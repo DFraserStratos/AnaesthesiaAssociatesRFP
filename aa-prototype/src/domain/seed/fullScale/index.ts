@@ -55,6 +55,9 @@ import type {
   XeroAccRec,
   XeroContact,
   XeroJournal,
+  XeroBatchPayment,
+  PayablesRun,
+  BankLine,
   XeroVolumeStory,
   AaFeeInvoice,
   AaFeeSettings,
@@ -62,6 +65,7 @@ import type {
   ImportRow,
   Stub,
 } from '../../types'
+import { backdropBankLines, backdropRunsFor } from '../backdropRuns'
 import { stubFor } from '../../intake/stubs'
 import { rawRowFor } from '../../intake/rawRow'
 import type { AppSettings } from '../../warnings/types'
@@ -149,6 +153,9 @@ export interface FullScaleInput {
     aaFeeInvoices: Record<string, AaFeeInvoice>
     locks: Record<string, BookingLock>
     transfers: Record<string, LedgerTransfer>
+    /** The weekly payment runs and the bank download (catch-up Phase 39a): the generated payouts join backdrop weekly runs. */
+    payablesRuns: Record<string, PayablesRun>
+    bankLines: Record<string, BankLine>
   }
   xero: {
     contacts: Record<string, XeroContact>
@@ -157,6 +164,7 @@ export interface FullScaleInput {
     payments: Record<string, PaymentIn>
     disbursements: Record<string, Disbursement>
     journals: Record<string, XeroJournal>
+    batchPayments: Record<string, XeroBatchPayment>
   }
   intake: {
     batches: Record<string, ImportBatch>
@@ -1365,12 +1373,53 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   void aaFeeCount
   void validateNhi
 
+  // Every backdrop payout (the seed's and the generated ones) joins one backdrop weekly run per ISO week (`PRFS##`),
+  // with its batch payment, and every generated payment has its bank download line (catch-up Phase 39a): no payment
+  // without a run or a week, one run per week, and a close after the load raises no false "not on the bank download"
+  // anomaly. The seed's own backdrop runs are rebuilt into these; any live run (a week the presenter paid) stays.
+  const seededRun = (runId: string) => base.billing.payablesRuns[runId] === undefined || base.billing.payablesRuns[runId]!.seeded === true
+  const backdropPayouts = Object.fromEntries(Object.entries(ledgerDisbursements).filter(([, d]) => seededRun(d.payablesRunId)))
+  const liveRuns = Object.fromEntries(Object.entries(base.billing.payablesRuns).filter(([, r]) => r.seeded !== true))
+  const liveBatches = Object.fromEntries(Object.entries(base.xero.batchPayments).filter(([, b]) => liveRuns[b.payablesRunId] !== undefined))
+  const bookingPairs = Object.fromEntries(Object.entries(ledger).filter((e): e is [string, BookingLedgerPair] => e[1].kind !== 'aaFee'))
+  const paidRuns = backdropRunsFor({
+    ns: 'FS',
+    settings: base.appSettings.paymentCycle,
+    ledger: bookingPairs,
+    invoices,
+    payerNameOf: (pair) => {
+      const inv = invoices[pair.invoiceId]
+      const cp = inv?.counterparty
+      return inv?.billedTo?.name ?? (cp !== undefined ? (base.masters.hospitals[cp.id]?.name ?? parties[cp.id]?.name ?? cp.id) : '')
+    },
+    serviceDateOf: (pair) => lists[pair.listId]?.dateISO ?? pair.createdAtISO.slice(0, 10),
+    ledgerDisbursements: backdropPayouts,
+    xeroDisbursements,
+    accPays,
+    seeded: true,
+  })
+  const generatedPayments = Object.fromEntries(Object.entries(payments).filter(([id]) => base.xero.payments[id] === undefined))
+
   const state = {
     ...base,
     masters: { ...base.masters, anaesthetists, surgeons, parties, contracts, patients, recurringBookings },
     schedule: { ...base.schedule, slots, lists, bookings, procedures },
-    billing: { ...base.billing, invoices, invoiceLines, ledger, receipts, disbursements: ledgerDisbursements, exceptions, contactIdCache, aaFeeInvoices, locks, transfers },
-    xero: { ...base.xero, contacts, accRecs, accPays, payments, disbursements: xeroDisbursements, journals },
+    billing: {
+      ...base.billing,
+      invoices,
+      invoiceLines,
+      ledger,
+      receipts,
+      disbursements: { ...ledgerDisbursements, ...paidRuns.ledgerDisbursements },
+      exceptions,
+      contactIdCache,
+      aaFeeInvoices,
+      locks,
+      transfers,
+      payablesRuns: { ...liveRuns, ...paidRuns.runs },
+      bankLines: { ...base.billing.bankLines, ...backdropBankLines('FS', generatedPayments, accRecs) },
+    },
+    xero: { ...base.xero, contacts, accRecs, accPays, payments, disbursements: paidRuns.xeroDisbursements, journals, batchPayments: { ...liveBatches, ...paidRuns.batchPayments } },
     intake: { ...base.intake, batches, rows, stubs },
     audit: [...base.audit, ...audit, loaded],
     counters,

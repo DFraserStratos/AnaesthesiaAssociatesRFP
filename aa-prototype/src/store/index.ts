@@ -435,6 +435,8 @@ export {
 } from './payablesActions'
 // The weekly payment cycle (catch-up Phase 39a; US-10.2.7, US-10.2.6, US-10.2.5).
 export * from './paymentCycleActions'
+export * from './remittanceSelectors'
+export { stagePaymentWeek, stagePaymentWeekRefusal, stageBankMismatch, stageBankMismatchRefusal, PAYMENT_WEEK_CHOICES, PAYMENT_WEEK_COPY } from './paymentWeekDemo'
 export { runArchiveJob, eligibleArchiveContactIds, wireArchiveJob, ARCHIVE_SKIPPED_OUTAGE, type ArchiveJobResult } from './archiveActions'
 export {
   advanceClockMinutes,

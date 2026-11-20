@@ -10,14 +10,17 @@
  * account only by a transfer or a refund the system raises (27a). AA's own fee
  * is never netted (16): an `aaFee` pair has no payable.
  *
- * `payablesDue` is the ONE source of what is due: the Billing monitor's
- * read-only list and Phase 39a's weekly run read it, with no second copy.
+ * `payablesDue` is the figure of what is due (the Ledger, the tiles, the
+ * positions). What a weekly run may take is `runLegsFromLedger`
+ * (`paymentCycleActions.ts`): the same legs, less anything an unsettled run
+ * already holds.
  *
  * Since catch-up Phase 37 (US-09.2.4, FT-10.2, RV-40; OQ-111 answered, D53)
- * the payment is made in Xero, never here: `runPayables` is the simulated Xero
- * payables run over the legs due (`payBillsInXero`, Xero side), and the
- * engine records each disbursement only when Xero reports the bill paid
- * (`recordDisbursement`). No code in this module writes a payable leg.
+ * the payment is made in Xero, never here, and since catch-up Phase 39a only
+ * through an approved, scheduled payment run: `runPayables` is the accountant
+ * paying the oldest scheduled run in Xero (`payRunInXero`), and the engine
+ * records each payment only when Xero reports it (`recordDisbursement`,
+ * `recordOffset`). No code in this module writes a payable leg.
  */
 
 import type { AnaesthetistId, PayableLeg, PayablesRun } from '../domain/types'
@@ -78,7 +81,7 @@ export interface PayablesDue {
 export interface PayablesFilter {
   /** One anaesthetist's legs only. */
   anaesthetistId?: AnaesthetistId
-  /** Only these pairs and transfers (Phase 39a holds anomalies out of a cycle with this). */
+  /** Only these pairs and transfers. */
   only?: readonly string[]
 }
 
@@ -175,15 +178,15 @@ export function runPayables(api: AppStoreApi, _actor: Actor, opts: { webhook?: '
 }
 
 /** Why one payable cannot be paid on its own now, or null (the Xero pair's single payout). */
-export function disbursePayableRefusal(state: Pick<AppState, 'billing' | 'xero'>, pairId: string): string | null {
+export function disbursePayableRefusal(state: Pick<AppState, 'billing' | 'xero'>, pairId: string): { code: string; message: string } | null {
   const pair = state.billing.ledger[pairId]
   const transfer = state.billing.transfers[pairId]
-  if (pair === undefined && transfer === undefined) return 'Payable not found.'
-  if (pair !== undefined && (!isBookingPair(pair) || pair.payable === undefined)) return 'This invoice has no payable.'
-  if (pair !== undefined && isBookingPair(pair) && pair.payable !== undefined && isHoldingLeg(pair.payable)) return HOLDING_SYSTEM_ONLY
+  if (pair === undefined && transfer === undefined) return { code: 'notFound', message: 'Payable not found.' }
+  if (pair !== undefined && (!isBookingPair(pair) || pair.payable === undefined)) return { code: 'noPayable', message: 'This invoice has no payable.' }
+  if (pair !== undefined && isBookingPair(pair) && pair.payable !== undefined && isHoldingLeg(pair.payable)) return { code: 'holdingSystemOnly', message: HOLDING_SYSTEM_ONLY }
   const on = scheduledLineFor(state, pairId)
-  if (on === undefined) return PAYMENT_CYCLE_COPY.notApproved
-  if (on.run.nettings.some((n) => n.allocations.some((a) => a.pairId === pairId))) return PAYMENT_CYCLE_COPY.useRun
+  if (on === undefined) return { code: 'notApproved', message: PAYMENT_CYCLE_COPY.notApproved }
+  if (on.run.nettings.some((n) => n.allocations.some((a) => a.pairId === pairId))) return { code: 'useRun', message: PAYMENT_CYCLE_COPY.useRun }
   return null
 }
 
@@ -196,10 +199,8 @@ export function disbursePayableRefusal(state: Pick<AppState, 'billing' | 'xero'>
  */
 export function disbursePayable(api: AppStoreApi, _actor: Actor, pairId: string, opts: { webhook?: 'deliver' | 'missed' } = {}): Outcome<PayablesRunResult> {
   const state = api.getState()
-  const pair = state.billing.ledger[pairId]
-  if (pair !== undefined && isBookingPair(pair) && pair.payable !== undefined && isHoldingLeg(pair.payable)) return refuse('holdingSystemOnly', HOLDING_SYSTEM_ONLY)
   const refusal = disbursePayableRefusal(state, pairId)
-  if (refusal !== null) return refuse(refusal === PAYMENT_CYCLE_COPY.useRun ? 'useRun' : refusal === PAYMENT_CYCLE_COPY.notApproved ? 'notApproved' : 'noPayable', refusal)
+  if (refusal !== null) return refuse(refusal.code, refusal.message)
   const on = scheduledLineFor(state, pairId)!
   const paid = payRunInXero(api, XERO_PAYABLES_ACTOR, on.run.id, { webhook: opts.webhook ?? 'deliver', onlyPairIds: [pairId] })
   if (!paid.ok) return paid

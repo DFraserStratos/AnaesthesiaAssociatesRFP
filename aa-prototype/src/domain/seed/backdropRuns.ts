@@ -31,6 +31,8 @@ export interface BackdropRunsInput {
   ledgerDisbursements: Readonly<Record<string, LedgerDisbursement>>
   xeroDisbursements: Readonly<Record<string, Disbursement>>
   accPays: Readonly<Record<string, Pick<XeroAccPay, 'contactId'>>>
+  /** `week` (the practice's own history: one run per ISO week) or `staged` (a demo fixture's payouts, beside the week's run, never a second week run). Default `week`. */
+  kind?: 'week' | 'staged'
   /** Mark the runs `seeded` (the app's seed), or not (a demo fixture). */
   seeded: boolean
 }
@@ -64,11 +66,17 @@ export function backdropRunsFor(input: BackdropRunsInput): BackdropRuns {
     r += 1
     const runId = `PR${input.ns}${pad(r)}`
     const cycle = cycleFor(paid[0]!.atISO, input.settings)
-    const legs: RunLegInput[] = []
+    // One line per payable: a bill paid twice in one week (part then balance) is one line for the sum.
+    const legByPair = new Map<string, RunLegInput>()
     for (const d of paid) {
       const pair = input.ledger[d.pairId]
       if (pair === undefined || pair.payable === undefined) continue
-      legs.push({
+      const had = legByPair.get(pair.id)
+      if (had !== undefined) {
+        had.available = roundToCents(had.available + d.amount)
+        continue
+      }
+      legByPair.set(pair.id, {
         pairId: pair.id,
         kind: 'pair',
         payee: pair.payable.payee,
@@ -81,13 +89,13 @@ export function backdropRunsFor(input: BackdropRunsInput): BackdropRuns {
         nettable: pair.payable.xeroAccPayId !== undefined,
       })
     }
-    const draft = buildWeekRun({ legs, negatives: [] })
+    const draft = buildWeekRun({ legs: [...legByPair.values()], negatives: [] })
     const firstDay = paid[0]!.atISO.slice(0, 10)
     const at = `${firstDay}T08:00:00`
     const total = roundToCents(draft.byAnaesthetist.reduce((n, t) => n + t.net, 0))
     runs[runId] = {
       id: runId,
-      kind: 'week',
+      kind: input.kind ?? 'week',
       cycleId,
       isoYear: cycle.isoYear,
       isoWeek: cycle.isoWeek,

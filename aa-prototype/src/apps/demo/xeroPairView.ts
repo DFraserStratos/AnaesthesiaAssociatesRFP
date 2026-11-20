@@ -3,6 +3,7 @@ import { paymentsByAccRec } from '../../store/indexes'
 import { isHeldPayable } from '../../domain/billing/prepayHolding'
 import type { BookingLedgerPair, BuyerCreatedTaxInvoice, InvoiceLine, LedgerDisbursement, LedgerPair, XeroAccPay, XeroAccRec, XeroContact } from '../../domain/types'
 import type { AppState } from '../../store'
+import { paymentWeekFor } from '../../store/paymentCycleActions'
 
 export interface XeroContactView {
   contactId: string
@@ -56,6 +57,8 @@ export interface XeroInvoicePairView {
     taxInvoice?: BuyerCreatedTaxInvoice
     /** Xero's bill payments on this ACCPAY, oldest first, each with what the Billing Engine knows of it (catch-up Phase 37). */
     billPayments: XeroBillPaymentView[]
+    /** ACCPAYCREDIT allocated against it by a payment run's netting (catch-up Phase 39a). */
+    creditAllocated: XeroAllocationView[]
   }
   /**
    * The ledger pair this Xero record mirrors (catch-up Phase 36; FT-09.1): the
@@ -100,6 +103,8 @@ export interface XeroCreditNoteView {
   total: number
   allocated: number
   unallocated: number
+  /** An ACCPAYCREDIT's allocations against bills by payment runs (catch-up Phase 39a). */
+  allocations?: XeroAllocationView[]
 }
 
 export interface XeroCreditView {
@@ -123,6 +128,9 @@ export interface XeroBillPaymentView {
   amount: number
   atISO: string
   payablesRunId: string
+  /** The batch payment it went out in, and the week of its payment run (catch-up Phase 39a). */
+  batchPaymentId?: string
+  week?: string
   engine:
     | { state: 'recorded'; detectedBy: 'webhook' | 'poll'; recordedAtISO?: string }
     | { state: 'queued' }
@@ -232,6 +240,7 @@ export function xeroInvoicePairViews(state: XeroPairState, opts: { accRecIds?: r
                 status: accPay.status,
                 ...(accPay.taxInvoice !== undefined ? { taxInvoice: accPay.taxInvoice } : {}),
                 billPayments: billPaymentViews(state, accPay.id, linkedPair?.id),
+                creditAllocated: allocationViews(state, { accPayId: accPay.id }),
               },
             }
           : {}),
@@ -319,7 +328,29 @@ function billPaymentViews(state: XeroPairState, accPayId: string, pairId: string
           : queued.has(d.id)
             ? { state: 'queued' }
             : { state: 'notDetected' }
-      return { id: d.id, amount: d.amount, atISO: d.atISO, payablesRunId: d.payablesRunId, engine }
+      const week = paymentWeekFor(state, d.payablesRunId)
+      return { id: d.id, amount: d.amount, atISO: d.atISO, payablesRunId: d.payablesRunId, ...(d.batchPaymentId !== undefined ? { batchPaymentId: d.batchPaymentId } : {}), ...(week !== undefined ? { week } : {}), engine }
+    })
+}
+
+/** One ACCPAYCREDIT allocation a payment run made (catch-up Phase 39a): on the bill it settled, or on the credit note it drew from. */
+export interface XeroAllocationView {
+  id: string
+  /** The other side: the credit note's number on a bill, the bill's number on a credit note. */
+  counterpartNumber: string
+  amount: number
+  week?: string
+}
+
+/** The credit allocated against an ACCPAY, or from an ACCPAYCREDIT, oldest first. */
+function allocationViews(state: XeroPairState, by: { accPayId: string } | { creditId: string }): XeroAllocationView[] {
+  return Object.values(state.xero.creditAllocations)
+    .filter((a) => ('accPayId' in by ? a.accPayId === by.accPayId : a.accPayCreditId === by.creditId))
+    .sort((a, b) => a.atISO.localeCompare(b.atISO) || a.id.localeCompare(b.id))
+    .map((a) => {
+      const week = paymentWeekFor(state, a.payablesRunId)
+      const counterpartNumber = 'accPayId' in by ? (state.xero.creditNotes[a.accPayCreditId]?.creditNoteNumber ?? a.accPayCreditId) : (state.xero.accPays[a.accPayId]?.invoiceNumber ?? a.accPayId)
+      return { id: a.id, counterpartNumber, amount: a.amount, ...(week !== undefined ? { week } : {}) }
     })
 }
 
@@ -386,7 +417,7 @@ function creditViewFor(state: XeroPairState, accRecId: string, accPayId: string 
   })
   return {
     creditNoteNumber: engine?.creditNoteNumber ?? notes[0]!.creditNoteNumber,
-    notes: notes.map((n) => ({ id: n.id, type: n.type, creditNoteNumber: n.creditNoteNumber, total: n.total, allocated: n.allocated, unallocated: roundToCents(n.total - n.allocated) })),
+    notes: notes.map((n) => ({ id: n.id, type: n.type, creditNoteNumber: n.creditNoteNumber, total: n.total, allocated: n.allocated, unallocated: roundToCents(n.total - n.allocated), ...(n.type === 'ACCPAYCREDIT' ? { allocations: allocationViews(state, { creditId: n.id }) } : {}) })),
     accPayVoided: accPay?.status === 'voided',
     newPairs,
   }

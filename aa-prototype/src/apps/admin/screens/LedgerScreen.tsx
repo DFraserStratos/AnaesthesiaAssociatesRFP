@@ -27,6 +27,10 @@ import {
   ledgerRowTotals,
   markUnmatchedRefunded,
   negativeInvoicesFor,
+  negativeOpenAmount,
+  PAYMENT_CYCLE_COPY,
+  paymentWeekFor,
+  paymentWeeksForPair,
   receivableOutstanding,
   replacementsOf,
   unmatchedReceiptRows,
@@ -43,6 +47,7 @@ import { CREDIT_LABELS } from '../../../shared/procedureEventCopy'
 import type { LedgerPair, NegativeInvoice, UnmatchedReceipt } from '../../../domain/types'
 import { FULL_SCALE } from '../../../domain/seed/fullScale/constants'
 import { Pager, pageOf } from '../components/Pager'
+import { LedgerPaymentRuns, StillToNetNotice } from '../components/LedgerPaymentRuns'
 import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
 
 type Scope = 'whole' | 'one'
@@ -69,6 +74,7 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
   const [params] = useSearchParams()
   const highlightId = params.get('pair')
   const billing = useAppStore((s) => s.billing)
+  const weeksOfRow = (id: string): string => [...new Set(paymentWeeksForPair({ billing }, id).map((w) => w.week).filter((w): w is string => w !== undefined))].join(', ')
   const masters = useAppStore((s) => s.masters)
   const schedule = useAppStore((s) => s.schedule)
   const xero = useAppStore((s) => s.xero)
@@ -179,7 +185,7 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
               variant="outlined"
               label="Payables due"
               value={formatCurrency(whole.payablesDue)}
-              sub={whole.payablesDue > 0 ? <TextAction size="sm" flush onClick={() => navigate('/admin/billing')}>Run payables in the Billing monitor</TextAction> : 'No payables due'}
+              sub={whole.payablesDue > 0 ? <TextAction size="sm" flush onClick={() => navigate('/admin/billing')}>Paid in this week's payment run on the Billing monitor</TextAction> : 'No payables due'}
             />
             <StatTile variant="outlined" label="Disbursed" value={formatCurrency(whole.disbursed)} sub="Paid out to anaesthetists" />
           </div>
@@ -204,6 +210,9 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
             <StatTile variant="outlined" label={CREDIT_LABELS.creditsHeldForPayers} value={formatCurrency(whole.creditsHeldForPayers)} sub={CREDIT_LABELS.creditsHeldSub} />
             <StatTile variant="outlined" label={CREDIT_LABELS.negativeToNet} value={formatCurrency(whole.recoveryDueFromAnaesthetists)} sub={CREDIT_LABELS.negativeToNetSub} />
           </div>
+          {whole.recoveryDueFromAnaesthetists > 0 && (
+            <div data-shot="ledger-still-to-net" style={{ fontSize: 12.5, color: neutral.slate }}>{PAYMENT_CYCLE_COPY.stillToNetCaption}</div>
+          )}
         </div>
       ) : (
         one !== undefined && (
@@ -313,7 +322,13 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
         </section>
       )}
 
-      {scope === 'one' && anaesthetistId !== undefined && <CreditTrails anaesthetistId={anaesthetistId} surname={surname} />}
+      {scope === 'one' && anaesthetistId !== undefined && (
+        <>
+          <StillToNetNotice anaesthetistId={anaesthetistId} surname={surname} />
+          <LedgerPaymentRuns anaesthetistId={anaesthetistId} />
+          <CreditTrails anaesthetistId={anaesthetistId} surname={surname} />
+        </>
+      )}
 
       <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
@@ -380,7 +395,11 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
                   <Td align="right" mono>{formatCurrency(row.amount)}</Td>
                   <Td align="right" mono>{formatCurrency(row.received)}</Td>
                   <Td align="right" mono>{formatCurrency(row.released)}</Td>
-                  <Td align="right" mono>{formatCurrency(row.paidOut)}</Td>
+                  <Td align="right" mono>
+                    {formatCurrency(row.paidOut)}
+                    {/* The week each payout went out in (catch-up Phase 39a; US-10.2.7). */}
+                    {weeksOfRow(row.id) !== '' && <div data-shot="ledger-payment-week" style={{ fontSize: 11, color: neutral.mist }}>{weeksOfRow(row.id)}</div>}
+                  </Td>
                   <Td nowrap>
                     {row.inXero ? <span style={{ fontSize: 12, color: neutral.slate }}>Mirrored</span> : <Pill tone="warning" size="sm">Not yet in Xero</Pill>}
                     {row.contactArchived && <div style={{ fontSize: 11, color: neutral.mist }}>Contact archived in Xero</div>}
@@ -571,6 +590,14 @@ export function CreditTrails({ anaesthetistId, surname }: { anaesthetistId: stri
   const billing = useAppStore((s) => s.billing)
   const negatives = useMemo(() => negativeInvoicesFor({ billing }, anaesthetistId), [billing, anaesthetistId])
   if (negatives.length === 0) return null
+  // What the negative's contra row says (catch-up Phase 39a): offset at once, netted in which weeks, or what is still to net.
+  const nettingNote = (n: NegativeInvoice): string => {
+    if (n.status === 'offset' || n.recoveryDue <= 0) return CREDIT_LABELS.offsetDone
+    const weeks = [...new Set((n.nettings ?? []).map((x) => paymentWeekFor({ billing }, x.runId)).filter((w): w is string => w !== undefined))]
+    const open = negativeOpenAmount({ billing }, n.id)
+    if (n.status === 'netted') return `Netted in ${weeks.join(' and ')}`
+    return `${CREDIT_LABELS.netsNextRun} · ${formatCurrency(open)}${weeks.length > 0 ? ` (part netted in ${weeks.join(' and ')})` : ''}`
+  }
   const number = (text: string, to: string | undefined) =>
     to !== undefined ? (
       <TextAction size="sm" flush onClick={() => navigate(to)}>
@@ -590,7 +617,7 @@ export function CreditTrails({ anaesthetistId, surname }: { anaesthetistId: stri
       step: CREDIT_LABELS.trailContra,
       record: number(n.number, cn !== undefined ? `/admin/credit-notes/${cn.id}` : undefined),
       amount: formatCurrency(-n.amount, { sign: 'always' }),
-      note: n.status === 'toNet' && n.recoveryDue > 0 ? `${CREDIT_LABELS.netsNextRun} · ${formatCurrency(n.recoveryDue)}` : CREDIT_LABELS.offsetDone,
+      note: nettingNote(n),
     })
     for (const r of replacementsOf({ billing }, n.originalInvoiceId)) out.push({ kind: 'newDebit', step: CREDIT_LABELS.trailNewDebit, record: number(r.invoiceNumber, `/admin/invoices/${r.id}`), amount: formatCurrency(r.total) })
     return out

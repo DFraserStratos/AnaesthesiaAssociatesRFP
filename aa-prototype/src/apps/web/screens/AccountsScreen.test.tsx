@@ -17,11 +17,12 @@ import { formatCurrency } from '../../../shared/format'
 import * as download from '../../../shared/download'
 import { xeroInvoicePairViews } from '../../demo/xeroPairView'
 import { AccountsScreen } from './AccountsScreen'
+import { SurfaceProvider } from '../../../shared/surface'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
 function renderIn(ui: ReactElement) {
-  return render(<MemoryRouter>{ui}</MemoryRouter>)
+  return render(<MemoryRouter><SurfaceProvider variant="web">{ui}</SurfaceProvider></MemoryRouter>)
 }
 
 /** S3: both Mon 20 Lists authorised (the wired billing run raises AA-2026-0005). */
@@ -48,10 +49,10 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks())
 
 describe('Accounts sub-tabs (catch-up Phase 38)', () => {
-  it('reads Outstanding, Payments, GST report and AA fees, as links', () => {
+  it('reads Outstanding, Payments, Remittances (catch-up Phase 39a), GST report and AA fees, as links', () => {
     renderIn(<AccountsScreen anaesthetistId={ANAE.souter} subTab="outstanding" onSubTab={() => undefined} />)
     const tabs = within(screen.getByRole('navigation', { name: 'Accounts' })).getAllByRole('link')
-    expect(tabs.map((t) => t.textContent)).toEqual(['Outstanding', 'Payments', 'GST report', 'AA fees'])
+    expect(tabs.map((t) => t.textContent)).toEqual(['Outstanding', 'Payments', 'Remittances', 'GST report', 'AA fees'])
     expect(tabs[0]).toHaveAttribute('href', '/web/accounts/outstanding')
     expect(tabs[0]).toHaveAttribute('aria-current', 'page')
   })
@@ -179,5 +180,43 @@ describe('the monthly GST report (US-12.2.2, cash basis)', () => {
     renderIn(<AccountsScreen anaesthetistId={ANAE.souter} subTab="gst" onSubTab={() => undefined} />)
     expect(screen.getByText('AA has not passed you any payments in this month.')).toBeInTheDocument()
     for (const name of ['Download', 'Print', 'Email to me']) expect(screen.getByRole('button', { name })).toBeDisabled()
+  })
+})
+
+describe('Remittances (catch-up Phase 39a; US-10.2.5)', () => {
+  it("lists Dr Souter's backdrop weekly runs newest first; a row opens its advice; ?run focuses one", () => {
+    renderIn(<AccountsScreen anaesthetistId={ANAE.souter} subTab="remittances" onSubTab={() => undefined} focusRunId="PRH12" />)
+    const table = document.querySelector<HTMLElement>('[data-shot="web-remittances"] table')!
+    const rows = within(table).getAllByRole('row').slice(1)
+    expect(rows[0]).toHaveTextContent('Week 29')
+    expect(rows[0]).toHaveTextContent('$690.00')
+    expect(rows[0]).toHaveTextContent('Paid')
+    expect(rows.find((r) => r.getAttribute('data-focused') === 'true')).toHaveTextContent('Week 28')
+    expect(screen.queryByText(/still to net/)).not.toBeInTheDocument()
+    fireEvent.click(rows[0]!)
+    const sheet = document.querySelector('[data-shot="web-remittance-sheet"]')!
+    expect(sheet).toHaveTextContent('REMITTANCE ADVICE')
+    expect(sheet).toHaveTextContent('Week 29, 2026')
+    expect(sheet).toHaveTextContent('Paid to you')
+  })
+
+  it('shows a negative still to net as a signed amount, with where it nets', () => {
+    const s = freshAppState()
+    useAppStore.setState({
+      ...s,
+      billing: {
+        ...s.billing,
+        negativeInvoices: {
+          NEG0001: { id: 'NEG0001', number: 'CN-2026-0001-P', anaesthetistId: ANAE.souter, creditNoteId: 'CRN0001', originalInvoiceId: 'INV0001', pairId: 'BC0001', cause: 'credit', amount: 120, offsetAmount: 0, recoveryDue: 120, status: 'toNet', issuedAtISO: '2026-07-21T09:00:00' },
+        },
+      },
+    })
+    renderIn(<AccountsScreen anaesthetistId={ANAE.souter} subTab="remittances" onSubTab={() => undefined} />)
+    expect(document.querySelector('[data-shot="web-still-to-net"]')).toHaveTextContent('You have -$120.00 still to net. It is netted against your next payment run.')
+  })
+
+  it('Payments shows the week each payment to you went out in', () => {
+    renderIn(<AccountsScreen anaesthetistId={ANAE.souter} subTab="payments" onSubTab={() => undefined} />)
+    expect(screen.getByTestId('payment-history-row-AA-2026-H09')).toHaveTextContent('Week 29')
   })
 })

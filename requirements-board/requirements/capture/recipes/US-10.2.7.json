@@ -1,6 +1,216 @@
 {
   "id": "US-10.2.7",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 39a builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "payment-cycle",
+      "app": "admin",
+      "caption": "Each accounting week is named by its ISO week number",
+      "start": "/admin/billing",
+      "states": [
+        {
+          "state": "open",
+          "caption": "Each accounting week is named by its ISO week number: Week 30, with the planned Friday close, Monday checks and Tuesday payment schedule",
+          "steps": [
+            {
+              "wait": "[data-shot=payment-cycle]"
+            },
+            {
+              "trigger": "stage-payment-week",
+              "choice": "bctis"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "wait": "[data-shot=payables-run-draft]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=payment-cycle]"
+          ]
+        },
+        {
+          "state": "anomaly",
+          "caption": "Closing the week reconciles it against the bank download: a receipt missing from it is an anomaly for the office to sort out before payment",
+          "steps": [
+            {
+              "wait": "[data-shot=payment-cycle]"
+            },
+            {
+              "trigger": "stage-payment-week",
+              "choice": "bctis"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "trigger": "stage-bank-mismatch"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=payment-cycle-close]"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-anomalies]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=payment-cycle-anomalies]"
+          ]
+        },
+        {
+          "state": "held",
+          "caption": "An anomaly that cannot be fixed is held out and rolled into the next cycle",
+          "steps": [
+            {
+              "wait": "[data-shot=payment-cycle]"
+            },
+            {
+              "trigger": "stage-payment-week",
+              "choice": "bctis"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "trigger": "stage-bank-mismatch"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=payment-cycle-close]"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-anomalies]"
+            },
+            {
+              "click": "[data-shot=payment-cycle-hold-anomaly] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-held]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=payment-cycle-anomalies]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "payment-schedule",
+      "app": "admin",
+      "caption": "The payment schedule of released payables goes to the accountant for payment",
+      "start": "/admin/billing/payment-runs/PR0001",
+      "setup": [
+        {
+          "goto": "/admin/billing"
+        },
+        {
+          "wait": "[data-shot=payment-cycle]"
+        },
+        {
+          "trigger": "stage-payment-week",
+          "choice": "bctis"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "[data-shot=payment-cycle-close]"
+        },
+        {
+          "wait": "[data-shot=payment-cycle-approve]"
+        },
+        {
+          "click": "[data-shot=payment-cycle-approve]"
+        },
+        {
+          "wait": "[data-shot=payment-cycle-send]"
+        },
+        {
+          "click": "[data-shot=payment-cycle-send]"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=payment-schedule]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=payment-schedule]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "payment-week",
+      "app": "admin",
+      "caption": "A payment is shown against the week number of the cycle it was paid in",
+      "start": "/admin/invoices/PPINV01",
+      "setup": [
+        {
+          "goto": "/admin/billing"
+        },
+        {
+          "wait": "[data-shot=payment-cycle]"
+        },
+        {
+          "trigger": "stage-payment-week",
+          "choice": "bctis"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "[data-shot=payment-cycle-close]"
+        },
+        {
+          "wait": "[data-shot=payment-cycle-approve]"
+        },
+        {
+          "click": "[data-shot=payment-cycle-approve]"
+        },
+        {
+          "wait": "[data-shot=payment-cycle-send]"
+        },
+        {
+          "click": "[data-shot=payment-cycle-send]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=billing-run-payables-in-xero]"
+        },
+        {
+          "wait": "[data-shot=billing-payables-result]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=payment-week]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=payment-week]"
+          ]
+        }
+      ]
+    }
+  ]
 }

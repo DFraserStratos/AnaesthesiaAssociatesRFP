@@ -1,6 +1,117 @@
 {
   "id": "US-10.2.6",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 39a builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "approve-week",
+      "app": "admin",
+      "caption": "BCTIs not yet approved are not in the payment run",
+      "start": "/admin/billing",
+      "states": [
+        {
+          "state": "closed",
+          "caption": "BCTIs not yet approved are not in the payment run: Week 30 is closed, its BCTIs wait for approval and Run payables in Xero has nothing scheduled to pay",
+          "steps": [
+            {
+              "wait": "[data-shot=payment-cycle]"
+            },
+            {
+              "trigger": "stage-payment-week",
+              "choice": "bctis"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=payment-cycle-close]"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-approve]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=payment-cycle]"
+          ]
+        },
+        {
+          "state": "approved",
+          "caption": "Approved: Week 30's run shows Approved, and the payment schedule can go to the accountant",
+          "steps": [
+            {
+              "wait": "[data-shot=payment-cycle]"
+            },
+            {
+              "trigger": "stage-payment-week",
+              "choice": "bctis"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=payment-cycle-close]"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-approve]"
+            },
+            {
+              "click": "[data-shot=payment-cycle-approve]"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-send]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=payment-cycle]"
+          ]
+        },
+        {
+          "state": "paid",
+          "caption": "Once approved and the schedule sent, the run is paid in Xero: Week 30 shows Paid",
+          "steps": [
+            {
+              "wait": "[data-shot=payment-cycle]"
+            },
+            {
+              "trigger": "stage-payment-week",
+              "choice": "bctis"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=payment-cycle-close]"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-approve]"
+            },
+            {
+              "click": "[data-shot=payment-cycle-approve]"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-send]"
+            },
+            {
+              "click": "[data-shot=payment-cycle-send]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=billing-run-payables-in-xero]"
+            },
+            {
+              "wait": "[data-shot=billing-payables-result]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=payment-cycle]"
+          ]
+        }
+      ]
+    }
+  ]
 }

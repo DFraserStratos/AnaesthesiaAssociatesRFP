@@ -159,6 +159,19 @@ describe('route scoping', () => {
     expect(mismatch.run(api, ctx).message).toMatch(/^The bank download is missing the receipt for AA-2026-PP\d\d\. Close the week to see the anomaly\.$/)
   })
 
+  it('"Pay anaesthetist in Xero" pays a bill only as a line of a scheduled run (catch-up Phase 39a)', () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    const t = byId('xero-pay-bill')
+    const s = api.getState()
+    const bill = Object.values(s.xero.accPays).find((p) => p.anaesthetistId === ANAE.souter && p.payeeAccount !== 'aaHoldingAccount' && s.xero.accRecs[p.accRecId]?.status === 'awaitingPayment')!
+    const rec = s.xero.accRecs[bill.accRecId]!
+    expect(deliverPaymentWebhook(api, { accRecId: rec.id, amount: rec.amountDue - rec.amountReceived, idempotencyKey: 'PAY-BILL-GATE' }).ok).toBe(true)
+    const ctx = ctxFor(`/demo/xero/invoices/${rec.id}`, { accRecId: rec.id })
+    expect(t.disabledReason(api.getState(), ctx)).toBe('Not in an approved payment run yet')
+    unwire()
+  })
+
   it('the Xero outage pair, and the pair-only Xero actions, are bar-only with working disabled states (catch-up Phase 37)', () => {
     const api = createAppStore()
     const start = DEMO_TRIGGERS.find((t) => t.id === 'xero-outage-start')!

@@ -94,9 +94,10 @@ Snapshot date: **24 July 2026**
 | Billing run and invoice documents | Ready | Phase 08 |
 | Events and additional invoices, credit notes (credit and rebill, the split, the anaesthetist's credit note), and billing monitor (grouped by anaesthetist, with filters for one anaesthetist, hospital, dates and Problems only; Lists awaiting approval open in Review) | Ready | Phase 09; grouping and filters from catch-up Phase 37; credit notes from catch-up Phase 39 |
 | Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), escalating warning, left off the final invoice | Ready | Catch-up Phase 27 |
-| Prepayment held in the AA Holding account (its card on the Billing monitor), transferred to the anaesthetist automatically when the List is authorised, then paid by the payables run | Ready | Catch-up Phase 27a |
+| Prepayment held in the AA Holding account (its card on the Billing monitor), transferred to the anaesthetist automatically when the List is authorised, then paid by the next weekly payment run | Ready | Catch-up Phase 27a |
 | Xero pairs, payments, payables, payment history, live balances and GST report | Ready | Phase 10 |
-| Xero resilience: the payables run made in Xero (each disbursement recorded by webhook or poll), the Xero sync queue through an outage, voids and edits made in Xero flagged at the poll, bulk remittances matched in Xero, and the Reconciliation card on Admin Day | Ready | Catch-up Phase 37 |
+| The weekly payment cycle on the Billing monitor (close the week, Monday checks with Hold out of this run, Approve the week's BCTIs, Send payment schedule, Run payables in Xero), negative invoices netted in the run, each run's page and schedule, the week on every payment, and a remittance advice per run (Admin, and web Accounts · Remittances) | Ready (the cycle is Greg's proposal, still with AA's accountant, OQ-47) | Catch-up Phase 39a |
+| Xero resilience: the payment made in Xero (each disbursement recorded by webhook or poll), the Xero sync queue through an outage, voids and edits made in Xero flagged at the poll, bulk remittances matched in Xero, and the Reconciliation card on Admin Day | Ready | Catch-up Phase 37 |
 | Internal ledger with in-balance view: Admin Ledger (the whole ledger and one anaesthetist), the out-of-balance list, unmatched receipts allocated or refunded; Xero mirrors the ledger | Ready | Catch-up Phase 36 |
 | Anaesthetist profile and bank details (own rate per unit on mobile and web; office-held contact, HPI CPN and masked bank details, payments made in Xero) | Ready | Catch-up Phase 26 |
 | Admin Intake (one home: Matching, PDF lists, Data quality, Validators; `/admin/intake`) | Ready | Catch-up Phase 34 |
@@ -113,7 +114,8 @@ polish of the mobile background; it changes nothing in the workflows, data, web 
 Demo-only surfaces stay honestly labelled. The Xero simulator, integration simulator and the control
 panel carry a "demo simulation" badge: they simulate external systems and are not proposed end-user
 product screens. The billing monitor is proposed product UI; only its simulation triggers are badged,
-and its **Run payables in Xero** (badged Simulated Xero). It is grouped by anaesthetist and filters by
+and its **Run payables in Xero** (badged Simulated Xero, the accountant paying the week's schedule once
+the week is closed, approved and scheduled). It is grouped by anaesthetist and filters by
 anaesthetist, hospital, dates and **Problems only**; Lists awaiting approval open in Review, where they
 are authorised.
 

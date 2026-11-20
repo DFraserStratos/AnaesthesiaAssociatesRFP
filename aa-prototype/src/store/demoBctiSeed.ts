@@ -154,6 +154,7 @@ export function seedMonthOfBctis(api: AppStoreApi, actor: Actor, anaesthetistId:
         xeroDisbursements: build.disbursements,
         accPays: build.accPays,
         seeded: false,
+        kind: 'staged',
       })
       return {
         schedule: {

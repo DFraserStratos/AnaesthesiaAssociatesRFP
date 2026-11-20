@@ -201,13 +201,18 @@ describe('the check day: holds roll forward (US-10.2.7 second criterion)', () =>
     expect(approveWeekBctis(api, OFFICE_ACTOR, runId).ok).toBe(true)
   })
 
-  it('holding every line leaves nothing to approve', () => {
+  it('holding every line: approval closes the week with nothing to pay, and the next week takes the line rolled (never a dead end)', () => {
     const { api, pairs } = setup()
     pay(api, pairs[0]!, 1, 'A')
     const closed = closeWeek(api, OFFICE_ACTOR)
     const runId = closed.ok ? closed.value.runId : ''
     holdOutOfRun(api, OFFICE_ACTOR, runId, { pairId: pairs[0]!.id, reason: 'Wait' })
-    expect(approveWeekBctis(api, OFFICE_ACTOR, runId)).toMatchObject({ ok: false, code: 'nothingToApprove' })
+    expect(approveWeekBctis(api, OFFICE_ACTOR, runId).ok).toBe(true)
+    expect(api.getState().billing.payablesRuns[runId]!.status).toBe('paid')
+    expect(leg(api, pairs[0]!.id)!.disbursedAmount).toBe(0)
+    const next = closeWeek(api, OFFICE_ACTOR)
+    expect(next).toMatchObject({ ok: true, value: { cycleId: '2026-W31' } })
+    expect(api.getState().billing.payablesRuns[next.ok ? next.value.runId : '']!.lines).toEqual([expect.objectContaining({ pairId: pairs[0]!.id, rolledFromRunId: runId })])
   })
 })
 

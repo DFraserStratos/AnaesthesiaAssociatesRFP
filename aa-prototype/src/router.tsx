@@ -38,6 +38,8 @@ import {
   AdminValidatorsRoute,
   AdminInvoicesRoute,
   AdminCreditNoteRoute,
+  AdminPaymentRunRoute,
+  AdminRemittanceRoute,
   AdminMastersRoute,
   AdminMatchingRoute,
   AdminSurgeonProfileRoute,
@@ -144,6 +146,9 @@ const routeTree = (
               <Route index element={<AdminBillingPage />} />
               <Route path="aa-fees" element={<AdminAaFeesRoute />} />
               <Route path="aa-fees/settings" element={<AdminAaFeeSettingsRoute />} />
+              {/* A payment run and its remittance advices (catch-up Phase 39a). */}
+              <Route path="payment-runs/:runId" element={<AdminPaymentRunRoute />} />
+              <Route path="payment-runs/:runId/remittance/:anaesthetistId" element={<AdminRemittanceRoute />} />
             </Route>
             <Route path="ledger">
               <Route index element={<AdminLedgerRoute />} />

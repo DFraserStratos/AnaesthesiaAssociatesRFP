@@ -209,8 +209,8 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
           variant="outlined"
           label="Payables due"
           value={formatCurrency(payablesDueTotal)}
-          sub="Go to the payables run"
-          onClick={() => document.querySelector('[data-shot="billing-payables-run"]')?.scrollIntoView({ block: 'start' })}
+          sub="Go to the payment cycle"
+          onClick={() => document.querySelector('[data-shot="payment-cycle"]')?.scrollIntoView({ block: 'start' })}
           shot="billing-tile-payables"
         />
       </div>

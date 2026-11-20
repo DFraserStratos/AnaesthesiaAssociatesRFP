@@ -30,6 +30,7 @@ import { formatCurrency } from '../shared/format'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { invoiceAddresseeName } from './selectors'
+import { disbursedByRunPair, latestReceiptByPair, nettedByRunPair, runIdsByLinePair, xeroAllocatedByRunBill, xeroPaidByRunBill } from './indexes'
 
 // ---------------------------------------------------------------------------
 // Copy (one place)
@@ -41,7 +42,7 @@ export const PAYMENT_CYCLE_COPY = {
   previousWeekOpen: (label: string) => `Finish ${label}'s run first.`,
   notClosed: 'This step is only open while the week is closed.',
   anomaliesOpen: 'Hold out or mark fixed every anomaly first.',
-  nothingToApprove: 'Every line is held out: nothing to approve.',
+
   notApprovedYet: 'Approve the week first.',
   runStale: 'Something changed since this week was closed. Re-close the week.',
   notApproved: 'This payable is not in an approved payment run yet.',
@@ -53,6 +54,8 @@ export const PAYMENT_CYCLE_COPY = {
   lineNotFound: 'That BCTI is not on this run.',
   cannotReclose: 'This run has been sent to Xero: it can no longer be re-closed.',
   rule: 'A released payable is paid only in an approved weekly run.',
+  /** OQ-71 (answered, D21): the one caption a negative still to net carries. Nothing else is built for it. */
+  stillToNetCaption: 'Netted in their next payment run. If no later payment comes, AA settles it with the anaesthetist outside the system.',
 } as const
 
 /** The reason a check-day hold records for each anomaly kind. */
@@ -61,6 +64,12 @@ export const ANOMALY_LABEL: Record<CycleAnomaly['kind'], string> = {
   bankAmountDiffers: 'Bank amount differs',
   noBankAccount: 'No bank account on file',
   flaggedByOffice: 'Flagged by the office',
+}
+
+/** The next anomaly id on a run (`<runId>-A<n>`): one past the highest in use, so an id is never reused after a flag is removed. */
+function nextAnomalyId(runId: string, anomalies: readonly Pick<CycleAnomaly, 'id'>[]): string {
+  const max = anomalies.reduce((m, a) => Math.max(m, Number(/-A(\d+)$/.exec(a.id)?.[1] ?? 0)), 0)
+  return `${runId}-A${max + 1}`
 }
 
 // ---------------------------------------------------------------------------
@@ -89,23 +98,38 @@ export function runsNewestFirst(state: Pick<AppState, 'billing'>): PayablesRun[]
 
 /** What a run has settled on one line so far, from the ledger: the disbursements and nettings recorded for it. */
 export function settledInRun(state: Pick<AppState, 'billing'>, runId: string, pairId: string): number {
-  let cents = 0
-  for (const d of Object.values(state.billing.disbursements)) if (d.payablesRunId === runId && d.pairId === pairId) cents += toCents(d.amount)
-  for (const n of Object.values(state.billing.negativeInvoices)) for (const x of n.nettings ?? []) if (x.runId === runId && x.pairId === pairId) cents += toCents(x.amount)
-  return cents / 100
+  return settledCentsInRun(state, runId, pairId) / 100
 }
 
-/** What unsettled runs (other than `exceptRunId`) still hold of a leg: the anti-double-take rule. */
-function inFlightFor(state: Pick<AppState, 'billing'>, pairId: string, exceptRunId?: string): number {
-  let cents = 0
+/** Indexed (`disbursedByRunPair`, `nettedByRunPair`): what a run settled on one line, in cents, and when the last of it landed. */
+function settledCentsInRun(state: Pick<AppState, 'billing'>, runId: string, pairId: string): number {
+  const key = `${runId}|${pairId}`
+  return (disbursedByRunPair(state.billing.disbursements).get(key)?.cents ?? 0) + (nettedByRunPair(state.billing.negativeInvoices).get(key)?.cents ?? 0)
+}
+
+function settledLatestInRun(state: Pick<AppState, 'billing'>, runId: string, pairId: string): string | undefined {
+  const key = `${runId}|${pairId}`
+  const a = disbursedByRunPair(state.billing.disbursements).get(key)?.latestISO
+  const b = nettedByRunPair(state.billing.negativeInvoices).get(key)?.latestISO
+  return a === undefined ? b : b === undefined || a > b ? a : b
+}
+
+/**
+ * What unsettled runs (other than `exceptRunId`) still hold of each leg, in
+ * cents, keyed by pair: the anti-double-take rule. One walk over the
+ * unsettled runs' lines, so building a run's legs stays linear.
+ */
+function inFlightCents(state: Pick<AppState, 'billing'>, exceptRunId?: string): Map<string, number> {
+  const out = new Map<string, number>()
   for (const run of unsettledRuns(state)) {
     if (run.id === exceptRunId) continue
     for (const line of run.lines) {
-      if (line.pairId !== pairId || line.heldOut !== undefined) continue
-      cents += Math.max(0, toCents(line.amount) - toCents(settledInRun(state, run.id, pairId)))
+      if (line.heldOut !== undefined) continue
+      const left = Math.max(0, toCents(line.amount) - settledCentsInRun(state, run.id, line.pairId))
+      if (left > 0) out.set(line.pairId, (out.get(line.pairId) ?? 0) + left)
     }
   }
-  return cents / 100
+  return out
 }
 
 /** What a run still nets of one negative: its netting less what Xero has reported allocated for it. */
@@ -150,9 +174,7 @@ function serviceDateOf(state: Pick<AppState, 'schedule'>, listId: string, fallba
 }
 
 function latestReceiptOn(state: Pick<AppState, 'billing'>, pairId: string): IsoDateTime | undefined {
-  let latest: string | undefined
-  for (const r of Object.values(state.billing.receipts)) if (r.pairId === pairId && (latest === undefined || r.atISO > latest)) latest = r.atISO
-  return latest
+  return latestReceiptByPair(state.billing.receipts).get(pairId)
 }
 
 /**
@@ -165,11 +187,12 @@ function latestReceiptOn(state: Pick<AppState, 'billing'>, pairId: string): IsoD
 export function runLegsFromLedger(state: CycleState, exceptRunId?: string): RunLegInput[] {
   const legs: RunLegInput[] = []
   const transferred = new Set(Object.values(state.billing.transfers).map((t) => t.collectPairId))
+  const inFlight = inFlightCents(state, exceptRunId)
   for (const pair of Object.values(state.billing.ledger)) {
     if (!isBookingPair(pair) || pair.payable === undefined) continue
     const p = pair.payable
     if (isHoldingLeg(p) && transferred.has(pair.id)) continue
-    const available = isHoldingLeg(p) ? roundToCents(p.releasedAmount - settledOn(p)) : roundToCents(p.releasedAmount - settledOn(p) - inFlightFor(state, pair.id, exceptRunId))
+    const available = isHoldingLeg(p) ? roundToCents(p.releasedAmount - settledOn(p)) : roundToCents(p.releasedAmount - settledOn(p) - (inFlight.get(pair.id) ?? 0) / 100)
     if (toCents(available) <= 0) continue
     const invoice = state.billing.invoices[pair.invoiceId]
     const released = latestReceiptOn(state, pair.id)
@@ -187,7 +210,7 @@ export function runLegsFromLedger(state: CycleState, exceptRunId?: string): RunL
     })
   }
   for (const t of Object.values(state.billing.transfers)) {
-    const available = roundToCents(t.in.releasedAmount - settledOn(t.in) - inFlightFor(state, t.id, exceptRunId))
+    const available = roundToCents(t.in.releasedAmount - settledOn(t.in) - (inFlight.get(t.id) ?? 0) / 100)
     if (toCents(available) <= 0) continue
     const collect = state.billing.ledger[t.collectPairId]
     const invoice = state.billing.invoices[t.invoiceId]
@@ -277,10 +300,12 @@ function receiptsToReconcile(state: CycleState, lines: readonly PayablesRunLine[
     const collect = l.kind === 'transfer' ? state.billing.transfers[l.pairId]?.collectPairId : l.pairId
     if (collect !== undefined) pairOf.set(collect, l.pairId)
   }
+  // A line rolled from an earlier week is checked again whole: its receipt may be why it was held.
+  const rolled = new Set(lines.filter((l) => l.rolledFromRunId !== undefined).map((l) => l.pairId))
   const out: ReconcileReceipt[] = []
   for (const r of Object.values(state.billing.receipts)) {
     const linePair = pairOf.get(r.pairId)
-    if (linePair === undefined || (sinceISO !== undefined && r.atISO <= sinceISO)) continue
+    if (linePair === undefined || (sinceISO !== undefined && r.atISO <= sinceISO && !rolled.has(linePair))) continue
     out.push({ receiptId: r.id, pairId: linePair, reference: state.billing.ledger[r.pairId]?.receivable.number ?? '', amount: r.grossAmount, atISO: r.atISO })
   }
   return out
@@ -289,7 +314,13 @@ function receiptsToReconcile(state: CycleState, lines: readonly PayablesRunLine[
 /** Build a closed week run for a cycle, as the store would write it (no state change). */
 function closedRunFor(state: CycleState, actor: Actor, runId: string, cycle: PaymentCycle, opts: { exceptRunId?: string; carry?: PayablesRun } = {}): PayablesRun {
   const atISO = clockISO(state.clock)
-  const draft = buildWeekRun({ legs: runLegsFromLedger(state, opts.exceptRunId), negatives: openNegativesForRun(state, opts.exceptRunId), heldEarlier: heldEarlierFor(state, cycle.cycleId) })
+  let legs = runLegsFromLedger(state, opts.exceptRunId)
+  // A re-close takes only what the week took when it first closed: a payable released since belongs to the next week.
+  if (opts.carry !== undefined) {
+    const took = new Map(opts.carry.lines.map((l) => [l.pairId, l.amount]))
+    legs = legs.filter((l) => took.has(l.pairId)).map((l) => ({ ...l, available: Math.min(l.available, took.get(l.pairId)!) }))
+  }
+  const draft = buildWeekRun({ legs, negatives: openNegativesForRun(state, opts.exceptRunId), heldEarlier: heldEarlierFor(state, cycle.cycleId) })
   const prev = previousWeekRun(state, cycle.cycleId)
   const found = reconcileWeek({ receipts: receiptsToReconcile(state, draft.lines, prev?.closedAtISO), bankLines: Object.values(state.billing.bankLines) })
   const missingBank = new Set(draft.lines.map((l) => l.anaesthetistId).filter((a) => destinationMaskedFor(state, a) === null))
@@ -300,13 +331,26 @@ function closedRunFor(state: CycleState, actor: Actor, runId: string, cycle: Pay
   // Re-close: the holds and fixed anomalies that still apply carry over.
   if (opts.carry !== undefined) {
     const sameAnomaly = (a: CycleAnomaly, b: CycleAnomaly) => a.kind === b.kind && a.anaesthetistId === b.anaesthetistId && a.pairIds.join() === b.pairIds.join()
+    // Each carried anomaly keeps its resolution under the new run's id; holds are re-pointed to the new ids.
+    const newIdOf = new Map<string, string>()
     anomalies = anomalies.map((a) => {
       const was = opts.carry!.anomalies.find((b) => sameAnomaly(a, b))
+      if (was !== undefined) newIdOf.set(was.id, a.id)
       return was !== undefined && was.status !== 'open' ? { ...a, status: was.status, ...(was.resolvedAtISO !== undefined ? { resolvedAtISO: was.resolvedAtISO } : {}), ...(was.resolvedBy !== undefined ? { resolvedBy: was.resolvedBy } : {}) } : a
     })
+    const kept = new Set(lines.map((x) => x.pairId))
+    for (const was of opts.carry.anomalies.filter((a) => a.kind === 'flaggedByOffice' && a.pairIds.some((p) => kept.has(p)))) {
+      const id = nextAnomalyId(runId, anomalies)
+      newIdOf.set(was.id, id)
+      anomalies.push({ ...was, id, pairIds: was.pairIds.filter((p) => kept.has(p)) })
+    }
     const holds = new Map<string, NonNullable<PayablesRunLine['heldOut']>>()
-    for (const l of opts.carry.lines) if (l.heldOut !== undefined && lines.some((x) => x.pairId === l.pairId)) holds.set(l.pairId, l.heldOut)
-    for (const was of opts.carry.anomalies.filter((a) => a.kind === 'flaggedByOffice' && a.pairIds.some((p) => holds.has(p)))) anomalies.push({ ...was, id: `${runId}-A${anomalies.length + 1}` })
+    for (const l of opts.carry.lines) {
+      if (l.heldOut === undefined || !kept.has(l.pairId)) continue
+      const anomalyId = l.heldOut.anomalyId !== undefined ? newIdOf.get(l.heldOut.anomalyId) : undefined
+      const { anomalyId: _old, ...rest } = l.heldOut
+      holds.set(l.pairId, { ...rest, ...(anomalyId !== undefined ? { anomalyId } : {}) })
+    }
     const held = applyHolds(lines, holds, openNegativesForRun(state, opts.exceptRunId))
     lines = held.lines
     nettings = held.nettings
@@ -379,14 +423,13 @@ export function accPayOfLine(state: Pick<AppState, 'billing'>, line: Pick<Payabl
 
 /** What Xero has been sent for a run line so far: its bill payments and credit allocations in this run. */
 export function xeroSentOn(state: Pick<AppState, 'billing' | 'xero'>, run: Pick<PayablesRun, 'id'>, line: Pick<PayablesRunLine, 'pairId' | 'kind'>): number {
-  const accPayId = accPayOfLine(state, line)
-  let cents = 0
-  for (const d of Object.values(state.xero.disbursements)) {
-    if (d.payablesRunId !== run.id) continue
-    if ((line.kind === 'transfer' && d.transferId === line.pairId) || (accPayId !== undefined && d.accPayId === accPayId)) cents += toCents(d.amount)
-  }
-  if (accPayId !== undefined) for (const a of Object.values(state.xero.creditAllocations)) if (a.payablesRunId === run.id && a.accPayId === accPayId) cents += toCents(a.amount)
-  return cents / 100
+  // Indexed: Xero's bill payments and credit allocations by run and bill.
+  const bill = line.kind === 'transfer' ? line.pairId : accPayOfLine(state, line)
+  if (bill === undefined) return 0
+  const key = `${run.id}|${bill}`
+  const paid = xeroPaidByRunBill(state.xero.disbursements).get(key)?.cents ?? 0
+  const allocated = line.kind === 'transfer' ? 0 : (xeroAllocatedByRunBill(state.xero.creditAllocations).get(key)?.cents ?? 0)
+  return (paid + allocated) / 100
 }
 
 function xeroUnsentOn(state: Pick<AppState, 'billing' | 'xero'>, run: PayablesRun, line: PayablesRunLine): number {
@@ -395,11 +438,10 @@ function xeroUnsentOn(state: Pick<AppState, 'billing' | 'xero'>, run: PayablesRu
 
 /** Each unheld line's detection: paid once the engine has recorded all of it (cash and netting), with the latest date. */
 export function lineDetection(state: Pick<AppState, 'billing'>, run: PayablesRun, line: PayablesRunLine): { state: 'awaitingXero' } | { state: 'paid'; atISO: IsoDateTime } {
-  if (toCents(settledInRun(state, run.id, line.pairId)) < toCents(line.amount)) return { state: 'awaitingXero' }
-  let at = run.paidAtISO ?? run.closedAtISO
-  for (const d of Object.values(state.billing.disbursements)) if (d.payablesRunId === run.id && d.pairId === line.pairId && d.atISO > at) at = d.atISO
-  for (const n of Object.values(state.billing.negativeInvoices)) for (const x of n.nettings ?? []) if (x.runId === run.id && x.pairId === line.pairId && x.atISO > at) at = x.atISO
-  return { state: 'paid', atISO: at }
+  if (settledCentsInRun(state, run.id, line.pairId) < toCents(line.amount)) return { state: 'awaitingXero' }
+  const latest = settledLatestInRun(state, run.id, line.pairId)
+  const base = run.paidAtISO ?? run.closedAtISO
+  return { state: 'paid', atISO: latest !== undefined && latest > base ? latest : base }
 }
 
 /** A run's derived payment state: each unheld line's detection, and whether all are paid. */
@@ -408,6 +450,23 @@ export function payablesRunState(state: Pick<AppState, 'billing'>, runId: string
   if (run === undefined) return undefined
   const lines = run.lines.filter((l) => l.heldOut === undefined).map((l) => ({ pairId: l.pairId, detection: lineDetection(state, run, l) }))
   return { lines, allPaid: lines.every((l) => l.detection.state === 'paid') }
+}
+
+/**
+ * The week of a run Xero is paying a payable in right now ("Week 30"): an
+ * unheld line of a `paying` run that Xero has not yet been sent in full.
+ * A credit waits for it (a credited line would strand the run).
+ */
+export function payingRunFor(state: Pick<AppState, 'billing'> & Partial<Pick<AppState, 'xero'>>, pairId: string): string | undefined {
+  for (const run of Object.values(state.billing.payablesRuns)) {
+    if (run.status !== 'paying') continue
+    const line = run.lines.find((l) => l.pairId === pairId && l.heldOut === undefined)
+    if (line === undefined) continue
+    // Only while Xero has yet to be sent the line: a payment Xero made that the engine has not recorded is the credit's own wait (`waitingForXero`), which ends when it lands.
+    const unsent = state.xero !== undefined ? toCents(line.amount) - toCents(xeroSentOn({ billing: state.billing, xero: state.xero }, run, line)) : toCents(line.amount) - settledCentsInRun(state, run.id, pairId)
+    if (unsent > 0) return cycleLabel(run)
+  }
+  return undefined
 }
 
 /** "Week 30": the week a payment (disbursement, netting or batch payment) was paid in, from its run. Undefined for a run the app does not know. */
@@ -422,13 +481,15 @@ export function paymentWeekFor(state: Pick<AppState, 'billing'>, runId: string |
  * `paid`, stamped with the detection's date. Returns the new runs map and
  * the audit metas (source system).
  */
-export function completeRunsIn(billing: AppState['billing'], atISO: IsoDateTime): { payablesRuns: AppState['billing']['payablesRuns']; metas: MutationMeta[] } {
+export function completeRunsIn(billing: AppState['billing'], atISO: IsoDateTime, pairId?: string): { payablesRuns: AppState['billing']['payablesRuns']; metas: MutationMeta[] } {
   const metas: MutationMeta[] = []
   let runs = billing.payablesRuns
-  for (const run of Object.values(billing.payablesRuns)) {
+  // Only the runs the payment just recorded touches (linear in the poll, not quadratic).
+  const touched = pairId !== undefined ? (runIdsByLinePair(billing.payablesRuns).get(pairId) ?? []).map((id) => billing.payablesRuns[id]!) : Object.values(billing.payablesRuns)
+  for (const run of touched) {
     if (run.status !== 'paying') continue
     const unheld = run.lines.filter((l) => l.heldOut === undefined)
-    if (!unheld.every((l) => toCents(settledInRun({ billing }, run.id, l.pairId)) >= toCents(l.amount))) continue
+    if (!unheld.every((l) => settledCentsInRun({ billing }, run.id, l.pairId) >= toCents(l.amount))) continue
     runs = { ...runs, [run.id]: { ...run, status: 'paid', paidAtISO: atISO } }
     const total = run.byAnaesthetist.reduce((n, t) => n + toCents(t.net), 0) / 100
     metas.push({ entityType: 'payablesRun', entityId: run.id, action: 'payables.runPaid', before: { status: 'paying' }, after: { status: 'paid', week: cycleLabel(run), cycleId: run.cycleId, bctis: unheld.length, paidOut: total } })
@@ -515,14 +576,15 @@ export function holdOutOfRun(api: AppStoreApi, actor: Actor, runId: string, targ
     const now = s.billing.payablesRuns[runId]!
     let anomalies = now.anomalies
     if (anomalyId === undefined) {
-      anomalyId = `${runId}-A${anomalies.length + 1}`
+      anomalyId = nextAnomalyId(runId, anomalies)
       const line = now.lines.find((l) => l.pairId === pairIds[0])!
       anomalies = [...anomalies, { id: anomalyId, kind: 'flaggedByOffice', pairIds, anaesthetistId: line.anaesthetistId, detail: reason, status: 'heldOut', resolvedAtISO: at, resolvedBy: actor.who }]
     } else {
       anomalies = anomalies.map((a) => (a.id === anomalyId ? { ...a, status: 'heldOut', resolvedAtISO: at, resolvedBy: actor.who } : a))
     }
     const holds = holdsOf(now)
-    for (const p of pairIds) holds.set(p, { anomalyId: anomalyId!, reason, atISO: at, by: actor.who })
+    // A line already held keeps its own hold (and the flag or anomaly that made it): one hold per line.
+    for (const p of pairIds) if (!holds.has(p)) holds.set(p, { anomalyId: anomalyId!, reason, atISO: at, by: actor.who })
     const next = { ...now, anomalies, ...rehold(s, now, holds) }
     const line = now.lines.find((l) => pairIds.includes(l.pairId))
     metas.push({ entityType: 'payablesRun', entityId: runId, action: 'payments.lineHeldOut', after: { week: cycleLabel(now), bills: now.lines.filter((l) => pairIds.includes(l.pairId)).map((l) => l.billNumber), reason, anomalyId, rollsInto: cycleLabel({ isoWeek: cycleOfId(nextCycleId(now.cycleId, paymentCycleSettingsOf(s)), paymentCycleSettingsOf(s)).isoWeek }), ...(line !== undefined ? { anaesthetistId: line.anaesthetistId } : {}) } })
@@ -577,12 +639,15 @@ export function approveWeekBctis(api: AppStoreApi, actor: Actor, runId: string):
   if (!found.ok) return found
   const run = found.value
   if (run.anomalies.some((a) => a.status === 'open')) return refuse('anomaliesOpen', PAYMENT_CYCLE_COPY.anomaliesOpen)
-  if (run.lines.every((l) => l.heldOut !== undefined)) return refuse('nothingToApprove', PAYMENT_CYCLE_COPY.nothingToApprove)
   const stale = runStaleness(state, run)
   if (stale !== null) return refuse('runStale', stale)
-  mutate(api, actor, { entityType: 'payablesRun', entityId: runId, action: 'payables.runApproved', before: { status: 'closed' }, after: { status: 'approved', week: cycleLabel(run), ...runTotals(run), byAnaesthetist: run.byAnaesthetist, excluded: run.excluded } }, (s) => {
+  // Every line held out: nothing is paid this week, the run is done and its lines roll into the next close (never a dead end).
+  const nothingToPay = run.lines.every((l) => l.heldOut !== undefined)
+  const status = nothingToPay ? 'paid' : 'approved'
+  mutate(api, actor, { entityType: 'payablesRun', entityId: runId, action: 'payables.runApproved', before: { status: 'closed' }, after: { status, week: cycleLabel(run), ...runTotals(run), byAnaesthetist: run.byAnaesthetist, excluded: run.excluded, ...(nothingToPay ? { nothingToPay: true } : {}) } }, (s) => {
     const now = s.billing.payablesRuns[runId]!
-    return { billing: { ...s.billing, payablesRuns: { ...s.billing.payablesRuns, [runId]: { ...now, status: 'approved', approvedAtISO: clockISO(s.clock), approvedBy: { who: actor.who, role: actor.role } } } } }
+    const at = clockISO(s.clock)
+    return { billing: { ...s.billing, payablesRuns: { ...s.billing.payablesRuns, [runId]: { ...now, status, approvedAtISO: at, approvedBy: { who: actor.who, role: actor.role }, ...(nothingToPay ? { paidAtISO: at } : {}) } } } }
   })
   return ok(undefined)
 }
@@ -637,6 +702,10 @@ export function stagePairRun(api: AppStoreApi, actor: Actor, pairId: string): Ou
   if (guard !== null) return guard
   const state = api.getState()
   if (unsettledRuns(state).some((r) => r.lines.some((l) => l.pairId === pairId && l.heldOut === undefined))) return refuse('useRun', 'This payable is already in a payment run. Pay it with its run.')
+  // A held line is never paid in the week it was held out of: it waits for the next week's run.
+  const thisWeek = cycleFor(state.clock.todayISO, paymentCycleSettingsOf(state)).cycleId
+  const heldIn = Object.values(state.billing.payablesRuns).find((r) => r.status !== 'superseded' && (UNSETTLED.has(r.status) || r.cycleId === thisWeek) && r.lines.some((l) => l.pairId === pairId && l.heldOut !== undefined))
+  if (heldIn !== undefined) return refuse('heldOut', `Held out of ${cycleLabel(heldIn)}'s payment run: it is paid in a later week.`)
   const leg = runLegsFromLedger(state).find((l) => l.pairId === pairId)
   if (leg === undefined) return refuse('nothingToApprove', 'Nothing released and unpaid on this payable.')
   if (leg.payee.kind !== 'anaesthetist') return refuse('holdingSystemOnly', 'The AA Holding account is never paid by a payment run.')

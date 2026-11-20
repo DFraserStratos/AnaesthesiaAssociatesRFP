@@ -438,3 +438,17 @@ describe('one billing module', () => {
     }
   })
 })
+
+describe('payment runs at full scale (catch-up Phase 39a)', () => {
+  it('every payout names a paid run, one week run per ISO week, and every generated payment has its bank line', () => {
+    const runs = state.billing.payablesRuns
+    for (const d of Object.values(state.billing.disbursements)) expect(runs[d.payablesRunId]?.status, d.id).toBe('paid')
+    const weeks = Object.values(runs).filter((r) => r.kind === 'week' && r.status !== 'superseded').map((r) => r.cycleId)
+    expect(new Set(weeks).size).toBe(weeks.length)
+    const lined = new Set(Object.values(state.billing.bankLines).map((b) => b.xeroPaymentId))
+    for (const p of Object.values(state.xero.payments)) {
+      if (p.source === 'aaFee' || state.xero.accRecs[p.accRecId]?.kind === 'aaFee') continue
+      expect(lined.has(p.id), p.id).toBe(true)
+    }
+  })
+})

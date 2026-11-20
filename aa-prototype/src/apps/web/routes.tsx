@@ -203,7 +203,7 @@ export function WebProfileRoute() {
 }
 
 // ---------------------------------------------------------------------------
-// Accounts — `/web/accounts/:subTab` (outstanding | payments | gst | fees);
+// Accounts — `/web/accounts/:subTab` (outstanding | payments | remittances | gst | fees);
 // the old `/web/accounts/overdue` redirects to Outstanding (catch-up Phase 38)
 // ---------------------------------------------------------------------------
 
@@ -220,6 +220,7 @@ export function WebAccountsRoute() {
   const [params] = useSearchParams()
   const valid = ACCOUNTS_SUB_TABS.includes(subTab as AccountsSubTab)
   const focusInvoiceNumber = params.get('invoice') ?? undefined
+  const focusRunId = params.get('run') ?? undefined
 
   return (
     <RequireEntity exists={valid}>
@@ -229,6 +230,7 @@ export function WebAccountsRoute() {
         onSubTab={(next) => navigate(`/web/accounts/${next}`)}
         onOpenBooking={(listId, bookingId) => navigate(`/web/lists/${listId}/bookings/${bookingId}`)}
         {...(focusInvoiceNumber !== undefined ? { focusInvoiceNumber } : {})}
+        {...(focusRunId !== undefined ? { focusRunId } : {})}
       />
     </RequireEntity>
   )

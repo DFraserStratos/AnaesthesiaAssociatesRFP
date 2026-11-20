@@ -163,6 +163,7 @@ export function stagePaymentWeek(api: AppStoreApi, actor: Actor, choiceId: strin
       xeroDisbursements: build.disbursements,
       accPays: build.accPays,
       seeded: false,
+      kind: 'staged',
     })
     return {
       schedule: {

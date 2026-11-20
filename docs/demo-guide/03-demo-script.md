@@ -76,6 +76,7 @@ view respectively.
 | My availability | `/web/availability/mine` (one day: `?date=2026-08-14`) |
 | Accounts, outstanding | `/web/accounts/outstanding` (the old `/web/accounts/overdue` opens it) |
 | Accounts, payments | `/web/accounts/payments` |
+| Accounts, remittances | `/web/accounts/remittances` (each weekly run's remittance advice) |
 | Accounts, GST report | `/web/accounts/gst` |
 
 | Admin Web App | URL |
@@ -94,6 +95,8 @@ view respectively.
 | One invoice document | `/admin/invoices/<invoiceId>` |
 | One credit note | `/admin/credit-notes/<creditNoteId>` (Sarah Mitchell's, from S4 Beat 2b: `CRN0001`) |
 | Billing monitor | `/admin/billing` (filters in the URL: `?problems=1`, `?anaesthetist=34821`, `?hospital=`, `?from=`, `?to=`) |
+| A payment run | `/admin/billing/payment-runs/<runId>` (the first run made in the demo: `PR0001`; the seeded Week 29 run: `PRH13`) |
+| A remittance advice | `/admin/billing/payment-runs/<runId>/remittance/<registration>` (Dr Sharma's after the netting aside: `PR0001/remittance/41267`) |
 | Ledger (the whole ledger) | `/admin/ledger` |
 | Ledger, one anaesthetist | `/admin/ledger/anaesthetists/<anaesthetistId>` (Dr Souter: `34821`) |
 | Master data | `/admin/masters` (one view: `?view=surgeons`, `?view=anaesthetists`) |
@@ -927,19 +930,24 @@ a submitted List: "A hospital feed cannot change a submitted List").
   - Pause on the updated ACCREC and ACCPAY states.
   - Select **View in Dr Souter's account**.
   - Pause on the highlighted **AA-2026-0005** row under **Accounts → Payments**.
-- **Say:** "One demo action stands in for three real events: nib pays into AA's Xero, the engine
-  learns it by webhook and authorises the payable, then Xero's payables run pays Dr Souter (made in
-  Xero, not by us) and a bill-paid webhook tells the engine, which records the disbursement. We keep
+- **Say:** "One demo action stands in for the real events: nib pays into AA's Xero, the engine
+  learns it by webhook and authorises the payable, the office approves it for payment in this week's
+  run, then Xero's payables run pays Dr Souter (made in Xero, not by us) and a bill-paid webhook tells
+  the engine, which records the disbursement. We keep
   the paid-in and paid-out states separate underneath, even though this guided path advances both
   together. The anaesthetist app reads the Billing Engine's own ledger, AA's system of record. Xero
   mirrors it for receivables and banking."
 - **Expected:** the pair's head reads **Disbursed** and "Payment and payout complete", with the line
-  "nib's payment of $152.38 landed in Xero and the webhook told the engine; Xero's payables run paid
-  Dr Melanie Souter $152.38 and the bill-paid webhook recorded the disbursement." The ACCREC reads
-  **Paid** (received $152.38, balance $0.00). The ACCPAY reads **Paid**, and its **Paid in Xero**
-  block shows the Xero bill payment (DSB0001, Tue 21 Jul · 08:00, $152.38) and "Billing Engine:
-  disbursement recorded 08:00 by webhook." The Web Payments row remains visible
-  with $152.38 received by AA, $152.38 released to you, $152.38 paid to you and **Paid to you**. It leaves
+  "nib's payment of $152.38 landed in Xero and the webhook told the engine; the office approved it
+  for payment in Week 30, Xero's payables run paid Dr Melanie Souter $152.38 and the bill-paid webhook
+  recorded the disbursement." The ACCREC reads **Paid** (received $152.38, balance $0.00). The ACCPAY
+  reads **Paid**, and its **Paid in Xero** block shows the Xero bill payment (DSB0001, "Tue 21 Jul ·
+  08:00 · Paid in batch XBP0001 · Week 30", $152.38) and "Billing Engine: disbursement recorded 08:00
+  by webhook." The one click made a one-bill **Staged** run: the Billing monitor's **Payment runs**
+  table gains Week 30, PR0001, $152.38, **Paid** and **Staged** above the seeded Week 29, and the
+  invoice's **Ledger** card reads "Paid out in Week 30 · $152.38". The Web Payments row remains visible
+  with $152.38 received by AA, $152.38 released to you, $152.38 paid to you and **Paid to you**, with
+  "Week 30" under it, and **Accounts → Remittances** lists Week 30, $152.38 paid to you. It leaves
   Outstanding because AA has now paid Dr Souter. The web dashboard's **Financial position** shows
   Collected and Paid out to you each $152.38 higher, and the GST report for July (**Accounts → GST
   report**) gains **AA-2026-0005** on today's date (Tue 21 Jul 2026): paid to you $152.38, GST $19.88.
@@ -947,10 +955,12 @@ a submitted List: "A hospital feed cannot change a submitted List").
   Xero's same three figures, still **Matches the ledger**.
 - **Optional (the two steps apart, instead of Simulate payment and payout):** on web **Accounts →
   Outstanding** (`/web/accounts/outstanding`), **Demo actions → Payment received · full**, choose
-  **AA-2026-0005 · Alan Prentice · $152.38 due**, then **Run**: "Payment received. It reaches your GST
-  report when AA pays you." Collected rises by $152.38, but the row stays, its stage now **Paid in, due
-  to you**, and the GST report gains no row. Then **Admin → Billing monitor → Run payables in Xero**
-  (badged **Simulated Xero**): the payment to Dr Souter is made in Xero and recorded, the row leaves
+  **AA-2026-0005 · Alan Prentice · $152.38 due**, then **Run**: "Payment received. It reaches the GST
+  report when AA pays the anaesthetist." Collected rises by $152.38, but the row stays, its stage now **Paid in, due
+  to you**, and the GST report gains no row. Then on **Admin → Billing monitor**, run Week 30's
+  payment cycle: **Close the week**, **Approve week 30's BCTIs**, **Send payment schedule**, then
+  **Run payables in Xero** (badged **Simulated Xero**; "Week 30 paid in Xero: 1 BCTI, $152.38 paid to
+  1 anaesthetist."): the payment to Dr Souter is made in Xero and recorded, the row leaves
   Outstanding, Paid out to you rises by $152.38, and the July GST report gains AA-2026-0005 dated Tue 21
   Jul 2026, $152.38 with its GST $19.88. Say: "GST here is on a cash basis: what AA has paid you, in the
   month AA paid it, with the GST from the invoice itself." Optionally show the report's **Download**
@@ -1020,22 +1030,24 @@ a submitted List: "A hospital feed cannot change a submitted List").
   $120.00"), and her scope reads "Dr Souter's ledger is out of balance by $120.00". After allocation:
   in balance, the list reads "Every anaesthetist's ledger is in balance.", the receipt's row reads
   **Allocated to AA-2026-0002**, and Payables due shows $120.00 (now due to Dr Souter, with the link
-  "Run payables in the Billing monitor"). From a fresh reset with no S3 beats run, the tiles read
+  "Paid in this week's payment run on the Billing monitor"). From a fresh reset with no S3 beats run, the tiles read
   Receivables outstanding $11,350.50, Receipts held $1,380.00, Payables due $0.00 and Disbursed
   $27,220.00; read the figures from the app if you skipped any beat.
 - **Optional:** run the trigger again with **Names no one**: the whole ledger is out by $120.00 but
   the out-of-balance list stays empty. **Mark refunded** with a note returns it to balance, and the
-  row reads Refunded with the note. The Billing monitor's payables panel has an **Open the ledger**
+  row reads Refunded with the note. The Billing monitor's payment cycle panel has an **Open the ledger**
   link, and each invoice's rail has a **Ledger** card (receivable and payable numbers, their Xero ids,
   **Open in the ledger**).
 - **Optional (the anaesthetist's side):** web **Accounts** opens on a **Your position** strip (Owed to
   you, with awaiting collection and due to you now; Collected; Paid out to you; You owe AA), and
   mobile **Balances** adds lines under Outstanding to you, "Collected $27,220.00", "Paid out to you
   $27,220.00" and "You owe AA $580.75" on a fresh reset. On a handset (the PWA), **Demo → Payment
-  received · half**, then **Office runs payables in Xero** (office stand-in): Collected moves, then
+  received · half**, then **Office runs this week's payment cycle** (office stand-in: the office
+  closes the week, approves its BCTIs and sends the schedule, and the accountant pays it in Xero; "The
+  office ran Week 30's payment cycle and the accountant paid it in Xero: ..."): Collected moves, then
   Paid out, as Xero reports the bill paid; a fully paid invoice leaves Outstanding and shows under
   **GST this month**. The stand-in is disabled with "Nothing due to pay out" when
-  nothing is due.
+  nothing is due, or "An anomaly needs the office" when the week's checks found something.
 
 ### Close: one status for the books
 
@@ -1109,8 +1121,8 @@ actions** on the screen named in its beat.
     On a fresh reset it held $1,380.00 for Priya Nair (AA-2026-0001, one Received entry); Riley's
     $690.00 now shows as a second Received entry and the balance rises by it. The card reads "Leaves only
     by a system transfer or refund" and carries the pill "Moves to the anaesthetist when the List is
-    authorised · to confirm with AA". The payables run shows nothing due: nothing is paid to the
-    anaesthetist yet.
+    authorised · to confirm with AA". The **Payment cycle** panel still reads "Nothing is waiting for
+    this week's run.": nothing is paid to the anaesthetist yet.
   - Optional, in the **Xero sim → Invoices → XRB0** (Nair's pair): "Held in the AA Holding account", its
     ACCPAY card reading "Held until the List is authorised". The settle button, **Pay out of the AA
     Holding account**, is refused: "The customer payment is recorded. Money leaves the AA Holding account
@@ -1143,8 +1155,8 @@ actions** on the screen named in its beat.
   the warning strengthens as the day approaches. After the procedure it is left off the final invoice,
   nothing deducted. A move to a colleague changes nothing in the books."
 - **Expected:** awaiting approval, then the sent invoice with its pair to the AA Holding account, part
-  paid on all three surfaces, the AA Holding account card holding both prepayments with nothing due in
-  the payables run, and a submit that goes through. The Ledger (`/admin/ledger`) shows Riley's
+  paid on all three surfaces, the AA Holding account card holding both prepayments with nothing waiting in
+  the week's payment run, and a submit that goes through. The Ledger (`/admin/ledger`) shows Riley's
   Pre-payment pair (AA-2026-0002, Payee "AA Holding account") beside Nair's; its AA Holding account
   tile rises from $1,380.00 to $2,070.00 with her half while Payables due stays $0.00, and the ledger
   stays in balance. Authorising the List (Beat 7) adds the transfer, two payable legs and no
@@ -1256,15 +1268,17 @@ actions** on the screen named in its beat.
   the split moves Beat 3's and Beat 5's numbers on four (the paid-out aside raises only a credit note).
   Otherwise run them at the end of S4, where they take the next free numbers.
 - **Aside (paid-out case):** on the **Billing monitor**, **Demo actions → Stage refund after payout →
-  Run** ("Paid in full and paid out to Dr Sharma in Xero. Credit it to see the negative invoice."; after Beat
-  2b it pays the rebill, AA-2026-0005). Open it, **Credit note**, reason Wrong amount: the money reads
+  Run** ("Paid in full, approved for payment and paid out to Dr Sharma in Xero. Credit it to see the
+  negative invoice. Once credited, the negative invoice is netted in Dr Sharma's next payment run.";
+  after Beat 2b it pays the rebill, AA-2026-0005, and the payout shows as a **Staged** run, **Paid**,
+  under the monitor's **Payment runs**). Open it, **Credit note**, reason Wrong amount: the money reads
   "Paid $211.60: $211.60 will be held for Christchurch Public." and "Dr Sharma was paid $211.60: a
   negative invoice for $211.60 nets in their next payment run."; no new invoice ("No new invoice. The
   credit stands alone unless you add one."). Save, approve and run: CN-2026-0002, its negative
   invoice "CN-2026-0002-P to Dr Sharma · $211.60 · $211.60 nets in the next payment run", and the
   Ledger's Credits held for payers and Negative invoices to net both $211.60, still in balance. Say:
   "Once the anaesthetist has been paid, the negative invoice is netted in their next weekly payment
-  run." (39a adds the netting beat.)
+  run." Beat 5's netting aside shows that run.
 - **Aside (split):** on **Admin · Invoices**, **Demo actions → Stage combined procedure → Run**
   ("Staged: a billed Merivale combination. Open its invoice and use Split into additional invoices.",
   with its link, AA-2026-0006 here, AA-2026-0002 from a reset): Lorraine Petrie on Dr Delaney's Fri 10
@@ -1379,23 +1393,68 @@ actions** on the screen named in its beat.
 
 - **Click:**
   - Go to **Admin Invoices → Hemi Walker · St George's** (the clean-sibling invoice from Beat 3).
-  - Open **Demo actions → Payment received · half → Run**.
-  - Go to **Billing monitor**: the **Payment cycle · Week 30** panel shows the payable under **Waiting
-    for this week's run** (Dr Ropata, one BCTI at exactly half). Select **Close the week**, then
-    **Approve week 30's BCTIs**, then **Send payment schedule**, then **Run payables in Xero** (badged
-    **Simulated Xero**: the accountant paying the schedule).
+  - Open **Demo actions → Payment received · half → Run** ("Webhook for AA-2026-0007: $110.69
+    received, the paired ACCPAY is authorised for exactly $110.69.").
+  - Go to **Billing monitor**: the **Payment cycle · Week 30 · 20 Jul to 26 Jul 2026** panel, its step
+    rail (Close the week, Planned Friday 24 Jul; Monday checks, Planned Monday 27 Jul; Approve BCTIs;
+    Send payment schedule, Planned Tuesday 28 Jul), and under **Waiting for this week's run** Dr
+    Ropata, 1 BCTI, $110.69. **Run payables in Xero** reads "Nothing scheduled to pay". Select **Close
+    the week**, then **Approve week 30's BCTIs**, then **Send payment schedule**, then **Run payables in
+    Xero** (badged **Simulated Xero**: the accountant paying the schedule in Xero).
+  - Under **Payment runs**, open Week 30's run (its run id) and Dr Ropata's **Remittance advice**.
   - Back on the invoice, **Demo actions → Payment received · full → Run**: the balance now waits for
     **Week 31**. Optionally run Week 31 the same way.
 - **Say:** "A payable is released when its receivable is paid, exactly the amount received. Payments to
   anaesthetists run weekly, each run named by its ISO week: the week closes on Friday and is reconciled
   to the bank, Monday is for sorting out anything odd, the office approves the week's BCTIs, and on
   Tuesday the schedule goes to the accountant, who pays it in Xero. A problem that can't be fixed in
-  time is held out and rolls into next week. Every payment shows the week it was paid in."
-- **Expected:** Week 30 closes with Dr Ropata's BCTI at exactly half ($110.69 on Hemi Walker's
-  AA-2026-0007, $221.38), no anomaly; after approval, the schedule and the run, Week 30 reads **Paid**
-  under Payment runs and the half is paid out in Week 30. The balance received afterwards waits in
-  Week 31, never in Week 30's run, and is never paid twice. (Figures re-checked against the running app
-  at the end of Phase 39a.)
+  time is held out and rolls into next week. Every payment shows the week it was paid in, and every run
+  leaves a remittance advice."
+- **Expected:** Close stamps "Closed Tue 21 Jul · planned Fri 24 Jul" on the step rail (the demo clock does not wait for Friday) and
+  **Checks before payment** reads "The week reconciled to the bank download with nothing to sort out.";
+  approval and the schedule stamp their steps ("Payment schedule for Week 30 sent to the accountant.").
+  The run reads "Week 30 paid in Xero: 1 BCTI, $110.69 paid to 1 anaesthetist." (half of Hemi Walker's
+  AA-2026-0007, $221.38), Week 30 reads **Paid** under Payment runs, and the panel moves on to **Week 31
+  · 27 Jul to 2 Aug 2026**. The run's page reads "Payment run · Week 30" with its **PAYMENT SCHEDULE ·
+  Week 30** ("Sent to the accountant Tue 21 Jul, 08:00"); the advice lists the one BCTI and what was paid
+  to her. The invoice's **Ledger** card reads "Paid out in Week 30 · $110.69". After the full payment
+  the other $110.69 waits under Week 31, never in Week 30's run; run Week 31 and it reads "Week 31 paid
+  in Xero: 1 BCTI, $110.69 paid to 1 anaesthetist." and the Ledger card adds "Paid out in Week 31 ·
+  $110.69": the invoice total paid out once, in two weeks, never twice. (The invoice numbers follow S4
+  as run top to bottom; from a reset with only Beat 3 run first, Hemi Walker's invoice is AA-2026-0003
+  and the figures are the same.)
+- **Optional aside (an anomaly held out):** from a reset, on the **Billing monitor**, **Demo actions →
+  Stage a payment week → 19 BCTIs → Run** ("19 payables released for Dr Sharma into Week 30. Close the
+  week to start the run."), then **Stage a bank mismatch → Run** ("The bank download is missing the
+  receipt for AA-2026-PP19. Close the week to see the anomaly."). **Close the week**: **Checks before
+  payment** shows one **Receipt not on the bank download** ("The receipt of $420.00 for AA-2026-PP19 is
+  not on the bank download.") and **Approve week 30's BCTIs** is disabled, "Hold out or mark fixed
+  every anomaly first." Select **Hold out of this run**: AA-2026-PP19-P ($420.00) moves under **Rolls
+  into Week 31** and Dr Sharma's row drops to 18 BCTIs, $10,417.86. Approve, send and run: "Week 30
+  paid in Xero: 18 BCTIs, $10,417.86 paid to 1 anaesthetist."; Week 31's panel then lists her $420.00
+  with "Rolled from Week 30". Say: "A problem that can't be sorted out by Monday doesn't hold up
+  everyone else's pay. That one payment is held out and rolls into next week's run."
+- **Optional aside (netting):** from a reset, on the **Billing monitor**, **Demo actions → Stage a
+  payment week → 19 BCTIs and a credit after payout → Run** (the same message, plus "A negative invoice
+  of -$365.70 is waiting to be netted."). Run the week (Close, Approve, Send, Run payables in Xero):
+  Dr Sharma's row reads 19 BCTIs, positives $10,837.86, negatives netted -$365.70, net $10,472.16, and
+  the result "Week 30 paid in Xero: 19 BCTIs, 1 negative invoice netted, $10,472.16 paid to 1
+  anaesthetist." Open the run (`/admin/billing/payment-runs/PR0001`) and her **Remittance advice**
+  (`/admin/billing/payment-runs/PR0001/remittance/41267`): **REMITTANCE ADVICE**, RA-2026-W30-41267,
+  nineteen BCTIs, the line "Negative invoice CN-2026-0001-P · credit of AA-2026-PP20 -$365.70", and
+  "Paid to you $10,472.16" to 99-0101-·····67-00. The first invoice's **Ledger** card
+  (AA-2026-PP01) reads "Paid out in Week 30 · $54.30 · netted $365.70". Say: "A refund or a credit
+  after the anaesthetist was paid is a credit note to the payer and a negative invoice to the
+  anaesthetist, netted in their next weekly run: nineteen positives and one negative, one net
+  payment." For a longer session the live path is Beat 2b's **Stage refund after payout**, then **Credit
+  note**, then the next week's run once she has a released payable. If asked what happens with no later
+  payment: "That is rare. AA settles it with the anaesthetist outside the system; the balance stays
+  visible on their ledger position." (The Admin Ledger's view of one anaesthetist has a **Payment runs**
+  card and, while a negative is open, "Netted in their next payment run. If no later payment comes, AA
+  settles it with the anaesthetist outside the system.")
+- **Optional (the anaesthetist's side):** web **Accounts → Remittances** (`/web/accounts/remittances`)
+  lists Dr Souter's weekly runs newest first (Week 29, $690.00, from a reset), each opening its advice
+  in a sheet; **Payments** shows the week under **Paid to you** (AA-2026-H09, "Week 29").
 
 ### Beat 6: The date approaches
 
@@ -1432,23 +1491,26 @@ $1,380.00 held since Beat 1) to Dr Souter.
     and "How this posts in Xero is still to be confirmed".
   - Optional: **Admin Invoices → INV0001** shows Payee "AA Holding account" and "Transfer journal
     MJ-0001".
-  - Back on the **Billing monitor**, select **Run payables in Xero**: Xero pays the transferred
-    $1,380.00 (1 payable) to Dr Souter, never the AA Holding account's own payable, and the engine
-    records the disbursement from the bill-paid webhook.
+  - Back on the **Billing monitor**, the transfer waits in the payment cycle the panel names (Week 31
+    after Beat 5 as scripted, Week 30 from a reset). Run it: **Close the week**, **Approve** its BCTIs, **Send payment
+    schedule**, then **Run payables in Xero**: Xero pays the transferred $1,380.00 to Dr Souter, never
+    the AA Holding account's own payable, and the engine records the disbursement from the bill-paid
+    webhook. (If Beat 5's balance is waiting in the same week, the run pays Dr Ropata too; read the
+    totals from the app.)
   - Optional: **Anaesthetist Web App → Accounts → Payments** (`/web/accounts/payments`): Nair's
     prepayment read "Held until the List is authorised" before, and now reads **Paid to you**.
 - **Say:** "The patient paid before the procedure, but the money was held, not paid to Dr Souter. When the office
   authorised her List the system moved it from the AA Holding account to her, with no office step.
   That is a transfer, not a payment: no new invoice, no GST, nothing more from the patient. The next
-  payables run pays her. If the Booking had moved to a colleague, the transfer would pay whoever did
+  weekly payment run pays her. If the Booking had moved to a colleague, the transfer would pay whoever did
   the List, with nothing changed in between. Whether authorisation is the right moment is still to
   confirm with AA."
 - **Expected:** one Transferred entry naming Dr Souter, the card's balance down by $1,380.00, MJ-0001 on
-  XRB0, and a payables run of exactly $1,380.00 to Dr Souter. The transfer itself adds no invoice,
+  XRB0, and the week's run paying exactly $1,380.00 to Dr Souter. The transfer itself adds no invoice,
   ACCREC or payment, and GST does not move (her septoplasty bills on its own invoice as usual). On the
   Ledger the transfer is its own row (Kind Transfer, Receivable "None", "From AA-2026-0001", Payee Dr
-  Souter); the AA Holding account tile falls and Payables due rises by the same amount until Run
-  payables in Xero, and the ledger stays in balance.
+  Souter); the AA Holding account tile falls and Payables due rises by the same amount until the week's
+  run is paid, and the ledger stays in balance.
 
 ### Optional asides: Xero resilience
 
@@ -1532,14 +1594,18 @@ names them, Donald's proposal); which conditions warn, and how strongly; where t
 the office until the List is authorised (US-02.5.4), and one for an authorised List cannot (what happens
 then is not yet decided); a Booking moved to another day arrives as a cancellation plus a new Booking;
 applying hospital changes automatically is Future Work.
+For the weekly payment run (Beat 5): the cycle is Greg's proposal (OQ-47, Proposed), built to it and
+being confirmed with AA's accountant, with who approves the week's BCTIs and how the 20th-of-the-month
+payment fits still open (the 20th is not part of this run; AA's monthly fee is its own cycle).
 For the stub on a List (Beat 4), our readings, to confirm with AA: the Booking takes the stub's place
 when the office adds the NHI; what a stub shows (time, name and wording as received, marked waiting at
 intake); and how a List holding one reads (counted apart, no prompt or block on submit or authorise).
 For the prepayment beats: still to confirm whether the prepayment
 invoice names the anaesthetist (OQ-120); still to confirm when the AA Holding account releases the
 money (OQ-125: the prototype transfers it when the office authorises the List; Greg said "confirmed and
-submitted"); payments, the transferred prepayment's included, are made in Xero, and the badged
-**Run payables in Xero** stands in for Xero's payables run here (OQ-111); and whether a prepayment's payable counts as a BCTI (the prototype
+submitted"); payments, the transferred prepayment's included, are made in Xero: the weekly cycle
+approves and records them, and the badged **Run payables in Xero** stands in for the accountant paying
+the schedule in Xero (OQ-111, answered); and whether a prepayment's payable counts as a BCTI (the prototype
 leaves it out, provisional, beside the BCTI granularity point in S3, OQ-29). Stated as facts: the prepaid price is never editable by the
 anaesthetist and is kept (OQ-96, OQ-104), the prepaid Procedure is left off the final invoice (OQ-116),
 and a Contract changed after sending is handled as a cancellation, built in Phase 41 (OQ-119). One

@@ -20,7 +20,7 @@ import { transferOfPair } from '../../domain/billing/ledger'
 import { toCents } from '../../domain/billing/money'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import { APP_CONFIG } from '../../shell/appConfig'
-import { xeroInvoicePairViews, type XeroBillPaymentView, type XeroCreditView, type XeroInvoicePairView } from './xeroPairView'
+import { xeroInvoicePairViews, type XeroAllocationView, type XeroBillPaymentView, type XeroCreditView, type XeroInvoicePairView } from './xeroPairView'
 import { CREDIT_LABELS } from '../../shared/procedureEventCopy'
 import { recordFeePaymentFor } from '../../shared/demoTriggers'
 import { aaFeeMonthLabel } from '../../domain/billing/aaFee'
@@ -872,7 +872,7 @@ function AccPayCard({ pair }: { pair: XeroInvoicePairView }) {
         <MoneyStat label="Ready to disburse" value={pay.remainingAuthorised} />
       </MoneyGrid>
 
-      {!pay.held && <BillPayments payments={pay.billPayments} />}
+      {!pay.held && <BillPayments payments={pay.billPayments} allocations={pay.creditAllocated} />}
 
       {/* A payable to the AA Holding account (catch-up Phase 27a): held, and not counted as a BCTI (OQ-29 provisional). */}
       {pay.held && (
@@ -908,22 +908,33 @@ function AccPayCard({ pair }: { pair: XeroInvoicePairView }) {
  * bill payments) kept apart from what the Billing Engine has recorded of each,
  * so a missed bill-paid webhook shows as a gap the next poll closes.
  */
-function BillPayments({ payments }: { payments: XeroBillPaymentView[] }) {
+function BillPayments({ payments, allocations }: { payments: XeroBillPaymentView[]; allocations: XeroAllocationView[] }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, borderTop: `1px solid ${neutral.line}`, paddingTop: 14 }}>
       <div data-shot="xero-accpay-paid-in-xero" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <SectionLabel>Paid in Xero</SectionLabel>
-        {payments.length === 0 ? (
-          <span style={{ fontSize: 12.5, color: neutral.mist }}>No bill payment yet. Xero&apos;s payables run pays the bill once it is authorised.</span>
+        {payments.length === 0 && allocations.length === 0 ? (
+          <span style={{ fontSize: 12.5, color: neutral.mist }}>No bill payment yet. Xero&apos;s payables run pays the bill once its payment run is scheduled.</span>
         ) : (
           payments.map((p) => (
             <div key={p.id} style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr) auto', gap: 12, alignItems: 'baseline', fontSize: 13 }}>
               <span className="mono" title="Xero bill payment" style={{ fontWeight: 700 }}>{p.id}</span>
-              <span className="mono" style={{ color: neutral.slate }}>{dateTimeMicroCap(p.atISO)}</span>
+              <span className="mono" style={{ color: neutral.slate }}>
+                {dateTimeMicroCap(p.atISO)}
+                {/* The batch and week of its payment run (catch-up Phase 39a; US-10.2.7). */}
+                {p.batchPaymentId !== undefined && <span data-shot="xero-accpay-batch">{` · Paid in batch ${p.batchPaymentId}${p.week !== undefined ? ` · ${p.week}` : ''}`}</span>}
+              </span>
               <span className="mono" style={{ fontWeight: 700 }}>{formatCurrency(p.amount)}</span>
             </div>
           ))
         )}
+        {allocations.map((a) => (
+          <div key={a.id} data-shot="xero-accpay-credit-allocated" style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr) auto', gap: 12, alignItems: 'baseline', fontSize: 13 }}>
+            <span className="mono" style={{ fontWeight: 700 }}>{a.id}</span>
+            <span style={{ color: neutral.slate }}>{`Credit allocated from ${a.counterpartNumber}${a.week !== undefined ? ` · ${a.week}` : ''}`}</span>
+            <span className="mono" style={{ fontWeight: 700 }}>{formatCurrency(a.amount)}</span>
+          </div>
+        ))}
       </div>
       {payments.length > 0 && (
         <div data-shot="xero-accpay-engine-detection" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1477,6 +1488,20 @@ function CreditNotesCard({ credit }: { credit: XeroCreditView }) {
               <MoneyStat label={CREDIT_LABELS.xeroAllocated} value={n.allocated} />
               <MoneyStat label={CREDIT_LABELS.xeroUnallocated} value={n.unallocated} />
             </div>
+            {/* Payment runs' netting against later bills (catch-up Phase 39a). */}
+            {(n.allocations ?? []).length > 0 && (
+              <div data-shot="xero-credit-allocations" style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12.5 }}>
+                {n.allocations!.map((a) => (
+                  <span key={a.id}>
+                    {'Allocated against '}
+                    <span className="mono">{a.counterpartNumber}</span>
+                    {' · '}
+                    <span className="mono">{formatCurrency(a.amount)}</span>
+                    {a.week !== undefined ? ` · ${a.week}` : ''}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         ))}
         {credit.accPayVoided && (

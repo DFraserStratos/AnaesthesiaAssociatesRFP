@@ -119,6 +119,8 @@ export const EVENT_MESSAGES = {
 /** Store sentences for a credit (catch-up Phase 39; US-08.6.5, OQ-97). No en or em dash. */
 export const CREDIT_MESSAGES = {
   invoiceNotFound: 'Invoice not found.',
+  /** Catch-up Phase 39a: Xero is paying this invoice's payable in a payment run; the credit waits for the run. */
+  inPaymentRun: (week: string) => `Being paid in ${week}'s payment run. Credit it once the run is paid.`,
   reasonRequired: 'Give a reason for the credit.',
   notOwnProcedure: 'You can only credit invoices for your own procedures.',
   splitOfficeOnly: 'Only the office can split an invoice into additional invoices.',

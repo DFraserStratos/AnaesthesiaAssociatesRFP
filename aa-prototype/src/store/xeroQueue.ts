@@ -114,6 +114,11 @@ function runHandler(api: AppStoreApi, item: XeroQueueItem): string | undefined {
       const a = t.xeroAllocationId !== undefined ? api.getState().xero.creditAllocations[t.xeroAllocationId] : undefined
       if (a === undefined) return 'The credit allocation is no longer in Xero'
       const out = recordOffset(api, { accPayId: a.accPayId, accPayCreditId: a.accPayCreditId, xeroAllocationId: a.id, amount: a.amount, atISO: a.atISO, idempotencyKey: a.idempotencyKey, detectedBy: 'webhook', payablesRunId: a.payablesRunId })
+      // As a bill payment on a reversed payable: never recorded in the ledger; flagged for the office, and the sync is done.
+      if (!out.ok && out.code === 'pairCredited') {
+        flagXeroDivergences(api)
+        return undefined
+      }
       return out.ok ? undefined : out.message
     }
     case 'poll':

@@ -6,7 +6,7 @@
     {
       "name": "money-in-out",
       "app": "admin",
-      "caption": "Money in and money out per Booking, after Xero's payables run: paid in and disbursed, each dated",
+      "caption": "Money in and money out per Booking, after the week's payment run is paid in Xero: paid in and disbursed, each dated",
       "start": "/admin/billing?list=L-34821-2026-07-20-AM",
       "setup": [
         {
@@ -49,6 +49,24 @@
       "states": [
         {
           "steps": [
+            {
+              "click": "[data-shot=payment-cycle-close]"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-approve]"
+            },
+            {
+              "click": "[data-shot=payment-cycle-approve]"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-send]"
+            },
+            {
+              "click": "[data-shot=payment-cycle-send]"
+            },
+            {
+              "wait": 400
+            },
             {
               "click": "[data-shot=billing-run-payables-in-xero]"
             },

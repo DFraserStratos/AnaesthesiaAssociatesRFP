@@ -28,7 +28,7 @@ import { accPayOfLine, PAYMENT_CYCLE_COPY, runStaleness } from './paymentCycleAc
 import { cycleLabel } from '../domain/billing/paymentCycle'
 import { deliverPaymentWebhook, xeroBalanceOf } from './paymentActions'
 import { enqueueXeroWork, XERO_OUTAGE_ERROR, xeroAvailable } from './xeroGate'
-import { pairsByAccPayIndex } from './indexes'
+import { pairsByAccPayIndex, xeroPaidByRunBill } from './indexes'
 
 /** Xero's payables run (simulated): AA staff pay the authorised bills in Xero. */
 export const XERO_PAYABLES_ACTOR: Actor = { who: 'Xero payables run (simulated)', role: 'office', source: 'demo' }
@@ -146,26 +146,34 @@ export function payRunInXero(api: AppStoreApi, actor: Actor, runId: string, opts
     const accPayId = 'accPayId' in bill ? bill.accPayId : undefined
     const allocations: PlannedLine['allocations'] = []
     let nettedCents = 0
+    // Xero has less credit left than the run nets on this bill: never pay the bill short of its netting; leave the line unsent.
+    let short = false
     for (const n of run.nettings) {
       for (const a of n.allocations) {
         if (a.pairId !== line.pairId) continue
         nettedCents += toCents(a.amount)
         const neg = state.billing.negativeInvoices[n.negativeInvoiceId]
         const credit = neg?.accPayCreditNoteId !== undefined ? state.xero.creditNotes[neg.accPayCreditNoteId] : undefined
-        if (credit === undefined || accPayId === undefined) continue
+        if (credit === undefined || accPayId === undefined) {
+          short = true
+          continue
+        }
         const already = Object.values(state.xero.creditAllocations)
           .filter((x) => x.payablesRunId === runId && x.accPayId === accPayId && x.accPayCreditId === credit.id)
           .reduce((s, x) => s + toCents(x.amount), 0)
         const want = toCents(a.amount) - already
         const left = creditLeft.get(credit.id) ?? toCents(credit.total) - toCents(credit.allocated)
         const take = Math.max(0, Math.min(want, left))
+        if (take < want) short = true
         creditLeft.set(credit.id, left - take)
         if (take > 0) allocations.push({ negativeInvoiceId: n.negativeInvoiceId, accPayCreditId: credit.id, amount: take / 100 })
       }
     }
-    const sentCash = Object.values(state.xero.disbursements)
-      .filter((d) => d.payablesRunId === runId && (('accPayId' in bill && d.accPayId === bill.accPayId) || ('transferId' in bill && d.transferId === bill.transferId)))
-      .reduce((s, d) => s + toCents(d.amount), 0)
+    if (short) {
+      result.skipped += 1
+      continue
+    }
+    const sentCash = xeroPaidByRunBill(state.xero.disbursements).get(`${runId}|${'accPayId' in bill ? bill.accPayId : bill.transferId}`)?.cents ?? 0
     const cash = Math.max(0, toCents(line.amount) - nettedCents - sentCash)
     const need = cash + allocations.reduce((s, a) => s + toCents(a.amount), 0)
     if (need === 0) continue
@@ -271,7 +279,7 @@ export function payRunInXero(api: AppStoreApi, actor: Actor, runId: string, opts
 
 /**
  * Xero pays these bills, each only as an unheld line of the scheduled run
- * named (37's helper, kept for the Xero pair's single payout): the gate
+ * named (37's bill-level entry, kept for the simulator's tests and any caller that pays named bills): the gate
  * refuses `notApproved` for a bill that is not such a line.
  */
 export function payBillsInXero(api: AppStoreApi, actor: Actor, bills: readonly XeroBill[], opts: { webhook: 'deliver' | 'missed'; runId: string }): Outcome<PayBillsResult> {

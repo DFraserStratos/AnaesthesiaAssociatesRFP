@@ -13,7 +13,7 @@
  * payments. A payable to the AA Holding account is never disbursed (27a).
  */
 
-import { idempotencyKeysOf } from './indexes'
+import { idempotencyKeysOf, nettingKeys } from './indexes'
 import type { BookingLedgerPair, LedgerDisbursement, NegativeInvoice, PayableLeg } from '../domain/types'
 import { roundToCents, toCents } from '../domain/billing/money'
 import { applyDisbursement, applyOffset, isBookingPair, payeeAnaesthetistOf, settledOn } from '../domain/billing/ledger'
@@ -121,7 +121,7 @@ export function recordDisbursement(api: AppStoreApi, input: RecordDisbursementIn
         : { ...s.billing, transfers: { ...s.billing.transfers, [ref.id]: { ...s.billing.transfers[ref.id]!, in: leg } } }
     const withEntry = { ...billing, disbursements: { ...billing.disbursements, [entry.id]: entry } }
     // The run completes in the detection that settles its last unheld line (catch-up Phase 39a).
-    const done = completeRunsIn(withEntry, input.atISO)
+    const done = completeRunsIn(withEntry, input.atISO, ref.id)
     metas.push(...done.metas)
     return { billing: { ...withEntry, payablesRuns: done.payablesRuns }, counters: allocated.counters }
   })
@@ -148,8 +148,8 @@ export interface RecordOffsetInput {
 
 /** Whether the ledger already holds a netting with this allocation's key. */
 export function offsetKeySeen(state: Pick<AppState, 'billing'>, key: string): boolean {
-  for (const n of Object.values(state.billing.negativeInvoices)) if ((n.nettings ?? []).some((x) => x.idempotencyKey === key)) return true
-  return false
+  // Indexed: the poll asks this per Xero credit allocation.
+  return nettingKeys(state.billing.negativeInvoices).has(key)
 }
 
 /**
@@ -201,7 +201,7 @@ export function recordOffset(api: AppStoreApi, input: RecordOffsetInput): Outcom
       after: { negativeInvoice: neg.number, amount: input.amount, offsetCumulative: moved.leg.offsetAmount, payablesRunId: input.payablesRunId, nettedCumulative: nettedTotal, negativeStatus: status, detectedBy: input.detectedBy },
     })
     const billing = { ...s.billing, ledger, negativeInvoices: { ...s.billing.negativeInvoices, [neg.id]: { ...neg, nettings, status } } }
-    const done = completeRunsIn(billing, input.atISO)
+    const done = completeRunsIn(billing, input.atISO, bill.id)
     metas.push(...done.metas)
     return { billing: { ...billing, payablesRuns: done.payablesRuns } }
   })

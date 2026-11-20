@@ -148,6 +148,8 @@ underlying List, Booking and BTM actions.
 - Hand one Booking to a colleague who is free that session, from the Booking's screen.
 - See her financial position on the dashboard, review accounts outstanding and payments, and read
   her monthly GST report (Accounts, GST report).
+- Read the remittance advice for each weekly payment run, by week (Accounts, Remittances): the BCTIs
+  it paid, any negative invoice netted against them, and what was paid to her.
 - Open her Profile from her name and avatar in the top nav (`/web/profile`) and change her rate per
   unit; contact details, HPI CPN and bank details are read-only there, as on the phone.
 
@@ -325,6 +327,10 @@ allowing billing to proceed.
     or, when the billable party asks for a combined procedure in pieces, **Split into additional
     invoices** that add up to what was credited. Each credit is reviewed on **Review → Events** and
     issued in the next billing run.
+13. Run the weekly payment cycle on the Billing monitor: **Close the week** (Friday; it reconciles to
+    the bank download), sort out the **Monday checks** (fix an anomaly, or **Hold out of this run** so
+    it rolls into next week), **Approve** the week's BCTIs, and **Send payment schedule** to the
+    accountant on Tuesday, who pays it in Xero.
 
 ### Critical rule
 
@@ -388,9 +394,10 @@ organisational assumption.
 - Reconcile payments into AA.
 - Handle partial payments, and match any bulk remittance line Xero could not match (in Xero's bank
   reconciliation, not in the Billing Engine).
-- Confirm the related anaesthetist payable becomes available for a payables run.
-- Run the payables in Xero (the Billing Engine records each disbursement when Xero reports the bill
-  paid) and distinguish paid-in from paid-out.
+- Confirm the related anaesthetist payable is released into the week's payment run.
+- Close the week, clear the Monday checks (fix or hold out each anomaly), approve the week's BCTIs and
+  send the payment schedule to the accountant, who pays it in Xero (the Billing Engine records each
+  disbursement when Xero reports the bill paid); distinguish paid-in from paid-out.
 - Watch the **Reconciliation** card on Admin Day, and on the Billing monitor the Xero sync queue and
   any invoice changed directly in Xero.
 - Manage individual Xero contact archiving at scale.
@@ -402,16 +409,19 @@ organisational assumption.
 ### Prototype status
 
 Built. Invoice calculation and documents (Phase 08), then the Xero collection/payable pairs, payment
-webhook and reconciliation poll, payables run with separate paid-in and disbursed states, contact
+webhook and reconciliation poll, payment with separate paid-in and disbursed states, contact
 archiving and live anaesthetist balances (Phase 10) are all clickable. AA's monthly fee settings,
 the monthly fee invoice run and the anaesthetist's AA fees tab followed in catch-up Phase 16. Since
 catch-up Phase 22 the run sends each invoice itself (emailed, or marked To post), in the
 anaesthetist's name with AA as agent, and a fee can be split on the Booking. Since catch-up Phase 36
 the Billing Engine's own ledger is AA's system of record (every invoice a receivable and payable pair,
 Xero mirroring it), with the Admin Ledger screen's in-balance view and out-of-balance list. Since
-catch-up Phase 37 the payables run is made in Xero and the engine records each disbursement by webhook
+catch-up Phase 37 the payment is made in Xero and the engine records each disbursement by webhook
 or poll; every call to Xero waits in a sync queue that retries through an outage; voids and edits made
 in Xero are flagged at the poll; and Admin Day's Reconciliation card says whether everything squares.
+Since catch-up Phase 39a payments run in a weekly payment run named by its ISO week (close, Monday
+checks, BCTI approval, the schedule to the accountant), negative invoices are netted in the run, and
+every run keeps its record and a remittance advice per anaesthetist.
 
 ## External actors, not prototype login personas
 

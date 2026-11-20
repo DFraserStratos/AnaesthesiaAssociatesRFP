@@ -58,6 +58,8 @@ import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta
 import type { AppState, AppStoreApi } from './appStore'
 import { BILLING_RUN_SENDER } from './invoiceMaterialise'
 import { pairForInvoice } from './ledgerSelectors'
+import { payingRunFor } from './paymentCycleActions'
+import { offsetKeySeen } from './disbursementDetection'
 import {
   cleanLines,
   deliveryOfOriginal,
@@ -251,6 +253,9 @@ export function creditRefusalFor(state: Pick<AppState, 'schedule' | 'billing'>, 
   if (pair === undefined || pair.payable === undefined || payeeAnaesthetistOf(pair.payable) === undefined) return { code: 'noPair', message: CREDIT_MESSAGES.noPair }
   if (creditNoteForInvoice(state, invoiceId) !== undefined || pair.credit !== undefined) return { code: 'alreadyCredited', message: CREDIT_MESSAGES.alreadyCredited }
   if (pendingCreditEventFor(state, invoiceId, opts.editing) !== undefined) return { code: 'correctionPending', message: CREDIT_MESSAGES.correctionPending }
+  // A payable Xero is paying in a payment run right now (catch-up Phase 39a): the run must finish first, or its payment strands.
+  const paying = payingRunFor(state, pair.id)
+  if (paying !== undefined) return { code: 'inPaymentRun', message: CREDIT_MESSAGES.inPaymentRun(paying) }
   return null
 }
 
@@ -702,6 +707,8 @@ export function xeroMoneyNotInLedger(state: Pick<AppState, 'billing' | 'xero'>, 
   if (accPayId !== undefined) {
     const disbursed = new Set(Object.values(state.billing.disbursements).map((d) => d.idempotencyKey))
     if (Object.values(state.xero.disbursements).some((d) => d.accPayId === accPayId && !disbursed.has(d.idempotencyKey))) return true
+    // A payment run's netting Xero made on this bill that the ledger has not recorded yet (catch-up Phase 39a).
+    if (Object.values(state.xero.creditAllocations).some((a) => a.accPayId === accPayId && !offsetKeySeen(state, a.idempotencyKey))) return true
   }
   return Object.values(state.billing.xeroQueue).some((q) => {
     if (q.status === 'sent') return false
@@ -713,6 +720,7 @@ export function xeroMoneyNotInLedger(state: Pick<AppState, 'billing' | 'xero'>, 
       const on = q.target.xeroDisbursementId !== undefined ? state.xero.disbursements[q.target.xeroDisbursementId]?.accPayId : undefined
       return q.target.pairId === pair.id || (on !== undefined && on === accPayId)
     }
+    if (q.kind === 'offsetSync') return q.target.accPayId !== undefined && q.target.accPayId === accPayId
     return false
   })
 }
@@ -739,6 +747,9 @@ export function planCreditIssue(state: CreditState, creditEventId: string): Outc
   if (creditNoteForInvoice(state, original.id) !== undefined || pair.credit !== undefined) return refuse('alreadyCredited', CREDIT_MESSAGES.alreadyCredited)
   // The reversal is read from the ledger, so it waits until Xero and the ledger agree (catch-up Phase 39 review).
   if (xeroMoneyNotInLedger(state, pair)) return refuse('waitingForXero', CREDIT_SYNC_MESSAGES.waitingForXeroSync)
+  // Never while Xero is paying its payable in a payment run (catch-up Phase 39a): the run skips it and it waits.
+  const paying = payingRunFor(state, pair.id)
+  if (paying !== undefined) return refuse('inPaymentRun', CREDIT_MESSAGES.inPaymentRun(paying))
   const planned: PlannedAdditional[] = []
   for (const r of replacements) {
     if (eventStatus(r) !== 'approved') return refuse('notApproved', EVENT_MESSAGES.nothingToRun)

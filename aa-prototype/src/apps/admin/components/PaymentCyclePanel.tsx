@@ -16,8 +16,8 @@ import { Button, Card, EmptyState, FormError, Notice, Pill, ResultLine, TextActi
 import { Td, Th, TableShell } from '../../../shared/table'
 import { DemoBadge } from '../../../shared/DemoBadge'
 import { StepRail, type RailStep } from '../../../shared/contracts/railParts'
-import { drSurname, formatCurrency, formatSignedCurrency, hhmm, plural, shortDay } from '../../../shared/format'
-import { neutral } from '../../../theme/tokens'
+import { drSurname, formatCurrency, formatSignedCurrency, plural, shortDay, stampText } from '../../../shared/format'
+import { neutral, radius } from '../../../theme/tokens'
 import { cycleFor, cycleLabel, cycleOfId, cycleRangeLabel, nextCycleId, plannedDayLabel, weekdayName, type PaymentCycle } from '../../../domain/billing/paymentCycle'
 import type { CycleAnomaly, PayablesRun, PayablesRunLine, PayablesRunStatus, RunAnaesthetistTotal } from '../../../domain/types'
 import {
@@ -54,7 +54,18 @@ export const RUN_STATUS: Record<PayablesRunStatus, { label: string; tone: PillTo
 
 /** "Tue 21 Jul 10:04": a step's actual stamp. */
 export function stampOf(iso: string | undefined): string {
-  return iso === undefined ? '' : `${shortDay(iso.slice(0, 10))} ${hhmm(iso)}`
+  return iso === undefined ? '' : stampText(iso)
+}
+
+/** The slices the panel reads (never the whole store, so an unrelated write does not recompute the draft). */
+function useCycleState() {
+  const billing = useAppStore((s) => s.billing)
+  const xero = useAppStore((s) => s.xero)
+  const masters = useAppStore((s) => s.masters)
+  const schedule = useAppStore((s) => s.schedule)
+  const clock = useAppStore((s) => s.clock)
+  const appSettings = useAppStore((s) => s.appSettings)
+  return useMemo(() => ({ billing, xero, masters, schedule, clock, appSettings }), [billing, xero, masters, schedule, clock, appSettings])
 }
 
 function useNames() {
@@ -64,7 +75,7 @@ function useNames() {
 
 export function PaymentCyclePanel({ actor }: { actor: Actor }) {
   const navigate = useNavigate()
-  const state = useAppStore((s) => s)
+  const state = useCycleState()
   const name = useNames()
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -72,8 +83,8 @@ export function PaymentCyclePanel({ actor }: { actor: Actor }) {
   const run = weekRunInProgress(state)
   const draft = useMemo(() => (run === undefined ? openCycleDraft(state) : undefined), [state, run])
   const cycle: PaymentCycle = run !== undefined ? cycleOfId(run.cycleId, settings) : draft!.cycle
-  const stale = run !== undefined ? runStaleness(state, run) : null
-  const toPay = nextRunToPay(state)
+  const stale = useMemo(() => (run !== undefined ? runStaleness(state, run) : null), [state, run])
+  const toPay = useMemo(() => nextRunToPay(state), [state])
 
   function act(out: { ok: true } | { ok: false; message: string }, done?: string) {
     if (!out.ok) {
@@ -86,27 +97,28 @@ export function PaymentCyclePanel({ actor }: { actor: Actor }) {
 
   const closeRefusal = draft !== undefined && draft.lines.length === 0 ? PAYMENT_CYCLE_COPY.nothingToClose : null
   const openAnomalies = run?.anomalies.filter((a) => a.status === 'open') ?? []
-  const approveRefusal = run === undefined || run.status !== 'closed' ? null : openAnomalies.length > 0 ? PAYMENT_CYCLE_COPY.anomaliesOpen : run.lines.every((l) => l.heldOut !== undefined) ? PAYMENT_CYCLE_COPY.nothingToApprove : stale
+  const approveRefusal = run === undefined || run.status !== 'closed' ? null : openAnomalies.length > 0 ? PAYMENT_CYCLE_COPY.anomaliesOpen : stale
 
   const steps: RailStep[] = [
-    { n: 1, label: 'Close the week', done: run !== undefined, current: run === undefined, auto: false, ...(run !== undefined ? { value: `Closed ${stampOf(run.closedAtISO)}` } : {}), pendingValue: `Planned ${plannedDayLabel(cycle.closeDateISO)}` },
+    { n: 1, label: 'Close the week', done: run !== undefined, current: run === undefined, auto: false, ...(run !== undefined ? { value: `Closed ${shortDay(run.closedAtISO.slice(0, 10))} · planned ${shortDay(cycle.closeDateISO)}` } : {}), pendingValue: `Planned ${plannedDayLabel(cycle.closeDateISO)}` },
     {
       n: 2,
       label: `${weekdayName(settings.checkWeekday)} checks`,
-      done: run !== undefined && run.status !== 'closed',
-      current: run?.status === 'closed',
+      // The checks are done once no anomaly is open; approval is then the current step.
+      done: run !== undefined && (run.status !== 'closed' || openAnomalies.length === 0),
+      current: run?.status === 'closed' && openAnomalies.length > 0,
       auto: false,
-      ...(run !== undefined && run.status !== 'closed' ? { value: run.anomalies.length === 0 ? 'No anomalies' : `${plural(run.anomalies.length, 'anomaly', 'anomalies')} sorted` } : {}),
+      ...(run !== undefined && (run.status !== 'closed' || openAnomalies.length === 0) ? { value: run.anomalies.length === 0 ? 'No anomalies' : `${plural(run.anomalies.length, 'anomaly', 'anomalies')} sorted` } : {}),
       pendingValue: `Planned ${plannedDayLabel(cycle.checkDateISO)}`,
     },
-    { n: 3, label: 'Approve BCTIs', done: run?.approvedAtISO !== undefined, current: false, auto: false, ...(run?.approvedAtISO !== undefined ? { value: `Approved ${stampOf(run.approvedAtISO)}` } : {}), pendingValue: 'After the checks' },
+    { n: 3, label: 'Approve BCTIs', done: run?.approvedAtISO !== undefined, current: run?.status === 'closed' && openAnomalies.length === 0, auto: false, ...(run?.approvedAtISO !== undefined ? { value: `Approved ${shortDay(run.approvedAtISO.slice(0, 10))}` } : {}), pendingValue: 'After the checks' },
     {
       n: 4,
       label: 'Send payment schedule',
       done: run?.scheduledAtISO !== undefined,
       current: run?.status === 'approved',
       auto: false,
-      ...(run?.scheduledAtISO !== undefined ? { value: `Sent ${stampOf(run.scheduledAtISO)}` } : {}),
+      ...(run?.scheduledAtISO !== undefined ? { value: `Sent ${shortDay(run.scheduledAtISO.slice(0, 10))} · planned ${shortDay(cycle.scheduleDateISO)}` } : {}),
       pendingValue: `Planned ${plannedDayLabel(cycle.scheduleDateISO)}`,
     },
   ]
@@ -209,7 +221,7 @@ export function PaymentCyclePanel({ actor }: { actor: Actor }) {
         </span>
       </div>
 
-      <RunsList onOpen={(id) => navigate(`/admin/billing/payment-runs/${id}`)} />
+      <RunsList />
 
       <div>
         <TextAction size="sm" flush shot="billing-open-ledger" onClick={() => navigate('/admin/ledger')}>Open the ledger</TextAction>
@@ -312,7 +324,7 @@ function TotalsTable({
 
 /** The check day: each anomaly to hold out or mark fixed, the run's lines (any can be held with a reason), and what rolls into next week. */
 function ChecksSection({ run, actor, name, nextWeek, onResult }: { run: PayablesRun; actor: Actor; name: (id: string) => string; nextWeek: string; onResult: (out: { ok: true } | { ok: false; message: string }, done?: string) => void }) {
-  const state = useAppStore((s) => s)
+  const state = useCycleState()
   const [holding, setHolding] = useState<string | null>(null)
   const [reason, setReason] = useState('')
   const held = run.lines.filter((l) => l.heldOut !== undefined)
@@ -382,7 +394,7 @@ function ChecksSection({ run, actor, name, nextWeek, onResult }: { run: Payables
 function AnomalyRow({ anomaly, name, bills, onHold, onFix }: { anomaly: CycleAnomaly; name: (id: string) => string; bills: string[]; onHold: () => void; onFix: () => void }) {
   const resolved = anomaly.status !== 'open'
   return (
-    <li data-anomaly-id={anomaly.id} data-anomaly-kind={anomaly.kind} style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', border: `1px solid ${neutral.line}`, borderRadius: 10, padding: '10px 12px' }}>
+    <li data-anomaly-id={anomaly.id} data-anomaly-kind={anomaly.kind} style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, padding: '10px 12px' }}>
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
         <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
           <Pill tone={resolved ? 'neutral' : 'warning'} size="sm">{ANOMALY_LABEL[anomaly.kind]}</Pill>
@@ -404,7 +416,7 @@ function AnomalyRow({ anomaly, name, bills, onHold, onFix }: { anomaly: CycleAno
 }
 
 /** This week's run and staged runs, then the previous weeks', newest first, each opening its detail. */
-function RunsList({ onOpen }: { onOpen: (runId: string) => void }) {
+function RunsList() {
   const billing = useAppStore((s) => s.billing)
   const clockToday = useAppStore((s) => s.clock.todayISO)
   const settings = useAppStore((s) => paymentCycleSettingsOf(s))
@@ -434,7 +446,7 @@ function RunsList({ onOpen }: { onOpen: (runId: string) => void }) {
               <tr key={r.id} data-run-id={r.id} data-run-status={r.status}>
                 <Td mono>{cycleLabel(r)}</Td>
                 <Td mono>
-                  <Link to={`/admin/billing/payment-runs/${r.id}`} onClick={(e) => { e.preventDefault(); onOpen(r.id) }} style={{ color: neutral.ink }}>{r.id}</Link>
+                  <Link to={`/admin/billing/payment-runs/${r.id}`} style={{ color: neutral.ink }}>{r.id}</Link>
                 </Td>
                 <Td mono>{`${stampOf(r.closedAtISO)} · ${r.closedBy.who}`}</Td>
                 <Td mono>{r.approvedAtISO !== undefined ? stampOf(r.approvedAtISO) : ''}</Td>

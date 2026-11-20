@@ -44,6 +44,39 @@
         },
         {
           "wait": 600
+        },
+        {
+          "goto": "/admin/billing"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "click": "[data-shot=payment-cycle-close]"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "[data-shot=payment-cycle-approve]"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "click": "[data-shot=payment-cycle-send]"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "goto": "/demo/xero/invoices"
+        },
+        {
+          "wait": 600
+        },
+        {
+          "wait": 600
         }
       ],
       "states": [
@@ -136,12 +169,12 @@
     {
       "name": "payables-run",
       "app": "admin",
-      "caption": "Authorised payables await Xero's payables run; the payment is made in Xero and the Billing Engine records it",
+      "caption": "Released payables wait for this week's payment run; the payment is made in Xero and the Billing Engine records it",
       "start": "/admin/billing",
       "states": [
         {
           "state": "due",
-          "caption": "Authorised, awaiting Xero's payables run: the prepayment transferred to Dr Souter, 1 payable due, $1,380.00, with Run payables in Xero (Simulated Xero)",
+          "caption": "Released, waiting for this week's payment run: the prepayment transferred to Dr Souter, $1,380.00, before the office closes the week",
           "steps": [
             {
               "goto": "/web/lists/L-34821-2026-07-24-PM"
@@ -220,16 +253,16 @@
               "goto": "/admin/billing"
             },
             {
-              "wait": "[data-shot=billing-payables-run]"
+              "wait": "[data-shot=payables-run-draft]"
             }
           ],
           "highlight": [
-            "[data-shot=billing-payables-run]"
+            "[data-shot=payables-run-draft]"
           ]
         },
         {
           "state": "run",
-          "caption": "After Run payables in Xero: Xero pays the bill, the Billing Engine records the disbursement from the bill-paid webhook, and nothing is left awaiting the run",
+          "caption": "After the office closes the week, approves its BCTIs and sends the payment schedule, Run payables in Xero: Xero pays the bill and the Billing Engine records the disbursement from the bill-paid webhook",
           "steps": [
             {
               "goto": "/web/lists/L-34821-2026-07-24-PM"
@@ -309,6 +342,24 @@
             },
             {
               "wait": "[data-shot=billing-payables-run]"
+            },
+            {
+              "click": "[data-shot=payment-cycle-close]"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-approve]"
+            },
+            {
+              "click": "[data-shot=payment-cycle-approve]"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-send]"
+            },
+            {
+              "click": "[data-shot=payment-cycle-send]"
+            },
+            {
+              "wait": 400
             },
             {
               "click": "[data-shot=billing-run-payables-in-xero]"
@@ -321,7 +372,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=billing-payables-run]"
+            "[data-shot=billing-payables-result]"
           ]
         }
       ]

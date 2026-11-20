@@ -12,7 +12,7 @@
  */
 
 import { sortAuditNewestFirst } from '../shared/audit/auditNarrative'
-import type { InvoiceLine, PaymentIn, AuditEntry, BillingException, Booking, BookingLedgerPair, Invoice, LedgerPair, LedgerTransfer, List, Procedure, XeroDivergence, XeroQueueItem } from '../domain/types'
+import type { LedgerDisbursement, InvoiceLine, PaymentIn, AuditEntry, BillingException, Booking, BookingLedgerPair, Invoice, LedgerPair, LedgerTransfer, List, Procedure, XeroDivergence, XeroQueueItem } from '../domain/types'
 import { isBookingPair } from '../domain/billing/ledger'
 
 /** Memoise `build` on the identity of `source`. */
@@ -151,3 +151,96 @@ export const openDivergenceByPair = memoOn((divergences: Readonly<Record<string,
   return out
 })
 
+
+// ---------------------------------------------------------------------------
+// Payment runs (catch-up Phase 39a): what each run settled and sent, per line,
+// so the cycle panel, run completion and the web Accounts rows stay linear.
+// ---------------------------------------------------------------------------
+
+/** What one run settled (or sent) on one payable: cents and the latest date. Keyed `${runId}|${pairId}` (or bill id on the Xero side). */
+export interface RunAmount {
+  cents: number
+  latestISO: string
+}
+
+function addRunAmount(out: Map<string, RunAmount>, key: string, amount: number, atISO: string): void {
+  const cents = Math.round(amount * 100)
+  const had = out.get(key)
+  if (had === undefined) out.set(key, { cents, latestISO: atISO })
+  else {
+    had.cents += cents
+    if (atISO > had.latestISO) had.latestISO = atISO
+  }
+}
+
+/** The ledger's disbursements by `${runId}|${pairId}`. */
+export const disbursedByRunPair = memoOn((disbursements: Readonly<Record<string, { payablesRunId: string; pairId: string; amount: number; atISO: string }>>) => {
+  const out = new Map<string, RunAmount>()
+  for (const d of Object.values(disbursements)) addRunAmount(out, `${d.payablesRunId}|${d.pairId}`, d.amount, d.atISO)
+  return out
+})
+
+/** The negative invoices' nettings by `${runId}|${pairId}`. */
+export const nettedByRunPair = memoOn((negatives: Readonly<Record<string, { nettings?: readonly { runId: string; pairId: string; amount: number; atISO: string }[] }>>) => {
+  const out = new Map<string, RunAmount>()
+  for (const n of Object.values(negatives)) for (const x of n.nettings ?? []) addRunAmount(out, `${x.runId}|${x.pairId}`, x.amount, x.atISO)
+  return out
+})
+
+/** The negative invoices' recorded netting keys (`CNALLOC-`): the engine records each once. */
+export const nettingKeys = memoOn((negatives: Readonly<Record<string, { nettings?: readonly { idempotencyKey: string }[] }>>) => {
+  const out = new Set<string>()
+  for (const n of Object.values(negatives)) for (const x of n.nettings ?? []) out.add(x.idempotencyKey)
+  return out as ReadonlySet<string>
+})
+
+/** The latest receipt per pair (a run line's released date). */
+export const latestReceiptByPair = memoOn((receipts: Readonly<Record<string, { pairId: string; atISO: string }>>) => {
+  const out = new Map<string, string>()
+  for (const r of Object.values(receipts)) {
+    const had = out.get(r.pairId)
+    if (had === undefined || r.atISO > had) out.set(r.pairId, r.atISO)
+  }
+  return out
+})
+
+/** The ledger's disbursements per pair (the week of every payment on one payable). */
+export const disbursementsByPair = memoOn((disbursements: Readonly<Record<string, LedgerDisbursement>>) => groupBy(Object.values(disbursements), (d) => d.pairId))
+
+/** Xero's bill payments by `${runId}|${accPayId or transferId}`. */
+export const xeroPaidByRunBill = memoOn((disbursements: Readonly<Record<string, { payablesRunId: string; accPayId?: string; transferId?: string; amount: number; atISO: string }>>) => {
+  const out = new Map<string, RunAmount>()
+  for (const d of Object.values(disbursements)) {
+    const bill = d.accPayId ?? d.transferId
+    if (bill !== undefined) addRunAmount(out, `${d.payablesRunId}|${bill}`, d.amount, d.atISO)
+  }
+  return out
+})
+
+/** Xero's credit allocations by `${runId}|${accPayId}`. */
+export const xeroAllocatedByRunBill = memoOn((allocations: Readonly<Record<string, { payablesRunId: string; accPayId: string; amount: number; atISO: string }>>) => {
+  const out = new Map<string, RunAmount>()
+  for (const a of Object.values(allocations)) addRunAmount(out, `${a.payablesRunId}|${a.accPayId}`, a.amount, a.atISO)
+  return out
+})
+
+/** Per pair, the latest week run that held it out (the web Payments note). */
+export const heldRunByPair = memoOn((runs: Readonly<Record<string, { id: string; status: string; cycleId: string; lines: readonly { pairId: string; heldOut?: unknown }[] }>>) => {
+  const out = new Map<string, { id: string; cycleId: string }>()
+  for (const r of Object.values(runs)) {
+    if (r.status === 'superseded') continue
+    for (const l of r.lines) {
+      if (l.heldOut === undefined) continue
+      const had = out.get(l.pairId)
+      if (had === undefined || r.cycleId > had.cycleId) out.set(l.pairId, { id: r.id, cycleId: r.cycleId })
+    }
+  }
+  return out
+})
+
+/** The runs each pair is a line of (unheld), for the in-flight and completion checks. */
+export const runIdsByLinePair = memoOn((runs: Readonly<Record<string, { id: string; lines: readonly { pairId: string; heldOut?: unknown }[] }>>) => {
+  const out = new Map<string, string[]>()
+  for (const r of Object.values(runs)) for (const l of r.lines) if (l.heldOut === undefined) out.set(l.pairId, [...(out.get(l.pairId) ?? []), r.id])
+  return out
+})

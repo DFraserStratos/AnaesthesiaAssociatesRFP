@@ -66,7 +66,6 @@ import {
   xeroAvailable,
   disbursePayable,
   disbursePayableRefusal,
-  PAYMENT_CYCLE_COPY,
   paymentWeekFor,
   xeroBillPayable,
   voidAccRecInXero,
@@ -489,7 +488,7 @@ function payBillRefusal(state: AppState, accRecId: string | undefined): string |
   if (xeroBillPayable(state, bill) <= 0) return 'Nothing authorised to pay yet'
   // The gate (catch-up Phase 39a; US-10.2.6): only an unheld line of a scheduled run, with no negative netted on it.
   const refusal = disbursePayableRefusal(state, 'transferId' in bill ? bill.transferId : pair.id)
-  if (refusal === PAYMENT_CYCLE_COPY.useRun) return XERO_PAY_BILL_COPY.useRun
+  if (refusal?.code === 'useRun') return XERO_PAY_BILL_COPY.useRun
   return refusal !== null ? XERO_PAY_BILL_COPY.notApproved : null
 }
 

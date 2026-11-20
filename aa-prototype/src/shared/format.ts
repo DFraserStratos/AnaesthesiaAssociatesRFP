@@ -51,6 +51,8 @@ export { formatMoney, formatMoney as formatCurrency, parseAmount, parseAmountOrN
  * `sign`, not a second formatter.
  */
 export function formatSignedCurrency(amount: number): string {
+  // A negative zero (-0, or a negative that rounds to zero) prints "$0.00", never "$-0.00".
+  if (Math.round(Math.abs(amount) * 100) === 0) return formatMoneyOf(0)
   return amount < 0 ? formatMoneyOf(amount, { sign: 'always' }) : formatMoneyOf(amount)
 }
 export type { MoneyFormat } from '../domain/billing/money'
