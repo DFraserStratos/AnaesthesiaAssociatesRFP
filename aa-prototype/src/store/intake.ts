@@ -72,6 +72,7 @@ function withEthnicity(patient: Patient, code: string | undefined): Patient {
 
 function sourceFor(actor: Actor, details: PatientIntakeDetails): PatientPendingDetails['source'] {
   if (details.detailsSource !== undefined) return details.detailsSource
+  if (actor.role === 'anaesthetist') return 'anaesthetist'
   return actor.source === 'integration' ? 'hospital' : 'aa'
 }
 
@@ -107,11 +108,18 @@ export function upsertPatient(
     }
     mutate(api, actor, metas, (s) => {
       if (differences.length > 0) {
+        // Merge by field with any differences still unreviewed: the newest incoming value wins per field,
+        // and a field only the earlier arrival brought stays for review.
+        const prior = existing.pendingDetails
+        const merged = [...(prior?.differences ?? []).filter((d) => !differences.some((n) => n.field === d.field)), ...differences]
+        const newAddress = differences.some((d) => d.field === 'address') ? details.postalAddress : undefined
+        const incomingAddress = newAddress ?? (merged.some((d) => d.field === 'address') ? prior?.incomingAddress : undefined)
         const pending: PatientPendingDetails = {
           receivedAtISO: clockISO(s.clock),
           source: sourceFor(actor, details),
-          differences,
-          ...(differences.some((d) => d.field === 'address') && details.postalAddress !== undefined ? { incomingAddress: details.postalAddress } : {}),
+          ...(actor.role === 'office' || actor.role === 'anaesthetist' ? { by: actor.who } : {}),
+          differences: merged,
+          ...(incomingAddress !== undefined ? { incomingAddress } : {}),
         }
         enriched = { ...enriched, pendingDetails: pending }
       }
@@ -199,6 +207,8 @@ export type PatientEditPatch = Partial<Pick<Patient, 'name' | 'dobISO' | 'phone'
 /** The NHI is mandatory and never cleared (catch-up Phase 35; D11, OQ-49). */
 export const PATIENT_NHI_REQUIRED_MESSAGE = 'The NHI is required.'
 export const PATIENT_NHI_OFFICE_ONLY_MESSAGE = 'Only the AA office changes the NHI.'
+export const PATIENT_NHI_TAKEN_MESSAGE = 'Another patient record already has this NHI.'
+export const PATIENT_EDIT_OFFICE_ONLY_MESSAGE = 'Only the AA office edits a patient record outside a Booking.'
 
 /**
  * Edit a Patient's demographics, audited `patient.update` (phase doc item 3).
@@ -223,6 +233,9 @@ export function editPatient(
     if (found === undefined) return refuse('notFound', 'Booking not found.')
     const rights = editRefusal(actor, found.list)
     if (rights !== null) return rights
+  } else if (actor.role !== 'office') {
+    // With no Booking to check rights against (the Admin patient record), only the office edits.
+    return refuse('officeOnly', PATIENT_EDIT_OFFICE_ONLY_MESSAGE)
   }
   // The office corrects the NHI (catch-up Phase 35; US-02.3.1): mandatory, never cleared (D11), either format.
   if (patch.nhi !== undefined) {
@@ -230,6 +243,8 @@ export function editPatient(
     if (patch.nhi.trim() === '') return refuse('nhiRequired', PATIENT_NHI_REQUIRED_MESSAGE)
     const verdict = validateNhi(patch.nhi)
     if (!verdict.valid) return refuse('nhiInvalid', verdict.reason ?? 'That NHI is not valid.')
+    const holder = Object.values(state.masters.patients).find((p) => p.nhi === verdict.normalised && p.hiddenInternalId !== patientId)
+    if (holder !== undefined) return refuse('nhiTaken', PATIENT_NHI_TAKEN_MESSAGE)
     patch = { ...patch, nhi: verdict.normalised }
   }
   // Ethnicity (catch-up Phase 40; US-11.1.1, FT-14.4): a malformed code is refused; a code outside
@@ -270,6 +285,9 @@ export function editPatient(
     },
     (s) => {
       let next: Patient = { ...patient, ...patch }
+      // A blanked phone or email is not supplied: the key goes, never an empty string (catch-up Phase 40).
+      if (next.phone !== undefined && next.phone.trim() === '') delete next.phone
+      if (next.email !== undefined && next.email.trim() === '') delete next.email
       if (ethnicity?.ethnicityCode !== undefined) {
         const { ethnicityPending: _cleared, ...rest } = next
         next = { ...rest, ethnicityCode: ethnicity.ethnicityCode }

@@ -7,6 +7,7 @@ import type { Procedure } from '../../../domain/types'
 import { isAssignedList } from '../../../domain/draftLists'
 import { useAppStore, type Actor } from '../../../store'
 import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
+import { warningsFor } from '../../../shared/warnings'
 import { BookingDetailBody } from '../../../shared/booking'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
 
@@ -59,7 +60,7 @@ export function BookingDetailScreen({ bookingId, actor, onBack }: BookingDetailS
     return Object.values(proceduresRecord).find((p) => p.bookingId === bookingId && p.isPrimary)
   }, [booking, bookingId, proceduresRecord])
 
-  const warnings = useBookingWarnings(bookingId)
+  const warnings = warningsFor(useBookingWarnings(bookingId), 'anaesthetist')
 
   // A Booking on a Draft List is office only (OQ-86).
   if (booking === undefined || !isAssignedList(list)) return null

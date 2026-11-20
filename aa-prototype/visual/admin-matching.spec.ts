@@ -101,6 +101,39 @@ test("R1 Create Booking; R3 applies the ticked fields; R4 and R5 a day move; a r
   await expect(stat(page, 'open')).toContainText('1')
 })
 
+test("S1 Beat 1: Sarah Mitchell's strong balance warning previews, lands on the to-do list, and shows on Dr Souter's mobile List", async ({ page }) => {
+  // Catch-up Phase 40: she owes $610.00 on an invoice billed to her, unpaid 98 days.
+  await fresh(page)
+  await importSample(page, 'SAMPLE_STG')
+  await row(page, 'Sarah Mitchell').click()
+  const preview = page.locator('[data-shot="matching-balance-preview"]')
+  await expect(preview).toBeVisible()
+  await expect(preview).toHaveAttribute('data-strength', 'strong')
+  await expect(preview).toContainText('$610.00')
+  await expect(preview).toContainText('98 days')
+  await expect(page.locator('[data-shot="matching-patient-record-link"]')).toBeVisible()
+  await page.screenshot({ path: 'visual/shots/admin-matching-balance-preview.png', fullPage: true })
+
+  await page.locator('[data-shot="matching-apply"]').click()
+  const result = page.locator('[data-shot="matching-balance-result"]')
+  await expect(result).toHaveAttribute('data-strength', 'strong')
+  await expect(result).toContainText('Strong balance warning on the to-do list')
+
+  await page.goto('/admin/day/2026-07-21')
+  await page.waitForLoadState('networkidle')
+  const todo = page.locator('[data-shot="admin-warnings-todo"]')
+  const todoRow = todo.locator('li', { hasText: 'Sarah Mitchell' }).filter({ hasText: '$610.00' })
+  await expect(todoRow).toHaveCount(1)
+  await expect(todoRow).toContainText('98 days')
+
+  await page.goto('/mobile/lists/L-34821-2026-07-28-AM')
+  await page.waitForLoadState('networkidle')
+  const chip = page.locator('[data-shot="balance-alert-chip"][data-strength="strong"]')
+  await expect(chip.first()).toBeVisible()
+  expect(/\$610/.test(await page.locator('body').innerText())).toBe(false)
+  await page.screenshot({ path: 'visual/shots/mobile-balance-alert-strong.png', fullPage: true })
+})
+
 test('the later update for the Booking R1 created waits for approval', async ({ page }) => {
   await fresh(page)
   await importSample(page, 'SAMPLE_STG')

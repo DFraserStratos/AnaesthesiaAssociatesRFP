@@ -6,7 +6,7 @@ import { TextAction } from '../../shared/ui'
 import { RequireEntity } from '../../shell/RequireEntity'
 import { PaymentRunScreen, RemittanceAdviceScreen } from './screens/PaymentRunScreen'
 import { isISODate } from '../../shell/routeParams'
-import { listInSlot, useAppStore, useToday, type NotificationTarget } from '../../store'
+import { listInSlot, patientByNhi, useAppStore, useToday, type NotificationTarget } from '../../store'
 import { DayNav } from './components/DayNav'
 import { AvailabilityFinderSheet } from './flows/AvailabilityFinderSheet'
 import { DayGrid } from './components/DayGrid'
@@ -31,6 +31,8 @@ import { DraftListsScreen } from './screens/DraftListsScreen'
 import { NotificationsScreen } from './screens/NotificationsScreen'
 import { MatchingScreen } from './screens/MatchingScreen'
 import { ReviewScreen } from './screens/ReviewScreen'
+import { PatientsScreen, type PatientListView } from './screens/patients/PatientsScreen'
+import { PatientRecord } from './screens/patients/PatientRecord'
 import { useAdminOutlet, type AdminOutletContext } from './outlet'
 import { dayWithYear } from '../../shared/format'
 
@@ -521,5 +523,45 @@ function BeyondHorizon({ endISO, onGoToEnd }: { endISO: string; onGoToEnd: () =>
         Go to the last day
       </TextAction>
     </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Patients (catch-up Phase 40): `/admin/patients`, `/admin/patients/waiting`,
+// `/admin/patients/follow-up` and the record `/admin/patients/:nhi`. The route
+// key is the NHI; an unknown NHI goes back to the search.
+// ---------------------------------------------------------------------------
+
+function usePatientRouteHandlers() {
+  const { onOpenList } = useAdminOutlet()
+  const navigate = useNavigate()
+  return {
+    onOpenList,
+    onOpenMatching: (rowId: string) => navigate('/admin/intake/matching', { state: { selectRowId: rowId } }),
+  }
+}
+
+function patientListRoute(view: PatientListView) {
+  return function AdminPatientListRoute() {
+    const { actor } = useAdminOutlet()
+    const handlers = usePatientRouteHandlers()
+    return <PatientsScreen view={view} actor={actor} {...handlers} />
+  }
+}
+
+export const AdminPatientsRoute = patientListRoute('search')
+export const AdminWaitingNhiRoute = patientListRoute('waiting')
+export const AdminPatientFollowUpRoute = patientListRoute('followUp')
+
+export function AdminPatientRecordRoute() {
+  const { nhi = '' } = useParams()
+  const { actor } = useAdminOutlet()
+  const navigate = useNavigate()
+  const key = nhi.replace(/\s+/g, '').toUpperCase()
+  const exists = useAppStore((s) => patientByNhi(s, key) !== undefined)
+  return (
+    <RequireEntity exists={exists}>
+      <PatientRecord key={key} nhi={key} actor={actor} onOpenBooking={(d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`)} />
+    </RequireEntity>
   )
 }

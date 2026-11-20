@@ -4,6 +4,7 @@ import { accent, neutral, radius } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 import type { Procedure } from '../../domain/types'
 import { bookingMoveRefusal } from '../../domain/bookingMoves'
+import { ethnicityText } from '../../domain/nzhis'
 import { approvalNumberMissing, bookingTotalWithEvents } from '../../domain/billing'
 import { completionFailuresFor, type CompletionFailure } from '../../domain/billing/completion'
 import {
@@ -46,7 +47,9 @@ import {
   movedToYouByLine,
   useBookingMovedToMeNotice,
 } from '../flows'
-import { useBookingWarnings, WarningsPanel } from '../warnings'
+import { useBookingWarnings, warningsFor, WarningsPanel } from '../warnings'
+import { BalanceAlertPill, useBalanceAlert } from '../patients'
+import { SharedNotes } from '../notes'
 import { OfficeBillingSetup } from './OfficeBillingSetup'
 import { ProcedureEventsList } from './ProcedureEventsList'
 import { PrepaymentPanel, type PrepaymentOfficeLinks } from './PrepaymentPanel'
@@ -145,7 +148,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
   const locks = useBookingStore((s) => s.billing.locks)
   const masters = useBookingStore((s) => s.masters)
   const prepaymentStatus = useBookingPrepayment(bookingId).status
-  const warnings = useBookingWarnings(bookingId)
+  // The balance warning is the office's (catch-up Phase 40): the anaesthetist sees its colour code instead.
+  const warnings = warningsFor(useBookingWarnings(bookingId), actor.role)
+  const balanceAlert = useBalanceAlert(bookingId, actor.role === 'anaesthetist' ? actor.anaesthetistId : undefined)
   // The history reads the saved audit, never a draft's own entries (catch-up Phase 35).
   const audit = useAppStore((s) => s.audit)
   const todayISO = useToday()
@@ -397,7 +402,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
     bookingMoveRefusal({ lists: listsRecord, bookings: { [bookingId]: booking } }, bookingId, actor.anaesthetistId, todayISO) === null
   const canCapture = canEdit && !booking.completed
   const isOffice = actor.role === 'office'
-  const badge = nhiBadge(patient?.nhi)
+  // The row's label already says NHI: the value is the bare number ("ZAP3016", not "NHI ZAP3016").
+  const nhiValue = nhiBadge(patient?.nhi).text.replace(/^NHI /, '')
 
   const showBar = !cancelled && (booking.completed || canCapture)
   const bookingLevelFailures = showValidation ? failures.filter((f) => f.procedureId === undefined) : []
@@ -545,6 +551,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
 
   const hasBanners =
     warnings.length > 0 ||
+    balanceAlert.strength !== 'none' ||
     movedToMe !== undefined ||
     cancelled ||
     prepaymentStatus !== 'none' ||
@@ -561,6 +568,8 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
         canClear={isOffice}
         rowShot={(w) => BOOKING_WARNING_SHOTS[w.ruleId]}
       />
+      {/* The anaesthetist's balance colour code (catch-up Phase 40): no amount, no name, no Clear. */}
+      {actor.role === 'anaesthetist' && <BalanceAlertPill alert={balanceAlert} placement="detail" />}
       {movedToMe !== undefined && (
         <Notice tone="neutral" shot="booking-moved-to-you">
           {movedToYouByLine(movedToMe.atISO, movedToMe.fromName)}
@@ -615,7 +624,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
       <Section label="Patient" action={canEdit ? <EditLink onClick={() => setSheet('patient')} /> : undefined}>
         <DefList gap={10}>
           <DefRow label="NHI">
-            <span className="mono" style={{ fontSize: 14 }}>{badge.text}</span>
+            <span className="mono" data-shot="booking-patient-nhi" style={{ fontSize: 14 }}>{nhiValue}</span>
           </DefRow>
           {/* `data-aa-selectable` re-enables text selection and the iOS
               magnifier on clinical reference data. The mobile hosts switch
@@ -625,12 +634,18 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
               already covered by `.mono`. */}
           {patient !== undefined && (
             <DefRow label="Date of birth">
-              <span data-aa-selectable>{formatDob(patient.dobISO)} · {ageYears(patient.dobISO, todayISO)} years</span>
+              <span data-aa-selectable>{patient.dobISO === '' ? formatDob('') : `${formatDob(patient.dobISO)} · ${ageYears(patient.dobISO, todayISO)} years`}</span>
             </DefRow>
           )}
           <DefRow label="Contact">
             <span data-aa-selectable>{patient?.phone ?? 'Not recorded'}</span>
           </DefRow>
+          {/* Ethnicity only where supplied (catch-up Phase 40, US-11.1.1): never required. */}
+          {patient?.ethnicityCode !== undefined && (
+            <DefRow label="Ethnicity">
+              <span data-aa-selectable data-shot="booking-patient-ethnicity">{ethnicityText(patient.ethnicityCode)}</span>
+            </DefRow>
+          )}
           {/* The slot the patient was booked into: reference data, so it sits
               with the patient rows at their weight. Given a card of its own it
               read as a second timer beside the Times card, which is the one that
@@ -720,6 +735,11 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
         ) : (
           <div style={{ fontSize: 14, color: booking.notes !== undefined ? neutral.ink : neutral.mist }}>{booking.notes ?? 'No notes.'}</div>
         )}
+      </Section>
+
+      {/* The shared note (catch-up Phase 40; US-11.3.3): the office and the anaesthetist both read and add, with author and time. */}
+      <Section label="Shared notes">
+        <SharedNotes target={{ bookingId }} actor={actor} />
       </Section>
     </>
   )

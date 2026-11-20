@@ -168,7 +168,8 @@ describe('a credit note in Xero (catch-up Phase 39)', () => {
     const run = runEventInvoicing(api, OFFICE, { eventIds: [sub.value.creditEventId] })
     expect(run.ok && run.value.creditNoteIds).toHaveLength(1)
     const credits = Object.values(api.getState().xero.creditNotes)
-    expect(credits.map((c) => c.type).sort()).toEqual(['ACCPAYCREDIT', 'ACCRECCREDIT'])
+    // This credit's pair, beside the seed's own (Heather Sinclair's, catch-up Phase 40), which the scan below checks too.
+    expect(credits.map((c) => c.type).sort()).toEqual(['ACCPAYCREDIT', 'ACCPAYCREDIT', 'ACCRECCREDIT', 'ACCRECCREDIT'])
     const serialised = JSON.stringify(credits)
     const patient = api.getState().masters.patients[api.getState().schedule.bookings['HBK03']!.patientId]!
     for (const value of ['Mei Chen', 'mei.chen@example.com', patient.name, patient.nhi ?? 'none', patient.email ?? 'none']) {

@@ -86,7 +86,7 @@ const PINNED: readonly Patient[] = [
   { hiddenInternalId: PAT.tuilagi, nhi: 'JKL1188', name: 'Losa Tuilagi', dobISO: '1992-01-27', phone: '021 555 3676', ethnicityCode: '31111' },
   { hiddenInternalId: PAT.nair, nhi: 'MYY54SL', name: 'Priya Nair', dobISO: '1969-11-08', phone: '03 555 3781', ethnicityCode: '43111' },
   { hiddenInternalId: PAT.park, nhi: 'RUE29KR', name: 'Grace Park', dobISO: '2014-06-30', ethnicityCode: '42111' },
-  // Provisional record: booked from a PDF referral, NHI to follow.
+  // Booked from a PDF referral (catch-up Phase 40: the NHI is mandatory, so the record has one; the `provisional` key is historical).
   { hiddenInternalId: PAT.provisional, nhi: 'ZAP3016', name: 'Noah Prescott', dobISO: '1983-05-17', phone: '021 555 3899', ethnicityCode: '11111' },
   // Scenario patients.
   { hiddenInternalId: PAT.prentice, nhi: 'ZAC3326', name: 'Alan Prentice', dobISO: '1966-07-04', phone: '03 555 3902', ethnicityCode: '11111' },

@@ -31,7 +31,7 @@ import { editRefusal, getBooking } from './lifecycle'
 import { payerFromInput, payerInputRefusal, type PayerInput } from './payerActions'
 import { isBlankText, procedureTextOf, refreshedInvoiceDescriptionFor } from '../domain/billing/procedureStack'
 import { payerForNewProcedure } from '../domain/billing/procedurePayer'
-import { nhiRefusal, upsertPatient, type PatientIntakeDetails } from './intake'
+import { nhiRefusal, upsertPatient, type IntakeResult, type PatientIntakeDetails } from './intake'
 import { stampBalanceCheck } from './balanceCheck'
 import { proceduresForBooking } from './selectors'
 import { rvgGroupPickRefusal } from '../domain/billing/rvgGroups'
@@ -106,7 +106,7 @@ function createBookingUnscoped(
   actor: Actor,
   listId: string,
   input: CreateBookingInput,
-): Outcome<{ bookingId: string; patientId: string }> {
+): Outcome<{ bookingId: string; patientId: string; patientOutcome: IntakeResult['outcome']; pendingDifferences?: IntakeResult['pendingDifferences'] }> {
   const state = api.getState()
   const list = state.schedule.lists[listId]
   if (list === undefined) return refuse('notFound', 'List not found.')
@@ -239,7 +239,12 @@ function createBookingUnscoped(
 
   // With approval off, a prepaid Booking created ready is sent at once (catch-up Phase 27).
   autoSendPrepayments(api, bookingId)
-  return ok({ bookingId, patientId })
+  return ok({
+    bookingId,
+    patientId,
+    patientOutcome: intake.value.outcome,
+    ...(intake.value.pendingDifferences !== undefined ? { pendingDifferences: intake.value.pendingDifferences } : {}),
+  })
 }
 
 // ---------------------------------------------------------------------------

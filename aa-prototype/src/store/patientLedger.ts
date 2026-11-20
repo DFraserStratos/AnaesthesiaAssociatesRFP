@@ -11,15 +11,17 @@ import type { PatientBalanceRow } from '../domain/patients'
 import type { AppState } from './appStore'
 import { patientPosition } from '../domain/billing/ledger'
 import { pairsByPatient } from './indexes'
+import { counterpartyName } from './selectors'
 
 export type PatientLedgerState = Pick<AppState, 'billing' | 'schedule' | 'masters'>
 
+/** The billed party's name through the one counterparty resolver (hospital, insurer, organisation, party, payer); never an id. */
 function billedToName(state: PatientLedgerState, invoiceId: string, billedTo: PatientBalanceRow['billedTo']): string | undefined {
-  const named = state.billing.invoices[invoiceId]?.billedTo?.name
+  const invoice = state.billing.invoices[invoiceId]
+  const named = invoice?.billedTo?.name
   if (named !== undefined) return named
-  if (billedTo.kind === 'patient') return state.masters.patients[billedTo.id]?.name
-  if (billedTo.kind === 'hospital') return state.masters.hospitals[billedTo.id]?.name
-  return state.masters.parties[billedTo.id]?.name
+  const name = counterpartyName(state, billedTo, invoice?.bookingId)
+  return name === billedTo.id ? undefined : name
 }
 
 /** Every invoice row of the patient, across every anaesthetist and every payer, oldest first. */

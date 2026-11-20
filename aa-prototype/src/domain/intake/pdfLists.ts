@@ -234,7 +234,7 @@ export function pdfRowIssues(row: Pick<PdfListRow, 'asRead' | 'corrections'>): P
   const nhi = effectivePdfRow(row).nhi?.trim() ?? ''
   if (nhi === '') return [{ code: 'noNhi', message: NO_NHI_WAITS, blocksSend: false }]
   const v = validateNhi(nhi)
-  if (!v.valid) return [{ code: 'nhiInvalid', message: `NHI ${nhi} is not valid: ${v.reason ?? 'check it'}. Correct it before sending.`, blocksSend: true }]
+  if (!v.valid) return [{ code: 'nhiInvalid', message: `NHI ${nhi} is not valid: ${(v.reason ?? 'check it').replace(/\.$/, '')}. Correct it before sending.`, blocksSend: true }]
   return []
 }
 

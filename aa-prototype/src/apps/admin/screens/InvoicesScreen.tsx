@@ -10,7 +10,7 @@ import { Pager, pageOf } from '../components/Pager'
 import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 import type { Actor } from '../../../store'
-import { billedLists, invoiceAddresseeName, invoiceCountsByList, invoiceStanding, isBackdropInvoice, originalInvoiceFor, rebillOriginFor, useAppStore, openBillingExceptions } from '../../../store'
+import { billedLists, invoiceAddresseeName, invoiceCountsByList, invoiceStanding, isBackdropCreditNote, isBackdropInvoice, originalInvoiceFor, rebillOriginFor, useAppStore, openBillingExceptions } from '../../../store'
 import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, PRE_POST_OP_COPY } from '../../../shared/procedureEventCopy'
 import { dateTimeMicroCap, dayMicroCap, formatCount, formatCurrency, hhmm, plural } from '../../../shared/format'
 import { listShortLabel, listSourceLabels } from '../util'
@@ -59,7 +59,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
   // A credit note of an invoice this table leaves out (the seeded history) still lists, at the top.
   const shownIds = useMemo(() => new Set(Object.values(billing.invoices).filter((i) => !isBackdropInvoice(i)).map((i) => i.id)), [billing.invoices])
   const looseCreditNotes = useMemo(
-    () => Object.values(billing.creditNotes).filter((cn) => !shownIds.has(cn.originalInvoiceId)).sort((a, b) => b.id.localeCompare(a.id)),
+    () => Object.values(billing.creditNotes).filter((cn) => !shownIds.has(cn.originalInvoiceId) && !isBackdropCreditNote(cn)).sort((a, b) => b.id.localeCompare(a.id)),
     [billing.creditNotes, shownIds],
   )
   const creditRow = (cn: CreditNote) => {

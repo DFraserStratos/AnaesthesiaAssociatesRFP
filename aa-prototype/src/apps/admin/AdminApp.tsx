@@ -9,6 +9,7 @@ import {
   ledgerAttentionCount,
   isOpenSlotView,
   matchingAttentionCount,
+  patientAttentionCount,
   openConflictCount,
   openWarnings,
   bookingCountsByList,
@@ -49,6 +50,7 @@ function sectionForPath(pathname: string): NavSection {
   if (head === 'draft-lists') return 'draftLists'
   if (head === 'notifications') return 'notifications'
   if (head === 'intake') return 'intake'
+  if (head === 'patients') return 'patients'
   // A credit note's document sits under Invoices (catch-up Phase 39).
   if (head === 'credit-notes') return 'invoices'
   switch (head) {
@@ -198,6 +200,13 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   // Open rows on Intake's matching screen (catch-up Phases 33 and 34): the amber Intake badge.
   const intake = useAppStore((s) => s.intake)
   const intakeBadge = useMemo(() => matchingAttentionCount({ intake }), [intake])
+  // Patients (catch-up Phase 40): rows waiting for an NHI, strong balance warnings, reminders due and details to review.
+  const patientCare = useAppStore((s) => s.patientCare)
+  const auditTrail = useAppStore((s) => s.audit)
+  const patientBadge = useMemo(
+    () => patientAttentionCount({ billing, schedule, masters, appSettings, clock, patientCare, intake, audit: auditTrail }),
+    [billing, schedule, masters, appSettings, clock, patientCare, intake, auditTrail],
+  )
 
   // The header line counts Lists as sessions and open sessions as free, read
   // from the same views the grid paints (no second derivation), and the day's
@@ -307,6 +316,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     notifications: '/admin/notifications',
     review: '/admin/review',
     invoices: '/admin/invoices',
+    patients: '/admin/patients',
     billing: '/admin/billing',
     ledger: '/admin/ledger',
     masters: '/admin/masters',
@@ -324,6 +334,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         draftListBadge={draftListBadge}
         notificationBadge={notificationBadge}
         intakeBadge={intakeBadge}
+        patientBadge={patientBadge}
         onNavigate={(next) => navigate(SECTION_PATH[next])}
       />
 

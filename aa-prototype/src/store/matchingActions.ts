@@ -684,6 +684,11 @@ function record(
     // A row matched to an existing Booking stamps its patient balance check in this commit (catch-up Phase 40; US-11.3.2).
     const matched = decision.kind === 'match' && decision.changeType !== 'cancellation' ? s.schedule.bookings[decision.bookingId] : undefined
     const stamped = matched !== undefined ? stampBalanceCheck(matched, 'matched', clockISO(s.clock)) : undefined
+    // Already stamped (a sample's stamp, say): the stamp stays, and the audit records that a real match checked it,
+    // so Clear sample warnings never removes it (warningSamples' `isStaged` stops here).
+    if (matched?.balanceCheck !== undefined) {
+      metas.push({ entityType: 'booking', entityId: matched.id, action: 'booking.balanceCheckStamped', after: { trigger: 'matched' } })
+    }
     return {
       intake: { ...s.intake, rows: { ...s.intake.rows, [row.id]: next }, ...(settled !== undefined ? { stubs: settled.stubs } : {}) },
       ...(stamped !== undefined && stamped !== matched ? { schedule: { ...s.schedule, bookings: { ...s.schedule.bookings, [stamped.id]: stamped } } } : {}),

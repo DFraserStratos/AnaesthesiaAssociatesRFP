@@ -36,9 +36,13 @@ import { payerAuditText, sameData, setProcedurePayer } from './payerActions'
 import { payerOfferFor } from '../domain/billing/procedurePayer'
 import { setBookingInsurance } from './insuranceActions'
 import { approvalNumberMissing, hasApprovalNumber } from '../domain/billing/insurance'
+import { checksPatientBalance, patientBalanceSummary } from '../domain/patients'
+import { patientBalanceRows } from './patientLedger'
+import { stampBalanceCheck } from './balanceCheck'
+import { clockISO } from './mutate'
 
-/** What the staging checks read: the schedule and masters, and the audit trail that says who last changed it. */
-type SampleState = Pick<AppState, 'schedule' | 'audit' | 'masters'>
+/** What the staging checks read: the schedule and masters, the audit trail that says who last changed it, and (catch-up Phase 40) the ledger and clock the balance sample reads. */
+type SampleState = Pick<AppState, 'schedule' | 'audit' | 'masters' | 'billing' | 'clock'>
 
 export interface WarningSample {
   ruleId: WarningRuleId
@@ -314,7 +318,7 @@ function patientIsChild(state: SampleState, bookingId: string): boolean {
 }
 
 /** True when any of the Booking's Procedures raises the child payer warning (`childPayerOn`, per Procedure). */
-function childRaisedOn(state: SampleState, bookingId: string): boolean {
+function childRaisedOn(state: Pick<AppState, 'schedule' | 'masters'>, bookingId: string): boolean {
   const booking = state.schedule.bookings[bookingId]
   const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
   if (booking === undefined || list === undefined) return false
@@ -554,8 +558,88 @@ const splitSample: WarningSample = {
   },
 }
 
+// ---------------------------------------------------------------------------
+// A paying patient with a balance (catch-up Phase 40; US-11.3.2)
+// ---------------------------------------------------------------------------
+
+/** The audit action that stamps the sample's balance check (the only Booking field it writes). */
+export const BALANCE_SAMPLE_ACTION = 'booking.balanceSampleStamped'
+
+/** True when the patient owes on an invoice billed to them and a Procedure has the patient as payer: the sample can show. */
+function balanceSampleFits(state: SampleState, bookingId: string): boolean {
+  const booking = state.schedule.bookings[bookingId]
+  if (booking === undefined) return false
+  if (!checksPatientBalance(proceduresForBooking(state, bookingId).map((p) => p.payer))) return false
+  const summary = patientBalanceSummary(patientBalanceRows(state, booking.patientId), {
+    patientId: booking.patientId,
+    todayISO: state.clock.todayISO,
+    excludeBookingId: bookingId,
+  })
+  return summary.owing.length > 0
+}
+
+/**
+ * The patient balance sample: stamps the balance check on the Booking, as a
+ * create would, so 15a's routine raises the live warning (the `multiWarning`
+ * Booking's patient, Mere Walsh, owes a 120 day invoice billed to her:
+ * strong). Skipped (no target, so it counts as done) where the patient owes
+ * nothing or no Procedure has the patient as payer. Clear removes the stamp
+ * and its clearance.
+ */
+const patientBalanceSample: WarningSample = {
+  ruleId: 'patientBalance',
+  fields: [],
+  bookingFields: ['balanceCheck'],
+  targetFor(state, bookingId) {
+    if (this.isStaged(state, bookingId)) return bookingId
+    // A real create or match already stamped it: skipped, so Clear never removes a real check.
+    if (state.schedule.bookings[bookingId]?.balanceCheck !== undefined) return undefined
+    return balanceSampleFits(state, bookingId) ? bookingId : undefined
+  },
+  isStaged(state, bookingId) {
+    const booking = state.schedule.bookings[bookingId]
+    if (booking?.balanceCheck === undefined) return false
+    if (buildSeed().schedule.bookings[bookingId]?.balanceCheck !== undefined) return false
+    // The stamp is the sample's while its last stamp is later than its last unstage.
+    for (let i = state.audit.length - 1; i >= 0; i--) {
+      const a = state.audit[i]!
+      if (a.entityId !== bookingId) continue
+      if (a.action === 'booking.warningSampleUnstaged' || a.action === 'booking.balanceCheckStamped') return false
+      if (a.action === BALANCE_SAMPLE_ACTION) return a.who === DEMO_TRIGGER_ACTOR.who
+    }
+    return false
+  },
+  seedRaises(bookingId) {
+    return buildSeed().schedule.bookings[bookingId]?.balanceCheck !== undefined
+  },
+  stage(api, actor, bookingId) {
+    const booking = api.getState().schedule.bookings[bookingId]
+    if (booking === undefined) return refuse('notFound', 'Booking not found.')
+    if (booking.balanceCheck !== undefined) return ok(undefined)
+    const balanceCheck = stampBalanceCheck(booking, 'created', clockISO(api.getState().clock)).balanceCheck!
+    mutate(
+      api,
+      actor,
+      { entityType: 'booking', entityId: bookingId, action: 'booking.balanceSampleStamped', after: { balanceCheck } },
+      (s) => ({ schedule: { ...s.schedule, bookings: { ...s.schedule.bookings, [bookingId]: { ...s.schedule.bookings[bookingId]!, balanceCheck } } } }),
+    )
+    return ok(undefined)
+  },
+  // Called only for a staged sample (`clearSamplesOn` filters first): drop the stamp.
+  restore(state, bookingId) {
+    const booking = state.schedule.bookings[bookingId]
+    if (booking?.balanceCheck === undefined) return undefined
+    const restored = { ...booking }
+    delete restored.balanceCheck
+    return { bookings: { ...state.schedule.bookings, [bookingId]: restored } }
+  },
+  restoredEntityIds() {
+    return []
+  },
+}
+
 /** One sample per registered rule, in `WARNING_RULES` order. */
-export const WARNING_SAMPLES: readonly WarningSample[] = [prepaymentSample, baseUnitsSample, childPayerSample, approvalSample, splitSample]
+export const WARNING_SAMPLES: readonly WarningSample[] = [prepaymentSample, baseUnitsSample, childPayerSample, approvalSample, splitSample, patientBalanceSample]
 
 /** Where a sample stages when raised from this Booking (itself, unless the sample redirects). */
 export function sampleTarget(sample: WarningSample, state: SampleState, bookingId: string): string | undefined {
@@ -601,6 +685,21 @@ const SAMPLE_NAMES: Record<WarningRuleId, string> = {
   approvalNumberMissing: 'approval number',
   splitDoesNotFit: 'split',
   patientBalance: 'patient balance',
+}
+
+/** Every staged sample as `ruleId:bookingId` (catch-up Phase 40: the raise's message names only what it staged). */
+export function stagedSampleKeys(state: SampleState): Set<string> {
+  const out = new Set<string>()
+  for (const id of Object.keys(state.schedule.bookings)) {
+    for (const s of WARNING_SAMPLES) if (s.isStaged(state, id)) out.add(`${s.ruleId}:${id}`)
+  }
+  return out
+}
+
+/** The samples staged between two `stagedSampleKeys` snapshots, by name, in `WARNING_SAMPLES` order and once each. */
+export function newlyStagedSampleNames(before: ReadonlySet<string>, after: ReadonlySet<string>): string[] {
+  const rules = new Set([...after].filter((k) => !before.has(k)).map((k) => k.split(':')[0]))
+  return WARNING_SAMPLES.filter((s) => rules.has(s.ruleId)).map((s) => SAMPLE_NAMES[s.ruleId])
 }
 
 /** The registered rule count, for the triggers' honest message. */
@@ -812,7 +911,7 @@ export function clearSamplesOn(api: AppStoreApi, bookingId: string, actor: Actor
     (s) => {
       let schedule = s.schedule
       for (const sample of staged) {
-        const patch = sample.restore({ schedule, audit: s.audit, masters: s.masters }, bookingId)
+        const patch = sample.restore({ schedule, audit: s.audit, masters: s.masters, billing: s.billing, clock: s.clock }, bookingId)
         if (patch !== undefined) schedule = { ...schedule, ...patch }
       }
       if (restoreStamp) {

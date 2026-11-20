@@ -3,6 +3,7 @@ import { neutral } from '../../../theme/tokens'
 import type { Procedure } from '../../../domain/types'
 import { useAppStore, type Actor } from '../../../store'
 import { StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
+import { warningsFor } from '../../../shared/warnings'
 import { BookingDetailBody } from '../../../shared/booking'
 import { ageYears, formatDob, nhiBadge, locationName } from '../../../shared/format'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
@@ -42,7 +43,7 @@ export function BookingDetailView({ bookingId, actor, todayISO, onBack }: Bookin
     return Object.values(proceduresRecord).find((p) => p.bookingId === bookingId && p.isPrimary)
   }, [booking, bookingId, proceduresRecord])
 
-  const warnings = useBookingWarnings(bookingId)
+  const warnings = warningsFor(useBookingWarnings(bookingId), 'anaesthetist')
 
   if (booking === undefined || list === undefined) return null
   const patient = masters.patients[booking.patientId]

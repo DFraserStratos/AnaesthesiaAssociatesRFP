@@ -40,3 +40,15 @@ export function useListWarnings(listId: string): ReadonlyMap<string, Warning[]> 
 export function strongestOpen(warnings: readonly Warning[]): WarningStrength | undefined {
   return warnings.filter(isOpen).reduce<WarningStrength | undefined>((acc, w) => (acc === undefined ? w.strength : strongerOf(acc, w.strength)), undefined)
 }
+
+/**
+ * Rules whose warning is the office's alone (catch-up Phase 40): the balance
+ * warning names the patient and the amount, so the anaesthetist never sees it
+ * in the panel or the triangle; they see `BalanceAlertChip` instead.
+ */
+export const OFFICE_ONLY_WARNING_RULES: ReadonlySet<string> = new Set(['patientBalance'])
+
+/** The warnings an actor sees: all of them for the office, without the office-only rules for the anaesthetist. */
+export function warningsFor<W extends Pick<Warning, 'ruleId'>>(warnings: readonly W[], role: 'office' | 'anaesthetist' | string): W[] {
+  return role === 'anaesthetist' ? warnings.filter((w) => !OFFICE_ONLY_WARNING_RULES.has(w.ruleId)) : [...warnings]
+}

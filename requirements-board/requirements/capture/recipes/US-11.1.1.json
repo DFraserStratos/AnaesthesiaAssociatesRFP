@@ -1,19 +1,22 @@
 {
   "id": "US-11.1.1",
-  "status": "partial",
-  "absentReason": "Patient details show on each booking; there is no standalone patient record screen, and ethnicity is held but not shown on the patient panel.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "patient-record",
       "app": "admin",
-      "caption": "Patient details keyed on the NHI",
-      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "caption": "Patient record keyed on the NHI, with the details and ethnicity",
+      "start": "/admin/patients/CQY9304",
       "states": [
         {
-          "steps": [],
+          "steps": [
+            {
+              "wait": "[data-shot=admin-patient-record]"
+            }
+          ],
           "highlight": [
-            
-            "[data-shot=booking-patient]"
+            "[data-shot=patient-details]"
           ]
         }
       ]
@@ -21,13 +24,16 @@
     {
       "name": "edit-patient",
       "app": "admin",
-      "caption": "Edit patient details",
-      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "caption": "Edit patient details, with the ethnicity field",
+      "start": "/admin/patients/CQY9304",
       "states": [
         {
           "steps": [
             {
-              "click": "[data-shot=booking-patient] >> text=\"Edit\""
+              "click": "[data-shot=patient-details] >> text=\"Edit\""
+            },
+            {
+              "wait": "[role=dialog]"
             },
             {
               "wait": 400
@@ -35,6 +41,109 @@
           ],
           "highlight": [
             "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "details-differ",
+      "app": "admin",
+      "caption": "Some details differ: a returning patient with a new phone number waits for the office to keep the record or use the new one",
+      "start": "/web/lists/L-34821-2026-07-21-PM",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "text=\"Add a booking\" >> nth=0"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[role=dialog] [placeholder=\"ABC1234\"]",
+              "value": "CQY9304"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Look up\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[role=dialog] input[type=tel]",
+              "value": "021 555 9999"
+            },
+            {
+              "fill": "[role=dialog] [data-shot=procedure-description] input",
+              "value": "Laparoscopic cholecystectomy"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Save booking\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/patients/CQY9304"
+            },
+            {
+              "wait": "[data-shot=patient-details-differ]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=patient-details-differ]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "not-supplied",
+      "app": "admin",
+      "caption": "A record with no phone or ethnicity supplied: nothing on it is marked required",
+      "start": "/admin/patients/waiting",
+      "states": [
+        {
+          "steps": [
+            {
+              "trigger": "receive-no-nhi-list"
+            },
+            {
+              "wait": "[data-shot=waiting-nhi-row]"
+            },
+            {
+              "click": "[data-shot=waiting-nhi-row]:has-text(\"Aroha Ngata\") >> [data-shot=waiting-nhi-add]"
+            },
+            {
+              "wait": "[data-shot=add-nhi-sheet]"
+            },
+            {
+              "fill": "[data-shot=add-nhi-sheet] input >> nth=0",
+              "value": "ZQA3019"
+            },
+            {
+              "wait": "[data-shot=add-nhi-preview]"
+            },
+            {
+              "click": "[data-shot=add-nhi-save]"
+            },
+            {
+              "wait": "[data-shot=add-nhi-done]"
+            },
+            {
+              "goto": "/admin/patients/ZQA3019"
+            },
+            {
+              "wait": "[data-shot=patient-details]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=patient-details]"
           ]
         }
       ]

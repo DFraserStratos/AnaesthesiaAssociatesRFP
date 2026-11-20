@@ -1,27 +1,262 @@
 {
   "id": "US-11.3.2",
-  "status": "partial",
-  "absentReason": "The unpaid prior balance is flagged in the billing monitor once the list is authorised, not as an alert when the booking is created or matched.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
-      "name": "prior-balance",
+      "name": "balance-warning",
       "app": "admin",
-      "caption": "Prior balance flag on a returning patient with unpaid invoices, on the Booking's row in the authorised List",
-      "start": "/admin/billing?list=L-36208-2026-07-17-AM",
-      "setup": [
-        {
-          "scenario": "S5"
-        }
-      ],
+      "caption": "Balance warning when booking a patient who owes AA, strong over the threshold, also shown on the anaesthetist's List",
+      "start": "/admin/intake/matching",
       "states": [
         {
+          "state": "preview",
+          "caption": "The matching row previews the warning before Create Booking: Sarah Mitchell has a 98-day invoice billed to her",
           "steps": [
             {
-              "wait": 2200
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_STG]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "wait": "[data-shot=matching-balance-preview]"
             }
           ],
           "highlight": [
-            "[data-shot=billing-prior-balance]"
+            "[data-shot=matching-balance-preview]"
+          ]
+        },
+        {
+          "state": "result",
+          "caption": "After Create Booking, the decision reads the strong warning",
+          "steps": [
+            {
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_STG]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=matching-apply]"
+            },
+            {
+              "wait": "[data-shot=matching-banner]"
+            },
+            {
+              "wait": "[data-shot=matching-balance-result]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=matching-balance-result]"
+          ]
+        },
+        {
+          "state": "to-do",
+          "caption": "The strong red warning on the Admin to-do list",
+          "steps": [
+            {
+              "click": "[data-shot=matching-import-open]"
+            },
+            {
+              "wait": "[data-shot=matching-import]"
+            },
+            {
+              "click": "[data-sample-id=SAMPLE_STG]"
+            },
+            {
+              "click": "[data-shot=matching-import-confirm]"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=matching-apply]"
+            },
+            {
+              "wait": "[data-shot=matching-banner]"
+            },
+            {
+              "goto": "/admin/day/2026-07-21"
+            },
+            {
+              "wait": "[data-shot=admin-warnings-todo]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=admin-warnings-todo]"
+          ]
+        },
+        {
+          "state": "credit",
+          "caption": "Phone advice for Heather Sinclair: a mild yellow preview, because she is in credit",
+          "steps": [
+            {
+              "goto": "/admin/day/2026-07-21"
+            },
+            {
+              "click": "button[data-slot-id=\"S-43015-2026-07-21-PM\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Book (phone advice)\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "select": "[role=dialog]:not([data-testid=admin-list-drawer]) [data-shot=assign-hospital]",
+              "value": "H-FORTE"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "select": "[role=dialog]:not([data-testid=admin-list-drawer]) select[data-shot=surgeon-picker]",
+              "value": "S-OKAFOR"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[role=dialog]:not([data-testid=admin-list-drawer]) [placeholder=\"ABC1234\"]",
+              "value": "ZAN2219"
+            },
+            {
+              "wait": "[data-shot=manual-balance-preview]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=manual-balance-preview]"
+          ]
+        },
+        {
+          "state": "threshold",
+          "caption": "Master data: the days after which an unpaid invoice raises the strong warning",
+          "steps": [
+            {
+              "goto": "/admin/masters?view=patientBalance"
+            },
+            {
+              "wait": "[data-shot=master-patient-balance-threshold]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=master-patient-balance-threshold]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "balance-warning",
+      "app": "web",
+      "caption": "The strong alert on the anaesthetist's List, with no amount",
+      "setup": [
+        {
+          "goto": "/admin/intake/matching"
+        },
+        {
+          "click": "[data-shot=matching-import-open]"
+        },
+        {
+          "wait": "[data-shot=matching-import]"
+        },
+        {
+          "click": "[data-sample-id=SAMPLE_STG]"
+        },
+        {
+          "click": "[data-shot=matching-import-confirm]"
+        },
+        {
+          "wait": "[data-shot=matching-panel]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "click": "[data-shot=matching-apply]"
+        },
+        {
+          "wait": "[data-shot=matching-banner]"
+        }
+      ],
+      "start": "/web/lists/L-34821-2026-07-28-AM",
+      "states": [
+        {
+          "state": "anaesthetist",
+          "caption": "Dr Souter's List after the Booking is created: a strong red alert on Sarah Mitchell's Booking",
+          "steps": [
+            {
+              "wait": "[data-shot=balance-alert-chip]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=balance-alert-chip]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "balance-warning",
+      "app": "mobile",
+      "caption": "The strong alert on the anaesthetist's List, with no amount",
+      "start": "/mobile/lists/L-34821-2026-07-28-AM",
+      "states": [
+        {
+          "state": "anaesthetist",
+          "caption": "Dr Souter's List after the Booking is created: a strong red alert on Sarah Mitchell's Booking",
+          "steps": [
+            {
+              "wait": 400
+            },
+            {
+              "trigger": "matching-office-matches-row",
+              "choice": "St George's file, Tue 28 Jul AM (S1)"
+            },
+            {
+              "wait": "[data-shot=balance-alert-chip]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=balance-alert-chip]"
           ]
         }
       ]

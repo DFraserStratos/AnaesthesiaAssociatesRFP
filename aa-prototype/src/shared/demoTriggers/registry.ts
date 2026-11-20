@@ -204,6 +204,10 @@ import { HOSPITAL_FEED_ACTOR, SEED_LOAD_ACTOR, SOUTER_ACTOR } from '../../store/
 import { leakScanSummary, scanForNhiLeaks } from '../../store/privacyScan'
 import { rawRowRefusal, rawRowTarget, viewRawImportRow } from '../../store/rawRowActions'
 import { reportDiagnostic } from '../../store/diagnostics'
+import { addNhiAsSimulatedOffice, addNhiStandInRefusal } from '../../store/officeStandIn'
+import { importHospitalDownload } from '../../store/matchingActions'
+import { newlyStagedSampleNames, stagedSampleKeys } from '../../store/warningSamples'
+import { NO_NHI_LIST, NO_NHI_NEW_PATIENT_NHI, NO_NHI_RETURNING_NHI } from '../../domain/intake/hospitalDownloads'
 
 // ---------------------------------------------------------------------------
 // Route patterns (checked against `src/router.tsx` and `pwa/main.tsx`)
@@ -602,10 +606,15 @@ function clearSampleDisabled(state: AppState, ctx: DemoTriggerCtx): string | nul
   return bookingId === undefined ? allSampleClearRefusal(state) : sampleClearRefusal(state, bookingId)
 }
 
-/** The Booking's open warnings, as the PWA stand-in's choices. */
+/**
+ * The Booking's open warnings, as the PWA stand-in's choices. Never the
+ * balance warning (catch-up Phase 40): the anaesthetist sees only its colour
+ * code, which ignores the office's Clear, so clearing it from the phone would
+ * show nothing.
+ */
 function openWarningChoices(state: AppState, ctx: DemoTriggerCtx) {
   return warningsForBooking(state, ctx.params['bookingId'] ?? '')
-    .filter((w) => w.clearance === undefined)
+    .filter((w) => w.clearance === undefined && w.ruleId !== 'patientBalance')
     .map((w) => ({ id: w.key, label: w.text }))
 }
 
@@ -1947,7 +1956,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'raise-sample-warnings',
     label: 'Raise sample warnings',
     description:
-      "Stages every warning rule's sample, as Demo actions, on Dr Rutherford's Tue 21 Jul Bookings (from the Day view) or on the Booking on screen: a prepayment awaiting approval (the List's own prepaid Contract, else Prepaid · Fixed price at $500), base units outside the range, a child as the payer on each Procedure billed to the patient (on the Booking on screen when its patient is under 18, otherwise on Grace Park's two Procedures, one to-do row), and an insurer named with no approval number (on the Booking on screen when it names an insurer, otherwise on the first seeded NIB Booking). Later rules add theirs: a paying patient with a balance.",
+      "Stages every warning rule's sample, as Demo actions, on Dr Rutherford's Tue 21 Jul Bookings (from the Day view) or on the Booking on screen: a prepayment awaiting approval (the List's own prepaid Contract, else Prepaid · Fixed price at $500), base units outside the range, a child as the payer on each Procedure billed to the patient (on the Booking on screen when its patient is under 18, otherwise on Grace Park's two Procedures, one to-do row), and an insurer named with no approval number (on the Booking on screen when it names an insurer, otherwise on the first seeded NIB Booking). And a balance check on a Booking whose patient owes AA on an invoice billed to them and pays a Procedure (the strong balance warning; skipped where the patient owes nothing).",
     screen: 'Admin · Day and Booking detail, Mobile · Booking',
     routes: SAMPLE_WARNING_ROUTES,
     surfaces: ['bar', 'pwa'],
@@ -1955,9 +1964,12 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     run: (api, ctx) => {
       const bookingId = ctx.params['bookingId']
       const notes = skippedSampleNotes(api.getState(), bookingId ?? SEED_WARNING_SAMPLE_BOOKINGS.targets[0])
+      const before = stagedSampleKeys(api.getState())
       const res = bookingId === undefined ? raiseDaySamples(api) : raiseSamplesOn(api, bookingId)
       if (!res.ok) return { ok: false, message: res.message }
-      const skipped = notes.length > 0 ? ` ${notes.join(' ')}` : ''
+      // Only the samples this raise staged are named (catch-up Phase 40: a skipped balance sample is not).
+      const names = newlyStagedSampleNames(before, stagedSampleKeys(api.getState()))
+      const skipped = `${names.length > 0 ? ` Staged: ${names.join(', ')}.` : ''}${notes.length > 0 ? ` ${notes.join(' ')}` : ''}`
       return {
         ok: true,
         message:
@@ -2165,6 +2177,52 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => null,
     indexEmptyReason: 'PWA only: the framed build plays the office in Admin, Intake (Add NHI).',
+  },
+  // ── Admin · Patients · Waiting for NHI and Mobile · List (catch-up Phase 40) ──
+  {
+    id: 'receive-no-nhi-list',
+    label: 'Receive list with a missing NHI',
+    description: `Imports a Forte Health sheet with two bookings sent without an NHI: ${NO_NHI_LIST.rows[0]!.patient.name} on Thu 23 Jul PM (urgent, a new patient) and ${NO_NHI_LIST.rows[1]!.patient.name} on Mon 27 Jul (a returning patient). Both wait here and on Matching; nothing is created until the office adds the NHI.`,
+    screen: 'Admin · Patients · Waiting for NHI',
+    routes: ['/admin/patients/waiting'],
+    surfaces: ['bar'],
+    disabledReason: (state) => (Object.values(state.intake.batches).some((b) => b.sampleId === NO_NHI_LIST.id) ? 'Already received' : null),
+    run: (api) => {
+      const res = importHospitalDownload(api, OFFICE_ACTOR, NO_NHI_LIST.id)
+      if (!res.ok) return { ok: false, message: res.message }
+      return {
+        ok: true,
+        message: `Forte Health sent two bookings with no NHI. They wait here and on Matching, and nothing is created yet. Add NHI ${NO_NHI_NEW_PATIENT_NHI} for ${NO_NHI_LIST.rows[0]!.patient.name} (a new patient) and ${NO_NHI_RETURNING_NHI} for ${NO_NHI_LIST.rows[1]!.patient.name} (an existing record).`,
+      }
+    },
+    indexPath: () => '/admin/patients/waiting',
+  },
+  {
+    id: 'pwa-office-adds-nhi',
+    label: 'Office adds the NHI',
+    description:
+      'Stands in for the office on the phone: the hospital sends a booking for this List with no NHI, so it waits with the office as a stub on the List; then the office adds the NHI and the Booking takes the stub\'s place. A booking already waiting on this List is used first. From a Booking, it acts on that Booking\'s List.',
+    screen: 'Mobile · List',
+    alsoScreens: ['Mobile · Booking'],
+    routes: ['/mobile/lists/:listId', MOBILE_BOOKING],
+    surfaces: ['pwa'],
+    badge: 'office-stand-in',
+    disabledReason: (state, ctx) => addNhiStandInRefusal(state, ctx.params['listId']),
+    run: (api, ctx) => {
+      const listId = ctx.params['listId']
+      if (listId === undefined) return { ok: false, message: 'Open a List first' }
+      const res = addNhiAsSimulatedOffice(api, listId)
+      if (!res.ok) return { ok: false, message: res.message }
+      const fromBooking = ctx.params['bookingId'] !== undefined ? ' (on this Booking\'s List)' : ''
+      return res.value.result.kind === 'resolved'
+        ? {
+            ok: true,
+            message: `The hospital sent a booking with no NHI, so it waited with the office as a stub on your List${fromBooking}. The office added the NHI: ${res.value.patient} is now on your List.`,
+          }
+        : { ok: true, message: `The office added ${res.value.patient}'s NHI. The row now waits for the office's decision on Matching.` }
+    },
+    indexPath: () => null,
+    indexEmptyReason: 'PWA only: the framed build adds the NHI on Admin, Patients, Waiting for NHI.',
   },
   // ── Future scope: HL7 and FHIR (catch-up Phase 34) ───────────────────
   {

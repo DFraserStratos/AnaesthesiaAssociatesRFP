@@ -665,7 +665,8 @@ function buildSeedInternal(): SeedBuild {
       bookings: bookingsRec,
       procedures: proceduresRec,
       // Catch-up Phase 38b: the one seeded event (EV0001, Dr Souter's additional invoice on HP03), appended, RNG-free.
-      procedureEvents: byId(SEED_PROCEDURE_EVENTS.map((e) => structuredClone(e)), (e) => e.id),
+      // Catch-up Phase 40: Heather Sinclair's issued credit event (HSEV05), after it, outside the `EV####` counter.
+      procedureEvents: { ...byId(SEED_PROCEDURE_EVENTS.map((e) => structuredClone(e)), (e) => e.id), ...(history.procedureEvents ?? {}) },
       warningClearances: {},
       // Catch-up Phase 32d: each anaesthetist's weekly Public series (AS0001 to AS0007).
       availabilitySeries: byId(rehomed.series, (x) => x.id),
@@ -971,7 +972,8 @@ export const SEED_PREPAID_BOOKING_ID: string = SEED_BUILD.scenario.prepaymentPai
 
 export interface SeedMarker {
   label: string
-  entityType: 'list' | 'booking' | 'procedure' | 'patient' | 'contract'
+  /** `route` (catch-up Phase 40): a screen rather than a record; its `entityId` is the app path the finder opens. */
+  entityType: 'list' | 'booking' | 'procedure' | 'patient' | 'contract' | 'route'
   entityId: string
   detail: string
 }
@@ -1371,6 +1373,13 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
     entityType: 'booking',
     entityId: SEED_BUILD.disabledContract.disabledContractBooking,
     detail: "Chen Tue 14 Jul AM, 11:45, on Christchurch Eye Surgery 2025 rate, disabled Fri 10 Jul: Review reads \"Contract disabled on Fri 10 Jul\"; the List still authorises.",
+  },
+  // Catch-up Phase 40: in place of the retired patient record that had no NHI, the screen of intake rows that wait for an NHI.
+  waitingForNhi: {
+    label: 'Intake rows waiting for an NHI',
+    entityType: 'route',
+    entityId: '/admin/patients/waiting',
+    detail: "Admin Patients, Waiting for an NHI: intake rows held back until an NHI is added (33a's IRS001 at reset; import the No NHI sample for Aroha Ngata and Losa Tuilagi). Add NHI matches or creates the patient and books the row.",
   },
 }
 

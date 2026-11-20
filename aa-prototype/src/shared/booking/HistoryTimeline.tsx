@@ -70,7 +70,8 @@ export function HistoryTimeline({
   const todayISO = useToday()
   const rvgGroups = useBookingStore((s) => s.masters.rvgGroups)
   const contracts = useBookingStore((s) => s.masters.contracts)
-  const names = useMemo(() => auditNamesFor({ rvgGroups, contracts }), [rvgGroups, contracts])
+  const patients = useBookingStore((s) => s.masters.patients)
+  const names = useMemo(() => auditNamesFor({ rvgGroups, contracts, patients }), [rvgGroups, contracts, patients])
   const rootRef = useRef<HTMLDivElement>(null)
   const [stacked, setStacked] = useState(false)
 

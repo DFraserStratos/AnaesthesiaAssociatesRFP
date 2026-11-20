@@ -304,7 +304,8 @@ describe('US-10.2.5: netting in the weekly run (Stage a payment week)', () => {
     const { api, out } = staged('withCredit')
     expect(out).toMatchObject({ released: 19, negative: 365.7 })
     expect(stagePaymentWeekRefusal(api.getState())).toBe(PAYMENT_WEEK_COPY.already)
-    const negative = Object.values(api.getState().billing.negativeInvoices)[0]!
+    // Set aside the seed's own credit, Heather Sinclair's (`HS` ids, catch-up Phase 40, D24).
+    const negative = Object.values(api.getState().billing.negativeInvoices).find((n) => !n.id.startsWith('HS'))!
     expect(negative).toMatchObject({ status: 'toNet', recoveryDue: 365.7, anaesthetistId: ANAE.sharma })
     expect(negative.accPayCreditNoteId).toBeDefined()
     // Netted while waiting: the draft nets it already.

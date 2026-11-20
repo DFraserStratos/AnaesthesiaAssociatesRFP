@@ -115,6 +115,8 @@ view respectively.
 | Notifications (the shared pool) | `/admin/notifications` |
 | Email templates | `/admin/masters?view=emailTemplates` |
 | Audit | `/admin/audit` (a change set's id filters it to that save) |
+| Patients | `/admin/patients` (waiting rows: `/admin/patients/waiting`; follow-up: `/admin/patients/follow-up`) |
+| Patient record | `/admin/patients/<nhi>` (Sarah Mitchell: `CQY9304`) |
 
 The demo surfaces are `/demo/control`, `/demo/xero`, `/demo/integrations` and `/demo/data`.
 `/demo/integrations` is **Demo: Future scope, HL7 and FHIR** in the app switcher: the simulator, with
@@ -174,6 +176,14 @@ not-yet-captured cases, so the hospital's booking arrives into a working List ra
   Mitchell at 08:30, between the first two cases, source **Hospital download**, with no RVG code and no
   Contract. Her NHI matched an existing record, so her patient record is reused, no duplicate. The List
   reads **0 of 4 complete** and stays `ACTIVE`.
+- **Expected (balance warning, Phase 40):** on Sarah Mitchell's row, and after Create Booking, a strong
+  patient balance warning (1 invoice billed to her, unpaid 98 days, $610.00) shows, with its entry on
+  the office's to-do list.
+- **Say (balance warning):** "Sarah owes AA for an earlier procedure, past the 90 day threshold, so the
+  office gets a strong warning to follow up before this one goes ahead, and Dr Souter sees the red alert
+  on the Booking in his List. It never stops the booking. The 90 days count from the invoice date; a
+  newer bill would be a yellow, mild warning, and a bill the hospital or an insurer pays does not count.
+  It is raised because she is the payer on a Procedure of this Booking."
 - **Optional aside:** on Matching open **R3 (Diane Foster)**, a Modification: the field differences
   with their tick boxes (time 11:00 to 12:15, the note "Bumped 15 min at surgeon request"), and the
   hospital's long text replacing "WLE MM" (the old text kept in the history, with a line saying it also
@@ -201,6 +211,30 @@ not-yet-captured cases, so the hospital's booking arrives into a working List ra
   (the green strip reads "Saved · ... · Kirsty W." with its change-set id) she leaves the Needs an
   invoice destination card. Her invoice description starts as the hospital's text
   (the Contract's invoice description replaces it where filled in).
+
+### Beat 1d (optional): the patient's whole bill
+
+- **Click:**
+  - From the strong warning on Sarah Mitchell's Booking (or **Admin → Patients**, `/admin/patients/CQY9304`),
+    open her patient record.
+  - Read the tiles (**Balance**, **Billed to the patient**, **Other payers**) and her invoices: two
+    anaesthetists still appear. Dr Sharma's: $540.00 paid in February and AA-2026-HS01, $610.00 billed to
+    her and unpaid. Dr Souter's: the hospital-billed invoices, which count in her Balance under Other
+    payers but not in the warning.
+  - **Log call** (note what the patient said), **Resend** the unpaid AA-2026-HS01, then **Clear** the warning.
+  - Optional: Losa Tuilagi (JKL1188) for the mild case (Dr Sharma, $380.00, 30 days, yellow); Heather Sinclair
+    (ZAN2219) for the credit case (Dr Sharma, $260.00 credited 2 June, "In credit $260.00", a mild warning);
+    a guardian as payer; the threshold field in **Master data** (`?view=patientBalance`, starts at 90 days);
+    a shared note on a List from each side (the office in Admin, Dr Souter in his List).
+- **Say:** "The whole bill is one screen: what the patient owes under each anaesthetist, what other payers
+  owe, and every call and resend the office has made. The anaesthetist only ever sees the colour."
+- **Expected:** Log call adds a follow-up log entry; Resend adds a line to the invoice's send history; Clear
+  removes the warning from the to-do list (it re-opens only if it turns strong).
+- **Discovery points:** whether the warning should also need this Booking's Contract to bill the patient;
+  whether the anaesthetist's colour code and money-free line is enough; whether staff can clear or annotate
+  it (parked); the starting threshold (Ben and Vanessa left the rules as they were on 5 November); whether
+  the balance and prepayment alerts should be one combined set (OQ-134: built as two rules shown together);
+  whether the threshold should be editable at all (US-11.3.2 says fixed until a settings page).
 
 ### Beat 1b (optional): a booking with no NHI
 
@@ -1685,6 +1719,25 @@ price in force on 17 Jul onto each Procedure and raises its five invoices from t
 (AA-2026-0002 to AA-2026-0006, Hemi Walker's first at $264.50). Use **Go to Admin app** and **Go to
 Xero sim**.
 
+### Optional beat: no NHI, no Booking (Phase 40)
+
+- **Click:**
+  - Try to add a Booking on Admin without an NHI: the form refuses a blank NHI.
+  - **Admin → Patients → Waiting for NHI** (`/admin/patients/waiting`) → **Demo actions → Receive list with a
+    missing NHI**. Two rows arrive: Aroha Ngata (a new patient, who types ZQA3019, Urgent, Thu 23 Jul) and
+    Losa Tuilagi (types JKL1188, Mon 27 Jul). Each shows the patient as received, the address to chase and
+    **Email for the NHI**.
+  - Open Dr Souter's Mon 27 Jul List to see the stub; on Waiting for NHI, **Add NHI** on Losa Tuilagi.
+  - Handset variant (PWA): **Demo → Office adds the NHI** (Tomasz Nowak first).
+- **Say:** "No NHI, no Booking: the row waits, the anaesthetist still sees it as a stub, and the office
+  chases the one address that sent the List."
+- **Expected:** the stub on the List is replaced by a Booking; Losa Tuilagi's row is matched to her single
+  existing record (details that differ wait for the office to keep or use incoming).
+- **Discovery points:** D11 and D66 are built (the NHI is mandatory and the identifier; a stub stands in for
+  a waiting row; Donald's answer, not yet seen by AA). D74 as built (Donald's answer, not yet seen by AA):
+  the request goes to one address, the List's sender, else the surgeon's first office contact, never every
+  contact, and whether it should be sent from here or by the office's own email.
+
 ### Beat 1: the audit trail of a much-edited Booking
 
 - **Click:**
@@ -1946,6 +1999,8 @@ payment and payout; the Web Payments history keeps the settled invoice visible.
   needs **Reset → Confirm reset** (or the S1 jump) first.
 - Lost the screen a demo action lives on? The control panel's **Demo actions by screen** has an
   **Open screen** link for every entry (Intake's PDF lists entry opens `/admin/intake/pdfs`).
+- A decided waiting-for-NHI row cannot be undone except by **Reset → Confirm reset**; a cleared balance
+  warning re-opens only if it turns strong.
 - Imported the same sample twice: nothing new is added. Applied the wrong row: fix the Booking by
   hand; the row's decision and any wording it added stay in the history.
 - If **Finish now** was stamped too early, reset and advance the clock before reopening the Booking.

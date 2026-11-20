@@ -42,6 +42,8 @@ export function isBlankContact(c: SurgeonContact | undefined): boolean {
 export interface OfficeAddress {
   email: string
   name?: string
+  /** The office contact's phone, when held (shown beside the address to chase, Phase 40). */
+  phone?: string
   source: 'officeContact' | 'listSender'
 }
 
@@ -75,12 +77,12 @@ export function officeAddressFor(
     addresses.push({ email: sender, source: 'listSender' })
   }
   for (const contact of surgeon?.officeContacts ?? []) {
-    const { name, email } = cleanContact(contact)
+    const { name, email, phone } = cleanContact(contact)
     if (email === undefined) continue
     const key = email.toLowerCase()
     if (seen.has(key)) continue
     seen.add(key)
-    addresses.push({ email, ...(name !== undefined ? { name } : {}), source: 'officeContact' })
+    addresses.push({ email, ...(name !== undefined ? { name } : {}), ...(phone !== undefined ? { phone } : {}), source: 'officeContact' })
   }
   const [to, ...others] = addresses
   return { to: to ?? null, others }

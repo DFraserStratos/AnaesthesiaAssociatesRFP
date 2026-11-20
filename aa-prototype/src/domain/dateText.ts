@@ -55,8 +55,13 @@ export function dayHeading(dateISO: string, todayISO: string): string {
 
 /** "14 MAR 1954": the mono DOB line. */
 export function formatDob(dobISO: string): string {
+  // A record made from a row with no date of birth (a rooms' PDF, HL7) holds '' (catch-up Phase 40).
+  if (dobISO.trim() === '') return DOB_NOT_SUPPLIED
   return format(parseISO(dobISO), 'd MMM yyyy').toUpperCase()
 }
+
+/** What a missing date of birth reads as. */
+export const DOB_NOT_SUPPLIED = 'Not supplied'
 
 /** A received text's day, as its meta line shows it ("Mon 20 Jul"). */
 export function receivedDay(iso: string): string {

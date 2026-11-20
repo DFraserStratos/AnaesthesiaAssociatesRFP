@@ -48,6 +48,8 @@ export const MASTER_VIEWS: readonly MasterViewEntry[] = [
   { view: 'modifiers', label: 'Modifiers', group: 'Billing', catalogueRows: ['modifier codes'], add: true, edit: true, retire: true, remove: false, seeded: ['modifiers'] },
   { view: 'emailTemplates', label: 'Email templates', group: 'Settings', catalogueRows: [], add: true, edit: true, retire: false, remove: false },
   { view: 'xeroArchiving', label: 'Xero & archiving', group: 'Settings', catalogueRows: [], add: false, edit: true, retire: false, remove: false },
+  // The balance warning's one setting (catch-up Phase 40; US-11.3.2).
+  { view: 'patientBalance', label: 'Patient balance warning', group: 'Settings', catalogueRows: [], add: false, edit: true, retire: false, remove: false },
   { view: 'seedLoad', label: 'Seed load', group: 'Go-live', catalogueRows: [], add: false, edit: false, retire: false, remove: false, demo: true },
   { view: 'goLive', label: 'Go-live load', group: 'Go-live', catalogueRows: [], add: false, edit: false, retire: false, remove: false, demo: true },
 ]

@@ -19,7 +19,8 @@ describe('officeAddressFor: the one email helper (catch-up Phase 17b; D74)', () 
     const out = officeAddressFor(masters([{ name: 'Bev', email: 'bev@a.example' }, { name: 'Rooms', email: 'info@a.example', phone: '03 555 1000' }]), 'S-T')
     expect(out).toEqual({
       to: { email: 'bev@a.example', name: 'Bev', source: 'officeContact' },
-      others: [{ email: 'info@a.example', name: 'Rooms', source: 'officeContact' }],
+      // Phase 40: the contact's phone travels with its address, for the waiting row's contact line.
+      others: [{ email: 'info@a.example', name: 'Rooms', phone: '03 555 1000', source: 'officeContact' }],
     })
   })
 

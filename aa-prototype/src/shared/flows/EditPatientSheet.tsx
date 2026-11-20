@@ -10,13 +10,24 @@ import { OverlayHeader } from '../surface/OverlayHeader'
 import { SheetActions } from '../surface/SheetActions'
 import { cleanPostalAddress } from '../../domain/billing/payer'
 import { PostalAddressFields, addressDraftOf, type PostalAddressDraft } from './PostalAddressFields'
+import { validateEthnicityCode } from '../../domain/nzhis'
 
 interface EditPatientSheetProps {
   open: boolean
   patient: Patient
-  bookingId: string
+  /** The Booking the edit is made through (its List's rights apply); absent on the Admin patient record (catch-up Phase 40). */
+  bookingId?: string
   actor: Actor
   onClose: () => void
+}
+
+/** The Ethnicity code field's live line (catch-up Phase 40): the label, the quarantine note or the format reason. */
+function ethnicityHint(code: string): { text: string; invalid: boolean } | undefined {
+  if (code.trim() === '') return undefined
+  const v = validateEthnicityCode(code)
+  if (v.verdict === 'valid') return { text: v.label, invalid: false }
+  if (v.verdict === 'outsideDemoSubset') return { text: `Held for review. ${v.message}`, invalid: false }
+  return { text: v.reason, invalid: true }
 }
 
 /** Edit patient demographics via the audited `editPatient`, gated by the booking's list. */
@@ -35,6 +46,12 @@ export function EditPatientSheet({ open, patient, bookingId, actor, onClose }: E
   const officeDraft = useBookingStoreMode() === 'draft' && actor.role === 'office'
   const [nhi, setNhi] = useState(patient.nhi ?? '')
   const nhiProblem = !officeDraft ? null : nhi.trim() === '' ? PATIENT_NHI_REQUIRED_MESSAGE : (validateNhi(nhi).valid ? null : (validateNhi(nhi).reason ?? 'That NHI is not valid.'))
+  // The office keeps the Ethnicity code (catch-up Phase 40; US-11.1.1): optional, checked live.
+  const office = actor.role === 'office'
+  const storedEthnicity = patient.ethnicityCode ?? patient.ethnicityPending?.receivedCode ?? ''
+  const [ethnicity, setEthnicity] = useState(storedEthnicity)
+  const ethnicityLine = ethnicityHint(ethnicity)
+  const ethnicityChanged = office && ethnicity.trim() !== '' && ethnicity.trim() !== storedEthnicity
 
   useEffect(() => {
     if (open) {
@@ -44,6 +61,7 @@ export function EditPatientSheet({ open, patient, bookingId, actor, onClose }: E
       setEmail(patient.email ?? '')
       setAddress(addressDraftOf(patient.postalAddress))
       setNhi(patient.nhi ?? '')
+      setEthnicity(patient.ethnicityCode ?? patient.ethnicityPending?.receivedCode ?? '')
       setError(null)
     }
   }, [open, patient])
@@ -61,6 +79,7 @@ export function EditPatientSheet({ open, patient, bookingId, actor, onClose }: E
         email: email.trim(),
         postalAddress: cleanPostalAddress(address),
         ...(officeDraft && nhi.trim().toUpperCase() !== (patient.nhi ?? '') ? { nhi } : {}),
+        ...(ethnicityChanged ? { ethnicityCode: ethnicity.trim() } : {}),
       },
       bookingId,
     )
@@ -85,10 +104,22 @@ export function EditPatientSheet({ open, patient, bookingId, actor, onClose }: E
         <TextField label="Phone" value={phone} onChange={setPhone} type="tel" />
         <TextField label="Email" value={email} onChange={setEmail} type="email" />
         <PostalAddressFields value={address} onChange={setAddress} shot="patient-postal-address" />
+        {office && (
+          <TextField
+            label="Ethnicity code"
+            mono
+            inputMode="numeric"
+            value={ethnicity}
+            onChange={setEthnicity}
+            shot="patient-ethnicity-field"
+            invalid={ethnicityLine?.invalid === true}
+            hint={ethnicityLine?.text ?? 'NZHIS Level 4, 5 digits. Not required.'}
+          />
+        )}
         <FormError message={error} />
         <SheetActions
           primary={
-            <Button variant="primary" block onClick={save} disabled={name.trim() === '' || dob === '' || nhiProblem !== null}>
+            <Button variant="primary" block onClick={save} disabled={name.trim() === '' || nhiProblem !== null || (ethnicityChanged && ethnicityLine?.invalid === true)}>
               {primaryLabel}
             </Button>
           }

@@ -878,7 +878,7 @@ function AaFeePanel() {
  * The patient balance warning on a monitor row (catch-up Phase 40; RV-36):
  * 15a's triangle when the Booking carries the open `patientBalance` warning,
  * read from `useBookingWarnings`, never recomputed. Replaces the old
- * "Prior balance" tag.
+ * prior-episode tag.
  */
 function PatientBalanceTriangle({ bookingId }: { bookingId: string }) {
   const warnings = useBookingWarnings(bookingId)

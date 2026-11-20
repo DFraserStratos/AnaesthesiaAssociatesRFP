@@ -259,7 +259,7 @@ describe('history survives the clock and the canvas', () => {
   it('Next morning, a 30-day jump, a recurring-booking edit and apply, a series save, a holiday, Add anaesthetist and a horizon change leave every backdrop record as seeded', () => {
     const api = store()
     const before = snapshot(api)
-    expect(before.lists.length).toBe(29) // 25, plus Dr Sharma's four patient-billed history Lists (catch-up Phase 40)
+    expect(before.lists.length).toBe(30) // 25, plus Dr Sharma's five patient-billed history Lists (catch-up Phase 40, Heather Sinclair's credit the fifth)
 
     advanceClockToNextMorning(api)
     const monday = Object.values(api.getState().masters.recurringBookings).find((r) => r.dayOfWeek === 1 && r.anaesthetistId === ANAE.souter)!

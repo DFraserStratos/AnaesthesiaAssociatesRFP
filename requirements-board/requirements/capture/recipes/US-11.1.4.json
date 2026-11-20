@@ -1,19 +1,88 @@
 {
   "id": "US-11.1.4",
-  "status": "partial",
-  "absentReason": "A patient can be created without an NHI (the add booking form leaves it optional) and shows as NHI pending, but there is no way to attach the NHI later: Edit patient details has no NHI field.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
-      "name": "nhi-pending",
+      "name": "nhi-required",
       "app": "admin",
-      "caption": "Patient booked without an NHI, shown as NHI pending",
-      "start": "/admin/day/2026-07-27/bookings/BK0035",
+      "caption": "A Booking cannot be saved without an NHI; an incoming row without one waits at intake",
+      "start": "/admin/day/2026-07-21",
       "states": [
         {
-          "steps": [],
+          "state": "form",
+          "caption": "Phone advice with the NHI blank: Save stays disabled and says why",
+          "steps": [
+            {
+              "click": "button[data-slot-id=\"S-43015-2026-07-21-PM\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Book (phone advice)\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "select": "[role=dialog]:not([data-testid=admin-list-drawer]) [data-shot=assign-hospital]",
+              "value": "H-FORTE"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "select": "[role=dialog]:not([data-testid=admin-list-drawer]) select[data-shot=surgeon-picker]",
+              "value": "S-OKAFOR"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[role=dialog]:not([data-testid=admin-list-drawer]) [data-shot=procedure-description] input",
+              "value": "Laparoscopic cholecystectomy"
+            },
+            {
+              "wait": 300
+            }
+          ],
           "highlight": [
-            
-            "[data-shot=booking-patient]"
+            "[data-shot=manual-nhi]",
+            "[data-shot=manual-save]"
+          ]
+        },
+        {
+          "state": "waiting",
+          "caption": "A row received without an NHI waits on Matching; nothing is created until the office adds it",
+          "steps": [
+            {
+              "goto": "/admin/patients/waiting"
+            },
+            {
+              "trigger": "receive-no-nhi-list"
+            },
+            {
+              "wait": "[data-shot=waiting-nhi-row]"
+            },
+            {
+              "goto": "/admin/intake/matching"
+            },
+            {
+              "wait": "[data-shot^='matching-row-']"
+            },
+            {
+              "click": "[data-shot^='matching-row-']:has-text('Aroha Ngata')"
+            },
+            {
+              "wait": "[data-shot=matching-panel]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=matching-nhi]"
           ]
         }
       ]

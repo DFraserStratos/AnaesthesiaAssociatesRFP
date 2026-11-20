@@ -1089,7 +1089,8 @@ describe('catch-up Phase 38b (v65: events on a Procedure, the addendum Booking g
     const { procedureEvents: _e, ...schedule } = fresh.schedule
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule }, version: 64 }))
     const s = createAppStore({ persisted: true }).getState()
-    expect(Object.keys(s.schedule.procedureEvents)).toEqual(['EV0001'])
+    // Catch-up Phase 40 adds Heather Sinclair's issued credit event (HSEV05) beside EV0001.
+    expect(Object.keys(s.schedule.procedureEvents)).toEqual(['EV0001', 'HSEV05'])
     expect(s.counters['procedureEvent']).toBe(2)
   })
 
@@ -1140,7 +1141,8 @@ describe('Wave 4 sync (v66): Lane B\'s 42 joined into lane/a beside 38b', () => 
     const { publicHolidays: _p, ...masters } = fresh.masters
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, schedule, masters }, version: 65 }))
     const s = createAppStore({ persisted: true }).getState()
-    expect(Object.keys(s.schedule.procedureEvents)).toEqual(['EV0001'])
+    // Catch-up Phase 40 adds Heather Sinclair's issued credit event (HSEV05) beside EV0001.
+    expect(Object.keys(s.schedule.procedureEvents)).toEqual(['EV0001', 'HSEV05'])
     expect(Object.keys(s.masters.publicHolidays)).toHaveLength(7)
   })
 })
@@ -1161,14 +1163,15 @@ describe('catch-up Phase 39 (v67): credit notes, negative invoices and Xero cred
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 66 }))
     const s = createAppStore({ persisted: true }).getState()
     expect(s.schedule.bookings['BK9999']).toBeUndefined()
-    expect([s.billing.creditNotes, s.billing.negativeInvoices, s.xero.creditNotes]).toEqual([{}, {}, {}])
+    // Catch-up Phase 40 seeds one credit (Heather Sinclair's, D24): its note, negative invoice and two Xero credit notes.
+    expect([Object.keys(s.billing.creditNotes), Object.keys(s.billing.negativeInvoices), Object.keys(s.xero.creditNotes)]).toEqual([['HSCRN05'], ['HSNEG05'], ['XCNHS05', 'XCNHS05P']])
   })
 
   it('two fresh seeds deep-equal, with the new slices empty', () => {
     const a = freshAppState()
     const b = freshAppState()
     expect(a).toEqual(b)
-    expect([a.billing.creditNotes, a.billing.negativeInvoices, a.xero.creditNotes]).toEqual([{}, {}, {}])
+    expect([Object.keys(a.billing.creditNotes), Object.keys(a.billing.negativeInvoices), Object.keys(a.xero.creditNotes)]).toEqual([['HSCRN05'], ['HSNEG05'], ['XCNHS05', 'XCNHS05P']])
   })
 })
 
@@ -1221,7 +1224,7 @@ describe('the Wave 4 join (v69: Lane A 39 at v68 joined with Lane B 43 at v67)',
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing, intake: { ...fresh.intake, rows } }, version: 68 }))
     const s = createAppStore({ persisted: true }).getState()
     for (const row of Object.values(s.intake.rows)) expect(row.raw?.columns.length).toBeGreaterThan(0)
-    expect([s.billing.creditNotes, s.billing.negativeInvoices]).toEqual([{}, {}])
+    expect([Object.keys(s.billing.creditNotes), Object.keys(s.billing.negativeInvoices)]).toEqual([['HSCRN05'], ['HSNEG05']])
     expect(s.masters.patients['PT0173']).toBeDefined()
   })
 })

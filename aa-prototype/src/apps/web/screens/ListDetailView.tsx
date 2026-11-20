@@ -5,6 +5,9 @@ import { STATUS_PALETTE } from '../../../theme/statusColours'
 import type { Booking, Procedure } from '../../../domain/types'
 import { bookingContractCue, editRefusal, heldPricesForBooking, useAppStore, type Actor, useListTimes } from '../../../store'
 import { StatusChip, TickBadge, useListWarnings, WarningTriangle } from '../../../shared'
+import { warningsFor } from '../../../shared/warnings'
+import { BalanceAlertPill, balanceAlertFromWarnings } from '../../../shared/patients'
+import { SharedNotes } from '../../../shared/notes'
 import { ListInvoices, useListInvoices } from '../../../shared/schedule'
 import { LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
 import { bookingFee } from '../../../shared/capture'
@@ -134,6 +137,8 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
   }, [list, listId, bookingsRecord, proceduresRecord, masters, invoicedByBooking, cueState])
 
   const warningsByBooking = useListWarnings(listId)
+  // The balance chip reads these warnings, never a second evaluation per row (catch-up Phase 40).
+  const schedule = useAppStore((s) => s.schedule)
   // Stubs for rows waiting at intake (catch-up Phase 33a): in time order, never counted or totalled.
   const stubs = useListStubs(listId)
   const entries = useMemo(() => withStubsInTimeOrder(model?.rows ?? [], (r) => r.booking.scheduledTime, stubs), [model, stubs])
@@ -258,9 +263,10 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
                         <RowOpenButton label={`Open Booking for ${r.patientName} at ${r.time}`} onOpen={() => onOpenBooking(r.booking.id)}>
                           <span style={{ fontWeight: 600, textDecoration: cancelled ? 'line-through' : 'none' }}>{r.patientName}</span>
                         </RowOpenButton>
-                        <WarningTriangle warnings={warningsByBooking.get(r.booking.id) ?? []} size="sm" />
+                        <WarningTriangle warnings={warningsFor(warningsByBooking.get(r.booking.id) ?? [], 'anaesthetist')} size="sm" />
+                        <BalanceAlertPill alert={balanceAlertFromWarnings({ schedule }, r.booking.id, actor.anaesthetistId, warningsByBooking.get(r.booking.id) ?? [])} />
                       </div>
-                      <div className="mono" style={{ fontSize: 11.5, color: neutral.mist, marginTop: 2 }}>{r.nhi}</div>
+                      <div className="mono" data-shot="list-row-nhi" style={{ fontSize: 11.5, color: neutral.mist, marginTop: 2 }}>{r.nhi}</div>
                     </Td>
                     <Td>
                       {r.procedure}
@@ -328,6 +334,11 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
           <ListInvoices rows={invoices} />
         </Card>
       )}
+
+      {/* The shared note on the List (catch-up Phase 40; US-11.3.3): the office reads it in Admin. */}
+      <Card padding="panel" title="Shared notes">
+        <SharedNotes target={{ listId }} actor={actor} />
+      </Card>
 
       <AddBookingFlow open={addOpen} listId={listId} actor={actor} onClose={() => setAddOpen(false)} onCreated={() => undefined} />
       {submitSheet !== 'none' && (

@@ -89,11 +89,13 @@ describe('raise and clear on the demo day', () => {
     // Two samples on each target: the prepayment (strong) and the base units outside the guide (mild);
     // plus, once each (catch-up Phase 21), the child payer sample on Grace Park's Booking (it stages on a
     // minor) and the approval number sample on the first seeded NIB Booking; and (catch-up Phase 22) the
-    // split sample on Alan Prentice's fee-split Booking.
-    expect(raised).toEqual({ ok: true, value: 7 })
+    // split sample on Alan Prentice's fee-split Booking; and (catch-up Phase 40) the patient balance sample on
+    // the multiWarning Booking only (its patient owes a 120 day invoice; the PM target's patient owes nothing).
+    expect(raised).toEqual({ ok: true, value: 8 })
     let state = api.getState()
     for (const id of SEED_WARNING_SAMPLE_BOOKINGS.targets) {
-      expect(warningsForBooking(state, id).map((w) => w.ruleId)).toEqual(['prepaymentUnpaid', 'baseUnitsOutsideGuide'])
+      const expected = id === SEED_WARNING_SAMPLE_BOOKINGS.multiWarning ? ['baseUnitsOutsideGuide', 'patientBalance', 'prepaymentUnpaid'] : ['baseUnitsOutsideGuide', 'prepaymentUnpaid']
+      expect(warningsForBooking(state, id).map((w) => w.ruleId).sort()).toEqual(expected)
     }
     expect([...new Set(openWarnings(state).map((r) => r.bookingId))].sort()).toEqual(
       [AM_TARGET, PM_TARGET, RILEY, GRACE, NIB_TARGET, FEE_SPLIT, SEED_MARKERS['childPayer']!.entityId, SEED_MARKERS['approvalMissing']!.entityId].sort(),
@@ -111,8 +113,10 @@ describe('raise and clear on the demo day', () => {
     expect(clearWarning(api, OFFICE_ACTOR, AM_TARGET!, key).ok).toBe(true)
     expect(api.getState().schedule.warningClearances[key]).toBeDefined()
 
-    expect(clearAllSamples(api)).toEqual({ ok: true, value: 7 })
+    expect(clearAllSamples(api)).toEqual({ ok: true, value: 8 })
     state = api.getState()
+    // The balance sample's stamp is gone (catch-up Phase 40).
+    expect(state.schedule.bookings[AM_TARGET!]!.balanceCheck).toBeUndefined()
     for (const id of SEED_WARNING_SAMPLE_BOOKINGS.targets) {
       const p = proceduresForBooking(state, id)[0]!
       expect(Object.fromEntries(STAGED_FIELDS.map((f) => [f, p[f]]))).toEqual(seedFieldsOf(id))
@@ -183,14 +187,14 @@ describe('refusals on one Booking', () => {
 })
 
 describe('two rules on the multi-warning Booking (catch-up Phase 19)', () => {
-  it('shows two warnings with their own text and keys, strong first', () => {
+  it('shows its warnings with their own text and keys, strong first (catch-up Phase 40 adds the balance warning)', () => {
     const api = createAppStore()
     raiseDaySamples(api)
     const warnings = warningsForBooking(api.getState(), SEED_WARNING_SAMPLE_BOOKINGS.multiWarning)
-    expect(warnings).toHaveLength(2)
-    expect(warnings.map((w) => w.strength)).toEqual(['strong', 'mild'])
-    expect(new Set(warnings.map((w) => w.key)).size).toBe(2)
-    expect(warnings[1]!.text).toMatch(/^Base units \d+ are outside the RVG guide for /)
+    expect(warnings).toHaveLength(3)
+    expect(warnings.map((w) => w.strength)).toEqual(['strong', 'strong', 'mild'])
+    expect(new Set(warnings.map((w) => w.key)).size).toBe(3)
+    expect(warnings[2]!.text).toMatch(/^Base units \d+ are outside the RVG guide for /)
     expect(WARNING_RULES.map((r) => r.id)).toEqual(['prepaymentUnpaid', 'baseUnitsOutsideGuide', 'childPayer', 'approvalNumberMissing', 'splitDoesNotFit', 'patientBalance'])
   })
 
@@ -227,7 +231,8 @@ describe('review fixes (convention 18)', () => {
     raiseSamplesOn(api, AM_TARGET!)
     const p = proceduresForBooking(api.getState(), AM_TARGET!)[0]!
     editProcedure(api, OFFICE_ACTOR, p.id, { notes: 'Checked with the patient' } as never)
-    expect(stagedSampleBookings(api.getState())).not.toContain(AM_TARGET)
+    // Only the Booking-level balance check stays the demo's (catch-up Phase 40): the edit touched a Procedure.
+    expect(WARNING_SAMPLES.filter((s) => s.isStaged(api.getState(), AM_TARGET!)).map((s) => s.ruleId)).toEqual(['patientBalance'])
   })
 
   it('refuses to unstage once a real prepayment invoice was sent on the sample', () => {
@@ -324,8 +329,8 @@ describe('the child payer sample (catch-up Phase 21; per Procedure since 22a; US
     const api = createAppStore()
     const grace = api.getState().schedule.bookings[GRACE]!
     setListState(api, grace.listId, 'AUTHORISED')
-    // Prepayment, base units, approval number and (catch-up Phase 22) split; the child payer sample skips Grace Park.
-    expect(raiseSamplesOn(api, AM_TARGET!)).toEqual({ ok: true, value: 4 })
+    // Prepayment, base units, approval number, (catch-up Phase 22) split and (40) patient balance; the child payer sample skips Grace Park.
+    expect(raiseSamplesOn(api, AM_TARGET!)).toEqual({ ok: true, value: 5 })
     expect(gracePayers(api).every((p) => p.kind === 'other')).toBe(true)
   })
 })
@@ -372,7 +377,7 @@ describe('review fixes (convention 18): samples', () => {
     // The office updates Hana Park's email on Grace Park's Booking (a real payer edit).
     setFirstProcedurePayer(api, OFFICE_ACTOR, GRACE, { kind: 'other', id: 'BP0001', name: 'Hana Park', relationship: 'Mother', email: 'hana.work@example.net' })
     expect(sampleRaiseRefusal(api.getState(), AM_TARGET!)).toBeNull()
-    expect(raiseSamplesOn(api, AM_TARGET!)).toEqual({ ok: true, value: 4 })
+    expect(raiseSamplesOn(api, AM_TARGET!)).toEqual({ ok: true, value: 5 })
     expect(gracePayers(api).every((p) => p.kind === 'other')).toBe(true)
   })
 })

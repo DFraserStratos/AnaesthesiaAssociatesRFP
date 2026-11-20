@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { UnassignedPill } from '../components/draftLists/DraftListParts'
 import { neutral } from '../../../theme/tokens'
 import { BackLink, FormError, PageHeader, TextAction } from '../../../shared/ui'
@@ -20,6 +20,7 @@ import {
 } from '../../../shared/booking'
 import { Notice } from '../../../shared/ui'
 import { useDemoTriggerContextWhile } from '../../../shared/demoTriggers'
+import { patientPath } from '../../../shared/patients'
 import { BookingSaveBar, BookingSavedStrip } from '../components/BookingSaveBar'
 import { ageYears, formatDob, nhiBadge, locationName } from '../../../shared/format'
 import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
@@ -130,7 +131,16 @@ function AdminBookingDetailDraft({ bookingId, actor, todayISO, onBack, backLabel
       <PageHeader
         size="admin"
         wrap
-        title={patient?.name ?? 'Unknown patient'}
+        title={
+          patient !== undefined ? (
+            // The patient's record (catch-up Phase 40): by NHI, never the internal id.
+            <Link to={patientPath(patient.nhi)} data-shot="booking-patient-record-link" className="aa-table-entity-link" style={{ color: 'inherit' }}>
+              <span className="aa-table-entity-link-title">{patient.name}</span>
+            </Link>
+          ) : (
+            'Unknown patient'
+          )
+        }
         aside={<WarningTriangle warnings={warnings} />}
         subStyle={{ marginTop: 0 }}
         // Top-right, level with the title (Admin Day's header), not sunk to the foot of the sub-lines.

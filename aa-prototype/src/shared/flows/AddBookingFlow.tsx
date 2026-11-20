@@ -8,6 +8,7 @@ import { DemoBadge } from '../DemoBadge'
 import { useSurface } from '../surface'
 import { ManualBookingForm, type ExtractionFields } from './ManualBookingForm'
 import { PhotoCaptureFlow } from './PhotoCaptureFlow'
+import { DETAILS_DIFFER_LINE, LINKED_TO_EXISTING_RECORD, NEW_PATIENT_RECORD } from './nhiCopy'
 
 /** The prong the sheet opens on. Only the Future-scope demo opens on `photo`. */
 export type AddBookingMode = 'manual' | 'photo'
@@ -48,7 +49,7 @@ function sourceFor(actor: Actor): BookingSource {
 export function AddBookingFlow({ open, listId, actor, manualEmptyLookupPrefill, initialMode = 'manual', resetKey, onClose, onCreated }: AddBookingFlowProps) {
   const { Overlay } = useSurface()
   const [mode, setMode] = useState<Mode>(initialMode)
-  const [result, setResult] = useState<{ bookingId: string; reused: boolean } | null>(null)
+  const [result, setResult] = useState<{ bookingId: string; reused: boolean; detailsDiffer?: boolean } | null>(null)
 
   // Reset to the starting prong each time the sheet opens (or is re-requested).
   useEffect(() => {
@@ -58,7 +59,7 @@ export function AddBookingFlow({ open, listId, actor, manualEmptyLookupPrefill, 
     }
   }, [open, initialMode, resetKey])
 
-  function handleSaved(r: { bookingId: string; reused: boolean }) {
+  function handleSaved(r: { bookingId: string; reused: boolean; detailsDiffer?: boolean }) {
     setResult(r)
     setMode('done')
   }
@@ -90,8 +91,10 @@ export function AddBookingFlow({ open, listId, actor, manualEmptyLookupPrefill, 
           title="Booking added"
           detail={
             result.reused
-              ? 'Linked to an existing patient record by NHI. No duplicate was created.'
-              : 'A new patient record was created for this booking.'
+              ? result.detailsDiffer === true
+                ? `${LINKED_TO_EXISTING_RECORD} ${DETAILS_DIFFER_LINE}`
+                : LINKED_TO_EXISTING_RECORD
+              : NEW_PATIENT_RECORD
           }
           action={
             <Button

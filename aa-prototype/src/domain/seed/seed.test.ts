@@ -522,6 +522,11 @@ describe('design-day fees (the mockup figures, from the real calculator)', () =>
 describe('scenario states', () => {
   it('every SEED_MARKER resolves to a live entity', () => {
     for (const [key, marker] of Object.entries(SEED_MARKERS)) {
+      // A route marker (catch-up Phase 40) names a screen, not a record.
+      if (marker.entityType === 'route') {
+        expect(marker.entityId, `${key} is an app path`).toMatch(/^\/(admin|web|mobile|demo)\//)
+        continue
+      }
       const pool =
         marker.entityType === 'list'
           ? seed.schedule.lists
@@ -1147,7 +1152,8 @@ describe('the primary Procedure and the multi-procedure rule (catch-up Phase 23)
 describe('the seeded event (catch-up Phase 38b)', () => {
   it('holds one additional invoice Dr Souter raised on HP03, awaiting review, RNG-free', () => {
     const seed = buildSeed()
-    const events = Object.values(seed.schedule.procedureEvents)
+    // Catch-up Phase 40's Sinclair credit event (HSEV05) sits beside it, outside the `EV####` counter.
+    const events = Object.values(seed.schedule.procedureEvents).filter((e) => e.id.startsWith('EV'))
     expect(events).toHaveLength(1)
     const ev = events[0]!
     expect(ev).toMatchObject({ id: 'EV0001', procedureId: 'HP03', bookingId: 'HBK03', kind: 'additionalInvoice', occurredOnISO: '2026-06-23', billable: true, party: { sameAs: true }, review: { state: 'awaitingReview' } })

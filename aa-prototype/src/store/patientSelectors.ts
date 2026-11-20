@@ -11,6 +11,7 @@
  */
 
 import { daysBetween } from '../domain/dateDays'
+import { toCents } from '../domain/billing/money'
 import { parseBookingQuery, patientMatches } from '../domain/bookingSearch'
 import { ageInCompletedYears } from '../domain/billing/modifiers'
 import { ETHNICITY_DEMO_SUBSET } from '../domain/nzhis'
@@ -31,7 +32,8 @@ import { strongerOf, type WarningStrength } from '../domain/warnings'
 import type { AuditEntry, Booking, IsoDate, Patient, PatientFollowUp, PatientPendingDetails, Session } from '../domain/types'
 import type { AppState } from './appStore'
 import { assessImportRow } from './matchingSelectors'
-import { nhiRequestAddressFor, patientBalanceThresholdDays, type NhiRequestAddress } from './patientActions'
+import { canResendFromRecord, nhiRequestAddressFor, patientBalanceThresholdDays, type NhiRequestAddress } from './patientActions'
+import { patientByNhi } from './patientLookup'
 import { patientBalanceRows } from './patientLedger'
 import { stubForRow } from './stubSelectors'
 import { openWarnings, type OpenWarningRow, type WarningState } from './warnings'
@@ -190,6 +192,8 @@ export interface PatientInvoiceRow extends PatientBalanceRow {
   countsTowardBalance: boolean
   ageDays: number
   sends: { atISO: string; to: string; by: string }[]
+  /** Resend is offered: an invoice already emailed and not credited (`canResendFromRecord`). */
+  resendable: boolean
 }
 
 export interface PatientRecordView {
@@ -205,20 +209,19 @@ export interface PatientRecordView {
   followUps: PatientFollowUp[]
   invoices: PatientInvoiceRow[]
   balance: PatientCentricBalance
-  /** Billed to the patient: what the warning reads. */
-  billedToPatient: { owingTotal: number; owingCount: number; oldestAgeDays: number; creditHeld: number; strength: PatientBalanceStrength }
-}
-
-function patientIdByNhi(state: Pick<AppState, 'masters'>, nhi: string): string | undefined {
-  const key = nhi.replace(/\s+/g, '').toUpperCase()
-  return Object.values(state.masters.patients).find((p) => p.nhi === key)?.hiddenInternalId
+  /** Billed to the patient: what the warning reads. `net` is owing less credit held (negative reads "in credit"). */
+  billedToPatient: { owingTotal: number; owingCount: number; oldestAgeDays: number; creditHeld: number; net: number; strength: PatientBalanceStrength }
+  /** Every other payer's outstanding less credit held, signed. */
+  otherPayersTotal: number
+  /** The Invoices table's footer: what is still owed on every row (a credited row owes nothing). */
+  invoicesOutstanding: number
 }
 
 /** The patient record by NHI (the route's key): details, Bookings, follow-ups, every invoice and the balances. */
 export function patientRecordView(state: PatientSelectorState, nhi: string): PatientRecordView | undefined {
-  const patientId = patientIdByNhi(state, nhi)
-  if (patientId === undefined) return undefined
-  const p = state.masters.patients[patientId]!
+  const p = patientByNhi(state, nhi)
+  if (p === undefined) return undefined
+  const patientId = p.hiddenInternalId
   const today = state.clock.todayISO
   const warnings = new Map<string, WarningStrength>()
   for (const row of openBalanceWarnings(state)) {
@@ -262,9 +265,11 @@ export function patientRecordView(state: PatientSelectorState, nhi: string): Pat
       countsTowardBalance: countsTowardPatientBalance(row, patientId),
       ageDays: invoiceAgeDays(row.raisedAtISO, today),
       sends,
+      resendable: canResendFromRecord(row.status, invoice?.delivery?.status),
     }
   })
   const summary = patientBalanceSummary(rows, { patientId, todayISO: today })
+  const balance = patientCentricBalance(rows, patientId)
   const created: AuditEntry | undefined = state.audit.find((e) => e.entityType === 'patient' && e.entityId === patientId && e.action === 'patient.create')
   const age = ageInCompletedYears(p.dobISO, today)
   const ethnicityLabel = p.ethnicityCode !== undefined ? ETHNICITY_DEMO_SUBSET.find((e) => e.code === p.ethnicityCode)?.label : undefined
@@ -273,8 +278,8 @@ export function patientRecordView(state: PatientSelectorState, nhi: string): Pat
       nhi: p.nhi,
       name: p.name,
       dobISO: p.dobISO,
-      ...(p.phone !== undefined ? { phone: p.phone } : {}),
-      ...(p.email !== undefined ? { email: p.email } : {}),
+      ...(p.phone !== undefined && p.phone.trim() !== '' ? { phone: p.phone } : {}),
+      ...(p.email !== undefined && p.email.trim() !== '' ? { email: p.email } : {}),
       ...(p.postalAddress !== undefined ? { postalAddress: p.postalAddress } : {}),
       ...(p.ethnicityCode !== undefined ? { ethnicityCode: p.ethnicityCode } : {}),
     },
@@ -289,14 +294,20 @@ export function patientRecordView(state: PatientSelectorState, nhi: string): Pat
       .filter((f) => f.patientId === patientId)
       .sort((a, b) => b.atISO.localeCompare(a.atISO) || b.id.localeCompare(a.id)),
     invoices,
-    balance: patientCentricBalance(rows, patientId),
+    balance,
     billedToPatient: {
       owingTotal: summary.owingTotal,
       owingCount: summary.owing.length,
       oldestAgeDays: summary.oldestAgeDays,
       creditHeld: summary.creditTotal,
+      net: (toCents(summary.owingTotal) - toCents(summary.creditTotal)) / 100,
       strength: patientBalanceStrength(summary, patientBalanceThresholdDays(state)),
     },
+    otherPayersTotal:
+      balance.byPayer
+        .filter((b) => !(b.billedTo.kind === 'patient' && b.billedTo.id === patientId))
+        .reduce((t, b) => t + toCents(b.outstanding) - toCents(b.creditHeld), 0) / 100,
+    invoicesOutstanding: rows.reduce((t, r) => t + (r.status === 'credited' ? 0 : toCents(r.outstanding)), 0) / 100,
   }
 }
 
@@ -341,6 +352,8 @@ export function waitingNhiRows(state: Pick<AppState, 'intake' | 'masters' | 'sch
     const assessment = assessImportRow(state as AppState, row.id)
     if (assessment === undefined || !assessment.waitingForNhi) continue
     const fields = effectiveIncoming(row)
+    // A hospital cancellation without an NHI is not chased: it stays on Matching for Reject.
+    if (fields.hospitalStatus === 'cancelled') continue
     const surgeonId = assessment.surgeonId
     const surgeon = surgeonId !== undefined ? state.masters.surgeons[surgeonId]?.name : fields.surgeon?.name
     const stub = stubForRow(state, row.id)

@@ -120,6 +120,10 @@ function frozen(bookingId: string, invoiceId: string) {
   })
 }
 
+/** Heather Sinclair's seeded credit (catch-up Phase 40, D24): $260.00 already held for her, nothing to net. */
+const SEEDED_HELD = 260
+const plusSeededHeld = (amount: number): number => (toCents(amount) + toCents(SEEDED_HELD)) / 100
+
 function expectInBalance() {
   const pos = ledgerPositionOf(api.getState())
   expect(pos.imbalance).toBe(0)
@@ -168,7 +172,8 @@ describe('the reversal cases, through the real actions', () => {
 
     const negative = s.billing.negativeInvoices[note.negativeInvoiceId!]!
     expect(negative).toMatchObject({ number: 'CN-2026-0001-P', anaesthetistId: ANAE.sharma, amount: payable.amount, offsetAmount: payable.amount, recoveryDue: 0, status: 'offset', cause: 'credit' })
-    expect(negativeInvoicesFor(s, ANAE.sharma).map((n) => n.id)).toEqual([negative.id])
+    // Beside Dr Sharma's seeded HSNEG05 (Heather Sinclair's credit, catch-up Phase 40), by number.
+    expect(negativeInvoicesFor(s, ANAE.sharma).map((n) => n.id)).toEqual([negative.id, 'HSNEG05'])
 
     const rebillInvoice = s.billing.invoices[run.value.invoiceIds[0]!]!
     expect(rebillInvoice).toMatchObject({ kind: 'additional', total: 230, lineage: [{ role: 'rebillOf', invoiceId: original.id }] })
@@ -191,7 +196,7 @@ describe('the reversal cases, through the real actions', () => {
 
     // The ledger is in balance; the anaesthetist's position moved by the reversal and then the rebill.
     const pos = expectInBalance()
-    expect([pos.creditsHeldForPayers, pos.recoveryDueFromAnaesthetists]).toEqual([0, 0])
+    expect([pos.creditsHeldForPayers, pos.recoveryDueFromAnaesthetists]).toEqual([SEEDED_HELD, 0])
     const anaesthetistAfter = anaesthetistLedgerPosition(s, ANAE.sharma)
     expect(toCents(anaesthetistAfter.awaitingCollection) - toCents(anaesthetistBefore.awaitingCollection)).toBe(toCents(230) - toCents(payable.amount))
     expect(anaesthetistAfter.inBalance).toBe(true)
@@ -216,7 +221,7 @@ describe('the reversal cases, through the real actions', () => {
     expect(toCents(accRecCredit.total) - toCents(accRecCredit.allocated)).toBe(toCents(half))
     expect(s.billing.negativeInvoices[negative.id]!.accPayCreditNoteId).toBe(accPayCredit.id)
     const pos = expectInBalance()
-    expect(pos.creditsHeldForPayers).toBe(half)
+    expect(pos.creditsHeldForPayers).toBe(plusSeededHeld(half))
     expect(pos.payablesDue).toBe(0)
   })
 
@@ -226,7 +231,7 @@ describe('the reversal cases, through the real actions', () => {
     const { negative } = issue(OFFICE, creditInput(original.id))
     expect(negative).toMatchObject({ offsetAmount: original.total, recoveryDue: 0, status: 'offset' })
     const pos = expectInBalance()
-    expect([pos.creditsHeldForPayers, pos.recoveryDueFromAnaesthetists]).toEqual([original.total, 0])
+    expect([pos.creditsHeldForPayers, pos.recoveryDueFromAnaesthetists]).toEqual([plusSeededHeld(original.total), 0])
   })
 
   it('fully paid and paid out in a payment run: the paid-out part is left to net', () => {
@@ -239,7 +244,7 @@ describe('the reversal cases, through the real actions', () => {
     expect(negative).toMatchObject({ amount: original.total, offsetAmount: 0, recoveryDue: original.total, status: 'toNet' })
     expect(api.getState().xero.creditNotes[note.xero!.accPayCreditNoteId!]).toMatchObject({ allocated: 0, total: original.total })
     const pos = expectInBalance()
-    expect([pos.creditsHeldForPayers, pos.recoveryDueFromAnaesthetists]).toEqual([original.total, original.total])
+    expect([pos.creditsHeldForPayers, pos.recoveryDueFromAnaesthetists]).toEqual([plusSeededHeld(original.total), original.total])
     expect(anaesthetistLedgerPosition(api.getState(), ANAE.sharma).recoveryDue).toBe(original.total)
   })
 

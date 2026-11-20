@@ -1,6 +1,48 @@
 {
   "id": "US-13.2.2",
-  "status": "absent",
-  "absentReason": "No patient profile or per-patient balance in the Admin app. The only patient balance signal is the \"Prior balance\" flag on a billing monitor row. Searched apps/admin for patient balance and patient profile screens.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "patient-balance",
+      "app": "admin",
+      "caption": "A patient's balance, whoever pays, split into Billed to the patient and Other payers",
+      "start": "/admin/patients/CQY9304",
+      "states": [
+        {
+          "state": "balance",
+          "steps": [
+            {
+              "wait": "[data-shot=patient-balance]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=patient-balance]",
+            "[data-shot=patient-by-payer]"
+          ]
+        },
+        {
+          "state": "credit",
+          "caption": "A patient in credit: Heather Sinclair is In credit $260.00",
+          "steps": [
+            {
+              "goto": "/admin/patients/ZAN2219"
+            },
+            {
+              "wait": "[data-shot=patient-balance]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=patient-balance]"
+          ]
+        }
+      ]
+    }
+  ]
 }

@@ -124,6 +124,8 @@ import {
 } from './admin/fieldExamples'
 import { BackstopAmountFieldExample, NoContractGroupExample, RailOptionGroupExample, StepRailExample } from './railPartsExamples'
 import { LedgerPaymentRunsExample, RemittanceAdviceDocumentExample } from './admin/paymentRunExamples'
+import { SharedNotesExample, StrengthPillExample, WarningPreviewRowExample } from './patientAlertExamples'
+import { PatientBalanceThresholdExample, PatientRecordExample, PatientsSearchExample, WaitingNhiExample } from './admin/patientExamples'
 import { ProcedureStackExample } from './procedureStackExample'
 import { FunderDetailsExample, PayerFieldsExample } from './payerExamples'
 import { PaidByRowExample, PaidBySheetExample, PartyPickerExample } from './splitExamples'
@@ -287,6 +289,15 @@ export function AdminCatalogue() {
         <CatalogueRow name="WarningTriangle" source="shared/warnings/WarningTriangle.tsx" usedIn={AWM} what="The warning mark on a booking, coloured by the strongest open warning." replaceWith="shadcn Tooltip + Badge" note="Its detail is reachable by keyboard once it is a Tooltip.">
           <WarningTriangleExample />
         </CatalogueRow>
+        <CatalogueRow name="StrengthPill" source="shared/warnings/StrengthPill.tsx" usedIn={AWM} what="A warning's strength, Mild or Strong, as an outline pill in the warning's own tone (mild amber, strong red), neutral once cleared (catch-up Phase 40). The one strength pill: the warnings panel, the preview row, the patient record's Billed to the patient tile and the Patients search and Follow-up tables." replaceWith="shadcn Badge (variant outline)" note="On the shared Pill. Replaced WarningsPanel's private copy, the patient screens' copy and WarningPreviewRow's inline one.">
+          <StrengthPillExample />
+        </CatalogueRow>
+        <CatalogueRow name="WarningPreviewRow" source="shared/warnings/WarningPreviewRow.tsx" usedIn={A} what="One warning that is not raised yet (catch-up Phase 40): the balance warning a save will raise, before the office saves a Booking (Admin phone advice) or decides a Matching row. A WarningsPanel row's tint, triangle and text with the StrengthPill, the caption and the record link under it; no Clear." replaceWith="shadcn Alert" note="Mild and strong, with fixed text; nothing reads the demo store.">
+          <WarningPreviewRowExample />
+        </CatalogueRow>
+        <CatalogueRow name="SharedNotes" source="shared/notes/SharedNotes.tsx" usedIn={AWM} what="The shared note on a List (the Day drawer) or Booking (the Booking detail) (catch-up Phase 40; US-11.3.3): Add note and the notes, newest first, with author and time. The office and the anaesthetist both read and add; a blank note is refused." replaceWith="shadcn Textarea + Button" note="One component in all three apps; compact in the drawer. Writes the real store, never the Booking draft. Here on local notes (SharedNotesPanel), so nothing is written.">
+          <SharedNotesExample size="compact" by="Kirsty W." />
+        </CatalogueRow>
         <CatalogueRow name="NameSearchBox" source="shared/ui/NameSearchBox.tsx" usedIn={AWM} what="The one search box in all three apps since UI unification U4: field (48px) and pill (36px, or 38px on the web Lists row) sizes; fill well (grey) inside a sheet, card or drawer and surface (white, the default) on the page; a clear button (clearLabel, a 44px touch target on the phone), Escape clears, testId and shot hooks. Each caller filters its own rows." replaceWith="shadcn Input Group (search)" note="WebSearchField and the mobile Lists input are gone: both Lists pages use it. The aa-field class gives it the one teal focus ring.">
           <NameSearchBoxExample />
         </CatalogueRow>
@@ -334,6 +345,18 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="LedgerPaymentRuns / StillToNetNotice" source="apps/admin/components/LedgerPaymentRuns.tsx" usedIn={A} what="The Admin Ledger's per-anaesthetist payment runs (catch-up Phase 39a): each run by week with BCTIs, netted, net, status and its remittance advice; above it, only while a negative invoice is open, what is still to net with OQ-71's one caption." replaceWith="shadcn Card + Table + Badge" note="On the shared Card, TableShell (nested, compact), Pill and Notice. The notice is quiet on the seed (no negative open).">
           <LedgerPaymentRunsExample />
+        </CatalogueRow>
+        <CatalogueRow name="PatientsScreen (Search · Waiting for NHI · Follow-up)" source="apps/admin/screens/patients/PatientsScreen.tsx" usedIn={A} what="Admin · Patients (catch-up Phase 40; US-11.1.1, US-11.3.2): the three list views behind one segmented control, each with its count. Search by name, NHI or date of birth with the patient-centric balance and the warning's strength pill; Follow-up lists the open balance warnings (strong first, with Clear), the reminders due and the details to review." replaceWith="shadcn Table + Tabs + Badge" note="On the shared PageHeader, SlidingSegmentedControl, NameSearchBox, TableShell (compact), ClickableRow, Pill, EmptyState and 15a's ClearWarningButton. The NHI is the key; no internal id is shown.">
+          <PatientsSearchExample />
+        </CatalogueRow>
+        <CatalogueRow name="WaitingNhiView / WaitingNhiRowView / AddNhiSheet" source="apps/admin/screens/patients/WaitingNhiView.tsx · AddNhiSheet.tsx" usedIn={A} what="Waiting for NHI (catch-up Phase 40; US-11.1.5): each intake row with the patient as received, its List, 33a's stub chip, the one address to chase (the others offered), the days to go with an Urgent pill and when the office asked. Email for the NHI is a real mailto link, audited on click; Add NHI opens the desktop dialog with the live NHI check, the existing-record preview and the differences." replaceWith="shadcn Table + Dialog + Badge" note="On the shared TableShell, Pill, Button (href), SelectField, TextField, Notice, OverlayHeader and SheetActions. The seed holds one waiting row (33a's); the Demo actions' Receive list with a missing NHI adds two.">
+          <WaitingNhiExample />
+        </CatalogueRow>
+        <CatalogueRow name="PatientRecord" source="apps/admin/screens/patients/PatientRecord.tsx" usedIn={A} what="The patient record (catch-up Phase 40; US-11.3.1, US-11.3.3, US-13.2.2): the NHI as identifier, three balance tiles (Balance whoever pays, Billed to the patient with the strength pill, Other payers) and the By payer line, 15a's warnings with Clear and an optional note, every invoice with its status, Resend, Log follow-up and send history, the Bookings, Details differ, Details with Ethnicity, and the follow-up log." replaceWith="shadcn Card + Table + Badge" note="On the shared PageHeader, StatTile (outlined), Card, TableShell (nested), Pill, DefList, Segmented, TextArea, 15a's WarningsPanel and WarningTriangle, and EditPatientSheet (with the Ethnicity code field). Sarah Mitchell (CQY9304) here.">
+          <PatientRecordExample />
+        </CatalogueRow>
+        <CatalogueRow name="PatientBalanceThresholdView" source="apps/admin/screens/masters/PatientBalanceThresholdView.tsx" usedIn={A} what="Master data's Patient balance warning (catch-up Phase 40; US-11.3.2): one number field, 1 to 730 days, saved through setPatientBalanceThreshold, with its caption and History." replaceWith="shadcn Input + Button" note="On the shared MasterHeader, Card, TextField, Button, ResultLine and HistorySheet.">
+          <PatientBalanceThresholdExample />
         </CatalogueRow>
         <CatalogueRow name="PrepaymentsRailCard" source="apps/admin/components/PrepaymentsRailCard.tsx" usedIn={A} what="The rail's Pre-payments card (catch-up Phase 27): every upcoming prepaid Booking, one row per payer, with its amount, a status pill and the days to go. An awaiting row opens the Invoices strip; the others open the Booking. Its count is the shared CountBadge; empty, the shared EmptyState." replaceWith="shadcn Card + Badge" note="On the shared Card (padding card, flat), under the To-do card. Reads useUpcomingPrepayments.">
           <PrepaymentsRailCardExample />

@@ -49,7 +49,8 @@ describe('Wave 4 join: full-scale data with 38b events and 39 credits', () => {
 
   it('keeps the seeded event and empty credit slices, and credits and rebills a generated invoice', () => {
     expect(Object.keys(full.schedule.procedureEvents)).toContain('EV0001')
-    expect([full.billing.creditNotes, full.billing.negativeInvoices, full.xero.creditNotes]).toEqual([{}, {}, {}])
+    // Only the seed's own credit, Heather Sinclair's (catch-up Phase 40, D24).
+    expect([Object.keys(full.billing.creditNotes), Object.keys(full.billing.negativeInvoices), Object.keys(full.xero.creditNotes)]).toEqual([['HSCRN05'], ['HSNEG05'], ['XCNHS05', 'XCNHS05P']])
 
     const api = createAppStore()
     installDomainState(api, full)
@@ -107,10 +108,12 @@ describe('Wave 4 join: the leak scan covers 39\'s credit records', () => {
     const original = Object.values(s.billing.invoices).find((i) => i.kind === 'standard' && creditRefusalFor(s, { role: 'office' }, i.id) === null)!
     creditAndRebill(api, original, 100)
     const after = api.getState()
-    expect(Object.keys(after.xero.creditNotes).length).toBeGreaterThan(0)
+    expect(Object.keys(after.xero.creditNotes).filter((id) => !id.startsWith('XCNHS')).length).toBeGreaterThan(0)
     const before = scanForNhiLeaks(after).areas.find((a) => a.key === 'xero')!
     // Pin ids of the NHI shape that validate (CRN0005, NEG0009, XCN0005) onto the credit records, as the fifth credit would carry.
-    const rekey = <T extends { id: string }>(map: Record<string, T>, id: string) => Object.fromEntries(Object.values(map).map((r) => [id, { ...r, id }]))
+    // The seed's own credit (Heather Sinclair's `HS` records, catch-up Phase 40) keeps its ids; the run's credit is rekeyed.
+    const rekey = <T extends { id: string }>(map: Record<string, T>, id: string) =>
+      Object.fromEntries(Object.values(map).map((r) => (r.id.startsWith('HS') || r.id.startsWith('XCNHS') ? [r.id, r] : [id, { ...r, id }])))
     const pinned = {
       ...after,
       billing: { ...after.billing, creditNotes: rekey(after.billing.creditNotes, 'CRN0005'), negativeInvoices: rekey(after.billing.negativeInvoices, 'NEG0009') },

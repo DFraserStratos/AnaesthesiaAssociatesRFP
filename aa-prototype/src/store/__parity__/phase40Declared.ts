@@ -36,6 +36,8 @@ export function withoutPhase40<S extends AppState>(input: S): S {
       receipts: dropPhase40(state.billing.receipts),
       disbursements: dropPhase40(state.billing.disbursements),
       contactIdCache: dropPhase40(state.billing.contactIdCache, (_k, v) => onlyHs.has(v)),
+      creditNotes: dropPhase40(state.billing.creditNotes),
+      negativeInvoices: dropPhase40(state.billing.negativeInvoices),
     },
     xero: {
       ...xero,
@@ -44,6 +46,7 @@ export function withoutPhase40<S extends AppState>(input: S): S {
       payments: dropPhase40(xero.payments),
       disbursements: dropPhase40(xero.disbursements),
       contacts: dropPhase40(xero.contacts, (id) => onlyHs.has(id)),
+      creditNotes: dropPhase40(xero.creditNotes),
     },
   }
 }

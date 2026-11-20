@@ -8,6 +8,10 @@ import type { Booking, Procedure } from '../../../domain/types'
 import { isAssignedList } from '../../../domain/draftLists'
 import { bookingContractCue, editRefusal, officeAlertRefusal, useAppStore, useToday, type Actor, useListTimes } from '../../../store'
 import { DockSpacer, StatusChip, useListWarnings, WarningTriangle } from '../../../shared'
+import { warningsFor } from '../../../shared/warnings'
+import { BalanceAlertPill, balanceAlertFromWarnings } from '../../../shared/patients'
+import { SharedNotes } from '../../../shared/notes'
+import { Card } from '../../../shared/ui/Card'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { AddRowButton } from '../../../shared/ui/AddRowButton'
 import { ListOptionsSheet, TickBadge, type ListOption } from '../components'
@@ -34,7 +38,7 @@ interface BookingRow {
   booking: Booking
   time: string
   patientName: string
-  nhi: string | undefined
+  nhi: string
   procedure: string
   cue: string | undefined
 }
@@ -99,7 +103,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           booking,
           time: booking.scheduledTime ?? '·',
           patientName: patient?.name ?? 'Unknown patient',
-          nhi: patient?.nhi,
+          nhi: patient?.nhi ?? '',
           procedure: (() => {
             const first = firstProcByBooking.get(booking.id)
             return first !== undefined ? procedureLabel(first, cueState.masters.rvgGroups, 1) : 'Procedure to capture'
@@ -114,6 +118,8 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
   }, [list, listId, bookingsRecord, proceduresRecord, patients, cueState])
 
   const warningsByBooking = useListWarnings(listId)
+  // The balance chip reads these warnings, never a second evaluation per row (catch-up Phase 40).
+  const schedule = useAppStore((s) => s.schedule)
   // Stubs for rows waiting at intake (catch-up Phase 33a): drawn in time order, never counted.
   const stubs = useListStubs(listId)
   const [openStubId, setOpenStubId] = useState<string | null>(null)
@@ -274,13 +280,12 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
                   >
                     {r.patientName}
                   </span>
-                  <WarningTriangle warnings={warningsByBooking.get(r.booking.id) ?? []} size="sm" />
+                  <WarningTriangle warnings={warningsFor(warningsByBooking.get(r.booking.id) ?? [], 'anaesthetist')} size="sm" />
+                  <BalanceAlertPill alert={balanceAlertFromWarnings({ schedule }, r.booking.id, actor.anaesthetistId, warningsByBooking.get(r.booking.id) ?? [])} />
                 </span>
-                {r.nhi !== undefined && (
-                  <span className="mono" style={{ fontSize: 11, color: neutral.mist }}>
-                    {r.nhi}
-                  </span>
-                )}
+                <span className="mono" data-shot="list-row-nhi" style={{ fontSize: 11, color: neutral.mist }}>
+                  {r.nhi}
+                </span>
                 <span style={{ fontSize: 13, color: neutral.slate }}>{r.procedure}</span>
                 {r.cue !== undefined && (
                   <span data-shot="list-row-contract-cue" style={{ fontSize: 11.5, color: neutral.slate }}>{r.cue}</span>
@@ -320,6 +325,11 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
         )}
 
         {canEdit && <AddRowButton size="touch" onClick={onAddBooking}>Add a booking</AddRowButton>}
+
+        {/* The shared note on the List (catch-up Phase 40; US-11.3.3): the office reads it in Admin. */}
+        <Card title="Shared notes">
+          <SharedNotes target={{ listId }} actor={actor} size="touch" />
+        </Card>
         {/* 96 - 10 for the column gap, so the reserved space is unchanged. */}
         <DockSpacer height="calc(var(--aa-inset-bottom, 34px) + 86px)" />
       </div>

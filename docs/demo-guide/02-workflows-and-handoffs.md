@@ -197,6 +197,10 @@ Matching** link. When the office adds the NHI, the Booking takes the stub's plac
 removes the stub. Seeded: Mere Tipene on Dr Souter's Tue 4 Aug PM List (NHI ZQA1024). What a stub shows
 and that the Booking takes its place are our readings, to confirm with AA.
 
+The office works the waiting rows on **Admin, Patients, Waiting for NHI**: it emails the List's sender (else
+the surgeon's first office contact) for the NHI, adds it, then decides the row. A returning patient who owes
+money raises the patient balance warning when the Booking is created or matched.
+
 A List created from a rooms' PDF reads "From a rooms' PDF · sent from <address>" with **Replies go to**
 that address, on the List and its Bookings: updates and NHI requests go to the List's sender, else the
 surgeon's first office contact, the others offered.
@@ -872,6 +876,11 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
   **Retry now** on its queue row. A failed billing run keeps the booking row's **Retry**, which rebuilds
   from the lock. On the Billing monitor, **Problems only** narrows the list to just these. The fix never edits a Contract or any other master; a wrong price after
   invoicing is corrected by a credit note and rebill (see Correction after invoicing).
+
+#### Patient follow-up (catch-up Phase 40)
+
+- A patient who owes AA is worked from the patient record: the follow-up log (Log call, notes, reminders),
+  **Resend** on an unpaid invoice and **Clear** on the warning.
 
 #### Row the office cannot match
 

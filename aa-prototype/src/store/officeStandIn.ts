@@ -29,6 +29,12 @@ import { OUT_OF_HOURS, compareSessions } from '../domain/outOfHours'
 import { isAssignedList } from '../domain/draftLists'
 import { slotIdFor } from '../domain/slots'
 import { closeOutOfHoursSession, openOutOfHoursSession } from './outOfHoursActions'
+import type { AssignedList, ImportRow } from '../domain/types'
+import { stubsOnList } from '../domain/intake/stubs'
+import { NO_NHI_LIST, NO_NHI_NEW_PATIENT_NHI, NO_NHI_RETURNING_NHI } from '../domain/intake/hospitalDownloads'
+import { stageImportRows } from './matchingActions'
+import { addNhiToWaitingRow, type AddNhiResult } from './patientActions'
+import { fixtureNhiForRow } from './stubDemo'
 
 /**
  * The stand-in's refusal while a Booking on the SUBMITTED List is incomplete
@@ -260,4 +266,106 @@ export function setSessionPublicAsSimulatedOffice(api: AppStoreApi, slotId: stri
   const out = setAvailability(api, OFFICE_SIMULATION_ACTOR, slot.anaesthetistId, slot.dateISO, slot.session, SEED_STATUS.publicHospital, OFFICE_PUBLIC_NOTE)
   if (!out.ok) return out
   return ok({ slotId })
+}
+
+// ---------------------------------------------------------------------------
+// "Office adds the NHI" (catch-up Phase 40; US-11.1.4, US-11.1.5, D11, D66)
+// ---------------------------------------------------------------------------
+
+/**
+ * Three synthetic patients the hospital "sends" with no NHI, each with the
+ * NHI the office then adds: valid (mod 11), held by no seeded patient, and
+ * outside every block the seed and the samples use (`ZQE4..`).
+ */
+export const NO_NHI_FIXTURES = [
+  { name: 'Tomasz Nowak', dobISO: '1971-03-08', nhi: 'ZQE4017', wording: 'Knee arthroscopy' },
+  { name: 'Priya Raman', dobISO: '1988-11-19', nhi: 'ZQE4025', wording: 'Excision of skin lesion' },
+  { name: 'Ana Fifita', dobISO: '1964-06-02', nhi: 'ZQE4033', wording: 'Cystoscopy' },
+] as const
+
+export const NO_FIXTURE_ROWS_LEFT = 'No fixture rows left'
+export const LIST_NOT_ACTIVE = 'The List is not ACTIVE'
+
+/** The NHI the office "finds" for a row waiting on this List: a fixture's, the seed's or a sample's. */
+function waitingRowNhi(row: ImportRow): string | undefined {
+  const name = row.incoming.patient.name
+  return (
+    NO_NHI_FIXTURES.find((f) => f.name === name)?.nhi ??
+    fixtureNhiForRow(row) ??
+    (row.incoming.hospitalId === NO_NHI_LIST.hospitalId && name === NO_NHI_LIST.rows[0]!.patient.name ? NO_NHI_NEW_PATIENT_NHI : undefined) ??
+    (row.incoming.hospitalId === NO_NHI_LIST.hospitalId && name === NO_NHI_LIST.rows[1]!.patient.name ? NO_NHI_RETURNING_NHI : undefined)
+  )
+}
+
+/** An open row already waiting for an NHI on this List (its stub stands there), with the NHI to add. */
+function waitingRowOn(state: AppState, listId: string): { rowId: string; nhi: string } | undefined {
+  for (const stub of stubsOnList(state.intake.stubs, listId)) {
+    const row = state.intake.rows[stub.importRowId]
+    if (row === undefined || row.status !== 'open' || row.corrections?.nhi !== undefined) continue
+    const nhi = waitingRowNhi(row)
+    if (nhi !== undefined) return { rowId: row.id, nhi }
+  }
+  return undefined
+}
+
+/** The next fixture no row and no patient has used yet. */
+function nextNoNhiFixture(state: AppState): (typeof NO_NHI_FIXTURES)[number] | undefined {
+  const sent = new Set(Object.values(state.intake.rows).map((r) => r.incoming.patient.name))
+  const held = new Set(Object.values(state.masters.patients).map((p) => p.nhi))
+  return NO_NHI_FIXTURES.find((f) => !sent.has(f.name) && !held.has(f.nhi))
+}
+
+/** Why "Office adds the NHI" cannot run on this List, or null. */
+export function addNhiStandInRefusal(state: AppState, listId: string | undefined): string | null {
+  const list = listId !== undefined ? state.schedule.lists[listId] : undefined
+  if (list === undefined) return 'Open a List first'
+  if (!isAssignedList(list) || list.state !== 'ACTIVE' || list.removedAtISO !== undefined) return LIST_NOT_ACTIVE
+  if (waitingRowOn(state, list.id) !== undefined) return null
+  if (nextNoNhiFixture(state) === undefined) return NO_FIXTURE_ROWS_LEFT
+  if (state.masters.surgeons[list.surgeonId] === undefined) return 'This List has no surgeon'
+  // The hospital's row lands on the first List open at its hospital, session and surgeon: this one.
+  const first = Object.values(state.schedule.lists)
+    .filter((l) => l.hospitalId === list.hospitalId && l.dateISO === list.dateISO && l.session === list.session && l.surgeonId === list.surgeonId && (l.state === 'ACTIVE' || l.state === 'SUBMITTED'))
+    .sort((a, b) => a.id.localeCompare(b.id))[0]
+  return first?.id === list.id ? null : 'Another List shares this session'
+}
+
+/**
+ * The office stand-in on the PWA: the hospital sends a booking for this List
+ * with no NHI (the next unused fixture, staged through 33's `stageImportRows`,
+ * which makes no Booking; 33a's stub stands on the List), then the office adds
+ * the fixture's NHI as `OFFICE_SIMULATION_ACTOR` through `addNhiToWaitingRow`
+ * (33a's resolve), so the Booking takes the stub's place. An open waiting row
+ * already on the List is used instead of a new fixture.
+ */
+export function addNhiAsSimulatedOffice(api: AppStoreApi, listId: string): Outcome<{ patient: string; result: AddNhiResult }> {
+  const state = api.getState()
+  const reason = addNhiStandInRefusal(state, listId)
+  if (reason !== null) return refuse('officeStandIn', reason)
+  let target = waitingRowOn(state, listId)
+  let patient = target !== undefined ? state.intake.rows[target.rowId]!.incoming.patient.name : ''
+  if (target === undefined) {
+    const list = state.schedule.lists[listId] as AssignedList
+    const fixture = nextNoNhiFixture(state)!
+    const staged = stageImportRows(api, OFFICE_SIMULATION_ACTOR, 'manualSheet', list.hospitalId, 'Hospital booking sent with no NHI', [
+      {
+        hospitalId: list.hospitalId,
+        dateISO: list.dateISO,
+        session: list.session,
+        surgeon: { name: state.masters.surgeons[list.surgeonId]!.name },
+        scheduledTime: list.session === 'PM' ? '16:15' : '11:45',
+        patient: { name: fixture.name, dobISO: fixture.dobISO },
+        procedure: { text: fixture.wording },
+        hospitalStatus: 'booked',
+      },
+    ])
+    if (!staged.ok) return staged
+    const rowId = staged.value.rowIds[0]
+    if (rowId === undefined) return refuse('officeStandIn', NO_FIXTURE_ROWS_LEFT)
+    target = { rowId, nhi: fixture.nhi }
+    patient = fixture.name
+  }
+  const added = addNhiToWaitingRow(api, OFFICE_SIMULATION_ACTOR, target.rowId, target.nhi)
+  if (!added.ok) return added
+  return ok({ patient, result: added.value })
 }

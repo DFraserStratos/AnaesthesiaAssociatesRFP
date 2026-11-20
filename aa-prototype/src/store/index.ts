@@ -170,6 +170,8 @@ export {
   NOTHING_TO_REVIEW_MESSAGE,
   PATIENT_NHI_REQUIRED_MESSAGE,
   PATIENT_NHI_OFFICE_ONLY_MESSAGE,
+  PATIENT_NHI_TAKEN_MESSAGE,
+  PATIENT_EDIT_OFFICE_ONLY_MESSAGE,
   type PatientIntakeDetails,
   type IntakeResult,
   type PatientEditPatch,
@@ -329,6 +331,7 @@ export {
   clearAllSamples,
   type WarningSample,
 } from './warningSamples'
+export { stagedSampleKeys, newlyStagedSampleNames, BALANCE_SAMPLE_ACTION } from './warningSamples'
 export { openOutOfHoursSession, closeOutOfHoursSession, closeOutOfHoursRefusal } from './outOfHoursActions'
 export {
   addOutOfHoursListAsSimulatedOffice,
@@ -347,6 +350,7 @@ export {
   officeSetsPublicRefusal,
   setSessionPublicAsSimulatedOffice,
 } from './officeStandIn'
+export { addNhiAsSimulatedOffice, addNhiStandInRefusal, NO_NHI_FIXTURES, NO_FIXTURE_ROWS_LEFT, LIST_NOT_ACTIVE } from './officeStandIn'
 export {
   addPrepaidBooking,
   addPrepaidBookingRefusal,
@@ -694,5 +698,8 @@ export { reportDiagnostic, recentDiagnostics, wireDiagnostics } from './diagnost
 
 // Catch-up Phase 40: patients (mandatory NHI, the balance warning, the patient view, the shared note).
 export { addSharedNote, addNhiToWaitingRow, nhiRowPreview, nhiRequestAddressFor, requestNhiFromOffice, patientBalancePreview, setPatientBalanceThreshold, patientBalanceThresholdDays, stampBalanceCheck, SHARED_NOTE_MAX_LENGTH, NOTE_REQUIRED_MESSAGE, NOTE_TOO_LONG_MESSAGE, NOTE_OWN_ONLY_MESSAGE, OFFICE_ADDS_NHI_MESSAGE, ROW_HAS_NHI_MESSAGE, THRESHOLD_RANGE_MESSAGE, PATIENT_BALANCE_PREVIEW_CAPTION, type SharedNoteTarget, type AddNhiResult, type NhiRowPreview, type NhiRequestAddress, type PatientBalancePreview, type BalanceCheckTrigger } from './patientActions'
+export { canResendFromRecord, INVOICE_NOT_THIS_PATIENT_MESSAGE } from './patientActions'
+export { nhiRequestEmailFor, logPatientFollowUp, completeFollowUp, resendInvoiceFromRecord, clearBalanceWarningWithNote, FOLLOW_UP_TEXT_REQUIRED_MESSAGE, FOLLOW_UP_DATE_MESSAGE, FOLLOW_UP_OFFICE_ONLY_MESSAGE, type FollowUpInput, type FollowUpKind } from './patientActions'
 export { patientSearch, patientRecordView, waitingNhiRows, openBalanceWarnings, followUpsDue, patientsWithPendingDetails, patientAttentionCount, PATIENT_SEARCH_LIMIT, PATIENT_SEARCH_UPCOMING_DAYS, type PatientSearchRow, type PatientRecordView, type PatientBookingRow, type PatientInvoiceRow, type WaitingNhiRow, type PatientSelectorState } from './patientSelectors'
 export { patientBalanceRows } from './patientLedger'
+export { patientByNhi } from './patientLookup'

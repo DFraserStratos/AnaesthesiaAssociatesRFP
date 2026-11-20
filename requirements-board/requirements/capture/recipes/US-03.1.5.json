@@ -1,6 +1,77 @@
 {
   "id": "US-03.1.5",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 40 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "nhi-shown",
+      "app": "web",
+      "caption": "The patient's NHI shown to the anaesthetist, on the List row and on the Booking",
+      "start": "/web/lists/L-34821-2026-07-27-AM",
+      "states": [
+        {
+          "state": "list",
+          "caption": "The NHI on the List row, in mono",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"list-row-nhi\"]:has-text(\"CQY9304\")"
+          ]
+        },
+        {
+          "state": "booking",
+          "caption": "The NHI on the Booking",
+          "steps": [
+            {
+              "goto": "/web/lists/L-34821-2026-07-27-AM/bookings/BK0186"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"booking-patient-nhi\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nhi-shown",
+      "app": "mobile",
+      "caption": "The patient's NHI shown to the anaesthetist, on the List row and on the Booking",
+      "start": "/mobile/lists/L-34821-2026-07-27-AM",
+      "states": [
+        {
+          "state": "list",
+          "caption": "The NHI on the List row, in mono",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"list-row-nhi\"]:has-text(\"CQY9304\")"
+          ]
+        },
+        {
+          "state": "booking",
+          "caption": "The NHI on the Booking",
+          "steps": [
+            {
+              "goto": "/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0186"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=\"booking-patient-nhi\"]"
+          ]
+        }
+      ]
+    }
+  ]
 }

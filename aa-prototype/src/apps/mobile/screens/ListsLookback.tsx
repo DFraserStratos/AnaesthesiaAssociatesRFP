@@ -16,6 +16,7 @@ import { listDaysFor, listsOnDayFor, useAppStore, type BookingSearchRow, type Lo
 import { MonthGrid } from '../../../shared/calendar'
 import { monthOf } from '../../../shared/availability/monthCells'
 import { ProgressPill, useBookingWarnings, useSurface, WarningTriangle } from '../../../shared'
+import { warningsFor } from '../../../shared/warnings'
 import { ListRow } from '../components'
 import { listRowModel } from './listRowModel'
 import { DAY_EMPTY, SEARCH_EMPTY, useFieldText, useLookbackBounds } from '../../../shared/schedule'
@@ -219,7 +220,7 @@ function GroupHeading({ children }: { children: string }) {
 
 /** A Booking found by search, in the List row's anatomy (a button; the triangle is an image). */
 function ResultRow({ row, onOpen }: { row: BookingSearchRow; onOpen: (listId: string, bookingId: string) => void }) {
-  const warnings = useBookingWarnings(row.bookingId)
+  const warnings = warningsFor(useBookingWarnings(row.bookingId), 'anaesthetist')
   const when = shortDay(row.dateISO)
   const subtitle = [when, sessionText(row.session), row.hospitalName, row.procedureNames[0]].filter(Boolean).join(' · ')
   const nhi = nhiBadge(row.nhi).text

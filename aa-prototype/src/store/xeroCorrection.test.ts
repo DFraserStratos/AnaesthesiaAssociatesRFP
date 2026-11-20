@@ -88,7 +88,8 @@ describe('the correction and the new pairs land in one commit', () => {
       const landed = states.find((st) => st.xero.accRecs[accRecId]?.status === 'credited')!
       for (const id of newPairs) expect(landed.billing.ledger[id]!.receivable.xeroAccRecId, id).toBeDefined()
       // And not before it: the run's own commit made no mirror for them.
-      const ran = states.find((st) => Object.keys(st.billing.creditNotes).length > 0)!
+      // Set aside the seed's own credit, Heather Sinclair's (`HS` ids, catch-up Phase 40, D24).
+      const ran = states.find((st) => Object.keys(st.billing.creditNotes).some((id) => !id.startsWith('HS')))!
       for (const id of newPairs) expect(ran.billing.ledger[id]!.receivable.xeroAccRecId).toBeUndefined()
       expect(Object.values(s.xero.creditNotes).filter((c) => c.creditNoteId === note.id).map((c) => c.type)).toEqual(['ACCRECCREDIT'])
       // Handed off once: a second hand-off of the correction or of a new pair is a no-op.
@@ -116,7 +117,7 @@ describe('the fault path and its retry', () => {
     expect(note.xeroFailure).toMatchObject({ code: 'fault' })
     expect(s.xero.accRecs[originalPair.receivable.xeroAccRecId!]!.status).toBe('awaitingPayment')
     expect(newPair.receivable.xeroAccRecId).toBeUndefined()
-    expect(Object.keys(s.xero.creditNotes)).toEqual([])
+    expect(Object.keys(s.xero.creditNotes).filter((id) => !id.startsWith('XCNHS'))).toEqual([])
     const item = correctionQueuedFor(s, note.id)!
     expect(item).toMatchObject({ kind: 'correction', idempotencyKey: `CORRECTION-${note.id}`, target: { creditNoteId: note.id } })
     expect(handoffQueuedFor(s, newPair.id)?.id).toBe(item.id)
@@ -164,7 +165,7 @@ describe('the fault path and its retry', () => {
     const s = api.getState()
     expect(pairForInvoice(s, original.id)!.receivable.xeroAccRecId).toBeUndefined()
     expect(s.billing.creditNotes[out.creditNoteIds[0]!]!.xero).toEqual({ accPayVoided: false })
-    expect(Object.keys(s.xero.creditNotes)).toEqual([])
+    expect(Object.keys(s.xero.creditNotes).filter((id) => !id.startsWith('XCNHS'))).toEqual([])
     expect(pairForInvoice(s, out.invoiceIds[0]!)!.receivable.xeroAccRecId).toBeDefined()
     expect(Object.values(s.billing.xeroQueue).every((q) => q.status === 'sent')).toBe(true)
   })

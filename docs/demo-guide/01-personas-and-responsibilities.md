@@ -366,6 +366,10 @@ The prototype plans to place the monitoring in or alongside the Admin Web App.
   queue; on **PDF lists**, open each rooms' list with its sender, correct its rows and send it to
   matching (a re-sent list's differences wait for approval); on **Data quality** and **Validators**,
   check what was received and test NHIs.
+- Chase waiting rows on **Admin, Patients, Waiting for NHI** (email the List's sender, add the NHI) and
+  follow up patients who owe (the patient record, its follow-up log, Resend and Clear).
+- The anaesthetist always sees the NHI and the balance alert colour on their List, never the amounts, and
+  can leave a note on a List or Booking for the office.
 - Handle an inbound change that targets a `SUBMITTED` or `AUTHORISED` List.
 - Future scope: automatic hospital sync and HL7 and FHIR monitoring (failed, duplicate, retried and
   dead-lettered messages, partner field mappings, reprocessing without duplicates).

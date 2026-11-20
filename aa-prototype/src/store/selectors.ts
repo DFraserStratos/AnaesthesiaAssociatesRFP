@@ -465,6 +465,11 @@ export function isBackdropInvoice(invoice: Pick<Invoice, 'id'>): boolean {
   return invoice.id.startsWith('HINV') || invoice.id.startsWith('HSINV') || invoice.id.startsWith('RBINV')
 }
 
+/** A seeded backdrop credit note (catch-up Phase 40: Heather Sinclair's `HSCRN05`), kept off the office Invoices list like its invoice. A credit raised at runtime on a backdrop invoice still lists. */
+export function isBackdropCreditNote(note: { id: string }): boolean {
+  return note.id.startsWith('HSCRN')
+}
+
 /** Every LIVE billed List, most recently billed first (Phase 08; excludes seed backdrop). */
 export function billedLists(state: Pick<AppState, 'schedule'>): List[] {
   return Object.values(state.schedule.lists)

@@ -24,6 +24,7 @@ export type MastersView =
   | 'publicHolidays'
   | 'emailTemplates'
   | 'xeroArchiving'
+  | 'patientBalance'
   | 'seedLoad'
   | 'goLive'
 

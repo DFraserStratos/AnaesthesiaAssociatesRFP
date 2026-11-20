@@ -11,7 +11,7 @@ interface PhotoCaptureFlowProps {
   listId: string
   actor: Actor
   source?: BookingSource
-  onSaved: (result: { bookingId: string; reused: boolean }) => void
+  onSaved: (result: { bookingId: string; reused: boolean; detailsDiffer?: boolean }) => void
 }
 
 type Step = { kind: 'pick' } | { kind: 'processing'; sample: SampleExtraction } | { kind: 'review'; sample: SampleExtraction }

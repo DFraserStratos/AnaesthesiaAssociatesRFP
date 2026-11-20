@@ -135,7 +135,7 @@ function titleCase(word: string): string {
 }
 
 /** The nested value shapes the store stores: rendered, never stringified. */
-function formatShape(value: Record<string, unknown>): string | null {
+function formatShape(value: Record<string, unknown>, names?: AuditNames): string | null {
   // CapturedUnits — the figure is the point; its provenance is implied by the
   // fact that a change was audited at all.
   if (typeof value.units === 'number' && typeof value.source === 'string' && Object.keys(value).length === 2) {
@@ -147,6 +147,8 @@ function formatShape(value: Record<string, unknown>): string | null {
   }
   // CounterpartyRef
   if (typeof value.kind === 'string' && typeof value.id === 'string' && Object.keys(value).length === 2) {
+    // A patient by NHI and name, never the internal id (catch-up Phase 40).
+    if (value.kind === 'patient') return names?.patient?.(value.id) ?? 'The patient'
     return `${COUNTERPARTY_KINDS[value.kind] ?? titleCase(value.kind)} ${value.id}`
   }
   // IntegrationCorrelationRef
@@ -175,12 +177,15 @@ export interface AuditNames {
   rvgGroup?: (id: string) => string | undefined
   /** A Contract by its name, never its id (catch-up Phase 35 test pass). */
   contract?: (id: string) => string | undefined
+  /** A patient by NHI and name, never the internal id (catch-up Phase 40). */
+  patient?: (id: string) => string | undefined
 }
 
 /** The names a reader passes from its masters: an RVG group as "H4 · Complex procedures…". */
 export function auditNamesFor(masters: {
   rvgGroups: Readonly<Record<string, { code: string; description: string }>>
   contracts?: Readonly<Record<string, { name: string }>>
+  patients?: Readonly<Record<string, { nhi: string; name: string }>>
 }): AuditNames {
   return {
     rvgGroup: (id) => {
@@ -188,6 +193,14 @@ export function auditNamesFor(masters: {
       return g !== undefined ? `${g.code} · ${g.description}` : undefined
     },
     ...(masters.contracts !== undefined ? { contract: (id: string) => masters.contracts?.[id]?.name } : {}),
+    ...(masters.patients !== undefined
+      ? {
+          patient: (id: string) => {
+            const p = masters.patients?.[id]
+            return p !== undefined ? `${p.name} (NHI ${p.nhi})` : undefined
+          },
+        }
+      : {}),
   }
 }
 
@@ -267,7 +280,7 @@ export function formatAuditValue(key: string, value: unknown, names?: AuditNames
       return value.shares
         .map((share: unknown) => {
           if (!isRecord(share) || !isRecord(share.party) || !isRecord(share.basis)) return '?'
-          const party = formatShape(share.party) ?? '?'
+          const party = formatShape(share.party, names) ?? '?'
           const basis = share.basis
           const label =
             basis.kind === 'amount' && typeof basis.amountExGst === 'number'
@@ -300,7 +313,7 @@ export function formatAuditValue(key: string, value: unknown, names?: AuditNames
     if (key === 'pricing' && typeof value.kind === 'string' && Object.hasOwn(PRICING_KIND_LABEL, value.kind)) {
       return pricingLabel(value as unknown as ContractPricing)
     }
-    const shape = formatShape(value)
+    const shape = formatShape(value, names)
     if (shape !== null) return shape
     const parts = Object.entries(value)
       .filter(([, v]) => v !== undefined)

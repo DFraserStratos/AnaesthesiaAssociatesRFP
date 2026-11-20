@@ -265,6 +265,13 @@ Hooks already added:
 - **Admin, and every `/demo/*` page:** Kirsty W., office staff. Catch-up Phase 35 adds a second named office user,
   Sam T.: the `switch-office-user` trigger (Day view and Booking detail) swaps the Admin app between them, so two
   users' saves show named in one Booking's History.
+- **Patients keyed on NHI** (catch-up Phase 40; `/admin/patients/<NHI>`): Sarah Mitchell `CQY9304` (the strong
+  balance case: Dr Sharma's AA-2026-HS01, $610.00 raised 14 Apr, 98 days, billed to her, unpaid; also HS02 $540 paid),
+  Losa Tuilagi `JKL1188` (Sharma $380 unpaid, a returning patient: the Add NHI match), Heather Sinclair `ZAN2219`
+  (the credit case: Sharma AA-2026-HS05 $260.00 paid, then credited; reads "In credit $260.00", a mild yellow
+  warning), Noah Prescott `ZAP3016`. Fixture NHIs the triggers add: Aroha Ngata `ZQA3019` (a new patient),
+  Tomasz Nowak `ZQE4017`, Priya Raman `ZQE4025`, Ana Fifita `ZQE4033`. Valid unused NHI for a recipe that
+  types one: `ZZZ9005` (the seed never makes `ZZZ` NHIs; every Add a booking recipe that saves must type one).
 - **Other registration numbers:** Rutherford 29104, Ropata 39560, Delaney 27731, Morrison 25490,
   Whitaker 36208, Sharma 41267, Chen 45178, Hughes 46822, Strand 47733, Ngata 38455.
 - **Surgeons** (catch-up Phase 17): `S-HALE` Mr T. Hale, `S-REID` Ms A. Reid, `S-WHITFORD` Mr J. Whitford
@@ -371,6 +378,10 @@ unsaved-changes guard can block a navigation). No URL changed; the Admin Booking
 | `/admin/intake/pdfs` | PDF lists (catch-up Phase 34; product, unbadged): the rooms' PDF lists. "Upload PDF list" `pdf-upload-open` opens the dialog `pdf-upload`; the inbox table `pdf-inbox` (rows `tr[data-pdf-list-id=PDL0001][data-status=received|sent]`; columns Sent from, Surgeon, Hospital, Received, Suggested List, Rows, Status with a "Re-sent" pill on a re-sent list). A row click opens its review in place (`pdf-list-header`, rows `pdf-row-<n>`; "Back to PDF lists" returns). See "Rooms' PDF lists" under Seed data and the hooks under Existing hooks. Demo action `pdf-list-resend`. |
 | `/admin/intake/quality` | Data quality (catch-up Phase 34): the data-quality items; at reset the empty card `data-quality-empty`. |
 | `/admin/intake/validators` | Validators (catch-up Phase 34; was the Integrations Validators tab): the NHI validator `integrations-nhi-validator` (fill its `input`). No tab click. |
+| `/admin/patients` | Patients (catch-up Phase 40; `admin-patients`): the search box `patient-search-box` and table `patient-search-table` (name, NHI or date of birth; empty state `patient-search-empty`); the other two views are routes, so open them directly: `/admin/patients/waiting` (Waiting for NHI, `admin-waiting-nhi`) and `/admin/patients/follow-up` (`admin-patient-follow-up`: `patient-threshold-line`, `patient-follow-up-warnings`, `patient-follow-ups-due`, `patient-details-review`). Side nav Patients carries its own count badge. |
+| `/admin/patients/waiting` | Waiting for NHI (US-11.1.5): table `waiting-nhi-table`, one `waiting-nhi-row` per intake row (`data-row-id`, `data-urgent=true|false`) with the stub chip `waiting-nhi-stub`, the one address to chase `waiting-nhi-chase`, the pill `waiting-nhi-urgent`, `waiting-nhi-email` ("Email for the NHI", a mailto link), `waiting-nhi-add` ("Add NHI") and "Open on matching". Empty state `waiting-nhi-empty`. At reset it holds the seeded Mere Tipene (33a's `IRS001`); the bar's `receive-no-nhi-list` adds Aroha Ngata (urgent) and Losa Tuilagi. |
+| `/admin/patients/:nhi` | Patient record (US-11.1.1, US-11.3.1, US-11.3.3, US-13.2.2; `admin-patient-record`, `data-patient-nhi`; keyed by NHI, no internal id): header NHI pill `patient-record-nhi`; cards `patient-details` ("Edit" opens the sheet, `patient-nhi-field`, with the Ethnicity code field and no required marker; rows show "Not supplied"), `patient-details-differ` (only when a returning patient's details differ; `patient-details-apply`), `patient-balance` (tiles, `patient-balance-strength`, and the By payer line `patient-by-payer`; "In credit $260.00" on Sinclair), `patient-warnings` (clear with `patient-clear-note`), `patient-invoices` (table across every anaesthetist, `patient-invoice-patient-tag` on those billed to the patient; row actions "Resend <number>" and "Log follow-up", then `patient-invoice-sends` rows listing each send), `patient-bookings` and `patient-follow-up-log` (the composer: Call, Note and Reminder buttons, textarea, `patient-follow-up-date`, `patient-follow-up-save`; entries below with who, when, invoice number). `ZAN2219` is the credit record. |
+| `/admin/masters?view=patientBalance` | Patient balance warning (`master-patient-balance-threshold`): the one field "Patient balance warning after N days" (default 90; 1 to 730), `patient-balance-threshold-field`. |
 | `/admin/intake/matching` (was `/admin/matching`) | Matching (catch-up Phase 33; Kirsty W.): hospital rows waiting for the office. At reset it holds one seeded waiting row (Mere Tipene, no NHI, catch-up Phase 33a; see Stubs on a List below), so `matching-empty` no longer shows; stage rows with "Import hospital file" (`matching-import-open`, see Overlays) or the Demo actions below. Stat tiles `matching-stats` (`[data-stat=open|new|modification|cancellation|unmatched]`), the filter `[aria-label="Show rows"]` (options whose text starts "Open", "Unmatched", "Decided"), the table `matching-table` with rows `matching-row-<n>` (1-based, ready rows first, then import order). A row click opens its panel `matching-panel` (a right-docked SidePanel with a scrim: press Escape before clicking a row or the header). After an import the batch's first row's panel opens by itself. A row decided stays in place, dimmed, until the panel closes. |
 | `/admin/notifications` | The shared notification pool (catch-up Phase 32; US-13.8.1): newest first, six a page, `?page=N`; the table `admin-notifications-table`, rows `[data-notification-row=NT0001]` with "Open List", "Open Draft List" or "Open Booking", the pager `admin-notifications-pager` (Newer / Older). Catch-up Phase 32b: notices are active or resolved; the page shows active ones by default, the count `admin-notifications-page-count`, each active row's tick `notification-tick` ("Resolve"), and the "Show resolved" checkbox `admin-notifications-show-resolved` (`?resolved=1`, kept with `?page=`); resolved rows carry `data-notification-resolved=true` and the line `notification-resolved-line` ("Resolved by Kirsty W., Tue 21 Jul 08:00"). An alert's note is `notification-alert-note`. The provisional caption is gone. Seeds empty: stage it with the `colleague-moves-list-to-office` trigger, or send an alert from a web Booking (same origin) and `goto` here. Catch-up Phase 35: a List handed on to a colleague carries "Draft cover-change email" `pool-cover-email` (the composer, To the hospital, the move ticked); a single Booking moved carries "Draft update email" `pool-booking-email`; a List returned to the office carries the hint `pool-returned-hint` ("Assign this Draft List first ..."). The `busy` choice of `colleague-moves-list-to-office` stages hand-ons, so `[data-shot=pool-cover-email] >> nth=0` finds one. Not on the Day rail card. |
 | `/admin/draft-lists` | Draft Lists (catch-up Phase 31): Unassigned tab (default) and History (`?tab=history`). Since UI unification U5 the two tabs are links inside `role=navigation[name="Draft Lists"]`, not `role=tab`: `a[data-draft-tab=unassigned]` and `a[data-draft-tab=history]`, each with its count inside the link text (so match by the hook, not the name); the current one has `aria-current=page`. `?open=<listId>` opens the Draft List drawer (`admin-draft-list-drawer`); `?assigned=<listId>` shows the assigned confirmation with "Open List". The drawer's "Available that session" Assign opens step 2; the row's Assign opens step 1 (Everyone / Free only, tier filter, groups). "New Draft List" opens `admin-new-draft-list`. |
@@ -699,7 +710,7 @@ Authorising Morrison raises 6 invoices.
 - Paid: Bennett, Webb, Mills, Riley, Park, and the 29 January to March 2026 accounts (catch-up Phase 38a).
 - Search examples (catch-up Phase 38a): "Mitchell" or `CQY9304` (three: Mon 27 Jul, Tue 14 Apr, Fri 13
   Mar; never her Booking on Dr Sharma's List), "Prentice" (Mon 20 Jul PM and the June ACC Booking),
-  "Prescott" (Noah Prescott, NHI pending), "tane".
+  "Prescott" (Noah Prescott, NHI `ZAP3016`), "tane".
 
 **Also seeded:**
 
@@ -709,7 +720,13 @@ Authorising Morrison raises 6 invoices.
   child warning.
 - An insured-reimbursement booking: Rutherford, Thu 16 AM (BK0030, Marcus Webb): No contract · RVG,
   invoiced to the patient, AIA Health named as insurer with number `AIA-2026-30418`, no warning.
-- A provisional patient with no NHI.
+- Patient-billed history (catch-up Phase 40; Dr Sharma's backdrop, off the office Invoices list and monitor):
+  Sarah Mitchell AA-2026-HS01 $610.00 raised 14 Apr (98 days, unpaid, billed to her: the strong warning) and
+  HS02 $540.00 paid 10 Feb; Losa Tuilagi $380.00 unpaid; Mere Walsh $290.00 unpaid; Heather Sinclair AA-2026-HS05
+  $260.00 paid, then credited (credit note CN-2026-HS05, "Credited" pill, "In credit $260.00", never paid out). Dr
+  Souter's own Mitchell invoice is hospital-billed (Other payers). The `NO_NHI_LIST` rows arrive only through
+  `receive-no-nhi-list`; the seed's own waiting row is `IRS001`.
+- Patients and the NHI (catch-up Phase 40): every Booking has a patient with an NHI; the NHI is mandatory and a row without one waits (below). Noah Prescott is `ZAP3016`.
 - Repeat patients: Mitchell and Walker.
 - Two hospital-billed Procedures on Mon 20 Jul, markers `mon20HolderBilled1` and `mon20HolderBilled2` (once the missing billing references; the reference is gone since catch-up Phase 25a).
 
@@ -794,7 +811,7 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
 - Prepaid Contracts: Dr Souter's price list (`CT-SOUTER-RHINO` $1,200, `-BLEPH`, `-BREAST`, and
   `CT-SOUTER-RHINO-COS` retired in Phase 27, plastic surgery and ENT). Riley (BK0034, P0036) and Nair's cosmetic
   component (BK0038, P0041) are both on the Rhinoplasty Contract at $1,200.00 ex GST.
-- "Needs an invoice destination" at reset (no Contract): BK0035 (Souter Mon 27 AM, the NHI-pending PDF
+- "Needs an invoice destination" at reset (no Contract): BK0035 (Souter Mon 27 AM, the PDF
   Booking) and the six pre-ops BK0060 to BK0065 (Souter Thu 23 PM, AA rooms). BK0060 carries the
   answers so far Patient › Standard, for the anaesthetist's pick-up. Sarah Mitchell's Booking created on Matching (S1) arrives
   with none, unless the office chose one.
@@ -1877,6 +1894,21 @@ the exception: use the `trigger` step)
 
 ## Existing hooks
 
+**Patients, the NHI and the balance warning (catch-up Phase 40).** Admin: `admin-patients`, `admin-waiting-nhi`,
+`admin-patient-follow-up`, `admin-patient-record` and the record's cards (listed under Routes, `/admin/patients/:nhi`);
+`waiting-nhi-row` / `waiting-nhi-add` / `waiting-nhi-email` / `waiting-nhi-urgent`; the Add NHI sheet
+`add-nhi-sheet` (the field `add-nhi-field`, the preview `add-nhi-preview` "Matches Losa Tuilagi, born ... The row uses
+this record; no second one is made.", `add-nhi-differences`, the teal `add-nhi-save`, then `add-nhi-done` "Added. The
+Booking is on ..."); `master-patient-balance-threshold`. Add a booking form (every app): `manual-nhi` (required, with
+the live check), `manual-save` (disabled with the NHI reason while blank), `manual-matched-record`,
+`manual-details-differ` and, Admin only, `manual-balance-preview`. Matching: `matching-nhi`,
+`matching-balance-preview` (before Create Booking), `matching-balance-result` (after, `data-strength`),
+`matching-patient-record-link`, `matching-waiting-link`. Booking detail: `booking-patient-ethnicity`,
+`booking-patient-record-link` (Admin). The anaesthetist's chip `balance-alert-chip` (`data-strength`, no amount) on a
+List row and a Booking, in Web and Mobile; the shared note box `shared-notes` (`shared-note-input`,
+`shared-note-add`, notes `li[data-note-id]`) on a List in Mobile, Web and the Admin drawer, and on a Booking. Billing
+monitor: `billing-patient-balance`. `billing-prior-balance` is gone.
+
 - Events and the additional invoice (catch-up Phase 38b). `procedure-events` (the section under each Procedure, all
   three apps; Admin always, the anaesthetist on their own Procedure since catch-up Phase 39b, otherwise only when it has events), rows `procedure-event-row`
   (`data-event-id`, `data-status`) with `procedure-event-status`, `procedure-event-review`, `procedure-event-edit`,
@@ -2406,7 +2438,7 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   `billing-group-39560` Ropata, `billing-group-25490` Morrison; its expand-all `billing-group-expand-<anaesthetistId>`);
   `billing-awaiting-<listId>` (an "Awaiting approval" row) with `billing-open-in-review-<listId>`; `billing-pipeline-<listId>`
   (now a `tbody`: the summary row plus, expanded, the detail row; Booking rows are `tr[data-booking-id]` in a nested
-  table); `billing-prior-balance` (kept on the patient cell), `monitor-waiting-for-xero` and `monitor-journal-fault`
+  table); `billing-patient-balance` (Phase 40, replaces `billing-prior-balance`: the balance triangle on the patient cell, open patient-balance warnings only), `monitor-waiting-for-xero` and `monitor-journal-fault`
   (the Booking's detail while its hand-off or journal waits), `monitor-xero-flag` (voided or amended in Xero),
   `monitor-retry-note` and `billing-retry-<bookingId>` (billing-run exceptions only). The Xero panels:
   `billing-xero-queue` ("Xero sync queue": rows `tr[data-queue-item=<id>][data-queue-kind=...]` with What ("Hand off
@@ -2624,6 +2656,8 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>` | `add-prepaid-booking` (choices `one-payer`, `two-payers`) | Catch-up Phase 27: as the office stand-in, adds Fiona Gray on Dr Souter's next ACTIVE List where her prepaid Contracts are offered. `two-payers`: Rhinoplasty $1,200.00 to the patient and Blepharoplasty, upper lids $900.00 to Ian Gray, so two strip rows. With approval off each is sent at once. Disabled "No ACTIVE List for Dr Souter" or "Already added (Reset to repeat)" |
 | `/mobile/lists/<listId>/bookings/<bookingId>` (PWA Demo sheet only) | `pwa-office-approves-prepayment`, `pwa-payment-full`, `pwa-payment-half` | Catch-up Phase 27: the office approves and sends this Booking's first ready payer group; the patient pays half or all of its sent prepayment. Not in the framed build's bar |
 | `/demo/integrations`, `/demo/integrations/log`, `/demo/integrations/mapping` | `fire-hospital-message` (choice: a message id), `replay-hospital-message` | Badged Future scope, **bar only**, screen "Future scope: HL7 and FHIR". Since catch-up Phase 34 only on these three routes (no longer on mobile, web or Admin Booking routes, nor Admin Integrations), and with no per-Booking default. It never applies anything: a message stages a row on `/admin/intake/matching` ("Sent ... to matching"), and the Booking changes only once the office decides the row there. To stage a row for an Admin shot, fire it in `setup` from `/demo/integrations`, then `start` on Matching (US-02.5.4). Replay dedupes: no second row |
+| `/admin/patients/waiting` | `receive-no-nhi-list` ("Receive list with a missing NHI") | Catch-up Phase 40, bar only. Imports a Forte Health sheet with two rows and no NHI: Aroha Ngata (Thu 23 Jul PM, urgent, a new patient; type `ZQA3019`) and Losa Tuilagi (Mon 27 Jul, a returning patient; type `JKL1188`). Both wait here and on Matching; nothing is created until the NHI is added. Disabled "Already received". |
+| `/mobile/lists/<listId>`, a Booking (PWA Demo sheet only) | `pwa-office-adds-nhi` ("Office adds the NHI") | Catch-up Phase 40, badged Office stand-in, PWA only. The hospital sends a booking with no NHI for this List (a stub), then the office adds the NHI and the Booking takes the stub's place. |
 | `/admin/intake/matching` (was `/admin/matching`) | `matching-receive-theatre-list` (choice `stg` or `sx`), `matching-send-update` | Catch-up Phase 33, bar only. "Import hospital file" stages `SAMPLE_STG` or `SAMPLE_SX`'s rows as the hospital sending its theatre list (refused once staged). "Send update for a matched Booking" stages a later row for the Booking matched by the selected row, else Diane Foster's `BK0043` (a later time and the hospital's fuller wording), waiting for approval. Recipes usually stage rows through the product's own Import hospital file dialog instead (see Overlays) |
 | `/mobile/lists[...]` (PWA Demo sheet) | `matching-office-matches-row` ("Hospital file imported and my booking matched" since catch-up Phase 34; choice by label: "St George's file, Tue 28 Jul AM (S1)", "A new hospital booking on this List", "A hospital update for this Booking, approved by the office") | Catch-up Phase 33, badged Office stand-in, PWA only. The S1 choice imports the St George's file and decides the confident rows for Tue 28 Jul AM (Sarah Mitchell created, No contract · RVG on her Procedures); refused "Nothing new from the hospital for your Lists" once done. The other choices: the hospital's row arrives and the office decides it with the suggestion, every difference ticked, no Contract picked. On Foster's `BK0043` the hospital's fuller wording replaces WLE MM (US-02.5.7's mobile shot). In the framed build use Admin, Matching |
 | `/mobile/lists/<listId>` (PWA Demo sheet only) | `stub-office-adds-nhi` ("Office adds the NHI to this stub") | Catch-up Phase 33a, badged Office stand-in, PWA only. On a List holding a stub, the office adds the NHI its waiting row needs (Mere Tipene `ZQA1024` on `L-34821-2026-08-04-PM`; after the Southern Cross import, Tama Henare `ZQA1008` on `L-34821-2026-07-28-PM`) through the one resolve path, and the Booking takes the stub's place. Disabled on a List with no stub. No choice. |

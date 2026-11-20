@@ -8,6 +8,7 @@ import { FunderDetailsExample, PayerFieldsExample } from './payerExamples'
 import { PaidByRowExample, PaidBySheetExample, PartyPickerExample } from './splitExamples'
 import { AdditionalInvoiceButtonExample, AdditionalInvoiceSheetExample, AnaesthetistCreditSheetExample, CreditNoteButtonExample, EventSheetsExample, ProcedureEventsListExample } from './eventExamples'
 import { RemittancesTabExample } from './admin/paymentRunExamples'
+import { BalanceAlertChipExample, SharedNotesExample, StrengthPillExample } from './patientAlertExamples'
 
 const W = 'Web'
 const WA = 'Web · Admin'
@@ -44,7 +45,7 @@ export function WebCatalogue() {
           <CatalogueRow name="Card (panel)" source="shared/ui/Card.tsx" usedIn={W} what="The white card every web screen is built from, the shared Card at padding panel (UI unification U6): 20px, gap 14, e1, a 17/600 heading; optional right-aligned action, padded or flush for a full-bleed table. The web Panel is gone." replaceWith="shadcn Card" note="Its title is a real h2 naming the section (it was a div), so screen-reader users can jump between panels. The same Card at padding card is the Admin rail and profile card and the phone card.">
             <D.PanelDemo />
           </CatalogueRow>
-          <CatalogueRow name="StatTile" source="shared/ui/StatTile.tsx" usedIn={W} what="A dashboard figure, the shared StatTile variant quiet (UI unification U6): an Eyebrow label, a large mono value and an optional green change pill. The dashboard's Financial position and Accounts' Your position (catch-up Phase 38)." replaceWith="shadcn Card + Badge" note="The same component's outlined variant is Admin Review's summary tile, and with onClick a button (the Billing monitor's With problems tile turns its filter on). Static figures; no animation to add.">
+          <CatalogueRow name="StatTile" source="shared/ui/StatTile.tsx" usedIn={W} what="A dashboard figure, the shared StatTile variant quiet (UI unification U6): an Eyebrow label, a large mono value and an optional green change pill. The dashboard's Financial position and Accounts' Your position (catch-up Phase 38). tone warning or error colours the figure (error: the patient record's strong balance, catch-up Phase 40)." replaceWith="shadcn Card + Badge" note="The same component's outlined variant is Admin Review's summary tile, and with onClick a button (the Billing monitor's With problems tile turns its filter on). Static figures; no animation to add.">
             <D.StatTileDemo f={f} />
           </CatalogueRow>
           <CatalogueRow name="SlidingSegmentedControl" source="shared/ui/SlidingSegmentedControl.tsx" usedIn={ALL} what="A single-choice segmented control whose highlight slides between options. Two colour variants (teal, surface) and two sizes: md, and sm for a 36px toolbar (Admin Day's row order, UI unification U5). The ink variant went with question 17." replaceWith="shadcn ToggleGroup (single)" note="aria-pressed buttons rather than radios, no roving focus (question 3 keeps them buttons). Keep the slide with Motion layoutId.">
@@ -71,6 +72,15 @@ export function WebCatalogue() {
           <CatalogueRow name="WarningTriangle" source="shared/warnings/WarningTriangle.tsx" usedIn={ALL} what="The small warning marker on a Booking, coloured by the strongest open warning, with a count when there are several." replaceWith="shadcn Tooltip + Badge" note="The warning text lives only in title=, which keyboard and touch users never see.">
             <D.WarningTriangleDemo f={f} />
           </CatalogueRow>
+          <CatalogueRow name="BalanceAlertChip" source="shared/patients/BalanceAlertChip.tsx" usedIn={WM} what="The anaesthetist's balance colour code (catch-up Phase 40) on the Booking row of her List and in the Booking detail: red for a strong balance warning, yellow for a mild one or a credit. No amount, no name, no Clear, no patient link; it ignores the office's Clear." replaceWith="shadcn Badge" note="On the shared Pill (sm on the row with the full sentence in title, lg wrapping in the detail).">
+            <BalanceAlertChipExample />
+          </CatalogueRow>
+          <CatalogueRow name="StrengthPill" source="shared/warnings/StrengthPill.tsx" usedIn={ALL} what="A warning's strength, Mild or Strong, in the warning's own tone, neutral once cleared (catch-up Phase 40): each row of the Booking's warnings panel." replaceWith="shadcn Badge (variant outline)" note="On the shared Pill; one component with the Admin patient screens and the preview row.">
+            <StrengthPillExample />
+          </CatalogueRow>
+          <CatalogueRow name="SharedNotes" source="shared/notes/SharedNotes.tsx" usedIn={ALL} what="The shared note on a List or Booking (catch-up Phase 40; US-11.3.3): Add note and the notes, newest first, with author and time. The office and the anaesthetist both read and add; a blank note is refused." replaceWith="shadcn Textarea + Button" note="One component in all three apps; writes the real store, never a Booking draft. Here on local notes (SharedNotesPanel), so nothing is written.">
+            <SharedNotesExample by="Dr Melanie Souter" />
+          </CatalogueRow>
           <CatalogueRow name="Who's free chip" source="apps/web/screens/DashboardScreen.tsx" usedIn={W} what="A colleague's name on the dashboard's Who's free panel. A button when her List can move into their free session, a plain chip otherwise." replaceWith="shadcn Tooltip" note="Recreated: inline in DashboardScreen.tsx. Why it is or is not clickable is only in title=.">
             <D.WhosFreeChipDemo f={f} />
           </CatalogueRow>
@@ -80,7 +90,7 @@ export function WebCatalogue() {
           <CatalogueRow name="Day stepper" source="apps/web/screens/AvailabilityGrid.tsx" usedIn={W} what="Previous day, the day's name, next day and Today, for Find cover." replaceWith="shadcn Button Group" note="Recreated: inline in AvailabilityGrid.tsx, on the shared IconButton and Button (outline). No arrow-key or T-for-today shortcuts.">
             <D.DayStepperDemo f={f} />
           </CatalogueRow>
-          <CatalogueRow name="TextAction" source="shared/ui/TextAction.tsx" usedIn={ALL} what="A borderless teal word that does one thing (UI unification U5): sm 12.5 in tables, md 14 in cards, lg 15 with a 44px target on the phone, flush, inline inside a sentence, and a printed reason when disabled. The dashboard's View outstanding invoices is one." replaceWith="shadcn Button (variant link)" note="Was the dashboard's LinkButton, SeriesList's linkStyle and about forty inline teal copies.">
+          <CatalogueRow name="TextAction" source="shared/ui/TextAction.tsx" usedIn={ALL} what="A borderless teal word that does one thing (UI unification U5): sm 12.5 in tables, md 14 in cards, lg 15 with a 44px target on the phone, flush, inline inside a sentence, and a printed reason when disabled. The dashboard's View outstanding invoices is one. With to (catch-up Phase 40) it is a real router link in the same look: the patient screens' record, invoice and Master data links." replaceWith="shadcn Button (variant link)" note="Was the dashboard's LinkButton, SeriesList's linkStyle and about forty inline teal copies, and the patient screens' private TealLink.">
             <D.LinkButtonDemo />
           </CatalogueRow>
           <CatalogueRow name="SubmitAction" source="apps/web/screens/ListDetailView.tsx" usedIn={W} what="List detail's primary action in four states: blocked (count left, opens the real blockers sheet), ready, submitted and authorised." replaceWith="shadcn Button variants + Badge" note="Recreated: local to ListDetailView.tsx. Submitting just swaps the button for a green pill, with no live region or toast.">

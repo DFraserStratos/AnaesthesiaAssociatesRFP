@@ -30,6 +30,7 @@ import { CONTRACT } from '../domain/seed/contracts'
 import { SEED_PDF_LIST, SEED_STUB } from '../domain/seed/intakeSeed'
 import { SEED_ORIGIN_LISTS } from '../domain/seed/listOrigins'
 import { assessImportRow } from './matchingSelectors'
+import { warningsForBooking } from './warnings'
 import type { Invoice } from '../domain/types'
 import { projectedListId } from '../domain/slots'
 import { addProcedureEvent, additionalInvoicesFor, approveProcedureEvent, liveInvoiceForProcedure, runEventInvoicing } from './procedureEventActions'
@@ -92,6 +93,16 @@ describe('S1 · booking to theatre (rebuilt in catch-up Phase 34)', () => {
     expect(list).toHaveLength(4)
     expect(list.filter((c) => c.completed)).toHaveLength(0)
     expect(api.getState().schedule.lists[listId]?.state).toBe('ACTIVE')
+  })
+
+  it("Beat 1 (catch-up Phase 40): Create Booking leaves one open strong balance warning on Sarah Mitchell's new Booking", () => {
+    const api = createAppStore()
+    const res = importAndCreateSarah(api).decide()
+    if (!res.ok) throw new Error(res.message)
+    const balance = warningsForBooking(api.getState(), res.value.bookingId!).filter((w) => w.ruleId === 'patientBalance' && w.clearance === undefined)
+    expect(balance).toHaveLength(1)
+    expect(balance[0]).toMatchObject({ strength: 'strong' })
+    expect(balance[0]!.text).toContain('Sarah Mitchell owes $610.00 on 1 invoice')
   })
 
   it("Beat 1b: the Southern Cross file's row with no NHI waits, its stub on the List, never a Booking", () => {

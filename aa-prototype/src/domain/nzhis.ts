@@ -77,6 +77,12 @@ export function validateEthnicityCode(code: string): EthnicityValidation {
   }
 }
 
+/** A stored ethnicity code as shown on a Booking or record: "21111 · Māori", or the bare code outside the demo subset (catch-up Phase 40). */
+export function ethnicityText(code: string): string {
+  const entry = SUBSET_BY_CODE.get(code)
+  return entry === undefined ? code : `${entry.code} · ${entry.label}`
+}
+
 // ---------------------------------------------------------------------------
 // Simulated NHI lookup
 // ---------------------------------------------------------------------------

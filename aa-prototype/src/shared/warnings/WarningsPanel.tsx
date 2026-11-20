@@ -7,8 +7,8 @@ import { clearWarning, useAppStore, type Actor } from '../../store'
 import { neutral, radius } from '../../theme/tokens'
 import { hhmm, shortDay } from '../format'
 import { strongestOpen } from './useBookingWarnings'
-import { KIND_LABELS, STRENGTH_LABELS, warningPillTone, warningTone } from './tone'
-import { Pill } from '../ui/Pill'
+import { KIND_LABELS, warningTone } from './tone'
+import { StrengthPill } from './StrengthPill'
 import { FormError } from '../ui/Field'
 
 /** "Tue 21 Jul 10:05" for a clearance time. */
@@ -33,14 +33,6 @@ export function ClearWarningButton({
     <TickButton onClick={onClear} compact={compact} {...(label !== undefined ? { label } : {})}>
       {warning.strength === 'mild' ? 'Clear (optional)' : 'Clear'}
     </TickButton>
-  )
-}
-
-function StrengthPill({ warning }: { warning: Warning }) {
-  return (
-    <Pill variant="outline" tone={warningPillTone(isOpen(warning) ? warning.strength : undefined)}>
-      {STRENGTH_LABELS[warning.strength]}
-    </Pill>
   )
 }
 
@@ -121,7 +113,7 @@ export function WarningsPanel({
               <span style={{ fontWeight: 600, lineHeight: '18px', color: cleared ? neutral.slate : tone.onTint }}>{w.text}</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12, color: cleared ? neutral.slate : tone.onTint }}>
                 <span>{KIND_LABELS[w.kind]}</span>
-                <StrengthPill warning={w} />
+                <StrengthPill strength={w.strength} cleared={!isOpen(w)} />
                 {w.clearance !== undefined && (
                   <span style={{ color: neutral.slate }}>
                     Cleared by {w.clearance.by}, {clearanceWhen(w.clearance.atISO)}

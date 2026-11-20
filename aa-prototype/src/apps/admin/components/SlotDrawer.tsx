@@ -37,6 +37,7 @@ import { Notice } from '../../../shared/ui/Notice'
 import { EmptyState } from '../../../shared/ui/EmptyState'
 import { ListOriginRow } from './ListOriginRow'
 import { useListUpdateEmail } from '../flows/UpdateEmailActions'
+import { SharedNotes } from '../../../shared/notes'
 
 interface SlotDrawerProps {
   /** The session open in the drawer (a Slot id). */
@@ -271,6 +272,11 @@ function ListBody({
                 Add Booking
               </TextAction>
             )}
+          </Section>
+
+          {/* The shared note on the List (catch-up Phase 40; US-11.3.3): the anaesthetist reads it on mobile and web. */}
+          <Section label="Shared notes">
+            <SharedNotes target={{ listId: list.id }} actor={actor} size="compact" />
           </Section>
       </SidePanel>
 

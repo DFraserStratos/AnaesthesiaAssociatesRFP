@@ -142,7 +142,7 @@ describe('Phase 32d parity: what must not move', () => {
     expect(omit(now.procedures, [...PHASE_27_MOVED, ...PHASE_40_MOVED])).toEqual(omit(before.procedures, [...PHASE_27_MOVED, ...PHASE_40_MOVED]))
   })
 
-  // Catch-up Phase 40 (D11): Noah Prescott's seeded wording lost "(NHI pending)"; only its text and invoice description moved.
+  // Catch-up Phase 40 (D11): Noah Prescott's seeded wording lost its no-NHI marker; only its text and invoice description moved.
   it("Phase 40 moved only Noah Prescott's wording", () => {
     expect(PHASE_40_MOVED).toHaveLength(1)
     for (const id of PHASE_40_MOVED) {

@@ -12,6 +12,7 @@
  */
 
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
 import type { IncomingFieldKey, OfficePicks, RailAnswers } from '../../../domain/types'
 import {
@@ -27,6 +28,7 @@ import {
   sessionLabel,
   suggestDecision,
   targetProcedure,
+  validNhiOf,
   type FieldDiff,
   type RowAssessment,
 } from '../../../domain/intake'
@@ -36,12 +38,17 @@ import {
   INVALID_NHI_MESSAGE,
   LIST_LOCKED_MESSAGE,
   NHI_REQUIRED_MESSAGE,
+  PATIENT_BALANCE_PREVIEW_CAPTION,
   SURGEON_REQUIRED_MESSAGE,
   WORDING_OR_CODE_MESSAGE,
   correctImportRow,
   decideImportRow,
   matchingView,
+  patientBalancePreview,
+  patientByNhi,
   railActorOf,
+  rawRowEligible,
+  rawViewsFor,
   railContextForList,
   railContextForProcedure,
   railStartFor,
@@ -50,6 +57,7 @@ import {
   rowStackViews,
   stubForRow,
   useAppStore,
+  warningsForBooking,
   type Actor,
   type DecisionInput,
 } from '../../../store'
@@ -58,8 +66,9 @@ import { ContractRail } from '../../../shared/flows/ContractRail'
 import { CodePickerSheet } from '../../../shared/capture/CodePickerSheet'
 import { Button, Checkbox, DefList, DefRow, Eyebrow, FormError, NameSearchBox, Notice, OptionRow, Pill, SelectField, TextAction, TextField, TickBadge } from '../../../shared/ui'
 import { hhmm, locationName, stampText } from '../../../shared/format'
-import { rawRowEligible, rawViewsFor } from '../../../store'
 import { RawRowSheet } from './RawRowSheet'
+import { STRENGTH_LABELS, WarningPreviewRow } from '../../../shared/warnings'
+import { patientPath } from '../../../shared/patients'
 import { SidePanel } from '../components/SidePanel'
 import { AnaesthetistCandidates, NotPreferredWarning, SurgeonPicker, useNotPreferredWarning, useSuggestionKey } from '../components/pairing'
 import { RowField } from '../components/RowField'
@@ -96,6 +105,8 @@ export function RowPanel({
   const schedule = useAppStore((s) => s.schedule)
   const intake = useAppStore((s) => s.intake)
   const billing = useAppStore((s) => s.billing)
+  const appSettings = useAppStore((s) => s.appSettings)
+  const clock = useAppStore((s) => s.clock)
   const view = useMemo(() => matchingView({ masters, schedule, intake }), [masters, schedule, intake])
   const row = intake.rows[rowId]
   // The row's standing stub, if any (catch-up Phase 33a): Add NHI and Reject resolve it through `resolveStub`.
@@ -240,6 +251,30 @@ export function RowPanel({
     if (reason.trim() === '') blocked = 'Give a reason to reject this row.'
   }
   if (blocked === undefined && kind !== undefined && kind !== 'reject' && kind !== 'match' && noWording && rvgGroupId === undefined) blocked = WORDING_OR_CODE_MESSAGE
+
+  // The balance warning the decision will raise (catch-up Phase 40): a matched Booking's own payers, else the
+  // new Procedure's default payer, the patient (22a). Shown before the decision; never stops it.
+  const rowNhi = fields !== undefined ? validNhiOf(fields) : undefined
+  const balancePreview = useMemo(() => {
+    if (rowNhi === undefined || fields?.hospitalStatus === 'cancelled') return undefined
+    const slices = { billing, schedule, masters, appSettings, clock }
+    // A match reads the matched Booking's patient and leaves out its own invoices, as the warning itself does.
+    const matchedPatientId = matchBooking !== undefined ? schedule.bookings[matchBooking.id]?.patientId : undefined
+    if (matchBooking !== undefined && matchedPatientId !== undefined) {
+      const payers = Object.values(schedule.procedures).filter((p) => p.bookingId === matchBooking.id).map((p) => p.payer)
+      return patientBalancePreview(slices, { patientId: matchedPatientId }, payers, { excludeBookingId: matchBooking.id })
+    }
+    return patientBalancePreview(slices, { nhi: rowNhi }, [{ kind: 'patient' }])
+  }, [rowNhi, fields?.hospitalStatus, matchBooking, billing, schedule, masters, appSettings, clock])
+  const matchedBookingPatientId = matchBooking !== undefined ? schedule.bookings[matchBooking.id]?.patientId : undefined
+  const balancePatient = matchedBookingPatientId !== undefined ? masters.patients[matchedBookingPatientId] : rowNhi !== undefined ? patientByNhi({ masters }, rowNhi) : undefined
+  const navigate = useNavigate()
+  // After the decision, the result repeats it: the open balance warning on the decided Booking.
+  const decidedId = row?.decision !== undefined && 'bookingId' in row.decision ? row.decision.bookingId : undefined
+  const decidedBalance = useMemo(
+    () => (decidedId !== undefined ? warningsForBooking({ schedule, billing, appSettings, clock, masters }, decidedId).find((w) => w.ruleId === 'patientBalance' && w.clearance === undefined) : undefined),
+    [decidedId, schedule, billing, appSettings, clock, masters],
+  )
 
   if (row === undefined || fields === undefined) return null
 
@@ -415,6 +450,11 @@ export function RowPanel({
         <Notice tone="success" live="status" shot="matching-banner" enter icon={<TickBadge size={30} animate />} title={`${decisionText(view, row, row.decision)} · ${byWhen(row, todayISO)}`}>
           {settledStub !== undefined && settledStub.bookingId === decidedBookingId && (
             <span data-shot="matching-stub-resolved">The Booking takes the stub's place on the List.</span>
+          )}
+          {decidedBalance !== undefined && (
+            <span data-shot="matching-balance-result" data-strength={decidedBalance.strength}>
+              {row.decision.kind === 'match' ? 'Matched.' : 'Booking created.'} {STRENGTH_LABELS[decidedBalance.strength]} balance warning on the to-do list.
+            </span>
           )}
           {needsDestination && (
             <span>
@@ -668,6 +708,17 @@ export function RowPanel({
             )
           )}
         </section>
+      )}
+
+      {open && balancePreview !== undefined && balancePreview.strength !== 'none' && balancePreview.text !== undefined && (
+        <WarningPreviewRow strength={balancePreview.strength} text={balancePreview.text} shot="matching-balance-preview">
+          <span>{PATIENT_BALANCE_PREVIEW_CAPTION}</span>
+          {balancePatient !== undefined && (
+            <TextAction size="sm" flush shot="matching-patient-record-link" onClick={() => navigate(patientPath(balancePatient.nhi))}>
+              Open patient record
+            </TextAction>
+          )}
+        </WarningPreviewRow>
       )}
 
       {open && options.length > 0 && (

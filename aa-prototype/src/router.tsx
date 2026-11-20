@@ -49,6 +49,10 @@ import {
   AdminDraftListsRoute,
   AdminNotificationsRoute,
   AdminReviewRoute,
+  AdminPatientsRoute,
+  AdminWaitingNhiRoute,
+  AdminPatientFollowUpRoute,
+  AdminPatientRecordRoute,
 } from './apps/admin/routes'
 import { DemoControlPanel } from './apps/demo/DemoControlPanel'
 import { DemoXero } from './apps/demo/DemoXero'
@@ -139,6 +143,13 @@ const routeTree = (
             <Route path="invoices">
               <Route index element={<AdminInvoicesRoute />} />
               <Route path=":invoiceId" element={<AdminInvoicesRoute />} />
+            </Route>
+            {/* Patients (catch-up Phase 40): the three list views and the record, keyed by NHI. */}
+            <Route path="patients">
+              <Route index element={<AdminPatientsRoute />} />
+              <Route path="waiting" element={<AdminWaitingNhiRoute />} />
+              <Route path="follow-up" element={<AdminPatientFollowUpRoute />} />
+              <Route path=":nhi" element={<AdminPatientRecordRoute />} />
             </Route>
             {/* A credit note's document (catch-up Phase 39), under Invoices in the side nav. */}
             <Route path="credit-notes/:creditNoteId" element={<AdminCreditNoteRoute />} />

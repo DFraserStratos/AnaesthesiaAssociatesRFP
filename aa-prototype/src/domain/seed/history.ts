@@ -14,8 +14,8 @@
  * accounts (converted from the Phase-05 seeded outstanding rows) spread across
  * several months of invoice dates; a few PAID and paid-out accounts feed the GST report; one account is a
  * MISSED WEBHOOK (an unmirrored PaymentIn the reconciliation poll catches on the
- * next day advance); one repeat patient (Mitchell) carries an unpaid prior
- * balance (the WI2a intake check); and one patient contact (Riley) is seeded
+ * next day advance); one repeat patient (Mitchell) carries an unpaid patient-billed
+ * invoice (catch-up Phase 40's patient balance warning); and one patient contact (Riley) is seeded
  * ARCHIVED so a live episode unarchives it (archived-then-returning).
  *
  * All ids use an `H`-prefixed namespace disjoint from the runtime counters, so
@@ -28,6 +28,10 @@
 import { slotIdFor } from '../slots'
 import type {
   Anaesthetist,
+  CreditNote,
+  NegativeInvoice,
+  ProcedureEvent,
+  XeroCreditNote,
   BookingLedgerPair,
   LedgerDisbursement,
   LedgerReceipt,
@@ -49,6 +53,8 @@ import type {
   XeroContact,
 } from '../types'
 import { roundToCents } from '../billing/money'
+import { creditInFull, reversalPlan, xeroCorrectionPlan } from '../billing/creditNote'
+import { applyCredit, settledOn } from '../billing/ledger'
 import { AA_AGENT, GST_RATE, buyerCreatedTaxInvoiceFor, deliveryStampFor, supplierFor } from '../billing/invoicePresentation'
 import { invoiceDeliveryFor } from '../billing/whoIsBilled'
 import { xeroIndividualContactName } from '../xeroContact'
@@ -118,6 +124,18 @@ export interface HistoryAccount {
   session?: 'AM' | 'PM'
   /** The Booking's scheduled time on its List (the browsable history; catch-up Phase 38a). */
   scheduledTime?: string
+  /** A paid account whose payable was released but never paid out (catch-up Phase 40, D24's credit case). */
+  notPaidOut?: boolean
+  /** Credited in full after the money above, through 39's pure path (catch-up Phase 40, D24). */
+  credit?: HistoryCredit
+}
+
+/** A seeded credit in full (catch-up Phase 40, D24): issued at `atISO` by the office, no replacement. */
+export interface HistoryCredit {
+  atISO: string
+  reason: string
+  /** Who raised and approved it (the office). */
+  by: string
 }
 
 const HOSP_STG: CounterpartyRef = { kind: 'hospital', id: HOSP.stg }
@@ -283,6 +301,23 @@ const SHARMA_PATIENT_ACCOUNTS: readonly HistoryAccount[] = [
   { key: 'hs02', patientId: PAT.mitchell, counterparty: { kind: 'patient', id: PAT.mitchell }, surgeonId: SURG.lim, listHospitalId: HOSP.forte, description: 'Excision of skin lesion, flap repair', serviceISO: '2026-02-10', raisedISO: '2026-02-10T09:00:00', total: 540.0, accRelated: false, paidState: 'paid', paidAtISO: '2026-02-24T10:00:00', disbursedAtISO: '2026-02-26T09:00:00' },
   { key: 'hs03', patientId: PAT.tuilagi, counterparty: { kind: 'patient', id: PAT.tuilagi }, surgeonId: SURG.lim, listHospitalId: HOSP.forte, description: 'Carpal tunnel release', serviceISO: '2026-06-19', raisedISO: '2026-06-21T09:00:00', total: 380.0, accRelated: false, paidState: 'unpaid' },
   { key: 'hs04', patientId: MULTI_WARNING_PATIENT_ID, counterparty: { kind: 'patient', id: MULTI_WARNING_PATIENT_ID }, surgeonId: SURG.lim, listHospitalId: HOSP.forte, description: 'Excision of skin lesion', serviceISO: '2026-03-20', raisedISO: '2026-03-23T09:00:00', total: 290.0, accRelated: false, paidState: 'unpaid' },
+  // The credit case (D24): Heather Sinclair paid in full, nothing paid out, then the invoice credited in full, so $260.00 is held for her ("in credit").
+  {
+    key: 'hs05',
+    patientId: PAT.sinclair,
+    counterparty: { kind: 'patient', id: PAT.sinclair },
+    surgeonId: SURG.lim,
+    listHospitalId: HOSP.forte,
+    description: 'Excision of skin lesion',
+    serviceISO: '2026-05-08',
+    raisedISO: '2026-05-12T09:00:00',
+    total: 260.0,
+    accRelated: false,
+    paidState: 'paid',
+    paidAtISO: '2026-05-19T10:00:00',
+    notPaidOut: true,
+    credit: { atISO: '2026-06-02T11:00:00', reason: 'Billed in error: the excision was covered by the surgeon.', by: 'Kirsty W.' },
+  },
 ] as const
 
 export interface HistoryBuild {
@@ -302,6 +337,11 @@ export interface HistoryBuild {
   payments: Record<string, PaymentIn>
   disbursements: Record<string, Disbursement>
   contactIdCache: Record<string, string>
+  /** A credited account's records (catch-up Phase 40, D24), filled only when an account carries a `credit`. */
+  creditNotes?: Record<string, CreditNote>
+  negativeInvoices?: Record<string, NegativeInvoice>
+  xeroCreditNotes?: Record<string, XeroCreditNote>
+  procedureEvents?: Record<string, ProcedureEvent>
 }
 
 function pad(n: number): string {
@@ -318,6 +358,7 @@ export function buildHistory(masters: HistoryMasters): HistoryBuild {
   const build: HistoryBuild = {
     lists: {}, bookings: {}, procedures: {}, invoices: {}, invoiceLines: {}, ledger: {},
     receipts: {}, ledgerDisbursements: {}, contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, contactIdCache: {},
+    creditNotes: {}, negativeInvoices: {}, xeroCreditNotes: {}, procedureEvents: {},
   }
 
   let xc = 0
@@ -378,6 +419,12 @@ export interface HistoryIds {
   disbursement: (n: string) => string
   ledgerDisbursement: (n: string) => string
   paymentKey: (accountKey: string) => string
+  /** A credited account's credit note, its number, negative invoice, Xero credit notes and credit event (catch-up Phase 40). */
+  creditNote: (n: string) => string
+  creditNoteNumber: (n: string) => string
+  negativeInvoice: (n: string) => string
+  xeroCreditNote: (n: string) => string
+  creditEvent: (n: string) => string
 }
 
 /** A namespace's ids: `H` gives Dr Souter's `L-HIST-01`, `HBK01`, `AA-2026-H01` and so on. */
@@ -398,6 +445,11 @@ export function historyIds(ns: string): HistoryIds {
     disbursement: (n) => `DSB${ns}${n}`,
     ledgerDisbursement: (n) => `LD${ns}${n}`,
     paymentKey: (accountKey) => (ns === 'H' ? `HIST-PAY-${accountKey}` : `${ns}-PAY-${accountKey}`),
+    creditNote: (n) => `${ns}CRN${n}`,
+    creditNoteNumber: (n) => `CN-2026-${ns}${n}`,
+    negativeInvoice: (n) => `${ns}NEG${n}`,
+    xeroCreditNote: (n) => `XCN${ns}${n}`,
+    creditEvent: (n) => `${ns}EV${n}`,
   }
 }
 
@@ -555,10 +607,12 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
     const accRecId = ids.accRec(n)
     const accPayId = ids.accPay(n)
     const paid = acc.paidState === 'paid'
+    // Paid and paid out, unless the account says its payable was released but never paid out (catch-up Phase 40).
+    const paidOut = paid && acc.notPaidOut !== true
     const received = paid ? acc.total : 0
     // The payable is the gross amount (FT-10.3): it equals the receivable.
     const amountPayable = acc.total
-    const disbursed = paid ? amountPayable : 0
+    const disbursed = paidOut ? amountPayable : 0
 
     const accRec: XeroAccRec = {
       id: accRecId,
@@ -585,7 +639,7 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       amountPayable,
       amountAuthorised: paid ? amountPayable : 0,
       amountDisbursed: disbursed,
-      status: paid ? 'paid' : 'draft',
+      status: paidOut ? 'paid' : paid ? 'authorised' : 'draft',
       ...(supplier !== undefined ? { taxInvoice: buyerCreatedTaxInvoiceFor(invoice, supplier) } : {}),
     }
 
@@ -616,7 +670,7 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
         releasedAmount: paid ? amountPayable : 0,
         disbursedAmount: disbursed,
         issuedAtISO: acc.raisedISO,
-        ...(paid && acc.disbursedAtISO !== undefined ? { paidOutAtISO: acc.disbursedAtISO } : {}),
+        ...(paidOut && acc.disbursedAtISO !== undefined ? { paidOutAtISO: acc.disbursedAtISO } : {}),
         xeroAccPayId: accPayId,
       },
       ...(acc.accRelated ? { archivedAccRelated: true as const } : {}),
@@ -640,11 +694,11 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       }
       // The bill payment's key (catch-up Phase 37): the ledger already holds it, so replaying it is a no-op.
       const billPayKey = `BILLPAY-${ids.disbursement(n)}`
-      if (acc.disbursedAtISO !== undefined) {
+      if (paidOut && acc.disbursedAtISO !== undefined) {
         build.disbursements[ids.disbursement(n)] = { id: ids.disbursement(n), accPayId, amount: amountPayable, atISO: acc.disbursedAtISO, payablesRunId: dsbRunId, idempotencyKey: billPayKey }
       }
-      // The ledger's record of the payment out (every paid account was paid out in full), learned at a poll before the demo day.
-      build.ledgerDisbursements[ids.ledgerDisbursement(n)] = {
+      // The ledger's record of the payment out (every paid account but a `notPaidOut` one was paid out in full), learned at a poll before the demo day.
+      if (paidOut) build.ledgerDisbursements[ids.ledgerDisbursement(n)] = {
         id: ids.ledgerDisbursement(n),
         pairId: caseId,
         anaesthetistId,
@@ -661,6 +715,173 @@ export function addHistoryAccounts(build: HistoryBuild, opts: HistoryAccountsOpt
       const key = `HIST-MISSED-${acc.key}`
       build.payments[ids.payment(n)] = { id: ids.payment(n), accRecId, amount: acc.total, atISO: acc.paidAtISO ?? acc.raisedISO, idempotencyKey: key, source: 'webhook' }
     }
+
+    if (acc.credit !== undefined) {
+      addHistoryCredit(build, {
+        ids,
+        n,
+        acc,
+        credit: acc.credit,
+        anaesthetistId,
+        caseId,
+        invoice,
+        procId,
+        bookingId,
+        payerContactId,
+        lines: [build.invoiceLines[ids.invoiceLine(n)]!],
+      })
+    }
+  }
+}
+
+/**
+ * Credit a just-built account in full through 39's pure path (catch-up Phase
+ * 40, D24), as the office's credit with no replacement leaves it once the run
+ * and the Xero correction have gone through: `reversalPlan` on the legs,
+ * `applyCredit` on the pair, `creditInFull` for the note, the negative invoice
+ * to the anaesthetist (`offset` when nothing was paid out, else `toNet`), and
+ * `xeroCorrectionPlan` for the ACCRECCREDIT and the ACCPAYCREDIT (or the draft
+ * ACCPAY voided). The credit event is stamped issued. Pure; ids from the namespace.
+ */
+function addHistoryCredit(
+  build: HistoryBuild,
+  a: {
+    ids: HistoryIds
+    n: string
+    acc: HistoryAccount
+    credit: HistoryCredit
+    anaesthetistId: string
+    caseId: string
+    invoice: Invoice
+    procId: string
+    bookingId: string
+    payerContactId: string
+    lines: readonly InvoiceLine[]
+  },
+): void {
+  const { ids, n, credit } = a
+  const pair = build.ledger[a.caseId]!
+  const payable = pair.payable!
+  const reversal = reversalPlan({ total: pair.receivable.amount, received: pair.receivable.receivedAmount, released: payable.releasedAmount, disbursed: settledOn(payable) })
+  const creditNoteId = ids.creditNote(n)
+  const negativeInvoiceId = ids.negativeInvoice(n)
+  const creditNoteNumber = ids.creditNoteNumber(n)
+  const creditEventId = ids.creditEvent(n)
+  const credited = applyCredit(pair, reversal, { creditNoteId, negativeInvoiceId, atISO: credit.atISO })
+  if (!credited.ok) throw new Error(`history account ${a.acc.key} could not be credited: ${credited.code}`)
+  build.ledger[a.caseId] = credited.pair
+  const noteFigures = creditInFull(a.invoice, a.lines)
+
+  // Xero: the ACCRECCREDIT against the original ACCREC, and the ACCPAY credited (or voided when still a draft).
+  const accRecId = pair.receivable.xeroAccRecId!
+  const accPayId = payable.xeroAccPayId!
+  const accRec = build.accRecs[accRecId]!
+  const accPay = build.accPays[accPayId]!
+  const plan = xeroCorrectionPlan(accRec, accPay, { creditNoteNumber, total: noteFigures.total })
+  const xeroCreditNotes = (build.xeroCreditNotes ??= {})
+  let accRecCreditNoteId: string | undefined
+  let accPayCreditNoteId: string | undefined
+  if (plan.accRec !== undefined) {
+    accRecCreditNoteId = ids.xeroCreditNote(n)
+    xeroCreditNotes[accRecCreditNoteId] = {
+      id: accRecCreditNoteId,
+      type: 'ACCRECCREDIT',
+      creditNoteNumber: plan.accRec.creditNoteNumber,
+      againstId: accRecId,
+      contactId: a.payerContactId,
+      reference: pair.id,
+      creditNoteId,
+      total: plan.accRec.total,
+      allocated: plan.accRec.allocated,
+      status: 'authorised',
+      issuedAtISO: credit.atISO,
+    }
+    build.accRecs[accRecId] = { ...accRec, status: 'credited' }
+  }
+  if (plan.accPay.action === 'void') build.accPays[accPayId] = { ...accPay, status: 'voided' }
+  else if (plan.accPay.action === 'credit') {
+    accPayCreditNoteId = `${ids.xeroCreditNote(n)}P`
+    xeroCreditNotes[accPayCreditNoteId] = {
+      id: accPayCreditNoteId,
+      type: 'ACCPAYCREDIT',
+      creditNoteNumber: plan.accPay.creditNoteNumber,
+      againstId: accPayId,
+      contactId: accPay.contactId,
+      reference: pair.id,
+      creditNoteId,
+      total: plan.accPay.total,
+      allocated: plan.accPay.allocated,
+      status: 'authorised',
+      issuedAtISO: credit.atISO,
+    }
+    build.accPays[accPayId] = { ...accPay, status: 'credited' }
   }
 
+  const office = { who: credit.by, role: 'office' as const }
+  ;(build.negativeInvoices ??= {})[negativeInvoiceId] = {
+    id: negativeInvoiceId,
+    number: `${creditNoteNumber}-P`,
+    anaesthetistId: a.anaesthetistId,
+    creditNoteId,
+    originalInvoiceId: a.invoice.id,
+    pairId: pair.id,
+    cause: 'credit',
+    amount: reversal.negativeInvoiceTotal,
+    offsetAmount: reversal.offsetAgainstPayable,
+    recoveryDue: reversal.recoveryDue,
+    status: reversal.recoveryDue > 0 ? 'toNet' : 'offset',
+    issuedAtISO: credit.atISO,
+    ...(accPayCreditNoteId !== undefined ? { accPayCreditNoteId } : {}),
+  }
+  // The note goes to the original's party the way the original went (22's delivery, stamped at the credit).
+  const sent = a.invoice.delivery
+  const delivery =
+    sent !== undefined && sent.method === 'email' && sent.status === 'sent' && sent.sends.length > 0
+      ? deliveryStampFor({ method: 'email', to: sent.sends[sent.sends.length - 1]!.to }, credit.atISO, 'Billing run')
+      : sent !== undefined && sent.method === 'post'
+        ? deliveryStampFor({ method: 'post', lines: [...sent.address] }, credit.atISO, 'Billing run')
+        : deliveryStampFor({ method: 'none' }, credit.atISO, 'Billing run')
+  ;(build.creditNotes ??= {})[creditNoteId] = {
+    id: creditNoteId,
+    creditNoteNumber,
+    originalInvoiceId: a.invoice.id,
+    pairId: pair.id,
+    creditEventId,
+    bookingId: a.bookingId,
+    procedureIds: [a.procId],
+    counterparty: a.invoice.counterparty,
+    ...(a.invoice.supplier !== undefined ? { supplier: { ...a.invoice.supplier } } : {}),
+    ...(a.invoice.agent !== undefined ? { agent: { ...a.invoice.agent } } : {}),
+    gstTreatment: noteFigures.gstTreatment,
+    lines: noteFigures.lines,
+    subtotal: noteFigures.subtotal,
+    gst: noteFigures.gst,
+    total: noteFigures.total,
+    reason: credit.reason,
+    cause: 'correction',
+    replacementInvoiceIds: [],
+    negativeInvoiceId,
+    issuedAtISO: credit.atISO,
+    issuedBy: office,
+    delivery,
+    reversal,
+    xero: {
+      ...(accRecCreditNoteId !== undefined ? { accRecCreditNoteId } : {}),
+      ...(accPayCreditNoteId !== undefined ? { accPayCreditNoteId } : {}),
+      accPayVoided: plan.accPay.action === 'void',
+    },
+  }
+  ;(build.procedureEvents ??= {})[creditEventId] = {
+    id: creditEventId,
+    procedureId: a.procId,
+    bookingId: a.bookingId,
+    kind: 'credit',
+    occurredOnISO: credit.atISO.slice(0, 10),
+    billable: true,
+    party: { sameAs: true },
+    detail: { kind: 'credit', credit: { originalInvoiceId: a.invoice.id, reason: credit.reason, cause: 'correction', replacementEventIds: [], creditNoteId, negativeInvoiceId } },
+    review: { state: 'approved', by: office, atISO: credit.atISO },
+    addedBy: office,
+    addedAtISO: credit.atISO,
+  }
 }

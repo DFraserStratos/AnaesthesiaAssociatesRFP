@@ -59,7 +59,7 @@ export interface BookingScenarioIds {
   aiaClaim: string
   /** The Booking whose Contract the office left at Patient › Standard (catch-up Phase 20). */
   railPickUp: string
-  /** A Booking that arrived with no Contract (the NHI-pending PDF Booking, catch-up Phase 20). */
+  /** A Booking that arrived with no Contract (Noah Prescott's PDF-referral Booking, catch-up Phase 20). */
   needsDestination: string
   provisionalNoNhi: string
   repeatMitchell: [string, string]
@@ -827,7 +827,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     governingContractId: PRICED_ITEM.souterRhinoplasty,
   })
 
-  // Provisional no-NHI patient (PDF pathway) + Sarah Mitchell's repeat episode
+  // Noah Prescott's PDF-referral Booking (`provisionalNoNhi`, a historical name: he has an NHI since catch-up Phase 40) + Sarah Mitchell's repeat episode
   // — Souter, Mon 27 Jul, Forte / Mr Okafor.
   const souterMon27 = projectedListId(ANAE.souter, MON27, 'AM')
   const provisionalBooking = addBooking({

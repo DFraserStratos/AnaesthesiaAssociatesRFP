@@ -551,6 +551,7 @@
     <tr><td>Explicit save on the Admin Booking (one change set a save, History grouped, View as at), Switch office user, the on-demand update email and its composer, Master data &middot; Email templates</td><td><span class="chip ready">Ready</span></td><td>Catch-up Phase 35</td></tr>
     <tr><td>Demo control panel (the index) with S1 to S5 scenario jumps; demo actions on each screen under Demo actions in the top bar, and a Demo sheet on a handset</td><td><span class="chip ready">Ready</span></td><td>Phase 12; per-screen actions from catch-up Phase 14</td></tr>
     <tr><td>HL7/FHIR simulator, message log and feed mapping (Demo: Future scope, HL7 and FHIR)</td><td><span class="chip ready">Ready</span> <span class="chip">Future scope</span></td><td>Phase 11; its own demo surface from catch-up Phase 34; a fired message lands on Admin Intake as a row</td></tr>
+    <tr><td>Patients on Admin (search and records, Waiting for NHI, follow-up), the patient balance warning and shared notes</td><td><span class="chip ready">Ready</span></td><td>Catch-up Phase 40</td></tr>
     <tr><td>Anaesthetist's own List move and the shared notifications</td><td><span class="chip ready">Ready</span></td><td>Catch-up 32</td></tr>
     <tr><td>Single-Booking move to a colleague and the doer rule</td><td><span class="chip ready">Ready</span></td><td>Catch-up 32a</td></tr>
     <tr><td>Mobile atmospheric gradient (visual only)</td><td><span class="chip ready">Ready</span></td><td>Phase 13</td></tr>
@@ -715,6 +716,7 @@
       Corrects an issued invoice without editing it: a credit note, credit in full and rebill, or a split into additional invoices that add up to the credit, each reviewed on Review, Events and issued in the next run.
       Adds pre-op, post-op and billing events on an anaesthetist's request, prices their time at review (a Contract event fee such as STGACC-PAIN replaces it; on a fixed-price Procedure she sets a price with a reason), and keeps each Contract's Event fees (Master data, Contracts).
       Runs the weekly payment cycle on the Billing monitor: closes the week (Friday; it reconciles to the bank download), sorts out the Monday checks (fixes an anomaly, or holds it out of this run so it rolls into next week), approves the week's BCTIs, and sends the payment schedule to the accountant on Tuesday, who pays it in Xero.</p>
+      <p style="font-size:13px">Chases waiting rows on Admin, Patients, Waiting for NHI (emails the List's sender, adds the NHI) and follows up patients who owe (the patient record, its follow-up log, Resend and Clear). The anaesthetist always sees the NHI and the balance alert colour on their List, never the amounts, and can leave a note on a List or Booking for the office.</p>
       <p style="font-size:13px"><strong>Critical rule:</strong> there is no RETURNED state. The office phones
       for clarification and corrects it; the anaesthetist does not reopen the Booking.</p>
     </div>
@@ -1010,6 +1012,7 @@
     Future scope: automatic hospital sync and automated hospital changes are Future Work, and an HL7 v2 message that fails retries then
     dead-letters for manual intervention. <strong>Compliance:</strong> everything is audited, both NHI formats validate, and
     no NHI or other personal information enters Xero, patient names included (confirmed with AA). <span class="chip ready">Ready</span></p>
+    <p>The office works the waiting rows on Admin, Patients, Waiting for NHI: it emails the List's sender (else the surgeon's first office contact) for the NHI, adds it, then decides the row. A returning patient who owes money raises the patient balance warning. Billing follow-up works from the patient record: the follow-up log, Resend and Clear.</p>
   </div></details>
 </section>
 
@@ -1114,6 +1117,8 @@
       <tr><td>Notifications (the shared pool)</td><td><code>/admin/notifications</code></td></tr>
       <tr><td>Email templates</td><td><code>/admin/masters?view=emailTemplates</code></td></tr>
       <tr><td>Audit</td><td><code>/admin/audit</code> (a change set's id filters it to that save)</td></tr>
+      <tr><td>Patients</td><td><code>/admin/patients</code> (waiting rows: <code>/admin/patients/waiting</code>; follow-up: <code>/admin/patients/follow-up</code>)</td></tr>
+      <tr><td>Patient record</td><td><code>/admin/patients/&lt;nhi&gt;</code> (Sarah Mitchell: <code>CQY9304</code>)</td></tr>
     </table></div>
     <p style="font-size:14px">The demo surfaces are <code>/demo/control</code>,
     <code>/demo/xero</code>, <code>/demo/integrations</code> and <code>/demo/data</code>.
@@ -1142,6 +1147,8 @@
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>In Mobile Lists, open Dr Souter's Tue 28 Jul St George's AM List and read its three booked cases (07:45, 09:45, 11:15); two read as the surgeon's rooms sent them, "L knee scope + partial menisectomy" and "ORIF # R dist radius" (illustrative demo wording, not AA's).</li><li>Admin &#8594; Intake (under Day view; the amber badge counts open rows); it opens on the Matching tab &#8594; <strong>Import hospital file</strong> (or Demo actions &#8594; Import hospital file) &#8594; St George's theatre list, Tue 28 Jul to Tue 4 Aug. Five rows are imported; the stats strip fills: OPEN, NEW, MODIFICATIONS, CANCELLATIONS, UNMATCHED.</li><li>Open Sarah Mitchell's row (R1, New): read <code>lap appy ?conv to open</code> as the hospital sent it, and the suggestion, Create Booking on Dr Souter, Tue 28 Jul AM.</li><li><strong>Create Booking</strong>.</li><li>Back in Mobile, reopen the Tue 28 Jul AM List.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"The office imports each hospital's file through the integration, one theatre list a day. Every row lands here, and nothing reaches the schedule until the office decides, even an update to a Booking already matched. The hospital's text is kept exactly as sent; on a Booking the rooms sent first it replaces the rooms' text, and the original stays in its change history. Automatic sync is later work."</span></div>
       <div class="row"><span class="k">Expect</span><span>The row moves under Decided; the List carries a fourth Booking for Sarah Mitchell at 08:30, between the first two cases, source <strong>Hospital download</strong>, with no RVG code and no Contract. Her NHI matched an existing record, so her patient record is reused. The List reads <strong>0 of 4 complete</strong> and stays ACTIVE.</span></div>
+      <div class="row"><span class="k">Expect</span><span>Balance warning (Phase 40): on Sarah Mitchell's row, and after Create Booking, a strong patient balance warning (1 invoice billed to her, unpaid 98 days, $610.00) shows, with its entry on the office's to-do list.</span></div>
+      <div class="row"><span class="k">Say</span><span class="say">"Sarah owes AA for an earlier procedure, past the 90 day threshold, so the office gets a strong warning to follow up before this one goes ahead, and Dr Souter sees the red alert on the Booking in his List. It never stops the booking. The 90 days count from the invoice date; a newer bill would be a yellow, mild warning, and a bill the hospital or an insurer pays does not count. It is raised because she is the payer on a Procedure of this Booking."</span></div>
       <div class="row"><span class="k">Optional</span><span>On Matching open R3 (Diane Foster), a Modification: the field differences with their tick boxes (time 11:00 to 12:15, the note "Bumped 15 min at surgeon request") and the hospital's long text replacing "WLE MM" (kept in the history, with a line saying it also becomes the invoice description); untick a field. Or import St George's theatre list, a day later, to show Sarah Mitchell's update waiting for approval, matched by date, surgeon, hospital and session.</span></div>
       <div class="row"><span class="k">Handset</span><span>PWA: Mobile Lists (or the List or Booking) &#8594; Demo &#8594; <strong>Hospital file imported and my booking matched</strong> &#8594; St George's file, Tue 28 Jul AM (S1). It stands in for the office: it imports the file, decides the rows for that List and sets No contract · RVG on Sarah's new Booking (Beats 1 and 1a in one); run again, it reads Nothing new from the hospital for your Lists.</span></div>
     </div>
@@ -1151,6 +1158,13 @@
       <div class="row"><span class="k">Say</span><span class="say">"The hospital does not choose the Contract; the office does. The payment type is always asked, and for a patient paying on the RVG the code is the anaesthetist's to pick when she captures."</span></div>
       <div class="row"><span class="k">Expect</span><span>Her Procedure reads No contract · RVG with the RVG code still to choose; once saved (the green strip reads "Saved · ... · Kirsty W." with its change-set id) she leaves the Needs an invoice destination card. Her invoice description starts as the hospital's text (the Contract's invoice description replaces it where filled in).</span></div>
     </div>
+    <div class="beat">
+      <h4>Beat 1d (optional) · the patient's whole bill</h4>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>From the strong warning on Sarah Mitchell's Booking (or Admin &#8594; Patients, <code>/admin/patients/CQY9304</code>), open her patient record.</li><li>Read the tiles (Balance, Billed to the patient, Other payers) and her invoices: two anaesthetists still appear. Dr Sharma's: $540.00 paid in February and AA-2026-HS01, $610.00 billed to her and unpaid. Dr Souter's: the hospital-billed invoices, which count in her Balance under Other payers but not in the warning.</li><li>Log call, Resend the unpaid AA-2026-HS01, then Clear the warning.</li><li>Optional: Losa Tuilagi (JKL1188) for the mild case (Dr Sharma, $380.00, 30 days, yellow); Heather Sinclair (ZAN2219) for the credit case (Dr Sharma, $260.00 credited 2 June, "In credit $260.00", a mild warning); a guardian as payer; the threshold field in Master data (starts at 90 days); a shared note on a List from each side.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"The whole bill is one screen: what the patient owes under each anaesthetist, what other payers owe, and every call and resend the office has made. The anaesthetist only ever sees the colour."</span></div>
+      <div class="row"><span class="k">Expect</span><span>Log call adds a follow-up log entry; Resend adds a line to the invoice's send history; Clear removes the warning from the to-do list (it re-opens only if it turns strong).</span></div>
+    </div>
+    <div class="callout warn">Discovery: whether the warning should also need this Booking's Contract to bill the patient; whether the anaesthetist's colour code and money-free line is enough; whether staff can clear or annotate it (parked); the starting threshold (Ben and Vanessa left the rules as they were on 5 November); whether the balance and prepayment alerts should be one combined set (OQ-134: built as two rules shown together); whether the threshold should be editable at all (US-11.3.2 says fixed until a settings page).</div>
     <div class="beat">
       <h4>Beat 1b (optional) · a booking with no NHI</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin &#8594; Intake &#8594; Matching &#8594; Import hospital file &#8594; Southern Cross theatre list, Tue 28 Jul to Thu 6 Aug.</li><li>Filter Unmatched and open Tama Henare (no NHI); optionally open Dr Souter's Tue 28 Jul PM List to show the stub in her place.</li><li>Optionally type NHI <strong>ZQA1008</strong> &#8594; Add NHI.</li></ul></div>
@@ -1452,6 +1466,12 @@
       history and the invoice recipe. 5 to 6 minutes.</span>
       <span class="stage">Stage it: Scenario jumps &#8594; S5 &#8594; Jump &#8594; Confirm jump (resets to rich booking-to-clinical histories on every Booking, adds three live edits to David Chen's trail, among them the office's grouped save (the note and the time, one change set), and authorises Dr Whitaker's Fri 17 Jul List, which locks the Health NZ agreed rate and the price in force on 17 Jul onto each Procedure and raises its five invoices from that record: AA-2026-0002 to AA-2026-0006, Hemi Walker's first at $264.50). Go to Admin app / Xero sim.</span>
     </div>
+    <div class="beat"><h4>Optional beat · no NHI, no Booking (Phase 40)</h4>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>Try to add a Booking on Admin without an NHI: the form refuses a blank NHI.</li><li>Admin &#8594; Patients &#8594; Waiting for NHI (<code>/admin/patients/waiting</code>) &#8594; Demo actions &#8594; <strong>Receive list with a missing NHI</strong>. Two rows arrive: Aroha Ngata (a new patient, who types ZQA3019, Urgent, Thu 23 Jul) and Losa Tuilagi (types JKL1188, Mon 27 Jul), each with the patient as received, the address to chase and Email for the NHI.</li><li>Open Dr Souter's Mon 27 Jul List to see the stub; on Waiting for NHI, Add NHI on Losa Tuilagi.</li><li>Handset variant (PWA): Demo &#8594; <strong>Office adds the NHI</strong> (Tomasz Nowak first).</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"No NHI, no Booking: the row waits, the anaesthetist still sees it as a stub, and the office chases the one address that sent the List."</span></div>
+      <div class="row"><span class="k">Expect</span><span>The stub on the List is replaced by a Booking; Losa Tuilagi's row is matched to her single existing record (details that differ wait for the office to keep or use incoming).</span></div>
+    </div>
+    <div class="callout warn">Discovery: D11 and D66 are built (the NHI is mandatory and the identifier; a stub stands in for a waiting row; Donald's answer, not yet seen by AA). D74 as built (Donald's answer, not yet seen by AA): the request goes to one address, the List's sender, else the surgeon's first office contact, never every contact, and whether it should be sent from here or by the office's own email.</div>
     <div class="beat"><h4>Beat 1 · audit trail of a much-edited Booking</h4>
       <div class="row"><span class="k">Click</span><ul class="action-list"><li>Admin Day &#8594; Tue 21 Jul &#8594; Dr Souter PM.</li><li>David Chen &#8594; History.</li><li>Pause on the audit trail, then on the office's grouped save, <strong>Saved by Kirsty W. · 2 changes</strong>.</li><li>Close History. Demo actions &#8594; <strong>Switch office user</strong> &#8594; Run ("The office is now Sam T."). Select <strong>5 minutes later</strong> beside the time and type a new note under Notes for the office: the save bar reads "2 unsaved changes · Notes · Time" (Draft update email waits: "Save your changes first. The email uses saved changes.") &#8594; <strong>Save changes</strong>.</li><li>History again: <strong>Saved by Sam T.</strong> above Saved by Kirsty W. &#8594; <strong>View as at</strong> on Kirsty's save.</li><li>Close it &#8594; <strong>Draft update email</strong>: Sam's save is ticked; tick Kirsty's too. Point at the template (Booking change), the recipient (the surgeon's office) and the preview. Close (or Open in mail client). Afterwards Switch office user back to Kirsty W.</li></ul></div>
       <div class="row"><span class="k">Say</span><span class="say">"Every change, including automated ones, writes an append-only entry with who, role, source and before/after. The captured inputs stay reproducible, not just the total."</span></div>
@@ -1523,7 +1543,8 @@
   restarts identifiers, so invoice numbers begin at the same point every time. Imported the same sample twice: nothing new is added. Applied the wrong row: fix the Booking by hand; the row's decision and any wording it added stay in the history. If Finish now was stamped too early,
   reset and advance the clock before reopening the Booking. A stray refresh is no longer a problem: it returns
   you to the same screen, the back button retraces your steps, and you can paste a beat's address from
-  Direct URLs. An Admin Booking draft stuck or wrong before saving: Discard in the save bar (leaving asks first, and a
+  Direct URLs. A decided waiting-for-NHI row cannot be undone except by Reset; a cleared balance warning
+  re-opens only if it turns strong. An Admin Booking draft stuck or wrong before saving: Discard in the save bar (leaving asks first, and a
   Reset discards it). Skipped an update email? Nothing is lost: Draft update email is always on the Booking, and on the
   List drawer after a cover change; nothing is sent automatically (AA chose manual for the first release, OQ-82).</div>
 </section>
@@ -1707,6 +1728,16 @@
     <li>Bank details are master data: the office holds them on each anaesthetist's record (mandatory, with the HPI CPN), the anaesthetist sees them masked and read-only, and the payment itself is made in Xero. The app never pays from them.</li>
     <li>Outstanding balances are flat individual payable rows, oldest first with no ageing buckets, not a Booking-level rollup and not amounts the
       anaesthetist personally owes. A row stays ("Paid in, due to you") after the billable party pays, until AA pays the anaesthetist, and each row opens its Booking.</li>
+  </ul>
+
+  <h3>Patient balance warning (catch-up Phase 40)</h3>
+  <ul class="tight">
+    <li>One of the routine's warnings, raised when a Booking is created or matched for a patient who is the payer on the Booking and owes AA money on invoices billed to them. Mild within the threshold, strong over it (90 days from the invoice date, one admin field in Master data); a patient in credit is mild. Yellow and red.</li>
+    <li>Other payers' bills (the hospital, an insurer) do not count toward the warning, though the patient record's balance shows them under Other payers. It never blocks a Booking.</li>
+    <li>The office works it from the to-do list and the patient record (Log call, Resend, Clear). The anaesthetist sees the colour on their List, mild as yellow, without amounts.</li>
+    <li>Seed: Sarah Mitchell strong ($610.00, Dr Sharma's AA-2026-HS01, 98 days); Losa Tuilagi mild ($380.00, 30 days); Heather Sinclair in credit ($260.00, credited 2 June).</li>
+    <li>Shared notes: anyone writes a note on a List or Booking, everyone sees it.</li>
+    <li><strong>The NHI is mandatory:</strong> no Booking without one. A row without an NHI waits (Admin, Patients, Waiting for NHI), the anaesthetist sees a stub, and the office adds the NHI.</li>
   </ul>
 
   <h3>Internal ledger (catch-up Phase 36)</h3>
@@ -1905,9 +1936,9 @@
       bands are settled (OQ-95 answered, D29). Modifiers stack with no limit; AA's own are master data the
       office adds, edits, retires and reinstates.</p></div>
     <div class="card"><h3>11 · Open vs genuinely overdue balances</h3><p style="font-size:14px">The billing
-      monitor's "Prior balance" intake flag reads any open (unpaid) prior episode. The RFP asks whether to
+      monitor's "Prior balance" intake flag is retired (Phase 40); the patient balance warning replaces it. The RFP asks whether to
       distinguish open from genuinely overdue; the
-      prototype flags any open balance and holds the distinction as a discovery question.</p></div>
+      prototype uses a mild warning inside the threshold and a strong one over it, and holds the threshold as a discovery question.</p></div>
     <div class="card"><h3>12 · ACC pre-op flat-fee codes</h3><p style="font-size:14px">ACC pre-operative
       assessment has its own code set (CS250, CS260, CS70). The prototype offers these as preconfigured
       pre-op events under the generic event and pricing rules (a time recorded or a fixed fee, no
@@ -1974,7 +2005,7 @@
     after the first release (US-02.5.1 to US-02.5.4).</p></div></details>
   <details><summary>What if the patient has no NHI?</summary><div class="details-body">
     <p>The RFP is internally inconsistent (unique identifier vs "where available"). The prototype uses a
-    hidden internal ID as the invariant and allows a provisional NHI-pending patient.</p>
+    hidden internal ID as the invariant and makes the NHI mandatory: no Booking and no patient without one.</p>
     <p>A hospital row with no NHI waits at intake on Admin, Intake, Matching; no patient or Booking is made. So the
     anaesthetist still sees the case, a stub stands on the List in its place: a dashed amber row, "Waiting
     at intake: no NHI · The office is resolving this", with the time, name and wording as received. A stub

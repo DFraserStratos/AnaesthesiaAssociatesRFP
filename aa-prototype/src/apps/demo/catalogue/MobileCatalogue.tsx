@@ -9,6 +9,7 @@ import { AdditionalInvoiceButtonExample, AdditionalInvoiceSheetExample, Anaesthe
 import { LockBadge } from '../../../shared/booking/LockBadge'
 import { SEED_MARKERS } from '../../../domain/seed'
 import { ContractApprovalExample } from './contractApprovalExample'
+import { BalanceAlertChipExample, SharedNotesExample } from './patientAlertExamples'
 
 const M = 'Mobile'
 const SW = 'Admin · Web · Mobile'
@@ -418,6 +419,18 @@ export function MobileCatalogue() {
           replaceWith="Custom + shadcn Tooltip"
           note="The text lives in title only; a Tooltip makes it reachable by keyboard.">
           <Ex.WarningTriangleExample picks={picks} />
+        </CatalogueRow>
+        <CatalogueRow name="BalanceAlertChip" source="shared/patients/BalanceAlertChip.tsx" usedIn={WM} stage="mobile" height={340}
+          what="The anaesthetist's balance colour code (catch-up Phase 40) on the Booking row of her List and in the Booking detail: red for a strong balance warning, yellow for a mild one or a credit. No amount, no name, no Clear, no patient link; it ignores the office's Clear."
+          replaceWith="shadcn Badge"
+          note="On the shared Pill (sm on the row with the full sentence in title, lg wrapping in the detail). The office's balance warning row and triangle never show to the anaesthetist.">
+          <BalanceAlertChipExample />
+        </CatalogueRow>
+        <CatalogueRow name="SharedNotes" source="shared/notes/SharedNotes.tsx" usedIn={SW} stage="mobile" height={420}
+          what="The shared note on a List or Booking (catch-up Phase 40; US-11.3.3): Add note and the notes, newest first, with author and time. The office and the anaesthetist both read and add; a blank note is refused."
+          replaceWith="shadcn Textarea + Button"
+          note="One component in all three apps, on TextArea, Button and FormError; writes the real store, never a Booking draft. Here on local notes (SharedNotesPanel), so nothing is written.">
+          <SharedNotesExample size="touch" by="Dr Melanie Souter" />
         </CatalogueRow>
         <CatalogueRow name="OutOfHoursMoon" source="shared/schedule/OutOfHoursMark.tsx" usedIn={SW} stage="mobile" height={140}
           what="The moon that stands in the session column where an AM or PM List shows its session."

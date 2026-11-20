@@ -1,6 +1,28 @@
 {
   "id": "US-11.3.1",
-  "status": "absent",
-  "absentReason": "There is no patient view listing a patient's invoices across anaesthetists; the admin Invoices screen lists invoices without a per-patient view, and the web and mobile accounts show only the anaesthetist's own payables.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "patient-invoices",
+      "app": "admin",
+      "caption": "A patient's invoices across every anaesthetist, each Paid, Part paid or Unpaid, with the balance",
+      "start": "/admin/patients/CQY9304",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=patient-invoices]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=patient-invoices]"
+          ]
+        }
+      ]
+    }
+  ]
 }

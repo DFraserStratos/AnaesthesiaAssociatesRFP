@@ -11,7 +11,7 @@
  * extends it (`officeAddressFor`), never every contact.
  */
 
-import type { ImportRow, IsoDate, Patient, PatientDetailDifference, SharedNote } from '../domain/types'
+import type { ImportRow, IsoDate, Patient, PatientDetailDifference, PatientFollowUp, SharedNote } from '../domain/types'
 import { validateNhi } from '../domain/nhi'
 import { effectiveIncoming, validNhiOf } from '../domain/intake/matching'
 import { checksPatientBalance, detailDifferences, patientBalanceStrength, patientBalanceSummary, type PatientBalanceStrength } from '../domain/patients'
@@ -26,6 +26,9 @@ import { correctImportRow } from './matchingActions'
 import { resolveStub, type ResolveStubResult } from './stubActions'
 import { stubForRow } from './stubSelectors'
 import { patientBalanceRows } from './patientLedger'
+import { resendInvoice } from './billingRun'
+import { patientByNhi } from './patientLookup'
+import { clearWarning } from './warnings'
 
 export { stampBalanceCheck, type BalanceCheckTrigger } from './balanceCheck'
 
@@ -179,7 +182,7 @@ export function nhiRowPreview(state: Pick<AppState, 'intake' | 'masters' | 'sche
   if (row === undefined) return { differences: [] }
   const v = validateNhi(typedNhi)
   if (!v.valid) return { differences: [], ...(typedNhi.trim() !== '' ? { invalidReason: v.reason ?? 'That NHI is not valid.' } : {}) }
-  const patient = Object.values(state.masters.patients).find((p) => p.nhi === v.normalised)
+  const patient = patientByNhi(state, v.normalised)
   if (patient === undefined) return { differences: [] }
   const incoming = effectiveIncoming(row).patient
   const bookingCount = Object.values(state.schedule.bookings).filter((b) => b.patientId === patient.hiddenInternalId && b.cancellation === undefined).length
@@ -194,16 +197,23 @@ export interface NhiRequestAddress {
   to: string
   /** The surgeon's other office addresses, offered to switch to (never filled in together). */
   alternatives: { email: string; label: string }[]
+  /** Name and phone for each address offered (`to` first), from the one helper, for the row's contact line. */
+  contacts: { email: string; name?: string; phone?: string }[]
 }
 
 /** Where a waiting row's NHI request goes: the List's sender, else the surgeon's first office contact (D74). */
 export function nhiRequestAddressFor(state: Pick<AppState, 'intake' | 'masters' | 'schedule'>, rowId: string): NhiRequestAddress {
   const assessment = assessImportRow(state as AppState, rowId)
-  if (assessment === undefined) return { to: '', alternatives: [] }
+  if (assessment === undefined) return { to: '', alternatives: [], contacts: [] }
   const list = assessment.targetListId !== undefined ? state.schedule.lists[assessment.targetListId] : undefined
-  const found = officeAddressFor(state.masters, assessment.surgeonId ?? list?.surgeonId ?? '', list)
-  if (found.to === null) return { to: '', alternatives: [] }
+  // D74: the List's sender first. A rooms' PDF row with no List yet chases the PDF's own sender.
+  const row = state.intake.rows[rowId]
+  const pdfSender = row?.source === 'rooms' ? (state.intake.batches[row.batchId]?.senderEmail?.trim() ?? '') : ''
+  const senderOf = list?.origin.kind === 'pdf' ? list : pdfSender !== '' ? { origin: { kind: 'pdf' as const, senderEmail: pdfSender } } : list
+  const found = officeAddressFor(state.masters, assessment.surgeonId ?? list?.surgeonId ?? '', senderOf)
+  if (found.to === null) return { to: '', alternatives: [], contacts: [] }
   return {
+    contacts: [found.to, ...found.others].map((a) => ({ email: a.email, ...(a.name !== undefined ? { name: a.name } : {}), ...(a.phone !== undefined ? { phone: a.phone } : {}) })),
     to: found.to.email,
     alternatives: found.others.map((a) => ({ email: a.email, label: a.source === 'listSender' ? 'Sent the List' : (a.name ?? 'Office contact') })),
   }
@@ -224,6 +234,21 @@ export function requestNhiFromOffice(api: AppStoreApi, actor: Actor, rowId: stri
   if (row.status !== 'open') return refuse('alreadyDecided', 'This row has already been decided.')
   const fields = effectiveIncoming(row)
   if (validNhiOf(fields) !== undefined) return refuse('rowHasNhi', ROW_HAS_NHI_MESSAGE)
+  const email = nhiRequestEmailFor(state, rowId, to)
+  if (email === undefined) return refuse('notFound', 'Row not found.')
+  mutate(api, actor, { entityType: 'importRow', entityId: rowId, action: 'importRow.nhiRequested', after: { to: email.to }, stampBookingId: null }, () => ({}))
+  return ok(email)
+}
+
+/**
+ * The NHI request's `mailto:` link without asking yet (the Waiting for NHI
+ * row's real `<a href>`; the click asks through `requestNhiFromOffice`, which
+ * audits). Same address rule and the same body.
+ */
+export function nhiRequestEmailFor(state: Pick<AppState, 'intake' | 'masters' | 'schedule'>, rowId: string, to?: string): { href: string; to: string } | undefined {
+  const row: ImportRow | undefined = state.intake.rows[rowId]
+  if (row === undefined) return undefined
+  const fields = effectiveIncoming(row)
   const address = nhiRequestAddressFor(state, rowId)
   const allowed = [address.to, ...address.alternatives.map((a) => a.email)].filter((a) => a !== '')
   const picked = to !== undefined && allowed.some((a) => a.toLowerCase() === to.trim().toLowerCase()) ? to.trim() : address.to
@@ -239,8 +264,7 @@ export function requestNhiFromOffice(api: AppStoreApi, actor: Actor, rowId: stri
     ...(fields.scheduledTime !== undefined ? { time: fields.scheduledTime } : {}),
     ...(fields.procedure?.text !== undefined ? { wording: fields.procedure.text } : {}),
   })
-  mutate(api, actor, { entityType: 'importRow', entityId: rowId, action: 'importRow.nhiRequested', after: { to: picked }, stampBookingId: null }, () => ({}))
-  return ok({ href: email.href, to: picked })
+  return { href: email.href, to: picked }
 }
 
 // ---------------------------------------------------------------------------
@@ -264,17 +288,18 @@ export function patientBalancePreview(
   state: Pick<AppState, 'billing' | 'schedule' | 'masters' | 'appSettings' | 'clock'>,
   who: { patientId: string } | { nhi: string },
   payers: readonly ({ kind: string } | undefined)[],
+  opts: { excludeBookingId?: string } = {},
 ): PatientBalancePreview {
   if (!checksPatientBalance(payers)) return { strength: 'none' }
-  let patient: Patient | undefined
-  if ('patientId' in who) patient = state.masters.patients[who.patientId]
-  else {
-    const v = validateNhi(who.nhi)
-    patient = v.valid ? Object.values(state.masters.patients).find((p) => p.nhi === v.normalised) : undefined
-  }
+  const patient: Patient | undefined = 'patientId' in who ? state.masters.patients[who.patientId] : validateNhi(who.nhi).valid ? patientByNhi(state, who.nhi) : undefined
   if (patient === undefined) return { strength: 'none' }
   const threshold = patientBalanceThresholdDays(state)
-  const summary = patientBalanceSummary(patientBalanceRows(state, patient.hiddenInternalId), { patientId: patient.hiddenInternalId, todayISO: state.clock.todayISO as IsoDate })
+  // A match excludes the matched Booking's own invoices, as the warning itself does (27's warning covers a prepayment).
+  const summary = patientBalanceSummary(patientBalanceRows(state, patient.hiddenInternalId), {
+    patientId: patient.hiddenInternalId,
+    todayISO: state.clock.todayISO as IsoDate,
+    ...(opts.excludeBookingId !== undefined ? { excludeBookingId: opts.excludeBookingId } : {}),
+  })
   const strength = patientBalanceStrength(summary, threshold)
   if (strength === 'none') return { strength }
   const text =
@@ -284,4 +309,166 @@ export function patientBalancePreview(
         ? patientBalanceStrongText(patient.name, summary, threshold)
         : patientBalanceMildText(patient.name, summary, threshold)
   return { strength, text }
+}
+
+// ---------------------------------------------------------------------------
+// The follow-up log (session 2, item 12; US-11.3.3)
+// ---------------------------------------------------------------------------
+
+export const FOLLOW_UP_TEXT_REQUIRED_MESSAGE = 'Write what happened first.'
+export const FOLLOW_UP_DATE_MESSAGE = 'Pick today or a later day for the reminder.'
+export const FOLLOW_UP_OFFICE_ONLY_MESSAGE = 'Only the office keeps the follow-up log.'
+
+export type FollowUpKind = PatientFollowUp['kind']
+
+export interface FollowUpInput {
+  /** The patient, by NHI (the record's key). */
+  nhi: string
+  kind: FollowUpKind
+  text: string
+  /** A reminder's day: required for a reminder, on or after today (demo clock). */
+  dueDateISO?: IsoDate
+  invoiceId?: string
+  warningKey?: string
+}
+
+/** A real calendar day in `YYYY-MM-DD` (no 30 February, no month 13). */
+function isCalendarDate(iso: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso)
+  if (m === null) return false
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])]
+  if (mo < 1 || mo > 12 || d < 1) return false
+  const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1]!
+  return d <= days
+}
+
+export const INVOICE_NOT_THIS_PATIENT_MESSAGE = 'That invoice is not one of this patient\'s.'
+
+/** The patient's row for the invoice (any payer, as the record lists them), or undefined when it is not theirs. */
+function patientsInvoiceRow(state: Parameters<typeof patientBalanceRows>[0], patientId: string, invoiceId: string) {
+  return patientBalanceRows(state, patientId).find((r) => r.invoiceId === invoiceId)
+}
+
+/**
+ * Log a call, a note, a reminder or a resend on the patient record
+ * (US-11.3.3): office only, non-empty text, a reminder on or after today.
+ * Append-only into `patientCare.followUps`; audited `patient.followUp`.
+ */
+export function logPatientFollowUp(api: AppStoreApi, actor: Actor, input: FollowUpInput): Outcome<{ followUpId: string }> {
+  if (actor.role !== 'office') return refuse('officeOnly', FOLLOW_UP_OFFICE_ONLY_MESSAGE)
+  const state = api.getState()
+  const patient = patientByNhi(state, input.nhi)
+  if (patient === undefined) return refuse('notFound', 'Patient not found.')
+  const text = input.text.trim()
+  if (text === '') return refuse('textRequired', FOLLOW_UP_TEXT_REQUIRED_MESSAGE)
+  if (input.kind === 'reminder' && (input.dueDateISO === undefined || !isCalendarDate(input.dueDateISO) || input.dueDateISO < state.clock.todayISO)) {
+    return refuse('reminderDate', FOLLOW_UP_DATE_MESSAGE)
+  }
+  const invoice = input.invoiceId !== undefined ? state.billing.invoices[input.invoiceId] : undefined
+  if (input.invoiceId !== undefined && invoice === undefined) return refuse('notFound', 'Invoice not found.')
+  if (input.invoiceId !== undefined && patientsInvoiceRow(state, patient.hiddenInternalId, input.invoiceId) === undefined) return refuse('notThisPatient', INVOICE_NOT_THIS_PATIENT_MESSAGE)
+  const patientId = patient.hiddenInternalId
+  let followUpId = ''
+  mutate(
+    api,
+    actor,
+    {
+      entityType: 'patient',
+      entityId: patientId,
+      action: 'patient.followUp',
+      after: {
+        kind: input.kind,
+        text,
+        ...(input.kind === 'reminder' ? { dueDateISO: input.dueDateISO } : {}),
+        ...(invoice !== undefined ? { invoiceNumber: invoice.invoiceNumber } : {}),
+      },
+      stampBookingId: null,
+    },
+    (s) => {
+      const alloc = allocateId(s.counters, 'followUp')
+      followUpId = alloc.id
+      const entry: PatientFollowUp = {
+        id: alloc.id,
+        patientId,
+        kind: input.kind,
+        text,
+        ...(input.invoiceId !== undefined ? { invoiceId: input.invoiceId } : {}),
+        ...(input.warningKey !== undefined ? { warningKey: input.warningKey } : {}),
+        ...(input.kind === 'reminder' && input.dueDateISO !== undefined ? { dueDateISO: input.dueDateISO } : {}),
+        atISO: clockISO(s.clock),
+        by: actor.who,
+      }
+      return { patientCare: { ...s.patientCare, followUps: { ...s.patientCare.followUps, [alloc.id]: entry } }, counters: alloc.counters }
+    },
+  )
+  return ok({ followUpId })
+}
+
+/** Tick an open reminder done (US-11.3.3): office only; audited `patient.followUpDone`. */
+export function completeFollowUp(api: AppStoreApi, actor: Actor, id: string): Outcome {
+  if (actor.role !== 'office') return refuse('officeOnly', FOLLOW_UP_OFFICE_ONLY_MESSAGE)
+  const entry = api.getState().patientCare.followUps[id]
+  if (entry === undefined) return refuse('notFound', 'Follow-up not found.')
+  if (entry.kind !== 'reminder') return refuse('notReminder', 'Only a reminder is ticked done.')
+  if (entry.doneAtISO !== undefined) return refuse('alreadyDone', 'This reminder is already done.')
+  mutate(
+    api,
+    actor,
+    { entityType: 'patient', entityId: entry.patientId, action: 'patient.followUpDone', before: { text: entry.text }, after: { done: true }, stampBookingId: null },
+    (s) => {
+      const current = s.patientCare.followUps[id]!
+      return {
+        patientCare: { ...s.patientCare, followUps: { ...s.patientCare.followUps, [id]: { ...current, doneAtISO: clockISO(s.clock), doneBy: actor.who } } },
+      }
+    },
+  )
+  return ok(undefined)
+}
+
+/** The record offers Resend only on an invoice already emailed and not credited (there is no address field to type one). */
+export function canResendFromRecord(rowStatus: string, deliveryStatus: string | undefined): boolean {
+  return deliveryStatus === 'sent' && rowStatus !== 'credited'
+}
+
+/**
+ * The record's Resend (US-11.3.1): 22's `resendInvoice`, which appends to the
+ * invoice's send history (a second send is never refused), then a `resend`
+ * entry in the follow-up log naming the invoice. There is no portal delivery
+ * in the model (D55's default, OQ-114 open), so every resend is an email.
+ */
+export function resendInvoiceFromRecord(api: AppStoreApi, actor: Actor, nhi: string, invoiceId: string, opts: { to?: string } = {}): Outcome<{ to: string }> {
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can resend an invoice.')
+  const state = api.getState()
+  const patient = patientByNhi(state, nhi)
+  if (patient === undefined) return refuse('notFound', 'Patient not found.')
+  const row = patientsInvoiceRow(state, patient.hiddenInternalId, invoiceId)
+  if (row === undefined) return refuse('notThisPatient', INVOICE_NOT_THIS_PATIENT_MESSAGE)
+  if (!canResendFromRecord(row.status, state.billing.invoices[invoiceId]?.delivery?.status)) return refuse('notResendable', 'Only a sent invoice that is not credited is resent from the record.')
+  const sent = resendInvoice(api, actor, invoiceId, opts)
+  if (!sent.ok) return sent
+  const invoice = api.getState().billing.invoices[invoiceId]!
+  const delivery = invoice.delivery
+  const to = delivery?.status === 'sent' ? (delivery.sends[delivery.sends.length - 1]?.to ?? '') : ''
+  const logged = logPatientFollowUp(api, actor, { nhi, kind: 'resend', text: `Resent ${invoice.invoiceNumber} to ${to}`, invoiceId })
+  if (!logged.ok) return logged
+  return ok({ to })
+}
+
+/**
+ * Clear a balance warning from the patient record (15a's `clearWarning`). A
+ * note given with it is also logged as a `note` follow-up linked by
+ * `warningKey`, so the log says why the office went ahead.
+ */
+export function clearBalanceWarningWithNote(api: AppStoreApi, actor: Actor, bookingId: string, key: string, note?: string): Outcome {
+  const cleared = clearWarning(api, actor, bookingId, key)
+  if (!cleared.ok) return cleared
+  const text = note?.trim() ?? ''
+  if (text === '') return cleared
+  const state = api.getState()
+  const booking = state.schedule.bookings[bookingId]
+  const patient = booking !== undefined ? state.masters.patients[booking.patientId] : undefined
+  if (patient === undefined) return cleared
+  const logged = logPatientFollowUp(api, actor, { nhi: patient.nhi, kind: 'note', text, warningKey: key })
+  return logged.ok ? ok(undefined) : logged
 }

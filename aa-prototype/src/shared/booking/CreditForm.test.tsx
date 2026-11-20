@@ -24,7 +24,8 @@ function renderForm(mode: 'credit' | 'rebill' = 'credit', onDone = vi.fn()) {
   return { ...utils, onClose, onDone }
 }
 
-const credits = () => Object.values(useAppStore.getState().schedule.procedureEvents).filter((e) => e.kind === 'credit')
+// Set aside the seed's own credit, Heather Sinclair's (`HS` ids, catch-up Phase 40, D24).
+const credits = () => Object.values(useAppStore.getState().schedule.procedureEvents).filter((e) => e.kind === 'credit' && !e.id.startsWith('HS'))
 
 beforeEach(() => useAppStore.setState(freshAppState()))
 afterEach(() => cleanup())

@@ -1,7 +1,7 @@
 {
   "id": "US-11.3.3",
-  "status": "partial",
-  "absentReason": "Invoices are re-sent from the invoice's Delivery card, but there is no way to record follow-up actions against a patient's outstanding items.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "resend-invoice",
@@ -35,6 +35,182 @@
           ],
           "highlight": [
             "[data-shot=invoice-delivery]"
+          ]
+        },
+        {
+          "state": "resent",
+          "caption": "Sent again: the send history lists both sends, with no refusal",
+          "steps": [
+            {
+              "click": "[data-shot=invoice-delivery] >> role=button[name=\"Resend\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=invoice-delivery] >> role=button[name=\"Resend\"]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-delivery]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "follow-up-log",
+      "app": "admin",
+      "caption": "A patient's follow-up log: calls, reminders and resends, each with who, when and the invoice number",
+      "start": "/admin/patients/CQY9304",
+      "states": [
+        {
+          "steps": [
+            {
+              "fill": "[data-shot=patient-follow-up-log] textarea",
+              "value": "Spoke to Sarah. She will pay on Friday."
+            },
+            {
+              "click": "[data-shot=patient-follow-up-save]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=patient-follow-up-log] >> text=\"Reminder\""
+            },
+            {
+              "fill": "[data-shot=patient-follow-up-log] textarea",
+              "value": "Call again if unpaid"
+            },
+            {
+              "click": "[data-shot=patient-follow-up-save]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Resend AA-2026-HS01\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-shot=patient-follow-up-log]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=patient-follow-up-log]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "shared-note",
+      "app": "web",
+      "caption": "A note written on a List, with who wrote it and when",
+      "start": "/web/lists/L-34821-2026-07-21-PM",
+      "states": [
+        {
+          "state": "written",
+          "steps": [
+            {
+              "scroll": "[data-shot=shared-notes]"
+            },
+            {
+              "fill": "[data-shot=shared-notes] textarea",
+              "value": "Please confirm the second patient's fasting time."
+            },
+            {
+              "click": "[data-shot=shared-note-add]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=shared-notes]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "shared-note",
+      "app": "mobile",
+      "caption": "A note written on a List, with who wrote it and when",
+      "start": "/mobile/lists/L-34821-2026-07-21-PM",
+      "states": [
+        {
+          "state": "written",
+          "steps": [
+            {
+              "scroll": "[data-shot=shared-notes]"
+            },
+            {
+              "fill": "[data-shot=shared-notes] textarea",
+              "value": "Please confirm the second patient's fasting time."
+            },
+            {
+              "click": "[data-shot=shared-note-add]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=shared-notes]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "shared-note",
+      "app": "admin",
+      "caption": "A note written by the anaesthetist, seen by the office with author and time",
+      "start": "/web/lists/L-34821-2026-07-21-PM",
+      "states": [
+        {
+          "state": "seen",
+          "steps": [
+            {
+              "scroll": "[data-shot=shared-notes]"
+            },
+            {
+              "fill": "[data-shot=shared-notes] textarea",
+              "value": "Please confirm the second patient's fasting time."
+            },
+            {
+              "click": "[data-shot=shared-note-add]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/day/2026-07-21"
+            },
+            {
+              "click": "button[data-list-id=\"L-34821-2026-07-21-PM\"]"
+            },
+            {
+              "wait": "[data-testid=admin-list-drawer]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "scroll": "[data-testid=admin-list-drawer] [data-shot=shared-notes]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-testid=admin-list-drawer] [data-shot=shared-notes]"
           ]
         }
       ]

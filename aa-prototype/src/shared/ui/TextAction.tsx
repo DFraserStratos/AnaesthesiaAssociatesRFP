@@ -1,4 +1,5 @@
 import { useId, type CSSProperties, type ReactNode, type Ref } from 'react'
+import { Link } from 'react-router-dom'
 import { accent, neutral } from '../../theme/tokens'
 import { dataAttributesOf, type DataAttributes } from './Field'
 
@@ -6,7 +7,12 @@ export type TextActionSize = 'sm' | 'md' | 'lg'
 
 interface TextActionProps extends DataAttributes {
   children: ReactNode
-  onClick: () => void
+  /** Runs on click (a button). Omit when `to` is given. */
+  onClick?: () => void
+  /** A route: renders a real router link in the same look (middle-click opens a new tab; catch-up Phase 40). */
+  to?: string
+  /** Router state carried by a `to` link. */
+  linkState?: unknown
   /** `sm` 12.5 in tables, `md` 14 in cards (default), `lg` 15 with a 44px target on the phone. */
   size?: TextActionSize
   /** No vertical padding: the action sits on the text line it shares (a table cell, a header row). */
@@ -40,6 +46,8 @@ const SIZE: Record<TextActionSize, CSSProperties> = {
 export function TextAction({
   children,
   onClick,
+  to,
+  linkState,
   size = 'md',
   flush = false,
   inline = false,
@@ -55,6 +63,27 @@ export function TextAction({
 }: TextActionProps) {
   const reasonId = useId()
   const showReason = disabled && disabledReason !== undefined && disabledReason !== null && disabledReason !== false
+  const look: CSSProperties = {
+    border: 'none',
+    background: 'none',
+    borderRadius: 4,
+    fontFamily: 'inherit',
+    fontWeight: 600,
+    color: disabled ? neutral.mist : accent.base,
+    cursor: disabled ? 'default' : 'pointer',
+    whiteSpace: 'nowrap',
+    ...SIZE[size],
+    ...(flush ? { padding: 0 } : {}),
+    ...(inline ? { padding: 0, fontSize: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2 } : {}),
+    ...style,
+  }
+  if (to !== undefined && !disabled) {
+    return (
+      <Link to={to} state={linkState} className="aa-ctl" data-shot={shot} aria-label={label} title={title} onClick={onClick} style={{ textDecoration: 'none', ...look }} {...dataAttributesOf(rest)}>
+        {children}
+      </Link>
+    )
+  }
   const button = (
     <button
       ref={buttonRef}
@@ -67,20 +96,7 @@ export function TextAction({
       title={title}
       disabled={disabled}
       onClick={disabled ? undefined : onClick}
-      style={{
-        border: 'none',
-        background: 'none',
-        borderRadius: 4,
-        fontFamily: 'inherit',
-        fontWeight: 600,
-        color: disabled ? neutral.mist : accent.base,
-        cursor: disabled ? 'default' : 'pointer',
-        whiteSpace: 'nowrap',
-        ...SIZE[size],
-        ...(flush ? { padding: 0 } : {}),
-        ...(inline ? { padding: 0, fontSize: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2 } : {}),
-        ...style,
-      }}
+      style={look}
       {...dataAttributesOf(rest)}
     >
       {children}

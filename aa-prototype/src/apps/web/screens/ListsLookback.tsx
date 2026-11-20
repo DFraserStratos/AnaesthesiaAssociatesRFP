@@ -9,6 +9,7 @@ import { useMemo } from 'react'
 import { neutral, radius } from '../../../theme/tokens'
 import { listsOnDayFor, useAppStore, type BookingSearchRow } from '../../../store'
 import { ProgressPill, resolveDisplayStatus, StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
+import { warningsFor } from '../../../shared/warnings'
 import { dayWithYear, locationName, longDay } from '../../../shared/format'
 import { DAY_EMPTY, SEARCH_EMPTY, useLookbackBounds } from '../../../shared/schedule'
 import { sessionText } from '../../../domain/outOfHours'
@@ -61,7 +62,7 @@ export function WebResultsTable({ upcoming, past, onOpenBooking }: { upcoming: B
 }
 
 function ResultRow({ row, onOpen }: { row: BookingSearchRow; onOpen: (listId: string, bookingId: string) => void }) {
-  const warnings = useBookingWarnings(row.bookingId)
+  const warnings = warningsFor(useBookingWarnings(row.bookingId), 'anaesthetist')
   const date = dayWithYear(row.dateISO)
   const open = () => onOpen(row.listId, row.bookingId)
   return (

@@ -11,7 +11,8 @@ export type StatTileVariant = 'quiet' | 'outlined'
  * 24/700, `Web Dashboard.dc.html` 116 to 119); `outlined` is the Admin Review tile (white, `line`,
  * `radius.md` 12, `14px 16px`, mono 22/700, `Admin Review.dc.html` 68 to 71). The label is the shared
  * `Eyebrow`. `pill` is the quiet tile's success pill beside the figure; `sub` a mist line under it;
- * `tone="warning"` colours the figure (Review's flags).
+ * `tone="warning"` colours the figure (Review's flags); `tone="error"` the strong red (catch-up Phase 40:
+ * a strong balance warning).
  */
 export function StatTile({
   variant,
@@ -30,14 +31,14 @@ export function StatTile({
   value: ReactNode
   sub?: ReactNode
   pill?: ReactNode
-  tone?: 'warning'
+  tone?: 'warning' | 'error'
   /** The outlined tile as a button (catch-up Phase 37: the Billing monitor's "With problems" turns its filter on). */
   onClick?: () => void
   /** With `onClick`: the filter the tile turns on is on. */
   pressed?: boolean
   shot?: string
 } & DataAttributes) {
-  const figureColour = tone === 'warning' ? semantic.warning.onTint : undefined
+  const figureColour = tone === 'warning' ? semantic.warning.onTint : tone === 'error' ? semantic.error.onTint : undefined
   if (variant === 'quiet') {
     return (
       <div {...data} data-shot={shot} style={{ background: neutral.bg, borderRadius: radius.ctl, padding: '12px 14px' }}>

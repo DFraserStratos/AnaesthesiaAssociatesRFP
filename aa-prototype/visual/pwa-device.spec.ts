@@ -471,3 +471,26 @@ test('the hospital file is imported and my booking matched, from the Lists Demo 
   await page.locator('[data-shot="pwa-demo-actions"]').click()
   await expect(page.locator('[data-shot="pwa-demo-action-matching-office-matches-row"]').getByText('Nothing new from the hospital for your Lists')).toBeVisible()
 })
+
+test("the office stand-in adds a missing NHI and the Booking takes the stub's place on an ACTIVE List (catch-up Phase 40)", async ({ page }) => {
+  // Dr Souter's Tue 21 Jul PM List, ACTIVE at reset.
+  await page.goto('/mobile/lists/L-34821-2026-07-21-PM')
+  await page.evaluate(() => window.localStorage.clear())
+  await page.goto('/mobile/lists/L-34821-2026-07-21-PM')
+  await page.waitForLoadState('networkidle')
+  await settleSlide(page)
+  await expect(page.getByTestId('mobile-list-header')).toBeVisible()
+  await expect(page.getByText('Tomasz Nowak')).toHaveCount(0)
+
+  await page.locator('[data-shot="pwa-demo-actions"]').click()
+  const row = page.locator('[data-shot="pwa-demo-action-pwa-office-adds-nhi"]')
+  await expect(row).toBeVisible()
+  await expect(row).toContainText('Office adds the NHI')
+  await row.getByRole('button', { name: 'Run' }).click()
+  await expect(row.getByRole('status')).toContainText('The office added the NHI: Tomasz Nowak is now on your List.')
+  await page.screenshot({ path: 'visual/shots/pwa-25-office-adds-nhi.png' })
+  await page.keyboard.press('Escape')
+
+  await expect(page.getByText('Tomasz Nowak').first()).toBeVisible()
+  await expectNoDocumentScroll(page, 'List after the office added the NHI')
+})

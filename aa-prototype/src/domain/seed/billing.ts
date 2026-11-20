@@ -20,6 +20,8 @@ import { AA_AGENT, buyerCreatedTaxInvoiceFor, deliveryStampFor, supplierFor } fr
 import { invoiceDeliveryFor } from '../billing/whoIsBilled'
 import type {
   AaFeeInvoice,
+  CreditNote,
+  NegativeInvoice,
   LedgerDisbursement,
   LedgerPair,
   LedgerReceipt,
@@ -61,7 +63,7 @@ export interface SeedXeroSlice {
   /** Bulk remittances and bank lines (catch-up Phase 37): the seed ships none. */
   remittances: Record<string, XeroRemittance>
   bankLines: Record<string, XeroBankLine>
-  /** The engine's Xero credit notes (catch-up Phase 39): the seed ships none. */
+  /** The engine's Xero credit notes (catch-up Phase 39): the seed ships Heather Sinclair's two (catch-up Phase 40). */
   creditNotes: Record<string, XeroCreditNote>
   /** Payment runs' credit allocations and batch payments (catch-up Phase 39a): the backdrop runs' batch payments. */
   creditAllocations: Record<string, XeroCreditAllocation>
@@ -91,6 +93,9 @@ export interface SeedBillingSlice {
   payablesRuns: Record<string, PayablesRun>
   /** The simulated bank download: one line per seeded receipt (catch-up Phase 39a). */
   bankLines: Record<string, BankLine>
+  /** Heather Sinclair's credit in full (catch-up Phase 40, D24): its credit note and negative invoice. */
+  creditNotes: Record<string, CreditNote>
+  negativeInvoices: Record<string, NegativeInvoice>
   /** seed.counters bumped past the ids this slice consumed. */
   counters: Record<string, number>
 }
@@ -303,12 +308,14 @@ export function buildSeedBillingSlice(seed: SeedState, prepaidBookingId: string,
         journals: {},
         remittances: {},
         bankLines: {},
-        creditNotes: {},
+        creditNotes: { ...(history.xeroCreditNotes ?? {}) },
         creditAllocations: {},
         batchPayments: backdrop.batchPayments,
       },
       payablesRuns: backdrop.runs,
       bankLines: backdropBankLines('H', allPayments, allAccRecs),
+      creditNotes: { ...(history.creditNotes ?? {}) },
+      negativeInvoices: { ...(history.negativeInvoices ?? {}) },
       contactIdCache,
       aaFeeInvoices: fees.aaFeeInvoices,
       counters: { ...seed.counters, ...bumps },

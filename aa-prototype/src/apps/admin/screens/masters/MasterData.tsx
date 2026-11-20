@@ -24,6 +24,7 @@ import { FundingTagsView } from './FundingTagsView'
 import { RvgGroupsView } from './RvgGroupsView'
 import { ModifiersView } from './ModifiersView'
 import { EmailTemplatesView } from './EmailTemplatesView'
+import { PatientBalanceThresholdView } from './PatientBalanceThresholdView'
 
 interface MasterDataProps {
   actor: Actor
@@ -94,6 +95,7 @@ export function MasterData({ actor }: MasterDataProps) {
         {view === 'availability-statuses' && <AvailabilityStatusesView actor={actor} />}
         {view === 'emailTemplates' && <EmailTemplatesView actor={actor} />}
         {view === 'xeroArchiving' && <XeroArchivingView actor={actor} />}
+        {view === 'patientBalance' && <PatientBalanceThresholdView actor={actor} />}
         {view === 'publicHolidays' && <PublicHolidaysView actor={actor} />}
         {view === 'seedLoad' && <SeedLoadView actor={actor} />}
         {view === 'goLive' && <GoLiveLoadView actor={actor} />}

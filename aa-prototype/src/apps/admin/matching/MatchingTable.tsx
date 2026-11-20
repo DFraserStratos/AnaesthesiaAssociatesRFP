@@ -11,7 +11,7 @@ import { fontFamily, neutral, semantic } from '../../../theme/tokens'
 import { effectiveIncoming, suggestionText, type MatchingView } from '../../../domain/intake'
 import type { ImportRowView } from '../../../store'
 import { ClickableRow, RowOpenButton, TableShell, Td, Th } from '../../../shared/table'
-import { Eyebrow, Pill } from '../../../shared/ui'
+import { Eyebrow, Pill, TextAction } from '../../../shared/ui'
 import { locationName, stampText } from '../../../shared/format'
 import { CHANNEL_CAPS, byWhen, changeTypePill, decisionText, insurerText, roomsCap, whenText } from './matchingText'
 import { useAppStore } from '../../../store'
@@ -108,7 +108,15 @@ export function MatchingTable({
                   {nhi !== undefined && nhi.trim() !== '' ? (
                     <span style={{ fontFamily: fontFamily.mono, fontSize: 12, color: neutral.slate }}>{nhi}</span>
                   ) : (
-                    <span><Pill size="sm" tone="warning">No NHI</Pill></span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <Pill size="sm" tone="warning">No NHI</Pill>
+                      {/* The office's chase list (catch-up Phase 40; US-11.1.5). */}
+                      {row.status === 'open' && (
+                        <TextAction to="/admin/patients/waiting" size="sm" flush shot="matching-waiting-link" style={{ fontSize: 12 }}>
+                          Waiting for NHI
+                        </TextAction>
+                      )}
+                    </span>
                   )}
                   {insurer !== null && <span style={{ fontFamily: fontFamily.mono, fontSize: 11.5, color: neutral.slate }}>{insurer}</span>}
                 </div>

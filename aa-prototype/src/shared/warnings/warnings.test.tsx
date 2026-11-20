@@ -11,6 +11,7 @@ import { SEED_MARKERS } from '../../domain/seed'
 import type { Warning } from '../../domain/warnings'
 import { WarningTriangle } from './WarningTriangle'
 import { WarningsPanel } from './WarningsPanel'
+import { StrengthPill } from './StrengthPill'
 
 const RILEY = SEED_MARKERS['prepaymentBooking']!.entityId
 /** Riley's live warning key (catch-up Phase 27): one per payer group, so it carries the payer's identity. */
@@ -94,5 +95,22 @@ describe('WarningsPanel', () => {
     expect(screen.getByText(/^Cleared by Kirsty W\., Tue 21 Jul \d\d:\d\d$/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Clear/ })).toBeNull()
     expect(screen.getByRole('heading', { name: /All cleared/ })).toBeInTheDocument()
+  })
+})
+
+describe('StrengthPill (catch-up Phase 40): the one strength pill', () => {
+  it('strong is red, a cleared strong one neutral, none draws nothing', () => {
+    const { container } = render(
+      <>
+        <StrengthPill strength="strong" shot="sp-open" />
+        <StrengthPill strength="strong" cleared shot="sp-cleared" />
+        <StrengthPill strength="none" shot="sp-none" />
+      </>,
+    )
+    const open = container.querySelector('[data-shot="sp-open"]') as HTMLElement
+    const cleared = container.querySelector('[data-shot="sp-cleared"]') as HTMLElement
+    expect(open.textContent).toBe('Strong')
+    expect(open.style.color).not.toBe(cleared.style.color)
+    expect(container.querySelector('[data-shot="sp-none"]')).toBeNull()
   })
 })

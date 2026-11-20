@@ -41,7 +41,7 @@ function store(): BoundAppStore {
 }
 
 describe('createBooking', () => {
-  it('creates a Booking + first Procedure on an ACTIVE list, provisionally for a no-NHI patient', () => {
+  it('creates a Booking + first Procedure on an ACTIVE list, with a new patient record for a new NHI', () => {
     const api = store()
     const patientsBefore = Object.keys(api.getState().masters.patients).length
     const bookingsBefore = bookingsForList(api.getState(), SOUTER_PM).length
@@ -56,7 +56,7 @@ describe('createBooking', () => {
     expect(outcome.ok).toBe(true)
     if (!outcome.ok) return
     const state = api.getState()
-    // A new provisional patient row was created (no NHI to match).
+    // A new patient record was created (no record holds this NHI).
     expect(Object.keys(state.masters.patients).length).toBe(patientsBefore + 1)
     expect(bookingsForList(state, SOUTER_PM).length).toBe(bookingsBefore + 1)
 

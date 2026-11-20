@@ -30,7 +30,8 @@ function renderForm(props: { mode?: 'credit' | 'rebill' | 'split'; actor?: Actor
   )
 }
 
-const credits = () => Object.values(useAppStore.getState().schedule.procedureEvents).filter((e) => e.kind === 'credit')
+// Set aside the seed's own credit, Heather Sinclair's (`HS` ids, catch-up Phase 40, D24).
+const credits = () => Object.values(useAppStore.getState().schedule.procedureEvents).filter((e) => e.kind === 'credit' && !e.id.startsWith('HS'))
 const original = () => useAppStore.getState().billing.invoices[ORIGINAL]!
 const amounts = (card: Element) => [...card.querySelectorAll<HTMLInputElement>('input[data-shot="line-amount"]')].map((i) => i.value)
 const descriptions = (card: Element) => [...card.querySelectorAll<HTMLInputElement>('input[data-shot="line-description"]')].map((i) => i.value)

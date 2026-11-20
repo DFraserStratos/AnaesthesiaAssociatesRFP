@@ -509,9 +509,9 @@ function resetDomainStateOnly(api: AppStoreApi): void {
       // The seed ships no queue and no flags; settings come from the seed, so the outage clears (catch-up Phase 37).
       xeroQueue: {},
       xeroDivergences: {},
-      // No credit notes or negative invoices in the seed (catch-up Phase 39).
-      creditNotes: {},
-      negativeInvoices: {},
+      // The seed's one credit, Heather Sinclair's (catch-up Phase 40, D24), as `freshAppState` has it.
+      creditNotes: seedBilling.creditNotes,
+      negativeInvoices: seedBilling.negativeInvoices,
       // The backdrop weekly runs and the bank download (catch-up Phase 39a).
       payablesRuns: seedBilling.payablesRuns,
       bankLines: seedBilling.bankLines,

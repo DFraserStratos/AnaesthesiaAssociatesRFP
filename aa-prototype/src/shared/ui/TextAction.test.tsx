@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { accent, neutral } from '../../theme/tokens'
 import { TextAction } from './TextAction'
@@ -41,5 +42,13 @@ describe('TextAction', () => {
     const b = screen.getByRole('button', { name: 'Remove A1' })
     expect(b).toHaveAttribute('data-shot', 'modifier-remove')
     expect(b).toHaveAttribute('data-modifier-code', 'A1')
+  })
+
+  it('with `to` renders a router link in the same teal look (Phase 40)', () => {
+    render(<MemoryRouter><TextAction to="/admin/patients/CQY9304" size="sm" flush shot="t-link">Open record</TextAction></MemoryRouter>)
+    const a = screen.getByRole('link', { name: 'Open record' })
+    expect(a).toHaveAttribute('href', '/admin/patients/CQY9304')
+    expect(a).toHaveAttribute('data-shot', 't-link')
+    expect(a).toHaveStyle({ color: accent.base, fontWeight: '600', fontSize: '12.5px' })
   })
 })

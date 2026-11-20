@@ -1,8 +1,10 @@
 import { CONFLICT_REASONS } from '../../domain/conflicts'
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { DemoSurface } from './DemoSurface'
 import { StatusChip } from '../../shared'
+import { Button } from '../../shared/ui'
 import { SEED_MARKERS, type SeedMarker } from '../../domain/seed'
 import type { ListState } from '../../domain/types'
 import { UNASSIGNED } from '../../shared/scheduleTerms'
@@ -200,6 +202,7 @@ export function DemoData() {
     return out
   }, [schedule.lists])
 
+  const navigate = useNavigate()
   const selectedMarker: SeedMarker | undefined = SEED_MARKERS[markerKey]
 
   const markerEntity = useMemo(() => {
@@ -215,6 +218,8 @@ export function DemoData() {
         return masters.patients[selectedMarker.entityId]
       case 'contract':
         return masters.contracts[selectedMarker.entityId]
+      case 'route':
+        return undefined
     }
   }, [selectedMarker, schedule, masters])
 
@@ -418,7 +423,7 @@ export function DemoData() {
                 type="button"
                 onClick={() => {
                   setMarkerKey(active ? '' : key)
-                  if (!active) setAuditEntityId(marker.entityId)
+                  if (!active && marker.entityType !== 'route') setAuditEntityId(marker.entityId)
                 }}
                 style={{
                   font: 'inherit',
@@ -453,7 +458,14 @@ export function DemoData() {
             <span className="mono" style={{ fontSize: 12, color: neutral.mist }}>
               {selectedMarker.entityType} · {selectedMarker.entityId}
             </span>
-            <pre
+            {selectedMarker.entityType === 'route' && (
+              <div>
+                <Button variant="secondary" size="compact" onClick={() => navigate(selectedMarker.entityId)} data-shot="seed-marker-open">
+                  Open the screen
+                </Button>
+              </div>
+            )}
+            {selectedMarker.entityType !== 'route' && <pre
               className="mono"
               style={{
                 margin: 0,
@@ -470,7 +482,7 @@ export function DemoData() {
               }}
             >
               {JSON.stringify(markerEntity, null, 2)}
-            </pre>
+            </pre>}
           </div>
         )}
       </Panel>

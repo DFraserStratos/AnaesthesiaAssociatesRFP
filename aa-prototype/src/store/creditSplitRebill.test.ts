@@ -260,7 +260,8 @@ describe('the combined split (US-08.6.4, OQ-77)', () => {
     const draftProcedure = Object.values(api.getState().schedule.procedures).find((p) => p.bookingId === made.value.bookingId)!.id
     expect(canSplitCombined(api.getState(), draftProcedure, { role: 'office' })).toEqual({ code: 'notYetInvoiced', message: SPLIT_MESSAGES.notYetInvoiced })
     expect(setProcedureContract(api, OFFICE, draftProcedure, PRICED_ITEM.merFaceLift1).ok).toBe(true)
-    expect(Object.values(api.getState().schedule.procedureEvents).filter((e) => e.kind === 'credit')).toEqual([])
+    // Set aside the seed's own credit, Heather Sinclair's (`HS` ids, catch-up Phase 40, D24).
+    expect(Object.values(api.getState().schedule.procedureEvents).filter((e) => e.kind === 'credit' && !e.id.startsWith('HS'))).toEqual([])
     expect(stagedCombined(api.getState())?.bookingId).toBe(made.value.bookingId)
     expect(stageCombinedRefusal(api.getState())).toBe(CREDIT_DEMO_COPY.alreadyStaged)
 

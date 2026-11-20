@@ -1,6 +1,156 @@
 {
   "id": "US-11.1.5",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 40 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "waiting-for-nhi",
+      "app": "admin",
+      "caption": "Intake rows waiting for an NHI, each a stub on its List, with the address to chase",
+      "start": "/admin/patients/waiting",
+      "states": [
+        {
+          "state": "list",
+          "caption": "Two rows received without an NHI: the urgent one first, each with the address to chase",
+          "steps": [
+            {
+              "trigger": "receive-no-nhi-list"
+            },
+            {
+              "wait": "[data-shot=waiting-nhi-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=waiting-nhi-row][data-urgent=true]",
+            "[data-shot=waiting-nhi-chase]"
+          ]
+        },
+        {
+          "state": "add-nhi",
+          "caption": "Adding the NHI matches the existing record for Losa Tuilagi; no second one is made",
+          "steps": [
+            {
+              "trigger": "receive-no-nhi-list"
+            },
+            {
+              "wait": "[data-shot=waiting-nhi-row]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=waiting-nhi-row]:has-text(\"Losa Tuilagi\") >> [data-shot=waiting-nhi-add]"
+            },
+            {
+              "wait": "[data-shot=add-nhi-sheet]"
+            },
+            {
+              "fill": "[data-shot=add-nhi-sheet] input >> nth=0",
+              "value": "JKL1188"
+            },
+            {
+              "wait": "[data-shot=add-nhi-preview]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=add-nhi-sheet]"
+          ]
+        },
+        {
+          "state": "ready",
+          "caption": "The Booking is created on the List, matched to her single record",
+          "steps": [
+            {
+              "trigger": "receive-no-nhi-list"
+            },
+            {
+              "wait": "[data-shot=waiting-nhi-row]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=waiting-nhi-row]:has-text(\"Losa Tuilagi\") >> [data-shot=waiting-nhi-add]"
+            },
+            {
+              "wait": "[data-shot=add-nhi-sheet]"
+            },
+            {
+              "fill": "[data-shot=add-nhi-sheet] input >> nth=0",
+              "value": "JKL1188"
+            },
+            {
+              "wait": "[data-shot=add-nhi-preview]"
+            },
+            {
+              "click": "[data-shot=add-nhi-save]"
+            },
+            {
+              "wait": "[data-shot=add-nhi-done]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=add-nhi-done]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "waiting-for-nhi",
+      "app": "web",
+      "caption": "The stub for a row waiting for its NHI, beside the List's progress",
+      "start": "/web/lists/L-34821-2026-08-04-PM",
+      "states": [
+        {
+          "state": "stub",
+          "caption": "The stub on the List, with no amount",
+          "steps": [
+            {
+              "wait": "[data-shot=list-stub-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=list-stub-row]",
+            "[data-shot=list-stub-note]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "waiting-for-nhi",
+      "app": "mobile",
+      "caption": "The stub for a row waiting for its NHI, beside the List's progress",
+      "start": "/mobile/lists/L-34821-2026-08-04-PM",
+      "states": [
+        {
+          "state": "stub",
+          "caption": "The stub on the List, with no amount",
+          "steps": [
+            {
+              "wait": "[data-shot=list-stub]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=list-stub]",
+            "[data-shot=list-stub-note]"
+          ]
+        }
+      ]
+    }
+  ]
 }

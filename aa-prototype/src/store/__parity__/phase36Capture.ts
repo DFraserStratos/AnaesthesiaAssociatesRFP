@@ -66,7 +66,7 @@ const OFFICE: Actor = TEST_OFFICE
 
 /**
  * The baseline's `prior` flag, kept here only so the 36 baseline still
- * compares: the Billing monitor's "Prior balance" tag it pinned was replaced
+ * compares: the Billing monitor's old prior-episode tag it pinned was replaced
  * by 40's patient balance warning (catch-up Phase 40; RV-36).
  */
 function hasUnpaidOtherEpisode(state: AppState, patientId: string, excludeBookingId: string): boolean {

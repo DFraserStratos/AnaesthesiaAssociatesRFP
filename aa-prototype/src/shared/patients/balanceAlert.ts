@@ -9,7 +9,7 @@
 
 import type { AppState } from '../../store/appStore'
 import { warningsForBooking } from '../../store/warnings'
-import { strongerOf } from '../../domain/warnings'
+import { strongerOf, type Warning } from '../../domain/warnings'
 
 export type BalanceAlertState = Pick<AppState, 'schedule' | 'billing' | 'appSettings' | 'clock' | 'masters'>
 
@@ -23,11 +23,29 @@ const NONE: BalanceAlert = { strength: 'none' }
 
 /** The alert on one Booking for the anaesthetist viewing it, or none on another anaesthetist's List. */
 export function balanceAlertForBooking(state: BalanceAlertState, bookingId: string, viewerAnaesthetistId: string | undefined): BalanceAlert {
+  if (!viewerSeesAlert(state, bookingId, viewerAnaesthetistId)) return NONE
+  return balanceAlertFromWarnings(state, bookingId, viewerAnaesthetistId, warningsForBooking(state, bookingId))
+}
+
+function viewerSeesAlert(state: Pick<AppState, 'schedule'>, bookingId: string, viewerAnaesthetistId: string | undefined): boolean {
   const booking = state.schedule.bookings[bookingId]
-  if (booking === undefined || booking.balanceCheck === undefined) return NONE
+  if (booking === undefined || booking.balanceCheck === undefined) return false
   const list = state.schedule.lists[booking.listId]
-  if (list === undefined || viewerAnaesthetistId === undefined || list.anaesthetistId !== viewerAnaesthetistId) return NONE
-  const findings = warningsForBooking(state, bookingId).filter((w) => w.ruleId === 'patientBalance')
+  return list !== undefined && viewerAnaesthetistId !== undefined && list.anaesthetistId === viewerAnaesthetistId
+}
+
+/**
+ * The same alert from warnings already evaluated (a List's `useListWarnings`), so a List row never
+ * runs the rules a second time.
+ */
+export function balanceAlertFromWarnings(
+  state: Pick<AppState, 'schedule'>,
+  bookingId: string,
+  viewerAnaesthetistId: string | undefined,
+  warnings: readonly Warning[],
+): BalanceAlert {
+  if (!viewerSeesAlert(state, bookingId, viewerAnaesthetistId)) return NONE
+  const findings = warnings.filter((w) => w.ruleId === 'patientBalance' && w.bookingId === bookingId)
   if (findings.length === 0) return NONE
   const strongest = findings.reduce((s, w) => strongerOf(s, w.strength), findings[0]!.strength)
   const shown = findings.find((w) => w.strength === strongest)!

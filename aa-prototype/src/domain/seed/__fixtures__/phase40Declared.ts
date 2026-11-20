@@ -7,11 +7,12 @@
  * `store/__parity__/phase40Declared.ts`, which builds on this. Pure.
  */
 
-import type { AuditEntry, Booking, List, Procedure } from '../../types'
+import type { AuditEntry, Booking, List, Procedure, ProcedureEvent } from '../../types'
 
 export const PHASE_40_REASON = "Dr Sharma's patient-billed history (the HS namespace) is appended"
 
-const HS_ID = /^(L-HIST-HS-|HSBK|HSP|HSINV|HSIL|HSBC|XRHS|XPHS|PMTHS|RCTHS|DSBHS|LDHS|HS-PAY-)/
+// Heather Sinclair's credit (D24) adds the credit note, negative invoice, Xero credit notes and credit event: HSCRN, HSNEG, XCNHS, HSEV.
+const HS_ID = /^(L-HIST-HS-|HSBK|HSP|HSINV|HSIL|HSBC|XRHS|XPHS|PMTHS|RCTHS|DSBHS|LDHS|HS-PAY-|HSCRN|HSNEG|XCNHS|HSEV)/
 
 export function isPhase40Id(id: string): boolean {
   return HS_ID.test(id)
@@ -24,7 +25,7 @@ export function dropPhase40<T>(record: Readonly<Record<string, T>>, gone: (id: s
 }
 
 interface SeedLike {
-  schedule: { lists: Readonly<Record<string, List>>; bookings: Readonly<Record<string, Booking>>; procedures: Readonly<Record<string, Procedure>> }
+  schedule: { lists: Readonly<Record<string, List>>; bookings: Readonly<Record<string, Booking>>; procedures: Readonly<Record<string, Procedure>>; procedureEvents?: Readonly<Record<string, ProcedureEvent>> }
   audit: readonly AuditEntry[]
 }
 
@@ -37,6 +38,7 @@ export function seedWithoutPhase40<S extends SeedLike>(seed: S): S {
       lists: dropPhase40(seed.schedule.lists),
       bookings: dropPhase40(seed.schedule.bookings),
       procedures: dropPhase40(seed.schedule.procedures),
+      ...(seed.schedule.procedureEvents !== undefined ? { procedureEvents: dropPhase40(seed.schedule.procedureEvents) } : {}),
     },
     audit: seed.audit.filter((e) => !isPhase40Id(e.entityId)),
   }

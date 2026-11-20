@@ -51,7 +51,8 @@ export function AuditViewer() {
   const specialties = useAppStore((s) => s.masters.specialties)
   const fundingTags = useAppStore((s) => s.masters.fundingTags)
   const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
-  const names = useMemo(() => auditNamesFor({ rvgGroups, contracts }), [rvgGroups, contracts])
+  const patients = useAppStore((s) => s.masters.patients)
+  const names = useMemo(() => auditNamesFor({ rvgGroups, contracts, patients }), [rvgGroups, contracts, patients])
   const [entityType, setEntityType] = useState('all')
 
   // A Contract reads by its AA code and name, a Party by its name (catch-up Phase 18).
@@ -66,6 +67,12 @@ export function AuditViewer() {
     if (type === 'fundingTag') return fundingTags[id]?.code ?? id
     // Catch-up Phase 19: an RVG group by its code and description, never its hidden id.
     if (type === 'rvgGroup') return names.rvgGroup?.(id) ?? 'An RVG group'
+    // Catch-up Phase 40: a patient by NHI and name (the internal id is never shown); the balance setting by name.
+    if (type === 'patient') {
+      const p = patients[id]
+      return p !== undefined ? `${p.nhi} · ${p.name}` : 'A patient'
+    }
+    if (type === 'settings' && id === 'patientBalance') return 'Patient balance warning'
     return id
   }
   const [source, setSource] = useState('all')

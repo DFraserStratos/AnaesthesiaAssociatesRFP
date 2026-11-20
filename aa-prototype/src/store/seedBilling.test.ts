@@ -106,7 +106,8 @@ describe('seeded Xero pairs (catch-up Phase 16)', () => {
       p.kind !== 'aaFee' && p.receivable.xeroAccRecId !== undefined && p.payable?.xeroAccPayId !== undefined ? [{ pair: p, payable: p.payable }] : [],
     )
     expect(pairs.length).toBeGreaterThan(5)
-    for (const { pair, payable } of pairs) {
+    // A credited pair (Heather Sinclair's, catch-up Phase 40) has its release cut by the credit: `seed40.test.ts` pins it.
+    for (const { pair, payable } of pairs.filter(({ pair }) => pair.credit === undefined)) {
       const accRec = state.xero.accRecs[pair.receivable.xeroAccRecId!]!
       const accPay = state.xero.accPays[payable.xeroAccPayId!]!
       expect(accPay.amountPayable).toBe(accRec.amountDue)
@@ -124,7 +125,8 @@ describe('seeded Xero pairs (catch-up Phase 16)', () => {
       expect(accRec.invoiceNumber).toBe(invoice.invoiceNumber)
       expect(accRec.reference).toBe(invoice.caseReference)
       expect(accRec.issuedAtISO).toBeTruthy()
-      expect(accRec.paidAtISO !== undefined).toBe(accRec.status === 'paid')
+      // A paid invoice later credited (Heather Sinclair's, catch-up Phase 40) keeps its paid date.
+      expect(accRec.paidAtISO !== undefined).toBe(accRec.status === 'paid' || (accRec.status === 'credited' && accRec.amountReceived > 0))
     }
     for (const accPay of Object.values(state.xero.accPays)) {
       const accRec = state.xero.accRecs[accPay.accRecId]!

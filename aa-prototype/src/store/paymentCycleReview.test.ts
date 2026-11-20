@@ -165,7 +165,8 @@ describe('netting', () => {
     expect(paid).toMatchObject({ ok: true, value: { billsPaid: 0, netted: 152.38 } })
     expect(Object.values(api.getState().xero.batchPayments).filter((b) => b.payablesRunId === runId)).toEqual([])
     expect(api.getState().billing.payablesRuns[runId]!.status).toBe('paid')
-    const neg = Object.values(api.getState().billing.negativeInvoices)[0]!
+    // Set aside the seed's own credit, Heather Sinclair's (`HS` ids, catch-up Phase 40, D24).
+    const neg = Object.values(api.getState().billing.negativeInvoices).find((n) => !n.id.startsWith('HS'))!
     expect(neg.status).toBe('toNet')
     // Next week: the held lines roll and the rest of the negative nets against them.
     const next = closed(api)

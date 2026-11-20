@@ -108,7 +108,8 @@ describe('a credit waits while Xero holds money the ledger has not recorded (fin
     const waiting = runEventInvoicing(api, OFFICE)
     expect(waiting).toMatchObject({ ok: false, message: CREDIT_SYNC_MESSAGES.waitingForXeroSync })
     expect(eventStatus(api.getState().schedule.procedureEvents[creditEventId]!)).toBe('approved')
-    expect(Object.keys(api.getState().billing.creditNotes)).toEqual([])
+    // Set aside the seed's own credit, Heather Sinclair's (`HS` ids, catch-up Phase 40, D24).
+    expect(Object.keys(api.getState().billing.creditNotes).filter((id) => !id.startsWith('HS'))).toEqual([])
 
     expect(runReconciliationPoll(api).disbursements).toBe(1)
     const issued = run()

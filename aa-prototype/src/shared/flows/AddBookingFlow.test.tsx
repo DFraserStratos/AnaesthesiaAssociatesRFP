@@ -11,6 +11,7 @@ import { bookingsForList, freshAppState, OFFICE_ACTOR, SOUTER_ACTOR, useAppStore
 import { SEED_LIST_IDS } from '../../domain/seed'
 import { SurfaceProvider } from '../surface'
 import { AddBookingFlow } from './AddBookingFlow'
+import { DETAILS_DIFFER_LINE, NHI_NEEDED_TO_SAVE } from './nhiCopy'
 
 const LIST = SEED_LIST_IDS.souterPm21
 
@@ -160,5 +161,85 @@ describe('the Procedure description field (catch-up Phase 20a; US-02.4.1)', () =
     fireEvent.click(screen.getByRole('button', { name: 'Save booking' }))
     expect(screen.getByText('Type the procedure as told, or choose an RVG code.')).toBeInTheDocument()
     expect(newBookingIds(before)).toHaveLength(0)
+  })
+})
+
+describe('the mandatory NHI and the matched record (catch-up Phase 40; D11, US-03.1.5, US-11.1.4)', () => {
+  // The three add-booking forms: the mobile sheet and the web dialog (an anaesthetist), and Admin's (the office).
+  const FORMS = [
+    ['mobile', 'mobile', SOUTER_ACTOR],
+    ['web', 'web', SOUTER_ACTOR],
+    ['Admin', 'web', OFFICE_ACTOR],
+  ] as const
+
+  function renderOn(variant: 'mobile' | 'web', actor: Actor) {
+    return render(
+      <SurfaceProvider variant={variant}>
+        <AddBookingFlow open listId={LIST} actor={actor} onClose={vi.fn()} onCreated={vi.fn()} />
+      </SurfaceProvider>,
+    )
+  }
+  const type = (label: string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } })
+  const saveButton = () => screen.getByRole('button', { name: 'Save booking' })
+
+  it.each(FORMS)('the %s form disables Save with a blank NHI, says why, and enables it with a valid one', (_app, variant, actor) => {
+    renderOn(variant, actor)
+    type('Name', 'Ad Hoc Patient')
+    type('Date of birth', '1990-05-05')
+    expect(saveButton()).toBeDisabled()
+    expect(saveButton()).toHaveAccessibleDescription(NHI_NEEDED_TO_SAVE)
+
+    // An invalid NHI keeps Save disabled and shows validateNhi's reason live.
+    type('NHI', 'ZZZ9004')
+    expect(saveButton()).toBeDisabled()
+    expect(screen.getByLabelText('NHI')).toHaveAttribute('aria-invalid', 'true')
+
+    type('NHI', 'ZZZ9005')
+    expect(saveButton()).toBeEnabled()
+    expect(screen.queryByText(NHI_NEEDED_TO_SAVE)).toBeNull()
+    expect(screen.getByLabelText('NHI')).not.toHaveAttribute('aria-invalid')
+  })
+
+  it('a matched NHI whose details differ says so in the form and on the saved step', () => {
+    renderOn('mobile', SOUTER_ACTOR)
+    type('NHI', 'CQY9304')
+    expect(screen.getByText(/Matches an existing record: Sarah Mitchell/)).toBeInTheDocument()
+    expect(screen.queryByText(DETAILS_DIFFER_LINE)).toBeNull()
+
+    type('Name', 'Sarah Mitchell')
+    type('Date of birth', '1988-04-12')
+    expect(screen.queryByText(DETAILS_DIFFER_LINE)).toBeNull()
+    type('Phone', '027 000 1111')
+    expect(screen.getByText(DETAILS_DIFFER_LINE)).toBeInTheDocument()
+
+    type('Procedure description', 'Diagnostic laparoscopy')
+    fireEvent.click(saveButton())
+    expect(screen.getByText(`Linked to an existing patient record by NHI. No duplicate was created. ${DETAILS_DIFFER_LINE}`)).toBeInTheDocument()
+    const mitchell = Object.values(useAppStore.getState().masters.patients).find((p) => p.nhi === 'CQY9304')
+    expect(mitchell?.pendingDetails?.differences.map((d) => d.field)).toEqual(['phone'])
+  })
+
+  it("the Admin form previews Sarah Mitchell's strong balance warning while the patient pays, and hides it for another payer", () => {
+    renderOn('web', OFFICE_ACTOR)
+    type('NHI', 'CQY9304')
+    const preview = document.querySelector('[data-shot="manual-balance-preview"]')
+    expect(preview).not.toBeNull()
+    expect(preview).toHaveAttribute('data-strength', 'strong')
+    expect(preview).toHaveTextContent('Sarah Mitchell owes $610.00 on 1 invoice')
+    expect(preview).toHaveTextContent('Strong')
+
+    fireEvent.click(screen.getByLabelText(/Different payer/))
+    expect(document.querySelector('[data-shot="manual-balance-preview"]')).toBeNull()
+  })
+
+  it.each([
+    ['mobile', 'mobile'],
+    ['web', 'web'],
+  ] as const)('the %s form never shows the balance preview', (_app, variant) => {
+    renderOn(variant, SOUTER_ACTOR)
+    type('NHI', 'CQY9304')
+    expect(screen.getByText(/Matches an existing record: Sarah Mitchell/)).toBeInTheDocument()
+    expect(document.querySelector('[data-shot="manual-balance-preview"]')).toBeNull()
+    expect(screen.queryByText(/owes \$610\.00/)).toBeNull()
   })
 })

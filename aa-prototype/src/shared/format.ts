@@ -25,6 +25,7 @@ export {
   dayMicroCap,
   dayWithYear,
   formatDob,
+  DOB_NOT_SUPPLIED,
   hhmm,
   longDay,
   longDayNoYear,

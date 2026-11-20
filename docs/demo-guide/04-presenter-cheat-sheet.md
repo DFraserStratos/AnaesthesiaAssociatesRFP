@@ -397,6 +397,21 @@ Month end: fee settings + BCTIs paid that month -> AA-FEE invoice (ACCREC) -> An
 - Caveat: the fixed schedule, the paid-only count and BCTI granularity (per invoice or per procedure) are
   with AA's accountant; amounts are held ex GST, with GST at the foot of the fee invoice.
 
+### Patient balance warning (catch-up Phase 40)
+
+- One of the routine's warnings, raised when a Booking is created or matched for a patient who is the payer
+  on the Booking and owes AA money on invoices billed to them. Mild within the threshold, strong over it
+  (90 days from the invoice date, one admin field in Master data); a patient in credit is mild. Yellow and red.
+- Other payers' bills (the hospital, an insurer) do not count toward the warning, though the patient
+  record's balance shows them under Other payers. It never blocks a Booking.
+- The office works it from the to-do list and the patient record (Log call, Resend, Clear). The
+  anaesthetist sees the colour on their List, mild as yellow, without amounts.
+- Seed: Sarah Mitchell strong ($610.00, Dr Sharma's AA-2026-HS01, 98 days); Losa Tuilagi mild ($380.00, 30
+  days); Heather Sinclair in credit ($260.00, credited 2 June).
+- Shared notes: anyone writes a note on a List or Booking, everyone sees it.
+- **The NHI is mandatory:** no Booking without one. A row without an NHI waits (Admin, Patients, Waiting for
+  NHI), the anaesthetist sees a stub, and the office adds the NHI.
+
 ### Internal ledger (catch-up Phase 36)
 
 ```text
@@ -464,6 +479,9 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - Profile (her name and avatar in the top nav): rate per unit editable, the rest read-only
 
 ### Admin Web
+
+- **Patients** (catch-up Phase 40): patient search and records, Waiting for NHI, and the follow-up list for
+  patients who owe
 
 - Whole-day operational control
 - Phone/manual changes
@@ -918,9 +936,11 @@ Say:
 
 ### 11. Open versus genuinely overdue prior balances
 
-- The billing monitor's "Prior balance" intake flag reads any open (unpaid) prior episode.
-- The RFP asks whether to separately distinguish "open" from "genuinely overdue" in this check; the
-  prototype flags any open balance and holds the distinction as a discovery question.
+- The "Prior balance" intake flag is retired (Phase 40); the patient balance warning replaces it (see
+  "Patient balance warning").
+- The RFP asks whether to separately distinguish "open" from "genuinely overdue"; the prototype uses a
+  mild warning inside the threshold and a strong one over it, and holds the threshold as a discovery
+  question.
 
 ### 12. ACC pre-op flat-fee codes (CS250, CS260, CS70)
 
@@ -1031,8 +1051,8 @@ after the first release (US-02.5.1 to US-02.5.4).
 ### "What if the patient has no NHI?"
 
 The RFP is internally inconsistent: one section treats NHI as the unique patient identifier, another
-says "where available". The prototype uses a hidden internal ID as the invariant and allows a
-provisional NHI-pending patient.
+says "where available". The prototype makes the NHI mandatory: no Booking and no patient without one,
+and a hidden internal ID stays the invariant.
 
 A hospital row with no NHI waits at intake on Admin, Intake, Matching; no patient or Booking is made. So the
 anaesthetist still sees the case, a stub stands on the List in its place: a dashed amber row, "Waiting

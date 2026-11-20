@@ -5,7 +5,11 @@ import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { BookingSource, RailAnswers } from '../../domain/types'
 import { railAnswersFor, railAnswersText } from '../../domain/billing/contractRail'
 import { lookupNhi } from '../../domain/nzhis'
-import { createBooking, railActorOf, railContextForList, useAppStore, type Actor } from '../../store'
+import { validateNhi } from '../../domain/nhi'
+import { detailDifferences } from '../../domain/patients'
+import { createBooking, patientBalancePreview, patientByNhi, PATIENT_BALANCE_PREVIEW_CAPTION, railActorOf, railContextForList, useAppStore, type Actor } from '../../store'
+import { WarningPreviewRow } from '../warnings/WarningPreviewRow'
+import { DETAILS_DIFFER_LINE, matchedRecordText, NHI_NEEDED_TO_SAVE, nhiFieldCheck } from './nhiCopy'
 import { ContractRail, type ContractRailPick } from './ContractRail'
 import { SheetActions } from '../surface/SheetActions'
 import { DemoBadge } from '../DemoBadge'
@@ -36,7 +40,8 @@ interface ManualBookingFormProps {
   emptyLookupPrefill?: ExtractionFields & { nhi: string }
   /** How this Booking entered the system (display-only, DM-39); the add flow passes it. */
   source?: BookingSource
-  onSaved: (result: { bookingId: string; reused: boolean }) => void
+  /** `detailsDiffer`: the NHI matched a record whose details differ; they are held for the office's review. */
+  onSaved: (result: { bookingId: string; reused: boolean; detailsDiffer?: boolean }) => void
 }
 
 type LookupState =
@@ -75,9 +80,26 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
   const [otherPayer, setOtherPayer] = useState<OtherPayerDraft>(EMPTY_OTHER_PAYER)
   // The existing patient record this NHI matches, if any: its email and postal address are the payer's.
   const knownPatient = useMemo(() => {
-    const key = nhi.trim().toUpperCase()
-    return key === '' ? undefined : Object.values(masters.patients).find((p) => p.nhi === key)
-  }, [nhi, masters.patients])
+    return validateNhi(nhi).valid ? patientByNhi({ masters }, nhi) : undefined
+  }, [nhi, masters])
+  // The NHI is mandatory (catch-up Phase 40; D11, US-11.1.4): a live check, and Save waits on a valid one.
+  const nhiCheck = nhiFieldCheck(nhi)
+  // Typed details that differ from the matched record are held for review on save (intake's `pendingDetails`).
+  const detailsDiffer =
+    knownPatient !== undefined &&
+    detailDifferences(knownPatient, { name: name.trim(), ...(dob !== '' ? { dobISO: dob } : {}), ...(phone.trim() !== '' ? { phone: phone.trim() } : {}) }).length > 0
+  // The office's balance preview (Admin only, catch-up Phase 40): while the Procedure's payer is the patient.
+  const billing = useAppStore((s) => s.billing)
+  const schedule = useAppStore((s) => s.schedule)
+  const appSettings = useAppStore((s) => s.appSettings)
+  const clock = useAppStore((s) => s.clock)
+  const balancePreview = useMemo(
+    () =>
+      isOffice && knownPatient !== undefined
+        ? patientBalancePreview({ billing, schedule, masters, appSettings, clock }, { patientId: knownPatient.hiddenInternalId }, [{ kind: differentPayer ? 'other' : 'patient' }])
+        : undefined,
+    [isOffice, knownPatient, billing, schedule, masters, appSettings, clock, differentPayer],
+  )
 
   const [lookup, setLookup] = useState<LookupState>({ kind: 'idle' })
   const [error, setError] = useState<string | null>(null)
@@ -138,13 +160,15 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
       setError(outcome.message)
       return
     }
-    // Was the patient reused? Detect via the just-written audit action.
-    const lastPatientAudit = [...useAppStore.getState().audit].reverse().find((a) => a.entityType === 'patient')
-    onSaved({ bookingId: outcome.value.bookingId, reused: lastPatientAudit?.action === 'patient.reuse' })
+    // What intake did with the patient: reused or created, and any details held for review.
+    const reused = outcome.value.patientOutcome === 'reused'
+    const differ = (outcome.value.pendingDifferences?.length ?? 0) > 0
+    onSaved({ bookingId: outcome.value.bookingId, reused, ...(reused && differ ? { detailsDiffer: true } : {}) })
   }
 
   // The procedure or an RVG code is checked on save, so the refusal says which (createBooking).
-  const canSave = name.trim() !== '' && dob !== ''
+  const canSave = nhiCheck.valid && name.trim() !== '' && dob !== ''
+  const saveBlockedReason = !nhiCheck.valid ? NHI_NEEDED_TO_SAVE : 'Name and date of birth are required.'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -152,13 +176,26 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
 
       {/* NHI + Look up NHI */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+        {/* Top-aligned so the field's live hint can sit under it: an unseen label keeps Look up level with the input. */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
           <div style={{ flex: 1 }}>
-            <TextField label="NHI" value={nhi} onChange={(v) => { setNhi(v); setLookup({ kind: 'idle' }) }} placeholder="ABC1234" mono />
+            <TextField
+              label="NHI"
+              value={nhi}
+              onChange={(v) => { setNhi(v); setLookup({ kind: 'idle' }) }}
+              placeholder="ABC1234"
+              mono
+              invalid={nhiCheck.invalid}
+              {...(nhiCheck.hint !== undefined ? { hint: nhiCheck.hint } : {})}
+              shot="manual-nhi"
+            />
           </div>
-          <Button variant="secondary" onClick={runLookup} disabled={nhi.trim() === '' && emptyLookupPrefill === undefined}>
-            <Search size={16} strokeWidth={2.2} aria-hidden /> Look up
-          </Button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div aria-hidden style={{ visibility: 'hidden' }}><FieldLabel>NHI</FieldLabel></div>
+            <Button variant="secondary" onClick={runLookup} disabled={nhi.trim() === '' && emptyLookupPrefill === undefined}>
+              <Search size={16} strokeWidth={2.2} aria-hidden /> Look up
+            </Button>
+          </div>
         </div>
         <DemoBadge label="NHI FHIR lookup · Digital Services Hub" />
         {lookup.kind === 'hit' && (
@@ -170,6 +207,17 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
           <div style={{ fontSize: 13, color: neutral.slate }}>
             Not found in this demo's records. Enter the details manually.
           </div>
+        )}
+        {knownPatient !== undefined && (
+          <div data-shot="manual-matched-record" style={{ fontSize: 13, color: neutral.slate }}>
+            {matchedRecordText(knownPatient.name, knownPatient.dobISO)}
+            {detailsDiffer && <span data-shot="manual-details-differ"> {DETAILS_DIFFER_LINE}</span>}
+          </div>
+        )}
+        {balancePreview?.text !== undefined && balancePreview.strength !== 'none' && (
+          <WarningPreviewRow strength={balancePreview.strength} text={balancePreview.text} shot="manual-balance-preview">
+            <span>{PATIENT_BALANCE_PREVIEW_CAPTION}</span>
+          </WarningPreviewRow>
         )}
       </div>
 
@@ -328,16 +376,13 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
 
       <SheetActions
         primary={
-          <Button variant="primary" block onClick={save} disabled={!canSave}>
-            Save booking
-          </Button>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, textAlign: 'center' }}>
+            <Button variant="primary" block onClick={save} disabled={!canSave} disabledReason={saveBlockedReason} shot="manual-save">
+              Save booking
+            </Button>
+          </div>
         }
       />
-      {!canSave && (
-        <div style={{ fontSize: 12, color: neutral.mist, textAlign: 'center', marginTop: -8 }}>
-          Name and date of birth are required.
-        </div>
-      )}
       <div style={{ height: 8 }} />
     </div>
   )

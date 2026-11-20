@@ -247,7 +247,9 @@ export interface PatientDetailDifference {
 
 export interface PatientPendingDetails {
   receivedAtISO: IsoDateTime
-  source: 'hospital' | 'surgeon' | 'aa'
+  source: 'hospital' | 'surgeon' | 'aa' | 'anaesthetist'
+  /** Who entered them, when a person did (the office or the anaesthetist; catch-up Phase 40). */
+  by?: string
   bookingId?: BookingId
   differences: PatientDetailDifference[]
   /** The incoming address in full, so "use incoming" can apply it as an address, not a line of text. */

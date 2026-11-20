@@ -79,6 +79,10 @@
               "wait": 700
             },
             {
+              "fill": "[role=dialog] [placeholder=\"ABC1234\"]",
+              "value": "ZZZ9005"
+            },
+            {
               "fill": "[role=dialog] input[placeholder=\"Patient name\"]",
               "value": "Anna Whitcombe"
             },

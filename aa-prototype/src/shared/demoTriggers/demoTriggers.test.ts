@@ -762,11 +762,12 @@ describe('sample warnings (catch-up Phase 15a)', () => {
     const before = proceduresForBooking(api.getState(), AM_TARGET!)[0]!
     const res = raise.run(api, day)
     expect(res.ok).toBe(true)
-    expect(res.message).toContain('Raised 7 sample warnings')
+    expect(res.message).toContain('Raised 8 sample warnings')
+    expect(res.message).toContain('patient balance')
     expect(res.message).toContain('6 rules registered')
-    // multiWarning (catch-up Phase 19): the prepayment sample and the base-units sample, each with its own text.
+    // multiWarning (catch-up Phase 19): the prepayment sample and the base-units sample, each with its own text; (catch-up Phase 40) the balance sample.
     const multi = warningsForBooking(api.getState(), SEED_WARNING_SAMPLE_BOOKINGS.multiWarning)
-    expect(multi.map((w) => w.ruleId).sort()).toEqual(['baseUnitsOutsideGuide', 'prepaymentUnpaid'])
+    expect(multi.map((w) => w.ruleId).sort()).toEqual(['baseUnitsOutsideGuide', 'patientBalance', 'prepaymentUnpaid'])
     expect(multi.find((w) => w.ruleId === 'baseUnitsOutsideGuide')).toMatchObject({ kind: 'afterProcedure', strength: 'mild' })
     expect(raise.disabledReason(api.getState(), day)).toBe('Samples already raised')
     expect(clear.disabledReason(api.getState(), day)).toBeNull()
