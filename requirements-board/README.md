@@ -57,7 +57,7 @@ A host repo usually adds root scripts that call these (`ADOPTING.md`). Run them 
 a path you give a script (`artifact:new`'s file, `--out`, `--to`, a link run folder) is read from the
 folder you ran the command from, also under `npm --prefix requirements-board run ...` (npm passes that
 folder as `INIT_CWD`; a root script that calls `npm --prefix` passes the repo root), and the paths a
-script prints read from there too. Run directly (`node scripts/x.ts`), a script reads paths from where
+script prints read from there too. Run directly (`node scripts/<name>.ts`), a script reads paths from where
 it was started.
 
 **Environment:** `REQUIREMENTS_DIR` (the catalogue folder; default `requirements/`), `HISTORY_DIR` (the
