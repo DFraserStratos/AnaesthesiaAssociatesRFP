@@ -11,7 +11,9 @@
  * Approval is a step AA can switch off: off, each ready group is generated
  * and sent at the end of each action that can make it ready, and on
  * switching off. Submit never invoices it again; nothing ever blocks (D5).
- * The letter joins the send in Phase 41.
+ * Every send carries the prepayment letter (catch-up Phase 41; US-06.3.6):
+ * the template chosen at Approve and send, else the default request template,
+ * rendered in the same commit and kept on the invoice as a snapshot.
  */
 
 import { PAYER_CONTACT_FIRST, PREPAYMENT_NAMES_ANAESTHETIST, prepaymentInvoiceDraftFor, pendingGroupFor, TYPE_AN_AMOUNT_FIRST, type PrepaymentGroup } from '../domain/billing/prepayment'
@@ -24,6 +26,9 @@ import { ASSIGN_THE_LIST_FIRST, pendingPrepayments, prepaymentGroupsForBooking }
 import { getBooking } from './lifecycle'
 import { handoffPairsForBooking } from './xeroHandoff'
 import { isDraftStore } from './draftMode'
+import { amountOutstandingOn, chooseLetterTemplate, letterMergeDataFor, renderLetter } from './prepaymentLetter'
+import { prepaymentStatusFor } from './prepaymentSelectors'
+import type { Invoice } from '../domain/types'
 
 /** Who sends a prepayment invoice when approval is off. */
 export const PREPAYMENT_AUTO_ACTOR: Actor = { who: 'System', role: 'system', source: 'system' }
@@ -37,10 +42,13 @@ export const PREPAYMENT_PAYER_CONTACT = PAYER_CONTACT_FIRST
  * one place; D38, OQ-80). Internal: callers check the gates first. The amount
  * on each line becomes its Procedure's prepaid amount, read-only from now on.
  */
-function generatePrepaymentInvoice(api: AppStoreApi, actor: Actor, bookingId: string, group: PrepaymentGroup, mode: 'approved' | 'automatic'): Outcome<{ invoiceId: string }> {
+function generatePrepaymentInvoice(api: AppStoreApi, actor: Actor, bookingId: string, group: PrepaymentGroup, mode: 'approved' | 'automatic', letterTemplateId?: string): Outcome<{ invoiceId: string }> {
   const state = api.getState()
   const booking = state.schedule.bookings[bookingId]
   if (booking === undefined) return refuse('notFound', 'Booking not found.')
+  // The letter that goes with it (catch-up Phase 41): the one chosen, else the default request template.
+  const choice = chooseLetterTemplate(state, 'request', letterTemplateId)
+  if (!choice.ok) return refuse(choice.code, choice.message)
   const patient = state.masters.patients[booking.patientId]
   const draft = prepaymentInvoiceDraftFor(group, proceduresForBooking(state, bookingId), {
     contracts: state.masters.contracts,
@@ -64,7 +72,16 @@ function generatePrepaymentInvoice(api: AppStoreApi, actor: Actor, bookingId: st
     })
     invoiceId = made.invoiceIds[0] ?? ''
     metas.push(...made.metas)
-    return { billing: { ...s.billing, invoices: made.invoices, invoiceLines: made.invoiceLines, ledger: made.ledger }, counters: made.counters }
+    let invoices = made.invoices
+    const invoice = invoices[invoiceId]
+    if (invoice !== undefined) {
+      // The letter, rendered from the invoice just made (its number, total and supplier), to that invoice's payer (D85).
+      const billing = { ...s.billing, invoices, invoiceLines: made.invoiceLines, ledger: made.ledger }
+      const letter = renderLetter(choice.template, letterMergeDataFor({ ...s, billing }, bookingId, { invoiceId, kind: 'request' }), atISO)
+      invoices = { ...invoices, [invoiceId]: { ...invoice, letter } }
+      metas.push({ entityType: 'invoice', entityId: invoiceId, action: 'invoice.letterSent', after: { invoiceNumber: invoice.invoiceNumber, template: letter.templateName } })
+    }
+    return { billing: { ...s.billing, invoices, invoiceLines: made.invoiceLines, ledger: made.ledger }, counters: made.counters }
   })
   // The ledger pair is made with the invoice above; its Xero mirror: an ACCREC from the payer and a DRAFT ACCPAY to the AA Holding account (idempotent).
   handoffPairsForBooking(api, bookingId)
@@ -77,7 +94,7 @@ function generatePrepaymentInvoice(api: AppStoreApi, actor: Actor, bookingId: st
  * cancelled Booking, or once the List is AUTHORISED or billed. Approving one
  * payer leaves the Booking's other groups pending.
  */
-export function approvePrepayment(api: AppStoreApi, actor: Actor, bookingId: string, payerKey: string): Outcome<{ invoiceId: string }> {
+export function approvePrepayment(api: AppStoreApi, actor: Actor, bookingId: string, payerKey: string, opts: { letterTemplateId?: string } = {}): Outcome<{ invoiceId: string }> {
   const state = api.getState()
   const found = getBooking(state, bookingId)
   if (found === undefined) return refuse('notFound', 'Booking not found.')
@@ -97,7 +114,7 @@ export function approvePrepayment(api: AppStoreApi, actor: Actor, bookingId: str
   const split = group.procedureIds.find((id) => state.schedule.procedures[id]?.split !== undefined)
   if (split !== undefined) return refuse('prepaidSplit', PREPAID_SPLIT_MESSAGE)
   if (!group.ready) return refuse('payerContactMissing', PREPAYMENT_PAYER_CONTACT)
-  return generatePrepaymentInvoice(api, actor, bookingId, group, 'approved')
+  return generatePrepaymentInvoice(api, actor, bookingId, group, 'approved', opts.letterTemplateId)
 }
 
 /**
@@ -139,4 +156,66 @@ export function setPrepaymentApprovalRequired(api: AppStoreApi, actor: Actor, on
     appSettings: { ...s.appSettings, prepayment: { ...s.appSettings.prepayment, approvalRequired: on } },
   }))
   return ok({ sentInvoiceIds: on ? [] : autoSendPrepayments(api) })
+}
+
+// ---------------------------------------------------------------------------
+// The prepayment reminder (catch-up Phase 41; US-06.3.6, US-06.3.2's follow-up)
+// ---------------------------------------------------------------------------
+
+export const REMINDER_MESSAGES = {
+  officeOnly: 'Only the office sends a prepayment reminder.',
+  noOutstandingPrepayment: 'There is no unpaid prepayment on this booking.',
+  noInvoiceEmail: 'Add an invoice email for the payer to send a reminder.',
+  listAuthorised: 'This List is authorised; the prepayment is settled through the AA Holding account.',
+} as const
+
+/** Where a reminder goes: the payer's invoice email as the invoice holds it. */
+export function reminderAddressFor(invoice: Pick<Invoice, 'billedTo' | 'delivery'>): string | undefined {
+  const email = invoice.billedTo?.email?.trim()
+  if (email !== undefined && email !== '') return email
+  const sent = invoice.delivery?.status === 'sent' ? invoice.delivery.sends[0]?.to : undefined
+  return sent !== undefined && sent.includes('@') ? sent : undefined
+}
+
+/** The prepayment invoices on a Booking a reminder can go for: sent, unpaid or part paid. */
+export function remindablePrepaymentInvoices(state: Parameters<typeof prepaymentStatusFor>[0], bookingId: string): string[] {
+  return prepaymentStatusFor(state, bookingId)
+    .groups.filter((g) => (g.status === 'unpaid' || g.status === 'partPaid') && g.invoiceId !== undefined)
+    .map((g) => g.invoiceId!)
+}
+
+/**
+ * Send a prepayment reminder (US-06.3.6): office only (the PWA's stand-in
+ * runs as the simulated office); while the payer's prepayment is unpaid or
+ * part paid and the List is not AUTHORISED. Per payer: `invoiceId` names the
+ * invoice, defaulting to the first unpaid one. Rendered with the amount still
+ * to pay, appended to the invoice's reminders, audited
+ * `invoice.prepaymentReminder`. Never changes the status or 15a's warning.
+ */
+export function sendPrepaymentReminder(api: AppStoreApi, actor: Actor, bookingId: string, opts: { invoiceId?: string; templateId?: string } = {}): Outcome<{ invoiceId: string; to: string }> {
+  if (actor.role !== 'office') return refuse('officeOnly', REMINDER_MESSAGES.officeOnly)
+  const state = api.getState()
+  const found = getBooking(state, bookingId)
+  if (found === undefined) return refuse('notFound', 'Booking not found.')
+  if (found.booking.cancellation !== undefined) return refuse('noOutstandingPrepayment', REMINDER_MESSAGES.noOutstandingPrepayment)
+  if (found.list.state === 'AUTHORISED' || found.list.billedAtISO !== undefined) return refuse('listAuthorised', REMINDER_MESSAGES.listAuthorised)
+  const open = remindablePrepaymentInvoices(state, bookingId)
+  const invoiceId = opts.invoiceId ?? open[0]
+  if (invoiceId === undefined || !open.includes(invoiceId)) return refuse('noOutstandingPrepayment', REMINDER_MESSAGES.noOutstandingPrepayment)
+  const invoice = state.billing.invoices[invoiceId]!
+  const to = reminderAddressFor(invoice)
+  if (to === undefined) return refuse('noInvoiceEmail', REMINDER_MESSAGES.noInvoiceEmail)
+  const choice = chooseLetterTemplate(state, 'reminder', opts.templateId)
+  if (!choice.ok) return refuse(choice.code, choice.message)
+  const amountOutstanding = amountOutstandingOn(state, invoice)
+  const metas: MutationMeta[] = []
+  mutate(api, actor, metas, (s) => {
+    const atISO = clockISO(s.clock)
+    const letter = renderLetter(choice.template, letterMergeDataFor(s, bookingId, { invoiceId, kind: 'reminder' }), atISO)
+    const current = s.billing.invoices[invoiceId]!
+    metas.push({ entityType: 'invoice', entityId: invoiceId, action: 'invoice.prepaymentReminder', after: { invoiceNumber: current.invoiceNumber, to, amountOutstanding, template: letter.templateName } })
+    const reminder = { atISO, by: actor.who, to, letter, amountOutstanding }
+    return { billing: { ...s.billing, invoices: { ...s.billing.invoices, [invoiceId]: { ...current, prepaymentReminders: [...(current.prepaymentReminders ?? []), reminder] } } } }
+  })
+  return ok({ invoiceId, to })
 }

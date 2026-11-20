@@ -85,6 +85,11 @@ Bookings and capture the data AA needs for billing.
     note** beside **Raise additional invoice** credits the invoice in full (less work than expected, a
     wrong billable party, or paid twice), with a lower new invoice if one is due. The office reviews it,
     and her payment for that invoice is reversed.
+15a. Raise an additional invoice or a credit note by hand on her own prepaid procedure, once its List
+    is authorised, from its **Prepaid settlement** block: nothing further is raised automatically, a
+    credit note always credits the whole prepayment invoice, and anything still owed is a fresh
+    additional invoice, paid to her. She can also cancel a prepaid Booking on her List: the prepayment
+    is credited, or refunded if paid, at once.
 16. Record her own pre-op and post-op care on any of her Procedures, before or days after, from the
     Booking (main view, archive or search): **Add pre-op or post-op event** (a ward review, HDU review,
     pain consult, the ACC pre-op assessment with its CS250, CS260 or CS70 code, or other pre-op or
@@ -301,6 +306,9 @@ allowing billing to proceed.
   out-of-balance list (allocate or refund a receipt that matches no invoice).
 - Keep invoices moving after the run sends them: resend one, or give a payer with no invoice address
   an email or postal address.
+- Maintain the prepayment letter and send reminders: the templates on Master data, Prepayment letters
+  (Standard prepayment letter, Prepayment reminder, Anaesthetist changed, one default per kind), and
+  **Send prepayment reminder** on a Booking while its prepayment is unpaid or part paid.
 
 ### Core actions
 
@@ -336,6 +344,11 @@ allowing billing to proceed.
     or, when the billable party asks for a combined procedure in pieces, **Split into additional
     invoices** that add up to what was credited. Each credit is reviewed on **Review → Events** and
     issued in the next billing run.
+12a. Follow up a prepayment: **Send prepayment reminder** while it is unpaid or part paid; after a
+    move, optionally **Email patient: anaesthetist changed** (nothing else changes); on a cancelled
+    prepaid Booking (credited, or refunded from the AA Holding account, at once), **Rebook with another
+    anaesthetist** at that anaesthetist's own price; and raise a whole-invoice credit note or an
+    additional invoice by hand on a prepaid procedure when the work turned out very different.
 13. Run the weekly payment cycle on the Billing monitor: **Close the week** (Friday; it reconciles to
     the bank download), sort out the **Monday checks** (fix an anomaly, or **Hold out of this run** so
     it rolls into next week), **Approve** the week's BCTIs, and **Send payment schedule** to the

@@ -52,7 +52,8 @@ import { BalanceAlertPill, useBalanceAlert } from '../patients'
 import { SharedNotes } from '../notes'
 import { OfficeBillingSetup } from './OfficeBillingSetup'
 import { ProcedureEventsList } from './ProcedureEventsList'
-import { PrepaymentPanel, type PrepaymentOfficeLinks } from './PrepaymentPanel'
+import { PrepaymentPanel, useSettledPrepayments, type PrepaymentOfficeLinks } from './PrepaymentPanel'
+import { PrepaidSettlementBlock } from './PrepaidSettlementBlock'
 import { FunderDetailsView } from './FunderDetailsView'
 import { startForAddedProcedure } from '../../domain/billing/contractRail'
 import { HistorySheet } from './HistorySheet'
@@ -148,6 +149,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
   const locks = useBookingStore((s) => s.billing.locks)
   const masters = useBookingStore((s) => s.masters)
   const prepaymentStatus = useBookingPrepayment(bookingId).status
+  // A prepayment settled by a cancellation or a Contract change (catch-up Phase 41) keeps the panel on screen.
+  const prepaymentSettled = useSettledPrepayments(bookingId).length > 0
+  const showPrepayment = prepaymentStatus !== 'none' || prepaymentSettled
   // The balance warning is the office's (catch-up Phase 40): the anaesthetist sees its colour code instead.
   const warnings = warningsFor(useBookingWarnings(bookingId), actor.role)
   const balanceAlert = useBalanceAlert(bookingId, actor.role === 'anaesthetist' ? actor.anaesthetistId : undefined)
@@ -554,7 +558,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
     balanceAlert.strength !== 'none' ||
     movedToMe !== undefined ||
     cancelled ||
-    prepaymentStatus !== 'none' ||
+    showPrepayment ||
     recheck !== null ||
     error !== null ||
     (completeError !== null && showValidation)
@@ -583,7 +587,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
         </Notice>
       )}
       {/* The prepayment, per payer group (catch-up Phase 27; US-06.3.2, US-03.1.8): on screen the moment the Booking opens. */}
-      {prepaymentStatus !== 'none' && (
+      {showPrepayment && (
         <PrepaymentPanel
           bookingId={bookingId}
           actor={actor}
@@ -802,6 +806,13 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
                 canEdit={canEdit}
               />
             )}
+            {/* A prepaid Procedure's settlement (catch-up Phase 41; US-06.4.1, D31): the prepaid price, the BTM for reference, and what was raised by hand. */}
+            <PrepaidSettlementBlock
+              procedureId={procedure.id}
+              actor={actor}
+              {...(officeLinks !== undefined ? { onOpenInvoice: officeLinks.onOpenInvoice } : {})}
+              {...(officeLinks?.onOpenCreditNote !== undefined ? { onOpenCreditNote: officeLinks.onOpenCreditNote } : {})}
+            />
             {/* The Procedure's events (catch-up Phase 38b; US-03.7.3): on no List or schedule, only here. */}
             <ProcedureEventsList
               procedureId={procedure.id}

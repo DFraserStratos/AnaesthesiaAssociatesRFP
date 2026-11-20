@@ -12,7 +12,7 @@ import { fontFamily, neutral, radius } from '../../theme/tokens'
 import type { InvoiceAgent, InvoiceSupplier } from '../../domain/types'
 import { GST_RATE, OQ29_CAPTION, OQ29_PILL, agentStatement, supplierGstText } from '../../domain/billing/invoicePresentation'
 import { dayWithYear } from '../../domain/dateText'
-import { dateTimeMicroCap, formatCurrency } from '../format'
+import { dateTimeMicroCap, formatCurrency, plainDate } from '../format'
 import { Pill } from '../ui'
 import { Logo } from '../Logo'
 
@@ -133,6 +133,20 @@ export interface DocLineRow {
   eventId?: string
 }
 
+/** An event line's description with its date of service in mono (catch-up Phase 39b; work item 11). */
+export function EventLineText({ text, dateISO }: { text: string; dateISO: string }) {
+  const date = plainDate(dateISO)
+  const at = text.indexOf(date)
+  if (at < 0) return <>{text}</>
+  return (
+    <>
+      {text.slice(0, at)}
+      <span className="mono">{date}</span>
+      {text.slice(at + date.length)}
+    </>
+  )
+}
+
 /**
  * The lines table, one for every document: Description, then the quantity
  * column (`quantityHead`, "Units" on a priced invoice, "Qty" on a free-form
@@ -187,5 +201,37 @@ export function DocTotalLines({ rows, totalLabel, totalValue, after = [], shot =
         </div>
       ))}
     </div>
+  )
+}
+
+/**
+ * A rendered letter's plain text as paragraphs (catch-up Phase 41; US-06.3.6):
+ * a blank line starts a paragraph, a single line break stays a break. The
+ * prepayment letter on its invoice and the preview before sending read it.
+ */
+export function LetterText({ body, fontSize = 13, lineHeight = 20 }: { body: string; fontSize?: number; lineHeight?: number }) {
+  const paragraphs = body.split(/\n\s*\n/).filter((p) => p.trim() !== '')
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize, lineHeight: `${lineHeight}px`, color: neutral.ink }}>
+      {paragraphs.map((p, i) => (
+        <p key={i} style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+          {p}
+        </p>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * The prepayment letter as the invoice's cover section (catch-up Phase 41;
+ * US-06.3.6): on the same paper, above the masthead, a small eyebrow, the
+ * letter as sent (a snapshot, never re-rendered), then a thin rule.
+ */
+export function DocLetter({ body }: { body: string }) {
+  return (
+    <section data-shot="prepayment-letter" aria-label="Prepayment letter" style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 22, borderBottom: `1px solid ${neutral.line}` }}>
+      <div style={metaLabel}>Prepayment letter</div>
+      <LetterText body={body} />
+    </section>
   )
 }

@@ -67,8 +67,13 @@ export function canPayOutOfHolding(source: HoldingOutflow): boolean {
 /** One line of the account's entries table. */
 export interface HoldingEntry {
   atISO: string
-  kind: 'received' | 'transferred'
-  /** Received: the payment. Transferred: the amount held at that moment. */
+  /**
+   * `credited` (catch-up Phase 41): a credit reversing the account's payable before the transfer (by hand, a cancellation or
+   * a Contract change). `refunded`: money the system paid back to the payer out of the account, against that credit; it is
+   * shown, never counted again in the balance (the credit already took it out).
+   */
+  kind: 'received' | 'transferred' | 'credited' | 'refunded'
+  /** Received: the payment. Transferred: the amount held at that moment. Credited: what the account held when the credit reversed it. */
   amount: number
   bookingId: string
   invoiceId: string
@@ -79,6 +84,12 @@ export interface HoldingEntry {
   /** Received: the receipt. Transferred: the transfer. One of the two, so every entry has its own key. */
   receiptId?: string
   transferId?: string
+  /** Credited and refunded: the credit note and its number. */
+  creditNoteId?: string
+  creditNoteNumber?: string
+  /** Refunded only: the refund and why. */
+  refundId?: string
+  refundCause?: 'cancelled' | 'latePayment' | 'contractChanged'
 }
 
 export interface HoldingInput {
@@ -86,6 +97,10 @@ export interface HoldingInput {
   receipts: Readonly<Record<string, LedgerReceipt>>
   transfers: Readonly<Record<string, LedgerTransfer>>
   invoices: Readonly<Record<string, Pick<Invoice, 'id' | 'invoiceNumber' | 'counterparty'>>>
+  /** The credit notes, to number a credited entry (catch-up Phase 41). */
+  creditNotes?: Readonly<Record<string, { id: string; creditNoteNumber: string }>>
+  /** The refunds paid by the system (catch-up Phase 41). */
+  prepaymentRefunds?: Readonly<Record<string, { id: string; prepaymentInvoiceId: string; creditNoteId: string; amount: number; paidAtISO: string; cause: 'cancelled' | 'latePayment' | 'contractChanged' }>>
 }
 
 /** The `prePayment` pairs whose payable is to the account. */
@@ -118,12 +133,27 @@ export function holdingEntries(input: HoldingInput): HoldingEntry[] {
     const payerKey = refKey(invoice.counterparty)
     const transfer = transferOfPair(input.transfers, c.id)
     // What reached the account: every receipt before its transfer, never more than it then held.
-    let room = transfer !== undefined ? toCents(transfer.out.amount) : Number.POSITIVE_INFINITY
+    // Credited before a transfer (catch-up Phase 41): receipts before the credit, up to what it held then.
+    const heldCredit = transfer === undefined && c.credit !== undefined && c.credit.reversedOn === undefined ? c.credit : undefined
+    let room = transfer !== undefined ? toCents(transfer.out.amount) : heldCredit !== undefined ? toCents(heldCredit.heldForPayer) : Number.POSITIVE_INFINITY
     for (const r of (receiptsByPair.get(c.id) ?? []).sort(receiptOrder)) {
       if (room <= 0) break
       const cents = Math.min(toCents(r.grossAmount), room)
       room -= cents
       entries.push({ atISO: r.atISO, kind: 'received', amount: cents / 100, bookingId: c.bookingId, invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber, payerKey, receiptId: r.id })
+    }
+    if (heldCredit !== undefined) {
+      entries.push({
+        atISO: heldCredit.atISO,
+        kind: 'credited',
+        amount: heldCredit.heldForPayer,
+        bookingId: c.bookingId,
+        invoiceId: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        payerKey,
+        creditNoteId: heldCredit.creditNoteId,
+        ...(input.creditNotes?.[heldCredit.creditNoteId] !== undefined ? { creditNoteNumber: input.creditNotes[heldCredit.creditNoteId]!.creditNoteNumber } : {}),
+      })
     }
     if (transfer !== undefined) {
       const to = transfer.in.payee.kind === 'anaesthetist' ? transfer.in.payee.anaesthetistId : undefined
@@ -140,15 +170,35 @@ export function holdingEntries(input: HoldingInput): HoldingEntry[] {
       })
     }
   }
-  return entries.sort(
-    (a, b) => a.atISO.localeCompare(b.atISO) || (a.kind === b.kind ? 0 : a.kind === 'received' ? -1 : 1) || a.invoiceNumber.localeCompare(b.invoiceNumber),
-  )
+  for (const r of Object.values(input.prepaymentRefunds ?? {})) {
+    const invoice = input.invoices[r.prepaymentInvoiceId]
+    const pair = heldPairs(input.ledger).find((c) => c.invoiceId === r.prepaymentInvoiceId)
+    if (invoice === undefined || pair === undefined) continue
+    entries.push({
+      atISO: r.paidAtISO,
+      kind: 'refunded',
+      amount: r.amount,
+      bookingId: pair.bookingId,
+      invoiceId: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      payerKey: refKey(invoice.counterparty),
+      creditNoteId: r.creditNoteId,
+      ...(input.creditNotes?.[r.creditNoteId] !== undefined ? { creditNoteNumber: input.creditNotes[r.creditNoteId]!.creditNoteNumber } : {}),
+      refundId: r.id,
+      refundCause: r.cause,
+    })
+  }
+  const order: Record<HoldingEntry['kind'], number> = { received: 0, transferred: 1, credited: 1, refunded: 2 }
+  return entries.sort((a, b) => a.atISO.localeCompare(b.atISO) || order[a.kind] - order[b.kind] || a.invoiceNumber.localeCompare(b.invoiceNumber))
 }
 
-/** The account's balance: received less transferred, in cents, never negative. It is the prepayments received for procedures not yet done. */
+/** The account's balance: received less transferred and credited, in cents, never negative. It is the prepayments received for procedures not yet done. */
 export function holdingBalance(entries: readonly HoldingEntry[]): number {
   let cents = 0
-  for (const e of entries) cents += e.kind === 'received' ? toCents(e.amount) : -toCents(e.amount)
+  for (const e of entries) {
+    if (e.kind === 'refunded') continue
+    cents += e.kind === 'received' ? toCents(e.amount) : -toCents(e.amount)
+  }
   return Math.max(0, cents) / 100
 }
 
@@ -156,6 +206,7 @@ export function holdingBalance(entries: readonly HoldingEntry[]): number {
 export function heldBookingIds(entries: readonly HoldingEntry[]): string[] {
   const heldByInvoice = new Map<string, { bookingId: string; cents: number }>()
   for (const e of entries) {
+    if (e.kind === 'refunded') continue
     const row = heldByInvoice.get(e.invoiceId) ?? { bookingId: e.bookingId, cents: 0 }
     row.cents += e.kind === 'received' ? toCents(e.amount) : -toCents(e.amount)
     heldByInvoice.set(e.invoiceId, row)
@@ -164,7 +215,7 @@ export function heldBookingIds(entries: readonly HoldingEntry[]): string[] {
 }
 
 /** Why a `prePayment` pair gets no transfer at authorisation. */
-export type TransferSkip = 'notCollect' | 'alreadyTransferred' | 'notSent' | 'voided' | 'cancelled' | 'noPayee'
+export type TransferSkip = 'notCollect' | 'alreadyTransferred' | 'notSent' | 'voided' | 'cancelled' | 'credited' | 'noPayee'
 
 export interface TransferCandidate {
   collectPair: LedgerPair
@@ -173,6 +224,8 @@ export interface TransferCandidate {
   voided: boolean
   bookingCancelled: boolean
   alreadyTransferred: boolean
+  /** Whether the prepayment invoice was credited in full before the transfer (catch-up Phase 41): nothing is left to move. */
+  credited?: boolean
   /** The payee locked at authorise (catch-up Phase 25), else the List's anaesthetist. */
   payeeAnaesthetistId: AnaesthetistId | undefined
 }
@@ -191,6 +244,48 @@ export function transferFor(candidate: TransferCandidate): { skip: TransferSkip 
   if (invoice.approval === undefined) return { skip: 'notSent' }
   if (candidate.voided) return { skip: 'voided' }
   if (candidate.bookingCancelled) return { skip: 'cancelled' }
+  if (candidate.credited === true) return { skip: 'credited' }
   if (candidate.payeeAnaesthetistId === undefined) return { skip: 'noPayee' }
   return { to: candidate.payeeAnaesthetistId }
+}
+
+/** Which payable a credit of an invoice reverses (catch-up Phase 41; US-06.4.1, US-08.6.5, D31). */
+export type CreditTarget =
+  /** A procedure invoice's own payable to the anaesthetist (39's case). */
+  | { leg: 'payable'; anaesthetistId: AnaesthetistId }
+  /** A prepayment before its transfer: the AA Holding account's payable; nothing against an anaesthetist, who was never paid. */
+  | { leg: 'holding' }
+  /** A prepayment after its transfer: the transferred payable to whoever did the List (offset while unreleased, else netted by 39a). */
+  | { leg: 'transfer'; anaesthetistId: AnaesthetistId; transferId: string }
+  /** No payable to reverse. */
+  | { leg: 'none' }
+
+/**
+ * The one place a credit's payable is chosen (catch-up Phase 41): before 27a's
+ * transfer a prepayment's collect payable to the AA Holding account (the
+ * account's balance falls by what it held); after it, the transferred payable
+ * to the anaesthetist. Any other invoice's own payable to its anaesthetist.
+ */
+export function creditTargetFor(pair: Pick<BookingLedgerPair, 'kind' | 'payable'>, transfer?: Pick<LedgerTransfer, 'id' | 'in'>): CreditTarget {
+  const p = pair.payable
+  if (p === undefined) return { leg: 'none' }
+  if (pair.kind === 'prePayment' && isHoldingLeg(p)) {
+    if (transfer === undefined) return { leg: 'holding' }
+    const to = transfer.in.payee.kind === 'anaesthetist' ? transfer.in.payee.anaesthetistId : undefined
+    return to !== undefined ? { leg: 'transfer', anaesthetistId: to, transferId: transfer.id } : { leg: 'none' }
+  }
+  const to = p.payee.kind === 'anaesthetist' ? p.payee.anaesthetistId : undefined
+  return to !== undefined ? { leg: 'payable', anaesthetistId: to } : { leg: 'none' }
+}
+
+/**
+ * The account's identity (catch-up Phase 41): every cent received was either
+ * still held, transferred to an anaesthetist, or credited back; and what was
+ * refunded never exceeds what was credited. False is a `holdingUnbalanced`
+ * finding.
+ */
+export function holdingIdentityHolds(entries: readonly HoldingEntry[]): boolean {
+  const sum = (k: HoldingEntry['kind']) => entries.filter((e) => e.kind === k).reduce((c, e) => c + toCents(e.amount), 0)
+  const received = sum('received')
+  return received === toCents(holdingBalance(entries)) + sum('transferred') + sum('credited') && sum('refunded') <= sum('credited')
 }

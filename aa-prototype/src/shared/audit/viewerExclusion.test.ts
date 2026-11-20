@@ -17,12 +17,17 @@ function emittedActionCodes(): string[] {
   for (const [file, source] of Object.entries(STORE_SOURCES)) {
     if (file.endsWith('.test.ts')) continue
     for (const match of source.matchAll(/\baction: '([^']+)'/g)) codes.add(match[1]!)
+    // An action picked by a ternary (catch-up Phase 41's refund cause): both codes.
+    for (const match of source.matchAll(/\baction: [^,?\n]+\? '([^']+)' : '([^']+)'/g)) {
+      codes.add(match[1]!)
+      codes.add(match[2]!)
+    }
   }
   return [...codes].sort()
 }
 
 /** What reads as money moving: a payment, a receipt, a disbursement or payout, a bill paid, a bank or remittance match, a release on receipt. */
-const MONEY = /payment|receipt|disburs|bankLine|remittance|unmatched|allocation|accpayAuthorised|transferReleased|creditAllocated|batchPaid|offset/i
+const MONEY = /payment|receipt|disburs|refund|bankLine|remittance|unmatched|allocation|accpayAuthorised|transferReleased|creditAllocated|batchPaid|offset/i
 /**
  * Codes the pattern catches that move no money: a Procedure's payer, the prepayment approval switch, a prepaid
  * Booking left off the final invoice, 27a's transfer of a prepayment's payable (neither money in nor money out),
@@ -42,6 +47,15 @@ const NOT_MONEY = new Set([
   'payments.runSuperseded',
   'demo.paymentWeekStaged',
   'demo.bankLineRemoved',
+  // Catch-up Phase 41: a prepayment reminder sends a letter; no money moves.
+  'invoice.prepaymentReminder',
+  // Catch-up Phase 41: a prepayment settled on cancellation or a Contract change is the credit (a credit note, audited
+  // like 39's); the money it refunds is its own prepaymentRefund.* entry. A settlement skipped moves nothing.
+  'booking.prepaymentSettled',
+  'procedure.prepaymentSettled',
+  'prepayment.settlementSkipped',
+  // Catch-up Phase 41 review: the sweep found nothing left to settle; no money moves.
+  'prepayment.settlementNoop',
 ])
 
 describe('AUDIT_VIEWER_EXCLUDED (US-13.5.2: payments are not audited, credit notes are)', () => {

@@ -7,6 +7,7 @@ import {
   XERO_STAFF_ACTOR,
   amendAccRecInXero,
   authoriseList,
+  cancelBooking,
   deliverPaymentWebhook,
   freshAppState,
   payBillsInXero,
@@ -19,7 +20,7 @@ import {
   wireBillingRun,
   type Actor,
 } from '../../store'
-import { SEED_LIST_IDS } from '../../domain/seed'
+import { SEED_LIST_IDS, SEED_PREPAID_BOOKING_ID } from '../../domain/seed'
 import { DemoXero } from './DemoXero'
 import { xeroInvoicePairViews } from './xeroPairView'
 
@@ -272,5 +273,28 @@ describe('DemoXero mirror resilience (catch-up Phase 37)', () => {
     renderInvoices()
     const callout = shot('xero-duplicate-number-policy')!
     expect(callout.querySelector('a[href="/demo/xero/bank"]')).not.toBeNull()
+  })
+})
+
+describe('DemoXero refund on a cancelled prepayment (catch-up Phase 41; US-06.5.2, D53)', () => {
+  beforeEach(() => {
+    useAppStore.setState(freshAppState())
+  })
+
+  it("shows the refund paid from the AA trust account on the credit note panel", () => {
+    const unwire = wireBillingRun(useAppStore)
+    try {
+      expect(cancelBooking(useAppStore, OFFICE, SEED_PREPAID_BOOKING_ID, 'Patient withdrew').ok).toBe(true)
+    } finally {
+      unwire()
+    }
+    const state = useAppStore.getState()
+    const note = Object.values(state.billing.creditNotes).find((c) => c.cause === 'prepaymentCancelled')!
+    const pair = xeroInvoicePairViews(state).find((p) => p.ledger.billingInvoiceId === note.originalInvoiceId)!
+    renderInvoices(`/demo/xero/invoices/${pair.accRec.id}`)
+    const refund = shot('xero-prepayment-refund')!
+    expect(refund).toHaveTextContent('Refund paid from AA trust account · $1,380.00 · Paid 21 Jul')
+    expect(refund).toHaveTextContent(note.creditNoteNumber)
+    expect(refund.querySelectorAll('[data-shot="xero-prepayment-refund-row"]')).toHaveLength(1)
   })
 })

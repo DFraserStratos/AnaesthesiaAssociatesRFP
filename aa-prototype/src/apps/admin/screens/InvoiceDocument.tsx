@@ -37,8 +37,9 @@ import {
   splitNoteText,
 } from '../../../domain/billing'
 import { Button, DemoBadge } from '../../../shared'
-import { AgentBlock, DocLinesTable, DocMasthead, DocMeta, DocTotals, metaLabel } from '../../../shared/billing/docParts'
-import { dateTimeMicroCap, drSurname, formatCurrency, plainDate } from '../../../shared/format'
+import { AgentBlock, DocLetter, DocLinesTable, DocMasthead, DocMeta, DocTotals, EventLineText, metaLabel } from '../../../shared/billing/docParts'
+import { reminderStampText } from '../../../shared/booking/prepaymentText'
+import { dateTimeMicroCap, drSurname, formatCurrency } from '../../../shared/format'
 import { dayWithYear, hhmm } from '../../../domain/dateText'
 import { DefList, DefRow, FormError, Notice, Pill, TextAction, TextField } from '../../../shared/ui'
 import { lockStampText, lockViewFor, MIGRATED_LOCK_TEXT, partyKeyOf } from '../../../domain/billing/lock'
@@ -156,6 +157,9 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
         className="aa-invoice-doc"
         style={{ minWidth: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.panel, padding: '36px 40px', display: 'flex', flexDirection: 'column', gap: 22 }}
       >
+        {/* The prepayment letter sent with it (catch-up Phase 41; US-06.3.6): its cover, on the same paper, above the masthead. */}
+        {invoice.kind === 'prePayment' && invoice.letter !== undefined && <DocLetter body={invoice.letter.body} />}
+
         {/* Masthead: the supplier, the anaesthetist (US-08.4.5) */}
         <DocMasthead
           supplier={supplier}
@@ -418,6 +422,7 @@ function InvoiceInfoRail({
       <RailCard title="Delivery">
         <DeliveryState delivery={invoice.delivery} onSend={onSend} {...(credited ? { sendDisabledReason: CREDIT_MESSAGES.alreadyCredited } : {})} />
         <FormError message={error} />
+        <LetterLines invoice={invoice} />
       </RailCard>
 
       <LockedRecordCard invoice={invoice} />
@@ -730,6 +735,33 @@ function RegenerateNotice({ result }: { result: RegenerateResult }) {
   )
 }
 
+/**
+ * The prepayment letter in the Delivery card (catch-up Phase 41; US-06.3.6):
+ * which letter went with the invoice, then each reminder sent for it, with
+ * what was still to pay.
+ */
+function LetterLines({ invoice }: { invoice: Invoice }) {
+  if (invoice.letter === undefined && (invoice.prepaymentReminders ?? []).length === 0) return null
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, borderTop: `1px solid ${neutral.line}`, paddingTop: 10, fontSize: 12.5, lineHeight: '18px', color: neutral.ink }}>
+      {invoice.letter !== undefined && (
+        <span data-shot="invoice-letter-line" data-template-id={invoice.letter.templateId}>
+          Letter: {invoice.letter.templateName} · sent with this invoice
+        </span>
+      )}
+      {(invoice.prepaymentReminders ?? []).map((r, i) => (
+        <span key={`${r.atISO}:${i}`} data-shot="invoice-reminder-line" style={{ color: neutral.slate }}>
+          {'Reminder · '}
+          <span className="mono">{reminderStampText(r.atISO)}</span>
+          {' · '}
+          <span className="mono">{formatMoney(r.amountOutstanding)}</span>
+          {' outstanding'}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function RailCard({
   title,
   warning = false,
@@ -820,20 +852,6 @@ const railMetaLabel: CSSProperties = {
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
   color: neutral.mist,
-}
-
-/** An event line's description with its date of service in mono (catch-up Phase 39b; work item 11). */
-function EventLineText({ text, dateISO }: { text: string; dateISO: string }) {
-  const date = plainDate(dateISO)
-  const at = text.indexOf(date)
-  if (at < 0) return <>{text}</>
-  return (
-    <>
-      {text.slice(0, at)}
-      <span className="mono">{date}</span>
-      {text.slice(at + date.length)}
-    </>
-  )
 }
 
 /** A linked document number, in the teal of every other invoice link (the rail's, the New invoices card's). */

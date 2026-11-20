@@ -22,6 +22,8 @@ import { useMoveInput } from './useListMoves'
 import { ChoiceRow } from './moveSheetParts'
 import { Avatar } from '../Avatar'
 import { VacatedSessionChoice } from './VacatedSessionChoice'
+import { PrepaymentHonourLine } from './PrepaymentHonourLine'
+import { listHasSentPrepayment } from '../../store/prepaymentNotice'
 import { sessionText } from '../../domain/outOfHours'
 
 interface MoveListSheetProps {
@@ -109,6 +111,7 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
   const bookingWord = plural(bookingCount, 'Booking')
   const colleague = targetSlotId !== undefined ? anaesthetists[slots[targetSlotId]?.anaesthetistId ?? ''] : undefined
   const colleagueShort = colleague !== undefined ? drSurname(colleague.name) : 'Your colleague'
+  const prepaidOnList = useAppStore((s) => listHasSentPrepayment(s, listId))
 
   const unavailableLabel = unavailable !== undefined ? resolveDisplayStatus(unavailable.statusKey, statuses).label : ''
 
@@ -256,6 +259,13 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
               {...(unavailable !== undefined ? { statusBeingSet: unavailable.statusKey } : {})}
             />
 
+            {/* A prepaid Booking on the List keeps its agreed amount (catch-up Phase 41; US-06.5.4): nothing changes. */}
+            {prepaidOnList &&
+              (route === 'colleague' ? (
+                <PrepaymentHonourLine audience="anaesthetist" receiverShort={colleagueShort} shot="move-list-honour" />
+              ) : (
+                <PrepaymentHonourLine audience="office" shot="move-list-honour" />
+              ))}
             <TextArea label="Add a message" value={message} onChange={setMessage} placeholder={route === 'colleague' ? `Optional note for ${colleagueShort} and the office` : 'Optional note for the office'} />
             <FormError message={error} />
             <SheetActions

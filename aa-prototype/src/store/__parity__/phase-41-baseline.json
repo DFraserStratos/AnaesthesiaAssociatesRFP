@@ -1,0 +1,71 @@
+{
+  "statuses": {
+    "BK0034": {
+      "status": "awaitingApproval",
+      "groups": [
+        {
+          "status": "awaitingApproval",
+          "amount": 1200,
+          "received": 0
+        }
+      ]
+    },
+    "BK0038": {
+      "status": "paid",
+      "groups": [
+        {
+          "status": "paid",
+          "amount": 1200,
+          "invoiceNumber": "AA-2026-0001",
+          "received": 1380
+        }
+      ]
+    }
+  },
+  "position": {
+    "received": 28600,
+    "holdingBalance": 1380,
+    "payablesDue": 0,
+    "receivablesOutstanding": 11350.5,
+    "imbalance": 0,
+    "inBalance": true
+  },
+  "holding": {
+    "balance": 1380,
+    "entries": 1
+  },
+  "anaesthetists": {
+    "34821": {
+      "owedToThem": 11350.5,
+      "collected": 27220,
+      "paidOut": 27220,
+      "imbalance": 0
+    }
+  },
+  "riley": {
+    "before": "awaitingApproval",
+    "invoiceNumber": "AA-2026-0002",
+    "total": 1380,
+    "after": "unpaid"
+  },
+  "nairAuthorised": {
+    "invoices": [
+      {
+        "number": "AA-2026-0002",
+        "kind": "standard",
+        "total": 243.8,
+        "counterparty": "hospital:H-FORTE"
+      }
+    ],
+    "transfers": [
+      {
+        "invoiceNumber": "AA-2026-0001",
+        "amount": 1380,
+        "to": "34821"
+      }
+    ],
+    "holdingBalance": 0,
+    "imbalance": 0,
+    "nairStatus": "paid"
+  }
+}

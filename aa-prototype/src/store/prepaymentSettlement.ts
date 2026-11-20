@@ -50,6 +50,8 @@ export function transfersDueForList(state: Pick<AppState, 'schedule' | 'billing'
         voided: accRec?.status === 'voided',
         bookingCancelled: booking.cancellation !== undefined,
         alreadyTransferred: transferOfPair(state.billing.transfers, pair.id) !== undefined,
+        // Credited in full before authorise (catch-up Phase 41): the Procedure bills normally and nothing moves.
+        credited: pair.credit !== undefined,
         // Whoever did the List: the payee locked at authorise (catch-up Phase 25), else the List's anaesthetist.
         payeeAnaesthetistId: state.billing.locks[booking.id]?.payee.anaesthetistId ?? list.anaesthetistId,
       })

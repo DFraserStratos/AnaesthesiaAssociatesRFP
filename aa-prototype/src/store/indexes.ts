@@ -244,3 +244,10 @@ export const runIdsByLinePair = memoOn((runs: Readonly<Record<string, { id: stri
   for (const r of Object.values(runs)) for (const l of r.lines) if (l.heldOut === undefined) out.set(l.pairId, [...(out.get(l.pairId) ?? []), r.id])
   return out
 })
+
+/** Catch-up Phase 41: the credit note on each credited invoice, by the original's id (`livePrePaymentInvoicesForBooking`). */
+export const creditNoteByOriginal = memoOn((notes: Readonly<Record<string, { id: string; originalInvoiceId: string }>>) => {
+  const out = new Map<string, string>()
+  for (const n of Object.values(notes)) out.set(n.originalInvoiceId, n.id)
+  return out
+})

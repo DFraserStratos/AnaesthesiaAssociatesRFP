@@ -10,9 +10,82 @@ import type { Contract, Procedure } from '../../domain/types'
 import { inDisplayOrder } from '../../domain/billing/multiProcedure'
 import type { PrepaidAmount, PrepaymentStatus } from '../../domain/billing/prepayment'
 import type { PillTone } from '../ui/Pill'
-import { formatMoney } from '../format'
+import { formatMoney, stampText } from '../format'
 import { NEEDS_PRICE_LABEL } from '../../domain/billing/priceRanges'
 import type { PrepaymentHolding } from '../../store/prepaymentSelectors'
+
+// ---------------------------------------------------------------------------
+// The prepayment letter and its reminder (catch-up Phase 41; US-06.3.6)
+// ---------------------------------------------------------------------------
+
+/** The action on a sent, unpaid prepayment (office only). */
+export const SEND_REMINDER_LABEL = 'Send prepayment reminder'
+
+/** The anaesthetist's panel: who sends the letter. */
+export const OFFICE_SENDS_LETTER = 'The AA office sends the prepayment letter.'
+
+/** "21 Jul 10:04": when a reminder went (the panel's line, the invoice rail). */
+export function reminderStampText(iso: string): string {
+  return stampText(iso, { weekday: false }).replace(',', '')
+}
+
+/** "21 Jul": the day a reminder went (the Admin Day rail card). */
+export function reminderDayText(iso: string): string {
+  return stampText(iso.slice(0, 10), { weekday: false })
+}
+
+/** "Sent with the Standard prepayment letter": the letter names used by a set of sends, once each. */
+export function sentWithLetterText(templateNames: readonly string[]): string | null {
+  const names = [...new Set(templateNames)]
+  if (names.length === 0) return null
+  return `Sent with the ${names.join(' and the ')}.`
+}
+
+// ---------------------------------------------------------------------------
+// Settled automatically: a cancellation or a Contract change (catch-up Phase 41; US-06.5.2, US-06.3.7)
+// ---------------------------------------------------------------------------
+
+/** "21 Jul": the day a refund was paid. */
+export function settledDayText(iso: string): string {
+  return stampText(iso.slice(0, 10), { weekday: false })
+}
+
+/** The words after the credit number on a Contract change's credit. */
+export const CONTRACT_CHANGED_OFF_PREPAID = 'Contract changed off prepaid'
+
+/** A refund's line in parts, so the amount and the day can be set in mono. */
+export interface RefundLineParts {
+  before: string
+  amount: string
+  between: string
+  day: string
+}
+
+/**
+ * "Refunded to the payer from the AA Holding account · $1,380.00 on 21 Jul" (a
+ * cancellation's or a Contract change's refund), or "Late payment of $100.00
+ * refunded on 22 Jul" (money that arrived after the credit note).
+ */
+export function refundLineParts(refund: { amount: number; paidAtISO: string; cause: 'cancelled' | 'latePayment' | 'contractChanged' }): RefundLineParts {
+  const amount = formatMoney(refund.amount)
+  const day = settledDayText(refund.paidAtISO)
+  return refund.cause === 'latePayment'
+    ? { before: 'Late payment of ', amount, between: ' refunded on ', day }
+    : { before: 'Refunded to the payer from the AA Holding account · ', amount, between: ' on ', day }
+}
+
+/** The panel's title when all it shows is a settled prepayment. */
+export function settledTitle(anyRefund: boolean): string {
+  return anyRefund ? 'Pre-payment refunded' : 'Pre-payment credited'
+}
+
+/**
+ * The office's Contract change on a Procedure a sent prepayment invoice covers
+ * (US-06.3.7, D67), plainly and with no label.
+ */
+export function prepaidContractChangeText(invoiceNumber: string): string {
+  return `Prepayment invoice ${invoiceNumber} was sent. Changing the Contract credits it (and refunds what was paid), then bills this procedure after it under the new Contract.`
+}
 
 /** The panel's title for the Booking's least settled group. */
 export function prepaymentTitle(status: PrepaymentStatus, money?: { received: number; total: number }): string {

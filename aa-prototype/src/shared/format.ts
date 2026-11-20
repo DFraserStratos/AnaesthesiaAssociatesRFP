@@ -182,6 +182,7 @@ export const BOOKING_SOURCE_LABELS: Record<BookingSource, string> = {
   surgeonPdf: 'Surgeon PDF',
   admin: 'Office entry',
   anaesthetistAdHoc: 'Added by anaesthetist',
+  rebook: 'Rebooked by the office',
 }
 
 // ---------------------------------------------------------------------------

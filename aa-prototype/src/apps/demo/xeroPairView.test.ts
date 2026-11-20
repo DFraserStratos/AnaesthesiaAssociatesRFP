@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { INS, SEED_MARKERS, ANAE } from '../../domain/seed'
+import { INS, SEED_MARKERS, ANAE, SEED_PREPAID_BOOKING_ID } from '../../domain/seed'
 import {
   DEMO_TRIGGER_ACTOR,
   XERO_PAYABLES_ACTOR,
   XERO_STAFF_ACTOR,
   advanceClockMinutes,
   amendAccRecInXero,
+  approvePrepayment,
+  prepaymentStatusFor,
   authoriseList,
+  cancelBooking,
   createAppStore,
   deliverPaymentWebhook,
   payBillsInXero,
@@ -198,5 +201,42 @@ describe('Xero invoice-pair view: the Xero side and the engine side (catch-up Ph
     const voided = nibPair(api.getState())
     expect(voided.accRec.status).toBe('voided')
     expect(voided.accRec.voidedAtISO).toBeDefined()
+  })
+})
+
+describe('Xero invoice-pair view: a cancelled prepayment refunded (catch-up Phase 41; US-06.5.2, D53)', () => {
+  it("shows the refund paid from the AA trust account against the prepayment's credit note, with its reference and no NHI", () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    try {
+      expect(cancelBooking(api, OFFICE, SEED_PREPAID_BOOKING_ID, 'Patient withdrew').ok).toBe(true)
+    } finally {
+      unwire()
+    }
+    const state = api.getState()
+    const note = Object.values(state.billing.creditNotes).find((c) => c.cause === 'prepaymentCancelled')!
+    const pair = xeroInvoicePairViews(state).find((p) => p.ledger.billingInvoiceId === note.originalInvoiceId)!
+    expect(pair.credit?.creditNoteNumber).toBe(note.creditNoteNumber)
+    expect(pair.credit?.refunds).toEqual([expect.objectContaining({ amount: 1380, bankAccount: 'AA trust account', paidAtISO: expect.stringMatching(/^2026-07-21/) })])
+    expect(pair.credit!.refunds![0]!.reference).toContain(note.creditNoteNumber)
+    const patient = state.masters.patients[state.schedule.bookings[SEED_PREPAID_BOOKING_ID]!.patientId]!
+    expect(JSON.stringify(pair.credit)).not.toContain(patient.nhi!)
+  })
+
+  it('an unpaid prepayment credited on cancellation has no refund row', () => {
+    const api = createAppStore()
+    const unwire = wireBillingRun(api)
+    try {
+      const riley = SEED_MARKERS.prepaymentBooking!.entityId
+      const group = prepaymentStatusFor(api.getState(), riley).groups[0]!
+      const approve = approvePrepayment(api, OFFICE, riley, group.payerKey)
+      if (!approve.ok) throw new Error(approve.message)
+      expect(cancelBooking(api, OFFICE, riley, 'Surgery postponed').ok).toBe(true)
+      const pair = xeroInvoicePairViews(api.getState()).find((p) => p.ledger.billingInvoiceId === approve.value.invoiceId)!
+      expect(pair.credit).toBeDefined()
+      expect(pair.credit?.refunds).toBeUndefined()
+    } finally {
+      unwire()
+    }
   })
 })

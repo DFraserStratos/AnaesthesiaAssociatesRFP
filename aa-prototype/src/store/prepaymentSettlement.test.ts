@@ -208,14 +208,15 @@ describe('the transfer at authorisation (OQ-125 provisional)', () => {
     expect(payablesDue(api.getState()).count).toBe(2)
   })
 
-  it('a cancelled Booking gets no transfer (Phase 41 credits or refunds it)', () => {
+  it('a cancelled Booking gets no transfer: catch-up Phase 41 credited and refunded it at the cancel', () => {
     const [invoiceId] = approveAllPrepayments(api, RILEY)
     pay(invoiceId!, 1380, 'T-RILEY-FULL')
     const listId = listOf(RILEY)
     expect(cancelBooking(api, OFFICE, RILEY, 'Patient unwell').ok).toBe(true)
     authorise(listId)
     expect(transfers().filter((t) => t.bookingId === RILEY)).toEqual([])
-    expect(balance()).toBe(2760)
+    // Riley's $1,380.00 was refunded from the account at the cancel; Nair's stays held.
+    expect(balance()).toBe(1380)
   })
 })
 

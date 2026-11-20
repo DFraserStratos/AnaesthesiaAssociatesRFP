@@ -1298,6 +1298,27 @@ describe('Phase 40 sync (v71): Lane A 39a (v70) synced into lane/b beside 39b (v
   })
 })
 
+
+describe('Wave 5 sync (v71): Lane B\'s 39b into lane/a', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v70 store from either lane and reseeds both lanes\' slices', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(71)
+    const fresh = freshAppState()
+    const { contractEventFees: _f, ...masters } = fresh.masters
+    const { payablesRuns: _r, bankLines: _b, ...billing } = fresh.billing
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters, billing }, version: 70 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.masters.contractEventFees['CEF001']).toBeDefined()
+    expect(Object.keys(s.billing.payablesRuns).length).toBeGreaterThan(0)
+  })
+})
+
+
 describe('catch-up Phase 40 (v72): patients', () => {
   beforeEach(() => {
     flushPersist()
@@ -1329,5 +1350,79 @@ describe('catch-up Phase 40 (v72): patients', () => {
     const s = createAppStore({ persisted: true }).getState()
     expect(s.patientCare).toEqual({ followUps: {} })
     expect(s.appSettings.warningRules.patientBalance?.params['thresholdDays']).toBe(90)
+  })
+})
+
+describe('catch-up Phase 41 session 1 (v72): the prepayment letter', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v71 store without letter templates and reseeds them, with INV0001 sent with its letter', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(72)
+    const fresh = freshAppState()
+    const { prepaymentLetterTemplates: _t, ...masters } = fresh.masters
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters }, version: 71 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.keys(s.masters.prepaymentLetterTemplates).sort()).toEqual(['LT001', 'LT002', 'LT003'])
+    expect(s.billing.invoices['INV0001']?.letter?.templateId).toBe('LT001')
+    expect(s.counters['letterTemplate']).toBe(4)
+  })
+})
+
+describe('catch-up Phase 41 session 2 (v73): cancellation and refunds', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v72 store without the refund slices and reseeds them', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(73)
+    const fresh = freshAppState()
+    const { prepaymentRefunds: _r, ...billing } = fresh.billing
+    const { refunds: _x, ...xero } = fresh.xero
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing, xero }, version: 72 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.billing.prepaymentRefunds).toEqual({})
+    expect(s.xero.refunds).toEqual({})
+  })
+})
+
+describe('the Wave 5 join (v74: Lane A 41 at v73 joined with Lane B 40 at v72)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v73 store from Lane A or a v72 store from Lane B, and reseeds both lanes\' slices', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(74)
+    const fresh = freshAppState()
+    // Lane A at v73: no patientCare slice, no patientBalance rule.
+    const { patientCare: _c, ...laneA } = fresh
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: laneA, version: 73 }))
+    let s = createAppStore({ persisted: true }).getState()
+    expect(s.patientCare).toEqual({ followUps: {} })
+    expect(s.appSettings.warningRules.patientBalance).toBeDefined()
+    expect(Object.keys(s.masters.prepaymentLetterTemplates).length).toBe(3)
+    flushPersist()
+    localStorage.clear()
+    // Lane B at v72: no letter templates, no refund slices.
+    const { prepaymentLetterTemplates: _t, ...masters } = fresh.masters
+    const { prepaymentRefunds: _r, ...billing } = fresh.billing
+    const { refunds: _x, ...xero } = fresh.xero
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters, billing, xero }, version: 72 }))
+    s = createAppStore({ persisted: true }).getState()
+    expect(Object.keys(s.masters.prepaymentLetterTemplates).sort()).toEqual(['LT001', 'LT002', 'LT003'])
+    expect(s.billing.prepaymentRefunds).toEqual({})
+    expect(s.xero.refunds).toEqual({})
+    expect(s.masters.patients['PT0010']!.nhi).toBe('ZAP3016')
+  })
+
+  it('two fresh seeds deep-equal', () => {
+    expect(freshAppState()).toEqual(freshAppState())
   })
 })

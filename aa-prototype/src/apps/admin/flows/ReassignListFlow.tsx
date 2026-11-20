@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { accent, neutral } from '../../../theme/tokens'
 import type { AssignedList, SlotStatusKey } from '../../../domain/types'
 import { defaultVacated } from '../../../domain/listMoves'
-import { closedEmptyColleagueSlots, openSlotViews, reassignList, useAppStore, type Actor } from '../../../store'
+import { closedEmptyColleagueSlots, listHasSentPrepayment, openSlotViews, reassignList, useAppStore, type Actor } from '../../../store'
 import { Button, FormError } from '../../../shared/ui'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
@@ -13,6 +13,7 @@ import { AnaesthetistCandidates, NotPreferredWarning, useNotPreferredWarning, us
 import { NotAvailableColleagues } from '../components/pairing/AnaesthetistCandidates'
 import { sessionText } from '../../../domain/outOfHours'
 import { Notice } from '../../../shared/ui/Notice'
+import { PrepaymentHonourLine } from '../../../shared/flows/PrepaymentHonourLine'
 
 interface ReassignListFlowProps {
   open: boolean
@@ -127,6 +128,7 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
             <Notice tone="neutral">
               <span>The List moves with its Bookings and history to {surnameFirst(target?.name ?? '')}'s {sessionText(list.session)} session.</span>
             </Notice>
+            {listHasSentPrepayment(state, list.id) && <PrepaymentHonourLine audience="office" shot="reassign-list-honour" />}
             <VacatedSessionChoice label={`${surnameFirst(sourceName)}'s session after the move`} value={vacatedStatus} onChange={setVacatedStatus} shot="reassign-vacated" />
             <NotPreferredWarning warning={pairingWarning} shot="reassign-pairing-warning" />
             <FormError message={error} />

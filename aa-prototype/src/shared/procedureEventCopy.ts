@@ -139,7 +139,12 @@ export const CREDIT_MESSAGES = {
   splitNeedsTwo: 'A split needs at least two new invoices.',
   alreadyCredited: 'This invoice is already credited.',
   correctionPending: 'A credit for this invoice is waiting for review.',
-  prepaymentNotCreditable: 'Crediting a prepayment invoice is not in this prototype yet.',
+  /** Catch-up Phase 41: a cancelled Booking's prepayment was credited or refunded by the cancellation. */
+  prepaymentBookingCancelled: "A cancelled booking's prepayment was settled when it was cancelled.",
+  /** Catch-up Phase 41 (D31): a prepayment invoice is credited whole, never split. */
+  prepaymentNoSplit: 'A prepayment invoice is credited in full. Raise an additional invoice for anything still owed.',
+  /** Catch-up Phase 41: before the List is authorised, only the office credits a prepayment invoice. */
+  prepaymentBeforeAuthorise: 'The office credits a prepayment invoice before the List is authorised.',
   aaFeeNotCreditable: 'AA fee invoices are not credited here.',
   noChargeNotCreditable: 'A no-charge invoice has nothing to credit.',
   invoiceEmailRequired: 'Add an invoice email for this billable party.',
@@ -605,3 +610,26 @@ export function kindRowText(
     amount: e.pricing?.amount ?? asRecorded,
   }
 }
+
+/**
+ * The prepaid settlement block and the credit of a prepayment invoice (catch-up
+ * Phase 41, work item 9; US-06.4.1, D31): the prepaid amount is the price, the
+ * recorded BTM is for reference only (never a dollar figure), and nothing is
+ * invoiced or credited automatically. No en or em dash.
+ */
+export const PREPAID_SETTLEMENT_COPY = {
+  title: 'Prepaid settlement',
+  prepaid: 'Prepaid',
+  thePrice: 'the price for this procedure',
+  recordedBtm: 'Recorded BTM',
+  units: (n: number) => `${n} ${n === 1 ? 'unit' : 'units'}`,
+  forReference: 'for reference only',
+  /** "Moved from the AA Holding account to Dr Souter on 24 Jul". */
+  moved: (to: string, day: string) => `Moved from the AA Holding account to ${to} on ${day}`,
+  you: 'you',
+  nothingAutomatic: 'Nothing is invoiced or credited automatically.',
+  credited: 'Credited',
+  additionalInvoice: 'Additional invoice',
+  /** The credit form's notice on a prepayment invoice, before `CREDIT_LABELS.notARefund`. */
+  creditWhole: 'This credits the whole prepayment invoice. Raise an additional invoice for anything still owed.',
+} as const

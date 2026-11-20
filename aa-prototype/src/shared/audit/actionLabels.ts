@@ -334,6 +334,26 @@ export const ACTION_LABELS: Record<string, string> = {
   'emailTemplate.retire': 'Email template retired',
   'emailTemplate.restore': 'Email template restored',
   'updateEmail.drafted': 'Update email drafted (not sent)',
+
+  // --- Prepayment letters, reminders and settlement (catch-up Phase 41; US-06.3.6, US-06.5.2) ---
+  'letterTemplate.create': 'Prepayment letter template created',
+  'letterTemplate.update': 'Prepayment letter template updated',
+  'letterTemplate.activate': 'Prepayment letter template activated',
+  'letterTemplate.deactivate': 'Prepayment letter template deactivated',
+  'letterTemplate.setDefault': 'Prepayment letter template made default',
+  'invoice.letterSent': 'Prepayment letter sent with the invoice',
+  'invoice.prepaymentReminder': 'Prepayment reminder sent',
+  'booking.patientNotified': 'Patient emailed: anaesthetist changed',
+  'booking.rebooked': 'Booking rebooked with another anaesthetist',
+  'booking.prepaymentSettled': 'Prepayment credited or refunded on cancellation',
+  'procedure.prepaymentSettled': 'Prepayment settled on Contract change',
+  'prepaymentRefund.cancelled': 'Prepayment refunded on cancellation',
+  'prepaymentRefund.latePayment': 'Late prepayment payment refunded',
+  'prepaymentRefund.contractChanged': 'Prepayment refunded on Contract change',
+  'prepayment.settlementSkipped': 'Prepayment not settled automatically',
+  'prepayment.settlementNoop': 'Prepayment already settled',
+  'xero.refundPaid': 'Refund paid in Xero from the AA trust account',
+  'xero.refundNoop': 'Refund already in Xero',
 }
 
 /** "someWord" -> "some word" (the shared camelCase splitter). */

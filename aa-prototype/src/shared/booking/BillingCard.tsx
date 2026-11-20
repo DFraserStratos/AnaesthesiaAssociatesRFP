@@ -37,6 +37,9 @@ import { Notice } from '../ui/Notice'
 import { BackstopAmountField, ContractGroupHeading, NoContractGroup, RailOptionGroup, StepRail, type RailStep } from '../contracts/railParts'
 import { backstopPriceText, contractPriceText, railBackstops, railContractLabel } from '../contracts/railText'
 import { FormError } from '../ui'
+import { prepaidHeldFor } from '../../store/selectors'
+import { isPrepaidContract } from '../../domain/billing/prepayment'
+import { prepaidContractChangeText } from './prepaymentText'
 import { LockBadge } from './LockBadge'
 import { PaidByRow, type PaidByRowProps } from './PaidByRow'
 
@@ -198,6 +201,9 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
   const [note, setNote] = useState<string | null>(null)
   // The re-check made visible (catch-up Phase 27, US-06.3.5): one line when the pick changes the prepayment.
   const [recheck, setRecheck] = useState<string | null>(null)
+  // The office's Contract change off prepaid after the prepayment invoice was sent (catch-up Phase 41; US-06.3.7, D67):
+  // the rail applies a pick at once, so the line is its result, shown once the store has credited that invoice.
+  const [prepaidChange, setPrepaidChange] = useState<string | null>(null)
   /** Run a change and say what it did to the prepayment. */
   const withRecheck = <T,>(run: () => T): T => {
     const before = prepaymentStatusFor(bookingApi.getState(), procedure.bookingId)
@@ -240,6 +246,7 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
     setError(null)
     setNote(null)
     setRecheck(null)
+    setPrepaidChange(null)
     setOtherOn(false)
     // Every answer is saved as it is given (owner review, 2026-11-16), so the other side sees how far it has got.
     // An answer that still leads to the Contract (the same path, or the start of it) keeps it; one that does not releases it.
@@ -263,12 +270,14 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
 
   const choose = (contractId: ContractId, enteredPrice?: number) => {
     const changing = procedure.governingContractId !== undefined && procedure.governingContractId !== contractId
+    const heldBy = prepaidHeldFor(bookingApi.getState(), procedure.bookingId)[procedure.id]?.prepaymentInvoiceId
     const res = withRecheck(() => setProcedureContract(bookingApi, actor, procedure.id, contractId, enteredPrice !== undefined ? { enteredPrice } : {}))
     if (!res.ok) {
       setError(res.message)
       return
     }
     setError(null)
+    setPrepaidChange(prepaidChangeLine(bookingApi.getState(), heldBy, isPrepaidContract(masters.contracts[contractId])))
     setOtherOn(masters.contracts[contractId]?.pricing.kind === 'open')
     setNote(changing && procedure.enteredPrice !== undefined && enteredPrice === undefined ? 'Any typed price was cleared for the new Contract.' : null)
   }
@@ -433,8 +442,27 @@ function BillingSteps({ procedure, actor, canEdit, canCapture, rvgGroup, codeFai
       <FormError message={error} />
       {note !== null && <span data-shot="contract-price-cleared" style={{ fontSize: 12.5, color: neutral.slate }}>{note}</span>}
       {recheck !== null && <span data-shot="prepayment-recheck" role="status" style={{ fontSize: 12.5, color: neutral.slate }}>{recheck}</span>}
+      {prepaidChange !== null && (
+        <span data-shot="prepaid-contract-change" role="status" style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.slate }}>
+          {prepaidChange}
+        </span>
+      )}
     </div>
   )
+}
+
+/**
+ * The line after the office moved a Procedure a sent prepayment invoice covered
+ * onto a Contract that is not prepaid (catch-up Phase 41; US-06.3.7, D67): read
+ * from the credit note the store just made, so it shows only when the
+ * settlement happened. Null otherwise.
+ */
+function prepaidChangeLine(state: ReturnType<ReturnType<typeof useBookingApi>['getState']>, heldBy: string | undefined, toPrepaid: boolean): string | null {
+  if (heldBy === undefined || toPrepaid) return null
+  // In the Admin Booking draft the settlement happens at Save (catch-up Phase 41 review), so the line confirms what Save will do;
+  // outside a draft the credit was just made. Either way the invoice it names was sent.
+  const invoice = state.billing.invoices[heldBy]
+  return invoice !== undefined ? prepaidContractChangeText(invoice.invoiceNumber) : null
 }
 
 function StepFrame({ question, aside, children }: { question: string; aside?: ReactNode; children: ReactNode }) {

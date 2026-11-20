@@ -34,6 +34,12 @@
           "click": "[data-shot=awaiting-approval-row][data-booking-id=BK0034] [data-shot=approve-and-send]"
         },
         {
+          "wait": "[data-shot=prepayment-letter-picker]"
+        },
+        {
+          "click": "[data-shot=prepayment-letter-send]"
+        },
+        {
           "wait": 800
         }
       ],

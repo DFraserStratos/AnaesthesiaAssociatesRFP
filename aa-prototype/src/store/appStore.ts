@@ -52,6 +52,8 @@ import type {
   CreditNote,
   NegativeInvoice,
   PayablesRun,
+  PrepaymentRefund,
+  XeroRefund,
   BankLine,
   XeroCreditAllocation,
   XeroBatchPayment,
@@ -126,6 +128,8 @@ export interface BillingSlice {
   payablesRuns: Record<string, PayablesRun>
   /** The simulated bank download the week's close reconciles against (catch-up Phase 39a). */
   bankLines: Record<string, BankLine>
+  /** Prepayments refunded by the system (catch-up Phase 41; US-06.5.2). */
+  prepaymentRefunds: Record<string, PrepaymentRefund>
 }
 
 export interface XeroSlice {
@@ -145,6 +149,8 @@ export interface XeroSlice {
   creditAllocations: Record<string, XeroCreditAllocation>
   /** One payment per anaesthetist per run, for the net (catch-up Phase 39a). */
   batchPayments: Record<string, XeroBatchPayment>
+  /** Refunds paid in Xero against a credit note (catch-up Phase 41; simulated). */
+  refunds: Record<string, XeroRefund>
 }
 
 export interface IntegrationsSlice {
@@ -450,26 +456,34 @@ export const PERSIST_KEY = 'aa-demo'
  *  PT0173 Lorraine Petrie, appended after 25a's; counter `patient` 174). Reseeds on load.
  *  v69: Wave 4 join, Lane A's 39 (v68, holding 38b and the 42 sync) joined with Lane B's 43 (v67): one past the higher.
  *  Reseeds on load.
- *  v70: Phase 39b: pre-op, post-op and billing events; BillingLine removed (`schedule.billingLines` and the `BL`
- *  counter gone; `masters.contractEventFees` new, CEF001 STGACC-PAIN on St George's ACC, counter `contractEventFee`;
- *  the event's `pricing` and `invoiceLineId`, the line's `serviceDateISO` and `eventId`). Reseeds on load.
  *  v70 (lane/a): catch-up Phase 39a, the weekly payment cycle: `billing.payablesRuns` (the seed's backdrop weekly runs
  *  PRH01 to PRH13, Week 29 the newest), `billing.bankLines` (the bank download, one per seeded payment), `xero.creditAllocations`
  *  and `xero.batchPayments` (the backdrop runs' batch payments), `appSettings.paymentCycle`, the payable leg's `offsetAmount`,
  *  the negative invoice's `nettings` and `netted` status, the credit's `nettedAmount`; every seeded payout names its run.
  *  Reseeds on load.
+ *  v70 (lane/b): catch-up Phase 39b: pre-op, post-op and billing events; BillingLine removed (`schedule.billingLines` and the `BL`
+ *  counter gone; `masters.contractEventFees` new, CEF001 STGACC-PAIN on St George's ACC, counter `contractEventFee`;
+ *  the event's `pricing` and `invoiceLineId`, the line's `serviceDateISO` and `eventId`). Reseeds on load.
  *  v71 (lane/b): the Phase 40 sync of Lane A's 39a into lane/b (39b and 39a both took v70): one past the higher.
  *  Reseeds on load.
- *  v72: catch-up Phase 40, patients: `Patient.nhi` required (PT0010 Noah Prescott ZAP3016, his wording without
+ *  v71 (lane/a): the Wave 5 sync of Lane B's 39b into lane/a (Phase 39a and Phase 39b both took v70): one past the higher.
+ *  Reseeds on load.
+ *  v72 (lane/b): catch-up Phase 40, patients: `Patient.nhi` required (PT0010 Noah Prescott ZAP3016, his wording without
  *  its no-NHI marker), `pendingDetails`, `Booking.balanceCheck`, `noteLog` on Booking and List, the `patientCare` slice
- *  (counters `sharedNote` NTE, `followUp` FUN), the `patientBalance` rule's settings entry, Dr Sharma's patient-billed history (`HS` namespace). Reseeds on load. */
-export const PERSIST_VERSION = 72
+ *  (counters `sharedNote` NTE, `followUp` FUN), the `patientBalance` rule's settings entry, Dr Sharma's patient-billed history (`HS` namespace). Reseeds on load.
+ *  v72 (lane/a): catch-up Phase 41 session 1, the prepayment letter: `masters.prepaymentLetterTemplates` (LT001 to LT003, one
+ *  default per kind; counter `letterTemplate` 4) and INV0001's `letter` (LT001 rendered at its approval). Reseeds on load.
+ *  v73 (lane/a): catch-up Phase 41 session 2, cancellation and refunds: `billing.prepaymentRefunds` (RF) and `xero.refunds` (XRF), empty
+ *  in the seed; the credit's `refundedAmount`; Dr Beaumont's prepaid Rhinoplasty price-list Contract for the rebook. Reseeds on load.
+ *  v74: Wave 5 join, Lane A's 41 (v73, holding 39a and the 39b sync) joined with Lane B's 40 (v72): one past the higher.
+ *  Reseeds on load. */
+export const PERSIST_VERSION = 74
 
 export function emptyBillingSlice(): BillingSlice {
-  return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {}, creditNotes: {}, negativeInvoices: {}, payablesRuns: {}, bankLines: {} }
+  return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {}, creditNotes: {}, negativeInvoices: {}, payablesRuns: {}, bankLines: {}, prepaymentRefunds: {} }
 }
 export function emptyXeroSlice(): XeroSlice {
-  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {}, creditNotes: {}, creditAllocations: {}, batchPayments: {} }
+  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {}, creditNotes: {}, creditAllocations: {}, batchPayments: {}, refunds: {} }
 }
 export function emptyIntegrationsSlice(): IntegrationsSlice {
   return { feeds: {}, messages: {} }
@@ -521,6 +535,7 @@ export function freshAppState(): AppState {
       negativeInvoices: seedBilling.negativeInvoices,
       payablesRuns: seedBilling.payablesRuns,
       bankLines: seedBilling.bankLines,
+      prepaymentRefunds: {},
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),

@@ -149,6 +149,11 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   changeSet: { prefix: 'CS', pad: 4 },
   // The update email templates the office adds (catch-up Phase 35; US-02.3.4): seeded ET001 to ET004.
   emailTemplate: { prefix: 'ET', pad: 3 },
+  // The prepayment letter templates (catch-up Phase 41; US-06.3.6): seeded LT001 to LT003.
+  letterTemplate: { prefix: 'LT', pad: 3 },
+  // Prepayment refunds paid by the system and their Xero mirror (catch-up Phase 41; US-06.5.2).
+  prepaymentRefund: { prefix: 'RF', pad: 4 },
+  xeroRefund: { prefix: 'XRF', pad: 4 },
   // Xero mirror resilience (catch-up Phase 37): the sync queue, divergence flags, and the Xero side's remittances and bank lines.
   xeroQueueItem: { prefix: 'XQ', pad: 4 },
   xeroDivergence: { prefix: 'XD', pad: 4 },
@@ -515,6 +520,8 @@ function resetDomainStateOnly(api: AppStoreApi): void {
       // The backdrop weekly runs and the bank download (catch-up Phase 39a).
       payablesRuns: seedBilling.payablesRuns,
       bankLines: seedBilling.bankLines,
+      // None in the seed (catch-up Phase 41).
+      prepaymentRefunds: {},
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),

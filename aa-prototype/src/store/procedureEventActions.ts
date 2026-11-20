@@ -830,6 +830,7 @@ export function runEventInvoicing(api: AppStoreApi, actor: Actor, opts: { eventI
       procedureEvents: { ...s.schedule.procedureEvents },
       creditNotes: { ...s.billing.creditNotes },
       negativeInvoices: { ...s.billing.negativeInvoices },
+      transfers: { ...s.billing.transfers },
       metas,
     }
     for (const p of planned) {
@@ -861,7 +862,7 @@ export function runEventInvoicing(api: AppStoreApi, actor: Actor, opts: { eventI
     work.procedureEvents = sent.procedureEvents
     metas.push(...sent.metas)
     return {
-      billing: { ...s.billing, invoices: work.maps.invoices, invoiceLines: work.maps.invoiceLines, ledger: work.maps.ledger, creditNotes: work.creditNotes, negativeInvoices: work.negativeInvoices },
+      billing: { ...s.billing, invoices: work.maps.invoices, invoiceLines: work.maps.invoiceLines, ledger: work.maps.ledger, creditNotes: work.creditNotes, negativeInvoices: work.negativeInvoices, transfers: work.transfers },
       schedule: { ...s.schedule, procedureEvents: work.procedureEvents },
       counters: work.counters,
     }

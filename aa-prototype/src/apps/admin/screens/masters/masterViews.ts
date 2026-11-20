@@ -47,6 +47,7 @@ export const MASTER_VIEWS: readonly MasterViewEntry[] = [
   { view: 'rvgGroups', label: 'RVG groups', group: 'Billing', catalogueRows: ['RVG codes and groups'], add: true, edit: true, retire: true, remove: false, seeded: ['rvgGroups'] },
   { view: 'modifiers', label: 'Modifiers', group: 'Billing', catalogueRows: ['modifier codes'], add: true, edit: true, retire: true, remove: false, seeded: ['modifiers'] },
   { view: 'emailTemplates', label: 'Email templates', group: 'Settings', catalogueRows: [], add: true, edit: true, retire: false, remove: false },
+  { view: 'prepaymentLetters', label: 'Prepayment letters', group: 'Settings', catalogueRows: [], add: true, edit: true, retire: false, remove: false },
   { view: 'xeroArchiving', label: 'Xero & archiving', group: 'Settings', catalogueRows: [], add: false, edit: true, retire: false, remove: false },
   // The balance warning's one setting (catch-up Phase 40; US-11.3.2).
   { view: 'patientBalance', label: 'Patient balance warning', group: 'Settings', catalogueRows: [], add: false, edit: true, retire: false, remove: false },

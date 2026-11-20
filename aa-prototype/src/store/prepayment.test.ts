@@ -220,18 +220,17 @@ describe('the re-check (US-06.3.5) and a move (US-04.3.11)', () => {
     expect(pendingPrepayments(api.getState()).find((r) => r.bookingId === RILEY)?.payerName).toBe('Guardian Riley')
   })
 
-  it('after sending, a Contract changed off prepaid rewrites nothing and reads notNeeded with a mild office warning', () => {
+  it('after sending, a Contract changed off prepaid rewrites nothing on the invoice and is settled as a cancellation: credited, no warning left (catch-up Phase 41, D67)', () => {
     const api = createAppStore()
     const out = approvePrepayment(api, OFFICE, RILEY, PATIENT_KEY(api, RILEY))
     if (!out.ok) throw new Error(out.message)
     const before = JSON.stringify(api.getState().billing.invoices[out.value.invoiceId])
     const p = rileyProc(api)
     expect(setProcedureContract(api, OFFICE, p.id, CONTRACT.forteRvg).ok).toBe(true)
-    expect(prepaymentStatusFor(api.getState(), RILEY).status).toBe('notNeeded')
+    expect(prepaymentStatusFor(api.getState(), RILEY).status).toBe('none')
     expect(JSON.stringify(api.getState().billing.invoices[out.value.invoiceId])).toBe(before)
-    const w = warningsForBooking(api.getState(), RILEY).filter((x) => x.ruleId === 'prepaymentUnpaid')
-    expect(w.map((x) => x.strength)).toEqual(['mild'])
-    expect(w[0]!.text).toContain('no longer needs prepayment')
+    expect(Object.values(api.getState().billing.creditNotes).find((c) => c.originalInvoiceId === out.value.invoiceId)?.cause).toBe('prepaidContractChanged')
+    expect(warningsForBooking(api.getState(), RILEY).filter((x) => x.ruleId === 'prepaymentUnpaid')).toEqual([])
   })
 
   it('a reassign to a colleague leaves the status, amount, invoice and pair identical', () => {
@@ -325,17 +324,16 @@ describe('the adversarial review fixes (catch-up Phase 27)', () => {
     expect(finals.map((i) => i.subtotal)).toEqual([212])
   })
 
-  it('moved off prepaid after sending: left off the final invoice, the office warning kept after authorise (D67 interim)', () => {
+  it('moved off prepaid after sending: credited and refunded at the change, then billed under its new Contract after the procedure (catch-up Phase 41, D67)', () => {
     const api = createAppStore()
     const p = nairRhino(api)
     expect(setProcedureContract(api, OFFICE, p.id, CONTRACT.noContractRvg).ok).toBe(true)
-    expect(prepaymentForProcedure(api.getState(), p.id)?.status).toBe('notNeeded')
+    expect(prepaymentForProcedure(api.getState(), p.id)).toBeUndefined()
+    expect(Object.values(api.getState().billing.prepaymentRefunds).map((r) => [r.cause, r.amount])).toEqual([['contractChanged', 1380]])
     authoriseAndRun(api, SEED_LIST_IDS.prepaymentPaidList)
     const finals = Object.values(api.getState().billing.invoices).filter((i) => i.bookingId === NAIR && i.kind === 'standard')
-    expect(finals.map((i) => i.subtotal)).toEqual([212])
-    const w = warningsForBooking(api.getState(), NAIR).filter((x) => x.ruleId === 'prepaymentUnpaid')
-    expect(w.map((x) => x.strength)).toEqual(['mild'])
-    expect(w[0]!.text).toContain('no longer needs prepayment')
+    expect(finals.some((i) => (i.procedureIds ?? []).includes(p.id))).toBe(true)
+    expect(warningsForBooking(api.getState(), NAIR).filter((x) => x.ruleId === 'prepaymentUnpaid')).toEqual([])
   })
 
 })

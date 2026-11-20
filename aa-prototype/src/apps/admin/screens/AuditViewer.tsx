@@ -50,6 +50,7 @@ export function AuditViewer() {
   const parties = useAppStore((s) => s.masters.parties)
   const specialties = useAppStore((s) => s.masters.specialties)
   const fundingTags = useAppStore((s) => s.masters.fundingTags)
+  const letterTemplates = useAppStore((s) => s.masters.prepaymentLetterTemplates)
   const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
   const patients = useAppStore((s) => s.masters.patients)
   const names = useMemo(() => auditNamesFor({ rvgGroups, contracts, patients }), [rvgGroups, contracts, patients])
@@ -67,6 +68,8 @@ export function AuditViewer() {
     if (type === 'fundingTag') return fundingTags[id]?.code ?? id
     // Catch-up Phase 19: an RVG group by its code and description, never its hidden id.
     if (type === 'rvgGroup') return names.rvgGroup?.(id) ?? 'An RVG group'
+    // Catch-up Phase 41: a prepayment letter template by its name.
+    if (type === 'letterTemplate') return letterTemplates[id]?.name ?? id
     // Catch-up Phase 40: a patient by NHI and name (the internal id is never shown); the balance setting by name.
     if (type === 'patient') {
       const p = patients[id]

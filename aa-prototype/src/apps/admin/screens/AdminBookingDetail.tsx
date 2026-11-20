@@ -28,6 +28,7 @@ import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { listOriginText } from '../../../domain/lists/listOrigin'
 import { BookingUpdateEmailButton } from '../flows/UpdateEmailActions'
 import { EventReviewSheet } from '../flows/EventReviewSheet'
+import { PrepaymentFollowupCards } from '../components/PrepaymentFollowupCards'
 
 interface AdminBookingDetailProps {
   bookingId: string
@@ -234,6 +235,8 @@ function AdminBookingDetailDraft({ bookingId, actor, todayISO, onBack, backLabel
       ))}
       <FormError message={useError} />
 
+      {/* Catch-up Phase 41: a moved prepaid Booking's card and email, the rebook after a cancellation, the history across it. */}
+      <PrepaymentFollowupCards bookingId={bookingId} actor={actor} />
       <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} onReviewEvent={setReviewing} {...(officeLinks !== undefined ? { officeLinks } : {})} />
       {/* The one standard review step for an event on this Booking's Procedures (catch-up Phase 38b). */}
       <EventReviewSheet eventId={reviewing} actor={actor} onClose={() => setReviewing(null)} />

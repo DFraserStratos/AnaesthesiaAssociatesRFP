@@ -10,6 +10,7 @@ import { LockBadge } from '../../../shared/booking/LockBadge'
 import { SEED_MARKERS } from '../../../domain/seed'
 import { ContractApprovalExample } from './contractApprovalExample'
 import { BalanceAlertChipExample, SharedNotesExample } from './patientAlertExamples'
+import { PrepaidSettlementExample } from './prepaymentFollowupExamples'
 
 const M = 'Mobile'
 const SW = 'Admin · Web · Mobile'
@@ -228,10 +229,16 @@ export function MobileCatalogue() {
 
       <LibraryGroup id="forms">
         <CatalogueRow name="PrepaymentPanel" source="shared/booking/PrepaymentPanel.tsx" usedIn={SW} stage="mobile" height={420}
-          what="A Booking's prepayment (catch-up Phase 27): a title by status, then one block per payer with its prepaid Procedures (text, Contract, price), the prepaid amount and the invoice. Read-only for the anaesthetist; the office sees Approve on Invoices."
+          what="A Booking's prepayment (catch-up Phase 27): a title by status, then one block per payer with its prepaid Procedures (text, Contract, price), the prepaid amount and the invoice. Read-only for the anaesthetist; the office sees Approve on Invoices. Since catch-up Phase 41: the last reminder's line once one is sent, The AA office sends the prepayment letter. for the anaesthetist, and the settled block (Credited with the credit number, each refund paid) once a cancellation or a Contract change credits the prepayment invoice."
           replaceWith="shadcn Card + Badge"
           note={`On the shared Card, Pill and TextAction; amounts in mono. All three apps through BookingDetailBody. ${STORE_NOTE}`}>
           <Ex.PrepaymentPanelExample />
+        </CatalogueRow>
+        <CatalogueRow name="PrepaidSettlementBlock (the anaesthetist's)" source="shared/booking/PrepaidSettlementBlock.tsx" usedIn={SW} stage="mobile" height={420}
+          what="A prepaid Procedure once its List is authorised (catch-up Phase 41; US-06.4.1): the prepaid amount as the price, the recorded BTM for reference only, the transfer from the AA Holding account to you, Nothing is invoiced or credited automatically, and Credit note (the whole prepayment invoice) and Raise additional invoice on your own Procedure."
+          replaceWith="shadcn Card + Badge"
+          note={`Authorise writes to the demo store; then shown on Nair's rhinoplasty as Dr Souter. ${STORE_NOTE}`}>
+          <PrepaidSettlementExample as="anaesthetist" />
         </CatalogueRow>
         <CatalogueRow name="BookingDetailBody" source="shared/booking/BookingDetailBody.tsx" usedIn={SW} stage="mobile" height={640}
           what="The whole Booking capture: patient, ASA, RVG code, times, units, override, notes and Mark complete, laid out by the mobile surface."
@@ -369,7 +376,7 @@ export function MobileCatalogue() {
         <CatalogueRow name="CreditFormSheet (Credit note, the anaesthetist's)" source="shared/booking/CreditSheetSlot.tsx, shared/booking/CreditForm.tsx" usedIn={SW} stage="mobile" height={560} what="The anaesthetist's credit note (catch-up Phase 39; US-08.6.5): Credit note on their own invoiced Procedure (reached through search) opens the one credit form in the surface's overlay, a bottom sheet on the phone and a dialog on the web. The original's number, who it billed and its total ex GST; the Same as the original invoice tick; the reason (Less work than expected, Wrong billable party, Paid twice, plus free text); Your payment for this invoice is reversed. and A credit note is not a refund.; optional Add an invoice with typed lines (no copy, no equal-total rule); Save for review, which the office reviews and the next billing run issues. No ledger figures, offsets or amounts to net, no split." replaceWith="Custom (the shared overlay, OptionChip, TextArea and Notice)" note="On the seeded AA-2026-H03 as Dr Souter; Save writes to the demo store.">
           <AnaesthetistCreditSheetExample />
         </CatalogueRow>
-        <CatalogueRow name="CreditNoteButton (the anaesthetist's)" source="shared/booking/CreditNoteButton.tsx" usedIn={SW} stage="mobile" height={560} what="Credit note beside Raise additional invoice on the anaesthetist's own invoiced Procedure (catch-up Phase 39; US-08.6.5, creditOptionFor): hidden on a colleague's, hidden with the caption Crediting a prepayment invoice is not in this prototype yet. on a prepaid Procedure, disabled with its sentence while a credit waits or once credited." replaceWith="Custom (the shared TextAction)" note="As Dr Souter on David Chen's HP03.">
+        <CatalogueRow name="CreditNoteButton (the anaesthetist's)" source="shared/booking/CreditNoteButton.tsx" usedIn={SW} stage="mobile" height={560} what="Credit note beside Raise additional invoice on the anaesthetist's own invoiced Procedure (catch-up Phase 39; US-08.6.5, creditOptionFor): crediting the Procedure's live invoice in full through the app's credit sheet (a prepayment invoice whole, from the PrepaidSettlementBlock once the List is authorised, catch-up Phase 41); hidden on a colleague's, disabled with its sentence while a credit waits or once credited." replaceWith="Custom (the shared TextAction)" note="As Dr Souter on David Chen's HP03.">
           <CreditNoteButtonExample as="anaesthetist" />
         </CatalogueRow>
         <CatalogueRow name="BottomTabBar" source="apps/mobile/MobileApp.tsx" usedIn={M} stage="mobile" height={220}

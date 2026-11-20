@@ -29,7 +29,7 @@ import { heldBookingIds, holdingBalance, holdingEntries, type HoldingEntry } fro
 import { transferOfPair } from '../domain/billing/ledger'
 import { pairForInvoice } from './ledgerSelectors'
 import { daysBetween } from '../domain/dateDays'
-import { billingContextForBooking, counterpartyName, patientNameFor, prePaymentInvoicesForBooking, proceduresForBooking } from './selectors'
+import { billingContextForBooking, counterpartyName, livePrePaymentInvoicesForBooking, patientNameFor, proceduresForBooking } from './selectors'
 import { useMemo } from 'react'
 import { useAppStore, type AppState } from './appStore'
 
@@ -76,7 +76,7 @@ function mayHavePrepayment(state: PrepaymentState, booking: Booking, procedures:
 }
 
 function issuedFor(state: PrepaymentState, bookingId: string): IssuedPrepayment[] {
-  return prePaymentInvoicesForBooking(state, bookingId).map((inv) => ({
+  return livePrePaymentInvoicesForBooking(state, bookingId).map((inv) => ({
     invoiceId: inv.id,
     invoiceNumber: inv.invoiceNumber,
     payer: inv.counterparty,
@@ -91,7 +91,14 @@ function issuedFor(state: PrepaymentState, bookingId: string): IssuedPrepayment[
 export function prepaymentGroupsForBooking(state: PrepaymentState, bookingId: string): PrepaymentGroup[] {
   const booking = state.schedule.bookings[bookingId]
   if (booking === undefined) return []
-  const procedures = proceduresForBooking(state, bookingId)
+  // A Procedure whose prepayment invoice the office or the anaesthetist credited whole by hand (catch-up Phase 41; D31)
+  // derives no fresh prepayment: the payer's money is held for them and the Procedure is billed normally at authorise.
+  const creditedByHand = new Set(
+    Object.values(state.billing.creditNotes ?? {})
+      .filter((c) => c.cause === 'correction' && state.billing.invoices[c.originalInvoiceId]?.kind === 'prePayment' && c.bookingId === bookingId)
+      .flatMap((c) => c.procedureIds),
+  )
+  const procedures = proceduresForBooking(state, bookingId).map((p) => (creditedByHand.has(p.id) ? { ...p, governingContractId: undefined } : p))
   if (!mayHavePrepayment(state, booking, procedures)) return []
   // 24's price now, the Booking priced once under the multi-procedure rule (23).
   const ctx = billingContextForBooking(state, booking)
@@ -395,6 +402,57 @@ export function useHoldingAccount(): HoldingAccountView {
   const billing = useAppStore((s) => s.billing)
   const masters = useAppStore((s) => s.masters)
   return useMemo(() => holdingAccountView({ schedule, billing, masters }), [schedule, billing, masters])
+}
+
+/** A prepaid Procedure's settlement as its block shows it (catch-up Phase 41; US-06.4.1). */
+export interface PrepaidSettlement {
+  procedureId: ProcedureId
+  /** The prepaid amount ex GST: the price for this procedure, from its issued prepayment invoice. */
+  prepaidAmount: number
+  prepaymentInvoice: { id: InvoiceId; number: string; total: number; status: PrepaymentStatus | 'credited' }
+  /** The BTM units recorded on the day (the authorise snapshot), for reference only: no dollar figure is computed from them. */
+  recordedBtmUnits?: number
+  /** 27a's transfer from the AA Holding account to whoever did the List. */
+  transfer?: { toAnaesthetistId: string; atISO: string; amount: number }
+  /** Additional invoices raised by hand on the Procedure (38b), by number. */
+  additionalInvoices: { id: InvoiceId; number: string; total: number }[]
+  /** Credit notes on the prepayment invoice (39's by-hand credit, or a cancellation's). */
+  credits: { id: string; number: string; total: number; cause: string }[]
+}
+
+/**
+ * The one read for the prepaid settlement block (catch-up Phase 41;
+ * US-06.4.1): the prepaid amount as the price, the recorded BTM for
+ * reference, 27a's transfer, and what was raised by hand. Undefined for a
+ * Procedure no prepayment invoice ever covered.
+ */
+export function prepaidSettlementFor(state: PrepaymentState, procedureId: string): PrepaidSettlement | undefined {
+  const procedure = state.schedule.procedures[procedureId]
+  if (procedure === undefined) return undefined
+  const invoices = (invoicesByBooking(state.billing.invoices).get(procedure.bookingId) ?? []).filter((i) => (i.procedureIds ?? []).includes(procedureId))
+  const prepayment = invoices.filter((i) => i.kind === 'prePayment').sort((a, b) => b.invoiceNumber.localeCompare(a.invoiceNumber))[0]
+  if (prepayment === undefined) return undefined
+  const line = (linesByInvoice(state.billing.invoiceLines).get(prepayment.id) ?? []).find((l) => l.procedureId === procedureId)
+  const credits = Object.values(state.billing.creditNotes ?? {})
+    .filter((c) => c.originalInvoiceId === prepayment.id)
+    .map((c) => ({ id: c.id, number: c.creditNoteNumber, total: c.total, cause: c.cause }))
+  const pair = pairForInvoice(state, prepayment.id)
+  const transfer = pair !== undefined ? transferOfPair(state.billing.transfers, pair.id) : undefined
+  const to = transfer?.in.payee.kind === 'anaesthetist' ? transfer.in.payee.anaesthetistId : undefined
+  const group = prepaymentStatusFor(state, procedure.bookingId).groups.find((g) => g.invoiceId === prepayment.id)
+  const units = state.billing.locks[procedure.bookingId]?.procedures.find((p) => p.procedureId === procedureId)?.fee?.billableUnits
+  return {
+    procedureId,
+    prepaidAmount: line?.amount ?? prepayment.subtotal,
+    prepaymentInvoice: { id: prepayment.id, number: prepayment.invoiceNumber, total: prepayment.total, status: credits.length > 0 ? 'credited' : (group?.status ?? 'unpaid') },
+    ...(units !== undefined ? { recordedBtmUnits: units } : {}),
+    ...(transfer !== undefined && to !== undefined ? { transfer: { toAnaesthetistId: to, atISO: transfer.createdAtISO, amount: transfer.in.amount } } : {}),
+    additionalInvoices: invoices
+      .filter((i) => i.kind === 'additional')
+      .sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber))
+      .map((i) => ({ id: i.id, number: i.invoiceNumber, total: i.total })),
+    credits,
+  }
 }
 
 /**

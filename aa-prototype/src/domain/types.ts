@@ -921,7 +921,7 @@ export interface BookingCancellation {
  * photo of the physical card: Copy a Booking is Retired (US-02.4.3) and photo
  * capture is Future Work (US-02.4.4), so neither is a source (catch-up Phase 15b).
  */
-export type BookingSource = 'hospitalDownload' | 'surgeonPdf' | 'admin' | 'anaesthetistAdHoc'
+export type BookingSource = 'hospitalDownload' | 'surgeonPdf' | 'admin' | 'anaesthetistAdHoc' | 'rebook'
 
 export interface Booking {
   id: BookingId
@@ -959,6 +959,10 @@ export interface Booking {
   /** The insurer's approval number for the claim (US-11.4.3): the office and, on the day, the anaesthetist record it; the anaesthetist sees it. */
   insuranceApprovalNumber?: string
   cancellation?: BookingCancellation
+  /** A Booking made by "Rebook with another anaesthetist" after a true cancellation (catch-up Phase 41; US-06.5.3): the cancelled one. */
+  rebookedFromBookingId?: BookingId
+  /** Informational emails the office chose to send the patient (catch-up Phase 41; US-06.5.4): never sent by a move. */
+  patientNotices?: PatientNotice[]
   notes?: string
   /** The shared notes (catch-up Phase 40; US-11.3.3), beside `notes`: anyone writes, everyone sees. */
   noteLog?: SharedNote[]
@@ -1254,7 +1258,8 @@ export interface FreeFormLine {
  * invoice split into additional invoices that add up to it; US-08.6.4, office
  * only). Phase 41 adds its cancellation refund here.
  */
-export type CreditCause = 'correction' | 'split'
+/** `prepaymentCancelled` and `prepaidContractChanged` (catch-up Phase 41): raised by the system when a prepaid Booking is cancelled or its Contract changed off prepaid after sending. */
+export type CreditCause = 'correction' | 'split' | 'prepaymentCancelled' | 'prepaidContractChanged'
 
 /**
  * A credit event's detail (catch-up Phase 39; DM-24, OQ-63): the original it
@@ -1670,6 +1675,51 @@ export interface Invoice {
    * admin approved it, or approval was switched off and the system sent it.
    */
   approval?: InvoiceApproval
+  /** The prepayment letter sent with this prepayment invoice (catch-up Phase 41; US-06.3.6): a snapshot, never re-rendered. */
+  letter?: RenderedLetter
+  /** Prepayment reminders sent for it (catch-up Phase 41), oldest first. */
+  prepaymentReminders?: PrepaymentReminder[]
+}
+
+/** A merge field a prepayment letter template may use (catch-up Phase 41; US-06.3.6). */
+export type LetterMergeField = 'patientName' | 'procedure' | 'procedureDate' | 'prepaidAmount' | 'anaesthetist' | 'invoiceNumber' | 'amountOutstanding'
+
+/** What a prepayment letter template is for: the letter sent with the invoice, a reminder, or the optional moved-Booking email. */
+export type PrepaymentLetterKind = 'request' | 'reminder' | 'anaesthetistChanged'
+
+/**
+ * One prepayment letter template (`masters.prepaymentLetterTemplates`, id
+ * `LT###`; catch-up Phase 41, US-06.3.6, DM-20): plain text with `{{field}}`
+ * placeholders, maintained by admins. One default per kind.
+ */
+export interface PrepaymentLetterTemplate {
+  id: string
+  kind: PrepaymentLetterKind
+  name: string
+  body: string
+  isDefault: boolean
+  active: boolean
+  updatedBy?: string
+  updatedAtISO?: IsoDateTime
+}
+
+/** A letter as rendered and sent: a snapshot of the template's words with the Booking's details filled in. */
+export interface RenderedLetter {
+  templateId: string
+  templateName: string
+  kind: PrepaymentLetterKind
+  body: string
+  renderedAtISO: IsoDateTime
+}
+
+/** One prepayment reminder sent to the payer (catch-up Phase 41). */
+export interface PrepaymentReminder {
+  atISO: IsoDateTime
+  by: string
+  /** Where it went: the payer's invoice email. */
+  to: string
+  letter: RenderedLetter
+  amountOutstanding: number
 }
 
 /** Who let a prepayment invoice go out, and how (catch-up Phase 27). */
@@ -1820,10 +1870,57 @@ export interface BookingLedgerPair {
   credit?: PairCredit
 }
 
+/** The optional "anaesthetist changed" email (catch-up Phase 41; US-06.5.4, OQ-120 provisional). */
+export interface PatientNotice {
+  kind: 'anaesthetistChanged'
+  atISO: IsoDateTime
+  by: string
+  to: string
+  letter: RenderedLetter
+  anaesthetistId: AnaesthetistId
+}
+
+/**
+ * A prepayment refunded to its payer by the system (catch-up Phase 41;
+ * US-06.5.2, US-06.3.7; D56, D53): out of the AA Holding account, on a
+ * cancellation, a payment after that credit, or a Contract changed off
+ * prepaid after sending. Paid when created (the payment itself made in Xero),
+ * so there is no due or instructed state. Never to an anaesthetist.
+ */
+export interface PrepaymentRefund {
+  id: string
+  bookingId: BookingId
+  prepaymentInvoiceId: InvoiceId
+  creditNoteId: string
+  cause: 'cancelled' | 'latePayment' | 'contractChanged'
+  /** The payer that paid: the prepayment invoice's counterparty. */
+  counterparty: CounterpartyRef
+  amount: number
+  paidAtISO: IsoDateTime
+  /** Its Xero mirror, once posted (`postPrepaymentRefund`). */
+  xeroRefundId?: string
+}
+
+/** A refund paid in Xero against a credit note from the AA trust account (catch-up Phase 41; simulated). */
+export interface XeroRefund {
+  id: string
+  /** The engine's refund. */
+  prepaymentRefundId: string
+  creditNoteId: string
+  amount: number
+  bankAccount: 'AA trust account'
+  paidAtISO: IsoDateTime
+  /** The credit note's number and the refund id, no personal information. */
+  reference: string
+}
+
 /** A pair's credit (catch-up Phase 39): what is held for the payer and what is left to net from the anaesthetist. */
 export interface PairCredit {
   creditNoteId: string
-  negativeInvoiceId: string
+  /** Absent on a prepayment credited before its transfer (catch-up Phase 41): the payable reversed is the AA Holding account's, so nothing is raised against an anaesthetist. */
+  negativeInvoiceId?: string
+  /** Where the payable was reversed (catch-up Phase 41): the pair's own payable (absent), or a prepayment's transfer to the anaesthetist. */
+  reversedOn?: 'transfer'
   atISO: IsoDateTime
   /** What the payer had paid: held for them (a refund happens outside the system, US-08.6.5). */
   heldForPayer: number
@@ -1831,6 +1928,8 @@ export interface PairCredit {
   recoveryDue: number
   /** What weekly payment runs have netted of `recoveryDue` so far (catch-up Phase 39a), kept in step with the negative invoice's `nettings` in the same mutate. Absent reads as 0. */
   nettedAmount?: number
+  /** Of `heldForPayer`, what the system refunded to the payer (catch-up Phase 41: a cancelled prepayment, a late payment, a Contract change). Absent reads as 0. */
+  refundedAmount?: number
 }
 
 /** AA's monthly fee invoice to an anaesthetist (catch-up Phase 16; FT-10.3, DM-26): a receivable from the anaesthetist and NO payable. AA's own money, never part of what is held for anaesthetists. */

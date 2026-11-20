@@ -29,6 +29,10 @@
  *   from the pure `splitTotalCheck`; Save N invoices for review waits for
  *   Left to allocate to reach $0.00. The store re-checks.
  *
+ * A prepayment invoice (catch-up Phase 41; US-06.4.1, D31) is credited whole
+ * and only credited: the form says so beside "A credit note is not a refund."
+ * (`prepayment-credit`) and has no step 2; any mode reads as `credit`.
+ *
  * One teal Save for review (38b's verb). Every word from
  * `procedureEventCopy.ts`. PWA-safe: no admin import.
  */
@@ -62,7 +66,7 @@ import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { SheetActions } from '../surface/SheetActions'
 import { formatCurrency } from '../format'
-import { CREDIT_LABELS as L, ADDITIONAL_INVOICE_COPY as ADD, EVENT_LABELS } from '../procedureEventCopy'
+import { CREDIT_LABELS as L, ADDITIONAL_INVOICE_COPY as ADD, EVENT_LABELS, PREPAID_SETTLEMENT_COPY } from '../procedureEventCopy'
 import { EMPTY_LINE, EventPartyField, FreeFormLinesEditor, FreeFormTotals, lineDraftOf, lineFromDraft, partyDraftOf, partyInputOf, type LineDraft, type PartyDraft } from './AdditionalInvoiceForm'
 import { useBookingStore } from './draft'
 
@@ -215,7 +219,9 @@ export function CreditForm({ invoiceId, actor, procedureId: procedureIdProp, inv
   const existing = editing !== undefined ? state.schedule.procedureEvents[editing] : undefined
   const existingCredit = creditDetailOf(existing)
   // The rebill's copy and the split are the office's only (US-08.6.6, US-08.6.4); an edit keeps the credit's own cause.
-  const mode: CreditFormMode = existingCredit !== undefined ? (existingCredit.cause === 'split' ? 'split' : 'credit') : office ? modeProp : 'credit'
+  // A prepayment invoice is credited whole, never rebilled from a copy or split (catch-up Phase 41, D31): anything still owed is an additional invoice.
+  const prepayment = original?.kind === 'prePayment'
+  const mode: CreditFormMode = existingCredit !== undefined ? (existingCredit.cause === 'split' ? 'split' : 'credit') : office && !prepayment ? modeProp : 'credit'
   const split = mode === 'split'
   const cause: CreditCause = split ? 'split' : 'correction'
   const procedureId = existing?.procedureId ?? procedureIdProp ?? original?.procedureIds?.[0] ?? ''
@@ -387,74 +393,86 @@ export function CreditForm({ invoiceId, actor, procedureId: procedureIdProp, inv
       ) : !office ? (
         <span data-shot="credit-payment-reversed" style={{ fontSize: 13.5, lineHeight: '20px', color: neutral.ink }}>{L.yourPaymentReversed}</span>
       ) : null}
-      <Notice tone="neutral" shot="credit-not-refund">{L.notARefund}</Notice>
+      {prepayment ? (
+        // The whole prepayment invoice, credit only: no new invoice cards (catch-up Phase 41; US-06.4.1, D31).
+        <Notice tone="neutral" shot="prepayment-credit">
+          <span style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span>{PREPAID_SETTLEMENT_COPY.creditWhole}</span>
+            <span data-shot="credit-not-refund">{L.notARefund}</span>
+          </span>
+        </Notice>
+      ) : (
+        <Notice tone="neutral" shot="credit-not-refund">{L.notARefund}</Notice>
+      )}
 
-      <StepHeading n={2}>{L.newInvoices}</StepHeading>
+      {!prepayment && <StepHeading n={2}>{L.newInvoices}</StepHeading>}
       {split && (
         <span data-shot="split-must-add-up" style={{ fontSize: 13.5, lineHeight: '20px', color: neutral.ink }}>
           {L.splitDescription} {L.splitMustAddUp} {L.splitBeforeGst}
         </span>
       )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {cards.length === 0 && <span style={{ fontSize: 13, color: neutral.slate }}>{L.newInvoicesNone}</span>}
-        {cards.map((c, i) => {
-          const priced = priceFreeFormInvoice(c.lines.map(lineFromDraft))
-          const ce = cardError(i)
-          const rest = check !== undefined ? putRestOn(c.lines, check.leftToAllocate) : null
-          const removable = !split || cards.length > SPLIT_MIN
-          const cardParty = pickedPartyOf(c.party)
-          return (
-            <section
-              key={c.key}
-              data-shot={split ? 'split-component' : 'credit-replacement'}
-              data-index={i}
-              aria-label={L.newInvoiceTitle(i + 1)}
-              style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: 16, background: neutral.surface, border: `1px solid ${ce !== undefined ? neutral.lineStrong : neutral.line}`, borderRadius: radius.card }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: neutral.ink }}>{L.newInvoiceTitle(i + 1)}</span>
-                {removable && (
-                  <IconButton size={phone ? 44 : 32} label={`${L.removeInvoice} ${i + 1}`} onClick={() => setCards((all) => all.filter((_, j) => j !== i))} shot="credit-replacement-remove">
-                    <X size={16} aria-hidden />
-                  </IconButton>
-                )}
-              </div>
-              <EventPartyField procedureId={procedureId} sameAsName={originalParty} value={c.party} onChange={(p) => setCard(i, { party: p })} shot="credit-replacement-party" />
-              {/* A picked party takes an invoice email here, as the credit's own party does. */}
-              {cardParty !== null && (
-                <InvoiceEmailField procedureId={procedureId} party={cardParty} value={c.invoiceEmail} onChange={(email) => setCard(i, { invoiceEmail: email })} invalid={ce?.field === 'party'} shot="credit-replacement-invoice-email" />
-              )}
-              {/* The office's copy of the original's lines (US-08.6.6), on any card a credit or rebill adds; never on a split's components (typed freely) or the anaesthetist's. */}
-              {office && !split && (
-                <div>
-                  <TextAction size="sm" onClick={() => setCard(i, { lines: copyOf() })} shot="credit-copy-lines">
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                      <Copy size={14} aria-hidden /> {L.copyLines}
-                    </span>
-                  </TextAction>
+      {!prepayment && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {cards.length === 0 && <span style={{ fontSize: 13, color: neutral.slate }}>{L.newInvoicesNone}</span>}
+          {cards.map((c, i) => {
+            const priced = priceFreeFormInvoice(c.lines.map(lineFromDraft))
+            const ce = cardError(i)
+            const rest = check !== undefined ? putRestOn(c.lines, check.leftToAllocate) : null
+            const removable = !split || cards.length > SPLIT_MIN
+            const cardParty = pickedPartyOf(c.party)
+            return (
+              <section
+                key={c.key}
+                data-shot={split ? 'split-component' : 'credit-replacement'}
+                data-index={i}
+                aria-label={L.newInvoiceTitle(i + 1)}
+                style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: 16, background: neutral.surface, border: `1px solid ${ce !== undefined ? neutral.lineStrong : neutral.line}`, borderRadius: radius.card }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: neutral.ink }}>{L.newInvoiceTitle(i + 1)}</span>
+                  {removable && (
+                    <IconButton size={phone ? 44 : 32} label={`${L.removeInvoice} ${i + 1}`} onClick={() => setCards((all) => all.filter((_, j) => j !== i))} shot="credit-replacement-remove">
+                      <X size={16} aria-hidden />
+                    </IconButton>
+                  )}
                 </div>
-              )}
-              <FreeFormLinesEditor lines={c.lines} onChange={(lines) => setCard(i, { lines })} {...(ce !== undefined ? { invalid: ce } : {})} />
-              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: split ? 'space-between' : 'flex-end', gap: 16, flexWrap: 'wrap' }}>
-                {split && (
-                  <TextAction size="sm" onClick={() => rest !== null && setCard(i, { lines: rest })} disabled={rest === null} shot="split-put-rest">
-                    {L.putTheRest}
-                  </TextAction>
+                <EventPartyField procedureId={procedureId} sameAsName={originalParty} value={c.party} onChange={(p) => setCard(i, { party: p })} shot="credit-replacement-party" />
+                {/* A picked party takes an invoice email here, as the credit's own party does. */}
+                {cardParty !== null && (
+                  <InvoiceEmailField procedureId={procedureId} party={cardParty} value={c.invoiceEmail} onChange={(email) => setCard(i, { invoiceEmail: email })} invalid={ce?.field === 'party'} shot="credit-replacement-invoice-email" />
                 )}
-                <div style={{ minWidth: 220, marginLeft: 'auto' }}>
-                  <FreeFormTotals shot="credit-replacement-totals" subtotal={priced.kind === 'priced' ? priced.subtotal : 0} gst={priced.kind === 'priced' ? priced.gst : 0} total={priced.kind === 'priced' ? priced.total : 0} />
+                {/* The office's copy of the original's lines (US-08.6.6), on any card a credit or rebill adds; never on a split's components (typed freely) or the anaesthetist's. */}
+                {office && !split && (
+                  <div>
+                    <TextAction size="sm" onClick={() => setCard(i, { lines: copyOf() })} shot="credit-copy-lines">
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <Copy size={14} aria-hidden /> {L.copyLines}
+                      </span>
+                    </TextAction>
+                  </div>
+                )}
+                <FreeFormLinesEditor lines={c.lines} onChange={(lines) => setCard(i, { lines })} {...(ce !== undefined ? { invalid: ce } : {})} />
+                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: split ? 'space-between' : 'flex-end', gap: 16, flexWrap: 'wrap' }}>
+                  {split && (
+                    <TextAction size="sm" onClick={() => rest !== null && setCard(i, { lines: rest })} disabled={rest === null} shot="split-put-rest">
+                      {L.putTheRest}
+                    </TextAction>
+                  )}
+                  <div style={{ minWidth: 220, marginLeft: 'auto' }}>
+                    <FreeFormTotals shot="credit-replacement-totals" subtotal={priced.kind === 'priced' ? priced.subtotal : 0} gst={priced.kind === 'priced' ? priced.gst : 0} total={priced.kind === 'priced' ? priced.total : 0} />
+                  </div>
                 </div>
-              </div>
-              {ce !== undefined && <FormError message={ce.message} />}
-            </section>
-          )
-        })}
-        <div>
-          <Button variant="secondary" size={phone ? 'touch' : 'compact'} onClick={() => setCards((all) => [...all, newCard({ sameAs: true })])} shot="credit-add-invoice">
-            <Plus size={14} aria-hidden /> {L.addInvoice}
-          </Button>
+                {ce !== undefined && <FormError message={ce.message} />}
+              </section>
+            )
+          })}
+          <div>
+            <Button variant="secondary" size={phone ? 'touch' : 'compact'} onClick={() => setCards((all) => [...all, newCard({ sameAs: true })])} shot="credit-add-invoice">
+              <Plus size={14} aria-hidden /> {L.addInvoice}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {office && (
         <CreditTrail

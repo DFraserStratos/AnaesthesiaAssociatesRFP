@@ -41,6 +41,14 @@ export const AUDIT_VIEWER_EXCLUDED: readonly string[] = [
   'xero.batchPaid',
   'ledger.offsetRecorded',
   'ledger.offsetNoop',
+  // Prepayment refunds the system pays out of the AA Holding account (catch-up Phase 41; US-06.5.2, D56, D53): on a
+  // cancellation, a payment after the credit note, or a Contract changed off prepaid, and the refund paid in Xero from
+  // the AA trust account. The settlement itself (the credit) stays audited.
+  'prepaymentRefund.cancelled',
+  'prepaymentRefund.latePayment',
+  'prepaymentRefund.contractChanged',
+  'xero.refundPaid',
+  'xero.refundNoop',
 ]
 
 const EXCLUDED = new Set(AUDIT_VIEWER_EXCLUDED)

@@ -1,6 +1,330 @@
 {
   "id": "US-06.5.2",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 41 builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "cancel-prepayment",
+      "app": "admin",
+      "caption": "Cancelling credits an unpaid prepayment or refunds a paid one from the AA Holding account, automatically",
+      "start": "/admin/day/2026-07-24/bookings/BK0038",
+      "states": [
+        {
+          "state": "paid",
+          "caption": "Paid: the cancel sheet says the prepayment is refunded in full to the payer from the AA Holding account and the invoice credited",
+          "steps": [
+            {
+              "wait": "[data-shot=booking-prepayment]"
+            },
+            {
+              "click": "role=button[name=\"Cancel booking\"] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=cancel-prepayment]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=cancel-prepayment]"
+          ]
+        },
+        {
+          "state": "unpaid",
+          "caption": "Sent but not paid: the cancel sheet says the prepayment invoice is credited in full, so the patient is not chased",
+          "steps": [
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
+            },
+            {
+              "click": "[data-shot=awaiting-approval-row][data-booking-id=BK0034] [data-shot=approve-and-send]"
+            },
+            {
+              "wait": "[data-shot=prepayment-letter-picker]"
+            },
+            {
+              "click": "[data-shot=prepayment-letter-send]"
+            },
+            {
+              "wait": "[data-shot=approve-and-send-result]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/day/2026-07-24/bookings/BK0034"
+            },
+            {
+              "wait": "[data-shot=booking-prepayment]"
+            },
+            {
+              "click": "role=button[name=\"Cancel booking\"] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=cancel-prepayment]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=cancel-prepayment]"
+          ]
+        },
+        {
+          "state": "settled",
+          "caption": "Cancelled: the prepayment invoice is credited and the payment refunded at once, linked to the original invoice",
+          "steps": [
+            {
+              "wait": "[data-shot=booking-prepayment]"
+            },
+            {
+              "click": "role=button[name=\"Cancel booking\"] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=cancel-prepayment]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[role=dialog] textarea",
+              "value": "Patient withdrew"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Cancel booking\"]"
+            },
+            {
+              "wait": "[data-shot=prepayment-settled]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=prepayment-settled]"
+          ]
+        },
+        {
+          "state": "late-payment",
+          "caption": "A payment that arrives after the credit note is refunded to the payer at once",
+          "steps": [
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
+            },
+            {
+              "click": "[data-shot=awaiting-approval-row][data-booking-id=BK0034] [data-shot=approve-and-send]"
+            },
+            {
+              "wait": "[data-shot=prepayment-letter-picker]"
+            },
+            {
+              "click": "[data-shot=prepayment-letter-send]"
+            },
+            {
+              "wait": "[data-shot=approve-and-send-result]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/day/2026-07-24/bookings/BK0034"
+            },
+            {
+              "wait": "[data-shot=booking-prepayment]"
+            },
+            {
+              "click": "role=button[name=\"Cancel booking\"] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=cancel-prepayment]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[role=dialog] textarea",
+              "value": "Surgery postponed"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Cancel booking\"]"
+            },
+            {
+              "wait": "[data-shot=prepayment-settled]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "trigger": "prepayment-late-payment"
+            },
+            {
+              "wait": "[data-shot=prepayment-settled-refund]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=prepayment-settled]"
+          ]
+        },
+        {
+          "state": "holding",
+          "caption": "The AA Holding account shows the prepayment credited and refunded, with its credit note and the cause",
+          "steps": [
+            {
+              "wait": "[data-shot=booking-prepayment]"
+            },
+            {
+              "click": "role=button[name=\"Cancel booking\"] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=cancel-prepayment]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[role=dialog] textarea",
+              "value": "Patient withdrew"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Cancel booking\"]"
+            },
+            {
+              "wait": "[data-shot=prepayment-settled]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "wait": "[data-shot=holding-entry][data-entry-kind=refunded]"
+            },
+            {
+              "scroll": "[data-shot=billing-prepay-holding]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-prepay-holding]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "xero-refund",
+      "app": "simulator",
+      "caption": "The refund is paid in Xero, recorded against the prepayment invoice's credit note",
+      "start": "/admin/day/2026-07-24/bookings/BK0038",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=booking-prepayment]"
+            },
+            {
+              "click": "role=button[name=\"Cancel booking\"] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=cancel-prepayment]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[role=dialog] textarea",
+              "value": "Patient withdrew"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Cancel booking\"]"
+            },
+            {
+              "wait": "[data-shot=prepayment-settled]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/demo/xero/invoices/XRB0"
+            },
+            {
+              "wait": "[data-shot=xero-prepayment-refund]"
+            },
+            {
+              "scroll": "[data-shot=xero-credit-note]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=xero-prepayment-refund]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cancel-note",
+      "app": "web",
+      "caption": "The anaesthetist cancelling a prepaid Booking reads what happens to the prepayment",
+      "start": "/web/lists/L-34821-2026-07-24-PM/bookings/BK0038",
+      "states": [
+        {
+          "caption": "Dr Souter cancels Priya Nair's Booking: the prepayment is refunded in full from the AA Holding account, automatically",
+          "steps": [
+            {
+              "scroll": "role=button[name=\"Cancel booking\"] >> nth=0"
+            },
+            {
+              "click": "role=button[name=\"Cancel booking\"] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=cancel-prepayment]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=cancel-prepayment]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cancel-note",
+      "app": "mobile",
+      "caption": "The anaesthetist cancelling a prepaid Booking reads what happens to the prepayment, on the phone",
+      "start": "/mobile/lists/L-34821-2026-07-24-PM/bookings/BK0038",
+      "states": [
+        {
+          "caption": "On the phone: cancelling refunds the prepayment in full from the AA Holding account and credits the invoice",
+          "steps": [
+            {
+              "scroll": "[data-aa-mobile-product] >> role=button[name=\"Cancel booking\"] >> nth=0"
+            },
+            {
+              "click": "[data-aa-mobile-product] >> role=button[name=\"Cancel booking\"] >> nth=0"
+            },
+            {
+              "wait": "[data-aa-mobile-product] [data-shot=cancel-prepayment]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [data-shot=cancel-prepayment]"
+          ]
+        }
+      ]
+    }
+  ]
 }

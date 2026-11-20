@@ -346,20 +346,40 @@ export type CreditRefusal = 'alreadyCredited' | 'notCreditable'
 export function applyCredit(
   pair: LedgerPair,
   plan: ReversalPlan,
-  ref: { creditNoteId: string; negativeInvoiceId: string; atISO: IsoDateTime },
+  ref: { creditNoteId: string; negativeInvoiceId?: string; atISO: IsoDateTime; reversedOn?: 'transfer' },
 ): { ok: true; pair: BookingLedgerPair } | { ok: false; code: CreditRefusal } {
   if (!isBookingPair(pair)) return { ok: false, code: 'notCreditable' }
   if (pair.credit !== undefined) return { ok: false, code: 'alreadyCredited' }
   const payable = pair.payable
+  // A transferred prepayment (catch-up Phase 41): the AA Holding account's payable already moved out by the transfer, so it stays; the transfer's payable is reversed (`applyCreditToTransfer`).
+  const reversePayable = payable !== undefined && ref.reversedOn !== 'transfer'
   return {
     ok: true,
     pair: {
       ...pair,
       receivable: { ...pair.receivable, creditedAmount: plan.receivableCredited },
-      ...(payable !== undefined ? { payable: { ...payable, reversedAmount: plan.negativeInvoiceTotal, releasedAmount: settledOn(payable) } } : {}),
-      credit: { creditNoteId: ref.creditNoteId, negativeInvoiceId: ref.negativeInvoiceId, atISO: ref.atISO, heldForPayer: plan.heldForPayer, recoveryDue: plan.recoveryDue },
+      ...(reversePayable ? { payable: { ...payable, reversedAmount: plan.negativeInvoiceTotal, releasedAmount: settledOn(payable) } } : {}),
+      credit: {
+        creditNoteId: ref.creditNoteId,
+        ...(ref.negativeInvoiceId !== undefined ? { negativeInvoiceId: ref.negativeInvoiceId } : {}),
+        ...(ref.reversedOn !== undefined ? { reversedOn: ref.reversedOn } : {}),
+        atISO: ref.atISO,
+        heldForPayer: plan.heldForPayer,
+        recoveryDue: plan.recoveryDue,
+      },
     },
   }
+}
+
+/**
+ * Credit a transferred prepayment's payable to the anaesthetist (catch-up
+ * Phase 41; US-06.4.1, D31): the transfer's `in` leg gains `reversedAmount`
+ * and its release is cut to what was already settled, as `applyCredit` does
+ * for a pair's own payable. The `out` leg (what left the AA Holding account)
+ * stays: that money moved when the List was authorised.
+ */
+export function applyCreditToTransfer(transfer: LedgerTransfer, plan: ReversalPlan): LedgerTransfer {
+  return { ...transfer, in: { ...transfer.in, reversedAmount: plan.negativeInvoiceTotal, releasedAmount: settledOn(transfer.in) } }
 }
 
 // ---------------------------------------------------------------------------
@@ -402,7 +422,11 @@ function checksForPair(pair: BookingLedgerPair, transfer: LedgerTransfer | undef
   const out: LedgerCheck[] = []
   const r = pair.receivable
   const who = pair.anaesthetistId !== undefined ? { anaesthetistId: pair.anaesthetistId } : {}
-  if (toCents(r.receivedAmount) > toCents(r.amount)) out.push({ code: 'receivedAboveAmount', amount: roundToCents(r.receivedAmount - r.amount), targetId: pair.id, ...who })
+  // Money that arrived after a cancelled prepayment's credit and was refunded straight back (catch-up Phase 41) is not an overpayment.
+  const refundedBack = toCents(pair.credit?.refundedAmount ?? 0)
+  if (toCents(r.receivedAmount) - refundedBack > toCents(r.amount) || (toCents(r.receivedAmount) > toCents(r.amount) && pair.credit === undefined)) {
+    out.push({ code: 'receivedAboveAmount', amount: roundToCents(r.receivedAmount - r.amount), targetId: pair.id, ...who })
+  }
   const p = pair.payable
   if (p === undefined) return out
   if (toCents(p.amount) !== toCents(r.amount)) out.push({ code: 'pairAmountMismatch', amount: roundToCents(p.amount - r.amount), targetId: pair.id, ...who })
@@ -411,7 +435,8 @@ function checksForPair(pair: BookingLedgerPair, transfer: LedgerTransfer | undef
     const expected = pair.credit !== undefined ? settledOn(p) : payableReleasedFor(r.receivedAmount, p.amount)
     if (toCents(p.releasedAmount) !== toCents(expected)) out.push({ code: 'releasedNotReceived', amount: roundToCents(p.releasedAmount - expected), targetId: pair.id, ...who })
   } else {
-    const expected = payableReleasedFor(r.receivedAmount, transfer.in.amount)
+    // A credited transfer's release was cut to what was settled (catch-up Phase 41), as a credited pair's is.
+    const expected = pair.credit !== undefined ? settledOn(transfer.in) : payableReleasedFor(r.receivedAmount, transfer.in.amount)
     const to = payeeAnaesthetistOf(transfer.in)
     if (toCents(transfer.in.releasedAmount) !== toCents(expected)) out.push({ code: 'releasedNotReceived', amount: roundToCents(transfer.in.releasedAmount - expected), targetId: transfer.id, ...(to !== undefined ? { anaesthetistId: to } : {}) })
     if (toCents(transfer.out.amount) !== toCents(p.releasedAmount)) out.push({ code: 'transferMismatch', amount: roundToCents(p.releasedAmount - transfer.out.amount), targetId: transfer.id, ...(to !== undefined ? { anaesthetistId: to } : {}) })
@@ -462,6 +487,8 @@ export interface LedgerPosition {
   creditsHeldForPayers: number
   /** What was paid out on credited invoices, left to net from the anaesthetists' next payment runs (catch-up Phase 39; 39a nets it). */
   recoveryDueFromAnaesthetists: number
+  /** What the system refunded to payers out of what was held for them (catch-up Phase 41: cancelled prepayments): money out. */
+  refundedToPayers: number
 }
 
 /** What a payable still awaits from the payer: none once it is reversed (catch-up Phase 39). */
@@ -497,6 +524,7 @@ export function ledgerPosition(pairs: readonly LedgerPair[], transfers: Readonly
   const feeOutstanding = new Cents()
   const creditsHeld = new Cents()
   const recoveryDue = new Cents()
+  const refunded = new Cents()
   let notInXero = 0
   for (const pair of pairs) {
     if (!isInXero(pair)) notInXero += 1
@@ -510,7 +538,9 @@ export function ledgerPosition(pairs: readonly LedgerPair[], transfers: Readonly
     outstanding.add(Math.max(0, roundToCents(r.amount - r.receivedAmount - (r.creditedAmount ?? 0))))
     received.add(r.receivedAmount)
     if (pair.credit !== undefined) {
-      creditsHeld.add(pair.credit.heldForPayer)
+      // A refund (catch-up Phase 41) pays out of what is held for the payer: money out, so it leaves both.
+      creditsHeld.add(roundToCents(pair.credit.heldForPayer - (pair.credit.refundedAmount ?? 0)))
+      refunded.add(pair.credit.refundedAmount ?? 0)
       // Net of what payment runs have netted (catch-up Phase 39a): each netting lowers it by exactly the offset it adds to a bill.
       recoveryDue.add(recoveryOpenOn(pair.credit))
     }
@@ -528,11 +558,11 @@ export function ledgerPosition(pairs: readonly LedgerPair[], transfers: Readonly
     out.add(t.out.amount)
     disbursed.add(t.in.disbursedAmount)
     due.add(dueOn(t.in))
-    awaiting.add(roundToCents(t.in.amount - t.in.releasedAmount))
+    awaiting.add(awaitingOn(t.in))
   }
   const unmatchedHeld = new Cents()
   for (const u of unmatched) if (u.status === 'held') unmatchedHeld.add(u.amount)
-  const receiptsHeldCents = received.cents + unmatchedHeld.cents - disbursed.cents
+  const receiptsHeldCents = received.cents + unmatchedHeld.cents - disbursed.cents - refunded.cents
   const holdingCents = holdingReleased.cents - out.cents
   const imbalanceCents = receiptsHeldCents - due.cents - holdingCents - creditsHeld.cents + recoveryDue.cents
   const checks = ledgerChecks(pairs, transfers, unmatched)
@@ -552,6 +582,7 @@ export function ledgerPosition(pairs: readonly LedgerPair[], transfers: Readonly
     notInXero,
     creditsHeldForPayers: creditsHeld.value,
     recoveryDueFromAnaesthetists: recoveryDue.value,
+    refundedToPayers: refunded.value,
   }
 }
 
@@ -612,12 +643,20 @@ export function anaesthetistPosition(
       recovery.add(recoveryOpenOn(pair.credit))
     }
   }
+  const creditedCollect = new Map<string, PairCredit>()
+  for (const pair of pairs) if (isBookingPair(pair) && pair.kind === 'prePayment' && pair.credit !== undefined) creditedCollect.set(pair.id, pair.credit)
   for (const t of Object.values(transfers)) {
     if (payeeAnaesthetistOf(t.in) !== anaesthetistId) continue
-    collected.add(t.in.releasedAmount)
+    // A transferred prepayment credited by hand (catch-up Phase 41): what the payer paid stays collected and is held for them; what was paid out is left to net.
+    const credit = creditedCollect.get(t.collectPairId)
+    collected.add(credit !== undefined ? credit.heldForPayer : t.in.releasedAmount)
     paidOut.add(t.in.disbursedAmount)
     due.add(dueOn(t.in))
-    awaiting.add(roundToCents(t.in.amount - t.in.releasedAmount))
+    awaiting.add(awaitingOn(t.in))
+    if (credit !== undefined) {
+      heldForPayers.add(credit.heldForPayer)
+      recovery.add(recoveryOpenOn(credit))
+    }
   }
   const held = new Cents()
   for (const u of unmatched) if (u.status === 'held' && u.anaesthetistId === anaesthetistId) held.add(u.amount)

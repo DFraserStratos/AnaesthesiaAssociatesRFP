@@ -15,6 +15,7 @@ import type {
   Booking,
   Contract,
   ContractEventFee,
+  PrepaymentLetterTemplate,
   ContractHolderOrganisation,
   RvgTimeRule,
   DayNote,
@@ -94,6 +95,7 @@ import { seedDisabledContractBooking } from './disabledContractBooking'
 import { RANGE_AUTHORISED_BILLED_ISO, RANGE_AUTHORISED_LIST_ID, seedPricingBookings, type PricingBookingKey } from './pricingBookings'
 import { applySeedListOrigins } from './listOrigins'
 import { SEED_EMAIL_TEMPLATES, SEED_EMAIL_TEMPLATE_NEXT } from './emailTemplates'
+import { SEED_LETTER_TEMPLATES, SEED_LETTER_TEMPLATE_NEXT } from './prepaymentLetters'
 import type { EmailTemplate, PatientCareSlice, ProcedureEvent } from '../types'
 import { SEED_NEXT_PROCEDURE_EVENT, SEED_PROCEDURE_EVENTS } from './procedureEvents'
 
@@ -151,6 +153,8 @@ export interface SeedMasters {
   contracts: Record<string, Contract>
   /** The Contract event fees (catch-up Phase 39b; `domain/billing/contractEventFees.ts`): read only by an event's pricing. */
   contractEventFees: Record<string, ContractEventFee>
+  /** The prepayment letter templates (catch-up Phase 41; US-06.3.6): one default per kind. */
+  prepaymentLetterTemplates: Record<string, PrepaymentLetterTemplate>
   /**
    * The RVG time rule held as data (catch-up Phase 19a; US-05.2.2, D25):
    * seeded from `DEFAULT_RVG_TIME_RULE`; every fee reads it from here. Read
@@ -658,6 +662,8 @@ function buildSeedInternal(): SeedBuild {
       patients: patientsRec,
       // Catch-up Phase 35: added after everything else, no RNG draws.
       emailTemplates: byId(SEED_EMAIL_TEMPLATES.map((t) => ({ ...t })), (t) => t.id),
+      // Catch-up Phase 41: added after everything else, no RNG draws.
+      prepaymentLetterTemplates: byId(SEED_LETTER_TEMPLATES.map((t) => ({ ...t })), (t) => t.id),
     },
     schedule: {
       slots,
@@ -706,6 +712,8 @@ function buildSeedInternal(): SeedBuild {
       pdfList: 2,
       // Catch-up Phase 35: the seeded update email templates are ET001 to ET004 (`emailTemplates.ts`).
       emailTemplate: SEED_EMAIL_TEMPLATE_NEXT,
+      // Catch-up Phase 41: the seeded prepayment letter templates are LT001 to LT003 (`prepaymentLetters.ts`).
+      letterTemplate: SEED_LETTER_TEMPLATE_NEXT,
     },
   }
 

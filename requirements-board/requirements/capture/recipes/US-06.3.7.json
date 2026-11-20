@@ -1,0 +1,102 @@
+{
+  "id": "US-06.3.7",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "contract-change",
+      "app": "admin",
+      "caption": "A Contract changed off prepaid after sending is settled as a cancellation, then billed under the new Contract",
+      "start": "/admin/day/2026-07-24/bookings/BK0038",
+      "states": [
+        {
+          "state": "confirmation",
+          "caption": "Sent, not paid: the office moves Annette Riley's procedure off her prepaid Contract, and the line says the invoice is credited and the procedure billed after it under the new Contract",
+          "steps": [
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
+            },
+            {
+              "click": "[data-shot=awaiting-approval-row][data-booking-id=BK0034] [data-shot=approve-and-send]"
+            },
+            {
+              "wait": "[data-shot=prepayment-letter-picker]"
+            },
+            {
+              "click": "[data-shot=prepayment-letter-send]"
+            },
+            {
+              "wait": "[data-shot=approve-and-send-result]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/admin/day/2026-07-24/bookings/BK0034"
+            },
+            {
+              "wait": "[data-shot=booking-prepayment]"
+            },
+            {
+              "click": "[data-shot=contract-rail-step-2] >> nth=0"
+            },
+            {
+              "click": "[data-rail-option=standard] >> nth=0"
+            },
+            {
+              "click": "[data-shot=contract-combo] >> nth=0"
+            },
+            {
+              "click": "[data-contract-id=CT-NO-CONTRACT] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=prepaid-contract-change]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=prepaid-contract-change]"
+          ]
+        },
+        {
+          "state": "before",
+          "caption": "Priya Nair's prepayment is paid and held in the AA Holding account",
+          "steps": [
+            {
+              "wait": "[data-shot=booking-prepayment]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=booking-prepayment]"
+          ]
+        },
+        {
+          "state": "settled",
+          "caption": "Paid: once the office changes the Contract, the prepayment invoice is credited in full and refunded from the AA Holding account, as for a cancellation",
+          "steps": [
+            {
+              "wait": "[data-shot=booking-prepayment]"
+            },
+            {
+              "trigger": "prepayment-contract-changed"
+            },
+            {
+              "wait": "[data-shot=prepayment-settled-refund]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=prepayment-settled]"
+          ]
+        }
+      ]
+    }
+  ]
+}

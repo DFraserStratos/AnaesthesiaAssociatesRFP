@@ -318,9 +318,10 @@ describe("the anaesthetist's credit note (US-08.6.5)", () => {
     expect(creditOptionFor(api.getState(), { role: 'anaesthetist', anaesthetistId: ANAE.souter }, 'HP03')).toEqual({ kind: 'disabled', invoiceId: 'HINV03', reason: CREDIT_MESSAGES.alreadyCredited })
   })
 
-  it('creditOptionFor: hidden with the caption on a prepaid Procedure whose only invoice is its prepayment invoice, hidden before invoicing', () => {
+  it('creditOptionFor: on a prepaid Procedure before authorise, the office only (catch-up Phase 41); hidden before invoicing', () => {
     const prepaid = api.getState().billing.invoices['INV0001']!.procedureIds![0]!
-    expect(creditOptionFor(api.getState(), { role: 'anaesthetist', anaesthetistId: ANAE.souter }, prepaid)).toEqual({ kind: 'hidden', caption: CREDIT_MESSAGES.prepaymentNotCreditable })
+    expect(creditOptionFor(api.getState(), { role: 'anaesthetist', anaesthetistId: ANAE.souter }, prepaid)).toEqual({ kind: 'hidden' })
+    expect(creditOptionFor(api.getState(), { role: 'office' }, prepaid)).toEqual({ kind: 'enabled', invoiceId: 'INV0001', invoiceIds: ['INV0001'] })
     const unbilled = Object.values(api.getState().schedule.procedures).find((p) => p.bookingId === 'BK0184')!.id
     expect(creditOptionFor(api.getState(), { role: 'anaesthetist', anaesthetistId: ANAE.souter }, unbilled)).toEqual({ kind: 'hidden' })
   })
@@ -337,7 +338,7 @@ describe("the anaesthetist's credit note (US-08.6.5)", () => {
 
   it("refused on a colleague's Procedure, for a prepayment invoice and with cause split", () => {
     expect(submitCredit(api, delaney(), creditInput('HINV03'))).toMatchObject({ ok: false, code: 'notOwnProcedure', message: 'You can only credit invoices for your own procedures.' })
-    expect(submitCredit(api, souter(), creditInput('INV0001'))).toMatchObject({ ok: false, code: 'kindNotCreditable', message: CREDIT_MESSAGES.prepaymentNotCreditable })
+    expect(submitCredit(api, souter(), creditInput('INV0001'))).toMatchObject({ ok: false, code: 'prepaymentBeforeAuthorise', message: CREDIT_MESSAGES.prepaymentBeforeAuthorise })
     expect(submitCredit(api, souter(), creditInput('HINV03', { cause: 'split', replacements: [component(200, 'a'), component(252.61, 'b')] }))).toMatchObject({ ok: false, code: 'splitOfficeOnly' })
     expect(creditRefusalFor(api.getState(), { role: 'anaesthetist', anaesthetistId: ANAE.souter }, 'HINV03')).toBeNull()
   })
