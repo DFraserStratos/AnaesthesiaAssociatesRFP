@@ -1,7 +1,7 @@
 # B12 · Implementation plan
 
 Written before building, 2026-11-20, at `58e0b6ba` (board-fixes `b35abbba` + master `7e227e66`, the wave
-4 join). Decisions: accepted decision 27 (D-08, B12-Q3, B12-Q6); decision 16 (R-07 rule). D-03 not
+4 join). Decisions: accepted decision 28 (D-08, B12-Q3, B12-Q6); decision 16 (R-07 rule). D-03 not
 needed (no `shared/*.ts` import). Every finding re-verified at HEAD: all hold (only `capture.ts` lines
 moved by about 3).
 
@@ -60,6 +60,6 @@ moved by about 3).
 
 ## Handoff
 
-- Owner: the migration JSON for the live `plan.config.json` (decision 27), applied at the master merge.
+- Owner: the migration JSON for the live `plan.config.json` (decision 28), applied at the master merge.
 - B14: new config keys and defaults; the `starter/` and `capture.ts` changes to verify; Doc facts.
 - B15: dispositions and the A-4 and A-10 verdicts.

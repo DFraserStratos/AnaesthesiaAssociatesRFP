@@ -20,6 +20,7 @@ export const meta = {
  *   req          catalogue folder relative to the repo (default requirements-board/requirements)
  *   project      one line naming the system, e.g. "the Acme order management system"
  *   owner        who outranks everything, e.g. "Sam (product owner)" (default "the product owner")
+ *   ownerShort   how headings name them, e.g. "Sam" (default: the first word of owner, or "the product owner")
  *   levels       [{id, desc}] highest authority first (default: owner, meeting, doc, catalogue, original)
  *   fixedRulings strings: settled rulings that must appear as F-1, F-2 ... (never re-litigated)
  *   topics       suggested topic names (optional; the extractors invent short ones when absent)
@@ -31,6 +32,8 @@ const REQ_REL = (A.req || 'requirements-board/requirements').replace(/\/$/, '')
 const REQ = ROOT + REQ_REL
 const OUT = A.out
 const OWNER = A.owner || 'the product owner'
+// The first word of owner ("Sam (product owner)" is "Sam"), unless that is an article: then the whole owner.
+const OWNER_SHORT = A.ownerShort || (A.owner ? (/^(the|a|an)$/i.test(A.owner.trim().split(/\s+/)[0]) ? A.owner.trim() : A.owner.trim().split(/\s+/)[0]) : 'the product owner')
 const PROJECT = A.project || 'the system this catalogue describes'
 if (!OUT || !A.baseline || !Array.isArray(A.notes)) {
   log('Missing args: out, baseline and notes are required (notes, changes and answeredQuestions come from <run>/index.json).')
@@ -47,6 +50,12 @@ const LEVEL_LIST = A.levels || [
 const LEVELS = `Levels (highest authority first; within a level, newer beats older):
 ${LEVEL_LIST.map((l) => `- "${l.id}": ${l.desc}`).join('\n')}`
 const TOPICS = A.topics || []
+// A note is cited by its file's slug words, never its title: notes/2026-10-16-sam-pricing-call.md (titled "Sam's pricing
+// call") is cited "Notes 2026-10-16 · Sam pricing call #8". The board resolves exactly these prefixes.
+const notePrefix = (n) => { const m = n.split('/').pop().match(/^(\d{4}-\d\d-\d\d)-(.+)\.md$/); return m ? `Notes ${m[1]} · ${m[2].replace(/-/g, ' ')}` : null }
+const NOTE_PREFIXES = A.notes.map(notePrefix).filter(Boolean)
+const citeForm = (prefixes) => `Cite a note as "Notes <date> · <slug words> #n": the words are the note's file name after its date, hyphens as spaces, not its title (a note titled "Sam's pricing call" saved as 2026-10-16-sam-pricing-call.md is cited "Notes 2026-10-16 · Sam pricing call #8"). ${prefixes.length === 1 ? `This note's prefix is: ${prefixes[0]}.` : `Only these note prefixes resolve: ${prefixes.join('; ')}.`}`
+const CITE_FORM = citeForm(NOTE_PREFIXES)
 const chunk = (xs, n) => { const out = []; for (let i = 0; i < xs.length; i += n) out.push(xs.slice(i, i + n)); return out }
 
 const SCHEMA = {
@@ -61,7 +70,7 @@ const SCHEMA = {
           rule: { type: 'string', description: 'The rule or fact as it now stands, one or two plain sentences' },
           level: { type: 'string', enum: LEVEL_LIST.map((l) => l.id) },
           date: { type: 'string', description: 'YYYY-MM-DD the statement was made' },
-          cite: { type: 'string', description: 'Citation in catalogue form, e.g. "Notes 2026-10-16 · <note title words> #8", "OQ-62", "Typed decision <date> · <who>"' },
+          cite: { type: 'string', description: 'Citation in catalogue form, e.g. "Notes 2026-10-16 · <the note file\'s slug words> #8" (the file name after its date, hyphens as spaces, not the title), "OQ-62", "Typed decision <date> · <who>"' },
           quote: { type: 'string', description: 'Short verbatim quote (under 300 chars) that carries the rule' },
           replaces: { type: 'string', description: 'The earlier understanding this explicitly replaces or reverses, with its source if known; empty if none' },
           items: { type: 'array', items: { type: 'string' }, description: 'Catalogue IDs (EP/FT/US/OQ/AR) the source names for this rule' },
@@ -74,26 +83,27 @@ const SCHEMA = {
   required: ['decisions', 'caveats'],
 }
 
-const COMMON = `You are extracting the DECISIONS and RULES from requirements evidence for ${PROJECT}, so a later step can build a newest-wins list of current rulings. Read-only: do not edit any file.
+const common = (citeRule) => `You are extracting the DECISIONS and RULES from requirements evidence for ${PROJECT}, so a later step can build a newest-wins list of current rulings. Read-only: do not edit any file.
 
 Extract every decision, rule, fact about how the client works, rename, retirement, or reversal that should shape the requirements. Skip chit-chat, process talk and things merely discussed without an outcome (record a question that was raised but not settled only if it explicitly reverses an earlier rule). Be thorough: a 50k-character note may hold 40 to 80 decisions. Give each one a level:
 ${LEVELS}
 ${TOPICS.length ? `\nSuggested topics (use these names where they fit): ${TOPICS.join('; ')}.\n` : ''}
 Rules:
 - Quote verbatim; never invent a citation. Use the note's numbered points (#n) in cites where the rule sits under one.
+- ${citeRule}
 - Fill "replaces" whenever the source says something changed, was dropped, renamed, or no longer holds; this is the most important field.
-- Open questions are NOT rulings. Only an answered question (a question whose status has role `answered`, with an ## Answer) defines a rule.`
+- Open questions are NOT rulings. Only an answered question (a question whose status has role \`answered\`, with an ## Answer) defines a rule.`
 
 const notePrompts = A.notes.map((n) => ({
   label: `note:${n.split('/').pop().replace('.md', '')}`,
-  prompt: `${COMMON}
+  prompt: `${common(citeForm([notePrefix(n)].filter(Boolean)))}
 
 Source: the note ${ROOT}${n}. Read the whole file (use offset/limit reads if it is long). Its date is in the file name. Notes summarise meetings; the speaker tells you the level (${OWNER}'s instructions or typed decisions = ${LEVEL_LIST[0].id}; agreed or stated in the meeting = meeting; points summarising written documents = the documents' level).`,
 }))
 
 const changePrompts = chunk(A.changes || [], (A.batch && A.batch.changes) || 3).map((b, i) => ({
   label: `changes:${i + 1}`,
-  prompt: `${COMMON}
+  prompt: `${common(CITE_FORM)}
 
 Sources: these change logs (each records what one requirements update did and why):
 ${b.map((c) => `- ${ROOT}${c}`).join('\n')}
@@ -103,7 +113,7 @@ From change logs extract: (1) ${OWNER}'s typed decisions and instructions they r
 
 const questionPrompts = chunk(A.answered || [], (A.batch && A.batch.questions) || 30).map((b, i) => ({
   label: `questions:${i + 1}`,
-  prompt: `${COMMON}
+  prompt: `${common(CITE_FORM)}
 
 Sources: these answered questions in ${REQ}/questions/: ${b.join(', ')} (file name = ID + .md). Read each. The ## Answer is the ruling; its date and level come from the answer's own source lines or sources field (an answer from ${OWNER} is ${LEVEL_LIST[0].id}, from a meeting is meeting). Cite each as its OQ ID. If an answer was later extended or partly reversed inside the same file, record the latest state and put the earlier one in "replaces".`,
 }))
@@ -132,11 +142,13 @@ Merge rules:
 4. Open questions are never rulings.
 ${FIXED.length ? `5. These settled rulings are fixed and must appear in a "Fixed rulings" section, worded neutrally:\n${FIXED.map((f) => `   - ${f}`).join('\n')}` : '5. There are no fixed rulings: leave the "Fixed rulings" section with the line "None."'}
 
+${CITE_FORM}
+
 Write ${OUT}/rulings.md with this structure (keep it under about 60,000 characters; one or two lines per ruling):
 
 # Current rulings
 Baseline commit \`${A.baseline}\`, date built, the ranking in one line, "Open questions are not rulings".
-A "Cite shorthand" line if you abbreviate note cites: \`KEY = Notes <date> · <note title words>\` entries separated by " · " (for example \`G1016 = Notes 2026-10-16 · Meeting with the client\`), then \`CL<date> = change log of that date · TD<date> = ${OWNER}'s typed decision of that date (as recorded in the change log)\`. The review pages resolve exactly that shape.
+A "Cite shorthand" line if you abbreviate note cites: \`KEY = Notes <date> · <the note file's slug words>\` entries separated by " · " (for example \`G1016 = Notes 2026-10-16 · Meeting with the client\` for notes/2026-10-16-meeting-with-the-client.md; keys are a capital letter, letters, then digits), then \`CL<date> = change log of that date · TD<date> = ${OWNER}'s typed decision of that date (as recorded in the change log)\`. The review pages resolve exactly that shape.
 ## Fixed rulings
 - **F-1** ... (the fixed rulings above)
 ## Rulings by topic
@@ -146,7 +158,7 @@ A "Cite shorthand" line if you abbreviate note cites: \`KEY = Notes <date> · <n
 Stale understandings a requirement might still contain, each pointing at what replaced it: - **S-001** <old understanding> (was <cite>, <date>) → see R-0nn. Include renamed and retired terms and concepts (old name → new name). This section is what reviewers use to spot stale text, so be complete.
 ## Terminology
 Current names for key things, and retired names to avoid ("Avoid (retired): ...").
-## Conflicts for ${OWNER.split(' ')[0]}
+## Conflicts for ${OWNER_SHORT}
 - **C-1 <short title>.** Each: the two (or more) positions with level, date, cite; why it is unresolved; "Recommendation: ...". Only real conflicts, not things the ranking settles.
 
 Then return a short summary.

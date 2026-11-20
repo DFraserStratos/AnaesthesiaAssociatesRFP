@@ -10,7 +10,8 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
 - Checks: `npm --prefix requirements-board run check` (catalogue) and
   `npm --prefix requirements-board run verify` (typecheck, Vitest, catalogue).
 - Run folder: `<TODO: a persistent folder outside the repo>/<YYYY-MM-DD>/` (not `/tmp`).
-  Pass `--storage-key <TODO: project>-consistency-review` to `build-review.mjs`.
+  Pass `--storage-key <TODO: project>-consistency-review` to `build-review.mjs`, and `--protected`
+  with the `protectedArtifacts` ids below (comma separated), if any.
 - People: `<TODO: product owner>` decides. `<TODO: the client's people, and who wrote which
   documents>`. Unanswered points for the client become open questions with
   `owner: <the product owner> to ask <name>`.
@@ -47,4 +48,7 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
 ```
 
 `groups` names the rulings' own topic headings, so check them against `index.json` `topics` after
-stage 1 and adjust (a group with `topics: null` takes every topic no other group lists).
+stage 1 and adjust (a group with `topics: null` takes every topic no other group lists). Stage 2
+warns about a group topic that matches no rulings topic. Headings name the owner by the first word of
+`owner` (the whole of it when that word is an article); add `"ownerShort"` to the rulings arguments
+to choose another short name.

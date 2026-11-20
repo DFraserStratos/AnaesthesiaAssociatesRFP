@@ -25,6 +25,8 @@ export const meta = {
  *   diagramNote  one extra line for the diagram reviewers (e.g. "a diagram dated before <date> predates ...")
  *   groups       [{name, topics: [...] | null}] consolidation groups; one with topics null takes every topic
  *                no other group lists. Default: the topics in groups of about eight, the last one catch-all.
+ *                A group topic that is not one of `topics` matches nothing: the run warns (log and returned
+ *                groupCheck) and carries on, its findings going to the catch-all group.
  *   chunk        findings per verifier (default 30); diagramsPerAgent (default 5)
  */
 const A = args || {}
@@ -40,6 +42,20 @@ if (!RUN || !Array.isArray(A.units) || !Array.isArray(A.topics)) {
   return { error: 'missing args' }
 }
 const RULINGS = `${RUN}/rulings.md`
+
+// ---------- consolidation groups, checked against the rulings' topics before anything runs
+let GROUPS = A.groups
+if (!GROUPS) {
+  const per = 8
+  GROUPS = []
+  for (let i = 0; i < A.topics.length; i += per) { const t = A.topics.slice(i, i + per); GROUPS.push({ name: t.length > 1 ? `${t[0]} to ${t[t.length - 1]}` : t[0], topics: t }) }
+  if (!GROUPS.length) GROUPS.push({ name: 'Everything', topics: null })
+  else GROUPS[GROUPS.length - 1].topics = null
+}
+const listed = GROUPS.filter((g) => g.topics).flatMap((g) => g.topics)
+const unmatched = [...new Set(listed.filter((t) => !A.topics.includes(t)))]
+const catchAll = GROUPS.filter((g) => !g.topics).map((g) => g.name)
+if (unmatched.length) log(`WARNING: ${unmatched.length} group topic(s) match no rulings topic, so they match no finding: ${unmatched.map((t) => `"${t}"`).join(', ')}. Their findings go to the catch-all group${catchAll.length ? ` (${catchAll.join(', ')})` : ' (none: they will show as unreviewed)'}. Align groups with index.json topics.`)
 
 const READ_RULINGS = `Read the current rulings list ${RULINGS} in full (read it in parts with offset/limit until you reach the end). It is the yardstick: Fixed rulings (F-), Rulings by topic (R-), "No longer true" (S-: stale understandings and retired terms), Terminology, and Conflicts decided by ${OWNER} (C-: each Recommendation, or the position ${OWNER} chose, is now the ruling). Within it, open questions are never rulings.`
 const HOUSE_TEXT = HOUSE.length ? `\nProject rules (binding):\n${HOUSE.map((h) => `- ${h}`).join('\n')}` : ''
@@ -98,9 +114,11 @@ const EDIT = {
   },
   required: ['file', 'old', 'new'],
 }
+const ACTION = { type: 'string', enum: ['edit', 'redraw', 'flag'], description: 'edit: the edits fix it. redraw: a diagram change too big for a text swap (no edits). flag: no edits and no redraw, for the reader to acknowledge (a protected artifact, a fix that waits on a decision)' }
 const VERIFIED = {
   type: 'object',
   properties: {
+    action: ACTION,
     items: { type: 'array', items: { type: 'string' } },
     topic: { type: 'string', enum: A.topics.concat(['Other']) },
     kind: { type: 'string', enum: KINDS },
@@ -112,7 +130,7 @@ const VERIFIED = {
     size: { type: 'string', enum: ['small', 'medium', 'large'] },
     confidence: { type: 'string', enum: ['high', 'medium'] },
   },
-  required: ['items', 'topic', 'kind', 'summary', 'change', 'evidence', 'rulings', 'edits', 'size', 'confidence'],
+  required: ['action', 'items', 'topic', 'kind', 'summary', 'change', 'evidence', 'rulings', 'edits', 'size', 'confidence'],
 }
 const QUESTION = {
   type: 'object',
@@ -136,7 +154,7 @@ const EDIT_RULES = `How to write edits (they will be shown to ${OWNER} for appro
 - Fix the meaning, not the style. Keep the catalogue's voice (${REQ}/VOICE.md), the ${REQ}/SCHEMA.md format and its sections. Do not rewrite text that is fine.
 - Where a fix rests on a ruling, add that ruling's source to the item's sources in date order, in full catalogue form (the rulings header maps its cite shorthand to the full "Notes <date> · <words>" form). Quote a source only if it contains "#" or ": ".
 - A rule that is now pending (a Conflict settled as pending, any open OQ) is described as pending with its OQ, and a settled or signed-off status on it moves to the Verify status (look up numbers in board.config.json; never infer from a number).
-- Never edit retired items, notes/, changes/, reference/, or question answers. If a fix needs a decision the rulings do not make, put it in newQuestions instead of editing.${HOUSE_TEXT}`
+- Never edit retired items or artifacts, notes/, changes/, reference/, or question answers, and never a file outside ${REQ}: such edits are refused when applied. If a fix needs a decision the rulings do not make, put it in newQuestions instead of editing (a finding kept without edits has action "flag").${HOUSE_TEXT}`
 
 const verifyPrompt = (label, findings) => `You verify drift findings that cheap reviewers raised about a requirements catalogue, and draft exact fixes for the real ones. Read-only: do not edit any file; return proposed edits only.
 
@@ -154,7 +172,7 @@ ${SIZES}
 Give each verified entry the topic (from the rulings' topic headings) it mainly belongs to.`
 
 // ---------- Sonnet: diagrams and domain model
-const protectedText = PROTECTED.map((p) => `${p.id} is ${p.reason}: do not propose edits to it; only report as a finding (no edits, size large, change "flag to ${OWNER}") if requirements link to it for something it now contradicts.`).join('\n')
+const protectedText = PROTECTED.map((p) => `${p.id} is ${p.reason}: do not propose edits to it; only report as a finding (no edits, action "flag", size large, change "flag to ${OWNER}") if requirements link to it for something it now contradicts.`).join('\n')
 const diagramPrompt = (ds) => `You check diagrams in a requirements catalogue against the latest decisions. Read-only: do not edit any file; return proposed edits only.
 
 ${READ_RULINGS}
@@ -167,7 +185,7 @@ ${protectedText}
 Fixes:
 - Sidecar text (region names and notes, step names, captions and balance amounts, description): normal edits. Never edit an id or an anchor (a region's around, a step's show, highlight or moves): links and the drawing depend on them.
 - SVG text: an edit replacing the text inside one <text>/<tspan> only when the new text is about the same length (within about 20%); "old" must be exact from the SVG file and unique. If a region or step anchor in the sidecar is "text=" that exact text, edit the anchor to match in the same change.
-- Anything needing layout changes, new boxes or arrows, longer text, or (in a stepped diagram) a step added, removed, reordered or revealing different marks, or a different move: no edits; size large, and "change" describes exactly what to redraw (it will be done with the svg-diagram skill).
+- Anything needing layout changes, new boxes or arrows, longer text, or (in a stepped diagram) a step added, removed, reordered or revealing different marks, or a different move: no edits; action "redraw", size large, and "change" describes exactly what to redraw (it will be done with the svg-diagram skill).
 
 ${EDIT_RULES}`
 
@@ -228,17 +246,17 @@ const raw = verifyRuns.reduce((n, v) => n + v.raw, 0)
 log(`Find: ${raw} raw findings; Verify kept ${keyed.length}, dropped ${verifyRuns.reduce((n, v) => n + v.dropped.length, 0)}; ${questions.length} new questions`)
 
 // ---------- Opus: consolidate per topic group
-let GROUPS = A.groups
-if (!GROUPS) {
-  const per = 8
-  GROUPS = []
-  for (let i = 0; i < A.topics.length; i += per) { const t = A.topics.slice(i, i + per); GROUPS.push({ name: t.length > 1 ? `${t[0]} to ${t[t.length - 1]}` : t[0], topics: t }) }
-  if (!GROUPS.length) GROUPS.push({ name: 'Everything', topics: null })
-  else GROUPS[GROUPS.length - 1].topics = null
-}
-const listed = GROUPS.filter((g) => g.topics).flatMap((g) => g.topics)
 const inGroup = (g, f) => (g.topics ? g.topics.includes(f.topic) : !listed.includes(f.topic))
 const index = keyed.map((f) => `${f.key} [${f.topic}] ${f.items.join(',')}: ${f.summary}`).join('\n')
+// toCatchAll: every finding whose topic no group lists (an unmatched group topic means its findings land here too).
+const toCatchAll = catchAll.length ? keyed.filter((f) => !listed.includes(f.topic)).length : 0
+const groupCheck = { unmatched, catchAll, toCatchAll }
+if (unmatched.length) log(`Group check: ${toCatchAll} of ${keyed.length} findings have a topic no group lists and go to the catch-all group.`)
+const CQUESTION = {
+  type: 'object',
+  properties: { ...QUESTION.properties, from: { type: 'array', items: { type: 'string' }, description: 'Titles, exactly as proposed, of the proposed questions this one keeps or merges' } },
+  required: [...QUESTION.required, 'from'],
+}
 
 const CONSOLIDATE_SCHEMA = {
   type: 'object',
@@ -249,6 +267,7 @@ const CONSOLIDATE_SCHEMA = {
         type: 'object',
         properties: {
           title: { type: 'string', description: 'Plain-language name of the change, e.g. "Prepaid is set on the Price list, not the profile"' },
+          action: ACTION,
           size: { type: 'string', enum: ['small', 'medium', 'large'] },
           topic: { type: 'string' },
           why: { type: 'string', description: `Two or three plain sentences for ${OWNER}: what was wrong, what changes, which ruling` },
@@ -257,14 +276,15 @@ const CONSOLIDATE_SCHEMA = {
           editsOverride: { type: 'array', items: EDIT, description: 'Only if you revised the edits: the full replacement edit set for these keys. Empty to keep the findings\' edits.' },
           extraEdits: { type: 'array', items: EDIT, description: 'Additional edits you found were needed (other items with the same drift)' },
         },
-        required: ['title', 'size', 'topic', 'why', 'confidence', 'keys', 'editsOverride', 'extraEdits'],
+        required: ['title', 'action', 'size', 'topic', 'why', 'confidence', 'keys', 'editsOverride', 'extraEdits'],
       },
     },
     dropped: { type: 'array', items: { type: 'object', properties: { key: { type: 'string' }, reason: { type: 'string' } }, required: ['key', 'reason'] } },
-    newQuestions: { type: 'array', items: QUESTION },
+    newQuestions: { type: 'array', items: CQUESTION },
+    dismissedQuestions: { type: 'array', items: { type: 'object', properties: { title: { type: 'string', description: 'The proposed question\'s title, exactly' }, reason: { type: 'string' } }, required: ['title', 'reason'] } },
     notes: { type: 'string' },
   },
-  required: ['changes', 'dropped', 'newQuestions', 'notes'],
+  required: ['changes', 'dropped', 'newQuestions', 'dismissedQuestions', 'notes'],
 }
 
 phase('Consolidate')
@@ -288,7 +308,8 @@ Do this:
 2. Consistency: where the same rule is fixed in several items, make the wording consistent, and group them into ONE change (several keys). If other items in this topic carry the same drift but have no finding, search for them (grep the stories folder) and add extraEdits.
 3. Conflicts: two edits on the same file whose "old" text overlaps must be merged into one edit (use editsOverride).
 4. Size each change (${SIZES}) and give it a plain title and a short why for ${OWNER}.
-5. Questions: keep only genuinely unresolved matters that block a fix in your group; merge duplicates. Write each body as the catalogue's questions are written: "**Already settled:** ..." (if anything is), "**Still to answer:**" with numbered bold questions, then "Recommendation: ...".
+5. Questions: for every proposed question that concerns your group, either keep it (merging duplicates; list the proposed titles each one covers in "from") or dismiss it in dismissedQuestions with its exact title and the reason (the rulings already settle it, or it is not a real open matter). Keep genuinely unresolved matters. A proposed question no group keeps or dismisses still reaches ${OWNER}, marked as not reviewed. Write each body as the catalogue's questions are written: "**Already settled:** ..." (if anything is), "**Still to answer:**" with numbered bold questions, then "Recommendation: ...".
+6. Action: "edit" when the change has edits; "redraw" for a diagram change too big for a text swap; "flag" for anything else without edits (a protected artifact, a fix that waits on a decision).
 Every key of yours must end up in exactly one change or in dropped.
 
 ${EDIT_RULES}`, { label: `consolidate:${g.name}`, phase: 'Consolidate', schema: CONSOLIDATE_SCHEMA, model: 'opus', effort: 'high' })
@@ -304,5 +325,6 @@ return {
   bySize: ['large', 'medium', 'small'].map((s) => `${s}: ${consolidated.reduce((n, c) => n + c.changes.filter((x) => x.size === s).length, 0)}`).join(', '),
   dropped: consolidated.reduce((n, c) => n + c.dropped.length, 0),
   uncovered,
+  groupCheck,
   notes: consolidated.map((c) => `${c.group}: ${c.notes}`),
 }

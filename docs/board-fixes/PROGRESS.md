@@ -139,8 +139,8 @@ Agent tools in parallel: B12 (after B02), B13 (REQ-07b after B04); both before B
 | B09 | Diff and history UI | COMPLETE | B09-Q2 to Q4 and the Open rule recorded (accepted decision 23) | 2026-11-20, board 1.21.0; all 13 findings fixed; Diff count can rise (stricter minor rule); journal gains `seen` lines (additive) |
 | B10 | Artifact viewers | COMPLETE | after B01, B03, B04, B07; D-01c, B01-Q2 and D-10 recorded; B10-Q2, Q3 (accepted decision 24) | 2026-11-20, board 1.22.0; all 10 findings and the timeline label fixed; workers and object URLs bounded (1 and 0 after 10 rounds, were 40 and 40) |
 | B11 | Board canvas and views | COMPLETE | after B03, B05, B07; D-06 recorded; B11-Q1 to Q5 recorded (accepted decision 25) | 2026-11-20, board 1.23.0; all 13 findings fixed; lane merge on B05's route; D-04e's last legacy shape (base-less lane lists) retired |
-| B12 | Build-plan tools | IN PROGRESS | after B02; D-08 and B12-Q3, Q6 recorded (accepted decision 27); D-03 not needed | parallel worktree |
-| B13 | Consistency and linking tools | PLANNED | REQ-07b after B04 (D-03) | parallel worktree |
+| B12 | Build-plan tools | COMPLETE | after B02; D-08 and B12-Q3, Q6 recorded (accepted decision 28); D-03 not needed | 2026-11-20, board 1.25.0; all 15 findings fixed, R-07 closed; A-4 and A-10 confirmed and fixed; lanes read on master (migration at the master merge) |
+| B13 | Consistency and linking tools | COMPLETE | REQ-07b after B04 (D-03, landed); B13-Q1 to Q5 recorded (accepted decision 27) | 2026-11-20, board 1.24.0; all 14 findings fixed; stage 1 parse error found and fixed; new agent suites for B12 to add to verify:board |
 | B14 | Scripts, kit and docs | PLANNED | after B02, B05, B11, B12, B13; D-09 before build | |
 | B15 | Closing audit | PLANNED | after all | |
 
@@ -161,7 +161,7 @@ decisions" section and resolved in that phase's planning.
 | D-05 | ID reuse rule: SCHEMA "never reused" vs deliberate documented reuse (A-1, R-54); with B05-Q2/Q3 | B05 (user) | B08, B14 | B08 build (planning-only gate in a B05 planning conversation) | SCHEMA text; journal and history handling; possible deleted-ID list (data migration) | **Accepted 2026-11-19** (accepted decision 19): reuse stays; a restore continues its history; journal cut only at a committed deletion |
 | D-06 | Bad-data issue surface and error-boundary recovery | B03 | B06, B10, B11 | B03 build | How later phases report bad data | **Accepted 2026-11-19** (accepted decision 17): panel in place and a "This page" group in the pill; auto-retry on catalogue change; copyable details; page-wide error capture; repaired storage mentioned |
 | D-07 | Git reader contract (cache key/bounds, SHA-256, unstaged moves, deletion and rename bounds) | B08 | B05, B09 | B08 build | Timeline and diff inputs; R-54 history cut | **Accepted 2026-11-19** (accepted decision 19): HEAD + index identity keys, bounded LRUs, hybrid clean-form names, unchanged unstaged moves followed, full lists with `deleted` markers |
-| D-08 | Lane-aware plan state on master | B12 | catch-up lanes | B12 build | update-build-plan behaviour while lanes run | **Accepted 2026-11-20** (accepted decision 27): read the configured lane branches' commits and progress rows, with a guard when lanes are declared but not configured |
+| D-08 | Lane-aware plan state on master | B12 | catch-up lanes | B12 build | update-build-plan behaviour while lanes run | **Accepted 2026-11-20** (accepted decision 28): read the configured lane branches' commits and progress rows, with a guard when lanes are declared but not configured |
 | D-09 | Kit export source and target refusal rules | B14 | none | B14 build | Export behaviour and docs | Open |
 | D-10 | Asset version and change signal (event and URL token) | B07 | B09, B10 | B07 build | R-96 and R-104 consumers | **Accepted 2026-11-19** (accepted decision 21): an `assets` entry on the batched delivery and every token in the snapshot; token = git blob hash; `?v=<token>` |
 
@@ -528,8 +528,44 @@ decisions" section and resolved in that phase's planning.
       - **Downstream:** the B12 and B13 specs and kick-off prompts; PLAN "Version numbers in worktree
         phases".
 
+- 2026-11-20, user and B13 session (B13's planning questions, asked in the B13 session):
+  27. **B13-Q1 to Q5, and how decisions bind:**
+      - **B13-Q1, refuse them all, no override** (user). Beyond edits outside the catalogue folder and to
+        protected artifacts, `apply.mjs` refuses an edit to `notes/`, `changes/` or `reference/`, an edit
+        whose text lies in a question's `## Answer` section, and an edit to a retired item or a retired
+        artifact (its sidecar or drawn file). A refusal is a `FAIL` line and holds the whole change back
+        (B13-REQ-02); the review page marks the edit as one that will not apply. No override flag: a hand
+        fix is made by hand, as Stage 4 already does for `FAIL` lines.
+      - **B13-Q2, the latest run, old files reported** (user). Each link run has its own folder:
+        `links:index` starts one (the previous run folder is kept under `.links/runs/`), the workflow
+        writes its proposal files there by default, and `links:apply` with no folder argument applies that
+        latest run only, naming it in its output and report. Loose `*.verified.json` files left in `.links/`
+        from before this fix are never applied by default; they are listed in the output and left in place
+        for the user to delete. Naming a folder (`links:apply -- <dir>`) applies that folder, as today.
+      - **B13-Q3, warn and continue** (user). A consolidation group topic that matches no rulings topic is
+        named in the stage-2 log and its returned result, with how many findings fell to the catch-all
+        group; the run goes on. The "This repo" groups are realigned to the suggested topics.
+      - **B13-Q4, retired diagrams are left out** (user). A diagram whose sidecar is Retired (or names a
+        `superseded_by`) gets no artifact pack and no diagram verifier; `index.json` lists it under a new
+        `skippedDiagrams` field (additive) so the count is visible.
+      - **B13-Q5, one batch per epic** (user). A bare epic ID in `batches` becomes its own batch; a list
+        stays one batch; a mix works; anything else stops the run before any agent with a returned error.
+        The log states the grouping.
+      - **How a decision binds (R-09)** (session, from the SPEC's risk "neither too strict nor too loose").
+        Each change carries a fingerprint of its proposed effect (its edits as file, `old`, `new`, order
+        ignored; for a change without edits its title, items and action); each question one of its title,
+        body and affects. The page keeps decisions by fingerprint, so the same change keeps its decision
+        under a new id and a different change at an old id starts undecided; exported decisions, the
+        pasted text and `accepted-ids.txt` carry `id@fingerprint`. `decisions.mjs` and `apply.mjs` match by
+        fingerprint, name any decision whose change has changed or gone, and treat a bare id (a decisions
+        file or text from before this phase) as unverified: `apply.mjs` applies it only with an explicit
+        `--unverified`. `question-fixups.json` takes `Q-nn@fingerprint` keys; a plain `Q-nn` key is honoured
+        and pinned to the question it acted on, and skipped with a warning once that id names another.
+      - **Downstream:** none outside B13. B14's R-31 sweep and docs pass take the new `links:index`,
+        `links:apply` and workflow argument shapes from B13's entry.
+
 - 2026-11-20, user (B12's planning questions, asked in the B12 session):
-  27. **D-08, B12-Q3 and B12-Q6:**
+  28. **D-08, B12-Q3 and B12-Q6:**
       - **D-08, read the lanes, with a guard** (user). A new optional top-level `plan.config.json` key
         `"lanes": { "branches": ["lane/a", "lane/b"], "complete": "{id} complete:", "checkpoint": "{id} checkpoint:" }`
         (only `branches` is needed; the two subject patterns are the defaults). The update-build-plan view
@@ -599,7 +635,6 @@ decisions" section and resolved in that phase's planning.
 | `.pdf-facts/` is never pruned (an old version's entry stays) and a killed write leaves a `.tmp` | B03 review | none | documented in README; delete the folder any time |
 | `tsconfig.node.json` now carries `jsx` and `vite/client` types so tests can import `.tsx`; a tests-only tsconfig would keep them out of server code | B03 review | B14 | |
 | `shared/proseDiff.ts` keeps its own fence and backtick heuristics (`FENCE`, `closed`) for the Diff review's block splitting | B04 | B09 | not a "what is code for links" rule; could adopt `markdownCode.ts` |
-| `scripts/linkProposals.ts` has its own code-masking copy | B04 review | B13 | B13 adopts B04's helpers there |
 | `decodeEntities` knows six named entities, so `# &copy; 2026` reads "&copy; 2026" where the page shows "©" (slug differs); a footnote `[^1]` in a heading reads "^1" | B04 review | none | no catalogue heading uses either |
 | `lintFrontmatter` keeps a `#` warning quiet when any other frontmatter string holds the same text after the `#` | B04 review | none | contrived false negative |
 | A mermaid edge label written without spaces (`A--text-->B`) is read as a node `text`; unverified whether mermaid accepts that form | B04 review | none | |
@@ -644,8 +679,215 @@ decisions" section and resolved in that phase's planning.
 | A renamed collapsed lane shows open for one render until the server answers (the key moves on success) | B11 review | none | cosmetic |
 | In a collapsed lane the open card is placed at the strip's top while the hidden cards of its stack keep their stacked places (one may share its spot) | B11 review | none | hidden cards are never hit-tested; a collapsed lane's drop index is the stack's foot |
 | The full fixture e2e run at load 29 lost `board-mapped` "dragging a feature to an earlier slot", `artifacts` R-104 and `diff` "uncommitted edits arrive live"; each passed 3 of 3 alone, and `board-mapped` 13 of 13 twice, `artifacts` with `diff` 59 of 59 | B11 | B15 | load timing, the same class as the rows above |
+| `consistency-rulings.js` had not parsed since 2026-10-20 (an unescaped backtick in a template literal), so stage 1 of the consistency review could not run | B13 | B13 | **Done in B13** (the REQ-09 proof parses the workflow) |
+| `scripts/linkProposals.ts` has its own code-masking copy | B04 review | B13 | **Done in B13**: it uses `markdownCode.ts` and `LINK_SOURCE` |
+| `run-build-phase/tools/phase-context.mjs` (about line 210) matches note cites by title words, a third note rule | B13 review | B14 (left by B12: outside its findings) | could use B04's import as `consistency-review/scripts/board-kit.mjs` does |
+| The new agent suites (`consistency-review.test.mjs`, `workflows.test.mjs`) run by hand until `verify:board` runs every `*.test.mjs` under `agent/` | B13 | B12 | **Done in B12**: `verify` runs `node --test "agent/**/*.test.mjs"` (73 tests) |
+| `apply-links.ts` and `link-index.ts` take the links root from the script's folder only, so a CLI test needs a named run folder | B13 | B14 | the R-31 env-path sweep |
+| `kit:export` copies untracked, git-ignored files: the `.pdf-facts/` cache (project words) and a leftover `.origin-fixture/` (an unreadable file aborts the export); and `agent/shared-rules.test.mjs` and `tests/inPlace.test.ts` hold denied words, so a scratch export fails its leak check before B12's terms are reached | B12 | B14 (D-09) | B12's own files pass; a planted term in run-build-phase's body is flagged |
+| `tests/originLive.test.ts` leaves its `.origin-fixture/<dir>` behind when its hook times out under load | B12 | B14 | delete the folder; consider cleanup in a `finally` |
+| `plan-state.mjs` reads each changed item's current status from the working tree even with `--to` (the R-138 class) | B12 SPEC | B14 or none | display only; regrade-ids now reads at the ref |
+| The 5 s and 10 s Vitest timeouts recurred in B12's full runs at load 20 to 46 (`originLive`, `api`, `catalogue`, `skillInstall`); each passed alone and the next full run was green | B12 | B14 | the timeout rows above |
 
 ## Phase entries
+
+### B12 · Build-plan tools · COMPLETE · 2026-11-20
+
+Board 1.24.0 (B13) to **1.25.0**. Plan and evidence: `phases/B12-build-plan-tools/IMPLEMENTATION.md`.
+Decisions: accepted decision 28 (D-08, B12-Q3, B12-Q6), asked in this session; decision 16's R-07 rule
+applied (D-03 not needed). Worktree `AnaesthesiaAssociatesRFP-board-B12`, branch `board-fixes-b12`. Master
+merged first (`58e0b6ba`, the wave 4 join: prototype, catalogue and screenshots only); `board-fixes` merged
+before finishing (B13, 1.24.0: its decision took number 27, so B12's is 28; PROGRESS and PHASE STATUS keep
+both sides).
+
+**Dispositions** (every proof failed on the pre-B12 tools, `git archive 58e0b6ba` in the scratchpad, and
+passes after, unless the row says otherwise)
+
+| Finding | Disposition | Proof |
+|---|---|---|
+| R-14 | **Fixed.** An `IN PROGRESS` row (or status.json `in_progress`) is partly built, never built, in `built` and `builtByEntry`, so plan-state, `recipe-status --check` and the pack treat it as unbuilt; entry-only stays built; `keepBaseline` and the returned fields unchanged | `config.test.mjs` R-14; existing `phaseStatus` test passes |
+| R-15 | **Fixed.** `last.json` keeps one record per check: a quick (`--changed`) PASS or OMIT never replaces a FAIL or SKIP on record; a full-form pass (`--only`, `--failed`, the gate) clears it; shape `{ at, changed, results }` kept (per-result `form` added) | `phase-check.test.mjs` (gate fails, `--changed` green, `--failed` re-runs; `--only` clears; a pre-B12 file read, old keys kept) |
+| R-16 | **Fixed.** `regrade-ids` compares each id's out-of-scope verdict at the baseline and at `<ref>`: into scope is re-graded (`scopeChanged`), out of scope is listed under `dropped`; an in-scope-to-in-scope lane move stays cosmetic | `regrade-ids.test.mjs` (moved out, moved in, between lanes, retired, feature flip) |
+| R-17 | **Fixed** per D-08: `laneStatus` and `phaseStatus(c, root, { lanes: true })` (plan-state, apply-plan-update's kept baselines, `recipe-status --check`) read each configured lane branch's `complete`/`checkpoint` commits and progress rows; declared but unconfigured lanes, or a configured branch that does not exist, make plan-state say so and apply-plan-update refuse (`--ignore-lanes`); the pack reads its own branch only | `config.test.mjs` (fixture master plus two lane branches; inside a lane the own view is unchanged); `apply-plan-update.test.mjs` guards; live, read-only: with the proposed key on a plan copy, Lane B's `39b complete:` reads built and Lane A's checkpointed 39a partly built (master alone: neither) |
+| R-18 | **Fixed.** A fresh-plan remake keeps an old doc only for the same slug and moves to the new path once a doc is written there; the old one is reported (`superseded`, stderr), never deleted (Q6); an update run (`architect:update`) keeps every existing path | `apply-plan-update.test.mjs` (fresh remake; update run; renamed slug with no new doc) |
+| R-19 | **Fixed.** A track range expands over that track only; a number followed by a month is not a phase. Live: 26's previous phase is U6 (was 25a), U6 holds its step alone | `phase-context.test.mjs` R-19; compatibility diff |
+| R-135 | **Fixed.** `plan-state.mjs --diff <IDs> --from <sha>`; bare `--diff` byte-identical; the pack prints the command with its own baseline (also in each cut diff); SKILL Stage 2 step 1 | `plan-state.test.mjs`; `diffIds` case; live `plan-state --diff` byte-identical |
+| R-136 | **Fixed.** `needs`/`after` canonicalised after load | `phase-check.test.mjs` (alias waits; failed alias skips the dependent) |
+| R-137 | **Fixed.** A cycle is a config error at load (exit 2 naming it, before the lock) in every scheduling mode; `--stop-servers` and `--capture` still run; the scheduler ends never-ready checks as SKIP (RED) instead of spinning | `phase-check.test.mjs` (old tool hung 30 s, now exit 2 in all modes, no lock, nothing started) |
+| R-138 | **Fixed.** `regrade-ids` reads item list (`git ls-tree`), heads, recodes, board config and question `affects` at `<ref>` in one batch | `regrade-ids.test.mjs` (uncommitted edits ignored) |
+| R-139 | **Fixed.** A non-dry `capture.ts --only` run rewrites `REPORT.md` as a full run would, with its IDs from this run and failures outside it carried over (`scripts/captureReport.ts`); unreadable recipes are marked `invalid recipe:` and never carried; SKILL Stage 5 step 6 says to check the report | `tests/captureReport.test.ts`; manual walk on a scratch catalogue with a stand-in page on 5573: the final capture fails FT-01.6 and its stories; after the fix the **old** `--only FT-01.6` left "Failed recipe 5" with FT-01.6 listed, the **new** one moved FT-01.6 back to Captured (220 + 4 failing stories = the full run's 224), totals agreeing with rows |
+| R-150 | **Fixed.** run-build-phase's body names roles (state version, demo guide, source rule, the decisions section); "This repo" gains State version, Source rule, the demo guide's large page and the progress headings; starter placeholders added; `starter/deny.txt` gains `PERSIST_VERSION`, `master-demo-guide`, `\bRFP rule`, `demo clock`, `control panel` | grep of the body outside "This repo" finds none; scratch `kit:export`: a term planted in the body is flagged; no B12 file is flagged. The export as a whole still fails on leaks from before B12 (Discovered) |
+| R-151 | **Fixed.** Generic "not a phase" words in code (a `*_VERSION` constant generically); project nouns and `BK0` from `runner.context.countNouns` / `notPhaseBefore`; `decisionsSection` / `handoffSection` (defaults "Decisions log", "Discovered for later"); a configured heading the file lacks is noted | `phase-context.test.mjs` R-151; live packs for every unbuilt phase identical with and without the proposed keys (only built 25 and 29 differ) |
+| R-164 | **Fixed.** `readBlobs` (one `git cat-file --batch`), `sidesMany`, `substanceVerdicts` (recodes once); `changedInSubstance` and `substanceDiff` keep their signatures; regrade-ids, phase-briefs and the pack batch | `regrade-ids.test.mjs` (about 200 entries under 20 git processes; the old tool hundreds); on this repo's 110 real entries verdicts and diffs identical to the 1.23 functions, 0.3 s against 40 s |
+| R-07 (plan-tool half) | **Fixed; R-07 closed** (B02's board half and this). `normaliseStatus` unchanged (decision 16) | `scope.test.mjs` (idempotent after a fresh-code renumber; the board's `recodeHistoryProblems` flags an overlap; this catalogue's history reads as today). A guard, not fail-first: no plan-tool code changes; the fail-first proof is B02's `tests/recodeStatuses.test.ts` (convention 13 exception, recorded) |
+| A-4 | **Confirmed and Fixed.** Lane rows render under "Start now" whether or not a phase is safe | `build-index.test.mjs` A-4 (failed on the old tool: no lanes) |
+| A-10 | **Confirmed and Fixed.** The "re-plan first" flag compares both sides through `normaliseStatus`; one answered since still flags | `build-index.test.mjs` A-10 (the old tool flagged the question answered before the recode) |
+
+**What shipped:** `update-build-plan/tools/`: `config.mjs` (`parseProgress`, `phaseStatus` lanes view,
+`laneStatus`, config `lanes`), `req-changes.mjs` (`readBlobs`, `sidesMany`, `substanceVerdicts`),
+`regrade-ids.mjs` (rewritten), `scope.mjs` (`statusesFrom`), `plan-state.mjs` (`--from`, lanes, `lanes`
+key), `apply-plan-update.mjs` (guard, slug rule, `superseded`), `recipe-status.mjs`, `phase-briefs.mjs`,
+`build-index.mjs` (A-4, A-10); `run-build-phase/tools/`: `phase-check.mjs` (merge, canonical deps,
+cycles, backstop), `phase-context.mjs` (vocabulary, run order, `--from` command, section names, batched
+drift); both SKILL.md files; new tests `phase-check`, `config`, `regrade-ids`, `apply-plan-update`,
+`plan-state`, `build-index`, `scope` (`*.test.mjs`) and `tests/captureReport.test.ts`.
+
+**Touch-rights edits (convention 11):** `scripts/capture.ts` and new `scripts/captureReport.ts` (B14's
+next), `starter/deny.txt`, `starter/this-repo/run-build-phase.md`, `package.json` (`verify`), root
+`CLAUDE.md` (the `verify:board` line), `README.md` and `ADOPTING.md` lines (Doc facts),
+`docs/board-fixes/index.html` (PHASE STATUS).
+
+**Migration for the plan's owner (decision 28, at the `board-fixes` to master merge; additive, inert to
+today's tools):** in `docs/prototype-build/catch-up/plan.config.json` add the top-level key
+`"lanes": { "branches": ["lane/a", "lane/b"] }`, and under `runner.context`
+`"countNouns": ["Lists?", "Bookings?", "Procedures?", "Contracts?", "patients?", "invoices?"]` and
+`"notPhaseBefore": ["BK0*"]`. Without `lanes`, plan-state warns and apply-plan-update refuses while
+`status.json` declares lanes; without the context keys, no live pack of an unbuilt phase changes today.
+**For the lanes:** nothing until that merge; afterwards run-build-phase tells a resumed phase to use the
+pack's `--from` command, and `--failed` remembers the full gate (both backward compatible).
+
+**Deviations:** (1) Decision number 28, not 27 (B13 took 27 first). (2) The guard also refuses a configured
+branch that does not exist (review). (3) The R-07 proof is a guard (see its row). (4) The R-150 export
+proof could not show a passing export: leaks from before B12 fail it (Discovered). (5) The report header
+line now says a limited run updates its rows, so the next full capture changes `REPORT.md`'s third line once.
+(6) `regrade-ids` judges both sides by the target's recodes and roles (decision 16's rule).
+
+**Verification:** `npm run verify:board` green after the final `board-fixes` merge (74 test files, 1,141
+Vitest tests; check OK; 73 agent tests, B13's two suites included). Other full runs at load 20 to 46 timed
+out in `originLive`, `api`, `catalogue`, `skillInstall` and `diffUi` (5, 10 and 30 s limits); each passed
+alone and the next full run was green (the timeout rows below).
+Live-plan compatibility, read-only (`scratchpad/compat.sh`, before and after): packs for 26, 27a, 33, 39a,
+39b, 40, 41, 44, U6 differ only in the run-order line (R-19) and the `--from` command; `plan-state --diff`,
+`phase-check --list` and `recipe-status --check` identical; plan-state adds the lane warning and `lanes`
+key, regrade-ids `scopeChanged` and `dropped`, `config.mjs --json` `"lanes": null`. Writing tools ran only
+on copies (`build-index` old and new on a plan copy: identical page but the generator comment) and fixtures.
+Nothing written under `docs/prototype-build/`, the lane branches or `.git/lanes/`.
+
+**Review outcomes (convention 15):** two Sonnet reviewers (diff about 1,300 added lines). Confirmed and
+fixed: the guard missed a configured branch that does not exist; a carried-over report failure could be a
+stale unreadable-recipe line; an update applied without its outline label could repoint a doc to a missing
+path; a cycle blocked `--stop-servers`; `--failed` wording said "full form" where the rule is any failure
+on record; naming and comments (no "D-08" in tool code, `phaseState`, one `changes` in plan-state, the
+"Start now" lead hoisted). Regression tests added for the first four. Not taken: the live packs missing
+the project nouns until the migration (accepted by decision 28; no unbuilt phase's pack changes);
+`unaccounted` comparing counts (a wrong branch name is now refused as missing).
+
+**Doc facts (convention 12):** run-build-phase `SKILL.md` ("This repo": demo guide, State version, Source
+rule, progress headings; body: Ground rules big files, Stage 0 step 2, Stage 2 intro and steps 1 and 6,
+Stage 3 steps 2 and 5, Stage 4 step 2, Stage 5 steps 3 and 6, Stage 6 Built bullet and step 3, the tools
+table, the `runner` paragraph); update-build-plan `SKILL.md` (in-progress rule, `progress` row, new
+`lanes` row, `runner` row context keys, Stage 0 steps 2 and 3, `runReverse`, Stage 3 step 1, Fresh plan
+step 4); tool headers and `--help` of `phase-check.mjs`, `phase-context.mjs`, `plan-state.mjs`,
+`apply-plan-update.mjs`, `regrade-ids.mjs`, `config.mjs`, `capture.ts`; `requirements-board/README.md`
+(`npm run verify` line, capture Output); `ADOPTING.md` (run-build-phase "This repo" list, `runner.context`
+keys); root `CLAUDE.md` (`verify:board`); `CHANGELOG.md` 1.25.0. About page checked: nothing it says changed.
+
+**What later phases need:**
+- **B14:** verify the `starter/` changes (deny terms, run-build-phase placeholders) and the `capture.ts`
+  report change rather than redo them; document the new keys (`lanes`, `runner.context.countNouns`,
+  `notPhaseBefore`, `decisionsSection`, `handoffSection`) and `plan-state --from` in the whole-file pass;
+  the export leaks and the timeout rows below are yours; `phase-context.mjs`'s note-cite title-word rule
+  (B13's row) is left to you.
+- **B15:** confirm the dispositions and the A-4 and A-10 verdicts with `build-index.test.mjs`; R-07 closes
+  with B02's `tests/recodeStatuses.test.ts` and `scope.test.mjs`.
+- **The plan's owner:** the migration above at the master merge.
+
+### B13 · Consistency and linking tools · COMPLETE · 2026-11-20
+
+Branch `board-fixes-b13` in worktree `AnaesthesiaAssociatesRFP-board-B13` (ports 5673, 5674, 5680), run as a
+lane after convention 16. Caught up at start: `board-fixes` was the branch start; `git merge master` brought 11
+commits of catalogue and plan files (no board code). Baseline `verify:board` green apart from the known load
+timeouts (`originLive`, one `api` history test; both pass alone); agent `node --test` suites 29 of 29.
+Decisions: accepted decision 27 (B13-Q1 to Q5 asked in this session; how a decision binds settled from the
+SPEC's risk). D-03 consumed as B04 shipped it. Plan: `phases/B13-consistency-and-linking-tools/IMPLEMENTATION.md`.
+All 14 findings reproduced at HEAD (owned files unchanged since `d4341735` apart from line drift).
+
+| Finding | Disposition | Proof (fails on the starting code, passes now) |
+|---|---|---|
+| R-34 | **Fixed**: `guard.mjs` refuses edits outside the catalogue (`..`, absolute, links, another checkout), to `notes/`, `changes/`, `reference/`, a question's answer, a retired item or artifact, a protected artifact's sidecar or drawing, by any spelling of the name; a missing file or a folder is a `FAIL`. Protected ids reach `apply.mjs` in `changes.json` (`build-review.mjs --protected`, warned when left out or unknown; `apply.mjs --protected` adds). Full paths on the page | `consistency-review.test.mjs` REQ-01 (twelve cases plus a healthy change that lands; an outside file byte-identical) |
+| R-140 | **Fixed**: a change applies whole or is `HELD`; the page checks a change's own edits in sequence and flags the same text replaced two ways (no longer dropped) | REQ-02 |
+| R-09 | **Fixed**: fingerprints on every change and question; the page keeps decisions by fingerprint; exports, pasted text and `accepted-ids.txt` carry `id@fp`; `decisions.mjs` reads the file or the pasted text and names moved, stale and unverified decisions; `apply.mjs` refuses a changed one and needs `--unverified` for a bare id; question fixups by `Q-nn@srcFp`, plain keys pinned | REQ-03 (page in jsdom, file, pasted text, pre-phase file, apply) and the question-fixup test |
+| R-20 | **Fixed**: unkept verifier questions shown "not reviewed by the final pass"; a consolidator may dismiss only with a reason, recorded in `dismissedQuestions`; consolidators list what each kept question covers (`from`) | REQ-04 (no consolidator, `null` consolidator, keep, merge, dismiss, reasonless dismissal) |
+| R-21 | **Fixed**: `action` edit, redraw or flag; redraw only on a live, unprotected diagram; "flag only" pill; counts apart; old journals classified the same way | REQ-05 |
+| R-144 | **Fixed**: series ids two digits up to 99, four past it (`S-0104`), never three; one change-id pattern on server and page | REQ-06 |
+| R-141 | **Fixed**: ref-kit and build-packs resolve with `resolveNoteCite` (via `board-kit.mjs`); whole cites without points are one reference; no first-note guess; prompts and skills teach slug words; stage 1 is given the prefixes that resolve | REQ-07 (parity with the board over apostrophe, `&`, colon, non-ASCII notes); `workflows.test.mjs` REQ-07a |
+| R-142 | **Fixed**: one shorthand key pattern for keys and terminators | REQ-07 (e) |
+| R-143 | **Fixed**: Retired or replaced diagrams left out (`skippedDiagrams`); `/`-rooted files resolved from the repository | REQ-08 |
+| R-145 | **Fixed**: `ownerShort` (default the first word of `owner`, the whole owner when that word is an article, "the product owner" with no owner) | `workflows.test.mjs` REQ-09 |
+| R-147 | **Fixed** (warn and continue, decision 27): unmatched group topics logged and returned (`groupCheck`) with the catch-all count; this repo's groups realigned | REQ-10 (stubbed run; SKILL groups parse and match) |
+| R-08 | **Fixed**: `linkRuns.ts`; `links:index` starts `.links/current/`, the previous run with proposals moves to `.links/runs/<start>/`; the workflow writes there; `links:apply` applies that run only and names it; loose old files listed, never applied by default; an empty run names the newest earlier run with proposals | `tests/linkRuns.test.ts` (two runs, a removed link not restored; loose files; a CLI dry run on a fixture catalogue whose report names the run) |
+| R-133 | **Fixed**: positions in the field's original text, overlap skipped with a reason, spliced from the end; code by `markdownCode.ts` (B04), links by `LINK_SOURCE` | `tests/linkProposals.test.ts` (three new cases) |
+| R-146 | **Fixed**: bare ids one batch each, lists one batch, mixes; a batch named twice runs once; anything else, or a non-list, returns an error before any agent | `workflows.test.mjs` REQ-13 |
+
+**Fail-first evidence:** `consistency-review.test.mjs` against HEAD's scripts (`CR_SCRIPTS=<HEAD copy>`): 9 of 10
+fail on the behaviour (REQ-01 and REQ-05 with `CR_NO_PROTECTED=1`, since HEAD has no `--protected`: an absolute
+outside edit was not refused; every action undefined); REQ-15 (preserved behaviour) passes on both.
+`workflows.test.mjs` against HEAD's workflows (`WF_DIR`): 6 of 7 fail (`epics.join is not a function`; with HEAD's
+parse error escaped, "## Conflicts for the" and "note title words"); the groups check failed on HEAD's SKILL.
+`tests/linkProposals.test.ts` R-133 cases: 3 of 3 fail with HEAD's `linkProposals.ts`. `tests/linkRuns.test.ts`:
+`linkRuns.ts` does not exist at HEAD, whose `apply-links.ts` reads every `*.verified.json` in `.links/`.
+
+**What shipped:** new `scripts/guard.mjs` (edit rules, fingerprints, id scheme) and `scripts/board-kit.mjs` (the
+board's note rule, retired-artifact and artifact-path rules, one home) in `agent/skills/consistency-review/`;
+changed `apply.mjs`, `build-review.mjs`, `decisions.mjs`, `ref-kit.mjs` (`makeResolver` now async),
+`render-rulings.mjs`, `build-packs.mjs`; the three workflows; new `scripts/linkRuns.ts`; changed
+`scripts/apply-links.ts`, `scripts/link-index.ts`, `scripts/linkProposals.ts`. Tests:
+`agent/skills/consistency-review/consistency-review.test.mjs`, `agent/workflows/workflows.test.mjs`,
+`tests/linkRuns.test.ts`, three cases in `tests/linkProposals.test.ts`. Board 1.24.0 (lock file by `npm install`).
+
+**Deviations:** (1) Found and fixed in territory: `consistency-rulings.js` had not parsed since `d4db2772`
+(2026-10-20, an unescaped backtick around `answered` in a template literal), so stage 1 could not run; the REQ-09
+proof covers it. (2) The run folder is `.links/current/`, with earlier runs under `.links/runs/<start>/`, so the
+workflow's default `outDir` needs no new argument (decision 27's behaviour; the folder name differs from
+"runs/<time>" as first described). (3) A dismissal needs a reason, a new consolidator field (`dismissedQuestions`)
+and `from` on kept questions (SPEC left the shape open). (4) `board-kit.mjs` added after review to keep one copy of
+the board-import and artifact rules. (5) `apply.mjs` is now `parseArgs`-based; unknown options it never had
+(none were documented) are refused.
+
+**Verification:** `npm run verify:board` green (73 files, 1,136 tests; one earlier full run at load 23 to 38 lost six git and live-server tests to 5 s and 10 s timeouts, all 196 tests of those files passed alone, then the full run passed); `node --test` over every `*.test.mjs` under
+`requirements-board/agent/` (the new suites run by hand until B12 adds them to `verify:board`):
+`node --test $(find requirements-board/agent -name '*.test.mjs')`. Read-only dry runs on the real catalogue:
+`build-packs.mjs` into the scratchpad (81 units, 13 live diagrams, AR-30 and AR-52 left out, every cited note
+point found); `ref-kit` on the R-141 cites (the slug cite with and without points opens the 2026-11-05 decisions
+note; the title-words cite and "Notes <date> #3" are unresolved, as on the board). `apply.mjs` and `links:apply`
+were never run on the real catalogue. No Playwright spec touched.
+
+**Review (convention 15):** two Sonnet reviewers. Reviewer 1 (completeness, correctness): one blocking (a
+name clash left mid-refactor, caught before commit), case-variant names bypassing the refusals on macOS, a folder
+path crashing the tools, `links:index` archiving runs with no proposals, reasonless dismissals, legacy decisions
+losing their verdict, the protected list replaceable from the command line, an absolute path into another checkout
+re-pointed at this one, an `inside` edge, an article as the owner's first word, unreadable ids dropped silently,
+two changes sharing a fingerprint, non-list batches; plus test gaps. Reviewer 2 (quality, compatibility, docs):
+the protected list could be forgotten silently, duplicated retired and path rules and board imports, an empty run
+silent in `links:apply`, the group-check wording, fingerprint prefix matching inconsistent, dead fields, duplicate
+batches, every note prefix in every extractor prompt, `ownerShort` undocumented. All verified against the code and
+fixed with regression cases, except: Reviewer 2's "manual test command" (recorded here and for B12) and its note
+that `phase-context.mjs` keeps a "title words" note rule (B12 territory, below). Docs truth was checked and found
+accurate.
+
+**Touch rights (convention 11):** `starter/this-repo/consistency-review.md` (B14's kit text: `--protected`, the
+group warning, `ownerShort`); `agent/skills/update-requirements/SKILL.md` and `agent/skills/add-artifact/SKILL.md`,
+only the sentences on note cites and linking (PLAN territory).
+
+**Doc facts (convention 12):** consistency-review `SKILL.md`: This repo (`--protected`, realigned groups, the
+group check), Stage 0.2 (live diagrams, `skippedDiagrams`, note points), Stage 1.2 (slug words), Stage 2 (actions,
+questions kept, merged or dismissed), Stage 3.1 (command with `--protected`, id scheme, fingerprints, actions,
+refusals, whole changes), Stage 3.2 (fixups change fingerprints; `Q-nn@srcFp` keys), Stage 4.1 to 4.3 (decisions by
+fingerprint, `--unverified`, `HELD`), Stage 4.6 (redraws only; flags acknowledged). update-requirements `SKILL.md`
+source forms (slug words) and Stage 5 step 2 (batch shapes, run). add-artifact `SKILL.md` note bullet. README.md
+script list (`links:index`, `links:apply`), "Linking requirements" steps 1 to 3, "Consistency review" paragraph.
+Workflow `meta.whenToUse` and args comments (link-requirements; consistency-rulings `ownerShort`;
+consistency-changes groups). Starter consistency-review "This repo". About page unchanged (still true).
+
+**For later phases:** **B12**: add `agent/skills/consistency-review/consistency-review.test.mjs` and
+`agent/workflows/workflows.test.mjs` to `verify:board` with the other agent tests (accepted decision 6);
+`run-build-phase/tools/phase-context.mjs` (about line 210) matches note cites by title words, a third note rule
+(could use `board-kit.mjs`'s `boardNoteRules` or B04's import). **B14**: R-31 sweep of `link-index.ts` and
+`apply-links.ts` (the links root is `<script>/../.links`; a `--links-dir` or env path would let a CLI test run
+without a fixture copy); command shapes: `links:index [-- <out.md>]` starts a run beside its output,
+`links:apply [-- <dir>] [-- --dry-run]` defaults to `.links/current`; `build-review.mjs --protected`,
+`apply.mjs --unverified --protected`, `decisions.mjs <file or pasted text>`; README and SKILL lines above. **B05**:
+nothing new (`apply-links.ts` still writes through `writeItem`). **B15**: rerun the B13 proofs.
 
 ### B11 · Board canvas and views · COMPLETE · 2026-11-20
 

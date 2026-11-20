@@ -1,26 +1,35 @@
 /**
- * Apply the verified link proposals from a `link-requirements` run to the catalogue.
- *   npm run links:apply [-- <run dir>] [-- --dry-run]   default run dir: .links in this folder
- * Reads every `*.verified.json` in the run folder (`{ accepted: Proposal[] }`), checks each proposal
- * again against the files as they are now, and writes through the board's own serialiser. Refuses
- * to write if the result would add a `check` error. Writes `links-report.md` in the run folder either
- * way. Safe to run twice: anything already applied is skipped.
+ * Apply the verified link proposals of one `link-requirements` run to the catalogue.
+ *   npm run links:apply [-- <run dir>] [-- --dry-run]   default run: .links/current in this folder (the run
+ *   `links:index` started last)
+ * Reads every `*.verified.json` in the run folder (`{ accepted: Proposal[] }`), and only that folder: an
+ * earlier run's proposals are never applied unless its folder is named. Checks each proposal again against
+ * the files as they are now, and writes through the board's own serialiser. Refuses to write if the result
+ * would add a `check` error. Writes `links-report.md` in the run folder either way, naming the run. Safe to
+ * run twice: anything already applied is skipped.
  */
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { checkCatalogue, issueKey } from '../shared/check.ts'
 import type { Item } from '../shared/types.ts'
 import { REQUIREMENTS_DIR, fileExistsIn, loadCatalogue, readConfig, readLayout, writeItem } from '../server/catalogueFs.ts'
 import { applyProposals, type Outcome, type Proposal } from './linkProposals.ts'
+import { pickLinkRun, type LinkRun } from './linkRuns.ts'
 
+const root = join(dirname(fileURLToPath(import.meta.url)), '../.links')
 const dirArg = process.argv.slice(2).find((a) => !a.startsWith('--'))
-const dir = resolve(dirArg ?? join(dirname(fileURLToPath(import.meta.url)), '../.links'))
 const dry = process.argv.includes('--dry-run')
 
-const files = readdirSync(dir)
-  .filter((f) => f.endsWith('.verified.json'))
-  .sort()
+let run: LinkRun
+try {
+  run = pickLinkRun(root, dirArg)
+} catch (e) {
+  console.error((e as Error).message)
+  process.exit(1)
+}
+const { dir, files } = run
+const runName = `${dir}${run.started ? ` (started ${run.started})` : ''}`
 const proposals: Proposal[] = files.flatMap((f) => (JSON.parse(readFileSync(join(dir, f), 'utf8')) as { accepted?: Proposal[] }).accepted ?? [])
 
 const { items, questions, config } = loadCatalogue()
@@ -36,8 +45,14 @@ const newErrors = added.filter((i) => i.severity === 'error')
 
 writeFileSync(join(dir, 'links-report.md'), report(outcomes, added.map((i) => `${i.severity} ${i.id}: ${i.message}`)))
 const applied = outcomes.filter((o) => !o.skipped).length
+console.log(`Run ${runName}`)
 console.log(`${files.length} batch file(s), ${proposals.length} proposal(s): ${applied} apply, ${outcomes.length - applied} skipped, ${changed.size} file(s) change`)
 for (const i of added) console.log(`${i.severity === 'error' ? 'ERROR' : 'warn '}  ${i.id.padEnd(10)} ${i.message}`)
+if (!files.length) {
+  const earlier = run.earlier[0]
+  console.warn(`WARNING: no proposal files in ${dir}.${earlier ? ` The newest earlier run with proposals is ${earlier}: pass it (links:apply -- ${earlier}) if that is the run to apply (links:index started a new run since).` : ' Run the link-requirements workflow first.'}`)
+}
+if (run.loose.length) console.log(`Not applied: ${run.loose.length} proposal file(s) left in ${root} from before link runs had their own folders (${run.loose.join(', ')}). Delete them when you no longer need them.`)
 console.log(`Report: ${join(dir, 'links-report.md')}`)
 if (newErrors.length) {
   console.error(`Not written: ${newErrors.length} new check error(s).`)
@@ -67,8 +82,11 @@ function report(outcomes: Outcome[], issues: string[]): string {
   return [
     '# Link proposals',
     '',
+    `Run: ${runName}, ${files.length} batch file(s)${files.length ? `: ${files.join(', ')}` : ''}.`,
+    '',
     `${applied} ${dry ? 'to apply' : 'applied'}, ${outcomes.length - applied} skipped, across ${ids.length} item(s).`,
     '',
+    ...(run.loose.length ? [`Not applied: ${run.loose.length} proposal file(s) from before link runs had their own folders, left in ${root}.`, ''] : []),
     ...(issues.length ? ['## New check issues', '', ...issues.map((i) => `- ${i}`), ''] : []),
     ...ids.flatMap((id) => [`## ${name(id)}`, '', ...byItem.get(id)!.map(line), '']),
   ].join('\n')
