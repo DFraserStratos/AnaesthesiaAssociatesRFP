@@ -1,6 +1,614 @@
 {
   "id": "US-03.7.2",
-  "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 39b builds this.",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "add-billing-event",
+      "app": "web",
+      "caption": "Add a billing event: a free-form charge or credit on the Procedure",
+      "setup": [
+        {
+          "goto": "/web/lists"
+        },
+        {
+          "trigger": "stage-post-op"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "start": "/web/lists?q=Bennett",
+      "states": [
+        {
+          "state": "charge",
+          "caption": "A charge with a description and an amount, here a nerve catheter",
+          "steps": [
+            {
+              "wait": "[data-shot=web-lookback-search] tr[data-booking-id]"
+            },
+            {
+              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=procedure-events]"
+            },
+            {
+              "click": "[data-shot=add-billing-event] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=add-billing-event-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-shot=add-billing-event-sheet] input[data-shot=billing-event-description]",
+              "value": "Nerve catheter"
+            },
+            {
+              "fill": "[data-shot=add-billing-event-sheet] input[data-shot=billing-event-amount]",
+              "value": "180"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=add-billing-event-sheet]"
+          ]
+        },
+        {
+          "state": "credit",
+          "caption": "A credit reduces what is owed",
+          "steps": [
+            {
+              "wait": "[data-shot=web-lookback-search] tr[data-booking-id]"
+            },
+            {
+              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=procedure-events]"
+            },
+            {
+              "click": "[data-shot=add-billing-event] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=add-billing-event-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=add-billing-event-sheet] button:text-is(\"Credit\")"
+            },
+            {
+              "fill": "[data-shot=add-billing-event-sheet] input[data-shot=billing-event-description]",
+              "value": "Goodwill adjustment"
+            },
+            {
+              "fill": "[data-shot=add-billing-event-sheet] input[data-shot=billing-event-amount]",
+              "value": "40"
+            },
+            {
+              "wait": "[data-shot=add-billing-event-sheet] [data-shot=billing-credit-caption]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=add-billing-event-sheet]"
+          ]
+        },
+        {
+          "state": "added",
+          "caption": "Its own line item on the Procedure, awaiting review and billed in the next run",
+          "steps": [
+            {
+              "wait": "[data-shot=web-lookback-search] tr[data-booking-id]"
+            },
+            {
+              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=procedure-events]"
+            },
+            {
+              "click": "[data-shot=add-billing-event] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=add-billing-event-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-shot=add-billing-event-sheet] input[data-shot=billing-event-description]",
+              "value": "Nerve catheter"
+            },
+            {
+              "fill": "[data-shot=add-billing-event-sheet] input[data-shot=billing-event-amount]",
+              "value": "180"
+            },
+            {
+              "click": "[data-shot=add-billing-event-sheet] [data-shot=add-billing-event-save]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "wait": "[data-shot=procedure-event-row][data-kind=billing]"
+            },
+            {
+              "scroll": "[data-shot=procedure-event-row][data-kind=billing]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-event-row][data-kind=billing]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "add-billing-event",
+      "app": "mobile",
+      "caption": "Add a billing event: a free-form charge or credit on the Procedure, on the phone",
+      "setup": [
+        {
+          "goto": "/mobile/lists"
+        },
+        {
+          "trigger": "stage-post-op"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "start": "/mobile/lists?q=Bennett",
+      "states": [
+        {
+          "state": "charge",
+          "caption": "A charge with a description and an amount, here a nerve catheter, on the phone",
+          "steps": [
+            {
+              "wait": "[data-shot=mobile-lookback-search] button[data-booking-id]"
+            },
+            {
+              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=procedure-events]"
+            },
+            {
+              "click": "[data-aa-mobile-product] [data-shot=add-billing-event] >> nth=0"
+            },
+            {
+              "wait": "[data-aa-mobile-product] [data-shot=add-billing-event-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-aa-mobile-product] [data-shot=add-billing-event-sheet] input[data-shot=billing-event-description]",
+              "value": "Nerve catheter"
+            },
+            {
+              "fill": "[data-aa-mobile-product] [data-shot=add-billing-event-sheet] input[data-shot=billing-event-amount]",
+              "value": "180"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [data-shot=add-billing-event-sheet]"
+          ]
+        },
+        {
+          "state": "credit",
+          "caption": "A credit reduces what is owed, on the phone",
+          "steps": [
+            {
+              "wait": "[data-shot=mobile-lookback-search] button[data-booking-id]"
+            },
+            {
+              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=procedure-events]"
+            },
+            {
+              "click": "[data-aa-mobile-product] [data-shot=add-billing-event] >> nth=0"
+            },
+            {
+              "wait": "[data-aa-mobile-product] [data-shot=add-billing-event-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-aa-mobile-product] [data-shot=add-billing-event-sheet] button:text-is(\"Credit\")"
+            },
+            {
+              "fill": "[data-aa-mobile-product] [data-shot=add-billing-event-sheet] input[data-shot=billing-event-description]",
+              "value": "Goodwill adjustment"
+            },
+            {
+              "fill": "[data-aa-mobile-product] [data-shot=add-billing-event-sheet] input[data-shot=billing-event-amount]",
+              "value": "40"
+            },
+            {
+              "wait": "[data-aa-mobile-product] [data-shot=add-billing-event-sheet] [data-shot=billing-credit-caption]"
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [data-shot=add-billing-event-sheet]"
+          ]
+        },
+        {
+          "state": "added",
+          "caption": "Its own line item on the Procedure, awaiting review and billed in the next run, on the phone",
+          "steps": [
+            {
+              "wait": "[data-shot=mobile-lookback-search] button[data-booking-id]"
+            },
+            {
+              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=procedure-events]"
+            },
+            {
+              "click": "[data-aa-mobile-product] [data-shot=add-billing-event] >> nth=0"
+            },
+            {
+              "wait": "[data-aa-mobile-product] [data-shot=add-billing-event-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-aa-mobile-product] [data-shot=add-billing-event-sheet] input[data-shot=billing-event-description]",
+              "value": "Nerve catheter"
+            },
+            {
+              "fill": "[data-aa-mobile-product] [data-shot=add-billing-event-sheet] input[data-shot=billing-event-amount]",
+              "value": "180"
+            },
+            {
+              "click": "[data-aa-mobile-product] [data-shot=add-billing-event-sheet] [data-shot=add-billing-event-save]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "wait": "[data-aa-mobile-product] [data-shot=procedure-event-row][data-kind=billing]"
+            },
+            {
+              "scroll": "[data-aa-mobile-product] [data-shot=procedure-event-row][data-kind=billing]"
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [data-shot=procedure-event-row][data-kind=billing]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "billed",
+      "app": "admin",
+      "caption": "Every event is billed in the next run, never held for the Procedure's invoice",
+      "setup": [
+        {
+          "goto": "/web/lists"
+        },
+        {
+          "trigger": "stage-post-op"
+        },
+        {
+          "wait": 800
+        }
+      ],
+      "start": "/admin/review",
+      "states": [
+        {
+          "state": "on-invoice",
+          "caption": "With the same billable party's invoice in the run, each event is its own dated line on it, the credit negative",
+          "steps": [
+            {
+              "goto": "/web/lists?q=Bennett"
+            },
+            {
+              "wait": "[data-shot=web-lookback-search] tr[data-booking-id]"
+            },
+            {
+              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=procedure-events]"
+            },
+            {
+              "click": "[data-shot=add-pre-post-op-event] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=add-event-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=add-event-sheet] [data-shot=event-type-row][data-type=postOpWardReview]"
+            },
+            {
+              "click": "[data-shot=add-event-sheet] [data-shot=add-event-save]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=add-billing-event] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=add-billing-event-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-shot=add-billing-event-sheet] input[data-shot=billing-event-description]",
+              "value": "Nerve catheter"
+            },
+            {
+              "fill": "[data-shot=add-billing-event-sheet] input[data-shot=billing-event-amount]",
+              "value": "180"
+            },
+            {
+              "click": "[data-shot=add-billing-event-sheet] [data-shot=add-billing-event-save]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=add-billing-event] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=add-billing-event-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=add-billing-event-sheet] button:text-is(\"Credit\")"
+            },
+            {
+              "fill": "[data-shot=add-billing-event-sheet] input[data-shot=billing-event-description]",
+              "value": "Goodwill adjustment"
+            },
+            {
+              "fill": "[data-shot=add-billing-event-sheet] input[data-shot=billing-event-amount]",
+              "value": "40"
+            },
+            {
+              "click": "[data-shot=add-billing-event-sheet] [data-shot=add-billing-event-save]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr[data-kind=postOp]:has-text(\"Coral Bennett\")"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            },
+            {
+              "click": "[data-shot=event-review-sheet] [data-shot=event-review-approve]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr[data-kind=billing]:has-text(\"Nerve catheter\")"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            },
+            {
+              "click": "[data-shot=event-review-sheet] [data-shot=event-review-approve]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr[data-kind=billing]:has-text(\"Goodwill\")"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            },
+            {
+              "click": "[data-shot=event-review-sheet] [data-shot=event-review-approve]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "goto": "/admin/review"
+            },
+            {
+              "click": "role=button[name=/^Review .*Souter.*Wed 15 Jul$/]"
+            },
+            {
+              "wait": "role=button[name=\"Authorise for billing\"]"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": "text=\"List authorised · locked for billing\""
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "wait": "[data-shot=invoice-list-event-lines]"
+            },
+            {
+              "click": "[data-shot=invoice-list-event-lines] >> nth=0"
+            },
+            {
+              "wait": "tr[data-shot=invoice-event-lines]"
+            },
+            {
+              "scroll": "tr[data-shot=invoice-event-lines] >> nth=0"
+            }
+          ],
+          "highlight": [
+            "tr[data-shot=invoice-event-lines]"
+          ]
+        },
+        {
+          "state": "own-invoice",
+          "caption": "With no invoice for its billable party in the run, the event is an invoice of its own, traceable to the Procedure and its invoice",
+          "steps": [
+            {
+              "goto": "/admin/review"
+            },
+            {
+              "click": "role=button[name=/^Review .*Souter.*Wed 15 Jul$/]"
+            },
+            {
+              "wait": "role=button[name=\"Authorise for billing\"]"
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
+            },
+            {
+              "wait": "text=\"List authorised · locked for billing\""
+            },
+            {
+              "goto": "/web/lists?q=Bennett"
+            },
+            {
+              "wait": "[data-shot=web-lookback-search] tr[data-booking-id]"
+            },
+            {
+              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+            },
+            {
+              "wait": "[data-shot=procedure-events]"
+            },
+            {
+              "click": "[data-shot=add-pre-post-op-event] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=add-event-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=add-event-sheet] [data-shot=event-type-row][data-type=painConsult]"
+            },
+            {
+              "click": "[data-shot=add-event-sheet] [data-shot=add-event-save]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/review?tab=events"
+            },
+            {
+              "wait": "[data-shot=admin-events-queue]"
+            },
+            {
+              "click": "[data-shot=admin-events-queue] tr[data-kind=postOp]:has-text(\"Pain consult\")"
+            },
+            {
+              "wait": "[data-shot=event-review-sheet]"
+            },
+            {
+              "click": "[data-shot=event-review-sheet] [data-shot=event-review-approve]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "press": "Escape"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "goto": "/admin/billing"
+            },
+            {
+              "trigger": "run-next-billing-run"
+            },
+            {
+              "wait": 800
+            },
+            {
+              "goto": "/admin/invoices"
+            },
+            {
+              "click": "[data-shot=invoice-list-kind][data-kind=additional] >> nth=0"
+            },
+            {
+              "wait": "[data-shot=invoice-additional-of]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoice-additional-of]"
+          ]
+        }
+      ]
+    }
+  ]
 }

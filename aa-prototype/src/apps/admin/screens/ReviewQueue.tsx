@@ -8,16 +8,14 @@ import { creditDetailOf, eventLines } from '../../../domain/billing/procedureEve
 import type { ProcedureEvent } from '../../../domain/types'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { daysBetween } from '../../../domain/dateDays'
-import { CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, PRE_POST_OP_COPY } from '../../../shared/procedureEventCopy'
-import { kindRowText } from '../../../shared/booking/ProcedureEventsList'
-import { pricingText } from '../flows/EventReviewSheet'
+import { CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, PRE_POST_OP_COPY, kindRowText, pricingText } from '../../../shared/procedureEventCopy'
 import { drSurname, formatCurrency, plural } from '../../../shared/format'
 import { EventReviewSheet } from '../flows/EventReviewSheet'
 import { ChangedSinceSubmittedPill } from '../components/ChangedSinceSubmitted'
 import { dayMicroCap, hhmm, shortDay } from '../../../shared/format'
 import type { AssignedList } from '../../../domain/types'
 import { listShortLabel, listSourceLabels } from '../util'
-import { Card, LineTabLink, LineTabs, PageHeader, TextAction } from '../../../shared/ui'
+import { Card, LineTabLink, LineTabs, PageHeader, Pill, TextAction } from '../../../shared/ui'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 
 interface ReviewQueueProps {
@@ -283,7 +281,7 @@ function EventsQueue({ actor }: { actor: Actor }) {
                   </Td>
                   <Td>{partyName}</Td>
                   <Td mono bold align="right" nowrap>
-                    {amount !== undefined ? PRE_POST_OP_COPY.amount(amount) : <span data-shot="review-needs-price" style={{ fontWeight: 400, color: neutral.slate }}>{PRE_POST_OP_COPY.setPrice}</span>}
+                    {amount !== undefined ? PRE_POST_OP_COPY.amount(amount) : <Pill size="sm" tone="warning" shot="review-needs-price">{PRE_POST_OP_COPY.needsPriceShort}</Pill>}
                   </Td>
                   <Td nowrap>{e.addedBy.role === 'office' ? 'Office' : drSurname(e.addedBy.who)}</Td>
                   <Td mono align="right" nowrap>{plural(waiting, 'day')}</Td>

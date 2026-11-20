@@ -18,7 +18,7 @@ import { addContractEventFee, editContractEventFee, removeContractEventFee, useA
 import { Button, FieldLabel } from '../../../shared'
 import { SelectField, TextAction, TextField, visuallyHidden } from '../../../shared/ui'
 import { TableShell, Td, Th } from '../../../shared/table'
-import { EVENT_TYPE_LABEL, PRE_POST_OP_COPY as COPY } from '../../../shared/procedureEventCopy'
+import { EVENT_LABELS, EVENT_TYPE_LABEL, PRE_POST_OP_COPY as COPY } from '../../../shared/procedureEventCopy'
 import { formatCurrency } from '../../../shared/format'
 import { neutral } from '../../../theme/tokens'
 
@@ -44,7 +44,7 @@ export function ContractEventFees({ contract, actor, onError }: { contract: Cont
   const [adding, setAdding] = useState<Draft>({ ...EMPTY })
 
   function startEdit(f: ContractEventFee) {
-    setEditing({ id: f.id, draft: { eventType: f.eventType, holderCode: f.holderCode ?? '', holderDescription: f.holderDescription ?? '', price: f.fixedPrice.toFixed(2) } })
+    setEditing({ id: f.id, draft: { eventType: f.eventType, holderCode: f.holderCode ?? '', holderDescription: f.holderDescription ?? '', price: formatCurrency(f.fixedPrice).replace('$', '') } })
     onError(null)
   }
 
@@ -85,10 +85,10 @@ export function ContractEventFees({ contract, actor, onError }: { contract: Cont
       <TableShell label={COPY.eventFeesTitle} density="dense">
         <thead>
           <tr>
-            <Th>Event type</Th>
-            <Th>{COPY.holderCodeLabel}</Th>
-            <Th align="right">Fixed price (ex GST)</Th>
-            <Th align="right"><span style={visuallyHidden}>Actions</span></Th>
+            <Th>{COPY.eventTypeHead}</Th>
+            <Th width={200}>{COPY.holderCodeLabel}</Th>
+            <Th align="right" nowrap>{COPY.fixedPriceLabel}</Th>
+            <Th align="right"><span style={visuallyHidden}>{COPY.actionsHead}</span></Th>
           </tr>
         </thead>
         <tbody>
@@ -100,17 +100,20 @@ export function ContractEventFees({ contract, actor, onError }: { contract: Cont
           {fees.map((f) =>
             editing?.id === f.id ? (
               <tr key={f.id} data-shot="contract-event-fee-row" data-fee-id={f.id}>
-                <Td style={{ verticalAlign: 'middle' }}>{typeSelect(editing.draft.eventType, (eventType) => setEditing({ ...editing, draft: { ...editing.draft, eventType } }), 'Event type')}</Td>
+                <Td style={{ verticalAlign: 'middle' }}>{typeSelect(editing.draft.eventType, (eventType) => setEditing({ ...editing, draft: { ...editing.draft, eventType } }), COPY.eventTypeHead)}</Td>
                 <Td style={{ verticalAlign: 'middle' }}>
-                  <TextField label={COPY.holderCodeLabel} hideLabel size="compact" mono value={editing.draft.holderCode} onChange={(holderCode) => setEditing({ ...editing, draft: { ...editing.draft, holderCode } })} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <TextField label={COPY.holderCodeLabel} hideLabel size="compact" mono value={editing.draft.holderCode} onChange={(holderCode) => setEditing({ ...editing, draft: { ...editing.draft, holderCode } })} />
+                    <TextField label={COPY.holderDescriptionLabel} hideLabel size="compact" placeholder={COPY.holderDescriptionLabel} value={editing.draft.holderDescription} onChange={(holderDescription) => setEditing({ ...editing, draft: { ...editing.draft, holderDescription } })} />
+                  </div>
                 </Td>
                 <Td align="right" style={{ verticalAlign: 'middle' }}>
                   <TextField label={COPY.fixedPriceLabel} hideLabel size="compact" mono align="right" inputMode="decimal" width={96} value={editing.draft.price} onChange={(price) => setEditing({ ...editing, draft: { ...editing.draft, price } })} />
                 </Td>
                 <Td align="right" nowrap style={{ verticalAlign: 'middle' }}>
                   <span style={{ display: 'inline-flex', gap: 10 }}>
-                    <TextAction size="sm" flush onClick={saveEdit}>Save</TextAction>
-                    <TextAction size="sm" flush onClick={() => setEditing(null)}>Cancel</TextAction>
+                    <TextAction size="sm" flush onClick={saveEdit}>{COPY.save}</TextAction>
+                    <TextAction size="sm" flush onClick={() => setEditing(null)}>{COPY.cancel}</TextAction>
                   </span>
                 </Td>
               </tr>
@@ -124,20 +127,23 @@ export function ContractEventFees({ contract, actor, onError }: { contract: Cont
                 <Td mono bold align="right" style={{ fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(f.fixedPrice)}</Td>
                 <Td align="right" nowrap>
                   <span style={{ display: 'inline-flex', gap: 10 }}>
-                    <TextAction size="sm" flush onClick={() => startEdit(f)} label={`Edit the ${EVENT_TYPE_LABEL[f.eventType]} fee`}>Edit</TextAction>
-                    <TextAction size="sm" flush onClick={() => remove(f.id)} label={`Remove the ${EVENT_TYPE_LABEL[f.eventType]} fee`}>Remove</TextAction>
+                    <TextAction size="sm" flush onClick={() => startEdit(f)} label={`${EVENT_LABELS.edit} the ${EVENT_TYPE_LABEL[f.eventType]} fee`}>{EVENT_LABELS.edit}</TextAction>
+                    <TextAction size="sm" flush onClick={() => remove(f.id)} label={`${EVENT_LABELS.remove} the ${EVENT_TYPE_LABEL[f.eventType]} fee`}>{EVENT_LABELS.remove}</TextAction>
                   </span>
                 </Td>
               </tr>
             ),
           )}
           <tr data-shot="contract-event-fee-add">
-            <Td style={{ verticalAlign: 'middle', borderBottom: 'none' }}>{typeSelect(adding.eventType, (eventType) => setAdding({ ...adding, eventType }), 'New fee event type')}</Td>
+            <Td style={{ verticalAlign: 'middle', borderBottom: 'none' }}>{typeSelect(adding.eventType, (eventType) => setAdding({ ...adding, eventType }), COPY.newFee(COPY.eventTypeHead))}</Td>
             <Td style={{ verticalAlign: 'middle', borderBottom: 'none' }}>
-              <TextField label="New fee holder code" hideLabel size="compact" mono placeholder={COPY.holderCodeLabel} value={adding.holderCode} onChange={(holderCode) => setAdding({ ...adding, holderCode })} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <TextField label={COPY.newFee(COPY.holderCodeLabel)} hideLabel size="compact" mono placeholder={COPY.holderCodeLabel} value={adding.holderCode} onChange={(holderCode) => setAdding({ ...adding, holderCode })} />
+                <TextField label={COPY.newFee(COPY.holderDescriptionLabel)} hideLabel size="compact" placeholder={COPY.holderDescriptionLabel} value={adding.holderDescription} onChange={(holderDescription) => setAdding({ ...adding, holderDescription })} />
+              </div>
             </Td>
             <Td align="right" style={{ verticalAlign: 'middle', borderBottom: 'none' }}>
-              <TextField label="New fee fixed price (ex GST)" hideLabel size="compact" mono align="right" inputMode="decimal" width={96} placeholder="0.00" value={adding.price} onChange={(price) => setAdding({ ...adding, price })} />
+              <TextField label={COPY.newFee(COPY.fixedPriceLabel)} hideLabel size="compact" mono align="right" inputMode="decimal" width={96} placeholder="0.00" value={adding.price} onChange={(price) => setAdding({ ...adding, price })} />
             </Td>
             <Td align="right" style={{ verticalAlign: 'middle', borderBottom: 'none' }}>
               <Button variant="primary" size="compact" onClick={add} shot="contract-event-fee-add-button">

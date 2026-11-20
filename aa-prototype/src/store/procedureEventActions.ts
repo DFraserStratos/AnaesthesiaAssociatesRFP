@@ -67,6 +67,7 @@ import {
   isPricedKind,
   issueKindInvoiceInto,
   planKindInvoice,
+  stampBundledEvents,
   updateKindEvent,
   type KindDetail,
   type OfficePriceInput,
@@ -785,13 +786,17 @@ export function runEventInvoicing(api: AppStoreApi, actor: Actor, opts: { eventI
   type Planned = { kind: 'additional'; plan: PlannedAdditional } | { kind: 'credit'; eventId: string } | { kind: 'own'; plan: PlannedKindInvoice }
   const planned: Planned[] = []
   const skipped: EventRunResult['skipped'] = []
+  const backs: { eventId: string; message: string }[] = []
   for (const event of due) {
     // Pre-op, post-op and billing events (catch-up Phase 39b): this run raises no invoice for their party, so each is its own.
     if (isPricedKind(event.kind)) {
       if (eventInvoicing(event, { runInvoiceForParty: false }) !== 'ownInvoice') continue
       const plan = planKindInvoice(state, event)
-      if ('message' in plan) skipped.push({ eventId: event.id, message: plan.message })
-      else planned.push({ kind: 'own', plan })
+      if ('message' in plan) {
+        skipped.push({ eventId: event.id, message: plan.message })
+        // A credit that can never ride on an invoice goes back to review rather than wait for ever.
+        if (plan.backToReview === true) backs.push({ eventId: event.id, message: plan.message })
+      } else planned.push({ kind: 'own', plan })
       continue
     }
     if (event.kind === 'credit') {
@@ -809,7 +814,7 @@ export function runEventInvoicing(api: AppStoreApi, actor: Actor, opts: { eventI
     if (eventInvoicing(event, { runInvoiceForParty: false }) !== 'ownInvoice') continue
     planned.push({ kind: 'additional', plan })
   }
-  if (planned.length === 0) return refuse('nothingToInvoice', skipped[0]?.message ?? EVENT_MESSAGES.nothingToRun)
+  if (planned.length === 0 && backs.length === 0) return refuse('nothingToInvoice', skipped[0]?.message ?? EVENT_MESSAGES.nothingToRun)
 
   const invoiceIds: InvoiceId[] = []
   const pairIds: string[] = []
@@ -851,6 +856,10 @@ export function runEventInvoicing(api: AppStoreApi, actor: Actor, opts: { eventI
       invoiceIds.push(...issued.value.invoiceIds)
       pairIds.push(...issued.value.pairIds)
     }
+    // Catch-up Phase 39b: credits that can never ride on an invoice, back to review with no price.
+    const sent = stampBundledEvents(work.procedureEvents, { invoiceIds: [], invoices: work.maps.invoices, invoiceLines: {} }, { bundled: [], backToReview: backs }, atISO)
+    work.procedureEvents = sent.procedureEvents
+    metas.push(...sent.metas)
     return {
       billing: { ...s.billing, invoices: work.maps.invoices, invoiceLines: work.maps.invoiceLines, ledger: work.maps.ledger, creditNotes: work.creditNotes, negativeInvoices: work.negativeInvoices },
       schedule: { ...s.schedule, procedureEvents: work.procedureEvents },

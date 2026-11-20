@@ -22,10 +22,9 @@ import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { approveProcedureEvent, currentReversalPlan, declineProcedureEvent, eventPartyName, eventPriceNow, invoiceAddresseeName, isPricedKind, originalForEvent, procedureOwnerSurname, replacementEventsOf, useAppStore, type Actor } from '../../../store'
 import { Button, DefList, DefRow, Eyebrow, FormError, Notice, Pill, ResultLine, TextArea, TextField } from '../../../shared/ui'
 import { formatCurrency, shortDay, stampText } from '../../../shared/format'
-import { ADDITIONAL_INVOICE_COPY as COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, EVENT_STATUS_LABEL, PRE_POST_OP_COPY, eventStatusLabel, raisedByText } from '../../../shared/procedureEventCopy'
-import { EVENT_STATUS_TONE, kindRowText } from '../../../shared/booking/ProcedureEventsList'
+import { ADDITIONAL_INVOICE_COPY as COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, EVENT_STATUS_LABEL, PRE_POST_OP_COPY, eventStatusLabel, kindRowText, pricingText, raisedByText } from '../../../shared/procedureEventCopy'
+import { EVENT_STATUS_TONE } from '../../../shared/booking/ProcedureEventsList'
 import { parseAmount } from '../../../domain/billing/money'
-import type { EventPricing } from '../../../domain/billing/prePostOpEvent'
 import { FreeFormTotals } from '../../../shared/booking/AdditionalInvoiceForm'
 import { CreditMoneyState } from '../../../shared/booking/CreditForm'
 import { SidePanel } from '../components/SidePanel'
@@ -197,24 +196,6 @@ export function EventReviewSheet({ eventId, actor, onClose }: EventReviewSheetPr
   )
 }
 
-/** How an event's price reads to the office (catch-up Phase 39b): the calculation, the Contract fee, the typed fee or the office's price. */
-export function pricingText(p: EventPricing): string {
-  switch (p.basis) {
-    case 'time':
-      return PRE_POST_OP_COPY.timeCalculation(p.minutes ?? 0, p.timeUnits ?? 0, formatCurrency(p.rate ?? 0), p.rateOrigin ?? 'unitValue', formatCurrency(p.amount), p.discountPercent)
-    case 'contractEventFee':
-      return p.replacedMinutes !== undefined
-        ? PRE_POST_OP_COPY.feeReplaces(p.holderCode ?? 'Contract fee', formatCurrency(p.amount), p.replacedMinutes)
-        : `Contract fee ${p.holderCode ?? ''} · ${formatCurrency(p.amount)}`
-    case 'typedFixedFee':
-      return `${PRE_POST_OP_COPY.fixedFee} · ${formatCurrency(p.amount)}`
-    case 'billingEvent':
-      return PRE_POST_OP_COPY.amount(p.amount)
-    case 'officePrice':
-      return `${PRE_POST_OP_COPY.setPrice} · ${formatCurrency(p.amount)}${p.officeReason !== undefined ? ` · ${p.officeReason}` : ''}`
-  }
-}
-
 /**
  * A pre-op, post-op or billing event under review (catch-up Phase 39b): what
  * was recorded, its price as the office would approve it now (or as frozen),
@@ -243,7 +224,6 @@ function KindReviewBody({
   const row = kindRowText(state, event)
   const now = event.pricing === undefined ? eventPriceNow(state, event) : undefined
   const pricing = event.pricing ?? (now?.kind === 'priced' ? now.pricing : undefined)
-  const needsPrice = now?.kind === 'refused'
   const settable = awaiting && event.detail.kind !== 'billing'
   return (
     <div data-shot="event-review-kind" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -258,13 +238,13 @@ function KindReviewBody({
           </DefRow>
         )}
         {pricing !== undefined && (
-          <DefRow labelTone="slate" label="Price">
+          <DefRow labelTone="slate" label={PRE_POST_OP_COPY.priceLabel}>
             <span className="mono" data-shot="event-review-price">{pricingText(pricing)}</span>
           </DefRow>
         )}
       </DefList>
       {awaiting && event.review.reason !== undefined && <Notice tone="warning">{event.review.reason}</Notice>}
-      {needsPrice && now?.kind === 'refused' && (
+      {now?.kind === 'refused' && (
         <Notice tone="warning" shot="event-review-needs-price">
           {now.message}
         </Notice>

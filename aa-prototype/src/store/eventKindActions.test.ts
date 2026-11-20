@@ -27,6 +27,7 @@ import { regenerateInvoiceFromLock } from './locks'
 import { bookingsForList } from './selectors'
 import { editContract } from './contractActions'
 import type { List } from '../domain/types'
+import { SEED_PREPAID_BOOKING_ID } from '../domain/seed'
 import type { Actor } from './mutate'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -330,5 +331,75 @@ describe('Contract event fees', () => {
     api = prev
     authorise(LIST)
     expect(liveInvoiceForProcedure(api.getState(), PROC)!.subtotal).toBe(withFee)
+  })
+})
+
+describe('review fixes (catch-up Phase 39b review pass)', () => {
+  it('a recorded Contract fee since removed can still be approved at the office price', () => {
+    const id = add(ward({ type: 'painConsult', recording: { kind: 'fixedFee', source: 'contractEventFee', contractId: 'CT-STG-ACC', eventFeeId: 'CEF001' } }))
+    expect(removeContractEventFee(api, OFFICE, 'CEF001').ok).toBe(true)
+    expect(approveProcedureEvent(api, OFFICE, id)).toMatchObject({ ok: false, code: 'eventFeeGone' })
+    approve(id, { amount: 110, reason: 'Fee withdrawn; agreed with the holder' })
+    expect(api.getState().schedule.procedureEvents[id]!.pricing).toMatchObject({ basis: 'officePrice', amount: 110 })
+  })
+
+  it('a credit with no invoice for its party in the run goes back to review, unpriced; never stuck approved', () => {
+    const credit = addBillingEvent(api, owner(), PROC, { direction: 'credit', description: 'Goodwill', amount: 40, occurredOnISO: '2026-07-21', party: { sameAs: false, personInput: { kind: 'other', name: 'Ward 5 Trust', email: 'accounts@ward5.example' } } })
+    if (!credit.ok) throw new Error(credit.message)
+    approve(credit.value.eventId)
+    // The explicit run before the List is billed leaves it waiting for the List's run.
+    expect(runEventInvoicing(api, OFFICE)).toMatchObject({ ok: false })
+    expect(api.getState().schedule.procedureEvents[credit.value.eventId]!.review.state).toBe('approved')
+    authorise(LIST)
+    const e = api.getState().schedule.procedureEvents[credit.value.eventId]!
+    expect(e.review.state).toBe('awaitingReview')
+    expect(e.pricing).toBeUndefined()
+    expect(e.invoiceId).toBeUndefined()
+    // The office can now decline it.
+    expect(declineProcedureEvent(api, OFFICE, e.id, 'Use a credit note').ok).toBe(true)
+  })
+
+  it('a credit that brings the invoice to exactly $0.00 makes it a no-charge invoice (no payable leg, no BCTI)', () => {
+    const baseline = createAppStore()
+    const unwireB = wireBillingRun(baseline)
+    const prev = api
+    api = baseline
+    authorise(LIST)
+    const subtotal = liveInvoiceForProcedure(baseline.getState(), PROC)!.subtotal
+    unwireB()
+    api = prev
+    const credit = addBillingEvent(api, owner(), PROC, { direction: 'credit', description: 'Written off', amount: subtotal, occurredOnISO: '2026-07-21', party: { sameAs: true } })
+    if (!credit.ok) throw new Error(credit.message)
+    approve(credit.value.eventId)
+    authorise(LIST)
+    const inv = liveInvoiceForProcedure(api.getState(), PROC)!
+    expect(inv).toMatchObject({ subtotal: 0, total: 0, noCharge: true })
+    expect(pairForInvoice(api.getState(), inv.id)?.payable).toBeUndefined()
+  })
+
+  it('the explicit run raises nothing for an event whose Booking was cancelled after approval', () => {
+    const id = add(ward())
+    approve(id)
+    expect(cancelBooking(api, OFFICE, BOOKING, 'Patient unwell').ok).toBe(true)
+    expect(runEventInvoicing(api, OFFICE)).toMatchObject({ ok: false, message: 'This Booking is cancelled.' })
+    expect(api.getState().schedule.procedureEvents[id]!.invoiceId).toBeUndefined()
+  })
+
+  it('un-ticked, unreviewed, approved-but-not-run and declined events add no BCTI', () => {
+    const before = bctiRecords(api.getState()).length
+    add(ward({ billable: false }))
+    add(ward())
+    approve(add(ward()))
+    const declined = add(ward())
+    expect(declineProcedureEvent(api, OFFICE, declined, 'No').ok).toBe(true)
+    expect(bctiRecords(api.getState()).length).toBe(before)
+  })
+
+  it('a credit billing event is offered on a prepaid Procedure (a prepayment invoice is not its invoice)', () => {
+    const booking = api.getState().schedule.bookings[SEED_PREPAID_BOOKING_ID]!
+    const list = api.getState().schedule.lists[booking.listId]!
+    const procedure = Object.values(api.getState().schedule.procedures).find((p) => p.bookingId === booking.id && Object.values(api.getState().billing.invoices).some((i) => i.kind === 'prePayment' && (i.procedureIds ?? []).includes(p.id)))!
+    const out = addBillingEvent(api, OFFICE, procedure.id, { direction: 'credit', description: 'Goodwill', amount: 10, occurredOnISO: list.dateISO, party: { sameAs: true } })
+    expect(out).toMatchObject({ ok: true })
   })
 })

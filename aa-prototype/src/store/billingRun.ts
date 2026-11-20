@@ -29,7 +29,7 @@
  * directly or wire explicitly and unsubscribe.
  */
 
-import type { BillingException, BookingId, InvoiceDelivery, InvoiceId } from '../domain/types'
+import type { BillingException, BookingId, InvoiceDelivery, InvoiceId, ProcedureEvent } from '../domain/types'
 import { emailProblem } from '../domain/billing/payer'
 import { materialiseInvoices } from './invoiceMaterialise'
 import { invoiceDraftsFromLock, LOCK_MISSING_MESSAGE, type BookingBuildResult } from '../domain/billing/lock'
@@ -55,9 +55,9 @@ import { planEventBundle, stampBundledEvents, type EventBundlePlan } from './eve
  * draft for their party (catch-up Phase 39b; OQ-121, D69: the List's run is a
  * billing run). Priced from each event's frozen `pricing`, never the lock.
  */
-function withEventBundle(state: AppState, bookingId: BookingId, result: BookingBuildResult): { bookingId: BookingId; result: BookingBuildResult; bundle?: EventBundlePlan } {
+function withEventBundle(state: AppState, bookingId: BookingId, result: BookingBuildResult, bookingEvents?: readonly ProcedureEvent[]): { bookingId: BookingId; result: BookingBuildResult; bundle?: EventBundlePlan } {
   if (result.kind !== 'invoices') return { bookingId, result }
-  const bundle = planEventBundle(state, bookingId, result.invoices)
+  const bundle = planEventBundle(state, bookingId, result.invoices, bookingEvents)
   if (bundle.bundled.length === 0 && bundle.backToReview.length === 0) return { bookingId, result }
   return { bookingId, result: { kind: 'invoices', invoices: bundle.drafts }, bundle }
 }
@@ -98,7 +98,12 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
   const bookings = bookingsForList(state, listId).filter((c) => c.cancellation === undefined)
   // From the lock alone: the engine never reads a master (US-08.1.1).
   // Catch-up Phase 39b: each Booking's approved events join the run's invoice for their party (`planEventBundle`, D69).
-  const built: { bookingId: BookingId; result: BookingBuildResult; bundle?: EventBundlePlan }[] = bookings.map((booking) => withEventBundle(state, booking.id, buildFromLock(state, booking.id)))
+  // The events grouped by Booking once for the whole run (full scale: never a scan of every event per Booking).
+  const eventsByBooking = new Map<string, ProcedureEvent[]>()
+  for (const e of Object.values(state.schedule.procedureEvents)) eventsByBooking.set(e.bookingId, [...(eventsByBooking.get(e.bookingId) ?? []), e])
+  const built: { bookingId: BookingId; result: BookingBuildResult; bundle?: EventBundlePlan }[] = bookings.map((booking) =>
+    withEventBundle(state, booking.id, buildFromLock(state, booking.id), eventsByBooking.get(booking.id) ?? []),
+  )
 
   const invoiceIds: InvoiceId[] = []
   const exceptions: BillingRunException[] = []

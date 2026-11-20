@@ -24,11 +24,10 @@ import { useMemo, useState } from 'react'
 import { neutral, radius } from '../../theme/tokens'
 import { creditDetailOf, eventLines, eventStatus, mayEditEvent, type ProcedureEventStatus } from '../../domain/billing/procedureEvent'
 import { freeFormSubtotal } from '../../domain/billing/additionalInvoice'
-import type { ProcedureEvent } from '../../domain/types'
 import { eventPartyName, eventsForProcedure, procedureOwner, raiseRefusal, removeProcedureEvent, useAppStore, type Actor } from '../../store'
 import { Button, Eyebrow, FormError, InlineConfirm, Pill, TextAction, type PillTone } from '../ui'
 import { shortDay } from '../format'
-import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, EVENT_TYPE_LABEL, PRE_POST_OP_COPY, eventStatusLabel, raisedByText } from '../procedureEventCopy'
+import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, PRE_POST_OP_COPY, eventStatusLabel, kindRowText, raisedByText } from '../procedureEventCopy'
 import { AdditionalInvoiceSheet } from './AdditionalInvoiceForm'
 import { AddBillingEventSheet, AddPrePostOpEventSheet } from './EventSheets'
 import { useCreditSheet } from './CreditSheetSlot'
@@ -42,33 +41,6 @@ export const EVENT_STATUS_TONE: Record<ProcedureEventStatus, PillTone> = {
   approved: 'neutral',
   invoiced: 'success',
   declined: 'neutral',
-}
-
-/**
- * A pre-op, post-op or billing event's row text (catch-up Phase 39b): its type
- * (and ACC code) or description, what was recorded, and the amount the viewer
- * may see once one exists: the frozen price, a typed fee or charge as typed,
- * a Contract event fee's fixed price. A time before review shows none (never a
- * calculation, `EVENT_RULES.anaesthetistSees`). Undefined for 38b's and 39's kinds.
- */
-export function kindRowText(
-  state: { masters: { contractEventFees: Record<string, { fixedPrice: number }> } },
-  e: ProcedureEvent,
-): { first: string; recorded: string; amount: number | undefined } | undefined {
-  const d = e.detail
-  if (d.kind === 'billing') {
-    const signed = d.direction === 'credit' ? -d.amount : d.amount
-    return { first: d.description, recorded: d.direction === 'credit' ? PRE_POST_OP_COPY.credit : PRE_POST_OP_COPY.charge, amount: e.pricing?.amount ?? signed }
-  }
-  if (d.kind !== 'preOp' && d.kind !== 'postOp') return undefined
-  const r = d.recording
-  const recorded = r.kind === 'time' ? PRE_POST_OP_COPY.minutes(r.minutes) : PRE_POST_OP_COPY.fixedFeeShort
-  const asRecorded = r.kind === 'fixedFee' ? (r.source === 'typed' ? r.amount : state.masters.contractEventFees[r.eventFeeId]?.fixedPrice) : undefined
-  return {
-    first: `${EVENT_TYPE_LABEL[d.type]}${d.code !== undefined ? ` · ${d.code}` : ''}`,
-    recorded,
-    amount: e.pricing?.amount ?? asRecorded,
-  }
 }
 
 export interface ProcedureEventsListProps {

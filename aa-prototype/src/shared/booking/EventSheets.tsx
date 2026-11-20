@@ -31,14 +31,14 @@ import {
   useAppStore,
   type Actor,
 } from '../../store'
-import { Button, Checkbox, FieldLabel, FormError, OptionRow, Segmented, TextField } from '../ui'
+import { Button, Checkbox, FieldHint, FieldLabel, FormError, OptionRow, Segmented, TextField } from '../ui'
 import { useSurface } from '../surface'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { SheetActions } from '../surface/SheetActions'
 import { NumberStepper } from '../capture/ui'
 import { EventPartyField, partyDraftOf, partyInputOf, type PartyDraft } from './AdditionalInvoiceForm'
 import { useBookingStore } from './draft'
-import { EVENT_TYPE_LABEL, PRE_POST_OP_COPY as COPY } from '../procedureEventCopy'
+import { EVENT_KIND_MESSAGES, EVENT_TYPE_LABEL, PRE_POST_OP_COPY as COPY } from '../procedureEventCopy'
 
 // ---------------------------------------------------------------------------
 // Shared parts
@@ -102,11 +102,12 @@ function TickAndParty({ procedureId, sameAsName, billable, onBillable, party, on
   )
 }
 
+/** A caption under a field: the shared `FieldHint`, carrying the hook recipes and specs target. */
 function Caption({ children, shot }: { children: ReactNode; shot?: string }) {
   return (
-    <span data-shot={shot} style={{ fontSize: 13, lineHeight: '19px', color: neutral.slate }}>
-      {children}
-    </span>
+    <div data-shot={shot}>
+      <FieldHint tone="slate">{children}</FieldHint>
+    </div>
   )
 }
 
@@ -158,7 +159,7 @@ function PrePostOpForm({ procedureId, actor, onClose, eventId }: SheetProps) {
     if (existing === undefined) setDate(defaultDate(k))
   }
 
-  function recording(): EventRecording | null {
+  function recording(): EventRecording {
     if (records === 'time') return { kind: 'time', minutes }
     if (fee !== undefined) return { kind: 'fixedFee', source: 'contractEventFee', contractId: fee.contractId, eventFeeId: fee.id }
     const n = parseAmount(amount)
@@ -166,16 +167,17 @@ function PrePostOpForm({ procedureId, actor, onClose, eventId }: SheetProps) {
   }
 
   function save() {
-    if (type === null) return setError({ message: kind === 'preOp' ? 'Pick a pre-op type.' : 'Pick a post-op type.', field: 'type' })
+    if (type === null) return setError({ message: EVENT_KIND_MESSAGES.pickType[kind], field: 'type' })
     const partyInput = partyInputOf(party)
-    if (partyInput === null) return setError({ message: 'Pick who to bill.', field: 'party' })
-    const rec = recording()!
+    if (partyInput === null) return setError({ message: EVENT_KIND_MESSAGES.pickParty, field: 'party' })
+    const rec = recording()
     const out =
       eventId === undefined
         ? addPrePostOpEvent(useAppStore, actor, procedureId, { kind, type, ...(code !== undefined ? { code } : {}), occurredOnISO: date, ...(start !== '' ? { startTime: start } : {}), recording: rec, billable, party: partyInput })
         : updateProcedureEvent(useAppStore, actor, eventId, {
             occurredOnISO: date,
-            ...(start !== '' ? { startTime: start } : {}),
+            // An emptied start time clears it ('' in the patch).
+            startTime: start,
             billable,
             party: partyInput,
             detail: { kind, type, recording: rec, ...(code !== undefined && type === 'accPreOpAssessment' ? { code } : {}) },
@@ -198,6 +200,8 @@ function PrePostOpForm({ procedureId, actor, onClose, eventId }: SheetProps) {
           { value: 'postOp', label: COPY.postOp },
         ]}
         onChange={pickKind}
+        // An event keeps its kind: editing one never switches Pre-op and Post-op.
+        disabled={eventId !== undefined}
       />
       <div data-shot="event-types" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <FieldLabel>{COPY.typeLabel}</FieldLabel>
@@ -211,7 +215,7 @@ function PrePostOpForm({ procedureId, actor, onClose, eventId }: SheetProps) {
         <div data-shot="acc-preop-presets" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {ACC_PREOP_PRESETS.map((p) => (
             <OptionRow key={p.code} selected={code === p.code} onClick={() => setCode(code === p.code ? undefined : p.code)} shot="acc-preop-preset" data-code={p.code}>
-              <span className="mono">{COPY.presetRow(p.code, p.label)}</span>
+              <span className="mono">{p.code}</span> · {EVENT_TYPE_LABEL.accPreOpAssessment}
             </OptionRow>
           ))}
           <Caption shot="acc-codes-caption">{COPY.accCodesCaption}</Caption>
@@ -236,7 +240,7 @@ function PrePostOpForm({ procedureId, actor, onClose, eventId }: SheetProps) {
       {records === 'time' ? (
         <div data-shot="event-minutes" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <FieldLabel>{COPY.minutesLabel}</FieldLabel>
-          <NumberStepper value={minutes} onChange={setMinutes} min={5} max={720} step={5} label="minutes" typeable={{ name: COPY.minutesLabel, accept: (n) => Number.isInteger(n) && n >= 1 && n <= 720 }} />
+          <NumberStepper value={minutes} onChange={setMinutes} min={5} max={720} step={5} label={COPY.minutesNoun} typeable={{ name: COPY.minutesLabel, accept: (n) => Number.isInteger(n) && n >= 1 && n <= 720 }} />
           <Caption shot="event-pricing-caption">{COPY.timePricingCaption}</Caption>
         </div>
       ) : fee !== undefined ? (
@@ -300,7 +304,7 @@ function BillingEventForm({ procedureId, actor, onClose, eventId }: SheetProps) 
 
   function save() {
     const partyInput = partyInputOf(party)
-    if (partyInput === null) return setError({ message: 'Pick who to bill.', field: 'party' })
+    if (partyInput === null) return setError({ message: EVENT_KIND_MESSAGES.pickParty, field: 'party' })
     const n = parseAmount(amount) ?? Number.NaN
     const out =
       eventId === undefined

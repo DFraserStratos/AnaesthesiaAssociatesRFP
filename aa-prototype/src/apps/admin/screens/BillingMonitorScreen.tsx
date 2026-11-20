@@ -5,7 +5,7 @@ import { aaFeeMonthLabel } from '../../../domain/billing/aaFee'
 import { needAddressText } from '../../../domain/billing/invoicePresentation'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import type { Actor, AppState } from '../../../store'
-import { isPricedKind } from '../../../store/eventKindActions'
+import { isPricedKind } from '../../../store'
 import { invoicesByBooking } from '../../../store/indexes'
 import {
   billingMonitorView,
@@ -40,7 +40,7 @@ import { HoldingAccountPanel } from '../components/HoldingAccountPanel'
 import { approvedEventsAwaitingRun } from '../../../store/procedureEventActions'
 import { freeFormSubtotal } from '../../../domain/billing/additionalInvoice'
 import { creditDetailOf, eventLines } from '../../../domain/billing/procedureEvent'
-import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, PRE_POST_OP_COPY, XERO_FLAG_COPY, XERO_FLAG_LABEL, XERO_FLAG_PAYOUT_LABEL, xeroFlagText } from '../../../shared/procedureEventCopy'
+import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, PRE_POST_OP_COPY, kindRowText, XERO_FLAG_COPY, XERO_FLAG_LABEL, XERO_FLAG_PAYOUT_LABEL, xeroFlagText } from '../../../shared/procedureEventCopy'
 import { correctionQueuedFor } from '../../../store/ledgerSelectors'
 import type { Invoice, XeroQueueItem } from '../../../domain/types'
 import { PayablesPanel, XeroConnectionLine, XeroDivergencePanel, XeroQueuePanel } from '../components/XeroPanels'
@@ -660,12 +660,18 @@ function PipelineDetail({ row, onRetry, actor }: { row: MonitorAuthorisedRow; on
   )
 }
 
+/** An event's own invoice (catch-up Phase 39b): raised from a pre-op, post-op or billing event. */
+function isEventInvoice(events: AppState['schedule']['procedureEvents'], invoice: Invoice): boolean {
+  const kind = invoice.eventId !== undefined ? events[invoice.eventId]?.kind : undefined
+  return kind !== undefined && isPricedKind(kind)
+}
+
 function BookingDetail({ row }: { row: MonitorBookingRow }) {
   // A Booking's additional invoices (catch-up Phase 38b): each its own invoice, linked to the original.
   // Catch-up Phase 39b: an event's own invoice is `kind: 'additional'` too; told apart by its event's kind.
-  const isEventInvoice = (s: AppState, i: Invoice) => i.eventId !== undefined && isPricedKind(s.schedule.procedureEvents[i.eventId]?.kind ?? 'additionalInvoice')
-  const additionalCount = useAppStore((s) => (invoicesByBooking(s.billing.invoices).get(row.bookingId) ?? []).filter((i) => i.kind === 'additional' && !isEventInvoice(s, i)).length)
-  const eventInvoiceCount = useAppStore((s) => (invoicesByBooking(s.billing.invoices).get(row.bookingId) ?? []).filter((i) => i.kind === 'additional' && isEventInvoice(s, i)).length)
+  // Catch-up Phase 39b: an event's own invoice is `kind: 'additional'` too; told apart by its event's kind (two primitive selectors, so no re-render loop).
+  const additionalCount = useAppStore((s) => (invoicesByBooking(s.billing.invoices).get(row.bookingId) ?? []).filter((i) => i.kind === 'additional' && !isEventInvoice(s.schedule.procedureEvents, i)).length)
+  const eventInvoiceCount = useAppStore((s) => (invoicesByBooking(s.billing.invoices).get(row.bookingId) ?? []).filter((i) => i.kind === 'additional' && isEventInvoice(s.schedule.procedureEvents, i)).length)
   // A credit's Xero correction that failed and waits in the sync queue (catch-up Phase 39).
   const correction = useFailedCorrection(row.bookingId)
   // A paidAfterCredit flag on the payable reads as a payout (its divergence says which leg).
@@ -838,7 +844,7 @@ function EventsAwaitingRunPanel() {
               <span style={{ fontWeight: 600 }}>{patient?.name ?? e.bookingId}</span>
             )}
             <span style={{ color: neutral.slate }}>{credited !== undefined ? CREDIT_LABELS.creditsInFull(credited.invoiceNumber) : EVENT_KIND_LABEL[e.kind]}</span>
-            <span className="mono" style={{ marginLeft: 'auto', color: neutral.ink }}>{formatCurrency(credited !== undefined ? credited.subtotal : freeFormSubtotal(eventLines(e)))} <span style={{ color: neutral.slate }}>{EVENT_LABELS.exGst}</span></span>
+            <span className="mono" style={{ marginLeft: 'auto', color: neutral.ink }}>{credited !== undefined ? formatCurrency(credited.subtotal) : PRE_POST_OP_COPY.amount(kindRowText(state, e)?.amount ?? freeFormSubtotal(eventLines(e)))} <span style={{ color: neutral.slate }}>{EVENT_LABELS.exGst}</span></span>
           </div>
         )
       })}

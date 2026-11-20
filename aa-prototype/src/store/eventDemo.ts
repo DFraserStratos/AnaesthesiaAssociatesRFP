@@ -167,6 +167,8 @@ export function officeReviewsAdditionalInvoice(api: AppStoreApi, bookingId: stri
   const run = runEventInvoicing(api, OFFICE_SIMULATION_ACTOR, { eventIds: [eventId] })
   // Approved but the run could not invoice it: say so, rather than a bare refusal.
   if (!run.ok) return refuse(run.code, `Approved by the office, not yet invoiced: ${run.message}`)
-  const id = run.value.invoiceIds[0]!
+  const id = run.value.invoiceIds[0]
+  // A credit sent back to review (catch-up Phase 39b) raises nothing: say why.
+  if (id === undefined) return refuse('notInvoiced', `Approved by the office, not yet invoiced: ${run.value.skipped[0]?.message ?? ''}`)
   return ok({ number: api.getState().billing.invoices[id]?.invoiceNumber ?? id })
 }

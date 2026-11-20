@@ -49,7 +49,7 @@ import { billablePartyForProcedure, billedToFor, invoiceDeliveryFor, isPersonPar
 import { gstOn, invoiceLayoutFor, type InvoiceLineView } from '../domain/billing/invoicePresentation'
 import { roundToCents, toCents } from '../domain/billing/money'
 import type { DraftInvoice, LockedPayee } from '../domain/billing/lock'
-import { EVENT_TYPE_LABEL, PRE_POST_OP_COPY } from '../shared/procedureEventCopy'
+import { EVENT_KIND_MESSAGES, EVENT_TYPE_LABEL, eventLineLead } from '../shared/procedureEventCopy'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { materialiseInvoices } from './invoiceMaterialise'
@@ -57,7 +57,7 @@ import {
   addProcedureEvent,
   deliveryOfOriginal,
   eventActor,
-  liveInvoiceForProcedure,
+  liveInvoicesForProcedure,
   namedPartyDelivery,
   partyForAudit,
   partyFromInput,
@@ -79,17 +79,8 @@ export function isPricedKind(kind: ProcedureEventKind): kind is PricedEventKind 
 
 export type KindDetail = PrePostOpEventDetail | BillingEventDetail
 
-export const EVENT_KIND_MESSAGES = {
-  listUnassigned: 'Assign the List first.',
-  feeNotOnContract: "This procedure's Contract has no fee for that type of event.",
-  creditAfterInvoice: PRE_POST_OP_COPY.creditAfterInvoice,
-  officePriceInvalid: 'Type the price in dollars and cents, 0 or more and under $100,000.00.',
-  officeReasonRequired: PRE_POST_OP_COPY.officeReasonRequired,
-  noOfficePriceOnBilling: 'A billing event is priced as typed. Edit its amount instead.',
-  needsPrice: PRE_POST_OP_COPY.needsPrice,
-  creditTooBig: PRE_POST_OP_COPY.creditTooBig,
-  creditWaits: "A credit joins its party's invoice in a run. Decline it and use Credit note once the procedure is invoiced.",
-} as const
+/** The store's sentences for these kinds: one home, the copy map (`EVENT_KIND_MESSAGES` there). */
+export { EVENT_KIND_MESSAGES } from '../shared/procedureEventCopy'
 
 // ---------------------------------------------------------------------------
 // Inputs
@@ -176,7 +167,8 @@ function procedureCtx(state: KindState, procedureId: string): Outcome<ProcedureC
   if (booking.cancellation !== undefined) return refuse('bookingCancelled', 'This Booking is cancelled.')
   // A Draft List has no anaesthetist yet (catch-up Phase 31): nobody owns the Procedure.
   if (list.anaesthetistId === undefined) return refuse('listUnassigned', EVENT_KIND_MESSAGES.listUnassigned)
-  return ok({ procedureInvoiced: liveInvoiceForProcedure(state, procedureId) !== undefined, listDateISO: list.dateISO })
+  // Invoiced means a live standard invoice: a prepayment invoice alone is not the Procedure's invoice (review: money integrity).
+  return ok({ procedureInvoiced: liveInvoicesForProcedure(state, procedureId).length > 0, listDateISO: list.dateISO })
 }
 
 /**
@@ -189,6 +181,8 @@ export function kindEventRefusal(
   raiser: EventActor,
   procedureId: string,
   input: { kind: PricedEventKind; occurredOnISO: string; startTime?: string; party: EventParty; detail: KindDetail },
+  /** At approval the recorded Contract fee is not re-checked: pricing reports a fee gone (`eventFeeGone`) and the office may set a price. */
+  opts: { checkFee?: boolean } = {},
 ): Outcome<null> {
   const pc = procedureCtx(state, procedureId)
   if (!pc.ok) return pc
@@ -211,7 +205,7 @@ export function kindEventRefusal(
   }
   const bad = validatePrePostOpEvent({ kind: d.kind, type: d.type, occurredOnISO: input.occurredOnISO, ...(input.startTime !== undefined ? { startTime: input.startTime } : {}), recording: d.recording, ...(d.code !== undefined ? { code: d.code } : {}) }, dates)
   if (bad !== null) return refuse(bad.code, bad.message, { field: bad.field })
-  if (d.recording.kind === 'fixedFee' && d.recording.source === 'contractEventFee') {
+  if (opts.checkFee !== false && d.recording.kind === 'fixedFee' && d.recording.source === 'contractEventFee') {
     const procedure = state.schedule.procedures[procedureId]!
     const fee = state.masters.contractEventFees[d.recording.eventFeeId]
     if (fee === undefined || fee.contractId !== procedure.governingContractId || fee.eventType !== d.type) return refuse('feeNotOnContract', EVENT_KIND_MESSAGES.feeNotOnContract, { field: 'amount' })
@@ -322,11 +316,12 @@ export function updateKindEvent(api: AppStoreApi, actor: Actor, before: Procedur
   const madeParty = partyFromInput(patch.party ?? before.party, state.counters)
   if (!madeParty.ok) return madeParty
   const detail = patch.detail ?? (before.detail as KindDetail)
-  if (detail.kind !== (before.kind === 'billing' ? 'billing' : before.kind)) return refuse('kindChanged', 'An event keeps its kind. Remove it and add another.')
+  if (detail.kind !== before.kind) return refuse('kindChanged', 'An event keeps its kind. Remove it and add another.')
   const next = {
     kind: before.kind,
     occurredOnISO: patch.occurredOnISO ?? before.occurredOnISO,
-    ...((patch.startTime ?? before.startTime) !== undefined && before.kind !== 'billing' ? { startTime: (patch.startTime ?? before.startTime)! } : {}),
+    // An empty start time clears it (the sheet sends '' when the field is emptied).
+    ...((patch.startTime ?? before.startTime ?? '') !== '' && before.kind !== 'billing' ? { startTime: (patch.startTime ?? before.startTime)! } : {}),
     party: madeParty.value.party,
     detail,
   }
@@ -341,7 +336,7 @@ export function updateKindEvent(api: AppStoreApi, actor: Actor, before: Procedur
       entityId: before.id,
       action: 'procedureEvent.update',
       before: { occurredOnISO: before.occurredOnISO, billable: before.billable, party: partyForAudit(before.party), ...detailForAudit(before.detail as KindDetail), review: before.review.state },
-      after: { occurredOnISO: next.occurredOnISO, billable, party: partyForAudit(next.party), ...detailForAudit(detail), review: billable ? 'awaitingReview' : 'notBillable' },
+      after: { occurredOnISO: next.occurredOnISO, billable, party: partyForAudit(next.party), ...detailForAudit(detail), review: billable ? 'awaitingReview' : 'approved', ...(billable ? {} : { notInvoiced: true }) },
       stampBookingId: null,
     },
     (s) => {
@@ -411,7 +406,7 @@ export function approveKindEvent(api: AppStoreApi, actor: Actor, event: Procedur
     ...(event.startTime !== undefined ? { startTime: event.startTime } : {}),
     party: event.party,
     detail: event.detail as KindDetail,
-  })
+  }, { checkFee: false })
   if (!refusal.ok) return refusal
   let pricing: EventPricing
   if (opts.officePrice !== undefined) {
@@ -458,8 +453,8 @@ export function approveKindEvent(api: AppStoreApi, actor: Actor, event: Procedur
 /** The words of an event's invoice line, from the copy map. */
 function lineWords(event: Pick<ProcedureEvent, 'detail'>, pricing: EventPricing): { lead: string; subject: string; code?: string } {
   const d = event.detail
-  if (d.kind === 'billing') return { lead: pricing.amount < 0 ? PRE_POST_OP_COPY.lineLead.credit : PRE_POST_OP_COPY.lineLead.billing, subject: d.description }
-  if (d.kind === 'preOp' || d.kind === 'postOp') return { lead: PRE_POST_OP_COPY.lineLead[d.kind], subject: EVENT_TYPE_LABEL[d.type], ...(d.code !== undefined ? { code: d.code } : {}) }
+  if (d.kind === 'billing') return { lead: eventLineLead(d, pricing.amount)!, subject: d.description }
+  if (d.kind === 'preOp' || d.kind === 'postOp') return { lead: eventLineLead(d)!, subject: EVENT_TYPE_LABEL[d.type], ...(d.code !== undefined ? { code: d.code } : {}) }
   return { lead: '', subject: '' }
 }
 
@@ -489,7 +484,11 @@ export function bundleOrder<T extends Pick<ProcedureEvent, 'id' | 'pricing'>>(ev
 export function withEventLine(draft: DraftInvoice, line: InvoiceLineView): DraftInvoice {
   const subtotal = roundToCents(draft.subtotal + line.amount)
   const gst = gstOn(subtotal)
-  return { ...draft, lines: [...draft.lines, line], subtotal, gst, total: roundToCents(subtotal + gst) }
+  // The line's Procedure joins the invoice's Procedures (an event on another Procedure billed to this party), so it stays traceable.
+  const procedureIds = line.procedureId !== undefined && !draft.procedureIds.includes(line.procedureId) ? [...draft.procedureIds, line.procedureId] : draft.procedureIds
+  // A credit that brings the invoice to $0.00 makes it a no-charge invoice, as a $0 own invoice is (no payable leg or BCTI).
+  const { noCharge: _noCharge, ...rest } = draft
+  return { ...rest, lines: [...draft.lines, line], procedureIds, subtotal, gst, total: roundToCents(subtotal + gst), ...(toCents(subtotal) === 0 ? { noCharge: true as const } : {}) }
 }
 
 /** A draft a run may add an event line to: GST worked at the foot (no printed figure) and not a no-charge invoice. */
@@ -521,8 +520,14 @@ export interface EventBundlePlan {
  * $0.00 goes back to review. Events for a party with no draft stay approved
  * for the next run's own invoice. Pure over the state.
  */
-export function planEventBundle(state: Pick<AppState, 'schedule' | 'billing' | 'masters'>, bookingId: string, drafts: readonly DraftInvoice[]): EventBundlePlan {
-  const due = Object.values(state.schedule.procedureEvents).filter(
+export function planEventBundle(
+  state: Pick<AppState, 'schedule' | 'billing' | 'masters'>,
+  bookingId: string,
+  drafts: readonly DraftInvoice[],
+  /** The Booking's events, when the caller grouped them once for a whole run (full scale: never a scan per Booking). */
+  bookingEvents?: readonly ProcedureEvent[],
+): EventBundlePlan {
+  const due = (bookingEvents ?? Object.values(state.schedule.procedureEvents)).filter(
     (e) => e.bookingId === bookingId && e.replaces === undefined && eventStatus(e) === 'approved' && e.pricing !== undefined && EVENT_KINDS[e.kind]?.mayBundle === true,
   )
   const next = drafts.map((d) => ({ ...d, lines: [...d.lines] }))
@@ -532,7 +537,11 @@ export function planEventBundle(state: Pick<AppState, 'schedule' | 'billing' | '
     const party = resolvedPartyOf(state, event)
     if (party === undefined) continue
     const index = next.findIndex((d) => sameRef(d.counterparty, party.counterparty) && takesEventLines(d))
-    if (eventInvoicing(event, { runInvoiceForParty: index >= 0 }) !== 'bundleOnRunInvoice') continue
+    if (eventInvoicing(event, { runInvoiceForParty: index >= 0 }) !== 'bundleOnRunInvoice') {
+      // A credit only rides on its party's invoice: with none in this run it can never be billed, so it goes back to review.
+      if ((event.pricing?.amount ?? 0) < 0) backToReview.push({ eventId: event.id, message: EVENT_KIND_MESSAGES.creditNoInvoice })
+      continue
+    }
     const line = eventLineView(event)!
     const draft = next[index]!
     if (draft.subtotal + line.amount < -0.005) {
@@ -563,7 +572,8 @@ export function stampBundledEvents(
   for (const eventId of plan.bundled) {
     const line = lines.find((l) => l.eventId === eventId)
     const event = events[eventId]
-    if (line === undefined || event === undefined) continue
+    // Never leave a billed line's event unstamped: the next run would bill it again on its own invoice.
+    if (line === undefined || event === undefined) throw new Error(`Event ${eventId} was planned onto an invoice but its line is missing`)
     events[eventId] = { ...event, invoiceId: line.invoiceId, invoiceLineId: line.id }
     metas.push({
       entityType: 'invoice',
@@ -577,7 +587,9 @@ export function stampBundledEvents(
   for (const back of plan.backToReview) {
     const event = events[back.eventId]
     if (event === undefined) continue
-    events[back.eventId] = { ...event, review: { state: 'awaitingReview', reason: back.message, atISO } }
+    // Back to review with no price: the office prices it again (a stale frozen price never reads as current).
+    const { pricing: _pricing, ...rest } = event
+    events[back.eventId] = { ...rest, review: { state: 'awaitingReview', reason: back.message, atISO } }
     metas.push({ entityType: 'procedureEvent', entityId: back.eventId, action: 'procedureEvent.backToReview', after: { reason: back.message }, stampBookingId: null })
   }
   return { procedureEvents: events, metas }
@@ -603,15 +615,21 @@ export interface PlannedKindInvoice {
  * 22's rule, paying the locked payee (else the List's anaesthetist). A credit
  * never stands alone.
  */
-export function planKindInvoice(state: KindState, event: ProcedureEvent): PlannedKindInvoice | { message: string } {
+export function planKindInvoice(state: KindState, event: ProcedureEvent): PlannedKindInvoice | { message: string; backToReview?: true } {
   const pricing = event.pricing
   if (pricing === undefined) return { message: EVENT_KIND_MESSAGES.needsPrice }
-  if (pricing.amount < 0) return { message: EVENT_KIND_MESSAGES.creditWaits }
+  // The guard again, as 38b's issue path re-validates: a cancelled Booking or an unassigned List raises nothing.
+  const guard = procedureCtx(state, event.procedureId)
+  if (!guard.ok) return { message: guard.message }
+  // A credit rides only on its party's invoice in a List's run: once the Procedure is invoiced that can never happen, so it goes back to review.
+  if (pricing.amount < 0) return guard.value.procedureInvoiced ? { message: EVENT_KIND_MESSAGES.creditNoInvoice, backToReview: true } : { message: EVENT_KIND_MESSAGES.creditWaits }
   const procedure = state.schedule.procedures[event.procedureId]
   const booking = procedure !== undefined ? state.schedule.bookings[procedure.bookingId] : undefined
   if (procedure === undefined || booking === undefined) return { message: 'Procedure not found.' }
   const named = event.party.sameAs ? undefined : event.party.party
-  const original = liveInvoiceForProcedure(state, event.procedureId, named)
+  // A live standard invoice only: a prepayment invoice is never the Procedure's original (review: money integrity).
+  const live = liveInvoicesForProcedure(state, event.procedureId)
+  const original = (named !== undefined ? live.find((i) => sameRef(i.counterparty, named)) : undefined) ?? live[0]
   const party = resolvedPartyOf(state, event)
   const payee = payeeOf(state, event.bookingId)
   if (party === undefined || payee === undefined) return { message: 'The billable party or payee is missing.' }

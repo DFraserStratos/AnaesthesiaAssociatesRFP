@@ -21,7 +21,7 @@ import {
   useAppStore,
 } from '../../../store'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
-import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, CREDIT_MESSAGES, EVENT_KIND_LABEL, EVENT_LABELS, PRE_POST_OP_COPY, XERO_FLAG_COPY, XERO_FLAG_LABEL, XERO_FLAG_PAYOUT_LABEL, raisedByText, xeroFlagText } from '../../../shared/procedureEventCopy'
+import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, CREDIT_MESSAGES, EVENT_KIND_LABEL, EVENT_LABELS, PRE_POST_OP_COPY, eventLineLead, XERO_FLAG_COPY, XERO_FLAG_LABEL, XERO_FLAG_PAYOUT_LABEL, raisedByText, xeroFlagText } from '../../../shared/procedureEventCopy'
 import { AdditionalInvoiceSheet } from '../../../shared/booking/AdditionalInvoiceForm'
 import type { CreditFormMode } from '../../../shared/booking/CreditForm'
 import { CreditSheet } from '../flows/CreditSheet'
@@ -41,7 +41,7 @@ import {
   supplierGstText,
 } from '../../../domain/billing'
 import { Button, DemoBadge, Logo } from '../../../shared'
-import { dateTimeMicroCap, drSurname, formatCurrency } from '../../../shared/format'
+import { dateTimeMicroCap, drSurname, formatCurrency, plainDate } from '../../../shared/format'
 import { dayWithYear, hhmm } from '../../../domain/dateText'
 import { DefList, DefRow, FormError, Notice, Pill, TextAction, TextField } from '../../../shared/ui'
 import { lockStampText, lockViewFor, MIGRATED_LOCK_TEXT, partyKeyOf } from '../../../domain/billing/lock'
@@ -123,14 +123,7 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   const freeForm = invoice.kind === 'additional'
   // Catch-up Phase 39b: an event invoice's kind ("Post-op event"), from the event it was raised from.
   const ownEvent = invoice.eventId !== undefined ? procedureEvents[invoice.eventId] : undefined
-  const eventLead =
-    ownEvent === undefined
-      ? undefined
-      : ownEvent.detail.kind === 'preOp' || ownEvent.detail.kind === 'postOp'
-        ? PRE_POST_OP_COPY.lineLead[ownEvent.detail.kind]
-        : ownEvent.detail.kind === 'billing'
-          ? PRE_POST_OP_COPY.lineLead.billing
-          : undefined
+  const eventLead = ownEvent !== undefined ? eventLineLead(ownEvent.detail) : undefined
   const procedureDateISO = invoice.crossMatch?.procedureDateISO ?? list?.dateISO
   // Catch-up Phase 39: the invoice's standing, its credit note and what replaced it; a replacement's origin.
   const creditState = { schedule: { procedureEvents }, billing }
@@ -290,10 +283,10 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
             key: line.id,
             kind: line.kind ?? 'fee',
             // Catch-up Phase 39b: an event's own dated line (its date and kind are in its description).
-            ...(line.eventId !== undefined ? { shot: 'invoice-event-lines', eventId: line.eventId } : {}),
+            ...(line.eventId !== undefined ? { shot: 'invoice-event-lines', eventId: line.eventId, amountText: PRE_POST_OP_COPY.amount(line.amount) } : {}),
             description: (
               <>
-                <div>{line.description}</div>
+                <div>{line.serviceDateISO !== undefined ? <EventLineText text={line.description} dateISO={line.serviceDateISO} /> : line.description}</div>
                 {line.btm !== undefined && <BtmBreakdown btm={line.btm} />}
               </>
             ),
@@ -926,6 +919,22 @@ interface DocLineRow {
   shot?: string
   /** `data-event-id` on an event's line. */
   eventId?: string
+  /** The amount as printed, where it differs from `formatCurrency` (an event credit: "-$40.00"). */
+  amountText?: string
+}
+
+/** An event line's description with its date of service in mono (catch-up Phase 39b; work item 11). */
+function EventLineText({ text, dateISO }: { text: string; dateISO: string }) {
+  const date = plainDate(dateISO)
+  const at = text.indexOf(date)
+  if (at < 0) return <>{text}</>
+  return (
+    <>
+      {text.slice(0, at)}
+      <span className="mono">{date}</span>
+      {text.slice(at + date.length)}
+    </>
+  )
 }
 
 /**
@@ -952,7 +961,7 @@ function DocLinesTable({ rows, quantityHead, unitAmount = false }: { rows: reado
             <td style={docCell}>{r.description}</td>
             {showQuantity && <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{r.quantity ?? ''}</td>}
             {unitAmount && <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{r.unitAmount !== undefined ? formatCurrency(r.unitAmount) : ''}</td>}
-            <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{formatCurrency(r.amount)}</td>
+            <td className="mono" style={{ ...docCell, textAlign: 'right' }}>{r.amountText ?? formatCurrency(r.amount)}</td>
           </tr>
         ))}
       </tbody>

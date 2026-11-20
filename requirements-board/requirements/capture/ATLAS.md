@@ -309,6 +309,7 @@ Hooks already added:
 | Chen Tue 14 Jul (`reviewFlags`) | `L-45178-2026-07-14-AM` | Christchurch Eye Surgery, Mr Whitford, SUBMITTED. The review-flags List (catch-up Phase 21a): BK0178 to BK0181. |
 | Delaney Fri 10 Jul PM | `L-27731-2026-07-10-PM` | Forte, ACTIVE at reset. Catch-up Phase 39: `stage-combined-procedure` books, completes, authorises and bills the Merivale combination (Lorraine Petrie) here; the trigger is disabled once the List is no longer open. |
 | Sharma Tue 14 Jul AM | `L-41267-2026-07-14-AM` | Catch-up Phase 38b's `stage-post-op` List (Sarah Mitchell `BK0032`); since catch-up Phase 39 her invoice is the office's credit and rebill target (see [Credit notes](#credit-notes-credit-and-rebill-and-the-combined-split-catch-up-phase-39)). |
+| Souter Wed 15 Jul PM (staged) | runtime (`L000n`) | Catch-up Phase 39b: not in the seed. `stage-post-op` assigns it (St George's, Mr T. Hale, session `S-34821-2026-07-15-PM`) and adds Coral Bennett's ACL reconstruction on St George's ACC (`CT-STG-ACC`), completed and SUBMITTED. Its List and Booking ids are runtime: reach it by search (see [Pre-op, post-op and billing events](#pre-op-post-op-and-billing-events-catch-up-phase-39b)). |
 
 **Seed markers** (`SEED_MARKERS.<key>.entityId`, `aa-prototype/src/domain/seed/index.ts`), catch-up Phase 21a:
 `fixedPriceNoTimes` BK0176, `needsPriceBooking` BK0177, `contractChangeBooking` BK0178, `typedPriceBooking`
@@ -367,7 +368,7 @@ unsaved-changes guard can block a navigation). No URL changed; the Admin Booking
 | `/admin/draft-lists` | Draft Lists (catch-up Phase 31): Unassigned tab (default) and History (`?tab=history`). Since UI unification U5 the two tabs are links inside `role=navigation[name="Draft Lists"]`, not `role=tab`: `a[data-draft-tab=unassigned]` and `a[data-draft-tab=history]`, each with its count inside the link text (so match by the hook, not the name); the current one has `aria-current=page`. `?open=<listId>` opens the Draft List drawer (`admin-draft-list-drawer`); `?assigned=<listId>` shows the assigned confirmation with "Open List". The drawer's "Available that session" Assign opens step 2; the row's Assign opens step 1 (Everyone / Free only, tier filter, groups). "New Draft List" opens `admin-new-draft-list`. |
 | `/admin/conflicts` | Conflicts (catch-up Phase 30): every live conflict, grouped by date (`section[data-conflict-date=<date>]`), one table each (`[data-shot=conflicts-table]` wraps them). Rows are `tr[data-conflict-row=<listId>]` (cleared ones add `data-conflict-cleared=true`). Row actions have accessible names with context (`Reassign, Dr Rutherford Wed 22 Jul AM`, `Clear conflict, ...`, `Open the List, ...`, `Open the day, ...`): match them by regex (`role=button[name=/^Clear conflict/]`). Hospital closures only since catch-up Phase 32b (no reason filter, no Availability column). Filters in the URL: `?when=twoWeeks|canvas|past`, `?hospital=<id>`, `?anaesthetist=<reg>`, `?cleared=1`. After a reassign or clear, `[data-shot=conflicts-confirmation]`. |
 | `/admin/review` | Review queue, plus "Recently billed". Catch-up Phase 38b adds two tabs (links carrying `data-review-tab="lists"` and `"events"`): Lists is this queue. |
-| `/admin/review?tab=events` (catch-up Phase 38b) | The Events tab: the events table body `admin-events-queue` (rows `tr[data-event-id=EV0001]`, status pill, party, amount, "Review" button). A row opens the `event-review-sheet` (`event-review-approve` "Approve for billing", `event-review-decline` with its reason). |
+| `/admin/review?tab=events` (catch-up Phase 38b) | The Events tab: the events table body `admin-events-queue` (rows `tr[data-event-id=EV0001]`, status pill, party, amount, "Review" button). A row opens the `event-review-sheet` (`event-review-approve` "Approve for billing", `event-review-decline` with its reason). Catch-up Phase 39b: every kind is reviewed here, rows carry `data-kind` (`additional`, `preOp`, `postOp`, `billing`, credits), so pick one as `tr[data-kind=postOp]:has-text("Coral Bennett")`; a timed event's row reads the office's calculation ("30 min · 2 time units x $25.00 Contract rate = $50.00"), a Contract fee "Contract fee STGACC-PAIN · $120.00 replaces 30 min", an unpriced one `review-needs-price` ("Set a price"). The sheet adds `event-review-kind`, `event-review-price`, `event-review-set-price`, `event-review-office-price` and `event-review-needs-price`; after Approve it reads "Approved. Invoiced in the next billing run." (press Escape to close). The Review queue's row button is named `Review <anaesthetist> List, <source>, <Wed 15 Jul>`, so a runtime List opens by `role=button[name=/^Review .*Souter.*Wed 15 Jul$/]`. |
 | `/admin/review/:listId` | Sanity check: total units, B · T · M, "Log phone note", "Authorise for billing". A Procedure that needs a price blocks it (`review-needs-price-blocker`, catch-up Phase 25); once authorised, the lock glyph in each Procedure stack, "(locked)" rate and "Paid to" line. |
 | `/admin/invoices` | Invoice list (office pipeline only; the seeded history invoices are left out), newest id first. Columns: Number, Patient / booking (a link to the Booking), Anaesthetist, List (a link to the day), List date, Raised, Counterparty (a split share adds the "Split" chip `invoice-list-split`), Layout (Patient or Holder), Total, Delivery (`invoice-list-delivery`, `data-delivery` sent, toPost, noAddress), and "View →" (named "View invoice AA-2026-0005" since UI unification U6). Open an invoice with `[data-testid=invoice-list-table-shell] tr:has-text("AA-2026-0005") >> role=button[name=/^View invoice /]`: a bare row click can land on a row link. |
 | `/admin/invoices/:invoiceId` | Tax invoice document (`.aa-invoice-doc`) with an info rail (catch-up Phase 22): Delivery (`invoice-delivery`), Related invoices on a split share (`invoice-related`), Xero handoff, and the Locked record (`invoice-locked-record`, catch-up Phase 25; migrated words on a history invoice) with the `regenerate-invoice` demo action. Any invoice id opens, the history ones too (`HINV13`). |
@@ -927,7 +928,7 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   Contracts list shows `contract-override-pill` on RVG kinds only: "Anaesthetist can override the price" (No contract ·
   RVG `CT-NO-CONTRACT`, Forte Health RVG `CT-FORTE-D1`) or "Price fixed for the anaesthetist" (Aria `CT-ARIA-HOURLY`,
   `CT-FORTE-DISC`, every other RVG Contract); none on a fixed or open price. Rate x time is gone everywhere: no
-  "Rate × time" option in Add billing line (fixed amount only), no Method 3 setting.
+  Method 3 setting, and (catch-up Phase 39b) no Add billing line at all: other charges are billing events.
 - **Aria at the Contract's rate:** `CT-ARIA-HOURLY` "Aria Skin and Laser Clinic" (id kept), RVG at $26.50, override
   off. Fitzgerald's Booking BK0029 (`contractRateBooking`, Wed 15 Jul AM `L-43015-2026-07-15-AM`, Forte, Ms Lim,
   completed but the List is ACTIVE, so it cannot be authorised in the UI) is the abdominoplasty A5, 08:30 to 11:30,
@@ -1253,8 +1254,9 @@ were already imported. Nothing new.").
   anaesthetist shot of raising an additional invoice uses Dr Souter's own Procedure on `HBK03`, never Dr Sharma's.
   The Events tab `/admin/review?tab=events` lists `EV0001`.
 - **Sarah Mitchell after `stage-post-op`**: Booking `BK0032` on Dr Sharma's Tue 14 Jul AM List
-  `L-41267-2026-07-14-AM` (Admin `/admin/day/2026-07-14/bookings/BK0032`). The trigger now only authorises and bills the
-  List (no addendum Booking, no free session needed), so BK0032 is locked and invoiced and offers
+  `L-41267-2026-07-14-AM` (Admin `/admin/day/2026-07-14/bookings/BK0032`). The trigger authorises and bills the
+  List (no addendum Booking, no free session needed; since catch-up Phase 39b it also stages Dr Souter's Coral Bennett
+  Booking, see [Pre-op, post-op and billing events](#pre-op-post-op-and-billing-events-catch-up-phase-39b)), so BK0032 is locked and invoiced and offers
   `additional-invoice-button`. After "Create additional invoice", Approve in the Events tab and the
   `run-next-billing-run` trigger, her original invoice's rail card `invoice-additional-links` lists the additional
   invoice and its own document shows `invoice-additional-of`.
@@ -1298,6 +1300,45 @@ were already imported. Nothing new.").
   amount field: a credit is always for the whole invoice.
 - **Prepaid Procedures** show `credit-note-unavailable` ("Crediting a prepayment invoice is not in this prototype
   yet.") in place of the button: crediting a prepayment invoice is Phase 41's.
+
+### Pre-op, post-op and billing events (catch-up Phase 39b)
+
+- **The staged Bennett Booking.** `stage-post-op` (see Demo actions) also gives Dr Souter a SUBMITTED ACL
+  reconstruction for Coral Bennett on **Wed 15 Jul PM** at St George's, Mr T. Hale (session
+  `S-34821-2026-07-15-PM`, 13:00), Contract St George's ACC `CT-STG-ACC`, completed with no modifiers. (The phase doc
+  named Thu 16 Jul AM, which is a public-hospital session.) Nothing of it is in the seed and its List and Booking ids
+  are runtime, so reach it by search: web `/web/lists?q=Bennett`, then
+  `[data-shot=web-lookback-search] tr[data-booking-id]:has-text("15 Jul") >> nth=0`; mobile `/mobile/lists?q=Bennett`, then
+  `[data-shot=mobile-lookback-search] button[data-booking-id]:has-text("15 Jul") >> nth=0`; wait for `[data-shot=procedure-events]`.
+  Admin: `/admin/day/2026-07-15`, click `button[data-slot-id="S-34821-2026-07-15-PM"]`, then in the drawer
+  `[data-testid=admin-list-drawer] >> role=button[name=/^Open$/]`; or the Procedure link in `event-review-sheet`. Its
+  List sits in Admin Review's Lists queue: open it by `role=button[name=/^Review .*Souter.*Wed 15 Jul$/]`, then
+  "Authorise for billing" twice (`>> nth=0`, then `>> nth=-1`) and wait for `text="List authorised · locked for billing"`.
+  The staging runs on the web or mobile Lists (`setup`: `goto` `/web/lists`, the trigger, then `start`
+  `/web/lists?q=Bennett`), so Admin shots stage it from `/web/lists` too. US-03.7.1 and US-03.7.2 show the patterns.
+- **What the anaesthetist adds** (their own Procedure only): a post-op ward review defaults to 30 minutes, dated the day
+  after the List (Thu 16 Jul), a pre-op event to the List's date. The anaesthetist never sees a calculation ("The office
+  prices the time at review."). On CT-STG-ACC a ward review prices at the Contract's rate, 30 min = 2 time units x
+  $25.00 = $50.00.
+- **The Contract event fee:** `CEF001` on `CT-STG-ACC`, Pain consult, holder code `STGACC-PAIN`, "Acute pain review, fixed
+  fee", $120.00. In the add sheet, Pain consult then "Fixed fee" shows it read-only (`event-contract-fee`); a timed pain
+  consult is priced from it at review ("Contract fee STGACC-PAIN · $120.00 replaces 30 min"). Contract editor:
+  `/admin/masters?view=contracts`, fill `[data-shot=contract-search] input` with "ACC elective", click
+  `tr[data-contract="CT-STG-ACC"] >> button:text-is("Edit")`, then `[data-shot=contract-detail] [data-shot=contract-event-fees]`.
+- **Billing.** Approved events are invoiced only when billing runs: authorising the List bills events approved before
+  it as their own dated lines on the Procedure's invoice (`tr[data-shot=invoice-event-lines]`, e.g. "Post-op event ·
+  Post-op ward review · 16 Jul 2026 · 30 min", "Billing event · Nerve catheter · 15 Jul 2026"; a credit a negative
+  line); the Invoices list marks that invoice `invoice-list-event-lines` ("+2 event lines"), and clicking it opens the
+  invoice. An event approved after the invoice waits for `run-next-billing-run` (`/admin/billing`) and is an invoice of
+  its own: `invoice-list-kind[data-kind=additional]`, its document's `invoice-additional-of` reads "Post-op event ·
+  relates to AA-2026-...". The Billing monitor counts them in `monitor-event-invoices`.
+- **ACC pre-op presets** (US-05.5.2): Pre-op, then type "ACC pre-op assessment", shows three presets CS250, CS260 and
+  CS70 (`acc-preop-preset`, `data-code`) and the caption `acc-codes-caption` ("Codes to confirm with AA's accountant
+  (OQ-12)."). No price is held for them. The text "ACC pre-op assessment" is on the type row and on every preset, so
+  click by hook, `[data-shot=event-type-row][data-type=accPreOpAssessment]`.
+- **Gone:** the BillingLine entity, the Add billing line sheet and the billing-lines card (no `capture-billing-lines`,
+  "Add billing line" or "What this line charges"). The seeded billing lines are billing events with their old figures.
+  US-03.3.6 is Retired and has no recipe shots.
 
 ### Public holidays, retire and the controlled loads (catch-up Phase 42)
 
@@ -1398,6 +1439,24 @@ were already imported. Nothing new.").
   `event-same-as` ticked or clear it and pick a party in `event-party-picker`, then `additional-invoice-save`. Review: the
   Events tab link `[data-review-tab=events]`, a row `tr[data-event-id]`, then Approve `event-review-approve` in
   `event-review-sheet`. Invoicing happens only at the `run-next-billing-run` trigger.
+- **Pre-op, post-op and billing events (catch-up Phase 39b).** Under each Procedure's `procedure-events` (shown on the
+  anaesthetist's own Procedure, and always on Admin) the row `procedure-event-add` holds two buttons:
+  `[data-shot=add-pre-post-op-event]` ("Add pre-op or post-op event") and `[data-shot=add-billing-event]` ("Add billing
+  event"); use `>> nth=0`. Each opens a dialog on web and Admin, a bottom sheet on mobile (scope
+  `[data-aa-mobile-product] [data-shot=...]`). `[data-shot=add-event-sheet]`: the Pre-op / Post-op segmented (buttons,
+  `button:text-is("Pre-op")`; Post-op is the default), type rows `[data-shot=event-type-row][data-type=postOpWardReview|hduReview|painConsult|otherPostOp|accPreOpAssessment|otherPreOp]`,
+  on the ACC type the presets `acc-preop-presets` (`[data-shot=acc-preop-preset][data-code=CS250]`) and
+  `acc-codes-caption`; `event-date`, `event-start`; the "Record a time" / "Fixed fee" segmented; on a time the stepper
+  `event-minutes` (default 30) with `event-pricing-caption`; on a fixed fee either the Contract's fee read-only
+  `event-contract-fee` or a typed `input[data-shot=event-fee-amount]`; the invoice tick `[data-shot=event-invoice-tick] input`
+  (its hint "Cleared: kept on the record, never invoiced."); the "same as" party (`event-same-as-row`, then
+  `event-party-picker`), `event-routing-caption` and save `add-event-save` ("Add event").
+  `[data-shot=add-billing-event-sheet]`: Charge / Credit segmented (before the invoice only; after it,
+  `billing-credit-after-invoice`), `input[data-shot=billing-event-description]`, `input[data-shot=billing-event-amount]`,
+  `event-date`, on a credit `billing-credit-caption` ("Reduces what is owed."), the same tick and party, save
+  `add-billing-event-save`. Saved rows are `[data-shot=procedure-event-row][data-kind=preOp|postOp|billing]`, the
+  recorded part `procedure-event-recorded` ("30 min", "Fixed fee", "Charge"); the anaesthetist sees no calculation on a
+  timed event.
 - **Credit sheets (catch-up Phase 39).** One form, `[data-shot=credit-form]`, in three wrappers. Admin `CreditSheet`: a
   right-docked side sheet `[data-shot=credit-sheet]` (`data-mode=credit|rebill|edit`), title in its header and Save
   (`credit-submit`, "Save for review") in its footer; opened by the invoice rail's `credit-note-button` (no new
@@ -1513,7 +1572,8 @@ were already imported. Nothing new.").
   is `role=button[name="Close sheet"]`.
 - **Add AA modifier** (Master data, Modifiers, catch-up Phase 19b): `role=button[name="Add AA modifier"]`
   opens `[data-shot=add-aa-modifier]` (Code, Units, Modifying factor; "Add modifier").
-- **Add billing line:** `role=button[name="Add billing line"]`.
+- **Add an event:** `[data-shot=add-pre-post-op-event] >> nth=0` or `[data-shot=add-billing-event] >> nth=0` (catch-up
+  Phase 39b; see Overlays). There is no Add billing line any more.
 - **History, replaced text:** the History sheet lists "Procedure text replaced" with the old and new text
   and their sources (`role=button[name="History"]`).
 - **Procedure description** (the manual form, catch-up Phase 20a): `[data-shot=procedure-description] input`
@@ -1774,7 +1834,7 @@ the exception: use the `trigger` step)
 ## Existing hooks
 
 - Events and the additional invoice (catch-up Phase 38b). `procedure-events` (the section under each Procedure, all
-  three apps; Admin always, the anaesthetist only when the Procedure has events), rows `procedure-event-row`
+  three apps; Admin always, the anaesthetist on their own Procedure since catch-up Phase 39b, otherwise only when it has events), rows `procedure-event-row`
   (`data-event-id`, `data-status`) with `procedure-event-status`, `procedure-event-review`, `procedure-event-edit`,
   `procedure-event-remove` and `procedure-event-invoice`. `additional-invoice-button` (on the Procedure's Paid by row
   beside Split: "Create additional invoice" on Admin, "Raise additional invoice" on web and mobile).
@@ -1787,6 +1847,20 @@ the exception: use the `trigger` step)
   additional invoice), `invoice-additional-links` (rail card on the original and the additional invoice),
   `invoice-create-additional`. Admin Booking detail: `booking-total`, `booking-total-gst`. The addendum hooks and the
   "Add post-op event" block and banner are gone.
+- Pre-op, post-op and billing events (catch-up Phase 39b). Under `procedure-events`: `procedure-event-add` holding
+  `add-pre-post-op-event` and `add-billing-event`; rows `procedure-event-row` gain `data-kind` (`preOp`, `postOp`,
+  `billing`, beside 38b's kinds) and `procedure-event-recorded`. Sheets: `add-event-sheet` (`event-types`,
+  `event-type-row` with `data-type`, `acc-preop-presets`, `acc-preop-preset` with `data-code`, `acc-codes-caption`,
+  `event-date`, `event-start`, `event-minutes`, `event-pricing-caption`, `event-contract-fee`, `event-fee-amount`,
+  `event-invoice-tick`, `event-same-as-row`, `event-party-picker`, `event-routing-caption`, `add-event-save`) and
+  `add-billing-event-sheet` (`billing-event-description`, `billing-event-amount`, `billing-credit-caption`,
+  `billing-credit-after-invoice`, the same date, tick, party and routing hooks, `add-billing-event-save`). Review:
+  `admin-events-queue` rows `tr[data-kind]`, `review-needs-price`; `event-review-sheet` adds `event-review-kind`,
+  `event-review-price`, `event-review-set-price`, `event-review-office-price`, `event-review-needs-price`. Invoices:
+  `tr[data-shot=invoice-event-lines]` (an event's line on an invoice, with `data-event-id`), `invoice-list-event-lines`
+  ("+2 event lines" on the Invoices list). Billing monitor: `monitor-event-invoices`. Contract editor:
+  `contract-event-fees` (inside `contract-detail`). The billing-lines card, `capture-billing-lines` and the Add billing
+  line sheet are gone.
 - Credit notes, credit and rebill, and the combined split (catch-up Phase 39). Admin invoice rail: the card
   `invoice-correct` ("Correct this invoice", caption or refusal `invoice-correct-refusal`) holds `credit-note-button`
   ("Credit note"), `credit-rebill-button` ("Credit in full and rebill") and `split-combined-rail-button` ("Split into
@@ -2462,8 +2536,8 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/demo/xero/invoices`, `/demo/xero/bank` | `xero-bulk-remittance` | Catch-up Phase 37, bar only. St George's pays Dr Souter's aged `XRH01` and `XRH03` in one deposit, matched by the add-on and learned by the engine by webhook, and a $980.00 line quoting AA-2026-H40 (meant for AA-2026-H04, `XRH04`) left unmatched on `/demo/xero/bank`. Disabled once run (those invoices are paid) |
 | `/demo/xero/invoices/<accRecId>` of an AA fee pair | `record-fee-payment` | Only on a fee pair; the payment triggers below are hidden there |
 | `/admin/billing/aa-fees` | `run-scheduled-fee-run`, `seed-month-of-bctis` | The scheduled run raises the month in the picker as the system actor; "Run monthly fee invoices" is the screen's own product button |
-| `/admin/review/L-41267-2026-07-14-AM` or that List's Booking detail | `stage-post-op` | Shown only for Dr Sharma's Tue 14 AM List. Catch-up Phase 38b re-points it: it only authorises and bills the List (no addendum Booking), leaving Sarah Mitchell's BK0032 invoiced and offering the additional invoice button |
-| `/admin/billing`, `/admin/review` | `run-next-billing-run` | Catch-up Phase 38b: the explicit next billing run. It invoices every approved event once (each additional invoice on its own), after which `events-awaiting-run` on the Billing monitor disappears. The List run never sweeps events |
+| `/admin/review/L-41267-2026-07-14-AM` or that List's Booking detail; `/web/lists`, `/web/lists/<listId>`, `/web/lists/<listId>/bookings/<id>`; `/mobile/lists[...]` (bar and the PWA Demo sheet) | `stage-post-op` ("Stage post-op scenario") | On Admin shown only for Dr Sharma's Tue 14 AM List; on the anaesthetist's Lists and Booking screens always. Two halves, each idempotent: 38b's authorises and bills Dr Sharma's List (no addendum Booking), leaving Sarah Mitchell's BK0032 invoiced and offering the additional invoice button; catch-up Phase 39b's stages Dr Souter's SUBMITTED ACL reconstruction for Coral Bennett on Wed 15 Jul PM at St George's (Mr T. Hale, `CT-STG-ACC`), a new runtime List and Booking, so it also adds a List to Admin Review's queue and a Booking to Dr Souter's Lists and search. Message: "Staged. Search Bennett, open Wednesday's Booking and use Add pre-op or post-op event. Sarah Mitchell's Tue 14 Jul List is authorised and billed for Create additional invoice." Disabled "Already staged: search Bennett and open Wednesday's Booking" once both are done. US-03.7.1 shows the pattern (`setup` on `/web/lists` or `/mobile/lists`, `start` `?q=Bennett`) |
+| `/admin/billing`, `/admin/review` | `run-next-billing-run` | Catch-up Phase 38b: the explicit next billing run. It invoices every approved event once (each additional invoice on its own), after which `events-awaiting-run` on the Billing monitor disappears. The List run never sweeps events. Catch-up Phase 39b: authorising a List bills events approved before it as lines on the Procedure's invoice; this trigger then takes the rest, each a line on the same party's invoice in the run or an invoice of its own (`monitor-event-invoices`) |
 | `/admin/billing`, `/admin/review` | `run-next-billing-run` (catch-up Phase 39) | Also issues every approved credit: the credit note, its negative invoice and the credit's new invoices together ("Billing run done: ... (CN-2026-0001, AA-2026-....)"). US-08.6.2 shows the pattern (Approve on `tr:has([data-shot=review-credit-row])` in the Events tab, then this trigger on `/admin/billing`) |
 | `/admin/invoices` | `stage-combined-procedure` | Catch-up Phase 39, bar only, screen "Admin · Invoices". Stages the billed Merivale combination (Lorraine Petrie, Dr Delaney's Fri 10 Jul PM List); its result links "Open AA-2026-0002" after a reset. Disabled "Already staged". US-08.6.4 shows the pattern (trigger, then the row by patient) |
 | `/admin/billing`, `/admin/invoices/<invoiceId>` | `stage-refund-after-payout` | Catch-up Phase 39, bar only, screen "Admin · Billing monitor". Pays the invoice in the URL (on the Billing monitor, Sarah Mitchell's after `stage-post-op`) in full and pays its anaesthetist out, so a following credit's negative invoice nets in the next payment run. US-08.6.2's `refund-after-payout` shows the pattern |
@@ -2506,7 +2580,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/demo/data` | `scan-nhi-leaks` ("Scan for NHI leaks", choice `now` or `planted`) | Catch-up Phase 43, bar only. Fills the Privacy checks report `nhi-scan-report`; the result line summarises what was found |
 | `/admin/intake/matching` | `matching-raw-row-other-role` ("View raw row as another role", choice `souter` or `feed`) | Catch-up Phase 43, bar only. Acts on the selected row or, with none selected, the oldest row needing resolving; refused, "Refused: only office staff can view a raw hospital row (Mere Tipene's row). The attempt is in the audit trail." Close the row panel first: it covers the harness bar's right side |
 
-The PWA-only entries (`office-reviews-additional-invoice` on a mobile Booking with an event awaiting review (catch-up Phase 38b: the office approves it and runs the next run, narrowed to that event), `office-authorises-list` on a mobile List, `office-clears-warning` on a
+The PWA-only entries (`office-reviews-additional-invoice`, labelled "Office reviews this event" since catch-up Phase 39b (id kept), on a mobile Booking with an event of any kind awaiting review (catch-up Phase 38b, widened in 39b: the office approves the Booking's oldest event awaiting review, else takes the oldest approved one, and invoices it in the next run; "Reviewed by the office (simulated). Invoice AA-... raised in the next run."), `office-authorises-list` on a mobile List, `office-clears-warning` on a
 mobile Booking with an open warning, `office-assigns-next-free` on the mobile Lists home (catch-up
 Phase 28: assigns St George's · Mr T. Hale to Dr Souter's next free session, Wed 22 PM on a fresh
 profile), all badged as the office stand-in, `pwa-payment-full` and
