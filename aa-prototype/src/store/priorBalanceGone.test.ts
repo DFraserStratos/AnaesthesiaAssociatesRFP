@@ -32,5 +32,6 @@ describe('the prior-episode flag and the provisional patient are retired', () =>
     expect(files.length).toBeGreaterThan(100)
     const hits = files.filter((f) => RETIRED.test(readFileSync(f, 'utf8'))).map((f) => relative(ROOT, f))
     expect(hits).toEqual([])
-  })
+    // It reads every file under src and visual: allow for a slow disk or an on-access scanner (Wave 5 join).
+  }, 30_000)
 })
