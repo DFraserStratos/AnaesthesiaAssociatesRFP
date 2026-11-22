@@ -89,7 +89,9 @@ Not the place to edit requirements:
   screenshot recipes, atlas and report are in `REQ/capture/` (its prototype-specific capture steps in
   `REQ/capture/steps.ts`), and each skill keeps its repo-specific facts in one "This repo" block.
   `requirements-board/ADOPTING.md` is the checklist for setting it up in another repo. **To share it**,
-  `npm --prefix requirements-board run kit:export -- --to "<folder>"` writes a clean kit (starter
+  `npm --prefix requirements-board run kit:export -- --to "<folder>"` writes a clean kit from the board as
+  committed at HEAD (commit first; `--uncommitted` to try work), into an empty folder or one an earlier
+  export wrote and nobody changed (starter
   catalogue from `requirements-board/starter/`, starter "This repo" sections, leak check against
   `starter/deny.txt`); build anything new for the board here first, bump its `package.json` version and
   `CHANGELOG.md`, then export. Its About page (`/about`) is the user guide: keep it in step with the skills. Not
