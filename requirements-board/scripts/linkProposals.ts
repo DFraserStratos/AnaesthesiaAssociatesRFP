@@ -2,8 +2,12 @@
  * Apply link proposals (from the `link-requirements` workflow, or written by hand) to catalogue
  * items: pure, so `apply-links.ts` and the tests share it. Each proposal is checked again here,
  * whatever the agents said, and skipped with a reason when it no longer fits the text.
+ * An inline proposal's `occurrence` counts in the field as the agents read it: before any proposal of
+ * the same run was applied, outside links and code. All of a field's links are placed on that text,
+ * and an anchor overlapping one placed earlier in the run is skipped, never moved onto another word.
  */
-import { isQuestionId, isRecordId, itemLinkTargets } from '../shared/links.ts'
+import { codeRanges, maskCode } from '../shared/markdownCode.ts'
+import { LINK_SOURCE, isQuestionId, isRecordId, itemLinkTargets } from '../shared/links.ts'
 import { DEFAULT_CONFIG, type BoardConfig } from '../shared/config.ts'
 import { isRetired } from '../shared/statuses.ts'
 import type { Item, Question } from '../shared/types.ts'
@@ -21,12 +25,11 @@ export interface Outcome {
   skipped: string | null
 }
 
-/** Spans of `md` a new link must not overlap: existing links, code spans and fenced blocks. */
+/** Spans of `md` a new link must not overlap: code (the board's one rule, `shared/markdownCode.ts`) and existing links and images. */
 function blockedRanges(md: string): [number, number][] {
-  const out: [number, number][] = []
-  for (const re of [/^(```|~~~)[^\n]*\n[\s\S]*?(?:^\1[^\n]*$|(?![\s\S]))/gm, /(`+)[\s\S]*?\1/g, /!?\[[^\]]*\]\([^)]*\)/g]) {
-    for (const m of md.matchAll(re)) out.push([m.index, m.index + m[0].length])
-  }
+  const out: [number, number][] = codeRanges(md).map(([s, e]): [number, number] => [s, e])
+  // Links are found in the code-masked text, as the board finds them: brackets inside code are no link.
+  for (const m of maskCode(md).matchAll(new RegExp(LINK_SOURCE, 'g'))) out.push([m.index, m.index + m[0].length])
   return out
 }
 
@@ -66,6 +69,8 @@ export function applyProposals(items: Item[], questions: Question[], proposals: 
     return it && !isRetired(config, it) ? it : undefined
   }
 
+  // The links this run places, per item and field, at offsets in the field's original text.
+  const placed = new Map<string, { at: number; end: number; anchor: string; target: string }[]>()
   const outcomes: Outcome[] = []
   const skip = (proposal: Proposal, why: string) => outcomes.push({ proposal, skipped: why })
 
@@ -88,8 +93,11 @@ export function applyProposals(items: Item[], questions: Question[], proposals: 
         skip(p, `target ${p.target} is the item itself, its lineage or one of its children`)
         continue
       }
-      const text = it[p.field]
-      if (linksTo(text, p.target)) {
+      // Positions are found in the field as it was before this run, as the agents read it.
+      const text = byId.get(it.id)![p.field]
+      const key = `${it.id}\u0000${p.field}`
+      const mine = placed.get(key) ?? []
+      if (linksTo(text, p.target) || mine.some((x) => x.target === p.target)) {
         skip(p, `the ${p.field} already links to ${p.target}`)
         continue
       }
@@ -98,8 +106,18 @@ export function applyProposals(items: Item[], questions: Question[], proposals: 
         skip(p, `"${p.anchor}" (occurrence ${p.occurrence ?? 1}) is not in the ${p.field} outside links and code`)
         continue
       }
-      const next = text.slice(0, at) + `[${p.anchor}](${p.target})` + text.slice(at + p.anchor.length)
-      changed.set(it.id, { ...it, [p.field]: next })
+      const end = at + p.anchor.length
+      const clash = mine.find((x) => at < x.end && end > x.at)
+      if (clash) {
+        skip(p, `"${p.anchor}" (occurrence ${p.occurrence ?? 1}) overlaps "${clash.anchor}", linked to ${clash.target} by an earlier proposal`)
+        continue
+      }
+      mine.push({ at, end, anchor: p.anchor, target: p.target })
+      placed.set(key, mine)
+      // Splice every link of this field into the original text, from the end so earlier offsets hold.
+      let next = text
+      for (const x of [...mine].sort((a, b) => b.at - a.at)) next = next.slice(0, x.at) + `[${x.anchor}](${x.target})` + next.slice(x.end)
+      changed.set(it.id, { ...current(it.id)!, [p.field]: next })
       outcomes.push({ proposal: p, skipped: null })
     } else {
       const from = current(p.from)

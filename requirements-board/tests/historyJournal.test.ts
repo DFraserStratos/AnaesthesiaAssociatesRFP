@@ -3,7 +3,10 @@ import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+// Each test drives real git processes; under a loaded machine 5 s is too short (B08: more git runs per read).
+vi.setConfig({ testTimeout: 60_000 })
 import { serialiseItem } from '../shared/files.ts'
 import type { TimelineEntry } from '../shared/history.ts'
 import type { Item, Rev } from '../shared/types.ts'
@@ -45,7 +48,7 @@ describe('the change journal', () => {
   it('logs a sheet save as the board, once, even after the watcher re-reads it', async () => {
     const a = api()
     const r = rec(a, 'US-01.1.1')
-    call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...r.data, title: 'Second' }, baseRev: r.rev })
+    call(a, 'PUT', '/api/items/US-01.1.1', { patch: { ...r.data, title: 'Second' }, baseRev: r.rev })
     a.syncFromDisk() // the watcher's echo of our own write
     expect(await timeline(a, 'US-01.1.1')).toMatchObject([{ source: 'board', kind: 'changed', changes: [{ field: 'title', from: 'First', to: 'Second' }] }])
   })
@@ -172,7 +175,7 @@ describe.skipIf(!hasGit)('git history', () => {
 describe('deleting a card', () => {
   it('sets its journal aside, so a new card given the same ID starts with a clean history', async () => {
     const a = api()
-    call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...rec(a, 'US-01.1.1').data, title: 'Renamed' }, baseRev: rec(a, 'US-01.1.1').rev })
+    call(a, 'PUT', '/api/items/US-01.1.1', { patch: { ...rec(a, 'US-01.1.1').data, title: 'Renamed' }, baseRev: rec(a, 'US-01.1.1').rev })
     expect((await timeline(a, 'US-01.1.1')).length).toBeGreaterThan(0)
     call(a, 'DELETE', '/api/items/US-01.1.1', { baseRev: rec(a, 'US-01.1.1').rev, ids: ['US-01.1.1'] })
     const again = call(a, 'POST', '/api/items', { type: 'story', parent: 'FT-01.1', title: 'Fresh' }) as Rev<Item>

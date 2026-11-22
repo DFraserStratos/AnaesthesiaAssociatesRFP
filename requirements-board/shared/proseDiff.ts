@@ -15,6 +15,8 @@ export interface Block {
   depth: number
   /** The block's Markdown, dedented (a list item keeps its marker). */
   text: string
+  /** A numbered list's first item: the number the list starts at, which Markdown shows. */
+  start?: number
 }
 
 const FENCE = /^\s*(```|~~~)/
@@ -92,6 +94,15 @@ export function splitBlocks(md: string, opts: { lines?: boolean } = {}): Block[]
     }
   }
   flush()
+  // A numbered list's first item: no item at its depth before it in the same list.
+  for (let k = 0; k < out.length; k++) {
+    const b = out[k]!
+    const num = b.kind === 'item' ? /^(\d+)[.)]/.exec(b.text) : null
+    if (!num) continue
+    let first = true
+    for (let p = k - 1; first && p >= 0 && out[p]!.kind === 'item' && out[p]!.depth >= b.depth; p--) if (out[p]!.depth === b.depth) first = false
+    if (first) b.start = Number(num[1])
+  }
   return out
 }
 
@@ -104,14 +115,43 @@ export interface Row {
   after: Block | null
 }
 
-const keyOf = (b: Block) => `${b.kind}:${b.depth}:${squashSpace(b.text)}`
+const ITEM_MARK = /^([-*+]|\d+[.)])\s+/
+
+/**
+ * What a list item's marker shows: a bullet (whichever of `-`, `*`, `+`), a number, or on a numbered
+ * list's first item the number it starts at. Renumbering after an insert, or another bullet
+ * character, shows nothing new; a bullet turned into a number, or a new starting number, does.
+ */
+const shownMark = (b: Block) => (b.kind !== 'item' ? '' : /^\d/.test(b.text) ? 'ordered' : 'bullet')
+
+/**
+ * Two paired blocks whose markers show differently: a bullet against a number, or two list starts
+ * (each its list's first item) at different numbers. The start is compared only between two list
+ * starts, so an item inserted or removed at the top of a list changes no other item.
+ */
+const markerChanged = (a: Block, b: Block) => shownMark(a) !== shownMark(b) || (a.start != null && b.start != null && a.start !== b.start)
+
+/** An item's text without its marker, for counting words (a "2." is no word). */
+const bodyOf = (b: Block) => (b.kind === 'item' ? b.text.replace(ITEM_MARK, '') : b.text)
+
+/** A block as the reader sees it: kind, depth, a list item's shown marker, and its text without the marker, spacing squashed. */
+const keyOf = (b: Block) => (b.kind === 'item' ? `item:${b.depth}:${shownMark(b)}:${squashSpace(b.text.replace(ITEM_MARK, ''))}` : `${b.kind}:${b.depth}:${squashSpace(b.text)}`)
+
+/**
+ * Two Markdown texts with the same blocks, each reading the same but for its spacing (a paragraph
+ * re-wrapped, a list renumbered or its bullets changed): nothing a reader would notice. Joining or
+ * splitting paragraphs or list items, a new depth or kind, or a new starting number, is a change.
+ */
+export function sameBlocks(a: string, b: string): boolean {
+  const x = splitBlocks(a)
+  const y = splitBlocks(b)
+  return x.length === y.length && x.every((k, i) => keyOf(k) === keyOf(y[i]!) && !markerChanged(k, y[i]!))
+}
 
 const wordsOf = (s: string) => s.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []
 
-/** How alike two blocks read (0 to 1): the share of words they have in common. */
-function similarity(a: string, b: string): number {
-  const x = wordsOf(a)
-  const y = wordsOf(b)
+/** How alike two blocks' words read (0 to 1): the share of words they have in common. */
+function similarity(x: string[], y: string[]): number {
   if (!x.length && !y.length) return 1
   const count = new Map<string, number>()
   for (const w of x) count.set(w, (count.get(w) ?? 0) + 1)
@@ -127,31 +167,47 @@ function similarity(a: string, b: string): number {
 }
 
 /** Of a block's words, the share the other block holds too (the shorter block's view): an item only extended scores high. */
-function overlap(a: string, b: string): number {
-  const x = wordsOf(a)
-  const y = new Set(wordsOf(b))
+function overlap(x: string[], y: string[]): number {
   if (!x.length) return 0
-  return x.filter((w) => y.has(w)).length / x.length
+  const has = new Set(y)
+  return x.filter((w) => has.has(w)).length / x.length
 }
 
 /** Blocks this alike are one block edited, not one removed and another added. */
 const PAIR_AT = 0.4
 
 /** Paired when they read alike, or when one is mostly the other with words added (a short list item extended). */
-export const alike = (a: string, b: string) => {
-  const s = similarity(a, b)
+function alikeWords(x: string[], y: string[]) {
+  const s = similarity(x, y)
   if (s >= PAIR_AT) return true
-  const short = wordsOf(a).length <= wordsOf(b).length ? [a, b] : [b, a]
-  return s >= 0.25 && overlap(short[0]!, short[1]!) >= 0.8
+  const [short, long] = x.length <= y.length ? [x, y] : [y, x]
+  return s >= 0.25 && overlap(short, long) >= 0.8
 }
 
-/** Pair the removed and added blocks between two unchanged ones, keeping both orders. */
-function pairRun(dels: Block[], adds: Block[], out: Row[]) {
+export const alike = (a: string, b: string) => alikeWords(wordsOf(a), wordsOf(b))
+
+/** A run bigger than this (removed times added blocks) looks only `PAIR_WINDOW` added blocks ahead for each removed one: wholly different documents stay quick. */
+const PAIR_ALL_UP_TO = 40_000
+const PAIR_WINDOW = 100
+
+/**
+ * Pair the removed and added blocks between two unchanged ones, keeping both orders. Two blocks that
+ * read the same (equal keys the comparison left unpaired) make a `same` row, never an edit with
+ * nothing to mark.
+ */
+function pairRun(dels: Block[], adds: Block[], keys: Map<Block, string>, out: Row[]) {
+  const window = dels.length * adds.length > PAIR_ALL_UP_TO ? PAIR_WINDOW : Infinity
+  const words = new Map<Block, string[]>()
+  const wordsOfBlock = (b: Block) => {
+    let w = words.get(b)
+    if (!w) words.set(b, (w = wordsOf(bodyOf(b))))
+    return w
+  }
   let j = 0
   for (const d of dels) {
     let k = -1
-    for (let n = j; n < adds.length; n++) {
-      if (alike(d.text, adds[n]!.text)) {
+    for (let n = j; n < adds.length && n - j < window; n++) {
+      if (keys.get(d) === keys.get(adds[n]!) || alikeWords(wordsOfBlock(d), wordsOfBlock(adds[n]!))) {
         k = n
         break
       }
@@ -161,7 +217,7 @@ function pairRun(dels: Block[], adds: Block[], out: Row[]) {
       continue
     }
     for (; j < k; j++) out.push({ op: 'added', before: null, after: adds[j]! })
-    out.push({ op: 'edited', before: d, after: adds[k]! })
+    out.push({ op: keys.get(d) === keys.get(adds[k]!) ? 'same' : 'edited', before: d, after: adds[k]! })
     j = k + 1
   }
   for (; j < adds.length; j++) out.push({ op: 'added', before: null, after: adds[j]! })
@@ -171,16 +227,21 @@ function pairRun(dels: Block[], adds: Block[], out: Row[]) {
 export function pairBlocks(a: Block[], b: Block[]): Row[] {
   const keysA = a.map(keyOf)
   const keysB = b.map(keyOf)
-  const pairs = lcsPairs(keysA, keysB, (p, q) => p === q) ?? []
+  const keys = new Map<Block, string>()
+  a.forEach((x, i) => keys.set(x, keysA[i]!))
+  b.forEach((x, i) => keys.set(x, keysB[i]!))
+  const pairs = lcsPairs(keysA, keysB, (p, q) => p === q)
   const out: Row[] = []
   let i = 0
   let j = 0
   for (const [pi, pj] of [...pairs, [a.length, b.length] as [number, number]]) {
-    pairRun(a.slice(i, pi), b.slice(j, pj), out)
+    pairRun(a.slice(i, pi), b.slice(j, pj), keys, out)
     if (pi < a.length && pj < b.length) out.push({ op: 'same', before: a[pi]!, after: b[pj]! })
     i = pi + 1
     j = pj + 1
   }
+  // Two list starts at different numbers read the same in the key but show differently: an edit.
+  for (const r of out) if (r.op === 'same' && markerChanged(r.before!, r.after!)) r.op = 'edited'
   return out
 }
 
@@ -209,6 +270,8 @@ const absorbable = (s: string) => !/[\p{L}\p{N}]/u.test(s) || s.trim().length <=
 export function wordDiff(a: string, b: string): { before: Segment[]; after: Segment[] } {
   const x = tokenize(a)
   const y = tokenize(b)
+  // The table's budget goes only to what lies between the common start and end (and past it, between
+  // words found once each side), so a long paragraph with one word changed still marks that word.
   const pairs = lcsPairs(x, y, (p, q) => p === q, 400_000)
   let ops: Op[] = []
   const push = (op: Op['op'], text: string) => {
@@ -216,19 +279,14 @@ export function wordDiff(a: string, b: string): { before: Segment[]; after: Segm
     if (last?.op === op) last.text += text
     else ops.push({ op, text })
   }
-  if (!pairs) {
-    push('del', a)
-    push('add', b)
-  } else {
-    let i = 0
-    let j = 0
-    for (const [pi, pj] of [...pairs, [x.length, y.length] as [number, number]]) {
-      while (i < pi) push('del', x[i++]!)
-      while (j < pj) push('add', y[j++]!)
-      if (pi < x.length && pj < y.length) push('same', x[pi]!)
-      i = pi + 1
-      j = pj + 1
-    }
+  let i = 0
+  let j = 0
+  for (const [pi, pj] of [...pairs, [x.length, y.length] as [number, number]]) {
+    while (i < pi) push('del', x[i++]!)
+    while (j < pj) push('add', y[j++]!)
+    if (pi < x.length && pj < y.length) push('same', x[pi]!)
+    i = pi + 1
+    j = pj + 1
   }
   // Fold short unchanged runs sandwiched between changes into both sides' changes.
   for (let changed = true; changed; ) {
@@ -320,20 +378,35 @@ const keptShare = (segments: Segment[]) => {
 }
 
 /**
+ * A list item whose shown marker changed (a bullet turned into a number, a new starting number), as a
+ * paragraph led by its marker, marked: a mark inside the marker would stop the line being a list item.
+ * A bullet is drawn as one.
+ */
+function markedMarker(b: Block, segs: Segment[]): string {
+  const mark = ITEM_MARK.exec(b.text)?.[1] ?? ''
+  return `${MARK_OPEN}${/^\d/.test(mark) ? mark : '•'}${MARK_CLOSE} ${markSegments(segs)}`
+}
+
+/**
  * A paired block's two sides, marked where their words differ. `rewritten` when so little was kept
- * that word marks would read as confetti: the sides come back unmarked, to be tinted whole.
+ * that word marks would read as confetti: the sides come back unmarked, to be tinted whole. An edited
+ * pair always shows its change: a list item whose shown marker changed has the marker marked, and a
+ * pair that would show no mark on either side (a heading's level, a table's alignment row) is tinted whole.
  */
 export function markPair(before: Block, after: Block): { before: string; after: string; rewritten: boolean } {
   const lead = (b: Block) => LEAD[b.kind]?.exec(b.text)?.[0] ?? ''
   const la = lead(before)
   const lb = lead(after)
   const d = wordDiff(before.text.slice(la.length), after.text.slice(lb.length))
-  if (Math.min(keptShare(d.before), keptShare(d.after)) < REWRITTEN_BELOW) return { before: before.text, after: after.text, rewritten: true }
+  const whole = { before: before.text, after: after.text, rewritten: true }
+  if (Math.min(keptShare(d.before), keptShare(d.after)) < REWRITTEN_BELOW) return whole
+  if (before.kind === 'item' && after.kind === 'item' && markerChanged(before, after)) return { before: markedMarker(before, d.before), after: markedMarker(after, d.after), rewritten: false }
   const marked = (b: Block, lead: string, segs: Segment[]) => {
     const out = lead + markSegments(segs)
     return b.kind === 'table' ? unmarkDelimiterRows(out) : out
   }
-  return { before: marked(before, la, d.before), after: marked(after, lb, d.after), rewritten: false }
+  const out = { before: marked(before, la, d.before), after: marked(after, lb, d.after), rewritten: false }
+  return out.before.includes(MARK_OPEN) || out.after.includes(MARK_OPEN) ? out : whole
 }
 
 /** Where sentences were left out of a marked block: the renderer draws it as a "…" that opens the whole block. */

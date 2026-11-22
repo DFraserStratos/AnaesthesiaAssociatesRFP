@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * Questions on an item sheet, over the fixture catalogue (port 5182): only open ones show,
+ * Questions on an item sheet, over the fixture catalogue: only open ones show,
  * and deleting one from its sheet asks first, removes the file and drops it off the card.
  */
 import { existsSync } from 'node:fs'

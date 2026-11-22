@@ -46,8 +46,10 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
   question answer. Anything the evidence leaves unresolved becomes a new question (OQ), not a guess.
 - Every source you write must resolve: the board opens it at the spot it cites, and the check
   warns on one that resolves to nothing (SCHEMA's `sources` row lists the forms). Use
-  `"RFP p.<printed page> · <Section> › <subheading>"`, `"Notes <date> · <the note's title words> #n"`
-  (several points as `#2 #16`), `"Transcript <date> · <name> L27-33"` for transcript lines, a bare
+  `"RFP p.<printed page> · <Section> › <subheading>"`, `"Notes <date> · <the note file's slug words> #n"`
+  (the file name after its date, hyphens as spaces, not the title: a note titled "Sam's pricing call"
+  saved as `2026-10-16-sam-pricing-call.md` is `"Notes 2026-10-16 · Sam pricing call #8"`; several
+  points as `#2 #16`), `"Transcript <date> · <name> L27-33"` for transcript lines, a bare
   `OQ-nn`. Check one with `npm --prefix BOARD run source -- "<source>"`.
 - Notes are append only: never edit an existing note, except the one this run creates.
 - Keep the user's own wording when quoting their answers and notes (fix spelling, drop filler).
@@ -177,10 +179,12 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
 ## Stage 5: finish
 
 1. Run the check ("This repo") until there are no errors, and no new warnings from this run.
-2. Links: run `npm --prefix BOARD run links:index`, then the `link-requirements` workflow, with
-   `batches` set to the touched epics (and `board` set to BOARD if it is not `requirements-board`).
-   Then run `npm --prefix BOARD run links:apply -- --dry-run`, check the output, and apply it without
-   `--dry-run`. Run the check again.
+2. Links: run `npm --prefix BOARD run links:index` (it starts a new link run), then the
+   `link-requirements` workflow, with `batches` set to the touched epics as a list of IDs, for example
+   `["EP-04", "EP-06"]` (one batch each; `[["EP-04", "EP-06"]]` makes them one batch), and `board` set
+   to BOARD if it is not `requirements-board`. Then run `npm --prefix BOARD run links:apply --
+   --dry-run`, which applies that run only, check the output, and apply it without `--dry-run`. Run
+   the check again.
 3. **Completeness critic (fresh):** read the note and the change list against the final catalogue. Is
    every point reflected or justified?
 4. **Change log:** write `REQ/changes/YYYY-MM-DD-<slug>.md`.

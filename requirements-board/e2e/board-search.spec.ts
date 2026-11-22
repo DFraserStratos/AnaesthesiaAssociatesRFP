@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * The board's search, over the fixture catalogue (port 5182): Ctrl F focuses it, typing lists the
+ * The board's search, over the fixture catalogue: Ctrl F focuses it, typing lists the
  * matching cards, arrow keys find each on the board without opening it, Enter opens, Esc goes back.
  */
 import { expect, test } from '@playwright/test'

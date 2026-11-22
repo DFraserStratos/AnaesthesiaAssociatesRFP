@@ -2,11 +2,15 @@
  * CSV in the old generator's column shape, for Miro or a spreadsheet, with
  * Acceptance criteria, Technical discussion and Related appended at the end so every
  * earlier column keeps its position for existing imports. Links in the text become their words.
- * Quoting matches Python's csv.QUOTE_MINIMAL with "\n" line endings.
+ * Quoting matches Python's csv.QUOTE_MINIMAL with "\n" line endings. Status shows the project's
+ * label (a stored code means nothing to a reader); a code the project's list does not define is
+ * written as stored.
  */
+import type { BoardConfig } from './config.ts'
 import { compareIds, compareSiblings } from './ids.ts'
 import { plainText } from './links.ts'
-import { TYPE_LABEL, type Item, type Question } from './types.ts'
+import { statusLabel } from './statuses.ts'
+import { typeLabel, type Item, type Question } from './types.ts'
 
 export const REQUIREMENT_COLUMNS = ['ID', 'Type', 'Parent', 'Title', 'Description', 'Notes', 'Component', 'Status', 'Source', 'Acceptance criteria', 'Technical discussion', 'Related']
 export const QUESTION_COLUMNS = ['ID', 'Title', 'Question', 'Affects', 'Owner', 'Status', 'Source']
@@ -41,20 +45,20 @@ export function depthFirst(items: Item[]): Item[] {
   return out
 }
 
-export function requirementsCsv(items: Item[]): string {
+export function requirementsCsv(items: Item[], config: BoardConfig): string {
   return (
     row(REQUIREMENT_COLUMNS) +
     depthFirst(items)
       .map((it) =>
         row([
           it.id,
-          TYPE_LABEL[it.type],
+          typeLabel(it.type),
           it.parent ?? '',
           it.title,
           plainText(it.description),
           plainText(it.notes),
           it.components.join(LIST_SEPARATOR),
-          it.status,
+          statusLabel(config, 'item', it.status),
           it.sources.join(LIST_SEPARATOR),
           plainText(it.acceptance),
           plainText(it.technical),
@@ -65,7 +69,7 @@ export function requirementsCsv(items: Item[]): string {
   )
 }
 
-export function questionsCsv(questions: Question[]): string {
+export function questionsCsv(questions: Question[], config: BoardConfig): string {
   return (
     row(QUESTION_COLUMNS) +
     [...questions]
@@ -77,7 +81,7 @@ export function questionsCsv(questions: Question[]): string {
           plainText(q.answer ? `${q.question} ANSWER: ${q.answer}` : q.question),
           q.affects.join(LIST_SEPARATOR),
           q.owner,
-          q.status,
+          statusLabel(config, 'question', q.status),
           q.sources.join(LIST_SEPARATOR),
         ]),
       )

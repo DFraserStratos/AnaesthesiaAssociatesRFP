@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * Answering a question, over the fixture catalogue (port 5182): the prompt that follows offers every
+ * Answering a question, over the fixture catalogue: the prompt that follows offers every
  * item it affects Verify or Confirmed beside its own status. Open items start at Verify, the rest keep
  * their status, and only the ones changed are saved.
  */

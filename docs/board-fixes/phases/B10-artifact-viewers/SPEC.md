@@ -1,6 +1,6 @@
 # Phase B10: Artifact viewers release what they open, show what is current, and say what went wrong
 
-**Status:** PLANNED
+**Status:** COMPLETE (2026-11-20, board 1.22.0; see PROGRESS.md)
 
 **Requirements:** ten findings from [FINDINGS.md](../../FINDINGS.md), "Findings in detail":
 R-13 (Medium, pdf.js documents and workers never destroyed), R-33 (Medium, card find re-scrolls on
@@ -497,8 +497,8 @@ Shared register: [PROGRESS.md](../../PROGRESS.md), "Deferred decisions".
 | ID | Question / gap | Affects | Owner | Dependents | Resolve before | Boundary / acceptance impact |
 |---|---|---|---|---|---|---|
 | B10-Q1 | **Answered (accepted decisions 9 and 10, 2026-11-18): D-10 is B07's.** B07 produces the asset version and change signal, and B10-REQ-06 consumes it. B10 builds no server-side version source. | B10-REQ-06 | closed | none | n/a | REQ-06 waits only on D-10 being recorded and B07's signal shipping. |
-| B10-Q2 | Should a compare version that loads but fails to decode as an image (a corrupt PNG, an SVG the browser rejects) show "Could not be drawn" instead of a broken-image icon? FINDINGS does not raise this. B10-REQ-11 already requires that label for the timeline's screenshots, so consistency argues for yes. | B10-REQ-05 | B10 execution planner (user if in doubt) | none | B10 implementation plan | If yes, add a row to REQ-05's proof. If no, record it under "Discovered for later". |
-| B10-Q3 | What form does filter recovery take on the Artifacts tab: picked-but-absent values kept as toggles and select options (as statuses do today, with selects shown whenever a value is picked), a "Clear filters" action in the empty state, or both? This is a DESIGN.md question: quiet pills, laptop first. | B10-REQ-08 | B10 execution planner, against DESIGN.md (user if the look changes) | none | B10 implementation plan | Acceptance is unchanged: a visible control per picked value, plus a clear action from the empty state. |
+| B10-Q2 | **Answered (accepted decision 24, 2026-11-20): yes**, "Could not be drawn". Should a compare version that loads but fails to decode as an image (a corrupt PNG, an SVG the browser rejects) show "Could not be drawn" instead of a broken-image icon? FINDINGS does not raise this. B10-REQ-11 already requires that label for the timeline's screenshots, so consistency argues for yes. | B10-REQ-05 | B10 execution planner (user if in doubt) | none | B10 implementation plan | If yes, add a row to REQ-05's proof. If no, record it under "Discovered for later". |
+| B10-Q3 | **Answered (accepted decision 24, 2026-11-20): both** (picked values stay listed, and Clear filters in the empty state). What form does filter recovery take on the Artifacts tab: picked-but-absent values kept as toggles and select options (as statuses do today, with selects shown whenever a value is picked), a "Clear filters" action in the empty state, or both? This is a DESIGN.md question: quiet pills, laptop first. | B10-REQ-08 | B10 execution planner, against DESIGN.md (user if the look changes) | none | B10 implementation plan | Acceptance is unchanged: a visible control per picked value, plus a clear action from the empty state. |
 
 ## Risks and recovery requirements
 

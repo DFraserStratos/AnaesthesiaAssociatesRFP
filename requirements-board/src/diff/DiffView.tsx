@@ -4,7 +4,7 @@
  * the last commit that changed the catalogue against what is on disk now; with nothing uncommitted,
  * what that last commit changed. While To is what is on disk, it refreshes in place as files change.
  */
-import { memo, useCallback, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { EMPTY_TREE, WORKTREE } from '../../shared/diff.ts'
 import { ALL_FILTERS, canonicalRef, counts as countsOf, pageRows, passes, type Filters } from '../../shared/diffModel.ts'
@@ -22,7 +22,7 @@ import { DENSITIES, DiffBar, StickyBar } from './DiffBar.tsx'
 import { DiffCard } from './DiffCard.tsx'
 import { LookupContext, type Lookup, type Side } from './DiffFields.tsx'
 import './diff.css'
-import { flash, land } from './scroll.ts'
+import { cancelLanding, flash, land } from './scroll.ts'
 import { comparisonOf, useDiffData } from './useDiffData.ts'
 import { useDiffKeys } from './useDiffKeys.ts'
 import { useProgressiveDraw } from './useProgressiveDraw.ts'
@@ -104,6 +104,13 @@ export function DiffView() {
 
   const { isDrawn, drawAround } = useProgressiveDraw(cardsInOrder, page)
   const barHeight = useCallback(() => face.current?.offsetHeight ?? 0, [])
+  // Leaving the tab ends any landing still moving the page.
+  useEffect(() => {
+    const el = page.current
+    return () => {
+      if (el) cancelLanding(el)
+    }
+  }, [])
   useDiffKeys({ page, barHeight, paused: stale || params.has('item') || params.has('question'), cards: cardsInOrder, drawAround, viewed })
 
   /** The jump list's pick: draw it, land it under the bar, ring it. */
@@ -161,9 +168,10 @@ export function DiffView() {
                 />
               )}
             </StickyBar>
+            {/* While a new comparison is read, nothing the old one said speaks for it: only its cards stay, dimmed (R-94). */}
             {error ? (
               <p className="diff-state bad">Git could not be read: {error}</p>
-            ) : !data ? (
+            ) : !data || (stale && !shown.length) ? (
               <p className="diff-state">Reading git</p>
             ) : !entries.length ? (
               <p className="diff-state">No card, outstanding item or artifact differs between these two versions.</p>

@@ -18,21 +18,25 @@ import { ITEM_TYPES, TYPE_LABEL, firstLaneName, type Item } from '../../shared/t
 import { BoardMinimap } from '../board/BoardMinimap.tsx'
 import { BoardSearch } from '../board/BoardSearch.tsx'
 import { autoLayout, CARD, COL_GAP, EPIC_GAP, STACK_GAP } from '../board/autoLayout.ts'
-import type { CardData, CardNodeType } from '../board/cardData.ts'
+import { cardInView, centreViewport, type Box } from '../board/camera.ts'
+import type { CardNodeType } from '../board/cardData.ts'
 import { CardNode } from '../board/CardNode.tsx'
 import { buildEdges, buildNodes, countDescendants, isShown, type GraphInput } from '../board/graph.ts'
 import { LaneHeaders } from '../board/LaneHeaders.tsx'
 import { RiseEdge } from '../board/RiseEdge.tsx'
 import { wheelGestures } from '../board/trackpad.ts'
 import { AddNode, LaneNode, MarkerNode, type AddNodeType, type LaneNodeType, type MarkerNodeType } from '../board/LaneNode.tsx'
-import { dropTarget, LANE_HEAD, LANE_MARGIN, laneKey, mappedLayout, type MappedLayout } from '../board/mappedLayout.ts'
+import { dragHold, dragLayout, dropTarget, LANE_HEAD, LANE_MARGIN, laneKey, mappedLayout, type MappedLayout, type MappedOptions } from '../board/mappedLayout.ts'
 import { boundsOf, clampViewport, panExtent, type Bounds } from '../board/panLimits.ts'
+import { walkStep, type WalkKey } from '../board/walk.ts'
 import { Glyph, StatusLabel } from '../components/bits.tsx'
 import { PanelResizer, readPanel, writePanel } from '../components/PanelResizer.tsx'
 import { ItemModal } from '../components/ItemModal.tsx'
+import { RegionBoundary } from '../components/RegionBoundary.tsx'
 import { rankMatches } from '../itemSearch.ts'
 import { guarded, useOpen } from '../nav.ts'
 import { ancestorsOf, descendantsOf, filtersActive, matchesFilters, shownIndex, useCatalogue, useComponents, useConfig, useIndex, useView, type BoardMode, type Index } from '../store.ts'
+import { isFiniteNumber, isRecord, readJson, writeJson } from '../storage.ts'
 import { useDismiss } from '../useDismiss.ts'
 
 const nodeTypes = { card: CardNode, lane: LaneNode, add: AddNode, marker: MarkerNode }
@@ -51,16 +55,18 @@ const PANEL_KEY = 'requirements-board:panel-width'
 const DOCK_MIN = 380
 /** Clear the floating toolbar and legend when fitting the whole map. */
 const FIT = { padding: { top: '84px', bottom: '64px', left: '24px', right: '24px' }, maxZoom: 0.6 } as const
-/** How much of a wide card (an epic) must be on screen to count as in view. */
-const CARD_PEEK = 240
+/** The zoom an arrow-key step or an opened search hit lands at, or closer if the board is already closer in. */
+const WALK_ZOOM = 0.9
+/** What, inside the canvas, does its own job with Enter and the arrow keys: the board never walks from it (FINDINGS R-115). */
+const CONTROLS = 'button, a[href], input, select, textarea, [contenteditable="true"], [role="menu"], [role="menuitem"], [role="toolbar"], [role="dialog"]'
 
-function readViewport(mode: BoardMode): Viewport | undefined {
-  try {
-    const raw = localStorage.getItem(VIEWPORT_KEY[mode])
-    return raw ? (JSON.parse(raw) as Viewport) : undefined
-  } catch {
+/** A saved viewport, or none (the board fits the map) when it is not finite x, y and a positive zoom. */
+export function readViewport(mode: BoardMode): Viewport | undefined {
+  return readJson<Viewport | undefined>(VIEWPORT_KEY[mode], 'board position', undefined, (raw, bad) => {
+    if (isRecord(raw) && isFiniteNumber(raw.x) && isFiniteNumber(raw.y) && isFiniteNumber(raw.zoom) && raw.zoom > 0) return { x: raw.x, y: raw.y, zoom: raw.zoom }
+    bad()
     return undefined
-  }
+  })
 }
 /** Semantic zoom bands: overview (epic names, status blocks), far (titles only), mid, near (excerpt). */
 const zoomBand = (z: number) => (z < 0.3 ? 'zoom-far zoom-overview' : z < 0.5 ? 'zoom-far' : z >= 0.95 ? 'zoom-near' : 'zoom-mid')
@@ -101,6 +107,8 @@ function Board({ mode }: { mode: BoardMode }) {
   const moveItems = useCatalogue((s) => s.moveItems)
   const view = useView()
   const open = useOpen()
+  /** What a Mapped drag holds still while it lasts (`dragHold`), in the hit-test map and the drawn preview alike. */
+  const [hold, setHold] = useState<Pick<MappedOptions, 'keepDirect' | 'laneFloors'> | null>(null)
   const rf = useReactFlow<BoardNode>()
   const mapped = mode === 'mapped'
   // The open card is the URL's `?item=`: clicking a card opens it in the side panel and lights its lineage.
@@ -177,9 +185,9 @@ function Board({ mode }: { mode: BoardMode }) {
   const dragRef = useRef<MappedDrag | null>(null)
   const collapsedLanes = useMemo(() => new Set(view.collapsedLanes), [view.collapsedLanes])
   const visible = useCallback((it: Item) => isShown(it, { index, showRetired: view.showRetired, selected }), [index, view.showRetired, selected])
-  // The index as shown: retired cards (unless the toggle is on) are out of every count and every arrow-key step.
-  const shown = useMemo(() => shownIndex(index, view.showRetired, selected), [index, view.showRetired, selected])
-  const laneOpts = useMemo(() => ({ lanes, firstLane, collapsed: collapsedLanes, visible, retired }), [lanes, firstLane, collapsedLanes, visible, retired])
+  // The open card is drawn even in a collapsed lane, alone in its strip (B11-Q1).
+  const baseLaneOpts = useMemo<MappedOptions>(() => ({ lanes, firstLane, collapsed: collapsedLanes, visible, retired, open: selected }), [lanes, firstLane, collapsedLanes, visible, retired, selected])
+  const laneOpts = useMemo<MappedOptions>(() => (hold ? { ...baseLaneOpts, ...hold } : baseLaneOpts), [baseLaneOpts, hold])
   const previewItems = useMemo(() => (target ? applyMove(index.items, target, retired) : index.items), [index.items, target, retired])
   const map = useMemo(() => (mapped ? mappedLayout(previewItems, laneOpts) : null), [mapped, previewItems, laneOpts])
   const freeform = useMemo(() => (mapped ? null : autoLayout(index.items, retired)), [mapped, index.items, retired])
@@ -204,25 +212,35 @@ function Board({ mode }: { mode: BoardMode }) {
   )
 
   const descendantCounts = useMemo(() => countDescendants(shownIndex(index, view.showRetired)), [index, view.showRetired])
+  // The last build's card nodes: a card nothing it draws has changed keeps its node (FINDINGS R-159).
+  const lastCards = useRef<ReadonlyMap<string, CardNodeType>>(new Map())
   const computed = useMemo<BoardNode[]>(() => {
-    const cards: BoardNode[] = buildNodes(graph, descendantCounts).map((n) => (n.id === peek ? { ...n, className: 'peek' } : n))
+    const built = buildNodes(graph, descendantCounts, lastCards.current)
+    lastCards.current = new Map(built.map((n) => [n.id, n]))
+    const cards: BoardNode[] = built.map((n) => (n.id === peek ? { ...n, className: 'peek' } : n))
     return map ? [...cards, ...mappedExtras(map, index, lanes.length > 0, target)] : cards
   }, [graph, descendantCounts, map, index, lanes.length, target, resetTick, peek])
 
   // React Flow owns in-flight drag positions; the store owns everything else.
   const [nodes, setNodes] = useState<BoardNode[]>(computed)
+  const lastComputed = useRef<ReadonlySet<BoardNode>>(new Set())
   useEffect(() => {
+    const unchanged = lastComputed.current
+    lastComputed.current = new Set(computed)
     // Carry React Flow's own per-node state across rebuilds: without `measured` every card
     // hides and re-measures on each click or keystroke; a card mid-drag keeps its live position.
     // This copy of `measured` can lag React Flow's (a rebuild landing mid-measure), which once
     // stripped every card's handles for good; nodes now carry `handles`, so a lag only delays.
     // In Mapped, a dragged card carries everything under it, so that whole subtree holds its live position.
+    // A card whose built node is the one built last time, sitting where it was built, keeps the node
+    // React Flow already holds, so it does not render again.
     setNodes((prev) => {
       const byId = new Map(prev.map((n) => [n.id, n]))
       const drag = dragRef.current
       return computed.map((n) => {
         const p = byId.get(n.id)
         if (!p) return n
+        if (!drag && !p.dragging && unchanged.has(n) && p.position.x === n.position.x && p.position.y === n.position.y && p.className === n.className) return p
         const held = drag ? drag.subtree.has(n.id) : !mapped && !!p.dragging
         return { ...n, measured: p.measured, selected: p.selected, dragging: p.dragging, position: held ? p.position : n.position, className: drag?.subtree.has(n.id) ? 'in-drag' : n.className } as BoardNode
       })
@@ -235,13 +253,13 @@ function Board({ mode }: { mode: BoardMode }) {
     const it = index.byId.get(node.id)
     if (!it) return
     const subtree = new Set([it.id, ...descendantsOf(index, it.id).map((d) => d.id)])
+    // Worked out from the map as drawn without any earlier hold, so a drag that never saw its stop cannot compound.
+    const held = dragHold(index.items, it, baseLaneOpts)
+    setHold(held)
     dragRef.current = {
       item: it,
       subtree,
-      rest: mappedLayout(
-        index.items.filter((i) => !subtree.has(i.id)),
-        laneOpts,
-      ),
+      rest: dragLayout(index.items, it, subtree, baseLaneOpts, held),
       start: new Map(nodes.filter((n) => subtree.has(n.id)).map((n) => [n.id, n.position])),
       origin: node.position,
       target: null,
@@ -261,7 +279,8 @@ function Board({ mode }: { mode: BoardMode }) {
     )
     const at = 'touches' in e ? e.touches[0] : e
     if (!at) return
-    const t = dropTarget(drag.rest, rf.screenToFlowPosition({ x: at.clientX, y: at.clientY }), drag.item)
+    // The lane under the pointer is read from the map as drawn now (`map`, the preview), its slot from `rest`.
+    const t = dropTarget(drag.rest, rf.screenToFlowPosition({ x: at.clientX, y: at.clientY }), drag.item, map ?? undefined)
     if (!sameTarget(t, drag.target)) {
       drag.target = t
       setTarget(t)
@@ -280,6 +299,7 @@ function Board({ mode }: { mode: BoardMode }) {
     const changes = drag.target ? planMove(index.items, drag.target, retired) : []
     if (changes.length) void moveItems(changes, { label: `Move ${drag.item.title}` })
     setTarget(null)
+    setHold(null)
     setResetTick((n) => n + 1)
     setTimeout(() => setPreviewing(false), SETTLE_MS)
   }
@@ -308,16 +328,23 @@ function Board({ mode }: { mode: BoardMode }) {
   // Mapped draws no connectors except the open card's lineage, and none mid-drag (the map is reflowing).
   const edges = useMemo(() => (!mapped ? buildEdges(graph) : lineage && !previewing ? buildEdges(graph, { mapped: true }) : []), [mapped, graph, lineage, previewing])
 
+  // Where each card is drawn, from the board's own layout of this render: a centring made in the same commit
+  // as a selection sees the layout that selection draws (a collapsed lane's strip, a retired parent's column),
+  // which React Flow's node store only catches up with later.
+  const placeRef = useRef<(id: string) => Box | undefined>(() => undefined)
+  placeRef.current = (id) => {
+    const a = auto[id]
+    const p = mapped ? undefined : positions[id]
+    return a && p ? { ...a, x: p.x, y: p.y } : a
+  }
+
+  /** Bring a card into view right of `clearLeft` (the open panel by default) at `zoom` (default: at least WALK_ZOOM). */
   const centreOn = useCallback(
     (id: string, zoom?: number, clearLeft = dockRef.current) => {
-      const n = rf.getNode(id)
-      if (!n) return
-      const w = (n.data as CardData).w
-      const h = (n.data as CardData).h
-      const z = zoom ?? Math.max(rf.getZoom(), 0.9)
-      // Centre it in the part of the board left visible right of `clearLeft` (the open panel by default), within the board's limits.
+      const card = placeRef.current(id)
+      if (!card) return
       const { width, height } = store.getState()
-      const vp = { x: (width + clearLeft) / 2 - (n.position.x + w / 2) * z, y: height / 2 - (n.position.y + h / 2) * z, zoom: z }
+      const vp = centreViewport(card, { w: width, h: height }, clearLeft, zoom ?? Math.max(rf.getZoom(), WALK_ZOOM))
       void rf.setViewport(limit(vp, clearLeft), { duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450 })
     },
     [rf, store, limit],
@@ -326,36 +353,69 @@ function Board({ mode }: { mode: BoardMode }) {
   /** Is the top left of a card on screen, clear of the toolbar and the panel? */
   const inView = useCallback(
     (id: string) => {
-      const n = rf.getNode(id)
+      const card = placeRef.current(id)
       const pane = paneRef.current
-      if (!n || !pane) return true
-      const { x, y, zoom } = rf.getViewport()
-      const d = n.data as CardData
-      const left = n.position.x * zoom + x
-      const top = n.position.y * zoom + y
-      return left >= dockRef.current && top >= 64 && left + Math.min(d.w, CARD_PEEK) * zoom <= pane.clientWidth && top + d.h * zoom <= pane.clientHeight
+      if (!card || !pane) return true
+      return cardInView(card, rf.getViewport(), { w: pane.clientWidth, h: pane.clientHeight }, dockRef.current)
     },
     [rf],
   )
 
-  // "Show on board" from a sheet or another view lands here as ?focus=ID (with the item open).
+  /**
+   * A move the board makes to the open card (an arrow-key step, a search hit opened, "Show on board"): made
+   * once, after the render that draws the selection, at its own zoom. While one is made, nothing else
+   * re-targets it (FINDINGS R-116: the selection pan used to restart a walk's ease at the mid-ease zoom).
+   */
+  const aimRef = useRef<{ id: string; zoom?: number; clearLeft?: number; done?: boolean } | null>(null)
+  const [aimTick, setAimTick] = useState(0)
+  const aim = (id: string, opts: { zoom?: number; clearLeft?: number } = {}) => {
+    aimRef.current = { id, ...opts }
+    setAimTick((n) => n + 1)
+  }
+
+  // "Show on board" from a sheet or another view lands here as ?focus=ID (with the item open), at a zoom of 1.
   const focusId = open.params.get('focus')
   useEffect(() => {
     if (!focusId) return
-    if (index.byId.has(focusId)) setTimeout(() => centreOn(focusId, 1), 60)
+    if (index.byId.has(focusId)) aim(focusId, { zoom: 1 })
     open.clearFocus()
   }, [focusId]) // only when a new focus request arrives
 
-  // The open card must be on show (graph.ts shows it even while retired cards are hidden), and
-  // in view: pan to it when the panel opened over it or a panel link left it off screen.
+  // The open card must be on show (graph.ts shows it and its ancestors even while retired cards are hidden),
+  // and in view: an aim brings it there; otherwise (a click, a panel link, Back) pan to it only when the
+  // panel opened over it or a link left it off screen, at the zoom the board has.
+  const lastSelected = useRef(selected)
   useEffect(() => {
+    const moved = lastSelected.current !== selected
+    lastSelected.current = selected
+    const a = aimRef.current
+    if (a && !a.done) {
+      // The pane is measured a moment after the board mounts (Show on board from another view); a pane
+      // never measured gets no move rather than one worked out for a zero-width board.
+      let tries = 0
+      let t: ReturnType<typeof setTimeout> | undefined
+      const go = () => {
+        if (!store.getState().width) {
+          if (tries++ < 40) t = setTimeout(go, 25)
+          return
+        }
+        a.done = true
+        centreOn(a.id, a.zoom, a.clearLeft)
+      }
+      go()
+      return () => clearTimeout(t)
+    }
+    // The run after an aim for this same selection (its own render, StrictMode's second run): the board
+    // already brought the card into view. Any other selection change forgets the aim.
+    if (a && a.id === selected && !moved) return
+    aimRef.current = null
     if (!selected || !index.byId.has(selected) || focusId) return
     const t = setTimeout(() => {
       // Not while the search list is steering the board: it has somewhere else to be.
       if (!peekFrom.current && !inView(selected)) centreOn(selected, rf.getZoom())
     }, 80)
     return () => clearTimeout(t)
-  }, [selected]) // only when the selection changes, not on every catalogue event
+  }, [selected, aimTick]) // when the selection changes or the board aims, not on every catalogue event
 
   // Keyboard: / search, arrows walk the tree (each step opens that card), Enter moves into the panel.
   // Esc closes the panel; the panel itself handles that.
@@ -396,26 +456,22 @@ function Board({ mode }: { mode: BoardMode }) {
     }
     // Esc also clears a search left standing (after Enter opened a match); the panel closes as usual.
     if (e.key === 'Escape' && !typing && view.search) view.set({ search: '' })
-    // Only walk the tree when focus is on the page or the canvas, never on a button or link
-    // (Enter there must just press it).
-    const onCanvas = !target || target === document.body || !!target.closest('.react-flow')
-    if (typing || !onCanvas || !selected) return
-    const it = index.byId.get(selected)
-    if (!it) return
-    const go = (next: Item | undefined) => {
-      if (!next) return
-      e.preventDefault()
-      select(next.id, () => centreOn(next.id))
-    }
-    const sibs = it.parent ? (shown.children.get(it.parent) ?? []) : shown.epics
-    const at = sibs.findIndex((s) => s.id === it.id)
+    // Only walk the tree when focus is on the page, the canvas or a card: never on a control inside the
+    // canvas (a lane toggle, a lane name, its menu, Add lane, an add slot, the view bar), which keeps
+    // Enter and the arrow keys for its own job (FINDINGS R-115).
+    const onCanvas = !target || target === document.body || (!!target.closest('.react-flow') && !target.closest(CONTROLS))
+    if (typing || !onCanvas || !selected || !index.byId.has(selected)) return
     if (e.key === 'Enter') {
       e.preventDefault()
       document.querySelector<HTMLElement>('.sheet.docked')?.focus()
-    } else if (e.key === 'ArrowUp') go(it.type === 'story' && at > 0 ? sibs[at - 1] : it.parent ? index.byId.get(it.parent) : undefined)
-    else if (e.key === 'ArrowDown') go(it.type === 'story' ? sibs[at + 1] : shown.children.get(it.id)?.[0])
-    else if (e.key === 'ArrowLeft') go(sibs[at - 1])
-    else if (e.key === 'ArrowRight') go(sibs[at + 1])
+    } else if ((e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+      // A modified arrow (Alt Left is the browser's Back) keeps its own job.
+      // Step as the board draws the cards (FINDINGS R-118); each step opens that card and lands it in view.
+      const next = walkStep(e.key as WalkKey, selected, { index, shown: visible, retired, map })
+      if (!next) return
+      e.preventDefault()
+      select(next, () => aim(next))
+    }
   }
 
   /** Find a search hit on the board, clear of the panel and the results list, without opening it. */
@@ -445,7 +501,9 @@ function Board({ mode }: { mode: BoardMode }) {
     <div className={`board-split${selected ? ' has-panel' : ''}`} style={{ '--panel-w': `${panelW}%` } as CSSProperties}>
       {selected && (
         <aside className="dock" aria-label="Item details">
-          <ItemModal key={selected} id={selected} docked />
+          <RegionBoundary key={selected} region="dock:item" label="This card" frame="docked" closes="item">
+            <ItemModal id={selected} docked />
+          </RegionBoundary>
         </aside>
       )}
       {selected && <PanelResizer width={panelW} onChange={setPanelW} />}
@@ -466,13 +524,7 @@ function Board({ mode }: { mode: BoardMode }) {
           onNodeDrag={onNodeDrag}
           onNodeDragStop={onNodeDragStop}
           onMove={(_, vp) => setZoomClass((z) => (zoomBand(vp.zoom) === z ? z : zoomBand(vp.zoom)))}
-          onMoveEnd={(_, vp) => {
-            try {
-              localStorage.setItem(VIEWPORT_KEY[mode], JSON.stringify(vp))
-            } catch {
-              /* not persisted */
-            }
-          }}
+          onMoveEnd={(_, vp) => writeJson(VIEWPORT_KEY[mode], vp)}
           defaultViewport={initialViewport}
           fitView={!initialViewport}
           fitViewOptions={FIT}
@@ -514,8 +566,8 @@ function Board({ mode }: { mode: BoardMode }) {
               onPeek={peekAt}
               onOpen={(id) => {
                 leaveSearch(false)
-                if (id === selected) centreOn(id)
-                else select(id, () => centreOn(id, undefined, openDockPx))
+                if (id === selected) aim(id)
+                else select(id, () => aim(id, { clearLeft: openDockPx }))
               }}
               onCancel={() => {
                 leaveSearch(true)

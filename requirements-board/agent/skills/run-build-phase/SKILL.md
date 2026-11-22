@@ -66,14 +66,20 @@ root (`git rev-parse --show-toplevel`; folder names contain spaces, so quote eve
   phase's covered items and recipes.
 - **Demo guide:** `docs/demo-guide/` (`03-demo-script.md` run sheet, `04-presenter-cheat-sheet.md`,
   `02-workflows-and-handoffs.md`, `01-personas-and-responsibilities.md`), the matching sections of
-  `docs/demo-guide/master-demo-guide.html`, and the Control Panel scenario text
-  (`aa-prototype/src/apps/demo/DemoControlPanel.tsx`). Milestone phases (consistency read of
-  `master-demo-guide.html` against the run sheet): 38a, 25, 27a, 35, 39a.
+  `docs/demo-guide/master-demo-guide.html` (a large page: grep it, never read it whole), and the
+  Control Panel scenario text (`aa-prototype/src/apps/demo/DemoControlPanel.tsx`) when a scenario
+  changed. Milestone phases (consistency read of `master-demo-guide.html` against the run sheet): 38a,
+  25, 27a, 35, 39a.
+- **State version:** `PERSIST_VERSION` in `aa-prototype/src/store/appStore.ts` (house rules say when it
+  moves). Note it at the drift check, log each move, and write it in the entry's `**Built.**` bullet as
+  `PERSIST_VERSION <a> to <b>`. The app's demo clock (`src/domain/clock.ts`) is not today's date.
+- **Source rule:** where a design mockup simplified a business rule, the RFP rule as the catalogue now
+  states it wins (CLAUDE.md "Design", rule 2); the progress file's Decisions log records the readings.
 - **Progress file:** `docs/prototype-build/PROGRESS.md` (900 KB: grep, never read whole). Status rows
   `| <id> | Catch-up · <title> | DONE | <YYYY-MM-DD> | <summary> |` (or `IN PROGRESS`); entries
-  `### Catch-up Phase <id> · <title> (<YYYY-MM-DD>)`; Decisions-log entries
-  `- **<date> · Catch-up Phase <id> (<n>): <title>** (<ids>; supersedes ...). <body>`. Tools parse
-  all three: keep them exact.
+  `### Catch-up Phase <id> · <title> (<YYYY-MM-DD>)`; Decisions-log entries (its decisions section,
+  `## Decisions log`) `- **<date> · Catch-up Phase <id> (<n>): <title>** (<ids>; supersedes ...).
+  <body>`; the handoff list is `## Discovered for later`. Tools parse all of these: keep them exact.
 - **Plan page:** `PLAN/status.json` (`in_progress`, `next`, `guidance`) rendered into
   `PLAN/index.html` by `node P/build-index.mjs`. Run order: `PLAN/ROADMAP.md`, the "Run order from
   here" paragraph under "Tracks" and the "Run order" bullet of the UI unification rule under
@@ -111,7 +117,7 @@ root (`git rev-parse --show-toplevel`; folder names contain spaces, so quote eve
   `run_in_background` and act on the notification. No `sleep`, no loops reading a log file. Only one
   `phase-check` runs at a time (it holds a lock); a second one exits at once.
 - **Keep the main context small.** Read the pack and the phase doc; grep the big files (the progress
-  file, ROADMAP, ATLAS, the gap analysis, `master-demo-guide.html`) by heading and read the lines you
+  file, ROADMAP, ATLAS, the gap analysis, any large page "This repo" names) by heading and read the lines you
   need, never whole. Ask an Explore subagent code-map questions ("where is X written, who reads it")
   instead of reading folders. Hand self-contained writing (recipes and ATLAS, the demo guide, the
   progress entry draft) to subagents with a precise brief.
@@ -128,8 +134,8 @@ repo's only `plan.config.json`); pass `--plan PLAN` when there are several.
 | Tool | What it does |
 |---|---|
 | `T/phase-context.mjs <id> [--stdout]` | Writes the context pack `<logDir>/<id>.md` (about 60 KB; `--stdout` prints it and writes nothing, for plan mode): the phase's plan entry, built status and dependencies; the drift check already run since the doc's baseline; the owner decisions that gate it; its catalogue items' current text and questions; the progress file's conventions, dependency status rows, their entries trimmed to handoffs, and the Decisions-log entries the doc names; ROADMAP's standing rules and the sequencing rules naming the phase; pointers (anchors, maps, design files, artifacts, recipes) |
-| `T/phase-check.mjs` | Every check in `runner.checks`, side by side where safe, one line each, failures' tails, one summary line. `--changed` the quick partial loop; `--only a,b`; `--failed` re-runs last run's failures; `--list` the schedule; `--capture <IDs>` dev servers up, dry run of those recipes, then capture; `--capture all` one full capture with no dry pass |
-| `P/plan-state.mjs --diff <IDs>` | Rename-aware catalogue diff since the baseline (never a plain `git diff` of the catalogue) |
+| `T/phase-check.mjs` | Every check in `runner.checks`, side by side where safe, one line each, failures' tails, one summary line. `--changed` the quick partial loop; `--only a,b`; `--failed` re-runs every check whose record says failed or skipped (only a full-form pass clears one; a `--changed` pass never does); `--list` the schedule; `--capture <IDs>` dev servers up, dry run of those recipes, then capture; `--capture all` one full capture with no dry pass |
+| `P/plan-state.mjs --diff <IDs> [--from <sha>]` | Rename-aware catalogue diff since the plan's baseline, or since `--from` (the pack prints the command with its own baseline); never a plain `git diff` of the catalogue |
 | `P/recipe-status.mjs <id>` | The phase's covered items with their recipes and shots |
 | `P/build-index.mjs` | Renders `PLAN/index.html` from `plan.json`, `status.json`, the progress file and the prompts |
 | `P/config.mjs --json` | The resolved plan config (paths, rules); the tools read `runner` from the file directly |
@@ -141,14 +147,16 @@ skill's name: kick-off prompts load it, and update-build-plan writes slim prompt
 `focus`, `timeout`, `equivalent`: the project command it stands for); `devServers` (name, port, url,
 cmd) and `devCommand`; `startTimeout`; `capture` (`cwd`, `cmd`, `onlyFlag`, `dryFlag`, `report`);
 `context` (the pack's budget, the progress sections and ROADMAP sections it quotes, the sequencing
-section and always-on rules, the design folder). Here the checks are typecheck, build, build-pwa,
+section and always-on rules, the design folder, `countNouns` and `notPhaseBefore` (the plan's own words
+that make a number not a phase), `decisionsSection` and `handoffSection` (the progress file's decisions
+log and handoff list headings)). Here the checks are typecheck, build, build-pwa,
 vitest, verify-board and shots: together they are the project's green commands.
 
 ## Stage 0: which phase, which session
 
 1. The phase id is in the prompt's first line. Note its track ("This repo" names them) and any
    override block.
-2. `date +%F` is today for the progress file (the app's demo clock is something else).
+2. `date +%F` is today for the progress file (any clock the app keeps for demos is something else).
 3. The pack (Stage 1) says whether the phase is not built, IN PROGRESS (an earlier session stopped
    at or past the checkpoint: resume) or DONE (stop and say so). Two-session phases normally run
    in one session (see "Two-session phases").
@@ -167,10 +175,11 @@ vitest, verify-board and shots: together they are the project's green commands.
 ## Stage 2: drift check
 
 The pack has already run the catalogue diff since the doc's baseline. Its baseline beats any hash or
-`PERSIST_VERSION` a doc or prompt quotes as narrative.
+version number a doc or prompt quotes as narrative.
 
 1. **Changed in substance:** re-read each item the pack lists and adjust the plan to its current text.
-   For a diff the pack trimmed, run `node P/plan-state.mjs --diff <ID>`.
+   For a diff the pack trimmed, run the command it prints (`node P/plan-state.mjs --diff <ID> --from
+   <the pack's baseline>`): it diffs from the same baseline as the pack.
 2. **Now Retired or out of scope:** drop that work; record it for the progress entry.
 3. **A change that would undo built work** (an earlier phase's, or session 1's): do not build it.
    Record `NEEDS OWNER: <item>: <what changed>, <what stays built>` and carry on with the rest.
@@ -182,7 +191,8 @@ The pack has already run the catalogue diff since the doc's baseline. Its baseli
    page (Stage 7) with a wait note. Write down the names each built dependency actually shipped
    (functions, selectors, fields, triggers, hooks) from its handoff; plan on those, not the doc's
    guesses.
-6. Note the current `PERSIST_VERSION` and, on a UI-only track, the Vitest and Playwright counts.
+6. Note the app's state version, if "This repo" names one, and, on a UI-only track, the Vitest and
+   Playwright counts.
 7. The doc's and prompt's own stops and checks (`rg` counts, baseline shots, grep gates) run here too.
 
 ## Stage 3: plan, then build
@@ -194,7 +204,7 @@ The pack has already run the catalogue diff since the doc's baseline. Its baseli
    plan mode, this plan is what ExitPlanMode presents (Ground rules); write the file once approved.
 2. Keep `<logDir>/<id>-log.md` as you go, one line per entry: each default or reading built, each
    deviation from the doc with why, each name you ship that a later phase will use, tests added,
-   `PERSIST_VERSION` moves, anything for `/update-requirements`. It is the brief for the progress
+   state-version moves, anything for `/update-requirements`. It is the brief for the progress
    entry and what a resumed session starts from: after each work item, a line
    `Checkpoint: items 1 to n built, <inner loop result>`.
 3. Build. Follow the house rules ("This repo") and the doc's work items. Before building or
@@ -207,7 +217,8 @@ The pack has already run the catalogue diff since the doc's baseline. Its baseli
    full suite or a build after each edit.
 5. **Full gate** (`node T/phase-check.mjs`, in the background) only at: a two-session phase's
    checkpoint, the end of the build, after the review fixes, and the final close. On failure fix and
-   run `--failed`.
+   run `--failed` (it re-runs every check whose last full run failed or was skipped, however many
+   `--changed` loops ran since).
 
 ## Stage 4: prove it (UI phases: all three; others: 1 and 3)
 
@@ -219,7 +230,7 @@ The pack has already run the catalogue diff since the doc's baseline. Its baseli
    skill), save the pair in `<logDir>/<id>-design/`, and look at both images side by side. Compare
    layout, hierarchy, spacing, type, states and the components used; where the phase doc names
    another reference (a mock app, an earlier screen) compare against that too. Fix what differs,
-   unless the RFP rule or a Decisions-log ruling made the difference on purpose (say which). A screen
+   unless the source rule ("This repo") or a Decisions-log ruling made the difference on purpose (say which). A screen
    no mockup draws is compared with the nearest one in the same app for the same patterns. Record
    the pairs compared and what you fixed. You may hand the shooting to a subagent; the comparison
    and the call are yours.
@@ -253,9 +264,8 @@ Start these together as soon as Stage 4 is green, each in the background:
    caption. Never a full dry run.
 3. **Demo guide** (one subagent). Brief: the doc's "Demo guide updates" beats, the files in "This
    repo", the changed behaviour from the log, and that every figure comes from the running app (it
-   may read it with Playwright). It patches the Markdown, the matching `master-demo-guide.html`
-   sections and the Control Panel scenario text if a scenario changed. A milestone phase adds the
-   consistency read. Read its diff when it returns.
+   may read it with Playwright). It patches each demo guide file "This repo" names, as it
+   says. A milestone phase adds the consistency read. Read its diff when it returns.
 
 Then:
 
@@ -265,7 +275,9 @@ Then:
 5. **Re-gate:** the full `phase-check`. Re-capture only the IDs whose screens the fixes changed.
 6. **Final capture:** `node T/phase-check.mjs --capture all` in the background (it prints the
    report's counts before and after). Meanwhile write the progress entry (Stage 6). If a recipe
-   fails, fix it and run `--capture <failed IDs>`; then `node T/phase-check.mjs --only verify-board`.
+   fails, fix it and run `--capture <failed IDs>`: that run rewrites those IDs' rows of the report and
+   its totals, so the report you leave lists no failure you fixed (check its "Failed recipes" section);
+   then `node T/phase-check.mjs --only verify-board`.
 7. Stop the dev servers `phase-check` started: `node T/phase-check.mjs --stop-servers` (it stops only
    the ones in `<logDir>/dev-servers.pid` and leaves any it did not start running).
 
@@ -280,7 +292,7 @@ gate, review and capture results; you check every name and number in it.
    find them:
    - `**Drift check against <baseline>.**` what changed, what was dropped, built as answered or default.
    - `**Built.**` three to eight bullets: model, the one place each rule lives, writers, UI, triggers,
-     seed (`PERSIST_VERSION` a to b).
+     seed (the state version a to b, where "This repo" names one).
    - `**Tests.**` new and re-expressed test files; Vitest and Playwright counts; the gate result.
    - `**Checked.**` checklist n of n pass (evidence folder); design pairs compared and what was fixed.
    - `**Review.**` lenses; findings confirmed and fixed; those declined, with why.
@@ -293,7 +305,8 @@ gate, review and capture results; you check every name and number in it.
    - `**For /update-requirements.**` catalogue changes the phase found (omit if none).
    - `**For the owner's review.**` defaults built for open questions, provisional readings, anything
      logged rather than fixed, any `NEEDS OWNER`, the screens worth a look.
-3. **Decisions log:** the entries the doc's "PROGRESS.md updates" names, one short paragraph each in
+3. **Decisions log** (the progress file's decisions section; "This repo" names it): the entries the
+   doc's "PROGRESS.md updates" names, one short paragraph each in
    the format in "This repo", pointing to the phase entry for detail.
 4. The handoff-list items the doc names, if any.
 

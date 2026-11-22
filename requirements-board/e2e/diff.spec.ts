@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * The Diff review tab over the fixture catalogue (port 5182), in a throwaway git repository: the
+ * The Diff review tab over the fixture catalogue, in a throwaway git repository: the
  * default comparison (last commit against the files on disk), falling back to what the last commit
  * changed when nothing is uncommitted, live refresh, picking commits, filters, Whole card and Viewed.
  */
@@ -448,3 +448,71 @@ test('Enter picks the first row in the jump list and the pickers, and the arrow 
   await expect(page.locator('.diff-picker').first()).toContainText('Fixture catalogue')
   await expect(page.locator('[id="diff-item:US-01.2.1"]')).toBeVisible()
 })
+
+test("B09 R-94: while a new comparison is read, the old one's empty state or error never speaks for it", async ({ page }) => {
+  writeItem({ ...base('US-01.2.1'), description: 'Records start and finish times.' }, FIXTURE_DIR)
+  git('commit -qam "Describe a story"')
+  const sha = execSync('git rev-parse HEAD', { cwd: FIXTURE_DIR, encoding: 'utf8' }).trim()
+  await page.goto(`/#/diff?from=${sha}&to=${sha}`)
+  const empty = page.getByText('No card, outstanding item or artifact differs between these two versions.')
+  await expect(empty).toBeVisible()
+
+  // A new From picked: only "Reading git" until it is read, never the old "No card differs".
+  let gate = await hold(page, (u) => u.pathname === '/api/diff')
+  await page.locator('.diff-picker').first().click()
+  await page.getByRole('option', { name: /Fixture catalogue/ }).click()
+  await expect(page.locator('.diff-picker').first()).toContainText('Fixture catalogue')
+  await expect.poll(gate.held).toBeGreaterThan(0)
+  await expect(page.locator('.diff-state')).toHaveText('Reading git')
+  await expect(empty).toHaveCount(0)
+  await gate.release()
+  await expect(page.locator('[id="diff-item:US-01.2.1"]')).toBeVisible()
+
+  // A comparison that fails says so; picking another clears it at once.
+  const first = execSync('git rev-parse HEAD~1', { cwd: FIXTURE_DIR, encoding: 'utf8' }).trim()
+  await page.route((u) => u.pathname === '/api/diff', (route) => route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'git broke' }) }))
+  await page.evaluate((h) => (location.hash = h), `#/diff?from=${sha}&to=${sha}`)
+  await expect(page.locator('.diff-state.bad')).toContainText('Git could not be read')
+  await page.unroute((u) => u.pathname === '/api/diff')
+  gate = await hold(page, (u) => u.pathname === '/api/diff')
+  await page.evaluate((h) => (location.hash = h), `#/diff?from=${first}&to=worktree`)
+  await expect.poll(gate.held).toBeGreaterThan(0)
+  await expect(page.locator('.diff-state.bad')).toHaveCount(0)
+  // The last comparison read stays, dimmed, under "Reading git".
+  await expect(page.locator('.diff-reading')).toHaveText('Reading git')
+  await gate.release()
+  await expect(page.locator('[id="diff-item:US-01.2.1"]')).toBeVisible()
+})
+
+for (const reduced of [true, false]) {
+  test(`B09 R-32: k to the end, then the reader scrolls up: never pulled back${reduced ? ', with reduced motion' : ''}`, async ({ page }) => {
+    if (reduced) await page.emulateMedia({ reducedMotion: 'reduce' })
+    const ids = ['US-01.1.1', 'US-01.2.1', 'US-01.3.1', 'US-01.4.2', 'US-02.1.1', 'US-02.2.1', 'US-02.3.2', 'US-02.4.3']
+    for (const id of ids) writeItem({ ...base(id), description: `New words for ${id}.\n\nA second paragraph.`, acceptance: '- Given one thing, then another.' }, FIXTURE_DIR)
+    await page.setViewportSize({ width: 1280, height: 640 })
+    await page.goto('/#/diff')
+    await expect(page.locator(`[id="diff-item:${ids.at(-1)}"]`)).toBeVisible({ timeout: 10_000 })
+    const diffPage = page.locator('.diff-page')
+    const top = () => diffPage.evaluate((el) => el.scrollTop)
+    const bottom = () => diffPage.evaluate((el) => el.scrollHeight - el.clientHeight)
+    await page.locator('body').click({ position: { x: 5, y: 300 } })
+    // k until the page stops at its bottom (the last changes cannot come up under the bar), then once more.
+    for (let n = 0; n < 60 && Math.abs((await top()) - (await bottom())) >= 2; n++) {
+      await page.keyboard.press('k')
+      await page.waitForTimeout(reduced ? 50 : 250)
+    }
+    await expect.poll(async () => Math.abs((await top()) - (await bottom()))).toBeLessThan(2)
+    await page.keyboard.press('k')
+    // The reader scrolls up by hand.
+    await page.mouse.move(640, 400)
+    await page.mouse.wheel(0, -500)
+    await expect.poll(top).toBeLessThan((await bottom()) - 300)
+    const left = await top()
+    await page.waitForTimeout(1500)
+    expect(Math.abs((await top()) - left)).toBeLessThan(2)
+    // j from there goes up, and stays up.
+    await page.keyboard.press('j')
+    await page.waitForTimeout(1500)
+    expect(await top()).toBeLessThan(left + 2)
+  })
+}

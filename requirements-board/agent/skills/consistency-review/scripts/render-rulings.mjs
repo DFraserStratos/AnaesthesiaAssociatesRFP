@@ -66,7 +66,7 @@ const body = `<div class="wrap">
 const script = `const q=document.getElementById('q');q.addEventListener('input',()=>{const v=q.value.trim().toLowerCase();
 document.querySelectorAll('ul.rules li').forEach(li=>li.classList.toggle('hidden',!!v&&!li.textContent.toLowerCase().includes(v)))});`
 
-const { blob, stats } = makeResolver(a.req, src).refsFor(body)
+const { blob, stats } = (await makeResolver(a.req, src)).refsFor(body)
 fs.writeFileSync(out, shell({ title: 'Current rulings', css: css + refCss, body, script, extra: dataTag(blob) + '<script>' + refClient + '</script>' }))
 console.error('ref stats', JSON.stringify(stats))
 console.log('wrote', out)

@@ -2,7 +2,9 @@
  * Take screenshots of the project's own app from recipes and link them to the catalogue.
  *
  *   npm run capture                              every recipe, then the report
- *   node scripts/capture.ts --only US-03.2.4,EP-03   those items (an epic or feature takes its descendants)
+ *   node scripts/capture.ts --only US-03.2.4,EP-03   those items (an epic or feature takes its descendants),
+ *                                                   then the report: their rows from this run, every other row
+ *                                                   from the files, failures outside the run carried over
  *   node scripts/capture.ts --only US-03.2.4 --dry   run every step and selector, write nothing
  *
  * Set up in the `capture` section of `board.config.json`: each screenshot app's dev-server URL,
@@ -18,18 +20,19 @@
  * own (jumping to a demo scenario, running a demo action) in the module `capture.steps` names:
  * its default export maps a step key to `run(page, step, ctx)`, with an optional `check(step)`.
  */
-import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
-import { dirname, join, relative, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { chromium, type Browser, type BrowserContext, type Locator, type Page } from '@playwright/test'
 import { REQUIREMENTS_DIR, itemPath, loadCatalogue, readConfig, readItemFile, writeItem } from '../server/catalogueFs.ts'
 import { CONFIG_FILE, type CaptureApp, type CaptureConfig, type ScreenshotApp } from '../shared/config.ts'
-import { serialiseItem } from '../shared/files.ts'
 import { HIGHLIGHT } from '../shared/highlight.ts'
 import { compareIds } from '../shared/ids.ts'
 import type { ImageRef, Item } from '../shared/types.ts'
-import { fileFor, isGenerated, pruneGenerated } from './captureFiles.ts'
+import { fileFor, isGenerated, parseOnly, pruneShots } from './captureFiles.ts'
+import { INVALID_RECIPE, mergeFailures, priorFailures } from './captureReport.ts'
+import { loadLaneEnv } from '../server/laneEnv.ts'
+import { shown } from './userPath.ts'
 
 const { config, problems: configProblems } = readConfig()
 if (configProblems.length) {
@@ -45,16 +48,7 @@ const RECIPES_DIR = resolve(REQUIREMENTS_DIR, CAPTURE.recipes)
 const REPORT_PATH = resolve(REQUIREMENTS_DIR, CAPTURE.report)
 /** The apps the runner can open: a screenshot app with a URL in `capture.apps`. */
 /** A worktree's git-ignored `.lane.env` (KEY=value lines) at the repo root fills unset variables (the ports). */
-const laneEnvFile = (() => {
-  try {
-    return join(execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(), '.lane.env')
-  } catch {
-    return null
-  }
-})()
-if (laneEnvFile && existsSync(laneEnvFile)) {
-  for (const [, k, v] of readFileSync(laneEnvFile, 'utf8').matchAll(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$/gm)) if (k && process.env[k] === undefined) process.env[k] = v
-}
+loadLaneEnv()
 /** An app's url with its `portEnv` variable, when set, in place of the port. */
 const withPortEnv = (app: CaptureApp): CaptureApp => {
   const port = app.portEnv && process.env[app.portEnv]
@@ -65,11 +59,6 @@ const withPortEnv = (app: CaptureApp): CaptureApp => {
 }
 const APPS = new Map<string, ScreenshotApp & CaptureApp>(config.screenshotApps.filter((a) => CAPTURE.apps[a.key]).map((a) => [a.key, { ...a, ...withPortEnv(CAPTURE.apps[a.key]!) }]))
 const APP_KEYS = config.screenshotApps.map((a) => a.key)
-/** A path as the user would type it: relative when it is under the working folder, else absolute. */
-const shown = (abs: string) => {
-  const rel = relative(process.cwd(), abs)
-  return rel && !rel.startsWith('..') ? rel : abs
-}
 
 /** The id of the injected hide style, so a plugin step can lift it for a moment (`ctx.setHidden(false)`). */
 const HIDE_STYLE_ID = 'capture-hide'
@@ -152,15 +141,13 @@ interface Job {
 
 const argv = process.argv.slice(2)
 const flag = (name: string) => argv.includes(name)
-const opt = (name: string) => {
-  const i = argv.indexOf(name)
-  return i >= 0 ? argv[i + 1] : undefined
-}
 const DRY = flag('--dry')
-const only = opt('--only')
-  ?.split(',')
-  .map((s) => s.trim())
-  .filter(Boolean)
+const onlyArg = parseOnly(argv)
+if (onlyArg.error) {
+  console.error(onlyArg.error)
+  process.exit(1)
+}
+const only = onlyArg.ids
 const fullRun = !only
 
 // ── Recipes ──────────────────────────────────────────────────────────────────
@@ -482,16 +469,18 @@ function linkItem(recipe: Recipe): boolean {
   const item: Item = loaded.record.data
   const kept = item.images.filter((i) => !isGenerated(recipe.id, i.src, APP_KEYS))
   const next: Item = { ...item, images: [...kept, ...imagesFor(recipe)] }
-  const before = readFileSync(itemPath(recipe.id), 'utf8')
-  if (serialiseItem(next) === before) return false
-  writeItem(next)
-  return true
+  // writeItem edits the file in place and writes nothing when nothing changed: the rev says which.
+  return writeItem(next).rev !== loaded.record.rev
 }
 
-/** Delete generated files for this item that the recipe no longer produces. */
-function pruneAssets(recipe: Recipe): string[] {
+/**
+ * Delete generated files for this item that the recipe no longer produces, unless another item's
+ * `images` still lists one (`users` maps an image path to the items that list it): that file is kept.
+ */
+function pruneAssets(recipe: Recipe, users: Map<string, string[]>) {
   const wanted = new Set(imagesFor(recipe).map((i) => i.src.split('/').pop()!))
-  return pruneGenerated(join(REQUIREMENTS_DIR, 'assets', recipe.id), wanted, APP_KEYS)
+  const usedBy = (name: string) => (users.get(`assets/${recipe.id}/${name}`) ?? []).filter((id) => id !== recipe.id)
+  return pruneShots(join(REQUIREMENTS_DIR, 'assets', recipe.id), wanted, APP_KEYS, usedBy)
 }
 
 // ── Report ───────────────────────────────────────────────────────────────────
@@ -518,7 +507,7 @@ function writeReport(items: Item[], recipes: Map<string, Recipe>, broken: Map<st
   const out = [
     '# Screenshot report',
     '',
-    'Written by `npm run capture` (the board\'s scripts/capture.ts) on a full run. Do not edit by hand.',
+    'Written by `npm run capture` (the board\'s scripts/capture.ts); a run limited to some IDs updates their rows and keeps other failures. Do not edit by hand.',
     '',
     `Scope: every story plus every feature with no stories (${inScope.length} items, ${stories.length} stories). Features with stories are captured only when they have an overview screen.`,
     '',
@@ -538,7 +527,7 @@ function writeReport(items: Item[], recipes: Map<string, Recipe>, broken: Map<st
     out.push(...(lines.length ? lines : ['None.']), '')
   }
   section('Failed recipes', [
-    ...[...broken].sort(([a], [b]) => compareIds(a, b)).map(([id, p]) => line(id, p.join('; '))),
+    ...[...broken].sort(([a], [b]) => compareIds(a, b)).map(([id, p]) => line(id, `${INVALID_RECIPE}${p.join('; ')}`)),
     ...[...failed].sort(([a], [b]) => compareIds(a, b)).map(([id, e]) => line(id, e)),
   ])
   section('Absent from the app', absent.map((r) => line(r.id, r.absentReason)))
@@ -617,6 +606,10 @@ async function main() {
   let written = 0
   let linked = 0
   const pruned: string[] = []
+  const keptShared: string[] = []
+  // Which items list each image, as the run starts: a shot another item uses is never pruned.
+  const users = new Map<string, string[]>()
+  for (const it of items) for (const img of it.images) users.set(img.src, [...(users.get(img.src) ?? []), it.id])
   for (const recipe of selected) {
     if (failed.has(recipe.id)) continue
     if (!DRY) {
@@ -629,13 +622,16 @@ async function main() {
           written++
         }
       }
-      pruned.push(...pruneAssets(recipe).map((f) => `${recipe.id}/${f}`))
+      const { removed, kept } = pruneAssets(recipe, users)
+      pruned.push(...removed.map((f) => `${recipe.id}/${f}`))
+      keptShared.push(...kept.map((k) => `${recipe.id}/${k.file} (still listed by ${k.users.join(', ')})`))
       if (linkItem(recipe)) linked++
     }
   }
 
   const ok = selected.length - failed.size
   console.log(`\n${DRY ? '[dry run] ' : ''}${ok}/${selected.length} recipe(s) OK, ${jobs.length} shot(s); ${written} PNG(s) changed, ${linked} item file(s) updated${pruned.length ? `, removed ${pruned.join(', ')}` : ''}.`)
+  if (keptShared.length) console.log(`Kept ${keptShared.length} shot(s) the recipe no longer makes, because other items list them: ${keptShared.join('; ')}.`)
 
   if (!DRY) {
     const after = loadCatalogue()
@@ -643,9 +639,20 @@ async function main() {
     const mine = errors.filter((i) => scope.has(i.id))
     for (const i of mine) console.error(`catalogue ERROR ${i.id}: ${i.message}`)
     if (errors.length > mine.length) console.error(`(${errors.length - mine.length} other catalogue error(s) outside this run; see npm run check)`)
+    const afterItems = Object.values(after.items).map((r) => r.data)
     if (fullRun) {
-      writeReport(Object.values(after.items).map((r) => r.data), recipes, broken, failed)
+      writeReport(afterItems, recipes, broken, failed)
       console.log(`Report: ${shown(REPORT_PATH)}`)
+    } else {
+      // A run limited to some IDs rewrites the report too: its IDs take this run's result, every other
+      // row follows from the files as on a full run, and failures outside the run are carried over.
+      const titles = new Map(afterItems.map((i) => [i.id, i.title]))
+      const prior = priorFailures(existsSync(REPORT_PATH) ? readFileSync(REPORT_PATH, 'utf8') : null, (id) => titles.get(id) ?? '')
+      if (!prior) console.log(`Report not updated (${shown(REPORT_PATH)} is missing or not written by this runner): run the full capture to write it.`)
+      else {
+        writeReport(afterItems, recipes, broken, mergeFailures(prior, scope, failed, broken, (id) => recipes.has(id)))
+        console.log(`Report: ${shown(REPORT_PATH)} (the rows of ${scope.size} id(s) from this run; failures outside it carried over)`)
+      }
     }
   }
   const brokenInScope = [...broken.keys()].filter((id) => scope.has(id)).length

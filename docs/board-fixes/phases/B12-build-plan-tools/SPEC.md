@@ -59,13 +59,14 @@ A-4/A-10 verdicts).
   `plan-docs.mjs` and `scope.mjs` from `update-build-plan/tools/`; a change to one keeps both skills
   working (update-build-plan `SKILL.md`, "The tools and the plan's config").
 - **PROGRESS conventions 1 to 14** apply, in particular 2 (dispositions), 5 and 14 (version bump taken
-  at merge time: master's version plus B12's minor bump, CHANGELOG entry on top, lock file
+  at merge time: `board-fixes`' version plus B12's minor bump, CHANGELOG entry on top, lock file
   regenerated with `npm install`), 6 (finish green), 8 (live-plan compatibility), 11 (touch rights),
   12 (doc lines), 13 (proof fails first).
 - **Finish green:** `npm run verify:board` from the repo root, which after B12 also runs every
   `*.test.mjs` under `requirements-board/agent/`.
-- **Git and lanes:** B12 runs in its own worktree and branch, merged into `master`; commit and merge,
-  never push; stage by path at commit time only (convention 9). B12
+- **Git and lanes:** B12 runs in its own worktree and branch (`AnaesthesiaAssociatesRFP-board-B12`,
+  `board-fixes-b12`) and finishes by fast-forwarding `board-fixes` (PROGRESS convention 16, steps 1
+  to 5); commit and merge, never push; stage by path at commit time only (convention 9). B12
   never writes to lane branches, lane worktrees or `$(git rev-parse --git-common-dir)/lanes/`, and
   never takes lane ports (5273/5274/5280, 5373/5374/5380) or 5173/5174/5180/5181.
 
@@ -432,7 +433,7 @@ fixture that shows it.
 
 **Live-plan compatibility check (required, read-only on the real plan):**
 - Before and after the change, from B12's worktree (whose plan files are the live plan as of its
-  branch point, refreshed by merging `master` before the final check), capture and compare: `node …/phase-context.mjs <id>
+  branch point, refreshed by convention 16's catch-up merges before the final check), capture and compare: `node …/phase-context.mjs <id>
   --stdout` for at least 26, 27a, 33, 44 and U6 (or the current equivalents); `plan-state.mjs`,
   `plan-state.mjs --coverage`, `plan-state.mjs --diff <a phase doc's IDs>`, `regrade-ids.mjs HEAD`,
   `recipe-status.mjs --check`, `phase-check.mjs --list`, `config.mjs --json`. Differences are limited
@@ -512,8 +513,8 @@ Shared register: [PROGRESS.md](../../PROGRESS.md) "Deferred decisions".
 - **Status rule.** B12-REQ-14 changes how every plan tool reads statuses. Until B02's rule and
   migration land, the plan tools must keep reading the live `status-recodes.json` as today; B12 does
   not build REQ-14 against a guessed rule.
-- **Parallel worktree.** B12 runs beside the serial app phases. It merges `master` before its final
-  checks, takes its version at merge time, and resolves the `package.json` `verify` line and lock
+- **Parallel worktree.** B12 runs beside the serial app phases. It merges `board-fixes` (and master, if it has moved) before its final
+  checks (convention 16, steps 2 and 4), takes its version at merge time, and resolves the `package.json` `verify` line and lock
   file by hand and `npm install` (convention 14).
 - **Rollback.** Reverting B12's merge on `master` restores the previous tools; lanes pick up the revert at
   their next merge. Required: no B12 output (results files, packs, new optional config or plan keys)
@@ -537,7 +538,7 @@ Shared register: [PROGRESS.md](../../PROGRESS.md) "Deferred decisions".
    passing after each bite that touches a shared module.
 5. Finish green: `npm run verify:board` (now including every agent `*.test.mjs`); the live-plan
    compatibility check recorded with its intended differences.
-6. At merge time, bump the board version (minor) from master's current version in
+6. At merge time, bump the board version (minor) from `board-fixes`' current version in
    `requirements-board/package.json`, regenerate the lock file with `npm install`, and put the
    `CHANGELOG.md` entry on top, naming each behaviour change and any new config key (conventions 5
    and 14).
@@ -552,7 +553,8 @@ Shared register: [PROGRESS.md](../../PROGRESS.md) "Deferred decisions".
    SPECs). R-07 is closed by B12 once B02's board-half proof and B12-REQ-14's proof both pass. Record
    the A-4 and A-10 verdicts.
 10. Commit on B12's branch by path, B12's files only (including the `capture.ts`, `starter/` and
-    `package.json` edits named in the entry), merge into `master`; never push. Write the PROGRESS.md
+    `package.json` edits named in the entry), then fast-forward `board-fixes` (convention 16, steps 3 to
+    5); never push. Write the PROGRESS.md
     phase entry last: what shipped, dispositions, verdicts, D-08 answer, migrations handed to the
     plan's owner, Doc facts, handoffs to B14 and B15, and anything discovered for later (for example
     `plan-state.mjs:60-63` reads item status from the working tree even with `--to`, the same class

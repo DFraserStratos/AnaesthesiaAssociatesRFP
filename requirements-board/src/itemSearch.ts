@@ -7,7 +7,7 @@ import type { BoardConfig } from '../shared/config.ts'
 import { plainText } from '../shared/links.ts'
 import { compareIds, compareSiblings } from '../shared/ids.ts'
 import { isRetired } from '../shared/statuses.ts'
-import type { Item, ItemType } from '../shared/types.ts'
+import { typeRank, type Item, type ItemType } from '../shared/types.ts'
 
 export interface SearchIndex {
   items: Item[]
@@ -83,12 +83,11 @@ function treeOrder(list: Item[], index: SearchIndex): Item[] {
     }
     return cur
   }
-  const depth = { epic: 0, feature: 1, story: 2 } as const
   return [...list].sort((a, b) => {
     const ea = epicOf(a)
     const eb = epicOf(b)
     if (ea.id !== eb.id) return compareSiblings(ea, eb)
-    return depth[a.type] - depth[b.type] || compareSiblings(a, b)
+    return typeRank(a.type) - typeRank(b.type) || compareSiblings(a, b)
   })
 }
 

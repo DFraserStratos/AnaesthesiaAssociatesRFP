@@ -2,7 +2,7 @@ import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { ImageIcon, MessageCircleQuestion } from 'lucide-react'
 import { memo } from 'react'
 import { defaultStatus, statusClasses } from '../../shared/statuses.ts'
-import { TYPE_LABEL } from '../../shared/types.ts'
+import { typeLabel } from '../../shared/types.ts'
 import { StatusLabel } from '../components/bits.tsx'
 import { useConfig } from '../store.ts'
 import { excerpt, typeClass } from '../vocab.ts'
@@ -18,7 +18,7 @@ function CardNodeImpl({ data }: NodeProps<CardNodeType>) {
       <Handle type="target" position={Position.Left} id="l" isConnectable={false} />
       <Handle type="source" position={Position.Bottom} isConnectable={false} />
       <Handle type="source" position={Position.Left} id="ls" isConnectable={false} />
-      <div className={`card ${item.type} ${typeClass(item.type)} ${statusClasses(config, 'item', item.status)} ${tone}`} style={{ width: w, height: h }} title={`${TYPE_LABEL[item.type]} ${item.id} · ${item.title}`}>
+      <div className={`card ${item.type} ${typeClass(item.type)} ${statusClasses(config, 'item', item.status)} ${tone}`} style={{ width: w, height: h }} title={`${typeLabel(item.type)} ${item.id} · ${item.title}`}>
         <p className="card-title">{item.title}</p>
         {item.description && <p className="card-excerpt">{excerpt(item.description, 220)}</p>}
         <div className="card-foot">

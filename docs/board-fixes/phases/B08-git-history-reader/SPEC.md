@@ -1,6 +1,6 @@
 # Phase B08: Git history reader
 
-**Status:** PLANNED
+**Status:** COMPLETE (2026-11-19; see PROGRESS B08 entry and IMPLEMENTATION.md)
 
 **Requirements:** R-23, R-24, R-69, R-70, R-71, R-72, R-73, R-74, R-161, R-162, from
 [FINDINGS.md](../../FINDINGS.md) ("Findings in detail", `#### R-nn`), and systemic issue 3 ("The
@@ -388,6 +388,10 @@ conversation, with the user where needed, before build.
 
 ### D-07 · Git reader contract
 
+**Answered (accepted decision 19, 2026-11-19):** (a) HEAD plus index identity, unstaged pairs read
+afresh; (b) bounded LRUs; (c) hybrid clean-form names; (d) option 1, unchanged unstaged moves
+followed (user); (e) option 1, full lists with `deleted` markers and `screenshotsEnded`.
+
 - **Source/gap:** FINDINGS systemic issue 3, R-54, R-69, R-73, R-161, R-162. Affects REQ-04,
   REQ-06, REQ-08, REQ-09, REQ-11. **Owner:** B08. **Depends on it:** B05 (deletion bound), B09
   (timeline and diff inputs). **Gate:** before B08 builds; (e) must also fit the D-05 answer,
@@ -426,18 +430,21 @@ conversation, with the user where needed, before build.
   wider contract. Applies equally to rename bounds (REQ-03).
 
 ### B08-Q1 · Attributing a merge to its lane commits
+**Answered (decision 19):** the merge alone.
 Source: REQ-01.2; R-23's fix makes a lane's work appear as the merge. Should a merge entry also
 name the lane commits it brought in (subjects, authors), or is the merge alone enough? Owner: B08,
 with B09 for the display. Gate: before B08 fixes the response shape. Default if unanswered: the
 merge alone, as the Diff review does now.
 
 ### B08-Q2 · LFS and filtered content
+**Answered (decision 19):** served as checked out (`cat-file --filters`), the stored blob if the filter cannot run.
 Source: R-72 ("an LFS 'before' renders the pointer text"). Should the history-blob route serve a
 filtered file's historical content as checked out (smudged), which needs git-lfs installed and the
 object present locally, or serve the stored blob (the pointer) and let viewers say so? Owner: B08;
 B10 if viewers must show a message. Gate: before B08 build. Impact: REQ-05.4 and its scenario.
 
 ### B08-Q3 · Journal hashes written with the wrong width
+**Answered (decision 19):** re-hashed on the next scan, no change logged; old entries stay unfetchable.
 Source: R-73 (`historyJournal.ts:41, 107`). Existing `<ID>.shots.json` and journal entries in a
 SHA-256 repository hold SHA-1 names that git cannot serve. Options: re-hash on next scan and leave
 old entries unfetchable; convert on read; or record the format and ignore mismatched entries.
@@ -449,12 +456,14 @@ Answered (accepted decisions 4 and 10, 2026-11-18): the rename and deletion boun
 closes R-54. B08 builds before B05.
 
 ### B08-Q5 · Bounding the history-blob check
+**Answered (decision 19):** not bounded; the `?src=` case is now gated by the same check.
 Source: REQ-03.7; `cataloguePlugin.ts:237-282` uses unbounded earlier paths to decide whether a
 blob may be served. Should that check use the same bounds? It is an authorisation-style check
 (B01's area) and serves blobs the timeline links to. Owner: B08, with B01's D-01 answer. Default:
 keep it accepting at least everything the history lists.
 
 ### B08-Q6 · `git status` takes the index lock
+**Result (decision 19):** confirmed; every reader's git runs with `GIT_OPTIONAL_LOCKS=0`.
 Answered (accepted decision 10, 2026-11-18): B08 investigates. The readers run
 `git status --porcelain` for `dirty`, and git may refresh the index under `index.lock` while
 doing so. A board running in a lane worktree could then make an agent's concurrent `git commit` or

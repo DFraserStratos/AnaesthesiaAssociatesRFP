@@ -1,5 +1,5 @@
 import { CheckCircle2, ChevronLeft, ChevronRight, Map as MapIcon, MessageSquareReply, Pencil, Trash2, X } from 'lucide-react'
-import { useMemo, useRef, useState, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { useLocation } from 'react-router-dom'
 import { kindHelpIn } from '../../shared/config.ts'
 import { tidyText } from '../../shared/files.ts'
@@ -13,7 +13,7 @@ import { useCatalogue, useConfig, useIndex, type Index } from '../store.ts'
 import { KIND_LABEL } from '../vocab.ts'
 import { ArtifactRowsSection } from './ArtifactRows.tsx'
 import { CopyLink, ItemName, StatusLabel } from './bits.tsx'
-import { EditActions, EditBanners, OrphanedDraft, discardConfirm } from './EditChrome.tsx'
+import { EditActions, EditBanners, NotFoundSheet, OrphanedDraft, changedRows, discardConfirm } from './EditChrome.tsx'
 import { ItemsPicker } from './ItemPicker.tsx'
 import { MarkdownTextarea } from './MarkdownTextarea.tsx'
 import { Prose } from './Prose.tsx'
@@ -37,14 +37,22 @@ export function QuestionModal({ id }: { id: string }) {
   const index = useIndex()
   const config = useConfig()
   const open = useOpen()
-  /** Where this question sat in the list when it was opened: answering it doesn't move it for stepping. */
-  const [anchorStatus] = useState(() => rec?.data.status)
+  /**
+   * Where this question sat in the list when it was opened (or first appeared, if it was not there yet):
+   * answering it doesn't move it for stepping.
+   */
+  const [anchorStatus, setAnchorStatus] = useState(() => rec?.data.status)
+  const appeared = rec?.data.status
+  useEffect(() => {
+    if (anchorStatus === undefined && appeared !== undefined) setAnchorStatus(appeared)
+  }, [appeared])
   /** The items to offer a new status (one of the settle statuses) after the question is answered. */
   const [flipOffer, setFlipOffer] = useState<Item[] | null>(null)
   const ed = useEditableRecord<Question>({
     key: `question:${id}`,
+    kind: 'question',
     rec,
-    save: saveQuestion,
+    save: (change) => saveQuestion(id, change),
     adopt: adoptQuestion,
     normalise,
     startEditing: useEditOnOpen(id),
@@ -74,33 +82,17 @@ export function QuestionModal({ id }: { id: string }) {
     if (answering) setTimeout(() => answerRef.current?.focus(), 30)
   }
 
-  if (ed.orphaned && ed.draft) {
-    const d = ed.draft
-    return (
-      <OrphanedDraft
-        ed={ed}
-        id={id}
-        noun="Question"
-        onClose={open.close}
-        fields={[
-          { label: 'Title', text: d.title },
-          { label: 'Question', text: d.question },
-          { label: 'Answer', text: d.answer },
-          { label: 'Sources', text: d.sources.join('\n') },
-        ]}
-      />
-    )
+  if (ed.orphaned && ed.draft && ed.base) {
+    // Every unsaved change, readable: the items it affects by ID and title, its kind and status by name.
+    const show = (field: string, value: unknown) =>
+      field === 'affects' ? (value as string[]).map((a) => `${a}${index.byId.get(a) ? ` ${index.byId.get(a)!.title}` : ''}`).join('\n') :
+      field === 'status' ? statusLabel(config, 'question', value as string) :
+      field === 'kind' ? KIND_LABEL[value as Question['kind']] ?? String(value) :
+      undefined
+    return <OrphanedDraft ed={ed} id={id} noun="Question" onClose={open.close} rows={changedRows('question', ed.base.data, ed.draft, show)} />
   }
 
-  if (!rec || !ed.draft) {
-    return (
-      <Sheet onClose={open.close} label="Question not found">
-        <div className="sheet-body">
-          <h2>{id} is not in the catalogue</h2>
-        </div>
-      </Sheet>
-    )
-  }
+  if (!rec || !ed.draft) return <NotFoundSheet id={id} noun="Question" onClose={open.close} />
   const q = ed.editing ? ed.draft : rec.data
   const set = (patch: Partial<Question>) => ed.setDraft((d) => (d ? { ...d, ...patch } : d))
 
@@ -131,7 +123,7 @@ export function QuestionModal({ id }: { id: string }) {
           <X size={18} />
         </button>
       </div>
-      <EditBanners ed={ed} noun="question" />
+      <EditBanners ed={ed} noun="question" kind="question" />
       <div className="sheet-body">
         {ed.editing ? <EditForm draft={ed.draft} set={set} index={index} answerRef={answerRef} /> : <ReadView q={q} index={index} />}
         {flipOffer && !ed.editing && <FlipOffer items={flipOffer} question={q} onDone={() => setFlipOffer(null)} />}
@@ -276,7 +268,7 @@ function FlipOffer({ items, question, onDone }: { items: Item[]; question: Quest
       for (const { id, from, to } of moving) {
         const rec = records[id]
         // Skip an item whose status changed elsewhere since the offer opened.
-        if (rec && rec.data.status === from) await saveItem({ ...rec.data, status: to }, rec.rev)
+        if (rec && rec.data.status === from) await saveItem(id, { patch: { status: to }, baseRev: rec.rev, base: { status: from } })
       }
       onDone()
     } catch (e) {

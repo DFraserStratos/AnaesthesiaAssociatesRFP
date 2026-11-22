@@ -17,6 +17,11 @@ export function loadStatuses(root = process.cwd(), req = DEFAULT_REQ) {
   try {
     config = JSON.parse(fs.readFileSync(path.join(root, req, 'board.config.json'), 'utf8'))
   } catch {}
+  return statusesFrom(config)
+}
+
+/** loadStatuses for a board config already read (for example from a commit). */
+export function statusesFrom(config = {}) {
   const lists = statusListsOf(config)
   const list = kind => lists[kind]
   const role = (kind, r) => String(list(kind).find(d => d.role === r)?.code ?? '')

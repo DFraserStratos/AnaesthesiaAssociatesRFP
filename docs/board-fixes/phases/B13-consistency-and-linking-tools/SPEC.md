@@ -77,9 +77,11 @@ particular:
 - Finish green with `npm run verify:board`, plus every agent `node --test` suite until B12 adds them
   to `verify:board` (convention 6).
 - Bump the board version (minor: agents see the behaviour change) and add a CHANGELOG entry
-  (convention 5). The version is picked at merge time: master's version plus the bump, the entry on
+  (convention 5). The version is picked at merge time: `board-fixes`' version plus the bump, the entry on
   top, the lock file regenerated with `npm install` (convention 14).
-- Git rules (convention 9). B13 runs in a parallel worktree (convention 10) with its own ports.
+- Git rules (convention 9). B13 runs in its own worktree (`AnaesthesiaAssociatesRFP-board-B13`, branch
+  `board-fixes-b13`, convention 10) with its own ports, and finishes by fast-forwarding `board-fixes`
+  (PROGRESS convention 16, steps 1 to 5).
 - Touch rights (convention 11): minimal edits in other phases' files, named in the entry. Doc lines
   (convention 12): every doc line describing changed behaviour is updated and listed under "Doc
   facts".
@@ -482,7 +484,7 @@ owned by B13 (with the user), and gated on B13's implementation plan.
    tests where B12's glob finds them (every `*.test.mjs` under `requirements-board/agent/`).
 6. Finish green: `npm run verify:board` from the repo root, plus every agent `node --test` suite
    (part of `verify:board` once B12 has landed; run them by hand until then, convention 6). At merge
-   time, take the board version as master's current version plus a minor bump. Put the
+   time, take the board version as `board-fixes`' current version plus a minor bump. Put the
    `CHANGELOG.md` entry above the newest one, and regenerate the lock file with `npm install` in the
    board folder (convention 14). The entry names the user- and agent-visible changes: decision
    checks, path refusals, whole-change apply, flag-only marking, link run scoping, accepted batch
@@ -497,5 +499,5 @@ owned by B13 (with the user), and gated on B13's implementation plan.
    (with their fail-before evidence), review results, minimal edits made in other phases' files
    (convention 11), every doc line changed listed under "Doc facts" (convention 12), and handoffs
    for B14 (changed commands for the R-31 sweep and the docs pass), B05 (`apply-links` tests) and
-   later work (masking duplicate if B04's helper was not yet available). Commit by path on master or a local
-   branch merged back. Never push.
+   later work (masking duplicate if B04's helper was not yet available). Commit by path on `board-fixes-b13`
+   (`B13 complete: ...`), then fast-forward `board-fixes` (convention 16, steps 3 to 5). Never push.

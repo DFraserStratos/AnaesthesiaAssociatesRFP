@@ -13,6 +13,7 @@ import {
   STEP_VIEWS,
   VIEWPORTS,
   artifactFormat,
+  firstLaneName,
   isPastArtifact,
   linesOfRegionId,
   pageOfRegionId,
@@ -26,11 +27,12 @@ import {
   type Question,
   type Rect,
 } from './types.ts'
-import { isArtifactId, isQuestionId, itemTexts, mentions } from './links.ts'
-import { buildSourceIndex, citationProblems, resolveSource, type SpotFacts } from './sources.ts'
+import { laneListProblems } from './move.ts'
+import { ARTIFACT_REF, isArtifactId, isQuestionId, itemTexts, mentionsOf } from './links.ts'
+import { buildSourceIndex, citationProblems, resolveSource, spotExists, type SpotFacts } from './sources.ts'
 import { appKeys, componentNames, DEFAULT_CONFIG, voiceRegex, type BoardConfig } from './config.ts'
-import { isAnswered, isRetired, statusCodes } from './statuses.ts'
-import { stepOf, stepState } from './steps.ts'
+import { STATUS_FIELDS, isAnswered, isRetired, removedStatus, statusCodes, type StatusKind } from './statuses.ts'
+import { stepState } from './steps.ts'
 import { ANCHOR_FORMATS, boxRect, isRegionId, looseText, matchSimpleSelector, normText, parseAnchor, rectWithin, type SvgElement } from './artifacts.ts'
 
 export const ID_PATTERNS = {
@@ -56,6 +58,8 @@ export interface ArtifactFacts {
   nodeIds?: Set<string> | null
   markdown?: { headings: Heading[]; loose: string; lines: number; points?: NotePoint[] }
   pdf?: { pages: { w: number; h: number; loose: string }[] }
+  /** Where the file really is when it is a symbolic link that leads out of its folder (it is still shown). */
+  linkOut?: string
 }
 
 export interface CheckInput {
@@ -63,8 +67,12 @@ export interface CheckInput {
   questions: Question[]
   /** Returns whether a catalogue-relative path exists. Omit to skip image checks (browser). */
   fileExists?: (relPath: string) => boolean
-  /** The board's named swim lanes (`board-layout.json`). Omit to skip the lane check. */
+  /** Where a catalogue-relative path really leads when a symbolic link takes it out of its folder, else null. Omit to skip. */
+  linkOut?: (relPath: string) => string | null
+  /** The board's named swim lanes (`board-layout.json`). Omit to skip the lane checks. */
   lanes?: string[]
+  /** What the first lane is called (`board-layout.json` `firstLane`); its name takes part in the lane-list rules. */
+  firstLane?: string
   artifacts?: Artifact[]
   /** What each artifact's file holds. Omit (or return null) to skip the file and region checks. */
   artifactFacts?: (a: Artifact) => ArtifactFacts | null
@@ -72,11 +80,19 @@ export interface CheckInput {
   config?: BoardConfig
 }
 
-export function checkCatalogue({ items, questions, fileExists, lanes, artifacts = [], artifactFacts, config = DEFAULT_CONFIG }: CheckInput): Issue[] {
+export function checkCatalogue({ items, questions, fileExists, linkOut, lanes, firstLane, artifacts = [], artifactFacts, config = DEFAULT_CONFIG }: CheckInput): Issue[] {
   const issues: Issue[] = []
   const components = componentNames(config)
-  const itemCodes = statusCodes(config, 'item')
-  const questionCodes = statusCodes(config, 'question')
+  // A card's status is judged against the project's own list only. While that list is damaged the
+  // config problem is the one error: judging every card against what is left of it would bury the cause.
+  const statusProblem = (kind: StatusKind, code: string): string | null => {
+    const field = STATUS_FIELDS[kind]
+    const codes = statusCodes(config, kind)
+    if (config.statusState?.[field].state === 'damaged' || codes.includes(code)) return null
+    const gone = removedStatus(config, kind, code)
+    if (gone) return `status "${code}" is ${gone.label}, a removed status: give it one of ${codes.join(', ')} (${field} in board.config.json)`
+    return `status "${code}" is not one of ${codes.join(', ')} (${field} in board.config.json)`
+  }
   const retired = (it: Item) => isRetired(config, it)
   const apps = appKeys(config)
   const unknownComponent = (c: string) => components.length > 0 && !components.includes(c)
@@ -89,6 +105,26 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     byId.set(it.id, it)
   }
 
+  // Parent cycles: a card that is (through its parents) under itself. Named on every member, so the
+  // problem list leads to each; a self-parent is a cycle of one. Each card is followed once.
+  const done = new Set<string>()
+  for (const start of items) {
+    const path: string[] = []
+    const at = new Map<string, number>()
+    let cur: Item | undefined = start
+    while (cur && !done.has(cur.id) && !at.has(cur.id)) {
+      at.set(cur.id, path.length)
+      path.push(cur.id)
+      cur = cur.parent ? byId.get(cur.parent) : undefined
+    }
+    if (cur && at.has(cur.id)) {
+      const members = path.slice(at.get(cur.id))
+      const message = members.length === 1 ? 'is its own parent; a card can never be under itself' : `is in a parent cycle (${members.join(', ')}); a card can never be under itself`
+      for (const id of members) err(id, message)
+    }
+    for (const id of path) done.add(id)
+  }
+
   for (const it of items) {
     if (!ITEM_TYPES.includes(it.type)) {
       err(it.id, `type "${it.type}" is not one of ${ITEM_TYPES.join(', ')}`)
@@ -96,7 +132,8 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     }
     if (!ID_PATTERNS[it.type].test(it.id)) err(it.id, `ID ${it.id} does not match the ${it.type} pattern`)
     if (!it.title.trim()) err(it.id, 'title is empty')
-    if (!itemCodes.includes(it.status)) err(it.id, `status "${it.status}" is not one of ${itemCodes.join(', ')} (statuses in board.config.json)`)
+    const badStatus = statusProblem('item', it.status)
+    if (badStatus) err(it.id, badStatus)
     for (const c of it.components) {
       if (unknownComponent(c)) err(it.id, `component "${c}" is not in the vocabulary (board.config.json)`)
     }
@@ -125,6 +162,8 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
       if (!img.src) err(it.id, 'image with no src')
       else if (!img.src.startsWith('assets/')) err(it.id, `image ${img.src} must live under assets/ (the board only serves that folder)`)
       else if (fileExists && !fileExists(img.src)) err(it.id, `image file ${img.src} is missing`)
+      const out = img.src?.startsWith('assets/') ? linkOut?.(img.src) : null
+      if (out) warn(it.id, `image ${img.src} is a symbolic link to ${out}, outside assets/; the board still shows it`)
       if (!VIEWPORTS.includes(img.viewport)) err(it.id, `image viewport "${img.viewport}" is not desktop or mobile`)
       const app = img.app === undefined ? undefined : config.screenshotApps.find((a) => a.key === img.app)
       if (img.app !== undefined && apps.length > 0 && !app) err(it.id, `image app "${img.app}" is not one of ${apps.join(', ')}`)
@@ -164,16 +203,8 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
   }
   const factsOf = new Map<string, ArtifactFacts | null>()
   for (const a of artifacts) factsOf.set(a.id, artifactFacts ? artifactFacts(a) : null)
-  /** Region IDs that resolve: the named ones and the steps, plus each PDF page and Markdown heading. */
-  const regionExists = (a: Artifact, region: string) => {
-    if (a.regions.some((r) => r.id === region) || stepOf(a, region)) return true
-    const f = factsOf.get(a.id)
-    const page = pageOfRegionId(region)
-    if (page !== null) return !f || !f.pdf ? (f ? false : true) : page >= 1 && page <= f.pdf.pages.length
-    const lines = linesOfRegionId(region)
-    if (lines) return f?.markdown ? lines.to <= f.markdown.lines : !f
-    return f?.markdown ? f.markdown.headings.some((h) => h.slug === region) : !f
-  }
+  /** Spots that resolve, by the one spot rule (`sources.ts spotExists`). */
+  const regionExists = (a: Artifact, region: string) => spotExists(a, region, spotFactsOf(factsOf.get(a.id) ?? null))
   const artifactRefProblem = (ref: string): string | null => {
     const { id, region } = parseArtifactRef(ref)
     const a = artById.get(id)
@@ -206,7 +237,8 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
       else if (n > 1 && opts.many) warn(a.id, spans(n, 'texts'))
     } else if (kind === 'css' && f.svg) {
       const n = matchSimpleSelector(value, f.svg.elements)
-      if (n === 0) err(a.id, `${label} matches nothing in the drawing`)
+      if (n === 'invalid') warn(a.id, `${label} is not a valid selector (an empty part, as after a stray comma), so the board draws nothing for it`)
+      else if (n === 0) err(a.id, `${label} matches nothing in the drawing`)
       else if (n === null) warn(a.id, `${label} is not checked here; the board resolves it`)
       else if (n > 1 && opts.many) warn(a.id, spans(n, 'elements'))
     } else if (kind === 'node') {
@@ -246,6 +278,7 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     }
     const f = factsOf.get(a.id)
     if (f && !f.ok) err(a.id, f.error ?? `file ${a.file} cannot be read`)
+    if (f?.linkOut) warn(a.id, `file ${a.file} is a symbolic link to ${f.linkOut}, outside ${a.file?.startsWith('/') ? 'the repository' : 'the requirements folder'}; the board still shows it`)
 
     const seen = new Set<string>()
     for (const r of a.regions) {
@@ -318,7 +351,8 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     for (const ref of it.artifacts ?? []) {
       if (seen.has(ref)) warn(it.id, `artifacts lists ${ref} twice`)
       seen.add(ref)
-      if (!/^AR-\d{2,}(#[A-Za-z0-9-]+)?$/.test(ref)) {
+      // Any spot the slug rule can make (underscores, letters with accents); whether it exists is the spot rule's to say (FINDINGS R-77).
+      if (!ARTIFACT_REF.test(ref)) {
         err(it.id, `artifacts entry "${ref}" is not AR-nn or AR-nn#region`)
         continue
       }
@@ -336,7 +370,7 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
   // Links in an artifact's description only warn: the board cannot rewrite an artifact, so they must never block a save or a delete.
   const linksIn = (id: string, texts: string[], live: boolean, soft = false) => {
     const fail = soft ? warn : err
-    for (const m of mentions(texts.join('\n\n'))) {
+    for (const m of mentionsOf(texts)) {
       const how = m.bare ? 'mentions' : 'links to'
       if (isArtifactId(m.id)) {
         const problem = artifactRefProblem(m.id)
@@ -379,7 +413,8 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     if (!ID_PATTERNS.question.test(q.id)) err(q.id, `ID ${q.id} does not match OQ-nn`)
     if (!QUESTION_KINDS.includes(q.kind)) err(q.id, `kind "${q.kind}" is not one of ${QUESTION_KINDS.join(', ')}`)
     if (!q.title.trim()) err(q.id, 'title is empty')
-    if (!questionCodes.includes(q.status)) err(q.id, `status "${q.status}" is not one of ${questionCodes.join(', ')} (questionStatuses in board.config.json)`)
+    const badStatus = statusProblem('question', q.status)
+    if (badStatus) err(q.id, badStatus)
     for (const a of q.affects) if (!byId.has(a)) err(q.id, `affects ${a}, which does not exist`)
     if (q.affects.length === 0) warn(q.id, 'affects no items')
     if (isAnswered(config, q) && !q.answer.trim()) warn(q.id, 'answered but the answer is empty')
@@ -390,6 +425,14 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     const sources = buildSourceIndex(artifacts, (id) => spotFactsOf(factsOf.get(id) ?? null))
     for (const a of artifacts) for (const p of citationProblems(a, spotFactsOf(factsOf.get(a.id) ?? null), artifactFormat(a) === 'pdf')) err(a.id, p)
     for (const c of sources.clashes) for (const id of c.ids) err(id, `cited_as "${c.prefix}" is also claimed by ${c.ids.filter((x) => x !== id).join(', ')}`)
+    for (const r of sources.repeats) warn(r.id, `cited_as lists "${r.prefix}" more than once; once is enough`)
+    // One file, one sidecar: two would leave its sources resolving to only one of them (FINDINGS R-82).
+    const byFile = new Map<string, string[]>()
+    for (const a of artifacts) {
+      const file = a.file?.replace(/^\.\//, '')
+      if (file) byFile.set(file, [...(byFile.get(file) ?? []), a.id])
+    }
+    for (const [file, ids] of byFile) if (ids.length > 1) for (const id of ids) warn(id, `file ${file} is also registered by ${ids.filter((x) => x !== id).join(', ')}; sources open only one of them, so keep one sidecar`)
     const sourcesOf = (id: string, list: string[], self?: string) => {
       for (const s of list) {
         const r = resolveSource(sources, s, self)
@@ -403,6 +446,10 @@ export function checkCatalogue({ items, questions, fileExists, lanes, artifacts 
     for (const a of artifacts) sourcesOf(a.id, a.sources, a.id)
   }
 
+  // The lane list breaks a rule the board enforces on lane writes (the same rule, `laneListProblems`):
+  // say so here, where it can be fixed, rather than only when a lane change is refused (FINDINGS R-55).
+  if (lanes) for (const p of laneListProblems([firstLaneName({ firstLane }), ...lanes])) err('layout', `board-layout.json: ${p}; the board refuses lane changes that add a problem like this, so fix it in the file or rename the lane on the Mapped board`)
+
   return issues
 }
 
@@ -414,7 +461,7 @@ function snippet(text: string, max = 40): string {
 
 /** What the check knows of a file, as the source resolver reads it. */
 function spotFactsOf(f: ArtifactFacts | null): SpotFacts | null {
-  if (!f) return null
+  if (!f || !f.ok) return null // a file that cannot be read says so itself; its spots are not judged
   return { pages: f.pdf?.pages.length ?? null, headings: f.markdown?.headings ?? null, points: f.markdown?.points ?? null, lines: f.markdown?.lines ?? null }
 }
 

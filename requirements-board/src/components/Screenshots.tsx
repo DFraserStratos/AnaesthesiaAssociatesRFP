@@ -1,10 +1,11 @@
 /** An item's screenshots: the gallery and lightbox in its read view, and the list editor in its edit form. */
 import { ImageIcon, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { appKeys, type BoardConfig } from '../../shared/config.ts'
 import { type ImageRef, type Item } from '../../shared/types.ts'
 import { assetUrl } from '../api.ts'
-import { useConfig } from '../store.ts'
+import { useCatalogue, useConfig } from '../store.ts'
 
 /**
  * Gallery tabs: one per screenshot app (`board.config.json`), in its order; images with no app
@@ -39,6 +40,10 @@ export function Gallery({ item }: { item: Item }) {
   const shown = item.images.filter((i) => tabOf(i) === tab)
   const count = (t: GalleryTab) => item.images.filter((i) => tabOf(i) === t).length
   const layout = shown.every((i) => i.viewport === 'mobile') ? 'mobile' : 'desktop'
+  // Each file's version (its git blob hash, D-10) in its URL: a re-captured screenshot shows at once,
+  // an unchanged one keeps its URL and so its cached picture (R-104).
+  const versions = useCatalogue((s) => s.assets)
+  const shotUrl = (src: string) => assetUrl(src, versions[src] ?? undefined)
 
   return (
     <section className="section">
@@ -63,7 +68,7 @@ export function Gallery({ item }: { item: Item }) {
             {shown.map((img) => (
               <figure key={img.src} style={{ margin: 0 }}>
                 <button className="shot" onClick={() => setZoomedAt(ordered.indexOf(img))} aria-label={`Enlarge ${img.caption ?? img.src}`}>
-                  <img src={assetUrl(img.src)} alt={img.caption ?? ''} loading="lazy" />
+                  <img src={shotUrl(img.src)} alt={img.caption ?? ''} loading="lazy" />
                   <figcaption>{img.caption ?? img.src.split('/').pop()}</figcaption>
                 </button>
               </figure>
@@ -71,13 +76,17 @@ export function Gallery({ item }: { item: Item }) {
           </div>
         </>
       )}
-      {zoomed && <Lightbox image={zoomed} at={zoomedAt!} total={ordered.length} label={tabLabel(config, tabOf(zoomed))} onStep={step} onClose={() => setZoomedAt(null)} />}
+      {zoomed && <Lightbox image={zoomed} url={shotUrl(zoomed.src)} at={zoomedAt!} total={ordered.length} label={tabLabel(config, tabOf(zoomed))} onStep={step} onClose={() => setZoomedAt(null)} />}
     </section>
   )
 }
 
-/** A screenshot enlarged. Left and right arrows step through all of the item's screenshots, wrapping at the ends. */
-function Lightbox({ image, at, total, label, onStep, onClose }: { image: ImageRef; at: number; total: number; label: string; onStep: (dir: 1 | -1) => void; onClose: () => void }) {
+/**
+ * A screenshot enlarged. Left and right arrows step through all of the item's screenshots, wrapping at
+ * the ends. It is drawn on the page's body, so it covers everything: a docked card's panel makes its
+ * own stacking layer, under the New card button and the divider (R-105).
+ */
+function Lightbox({ image, url, at, total, label, onStep, onClose }: { image: ImageRef; url: string; at: number; total: number; label: string; onStep: (dir: 1 | -1) => void; onClose: () => void }) {
   const handlers = useRef({ onStep, onClose })
   handlers.current = { onStep, onClose }
   useEffect(() => {
@@ -93,10 +102,10 @@ function Lightbox({ image, at, total, label, onStep, onClose }: { image: ImageRe
     window.addEventListener('keydown', onKey, true)
     return () => window.removeEventListener('keydown', onKey, true)
   }, [])
-  return (
+  return createPortal(
     <div className="lightbox" onClick={onClose} role="dialog" aria-label="Screenshot">
       <div>
-        <img src={assetUrl(image.src)} alt={image.caption ?? ''} />
+        <img src={url} alt={image.caption ?? ''} />
         <p>
           {image.caption ?? image.src}
           {total > 1 && (
@@ -106,7 +115,8 @@ function Lightbox({ image, at, total, label, onStep, onClose }: { image: ImageRe
           )}
         </p>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

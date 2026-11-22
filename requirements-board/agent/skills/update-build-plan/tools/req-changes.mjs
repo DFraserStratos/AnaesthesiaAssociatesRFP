@@ -101,14 +101,64 @@ export function substance(text, recodes = [], kind = 'item') {
   return `${kept.join('\n')}\n---\n${unlink(body)}`.replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim()
 }
 
+/**
+ * Many `<ref>:<path>` blobs read with one `git cat-file --batch` process: a Map from each spec to its text,
+ * null where the path does not exist at that ref. (One process for any number of files, where a `git show`
+ * each costs a process apiece.)
+ */
+export function readBlobs(cwd, specs) {
+  const uniq = [...new Set(specs)].filter(s => s && !s.includes('\n'))
+  const out = new Map()
+  if (!uniq.length) return out
+  let buf
+  try {
+    buf = execFileSync('git', ['cat-file', '--batch'], { cwd, input: `${uniq.join('\n')}\n`, maxBuffer: 1024 * 1024 * 1024 })
+  } catch {
+    for (const spec of uniq) out.set(spec, null)
+    return out
+  }
+  let pos = 0
+  for (const spec of uniq) {
+    const nl = buf.indexOf(10, pos)
+    if (nl < 0) { out.set(spec, null); continue }
+    const m = buf.toString('utf8', pos, nl).match(/^[0-9a-f]+ (\S+) (\d+)$/)
+    pos = nl + 1
+    if (!m) { out.set(spec, null); continue } // "<spec> missing" or "ambiguous"
+    const size = Number(m[2])
+    out.set(spec, m[1] === 'blob' ? buf.toString('utf8', pos, pos + size) : null)
+    pos += size + 1
+  }
+  return out
+}
+
+const readFile = (cwd, file) => { try { return fs.readFileSync(path.join(cwd, file), 'utf8') } catch { return null } }
+
+/**
+ * Changed entries' texts at `from` and at `to` (default: the working tree), all git reads in one batch:
+ * { sides: Map(entry -> { before, after }), blobs } (null where a side does not exist). `extra` specs are
+ * read in the same batch and returned in `blobs`.
+ */
+export function sidesMany({ cwd, from, to = null, entries, extra = [] }) {
+  const beforeOf = e => `${from}:${e.was ?? e.file}`
+  const afterOf = e => `${to}:${e.file}`
+  const specs = [...extra]
+  for (const e of entries) {
+    if (e.change !== 'A') specs.push(beforeOf(e))
+    if (e.change !== 'D' && to) specs.push(afterOf(e))
+  }
+  const blobs = readBlobs(cwd, specs)
+  const sides = new Map()
+  for (const e of entries) {
+    const before = e.change === 'A' ? null : blobs.get(beforeOf(e)) ?? null
+    const after = e.change === 'D' ? null : to ? blobs.get(afterOf(e)) ?? null : readFile(cwd, e.file)
+    sides.set(e, { before, after })
+  }
+  return { sides, blobs }
+}
+
 /** A changed entry's text at `from` and at `to` (default: the working tree); null where it does not exist. */
 export function sidesOf({ cwd, from, to = null, entry }) {
-  const show = (ref, file) => {
-    try { return execFileSync('git', ['show', `${ref}:${file}`], { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }) } catch { return null }
-  }
-  const before = entry.change === 'A' ? null : show(from, entry.was ?? entry.file)
-  const after = entry.change === 'D' ? null : to ? show(to, entry.file) : (() => { try { return fs.readFileSync(path.join(cwd, entry.file), 'utf8') } catch { return null } })()
-  return { before, after }
+  return sidesMany({ cwd, from, to, entries: [entry] }).sides.get(entry)
 }
 
 /** An item or question's text without its cosmetic front-matter fields (COSMETIC_FIELDS); the body as it is. */
@@ -167,23 +217,37 @@ export function unifiedDiff(a, b, context = 2) {
  * The unified diff of a changed entry with cosmetic front-matter fields left out on both sides (so a diff
  * shows only what a reader of the requirement would notice), hunks only, `context` lines around each.
  */
-export function substanceDiff({ cwd, from, to = null, entry, context = 2 }) {
-  const { before, after } = sidesOf({ cwd, from, to, entry })
+export function substanceDiff({ cwd, from, to = null, entry, context = 2, sides = null }) {
+  const { before, after } = sides ?? sidesOf({ cwd, from, to, entry })
   return unifiedDiff(before == null ? '' : withoutCosmetic(before), after == null ? '' : withoutCosmetic(after), context)
+}
+
+/**
+ * For many changed entries from requirementChanges(): Map(entry -> true when it differs in substance; a real
+ * status move counts, a recode does not; an add or delete always counts). One git read for all of them
+ * (or none, given their `sides` from sidesMany), and the recode list read once.
+ */
+export function substanceVerdicts({ cwd, from, to = null, entries, req = LAYOUTS[0].root, sides = null }) {
+  const modified = entries.filter(e => e.change === 'M')
+  const recodeSpec = to ? `${to}:${recodesPath(req)}` : null
+  const read = sides ? { sides, blobs: readBlobs(cwd, recodeSpec ? [recodeSpec] : []) } : sidesMany({ cwd, from, to, entries: modified, extra: recodeSpec ? [recodeSpec] : [] })
+  // The newest recode list covers every older baseline: read it from the target side, else the working tree.
+  const recodes = (() => {
+    const text = recodeSpec ? read.blobs.get(recodeSpec) : null
+    try { return text ? JSON.parse(text) : loadRecodes(cwd, req) } catch { return [] }
+  })()
+  const out = new Map()
+  for (const e of entries) {
+    if (e.change !== 'M') { out.set(e, true); continue }
+    const { before, after } = read.sides.get(e) ?? sidesOf({ cwd, from, to, entry: e })
+    const kind = /^(OQ|MS)-/.test(e.id) ? 'question' : 'item'
+    out.set(e, substance(before, recodes, kind) !== substance(after, recodes, kind))
+  }
+  return out
 }
 
 /** True when a changed entry from requirementChanges() differs in substance (a real status move included; a recode is not). */
 export function changedInSubstance({ cwd, from, to = null, entry, req = LAYOUTS[0].root }) {
   if (entry.change !== 'M') return true
-  const show = (ref, file) => {
-    try { return execFileSync('git', ['show', `${ref}:${file}`], { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }) } catch { return null }
-  }
-  const { before, after } = sidesOf({ cwd, from, to, entry })
-  // The newest recode list covers every older baseline: read it from the target side, else the working tree.
-  const recodes = (() => {
-    const text = to ? show(to, recodesPath(req)) : null
-    try { return text ? JSON.parse(text) : loadRecodes(cwd, req) } catch { return [] }
-  })()
-  const kind = /^(OQ|MS)-/.test(entry.id) ? 'question' : 'item'
-  return substance(before, recodes, kind) !== substance(after, recodes, kind)
+  return substanceVerdicts({ cwd, from, to, entries: [entry], req }).get(entry)
 }

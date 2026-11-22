@@ -89,7 +89,9 @@ Not the place to edit requirements:
   screenshot recipes, atlas and report are in `REQ/capture/` (its prototype-specific capture steps in
   `REQ/capture/steps.ts`), and each skill keeps its repo-specific facts in one "This repo" block.
   `requirements-board/ADOPTING.md` is the checklist for setting it up in another repo. **To share it**,
-  `npm --prefix requirements-board run kit:export -- --to "<folder>"` writes a clean kit (starter
+  `npm --prefix requirements-board run kit:export -- --to "<folder>"` writes a clean kit from the board as
+  committed at HEAD (commit first; `--uncommitted` to try work), into an empty folder or one an earlier
+  export wrote and nobody changed (starter
   catalogue from `requirements-board/starter/`, starter "This repo" sections, leak check against
   `starter/deny.txt`); build anything new for the board here first, bump its `package.json` version and
   `CHANGELOG.md`, then export. Its About page (`/about`) is the user guide: keep it in step with the skills. Not
@@ -108,7 +110,7 @@ Not the place to edit requirements:
   never makes or edits the artifact itself; agents add them, and write their files and regions, with the `add-artifact` skill
   (`npm --prefix requirements-board run artifact:new`), and the `svg-diagram` skill saves new
   diagrams as artifacts. A new transcript or note filed by `update-requirements` is registered as one. **Finish green on board work:**
-  `npm run verify:board` from the repo root (typecheck, Vitest, catalogue check) passes before handing back.
+  `npm run verify:board` from the repo root (typecheck, Vitest, catalogue check, the agent tools' `node --test` suites) passes before handing back.
 - **Two build targets, one `src/`** — `npm run build` → `dist/` is the framed all-apps prototype;
   `npm run build:pwa` → `dist-pwa/` is the Anaesthetist Mobile App alone as an installable PWA, built
   from `vite.pwa.config.ts` + `pwa/`. Anything under `src/apps/mobile/`, `src/shared/` or `src/theme/`

@@ -1,4 +1,5 @@
 /** Artifacts: the sidecar format, reading files without a DOM, the check's rules, links, history and the API. */
+import { changesOf } from './deliveries.ts'
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import type { ServerResponse } from 'node:http'
 import { tmpdir } from 'node:os'
@@ -691,8 +692,7 @@ describe('the API', () => {
 
   it('refuses a card save that links to a missing artifact or spot', () => {
     const a = createCatalogueApi(root)
-    const rec = a.getState().items['US-01.1.1']!
-    const save = (artifacts: string[]) => a.handle({ method: 'PUT', path: '/api/items/US-01.1.1', body: { record: { ...rec.data, artifacts }, baseRev: a.getState().items['US-01.1.1']!.rev }, headers: HEADERS })
+    const save = (artifacts: string[]) => a.handle({ method: 'PUT', path: '/api/items/US-01.1.1', body: { patch: { artifacts }, baseRev: a.getState().items['US-01.1.1']!.rev }, headers: HEADERS })
     expect(() => save(['AR-01#nope'])).toThrow(HttpError)
     expect(() => save(['AR-09'])).toThrow(/does not exist/)
     expect((save(['AR-01#panel']) as { data: { artifacts: string[] } }).data.artifacts).toEqual(['AR-01#panel'])
@@ -700,10 +700,13 @@ describe('the API', () => {
 
   it("saves an artifact's details and nothing else: its file, regions and source stay as on disk", () => {
     const events: { kind: string }[] = []
-    const a = createCatalogueApi(root, (e) => events.push(e))
+    const a = createCatalogueApi(root, (d) => events.push(...changesOf(d)))
     const rec = a.getState().artifacts['AR-01']!
-    const record = { ...rec.data, title: '  Renamed  ', date: '2021', author: 'Acme Ltd', status: 'Draft', supersededBy: 'AR-01', file: 'artifacts/AR-09.svg', regions: [], source: 'flowchart LR\n A', extra: { hack: 1 } }
-    const saved = a.handle({ method: 'PUT', path: '/api/artifacts/AR-01', body: { record, baseRev: rec.rev }, headers: HEADERS }) as ArtifactRec
+    // Only details can be named: a patch reaching for the file, its regions or its source is refused whole.
+    for (const other of [{ file: 'artifacts/AR-09.svg' }, { regions: [] }, { source: 'flowchart LR\n A' }, { extra: { hack: 1 } }])
+      expect(() => a.handle({ method: 'PUT', path: '/api/artifacts/AR-01', body: { patch: { title: 'Renamed', ...other }, baseRev: rec.rev }, headers: HEADERS })).toThrow(expect.objectContaining({ status: 400 }))
+    const patch = { title: '  Renamed  ', date: '2021', author: 'Acme Ltd', status: 'Draft', supersededBy: 'AR-01' }
+    const saved = a.handle({ method: 'PUT', path: '/api/artifacts/AR-01', body: { patch, baseRev: rec.rev }, headers: HEADERS }) as ArtifactRec
     expect(saved.data).toMatchObject({ title: 'Renamed', date: '2021', author: 'Acme Ltd', status: 'Draft', supersededBy: null, file: 'artifacts/AR-01.svg', source: '', extra: {} })
     expect(saved.data.regions.map((r) => r.id)).toEqual(['panel'])
     expect(saved.meta.format).toBe('svg')
@@ -715,19 +718,19 @@ describe('the API', () => {
     const a = createCatalogueApi(root)
     const rec = a.getState().artifacts['AR-01']!
     const put = (patch: Partial<Artifact>, baseRev = a.getState().artifacts['AR-01']!.rev) =>
-      a.handle({ method: 'PUT', path: '/api/artifacts/AR-01', body: { record: { ...rec.data, ...patch }, baseRev }, headers: HEADERS })
+      a.handle({ method: 'PUT', path: '/api/artifacts/AR-01', body: { patch, baseRev }, headers: HEADERS })
     expect(() => put({ date: '6 Oct' })).toThrow(/YYYY-MM-DD/)
     expect(() => put({ title: ' ' })).toThrow(/title is empty/)
     expect(() => put({ status: 'Retired', supersededBy: 'AR-09' })).toThrow(/does not exist/)
     expect(() => put({ description: 'Intro\n## Source\nmore' })).toThrow(/## Source/)
     put({ title: 'First' })
     expect(() => put({ title: 'Second' }, rec.rev)).toThrow(expect.objectContaining({ status: 409 }))
-    expect(() => a.handle({ method: 'PUT', path: '/api/artifacts/AR-09', body: { record: {}, baseRev: 'x' }, headers: HEADERS })).toThrow(/does not exist/)
+    expect(() => a.handle({ method: 'PUT', path: '/api/artifacts/AR-09', body: { patch: {}, baseRev: 'x' }, headers: HEADERS })).toThrow(/does not exist/)
   })
 
   it("tells clients when an artifact's file changes on disk", () => {
     const events: unknown[] = []
-    const a = createCatalogueApi(root, (e) => events.push(e))
+    const a = createCatalogueApi(root, (d) => events.push(...changesOf(d)))
     writeFileSync(join(root, 'artifacts', 'AR-01.svg'), SVG.replace('Two', 'Three'))
     a.syncFromDisk()
     expect(events).toContainEqual(expect.objectContaining({ kind: 'artifact', id: 'AR-01' }))

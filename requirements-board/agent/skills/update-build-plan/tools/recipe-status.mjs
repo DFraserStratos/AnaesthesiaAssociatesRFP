@@ -74,8 +74,10 @@ function shotItems(phase) {
   return out
 }
 
-// A phase is built once the progress file has its "### Phase NN" entry (or status.json lists it done).
-const builtSet = new Set(phaseStatus(config, ROOT).builtByEntry)
+// A phase is built once the progress file has its "### Phase NN" entry with no IN PROGRESS row (or
+// status.json lists it done). --check, part of a plan update, also counts what the build lanes have built
+// (config `lanes`).
+const builtSet = new Set(phaseStatus(config, ROOT, { lanes: check }).builtByEntry)
 const built = num => builtSet.has(num)
 
 if (check) {

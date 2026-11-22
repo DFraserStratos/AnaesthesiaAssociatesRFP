@@ -1,6 +1,6 @@
 # Phase B01: Origin security
 
-**Status:** PLANNED
+**Status:** COMPLETE (2026-11-19; see the B01 entry in PROGRESS.md)
 
 **Requirements:** R-03, R-04, R-22, R-35, R-36, R-63, R-102, from [FINDINGS.md](../../FINDINGS.md)
 ("Findings in detail": R-03, R-04 and R-22 under Medium; R-35, R-36, R-63 and R-102 under Low; the

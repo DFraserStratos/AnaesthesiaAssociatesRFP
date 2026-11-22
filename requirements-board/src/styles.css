@@ -288,6 +288,77 @@ button {
 .problem-panel .problem-row span {
   flex: 1;
 }
+.problem-panel div.problem-row {
+  padding: 4px 14px 10px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.problem-panel .problem-row .problem-actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 6px;
+}
+/* A part of the page that failed to show (RegionBoundary): in its own place, the rest still works. */
+.crash-panel {
+  max-width: 640px;
+  margin: 48px auto;
+  padding: 24px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  box-shadow: var(--shadow-tag);
+  color: var(--ink-2);
+  font-size: 14px;
+}
+.sheet .crash-panel {
+  margin: 0;
+  border: 0;
+  box-shadow: none;
+  padding: 8px 0;
+}
+.crash-panel h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 17px;
+  color: var(--ink);
+}
+.crash-panel h2 svg {
+  color: var(--danger);
+}
+.crash-panel p {
+  margin: 0 0 10px;
+}
+.crash-panel .crash-message {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--danger-tint);
+  color: var(--danger);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.crash-panel .crash-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 10px;
+}
+.crash-panel .crash-details summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.crash-panel .crash-details pre {
+  max-height: 240px;
+  overflow: auto;
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--paper);
+  font-size: 11px;
+  white-space: pre-wrap;
+}
 .issue-list {
   margin: 0 0 6px;
   padding: 0;
@@ -333,7 +404,8 @@ button {
   background: var(--card-soft);
   border-color: var(--ink-4);
 }
-.btn:disabled {
+.btn:disabled,
+.btn[aria-disabled='true'] {
   opacity: 0.5;
   cursor: default;
 }
@@ -1403,6 +1475,20 @@ button.seg:focus-visible {
 .tree-row:hover {
   background: var(--card-soft);
 }
+/* The Outline's last group: cards no epic reaches (a missing parent, no parent, a parent cycle). */
+.tree-group-head {
+  border-top: 1px solid var(--rule);
+  margin-top: 6px;
+  padding: 12px 16px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.tree-row .tree-reason {
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
 .tree-row:focus-visible {
   outline-offset: -2px;
 }
@@ -1416,6 +1502,13 @@ button.seg:focus-visible {
 }
 .tree-row .twisty:hover {
   background: var(--paper);
+}
+/* While the Outline is searched every row is shown open, so the twisty folds nothing: faint and inert (FINDINGS R-126). */
+.tree-row .twisty.inert {
+  opacity: 0.35;
+}
+.tree-row .twisty.inert:hover {
+  background: none;
 }
 .tree-row .mono {
   font-size: 12px;
@@ -1485,7 +1578,8 @@ mark {
 .scrim.swapped .sheet {
   animation: none;
 }
-.sheet:focus {
+.sheet:focus,
+.main:focus {
   outline: none;
 }
 .sheet {

@@ -2,31 +2,40 @@
 // Server side: resolve every code that appears in a page's text into one JSON blob. Client side: wrap codes, show popovers.
 // Generic: note shorthands (e.g. G1016, V6) come from the rulings file's "Cite shorthand" line (`KEY = Notes <date> · <words>`),
 // and CL<date> / TD<date> descriptions from the same line when present.
+// Note cites resolve by the board's own rule (shared/sources.ts resolveNoteCite, imported from the board beside the
+// catalogue): the words are the note file's slug words, and a cite whose words match no note is unresolved.
 import fs from 'node:fs'
 import path from 'node:path'
+import { boardNoteRules } from './board-kit.mjs'
 
 // ---- shared matcher (evaluated on the server too, so both sides recognise exactly the same codes)
 export const RE_SRC = String.raw`
-function buildRe(titles, shorts) {
+function buildRe(cites, shorts) {
   const esc = (s) => s.replace(/[.*+?^$\{\}()|[\]\\]/g, '\\$&')
   const pts = '(?:\\s*,?\\s*#\\d+(?:\\s*-\\s*#?\\d+)?)'
-  const tl = titles.slice().sort((a, b) => b.length - a.length).map(esc).join('|')
-  const words = '(?: · (?:' + (tl ? tl + '|' : '') + "[A-Za-z0-9&' ]+?(?=\\s+#\\d)))?"
+  // whole cites the server resolved (with or without points), then any other words that run up to a point
+  const cl = (cites || []).slice().sort((a, b) => b.length - a.length).map(esc).join('|')
+  const words = "(?: · [\\p{L}\\p{N}&'’:_ -]+?(?=\\s+#\\d))?"
   const sl = (shorts || []).slice().sort((a, b) => b.length - a.length).map(esc).join('|')
   const parts = [
+    ...(cl ? ['(?:' + cl + ')' + pts + '*'] : []),
     'Notes \\d{4}-\\d\\d-\\d\\d' + words + pts + '*',
     ...(sl ? ['(?:' + sl + ')' + pts + '*'] : []),
     '(?:CL|TD)\\d{4}-\\d\\d-\\d\\d(?:\\s*\\(?§\\d+)?',
     'AR-\\d+(?:#[A-Za-z0-9][\\w-]*)?',
     'OQ-\\d+', 'EP-\\d+', 'FT-\\d+\\.\\d+', 'US-\\d+\\.\\d+\\.\\d+',
-    'S-\\d{3}', 'R-\\d{3}', '[FC]-\\d+', '[LMSQ]-\\d{2}',
+    'S-\\d{3}', 'R-\\d{3}', '[FC]-\\d+', CHANGE_ID,
   ]
-  return new RegExp('(?<![\\w-])(?:' + parts.join('|') + ')(?!\\w)', 'g')
+  return new RegExp('(?<![\\w-])(?:' + parts.join('|') + ')(?!\\w)', 'gu')
 }
+// change and question ids: two digits, or four or more, never three (three-digit S- and R- codes are rulings)
+const CHANGE_ID = '[LMSQ]-(?:\\d{2}|\\d{4,})'
+const isChangeId = (k) => new RegExp('^' + CHANGE_ID + '$').test(k)
 const normKey = (s) => s.replace(/\s+/g, ' ').trim()
 `
 export const buildRe = new Function(RE_SRC + '; return buildRe;')()
 export const normKey = new Function(RE_SRC + '; return normKey;')()
+export const isChangeId = new Function(RE_SRC + '; return isChangeId;')()
 
 // ---- catalogue readers
 const unq = (v) => { v = v.trim(); if (v.startsWith('"')) { try { return JSON.parse(v) } catch { return v.slice(1, -1) } } if (v.startsWith("'")) return v.slice(1, -1).replace(/''/g, "'"); return v }
@@ -48,16 +57,18 @@ function trim(s, n) {
   const cut = s.slice(0, n)
   return cut.slice(0, Math.max(cut.lastIndexOf(' '), n * 0.6)).replace(/[\s,;:]+$/, '') + '…'
 }
-const slug = (s) => s.toLowerCase().replace(/&/g, ' ').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
+// One key pattern for the "Cite shorthand" line, used for the keys and for where an entry ends (G1016, V6, Bv1105).
+const SHORT_KEY = String.raw`[A-Z][A-Za-z]*\d+`
 export function loadRulings(file) {
   const lines = fs.readFileSync(file, 'utf8').split('\n')
   const rulings = {}, shorthand = {}
   const logLabels = {}
-  const sh = lines.find((l) => /(^|\s)[A-Z][A-Za-z]*\d+ = Notes \d{4}-\d\d-\d\d · /.test(l))
+  const sh = lines.find((l) => new RegExp(String.raw`(^|\s)${SHORT_KEY} = Notes \d{4}-\d\d-\d\d · `).test(l))
   if (sh) {
-    for (const m of sh.matchAll(/([A-Z][A-Za-z]*\d+) = Notes (\d{4}-\d\d-\d\d) · (.*?)(?= · [A-Z]+(?:\d+|<date>) = |$)/g)) shorthand[m[1]] = { date: m[2], words: m[3].trim() }
-    for (const m of sh.matchAll(/(CL|TD)<date> = (.*?)(?= · [A-Z-]+(?:\d+|<date>|nn) = |$)/g)) logLabels[m[1]] = m[2].trim().replace(/\.$/, '')
+    const next = String.raw`(?= · (?:${SHORT_KEY}|[A-Z][A-Za-z-]*(?:<date>|nn)) = |$)`
+    for (const m of sh.matchAll(new RegExp(String.raw`(${SHORT_KEY}) = Notes (\d{4}-\d\d-\d\d) · (.*?)${next}`, 'g'))) shorthand[m[1]] = { date: m[2], words: m[3].trim() }
+    for (const m of sh.matchAll(new RegExp(String.raw`(CL|TD)<date> = (.*?)${next}`, 'g'))) logLabels[m[1]] = m[2].trim().replace(/\.$/, '')
   }
   let h2 = '', h3 = '', bold = '', cur = null
   const flush = () => { cur = null }
@@ -94,9 +105,10 @@ export function loadRulings(file) {
   return { rulings, shorthand, logLabels }
 }
 
-// reqDir: the catalogue folder (absolute, or relative to the working directory)
-export function makeResolver(reqDir, rulingsFile) {
+// reqDir: the catalogue folder (absolute, or relative to the working directory). The board sits one folder above it.
+export async function makeResolver(reqDir, rulingsFile) {
   const REQ = path.resolve(reqDir)
+  const { resolveNoteCite, noteWords, sourceIndex } = await boardNoteRules(REQ)
   // A status is a number whose label lives in board.config.json: show the label.
   const config = (() => { try { return JSON.parse(fs.readFileSync(path.join(REQ, 'board.config.json'), 'utf8')) } catch { return {} } })()
   const statusName = (list, code) => (code === '' || code == null ? '' : ((Array.isArray(list) ? list.find((d) => String(d?.code) === String(code))?.label : undefined) ?? String(code)))
@@ -123,14 +135,19 @@ export function makeResolver(reqDir, rulingsFile) {
       points[m[1]] = buf.join(' ').replace(/ {2,}/g, ' ').replace(/\s+$/, '').replace(/\[([^\]]+)\]\((?:<[^>]*>|[^)]*)\)/g, '$1').trim()
     }
     const cov = raw.match(/^- \*\*Covered:\*\*([\s\S]*?)(?=\n- \*\*|\n\n)/m)
-    return { base, date, title, slug: base.slice(11), points, covered: cov ? trim(plain(cov[1]), 420) : '' }
+    return { base, date, title, points, covered: cov ? trim(plain(cov[1]), 420) : '' }
   })
-  const titles = [...new Set(notes.map((n) => n.title))]
+  const noteByBase = Object.fromEntries(notes.map((n) => [n.base, n]))
+  // The note a `Notes <date> · <words>` cite opens, by the board's rule (points and reader words after the words
+  // are this page's business), or null.
+  const noteFor = (date, afterDot) => {
+    const r = resolveNoteCite(sourceIndex, `Notes ${date} · ${noteWords(afterDot).words}`)
+    return r ? (noteByBase[path.basename(r.file, '.md')] ?? null) : null
+  }
   const logs = fs.existsSync(path.join(REQ, 'changes')) ? fs.readdirSync(path.join(REQ, 'changes')).filter((f) => /^\d{4}-\d\d-\d\d-.+\.md$/.test(f)).map((f) => {
     const raw = fs.readFileSync(path.join(REQ, 'changes', f), 'utf8')
     return { date: f.slice(0, 10), title: (raw.match(/^# (.*)$/m)?.[1] ?? f).trim(), raw }
   }) : []
-  const re = buildRe(titles, shorts)
   const cache = {}
   const itemRef = (id) => {
     const md = readMd(path.join(REQ, 'stories', id + '.md'))
@@ -172,17 +189,16 @@ export function makeResolver(reqDir, rulingsFile) {
       return e
     }
     if ((m = key.match(/^([FRSC]-\d+)$/)) && rulings[m[1]]) { const r = rulings[m[1]]; return { k: 'ruling', id: r.id, title: r.head, pill: r.pill, text: r.text, cite: r.cite } }
-    if ((m = key.match(/^Notes (\d{4}-\d\d-\d\d)(?: · (.*?))?((?: ?,? ?#\d.*)?)$/))) {
-      const same = notes.filter((n) => n.date === m[1]); if (!same.length) return null
-      let note
-      if (m[2]) { const s = slug(m[2]); note = same.find((n) => n.slug === s) ?? same.find((n) => n.slug.startsWith(s)) }
-      else { const want = pointsOf(m[3]); note = same.find((n) => want.every((x) => n.points[x] != null)) ?? same[0] }
-      return note ? noteEntry(note, m[3], '') : null
+    if ((m = key.match(/^Notes (\d{4}-\d\d-\d\d)(?: · (.*))?$/))) {
+      // A cite with no words names no note (the board needs words after the date): unresolved, never a guess.
+      if (!m[2]) return null
+      const note = noteFor(m[1], m[2])
+      return note ? noteEntry(note, noteWords(m[2]).rest, '') : null
     }
     if ((m = key.match(shortRe)) && /^((?: ?,? ?#\d.*)?)$/.test(key.slice(m[0].length))) {
       const k = m[0], rest = key.slice(k.length)
       const s = shorthand[k]; if (!s) return null
-      const note = notes.find((n) => n.date === s.date && n.slug === slug(s.words)); if (!note) return null
+      const note = noteFor(s.date, s.words); if (!note) return null
       return noteEntry(note, rest, k)
     }
     if ((m = key.match(/^(CL|TD)(\d{4}-\d\d-\d\d)(?:\s*\(?§(\d+))?$/))) {
@@ -197,10 +213,25 @@ export function makeResolver(reqDir, rulingsFile) {
   }
   const decode = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
   // scan the page's text, resolve each distinct code, report counts
+  // Whole note cites in the text, with or without points: the longest run of words after `Notes <date> · ` that
+  // opens a note by the board's rule. The page matcher takes these exact strings, so a cite is one reference.
+  function citesIn(text) {
+    const out = new Set()
+    for (const m of text.matchAll(/Notes (\d{4}-\d\d-\d\d) · /g)) {
+      const words = text.slice(m.index + m[0].length).split(/[\n\x01]/)[0].slice(0, 240).split(' ')
+      for (let k = Math.min(words.length, 24); k >= 1; k--) {
+        const w = words.slice(0, k).join(' ').replace(/[\s,.;:)\]]+$/, '')
+        if (w && noteFor(m[1], w)) { out.add(`Notes ${m[1]} · ${noteWords(w).words}`); break }
+      }
+    }
+    return [...out]
+  }
   function refsFor(html) {
     const text = decode(html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, '').replace(/<[^>]*>/g, '\x01'))
+    const cites = citesIn(text)
+    const re = buildRe(cites, shorts)
     const refs = {}, stats = {}
-    const kindOf = (k) => /^Notes /.test(k) ? 'note cite' : shortRe.test(k) && !/^[FC]-/.test(k) ? 'note shorthand' : /^(CL|TD)/.test(k) ? 'CL/TD' : /^[LMSQ]-\d\d$/.test(k) ? 'change id' : k.match(/^(EP|FT|US|OQ|AR)/)?.[1] ?? 'ruling'
+    const kindOf = (k) => /^Notes /.test(k) ? 'note cite' : shortRe.test(k) && !/^[FC]-/.test(k) ? 'note shorthand' : /^(CL|TD)/.test(k) ? 'CL/TD' : isChangeId(k) ? 'change id' : k.match(/^(EP|FT|US|OQ|AR)/)?.[1] ?? 'ruling'
     for (const mt of text.matchAll(re)) {
       const key = normKey(mt[0])
       if (key in cache === false) cache[key] = resolve(key)
@@ -211,7 +242,7 @@ export function makeResolver(reqDir, rulingsFile) {
     }
     const out = {}
     for (const [k, v] of Object.entries(stats)) out[k] = { resolved: v.resolved.size, unresolved: [...v.unresolved] }
-    return { blob: JSON.stringify({ refs, titles, shorts }).replace(/</g, '\\u003c'), stats: out }
+    return { blob: JSON.stringify({ refs, cites, shorts }).replace(/</g, '\\u003c'), stats: out }
   }
   return { refsFor }
 }
@@ -244,9 +275,9 @@ export const refCss = `
 
 export const refClient = RE_SRC + String.raw`
 ;(function(){try{
-const D=JSON.parse(document.getElementById('refdata').textContent),R=D.refs,re=buildRe(D.titles,D.shorts);
+const D=JSON.parse(document.getElementById('refdata').textContent),R=D.refs,re=buildRe(D.cites,D.shorts);
 const SKIP=new Set(['SCRIPT','STYLE','BUTTON','TEXTAREA','INPUT','SELECT','OPTION','NOSCRIPT']);
-const isJump=k=>/^[LMSQ]-\d\d$/.test(k)&&document.getElementById(k);
+const isJump=k=>isChangeId(k)&&document.getElementById(k);
 function ok(n){for(let e=n.parentElement;e;e=e.parentElement){if(SKIP.has(e.tagName))return false;if(e.classList&&(e.classList.contains('pop')||e.classList.contains('ref')||e.classList.contains('cid')))return false}return true}
 const nodes=[],tw=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
 for(let n;(n=tw.nextNode());)if(n.nodeValue.length>3&&ok(n))nodes.push(n);

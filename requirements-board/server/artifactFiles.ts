@@ -4,13 +4,16 @@
  * (`ArtifactFacts`) and the board (`ArtifactMeta`).
  */
 import { execFileSync } from 'node:child_process'
-import { existsSync, readFileSync, statSync } from 'node:fs'
-import { dirname, join, relative, resolve, sep } from 'node:path'
+import { readFileSync, statSync } from 'node:fs'
+import { dirname, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { looseText, markdownFacts, mermaidNodeIds, rasterSize, svgFacts } from '../shared/artifacts.ts'
 import type { ArtifactFacts } from '../shared/check.ts'
 import { artifactFormat, type Artifact, type ArtifactFormat, type ArtifactMeta } from '../shared/types.ts'
 import { gitBlobSha } from './historyJournal.ts'
+import { pdfFactsFor, primePdfFacts } from './pdfFactsStore.ts'
+import { linkOut, realEntry, realPath, under } from './realPaths.ts'
+import { envPath } from './boardPaths.ts'
 
 const here = dirname(fileURLToPath(import.meta.url))
 /**
@@ -18,13 +21,13 @@ const here = dirname(fileURLToPath(import.meta.url))
  * the git repository the requirements folder is in, else the folder that holds it. Anchored on
  * the data, not on this code, so it holds wherever the board itself is installed.
  */
-export const REPO_ROOT = process.env.REPO_ROOT ? resolve(process.env.REPO_ROOT) : repoOf(process.env.REQUIREMENTS_DIR ? resolve(process.env.REQUIREMENTS_DIR) : resolve(here, '../requirements'))
+export const REPO_ROOT = envPath('REPO_ROOT') ?? repoOf(envPath('REQUIREMENTS_DIR') ?? resolve(here, '../requirements'))
 
 /**
  * Where a `/`-rooted path starts for a requirements folder in the git repository `gitTop`:
  * `REPO_ROOT` when the environment sets it (as `artifactPath` reads it), else that repository.
  */
-export const repoRootFor = (gitTop: string) => (process.env.REPO_ROOT ? resolve(process.env.REPO_ROOT) : gitTop)
+export const repoRootFor = (gitTop: string) => envPath('REPO_ROOT') ?? gitTop
 
 function repoOf(data: string): string {
   try {
@@ -33,16 +36,8 @@ function repoOf(data: string): string {
     return dirname(data) // not in git, or the folder is not there yet
   }
 }
-const PDF_SCRIPT = join(here, 'pdfFacts.ts')
 
-/**
- * The Node binary to run a helper script with: this process's own, unless it has gone from disk
- * (a package manager upgraded Node under a long-running dev server), then whichever `node` is on
- * the PATH.
- */
-export function nodeBinary(): string {
-  return existsSync(process.execPath) ? process.execPath : 'node'
-}
+export { nodeBinary } from './pdfFactsStore.ts'
 
 export const ARTIFACT_MIME: Record<string, string> = {
   '.svg': 'image/svg+xml',
@@ -54,16 +49,26 @@ export const ARTIFACT_MIME: Record<string, string> = {
   '.pdf': 'application/pdf',
 }
 
+/** The folder an artifact's `file` is read from: the repository for a path starting `/`, else the requirements folder. */
+export const artifactBase = (file: string, root: string) => resolve(file.startsWith('/') ? REPO_ROOT : root)
+
 /**
- * The absolute path of an artifact's `file`, or null when it would step outside its base: the
- * requirements folder for a plain path, the repository for one starting `/`.
+ * The absolute path of an artifact's `file`, or null when it would step outside its base (as
+ * written: a symbolic link that leads out is followed, and named by `linkOut`).
  */
 export function artifactPath(file: string, root: string): string | null {
-  const repo = file.startsWith('/')
-  const base = resolve(repo ? REPO_ROOT : root)
-  const abs = resolve(base, repo ? file.slice(1) : file)
-  return abs.startsWith(base + sep) ? abs : null
+  const base = artifactBase(file, root)
+  const abs = resolve(base, file.startsWith('/') ? file.slice(1) : file)
+  return under(abs, base) ? abs : null
 }
+
+let repoReal: string | undefined
+/**
+ * A file's path from the repository root, as `/`-rooted artifact paths are written. Both sides
+ * are compared as real folders: git names the repository by its real path, while the requirements
+ * folder may be reached through a link (a macOS temp folder under `/var`).
+ */
+export const repoRelative = (abs: string) => relative((repoReal ??= realPath(REPO_ROOT)), realEntry(abs)).split(sep).join('/')
 
 export interface ArtifactInfo {
   facts: ArtifactFacts
@@ -78,17 +83,47 @@ function fail(format: ArtifactFormat | null, error: string, meta: ArtifactMeta =
   return { facts: { format, ok: false, error, bounds: null }, meta }
 }
 
-function readPdf(abs: string): { pages: { w: number; h: number; text: string }[] } | { error: string } {
+/**
+ * Read every PDF these artifacts name that this process has not already read, in one extractor run
+ * (see `pdfFactsStore.ts`), so `artifactInfo` then finds them all. Never throws.
+ */
+export function primePdfs(artifacts: Artifact[], root: string) {
+  const files: { abs: string; buf: Buffer }[] = []
+  for (const a of artifacts) {
+    try {
+      if (!a.file || artifactFormat(a) !== 'pdf') continue
+      const abs = artifactPath(a.file, root)
+      if (!abs) continue
+      const stat = statSync(abs)
+      if (!stat.isFile() || cache.get(abs)?.key === versionKey(a, stat)) continue
+      files.push({ abs, buf: readFileSync(abs) })
+    } catch {
+      // artifactInfo reports it
+    }
+  }
   try {
-    const out = execFileSync(nodeBinary(), [PDF_SCRIPT, abs], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] })
-    return JSON.parse(out) as { pages: { w: number; h: number; text: string }[] } | { error: string }
+    primePdfFacts(files)
   } catch (e) {
-    return { error: (e as Error).message.split('\n')[0]! }
+    console.error('[artifacts] reading PDFs failed:', e)
   }
 }
 
-/** What the artifact's file (or mermaid source) holds. Cached per file version, so a reload reads only what changed. */
+const versionKey = (a: Artifact, stat: { mtimeMs: number; size: number }) => `${a.file}|${stat.mtimeMs}|${stat.size}`
+
+/**
+ * What the artifact's file (or mermaid source) holds. Cached per file version, so a reload reads
+ * only what changed. Never throws: any failure is the artifact's error, and a failure to read the
+ * file or derive its facts is not cached, so the next load tries again.
+ */
 export function artifactInfo(a: Artifact, root: string): ArtifactInfo {
+  try {
+    return infoOf(a, root)
+  } catch (e) {
+    return fail(null, `file ${a.file}: could not be read (${(e as Error)?.message ?? String(e)})`)
+  }
+}
+
+function infoOf(a: Artifact, root: string): ArtifactInfo {
   const format = artifactFormat(a)
   if (!a.file) {
     if (format !== 'mermaid') return fail(null, 'no file')
@@ -106,12 +141,27 @@ export function artifactInfo(a: Artifact, root: string): ArtifactInfo {
     return fail(format, `file ${a.file} is missing`)
   }
   if (!stat.isFile()) return fail(format, `file ${a.file} is not a file`)
-  const key = `${a.file}|${stat.mtimeMs}|${stat.size}`
+  const key = versionKey(a, stat)
   const hit = cache.get(abs)
   if (hit?.key === key) return hit.info
 
-  const buf = readFileSync(abs)
-  const meta: ArtifactMeta = { ...empty(format), fileRev: gitBlobSha(buf), bytes: stat.size, path: relative(REPO_ROOT, abs).split(sep).join('/') }
+  let buf: Buffer
+  try {
+    buf = readFileSync(abs)
+  } catch (e) {
+    const err = e as NodeJS.ErrnoException
+    return fail(format, `file ${a.file} could not be read (${err.code ?? err.message})`)
+  }
+  try {
+    return derive(a, root, format, abs, buf, key, stat.size)
+  } catch (e) {
+    return fail(format, `file ${a.file}: its contents could not be read (${(e as Error)?.message ?? String(e)})`)
+  }
+}
+
+function derive(a: Artifact, root: string, format: ArtifactFormat | null, abs: string, buf: Buffer, key: string, size: number): ArtifactInfo {
+  const meta: ArtifactMeta = { ...empty(format), fileRev: gitBlobSha(buf), bytes: size, path: repoRelative(abs) }
+  const out = linkOut(abs, artifactBase(a.file!, root)) // `a.file` is set: infoOf returned early otherwise
   let info: ArtifactInfo
   if (format === 'svg') {
     const f = svgFacts(buf.toString('utf8'))
@@ -128,13 +178,17 @@ export function artifactInfo(a: Artifact, root: string): ArtifactInfo {
     meta.points = f.points
     info = { facts: { format, ok: true, bounds: null, markdown: f }, meta }
   } else if (format === 'pdf') {
-    const r = readPdf(abs)
+    const r = pdfFactsFor(abs, buf)
+    // A run that failed for the moment (a timeout, the reader not starting) is not this version's
+    // facts: reported, but not cached, so the next load tries again.
+    if ('unread' in r) return fail(format, `file ${a.file} could not be read as a PDF (${r.error})`, meta)
     if ('error' in r) info = fail(format, `file ${a.file} could not be read as a PDF (${r.error})`, meta)
     else {
       meta.pages = r.pages.map((p) => ({ w: p.w, h: p.h }))
       info = { facts: { format, ok: true, bounds: null, pdf: { pages: r.pages.map((p) => ({ w: p.w, h: p.h, loose: looseText(p.text) })) } }, meta }
     }
   } else info = fail(format, `file ${a.file} is not a kind the board shows`, meta)
+  if (out) info.facts.linkOut = out
   cache.set(abs, { key, info })
   return info
 }

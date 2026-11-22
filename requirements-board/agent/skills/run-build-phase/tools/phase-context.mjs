@@ -19,7 +19,8 @@
 //      before, the next unbuilt one after, its "then" step); the plan page's status.json entries naming it
 //      or that next phase, verbatim; and the doc's session split ("**Estimated:**", "**Session N: …**");
 //   2. the drift check, already run, since the phase doc's own baseline (the commit on its first drift or
-//      baseline line, else plan.json's): its covered items and the catalogue ids its plan-state --diff line
+//      baseline line, else plan.json's; the pack prints the plan-state --diff --from command for that same
+//      baseline): its covered items and the catalogue ids its plan-state --diff line
 //      names, unchanged ones in one line, cosmetic-only changes in one line, changes in substance with their
 //      diff (cosmetic front-matter fields left out); domain-model.md's changed sections; ids now retired or
 //      out of scope; notes and change logs added;
@@ -45,7 +46,14 @@
 //   "budgetKB": 60, "progressSections": ["Binding conventions"], "roadmapSections": ["Demo triggers", ...],
 //   "sequencingSection": "Sequencing rules", "sequencingAlways": ["Every phase", ...], "designDir": "docs/design",
 //   "runOrder": [{ "section": "Sequencing rules", "marker": "**Run order.**" }],
-//   "fullEntryKB": 8 } }
+//   "fullEntryKB": 8,
+//   "countNouns": ["tickets?"],         words after a number that make it a count, not a phase (regex fragments,
+//                                        added to the generic ones: tests, files, items, days and so on)
+//   "notPhaseBefore": ["TK0*"],         what before a number makes it not a phase (regex fragments, added to
+//                                        the generic ones: a VERSION constant, "line", "#" and so on)
+//   "decisionsSection": "Decisions log", "handoffSection": "Discovered for later"
+//                                        the progress file's decisions log and handoff list headings (these
+//                                        defaults; a configured one the file lacks is noted in the pack) } }
 // Tested by phase-context.test.mjs (the pure parts).
 import fs from 'node:fs'
 import path from 'node:path'
@@ -61,18 +69,35 @@ const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 /** A phase id as a token: "22" not inside "2026-11-22", "$22", "D22", "US-03.22" or "22%". */
 export const phaseIdRe = (id, flags = '') => new RegExp(`(?<![\\w.$/#:-])${esc(id)}(?![\\w%$]|[.,:/-]\\d)`, flags)
 // A plain number is often not a phase: a day ("Mon 27", "27 Oct"), a count ("27 tests"), a version
-// ("PERSIST_VERSION 26 to 27"), a line number or the end of a numeric range.
+// ("APP_VERSION 26 to 27"), a line number or the end of a numeric range. The generic words are here; a
+// plan adds its own (config runner.context.countNouns: words after a number that make it a count, such as
+// "tickets?"; runner.context.notPhaseBefore: what before a number makes it not a phase, such as "TK0*"),
+// each a regular-expression fragment.
 const DAY_BEFORE = /(Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*\.?\s$/
-const BAD_BEFORE = /(PERSIST_VERSION\D{0,16}|version\s|lines?\s|line\s~?|:\s?|\d\s(to|and|or|by)\s|\d[–-]|BK0*|#|~|\bp\.\s?|\bL)$/
 const MONTH_AFTER = /^\s(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/
-const COUNT_AFTER = /^\s(tests?|files?|lines?|rows?|Lists?|Bookings?|KB|items?|recipes?|days?|weeks?|months?|years?|hours?|min|minutes?|seconds?|units?|invoices?|questions?|ids?|IDs|groups?|specs?|cases?|shots?|codes?|Procedures?|Contracts?|patients?|people|sessions? (?!\d)|of\b|x\b|×|\+|-|to \d)/
+const BAD_BEFORE_WORDS = ['(?:[A-Z][A-Z0-9]*_)*VERSION\\D{0,16}', 'version\\s', 'lines?\\s', 'line\\s~?', ':\\s?', '\\d\\s(to|and|or|by)\\s', '\\d[–-]', '#', '~', '\\bp\\.\\s?', '\\bL']
+const COUNT_WORDS = ['tests?', 'files?', 'lines?', 'rows?', 'KB', 'items?', 'recipes?', 'days?', 'weeks?', 'months?', 'years?', 'hours?', 'min', 'minutes?', 'seconds?', 'units?', 'questions?', 'ids?', 'IDs', 'groups?', 'specs?', 'cases?', 'shots?', 'codes?', 'people', 'sessions? (?!\\d)', 'of\\b', 'x\\b', '×', '\\+', '-', 'to \\d']
+const strings = v => (Array.isArray(v) ? v.filter(x => typeof x === 'string' && x) : [])
+/** The "not a phase" patterns for a plan's runner.context (countNouns, notPhaseBefore added to the generic ones). */
+export function vocabulary(ctx = {}) {
+  const build = (bad, count) => ({ badBefore: new RegExp(`(${bad.join('|')})$`), countAfter: new RegExp(`^\\s(${count.join('|')})`) })
+  try {
+    return build([...BAD_BEFORE_WORDS, ...strings(ctx.notPhaseBefore)], [...COUNT_WORDS, ...strings(ctx.countNouns)])
+  } catch (e) {
+    console.error(`phase-context: runner.context countNouns / notPhaseBefore hold an invalid pattern (${e.message}); using the generic words only.`)
+    return build(BAD_BEFORE_WORDS, COUNT_WORDS)
+  }
+}
+let VOCAB = vocabulary()
+/** Sets the vocabulary every later `mentions` call uses by default (the pack sets the plan's once). */
+export function useVocabulary(ctx) { VOCAB = vocabulary(ctx) }
 /** Does the text name phase `id`? A plain number must not read as a day, a count, a version or a line. */
-export function mentions(text, id) {
+export function mentions(text, id, vocab = VOCAB) {
   for (const m of text.matchAll(phaseIdRe(id, 'g'))) {
     if (!/^\d+$/.test(id)) return true
     const before = text.slice(Math.max(0, m.index - 24), m.index)
     const after = text.slice(m.index + id.length, m.index + id.length + 16)
-    if (DAY_BEFORE.test(before) || BAD_BEFORE.test(before) || MONTH_AFTER.test(after) || COUNT_AFTER.test(after)) continue
+    if (DAY_BEFORE.test(before) || vocab.badBefore.test(before) || MONTH_AFTER.test(after) || vocab.countAfter.test(after)) continue
     return true
   }
   return false
@@ -349,7 +374,8 @@ export function passageAt(section, marker) {
  * A run-order statement ("21, then U1, then U2 and U3 side by side, then 21a and 22, …, Intake, Money
  * and 40 to 43a") read against the plan's phases ([{ num, track }], in plan order). Steps split at
  * "then"; within a step, phase ids in order, "A to B" ranges expanded over the plan's order (numbered
- * phases only, unless both ends are track phases), and a track name expanded to its phases. Returns
+ * ends over numbered phases only, track ends such as U1 to U6 over that track's phases only), a number
+ * followed by a month ("18 November") is a date, not a phase, and a track name expanded to its phases. Returns
  * { steps: [[id]], order: [id] } with each phase once, where it first appears.
  */
 export function parseRunOrder(text, phases) {
@@ -369,8 +395,14 @@ export function parseRunOrder(text, phases) {
       else if (a) {
         if (!idx.has(a) || !idx.has(b)) continue
         const numbered = /^\d/.test(a) && /^\d/.test(b)
-        nums.slice(idx.get(a), idx.get(b) + 1).filter(n => !numbered || /^\d/.test(n)).forEach(push)
-      } else push(single)
+        const trackOf = n => n.match(/^[A-Z]+/)?.[0]
+        const sameTrack = !numbered && trackOf(a) && trackOf(a) === trackOf(b)
+        nums.slice(idx.get(a), idx.get(b) + 1).filter(n => (numbered ? /^\d/.test(n) : sameTrack ? trackOf(n) === trackOf(a) : true)).forEach(push)
+      } else {
+        const rest = chunk.slice(m.index + m[0].length, m.index + m[0].length + 12)
+        if (/^\d/.test(single) && MONTH_AFTER.test(rest)) continue
+        push(single)
+      }
     }
     if (step.length) steps.push(step)
   }
@@ -470,7 +502,7 @@ export const kb = n => `${(n / 1024).toFixed(1)} KB`
 async function main() {
   const T = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../update-build-plan/tools')
   const { loadConfig, phaseStatus, stripPlanArg } = await import(path.join(T, 'config.mjs'))
-  const { layoutsOf, requirementChanges, changedInSubstance, substanceDiff, pathOf } = await import(path.join(T, 'req-changes.mjs'))
+  const { layoutsOf, requirementChanges, substanceVerdicts, sidesMany, substanceDiff, pathOf } = await import(path.join(T, 'req-changes.mjs'))
   const { decisionRows, decisionsGating, BASELINE_LINE } = await import(path.join(T, 'plan-docs.mjs'))
   const { loadStatuses, loadRecodes, normaliseStatus, outOfScopeRule } = await import(path.join(T, 'scope.mjs'))
 
@@ -484,6 +516,7 @@ async function main() {
   const raw = config.configExists ? JSON.parse(fs.readFileSync(path.join(ROOT, config.configFile), 'utf8')) : {}
   const runner = raw.runner ?? {}
   const ctx = runner.context ?? {}
+  useVocabulary(ctx)
   const BUDGET = (ctx.budgetKB ?? 60) * 1024
   const FULL_ENTRY = (ctx.fullEntryKB ?? 8) * 1024
 
@@ -595,16 +628,19 @@ async function main() {
   const baselineShort = baseline.slice(0, 7)
   const changes = requirementChanges({ cwd: ROOT, from: baseline, layouts: LAYOUTS })
   const changedById = new Map([...changes.items, ...changes.questions].map(c => [c.id, c]))
+  // Every changed entry's two sides in one git read, and their substance verdicts from them.
+  const { sides } = sidesMany({ cwd: ROOT, from: baseline, entries: [...changedById.values()] })
+  const verdict = substanceVerdicts({ cwd: ROOT, from: baseline, entries: [...changedById.values()], req: REQ, sides })
   const substantive = new Map()
   {
     const s = [`## 2. Drift check since \`${baselineShort}\` (already run)`, '']
-    s.push(`Baseline: \`${baselineShort}\`, ${base ? `the phase doc's own (\`${docPath}\`: "${base.line.trim().slice(0, 140)}${base.line.trim().length > 140 ? ' …' : ''}")` : `plan.json's (the phase doc names none)`}; compared with the working tree. Rename-aware (\`${config.tools}/req-changes.mjs\`); the full diff of any id: \`node ${config.tools}/plan-state.mjs --diff <ID>\` (against plan.json's baseline).`, '')
+    s.push(`Baseline: \`${baselineShort}\`, ${base ? `the phase doc's own (\`${docPath}\`: "${base.line.trim().slice(0, 140)}${base.line.trim().length > 140 ? ' …' : ''}")` : `plan.json's (the phase doc names none)`}; compared with the working tree. Rename-aware (\`${config.tools}/req-changes.mjs\`); the full diff of any id, from this same baseline: \`node ${config.tools}/plan-state.mjs${config.planFlag} --diff <ID> --from ${baseline}\`.`, '')
     const cosmetic = []
     const unchanged = []
     for (const cid of checkIds) {
       const c = changedById.get(cid)
       if (!c) { unchanged.push(cid); continue }
-      if (changedInSubstance({ cwd: ROOT, from: baseline, entry: c, req: REQ })) substantive.set(cid, c)
+      if (verdict.get(c)) substantive.set(cid, c)
       else cosmetic.push(cid)
     }
     if (!checkIds.length) s.push(`This phase covers no catalogue item and its doc names none to diff.`, '')
@@ -620,10 +656,10 @@ async function main() {
     s.push('')
     const diffParts = []
     for (const [cid, c] of substantive) {
-      const d = substanceDiff({ cwd: ROOT, from: baseline, entry: c })
+      const d = substanceDiff({ cwd: ROOT, from: baseline, entry: c, sides: sides.get(c) })
       const now = c.change === 'D' ? 'deleted' : statusLabel(cid, rd(c.file))
       const head = `### ${cid} (${c.change === 'A' ? 'new' : c.change === 'D' ? 'deleted' : 'changed'}, now ${now}) · \`${c.file}\``
-      const cutDiff = n => `${head}\n\n${fence('diff', d.length > n ? `${d.slice(0, n)}\n… (cut: open the file)` : d)}`
+      const cutDiff = n => `${head}\n\n${fence('diff', d.length > n ? `${d.slice(0, n)}\n… (cut: the whole diff is \`node ${config.tools}/plan-state.mjs${config.planFlag} --diff ${cid} --from ${baseline}\`)` : d)}`
       diffParts.push([`${head}\n\n${fence('diff', d)}`, cutDiff(2500), cutDiff(900)])
     }
     // domain-model.md: which sections changed, and the diff of those the doc names.
@@ -723,7 +759,7 @@ async function main() {
         const affects = (t.match(/^affects:\n((?:\s+-.*\n?)+)/m) || [, ''])[1].split('\n').map(l => l.replace(/^\s*-\s*/, '').trim()).filter(Boolean).join(', ') || 'nothing listed'
         open.push(`- **${q} · ${title}** (${stat}; affects ${affects}): ${ask.slice(0, 700)}${ask.length > 700 ? ' …' : ''}${rec && !ask.includes(rec.slice(0, 40)) ? ` ${rec.slice(0, 400)}` : ''}`)
         openBrief.push(`- **${q} · ${title}** (${stat}): ${ask.slice(0, 250)}${ask.length > 250 ? ' …' : ''}`)
-      } else if (changedById.has(q) && changedInSubstance({ cwd: ROOT, from: baseline, entry: changedById.get(q), req: REQ })) {
+      } else if (changedById.has(q) && verdict.get(changedById.get(q))) {
         const ans = (body.match(/\n## Answer\n([\s\S]*?)(?=\n## |$)/) || [, ''])[1].replace(/\s+/g, ' ').trim()
         recent.push(`- **${q} · ${title}** (${stat}, answered or changed since \`${baselineShort}\`): ${ans.slice(0, 1000)}${ans.length > 1000 ? ' … (open the file)' : ''}`)
         recentBrief.push(`- **${q} · ${title}** (${stat}, since \`${baselineShort}\`): ${ans.slice(0, 300)}${ans.length > 300 ? ' …' : ''}`)
@@ -795,16 +831,22 @@ async function main() {
       add('entries-others', 'progress', '5. Other entries naming this phase', [full, short, shorter, list])
     }
     // Decisions-log entries the doc names by date and title.
-    const dl = sectionOf(progress, 'Decisions log')
+    // The progress file's decisions log and handoff list (config runner.context.decisionsSection and
+    // handoffSection; a configured name the file lacks is noted).
+    const dlName = typeof ctx.decisionsSection === 'string' && ctx.decisionsSection ? ctx.decisionsSection : 'Decisions log'
+    const hoName = typeof ctx.handoffSection === 'string' && ctx.handoffSection ? ctx.handoffSection : 'Discovered for later'
+    const dl = sectionOf(progress, dlName)
+    const lacking = [[ctx.decisionsSection, dl, 'decisionsSection'], [ctx.handoffSection, sectionOf(progress, hoName), 'handoffSection']].filter(([given, sec]) => typeof given === 'string' && given && !sec)
+    if (progress && lacking.length) add('sections-missing', 'fixed', '5. Sections not found', lacking.map(([given, , key]) => `_The progress file has no section headed "${given}" (config runner.context.${key}), so nothing was read from it._`).join('\n'))
     if (dl) {
       const picked = decisionsNamed(named, decisionLogEntries(dl.text, dl.line))
       if (picked.length) {
-        const full = [`### Decisions-log entries the phase doc names`, '', src(progressPath, 'Decisions log'), '', ...picked.map(e => `${e.text.length > 3000 ? `${e.text.slice(0, 3000)} … (cut; line ${e.line})` : e.text}`)].join('\n')
+        const full = [`### Decisions-log entries the phase doc names`, '', src(progressPath, dl.heading), '', ...picked.map(e => `${e.text.length > 3000 ? `${e.text.slice(0, 3000)} … (cut; line ${e.line})` : e.text}`)].join('\n')
         const short = [`### Decisions-log entries the phase doc names`, '', ...picked.map(e => `- **${e.date} · ${e.title}** (${progressPath} line ${e.line})`)].join('\n')
         add('decisions-log', 'progress', '5. Decisions log', [full, short])
       }
     }
-    const ho = sectionOf(progress, 'Discovered for later')
+    const ho = sectionOf(progress, hoName)
     if (ho) {
       const items = ho.text.split(/\n(?=\d+\.\s|- )/).filter(b => mentions(b, id))
       if (items.length) add('handoff-list', 'progress', '5. Handoff list', [[`### "${ho.heading}" items naming ${id}`, '', ...items.map(i => i.trim())].join('\n'), `### "${ho.heading}": ${items.length} item(s) name ${id} (${progressPath} line ${ho.line}).`])

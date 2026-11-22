@@ -1,12 +1,14 @@
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react'
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import Markdown from 'react-markdown'
 import { Link } from 'react-router-dom'
 import { ApiError, api, type Voice } from '../api.ts'
 import { BrandMark } from '../components/BrandMark.tsx'
 import { MarkdownTextarea } from '../components/MarkdownTextarea.tsx'
 import { IssueList } from '../components/ProblemPill.tsx'
-import { componentCodeIn, type ComponentDef, type ConfigPatch } from '../../shared/config.ts'
+import { componentCodeIn, type BoardConfig, type ComponentDef, type ConfigSection } from '../../shared/config.ts'
+import { sameValue } from '../../shared/patch.ts'
+import { mergeFields, mergeRows, mergeStatusLists } from '../../shared/settingsMerge.ts'
 import {
   ITEM_ROLES,
   QUESTION_ROLES,
@@ -74,26 +76,93 @@ function ChecksSection() {
   )
 }
 
-/** Save one patch with the busy and error state every section shares. */
-function useSave() {
+/**
+ * One Settings section's edit: the form, and the version of the file's section the edits started from
+ * (`start`: its value and `config.revs` rev). A save sends that rev as its base, so a section changed on
+ * disk meanwhile is caught rather than overwritten (R-45). While the form is clean it follows the file.
+ * `norm` is the value as the file would hold it: the section is dirty only when saving would change the
+ * file, whatever form the values take on disk (R-124, R-125).
+ */
+function useSection<V>(section: ConfigSection, saved: V, norm: (v: V) => unknown, fromDisk: (data: unknown) => V) {
+  const config = useConfig()
   const saveConfig = useCatalogue((s) => s.saveConfig)
+  const rev = config.revs[section]
+  const [form, setForm] = useState(saved)
+  const [start, setStart] = useState({ value: saved, rev })
+  /** The file's section as a refused save reported it (409), until the store catches up. */
+  const [refused, setRefused] = useState<{ value: V; rev: string } | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const save = async (patch: ConfigPatch) => {
+  /** What Keep mine did beyond the obvious (a clash kept as yours, a renumbered row), until the next save or discard. */
+  const [notice, setNotice] = useState<string | null>(null)
+  const dirty = !sameValue(norm(form), norm(start.value))
+  // The form as it is now, read when a save comes back: anything typed meanwhile is kept.
+  const formRef = useRef(form)
+  formRef.current = form
+
+  // A change to the file on disk shows straight away, unless there are edits here to keep (checked again
+  // when a save ends, in case the file moved on while it was saving).
+  useEffect(() => {
+    if (dirty || busy || rev === start.rev) return
+    setForm(saved)
+    setStart({ value: saved, rev })
+    setRefused(null)
+    setNotice(null)
+  }, [rev, busy])
+
+  /** The file's section as it is now, when it moved on since the edits started. */
+  const disk = rev !== start.rev ? { value: saved, rev } : refused
+  const conflict = dirty && !!disk && !busy
+
+  const save = async (value: unknown) => {
     setBusy(true)
     setError(null)
+    const sent = form
     try {
-      await saveConfig(patch)
+      const next = await saveConfig({ [section]: value, bases: { [section]: start.rev } })
+      const now = fromDisk(next[section])
+      const latest = formRef.current
+      setForm(sameValue(norm(latest), norm(sent)) ? now : latest)
+      setStart({ value: now, rev: next.revs[section] })
+      setRefused(null)
+      setNotice(null)
     } catch (e) {
-      setError((e as Error).message)
+      const current = e instanceof ApiError && e.status === 409 && e.section === section ? (e.current as { data: unknown; rev: string } | undefined) : undefined
+      if (current) setRefused({ value: fromDisk(current.data), rev: current.rev })
+      else setError((e as Error).message)
     } finally {
       setBusy(false)
     }
   }
-  return { busy, error, setError, save }
+  const take = (value: V, from: { value: V; rev: string }, note: string | null = null) => {
+    setForm(value)
+    setStart(from)
+    setRefused(null)
+    setError(null)
+    setNotice(note)
+  }
+  return {
+    form,
+    setForm,
+    dirty,
+    busy,
+    error,
+    notice,
+    conflict,
+    save,
+    discard: () => take(saved, { value: saved, rev }),
+    loadTheirs: () => disk && take(disk.value, disk),
+    /** The user's changes laid over the file as it is now (`merge(base, mine, theirs)`); then Save. */
+    keepMine: (merge: (base: V, mine: V, theirs: V) => { value: V; note?: string }) => {
+      if (!disk) return
+      const m = merge(start.value, form, disk.value)
+      take(m.value, disk, m.note ?? null)
+    },
+  }
 }
 
-function SaveBar({ dirty, blocked, busy, onDiscard, onSave, children }: { dirty: boolean; blocked?: boolean; busy: boolean; onDiscard: () => void; onSave: () => void; children?: ReactNode }) {
+/** `repair`: Save is offered with nothing changed, as writing the section as shown fixes what did not read cleanly. */
+function SaveBar({ dirty, repair, blocked, busy, onDiscard, onSave, children }: { dirty: boolean; repair?: boolean; blocked?: boolean; busy: boolean; onDiscard: () => void; onSave: () => void; children?: ReactNode }) {
   return (
     <div className="settings-actions">
       {children}
@@ -103,9 +172,61 @@ function SaveBar({ dirty, blocked, busy, onDiscard, onSave, children }: { dirty:
           Discard changes
         </button>
       )}
-      <button type="button" className="btn primary" disabled={!dirty || blocked || busy} onClick={onSave}>
+      <button type="button" className="btn primary" disabled={!(dirty || repair) || blocked || busy} onClick={onSave}>
         {busy ? 'Saving…' : 'Save'}
       </button>
+    </div>
+  )
+}
+
+/** The section changed on disk while it was being edited: take the file's, or keep these edits over it. */
+function ConflictBanner({ what, note, onLoadTheirs, onKeepMine }: { what: string; note?: string; onLoadTheirs: () => void; onKeepMine: () => void }) {
+  return (
+    <div className="banner error voice-conflict" role="alert">
+      <span>
+        {what} changed in board.config.json since you started editing, perhaps by an agent.{note ? ` ${note}` : ''}
+      </span>
+      <button type="button" className="btn ghost sm" onClick={onLoadTheirs} title="Drop your changes and show the file as it is now">
+        Load theirs
+      </button>
+      <button type="button" className="btn ghost sm" onClick={onKeepMine} title="Keep your changes; take everything else as the file has it now">
+        Keep mine
+      </button>
+    </div>
+  )
+}
+
+/** What Keep mine did beyond laying the edits over the file: fields both sides changed (yours kept), rows the file removed. */
+function mergeNote(clashes: string[], removedOnDisk: string[], more: string[] = []): string | undefined {
+  const parts = [
+    ...(clashes.length ? [`your version of ${clashes.join(', ')} kept where the file changed it too`] : []),
+    ...(removedOnDisk.length ? [`${removedOnDisk.join(', ')} removed in the file, so your edits to it are gone`] : []),
+    ...more,
+  ]
+  return parts.length ? `Kept your changes: ${parts.join('; ')}. Check, then Save.` : undefined
+}
+
+/** Keep mine's note, until the section is saved or discarded. */
+function Notice({ text }: { text: string | null }) {
+  return text ? (
+    <div className="banner" role="status">
+      <span>{text}</span>
+    </div>
+  ) : null
+}
+
+/** A section that does not read cleanly: nothing is offered for editing, so nothing is saved over what could not be read. */
+function LockedBanner({ what, problems }: { what: string; problems: string[] }) {
+  return (
+    <div className="banner error settings-locked" role="status">
+      <span>
+        {what} can't be edited here until board.config.json is fixed: the board could not read all of it, and a save would drop what it could not read. This comes back as soon as the file reads cleanly.
+      </span>
+      <ul className="settings-problems">
+        {problems.map((p) => (
+          <li key={p}>{p}</li>
+        ))}
+      </ul>
     </div>
   )
 }
@@ -123,18 +244,30 @@ const ACCENTS: [name: string, hex: string][] = [
   ['Slate', '#4a5568'],
 ]
 
+type ProjectForm = { project: string; accent: string }
+const projectNorm = (f: ProjectForm) => ({ project: f.project.trim(), accent: f.accent })
+const projectFrom = (data: unknown): ProjectForm => {
+  const p = (data ?? {}) as BoardConfig['project']
+  return { project: p.name ?? '', accent: p.accent ?? '' }
+}
+
 /** The project the board is for: its name beside the board's, and an accent colour for the mark and the tab icon. */
 function ProjectSection() {
   const config = useConfig()
-  const saved = { project: config.project.name, accent: config.project.accent ?? '' }
-  const [form, setForm] = useState(saved)
-  const { busy, error, setError, save } = useSave()
-  const dirty = JSON.stringify(form) !== JSON.stringify(saved)
-  useEffect(() => {
-    if (!dirty) setForm(saved)
-  }, [config.project])
-  const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }))
+  const saved: ProjectForm = { project: config.project.name, accent: config.project.accent ?? '' }
+  const s = useSection('project', saved, projectNorm, projectFrom)
+  const form = s.form
+  const set = (patch: Partial<ProjectForm>) => s.setForm((f) => ({ ...f, ...patch }))
   const custom = !!form.accent && !ACCENTS.some(([, hex]) => hex === form.accent)
+  const state = config.sectionState?.project
+  if (state?.state === 'damaged') {
+    return (
+      <section className="settings-section" aria-label="Project">
+        <h2 className="group-head">Project</h2>
+        <LockedBanner what="The project" problems={state.problems} />
+      </section>
+    )
+  }
   return (
     <section className="settings-section" aria-label="Project">
       <h2 className="group-head">Project</h2>
@@ -162,13 +295,13 @@ function ProjectSection() {
           <small>Fills the board's mark and the tab icon, so boards for different projects open side by side tell apart at a glance.</small>
         </div>
       </div>
-      {error && <div className="banner error">{error}</div>}
-      <SaveBar
-        dirty={dirty}
-        busy={busy}
-        onDiscard={() => (setForm(saved), setError(null))}
-        onSave={() => void save({ project: { name: form.project.trim(), ...(form.accent ? { accent: form.accent } : {}) } })}
-      />
+      {s.conflict && <ConflictBanner what="The project" onLoadTheirs={s.loadTheirs} onKeepMine={() => s.keepMine((b, m, t) => {
+            const r = mergeFields(projectNorm(b), projectNorm(m), projectNorm(t))
+            return { value: r.merged, note: mergeNote(r.clashes.map((f) => (f === 'project' ? 'the name' : 'the accent')), []) }
+          })} />}
+      <Notice text={s.notice} />
+      {s.error && <div className="banner error" role="alert">{s.error}</div>}
+      <SaveBar dirty={s.dirty} blocked={s.conflict} busy={s.busy} onDiscard={s.discard} onSave={() => void s.save({ name: form.project.trim(), ...(form.accent ? { accent: form.accent } : {}) })} />
     </section>
   )
 }
@@ -252,7 +385,7 @@ function VoiceSection() {
           </button>
         </div>
       )}
-      {error && <div className="banner error">{error}</div>}
+      {error && <div className="banner error" role="alert">{error}</div>}
       {voice && (
         <div className="settings-actions">
           <span className="spacer" />
@@ -276,32 +409,59 @@ function VoiceSection() {
   )
 }
 
-/** The system's areas: what a card's component glyph shows. Empty accepts any component. */
+
+/** A component row being edited; `from` is its name in the file, for a row that came from there. */
+type ComponentRow = ComponentDef & { from?: string }
+const componentRows = (list: ComponentDef[]): ComponentRow[] => list.map((c) => ({ ...c, from: c.name }))
+/** The list as the file would hold it: names and codes trimmed, no empty code, no `from`. */
+const componentList = (rows: ComponentRow[]): ComponentDef[] => rows.map((r) => (r.code?.trim() ? { name: r.name.trim(), code: r.code.trim() } : { name: r.name.trim() }))
+
+/** How many cards and artifacts name each component: what the server counts before it lets one go (R-124). */
+function useComponentUsage() {
+  const index = useIndex()
+  const artifacts = useCatalogue((s) => s.artifacts)
+  return useMemo(() => {
+    const n = new Map<string, number>()
+    for (const it of [...index.items, ...Object.values(artifacts).map((r) => r.data)]) for (const c of it.components) n.set(c, (n.get(c) ?? 0) + 1)
+    return n
+  }, [index, artifacts])
+}
+
+const uses = (n: number) => `${n} card${n === 1 ? '' : 's'} or artifact${n === 1 ? '' : 's'}`
+
+/**
+ * The system's areas: what a card's component glyph shows. Empty accepts any component; once the list
+ * names one, it must name every component a card or artifact uses (R-123, accepted decision 22).
+ */
 function ComponentSection() {
   const config = useConfig()
-  const index = useIndex()
-  const saved = config.components
-  const [rows, setRows] = useState<ComponentDef[]>(saved)
-  const { busy, error, setError, save } = useSave()
-  const list = rows.map((r) => (r.code?.trim() ? { name: r.name.trim(), code: r.code.trim().toUpperCase() } : { name: r.name.trim() }))
-  const dirty = JSON.stringify(list) !== JSON.stringify(saved)
-  useEffect(() => {
-    if (!dirty) setRows(saved)
-  }, [saved])
-  const usage = useMemo(() => {
-    const n = new Map<string, number>()
-    for (const it of index.items) for (const c of it.components) n.set(c, (n.get(c) ?? 0) + 1)
-    return n
-  }, [index])
+  const usage = useComponentUsage()
+  const s = useSection('components', componentRows(config.components), componentList, (data) => componentRows((data ?? []) as ComponentDef[]))
+  const rows = s.form
+  const list = componentList(rows)
   const names = list.map((r) => r.name)
-  const problems = [...(names.some((n) => !n) ? ['Every component needs a name'] : []), ...names.filter((n, i) => n && names.indexOf(n) !== i).map((n) => `"${n}" is listed twice`)]
-  const set = (i: number, patch: Partial<ComponentDef>) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)))
+  // In use but not listed: a saved list that leaves them out would turn every one into a check error.
+  const unlisted = names.length ? [...usage].filter(([name]) => !names.includes(name)) : []
+  const problems = [
+    ...(names.some((n) => !n) ? ['Every component needs a name'] : []),
+    ...names.filter((n, i) => n && names.indexOf(n) !== i).map((n) => `"${n}" is listed twice`),
+  ]
+  const set = (i: number, patch: Partial<ComponentRow>) => s.setForm((rs) => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)))
+  const state = config.sectionState?.components
+  if (state?.state === 'damaged') {
+    return (
+      <section className="settings-section" aria-label="Components">
+        <h2 className="group-head">Components</h2>
+        <LockedBanner what="The components" problems={state.problems} />
+      </section>
+    )
+  }
   return (
     <section className="settings-section" aria-label="Components">
       <h2 className="group-head">
         Components <span className="mono">{rows.length}</span>
       </h2>
-      <p className="settings-intro">The areas of the system a requirement belongs to. Leave the list empty to accept any component. One still on a card can't be removed.</p>
+      <p className="settings-intro">The areas of the system a requirement belongs to. Leave the list empty to accept any component; once it names one, it must name every component in use. One still on a card or artifact can't be removed or renamed.</p>
       {rows.length > 0 && (
         <div className="status-table component-table" role="table" aria-label="Components">
           <div className="status-tr status-th" role="row">
@@ -313,21 +473,22 @@ function ComponentSection() {
             </span>
           </div>
           {rows.map((r, i) => {
-            const was = saved.find((c) => c.name === r.name)
-            const used = was ? usage.get(r.name) ?? 0 : 0
+            const used = usage.get(r.name.trim()) ?? 0
+            // Only a row from the file is held to its uses: a new row is never locked because of what it is called.
+            const held = r.from !== undefined ? (usage.get(r.from) ?? 0) : 0
             return (
               <div key={i} className="status-tr" role="row">
                 <span role="cell">
-                  <input className="input mono" value={r.code ?? ''} maxLength={3} placeholder={r.name ? componentCodeIn({ ...config, components: [] }, r.name) : 'ABC'} aria-label={`Code of ${r.name || 'new component'}`} onChange={(e) => set(i, { code: e.target.value })} />
+                  <input className="input mono" value={r.code ?? ''} maxLength={3} placeholder={r.name ? componentCodeIn({ ...config, components: [] }, r.name) : 'ABC'} aria-label={`Code of ${r.name || 'new component'}`} onChange={(e) => set(i, { code: e.target.value.toUpperCase() })} />
                 </span>
                 <span role="cell">
-                  <input className="input status-name" value={r.name} placeholder="Name" aria-label={`Name of ${r.name || 'new component'}`} autoFocus={!r.name} disabled={used > 0} title={used > 0 ? 'Used by cards: rename it in their files first' : undefined} onChange={(e) => set(i, { name: e.target.value })} />
+                  <input className="input status-name" value={r.name} placeholder="Name" aria-label={`Name of ${r.name || 'new component'}`} autoFocus={!r.name && r.from === undefined} disabled={held > 0} title={held > 0 ? 'Used by cards or artifacts: rename it in their files first' : undefined} onChange={(e) => set(i, { name: e.target.value })} />
                 </span>
                 <span role="cell" className="status-used">
-                  {used ? `${used} card${used === 1 ? '' : 's'}` : 'None'}
+                  {used ? uses(used) : 'None'}
                 </span>
                 <span role="cell" className="status-tools">
-                  <button type="button" className="btn icon ghost sm danger" disabled={used > 0} title={used ? `Used by ${used} card${used === 1 ? '' : 's'}` : 'Remove this component'} onClick={() => setRows((rs) => rs.filter((_, j) => j !== i))} aria-label="Remove">
+                  <button type="button" className="btn icon ghost sm danger" disabled={held > 0} title={held ? `Used by ${uses(held)}` : 'Remove this component'} onClick={() => s.setForm((rs) => rs.filter((_, j) => j !== i))} aria-label="Remove">
                     <Trash2 size={14} />
                   </button>
                 </span>
@@ -336,16 +497,42 @@ function ComponentSection() {
           })}
         </div>
       )}
-      {dirty && problems.length > 0 && (
+      {unlisted.length > 0 && (
+        <div className="banner settings-unlisted" role="group" aria-label="In use, not listed">
+          <span>
+            In use but not listed, so saving this list would mark them as errors: {unlisted.map(([name, n]) => `${name} (${uses(n)})`).join(', ')}.
+          </span>
+          <span className="spacer" />
+          <button type="button" className="btn sm" onClick={() => s.setForm((rs) => [...rs, ...unlisted.map(([name]) => ({ name }))])}>
+            Add them
+          </button>
+        </div>
+      )}
+      {s.dirty && problems.length > 0 && (
         <ul className="banner error settings-problems">
           {[...new Set(problems)].map((p) => (
             <li key={p}>{p}</li>
           ))}
         </ul>
       )}
-      {error && <div className="banner error">{error}</div>}
-      <SaveBar dirty={dirty} blocked={problems.length > 0} busy={busy} onDiscard={() => (setRows(saved), setError(null))} onSave={() => void save({ components: list })}>
-        <button type="button" className="btn ghost" onClick={() => setRows((rs) => [...rs, { name: '' }])}>
+      {s.conflict && (
+        <ConflictBanner
+          what="The components"
+          onLoadTheirs={s.loadTheirs}
+          onKeepMine={() =>
+            s.keepMine((b, m, t) => {
+              const theirs = componentList(t)
+              const r = mergeRows(componentList(b), componentList(m), theirs, (c) => c.name)
+              const value = componentRows(r.rows).map((c) => (theirs.some((x) => x.name === c.name) ? c : { ...c, from: undefined }))
+              return { value, note: mergeNote(r.clashes, r.removedOnDisk) }
+            })
+          }
+        />
+      )}
+      <Notice text={s.notice} />
+      {s.error && <div className="banner error" role="alert">{s.error}</div>}
+      <SaveBar dirty={s.dirty} blocked={problems.length > 0 || unlisted.length > 0 || s.conflict} busy={s.busy} onDiscard={s.discard} onSave={() => void s.save(list)}>
+        <button type="button" className="btn ghost" onClick={() => s.setForm((rs) => [...rs, { name: '' }])}>
           <Plus size={15} /> Add component
         </button>
       </SaveBar>
@@ -367,22 +554,24 @@ function stored({ fresh: _f, ...d }: Row): StatusDef {
   if (d.settle) out.settle = true
   return out
 }
+const storedList = (rows: Row[]) => rows.map(stored)
+
+/** Keep mine for a status list (`mergeStatusLists`): rows the file does not hold yet stay new (teal) until saved. */
+function keepMineStatuses(base: Row[], mine: Row[], theirs: Row[], spent: Iterable<string>): { value: Row[]; note?: string } {
+  const m = mergeStatusLists(storedList(base), storedList(mine), storedList(theirs), spent)
+  const onDisk = new Set(theirs.map((d) => d.code))
+  const value = m.rows.map((d) => (onDisk.has(d.code) ? d : { ...d, fresh: true }))
+  return { value, note: mergeNote(m.clashes, m.removedOnDisk, Object.entries(m.renumbered).map(([a, b]) => `your new status ${a} is now ${b}, since the file took ${a}`)) }
+}
 
 function StatusSection({ kind, title }: { kind: StatusKind; title: string }) {
   const config = useConfig()
   const index = useIndex()
-  const saveConfig = useCatalogue((s) => s.saveConfig)
+  const field = kind === 'item' ? 'statuses' : 'questionStatuses'
   const saved = statusesOf(config, kind)
-  const [rows, setRows] = useState<Row[]>(saved)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const list = rows.map(stored)
-  const dirty = JSON.stringify(list) !== JSON.stringify(saved)
-
-  // A change to the file on disk shows straight away, unless there are edits here to keep.
-  useEffect(() => {
-    if (!dirty) setRows(saved)
-  }, [saved])
+  const s = useSection<Row[]>(field, saved, storedList, (data) => (data ?? []) as Row[])
+  const rows = s.form
+  const list = storedList(rows)
 
   const usage = useMemo(() => {
     const n = new Map<string, number>()
@@ -390,7 +579,6 @@ function StatusSection({ kind, title }: { kind: StatusKind; title: string }) {
     return n
   }, [index, kind])
 
-  const field = kind === 'item' ? 'statuses' : 'questionStatuses'
   const problems = [
     ...rows.flatMap((r) => (!r.label.trim() ? ['Every status needs a label'] : !STATUS_CODE.test(r.code) ? [`"${r.label}" needs a code: a whole number from 1`] : [])),
     ...statusListProblems(list, kind, field).map((p) => p.replace(`${field}: `, '')),
@@ -398,41 +586,50 @@ function StatusSection({ kind, title }: { kind: StatusKind; title: string }) {
   const noun = kind === 'item' ? 'card' : 'question'
 
   const set = (i: number, patch: Partial<Row>) =>
-    setRows((rs) => {
+    s.setForm((rs) => {
       let next = rs.map((r, j) => (j === i ? { ...r, ...patch } : r))
       // A role belongs to one status: giving it to this one takes it from the other.
       if (patch.role) next = next.map((r, j) => (j !== i && r.role === patch.role ? { ...r, role: undefined } : r))
       return next
     })
   const move = (i: number, by: number) =>
-    setRows((rs) => {
+    s.setForm((rs) => {
       const next = [...rs]
       const [r] = next.splice(i, 1)
       next.splice(i + by, 0, r!)
       return next
     })
-  // A removed number is never handed out again while this page is open: past the saved list and every row.
-  const add = () => setRows((rs) => [...rs, { code: nextStatusCode([...saved, ...rs]), label: '', help: '', tone: 'neutral', fresh: true }])
-
-  const save = async () => {
-    setBusy(true)
-    setError(null)
-    try {
-      await saveConfig({ [field]: list })
-    } catch (e) {
-      setError((e as Error).message)
-    } finally {
-      setBusy(false)
-    }
-  }
+  // A number is never handed out again: past the saved list, every row, every code the list has ever used (removed or recoded) and every code a card holds.
+  const state = config.statusState?.[field]
+  const highWater = String(state?.highWater ?? 0)
+  const add = () => s.setForm((rs) => [...rs, { code: nextStatusCode([...saved, ...rs].map((d) => d.code), [highWater], usage.keys()), label: '', help: '', tone: 'neutral', fresh: true }])
 
   const question = kind === 'question'
   const roles = question ? QUESTION_ROLES : ITEM_ROLES
+  // B02 (decision 16): a damaged list is never edited or saved over, and no default list stands in for it.
+  if (state?.state === 'damaged') {
+    return (
+      <section className="settings-section" aria-label={title}>
+        <h2 className="group-head">{title}</h2>
+        <LockedBanner what={`The ${title.toLowerCase()}`} problems={state.problems} />
+      </section>
+    )
+  }
   return (
     <section className="settings-section" aria-label={title}>
       <h2 className="group-head">
         {title} <span className="mono">{rows.length}</span>
       </h2>
+      {state?.state === 'degraded' && (
+        <div className="banner settings-degraded" role="status">
+          <span>Some of this list does not read cleanly; each problem shows its default until fixed. Saving the list writes it as shown, which repairs them.</span>
+          <ul className="settings-problems">
+            {state.problems.map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className={`status-table ${kind}`} role="table" aria-label={title}>
         <div className="status-tr status-th" role="row">
           <span role="columnheader" title="The number cards store. It never changes.">No.</span>
@@ -510,7 +707,7 @@ function StatusSection({ kind, title }: { kind: StatusKind; title: string }) {
                 <button type="button" className="btn icon ghost sm" disabled={i === rows.length - 1} onClick={() => move(i, 1)} aria-label="Move down" title="Move down">
                   <ArrowDown size={14} />
                 </button>
-                <button type="button" className="btn icon ghost sm danger" disabled={!!keep} title={keep ?? 'Remove this status'} onClick={() => setRows((rs) => rs.filter((_, j) => j !== i))} aria-label="Remove">
+                <button type="button" className="btn icon ghost sm danger" disabled={!!keep} title={keep ?? 'Remove this status'} onClick={() => s.setForm((rs) => rs.filter((_, j) => j !== i))} aria-label="Remove">
                   <Trash2 size={14} />
                 </button>
               </span>
@@ -532,28 +729,28 @@ function StatusSection({ kind, title }: { kind: StatusKind; title: string }) {
           </div>
         )}
       </dl>
-      {dirty && problems.length > 0 && (
+      {s.dirty && problems.length > 0 && (
         <ul className="banner error settings-problems">
           {[...new Set(problems)].map((p) => (
             <li key={p}>{p}</li>
           ))}
         </ul>
       )}
-      {error && <div className="banner error">{error}</div>}
-      <div className="settings-actions">
+      {s.conflict && (
+        <ConflictBanner
+          what={`The ${title.toLowerCase()}`}
+          note="Keep mine keeps every status you added or changed and every one added there."
+          onLoadTheirs={s.loadTheirs}
+          onKeepMine={() => s.keepMine((b, m, t) => keepMineStatuses(b, m, t, [String(useCatalogue.getState().config.statusState?.[field].highWater ?? 0), ...usage.keys()]))}
+        />
+      )}
+      <Notice text={s.notice} />
+      {s.error && <div className="banner error" role="alert">{s.error}</div>}
+      <SaveBar dirty={s.dirty} repair={state?.state === 'degraded'} blocked={problems.length > 0 || s.conflict} busy={s.busy} onDiscard={s.discard} onSave={() => void s.save(list)}>
         <button type="button" className="btn ghost" onClick={add}>
           <Plus size={15} /> Add status
         </button>
-        <span className="spacer" />
-        {dirty && (
-          <button type="button" className="btn ghost" disabled={busy} onClick={() => (setRows(saved), setError(null))}>
-            Discard changes
-          </button>
-        )}
-        <button type="button" className="btn primary" disabled={!dirty || problems.length > 0 || busy} onClick={() => void save()}>
-          {busy ? 'Saving…' : 'Save'}
-        </button>
-      </div>
+      </SaveBar>
     </section>
   )
 }

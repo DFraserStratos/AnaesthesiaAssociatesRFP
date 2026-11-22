@@ -1,17 +1,30 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { UNSAFE_NavigationContext, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { isQuestionId } from '../shared/links.ts'
+import { hasUnsavedDrafts } from './drafts.ts'
+import { hasUnsavedMoves } from './store.ts'
 
 /**
  * The docked item panel on the board registers its unsaved-edit guard here, so
  * the board can switch cards (click, arrows, search) without losing a draft
  * silently: with unsaved edits the panel asks first, in its own frame.
+ *
+ * While a modal sheet is open over the panel (a question), the panel is covered and inert, so it could
+ * not show the question: the way out goes ahead at once, and the panel's draft is kept, as drafts are
+ * whenever a sheet is left (reopening the card restores them).
  */
 let leaveGuard: ((go: () => void) => void) | null = null
 export function setLeaveGuard(guard: typeof leaveGuard) {
   leaveGuard = guard
 }
-export const guarded = (go: () => void) => (leaveGuard ? leaveGuard(go) : go())
+export const guarded = (go: () => void) => (leaveGuard && !document.querySelector('.scrim') ? leaveGuard(go) : go())
+
+/**
+ * Whether leaving the page (a reload, a closed tab) would lose something: a sheet's unsaved edits, or
+ * card moves not yet saved. `movesKept` when the page is reloaded by the problem pill, which keeps the
+ * moves in this tab (B07), so only sheet edits ask.
+ */
+export const hasUnsavedWork = (movesKept = false) => hasUnsavedDrafts() || (!movesKept && hasUnsavedMoves())
 
 /**
  * Sheets are deep-linkable: `?item=US-01.1.1` or `?question=OQ-01` over whatever view is open.

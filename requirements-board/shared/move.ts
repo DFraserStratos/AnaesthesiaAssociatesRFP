@@ -11,9 +11,10 @@
  * needs no reorder) keeps its `order`, so no other file is rewritten.
  */
 import { DEFAULT_CONFIG } from './config.ts'
+import { revOf } from './files.ts'
 import { compareSiblings } from './ids.ts'
 import { retiredTest } from './statuses.ts'
-import { PARENT_TYPES, type Item } from './types.ts'
+import { firstLaneName, parentTypesOf, type Item } from './types.ts'
 
 /** Is a card retired? The board passes its config's (`retiredTest(config)`); unset, the default config's. */
 export type RetiredTest = (it: Item) => boolean
@@ -49,7 +50,7 @@ export const laneOf = (it: Item): string | null => (it.type === 'story' ? it.swi
 /** Can `it` sit under `parent` (null: at the top, as an epic)? */
 export function canParent(it: Item, parent: Item | null): boolean {
   if (it.type === 'epic') return parent === null
-  return !!parent && parent.id !== it.id && PARENT_TYPES[it.type].includes(parent.type)
+  return !!parent && parent.id !== it.id && parentTypesOf(it.type).includes(parent.type)
 }
 
 /** The cards a slot index counts among at the destination, in drawing order. */
@@ -70,15 +71,19 @@ export function planMove(items: Item[], move: Move, retired: RetiredTest = DEFAU
 
   // Everything else under the destination parent, in file order; the moved card goes in beside its peer.
   const siblings = items.filter((o) => o.id !== it.id && o.parent === move.parent && (move.parent !== null || o.type === 'epic')).sort(compareSiblings)
+  // The board draws live cards first, then retired ones, so a card can only land among its own kind:
+  // the slot is counted within that run of the drawn stack (FINDINGS R-86). Its neighbours are then in
+  // file order too, so any position between them, whatever other cards sit there, looks the same.
   const peers = peersAt(items, it, move.parent, lane, retired)
-  const index = Math.max(0, Math.min(Math.floor(move.index), peers.length))
-  // Any position between the peer above and the peer below looks the same on the board.
-  const lo = index > 0 ? siblings.indexOf(peers[index - 1]!) + 1 : 0
-  const hi = index < peers.length ? siblings.indexOf(peers[index]!) : siblings.length
+  const live = peers.filter((p) => !retired(p))
+  const own = retired(it) ? peers.filter((p) => retired(p)) : live
+  const index = Math.max(0, Math.min(Math.floor(move.index) - (retired(it) ? live.length : 0), own.length))
+  const lo = index > 0 ? siblings.indexOf(own[index - 1]!) + 1 : 0
+  const hi = index < own.length ? siblings.indexOf(own[index]!) : siblings.length
   // Where the card sits now, if it stays under the same parent; kept when it is already in the slot, so nothing else is rewritten.
   const cur = it.parent === move.parent ? siblings.filter((o) => compareSiblings(o, it) < 0).length : -1
   const stays = cur >= lo && cur <= hi
-  const at = stays ? cur : !peers.length ? siblings.length : index > 0 ? lo : hi
+  const at = stays ? cur : index > 0 ? lo : hi
   const moved: Change = { id: it.id }
   if (it.parent !== move.parent) moved.parent = move.parent
   if (lane !== it.swimlane) moved.swimlane = lane
@@ -138,17 +143,54 @@ export const applyMove = (items: Item[], move: Move, retired?: RetiredTest): Ite
 
 const MAX_LANE_NAME = 40
 
-/** Why a set of lane names (the first lane's name, then the named lanes) cannot be saved, or null when it can. */
-export function laneListProblem(lanes: unknown): string | null {
-  if (!Array.isArray(lanes)) return 'lanes must be a list of names'
+/**
+ * Every reason a set of lane names (the first lane's name, then the named lanes) cannot be saved: a
+ * blank or non-text name, spaces around a name, a name over 40 characters, a name that repeats another
+ * regardless of case (the first lane's included, so a lane called "unassigned" clashes with the default).
+ * One message per problem, so a write can tell a problem it adds from one already there.
+ */
+export function laneListProblems(lanes: unknown): string[] {
+  if (!Array.isArray(lanes)) return ['lanes must be a list of names']
+  const out: string[] = []
   const seen = new Set<string>()
   for (const raw of lanes) {
-    if (typeof raw !== 'string' || !raw.trim()) return 'a lane needs a name'
+    if (typeof raw !== 'string' || !raw.trim()) {
+      out.push('a lane needs a name')
+      continue
+    }
     const name = raw.trim()
-    if (name !== raw) return `lane "${raw}" has spaces around its name`
-    if (name.length > MAX_LANE_NAME) return `lane "${name}" is longer than ${MAX_LANE_NAME} characters`
-    if (seen.has(name.toLowerCase())) return `there is already a lane called "${name}"`
+    if (name !== raw) out.push(`lane "${raw}" has spaces around its name`)
+    if (name.length > MAX_LANE_NAME) out.push(`lane "${name}" is longer than ${MAX_LANE_NAME} characters`)
+    if (seen.has(name.toLowerCase())) out.push(`there is already a lane called "${name}"`)
     seen.add(name.toLowerCase())
   }
-  return null
+  return out
 }
+
+/**
+ * The lane a rename of `from` to `to` merges into (FINDINGS R-119): a named lane other than `from` whose
+ * name matches `to` in any case, or `null` for the first lane when `to` is its name in any case. Undefined
+ * when the rename is no merge (a new name, or `from` itself in another case).
+ */
+export function laneMergeTarget(layout: { firstLane?: string; lanes: string[] }, from: string, to: string): string | null | undefined {
+  const name = to.trim().toLowerCase()
+  if (firstLaneName(layout).toLowerCase() === name) return null
+  return layout.lanes.find((l) => l !== from && l.toLowerCase() === name)
+}
+
+/** The first reason a set of lane names cannot be saved, or null when it can (see `laneListProblems`). */
+export const laneListProblem = (lanes: unknown): string | null => laneListProblems(lanes)[0] ?? null
+
+/** The problems in `after` that `before` does not already have (a repeated message counts each time). */
+export function addedProblems(before: string[], after: string[]): string[] {
+  const left = new Map<string, number>()
+  for (const p of before) left.set(p, (left.get(p) ?? 0) + 1)
+  return after.filter((p) => {
+    const n = left.get(p) ?? 0
+    if (n) left.set(p, n - 1)
+    return !n
+  })
+}
+
+/** The lane list's revision (the first lane's name and the named lanes): a lane write sends the one it started from. */
+export const lanesRevOf = (layout: { firstLane?: string; lanes: string[] }): string => revOf(JSON.stringify({ firstLane: layout.firstLane ?? null, lanes: layout.lanes }))

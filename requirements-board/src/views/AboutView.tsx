@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react'
 import { useEffect, type MouseEvent } from 'react'
 import Markdown from 'react-markdown'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import changelog from '../../CHANGELOG.md?raw'
 import { ARTIFACT_STATUSES, firstLaneName } from '../../shared/types.ts'
 import { StatusLabel, TypeIcon } from '../components/bits.tsx'
@@ -16,10 +16,13 @@ import { ARTIFACT_STATUS_HELP, typeClass } from '../vocab.ts'
  */
 export function AboutView() {
   const [params] = useSearchParams()
+  const { key } = useLocation()
   const section = params.get('s')
+  // Keyed on the location too: a contents link to the section already in the URL is a new location, so it
+  // scrolls there again after the reader has scrolled away (FINDINGS R-127); Back and Forward land as well.
   useEffect(() => {
     if (section) document.getElementById(`about-${section}`)?.scrollIntoView({ block: 'start' })
-  }, [section])
+  }, [section, key])
 
   return (
     <div className="page">
@@ -270,7 +273,7 @@ function Skills() {
     <section id="about-skills" className="about-section">
       <h2>Skills</h2>
       <p className="about-lede">
-        Type the command in Claude Code at the root of your repo. Each skill reads <code>requirements/SCHEMA.md</code> first and never commits: you do.
+        Type the command in Claude Code at the root of your repo. Each skill reads <code>requirements/SCHEMA.md</code> first and leaves committing to you; only <code>/run-build-phase</code> commits, and only when its kick-off prompt allows it.
       </p>
       <div className="skill-cards">
         {SKILLS.map((s) => (
@@ -403,7 +406,7 @@ function Anatomy() {
         <div className="about-tile">
           <h3>Outline and checks</h3>
           <p>
-            <Link to="/outline">Outline</Link> lists everything as a document, ready to read top to bottom. The masthead stays clear while all is well. A pill appears only when something needs attention: amber <em>Offline</em> when the board has lost its server and nothing is being saved, red when a file is wrong or a card move didn’t save. Click it to see why. The checks also note when a description carries history that belongs in Notes, by the patterns listed under <code>voice</code> in <code>board.config.json</code>; notes never raise the pill, and Settings lists them under Checks.
+            <Link to="/outline">Outline</Link> lists everything as a document, ready to read top to bottom; a card no epic reaches (its parent missing, or in a parent cycle) is listed in a last group, Not under an epic, so nothing counted is hidden. The masthead stays clear while all is well. A pill appears only when something needs attention: amber <em>Offline</em> when the board has lost its server (card moves are kept and sent when it answers again, and the pill then offers a reload), red when a file is wrong, a card move didn’t save or a part of the page failed to show. Click it to see why. The checks also note when a description carries history that belongs in Notes, by the patterns listed under <code>voice</code> in <code>board.config.json</code>; notes never raise the pill, and Settings lists them under Checks.
           </p>
         </div>
       </div>
@@ -425,11 +428,11 @@ const FOLDERS: [string, string][] = [
 ]
 
 const COMMANDS: [string, string][] = [
-  ['npm --prefix requirements-board run dev', 'Open the board on localhost:5180'],
+  ['npm --prefix requirements-board run dev', 'Open the board on localhost:5180 (BOARD_PORT moves it)'],
   ['npm --prefix requirements-board run check', 'Check every file, ID, parent and link'],
   ['npm --prefix requirements-board run verify', 'Typecheck, tests and check: run before sharing a change to the board itself'],
   ['npm --prefix requirements-board run export:csv', 'Export the catalogue as CSV'],
-  ['npm --prefix requirements-board run install-skills', 'Copy the skills into .claude/ at the repo root again, after editing one'],
+  ['npm --prefix requirements-board run install-skills', 'Install the skills into .claude/ at the repo root again, after editing one: it keeps the mode in use (copies, or links with -- --link)'],
 ]
 
 function Files() {
@@ -462,7 +465,7 @@ function Files() {
               </div>
             ))}
           </dl>
-          <p>The skills live in <code>requirements-board/agent/</code>; <code>.claude/skills/</code> holds installed copies: edit the source, then run <code>install-skills</code>. Each keeps this repo's own facts in its "This repo" section.</p>
+          <p>The skills live in <code>requirements-board/agent/</code>; <code>.claude/skills/</code> holds what <code>install-skills</code> put there, copies or links: edit the source, then run it again (a copy changes only then; a link at once). Each keeps this repo's own facts in its "This repo" section.</p>
         </div>
       </div>
     </section>

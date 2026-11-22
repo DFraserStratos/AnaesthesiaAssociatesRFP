@@ -19,7 +19,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
-import { layoutsOf, requirementChanges, changedInSubstance } from './req-changes.mjs'
+import { layoutsOf, requirementChanges, substanceVerdicts } from './req-changes.mjs'
 import { TOOLS, loadConfig, stripPlanArg } from './config.mjs'
 import { decisionRows as decisionRowsOf, gates } from './plan-docs.mjs'
 
@@ -54,8 +54,9 @@ fs.writeFileSync(path.join(out, 'outline.md'), [
 const gaps = JSON.parse(fs.readFileSync(path.join(CU, 'gaps.json'), 'utf8'))
 const gapOf = new Map([...gaps.items, ...gaps.dataModelDeltas, ...gaps.reverseFindings].map(x => [x.id, x]))
 const changes = requirementChanges({ cwd: ROOT, from, to: sha, layouts: layoutsOf(config) })
-const changedItem = new Map(changes.items.filter(e => changedInSubstance({ cwd: ROOT, from, to: sha, entry: e, req: REQ })).map(e => [e.id, e]))
-const changedQuestions = changes.questions.filter(e => changedInSubstance({ cwd: ROOT, from, to: sha, entry: e, req: REQ }))
+const verdict = substanceVerdicts({ cwd: ROOT, from, to: sha, entries: [...changes.items, ...changes.questions], req: REQ })
+const changedItem = new Map(changes.items.filter(e => verdict.get(e)).map(e => [e.id, e]))
+const changedQuestions = changes.questions.filter(e => verdict.get(e))
 const git = (...a) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
 const show = (file) => { try { return git('show', `${sha}:${file}`) } catch { return '' } }
 const logs = changes.changeLogsAdded.map(f => ({ f, lines: show(f).split('\n') }))

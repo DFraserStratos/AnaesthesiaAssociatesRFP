@@ -416,7 +416,7 @@ wording and mechanism and the scope of kept moves (B07-Q6).
 
 See the shared register in [PROGRESS.md](../../PROGRESS.md) "Deferred decisions".
 
-**Owned shared decision: D-10, asset version and change signal.**
+**Owned shared decision: D-10, asset version and change signal.** **Answered (accepted decision 21, 2026-11-19):** option 1 with the git blob hash as a `?v=` token.
 - *Gap:* R-96 (B09) and R-104 (B10) both need to know when a screenshot changed and a version to
   show the current file; FINDINGS proposes "an assets event or fingerprint" and "a per-asset version
   ... append `?v=`". Nothing exists today (evidence above).
@@ -468,8 +468,8 @@ code and damage state.
 
 | ID | Question | Affects | Owner | Depends | Resolve before | Proposal (not a decision) |
 |---|---|---|---|---|---|---|
-| B07-Q5 | Mapped moves still in flight at a reload: replay them after load (base-rev checked) or report them as not saved? A replay of a move the server already applied would be refused as stale. | REQ-02.4 | B07 planning, with the user | D-04 | B07 build | Report as not saved, unless D-04 gives a safe way to tell "already applied". |
-| B07-Q6 | After "Stay" when the server has gone, Vite stops polling. Should the board watch for the server itself and recover or offer a reload, and what does it say? Should kept moves survive only a reload of the same tab, or a closed and reopened tab too? | REQ-02.2, REQ-02.5, REQ-03.2 | B07 planning, with the user | none | B07 build | Same-tab survival as the minimum; the board offers a reload when the server is back. |
+| B07-Q5 | Mapped moves still in flight at a reload: replay them after load (base-rev checked) or report them as not saved? A replay of a move the server already applied would be refused as stale. | REQ-02.4 | B07 planning, with the user | D-04 | B07 build | **Answered (accepted decision 21, 2026-11-19):** check, then report; never replayed. |
+| B07-Q6 | After "Stay" when the server has gone, Vite stops polling. Should the board watch for the server itself and recover or offer a reload, and what does it say? Should kept moves survive only a reload of the same tab, or a closed and reopened tab too? | REQ-02.2, REQ-02.5, REQ-03.2 | B07 planning, with the user | none | B07 build | **Answered (accepted decision 21, 2026-11-19):** same-tab (session storage); kept moves saved over HTTP when the server is back, and the pill offers Reload. |
 
 ## Risks and recovery requirements
 

@@ -21,15 +21,15 @@ import { parseArtifact, parseItem, parseQuestion } from '../shared/files.ts'
 import { normaliseStatus, type Recode } from '../shared/statuses.ts'
 import type { Artifact, Item, Question } from '../shared/types.ts'
 import { repoRootFor } from './artifactFiles.ts'
+import { realPath } from './realPaths.ts'
 import { RECORD_DIRS, readRecodes } from './catalogueFs.ts'
-import { blobShaOf, emptyTree, git as gitRaw, readBlobs, repoTop, tryParse } from './gitHistory.ts'
+import { Lru, memo, nulSplit, workingNames } from './gitCore.ts'
+import { emptyTree, git, readBlobs, repoTop, tryParse } from './gitHistory.ts'
 import { priorDirs } from './gitRenames.ts'
 
 type RecordKind = keyof typeof RECORD_DIRS
 const KINDS = Object.keys(RECORD_DIRS) as RecordKind[]
 
-/** Paths given to git are always literal (a file named `*.md` is that file, not a pattern). */
-const git = (cwd: string, args: string[]) => gitRaw(cwd, ['--literal-pathspecs', ...args])
 
 interface Repo {
   top: string
@@ -56,41 +56,6 @@ interface Layout {
 export class DiffRefError extends Error {}
 
 /* ------------------------------------------------------------------ small caches */
-
-/** A map that forgets its least recently used entries past `max`. */
-class Lru<V> {
-  private map = new Map<string, V>()
-  private max: number
-  constructor(max: number) {
-    this.max = max
-  }
-  get(key: string): V | undefined {
-    const v = this.map.get(key)
-    if (v !== undefined) {
-      this.map.delete(key)
-      this.map.set(key, v)
-    }
-    return v
-  }
-  set(key: string, v: V) {
-    this.map.delete(key)
-    this.map.set(key, v)
-    while (this.map.size > this.max) this.map.delete(this.map.keys().next().value!)
-  }
-  delete(key: string) {
-    this.map.delete(key)
-  }
-}
-
-/** A promise kept under `key` while it runs, and (unless it fails) after, so identical calls share one. */
-function memo<V>(cache: Lru<Promise<V>>, key: string, make: () => Promise<V>): Promise<V> {
-  const hit = cache.get(key)
-  if (hit) return hit
-  const p = make()
-  cache.set(key, p)
-  p.catch(() => cache.delete(key))
-  return p
-}
 
 const repos = new Map<string, Repo>()
 
@@ -132,7 +97,8 @@ function fileInRepo(repo: Repo, base: string, file: string): string | null {
   if (file.startsWith('/')) {
     const rest = contained(file.slice(1))
     if (!rest) return null
-    const p = relative(repo.top, resolve(repoRootFor(repo.top), rest)).split(sep).join('/')
+    // git names its top by its real path; REPO_ROOT may be given through a link, so compare real with real.
+    const p = relative(repo.top, resolve(realPath(repoRootFor(repo.top)), rest)).split(sep).join('/')
     return contained(p)
   }
   const rest = contained(file)
@@ -165,8 +131,6 @@ export function classify(path: string): { kind: RecordKind; id: string } | null 
 
 /** A record's file at one side, relative to the repository's top. */
 const recordPath = (side: Side, kind: RecordKind, id: string) => `${side.dirs[kind]}/${id}.md`
-
-const nulSplit = (s: string) => s.split('\0').filter(Boolean)
 
 /** Where each kind of record is now. */
 const dirsNow = (repo: Repo): Dirs => ({ item: inBase(repo.rel, RECORD_DIRS.item), question: inBase(repo.rel, RECORD_DIRS.question), artifact: inBase(repo.rel, RECORD_DIRS.artifact) })
@@ -306,24 +270,13 @@ function fileIndex(repo: Repo, side: Side, generation: number | null): Promise<S
   return memo(indexCache, key, () => buildIndex(repo, side))
 }
 
-/** The repository's object names are SHA-256 ones. */
-const isSha256 = async (repo: Repo) => (await emptyTree(repo.top).catch(() => '')).length === 64
-
 /** Git blob names of files (relative to the repository's top) at one side; absent or unreadable files are left out. */
 async function blobShas(repo: Repo, side: Side, repoPaths: string[]): Promise<Map<string, string>> {
   const out = new Map<string, string>()
   const unique = [...new Set(repoPaths)]
   if (!unique.length) return out
-  if (side.kind === 'worktree') {
-    const sha256 = await isSha256(repo)
-    await Promise.all(
-      unique.map(async (p) => {
-        const buf = await readFile(join(repo.top, p)).catch(() => null)
-        if (buf) out.set(p, blobShaOf(buf, sha256))
-      }),
-    )
-    return out
-  }
+  // The files on disk: named as `git add` would store them (line endings, filters, the repository's width).
+  if (side.kind === 'worktree') return workingNames(repo.top, unique)
   const text = await git(repo.top, ['ls-tree', '-z', side.ref, '--', ...unique]).catch(() => '')
   for (const entry of text.split('\0')) {
     const m = /^\d+ blob ([0-9a-f]{40}|[0-9a-f]{64})\t(.+)$/s.exec(entry)
@@ -341,12 +294,12 @@ async function blobShas(repo: Repo, side: Side, repoPaths: string[]): Promise<Ma
 async function resolveRefs(repo: Repo, refs: string[]): Promise<{ shas: string[]; head: string | null }> {
   for (const ref of refs) if (ref !== EMPTY_TREE && !isCommitRef(ref)) throw new DiffRefError(`${ref} is not a commit`)
   const commits = refs.filter((r) => r !== EMPTY_TREE)
-  const one = (r: string) => gitRaw(repo.top, ['rev-parse', '--verify', '--quiet', `${r}^{commit}`]).then((s) => s.trim())
+  const one = (r: string) => git(repo.top, ['rev-parse', '--verify', '--quiet', `${r}^{commit}`]).then((s) => s.trim())
   let head: string | null
   let resolved: string[]
   try {
     // Every ref is HEAD or plain hex (checked above), so none can read as an option.
-    ;[head = '', ...resolved] = (await gitRaw(repo.top, ['rev-parse', ...['HEAD', ...commits].map((r) => `${r}^{commit}`)])).trim().split('\n')
+    ;[head = '', ...resolved] = (await git(repo.top, ['rev-parse', ...['HEAD', ...commits].map((r) => `${r}^{commit}`)])).trim().split('\n')
   } catch {
     // No commits yet, or one ref is not a commit: find which, for the message.
     head = await one('HEAD').catch(() => null)
@@ -406,7 +359,7 @@ async function readCommits(root: string, generation: number | null, firstOnly = 
   if (!repo) return { available: false, commits: [], head: null }
   let head: string
   try {
-    head = (await gitRaw(repo.top, ['rev-parse', '--verify', 'HEAD^{commit}'])).trim()
+    head = (await git(repo.top, ['rev-parse', '--verify', 'HEAD^{commit}'])).trim()
   } catch {
     return { available: true, commits: [], head: null } // a repository with no commits yet
   }
@@ -628,9 +581,25 @@ async function diffSides(
     ancestors(repo, to, kept, 'after', recodes),
     to.kind === 'worktree' ? idxAfter : fileIndex(repo, worktreeSide(repo), generation),
   ])
-  // The page has today's artifacts, so each side sends only the ones that read differently then (or are gone now).
-  const then = (idx: SideArtifacts) => Object.fromEntries(Object.entries(idx.artifacts).filter(([id, a]) => JSON.stringify(a) !== JSON.stringify(today.artifacts[id])))
-  return { available: true, from: refs.from, to: refs.to, records: kept, context: { before, after, artifacts: { before: then(idxBefore), after: then(idxAfter) } } }
+  const res: DiffResponse = { available: true, from: refs.from, to: refs.to, records: kept, context: { before, after } }
+  sideArtifacts.set(res, { before: idxBefore.artifacts, after: idxAfter.artifacts })
+  return withToday(res, today)
+}
+
+/** Each comparison's artifacts at both sides, for reading against today's afresh on every response. */
+const sideArtifacts = new WeakMap<DiffResponse, { before: Record<string, Artifact>; after: Record<string, Artifact> }>()
+
+/**
+ * The page has today's artifacts, so each side sends only the ones that read differently then (or are
+ * gone now). Applied per response: a comparison of two commits is kept, but today's artifacts change.
+ */
+function withToday(res: DiffResponse, today: SideArtifacts): DiffResponse {
+  const sides = sideArtifacts.get(res)
+  if (!sides) return res
+  const then = (arts: Record<string, Artifact>) => Object.fromEntries(Object.entries(arts).filter(([id, a]) => JSON.stringify(a) !== JSON.stringify(today.artifacts[id])))
+  const out: DiffResponse = { ...res, context: { ...res.context, artifacts: { before: then(sides.before), after: then(sides.after) } } }
+  sideArtifacts.set(out, sides)
+  return out
 }
 
 /** Every catalogue record that differs between From (a commit) and To (a commit, or `worktree`), with both versions. */
@@ -695,7 +664,8 @@ export function createDiffReader(root: string, opts: DiffReaderOptions = {}): Di
   /** The count of each kept result, so asking again costs nothing. */
   const counted = new WeakMap<DiffResponse, number>()
 
-  async function diff(fromRef: string, toRef: string): Promise<DiffResponse> {
+  /** A comparison as kept: its artifact context read against the artifacts of when it was made. */
+  async function kept(fromRef: string, toRef: string): Promise<DiffResponse> {
     const repo = await repoOf(root)
     if (!repo) return computeDiff(root, fromRef, toRef, null)
     const worktree = toRef === WORKTREE
@@ -716,14 +686,22 @@ export function createDiffReader(root: string, opts: DiffReaderOptions = {}): Di
     return memo(results, worktree ? `${key}@${gen}` : key, () => computeDiff(root, fromRef, toRef, worktree ? gen : null, resolved))
   }
 
+  /** A comparison, its artifact context read against today's artifacts (R-74: never a stale "today"). */
+  async function diff(fromRef: string, toRef: string): Promise<DiffResponse> {
+    const res = await kept(fromRef, toRef)
+    if (toRef === WORKTREE || !res.available) return res
+    const repo = await repoOf(root)
+    return repo ? withToday(res, await fileIndex(repo, worktreeSide(repo), opts.watched ? generation : null)) : res
+  }
+
   async function commits() {
     return readCommits(root, opts.watched ? generation : null)
   }
 
   async function count(from = 'HEAD', to = WORKTREE): Promise<DiffCountResponse> {
-    const res = await diff(from, to).catch((e: unknown) => {
+    const res = await kept(from, to).catch((e: unknown) => {
       // A repository with no commits yet: everything on disk is new.
-      if (e instanceof DiffRefError && from === 'HEAD' && to === WORKTREE) return diff(EMPTY_TREE, to)
+      if (e instanceof DiffRefError && from === 'HEAD' && to === WORKTREE) return kept(EMPTY_TREE, to)
       throw e
     })
     if (!res.available) return { available: false, count: 0 }

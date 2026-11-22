@@ -11,6 +11,7 @@ import type { CatalogueSnapshot } from '../shared/types.ts'
 
 const LOADS = 8
 const VIEWPORT_KEY = 'requirements-board:viewport'
+const VIEW_KEY = 'requirements-board:view'
 
 let parentOf: Record<string, string> = {}
 test.beforeAll(async ({ request }) => {
@@ -37,6 +38,8 @@ async function expectAllJoined(page: Page, when: string) {
 async function freshLoad(page: Page, viewport: { x: number; y: number; zoom: number } | null) {
   await page.goto('/')
   await page.evaluate(([k, v]) => (v ? localStorage.setItem(k, v) : localStorage.removeItem(k)), [VIEWPORT_KEY, viewport && JSON.stringify(viewport)] as const)
+  // Freeform joins every card; Mapped (the default since 1.12) joins only the open card's lineage.
+  await page.evaluate((k) => localStorage.setItem(k, JSON.stringify({ ...JSON.parse(localStorage.getItem(k) ?? '{}'), boardMode: 'freeform' })), VIEW_KEY)
   await page.goto('/#/board')
   await page.reload()
   await page.locator('.react-flow__node').first().waitFor()

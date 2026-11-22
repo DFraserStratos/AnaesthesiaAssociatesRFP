@@ -8,7 +8,7 @@ import type { ItemDiff } from '../../shared/diff.ts'
 import { shownOf, type Entry } from '../../shared/diffModel.ts'
 import { regionChanges } from '../../shared/history.ts'
 import { stepChanges } from '../../shared/steps.ts'
-import { TYPE_LABEL, firstLaneName, parseArtifactRef, type Artifact, type ImageRef, type Item, type ItemType, type Question, type Region, type Step } from '../../shared/types.ts'
+import { typeLabel, firstLaneName, parseArtifactRef, type Artifact, type ImageRef, type Item, type ItemType, type Question, type Region, type Step } from '../../shared/types.ts'
 import { historyBlobUrl } from '../api.ts'
 import { ArtifactIcon, ArtifactName, ArtifactRefName, Lineage, QuestionName, RecordMark, RecordName, TypeIcon, type MarkOf } from '../components/bits.tsx'
 import type { SourceIndex } from '../../shared/sources.ts'
@@ -73,7 +73,7 @@ export function ParentCell({ parent, side }: { parent: string | null; side: Side
 export function TypeCell({ type }: { type: ItemType }) {
   return (
     <span className="diff-inline">
-      <TypeIcon type={type} /> {TYPE_LABEL[type]}
+      <TypeIcon type={type} /> {typeLabel(type)}
     </span>
   )
 }

@@ -369,6 +369,14 @@ R-07 proof applies (D-02b).
 
 Shared register: [PROGRESS.md](../../PROGRESS.md) "Deferred decisions".
 
+**Answered 2026-11-19 (PROGRESS accepted decision 16):** D-02a removed statuses under
+`removedStatuses` in `board.config.json`, with their last labels; D-02b no overlap allowed (the
+chain rule stands, `catalogueDiff.ts` untouched); D-02c no migration; B02-Q3 the readable part of
+the project's own list, creation refused while the default role is unresolved; B02-Q4 role and settle
+breaches are damage, a cosmetic-only list may be saved through Settings; B02-Q5 yes, the recode
+updates the config; B02-Q6 no code column. Delivery: see IMPLEMENTATION.md and the B02 entry in
+PROGRESS.md.
+
 ### D-02 · Status registry (owner B02; waits: B06, B12, B14; resolve before B02 build)
 
 Source: systemic issue 2; R-07 and R-68 proposed fixes. Affects B02-REQ-03, -04, -05, -10 and B12's

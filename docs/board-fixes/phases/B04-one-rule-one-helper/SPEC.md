@@ -1,6 +1,6 @@
 # Phase B04: One rule, one helper
 
-**Status:** PLANNED
+**Status:** COMPLETE (2026-11-19; see PROGRESS.md)
 
 **Requirements:** R-27, R-28, R-38, R-60, R-61, R-62, R-75, R-76, R-77, R-78, R-79, R-80, R-81,
 R-82, R-83, R-84, R-85, R-101 (18 findings, each under "#### R-nn" in
@@ -433,7 +433,7 @@ Shared register: [PROGRESS.md](../../PROGRESS.md) "Deferred decisions". Each ope
 B04's implementation planning, with the user where marked, before B04 builds.
 
 **D-03 How agent `.mjs` tools share `shared/*.ts` rules, including the note-cite resolution rule**
-(open; owner B04, with the user; dependents B13-REQ-07b and B12 if it needs shared code; gate: before
+(**Answered 2026-11-19, accepted decision 18: A, direct import from the catalogue path.** Was open; owner B04, with the user; dependents B13-REQ-07b and B12 if it needs shared code; gate: before
 B04 builds, and as a planning-only gate before B12 builds if B12 needs shared code and before
 B13-REQ-07b, accepted decision 8). Options and consequences, not chosen here:
 - *A. Import `shared/*.ts` directly under Node type stripping.* One implementation, no drift. The
@@ -454,19 +454,19 @@ B the mirrored copy covers the whole resolution rule, not only the slug) and whe
 shared status rules; affects B14's kit export and install-skills docs if tools gain a path dependency
 on `shared/`. Affected acceptance: the D-03 row.
 
-**B04-Q1 What an image whose target is a record ID means** (open; source: R-60; affects
+**B04-Q1 What an image whose target is a record ID means** (**Answered, accepted decision 18: ignored by both.** Was open; source: R-60; affects
 B04-REQ-01.3, `tests/remove.test.ts:9`; owner B04; gate: before B04 builds; no dependents). `![x](US-01.1.2)` renders as a broken image, not a
 link. Options: count it as a link (the check catches a broken one; `unlink` must then rewrite it, and
 to what), or ignore it in both `mentions` and `unlink` (matching the renderer). None exists in the
 catalogue today.
 
-**B04-Q2 Point-list grammar** (open; source: R-80; affects B04-REQ-07.2, SCHEMA "Which spot" and
+**B04-Q2 Point-list grammar** (**Answered, accepted decision 18: all three forms are point lists.** Was open; source: R-80; affects B04-REQ-07.2, SCHEMA "Which spot" and
 B04-REQ-09's resolver split; owner B04; gate: before B04 builds).
 A comma after the spot currently starts reader words, so `#2, #3` is ambiguous: two points, or point 2
 plus words. Decide whether `#2#3` and `#2, #3` are accepted point lists or flagged sources. No
 `sources:` entry uses either form today (prose in `domain-model.md` does, but is not resolved).
 
-**B04-Q3 Severity of the new reports** (open; sources: R-82, R-84; affects B04-REQ-05.1, 07.4; owner
+**B04-Q3 Severity of the new reports** (**Answered, accepted decision 18: warnings.** Was open; sources: R-82, R-84; affects B04-REQ-05.1, 07.4; owner
 B04; gate: before B04 builds).
 A shared note file or shared `file` across artifacts, a self-duplicated prefix, and an invalid
 selector: error (consistent with prefix clashes and "matches nothing") or warning. Either keeps the

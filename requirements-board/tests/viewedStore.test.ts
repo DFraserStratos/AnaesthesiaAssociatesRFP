@@ -103,6 +103,39 @@ describe('Viewed ticks', () => {
     expect(Object.keys(stored())).not.toContain('c3..worktree')
   })
 
+  it("keeps another tab's ticks: each tick changes only its own card (R-93)", () => {
+    // Two tabs on one comparison: two hooks over one storage, each with its own memory.
+    const other = createRoot(document.createElement('div'))
+    let tabB!: Hook
+    const ProbeB = () => ((tabB = useViewed('a..b')), null)
+    try {
+      show('a..b')
+      act(() => other.render(createElement(ProbeB)))
+      const one = entryOf({ kind: 'item', id: 'US-01.1.1', before: story, after: { ...story, title: 'Two' } })
+      const two = entryOf({ kind: 'item', id: 'US-01.1.2', before: { ...story, id: 'US-01.1.2' }, after: { ...story, id: 'US-01.1.2', title: 'Two' } })
+      act(() => hook.set(one, true))
+      act(() => tabB.set(two, true))
+      expect(stored()['a..b']).toEqual({ [one.key]: one.fingerprint, [two.key]: two.fingerprint })
+      act(() => tabB.set(two, false))
+      expect(stored()['a..b']).toEqual({ [one.key]: one.fingerprint })
+      // Tab B ticking again never brings back what tab A unticked meanwhile.
+      act(() => hook.set(one, false))
+      act(() => tabB.set(two, true))
+      expect(stored()['a..b']).toEqual({ [two.key]: two.fingerprint })
+    } finally {
+      act(() => other.unmount())
+    }
+  })
+
+  it("shows ticks made in another tab at once (B09-Q4)", () => {
+    const e = entry('Two')
+    show('a..b')
+    localStorage.setItem(KEY, JSON.stringify({ 'a..b': { [e.key]: e.fingerprint } }))
+    act(() => void window.dispatchEvent(new StorageEvent('storage', { key: KEY })))
+    expect(isViewed(hook.viewed, e)).toBe(true)
+    expect(isViewed(hook.now(), e)).toBe(true)
+  })
+
   it('works for the page when storage is blocked or holds rubbish', () => {
     localStorage.setItem(KEY, '{not json')
     const e = entry('Two')
@@ -115,6 +148,11 @@ describe('Viewed ticks', () => {
       throw new Error('blocked')
     })
     act(() => hook.set(e, true))
+    expect(isViewed(hook.viewed, e)).toBe(true)
+    // Unticking another card keeps this tab's other ticks (review).
+    const other = entryOf({ kind: 'item', id: 'US-01.1.2', before: { ...story, id: 'US-01.1.2' }, after: { ...story, id: 'US-01.1.2', title: 'Two' } })
+    act(() => hook.set(other, true))
+    act(() => hook.set(other, false))
     expect(isViewed(hook.viewed, e)).toBe(true)
     show('c..d')
     expect(hook.viewed).toEqual({})

@@ -1,17 +1,39 @@
 /** The catalogue store's card-move bookkeeping: debounced, patch-based, never lost, never undone by its own echo. */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Item, Layout, Rev } from '../shared/types.ts'
+import type { CatalogueChange, CatalogueDelivery, Item, Layout, Rev } from '../shared/types.ts'
 import { item } from './fixtures.ts'
 
 const putLayout = vi.fn<(patch: { positions: Record<string, { x: number; y: number } | null> }) => Promise<Layout>>()
 const catalogue = vi.fn()
 const batchItems = vi.fn()
+const changeLane = vi.fn()
 vi.mock('../src/api.ts', () => ({
-  api: { putLayout: (p: never) => putLayout(p), catalogue: () => catalogue(), batchItems: (c: never) => batchItems(c) },
-  ApiError: class extends Error {},
+  api: { putLayout: (p: never) => putLayout(p), catalogue: () => catalogue(), batchItems: (c: never) => batchItems(c), changeLane: (c: never) => changeLane(c) },
+  ApiError: class extends Error {
+    blocked?: unknown[]
+    constructor(message: string, blocked?: unknown[]) {
+      super(message)
+      this.blocked = blocked
+    }
+  },
 }))
 
-const { useCatalogue } = await import('../src/store.ts')
+const stored = new Map<string, string>()
+vi.stubGlobal('localStorage', {
+  getItem: (k: string) => stored.get(k) ?? null,
+  setItem: (k: string, v: string) => void stored.set(k, v),
+  removeItem: (k: string) => void stored.delete(k),
+})
+const { useCatalogue, useView } = await import('../src/store.ts')
+const { addChange } = await import('../shared/delivery.ts')
+/** One change, as the server sends it: a numbered delivery. */
+let seq = 0
+const deliver = (c: CatalogueChange) => {
+  const d: CatalogueDelivery = { epoch: 'test', seq: ++seq }
+  addChange(d, c)
+  useCatalogue.getState().applyDelivery(d)
+}
+const { parseConfig } = await import('../shared/config.ts')
 const s = () => useCatalogue.getState()
 
 beforeEach(async () => {
@@ -66,7 +88,7 @@ describe('card moves', () => {
     s().setPositions({ a: { x: 1, y: 1 } })
     await vi.advanceTimersByTimeAsync(400)
     putLayout.mockResolvedValue({ positions: {}, lanes: [] })
-    s().applyEvent({ kind: 'layout', layout: { positions: {}, lanes: [] } }) // someone fixed the file
+    deliver({ kind: 'layout', layout: { positions: {}, lanes: [] } }) // someone fixed the file
     await vi.advanceTimersByTimeAsync(0)
     expect(putLayout).toHaveBeenCalledTimes(2)
     expect(s().layoutError).toBeUndefined()
@@ -74,7 +96,7 @@ describe('card moves', () => {
 
   it('ignores a layout event while moves are still waiting to be sent', () => {
     s().setPositions({ a: { x: 1, y: 1 } })
-    s().applyEvent({ kind: 'layout', layout: { positions: {}, lanes: [] } })
+    deliver({ kind: 'layout', layout: { positions: {}, lanes: [] } })
     expect(s().layout.positions.a).toEqual({ x: 1, y: 1 })
   })
 
@@ -185,7 +207,7 @@ describe('undo and redo', () => {
     await s().moveItems([{ id: 'US-01.1.1', order: 3 }])
     await s().moveItems(move)
     const cur = s().items['US-01.1.2']!
-    s().applyEvent({ kind: 'item', id: 'US-01.1.2', record: { data: { ...cur.data, parent: 'FT-01.1' }, rev: 'agent' } })
+    deliver({ kind: 'item', id: 'US-01.1.2', record: { data: { ...cur.data, parent: 'FT-01.1' }, rev: 'agent' } })
     expect(await s().undo()).toBe(false)
     expect(batchItems).toHaveBeenCalledTimes(2)
     expect(s().moveError).toMatch(/Can't undo/)
@@ -196,7 +218,7 @@ describe('undo and redo', () => {
     echo()
     await s().moveItems(move)
     const cur = s().items['US-01.1.2']!
-    s().applyEvent({ kind: 'item', id: 'US-01.1.2', record: { data: { ...cur.data, title: 'Renamed' }, rev: 'agent' } })
+    deliver({ kind: 'item', id: 'US-01.1.2', record: { data: { ...cur.data, title: 'Renamed' }, rev: 'agent' } })
     expect(await s().undo()).toBe(true)
     expect(s().items['US-01.1.2']!.data).toMatchObject({ parent: 'FT-01.1', title: 'Renamed' })
   })
@@ -211,10 +233,173 @@ describe('undo and redo', () => {
   })
 
   it('keeps lane renames out of card-move history', async () => {
-    echo()
-    putLayout.mockResolvedValue({ positions: {}, lanes: ['Later'] })
-    useCatalogue.setState({ items: { ...recs(), 'US-01.1.1': { data: item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, swimlane: 'MVP' }), rev: 'r1' } }, layout: { positions: {}, lanes: ['MVP'] } })
+    changeLane.mockResolvedValue({ records: [{ data: item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, swimlane: 'Later' }), rev: 'r2' }], layout: { positions: {}, lanes: ['Later'], lanesRev: 'L2' } })
+    useCatalogue.setState({ items: { ...recs(), 'US-01.1.1': { data: item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, swimlane: 'MVP' }), rev: 'r1' } }, layout: { positions: {}, lanes: ['MVP'], lanesRev: 'L1' } })
     expect(await s().renameLane('MVP', 'Later')).toBe(true)
     expect(s().past).toEqual([])
+  })
+})
+
+describe('renaming or removing a lane is one write (R-56)', () => {
+  const inMvp = () => ({
+    'US-01.1.1': { data: item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, swimlane: 'MVP' }), rev: 'r1' },
+    'US-01.1.2': { data: item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2, swimlane: 'MVP' }), rev: 'r2' },
+    'US-01.1.3': { data: item({ id: 'US-01.1.3', parent: 'FT-01.1', order: 3, swimlane: 'Later' }), rev: 'r3' },
+  })
+  beforeEach(() => {
+    changeLane.mockReset()
+    batchItems.mockReset()
+    putLayout.mockClear()
+    useCatalogue.setState({ items: inMvp(), layout: { positions: {}, lanes: ['MVP', 'Later'], lanesRev: 'L1' }, moveError: undefined, past: [] })
+  })
+  const swimlanes = () => Object.values(s().items).map((r) => [r.data.id, r.data.swimlane])
+
+  it('a rename sends one request carrying every story in the lane and the lane list rev, and takes both back from the answer', async () => {
+    changeLane.mockResolvedValue({
+      records: [
+        { data: item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, swimlane: 'Now' }), rev: 'r1b' },
+        { data: item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2, swimlane: 'Now' }), rev: 'r2b' },
+      ],
+      layout: { positions: {}, lanes: ['Now', 'Later'], lanesRev: 'L2' },
+    })
+    expect(await s().renameLane('MVP', 'Now')).toBe(true)
+    expect(changeLane).toHaveBeenCalledTimes(1)
+    expect(changeLane).toHaveBeenCalledWith({ op: 'rename', from: 'MVP', to: 'Now', lanesRev: 'L1', stories: { 'US-01.1.1': 'r1', 'US-01.1.2': 'r2' } })
+    expect(batchItems).not.toHaveBeenCalled()
+    expect(putLayout).not.toHaveBeenCalled()
+    expect(swimlanes()).toEqual([
+      ['US-01.1.1', 'Now'],
+      ['US-01.1.2', 'Now'],
+      ['US-01.1.3', 'Later'],
+    ])
+    expect(s().layout).toMatchObject({ lanes: ['Now', 'Later'], lanesRev: 'L2' })
+  })
+
+  it('a refused rename leaves the stories and the lanes as they were, and says why', async () => {
+    changeLane.mockRejectedValue(new Error('board-layout.json cannot be read; fix or delete it before changing lanes'))
+    expect(await s().renameLane('MVP', 'Now')).toBe(false)
+    expect(swimlanes()).toEqual(Object.values(inMvp()).map((r) => [r.data.id, r.data.swimlane]))
+    expect(s().layout.lanes).toEqual(['MVP', 'Later'])
+    expect(s().moveError).toMatch(/^Lane not renamed: board-layout.json cannot be read/)
+  })
+
+  it('a removal refused for a stale story leaves everything, and shows the newer copy it was given', async () => {
+    const { ApiError } = await import('../src/api.ts')
+    const newer = { data: item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 8, swimlane: 'MVP' }), rev: 'r2-agent' }
+    changeLane.mockRejectedValue(new (ApiError as unknown as new (m: string, b: unknown[]) => Error)('the stories in "MVP" changed on disk since you looked; look again', [{ id: 'US-01.1.2', current: newer }]))
+    expect(await s().deleteLane('MVP')).toBe(false)
+    expect(changeLane).toHaveBeenCalledWith({ op: 'remove', from: 'MVP', lanesRev: 'L1', stories: { 'US-01.1.1': 'r1', 'US-01.1.2': 'r2' } })
+    expect(s().items['US-01.1.1']!.data.swimlane).toBe('MVP')
+    expect(s().items['US-01.1.2']).toEqual(newer)
+    expect(s().layout.lanes).toEqual(['MVP', 'Later'])
+    expect(s().moveError).toMatch(/^Lane not removed: /)
+  })
+
+  it('a good removal clears the stories and drops the lane', async () => {
+    changeLane.mockResolvedValue({
+      records: [
+        { data: item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, swimlane: null }), rev: 'r1b' },
+        { data: item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2, swimlane: null }), rev: 'r2b' },
+      ],
+      layout: { positions: {}, lanes: ['Later'], lanesRev: 'L2' },
+    })
+    expect(await s().deleteLane('MVP')).toBe(true)
+    expect(swimlanes().filter(([, l]) => l === 'MVP')).toEqual([])
+    expect(s().layout.lanes).toEqual(['Later'])
+  })
+
+  it('the lane list rev follows layout events and lane saves', async () => {
+    deliver({ kind: 'layout', layout: { positions: {}, lanes: ['MVP', 'Later', 'New'], lanesRev: 'L9' } })
+    expect(s().layout.lanesRev).toBe('L9')
+    putLayout.mockResolvedValue({ positions: {}, lanes: ['MVP', 'Later'], lanesRev: 'L10' })
+    await s().setLanes(['MVP', 'Later'])
+    expect(s().layout.lanesRev).toBe('L10')
+  })
+})
+
+describe('the saved status filter (R-46)', () => {
+  const SIX = [
+    { code: 1, label: 'Proposed', role: 'default' },
+    { code: 2, label: 'Open', role: 'waiting' },
+    { code: 3, label: 'Verify', settle: true },
+    { code: 4, label: 'Agreed', settle: true },
+    { code: 5, label: 'Confirmed', settle: true },
+    { code: 6, label: 'Retired', role: 'retired' },
+  ]
+  const config = (text: string) => parseConfig(text).config
+  const saved = () => JSON.parse(stored.get('requirements-board:view') ?? '{}').statuses as string[] | undefined
+
+  it('survives a config that is broken for a moment, and goes only when its status is really gone', () => {
+    useView.getState().set({ statuses: ['6'] })
+    const before = saved()
+    expect(before).toEqual(['6'])
+    for (const broken of ['{ "statuses": [ ,', JSON.stringify({ statuses: SIX.map((d) => (d.code === 5 ? { ...d, role: 'retired' } : d)) }), JSON.stringify({ statuses: { Retired: 6 } })]) {
+      deliver({ kind: 'config', config: config(broken) })
+      expect(useView.getState().statuses, broken).toEqual(['6'])
+      expect(saved(), broken).toEqual(['6'])
+    }
+    deliver({ kind: 'config', config: config(JSON.stringify({ statuses: SIX })) })
+    expect(useView.getState().statuses).toEqual(['6'])
+    // Removed for real: a filter naming it would hide every card.
+    deliver({ kind: 'config', config: config(JSON.stringify({ statuses: SIX.filter((d) => d.code !== 6).map((d) => (d.code === 5 ? { ...d, settle: undefined, role: 'retired' } : d)) })) })
+    expect(useView.getState().statuses).toEqual([])
+    expect(saved()).toEqual([])
+  })
+})
+
+describe('collapsed lanes follow the lane changes made on the board (R-120, B11)', () => {
+  const lanesAfter = (lanes: string[], rev: string) => ({ records: [], layout: { positions: {}, lanes, lanesRev: rev } })
+  const collapsed = () => useView.getState().collapsedLanes
+  const savedCollapsed = () => (JSON.parse(stored.get('requirements-board:view') ?? '{}') as { collapsedLanes?: string[] }).collapsedLanes
+  beforeEach(() => {
+    changeLane.mockReset()
+    useCatalogue.setState({ items: {}, layout: { positions: {}, lanes: ['MVP', 'Later'], lanesRev: 'L1' }, moveError: undefined })
+    useView.getState().set({ collapsedLanes: [] })
+  })
+
+  it('a collapsed lane renamed stays collapsed under its new name; deleted, its state goes, so a lane of that name starts open', async () => {
+    useView.getState().set({ collapsedLanes: ['MVP'] })
+    changeLane.mockResolvedValue(lanesAfter(['Now', 'Later'], 'L2'))
+    expect(await s().renameLane('MVP', 'Now')).toBe(true)
+    expect(collapsed()).toEqual(['Now'])
+    expect(savedCollapsed()).toEqual(['Now'])
+    changeLane.mockResolvedValue(lanesAfter(['Later'], 'L3'))
+    expect(await s().deleteLane('Now')).toBe(true)
+    expect(collapsed()).toEqual([])
+    expect(savedCollapsed()).toEqual([])
+  })
+
+  it("an open lane renamed onto a name a stale key left collapsed comes out open; a merge leaves the target's state", async () => {
+    useView.getState().set({ collapsedLanes: ['Now', 'Later'] })
+    changeLane.mockResolvedValue(lanesAfter(['Now', 'Later'], 'L2'))
+    await s().renameLane('MVP', 'Now')
+    expect(collapsed()).toEqual(['Later'])
+    useCatalogue.setState({ layout: { positions: {}, lanes: ['Now', 'Later'], lanesRev: 'L2' } })
+    changeLane.mockResolvedValue(lanesAfter(['Later'], 'L3'))
+    await s().renameLane('Now', 'later')
+    expect(changeLane).toHaveBeenLastCalledWith(expect.objectContaining({ op: 'rename', from: 'Now', to: 'later' }))
+    expect(collapsed()).toEqual(['Later'])
+  })
+
+  it('a refused rename or removal leaves the collapsed lanes as they were', async () => {
+    useView.getState().set({ collapsedLanes: ['MVP'] })
+    changeLane.mockRejectedValue(new Error('the lanes changed on disk since you looked; look again'))
+    expect(await s().renameLane('MVP', 'Now')).toBe(false)
+    expect(await s().deleteLane('MVP')).toBe(false)
+    expect(collapsed()).toEqual(['MVP'])
+  })
+
+  it('a rename onto another lane in another case is sent as a merge, not refused as a duplicate', async () => {
+    changeLane.mockResolvedValue(lanesAfter(['Later'], 'L2'))
+    expect(await s().renameLane('MVP', 'LATER')).toBe(true)
+    expect(changeLane).toHaveBeenCalledTimes(1)
+    expect(s().moveError).toBeUndefined()
+  })
+
+  it('adding or reordering lanes sends the lane list it started from', async () => {
+    putLayout.mockResolvedValue({ positions: {}, lanes: ['MVP', 'Later', 'Soon'], lanesRev: 'L2' } as Layout)
+    expect(await s().setLanes(['MVP', 'Later', 'Soon'])).toBe(true)
+    expect(putLayout).toHaveBeenCalledWith({ lanes: ['MVP', 'Later', 'Soon'], lanesRev: 'L1' })
+    expect(s().layout.lanesRev).toBe('L2')
   })
 })

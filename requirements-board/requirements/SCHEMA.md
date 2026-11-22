@@ -3,7 +3,7 @@
 The requirements catalogue: one Markdown file per epic, feature, story and outstanding item (an
 open question or a missing source), plus artifacts (the diagrams, transcripts, notes and documents
 behind them). Humans
-edit it in the Requirements Board (`requirements-board/`, `npm run dev:board` from the repo root);
+edit it in the Requirements Board (`requirements-board/`, `npm --prefix requirements-board run dev` from the repo root);
 agents and people edit the files directly. Both are first-class: the board watches this folder and
 picks up file edits live.
 
@@ -70,7 +70,7 @@ About 85 x 120 x 2 = 20,000 Pick List records at current warehouse count.
 
 | Field | Rule |
 | --- | --- |
-| `id` | `EP-nn` epic, `FT-nn.m` feature, `US-nn.m.k` story (`US-nn.0.k` for a story directly under an epic). Must match the file name. Never reused, never renumbered. |
+| `id` | `EP-nn` epic, `FT-nn.m` feature, `US-nn.m.k` story (`US-nn.0.k` for a story directly under an epic). Must match the file name. Never renumbered. Deleting the highest ID under a parent frees it for the next item created there (Conventions). |
 | `type` | `epic`, `feature` or `story`. Cannot change. |
 | `parent` | Omitted for epics. A feature's parent is an epic; a story's parent is a feature or an epic. Reparenting keeps the ID. |
 | `title` | Short name, sentence case (`VOICE.md`). |
@@ -116,7 +116,9 @@ An artifact links the same ways: `[the pricing steps](AR-01#price-rules)` opens 
 that spot in its red box (or, for a step of a stepped diagram, at that step), and a bare `AR-01`
 reads as the artifact's name. A link to a missing artifact or spot is an error, as for a card.
 
-Neither counts inside code (backticks or a fenced block). The board lists, under **Related** on each
+Neither counts inside code: a backtick span (closed by a run of the same length, never across a
+blank line; a lone backtick is plain text) or a fenced block (three or more backticks or tildes,
+closed by the same, at least as long). An image `![x](US-01.1.1)` is an image, not a link. The board lists, under **Related** on each
 card, the `related` entries from both sides and then the cards whose text mentions it ("Mentioned
 in"), leaving out its own lineage and children, which the card already shows.
 
@@ -157,16 +159,23 @@ reader** after ` · ` or in brackets:
 - **Which artifact.** A note answers to `Notes <date> · <words>` when the words slug to its file name
   (`notes/<date>-<slug>.md`), with no setup. Any other artifact lists the prefixes it answers to in
   its `cited_as` (Artifact file below); the longest prefix that fits wins. A retired artifact with a
-  `superseded_by` hands on to it; one without hands on to nothing, and a source citing it opens it as it is. A source on an artifact that names that same artifact (a transcript's own
+  `superseded_by` hands on to it; one without hands on to nothing, and a source citing it opens it as it is.
+  A handed-on page is the cited page plus the retired artifact's own `page_offset` (the entry that matched),
+  so a replacement whose printed pages run differently needs its own `cited_as` entry, or re-cited sources. A source on an artifact that names that same artifact (a transcript's own
   `Recording ...`) shows plain.
-- **Which spot.** `p.<n>`: a page (plus the entry's `page_offset`). `#<n>`, or `#2 #16`: numbered
-  points. `L27-33`: lines. Nothing: the entry's `spot`, else its `within` section, else the whole artifact.
+- **Which spot.** `p.<n>`: a page (plus the entry's `page_offset`). `#<n>`, or a list `#2 #16`,
+  `#2#16` or `#2, #16`: numbered points, each one checked. `L27-33`: lines. Nothing: the entry's `spot`,
+  else its `within` section, else the whole artifact. A retired artifact hands on first, and the spot
+  is found in its replacement (one the replacement lacks opens the whole replacement).
 - **A note's points** are its numbered list items at the very start of a line (`16. **Title.** ...`,
   continuation lines indented), numbered once across the note; each runs to the next point, heading or
   paragraph at the margin. A point written as a heading or a bold `**16.**` is not one.
 - **Check.** A source whose first word is one citations use (`Notes`, or the first word of any
-  `cited_as`) but that matches no artifact, or names a point, page or line the file lacks, is a
-  warning; so is a bare `OQ-nn` that names no question. They never block a save.
+  `cited_as`) but that matches no artifact, or names a point, page or line the file lacks (a page on
+  anything but a PDF, lines on anything but a Markdown document, points on a file with none, a
+  reversed or zero line range), is a warning naming the artifact and spot; so is an `OQ-nn` (perhaps
+  with words after it, `OQ-01 · answered by Sam`) that names no question. A note cite whose words
+  name a note but whose tail is no spot says so. They never block a save.
 - `npm --prefix requirements-board run source -- "<source>"` (or `-- --item <ID> --text`) prints what
   a source resolves to and the cited passage; `-- --report` lists every source in the catalogue.
 
@@ -264,7 +273,7 @@ The four steps from an Order line's inputs to a priced, invoiced line ...
 
 | Field | Rule |
 | --- | --- |
-| `id` | `AR-nn`. Must match the file name. Never reused, never renumbered. |
+| `id` | `AR-nn`. Must match the file name. Never renumbered. Deleting the highest `AR-nn` frees it for the next artifact (Conventions). |
 | `title` | The artifact's name, independent of its file's name. Sentence case. |
 | `kind` | `diagram`, `mockup`, `screenshot`, `photo`, `transcript`, `note` or `document`: what it is, for its icon and for filtering. |
 | `status` | `Current` (the baseline, unmarked on the board), `Draft`, or `Retired` (no longer the version to go by, whether a newer artifact replaced it or nothing does; kept for traceability, hidden on the Artifacts tab unless retired artifacts are shown, and still opened by a link or URL). Retired is the only past status: there is no `Superseded` (`check` errors on it), since `superseded_by` already says whether something replaced it. A live item listing or linking a Retired artifact warns; a retired one needs no source, and links in its own description are not held to the live rules. |
@@ -273,7 +282,7 @@ The four steps from an Order line's inputs to a priced, invoiced line ...
 | `author` | Optional: who made it. |
 | `components` | Optional: the same vocabulary as an item's. |
 | `sources` | Where it came from, as for an item (`check` warns when empty). |
-| `cited_as` | Optional: how sources cite this artifact, when not by the notes convention. A list of entries, each `as` (the prefix a source starts with) and optionally `page_offset` (a PDF: added to a cited page), `within` (a heading slug: cited points are looked for in that section only) and `spot` (the region a source with no spot of its own opens). Agents write it (`artifact:new --cited-as`); the board keeps it. `check` errors on an entry with no `as`, a prefix two artifacts claim, a `within` or `spot` the file lacks, a `page_offset` off a PDF, and an entry for a note in `notes/` (cited by its file name already). See Sources above. |
+| `cited_as` | Optional: how sources cite this artifact, when not by the notes convention. A list of entries, each `as` (the prefix a source starts with) and optionally `page_offset` (a PDF: added to a cited page), `within` (a heading slug: cited points are looked for in that section only) and `spot` (the spot a source with no spot of its own opens: a region, a step, a page `p27`, a line range `L1-10` or a heading slug). Agents write it (`artifact:new --cited-as`); the board keeps it. `check` errors on an entry with no `as`, a prefix two artifacts claim, a `within` or `spot` the file lacks, a `page_offset` off a PDF, and an entry for a note in `notes/` (cited by its file name already); it warns on a prefix one artifact lists twice, on two sidecars with the same `file`, and on a `cited_as` that is not a list or has keys the board ignores (`pageOffset` for `page_offset`); a board save keeps them as written. See Sources above. |
 | `file` | The file it shows. A plain path is relative to this folder (`artifacts/files/AR-01.svg`, `notes/2026-10-01-client-meeting.md`), and is the norm: every artifact file lives here. A path starting `/` is relative to the repository root (`/docs/some-file.pdf`), for a file that has to stay outside. It must stay inside its base. `.svg`, `.png`, `.jpg`, `.jpeg`, `.webp`, `.md` or `.pdf`; a Markdown document never lives directly in `artifacts/`, where every `.md` is a sidecar: it goes in `artifacts/files/`. Omit it for a mermaid diagram. |
 | `regions` | Optional: the named spots items can link to, each drawn as a red box. See below. |
 | `steps` | Optional, an SVG drawing only: makes it a stepped diagram the board plays one step at a time. Each step is a spot too. See Steps below. |
@@ -369,7 +378,12 @@ Written by the board; safe to hand-edit while it is closed.
 `lanes` (omitted while empty): the Mapped board's named swim lanes, top to bottom. The first lane
 (stories with no `swimlane`) is implicit and always first; `firstLane` (omitted until renamed) is
 what it is called, `Unassigned` by default. Renaming it changes no story. All lane names, the first
-lane's included, are unique regardless of case.
+lane's included, are unique regardless of case, at most 40 characters, with no spaces round them.
+`check` reports a list on disk that breaks one of these rules, or holds an entry that is not a name;
+the board refuses a lane change that would add such a problem, never a card move. Renaming or
+removing a named lane rewrites the `swimlane` of every story in it in the same change. Renaming a
+lane onto another lane's name (case aside, the first lane's included) merges the two: its stories take
+that lane's exact name (or none, for the first lane) and the old name leaves the list, in one change.
 
 ## Board config file (`board.config.json`)
 
@@ -399,7 +413,9 @@ Every field is optional; with no file the board runs on neutral defaults.
 
 `project.name` shows beside the board's name (always "Requirements board") in the masthead and the
 browser tab; `project.accent` (optional, `#rrggbb`) fills the board's mark and the tab icon, so boards for different projects tell apart. Dates and times are always New Zealand English. `components` and `screenshotApps` are the lists the check
-holds items to (empty: anything goes).
+holds items to (empty: anything goes). Once `components` names one, the Settings page saves it only
+while it names every component a card or artifact uses; it never saves over a `project` or
+`components` section that does not read cleanly.
 `statuses` (items) and `questionStatuses` (questions) are ordered lists; each entry is
 `{ code, label, help, tone, role?, settle?, heading? }`. `code` is a whole number from 1, unique within its list. A file stores the `code`; the label, help,
 colour (`tone`: neutral, amber, olive, green, forest, sand or hatched) and order are config, so
@@ -412,10 +428,22 @@ roles: `default` and `answered`. There must be exactly one default and one retir
 at least one `settle`; one default and one answered question status. The board's Settings page
 (`/settings`, the gear at the right of the masthead) edits these lists (label, help, heading, tone,
 role, settle, order, add, remove) and writes the file; a status in use or holding a required role
-can't be removed, and a new status takes the next free number, fixed once saved (the number
-shows only in a quiet "No." column). To change a code across the files use
-`npm --prefix requirements-board run statuses:recode -- --items old=new,... --questions old=new,...` (it rewrites only `status:` lines and the board's history journal, and records
-the run in `status-recodes.json` so diffs across it read a pure relabel as no change). `questionKinds`
+can't be removed. A removed status is kept under `removedStatuses` (`{ "statuses": [{ "code": 7,
+"label": "On hold" }], "questionStatuses": [] }`): its code is spent, and an old version storing it
+reads as its last label, marked removed. A code is never handed out twice: a new status takes a
+number past every code the list has ever used (live, removed, in a recode, or on a card), fixed once
+saved (the number shows only in a quiet "No." column). The lists are only ever the project's own,
+never the built-in ones: a bad `tone` falls back for that status alone, while a structural problem
+(a missing or doubled code, a role or settle rule broken, a file that does not parse) is reported,
+the board reads only what it can of the list, and status saves are refused until the file is fixed.
+To change a code across the files use
+`npm --prefix requirements-board run statuses:recode -- --items old=new,... --questions old=new,...` (it rewrites only `status:` lines, the board's history journal and the codes in these lists, and records
+the run in `status-recodes.json` so diffs across it read a pure relabel as no change). A recode
+renumbers to fresh codes: it refuses a target that it or an earlier recode moves away, or that was
+used before, so it can't swap two numbers in place; to merge statuses, name the one kept as well
+(`3=4,4=4`). Stop the board before a recode: it refuses to run beside one (a running board keeps
+`board-<pid>.lock` in its journal folder; if a board crashed and another process later took its number,
+the recode names that file: delete it). `questionKinds`
 changes only the wording beside a kind (`help`). `capture` is described in the board's README.
 `voice.descriptionWarnings` is the check's backstop for the voice in `VOICE.md`: each entry is
 `{ pattern, flags?, message }`, where `pattern` is a JavaScript regular expression (backslashes
@@ -431,7 +459,8 @@ entry is a `check` error and is left at its default (a pattern that does not com
 ## Rules the tools enforce
 
 The check (`npm run check` in the board) and every save in the board run the same checks: unique IDs,
-ID shape per type, file name matches ID, parent exists and has the right type, vocabulary values
+ID shape per type, file name matches ID, parent exists and has the right type, no card is (through its
+parents) under itself, vocabulary values
 (statuses, and the components and screenshot apps `board.config.json` lists),
 `affects` targets exist, `related` entries are existing items (not the item itself, not a question),
 a text link to an epic, feature or story names one that exists, image files exist under `assets/`,
@@ -448,8 +477,15 @@ over it.
 
 ## Conventions
 
-- **No deletes for items.** Retire an item by setting its status to the one with role `retired` (6 here); the ID stays taken.
-- **No deletes for artifacts.** Set one that is no longer the version to go by to `status: Retired`,
+- **Retire rather than delete.** Retire an item by setting its status to the one with role
+  `retired`; it stays on record and its ID stays taken. The board's Delete removes an item for good,
+  with everything under it, after asking.
+- **IDs after a delete.** Item, question and artifact IDs are reissued: when the highest ID under a
+  parent (or a prefix, for `OQ-` and `AR-`) is deleted, the next record created there takes it, and its
+  History starts with it; a record restored as it was keeps its history. Plain-text mentions of a
+  deleted ID in other records stay as written and name whichever record later takes the ID (`check`
+  warns about them while none does).
+- **Retire artifacts too.** Set one that is no longer the version to go by to `status: Retired`,
   adding `superseded_by` when a newer artifact replaced it. The ID stays taken. The board never creates artifacts and never changes their files or
   regions, only their details: add them and change those as files (the `add-artifact` skill, or
   the board's `npm run artifact:new`).
@@ -459,9 +495,11 @@ over it.
   new question, so prefer answering one that was simply settled.
 - **New IDs**: next free number under the parent (the board assigns them). By hand: look at the
   highest sibling ID and add one.
-- **Answering a question**: set the question to the status with role `answered` (4 here), add `## Answer`, then move the affected items
-  off the `waiting` status: to a `settle` status where the answer settles them (Agreed 4 here), or to Verify (3 here) where the item still needs
-  checking with whoever signs off. Never the final sign-off status (Confirmed 5 here: that is the client's sign-off, set only on explicit say-so) (the board offers this for every item the question affects, whatever its status).
+- **Answering a question**: set the question to the status with role `answered`, add `## Answer`, then move the affected items
+  off the `waiting` status to the `settle` status that fits: one that records the answer as settled, or one that says the item still needs
+  checking with whoever signs off (each status's `help` says which). Never the final sign-off status, if the project has one: that is
+  the sign-off itself, set only on its owner's explicit say-so (the board offers the `settle` statuses for every item the question affects, whatever its status).
+  Status numbers mean only what `board.config.json` says: never name a status by its number.
 - Keep the serialised shape (key order, block lists, blank line after the fence) so diffs stay
   small; the board rewrites files in exactly this shape.
 - CSV for Miro or a spreadsheet: `npm run export:csv` writes `requirements.csv` and

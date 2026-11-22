@@ -7,7 +7,6 @@
  */
 import { Minus, MoveHorizontal, MoveVertical, PanelRight, Plus } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type RefObject } from 'react'
-import type { PDFDocumentProxy } from 'pdfjs-dist'
 import { padRect, parseAnchor } from '../../shared/artifacts.ts'
 import { HIGHLIGHT } from '../../shared/highlight.ts'
 import { pageOfRegionId, type Rect, type Region } from '../../shared/types.ts'
@@ -16,41 +15,17 @@ import { GESTURE_GAP_MS, PINCH_RATE } from '../board/trackpad.ts'
 import { boxStyle, type FindProps } from './CanvasViewer.tsx'
 import { useLoaded } from './content.ts'
 import { countIn, findRanges, lineRects, pdfPageText } from './find.ts'
+import { closePdf, openPdf, type LoadedPdf } from './pdfDocs.ts'
 import { quoteRange, relativeTo, unionIn } from './regionsDom.ts'
 
-type PdfJs = typeof import('pdfjs-dist')
-let pdfjs: Promise<PdfJs> | null = null
-
-export function loadPdfJs(): Promise<PdfJs> {
-  return (pdfjs ??= Promise.all([import('pdfjs-dist'), import('pdfjs-dist/build/pdf.worker.min.mjs?url')]).then(([lib, worker]) => {
-    lib.GlobalWorkerOptions.workerSrc = worker.default
-    return lib
-  }))
-}
-
-export interface LoadedPdf {
-  lib: PdfJs
-  doc: PDFDocumentProxy
-  sizes: { w: number; h: number }[]
-}
-
-export async function loadPdf(url: string): Promise<LoadedPdf> {
-  const lib = await loadPdfJs()
-  const doc = await lib.getDocument({ url }).promise
-  const sizes: { w: number; h: number }[] = []
-  for (let n = 1; n <= doc.numPages; n++) {
-    const vp = (await doc.getPage(n)).getViewport({ scale: 1 })
-    sizes.push({ w: vp.width, h: vp.height })
-  }
-  return { lib, doc, sizes }
-}
-
-/** Every page's text, read once per document, so find can count matches on pages not drawn yet. */
+/** Every page's text, read once per document (kept while `pdfDocs.ts` keeps the document), so find can count matches on pages not drawn yet. */
 const texts = new WeakMap<LoadedPdf, Promise<string[]>>()
 function pageTexts(pdf: LoadedPdf): Promise<string[]> {
   let t = texts.get(pdf)
   if (!t) {
     t = Promise.all(pdf.sizes.map(async (_, i) => pdfPageText((await (await pdf.doc.getPage(i + 1)).getTextContent()).items as { str?: string; hasEOL?: boolean }[])))
+    // A read cut short (the document released as the reader went) is forgotten, never an unhandled rejection.
+    t.catch(() => texts.delete(pdf))
     texts.set(pdf, t)
   }
   return t
@@ -192,7 +167,8 @@ interface ReaderProps {
 }
 
 export function PdfReader({ url, ...props }: ReaderProps & { url: string }) {
-  const loaded = useLoaded(url, () => loadPdf(url))
+  // The document is held for as long as the reader shows it, and given back after.
+  const loaded = useLoaded(url, () => openPdf(url), closePdf)
   if (loaded.status === 'loading') return <div className="viewer-note">Opening the PDF</div>
   if (loaded.status === 'error') return <div className="viewer-note bad">The PDF could not be opened: {loaded.error}</div>
   return <PdfPages pdf={loaded.value} {...props} />
@@ -385,7 +361,10 @@ function PdfPages({ pdf, spot, focusKey, label, onRegionFound, find, viewExtra }
   }, [])
 
   const page = spot.region?.page ?? (spot.auto ? pageOfRegionId(spot.auto) : null)
+  // The request (which spot, asked when) decides placing, once; the region's content decides what is
+  // boxed, so a region changed on disk is found again from what it now says (R-100).
   const key = `${spot.region?.id ?? ''}|${spot.auto ?? ''}|${focusKey ?? ''}`
+  const regionNow = spot.region ? JSON.stringify(spot.region) : ''
 
   // Find the spot once its page is drawn (its text layer is what a passage is matched in), then
   // bring it into view, once: a zoom afterwards moves the box with the page, not the view to it.
@@ -432,7 +411,7 @@ function PdfPages({ pdf, spot, focusKey, label, onRegionFound, find, viewExtra }
       placed.current = key
       setArrival((n) => n + 1)
     }
-  }, [key, page, rendered[page ?? 0], scale])
+  }, [key, regionNow, page, rendered[page ?? 0], scale])
 
   // Find: count on every page from its text; mark the matches on the pages that are drawn.
   const query = find?.query ?? ''
@@ -449,7 +428,7 @@ function PdfPages({ pdf, spot, focusKey, label, onRegionFound, find, viewExtra }
       const c = ts.map((t) => countIn(t, query))
       setCounts(c)
       find?.onCount(c.reduce((a, b) => a + b, 0))
-    })
+    }, () => {}) // the reader has gone, or a page would not read: nothing to count
     return () => {
       live = false
     }

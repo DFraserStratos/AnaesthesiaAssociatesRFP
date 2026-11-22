@@ -2,13 +2,16 @@
 // Usage: node build-packs.mjs --out <run dir> [--repo <repo root, default .>] [--req <catalogue dir relative to the repo,
 //          default requirements-board/requirements>] [--rulings <rulings.md, default <out>/rulings.md>]
 // Writes <out>/packs/<EP|FT id>.md (one per live epic, holding its direct stories, and one per live feature with all its
-// descendants), <out>/artifact-packs/<AR id>.md (one per diagram artifact: sidecar, text drawn in the SVG, linking items)
-// and <out>/index.json: units, diagrams, topics (the rulings' "###" headings under "Rulings by topic", when the rulings
-// file exists), notes, changes, answeredQuestions, counts. Run it on the committed baseline.
+// descendants), <out>/artifact-packs/<AR id>.md (one per live diagram artifact: sidecar, text drawn in the SVG, linking
+// items) and <out>/index.json: units, diagrams, skippedDiagrams (retired ones, never reviewed), topics (the rulings' "###"
+// headings under "Rulings by topic", when the rulings file exists), notes, changes, answeredQuestions, counts.
+// Note cites resolve by the board's own rule (shared/sources.ts, imported from the board beside the catalogue).
+// Run it on the committed baseline.
 import fs from 'node:fs'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
 import { createRequire } from 'node:module'
+import { artifactFilePath, artifactFileRel, boardNoteRules, isRetiredArtifact } from './board-kit.mjs'
 
 const { values: a } = parseArgs({ options: { repo: { type: 'string', default: '.' }, req: { type: 'string', default: 'requirements-board/requirements' }, out: { type: 'string' }, rulings: { type: 'string' } } })
 if (!a.out) { console.error('usage: node build-packs.mjs --out <run dir> [--repo <root>] [--req <catalogue dir>] [--rulings <rulings.md>]'); process.exit(2) }
@@ -32,6 +35,7 @@ const RETIRED = roleCode(boardConfig.statuses, 'retired', 5)
 // yaml is a dependency of the board app, which sits one level above its catalogue folder
 const require = createRequire(path.join(REQ, '..', 'package.json'))
 const YAML = require('yaml')
+const { resolveNoteCite, noteWords, sourceIndex } = await boardNoteRules(REQ)
 
 const read = (p) => fs.readFileSync(p, 'utf8')
 function parse(file) {
@@ -71,8 +75,7 @@ const qAffecting = {}
 for (const q of Object.values(questions)) for (const a of q.affects ?? []) (qAffecting[a] ??= []).push(q.id)
 for (const q of Object.values(questions)) for (const r of idsIn(q.body)) if (items[r] && !(q.affects ?? []).includes(r)) (qAffecting[r] ??= []).push(q.id)
 
-// ---- note points: "Notes <date> · <words> #n #m"
-const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+// ---- note points: "Notes <date> · <words> #n #m", the note found as the board finds it
 const notePoints = {}
 function pointsOf(noteFile) {
   if (notePoints[noteFile]) return notePoints[noteFile]
@@ -89,13 +92,14 @@ function pointsOf(noteFile) {
   return (notePoints[noteFile] = pts)
 }
 function citedPoints(source) {
-  const m = String(source).match(/^Notes (\d{4}-\d{2}-\d{2}) · ([^#]+?)\s*((?:#\d+\s*)*)$/)
+  const m = String(source).match(/^Notes (\d{4}-\d{2}-\d{2}) · (.+)$/)
   if (!m) return []
-  const file = notes.find((n) => n === `${m[1]}-${slug(m[2])}.md`)
-  if (!file) return [{ source, text: '(note not found)' }]
-  const nums = [...m[3].matchAll(/#(\d+)/g)].map((x) => x[1])
-  const pts = pointsOf(file)
-  return nums.map((n) => ({ source: `${m[1]} ${m[2]} #${n}`, text: pts[n] ?? '(point not found)' }))
+  const { words, rest } = noteWords(m[2])
+  const hit = resolveNoteCite(sourceIndex, String(source))
+  const nums = [...rest.matchAll(/#(\d+)/g)].map((x) => x[1])
+  if (!hit) return [{ source: `${m[1]} ${words.trim()}${nums.length ? ' #' + nums.join(' #') : ''}`, text: '(note not found)' }]
+  const pts = pointsOf(path.basename(hit.file))
+  return nums.map((n) => ({ source: `${m[1]} ${words.trim()} #${n}`, text: pts[n] ?? '(point not found)' }))
 }
 
 // ---- pack writers
@@ -172,13 +176,19 @@ const svgText = (file) => {
 }
 const linkedFrom = {}
 for (const it of Object.values(items)) for (const a of it.artifacts ?? []) (linkedFrom[String(a).split('#')[0]] ??= new Set()).add(it.id)
-const diagramIds = Object.keys(artifacts).filter((a) => artifacts[a].kind === 'diagram').sort()
+// A diagram's file as the board reads it; retired diagrams are records, never reviewed for drift.
+const srcPath = (src) => artifactFilePath(repo, REQ_REL, src)
+const srcRel = (src) => artifactFileRel(REQ_REL, src)
+const retiredArtifact = isRetiredArtifact
+const allDiagrams = Object.keys(artifacts).filter((a) => artifacts[a].kind === 'diagram').sort()
+const skippedDiagrams = allDiagrams.filter((a) => retiredArtifact(artifacts[a])).map((a) => ({ id: a, title: artifacts[a].title, reason: artifacts[a].superseded_by ? `retired, replaced by ${artifacts[a].superseded_by}` : 'retired' }))
+const diagramIds = allDiagrams.filter((a) => !retiredArtifact(artifacts[a]))
 for (const a of diagramIds) {
   const ar = artifacts[a]
-  const file = path.join(REQ, ar.src ?? '')
+  const file = ar.src ? srcPath(ar.src) : null
   let body = `# Artifact pack: ${a} · ${ar.title}\n\nSidecar: ${ar.file ? ar.file : '-'}\n\n\`\`\`\n${ar.raw.trim()}\n\`\`\`\n`
-  if (ar.src && ar.src.endsWith('.svg') && fs.existsSync(file)) body += `\n## Text drawn in the diagram (${REQ_REL}/${ar.src}), in document order\n\n${svgText(file)}\n`
-  else if (ar.src && fs.existsSync(file) && /\.(md|mmd|mermaid)$/.test(ar.src)) body += `\n## Diagram source (${REQ_REL}/${ar.src})\n\n${read(file)}\n`
+  if (file && ar.src.endsWith('.svg') && fs.existsSync(file)) body += `\n## Text drawn in the diagram (${srcRel(ar.src)}), in document order\n\n${svgText(file)}\n`
+  else if (file && fs.existsSync(file) && /\.(md|mmd|mermaid)$/.test(ar.src)) body += `\n## Diagram source (${srcRel(ar.src)})\n\n${read(file)}\n`
   body += `\n## Items that link to it\n${[...(linkedFrom[a] ?? [])].sort().map((i) => `- ${i} · ${items[i]?.title}`).join('\n')}\n`
   fs.writeFileSync(path.join(out, 'artifact-packs', `${a}.md`), body)
 }
@@ -195,7 +205,8 @@ function topicsFrom(file) {
 }
 const index = {
   units: units.map(({ id, epic, title, core, pack, chars }) => ({ id, epic, title, core, pack, chars })),
-  diagrams: diagramIds.map((a) => ({ id: a, title: artifacts[a].title, pack: path.join(out, 'artifact-packs', `${a}.md`), svg: artifacts[a].src ? `${REQ_REL}/${artifacts[a].src}` : null })),
+  diagrams: diagramIds.map((a) => ({ id: a, title: artifacts[a].title, pack: path.join(out, 'artifact-packs', `${a}.md`), svg: artifacts[a].src ? srcRel(artifacts[a].src) : null })),
+  skippedDiagrams,
   notes: notes.map((n) => `${REQ_REL}/notes/${n}`),
   changes: fs.readdirSync(path.join(REQ, 'changes')).filter((f) => /^\d{4}-/.test(f)).sort().map((f) => `${REQ_REL}/changes/${f}`),
   answeredQuestions: Object.values(questions).filter((q) => String(q.status) === ANSWERED).map((q) => q.id).sort(),
@@ -204,5 +215,5 @@ const index = {
 }
 fs.writeFileSync(path.join(out, 'index.json'), JSON.stringify(index, null, 2))
 const sizes = units.map((u) => u.chars).sort((a, b) => a - b)
-console.log(`units ${units.length}, diagrams ${diagramIds.length}, pack chars min ${sizes[0]} median ${sizes[sizes.length >> 1]} max ${sizes.at(-1)} total ${sizes.reduce((a, b) => a + b, 0)}`)
+console.log(`units ${units.length}, diagrams ${diagramIds.length} (${skippedDiagrams.length} retired left out${skippedDiagrams.length ? ': ' + skippedDiagrams.map((d) => d.id).join(', ') : ''}), pack chars min ${sizes[0]} median ${sizes[sizes.length >> 1]} max ${sizes.at(-1)} total ${sizes.reduce((a, b) => a + b, 0)}`)
 console.log(units.filter((u) => u.chars > 120000).map((u) => `${u.id} ${u.chars}`).join('\n'))

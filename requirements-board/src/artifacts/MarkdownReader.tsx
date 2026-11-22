@@ -7,7 +7,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { inlinePlain, normText, padRect, parseAnchor, slugify } from '../../shared/artifacts.ts'
+import { markdownHeadings, normText, padRect, parseAnchor } from '../../shared/artifacts.ts'
 import { HIGHLIGHT } from '../../shared/highlight.ts'
 import { linesOfRegionId, type Rect, type Region } from '../../shared/types.ts'
 import { recordLinkComponents, remarkRecordIds } from '../components/Prose.tsx'
@@ -73,18 +73,25 @@ export function MarkdownReader({ text, spot, focusKey, label, onRegionFound, fin
   const [box, setBox] = useState<Rect | null>(null)
   const [arrival, setArrival] = useState(0)
 
-  // Headings take the slugs the server gave them (GitHub's rule), so `#section-name` finds them.
+  // Each heading takes the slug of the source heading on its line (the server's, the check's and the
+  // Sections list's), whatever the rendered text shows: a bare record ID reads as its title on the
+  // page but keeps its ID in the slug (FINDINGS R-28).
+  const headings = useMemo(() => markdownHeadings(text), [text])
   useLayoutEffect(() => {
-    const seen = new Map<string, number>()
+    const byLine = new Map(headings.map((h) => [h.line, h.slug]))
     for (const h of sheetRef.current?.querySelectorAll('h1, h2, h3, h4, h5, h6') ?? []) {
-      const base = slugify(inlinePlain(h.textContent ?? '')) || 'section'
-      const n = seen.get(base) ?? 0
-      seen.set(base, n + 1)
-      h.setAttribute('data-slug', n ? `${base}-${n}` : base)
+      const slug = byLine.get(Number(h.getAttribute('data-ls')))
+      if (slug) h.setAttribute('data-slug', slug)
+      else h.removeAttribute('data-slug')
     }
-  }, [text])
+  }, [headings])
 
-  const key = `${spot.region?.id ?? ''}|${spot.auto ?? ''}|${focusKey ?? ''}`
+  // The request (which spot, asked when) decides placing; the region's content decides what is boxed, so
+  // a region changed on disk is found again from what it now says (R-100), and the observers below,
+  // made afresh with it, never measure an older version.
+  const request = `${spot.region?.id ?? ''}|${spot.auto ?? ''}|${focusKey ?? ''}`
+  const regionNow = spot.region ? JSON.stringify(spot.region) : ''
+  const placed = useRef<string | null>(null)
   useLayoutEffect(() => {
     const sheet = sheetRef.current
     const frame = frameRef.current
@@ -105,7 +112,9 @@ export function MarkdownReader({ text, spot, focusKey, label, onRegionFound, fin
           const r = quoteRange(sheet, value)
           if (r) parts.push(r)
         } else if (kind === 'heading') {
-          const h = [...sheet.querySelectorAll('h1, h2, h3, h4, h5, h6')].find((x) => normText(x.textContent ?? '') === normText(value))
+          // Matched on the source heading's text, as the check matches it, then found by its line.
+          const src = headings.find((x) => x.text === normText(value))
+          const h = src && sheet.querySelector(`:is(h1, h2, h3, h4, h5, h6)[data-ls="${src.line}"]`)
           if (h) parts.push(...sectionOf(h))
         }
       }
@@ -115,7 +124,10 @@ export function MarkdownReader({ text, spot, focusKey, label, onRegionFound, fin
     const r = find()
     setBox(r)
     if (spot.region || spot.auto) onRegionFound?.(!!r)
-    if (r) {
+    // Brought into view once per request: a region corrected while it is shown is boxed where it now is
+    // without moving the reader, and one found for the first time is placed as a new request is.
+    if (r && placed.current !== request) {
+      placed.current = request
       // Bring it to the middle of the view (or its top in view, if it is taller than the view).
       const top = r.y + sheet.offsetTop
       const y = r.h > frame.clientHeight - 80 ? top - 40 : top - (frame.clientHeight - r.h) / 2
@@ -130,7 +142,7 @@ export function MarkdownReader({ text, spot, focusKey, label, onRegionFound, fin
       live = false
       ro.disconnect()
     }
-  }, [key, text])
+  }, [request, regionNow, text])
 
   // Find: each match's line boxes, measured on the page (again whenever it reflows).
   const query = find?.query ?? ''

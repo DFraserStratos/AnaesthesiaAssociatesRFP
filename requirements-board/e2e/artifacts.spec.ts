@@ -1,17 +1,18 @@
 /// <reference lib="dom" />
 /**
- * Artifacts, over the fixture catalogue (port 5182): the tab and its two layouts, the canvas
+ * Artifacts, over the fixture catalogue: the tab and its two layouts, the canvas
  * viewer (sanitised SVG, selectable text, pan and zoom without moving the page, the minimap), the
  * red box from a card's link, mermaid, Markdown and PDF spots, the Linked tab, history, and a
  * stepped diagram (its step bar, the arrow keys, its Steps tab, find and refreshes at a step).
  */
 import { execSync } from 'node:child_process'
-import { readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
 import { writeItem } from '../server/catalogueFs.ts'
-import type { CatalogueSnapshot } from '../shared/types.ts'
-import { FIXTURE_DIR, fixtureItems, writeFixture } from './fixtureCatalogue.ts'
+import { serialiseArtifact } from '../shared/files.ts'
+import type { Artifact, CatalogueSnapshot } from '../shared/types.ts'
+import { FIXTURE_DIR, fixtureArtifacts, fixtureItems, png, tinyPdf, writeFixture } from './fixtureCatalogue.ts'
 
 test.describe.configure({ mode: 'serial' })
 
@@ -771,5 +772,263 @@ test.describe('history', () => {
     await page.getByRole('radio', { name: 'Source' }).click()
     await expect(page.locator('.hist-diff .add')).toContainText('Changed panel')
     await expect(page.locator('.hist-diff .del')).toContainText('Other panel')
+  })
+})
+
+/* ------------------------------------------------------------------ B10 */
+
+test.describe('B10 · artifact viewers', () => {
+  /** Rewrite an artifact's sidecar from the fixture's, changed. */
+  const rewrite = (id: string, change: (a: Artifact) => Artifact) => writeFileSync(join(FIXTURE_DIR, 'artifacts', `${id}.md`), serialiseArtifact(change(fixtureArtifacts().find((a) => a.id === id)!)))
+  const withRegion = (id: string, region: Artifact['regions'][number]) => rewrite(id, (a) => ({ ...a, regions: [...a.regions.filter((r) => r.id !== region.id), region] }))
+  const spot = (id: string, name: string, around: string[], page: number | null = null): Artifact['regions'][number] => ({ id, name, around, box: null, page, pad: null, note: '' })
+  const flag = (page: Page) => page.locator('.viewer-flag')
+  const boxTop = async (page: Page) => (await page.locator('.region-box').first().boundingBox())?.y ?? null
+  const git = (cmd: string) => execSync(`git -c user.email=fixture@example.com -c user.name=Fixture ${cmd}`, { cwd: FIXTURE_DIR, stdio: 'ignore' })
+
+  test.afterEach(() => {
+    rmSync(join(FIXTURE_DIR, '.git'), { recursive: true, force: true })
+    rmSync(join(FIXTURE_DIR, 'assets'), { recursive: true, force: true })
+  })
+
+  test('R-98: asking for a spot that cannot be found, in a drawing, a document or a PDF already open, says so', async ({ page }) => {
+    withRegion('AR-01', spot('lost', 'Lost', ['text=Nowhere at all']))
+    withRegion('AR-04', spot('lost', 'Lost', ['quote=Not in this note anywhere.']))
+    withRegion('AR-05', spot('lost', 'Lost', ['quote=Not on this page at all'], 1))
+    for (const [id, found] of [['AR-01', 'totals'], ['AR-04', 'fox'], ['AR-05', 'time-table']] as const) {
+      await page.goto(`/#/artifacts/${id}?region=${found}`)
+      await expect(page.locator('.spot-row', { hasText: 'Lost' })).toBeVisible()
+      await expect(page.locator('.region-box')).toBeVisible()
+      await expect(flag(page)).toHaveCount(0)
+      // The same viewer, now asked from the panel for the spot it cannot find (FINDINGS' case), then by the URL.
+      await page.locator('.spot-row', { hasText: 'Lost' }).locator('.spot-go').click()
+      await expect(page).toHaveURL(/region=lost$/)
+      await expect(flag(page)).toHaveText(/The highlight could not be found/)
+      await page.goto(`/#/artifacts/${id}?region=${found}`)
+      await expect(page.locator('.region-box')).toBeVisible()
+      await expect(flag(page)).toHaveCount(0)
+      await page.goto(`/#/artifacts/${id}?region=lost`)
+      await expect(flag(page)).toHaveText(/The highlight could not be found/)
+    }
+  })
+
+  test('R-100: a region changed on disk is boxed where it now points, in Markdown and in a PDF', async ({ page }) => {
+    for (const [id, regionId, moved, original, onPage] of [
+      ['AR-04', 'fox', 'Alpha line one.', 'The quick brown fox jumps over the lazy dog.', null],
+      ['AR-05', 'time-table', 'Second page heading', 'Time units table', 2],
+    ] as const) {
+      const name = id === 'AR-04' ? 'The fox' : 'Time table'
+      await page.goto(`/#/artifacts/${id}?region=${regionId}`)
+      await expect(page.locator('.region-box')).toBeVisible()
+      await page.waitForTimeout(700) // the scroll to it settles
+      const was = (await boxTop(page))!
+      withRegion(id, spot(regionId, name, [`quote=${moved}`], onPage))
+      await expect.poll(() => boxTop(page)).toBeLessThan(was - 10)
+      await expect(page.locator('.region-box')).toHaveCount(1)
+      await expect(flag(page)).toHaveCount(0)
+      // Broken on disk: no box left over, and the flag.
+      withRegion(id, spot(regionId, name, ['quote=Words that are nowhere'], onPage))
+      await expect(flag(page)).toHaveText(/The highlight could not be found/)
+      await expect(page.locator('.region-box')).toHaveCount(0)
+      // Fixed on disk: boxed again, no flag.
+      withRegion(id, spot(regionId, name, [`quote=${original}`], onPage))
+      await expect(page.locator('.region-box')).toBeVisible()
+      await expect(flag(page)).toHaveCount(0)
+    }
+  })
+
+  /** Every distinct viewBox the drawing takes over `ms` while `act` runs. */
+  const viewBoxesDuring = async (page: Page, act: () => Promise<unknown>, ms = 800) => {
+    await page.evaluate((ms) => {
+      const w = window as unknown as { __boxes: string[] }
+      w.__boxes = []
+      const end = performance.now() + ms
+      const tick = () => {
+        const vb = document.querySelector('.canvas-host')?.shadowRoot?.querySelector('svg')?.getAttribute('viewBox')
+        if (vb && w.__boxes.at(-1) !== vb) w.__boxes.push(vb)
+        if (performance.now() < end) requestAnimationFrame(tick)
+      }
+      requestAnimationFrame(tick)
+    }, ms)
+    await act()
+    await page.waitForTimeout(ms + 100)
+    return page.evaluate(() => (window as unknown as { __boxes: string[] }).__boxes)
+  }
+
+  test('R-99: another region in an open drawing eases onto it; a first open, and reduced motion, place at once', async ({ page }) => {
+    await page.goto('/#/artifacts/AR-01?region=totals')
+    await expect(page.locator('.region-box')).toBeVisible()
+    await page.waitForTimeout(600)
+    const eased = await viewBoxesDuring(page, () => page.locator('.spot-row', { hasText: 'Panel A' }).locator('.spot-go').click())
+    expect(eased.length).toBeGreaterThan(4)
+    // The same region asked for again eases back to it too.
+    await page.locator('.canvas-frame').press('-')
+    await page.waitForTimeout(600)
+    const again = await viewBoxesDuring(page, () => page.locator('.spot-row', { hasText: 'Panel A' }).locator('.spot-go').click())
+    expect(again.length).toBeGreaterThan(4)
+    // A fresh open is placed at once (the whole drawing while the box is measured, then the box).
+    await page.goto('/#/artifacts')
+    const fresh = await viewBoxesDuring(page, () => page.goto('/#/artifacts/AR-01?region=panel-a'))
+    expect(fresh.length).toBeLessThanOrEqual(2)
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    const jumped = await viewBoxesDuring(page, () => page.locator('.spot-row', { hasText: 'Totals' }).locator('.spot-go').click())
+    expect(jumped.length).toBeLessThanOrEqual(2) // where it was, then where it jumped to
+  })
+
+  test('R-13, R-163: workers, PDF documents and object URLs stay bounded however many views open', async ({ page }) => {
+    // Count the object URLs the page makes and revokes.
+    await page.addInitScript(() => {
+      const live = new Set<string>()
+      const make = URL.createObjectURL.bind(URL)
+      const drop = URL.revokeObjectURL.bind(URL)
+      URL.createObjectURL = (b: Blob | MediaSource) => {
+        const u = make(b)
+        live.add(u)
+        return u
+      }
+      URL.revokeObjectURL = (u: string) => {
+        live.delete(u)
+        drop(u)
+      }
+      ;(window as unknown as { __liveUrls: () => number }).__liveUrls = () => live.size
+    })
+    await page.reload()
+    await expect(page.locator('.tabs .tab').first()).toBeVisible()
+    const urls = () => page.evaluate(() => (window as unknown as { __liveUrls: () => number }).__liveUrls())
+    const workers = () => page.workers().length
+    const docs = () => page.evaluate(() => (window as unknown as { __BOARD_PDF__?: () => { open: number; held: number } }).__BOARD_PDF__?.() ?? null)
+    const round = async () => {
+      await page.goto('/#/artifacts')
+      // Thumbnails draw only near the view: bring the documents down the table into it.
+      await page.locator('.group', { hasText: 'Documents' }).scrollIntoViewIfNeeded()
+      await expect(page.locator('.thumb-pdf img.thumb-page')).toBeVisible()
+      await expect(page.locator('.thumb-mermaid img')).toBeVisible()
+      await page.goto('/#/artifacts/AR-05')
+      await expect(page.locator('.pdf-page .textLayer').first()).toBeVisible()
+      await page.goto('/#/artifacts/AR-03')
+      await expect(page.locator('.canvas-host')).toBeVisible()
+      await page.goto('/#/')
+      await expect(page.locator('.react-flow')).toBeVisible()
+    }
+    const counts: { workers: number; urls: number }[] = []
+    for (let i = 1; i <= 10; i++) {
+      await round()
+      if (i === 5 || i === 10) {
+        await page.waitForTimeout(300)
+        counts.push({ workers: workers(), urls: await urls() })
+      }
+    }
+    console.log('B10 leak counts after 5 and 10 rounds', JSON.stringify(counts), JSON.stringify(await docs()))
+    // One shared pdf.js worker at most; no object URL left once no drawing is on screen.
+    expect(counts[1]!.workers).toBeLessThanOrEqual(1)
+    expect(counts[1]!.workers).toBe(counts[0]!.workers)
+    expect(counts[1]!.urls).toBe(0)
+    expect((await docs())?.open ?? Infinity).toBeLessThanOrEqual(3)
+
+    // A mermaid source edited six times while it is shown: one URL for the one drawing.
+    await page.goto('/#/artifacts/AR-03')
+    for (let n = 1; n <= 6; n++) {
+      rewrite('AR-03', (a) => ({ ...a, source: `flowchart LR\n  A[Order] --> B[Pricing ${n}]\n  B --> C[Invoice]` }))
+      await expect(page.locator('.canvas-host svg', { hasText: `Pricing ${n}` })).toBeVisible()
+    }
+    await page.locator('.view-bar').getByRole('button', { name: /Minimap/ }).click()
+    await expect(page.locator('.minimap-map image')).toHaveCount(1)
+    expect(await urls()).toBeLessThanOrEqual(1)
+    // The minimap still shows its picture: its URL is live.
+    const href = await page.locator('.minimap-map image').getAttribute('href')
+    expect(await page.evaluate((u) => fetch(u!).then((r) => r.ok), href)).toBe(true)
+
+    // A PDF history compare stepped through its pages opens nothing more.
+    git('init -q')
+    git('add -A')
+    git('commit -qm "Fixture catalogue"')
+    writeFileSync(join(FIXTURE_DIR, 'artifacts', 'files', 'AR-05.pdf'), tinyPdf([['Fixture page one, changed', 'Totals live here'], ['Second page heading', 'Time units table']]))
+    git('commit -qam "Change the PDF"')
+    await page.goto('/#/artifacts/AR-05')
+    await page.getByRole('tab', { name: /History/ }).click()
+    await page.locator('.hist-toggle', { hasText: 'File updated' }).click({ timeout: 10_000 })
+    await expect(page.locator('.compare-pair img')).toHaveCount(2)
+    for (const n of [2, 1, 2, 1, 2]) {
+      await page.locator('.compare-page input').fill(String(n))
+      await expect(page.locator('.compare-pair img')).toHaveCount(2)
+    }
+    await page.goto('/#/')
+    await page.waitForTimeout(300)
+    console.log('B10 leak counts after the compare', workers(), JSON.stringify(await docs()), await urls())
+    expect(workers()).toBeLessThanOrEqual(1)
+    expect((await docs())?.open ?? Infinity).toBeLessThanOrEqual(3)
+    expect(await urls()).toBe(0)
+  })
+
+  const withShots = async (request: APIRequestContext) => {
+    mkdirSync(join(FIXTURE_DIR, 'assets', 'US-01.1.1'), { recursive: true })
+    writeFileSync(join(FIXTURE_DIR, 'assets', 'US-01.1.1', 'a.png'), png(240, 160))
+    writeFileSync(join(FIXTURE_DIR, 'assets', 'US-01.1.1', 'b.png'), png(200, 100))
+    const base = fixtureItems().find((i) => i.id === 'US-01.1.1')!
+    writeItem({ ...base, images: [{ src: 'assets/US-01.1.1/a.png', viewport: 'desktop', app: 'web', caption: 'First' }, { src: 'assets/US-01.1.1/b.png', viewport: 'desktop', app: 'web', caption: 'Second' }] }, FIXTURE_DIR)
+    await expect.poll(async () => ((await (await request.get('/api/catalogue')).json()) as CatalogueSnapshot).items['US-01.1.1']?.data.images.length).toBe(2)
+  }
+  const natural = (page: Page, sel: string) => page.locator(sel).first().evaluate((img: HTMLImageElement) => (img.complete ? img.naturalWidth : 0))
+
+  test('R-104: a screenshot re-captured on disk shows in the open gallery and lightbox without a reload', async ({ page, request }) => {
+    await withShots(request)
+    await page.goto('/#/outline?item=US-01.1.1')
+    await expect.poll(() => natural(page, '.gallery img')).toBe(240)
+    const second = await page.locator('.gallery img').nth(1).getAttribute('src')
+    await page.locator('.shot').first().click()
+    await expect.poll(() => natural(page, '.lightbox img')).toBe(240)
+    await page.evaluate(() => ((window as unknown as { __sameTab: boolean }).__sameTab = true))
+    writeFileSync(join(FIXTURE_DIR, 'assets', 'US-01.1.1', 'a.png'), png(320, 100))
+    await expect.poll(() => natural(page, '.lightbox img')).toBe(320)
+    await expect.poll(() => natural(page, '.gallery img')).toBe(320)
+    expect(await page.evaluate(() => (window as unknown as { __sameTab?: boolean }).__sameTab)).toBe(true)
+    // The unchanged screenshot kept its URL.
+    expect(await page.locator('.gallery img').nth(1).getAttribute('src')).toBe(second)
+    // The versioned URL is the guarded asset route's: it serves the screenshot, and nothing else.
+    expect(second).toMatch(/\?v=[0-9a-f]+$/)
+    expect((await request.get(second!)).status()).toBe(200)
+    expect((await request.get('/requirements/stories/US-01.1.1.md?v=x')).status()).toBe(404)
+  })
+
+  test('R-105: the lightbox covers the New card button and the divider beside a docked card, and a modal sheet', async ({ page, request }) => {
+    await withShots(request)
+    await page.goto('/#/board?item=US-01.1.1')
+    await expect(page.locator('.dock .gallery img').first()).toBeVisible()
+    const fab = (await page.locator('.new-card .fab').boundingBox())!
+    const divider = (await page.locator('.dock-resizer').boundingBox())!
+    await page.locator('.dock .shot').first().click()
+    await expect(page.locator('.lightbox')).toBeVisible()
+    const topAt = (x: number, y: number) => page.evaluate(([x, y]) => !!document.elementFromPoint(x!, y!)?.closest('.lightbox'), [x, y])
+    expect(await topAt(fab.x + fab.width / 2, fab.y + fab.height / 2)).toBe(true)
+    expect(await topAt(divider.x + divider.width / 2, divider.y + divider.height / 2)).toBe(true)
+    // A click on the New card button's place closes the lightbox, and starts no card.
+    await page.mouse.click(fab.x + fab.width / 2, fab.y + fab.height / 2)
+    await expect(page.locator('.lightbox')).toHaveCount(0)
+    await expect(page.locator('.new-card .fab')).toHaveAttribute('aria-expanded', 'false')
+    await expect(page.locator('.dock')).toBeVisible()
+    // From a modal sheet: over the sheet, and Esc closes the lightbox, not the sheet.
+    await page.goto('/#/outline?item=US-01.1.1')
+    await page.locator('.scrim .shot').first().click()
+    const sheet = (await page.locator('.scrim .sheet').boundingBox())!
+    expect(await topAt(sheet.x + 20, sheet.y + 20)).toBe(true)
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.lightbox')).toHaveCount(0)
+    await expect(page.locator('.scrim .sheet')).toBeVisible()
+  })
+
+  test('R-106: saved filters for kinds and areas nothing has are shown, and can be cleared', async ({ page }) => {
+    await page.evaluate(() => localStorage.setItem('requirements-board:artifacts', JSON.stringify({ layout: 'grid', kinds: ['transcript'], statuses: [], components: ['Gone area'] })))
+    await page.goto('/#/artifacts')
+    await page.reload()
+    await expect(page.locator('.plate')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: /Transcripts/ })).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.getByLabel('Area')).toHaveValue('Gone area')
+    await expect(page.locator('.empty')).toContainText('Nothing matches the filters.')
+    await page.getByRole('button', { name: 'Clear filters' }).click()
+    await expect(page.locator('.plate')).toHaveCount(7)
+    // A damaged saved value loads the defaults, with no crash.
+    await page.evaluate(() => localStorage.setItem('requirements-board:artifacts', JSON.stringify({ kinds: 5, components: 'Core' })))
+    await page.reload()
+    await expect(page.locator('.plate')).toHaveCount(7)
   })
 })

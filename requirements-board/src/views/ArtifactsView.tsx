@@ -8,7 +8,7 @@
 import { Crosshair, LayoutGrid, Link2, ListOrdered, Rows3, Search } from 'lucide-react'
 import { useState } from 'react'
 import { ARTIFACT_KINDS, ARTIFACT_STATUSES, isPastArtifact, type ArtifactKind, type ArtifactRec } from '../../shared/types.ts'
-import { artifactMatches, artifactShown, linkCount, useArtifactIndex, useArtifactView, type ArtifactIndex } from '../artifactIndex.ts'
+import { NO_FILTERS, artifactMatches, artifactShown, linkCount, useArtifactIndex, useArtifactView, type ArtifactIndex } from '../artifactIndex.ts'
 import { Thumb } from '../artifacts/Thumb.tsx'
 import { ArtifactIcon, Highlight, StatusLabel } from '../components/bits.tsx'
 import { useOpen } from '../nav.ts'
@@ -25,10 +25,13 @@ export function ArtifactsView() {
   // What is on the tab at all: retired artifacts only while Show retired is on.
   const onShow = ix.list.filter((r) => artifactShown(r, view))
   const retiredCount = ix.list.filter((r) => r.data.status === 'Retired').length
-  const kindsPresent = ARTIFACT_KINDS.filter((k) => onShow.some((r) => r.data.kind === k))
-  const componentsPresent = components.filter((c) => onShow.some((r) => r.data.components.includes(c)))
+  // Each filter offers what is on show, plus whatever is picked (so a saved pick can always be cleared,
+  // even one no artifact has, or an area the config no longer lists: R-106).
+  const kindsPresent = ARTIFACT_KINDS.filter((k) => onShow.some((r) => r.data.kind === k) || view.kinds.includes(k))
+  const componentsPresent = [...components.filter((c) => onShow.some((r) => r.data.components.includes(c)) || view.components.includes(c)), ...view.components.filter((c) => !components.includes(c))]
   // Retired is offered only while retired artifacts are on show (or still picked, so it can be cleared).
   const statusesPresent = ARTIFACT_STATUSES.filter((s) => onShow.some((r) => r.data.status === s) || view.statuses.includes(s))
+  const filtered = view.kinds.length + view.statuses.length + view.components.length > 0
   const toggleRetired = () => view.set({ showRetired: !view.showRetired, ...(view.showRetired && view.statuses.includes('Retired') ? { statuses: [] } : {}) })
   const toggleKind = (k: ArtifactKind) => view.set({ kinds: view.kinds.includes(k) ? view.kinds.filter((x) => x !== k) : [...view.kinds, k] })
 
@@ -48,7 +51,7 @@ export function ArtifactsView() {
           </button>
         ))}
       </div>
-      {statusesPresent.length > 1 && (
+      {(statusesPresent.length > 1 || view.statuses.length > 0) && (
         <select className="select" value={view.statuses[0] ?? ''} onChange={(e) => view.set({ statuses: e.target.value ? [e.target.value as (typeof ARTIFACT_STATUSES)[number]] : [] })} aria-label="Status">
           <option value="">Any status</option>
           {statusesPresent.map((s) => (
@@ -56,7 +59,7 @@ export function ArtifactsView() {
           ))}
         </select>
       )}
-      {componentsPresent.length > 1 && (
+      {(componentsPresent.length > 1 || view.components.length > 0) && (
         <select className="select" value={view.components[0] ?? ''} onChange={(e) => view.set({ components: e.target.value ? [e.target.value] : [] })} aria-label="Area">
           <option value="">Every area</option>
           {componentsPresent.map((c) => (
@@ -91,6 +94,13 @@ export function ArtifactsView() {
     <p className="empty">No artifacts yet. An agent adds one as a file in the catalogue's artifacts folder (see the catalogue's SCHEMA.md).</p>
   ) : !onShow.length ? (
     <p className="empty">Every artifact is retired. Show retired to see them.</p>
+  ) : !groups.length && filtered ? (
+    <p className="empty">
+      Nothing matches the {query.trim() ? 'search and filters' : 'filters'}.{' '}
+      <button className="btn sm" onClick={() => view.set(NO_FILTERS)}>
+        Clear filters
+      </button>
+    </p>
   ) : !groups.length ? (
     <p className="empty">Nothing matches.</p>
   ) : null

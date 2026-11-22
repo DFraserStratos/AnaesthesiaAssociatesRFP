@@ -2,9 +2,9 @@ import { Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useOpen } from '../nav.ts'
 import { isRetiredOrUnder, useCatalogue, useConfig, useIndex, useView } from '../store.ts'
-import { defaultStatus, statusClasses, statusHeading } from '../../shared/statuses.ts'
+import { defaultStatus, statusClasses, statusHeading, statusLabel } from '../../shared/statuses.ts'
 import { QUESTION_KINDS, type QuestionKind } from '../../shared/types.ts'
-import { questionFilter, shownGroups, useQuestionFilters } from '../questionWalk.ts'
+import { questionFilter, questionGroups, useQuestionFilters } from '../questionWalk.ts'
 import { KIND_LABEL, typeClass } from '../vocab.ts'
 import { Highlight, TypeIcon } from '../components/bits.tsx'
 
@@ -17,10 +17,12 @@ export function QuestionsView() {
   const filters = useQuestionFilters()
   const { owner, kind, query, showAnswered, set: setFilters } = filters
 
-  const owners = useMemo(() => [...new Set(index.questions.map((q) => q.owner).filter(Boolean))].sort(), [index])
+  // A picked owner stays listed when no question names them any more, so the control shows the filter in
+  // force and "All owners" clears it (FINDINGS R-128; accepted decision 25).
+  const owners = useMemo(() => [...new Set([...index.questions.map((q) => q.owner), owner].filter(Boolean))].sort(), [index, owner])
   const shown = index.questions.filter((q) => questionFilter(q, filters))
-  const groups = shownGroups(config, filters)
-    .map((status) => ({ status, list: shown.filter((q) => q.status === status) }))
+  const groups = questionGroups(config, index.questions, filters)
+    .map(({ status, configured }) => ({ status, configured, list: shown.filter((q) => q.status === status) }))
     .filter((g) => g.list.length)
 
   // Ask for a title first so a click never leaves a blank placeholder question on disk.
@@ -115,10 +117,10 @@ export function QuestionsView() {
           </button>
         </div>
         {groups.length === 0 && <p className="empty">Nothing matches.</p>}
-        {groups.map(({ status, list }) => (
+        {groups.map(({ status, configured, list }) => (
           <section key={status} className="group">
             <h2 className="group-head">
-              {statusHeading(config, status)} <span className="mono">{list.length}</span>
+              {configured ? statusHeading(config, status) : `${statusLabel(config, 'question', status)} · not a configured status`} <span className="mono">{list.length}</span>
             </h2>
             <div className="sheet-list">
               {list.map((q) => (

@@ -63,9 +63,14 @@ UI copy (use a middot, a comma or "to").
 **The masthead shows status only when something is wrong.** No "Live", no "Checks pass": one
 problem pill appears at the right while there is a problem, naming it ("Offline", "3 errors", "Card
 moves not saved") or, with more than one, counting them ("2 problems"). Amber while offline, since
-nothing is being saved, and offline leads its list; red otherwise. It opens one list grouped as
-Connection, Card moves and Checks. When the last problem clears, a green "All clear" shows for about
-three seconds and fades. Check notes are not problems: they never raise the pill and are read under
+nothing reaches the files (card moves are kept and sent when the server answers), and offline leads
+its list; when the server answers again it reads "Server is back", its Connection line offering
+Reload; red otherwise. It opens one list grouped as
+Connection, Card moves, This page (a part of the page that failed to show, with Try again and Close
+card, and uncaught errors, dismissable), Saved preferences (a browser preference that was reset,
+dismissable) and Checks. A part of the page that fails shows its own quiet recovery panel in its
+place too; nothing else (no toast, no banner) reports a problem. When the last problem clears, a
+green "All clear" shows for about three seconds and fades. Check notes are not problems: they never raise the pill and are read under
 Checks on Settings (and under the errors in the pill's list).
 
 ## Cards
@@ -123,7 +128,8 @@ carries no `ty-*` class, which would recolour the artifact marks inside it.
   committed yet turn the trace amber under one "Not committed yet" label. Rows are sentences
   ("Moved from <feature> to <feature>" with type-coloured item chips, status pill to pill), and
   Markdown fields are a "+2 −1 lines" disclosure over a line diff; a re-captured screenshot is a
-  "Screenshot updated" disclosure over its before and after, side by side, each opening full size.
+  "Screenshot updated" disclosure over its before and after, side by side, each opening full size
+  (one that cannot show says why, in the artifact history's words).
   The footer then holds only Back to card.
 - The question sheet lists its sources the same way, under **Sources**, in the order written (no
   Diagrams split).
@@ -143,6 +149,19 @@ carries no `ty-*` class, which would recolour the artifact marks inside it.
   lineage lit. The panel floats over the board rather than narrowing it, so opening or closing a
   card never moves the map; the board's search and lane names step right to clear it. Clicking another card, or walking with the arrow keys, swaps the panel; Esc or a
   click on empty canvas closes it. No double-click anywhere.
+- **The arrow keys walk the cards as the board draws them** while a card is open: Left and Right
+  step among cards of the same kind under the same parent (epics, an epic's features, a column's
+  stories); Up and Down run through a story's column top to bottom (in Mapped lane by lane, live
+  cards first in each, skipping a collapsed lane), Up from the top story goes to its parent, Down
+  from a feature or epic to the first card drawn under it. An epic's own stories never mix with
+  its features. Enter moves into the panel. On a control inside the board (a lane toggle or name,
+  a lane menu, Add lane, an add slot, the view bar) Enter and the arrows do that control's job, and
+  an arrow held with Alt, Shift, Ctrl or Cmd keeps the browser's own meaning.
+- **Where a card lands.** A step, an opened search hit and Show on board bring the card into view
+  right of the panel, at 90% (or the board's zoom if closer in; Show on board at 100%), in one
+  ease: nothing re-targets it. A card wider than the board (a long epic) lands with its left edge
+  and title just right of the panel. A click never zooms; it pans only when the panel covers the
+  card. The open card and its ancestors are always drawn, a retired ancestor in its retired look.
 - **Search** (Ctrl F, Cmd F or `/`) fades the board to the matches and lists them under the box,
   title matches first, each row the name with the words found, then where it sits (or, when only its
   text matched, the line it was found in). The arrow keys walk the list and the board finds each card
@@ -158,12 +177,25 @@ carries no `ty-*` class, which would recolour the artifact marks inside it.
   group order. One answered in the sheet keeps its old place while open, so Next goes to the next
   question still open.
 - Unsaved edits are never lost silently: every way out of a sheet asks, and drafts survive
-  navigation.
+  navigation. While a question sheet covers the docked panel, a way out from it goes ahead and the
+  panel keeps its draft (a question it could not show is never left waiting).
+- A file changed on disk while a sheet is being edited is taken in quietly when it touches only what
+  the user has not changed; a field changed on both sides puts **Keep mine** and **Load theirs** in a
+  banner, naming the fields. A record that vanishes with unsaved edits shows every changed field,
+  readable (cards by title, statuses by name, a cleared field as "Cleared"), asks before any way out,
+  and its edits come back with it. A sheet opened on a record not there yet says so without guessing
+  why (and names the check's error for it) and shows the record when it appears.
+- Focus: a modal sheet opened in Edit starts in its first field (the title; the answer when
+  answering), otherwise on the sheet itself, which takes it back whenever what had it goes (leaving
+  Edit); answering its question returns focus to where it was; closing gives focus back to what had it before (the
+  first sheet's opener, after stepping through siblings), or to the page. The docked panel takes no
+  focus on open.
 - The board never raises a browser dialog. A sheet asks in its own frame: it veils its content
   (`SheetConfirm`) and puts the question there, with the safe answer as the filled teal button
-  that holds focus and the consequence named on the other ("Discard changes", "Retire item"). On
-  the canvas the question is a popover under the button that raised it ("Tidy all"). Escape
-  withdraws the question either way.
+  that holds focus and the consequence named on the other ("Discard changes", "Retire item"). The
+  safe answer takes focus once, when the question appears; a file changing meanwhile moves nothing,
+  and the veiled content stays unreachable. On the canvas the question is a popover under the button
+  that raised it ("Tidy all"). Escape withdraws the question either way.
 - Navigating the canvas: two fingers on a trackpad pan it, a pinch zooms; a mouse wheel zooms (the
   board tells them apart itself: `src/board/trackpad.ts`); dragging empty canvas pans. A pinch
   never zooms the page itself, wherever it lands (masthead, panel, list views): only the board and
@@ -212,12 +244,22 @@ A two-segment switch at the head of the board's right-hand controls: **Freeform 
   keeps, Esc drops). The first lane holds stories with no lane: while it is the only lane it has no
   header, so the board reads as a plain map; once a lane is named it shows first, as
   **Unassigned** until renamed like any other. A story naming a lane the board doesn't have gets its own lane, flagged
-  "not a lane". Lane actions (rename, move, delete) sit in a quiet menu on the header; deleting asks
-  in a popover, with Keep lane as the safe, focused answer. Tidy doesn't apply and is hidden.
+  "not a lane"; one that differs from a lane only in case, or names the first lane, offers **Move
+  into** that lane in its menu. Renaming a lane or band to another lane's name (case aside) merges it
+  into that lane, after asking in a popover (no undo takes a merge back; Keep lane is focused). Lane actions (rename, move, delete) sit in a quiet menu on the header; deleting asks
+  in a popover, with Keep lane as the safe, focused answer. A collapsed lane is its header alone,
+  except that the open card is drawn by itself in the strip; collapsing is kept per browser and
+  follows a rename or delete made on the board (a lane added later starts open). Cards no epic
+  reaches (a missing or wrong-type parent, a parent cycle) stand in a column of their own past the
+  map, each followed by what hangs under it (its stories in their own lanes). Tidy doesn't apply and
+  is hidden.
 - **Drag feedback**: the dragged card lifts and carries everything under it; the other cards ease
-  aside into their new slots as you move, and a thin teal bar marks where it will land. A drop
-  nowhere valid (a feature over a lane, a story on the backbone) springs back. Click still opens;
-  motion respects reduced motion.
+  aside into their new slots as you move, and a thin teal bar marks where it will land; the lanes,
+  and the column a story is lifted from, hold their size until the drop, so dropping a card back
+  where it was changes nothing, and the lane under the pointer is the lane as drawn. A card lands
+  among cards of its own kind: a live card above the retired ones. A drop nowhere valid (a feature
+  over a lane, a story on the backbone) springs back. Click still opens; motion respects reduced
+  motion.
 - A faint plus sits at the foot of every column in every lane, stronger on hover: it makes an
   untitled story right there and opens it in Edit. The round teal plus still makes a story in
   Unassigned.
@@ -239,6 +281,11 @@ edits only their details (below), never the file, its highlights or the links to
   counts and the status pill in a fixed column on the right. Within each kind, newest first. The
   date is when the artifact was made (the meeting, the publication, the drawing), not when it was
   filed. No row expands and nothing opens beside the list.
+- **Filters** (kinds as quiet toggles with counts, then Status and Area selects; kept per browser)
+  offer what is on show, and always whatever is picked, so a saved pick can be turned off even when
+  nothing on show has it (a kind with a 0 count, an area the config no longer lists). When the
+  filters are why nothing shows, the empty state says "Nothing matches the filters." with a **Clear
+  filters** button.
 - **The artifact page** docks a panel on the left like the item sheet (resizable, width kept per
   browser): Artifacts crumb, the name, kind and status, then tabs: a stepped diagram's **Steps**
   first (below), **Highlights** (the named spots, each marked with a tiny red box; a document's own
@@ -260,7 +307,9 @@ edits only their details (below), never the file, its highlights or the links to
   kind, status (and Replaced by, when Retired), date (as written, `2026-10-01`, `2026-10` or
   `2026`, read back beside the label), author, area, sources, description. Save, Cancel, Cmd S and
   Esc, the restored draft, the on-disk conflict and the discard veil all work as they do on a
-  card. The file, its highlights and its ID are not in the form.
+  card. The file, its highlights and its ID are not in the form. If the artifact goes from disk
+  while its details have unsaved edits, the panel shows them (as a card's orphaned sheet does) and
+  asks before letting them go; either way full screen is left and the masthead comes back.
 - **The red box** is the same mark the screenshots carry (`shared/highlight.ts`): 3px `#E0243A`
   outside the padded spot, 12px radius, soft red glow. It is the only red on an artifact; hovering
   a highlight in the panel previews it as a dashed outline. Asked for (from a card, a link, a
@@ -350,7 +399,12 @@ edits only their details (below), never the file, its highlights or the links to
   line breaks don't matter.
 - **History** is the card's time column; a new version of the file is a "File updated" disclosure
   over a before and after, side by side or swiped (a teal handle over the two), or as a source diff
-  for a text file.
+  for a text file. A side that cannot show a picture says why, in the quiet grey note: "Not there
+  yet" (before) or "Removed" (after) when there is no version, an empty mermaid source included;
+  "Not kept: this version was never committed" only when the server has no such version; "Could not
+  be drawn: <why>" for a version read but not drawable (a mermaid source that does not parse, a
+  damaged PDF or image); "Could not be read: <why>" for any other failure. A card's screenshot
+  versions use the same words.
 
 ## Diff review
 
@@ -375,14 +429,19 @@ the catalogue. Laptop first: the width goes to the two columns, the controls to 
 - **Keys**: j goes up to the previous change and k down to the next (a row, or a summary line),
   ringing it, both cells of a row together; Shift J and Shift K go up and down card by card (n stays
   the board's new card); v ticks the card in view Viewed and goes to the next one not yet viewed.
-  Every move lands the target 12px under the bar, however far down the page. Not while typing, with
-  a sheet, picker, popover or dialog open, or while a new comparison is being read.
+  Every move lands the target 12px under the bar, however far down the page. One move at a time: a new
+  one replaces the last, and the reader's own wheel, touch, click or scroll key ends it, so the page
+  is never pulled back once the reader moves it; a target the page cannot bring up (near the bottom)
+  stops where the page stops. Not while typing, with a sheet, picker, popover or dialog open, or while
+  a new comparison is being read.
 - **Default**: the last commit that changed the catalogue against Uncommitted; with nothing
   uncommitted, what that commit changed, with a quiet line saying so. A pick goes in the URL. While
   To is Uncommitted the page refreshes in place as files change, and when the window regains focus.
   A new pick names its commits in the bar at once; the comparison on the page stays, dimmed and out
   of reach, under a quiet "Reading git" line until the new one arrives, then the page starts from the
-  top. The first cards draw at once and the rest fill in a few at a time, nearest the view first;
+  top. Nothing the old comparison said ("No card differs", "Nothing matches the filters", a git
+  error) shows under the new pick; only "Reading git" until it is read.
+  The first cards draw at once and the rest fill in a few at a time, nearest the view first;
   until drawn, a card is its head and a quiet space about its size, so the scrollbar holds its place.
 - **Order** follows the Mapped view: each epic, its features, each feature's stories (by lane, then
   order). Unchanged parents of changed cards are slim headings (a type-colour rule across, thicker
@@ -392,8 +451,9 @@ the catalogue. Laptop first: the width goes to the two columns, the controls to 
 - **A card** is a white sheet with its type's top rule (artifacts indigo, outstanding items amber).
   Head: type mark, title and the ID quiet in mono (a click copies the ID itself, "Copied" for a
   moment), then only marks worth noticing: Added, Removed, Moved, Minor, as squared
-  outlined tags so they never read as a status pill. Right: Whole card, Open (not for a removed one),
-  the Viewed tick. Body: a grid of rows, Before | seam | After. The before column sits a shade back
+  outlined tags so they never read as a status pill. Right: Whole card, Open (only for a record on
+  the board now: not for a removed one, nor one deleted since), the Viewed tick.
+  Body: a grid of rows, Before | seam | After. The before column sits a shade back
   (`--card-soft`), the after one full white. **The seam** is a hairline with a short band on every row
   that changed: rose over green for an edit, green for an addition, rose for a removal, so changes can
   be found by running an eye down the seam.
@@ -409,7 +469,11 @@ the catalogue. Laptop first: the width goes to the two columns, the controls to 
   links are inert until it opens, so a click anywhere on it opens it. An edited
   paragraph shows only the sentences that hold a change; the rest is a small "…" that opens the whole
   paragraph. Changed words: struck on the rose tint (before), on the green tint (after). A paragraph
-  mostly rewritten is tinted whole, both sides, rather than marked word by word. Other fields are
+  mostly rewritten is tinted whole, both sides, rather than marked word by word; length alone never
+  tints it (a one-word change in a long transcript is one row and one word). A list renumbered by an
+  insert, or with another bullet character, reads unchanged; a bullet turned into a number, or a list
+  that starts at another number, shows as an edit with the marker marked. An edited row always shows
+  its change: where no word differs (a heading's level), it is tinted whole. Other fields are
   drawn as on the sheet: lineage pills for a move, rows for related cards, artifacts and sources (the
   ones only on one side tinted; each named as it stood at that side, so a source citing an artifact
   since removed still shows its name), screenshots, highlights. Whole card turns off the previews and the
@@ -422,11 +486,16 @@ the catalogue. Laptop first: the width goes to the two columns, the controls to 
 - **Added or removed** keeps both columns: the whole card on its side, tinted, and a dashed
   placeholder ("Didn't exist yet", "Deleted") opposite that keeps pace as the page scrolls.
 - **An artifact's file** by kind: drawings and images as two pictures (each opens full size), a
-  mermaid diagram drawn from each source, Markdown paired by paragraph, a PDF by its first page
-  ("File replaced").
-- **Minor changes** (a reorder among siblings, a list reordered, spacing only) hide behind Show minor
-  changes. Status renumbering is no change at all.
-- Viewed is per browser, per comparison, and clears itself when the record changes again.
+  mermaid diagram drawn from each source (its source edited: both drawings, "Drawing changed" on the
+  seam, beside the source's line diff), Markdown paired by paragraph, a PDF by its first page
+  ("File replaced"). A file that changed format shows each side as what it is: a Markdown side
+  typeset (its opening), the other its picture.
+- **Minor changes** (a reorder among siblings, a list reordered, spacing only: a paragraph re-wrapped,
+  a list renumbered or its bullets changed, a diagram line re-spaced) hide behind Show minor changes.
+  Joining or splitting paragraphs, list items or diagram lines, a new depth or heading, is never
+  minor. Status renumbering is no change at all.
+- Viewed is per browser, per comparison, and clears itself when the record changes again. A tick in
+  one tab never undoes another tab's, and shows in the other tabs at once.
 - Outside git, the tab says there is nothing to compare and how to start.
 
 ## Settings
@@ -446,6 +515,18 @@ read alike. A legend under each table says what each role does. A new status tak
 number, fixed once saved, and its row is tinted teal until then. A status in use or holding a
 required role can't be removed. Teal for the actions (Save, Add); no crimson, no status colour
 except in the pills and swatches. Below 1000px the table stacks, one block per status.
+
+Each section saves on its own and only what changed (Save is off at rest, whatever spacing or case
+the file holds). A section changed in the file while it is being edited says so in a banner with
+**Load theirs** and **Keep mine** (as Writing voice does), and Save waits for the answer; Keep mine
+keeps every row and field the user changed and everything the file gained, and a quiet note names
+anything it had to decide. A section the board cannot read cleanly (a damaged status list, a
+components or project section with a problem) shows only a banner naming the problems and saying to
+fix `board.config.json`: no rows, no Add, no Save. It comes back as soon as the file reads cleanly. A
+status list that reads with lesser problems shows them, and Save writes it as shown. Components
+show "Used by" across cards and artifacts; once the list names one component, any in use but
+unlisted are named with their counts and an **Add them** button, and Save waits until they are
+listed.
 
 ## Before shipping a visual change
 

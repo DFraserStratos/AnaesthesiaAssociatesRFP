@@ -1,12 +1,14 @@
+import { changesOf } from './deliveries.ts'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { parseItem, serialiseItem } from '../shared/files.ts'
-import type { CatalogueEvent, Item, Rev } from '../shared/types.ts'
+import type { CatalogueChange, Item, Rev } from '../shared/types.ts'
 import { HttpError, createCatalogueApi } from '../server/catalogueApi.ts'
 import { configPath, itemPath, layoutPath, loadCatalogue, questionPath, writeItem, writeLayout, writeQuestion } from '../server/catalogueFs.ts'
 import { DEFAULT_ITEM_STATUSES, DEFAULT_QUESTION_STATUSES, type StatusDef } from '../shared/statuses.ts'
+import { CONFIG_SECTIONS, configRevs } from '../shared/config.ts'
 import type { ServerResponse } from 'node:http'
 import { execFileSync } from 'node:child_process'
 import { serveAsset, serveHistoryBlob } from '../server/cataloguePlugin.ts'
@@ -26,7 +28,7 @@ const hasGit = (() => {
 })()
 
 let root: string
-let events: CatalogueEvent[]
+let events: CatalogueChange[]
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), 'catalogue-api-'))
   events = []
@@ -39,7 +41,7 @@ beforeEach(() => {
 })
 afterEach(() => rmSync(root, { recursive: true, force: true }))
 
-const api = () => createCatalogueApi(root, (e) => events.push(e))
+const api = () => createCatalogueApi(root, (d) => events.push(...changesOf(d)))
 const call = (a: ReturnType<typeof api>, method: string, path: string, body?: unknown, headers: Record<string, string> = JSON_HEADERS) =>
   a.handle({ method, path, body, headers })
 function status(fn: () => unknown): number {
@@ -52,6 +54,17 @@ function status(fn: () => unknown): number {
   }
 }
 const recOf = (a: ReturnType<typeof api>, id: string) => a.getState().items[id]!
+/** A Settings write as the board sends it: every section with its base, read from the file as it is now. */
+const withBases = (body: Record<string, unknown>) => {
+  let raw: Record<string, unknown> | null = {}
+  try {
+    raw = existsSync(configPath(root)) ? (JSON.parse(readFileSync(configPath(root), 'utf8')) as Record<string, unknown> | null) : {}
+  } catch {
+    raw = null // an unreadable file: any base will do, the save is refused anyway
+  }
+  const revs = configRevs(raw)
+  return { ...body, bases: Object.fromEntries(CONFIG_SECTIONS.filter((k) => body[k] !== undefined).map((k) => [k, revs[k]])) }
+}
 
 describe('creating', () => {
   it('never reuses the ID of a file that fails to parse', () => {
@@ -124,7 +137,7 @@ describe('saving', () => {
     writeItem({ ...mine.data, title: 'Agent retitled' }, root) // no syncFromDisk
     let err: HttpError | undefined
     try {
-      call(a, 'PUT', '/api/items/US-01.1.2', { record: { ...mine.data, title: 'User title' }, baseRev: mine.rev })
+      call(a, 'PUT', '/api/items/US-01.1.2', { patch: { ...mine.data, title: 'User title' }, baseRev: mine.rev })
     } catch (e) {
       err = e as HttpError
     }
@@ -136,14 +149,14 @@ describe('saving', () => {
 
   it('requires baseRev', () => {
     const a = api()
-    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { record: recOf(a, 'US-01.1.2').data }))).toBe(400)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { patch: recOf(a, 'US-01.1.2').data }))).toBe(400)
   })
 
   it('writes a clean save as a one-field change', () => {
     const a = api()
     const r = recOf(a, 'US-01.1.2')
     const before = readFileSync(itemPath('US-01.1.2', root), 'utf8')
-    call(a, 'PUT', '/api/items/US-01.1.2', { record: { ...r.data, title: 'Renamed' }, baseRev: r.rev })
+    call(a, 'PUT', '/api/items/US-01.1.2', { patch: { ...r.data, title: 'Renamed' }, baseRev: r.rev })
     const after = readFileSync(itemPath('US-01.1.2', root), 'utf8')
     expect(after).toBe(before.replace('title: Title of US-01.1.2', 'title: Renamed'))
   })
@@ -151,29 +164,29 @@ describe('saving', () => {
   it('never lets `extra` override a validated key', () => {
     const a = api()
     const r = recOf(a, 'US-01.1.2')
-    call(a, 'PUT', '/api/items/US-01.1.2', { record: { ...r.data, extra: { type: 'epic', status: 'Bogus', owner: 'kept' } }, baseRev: r.rev })
+    call(a, 'PUT', '/api/items/US-01.1.2', { patch: { ...r.data, extra: { type: 'epic', status: 'Bogus', owner: 'kept' } }, baseRev: r.rev })
     const onDisk = parseItem(readFileSync(itemPath('US-01.1.2', root), 'utf8'))
     expect(onDisk.type).toBe('story')
     expect(onDisk.status).toBe('1')
     expect(onDisk.extra).toEqual({ owner: 'kept' })
   })
 
-  it('answers a malformed record with 422, not a crash', () => {
+  it('answers a malformed patch with 422, not a crash', () => {
     const a = api()
-    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { record: { id: 'US-01.1.2', type: 'story' }, baseRev: recOf(a, 'US-01.1.2').rev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { patch: { id: 'US-01.1.2', status: { not: 'a code' }, parent: 42 }, baseRev: recOf(a, 'US-01.1.2').rev }))).toBe(422)
   })
 
   it('refuses a description that would split into Notes on the next read', () => {
     const a = api()
     const r = recOf(a, 'US-01.1.1')
-    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...r.data, description: 'Intro\n\n## Notes\n\nnot notes' }, baseRev: r.rev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { patch: { ...r.data, description: 'Intro\n\n## Notes\n\nnot notes' }, baseRev: r.rev }))).toBe(422)
   })
 
   it('refuses any section that holds another section\'s heading', () => {
     const a = api()
     const r = recOf(a, 'US-01.1.1')
-    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...r.data, acceptance: '- ok\n## Technical discussion' }, baseRev: r.rev }))).toBe(422)
-    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...r.data, notes: '## Acceptance criteria' }, baseRev: r.rev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { patch: { ...r.data, acceptance: '- ok\n## Technical discussion' }, baseRev: r.rev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { patch: { ...r.data, notes: '## Acceptance criteria' }, baseRev: r.rev }))).toBe(422)
   })
 
   it('refuses to save a file whose id does not match its name', () => {
@@ -255,11 +268,12 @@ describe('batch moves', () => {
 })
 
 describe('lanes', () => {
+  // Every lane-list write carries the list's rev it started from (base-less lane writes retired in B11).
   it('saves the lane list beside positions, and re-checks swimlanes against it', () => {
     const a = api()
-    call(a, 'PUT', '/api/items/US-01.1.1', { record: { ...recOf(a, 'US-01.1.1').data, swimlane: 'MVP' }, baseRev: recOf(a, 'US-01.1.1').rev })
+    call(a, 'PUT', '/api/items/US-01.1.1', { patch: { ...recOf(a, 'US-01.1.1').data, swimlane: 'MVP' }, baseRev: recOf(a, 'US-01.1.1').rev })
     expect(a.getState().issues.some((i) => i.message.startsWith('swimlane "MVP" is not a lane'))).toBe(true)
-    call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'Phase 2'] })
+    call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'Phase 2'], lanesRev: a.getState().layout.lanesRev })
     expect(JSON.parse(readFileSync(layoutPath(root), 'utf8'))).toEqual({ positions: {}, lanes: ['MVP', 'Phase 2'] })
     expect(a.getState().issues.some((i) => i.message.includes('swimlane'))).toBe(false)
     expect(events.some((e) => e.kind === 'layout' && e.layout.lanes.length === 2)).toBe(true)
@@ -270,23 +284,23 @@ describe('lanes', () => {
 
   it('refuses a bad lane list', () => {
     const a = api()
-    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'mvp'] }))).toBe(422)
-    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: ['Unassigned'] }))).toBe(422)
-    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: [''] }))).toBe(422)
-    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: 'MVP' }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'mvp'], lanesRev: a.getState().layout.lanesRev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: ['Unassigned'], lanesRev: a.getState().layout.lanesRev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: [''], lanesRev: a.getState().layout.lanesRev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/layout', { lanes: 'MVP', lanesRev: a.getState().layout.lanesRev }))).toBe(422)
   })
 
   it('renames the first lane, keeps the name clear of the others, and resets it with null', () => {
     const a = api()
-    call(a, 'PUT', '/api/layout', { lanes: ['MVP'] })
-    call(a, 'PUT', '/api/layout', { firstLane: 'Backlog' })
+    call(a, 'PUT', '/api/layout', { lanes: ['MVP'], lanesRev: a.getState().layout.lanesRev })
+    call(a, 'PUT', '/api/layout', { firstLane: 'Backlog', lanesRev: a.getState().layout.lanesRev })
     expect(loadCatalogue(root).layout).toMatchObject({ firstLane: 'Backlog', lanes: ['MVP'] })
-    expect(status(() => call(a, 'PUT', '/api/layout', { firstLane: 'mvp' }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/layout', { firstLane: 'mvp', lanesRev: a.getState().layout.lanesRev }))).toBe(422)
     // Unassigned is free once the first lane has another name.
-    call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'Unassigned'] })
-    expect(status(() => call(a, 'PUT', '/api/layout', { firstLane: null }))).toBe(422)
-    call(a, 'PUT', '/api/layout', { lanes: ['MVP'] })
-    call(a, 'PUT', '/api/layout', { firstLane: null })
+    call(a, 'PUT', '/api/layout', { lanes: ['MVP', 'Unassigned'], lanesRev: a.getState().layout.lanesRev })
+    expect(status(() => call(a, 'PUT', '/api/layout', { firstLane: null, lanesRev: a.getState().layout.lanesRev }))).toBe(422)
+    call(a, 'PUT', '/api/layout', { lanes: ['MVP'], lanesRev: a.getState().layout.lanesRev })
+    call(a, 'PUT', '/api/layout', { firstLane: null, lanesRev: a.getState().layout.lanesRev })
     expect(loadCatalogue(root).layout.firstLane).toBeUndefined()
   })
 })
@@ -331,7 +345,7 @@ describe('refusals the board cannot answer with "Keep mine"', () => {
     const a = api()
     const r = recOf(a, 'US-01.1.2')
     writeFileSync(itemPath('US-01.1.2', root), '---\nid: US-01.1.2\n<<<<<<< HEAD\n')
-    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { record: r.data, baseRev: r.rev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { patch: r.data, baseRev: r.rev }))).toBe(422)
   })
 
   it('answers a save to a file holding another id with 422', () => {
@@ -339,7 +353,7 @@ describe('refusals the board cannot answer with "Keep mine"', () => {
     const r = recOf(a, 'US-01.1.2')
     writeItem({ ...r.data, id: 'US-01.1.9' }, root)
     writeFileSync(itemPath('US-01.1.2', root), readFileSync(itemPath('US-01.1.9', root), 'utf8'))
-    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { record: r.data, baseRev: r.rev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.2', { patch: r.data, baseRev: r.rev }))).toBe(422)
   })
 })
 
@@ -454,7 +468,7 @@ describe('deleting an item', () => {
 })
 
 describe('the status settings', () => {
-  const put = (a: ReturnType<typeof api>, body: unknown) => call(a, 'PUT', '/api/config', body)
+  const put = (a: ReturnType<typeof api>, body: Record<string, unknown>) => call(a, 'PUT', '/api/config', withBases(body))
   const renamed: StatusDef[] = DEFAULT_ITEM_STATUSES.map((d) => (d.code === '1' ? { ...d, label: 'Draft', help: 'Not agreed yet' } : d))
 
   it('rewrites only the status lists, keeping the rest of the file, and tells the clients', () => {
@@ -505,6 +519,113 @@ describe('the status settings', () => {
   })
 })
 
+describe('status identity on the server (R-01, R-68)', () => {
+  /** This repo's numbering: 4 Agreed, 5 Confirmed, 6 Retired (the defaults have 5 Retired). */
+  const SIX = [
+    { code: 1, label: 'Proposed', help: 'Needs agreement', tone: 'neutral', role: 'default' },
+    { code: 2, label: 'Open', help: 'Waiting', tone: 'amber', role: 'waiting' },
+    { code: 3, label: 'Verify', help: 'Check it', tone: 'olive', settle: true },
+    { code: 4, label: 'Agreed', help: 'Agreed', tone: 'green', settle: true },
+    { code: 5, label: 'Confirmed', help: 'Signed off', tone: 'forest', settle: true },
+    { code: 6, label: 'Retired', help: 'Gone', tone: 'hatched', role: 'retired' },
+  ]
+  const writeConfig = (statuses: unknown, extra: Record<string, unknown> = {}) => writeFileSync(configPath(root), JSON.stringify({ project: { name: 'Acme' }, statuses, ...extra }, null, 2))
+  const put = (a: ReturnType<typeof api>, body: Record<string, unknown>) => call(a, 'PUT', '/api/config', withBases(body))
+  const codesOnDisk = () => (JSON.parse(readFileSync(configPath(root), 'utf8')).statuses as { code: number; label: string }[]).map((d) => `${d.code} ${d.label}`)
+  beforeEach(() => {
+    writeItem(item({ id: 'US-01.1.1', parent: 'FT-01.1', order: 1, status: '5' }), root)
+    writeItem(item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2, status: '6' }), root)
+  })
+
+  it('keeps the project\'s codes when a list with a bad tone is reworded and saved (the FINDINGS scenario)', () => {
+    writeConfig(SIX.map((d) => (d.code === 4 ? { ...d, tone: 'teal' } : d)))
+    const a = api()
+    const shown = a.getState().config.statuses
+    put(a, { statuses: shown.map((d) => (d.code === '1' ? { ...d, help: 'Reworded' } : d)) })
+    expect(codesOnDisk()).toEqual(['1 Proposed', '2 Open', '3 Verify', '4 Agreed', '5 Confirmed', '6 Retired'])
+    expect(a.getState().config.statusState.statuses.state).toBe('healthy')
+  })
+
+  it('refuses a status save while the list on disk is damaged, leaving the file byte for byte', () => {
+    const damaged: Record<string, unknown> = {
+      'a bad code': SIX.map((d) => (d.code === 3 ? { ...d, code: 'x' } : d)),
+      'a duplicated code': [...SIX, { ...SIX[1] }],
+      'two retired roles': SIX.map((d) => (d.code === 5 ? { ...d, role: 'retired' } : d)),
+      'not a list': { Proposed: 1 },
+    }
+    for (const [name, statuses] of Object.entries(damaged)) {
+      writeConfig(statuses)
+      const before = readFileSync(configPath(root), 'utf8')
+      const a = api()
+      expect(a.getState().config.statusState.statuses.state, name).toBe('damaged')
+      expect(status(() => put(a, { statuses: SIX })), name).toBe(422)
+      expect(readFileSync(configPath(root), 'utf8'), name).toBe(before)
+    }
+    for (const text of ['{ "statuses": [ ,', 'null', '[]']) {
+      writeFileSync(configPath(root), text)
+      expect(status(() => put(api(), { statuses: SIX })), text).toBe(422)
+      expect(readFileSync(configPath(root), 'utf8'), text).toBe(text)
+    }
+  })
+
+  it('judges a status in use against the list on disk, not the one in memory', () => {
+    const a = api()
+    // The server read no config (built-in 1 to 5); the file on disk now defines 6, which a card holds.
+    writeConfig(SIX)
+    expect(status(() => put(a, { statuses: SIX.filter((d) => d.code !== 6).map((d) => (d.code === 5 ? { ...d, settle: undefined, role: 'retired' } : d)) }))).toBe(422)
+    expect(codesOnDisk()).toHaveLength(6)
+    // A card holding a code the list never defined does not block an unrelated save.
+    writeItem(item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2, status: '9' }), root)
+    const b = api()
+    expect(status(() => put(b, { statuses: SIX.map((d) => (d.code === 2 ? { ...d, label: 'Waiting' } : d)) }))).toBe(200)
+  })
+
+  it('tells the client how each list read, in the snapshot and the config event', () => {
+    writeConfig(SIX.map((d) => (d.code === 4 ? { ...d, tone: 'teal' } : d)))
+    const a = api()
+    const snap = call(a, 'GET', '/api/catalogue') as { config: { statusState: Record<string, { state: string; problems: string[] }> } }
+    expect(snap.config.statusState.statuses!.state).toBe('degraded')
+    expect(snap.config.statusState.statuses!.problems[0]).toMatch(/"4" tone/)
+    expect(snap.config.statusState.questionStatuses!.state).toBe('healthy')
+    put(a, { statuses: SIX })
+    const ev = events.findLast((e) => e.kind === 'config') as { config: { statusState: Record<string, { state: string }> } }
+    expect(ev.config.statusState.statuses!.state).toBe('healthy')
+    writeConfig({ Proposed: 1 })
+    expect((call(api(), 'GET', '/api/catalogue') as typeof snap).config.statusState.statuses!.state).toBe('damaged')
+  })
+
+  it('records a removed status and never hands its code out again', () => {
+    writeConfig([...SIX, { code: 7, label: 'On hold', help: '', tone: 'sand' }])
+    const a = api()
+    put(a, { statuses: SIX })
+    const file = JSON.parse(readFileSync(configPath(root), 'utf8'))
+    expect(file.removedStatuses).toEqual({ statuses: [{ code: 7, label: 'On hold' }] })
+    expect(file.project).toEqual({ name: 'Acme' })
+    expect(status(() => put(a, { statuses: [...SIX, { code: 7, label: 'Deferred', help: '', tone: 'sand' }] }))).toBe(422)
+    expect(status(() => put(a, { statuses: [...SIX, { code: 8, label: 'Deferred', help: '', tone: 'sand' }] }))).toBe(200)
+    expect(a.getState().config.statusState.statuses.highWater).toBe(8)
+  })
+
+  it('skips codes used only in a recode or only in a record', () => {
+    writeConfig(SIX)
+    writeFileSync(join(root, 'status-recodes.json'), JSON.stringify([{ date: '2026-11-01', items: { Old: '12' }, questions: {} }]))
+    writeItem(item({ id: 'US-01.1.2', parent: 'FT-01.1', order: 2, status: '20' }), root)
+    const a = api()
+    expect(status(() => put(a, { statuses: [...SIX, { code: 10, label: 'New', help: '', tone: 'sand' }] }))).toBe(422)
+    expect(status(() => put(a, { statuses: [...SIX, { code: 15, label: 'New', help: '', tone: 'sand' }] }))).toBe(422)
+    expect(status(() => put(a, { statuses: [...SIX, { code: 21, label: 'New', help: '', tone: 'sand' }] }))).toBe(200)
+  })
+
+  it('refuses a new card while the default status is unresolved, and a status the project\'s list lacks', () => {
+    writeConfig(SIX.map((d) => (d.code === 3 ? { ...d, role: 'default' } : d)))
+    const a = api()
+    expect(status(() => call(a, 'POST', '/api/items', { type: 'story', parent: 'FT-01.1', title: 'New' }))).toBe(422)
+    const r = recOf(a, 'US-01.1.1')
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { patch: { ...r.data, status: '9' }, baseRev: r.rev }))).toBe(422)
+    expect(status(() => call(a, 'PUT', '/api/items/US-01.1.1', { patch: { ...r.data, status: '4' }, baseRev: r.rev }))).toBe(200)
+  })
+})
+
 describe('diff review routes', () => {
   it('needs both refs, and reads a folder outside git as nothing to compare', async () => {
     const a = api()
@@ -537,11 +658,11 @@ describe('diff review routes', () => {
     })
 
     it('a write through the API is seen at once, even where comparisons with the disk are kept', async () => {
-      const a = createCatalogueApi(root, (e) => events.push(e), { watched: true })
+      const a = createCatalogueApi(root, (d) => events.push(...changesOf(d)), { watched: true })
       const get = () => a.handle({ method: 'GET', path: '/api/diff', query: { from: 'HEAD', to: 'worktree' } }) as Promise<DiffResponse>
       expect((await get()).records).toEqual([])
       const r = recOf(a, 'US-01.1.2')
-      call(a, 'PUT', '/api/items/US-01.1.2', { record: { ...r.data, title: 'Renamed' }, baseRev: r.rev })
+      call(a, 'PUT', '/api/items/US-01.1.2', { patch: { ...r.data, title: 'Renamed' }, baseRev: r.rev })
       expect((await get()).records.map((x) => x.id)).toEqual(['US-01.1.2'])
       // A change on disk is kept until the watcher says so.
       writeItem(item({ id: 'EP-01', type: 'epic', title: 'Edited elsewhere' }), root)

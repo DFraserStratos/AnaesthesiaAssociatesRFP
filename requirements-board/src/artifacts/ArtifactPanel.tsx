@@ -7,7 +7,7 @@
  * area, sources, description) and nothing else: agents write the file, its highlights and links.
  */
 import { ChevronLeft, Link2, Pencil } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { isArtifactDate } from '../../shared/check.ts'
 import { tidyText } from '../../shared/files.ts'
@@ -18,9 +18,10 @@ import { autoSpots, linkCount, namedSpots, spotName, stepSpots, useArtifactIndex
 import { ArtifactRowsSection } from '../components/ArtifactRows.tsx'
 import { ArtifactIcon, Glyph, ItemName, StatusLabel } from '../components/bits.tsx'
 import { EditActions, EditBanners, discardConfirm } from '../components/EditChrome.tsx'
+import type { SheetConfirm } from '../components/Sheet.tsx'
 import { MarkdownTextarea } from '../components/MarkdownTextarea.tsx'
 import { Prose } from '../components/Prose.tsx'
-import { useEditableRecord } from '../components/useEditableRecord.ts'
+import { useEditableRecord, type EditableRecord } from '../components/useEditableRecord.ts'
 import { artifactUrl, useOpen } from '../nav.ts'
 import { sourceRow, useSourceIndex } from '../sourceRows.ts'
 import { useCatalogue, useComponents, useConfig, useView } from '../store.ts'
@@ -50,7 +51,7 @@ const normalise = (a: Artifact): Artifact => ({
 export function ArtifactPanel({ rec, spot, onSpot, onPreview }: Props) {
   const saveArtifact = useCatalogue((s) => s.saveArtifact)
   const adoptArtifact = useCatalogue((s) => s.adoptArtifact)
-  const ed = useEditableRecord<Artifact>({ key: `artifact:${rec.data.id}`, rec, save: saveArtifact, adopt: (r) => adoptArtifact(r as ArtifactRec), normalise })
+  const ed = useEditableRecord<Artifact>({ key: `artifact:${rec.data.id}`, kind: 'artifact', rec, save: (change) => saveArtifact(rec.data.id, change), adopt: (r) => adoptArtifact(r as ArtifactRec), normalise })
   const a = rec.data
   const ix = useArtifactIndex()
   const navigate = useNavigate()
@@ -66,25 +67,7 @@ export function ArtifactPanel({ rec, spot, onSpot, onPreview }: Props) {
   const open = useOpen()
   const confirm = discardConfirm(ed, a.title)
 
-  // The panel is no sheet, so it listens itself: Cmd S saves, Esc cancels the edit or answers the veil.
-  const keys = useRef({ ed, confirm })
-  keys.current = { ed, confirm }
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const { ed, confirm } = keys.current
-      if (document.querySelector('.scrim')) return // a sheet open over the page keeps its own keys
-      if (confirm) {
-        if (e.key === 'Escape') {
-          e.preventDefault()
-          confirm.onCancel()
-        }
-        return
-      }
-      if (ed.editing) ed.onKey(e)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  usePanelKeys(ed, confirm)
 
   const tabs: [PanelTab, string, number | null][] = [
     ...(stepped.length ? [['steps', 'Steps', stepped.length] as [PanelTab, string, number]] : []),
@@ -131,7 +114,7 @@ export function ArtifactPanel({ rec, spot, onSpot, onPreview }: Props) {
           </div>
         )}
       </header>
-      <EditBanners ed={ed} noun="artifact" />
+      <EditBanners ed={ed} noun="artifact" kind="artifact" />
       {ed.editing && ed.draft ? (
         <div className="artifact-panel-body">
           <DetailsForm draft={ed.draft} set={(patch) => ed.setDraft((d) => (d ? { ...d, ...patch } : d))} others={ix.list.filter((r) => r.data.id !== a.id)} />
@@ -162,15 +145,59 @@ export function ArtifactPanel({ rec, spot, onSpot, onPreview }: Props) {
   )
 }
 
+/** The panel is no sheet, so it listens itself: Cmd S saves, Esc cancels the edit or answers the veil. */
+export function usePanelKeys<T extends object>(ed: EditableRecord<T>, confirm: SheetConfirm | null) {
+  const keys = useRef({ ed, confirm })
+  keys.current = { ed, confirm }
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const { ed, confirm } = keys.current
+      if (document.querySelector('.scrim')) return // a sheet open over the page keeps its own keys
+      if (confirm) {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          confirm.onCancel()
+        }
+        return
+      }
+      if (ed.editing) ed.onKey(e)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+}
+
 /** The panel's "Discard your changes?", over its own content, as a sheet asks. */
-function PanelVeil({ confirm }: { confirm: NonNullable<ReturnType<typeof discardConfirm>> }) {
+export function PanelVeil({ confirm }: { confirm: SheetConfirm }) {
   const keep = useRef<HTMLButtonElement>(null)
-  useEffect(() => keep.current?.focus({ preventScroll: true }), [])
+  const veil = useRef<HTMLDivElement>(null)
+  const covered = useRef<HTMLElement[]>([])
+  // The safe answer takes the focus once, when the question appears; answered, focus goes back where it
+  // was (unless the user put it somewhere else meanwhile). What the veil covers is unreachable meanwhile.
+  const from = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    // Kept in a ref: StrictMode's second run finds focus already on the question.
+    const active = document.activeElement as HTMLElement | null
+    if (!active?.closest('.sheet-veil')) from.current = active
+    const before = from.current
+    keep.current?.focus({ preventScroll: true })
+    return () => {
+      for (const el of covered.current) el.inert = false
+      const now = document.activeElement
+      if ((!now || now === document.body || !now.isConnected) && before?.isConnected) before.focus({ preventScroll: true })
+    }
+  }, [])
+  // Checked on every render, as content can appear under the veil (a banner when the file changes).
+  useEffect(() => {
+    covered.current = [...(veil.current?.parentElement?.children ?? [])].filter((el) => el !== veil.current) as HTMLElement[]
+    for (const el of covered.current) el.inert = true
+  })
+  const bodyId = useId()
   return (
-    <div className="sheet-veil" role="alertdialog" aria-label={confirm.title}>
+    <div ref={veil} className="sheet-veil" role="alertdialog" aria-label={confirm.title} aria-describedby={bodyId}>
       <div className="veil-ask">
         <h3>{confirm.title}</h3>
-        <p>{confirm.body}</p>
+        <p id={bodyId}>{confirm.body}</p>
         <div className="veil-actions">
           <button ref={keep} className="btn primary" onClick={confirm.onCancel}>
             {confirm.cancelLabel}

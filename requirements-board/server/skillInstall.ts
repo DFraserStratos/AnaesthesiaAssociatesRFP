@@ -1,29 +1,51 @@
 /**
  * Expose the board's agent skills and workflows to Claude Code, in `<repo>/.claude/skills/` (a
  * folder per skill) and `<repo>/.claude/workflows/`, in one of two ways:
- *   - `copy` (the default, and what a shared kit uses): real files, which survive Windows, zips and
+ *   - `copy` (what a fresh repo and a shared kit get): real files, which survive Windows, zips and
  *     cloud drives. Each copied SKILL.md says where its source is; `.claude/requirements-board.json`
  *     lists what was installed, so a later run refreshes exactly those;
- *   - `link`: a real folder per skill holding a relative symlink per file (a symlinked skill folder
- *     still loads, but is left out of the `/` menu), so edits in the board show at once.
- * Skills a repo already has are left alone: only what the manifest lists, or links into the board,
- * are ever replaced, so the board's skills merge with any others.
+ *   - `link`: a real folder per skill holding a relative symlink per top-level entry (file or folder;
+ *     a symlinked skill folder still loads, but is left out of the `/` menu), so edits in the board
+ *     show at once. A link run keeps no list: its links say where they point.
+ * With no mode given, an install keeps the mode already in use (the list means copy, links into the
+ * board mean link), and a repo with neither gets copies.
+ *
+ * After a run, `.claude/` holds exactly the board's current skills and workflows: one the board no
+ * longer has, which an earlier run installed (listed, or a link into the board's `agent/`, dangling or
+ * not), is removed. Skills a repo already has are left alone: only what the list names, or what links
+ * into the board, is ever replaced or removed, so the board's skills merge with any others. Junk
+ * (`server/junk.ts`: dotfiles such as `.DS_Store`, `__pycache__`) is never installed and never
+ * decides who owns a folder.
  */
 import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join, relative, resolve, sep } from 'node:path'
+import { hasJunk, isJunk } from './junk.ts'
 
 export type InstallMode = 'copy' | 'link'
 
 export interface LinkReport {
+  mode: InstallMode
   linked: string[]
+  removed: string[]
   skipped: string[]
 }
 
 const MANIFEST = join('.claude', 'requirements-board.json')
 
+/** The mode `.claude/` is in for this board: copy (a list), link (links into the board), or null. */
+export function installMode(repo: string, board: string): InstallMode | null {
+  if (readManifest(repo).length) return 'copy'
+  const agentDir = join(repo, board, 'agent')
+  const skillsDir = join(repo, '.claude', 'skills')
+  const workflowsDir = join(repo, '.claude', 'workflows')
+  const entries = [...list(skillsDir).map((n) => join(skillsDir, n)), ...list(workflowsDir).map((n) => join(workflowsDir, n))]
+  return entries.some((abs) => linksIntoBoard(abs, agentDir) || isBoardLinkFolder(abs, agentDir)) ? 'link' : null
+}
+
 /** `board` is the board's folder name inside `repo` (e.g. `requirements-board`). */
-export function linkSkills(repo: string, board: string, mode: InstallMode = 'copy'): LinkReport {
-  const report: LinkReport = { linked: [], skipped: [] }
+export function linkSkills(repo: string, board: string, mode?: InstallMode): LinkReport {
+  const use: InstallMode = mode ?? installMode(repo, board) ?? 'copy'
+  const report: LinkReport = { mode: use, linked: [], removed: [], skipped: [] }
   const agent = join(repo, board, 'agent')
   const skillsDir = join(repo, '.claude', 'skills')
   const workflowsDir = join(repo, '.claude', 'workflows')
@@ -31,11 +53,8 @@ export function linkSkills(repo: string, board: string, mode: InstallMode = 'cop
   mkdirSync(workflowsDir, { recursive: true })
   const installed = new Set(readManifest(repo))
   const next: string[] = []
-  /** Ours to replace: installed by an earlier run, or a link into the board. */
-  const ours = (rel: string, abs: string) =>
-    installed.has(rel) ||
-    (isLink(abs) && readlinkSync(abs).includes(`${board}/agent/`)) ||
-    (isDir(abs) && readdirSync(abs).length > 0 && readdirSync(abs).every((f) => isLink(join(abs, f)) && readlinkSync(join(abs, f)).includes(`${board}/agent/`)))
+  /** Ours to replace or remove: installed by an earlier run, or a link (or folder of links) into the board. */
+  const ours = (rel: string, abs: string) => installed.has(rel) || linksIntoBoard(abs, agent) || isBoardLinkFolder(abs, agent)
   const clear = (rel: string, abs: string) => {
     if (!existsSync(abs) && !isLink(abs)) return true
     if (!ours(rel, abs)) {
@@ -46,16 +65,17 @@ export function linkSkills(repo: string, board: string, mode: InstallMode = 'cop
     return true
   }
 
-  for (const skill of readdirSync(join(agent, 'skills')).filter((s) => !s.startsWith('.'))) {
+  const skills = list(join(agent, 'skills')).filter((s) => isDir(join(agent, 'skills', s)))
+  for (const skill of skills) {
     const rel = `.claude/skills/${skill}`
     const into = join(skillsDir, skill)
     if (!clear(rel, into)) continue
     const from = join(agent, 'skills', skill)
-    if (mode === 'link') {
+    if (use === 'link') {
       mkdirSync(into)
-      for (const f of readdirSync(from).filter((f) => !f.startsWith('.'))) symlinkSync(`../../../${board}/agent/skills/${skill}/${f}`, join(into, f))
+      for (const f of list(from)) symlinkSync(`../../../${board}/agent/skills/${skill}/${f}`, join(into, f))
     } else {
-      cpSync(from, into, { recursive: true, filter: (src) => !src.endsWith('.DS_Store') })
+      cpSync(from, into, { recursive: true, filter: (src) => !hasJunk(relative(from, src)) })
       const md = join(into, 'SKILL.md')
       if (existsSync(md)) writeFileSync(md, withCopyNote(readFileSync(md, 'utf8'), skill, board))
       next.push(rel)
@@ -63,16 +83,29 @@ export function linkSkills(repo: string, board: string, mode: InstallMode = 'cop
     report.linked.push(rel)
   }
 
-  for (const wf of readdirSync(join(agent, 'workflows')).filter((f) => f.endsWith('.js'))) {
+  const workflows = list(join(agent, 'workflows')).filter((f) => f.endsWith('.js'))
+  for (const wf of workflows) {
     const rel = `.claude/workflows/${wf}`
     const at = join(workflowsDir, wf)
     if (!clear(rel, at)) continue
-    if (mode === 'link') symlinkSync(`../../${board}/agent/workflows/${wf}`, at)
+    if (use === 'link') symlinkSync(`../../${board}/agent/workflows/${wf}`, at)
     else {
       cpSync(join(agent, 'workflows', wf), at)
       next.push(rel)
     }
     report.linked.push(rel)
+  }
+
+  // What an earlier run installed for a skill or workflow the board no longer has.
+  const current = new Set(report.linked.concat(report.skipped.map((s) => s.split(' ')[0]!)))
+  for (const [dir, prefix] of [[skillsDir, '.claude/skills/'], [workflowsDir, '.claude/workflows/']] as const) {
+    for (const name of readdirSync(dir)) {
+      const rel = prefix + name
+      const abs = join(dir, name)
+      if (current.has(rel) || isJunk(name) || !ours(rel, abs)) continue
+      rmSync(abs, { recursive: true, force: true })
+      report.removed.push(rel)
+    }
   }
 
   // Remember what a copy run installed; a link run needs no list (its links say where they point).
@@ -97,66 +130,30 @@ function withCopyNote(text: string, skill: string, board: string) {
   return text.slice(0, at) + note + text.slice(at)
 }
 
-/**
- * How each of the board's skills and workflows stands in `<repo>/.claude/`: `current` (linked, or a
- * copy that matches the source), `outdated` (an older copy), `missing`, or `foreign` (a skill of the
- * same name that the board did not install, which an install leaves alone).
- */
-export type InstallState = 'current' | 'outdated' | 'missing' | 'foreign'
-
-export interface InstallStatus {
-  mode: InstallMode | null
-  skills: { name: string; state: InstallState }[]
-  workflows: { name: string; state: InstallState }[]
-}
-
-export function installStatus(repo: string, board: string): InstallStatus {
-  const agent = join(repo, board, 'agent')
-  const installed = new Set(readManifest(repo))
-  let mode: InstallMode | null = null
-  const stateOf = (rel: string, abs: string, source: string, expect: (f: string, text: Buffer) => Buffer | string) => {
-    if (!existsSync(abs) && !isLink(abs)) return 'missing'
-    const linked = isLink(abs) ? readlinkSync(abs).includes(`${board}/agent/`) : isDir(abs) && readdirSync(abs).length > 0 && readdirSync(abs).every((f) => isLink(join(abs, f)) && readlinkSync(join(abs, f)).includes(`${board}/agent/`))
-    if (linked) {
-      mode = 'link'
-      return 'current'
-    }
-    if (!installed.has(rel)) return 'foreign'
-    mode = 'copy'
-    for (const f of filesUnder(source)) {
-      const copy = join(abs, f)
-      if (!existsSync(copy)) return 'outdated'
-      const want = expect(f, readFileSync(join(source, f)))
-      if (!readFileSync(copy).equals(Buffer.isBuffer(want) ? want : Buffer.from(want))) return 'outdated'
-    }
-    return 'current'
+/** The names in `dir` that are not junk; none when it does not exist. */
+function list(dir: string): string[] {
+  try {
+    return readdirSync(dir).filter((f) => !isJunk(f))
+  } catch {
+    return []
   }
-  const skills = readdirSync(join(agent, 'skills'))
-    .filter((s) => !s.startsWith('.'))
-    .map((name) => ({
-      name,
-      state: stateOf(`.claude/skills/${name}`, join(repo, '.claude', 'skills', name), join(agent, 'skills', name), (f, b) => (f === 'SKILL.md' ? withCopyNote(b.toString('utf8'), name, board) : b)) as InstallState,
-    }))
-  const workflows = readdirSync(join(agent, 'workflows'))
-    .filter((f) => f.endsWith('.js'))
-    .map((name) => {
-      const abs = join(repo, '.claude', 'workflows', name)
-      const src = join(agent, 'workflows', name)
-      let state: InstallState
-      if (!existsSync(abs) && !isLink(abs)) state = 'missing'
-      else if (isLink(abs)) state = readlinkSync(abs).includes(`${board}/agent/`) ? 'current' : 'foreign'
-      else if (!installed.has(`.claude/workflows/${name}`)) state = 'foreign'
-      else state = readFileSync(abs).equals(readFileSync(src)) ? 'current' : 'outdated'
-      return { name, state }
-    })
-  return { mode, skills, workflows }
 }
 
-/** Every file under `dir`, relative, skipping dotfiles. */
-function filesUnder(dir: string, base = ''): string[] {
-  return readdirSync(join(dir, base), { withFileTypes: true })
-    .filter((d) => !d.name.startsWith('.'))
-    .flatMap((d) => (d.isDirectory() ? filesUnder(dir, join(base, d.name)) : d.isFile() ? [join(base, d.name)] : []))
+/**
+ * A symlink whose target, resolved from the link's own folder, lies in this board's `agent/` folder
+ * (whether or not the target still exists). A link to another copy of a board elsewhere is not ours.
+ */
+function linksIntoBoard(abs: string, agentDir: string) {
+  if (!isLink(abs)) return false
+  const target = resolve(dirname(abs), readlinkSync(abs))
+  return target.startsWith(resolve(agentDir) + sep)
+}
+
+/** A real folder whose entries, junk aside, are all links into the board (a link-mode skill). */
+function isBoardLinkFolder(abs: string, agentDir: string) {
+  if (!isDir(abs)) return false
+  const entries = list(abs)
+  return entries.length > 0 && entries.every((f) => linksIntoBoard(join(abs, f), agentDir))
 }
 
 function isLink(p: string) {

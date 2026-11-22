@@ -13,9 +13,15 @@ import '@xyflow/react/dist/base.css'
 import './styles.css'
 import { App } from './App.tsx'
 import { blockPagePinch } from './board/trackpad.ts'
+import { watchPageErrors } from './clientProblems.ts'
 
 // The page never pinch-zooms: only the board zooms (see trackpad.ts).
 blockPagePinch(window)
+
+// Uncaught errors from clicks and promises go to the problem list (accepted decision 17), besides the
+// console. A render crash a RegionBoundary caught is listed by the boundary, so it is skipped here:
+// React in development reports it to this handler first, so wait a moment for the boundary to mark it.
+watchPageErrors(window)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

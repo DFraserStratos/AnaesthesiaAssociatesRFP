@@ -3,6 +3,7 @@
  * (`diffItems`), a line diff for its Markdown fields (`lineDiff`), and the timeline the sheet
  * shows (`buildTimeline`), merged from the dev server's journal and the file's git commits.
  */
+import { sameBlocks } from './proseDiff.ts'
 import { lcsPairs, squashSpace } from './textCompare.ts'
 import type { Artifact, Item, Question } from './types.ts'
 
@@ -31,16 +32,22 @@ export interface FieldChange {
 /** Who made a change: the board's own API, or someone else's edit to the file (an agent, an editor, git). */
 export type HistorySource = 'board' | 'disk'
 
-/** One line of the server's per-card journal. */
+/**
+ * One line of the server's per-card journal. `seen` marks when the journal first saw a card it had no
+ * record of (at a start), with no changes: from then on the journal has the detail (FINDINGS R-87). It
+ * is never shown, and a board from before it ignores it (a line with no changes that is not `created`).
+ */
 export interface JournalEntry {
   at: string
   source: HistorySource
-  kind: 'created' | 'changed' | 'position'
+  kind: 'created' | 'changed' | 'position' | 'seen'
   /** The file's rev after the change (not for `position`). */
   rev?: string
   changes: FieldChange[]
   /** Changed on disk while the board was not running: noticed at the next start. */
   offline?: true
+  /** On a `created` entry: the record as it began, so the timeline can tell a new card reusing the ID from a restore. */
+  item?: Item
 }
 
 export interface CommitInfo {
@@ -50,10 +57,20 @@ export interface CommitInfo {
   subject: string
 }
 
-/** One version of a record's file in git (newest first). `item` is null where the file did not parse. */
+/**
+ * One version of a record's file in git (newest first), along HEAD's first parents: each version is
+ * the file as that commit left it, against its first parent (a merge is listed once, as the merge).
+ * `item` is null where the file did not parse, or where the commit deleted it (`deleted`).
+ */
 export interface GitVersion<T = Item> {
   commit: CommitInfo
   item: T | null
+  /**
+   * The deletion bound: this commit deleted the file (a committed deletion on HEAD's first parents).
+   * Versions after it in the list (older) are the path's earlier life: a record deleted and later
+   * added again at the same path, either restored (the same record) or a new one reusing the ID.
+   */
+  deleted?: true
 }
 
 export interface GitFileHistory<T = Item> {
@@ -70,6 +87,8 @@ export interface GitFileHistory<T = Item> {
   screenshots?: ScreenshotCommit[]
   /** A file under the card's `assets/<ID>/` differs from HEAD. */
   screenshotsDirty?: boolean
+  /** Deletion bounds of the card's screenshot files: the commit that deleted each (newest first). */
+  screenshotsEnded?: { src: string; commit: string }[]
 }
 
 export interface ScreenshotCommit {
@@ -82,7 +101,7 @@ export type TimelineEntry =
       type: 'change'
       at: string
       source: HistorySource | 'git'
-      kind: JournalEntry['kind']
+      kind: Exclude<JournalEntry['kind'], 'seen'>
       changes: FieldChange[]
       offline?: true
       commit?: CommitInfo
@@ -133,14 +152,22 @@ export function diffQuestions(a: Question, b: Question): FieldChange[] {
 const LIST_FIELDS: ReadonlySet<string> = new Set(['components', 'sources', 'related', 'artifacts', 'affects'])
 const sortedJson = (v: unknown) => JSON.stringify(Array.isArray(v) ? v.map((x) => JSON.stringify(x)).sort() : v)
 
+/** A diagram's source line by line, blank lines left out and each line's spacing squashed: line breaks are its syntax. */
+const sourceLines = (v: unknown) => String(v ?? '').split(/\r?\n/).map(squashSpace).filter(Boolean)
+
 /**
  * A change that alters nothing a reader would notice: a reorder among siblings, a list reordered
- * without anything added or removed, or text that differs only in its spacing.
+ * without anything added or removed, a one-line text that differs only in its spacing, a Markdown
+ * field with the same blocks each differing only in spacing or a list's marker (`sameBlocks`), or a
+ * diagram source with the same lines. Joined or split paragraphs and list items, a new depth or
+ * heading, and lines added, removed, joined or split are changes.
  */
 export function isMinorChange(c: FieldChange): boolean {
   if (c.field === 'order' || c.field === 'position') return true
   if (LIST_FIELDS.has(c.field) || c.field === 'images' || c.field === 'regions') return sortedJson(c.from ?? []) === sortedJson(c.to ?? [])
-  if (TEXT_FIELDS.has(c.field) || c.field === 'title' || c.field === 'question' || c.field === 'answer' || c.field === 'author') return squashSpace(c.from) === squashSpace(c.to)
+  if (c.field === 'source') return JSON.stringify(sourceLines(c.from)) === JSON.stringify(sourceLines(c.to))
+  if (TEXT_FIELDS.has(c.field) || c.field === 'question' || c.field === 'answer') return sameBlocks(String(c.from ?? ''), String(c.to ?? ''))
+  if (c.field === 'title' || c.field === 'author') return squashSpace(c.from) === squashSpace(c.to)
   return false
 }
 
@@ -166,15 +193,18 @@ export interface DiffLine {
   text: string
 }
 
-/** Longer than this (lines, either side) and the diff is shown as everything removed, then everything added. */
+/** The line diff's table budget: this many lines a side (between the texts' common start and end) are compared in full. */
 const MAX_DIFF_LINES = 400
 
-/** A line diff of two texts (LCS). Empty text has no lines. Past `max` lines a side, everything removed then added. */
+/**
+ * A line diff of two texts (LCS). Empty text has no lines. The common start and end are matched at any
+ * length; past `max` lines a side in between, lines found once on each side anchor the rest, and a
+ * part with nothing in common reads as everything removed, then added.
+ */
 export function lineDiff(a: string, b: string, max = MAX_DIFF_LINES): DiffLine[] {
   const x = a ? a.split('\n') : []
   const y = b ? b.split('\n') : []
-  const pairs = x.length > max || y.length > max ? null : lcsPairs(x, y, (p, q) => p === q, (max + 1) * (max + 1))
-  if (!pairs) return [...x.map((text) => ({ op: 'del' as const, text })), ...y.map((text) => ({ op: 'add' as const, text }))]
+  const pairs = lcsPairs(x, y, (p, q) => p === q, (max + 1) * (max + 1))
   const out: DiffLine[] = []
   let i = 0
   let j = 0
@@ -246,14 +276,77 @@ export function collapse(entries: JournalEntry[]): JournalEntry[] {
  * show only as dividers (the journal already has their detail). An edit git sees as uncommitted
  * but the journal never saw (made before it started) becomes a "not committed yet" entry.
  */
+/**
+ * A record's current life (FINDINGS R-54; accepted decisions 19 and 20): an ID can be reissued after its
+ * record is deleted, and the new record's history must not show the old one's as its own. The life starts
+ * at the newer of two marks:
+ * - a committed deletion (B08's bound, `deleted`) whose two sides read as different records; when the
+ *   record re-added reads as the one deleted (same type, no field changed: a revert, an undo) it is a
+ *   restore and its history carries on across the gap;
+ * - the journal's newest `created` entry, when the record it began as differs from the newest git version
+ *   before it (or nothing in git came before it). That catches an ID reissued before the deletion was
+ *   committed, where git sees only an edit. An entry from before `created` entries held the record counts
+ *   only when the board made it (the board's create is never a restore).
+ * Git versions, journal lines and screenshot rewrites before the start are dropped; nothing is deleted
+ * from the journal or git, only left out of the timeline.
+ */
+export function currentLife<T>(journal: JournalEntry[], git: Pick<GitFileHistory<T>, 'versions' | 'working'>, diff: (a: T, b: T) => FieldChange[]): { versions: GitVersion<T>[]; journal: JournalEntry[]; own: (at: string) => boolean } {
+  const kind = (r: T) => (r as { type?: unknown }).type
+  const sameRecord = (a: T | null, b: T | null) => !!a && !!b && kind(a) === kind(b) && diff(a, b).length === 0
+  let versions = git.versions
+  let journalFrom = 0
+  let own = (_at: string) => true
+  for (let i = 0; i < versions.length; i++) {
+    const v = versions[i]!
+    if (!v.deleted) continue
+    const readded = i > 0 ? versions[i - 1]!.item : git.working
+    const deleted = versions.slice(i + 1).find((x) => x.item)?.item ?? null
+    if (sameRecord(deleted, readded)) continue // a restore
+    const bound = Date.parse(v.commit.at)
+    versions = versions.slice(0, i)
+    own = (at) => Date.parse(at) > bound
+    break
+  }
+  let created = -1
+  for (let j = journal.length - 1; j >= 0 && created < 0; j--) if (journal[j]!.kind === 'created') created = j
+  if (created >= 0) {
+    const e = journal[created]!
+    // Commit times have one-second resolution (`%aI`): a commit in the same second as the start is the new record's.
+    const second = Math.floor(Date.parse(e.at) / 1000) * 1000
+    const before = versions.find((v) => v.item && Date.parse(v.commit.at) < second)?.item ?? null
+    const fresh = e.item ? !before || !sameRecord(before, e.item as unknown as T) : e.source === 'board'
+    // A start moves the life on only when it is newer than the deletion bound.
+    if (fresh && own(e.at)) {
+      versions = versions.filter((v) => Date.parse(v.commit.at) >= second)
+      journalFrom = created
+      own = (x) => Date.parse(x) >= second
+    }
+  }
+  return { versions, journal: journal.slice(journalFrom).filter((e) => own(e.at)), own }
+}
+
 export function buildTimeline<T = Item>(
-  journal: JournalEntry[],
-  git: GitFileHistory<T>,
+  journalIn: JournalEntry[],
+  gitIn: GitFileHistory<T>,
   diff: (a: T, b: T) => FieldChange[] = diffItems as unknown as (a: T, b: T) => FieldChange[],
 ): TimelineEntry[] {
-  const collapsed = collapse(journal)
-  const start = collapsed.length ? Date.parse(collapsed[0]!.at) : Infinity
+  const life = currentLife(journalIn, gitIn, diff)
+  const git: GitFileHistory<T> = { ...gitIn, versions: life.versions, screenshots: gitIn.screenshots?.filter((s) => life.own(s.commit.at)) }
+  const seen = life.journal.find((e) => e.kind === 'seen')
+  const collapsed = collapse(life.journal.filter((e) => e.kind !== 'seen')) as (JournalEntry & { kind: Exclude<JournalEntry['kind'], 'seen'> })[]
+  // The journal has the detail from when it first saw the card (R-87), or else from its first entry
+  // (journals from before `seen`). To the second, as git dates are: a commit in that second is after it.
+  const first = Math.min(seen ? Date.parse(seen.at) : Infinity, collapsed.length ? Date.parse(collapsed[0]!.at) : Infinity)
+  const start = Number.isFinite(first) ? Math.floor(first / 1000) * 1000 : Infinity
   const out: TimelineEntry[] = []
+
+  // A card the journal saw first, in a repository, with no version in git before then: its beginning is
+  // that first sight ("Not committed yet" until git has a version of it), unless the journal saw it created.
+  const inGit = git.versions.some((v) => v.item)
+  const before = git.versions.some((v) => v.item && Date.parse(v.commit.at) < start)
+  if (seen && (inGit || git.dirty) && !before && !collapsed.some((e) => e.kind === 'created')) {
+    out.push({ type: 'change', at: seen.at, source: 'disk', kind: 'created', changes: [], ...(inGit ? {} : { uncommitted: true as const }) })
+  }
 
   let prev: T | null = null
   for (const v of [...git.versions].reverse()) {
@@ -311,6 +404,8 @@ export interface AssetCommit {
   from: string | null
   /** Null where the commit removed it. */
   to: string | null
+  /** The deletion bound: this commit deleted the file (older entries are the path's earlier life). */
+  deleted?: true
 }
 
 /** An artifact file's history in git (newest first), and how the file on disk stands against HEAD. */
@@ -326,15 +421,33 @@ export interface AssetHistory {
 const version = (sha: string | null): ContentVersion | null => (sha ? { sha } : null)
 
 /**
+ * An artifact file's commits in its current life: up to its newest deletion whose file came back as
+ * other content (the same content back is a restore, and the history carries on).
+ */
+function assetLife(commits: AssetCommit[]): AssetCommit[] {
+  for (let i = 0; i < commits.length; i++) {
+    const c = commits[i]!
+    if (!c.deleted) continue
+    const back = i > 0 ? commits[i - 1]!.to : null
+    if (back && back === c.from) continue
+    return commits.slice(0, i)
+  }
+  return commits
+}
+
+/**
  * An artifact's timeline, newest first: its sidecar's commits as field changes (`buildTimeline`
  * with no journal), and its file's commits as `content` changes, folded into the same commit's
  * entry where both changed together. A file or sidecar changed and not yet committed shows as a
  * "not committed yet" entry.
  */
-export function buildArtifactTimeline(git: GitFileHistory<Artifact>, asset: AssetHistory | null): TimelineEntry[] {
+export function buildArtifactTimeline(gitIn: GitFileHistory<Artifact>, asset: AssetHistory | null): TimelineEntry[] {
+  // An artifact ID can be reissued too: its sidecar's history and its file's start at the current life (R-54).
+  const life = currentLife<Artifact>([], gitIn, diffArtifacts)
+  const git = { ...gitIn, versions: life.versions }
   const out = buildTimeline<Artifact>([], git, diffArtifacts)
   if (!git.versions.length && git.working) out.push({ type: 'change', at: git.mtime ?? new Date(0).toISOString(), source: 'disk', kind: 'created', changes: [], uncommitted: true })
-  for (const c of asset?.commits ?? []) {
+  for (const c of assetLife(asset?.commits ?? []).filter((x) => life.own(x.commit.at))) {
     const change: FieldChange = { field: 'content', from: version(c.from), to: version(c.to) }
     const same = out.find((e) => e.type === 'change' && e.commit?.sha === c.commit.sha)
     if (same?.type === 'change') {

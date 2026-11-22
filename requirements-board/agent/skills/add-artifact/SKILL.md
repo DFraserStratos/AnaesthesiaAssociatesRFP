@@ -19,7 +19,7 @@ The only repo-specific facts this skill uses; rewrite them when the board moves 
 
 - `BOARD` = `requirements-board` (the board's folder); `REQ` = `requirements-board/requirements`.
 - Check: `npm --prefix requirements-board run check` (the root `npm run check` runs the same).
-- The board's dev server: `http://localhost:5180` (`npm --prefix requirements-board run dev`).
+- The board's dev server: `http://localhost:5180`, or `BOARD_PORT` when set (a worktree's git-ignored `.lane.env` sets it) (`npm --prefix requirements-board run dev`).
 
 ## 1. Register it
 
@@ -40,8 +40,11 @@ npm --prefix BOARD run artifact:new -- --mermaid <file.mmd> --title "<name>" --d
   (`"Notes 2026-10-02 · Client meeting #11"`, `"Q&A 2026-09-24 #2"`, `"Recording 2026-10-01 · ..."`).
 - `--cited-as`, repeatable: how requirements' `sources:` cite it, so each source opens it at the spot
   it names (SCHEMA's `cited_as`). A source that starts with these words resolves here; after them it
-  may give `p.27` (a page), `#2 #3` (numbered points) or `L27-33` (lines). Which artifacts need it:
-  - a **note** in `REQ/notes/` needs none: `Notes <date> · <title words>` resolves by its file name;
+  may give `p.27` (a page, PDFs only), `#2 #3` (numbered points, also `#2#3` or `#2, #3`) or `L27-33`
+  (lines, Markdown only). Which artifacts need it:
+  - a **note** in `REQ/notes/` needs none: `Notes <date> · <slug words>` resolves by its file name
+    (the words after its date, hyphens as spaces, not its title: `2026-10-16-sam-pricing-call.md`,
+    titled "Sam's pricing call", is `Notes 2026-10-16 · Sam pricing call`);
   - a **transcript**: `--cited-as "Transcript <date> · <name>" --cited-as "Recording <date> · <name>"`,
     the names its note and the requirements use;
   - a **document** sources cite by page: its short name (`--cited-as "RFP"`), plus `--page-offset 1`
@@ -51,11 +54,11 @@ npm --prefix BOARD run artifact:new -- --mermaid <file.mmd> --title "<name>" --d
     (`"Diagram: Billing route"`): that name. When a diagram is replaced (retired with
     `superseded_by`), sources citing the old one follow it to the new one by themselves.
   `--within <heading-slug>` makes points count only under that heading (for a note that numbers each
-  section from 1). For a cited name that should open one spot, add `spot: <region-id>` to the entry in
-  the sidecar by hand. Then check a few with `npm --prefix BOARD run source -- "<source>"`.
+  section from 1). For a cited name that should open one spot, add `spot: <spot>` to the entry in
+  the sidecar by hand: a region or step ID, a page `p27`, a line range `L1-10` or a heading slug. Then check a few with `npm --prefix BOARD run source -- "<source>"`.
 - The file comes into `REQ/artifacts/files/`: an SVG or image is copied in as `AR-nn.<ext>`; a
-  transcript, document or PDF from elsewhere in the repo keeps its name and is moved in (`git mv` when
-  tracked; fix any links to its old place). A file already in the requirements folder stays put.
+  transcript, document or PDF from elsewhere in the repo keeps its name and is moved in (not staged:
+  add both paths when you commit; fix any links to its old place). A file already in the requirements folder stays put.
   `--keep` leaves it where it is, with a `/`-rooted path from the repository root; use it only for a
   file that must stay outside. A mermaid diagram lives in the sidecar under `## Source`.
 
@@ -112,8 +115,9 @@ the block form, so an inline list fails its byte-for-byte round-trip test.
   are warnings. Fix until there are no errors and no new warnings.
 - Optionally open `<dev server>/#/artifacts/AR-nn?region=<spot>` to see the red box land (the
   board's dev server must be running; "This repo"). For many regions, the read-only spec
-  `BOARD/e2e/artifacts-real.spec.ts` opens every one (`BOARD_E2E_REAL=1 npx playwright test` in BOARD).
-- A stepped diagram: with the dev server running, `npm --prefix BOARD run artifact:steps -- AR-nn`
+  `BOARD/e2e/artifact-regions.spec.ts` opens every one (`BOARD_E2E_REAL=1 npx playwright test
+  artifact-regions` in BOARD; it boots its own read-only board on `BOARD_PORT` + 3).
+- A stepped diagram: with this worktree's dev server running, `npm --prefix BOARD run artifact:steps -- AR-nn`
   screenshots the whole drawing and then each step (`00-whole.png`, `01-<step-id>.png` ...) and
   prints where; read every one.
 - Report the new ID, its regions and the items linked, briefly.

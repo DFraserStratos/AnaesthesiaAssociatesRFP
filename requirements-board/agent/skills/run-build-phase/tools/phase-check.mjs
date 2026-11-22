@@ -4,7 +4,9 @@
 // failure, one summary line. Dependency-free. Run from anywhere in the repo:
 //   node <tools>/phase-check.mjs [--plan <dir>]            every check
 //   node <tools>/phase-check.mjs --only build,vitest       those checks (and the checks they need)
-//   node <tools>/phase-check.mjs --failed                  the checks that failed (or were skipped) last run
+//   node <tools>/phase-check.mjs --failed                  the checks whose record says failed or skipped: a
+//                                                          failure stays on record until that check passes in
+//                                                          full form (a --changed pass never clears it)
 //   node <tools>/phase-check.mjs --changed                 quick inner loop: only checks with a "changed"
 //                                                          form, in that form (e.g. vitest --changed); PARTIAL
 //   node <tools>/phase-check.mjs --list                    print the planned schedule, run nothing (--dry too)
@@ -45,14 +47,15 @@
 //   }
 // A check that "needs" another is pulled in by --only. A dependency left out of the run (--failed, --changed)
 // counts as met. A check is started as soon as its needs and afters are done and a slot is free, in config
-// order.
+// order. An alias in "needs" or "after" means the check it names; a dependency cycle is a config error (exit 2,
+// before anything starts).
 //
 // --capture: probes each dev server's URL; when all are down it starts devCommand, when only some are, each
 // missing server's own cmd; detached, output to <logDir>/logs/dev-servers.log, left running afterwards (the
 // next run reuses them). Waits until they answer (startTimeout), then runs the capture with the IDs and the
 // dry flag, and only if that passes the real capture. "all" runs the full capture without the dry pass: a
 // failed recipe writes nothing, so a dry pass would only double the time. The report's summary table is
-// printed before and after (the board rewrites it on full runs only).
+// printed before and after (a full run rewrites the report; a run limited to IDs updates their rows).
 //
 // --stop-servers: stops each process group listed in <logDir>/dev-servers.pid (the servers --capture
 // started), SIGTERM then SIGKILL after 5 s, and empties the file. A pid that is gone, or no longer leads its
@@ -64,7 +67,8 @@
 // (checks, capture, dev servers). None found: fail fast (exit 2) before running anything, naming the fix.
 //
 // A lock (<logDir>/lock) stops two runs at once; a stale lock (its process gone) is taken over. Results are
-// kept in <logDir>/last.json for --failed. Nothing is interactive and nothing watches.
+// kept in <logDir>/last.json for --failed, one record per check merged across runs (a quick --changed pass
+// never replaces a full-form failure). Nothing is interactive and nothing watches.
 import fs from 'node:fs'
 import path from 'node:path'
 import net from 'node:net'
@@ -117,6 +121,16 @@ for (const c of CHECKS) {
   for (const n of [c.name, ...(c.aliases ?? [])]) byName.set(n, c)
 }
 for (const c of CHECKS) for (const d of [...(c.needs ?? []), ...(c.after ?? [])]) if (!byName.has(d)) usage(`check ${c.name} names unknown check ${d}`)
+// Dependencies by canonical name, so an alias in needs/after schedules exactly as the name does.
+for (const c of CHECKS) for (const k of ['needs', 'after']) if (c[k]) c[k] = [...new Set(c[k].map(d => byName.get(d).name))]
+// A cycle stops every mode that schedules checks; --stop-servers and --capture run no checks, so they still work.
+if (!has('--stop-servers') && !has('--capture')) {
+  const cycle = cycleOf(CHECKS)
+  if (cycle) {
+    console.error(`phase-check: dependency cycle in "runner.checks" (needs/after): ${cycle.join(' -> ')}. Fix ${config.configFile}.`)
+    process.exit(2)
+  }
+}
 const MAX = Math.max(1, Number(runner.maxParallel) || 4)
 const LOG_ROOT = path.resolve(ROOT, runner.logDir ?? '.build-phase')
 const LOGS = path.join(LOG_ROOT, 'logs')
@@ -125,6 +139,32 @@ const LAST = path.join(LOG_ROOT, 'last.json')
 const rel = p => {
   const r = path.relative(ROOT, p)
   return r.startsWith('..') || path.isAbsolute(r) ? p : r || '.'
+}
+
+/** The first dependency cycle among the checks (names, the first repeated at the end), or null. */
+function cycleOf(checks) {
+  const of = new Map(checks.map(c => [c.name, c]))
+  const state = new Map() // 1 visiting, 2 done
+  const stack = []
+  const visit = name => {
+    if (state.get(name) === 2) return null
+    if (state.get(name) === 1) return [...stack.slice(stack.indexOf(name)), name]
+    state.set(name, 1)
+    stack.push(name)
+    const c = of.get(name)
+    for (const d of [...(c.needs ?? []), ...(c.after ?? [])]) {
+      const found = visit(d)
+      if (found) return found
+    }
+    stack.pop()
+    state.set(name, 2)
+    return null
+  }
+  for (const c of checks) {
+    const found = visit(c.name)
+    if (found) return found
+  }
+  return null
 }
 
 /** A worktree's git-ignored `.lane.env` (KEY=value lines): fills unset variables, so every child inherits them. */
@@ -291,10 +331,9 @@ function selectChecks() {
     }
     for (const n of valueOf('--only').split(',').map(s => s.trim()).filter(Boolean)) add(n)
   } else if (has('--failed')) {
-    let last = null
-    try { last = JSON.parse(fs.readFileSync(LAST, 'utf8')) } catch {}
+    const last = readLast()
     if (!last) usage(`no previous run recorded (${rel(LAST)})`)
-    names = new Set(last.results.filter(r => r.status !== 'PASS' && r.status !== 'OMIT' && byName.has(r.name)).map(r => byName.get(r.name).name))
+    names = new Set(last.results.filter(r => r && r.status !== 'PASS' && r.status !== 'OMIT' && byName.has(r.name)).map(r => byName.get(r.name).name))
     if (!names.size) {
       console.log('phase-check: nothing failed last run; nothing to re-run.')
       process.exit(0)
@@ -303,6 +342,43 @@ function selectChecks() {
     names = new Set(CHECKS.map(c => c.name))
   }
   return CHECKS.filter(c => names.has(c.name))
+}
+
+// ---- the results record (<logDir>/last.json) ----
+// One record per check, merged across runs: { at, changed, results: [{ name, status, ms, note, log, form }] },
+// `form` "full" or "changed" (an older file has no form: its top-level `changed` says which). A run replaces
+// the records of the checks it ran, except that a quick (--changed) PASS or OMIT never replaces a FAIL or
+// SKIP on record, nor a full-form PASS: only passing in full form (the full gate, --only or --failed) clears
+// a failure, so --failed always re-runs what last failed, however many --changed loops ran since. Older
+// tools read the same keys.
+function readLast() {
+  try {
+    const last = JSON.parse(fs.readFileSync(LAST, 'utf8'))
+    return last && Array.isArray(last.results) ? last : null
+  } catch {
+    return null
+  }
+}
+
+function mergeLast(results) {
+  const prev = readLast()
+  const formOfRecord = r => r.form ?? (prev?.changed ? 'changed' : 'full')
+  const merged = new Map()
+  for (const r of prev?.results ?? []) {
+    if (!r || typeof r.name !== 'string') continue
+    const name = byName.get(r.name)?.name ?? r.name
+    merged.set(name, { ...r, name, form: formOfRecord(r) })
+  }
+  const form = changedMode ? 'changed' : 'full'
+  for (const r of results) {
+    const old = merged.get(r.name)
+    const quickPass = form === 'changed' && (r.status === 'PASS' || r.status === 'OMIT')
+    if (quickPass && old && (old.status !== 'PASS' || old.form === 'full')) continue
+    merged.set(r.name, { ...r, form })
+  }
+  const order = new Map(CHECKS.map((c, i) => [c.name, i]))
+  const results2 = [...merged.values()].sort((a, b) => (order.get(a.name) ?? 1e9) - (order.get(b.name) ?? 1e9))
+  return { at: new Date().toISOString(), changed: changedMode, results: results2 }
 }
 
 // ---- the schedule ----
@@ -360,18 +436,21 @@ async function runChecks(sel) {
   await new Promise(resolveAll => {
     let running = 0
     const pump = () => {
+      let moved = false
       for (const c of sel) {
         const s = state.get(c.name)
         if (s.status !== 'WAIT') continue
         const needs = c.needs ?? []
         if (needs.some(d => doneish(d) && !met(d))) {
           finish(c, 'SKIP', null, `needs ${needs.filter(d => !met(d)).join(', ')}`)
+          moved = true
           continue
         }
         if (![...needs, ...(c.after ?? [])].every(doneish)) continue
         const f = formOf(c)
-        if (f.skip) { finish(c, 'OMIT', null, f.skip); continue }
+        if (f.skip) { finish(c, 'OMIT', null, f.skip); moved = true; continue }
         if (running >= MAX) continue
+        moved = true
         running++
         s.status = 'RUN'
         run(f.cmd, c.cwd, path.join(LOGS, `${c.name}.log`), c.timeout).then(r => {
@@ -380,9 +459,15 @@ async function runChecks(sel) {
           pump()
         })
       }
-      // A skip can unblock others in the same pass; loop until stable.
       if ([...state.values()].every(s => !['WAIT', 'RUN'].includes(s.status))) return resolveAll()
-      if (running === 0 && sel.some(c => state.get(c.name).status === 'WAIT')) setImmediate(pump)
+      if (running === 0 && sel.some(c => state.get(c.name).status === 'WAIT')) {
+        // A skip can unblock others in the same pass; loop while that makes progress. Nothing running and
+        // nothing able to start (which the cycle check at load should make impossible) ends the waiting
+        // checks as SKIP, so no run can wait forever.
+        if (moved) return setImmediate(pump)
+        for (const c of sel) if (state.get(c.name).status === 'WAIT') finish(c, 'SKIP', null, 'never became ready (its needs or afters cannot finish)')
+        return resolveAll()
+      }
     }
     pump()
   })
@@ -392,7 +477,7 @@ async function runChecks(sel) {
     console.log(`\n---- ${r.name} FAILED (full log: ${r.log}) ----`)
     for (const l of excerpt(path.join(ROOT, r.log), r.focus)) console.log(l)
   }
-  try { fs.writeFileSync(LAST, JSON.stringify({ at: new Date().toISOString(), changed: changedMode, results }, null, 1)) } catch {}
+  try { fs.writeFileSync(LAST, JSON.stringify(mergeLast(results), null, 1)) } catch {}
   const count = st => results.filter(r => r.status === st)
   const skipped = count('SKIP')
   const parts = [`${count('PASS').length} passed`, `${bad.length} failed${bad.length ? ` (${bad.map(r => r.name).join(', ')})` : ''}`]
@@ -522,7 +607,7 @@ async function runCapture(ids) {
   const after = reportSummary(reportFile)
   const rewritten = after && (!before || after.mtime > before.mtime)
   if (!rewritten) {
-    console.log(`report after: not rewritten (${all ? 'the full run did not finish' : 'the board rewrites it on full runs only'})`)
+    console.log(`report after: not rewritten (${all ? 'the full run did not finish' : 'the capture stopped early, or the report is missing: run --capture all'})`)
   } else {
     const was = new Map(before?.body ?? [])
     const moved = after.body.filter(([k, v]) => was.get(k) !== v).map(([k, v]) => `${k} ${was.get(k) ?? '?'} -> ${v}`)

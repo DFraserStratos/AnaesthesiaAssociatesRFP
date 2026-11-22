@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 /**
- * Links between cards, over the fixture catalogue (port 5182): links in the text open the card
+ * Links between cards, over the fixture catalogue: links in the text open the card
  * they name, Related shows a relation on both cards plus the cards that mention this one, and a
  * copied card link pasted over selected text makes a Markdown link.
  */

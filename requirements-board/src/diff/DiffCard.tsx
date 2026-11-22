@@ -11,6 +11,7 @@ import { isMinorChange, setDiff } from '../../shared/history.ts'
 import type { Artifact, Citation, Item, Question } from '../../shared/types.ts'
 import { RecordMark, StatusLabel, markClass } from '../components/bits.tsx'
 import { guarded, useOpenRecord } from '../nav.ts'
+import { useCatalogue } from '../store.ts'
 import {
   ArtifactKindCell,
   ArtifactRefAt,
@@ -320,8 +321,10 @@ export const DiffCard = memo(function DiffCard({
   const fields = all.filter(({ f }) => !f.simple)
   const art = entry.kind === 'artifact' ? entry : null
   const showFile = !!art && (art.fileChanged || (entry.change !== 'edited' && (art.rec.fileBefore || art.rec.fileAfter || shownOf(art.rec)?.source)) || expanded)
-  // A record whose file does not parse now is not on the board to open.
-  const canOpen = entry.change !== 'removed' && !!entry.rec.after
+  // Open opens the record as it is now: only one on the board now (DESIGN.md: not for a removed one; a
+  // record deleted since the After side, or whose file does not parse now, has nothing to open).
+  const onBoard = useCatalogue((s) => !!(entry.kind === 'item' ? s.items : entry.kind === 'question' ? s.questions : s.artifacts)[entry.id])
+  const canOpen = entry.change !== 'removed' && !!entry.rec.after && onBoard
   const go = () => guarded(() => (entry.kind === 'item' ? open.item(entry.id) : entry.kind === 'question' ? open.question(entry.id) : open.artifact(entry.id)))
   const mark = markOf(entry)
   const fileFirst = art && showFile && !fields.some(({ f }) => f.field === 'description')

@@ -212,7 +212,7 @@ describe('a step as a cited spot', () => {
     const issues = checkCatalogue({ items: [], questions: [], artifacts: [old, flow], artifactFacts: () => ({ format: 'svg', ok: true, bounds: null }) })
       .filter((i) => /cited_as/.test(i.message))
       .map((i) => `${i.severity} ${i.id}: ${i.message}`)
-    expect(issues).toEqual(['error AR-31: cited_as "Diagram: Wrong": spot "nope" is not a region of AR-31'])
+    expect(issues).toEqual(['error AR-31: cited_as "Diagram: Wrong": spot "nope" is not a spot in AR-31 (a region, step, page, line range or heading)'])
   })
 })
 

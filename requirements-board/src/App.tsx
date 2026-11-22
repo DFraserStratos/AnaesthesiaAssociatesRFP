@@ -3,16 +3,17 @@ import { Suspense, lazy, useEffect, useState, type CSSProperties } from 'react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { BOARD_NAME, STARTER_PROJECT_NAME } from '../shared/config.ts'
 import { isOpenQuestion } from '../shared/statuses.ts'
-import { isPastArtifact, type CatalogueEvent } from '../shared/types.ts'
+import { isPastArtifact, type CatalogueDelivery } from '../shared/types.ts'
 import { ItemModal } from './components/ItemModal.tsx'
 import { NewCardButton } from './components/NewCardButton.tsx'
 import { QuestionModal } from './components/QuestionModal.tsx'
-import { hasUnsavedDrafts } from './components/useEditableRecord.ts'
-import { useOpen } from './nav.ts'
+import { hasUnsavedWork, useOpen } from './nav.ts'
+import { api } from './api.ts'
 import { useCatalogue, useConfig, useIndex, useShownIndex } from './store.ts'
 import { useArtifactIndex } from './artifactIndex.ts'
 import { BrandMark } from './components/BrandMark.tsx'
 import { ProblemPill } from './components/ProblemPill.tsx'
+import { RegionBoundary } from './components/RegionBoundary.tsx'
 import { AboutView } from './views/AboutView.tsx'
 import { ArtifactPage } from './views/ArtifactPage.tsx'
 import { ArtifactsView } from './views/ArtifactsView.tsx'
@@ -22,6 +23,16 @@ import { useUncommittedCount } from './diff/useUncommittedCount.ts'
 import { QuestionsView } from './views/QuestionsView.tsx'
 import { SettingsView } from './views/SettingsView.tsx'
 
+/** Set by the pill's Reload: card moves are kept across it (session storage), so the leave prompt does not ask for them. */
+let reloading = false
+function reloadKeepingMoves() {
+  reloading = true
+  location.reload()
+  // Deliberately a timer: if a prompt for unsaved sheet edits was answered "Stay", the page lives on, and
+  // card moves are guarded again once the prompt has had its turn.
+  setTimeout(() => (reloading = false), 1000)
+}
+
 /** The Diff review (its Markdown kit, its styles) loads the first time the tab is opened. */
 const DiffView = lazy(() => import('./diff/DiffView.tsx').then((m) => ({ default: m.DiffView })))
 
@@ -29,40 +40,63 @@ export function App() {
   const status = useCatalogue((s) => s.status)
   const error = useCatalogue((s) => s.error)
   const load = useCatalogue((s) => s.load)
-  const applyEvent = useCatalogue((s) => s.applyEvent)
+  const applyDelivery = useCatalogue((s) => s.applyDelivery)
+  // Only ever goes false: Vite never reopens a lost socket, it reloads the page (and this state with it).
   const [connected, setConnected] = useState(true)
+  /** Offline, and the board's server answers again: it can be reloaded, and card moves are saved. */
+  const [serverBack, setServerBack] = useState(false)
   const open = useOpen()
-  const onBoard = useLocation().pathname === '/board'
+  const pathname = useLocation().pathname
+  const onBoard = pathname === '/board'
 
   useEffect(() => {
     void load()
   }, [load])
 
-  // Files edited outside the app (an agent, a terminal, git) arrive over Vite's HMR socket.
+  // Files edited outside the app (an agent, a terminal, git) arrive over Vite's HMR socket, one delivery
+  // per change. Vite never reopens a lost socket in place: when the server comes back it reloads the
+  // page, so there is no reconnect to handle here.
   useEffect(() => {
     const hot = import.meta.hot
     if (!hot) return
-    const onChange = (e: CatalogueEvent) => applyEvent(e)
+    const onChange = (d: CatalogueDelivery) => applyDelivery(d)
     const onDown = () => setConnected(false)
-    const onUp = () => {
-      setConnected(true)
-      // Save card moves made while the server was away before re-reading, so they aren't lost.
-      void useCatalogue.getState().flushLayout().then(load)
-    }
     hot.on('catalogue:changed', onChange)
     hot.on('vite:ws:disconnect', onDown)
-    hot.on('vite:ws:connect', onUp)
     return () => {
       hot.off('catalogue:changed', onChange)
       hot.off('vite:ws:disconnect', onDown)
-      hot.off('vite:ws:connect', onUp)
     }
-  }, [applyEvent, load])
+  }, [applyDelivery])
 
-  // Unsaved sheet edits survive in-app navigation, but not a reload or closed tab: ask first.
+  // While offline the board asks its server itself, every 2 s: Vite stops asking once a leave prompt was
+  // answered "Stay" (B07-Q6). When it answers, kept card moves are saved and the pill offers a reload.
+  useEffect(() => {
+    if (connected) return
+    let live = true
+    const t = setInterval(() => {
+      api.ping().then(
+        async () => {
+          if (!live) return
+          clearInterval(t)
+          await useCatalogue.getState().flushLayout()
+          if (live) setServerBack(true)
+        },
+        () => {}, // still away
+      )
+    }, 2000)
+    return () => {
+      live = false
+      clearInterval(t)
+    }
+  }, [connected])
+
+  // Unsaved sheet edits survive in-app navigation, but not a reload or closed tab, and card moves not yet
+  // saved survive a reload but not a closed tab: ask first. The pill's own Reload keeps the moves, so it
+  // asks only for sheet edits.
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedDrafts()) e.preventDefault()
+      if (hasUnsavedWork(reloading)) e.preventDefault()
     }
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
@@ -75,7 +109,7 @@ export function App() {
 
   return (
     <div className="shell">
-      <Masthead connected={connected} />
+      <Masthead connected={connected} serverBack={serverBack} />
       <main className="main">
         {status === 'loading' && <div className="loading">Reading the catalogue…</div>}
         {status === 'error' && (
@@ -84,6 +118,16 @@ export function App() {
           </div>
         )}
         {status === 'ready' && (
+          // One view at a time, each with a fresh boundary (keyed by path): a failed view leaves the
+          // masthead, its problem list and the open sheets working.
+          <RegionBoundary
+            key={pathname}
+            region="view"
+            label={viewLabel(pathname)}
+            toBoard={!onBoard}
+            closes={itemId && questionId ? 'both' : itemId ? 'item' : questionId ? 'question' : undefined}
+            resetKey={`${itemId ?? ''}|${questionId ?? ''}`}
+          >
           <Routes>
             <Route path="/board" element={<BoardView />} />
             <Route path="/artifacts" element={<ArtifactsView />} />
@@ -102,17 +146,39 @@ export function App() {
             <Route path="/about" element={<AboutView />} />
             <Route path="*" element={<Navigate to="/board" replace />} />
           </Routes>
+          </RegionBoundary>
         )}
         {status === 'ready' && !onArtifact && <NewCardButton />}
       </main>
       {/* On the board the item docks beside the map (BoardView); elsewhere it is a modal. */}
-      {status === 'ready' && itemId && !onBoard && <ItemModal key={itemId} id={itemId} />}
-      {status === 'ready' && questionId && <QuestionModal key={questionId} id={questionId} />}
+      {status === 'ready' && itemId && !onBoard && (
+        <RegionBoundary key={itemId} region="sheet:item" label="This card" frame="sheet" closes="item">
+          <ItemModal id={itemId} />
+        </RegionBoundary>
+      )}
+      {status === 'ready' && questionId && (
+        <RegionBoundary key={questionId} region="sheet:question" label="This outstanding item" frame="sheet" closes="question">
+          <QuestionModal id={questionId} />
+        </RegionBoundary>
+      )}
     </div>
   )
 }
 
-function Masthead({ connected }: { connected: boolean }) {
+/** A view's name, as a recovery panel's sentence starts ("The Board couldn't be shown."). */
+function viewLabel(pathname: string): string {
+  if (pathname === '/board') return 'The Board'
+  if (pathname === '/artifacts') return 'The Artifacts list'
+  if (pathname.startsWith('/artifacts/')) return "This artifact's page"
+  if (pathname === '/questions') return 'Outstanding items'
+  if (pathname === '/outline') return 'The Outline'
+  if (pathname === '/diff') return 'The Diff review'
+  if (pathname === '/settings') return 'Settings'
+  if (pathname === '/about') return 'About'
+  return 'This page'
+}
+
+function Masthead({ connected, serverBack }: { connected: boolean; serverBack: boolean }) {
   const index = useIndex()
   const shown = useShownIndex()
   const artifacts = useArtifactIndex()
@@ -158,7 +224,7 @@ function Masthead({ connected }: { connected: boolean }) {
       </nav>
       <div className="masthead-right">
         {/* Nothing shows while all is well: the pill appears only when something needs attention. */}
-        <ProblemPill connected={connected} />
+        <ProblemPill connected={connected} serverBack={serverBack} onReload={reloadKeepingMoves} />
         {/* Until the project is named, a new team is pointed at the guide. */}
         {(!project || project === STARTER_PROJECT_NAME) && (
           <NavLink className="btn ghost sm start-here" to="/about">

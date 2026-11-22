@@ -20,7 +20,7 @@ where the catalogue started (an RFP, a workshop, a set of notes).
 | `artifacts/files/` | The artifact files themselves. | Add new files with the artifact; transcripts and documents are never rewritten. |
 | `changes/` | One change log per requirements update; `/update-build-plan` reads them. | Add new files. |
 | `VOICE.md` | How requirements are written: the words, not the format. The skills follow it. | Yes: on the board's Settings page, or as a file. |
-| `board.config.json` | Board and project name, components, statuses. | On the board's Settings page, or by hand. |
+| `board.config.json` | The project's name and accent colour, components, statuses, and the voice patterns the check warns on. | On the board's Settings page (voice patterns by hand). |
 | `board-layout.json` | The board's swimlanes and any card positions set by hand. | Through the board. |
 | `exports/` | `npm --prefix requirements-board run export:csv` output. Not committed. | No. |
 
@@ -28,7 +28,8 @@ where the catalogue started (an RFP, a workshop, a set of notes).
 
 **IDs.** `EP-nn` epic, `FT-nn.m` feature under epic nn, `US-nn.m.k` story under feature nn.m
 (`US-nn.0.k` for a story directly under an epic), `OQ-nn` outstanding item, `AR-nn` artifact. IDs
-are stable; retire an item by setting it to the Retired status rather than deleting it.
+never change. Retire an item (the Retired status) rather than delete it: the board can delete, and a
+deleted ID that was the highest under its parent goes to the next item created there.
 
 **Status.** Files store a status code, a whole number (`status: 2`); labels, help, colour, role and
 order live in `board.config.json` (`statuses`, edited on the Settings page). **A number means only

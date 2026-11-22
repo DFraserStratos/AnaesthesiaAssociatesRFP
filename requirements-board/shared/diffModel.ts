@@ -9,7 +9,7 @@
 import { EMPTY_TREE, type ArtifactDiff, type CommitsResponse, type DiffResponse, type ItemDiff, type QuestionDiff } from './diff.ts'
 import { diffArtifacts, diffItems, diffQuestions, isMinorChange, type FieldChange } from './history.ts'
 import { compareIds, compareSiblings } from './ids.ts'
-import { ARTIFACT_KINDS, type Item, type ItemType } from './types.ts'
+import { ARTIFACT_KINDS, artifactFormat, type Artifact, type Item, type ItemType } from './types.ts'
 
 export type Change = 'added' | 'removed' | 'edited'
 
@@ -46,7 +46,7 @@ export interface QuestionEntry extends EntryBase {
 export interface ArtifactEntry extends EntryBase {
   kind: 'artifact'
   rec: ArtifactDiff
-  /** The artifact's file differs. */
+  /** The artifact's file differs, or for a mermaid diagram its drawing (its source, more than in spacing). */
   fileChanged: boolean
 }
 
@@ -81,7 +81,11 @@ export function entryOf(rec: ItemDiff | QuestionDiff | ArtifactDiff): Entry {
   const unreadable = rec.beforeError != null && rec.afterError != null ? 'both' : rec.beforeError != null ? 'before' : rec.afterError != null ? 'after' : null
   const changes =
     !rec.before || !rec.after ? [] : rec.kind === 'item' ? diffItems(rec.before, rec.after) : rec.kind === 'question' ? diffQuestions(rec.before, rec.after) : diffArtifacts(rec.before, rec.after)
-  const fileChanged = rec.kind === 'artifact' && rec.fileBefore !== rec.fileAfter
+  // A mermaid diagram is drawn from its source, so a source change a reader would notice is a drawing change.
+  const drawnFrom = (a: Artifact | null) => !!a && artifactFormat(a) === 'mermaid'
+  const fileChanged =
+    rec.kind === 'artifact' &&
+    (rec.fileBefore !== rec.fileAfter || ((drawnFrom(rec.before) || drawnFrom(rec.after)) && !isMinorChange({ field: 'source', from: rec.before?.source ?? '', to: rec.after?.source ?? '' })))
   const base: EntryBase = {
     key: `${rec.kind}:${rec.id}`,
     id: rec.id,

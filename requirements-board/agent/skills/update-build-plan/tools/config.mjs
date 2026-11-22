@@ -80,6 +80,9 @@ export function loadConfig({ argv = process.argv.slice(2), root = process.cwd() 
     requirements,
     boardUrl: raw.boardUrl ?? 'http://localhost:5180',
     progress: raw.progress ?? null,
+    // Build lanes: { branches: ["lane/a", ...], complete: "{id} complete:", checkpoint: "{id} checkpoint:" },
+    // read by the update view of phaseStatus only; null when the plan declares none.
+    lanes: raw.lanes && typeof raw.lanes === 'object' ? raw.lanes : null,
     firstPhase: String(raw.firstPhase ?? '01'),
     outOfScopeLanes: raw.outOfScopeLanes ?? [],
     olderCatalogues: raw.olderCatalogues ?? [],
@@ -150,15 +153,16 @@ function statusesOf(boardConfig, settledCodes, unsettledCodes) {
 // Only phases numbered from config `firstPhase` count. A phase number is two digits with an optional
 // letter (15, 15a), or a capital letter and digits (U1): an owner-added track outside the numbered run,
 // which always counts as this plan's.
+// A phase IN PROGRESS (its row, or status.json's in_progress) is partly built, never built, even once its
+// session-1 entry is written; an entry with no status row at all still counts as built (older plans).
 const NUM = '\\d{2}[a-z]?|[A-Z]\\d+'
 const ROW = st => new RegExp(`^\\|\\s*(${NUM})\\s*\\|[^|\\n]*\\|\\s*(?:${st})\\s*\\|`, 'gm')
-export function phaseStatus(c, root = process.cwd()) {
-  const text = c.progress && fs.existsSync(path.join(root, c.progress)) ? fs.readFileSync(path.join(root, c.progress), 'utf8') : ''
-  let status = {}
-  try { status = JSON.parse(fs.readFileSync(path.join(root, c.plan, 'status.json'), 'utf8')) } catch {}
+
+/** The phase sets of one progress text (with no text, status.json's done and in_progress lists). */
+function parseProgress(text, status, firstPhase) {
   // status.json's done and in_progress lists stand in only when there is no progress file.
   const listed = k => (text ? [] : (status[k] ?? []).map(String))
-  const first = parseInt(c.firstPhase, 10)
+  const first = parseInt(firstPhase, 10)
   const ours = n => /^[A-Z]/.test(n) || parseInt(n, 10) >= first
   const rows = st => [...text.matchAll(ROW(st))].map(m => m[1])
   const doneDate = new Map([...text.matchAll(new RegExp(`^\\|\\s*(${NUM})\\s*\\|[^|\\n]*\\|\\s*DONE\\s*\\|\\s*([^|\\n]*?)\\s*\\|`, 'gm'))].map(m => [m[1], m[2]]))
@@ -166,22 +170,105 @@ export function phaseStatus(c, root = process.cwd()) {
   const done = [...new Set([...rows('DONE'), ...listed('done')])]
   const entries = [...text.matchAll(new RegExp(`^###\\s+(?:\\S+\\s+)?Phase\\s+(${NUM})\\b`, 'gm'))].map(m => m[1])
   const inProgress = [...new Set([...rows('IN PROGRESS'), ...listed('in_progress')])]
+  // Partly built: IN PROGRESS and not also DONE (a DONE row wins over a stale IN PROGRESS one).
+  const partly = new Set(inProgress.filter(n => !done.includes(n)))
   return {
-    text,
-    status,
+    ours,
     doneDate,
-    /** DONE rows (any number), for display. */
     doneRows: done,
-    /** IN PROGRESS rows (any number). */
     inProgressRows: inProgress,
-    /** Built: DONE rows or a Phase entry, ours only. */
-    built: [...new Set([...done, ...entries].filter(ours))],
-    /** Built by entry only (a "### Phase NN" heading). */
-    builtByEntry: [...new Set([...entries, ...listed('done')].filter(ours))],
+    built: [...new Set([...done, ...entries].filter(n => ours(n) && !partly.has(n)))],
+    builtByEntry: [...new Set([...entries, ...listed('done')].filter(n => ours(n) && !partly.has(n)))],
     inProgress: inProgress.filter(ours),
-    /** Phases whose docs keep their own drift baseline: DONE or IN PROGRESS, ours only. */
     keepBaseline: [...new Set([...done, ...inProgress].filter(ours))],
   }
+}
+
+/**
+ * The plan's phase status from the progress file (else status.json). With `{ lanes: true }`, the
+ * update-build-plan view (never a phase's own context pack, which keeps to its own branch), the plan's
+ * build lanes are merged in as laneStatus reads them: a lane's built phase is built, its partly built
+ * phase in progress, and both keep their drift baselines. The returned fields are the same either way,
+ * plus `lanes` in the update view.
+ */
+export function phaseStatus(c, root = process.cwd(), { lanes = false } = {}) {
+  const text = c.progress && fs.existsSync(path.join(root, c.progress)) ? fs.readFileSync(path.join(root, c.progress), 'utf8') : ''
+  let status = {}
+  try { status = JSON.parse(fs.readFileSync(path.join(root, c.plan, 'status.json'), 'utf8')) } catch {}
+  const p = parseProgress(text, status, c.firstPhase)
+  const out = {
+    text,
+    status,
+    doneDate: p.doneDate,
+    /** DONE rows (any number), for display. */
+    doneRows: p.doneRows,
+    /** IN PROGRESS rows (any number). */
+    inProgressRows: p.inProgressRows,
+    /** Built: DONE rows, or a Phase entry with no IN PROGRESS row; ours only. */
+    built: p.built,
+    /** Built by entry only (a "### Phase NN" heading with no IN PROGRESS row). */
+    builtByEntry: p.builtByEntry,
+    inProgress: p.inProgress,
+    /** Phases whose docs keep their own drift baseline: DONE or IN PROGRESS, ours only. */
+    keepBaseline: p.keepBaseline,
+  }
+  if (!lanes) return out
+  const l = laneStatus(c, root, status)
+  const laneBuilt = l.branches.flatMap(b => b.built).filter(p.ours)
+  const lanePartly = l.branches.flatMap(b => b.partlyBuilt).filter(p.ours)
+  const built = [...new Set([...out.built, ...laneBuilt])]
+  return {
+    ...out,
+    built,
+    builtByEntry: [...new Set([...out.builtByEntry, ...laneBuilt])],
+    inProgress: [...new Set([...out.inProgress, ...lanePartly])].filter(n => !built.includes(n)),
+    keepBaseline: [...new Set([...out.keepBaseline, ...laneBuilt, ...lanePartly])],
+    lanes: l,
+  }
+}
+
+const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/**
+ * What the plan's build lanes hold. Config `lanes.branches` names the lane branches; for each one
+ * other than the current branch: commits on HEAD..<branch> whose subject starts with `lanes.complete`
+ * (default "{id} complete:") mean built and `lanes.checkpoint` (default "{id} checkpoint:") partly built,
+ * and the branch's own progress file is read by the same rules as this one's (DONE built, IN PROGRESS partly
+ * built); the stronger state wins. A configured branch that does not exist is listed under `missing`.
+ * `declared` names status.json's guidance.lanes; `unaccounted` lists them when the config names fewer
+ * branches than status.json declares lanes, so the tools can say so rather than proceed in silence.
+ */
+export function laneStatus(c, root = process.cwd(), status = null) {
+  if (!status) {
+    try { status = JSON.parse(fs.readFileSync(path.join(root, c.plan, 'status.json'), 'utf8')) } catch { status = {} }
+  }
+  const declared = (Array.isArray(status?.guidance?.lanes) ? status.guidance.lanes : []).map((l, i) => String(l?.name ?? `lane ${i + 1}`))
+  const conf = c.lanes && typeof c.lanes === 'object' ? c.lanes : {}
+  const configured = (Array.isArray(conf.branches) ? conf.branches : []).filter(b => typeof b === 'string' && b.trim())
+  const git = (...a) => execFileSync('git', a, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64 << 20 })
+  let current = ''
+  try { current = git('rev-parse', '--abbrev-ref', 'HEAD').trim() } catch {}
+  const subjectRe = (tpl, fallback) => {
+    const [a, b] = (typeof tpl === 'string' && tpl.includes('{id}') ? tpl : fallback).split('{id}')
+    return new RegExp(`^${esc(a)}(${NUM})${esc(b)}`)
+  }
+  const completeRe = subjectRe(conf.complete, '{id} complete:')
+  const checkpointRe = subjectRe(conf.checkpoint, '{id} checkpoint:')
+  const branches = []
+  const missing = []
+  for (const branch of configured) {
+    if (branch === current) continue
+    try { git('rev-parse', '--verify', '--quiet', `${branch}^{commit}`) } catch { missing.push(branch); continue }
+    let subjects = []
+    try { subjects = git('log', '--format=%s', `HEAD..${branch}`).split('\n').filter(Boolean) } catch {}
+    let text = ''
+    if (c.progress) { try { text = git('show', `${branch}:${c.progress}`) } catch {} }
+    const p = parseProgress(text, {}, c.firstPhase)
+    const done = new Set([...p.built, ...subjects.map(s => s.match(completeRe)?.[1]).filter(Boolean)])
+    const partly = new Set([...p.inProgress, ...subjects.map(s => s.match(checkpointRe)?.[1]).filter(Boolean)].filter(n => !done.has(n)))
+    branches.push({ branch, built: [...done], partlyBuilt: [...partly] })
+  }
+  return { declared, configured, current, branches, missing, unaccounted: declared.length > configured.length ? declared : [] }
 }
 
 /** Repo-relative path `to`, as a link from folder `fromDir` (both repo-relative). */

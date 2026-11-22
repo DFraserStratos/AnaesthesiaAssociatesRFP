@@ -5,7 +5,24 @@
  * file the board runs on neutral defaults and accepts any component or screenshot app. Item types
  * and question kinds are behaviour, not vocabulary, so a project can reword a kind but not add one.
  */
-import { DEFAULT_ITEM_STATUSES, DEFAULT_QUESTION_STATUSES, parseStatusList, type StatusDef } from './statuses.ts'
+import { stripBom } from './bom.ts'
+import { revOf } from './files.ts'
+import {
+  DEFAULT_ITEM_STATUSES,
+  DEFAULT_QUESTION_STATUSES,
+  RECODES_FILE,
+  STATUS_FIELDS,
+  highestCode,
+  parseRemoved,
+  parseStatusList,
+  recodedCodes,
+  recodeHistoryProblems,
+  type Recode,
+  type RemovedStatus,
+  type StatusDef,
+  type StatusField,
+  type StatusListState,
+} from './statuses.ts'
 import { QUESTION_KINDS, VIEWPORTS, type QuestionKind, type Viewport } from './types.ts'
 
 export const CONFIG_FILE = 'board.config.json'
@@ -88,14 +105,51 @@ export interface BoardConfig {
   statuses: StatusDef[]
   /** Question statuses in group order. */
   questionStatuses: StatusDef[]
+  /** Statuses taken off each list: their codes are spent and never handed out again. */
+  removedStatuses: Record<StatusField, RemovedStatus[]>
+  /**
+   * Each section Settings writes, as a revision of what the file holds for it (derived, never written).
+   * A config write sends the revisions it started from (`bases`), so a section changed on disk since is
+   * a conflict rather than overwritten (B05, accepted decision 20; FINDINGS R-45).
+   */
+  revs: Record<ConfigSection, string>
+  /** How each status list read (healthy, degraded, damaged), with its problems and high-water mark. Derived, never written. */
+  statusState: Record<StatusField, StatusListState>
+  /**
+   * How the `project` and `components` sections read. Any problem reading one is `damaged` (an entry was
+   * dropped or a value ignored), so Settings shows it and saves nothing over it until the file is fixed
+   * (accepted decision 22). Derived, never written.
+   */
+  sectionState: Record<CheckedSection, SectionState>
   questionKinds: Partial<Record<QuestionKind, Wording>>
   capture: CaptureConfig | null
   /** Patterns the check warns on in descriptions. Edited by hand in the file. */
   voice: VoiceConfig
 }
 
-/** What the Settings page may change: each field sent replaces that field, the rest of the file stays as written. */
-export type ConfigPatch = Partial<Pick<BoardConfig, 'project' | 'components' | 'statuses' | 'questionStatuses'>>
+/** The Settings sections besides the status lists whose reading is judged (`sectionState`). */
+export type CheckedSection = 'project' | 'components'
+export interface SectionState {
+  state: 'healthy' | 'damaged'
+  /** What could not be read, naming the section and entry. */
+  problems: string[]
+}
+const HEALTHY: SectionState = { state: 'healthy', problems: [] }
+const sectionStateOf = (problems: string[]): SectionState => (problems.length ? { state: 'damaged', problems } : HEALTHY)
+
+/** The sections of `board.config.json` that Settings writes, each with its own revision. */
+export const CONFIG_SECTIONS = ['project', 'components', 'statuses', 'questionStatuses'] as const
+export type ConfigSection = (typeof CONFIG_SECTIONS)[number]
+
+/** A section's revision: of its JSON as the file holds it (a missing section is `null`). */
+export function configRevs(raw: Record<string, unknown> | null): Record<ConfigSection, string> {
+  const out = {} as Record<ConfigSection, string>
+  for (const k of CONFIG_SECTIONS) out[k] = revOf(JSON.stringify(raw && Object.hasOwn(raw, k) ? raw[k] : null))
+  return out
+}
+
+/** A Settings write: the sections sent replace those in the file; `bases` are the revisions each was edited from. */
+export type ConfigPatch = Partial<Pick<BoardConfig, 'project' | 'components' | 'statuses' | 'questionStatuses'>> & { bases?: Partial<Record<ConfigSection, string>> }
 
 /** The board's own name, in the masthead and the browser tab. Fixed: the project's name is what varies. */
 export const BOARD_NAME = 'Requirements board'
@@ -110,9 +164,23 @@ export const DEFAULT_CONFIG: BoardConfig = {
   screenshotApps: [],
   statuses: DEFAULT_ITEM_STATUSES,
   questionStatuses: DEFAULT_QUESTION_STATUSES,
+  removedStatuses: { statuses: [], questionStatuses: [] },
+  revs: configRevs({}),
+  statusState: {
+    statuses: { state: 'healthy', problems: [], highWater: highestCode(DEFAULT_ITEM_STATUSES.map((d) => d.code)) },
+    questionStatuses: { state: 'healthy', problems: [], highWater: highestCode(DEFAULT_QUESTION_STATUSES.map((d) => d.code)) },
+  },
+  sectionState: { project: HEALTHY, components: HEALTHY },
   questionKinds: {},
   capture: null,
   voice: { descriptionWarnings: [] },
+}
+
+/** A config file that can't be read: neutral defaults, except that the status lists are damaged and empty, never the built-in ones. */
+function unreadable(problem: string): BoardConfig {
+  const damaged = { state: 'damaged' as const, problems: [problem], highWater: 0 }
+  const section = sectionStateOf([problem])
+  return { ...DEFAULT_CONFIG, statuses: [], questionStatuses: [], statusState: { statuses: damaged, questionStatuses: damaged }, sectionState: { project: section, components: section }, revs: configRevs(null) }
 }
 
 export const DEFAULT_KIND_HELP: Record<QuestionKind, string> = {
@@ -131,25 +199,32 @@ const SLUG = /^[a-z0-9][a-z0-9-]*$/
 
 /**
  * Read a config file's JSON. Anything malformed is reported and left at its default, so one bad
- * entry never hides the rest. Unknown keys are ignored.
+ * entry never hides the rest. Unknown keys are ignored. The status lists are never replaced by the
+ * built-in ones (see `statuses.ts`); `recodes` (status-recodes.json) feed each list's high-water mark.
  */
-export function parseConfig(text: string): { config: BoardConfig; problems: string[] } {
+export function parseConfig(text: string, recodes: readonly Recode[] = []): { config: BoardConfig; problems: string[] } {
   const problems: string[] = []
   let raw: unknown
   try {
-    raw = JSON.parse(text)
+    raw = JSON.parse(stripBom(text))
   } catch (e) {
-    return { config: DEFAULT_CONFIG, problems: [`${CONFIG_FILE} is not valid JSON (${(e as Error).message})`] }
+    const problem = `${CONFIG_FILE} is not valid JSON (${(e as Error).message})`
+    return { config: unreadable(problem), problems: [problem] }
   }
-  if (!isObj(raw)) return { config: DEFAULT_CONFIG, problems: [`${CONFIG_FILE} must hold an object`] }
-  const config: BoardConfig = { ...DEFAULT_CONFIG, project: { name: '' }, components: [], screenshotApps: [], questionKinds: {} }
+  if (!isObj(raw)) {
+    const problem = `${CONFIG_FILE} must hold an object`
+    return { config: unreadable(problem), problems: [problem] }
+  }
+  const config: BoardConfig = { ...DEFAULT_CONFIG, project: { name: '' }, components: [], screenshotApps: [], questionKinds: {}, revs: configRevs(raw) }
 
+  const projectFrom = problems.length
   if (isObj(raw.project)) {
     config.project.name = str(raw.project.name) ?? ''
     const accent = str(raw.project.accent)
     if (accent && ACCENT_PATTERN.test(accent)) config.project.accent = accent.toLowerCase()
     else if (accent) problems.push(`project.accent must be a colour like #2f5dbe, not ${accent}`)
   } else if (raw.project !== undefined) problems.push('project must be an object')
+  const componentsFrom = problems.length
 
   if (Array.isArray(raw.components)) {
     const seen = new Set<string>()
@@ -164,6 +239,7 @@ export function parseConfig(text: string): { config: BoardConfig; problems: stri
       }
     }
   } else if (raw.components !== undefined) problems.push('components must be a list')
+  config.sectionState = { project: sectionStateOf(problems.slice(projectFrom, componentsFrom)), components: sectionStateOf(problems.slice(componentsFrom)) }
 
   if (Array.isArray(raw.screenshotApps)) {
     const seen = new Set<string>()
@@ -181,8 +257,34 @@ export function parseConfig(text: string): { config: BoardConfig; problems: stri
     }
   } else if (raw.screenshotApps !== undefined) problems.push('screenshotApps must be a list')
 
-  config.statuses = parseStatusList(raw.statuses, 'item', 'statuses', problems)
-  config.questionStatuses = parseStatusList(raw.questionStatuses, 'question', 'questionStatuses', problems)
+  const removedRaw = raw.removedStatuses
+  if (removedRaw !== undefined && !isObj(removedRaw)) problems.push('removedStatuses must be an object of { statuses, questionStatuses } lists')
+  config.removedStatuses = { statuses: [], questionStatuses: [] }
+  config.statusState = { ...DEFAULT_CONFIG.statusState }
+  for (const kind of ['item', 'question'] as const) {
+    const field = STATUS_FIELDS[kind]
+    const read = parseStatusList(raw[field], kind, field, problems)
+    const removed = isObj(removedRaw) ? parseRemoved(removedRaw[field], field, problems) : []
+    const own = [...read.problems]
+    // A code moved away by a recode is spent too: old versions storing it read as its new code.
+    const recodedAway = new Set(recodes.flatMap((r) => Object.entries(kind === 'item' ? r.items : r.questions).filter(([from, to]) => from !== to).map(([from]) => from)))
+    for (const d of read.list) {
+      const gone = removed.find((r) => r.code === d.code)
+      const p = gone
+        ? `${field}: "${d.code}" was removed (${gone.label}) and cannot be used again: give "${d.label}" a fresh code, or take it off removedStatuses if the removal was a mistake`
+        : recodedAway.has(d.code)
+          ? `${field}: "${d.code}" was recoded away (${RECODES_FILE}), so old versions storing it read as another status: give "${d.label}" a fresh code`
+          : null
+      if (!p) continue
+      problems.push(p)
+      own.push(p)
+    }
+    config[field] = read.list
+    config.removedStatuses[field] = removed
+    const state = read.state === 'healthy' && own.length ? 'degraded' : read.state
+    config.statusState[field] = { state, problems: own, highWater: highestCode(read.list.map((d) => d.code), removed.map((d) => d.code), recodedCodes(recodes, kind)) }
+  }
+  problems.push(...recodeHistoryProblems(recodes))
   config.questionKinds = wordings(raw.questionKinds, QUESTION_KINDS, 'questionKinds', problems)
   config.capture = raw.capture === undefined ? null : capture(raw.capture, config.screenshotApps, problems)
   config.voice = voice(raw.voice, problems)
