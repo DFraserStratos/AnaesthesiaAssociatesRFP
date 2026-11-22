@@ -54,7 +54,15 @@ export interface CaptureApp {
   /** Where a shot with setup steps loads first, before its `start` route. */
   setupRoute: string
   /** CSS that hides demo-only chrome from every shot. A plugin step can lift it for a moment. */
-  hideCss: string  /** An environment variable that, when set, replaces the url's port (a second worktree on its own ports). */
+  hideCss: string
+  /**
+   * localStorage keys each fresh context starts with, set on every page load unless the key is
+   * already there (a signed-in session, a dismissed welcome card), so a shot never opens on a login
+   * or a first-run card the recipe did not ask for. A key a step changes keeps its new value; one a step removes comes
+   * back on the next load.
+   */
+  localStorage?: Record<string, string>
+  /** An environment variable that, when set, replaces the url's port (a second worktree on its own ports). */
   portEnv?: string
 }
 
@@ -381,6 +389,11 @@ function capture(raw: unknown, apps: ScreenshotApp[], problems: string[]): Captu
       else {
         out.apps[key] = { url: str(v.url)!.replace(/\/$/, ''), setupRoute: str(v.setupRoute) ?? '/', hideCss: typeof v.hideCss === 'string' ? v.hideCss : '' }
         if (str(v.portEnv)) out.apps[key].portEnv = str(v.portEnv)
+        if (v.localStorage !== undefined) {
+          const ls = v.localStorage
+          if (!isObj(ls) || Object.values(ls).some((x) => typeof x !== 'string')) problems.push(`capture.apps.${key}.localStorage must map keys to string values`)
+          else out.apps[key].localStorage = ls as Record<string, string>
+        }
       }
     }
   }

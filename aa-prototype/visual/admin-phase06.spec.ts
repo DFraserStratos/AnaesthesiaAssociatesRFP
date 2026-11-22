@@ -225,7 +225,8 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   await expect(page.getByText('Demo Patient', { exact: true }).first()).toBeVisible()
   // Stored exactly as told, with Phone, and it starts the invoice description ("As entered").
   const readSaved = () => page.evaluate(() => {
-    const key = Object.keys(localStorage).find((k) => k.includes('aa'))!
+    // The store's own key (catch-up Phase 43a added other aa-* keys: the sign-in session and the first-run hints).
+    const key = 'aa-demo'
     const st = JSON.parse(localStorage.getItem(key)!).state
     const p = Object.values(st.schedule.procedures as Record<string, { procedureText: { text: string; source: string } | null; invoiceDescription: { origin: string } | null; bookingId: string }>).find(
       (x) => st.masters.patients[st.schedule.bookings[x.bookingId].patientId]?.name === 'Demo Patient',

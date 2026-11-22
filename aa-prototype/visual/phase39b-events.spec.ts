@@ -111,7 +111,8 @@ test('the phone: the two add buttons and the bottom sheet with the ACC presets',
   await sheet.getByText('Pre-op', { exact: true }).click()
   await sheet.getByText('ACC pre-op assessment').click()
   await expect(sheet.locator('[data-shot="acc-preop-preset"]')).toHaveCount(3)
-  await expect(sheet).toContainText("Codes to confirm with AA's accountant (OQ-12).")
+  // OQ-12's open-question caption is the office's (catch-up Phase 43a).
+  await expect(sheet).not.toContainText('OQ-12')
 })
 
 test("the Contract editor's Event fees on St George's ACC", async ({ page }) => {

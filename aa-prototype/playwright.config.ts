@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 import './laneEnv.ts'
+import { demoReadyStorageState } from './visual/storage/demoReady'
 
 /**
  * Playwright is a visual-testing aid for the build: it boots the dev server and
@@ -25,6 +26,8 @@ import './laneEnv.ts'
  */
 const PROTO_URL = `http://localhost:${process.env['AA_PROTO_PORT'] ?? 5173}`
 const PWA_URL = `http://localhost:${process.env['AA_PWA_PORT'] ?? 5174}`
+// The PWA signed in and the first-run cards dismissed (catch-up Phase 43a), so no existing spec moves.
+const DEMO_READY = demoReadyStorageState(PROTO_URL, PWA_URL)
 export default defineConfig({
   testDir: './visual',
   outputDir: './visual/.output',
@@ -46,6 +49,7 @@ export default defineConfig({
         // browser reports anyway (see the spec's floor assertions).
         browserName: 'chromium',
         baseURL: PWA_URL,
+        storageState: DEMO_READY,
       },
     },
     {
@@ -54,6 +58,7 @@ export default defineConfig({
       use: {
         baseURL: PROTO_URL,
         viewport: { width: 1440, height: 900 },
+        storageState: DEMO_READY,
       },
     },
   ],

@@ -59,6 +59,7 @@ import { startForAddedProcedure } from '../../domain/billing/contractRail'
 import { HistorySheet } from './HistorySheet'
 import { OfficeSavedNotice } from './OfficeSavedNotice'
 import { useBookingApi, useBookingStore, useBookingStoreMode, useCommandBlock } from './draft'
+import { viewerOf } from '../viewer'
 
 interface BookingDetailBodyProps {
   bookingId: string
@@ -241,12 +242,14 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
 
   // The office's total with each Procedure's events (catch-up Phase 38b; US-03.1.10): Admin only.
   const procedureEvents = useBookingStore((s) => s.schedule.procedureEvents)
+  // Who is looking decides office-only detail (catch-up Phase 43a): the one viewer rule.
+  const viewer = viewerOf(actor)
   const totalWithEvents = useMemo(() => {
-    if (actor.role !== 'office' || bookingTotals.structural !== undefined) return undefined
+    if (viewer !== 'office' || bookingTotals.structural !== undefined) return undefined
     const prices = bookingTotals.order.map((id) => ({ procedureId: id, price: bookingTotals.views[id]?.fee.total ?? 0 }))
     const r = bookingTotalWithEvents(prices, eventsForBooking({ schedule: { procedureEvents } as AppState['schedule'] }, bookingId), { bookingPrice: bookingTotals.total, invoices })
     return { eventsTotal: r.eventsTotal, total: r.total, gst: r.gst }
-  }, [actor.role, bookingTotals, procedureEvents, bookingId, invoices])
+  }, [viewer, bookingTotals, procedureEvents, bookingId, invoices])
 
   // After Make primary the new primary's block slides into the top place (the theme's
   // selection-slide, never blocking; reduced motion is the 80 ms fade).
@@ -296,6 +299,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
       if (held === 'typed') return 'PRICE TYPED'
       if (held === 'authorised') return 'INVOICED PRICE'
       if (held === 'prepaid') return 'PREPAID PRICE'
+      // The old rate labels stay the office's (catch-up Phase 43a): the anaesthetist reads the
+      // pricing basis on each Procedure's stack and the calculation on its Price section.
+      if (viewer === 'anaesthetist') return null
       return fee.unitRate === null ? 'FIXED CONTRACT PRICE' : `FEE @ ${formatCurrency(fee.unitRate)}/UNIT`
     })
     const rateLabel = rateLabels.every((l) => l === rateLabels[0]) ? (rateLabels[0] ?? null) : null
@@ -307,16 +313,17 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
         const line: BookingTotalLine = {
           label: procedureLabel(procedure, masters.rvgGroups, index + 1),
           amount: views[index]!.fee.total,
-          // Each row's place in the multi-procedure rule (catch-up Phase 23).
-          note: allocationNote(views[index]!.allocation),
         }
+        // Each row's place in the multi-procedure rule (catch-up Phase 23): the office's wording (43a).
+        if (viewer === 'office') line.note = allocationNote(views[index]!.allocation)
         if (views[index]!.fee.needsPrice) line.needsPrice = true
         return line
       })
       const first = views[0]!.allocation
       // OQ-132's default, provisional: a fixed or open price primary bills no base units.
-      if (!first.rvgPriced) notes.push('No base units billed (provisional, OQ-132)')
-      if (first.splitAcross > 1) notes.push(`Modifiers ${first.bookingModifierUnits}, split ${first.splitShares.join(' · ')}`)
+      // The rule's notes are the office's (catch-up Phase 43a).
+      if (viewer === 'office' && !first.rvgPriced) notes.push('No base units billed (provisional, OQ-132)')
+      if (viewer === 'office' && first.splitAcross > 1) notes.push(`Modifiers ${first.bookingModifierUnits}, split ${first.splitShares.join(' · ')}`)
     } else {
       const only = views[0]!.fee
       lines = only.lines.length > 1 ? only.lines.map((l) => ({ label: l.description, amount: l.amount })) : []
@@ -336,7 +343,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
           : `Price typed on ${typed.length} of ${procedures.length} procedures`
 
     return { lines, rateLabel, overrideNote, notes }
-  }, [list, procedures, ordered, bookingTotals, masters.rvgGroups])
+  }, [list, procedures, ordered, bookingTotals, masters.rvgGroups, viewer])
 
   // The booking's full history: its own id plus its procedures'
   // ids, so BTM overrides / billing-setup edits (audited on those entities) show.
@@ -405,7 +412,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
     actor.source !== 'integration' &&
     bookingMoveRefusal({ lists: listsRecord, bookings: { [bookingId]: booking } }, bookingId, actor.anaesthetistId, todayISO) === null
   const canCapture = canEdit && !booking.completed
-  const isOffice = actor.role === 'office'
+  const isOffice = viewer === 'office'
   // The row's label already says NHI: the value is the bare number ("ZAP3016", not "NHI ZAP3016").
   const nhiValue = nhiBadge(patient?.nhi).text.replace(/^NHI /, '')
 
@@ -798,7 +805,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
               onMakePrimary={() => setSheet({ kind: 'makePrimary', procedureId: procedure.id })}
               onError={setError}
             />
-            {actor.role === 'office' && (
+            {viewer === 'office' && (
               <OfficeBillingSetup
                 procedure={procedure}
                 displayNumber={index + 1}
@@ -968,6 +975,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
         title="Booking history"
         onClose={() => setHistoryOpen(false)}
         coverListId={booking.listId}
+        viewer={viewer}
         {...(draftMode ? { asAtBookingId: bookingId } : {})}
       />
     </>

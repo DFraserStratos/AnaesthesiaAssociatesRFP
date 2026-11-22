@@ -84,3 +84,25 @@ export function simulateSignInAttempts(api: AppStoreApi): Outcome<{ rows: number
   )
   return ok({ rows: 5 })
 }
+
+/** What one anaesthetist sign-in attempt came to (catch-up Phase 43a; US-13.5.3). */
+export type AnaesthetistSignInOutcome = 'signedIn' | 'refused' | 'signedOut'
+
+/**
+ * The simulated PWA sign-in's audit row (catch-up Phase 43a): one `account`
+ * row per attempt, as Dr Souter, through `mutate()` with an empty patch, so no
+ * domain slice moves and the Audit viewer shows every attempt logged. Never
+ * holds a password. The sign-in session itself is per-device browser state
+ * (`shared/session/anaesthetistSession.ts`), not `AppState`.
+ */
+export function recordAnaesthetistSignIn(api: AppStoreApi, outcome: AnaesthetistSignInOutcome): Outcome<{ rows: number }> {
+  const app = 'Mobile (PWA)'
+  if (outcome === 'signedIn') {
+    mutate(api, SOUTER_ACTOR, { entityType: 'account', entityId: ANAE.souter, action: 'auth.signIn', after: { app, provider: PROVIDER } }, () => ({}))
+  } else if (outcome === 'refused') {
+    mutate(api, SOUTER_ACTOR, { entityType: 'account', entityId: ANAE.souter, action: 'auth.signInFailed', after: { app, provider: PROVIDER, reason: 'Unknown account' } }, () => ({}))
+  } else {
+    mutate(api, SOUTER_ACTOR, { entityType: 'account', entityId: ANAE.souter, action: 'auth.signOut', after: { app, provider: PROVIDER } }, () => ({}))
+  }
+  return ok({ rows: 1 })
+}

@@ -2,6 +2,13 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.27.0 · 2026-11-23
+
+- **Capture presets browser storage.** A capture app in `board.config.json` can name `localStorage` keys
+  that every fresh context starts with: set on each page load unless the key is already there, so a shot
+  never opens on a sign-in screen or a first-run card its recipe did not ask for, and a step that signs
+  out or dismisses something keeps its own value. `shared/config.ts` checks the values are strings.
+
 ## 1.26.1 · 2026-11-20
 
 Closes the board-fixes programme (164 review findings; `docs/board-fixes/review/CLOSING-REVIEW.md` in the

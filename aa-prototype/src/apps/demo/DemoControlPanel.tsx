@@ -12,7 +12,6 @@ import {
   claimModifier,
   removeModifier,
   proceduresForBooking,
-  resetDemo,
   useAppStore,
   useClockTimeLabel,
   useToday,
@@ -24,6 +23,7 @@ import { BILLING_MONITOR_SCREEN, DEMO_TRIGGERS, DemoTriggerBadge, groupTriggersB
 import { DemoBadge } from '../../shared'
 import { DRAFT_LIST, DRAFT_LISTS } from '../../shared/scheduleTerms'
 import { APP_CONFIG } from '../../shell/appConfig'
+import { resetFramedDemo } from '../../shell/framedReset'
 import { neutral, accent, radius, elevation, semantic } from '../../theme/tokens'
 
 function ControlCard({ icon: Icon, title, eyebrow, children, shot }: {
@@ -177,7 +177,7 @@ export function DemoControlPanel() {
               <button
                 type="button"
                 onClick={() => {
-                  resetDemo(useAppStore)
+                  resetFramedDemo({ clearHints: true })
                   setConfirmingReset(false)
                 }}
                 style={primaryButtonStyle}
@@ -234,7 +234,7 @@ const SCENARIOS: readonly Scenario[] = [
     title: 'S1 · Booking to theatre',
     blurb: "A St George's file is imported with the hospital's own wording; the office matches Sarah Mitchell onto a booked List and says where the invoice goes; a booking with no NHI waits in its place; a rooms' PDF list keeps who sent it; it captures live on procedure day.",
     run: () => {
-      resetDemo(useAppStore)
+      resetFramedDemo({ clearHints: false })
       return {
         ok: true,
         message:
@@ -251,7 +251,7 @@ const SCENARIOS: readonly Scenario[] = [
     title: 'S2 · Office day',
     blurb: 'An optional opening on days off, repeating days off and the availability status list, then day-dashboard review, a phone-advice booking on a free session, an illness reassignment with tier-ordered cover suggestions, an anaesthetist moving her own List and the office\'s notifications, then handing one Booking to a colleague from its Booking screen, Find available, and an authorisation.',
     run: () => {
-      resetDemo(useAppStore)
+      resetFramedDemo({ clearHints: false })
       return {
         ok: true,
         message:
@@ -265,7 +265,7 @@ const SCENARIOS: readonly Scenario[] = [
     title: 'S3 · Money end-to-end',
     blurb: 'Authorise the multi-procedure and split Lists (the run sends every invoice), follow one Xero pair from payment to the anaesthetist account, raise AA\'s monthly fee invoices, then show the ledger balancing.',
     run: () => {
-      resetDemo(useAppStore)
+      resetFramedDemo({ clearHints: false })
       const state = useAppStore.getState()
       const am = state.schedule.lists[SEED_LIST_IDS.souterMon20Am]
       const pm = state.schedule.lists[SEED_LIST_IDS.souterMon20Pm]
@@ -285,7 +285,7 @@ const SCENARIOS: readonly Scenario[] = [
     title: 'S4 · Exceptions',
     blurb: 'Pre-payment from a prepaid Contract, pre-op and post-op events and an additional invoice recorded as events, billing failure + retry, the unmatched hospital queue, partial payment, the date approaches, the prepayment held then transferred.',
     run: () => {
-      resetDemo(useAppStore)
+      resetFramedDemo({ clearHints: false })
       return {
         ok: true,
         message:
@@ -302,7 +302,7 @@ const SCENARIOS: readonly Scenario[] = [
     title: 'S5 · Compliance tour',
     blurb: 'Rich seeded audit trail plus staged edits, NHI dual-format validator, no personal information in Xero, audited Contract edits.',
     run: () => {
-      resetDemo(useAppStore)
+      resetFramedDemo({ clearHints: false })
       const chenBookingId = SEED_MARKERS['overriddenTimeUnitsBooking']?.entityId ?? ''
       const chenProcedure = proceduresForBooking(useAppStore.getState(), chenBookingId)[0]
       if (chenProcedure === undefined) return { ok: false, message: 'Reset done, but David Chen\'s Booking was not found to stage the audit trail.' }

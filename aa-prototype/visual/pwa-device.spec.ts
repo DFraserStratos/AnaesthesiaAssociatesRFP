@@ -1,4 +1,11 @@
 import { expect, test, type Page } from '@playwright/test'
+import { keepSignedInScript } from './storage/demoReady'
+
+// The PWA opens signed out on a fresh handset (catch-up Phase 43a). These tests start signed in,
+// and several clear localStorage mid-test, so the session is re-seeded on each load.
+test.beforeEach(async ({ context }) => {
+  await context.addInitScript(keepSignedInScript)
+})
 
 /**
  * The PWA target, walked at real-handset size.

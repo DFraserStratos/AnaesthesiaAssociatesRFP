@@ -79,7 +79,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
-        <Route path="/mobile" element={<MobileApp host={MobileViewport} moreExtra={<PwaDemoPanel />} />}>
+        <Route path="/mobile" element={<MobileApp host={MobileViewport} sessionDefault="signed-out" moreExtra={<PwaDemoPanel />} />}>
           <Route index element={<Navigate to="lists" replace />} />
           <Route path="lists/*" element={<MobileListsRoute />} />
           <Route path="availability/*" element={<MobileAvailabilityRoute />} />

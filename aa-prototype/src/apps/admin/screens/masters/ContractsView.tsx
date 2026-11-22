@@ -26,7 +26,7 @@ import { fundingTagsInOrder } from '../../../../domain/billing/fundingTags'
 import { specialtyNames } from '../../../../domain/specialties'
 import { FieldLabel, Segmented } from '../../../../shared'
 import { NameSearchBox, SelectField } from '../../../../shared/ui'
-import { BILLS_LABEL, PARTY_KIND_LABEL, STATUS_LABEL, pricingLabel } from '../../../../shared/contracts'
+import { BILLS_LABEL, OVERRIDE_PILL_LABEL, PARTY_KIND_LABEL, STATUS_LABEL, pricingLabel } from '../../../../shared/contracts'
 import { neutral } from '../../../../theme/tokens'
 import { ContractPanel } from '../../flows/ContractEditSheet'
 import { Pill } from '../../components/MasterPills'
@@ -207,7 +207,7 @@ export function ContractsView({ actor }: { actor: Actor }) {
                       {c.prepaid && <Pill>Prepaid</Pill>}
                       {/* Who may change the price (catch-up Phase 24; US-04.2.2): on RVG kinds only, from 18's setting. */}
                       {isRvgKind(c.pricing.kind) && (
-                        <Pill shot="contract-override-pill">{c.anaesthetistMayOverridePrice ? 'Anaesthetist can override the price' : 'Price fixed for the anaesthetist'}</Pill>
+                        <Pill shot="contract-override-pill">{c.anaesthetistMayOverridePrice ? OVERRIDE_PILL_LABEL.may : OVERRIDE_PILL_LABEL.fixed}</Pill>
                       )}
                     </span>
                   </td>

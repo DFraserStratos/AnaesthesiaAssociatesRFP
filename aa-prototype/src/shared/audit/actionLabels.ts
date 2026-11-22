@@ -327,6 +327,8 @@ export const ACTION_LABELS: Record<string, string> = {
   'auth.signIn': 'Signed in',
   'auth.signInFailed': 'Sign-in failed',
   'auth.passwordReset': 'Password reset by user',
+  // Catch-up Phase 43a: the simulated PWA sign-in's sign-out.
+  'auth.signOut': 'Signed out',
 
   // --- Update emails (catch-up Phase 35; US-02.3.3, US-02.3.4) -------------
   'emailTemplate.create': 'Email template added',

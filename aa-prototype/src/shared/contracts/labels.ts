@@ -50,6 +50,16 @@ export const BILLS_LABEL: Record<BillsTo, string> = {
   payer: 'Payer',
 }
 
+/**
+ * Who may change the price on an RVG Contract (catch-up Phase 24; US-04.2.2): the Contract
+ * catalogue's pill. Office only (catch-up Phase 43a): `shared/viewer.ts`'s guard test forbids
+ * both phrases on every anaesthetist screen.
+ */
+export const OVERRIDE_PILL_LABEL = {
+  may: 'Anaesthetist can override the price',
+  fixed: 'Price fixed for the anaesthetist',
+} as const
+
 export const STATUS_LABEL: Record<ContractStatus, string> = {
   active: 'Active',
   disabled: 'Disabled',

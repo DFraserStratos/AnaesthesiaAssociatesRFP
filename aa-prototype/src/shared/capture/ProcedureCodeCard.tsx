@@ -1,4 +1,5 @@
 import { useBookingApi } from '../booking/draft'
+import { isOfficeViewer } from '../viewer'
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { ChevronRight, X } from 'lucide-react'
 import { accent, neutral, radius, semantic, elevation, zIndex } from '../../theme/tokens'
@@ -222,7 +223,8 @@ export function RvgCodeField({
       )}
       {rvgGroup?.baseUnitsRange !== undefined && !procedure.isPrimary && (
         <div data-shot="rvg-range-additional">
-          <Caption>Base not charged on an additional procedure</Caption>
+          {/* The rule's wording is the office's (catch-up Phase 43a): the anaesthetist reads the plain caption. */}
+          <Caption>{isOfficeViewer(actor) ? 'Base not charged on an additional procedure' : 'None on this procedure'}</Caption>
         </div>
       )}
 

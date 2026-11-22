@@ -20,6 +20,7 @@ import { Pill } from '../ui/Pill'
 import { rvgDetailFor } from '../../domain/billing/rvgDetail'
 import { priceStatusFor } from '../../domain/billing/priceStatus'
 import { needsPriceMessage } from '../../domain/billing/priceRanges'
+import { viewerOf } from '../viewer'
 import { prepaidAmountText, prepaymentHoldingWords, prepaymentStatusWords, prepaymentTone } from '../booking/prepaymentText'
 
 /** Fields the Contract row anchors (the step rail owns them; catch-up Phase 20). */
@@ -133,7 +134,9 @@ export function BtmCaptureBlock({
   const locks = useBookingStore((s) => s.billing.locks)
   // The ledger too: a prepaid Procedure's basis reads its prepayment status (catch-up Phase 27; the ledger since 36).
   const ledger = useBookingStore((s) => s.billing.ledger)
-  const stackSurface = actor.role === 'office' ? 'office' : 'anaesthetist'
+  // The one viewer rule (catch-up Phase 43a): the stack's surface, never a fork of what it shows.
+  const viewer = viewerOf(actor)
+  const stackSurface = viewer
   const stackView = useMemo(
     () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists }, billing: { invoices, invoiceLines, locks, ledger } }, procedure.id, stackSurface),
     [masters, procedures, bookings, lists, invoices, invoiceLines, locks, ledger, procedure.id, stackSurface],
@@ -192,9 +195,11 @@ export function BtmCaptureBlock({
 
       {allocation.role === 'additional' && (
         <Notice tone="neutral" shot="procedure-additional-note">
-          {allocation.rvgPriced
-            ? "Additional procedure. Base units are charged on the primary procedure only. It earns its own time units, and an equal share of the Booking's modifiers once they total more than 4."
-            : "Additional procedure on a fixed price. Its Contract's price is the whole price; its units are recorded for reference."}
+          {viewer === 'anaesthetist'
+            ? plainAdditionalNote(displayNumber, allocation.rvgPriced)
+            : allocation.rvgPriced
+              ? "Additional procedure. Base units are charged on the primary procedure only. It earns its own time units, and an equal share of the Booking's modifiers once they total more than 4."
+              : "Additional procedure on a fixed price. Its Contract's price is the whole price; its units are recorded for reference."}
         </Notice>
       )}
 
@@ -253,7 +258,7 @@ export function BtmCaptureBlock({
       )}
 
       {/* The prepaid amount where units are recorded (catch-up Phase 27, US-03.1.8): read-only, with its status. */}
-      <PrepaidRow procedureId={procedure.id} office={actor.role === 'office'} />
+      <PrepaidRow procedureId={procedure.id} office={viewer === 'office'} />
 
       <Pair>
         {/* What the price comes to (catch-up Phase 24, US-03.3.10): the reasoned Adjustment and charge card is gone (RV-04). */}
@@ -282,6 +287,18 @@ export function BtmCaptureBlock({
 }
 
 /** "Prepaid $1,200.00 · paid": a prepaid Procedure's amount and status, read-only (catch-up Phase 27; US-03.1.8, D30). */
+const ORDINAL = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth']
+
+/**
+ * The anaesthetist's one neutral line on an additional Procedure (catch-up Phase 43a; US-15.0.1):
+ * the multi-procedure rule's wording is the office's, so the anaesthetist reads only what to do.
+ */
+export function plainAdditionalNote(displayNumber: number, rvgPriced: boolean): string {
+  const ordinal = ORDINAL[displayNumber - 1] ?? `Procedure ${displayNumber}:`
+  const lead = ORDINAL[displayNumber - 1] !== undefined ? `${ordinal} procedure.` : ordinal
+  return rvgPriced ? `${lead} Record its times as usual.` : `${lead} Its Contract sets its price.`
+}
+
 function PrepaidRow({ procedureId, office }: { procedureId: string; office: boolean }) {
   const prepayment = useProcedurePrepayment(procedureId)
   const payeeName = useBookingStore((s) => {

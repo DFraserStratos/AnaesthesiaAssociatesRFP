@@ -33,11 +33,12 @@ test('mobile: add a procedure, Make primary moves it to the top with the pill, B
   const headers = page.locator('[data-testid="procedure-header"]')
   await expect(headers).toHaveCount(2)
   await expect(headers.nth(0).locator('[data-shot="procedure-primary-pill"]')).toHaveText('Primary')
-  await expect(page.locator('[data-shot="procedure-additional-note"]')).toContainText('Base units are charged on the primary procedure only')
+  // The anaesthetist reads one neutral line; the rule's wording is the office's (catch-up Phase 43a).
+  await expect(page.locator('[data-shot="procedure-additional-note"]')).toHaveText('Second procedure. Record its times as usual.')
   const makePrimary = page.locator('[data-shot="make-primary"]')
   await expect(makePrimary).toHaveCount(1)
   // The additional Procedure's B row: 0, on the primary; the Modifiers caption row instead of the section.
-  await expect(page.locator('[data-shot="units-row-b"]').filter({ hasText: 'Base units are on the primary procedure' })).toHaveCount(1)
+  await expect(page.locator('[data-shot="units-row-b"]').filter({ hasText: 'None on this procedure' })).toHaveCount(1)
   await expect(page.locator('[data-shot="modifiers-on-primary"]')).toHaveCount(1)
   // The phone shows what the price comes to since catch-up Phase 24 (US-03.3.10): a price line per Procedure.
   await expect(page.locator('[data-shot=price-card]')).toHaveCount(2)
@@ -46,7 +47,7 @@ test('mobile: add a procedure, Make primary moves it to the top with the pill, B
   const blocks = page.locator('[data-shot="procedure-block"]')
   const firstBefore = await blocks.first().getAttribute('data-procedure-id')
   const secondBefore = await blocks.nth(1).getAttribute('data-procedure-id')
-  await expect(blocks.first().locator('[data-shot="units-row-b"]')).not.toContainText('Base units are on the primary procedure')
+  await expect(blocks.first().locator('[data-shot="units-row-b"]')).not.toContainText('None on this procedure')
   await expect(blocks.first().locator('[data-shot="modifiers-on-primary"]')).toHaveCount(0)
 
   await makePrimary.click()
@@ -60,12 +61,12 @@ test('mobile: add a procedure, Make primary moves it to the top with the pill, B
   await expect(blocks.first()).toHaveAttribute('data-procedure-id', secondBefore!)
   await expect(blocks.nth(1)).toHaveAttribute('data-procedure-id', firstBefore!)
   // B changed over: the hip (now second) reads base on the primary; the Modifiers section moved to the first.
-  await expect(blocks.nth(1).locator('[data-shot="units-row-b"]')).toContainText('Base units are on the primary procedure')
+  await expect(blocks.nth(1).locator('[data-shot="units-row-b"]')).toContainText('None on this procedure')
   await expect(blocks.nth(1).locator('[data-shot="modifiers-on-primary"]')).toHaveCount(1)
   await expect(blocks.first().locator('[data-shot="modifiers-on-primary"]')).toHaveCount(0)
   await expect(headers.nth(0).locator('[data-shot="procedure-primary-pill"]')).toHaveText('Primary')
   await expect(page.locator('[data-shot="procedure-additional-note"]')).toHaveCount(1)
-  await expect(page.locator('[data-shot="units-row-b"]').filter({ hasText: 'Base units are on the primary procedure' })).toHaveCount(1)
+  await expect(page.locator('[data-shot="units-row-b"]').filter({ hasText: 'None on this procedure' })).toHaveCount(1)
   await expect(page.locator('[data-shot="modifiers-on-primary"]')).toHaveCount(1)
 })
 

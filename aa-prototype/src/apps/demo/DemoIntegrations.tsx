@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Info, Play, Radio, RotateCcw, RotateCw } from 'lucide-react'
 import { useDemoTriggerContext } from '../../shared/demoTriggers'
 import { FutureScopeChrome } from './futureScope/FutureScopeChrome'
-import { assessImportRow, matchingView, processMessage, resetDemo, useAppStore } from '../../store'
+import { assessImportRow, matchingView, processMessage, useAppStore } from '../../store'
+import { resetFramedDemo } from '../../shell/framedReset'
 import { CHANGE_TYPE_LABELS, suggestionText } from '../../domain/intake'
 import { neutral, accent, radius, semantic } from '../../theme/tokens'
 import {
@@ -128,7 +129,7 @@ export function DemoIntegrations() {
   }
 
   function resetSimulator() {
-    resetDemo(useAppStore)
+    resetFramedDemo({ clearHints: false })
     setFeedId(FEED.stg)
     setSelectedId(null)
     setLive(false)

@@ -178,7 +178,7 @@ const routeTree = (
           {/* ── Anaesthetist Mobile App ────────────────────────── */}
           {/* The simulated device is the prototype's host; the PWA target
               mounts the same app inside `MobileViewport` instead. */}
-          <Route path="mobile" element={<MobileApp host={PhoneFrame} />}>
+          <Route path="mobile" element={<MobileApp host={PhoneFrame} sessionDefault="signed-in" />}>
             <Route index element={<Navigate to="lists" replace />} />
             {/* One splat route, not sibling routes per layer: the slide stack
                 keeps every layer mounted so push AND pop animate. */}

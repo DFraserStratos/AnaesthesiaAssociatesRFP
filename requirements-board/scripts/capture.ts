@@ -256,6 +256,16 @@ async function newContext(browser: Browser, app: ScreenshotApp & CaptureApp): Pr
     serviceWorkers: 'block',
   })
   ctx.setDefaultTimeout(ACTION_TIMEOUT)
+  if (app.localStorage && Object.keys(app.localStorage).length > 0) {
+    await ctx.addInitScript((entries) => {
+      try {
+        const ls = (globalThis as any).localStorage
+        for (const [k, v] of Object.entries(entries)) if (ls.getItem(k) === null) ls.setItem(k, v)
+      } catch {
+        /* storage blocked: nothing to preset */
+      }
+    }, app.localStorage)
+  }
   if (app.hideCss) {
     await ctx.addInitScript(({ css, id }) => {
       const d = (globalThis as any).document

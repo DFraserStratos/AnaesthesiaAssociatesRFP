@@ -1,5 +1,11 @@
 import { expect, test } from '@playwright/test'
 import { runDemoAction } from './demoActions'
+import { keepSignedInScript } from './storage/demoReady'
+
+// The PWA opens signed out on a fresh handset (catch-up Phase 43a); these PWA tests clear storage, so the session is re-seeded on each load.
+test.beforeEach(async ({ context }) => {
+  await context.addInitScript(keepSignedInScript)
+})
 
 /**
  * Catch-up Phase 27: prepayment from a prepaid Contract. Admin: the rail's

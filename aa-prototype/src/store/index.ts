@@ -417,7 +417,7 @@ export {
   firstUnpaintedDay,
   STAGED_CLASH_NOTE,
 } from './draftListDemo'
-export { simulateSignInAttempts } from './authDemoActions'
+export { simulateSignInAttempts, recordAnaesthetistSignIn, type AnaesthetistSignInOutcome } from './authDemoActions'
 export { receivePayment, gstComponentOf, type ReceivePaymentInput } from './paymentActions'
 export { wireReconciliationPoll, runReconciliationPoll, type PollResult } from './reconciliationPoll'
 // Xero mirror resilience (catch-up Phase 37; EP-09, US-09.2.4): the gate, the sync queue, detection, divergence, and the Xero side.

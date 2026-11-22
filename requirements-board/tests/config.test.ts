@@ -83,6 +83,16 @@ describe('board.config.json', () => {
     ])
   })
 
+  it('reads a capture app\'s localStorage preset and refuses a non-string value (1.27.0)', () => {
+    const apps = [{ key: 'web' }, { key: 'phone', viewport: 'mobile' }]
+    const good = parseConfig(JSON.stringify({ screenshotApps: apps, capture: { apps: { phone: { url: 'http://x', localStorage: { session: '{"signedIn":true}', hint: '1' } } } } }))
+    expect(good.problems).toEqual([])
+    expect(good.config.capture?.apps.phone?.localStorage).toEqual({ session: '{"signedIn":true}', hint: '1' })
+    const bad = parseConfig(JSON.stringify({ screenshotApps: apps, capture: { apps: { web: { url: 'http://x', localStorage: { hint: 1 } } } } }))
+    expect(bad.problems).toEqual(['capture.apps.web.localStorage must map keys to string values'])
+    expect(bad.config.capture?.apps.web?.localStorage).toBeUndefined()
+  })
+
   it('leaves the defaults untouched when parsing', () => {
     parseConfig(JSON.stringify({ components: ['A'], screenshotApps: [{ key: 'a' }] }))
     expect(DEFAULT_CONFIG.components).toEqual([])

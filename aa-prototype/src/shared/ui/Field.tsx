@@ -32,7 +32,8 @@ interface TextFieldProps extends DataAttributes {
   value: string
   onChange: (value: string) => void
   placeholder?: string
-  type?: 'text' | 'date' | 'email' | 'tel' | 'number' | 'time'
+  /** `password` masks the value (catch-up Phase 43a: the simulated sign-in). */
+  type?: 'text' | 'date' | 'email' | 'tel' | 'number' | 'time' | 'password'
   mono?: boolean
   /** One mist line under the field, tied to it with aria-describedby (error-coloured while `invalid`). */
   hint?: ReactNode

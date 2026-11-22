@@ -164,7 +164,8 @@ Set this up only if the project has a web app whose screens should illustrate it
 
 1. In `board.config.json`, list the apps in `screenshotApps` (a stable lower-case `key`, a `label`,
    and a `viewport` of `desktop` or `mobile`). Add a `capture` section that gives each app its dev
-   server `url`, a `setupRoute`, and `hideCss` for any demo-only chrome. Add `locale`, `timezone`
+   server `url`, a `setupRoute`, `hideCss` for any demo-only chrome, and `localStorage` for any
+   per-browser state a fresh context must start with (a sign-in session, dismissed hints). Add `locale`, `timezone`
    and a `startHint` that says how to start the servers.
 2. Write recipes in `requirements/capture/recipes/<ID>.json`. The board's README ("Capturing
    screenshots") gives the format and the built-in steps.

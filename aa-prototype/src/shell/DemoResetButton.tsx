@@ -1,6 +1,6 @@
 import { useId } from 'react'
 import { RotateCcw } from 'lucide-react'
-import { resetDemo, useAppStore } from '../store'
+import { resetFramedDemo } from './framedReset'
 import { PopoverPanel, usePopover } from '../shared/ui'
 import { accent, neutral, radius, semantic } from '../theme/tokens'
 
@@ -14,7 +14,7 @@ export function DemoResetButton() {
   const titleId = useId()
 
   function confirmReset() {
-    resetDemo(useAppStore)
+    resetFramedDemo({ clearHints: true })
     setConfirming(false)
     triggerRef.current?.focus()
   }

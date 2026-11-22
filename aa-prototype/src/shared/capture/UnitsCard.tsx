@@ -5,6 +5,7 @@ import { describeTimeRule, resolveStartingUnits, type BillingValidationFailure, 
 import { editProcedure, type Actor, type ProcedurePatch } from '../../store'
 import { ModifiersSection } from './ModifiersSection'
 import { Caption, CaptureSection, NumberStepper } from './ui'
+import { isOfficeViewer } from '../viewer'
 
 type UnitsField = 'baseUnitsCaptured' | 'timeUnitsCaptured' | 'modifierUnitsCaptured'
 
@@ -47,6 +48,9 @@ export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, allocat
   const additional = allocation.role === 'additional'
   // OQ-132's default, provisional: a primary on a fixed or open price bills no base units.
   const unbilledBase = !additional && !allocation.rvgPriced
+  // The multi-procedure rule's wording is the office's (catch-up Phase 43a; US-15.0.1): the
+  // anaesthetist reads plain captions, the same figures, and no provisional label.
+  const plain = !isOfficeViewer(actor)
   // The RVG time tiers held as data (catch-up Phase 19a; US-05.2.2): the T caption's title words the rule.
   const timeRule = useBookingStore((s) => s.masters.rvgTimeRule)
   function write(patch: ProcedurePatch) {
@@ -75,7 +79,13 @@ export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, allocat
         overridden={!unbilledBase && btm.base.source === 'overridden'}
         overriddenLabel={`Set manually${btm.baseOutsideGuide ? ', outside the guide range' : ''}`}
         captionTone={btm.baseOutsideGuide && !additional ? 'warn' : 'quiet'}
-        seededCaption={additional ? 'Base units are on the primary procedure' : unbilledBase ? 'No base units billed on a fixed price (provisional, OQ-132)' : baseCaption(btm)}
+        seededCaption={
+          additional
+            ? plain ? PLAIN_NONE_HERE : 'Base units are on the primary procedure'
+            : unbilledBase
+              ? plain ? 'None on a fixed price' : 'No base units billed on a fixed price (provisional, OQ-132)'
+              : baseCaption(btm)
+        }
         steppable={canCapture && !additional && !unbilledBase}
         onStep={(delta) => step('baseUnitsCaptured', btm.base.units, delta)}
         onReset={canCapture && !additional ? () => reset('baseUnitsCaptured') : undefined}
@@ -96,7 +106,11 @@ export function UnitsCard({ procedure, btm, rvgGroup, actor, canCapture, allocat
         unit="modifier units"
         value={btm.modifiers.units}
         overridden={!additional && btm.modifiers.source === 'overridden'}
-        seededCaption={additional ? additionalModifierCaption(allocation) : primaryModifierCaption(mBreakdown, allocation)}
+        seededCaption={
+          plain
+            ? additional ? plainAdditionalModifierCaption(allocation) : mBreakdown
+            : additional ? additionalModifierCaption(allocation) : primaryModifierCaption(mBreakdown, allocation)
+        }
         steppable={canCapture && !additional}
         onStep={(delta) => step('modifierUnitsCaptured', btm.modifiers.units, delta)}
         onReset={canCapture && !additional ? () => reset('modifierUnitsCaptured') : undefined}
@@ -155,6 +169,13 @@ function additionalModifierCaption(allocation: ProcedureAllocation): string {
   if (allocation.modifierShare > 0) return `Share of the Booking's ${allocation.bookingModifierUnits} modifier units`
   if (allocation.bookingModifierUnits === 0) return 'None'
   return `None · the Booking's ${allocation.bookingModifierUnits} modifier units stay on the primary`
+}
+
+const PLAIN_NONE_HERE = 'None on this procedure'
+
+/** The anaesthetist's M caption on an additional Procedure: whether it carries any, never the rule (catch-up Phase 43a). */
+function plainAdditionalModifierCaption(allocation: ProcedureAllocation): string {
+  return allocation.rvgPriced && allocation.modifierShare > 0 ? "From the Booking's modifiers" : PLAIN_NONE_HERE
 }
 
 /**

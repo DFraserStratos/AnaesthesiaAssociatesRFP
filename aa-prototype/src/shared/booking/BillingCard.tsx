@@ -1,4 +1,5 @@
 import { useBookingApi, useBookingStore, useBookingStoreMode } from './draft'
+import { viewerOf } from '../viewer'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Check, ChevronDown, RotateCcw, Search } from 'lucide-react'
 import { accent, neutral, radius } from '../../theme/tokens'
@@ -154,7 +155,8 @@ function usePaidBy({ procedure, actor, canEdit }: BillingCardProps): Omit<PaidBy
   const invoices = useBookingStore((s) => s.billing.invoices)
   const invoiceLines = useBookingStore((s) => s.billing.invoiceLines)
   const locks = useBookingStore((s) => s.billing.locks)
-  const surface = actor.role === 'office' ? 'office' : 'anaesthetist'
+  // The one viewer rule (catch-up Phase 43a).
+  const surface = viewerOf(actor)
   const view = useMemo(
     () => procedureStackViewFor({ masters, schedule: { procedures, bookings, lists }, billing: { invoices, invoiceLines, locks } }, procedure.id, surface),
     [masters, procedures, bookings, lists, invoices, invoiceLines, locks, procedure.id, surface],

@@ -1,7 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { SyntheticDataBadge } from '../../../shared/SyntheticDataBadge'
 import { neutral, type as typeScale } from '../../../theme/tokens'
-import { profileFor, useAppStore, type Actor } from '../../../store'
+import { profileFor, recordAnaesthetistSignIn, useAppStore, type Actor } from '../../../store'
+import { signOutSession } from '../../../shared/session/anaesthetistSession'
 import { Avatar, DemoBadge, DockSpacer } from '../../../shared'
 import { formatCurrency } from '../../../shared/format'
 import { DefList, TextAction } from '../../../shared/ui'
@@ -38,6 +39,13 @@ export function MoreScreen({ personaName, personaRole, initials, actor, anaesthe
   const profile = useMemo(() => profileFor({ masters: { anaesthetists } }, anaesthetistId), [anaesthetists, anaesthetistId])
   const [rateOpen, setRateOpen] = useState(false)
   const [rateKey, setRateKey] = useState(0)
+
+  const accountEmail = anaesthetists[anaesthetistId]?.email ?? ''
+
+  function signOut() {
+    recordAnaesthetistSignIn(useAppStore, 'signedOut')
+    signOutSession()
+  }
 
   function openRate() {
     setRateKey((k) => k + 1)
@@ -93,6 +101,18 @@ export function MoreScreen({ personaName, personaRole, initials, actor, anaesthe
           <p style={CAPTION}>{BANK_CAPTION}</p>
         </Card>
       )}
+
+      {/* The account row (catch-up Phase 43a; US-13.5.3): one tap signs out, no confirm, and the
+          sign-in screen shows at once with the account filled in. Shown in both builds. */}
+      <Card as="div" shot="more-account" style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, color: neutral.slate }}>Signed in as</div>
+          <div style={{ fontSize: 15, fontWeight: 600, overflowWrap: 'anywhere' }}>{accountEmail}</div>
+        </div>
+        <TextAction size="lg" shot="more-sign-out" onClick={signOut}>
+          Sign out
+        </TextAction>
+      </Card>
 
       <Card as="div" style={{ marginTop: 16, gap: 12 }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>

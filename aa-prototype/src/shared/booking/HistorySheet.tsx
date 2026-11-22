@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { isOfficeOnlyAuditEntry } from '../audit/officeOnlyAudit'
+import type { Viewer } from '../viewer'
 import { neutral } from '../../theme/tokens'
 import { useAppStore } from '../../store'
 import { auditViewerEntries, sortAuditNewestFirst } from '../audit'
@@ -31,6 +33,12 @@ interface HistorySheetProps {
   coverListId?: string
   /** Admin only (catch-up Phase 35): each row offers View as at for this Booking. */
   asAtBookingId?: string
+  /**
+   * Who is reading (catch-up Phase 43a, `shared/viewer.ts`): the anaesthetist's history drops
+   * office-private entries (a not-preferred pairing acknowledged on a List reassignment).
+   * Absent, the office's view, as before.
+   */
+  viewer?: Viewer
 }
 
 /**
@@ -52,7 +60,7 @@ function subjectFrom(title: string): string {
   return word === '' || word.includes(' ') ? 'record' : word
 }
 
-export function HistorySheet({ open, entityIds, entityLabels, title, onClose, coverListId, asAtBookingId }: HistorySheetProps) {
+export function HistorySheet({ open, entityIds, entityLabels, title, onClose, coverListId, asAtBookingId, viewer = 'office' }: HistorySheetProps) {
   const [asAt, setAsAt] = useState<string | null>(null)
   const { Overlay } = useSurface()
   const audit = useAppStore((s) => s.audit)
@@ -83,8 +91,9 @@ export function HistorySheet({ open, entityIds, entityLabels, title, onClose, co
     }
     const cover = (a: (typeof audit)[number]) => a.changeSetId !== undefined && coverSets.has(a.changeSetId) && a.entityType === 'list'
     // Payments, receipts and disbursements are recorded in Xero, not in History (catch-up Phase 39; US-13.5.2).
-    return sortAuditNewestFirst(auditViewerEntries(audit.filter((a) => ids.has(a.entityId) || named(a) || cover(a))))
-  }, [audit, idSet, coverListId])
+    const readable = (a: (typeof audit)[number]) => viewer === 'office' || !isOfficeOnlyAuditEntry(a)
+    return sortAuditNewestFirst(auditViewerEntries(audit.filter((a) => (ids.has(a.entityId) || named(a) || cover(a)) && readable(a))))
+  }, [audit, idSet, coverListId, viewer])
 
   return (
     <Overlay open={open} onClose={onClose}>

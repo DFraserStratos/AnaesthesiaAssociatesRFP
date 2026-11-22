@@ -460,7 +460,9 @@ catalogue. It is optional: a project with no `capture` section in `board.config.
 - **Set up** in `board.config.json`: each screenshot app (`screenshotApps`: key, label, viewport) and,
   under `capture.apps`, its dev server's `url`, the `setupRoute` a shot with setup steps loads first,
   `hideCss` that hides demo-only chrome from every shot, and optionally `portEnv`, an environment
-  variable that replaces the url's port when set (a second worktree on its own ports). Also `capture.locale`, `timezone`,
+  variable that replaces the url's port when set (a second worktree on its own ports). Optionally `localStorage`, keys every
+  fresh context starts with (set on each load unless already there: a signed-in session, a dismissed
+  welcome card), so no shot opens on a login or a first-run card its recipe did not ask for. Also `capture.locale`, `timezone`,
   `startHint` (what to tell the user when a server is down) and where `recipes` and the `report` live,
   relative to `requirements/`.
 - **Recipes:** one JSON file per item (`<recipes>/<ID>.json`). Each lists shots, each with an app, a

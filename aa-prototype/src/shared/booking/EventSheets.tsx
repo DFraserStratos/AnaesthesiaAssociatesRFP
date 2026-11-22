@@ -12,6 +12,7 @@
  */
 
 import { useState, type ReactNode } from 'react'
+import { isOfficeViewer } from '../viewer'
 import { neutral } from '../../theme/tokens'
 import type { BillingEventDetail, PrePostOpEventDetail } from '../../domain/types'
 import { EVENT_RULES } from '../../domain/billing/procedureEvent'
@@ -82,7 +83,7 @@ function useProcedureContext(procedureId: string) {
 }
 
 /** The invoice tick and the "same as" party: both sheets. */
-function TickAndParty({ procedureId, sameAsName, billable, onBillable, party, onParty }: { procedureId: string; sameAsName: string; billable: boolean; onBillable: (b: boolean) => void; party: PartyDraft; onParty: (p: PartyDraft) => void }) {
+function TickAndParty({ procedureId, sameAsName, billable, onBillable, party, onParty, plain }: { procedureId: string; sameAsName: string; billable: boolean; onBillable: (b: boolean) => void; party: PartyDraft; onParty: (p: PartyDraft) => void; plain: boolean }) {
   const phone = useSurface().variant === 'mobile'
   return (
     <>
@@ -96,7 +97,8 @@ function TickAndParty({ procedureId, sameAsName, billable, onBillable, party, on
         onChange={onParty}
         label={COPY.billTo}
         sameAsLabel={sameAsName !== '' ? `${COPY.sameAsTick} (${sameAsName})` : COPY.sameAsTick}
-        caption={COPY.sameAsCaption}
+        // The office's reading caption (39b); the anaesthetist reads the tick alone (catch-up Phase 43a).
+        {...(plain ? {} : { caption: COPY.sameAsCaption })}
       />
     </>
   )
@@ -218,7 +220,8 @@ function PrePostOpForm({ procedureId, actor, onClose, eventId }: SheetProps) {
               <span className="mono">{p.code}</span> · {EVENT_TYPE_LABEL.accPreOpAssessment}
             </OptionRow>
           ))}
-          <Caption shot="acc-codes-caption">{COPY.accCodesCaption}</Caption>
+          {/* OQ-12's open-question caption is the office's (catch-up Phase 43a). */}
+          {isOfficeViewer(actor) && <Caption shot="acc-codes-caption">{COPY.accCodesCaption}</Caption>}
         </div>
       )}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -256,7 +259,7 @@ function PrePostOpForm({ procedureId, actor, onClose, eventId }: SheetProps) {
           <TextField label={COPY.feeAmountLabel} value={amount} onChange={setAmount} mono inputMode="decimal" invalid={error?.field === 'amount'} shot="event-fee-amount" />
         </div>
       )}
-      <TickAndParty procedureId={procedureId} sameAsName={ctx.sameAsName} billable={billable} onBillable={setBillable} party={party} onParty={setParty} />
+      <TickAndParty procedureId={procedureId} sameAsName={ctx.sameAsName} billable={billable} onBillable={setBillable} party={party} onParty={setParty} plain={!isOfficeViewer(actor)} />
       <FormError message={error?.message ?? null} />
       <Caption shot="event-routing-caption">{COPY.routingCaption}</Caption>
       <SheetActions
@@ -342,7 +345,7 @@ function BillingEventForm({ procedureId, actor, onClose, eventId }: SheetProps) 
         </div>
       </div>
       {direction === 'credit' && <Caption shot="billing-credit-caption">{COPY.creditCaption}</Caption>}
-      <TickAndParty procedureId={procedureId} sameAsName={ctx.sameAsName} billable={billable} onBillable={setBillable} party={party} onParty={setParty} />
+      <TickAndParty procedureId={procedureId} sameAsName={ctx.sameAsName} billable={billable} onBillable={setBillable} party={party} onParty={setParty} plain={!isOfficeViewer(actor)} />
       <FormError message={error?.message ?? null} />
       <Caption shot="event-routing-caption">{COPY.routingCaption}</Caption>
       <SheetActions

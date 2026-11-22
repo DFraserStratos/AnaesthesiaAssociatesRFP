@@ -9,6 +9,8 @@ import { SurfaceProvider } from '../../shared'
 import { MoveListPromptProvider } from '../../shared/flows/MoveListPrompt'
 import { availabilityStackLocation, listsStackLocation, mobileTabForPath, MOBILE_TAB_PATH, type MobileTab } from './navigation'
 import type { MobileOutletContext } from './outlet'
+import { SignInScreen } from './screens/SignInScreen'
+import { useAnaesthetistSession, type SessionDefault } from '../../shared/session/anaesthetistSession'
 
 interface TabDef {
   key: MobileTab
@@ -102,12 +104,23 @@ function BottomTabBar({ active, onSelect }: { active: MobileTab; onSelect: (tab:
  * host owes this app two things: a `position: relative` box for the absolutely
  * positioned sheets and docks, and the four `--aa-inset-*` custom properties
  * (see the inset contract in `theme/global.css`).
+ *
+ * `sessionDefault` (catch-up Phase 43a; US-13.5.3) is REQUIRED for the same
+ * reason: neither entry can forget it. The framed prototype passes
+ * `'signed-in'`, so no workshop opens on a login; the PWA passes
+ * `'signed-out'`, so a fresh handset shows the sign-in screen. Signed out, the
+ * app renders `SignInScreen` in place of the screens and the tab bar, inside
+ * the same surface and host, and leaves the URL alone, so signing in lands
+ * where it already points. The actor and every store guard are unchanged.
  */
 export function MobileApp({
   host: Host,
   moreExtra,
+  sessionDefault,
 }: {
   host: ComponentType<{ children: ReactNode }>
+  /** Signed in or out when nothing is stored on this device (the framed build opens signed in). */
+  sessionDefault: SessionDefault
   /** Host-supplied presenter controls for the More tab (the PWA's; see `outlet.ts`). */
   moreExtra?: ReactNode
 }) {
@@ -119,6 +132,7 @@ export function MobileApp({
   )
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const { signedIn } = useAnaesthetistSession(sessionDefault)
 
   const context: MobileOutletContext = useMemo(
     () => ({
@@ -149,13 +163,17 @@ export function MobileApp({
         style={{ height: '100%', position: 'relative', overflow: 'hidden', background: 'transparent', color: neutral.ink }}
       >
         {/* The one move sheet (catch-up Phase 32) renders after the screens and the tab bar, above both. */}
-        <MoveListPromptProvider actor={actor}>
-          <Outlet context={context} />
+        {signedIn ? (
+          <MoveListPromptProvider actor={actor}>
+            <Outlet context={context} />
 
-          {showTabBar && (
-            <BottomTabBar active={mobileTabForPath(pathname)} onSelect={(tab) => navigate(MOBILE_TAB_PATH[tab])} />
-          )}
-        </MoveListPromptProvider>
+            {showTabBar && (
+              <BottomTabBar active={mobileTabForPath(pathname)} onSelect={(tab) => navigate(MOBILE_TAB_PATH[tab])} />
+            )}
+          </MoveListPromptProvider>
+        ) : (
+          <SignInScreen />
+        )}
       </div>
       </Host>
     </SurfaceProvider>
