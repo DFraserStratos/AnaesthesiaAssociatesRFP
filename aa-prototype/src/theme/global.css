@@ -913,3 +913,11 @@ details[open] > .aa-disclosure .aa-disclosure-chevron {
   }
 }
 
+
+/* Catch-up Phase 40a: while a dialog is open, the framed build's harness bar sits
+   above its fixed scrim, so Demo actions can stage the screen behind it (the modal
+   layer never makes the bar inert). Only then: Admin's drawers keep covering the bar.
+   210 is zIndex.harness in tokens.ts. */
+body:has([data-aa-dialog]) .aa-harness {
+  z-index: 210;
+}

@@ -116,6 +116,8 @@ describe('registry shape', () => {
       if (t.id === 'ask-colleague-make-available') published['adminPicker.listId'] = 'L-29104-2026-07-22-AM'
       // The backdated range shows while Merivale's Face lift is open in its detail (catch-up Phase 24; the index hint says so).
       if (t.id === 'demo-backdated-range') published['adminContracts.openContractId'] = 'CT-MER-FACELIFT'
+      // The Hub's mode shows while Add a booking (or another lookup surface) is open (catch-up Phase 40a; the index hint says so).
+      if (t.id === 'nhi-hub-mode') published['nhiHub.inUse'] = true
       const visible = demoTriggersFor(state, path.split('?')[0]!, 'bar', published).map((m) => m.trigger.id)
       expect(visible, `${t.id} at ${path}`).toContain(t.id)
     }

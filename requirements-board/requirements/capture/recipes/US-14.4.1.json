@@ -1,35 +1,149 @@
 {
   "id": "US-14.4.1",
-  "status": "partial",
-  "absentReason": "The NHI lookup is simulated against a small set of demo records, not the NHI FHIR API, and anaesthetists carry an HPI only as an optional field; nothing is validated against HPI.",
+  "status": "captured",
+  "absentReason": "",
   "shots": [
     {
       "name": "nhi-lookup",
       "app": "web",
-      "caption": "NHI lookup when adding a Booking",
+      "caption": "NHI lookup through the Digital Services Hub when adding a Booking",
       "start": "/web/lists/L-34821-2026-07-21-PM",
       "states": [
         {
+          "state": "invalid",
+          "caption": "An NHI that fails its check digit (ZAA0068) is refused as it is typed, with the reason, and Look up stays disabled",
           "steps": [
             {
               "click": "text=\"Add a booking\" >> nth=0"
             },
             {
-              "wait": 400
+              "wait": "[role=dialog] [data-shot=nhi-lookup]"
             },
             {
-              "fill": "[role=dialog] [placeholder=\"ABC1234\"]",
-              "value": "CQY9304"
+              "fill": "[role=dialog] [data-shot=manual-nhi]",
+              "value": "ZAA0068"
             },
             {
-              "click": "[role=dialog] >> role=button[name=\"Look up\"]"
-            },
-            {
-              "wait": 400
+              "wait": "[role=dialog] [data-shot=nhi-lookup] >> text=\"The check digit does not match.\""
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[role=dialog] [data-shot=nhi-lookup]"
+          ]
+        },
+        {
+          "state": "found",
+          "caption": "Found Mereana Tipene on the NHI register, her details pre-filled and still editable; the lookup is on behalf of Dr Melanie Souter (HPI CPN 10SOUM), only to identify this patient",
+          "steps": [
+            {
+              "click": "text=\"Add a booking\" >> nth=0"
+            },
+            {
+              "wait": "[role=dialog] [data-shot=nhi-lookup]"
+            },
+            {
+              "fill": "[role=dialog] [data-shot=manual-nhi]",
+              "value": "ZBR4417"
+            },
+            {
+              "click": "[role=dialog] [data-shot=nhi-lookup-button]"
+            },
+            {
+              "wait": "[role=dialog] [data-shot=nhi-lookup-status][data-status=found]"
+            }
+          ],
+          "highlight": [
+            "[role=dialog] [data-shot=nhi-lookup-status]",
+            "[role=dialog] [data-shot=nhi-purpose]"
+          ]
+        },
+        {
+          "state": "payer",
+          "caption": "The payer follows the patient found on the NHI register: Mereana Tipene, Patient",
+          "steps": [
+            {
+              "click": "text=\"Add a booking\" >> nth=0"
+            },
+            {
+              "wait": "[role=dialog] [data-shot=nhi-lookup]"
+            },
+            {
+              "fill": "[role=dialog] [data-shot=manual-nhi]",
+              "value": "ZBR4417"
+            },
+            {
+              "click": "[role=dialog] [data-shot=nhi-lookup-button]"
+            },
+            {
+              "wait": "[role=dialog] [data-shot=nhi-lookup-status][data-status=found]"
+            },
+            {
+              "scroll": "[role=dialog] [data-shot=add-booking-payer]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[role=dialog] [data-shot=add-booking-payer]"
+          ]
+        },
+        {
+          "state": "not-on-register",
+          "caption": "A valid NHI with no one on the NHI register (ZBW6638): check the number, or enter the details by hand",
+          "steps": [
+            {
+              "click": "text=\"Add a booking\" >> nth=0"
+            },
+            {
+              "wait": "[role=dialog] [data-shot=nhi-lookup]"
+            },
+            {
+              "fill": "[role=dialog] [data-shot=manual-nhi]",
+              "value": "ZBW6638"
+            },
+            {
+              "click": "[role=dialog] [data-shot=nhi-lookup-button]"
+            },
+            {
+              "wait": "[role=dialog] [data-shot=nhi-lookup-status][data-status=notFound]"
+            }
+          ],
+          "highlight": [
+            "[role=dialog] [data-shot=nhi-lookup-status]"
+          ]
+        },
+        {
+          "state": "hub-unavailable",
+          "caption": "With the Hub simulated as Unavailable the lookup falls back to entering the details by hand, with Retry",
+          "steps": [
+            {
+              "click": "text=\"Add a booking\" >> nth=0"
+            },
+            {
+              "wait": "[role=dialog] [data-shot=nhi-lookup]"
+            },
+            {
+              "trigger": "nhi-hub-mode",
+              "choice": "unavailable"
+            },
+            {
+              "wait": "[role=dialog] [data-shot=nhi-hub-mode-badge]"
+            },
+            {
+              "fill": "[role=dialog] [data-shot=manual-nhi]",
+              "value": "ZBR4417"
+            },
+            {
+              "click": "[role=dialog] [data-shot=nhi-lookup-button]"
+            },
+            {
+              "wait": "[role=dialog] [data-shot=nhi-lookup-status][data-status=unavailable]"
+            }
+          ],
+          "highlight": [
+            "[role=dialog] [data-shot=nhi-hub-mode-badge]",
+            "[role=dialog] [data-shot=nhi-lookup-status]"
           ]
         }
       ]
@@ -37,7 +151,7 @@
     {
       "name": "nhi-lookup",
       "app": "mobile",
-      "caption": "NHI lookup when adding a Booking",
+      "caption": "NHI lookup in the Add a booking sheet: Ana Fifita found on the NHI register by her new format NHI, looked up on behalf of Dr Melanie Souter (HPI CPN 10SOUM)",
       "start": "/mobile/lists/L-34821-2026-07-21-PM",
       "states": [
         {
@@ -46,20 +160,70 @@
               "click": "text=\"Add a booking\" >> nth=0"
             },
             {
-              "wait": 400
+              "wait": "[data-aa-mobile-product] [role=dialog] [data-shot=nhi-lookup]"
             },
             {
-              "fill": "[data-aa-mobile-product] [role=dialog] [placeholder=\"ABC1234\"]",
-              "value": "CQY9304"
+              "fill": "[data-aa-mobile-product] [role=dialog] [data-shot=manual-nhi]",
+              "value": "ZBX41AL"
             },
             {
-              "click": "[data-aa-mobile-product] [role=dialog] >> role=button[name=\"Look up\"]"
+              "click": "[data-aa-mobile-product] [role=dialog] [data-shot=nhi-lookup-button]"
             },
             {
-              "wait": 400
+              "wait": "[data-aa-mobile-product] [role=dialog] [data-shot=nhi-lookup-status][data-status=found]"
             }
           ],
-          "highlight": []
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog] [data-shot=nhi-lookup]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "register-refresh",
+      "app": "admin",
+      "caption": "Refresh a patient's details from the NHI register",
+      "start": "/admin/patients/ZAM1098",
+      "states": [
+        {
+          "state": "differences",
+          "caption": "Fiona Gray's record against the NHI register: her name (Fiona Tamihana) and address (5 Kowhai Lane, Halswell) differ, and each is kept or taken from the register",
+          "steps": [
+            {
+              "click": "[data-shot=patient-register-refresh-button]"
+            },
+            {
+              "wait": "[data-shot=patient-register-differences]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=patient-register-refresh]"
+          ]
+        },
+        {
+          "state": "applied",
+          "caption": "Use register for the name, then Apply: the record reads Fiona Tamihana, keeps its own address, and reads Last refreshed 21 Jul 2026, 08:00",
+          "steps": [
+            {
+              "click": "[data-shot=patient-register-refresh-button]"
+            },
+            {
+              "wait": "[data-shot=patient-register-differences]"
+            },
+            {
+              "select": "[data-shot=patient-register-differences] [data-field=name] select",
+              "value": "use"
+            },
+            {
+              "click": "[data-shot=patient-register-apply]"
+            },
+            {
+              "wait": "[data-shot=patient-register-done]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=patient-details]"
+          ]
         }
       ]
     }

@@ -13,6 +13,7 @@ import { ClickableRow } from '../../../../shared/table'
 import { EditCell, MasterHeader, MasterTable } from './chrome'
 import { rowCellStyle } from './tableStyles'
 import { anaesthetistRecordPath } from '../../mastersPaths'
+import { HPI_CPN_LABEL } from '../../../../shared/format'
 
 /**
  * Anaesthetists (catch-up Phase 17 adds the Tier column and the row that opens
@@ -36,7 +37,7 @@ export function AnaesthetistsView({ actor }: { actor: Actor }) {
         sub="Open an anaesthetist for their record, tier and pairing preferences. Adding one creates their sessions from their start date."
         add={{ label: 'Add anaesthetist', onClick: () => setAdding(true) }}
       />
-      <MasterTable columns={['Name', 'Reg', 'Unit $', 'Tier', 'HPI CPN', 'Bank account', 'GST number', 'Phone', 'Email', 'Start date', 'Active', '']} rightAlign={[11]} shot="masters-anaesthetists" label="Anaesthetists">
+      <MasterTable columns={['Name', 'Reg', 'Unit $', 'Tier', HPI_CPN_LABEL, 'Bank account', 'GST number', 'Phone', 'Email', 'Start date', 'Active', '']} rightAlign={[11]} shot="masters-anaesthetists" label="Anaesthetists">
         {rows.map((a) => (
           <ClickableRow
             key={a.registrationNumber}

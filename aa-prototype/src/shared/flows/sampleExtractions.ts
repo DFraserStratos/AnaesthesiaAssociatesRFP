@@ -2,8 +2,8 @@
  * Canned OCR "extractions" for the photo-capture demo. Each mirrors the text
  * drawn on its bundled sample paper card. Sample A is keyed to an already-seeded
  * patient (Wiremu Tane) so saving demonstrates NHI dedupe/reuse; Sample B is
- * keyed to a canned `lookupNhi` hit (Losa Tuilagi) so the review form's
- * "Look up NHI" confirms against the simulated Hub.
+ * keyed to Losa Tuilagi, who is on the synthetic NHI register (catch-up Phase
+ * 40a), so the review form's "Look up" confirms against the simulated Hub.
  */
 
 import { PAPER_CARD_A, PAPER_CARD_B } from '../../assets/samplePaperCards'

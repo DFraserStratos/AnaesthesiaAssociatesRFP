@@ -24,6 +24,8 @@ import { longDay, nhiBadge, shortDay, plural } from '../../../shared/format'
 import { sessionText } from '../../../domain/outOfHours'
 import { OverlayHeader } from '../../../shared/surface/OverlayHeader'
 import { NameSearchBox } from '../../../shared/ui/NameSearchBox'
+import { FieldHint } from '../../../shared/ui/Field'
+import { searchNhiReason } from '../../../domain/bookingSearch'
 
 // ---------------------------------------------------------------------------
 // The header row: search field and calendar button
@@ -40,29 +42,38 @@ export function LookbackSearchRow({
   onOpenCalendar: () => void
 }) {
   const [text, setText] = useFieldText(query, onQueryChange)
+  const nhiReason = searchNhiReason(text)
   return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        {/* The shared search box, white on the phone canvas (UI unification U4, question 4), with the 44px clear. */}
-        <NameSearchBox
-          value={text}
-          onChange={setText}
-          label="Search your Bookings"
-          placeholder="Search patient name or NHI"
-          fill="surface"
-          touch
-          testId="mobile-lists-search"
-        />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* The shared search box, white on the phone canvas (UI unification U4, question 4), with the 44px clear. */}
+          <NameSearchBox
+            value={text}
+            onChange={setText}
+            label="Search your Bookings"
+            placeholder="Search patient name or NHI"
+            fill="surface"
+            touch
+            testId="mobile-lists-search"
+          />
+        </div>
+        <button
+          type="button"
+          className="aa-ctl"
+          aria-label="Go to a date"
+          onClick={onOpenCalendar}
+          style={{ width: 48, height: 48, flex: 'none', borderRadius: radius.ctl, border: `1.5px solid ${accent.base}`, background: neutral.surface, color: accent.base, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+        >
+          <CalendarDays size={20} strokeWidth={2.2} aria-hidden />
+        </button>
       </div>
-      <button
-        type="button"
-        className="aa-ctl"
-        aria-label="Go to a date"
-        onClick={onOpenCalendar}
-        style={{ width: 48, height: 48, flex: 'none', borderRadius: radius.ctl, border: `1.5px solid ${accent.base}`, background: neutral.surface, color: accent.base, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-      >
-        <CalendarDays size={20} strokeWidth={2.2} aria-hidden />
-      </button>
+      {/* Catch-up Phase 40a: a typed NHI that cannot be one says why (matching stays exact, nothing is looked up). */}
+      {nhiReason !== undefined && (
+        <FieldHint tone="error" shot="lists-search-nhi-reason" style={{ paddingLeft: 14 }}>
+          {nhiReason}
+        </FieldHint>
+      )}
     </div>
   )
 }

@@ -5,7 +5,7 @@ import { useAppStore, type Actor } from '../../../store'
 import { selectPriorityTier, setPriorityTier } from '../../../store/officePrivate'
 import { FormError } from '../../../shared'
 import { HistorySheet } from '../../../shared/booking'
-import { formatCurrency } from '../../../shared/format'
+import { formatCurrency, HPI_CPN_LABEL } from '../../../shared/format'
 import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
 import { PairingSection, useProfileHistory } from '../components/pairing'
 import { HeaderActions, IdChip, PROFILE_CARD, ProfileHeader, ProfilePage } from '../components/ProfileChrome'
@@ -46,7 +46,7 @@ export function AnaesthetistRecord({ anaesthetistId, actor }: { anaesthetistId: 
       <BackLink to={mastersViewPath('anaesthetists')} size="desktop">Anaesthetists</BackLink>
       <ProfileHeader
         name={anaesthetist.name}
-        chip={<IdChip label="HPI CPN" value={anaesthetist.hpiId} shot="anaesthetist-hpi-chip" />}
+        chip={<IdChip label={HPI_CPN_LABEL} value={anaesthetist.hpiId} shot="anaesthetist-hpi-chip" />}
         sub={<>Registration <span className="mono">{anaesthetist.registrationNumber}</span> · {anaesthetist.active ? 'Active' : 'Inactive'}</>}
         action={<HeaderActions onHistory={() => setHistory(true)} onEdit={() => setEditing(true)} />}
       />
@@ -64,7 +64,7 @@ export function AnaesthetistRecord({ anaesthetistId, actor }: { anaesthetistId: 
             <DefRow layout="stacked" label="Status">{anaesthetist.active ? 'Active' : 'Inactive'}</DefRow>
             <DefRow layout="stacked" label="Phone">{anaesthetist.phone}</DefRow>
             <DefRow layout="stacked" label="Email">{anaesthetist.email}</DefRow>
-            <DefRow layout="stacked" label="HPI CPN" mono>{anaesthetist.hpiId}</DefRow>
+            <DefRow layout="stacked" label={HPI_CPN_LABEL} mono>{anaesthetist.hpiId}</DefRow>
             <DefRow layout="stacked" label="Bank account" mono note={anaesthetist.bankAccount.accountName} shot="anaesthetist-bank-account">
               {maskBankAccount(anaesthetist.bankAccount.accountNumber)}
             </DefRow>

@@ -4,7 +4,7 @@ import { neutral, type as typeScale } from '../../../theme/tokens'
 import { profileFor, recordAnaesthetistSignIn, useAppStore, type Actor } from '../../../store'
 import { signOutSession } from '../../../shared/session/anaesthetistSession'
 import { Avatar, DemoBadge, DockSpacer } from '../../../shared'
-import { formatCurrency } from '../../../shared/format'
+import { formatCurrency, HPI_CPN_LABEL } from '../../../shared/format'
 import { DefList, TextAction } from '../../../shared/ui'
 import { BANK_CAPTION, HPI_CPN_CAPTION, ProfileRow } from '../../../shared/profile'
 import { EditRateSheet, MobileHeader } from '../components'
@@ -91,7 +91,7 @@ export function MoreScreen({ personaName, personaRole, initials, actor, anaesthe
           <div style={DIVIDER} />
           <DefList gap={4}>
             <ProfileRow label="Registration" locked>{profile.registrationNumber}</ProfileRow>
-            <ProfileRow label="HPI CPN" locked shot="mobile-profile-hpi">{profile.hpiId}</ProfileRow>
+            <ProfileRow label={HPI_CPN_LABEL} locked shot="mobile-profile-hpi">{profile.hpiId}</ProfileRow>
           </DefList>
           <p style={CAPTION}>{HPI_CPN_CAPTION}</p>
           <div style={DIVIDER} />

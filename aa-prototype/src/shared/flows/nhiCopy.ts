@@ -4,7 +4,7 @@
  * field: its captions belong here too.
  */
 
-import { validateNhi } from '../../domain/nhi'
+import { NHI_REASONS, NHI_SHAPE_HINT, nhiEntryFeedback } from '../../domain/nhi'
 import { formatDob } from '../format'
 
 /** Save's disabled reason while the NHI is blank or invalid. */
@@ -27,10 +27,25 @@ export function matchedRecordText(name: string, dobISO: string): string {
   return `Matches an existing record: ${name}, born ${formatDob(dobISO)}.`
 }
 
-/** The field's live check: `invalid` and its reason while a typed NHI is not valid; the hint while blank. */
-export function nhiFieldCheck(nhi: string): { valid: boolean; invalid: boolean; hint?: string } {
-  if (nhi.trim() === '') return { valid: false, invalid: false, hint: NHI_REQUIRED_HINT }
-  const verdict = validateNhi(nhi)
-  if (verdict.valid) return { valid: true, invalid: false }
-  return { valid: false, invalid: true, hint: verdict.reason ?? 'The NHI is not valid.' }
+/** The caption once a typed NHI is valid (catch-up Phase 40a). */
+export const VALID_NHI = 'Valid NHI'
+
+/**
+ * The field's live check as it is typed (catch-up Phase 40a, on
+ * `nhiEntryFeedback`): the required hint while blank, the shape hint while
+ * short, the validator's reason at once for an I or O and on the seventh
+ * character, and "Valid NHI" (success) once it validates.
+ */
+export function nhiFieldCheck(nhi: string): { valid: boolean; invalid: boolean; hint?: string; tone?: 'success' } {
+  const feedback = nhiEntryFeedback(nhi)
+  switch (feedback.state) {
+    case 'empty':
+      return { valid: false, invalid: false, hint: NHI_REQUIRED_HINT }
+    case 'incomplete':
+      return { valid: false, invalid: false, hint: NHI_SHAPE_HINT }
+    case 'invalid':
+      return { valid: false, invalid: true, hint: feedback.reason ?? NHI_REASONS.notValid }
+    case 'valid':
+      return { valid: true, invalid: false, hint: VALID_NHI, tone: 'success' }
+  }
 }

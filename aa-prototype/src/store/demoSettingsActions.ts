@@ -6,6 +6,7 @@
 
 import { clockISO, mutate, ok, refuse, type Actor, type Outcome } from './mutate'
 import type { AppStoreApi } from './appStore'
+import { NHI_HUB_MODES, type NhiHubMode } from '../domain/types'
 
 /**
  * Set the contact-archive inactivity window (RFP: a configurable setting seeded
@@ -55,6 +56,28 @@ export function armHandoffFault(api: AppStoreApi, actor: Actor, opts: { bookingI
     (s) => {
       const { failHandoffBookingId: _previous, ...rest } = s.settings
       return { settings: { ...rest, failNextHandoff: true, ...(opts.bookingId !== undefined ? { failHandoffBookingId: opts.bookingId } : {}) } }
+    },
+  )
+  return ok(undefined)
+}
+
+/**
+ * Set how the simulated Digital Services Hub answers NHI lookups (catch-up
+ * Phase 40a): demo scaffolding in `settings`, never AA configuration.
+ * Absent reads as `available`, and Reset clears it. Refuses an unknown mode;
+ * setting the current mode again writes nothing.
+ */
+export function setNhiHubMode(api: AppStoreApi, actor: Actor, mode: NhiHubMode): Outcome {
+  if (!NHI_HUB_MODES.includes(mode)) return refuse('unknownMode', 'The Hub is Available, Slow or Unavailable.')
+  const before = api.getState().settings.nhiHubMode ?? 'available'
+  if (before === mode) return ok(undefined)
+  mutate(
+    api,
+    actor,
+    { entityType: 'settings', entityId: 'demo', action: 'settings.nhiHubMode', before: { nhiHubMode: before }, after: { nhiHubMode: mode } },
+    (s) => {
+      const { nhiHubMode: _previous, ...rest } = s.settings
+      return { settings: mode === 'available' ? rest : { ...rest, nhiHubMode: mode } }
     },
   )
   return ok(undefined)

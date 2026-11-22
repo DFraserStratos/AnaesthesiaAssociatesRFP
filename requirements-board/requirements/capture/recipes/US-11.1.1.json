@@ -67,7 +67,7 @@
               "click": "[role=dialog] >> role=button[name=\"Look up\"]"
             },
             {
-              "wait": 400
+              "wait": "[role=dialog] [data-shot=nhi-lookup-status][data-status=found]"
             },
             {
               "fill": "[role=dialog] input[type=tel]",

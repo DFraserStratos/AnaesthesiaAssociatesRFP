@@ -9,7 +9,8 @@ import { mainViewFor, timesForList, useAppStore, type SlotView } from '../../../
 import { emptySessionLine, ProgressPill, resolveDisplayStatus, StatusChip, StatusLegend } from '../../../shared'
 import { searchCountLine, useBookingSearch, useFieldText } from '../../../shared/schedule'
 import { NameSearchBox } from '../../../shared/ui/NameSearchBox'
-import { PageHeader, TextAction } from '../../../shared/ui'
+import { FieldHint, PageHeader, TextAction } from '../../../shared/ui'
+import { searchNhiReason } from '../../../domain/bookingSearch'
 import { ClickableRow, GroupRow, RowOpenButton, TableShell, Td, Th } from '../../../shared/table'
 import { StubMarker } from '../../../shared/stubs'
 import { useStubCountsByList } from '../../../store/stubSelectors'
@@ -85,6 +86,7 @@ export function ListsScreen({
   const [toISO, setToISO] = useState(format(addDays(parseISO(todayISO), 28), 'yyyy-MM-dd'))
   const results = useBookingSearch(anaesthetistId, query, todayISO)
   const [searchText, setSearchText] = useFieldText(query, onQueryChange)
+  const nhiReason = searchNhiReason(searchText)
   const mode: 'main' | 'day' | 'search' =
     results.query.kind === 'nhi' || results.query.kind === 'name' ? 'search' : dayISO !== null ? 'day' : 'main'
   const shown = results.upcoming.length + results.past.length
@@ -194,18 +196,26 @@ export function ListsScreen({
         actions={
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             {/* The shared search box on the page (UI unification U4): the 38px pill beside Go to date. */}
-            <NameSearchBox
-              value={searchText}
-              onChange={setSearchText}
-              label="Search your Bookings"
-              placeholder="Search patient name or NHI"
-              size="pill"
-              height={38}
-              width={280}
-              fill="surface"
-              testId="web-lists-search"
-              clearLabel="Clear the search field"
-            />
+            {/* Catch-up Phase 40a: a typed NHI that cannot be one says why, under the box (matching stays exact). */}
+            <div style={{ position: 'relative' }}>
+              <NameSearchBox
+                value={searchText}
+                onChange={setSearchText}
+                label="Search your Bookings"
+                placeholder="Search patient name or NHI"
+                size="pill"
+                height={38}
+                width={280}
+                fill="surface"
+                testId="web-lists-search"
+                clearLabel="Clear the search field"
+              />
+              {nhiReason !== undefined && (
+                <FieldHint tone="error" shot="lists-search-nhi-reason" style={{ position: 'absolute', top: '100%', left: 14, marginTop: 4, whiteSpace: 'nowrap' }}>
+                  {nhiReason}
+                </FieldHint>
+              )}
+            </div>
             <WebGoToDate anaesthetistId={anaesthetistId} dayISO={dayISO} onDayChange={onDayChange} />
             {mode === 'main' && (
               <FilterDateInput label="To" labelPlacement="inline" height={38} value={toISO} min={todayISO} onChange={setToISO} />

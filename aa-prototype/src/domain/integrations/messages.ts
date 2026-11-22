@@ -259,7 +259,7 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
     eventType: 'S12',
     transport: 'fhir',
     label: 'S12 · FHIR-native booking',
-    description: 'A FHIR R4 booking from Southern Cross, the target-state feed: no HL7 translation step. Carries the NHI as a typed identifier, an NZHIS ethnicity extension, and the anaesthetist HPI on the Practitioner resource.',
+    description: 'A FHIR R4 booking from Southern Cross, the target-state feed: no HL7 translation step. Carries the NHI as a typed identifier, an NZHIS ethnicity extension, and the HPI CPN of the anaesthetist on the Practitioner resource.',
     correlationAppointmentId: APPT.fhirCreate,
     routing: SX_LIST,
     fhirBundle: toFhirBundle(FHIR_CREATE_PARSED, SOUTER_PRACTITIONER),

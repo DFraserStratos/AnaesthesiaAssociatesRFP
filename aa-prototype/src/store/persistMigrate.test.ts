@@ -1426,3 +1426,21 @@ describe('the Wave 5 join (v74: Lane A 41 at v73 joined with Lane B 40 at v72)',
     expect(freshAppState()).toEqual(freshAppState())
   })
 })
+
+describe('catch-up Phase 40a (no bump, v74): the Hub mode and the refresh stamp', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('a persisted store without nhiHubMode or registerRefreshedAtISO loads, the Hub reading as Available', () => {
+    const fresh = freshAppState()
+    expect('nhiHubMode' in fresh.settings).toBe(false)
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: fresh, version: PERSIST_VERSION }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.settings.nhiHubMode ?? 'available').toBe('available')
+    expect(s.masters.patients['PT0018']!.registerRefreshedAtISO).toBeUndefined()
+    expect(s.masters.patients['PT0018']!.name).toBe('Fiona Gray')
+  })
+})

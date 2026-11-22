@@ -2,6 +2,7 @@ import { normaliseNzBankAccount } from '../../../domain/bankAccount'
 import { HPI_CPN_INVALID, isPlausibleHpiCpn } from '../../../domain/surgeons'
 import { BANK_ACCOUNT_INVALID } from '../../../store'
 import { TextField } from '../../../shared'
+import { HPI_CPN_LABEL } from '../../../shared/format'
 
 /**
  * The anaesthetist's mandatory identity and bank fields (catch-up Phase 26;
@@ -29,7 +30,7 @@ export function HpiCpnField({ value, onChange }: { value: string; onChange: (val
   const invalid = hpiCpnInvalid(value)
   return (
     <TextField
-      label="HPI CPN (required)"
+      label={`${HPI_CPN_LABEL} (required)`}
       value={value}
       onChange={onChange}
       mono

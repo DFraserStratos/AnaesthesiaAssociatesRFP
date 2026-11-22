@@ -675,6 +675,15 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   web Accounts and mobile Balances (catch-up Phase 36)
 - The anaesthetist's profile: own rate per unit editable on mobile and web, the office's Profile card and
   Anaesthetists columns, HPI CPN and bank details mandatory, the bank number masked (catch-up Phase 26)
+- NHI lookup and identity standards (catch-up Phase 40a): on every **Add a booking** the NHI is
+  validated in both formats as it is typed ("Valid NHI", or "The check digit does not match."), and
+  **Look up** stays disabled until it is valid, so an invalid NHI is never sent to the Hub; Look up
+  pre-fills the patient from the NHI register, still editable. Practitioners are referenced by their
+  HPI CPN, the one name and format everywhere, and NHI use is purpose-limited: the note under the field
+  reads "Looked up on behalf of Dr Melanie Souter (HPI CPN 10SOUM), only to identify this patient.
+  Health Information Privacy Code 2020." The office refreshes a patient from the register (Admin,
+  patient record, **Refresh from NHI register**, Keep or Use register per field, audited, never sent to
+  Xero), and the Add NHI sheet shows the register's name and DOB
 - Hospital file import and the matching screen (Admin, Intake, Matching): wording as received, field
   differences, create a Booking, a List or a Draft List, the unmatched queue (catch-up Phase 33)
 - The rooms' PDF lists (Admin, Intake, PDF lists): upload with the address it came from, correct a
@@ -806,6 +815,15 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   ("Refused: only office staff can view a raw hospital row") and its audit entry, **Raw row view
   refused**, show. **View raw row** itself, with its reason and masking, is proposed product UI; the
   masking policy is for AA to agree.
+
+- The **Digital Services Hub** (catch-up Phase 40a) is simulated over a deterministic synthetic NHI
+  register (every seeded patient, four named register-only people and a generated pool), with three
+  demo states: **Demo actions → Hub: Available / Slow / Unavailable**, shown only while Add a booking,
+  the patient refresh panel or the Add NHI sheet is open (on a handset, on the Demo sheet). Unavailable
+  shows "The Digital Services Hub is not answering. Enter the details by hand, or try again." with
+  **Retry** and an amber **Hub simulated as Unavailable** badge; the details can still be typed and
+  saved with a valid NHI. Slow is a long wait with **Stop waiting**. The mode stays set until changed
+  or Reset.
 
 ### Still upcoming
 
@@ -1047,6 +1065,13 @@ Say:
 - Superseded (OQ-128): a surgeon belonging to more than one room, as there are no rooms.
 - Answered for the build (OQ-129): the HPI CPN is filled in by admin staff; a surgeon can be saved and
   booked without one ("No HPI CPN yet"). Open (OQ-143): the default is that it never becomes required.
+
+### 16. Refreshing from the NHI register (catch-up Phase 40a)
+
+- The refresh is on demand, by the office, and marked **Provisional** (to confirm with AA). Should it
+  run on a schedule? Hospitals get updates twice a day.
+- Should an NHI entered while the Hub is down be marked unverified? Today it saves as typed, as long as
+  it is valid.
 
 ## Recoveries: the save and the email
 

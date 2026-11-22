@@ -1,11 +1,12 @@
 import { DifferentPayerTick, EMPTY_OTHER_PAYER, OtherPayerFields, otherPayerInput, type OtherPayerDraft } from './PayerFields'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Search } from 'lucide-react'
-import { accent, neutral, radius, semantic } from '../../theme/tokens'
+import { accent, neutral, radius } from '../../theme/tokens'
 import type { BookingSource, RailAnswers } from '../../domain/types'
 import { railAnswersFor, railAnswersText } from '../../domain/billing/contractRail'
-import { lookupNhi } from '../../domain/nzhis'
 import { validateNhi } from '../../domain/nhi'
+import { NHI_HUB_MODE_LABELS, NHI_LOOKUP_COPY, NhiLookupStatus, NhiPurposeNote, useNhiHubLookup, usePurposePractitioner } from '../nhiHub'
+import { useDemoTriggerContext } from '../demoTriggers/context'
 import { detailDifferences } from '../../domain/patients'
 import { createBooking, patientBalancePreview, patientByNhi, PATIENT_BALANCE_PREVIEW_CAPTION, railActorOf, railContextForList, useAppStore, type Actor } from '../../store'
 import { WarningPreviewRow } from '../warnings/WarningPreviewRow'
@@ -43,11 +44,6 @@ interface ManualBookingFormProps {
   /** `detailsDiffer`: the NHI matched a record whose details differ; they are held for the office's review. */
   onSaved: (result: { bookingId: string; reused: boolean; detailsDiffer?: boolean }) => void
 }
-
-type LookupState =
-  | { kind: 'idle' }
-  | { kind: 'hit'; name: string; fullBooking: boolean }
-  | { kind: 'miss' }
 
 /** Saved with no Contract: it waits on the office's list (US-04.3.4, catch-up Phase 20). */
 export const SAVED_WITHOUT_CONTRACT = 'Saved without a Contract, this Booking waits on Needs an invoice destination.'
@@ -101,31 +97,59 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
     [isOffice, knownPatient, billing, schedule, masters, appSettings, clock, differentPayer],
   )
 
-  const [lookup, setLookup] = useState<LookupState>({ kind: 'idle' })
   const [error, setError] = useState<string | null>(null)
+
+  // The NHI lookup through the simulated Digital Services Hub (catch-up Phase 40a): only a valid NHI is sent.
+  const hub = useNhiHubLookup()
+  const practitioner = usePurposePractitioner(listId)
+  useDemoTriggerContext('nhiHub.inUse', true)
+  // S2's empty-NHI lookup: the prefill whose NHI was looked up, filled in when the Hub finds it.
+  const pendingPrefill = useRef<(ExtractionFields & { nhi: string }) | null>(null)
+  // The phone an earlier lookup filled in: a later found person without one clears it, so it never sticks to the wrong patient.
+  const lookupPhone = useRef<string | null>(null)
+  const [filledBooking, setFilledBooking] = useState(false)
 
   const rvgGroup = rvgGroupId !== '' ? rvgGroups[rvgGroupId] : undefined
   const pickedContract = pick !== undefined ? masters.contracts[pick.contractId] : undefined
 
   function runLookup() {
     const useEmptyPrefill = nhi.trim() === '' && emptyLookupPrefill !== undefined
-    const lookupValue = useEmptyPrefill ? emptyLookupPrefill.nhi : nhi
-    const result = lookupNhi(lookupValue)
-    if (result.found) {
-      setNhi(lookupValue)
-      setName(result.name)
-      setDob(result.dobISO)
-      if (result.phone !== undefined) setPhone(result.phone)
-      setEthnicityCode(result.ethnicityCode)
-      if (useEmptyPrefill) {
-        if (emptyLookupPrefill.description !== undefined) setDescription(emptyLookupPrefill.description)
-        if (emptyLookupPrefill.rvgGroupId !== undefined) setRvgGroupId(emptyLookupPrefill.rvgGroupId)
-        if (emptyLookupPrefill.scheduledTime !== undefined) setScheduledTime(emptyLookupPrefill.scheduledTime)
-      }
-      setLookup({ kind: 'hit', name: result.name, fullBooking: useEmptyPrefill })
-    } else {
-      setLookup({ kind: 'miss' })
+    pendingPrefill.current = useEmptyPrefill ? emptyLookupPrefill : null
+    setFilledBooking(false)
+    hub.lookup(useEmptyPrefill ? emptyLookupPrefill.nhi : nhi)
+  }
+
+  // A found person fills the patient (and, while the payer is "The patient", the payer's name follows it).
+  // The RVG code, the Procedure description and the Contract are never written, except by S2's prefill.
+  const answer = hub.state
+  useEffect(() => {
+    if (answer.status !== 'found') return
+    const { person } = answer
+    setNhi(person.nhi)
+    setName(person.name)
+    setDob(person.dobISO)
+    if (person.phone !== undefined) setPhone(person.phone)
+    else if (lookupPhone.current !== null) {
+      const filled = lookupPhone.current
+      setPhone((current) => (current === filled ? '' : current))
     }
+    lookupPhone.current = person.phone ?? null
+    if (person.ethnicityCode !== undefined) setEthnicityCode(person.ethnicityCode)
+    const prefill = pendingPrefill.current
+    pendingPrefill.current = null
+    if (prefill !== null) {
+      if (prefill.description !== undefined) setDescription(prefill.description)
+      if (prefill.rvgGroupId !== undefined) setRvgGroupId(prefill.rvgGroupId)
+      if (prefill.scheduledTime !== undefined) setScheduledTime(prefill.scheduledTime)
+      setFilledBooking(true)
+    }
+  }, [answer])
+
+  function editNhi(value: string) {
+    setNhi(value)
+    pendingPrefill.current = null
+    setFilledBooking(false)
+    hub.reset()
   }
 
   /** Pick (or clear) the optional RVG code. A picked code is not wording received: the description is never filled from it. */
@@ -174,40 +198,53 @@ export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, 
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ fontSize: 17, fontWeight: 700 }}>Patient</div>
 
-      {/* NHI + Look up NHI */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* NHI + Look up NHI (catch-up Phase 40a): checked as typed, and only a valid NHI is looked up. */}
+      <div data-shot="nhi-lookup" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {/* Top-aligned so the field's live hint can sit under it: an unseen label keeps Look up level with the input. */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
           <div style={{ flex: 1 }}>
             <TextField
               label="NHI"
               value={nhi}
-              onChange={(v) => { setNhi(v); setLookup({ kind: 'idle' }) }}
+              onChange={editNhi}
               placeholder="ABC1234"
               mono
+              autoCapitalize="characters"
+              spellCheck={false}
+              autoComplete="off"
               invalid={nhiCheck.invalid}
+              {...(nhiCheck.tone !== undefined ? { hintTone: nhiCheck.tone } : {})}
               {...(nhiCheck.hint !== undefined ? { hint: nhiCheck.hint } : {})}
               shot="manual-nhi"
             />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <div aria-hidden style={{ visibility: 'hidden' }}><FieldLabel>NHI</FieldLabel></div>
-            <Button variant="secondary" onClick={runLookup} disabled={nhi.trim() === '' && emptyLookupPrefill === undefined}>
-              <Search size={16} strokeWidth={2.2} aria-hidden /> Look up
+            <Button
+              variant="secondary"
+              onClick={runLookup}
+              disabled={hub.busy || !(nhiCheck.valid || (nhi.trim() === '' && emptyLookupPrefill !== undefined))}
+              shot="nhi-lookup-button"
+            >
+              <Search size={16} strokeWidth={2.2} aria-hidden /> {hub.busy ? NHI_LOOKUP_COPY.checkingButton : NHI_LOOKUP_COPY.lookUp}
             </Button>
           </div>
         </div>
-        <DemoBadge label="NHI FHIR lookup · Digital Services Hub" />
-        {lookup.kind === 'hit' && (
-          <div style={{ fontSize: 13, color: semantic.success.onTint }}>
-            Found {lookup.name}. {lookup.fullBooking ? 'Patient and booking details' : 'Patient details'} pre-filled, still editable.
-          </div>
-        )}
-        {lookup.kind === 'miss' && (
-          <div style={{ fontSize: 13, color: neutral.slate }}>
-            Not found in this demo's records. Enter the details manually.
-          </div>
-        )}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          <DemoBadge label="NHI FHIR lookup · Digital Services Hub" />
+          {hub.mode !== 'available' && (
+            <span data-shot="nhi-hub-mode-badge" style={{ display: 'inline-flex' }}>
+              <DemoBadge label={`Hub simulated as ${NHI_HUB_MODE_LABELS[hub.mode]}`} />
+            </span>
+          )}
+        </div>
+        <NhiLookupStatus
+          state={hub.state}
+          onStopWaiting={hub.cancel}
+          onRetry={hub.retry}
+          {...(filledBooking ? { found: (s: { person: { name: string } }) => NHI_LOOKUP_COPY.foundWithBooking(s.person.name) } : {})}
+        />
+        <NhiPurposeNote practitioner={practitioner} />
         {knownPatient !== undefined && (
           <div data-shot="manual-matched-record" style={{ fontSize: 13, color: neutral.slate }}>
             {matchedRecordText(knownPatient.name, knownPatient.dobISO)}

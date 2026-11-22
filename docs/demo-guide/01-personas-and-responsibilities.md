@@ -64,6 +64,9 @@ Bookings and capture the data AA needs for billing.
    herself (she rings the office).
 9. Create a missing Booking manually, with its procedure description as told or written (kept exactly
    as typed).
+9a. Type the patient's NHI on Add a booking: it is checked as she types ("Valid NHI", or what is wrong
+   with it), and **Look up** fills the patient from the NHI register, looked up on her behalf by her
+   HPI CPN, only to identify the patient (catch-up Phase 40a).
 10. Record an additional procedure inside a Booking with **Add another procedure**. The first
     Procedure is the primary, listed first with a **Primary** pill; **Make primary** on another one
     (a bottom sheet on the phone, a dialog on web) changes it on her own List until it is authorised
@@ -383,6 +386,9 @@ The prototype plans to place the monitoring in or alongside the Admin Web App.
   check what was received and test NHIs.
 - Chase waiting rows on **Admin, Patients, Waiting for NHI** (email the List's sender, add the NHI) and
   follow up patients who owe (the patient record, its follow-up log, Resend and Clear).
+- Refresh a patient's identity from the NHI register (the patient record's **Refresh from NHI
+  register**: Keep or Use register for each field that differs, audited), and see the register's name
+  and DOB when adding an NHI to a waiting row (catch-up Phase 40a).
 - The anaesthetist always sees the NHI and the balance alert colour on their List, never the amounts, and
   can leave a note on a List or Booking for the office.
 - Handle an inbound change that targets a `SUBMITTED` or `AUTHORISED` List.

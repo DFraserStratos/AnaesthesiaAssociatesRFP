@@ -209,6 +209,8 @@ export interface CapturedUnits {
  * D11, OQ-49, DM-30, US-11.1.1): the patient's identifier throughout and the
  * one-record-per-NHI dedupe key, stored normalised. Demographics and
  * ethnicity are held and shown only where supplied, never required.
+ * Identity is looked up and refreshed against the NHI register through the
+ * Digital Services Hub (simulated: `src/shared/nhiHub`).
  */
 export interface Patient {
   hiddenInternalId: PatientId
@@ -234,6 +236,12 @@ export interface Patient {
    * `resolvePatientDetails`.
    */
   pendingDetails?: PatientPendingDetails
+  /**
+   * When the office last refreshed this record from the NHI register
+   * (catch-up Phase 40a), stamped from the demo clock by
+   * `refreshPatientFromRegister`. Unseeded.
+   */
+  registerRefreshedAtISO?: IsoDateTime
 }
 
 /** A patient field the "details differ" prompt compares (catch-up Phase 40). */
@@ -3004,9 +3012,19 @@ export interface DemoSettings {
    * Cleared with the flag when it fires.
    */
   failHandoffBookingId?: string
+  /**
+   * How the simulated Digital Services Hub answers NHI lookups (catch-up
+   * Phase 40a): demo scaffolding, set from Demo actions. Absent reads as
+   * `available`; Reset clears it.
+   */
+  nhiHubMode?: NhiHubMode
   /** Seeded aggregate contact-volume counters for the Xero-sim callout. */
   volumeStory: XeroVolumeStory
 }
+
+/** The simulated Hub's demo mode (catch-up Phase 40a; `src/shared/nhiHub`). */
+export const NHI_HUB_MODES = ['available', 'slow', 'unavailable'] as const
+export type NhiHubMode = (typeof NHI_HUB_MODES)[number]
 
 // ---------------------------------------------------------------------------
 // Update email templates (catch-up Phase 35; US-02.3.4, DM-35)

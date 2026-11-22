@@ -31,6 +31,8 @@ export interface DemoContextValues {
   'mobileCalendar.day': string
   /** Admin · Booking detail: the Booking whose draft holds unsaved changes (catch-up Phase 35's Switch office user waits on it). */
   'adminBooking.dirtyBookingId': string
+  /** Any surface that looks an NHI up through the simulated Hub is open (catch-up Phase 40a's Hub mode trigger). */
+  'nhiHub.inUse': true
 }
 
 export type DemoContextKey = keyof DemoContextValues

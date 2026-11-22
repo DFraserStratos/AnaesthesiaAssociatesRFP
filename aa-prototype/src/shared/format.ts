@@ -16,6 +16,7 @@ import { ageInCompletedYears } from '../domain/billing/modifiers'
 import { validateNhi } from '../domain/nhi'
 import { formatMoney as formatMoneyOf } from '../domain/billing/money'
 import { nameWithoutTitle } from '../domain/names'
+import { normaliseHpiCpn } from '../domain/surgeons'
 import type { BookingSource, Hospital, InvoiceDescriptionOrigin, List, ProcedureTextSource, Surgeon } from '../domain/types'
 
 export {
@@ -126,6 +127,24 @@ export function drSurname(name: string): string {
 
 /** The titled short form ("Ms Reid", "Dr Sharma"): one home in the domain, so the pool's sentence agrees. */
 export { matchesNameQuery, titledSurname } from '../domain/names'
+
+/**
+ * The one label for a practitioner's identifier (catch-up Phase 40a; FT-14.4,
+ * OQ-52): the Health Provider Index Common Person Number.
+ */
+export const HPI_CPN_LABEL = 'HPI CPN'
+
+/** "10soum " -> "HPI CPN 10SOUM"; null when blank (a surgeon may hold none, 17b). Shape-checked elsewhere, never check-character validated. */
+export function formatHpiCpn(value?: string): string | null {
+  const id = normaliseHpiCpn(value ?? '')
+  return id === '' ? null : `${HPI_CPN_LABEL} ${id}`
+}
+
+/** "Dr Melanie Souter (HPI CPN 10SOUM)", or the name alone when no HPI CPN is held. */
+export function practitionerWithHpiCpn(name: string, hpiId?: string): string {
+  const cpn = formatHpiCpn(hpiId)
+  return cpn === null ? name : `${name} (${cpn})`
+}
 
 /** "Dr Melanie Souter" -> "MS" (avatar / grid initials, at most two letters). */
 export function initialsOf(name: string): string {

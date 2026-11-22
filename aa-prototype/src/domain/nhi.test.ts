@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { generateNhi, validateNhi } from './nhi'
+import { generateNhi, NHI_REASONS, nhiEntryFeedback, validateNhi } from './nhi'
 import { mulberry32 } from './rng'
 
 describe('validateNhi — current format (AAANNNC, mod 11)', () => {
@@ -88,5 +88,38 @@ describe('generateNhi', () => {
     const a = generateNhi('current', mulberry32(7))
     const b = generateNhi('current', mulberry32(7))
     expect(a).toBe(b)
+  })
+})
+
+describe('nhiEntryFeedback: the NHI checked as it is typed (catch-up Phase 40a)', () => {
+  it('reads valid in both formats', () => {
+    expect(nhiEntryFeedback('ZAA0067')).toEqual({ state: 'valid', normalised: 'ZAA0067', format: 'current' })
+    expect(nhiEntryFeedback('ZBX41AL')).toEqual({ state: 'valid', normalised: 'ZBX41AL', format: 'new' })
+  })
+
+  it("gives the validator's check digit and check letter reasons on the seventh character", () => {
+    expect(nhiEntryFeedback('ZAA0068')).toMatchObject({ state: 'invalid', reason: 'The check digit does not match.' })
+    expect(nhiEntryFeedback('ZBX41AM')).toMatchObject({ state: 'invalid', reason: 'The check letter does not match.' })
+  })
+
+  it('flags an I or O at once, before 7 characters', () => {
+    expect(nhiEntryFeedback('ABI')).toEqual({ state: 'invalid', normalised: 'ABI', reason: NHI_REASONS.letterIO })
+    expect(nhiEntryFeedback('o')).toMatchObject({ state: 'invalid', reason: NHI_REASONS.letterIO })
+  })
+
+  it('normalises, reads empty and incomplete with no reason, and refuses more than 7', () => {
+    expect(nhiEntryFeedback('zaa0067 ')).toMatchObject({ state: 'valid', normalised: 'ZAA0067' })
+    expect(nhiEntryFeedback('   ')).toEqual({ state: 'empty', normalised: '' })
+    expect(nhiEntryFeedback('ZAA006')).toEqual({ state: 'incomplete', normalised: 'ZAA006' })
+    expect(nhiEntryFeedback('ZAA00671')).toMatchObject({ state: 'invalid', reason: 'An NHI is exactly 7 characters.' })
+  })
+
+  it("every 7-character reason is validateNhi's own", () => {
+    for (const input of ['ZAA0068', 'ZBX41AM', 'ZAA0060', 'ZZZ12345'.slice(0, 7), '1234567', 'ZZ1AB23']) {
+      const feedback = nhiEntryFeedback(input)
+      const verdict = validateNhi(input)
+      expect(feedback.state === 'valid').toBe(verdict.valid)
+      if (!verdict.valid) expect(feedback.reason).toBe(verdict.reason)
+    }
   })
 })

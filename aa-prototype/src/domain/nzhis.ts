@@ -1,12 +1,11 @@
 /**
- * NZHIS ethnicity coding (demo subset) + the simulated NHI lookup.
+ * NZHIS ethnicity coding (demo subset).
  *
  * The RFP mandates NZHIS Level 4 (5-digit) ethnicity codes on patient records
- * and an NHI lookup via the Digital Services Hub FHIR API. This module carries
- * the prototype's honest stand-ins for both (2nd review #7; 7th review B19).
+ * (7th review B19). The NHI lookup via the Digital Services Hub lives in
+ * `nhiRegister/` (the synthetic register) and `shared/nhiHub` (the simulated
+ * Hub), catch-up Phase 40a.
  */
-
-import { validateNhi } from './nhi'
 
 export interface EthnicityCodeEntry {
   /** NZHIS Level 4 code (5 digits). */
@@ -81,45 +80,4 @@ export function validateEthnicityCode(code: string): EthnicityValidation {
 export function ethnicityText(code: string): string {
   const entry = SUBSET_BY_CODE.get(code)
   return entry === undefined ? code : `${entry.code} · ${entry.label}`
-}
-
-// ---------------------------------------------------------------------------
-// Simulated NHI lookup
-// ---------------------------------------------------------------------------
-
-export interface NhiLookupHit {
-  found: true
-  name: string
-  dobISO: string
-  phone?: string
-  ethnicityCode: string
-}
-export interface NhiLookupMiss {
-  found: false
-}
-export type NhiLookupResult = NhiLookupHit | NhiLookupMiss
-
-/**
- * Canned lookup data — fictional patients keyed by valid NHIs, with both
- * formats represented. Five were produced by the seeded generator and match
- * the Phase 02 seed; DEM1239 is the scenario-only patient returned by S2's
- * phone-advice lookup.
- */
-const CANNED_PATIENTS: ReadonlyMap<string, NhiLookupHit> = new Map([
-  ['CQY9304', { found: true, name: 'Sarah Mitchell', dobISO: '1988-04-12', ethnicityCode: '11111' }],
-  ['WQS3635', { found: true, name: 'Hemi Walker', dobISO: '1975-09-03', ethnicityCode: '21111' }],
-  ['JKL1188', { found: true, name: 'Losa Tuilagi', dobISO: '1992-01-27', ethnicityCode: '31111' }],
-  ['MYY54SL', { found: true, name: 'Priya Nair', dobISO: '1969-11-08', ethnicityCode: '43111' }],
-  ['RUE29KR', { found: true, name: 'Grace Park', dobISO: '2014-06-30', ethnicityCode: '42111' }],
-  ['DEM1239', { found: true, name: 'Demo Patient', dobISO: '1990-01-01', phone: '021 555 0190', ethnicityCode: '11111' }],
-])
-
-/**
- * Simulates the NHI FHIR API via the Digital Services Hub — no real network
- * call (the whole backend is fake, PROGRESS convention 4). Input is normalised
- * the same way `validateNhi` normalises, so lowercase/padded input still hits.
- */
-export function lookupNhi(nhi: string): NhiLookupResult {
-  const { normalised } = validateNhi(nhi)
-  return CANNED_PATIENTS.get(normalised) ?? { found: false }
 }

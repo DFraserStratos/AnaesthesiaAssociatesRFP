@@ -14,7 +14,8 @@ import { ANAESTHETISTS } from './cast'
 import { RECURRING_BOOKINGS } from './recurringBookings'
 import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
 import { validateNhi } from '../nhi'
-import { lookupNhi } from '../nzhis'
+import { lookupOnRegister } from '../nhiRegister'
+import { nhiRegister } from './nhiRegister'
 import { bookingFeeFor, type ProcedureFeeContext } from '../billing/bookingFee'
 import { contractRefusal, noContractRvg } from '../billing/contracts'
 import { isValidGstNumber, normaliseGstNumber } from '../billing/invoicePresentation'
@@ -406,16 +407,22 @@ describe('patients & NHIs', () => {
     expect(formats).toEqual(new Set(['current', 'new']))
   })
 
-  it('includes the 5 canned lookupNhi patients, matching the Hub data', () => {
+  it("includes Phase 01's five lookup patients, matching the NHI register (catch-up Phase 40a)", () => {
     for (const nhi of ['CQY9304', 'WQS3635', 'JKL1188', 'MYY54SL', 'RUE29KR']) {
-      const hit = lookupNhi(nhi)
-      expect(hit.found).toBe(true)
+      const hit = lookupOnRegister(nhiRegister(), nhi)
+      expect(hit.kind).toBe('found')
       const patient = patients.find((p) => p.nhi === nhi)
       expect(patient, `patient ${nhi} seeded`).toBeDefined()
-      if (hit.found && patient !== undefined) {
-        expect(patient.name).toBe(hit.name)
-        expect(patient.dobISO).toBe(hit.dobISO)
+      if (hit.kind === 'found' && patient !== undefined) {
+        expect(patient.name).toBe(hit.person.name)
+        expect(patient.dobISO).toBe(hit.person.dobISO)
       }
+    }
+  })
+
+  it('the register-only NHIs and the not-on-the-register example are held by no seeded patient', () => {
+    for (const nhi of ['ZBR4417', 'ZBT2253', 'ZBX41AL', 'DEM1239', 'ZBW6638']) {
+      expect(patients.some((p) => p.nhi === nhi), nhi).toBe(false)
     }
   })
 

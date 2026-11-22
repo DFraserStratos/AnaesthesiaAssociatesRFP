@@ -50,8 +50,11 @@ export function AppShell() {
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* ── Harness bar ─────────────────────────────────────── */}
       <header
+        className="aa-harness"
         style={{
           flex: 'none',
+          // Lifted above an open dialog's fixed scrim by global.css's `.aa-harness` rule (catch-up Phase 40a), and only then: drawers keep covering it as before.
+          position: 'relative',
           height: 48,
           display: 'flex',
           alignItems: 'center',

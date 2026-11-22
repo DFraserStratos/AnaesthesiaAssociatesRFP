@@ -131,6 +131,8 @@ export const ACTION_LABELS: Record<string, string> = {
   'patient.detailsResolved': 'Patient details reviewed',
   'patient.followUp': 'Follow-up logged',
   'patient.followUpDone': 'Follow-up done',
+  // Catch-up Phase 40a: the office's refresh from the NHI register.
+  'patient.registerRefreshed': 'Refreshed from the NHI register',
   'patient.ethnicity.correct': 'Ethnicity code corrected',
   'anaesthetist.create': 'Anaesthetist added',
   'anaesthetist.update': 'Anaesthetist updated',
@@ -315,6 +317,8 @@ export const ACTION_LABELS: Record<string, string> = {
   // --- Demo settings and triggers ---------------------------------------
   'settings.archiveWindow': 'Archive window changed',
   'settings.armHandoffFault': 'Handoff fault armed',
+  // Catch-up Phase 40a: the simulated Digital Services Hub's demo mode.
+  'settings.nhiHubMode': 'NHI Hub demo mode set',
   'demo.bctisSeeded': 'A month of BCTIs seeded',
   // Catch-up Phase 39a: the payment cycle's staging.
   'demo.paymentWeekStaged': 'Payment week staged',
