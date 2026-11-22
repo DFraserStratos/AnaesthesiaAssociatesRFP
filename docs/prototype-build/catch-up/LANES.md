@@ -49,7 +49,7 @@ lane branch holds a commit whose subject starts `<id> complete:`.
 Wave 1 (Lane A 26, 27, 27a; Lane B 32d, 33) was joined on 18 November 2026, Wave 2 (Lane A 25a, 36;
 Lane B 33a, 17b) and Wave 3 (Lane A 37, 38; Lane B 34, 35) on 19 November 2026, and Wave 4 (Lane A
 38b, 39; Lane B 42, 43) and Wave 5 (Lane A 39a, 41; Lane B 39b, 40) on 20 November 2026; `master`
-holds all five once the Wave 5 fast-forward is done (`PERSIST_VERSION` 74).
+holds all five (`PERSIST_VERSION` 74).
 
 | Lane | Queue | Sessions |
 |---|---|---|
