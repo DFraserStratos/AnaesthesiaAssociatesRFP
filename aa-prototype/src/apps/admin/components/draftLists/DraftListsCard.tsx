@@ -8,6 +8,7 @@
  * booking count; a row opens the drawer.
  */
 
+import { InfoTip } from '../../../../shared/help/InfoTip'
 import { useMemo } from 'react'
 import { bookingCountsByList, useAppStore, waitingDraftLists } from '../../../../store'
 import { format, parseISO } from 'date-fns'
@@ -34,6 +35,7 @@ export function DraftListsCard({ onOpenDraftList, onSeeAll }: { onOpenDraftList:
     <Card
       shot="admin-draft-lists-rail"
       headingId="admin-draft-lists-heading"
+      aside={<InfoTip topic="day.draftLists" />}
       title={
         <>
           {DRAFT_LISTS}

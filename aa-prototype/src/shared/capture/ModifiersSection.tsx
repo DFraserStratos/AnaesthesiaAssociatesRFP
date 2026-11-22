@@ -11,6 +11,7 @@ import { FailureNotes, RequiredCaption } from './ui'
 import { MODIFIERS_STEP_MESSAGE, modifiersStepAnswered } from '../../domain/billing/completion'
 import { TextAction } from '../ui/TextAction'
 import { Button } from '../ui/Button'
+import { InfoTip } from '../help/InfoTip'
 
 interface ModifiersSectionProps {
   procedure: Procedure
@@ -98,8 +99,9 @@ export function ModifiersSection({ procedure, items, actor, editable, required =
       {/* The seam: the arithmetic above it, the itemised facts that make up M below. */}
       <div style={{ height: 1, background: neutral.line, margin: '2px 0' }} />
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-        <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 8 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: web ? 13 : 14, fontWeight: 600, color: neutral.slate }}>Modifiers</span>
+          <InfoTip topic="capture.modifiers" />
           {asking && (
             <RequiredCaption latched={latched} />
           )}

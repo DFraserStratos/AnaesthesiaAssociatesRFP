@@ -5,6 +5,7 @@
  * line under the example instead of changing the route.
  */
 
+import { FirstRunHint } from '../../../../shared/help/FirstRunHint'
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { ArrowLeftRight, BellRing, ChevronLeft } from 'lucide-react'
 import { accent, neutral, radius } from '../../../../theme/tokens'
@@ -817,6 +818,10 @@ export function CaptureSectionExample() {
       <CaptureSection label="Times" required="latched">
         <Caption>After Mark complete with the times missing.</Caption>
       </CaptureSection>
+      {/* With help (catch-up Phase 43a): the info tip at the label row's end. */}
+      <CaptureSection label="Price" help="capture.price">
+        <Caption>Tap the info sign for the point-of-need explanation.</Caption>
+      </CaptureSection>
     </div>
   )
 }
@@ -1055,3 +1060,16 @@ export function EditRateSheetExample({ actor, anaesthetistId }: { actor: Actor; 
     </>
   )
 }
+
+export function InfoTipExample() {
+  return (
+    <CaptureSection label="Times" help="capture.times">
+      <Caption>Tap the info sign beside the label.</Caption>
+    </CaptureSection>
+  )
+}
+
+export function FirstRunHintExample() {
+  return <FirstRunHint app="mobile" />
+}
+

@@ -10,6 +10,7 @@
  * filters. A click opens the drawer.
  */
 
+import { InfoTip } from '../../../shared/help/InfoTip'
 import { useAppStore } from '../../../store'
 import type { DraftList, Session } from '../../../domain/types'
 import { drSurname, pairingLine } from '../../../shared/format'
@@ -52,6 +53,9 @@ export function DraftListBand({
       <span style={{ width: 148, flex: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2, paddingLeft: 16, boxSizing: 'border-box' }}>
         <span style={{ fontSize: 12.5, fontWeight: 600, color: neutral.ink }}>
           {DRAFT_LISTS} <span className="mono" style={{ fontVariantNumeric: 'tabular-nums', color: semantic.warning.onTint }}>{draftLists.length}</span>
+          <span style={{ marginLeft: 8 }}>
+            <InfoTip topic="day.draftLists" />
+          </span>
         </span>
         <Eyebrow as="span" tone="warning">{UNASSIGNED.toUpperCase()}</Eyebrow>
       </span>

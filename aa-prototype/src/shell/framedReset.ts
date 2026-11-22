@@ -1,12 +1,12 @@
 import { resetDemo, useAppStore } from '../store'
 import { clearAnaesthetistSession } from '../shared/session/anaesthetistSession'
+import { clearFirstRunHintDismissals } from '../shared/help/firstRunHints'
 
 export interface FramedResetOptions {
   /**
    * Also bring back the first-run welcome cards (the harness Reset and the
    * Control Panel's "Reset to pristine seed"). Scenario jumps and the
-   * Integrations simulator's reset keep the presenter's dismissals. Read by
-   * the first-run hints (catch-up Phase 43a, session 2).
+   * Integrations simulator's reset keep the presenter's dismissals.
    */
   clearHints: boolean
 }
@@ -22,5 +22,5 @@ export interface FramedResetOptions {
 export function resetFramedDemo(options: FramedResetOptions): void {
   resetDemo(useAppStore)
   clearAnaesthetistSession()
-  void options.clearHints
+  if (options.clearHints) clearFirstRunHintDismissals()
 }

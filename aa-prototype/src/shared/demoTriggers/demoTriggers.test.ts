@@ -43,8 +43,13 @@ function ctxFor(pathname: string, params: Record<string, string> = {}, published
   return { pathname, params, published }
 }
 
+/** Catch-up Phase 43a's two app-wide entries (Show first-run hints again; the PWA's Sign out), left out of per-screen lists; `phase43aTriggers.test.ts` covers them. */
+const APP_WIDE_TRIGGERS: ReadonlySet<string> = new Set(['show-first-run-hints', 'pwa-sign-out'])
+
 function ids(api: BoundAppStore, pathname: string, surface: 'bar' | 'pwa' = 'bar', published: Partial<DemoContextValues> = {}) {
-  return demoTriggersFor(api.getState(), pathname, surface, published).map((m) => m.trigger.id)
+  return demoTriggersFor(api.getState(), pathname, surface, published)
+    .map((m) => m.trigger.id)
+    .filter((id) => !APP_WIDE_TRIGGERS.has(id))
 }
 
 beforeEach(() => {
@@ -111,7 +116,8 @@ describe('registry shape', () => {
       if (t.id === 'ask-colleague-make-available') published['adminPicker.listId'] = 'L-29104-2026-07-22-AM'
       // The backdated range shows while Merivale's Face lift is open in its detail (catch-up Phase 24; the index hint says so).
       if (t.id === 'demo-backdated-range') published['adminContracts.openContractId'] = 'CT-MER-FACELIFT'
-      expect(ids(api, path.split('?')[0]!, 'bar', published), `${t.id} at ${path}`).toContain(t.id)
+      const visible = demoTriggersFor(state, path.split('?')[0]!, 'bar', published).map((m) => m.trigger.id)
+      expect(visible, `${t.id} at ${path}`).toContain(t.id)
     }
   })
 

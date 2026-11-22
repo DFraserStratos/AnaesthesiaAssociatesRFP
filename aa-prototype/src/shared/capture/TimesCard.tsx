@@ -82,6 +82,7 @@ export function TimesCard({ procedure, actor, canCapture, failures, onError }: T
   return (
     <CaptureSection
       label="Times"
+      help="capture.times"
       validationTarget={{
         procedureId: procedure.id,
         fields: ['anaestheticStartISO', 'handoverISO'],

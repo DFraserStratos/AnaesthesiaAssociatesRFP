@@ -6,6 +6,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
 import type { BillingValidationFailure } from '../../domain/billing'
 import type { DataAttributes } from '../ui/Field'
+import { Eyebrow } from '../ui/Eyebrow'
+import { InfoTip } from '../help/InfoTip'
+import type { HelpTopicId } from '../help/helpTopics'
 
 /**
  * A white capture card with the micro-caps section label.
@@ -27,8 +30,11 @@ export function CaptureSection({
   required,
   dataShot,
   data,
+  help,
 }: {
   label: string
+  /** The point-of-need tip at the label row's end (catch-up Phase 43a): a `HELP_TOPICS` id. None by default. */
+  help?: HelpTopicId
   /**
    * The whole `data-shot` value, replacing `capture-<shot>`, for a card whose
    * hook is named apart from its label (catch-up Phase 24: `price-card`).
@@ -74,16 +80,15 @@ export function CaptureSection({
         gap,
       }}
     >
-      {required === undefined ? (
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>
-          {label}
-        </div>
+      {required === undefined && help === undefined ? (
+        <Eyebrow>{label}</Eyebrow>
       ) : (
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>
-            {label}
-          </div>
-          <RequiredCaption latched={required === 'latched'} />
+        <div style={{ display: 'flex', alignItems: help === undefined ? 'baseline' : 'center', justifyContent: 'space-between', gap: 12, minHeight: help === undefined ? undefined : 20 }}>
+          <Eyebrow>{label}</Eyebrow>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+            {required !== undefined && <RequiredCaption latched={required === 'latched'} />}
+            {help !== undefined && <InfoTip topic={help} />}
+          </span>
         </div>
       )}
       {children}

@@ -452,6 +452,7 @@ the ledger's failed checks (none at reset, so no badge; 1 after "Inject unmatche
 | `/mobile/more` | Settings. The PWA adds a demo panel with a non-deterministic build ID. Avoid shooting that panel. |
 | `/mobile/more` (catch-up Phase 26) | The "Profile" card `mobile-profile` sits between the persona card and the Demo card: rows `mobile-profile-rate` (Rate per unit $26.50, with the "Change" text action `mobile-profile-rate-change`), Phone, Email, Registration, HPI CPN (`mobile-profile-hpi`) and Bank account (`mobile-profile-bank`, masked), the office-held rows with lock glyphs and captions. Its lower rows sit near the fold: `scroll` to `mobile-profile-bank` first. "Change" opens the bottom sheet `mobile-rate-sheet` (field "Rate per unit ($)", "Save rate" `mobile-rate-save`). |
 | `/mobile/more` (catch-up Phase 43) | The Demo card ("Demo prototype") also holds the "Synthetic data only" badge `synthetic-data-badge`. On the PWA the build panel sits below that card: keep it out of frame. |
+| `/mobile/more` (catch-up Phase 43a) | The account card `more-account` ("Signed in as m.souter@aa-associates.example") sits under 26's Profile card, so everything below the Profile card moves down by one card. Its Sign out text action `more-sign-out` signs out and shows the sign-in screen `sign-in-screen` on the same route; Sign in (`sign-in-submit`) returns to it. `scroll` to `more-account` and keep the PWA build panel out of frame. |
 
 - The tab bar is `[data-testid=mobile-tab-bar]`, with buttons Lists, Availability, Balances and
   More.
@@ -1552,6 +1553,13 @@ were already imported. Nothing new.").
 
 ## Overlays that need clicks
 
+- **Info tips (catch-up Phase 43a).** A small "About ..." button `[data-shot=info-tip-<topic>]` (the topic with dots as
+  dashes, e.g. `info-tip-capture-price`, `info-tip-day-statuses`, `info-tip-review-contracts`) sits in a section's label
+  row. On mobile a tap opens a bottom sheet whose content is `[data-shot=info-tip-<topic>-sheet]`; a tip inside another
+  sheet (for example `info-tip-capture-rvg` in the RVG code picker) opens an inline note `[data-shot=info-tip-<topic>-note]`
+  instead; on web and Admin it opens an anchored, fixed-positioned popover `[data-shot=info-tip-<topic>-popover]`
+  (`role=dialog`). Click the button, wait for the `-sheet`, `-note` or `-popover` hook, then shoot. See
+  `recipes/US-15.0.1.json`.
 - **Load full-scale data's confirm (catch-up Phase 43).** The `load-full-scale` row asks for a second click: Run turns
   into "Confirm" (the button carries `data-shot=demo-action-confirm` while confirming), with the line "Replaces the
   current demo data. Reset returns to it." The `trigger` step clicks Confirm itself. Then wait for
@@ -2001,6 +2009,22 @@ the exception: use the `trigger` step)
   "Next morning", "+7 days" and "Procedure day · 28 Jul".
 
 ## Existing hooks
+
+**Sign-in, info tips and welcome cards (catch-up Phase 43a).** PWA sign-in (mobile, :5174): the screen
+`sign-in-screen` (the logo, then a card holding `sign-in-email` (pre-filled with the demo account), `sign-in-password`
+and the teal `sign-in-submit` "Sign in", then the `sign-in-provisional` pill with its caption and the demo badges);
+More tab: the account card `more-account` ("Signed in as ...") with its Sign out text action `more-sign-out`; PWA Demo
+sheet row `pwa-demo-action-pwa-sign-out`. Info tips: the button `info-tip-<topic>` (dots as dashes: `capture-stack`,
+`capture-rvg`, `capture-contract`, `capture-price`, `capture-modifiers`, `capture-payer`, `capture-times`,
+`capture-warnings`, `day-statuses` (beside the Admin Day legend), `day-draft-lists`, `day-needs-destination`,
+`day-todo`, `review-flags`, `review-contracts` (Review table's Procedures heading), `review-price` (Fee heading),
+`review-authorise`) and what it opens: `info-tip-<topic>-sheet` (mobile bottom sheet), `info-tip-<topic>-note` (inline,
+inside another sheet) or `info-tip-<topic>-popover` (web and Admin). Their accessible names are "About <title>"
+(aria-labels, not text). Welcome cards: `first-run-hint-mobile` (`/mobile/lists`, under the greeting),
+`first-run-hint-web` (`/web` Dashboard, under the header), `first-run-hint-admin` (`/admin/day/<date>`, between the day
+navigation and the grid), each with a "Got it" text action `first-run-hint-<app>-dismiss`. Demo action rows
+`demo-action-show-first-run-hints` and `pwa-demo-action-show-first-run-hints` ("Show first-run hints again", every
+/mobile, /web and /admin route).
 
 **Patients, the NHI and the balance warning (catch-up Phase 40).** Admin: `admin-patients`, `admin-waiting-nhi`,
 `admin-patient-follow-up`, `admin-patient-record` and the record's cards (listed under Routes, `/admin/patients/:nhi`);
@@ -2957,6 +2981,16 @@ until `{ "trigger": "office-authorises-list" }` runs (US-07.4.1 and US-08.6.1 sh
 - **The PWA cannot see an Admin save.** :5174 and :5173 are different origins with separate stores, so a change made in
   Admin never reaches a mobile shot; stage it on the phone with an Office stand-in entry (for example
   `office-edits-booking`), or show it on web after a `setup` in Admin (see `recipes/US-15.0.7.json`).
+- **The PWA has a sign-in screen** (catch-up Phase 43a). With no session the PWA shows `sign-in-screen` on every route.
+  The runner presets the `aa-anaesthetist-session` key signed in for every mobile context (`localStorage` in
+  `board.config.json`), so mobile shots start signed in. To shoot the sign-in screen, sign out first: `/mobile/more`,
+  click `more-sign-out` (or the PWA trigger `pwa-sign-out`). Signing out writes the session key (signed out), so the
+  preset (set only when the key is absent) does not undo it on a later `goto`. Sign in returns to the same route.
+- **First-run welcome cards are dismissed by the runner** (catch-up Phase 43a). The welcome cards on `/mobile/lists`,
+  the web Dashboard and the Admin Day view show in any fresh context, so the runner presets the three dismissal keys
+  `aa-first-run-hint-mobile`, `-web` and `-admin` ("1") in every app's context. The preset is set-if-absent on every
+  page load: a card brought back with the `show-first-run-hints` trigger ("Show first-run hints again") must be shot
+  without a reload, so no `goto` after the trigger (in-app clicks are fine). See `recipes/US-15.0.1.json`.
 
 ## Worked examples
 

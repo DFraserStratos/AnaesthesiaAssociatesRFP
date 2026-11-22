@@ -187,6 +187,9 @@ import { PAYMENT_WEEK_CHOICES, stageBankMismatch, stageBankMismatchRefusal, stag
 import { sessionText } from '../../domain/outOfHours'
 import { isBookingPair } from '../../domain/billing/ledger'
 import { APP_CONFIG } from '../../shell/appConfig'
+import { recordAnaesthetistSignIn } from '../../store/authDemoActions'
+import { isSignedIn, signOutSession } from '../session/anaesthetistSession'
+import { anyHintDismissed, clearFirstRunHintDismissals } from '../help/firstRunHints'
 import { newerInvoiceDescription } from '../../domain/billing/procedureStack'
 import {
   defaultHospitalDescription,
@@ -2576,5 +2579,39 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         : { ok: true, message: res.code === 'officeOnly' ? 'Refused: only office staff can view a raw hospital row. The attempt is in the audit trail.' : res.message }
     },
     indexPath: () => ADMIN_MATCHING,
+  },
+  // ── Catch-up Phase 43a: sign-in and the first-run welcome cards ────────
+  // Neither touches AppState: the session and the dismissals are per-viewer
+  // browser storage, so the menus re-read them when they change.
+  {
+    id: 'pwa-sign-out',
+    label: 'Sign out',
+    description: 'Signs Dr Souter out, as at the end of a shift. The sign-in screen shows with the account filled in.',
+    screen: 'Mobile · any screen',
+    routes: ['/mobile', '/mobile/*'],
+    surfaces: ['pwa'],
+    // The PWA opens signed out when nothing is stored, so its default is the one to read.
+    disabledReason: () => (isSignedIn('signed-out') ? null : 'Already signed out'),
+    run: (api) => {
+      recordAnaesthetistSignIn(api, 'signedOut')
+      signOutSession()
+      return { ok: true, message: 'Signed out. Tap Sign in to come back.' }
+    },
+    indexPath: () => '/mobile/more',
+    indexHint: 'On a handset, from the Demo sheet; in the framed phone, use Sign out on More.',
+  },
+  {
+    id: 'show-first-run-hints',
+    label: 'Show first-run hints again',
+    description: 'Brings back the welcome card on Mobile, Web and Admin, as for a first visit.',
+    screen: 'All apps',
+    routes: ['/mobile', '/mobile/*', '/web', '/web/*', '/admin', '/admin/*'],
+    surfaces: ['bar', 'pwa'],
+    disabledReason: () => (anyHintDismissed() ? null : 'No welcome card has been dismissed'),
+    run: () => {
+      clearFirstRunHintDismissals()
+      return { ok: true, message: 'The welcome cards will show again.' }
+    },
+    indexPath: () => '/admin',
   },
 ]

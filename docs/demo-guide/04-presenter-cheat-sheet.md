@@ -468,6 +468,10 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - Move a List to a colleague or the office; hand one Booking to a free colleague (Move to a colleague)
 - Profile (More tab): her rate per unit, which she changes with **Change**; contact details, HPI CPN and
   bank account (masked) read-only with a lock
+- Sees each procedure's Contract, who is invoiced and the price they may change; never Contract
+  set-up, tiers or preferences
+- Signs in to the PWA once with their account (simulated; Dr Souter's demo account
+  `m.souter@aa-associates.example`), with **Sign out** on More
 - Later: balances
 
 ### Anaesthetist Web
@@ -480,6 +484,8 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - Move a List to a colleague or the office; hand one Booking to a free colleague (Move to a colleague)
 - Accounts (Outstanding, Payments, AA fees) and GST report (by month)
 - Profile (her name and avatar in the top nav): rate per unit editable, the rest read-only
+- Sees each procedure's Contract, who is invoiced and the price they may change; never Contract
+  set-up, tiers or preferences
 
 ### Admin Web
 
@@ -684,6 +690,16 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   (catch-up Phase 35)
 - The demo control panel with S1 to S5 scenario jumps (Phase 12), now the index of the per-screen
   Demo actions (catch-up Phase 14)
+- The PWA's simulated sign-in (catch-up Phase 43a): the sign-in screen with Dr Souter's demo account
+  filled in and a **Provisional** caption (OQ-83), "Signed in as" and **Sign out** on More, and one
+  audit row per sign-in, refused attempt and sign-out (Entity type **account**). The framed prototype
+  always opens signed in.
+- Point-of-need help (catch-up Phase 43a): an info sign beside section labels on Booking capture
+  (bottom sheets on the phone, popovers on the web), Admin Day (status legend, Draft Lists, Needs an
+  invoice destination, To-do) and Admin Review (Flags, Procedures, Fee, Authorise for billing)
+- Welcome cards (catch-up Phase 43a): one per app on first visit (mobile Lists, web Dashboard, Admin
+  Day), dismissed with **Got it**, back after Reset or with **Demo actions → Show first-run hints
+  again**
 
 ### Present but honestly demo-only (keep the badge in view)
 
@@ -724,6 +740,8 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   **Colleague moves a Booking to me** (also "Colleague stand-in", with a choice per candidate) plays a
   colleague handing her one Booking as a new List in a session she is free in; a session she is not
   available in is offered only after she sets it available in My calendar (her acceptance).
+  The chip also holds **Sign out** (PWA only), which returns the handset to the sign-in screen with
+  the account filled in.
 - On **Admin Day** and **Notifications**, **Demo actions → Colleague moves a List to the office**
   stages another anaesthetist's own return (One move), or **A busy morning (8 moves)** to show the
   Notifications page paging. Nothing waits for the office, so there is no office stand-in for it.
@@ -1143,6 +1161,21 @@ Billing monitor, the heaviest, about a quarter of a second). The honest caveat: 
 one browser on one laptop, with no server; formal performance testing is a Testing-milestone task.
 **Reset** (or a reload) returns to the demo data. The script's "Full scale" aside after S2 is the click
 path.
+
+### "How will people who are not comfortable with new systems cope?"
+
+Large controls and one clear action on each screen. Each procedure is shown the same way in every app:
+the descriptions as received, then its Contract and RVG code. The anaesthetist's screens hold only what
+they need, with Contract set-up left to the office, and stay close to the mobile app they use today.
+Help sits beside each heading on the daily screens (tap the info sign), a welcome card greets each app
+on first visit, and training runs per user group before go-live.
+
+### "How do anaesthetists sign in?"
+
+With an account login on the PWA, shown simulated: the account is filled in and a **Provisional**
+caption says how anaesthetists sign in is deferred to the end of discovery (OQ-83). The identity
+provider, MFA, single sign-on and biometrics are still to be decided. The audit logs every sign-in, refusal and sign-out:
+"Signed in", "Sign-in failed" and "Signed out" rows on Admin Audit (Entity type **account**).
 
 ## One-line close
 

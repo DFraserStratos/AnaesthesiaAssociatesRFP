@@ -378,7 +378,9 @@ The procedure has occurred and the anaesthetist needs to record the clinical bil
 
 ### Steps
 
-1. Dr Souter opens her List and selects the patient Booking.
+1. Dr Souter opens her List and selects the patient Booking. On a handset she has signed in to the
+   PWA once with her account (simulated; how anaesthetists sign in is deferred to the end of
+   discovery, OQ-83), and the device keeps her signed in.
 2. She confirms patient, operation, hospital and surgeon context.
 3. What each Procedure asks for follows its Contract's pricing kind. On an RVG price (No contract ·
    RVG and the RVG rate and discount kinds) the RVG code, start and finish times and the modifiers step
@@ -413,6 +415,10 @@ The procedure has occurred and the anaesthetist needs to record the clinical bil
     item and marks the Booking complete.
 12. Something only the office can fix shows a pointer to **Alert the office**; she sends it there. Submit
     still needs every Booking complete.
+13. Throughout, she sees the Contract summary (the Billing card: Invoice to, Contract, Price) and her
+    price options, while the office keeps Contract set-up, its own Change price sheet and the
+    multi-procedure rule wording. An info sign beside each section label explains it at the point of
+    need.
 
 ### Multiple Procedures
 

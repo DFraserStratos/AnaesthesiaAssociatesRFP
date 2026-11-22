@@ -578,6 +578,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
         actor={actor}
         canClear={isOffice}
         rowShot={(w) => BOOKING_WARNING_SHOTS[w.ruleId]}
+        help
       />
       {/* The anaesthetist's balance colour code (catch-up Phase 40): no amount, no name, no Clear. */}
       {actor.role === 'anaesthetist' && <BalanceAlertPill alert={balanceAlert} placement="detail" />}

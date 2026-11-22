@@ -29,8 +29,9 @@ import {
   type Actor,
 } from '../../store'
 import { useSurface } from '../surface'
-import { OverlayHeader } from '../surface/OverlayHeader'
 import { CaptureSection, FailureNotes } from '../capture/ui'
+import { Eyebrow } from '../ui/Eyebrow'
+import { InfoTip, InfoTipHeader } from '../help/InfoTip'
 import { Button } from '../ui/Button'
 import { PopoverPanel } from '../ui/PopoverPanel'
 import { usePopover } from '../ui/usePopover'
@@ -130,6 +131,7 @@ function InlineBillingCard(props: BillingCardProps) {
   return (
     <CaptureSection
       label={cardLabel(props.displayNumber, props.procedureCount)}
+      help="capture.contract"
       shot="billing"
       validationTarget={{ procedureId: props.procedure.id, fields: BILLING_FAILURE_FIELDS }}
     >
@@ -898,8 +900,15 @@ function MobileBillingCard(props: BillingCardProps) {
   )
 
   return (
-    // The card holds two tap targets (idea 6): the summary opens the Billing sheet, Paid by opens the Split sheet.
+    // The card's tap targets (idea 6): the summary opens the Billing sheet, Paid by opens the Split sheet; the label row holds the Contract tip (43a).
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16 }}>
+      {/* The label row sits above the summary button, so the Contract tip (catch-up Phase 43a) is never a control inside a control.
+          Its 44px hit area reaches 13px under the row; the margin keeps it off the button. The button's "Edit" word still
+          shows at this row's end (placed up from inside the button), so there is one control, as before. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 18, marginBottom: 13, paddingRight: 44 }}>
+        <Eyebrow>{label}</Eyebrow>
+        <InfoTip topic="capture.contract" />
+      </div>
       <button
         type="button"
         className="aa-ctl"
@@ -910,12 +919,13 @@ function MobileBillingCard(props: BillingCardProps) {
         tabIndex={editable ? 0 : -1}
         data-validation-procedure-id={procedure.id}
         data-validation-fields={['rvgGroupId', 'baseUnitsSelected', ...BILLING_FAILURE_FIELDS].join(' ')}
-        style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', textAlign: 'left', background: 'none', border: 'none', borderRadius: radius.ctl, padding: 0, fontFamily: 'inherit', cursor: editable ? 'pointer' : 'default', color: 'inherit' }}
+        style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 4, width: '100%', textAlign: 'left', background: 'none', border: 'none', borderRadius: radius.ctl, padding: 0, fontFamily: 'inherit', cursor: editable ? 'pointer' : 'default', color: 'inherit' }}
       >
-        <span style={{ display: 'flex', alignItems: 'baseline', width: '100%' }}>
-          <span style={{ flex: 1, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>{label}</span>
-          {editable && <span style={{ fontSize: 14, fontWeight: 600, color: accent.base }}>Edit</span>}
-        </span>
+        {editable && (
+          <span aria-hidden style={{ position: 'absolute', right: 0, top: -31, fontSize: 14, lineHeight: '18px', fontWeight: 600, color: accent.base }}>
+            Edit
+          </span>
+        )}
         <span data-shot="billing-contract-rows" style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>{rows}</span>
         {officeOnly && <span data-shot="contract-set-by-office" style={{ fontSize: 12.5, color: neutral.slate }}>Set by the office</span>}
         {codeFailures.length > 0 && (
@@ -928,7 +938,7 @@ function MobileBillingCard(props: BillingCardProps) {
       <LockBadge bookingId={procedure.bookingId} style={{ marginTop: 10, alignSelf: 'flex-start' }} />
       <Overlay open={open} onClose={() => setOpen(false)}>
         <div data-shot="billing-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <OverlayHeader title={label} />
+          <InfoTipHeader title={label} topic="capture.contract" />
           <BillingSteps {...props} layout="sheet" />
           <Button onClick={() => setOpen(false)} style={{ width: '100%', minHeight: 48 }}>
             Done

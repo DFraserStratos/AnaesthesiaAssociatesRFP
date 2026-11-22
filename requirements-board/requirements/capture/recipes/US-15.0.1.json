@@ -1,25 +1,32 @@
 {
   "id": "US-15.0.1",
   "status": "partial",
-  "absentReason": "Ease of use is a quality that screenshots can only suggest: the shots show the calm, large-target capture screen and the operational day view. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had.",
+  "absentReason": "Ease of use is a quality that screenshots can only suggest. The shots show the calm Booking capture screen with the procedure stack and the Price section kept, help at the point of need beside each section on the phone, the web app and the office screens, and the welcome card each app shows on a first visit. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had. The capture shot's Booking (BK0009) holds no insurer, so its Insurance row reads None and shows no approval number.",
   "shots": [
     {
       "name": "card-capture",
       "app": "mobile",
-      "caption": "Booking capture on the phone, large controls and one clear action",
+      "caption": "Booking capture: the descriptions, the Contract, the price and its calculation, nothing the office handles",
       "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
       "states": [
         {
+          "state": "stack-kept",
           "steps": [
-            {
-              "scroll": "[data-testid=slide-booking] [data-testid=mobile-booking-scroll]",
-              "by": 520
-            },
-            {
-              "wait": 400
-            }
+            { "wait": "[data-shot=procedure-stack]" },
+            { "scroll": "[data-testid=slide-booking] [data-testid=mobile-booking-scroll]", "by": 520 },
+            { "wait": 400 }
           ],
-          "highlight": []
+          "highlight": ["[data-shot=procedure-stack]", "[data-shot=billing-contract-rows]", "[data-shot=price-card]"]
+        },
+        {
+          "state": "tip-open",
+          "caption": "Help at the point of need",
+          "steps": [
+            { "click": "[data-shot=info-tip-capture-stack]" },
+            { "wait": "[data-shot=info-tip-capture-stack-sheet]" },
+            { "wait": 500 }
+          ],
+          "highlight": ["[data-shot=info-tip-capture-stack-sheet]"]
         }
       ]
     },
@@ -30,8 +37,100 @@
       "start": "/admin/day/2026-07-21",
       "states": [
         {
+          "state": "day",
           "steps": [],
           "highlight": []
+        },
+        {
+          "state": "tip-open",
+          "caption": "Help at the point of need",
+          "steps": [
+            { "click": "[data-shot=info-tip-day-statuses]" },
+            { "wait": "[data-shot=info-tip-day-statuses-popover]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=info-tip-day-statuses-popover]"]
+        }
+      ]
+    },
+    {
+      "name": "first-run-hint-mobile",
+      "app": "mobile",
+      "caption": "Welcome card shown on first visit",
+      "start": "/mobile/lists",
+      "states": [
+        {
+          "steps": [
+            { "trigger": "show-first-run-hints" },
+            { "wait": "[data-shot=first-run-hint-mobile]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=first-run-hint-mobile]"]
+        }
+      ]
+    },
+    {
+      "name": "first-run-hint-web",
+      "app": "web",
+      "caption": "Welcome card shown on first visit",
+      "start": "/web",
+      "states": [
+        {
+          "steps": [
+            { "trigger": "show-first-run-hints" },
+            { "wait": "[data-shot=first-run-hint-web]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=first-run-hint-web]"]
+        }
+      ]
+    },
+    {
+      "name": "first-run-hint-admin",
+      "app": "admin",
+      "caption": "Welcome card shown on first visit",
+      "start": "/admin/day/2026-07-21",
+      "states": [
+        {
+          "steps": [
+            { "trigger": "show-first-run-hints" },
+            { "wait": "[data-shot=first-run-hint-admin]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=first-run-hint-admin]"]
+        }
+      ]
+    },
+    {
+      "name": "review-tip",
+      "app": "admin",
+      "caption": "Help at the point of need",
+      "start": "/admin/review/L-34821-2026-07-13-AM",
+      "states": [
+        {
+          "steps": [
+            { "click": "[data-shot=info-tip-review-contracts]" },
+            { "wait": "[data-shot=info-tip-review-contracts-popover]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=info-tip-review-contracts-popover]"]
+        }
+      ]
+    },
+    {
+      "name": "info-tip-capture-price",
+      "app": "web",
+      "caption": "Help at the point of need",
+      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "states": [
+        {
+          "steps": [
+            { "scroll": "[data-shot=price-card]" },
+            { "click": "[data-shot=info-tip-capture-price]" },
+            { "wait": "[data-shot=info-tip-capture-price-popover]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=info-tip-capture-price-popover]"]
         }
       ]
     }

@@ -1,3 +1,4 @@
+import { InfoTip } from '../../../shared/help/InfoTip'
 import { useState } from 'react'
 import { clearWarning, openConflictCount, useAppStore, type Actor, type OpenWarningRow } from '../../../store'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
@@ -52,6 +53,7 @@ export function WarningsToDo({
     <Card
       shot="admin-warnings-todo"
       headingId="admin-todo-heading"
+      aside={<InfoTip topic="day.todo" />}
       title={
         <>
           To-do

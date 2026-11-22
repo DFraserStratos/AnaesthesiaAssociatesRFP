@@ -150,6 +150,7 @@ export function BtmCaptureBlock({
       <ProcedureStack
         view={stackView!}
         density="full"
+        help
         surface={stackSurface}
         heading={several ? `Procedure ${displayNumber}` : 'Procedure'}
         {...(several && procedure.isPrimary ? { badge: <Pill size="sm" shot="procedure-primary-pill">Primary</Pill> } : {})}
@@ -286,7 +287,6 @@ export function BtmCaptureBlock({
   )
 }
 
-/** "Prepaid $1,200.00 · paid": a prepaid Procedure's amount and status, read-only (catch-up Phase 27; US-03.1.8, D30). */
 const ORDINAL = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth']
 
 /**
@@ -299,6 +299,7 @@ export function plainAdditionalNote(displayNumber: number, rvgPriced: boolean): 
   return rvgPriced ? `${lead} Record its times as usual.` : `${lead} Its Contract sets its price.`
 }
 
+/** "Prepaid $1,200.00 · paid": a prepaid Procedure's amount and status, read-only (catch-up Phase 27; US-03.1.8, D30). */
 function PrepaidRow({ procedureId, office }: { procedureId: string; office: boolean }) {
   const prepayment = useProcedurePrepayment(procedureId)
   const payeeName = useBookingStore((s) => {

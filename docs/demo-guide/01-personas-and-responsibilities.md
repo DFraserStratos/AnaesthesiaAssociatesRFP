@@ -126,6 +126,8 @@ Bookings and capture the data AA needs for billing.
 - Anaesthetist ID: 34821
 - Primary surface: Anaesthetist Mobile App
 - Secondary surface: Anaesthetist Web App
+- Demo sign-in account: `m.souter@aa-associates.example`, with a masked password, filled in on the
+  installed PWA's simulated sign-in screen (Provisional, OQ-83); the framed prototype opens signed in
 
 ### RFP anchors
 

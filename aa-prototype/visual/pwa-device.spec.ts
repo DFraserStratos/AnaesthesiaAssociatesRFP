@@ -1,10 +1,12 @@
 import { expect, test, type Page } from '@playwright/test'
-import { keepSignedInScript } from './storage/demoReady'
+import { keepHintsDismissedScript, keepSignedInScript } from './storage/demoReady'
 
-// The PWA opens signed out on a fresh handset (catch-up Phase 43a). These tests start signed in,
-// and several clear localStorage mid-test, so the session is re-seeded on each load.
+// The PWA opens signed out on a fresh handset, with its welcome card (catch-up Phase 43a). These
+// tests start signed in with the card dismissed, and several clear localStorage mid-test, so both
+// are re-seeded on each load. `pwa-device-sign-in.spec.ts` tests the fresh handset.
 test.beforeEach(async ({ context }) => {
   await context.addInitScript(keepSignedInScript)
+  await context.addInitScript(keepHintsDismissedScript)
 })
 
 /**
@@ -171,10 +173,14 @@ test('a List opens, a Booking completes and the List submits, all within the dev
   await page.getByRole('button', { name: 'Done', exact: true }).click()
   await expect(page.getByText('Southern Cross')).toHaveCount(0)
 
-  // No chip on More, which has no demo actions.
+  // More has only the app-wide entries (catch-up Phase 43a): Sign out and Show first-run hints again.
   await tab(page, 'More').click()
   await expect(page).toHaveURL(/\/mobile\/more$/)
-  await expect(page.locator('[data-shot="pwa-demo-actions"]')).toHaveCount(0)
+  await page.locator('[data-shot="pwa-demo-actions"]').click()
+  await expect(page.locator('[data-shot^="pwa-demo-action-"]')).toHaveCount(2)
+  await expect(page.locator('[data-shot="pwa-demo-action-pwa-sign-out"]')).toBeVisible()
+  await expect(page.locator('[data-shot="pwa-demo-action-show-first-run-hints"]')).toBeVisible()
+  await page.keyboard.press('Escape')
 })
 
 test('the safe-area contract resolves on the device host, at its emulation floors', async ({ page }) => {

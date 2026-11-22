@@ -126,10 +126,20 @@ export function MobileCatalogue() {
           <Ex.NudgeButtonExample />
         </CatalogueRow>
         <CatalogueRow name="CaptureSection" source="shared/capture/ui.tsx" usedIn={SW} stage="mobile" height={260}
-          what="The capture card: a micro-caps label, the body, and an optional footer area pinned to the foot; required adds a Required caption that takes the warning tint once Mark complete is refused."
+          what="The capture card: a micro-caps label (the shared Eyebrow), the body, and an optional footer area pinned to the foot; required adds a Required caption that takes the warning tint once Mark complete is refused; help (catch-up Phase 43a) puts an InfoTip at the label row's end."
           replaceWith="shadcn Card (CardHeader / CardContent / CardFooter)"
           note="The label should become a real heading.">
           <Ex.CaptureSectionExample />
+        </CatalogueRow>
+        <CatalogueRow name="InfoTip (phone)" source="shared/help/InfoTip.tsx" usedIn={SW} stage="mobile" height={260}
+          what="Point-of-need help (catch-up Phase 43a; US-15.0.1): a 16px info glyph in a 44px hit area beside a section label, named About and the topic title. On the phone it opens a bottom sheet with the topic's copy from helpTopics.ts and Got it; inside a sheet (InfoTipHeader) it expands an inline note under the title instead of a second sheet."
+          replaceWith="shadcn Drawer (bottom) + Collapsible">
+          <Ex.InfoTipExample />
+        </CatalogueRow>
+        <CatalogueRow name="FirstRunHint (mobile)" source="shared/help/FirstRunHint.tsx" usedIn={SW} stage="mobile" height={220}
+          what="The welcome card on a first visit (catch-up Phase 43a): an inline teal-tint card in the page flow, never a modal, with Got it. Dismissed per browser (firstRunHints.ts); Reset and Show first-run hints again bring it back."
+          replaceWith="shadcn Alert">
+          <Ex.FirstRunHintExample />
         </CatalogueRow>
         <CatalogueRow name="StatusChip" source="shared/StatusChip.tsx" usedIn={SW} stage="mobile" height={220}
           what="A status pill: coloured dot and label on the status tint, read from the status master so a rename shows at once."

@@ -114,7 +114,7 @@ export function clearAnaesthetistSession(): void {
   setStored(null)
 }
 
-/** Re-read storage (tests, and a second tab's change). */
+/** Re-read storage. Nothing listens for another tab's change yet: a second framed tab follows on its next reload. */
 export function reloadAnaesthetistSession(): void {
   useSessionStore.getState().reload()
 }

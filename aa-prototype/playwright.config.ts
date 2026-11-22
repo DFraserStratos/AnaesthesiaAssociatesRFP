@@ -36,7 +36,7 @@ export default defineConfig({
   projects: [
     {
       name: 'pwa-device',
-      testMatch: /pwa-device\.spec\.ts$/,
+      testMatch: /pwa-device(-sign-in)?\.spec\.ts$/,
       use: {
         ...devices['iPhone 14 Pro'],
         // The descriptor's own `defaultBrowserType` is `webkit`, which is a
@@ -54,7 +54,7 @@ export default defineConfig({
     },
     {
       name: 'prototype',
-      testIgnore: /pwa-device\.spec\.ts$/,
+      testIgnore: /pwa-device(-sign-in)?\.spec\.ts$/,
       use: {
         baseURL: PROTO_URL,
         viewport: { width: 1440, height: 900 },

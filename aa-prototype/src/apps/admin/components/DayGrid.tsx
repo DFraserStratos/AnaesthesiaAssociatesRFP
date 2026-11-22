@@ -1,3 +1,4 @@
+import { InfoTip } from '../../../shared/help/InfoTip'
 import { useMemo, useState } from 'react'
 import { Moon, Plus, TriangleAlert } from 'lucide-react'
 import { accent, neutral, semantic, radius, elevation } from '../../../theme/tokens'
@@ -317,6 +318,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
         }}
       >
         <StatusLegend variant="chips" activeStatuses={activeStatuses} onToggleStatus={toggleStatus} />
+        <InfoTip topic="day.statuses" />
         <div role="group" aria-label="List focus filters" style={{ display: 'inline-flex', gap: 8, flexWrap: 'wrap' }}>
           <SignalFilterButton
             label="Needs attention"

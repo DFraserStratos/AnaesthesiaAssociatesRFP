@@ -18,6 +18,7 @@
  * `whoIsBilled.ts`, passed in; this row decides nothing.
  */
 
+import { InfoTip } from '../help/InfoTip'
 import { useState } from 'react'
 import { neutral, semantic } from '../../theme/tokens'
 import { PAYER_CONTACT_NEEDED, PAYER_NOT_BILLED_YET } from '../../domain/billing/whoIsBilled'
@@ -63,7 +64,13 @@ export function PaidByRow({ contract, procedureId, actor, canEdit, variant, paye
   const [recheck, setRecheck] = useState<string | null>(null)
   // A prepaid Procedure's invoice actions live in its settlement block while that shows (catch-up Phase 41).
   const inSettlement = usePrepaidSettlementShown(procedureId, actor) !== undefined
-  const label = <span style={{ fontSize: 13, fontWeight: 600 }}>Paid by</span>
+  // The payer tip beside the label (catch-up Phase 43a): it fits the 80px label column with its hit area clear of the value.
+  const label = (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600 }}>
+      Paid by
+      <InfoTip topic="capture.payer" />
+    </span>
+  )
 
   // No Contract yet: who is invoiced is not known, so there is nothing to change (US-11.2.2 "Not billed yet").
   if (contract === null) {

@@ -35,7 +35,7 @@
         },
         {
           "state": "additional",
-          "caption": "The other is additional: base units are charged on the primary only",
+          "caption": "The other is additional: the anaesthetist reads one plain line, and the office sees the base units rule",
           "steps": [
             {
               "click": "role=button[name=\"Add another procedure\"]"
@@ -91,7 +91,7 @@
         },
         {
           "state": "additional",
-          "caption": "The other is additional: base units are charged on the primary only",
+          "caption": "The other is additional: the anaesthetist reads one plain line, and the office sees the base units rule",
           "steps": [
             {
               "click": "role=button[name=\"Add another procedure\"]"

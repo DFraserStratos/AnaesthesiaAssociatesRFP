@@ -6,7 +6,7 @@
     {
       "name": "acc-preop",
       "app": "web",
-      "caption": "An ACC pre-op assessment is a pre-op event on the real Procedure, with CS250, CS260 and CS70 preconfigured; the codes are not yet confirmed (OQ-12)",
+      "caption": "An ACC pre-op assessment is a pre-op event on the real Procedure, with CS250, CS260 and CS70 preconfigured",
       "setup": [
         {
           "goto": "/web/lists"
@@ -50,7 +50,7 @@
               "click": "[data-shot=add-event-sheet] [data-shot=acc-preop-preset][data-code=CS250]"
             },
             {
-              "wait": "[data-shot=add-event-sheet] [data-shot=acc-codes-caption]"
+              "wait": "[data-shot=add-event-sheet] [data-shot=acc-preop-presets]"
             },
             {
               "scroll": "[data-shot=add-event-sheet] [data-shot=acc-preop-presets]"
@@ -65,7 +65,7 @@
     {
       "name": "acc-preop",
       "app": "mobile",
-      "caption": "An ACC pre-op assessment is a pre-op event on the real Procedure, with CS250, CS260 and CS70 preconfigured; the codes are not yet confirmed (OQ-12), on the phone",
+      "caption": "An ACC pre-op assessment is a pre-op event on the real Procedure, with CS250, CS260 and CS70 preconfigured, on the phone",
       "setup": [
         {
           "goto": "/mobile/lists"
@@ -109,7 +109,7 @@
               "click": "[data-aa-mobile-product] [data-shot=add-event-sheet] [data-shot=acc-preop-preset][data-code=CS250]"
             },
             {
-              "wait": "[data-aa-mobile-product] [data-shot=add-event-sheet] [data-shot=acc-codes-caption]"
+              "wait": "[data-aa-mobile-product] [data-shot=add-event-sheet] [data-shot=acc-preop-presets]"
             },
             {
               "scroll": "[data-aa-mobile-product] [data-shot=add-event-sheet] [data-shot=acc-preop-presets]"

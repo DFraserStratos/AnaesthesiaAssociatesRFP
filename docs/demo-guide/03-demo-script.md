@@ -31,6 +31,17 @@ capture.
 7. Point at the **Synthetic data only** badge in the top bar (it also sits in the Admin side nav, the
    web top nav and the mobile More card, which reads "All patients, NHIs, Lists and figures are
    synthetic."): nothing in the prototype is real patient or integration data.
+8. After Reset a welcome card shows once on each app: **Welcome to your Lists** under the greeting on
+   the mobile Lists screen, **Welcome** on the web Dashboard, and **The day at a glance** on Admin Day
+   between the day navigation and the grid. Select **Got it** on each before the audience arrives, or
+   leave the mobile one to open S1 with. Scenario jumps keep your dismissals; Reset (and **Reset to
+   pristine seed**) brings them back, and so does **Demo actions → Show first-run hints again** on any
+   Mobile, Web or Admin screen (disabled, "No welcome card has been dismissed", until one is).
+9. On a handset, the installed PWA opens on a simulated sign-in screen the first time, with Dr Souter's
+   demo account (`m.souter@aa-associates.example`) and a masked password filled in: tap **Sign in**
+   before the audience arrives, or use it as the opener. The device keeps the session across reloads
+   and the PWA's own Reset. The framed phone in the all-apps prototype always opens signed in, after
+   Reset and after every scenario jump.
 
 The control panel is the **index**, grouped: **Clock & reset**, **Scenario jumps (S1 to S5)** and
 **Demo actions by screen**. Each scenario jump confirms first, resets the data, applies any extra
@@ -348,6 +359,21 @@ not-yet-captured cases, so the hospital's booking arrives into a working List ra
   check the RVG code on a fixed price, the payer's contact, the approval number or out-of-range base
   units. Something only the office can fix shows a pointer to **Alert the office**; submit still needs
   every Booking complete.
+- **Worth pointing at (what the anaesthetist sees):** the anaesthetist sees what the Contract means for
+  them: the descriptions as received, the Contract with who is invoiced and how it is priced, the RVG
+  code, and the price with what they may change on it. The app stays close to the one they use today.
+  Contract set-up and the office's own price controls stay with the office; on the phone a second
+  procedure reads a plain line ("Second procedure. Record its times as usual."), while the office's
+  view keeps the multi-procedure rule wording. Tap the info sign beside the procedure heading for the
+  point-of-need explanation: a bottom sheet with a short note and **Got it** (the same info signs sit
+  on the Billing card, the RVG code picker, Modifiers, Paid by, Price, Times and Warnings; on the web
+  Booking they open as small popovers). **Say:** "Help sits on the screen, where it is needed, so the
+  manual stays short."
+- **Optional opener (handset):** open on the PWA's sign-in screen and tap **Sign in**: "An anaesthetist
+  signs in once with their account; how, exactly, is deferred to the end of discovery." The screen
+  carries a small **Provisional** caption (OQ-83). A wrong email reads "No account with that email.
+  Use the demo account."; **More** shows "Signed in as m.souter@aa-associates.example" with **Sign
+  out** under the profile.
 - **Optional aside (fixed price, no times):** on Dr Souter's Mon 10 Aug PM List
   (`/mobile/lists/L-34821-2026-08-10-PM/bookings/BK0176`), Miriam Holloway's Merivale "Facelift plus 1
   add on" asks for no times or modifiers and completes as she is. Graham Pulley on the same List
@@ -432,6 +458,10 @@ already seeded.
   List). Dr Ngata's AM is Unavailable (his leave) with no Draft List. A Draft Lists card in the right
   rail and a Draft Lists band above the grid hold only St George's PM, Mr S. Tan, waiting 16 h; every
   List block shows its booking count; the nav shows Draft Lists 10 and Conflicts 16.
+- **Optional (point-of-need help):** after the grid pause, open the info sign beside the status legend
+  and, with the band on screen, the one on the Draft Lists band; optionally the one on the **Needs an
+  invoice destination** card. **Expected:** a small popover with a short explanation, closed with Esc
+  or a click outside it.
 
 ### Beat 1b: a List with no anaesthetist yet
 
@@ -757,6 +787,12 @@ already seeded.
   **Demo actions → Raise sample warnings** brings a child payer warning back on Grace Park's Booking
   (Fri 24: two Procedures, both paid by Hana Park, Mother), and **Clear sample warnings** puts Hana
   Park back as the payer.
+- **Optional (point-of-need help):** before authorising, open the info sign on the **Procedures** or
+  **Fee** column heading (or the Flags tile, or the one beside **Authorise for billing**): a small
+  popover, closed with Esc or a click outside it.
+
+**Discovery point (help and training):** which screens AA wants help on next, and whether training per
+user group is enough.
 
 **Discovery points:** open (OQ-139): what the office needs to know about public sessions. The prototype keeps Public as a status with an optional note (such as CPH), set by the anaesthetist or the office, never a List and never billed; reopen if Vanessa says the office uses more. Settled: soft warning (OQ-09), and the Draft List questions (OQ-44, OQ-64 and OQ-86 are answered); settled: the anaesthetist's calendar is painted
 before recurring bookings, a recurring booking on an unavailable session becomes a Draft List (Phase
@@ -1220,10 +1256,9 @@ actions** on the screen named in its beat.
     ACL reconstruction, St George's, Mr Hale, Contract St George's ACC ($25.00 a unit), submitted.
     Under the Procedure: **Add pre-op or post-op event** and **Add billing event**.
   - **Add pre-op or post-op event → Pre-op → ACC pre-op assessment**, Mon 13 Jul, pick **CS250 · ACC
-    pre-op assessment** (caption "Codes to confirm with AA's accountant (OQ-12)."), **Fixed fee**
-    $60.00. Point at **Invoice this event**, **Billed to the same party as the procedure** ("Our
-    reading: the same party as the procedure unless you change it.") and "Reviewed by the office, then
-    billed in the next run."
+    pre-op assessment**, **Fixed fee** $60.00. Point at **Invoice this event**, **Billed to the same
+    party as the procedure** and "Reviewed by the office, then billed in the next run." (The codes'
+    OQ-12 caption and the same-party reading caption are the office's own view since catch-up 43a.)
   - **Post-op → Post-op ward review**, Thu 16 Jul 08:00, **Record a time** 45 min ("The office prices
     the time at review."). No calculation is shown on the phone.
   - **Add billing event → Charge**, "What is this for?" Nerve catheter, Thu 16 Jul, $180.00 ex GST.
@@ -1885,6 +1920,9 @@ Xero sim**.
   reason, because none is ever asked. Paula Westerman's Face lift on Dr Souter's Mon 10 Aug PM List
   (`/admin/day/2026-08-10/bookings/BK0187`) shows **Price changed · Kirsty W. · office · Price not set
   → $2,950.00**; clearing a typed price reads **cleared, computed again**.
+- **Optional aside (sign-in rows):** on **Admin → Audit**, set Entity type to **account**: each sign-in,
+  refused attempt and sign-out from the handset's PWA writes one row ("Signed in", "Sign-in failed",
+  "Signed out"), beside Phase 14's simulated sign-in rows.
 
 ### Beat 2: NHI dual-format validator
 
@@ -2085,6 +2123,10 @@ Work (OQ-100, answered 5 November), and master data loads once at go-live, then 
   Christchurch Public message sends the NHI in PID-3 but the feed reads PID-2, so it dead-letters until
   the mapping is fixed and it is reprocessed (**Demo: Future scope, HL7 and FHIR**, MSG-CPH-2001,
   `/demo/integrations/log` and `/demo/integrations/mapping`).
+- Training per user group before go-live, and short standalone guides beside the on-screen help.
+- The identity service: the PWA's sign-in is simulated. Proposed: Auth0, with MFA, single sign-on, Face
+  ID on a native app and self-service password reset; how anaesthetists sign in is deferred to the end
+  of discovery (OQ-83).
 
 The most persuasive clicks are the state changes: a matched hospital row or a manual booking creates a Booking; Finish
 now changes Time units and fee; Booking completion enables submission; submission changes who may edit;

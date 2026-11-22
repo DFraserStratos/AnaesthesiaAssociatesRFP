@@ -1,3 +1,5 @@
+import { InfoTip } from '../../../shared/help/InfoTip'
+import { FirstRunHint } from '../../../shared/help/FirstRunHint'
 import { OFFICE_ACTOR } from '../../../store'
 import { SyntheticDataBadge } from '../../../shared/SyntheticDataBadge'
 import { Notice } from '../../../shared/ui'
@@ -213,8 +215,14 @@ export function AdminCatalogue() {
         <CatalogueRow name="SidePanel" source="apps/admin/components/SidePanel.tsx" usedIn={A} what="The one Admin right-docked panel (U2): scrim, an h2 header at 18/700 that names the dialog, the corner X, e3, a scrolling body and a footer. 440px list (the drawers) or 600px record (MasterPanel). On the one modal stack." replaceWith="shadcn Sheet (side)">
           <SidePanelExample />
         </CatalogueRow>
-        <CatalogueRow name="PopoverPanel" source="shared/ui/PopoverPanel.tsx" usedIn={AWM} what="The one popover panel and behaviour (usePopover, U2): a white card at the card radius and e3 under its trigger; outside click closes, Escape closes and returns focus. The harness menus and the Contract combo use it." replaceWith="shadcn Popover">
+        <CatalogueRow name="PopoverPanel" source="shared/ui/PopoverPanel.tsx" usedIn={AWM} what="The one popover panel and behaviour (usePopover, U2): a white card at the card radius and e3 under its trigger; outside click closes, Escape closes and returns focus. The harness menus and the Contract combo use it. Its fixed placement (catch-up Phase 43a) sits at viewport coordinates for InfoTip, so a scrolling table never clips it." replaceWith="shadcn Popover">
           <PopoverPanelExample />
+        </CatalogueRow>
+        <CatalogueRow name="InfoTip (desktop)" source="shared/help/InfoTip.tsx" usedIn={AWM} what="Point-of-need help (catch-up Phase 43a; US-15.0.1): a 16px info glyph in a 28px hit area beside a section label (Admin Day's legend, the waiting Lists band and card, Needs an invoice destination and To-do; Admin Review's Flags, Procedures, Fee and Authorise; the web capture cards). It opens an anchored popover on PopoverPanel's fixed placement with role dialog, flipping at the viewport's edges; Escape and an outside click close it. All copy lives in helpTopics.ts." replaceWith="shadcn Popover">
+          <InfoTipDesktopExample />
+        </CatalogueRow>
+        <CatalogueRow name="FirstRunHint (desktop)" source="shared/help/FirstRunHint.tsx" usedIn={AWM} what="The welcome card on the web Dashboard and the Admin Day view (catch-up Phase 43a): inline, teal tint, e1, Got it. Per-browser dismissal; Reset and Show first-run hints again bring it back." replaceWith="shadcn Alert">
+          <FirstRunHint app="admin" />
         </CatalogueRow>
         <CatalogueRow name="SlotDrawer" source="apps/admin/components/SlotDrawer.tsx" usedIn={A} what="The 440px session drawer on SidePanel: an empty session's actions, or a List's details, bookings and actions with nested sheets. A named dialog with Escape, focus in and back." replaceWith="shadcn Sheet (side)" note="Its rows are the shared DefRow in a DefList (a dl, labels at 80; UI unification U6), its section labels the shared Eyebrow. Its actions (assign, edit, reassign, status) write to the demo store, and its nested sheets open over it.">
           <SlotDrawerExample />
@@ -825,6 +833,15 @@ function ListOriginExample() {
     <DefList>
       {[SEED_ORIGIN_LISTS.pdf, SEED_ORIGIN_LISTS.hospital].map((id) => (lists[id] !== undefined ? <ListOriginRow key={id} list={lists[id]!} /> : null))}
     </DefList>
+  )
+}
+
+function InfoTipDesktopExample() {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600 }}>
+      Reading the day
+      <InfoTip topic="day.statuses" />
+    </span>
   )
 }
 

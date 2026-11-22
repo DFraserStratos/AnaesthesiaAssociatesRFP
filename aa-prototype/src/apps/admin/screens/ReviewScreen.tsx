@@ -1,6 +1,8 @@
+import { InfoTip } from '../../../shared/help/InfoTip'
+import type { HelpTopicId } from '../../../shared/help/helpTopics'
 import { Link } from 'react-router-dom'
 import { runDeliverySummary } from '../../../domain/billing/invoicePresentation'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { ArrowLeft, ArrowRight, Check, Lock, Receipt } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import type { AssignedList, Booking, Procedure } from '../../../domain/types'
@@ -71,6 +73,19 @@ interface ReviewScreenProps {
 }
 
 const REVIEW_NOWRAP_HEADINGS = new Set(['Time', 'Times', 'B · T · M', 'Units', 'Fee'])
+
+/** The point-of-need tips on the table's headings (catch-up Phase 43a; US-15.0.1). */
+const REVIEW_HEADING_TIPS: Readonly<Record<string, HelpTopicId>> = { Procedures: 'review.contracts', Fee: 'review.price' }
+
+/** A label with its tip beside it, outside any control. */
+function TipLabel({ topic, children }: { topic: HelpTopicId; children: ReactNode }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+      {children}
+      <InfoTip topic={topic} />
+    </span>
+  )
+}
 
 /**
  * The sanity-check authorisation review (Phase 07). The mockup's anatomy
@@ -337,7 +352,7 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
         <StatTile variant="outlined" label="Bookings" value={String(rows.length)} />
         <StatTile variant="outlined" label="Total units" value={String(listTotals.units)} />
         <StatTile variant="outlined" label="Total fee" value={listFeeText} />
-        <StatTile variant="outlined" label="Flags" value={String(allFlags.length)} {...(allFlags.length > 0 ? { tone: 'warning' as const } : {})} sub="to check before authorising" />
+        <StatTile variant="outlined" label={<TipLabel topic="review.flags">Flags</TipLabel>} value={String(allFlags.length)} {...(allFlags.length > 0 ? { tone: 'warning' as const } : {})} sub="to check before authorising" />
       </div>
 
       <FormError message={error} />
@@ -353,7 +368,9 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
           <thead>
             <tr>
               {['Time', 'Patient', 'Billed to', 'Procedures', 'Times', 'B · T · M', 'Units', 'Fee', 'Flags'].map((h, i) => (
-                <Th key={h} align={i === 6 || i === 7 ? 'right' : 'left'} {...(REVIEW_NOWRAP_HEADINGS.has(h) ? { nowrap: true } : {})}>{h}</Th>
+                <Th key={h} align={i === 6 || i === 7 ? 'right' : 'left'} {...(REVIEW_NOWRAP_HEADINGS.has(h) ? { nowrap: true } : {})}>
+                  {REVIEW_HEADING_TIPS[h] !== undefined ? <TipLabel topic={REVIEW_HEADING_TIPS[h]}>{h}</TipLabel> : h}
+                </Th>
               ))}
             </tr>
           </thead>
@@ -528,6 +545,9 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
             )}
             <Button variant="secondary" onClick={() => setNoteOpen(true)}>Log phone note</Button>
             <Button variant="primary" disabled={incompleteNames.length > 0 || blockers.length > 0} onClick={() => setConfirmOpen(true)}>Authorise for billing</Button>
+            <span style={{ display: 'inline-flex', alignItems: 'center', paddingLeft: 2 }}>
+              <InfoTip topic="review.authorise" />
+            </span>
           </div>
         )}
       </div>

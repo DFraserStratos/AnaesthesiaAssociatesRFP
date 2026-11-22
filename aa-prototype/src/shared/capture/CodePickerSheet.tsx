@@ -1,8 +1,9 @@
+import { InfoTipHeader } from '../help/InfoTip'
+import { OverlayHeader } from '../surface/OverlayHeader'
 import { useEffect, useMemo, useState } from 'react'
 import { neutral, radius } from '../../theme/tokens'
 import type { RvgGroup, RvgGroupId } from '../../domain/types'
 import { useSurface } from '../surface'
-import { OverlayHeader } from '../surface/OverlayHeader'
 import { NameSearchBox } from '../ui/NameSearchBox'
 import { RvgCodeList, rvgSections } from './RvgCodeList'
 import { plural } from '../format'
@@ -14,6 +15,8 @@ interface CodePickerSheetProps {
   rvgGroups: Record<string, RvgGroup>
   onPick: (id: RvgGroupId) => void
   onClose: () => void
+  /** The RVG code tip beside the title (catch-up Phase 43a): Booking capture only, not the Contract editor, Intake or the add-Booking form. */
+  help?: boolean
 }
 
 const SEARCH_LABEL = 'Search RVG code or description'
@@ -28,7 +31,7 @@ const SEARCH_LABEL = 'Search RVG code or description'
  * A bottom sheet on mobile, the surface's dialog on web and Admin. Each row is
  * a plain button (the current one marked `aria-current`).
  */
-export function CodePickerSheet({ open, currentId, rvgGroups, onPick, onClose }: CodePickerSheetProps) {
+export function CodePickerSheet({ open, currentId, rvgGroups, onPick, onClose, help = false }: CodePickerSheetProps) {
   const { Overlay } = useSurface()
   const [query, setQuery] = useState('')
 
@@ -42,7 +45,7 @@ export function CodePickerSheet({ open, currentId, rvgGroups, onPick, onClose }:
   return (
     <Overlay open={open} onClose={onClose}>
       <div data-shot="rvg-type-ahead">
-        <OverlayHeader title="RVG code" style={{ marginBottom: 12 }} />
+        {help ? <InfoTipHeader title="RVG code" topic="capture.rvg" style={{ marginBottom: 12 }} /> : <OverlayHeader title="RVG code" style={{ marginBottom: 12 }} />}
         <NameSearchBox value={query} onChange={setQuery} label={SEARCH_LABEL} autoFocus fill="well" />
         <div style={{ fontSize: 12.5, color: neutral.mist, padding: '6px 4px 6px', minHeight: 18 }} aria-live="polite">
           {query.trim() === ''

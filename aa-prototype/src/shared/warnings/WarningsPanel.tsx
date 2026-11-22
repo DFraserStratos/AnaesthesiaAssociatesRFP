@@ -1,3 +1,4 @@
+import { InfoTip } from '../help/InfoTip'
 import { useState, type ReactNode } from 'react'
 import { TriangleAlert } from 'lucide-react'
 import { TickButton } from '../ui/TickButton'
@@ -51,6 +52,7 @@ export function WarningsPanel({
   canClear,
   extra,
   rowShot,
+  help = false,
 }: {
   warnings: readonly Warning[]
   actor: Actor
@@ -58,6 +60,8 @@ export function WarningsPanel({
   canClear: boolean
   extra?: (warning: Warning) => ReactNode
   rowShot?: (warning: Warning) => string | undefined
+  /** The Warnings tip beside the heading (catch-up Phase 43a): the Booking only, not the patient record. */
+  help?: boolean
 }) {
   const [error, setError] = useState<string | null>(null)
   if (warnings.length === 0) return null
@@ -85,13 +89,17 @@ export function WarningsPanel({
         gap: 10,
       }}
     >
-      <h2 id={headingId} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, lineHeight: '18px', fontWeight: 700 }}>
-        <TriangleAlert size={16} aria-hidden />
-        <span>Warnings</span>
-        <span style={{ fontWeight: 600, opacity: 0.8, fontVariantNumeric: 'tabular-nums' }}>
-          {open.length > 0 ? `${open.length} open` : 'All cleared'}
-        </span>
-      </h2>
+      {/* The tip sits beside the heading, outside it, so the section's name stays the heading's words (catch-up Phase 43a). */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <h2 id={headingId} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, lineHeight: '18px', fontWeight: 700 }}>
+          <TriangleAlert size={16} aria-hidden />
+          <span>Warnings</span>
+          <span style={{ fontWeight: 600, opacity: 0.8, fontVariantNumeric: 'tabular-nums' }}>
+            {open.length > 0 ? `${open.length} open` : 'All cleared'}
+          </span>
+        </h2>
+        {help && <InfoTip topic="capture.warnings" />}
+      </div>
       <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' }}>
         {warnings.map((w, i) => {
           const cleared = w.clearance !== undefined

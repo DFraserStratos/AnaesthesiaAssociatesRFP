@@ -109,6 +109,7 @@ export function PriceCard({ procedure, actor, fee, contract, canCapture, failure
   return (
     <CaptureSection
       label="Price"
+      help="capture.price"
       dataShot="price-card"
       data={{ 'data-state': state }}
       gap={10}

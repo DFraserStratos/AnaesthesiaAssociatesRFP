@@ -1,3 +1,4 @@
+import { InfoTip } from '../../../shared/help/InfoTip'
 import { useMemo, useState } from 'react'
 import { needsInvoiceDestinationBookings, useAppStore } from '../../../store'
 import { accent, neutral, radius } from '../../../theme/tokens'
@@ -28,6 +29,7 @@ export function NeedsInvoiceDestinationCard({ onOpenBooking }: { onOpenBooking: 
     <Card
       shot="admin-needs-invoice-destination"
       headingId="admin-needs-destination-heading"
+      aside={<InfoTip topic="day.needsDestination" />}
       title={
         <>
           Needs an invoice destination

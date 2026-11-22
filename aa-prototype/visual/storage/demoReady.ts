@@ -46,3 +46,18 @@ export function keepSignedInScript(): void {
     /* storage blocked: nothing to seed */
   }
 }
+
+/**
+ * An init script that re-seeds the three welcome-card dismissals on every load
+ * unless set, for the specs that clear `localStorage` mid-test to start from
+ * the pristine seed (catch-up Phase 43a). Self-contained, like the one above.
+ */
+export function keepHintsDismissedScript(): void {
+  try {
+    for (const key of ['aa-first-run-hint-mobile', 'aa-first-run-hint-web', 'aa-first-run-hint-admin']) {
+      if (window.localStorage.getItem(key) === null) window.localStorage.setItem(key, '1')
+    }
+  } catch {
+    /* storage blocked: nothing to seed */
+  }
+}

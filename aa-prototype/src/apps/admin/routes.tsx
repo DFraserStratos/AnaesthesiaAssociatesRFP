@@ -1,3 +1,4 @@
+import { FirstRunHint } from '../../shared/help/FirstRunHint'
 import { useState } from 'react'
 import { pageParam } from './components/Pager'
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -101,6 +102,8 @@ export function AdminDayRoute() {
         maxDateISO={ctx.horizonEndISO}
         {...(beyondHorizon ? {} : { onFindAvailable: () => setFinderOpen(true) })}
       />
+      {/* The welcome card on a first visit (catch-up Phase 43a): between the day's navigation and the grid. */}
+      <FirstRunHint app="admin" />
       <AvailabilityFinderSheet
         open={finderOpen}
         dateISO={dateISO}

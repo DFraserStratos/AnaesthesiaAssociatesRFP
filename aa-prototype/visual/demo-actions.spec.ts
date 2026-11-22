@@ -7,16 +7,16 @@ import { runDemoAction } from './demoActions'
  * in the URL (a part payment on the invoice page moves that invoice's money).
  */
 
-test('demo actions: one on the Review queue, eleven on the Day view, ten on the Billing monitor', async ({ page }) => {
+test('demo actions: one on the Review queue, eleven on the Day view, ten on the Billing monitor, each plus catch-up Phase 43a\'s app-wide Show first-run hints again', async ({ page }) => {
   // The Review queue holds "Run the next billing run" (catch-up Phase 38b).
   await page.goto('/admin/review')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 1')
+  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 2')
 
   // The Day view carries the sample warnings (catch-up Phase 15a), Simulate sickness (catch-up Phase 30), Add Draft List for this day (catch-up Phase 31), Colleague moves a List to the office (catch-up Phase 32) and Colleague hands a Booking to Dr Souter (catch-up Phase 32a), Move to 2 days before procedure and Add prepaid Booking (catch-up Phase 27), Inject unmatched receipt for the Reconciliation card (catch-up Phase 37), Switch office user (catch-up Phase 35) and Load full-scale data (catch-up Phase 43).
   await page.goto('/admin/day/2026-07-21')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 11')
+  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 12')
   await expect(page.locator('[data-shot="demo-action-inject-unmatched-receipt"]')).toHaveCount(0)
   await page.locator('[data-shot="demo-actions"]').click()
   await expect(page.locator('[data-shot="demo-action-inject-unmatched-receipt"]')).toBeVisible()
@@ -25,12 +25,12 @@ test('demo actions: one on the Review queue, eleven on the Day view, ten on the 
   // The Billing monitor keeps its entries with its filters in the URL (catch-up Phase 37), plus Stage refund after payout (catch-up Phase 39) and Stage a payment week and Stage a bank mismatch (catch-up Phase 39a).
   await page.goto('/admin/billing?anaesthetist=34821&problems=1&sort=date-asc')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 10')
+  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 11')
 
   await page.goto('/admin/billing')
   await page.waitForLoadState('networkidle')
   const pill = page.locator('[data-shot="demo-actions"]')
-  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 10')
+  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 11')
   await pill.focus()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('dialog')).toBeVisible()

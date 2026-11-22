@@ -25,6 +25,7 @@ import { bootMs } from './bootMetrics'
 import { checkForUpdate, serviceWorkerReady } from './swRegistration'
 import { InstallCoach } from './InstallCoach'
 import { clearInstallCoachDismissal } from './installPrompt'
+import { clearFirstRunHintDismissals } from '../shared/help/firstRunHints'
 
 /**
  * The presenter controls the installed PWA has no harness bar for.
@@ -286,6 +287,8 @@ function ResetCard() {
               // reappears on the next visit to More, because `InstallCoach`
               // reads the key when it mounts.
               clearInstallCoachDismissal()
+              // The welcome card comes back too (catch-up Phase 43a); the sign-in session stays.
+              clearFirstRunHintDismissals()
               setConfirming(false)
             }}
             style={{

@@ -77,6 +77,7 @@ describe('WarningsPanel', () => {
     expect(rows[1]).toHaveTextContent('A second, mild warning.')
     expect(rows[1]).toHaveTextContent('After procedure')
     expect(rows[1]).toHaveTextContent('Mild')
+    // No Clear without canClear, and no tip without help (catch-up Phase 43a: the Booking passes it).
     expect(within(panel).queryByRole('button')).toBeNull()
   })
 

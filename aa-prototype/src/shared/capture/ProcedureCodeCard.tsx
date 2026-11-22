@@ -235,6 +235,7 @@ export function RvgCodeField({
           rvgGroups={rvgGroups}
           onPick={pick}
           onClose={() => setPickerOpen(false)}
+          help
         />
       )}
       {failures.length > 0 && <FailureNotes failures={failures} />}

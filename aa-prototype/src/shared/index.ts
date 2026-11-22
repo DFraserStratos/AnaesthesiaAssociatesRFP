@@ -33,3 +33,9 @@ export { ProfileRow, useRateEditor, BANK_CAPTION, HPI_CPN_CAPTION, OFFICE_HELD_C
 
 // Catch-up Phase 15a: warnings (triangle, panel, hooks).
 export { useBookingWarnings, useListWarnings, WarningTriangle, WarningsPanel, ClearWarningButton } from './warnings'
+
+// Catch-up Phase 43a: point-of-need help and the first-run welcome cards.
+export { InfoTip, useInfoTip, infoTipShot, type InfoTipParts } from './help/InfoTip'
+export { HELP_TOPICS, helpTopic, type HelpTopic, type HelpTopicId } from './help/helpTopics'
+export { FirstRunHint, FIRST_RUN_COPY } from './help/FirstRunHint'
+export { dismissHint, clearFirstRunHintDismissals, anyHintDismissed, useHintShown, HINT_KEYS, type HintApp } from './help/firstRunHints'

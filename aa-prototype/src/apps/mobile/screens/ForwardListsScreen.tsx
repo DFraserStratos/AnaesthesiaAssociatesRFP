@@ -15,6 +15,7 @@
  * the slide stack. Search and the day view are exclusive.
  */
 
+import { FirstRunHint } from '../../../shared/help/FirstRunHint'
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { addDays, format, parseISO } from 'date-fns'
 import { ChevronUp } from 'lucide-react'
@@ -294,6 +295,8 @@ export function ForwardListsScreen({
           See the inset contract in `theme/global.css`. */}
       <div data-testid="mobile-lists-header" style={{ padding: 'calc(var(--aa-inset-top, 54px) + 10px) 20px 0', flex: 'none' }}>
         <MobileHeader eyebrow={dayHeading(todayISO, todayISO)} title={`Kia ora, ${greetingName}`} initials={initials} />
+        {/* The welcome card on a first visit (catch-up Phase 43a): in the page flow, under the greeting. */}
+        <FirstRunHint app="mobile" style={{ marginTop: 14 }} />
         <div style={{ marginTop: 14 }}>
           <LookbackSearchRow
             query={query}
