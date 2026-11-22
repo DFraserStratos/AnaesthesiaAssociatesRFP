@@ -3,6 +3,7 @@ import { neutral, type as typeScale } from '../../../theme/tokens'
 import { profileFor, useAppStore, type Actor } from '../../../store'
 import { Button, Card, DefList, FormError, PageHeader, ResultLine, TextField } from '../../../shared/ui'
 import { BANK_CAPTION, HPI_CPN_CAPTION, OFFICE_HELD_CAPTION, ProfileRow, RATE_LABEL, RATE_NOTE, useRateEditor } from '../../../shared/profile'
+import { HPI_CPN_LABEL } from '../../../shared/format'
 
 const CAPTION = { fontSize: typeScale.small.size, lineHeight: `${typeScale.small.line}px`, color: neutral.mist, margin: 0 } as const
 
@@ -35,7 +36,7 @@ export function ProfileScreen({ anaesthetistId, actor }: { anaesthetistId: strin
         <Card padding="panel" title="Identity" shot="web-identity-panel">
           <DefList gap={6}>
             <ProfileRow label="Registration" locked>{profile.registrationNumber}</ProfileRow>
-            <ProfileRow label="HPI CPN" locked>{profile.hpiId}</ProfileRow>
+            <ProfileRow label={HPI_CPN_LABEL} locked>{profile.hpiId}</ProfileRow>
           </DefList>
           <p style={CAPTION}>{HPI_CPN_CAPTION}</p>
         </Card>

@@ -33,7 +33,7 @@ import {
   type RowAssessment,
 } from '../../../domain/intake'
 import { railAnswersFor, type RailContext } from '../../../domain/billing/contractRail'
-import { validateNhi } from '../../../domain/nhi'
+import { NHI_SHAPE_HINT, nhiEntryFeedback, validateNhi } from '../../../domain/nhi'
 import {
   INVALID_NHI_MESSAGE,
   LIST_LOCKED_MESSAGE,
@@ -287,7 +287,9 @@ export function RowPanel({
   const insurer = insurerText(fields)
   // The NHI field's value and verdict, worked out once.
   const nhiValue = nhiDraft ?? fields.patient.nhi ?? ''
-  const nhiInvalid = nhiValue.trim().length === 7 && !validateNhi(nhiValue).valid
+  // Checked as typed (catch-up Phase 40a: `nhiEntryFeedback`, the one validator; no Hub lookup here).
+  const nhiFeedback = nhiEntryFeedback(nhiValue)
+  const nhiInvalid = nhiFeedback.state === 'invalid'
 
   function picks(forCreate: boolean): OfficePicks | undefined {
     const p: OfficePicks = {
@@ -495,10 +497,15 @@ export function RowPanel({
             maxLength={7}
             autoFocus
             invalid={nhiInvalid}
+            autoCapitalize="characters"
+            spellCheck={false}
+            autoComplete="off"
             hint={
               nhiInvalid
-                ? 'NHI invalid. Check it against the hospital record.'
-                : assessment?.waitingForNhi === true
+                ? `${nhiFeedback.reason ?? 'NHI invalid.'} Check it against the hospital record.`
+                : nhiFeedback.state === 'incomplete'
+                  ? NHI_SHAPE_HINT
+                  : assessment?.waitingForNhi === true
                   ? 'Add the NHI to continue. Nothing is created until it is added.'
                   : 'Correct the NHI to continue.'
             }

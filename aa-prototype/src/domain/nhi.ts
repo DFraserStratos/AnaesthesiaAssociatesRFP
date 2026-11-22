@@ -32,6 +32,24 @@ export interface NhiValidation {
   reason?: string
 }
 
+/**
+ * Every reason `validateNhi` gives, in one place, rendered verbatim in the UI
+ * (catch-up Phase 40a: `nhiEntryFeedback` reuses them, so no copy drifts).
+ */
+export const NHI_REASONS = {
+  length: 'An NHI is exactly 7 characters.',
+  letterIO: 'The letters I and O are never used in an NHI.',
+  remainderZero: 'This combination is never assigned (checksum remainder 0).',
+  checkDigit: 'The check digit does not match.',
+  checkLetter: 'The check letter does not match.',
+  shape: 'Not a recognised NHI shape (AAA1234 or AAA12AB).',
+  /** The fallback where a reason is missing. */
+  notValid: 'The NHI is not valid.',
+} as const
+
+/** The NHI field's shape hint while fewer than 7 characters are typed. */
+export const NHI_SHAPE_HINT = '7 characters, AAA1234 or AAA12AB'
+
 /** 1-based alphabet value of a letter (0 if not in the NHI alphabet). */
 function alphabetValue(ch: string): number {
   return NHI_ALPHABET.indexOf(ch) + 1
@@ -59,7 +77,7 @@ export function validateNhi(input: string): NhiValidation {
       normalised,
       format: null,
       valid: false,
-      reason: 'An NHI is exactly 7 characters.',
+      reason: NHI_REASONS.length,
     }
   }
   if (/[IO]/.test(normalised)) {
@@ -67,7 +85,7 @@ export function validateNhi(input: string): NhiValidation {
       normalised,
       format: null,
       valid: false,
-      reason: 'The letters I and O are never used in an NHI.',
+      reason: NHI_REASONS.letterIO,
     }
   }
 
@@ -78,7 +96,7 @@ export function validateNhi(input: string): NhiValidation {
         normalised,
         format: 'current',
         valid: false,
-        reason: 'This combination is never assigned (checksum remainder 0).',
+        reason: NHI_REASONS.remainderZero,
       }
     }
     const expected = 11 - remainder === 10 ? 0 : 11 - remainder
@@ -88,7 +106,7 @@ export function validateNhi(input: string): NhiValidation {
         normalised,
         format: 'current',
         valid: false,
-        reason: 'The check digit does not match.',
+        reason: NHI_REASONS.checkDigit,
       }
     }
     return { normalised, format: 'current', valid: true }
@@ -101,7 +119,7 @@ export function validateNhi(input: string): NhiValidation {
         normalised,
         format: 'new',
         valid: false,
-        reason: 'This combination is never assigned (checksum remainder 0).',
+        reason: NHI_REASONS.remainderZero,
       }
     }
     const expected = NHI_ALPHABET.charAt(23 - remainder - 1)
@@ -111,7 +129,7 @@ export function validateNhi(input: string): NhiValidation {
         normalised,
         format: 'new',
         valid: false,
-        reason: 'The check letter does not match.',
+        reason: NHI_REASONS.checkLetter,
       }
     }
     return { normalised, format: 'new', valid: true }
@@ -121,7 +139,38 @@ export function validateNhi(input: string): NhiValidation {
     normalised,
     format: null,
     valid: false,
-    reason: 'Not a recognised NHI shape (AAA1234 or AAA12AB).',
+    reason: NHI_REASONS.shape,
+  }
+}
+
+/** The NHI field's verdict as it is typed (catch-up Phase 40a, US-14.4.1, US-11.1.2). */
+export interface NhiEntryFeedback {
+  state: 'empty' | 'incomplete' | 'invalid' | 'valid'
+  normalised: string
+  format?: NhiFormat
+  reason?: string
+}
+
+/**
+ * Feedback while an NHI is typed, built on `validateNhi` alone (no second
+ * regex): an I or O is flagged at once at any length; fewer than 7 characters
+ * is `incomplete` (the field shows the shape hint); at 7 the validator's own
+ * verdict and reason; more than 7 is invalid. Only a `valid` NHI is ever looked up.
+ */
+export function nhiEntryFeedback(input: string): NhiEntryFeedback {
+  const normalised = input.trim().toUpperCase()
+  if (normalised === '') return { state: 'empty', normalised }
+  if (normalised.includes('I') || normalised.includes('O')) {
+    return { state: 'invalid', normalised, reason: NHI_REASONS.letterIO }
+  }
+  if (normalised.length < 7) return { state: 'incomplete', normalised }
+  const verdict = validateNhi(normalised)
+  if (verdict.valid && verdict.format !== null) return { state: 'valid', normalised, format: verdict.format }
+  return {
+    state: 'invalid',
+    normalised,
+    ...(verdict.format !== null ? { format: verdict.format } : {}),
+    reason: verdict.reason ?? NHI_REASONS.shape,
   }
 }
 

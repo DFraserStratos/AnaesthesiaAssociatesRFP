@@ -9,6 +9,7 @@ import { ContactFields, EMPTY_CONTACT, type ContactDraft } from '../components/C
 import { specialtiesInOrder } from '../../../domain/specialties'
 import { neutral } from '../../../theme/tokens'
 import { RetireSection } from '../screens/masters/chrome'
+import { HPI_CPN_LABEL } from '../../../shared/format'
 
 interface Props {
   /** Absent: add a surgeon. */
@@ -125,7 +126,7 @@ export function SurgeonEditSheet({ surgeon, actor, onClose }: Props) {
         />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           <div data-shot="surgeon-hpi-field">
-            <TextField label="HPI CPN (optional)" value={hpiId} onChange={setHpiId} mono placeholder="12ABCD" hint="Leave blank until known. No two practitioners share one." />
+            <TextField label={`${HPI_CPN_LABEL} (optional)`} value={hpiId} onChange={setHpiId} mono placeholder="12ABCD" hint="Leave blank until known. No two practitioners share one." />
           </div>
           <TextField label="NZ medical registration number (optional)" value={registration} onChange={setRegistration} mono hint="For information" />
         </div>

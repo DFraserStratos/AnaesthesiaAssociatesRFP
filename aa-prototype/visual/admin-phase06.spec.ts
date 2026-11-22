@@ -203,6 +203,9 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   await expect(lookup).toBeEnabled()
   await lookup.click()
 
+  // Catch-up Phase 40a: the simulated Hub answers after a short visible wait; wait on its status line, never a sleep.
+  await expect(page.locator('[data-shot=nhi-lookup-status]')).toContainText('Found Demo Patient on the NHI register')
+  await expect(page.locator('[data-shot=nhi-purpose]')).toContainText('Looked up on behalf of Dr Priya Sharma (HPI CPN 12SHAP)')
   await expect(page.getByLabel('NHI')).toHaveValue('DEM1239')
   await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Demo Patient')
   await expect(page.getByLabel('Date of birth')).toHaveValue('1990-01-01')

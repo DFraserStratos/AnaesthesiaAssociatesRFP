@@ -152,6 +152,8 @@ export const zIndex = {
   sheet: 70,
   shellMenu: 120,
   dialog: 200,
+  /** The framed build's harness bar stays above an open dialog's scrim, so Demo actions can stage a screen with a dialog open (catch-up Phase 40a). */
+  harness: 210,
 } as const
 
 /** Scrim under sheets (Design Language §04). */

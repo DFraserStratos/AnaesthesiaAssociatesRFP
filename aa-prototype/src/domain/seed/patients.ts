@@ -3,8 +3,9 @@
  *
  * Pinned rows: the four design-day PM patients (NHIs from the mockups; David
  * Chen's ZAE0311 corrected to ZAE0310 — the mockup value fails the mod 11
- * check and the RFP rule beats the mockup simplification), the five canned
- * `lookupNhi` patients from Phase 01, the named scenario patients, and one
+ * check and the RFP rule beats the mockup simplification), Phase 01's five
+ * lookup patients (the NHI register mirrors every seeded patient, catch-up
+ * Phase 40a: `seed/nhiRegister.ts`), the named scenario patients, and one
  * patient first booked from a PDF referral (Noah Prescott, given an NHI in catch-up Phase 40: the NHI is mandatory, D11).
  * The generic pool is generated from the seeded RNG — mostly current-format
  * NHIs with several new-format ones, every patient carrying an NZHIS Level 4
@@ -80,7 +81,7 @@ const PINNED: readonly Patient[] = [
   { hiddenInternalId: PAT.marsh, nhi: 'ZAD2210', name: 'Susan Marsh', dobISO: '1961-02-09', phone: '03 555 3122', ethnicityCode: '11111' },
   { hiddenInternalId: PAT.chen, nhi: 'ZAE0310', name: 'David Chen', dobISO: '1988-11-30', phone: '021 555 3230', ethnicityCode: '42111' },
   { hiddenInternalId: PAT.ellison, nhi: 'ZAA0067', name: 'Margaret Ellison', dobISO: '1954-03-14', phone: '03 555 3349', ethnicityCode: '11111' },
-  // The five canned lookupNhi patients (Phase 01's simulated Hub).
+  // Phase 01's five lookup patients (on the NHI register like every seeded patient, catch-up Phase 40a).
   { hiddenInternalId: PAT.mitchell, nhi: 'CQY9304', name: 'Sarah Mitchell', dobISO: '1988-04-12', phone: '021 555 3458', ethnicityCode: '11111' },
   { hiddenInternalId: PAT.walker, nhi: 'WQS3635', name: 'Hemi Walker', dobISO: '1975-09-03', phone: '021 555 3560', ethnicityCode: '21111' },
   { hiddenInternalId: PAT.tuilagi, nhi: 'JKL1188', name: 'Losa Tuilagi', dobISO: '1992-01-27', phone: '021 555 3676', ethnicityCode: '31111' },

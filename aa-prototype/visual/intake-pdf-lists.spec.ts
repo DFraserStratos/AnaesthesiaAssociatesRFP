@@ -40,7 +40,16 @@ test('upload with a sender, correct, send, create the List with its origin, then
 
   // Okafor's list: the printed NHI is invalid, so Send is refused until it is corrected.
   await page.locator('[data-shot="pdf-inbox"] tbody tr', { hasText: 'leanne.pa@avonsidesurgical.example' }).click()
+  // Catch-up Phase 40a: the NHI is checked as typed, with the validator's reason, and no Hub lookup on a PDF row.
+  const nhi2 = page.locator('[data-shot="pdf-row-2"]').getByLabel('NHI')
+  await nhi2.fill('ZAA006')
+  await expect(page.locator('[data-shot="pdf-row-2"]')).toContainText('7 characters, AAA1234 or AAA12AB')
+  await nhi2.fill('ZAA0069')
+  await expect(page.locator('[data-shot="pdf-row-nhi-reason"]')).toContainText('The check digit does not match.')
+  await expect(page.locator('[data-shot="pdf-row-2-apply"]')).toBeDisabled()
+  await expect(page.locator('[data-shot="pdf-row-2"] [data-shot="nhi-lookup-status"]')).toHaveCount(0)
   await page.locator('[data-shot="pdf-row-2"]').getByLabel('NHI').fill('ZAA0067')
+  await expect(page.locator('[data-shot="pdf-row-nhi-reason"]')).toHaveCount(0)
   await page.locator('[data-shot="pdf-row-2-apply"]').click()
   await expect(page.locator('[data-shot="pdf-correction"]').first()).toContainText('ZAA0068')
   await page.locator('[data-shot="pdf-send"]').click()

@@ -31,6 +31,9 @@ capture.
 7. Point at the **Synthetic data only** badge in the top bar (it also sits in the Admin side nav, the
    web top nav and the mobile More card, which reads "All patients, NHIs, Lists and figures are
    synthetic."): nothing in the prototype is real patient or integration data.
+8. NHIs for the lookup beats (S2 Beat 2, S5 Beat 2): `ZBR4417` Mereana Tipene, `ZBT2253` Lucas Brennan
+   and `ZBX41AL` Ana Fifita (new format) are on the NHI register; `ZBW6638` is valid but not on the
+   register; `ZAA0068` has a bad check digit.
 
 The control panel is the **index**, grouped: **Clock & reset**, **Scenario jumps (S1 to S5)** and
 **Demo actions by screen**. Each scenario jump confirms first, resets the data, applies any extra
@@ -117,6 +120,7 @@ view respectively.
 | Audit | `/admin/audit` (a change set's id filters it to that save) |
 | Patients | `/admin/patients` (waiting rows: `/admin/patients/waiting`; follow-up: `/admin/patients/follow-up`) |
 | Patient record | `/admin/patients/<nhi>` (Sarah Mitchell: `CQY9304`) |
+| Patient record, refresh from the NHI register | `/admin/patients/ZAM1098` (Fiona Gray, S5's optional refresh beat) |
 
 The demo surfaces are `/demo/control`, `/demo/xero`, `/demo/integrations` and `/demo/data`.
 `/demo/integrations` is **Demo: Future scope, HL7 and FHIR** in the app switcher: the simulator, with
@@ -465,14 +469,25 @@ already seeded.
     RVG-priced Contract leaves the RVG code to the anaesthetist. Once saved, the same steps show on the
     Booking's **Billing** card.
   - Select **Review → Save booking → Done**.
+  - Optional, the Hub is down (in place of the plain **Look up** above): with the form open, **Demo
+    actions → Hub: Available / Slow / Unavailable → Unavailable → Run**, then **Look up**: "The Digital Services Hub is not answering. Enter the
+    details by hand, or try again." with **Retry**, and an amber **Hub simulated as Unavailable** badge
+    on the form. The office can still book by hand: type a valid NHI and the details, and **Save**. Set
+    it back to **Available** afterwards (the mode stays set until changed or Reset).
 - **Say:** "Phone and PDF remain first-class booking channels. The design improves those fallbacks
   rather than pretending they disappear."
+- **Say:** "The NHI is checked as it is typed and looked up through the Digital Services Hub, and only
+  ever used to identify the patient."
 - **Expected:** the lookup fills the complete booking and leaves every field editable, including the
   **Procedure description** (what the caller said, kept exactly as typed, **Told by: Phone**). The saved
   Booking's Procedure card shows that wording with "Phone". The session now
   holds a Private List with the new Booking, and the anaesthetist's web and mobile views and the
   availability finders show it as booked. A List that already has Bookings offers the same **Add
   Booking** in its drawer (below).
+  **Look up** (with the NHI empty) answers from the simulated NHI register after a short "Checking the
+  NHI register": DEM1239 Demo Patient fills the Booking, and the payer reads the patient it finds. The
+  purpose note under the NHI reads "Looked up on behalf of Dr Priya Sharma (HPI CPN 12SHAP), only to
+  identify this patient. Health Information Privacy Code 2020."
 - **Worth pointing at:** "Where does the invoice go, then the Contract. Each step only offers Contracts
   that fit this List, and typing finds one among hundreds. No contract · RVG and No contract · Fixed price,
   first in every list, cover anything no price list has yet. The anaesthetist sees the same steps and can finish or change it until the list is authorised."
@@ -1893,14 +1908,46 @@ Xero sim**.
     new-format NHI, then an invalid one.
   - Optional: on **Intake → PDF lists**, Mr Okafor's row 2 shows a printed NHI (ZAA0068) flagged invalid
     beside the facsimile (S1 Beat 1c corrects it).
+  - The Add a booking path: on Dr Souter's ACTIVE **Tue 21 Jul PM** List (`L-34821-2026-07-21-PM`),
+    **Add a booking** (mobile List, web List, or the Admin List drawer). Type `ZAA0068`: "The check digit
+    does not match." as it is typed, and **Look up** stays disabled. Then type `ZBX41AL`: "Valid NHI",
+    **Look up** → "Found Ana Fifita on the NHI register. Details pre-filled, still editable." with **New
+    format NHI**. An I or O is flagged at once. Optional: `ZBW6638` is valid but "No one with NHI
+    ZBW6638 is on the NHI register. Check the number, or enter the details by hand."
   - Optional, a labelled Future-scope aside: on **Demo: Future scope, HL7 and FHIR**
     (`/demo/integrations`), **Demo actions → Fire hospital message → MSG-STG-1002 (new-format NHI) →
     Run**; then on **Admin → Intake → Matching** open the new row.
 - **Say:** "The prototype validates both NHI formats using the official check-digit algorithms. A
   new-format NHI with a mod-23 check letter validates; the row still waits for the office to decide."
 - **Expected:** both formats validate on the Validators tab and an invalid NHI is rejected with a reason.
+  On Add a booking, the same dual-format check runs as the NHI is typed, so an invalid NHI is never sent
+  to the Hub; the purpose note names "Dr Melanie Souter (HPI CPN 10SOUM)".
   In the aside, the fired message lands as a row on Admin, Intake, Matching showing the validated
   new-format NHI; nothing is applied until the office decides.
+
+### Optional beat: refresh from the NHI register (Phase 40a)
+
+- **Click:**
+  - **Admin → Patients → Fiona Gray** (`/admin/patients/ZAM1098`). On the **Details** card, the **NHI
+    register** row reads "Not refreshed yet", with a teal **Refresh from NHI register** button and a
+    small **Provisional** pill (on demand, to confirm with AA).
+  - **Refresh from NHI register**: "On the NHI register: Fiona Tamihana", and a table where the Name
+    (Fiona Gray to Fiona Tamihana) and the Address (her current address to 5 Kowhai Lane, Halswell)
+    differ, each **Keep** or **Use register** (default Keep).
+  - **Use register** for her married name, keep the address, **Apply**.
+  - Optional: **Admin → Audit** shows "Refreshed from the NHI register".
+- **Say:** "The office refreshes a patient's identity from the NHI register when it needs to, and
+  chooses field by field what to take."
+- **Expected:** the record and her Bookings read Fiona Tamihana; the row reads "Last refreshed 21 Jul
+  2026, 08:00". Nothing reaches Xero (no NHI or personal details go to Xero). A refresh is undone only
+  by Reset.
+- **Worth pointing at (optional):** Kevin Doherty's record (`/admin/patients/ZAQ4425`) has no address, so
+  his refresh shows the register's address as **Will be added** (filled in, no choice needed).
+- **Worth pointing at (optional):** on **Patients → Waiting for NHI**, the **Add NHI** sheet looks a valid
+  typed NHI up and shows "On the NHI register: <name>, <DOB>", with a mild line if the register's name or
+  DOB differs from the row's; it never blocks the add.
+- **Discovery points:** should the refresh run on a schedule (hospitals get updates twice a day)? Should
+  an NHI entered while the Hub is down be marked unverified?
 
 ### Beat 3: no personal information in Xero
 
@@ -2107,6 +2154,10 @@ payment and payout; the Web Payments history keeps the settled invoice visible.
   **Open screen** link for every entry (Intake's PDF lists entry opens `/admin/intake/pdfs`).
 - A decided waiting-for-NHI row cannot be undone except by **Reset → Confirm reset**; a cleared balance
   warning re-opens only if it turns strong.
+- A Hub left Slow or Unavailable (the amber **Hub simulated as Unavailable** badge on the form): set it
+  back to **Available** from **Demo actions → Hub: Available / Slow / Unavailable** with Add a booking
+  open, or by **Reset**. A refresh from the NHI register cannot be undone except by **Reset → Confirm
+  reset** (or the S5 jump).
 - Imported the same sample twice: nothing new is added. Applied the wrong row: fix the Booking by
   hand; the row's decision and any wording it added stay in the history.
 - If **Finish now** was stamped too early, reset and advance the clock before reopening the Booking.

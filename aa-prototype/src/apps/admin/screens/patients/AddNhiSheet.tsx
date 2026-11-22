@@ -11,12 +11,19 @@ import { useEffect, useMemo, useState } from 'react'
 import { addNhiToWaitingRow, nhiRowPreview, useAppStore, type Actor, type AddNhiResult, type WaitingNhiRow } from '../../../../store'
 import { useSurface } from '../../../../shared'
 import { OverlayHeader, SheetActions } from '../../../../shared/surface'
-import { Button, FormError, Notice, TextAction, TextField } from '../../../../shared/ui'
-import { TableShell, Td, Th } from '../../../../shared/table'
+import { Button, FieldHint, FormError, Notice, TextAction, TextField } from '../../../../shared/ui'
 import { formatDob, plural, shortDay } from '../../../../shared/format'
 import { sessionText } from '../../../../domain/outOfHours'
 import { neutral } from '../../../../theme/tokens'
-import { DETAIL_FIELD_LABELS } from './patientParts'
+import { DetailChoiceTable } from './patientParts'
+import { nhiFieldCheck } from '../../../../shared/flows/nhiCopy'
+import { AA_OFFICE, NHI_LOOKUP_COPY, NhiLookupStatus, NhiPurposeNote, useNhiHubLookup } from '../../../../shared/nhiHub'
+import { detailDifferences } from '../../../../domain/patients'
+import { useDemoTriggerContextWhile } from '../../../../shared/demoTriggers/context'
+
+/** The register's name or date of birth for a typed NHI differs from the row's (catch-up Phase 40a): a mild line, never a block. */
+export const REGISTER_DIFFERS_LINE = 'The register has a different name or date of birth for this NHI. Check before adding.'
+
 
 export function AddNhiSheet({
   row,
@@ -46,6 +53,17 @@ export function AddNhiSheet({
     setError(null)
     setDone(null)
   }, [rowId])
+
+  // Catch-up Phase 40a: a valid typed NHI is looked up on the register through the simulated Hub.
+  const hub = useNhiHubLookup()
+  useDemoTriggerContextWhile('nhiHub.inUse', true, row !== null && done === null)
+  const check = nhiFieldCheck(nhi)
+  const validNhi = check.valid ? nhi.trim().toUpperCase() : null
+  const { lookup, reset } = hub
+  useEffect(() => {
+    if (validNhi !== null) lookup(validNhi)
+    else reset()
+  }, [validNhi, lookup, reset])
 
   const preview = useMemo(() => (rowId !== undefined && done === null ? nhiRowPreview({ intake, masters, schedule }, rowId, nhi) : null), [rowId, done, intake, masters, schedule, nhi])
   const typed = nhi.trim() !== ''
@@ -84,9 +102,34 @@ export function AddNhiSheet({
                 setError(null)
               }}
               shot="add-nhi-field"
-              invalid={preview?.invalidReason !== undefined}
-              hint={preview?.invalidReason ?? 'Three letters and four digits, or the newer format.'}
+              autoCapitalize="characters"
+              spellCheck={false}
+              autoComplete="off"
+              invalid={check.invalid}
+              {...(check.tone !== undefined ? { hintTone: check.tone } : {})}
+              hint={check.hint}
             />
+            {validNhi !== null && (
+              <NhiLookupStatus
+                state={hub.state}
+                manualEntry={false}
+                onStopWaiting={hub.cancel}
+                onRetry={hub.retry}
+                found={(s) => NHI_LOOKUP_COPY.onRegister(s.person.name, s.person.dobISO)}
+              />
+            )}
+            {/* A mild caution, never a block: the register's name or DOB differs from the row's (Phase 40's comparison rules). */}
+            {validNhi !== null &&
+              hub.state.status === 'found' &&
+              shown !== null &&
+              shown !== undefined &&
+              detailDifferences(
+                { name: shown.patientName, ...(shown.dobISO !== undefined ? { dobISO: shown.dobISO } : {}) },
+                { name: hub.state.person.name, dobISO: hub.state.person.dobISO },
+              ).length > 0 && (
+                <FieldHint tone="warning" shot="add-nhi-register-differs">{REGISTER_DIFFERS_LINE}</FieldHint>
+              )}
+            <NhiPurposeNote practitioner={AA_OFFICE} />
             {valid && preview !== null && (
               <p data-shot="add-nhi-preview" role="status" style={{ margin: 0, fontSize: 13, lineHeight: '19px', color: neutral.ink }}>
                 {preview.existing === undefined
@@ -102,24 +145,7 @@ export function AddNhiSheet({
             {valid && preview !== null && preview.differences.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <span style={{ fontSize: 12.5, color: neutral.slate }}>The row's details differ from the record. They are held for review when the row is decided.</span>
-                <TableShell label="Details that differ" density="dense" nested shot="add-nhi-differences">
-                  <thead>
-                    <tr>
-                      <Th>Detail</Th>
-                      <Th>On the record</Th>
-                      <Th>On the row</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {preview.differences.map((d) => (
-                      <tr key={d.field}>
-                        <Td>{DETAIL_FIELD_LABELS[d.field]}</Td>
-                        <Td mono={d.field === 'dobISO'}>{d.existing ?? 'Not held'}</Td>
-                        <Td mono={d.field === 'dobISO'}>{d.incoming}</Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </TableShell>
+                <DetailChoiceTable rows={preview.differences} recordHeader="On the record" incomingHeader="On the row" shot="add-nhi-differences" />
               </div>
             )}
             <FormError message={error} />

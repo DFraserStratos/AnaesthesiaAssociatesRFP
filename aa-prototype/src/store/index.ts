@@ -353,6 +353,9 @@ export { recordUnmatchedReceipt, type UnmatchedReceiptInput } from './paymentAct
 export { postTransferJournal } from './xeroHandoff'
 export { settlePrepaymentsForList, transfersDueForList } from './prepaymentSettlement'
 export { setArchiveWindowDays, armHandoffFault } from './demoSettingsActions'
+// Catch-up Phase 40a: the simulated Hub's demo mode and the refresh from the NHI register.
+export { setNhiHubMode } from './demoSettingsActions'
+export { registerRefreshPreview, refreshPatientFromRegister, REGISTER_REFRESH_MESSAGES, type RegisterRefreshPreview } from './registerRefresh'
 export { anaesthetistActor, OFFICE_ACTOR, SECOND_OFFICE_ACTOR, OFFICE_USERS, officeActorOf, otherOfficeUser, SOUTER_ACTOR, OFFICE_SIMULATION_ACTOR, DEMO_TRIGGER_ACTOR, DEMO_OFFICE_ACTOR, OFFICE_ACCOUNT_ID, type OfficeUserId } from './demoActors'
 export {
   WARNING_SAMPLES,

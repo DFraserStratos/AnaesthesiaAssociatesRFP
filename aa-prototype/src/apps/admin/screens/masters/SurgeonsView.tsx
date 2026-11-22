@@ -15,6 +15,7 @@ import { NotPreferredPill, PreferredPill, usePairingEntries } from '../../compon
 import { ACTIONS_COLUMN, EditCell, MasterHeader, MasterTable, RetiredPill, ShowRetiredToggle, retiredRowStyle } from './chrome'
 import { rowCellStyle } from './tableStyles'
 import { surgeonProfilePath } from '../../mastersPaths'
+import { HPI_CPN_LABEL } from '../../../../shared/format'
 
 /**
  * Surgeons and Surgeon groups (catch-up Phase 17; US-13.4.1, US-13.6.2).
@@ -55,7 +56,7 @@ export function SurgeonsView({ actor }: { actor: Actor }) {
         add={{ label: 'Add surgeon', onClick: () => setSheet({}) }}
       />
       <ShowRetiredToggle checked={showRetired} onChange={setShowRetired} count={retiredCount} />
-      <MasterTable columns={['Name', 'Specialties', 'Practice', 'Office contact', 'HPI CPN', 'Pairings', ACTIONS_COLUMN]} shot="masters-surgeons" label="Surgeons">
+      <MasterTable columns={['Name', 'Specialties', 'Practice', 'Office contact', HPI_CPN_LABEL, 'Pairings', ACTIONS_COLUMN]} shot="masters-surgeons" label="Surgeons">
         {rows.map((s) => {
           const counts = pairingCounts(entries, { surgeonId: s.id })
           const to = officeAddressFor({ surgeons }, s.id).to

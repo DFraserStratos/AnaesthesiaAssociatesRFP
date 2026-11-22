@@ -196,3 +196,28 @@ describe('NameSearchBox', () => {
     expect(box).toHaveFocus()
   })
 })
+
+describe('catch-up Phase 40a: FieldHint tones and hooks, TextField hintTone and input passthrough', () => {
+  it('FieldHint carries shot, role and data-* and colours by tone', () => {
+    render(
+      <FieldHint tone="success" shot="hint-shot" live="status" data-status="found">
+        Valid NHI
+      </FieldHint>,
+    )
+    const hint = screen.getByRole('status')
+    expect(hint).toHaveAttribute('data-shot', 'hint-shot')
+    expect(hint).toHaveAttribute('data-status', 'found')
+    expect(hint.style.color).not.toBe('')
+  })
+
+  it('TextField passes autoCapitalize and spellCheck to the input; hintTone success colours the hint unless invalid', () => {
+    const { rerender } = render(<TextField label="NHI" value="" onChange={vi.fn()} hint="Valid NHI" hintTone="success" autoCapitalize="characters" spellCheck={false} />)
+    const input = screen.getByLabelText('NHI')
+    expect(input).toHaveAttribute('autocapitalize', 'characters')
+    expect(input).toHaveAttribute('spellcheck', 'false')
+    const successColour = screen.getByText('Valid NHI').style.color
+    rerender(<TextField label="NHI" value="" onChange={vi.fn()} hint="Valid NHI" />)
+    expect(screen.getByText('Valid NHI').style.color).not.toBe(successColour)
+    expect(screen.getByLabelText('NHI')).not.toHaveAttribute('autocapitalize')
+  })
+})

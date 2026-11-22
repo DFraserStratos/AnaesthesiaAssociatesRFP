@@ -5,7 +5,7 @@ import { BottomSheet } from '../shared/surface'
 import { useAnySheetOpen } from '../shared/surface/sheetPresence'
 import { DemoBadge } from '../shared/DemoBadge'
 import { DemoTriggerBadge, useDemoTriggerRows } from '../shared/demoTriggers'
-import { accent, elevation, neutral, radius, semantic } from '../theme/tokens'
+import { accent, elevation, neutral, radius, semantic, zIndex } from '../theme/tokens'
 import { isOfficeSimulationEnabled } from './officeSimulation'
 
 /**
@@ -35,10 +35,13 @@ export function PwaDemoActions() {
   if (rows.length === 0) return null
   // Read per render; the toggle lives on More, where the chip is not shown.
   const officeAuto = isOfficeSimulationEnabled()
+  // An entry that acts on the open sheet (catch-up Phase 40a's Hub mode) keeps
+  // the chip, lifted to the top of the screen above the sheet, clear of its controls.
+  const overSheet = sheetOpen && !open && rows.some((r) => r.trigger.overSheet === true)
 
   return (
     <>
-      {!sheetOpen && (
+      {(!sheetOpen || overSheet) && (
       <button
         type="button"
         data-shot="pwa-demo-actions"
@@ -49,8 +52,10 @@ export function PwaDemoActions() {
           right: 'calc(var(--aa-inset-right, 0px) + 14px)',
           // Clears the Lists tab bar, the List's submit footer and the Booking's
           // measured dock (`--aa-dock-height`, published on documentElement).
-          bottom: 'calc(var(--aa-inset-bottom, 0px) + max(96px, var(--aa-dock-height, 0px) + 12px))',
-          zIndex: 55,
+          // Over a sheet it sits at the top, above the sheet's scrim (zIndex.sheet is 70).
+          ...(overSheet
+            ? { top: 'calc(var(--aa-inset-top, 0px) + 10px)', zIndex: zIndex.sheet + 5 }
+            : { bottom: 'calc(var(--aa-inset-bottom, 0px) + max(96px, var(--aa-dock-height, 0px) + 12px))', zIndex: 55 }),
           display: 'flex',
           alignItems: 'center',
           gap: 6,

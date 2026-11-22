@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { ETHNICITY_DEMO_SUBSET, lookupNhi, validateEthnicityCode } from './nzhis'
+import { ETHNICITY_DEMO_SUBSET, validateEthnicityCode } from './nzhis'
 import { validateNhi } from './nhi'
+import { lookupOnRegister } from './nhiRegister'
+import { nhiRegister } from './seed/nhiRegister'
 
 describe('validateEthnicityCode — three-way verdict', () => {
   it('accepts a code in the demo subset with its group name', () => {
@@ -43,53 +45,36 @@ describe('validateEthnicityCode — three-way verdict', () => {
   })
 })
 
-describe('lookupNhi — simulated Digital Services Hub lookup', () => {
-  it('returns canned patient data for a seeded current-format NHI', () => {
-    const r = lookupNhi('CQY9304')
-    expect(r).toEqual({
-      found: true,
-      name: 'Sarah Mitchell',
-      dobISO: '1988-04-12',
-      ethnicityCode: '11111',
-    })
+describe('lookupOnRegister: the NHI lookup over the synthetic register (catch-up Phase 40a, replacing the Phase 01 stand-in)', () => {
+  it('returns the patient for a seeded current-format NHI', () => {
+    expect(lookupOnRegister(nhiRegister(), 'CQY9304')).toMatchObject({ kind: 'found', person: { name: 'Sarah Mitchell', dobISO: '1988-04-12', ethnicityCode: '11111' } })
   })
 
-  it('returns canned patient data for a seeded new-format NHI', () => {
-    const r = lookupNhi('MYY54SL')
-    expect(r).toEqual({
-      found: true,
-      name: 'Priya Nair',
-      dobISO: '1969-11-08',
-      ethnicityCode: '43111',
-    })
+  it('returns the patient for a seeded new-format NHI', () => {
+    expect(lookupOnRegister(nhiRegister(), 'MYY54SL')).toMatchObject({ kind: 'found', person: { name: 'Priya Nair', dobISO: '1969-11-08', ethnicityCode: '43111' } })
   })
 
   it('returns the complete phone-advice demo patient', () => {
-    expect(lookupNhi('DEM1239')).toEqual({
-      found: true,
-      name: 'Demo Patient',
-      dobISO: '1990-01-01',
-      phone: '021 555 0190',
-      ethnicityCode: '11111',
+    expect(lookupOnRegister(nhiRegister(), 'DEM1239')).toEqual({
+      kind: 'found',
+      person: { nhi: 'DEM1239', name: 'Demo Patient', dobISO: '1990-01-01', phone: '021 555 0190', ethnicityCode: '11111', format: 'current' },
     })
   })
 
   it('normalises input before looking up', () => {
-    expect(lookupNhi(' cqy9304 ').found).toBe(true)
+    expect(lookupOnRegister(nhiRegister(), ' cqy9304 ').kind).toBe('found')
   })
 
-  it('returns not-found for an unseeded NHI', () => {
-    expect(lookupNhi('ABC1234')).toEqual({ found: false })
+  it('an NHI failing its check digit is invalid with the reason, never looked up', () => {
+    expect(lookupOnRegister(nhiRegister(), 'ABC1234')).toEqual({ kind: 'invalid', reason: 'The check digit does not match.' })
   })
 
-  it('every canned NHI validates and every canned ethnicity code is in the demo subset', () => {
+  it('the formerly canned NHIs validate and their ethnicity codes are in the demo subset', () => {
     for (const nhi of ['CQY9304', 'WQS3635', 'JKL1188', 'MYY54SL', 'RUE29KR', 'DEM1239']) {
       expect(validateNhi(nhi).valid, `${nhi} should validate`).toBe(true)
-      const hit = lookupNhi(nhi)
-      expect(hit.found).toBe(true)
-      if (hit.found) {
-        expect(validateEthnicityCode(hit.ethnicityCode).verdict).toBe('valid')
-      }
+      const hit = lookupOnRegister(nhiRegister(), nhi)
+      expect(hit.kind).toBe('found')
+      if (hit.kind === 'found') expect(validateEthnicityCode(hit.person.ethnicityCode ?? '').verdict).toBe('valid')
     }
   })
 })

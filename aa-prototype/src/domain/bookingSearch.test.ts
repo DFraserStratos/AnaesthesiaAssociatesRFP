@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { foldName, parseBookingQuery, patientMatches } from './bookingSearch'
+import { foldName, parseBookingQuery, patientMatches, searchNhiReason } from './bookingSearch'
 
 const mitchell = { name: 'Sarah Mitchell', nhi: 'CQY9304' }
 const newFormat = { name: 'Aroha Ngata', nhi: 'ZZZ00AC' }
@@ -60,5 +60,19 @@ describe('patientMatches', () => {
     expect(patientMatches(parseBookingQuery(''), mitchell)).toBe(false)
     expect(patientMatches(parseBookingQuery('a'), mitchell)).toBe(false)
     expect(parseBookingQuery('sar mit')).toEqual(parseBookingQuery('sar mit'))
+  })
+})
+
+describe('searchNhiReason (catch-up Phase 40a)', () => {
+  it("a 7-character query that cannot be an NHI gives the validator's reason", () => {
+    expect(searchNhiReason('ZAA0068')).toBe('The check digit does not match.')
+    expect(searchNhiReason(' zaa0068 ')).toBe('The check digit does not match.')
+  })
+
+  it('a valid NHI, a 7-letter surname, a short or spaced query give none', () => {
+    expect(searchNhiReason('CQY9304')).toBeUndefined()
+    expect(searchNhiReason('Tuilagi')).toBeUndefined()
+    expect(searchNhiReason('ZAA006')).toBeUndefined()
+    expect(searchNhiReason('ZA A0068')).toBeUndefined()
   })
 })

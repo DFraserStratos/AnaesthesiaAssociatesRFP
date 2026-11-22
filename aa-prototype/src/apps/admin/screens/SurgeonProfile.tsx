@@ -12,6 +12,7 @@ import { HeaderActions, IdChip, PROFILE_CARD, ProfileHeader, ProfilePage } from 
 import { BackLink, Card, DefList, DefRow } from '../../../shared/ui'
 import { SurgeonEditSheet } from '../flows/SurgeonEditSheet'
 import { mastersViewPath } from '../mastersPaths'
+import { HPI_CPN_LABEL } from '../../../shared/format'
 
 /**
  * The surgeon profile (catch-up Phase 17; US-13.6.2, US-13.6.3, US-13.6.4):
@@ -41,7 +42,7 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
       <BackLink to={mastersViewPath('surgeons')} size="desktop">Surgeons</BackLink>
       <ProfileHeader
         name={surgeon.name}
-        chip={<IdChip label="HPI CPN" value={surgeon.hpiId} empty={NO_HPI_CPN} shot="surgeon-hpi-chip" />}
+        chip={<IdChip label={HPI_CPN_LABEL} value={surgeon.hpiId} empty={NO_HPI_CPN} shot="surgeon-hpi-chip" />}
         sub={[surgeonSpecialtyLabel({ specialties }, surgeon), surgeon.practiceName].filter((v) => v !== undefined && v !== '').join(' · ')}
         action={<HeaderActions onHistory={() => setHistory(true)} onEdit={() => setEditing(true)} />}
       />
@@ -58,7 +59,7 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
 
         <Card style={PROFILE_CARD} title="Identifiers" shot="surgeon-identifiers">
           <DefList gap={10}>
-            <DefRow layout="stacked" label="HPI CPN" mono={surgeon.hpiId !== undefined} note="Unique index on the Health Provider Index. Not the patient's NHI." data-hpi={surgeon.hpiId ?? ''}>
+            <DefRow layout="stacked" label={HPI_CPN_LABEL} mono={surgeon.hpiId !== undefined} note="Unique index on the Health Provider Index. Not the patient's NHI." data-hpi={surgeon.hpiId ?? ''}>
               {surgeon.hpiId ?? <span style={{ color: neutral.mist }}>{NO_HPI_CPN}</span>}
             </DefRow>
             <DefRow layout="stacked" label="NZ medical registration number" mono={surgeon.medicalRegistrationNumber !== undefined} note="For information">

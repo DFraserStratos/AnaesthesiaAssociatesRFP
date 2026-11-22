@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import type { PdfListRow, SurgeonPdfList } from '../../../domain/types'
 import { effectivePdfRow, PDF_ROW_FIELD_LABELS, pdfRowIssues, sessionLabel } from '../../../domain/intake'
-import { validateNhi } from '../../../domain/nhi'
+import { NHI_SHAPE_HINT, nhiEntryFeedback } from '../../../domain/nhi'
 import { correctPdfListRow, sendPdfListToMatching, useAppStore, type Actor, type PdfRowPatch } from '../../../store'
 import { BackLink, Button, Eyebrow, Notice, Pill, ResultLine, TextAction, TextField } from '../../../shared/ui'
 import { dateTimeMicroCap, locationName, plural } from '../../../shared/format'
@@ -126,7 +126,9 @@ function PdfRowCard({ list, row, index, editable, actor, onDirty }: { list: Surg
   const dirty = (Object.keys(draft) as (keyof Draft)[]).some((k) => draft[k].trim() !== saved[k])
   useEffect(() => onDirty(editable && dirty), [editable, dirty, onDirty])
   const typedNhi = draft.nhi.trim()
-  const nhiVerdict = typedNhi !== '' ? validateNhi(typedNhi) : undefined
+  // Checked as typed (catch-up Phase 40a: the one validator through `nhiEntryFeedback`; no Hub lookup on a PDF row).
+  const nhiFeedback = nhiEntryFeedback(typedNhi)
+  const nhiInvalid = nhiFeedback.state === 'invalid'
   const issues = pdfRowIssues(row)
   const set = (k: keyof Draft) => (v: string) => {
     setDraft((d) => ({ ...d, [k]: v }))
@@ -149,7 +151,7 @@ function PdfRowCard({ list, row, index, editable, actor, onDirty }: { list: Surg
       style={{ background: neutral.surface, border: `1px solid ${blocked ? semantic.error.solid : neutral.line}`, borderRadius: radius.card, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}
     >
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <TextField label="NHI" value={draft.nhi} onChange={set('nhi')} mono width={110} size="compact" disabled={!editable} invalid={nhiVerdict?.valid === false} />
+        <TextField label="NHI" value={draft.nhi} onChange={set('nhi')} mono width={110} size="compact" disabled={!editable} invalid={nhiInvalid} autoCapitalize="characters" spellCheck={false} autoComplete="off" shot={`pdf-row-${index + 1}-nhi`} />
         <TextField label="Name" value={draft.name} onChange={set('name')} width={160} size="compact" disabled={!editable} />
         <TextField label="Date of birth" value={draft.dobISO} onChange={set('dobISO')} mono width={118} size="compact" disabled={!editable} placeholder="YYYY-MM-DD" />
         <TextField label="Time" value={draft.scheduledTime} onChange={set('scheduledTime')} mono width={72} size="compact" disabled={!editable} placeholder="HH:MM" />
@@ -159,7 +161,8 @@ function PdfRowCard({ list, row, index, editable, actor, onDirty }: { list: Surg
         <span style={{ color: neutral.mist }}>Procedure as received</span>
         <span className="mono" style={{ color: neutral.ink }}>{row.asRead.procedureText}</span>
       </div>
-      {nhiVerdict?.valid === false && dirty && <div style={{ fontSize: 12, color: semantic.error.onTint }}>NHI {typedNhi} is not valid: {nhiVerdict.reason}</div>}
+      {nhiInvalid && dirty && <div data-shot="pdf-row-nhi-reason" style={{ fontSize: 12, color: semantic.error.onTint }}>NHI {typedNhi} is not valid: {nhiFeedback.reason}</div>}
+      {nhiFeedback.state === 'incomplete' && dirty && <div style={{ fontSize: 12, color: neutral.slate }}>{NHI_SHAPE_HINT}</div>}
       {!dirty &&
         issues.map((i) => (
           <div key={i.code} style={{ fontSize: 12, color: i.blocksSend ? semantic.error.onTint : semantic.warning.onTint }}>
@@ -178,7 +181,7 @@ function PdfRowCard({ list, row, index, editable, actor, onDirty }: { list: Surg
       {error !== null && <div style={{ fontSize: 12, color: semantic.error.onTint }}>{error}</div>}
       {editable && dirty && (
         <div style={{ display: 'flex', gap: 8 }}>
-          <Button variant="secondary" size="compact" onClick={apply} shot={`pdf-row-${index + 1}-apply`}>
+          <Button variant="secondary" size="compact" onClick={apply} disabled={nhiInvalid && typedNhi !== saved.nhi} disabledReason="Correct the NHI first." shot={`pdf-row-${index + 1}-apply`}>
             Save correction
           </Button>
           <TextAction onClick={() => setDraft(saved)}>Undo</TextAction>

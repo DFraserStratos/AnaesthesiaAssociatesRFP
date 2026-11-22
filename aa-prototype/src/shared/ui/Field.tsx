@@ -18,10 +18,34 @@ export function dataAttributesOf(props: object): DataAttributes {
   return out
 }
 
-/** The one quiet line under a field (12px mist), tied to it by `id` and `aria-describedby` (U4). */
-export function FieldHint({ id, children, tone = 'mist', style }: { id?: string; children: ReactNode; tone?: 'mist' | 'slate' | 'error'; style?: CSSProperties }) {
+/** The hint's tones: mist (default), slate, error, success, and warning for a mild caution (catch-up Phase 40a). */
+export type FieldHintTone = 'mist' | 'slate' | 'error' | 'success' | 'warning'
+
+const HINT_COLOURS: Record<FieldHintTone, string> = {
+  mist: neutral.mist,
+  slate: neutral.slate,
+  error: semantic.error.onTint,
+  success: semantic.success.onTint,
+  warning: semantic.warning.onTint,
+}
+
+/**
+ * The one quiet line under a field (12px mist), tied to it by `id` and
+ * `aria-describedby` (U4). Catch-up Phase 40a adds the success and warning
+ * tones, `shot` (`data-shot`), `live` (its role, for a line that arrives after
+ * an action, such as the NHI lookup's status) and `data-*` passthrough.
+ */
+export function FieldHint({
+  id,
+  children,
+  tone = 'mist',
+  shot,
+  live,
+  style,
+  ...data
+}: { id?: string; children: ReactNode; tone?: FieldHintTone; shot?: string; live?: 'status' | 'alert'; style?: CSSProperties } & DataAttributes) {
   return (
-    <div id={id} style={{ fontSize: 12, color: tone === 'error' ? semantic.error.onTint : tone === 'slate' ? neutral.slate : neutral.mist, ...style }}>
+    <div id={id} {...data} data-shot={shot} role={live} style={{ fontSize: 12, color: HINT_COLOURS[tone], ...style }}>
       {children}
     </div>
   )
@@ -40,6 +64,11 @@ interface TextFieldProps extends DataAttributes {
   align?: 'left' | 'right'
   /** Sets `aria-invalid` and the error border. */
   invalid?: boolean
+  /** The hint's tone while not `invalid`: `success` for a check that passed (catch-up Phase 40a's "Valid NHI"). Default mist. */
+  hintTone?: 'mist' | 'success'
+  /** Passed to the input (catch-up Phase 40a: the NHI field's `characters`, no spell check). */
+  autoCapitalize?: string
+  spellCheck?: boolean
   /** A `<datalist>` id. */
   list?: string
   min?: string | number
@@ -75,7 +104,7 @@ interface TextFieldProps extends DataAttributes {
  */
 export function TextField(props: TextFieldProps) {
   const {
-    label, value, onChange, placeholder, type = 'text', mono, hint, inputMode, align, invalid = false, list, min, max, step,
+    label, value, onChange, placeholder, type = 'text', mono, hint, inputMode, align, invalid = false, hintTone = 'mist', autoCapitalize, spellCheck, list, min, max, step,
     size = 'field', fill = 'well', hideLabel = false, accessibleName, width, shot, disabled, autoFocus, maxLength, autoComplete, onBlur, onKeyDown,
   } = props
   const hintId = useId()
@@ -99,6 +128,8 @@ export function TextField(props: TextFieldProps) {
       autoFocus={autoFocus}
       maxLength={maxLength}
       autoComplete={autoComplete}
+      autoCapitalize={autoCapitalize}
+      spellCheck={spellCheck}
       data-shot={shot}
       {...dataAttributesOf(props)}
       className={mono === true ? `${FIELD_CLASS} mono` : FIELD_CLASS}
@@ -115,7 +146,7 @@ export function TextField(props: TextFieldProps) {
           {input}
         </label>
       )}
-      {hint !== undefined && <FieldHint id={hintId} tone={invalid ? 'error' : 'mist'}>{hint}</FieldHint>}
+      {hint !== undefined && <FieldHint id={hintId} tone={invalid ? 'error' : hintTone}>{hint}</FieldHint>}
     </div>
   )
 }

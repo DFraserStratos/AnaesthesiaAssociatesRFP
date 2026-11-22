@@ -344,9 +344,10 @@ export function DemoIntegrations() {
         NZ&rsquo;s direction is FHIR-first: this demo translates each hospital&rsquo;s HL7 v2 into FHIR R4 (per-hospital
         field mapping) and treats a FHIR-native feed as the target, with near real time, per-message processing. That
         is Future scope, shown for discussion. Patient identity is validated (NHI format and check digit) and deduped
-        into a single record, and provider identity carries the HPI. Looking up an NHI is in scope (Phase 40a); a
-        production build would confirm identity against the NHI FHIR API and authenticate to the Hub with Keycloak
-        (referenced here, not implemented).
+        into a single record, and provider identity carries the HPI CPN. The NHI lookup is in scope: every Add booking
+        flow validates the NHI as it is typed and looks it up through a simulated Hub over a synthetic register, with
+        the Hub&rsquo;s states set from Demo actions. Authenticating to the Hub with Keycloak and the FHIR feeds stay
+        Future (referenced here, not implemented).
       </Callout>
     </FutureScopeChrome>
   )

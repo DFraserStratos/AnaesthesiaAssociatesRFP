@@ -18,6 +18,7 @@
  */
 
 import { DRAFT_LISTS } from '../scheduleTerms'
+import { HPI_CPN_LABEL } from '../format'
 
 export const FIELD_LABELS: Record<string, string> = {
   // --- Booking ----------------------------------------------------------------
@@ -231,7 +232,7 @@ export const FIELD_LABELS: Record<string, string> = {
   // Catch-up Phase 26: the anaesthetist's bank details (US-12.1.4), the number always masked.
   bankAccount: 'Bank account',
   // OQ-52: one identifier for surgeons and anaesthetists alike (catch-up Phase 17).
-  hpiId: 'HPI CPN',
+  hpiId: HPI_CPN_LABEL,
   active: 'Active',
 
   // --- Surgeons, groups, hospitals (catch-up Phase 17) ---------------------

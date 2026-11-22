@@ -94,7 +94,7 @@
               "click": "role=button[name=\"Look up\"]"
             },
             {
-              "wait": 400
+              "wait": "[data-shot=nhi-lookup-status][data-status=found]"
             },
             {
               "scroll": "[data-shot=manual-contract]"

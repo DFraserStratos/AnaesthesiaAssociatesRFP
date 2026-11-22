@@ -41,7 +41,8 @@ import { sessionText } from '../../../../domain/outOfHours'
 import { neutral } from '../../../../theme/tokens'
 import { UNASSIGNED } from '../../../../shared/scheduleTerms'
 import { usePatientSlices } from './PatientsScreen'
-import { balanceText, DETAIL_FIELD_LABELS, detailsFromText, InvoiceStatusPill } from './patientParts'
+import { balanceText, DetailChoiceTable, detailsFromText, InvoiceStatusPill } from './patientParts'
+import { RegisterRefreshPanel, RegisterRefreshRow } from './RegisterRefresh'
 
 const NOT_SUPPLIED = <span style={{ color: neutral.mist }}>Not supplied</span>
 
@@ -424,38 +425,17 @@ function DetailsDifferCard({ view, patientId, actor }: { view: PatientRecordView
       <span style={{ fontSize: 12.5 }}>
         From {from}, {stampText(pending.receivedAtISO)}. Keep the record's value or use the incoming one, then apply.
       </span>
-      <TableShell label="Details that differ" density="dense" nested>
-        <thead>
-          <tr>
-            <Th>Detail</Th>
-            <Th>Record</Th>
-            <Th>Incoming</Th>
-            <Th>Use</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {pending.differences.map((d) => (
-            <tr key={d.field} data-field={d.field}>
-              <Td>{DETAIL_FIELD_LABELS[d.field]}</Td>
-              <Td mono={d.field === 'dobISO'}>{d.existing ?? 'Not held'}</Td>
-              <Td mono={d.field === 'dobISO'}>{d.incoming}</Td>
-              <Td>
-                <SelectField
-                  label={`${DETAIL_FIELD_LABELS[d.field]}: keep or use incoming`}
-                  hideLabel
-                  size="compact"
-                  fill="surface"
-                  value={choices[d.field] ?? 'keep'}
-                  onChange={(v) => setChoices((c) => ({ ...c, [d.field]: v as 'keep' | 'useIncoming' }))}
-                >
-                  <option value="keep">Keep</option>
-                  <option value="useIncoming">Use incoming</option>
-                </SelectField>
-              </Td>
-            </tr>
-          ))}
-        </tbody>
-      </TableShell>
+      <DetailChoiceTable
+        rows={pending.differences}
+        recordHeader="Record"
+        incomingHeader="Incoming"
+        choice={{
+          header: 'Use',
+          useLabel: 'Use incoming',
+          value: (field) => (choices[field as PatientDetailField] === 'useIncoming' ? 'use' : 'keep'),
+          onChange: (field, v) => setChoices((c) => ({ ...c, [field]: v === 'use' ? 'useIncoming' : 'keep' })),
+        }}
+      />
       <FormError message={error} />
       <div>
         <Button
@@ -476,6 +456,8 @@ function DetailsDifferCard({ view, patientId, actor }: { view: PatientRecordView
 
 function DetailsCard({ view, patient, actor }: { view: PatientRecordView; patient: Parameters<typeof EditPatientSheet>[0]['patient']; actor: Actor }) {
   const [editing, setEditing] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshed, setRefreshed] = useState<string | null>(null)
   const p = view.patient
   const ethnicity =
     p.ethnicityCode !== undefined ? (
@@ -506,7 +488,32 @@ function DetailsCard({ view, patient, actor }: { view: PatientRecordView; patien
             {view.source.who}, <span className="mono">{stampText(view.source.atISO)}</span>
           </DefRow>
         )}
+        {/* Catch-up Phase 40a: refresh from the NHI register (hidden without an NHI, which the required NHI makes rare). */}
+        {patient.nhi.trim() !== '' && (
+          <RegisterRefreshRow
+            {...(patient.registerRefreshedAtISO !== undefined ? { lastRefreshedAtISO: patient.registerRefreshedAtISO } : {})}
+            open={refreshing}
+            onRefresh={() => {
+              setRefreshed(null)
+              setRefreshing(true)
+            }}
+          />
+        )}
       </DefList>
+      {refreshing && (
+        <RegisterRefreshPanel
+          patientId={patient.hiddenInternalId}
+          nhi={patient.nhi}
+          patientName={patient.name}
+          actor={actor}
+          onClose={() => setRefreshing(false)}
+          onDone={(line) => {
+            setRefreshing(false)
+            setRefreshed(line)
+          }}
+        />
+      )}
+      <ResultLine line={refreshed} onDismiss={() => setRefreshed(null)} shot="patient-register-done" />
       <EditPatientSheet open={editing} patient={patient} actor={actor} onClose={() => setEditing(false)} />
     </Card>
   )

@@ -157,6 +157,11 @@ describe('PWA bundle purity (the mobile app only)', () => {
     expect([...modules].some((p) => p.endsWith('src/pwa/PwaDemoActions.tsx'))).toBe(true)
   })
 
+  it('carries the simulated NHI Hub and the synthetic register for the handset lookup (catch-up Phase 40a)', () => {
+    expect([...modules].some((p) => p.endsWith('src/shared/nhiHub/useNhiHubLookup.ts'))).toBe(true)
+    expect([...modules].some((p) => p.endsWith('src/domain/seed/nhiRegister.ts'))).toBe(true)
+  })
+
   for (const forbidden of FORBIDDEN) {
     it(`never reaches ${forbidden.label}`, () => {
       const hits = [...modules].filter(forbidden.test)

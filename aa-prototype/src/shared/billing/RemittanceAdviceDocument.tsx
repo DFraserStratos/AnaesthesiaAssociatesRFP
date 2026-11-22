@@ -9,7 +9,7 @@
  * amounts are neutral, never red.
  */
 
-import { formatCurrency, formatSignedCurrency, plural, shortDay } from '../format'
+import { formatCurrency, formatHpiCpn, formatSignedCurrency, plural, shortDay } from '../format'
 import { neutral } from '../../theme/tokens'
 import { AA_AGENT } from '../../domain/billing/invoicePresentation'
 import { Pill } from '../ui'
@@ -61,7 +61,7 @@ export function RemittanceAdviceDocument({ advice, shot = 'remittance-advice' }:
       <div data-shot="remittance-meta" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, borderTop: `1px solid ${neutral.line}`, borderBottom: `1px solid ${neutral.line}`, padding: '12px 0' }}>
         <Meta label="To">
           <span style={{ fontFamily: 'inherit' }}>{advice.anaesthetistName}</span>
-          {advice.hpiId !== undefined && <span style={{ color: neutral.slate }}>{`HPI CPN ${advice.hpiId}`}</span>}
+          {formatHpiCpn(advice.hpiId) !== null && <span style={{ color: neutral.slate }}>{formatHpiCpn(advice.hpiId)}</span>}
         </Meta>
         <Meta label="Payment run" shot="remittance-week">
           <span>{`${advice.week}, ${advice.run.isoYear}`}</span>

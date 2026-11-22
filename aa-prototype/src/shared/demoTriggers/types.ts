@@ -47,6 +47,12 @@ export interface DemoTrigger {
   surfaces: readonly DemoTriggerSurface[]
   /** `colleague-stand-in` (catch-up Phase 32): plays another anaesthetist on the PWA, where the app runs only as Dr Souter. */
   badge?: 'future-scope' | 'office-stand-in' | 'colleague-stand-in'
+  /**
+   * The entry acts on a product sheet that is open (catch-up Phase 40a's Hub
+   * mode, while Add a booking is open): the PWA's Demo chip then shows above
+   * the sheet, at the top of the screen, instead of hiding.
+   */
+  overSheet?: boolean
   /** Visibility on a matched route (a seed-scoped entry gates itself here). */
   when?: (state: AppState, ctx: DemoTriggerCtx) => boolean
   /** Options the presenter picks between before running. */

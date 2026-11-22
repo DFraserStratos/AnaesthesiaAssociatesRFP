@@ -174,6 +174,12 @@ HL7/FHIR messaging are Future scope.
   Bookings before it is assigned.
 - **Mobile/web manual Booking:** Dr Souter enters the missing Booking, with the procedure as written on
   the hospital's list (kept exactly as typed) and, if she knows it, its Contract on the step rail; otherwise it waits on the office's Needs an invoice destination list.
+- **NHI lookup (catch-up Phase 40a):** on every Add a booking (the office's phone advice, the
+  anaesthetist's mobile and web List) the NHI, which is required, is validated in both formats as it is
+  typed, and **Look up** stays disabled until it is valid. Look up asks the Digital Services Hub (simulated
+  over a synthetic NHI register) and pre-fills the patient, still editable; the purpose note names who it
+  is looked up for, by HPI CPN (or the AA office on a Draft List). When the Hub is down the details are
+  entered by hand: the NHI is still typed and must be valid.
 - **Photo of the booking card:** Future Work (US-02.4.4); a badged Future-scope demo on the mobile List.
 - **PDF list:** on **Intake, PDF lists** the office opens the rooms' list beside its facsimile,
   corrects a row (an invalid NHI, say), and selects **Send to matching**: its rows land on the matching
@@ -904,6 +910,17 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 - A patient who owes AA is worked from the patient record: the follow-up log (Log call, notes, reminders),
   **Resend** on an unpaid invoice and **Clear** on the warning.
 
+#### Patient upkeep: refresh from the NHI register (catch-up Phase 40a)
+
+- The office refreshes a patient from the NHI register on the patient record (**Refresh from NHI
+  register**, on demand, marked Provisional): each field that differs (Fiona Gray's name and address)
+  is **Keep** or **Use register**, the change reaches the patient's Bookings, the record reads "Last
+  refreshed", and the refresh is audited. Nothing goes to Xero.
+- On **Patients, Waiting for NHI**, the **Add NHI** sheet looks a valid typed NHI up and shows the
+  register's name and DOB, with a mild line if they differ from the row's; it never blocks the add.
+- Discovery: whether the refresh runs on a schedule (hospitals get updates twice a day), and whether an
+  NHI entered while the Hub is down is marked unverified.
+
 #### Row the office cannot match
 
 - An unmatched row, or one with no NHI, waits in the unmatched queue; nothing is dropped.
@@ -925,6 +942,8 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 
 - All changes, including automated ones, are audited.
 - Both old and new NHI formats are validated.
+- An NHI is validated before any lookup, NHI use is purpose-limited (Health Information Privacy Code
+  2020), and practitioners are referenced by their HPI CPN (catch-up Phase 40a).
 - No NHI or other personal information enters Xero, patient names included (confirmed with AA).
 
 ## Workflow-to-prototype readiness
@@ -953,6 +972,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | AA's monthly fee invoices (settings, run, AA fees tab) | Yes | Catch-up Phase 16 |
 | Hospital import and matching screen | Yes | Catch-up Phase 33 |
 | The rooms' PDF lists through matching, and where a List came from | Yes | Catch-up Phase 34 |
+| NHI lookup through a simulated Digital Services Hub, refresh from the NHI register, identity standards | Yes | Catch-up Phase 40a |
 | HL7/FHIR ingestion and monitoring | Future scope | Phase 11 (simulator only; its own demo surface from catch-up Phase 34) |
 | Scenario jump controls and guided script | Yes | Phase 12 |
 | Mobile atmospheric gradient (visual only) | Yes | Phase 13 |

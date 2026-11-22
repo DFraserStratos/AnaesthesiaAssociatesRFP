@@ -6,7 +6,7 @@ export { IconButton, CloseButton, type IconButtonSize, type IconButtonShape, typ
 export { LineTabs, LineTabLink, LineTab } from './LineTabs'
 export { FilterPills, type FilterPillsSize } from './FilterPills'
 export { ProgressBar } from './ProgressBar'
-export { FieldLabel, FieldHint, FormError, TextField, TextArea, SelectField, Segmented, type DataAttributes } from './Field'
+export { FieldLabel, FieldHint, FormError, TextField, TextArea, SelectField, Segmented, type DataAttributes, type FieldHintTone } from './Field'
 export { FIELD_HEIGHT, FIELD_FILL, FIELD_CLASS, fieldControlStyle, controlStyle, selectControlStyle, type FieldSize, type FieldFill } from './fieldChrome'
 export { Checkbox, type CheckboxProps } from './Checkbox'
 export { Switch, type SwitchProps } from './Switch'

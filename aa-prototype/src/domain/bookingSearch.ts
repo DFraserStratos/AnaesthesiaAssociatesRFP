@@ -13,7 +13,7 @@
  * number (the stories name name and NHI only).
  */
 
-import { validateNhi } from './nhi'
+import { nhiEntryFeedback, validateNhi } from './nhi'
 import type { Patient } from './types'
 
 /** Fewer letters or digits than this is too short to search. */
@@ -38,6 +38,20 @@ export function foldName(s: string): string {
     .toLowerCase()
     .replace(/[\s-]+/g, ' ')
     .trim()
+}
+
+/**
+ * The search field's caption for a typed NHI that cannot be one (catch-up
+ * Phase 40a): a 7-character query with no space that `nhiEntryFeedback` calls
+ * invalid gives the validator's reason. It must hold a digit too, so a
+ * 7-letter surname ("Tuilagi") is never read as a bad NHI. Matching stays
+ * exact; nothing is looked up (the search is over AA's own Bookings).
+ */
+export function searchNhiReason(raw: string): string | undefined {
+  const trimmed = raw.trim()
+  if (trimmed.length !== 7 || /\s/.test(trimmed) || !/\d/.test(trimmed)) return undefined
+  const feedback = nhiEntryFeedback(trimmed)
+  return feedback.state === 'invalid' ? feedback.reason : undefined
 }
 
 export function parseBookingQuery(raw: string): BookingQuery {

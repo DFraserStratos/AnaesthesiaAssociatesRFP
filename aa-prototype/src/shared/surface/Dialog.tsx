@@ -40,7 +40,7 @@ export function Dialog({ open, onClose, children, size = 'default', initialFocus
 
   if (!open) return null
   return (
-    <div ref={rootRef} style={{ position: 'fixed', inset: 0, zIndex: zIndex.dialog, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <div ref={rootRef} data-aa-dialog style={{ position: 'fixed', inset: 0, zIndex: zIndex.dialog, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div
         onClick={onClose}
         aria-hidden

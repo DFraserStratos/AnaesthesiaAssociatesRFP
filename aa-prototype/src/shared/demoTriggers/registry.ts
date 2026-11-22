@@ -22,6 +22,7 @@ import {
   DEMO_TRIGGER_ACTOR,
   OFFICE_ACTOR,
   OFFICE_SIMULATION_ACTOR,
+  setNhiHubMode,
   aaFeePaymentDisabledReason,
   aaFeeRunDisabledReason,
   allAaFeeInvoices,
@@ -162,6 +163,8 @@ import { formatMoney, roundToCents } from '../../domain/billing/money'
 import { keptPriceTitle } from '../../domain/billing/contractChanges'
 import { aaFeeFor, aaFeeMonthLabel } from '../../domain/billing/aaFee'
 import { drSurname, formatCount, formatCurrency, plural, shortDay } from '../format'
+import { NHI_HUB_MODE_LABELS } from '../nhiHub/hub'
+import { NHI_HUB_MODES } from '../../domain/types'
 import { FULL_SCALE as FULL_SCALE_FIGURES } from '../../domain/seed/fullScale/constants'
 import { loadFullScaleData, loadFullScaleRefusal } from '../../store/fullScaleActions'
 import { isAssignedList } from '../../domain/draftLists'
@@ -641,6 +644,18 @@ function openWarningChoices(state: AppState, ctx: DemoTriggerCtx) {
 
 /** Dr Souter's Tue 21 PM List: open, and already used by the catalogue recipes. */
 const PHOTO_CAPTURE_INDEX_LIST_ID = SEED_LIST_IDS.souterPm21
+
+/** Every screen an NHI lookup opens on (catch-up Phase 40a); the entry shows only while one is open. */
+const NHI_HUB_ROUTES = [
+  ...MOBILE_LISTS,
+  '/web/lists/:listId',
+  ADMIN_DAY,
+  ADMIN_DRAFT_LISTS,
+  '/admin/patients',
+  '/admin/patients/waiting',
+  '/admin/patients/:nhi',
+] as const
+const NHI_HUB_SCREEN = 'Add booking, and Admin · Patients'
 
 /** The photo demo adds a Booking, so it needs a List still open for new Bookings. */
 function photoCaptureDisabledReason(state: AppState, listId: string): string | null {
@@ -2576,5 +2591,37 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         : { ok: true, message: res.code === 'officeOnly' ? 'Refused: only office staff can view a raw hospital row. The attempt is in the audit trail.' : res.message }
     },
     indexPath: () => ADMIN_MATCHING,
+  },
+  // ── Wherever an NHI is looked up: the simulated Digital Services Hub's mode (catch-up Phase 40a) ──
+  {
+    id: 'nhi-hub-mode',
+    label: 'Hub: Available / Slow / Unavailable',
+    description:
+      'Sets how the simulated Digital Services Hub answers NHI lookups: Available, Slow (a long wait, with Stop waiting) or Unavailable (the manual fallback, with Retry). It stays set until changed or Reset, and the form shows a badge while it is not Available.',
+    screen: NHI_HUB_SCREEN,
+    routes: NHI_HUB_ROUTES,
+    surfaces: ['bar', 'pwa'],
+    overSheet: true,
+    when: (_state, ctx) => ctx.published['nhiHub.inUse'] === true,
+    choices: () => NHI_HUB_MODES.map((mode) => ({ id: mode, label: NHI_HUB_MODE_LABELS[mode] })),
+    defaultChoice: (state) => NHI_HUB_MODES.find((m) => m !== (state.settings.nhiHubMode ?? 'available')),
+    disabledReason: (state, _ctx, choiceId) => ((state.settings.nhiHubMode ?? 'available') === (choiceId ?? 'available') ? 'Already set' : null),
+    run: (api, _ctx, choiceId) => {
+      const mode = NHI_HUB_MODES.find((m) => m === choiceId) ?? 'available'
+      const res = setNhiHubMode(api, OFFICE_ACTOR, mode)
+      if (!res.ok) return { ok: false, message: res.message }
+      const label = NHI_HUB_MODE_LABELS[mode]
+      return {
+        ok: true,
+        message:
+          mode === 'unavailable'
+            ? `The simulated Hub now answers as ${label}. The next lookup shows the manual fallback.`
+            : mode === 'slow'
+              ? `The simulated Hub now answers as ${label}. The next lookup waits, with Stop waiting.`
+              : `The simulated Hub now answers as ${label}.`,
+      }
+    },
+    indexPath: () => `/web/lists/${SEED_LIST_IDS.souterPm21}`,
+    indexHint: 'Open Add a booking (or a patient record\'s Refresh from NHI register) first: the entry shows only while a lookup surface is open.',
   },
 ]
