@@ -40,6 +40,12 @@
               "wait": 300
             },
             {
+              "click": "role=button[name=\"Continue to add booking\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
               "fill": "[role=dialog]:not([data-testid=admin-list-drawer]) [data-shot=procedure-description] input",
               "value": "Laparoscopic cholecystectomy"
             },

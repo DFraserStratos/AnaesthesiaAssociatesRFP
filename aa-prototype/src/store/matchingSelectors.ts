@@ -27,8 +27,22 @@ import { procedureStackViewFor } from './selectors'
 
 type ViewState = Pick<AppState, 'masters' | 'schedule' | 'intake'>
 
-/** The plain view the matcher reads: live Lists, every Booking with its patient and Procedures, the open sessions. */
+/**
+ * The plain view the matcher reads: live Lists, every Booking with its patient and Procedures, the open sessions.
+ * Memoised on the identity of the three slices it reads (every write replaces a slice it changes), so callers that
+ * assess row after row (40's Patients badge and waiting-for-NHI rows, the stub settle, the matching demo) build it
+ * once per state, not once per row: at full scale (43) the per-row rebuild made every Admin render slow (Wave 5 join).
+ */
+let lastView: { masters: ViewState['masters']; schedule: ViewState['schedule']; intake: ViewState['intake']; view: MatchingView } | undefined
 export function matchingView(state: ViewState): MatchingView {
+  const { masters, schedule, intake } = state
+  if (lastView !== undefined && lastView.masters === masters && lastView.schedule === schedule && lastView.intake === intake) return lastView.view
+  const view = buildMatchingView(state)
+  lastView = { masters, schedule, intake, view }
+  return view
+}
+
+function buildMatchingView(state: ViewState): MatchingView {
   const { masters, schedule } = state
   const proceduresByBooking = new Map<string, Procedure[]>()
   for (const p of Object.values(schedule.procedures)) {

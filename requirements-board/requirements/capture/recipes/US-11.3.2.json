@@ -151,6 +151,12 @@
               "wait": 300
             },
             {
+              "click": "role=button[name=\"Continue to add booking\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
               "fill": "[role=dialog]:not([data-testid=admin-list-drawer]) [placeholder=\"ABC1234\"]",
               "value": "ZAN2219"
             },
