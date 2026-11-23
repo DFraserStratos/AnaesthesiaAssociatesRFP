@@ -952,6 +952,22 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
   2020), and practitioners are referenced by their HPI CPN (catch-up Phase 40a).
 - No NHI or other personal information enters Xero, patient names included (confirmed with AA).
 
+#### Getting help: the help line and product support (catch-up Phase 43b)
+
+- Anaesthetist: when something in the apps is not working (a forgotten password, a failed sign-in),
+  **Help** (the mobile More tab's Help card, or Help in the web top nav) gives the help line 0800 787 286
+  (fictional), its hours (8:30am to 5:00pm NZT, Monday to Friday, excluding New Zealand public holidays)
+  and a request form; **Your requests** tracks each one (Logged, Responded, Closed) against its respond-by
+  time. Out of hours only a security breach or the platform being offline is answered; anything else is
+  logged and picked up at the next opening.
+- Office: Admin's **Help** has the same **Help line** tab plus **Product support**, AA's route to Stratos
+  for incidents, fixes, changes and new features (a new feature goes to the product owner or the
+  development team, to plan), and **Every request** across both. Product support out of hours is best
+  effort; a public-holiday call-out happens only with AA's approval.
+- Discovery: whether cover starts at 8:00am rather than 8:30am (for Vanessa); the hours are the
+  standard terms; which public holidays count and how the response clocks run are our reading, to
+  confirm with AA.
+
 ## Workflow-to-prototype readiness
 
 | Workflow | Ready now | Built in |
@@ -979,6 +995,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Hospital import and matching screen | Yes | Catch-up Phase 33 |
 | The rooms' PDF lists through matching, and where a List came from | Yes | Catch-up Phase 34 |
 | NHI lookup through a simulated Digital Services Hub, refresh from the NHI register, identity standards | Yes | Catch-up Phase 40a |
+| Support: Help in every app (the help line, hours, request form and tickets), product support for AA, out of hours and public-holiday call-outs | Yes | Catch-up Phase 43b |
 | HL7/FHIR ingestion and monitoring | Future scope | Phase 11 (simulator only; its own demo surface from catch-up Phase 34) |
 | Scenario jump controls and guided script | Yes | Phase 12 |
 | Mobile atmospheric gradient (visual only) | Yes | Phase 13 |

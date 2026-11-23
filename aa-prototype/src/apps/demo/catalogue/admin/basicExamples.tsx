@@ -32,7 +32,7 @@ import { NotPreferredPill, PreferredPill, TierPill } from '../../../admin/compon
 import { DrawerLink, Section as DrawerSection } from '../../../admin/components/drawerParts'
 import { HeaderActions, IdChip, ProfileHeader } from '../../../admin/components/ProfileChrome'
 import { MasterPanel, PanelGrid, PanelSection } from '../../../admin/components/MasterPanel'
-import { SidePanel } from '../../../admin/components/SidePanel'
+import { SidePanel } from '../../../../shared/surface/SidePanel'
 import { ACTIONS_COLUMN, EditCell, MasterHeader, MasterTable } from '../../../admin/screens/masters/chrome'
 import { MASTER_VIEW_GROUPS, MASTER_VIEWS } from '../../../admin/screens/masters/masterViews'
 import { Td } from '../../../../shared/table'

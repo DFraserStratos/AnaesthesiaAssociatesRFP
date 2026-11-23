@@ -27,7 +27,7 @@ import { EVENT_STATUS_TONE } from '../../../shared/booking/ProcedureEventsList'
 import { parseAmount } from '../../../domain/billing/money'
 import { FreeFormTotals } from '../../../shared/booking/AdditionalInvoiceForm'
 import { CreditMoneyState } from '../../../shared/booking/CreditForm'
-import { SidePanel } from '../components/SidePanel'
+import { SidePanel } from '../../../shared/surface/SidePanel'
 
 interface EventReviewSheetProps {
   eventId: string | null

@@ -356,7 +356,7 @@ export { setArchiveWindowDays, armHandoffFault } from './demoSettingsActions'
 // Catch-up Phase 40a: the simulated Hub's demo mode and the refresh from the NHI register.
 export { setNhiHubMode } from './demoSettingsActions'
 export { registerRefreshPreview, refreshPatientFromRegister, REGISTER_REFRESH_MESSAGES, type RegisterRefreshPreview } from './registerRefresh'
-export { anaesthetistActor, OFFICE_ACTOR, SECOND_OFFICE_ACTOR, OFFICE_USERS, officeActorOf, otherOfficeUser, SOUTER_ACTOR, OFFICE_SIMULATION_ACTOR, DEMO_TRIGGER_ACTOR, DEMO_OFFICE_ACTOR, OFFICE_ACCOUNT_ID, type OfficeUserId } from './demoActors'
+export { anaesthetistActor, OFFICE_ACTOR, SECOND_OFFICE_ACTOR, OFFICE_USERS, officeActorOf, otherOfficeUser, SOUTER_ACTOR, OFFICE_SIMULATION_ACTOR, DEMO_TRIGGER_ACTOR, DEMO_OFFICE_ACTOR, OFFICE_ACCOUNT_ID, STRATOS_SUPPORT_ACTOR, type OfficeUserId } from './demoActors'
 export {
   WARNING_SAMPLES,
   WARNING_RULE_COUNT,
@@ -748,3 +748,5 @@ export { nhiRequestEmailFor, logPatientFollowUp, completeFollowUp, resendInvoice
 export { patientSearch, patientRecordView, waitingNhiRows, openBalanceWarnings, followUpsDue, patientsWithPendingDetails, patientAttentionCount, PATIENT_SEARCH_LIMIT, PATIENT_SEARCH_UPCOMING_DAYS, type PatientSearchRow, type PatientRecordView, type PatientBookingRow, type PatientInvoiceRow, type WaitingNhiRow, type PatientSelectorState } from './patientSelectors'
 export { patientBalanceRows } from './patientLedger'
 export { patientByNhi } from './patientLookup'
+// Catch-up Phase 43b: support tickets, the help line's and product support's.
+export { raiseSupportTicket, advanceSupportTicket, approveCallOut, ticketsFor, newestOpenTicket, newestAwaitingCallOut, type RaiseSupportTicketInput, type TicketScope } from './supportActions'

@@ -29,7 +29,7 @@ import {
 } from '../../../store'
 import { XERO_ALERT_AFTER_ATTEMPTS } from '../../../domain/xero/queue'
 import type { XeroDivergence } from '../../../domain/types'
-import { SidePanel } from './SidePanel'
+import { SidePanel } from '../../../shared/surface/SidePanel'
 import { xeroFlagText } from '../../../shared/procedureEventCopy'
 
 /** "Connected", or "Xero unavailable since HH:mm · N waiting", read from the queue and the engine's view. */

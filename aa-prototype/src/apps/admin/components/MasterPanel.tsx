@@ -8,7 +8,7 @@
 
 import { type ReactNode } from 'react'
 import { neutral } from '../../../theme/tokens'
-import { SidePanel, SIDE_PANEL_WIDTH } from './SidePanel'
+import { SidePanel, SIDE_PANEL_WIDTH } from '../../../shared/surface/SidePanel'
 
 export const MASTER_PANEL_WIDTH = SIDE_PANEL_WIDTH.record
 

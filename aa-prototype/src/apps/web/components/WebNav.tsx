@@ -1,6 +1,7 @@
 import { Avatar, Logo } from '../../../shared'
 import { SyntheticDataBadge } from '../../../shared/SyntheticDataBadge'
 import { brand, neutral } from '../../../theme/tokens'
+import { TextAction } from '../../../shared/ui'
 
 export type WebTab = 'dashboard' | 'lists' | 'availability' | 'accounts'
 
@@ -20,6 +21,8 @@ interface WebNavProps {
   /** The profile page is showing (catch-up Phase 26): the persona block takes the underline. */
   profileActive: boolean
   onProfile: () => void
+  /** Opens the support panel (catch-up Phase 43b; US-15.0.8). The nav shows Help only when given. */
+  onHelp?: () => void
 }
 
 /**
@@ -31,7 +34,7 @@ interface WebNavProps {
  * block is the button to the anaesthetist's own profile (catch-up Phase 26),
  * underlined in crimson while it shows, so the four tabs stay as designed.
  */
-export function WebNav({ tab, onTab, personaName, initials, profileActive, onProfile }: WebNavProps) {
+export function WebNav({ tab, onTab, personaName, initials, profileActive, onProfile, onHelp }: WebNavProps) {
   return (
     <div style={{ background: neutral.surface, borderBottom: `1px solid ${neutral.line}` }}>
       <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 32px', height: 64, display: 'flex', alignItems: 'center', gap: 32 }}>
@@ -66,6 +69,13 @@ export function WebNav({ tab, onTab, personaName, initials, profileActive, onPro
             )
           })}
         </nav>
+
+        {/* Catch-up Phase 43b (US-15.0.8): Help, the support line, before the persona. */}
+        {onHelp !== undefined && (
+          <TextAction onClick={onHelp} shot="nav-help">
+            Help
+          </TextAction>
+        )}
 
         {/* Catch-up Phase 43 (US-15.0.6): an environment marker before the persona, neutral. */}
         <span style={{ display: 'inline-flex', alignItems: 'center', marginRight: -12 }}><SyntheticDataBadge tone="onLight" /></span>

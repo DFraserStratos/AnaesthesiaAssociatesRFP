@@ -118,6 +118,8 @@ describe('registry shape', () => {
       if (t.id === 'demo-backdated-range') published['adminContracts.openContractId'] = 'CT-MER-FACELIFT'
       // The Hub's mode shows while Add a booking (or another lookup surface) is open (catch-up Phase 40a; the index hint says so).
       if (t.id === 'nhi-hub-mode') published['nhiHub.inUse'] = true
+      // The support entries show while the support panel is open on their tab (catch-up Phase 43b; the index hints say so).
+      if (t.id.startsWith('support-')) published['support.tab'] = t.id === 'support-raise-public-holiday' || t.id === 'support-approve-call-out' ? 'productSupport' : 'helpLine'
       const visible = demoTriggersFor(state, path.split('?')[0]!, 'bar', published).map((m) => m.trigger.id)
       expect(visible, `${t.id} at ${path}`).toContain(t.id)
     }
@@ -578,7 +580,9 @@ describe('session 2 entries', () => {
   it('every office stand-in declares the PWA surface only; a colleague stand-in too, but for the Admin pickers\' one (catch-up Phase 32b)', () => {
     // The anaesthetist apps run only as Dr Souter, so in Admin the presenter cannot
     // play Dr Ngata agreeing to free his session: that one colleague stand-in is Admin's.
-    const ADMIN_COLLEAGUE_STAND_INS = ['ask-colleague-make-available']
+    // AA's approval of a public-holiday call-out (catch-up Phase 43b) is given to Stratos outside the app,
+    // so its office stand-in sits in Admin's Product support tab, on the bar.
+    const ADMIN_COLLEAGUE_STAND_INS = ['ask-colleague-make-available', 'support-approve-call-out']
     for (const t of DEMO_TRIGGERS.filter((x) => x.badge === 'office-stand-in' || x.badge === 'colleague-stand-in')) {
       expect(t.surfaces, t.id).toEqual(ADMIN_COLLEAGUE_STAND_INS.includes(t.id) ? ['bar'] : ['pwa'])
     }

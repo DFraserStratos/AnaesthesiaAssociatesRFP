@@ -6,6 +6,7 @@ export { useModalLayer, MODAL_SCOPE_ATTR, type ModalLayerOptions, type ModalLaye
 export { OverlayHeader, type OverlayHeaderProps } from './OverlayHeader'
 export { SheetActions, type SheetActionsProps } from './SheetActions'
 export { ConfirmSheet, type ConfirmSheetProps } from './ConfirmSheet'
+export { SidePanel, SIDE_PANEL_WIDTH, type SidePanelProps, type SidePanelAttrs } from './SidePanel'
 export {
   useSurface,
   type Surface,

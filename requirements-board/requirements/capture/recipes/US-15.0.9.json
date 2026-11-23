@@ -1,0 +1,48 @@
+{
+  "id": "US-15.0.9",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "product-support",
+      "app": "admin",
+      "caption": "AA's office raises incident, fix, change and new-feature tickets with their own response times; a public-holiday call-out waits for AA's approval (simulated)",
+      "start": "/admin/day/2026-07-21",
+      "setup": [
+        { "goto": "/demo/control" },
+        { "wait": 400 },
+        { "click": "role=button[name=\"+1 hour\"] >> nth=0" },
+        { "wait": 600 }
+      ],
+      "states": [
+        {
+          "state": "product-support",
+          "caption": "The Product support tab: its own response times, and a ticket form for an incident, fix, change or new feature",
+          "steps": [
+            { "click": "[data-shot=nav-help]" },
+            { "wait": "[data-shot=support-panel]" },
+            { "click": "[data-shot=support-tab-productSupport]" },
+            { "wait": "[data-shot=support-panel][data-tab=productSupport]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=support-response-table]", "[data-shot=support-request-form]"]
+        },
+        {
+          "state": "public-holiday",
+          "caption": "A ticket raised on Labour Day, Mon 26 Oct, waits for AA's approval of the call-out",
+          "steps": [
+            { "click": "[data-shot=nav-help]" },
+            { "wait": "[data-shot=support-panel]" },
+            { "click": "[data-shot=support-tab-productSupport]" },
+            { "wait": "[data-shot=support-panel][data-tab=productSupport]" },
+            { "trigger": "support-raise-public-holiday" },
+            { "wait": "[data-shot=support-cover-note][data-cover=publicHoliday]" },
+            { "wait": "[data-shot=support-ticket-list] li[data-ticket-id=TK0006]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=support-cover-note]", "[data-shot=support-ticket-list] li[data-ticket-id=TK0006]"]
+        }
+      ]
+    }
+  ]
+}

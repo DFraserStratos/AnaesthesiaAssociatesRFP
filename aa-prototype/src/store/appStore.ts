@@ -476,8 +476,9 @@ export const PERSIST_KEY = 'aa-demo'
  *  v73 (lane/a): catch-up Phase 41 session 2, cancellation and refunds: `billing.prepaymentRefunds` (RF) and `xero.refunds` (XRF), empty
  *  in the seed; the credit's `refundedAmount`; Dr Beaumont's prepaid Rhinoplasty price-list Contract for the rebook. Reseeds on load.
  *  v74: Wave 5 join, Lane A's 41 (v73, holding 39a and the 39b sync) joined with Lane B's 40 (v72): one past the higher.
- *  Reseeds on load. */
-export const PERSIST_VERSION = 74
+ *  Reseeds on load.
+ *  v75 (lane/b): catch-up Phase 43b, support: the `support` slice (TK0001 to TK0005, counter `supportTicket` 6). Reseeds on load. */
+export const PERSIST_VERSION = 75
 
 export function emptyBillingSlice(): BillingSlice {
   return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {}, creditNotes: {}, negativeInvoices: {}, payablesRuns: {}, bankLines: {}, prepaymentRefunds: {} }

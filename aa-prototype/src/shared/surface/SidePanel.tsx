@@ -1,7 +1,9 @@
 /**
- * The Admin right-docked side panel (UI unification U2, README U19): one shell
- * for the Admin Day List drawer, the empty-session drawer, the Draft List
- * drawer and the Master data record panel (Parties and Contracts).
+ * The right-docked side panel (UI unification U2, README U19): one shell for
+ * the Admin Day List drawer, the empty-session drawer, the Draft List drawer,
+ * the Master data record panel (Parties and Contracts) and, since catch-up
+ * Phase 43b moved it from `apps/admin/components` to the shared surface, the
+ * support panel on the web and Admin apps.
  *
  * A scrim, a right-docked surface at `elevation.e3`, a header with an h2 (the
  * sheet title, 18/700) that names the dialog, the corner X, a scrolling body
@@ -17,12 +19,15 @@
  */
 
 import { useId, useRef, type CSSProperties, type ReactNode } from 'react'
-import { elevation, neutral, scrim, type as typeScale, zIndex } from '../../../theme/tokens'
-import { useModalLayer } from '../../../shared/surface'
-import { CloseButton } from '../../../shared/ui'
-import { ADMIN_LIST_DRAWER_WIDTH } from '../layout'
+import { elevation, neutral, scrim, type as typeScale, zIndex } from '../../theme/tokens'
+import { useModalLayer } from './useModalLayer'
+import { CloseButton } from '../ui/IconButton'
 
-export const SIDE_PANEL_WIDTH = { list: ADMIN_LIST_DRAWER_WIDTH, record: 600 } as const
+/** `list` is the Admin List drawer's width (Admin's `ADMIN_LIST_DRAWER_WIDTH` reads it), `record` the 600px panel. */
+export const SIDE_PANEL_WIDTH = { list: 440, record: 600 } as const
+
+/** The framed build's harness bar height (`shell/AppShell.tsx`), for `underHarness`. */
+const HARNESS_HEIGHT = 48
 
 /** Data attributes and the test id passed through to the panel element (`data-slot-id`, `data-list-id`). */
 export type SidePanelAttrs = Record<`data-${string}`, string | undefined>
@@ -47,6 +52,12 @@ export interface SidePanelProps {
   panelAttrs?: SidePanelAttrs
   /** The gap between the body's blocks: 20 on a record, 16 on a drawer unless given. */
   bodyGap?: number
+  /**
+   * Starts below the framed build's 48px harness bar, which stays above the scrim
+   * (global.css), so Demo actions can stage what the panel shows (catch-up Phase
+   * 43b's support panel). Off by default: the drawers keep covering the bar.
+   */
+  underHarness?: boolean
   children: ReactNode
 }
 
@@ -59,7 +70,7 @@ const FOOTER_LAYOUT: Record<FooterLayout, CSSProperties> = {
   column: { padding: 20, display: 'flex', flexDirection: 'column', gap: 8 },
 }
 
-export function SidePanel({ open, onClose, title, meta, above, width, footer, footerLayout, footerTestId, shot, testId, panelAttrs, bodyGap, children }: SidePanelProps) {
+export function SidePanel({ open, onClose, title, meta, above, width, footer, footerLayout, footerTestId, shot, testId, panelAttrs, bodyGap, underHarness = false, children }: SidePanelProps) {
   const titleId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLElement>(null)
@@ -69,7 +80,7 @@ export function SidePanel({ open, onClose, title, meta, above, width, footer, fo
   const record = width === 'record'
   const layout = footerLayout ?? (record ? 'end' : 'row')
   return (
-    <div ref={rootRef}>
+    <div ref={rootRef} {...(underHarness ? { 'data-aa-under-harness': '' } : {})}>
       <div onClick={onClose} aria-hidden style={{ position: 'fixed', inset: 0, background: scrim, zIndex: zIndex.drawerScrim }} />
       <aside
         ref={panelRef}
@@ -80,7 +91,7 @@ export function SidePanel({ open, onClose, title, meta, above, width, footer, fo
         data-testid={testId}
         data-shot={shot}
         {...panelAttrs}
-        style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: SIDE_PANEL_WIDTH[width], maxWidth: '100%', background: neutral.surface, zIndex: zIndex.drawer, boxShadow: elevation.e3, display: 'flex', flexDirection: 'column', outline: 'none' }}
+        style={{ position: 'fixed', top: underHarness ? HARNESS_HEIGHT : 0, right: 0, bottom: 0, width: SIDE_PANEL_WIDTH[width], maxWidth: '100%', background: neutral.surface, zIndex: zIndex.drawer, boxShadow: elevation.e3, display: 'flex', flexDirection: 'column', outline: 'none' }}
       >
         <header style={{ padding: '20px 24px', borderBottom: `1px solid ${neutral.line}`, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: record || above !== undefined ? 6 : 0, minWidth: 0 }}>

@@ -224,10 +224,74 @@ import { addNhiAsSimulatedOffice, addNhiStandInRefusal } from '../../store/offic
 import { importHospitalDownload } from '../../store/matchingActions'
 import { newlyStagedSampleNames, stagedSampleKeys } from '../../store/warningSamples'
 import { NO_NHI_LIST, NO_NHI_NEW_PATIENT_NHI, NO_NHI_RETURNING_NHI } from '../../domain/intake/hospitalDownloads'
+import { advanceSupportTicket, approveCallOut, newestAwaitingCallOut, newestOpenTicket, raiseSupportTicket, ticketsFor } from '../../store/supportActions'
+import { advanceClockMinutes as moveClockMinutes, advanceClockToDate as moveClockToDate } from '../../store/clockActions'
+import { officeActorOf, STRATOS_SUPPORT_ACTOR } from '../../store/demoActors'
+import { closesSupport, supportStampText, timeOfDayText } from '../../domain/support'
+import { STATUS_LABEL } from '../support/supportCopy'
+import { clockISO } from '../../store/mutate'
+import { addDaysISO } from '../../domain/clock'
+import { weekdayOf } from '../../domain/availabilitySeries'
+import type { SupportChannel, SupportTicket } from '../../domain/types'
 
 // ---------------------------------------------------------------------------
 // Route patterns (checked against `src/router.tsx` and `pwa/main.tsx`)
 // ---------------------------------------------------------------------------
+
+/** Catch-up Phase 43b: the support panel opens over any route of the three apps. */
+const SUPPORT_ROUTES = ['/mobile', '/mobile/*', '/web', '/web/*', '/admin', '/admin/*'] as const
+const SUPPORT_SCREEN = 'All apps · Help'
+/** The public-holiday sample's time of day: 10:00am. */
+const PUBLIC_HOLIDAY_MINUTES = 10 * 60
+/** The out-of-hours sample's time of day: 7:00pm. */
+const EVENING_MINUTES = 19 * 60
+
+function supportTab(ctx: DemoTriggerCtx): SupportChannel | null {
+  return ctx.published['support.tab'] ?? null
+}
+
+function supportApp(ctx: DemoTriggerCtx): SupportTicket['raisedBy']['app'] {
+  return ctx.pathname.startsWith('/admin') ? 'admin' : ctx.pathname.startsWith('/web') ? 'web' : 'mobile'
+}
+
+/** The requester the open panel lists ('' is the office, who sees every request). */
+function supportRequester(state: AppState, ctx: DemoTriggerCtx) {
+  return ctx.published['support.requester'] === '' || ctx.published['support.requester'] === undefined ? officeActorOf(state.shell) : SOUTER_ACTOR
+}
+
+/** The newest open ticket in the panel's scope that can move on; else the newest open one (waiting for AA's call-out approval). */
+function supportTicketInScope(state: AppState, ctx: DemoTriggerCtx): SupportTicket | null {
+  const tab = supportTab(ctx)
+  if (tab === null) return null
+  const requester = ctx.published['support.requester']
+  const open = ticketsFor(state, { channel: tab, ...(requester !== undefined && requester !== '' ? { requester } : {}) }).filter((t) => t.status !== 'closed')
+  return open.find((t) => t.callOut !== 'awaitingApproval') ?? open[0] ?? null
+}
+
+/** Forward to 7:00pm on the next weekday: today's when it is a weekday before 7:00pm. Never back. */
+function moveClockToEvening(api: AppStoreApi): void {
+  const clock = api.getState().clock
+  let days = 0
+  let date = clock.todayISO
+  const todayOk = weekdayOf(date) <= 5 && clock.minutesSinceMidnight < EVENING_MINUTES
+  if (!todayOk) {
+    do {
+      days += 1
+      date = addDaysISO(clock.todayISO, days)
+    } while (weekdayOf(date) > 5)
+  }
+  moveClockMinutes(api, days * 24 * 60 + EVENING_MINUTES - clock.minutesSinceMidnight)
+}
+
+/** The next national public holiday in 42's calendar at or after the clock (today's only before 10:00am). */
+function nextNationalHoliday(state: AppState): { dateISO: string; name: string } | null {
+  const { todayISO, minutesSinceMidnight } = state.clock
+  return (
+    Object.values(state.masters.publicHolidays)
+      .filter((p) => closesSupport(p) && (p.dateISO > todayISO || (p.dateISO === todayISO && minutesSinceMidnight < PUBLIC_HOLIDAY_MINUTES)))
+      .sort((a, b) => a.dateISO.localeCompare(b.dateISO))[0] ?? null
+  )
+}
 
 const BILLING_MONITOR = ['/admin/billing'] as const
 /** The Billing monitor's index heading (the Control Panel adds its Run payables note under it). */
@@ -2660,5 +2724,141 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return { ok: true, message: 'The welcome cards will show again.' }
     },
     indexPath: () => '/admin',
+  },
+  // ── Catch-up Phase 43b: support, the help line and product support (shown while the support panel is open) ──
+  {
+    id: 'support-advance-ticket',
+    label: 'Advance ticket',
+    description: "Plays Stratos' support line: moves the newest open request on the open tab one step, Logged to Responded to Closed.",
+    screen: SUPPORT_SCREEN,
+    routes: SUPPORT_ROUTES,
+    surfaces: ['bar'],
+    when: (_state, ctx) => supportTab(ctx) !== null,
+    disabledReason: (state, ctx) => {
+      const ticket = supportTicketInScope(state, ctx)
+      if (ticket === null) return 'No open request'
+      return ticket.callOut === 'awaitingApproval' ? `${ticket.id} waits for AA's approval of the call-out` : null
+    },
+    run: (api, ctx) => {
+      const ticket = supportTicketInScope(api.getState(), ctx)
+      if (ticket === null) return { ok: false, message: 'No open request' }
+      const res = advanceSupportTicket(api, STRATOS_SUPPORT_ACTOR, ticket.id)
+      if (!res.ok) return { ok: false, message: res.message }
+      return { ok: true, message: `${ticket.id} ${ticket.subject}: now ${STATUS_LABEL[res.value.status]}.` }
+    },
+    indexPath: () => '/admin',
+    indexHint: 'Open Help first (Admin side nav, web top nav or mobile More): the entry shows only while the support panel is open.',
+  },
+  {
+    id: 'support-raise-out-of-hours',
+    label: 'Raise out of hours',
+    description: 'Moves the clock forward to 7:00pm on the next weekday (today, if it is earlier) and raises a sample help-line request, so the after-hours rule shows. The clock only moves forward; Reset restores it.',
+    screen: SUPPORT_SCREEN,
+    routes: SUPPORT_ROUTES,
+    surfaces: ['bar'],
+    when: (_state, ctx) => supportTab(ctx) === 'helpLine',
+    choices: () => [
+      { id: 'other', label: 'Ordinary request' },
+      { id: 'securityBreach', label: 'Security breach' },
+      { id: 'platformOffline', label: 'Platform offline' },
+    ],
+    disabledReason: () => null,
+    run: (api, ctx, choiceId) => {
+      moveClockToEvening(api)
+      const reason = choiceId === 'securityBreach' || choiceId === 'platformOffline' ? choiceId : undefined
+      const sample = reason === 'securityBreach' ? 'Someone else signed in to my account' : reason === 'platformOffline' ? 'The app will not load at all' : 'Cannot change my rate per unit'
+      const res = raiseSupportTicket(api, supportRequester(api.getState(), ctx), {
+        channel: 'helpLine',
+        kind: 'request',
+        priority: 'P3',
+        subject: sample,
+        description: 'Raised by the demo, out of hours.',
+        ...(reason !== undefined ? { reason } : {}),
+        app: supportApp(ctx),
+      })
+      if (!res.ok) return { ok: false, message: res.message }
+      const t = api.getState().support.tickets[res.value.ticketId]!
+      const when = supportStampText(clockISO(api.getState().clock))
+      return {
+        ok: true,
+        message: t.respondByISO !== undefined
+          ? `Clock now ${when}. ${t.id} logged as P1 and answered out of hours: respond by ${supportStampText(t.respondByISO)}.`
+          : `Clock now ${when}. ${t.id} logged: not answered out of hours, picked up at the next opening.`,
+      }
+    },
+    indexPath: () => '/admin',
+    indexHint: 'Open Help on the Help line tab first.',
+  },
+  {
+    id: 'support-raise-public-holiday',
+    label: 'Raise ticket on a public holiday',
+    description: "Moves the clock forward to 10:00am on the next national public holiday in the holiday calendar and raises a sample P2 incident, which waits for AA's call-out approval. Reset restores the clock.",
+    screen: SUPPORT_SCREEN,
+    routes: SUPPORT_ROUTES,
+    surfaces: ['bar'],
+    when: (_state, ctx) => supportTab(ctx) === 'productSupport',
+    disabledReason: (state) => (nextNationalHoliday(state) === null ? 'No later national public holiday in the calendar' : null),
+    run: (api) => {
+      const holiday = nextNationalHoliday(api.getState())
+      if (holiday === null) return { ok: false, message: 'No later national public holiday in the calendar' }
+      const clock = api.getState().clock
+      if (holiday.dateISO === clock.todayISO) moveClockMinutes(api, PUBLIC_HOLIDAY_MINUTES - clock.minutesSinceMidnight)
+      else {
+        moveClockToDate(api, holiday.dateISO)
+        moveClockMinutes(api, PUBLIC_HOLIDAY_MINUTES - api.getState().clock.minutesSinceMidnight)
+      }
+      const res = raiseSupportTicket(api, officeActorOf(api.getState().shell), {
+        channel: 'productSupport',
+        kind: 'incident',
+        priority: 'P2',
+        subject: 'Billing run stopped part way',
+        description: 'Raised by the demo on a public holiday.',
+        app: 'admin',
+      })
+      if (!res.ok) return { ok: false, message: res.message }
+      return { ok: true, message: `Clock now ${timeOfDayText(PUBLIC_HOLIDAY_MINUTES)}, ${holiday.name}. ${res.value.ticketId} logged: the call-out waits for AA's approval.` }
+    },
+    indexPath: () => '/admin',
+    indexHint: 'Open Help, then the Product support tab.',
+  },
+  {
+    id: 'support-approve-call-out',
+    label: 'AA approves call-out',
+    description: "Stands in for AA telling Stratos, outside the app, that the public-holiday call-out may go ahead on the newest ticket waiting for it.",
+    screen: SUPPORT_SCREEN,
+    routes: SUPPORT_ROUTES,
+    surfaces: ['bar'],
+    badge: 'office-stand-in',
+    when: (_state, ctx) => supportTab(ctx) === 'productSupport',
+    disabledReason: (state) => (newestAwaitingCallOut(state) === null ? 'No call-out awaiting approval' : null),
+    run: (api) => {
+      const ticket = newestAwaitingCallOut(api.getState())
+      if (ticket === null) return { ok: false, message: 'No call-out awaiting approval' }
+      const res = approveCallOut(api, OFFICE_SIMULATION_ACTOR, ticket.id)
+      return res.ok ? { ok: true, message: `Call-out approved for ${ticket.id}. Stratos can now respond.` } : { ok: false, message: res.message }
+    },
+    indexPath: () => '/admin',
+    indexHint: 'Open Help, then the Product support tab.',
+  },
+  {
+    id: 'support-help-line-responds',
+    label: 'Help line responds to this request',
+    description: "Plays Stratos' support line: moves Dr Souter's newest open help-line request on one step, Logged to Responded to Closed.",
+    screen: 'Mobile · any screen',
+    routes: ['/mobile', '/mobile/*'],
+    surfaces: ['pwa'],
+    // While the Help sheet is open (it lives on More, where the chip is otherwise absent), lifted above it.
+    overSheet: true,
+    when: (_state, ctx) => supportTab(ctx) === 'helpLine',
+    disabledReason: (state) => (newestOpenTicket(state, { channel: 'helpLine', requester: SOUTER_ACTOR.who }) === null ? 'No open request' : null),
+    run: (api) => {
+      const ticket = newestOpenTicket(api.getState(), { channel: 'helpLine', requester: SOUTER_ACTOR.who })
+      if (ticket === null) return { ok: false, message: 'No open request' }
+      const res = advanceSupportTicket(api, STRATOS_SUPPORT_ACTOR, ticket.id)
+      if (!res.ok) return { ok: false, message: res.message }
+      return { ok: true, message: `${ticket.id} ${ticket.subject}: now ${STATUS_LABEL[res.value.status]}.` }
+    },
+    indexPath: () => '/mobile/more',
+    indexHint: 'On a handset, open Help on More, then the Demo chip above the sheet.',
   },
 ]

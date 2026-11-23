@@ -1,0 +1,133 @@
+{
+  "id": "US-15.0.8",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "help-line",
+      "app": "admin",
+      "caption": "Anyone using the apps can reach Stratos' support line: phone, hours, response times and a request form that logs a tracked ticket (simulated)",
+      "start": "/admin/day/2026-07-21",
+      "setup": [
+        { "goto": "/demo/control" },
+        { "wait": 400 },
+        { "click": "role=button[name=\"+1 hour\"] >> nth=0" },
+        { "wait": 600 }
+      ],
+      "states": [
+        {
+          "state": "support",
+          "caption": "Help in the Admin side nav: the support line open now, its phone, hours and response times",
+          "steps": [
+            { "click": "[data-shot=nav-help]" },
+            { "wait": "[data-shot=support-panel]" },
+            { "wait": "[data-shot=support-status][data-open=true]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=support-phone]", "[data-shot=support-hours]", "[data-shot=support-response-table]"]
+        },
+        {
+          "state": "request-raised",
+          "caption": "A request sent from the form is logged as a tracked ticket, TK0006, at the top of the list",
+          "steps": [
+            { "click": "[data-shot=nav-help]" },
+            { "wait": "[data-shot=support-panel]" },
+            { "fill": "[data-shot=support-subject]", "value": "Cannot open the Billing monitor" },
+            { "fill": "[data-shot=support-description]", "value": "It stays on the loading screen." },
+            { "click": "[data-shot=support-send]" },
+            { "wait": "[data-shot=support-ticket-list] li[data-ticket-id=TK0006]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=support-ticket-list]"]
+        },
+        {
+          "state": "out-of-hours",
+          "caption": "Out of hours, at 7:00pm, the panel says how a request is handled until the line opens",
+          "steps": [
+            { "click": "[data-shot=nav-help]" },
+            { "wait": "[data-shot=support-panel]" },
+            { "trigger": "support-raise-out-of-hours" },
+            { "wait": "[data-shot=support-cover-note]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=support-cover-note]"]
+        }
+      ]
+    },
+    {
+      "name": "help-line",
+      "app": "web",
+      "caption": "Help in the web top nav: Stratos' support line, its phone, hours, response times and a request form (simulated)",
+      "start": "/web",
+      "setup": [
+        { "goto": "/demo/control" },
+        { "wait": 400 },
+        { "click": "role=button[name=\"+1 hour\"] >> nth=0" },
+        { "wait": 600 }
+      ],
+      "states": [
+        {
+          "state": "support",
+          "steps": [
+            { "click": "[data-shot=nav-help]" },
+            { "wait": "[data-shot=support-panel]" },
+            { "wait": "[data-shot=support-status][data-open=true]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=support-phone]", "[data-shot=support-hours]", "[data-shot=support-response-table]"]
+        },
+        {
+          "state": "request-raised",
+          "caption": "Dr Souter's request is logged as a tracked ticket, TK0006, among her own requests",
+          "steps": [
+            { "click": "[data-shot=nav-help]" },
+            { "wait": "[data-shot=support-panel]" },
+            { "fill": "[data-shot=support-subject]", "value": "Cannot see Thursday's List" },
+            { "fill": "[data-shot=support-description]", "value": "The Dashboard shows the week, but Thursday is empty." },
+            { "click": "[data-shot=support-send]" },
+            { "wait": "[data-shot=support-ticket-list] li[data-ticket-id=TK0006]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=support-ticket-list]"]
+        }
+      ]
+    },
+    {
+      "name": "help-line",
+      "app": "mobile",
+      "caption": "Help on the phone's More tab: Stratos' support line, its phone, hours, response times and a request form (simulated)",
+      "start": "/mobile/more",
+      "states": [
+        {
+          "state": "support",
+          "steps": [
+            { "click": "role=button[name=\"+1 hour\"] >> nth=0" },
+            { "wait": 400 },
+            { "scroll": "[data-shot=more-help]" },
+            { "click": "[data-shot=nav-help]" },
+            { "wait": "[data-shot=support-panel]" },
+            { "wait": "[data-shot=support-status][data-open=true]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=support-phone]", "[data-shot=support-hours]", "[data-shot=support-response-table]"]
+        },
+        {
+          "state": "request-raised",
+          "caption": "A request sent from the phone is logged as a tracked ticket, TK0006, among Dr Souter's own requests",
+          "steps": [
+            { "click": "role=button[name=\"+1 hour\"] >> nth=0" },
+            { "wait": 400 },
+            { "scroll": "[data-shot=more-help]" },
+            { "click": "[data-shot=nav-help]" },
+            { "wait": "[data-shot=support-panel]" },
+            { "fill": "[data-shot=support-subject]", "value": "Forgot my password again" },
+            { "click": "[data-shot=support-send]" },
+            { "wait": "[data-shot=support-ticket-list] li[data-ticket-id=TK0006]" },
+            { "wait": 400 }
+          ],
+          "highlight": ["[data-shot=support-ticket-list]"]
+        }
+      ]
+    }
+  ]
+}

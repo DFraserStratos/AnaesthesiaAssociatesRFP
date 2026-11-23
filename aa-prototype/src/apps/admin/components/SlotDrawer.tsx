@@ -14,7 +14,7 @@ import { AddBookingFlow, OfficeAlertLine, useBookingMoveEntries } from '../../..
 import { drSurname, LIST_STATE_LABELS, locationName, pairingLine, slotTimeRange, shortDay } from '../../../shared/format'
 import { surnameFirst } from '../util'
 import { ConflictPanel } from './conflicts/ConflictPanel'
-import { SidePanel } from './SidePanel'
+import { SidePanel } from '../../../shared/surface/SidePanel'
 import { DRAWER_ACTION, DRAWER_ACTION_PRIMARY, DrawerLink, Section } from './drawerParts'
 import { EditListSheet } from '../flows/EditListSheet'
 import { ReassignListFlow } from '../flows/ReassignListFlow'

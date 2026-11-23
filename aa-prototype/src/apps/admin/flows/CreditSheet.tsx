@@ -16,7 +16,7 @@
 
 import { CreditForm, type CreditFormFrameParts } from '../../../shared/booking/CreditForm'
 import type { CreditSheetProps } from '../../../shared/booking/CreditSheetSlot'
-import { SidePanel } from '../components/SidePanel'
+import { SidePanel } from '../../../shared/surface/SidePanel'
 
 export function CreditSheet({ open, invoiceId, actor, procedureId, invoiceIds, mode = 'credit', editing, onClose, onDone }: CreditSheetProps) {
   if (!open) return null

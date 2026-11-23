@@ -13,7 +13,7 @@ import { MASKING_POLICY_NOTE } from '../../../domain/privacy/mask'
 import { RAW_ROW_REASONS, useAppStore, viewRawImportRow, type Actor } from '../../../store'
 import { Button, FilterPills, FormError, Notice, TextField } from '../../../shared/ui'
 import { TableShell, Td, Th } from '../../../shared/table'
-import { SidePanel } from '../components/SidePanel'
+import { SidePanel } from '../../../shared/surface/SidePanel'
 import { neutral } from '../../../theme/tokens'
 
 export function RawRowSheet({ rowId, patientName, actor, onClose }: { rowId: string; patientName: string; actor: Actor; onClose: () => void }) {

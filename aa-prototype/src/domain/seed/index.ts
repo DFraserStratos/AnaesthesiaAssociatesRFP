@@ -96,7 +96,8 @@ import { RANGE_AUTHORISED_BILLED_ISO, RANGE_AUTHORISED_LIST_ID, seedPricingBooki
 import { applySeedListOrigins } from './listOrigins'
 import { SEED_EMAIL_TEMPLATES, SEED_EMAIL_TEMPLATE_NEXT } from './emailTemplates'
 import { SEED_LETTER_TEMPLATES, SEED_LETTER_TEMPLATE_NEXT } from './prepaymentLetters'
-import type { EmailTemplate, PatientCareSlice, ProcedureEvent } from '../types'
+import type { EmailTemplate, PatientCareSlice, ProcedureEvent, SupportSlice } from '../types'
+import { SEED_SUPPORT_TICKET_NEXT, seedSupportSlice } from './support'
 import { SEED_NEXT_PROCEDURE_EVENT, SEED_PROCEDURE_EVENTS } from './procedureEvents'
 
 export {
@@ -229,6 +230,8 @@ export interface SeedState {
   notifications: Record<string, Notification>
   /** The patient follow-up log (catch-up Phase 40; US-11.3.3). Seeds empty. */
   patientCare: PatientCareSlice
+  /** Support tickets, the help line's and product support's (catch-up Phase 43b): five seeded, before `DEMO_TODAY`. */
+  support: SupportSlice
   /** Next free numeric suffix per runtime-allocated entity kind. */
   counters: Record<string, number>
 }
@@ -689,6 +692,7 @@ function buildSeedInternal(): SeedBuild {
     officePrivate: buildOfficePrivate(),
     notifications: {},
     patientCare: { followUps: {} },
+    support: seedSupportSlice(),
     counters: {
       audit: audit.length + 1,
       booking: disabledContractBooking.next.booking,
@@ -714,6 +718,8 @@ function buildSeedInternal(): SeedBuild {
       emailTemplate: SEED_EMAIL_TEMPLATE_NEXT,
       // Catch-up Phase 41: the seeded prepayment letter templates are LT001 to LT003 (`prepaymentLetters.ts`).
       letterTemplate: SEED_LETTER_TEMPLATE_NEXT,
+      // Catch-up Phase 43b: the seeded support tickets are TK0001 to TK0005 (`support.ts`).
+      supportTicket: SEED_SUPPORT_TICKET_NEXT,
     },
   }
 

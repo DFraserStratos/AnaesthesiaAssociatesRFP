@@ -10,6 +10,7 @@ import { AdditionalInvoiceButtonExample, AdditionalInvoiceSheetExample, Anaesthe
 import { RemittancesTabExample } from './admin/paymentRunExamples'
 import { BalanceAlertChipExample, SharedNotesExample, StrengthPillExample } from './patientAlertExamples'
 import { PrepaidSettlementExample } from './prepaymentFollowupExamples'
+import { SupportSidePanelExample } from './supportExamples'
 
 const W = 'Web'
 const WA = 'Web · Admin'
@@ -34,8 +35,11 @@ export function WebCatalogue() {
       <SurfaceProvider variant="web">
       <MoveListPromptProvider actor={f.actor}>
         <LibraryGroup id="shadcn">
-          <CatalogueRow name="WebNav" source="apps/web/components/WebNav.tsx" usedIn={W} what="The white top bar: AA logo, the four section tabs with a crimson underline on the active one, and the persona's name and avatar, the button to their own profile (catch-up Phase 26), underlined while it shows." replaceWith="shadcn NavigationMenu (links) + Avatar" note="A labelled navigation (Main) whose active tab carries aria-current since UI unification U5; the tabs stay buttons (question 3). The avatar is the shared Avatar (tint, 36).">
+          <CatalogueRow name="WebNav" source="apps/web/components/WebNav.tsx" usedIn={W} what="The white top bar: AA logo, the four section tabs with a crimson underline on the active one, and the persona's name and avatar, the button to their own profile (catch-up Phase 26), underlined while it shows. Help before the persona (a TextAction, catch-up Phase 43b) opens the support panel." replaceWith="shadcn NavigationMenu (links) + Avatar" note="A labelled navigation (Main) whose active tab carries aria-current since UI unification U5; the tabs stay buttons (question 3). The avatar is the shared Avatar (tint, 36).">
             <D.WebNavDemo f={f} />
+          </CatalogueRow>
+          <CatalogueRow name="SupportSidePanel" source="shared/support/SupportHosts.tsx" usedIn={WA} what="Help from the web top nav (catch-up Phase 43b; US-15.0.8): the support panel in the shared SidePanel at the record width, the help line only and the anaesthetist's own requests." replaceWith="shadcn Sheet (side)">
+            <SupportSidePanelExample app="web" />
           </CatalogueRow>
           <CatalogueRow name="AvailabilityPageSwitch" source="apps/web/components/AvailabilityPageSwitch.tsx" usedIn={W} what="Switches between the two Availability pages, Find cover and My availability. Since UI unification U5 (question 18) an underline tab strip of links on the shared LineTabs: a labelled navigation, the current page marked aria-current." replaceWith="shadcn Tabs (as links)" note="Was a sliding segmented control doing a tab bar's job; now real links, so the route and the browser's back work as links do.">
             <D.PageSwitchDemo />

@@ -360,6 +360,12 @@ export const ACTION_LABELS: Record<string, string> = {
   'prepayment.settlementNoop': 'Prepayment already settled',
   'xero.refundPaid': 'Refund paid in Xero from the AA trust account',
   'xero.refundNoop': 'Refund already in Xero',
+
+  // --- Support: the help line and product support (catch-up Phase 43b; US-15.0.8, US-15.0.9) ---
+  'support.raise': 'Support request logged',
+  'support.respond': 'Support request responded to',
+  'support.close': 'Support request closed',
+  'support.callOutApprove': 'Call-out approved by AA',
 }
 
 /** "someWord" -> "some word" (the shared camelCase splitter). */

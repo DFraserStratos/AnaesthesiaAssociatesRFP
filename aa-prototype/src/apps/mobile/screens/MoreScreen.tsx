@@ -5,7 +5,9 @@ import { profileFor, recordAnaesthetistSignIn, useAppStore, type Actor } from '.
 import { signOutSession } from '../../../shared/session/anaesthetistSession'
 import { Avatar, DemoBadge, DockSpacer } from '../../../shared'
 import { formatCurrency, HPI_CPN_LABEL } from '../../../shared/format'
-import { DefList, TextAction } from '../../../shared/ui'
+import { DefList, DefRow, TextAction } from '../../../shared/ui'
+import { SupportSheet } from '../../../shared/support'
+import { SUPPORT_CONFIG } from '../../../domain/support'
 import { BANK_CAPTION, HPI_CPN_CAPTION, ProfileRow } from '../../../shared/profile'
 import { EditRateSheet, MobileHeader } from '../components'
 import { Card } from '../../../shared/ui/Card'
@@ -22,6 +24,8 @@ interface MoreScreenProps {
    * simulation here; the framed prototype passes nothing and is unchanged.
    */
   extra?: ReactNode
+  /** Which app a support request is raised from (catch-up Phase 43b). */
+  supportApp?: 'mobile' | 'pwa'
 }
 
 const CAPTION = { fontSize: typeScale.small.size, lineHeight: `${typeScale.small.line}px`, color: neutral.mist, margin: 0 } as const
@@ -34,11 +38,12 @@ const DIVIDER = { height: 1, background: neutral.line, margin: '2px 0' } as cons
  * CPN and the bank account masked; the office holds the rest, so those rows
  * carry the lock glyph. Reads `masters` only (never a tier or a pairing).
  */
-export function MoreScreen({ personaName, personaRole, initials, actor, anaesthetistId, extra }: MoreScreenProps) {
+export function MoreScreen({ personaName, personaRole, initials, actor, anaesthetistId, extra, supportApp = 'mobile' }: MoreScreenProps) {
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const profile = useMemo(() => profileFor({ masters: { anaesthetists } }, anaesthetistId), [anaesthetists, anaesthetistId])
   const [rateOpen, setRateOpen] = useState(false)
   const [rateKey, setRateKey] = useState(0)
+  const [helpOpen, setHelpOpen] = useState(false)
 
   const accountEmail = anaesthetists[anaesthetistId]?.email ?? ''
 
@@ -114,6 +119,22 @@ export function MoreScreen({ personaName, personaRole, initials, actor, anaesthe
         </TextAction>
       </Card>
 
+      {/* Help (catch-up Phase 43b; US-15.0.8): Stratos' support line, its phone and a request form, in a bottom sheet. */}
+      <Card title="Help" shot="more-help" style={{ marginTop: 16 }}>
+        <DefList gap={4}>
+          <DefRow
+            label="Support line"
+            layout="settings"
+            labelTone="slate"
+            mono
+            trailing={<TextAction onClick={() => setHelpOpen(true)} shot="nav-help">Get help</TextAction>}
+          >
+            {SUPPORT_CONFIG.phone}
+          </DefRow>
+        </DefList>
+        <p style={CAPTION}>Something not working, such as a forgotten password? Call or raise a request.</p>
+      </Card>
+
       <Card as="div" style={{ marginTop: 16, gap: 12 }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <DemoBadge label="Demo prototype" />
@@ -130,6 +151,8 @@ export function MoreScreen({ personaName, personaRole, initials, actor, anaesthe
 
       {extra}
       <DockSpacer height="calc(var(--aa-inset-bottom, 34px) + 82px)" />
+
+      <SupportSheet open={helpOpen} onClose={() => setHelpOpen(false)} actor={actor} app={supportApp} />
 
       {profile !== null && (
         <EditRateSheet

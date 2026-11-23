@@ -1,10 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { APP_CONFIG } from '../../shell/appConfig'
 import { neutral } from '../../theme/tokens'
 import { useToday, type Actor } from '../../store'
 import { SurfaceProvider } from '../../shared'
 import { MoveListPromptProvider } from '../../shared/flows/MoveListPrompt'
+import { SupportSidePanel } from '../../shared/support'
 import { WebNav, type WebTab } from './components'
 import type { WebOutletContext } from './outlet'
 
@@ -45,6 +46,8 @@ export function WebApp() {
   const todayISO = useToday()
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  // The support panel (catch-up Phase 43b): Help in the top nav opens it over any screen.
+  const [helpOpen, setHelpOpen] = useState(false)
 
   const context: WebOutletContext = useMemo(
     () => ({ anaesthetistId, personaName: persona.name, actor, todayISO }),
@@ -61,6 +64,7 @@ export function WebApp() {
           initials={persona.initials}
           profileActive={pathname.startsWith('/web/profile')}
           onProfile={() => navigate('/web/profile')}
+          onHelp={() => setHelpOpen(true)}
         />
         <div style={{ maxWidth: 1320, margin: '0 auto', padding: '28px 32px 48px' }}>
           <MoveListPromptProvider actor={actor}>
@@ -68,6 +72,7 @@ export function WebApp() {
           </MoveListPromptProvider>
         </div>
       </div>
+      <SupportSidePanel open={helpOpen} onClose={() => setHelpOpen(false)} actor={actor} app="web" />
     </SurfaceProvider>
   )
 }

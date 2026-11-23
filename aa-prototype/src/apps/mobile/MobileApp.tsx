@@ -117,12 +117,15 @@ export function MobileApp({
   host: Host,
   moreExtra,
   sessionDefault,
+  supportApp = 'mobile',
 }: {
   host: ComponentType<{ children: ReactNode }>
   /** Signed in or out when nothing is stored on this device (the framed build opens signed in). */
   sessionDefault: SessionDefault
   /** Host-supplied presenter controls for the More tab (the PWA's; see `outlet.ts`). */
   moreExtra?: ReactNode
+  /** Which app a support request says it came from (catch-up Phase 43b): the installed PWA passes 'pwa'. */
+  supportApp?: 'mobile' | 'pwa'
 }) {
   const persona = APP_CONFIG.mobile.persona
   const anaesthetistId = persona.anaesthetistId ?? '34821'
@@ -142,8 +145,9 @@ export function MobileApp({
       personaRole: persona.role,
       initials: persona.initials,
       moreExtra,
+      supportApp,
     }),
-    [actor, anaesthetistId, persona, moreExtra],
+    [actor, anaesthetistId, persona, moreExtra, supportApp],
   )
 
   // The List and Booking layers and My calendar are full-bleed (the mockup): the

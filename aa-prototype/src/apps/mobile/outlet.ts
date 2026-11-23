@@ -18,6 +18,8 @@ export interface MobileOutletContext {
    * out of the prototype's bundle.
    */
   moreExtra?: ReactNode
+  /** The app a support request is raised from (catch-up Phase 43b). */
+  supportApp: 'mobile' | 'pwa'
 }
 
 export function useMobileOutlet(): MobileOutletContext {

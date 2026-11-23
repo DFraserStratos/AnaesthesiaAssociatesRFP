@@ -921,3 +921,9 @@ details[open] > .aa-disclosure .aa-disclosure-chevron {
 body:has([data-aa-dialog]) .aa-harness {
   z-index: 210;
 }
+
+/* Catch-up Phase 43b: a side panel marked `underHarness` (the support panel) starts
+   below the harness bar, and the bar sits above its scrim the same way. */
+body:has([data-aa-under-harness]) .aa-harness {
+  z-index: 210;
+}

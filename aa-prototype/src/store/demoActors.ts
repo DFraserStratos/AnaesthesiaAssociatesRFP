@@ -69,6 +69,13 @@ export const OFFICE_SIMULATION_ACTOR: Actor = { who: 'AA office (simulated)', ro
 export const DEMO_TRIGGER_ACTOR: Actor = { who: 'Demo actions', role: 'system', source: 'demo' }
 
 /**
+ * Stratos' support line, simulated (catch-up Phase 43b; US-15.0.8, US-15.0.9):
+ * moves a support ticket on (Logged, Responded, Closed). A system actor named
+ * so nobody reads it as a real support engineer.
+ */
+export const STRATOS_SUPPORT_ACTOR: Actor = { who: 'Stratos support (simulated)', role: 'system', source: 'demo' }
+
+/**
  * The office as a demo trigger acts it (catch-up Phase 23): office rights,
  * audited with source `demo`, so a staged Booking reads as staged.
  */

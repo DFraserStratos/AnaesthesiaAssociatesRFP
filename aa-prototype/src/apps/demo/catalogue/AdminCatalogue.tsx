@@ -8,6 +8,7 @@ import { Pager } from '../../admin/components/Pager'
 import { SCALE_GENERATING_LINE } from '../../../shared/scale/ScaleBanner'
 import { StubSetExample } from './stubExamples'
 import { DRAFT_LIST, DRAFT_LISTS, UNASSIGNED } from '../../../shared/scheduleTerms'
+import { ResponseTableExample, SupportHoursExample, SupportPanelExample, SupportRequestFormExample, SupportSidePanelExample, TicketListExample } from './supportExamples'
 import { CataloguePage, CatalogueRow, LibraryGroup, StageHint } from './CatalogueKit'
 import { CardExample, DefRowExample, EyebrowExample, PageHeaderExample, TableKitExample } from './admin/pageChromeExamples'
 import { ReviewQueue } from '../../admin/screens/ReviewQueue'
@@ -213,8 +214,26 @@ export function AdminCatalogue() {
         <CatalogueRow name="RawRowSheet" source="apps/admin/matching/RawRowSheet.tsx" usedIn={A} what="The restricted raw hospital row (catch-up Phase 43; US-15.0.6): a record SidePanel over Matching's row panel that asks for a reason (FilterPills quick reasons or a TextField), then shows the masked columns on the table kit with the Notice that the masking policy is for AA to agree. Teal only on View raw row." replaceWith="shadcn Sheet (side)" note="Each view writes an audit entry, so it is not mounted here.">
           <StageHint>Opens from View raw row on an unmatched Matching row.</StageHint>
         </CatalogueRow>
-        <CatalogueRow name="SidePanel" source="apps/admin/components/SidePanel.tsx" usedIn={A} what="The one Admin right-docked panel (U2): scrim, an h2 header at 18/700 that names the dialog, the corner X, e3, a scrolling body and a footer. 440px list (the drawers) or 600px record (MasterPanel). On the one modal stack." replaceWith="shadcn Sheet (side)">
+        <CatalogueRow name="SidePanel" source="shared/surface/SidePanel.tsx" usedIn={AW} what="The one right-docked panel (U2): scrim, an h2 header at 18/700 that names the dialog, the corner X, e3, a scrolling body and a footer. 440px list (the drawers) or 600px record (MasterPanel, the support panel). On the one modal stack. Moved from apps/admin/components to the shared surface in catch-up Phase 43b, so the web app's Help uses the same shell." replaceWith="shadcn Sheet (side)">
           <SidePanelExample />
+        </CatalogueRow>
+        <CatalogueRow name="SupportPanel" source="shared/support/SupportPanel.tsx" usedIn={AWM} what="The one support panel body (catch-up Phase 43b; US-15.0.8, US-15.0.9): the open or closed status from the demo clock and the holiday calendar, the phone line in mono and the hours (SupportHours), the response table (ResponseTable), the out-of-hours Notice, the request form (SupportRequestForm: subject, priority, description; What is happening? out of hours; the kind on Product support) and the tickets (TicketList: status Pill, respond-by in mono, Response overdue, Best effort or Awaiting AA's approval). LineTabs Help line and Product support in Admin. One Simulated badge and the readings caption." replaceWith="shadcn Tabs + Field (React Hook Form + Zod)" note="Every hour and response time reads SUPPORT_CONFIG (domain/support.ts). Send writes an audited ticket to the demo store.">
+          <SupportPanelExample />
+        </CatalogueRow>
+        <CatalogueRow name="SupportSidePanel" source="shared/support/SupportHosts.tsx" usedIn={AW} what="The support panel on the desktop apps (catch-up Phase 43b): the shared SidePanel at the record width, opened by Help at the foot of the Admin side nav and in the web top nav. Admin adds Product support and sees every request with its requester." replaceWith="shadcn Sheet (side)">
+          <SupportSidePanelExample app="admin" />
+        </CatalogueRow>
+        <CatalogueRow name="SupportHours" source="shared/support/SupportHours.tsx" usedIn={AWM} what="The support panel's first block (catch-up Phase 43b): the open or closed status line from the demo clock and the holiday calendar (a success dot when open, mist when closed), the phone line in mono (plain text: the number is fictional) and the hours, on a sunken card." replaceWith="shadcn Card">
+          <SupportHoursExample />
+        </CatalogueRow>
+        <CatalogueRow name="ResponseTable" source="shared/support/ResponseTable.tsx" usedIn={AWM} what="A channel's response times from SUPPORT_CONFIG (catch-up Phase 43b): DefRows of priority, time and meaning; product support adds its outside-business-hours cover. Shown here for product support." replaceWith="shadcn Table">
+          <ResponseTableExample />
+        </CatalogueRow>
+        <CatalogueRow name="SupportRequestForm" source="shared/support/SupportRequestForm.tsx" usedIn={AWM} what="The request form (catch-up Phase 43b): Subject, Priority (Segmented P1 to P4 with its meaning), Description and Send; out of hours on the help line the What is happening? radio chips; on product support the Kind and the new-feature line. Shown out of hours; Send here only shows a refusal." replaceWith="shadcn Form (React Hook Form + Zod)">
+          <SupportRequestFormExample />
+        </CatalogueRow>
+        <CatalogueRow name="TicketList" source="shared/support/TicketList.tsx" usedIn={AWM} what="The tickets, newest first (catch-up Phase 43b): id in mono, subject, a status Pill (Logged, Responded, Closed), the respond-by in mono or why there is none, and the Response overdue, Best effort or Awaiting AA's approval pills. Shown with the seeded product-support tickets and their requester." replaceWith="shadcn Table">
+          <TicketListExample />
         </CatalogueRow>
         <CatalogueRow name="PopoverPanel" source="shared/ui/PopoverPanel.tsx" usedIn={AWM} what="The one popover panel and behaviour (usePopover, U2): a white card at the card radius and e3 under its trigger; outside click closes, Escape closes and returns focus. The harness menus and the Contract combo use it. Its fixed placement (catch-up Phase 43a) sits at viewport coordinates for InfoTip, so a scrolling table never clips it." replaceWith="shadcn Popover">
           <PopoverPanelExample />

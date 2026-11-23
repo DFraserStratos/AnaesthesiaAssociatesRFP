@@ -1562,8 +1562,31 @@ were already imported. Nothing new.").
   it (`/admin/day/2026-08-04/bookings/<new id>`): awaiting approval at $1,350.00, with `prepayment-history` "Earlier
   prepayment · Dr Souter · $1,200.00 · refunded" and "This prepayment · Dr Beaumont · $1,350.00".
 
+### Support tickets (catch-up Phase 43b)
+
+- **Five seeded tickets** (newest first in the panel's list `support-ticket-list`, rows `li[data-ticket-id]`):
+  `TK0001` help line, P3, Closed, "Forgot my password" (Dr Melanie Souter, mobile); `TK0002` help line, P3, Responded,
+  "Cannot sign in to the Admin app" (Kirsty W., Admin); `TK0003` help line, P4, Logged, "Wording on the Accounts page"
+  (Dr Souter, web); `TK0004` product support, New feature, P4, Logged, "Export the Day view to a spreadsheet" (Kirsty
+  W.); `TK0005` product support, Fix, P3, Responded, "Remittance advice shows the wrong week". Admin sees every request
+  on the open tab; web and the phone show Dr Souter's own (`TK0001`, `TK0003`). A new ticket is `TK0006` in each fresh
+  context (the PWA has its own store, so it is `TK0006` there too).
+- **The line reads closed at the seed's 8:00am.** Both channels open 8:30am to 5:00pm, Monday to Friday, so after Reset
+  `support-status` (`data-open=false`) reads "Closed, opens 8:30am" and the out-of-hours `support-cover-note` and the
+  help line's "What is happening?" choice (`support-reason`) show. Move the clock "+1 hour" first to shoot "Open now"
+  (`data-open=true`) with no cover note (see Gotchas).
+
 ## Overlays that need clicks
 
+- **Help, the support panel (catch-up Phase 43b).** Click `[data-shot=nav-help]` on any app: the Admin side nav's foot
+  button "Help", the web top nav's "Help" (before the persona), or the phone More tab's Help card (`more-help`), whose
+  "Get help" text action carries the hook. Web and Admin open the shared SidePanel (`role=dialog`,
+  `data-testid=support-side-panel`, title "Help", 600px wide); the phone opens a bottom sheet. Wait for
+  `[data-shot=support-panel]` (its `data-tab` is `helpLine` or `productSupport`). Admin only: the tabs
+  `[data-shot=support-tab-helpLine]` and `[data-shot=support-tab-productSupport]`; after the click wait for
+  `[data-shot=support-panel][data-tab=productSupport]`. Raise a request by filling `[data-shot=support-subject]` (the
+  hook is on the input itself) and clicking `[data-shot=support-send]`, then wait for
+  `[data-shot=support-ticket-list] li[data-ticket-id=TK0006]`. See `recipes/US-15.0.8.json` and `US-15.0.9.json`.
 - **Info tips (catch-up Phase 43a).** A small "About ..." button `[data-shot=info-tip-<topic>]` (the topic with dots as
   dashes, e.g. `info-tip-capture-price`, `info-tip-day-statuses`, `info-tip-review-contracts`) sits in a section's label
   row. On mobile a tap opens a bottom sheet whose content is `[data-shot=info-tip-<topic>-sheet]`; a tip inside another
@@ -2020,6 +2043,22 @@ the exception: use the `trigger` step)
   "Next morning", "+7 days" and "Procedure day · 28 Jul".
 
 ## Existing hooks
+
+**Support, the help line and product support (catch-up Phase 43b).** Entry `nav-help` on all three apps (Admin side nav
+foot, web top nav, phone More card `more-help`). The panel body `support-panel` (`data-tab=helpLine|productSupport`),
+in it `support-status` (`data-open=true|false`; "Closed, opens 8:30am" or "Open now"), `support-phone` (0800 787 286,
+fictional), `support-hours`, `support-response-table` (rows `[data-priority=P1..P4]`), `support-cover-note` (a warning
+Notice shown only out of hours, `data-cover=afterHours|publicHoliday|christmas`), the form `support-request-form`
+holding `support-subject` (on the input), the Priority segmented control (P1 to P4), `support-description` (on the
+textarea), out of hours on the help line the radiogroup `support-reason` (chips `[data-reason=other|securityBreach|
+platformOffline]`), on product support the Kind segmented control (Incident, Fix, Change, New feature) and
+`support-new-feature-line`, and the teal `support-send` ("Send request", or "Send ticket" on product support); the list
+`support-ticket-list` (rows `li[data-ticket-id]`, the status pill `[data-ticket-status=logged|responded|closed]`, pills
+`[data-ticket-overdue]` and `[data-ticket-cover]`, the latter "Awaiting AA's approval" on a public-holiday call-out) and
+the readings caption `support-readings`. Admin only: `support-tab-helpLine`, `support-tab-productSupport`. The web and
+Admin panel is `[data-testid=support-side-panel]`. Demo rows `demo-action-support-advance-ticket`,
+`demo-action-support-raise-out-of-hours`, `demo-action-support-raise-public-holiday`,
+`demo-action-support-approve-call-out`; PWA `pwa-demo-action-support-help-line-responds`.
 
 **Sign-in, info tips and welcome cards (catch-up Phase 43a).** PWA sign-in (mobile, :5174): the screen
 `sign-in-screen` (the logo, then a card holding `sign-in-email` (pre-filled with the demo account), `sign-in-password`
@@ -2705,6 +2744,22 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 
 ## Demo control panel (`/demo/control`) and Demo actions
 
+- Catch-up Phase 43b (support). Four bar entries and one PWA entry, screen heading "All apps · Help", on every
+  `/admin`, `/web` and `/mobile` route but **shown only while the support panel is open**, so the `trigger` step comes
+  after the click on `nav-help` (the harness bar sits above the SidePanel's scrim, so it works over the open panel).
+  `support-advance-ticket` ("Advance ticket", either tab) moves the newest open request on the open tab one step,
+  Logged to Responded to Closed: "<id> <subject>: now Responded." (or Closed); disabled "No open request" or
+  "<id> waits for AA's approval of the call-out". `support-raise-out-of-hours` ("Raise out of hours", Help line tab;
+  choices `other` "Ordinary request" (default), `securityBreach`, `platformOffline`) moves the clock forward to 7:00pm
+  on the next weekday and raises a sample P3 help-line request as `TK0006`; its result line says whether it is answered
+  out of hours (a breach or outage is logged as P1 with a respond-by within the hour) or picked up at the next opening.
+  `support-raise-public-holiday` ("Raise ticket on a public holiday", Product support tab) jumps the clock to 10:00am on
+  the next national public holiday (Labour Day, Mon 26 Oct 2026, from Reset) and raises a P2 incident that waits for
+  AA's approval: "Clock now 10:00am, Labour Day. TK0006 logged: the call-out waits for AA's approval."; the cover note
+  reads `data-cover=publicHoliday`. `support-approve-call-out` ("AA approves call-out", Product support tab, office
+  stand-in badge) approves the newest waiting call-out; disabled "No call-out awaiting approval". The PWA-only
+  `support-help-line-responds` ("Help line responds to this request") shows on the Demo sheet only while the Help sheet
+  is open on More; it advances Dr Souter's newest open help-line request. Index path `/admin` ("Open Help first ...").
 - Catch-up Phase 41 (prepayment settled automatically, differences by hand). Three bar entries and one PWA entry, none
   with a choice to pass. `stage-longer-prepaid-procedure` ("Stage longer prepaid procedure", screen "Admin · Review",
   only on `/admin/review/:listId`, the List SUBMITTED; its choices are the List's Bookings with a sent prepayment, the
@@ -3031,6 +3086,11 @@ until `{ "trigger": "office-authorises-list" }` runs (US-07.4.1 and US-08.6.1 sh
   `aa-first-run-hint-mobile`, `-web` and `-admin` ("1") in every app's context. The preset is set-if-absent on every
   page load: a card brought back with the `show-first-run-hints` trigger ("Show first-run hints again") must be shot
   without a reload, so no `goto` after the trigger (in-app clicks are fine). See `recipes/US-15.0.1.json`.
+- **The support line reads closed until 8:30am** (catch-up Phase 43b). Every state starts at the seed's 8:00am, so to
+  shoot "Open now" with no cover note move the clock first: on :5173 a `setup` that does `{ "goto": "/demo/control" }`,
+  then clicks `role=button[name="+1 hour"] >> nth=0` (the harness clock menu is hidden in shots); on :5174 click the
+  same button in the PWA More tab's Demo clock card before `nav-help`. The support Demo actions appear only after
+  `nav-help` is clicked (and the public-holiday and call-out ones only on the Product support tab).
 
 ## Worked examples
 

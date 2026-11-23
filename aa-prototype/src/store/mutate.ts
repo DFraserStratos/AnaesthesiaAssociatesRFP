@@ -175,6 +175,8 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   // Catch-up Phase 40: the shared note on a List or Booking, and the patient follow-up log.
   sharedNote: { prefix: 'NTE', pad: 4 },
   followUp: { prefix: 'FUN', pad: 4 },
+  // Catch-up Phase 43b: support tickets, the help line's and product support's (seeded TK0001 to TK0005).
+  supportTicket: { prefix: 'TK', pad: 4 },
 }
 
 /** Allocate the next deterministic id of a kind from the counters record. */
@@ -226,6 +228,7 @@ export type DomainPatch = Partial<
     | 'officePrivate'
     | 'notifications'
     | 'patientCare'
+    | 'support'
   >
 >
 
@@ -405,6 +408,7 @@ export function transaction<T>(api: AppStoreApi, run: () => Outcome<T>): Outcome
     officePrivate: before.officePrivate,
     notifications: before.notifications,
     patientCare: before.patientCare,
+    support: before.support,
     audit: before.audit,
   }
   const result = run()
@@ -464,6 +468,7 @@ export type DomainState = Pick<
   | 'officePrivate'
   | 'notifications'
   | 'patientCare'
+  | 'support'
   | 'counters'
   | 'billing'
   | 'xero'
@@ -498,6 +503,7 @@ function resetDomainStateOnly(api: AppStoreApi): void {
     officePrivate: seed.officePrivate,
     notifications: seed.notifications,
     patientCare: seed.patientCare,
+    support: seed.support,
     counters: seedBilling.counters,
     billing: {
       invoices: seedBilling.invoices,

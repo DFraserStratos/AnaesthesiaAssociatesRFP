@@ -33,6 +33,10 @@ export interface DemoContextValues {
   'adminBooking.dirtyBookingId': string
   /** Any surface that looks an NHI up through the simulated Hub is open (catch-up Phase 40a's Hub mode trigger). */
   'nhiHub.inUse': true
+  /** Any app · the support panel is open, on this tab (catch-up Phase 43b's support triggers show only then). */
+  'support.tab': 'helpLine' | 'productSupport'
+  /** Any app · whose requests the open support panel lists: the persona's name, or '' for the office (every request). */
+  'support.requester': string
 }
 
 export type DemoContextKey = keyof DemoContextValues

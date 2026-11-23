@@ -1444,3 +1444,22 @@ describe('catch-up Phase 40a (no bump, v74): the Hub mode and the refresh stamp'
     expect(s.masters.patients['PT0018']!.name).toBe('Fiona Gray')
   })
 })
+
+describe('catch-up Phase 43b (v75): support tickets', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v74 store without the support slice and reseeds its five tickets', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(75)
+    const fresh = freshAppState()
+    const { support: _s, ...rest } = fresh
+    const { supportTicket: _c, ...counters } = fresh.counters
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...rest, counters }, version: 74 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(Object.keys(s.support.tickets).sort()).toEqual(['TK0001', 'TK0002', 'TK0003', 'TK0004', 'TK0005'])
+    expect(s.counters['supportTicket']).toBe(6)
+  })
+})

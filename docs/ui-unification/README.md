@@ -293,7 +293,7 @@ sketch and the behaviour contract are in the detail file named at the end of eac
 
 - **Job:** A right-docked desktop panel: scrim, header, scrolling body, actions.
 - **Today:** Three identical drawer shells plus MasterPanel. `SlotDrawer` re-declares all four `drawerParts` pieces privately, with drift. The drawers have no Escape and no focus handling (already logged in PROGRESS).
-- **Target:** `SidePanel` in `apps/admin/components/` on the modal layer; SlotDrawer imports `drawerParts`.
+- **Target:** `SidePanel` in `apps/admin/components/` on the modal layer; SlotDrawer imports `drawerParts`. (Moved to `shared/surface/SidePanel.tsx` in catch-up Phase 43b, for the support panel on web and Admin; 43a's planned `HelpPanel` was never built and 43b's `SupportPanel` replaces it.)
 - **Canonical look:** The drawer header with MasterPanel's h2, `aria-labelledby` and e3.
 - **Must not break:** Keep `data-testid="admin-list-drawer"` (9 specs), the drawer shots, `data-slot-id` and `data-list-id`. Adding `role="dialog"` adds matches to broad `[role=dialog]` locators.
 - **When:** Before Phase 43a (HelpPanel uses the drawer pattern); 33a and 35 edit the drawers. Phase U2, size M.

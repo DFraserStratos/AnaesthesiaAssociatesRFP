@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { PersonaChip, Wordmark } from '../../../shared'
 import { SyntheticDataBadge } from '../../../shared/SyntheticDataBadge'
 import { brand, neutral, semantic, radius } from '../../../theme/tokens'
@@ -34,6 +35,29 @@ interface SideNavProps {
   /** Patients needing the office (catch-up Phase 40; `patientAttentionCount`): amber, an attention count. */
   patientBadge?: number
   onNavigate: (section: NavSection) => void
+  /** Opens the support panel (catch-up Phase 43b): an action at the foot, not a section. Shown only when given. */
+  onHelp?: () => void
+}
+
+/** One nav row's look: the sections and, at the foot, the Help action (catch-up Phase 43b). */
+function navItemStyle(active: boolean): CSSProperties {
+  return {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    padding: '10px 12px',
+    borderRadius: 9,
+    border: 'none',
+    fontFamily: 'inherit',
+    fontSize: 13.5,
+    fontWeight: active ? 600 : 500,
+    color: active ? neutral.surface : 'rgba(255,255,255,0.9)',
+    background: active ? 'rgba(255,255,255,0.08)' : 'transparent',
+    boxShadow: active ? `inset 3px 0 0 ${brand.base}` : 'none',
+    cursor: 'pointer',
+    textAlign: 'left',
+  }
 }
 
 /**
@@ -41,7 +65,7 @@ interface SideNavProps {
  * (Decisions log 2026-07-21). The Review-queue badge derives from the SUBMITTED
  * list count (2026-07-23 decision) rather than a hardcoded figure.
  */
-export function SideNav({ active, reviewBadge, billingBadge = 0, conflictBadge = 0, draftListBadge = 0, notificationBadge = 0, intakeBadge = 0, ledgerBadge = 0, patientBadge = 0, onNavigate }: SideNavProps) {
+export function SideNav({ active, reviewBadge, billingBadge = 0, conflictBadge = 0, draftListBadge = 0, notificationBadge = 0, intakeBadge = 0, ledgerBadge = 0, patientBadge = 0, onNavigate, onHelp }: SideNavProps) {
   const officeUser = useAppStore((s) => s.shell.officeUser)
   const items: NavItem[] = [
     { section: 'day', label: 'Day view' },
@@ -80,23 +104,7 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, conflictBadge =
               type="button"
               aria-current={activeItem ? 'page' : undefined}
               onClick={() => onNavigate(item.section)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 10,
-                padding: '10px 12px',
-                borderRadius: 9,
-                border: 'none',
-                fontFamily: 'inherit',
-                fontSize: 13.5,
-                fontWeight: activeItem ? 600 : 500,
-                color: activeItem ? neutral.surface : 'rgba(255,255,255,0.9)',
-                background: activeItem ? 'rgba(255,255,255,0.08)' : 'transparent',
-                boxShadow: activeItem ? `inset 3px 0 0 ${brand.base}` : 'none',
-                cursor: 'pointer',
-                textAlign: 'left',
-              }}
+              style={navItemStyle(activeItem)}
             >
               <span>{item.label}</span>
               {item.badge !== undefined && item.badge > 0 && (
@@ -108,6 +116,16 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, conflictBadge =
       </nav>
 
       <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {onHelp !== undefined && (
+          <button
+            type="button"
+            data-shot="nav-help"
+            onClick={onHelp}
+            style={navItemStyle(false)}
+          >
+            Help
+          </button>
+        )}
         <RolesInfo />
         <div style={{ padding: 8 }}>
           <PersonaChip persona={officePersona(officeUser)} />

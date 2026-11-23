@@ -45,6 +45,8 @@ capture.
     before the audience arrives, or use it as the opener. The device keeps the session across reloads
     and the PWA's own Reset. The framed phone in the all-apps prototype always opens signed in, after
     Reset and after every scenario jump.
+11. Help (Phase 43b): after Reset the clock is 8:00am, so every Help panel reads "Closed, opens 8:30am"
+    until the clock menu's **+1 hour**. Use it before a support beat if you want **Open now**.
 
 The control panel is the **index**, grouped: **Clock & reset**, **Scenario jumps (S1 to S5)** and
 **Demo actions by screen**. Each scenario jump confirms first, resets the data, applies any extra
@@ -2145,6 +2147,44 @@ surgeon with no HPI CPN loads, OQ-129 answered); and whether recurring bookings 
 spreadsheets (US-13.4.3's calendar schedules). Settled if asked: a Contract schedule upload is Future
 Work (OQ-100, answered 5 November), and master data loads once at go-live, then is kept by hand
 (US-13.4.3).
+
+### Optional close: what if something is not working? (Phase 43b)
+
+About 2 minutes. After Reset the clock is 8:00am, so every panel reads "Closed, opens 8:30am": use the
+clock menu's **+1 hour** first if you want it to read **Open now**.
+
+- **Click:**
+  - Mobile **More** tab → the **Help** card (the support line number, **Get help**): a bottom sheet with
+    the status line, the help line 0800 787 286 (fictional), the hours "8:30am to 5:00pm NZT, Monday to
+    Friday, excluding New Zealand public holidays", the response table and the request form (Subject,
+    Priority P1 to P4, Description, **Send request**). **Your requests** lists Dr Souter's own (TK0001
+    Forgot my password, closed; TK0003 Wording on the Accounts page, logged, P4). Web has **Help** in the
+    top nav before her name; the same panel opens as a side panel.
+  - Admin → **Help** at the foot of the side nav: two tabs, **Help line** and **Product support**, and
+    **Every request** with the requester's name. On Product support, **Kind** offers Incident, Fix, Change
+    and New feature; New feature reads "Goes to the product owner or the development team, to plan."
+    (TK0004 Export the Day view to a spreadsheet is one, logged).
+  - **Demo actions → Raise out of hours** (Ordinary request, Security breach or Platform offline): the
+    clock moves forward to 7:00pm on the next weekday and a sample help-line request is raised. Ordinary
+    reads "Not answered out of hours; picked up at the next opening", no respond-by; a security breach or
+    platform offline is P1, due within the hour. **Advance ticket** plays Stratos responding, then
+    closing, the newest open request on the open tab.
+  - On **Product support**, **Demo actions → Raise ticket on a public holiday**: the clock moves to
+    10:00am on Labour Day, Mon 26 Oct 2026, and a P2 incident reads **Awaiting AA's approval**; **AA
+    approves call-out** (office stand-in: AA tells Stratos outside the app) turns it to **Call-out
+    approved**.
+- **Say:** "If something is not working, Help is in every app: the phone line, the hours and a request
+  form, and every request is tracked to a response time. For AA there is a second route, product support,
+  where a feature we do not have yet goes to the product owner to plan. Out of hours only a security
+  breach or the platform being offline is answered, and a public-holiday call-out happens only with AA's
+  approval."
+- **Expected:** the panel carries one **Simulated** badge, "Simulated: how Stratos' support works is the
+  real service's, not this prototype's.", and an "Our reading, to confirm with AA" caption. A new request
+  is TK0006. The clock only moves forward; **Reset** restores 8:00am Tue 21 Jul.
+- **Discovery points:** the hours are the standard terms (8:30am to 5:00pm, Monday to Friday, national
+  public holidays excluded, so a regional anniversary day is a working day); whether cover starts at
+  8:00am is open for Vanessa; response clocks run in business hours; Christmas and New Year cover (24
+  December to 6 January) on product support is limited, best effort.
 
 ---
 

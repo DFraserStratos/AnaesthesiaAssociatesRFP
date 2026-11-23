@@ -11,6 +11,7 @@ import { SEED_MARKERS } from '../../../domain/seed'
 import { ContractApprovalExample } from './contractApprovalExample'
 import { BalanceAlertChipExample, SharedNotesExample } from './patientAlertExamples'
 import { PrepaidSettlementExample } from './prepaymentFollowupExamples'
+import { SupportSheetExample } from './supportExamples'
 
 const M = 'Mobile'
 const SW = 'Admin · Web · Mobile'
@@ -59,6 +60,12 @@ export function MobileCatalogue() {
           replaceWith="shadcn Drawer + Field (React Hook Form + Zod)"
           note={`Save ${WRITES}`}>
           <Ex.EditRateSheetExample actor={actor} anaesthetistId={anaesthetistId} />
+        </CatalogueRow>
+        <CatalogueRow name="SupportSheet" source="shared/support/SupportHosts.tsx" usedIn={M} stage="mobile" height={640}
+          what="Help from the More tab (catch-up Phase 43b; US-15.0.8): the support panel in a BottomSheet under the OverlayHeader, the help line only and the anaesthetist's own requests; Send request at the foot of the form."
+          replaceWith="shadcn Drawer + Field (React Hook Form + Zod)"
+          note={`Send ${WRITES}`}>
+          <SupportSheetExample actor={actor} />
         </CatalogueRow>
         <CatalogueRow name="AlertOfficeSheet" source="shared/flows/AlertOfficeSheet.tsx" usedIn={WM} stage="mobile" height={560}
           what="Asks the office to check one of her Lists or Bookings, with a note (OverlayHeader and SheetActions). A DoneStep shows the sent state afterwards."

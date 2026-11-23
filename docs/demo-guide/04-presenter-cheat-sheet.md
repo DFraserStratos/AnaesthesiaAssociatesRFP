@@ -472,6 +472,8 @@ Receipts held = payables due + the AA Holding account  ->  In balance
   set-up, tiers or preferences
 - Signs in to the PWA once with their account (simulated; Dr Souter's demo account
   `m.souter@aa-associates.example`), with **Sign out** on More
+- Help (More tab, catch-up Phase 43b): the support line number and **Get help**, a bottom sheet with the
+  hours, response times, a request form and **Your requests**
 - Later: balances
 
 ### Anaesthetist Web
@@ -486,6 +488,7 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - Profile (her name and avatar in the top nav): rate per unit editable, the rest read-only
 - Sees each procedure's Contract, who is invoiced and the price they may change; never Contract
   set-up, tiers or preferences
+- **Help** in the top nav before her name (catch-up Phase 43b): the same support panel as a side panel
 
 ### Admin Web
 
@@ -563,6 +566,9 @@ Receipts held = payables due + the AA Holding account  ->  In balance
 - Intake (one side-nav item under Day view; `/admin/intake`): tabs **Matching**, **PDF lists**, **Data
   quality** and **Validators**. Hospital files from St George's and Southern Cross and the rooms' PDF
   lists arrive here, every row waiting for the office's decision; nothing syncs
+- **Help** at the foot of the side nav (catch-up Phase 43b): tabs **Help line** and **Product support**
+  (Kind: Incident, Fix, Change or New feature; **Send ticket**), and **Every request** with the
+  requester's name
 - Later: billing monitoring and the rows still waiting on Intake
 
 ## Strong phrases to use
@@ -709,6 +715,18 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
 - Welcome cards (catch-up Phase 43a): one per app on first visit (mobile Lists, web Dashboard, Admin
   Day), dismissed with **Got it**, back after Reset or with **Demo actions → Show first-run hints
   again**
+- Support (catch-up Phase 43b): **Help** in every app (Admin side nav foot, web top nav, the mobile More
+  tab's Help card, the PWA included) opens one panel: a status line ("Open now" or "Closed, opens
+  8:30am"), the help line 0800 787 286 (fictional), the hours "8:30am to 5:00pm NZT, Monday to Friday,
+  excluding New Zealand public holidays", the response table (help line P1 1 hour, P2 Same business day,
+  P3 4 hours, P4 Scheduled at a mutually agreed time; product support the same but P3 3 business days;
+  after hours Best effort, not guaranteed; public holidays Call-out only, with AA's approval; Christmas and
+  New Year Limited, best-effort cover), the request form (Subject, Priority P1 to P4, Description) and the
+  tickets (TK0001 to TK0005 seeded; a new one is TK0006), each Logged, Responded or Closed with its
+  "Respond by" time and a **Response overdue** pill once it has passed. Out of hours the help line asks
+  "What is happening?": a security breach or platform offline is P1, due within the hour; anything else
+  is logged, "Not answered out of hours; picked up at the next opening". Admin's **Product support** tab
+  adds Kind; a new feature "Goes to the product owner or the development team, to plan."
 
 ### Present but honestly demo-only (keep the badge in view)
 
@@ -824,6 +842,15 @@ mobile atmospheric background, is the only remaining phase and is purely visual.
   **Retry** and an amber **Hub simulated as Unavailable** badge; the details can still be typed and
   saved with a valid NHI. Slow is a long wait with **Stop waiting**. The mode stays set until changed
   or Reset.
+- **Support** (catch-up Phase 43b) carries one **Simulated** badge: "Simulated: how Stratos' support
+  works is the real service's, not this prototype's." Its demo actions show only while the Help panel is
+  open (Control Panel heading **All apps · Help**): **Advance ticket** (Stratos responds, then closes,
+  the newest open request on the open tab; "No open request" when none), **Raise out of hours** (Ordinary
+  request, Security breach or Platform offline; the clock moves forward to 7:00pm on the next weekday),
+  **Raise ticket on a public holiday** (Product support; 10:00am Labour Day, Mon 26 Oct 2026, a P2
+  incident **Awaiting AA's approval**), **AA approves call-out** (office stand-in: AA tells Stratos
+  outside the app), and on the PWA's Demo sheet **Help line responds to this request**. The clock only
+  moves forward; Reset restores 8:00am Tue 21 Jul, so the line reads closed until **+1 hour**.
 
 ### Still upcoming
 
@@ -1073,6 +1100,15 @@ Say:
 - Should an NHI entered while the Hub is down be marked unverified? Today it saves as typed, as long as
   it is valid.
 
+### 17. Support hours and cover (catch-up Phase 43b)
+
+- The hours are the standard terms: 8:30am to 5:00pm NZT, Monday to Friday, excluding New Zealand public
+  holidays, on both the help line and product support. Open for Vanessa: whether cover starts at 8:00am.
+- Our reading, to confirm with AA (the panel's caption): national public holidays only (a regional
+  anniversary day is a working day); response clocks run in business hours; Christmas and New Year cover,
+  24 December to 6 January, is limited and best effort on product support.
+- After Reset the clock is 8:00am, so the line reads closed until **+1 hour**.
+
 ## Recoveries: the save and the email
 
 - If a draft gets stuck, **Discard** in the save bar (a demo **Reset** also discards it).
@@ -1201,6 +1237,17 @@ With an account login on the PWA, shown simulated: the account is filled in and 
 caption says how anaesthetists sign in is deferred to the end of discovery (OQ-83). The identity
 provider, MFA, single sign-on and biometrics are still to be decided. The audit logs every sign-in, refusal and sign-out:
 "Signed in", "Sign-in failed" and "Signed out" rows on Admin Audit (Entity type **account**).
+
+### "What if something is not working?"
+
+**Help** in any app: the help line's phone number, its hours and a request form, with each request
+tracked to its respond-by time. For AA there is a second route, **Product support** on Admin, for
+incidents, fixes, changes and new features: a feature we do not have yet goes to the product owner, to
+plan. The hours are the standard terms, 8:30am to 5:00pm, Monday to Friday, excluding public holidays;
+whether cover starts at 8:00am is an open question for Vanessa. Out of hours only a security breach or
+the platform being offline is answered on the help line, product support is best effort, and a
+public-holiday call-out happens only with AA's approval. After Reset the clock is 8:00am, so the line
+reads closed until **+1 hour**.
 
 ## One-line close
 

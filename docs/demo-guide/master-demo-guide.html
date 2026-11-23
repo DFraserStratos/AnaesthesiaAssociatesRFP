@@ -557,6 +557,7 @@
     <tr><td>Anaesthetist's own List move and the shared notifications</td><td><span class="chip ready">Ready</span></td><td>Catch-up 32</td></tr>
     <tr><td>Single-Booking move to a colleague and the doer rule</td><td><span class="chip ready">Ready</span></td><td>Catch-up 32a</td></tr>
     <tr><td>Ease of use: the PWA's simulated sign-in (Dr Souter's demo account filled in, Provisional OQ-83; Signed in as and Sign out on More; one audit row per attempt), point-of-need help beside section labels on Booking capture, Admin Day and Admin Review, and a welcome card per app on first visit</td><td><span class="chip ready">Ready</span></td><td>Catch-up 43a</td></tr>
+    <tr><td>Support: Help in every app (Admin side nav foot, web top nav, the mobile More tab's Help card), one panel with the help line, hours, response times, a request form and tickets; Admin's Product support tab for AA; out of hours and public-holiday call-outs</td><td><span class="chip ready">Ready</span></td><td>Catch-up 43b</td></tr>
     <tr><td>Mobile atmospheric gradient (visual only)</td><td><span class="chip ready">Ready</span></td><td>Phase 13</td></tr>
   </table></div>
   <p style="font-size:14px;color:var(--slate)">Phases 00 to 13 are built and clickable, with the catch-up
@@ -638,6 +639,27 @@
   lookup; practitioners are referenced by their HPI CPN, the one name and format everywhere; and NHI use is
   purpose-limited (Health Information Privacy Code 2020): "Looked up on behalf of Dr Melanie Souter (HPI CPN
   10SOUM), only to identify this patient."</div>
+  <div class="callout"><strong>Support: the help line and product support (catch-up Phase 43b).</strong>
+  <strong>Help</strong> in every app (Admin, at the foot of the side nav; web, in the top nav before the persona;
+  mobile, a Help card on More with the support line number and <strong>Get help</strong>, the PWA included) opens
+  one panel: a status line ("Open now" or "Closed, opens 8:30am"), the help line 0800 787 286 (fictional), the
+  hours "8:30am to 5:00pm NZT, Monday to Friday, excluding New Zealand public holidays", the response table (help
+  line P1 1 hour, P2 Same business day, P3 4 hours, P4 Scheduled at a mutually agreed time; product support the same
+  but P3 3 business days; after hours Best effort, not guaranteed; public holidays Call-out only, with AA's approval;
+  Christmas and New Year Limited, best-effort cover), the request form (Subject, Priority P1 to P4, Description) and
+  the tickets, "Your requests" or, on Admin, "Every request" (TK0001 to TK0005 seeded; a new one is TK0006), each
+  Logged, Responded or Closed with its Respond by time and a Response overdue pill once passed. Out of hours the help
+  line asks "What is happening?": a security breach or platform offline is P1, due within the hour; anything else is
+  logged, "Not answered out of hours; picked up at the next opening". Admin's <strong>Product support</strong> tab
+  adds Kind (Incident, Fix, Change, New feature); a new feature "Goes to the product owner or the development team, to
+  plan." One <strong>Simulated</strong> badge: "Simulated: how Stratos' support works is the real service's, not this
+  prototype's." Demo actions, shown only while the panel is open (Control Panel heading All apps · Help):
+  <strong>Advance ticket</strong>, <strong>Raise out of hours</strong> (Ordinary request, Security breach, Platform
+  offline; the clock moves forward to 7:00pm on the next weekday), <strong>Raise ticket on a public holiday</strong>
+  (Product support; 10:00am Labour Day, Mon 26 Oct 2026, a P2 incident Awaiting AA's approval), <strong>AA approves
+  call-out</strong> (office stand-in) and, on the PWA's Demo sheet, <strong>Help line responds to this
+  request</strong>. The clock only moves forward; Reset restores 8:00am Tue 21 Jul, so the line reads closed until
+  +1 hour.</div>
 
   <h2>Terms not to use</h2>
   <div class="table-wrap"><table>
@@ -1056,6 +1078,7 @@
     no NHI or other personal information enters Xero, patient names included (confirmed with AA). <span class="chip ready">Ready</span></p>
     <p>The office works the waiting rows on Admin, Patients, Waiting for NHI: it emails the List's sender (else the surgeon's first office contact) for the NHI, adds it, then decides the row. A returning patient who owes money raises the patient balance warning. Billing follow-up works from the patient record: the follow-up log, Resend and Clear.</p>
     <p>Patient upkeep (catch-up Phase 40a): the office refreshes a patient from the NHI register on the patient record (Refresh from NHI register, on demand, marked Provisional), choosing Keep or Use register for each field that differs; the change reaches the patient's Bookings, is audited, and nothing goes to Xero. The Add NHI sheet on a waiting row shows the register's name and DOB, never blocking the add. Discovery: whether the refresh runs on a schedule, and whether an NHI entered while the Hub is down is marked unverified.</p>
+    <p>Getting help (catch-up Phase 43b): when something in the apps is not working, an anaesthetist opens Help (the mobile More tab's Help card, or Help in the web top nav) for the help line 0800 787 286 (fictional), its hours (8:30am to 5:00pm NZT, Monday to Friday, excluding New Zealand public holidays) and a request form, and follows each request under Your requests (Logged, Responded, Closed) against its respond-by time; out of hours only a security breach or the platform being offline is answered, anything else is picked up at the next opening. The office's Admin Help adds Product support, AA's route to Stratos for incidents, fixes, changes and new features (a new feature goes to the product owner or the development team, to plan), and Every request across both; product support out of hours is best effort, and a public-holiday call-out happens only with AA's approval. Discovery: whether cover starts at 8:00am (for Vanessa). <span class="chip ready">Ready</span></p>
   </div></details>
 </section>
 
@@ -1087,6 +1110,7 @@
       <li>NHIs for the lookup beats (S2 Beat 2, S5 Beat 2): <code>ZBR4417</code> Mereana Tipene, <code>ZBT2253</code> Lucas Brennan and <code>ZBX41AL</code> Ana Fifita (new format) are on the NHI register; <code>ZBW6638</code> is valid but not on the register; <code>ZAA0068</code> has a bad check digit.</li>
       <li>After Reset a welcome card shows once per app: <strong>Welcome to your Lists</strong> under the mobile Lists greeting, <strong>Welcome</strong> on the web Dashboard, <strong>The day at a glance</strong> on Admin Day between the day navigation and the grid. Select <strong>Got it</strong> on each before the audience arrives, or leave the mobile one to open S1 with. Scenario jumps keep your dismissals; Reset (and Reset to pristine seed) brings them back, as does Demo actions &#8594; <strong>Show first-run hints again</strong> on any Mobile, Web or Admin screen (disabled, "No welcome card has been dismissed", until one is).</li>
       <li>On a handset, the installed PWA opens on a simulated sign-in screen the first time, Dr Souter's demo account (<code>m.souter@aa-associates.example</code>) and a masked password filled in: tap <strong>Sign in</strong> before the audience arrives, or use it as the opener. The device keeps the session across reloads and the PWA's own Reset. The framed phone always opens signed in, after Reset and every scenario jump.</li>
+      <li>Help (Phase 43b): after Reset the clock is 8:00am, so every Help panel reads "Closed, opens 8:30am" until the clock menu's <strong>+1 hour</strong>. Use it before a support beat if you want Open now.</li>
     </ol>
     <p style="font-size:13px;color:var(--slate);margin:6px 0 0">The panel is the index, grouped: Clock &amp;
     reset; Scenario jumps (S1 to S5); Demo actions by screen. Demo actions themselves live on their screen,
@@ -1592,6 +1616,12 @@
     </div>
     <div class="callout">Worth pointing at (optional): Admin &#8594; Master data &#8594; Contracts. Merivale's three combination Contracts (search H3: Face lift, Facelift plus 1 add on, Facelift plus 2 add ons, each its own Contract; fee extras are events, not Contracts) and Dr Souter's own prepaid price list (holder Dr Melanie Souter: one Contract per item, every price above zero; a zero price is refused). Search CAT to find the cataract items by name and the holder's code HNZCATall. Admin &#8594; Master data &#8594; RVG groups. The NZSA RVG 2021 groups as published under their anatomy headings, AA's own beside them and unmarked; both T2s and both P6s are separate rows; H4 reads 10 · range 10 to 12. Add, edit, retire and restore a group: each change is in Admin &#8594; Audit (entity type rvgGroup).</div>
     <div class="callout warn">Discovery: the RVG groups as published with AA's own beside them (demo-sized; at go-live, the RVG groups load once from AA's controlled spreadsheet), the same code on several rows told apart by description and base units; an optional RVG code picked by type-ahead; a ranged group holding its published range, shown to the anaesthetist, starting at its lower figure (OQ-101); the RVG modifier table as printed (values that are not plain numbers entered at capture); only the age and included modifiers pre-applied, nothing else pre-filled (settled, Ben, 27 October); the age bands settled (OQ-95 answered, D29); no stacking limit; AA's own modifiers as master data the office edits, retires and reinstates; which Procedure is primary (Vanessa: the most expensive; Greg: the first in the list; the build keeps the first until someone changes it); base units when the primary is on a fixed price (OQ-132: the build bills none); concurrency: the office saves explicitly and every save is one change set; handling two sources editing at once is Future Work with the automated integrations (US-02.5.6), and the prototype applies each save in order, audited. Settled: the update email is drafted on demand and sent by hand from the office's own mail client in the first release, automatic sending later (OQ-82, US-02.3.5). Master data: whether surgeon rows with no title or surname should load (OQ-143) (a surgeon with no HPI CPN loads, OQ-129 answered); and whether recurring bookings join the seed spreadsheets (US-13.4.3's calendar schedules). Settled if asked: a Contract schedule upload is Future Work (OQ-100, answered 5 November), and master data loads once at go-live, then is kept by hand (US-13.4.3).</div>
+    <div class="beat"><h4>Optional close · what if something is not working? (Phase 43b, about 2 minutes)</h4>
+      <div class="row"><span class="k">Click</span><ul class="action-list"><li>After Reset the clock is 8:00am, so every panel reads "Closed, opens 8:30am": use the clock menu's <strong>+1 hour</strong> first for Open now.</li><li>Mobile <strong>More</strong> tab &#8594; the <strong>Help</strong> card (support line number, <strong>Get help</strong>): a bottom sheet with the status line, the help line 0800 787 286 (fictional), the hours "8:30am to 5:00pm NZT, Monday to Friday, excluding New Zealand public holidays", the response table and the request form (Subject, Priority P1 to P4, Description, <strong>Send request</strong>). Your requests lists Dr Souter's own (TK0001 Forgot my password, closed; TK0003 Wording on the Accounts page, logged, P4). Web has Help in the top nav before her name, as a side panel.</li><li>Admin &#8594; <strong>Help</strong> at the foot of the side nav: tabs <strong>Help line</strong> and <strong>Product support</strong>, and Every request with the requester's name. On Product support, Kind offers Incident, Fix, Change and New feature; New feature reads "Goes to the product owner or the development team, to plan." (TK0004 Export the Day view to a spreadsheet, logged).</li><li>Demo actions &#8594; <strong>Raise out of hours</strong> (Ordinary request, Security breach or Platform offline): the clock moves forward to 7:00pm on the next weekday and a sample help-line request is raised. Ordinary reads "Not answered out of hours; picked up at the next opening", no respond-by; a security breach or platform offline is P1, due within the hour. <strong>Advance ticket</strong> plays Stratos responding, then closing, the newest open request on the open tab.</li><li>On Product support, Demo actions &#8594; <strong>Raise ticket on a public holiday</strong>: the clock moves to 10:00am Labour Day, Mon 26 Oct 2026, and a P2 incident reads Awaiting AA's approval; <strong>AA approves call-out</strong> (office stand-in: AA tells Stratos outside the app) turns it to Call-out approved.</li></ul></div>
+      <div class="row"><span class="k">Say</span><span class="say">"If something is not working, Help is in every app: the phone line, the hours and a request form, and every request is tracked to a response time. For AA there is a second route, product support, where a feature we do not have yet goes to the product owner to plan. Out of hours only a security breach or the platform being offline is answered, and a public-holiday call-out happens only with AA's approval."</span></div>
+      <div class="row"><span class="k">Expect</span><span>One Simulated badge, "Simulated: how Stratos' support works is the real service's, not this prototype's.", and an "Our reading, to confirm with AA" caption. A new request is TK0006. The clock only moves forward; Reset restores 8:00am Tue 21 Jul.</span></div>
+    </div>
+    <div class="callout warn">Discovery: the hours are the standard terms (8:30am to 5:00pm, Monday to Friday, national public holidays excluded, so a regional anniversary day is a working day); whether cover starts at 8:00am is open for Vanessa; response clocks run in business hours; Christmas and New Year cover (24 December to 6 January) on product support is limited, best effort.</div>
   </div></details>
 
   <h2>Recommended run orders</h2>
@@ -2060,6 +2090,12 @@
       demand, by the office, and marked Provisional (to confirm with AA). Should it run on a schedule? Hospitals
       get updates twice a day. Should an NHI entered while the Hub is down be marked unverified? Today it saves
       as typed, as long as it is valid.</p></div>
+    <div class="card"><h3>17 · Support hours and cover</h3><p style="font-size:14px">The hours are the standard
+      terms: 8:30am to 5:00pm NZT, Monday to Friday, excluding New Zealand public holidays, on both the help line
+      and product support. Open for Vanessa: whether cover starts at 8:00am. Our reading, to confirm with AA:
+      national public holidays only (a regional anniversary day is a working day); response clocks run in business
+      hours; Christmas and New Year cover, 24 December to 6 January, is limited and best effort on product support.
+      After Reset the clock is 8:00am, so the line reads closed until +1 hour.</p></div>
   </div>
 
   <h2>Likely evaluator questions</h2>
@@ -2149,6 +2185,14 @@
     how anaesthetists sign in is deferred to the end of discovery (OQ-83). The identity provider, MFA, single
     sign-on and biometrics are still to be decided. The audit logs every sign-in, refusal and sign-out: "Signed in", "Sign-in failed"
     and "Signed out" rows on Admin Audit (Entity type account).</p></div></details>
+  <details><summary>What if something is not working?</summary><div class="details-body">
+    <p>Help in any app: the help line's phone number, its hours and a request form, with each request tracked to its
+    respond-by time. For AA there is a second route, Product support on Admin, for incidents, fixes, changes and new
+    features: a feature we do not have yet goes to the product owner, to plan. The hours are the standard terms, 8:30am
+    to 5:00pm, Monday to Friday, excluding public holidays; whether cover starts at 8:00am is an open question for
+    Vanessa. Out of hours only a security breach or the platform being offline is answered on the help line, product
+    support is best effort, and a public-holiday call-out happens only with AA's approval. After Reset the clock is
+    8:00am, so the line reads closed until +1 hour.</p></div></details>
 
   <div class="callout brand" style="margin-top:24px"><strong>One-line close.</strong> The prototype
   demonstrates a single audited flow from a changing theatre schedule to captured clinical billing inputs,

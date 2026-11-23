@@ -301,6 +301,49 @@ export interface PatientCareSlice {
 }
 
 /**
+ * Support (catch-up Phase 43b; US-15.0.8, US-15.0.9): the help line for app
+ * users and product support for AA. A prototype-side record (no DM row): one
+ * ticket per request, tracked Logged, Responded, Closed. The rules (hours,
+ * response tables, cover) live in `domain/support.ts`.
+ */
+export type SupportChannel = 'helpLine' | 'productSupport'
+export type SupportPriority = 'P1' | 'P2' | 'P3' | 'P4'
+/** A help-line ticket is a `request`; the other four kinds are product support's. */
+export type SupportTicketKind = 'request' | 'incident' | 'fix' | 'change' | 'newFeature'
+export type SupportCover = 'inHours' | 'afterHours' | 'publicHoliday' | 'christmas'
+export type SupportTicketStatus = 'logged' | 'responded' | 'closed'
+/** Out of hours on the help line, the only two answered. */
+export type SupportReason = 'securityBreach' | 'platformOffline'
+/** `TK0001`; runtime allocation through `ID_FORMATS.supportTicket`. */
+export type SupportTicketId = string
+
+export interface SupportTicket {
+  id: SupportTicketId
+  channel: SupportChannel
+  kind: SupportTicketKind
+  priority: SupportPriority
+  subject: string
+  description: string
+  /** Out of hours on the help line: what is happening (only these two are answered after hours). */
+  reason?: SupportReason
+  raisedBy: { who: string; app: 'mobile' | 'web' | 'admin' | 'pwa' }
+  raisedAtISO: IsoDateTime
+  cover: SupportCover
+  /** Absent where no response time is guaranteed. */
+  respondByISO?: IsoDateTime
+  status: SupportTicketStatus
+  respondedAtISO?: IsoDateTime
+  closedAtISO?: IsoDateTime
+  /** Product support on a public holiday: the call-out waits for AA's approval. */
+  callOut?: 'awaitingApproval' | 'approved'
+}
+
+/** The support slice (catch-up Phase 43b): a small fixed seed of five tickets. */
+export interface SupportSlice {
+  tickets: Record<SupportTicketId, SupportTicket>
+}
+
+/**
  * A postal address in the NZ Post address standard (US-11.2.3; Greg, 28
  * October): an address line (a street address, PO Box or Private Bag), an
  * optional second line (unit, building or RD), suburb, town or city and a

@@ -31,6 +31,7 @@ import { SideNav, type NavSection } from './components/SideNav'
 import { type SortMode } from './components/DayNav'
 import { SlotDrawer } from './components/SlotDrawer'
 import { DraftListDrawer } from './components/DraftListDrawer'
+import { SupportSidePanel } from '../../shared/support'
 import { draftListCount } from '../../shared/scheduleTerms'
 import type { AdminOutletContext } from './outlet'
 import { surnameOf } from './util'
@@ -250,6 +251,8 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   // The named office user the app acts as (catch-up Phase 35; Switch office user, a demo stand-in for sign-in).
   const officeUser = useAppStore((s) => s.shell.officeUser)
   const officeActor = useMemo(() => officeActorOf({ officeUser }), [officeUser])
+  // The support panel (catch-up Phase 43b): Help at the foot of the side nav, Help line and Product support.
+  const [helpOpen, setHelpOpen] = useState(false)
   // The ledger's checks, a held unmatched receipt among them (catch-up Phase 36): the amber Ledger badge.
   const ledgerCount = useMemo(() => ledgerAttentionCount({ billing }), [billing])
   // Live conflicts from today to the horizon (catch-up Phase 30): the amber Conflicts badge.
@@ -326,6 +329,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   return (
     <div ref={shellRef} style={{ display: 'flex', minHeight: '100%', minWidth: 1320, background: neutral.bg, color: neutral.ink }}>
       <SideNav
+        onHelp={() => setHelpOpen(true)}
         active={sectionForPath(pathname)}
         reviewBadge={reviewLists.length + eventsAwaiting}
         billingBadge={exceptionCount}
@@ -341,6 +345,8 @@ function AdminShell({ todayISO }: { todayISO: string }) {
       <div style={{ flex: 1, minWidth: 0, padding: `24px ${ADMIN_PAGE_HORIZONTAL_PADDING}px 40px`, display: 'flex', flexDirection: 'column', gap: 16 }}>
         <Outlet context={context} />
       </div>
+
+      <SupportSidePanel open={helpOpen} onClose={() => setHelpOpen(false)} actor={officeActor} app="admin" />
 
       {drawerDraftListId !== null && (
         <DraftListDrawer
