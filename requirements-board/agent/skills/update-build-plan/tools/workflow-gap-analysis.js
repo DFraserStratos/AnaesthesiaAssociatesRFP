@@ -19,9 +19,15 @@ export const meta = {
  *   runThemes: false  skip the themes summary (assemble-gaps.mjs --merge keeps the earlier one)
  *   baseline: <sha>   the plan's previous catalogue commit: the delta then works as an update of the
  *                     existing analysis/domain-model-delta.md, from the domain model's diff, keeping ids
+ * and what is missing on disk (plan-state.mjs prints both under "analysis"; a workflow cannot read files):
+ *   missingMaps: [keys]  map files that do not exist: their mappers run even with reuseMaps (nothing to reuse)
+ *   deltaMissing: true   analysis/domain-model-delta.md does not exist: the delta runs even with
+ *                        runDelta: false, and is written fresh, not as an update
  */
 const ROOT = args.root
-const OPT = { reuseMaps: !!args.reuseMaps, runDelta: args.runDelta !== false, runReverse: args.runReverse !== false, runThemes: args.runThemes !== false }
+const MISSING_MAPS = new Set(Array.isArray(args.missingMaps) ? args.missingMaps.map(String) : [])
+const DELTA_MISSING = !!args.deltaMissing
+const OPT = { reuseMaps: !!args.reuseMaps, runDelta: args.runDelta !== false || DELTA_MISSING, runReverse: args.runReverse !== false, runThemes: args.runThemes !== false }
 const EPICS = args.epics.map(e => ({
   ...e,
   items: e.items.map(s => { const [id, status, oq] = s.split('|'); return { id, status, type: id.startsWith('EP') ? 'epic' : id.startsWith('FT') ? 'feature' : 'story', title: '', oqs: oq ? oq.split(',') : [] } }),
@@ -168,7 +174,9 @@ const MAPS = GA.maps || [{ key: 'app', scope: `${(C.appCode || []).join(', ') ||
 phase('Map')
 log(`${EPICS.reduce((n, e) => n + e.items.length, 0)} items across ${EPICS.length} epics; options ${JSON.stringify(OPT)}; catalogue @ ${args.commit.slice(0, 7)}`)
 
-const mapJobs = MAPS.map(mp => () => agent(
+// With reuseMaps, only the maps that were never written are made.
+const MAPS_TO_RUN = OPT.reuseMaps ? MAPS.filter(mp => MISSING_MAPS.has(String(mp.key))) : MAPS
+const mapJobs = MAPS_TO_RUN.map(mp => () => agent(
   `${CTX}
 
 TASK: write a navigational map of one area of the ${APP} to the file "${ROOT}/${AN}/${APP}-map-${mp.key}.md".
@@ -184,9 +192,11 @@ Final answer: 3-5 lines saying what you covered and anything you could not map.`
   { label: `map:${mp.key}`, phase: 'Map', model: M, effort: 'medium' },
 ))
 
-const STABLE_IDS = args.baseline
+const STABLE_IDS = args.baseline && !DELTA_MISSING
   ? `This is an UPDATE of "${ROOT}/${AN}/domain-model-delta.md" (written against catalogue ${args.baseline.slice(0, 7)}). Read it first, then the domain model's diff: node ${T}/plan-state.mjs${PF} --to ${args.commit.slice(0, 7)} --diff domain-model (and --diff <IDs> for the items it names). Re-check every earlier delta against the current catalogue and code, but spend your reading on what changed. IDS ARE STABLE: the build plan cites deltas by number. A delta that continues an earlier one (same entity, relationship or lifecycle concern, even if the reading moved) keeps its id; a new delta takes the next number above the highest id ever used; an earlier id with no delta now is listed in the intro as closed, merged into DM-xx, or dropped, with why. Never renumber.`
-  : 'Number the deltas DM-01 upward.'
+  : args.baseline
+    ? `There is no earlier "${ROOT}/${AN}/domain-model-delta.md": write it fresh. Number the deltas above the highest DM id the plan already uses (query "${ROOT}/${C.plan || 'docs/build-plan'}/gaps.json" dataModelDeltas and grep the phase docs; none: DM-01), so no id the plan cites is reused.`
+    : 'Number the deltas DM-01 upward.'
 
 const deltaJob = () => agent(
   `${CTX}
@@ -202,10 +212,11 @@ Return the structured deltas (verify_outcome and verify_note as "").`,
   { label: 'delta:domain-model', phase: 'Map', model: M, effort: 'high', schema: DELTA },
 )
 
-const mapped = await parallel([...(OPT.reuseMaps ? [] : mapJobs), ...(OPT.runDelta ? [deltaJob] : [])])
+const mapped = await parallel([...mapJobs, ...(OPT.runDelta ? [deltaJob] : [])])
 const deltaDraft = OPT.runDelta ? mapped[mapped.length - 1] : null
 const mapFiles = MAPS.map(mp => `"${ROOT}/${AN}/${APP}-map-${mp.key}.md"`).join('\n')
-log(`maps ${OPT.reuseMaps ? 'reused' : `done (${mapped.slice(0, OPT.runDelta ? -1 : undefined).filter(Boolean).length}/${MAPS.length})`}; ${deltaDraft ? deltaDraft.deltas.length : 0} draft model deltas`)
+const mapsMade = mapped.slice(0, OPT.runDelta ? -1 : undefined).filter(Boolean).length
+log(`maps ${!MAPS_TO_RUN.length ? 'reused' : OPT.reuseMaps ? `reused, ${mapsMade}/${MAPS_TO_RUN.length} missing made (${MAPS_TO_RUN.map(mp => mp.key).join(', ')})` : `done (${mapsMade}/${MAPS.length})`}; ${deltaDraft ? deltaDraft.deltas.length : 0} draft model deltas${DELTA_MISSING ? ' (delta file was missing: written fresh)' : ''}`)
 
 const READ_MAPS = `First read ALL of these ${APP} map files (they index where things are):\n${mapFiles}\nIf a map file is missing, explore the code directly.`
 

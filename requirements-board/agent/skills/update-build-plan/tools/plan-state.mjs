@@ -14,8 +14,10 @@
 // (the requirements folder's notes/ and changes/), whether domain-model.md changed, whether app code
 // changed (config `appCode`: the code maps are then stale), the plan's phases already built (progress
 // file DONE rows or Phase entries, numbered from config `firstPhase`, letters included) and those in
-// progress, the planning units (<plan>/units.json), the phases' current covers, and the coverage check
-// (every unit in exactly one phase or parked).
+// progress, the planning units (<plan>/units.json), the phases' current covers, the coverage check
+// (every unit in exactly one phase or parked), and under "analysis" the gap analysis's files missing on
+// disk (missingMaps: config gapAnalysis.maps keys with no analysis/<appNoun>-map-<key>.md; deltaMissing:
+// no analysis/domain-model-delta.md), passed to workflow-gap-analysis.js as they are.
 import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
@@ -93,6 +95,13 @@ if (argv.includes('--diff')) {
 }
 
 
+// The gap analysis's own files: a map or delta file that was never written cannot be reused or updated.
+const mapKeys = (config.gapAnalysis.maps || [{ key: 'app' }]).map(m => String(m.key))
+const analysis = {
+  missingMaps: mapKeys.filter(k => !fs.existsSync(path.join(CU, 'analysis', `${config.appNoun}-map-${k}.md`))),
+  deltaMissing: !fs.existsSync(path.join(CU, 'analysis', 'domain-model-delta.md')),
+}
+
 console.log(JSON.stringify({
   baseline: plan.commit, to: to || 'working tree',
   changedItems: changes.items.map(c => ({ id: c.id, change: c.change, status: status(c.id) })),
@@ -108,4 +117,5 @@ console.log(JSON.stringify({
   phases: plan.phases.map(p => ({ num: p.num, title: p.title, file: p.file, covers: p.covers })),
   parked: plan.parked,
   coverage,
+  analysis,
 }, null, 1))

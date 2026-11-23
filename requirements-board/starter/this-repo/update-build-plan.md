@@ -6,8 +6,9 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
 - `BOARD` = `requirements-board`; `REQ` = `requirements-board/requirements`; `T` =
   `requirements-board/agent/skills/update-build-plan/tools` (the tools below). Paths are relative to
   the repo root.
-- `PLAN` = `docs/build-plan`. There is no plan yet: the first run takes "Fresh plan" and creates the
-  folder, its `plan.config.json` and its `README.md`. Once it exists it is the repo's only
+- `PLAN` = `docs/build-plan`. There is no plan yet: the first run asks whether to grade everything
+  ("Fresh plan") or seed an empty plan at a commit ("Seed an empty plan"), and creates the folder, its
+  `plan.config.json` and its `README.md`. Once it exists it is the repo's only
   `plan.config.json`, so the tools find it without `--plan`. Phases are numbered from 01.
 - The app: `<TODO: your app folder>` (set `app` and `appCode` in `PLAN/plan.config.json`). No progress file
   yet: until there is one, `PLAN/status.json` (`done`, `in_progress`) says which phases are built.
