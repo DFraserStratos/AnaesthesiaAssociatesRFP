@@ -1,5 +1,10 @@
 # Build lanes: two worktrees, built in waves
 
+> **Closed (the owner, 23 November 2026).** The lanes ran Waves 1 to 7 (Phases 26 to U7). After Wave 7
+> was on `master`, every lane worktree and branch (and the board-fix and U2/U3 worktrees) was removed.
+> Phase 44 and anything after it run as ordinary single sessions in the main folder, on `master`, on the
+> usual ports: ignore this file's rules and lane prompts. It stays as the record of how the waves ran.
+
 The owner's decision of 18 November 2026: from Phase 26 on, the catch-up is built by **two sessions
 at once**, each in its own git worktree (a **lane**), working through a short queue of phases (a
 **wave**). When both lanes finish a wave, the session that finishes second joins them, checks the
@@ -44,7 +49,7 @@ and lock.
 Each lane runs its queue in order, one phase at a time. A phase is **complete on a lane** when the
 lane branch holds a commit whose subject starts `<id> complete:`.
 
-### Current wave: Wave 8
+### Current wave: none (lanes closed; Wave 8 became 44 alone, in the main folder)
 
 Wave 1 (Lane A 26, 27, 27a; Lane B 32d, 33) was joined on 18 November 2026, Wave 2 (Lane A 25a, 36;
 Lane B 33a, 17b) and Wave 3 (Lane A 37, 38; Lane B 34, 35) on 19 November 2026, Wave 4 (Lane A

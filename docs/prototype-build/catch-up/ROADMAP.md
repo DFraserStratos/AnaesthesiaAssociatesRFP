@@ -865,7 +865,9 @@ under Sequencing rules.
   Lane A 26, 27, 27a; Lane B 32d, 33 (32d and 33 run ahead of 25a and 17b, which the rule below
   orders by preference, not dependency). Keep this rule, LANES.md and its lane structure in every
   re-plan (an owner directive): check the current and next waves against the new dependencies and
-  record any change in LANES.md's wave tables.
+  record any change in LANES.md's wave tables. **Closed (the owner, 23 November 2026):** after Wave 7
+  the lanes, their worktrees and branches were removed; 44 runs alone in the main folder, and re-plans
+  no longer keep the lane structure.
 - **25a, 17b and 32d run after 27a and before Intake** (new 2026-11-18). Each follows up built phases
   for one group of the 18 November answers, so each runs before the phases that read what it changes:
   17b (no surgeons' rooms; the surgeon's contacts and the one email helper) before 34, 35, 40 and 42,

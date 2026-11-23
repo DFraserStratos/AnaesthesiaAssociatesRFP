@@ -22,9 +22,9 @@ the Vitest + Playwright suites are green.
 
 **The requirements catch-up is next.** `docs/prototype-build/catch-up/` holds a verified gap analysis
 between the prototype and the catalogue (at commit `63a4490`) and a build plan of phases 14 to 44 (55 phases, some lettered such as 15a, plus the UI unification track U1 to U7) to
-close it: start at its `README.md`, `ROADMAP.md` or `index.html` (kick-off prompts). From Phase 26 on it
-is built in two lanes (two git worktrees, two sessions) in waves: `catch-up/LANES.md` holds the current
-wave, the lane rules and the lane prompts, and overrides this file for a lane session. A catch-up phase
+close it: start at its `README.md`, `ROADMAP.md` or `index.html` (kick-off prompts). Phases 26 to U7
+were built in two lanes (two git worktrees, two sessions) in waves, recorded in `catch-up/LANES.md`; the
+lanes closed on 23 November 2026, so 44 runs as an ordinary session in the main folder. A catch-up phase
 session follows its kick-off prompt, which loads the `run-build-phase` skill (the lifecycle every
 phase shares: context pack, drift check, build, checks, review, screenshots, PROGRESS entry, and
 updating the plan page to name the next phase) and its phase doc; other work is still fixes, polish

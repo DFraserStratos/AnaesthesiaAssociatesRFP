@@ -4,32 +4,16 @@
     "phases": [
       "44"
     ],
-    "note": "Wave 8 of the build lanes (LANES.md): 44 alone, in Lane A (worktree AnaesthesiaAssociatesRFP-laneA, branch lane/a, ports 5273, 5274, 5280). Wave 7 (U7, the UI unification close-out) was joined on 23 November 2026 and is on master (PERSIST_VERSION 75): the U35 repeats on shared components, the guardrail test, the catalogue by family and the CLAUDE.md rule. Not captured yet: the owner tests first. Lane B has nothing queued; 44 regenerates every screenshot, so nothing runs beside it."
+    "note": "44 runs alone in the main folder, on master: the build lanes closed after Wave 7 (the owner, 23 November 2026; every lane worktree and branch removed). Wave 7 (U7, the UI unification close-out) is on master (PERSIST_VERSION 75): the U35 repeats on shared components, the guardrail test, the catalogue by family and the CLAUDE.md rule. Not captured yet: the owner tests first. 44 regenerates every screenshot, so nothing runs beside it."
   },
   "guidance": {
     "as_of": "2026-11-23",
-    "headline": "Start 44 now, alone in Lane A. U7 is joined: the UI unification is closed out with one shared component per job and a guardrail test.",
-    "headline_sub": "U7 built the U35 shared components, swept the leftovers onto them, regrouped the live catalogue by family and wrote the One component per job rule into CLAUDE.md; Wave 7 is on master (not yet pushed). Then 44 alone, the last phase.",
-    "parallel": "Wave 8 is one phase, 44, run alone in Lane A (its own worktree and ports): it rewrites the demo guide and regenerates every screenshot, so nothing runs beside it. Paste the Lane A prompt into a claude session; Lane B has nothing queued.",
+    "headline": "Start 44 now, the last phase, in the main folder. U7 is on master: the UI unification is closed out with one shared component per job and a guardrail test.",
+    "headline_sub": "U7 built the U35 shared components, swept the leftovers onto them, regrouped the live catalogue by family and wrote the One component per job rule into CLAUDE.md; it is on master (not yet pushed). The build lanes are closed: 44 is an ordinary single session.",
+    "parallel": "44 runs alone, in the main folder on master: it rewrites the demo guide and regenerates every screenshot, so nothing runs beside it. Copy its kick-off prompt into a fresh session.",
     "safe": {
-      "44": "Lane A, alone (Wave 8). Every dependency (every catch-up phase and U7) is done; Wave 7 is on master."
+      "44": "Every dependency (every catch-up phase and U7) is done and on master. Run it in the main folder; the lanes are closed."
     },
-    "wait": {},
-    "lanes": [
-      {
-        "name": "Lane A",
-        "where": "`AnaesthesiaAssociatesRFP-laneA`, branch `lane/a`, ports 5273, 5274, 5280, usually `claude`",
-        "queue": [
-          "44"
-        ],
-        "prompt_file": "lanes/lane-a.prompt.md"
-      },
-      {
-        "name": "Lane B",
-        "where": "`AnaesthesiaAssociatesRFP-laneB`, branch `lane/b`, ports 5373, 5374, 5380, usually `claude2`",
-        "queue": [],
-        "prompt_file": "lanes/lane-b.prompt.md"
-      }
-    ]
+    "wait": {}
   }
 }

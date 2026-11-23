@@ -11,9 +11,8 @@ Catalogue snapshot: `63a4490` (2026-11-18: Donald's board answers of 17 and 18 N
 
 - **[index.html](index.html)** is the build plan page: themes, the gap at a glance, every phase with
   its kick-off prompt (copy, paste into a fresh Claude Code session).
-- **[LANES.md](LANES.md)**: from Phase 26 on, the build runs in two lanes (two git worktrees, two
-  sessions) in waves. It holds the current wave, the lane rules and the two lane prompts, which wrap
-  the phase kick-off prompts.
+- **[LANES.md](LANES.md)**: Phases 26 to U7 were built in two lanes (two git worktrees, two sessions)
+  in waves. The lanes closed on 23 November 2026; 44 runs as an ordinary session in the main folder.
 - **[ROADMAP.md](ROADMAP.md)** is the phase list, dependencies and milestones.
 - **[phases/](phases/)** has one detailed plan per phase (`phase-NN-<slug>.md`) and its kick-off prompt
   (`phase-NN-<slug>.prompt.md`).
