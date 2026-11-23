@@ -44,28 +44,26 @@ and lock.
 Each lane runs its queue in order, one phase at a time. A phase is **complete on a lane** when the
 lane branch holds a commit whose subject starts `<id> complete:`.
 
-### Current wave: Wave 7
+### Current wave: Wave 8
 
 Wave 1 (Lane A 26, 27, 27a; Lane B 32d, 33) was joined on 18 November 2026, Wave 2 (Lane A 25a, 36;
 Lane B 33a, 17b) and Wave 3 (Lane A 37, 38; Lane B 34, 35) on 19 November 2026, Wave 4 (Lane A
 38b, 39; Lane B 42, 43) and Wave 5 (Lane A 39a, 41; Lane B 39b, 40) on 20 November 2026, and Wave 6
-(Lane A 40a; Lane B 43a, 43b) on 23 November 2026; `master` holds all six
-(`PERSIST_VERSION` 75).
+(Lane A 40a; Lane B 43a, 43b) and Wave 7 (Lane A U7, alone) on 23 November 2026; `wave/7` holds all
+seven (`PERSIST_VERSION` 75).
 
 | Lane | Queue | Sessions |
 |---|---|---|
-| A | U7 (alone) | as its phase doc says |
+| A | 44 (alone) | as its phase doc says |
 | B | nothing | |
 
-Why this split: U7 (UI unification, the last U phase) needs every phase Wave 6 finished (40a, 43b and
-phases already joined), and a U phase never runs beside a catch-up phase, so it runs alone. Lane A
-takes it, as the "Next waves" table planned. 44 needs U7, so it runs alone afterwards.
+Why this split: 44 (the demo guide rewrite and the final screenshots) depends on every catch-up phase
+and U7, all built, and it regenerates every screenshot, so nothing runs beside it. Lane A takes it.
 
-**A wave of one lane.** There is no other lane to merge. When U7 is complete, the Lane A session does
-"The join" itself: at step 2 there is no other lane's phase to look for, so it goes straight to step 4,
-claims `wave/7` from `lane/a`, skips `git merge lane/b` (lane/b holds nothing lane/a lacks once both
-are fast-forwarded to Wave 6's `master`), merges `master` if it moved, and carries on from step 5.
-Lane B is not started for Wave 7: if its prompt is pasted, the session finds an empty queue, writes
+**A wave of one lane**, as Wave 7 was. When 44 is complete, the Lane A session does "The join" itself:
+at step 2 there is no other lane's phase to look for, so it goes straight to step 4, claims `wave/8`
+from `lane/a`, skips `git merge lane/b`, merges `master` if it moved, and carries on from step 5.
+Lane B is not started for Wave 8: if its prompt is pasted, the session finds an empty queue, writes
 `wave-done` in `B.status` and stops.
 
 ### Next waves (provisional)
@@ -75,7 +73,7 @@ rewrites "Current wave" above.
 
 | Wave | Lane A | Lane B |
 |---|---|---|
-| 8 | 44 (alone) | |
+| none planned | 44 is the last phase of the plan | |
 
 Rules for choosing a wave: every phase's `depends_on` is built or in an earlier wave (never in the
 other lane's queue for the same wave). 25a keeps to Lane A, because it edits 25's lock snapshot and
@@ -178,7 +176,7 @@ When your last phase in the wave is complete:
      seed, never added up. The S1 to S5 golden tests pass.
    - No hook was lost: `git diff master...wave/<n> -- aa-prototype | grep '^-.*data-'`, and account
      for every line.
-   - Where the lanes meet, check in the running app on your ports. For Wave 7 (one lane): U7's migrated screens in all three apps, including 43b's support panel on the shared `SidePanel` (`underHarness`) and the PWA Help sheet, and 43a's InfoTips and first-run cards. (Wave 6's checks, done at its join: 40a's NHI lookup on the add-booking form 43a simplified, and on the Add NHI sheet; a looked-up NHI reusing the single record; sign-in and a framed Reset landing on the patient record route; 43b's help line on the PWA beside 40's and 41's stand-ins.) (Wave 5's checks, done at its join: 39a's payment run nets a
+   - Where the lanes meet, check in the running app on your ports. For Wave 8 (one lane): 44's rewritten run sheet against the running app, beat by beat, and its `demoGuideSync.test.ts`. (Wave 7's checks, done at its join: U7's migrated screens in all three apps, 43b's support panel on the shared `SidePanel` and the PWA Help sheet, 43a's InfoTips and first-run cards.) (Wave 6's checks, done at its join: 40a's NHI lookup on the add-booking form 43a simplified, and on the Add NHI sheet; a looked-up NHI reusing the single record; sign-in and a framed Reset landing on the patient record route; 43b's help line on the PWA beside 40's and 41's stand-ins.) (Wave 5's checks, done at its join: 39a's payment run nets a
      39 negative invoice beside 39b's new events (a post-op event invoiced, then credited, nets in the
      next run); 41's prepayment cancellation and refund on a Booking whose patient 40 now requires an
      NHI for; 40's patient view and balance warning after a 39a run and a 41 refund; Load full-scale

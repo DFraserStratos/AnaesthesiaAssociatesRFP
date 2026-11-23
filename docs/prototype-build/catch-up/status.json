@@ -2,27 +2,25 @@
   "in_progress": [],
   "next": {
     "phases": [
-      "U7"
+      "44"
     ],
-    "note": "Wave 7 of the build lanes (LANES.md): U7 alone, in Lane A (worktree AnaesthesiaAssociatesRFP-laneA, branch lane/a, ports 5273, 5274, 5280). Wave 6 (Lane A 40a; Lane B 43a, 43b) was joined on wave/6 on 23 November 2026 (PERSIST_VERSION 75): NHI lookup and identity standards, the simulated PWA sign-in and simple anaesthetist screens with point-of-need help, and the help line and product support. Lane B has nothing queued: a U phase never runs beside a catch-up phase. Then 44 alone."
+    "note": "Wave 8 of the build lanes (LANES.md): 44 alone, in Lane A (worktree AnaesthesiaAssociatesRFP-laneA, branch lane/a, ports 5273, 5274, 5280). Wave 7 (U7, the UI unification close-out) was joined on wave/7 on 23 November 2026 (PERSIST_VERSION 75): the U35 repeats on shared components, the guardrail test, the catalogue by family and the CLAUDE.md rule. Not captured yet: the owner tests first. Lane B has nothing queued; 44 regenerates every screenshot, so nothing runs beside it."
   },
   "guidance": {
     "as_of": "2026-11-23",
-    "headline": "Start U7 now, alone in Lane A. Wave 6 is joined: NHI lookup, sign-in and point-of-need help, and the help line and product support.",
-    "headline_sub": "Wave 6 (Lane A 40a; Lane B 43a, 43b) is joined on wave/6 and not yet pushed. Wave 7 is U7 alone in Lane A (paste the Lane A prompt); Lane B waits. Then 44 alone.",
-    "parallel": "Wave 7 is one phase, U7, run alone in Lane A (its own worktree and ports): a U phase never runs beside a catch-up phase. Paste the Lane A prompt into a claude session; Lane B has nothing queued. The same prompt starts, resumes and joins.",
+    "headline": "Start 44 now, alone in Lane A. U7 is joined: the UI unification is closed out with one shared component per job and a guardrail test.",
+    "headline_sub": "U7 built the U35 shared components, swept the leftovers onto them, regrouped the live catalogue by family and wrote the One component per job rule into CLAUDE.md; Wave 7 is joined on wave/7 and not yet pushed. Then 44 alone, the last phase.",
+    "parallel": "Wave 8 is one phase, 44, run alone in Lane A (its own worktree and ports): it rewrites the demo guide and regenerates every screenshot, so nothing runs beside it. Paste the Lane A prompt into a claude session; Lane B has nothing queued.",
     "safe": {
-      "U7": "Lane A, alone (Wave 7). Every dependency (U6, 25a, 32d, 35, 38, 39a, 40a, 41, 43, 43b) is done; Wave 6 must be committed and on master first."
+      "44": "Lane A, alone (Wave 8). Every dependency (every catch-up phase and U7) is done; Wave 7 must be committed and on master first."
     },
-    "wait": {
-      "44": "Alone, after U7."
-    },
+    "wait": {},
     "lanes": [
       {
         "name": "Lane A",
         "where": "`AnaesthesiaAssociatesRFP-laneA`, branch `lane/a`, ports 5273, 5274, 5280, usually `claude`",
         "queue": [
-          "U7"
+          "44"
         ],
         "prompt_file": "lanes/lane-a.prompt.md"
       },
