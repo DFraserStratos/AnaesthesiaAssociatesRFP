@@ -68,7 +68,7 @@ export function contractPickRefusal(
   const limit = contractChangeRefusal(railActorOf(actor), state.masters, current?.governingContractId, contractId, opts)
   if (limit !== null) return refuse(limit.code, limit.message)
   if (opts.enteredPrice !== undefined && contract.pricing.kind !== 'open') {
-    return refuse('notOpenPrice', 'Only an Other price takes a typed amount.')
+    return refuse('notOpenPrice', 'This Contract has its own price, so it takes no typed amount.')
   }
   return null
 }

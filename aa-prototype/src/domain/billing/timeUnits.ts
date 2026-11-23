@@ -1,6 +1,6 @@
 /**
- * Tiered time units (T), held as data (catch-up Phase 19a; US-05.2.2, D25,
- * OQ-75; AR-16 `#time-units`).
+ * Tiered time units (T), held as data (catch-up Phase 19a; US-05.2.2, D25;
+ * OQ-50 and OQ-75 answered: the RVG rule is the only source; AR-16 `#time-units`).
  *
  * The anaesthetist enters only the anaesthetic start and finish; the system
  * works out the units from the RVG time rule in `masters.rvgTimeRule`: 1 unit

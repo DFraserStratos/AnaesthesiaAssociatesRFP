@@ -15,7 +15,7 @@ export const FUTURE_SCOPE_TITLE = 'Future scope: HL7 and FHIR'
 
 /** The one line under the header: what is Future scope and what is in scope today. */
 export const FUTURE_SCOPE_LINE =
-  "Automatic hospital sync, HL7 v2, FHIR R4, near real time messaging, retries with a dead-letter queue and per-hospital mapping are Future scope, shown for discussion. In scope today: St George's and Southern Cross files imported, and the rooms' PDF lists, on Admin Intake, matched by the office."
+  "Automatic hospital feeds, HL7 v2, FHIR R4, near real time messaging, retries with a dead-letter queue and per-hospital mapping are Future scope, shown for discussion. In scope today: St George's and Southern Cross files imported, and the rooms' PDF lists, on Admin Intake, matched by the office."
 
 export const FUTURE_SCOPE_PAGES = [
   { path: '/demo/integrations', label: 'Simulator' },

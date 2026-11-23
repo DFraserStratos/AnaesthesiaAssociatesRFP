@@ -178,7 +178,7 @@ function FeeInvoicesTab({ actor }: { actor: Actor }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12.5, lineHeight: 1.5, color: neutral.slate, maxWidth: 780 }}>
         <span data-testid="aa-fee-count-rule">
           Counts one BCTI per receivable invoice, once, against the anaesthetist who did the procedure, in the
-          month its invoice is paid in full. Being confirmed with AA's accountant.
+          month its invoice is paid in full. Provisional: being confirmed with AA's accountant (OQ-29, OQ-60).
         </span>
         <span>Always a separate invoice, paid into AA's own account and never deducted from a payment to the anaesthetist.</span>
       </div>

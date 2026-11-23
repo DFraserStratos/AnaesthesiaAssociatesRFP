@@ -11,10 +11,12 @@ test('S3: the nib invoice opens its routed ACCREC and ACCPAY pair', async ({ pag
   // Stage both S3 Lists from a clean reset.
   await page.goto('/demo/control')
   await page.waitForLoadState('networkidle')
-  const scenario = page.getByText('S3 · Money end-to-end', { exact: true }).locator('..').locator('..').locator('..')
+  const scenario = page.locator('[data-scenario="S3"]')
   await scenario.getByRole('button', { name: 'Jump', exact: true }).click()
   await scenario.getByRole('button', { name: 'Confirm jump' }).click()
-  await scenario.getByRole('button', { name: 'Go to Admin app' }).click()
+  // Beat 1's link opens the Mon 20 Jul AM List on Admin Review (catch-up Phase 44).
+  await scenario.getByRole('button', { name: 'Beat 1 · Admin Review' }).click()
+  await expect(page).toHaveURL(/\/admin\/review\/L-34821-2026-07-20-AM$/)
 
   // Authorise the Forte AM List and the St George's PM List.
   await page.getByRole('button', { name: /Review queue/ }).first().click()

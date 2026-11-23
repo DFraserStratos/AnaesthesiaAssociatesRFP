@@ -110,14 +110,13 @@ export function DemoXero() {
         Xero holds no NHI and no other personal information about a patient or a person paying for one.
         Each such contact is known to Xero only by a hidden internal ID in ContactNumber, shown as its
         name, and by Xero's own ContactID, which link each transaction back to its invoice in the billing
-        system. Patient lookup happens in the billing system, never in Xero. Confirmed with AA.
+        system. Patient lookup happens in the billing system, never in Xero.
       </Callout>
-      <Callout tone="warn" title="Duplicate-invoice-number-prevention (mandated Xero org setting)" shot="xero-duplicate-number-policy">
-        The RFP requires the Xero organisation setting that prevents duplicate invoice numbers, so the
-        Billing Engine's unique InvoiceNumber can be the reliable matching key for remittance
-        reconciliation, which Xero's bank reconciliation and remittance add-on do, not the Billing Engine
-        (see{' '}<Link to="/demo/xero/bank" style={inlineLinkStyle}>Bank reconciliation</Link>). Configuring this
-        in the AA Xero org is an open item to confirm in discovery.
+      <Callout tone="warn" title="No duplicate invoice numbers (a required Xero setting)" shot="xero-duplicate-number-policy">
+        The AA Xero organisation needs the setting that prevents duplicate invoice numbers, so the Billing
+        Engine's unique InvoiceNumber is a reliable matching key for remittance reconciliation.
+        Xero's bank reconciliation and remittance add-on do that matching, not the Billing Engine
+        (see{' '}<Link to="/demo/xero/bank" style={inlineLinkStyle}>Bank reconciliation</Link>).
       </Callout>
 
       <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${neutral.line}` }}>

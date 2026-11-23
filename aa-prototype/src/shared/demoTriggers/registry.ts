@@ -676,6 +676,12 @@ function firstOpenInvoicePath(state: AppState): string | null {
   return first === undefined ? null : `/admin/invoices/${first.invoiceId}`
 }
 
+/** The same open invoice's Xero pair, for the entries that show only there (catch-up Phase 44's audit). */
+function firstOpenXeroPairPath(state: AppState): string | null {
+  const first = openAccRecs(state)[0]
+  return first === undefined ? null : `/demo/xero/invoices/${first.accRecId}`
+}
+
 // ---------------------------------------------------------------------------
 // Sample warnings (catch-up Phase 15a): bodies in `store/warningSamples.ts`
 // ---------------------------------------------------------------------------
@@ -1350,7 +1356,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         ? { ok: true, message: `${out.value.invoiceNumber} now totals ${formatCurrency(out.value.total)} in Xero. The engine still holds the amount it issued and finds out at the next poll (Run reconciliation poll, or Next day).` }
         : { ok: false, message: out.message }
     },
-    indexPath: firstOpenInvoicePath,
+    indexPath: firstOpenXeroPairPath,
     indexEmptyReason: 'No open invoice yet: authorise a List first',
   },
   {
@@ -1368,7 +1374,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         ? { ok: true, message: `${out.value.invoiceNumber} is voided in Xero. The engine does not know yet: run the reconciliation poll (or Next day) and it is flagged on the Billing monitor.` }
         : { ok: false, message: out.message }
     },
-    indexPath: firstOpenInvoicePath,
+    indexPath: firstOpenXeroPairPath,
     indexEmptyReason: 'No open invoice yet: authorise a List first',
   },
   {
@@ -1407,14 +1413,14 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
             : `Paid ${amount} in Xero in ${week}'s payment run. The bill-paid webhook told the engine, which recorded the disbursement.`,
       }
     },
-    indexPath: firstOpenInvoicePath,
+    indexPath: firstOpenXeroPairPath,
     indexEmptyReason: 'No open invoice yet: authorise a List first',
   },
   {
     id: 'xero-bulk-remittance',
     label: 'Simulate bulk hospital remittance',
     description:
-      "St George's pays several invoices in one deposit. Xero's remittance add-on matches the lines by invoice number and the engine learns each payment by webhook; one line quotes a mistyped number and waits in Bank reconciliation for the office.",
+      "St George's pays several invoices with one bank payment. Xero's remittance add-on matches the lines by invoice number and the engine learns each payment by webhook; one line quotes a mistyped number and waits in Bank reconciliation for the office.",
     screen: 'Xero simulation · invoices',
     routes: ['/demo/xero/invoices', XERO_BANK],
     surfaces: ['bar'],

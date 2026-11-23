@@ -39,16 +39,16 @@ describe('the pre-op or post-op sheet', () => {
     expect(sheet.querySelectorAll('[data-shot="acc-preop-preset"]')).toHaveLength(3)
     // OQ-12's open-question caption is the office's (catch-up Phase 43a): the anaesthetist sees the presets alone.
     expect(within(sheet).queryByText("Codes to confirm with AA's accountant (OQ-12).")).toBeNull()
-    expect(sheet.textContent).not.toMatch(/[–—]|Our reading/)
+    expect(sheet.textContent).not.toMatch(/[–—]|unless you change it/)
   })
 
-  it("the office's sheet keeps the OQ-12 caption and the same-as reading (Phase 43a)", () => {
+  it("the office's sheet keeps the OQ-12 caption and the same-as caption (Phase 43a; D13)", () => {
     wrap(<AddPrePostOpEventSheet open procedureId={ownProcedure()} actor={OFFICE} onClose={() => undefined} />)
     const sheet = document.querySelector('[data-shot="add-event-sheet"]') as HTMLElement
     fireEvent.click(within(sheet).getByText('Pre-op'))
     fireEvent.click(within(sheet).getByText('ACC pre-op assessment'))
     expect(within(sheet).getByText("Codes to confirm with AA's accountant (OQ-12).")).toBeTruthy()
-    expect(sheet.textContent).toContain('Our reading')
+    expect(sheet.textContent).toContain('The same party as the procedure unless you change it.')
   })
 
   it('clearing "same as" requires a party', () => {

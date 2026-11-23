@@ -76,7 +76,8 @@ export function contractLabel(contract: Pick<Contract, 'aaCode' | 'name' | 'stat
 
 /**
  * A Procedure's pricing basis with its figure, for the procedure stack (catch-up Phase 20a;
- * US-03.1.2): "RVG at your rate", "RVG less 10%", "Fixed price $3,565.00", "Other price $2,000.00".
+ * US-03.1.2): "RVG at your rate", "RVG less 10%", "Fixed price $3,565.00", and on an open price (the
+ * No contract · Fixed price backstop; there is no "Other price" toggle, D16) "Price typed $2,000.00".
  * The figure prints as all money does, with cents (UI unification U1, question 21).
  * The RVG kinds share pricingLabel's words; the basis, never the computed fee.
  */
@@ -102,7 +103,7 @@ function formatKindBasis(basis: PricingBasis, surface: StackSurface): string {
     case 'fixed':
       return basis.amount !== null ? PRICING_KIND_LABEL.fixed + ' ' + formatMoney(basis.amount) : PRICING_KIND_LABEL.fixed + ', none in force on this date'
     case 'open':
-      return basis.amount !== null ? 'Other price ' + formatMoney(basis.amount) : 'Other price, amount to enter'
+      return basis.amount !== null ? 'Price typed ' + formatMoney(basis.amount) : 'No price typed yet'
   }
 }
 

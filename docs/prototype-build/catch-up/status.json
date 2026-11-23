@@ -1,18 +1,20 @@
 {
-  "in_progress": [],
+  "in_progress": [
+    "44"
+  ],
   "next": {
     "phases": [
       "44"
     ],
-    "note": "44 runs alone in the main folder, on master: the build lanes closed after Wave 7 (the owner, 23 November 2026; every lane worktree and branch removed). Wave 7 (U7, the UI unification close-out) is on master (PERSIST_VERSION 75): the U35 repeats on shared components, the guardrail test, the catalogue by family and the CLAUDE.md rule. Not captured yet: the owner tests first. 44 regenerates every screenshot, so nothing runs beside it."
+    "note": "44 Session 1 is done and green (items 1 to 7, not committed): the scenario jumps as a tested module with beat links on the Control Panel, the trigger audit (Vitest and two Playwright specs), the guide-to-registry sync test (its two file checks skipped until the rewrite), the stale copy sweep with its copy guard, and the figures re-read from the app. Session 2 starts at item 8, the run sheet rewrite, from the draft Phase 44 entry in PROGRESS.md. PERSIST_VERSION 75, unchanged. Nothing is captured yet: the owner tests first."
   },
   "guidance": {
     "as_of": "2026-11-23",
-    "headline": "Start 44 now, the last phase, in the main folder. U7 is on master: the UI unification is closed out with one shared component per job and a guardrail test.",
-    "headline_sub": "U7 built the U35 shared components, swept the leftovers onto them, regrouped the live catalogue by family and wrote the One component per job rule into CLAUDE.md; it is on master (not yet pushed). The build lanes are closed: 44 is an ordinary single session.",
-    "parallel": "44 runs alone, in the main folder on master: it rewrites the demo guide and regenerates every screenshot, so nothing runs beside it. Copy its kick-off prompt into a fresh session.",
+    "headline": "Resume 44 at item 8 (Session 2). Session 1 rebuilt the scenario jumps, audited every demo trigger, swept stale copy and re-read every figure.",
+    "headline_sub": "44 Session 1 built the scenario-jump module with beat links, the trigger and copy guard tests and the re-baselined figures; it is green and not yet committed. Session 2 rewrites the S1 to S5 run sheet and the master guide, runs the QA pass and the final screenshot sweep, and closes the catch-up.",
+    "parallel": "44 runs alone, in the main folder on master: it rewrites the demo guide and regenerates every screenshot, so nothing runs beside it. Paste the same kick-off prompt into a fresh session; it finds the draft entry and starts at item 8.",
     "safe": {
-      "44": "Every dependency (every catch-up phase and U7) is done and on master. Run it in the main folder; the lanes are closed."
+      "44": "Resume only: Session 1 is green and its draft entry is in PROGRESS.md. Commit Session 1 first, then run the same prompt in the main folder."
     },
     "wait": {}
   }

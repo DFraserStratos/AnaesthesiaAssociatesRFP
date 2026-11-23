@@ -1104,16 +1104,16 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       detail: "Grace Park (12); her mother, Hana Park, is the payer on both of the Booking's Procedures (Different payer ticked, BP0001, the second copied): no child warning.",
     },
     prepaymentBooking: {
-      label: 'Pre-payment booking (split, unpaid)',
+      label: 'Prepaid Booking awaiting approval (Riley)',
       entityType: 'booking',
       entityId: scenario.prepayment,
-      detail: 'Souter Fri 24 AM; selfFundedPrepayment split, an $800 prepayment on a $1,200 self funded fee. Unpaid: raises the prepayment warning, never a block.',
+      detail: "Souter Fri 24 AM; a rhinoplasty on Dr Souter's prepaid Contract at $1,200, the patient the payer. No prepayment invoice until the office approves and sends it; until paid it raises the prepayment warning, never a block.",
     },
     prepaymentPaidBooking: {
-      label: 'Pre-payment booking (mixed + full, seeded paid)',
+      label: 'Prepaid Booking, prepayment paid (Nair)',
       entityType: 'booking',
       entityId: scenario.prepaymentPaid,
-      detail: 'Souter Fri 24 PM; one hospital procedure + one full pre-payment (seeded PAID). Paid: no warning; no balance invoice.',
+      detail: "Souter Fri 24 PM; a hospital-funded septoplasty and a rhinoplasty prepaid in full at $1,200 (INV0001, paid). No warning; authorising the List bills the septoplasty and leaves the rhinoplasty off, nothing deducted.",
     },
     billingFailureBooking: {
       label: 'Billing failure booking (COS ACC)',

@@ -95,10 +95,11 @@ export const PRODUCT_SUPPORT_OUT_OF_HOURS: readonly { when: string; cover: strin
 ]
 
 /**
- * Our readings of the terms, to confirm with AA (Before you start item 4 of
- * the phase doc). Shown once in the panel under one caption.
+ * How the support terms apply (catch-up Phase 43b's readings; D83 answered, so
+ * they carry no caveat). Shown once in the panel under one caption. Only the
+ * 8:00am start is open (OQ-141, D87), and its own line says so.
  */
-export const SUPPORT_READINGS_CAPTION = 'Our reading, to confirm with AA'
+export const SUPPORT_READINGS_CAPTION = 'How the support terms apply'
 
 /** The readings, worded from `SUPPORT_CONFIG`, so a config change (OQ-141's 8:00am start) changes them too. */
 export function supportReadings(): string[] {
@@ -109,7 +110,7 @@ export function supportReadings(): string[] {
   const p3Days = p3.kind === 'businessDays' ? p3.days : 0
   const { from, to } = SUPPORT_CONFIG.christmas
   return [
-    `${opens}; whether AA needs cover from 8:00am is still to be agreed.`,
+    `${opens}; whether AA needs cover from 8:00am is still to be agreed (OQ-141).`,
     "New Zealand public holidays are the national ones in AA's holiday calendar; a regional anniversary day is a working day.",
     `Response times run in business hours and roll into the next business day: P1 and the help line's P3 in business hours, P2 by the close of that business day, product support's P3 at the same time ${p3Days} business days on, and P4 with no set time.`,
     `Out of hours on the help line, a security breach or the platform offline is P1, due within ${SUPPORT_CONFIG.afterHoursUrgentMinutes} minutes on the plain clock; anything else is logged and picked up at the next opening, with no respond-by time.`,

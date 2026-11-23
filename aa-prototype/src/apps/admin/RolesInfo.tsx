@@ -59,7 +59,7 @@ export function RolesInfo() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <OverlayHeader title="Roles in this prototype" />
           <div style={{ fontSize: 13, color: neutral.slate }}>
-            View, access and edit rights are managed by role (RFP). Each is provable live by switching persona in the app switcher.
+            View, access and edit rights are set by role. Switch persona in the app switcher to try each one live.
           </div>
           {ROLES.map((r) => (
             <div key={r.role} style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>

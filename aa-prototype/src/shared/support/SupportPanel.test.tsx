@@ -37,7 +37,7 @@ describe('SupportPanel (catch-up Phase 43b)', () => {
     expect(shot('support-status').textContent).toBe('Open now')
     expect(document.querySelector('[data-shot="support-cover-note"]')).toBeNull()
     expect(screen.getAllByText('Simulated')).toHaveLength(1)
-    expect(screen.getAllByText('Our reading, to confirm with AA')).toHaveLength(1)
+    expect(screen.getAllByText('How the support terms apply')).toHaveLength(1)
   })
 
   it('lists only the persona\'s requests and logs a new one at the top with its respond-by', () => {

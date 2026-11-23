@@ -403,7 +403,7 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
             value={shownBillsTo}
             options={[
               { value: 'holder', label: BILLS_LABEL.holder },
-              { value: 'payer', label: `${BILLS_LABEL.payer} on the Booking` },
+              { value: 'payer', label: `${BILLS_LABEL.payer} on the Procedure` },
             ]}
             onChange={setBillsTo}
             disabled={forcedPayer || system}

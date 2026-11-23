@@ -1,11 +1,11 @@
 /**
- * NHI validation & generation — both formats per RFP Appendix 1, with the
+ * NHI validation & generation — both formats (US-11.1.2), with the
  * check-digit maths corrected to the official Health NZ algorithms (Decisions
- * log 2026-07-22): the RFP labels the current format "Modulus 24", which
- * appears to conflate the 24-letter alphabet with the modulus — its own
+ * log 2026-07-22): US-11.1.2 still labels the current format "modulus 24",
+ * which appears to conflate the 24-letter alphabet with the modulus — its own
  * example ZAA0067 validates only under mod 11. The new format is mod 23 as
- * labelled (example ACA31FM validates). Flagged as an RFP reading / discovery
- * item where REQUIREMENTS D8 repeats the label.
+ * labelled (example ACA31FM validates). The Validators tab flags the label for
+ * AA to confirm (catch-up Phase 44); the catalogue text still needs correcting.
  *
  * Formats:
  *  - current `AAANNNC` — 3 letters, 3 digits, 1 numeric check digit

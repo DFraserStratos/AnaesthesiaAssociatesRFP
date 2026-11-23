@@ -3,7 +3,8 @@ import { runDemoAction } from './demoActions'
 
 /**
  * Phase 12 — the demo control panel, now the index (catch-up Phase 14). A
- * real-browser click-through of the scenario jumps and procedure-day jump, then
+ * real-browser click-through of the scenario jumps and their beat links
+ * (catch-up Phase 44) and the procedure-day jump, then
  * the PDF arrival (Admin Intake, PDF lists) and job run
  * (Billing monitor) from the harness bar's Demo actions, asserting the console
  * stays clean across the interaction.
@@ -30,12 +31,22 @@ test('control panel: scenario jump, procedure-day jump, PDF ingest and jobs run 
   await page.getByRole('button', { name: /Procedure day/ }).click()
   await expect(page.getByText(/28 July 2026/)).toBeVisible()
 
-  // S1 scenario jump now resets to the clean live-arrival state.
+  // S1 scenario jump (catch-up Phase 44): reset only, then the seven beats in order, each a link to
+  // its screen with its steps beside it; a beat whose target does not exist yet waits, disabled, its
+  // label saying for what.
   await page.getByRole('button', { name: 'Jump', exact: true }).first().click()
-  await page.getByRole('button', { name: 'Confirm jump' }).click()
-  await expect(page.getByText(/clean S1 state/)).toBeVisible()
-  await page.getByRole('button', { name: 'Go to Mobile app' }).click()
-  await expect(page).toHaveURL(/\/mobile/)
+  await page.locator('[data-shot="scenario-confirm"]').click()
+  const result = page.locator('[data-shot="scenario-result"]')
+  await expect(result).toContainText('Reset to the pristine seed; nothing staged. Follow the beats below in order.')
+  await expect(result.locator('[data-shot="scenario-beat-2-steps"]')).toHaveText(
+    "Demo actions → Import hospital file (St George's), then Create Booking on Sarah Mitchell's row",
+  )
+  await expect(page.getByText(/^Tuesday 21 July 2026 · /)).toBeVisible()
+  await expect(result.locator('button[data-shot^="scenario-beat-"]')).toHaveCount(7)
+  await expect(result.locator('[data-shot="scenario-beat-4"]')).toHaveText('Beat 4 · Admin Booking, after Create Booking')
+  await expect(result.locator('[data-shot="scenario-beat-4"]')).toBeDisabled()
+  await result.locator('[data-shot="scenario-beat-1"]').click()
+  await expect(page).toHaveURL(/\/mobile\/more$/)
 
   // PDF arrival (catch-up Phase 34): Admin Intake, PDF lists, correct the flagged NHI and send to matching.
   await page.goto('/admin/intake/pdfs')

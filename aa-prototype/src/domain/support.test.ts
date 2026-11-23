@@ -146,7 +146,7 @@ describe('support rules (catch-up Phase 43b; US-15.0.8, US-15.0.9)', () => {
   })
 
   it('the readings are worded from the config, so an 8:00am start changes them', () => {
-    expect(supportReadings()[0]).toBe('Both channels open at 8:30am; whether AA needs cover from 8:00am is still to be agreed.')
+    expect(supportReadings()[0]).toBe('Both channels open at 8:30am; whether AA needs cover from 8:00am is still to be agreed (OQ-141).')
     expect(supportReadings()[4]).toContain('24 December to 6 January')
     const hours = SUPPORT_CONFIG.hours as { helpLine: { open: string } }
     hours.helpLine.open = '08:00'

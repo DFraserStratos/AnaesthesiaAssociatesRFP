@@ -22,8 +22,8 @@ export function ValidatorsTab() {
         <div style={{ fontSize: 14, fontWeight: 700 }}>NHI validator</div>
         <div style={{ fontSize: 12, color: neutral.slate }}>
           Current format AAANNNC uses a mod-11 check digit; the new format AAANNAX uses a mod-23 check
-          letter. The RFP labels the current algorithm &ldquo;Modulus 24&rdquo;, but its own example NHIs validate
-          only under mod-11, so this demo uses mod-11 and flags the label as a discovery item. Both
+          letter. The requirement labels the current algorithm &ldquo;Modulus 24&rdquo;, but its own example NHIs validate
+          only under mod-11, so this demo uses mod-11, and the label is flagged for AA to confirm. Both
           formats are mandated dual-format from 1 July 2027.
         </div>
         <TextField label="NHI to check" hideLabel value={nhi} onChange={(v) => setNhi(v.toUpperCase())} placeholder="e.g. ZAA0067 or ACA31FM" mono width={280} />

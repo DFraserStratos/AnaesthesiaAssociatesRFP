@@ -15,7 +15,7 @@ export function DataQualityTab({ actor }: { actor: Actor }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ fontSize: 12.5, color: neutral.slate, maxWidth: 820, lineHeight: 1.5 }}>
-        The RFP mandates NZHIS Level 4 ethnicity codes, so an inbound code that is not a valid code is
+        Ethnicity is coded to NZHIS Level 4, so an inbound code that is not a valid code is
         quarantined &ldquo;pending correction&rdquo;, never stored, and the Booking still books. Supply a valid code to
         clear each item.
       </div>

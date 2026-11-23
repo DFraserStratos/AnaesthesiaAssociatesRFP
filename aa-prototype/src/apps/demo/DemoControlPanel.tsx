@@ -4,27 +4,14 @@ import { RotateCcw, CalendarDays, Route, ListChecks, ArrowRight } from 'lucide-r
 import type { LucideIcon } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { DemoSurface } from './DemoSurface'
-import {
-  OFFICE_ACTOR,
-  SOUTER_ACTOR,
-  authoriseList,
-  saveBookingPatch,
-  claimModifier,
-  removeModifier,
-  proceduresForBooking,
-  useAppStore,
-  useClockTimeLabel,
-  useToday,
-} from '../../store'
-import { SEED_LIST_IDS, SEED_MARKERS } from '../../domain/seed'
-import { rvgModifierByCode } from '../../domain/billing/modifiers'
+import { DEMO_SCENARIOS, type DemoScenario, type DemoScenarioId, type ScenarioStageResult } from './demoScenarios'
+import { useAppStore, useClockTimeLabel, useToday } from '../../store'
 import { demoClockShortcuts } from '../../shared/demoClockShortcuts'
 import { BILLING_MONITOR_SCREEN, DEMO_TRIGGERS, DemoTriggerBadge, groupTriggersByScreen } from '../../shared/demoTriggers'
 import { DemoBadge } from '../../shared'
-import { DRAFT_LIST, DRAFT_LISTS } from '../../shared/scheduleTerms'
-import { APP_CONFIG } from '../../shell/appConfig'
+import { Button, Notice } from '../../shared/ui'
 import { resetFramedDemo } from '../../shell/framedReset'
-import { neutral, accent, radius, elevation, semantic } from '../../theme/tokens'
+import { neutral, accent, radius, elevation } from '../../theme/tokens'
 
 function ControlCard({ icon: Icon, title, eyebrow, children, shot }: {
   icon: LucideIcon
@@ -113,7 +100,8 @@ const secondaryHover = {
 /**
  * Demo control panel (`/demo/control`). The presenter's index (catch-up Phase
  * 14), in three labelled groups: the live clock + reset, the S1 to S5 scenario
- * jumps (the guided-script entry points), and every registered demo action
+ * jumps (`demoScenarios.ts`, catch-up Phase 44: each stages, then lists its
+ * beats with a link to each screen), and every registered demo action
  * listed under its screen with a link that opens it. The actions themselves
  * live on their screens (`src/shared/demoTriggers`); none is fired from here.
  * The demo-only surfaces stay badged (PROGRESS convention 13).
@@ -130,7 +118,7 @@ export function DemoControlPanel() {
   return (
     <DemoSurface
       title="Demo control panel"
-      subtitle="The presenter's index for the demo. Reset the data, advance the clock and jump to a scenario here. Every demo action lives on its own screen, under Demo actions in the harness bar (or the Demo sheet on a handset), and is listed below with a link to that screen."
+      subtitle="The presenter's index. Reset the data, move the clock, or jump to a scenario and follow its beats, each linked to its screen. Demo actions live on their own screens, under Demo actions in the harness bar (or the Demo sheet on a handset); the index below lists each one with a link to where it shows."
     >
       {/* ── Clock & reset ─────────────────────────────────────── */}
       <SectionHeading label="Clock & reset" />
@@ -140,7 +128,7 @@ export function DemoControlPanel() {
           Advancing past midnight rolls the schedule forward: each new far-edge day gets an AM and a PM
           session for every active anaesthetist, free, with the calendar and the recurring bookings
           painted on, by the same generator the seed uses. Next morning jumps to 08:00 tomorrow;
-          Procedure day jumps forward to the S1 booking's operating day. These advance controls are
+          Procedure day jumps forward to Tue 28 Jul, S1's operating day. These advance controls are
           also available from the live clock beside the app switcher.
         </span>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
@@ -199,7 +187,7 @@ export function DemoControlPanel() {
       {/* ── Scenario jumps (the guided-script entry points) ───── */}
       <SectionHeading
         label="Scenario jumps · S1 to S5"
-        hint="Each jump resets to the pristine seed, applies any extra preparation the scenario needs, and tells you where to go next. Reset-first keeps every jump deterministic and doubles as accident recovery."
+        hint="Each jump resets to the pristine seed and stages only what its scenario cannot reach from there, so the same jump always gives the same data and doubles as recovery. Its beats follow the run sheet's order."
       />
       <ScenarioJumps />
 
@@ -214,154 +202,21 @@ export function DemoControlPanel() {
   )
 }
 
-interface ScenarioResult {
-  ok: boolean
-  message: string
-  nav?: readonly { label: string; path: string }[]
-}
-
-interface Scenario {
-  id: string
-  title: string
-  blurb: string
-  run: () => ScenarioResult
-}
-
-/** The five guided-script scenarios. Each resets first, then adds only its scenario-specific live deltas. */
-const SCENARIOS: readonly Scenario[] = [
-  {
-    id: 'S1',
-    title: 'S1 · Booking to theatre',
-    blurb: "A St George's file is imported with the hospital's own wording; the office matches Sarah Mitchell onto a booked List and says where the invoice goes; a booking with no NHI waits in its place; a rooms' PDF list keeps who sent it; it captures live on procedure day.",
-    run: () => {
-      resetFramedDemo({ clearHints: false })
-      return {
-        ok: true,
-        message:
-          "Reset to a clean S1 state. Start in Mobile on Dr Souter's Tue 28 Jul AM List (three booked cases). On Admin, Intake, Matching, Import hospital file, St George's: Sarah Mitchell's row reads lap appy ?conv to open, kept exactly as the hospital sent it; Create Booking puts her on that List at 08:30, nothing else changing until the office decides. Creating her Booking raises a strong balance warning (98-day invoice billed to her). Her Booking waits on Day's Needs an invoice destination card: open it and answer Where does the invoice go? with Patient, then Standard: No contract · RVG, which leaves the RVG code to the anaesthetist (on the PWA, Hospital file imported and my booking matched stands in for all of this). Optionally import the Southern Cross file: its row with no NHI waits, its stub on the List, until the office adds the NHI. Then PDF lists: open Mr Okafor's list, see who sent it, correct the flagged NHI, Send to matching and create the List from its first row and put its other two rows on it; the List reads where it came from and who replies go to. Receive updated PDF from rooms, then Send: the unchanged row is skipped, Margaret Ellison's changed time waits as a difference for approval, and a new patient arrives as a new row. Finally use Procedure day · 28 Jul, pick Sarah's RVG code by typing appendicectomy (A3), Start now, and complete her Booking; the List stays active because its other three Bookings are still to be captured.",
-        nav: [
-          { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
-          { label: 'Go to Admin Intake', path: '/admin/intake/matching' },
-        ],
-      }
-    },
-  },
-  {
-    id: 'S2',
-    title: 'S2 · Office day',
-    blurb: 'An optional opening on days off, repeating days off and the availability status list, then day-dashboard review, a phone-advice booking on a free session, an illness reassignment with tier-ordered cover suggestions, an anaesthetist moving her own List and the office\'s notifications, then handing one Booking to a colleague from its Booking screen, Find available, and an authorisation.',
-    run: () => {
-      resetFramedDemo({ clearHints: false })
-      return {
-        ok: true,
-        message:
-          `Reset to the pristine day. In Admin: assign the St George's ${DRAFT_LIST} to Dr Fitzgerald; optionally show Dr Beaumont's recurring Lists waiting as ${DRAFT_LISTS} while she is on leave, open Forte Health to show Bookings on a ${DRAFT_LIST}, or simulate an incoming request to show the not-preferred group and the tier order. Then open Dr Sharma's Tue 21 PM Free session and Book (phone advice), or Assign List for a session booked ahead; from ${DRAFT_LISTS}, assign Dr Rutherford's Wed 22 AM Christchurch Eye Surgery List to Dr Sharma (he phoned in sick, so the office returned it; unavailability is never a conflict, and Conflicts shows hospital closures only); then, as Dr Souter on Web Availability, move a List to a colleague and see it on Admin Day's notifications, then hand one Booking to a colleague from its Booking screen (Wed 22 Jul AM, Lachlan Robinson to Dr Whitaker, Tell the office ticked); optionally Alert the office on a Booking, then resolve it from Admin Notifications with Show resolved; optionally use Find available in the Day header; then authorise Dr Morrison's Mon 20 Jul List from the Review queue. Optionally, open the payer review List (Dr Chen, Fri 17 Jul, Christchurch Eye Surgery) in the Review queue: a child as the payer, an insurer with no approval number, a payer with no email or postal address and a family trust paying by post; clear a warning and authorise anyway, then Raise sample warnings on Admin Day to bring a child payer warning back on Grace Park's Booking. Optionally, open the review-flags List (Dr Chen, Tue 14 Jul AM, Christchurch Eye Surgery): Approve or Correct Dr Chen's Contract change on Diane Fairweather, see a typed price beside the computed one, type a price and complete Hemi Walker's Booking, and see a Contract not offered on this List; no flag blocks, and authorising approves any change still waiting. On Admin Day, Mon 10 Aug, move Fiona Lattimer's Booking to Dr Souter's AM List and review flags its Contract; move it back and the flag clears. Optionally, with the phone-advice form open, Demo actions, Hub: Available / Slow / Unavailable, choose Unavailable and Look up: the office still books by hand with a valid NHI; set it back to Available.`,
-        nav: [{ label: 'Go to Admin app', path: APP_CONFIG.admin.path }],
-      }
-    },
-  },
-  {
-    id: 'S3',
-    title: 'S3 · Money end-to-end',
-    blurb: 'Authorise the multi-procedure and split Lists (the run sends every invoice), follow one Xero pair from payment to the anaesthetist account, raise AA\'s monthly fee invoices, then show the ledger balancing.',
-    run: () => {
-      resetFramedDemo({ clearHints: false })
-      const state = useAppStore.getState()
-      const am = state.schedule.lists[SEED_LIST_IDS.souterMon20Am]
-      const pm = state.schedule.lists[SEED_LIST_IDS.souterMon20Pm]
-      if (am?.state !== 'SUBMITTED' || pm?.state !== 'SUBMITTED') {
-        return { ok: false, message: 'Reset done, but the two S3 Lists were not present in the Review queue.' }
-      }
-      return {
-        ok: true,
-        message:
-          'Reset. Both of Dr Souter\'s Mon 20 Jul Lists are already in the Review queue: AM (Forte Health, the multi-procedure Booking) and PM (St George\'s, the fee-split Booking: nib $132.50, Alan Prentice the rest). In Admin, authorise both: the run raises and emails the invoices, and each invoice\'s pair goes into the ledger, mirrored in Xero. Open AA-2026-0005 in the Xero simulation, use its payment and payout button (nib pays $152.38 into AA, the office approves it for payment in Week 30, then Xero\'s payables run pays Dr Souter the full $152.38 and the bill-paid webhook tells the engine, which records the disbursement), then follow the direct link to Dr Souter\'s payment history. Beat 4: Admin Billing monitor, Open AA fee invoices, Demo actions, Seed a month of BCTIs, then Run monthly fee invoices (Dr Rutherford $700.00 before GST), and Record fee payment on AA-FEE-2026-H02 in the Xero simulation. Beat 5: Admin Ledger reads In balance, with no anaesthetist out of balance; switch to Dr Souter to show what AA owes her and what she owes AA. Then Demo actions, Inject unmatched receipt, Names Dr Souter: out of balance by $120.00 and Dr Souter on the list. Allocate to invoice on one of her receivables puts it back in balance. Close on Admin Day: the Reconciliation card reads Books square.',
-        nav: [{ label: 'Go to Admin app', path: APP_CONFIG.admin.path }],
-      }
-    },
-  },
-  {
-    id: 'S4',
-    title: 'S4 · Exceptions',
-    blurb: 'Pre-payment from a prepaid Contract, pre-op and post-op events and an additional invoice recorded as events, billing failure + retry, the unmatched hospital queue, partial payment, the date approaches, the prepayment held then transferred.',
-    run: () => {
-      resetFramedDemo({ clearHints: false })
-      return {
-        ok: true,
-        message:
-          'Reset. Walk the exceptions: (1) Pre-payment from a prepaid Contract: in Admin Day, Tue 21 Jul, Annette Riley is on the Pre-payments card and her warning on the To-do card; open her Booking (Rhinoplasty on Dr Souter\'s prepaid Contract, $1,200.00), go to Invoices, Approve and send and Preview letter (the Standard prepayment letter states the prepaid amount as the price; the payable credits the AA Holding account), then Payment received · half; on the Billing monitor the AA Holding account card holds it beside Priya Nair\'s $1,380.00, and nothing is paid to the anaesthetist yet; on Mobile, Souter Fri 24 AM, Annette Riley, see the triangle and the prepaid panel, Mark complete and submit (no block, no confirm step), then clear her mild warning from the Admin to-do list; (2) in Admin open Sarah Mitchell\'s Booking on Dr Sharma\'s Tue 14 AM List, Demo actions, Stage post-op scenario (it also stages Dr Souter\'s submitted ACL reconstruction for Coral Bennett on Wed 15 Jul PM: on Mobile search Bennett, open the Booking, Add pre-op or post-op event (an ACC pre-op CS250, a 45 min post-op ward review) and Add billing event (a $180.00 nerve catheter charge), approve them in Review, Events, then Authorise for billing her List: the invoice carries them as their own dated lines; a later pain consult on the invoiced Booking takes the St George\'s ACC event fee, $120.00, and is its own invoice in the next billing run), then Create additional invoice on Sarah Mitchell\'s Procedure, approve it in Review and run the next billing run, then Credit in full and rebill on Sarah Mitchell\'s original, approve the credit in Review and run the next billing run again; (3) Admin Billing monitor, Demo actions, Trigger billing failure: each Booking bills from what was locked at authorise, so the failure is outside the lock, Losa Tuilagi\'s Xero hand-off; she is held back while Hemi Walker\'s Booking bills and the List is not failed; her invoice waits for Xero in the sync queue, so use Retry now on its queue row (no Contract changes); (4) Admin, Intake, Matching, Demo actions, Import hospital file, Southern Cross: under Unmatched, Tama Henare\'s row has no NHI, so a stub stands on Dr Souter\'s Tue 28 Jul PM List; type NHI ZQA1008 and Add NHI, and the Booking takes the stub\'s place, then Create a List in a session for Grace Whitu\'s row; (5) open Hemi Walker\'s St George\'s clean-sibling invoice, Demo actions, Payment received · half, then on the Billing monitor run the week\'s payment cycle: Close the week, Approve week 30\'s BCTIs, Send payment schedule, then Run payables in Xero (badged Simulated Xero): Week 30 pays exactly the amount received and the engine records it from the bill-paid webhook; pay the balance and it waits for Week 31. (6) late, on Admin Day, Demo actions, Move to 2 days before procedure, choose Annette Riley: the clock jumps to Wed 22 Jul and her warning turns strong and re-opens; (7) held, then transferred: on Mobile, Mark complete and submit Souter\'s Fri 24 PM List, then Authorise for billing on Admin Review: Nair\'s Booking shows the Prepaid settlement block (the prepaid price, the BTM for reference only, nothing invoiced or credited automatically), the AA Holding account card shows Nair\'s $1,380.00 transferred to Dr Melanie Souter, the Xero sim shows journal MJ-0001 on XRB0, and the next week\'s payment cycle (Close the week, Approve its BCTIs, Send payment schedule, Run payables in Xero) pays her $1,380.00; (8) raised by hand, from a reset: submit Souter\'s Fri 24 PM List, then on Admin Review, Demo actions, Stage longer prepaid procedure; Authorise raises nothing for the prepaid rhinoplasty, so use Create additional invoice in its settlement block, approve it in Review, Events and run the next billing run (a credit note on a prepayment invoice always credits the whole $1,380.00, and anything still owed is a fresh additional invoice); (9) moved, cancelled and rebooked, from a reset with Riley approved and sent: Send prepayment reminder on her Booking, move her to Dr Beaumont (nothing changes; Email patient: anaesthetist changed if wanted), cancel Priya Nair (credited and $1,380.00 refunded from the AA Holding account at once), then Rebook with another anaesthetist, Dr Beaumont, Tue 4 Aug PM at Forte: a new prepayment at her own price, $1,350.00, awaiting approval; on a reset an unpaid Riley cancelled is credited only, and Demo actions, Payment arrives after the credit note refunds the late payment.',
-        nav: [
-          { label: 'Go to Mobile app', path: APP_CONFIG.mobile.path },
-          { label: 'Go to Billing monitor', path: '/admin/billing' },
-        ],
-      }
-    },
-  },
-  {
-    id: 'S5',
-    title: 'S5 · Compliance tour',
-    blurb: 'Rich seeded audit trail plus staged edits, NHI dual-format validator, no personal information in Xero, audited Contract edits.',
-    run: () => {
-      resetFramedDemo({ clearHints: false })
-      const chenBookingId = SEED_MARKERS['overriddenTimeUnitsBooking']?.entityId ?? ''
-      const chenProcedure = proceduresForBooking(useAppStore.getState(), chenBookingId)[0]
-      if (chenProcedure === undefined) return { ok: false, message: 'Reset done, but David Chen\'s Booking was not found to stage the audit trail.' }
-      // An ASA III modifier claimed with its explanation, the office note, then
-      // the claim removed: the trail shows both, and the fee ends where it started
-      // (catch-up Phase 19b; the ASA grade is one optional modifier).
-      const as3 = rvgModifierByCode(useAppStore.getState().masters.modifiers, 'AS3')
-      if (as3 === undefined) return { ok: false, message: 'Reset done, but the RVG modifier AS3 was not found to stage the audit trail.' }
-      const staged = [
-        claimModifier(useAppStore, SOUTER_ACTOR, chenProcedure.id, { modifierId: as3.id, explanation: 'Pre-op review: ASA III' }),
-        // The office's grouped save (catch-up Phase 35): the note and a time change in one change set.
-        saveBookingPatch(useAppStore, OFFICE_ACTOR, chenBookingId, {
-          booking: {
-            notes: 'Rooms called: confirmed self-funded account details ahead of invoicing.',
-            scheduledTime: shiftedTime(useAppStore.getState().schedule.bookings[chenBookingId]?.scheduledTime, 15),
-          },
-        }),
-        removeModifier(useAppStore, SOUTER_ACTOR, chenProcedure.id, as3.id),
-      ]
-      const refused = staged.find((r) => !r.ok)
-      if (refused !== undefined && !refused.ok) return { ok: false, message: `Reset done, but staging the audit trail was refused: ${refused.message}` }
-      const invoiceStage = authoriseList(useAppStore, OFFICE_ACTOR, SEED_LIST_IDS.whitakerFri17)
-      if (!invoiceStage.ok) return { ok: false, message: `Audit staged, but the Health NZ invoices could not be raised: ${invoiceStage.message}` }
-      return {
-        ok: true,
-        message:
-          'Reset to rich seeded Booking histories, added live edits to David Chen\'s trail, among them the office\'s grouped save (the note and the time, one change set), and authorised Dr Whitaker\'s Fri 17 Jul List, which locks the Health NZ agreed rate and the price in force on 17 Jul onto each Procedure and raises its invoices from that record. Compliance tour: (1) open David Chen\'s History: the office\'s save is one row, with View as at; (2) on Admin, Intake, Validators try an old-format and a new-format NHI, then an invalid one (optionally, as a labelled Future-scope aside, fire MSG-STG-1002 from Future scope: HL7 and FHIR and open its row on Admin, Intake, Matching); (3) in the Xero simulation\'s Contacts tab, show that no NHI or patient name crosses to Xero, only hidden IDs, then on the Data Inspector, Demo actions, Scan for NHI leaks: Scan now finds none, and the planted test leak is found; optionally, on Admin, Intake, Matching, open Mere Tipene\'s row and View raw row with a reason: identifiers masked and the view audited (Demo actions, View raw row as another role, is refused); (4) Contract history and the invoice recipe: in Admin, Master data, Contracts, open Health NZ agreed rate, change its rate and save, then open its History tab: the change with who, when and the values before and after, and Dr Whitaker\'s Procedures locked against it; open Hemi Walker\'s invoice, Demo actions, Regenerate from locked data: identical. Optional: Master data, Demo actions, Go-live data load. Optional, no NHI no Booking: on Admin, Patients, Waiting for NHI, Demo actions, Receive list with a missing NHI brings two waiting rows to Add NHI. Optional, refresh from the NHI register: on Admin, Patients, Fiona Gray, Refresh from NHI register, Use register for her name, Apply: the record reads Fiona Tamihana and Last refreshed, audited, never sent to Xero.',
-        nav: [
-          { label: 'Go to Admin app', path: APP_CONFIG.admin.path },
-          { label: 'Go to Xero sim', path: APP_CONFIG['demo-xero'].path },
-        ],
-      }
-    },
-  },
-]
-
-/** A wall time moved by `minutes` (the S5 jump's grouped save). */
-function shiftedTime(time: string | undefined, minutes: number): string {
-  const [h, m] = (time ?? '08:00').split(':').map(Number)
-  const total = Math.min(23 * 60 + 55, (h ?? 8) * 60 + (m ?? 0) + minutes)
-  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
-}
-
-/** The guided-script scenario jumps (S1 to S5): confirm, reset, stage, then point onward. */
+/** The guided-script scenario jumps (S1 to S5): confirm, reset and stage, then the beats in order. */
 function ScenarioJumps() {
-  const navigate = useNavigate()
-  const [confirming, setConfirming] = useState<string | null>(null)
-  const [result, setResult] = useState<{ id: string; res: ScenarioResult } | null>(null)
+  const [confirming, setConfirming] = useState<DemoScenarioId | null>(null)
+  const [result, setResult] = useState<{ id: DemoScenarioId; res: ScenarioStageResult } | null>(null)
 
   return (
     <ControlCard icon={Route} eyebrow="Guided script" title="Jump to a scenario">
       <div><DemoBadge label="Resets data" /></div>
       <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
-        Pick a scenario to reset it cleanly and apply only the preparation that scenario needs. Each
-        jump confirms first because it replaces all current demo data.
+        A jump replaces all current demo data, so it asks first. Each beat's link opens its screen,
+        with what to do there beside it.
       </span>
       <div style={{ display: 'flex', flexDirection: 'column', marginTop: 4 }}>
-        {SCENARIOS.map((s) => (
-          <div key={s.id} style={{ borderTop: `1px solid ${neutral.line}`, paddingTop: 12, marginTop: 12 }}>
+        {DEMO_SCENARIOS.map((s) => (
+          <div key={s.id} data-scenario={s.id} style={{ borderTop: `1px solid ${neutral.line}`, paddingTop: 12, marginTop: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 600 }}>{s.title}</div>
@@ -369,60 +224,82 @@ function ScenarioJumps() {
               </div>
               {confirming === s.id ? (
                 <div style={{ display: 'flex', gap: 6, flex: 'none' }}>
-                  <button
-                    type="button"
-                    data-shot="scenario-confirm"
+                  <Button
+                    variant="primary"
+                    size="compact"
+                    shot="scenario-confirm"
                     onClick={() => {
-                      setResult({ id: s.id, res: s.run() })
+                      setResult({ id: s.id, res: s.stage(useAppStore) })
                       setConfirming(null)
                     }}
-                    style={primaryButtonStyle}
                   >
                     Confirm jump
-                  </button>
-                  <button type="button" onClick={() => setConfirming(null)} style={actionButtonStyle}>
+                  </Button>
+                  <Button variant="secondary" size="compact" onClick={() => setConfirming(null)}>
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               ) : (
-                <button type="button" data-shot={`scenario-${s.id.toLowerCase()}`} onClick={() => setConfirming(s.id)} style={{ ...actionButtonStyle, flex: 'none' }}>
+                <Button variant="secondary" size="compact" shot={`scenario-${s.id.toLowerCase()}`} style={{ flex: 'none' }} onClick={() => setConfirming(s.id)}>
                   Jump
-                </button>
+                </Button>
               )}
             </div>
             {result?.id === s.id && (
-              <div
-                style={{
-                  marginTop: 10,
-                  fontSize: 12.5,
-                  lineHeight: 1.5,
-                  color: result.res.ok ? semantic.success.onTint : semantic.warning.onTint,
-                  background: result.res.ok ? semantic.success.tint : semantic.warning.tint,
-                  borderRadius: radius.ctl,
-                  padding: '10px 12px',
-                }}
-              >
-                <div>{result.res.message}</div>
-                {result.res.ok && result.res.nav !== undefined && (
-                  <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                    {result.res.nav.map((n) => (
-                      <button
-                        key={n.path}
-                        type="button"
-                        onClick={() => navigate(n.path)}
-                        style={{ ...actionButtonStyle, background: neutral.surface }}
-                      >
-                        {n.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <Notice tone={result.res.ok ? 'success' : 'warning'} live="status" shot="scenario-result" style={{ marginTop: 10 }}>
+                <span style={{ lineHeight: 1.5 }}>{result.res.message}</span>
+                {result.res.ok && <ScenarioBeats scenario={s} />}
+              </Notice>
             )}
           </div>
         ))}
       </div>
     </ControlCard>
+  )
+}
+
+/**
+ * A scenario's core beats, numbered in script order, each a link to its
+ * screen beside the beat's name and its steps (`does`). The path is read from
+ * the store when the link is clicked, so a beat
+ * opened after a live action (an import, an authorise) lands on what that
+ * action made; until its target exists the link is disabled, and its label
+ * says what it waits for.
+ */
+function ScenarioBeats({ scenario }: { scenario: DemoScenario }) {
+  const navigate = useNavigate()
+  const state = useAppStore()
+  return (
+    <ol data-shot="scenario-beats" style={{ listStyle: 'none', margin: '8px 0 0', padding: 0, display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr)', columnGap: 12, rowGap: 6 }}>
+      {scenario.beats.map((b, i) => {
+        const waiting = b.path(state) === null
+        return (
+          <li key={b.label} style={{ display: 'grid', gridColumn: '1 / -1', gridTemplateColumns: 'subgrid', alignItems: 'center' }}>
+            <Button
+              variant="secondary"
+              size="compact"
+              shot={`scenario-beat-${i + 1}`}
+              disabled={waiting}
+              style={{ justifySelf: 'start' }}
+              onClick={() => {
+                const path = b.path(useAppStore.getState())
+                if (path !== null) navigate(path)
+              }}
+            >
+              {b.label}
+            </Button>
+            <span style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0, fontSize: 12.5, lineHeight: 1.4 }}>
+              <span style={{ color: neutral.ink, fontWeight: 600 }}>{b.beat}</span>
+              {b.does !== undefined && (
+                <span data-shot={`scenario-beat-${i + 1}-steps`} style={{ color: neutral.slate }}>
+                  {b.does}
+                </span>
+              )}
+            </span>
+          </li>
+        )
+      })}
+    </ol>
   )
 }
 

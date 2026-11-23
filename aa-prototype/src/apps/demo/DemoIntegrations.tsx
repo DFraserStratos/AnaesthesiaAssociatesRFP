@@ -33,8 +33,8 @@ const FEED_ORDER = [FEED.stg, FEED.cph, FEED.sx]
  *
  * Translation is genuinely mapping-driven: the FHIR pane is built from the feed
  * mapping the store holds, so an operator's mapping fix changes what this shows.
- * Discovery callouts reference the HNZ FHIR-first mandate, the Digital Services
- * Hub NHI lookup and Keycloak (referenced, not implemented).
+ * The target-state callout references the HNZ FHIR-first mandate, the Digital
+ * Services Hub NHI lookup and Keycloak (referenced, not implemented).
  */
 export function DemoIntegrations() {
   const feeds = useAppStore((s) => s.integrations.feeds)

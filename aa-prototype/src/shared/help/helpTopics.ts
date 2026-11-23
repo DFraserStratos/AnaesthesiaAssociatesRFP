@@ -56,7 +56,7 @@ export const HELP_TOPICS: Readonly<Record<HelpTopicId, HelpTopic>> = {
   'capture.contract': {
     title: 'Contract',
     body: [
-      'A procedure needs a Contract. The office sets where the invoice goes and the Contract; where it prices on the RVG, you add the RVG code.',
+      'Each procedure has its own Contract. The office sets where the invoice goes and the Contract; where it prices on the RVG, you add the RVG code.',
       'Insurance never narrows the choices. You can change the Contract until the List is authorised; the office sees every change.',
     ],
   },
@@ -84,7 +84,7 @@ export const HELP_TOPICS: Readonly<Record<HelpTopicId, HelpTopic>> = {
   'capture.times': {
     title: 'Times',
     body: [
-      'Tap Start now when the anaesthetic starts and Finish now at handover. You can adjust either time afterwards.',
+      'Tap Start now when the anaesthetic starts and Finish now when it ends. You can adjust either time afterwards.',
       'Time units come from these two times, and a part interval always counts as a whole one.',
     ],
   },
@@ -112,7 +112,7 @@ export const HELP_TOPICS: Readonly<Record<HelpTopicId, HelpTopic>> = {
   'day.needsDestination': {
     title: 'Needs an invoice destination',
     body: [
-      'These Bookings arrived without a place for the invoice to go, and every procedure needs a Contract before it can be completed.',
+      'These Bookings arrived without a place for the invoice to go, and no procedure can be completed without a Contract.',
       'Open one and work down the steps: where the invoice goes, the step that narrows it, then the Contract. An RVG-priced Contract goes to the anaesthetist for the RVG code. Nothing is chosen for you from the hospital.',
     ],
   },

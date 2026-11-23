@@ -172,8 +172,8 @@ export function XeroArchivingView({ actor }: { actor: Actor }) {
       <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 560 }}>
         <div style={{ fontSize: 14, fontWeight: 700 }}>Contact archive inactivity window</div>
         <div style={{ fontSize: 12.5, color: neutral.slate }}>
-          The RFP gives 90 days as an illustrative example, not a fixed rule, so it is a configurable
-          setting. Changing it changes which contacts the next nightly run archives.
+          A contact is archived once every invoice is paid and this many days pass with no activity. 90
+          days is an example, not a fixed rule. Changing it changes which contacts the next nightly run archives.
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
           <div style={{ width: 160 }}>

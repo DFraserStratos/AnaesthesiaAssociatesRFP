@@ -503,9 +503,9 @@ export const PRE_POST_OP_COPY = {
   /** The invoice tick. */
   invoiceTick: 'Invoice this event',
   invoiceTickCaption: 'Cleared: kept on the record, never invoiced.',
-  /** The "same as" tick and its reading caption (US-03.7.1; our reading of Greg's courier comparison). */
+  /** The "same as" tick and its caption (US-03.7.1; D13 answered: an event's billable party defaults to its Procedure's). */
   sameAsTick: 'Billed to the same party as the procedure',
-  sameAsCaption: 'Our reading: the same party as the procedure unless you change it.',
+  sameAsCaption: 'The same party as the procedure unless you change it.',
   billTo: 'Bill to',
   /** The routing caption under the primary action (OQ-121, D69). */
   routingCaption: 'Reviewed by the office, then billed in the next run.',

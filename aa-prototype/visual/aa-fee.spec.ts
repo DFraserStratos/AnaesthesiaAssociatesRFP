@@ -40,7 +40,7 @@ test('AA fee: settings, seeded BCTIs, the monthly run, the fee pair and the web 
   await expect(screen.getByTestId('aa-fee-month')).toHaveText('July 2026')
   await expect(page.getByTestId('aa-fee-row-AA-FEE-2026-H01')).toContainText('Paid')
   await expect(page.getByTestId('aa-fee-row-AA-FEE-2026-H02')).toContainText('Unpaid')
-  await expect(screen.getByTestId('aa-fee-count-rule')).toContainText("Being confirmed with AA's accountant")
+  await expect(screen.getByTestId('aa-fee-count-rule')).toContainText("Provisional: being confirmed with AA's accountant (OQ-29, OQ-60).")
 
   // Seed a month of BCTIs, then run: Dr Rutherford's $700.00 before GST, $805.00 with GST.
   expect(await runDemoAction(page, 'seed-month-of-bctis', { close: true })).toMatch(/now has 40 paid in July 2026/)

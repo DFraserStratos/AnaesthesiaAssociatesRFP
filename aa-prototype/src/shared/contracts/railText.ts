@@ -31,7 +31,7 @@ export const AMOUNT_INVALID_HINT = 'Type the amount in dollars and cents.'
 
 /** A Contract's price as a row shows it: its fixed price in force, "Prepaid" before it, or how it is priced. */
 export function contractPriceText(contract: Contract, dateISO: string): string {
-  if (contract.pricing.kind === 'open') return 'Other price'
+  if (contract.pricing.kind === 'open') return 'Type the amount'
   if (isRvgKind(contract.pricing.kind)) return contract.pricing.kind === 'rvgAnaesthetistRate' ? 'RVG' : contract.pricing.kind === 'rvgContractRate' ? 'RVG, agreed rate' : 'RVG, discounted'
   const range = rangeInForce(contract, dateISO)
   const price = range === null ? 'Needs a price' : formatCurrency(range.price)

@@ -30,7 +30,7 @@
  * source and no layer is stored: the price is the figure itself.
  *
  * What the snapshot holds is our reading of AR-58 2.8 plus what the printed
- * invoice and the payee need (US-04.3.5 leaves the exact fields to discovery);
+ * invoice and the payee need (US-04.3.5 leaves the exact fields open);
  * a change is an edit here, its tests and the seed, never a screen.
  */
 

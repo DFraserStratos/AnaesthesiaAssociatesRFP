@@ -23,6 +23,7 @@ import { DefList, DefRow } from '../ui'
 import { Eyebrow } from '../ui/Eyebrow'
 import { TextAction } from '../ui/TextAction'
 import { hhmm } from '../format'
+import { NEEDS_INVOICE_DESTINATION } from './BillingCard'
 
 /**
  * Who the Procedure was invoiced to, the way the live Paid by line decides it
@@ -106,7 +107,7 @@ export function BookingAsAtPanel({ bookingId, entryId, onClose }: { bookingId: s
               <DefRow label="As received">{p.procedureText?.text ?? 'None received'}</DefRow>
               <DefRow label="Invoice description">{p.invoiceDescription?.text ?? 'Not set'}</DefRow>
               <DefRow label="RVG code">{p.rvgGroupId !== undefined && masters.rvgGroups[p.rvgGroupId] !== undefined ? `${masters.rvgGroups[p.rvgGroupId]!.code} · ${masters.rvgGroups[p.rvgGroupId]!.description}` : 'None'}</DefRow>
-              <DefRow label="Contract">{contract !== undefined ? `${contract.name}${holder !== undefined ? ` · ${holder}` : ''}` : 'Needs a Contract'}</DefRow>
+              <DefRow label="Contract">{contract !== undefined ? `${contract.name}${holder !== undefined ? ` · ${holder}` : ''}` : NEEDS_INVOICE_DESTINATION}</DefRow>
               <DefRow label="Paid by">{asAtPaidByText(contract, p.payer, snapshot.patient, masters.parties)}</DefRow>
             </DefList>
           </div>

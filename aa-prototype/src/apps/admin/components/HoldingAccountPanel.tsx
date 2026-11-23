@@ -43,7 +43,7 @@ export function HoldingAccountPanel() {
           {LEAVES_ONLY_BY_SYSTEM}.
         </span>
         <Pill tone="warning" title="The release trigger is still to confirm with AA (OQ-125)">
-          {RELEASE_TRIGGER_CAPTION} · to confirm with AA
+          {RELEASE_TRIGGER_CAPTION} · to confirm with AA (OQ-125)
         </Pill>
       </div>
       {account.rows.length === 0 ? (
