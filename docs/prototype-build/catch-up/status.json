@@ -2,23 +2,19 @@
   "in_progress": [],
   "next": {
     "phases": [
-      "40a",
-      "43a"
+      "U7"
     ],
-    "note": "Wave 6 of the two build lanes (LANES.md). Wave 5 (Lane A 39a, 41; Lane B 39b, 40) was joined on wave/5 on 20 November 2026 (PERSIST_VERSION 74): payment runs with BCTI approval and netting, pre-op, post-op and billing events, the prepayment letter, cancellation and differences by hand, and patients: the mandatory NHI, the balance warning and the Admin patient view. Lane A (worktree AnaesthesiaAssociatesRFP-laneA, branch lane/a, ports 5273, 5274, 5280) runs 40a. Lane B (AnaesthesiaAssociatesRFP-laneB, branch lane/b, ports 5373, 5374, 5380) runs 43a, then 43b. Then U7 alone, then 44 alone."
+    "note": "Wave 7 of the build lanes (LANES.md): U7 alone, in Lane A (worktree AnaesthesiaAssociatesRFP-laneA, branch lane/a, ports 5273, 5274, 5280). Wave 6 (Lane A 40a; Lane B 43a, 43b) was joined on wave/6 on 23 November 2026 (PERSIST_VERSION 75): NHI lookup and identity standards, the simulated PWA sign-in and simple anaesthetist screens with point-of-need help, and the help line and product support. Lane B has nothing queued: a U phase never runs beside a catch-up phase. Then 44 alone."
   },
   "guidance": {
-    "as_of": "2026-11-20",
-    "headline": "Wave 6 in two lanes: start Lane A (40a) and Lane B (43a) now.",
-    "headline_sub": "Wave 5 (Lane A 39a, 41; Lane B 39b, 40) is joined on wave/5. Wave 6: Lane A runs 40a; Lane B runs 43a, then 43b. Paste each lane's prompt into its own session.",
-    "parallel": "Wave 6 runs in two lanes, each in its own git worktree with its own ports: Lane A 40a; Lane B 43a, then 43b. Copy each lane's prompt below into its own Claude session (claude for Lane A, claude2 for Lane B); a session started in the main folder moves itself into its worktree. The same prompt starts, resumes and joins.",
+    "as_of": "2026-11-23",
+    "headline": "Start U7 now, alone in Lane A. Wave 6 is joined: NHI lookup, sign-in and point-of-need help, and the help line and product support.",
+    "headline_sub": "Wave 6 (Lane A 40a; Lane B 43a, 43b) is joined on wave/6 and not yet pushed. Wave 7 is U7 alone in Lane A (paste the Lane A prompt); Lane B waits. Then 44 alone.",
+    "parallel": "Wave 7 is one phase, U7, run alone in Lane A (its own worktree and ports): a U phase never runs beside a catch-up phase. Paste the Lane A prompt into a claude session; Lane B has nothing queued. The same prompt starts, resumes and joins.",
     "safe": {
-      "40a": "Lane A's phase in Wave 6. Its dependencies (22a, 26, 40) are done; 40 joined in Wave 5.",
-      "43a": "Lane B's first phase in Wave 6. Its dependencies (20a, 21, 21a, 22a, 24, 25a, 31, 39b, U6) are done; 39b joined in Wave 5."
+      "U7": "Lane A, alone (Wave 7). Every dependency (U6, 25a, 32d, 35, 38, 39a, 40a, 41, 43, 43b) is done; Wave 6 must be committed and on master first."
     },
     "wait": {
-      "43b": "Lane B, after 43a (its other dependencies 42 and U6 are done).",
-      "U7": "Alone, after Wave 6 (it needs 40a, 43b and phases already joined).",
       "44": "Alone, after U7."
     },
     "lanes": [
@@ -26,17 +22,14 @@
         "name": "Lane A",
         "where": "`AnaesthesiaAssociatesRFP-laneA`, branch `lane/a`, ports 5273, 5274, 5280, usually `claude`",
         "queue": [
-          "40a"
+          "U7"
         ],
         "prompt_file": "lanes/lane-a.prompt.md"
       },
       {
         "name": "Lane B",
         "where": "`AnaesthesiaAssociatesRFP-laneB`, branch `lane/b`, ports 5373, 5374, 5380, usually `claude2`",
-        "queue": [
-          "43a",
-          "43b"
-        ],
+        "queue": [],
         "prompt_file": "lanes/lane-b.prompt.md"
       }
     ]

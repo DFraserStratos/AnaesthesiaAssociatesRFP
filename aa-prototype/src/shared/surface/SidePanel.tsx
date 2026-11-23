@@ -18,7 +18,7 @@
  * `footerLayout`.
  */
 
-import { useId, useRef, type CSSProperties, type ReactNode } from 'react'
+import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { elevation, neutral, scrim, type as typeScale, zIndex } from '../../theme/tokens'
 import { useModalLayer } from './useModalLayer'
 import { CloseButton } from '../ui/IconButton'
@@ -26,8 +26,13 @@ import { CloseButton } from '../ui/IconButton'
 /** `list` is the Admin List drawer's width (Admin's `ADMIN_LIST_DRAWER_WIDTH` reads it), `record` the 600px panel. */
 export const SIDE_PANEL_WIDTH = { list: 440, record: 600 } as const
 
-/** The framed build's harness bar height (`shell/AppShell.tsx`), for `underHarness`. */
-const HARNESS_HEIGHT = 48
+/**
+ * Where the framed build's harness bar ends (`shell/AppShell.tsx`, class `aa-harness`): 0 when it is
+ * absent or hidden, as in the catalogue capture, so the panel then starts at the top.
+ */
+function harnessBottom(): number {
+  return document.querySelector('.aa-harness')?.getBoundingClientRect().bottom ?? 0
+}
 
 /** Data attributes and the test id passed through to the panel element (`data-slot-id`, `data-list-id`). */
 export type SidePanelAttrs = Record<`data-${string}`, string | undefined>
@@ -53,7 +58,7 @@ export interface SidePanelProps {
   /** The gap between the body's blocks: 20 on a record, 16 on a drawer unless given. */
   bodyGap?: number
   /**
-   * Starts below the framed build's 48px harness bar, which stays above the scrim
+   * Starts below the framed build's harness bar (measured when it opens), which stays above the scrim
    * (global.css), so Demo actions can stage what the panel shows (catch-up Phase
    * 43b's support panel). Off by default: the drawers keep covering the bar.
    */
@@ -75,6 +80,10 @@ export function SidePanel({ open, onClose, title, meta, above, width, footer, fo
   const rootRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLElement>(null)
   useModalLayer({ open, onClose, rootRef, panelRef })
+  const [top, setTop] = useState(0)
+  useLayoutEffect(() => {
+    if (open && underHarness) setTop(harnessBottom())
+  }, [open, underHarness])
 
   if (!open) return null
   const record = width === 'record'
@@ -91,7 +100,7 @@ export function SidePanel({ open, onClose, title, meta, above, width, footer, fo
         data-testid={testId}
         data-shot={shot}
         {...panelAttrs}
-        style={{ position: 'fixed', top: underHarness ? HARNESS_HEIGHT : 0, right: 0, bottom: 0, width: SIDE_PANEL_WIDTH[width], maxWidth: '100%', background: neutral.surface, zIndex: zIndex.drawer, boxShadow: elevation.e3, display: 'flex', flexDirection: 'column', outline: 'none' }}
+        style={{ position: 'fixed', top: underHarness ? top : 0, right: 0, bottom: 0, width: SIDE_PANEL_WIDTH[width], maxWidth: '100%', background: neutral.surface, zIndex: zIndex.drawer, boxShadow: elevation.e3, display: 'flex', flexDirection: 'column', outline: 'none' }}
       >
         <header style={{ padding: '20px 24px', borderBottom: `1px solid ${neutral.line}`, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: record || above !== undefined ? 6 : 0, minWidth: 0 }}>

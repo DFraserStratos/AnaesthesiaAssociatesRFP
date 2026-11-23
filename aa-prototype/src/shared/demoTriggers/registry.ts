@@ -2847,7 +2847,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     screen: 'Mobile · any screen',
     routes: ['/mobile', '/mobile/*'],
     surfaces: ['pwa'],
-    // While the Help sheet is open (it lives on More, where the chip is otherwise absent), lifted above it.
+    // Only while the Help sheet is open (on More), so it never crowds other screens; the chip lifts above the sheet.
     overSheet: true,
     when: (_state, ctx) => supportTab(ctx) === 'helpLine',
     disabledReason: (state) => (newestOpenTicket(state, { channel: 'helpLine', requester: SOUTER_ACTOR.who }) === null ? 'No open request' : null),

@@ -995,6 +995,7 @@ exception/payment/integration workflows (Phases 09 to 11) are built.
 | Hospital import and matching screen | Yes | Catch-up Phase 33 |
 | The rooms' PDF lists through matching, and where a List came from | Yes | Catch-up Phase 34 |
 | NHI lookup through a simulated Digital Services Hub, refresh from the NHI register, identity standards | Yes | Catch-up Phase 40a |
+| Ease of use: the PWA's simulated sign-in (Dr Souter's demo account filled in, Provisional OQ-83; Sign out on More), point-of-need help on Booking capture, Admin Day and Admin Review, a welcome card per app | Yes | Catch-up Phase 43a |
 | Support: Help in every app (the help line, hours, request form and tickets), product support for AA, out of hours and public-holiday call-outs | Yes | Catch-up Phase 43b |
 | HL7/FHIR ingestion and monitoring | Future scope | Phase 11 (simulator only; its own demo surface from catch-up Phase 34) |
 | Scenario jump controls and guided script | Yes | Phase 12 |
