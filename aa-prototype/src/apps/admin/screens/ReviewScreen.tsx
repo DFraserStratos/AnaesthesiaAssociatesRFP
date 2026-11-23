@@ -266,7 +266,7 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
       {/* Breadcrumb */}
       {!backToBillingMonitor && (
       <div style={{ fontSize: 13, color: neutral.mist }}>
-        <button onClick={onBack} style={{ border: 'none', background: 'none', padding: 0, color: neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Review queue</button>
+        <button type="button" className="aa-ctl" onClick={onBack} style={{ border: 'none', background: 'none', padding: 0, color: neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Review queue</button>
         <span style={{ color: neutral.lineStrong }}> / </span>
         <span>{anaesthetist !== undefined ? anaesthetist.name : list.anaesthetistId} · {hospitalName} {sessionText(list.session)}</span>
       </div>

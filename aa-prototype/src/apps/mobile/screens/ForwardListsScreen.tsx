@@ -312,7 +312,7 @@ export function ForwardListsScreen({
             {searchCountLine(results.total, shown, query)}
           </div>
         )}
-        {mode === 'day' && dayISO !== null && <DayChip dateISO={dayISO} onClose={() => onDayChange(null)} size="touch" testId="mobile-lists-day-chip" />}
+        {mode === 'day' && dayISO !== null && <DayChip dateISO={dayISO} onClose={() => onDayChange(null)} size="touch" testId="mobile-lists-day-chip" returnFocusTo={() => document.querySelector<HTMLElement>('[data-lookback-go-to-date]')} />}
         {mode === 'main' && <FilterPills value={filter} options={FILTERS} onSelect={setFilter} ariaLabel="Show Lists" size="lg" />}
       </div>
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeftRight, BellRing, Lock, MoreHorizontal } from 'lucide-react'
-import { accent, elevation, neutral, radius, semantic, surface } from '../../../theme/tokens'
+import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
 import { motion } from '../../../theme/motion'
 import { BackLink } from '../../../shared/ui/BackLink'
 import { ProgressBar } from '../../../shared/ui/ProgressBar'
@@ -14,6 +14,8 @@ import { SharedNotes } from '../../../shared/notes'
 import { Card } from '../../../shared/ui/Card'
 import { SuccessOverlay } from '../../../shared/ui/SuccessOverlay'
 import { AddRowButton } from '../../../shared/ui/AddRowButton'
+import { StickyDock } from '../../../shared/ui/StickyDock'
+import { TickGlyph } from '../../../shared/ui/TickBadge'
 import { ListOptionsSheet, TickBadge, type ListOption } from '../components'
 import { ListInvoices, useListInvoices } from '../../../shared/schedule'
 import { LIST_PROGRESS_LABEL, listProgress } from '../../../domain/listProgress'
@@ -337,23 +339,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
       {/* Sticky submit footer — the mockup's disabled → enabled → submitted
           walk. Completion-gated at the store; the greyed bar stays TAPPABLE
           and opens the explanatory sheet naming the offenders. */}
-      <div
-        data-testid="mobile-list-footer"
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          paddingTop: 14,
-          paddingLeft: 20,
-          paddingRight: 20,
-          // Matches the booking dock: inset - 2, floored at the footer's own top pad.
-          paddingBottom: 'max(calc(var(--aa-inset-bottom, 34px) - 2px), 14px)',
-          background: surface.frosted,
-          backdropFilter: 'blur(14px)',
-          borderTop: `1px solid ${neutral.line}`,
-        }}
-      >
+      <StickyDock testId="mobile-list-footer">
         {authorised ? (
           <div
             data-shot="list-authorised-status"
@@ -378,16 +364,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
               animation: `aa-tick-pop 340ms ${motion.completeTick.easing}`,
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 14 14" aria-hidden>
-              <path
-                d="M2.5 7.5 L5.5 10.5 L11.5 3.5"
-                fill="none"
-                stroke={neutral.surface}
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <TickGlyph size={18} color={neutral.surface} />
             Submitted to office
           </div>
         ) : incomplete > 0 ? (
@@ -440,7 +417,7 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
             Mark list completed
           </button>
         )}
-      </div>
+      </StickyDock>
 
       <ListOptionsSheet
         open={sheet === 'options'}

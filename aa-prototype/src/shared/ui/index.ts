@@ -17,7 +17,7 @@ export {
   type SlidingSegmentVariant,
   type SlidingSegmentSize,
 } from './SlidingSegmentedControl'
-export { TickBadge } from './TickBadge'
+export { TickBadge, TickGlyph } from './TickBadge'
 export { TickButton } from './TickButton'
 export { SuccessOverlay } from './SuccessOverlay'
 export { DockSpacer } from './DockSpacer'
@@ -44,6 +44,11 @@ export { StatTile, type StatTileVariant } from './StatTile'
 export { DefList, DefRow, type DefRowLayout } from './DefRow'
 export { DayChip } from './DayChip'
 export { AddRowButton } from './AddRowButton'
+export { StickyDock } from './StickyDock'
+export { NoticeLine, type NoticeLineProps } from './NoticeLine'
+export { PickRow, type PickRowProps } from './PickRow'
+export { Disclosure, DisclosureButton } from './Disclosure'
+
 // Catch-up Phase 33's review: option cards and pick-list rows.
 export { RadioCard, type RadioCardProps, type RadioItemProps } from './RadioCard'
 export { OptionRow, type OptionRowProps } from './OptionRow'

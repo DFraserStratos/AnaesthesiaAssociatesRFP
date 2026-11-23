@@ -226,7 +226,7 @@ export function ListsScreen({
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', minHeight: 32 }}>
         {mode === 'main' && <StatusLegend variant="chips" />}
-        {mode === 'day' && dayISO !== null && <DayChip dateISO={dayISO} onClose={() => onDayChange(null)} />}
+        {mode === 'day' && dayISO !== null && <DayChip dateISO={dayISO} onClose={() => onDayChange(null)} returnFocusTo={() => document.querySelector<HTMLElement>('[data-testid="web-lists-go-to-date"]')} />}
         {mode === 'search' && (
           <>
             {shown > 0 && (

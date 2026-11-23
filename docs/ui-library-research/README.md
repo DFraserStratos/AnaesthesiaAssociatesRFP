@@ -8,11 +8,12 @@
 - The dev team is comfortable keeping custom controls and advised against bending shadcn to our look.
 
 The research surfaced a problem worth fixing on its own: the same component built more than once. That work
-continues as the unification effort in `docs/ui-unification/` (one component per job, our own design and
-code). The inventories, the fit notes and the component map in this folder remain as evidence; the
-provisional decisions and the "How to resume" prompt below are historical. `ui-library-preview/` is retired
-at the start of unification phase U1, with its row list, fit notes and plan log archived to
-`preview-archive/` in this folder.
+was done as the unification effort in `docs/ui-unification/` (one component per job, our own design and
+code; U1 to U7, finished 23 November 2026, results in its `RESULTS.md`). The inventories, the fit notes and
+the component map in this folder remain as evidence; the provisional decisions and the "How to resume" prompt
+below are historical. `ui-library-preview/` was retired at the start of unification phase U1, with its row
+list, fit notes and plan log archived to `preview-archive/` in this folder. The live catalogue
+(`/demo/catalogue/*`) is now grouped by component family, with a "Shared component" column.
 
 **Snapshot:** gathered 11 November 2026, at commit `48fa38d4` (with uncommitted catch-up work in progress
 at the time). The inventories describe the app at that point; library versions and status are as reported

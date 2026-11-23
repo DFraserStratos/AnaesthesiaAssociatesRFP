@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { ChevronLeft, ChevronRight, Plus, Repeat } from 'lucide-react'
 import { AttentionDot } from '../../../shared/warnings/AttentionDot'
-import { brand, neutral, radius, surface } from '../../../theme/tokens'
+import { brand, neutral, radius } from '../../../theme/tokens'
 import { BackLink } from '../../../shared/ui/BackLink'
 import { Button } from '../../../shared/ui/Button'
+import { StickyDock } from '../../../shared/ui/StickyDock'
 import type { Actor, CalendarSession } from '../../../store'
 import { blockFill, DockSpacer, resolveDisplayStatus, StatusChip, useAnaesthetistStatusChoices, useDisplayStatus, useSlotStatusRecords } from '../../../shared'
 import {
@@ -133,23 +134,12 @@ export function MyAvailabilityCalendarScreen({ actor, anaesthetistId, onBack, on
         <DockSpacer height="calc(var(--aa-inset-bottom, 34px) + 86px)" />
       </div>
 
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          padding: '14px 20px max(calc(var(--aa-inset-bottom, 34px) - 2px), 14px)',
-          background: surface.frosted,
-          backdropFilter: 'blur(14px)',
-          borderTop: `1px solid ${neutral.line}`,
-        }}
-      >
+      <StickyDock>
         <Button variant="primary" block shot="mobile-add-days-off" onClick={() => onAddDaysOff(addFrom)}>
           <Plus size={18} strokeWidth={2.4} aria-hidden />
           Add days off
         </Button>
-      </div>
+      </StickyDock>
     </div>
   )
 }

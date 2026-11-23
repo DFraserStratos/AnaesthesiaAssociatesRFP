@@ -1,10 +1,11 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { format, parseISO } from 'date-fns'
 import { BellRing, CheckCircle2 } from 'lucide-react'
-import { neutral, semantic } from '../../theme/tokens'
+import { neutral } from '../../theme/tokens'
 import { alertOffice, activeAlertFor, latestAlertFor, officeAlertRefusal, OFFICE_ALERT_NOTE_MAX, resolveNotification, useAppStore, type Actor } from '../../store'
 import { Button, FormError, Notice, TextArea, TickButton } from '../ui'
 import { DoneStep } from '../ui/DoneStep'
+import { NoticeLine } from '../ui/NoticeLine'
 import { OverlayHeader } from '../surface/OverlayHeader'
 import { SheetActions } from '../surface/SheetActions'
 import { useSurface } from '../surface'
@@ -12,8 +13,6 @@ import { drSurname } from '../format'
 import { sessionText } from '../../domain/outOfHours'
 
 type Target = { listId: string; bookingId?: string }
-
-const whenLabel = (iso: string) => format(parseISO(iso), 'EEE d MMM, HH:mm')
 
 /**
  * "Alert the office" (catch-up Phase 32b; US-03.6.3): the anaesthetist asks the
@@ -59,20 +58,24 @@ export function AlertOfficeEntry({
     <div data-shot={`alert-office-${target.bookingId !== undefined ? 'booking' : 'list'}`} style={{ display: 'flex', flexDirection: 'column', gap: 8, ...style }}>
       {active !== undefined ? (
         <Notice tone="neutral" live="status" shot="alert-office-sent" icon={<BellRing size={16} />}>
-          <span style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-            <span style={{ fontSize: 13.5, fontWeight: 600, color: neutral.ink }}>The office has been alerted</span>
-            {active.message !== undefined && <span style={{ fontSize: 13, lineHeight: '18px', color: neutral.slate }}>"{active.message}"</span>}
-            <span style={{ fontSize: 11.5, color: neutral.mist }}>{whenLabel(active.atISO)} · It stays with the office until someone there deals with it.</span>
-          </span>
+          <NoticeLine
+            strong
+            text="The office has been alerted"
+            {...(active.message !== undefined ? { message: active.message } : {})}
+            atISO={active.atISO}
+            stampSuffix=" · It stays with the office until someone there deals with it."
+          />
         </Notice>
       ) : (
         latest?.resolvedAt !== undefined && (
           <Notice tone="success" live="status" shot="alert-office-resolved" icon={<CheckCircle2 size={16} />}>
-            <span style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-              <span style={{ fontSize: 13.5, fontWeight: 600, color: semantic.success.onTint }}>The office has dealt with this</span>
-              {latest.message !== undefined && <span style={{ fontSize: 13, lineHeight: '18px', color: semantic.success.onTint }}>Your note: "{latest.message}"</span>}
-              <span style={{ fontSize: 11.5, color: semantic.success.onTint }}>{whenLabel(latest.resolvedAt)}</span>
-            </span>
+            <NoticeLine
+              tone="success"
+              strong
+              text="The office has dealt with this"
+              {...(latest.message !== undefined ? { message: latest.message, messagePrefix: 'Your note: ' } : {})}
+              atISO={latest.resolvedAt}
+            />
           </Notice>
         )
       )}
@@ -210,12 +213,14 @@ export function OfficeAlertLine({ actor, target }: { actor: Actor; target: Targe
         </TickButton>
       }
     >
-      <span style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-        <span style={{ fontSize: 13.5, fontWeight: 600, color: neutral.ink }}>Alert from {who}</span>
-        {active.message !== undefined && <span style={{ fontSize: 13, lineHeight: '18px', color: neutral.slate }}>"{active.message}"</span>}
-        <span style={{ fontSize: 11.5, color: neutral.mist }}>{whenLabel(active.atISO)}</span>
-        <FormError message={error} variant="inline" />
-      </span>
+      <NoticeLine
+        strong
+        text={`Alert from ${who}`}
+        {...(active.message !== undefined ? { message: active.message } : {})}
+        atISO={active.atISO}
+        footer={<FormError message={error} variant="inline" />}
+        style={{ flex: 1 }}
+      />
     </Notice>
   )
 }

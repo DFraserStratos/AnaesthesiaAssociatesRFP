@@ -1,7 +1,8 @@
 import { useCallback, useLayoutEffect, useRef, useState, type ReactNode, type UIEvent } from 'react'
-import { neutral, radius, surface, zIndex } from '../../theme/tokens'
+import { neutral, radius, zIndex } from '../../theme/tokens'
 import { BookingTotalPanel, BookingTotalStrip } from '../capture'
 import { DockSpacer } from '../ui/DockSpacer'
+import { StickyDock } from '../ui/StickyDock'
 import { BottomSheet } from './BottomSheet'
 import { Dialog } from './Dialog'
 import { SurfaceCtx, type BookingLayoutSlots, type Surface, type SurfaceVariant } from './context'
@@ -41,60 +42,11 @@ const WEB_COMMIT_HALO = 12
  */
 function MobileBookingLayout({ contentRef, header, history, banners, context, capture, actions, summary, completeBar, overlay }: BookingLayoutSlots) {
   const commit = summary !== null ? summary(completeBar) : completeBar
-  const dockRef = useRef<HTMLDivElement | null>(null)
+  // The dock's MEASURED height (the shared `StickyDock` measures and publishes it as `--aa-dock-height`
+  // for the PWA's update pill and demo chip): the bar swaps for the shorter success state, so the
+  // booking's tail clearance below tracks it rather than a number.
   const [dockHeight, setDockHeight] = useState(0)
   const [collapsed, setCollapsed] = useState(false)
-
-  useLayoutEffect(() => {
-    const el = dockRef.current
-    if (el === null) {
-      setDockHeight(0)
-      return
-    }
-    // `offsetHeight`, NOT `getBoundingClientRect().height`: the rect is the
-    // POST-transform box, and PhoneFrame scales the whole device. At 0.7 zoom
-    // the rect reads ~30% short, so the scroll pad below leaves the tail of the
-    // booking hidden behind the dock. `SlidingSegmentedControl` documents the same
-    // trap for the same reason.
-    const measure = () => setDockHeight(el.offsetHeight)
-    measure()
-    // jsdom has no ResizeObserver, and the observer only REFINES a value the
-    // one-shot measurement already set, so there is nothing to shim.
-    if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(measure)
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [commit])
-
-  /**
-   * Republish the measured height as `--aa-dock-height` so host chrome that has
-   * to clear the dock can, without measuring it a second time. The installed
-   * PWA's update pill is the consumer: it was tuned to clear the bottom tab
-   * bar, but the tab bar is hidden at Lists depth 1 and 2 — exactly where this
-   * dock stands in its place and is twice as tall.
-   *
-   * Written on `documentElement`, not on the dock or the scroller, because the
-   * property has to INHERIT to the reader and the pill is a sibling of the
-   * whole product tree rather than a descendant of the booking layer. Cleared
-   * whenever there is no dock and on unmount, because a value left behind
-   * would keep the pill floating high on Lists, Availability and More.
-   *
-   * What ships is the untransformed `offsetHeight` measured above, which is the
-   * right number for this reader: the device host applies no presenter zoom.
-   */
-  useLayoutEffect(() => {
-    const root = document.documentElement
-    if (commit === null) {
-      root.style.removeProperty('--aa-dock-height')
-      return
-    }
-    root.style.setProperty('--aa-dock-height', `${dockHeight}px`)
-    // Block body, not a concise one: `removeProperty` returns the old value, and
-    // a cleanup function that returns a string is not a valid `Destructor`.
-    return () => {
-      root.style.removeProperty('--aa-dock-height')
-    }
-  }, [commit, dockHeight])
 
   const onScroll = useCallback((e: UIEvent<HTMLDivElement>) => {
     const y = e.currentTarget.scrollTop
@@ -149,32 +101,11 @@ function MobileBookingLayout({ contentRef, header, history, banners, context, ca
         />
       </div>
       {commit !== null && (
-        <div
-          ref={dockRef}
-          data-testid="mobile-booking-commit"
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            // Ride above the software keyboard when one is up. The var is set
-            // only by the device host, so in the frame this resolves to 0 and
-            // the dock is pixel-identical.
-            bottom: 'var(--aa-keyboard-inset, 0px)',
-            paddingTop: 14,
-            paddingLeft: 20,
-            paddingRight: 20,
-            // 32 = 34 - 2, reusing the home indicator's own lower margin. The
-            // 14px floor is the dock's own top pad, so a zero-inset device
-            // (Android, desktop) gets a symmetric box rather than a collapse.
-            paddingBottom: 'max(calc(var(--aa-inset-bottom, 34px) - 2px), 14px)',
-            background: surface.frosted,
-            backdropFilter: 'blur(14px)',
-            borderTop: `1px solid ${neutral.line}`,
-            zIndex: zIndex.sticky,
-          }}
-        >
+        // Rides above the software keyboard when one is up (the var is set only by the device host, so in
+        // the frame it resolves to 0 and the dock is pixel-identical).
+        <StickyDock testId="mobile-booking-commit" riseWithKeyboard zIndex={zIndex.sticky} onHeight={setDockHeight}>
           {commit}
-        </div>
+        </StickyDock>
       )}
       {overlay}
     </>

@@ -4,6 +4,7 @@ import { accent, neutral, radius } from '../../theme/tokens'
 import type { Actor } from '../../store'
 import { AvailabilityForm, type AvailabilityFormInitial } from './AvailabilityForm'
 import { ResultLine } from '../ui/ResultLine'
+import { IconButton } from '../ui/IconButton'
 import { AvailabilitySlotPanel, type ChangeRequest } from './AvailabilitySlotPanel'
 import { useAvailabilityBounds, useAvailabilityDay } from './useAvailability'
 import { dateRange, longDayNoYear } from '../format'
@@ -54,9 +55,9 @@ export function AvailabilityEditor({ actor, anaesthetistId, fromISO, toISO, form
     <div data-shot={shot} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {request !== null && !range && formPreset === undefined && (
-          <button type="button" aria-label="Back to the sessions" onClick={() => { setRequest(null); setLine(null) }} style={{ width: 32, height: 32, borderRadius: radius.pill, border: `1px solid ${neutral.line}`, background: neutral.surface, color: accent.pressed, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flex: 'none' }}>
+          <IconButton label="Back to the sessions" size={32} shape="round" tone="action" onClick={() => { setRequest(null); setLine(null) }}>
             <ChevronLeft size={16} aria-hidden />
-          </button>
+          </IconButton>
         )}
         <div>
           {/* A sheet title in the phone's sheet (U2 OverlayHeader names it); inline on the web rail it keeps its card title. */}

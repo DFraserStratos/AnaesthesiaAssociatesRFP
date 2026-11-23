@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Building2, ChevronRight, Users } from 'lucide-react'
+import { Building2, Users } from 'lucide-react'
 import { neutral, radius } from '../../theme/tokens'
 import {
   markUnavailableAndMoveList,
@@ -21,6 +21,7 @@ import { useSurface } from '../surface'
 import { useMoveInput } from './useListMoves'
 import { ChoiceRow } from './moveSheetParts'
 import { Avatar } from '../Avatar'
+import { PickRow } from '../ui/PickRow'
 import { VacatedSessionChoice } from './VacatedSessionChoice'
 import { PrepaymentHonourLine } from './PrepaymentHonourLine'
 import { listHasSentPrepayment } from '../../store/prepaymentNotice'
@@ -200,22 +201,18 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
               {targets.length > 0 && shownTargets.length === 0 && <li style={{ padding: 14, fontSize: 13, color: neutral.slate }}>No free colleague matches</li>}
               {shownTargets.map((t, i) => (
                 <li key={t.anaesthetistId} style={{ display: 'flex' }}>
-                <button
-                  type="button"
-                  data-shot={`move-colleague-${t.anaesthetistId}`}
-                  onClick={() => {
+                <PickRow
+                  look="colleague"
+                  shot={`move-colleague-${t.anaesthetistId}`}
+                  name={t.name}
+                  {...(t.phone !== '' ? { line: t.phone, lineMono: true } : {})}
+                  first={i === 0}
+                  minHeight={56}
+                  onPick={() => {
                     setTargetSlotId(t.slotId)
                     setStep('confirm')
                   }}
-                  style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', minHeight: 56, border: 'none', borderTop: i === 0 ? 'none' : `1px solid ${neutral.sunken}`, background: neutral.surface, fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
-                >
-                  <Avatar name={t.name} size={36} variant="neutral" />
-                  <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>{t.name}</span>
-                    {t.phone !== '' && <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>{t.phone}</span>}
-                  </span>
-                  <ChevronRight size={16} strokeWidth={2.2} color={neutral.mist} aria-hidden />
-                </button>
+                />
                 </li>
               ))}
             </ul>

@@ -1,6 +1,6 @@
 # Shared UI: one component per job
 
-Written in UI unification Phase U1 (16 November 2026). The audit behind it is
+Written in UI unification Phase U1 (16 November 2026); final after U7 (23 November 2026). The audit behind it is
 `docs/ui-unification/README.md` (what was built twice, and why some differences stay); the phased plan
 is `docs/ui-unification/PLAN.md`. Each later U phase adds its rows to the table below as it lands.
 
@@ -99,10 +99,17 @@ Press feedback stays in the mobile rules of `global.css`, never in a component.
 | `useRovingRadio` | `ui/useRovingRadio.ts` | The one radio-group keyboard model (U4): one Tab stop, arrows, Home and End, disabled skipped; `selectOnMove: false` where a pick saves (the Contract rail) | None planned |
 | `Segmented` | `ui/Field.tsx` | A labelled choice between a few options; passes `layout` and `size` to the sliding control (U5) | Phases 33, 36, 39b |
 | `SlidingSegmentedControl` | `ui/SlidingSegmentedControl.tsx` | The segmented control with the sliding highlight: `variant` teal or surface (`ink` went with question 17), `size` md or sm (the 36px toolbar fit, U5), `layout` row, two-column or wrap; segments stay buttons with `aria-pressed`. The README target's `shape` was not built: its only pill user, Balances, took the standard control (question 17) | None planned |
-| `TickBadge` | `ui/TickBadge.tsx` | The completed tick disc | None planned |
+| `TickBadge`, `TickGlyph` | `ui/TickBadge.tsx` | The completed tick disc; `TickGlyph` the brand tick itself (U7): path `M2.5 7.5 L5.5 10.5 L11.5 3.5` on a 14 viewBox, `size`, `color`, `strokeWidth` (2.4; the badge's 2.2), `draw` (the complete-tick stroke), always `aria-hidden`; for completion states (lucide `Check` stays for "selected") | None planned |
 | `TickButton` | `ui/TickButton.tsx` | A tick-to-confirm control | None planned |
 | `SuccessOverlay` | `ui/SuccessOverlay.tsx` | The full-surface "it worked" moment | U2 (`DoneStep`) |
-| `DockSpacer` | `ui/DockSpacer.tsx` | Room under content for a pinned mobile dock | None planned |
+| `DockSpacer` | `ui/DockSpacer.tsx` | Room under content for a pinned mobile dock (its 74, 82 and 86 kept: tying them to the published dock height would move framed pixels, U7) | None planned |
+| `StickyDock` | `ui/StickyDock.tsx` | The frosted dock across the foot of a phone screen (U7): absolute, `14px 20px`, the bottom pad from the host inset, `surface.frosted` under a 14px blur, a `line` rule; measures itself and publishes `--aa-dock-height` (docks stack: the newest is published); `riseWithKeyboard` (the Booking), `zIndex`, `onHeight`, `testId`, `shot`. What sits inside is the screen's own (Mark complete 56, the List dock 54) | None planned |
+| `NoticeLine` | `ui/NoticeLine.tsx` | One notice as words (U7): the sentence, the quoted `message` (`messagePrefix`, `messageShot`), the stamp through `stampText` (`atISO`, `stampSuffix`, `stampInline`); `size` md (13.5, 13, 12) or sm (the rail: 12.5, 12, 11); `strong`, `muted`, `tone="success"`, `footer`; `onOpen` makes the words one button (with the chevron unless `chevron={false}`), `action` sits beside; `boxed` the grey row; `shot`, `data-*` | None planned |
+| `PickRow` | `ui/PickRow.tsx` | A colleague in a pick list (U7), two looks: `colleague` (avatar, 15/600 name, `line` or `lineMono`, chevron; a button with `onPick`, else the same row in neutral with `aria-disabled`; `minHeight` per sheet, `first`) and `blocked` (the dashed `lineStrong` box on `bg`, `quiet` name or line, `wrap`, `groupLabel`, children at the end); `shot`, `data-*` | None planned |
+| `Disclosure`, `DisclosureButton` | `ui/Disclosure.tsx` | Show and hide (U7): `Disclosure` a `type="button"` summary with `aria-expanded` and `aria-controls` over a region that opens with the grid-rows motion (none under reduced motion) and is inert while shut; `summary` (or a function of `open`), `open`, `defaultOpen`, `onOpenChange`, `chevron` (the turning chevron), `summaryStyle`, `gap`, `shot`, `data-*`. `DisclosureButton` the bare chevron toggle for a table row or a card heading: `open`, `onToggle`, `label`, `controls`, `size` 14 or 16 | None planned |
+| `DayChip` | `ui/DayChip.tsx` | The picked day as one teal chip that closes the day view (U6): `size` desktop (32) or touch (44), one full-sentence name, `testId` | None planned |
+| `AddRowButton` | `ui/AddRowButton.tsx` | The dashed full-width "Add a booking" (U6): `size` desktop or touch, always `type="button"` | Phase 17b (office contacts) |
+| `ProgressPill`, `progressTone`, `progressLabel` | `schedule/ProgressPill.tsx` | A List's progress as a pill, and the one tone and label source the phone's `ListRow` reads too (U3) | None planned |
 | `CountBadge` | `ui/CountBadge.tsx` | The 18px count beside a heading, with a hidden noun; hidden at zero by default (U3) | None planned |
 | `visuallyHidden` | `ui/visuallyHidden.ts` | Words for screen readers only (a style object, U3) | None planned |
 | `AttentionDot` | `warnings/AttentionDot.tsx` | The solid "!" or triangle marker, 13px by default; `aria-hidden` unless labelled; `WarningTriangle` composes it (U3) | None planned |
@@ -111,12 +118,12 @@ Press feedback stays in the mobile rules of `global.css`, never in a component.
 | `Notice` | `ui/Notice.tsx` | A non-blocking note: warning, error (booking-level only), success, neutral; `live` only where it announces; `action` slot (U3); `enter` fades it in (Matching's decided banner, with `TickBadge animate` as its icon) | Phase 33 (`enter`) |
 | `RadioCard` | `ui/RadioCard.tsx` | One option of a radio group as a card (Phase 33 review): radio dot, title, `titleExtra`, `description`, `disabledReason`, the checked card's own controls as children; checked is the teal accent edge and inset ring on white; `radio` takes `useRovingRadio().itemProps(i)`; `shot`, `data-*` on the radio | None planned |
 | `OptionRow` | `ui/OptionRow.tsx` | One result in a short pick list under a search box (Phase 33 review): a full-width bordered button, words left, mono `trailing` right; `selected` the teal accent edge and tint with `aria-pressed`; `shot`, `data-*` | None planned |
-| `OptionChip` | `ui/OptionChip.tsx` | A quick option chip (catch-up Phase 39): a teal-tint pill that fills or picks one answer beside the field it serves (the credit's reasons); `pressed` the teal border and tint with `aria-pressed`; `size` md 36 or lg 44 (the phone); `shot`. Not `FilterPills`, the solid list filter | The availability form's and the funder sheet's private chips (to migrate) |
+| `OptionChip` | `ui/OptionChip.tsx` | A quick option chip (catch-up Phase 39): a teal-tint pill that fills or picks one answer beside the field it serves (the credit's reasons); `pressed` the teal border and tint with `aria-pressed`; `size` md 36 or lg 44 (the phone); `shot`. Not `FilterPills`, the solid list filter | None planned (the availability form's tiles and the funder sheet's chips stay their own: no swatch, no roving item props; U7) |
 | `ResultLine` | `ui/ResultLine.tsx` | "It worked" in success green; `role="status"` always mounted (scope `[role=status]` by `data-shot`); `actions`, `onDismiss`, `plain` (U3) | None planned |
 | `EmptyState` | `ui/EmptyState.tsx` | "Nothing here": `inline`, `card`, `centred`; `title`, `action` (U3) | None planned |
 | `Dialog` | `surface/Dialog.tsx` | The centred web and Admin overlay | U2 (`useModalLayer`, `OverlayHeader`, corner X) |
 | `BottomSheet` | `surface/BottomSheet.tsx` | The phone's bottom sheet | U2 (`useModalLayer`, `OverlayHeader`, `SheetActions`) |
-| `SurfaceProvider` | `surface/SurfaceProvider.tsx` | Chooses sheet or dialog per surface; the frosted dock | U2 |
+| `SurfaceProvider` | `surface/SurfaceProvider.tsx` | Chooses sheet or dialog per surface; the Booking's dock on the phone is the shared `StickyDock` (U7) | U2 |
 | `MonthGrid` | `calendar/MonthGrid.tsx` | The mobile "Go to a date" month calendar, built on `useCalendarKeys` (bounded), `MonthHeaderRow` and `MonthStepButton` | U4 (done) |
 | `useCalendarKeys` | `calendar/useCalendarKeys.ts` | The one month-calendar keyboard model (U4): a roving tab stop in the visible month, arrows by day and week, Home and End, Page Up and Down by month (Shift by year); with `bounds` a key stops at a bound, without (the admin calendar) it runs on | None planned |
 | `MonthHeaderRow` | `calendar/MonthHeaderRow.tsx` | The Monday-first weekday row, `initial` or `short`, `aria-hidden`; each calendar passes its own `style` and `cellStyle` (U4) | Phase 42 (hospital calendar) |
@@ -136,3 +143,19 @@ Press feedback stays in the mobile rules of `global.css`, never in a component.
 Text helpers (not components, same rule): `formatMoney`, `parseAmount`, `parseAmountOrNaN`
 (`src/domain/billing/money.ts`) and `dateRange`, `stampText`, `hhmm`, `plural`, `longDayNoYear` and the day
 helpers (`src/domain/dateText.ts`), all through `src/shared/format.ts`.
+
+## The guardrail
+
+`src/apps/oneComponentPerJob.test.ts` (U7) enforces `CLAUDE.md` "One component per job": it fails when a file
+under `src/apps/` or `src/shared/` defines its own `Pill`, `TextAction`, `Th`, `Td`, `BackLink`, `Section`,
+`Row`, `Card` or `Avatar` outside that component's home, and when a raw `<button>` carries its own `style=`
+outside the shared homes (`shared/ui`, `surface`, `table`, `calendar`) and `src/apps/demo/`. Its `ALLOW_LIST`
+names each file still allowed a styled raw button, with why (stays-custom surfaces, calendar cells, nav items,
+rows that open a record, and the words no `TextAction` size draws yet). The list only shrinks: an entry whose
+file has no styled button left fails, and so does a list longer than `ALLOW_LIST_CEILING`. Never add to it:
+extend the shared component with a variant (above) and migrate the site.
+
+The live catalogue (`/demo/catalogue/admin|web|mobile`) is grouped by family; each row's last column names
+its shared component's file (or "Stays custom" or "Demo only"), and its three tests check every named file
+exists. A component's catalogue row carries its name; `docs/ui-unification/RESULTS.md` maps the rows renamed
+since the 12 November audit.

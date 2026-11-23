@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
-import { format, parseISO } from 'date-fns'
 import { neutral, radius } from '../../../theme/tokens'
+import { stampText } from '../../../shared/format'
 import { useMemo, useRef, type CSSProperties } from 'react'
 import { activeNotificationCount, notificationPool, type Actor, type NotificationTarget } from '../../../store'
 import { TableShell, Td, Th } from '../../../shared/table'
@@ -85,7 +85,7 @@ export function NotificationsScreen({ actor, onOpen }: { actor: Actor; onOpen: (
             )}
             {pool.rows.map((r) => (
               <tr key={r.notification.id} data-notification-row={r.notification.id} data-notification-resolved={r.resolved ? 'true' : undefined} style={{ background: r.resolved ? neutral.bg : undefined, opacity: resolving.has(r.notification.id) ? 0.55 : 1, transition: 'opacity 200ms' }}>
-                <Td mono nowrap style={{ color: r.resolved ? neutral.mist : neutral.slate }}>{format(parseISO(r.atISO), 'EEE d MMM HH:mm')}</Td>
+                <Td mono nowrap style={{ color: r.resolved ? neutral.mist : neutral.slate }}>{stampText(r.atISO)}</Td>
                 <Td>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
                     <NotificationText row={r} />

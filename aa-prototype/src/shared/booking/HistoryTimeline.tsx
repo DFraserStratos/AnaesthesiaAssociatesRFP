@@ -2,7 +2,7 @@ import { useBookingStore } from './draft'
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { AuditEntry, ChangeSetKind } from '../../domain/types'
 import { accent, neutral, radius } from '../../theme/tokens'
-import { easing, motion } from '../../theme/motion'
+import { Disclosure } from '../ui/Disclosure'
 import { Pill } from '../ui/Pill'
 import { Eyebrow } from '../ui/Eyebrow'
 import { TextAction } from '../ui/TextAction'
@@ -126,7 +126,7 @@ export function HistoryTimeline({
                 {...(onViewAsAt !== undefined ? { onViewAsAt } : {})}
               />
             ) : (
-              <GroupRow
+              <HistoryGroupRow
                 group={group}
                 time={repeatedTime ? '' : time}
                 stacked={stacked}
@@ -158,7 +158,7 @@ function provenance(entry: AuditEntry): string {
     : `${entry.who} · ${entry.role} · ${entry.source}`
 }
 
-function GroupRow({
+function HistoryGroupRow({
   group,
   time,
   stacked,
@@ -174,7 +174,6 @@ function GroupRow({
   entityLabels?: Record<string, string>
   onViewAsAt?: (entryId: string) => void
 }) {
-  const [expanded, setExpanded] = useState(false)
   const { entry, steps, changes } = group
   const coalesced = steps.length > 1
   const scope = entityLabels?.[entry.entityId]
@@ -208,12 +207,18 @@ function GroupRow({
         {changes.length > 0 && <Ledger changes={changes} stacked={stacked} />}
         {onViewAsAt !== undefined && <ViewAsAt onClick={() => onViewAsAt(entry.id)} />}
         {coalesced && (
-          <>
-            <TextAction size="sm" flush onClick={() => setExpanded((v) => !v)} style={{ alignSelf: 'flex-start', marginTop: 2, fontSize: 12 }}>
-              {expanded ? `Hide the ${steps.length} steps` : `Show the ${steps.length} steps`}
-            </TextAction>
-            <Steps steps={steps} expanded={expanded} stacked={stacked} />
-          </>
+          <Disclosure
+            chevron={false}
+            summary={(open) => (open ? `Hide the ${steps.length} steps` : `Show the ${steps.length} steps`)}
+            summaryStyle={{ alignSelf: 'flex-start', fontSize: 12, fontWeight: 600, color: accent.base, borderRadius: 4, whiteSpace: 'nowrap' }}
+            style={{ marginTop: 2, display: 'flex', flexDirection: 'column', gap: 4 }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {steps.map((step) => (
+                <StepLedger key={step.id} step={step} stacked={stacked} />
+              ))}
+            </div>
+          </Disclosure>
         )}
       </div>
     </div>
@@ -264,39 +269,6 @@ function Ledger({ changes, stacked }: { changes: readonly AuditFieldChange[]; st
           </span>
         </div>
       ))}
-    </div>
-  )
-}
-
-/**
- * The individual writes behind a coalesced group, newest first (matching the
- * feed around them). Height transitions on the sheet easing; reduced motion
- * collapses it to an 80ms fade in `global.css`.
- */
-function Steps({
-  steps,
-  expanded,
-  stacked,
-}: {
-  steps: readonly AuditEntry[]
-  expanded: boolean
-  stacked: boolean
-}) {
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateRows: expanded ? '1fr' : '0fr',
-        transition: `grid-template-rows ${motion.sheetIn.out}ms ${easing.sheet}`,
-      }}
-    >
-      <div style={{ overflow: 'hidden', minHeight: 0 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 6 }}>
-          {steps.map((step) => (
-            <StepLedger key={step.id} step={step} stacked={stacked} />
-          ))}
-        </div>
-      </div>
     </div>
   )
 }

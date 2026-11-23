@@ -61,6 +61,7 @@ export function LookbackSearchRow({
         <button
           type="button"
           className="aa-ctl"
+          data-lookback-go-to-date=""
           aria-label="Go to a date"
           onClick={onOpenCalendar}
           style={{ width: 48, height: 48, flex: 'none', borderRadius: radius.ctl, border: `1.5px solid ${accent.base}`, background: neutral.surface, color: accent.base, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}

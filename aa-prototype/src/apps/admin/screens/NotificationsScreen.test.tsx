@@ -54,7 +54,7 @@ describe('Notifications: active or resolved', () => {
     fireEvent.click(within(container.querySelector('[data-shot="admin-notifications-show-resolved"]') as HTMLElement).getByRole('checkbox'))
     const back = container.querySelector(`[data-notification-row="${id}"]`) as HTMLElement
     expect(back.getAttribute('data-notification-resolved')).toBe('true')
-    expect(back).toHaveTextContent(/Resolved by Kirsty W\., Tue 21 Jul \d\d:\d\d/)
+    expect(back).toHaveTextContent(/Resolved by Kirsty W\., Tue 21 Jul, \d\d:\d\d/)
     expect(within(back).queryByRole('button', { name: /^Resolve notice/ })).toBeNull()
   })
 

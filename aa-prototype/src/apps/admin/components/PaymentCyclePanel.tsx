@@ -11,8 +11,7 @@
 
 import { Fragment, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ChevronDown, ChevronRight } from 'lucide-react'
-import { Button, Card, EmptyState, FormError, Notice, Pill, ResultLine, TextAction, TextField, type PillTone } from '../../../shared/ui'
+import { Button, Card, DisclosureButton, EmptyState, FormError, Notice, Pill, ResultLine, TextAction, TextField, type PillTone } from '../../../shared/ui'
 import { Td, Th, TableShell } from '../../../shared/table'
 import { DemoBadge } from '../../../shared/DemoBadge'
 import { StepRail, type RailStep } from '../../../shared/contracts/railParts'
@@ -278,16 +277,15 @@ function TotalsTable({
               <Fragment key={t.anaesthetistId}>
                 <tr data-anaesthetist-id={t.anaesthetistId}>
                   <Td>
-                    <button
-                      type="button"
-                      className="aa-ctl"
-                      aria-expanded={isOpen}
-                      onClick={() => setOpen((s) => (s.has(t.anaesthetistId) ? new Set([...s].filter((x) => x !== t.anaesthetistId)) : new Set([...s, t.anaesthetistId])))}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: 'none', background: 'transparent', padding: 0, font: 'inherit', color: neutral.ink, cursor: 'pointer' }}
+                    <DisclosureButton
+                      open={isOpen}
+                      size={14}
+                      chevronTone="inherit"
+                      onToggle={() => setOpen((s) => (s.has(t.anaesthetistId) ? new Set([...s].filter((x) => x !== t.anaesthetistId)) : new Set([...s, t.anaesthetistId])))}
+                      style={{ color: neutral.ink }}
                     >
-                      {isOpen ? <ChevronDown size={14} aria-hidden /> : <ChevronRight size={14} aria-hidden />}
                       {name(t.anaesthetistId)}
-                    </button>
+                    </DisclosureButton>
                     {rolled !== undefined && (
                       <Pill size="sm" style={{ marginLeft: 8 }} shot="payment-cycle-rolled">{`Rolled from ${previousLabel(rolled.rolledFromRunId!)}`}</Pill>
                     )}

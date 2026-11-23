@@ -24,12 +24,13 @@ import {
 } from '../../../../domain/pairingPreferences'
 import type { PriorityTier, Session, Slot } from '../../../../domain/types'
 import { matchesNameQuery, titledSurname } from '../../../../shared/format'
-import { NameSearchBox, Segmented } from '../../../../shared/ui'
+import { Disclosure, NameSearchBox, Segmented } from '../../../../shared/ui'
 import { StatusChip } from '../../../../shared'
 import { InlineDemoTrigger } from '../../../../shared/demoTriggers'
 import { useAppStore } from '../../../../store'
 import { neutral, radius, semantic } from '../../../../theme/tokens'
 import { surnameFirst } from '../../util'
+import { PickRow } from '../../../../shared/ui/PickRow'
 import { NotPreferredPill, PreferredPill, TierPill } from './Pills'
 import { usePairingEntries, usePriorityTiers } from './useOfficePairings'
 import { sessionText } from '../../../../domain/outOfHours'
@@ -199,20 +200,11 @@ export function ClosedColleagueRow({ slotId, tier }: { slotId: string; tier?: Pr
   if (slot === undefined) return null
   const name = surnameFirst(fullName ?? slot.anaesthetistId)
   return (
-    <div
-      role="group"
-      aria-label={`${name}: not available this session`}
-      data-candidate-closed={slot.anaesthetistId}
-      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: radius.card, border: `1px dashed ${neutral.lineStrong}`, background: neutral.bg, flexWrap: 'wrap' }}
-    >
-      <span style={{ flex: 1, minWidth: 140, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: neutral.slate }}>{name}</span>
-        <span style={{ fontSize: 12, color: neutral.mist }}>Not available this session</span>
-      </span>
+    <PickRow look="blocked" wrap groupLabel={`${name}: not available this session`} data-candidate-closed={slot.anaesthetistId} name={name} line="Not available this session">
       <StatusChip status={slot.status} />
       {tier !== undefined && <TierPill tier={tier} />}
       <InlineDemoTrigger id="ask-colleague-make-available" choiceId={slotId} label={`Ask ${titledSurname(fullName ?? '')} to make this session available`} />
-    </div>
+    </PickRow>
   )
 }
 
@@ -226,8 +218,7 @@ export function NotAvailableColleagues({ slots, session, query, shot }: { slots:
   const shown = slots.filter((x) => matchesNameQuery(anaesthetists[x.anaesthetistId]?.name ?? '', query))
   if (shown.length === 0) return null
   return (
-    <details data-shot={shot} style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '8px 12px' }}>
-      <summary style={{ cursor: 'pointer', fontSize: 13, fontWeight: 600, color: neutral.slate }}>Not available ({shown.length})</summary>
+    <Disclosure shot={shot} summary={`Not available (${shown.length})`} gap={0} style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '8px 12px' }}>
       <div style={{ fontSize: 12, color: neutral.mist, margin: '6px 0 8px' }}>
         Their {sessionText(session)} session is marked not available. They need to make it available before a List can go there.
       </div>
@@ -236,6 +227,6 @@ export function NotAvailableColleagues({ slots, session, query, shot }: { slots:
           <ClosedColleagueRow key={x.id} slotId={x.id} />
         ))}
       </div>
-    </details>
+    </Disclosure>
   )
 }

@@ -9,14 +9,13 @@
 
 import { useId, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronRight } from 'lucide-react'
 import { PAIRING_LABELS, pairingSentence, pairingsOnProfile } from '../../../../domain/pairingPreferences'
 import type { PairingKind, PairingPreference } from '../../../../domain/types'
 import { neutral, radius } from '../../../../theme/tokens'
 import { useAppStore, type Actor } from '../../../../store'
 import { Button } from '../../../../shared'
 import { anaesthetistRecordPath, surgeonProfilePath } from '../../mastersPaths'
-import { TextAction } from '../../../../shared/ui'
+import { Disclosure, TextAction } from '../../../../shared/ui'
 import { pairingSubject, type PairingPerspective } from './perspective'
 import { NotPreferredPill, PreferredPill } from './Pills'
 import { PairingAddSheet } from './PairingAddSheet'
@@ -81,12 +80,8 @@ export function PairingSection({ perspective, subjectId, actor }: Props) {
       ))}
 
       {groups.ended.length > 0 && (
-        <details data-shot="pairing-ended" style={{ borderTop: `1px solid ${neutral.line}`, paddingTop: 14 }}>
-          <summary className="aa-disclosure" style={{ cursor: 'pointer', fontSize: 13, fontWeight: 600, color: neutral.slate, listStyle: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <ChevronRight size={14} aria-hidden className="aa-disclosure-chevron" />
-            {PAIRING_LABELS.ended} ({groups.ended.length})
-          </summary>
-          <div style={{ display: 'flex', flexDirection: 'column', marginTop: 10 }}>
+        <Disclosure shot="pairing-ended" summary={`${PAIRING_LABELS.ended} (${groups.ended.length})`} gap={10} style={{ borderTop: `1px solid ${neutral.line}`, paddingTop: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             {groups.ended.map((e, i) => (
               <div key={e.id} data-pairing={e.id} style={{ padding: '10px 0', borderTop: i === 0 ? 'none' : `1px solid ${neutral.line}`, display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -104,7 +99,7 @@ export function PairingSection({ perspective, subjectId, actor }: Props) {
               </div>
             ))}
           </div>
-        </details>
+        </Disclosure>
       )}
 
       {adding && <PairingAddSheet perspective={perspective} subjectId={subjectId} actor={actor} onClose={() => setAdding(false)} />}

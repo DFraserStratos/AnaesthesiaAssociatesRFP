@@ -218,7 +218,7 @@ test('6 · Notifications: count, tick hides for every admin (reload), Show resol
   await page.goto('/admin/notifications?resolved=1')
   await page.waitForLoadState('networkidle')
   const row = page.locator('[data-notification-row][data-notification-resolved="true"]')
-  await expect(row).toContainText(/Resolved by Kirsty W\., Tue 21 Jul \d\d:\d\d/)
+  await expect(row).toContainText(/Resolved by Kirsty W\., Tue 21 Jul, \d\d:\d\d/)
   await page.screenshot({ path: 'visual/shots/p32b-16-show-resolved.png', fullPage: true })
   await clean(page, 'Notifications')
 })

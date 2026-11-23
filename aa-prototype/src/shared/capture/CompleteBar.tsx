@@ -1,5 +1,6 @@
 import { accent, elevation, neutral, radius, semantic } from '../../theme/tokens'
 import { TextAction } from '../ui/TextAction'
+import { TickGlyph } from '../ui/TickBadge'
 
 interface CompleteBarProps {
   completed: boolean
@@ -40,16 +41,7 @@ export function CompleteBar({ completed, canAmend, onComplete, onAmend, blocked 
         fontWeight: 700,
       }}
     >
-      <svg width="18" height="18" viewBox="0 0 14 14" aria-hidden>
-        <path
-          d="M2.5 7.5 L5.5 10.5 L11.5 3.5"
-          fill="none"
-          stroke={semantic.success.onTint}
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      <TickGlyph size={18} color={semantic.success.onTint} />
       Booking complete
       {canAmend && (
         <TextAction inline onClick={onAmend} disabled={isBlocked} {...(isBlocked ? { title: blocked } : {})} style={{ marginLeft: 6, fontSize: 14, padding: '4px 0' }}>

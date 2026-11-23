@@ -32,7 +32,8 @@ import { effectiveSlotTimes } from '../../../../domain/slots'
 import { StatusChip } from '../../../../shared'
 import { NameSearchBox, Segmented, TextAction } from '../../../../shared/ui'
 import { draftListAvailabilityFor, useAppStore } from '../../../../store'
-import { neutral, radius } from '../../../../theme/tokens'
+import { neutral } from '../../../../theme/tokens'
+import { PickRow } from '../../../../shared/ui/PickRow'
 import { surnameFirst } from '../../util'
 import { CandidateRow, ClosedColleagueRow, FILTER_OPTIONS, Group, type TierFilter } from './AnaesthetistCandidates'
 import { TierPill } from './Pills'
@@ -202,20 +203,19 @@ export function DraftListCandidates({
               const held = lists[r.listId]
               const what = held !== undefined ? pairingLine(held, { hospitals, surgeons }) : 'a List'
               return (
-                <div
+                <PickRow
                   key={r.anaesthetistId}
+                  look="blocked"
+                  quiet="name"
                   data-candidate-occupied={r.anaesthetistId}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: radius.card, border: `1px dashed ${neutral.lineStrong}`, background: neutral.bg }}
+                  name={nameOf(r.anaesthetistId)}
+                  line={`Holds ${what}. Resolve it in the Day view first.`}
                 >
-                  <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: neutral.mist }}>{nameOf(r.anaesthetistId)}</span>
-                    <span style={{ fontSize: 12, color: neutral.slate }}>Holds {what}. Resolve it in the Day view first.</span>
-                  </span>
                   <TierPill tier={tierFor(tiers, r.anaesthetistId)} />
                   <TextAction size="sm" flush onClick={() => onOpenOccupied(r.listId)}>
                     Open List
                   </TextAction>
-                </div>
+                </PickRow>
               )
             })}
           </Group>

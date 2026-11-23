@@ -1,6 +1,6 @@
 /**
  * The parts the Admin List drawers share (catch-up Phase 32c): a labelled
- * section (its label the shared `Eyebrow`; its label and value rows the shared
+ * section (`DrawerSection`; its label the shared `Eyebrow`; its label and value rows the shared
  * `DefRow` in a `DefList` since UI unification U6), the small teal-text link button and the
  * footer actions' layout styles (the actions themselves are compact `Button`s
  * since UI unification U5 folded `ActionBtn` into it). Used inside `SidePanel`
@@ -12,8 +12,11 @@ import type { CSSProperties } from 'react'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { Eyebrow } from '../../../shared/ui'
 
-/** A drawer section: its label is an `h3` Eyebrow under the drawer's `h2`, reachable by heading (U6). */
-export function Section({ label, children }: { label: string; children: React.ReactNode }) {
+/**
+ * A drawer section: its label is an `h3` Eyebrow under the drawer's `h2`, reachable by heading (U6).
+ * No border or fill of its own, so not a `Card`; named for its job, not `Section` (U7's guardrail).
+ */
+export function DrawerSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <Eyebrow as="h3">{label}</Eyebrow>

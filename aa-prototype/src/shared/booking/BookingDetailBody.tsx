@@ -27,7 +27,7 @@ import {
   type Actor,
   type AppState,
 } from '../../store'
-import { Button, DefList, DefRow, TextArea, TextField } from '../ui'
+import { Button, DefList, DefRow, Eyebrow, IconButton, TextAction, TextArea, TextField } from '../ui'
 import { Notice } from '../ui/Notice'
 import { useSurface, type BookingTotalLine } from '../surface'
 import { BtmCaptureBlock, CompleteBar, CompletionOverlay, bookingFee, type BookingFeeTotals } from '../capture'
@@ -103,11 +103,16 @@ const BOOKING_WARNING_SHOTS: Partial<Record<string, string>> = {
   approvalNumberMissing: 'booking-approval-warning',
 }
 
-function Section({ label, action, children, shot }: { label: string; action?: React.ReactNode; children: React.ReactNode; shot?: string }) {
+/**
+ * One block of the booking detail: an eyebrow label with an optional action, then its content, in a
+ * white bordered box. Not the shared `Card` (whose title is a 14/600 heading on a baseline row); its
+ * label is the shared `Eyebrow` (UI unification U7).
+ */
+function DetailSection({ label, action, children, shot }: { label: string; action?: React.ReactNode; children: React.ReactNode; shot?: string }) {
   return (
     <div data-shot={shot ?? `booking-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', color: neutral.mist, textTransform: 'uppercase' }}>{label}</div>
+        <Eyebrow>{label}</Eyebrow>
         {action}
       </div>
       {children}
@@ -117,9 +122,9 @@ function Section({ label, action, children, shot }: { label: string; action?: Re
 
 function EditLink({ onClick, label = 'Edit', ariaLabel }: { onClick: () => void; label?: string; ariaLabel?: string }) {
   return (
-    <button onClick={onClick} aria-label={ariaLabel} style={{ border: 'none', background: 'none', color: accent.base, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
+    <TextAction flush onClick={onClick} label={ariaLabel}>
       {label}
-    </button>
+    </TextAction>
   )
 }
 
@@ -633,7 +638,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
   const context = (
     <>
       {/* Patient */}
-      <Section label="Patient" action={canEdit ? <EditLink onClick={() => setSheet('patient')} /> : undefined}>
+      <DetailSection label="Patient" action={canEdit ? <EditLink onClick={() => setSheet('patient')} /> : undefined}>
         <DefList gap={10}>
           <DefRow label="NHI">
             <span className="mono" data-shot="booking-patient-nhi" style={{ fontSize: 14 }}>{nhiValue}</span>
@@ -689,8 +694,12 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
                       onBlur={() => setTimeText(booking.scheduledTime ?? '')}
                     />
                   )}
-                  <Stepper label="5 minutes earlier" icon={<Minus size={16} aria-hidden />} onClick={() => stepTime(-5)} />
-                  <Stepper label="5 minutes later" icon={<Plus size={16} aria-hidden />} onClick={() => stepTime(5)} />
+                  <IconButton label="5 minutes earlier" size={44} onClick={() => stepTime(-5)}>
+                    <Minus size={16} aria-hidden />
+                  </IconButton>
+                  <IconButton label="5 minutes later" size={44} onClick={() => stepTime(5)}>
+                    <Plus size={16} aria-hidden />
+                  </IconButton>
                 </>
               )
             }
@@ -699,13 +708,13 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
             {canEdit && draftMode ? null : (booking.scheduledTime ?? 'Not set')}
           </DefRow>
         </DefList>
-      </Section>
+      </DetailSection>
       {/* The payer is on each Procedure, in its Billing card's Paid by line (catch-up Phase 22a; US-11.2.2):
           the Booking holds only the insurer or funder and its approval number (US-11.4.3, D28). */}
       {/* The insurer or funder and the approval number (catch-up Phase 21;
           US-11.4.3): the office and, on the day, the anaesthetist record
           them; the anaesthetist sees the number. Never who is invoiced. */}
-      <Section
+      <DetailSection
         label="Insurer or funder"
         shot="booking-funder-row"
         action={
@@ -723,7 +732,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
           approvalNumber={booking.insuranceApprovalNumber}
           approvalMissing={approvalNumberMissing(booking, masters.parties)}
         />
-      </Section>
+      </DetailSection>
       {/* How the Booking entered the system (DM-39): one quiet line when it is
           recorded, nothing when it is not. Display-only; nothing reads it. */}
       {booking.source !== undefined && (
@@ -735,7 +744,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
       )}
 
       {/* Notes for the office */}
-      <Section label="Notes for the office">
+      <DetailSection label="Notes for the office">
         {canEdit ? (
           <TextArea
             ariaLabel="Notes for the office"
@@ -747,12 +756,12 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
         ) : (
           <div style={{ fontSize: 14, color: booking.notes !== undefined ? neutral.ink : neutral.mist }}>{booking.notes ?? 'No notes.'}</div>
         )}
-      </Section>
+      </DetailSection>
 
       {/* The shared note (catch-up Phase 40; US-11.3.3): the office and the anaesthetist both read and add, with author and time. */}
-      <Section label="Shared notes">
+      <DetailSection label="Shared notes">
         <SharedNotes target={{ bookingId }} actor={actor} />
-      </Section>
+      </DetailSection>
     </>
   )
 
@@ -763,7 +772,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
       {/* A Booking on a Draft List has no anaesthetist yet, so no fee or capture: its
           procedures are listed and priced once the office assigns the List (catch-up Phase 31). */}
       {!cancelled && list.state === 'DRAFT' && procedures.length > 0 && (
-        <Section label={`Procedures (${procedures.length})`}>
+        <DetailSection label={`Procedures (${procedures.length})`}>
           {ordered.map((procedure, index) => (
             <div key={procedure.id} style={{ fontSize: 14, color: neutral.ink }}>
               {procedureLabel(procedure, masters.rvgGroups, index + 1)}
@@ -773,7 +782,7 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
             </div>
           ))}
           <div style={{ fontSize: 12.5, color: neutral.mist }}>The fee shows once an anaesthetist is assigned.</div>
-        </Section>
+        </DetailSection>
       )}
       {!cancelled && list.state !== 'DRAFT' && bookingTotals.structural !== undefined && (
         <Notice tone="error" shot="booking-structural">{NO_PRIMARY_MESSAGE}.</Notice>
@@ -983,15 +992,3 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
   )
 }
 
-function Stepper({ label, icon, onClick }: { label: string; icon: React.ReactNode; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onClick}
-      style={{ width: 44, height: 44, borderRadius: 12, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.slate, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
-    >
-      {icon}
-    </button>
-  )
-}

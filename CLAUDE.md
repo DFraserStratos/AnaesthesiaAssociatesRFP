@@ -137,12 +137,12 @@ Not the place to edit requirements:
   `RFP response p.N`). Other evidence not cited by
   the catalogue (contract fee schedules) is in `docs/discovery-reference/Contract Files/`.
 - **Design** — `docs/design/` (the authoritative visual reference — see below).
-- **UI library research** — `docs/ui-library-research/` (parked until late in the prototype build): research
+- **UI library research** — `docs/ui-library-research/` (closed: no library adopted; see `docs/ui-unification/`): research
   and component inventories for replacing the hand-built UI with standard libraries (shadcn/ui on Base UI
   and others) for unification, not flourish. Start at its `README.md`. Its live companion is the demo-only
   component catalogue in the prototype (`/demo/catalogue/admin|web|mobile`, URL only, code in
-  `aa-prototype/src/apps/demo/catalogue/`): every hand-built component, one per row, grouped by replacement
-  library. Keep its rows in step when components are added, renamed or removed.
+  `aa-prototype/src/apps/demo/catalogue/`): every hand-built component, one per row, grouped by family.
+  Keep its rows in step when components are added, renamed or removed.
 - **Assets** — `docs/assets/` (the AA logo).
 
 ## Working in the app
@@ -190,6 +190,28 @@ doesn't already cover.
   temporary Gradient Lab that tunes it sits behind `GRADIENT_LAB_ENABLED`
   (`src/theme/gradientLabGate.ts`) — the prototype's only feature flag, removable after sign-off
   without touching the shipped look.
+
+## One component per job
+
+- **Before writing a new button, pill, chip, field, select, search box, sheet, dialog, notice, table, card
+  or tab, use the shared one.** Shared UI lives in `src/shared/ui/` (controls and feedback),
+  `src/shared/surface/` (sheets, dialogs, modal behaviour), `src/shared/table/` (tables) and
+  `src/shared/calendar/`. `docs/ui-unification/README.md` lists what exists and why.
+- **If the shared component cannot do what you need, extend it with a variant or prop; never copy it into a
+  screen file.** A variant must match a pattern in `docs/design/`; name the mockup in the commit notes.
+- **No private component may repeat a shared one's job or name.** No local `Pill`, `TextAction`, `Th`/`Td`,
+  `BackLink`, `Section`, `Row`, `Card` or `Avatar` in a screen file.
+- **No raw `<button>`, `<input>`, `<select>` or `<textarea>` with its own style object in a screen** unless
+  the element is part of a stays-custom surface (DayGrid, SlideStack, the invoice document, the phone frame).
+- **Tokens only.** No hex, radius, font size, shadow or z-index literal where a token exists
+  (`src/theme/tokens.ts`). A new value needs a token and a design source.
+- **Formatting has one home.** Money through `formatMoney`, dates and timestamps through the helpers in
+  `shared/format.ts`, person names through `drSurname` and friends. No `toFixed(2)` or `format(...,
+  'EEE d MMM')` in a component.
+- **A shared component keeps its hooks.** Every shared component takes `shot` and emits `data-shot` on the
+  element recipes target; pass `data-*` attributes through.
+- **Keep the catalogue in step.** Adding, renaming or removing a shared component updates its row in
+  `/demo/catalogue/*` in the same change.
 
 ## Copy & typography
 

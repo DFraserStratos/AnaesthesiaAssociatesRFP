@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useBookingWarnings, WarningTriangle } from '../../../shared/warnings'
 import { isOpen } from '../../../domain/warnings'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
@@ -35,7 +34,7 @@ import { dayMicroCap, formatCount, formatCurrency, hhmm, plural, shortDay } from
 import { FULL_SCALE } from '../../../domain/seed/fullScale/constants'
 import { Pager, pageOf, pageParam } from '../components/Pager'
 import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
-import { Button, Card, CountBadge, EmptyState, FilterDateInput, FilterPills, FormError, Notice, PageHeader, Pill, SelectField, StatTile, TextAction, visuallyHidden, type PillTone } from '../../../shared/ui'
+import { Button, Card, CountBadge, DisclosureButton, TickGlyph, EmptyState, FilterDateInput, FilterPills, FormError, Notice, PageHeader, Pill, SelectField, StatTile, TextAction, visuallyHidden, type PillTone } from '../../../shared/ui'
 import { ClickableRow, Td, Th, TableShell } from '../../../shared/table'
 import { sessionText } from '../../../domain/outOfHours'
 import { HoldingAccountPanel } from '../components/HoldingAccountPanel'
@@ -413,16 +412,9 @@ function AnaesthetistGroup({
       headingId={headingId}
       flush
       title={
-        <button
-          type="button"
-          className="aa-ctl"
-          aria-expanded={!folded}
-          onClick={() => onFold(!folded)}
-          style={{ all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}
-        >
-          <Chevron open={!folded} />
+        <DisclosureButton open={!folded} onToggle={() => onFold(!folded)} style={{ gap: 8 }}>
           {group.name}
-        </button>
+        </DisclosureButton>
       }
       aside={
         <span className="mono" style={{ fontSize: 12.5, fontWeight: 400, color: neutral.slate }}>
@@ -491,10 +483,6 @@ function AnaesthetistGroup({
   )
 }
 
-function Chevron({ open }: { open: boolean }) {
-  return open ? <ChevronDown size={16} aria-hidden color={neutral.slate} /> : <ChevronRight size={16} aria-hidden color={neutral.slate} />
-}
-
 function dateSession(list: { dateISO: string; session: string }): string {
   return `${shortDay(list.dateISO)} · ${sessionText(list.session)}`
 }
@@ -560,9 +548,7 @@ function AuthorisedRows({ row, open, focused, onToggle, onRetry, actor }: { row:
     >
       <ClickableRow onOpen={onToggle} style={{ background: open ? neutral.bg : undefined }}>
         <Td>
-          <button type="button" className="aa-ctl" aria-expanded={open} aria-controls={detailId} aria-label={`${dateSession(row.list)} details`} onClick={onToggle} style={{ all: 'unset', cursor: 'pointer', padding: '0 4px' }}>
-            <Chevron open={open} />
-          </button>
+          <DisclosureButton open={open} controls={detailId} label={`${dateSession(row.list)} details`} onToggle={onToggle} style={{ padding: '0 4px' }} />
         </Td>
         <Td mono nowrap bold>{dateSession(row.list)}</Td>
         <Td>{row.hospitalName ?? row.list.hospitalId}</Td>
@@ -756,13 +742,13 @@ function MoneyDetail({ row }: { row: MonitorBookingRow }) {
   const n = row.invoiceIds.length
   const paidLabel =
     row.paidInAtISO !== undefined
-      ? `Paid in ✓ ${dayMicroCap(row.paidInAtISO.slice(0, 10))}`
+      ? <>Paid in <TickGlyph size={11} color={semantic.success.onTint} /> {dayMicroCap(row.paidInAtISO.slice(0, 10))}</>
       : row.receivedAmount > 0
         ? `Part paid ${formatCurrency(row.receivedAmount)}`
         : 'Awaiting payment'
   const disbursedLabel =
     row.disbursedAtISO !== undefined
-      ? `Disbursed ✓ ${dayMicroCap(row.disbursedAtISO.slice(0, 10))}`
+      ? <>Disbursed <TickGlyph size={11} color={semantic.success.onTint} /> {dayMicroCap(row.disbursedAtISO.slice(0, 10))}</>
       : row.disbursedAmount > 0
         ? `Part disbursed ${formatCurrency(row.disbursedAmount)}`
         : 'Not disbursed'

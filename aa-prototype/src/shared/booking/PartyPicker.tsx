@@ -93,7 +93,7 @@ export function PartyPicker({ options, value, onChange, label, exclude = [], sho
 
       {open && (
         <div id={listId} style={{ display: 'flex', flexDirection: 'column', gap: 8, border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, padding: 8, background: neutral.surface }}>
-          <NameSearchBox value={query} onChange={setQuery} label="Search parties by name" size="pill" autoFocus shot="party-picker-search" />
+          <NameSearchBox value={query} onChange={setQuery} label="Search parties by name" size="pill" fill="well" autoFocus shot="party-picker-search" />
           <div role="listbox" aria-label={label} style={{ display: 'flex', flexDirection: 'column', maxHeight: 240, overflowY: 'auto' }}>
             {groups.map((g) =>
               g.rows.length === 0 ? null : (

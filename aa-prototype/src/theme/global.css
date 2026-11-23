@@ -850,29 +850,31 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
   }
 }
 
-/* A <details> disclosure with a turning chevron (catch-up Phase 17: the
-   pairing section's "Ended entries"). */
-.aa-disclosure::-webkit-details-marker {
-  display: none;
-}
-
+/* The shared `Disclosure` (UI unification U7; first drawn as catch-up Phase 17's
+   pairing "Ended" section): the summary's chevron turns when open, and the region
+   opens with HistoryTimeline's grid-rows motion. No motion under reduced motion. */
 .aa-disclosure-chevron {
   transition: transform 160ms ease-out;
 }
 
-details[open] > .aa-disclosure .aa-disclosure-chevron {
+.aa-disclosure[aria-expanded='true'] .aa-disclosure-chevron {
   transform: rotate(90deg);
 }
 
-.aa-disclosure:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 3px;
-  border-radius: 4px;
+.aa-disclosure-region {
+  display: grid;
+  grid-template-rows: 0fr;
+  /* The transition is set inline from motion.sheetIn.out and easing.sheet (Disclosure.tsx). */
+}
+
+.aa-disclosure-region[data-open='true'] {
+  grid-template-rows: 1fr;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .aa-disclosure-chevron {
-    transition: none;
+  .aa-disclosure-chevron,
+  .aa-disclosure-region {
+    transition: none !important;
   }
 }
 

@@ -1,8 +1,9 @@
 import { useBookingStore } from '../booking/draft'
-import { ArrowRightLeft, ChevronRight } from 'lucide-react'
+import { ArrowRightLeft } from 'lucide-react'
 import { neutral, radius } from '../../theme/tokens'
 import type { Notification } from '../../domain/types'
-import { drSurname, locationName, shortDay, stampText } from '../format'
+import { drSurname, locationName, shortDay } from '../format'
+import { NoticeLine } from '../ui/NoticeLine'
 import { useBookingsMovedToMe, useMovedToMe } from './useListMoves'
 import { sessionText } from '../../domain/outOfHours'
 
@@ -88,7 +89,16 @@ export function MovedToYouPanel({
         <span style={{ fontSize: 15, fontWeight: 600, color: neutral.ink }}>Moved to you</span>
       </div>
       {rows.map((r) => (
-        <NoticeRow key={r.key} row={r} />
+        // A button when it opens something, a plain row otherwise. Neutral; it needs no action.
+        <NoticeLine
+          key={r.key}
+          boxed
+          shot={r.shot}
+          text={r.line}
+          {...(r.message !== undefined ? { message: r.message } : {})}
+          atISO={r.atISO}
+          {...(r.onOpen !== undefined ? { onOpen: r.onOpen } : {})}
+        />
       ))}
     </section>
   )
@@ -102,30 +112,4 @@ interface Row {
   message?: string
   /** Present while the List or Booking is still hers: the row opens it. */
   onOpen?: () => void
-}
-
-/** One notice: a button when it opens something, a plain row otherwise. Neutral; it needs no action. */
-function NoticeRow({ row }: { row: Row }) {
-  const body = (
-    <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <span style={{ fontSize: 13.5, lineHeight: '19px', color: neutral.ink }}>{row.line}</span>
-      {row.message !== undefined && <span style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.slate }}>"{row.message}"</span>}
-      <span style={{ fontSize: 12, color: neutral.mist }}>{stampText(row.atISO)}</span>
-    </span>
-  )
-  return row.onOpen !== undefined ? (
-    <button
-      type="button"
-      data-shot={row.shot}
-      onClick={row.onOpen}
-      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: radius.ctl, border: 'none', background: neutral.bg, fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
-    >
-      {body}
-      <ChevronRight size={16} strokeWidth={2.2} color={neutral.mist} aria-hidden />
-    </button>
-  ) : (
-    <div data-shot={row.shot} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: radius.ctl, background: neutral.bg }}>
-      {body}
-    </div>
-  )
 }

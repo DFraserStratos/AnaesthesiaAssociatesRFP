@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { addMonths, format, parseISO } from 'date-fns'
-import { ChevronDown, ChevronRight, Plus, X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import type { AaFeeFixedItem, AaFeeSettings } from '../../../domain/types'
 import { aaFeeFixedTotal, aaFeeFor, aaFeeMonthLabel, validateAaFeeSettings } from '../../../domain/billing/aaFee'
@@ -19,7 +19,7 @@ import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { drSurname, formatCurrency, parseAmountOrNaN, plainDate, plural } from '../../../shared/format'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 import { Pill } from '../../../shared/ui/Pill'
-import { Button, Card, Eyebrow, FormError, IconButton, LineTabLink, LineTabs, PageHeader, TextField, visuallyHidden } from '../../../shared/ui'
+import { Button, Card, DisclosureButton, Eyebrow, FormError, IconButton, LineTabLink, LineTabs, PageHeader, TextField, visuallyHidden } from '../../../shared/ui'
 import { ResultLine } from '../../../shared/ui/ResultLine'
 
 export type AaFeesTab = 'invoices' | 'settings'
@@ -224,15 +224,11 @@ function FeeInvoiceList({ invoices }: { invoices: AaFeeInvoiceRow[] }) {
                       {...(expanded ? { style: { background: neutral.bg } } : {})}
                     >
                       <Td>
-                        <button
-                          type="button"
-                          aria-expanded={expanded}
-                          aria-label={`${expanded ? 'Hide' : 'Show'} ${f.invoiceNumber} details`}
-                          onClick={() => setOpen(expanded ? null : f.id)}
-                          style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', color: neutral.slate, display: 'inline-flex' }}
-                        >
-                          {expanded ? <ChevronDown size={16} aria-hidden /> : <ChevronRight size={16} aria-hidden />}
-                        </button>
+                        <DisclosureButton
+                          open={expanded}
+                          label={`${expanded ? 'Hide' : 'Show'} ${f.invoiceNumber} details`}
+                          onToggle={() => setOpen(expanded ? null : f.id)}
+                        />
                       </Td>
                       <Td mono bold>{f.invoiceNumber}</Td>
                       <Td>{drSurname(name)}</Td>

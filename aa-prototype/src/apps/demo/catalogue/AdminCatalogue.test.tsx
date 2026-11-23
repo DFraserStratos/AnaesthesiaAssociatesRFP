@@ -1,7 +1,7 @@
 /**
  * Smoke test for the Admin UI component catalogue (demo only): the page mounts
- * every live example against the fresh seed without throwing, and the rows and
- * groups are there.
+ * every live example against the fresh seed without throwing, the rows and
+ * families are there, and every Shared component cell names a real file.
  */
 
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
@@ -9,6 +9,8 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { freshAppState, useAppStore } from '../../../store'
 import { AdminCatalogue } from './AdminCatalogue'
+import { missingSharedFiles } from './CatalogueKit'
+import { SRC_FILES, sharedCells } from './sharedCells.testkit'
 
 afterEach(cleanup)
 
@@ -25,7 +27,7 @@ describe('AdminCatalogue', () => {
     useAppStore.setState(freshAppState())
   })
 
-  it('renders the rows, grouped by replacement library', () => {
+  it('renders the rows, grouped by component family', () => {
     const { container } = renderPage()
     expect(screen.getByRole('heading', { level: 1, name: 'Admin Web App · UI components' })).toBeInTheDocument()
     for (const name of ['Button', 'SlotDrawer', 'DayGrid', 'CodePickerSheet', 'SuccessOverlay', 'InvoiceDocument', 'MiniCalendar (RightRail)', 'AuditViewer', 'SidePanel', 'PopoverPanel', 'OverlayHeader', 'SheetActions', 'ConfirmSheet', 'RowField', 'RadioCard', 'DecisionCards (Matching)', 'OptionRow', 'DiffTable (Matching)']) {
@@ -33,10 +35,18 @@ describe('AdminCatalogue', () => {
     }
     const rows = container.querySelectorAll('[data-catalogue-row]')
     expect(rows.length).toBeGreaterThanOrEqual(35)
-    for (const id of ['shadcn', 'sonner', 'tanstack', 'forms', 'daypicker', 'motion', 'custom']) {
-      expect(container.querySelector(`#lib-${id}`)).not.toBeNull()
+    for (const id of ['actions', 'pills', 'fields', 'dates', 'tabs', 'overlays', 'feedback', 'tables', 'cards', 'custom', 'demo']) {
+      expect(container.querySelector(`#fam-${id}`), id).not.toBeNull()
     }
-    // About 90 live rows render here (U4 added 15): give the whole page room under a loaded full run.
+    expect(container.querySelectorAll('[id^="lib-"]')).toHaveLength(0)
+    expect(within(container.querySelector('#fam-custom') as HTMLElement).getByText('DayGrid')).toBeInTheDocument()
+    expect(within(container.querySelector('#fam-feedback') as HTMLElement).getByText('SuccessOverlay')).toBeInTheDocument()
+    expect(screen.getAllByText('Shared component').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Replace with')).toBeNull()
+    // Every Shared component cell names a real file under src/ (or Stays custom, Demo only).
+    expect(sharedCells(container)).toHaveLength(rows.length)
+    expect(missingSharedFiles(sharedCells(container), SRC_FILES)).toEqual([])
+    // About 170 live rows render here: give the whole page room under a loaded full run.
   }, 20_000)
 
   it('has the Master data pattern rows (catch-up Phase 42), with no legacy masters Table row', { timeout: 20000 }, () => {

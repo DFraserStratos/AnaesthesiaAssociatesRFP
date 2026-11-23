@@ -4,11 +4,13 @@
  * phone stage.
  */
 
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { freshAppState, useAppStore } from '../../../store'
 import { MobileCatalogue } from './MobileCatalogue'
+import { missingSharedFiles } from './CatalogueKit'
+import { SRC_FILES, sharedCells } from './sharedCells.testkit'
 
 afterEach(cleanup)
 
@@ -25,16 +27,24 @@ describe('the Mobile UI catalogue', () => {
     useAppStore.setState(freshAppState())
   })
 
-  it('renders one row per component, grouped by replacement library', { timeout: 20000 }, () => {
+  it('renders one row per component, grouped by component family', { timeout: 20000 }, () => {
     renderPage()
     expect(screen.getByRole('heading', { level: 1, name: /Anaesthetist Mobile App/ })).toBeInTheDocument()
     for (const name of ['BottomSheet', 'ListOptionsSheet', 'SlideStack', 'BottomTabBar', 'MonthGrid (LookbackDateSheet)', 'SuccessOverlay', 'UpdatePrompt', 'BookingDetailBody', 'HalfBlock', 'useTickingValue', 'InlineConfirm', 'DoneStep']) {
       expect(document.querySelector(`[data-catalogue-row="${name}"]`), name).not.toBeNull()
     }
-    expect(document.querySelectorAll('[data-catalogue-row]').length).toBeGreaterThanOrEqual(30)
-    for (const id of ['shadcn', 'sonner', 'forms', 'daypicker', 'numberflow', 'motion', 'custom']) {
-      expect(document.getElementById(`lib-${id}`), id).not.toBeNull()
+    const rows = document.querySelectorAll('[data-catalogue-row]')
+    expect(rows.length).toBeGreaterThanOrEqual(30)
+    for (const id of ['actions', 'pills', 'fields', 'dates', 'tabs', 'overlays', 'feedback', 'cards', 'custom', 'demo']) {
+      expect(document.getElementById(`fam-${id}`), id).not.toBeNull()
     }
+    expect(document.querySelectorAll('[id^="lib-"]')).toHaveLength(0)
+    expect(within(document.getElementById('fam-custom') as HTMLElement).getByText('SlideStack')).toBeInTheDocument()
+    expect(screen.getAllByText('Shared component').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Replace with')).toBeNull()
+    // Every Shared component cell names a real file under src/ (or Stays custom, Demo only).
+    expect(sharedCells(document)).toHaveLength(rows.length)
+    expect(missingSharedFiles(sharedCells(document), SRC_FILES)).toEqual([])
   })
 
   it('opens a bottom sheet inside the phone stage', () => {

@@ -4,7 +4,7 @@ import { OverlayHeader, SheetActions } from '../../../shared/surface'
 import { neutral, radius } from '../../../theme/tokens'
 import { addHospitalHoliday, deleteHospitalHoliday, editHospitalHoliday, listsFlaggedByHoliday, useAppStore, type Actor } from '../../../store'
 import { Button, FieldLabel, FormError, TextField, useSurface } from '../../../shared'
-import { ResultLine, SelectField } from '../../../shared/ui'
+import { FieldHint, ResultLine, SelectField } from '../../../shared/ui'
 import { activeOnly } from '../../../domain/masterLifecycle'
 
 interface Props {
@@ -96,7 +96,7 @@ export function HolidaySheet({ open, actor, hospitalId, dateISO: presetDate, hol
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <FieldLabel>Hospital</FieldLabel>
             <div style={{ fontSize: 15, color: neutral.ink }}>{hospitalName}</div>
-            <div style={{ fontSize: 12, color: neutral.mist }}>To close a different hospital, delete this holiday and add one there.</div>
+            <FieldHint>To close a different hospital, delete this holiday and add one there.</FieldHint>
           </div>
         ) : (
           <SelectField label="Hospital" value={selected} onChange={setSelected}>

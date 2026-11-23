@@ -32,7 +32,7 @@ const SEARCH_LABEL = 'Search RVG code or description'
  * a plain button (the current one marked `aria-current`).
  */
 export function CodePickerSheet({ open, currentId, rvgGroups, onPick, onClose, help = false }: CodePickerSheetProps) {
-  const { Overlay } = useSurface()
+  const { Overlay, variant } = useSurface()
   const [query, setQuery] = useState('')
 
   useEffect(() => {
@@ -46,7 +46,8 @@ export function CodePickerSheet({ open, currentId, rvgGroups, onPick, onClose, h
     <Overlay open={open} onClose={onClose}>
       <div data-shot="rvg-type-ahead">
         {help ? <InfoTipHeader title="RVG code" topic="capture.rvg" style={{ marginBottom: 12 }} /> : <OverlayHeader title="RVG code" style={{ marginBottom: 12 }} />}
-        <NameSearchBox value={query} onChange={setQuery} label={SEARCH_LABEL} autoFocus fill="well" />
+        {/* The 44px clear on the phone (UI unification U4's `touch`, question 25's floor). */}
+        <NameSearchBox value={query} onChange={setQuery} label={SEARCH_LABEL} autoFocus fill="well" touch={variant === 'mobile'} />
         <div style={{ fontSize: 12.5, color: neutral.mist, padding: '6px 4px 6px', minHeight: 18 }} aria-live="polite">
           {query.trim() === ''
             ? 'Type a code such as H1, or a word from the description.'

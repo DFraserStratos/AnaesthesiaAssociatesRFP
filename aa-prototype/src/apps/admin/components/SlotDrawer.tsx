@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { inDisplayOrder } from '../../../domain/billing/multiProcedure'
 import { Link } from 'react-router-dom'
-import { format, parseISO } from 'date-fns'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { bookingCountLabel, DRAFT_LIST, DRAFT_LISTS } from '../../../shared/scheduleTerms'
 import { assignDraftList, bookingMovesOntoList, closeOutOfHoursRefusal, closeOutOfHoursSession, draftListsForDate, latestNotificationForList, listInSlot, procedureStackViewFor, useAppStore, useSlotView, type Actor } from '../../../store'
@@ -15,7 +14,7 @@ import { drSurname, LIST_STATE_LABELS, locationName, pairingLine, slotTimeRange,
 import { surnameFirst } from '../util'
 import { ConflictPanel } from './conflicts/ConflictPanel'
 import { SidePanel } from '../../../shared/surface/SidePanel'
-import { DRAWER_ACTION, DRAWER_ACTION_PRIMARY, DrawerLink, Section } from './drawerParts'
+import { DRAWER_ACTION, DRAWER_ACTION_PRIMARY, DrawerLink, DrawerSection } from './drawerParts'
 import { EditListSheet } from '../flows/EditListSheet'
 import { ReassignListFlow } from '../flows/ReassignListFlow'
 import { PhoneAdviceBooking } from '../flows/PhoneAdviceBooking'
@@ -34,6 +33,7 @@ import { isOutOfHours, sessionText } from '../../../domain/outOfHours'
 import { CLOSE_OUT_OF_HOURS } from '../../../shared/outOfHoursTerms'
 import { Button, DefList, DefRow, FormError, TextAction } from '../../../shared/ui'
 import { Notice } from '../../../shared/ui/Notice'
+import { NoticeLine } from '../../../shared/ui/NoticeLine'
 import { EmptyState } from '../../../shared/ui/EmptyState'
 import { ListOriginRow } from './ListOriginRow'
 import { useListUpdateEmail } from '../flows/UpdateEmailActions'
@@ -179,7 +179,7 @@ function ListBody({
           <MovedHereLine listId={list.id} anaesthetistId={list.anaesthetistId} />
           <BookingMovedHereLine listId={list.id} />
 
-          <Section label="Session">
+          <DrawerSection label="Session">
             <DefList>
               <DefRow label="Times">
                 {slotTimeRange(times)}
@@ -204,9 +204,9 @@ function ListBody({
               {list.notes !== undefined && list.notes.trim() !== '' && <DefRow label="Note">{list.notes}</DefRow>}
               <ListOriginRow list={list} />
             </DefList>
-          </Section>
+          </DrawerSection>
 
-          <Section label={`Bookings (${activeBookings.length})`}>
+          <DrawerSection label={`Bookings (${activeBookings.length})`}>
             {bookings.length === 0 && stubs.length === 0 && <EmptyState>No bookings on this List yet.</EmptyState>}
             {withStubsInTimeOrder(bookings, (b) => b.scheduledTime, stubs).map((entry) => {
               if (entry.kind === 'stub') {
@@ -272,12 +272,12 @@ function ListBody({
                 Add Booking
               </TextAction>
             )}
-          </Section>
+          </DrawerSection>
 
           {/* The shared note on the List (catch-up Phase 40; US-11.3.3): the anaesthetist reads it on mobile and web. */}
-          <Section label="Shared notes">
+          <DrawerSection label="Shared notes">
             <SharedNotes target={{ listId: list.id }} actor={actor} size="compact" />
-          </Section>
+          </DrawerSection>
       </SidePanel>
 
       <HistorySheet open={sheet === 'history'} entityIds={[listId, slot.id]} title="List history" onClose={() => setSheet('none')} />
@@ -378,7 +378,7 @@ function EmptySessionDrawer({
           </>
         }
       >
-          <Section label="Session">
+          <DrawerSection label="Session">
             <DefList>
               <DefRow label="Status">
                 {/* The status line (catch-up Phase 32d): "Public hospital · CPH", no List detail. */}
@@ -394,7 +394,7 @@ function EmptySessionDrawer({
               </DefRow>
               {open && slot.note !== undefined && slot.note.trim() !== '' && <DefRow label="Note">{slot.note}</DefRow>}
             </DefList>
-          </Section>
+          </DrawerSection>
           {open ? (
             <div style={{ fontSize: 13, color: neutral.slate, lineHeight: '19px' }}>
               No List in this session yet. Assign one to give it a surgeon and hospital{waiting.length > 0 ? `, put a waiting ${DRAFT_LIST} here` : ''}, or book a patient straight from a call.
@@ -406,7 +406,7 @@ function EmptySessionDrawer({
             </div>
           )}
           {open && waiting.length > 0 && (
-            <Section label={`${DRAFT_LISTS} for this session (${waiting.length})`}>
+            <DrawerSection label={`${DRAFT_LISTS} for this session (${waiting.length})`}>
               <div data-shot="drawer-session-draft-lists" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {waiting.map((l) => (
                   <div key={l.id} data-draft-list-id={l.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', margin: '0 -10px', borderBottom: `1px solid ${neutral.line}` }}>
@@ -415,7 +415,7 @@ function EmptySessionDrawer({
                   </div>
                 ))}
               </div>
-            </Section>
+            </DrawerSection>
           )}
           <FormError message={error} />
       </SidePanel>
@@ -436,8 +436,12 @@ function MovedHereLine({ listId, anaesthetistId }: { listId: string; anaesthetis
   if (n === undefined || n.route !== 'colleague' || n.toAnaesthetistId !== anaesthetistId) return null
   return (
     <Notice tone="neutral" shot="drawer-moved-here">
-      <div>Moved here by {from !== undefined ? drSurname(from) : 'its anaesthetist'}, an anaesthetist's own move · <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>{format(parseISO(n.atISO), 'EEE d MMM HH:mm')}</span></div>
-      {n.message !== undefined && <div style={{ color: neutral.slate, marginTop: 2 }}>"{n.message}"</div>}
+      <NoticeLine
+        stampInline
+        text={`Moved here by ${from !== undefined ? drSurname(from) : 'its anaesthetist'}, an anaesthetist's own move`}
+        {...(n.message !== undefined ? { message: n.message } : {})}
+        atISO={n.atISO}
+      />
     </Notice>
   )
 }
@@ -459,10 +463,14 @@ function BookingMovedHereLine({ listId }: { listId: string }) {
       {moves.map((m) => {
         const from = anaesthetists[m.fromAnaesthetistId]?.name
         return (
-          <div key={m.auditId}>
-            Booking moved here by {from !== undefined ? drSurname(from) : 'its anaesthetist'}, <span className="mono" style={{ fontSize: 12, color: neutral.slate }}>{format(parseISO(m.atISO), 'EEE d MMM HH:mm')}</span>
-            {m.message !== undefined && <div style={{ color: neutral.slate, marginTop: 2 }}>"{m.message}"</div>}
-          </div>
+          <NoticeLine
+            key={m.auditId}
+            stampInline
+            stampJoin=", "
+            text={`Booking moved here by ${from !== undefined ? drSurname(from) : 'its anaesthetist'}`}
+            {...(m.message !== undefined ? { message: m.message } : {})}
+            atISO={m.atISO}
+          />
         )
       })}
     </div>

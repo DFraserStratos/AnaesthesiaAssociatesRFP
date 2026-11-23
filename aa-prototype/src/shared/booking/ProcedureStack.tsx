@@ -15,13 +15,14 @@
  */
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { accent, fontFamily, neutral, radius, type as typeScale } from '../../theme/tokens'
+import { fontFamily, neutral, radius, type as typeScale } from '../../theme/tokens'
 import type { ProcedureStackView, StackSurface } from '../../domain/billing/procedureStack'
 import { PROCEDURE_TEXT_SOURCE_LABELS, receivedDay } from '../format'
 import { formatPricingBasis } from '../contracts/labels'
 import { Lock } from 'lucide-react'
 import { LOCK_BADGE_TEXT } from '../../domain/billing/lock'
 import { Eyebrow } from '../ui/Eyebrow'
+import { TextAction } from '../ui/TextAction'
 import { InfoTip } from '../help/InfoTip'
 
 export interface ProcedureStackProps {
@@ -111,13 +112,9 @@ function FullStack({ view, heading, actions, badge, help = false }: ProcedureSta
                 {text.from !== undefined ? `, ${text.from}` : ''}
               </span>
               {(clipped || expanded) && (
-                <button
-                  type="button"
-                  onClick={() => setExpanded(!expanded)}
-                  style={{ flex: 'none', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, color: accent.base }}
-                >
+                <TextAction size="sm" flush onClick={() => setExpanded(!expanded)} style={{ flex: 'none' }}>
                   {expanded ? 'Show less' : 'Show all'}
-                </button>
+                </TextAction>
               )}
             </div>
           </>

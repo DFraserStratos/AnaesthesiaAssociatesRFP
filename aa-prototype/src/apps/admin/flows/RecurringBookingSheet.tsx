@@ -20,7 +20,7 @@ import {
   type RecurringBookingApplyResult,
 } from '../../../store'
 import { Button, FormError, Segmented, TextField, useSurface } from '../../../shared'
-import { SelectField, TextAction, TimeRangeFields } from '../../../shared/ui'
+import { Disclosure, SelectField, TextAction, TimeRangeFields } from '../../../shared/ui'
 import { OverlayHeader, SheetActions } from '../../../shared/surface'
 import { shortDay } from '../../../shared/format'
 import { NotPreferredWarning, SurgeonPicker, useNotPreferredWarning } from '../components/pairing'
@@ -340,9 +340,8 @@ function AppliedView({ applied, onShow, onOpenDraftLists, onDone }: { applied: A
 function DetailList<T extends { dateISO: string; slotId?: string; listId?: string }>({ title, rows, line, onOpen }: { title: string; rows: readonly T[]; line: (row: T) => string; onOpen?: (row: T) => void }) {
   if (rows.length === 0) return null
   return (
-    <details style={{ fontSize: 13, color: neutral.slate }}>
-      <summary style={{ cursor: 'pointer', fontWeight: 600 }}>{title}</summary>
-      <ul style={{ margin: '6px 0 0', paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Disclosure summary={title} style={{ fontSize: 13, color: neutral.slate }}>
+      <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 2 }}>
         {rows.map((r) => (
           <li key={`${r.listId ?? r.slotId ?? ''}-${r.dateISO}`}>
             {onOpen !== undefined ? (
@@ -355,6 +354,6 @@ function DetailList<T extends { dateISO: string; slotId?: string; listId?: strin
           </li>
         ))}
       </ul>
-    </details>
+    </Disclosure>
   )
 }

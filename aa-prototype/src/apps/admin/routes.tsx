@@ -301,7 +301,7 @@ export function AdminCreditNoteRoute() {
         <div data-testid="credit-note-detail-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', maxWidth: 1048, margin: '0 auto' }}>
             <div style={{ fontSize: 13, color: neutral.mist }}>
-              <button onClick={() => navigate('/admin/invoices')} style={{ border: 'none', background: 'none', padding: 0, color: neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Invoices</button>
+              <button type="button" className="aa-ctl" onClick={() => navigate('/admin/invoices')} style={{ border: 'none', background: 'none', padding: 0, color: neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Invoices</button>
               <span style={{ color: neutral.lineStrong }}> / </span>
               <span className="mono">{creditNote.creditNoteNumber}</span>
             </div>

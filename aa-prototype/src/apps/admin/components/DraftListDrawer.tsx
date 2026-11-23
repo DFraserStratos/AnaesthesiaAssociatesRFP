@@ -32,7 +32,7 @@ import { RemoveDraftListSheet } from '../flows/RemoveDraftListSheet'
 import { TierPill, PreferredPill, useSuggestionKey } from './pairing'
 import { useDraftListCandidates } from './pairing/DraftListCandidates'
 import { BookingCount, DraftStateChip, UnassignedPill, WaitingTime } from './draftLists/DraftListParts'
-import { DRAWER_ACTION, DRAWER_ACTION_PRIMARY, DrawerLink, Section } from './drawerParts'
+import { DRAWER_ACTION, DRAWER_ACTION_PRIMARY, DrawerLink, DrawerSection } from './drawerParts'
 import { Button, DefList, DefRow, TextAction } from '../../../shared/ui'
 import { SidePanel } from '../../../shared/surface/SidePanel'
 import { sessionText } from '../../../domain/outOfHours'
@@ -155,7 +155,7 @@ function DraftBody({
             </Notice>
           )}
 
-          <Section label="Request">
+          <DrawerSection label="Request">
             <DefList>
               <DefRow label="Hospital">{locationName(list.hospitalId, masters.hospitals)}</DefRow>
               <DefRow label="Surgeon">{masters.surgeons[list.surgeonId]?.name ?? list.surgeonId}</DefRow>
@@ -187,12 +187,12 @@ function DraftBody({
                 </DefRow>
               )}
             </DefList>
-          </Section>
+          </DrawerSection>
 
           <div style={{ fontSize: 13, color: neutral.slate }}>No anaesthetist yet. Nobody's schedule changes until it is assigned.</div>
 
           {!passed && (
-            <Section label="Available that session">
+            <DrawerSection label="Available that session">
               <div data-shot="draft-list-available" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {short.length === 0 && <EmptyState>No one is free and clear that session. See everyone for who could take it.</EmptyState>}
                 {short.map((c) => (
@@ -207,10 +207,10 @@ function DraftBody({
                   See everyone ({everyone})
                 </TextAction>
               </div>
-            </Section>
+            </DrawerSection>
           )}
 
-          <Section label={`Bookings (${active.length})`}>
+          <DrawerSection label={`Bookings (${active.length})`}>
             {bookings.length === 0 && stubs.length === 0 && <EmptyState>No Bookings on this {DRAFT_LIST} yet.</EmptyState>}
             {withStubsInTimeOrder(bookings, (b) => b.scheduledTime, stubs).map((entry) => {
               if (entry.kind === 'stub') {
@@ -235,7 +235,7 @@ function DraftBody({
             <TextAction size="sm" shot="draft-list-add-booking" onClick={() => setSheet('addBooking')} style={{ alignSelf: 'flex-start' }}>
               Add Booking
             </TextAction>
-          </Section>
+          </DrawerSection>
       </SidePanel>
 
       <AssignDraftListSheet

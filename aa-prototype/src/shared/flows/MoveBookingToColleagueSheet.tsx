@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import { ChevronRight } from 'lucide-react'
+import { PickRow } from '../ui/PickRow'
 import { neutral, radius } from '../../theme/tokens'
 import {
   bookingRequiresPrepayment,
@@ -189,17 +189,29 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
                   {searching ? 'No anaesthetist matches' : 'No colleague is free this session. Type a name to see who else works that day.'}
                 </li>
               )}
+              {/* One colleague each. Offered: a button (initials, name, line, chevron). Blocked (away, or
+                  already holding a List): the same row in neutral, not a button, never error red; its line says why. */}
               {rows.map((r, i) => (
-                <ReceiverRow
-                  key={r.anaesthetistId}
-                  receiver={r}
-                  first={i === 0}
-                  onPick={() => {
-                    setReceiverId(r.anaesthetistId)
-                    setError(null)
-                    setStep('confirm')
-                  }}
-                />
+                <li key={r.anaesthetistId} style={{ display: 'flex' }}>
+                  <PickRow
+                    look="colleague"
+                    shot={r.offer !== null ? 'move-booking-receiver' : 'move-booking-blocked'}
+                    data-anaesthetist-id={r.anaesthetistId}
+                    name={r.name}
+                    line={r.line}
+                    first={i === 0}
+                    minHeight={60}
+                    {...(r.offer !== null
+                      ? {
+                          onPick: () => {
+                            setReceiverId(r.anaesthetistId)
+                            setError(null)
+                            setStep('confirm')
+                          },
+                        }
+                      : {})}
+                  />
+                </li>
               ))}
             </ul>
           </>
@@ -278,51 +290,6 @@ export function MoveBookingToColleagueSheet({ open, actor, bookingId, onClose, o
         )}
       </div>
     </Overlay>
-  )
-}
-
-/**
- * One colleague. Offered: a button (initials, name, line, chevron). Blocked
- * (away, or already holding a List): the same row in neutral, not a button,
- * never error red; its line says why.
- */
-function ReceiverRow({ receiver, first, onPick }: { receiver: BookingReceiver; first: boolean; onPick: () => void }) {
-  const base = {
-    flex: 1,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    padding: '10px 14px',
-    minHeight: 60,
-    border: 'none',
-    borderTop: first ? 'none' : `1px solid ${neutral.sunken}`,
-    fontFamily: 'inherit',
-    textAlign: 'left' as const,
-  }
-  const text = (
-    <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <span style={{ fontSize: 15, fontWeight: 600, color: receiver.offer !== null ? neutral.ink : neutral.slate }}>{receiver.name}</span>
-      <span style={{ fontSize: 12.5, lineHeight: '17px', color: neutral.slate }}>{receiver.line}</span>
-    </span>
-  )
-  if (receiver.offer === null) {
-    return (
-      <li style={{ display: 'flex' }}>
-        <div data-shot="move-booking-blocked" data-anaesthetist-id={receiver.anaesthetistId} aria-disabled="true" style={{ ...base, background: neutral.bg }}>
-          <Avatar name={receiver.name} size={36} variant="neutral" muted />
-          {text}
-        </div>
-      </li>
-    )
-  }
-  return (
-    <li style={{ display: 'flex' }}>
-      <button type="button" data-shot="move-booking-receiver" data-anaesthetist-id={receiver.anaesthetistId} onClick={onPick} style={{ ...base, background: neutral.surface, cursor: 'pointer' }}>
-        <Avatar name={receiver.name} size={36} variant="neutral" />
-        {text}
-        <ChevronRight size={16} strokeWidth={2.2} color={neutral.mist} aria-hidden />
-      </button>
-    </li>
   )
 }
 

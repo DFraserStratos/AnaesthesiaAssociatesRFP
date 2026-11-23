@@ -9,8 +9,7 @@
  * admin; the panel's place and layout are Claude's design (US-13.8.1, Verify).
  */
 
-import { format, parseISO } from 'date-fns'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { activeNotificationCount, latestNotifications, resolveNotification, useAppStore, type Actor, type NotificationRow, type NotificationTarget, type PoolState } from '../../../store'
 import { neutral, radius } from '../../../theme/tokens'
 import { CountBadge } from '../../../shared/ui/CountBadge'
@@ -18,31 +17,40 @@ import { motion } from '../../../theme/motion'
 import { Card, FormError, TextAction, TickBadge, TickButton } from '../../../shared/ui'
 import { stampText } from '../../../shared/format'
 import { EmptyState } from '../../../shared/ui/EmptyState'
+import { NoticeLine } from '../../../shared/ui/NoticeLine'
 
 const RAIL_ROWS = 3
 
-/** "Resolved by Kirsty W., Tue 21 Jul 09:14" (US-13.8.3 "Kept"). */
+/** "Resolved by Kirsty W., Tue 21 Jul, 09:14" (US-13.8.3 "Kept"; the stamp through `stampText`, question 24). */
 export function resolvedLine(row: NotificationRow): string | null {
   const n = row.notification
   if (n.resolvedAt === undefined) return null
-  return `Resolved by ${n.resolvedBy ?? 'the office'}, ${format(parseISO(n.resolvedAt), 'EEE d MMM HH:mm')}`
+  return `Resolved by ${n.resolvedBy ?? 'the office'}, ${stampText(n.resolvedAt)}`
 }
 
-/** One notification as the card and the page show it: the sentence, any message or note, and when and by whom. */
-export function NotificationText({ row, compact = false }: { row: NotificationRow; compact?: boolean }) {
+/**
+ * One notification as the card and the page show it, on the shared `NoticeLine`: the sentence, any message
+ * or note, and (on the rail, `compact`) when and by whom; who resolved it under. The page prints when in its
+ * own column. `onOpen` and `action` make it the rail's row: the words open the notice, the tick sits beside.
+ */
+export function NotificationText({ row, compact = false, onOpen, action }: { row: NotificationRow; compact?: boolean; onOpen?: () => void; action?: ReactNode }) {
   const resolved = resolvedLine(row)
   const alert = row.notification.kind === 'officeAlert'
+  const message = row.notification.message
   return (
-    <span style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-      <span style={{ fontSize: compact ? 12.5 : 13.5, lineHeight: compact ? '17px' : '19px', fontWeight: 600, color: row.resolved ? neutral.slate : neutral.ink }}>{row.text}</span>
-      {row.notification.message !== undefined && (
-        <span data-shot={alert ? 'notification-alert-note' : undefined} style={{ fontSize: compact ? 12 : 13, lineHeight: '17px', color: neutral.slate }}>
-          {alert ? 'Note: ' : ''}"{row.notification.message}"
-        </span>
-      )}
-      {compact && <span style={{ fontSize: 11, color: neutral.mist }}>{stampText(row.atISO)} · {row.by}</span>}
-      {resolved !== null && <span data-shot="notification-resolved-line" style={{ fontSize: 11.5, color: neutral.mist }}>{resolved}</span>}
-    </span>
+    <NoticeLine
+      size={compact ? 'sm' : 'md'}
+      strong
+      muted={row.resolved}
+      text={row.text}
+      {...(message !== undefined ? { message, messagePrefix: alert ? 'Note: ' : '', ...(alert ? { messageShot: 'notification-alert-note' } : {}) } : {})}
+      {...(compact ? { atISO: row.atISO, stampSuffix: ` · ${row.by}` } : {})}
+      footer={resolved !== null ? <span data-shot="notification-resolved-line" style={{ fontSize: 11.5, color: neutral.mist }}>{resolved}</span> : undefined}
+      chevron={false}
+      {...(onOpen !== undefined ? { onOpen } : {})}
+      {...(action !== undefined ? { action } : {})}
+      style={{ flex: 1 }}
+    />
   )
 }
 
@@ -153,27 +161,22 @@ export function NotificationsCard({
                 data-notification-row={r.notification.id}
                 style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: radius.ctl, background: neutral.bg, opacity: ticking ? 0.55 : 1, transition: 'opacity 200ms' }}
               >
-                {r.target.kind === 'gone' ? (
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <NotificationText row={r} compact />
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => onOpen(r.target)}
-                    style={{ flex: 1, minWidth: 0, display: 'flex', padding: 0, border: 'none', background: 'none', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
-                  >
-                    <NotificationText row={r} compact />
-                  </button>
-                )}
-                {office &&
-                  (ticking ? (
-                    <TickBadge size={30} animate />
-                  ) : (
-                    <TickButton compact shot="notification-tick" label={`Resolve notice: ${r.text}`} onClick={() => resolve(r.notification.id)}>
-                      Resolve
-                    </TickButton>
-                  ))}
+                <NotificationText
+                  row={r}
+                  compact
+                  {...(r.target.kind !== 'gone' ? { onOpen: () => onOpen(r.target) } : {})}
+                  {...(office
+                    ? {
+                        action: ticking ? (
+                          <TickBadge size={30} animate />
+                        ) : (
+                          <TickButton compact shot="notification-tick" label={`Resolve notice: ${r.text}`} onClick={() => resolve(r.notification.id)}>
+                            Resolve
+                          </TickButton>
+                        ),
+                      }
+                    : {})}
+                />
               </li>
             )
           })}

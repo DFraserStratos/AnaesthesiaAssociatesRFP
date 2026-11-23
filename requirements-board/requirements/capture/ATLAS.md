@@ -2476,6 +2476,8 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   `mobile-lists-search-count`; `list-invoices` and `list-authorised-status` on an authorised List
 - `mobile-list-header`, `mobile-list-scroll`, `mobile-list-footer`, `list-submission-overlay`
 - `mobile-booking-header`, `mobile-booking-header-actions`, `mobile-booking-scroll`, `mobile-booking-commit`
+  (`mobile-list-footer`, `mobile-booking-commit` and My calendar's dock are the shared `StickyDock` since U7,
+  `[data-sticky-dock]`; each publishes `--aa-dock-height`)
 
 **`data-shot` hooks for warnings** (catch-up Phase 15a; use as `[data-shot=...]`)
 
@@ -2603,8 +2605,8 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   `surgeon-rooms-field`, `room-contact-add`, `room-contact-sheet`, `room-contact-remove`,
   `room-sheet-contacts`, `surgeon-room-sheet`, the "Surgeons' rooms" sub-nav button.
 - Pairing section: `pairing-section`, groups `[data-pairing-group=NOT_PREFERRED|PREFERRED]`, rows
-  `[data-pairing=<entryId>]`, `pairing-ended` (a `<details>`: click `[data-shot=pairing-ended] >
-  summary` to open), `pairing-add-sheet`, `pairing-counterpart` (the select; a taken counterpart's
+  `[data-pairing=<entryId>]`, `pairing-ended` (the shared `Disclosure` since UI unification U7: click
+  `[data-shot=pairing-ended] > button` to open; it carries `aria-expanded`), `pairing-add-sheet`, `pairing-counterpart` (the select; a taken counterpart's
   option is disabled with `data-taken`), `pairing-preview`, `pairing-end-sheet`.
 - Pickers (session 1): `surgeon-picker`, `candidate-picker`, `tier-filter`, `candidates-clear`,
   `candidates-not-preferred` (rows `[data-candidate=<id>]`), and the warnings

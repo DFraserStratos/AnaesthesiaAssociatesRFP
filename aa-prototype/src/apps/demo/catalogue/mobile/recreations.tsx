@@ -28,7 +28,7 @@ import {
 import { Avatar, blockFill, resolveDisplayStatus, useDefaultStatus, useDisplayStatus, useSlotStatusRecords } from '../../../../shared'
 import { statusLine } from '../../../../domain/slotStatus'
 import { AttentionDot } from '../../../../shared/warnings/AttentionDot'
-import { Card, TickBadge } from '../../../../shared/ui'
+import { Card, StickyDock, TickBadge, TickGlyph } from '../../../../shared/ui'
 import {
   describeDayForScreenReaders,
   monthCells,
@@ -180,21 +180,7 @@ export type DockState = 'toFinish' | 'ready' | 'submitted' | 'authorised'
 
 export function SubmitDockCopy({ state, incomplete, onTap }: { state: DockState; incomplete: number; onTap: (what: 'blockers' | 'confirm') => void }) {
   return (
-    <div
-      style={{
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        paddingTop: 14,
-        paddingLeft: 20,
-        paddingRight: 20,
-        paddingBottom: 'max(calc(var(--aa-inset-bottom, 34px) - 2px), 14px)',
-        background: 'rgba(246,248,247,0.92)',
-        backdropFilter: 'blur(14px)',
-        borderTop: `1px solid ${neutral.line}`,
-      }}
-    >
+    <StickyDock>
       {state === 'authorised' ? (
         <div style={{ height: 54, borderRadius: radius.card, background: neutral.sunken, color: neutral.slate, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 16, fontWeight: 700 }}>
           <Lock size={17} strokeWidth={2.4} aria-hidden />
@@ -216,9 +202,7 @@ export function SubmitDockCopy({ state, incomplete, onTap }: { state: DockState;
             animation: `aa-tick-pop 340ms ${motion.completeTick.easing}`,
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 14 14" aria-hidden>
-            <path d="M2.5 7.5 L5.5 10.5 L11.5 3.5" fill="none" stroke={neutral.surface} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <TickGlyph size={18} color={neutral.surface} />
           Submitted to office
         </div>
       ) : state === 'toFinish' ? (
@@ -271,7 +255,7 @@ export function SubmitDockCopy({ state, incomplete, onTap }: { state: DockState;
           Mark list completed
         </button>
       )}
-    </div>
+    </StickyDock>
   )
 }
 

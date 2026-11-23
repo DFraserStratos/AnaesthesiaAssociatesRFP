@@ -1,0 +1,1272 @@
+{
+ "admin": [
+  {
+   "name": "Button",
+   "file": "admin/button.png"
+  },
+  {
+   "name": "Disclosure",
+   "file": "admin/disclosure.png"
+  },
+  {
+   "name": "TickButton",
+   "file": "admin/tickbutton.png"
+  },
+  {
+   "name": "BookingUpdateEmailButton / NotificationEmailAction / useListUpdateEmail",
+   "file": "admin/bookingupdateemailbutton-notificationemailaction-uselistupdateemail.png"
+  },
+  {
+   "name": "AdditionalInvoiceButton",
+   "file": "admin/additionalinvoicebutton.png"
+  },
+  {
+   "name": "CreditNoteButton",
+   "file": "admin/creditnotebutton.png"
+  },
+  {
+   "name": "SplitCombinedButton",
+   "file": "admin/splitcombinedbutton.png"
+  },
+  {
+   "name": "CorrectionRetry (Billing monitor)",
+   "file": "admin/correctionretry-billing-monitor.png"
+  },
+  {
+   "name": "StatusLegend (chips)",
+   "file": "admin/statuslegend-chips.png"
+  },
+  {
+   "name": "StatusChip",
+   "file": "admin/statuschip.png"
+  },
+  {
+   "name": "Pill",
+   "file": "admin/pill.png"
+  },
+  {
+   "name": "SyntheticDataBadge",
+   "file": "admin/syntheticdatabadge.png"
+  },
+  {
+   "name": "MasterPills",
+   "file": "admin/masterpills.png"
+  },
+  {
+   "name": "TierPill / PreferredPill / NotPreferredPill",
+   "file": "admin/tierpill-preferredpill-notpreferredpill.png"
+  },
+  {
+   "name": "ChangedSinceSubmittedPill",
+   "file": "admin/changedsincesubmittedpill.png"
+  },
+  {
+   "name": "DraftListParts",
+   "file": "admin/draftlistparts.png"
+  },
+  {
+   "name": "AttentionDot",
+   "file": "admin/attentiondot.png"
+  },
+  {
+   "name": "WarningTriangle",
+   "file": "admin/warningtriangle.png"
+  },
+  {
+   "name": "StrengthPill",
+   "file": "admin/strengthpill.png"
+  },
+  {
+   "name": "LockBadge",
+   "file": "admin/lockbadge.png"
+  },
+  {
+   "name": "Billing pipeline (PipelineDetail)",
+   "file": "admin/billing-pipeline-pipelinedetail.png"
+  },
+  {
+   "name": "SupportRequestForm",
+   "file": "admin/supportrequestform.png"
+  },
+  {
+   "name": "SharedNotes",
+   "file": "admin/sharednotes.png"
+  },
+  {
+   "name": "NameSearchBox",
+   "file": "admin/namesearchbox.png"
+  },
+  {
+   "name": "ContractSelect (SelectField)",
+   "file": "admin/contractselect-selectfield.png"
+  },
+  {
+   "name": "SurgeonPicker",
+   "file": "admin/surgeonpicker.png"
+  },
+  {
+   "name": "ChipMultiSelect",
+   "file": "admin/chipmultiselect.png"
+  },
+  {
+   "name": "ContactFields",
+   "file": "admin/contactfields.png"
+  },
+  {
+   "name": "CodePickerSheet",
+   "file": "admin/codepickersheet.png"
+  },
+  {
+   "name": "PatientBalanceThresholdView",
+   "file": "admin/patientbalancethresholdview.png"
+  },
+  {
+   "name": "VacatedSessionChoice / StatusRadioGroup",
+   "file": "admin/vacatedsessionchoice-statusradiogroup.png"
+  },
+  {
+   "name": "RailOptionGroup",
+   "file": "admin/railoptiongroup.png"
+  },
+  {
+   "name": "RadioCard",
+   "file": "admin/radiocard.png"
+  },
+  {
+   "name": "DecisionCards (Matching)",
+   "file": "admin/decisioncards-matching.png"
+  },
+  {
+   "name": "OptionChip",
+   "file": "admin/optionchip.png"
+  },
+  {
+   "name": "OptionRow",
+   "file": "admin/optionrow.png"
+  },
+  {
+   "name": "Switch",
+   "file": "admin/switch.png"
+  },
+  {
+   "name": "ShowRetiredToggle / RetiredPill",
+   "file": "admin/showretiredtoggle-retiredpill.png"
+  },
+  {
+   "name": "TextField",
+   "file": "admin/textfield.png"
+  },
+  {
+   "name": "RowField",
+   "file": "admin/rowfield.png"
+  },
+  {
+   "name": "TextArea",
+   "file": "admin/textarea.png"
+  },
+  {
+   "name": "FieldHint",
+   "file": "admin/fieldhint.png"
+  },
+  {
+   "name": "SelectField",
+   "file": "admin/selectfield.png"
+  },
+  {
+   "name": "Checkbox",
+   "file": "admin/checkbox.png"
+  },
+  {
+   "name": "BackstopAmountField",
+   "file": "admin/backstopamountfield.png"
+  },
+  {
+   "name": "RetireSection",
+   "file": "admin/retiresection.png"
+  },
+  {
+   "name": "HpiCpnField / BankAccountFields",
+   "file": "admin/hpicpnfield-bankaccountfields.png"
+  },
+  {
+   "name": "RVG anatomy datalist",
+   "file": "admin/rvg-anatomy-datalist.png"
+  },
+  {
+   "name": "PayerFields (DifferentPayerTick, OtherPayerFields, PostalAddressFields)",
+   "file": "admin/payerfields-differentpayertick-otherpayerfields-postaladdressfields.png"
+  },
+  {
+   "name": "PartyPicker",
+   "file": "admin/partypicker.png"
+  },
+  {
+   "name": "NoContractGroup / ContractGroupHeading",
+   "file": "admin/nocontractgroup-contractgroupheading.png"
+  },
+  {
+   "name": "AnaesthetistCandidates",
+   "file": "admin/anaesthetistcandidates.png"
+  },
+  {
+   "name": "DraftListCandidates",
+   "file": "admin/draftlistcandidates.png"
+  },
+  {
+   "name": "DayNav (with SortToggle)",
+   "file": "admin/daynav-with-sorttoggle.png"
+  },
+  {
+   "name": "MiniCalendar (RightRail)",
+   "file": "admin/minicalendar-rightrail.png"
+  },
+  {
+   "name": "HospitalCalendar",
+   "file": "admin/hospitalcalendar.png"
+  },
+  {
+   "name": "Native date input (TextField type=date)",
+   "file": "admin/native-date-input-textfield-type-date.png"
+  },
+  {
+   "name": "DateJumpInput",
+   "file": "admin/datejumpinput.png"
+  },
+  {
+   "name": "FilterDateInput",
+   "file": "admin/filterdateinput.png"
+  },
+  {
+   "name": "SessionTimesFields",
+   "file": "admin/sessiontimesfields.png"
+  },
+  {
+   "name": "TimeRangeFields",
+   "file": "admin/timerangefields.png"
+  },
+  {
+   "name": "Segmented",
+   "file": "admin/segmented.png"
+  },
+  {
+   "name": "SlidingSegmentedControl",
+   "file": "admin/slidingsegmentedcontrol.png"
+  },
+  {
+   "name": "SideNav (with RolesInfo)",
+   "file": "admin/sidenav-with-rolesinfo.png"
+  },
+  {
+   "name": "Master data sub-nav",
+   "file": "admin/master-data-sub-nav.png"
+  },
+  {
+   "name": "LineTabs",
+   "file": "admin/linetabs.png"
+  },
+  {
+   "name": "StepRail / StepMarker",
+   "file": "admin/steprail-stepmarker.png"
+  },
+  {
+   "name": "Dialog (useSurface().Overlay)",
+   "file": "admin/dialog-usesurface-overlay.png"
+  },
+  {
+   "name": "OverlayHeader",
+   "file": "admin/overlayheader.png"
+  },
+  {
+   "name": "SheetActions",
+   "file": "admin/sheetactions.png"
+  },
+  {
+   "name": "ConfirmSheet",
+   "file": "admin/confirmsheet.png"
+  },
+  {
+   "name": "MasterPanel / PanelGrid / PanelSection",
+   "file": "admin/masterpanel-panelgrid-panelsection.png"
+  },
+  {
+   "name": "RawRowSheet",
+   "file": "admin/rawrowsheet.png"
+  },
+  {
+   "name": "SidePanel",
+   "file": "admin/sidepanel.png"
+  },
+  {
+   "name": "SupportPanel",
+   "file": "admin/supportpanel.png"
+  },
+  {
+   "name": "SupportSidePanel",
+   "file": "admin/supportsidepanel.png"
+  },
+  {
+   "name": "PopoverPanel",
+   "file": "admin/popoverpanel.png"
+  },
+  {
+   "name": "InfoTip (desktop)",
+   "file": "admin/infotip-desktop.png"
+  },
+  {
+   "name": "SlotDrawer",
+   "file": "admin/slotdrawer.png"
+  },
+  {
+   "name": "DraftListDrawer",
+   "file": "admin/draftlistdrawer.png"
+  },
+  {
+   "name": "ClearConflictSheet",
+   "file": "admin/clearconflictsheet.png"
+  },
+  {
+   "name": "PricingSheet",
+   "file": "admin/pricingsheet.png"
+  },
+  {
+   "name": "HistorySheet",
+   "file": "admin/historysheet.png"
+  },
+  {
+   "name": "UpdateEmailComposer (with UpdateEmailPreview)",
+   "file": "admin/updateemailcomposer-with-updateemailpreview.png"
+  },
+  {
+   "name": "LeaveWithoutSavingDialog",
+   "file": "admin/leavewithoutsavingdialog.png"
+  },
+  {
+   "name": "LetterPreview (ApprovePrepaymentDialog, PrepaymentReminderDialog)",
+   "file": "admin/letterpreview-approveprepaymentdialog-prepaymentreminderdialog.png"
+  },
+  {
+   "name": "ContractPanel (ContractEditSheet)",
+   "file": "admin/contractpanel-contracteditsheet.png"
+  },
+  {
+   "name": "SlotStatusSheet",
+   "file": "admin/slotstatussheet.png"
+  },
+  {
+   "name": "PublicHolidaySheet",
+   "file": "admin/publicholidaysheet.png"
+  },
+  {
+   "name": "RvgTimeRuleSheet",
+   "file": "admin/rvgtimerulesheet.png"
+  },
+  {
+   "name": "PaidBySheet (with SplitFeeSection)",
+   "file": "admin/paidbysheet-with-splitfeesection.png"
+  },
+  {
+   "name": "AdditionalInvoiceSheet (AdditionalInvoiceForm, FreeFormLinesEditor, EventPartyField)",
+   "file": "admin/additionalinvoicesheet-additionalinvoiceform-freeformlineseditor-eventpartyfield.png"
+  },
+  {
+   "name": "EventReviewSheet",
+   "file": "admin/eventreviewsheet.png"
+  },
+  {
+   "name": "AddPrePostOpEventSheet and AddBillingEventSheet",
+   "file": "admin/addprepostopeventsheet-and-addbillingeventsheet.png"
+  },
+  {
+   "name": "CreditSheet (CreditForm, SplitCombinedSheet)",
+   "file": "admin/creditsheet-creditform-splitcombinedsheet.png"
+  },
+  {
+   "name": "FirstRunHint (desktop)",
+   "file": "admin/firstrunhint-desktop.png"
+  },
+  {
+   "name": "WarningPreviewRow",
+   "file": "admin/warningpreviewrow.png"
+  },
+  {
+   "name": "NotPreferredWarning",
+   "file": "admin/notpreferredwarning.png"
+  },
+  {
+   "name": "Notice",
+   "file": "admin/notice.png"
+  },
+  {
+   "name": "LoadResultBanner",
+   "file": "admin/loadresultbanner.png"
+  },
+  {
+   "name": "ConflictCallout",
+   "file": "admin/conflictcallout.png"
+  },
+  {
+   "name": "NhiLookupStatus / NhiPurposeNote",
+   "file": "admin/nhilookupstatus-nhipurposenote.png"
+  },
+  {
+   "name": "NotificationsCard",
+   "file": "admin/notificationscard.png"
+  },
+  {
+   "name": "BookingSaveBar / BookingSavedStrip",
+   "file": "admin/bookingsavebar-bookingsavedstrip.png"
+  },
+  {
+   "name": "OfficeSavedNotice",
+   "file": "admin/officesavednotice.png"
+  },
+  {
+   "name": "Inline success banner (role=status)",
+   "file": "admin/inline-success-banner-role-status.png"
+  },
+  {
+   "name": "FieldLabel / FormError",
+   "file": "admin/fieldlabel-formerror.png"
+  },
+  {
+   "name": "SuccessOverlay",
+   "file": "admin/successoverlay.png"
+  },
+  {
+   "name": "TickBadge",
+   "file": "admin/tickbadge.png"
+  },
+  {
+   "name": "ContractChangeNotice",
+   "file": "admin/contractchangenotice.png"
+  },
+  {
+   "name": "PrepaymentHonourLine",
+   "file": "admin/prepaymenthonourline.png"
+  },
+  {
+   "name": "PdfListsTab and PdfListReview (PDF lists)",
+   "file": "admin/pdfliststab-and-pdflistreview-pdf-lists.png"
+  },
+  {
+   "name": "Pager",
+   "file": "admin/pager.png"
+  },
+  {
+   "name": "LedgerPaymentRuns / StillToNetNotice",
+   "file": "admin/ledgerpaymentruns-stilltonetnotice.png"
+  },
+  {
+   "name": "PatientsScreen (Search · Waiting for NHI · Follow-up)",
+   "file": "admin/patientsscreen-search-waiting-for-nhi-follow-up.png"
+  },
+  {
+   "name": "WaitingNhiView / WaitingNhiRowView / AddNhiSheet",
+   "file": "admin/waitingnhiview-waitingnhirowview-addnhisheet.png"
+  },
+  {
+   "name": "DetailChoiceTable",
+   "file": "admin/detailchoicetable.png"
+  },
+  {
+   "name": "HoldingAccountPanel",
+   "file": "admin/holdingaccountpanel.png"
+  },
+  {
+   "name": "MasterTable / EditCell",
+   "file": "admin/mastertable-editcell.png"
+  },
+  {
+   "name": "LoadResultPanel",
+   "file": "admin/loadresultpanel.png"
+  },
+  {
+   "name": "Table kit (TableShell · Th · Td · GroupRow · ClickableRow)",
+   "file": "admin/table-kit-tableshell-th-td-grouprow-clickablerow.png"
+  },
+  {
+   "name": "ReviewQueue (clickable rows)",
+   "file": "admin/reviewqueue-clickable-rows.png"
+  },
+  {
+   "name": "RvgGroupsView (grouped rows)",
+   "file": "admin/rvggroupsview-grouped-rows.png"
+  },
+  {
+   "name": "EmailTemplatesView (template editor with live preview)",
+   "file": "admin/emailtemplatesview-template-editor-with-live-preview.png"
+  },
+  {
+   "name": "PrepaymentLettersView (letter templates with merge fields and live preview)",
+   "file": "admin/prepaymentlettersview-letter-templates-with-merge-fields-and-live-preview.png"
+  },
+  {
+   "name": "AuditViewer",
+   "file": "admin/auditviewer.png"
+  },
+  {
+   "name": "DiffTable (Matching)",
+   "file": "admin/difftable-matching.png"
+  },
+  {
+   "name": "ContractPriceRanges",
+   "file": "admin/contractpriceranges.png"
+  },
+  {
+   "name": "ContractEventFees",
+   "file": "admin/contracteventfees.png"
+  },
+  {
+   "name": "CreditTrails (Ledger)",
+   "file": "admin/credittrails-ledger.png"
+  },
+  {
+   "name": "SupportHours",
+   "file": "admin/supporthours.png"
+  },
+  {
+   "name": "ResponseTable",
+   "file": "admin/responsetable.png"
+  },
+  {
+   "name": "TicketList",
+   "file": "admin/ticketlist.png"
+  },
+  {
+   "name": "ListOriginRow",
+   "file": "admin/listoriginrow.png"
+  },
+  {
+   "name": "WarningsToDo",
+   "file": "admin/warningstodo.png"
+  },
+  {
+   "name": "ReconciliationCard",
+   "file": "admin/reconciliationcard.png"
+  },
+  {
+   "name": "Xero panels (XeroConnectionLine · XeroQueuePanel · XeroDivergencePanel)",
+   "file": "admin/xero-panels-xeroconnectionline-xeroqueuepanel-xerodivergencepanel.png"
+  },
+  {
+   "name": "PaymentCyclePanel",
+   "file": "admin/paymentcyclepanel.png"
+  },
+  {
+   "name": "PatientRecord",
+   "file": "admin/patientrecord.png"
+  },
+  {
+   "name": "RegisterRefreshRow / RegisterRefreshPanel",
+   "file": "admin/registerrefreshrow-registerrefreshpanel.png"
+  },
+  {
+   "name": "PrepaymentsRailCard",
+   "file": "admin/prepaymentsrailcard.png"
+  },
+  {
+   "name": "PrepaymentApprovalStrip",
+   "file": "admin/prepaymentapprovalstrip.png"
+  },
+  {
+   "name": "BookingAsAtPanel",
+   "file": "admin/bookingasatpanel.png"
+  },
+  {
+   "name": "ProfileChrome",
+   "file": "admin/profilechrome.png"
+  },
+  {
+   "name": "drawerParts (DrawerSection, DrawerLink)",
+   "file": "admin/drawerparts-drawersection-drawerlink.png"
+  },
+  {
+   "name": "MasterHeader",
+   "file": "admin/masterheader.png"
+  },
+  {
+   "name": "PageHeader",
+   "file": "admin/pageheader.png"
+  },
+  {
+   "name": "Card (card)",
+   "file": "admin/card-card.png"
+  },
+  {
+   "name": "Eyebrow",
+   "file": "admin/eyebrow.png"
+  },
+  {
+   "name": "DefList / DefRow",
+   "file": "admin/deflist-defrow.png"
+  },
+  {
+   "name": "ProcedureStack",
+   "file": "admin/procedurestack.png"
+  },
+  {
+   "name": "FunderDetailsView",
+   "file": "admin/funderdetailsview.png"
+  },
+  {
+   "name": "PaidByRow",
+   "file": "admin/paidbyrow.png"
+  },
+  {
+   "name": "SplitAllocation",
+   "file": "admin/splitallocation.png"
+  },
+  {
+   "name": "PrepaymentMovedCard, RebookDialog, PrepaymentHistory (PrepaymentFollowupCards)",
+   "file": "admin/prepaymentmovedcard-rebookdialog-prepaymenthistory-prepaymentfollowupcards.png"
+  },
+  {
+   "name": "PrepaidSettlementBlock",
+   "file": "admin/prepaidsettlementblock.png"
+  },
+  {
+   "name": "CorrectInvoiceCard",
+   "file": "admin/correctinvoicecard.png"
+  },
+  {
+   "name": "Review summary tiles (ReviewScreen)",
+   "file": "admin/review-summary-tiles-reviewscreen.png"
+  },
+  {
+   "name": "SignalFilterButton (DayGrid focus filters)",
+   "file": "admin/signalfilterbutton-daygrid-focus-filters.png"
+  },
+  {
+   "name": "StubRow and StubMarker",
+   "file": "admin/stubrow-and-stubmarker.png"
+  },
+  {
+   "name": "RemittanceAdviceDocument (on the document parts)",
+   "file": "admin/remittanceadvicedocument-on-the-document-parts.png"
+  },
+  {
+   "name": "ContractHistory",
+   "file": "admin/contracthistory.png"
+  },
+  {
+   "name": "ProcedureEventsList",
+   "file": "admin/procedureeventslist.png"
+  },
+  {
+   "name": "CreditNoteDocument (CreditedBanner)",
+   "file": "admin/creditnotedocument-creditedbanner.png"
+  },
+  {
+   "name": "DayGrid",
+   "file": "admin/daygrid.png"
+  },
+  {
+   "name": "DraftListBand",
+   "file": "admin/draftlistband.png"
+  },
+  {
+   "name": "StatusBlock",
+   "file": "admin/statusblock.png"
+  },
+  {
+   "name": "InvoiceDocument",
+   "file": "admin/invoicedocument.png"
+  },
+  {
+   "name": "ScaleBanner",
+   "file": "admin/scalebanner.png"
+  }
+ ],
+ "web": [
+  {
+   "name": "IconButton",
+   "file": "web/iconbutton.png"
+  },
+  {
+   "name": "TextAction",
+   "file": "web/textaction.png"
+  },
+  {
+   "name": "SubmitAction",
+   "file": "web/submitaction.png"
+  },
+  {
+   "name": "Add a booking (dashed)",
+   "file": "web/add-a-booking-dashed.png"
+  },
+  {
+   "name": "CompleteBar",
+   "file": "web/completebar.png"
+  },
+  {
+   "name": "AdditionalInvoiceButton",
+   "file": "web/additionalinvoicebutton.png"
+  },
+  {
+   "name": "CreditNoteButton (the anaesthetist's)",
+   "file": "web/creditnotebutton-the-anaesthetist-s.png"
+  },
+  {
+   "name": "StatusLegend (toggle mode)",
+   "file": "web/statuslegend-toggle-mode.png"
+  },
+  {
+   "name": "StatusChip",
+   "file": "web/statuschip.png"
+  },
+  {
+   "name": "ProgressPill",
+   "file": "web/progresspill.png"
+  },
+  {
+   "name": "DayChip (desktop)",
+   "file": "web/daychip-desktop.png"
+  },
+  {
+   "name": "WarningTriangle",
+   "file": "web/warningtriangle.png"
+  },
+  {
+   "name": "BalanceAlertChip",
+   "file": "web/balancealertchip.png"
+  },
+  {
+   "name": "StrengthPill",
+   "file": "web/strengthpill.png"
+  },
+  {
+   "name": "Who's free chip",
+   "file": "web/who-s-free-chip.png"
+  },
+  {
+   "name": "Progress bar",
+   "file": "web/progress-bar.png"
+  },
+  {
+   "name": "SharedNotes",
+   "file": "web/sharednotes.png"
+  },
+  {
+   "name": "Lists search (NameSearchBox pill 38)",
+   "file": "web/lists-search-namesearchbox-pill-38.png"
+  },
+  {
+   "name": "NameSearchBox",
+   "file": "web/namesearchbox.png"
+  },
+  {
+   "name": "CodePickerSheet",
+   "file": "web/codepickersheet.png"
+  },
+  {
+   "name": "RvgCodeList",
+   "file": "web/rvgcodelist.png"
+  },
+  {
+   "name": "RvgCodeField",
+   "file": "web/rvgcodefield.png"
+  },
+  {
+   "name": "UnitsCard",
+   "file": "web/unitscard.png"
+  },
+  {
+   "name": "PriceCard",
+   "file": "web/pricecard.png"
+  },
+  {
+   "name": "AvailabilityEditor",
+   "file": "web/availabilityeditor.png"
+  },
+  {
+   "name": "PayerFields (DifferentPayerTick, OtherPayerFields, PostalAddressFields)",
+   "file": "web/payerfields-differentpayertick-otherpayerfields-postaladdressfields.png"
+  },
+  {
+   "name": "PartyPicker",
+   "file": "web/partypicker.png"
+  },
+  {
+   "name": "Day stepper",
+   "file": "web/day-stepper.png"
+  },
+  {
+   "name": "TimesCard",
+   "file": "web/timescard.png"
+  },
+  {
+   "name": "My availability month grid (DayCell)",
+   "file": "web/my-availability-month-grid-daycell.png"
+  },
+  {
+   "name": "WebGoToDate",
+   "file": "web/webgotodate.png"
+  },
+  {
+   "name": "WebNav",
+   "file": "web/webnav.png"
+  },
+  {
+   "name": "AvailabilityPageSwitch",
+   "file": "web/availabilitypageswitch.png"
+  },
+  {
+   "name": "Back link",
+   "file": "web/back-link.png"
+  },
+  {
+   "name": "SlidingSegmentedControl",
+   "file": "web/slidingsegmentedcontrol.png"
+  },
+  {
+   "name": "Segmented",
+   "file": "web/segmented.png"
+  },
+  {
+   "name": "FilterPills",
+   "file": "web/filterpills.png"
+  },
+  {
+   "name": "SupportSidePanel",
+   "file": "web/supportsidepanel.png"
+  },
+  {
+   "name": "Dialog (web Overlay)",
+   "file": "web/dialog-web-overlay.png"
+  },
+  {
+   "name": "SubmitListSheet",
+   "file": "web/submitlistsheet.png"
+  },
+  {
+   "name": "PaidBySheet (with SplitFeeSection)",
+   "file": "web/paidbysheet-with-splitfeesection.png"
+  },
+  {
+   "name": "AdditionalInvoiceSheet (Raise additional invoice)",
+   "file": "web/additionalinvoicesheet-raise-additional-invoice.png"
+  },
+  {
+   "name": "AddPrePostOpEventSheet and AddBillingEventSheet",
+   "file": "web/addprepostopeventsheet-and-addbillingeventsheet.png"
+  },
+  {
+   "name": "CreditFormSheet (Credit note, the anaesthetist's)",
+   "file": "web/creditformsheet-credit-note-the-anaesthetist-s.png"
+  },
+  {
+   "name": "MovedToYouPanel",
+   "file": "web/movedtoyoupanel.png"
+  },
+  {
+   "name": "ResultLine",
+   "file": "web/resultline.png"
+  },
+  {
+   "name": "AlertOfficeEntry",
+   "file": "web/alertofficeentry.png"
+  },
+  {
+   "name": "TickBadge",
+   "file": "web/tickbadge.png"
+  },
+  {
+   "name": "Lists table (Th · Td · GroupRow)",
+   "file": "web/lists-table-th-td-grouprow.png"
+  },
+  {
+   "name": "WebResultsTable",
+   "file": "web/webresultstable.png"
+  },
+  {
+   "name": "WebDayTable",
+   "file": "web/webdaytable.png"
+  },
+  {
+   "name": "Accounts tables (tfoot totals)",
+   "file": "web/accounts-tables-tfoot-totals.png"
+  },
+  {
+   "name": "RemittancesTab / StillToNetPanel",
+   "file": "web/remittancestab-stilltonetpanel.png"
+  },
+  {
+   "name": "List detail Bookings table",
+   "file": "web/list-detail-bookings-table.png"
+  },
+  {
+   "name": "ListInvoices",
+   "file": "web/listinvoices.png"
+  },
+  {
+   "name": "Card (panel)",
+   "file": "web/card-panel.png"
+  },
+  {
+   "name": "StatTile",
+   "file": "web/stattile.png"
+  },
+  {
+   "name": "SeriesList",
+   "file": "web/serieslist.png"
+  },
+  {
+   "name": "BookingTotalPanel · useTickingValue",
+   "file": "web/bookingtotalpanel-usetickingvalue.png"
+  },
+  {
+   "name": "BookingTotalStrip",
+   "file": "web/bookingtotalstrip.png"
+  },
+  {
+   "name": "ProcedureStack",
+   "file": "web/procedurestack.png"
+  },
+  {
+   "name": "FunderDetailsView",
+   "file": "web/funderdetailsview.png"
+  },
+  {
+   "name": "PaidByRow",
+   "file": "web/paidbyrow.png"
+  },
+  {
+   "name": "PrepaidSettlementBlock (the anaesthetist's)",
+   "file": "web/prepaidsettlementblock-the-anaesthetist-s.png"
+  },
+  {
+   "name": "WeekStrip",
+   "file": "web/weekstrip.png"
+  },
+  {
+   "name": "ProcedureEventsList (the anaesthetist)",
+   "file": "web/procedureeventslist-the-anaesthetist.png"
+  },
+  {
+   "name": "Cell (AvailabilityGrid)",
+   "file": "web/cell-availabilitygrid.png"
+  },
+  {
+   "name": "AvailabilityGrid",
+   "file": "web/availabilitygrid.png"
+  },
+  {
+   "name": "HistoryTimeline",
+   "file": "web/historytimeline.png"
+  }
+ ],
+ "mobile": [
+  {
+   "name": "InlineConfirm",
+   "file": "mobile/inlineconfirm.png"
+  },
+  {
+   "name": "Button (MobileButton)",
+   "file": "mobile/button-mobilebutton.png"
+  },
+  {
+   "name": "Mobile press feedback (:active)",
+   "file": "mobile/mobile-press-feedback-active.png"
+  },
+  {
+   "name": "StepperButton",
+   "file": "mobile/stepperbutton.png"
+  },
+  {
+   "name": "NudgeButton",
+   "file": "mobile/nudgebutton.png"
+  },
+  {
+   "name": "CompleteBar",
+   "file": "mobile/completebar.png"
+  },
+  {
+   "name": "AdditionalInvoiceButton",
+   "file": "mobile/additionalinvoicebutton.png"
+  },
+  {
+   "name": "CreditNoteButton (the anaesthetist's)",
+   "file": "mobile/creditnotebutton-the-anaesthetist-s.png"
+  },
+  {
+   "name": "StatusChip",
+   "file": "mobile/statuschip.png"
+  },
+  {
+   "name": "ProgressPill",
+   "file": "mobile/progresspill.png"
+  },
+  {
+   "name": "DayChip",
+   "file": "mobile/daychip.png"
+  },
+  {
+   "name": "Avatar",
+   "file": "mobile/avatar.png"
+  },
+  {
+   "name": "Progress bar",
+   "file": "mobile/progress-bar.png"
+  },
+  {
+   "name": "LockBadge",
+   "file": "mobile/lockbadge.png"
+  },
+  {
+   "name": "WarningTriangle",
+   "file": "mobile/warningtriangle.png"
+  },
+  {
+   "name": "BalanceAlertChip",
+   "file": "mobile/balancealertchip.png"
+  },
+  {
+   "name": "OutOfHoursMoon",
+   "file": "mobile/outofhoursmoon.png"
+  },
+  {
+   "name": "AvailabilityEditor",
+   "file": "mobile/availabilityeditor.png"
+  },
+  {
+   "name": "NumberStepper",
+   "file": "mobile/numberstepper.png"
+  },
+  {
+   "name": "LookbackSearchRow",
+   "file": "mobile/lookbacksearchrow.png"
+  },
+  {
+   "name": "TextField",
+   "file": "mobile/textfield.png"
+  },
+  {
+   "name": "TextArea",
+   "file": "mobile/textarea.png"
+  },
+  {
+   "name": "PayerFields (DifferentPayerTick, OtherPayerFields, PostalAddressFields)",
+   "file": "mobile/payerfields-differentpayertick-otherpayerfields-postaladdressfields.png"
+  },
+  {
+   "name": "PartyPicker",
+   "file": "mobile/partypicker.png"
+  },
+  {
+   "name": "SharedNotes",
+   "file": "mobile/sharednotes.png"
+  },
+  {
+   "name": "MonthGrid (LookbackDateSheet)",
+   "file": "mobile/monthgrid-lookbackdatesheet.png"
+  },
+  {
+   "name": "My calendar month grid",
+   "file": "mobile/my-calendar-month-grid.png"
+  },
+  {
+   "name": "6-day date strip",
+   "file": "mobile/6-day-date-strip.png"
+  },
+  {
+   "name": "TimesCard",
+   "file": "mobile/timescard.png"
+  },
+  {
+   "name": "SlidingSegmentedControl",
+   "file": "mobile/slidingsegmentedcontrol.png"
+  },
+  {
+   "name": "Segmented",
+   "file": "mobile/segmented.png"
+  },
+  {
+   "name": "Filter chips (Week / Month / To-Do / Done)",
+   "file": "mobile/filter-chips-week-month-to-do-done.png"
+  },
+  {
+   "name": "BottomTabBar",
+   "file": "mobile/bottomtabbar.png"
+  },
+  {
+   "name": "BottomSheet",
+   "file": "mobile/bottomsheet.png"
+  },
+  {
+   "name": "ListOptionsSheet",
+   "file": "mobile/listoptionssheet.png"
+  },
+  {
+   "name": "EditRateSheet",
+   "file": "mobile/editratesheet.png"
+  },
+  {
+   "name": "SupportSheet",
+   "file": "mobile/supportsheet.png"
+  },
+  {
+   "name": "SubmitListSheet",
+   "file": "mobile/submitlistsheet.png"
+  },
+  {
+   "name": "InfoTip (phone)",
+   "file": "mobile/infotip-phone.png"
+  },
+  {
+   "name": "StubSheet",
+   "file": "mobile/stubsheet.png"
+  },
+  {
+   "name": "PaidBySheet (with SplitFeeSection)",
+   "file": "mobile/paidbysheet-with-splitfeesection.png"
+  },
+  {
+   "name": "AdditionalInvoiceSheet (Raise additional invoice)",
+   "file": "mobile/additionalinvoicesheet-raise-additional-invoice.png"
+  },
+  {
+   "name": "AddPrePostOpEventSheet and AddBillingEventSheet",
+   "file": "mobile/addprepostopeventsheet-and-addbillingeventsheet.png"
+  },
+  {
+   "name": "CreditFormSheet (Credit note, the anaesthetist's)",
+   "file": "mobile/creditformsheet-credit-note-the-anaesthetist-s.png"
+  },
+  {
+   "name": "DoneStep",
+   "file": "mobile/donestep.png"
+  },
+  {
+   "name": "AlertOfficeSheet",
+   "file": "mobile/alertofficesheet.png"
+  },
+  {
+   "name": "FirstRunHint (mobile)",
+   "file": "mobile/firstrunhint-mobile.png"
+  },
+  {
+   "name": "EmptyState",
+   "file": "mobile/emptystate.png"
+  },
+  {
+   "name": "MovedToYouPanel",
+   "file": "mobile/movedtoyoupanel.png"
+  },
+  {
+   "name": "InstallCoach",
+   "file": "mobile/installcoach.png"
+  },
+  {
+   "name": "UpdatePrompt",
+   "file": "mobile/updateprompt.png"
+  },
+  {
+   "name": "FormError",
+   "file": "mobile/formerror.png"
+  },
+  {
+   "name": "SuccessOverlay",
+   "file": "mobile/successoverlay.png"
+  },
+  {
+   "name": "TickBadge",
+   "file": "mobile/tickbadge.png"
+  },
+  {
+   "name": "ContractApprovalLine",
+   "file": "mobile/contractapprovalline.png"
+  },
+  {
+   "name": "CaptureSection",
+   "file": "mobile/capturesection.png"
+  },
+  {
+   "name": "Hero figure card",
+   "file": "mobile/hero-figure-card.png"
+  },
+  {
+   "name": "Booking card (Capture pill)",
+   "file": "mobile/booking-card-capture-pill.png"
+  },
+  {
+   "name": "LookbackResults (ResultRow)",
+   "file": "mobile/lookbackresults-resultrow.png"
+  },
+  {
+   "name": "SeriesList",
+   "file": "mobile/serieslist.png"
+  },
+  {
+   "name": "PrepaymentPanel",
+   "file": "mobile/prepaymentpanel.png"
+  },
+  {
+   "name": "PrepaidSettlementBlock (the anaesthetist's)",
+   "file": "mobile/prepaidsettlementblock-the-anaesthetist-s.png"
+  },
+  {
+   "name": "BookingDetailBody",
+   "file": "mobile/bookingdetailbody.png"
+  },
+  {
+   "name": "useTickingValue",
+   "file": "mobile/usetickingvalue.png"
+  },
+  {
+   "name": "Collapsing masthead",
+   "file": "mobile/collapsing-masthead.png"
+  },
+  {
+   "name": "ProfileRow",
+   "file": "mobile/profilerow.png"
+  },
+  {
+   "name": "ProcedureStack",
+   "file": "mobile/procedurestack.png"
+  },
+  {
+   "name": "FunderDetailsView",
+   "file": "mobile/funderdetailsview.png"
+  },
+  {
+   "name": "PaidByRow",
+   "file": "mobile/paidbyrow.png"
+  },
+  {
+   "name": "MobileHeader",
+   "file": "mobile/mobileheader.png"
+  },
+  {
+   "name": "Sticky submit dock",
+   "file": "mobile/sticky-submit-dock.png"
+  },
+  {
+   "name": "DockSpacer",
+   "file": "mobile/dockspacer.png"
+  },
+  {
+   "name": "SlideStack",
+   "file": "mobile/slidestack.png"
+  },
+  {
+   "name": "ProcedureEventsList (the anaesthetist)",
+   "file": "mobile/procedureeventslist-the-anaesthetist.png"
+  },
+  {
+   "name": "ListRow",
+   "file": "mobile/listrow.png"
+  },
+  {
+   "name": "Colleague AM / PM cells",
+   "file": "mobile/colleague-am-pm-cells.png"
+  },
+  {
+   "name": "HalfBlock",
+   "file": "mobile/halfblock.png"
+  },
+  {
+   "name": "ToggleRow (switch)",
+   "file": "mobile/togglerow-switch.png"
+  }
+ ]
+}

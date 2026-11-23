@@ -5,7 +5,7 @@ import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
 import { STATUS_PALETTE } from '../../../../theme/statusColours'
 import { hospitalMonth, scheduleHorizon, useAppStore, type Actor } from '../../../../store'
 import { Segmented } from '../../../../shared'
-import { TextAction } from '../../../../shared/ui'
+import { IconButton, TextAction } from '../../../../shared/ui'
 import { MonthHeaderRow, useCalendarKeys } from '../../../../shared/calendar'
 import { monthCells, monthOf, shiftMonth } from '../../../../shared/availability'
 import { isRetired } from '../../../../domain/masterLifecycle'
@@ -232,17 +232,11 @@ function HospitalCalendar({
     })
   }
 
+  // The desktop month step (question 10: one step button, the ‹ › glyph, at Admin Day's 36).
   const navBtn = (label: string, delta: number, disabled: boolean) => (
-    <button
-      type="button"
-      aria-label={label}
-      disabled={disabled}
-      onClick={() => setMonth(shiftMonth(month, delta))}
-      className="aa-ctl"
-      style={{ minWidth: 36, height: 36, borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, color: disabled ? neutral.mist : accent.base, fontFamily: 'inherit', fontSize: 16, fontWeight: 700, cursor: disabled ? 'default' : 'pointer' }}
-    >
+    <IconButton label={label} size={36} disabled={disabled} onClick={() => setMonth(shiftMonth(month, delta))}>
       {delta < 0 ? '‹' : '›'}
-    </button>
+    </IconButton>
   )
 
   return (

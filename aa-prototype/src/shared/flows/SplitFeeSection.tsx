@@ -28,7 +28,7 @@ import {
   type SplitPersonInput,
   type SplitShareInput,
 } from '../../store'
-import { CloseButton, FormError, Notice, TextField } from '../ui'
+import { CloseButton, FormError, Notice, TextField, useRovingRadio } from '../ui'
 import { TextAction } from '../ui/TextAction'
 import { PartyPicker } from '../booking/PartyPicker'
 import { addressDraftOf } from './PostalAddressFields'
@@ -223,6 +223,15 @@ export function SplitFeeSection({ draft, heading = true }: SplitFeeSectionProps)
   const amounts = resolution?.ok === true ? resolution.amounts : undefined
   const total = amounts?.reduce((s, a) => s + a.amountExGst, 0)
   const options = draft.options
+  // "Who takes the rest" on the shared radio keyboard model (U4): one Tab stop, arrows move and
+  // choose. A move only ever chooses a row (never clears the one that has it); a click still toggles.
+  const restRadio = useRovingRadio({
+    values: rows.map((r) => r.key),
+    value: rows.find((r) => r.rest)?.key,
+    onChange: (key) => {
+      if (rows.find((r) => r.key === key)?.rest !== true) draft.chooseRest(key)
+    },
+  })
 
   return (
     <section data-shot="split-sheet" aria-label="Split the fee" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -317,10 +326,11 @@ export function SplitFeeSection({ draft, heading = true }: SplitFeeSectionProps)
                         <TextField label={`Share ${index + 1}, $ or %`} value={row.text} onChange={(text) => draft.update(row.key, { text })} placeholder="$48 or 48%" mono />
                       </div>
                     )}
+                    {/* The keys on the radio itself, not the list: the list also holds the share fields. */}
                     <button
+                      {...restRadio.itemProps(index)}
+                      onKeyDown={restRadio.groupProps.onKeyDown}
                       type="button"
-                      role="radio"
-                      aria-checked={row.rest}
                       aria-label={`Party ${index + 1} takes the rest`}
                       data-shot="split-rest-toggle"
                       onClick={() => draft.chooseRest(row.key)}

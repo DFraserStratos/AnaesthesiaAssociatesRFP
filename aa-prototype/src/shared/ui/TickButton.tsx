@@ -25,6 +25,7 @@ export function TickButton({
   return (
     <button
       type="button"
+      className="aa-ctl"
       onClick={onClick}
       aria-label={label}
       data-shot={shot}

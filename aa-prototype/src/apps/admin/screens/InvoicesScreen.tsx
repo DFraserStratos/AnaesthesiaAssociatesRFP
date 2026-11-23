@@ -133,7 +133,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
       <div data-testid="invoice-detail-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', maxWidth: 1048, margin: '0 auto' }}>
           <div style={{ fontSize: 13, color: neutral.mist }}>
-            <button onClick={() => onSelect(null)} style={{ border: 'none', background: 'none', padding: 0, color: neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Invoices</button>
+            <button type="button" className="aa-ctl" onClick={() => onSelect(null)} style={{ border: 'none', background: 'none', padding: 0, color: neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Invoices</button>
             <span style={{ color: neutral.lineStrong }}> / </span>
             <span className="mono">{invoice.invoiceNumber}</span>
           </div>

@@ -1,8 +1,10 @@
 # UI unification audit: the components that should be one
 
-**Status:** audit and plan, 12 November 2026. Nothing in `aa-prototype/` was changed. All 27 questions in
-section 6 were answered by Donald on 12 November 2026, each with the recommended answer, so the plan stands as
-written. Next step: phase docs and kick-off prompts for U1 to U7.
+**Status: done, 23 November 2026.** U1 to U7 are built (16 to 23 November 2026). The audit below is the
+12 November 2026 picture; `RESULTS.md` gives, per group, that count, the count after U7 and what was left and
+why, with the "after" catalogue shots in `shots-after/`. The rule now lives in `CLAUDE.md` ("One component per
+job") and is enforced by `aa-prototype/src/apps/oneComponentPerJob.test.ts`. All 27 questions in section 6
+were answered by Donald on 12 November 2026, each with the recommended answer.
 
 **Decision behind this:** we are not adopting shadcn or any component library (section 10). We keep our own
 design and code, and make it one component per job.

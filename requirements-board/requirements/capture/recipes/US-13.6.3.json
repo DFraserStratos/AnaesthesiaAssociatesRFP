@@ -29,7 +29,7 @@
           "caption": "An ended entry, the anaesthetist's side, kept with who ended it, when and why",
           "steps": [
             {
-              "click": "[data-shot=pairing-ended] > summary"
+              "click": "[data-shot=pairing-ended] > button"
             },
             {
               "wait": 300

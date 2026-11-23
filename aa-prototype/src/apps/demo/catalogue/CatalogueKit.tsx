@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
 import { DemoBadge, SurfaceProvider } from '../../../shared'
 import { accent, neutral, radius } from '../../../theme/tokens'
@@ -6,47 +6,74 @@ import { accent, neutral, radius } from '../../../theme/tokens'
 /**
  * The UI component catalogue (demo only, reached by URL: /demo/catalogue/:app).
  * One page per app shows every hand-built component LIVE, one component per
- * row, grouped by the library that would replace it in the planned UI library
- * migration (docs/ui-library-research/). Not product UI.
+ * row, grouped by component family. Each row names the shared component it is,
+ * or is built on, in src/ (or says it stays custom), so the page documents the
+ * shared kit (src/shared/ui/README.md, docs/ui-unification/). Not product UI.
  */
 
-/** The replacement-library groups, in the order every page lists them. */
-export const LIBRARY_GROUPS = {
-  shadcn: {
-    title: 'shadcn/ui on Base UI',
-    blurb: 'The foundation: accessible primitives (dialogs, sheets, drawers, menus, tabs, toggles, fields, badges, buttons) restyled to our tokens.',
+/** The component families, in the order every page lists them. */
+export const FAMILIES = {
+  actions: {
+    title: 'Buttons and actions',
+    blurb: 'Buttons, icon buttons, text actions, add-row buttons and the other controls that run one command.',
   },
-  sonner: {
-    title: 'Sonner',
-    blurb: 'Toasts. Replaces inline success banners and snackbars; blocking errors stay inline.',
+  pills: {
+    title: 'Pills and badges',
+    blurb: 'Tone labels, status chips, attention marks, avatars and progress indicators.',
   },
-  tanstack: {
-    title: 'TanStack Table (+ Virtual)',
-    blurb: 'Headless data tables with shadcn Table styling: sorting, grouping, pagination, row selection, virtualisation.',
+  fields: {
+    title: 'Fields and search',
+    blurb: 'Text fields, selects, checkboxes, switches, radio cards, search boxes and pick lists, on the one field chrome.',
   },
-  forms: {
-    title: 'React Hook Form + Zod',
-    blurb: 'One form pattern: labels, descriptions, field-bound errors and aria-invalid, with schema validation.',
+  dates: {
+    title: 'Dates and calendars',
+    blurb: 'Date and time fields, jump-to-date inputs, day steppers and month calendars.',
   },
-  daypicker: {
-    title: 'react-day-picker (shadcn Calendar / Date Picker)',
-    blurb: 'Calendar grids and date inputs, keeping our own day-cell content.',
+  tabs: {
+    title: 'Tabs and navigation',
+    blurb: 'Underline tabs, segmented controls, filter pills, back links, step rails and the app navigation.',
   },
-  numberflow: {
-    title: 'NumberFlow',
-    blurb: 'Optional like-for-like swap for figures that already animate. No new animation.',
+  overlays: {
+    title: 'Overlays',
+    blurb: 'Sheets, dialogs, side panels and popovers on the one modal stack: a bottom sheet on the phone, a dialog on web and Admin.',
   },
-  motion: {
-    title: 'Motion (custom component kept)',
-    blurb: 'Our own component stays, with its existing motion re-expressed on the Motion library. Behaviour unchanged.',
+  feedback: {
+    title: 'Feedback',
+    blurb: 'Notices, errors, result lines, empty states and the success moments.',
+  },
+  tables: {
+    title: 'Tables',
+    blurb: 'The one table kit (shell, cells, group rows, clickable rows) and the tables built on it.',
+  },
+  cards: {
+    title: 'Cards and page chrome',
+    blurb: 'Cards, page headers, eyebrows, label and value rows, stat tiles, headers and docks.',
   },
   custom: {
-    title: 'Stays custom (no library equivalent)',
-    blurb: 'Domain components built from library primitives (tooltips, focus handling) but otherwise ours.',
+    title: 'Stays custom',
+    blurb: 'Domain surfaces with no shared equivalent: the grids, strips, stacks, timelines and print documents. They use the shared parts where they can.',
+  },
+  demo: {
+    title: 'Demo only',
+    blurb: 'Presenter and harness controls that never ship in the product.',
   },
 } as const
 
-export type LibraryGroupId = keyof typeof LIBRARY_GROUPS
+export type FamilyId = keyof typeof FAMILIES
+
+/** The values a row's Shared component cell may take besides a file path. */
+export const SHARED_LITERALS: readonly string[] = ['Stays custom', 'Demo only']
+
+/**
+ * The Shared component cells that are neither a literal (Stays custom, Demo
+ * only) nor a file in `knownFiles` (paths relative to src/, such as
+ * "shared/ui/Pill.tsx"). For tests: pass the keys of an import.meta.glob over
+ * src/, so a moved or renamed file fails the catalogue test.
+ */
+export function missingSharedFiles(cells: readonly string[], knownFiles: readonly string[]): string[] {
+  const known = new Set(knownFiles)
+  return cells.filter((c) => !SHARED_LITERALS.includes(c) && !known.has(c))
+}
 
 const APPS = [
   { id: 'admin', label: 'Admin Web App' },
@@ -92,13 +119,20 @@ export function CataloguePage({ title, intro, children }: { title: string; intro
   )
 }
 
+/** Jump links to the family sections this page has (a page holds only some of the families). */
 function GroupIndex() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [present, setPresent] = useState<ReadonlySet<string> | null>(null)
+  useLayoutEffect(() => {
+    const page = ref.current?.parentElement?.parentElement ?? document
+    setPresent(new Set([...page.querySelectorAll('section[id^="fam-"]')].map((el) => el.id.slice(4))))
+  }, [])
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, fontSize: 12.5, color: neutral.mist }}>
+    <div ref={ref} style={{ display: 'flex', flexWrap: 'wrap', gap: 6, fontSize: 12.5, color: neutral.mist }}>
       <span style={{ fontWeight: 600 }}>Jump to:</span>
-      {(Object.keys(LIBRARY_GROUPS) as LibraryGroupId[]).map((id) => (
-        <a key={id} href={`#lib-${id}`} style={{ color: accent.base }}>
-          {LIBRARY_GROUPS[id].title}
+      {(Object.keys(FAMILIES) as FamilyId[]).filter((id) => present === null || present.has(id)).map((id) => (
+        <a key={id} href={`#fam-${id}`} style={{ color: accent.base }}>
+          {FAMILIES[id].title}
         </a>
       ))}
     </div>
@@ -107,13 +141,13 @@ function GroupIndex() {
 
 const COLS = 'minmax(420px, 460px) minmax(180px, 1fr) minmax(220px, 1.4fr) minmax(220px, 1.3fr)'
 
-/** One replacement-library group: heading, column header, then its rows. Renders nothing when empty. */
-export function LibraryGroup({ id, children }: { id: LibraryGroupId; children?: ReactNode }) {
+/** One component family: heading, column header, then its rows. Renders nothing when empty. */
+export function FamilySection({ id, children }: { id: FamilyId; children?: ReactNode }) {
   if (children === undefined || children === null || children === false) return null
-  const g = LIBRARY_GROUPS[id]
+  const g = FAMILIES[id]
   return (
-    <section id={`lib-${id}`} aria-labelledby={`lib-${id}-h`} style={{ display: 'flex', flexDirection: 'column', gap: 0, scrollMarginTop: 16 }}>
-      <h2 id={`lib-${id}-h`} style={{ margin: '18px 0 2px', fontSize: 20, fontWeight: 700 }}>
+    <section id={`fam-${id}`} aria-labelledby={`fam-${id}-h`} style={{ display: 'flex', flexDirection: 'column', gap: 0, scrollMarginTop: 16 }}>
+      <h2 id={`fam-${id}-h`} style={{ margin: '18px 0 2px', fontSize: 20, fontWeight: 700 }}>
         {g.title}
       </h2>
       <p style={{ margin: '0 0 10px', fontSize: 14, color: neutral.slate }}>{g.blurb}</p>
@@ -131,7 +165,7 @@ export function LibraryGroup({ id, children }: { id: LibraryGroupId; children?: 
             color: neutral.mist,
           }}
         >
-          {['Live example', 'Component', 'What it does', 'Replace with'].map((h) => (
+          {['Live example', 'Component', 'What it does', 'Shared component'].map((h) => (
             <div key={h} style={{ padding: '9px 14px' }}>
               {h}
             </div>
@@ -152,9 +186,12 @@ export interface CatalogueRowProps {
   usedIn: string
   /** Plain-English description of what it does (one or two sentences). */
   what: string
-  /** The library component that would replace it, e.g. "shadcn Drawer (Base UI Drawer)". */
-  replaceWith: string
-  /** Optional migration note or gap the library fixes. */
+  /**
+   * The shared component it is, or is built on: a file path relative to src/
+   * (e.g. "shared/ui/Pill.tsx"), or "Stays custom" or "Demo only".
+   */
+  shared: string
+  /** Optional note: what the example shows, a known gap, or what it writes. */
   note?: string
   /** 'mobile' renders inside a phone-width stage with the mobile surface; 'web' (default) uses the web surface. */
   stage?: 'web' | 'mobile'
@@ -164,8 +201,13 @@ export interface CatalogueRowProps {
   children: ReactNode
 }
 
-/** One component per row: live example, name, what it does, replacement. */
-export function CatalogueRow({ name, source, usedIn, what, replaceWith, note, stage = 'web', height, children }: CatalogueRowProps) {
+/**
+ * One component per row: live example, name, what it does, shared component.
+ * The stage stays the row's first child: the shots (docs/ui-unification/shots)
+ * capture it by that position.
+ */
+export function CatalogueRow({ name, source, usedIn, what, shared, note, stage = 'web', height, children }: CatalogueRowProps) {
+  const isPath = !SHARED_LITERALS.includes(shared)
   const cell: CSSProperties = { padding: '14px', borderTop: `1px solid ${neutral.line}`, minWidth: 0 }
   return (
     <div data-catalogue-row={name} style={{ display: 'grid', gridTemplateColumns: COLS, alignItems: 'stretch' }}>
@@ -179,7 +221,13 @@ export function CatalogueRow({ name, source, usedIn, what, replaceWith, note, st
       </div>
       <div style={{ ...cell, fontSize: 14, lineHeight: 1.5, color: neutral.ink }}>{what}</div>
       <div style={{ ...cell, fontSize: 14, lineHeight: 1.5 }}>
-        <div style={{ fontWeight: 600, color: accent.base }}>{replaceWith}</div>
+        <div
+          data-catalogue-shared={shared}
+          className={isPath ? 'mono' : undefined}
+          style={isPath ? { fontWeight: 600, fontSize: 12.5, color: accent.base, wordBreak: 'break-all' } : { fontWeight: 600, color: neutral.slate }}
+        >
+          {shared}
+        </div>
         {note !== undefined && <div style={{ marginTop: 6, color: neutral.slate, fontSize: 13 }}>{note}</div>}
       </div>
     </div>

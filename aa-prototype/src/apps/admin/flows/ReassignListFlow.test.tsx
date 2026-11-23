@@ -122,6 +122,11 @@ describe('ReassignListFlow', () => {
     expect(row.getAttribute('aria-label')).toMatch(/: not available this session$/)
     expect(row).toHaveTextContent('Not available this session')
     expect(document.body.textContent).not.toMatch(/flags it as a conflict|Keep as is/)
+    // The group is the shared Disclosure (UI unification U7): shut, its rows are inert and hidden; open it first.
+    const toggle = within(apart).getByRole('button', { name: /^Not available \(\d+\)$/ })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
     // The stand-in plays Dr Rutherford making his session available: his row becomes a candidate.
     fireEvent.click(within(row).getByRole('button', { name: 'Ask Dr Rutherford to make this session available' }))
     expect(useAppStore.getState().schedule.slots[`S-${ANAE.rutherford}-2026-07-22-AM`]?.status).toBe('free')
