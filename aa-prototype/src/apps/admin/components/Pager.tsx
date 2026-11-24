@@ -47,11 +47,13 @@ export interface PagerProps {
   showRange?: boolean
   /** Tighter gaps and a narrower page count, where the pager shares a line with filters (the Day view's footer). */
   dense?: boolean
+  /** Paging is off (the Day view's Scroll): every button greyed and the page count hidden, the pager keeping its place. */
+  disabled?: boolean
 }
 
 const MONO = { fontFamily: fontFamily.mono, fontVariantNumeric: 'tabular-nums' as const }
 
-export function Pager({ total, size, page, onPage, lead = 'Showing', shot, nested = false, showRange = true, dense = false }: PagerProps) {
+export function Pager({ total, size, page, onPage, lead = 'Showing', shot, nested = false, showRange = true, dense = false, disabled = false }: PagerProps) {
   const w = pageWindow(total, size, page)
   const range = total === 0 ? `${lead} 0 of 0` : `${lead} ${formatCount(w.start + 1)} to ${formatCount(w.end)} of ${formatCount(total)}`
   return (
@@ -60,23 +62,24 @@ export function Pager({ total, size, page, onPage, lead = 'Showing', shot, neste
       data-shot={shot}
       data-page={w.page}
       data-pages={w.pages}
+      data-disabled={disabled ? 'true' : undefined}
       style={{ display: 'flex', alignItems: 'center', justifyContent: showRange ? 'space-between' : 'flex-end', gap: 12, flexWrap: 'wrap', padding: nested ? '6px 0' : '8px 0', fontSize: nested ? 'inherit' : 12.5, color: nested ? 'inherit' : neutral.slate }}
     >
       {showRange && <span style={MONO} data-pager-range>{range}</span>}
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: dense ? 2 : 6 }}>
-        <IconButton size={32} tone="action" title="First page" label="First page" disabled={w.page <= 1} onClick={() => onPage(1)}>
+        <IconButton size={32} tone="action" title="First page" label="First page" disabled={disabled || w.page <= 1} onClick={() => onPage(1)}>
           <ChevronsLeft size={15} aria-hidden />
         </IconButton>
-        <IconButton size={32} tone="action" title="Previous page" label="Previous page" disabled={w.page <= 1} onClick={() => onPage(w.page - 1)}>
+        <IconButton size={32} tone="action" title="Previous page" label="Previous page" disabled={disabled || w.page <= 1} onClick={() => onPage(w.page - 1)}>
           <ChevronLeft size={15} aria-hidden />
         </IconButton>
-        <span aria-current="page" style={{ ...MONO, minWidth: dense ? 44 : 56, textAlign: 'center', color: accent.base, fontWeight: 600 }} data-pager-page>
+        <span aria-current="page" style={{ ...MONO, minWidth: dense ? 44 : 56, textAlign: 'center', color: accent.base, fontWeight: 600, visibility: disabled ? 'hidden' : undefined }} data-pager-page>
           {w.page} of {w.pages}
         </span>
-        <IconButton size={32} tone="action" title="Next page" label="Next page" disabled={w.page >= w.pages} onClick={() => onPage(w.page + 1)}>
+        <IconButton size={32} tone="action" title="Next page" label="Next page" disabled={disabled || w.page >= w.pages} onClick={() => onPage(w.page + 1)}>
           <ChevronRight size={15} aria-hidden />
         </IconButton>
-        <IconButton size={32} tone="action" title="Last page" label="Last page" disabled={w.page >= w.pages} onClick={() => onPage(w.pages)}>
+        <IconButton size={32} tone="action" title="Last page" label="Last page" disabled={disabled || w.page >= w.pages} onClick={() => onPage(w.pages)}>
           <ChevronsRight size={15} aria-hidden />
         </IconButton>
       </span>

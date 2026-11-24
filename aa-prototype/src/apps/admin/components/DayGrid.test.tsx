@@ -334,16 +334,23 @@ describe('DayGrid pager (catch-up Phase 43)', () => {
     return { ...utils, onPage }
   }
 
-  it('the scroll toggle shows every anaesthetist in one list, with no pager; it toggles back to pages', () => {
+  it('Scroll shows every anaesthetist in one list with the pager greyed; either icon flips back to pages', () => {
     const onRowMode = vi.fn()
     const masters = useAppStore.getState().masters
     const anaesthetists = Array.from({ length: 85 }, (_, i) => anaesthetist(`C${i + 1}`, `Dr Col${String(i + 1).padStart(2, '0')} Test`))
     const views: Record<string, SlotView[]> = Object.fromEntries(anaesthetists.map((a) => [a.registrationNumber, [view(a.registrationNumber, { status: 'holiday' })]]))
     const { container } = render(<DayGrid anaesthetists={anaesthetists} viewsByAnaesthetist={views} masters={masters} warningFlags={new Map()} onSelectSlot={vi.fn()} page={2} onPage={vi.fn()} rowMode="scroll" onRowMode={onRowMode} />)
     expect(container.querySelectorAll('[data-day-grid-row]')).toHaveLength(85)
-    expect(container.querySelector('[data-shot="day-grid-pager"]')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: /^Pages/ }))
+    // The pager stays, greyed, its page count hidden.
+    const pager = container.querySelector('[data-shot="day-grid-pager"]')
+    expect(pager).toHaveAttribute('data-disabled', 'true')
+    expect(screen.getByRole('button', { name: 'Next page' })).toBeDisabled()
+    expect(pager?.querySelector('[data-pager-page]')).toHaveStyle({ visibility: 'hidden' })
+    // Either icon flips the mode, the one already on included.
+    fireEvent.click(screen.getByRole('button', { name: /^Scroll/ }))
     expect(onRowMode).toHaveBeenCalledWith('pages')
+    fireEvent.click(screen.getByRole('button', { name: /^Pages/ }))
+    expect(onRowMode).toHaveBeenCalledTimes(2)
   })
 
   it('shows no pager at demo scale (14 rows)', () => {

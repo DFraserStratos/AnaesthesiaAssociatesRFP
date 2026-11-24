@@ -60,7 +60,8 @@ interface DayGridProps {
   /**
    * Pages of as many rows as fit the window (never a scroll bar), or every
    * anaesthetist in one scrolling list: the icon switch in the grid's
-   * bottom-right corner, offered only when there is more than one page.
+   * bottom-right corner (either icon flips it), offered only when there is
+   * more than one page.
    */
   rowMode?: DayRowMode
   onRowMode?: (mode: DayRowMode) => void
@@ -397,11 +398,12 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
             the pager, then the toggle between pages and one scrolling list. */}
         {pageable && (
           <div data-shot="day-grid-footer" style={{ marginLeft: 'auto', minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 11, color: neutral.mist }}>
-            {paged && onPage !== undefined && (
-              <Pager total={displayedRows.length} size={pageSize} page={page} onPage={onPage} lead="Anaesthetists" shot="day-grid-pager" nested showRange={false} dense />
+            {/* In Scroll the pager stays, greyed with its page count hidden, so the corner never shifts. */}
+            {onPage !== undefined && (
+              <Pager total={displayedRows.length} size={pageSize} page={page} onPage={onPage} lead="Anaesthetists" shot="day-grid-pager" nested showRange={false} dense disabled={!paged} />
             )}
             {onRowMode !== undefined && (
-              <SlidingSegmentedControl size="sm" variant="teal" ariaLabel="Show anaesthetists" value={rowMode} options={ROW_MODE_OPTIONS} onSelect={onRowMode} />
+              <SlidingSegmentedControl size="sm" variant="teal" ariaLabel="Show anaesthetists" value={rowMode} options={ROW_MODE_OPTIONS} onSelect={() => onRowMode(rowMode === 'pages' ? 'scroll' : 'pages')} />
             )}
           </div>
         )}
