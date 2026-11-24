@@ -1,6 +1,6 @@
 {
   "id": "US-04.4.1",
   "status": "absent",
-  "absentReason": "Retired: the flat Contract model has no lines, versions or defaults",
+  "absentReason": "Retired: removed in Phases 18, 19a and 20. There is no default Contract; No contract · RVG is the backstop on every List (US-04.3.3).",
   "shots": []
 }

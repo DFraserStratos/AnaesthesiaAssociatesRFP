@@ -1,25 +1,6 @@
 {
   "id": "US-09.1.2",
-  "status": "captured",
-  "absentReason": "",
-  "shots": [
-    {
-      "name": "invoice-number-reference",
-      "app": "simulator",
-      "caption": "The ledger's own invoice number as the Xero InvoiceNumber, the internal Reference alongside",
-      "start": "/demo/xero/invoices/XRH01",
-      "states": [
-        {
-          "steps": [
-            {
-              "scroll": "[data-shot=xero-invoice-identifiers]"
-            }
-          ],
-          "highlight": [
-            "[data-shot=xero-invoice-identifiers]"
-          ]
-        }
-      ]
-    }
-  ]
+  "status": "absent",
+  "absentReason": "Retired: merged into US-09.1.1, where both records of a pair carry InvoiceNumber and Reference.",
+  "shots": []
 }

@@ -30,6 +30,8 @@ export const EVENT_LABELS = {
   saveForReview: 'Save for review',
   raisedByYou: 'Raised by you',
   raisedByOffice: 'Raised by the office',
+  /** A credit or charge the system raised by itself, such as the credit on cancelling a prepaid Booking. */
+  raisedBySystem: 'Raised automatically',
   /** "Raised by Dr Souter". */
   raisedBy: (name: string) => `Raised by ${name}`,
   /** Admin Review's tabs. */
@@ -369,11 +371,13 @@ export const CREDIT_COPY = {
 
 /**
  * Who raised an event, one way everywhere: "Raised by you" to the anaesthetist
- * who raised it, "Raised by the office" for an office event, else "Raised by
+ * who raised it, "Raised by the office" for an office event, "Raised
+ * automatically" for one the system raised (never "Dr System"), else "Raised by
  * Dr Souter".
  */
 export function raisedByText(addedBy: { role: string; who: string; anaesthetistId?: string }, viewer?: { role: string; anaesthetistId?: string }): string {
   if (addedBy.role === 'office') return EVENT_LABELS.raisedByOffice
+  if (addedBy.role === 'system') return EVENT_LABELS.raisedBySystem
   if (viewer?.role === 'anaesthetist' && viewer.anaesthetistId !== undefined && addedBy.anaesthetistId === viewer.anaesthetistId) return EVENT_LABELS.raisedByYou
   return EVENT_LABELS.raisedBy(drSurname(addedBy.who))
 }

@@ -50,9 +50,13 @@ const trigger: StepHandler = {
       }
       await run.click()
       // An entry with a confirm step (catch-up Phase 43: Load full-scale data) asks for a second click.
+      // Its handler generates the data synchronously (3 to 7 s under load), and the click does not
+      // return until the page handles the event, so the confirm and the result line get a longer wait.
       const confirm = row.getByRole('button', { name: 'Confirm' })
-      if (await confirm.count()) await confirm.click()
-      await row.getByRole('status').filter({ hasText: /\S/ }).waitFor({ state: 'visible', timeout: ctx.timeout })
+      const confirmed = (await confirm.count()) > 0
+      const longWait = Math.max(ctx.timeout, 30_000)
+      if (confirmed) await confirm.click({ timeout: longWait })
+      await row.getByRole('status').filter({ hasText: /\S/ }).waitFor({ state: 'visible', timeout: confirmed ? longWait : ctx.timeout })
       if (!keepOpen) {
         if (pwa) {
           // Tap the scrim above the sheet, then let the sheet-out motion finish.

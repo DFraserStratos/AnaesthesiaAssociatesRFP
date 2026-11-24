@@ -287,7 +287,7 @@ function InvoicesTable({ pairs, total }: { pairs: XeroInvoicePairView[]; total: 
                       secondary
                     />
                   </Td>
-                  <Td compact clip><StatusChip recStatus={pair.accRec.status} payStatus={pair.accPay?.status} fee={pair.kind === 'aaFee'} /></Td>
+                  <Td compact clip><StatusChip recStatus={pair.accRec.status} payStatus={pair.accPay?.status} fee={pair.kind === 'aaFee'} noCharge={pair.noCharge === true} /></Td>
                 </tr>
               ))}
             </tbody>
@@ -394,10 +394,10 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
           </h2>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 9 }}>
-          <StatusChip recStatus={pair.accRec.status} payStatus={pair.accPay?.status} />
+          <StatusChip recStatus={pair.accRec.status} payStatus={pair.accPay?.status} noCharge={pair.noCharge === true} />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            {/* Hidden on a voided pair: Xero takes no payment on a voided invoice (catch-up Phase 37). */}
-            {!voided && !credited && <button
+            {/* Hidden on a voided pair: Xero takes no payment on a voided invoice (catch-up Phase 37); and on a no-charge invoice, which has nothing to pay or pay out. */}
+            {!voided && !credited && pair.noCharge !== true && <button
               type="button"
               onClick={settleInvoice}
               disabled={pair.accPay === undefined || fullySettled || transferred}
@@ -502,7 +502,7 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
             Pair link:{' '}
             <span className="mono" style={{ fontWeight: 700 }}>{pair.accRec.id}</span>
             {' '}↔{' '}
-            <span className="mono" style={{ fontWeight: 700 }}>{accPayId ?? 'ACCPAY unavailable'}</span>
+            <span className="mono" style={{ fontWeight: 700 }}>{accPayId ?? (pair.noCharge === true ? 'no payable (no charge)' : 'ACCPAY unavailable')}</span>
           </div>
         </div>
       </Callout>
@@ -529,7 +529,9 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
             from="Anaesthesia Associates"
             to={pair.accPay?.contact?.name ?? 'Anaesthetist'}
           >
-            {heldInHolding
+            {pair.noCharge === true
+              ? NO_CHARGE_PAYABLE
+              : heldInHolding
               ? `Simulated payable crediting the ${AA_HOLDING_ACCOUNT.name}, not the anaesthetist. ${HELD_UNTIL_AUTHORISED}, then moved by a transfer to the anaesthetist who did the List. ${LEAVES_ONLY_BY_SYSTEM}.`
               : <>Simulated payable to the anaesthetist. This record tracks the full amount AA will disburse. {`Held as a ${BCTI_DOCUMENT_NAME.toLowerCase()} from the anaesthetist, one for each invoice and the same value.`}</>}
           </MoneyFlowCard>
@@ -833,8 +835,18 @@ function AccRecCard({ pair }: { pair: XeroInvoicePairView }) {
   )
 }
 
+/** A no-charge invoice's payable side (catch-up Phase 44 QA): none by design, never a failed load. */
+const NO_CHARGE_PAYABLE = 'No payable: a no-charge invoice has nothing to pay out and no BCTI.'
+
 function AccPayCard({ pair }: { pair: XeroInvoicePairView }) {
   const pay = pair.accPay
+  if (pay === undefined && pair.noCharge === true) {
+    return (
+      <RecordCard shot="xero-accpay-card" eyebrow="Accounts payable · ACCPAY" title="No payable">
+        <span style={{ fontSize: 13, color: neutral.slate }}>{NO_CHARGE_PAYABLE}</span>
+      </RecordCard>
+    )
+  }
   if (pay === undefined) {
     return (
       <RecordCard eyebrow="Accounts payable · ACCPAY" title={pair.ledger.accPayId ?? 'ACCPAY'}>
@@ -1374,17 +1386,19 @@ function ContactTypeChip({ type }: { type: XeroContact['type'] }) {
   )
 }
 
-function StatusChip({ recStatus, payStatus, fee = false }: { recStatus: string; payStatus?: string; fee?: boolean }) {
+function StatusChip({ recStatus, payStatus, fee = false, noCharge = false }: { recStatus: string; payStatus?: string; fee?: boolean; noCharge?: boolean }) {
   const paid = recStatus === 'paid'
   const disbursed = payStatus === 'paid'
   const label = recStatus === 'voided'
     ? 'Voided'
     : recStatus === 'credited'
     ? CREDIT_LABELS.credited
+    : noCharge
+    ? 'No charge'
     : fee
     ? paid ? 'Paid' : 'Awaiting payment'
     : disbursed ? 'Disbursed' : paid ? 'Paid · not disbursed' : payStatus === 'authorised' ? 'Part paid' : 'Awaiting payment'
-  const on = paid || disbursed
+  const on = !noCharge && (paid || disbursed)
   // Voided in Xero is the danger state (catch-up Phase 37).
   const colours = recStatus === 'voided'
     ? { background: semantic.error.tint, color: semantic.error.onTint }

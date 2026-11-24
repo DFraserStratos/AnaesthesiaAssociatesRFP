@@ -40,35 +40,90 @@ Requires **Node 20.19 or newer** — `engines` in `package.json` carries the exa
 and the odd-numbered majors.
 
 Once running, use the app-switcher (top right) to move between the three apps and the demo surfaces.
-The demo control panel (`Demo: Control Panel`) is the presenter's **index**: reset, advance the clock,
-jump to a scenario (S1 to S5), and see every demo action listed under its screen with an "Open
-screen" link. The actions themselves live on their screens, under **Demo actions** in the harness
-bar (see [Demo actions](#demo-actions)).
+The demo control panel (`Demo: Control Panel`, `/demo/control`,
+`src/apps/demo/DemoControlPanel.tsx`) is the presenter's **index**, in three groups:
+
+- **Clock & reset:** the demo clock with its advance buttons (+15 min, +1 hour, Next day, Next
+  morning, +7 days, Procedure day · 28 Jul), and Reset demo data (asks first).
+- **Scenario jumps · S1 to S5:** each jump asks first, resets to the pristine seed, then stages only
+  what its scenario cannot reach from there, through the product's own guarded store actions. The
+  jumps are `DEMO_SCENARIOS` in `src/apps/demo/demoScenarios.ts`: S1, S2 and S4 stage nothing; S3
+  checks that Dr Souter's two Mon 20 Jul Lists are SUBMITTED; S5 stages David Chen's audit trail and
+  authorises Dr Whitaker's Fri 17 Jul List. After a jump its result line is followed by one link per
+  beat, in run-sheet order, each with what to do there; a link whose target does not exist yet is
+  disabled and says what it waits for. The same jump always gives the same data, so it doubles as
+  recovery mid-demo.
+- **Demo actions by screen:** every registered demo action listed under its screen, with its badge,
+  where it shows, and an "Open screen" link (a PWA-only entry reads "Shown in the installed PWA"
+  instead). Nothing is fired from here: the actions themselves live on their screens (see
+  [Demo actions](#demo-actions)).
 
 ## Demo actions
 
-Every simulated event (a hospital message, a payment webhook, a billing failure, a job run, the
-office standing in on a handset) is a **demo trigger** registered in
-`src/shared/demoTriggers/registry.ts` and shown only on the screen it belongs to:
+Every simulated event (a hospital file or message, a payment webhook, a billing failure, a job run,
+the office or a colleague standing in on a handset) is a **demo trigger** registered in
+`DEMO_TRIGGERS` (`src/shared/demoTriggers/registry.ts`) and shown only on the screen it belongs to.
+There are 88: 55 in the harness bar only, 24 in the installed PWA only, and 9 in both. An entry may
+carry one of three badges naming what it stands in for: **Future scope** (3: photo capture and the
+two HL7 and FHIR message entries), **Office stand-in** (19: 18 are the office's step on a handset
+that has no Admin app, plus "AA approves call-out" on the bar) and **Colleague stand-in** (3: another anaesthetist acting, where
+the PWA runs only as Dr Souter). The badge reads the same on the bar, the Demo sheet and the index.
 
-- **Framed prototype:** a "Demo actions" pill in the 48px harness bar (`src/shell/DemoActionsMenu.tsx`),
-  absent on screens with no entries.
-- **Installed PWA:** a small amber "Demo" chip that opens a bottom sheet (`src/pwa/PwaDemoActions.tsx`).
-- **Control Panel:** the index of all of them.
+### Harness bar (framed prototype, per screen)
+
+A "Demo actions" pill in the 48px harness bar (`src/shell/DemoActionsMenu.tsx`,
+`data-shot="demo-actions"`) lists the bar entries for the current route, and is absent on a screen
+with none. Each row (`demo-action-<id>`) shows the label, badge and one-line description, a select
+when the entry has choices, and Run; a disabled Run says why beneath it. An entry that replaces the
+demo data (Load full-scale data) asks first: Run becomes Confirm with a Cancel line. The result line
+shows under the row, sometimes with an in-app link ("Open AA-2026-0002").
+
+### Demo sheet (installed PWA)
+
+The PWA has no harness bar. A small amber "Demo" chip (`src/pwa/PwaDemoActions.tsx`,
+`data-shot="pwa-demo-actions"`), shown only on a screen with PWA entries, opens a bottom sheet
+listing them (`pwa-demo-action-<id>`), with choices as tappable rows rather than a dropdown. The
+chip hides while any sheet is open, except for an entry that acts on an open sheet (the NHI Hub
+mode while Add a booking is open, the help line's reply while Help is open), which lifts it to the
+top of the screen. While "Play the office" is on (see [Office simulation](#office-simulation)), the
+chip and the sheet carry an "Office auto" marker. The framed prototype hosts the mobile app in `PhoneFrame` and never shows the chip.
+
+### How an entry is built
 
 Each entry declares its route patterns (`matchPath`, against the full pathname), its surfaces
-(`'bar'`, `'pwa'` or both), an optional `when` (visibility, for seed-scoped entries), optional
-`choices`, a `disabledReason` (shown under a disabled Run), a `run(api, ctx, choiceId)` returning
-`{ ok, message }`, and an `indexPath` for the Control Panel's link. A trigger acts on the entity in
-the URL (`ctx.params`) or on screen state the URL cannot carry, which a screen publishes with
+(`'bar'`, `'pwa'` or both), its Control Panel heading (`screen`, plus `alsoScreens` when it shows on
+more than one), an optional `badge`, an optional `when` (visibility, for seed-scoped entries),
+optional `choices` and `defaultChoice`, a `disabledReason` (shown under a disabled Run), an optional
+`confirm` line, a `run(api, ctx, choiceId)` returning `{ ok, message, link? }`, and an `indexPath`
+for the Control Panel's link (with `indexEmptyReason` or `indexHint`). A trigger acts on the entity
+in the URL (`ctx.params`) or on screen state the URL cannot carry, which a screen publishes with
 `useDemoTriggerContext(key, value)` (typed keys in `src/shared/demoTriggers/context.ts`). "Replay"
 memory lives in a small non-persisted store (`memory.ts`). The shared actors (`OFFICE_ACTOR`,
 `SOUTER_ACTOR`, `OFFICE_SIMULATION_ACTOR`) are in `src/store/demoActors.ts`.
 
 **To add one in a later phase:** add an entry to `DEMO_TRIGGERS` (store actions only, no
 `src/apps/*` or `src/shell/*` imports, because the PWA bundles the registry), add a context key if
-it needs screen state, and add it to `demoTriggers.test.ts`. Product actions stay as buttons in the
-product UI; never add a trigger to the Control Panel page.
+it needs screen state, and add it to `demoTriggers.test.ts`. The guards below then make you place it:
+script it in the demo guide or put it on `NOT_SCRIPTED` with a reason, and place it in the two
+Playwright audits' tables. Product actions stay as buttons in the product UI; never add a trigger
+to the Control Panel page.
+
+### Guards (catch-up Phase 44)
+
+- `src/appCopy.test.ts`: the copy guard. Parses every `src/**` and `pwa/**` source file and fails on
+  an en or em dash in rendered copy, a stale caveat, a retired word, or a provisional label that
+  cites no open question.
+- `src/shared/demoTriggers/demoTriggerAudit.test.ts`: the whole registry against the rules the
+  phases left it with, so a new entry that breaks one fails without a test of its own.
+- `src/shared/demoTriggers/demoGuideSync.test.ts`: every "Demo actions → Label" and "Demo sheet →
+  Label" press in the run sheet and the single-page guide names a registered entry on that surface,
+  and every entry is scripted or on `NOT_SCRIPTED` with its reason.
+- `src/apps/demo/demoScenarios.test.ts`: each scenario jump stages cleanly and deterministically, and
+  every beat link lands on a real route.
+- `visual/demo-actions-audit.spec.ts` (Playwright): every "Open screen" link on the Control Panel
+  index lands on a screen whose harness bar lists that entry.
+- `visual/pwa-demo-parity.spec.ts` (Playwright, the `pwa-device` project): the PWA's Demo chip,
+  screen by screen, lists exactly the registry's PWA entries for that screen.
 
 ## Stack
 
@@ -464,15 +519,20 @@ The installed PWA has no Admin app, so **nobody plays the office**. In the frame
 presenter submits a List on the phone, switches to the Admin Web App, authorises it and watches the
 billing run; on a real phone a submitted List would sit in Done forever and Balances would never move.
 
-The handset closes that loop per List: the Demo chip on a submitted List offers **"Office authorises
-this List"** (`authoriseAsSimulatedOffice` in `src/store/officeStandIn.ts`), which authorises and bills
-that List through the ordinary audited store actions, with an actor named `AA office (simulated)`, so
-the invoices, the Balances movement (the next day) and the Xero mirror all follow.
+The handset closes that loop per List: the Demo sheet on a submitted List offers **"Office authorises
+this List"** (`authoriseAsSimulatedOffice` in `src/store/officeStandIn.ts`, badged Office stand-in),
+which authorises and bills that List through the ordinary audited store actions, with an actor named
+`AA office (simulated)`, so the invoices, the Balances movement (the next day) and the Xero mirror all
+follow. It is one of the Demo sheet's 18 Office stand-in entries (see [Demo actions](#demo-actions)),
+each the office's one step on the screen where the handset story needs it.
 
-`src/pwa/officeSimulation.ts` is the older, automatic version: **"Play the office"** on More. It is
-**off by default** (absent or unreadable storage reads off), badged "Simulated office" while on, and
-PWA-only (`src/main.tsx` never wires it; auto-authorising would sabotage the scripted S3 review beat).
-When on, a few seconds after a List goes ACTIVE → SUBMITTED it runs the same stand-in.
+`src/pwa/officeSimulation.ts` is the older, automatic version: **"Play the office"**, a switch on the
+More tab's "Office simulation" card. It is **off by default**: only a stored "on" reads as on, so
+absent, corrupt or unreadable storage leaves it off. While on, the card shows a "Simulated office"
+badge and the Demo chip and sheet an "Office auto" marker. It is PWA-only (`pwa/main.tsx` wires it,
+`src/main.tsx` never does; auto-authorising would sabotage the scripted review beats in the framed
+prototype). When on, about four seconds (`OFFICE_SIM_DELAY_MS`) after a List goes ACTIVE to SUBMITTED
+it runs the same stand-in. The setting is read when the timer fires, so a flip needs no reload.
 
 **It is explicitly a simulation and explicitly not the RFP flow.** Nothing in the RFP authorises a List
 off the back of the anaesthetist's own submit; a real submission goes to the office review queue and a

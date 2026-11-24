@@ -1,7 +1,7 @@
 {
   "id": "US-08.4.6",
   "status": "partial",
-  "absentReason": "The invoice description shows on the invoice only; the office's edit of it has no screen yet (it left the Booking at the owner's review, 12 November).",
+  "absentReason": "The invoice prints the invoice description, but the office has no screen to edit it as free text, so the admin edit, and its winning over a later description or a Contract change, are not shown.",
   "shots": [
     {
       "name": "invoice-description",

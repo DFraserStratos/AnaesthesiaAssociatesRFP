@@ -1,6 +1,6 @@
 {
   "id": "US-04.2.3",
   "status": "absent",
-  "absentReason": "A contract cannot override base units for an RVG code or group. Base units always come from the RVG code master; a fixed-price Contract prices a code with a fixed price instead. Searched domain/types.ts (Contract, ContractPrice), domain/billing/fee.ts and ContractEditSheet.tsx.",
+  "absentReason": "Retired: merged into US-04.2.2. Base units always come from the RVG code; a Contract sets a rate, a discount or a fixed price instead.",
   "shots": []
 }

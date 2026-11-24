@@ -83,7 +83,7 @@ entry describing what was *actually* built (which may differ from the plan — r
 | 43a | Catch-up · Sign-in and ease of use: simple anaesthetist screens and point-of-need help | DONE | 2026-11-23 | A simulated PWA sign-in with Sign out (per-device session, the framed build always signed in), one viewer rule keeping office-only detail off every anaesthetist screen (proven both ways), point-of-need help (one `InfoTip`, one topic file) on Booking capture, Admin Day and Admin Review, a first-run welcome card per app, and the Sign out and Show first-run hints again triggers. |
 | 43b | Catch-up · Support: the help line for app users and product support for AA | DONE | 2026-11-23 | A Help entry in every app (mobile More and the PWA, the web top nav, the Admin side nav) opening one support panel: open or closed from the demo clock and 42's calendar, the phone line, the hours and P1 to P4 from one `SUPPORT_CONFIG`, a request form logging an audited ticket tracked Logged, Responded, Closed with the after-hours rule; Admin's Product support tab with its own table, best effort after hours, the public-holiday call-out awaiting AA and limited Christmas cover; `SidePanel` moved to `shared/surface`; five triggers; `PERSIST_VERSION` 74 to 75 |
 | U7 | Catch-up · UI unification: Close out | DONE | 2026-11-23 | The U35 repeats on one shared component each (`StickyDock`, `NoticeLine`, `PickRow`, `TickGlyph`, `Disclosure`; `DayChip`, `AddRowButton` and the progress label already shared; `TotalsBlock` not built), a 105-line worklist (2 names, 103 styled buttons) swept to 90 buttons in 58 allow-listed files, the catalogue by family with a "Shared component" column (admin 168 to 169, web 69, mobile 78), `oneComponentPerJob.test.ts`, the `CLAUDE.md` section and `RESULTS.md`; Vitest 4,433, Playwright 284 |
-| 44 | Catch-up · Demo guide rewrite and final sweep | IN PROGRESS | 2026-11-23 | Session 1 built items 1 to 7 (inventory, `DEMO_SCENARIOS` with a link per beat, the trigger audit and guide-sync tests, the copy sweep and `appCopy.test.ts`, figures re-read from the app) with the gate green; Session 2 starts at item 8, the run sheet rewrite. |
+| 44 | Catch-up · Demo guide rewrite and final sweep | DONE | 2026-11-24 | The S1 to S5 jumps rebuilt in `demoScenarios.ts` with a link per beat, the trigger audit, guide-sync and app-copy guards, a copy sweep, the five guide files and the master guide rewritten from walks of the app, a QA and handset parity pass with its small fixes, the recipe and ATLAS sweep (capture held for the owner), and the catch-up closed; Vitest 4,568 in 415 files, Playwright 364. |
 
 Statuses: NOT STARTED → IN PROGRESS → DONE (with date). If a phase is partially done at the end
 of a session, leave it IN PROGRESS and state exactly what remains.
@@ -638,6 +638,15 @@ one-line why. Later sessions must not re-litigate entries here.
 - **2026-11-23 · Catch-up Phase 43b (1): the support hours and two channels as answered, in one config** (US-15.0.8, US-15.0.9; D83, OQ-137; supersedes 43a's old default of one help desk in Admin with 8:30am to 5:30pm in one string, never built). 8:30am to 5:00pm NZT, Monday to Friday, national public holidays excluded; the help line in all three apps and product support in Admin, each with its own response table; all of it in `SUPPORT_CONFIG` (`domain/support.ts`), built with no provisional label. See the 43b entry.
 - **2026-11-23 · Catch-up Phase 43b (2): cover from 8:00am at its default** (OQ-141, D87, open). Both channels open at 8:30am, each channel's hours one value reading `STRATOS_HOURS`, so an 8:00am start on either is a one-line change; no extra-cover pricing. Listed under "Our reading, to confirm with AA" in the panel.
 - **2026-11-23 · Catch-up Phase 43b (3): response clocks run in business time, and a response that would fall in the Christmas window is best effort** (US-15.0.8, US-15.0.9; our reading). P1 one business hour, P2 by the close of that business day, help-line P3 four business hours, product-support P3 the same time three business days on, P4 none; a help-line security breach or platform outage out of hours is P1 within 60 minutes on the plain clock; national holidays only close the line; 24 December to 6 January is limited cover on product support, and a product-support due time inside it gets no set time.
+- **2026-11-24 · Catch-up Phase 44 (1): time-unit rounding is AA's rule, not an assumption** (OQ-50, OQ-75, D25; US-05.2.2; supersedes the 2026-07-22 "Time-unit partial-interval rounding = round UP per started interval, a named ASSUMPTION"). Already recorded by Catch-up Phase 19a (6), 2026-11-11; the 2026-07-22 entry already carries its SUPERSEDED note. This entry only points there. Time units come only from the RVG rule, a part interval rounds up under the tiers held as data, applied to recorded time only. No caveat remains in the app or the guide; `appCopy.test.ts` refuses one coming back.
+- **2026-11-24 · Catch-up Phase 44 (2): scenario jumps live in one module and stage through guarded actions** (supersedes the Phase 12 scenario-jump design: jumps defined inline in `DemoControlPanel.tsx`, S1, S2 and S4 reset only, "Go to" buttons to app roots). No Phase 12 Decisions-log entry exists; the design is in the Phase 12 entry ("Demo polish & guided script", 2026-07-24). Jumps now live in `src/apps/demo/demoScenarios.ts` (`DEMO_SCENARIOS`), stage only through guarded store actions after a reset, and offer one deep link per beat with its steps line; the links stay until the next reset or a reload.
+- **2026-11-24 · Catch-up Phase 44 (3): the demo guide's source priority** (new). The requirements catalogue first, then this Decisions log, then the code; the RFP is historical input. AR-58 is the plain-language source for pricing narration, AR-61 its flat ERD. Discovery points and the master guide's "Open questions" tab are built from the catalogue's OQ statuses at the time of writing.
+- **2026-11-24 · Catch-up Phase 44 (4): app copy never settles an open item** (new). No copy calls an Open or Proposed item settled, nor the BCTI granularity; a kept caveat cites its OQ id or catalogue item. `src/appCopy.test.ts` enforces the stale phrases, the retired and superseded vocabulary, the must-keep caveats (`MUST_KEEP`), a minimal `ALLOWLIST`, no build-history leaks in demo copy, and the no-dash rule.
+- **2026-11-24 · Catch-up Phase 44 (5): audit of the superseded rulings** (the doc's list). Every ruling the catch-up superseded has its Decisions-log entry from its owning phase, except the Phase 12 jump design (entry 2 above) and four written below (6 to 9). Hospital sync's entry is Phase 34's, not 33's, which is fine. The 2026-07-22 rounding entry was already superseded by 19a (6) (entry 1).
+- **2026-11-24 · Catch-up Phase 44 (6): no staged Contract changes** (D77, OQ-131; US-04.1.6 Retired; owning phase Catch-up Phase 25; supersedes the plan's staged Contract change with submit, relink and its review dashboard, D77's old default). A Contract is edited in place and audited; a price changes by adding a price range; any other change from a date is a new Contract, the old one disabled. Phase 25 built it (its drift check: "no versions, no staging, no upload") without a supersede entry.
+- **2026-11-24 · Catch-up Phase 44 (7): no part credit** (D31, OQ-97; US-08.6.5; owning phase Catch-up Phase 39; supersedes D31's old default, a credit note for a stated part of a prepayment invoice reversing the same amount of its payable). A credit note always credits the whole invoice; anything still owed is a new additional invoice. 39 (4) built it and 41 (1) uses it, without "supersedes" wording.
+- **2026-11-24 · Catch-up Phase 44 (8): no holder references** (D82, OQ-136; owning phase Catch-up Phase 25a; supersedes the plan's holder references a Contract asks the Booking to collect, never built). The Booking holds only the insurer approval number; 25a (3) removed the Procedure's hospital reference (DM-68). The Contract's "holder reference code" (US-04.2.18, US-08.4.1) is current and not affected.
+- **2026-11-24 · Catch-up Phase 44 (9): the AA Holding account, never "trust account" or "prepay holding account"** (D38, OQ-80 as extended 2026-10-28; US-06.5.1, FT-06.5; owning phase Catch-up Phase 27a; supersedes the plan's trust account for prepayments and D38's "prepay holding account" name). Prepayments sit in the AA Holding account, an accounts payable creditor beside the anaesthetists, moved by a transfer. The trust account is AA's bank account: the Xero simulation's refund line "Refund paid from AA trust account" and its audit label are kept app text, as that is the bank the refund leaves from (41 (3)); it is an owner line.
 
 ## Discovered for later — handoff list
 
@@ -802,6 +811,17 @@ the web/admin apps. The demo control panel, `docs/demo-guide/` and `README.md` d
 visual work as not fully finished (Phase 13 upcoming) so nothing over-claims.
 
 ---
+
+**Catch-up close (Phase 44, 2026-11-24).** None blocks a demo; S1 to S5 run as scripted.
+- **Regressions logged, not fixed** (each on the owner review list, "44" lines): no authorise guard for a stub-only List; the hospital-update stand-in writes the RVG group text as the hospital's wording; Review stamps the List date and keeps "FLAGS 1" after authorise; Split Apply with no contact; Raise sample warnings overwrites Riley's prepaid code; the rebook dialog allows an unpriced rebook; the Reassign sheet names the wrong session; "Billed to Alan Prentice" on nib's lock; INVOICED PRICE counts an unreviewed additional invoice; the $0 invoice's monitor row; seeded History rows after the clock; the S2 Public series over a Private List with Bookings.
+- **Guide line still stale:** `02-workflows-and-handoffs.md` line 530 and the master guide quote the support panel's caption as "Our reading, to confirm with AA"; the app reads "How the support terms apply" (D83 answered). Fix both, or confirm the line is meant to quote the old caption.
+- **Parity gaps not fixed:** the mobile prepaid list under the profile is not built; S2's "a moved Booking keeps its Contract" is the office's move with no stand-in (RV-27); S3's fee run has no PWA side by design (16).
+- **Catalogue correction:** US-11.1.2 says the current NHI format uses "a modulus 24 check digit"; it is mod 11 (its own example ZAA0067 validates only under mod 11; 24 is the alphabet). Correct it through `/update-requirements`; then the app's "flagged for AA to confirm" note can go.
+- **For AA's accountant (beside OQ-29 and OQ-60): the BCTI granularity.** The app counts one BCTI per paid receivable invoice, never a prepayment pair, and one per event invoice (`BCTI_COUNT_RULE` `paidOnly: true, prepaymentPairs: false`). The AA fee per-BCTI charge, the weekly run's "N BCTIs" and the remittance counts rest on it. Several app mentions carry no label (web Accounts AA fees intro and column, payment runs, the cycle panel, ledger runs, web Remittances, the remittance advice, which also lists the transfer PXT0001 as a BCTI).
+- **Capture held:** run the backlog and then `--capture all` on `master` once the owner approves (list in the Phase 44 entry, Catalogue screenshots); then put the final REPORT.md counts in the entry and the closing summary.
+- **Stale `CLAUDE.md` lines (owner to edit):**
+  - "Current state", "**The requirements catch-up is next.**" paragraph. Suggested: "**The requirements catch-up is finished.** `docs/prototype-build/catch-up/` holds the gap analysis at `63a4490` and the build plan of phases 14 to 44 (55 phases, some lettered, plus the UI unification track U1 to U7), all DONE on 24 November 2026; its closing summary and the owner review list are at the end of `PROGRESS.md`. Lanes closed on 23 November 2026. Further work is fixes, polish and demo preparation; when requirements change, `/update-requirements` records them and `/update-build-plan <commit>` plans the follow-up phases, which run with the `run-build-phase` skill."
+  - "Working in the app", "Bump `PERSIST_VERSION` (`src/store/appStore.ts`, currently 13)": it is 75. Suggested: "(`src/store/appStore.ts`, currently 75)".
 
 ## Phase entries
 
@@ -5122,23 +5142,21 @@ Built in Lane B (LANES.md, Wave 6) in one session on `lane/b`, after merging Lan
 
 **Wave 7 joined (2026-11-23).** One lane: Lane A finished U7 (`U7 complete:` 692fa4d1) and joined on `wave/7` (= `lane/a` plus this write-up); `lane/b` held nothing and `master` had not moved, so there was no merge and no conflict. `PERSIST_VERSION` 75. The full `phase-check` ran green on this exact tree (Vitest 4,433 in 411 files, Playwright 284, both builds, verify-board). Hooks: every removed `data-`/`shot` line is re-added on the element it moved to (the U7 entry). Cross-lane checks on Lane A's ports (`.build-phase/U7-checklist/join-*`): 43b's support panel opens on the shared `SidePanel` in Admin and web, 43a's Admin info tip opens its popover, the PWA opens signed in on Lists (its Help sheet and first-run cards are in the green Playwright gate). The join reviewer: no merge to review, so U7's three Opus reviews stand for it. **Not captured** (the owner's rule): once approved, run U7's recipes (`--capture US-13.6.3,US-07.1.1,US-07.1.2,US-03.6.2,US-03.6.1,US-01.2.1,US-01.5.3,US-15.0.2,US-01.4.3,US-03.6.3,US-13.8.1,US-01.4.7,US-13.7.2,US-03.1.6,US-07.2.1`) with Wave 6's list above, then `--capture all`, on `master`. Next: Wave 8, 44 alone in Lane A (LANES.md rewritten; the plan page updated).
 
-### Catch-up Phase 44 · Demo guide rewrite and final sweep (2026-11-23)
+### Catch-up Phase 44 · Demo guide rewrite and final sweep (2026-11-23 to 2026-11-24)
 
-**Session 1 (2026-11-23).** Items 1 to 7 built and the gate green: the closing full `phase-check` passed 6 of 6 (typecheck, build, build-pwa, Vitest 4,562 in 415 files with 2 skipped by design, verify-board, Playwright 364). Session 2 starts at item 8 (the run sheet rewrite), un-skips the two file-level assertions in `src/shared/demoTriggers/demoGuideSync.test.ts`, finalises its `NOT_SCRIPTED` list, and applies the `no-ai-slop` skill to every guide text it writes (the owner asked for it). Prompt override: a session-1-only run; no `CLAUDE.md` or artifact edits; no capture until the owner approves. Figures walked on a frozen HEAD build on :4317 (`.build-phase/44-dist`), S5 on :5173 with the new jump.
+Two sessions. Session 1 (2026-11-23) built items 1 to 7: the scenario module, the audits, the copy sweep and the figures, gate green 6 of 6. Session 2 (2026-11-24) built items 8 to 13: the guide, the master guide, ATLAS and the app README, the QA and handset pass, the review, the recipe sweep and this close-out. Prompt overrides, both sessions: no `CLAUDE.md` or artifact edits (stale lines are a handoff); no catalogue capture, not even `--dry`, until the owner has tested and approved (memory rule); the `no-ai-slop` skill on every guide text (the owner asked, and on 2026-11-24 asked that it keep the run sheet readable, so it got its own edit pass). Figures walked on a frozen HEAD build on :4317 in Session 1, then on :5173 and the PWA on :5174.
 
 **Drift check against `63a4490`.**
-- HEAD `3d2e3433`. Nothing changed in substance for the 177 ids; 35 changed in links, sources or order only; commits on `requirements/` since are capture commits.
+- Session 1 at HEAD `3d2e3433`, re-run in Session 2 at HEAD `e593b5da` (Session 1 committed by the owner): nothing changed in substance for the 177 ids; 35 changed in links, sources or order only; commits on `requirements/` since are capture commits. OQ statuses identical in both runs.
 - Retired: US-05.1.6, US-04.2.10, US-06.1.1, US-06.1.2, US-12.1.3, US-04.1.6, US-13.6.1. Future Work: US-02.2.3, US-04.2.13, US-02.1.5. Their beats drop (already in "Left the script").
-- All 56 dependencies DONE (14 to 43b, U7). `PERSIST_VERSION` 75, unchanged. Before counts (Wave 7 gate on this identical tree, not re-run): Vitest 4,433 in 411 files, Playwright 284.
+- All 56 dependencies DONE (14 to 43b, U7). `PERSIST_VERSION` 75 at start and end. Before counts (Wave 7 gate on the identical tree): Vitest 4,433 in 411 files, Playwright 284.
 - OQs at HEAD: 17 Open, 1 Confirm, 1 Proposed, 121 Answered (140 files; no OQ-11, 37, 51). The plan doc's open list omits OQ-112 and OQ-138 (both Open, gate nothing built).
-- Statuses: the doc's "Confirmed" is code 4 Agreed (`status-recodes.json`, 2026-10-20); 5 Confirmed means signed off by AA and only US-01.1.6 holds it. Unchanged since `63a4490`.
+- Statuses: the doc's "Confirmed" is code 4 Agreed (`status-recodes.json`, 2026-10-20); 5 Confirmed means signed off by AA and only US-01.1.6 holds it. The guide tells Agreed as the rule (never "AA confirmed") and a Verify item's answered part as the rule.
   - Doc Confirmed, HEAD Agreed: US-05.2.2, US-09.3.1, FT-13.3, US-13.7.3, US-01.4.3, US-01.4.5, US-01.5.5, FT-13.8, US-02.3.4, US-03.1.2, US-05.1.4, US-03.1.8, US-08.2.2, US-10.2.5.
   - Doc Confirmed, HEAD Verify: US-06.4.1, US-13.8.1, US-02.5.7, US-03.1.9, US-04.3.3, US-03.3.8, US-05.2.6, US-05.4.3, US-06.2.2.
   - Doc Proposed, HEAD Agreed: US-07.3.2, FT-07.1, US-03.1.6, US-03.1.7. Doc Verify, HEAD Agreed: US-01.4.7, US-13.8.2, US-06.5.4, US-03.7.3.
-  - Match: Proposed FT-08.2, US-08.6.6, US-10.2.7, US-14.4.1, US-15.0.1; Verify FT-13.7, US-10.3.3, US-01.4.6, US-03.3.4, US-08.2.3, US-06.3.1, FT-03.7, US-08.6.1, US-08.6.5, US-10.2.6, US-13.5.3.
-  - Session 2 wording: Agreed told as the rule (never "AA confirmed"); Verify's answered part as the rule.
-- Time units (OQ-50, OQ-75, D25): one rule as data, one calculator, recorded time only, no caveat in the app.
-- **NEEDS OWNER (not a stop):** the T stepper's manual time-units override survives (`UnitsCard.tsx:93-103`, `fee.ts:125-126`; seeded on Chen, `bookings.ts:431-433`, `timeUnitsOverride: 4`; flagged at office review). 19a logged it (PROGRESS 2778); 24's planned fold into the typed price did not happen. The tiers are the only computed source. Not changed (billing out of scope); the guide scripts it as built.
+- Time units (OQ-50, OQ-75, D25): one rule as data, one calculator, recorded time only, no caveat in the app or the guide.
+- **NEEDS OWNER (not a stop):** the T stepper's manual time-units override survives (`UnitsCard.tsx:93-103`, `fee.ts:125-126`; seeded on Chen, `bookings.ts:431-433`, `timeUnitsOverride: 4`; flagged at office review). 19a logged it; 24's planned fold into the typed price did not happen. The tiers are the only computed source. Not changed (billing out of scope); the guide scripts it as built (S5 Beat 1, "Adjusted manually").
 
 **Open questions at HEAD.** Labels as rendered after the copy sweep.
 
@@ -5261,6 +5279,8 @@ Answered (121): OQ-01 to 10, 14 to 28, 30 to 36, 38 to 46, 48 to 50, 52 to 59, 6
 | D89 | Surgeons without HPI CPN | OQ-143 | L | Never required; loads, listed | "No HPI CPN yet" (display) |
 
 **Built.**
+
+Session 1 (items 1 to 7):
 - `src/apps/demo/demoScenarios.ts`: `DEMO_SCENARIOS`, `demoScenarioById`, types `DemoScenario`, `DemoScenarioId`, `ScenarioBeatLink { beat, label, path(state), does? }` (`does`: the beat's steps line, Demo presses as "Demo actions → Label" checked against the registry), `ScenarioStageResult`. Messages are one or two sentences (what was staged, then "Follow the beats below in order."); each beat's steps sit on its own row. Each `stage(api)` starts with `resetFirst` (framed: `resetFramedDemo({ clearHints: false })`; test store: `resetDomainState`; `resetDemo(` is banned under `src/apps/demo` by `framedReset.test.ts`). S1, S2, S4 reset only; S3 reset and fail unless both Mon 20 Jul Lists are SUBMITTED; S5 keeps its old steps in order (AS3 claimed, Kirsty W.'s grouped save, AS3 removed, `authoriseList(whitakerFri17)`), so INV0002 is still AA-2026-0002. S3 title "S3 · Money end to end". Beat links: S1 7, S2 8, S3 7, S4 8, S5 5, labelled "Beat N · Screen"; a waiting link says what it waits for. Deviations: `projectedListId`; `DRAFT_LIST` from `scheduleTerms`; no callout to rework (19a removed it). Recipes using a jump hold: S3 (25) and S5 (US-11.3.3, US-08.4.4); none use S1, S2, S4.
 - `DemoControlPanel.tsx`: `ScenarioJumps` reads the module (shared `Button`, `Notice`), new `ScenarioBeats`; removed `SCENARIOS`, `ScenarioResult`, `Scenario`, `shiftedTime` (moved), the "Go to ..." buttons. Beat links are buttons evaluated at click time, shown only after a jump (gone on reload), landing on the Booking, not History or the CPH-002 panel.
 - `demoTriggerAudit.test.ts` (22): shape, badges, surfaces, privacy over every text of the 39 anaesthetist-facing entries on the seed and S1 to S5 staged; `support-approve-call-out` (43b, bar-only office stand-in) gets the same reasoned exception as `demoTriggers.test.ts`.
@@ -5271,7 +5291,37 @@ Answered (121): OQ-01 to 10, 14 to 28, 30 to 36, 38 to 46, 48 to 50, 52 to 59, 6
 - Copy sweep: 3 of 14 6a/6b sites reworded; 29 rendered strings in 18 files; comments only in `nhi.ts`, `timeUnits.ts`, `DemoIntegrations.tsx`, `lock.ts`.
 - `PERSIST_VERSION` 75 unchanged: the only seed-file edit is `SEED_MARKERS` label and detail text, a constant, not persisted state.
 
-**Tests.** New: `demoScenarios.test.ts` 13, `demoTriggerAudit.test.ts` 22, `demoGuideSync.test.ts` 9 (2 skipped), `appCopy.test.ts` 85; `demo-actions-audit.spec.ts` 67, `pwa-demo-parity.spec.ts` 13. Updated: `EventSheets.test.tsx`, `SupportPanel.test.tsx`, `support.test.ts`, `aa-fee.spec.ts` (text), `phase12.spec.ts`, `xero-pair.spec.ts`. Vitest 4,433 (411 files) to 4,562 (415; 2 skipped); Playwright 284 to 364. Gate 1 (15:52): typecheck, both builds, verify-board green; 2 Vitest timeouts (`mastersPages.test.tsx`) and 1 Playwright timeout (`booking-detail-layout.spec.ts`) under load from four walkers, all pass alone and in the `--failed` re-run. Closing full gate after the beat-steps refinement: GREEN, 6 of 6.
+Session 2 (items 8 to 13):
+- **Run sheet (item 8).** `03-demo-script.md` rewritten from 2,259 to 1,556 lines: S1 7 beats, S2 8, S3 7, S4 8, S5 5, each with Stage it, Click, Expected, Say, Worth pointing at and a Handset line; asides for the rest; Discovery points by catalogue OQ title. Written in parts (`.build-phase/44-guide/head.md`, `S1.md` to `S5.md`, `tail.md`), each walked from Reset or its jump, then a `no-ai-slop` pass per part (figures, labels and bold presses untouched), then a QA pass per scenario (two runs each), then the review fixes, then reassembled. Times: S1 9 to 10 min, S2 12 to 14, S3 11 to 13, S4 12 to 14, S5 9 to 10; full run 53 to 61, short 30 to 40, money-focused 28 to 32.
+- **Companions (item 9).** `01-personas-and-responsibilities.md` (450 lines; the second office user is Sam T.), `02-workflows-and-handoffs.md` (1,002 to 592; readiness table 50 rows, every row built), `04-presenter-cheat-sheet.md` (1,256 to 517; 19 OQs and a BCTI granularity section under "Open questions to raise"; readiness moved to the README), `README.md` (181 lines). All drafted from the edited 03 with the same voice checklist.
+- **Master guide (item 10).** `master-demo-guide.html` regenerated (370 KB to 492 KB): 7 tabs, the Open questions tab keeps `data-panel=discovery`, the status legend from `statusColours`, quiz 8, "Now drive it" 8 steps walked, print rules start S2 to S5 on new pages, offline clean, sync test green. Builder kept in `.build-phase/44-master/build.mjs`; the Learn progress key is `aa-guide-learn-v2`.
+- **ATLAS and app README (item 11).** ATLAS sections changed: the data-shot hooks table (scenario hooks), Personas and IDs, Routes (`/demo/data`), Seed data (Draft Lists, Review queue of 9 SUBMITTED, out-of-hours, "Type the amount" and "Price typed", the AA Holding pill's "(OQ-125)"), Existing hooks (gone: `reassign-conflict-warning`, `assign-draft-list-closed-warning`, `billing-payables-due`; added `reassign-pairing-warning`, `reassign-vacated`, `assign-draft-list-holiday-warning`), Scenario jumps (rewritten), Demo actions by screen (generated from the registry, 88 entries in 90 rows; old notes kept as "Recipe notes by trigger"), Data inspector, Gotchas (Play the office off by default); the run-sheet beat references renumbered. `aa-prototype/README.md`: Control Panel, Demo actions (counts, badges, guards), Office simulation.
+- **QA fixes (item 12), each with a test where it was code.**
+  - Beat links re-pointed to the rewritten beats: S2 Beats 3, 4, 5 and 7 (Ms A. Reid's Draft List; Admin Day Wed 22 Jul), S4 Beat 3 to Annette Riley (it opened Priya Nair, authorised in Beat 2), S5 Beat 5 to Dr Souter's Mon 20 Jul AM review (Dr Whitaker's Contract has its own rate, so his unit value moves nothing). `demoScenarios.test.ts` follows.
+  - Beat links survive leaving `/demo/control`: `useLastScenarioJump`, a UI-only store with a `remember` action, cleared by `onDomainReset`, forgotten on reload; subtitle "The links stay here until the next reset or a reload." `phase12.spec.ts` goes back and finds the 7 links.
+  - The $0 no-charge invoice's Xero pair read "Paid · not disbursed", offered a disabled "Pay ... now" and an "Incomplete simulated pair" callout: `xeroPairView.ts` gains `noCharge`, `DemoXero.tsx` shows a neutral "No charge" chip, no settle button, a "No payable" card and "no payable (no charge)" on the pair link (`xeroPairView.test.ts`, `DemoXero.test.tsx`).
+  - An automatic credit read "Raised by Dr System": `raisedByText` returns "Raised automatically" for the system role, on the Booking and in `ReviewQueue` (`ProcedureEventsList.test.tsx`). `HoldingAccountPanel` shows no minus on a $0 Credited or Transferred row.
+  - Copy: `PdfListsTab` "Surgeons' rooms email..." (curly apostrophe through an HTML entity slipped the guard) to "A surgeon's practice emails its Lists as PDFs"; registry descriptions lose "(catch-up Phase 33a, 34, 35)" and "(Phase 33)"; "Patient, Standard: No contract · RVG" to "Patient › Standard, No contract · RVG"; the sample-warnings result names "a nib Booking on Dr Ngata's Mon 20 Jul List" in place of BK0074; `xeroHandoff` `UNARCHIVE_NOTE` drops "TBC in the sandbox" (OQ-10 answered).
+  - Guards: `appCopy.test.ts` normalises curly quotes, adds `PROVISIONAL_MARKER` with "TBC" and "still to check", and `DEMO_COPY_LEAK` (phase numbers, BK, INV and LG ids) over `apps/demo` (not the catalogue) and the registry's rendered copy, each with fixture tests; the trigger audit refuses `/phase \d|BK\d{4}/` in labels and descriptions; `demoGuideSync.test.ts` un-skipped, `NOT_SCRIPTED` final at 14 (diagnostics, Future scope and handset stand-ins the parity matrix covers), plus a test that `NOT_SCRIPTED` names nothing the guide presses.
+  - Gate fixes: `demoScenarios.ts` steps lines use `DRAFT_LIST` and `DRAFT_LISTS` (the `scheduleTerms` test), and the jump store writes through an action (`storeDiscipline`).
+- **Recipe sweep (item 13).** 74 recipes modified, 9 created (absent: US-04.4.2, FT-04.4, FT-06.1, FT-06.4, US-02.2.3, US-02.3.5, US-04.2.13, US-01.1.5, US-03.7.4); `REQ/capture/steps.ts` gives the trigger step's Confirm click and its result wait `max(ctx.timeout, 30 s)` (US-15.0.4: full-scale generation blocks the click). Detail under Catalogue screenshots.
+- `PERSIST_VERSION` 75, unchanged in both sessions: no seed shape or content change (Session 1's only seed-file edit is `SEED_MARKERS` text, a constant).
+
+**Tests.** Session 1 new: `demoScenarios.test.ts` 13, `demoTriggerAudit.test.ts` 22, `demoGuideSync.test.ts` 9 (2 skipped), `appCopy.test.ts` 85; `demo-actions-audit.spec.ts` 67, `pwa-demo-parity.spec.ts` 13; updated `EventSheets.test.tsx`, `SupportPanel.test.tsx`, `support.test.ts`, `aa-fee.spec.ts`, `phase12.spec.ts`, `xero-pair.spec.ts`. Session 2 new or changed: the two sync asserts un-skipped and the `NOT_SCRIPTED` test (sync 10 of 10), the `appCopy.test.ts` guard fixtures, the audit's leak pattern, `xeroPairView.test.ts` and `DemoXero.test.tsx` (no-charge pair), `ProcedureEventsList.test.tsx` (raised automatically), `demoScenarios.test.ts` (S5 Beat 5), `phase12.spec.ts` (links after going back). Counts: Vitest 4,433 (411 files) before, 4,562 (415, 2 skipped) at Session 1's close, 4,568 (415 files, none skipped) at the end; Playwright 284, 364, 364. Session 2's first full gate (11:15) passed typecheck, both builds, verify-board and shots (364); three Vitest failures (the guide sync on the old master, `scheduleTerms`, `storeDiscipline`) were fixed and re-run green. Closing gate (2026-11-24): GREEN, 6 of 6 (typecheck, build, build-pwa, Vitest 4,568, verify-board, shots 364) in 12 min; the presenter's text-only fixes after it re-ran the sync and beat-label tests green (24 of 24).
+
+**Checked.** QA per scenario from Reset and from its jump, two runs each, all pass after the fixes (S2 15 edits, S4 11 lines, S5 10 text fixes, S1 and S3 small additions). Handset parity (below). Every guide press is checked against the registry by the sync test; every beat link label in Stage it against `demoScenarios.ts`. Design: the Control Panel after a jump (Session 1, `.build-phase/44-design/`); no new screen in Session 2. Not walked end to end: the Fiona Lattimer move (its Review flag cannot show on a future List; Rosalind Kerr's row shows it).
+
+**Parity matrix (item 12).** `.build-phase/44-guide/PARITY.md`. No real phone: the PWA dev server on :5174 at the `pwa-device` viewport, 393x660, Chromium with the iPhone 14 Pro descriptor, a fresh context per run, signed in through the sign-in screen, Reset from More, Play the office OFF after every reset.
+- 101 rows: 80 beat and aside rows (45 with a handset path run, 35 with no mobile side) and 21 "no PWA stand-in required" phase rows. Of the 45 run, 44 pass and 1 failed as written (S4's unmatched-queue aside: the stub needs the Admin import; now pointed at Dr Souter's Tue 4 Aug PM List, Mere Tipene's stub). Privacy 0 hits (`/Not preferred|\bPreferred\b|Tier [1-4]|pairing/i` on every screen and sheet visited); chip placement pass.
+- 9 Handset lines were wrong or incomplete; all fixed in 03 (S1 Beat 7 names "Office approves this Contract change", S2 Beat 2 names "Office clears this warning", the colleague-hands-a-Booking aside picks the Dr Ropata row, S5 Beat 5 gains its handset path through More, Rate per unit, and four minor lines).
+- 3 gaps, none unexplained: S2 "a moved Booking keeps its Contract" (the office's move, no stand-in: RV-27, owner list); S3 Beat 6's fee run and the record-fee aside (office only by design, Phase 16 planned no PWA entry; the phone only reads "You owe AA"). Soft notes: office-only actions whose result shows on her phone (S3 discount and backdated range asides, S3 Beat 7, five S4 asides).
+- Registry entries no Handset line names, each run once and working: Office assigns a List to my next free session, Office assigns a Draft List to me, Office sets this session to Public, Photo capture (Future scope), Office sets this Booking's Contract (disabled when the Booking has a destination), Show first-run hints again.
+
+**Trigger audit.** No stand-in added in either session, no entry on `/demo/control`, no withdrawn or superseded vocabulary in any label (Vitest), every `future-scope` entry on the expected list, one sample per warning rule. Session 2 changed descriptions only (above). Inventory as at Session 1:
+**Trigger and registry inventory.** 88 entries: bar 55, PWA 24, both 9. Badges: future-scope 3 (`photo-capture-future`; `fire-hospital-message`, `replay-hospital-message` on `/demo/integrations*`), office-stand-in 19 (18 PWA plus `support-approve-call-out`), colleague-stand-in 3. No stand-in added. "Upload PDF list" is a page button; no `ingest-pdf*` entry. Warning rules 6 (`prepaymentUnpaid`, `baseUnitsOutsideGuide`, `childPayer`, `approvalNumberMissing`, `splitDoesNotFit`, `patientBalance`).
+- Per screen: Admin Billing monitor 10, Mobile Booking 7, Mobile Lists 4, All apps Help 4, then 3 each on Mobile List, Admin Booking detail, Intake, Invoice and Booking, Day and Booking plus Mobile Booking, Xero pair; the rest 1 or 2 (full list in `44-inv/registry.md`).
+- Framed index: 64 entries with an Open screen (49 land from the seed, 15 driven). PWA chip (emulated iPhone 14 Pro): Lists 8, search 8, List 11, Add a booking 12, Booking 22, three-Procedure Booking 23, Availability 3, My calendar 2 (3 after opening a day), Balances 5, More 2, Rate sheet open: absent, Help 3. Four `when` gates driven. No privacy leak, no chip mismatch.
+- Parity gap: "the prepaid list under the profile" is not built on mobile (More shows a profile card; no route lists prepaid Contracts).
 
 **Copy sweep.** 6a and 6b:
 
@@ -5294,21 +5344,18 @@ Answered (121): OQ-01 to 10, 14 to 28, 30 to 36, 38 to 46, 48 to 50, 52 to 59, 6
 - 6c regressions fixed, by owning phase: 16 (Xero "Confirmed with AA.", BCTI label without "provisional" or ids); 18/22a ("Payer on the Booking"); 20/21a ("Other price" x3 to "Price typed $X", "No price typed yet", "Type the amount", refusal "This Contract has its own price, so it takes no typed amount."); 27 (seed markers on the $800 deposit and a "balance invoice"); 35 ("Needs a Contract"); 39b (D13 "Our reading"); 43a (help "handover", "needs a Contract"); 43b (support caption); original build (RolesInfo "(RFP)", DataQualityTab, ReferenceViews "90 days", duplicate-number callout); UI research (catalogue "swap"). Also "Automatic hospital sync" to "feeds"; holding pill gains "(OQ-125)"; OQ-141 line gains its id.
 - Kept: "How this posts in Xero is still to be confirmed." x2 (US-06.5.1 open; must-keep); "AA trust account" on the Xero refund and its audit label (the bank account, US-06.5.1, not the AA Holding ledger account; a typed literal): owner; 33a's stub caption (borderline): owner; Reconciliation "Proposed · ..." (Proposed); "Holder reference code" x7 (US-08.4.1); `funder` x93; "Type 2 diabetes".
 - `MUST_KEEP` (26): BCTI (OQ-29, OQ-60), D70, D68, D72, D78 x2, D23, NHI mod-11 flag, OQ-12, OQ-13, OQ-83, OQ-141, and phase readings with no id: "On demand, to confirm with AA" (40a), stub caption (33a), "Masking policy is for AA to agree" (43), "Provisional: the policy for each mismatch is to be agreed with AA." (37), Xero posting x2 (27a). `ALLOWLIST` (6): ValidatorsTab flag, "Type 2 diabetes", "Slot availability statuses", "Provisional record", sign-in pill, `InfoTip` pill.
-- BCTI count: one function (`bctisFor`, `BCTI_COUNT_RULE` `paidOnly: true, prepaymentPairs: false`). Unlabelled mentions remain: web Accounts AA fees intro and "BCTIs" column; "BCTIs" counts on payment runs, the cycle panel, ledger runs, web Remittances, the remittance advice. Session 2: label every mention the guide quotes.
-- Recipe and ATLAS hits (none edited): ATLAS.md:1152 (holding pill, now "(OQ-125)"), ATLAS.md:840 ("Other price"), `US-09.4.2.json` caption "noted as an open setting"; the guide quotes the old support caption (03, 04, master), "Confirmed with AA" (04, master), "Automatic hospital sync" (02).
+- BCTI count: one function (`bctisFor`, `BCTI_COUNT_RULE` `paidOnly: true, prepaymentPairs: false`). Unlabelled mentions remain in the app: web Accounts AA fees intro and "BCTIs" column; "BCTIs" counts on payment runs, the cycle panel, ledger runs, web Remittances, the remittance advice (handoff). The guide marks every BCTI figure it quotes with an Open note (OQ-29, OQ-60).
+- Recipe and ATLAS hits found in Session 1, fixed in Session 2: ATLAS.md:1152 (holding pill, now "(OQ-125)"), ATLAS.md:840 ("Other price"), `US-09.4.2.json` caption "noted as an open setting"; the guide quotes the old support caption (03, 04, master), "Confirmed with AA" (04, master), "Automatic hospital sync" (02).
 
-**Trigger and registry inventory.** 88 entries: bar 55, PWA 24, both 9. Badges: future-scope 3 (`photo-capture-future`; `fire-hospital-message`, `replay-hospital-message` on `/demo/integrations*`), office-stand-in 19 (18 PWA plus `support-approve-call-out`), colleague-stand-in 3. No stand-in added. "Upload PDF list" is a page button; no `ingest-pdf*` entry. Warning rules 6 (`prepaymentUnpaid`, `baseUnitsOutsideGuide`, `childPayer`, `approvalNumberMissing`, `splitDoesNotFit`, `patientBalance`).
-- Per screen: Admin Billing monitor 10, Mobile Booking 7, Mobile Lists 4, All apps Help 4, then 3 each on Mobile List, Admin Booking detail, Intake, Invoice and Booking, Day and Booking plus Mobile Booking, Xero pair; the rest 1 or 2 (full list in `44-inv/registry.md`).
-- Framed index: 64 entries with an Open screen (49 land from the seed, 15 driven). PWA chip (emulated iPhone 14 Pro): Lists 8, search 8, List 11, Add a booking 12, Booking 22, three-Procedure Booking 23, Availability 3, My calendar 2 (3 after opening a day), Balances 5, More 2, Rate sheet open: absent, Help 3. Four `when` gates driven. No privacy leak, no chip mismatch.
-- Parity gap: "the prepaid list under the profile" is not built on mobile (More shows a profile card; no route lists prepaid Contracts).
+**Review.** Four Opus lenses: quality, bugs/correctness and plan adherence (each given the doc, the guide, the diff and the running app), and a presenter who read only the master guide and followed S1 to S5 cold. Verified and fixed: the code items above under QA fixes (no-charge pair detail, "Raised automatically" on Review, the $0 holding row, the guard extensions, `UNARCHIVE_NOTE`); the frame (head: Mon 20 AM is Brian Holt's two procedures and Mon 13 AM the three-procedure and $0 Bookings; readiness lists the three no-id captions: the stub, Resolve on a Xero-changed record, the NHI register Provisional pill; the tail's times); 02, 04 and the master quiz now say authorising is held by a Procedure with no price or a reopened Booking not completed again; per scenario: Stage it quotes the panel's beat labels, bold holds only `Demo actions → Label` or `Demo sheet → Label`, Discovery points use catalogue OQ titles, Say lines trimmed with Open notes on their own sub-bullet (S4: "Raised automatically", $0.00, the second Create additional invoice and Credit note buttons, 13 press runs de-prefixed; S3 and S5: times, labels lists, unit value wording, the Split aside's share to Margaret Prentice then Discard). Declined: "Slot" in the README's mental model and the Learn tab (the doc asks for Slot explained once there). Presenter: a presenter read only the master guide (before the last fixes) and followed every core beat of S1 to S5 cold from its jump, plus most asides: the guide and the app agree closely; five of its points were already fixed (Raised automatically, S1 labels, $0.00, Open notes, link names); fixed from it: S1's Send update opens the flagged row (close it, open the first), S1 Beat 3 and Beat 6 Say lines in plainer speech, the Different payer line shows once switched on, S2's Simulate sickness caution (not the first entry), S2 Beat 3's groups are not read only, S2 Beat 1 names Dr Ropata and Dr Souter apart, S3 says receivable and payable before ACCREC and ACCPAY, S3 Beat 6 expands with the chevron. Logged for the owner: the AA Holding card's rows do not sum to its balance (Refunded positive beside negative Credited and Transferred), Chen's History rows at 16:00 above the 08:00 clock, the PDF list suggesting Rutherford while Matching reads Unmatched, support P2 "Same business day" against P3 "4 hours", and "(US-13.5.1, not built)" on Switch office user. Also fixed after the plan review: S1 gains asides for the payer change offered to the other Procedures (Graeme Tullett, BK0184), a pre-op event (Callum Graham, BK0158; the OQ-12 label on the office sheet), P1 pre-applied and an optional modifier refusing without its explanation, and the approval number changed on the day; S2 gains the web triangle in Beat 2, the corrected notice rule in Beat 7 (an office reassign posts none, checked), OQ-124 in Beat 4 and its Discovery points, and Say lines under 75 words.
 
-**Beat inventory.** `03-demo-script.md` (2,259 lines) is mostly in current vocabulary; its problems are structure and build history (Phase, OQ, D numbers; five "Discovery points" blocks). Times today S1 6 to 8, S2 7 to 9, S3 8 to 10, S4 8 to 10 (+4), S5 5 to 6 min; target 9 to 10, 12 to 14, 10 to 12, 12 to 14, 7 to 9.
-- **S1** (1, 1a, 1d, 1b, 1c, 2, 3). Stale: 1a's rail ("Standard: No contract · RVG (pinned first)"); 3's "Mark complete checks exactly three things" and typed price on No contract · RVG (VERIFY); "surgeon's rooms". Missing: T1 core; T3 rail, Suggested, Paid by, insurer and approval number; T4 descriptions (D37, D73); surgeon contacts and sender (D74); T7 edit until authorised (D63). Moves: opener to T1; 1, 1b, 1c to T2 (1d aside); 1a to T3; 2's asides to T4; 2 to T5; 3 to T6; S3's closing moment to T7.
-- **S2** (opening, 1, 1b, 2, 3, 3a, 3b, 3c, 3d, 3e, find who is free, schedule, 4, full scale: 14 items; master HTML 13 `.beat`). Stale: 2's "Choose" path; 3c's confirm (VERIFY: app says "There is no need for Dr Ropata or the office to accept."); Hub states in 2. Missing: Public by a click, out-of-hours, help in T1; T2 warnings; T3 Stage recurring clash; T7 pool. Moves: 1 to T1 (opening, 3e asides); new T2; 1b, 3b, clash to T3; 2 an aside; 3, 3a to T4; 3c T5; 3d T6; pool T7; 4 T8.
-- **S3** (1, multi-procedure aside, 2, 3, 4, 5, close, closing moment). Not stale: "Your reference SGANAES01" is the Contract's holder reference code (US-04.2.18, US-08.4.1), current; D82 removed only per-Booking references and the Procedure's hospital reference. Stale: "no hospital reference" phrasing if it implies a per-Booking field; "holder" phrasing; the $396.18 note; "swap" (980, 1302, 1471); "trust law forbids it". Missing: T1 five kinds and snapshot; T2 discount and $0; T4 monitor; T5 weekly run. Moves: 1 T1; new T2; 2 T3; 3 T4; S4 5 to T5; 4 T6; 5 and close T7.
-- **S4** (1, 2 lead-in, 2 (38b), 2b, 3 to 9, Xero asides). Stale: 1's aside picker; 3 lacks D82's line; 9's "AA trust account" (app text, kept); 6 placed before 7 to 9. Missing: T1 balance alert beside the prepayment warning (D80); T2 order; T3 inside 9; T4 Sharma's private List (D86). Moves: 1 T1; 7, 8 T2; 9 cancel T3 (rebook aside); lead-in T4; 38b T5; 3 T6; 2b T7 (netting aside); 6 T8 last; 4 aside; 5 to S3 T5.
-- **S5** (stage, no-NHI, 1, 2, refresh, 3, 3a, 4, rate aside, go-live, help). 4's in-place rate edit checked: edited in place and audited, as D77 allows. Missing: Hub states and missing-NHI list in T2; T5 core; Simulate sign-in attempts, "No HPI CPN yet". Moves: 1 T1; no-NHI, 2, refresh, Hub T2; 3 T3; 4 T4; rate T5; go-live aside; help to S2 T1.
-- Elsewhere: drop "How to read the readiness"; regenerate Direct URLs; rewrite run orders; renumber Recovery. `04` stale lines 263, 288, 310, 322. Master HTML print rules need `.demo-scenario`, `.scenario-head`, `.print-first`.
+**Catalogue screenshots.** Final sweep done except the capture, which waits for the owner's approval (no `--dry` either; the agent that checked 9 recipes ran Playwright only, before the hold was explained).
+- REPORT.md before (last full run, 2026-11-23, `7b2dba57`): items 245 captured, 24 partial, 46 absent, 1 failed (US-15.0.4), 9 no recipe (stories 223, 24, 45, 1, 9). After: not run. The capture waits for the owner to test and approve (memory rule); REPORT.md is unchanged until then.
+- Recipe statuses after the sweep: 234 captured, 24 partial, 70 absent; every story has a recipe. Retired captured to absent (11; shots moved to the merge targets for US-05.2.4, US-05.3.2, US-07.1.2, US-10.2.2, US-11.1.3); Future partial to absent US-02.5.1 to 4; US-14.1.1, US-14.2.1, US-14.3.1, US-14.5.1 captured to partial (badged Future scope); 17 partial reasons made true; captions fixed on US-09.4.2, US-03.7.3, US-03.1.2.
+- Scenario recipes: 24 (35 S3 and 2 S5 uses); none re-pointed, the jumps keep their ids and hooks. 13 partial stories could become captured with new shots (US-01.4.1, 03.1.10, 04.1.1, 04.1.4, 04.2.1, 04.2.11, 04.2.14, 04.2.18, 04.3.3, 05.2.5, 06.2.1, 08.3.4, 13.7.1).
+- Capture backlog (`phase-check.mjs --capture <ids>` on `master`, after approval): 40a US-14.4.1, US-11.1.3, US-11.1.1, US-04.3.4, US-02.4.1, US-12.1.4, US-11.2.2; 43a US-15.0.1, US-13.5.3, US-05.5.2, US-03.2.1 (lane extras US-12.1.1, US-03.1.2, FT-05.1); 43b US-15.0.8, US-15.0.9; U7 US-13.6.3, US-07.1.1, US-07.1.2, US-03.6.2, US-03.6.1, US-01.2.1, US-01.5.3, US-15.0.2, US-01.4.3, US-03.6.3, US-13.8.1, US-01.4.7, US-13.7.2, US-03.1.6, US-07.2.1; Wave 5 US-15.0.4. Then `--capture all`, which covers them all.
+
+**Demo guide.** Rewritten (items 8 to 10, above); `demoGuideSync.test.ts` holds the guide and the registry together.
 
 **Figures (re-baselined, read from the app).** Beat = new beat (old id). Was = current sheet. BCTI = rests on the BCTI granularity.
 
@@ -5394,144 +5441,233 @@ S5
 | asides | Loads | contracts.csv 4 valid, 5 rejected; go-live 14 names, 5 junk, 2 not approved; after Unapprove 4 Contracts, 3 ranges, 11 not loaded | Masters | same | no |
 
 - Why figures moved: Phase 40's seed (PERSIST 71 to 72, Dr Sharma's patient-billed HS history: +$1,280.00 receivable, $540 paid out, $260 credit held) moves the whole-ledger tiles and Credits held; Souter's scope unchanged; not 22a. S4 numbers cascade with beat order: quote one canonical order. The Beat 7 transfer is dated by the demo clock.
-- Broken click paths for the rewrite:
-  - S1: rail is Invoice to, Payment type, Price (open Sarah after "All 9"); "Save correction" before "Send to matching"; confirm "Create List and Booking"; "Upload PDF list" a page button; the first Resend is H07's.
-  - S2: the footer "Assign" is last; hospital "St George's", no Review before "Save booking"; clash needs two "Next day"; "Approve the Contract change" (singular); "Next month"; dates default 2026-08-01; "Show resolved" a switch.
-  - S3: Alan Prentice via `/admin/day/2026-07-20/bookings/BK0025`, hook `procedure-split-button`; type "62.5%"; Mon 27 Jul List is ACTIVE and future-dated (script BK0185 before authorise); feed change disabled on a submitted List.
-  - S4: Grace Whitu needs an anaesthetist first; Nair needs "None apply"; the prepayment block's buttons are the second pair; no "Move booking to another list" button (Day drawer "Move", Target day, "Beaumont · AM", no confirm); cancel needs a reason; no-contract aside only on a Souter Booking.
-  - S5: "Go to Admin app", "Go to Xero sim" gone; Hub card only on NHI lookup surfaces; links do not open History or CPH-002 (say "open History"); Audit "account" and "importRow" filters appear only after such rows; Receive list once per reset.
-- Labels as rendered (beyond those already quoted): S1 "Needs an invoice destination", "Choose the RVG code", "Mark list completed · N to finish", clock "Procedure day · 28 Jul"; S2 "Book (phone advice)", "Use this Contract", "Return to the office", "Hand on to a colleague", "Move List", "Move Booking", phone status "Public hospital" (Admin "Public"); S3 "Approve week 30's BCTIs", "Send payment schedule", "Run payables in Xero", "Allocate to invoice", web `web-payment-full`; S4 "Approve and send", "Rebook with another anaesthetist", mobile "Held by AA until the List is authorised" (no "To you:"), holding pill "(OQ-125)" (read before the sweep on :4317); S5 "Email for the NHI", "Open on matching", "Load 4 valid rows", "Load approved data", support caption "How the support terms apply".
+- Moved in Session 2 by the new beat order (read from the app; BCTI-dependent marked):
+  - S3: Mon 13 Jul is authorised after Mon 20, so its invoices are AA-2026-0009 Tullett $731.40 and AA-2026-0010 Ihaia Paewai $0.00; the weekly run reads "Week 30 paid in Xero: 20 BCTIs, $10,990.24 paid to 2 anaesthetists" (DSB0020, BCTI); the fee run totals $8,406.50 (Sharma 19 BCTIs $684.25; Rutherford $805.00 and Souter $592.25 unchanged; BCTI). Core-only Beat 6 and 7 figures: AA fees outstanding $8,987.25, Souter $1,173.00; $8,406.50 and $592.25 after the record-fee aside. Ledger after Beats 1 to 6 $15,159.94 / $1,640.00 / $0.00 / $64,032.99; after Allocate $15,039.94. The discount shows on BK0185's Booking (its List is future-dated), the invoice discount is an aside on Ruth Kim; the hospital fixed price is BK0028 Gareth Mills ($2,800).
+  - S4: Beat 3 cancels Riley half paid (CN-2026-0001 credits AA-2026-0002 $1,380.00, refunds $690.00) and rebooks Beaumont Tue 4 Aug PM $1,350.00; Mitchell's original is AA-2026-0004; Beat 4's events bill as AA-2026-0005 $86.25 and 0006 $207.00; Beat 5 Chen AA-2026-0007 $97.75, Mitchell AA-2026-0008 $34.50; Beat 6 Tuilagi 0009, Walker 0010; Beat 7 refund after payout on AA-2026-0004 $238.05, CN-2026-0002, rebill AA-2026-0011, credits held $498.05, run "20 BCTIs, 1 negative invoice netted, $11,979.81 paid to 2 anaesthetists" (BCTI); Beat 8 on the rebooked Riley, clock to Sun 2 Aug. The pre-op event left Beat 4.
+  - S1: Matching OPEN 8 after import and PDF send; "unpaid 105 days" on 28 Jul; her Review "Changed since submitted · 5", 25 units, $662.50; authorise "4 invoices raised. 4 emailed, 0 to post."
+  - S2: Beat 6 free list Delaney, Ngata, Ropata, Whitaker; notifications 12 active; the payer review List "7 invoices raised. 5 emailed, 1 to post, 1 needs an invoice address", trust invoice $237.48 "To post", "Provisional (OQ-122)"; handset "Raised 5 sample warnings".
+  - S5: the leak scan count moves with earlier beats (200 from the jump, 201 as scripted, 189 from Reset); full-scale generation 3.0 s (varies).
 
-**For item 12 (Session 2 QA).** Logged, not fixed.
-- Invoice discount line "$-34.45" (remittance "-$365.70" is right).
-- AA Holding card Credited row "-$0.00" on Riley's unpaid cancel.
-- Sarah Mitchell after credit and rebill: Events $7.00, Invoiced price $214.00 (verify).
-- Add NHI under Hub Unavailable keeps "Matches Losa Tuilagi ...".
-- Data inspector 54 invoices, 56 ledgerPairs against Xero Invoices (55); "4 sessions" beside "894 lists".
-- Mon 10 Aug PM drawer "4 bookings" after the Lattimer move (verify).
-- Xero ACCREC "Awaiting payment" beside the pair's "Part paid" (probably by design).
-- Two identical "Create additional invoice" / "Credit note" pairs on Nair's Booking.
-- Settled, not a bug: "Your reference SGANAES01" on AA-2026-0007 is the Contract's holder reference code (US-04.2.18, US-08.4.1); D82 removed per-Booking references only.
-- "Surgeon's rooms PDF" (`shared/format.ts:213`), "From the surgeon's rooms" (`:225`), "Surgeon's rooms PDF list" (`domain/intake/rawRow.ts:27`) and "A call from the surgeon's rooms" render: plain words for the surgeon's practice, not the retired surgeons' rooms record (D74), so kept; the guard's `surgeons?'? rooms?` deliberately matches only the record's plural. The guide prefers the catalogue's "the rooms' PDF list". Owner line.
-- Review badge 10 against "9 in the queue"; Chen Fri 17 "1 flag open" beside two triangles.
-- Raw-row refusal drops the row name; grouped-save History rows carry no clock time.
-- S5 against the doc: no authorise guard for a stub; no missing-NHI list or attach/merge; a new Contract does not disable the old one.
-- Mon 27 Jul price-rule List cannot be authorised (future date).
+**Handoffs.** See the open-items handoff (Discovered for later) and the owner review list after the closing summary. The next catalogue change follows the ROADMAP's "When the catalogue changes". Working files in `.build-phase/`: `44.md`, `44-plan.md`, `44-log.md`, `44-inv/`, `44-figures/`, `44-guide/` (parts, briefs, QA, `PARITY.md`), `44-master/`, `44-recipes/`, `44-atlas/`, `44-review/`, `44-design/`.
 
-**Owner review lines (gathered).** 158 kept, 31 dropped (appendix with reasons in `.build-phase/44-inv/owner-review.md`). Format: phase · where · reading · OQ or D. Order: Reset, S1 to S5; Mobile and PWA; Web; Admin; demo-only; cross-cutting; Open defaults and Parked last.
+**Deviations.**
+- S2 Beat 3 assigns a seeded clash Draft List (Wed 22 AM, Ms A. Reid); Stage recurring clash's own Draft List is an aside after Beat 8, because it needs two Next day presses, which move the clock.
+- S3 and S4 beat orders changed from Session 1's plan, so invoice numbers cascade (figures above). S5 Beat 5 runs on Dr Souter's List, not Dr Whitaker's.
+- 04 tells a Contract change as allowed "until authorised" (D63, as the app does), not the doc's "until submit".
+- The doc's closing summary says "nothing parked"; three units stay parked (US-01.1.5 with DM-65, US-03.7.4), as the ROADMAP has said since 2026-11-10.
+- Handset tested on the emulated viewport, not a real phone. Capture held (owner rule). No `CLAUDE.md` edits (handoff).
+- Session 1: the copy guard matches `holder references\b` (plural) only, since "holder reference code" is catalogue wording (US-08.4.1); `support-approve-call-out` (43b) keeps its reasoned bar-only stand-in exception.
 
-Parked and awaiting: RV-27 · Admin Booking Move · office single-Booking move keeps any List on any day, same-day rule the anaesthetist's only · keep as demo scaffold (32a). US-01.1.5 · A and B split · parked, not built. US-03.7.4 · pre-op consults in AA's room · not built · OQ-138. D23 · Contracts editor line · awaiting AA · OQ-73. D87 to D89 logged (OQ-141, OQ-142, OQ-143). DM-68 off (D82, 25a).
+**For /update-requirements.**
+- US-11.1.2 says the current NHI format uses "a modulus 24 check digit"; it is mod 11 (its own example ZAA0067 validates only under mod 11; the 24 is the alphabet). The app keeps its "flagged for AA to confirm" note until the catalogue is corrected.
+- The price-range backdating sources differ (19a built ranges backdatable to D6; Greg said on 23 Oct a Contract cannot be backdated): worth a question if AA has not settled it.
 
-New in 44:
-- T stepper manual override (Chen BK0008 "Adjusted manually") · tiers the only computed source · OQ-50, D25, NEEDS OWNER.
-- Xero refund "Refund paid from AA trust account" and audit label · the bank account (US-06.5.1) · kept.
-- 33a stub caption · kept, borderline · D66.
-- Xero MJ "How this posts in Xero is still to be confirmed." x2 · US-06.5.1 open · D38, OQ-125.
-- S5 build against the doc (no stub guard, no missing-NHI list, old Contract not disabled) · scripted as built.
-- Support caption "How the support terms apply" · D83, OQ-141.
-- Mobile prepaid list under the profile not built · parity matrix.
-- US-11.1.2 "modulus 24" · catalogue correction.
+**For the owner's review.** One list for the whole catch-up, after the closing summary.
 
-Mobile and PWA (Souter):
-- 15 · BK0009 · source labels descriptive; simulated attachments.
-- 15a · Riley BK0034 · submit sheet silent on warnings · US-13.7.1 unset.
-- 15b · Add a booking · photo flow Future scope only: keep or delete?
-- 28 · Lists after an assignment · vacated session Free · OQ-84.
-- 29 · My calendar · seeded statuses, to agree with Vanessa · US-01.2.1/2.
-- 32 · Find cover Thu 23 · Free default; six notices a page; one List per prompt · OQ-84, OQ-79.
-- 32a · "Colleague moves a Booking to me" · Tell the office off · OQ-85.
-- 32b · Alert the office · Submit stays allowed, silent · US-03.6.3.
-- 32d · My calendar · Public a status, "CPH"; seven series.
-- 38a · search · name, exact NHI, partial name; from Jan 2026; "To finish".
-- 20 / 20a · BK0060, BK0164 · Contract pick-up; text stack; Contract shown · US-03.1.2, US-03.1.9 Verify.
-- 21 / 22a · BK0008, BK0033 · payer changeable until AUTHORISED; family trust; split person own BP id.
-- 21a · BK0009, BK0176/7 · Needs a price blocks completion (A48).
-- 19 / 19b · BK0009, BK0158 · range's lower bound; no ASA pre-fill; "Put back".
-- 22 / 23 · BK0002, BK0009 · splits until AUTHORISED; primary stays first.
-- 24 · BK0186 · price and total shown · US-03.3.10, RV-29 (Donald to confirm).
-- 26 · More · own rate only; bank masked.
-- 27 / 27a · Nair · D67 (OQ-119), D80 (OQ-134), release at authorisation (OQ-125).
-- 33a · Tue 4 Aug PM stub · never complete, no prompt or block.
-- 36 / 38 · Balances · one BCTI per receivable (OQ-29), paid only (OQ-60); GST row per payment (OQ-47).
-- 38b / 39 / 39b · Chen, Bennett · "event" name; credit to review; OQ-12 presets; HBK03 "H-STG" · OQ-121, D69.
-- 40 / 40a · S1 List; Add a booking · money-free patient alert; NHI typed with the Hub down: unverified?
-- 41 · Nair after authorise · patient notice (OQ-120); refund from trust account · OQ-111, D53.
-- 43a / 43b · PWA sign-in, Help · simulated sign-in (OQ-83); help line readings · OQ-141, D87.
-- 16 · no mobile fee view · US-10.3.2 partial.
+### Catch-up closing summary (2026-11-24)
 
-Web (Souter):
-- 15 · Tue 28 AM attachments. 16 · AA fees · paid-only count; $805.00 example. 17 · pairing slice never read by an anaesthetist screen.
-- 29 / 32b · My availability · whole day one status; vacated control pre-selects.
-- 32 / 32a · Availability 27 Jul; BK0046, BK0038 · as mobile; new List always; honour line · OQ-84, OQ-79, OQ-85.
-- 38a · Lists · "To finish"; no tick for an incomplete List.
-- 22 · Paid by and Split · Prentice's second invoice to Alan. 26 · Profile · own rate; GST number off.
-- 38 · Accounts · "Email to me" demo only; one-cent drift; Collected excludes held prepayments · OQ-29, OQ-47.
-- 39 / 39a · credit banner; Remittances web and Admin only · OQ-29.
+- **Every phase DONE (62):** 14, 15, 15a, 15b, 16, 17, 17a, 17b, 18, 18a, 19, 19a, 19b, 20, 20a, 21, 21a, 22, 22a, 23, 24, 25, 25a, 26, 27, 27a, 28, 29, 30, 31, 32, 32a, 32b, 32c, 32d, 33, 33a, 34, 35, 36, 37, 38, 38a, 38b, 39, 39a, 39b, 40, 40a, 41, 42, 43, 43a, 43b and 44, plus the owner-added UI unification track U1 to U7; 2026-10-02 to 2026-11-24.
+- **Closed:** 199 gap items, 25 data-model deltas and 16 reverse findings (the ROADMAP total; RV ids as renumbered on 2026-10-20). `gaps.json` (catalogue `63a4490`, 2026-11-18) holds 311 items in scope: 93 Matches, 91 Contradicts, 72 Partial, 38 Missing, 17 Grouping; its 201 non-matching items are the 199 plus the two parked stories, its 26 open deltas the 25 plus DM-65, its 18 findings the 16 plus RV-15 and RV-27 (keep as demo scaffold). The phase table's covers column sums to 252 / 60 / 39 because phases that followed up re-opened items count them again.
+- **Parked, not built:** US-01.1.5 with DM-65 (the A and B split of a session, Proposed) and US-03.7.4 (pre-op consults in AA's room, OQ-138). Both on the owner review list. Nothing else parked.
+- **Left the script** (Retired or Future, not demoed): Copy a Booking, the conditional positioning modifier, booking from a photo (Future scope demo only), automated change application, concurrent edits, warning settings, the prepayment estimate, the overpaid prepayment, default Contracts, per-Contract multi-procedure rules, required booking inputs, the Contract payment setting, a procedure off the schedule, automatic change emails, the Contract schedule upload, the carried-forward negative invoice, the procedure master and two-tab picker, prepaid on the profile, the GST period, the "Reschedule" change type and cross-List move, the conflict flag on unavailability, expiring notices, the archive, the trust account and prepay holding account names, the locked P1, the Insurers master, the deduction line, the second pair, Contract lines, versions and staged changes, the step rail's caveat, "No contract (RVG)", "Needs a Contract", "contract holder", and the anaesthetist never seeing a price.
+- **Provisional readings still shown in the app:** D55's part (OQ-114, no label), D68 (OQ-120, "Provisional (OQ-120)"), D70 (OQ-122, "Provisional (OQ-122)"), D71 (OQ-124, no label), D72 (OQ-125, the holding card's "(OQ-125)"), D78 (OQ-132, "(provisional, OQ-132)" for the office); D23 awaiting AA (OQ-73); D87 (OQ-141, on the support panel); the BCTI count and its granularity (OQ-29, OQ-60); the other open OQs as labelled in the Phase 44 table (OQ-12, 13, 83, 112, 123, 138, 142, 143) and OQ-47 Proposed.
+- **Snapshot commits** the plan was built and re-graded against: `3d3a18c`, `60e2d1e`, `d4db277`, `7cd7802`, then `a68f09b`, then `efe123c`, then `c9b65ad`, then `63a4490`. Phase 44 checked HEAD `e593b5da` (Session 1 at `3d2e3433`): nothing changed in substance.
+- **Catalogue screenshots:** REPORT.md before 245 captured, 24 partial, 46 absent, 1 failed, 9 no recipe (items); recipe statuses after the sweep 234, 24, 70 with every story on a recipe; final full capture not run yet (held for the owner's approval).
+- **Final gate:** GREEN: Vitest 4,568 in 415 files, Playwright 364, both builds, verify-board. `PERSIST_VERSION` 75.
+- **Next round:** follow the ROADMAP's "When the catalogue changes" (`/update-requirements`, commit, then `/update-build-plan <commit>`).
+- **Pricing in one place:** the pricing structures, resolver, precedence and the AUTHORISED snapshot sit in `src/domain/billing` behind the types the UI reads, against Donald's contract model (AR-58, AR-61), so a change to the model is a contained edit.
 
-Admin, Day and rails (Kirsty):
-- 15a · To-do under the calendar (US-13.7.2); clearing keyed by warning. 15b · ACTIVE printed; empty free session no state.
-- 17 · Reassign · tiers within groups; directors Tier 1 a guess. 28 · vacated Free (OQ-84); kinds outside statuses (DM-04); horizon 1 to 24 months.
-- 30 / 31 · Wed 22, Tue 21 · office sickness a conflict (OQ-81 pt 3); pre-op and acute Lists name surgeons.
-- 32 / 32b · Notifications card, Change status · panel count (US-13.8.1 Verify); AUTHORISED refuses.
-- 32c · out-of-hours · one a day, 18:00 to 21:00; who opens when closed is open with AA. 32d · Public CPH; Draft Lists 16 to 10.
-- 37 · Reconciliation card · our reading; waits on Greg and Sam (US-13.2.4). 43 · full scale · Day 30 a page; Next day 1.8 s.
+### Owner review list (catch-up close, 2026-11-24)
 
-Admin, Draft Lists, Notifications, Conflicts, Intake:
-- 30 · Conflict chip legend and filter. 31 · LD-001, LD-002 · first-assignment prepayment as setup.
-- 32 / 32b / 35 · Notifications · moves only, no un-tick; a return not emailable until assigned.
-- 33 · Matching · samples (OQ-13); SUBMITTED applied, AUTHORISED refused (US-02.5.4); insurer recorded (D28); no surgeon correction. Wave 1: prepaid preview basis, check closed.
-- 33a · R4 Add NHI · stub Booking waits on "Needs an invoice destination". 34 · PDF lists · sender replaced; AR-35 wording AI-made; re-send match (our reading).
+One review of the whole catch-up (ROADMAP "Owner review: agents test themselves"). Each line: phase · where (route, persona) · reading built · OQ or D. Souter is Dr Souter (anaesthetist: mobile, web, PWA); Kirsty is Kirsty W. (office, Admin). "44" lines are what Phase 44's QA and review logged without fixing. Lines a later phase or answer settled are left out (the 31 dropped are in `.build-phase/44-inv/owner-review.md`).
+
+**Suggested order.**
+1. Reset, then run S1 to S5 from `docs/demo-guide/03-demo-script.md` (or the master guide), each from Reset or its jump. The beats touch most screens.
+2. Anaesthetist Mobile App and PWA (Souter): Lists, Booking capture, Availability, More, Balances, Help; then the PWA sign-in on a fresh handset.
+3. Anaesthetist Web App (Souter): Dashboard, Lists, Availability, Accounts, Profile.
+4. Admin (Kirsty): Day, Draft Lists, Notifications, Conflicts, Intake and Matching, Review, Bookings, Contracts and Parties, Master data, Billing monitor, Ledger, Invoices, Payment runs, Patients, Help, Audit.
+5. Demo-only surfaces, then cross-cutting (UI unification).
+6. Last, the items that need AA rather than a click: Parked and awaiting, Open defaults, Needs owner.
+
+**Parked, not built, awaiting.**
+- 32a · Admin Booking, Move (Kirsty) · the office's single-Booking move keeps any List on any day; the same-day rule is the anaesthetist's only · RV-27, keep as demo scaffold. The S2 "a moved Booking keeps its Contract" aside uses it, with no handset stand-in.
+- US-01.1.5 · the A and B split of a session · parked, not built (Proposed; DM-65).
+- US-03.7.4 · pre-op consults in AA's room · parked, not built · OQ-138.
+- 18, 21, 27 · Admin Contracts editor line "A prepaid Contract always bills the payer, awaiting AA's confirmation." · built as the reading, awaiting AA · D23, OQ-73.
+- 43b, 25a, 17b and 42 · logged, open with AA: D87 support hours 8:30am on both channels (OQ-141, the panel names it); D88 the cross-match prints procedure date and surgeon only (OQ-142); D89 HPI CPN never required, surgeons without it load and are listed ("No HPI CPN yet", OQ-143).
+- DM-68 is not on this list: D82 answered, 25a removed the hospital reference.
+
+**Open defaults (built to the default, need AA's answer).**
+- D55's part · OQ-114 · a Party's delivery is email or post, no portal · Admin Master data, Parties, Delivery column (`/admin/masters?view=parties`); every resend is an email · no label.
+- D68 · OQ-120 · the prepayment invoice and letter name the anaesthetist (one constant, `PREPAYMENT_NAMES_ANAESTHETIST`) · "Provisional (OQ-120)" beside the patient email on a moved prepaid Booking (Nair after authorising Souter Fri 24 PM); Master data, Prepayment letters.
+- D70 · OQ-122 · a postal address alone is enough and the invoice is posted · "Provisional (OQ-122)" on a To post invoice, `/admin/review/L-45178-2026-07-17-AM`.
+- D71 · OQ-124 · emailed Lists and the on-demand update email stay; nothing removed · Admin Booking "Draft update email", List drawers, Email templates, Intake PDFs · no label.
+- D72 · OQ-125 · the prepayment moves to the anaesthetist at List authorisation · Billing monitor, AA Holding card, "Moves to the anaesthetist when the List is authorised · to confirm with AA (OQ-125)"; Xero sim "How this posts in Xero is still to be confirmed."
+- D78 · OQ-132 · no base units billed when the primary is on a fixed or open price · "No base units billed on a fixed price (provisional, OQ-132)" for the office: `/admin/day/2026-07-13/bookings/BK0184`, `/admin/day/2026-07-14/bookings/BK0028`; the phone reads "None on a fixed price" (BK0009), no label.
+
+**Needs owner (a choice, not a click).**
+- 19a, 24, 44 · Chen BK0008, S5 Beat 1 ("Adjusted manually") · the T stepper's manual time-units override survives beside the tiers · OQ-50, D25.
+- 25 · Review, a Booking whose lock is rejected for another reason · held back for good, no relock: block authorise on any rejection, or relock rejected locks only.
+- 15b · Mobile Add a booking · the photo flow survives only as a Future-scope demo action: keep it or delete it?
+- 44 · money format · negatives print "$-34.45" (invoice discount) and "$-15.90" (BK0185 breakdown) by `money.ts`'s default, while the remittance prints "-$365.70"; U1 kept the default and changing it touches every screen.
+- 44 · Wave 5 · 41's patient sends (prepayment reminders, anaesthetist-changed notice) do not reach 40's follow-up log, and Resend sits beside 41's reminder: decide whether they should append.
+- 44 · 04's "Open questions to raise" carries our recommendations where an OQ file had none: check they are ours to make.
+
+**Anaesthetist Mobile App and PWA (Souter).**
+- 15 · `/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009` · source labels are descriptive, not entry history; simulated attachment samples.
+- 15a · Riley `/mobile/lists/L-34821-2026-07-24-AM/bookings/BK0034` · the submit sheet says nothing about warnings; unpaid prepayment strong before the procedure · US-13.7.1 unset.
+- 16 · no fee view on mobile · US-10.3.2 partial.
+- 19 / 19b · BK0009 (Change, T2, H4 and 14; A1, Add a modifier, AS3), Spine BK0158 · starting figure is the range's lower bound; mild after-procedure warning; no stacking limit, no ASA pre-fill, explanation 200 characters, "Put back" for removed pre-applied modifiers.
+- 20 / 20a · BK0060 (`L-34821-2026-07-23-PM`), BK0164 (Tue 4 Aug AM) · Contract pick-up (she picks a fallback, cannot type its amount); procedure text stack; Contract name, holder, who is invoiced and basis visible; does she see the same parts as the office? · US-03.1.2, US-03.1.9 Verify.
+- 21 / 22a · payer sheet BK0008, Grace Park BK0033 · payer changeable by her until AUTHORISED (v6 said admin only); a family trust may pay; a split share's person gets their own BP id.
+- 21a · BK0009, BK0176 and BK0177 (`L-34821-2026-08-10-PM`) · "Needs a price" blocks completion (A48); an additional Procedure has no modifiers step.
+- 22 / 23 · BK0002 (`L-34821-2026-07-21-AM`), BK0009 · she splits until AUTHORISED and sees the fee; the first Procedure stays primary until changed; the remainder goes to the first RVG-priced Procedure (reading).
+- 24 · BK0186 (`L-34821-2026-07-27-AM`) · she sees what the price comes to and the Booking total · US-03.3.10, RV-29 (Donald to confirm, Greg to hear of it).
+- 26 · More, Rate per unit · she edits her own rate only; contact, HPI CPN and bank office-held; bank masked.
+- 27 / 27a / 41 · Nair, Souter Fri 24 PM · a Contract changed off prepaid stays held until cancellation (D67), the two alerts together (D80), release at authorisation (D72, OQ-125); patient notice of an anaesthetist change (OQ-120); refund paid in Xero from the trust account (OQ-111, D53, for Greg).
+- 28 / 32 · Lists after an assignment; Find cover Thu 23 · a vacated session is Free by default, she chooses; six notices a page; one List per prompt · OQ-84, OQ-79.
+- 29 / 32d · My calendar, Availability · seeded statuses to agree with Vanessa and AA users (US-01.2.1, US-01.2.2); Public is a session status with a "CPH" note; seven weekly series show Public on closure days.
+- 32a · Demo sheet "Colleague moves a Booking to me" · Tell the office off by default · OQ-85.
+- 32b · Alert the office · Submit while an alert is open stays allowed and silent · US-03.6.3.
+- 33a · `/mobile/lists/L-34821-2026-08-04-PM` · Mere Tipene's stub (ZQA1024): "1 waiting at intake", never complete, no prompt or block.
+- 36 / 38 · Balances, GST this month · one BCTI per receivable invoice, paid only (OQ-29, OQ-60); one GST row per payment (OQ-47).
+- 38a · `/mobile/lists?q=Prentice` · search by name, exact NHI or every word of a partial name; history from January 2026; "To finish" on a reopened List.
+- 38b / 39 / 39b · Chen (search), Bennett Wed 15 Jul · the "event" name (Greg unconvinced); her credit goes to office review; OQ-12 presets provisional; HBK03's Paid by shows raw "H-STG" · OQ-121, D69.
+- 40 / 40a · S1 List after Create Booking; Add a booking (Hub Unavailable) · money-free patient alert; an NHI typed while the Hub was down: mark it unverified?
+- 43a / 43b · fresh handset, More, Help · simulated sign-in with a Provisional pill (OQ-83); help line readings (national holidays only, business-time clocks, 60-minute after-hours P1, Christmas window, fictional number; "Closed, opens 8:30am" after Reset) · OQ-141, D87.
+- 44 · More · no list of her prepaid Contracts under the profile (parity gap).
+- 44 · PWA, S1 · "Office authorises this List" authorises while her Contract change still awaits office approval.
+- 44 · PWA Demo sheet, "A hospital update for this Booking" on a Booking other than Diane Foster's · writes the RVG group's description as the hospital's wording (Wiremu Tane: "lap chole +/- IOC" becomes "Moderate procedures, e.g. ...").
+- 44 · PWA Demo sheet, "A new hospital booking" on Tue 28 Jul PM (13:00 to 17:30) · adds Mere Tautahi at 10:30, before the session.
+- 44 · PWA Hub card · pre-ticks Slow in a fresh session while the Hub answers Available.
+- 44 · framed phone BK0025 after Raise sample warnings · the Paid by line shows the split warning text where the payer name should be.
+- 44 · Demo sheet "Colleague moves a Booking to me" after S2 Beat 5 · offers two rows, Dr Hughes ticked; the Dr Ropata row hands Souter her own former Booking back.
+
+**Anaesthetist Web App (Souter).**
+- 15 · `/web/lists/L-34821-2026-07-28-AM` · attachment samples, source labels as mobile.
+- 16 · `/web/accounts/fees` · paid-only count by paid month; fee settings ex GST (example $805.00).
+- 22 · Paid by and Split · Prentice's second invoice goes to Alan Prentice.
+- 26 · `/web/profile` · own rate only; GST tab is the calendar month to date; no GST number on the profile.
+- 29 / 32b · `/web/availability/mine` · a closed day under one status; the vacated control pre-selects the status being set.
+- 32 / 32a · `/web/availability?date=2026-07-27`; BK0046, honour line on BK0038 · as mobile; always a new List; "The prepaid amount stays as agreed, and Dr X claims it." · OQ-84, OQ-79, OQ-85.
+- 38 · `/web`, `/web/accounts/outstanding`, `/web/accounts/gst` · "Email to me" is a demo confirmation; one-cent GST drift possible on a late payout; Collected leaves out a prepayment AA Holding still holds · OQ-29, OQ-47.
+- 38a · `/web/lists`, `?day=2026-03-13` · "To finish"; no tick for a List with an incomplete Booking.
+- 39 / 39a · credit sheet (search "Chen"); `/web/accounts/remittances` · credited invoice banner; remittance advice on web and Admin only; netted bill's GST provisional · OQ-29.
+- 44 · Remittances · paid-on dates differ from Admin Payment runs for seeded weeks 12 and 13.
+- 44 · Admin "Unit value" against the profile's "Rate per unit" for the same figure.
+
+**Admin · Day (Kirsty).**
+- 15a / 15b · Fri 24 Jul rail; Tue 21 Souter PM · To-do under the mini calendar (US-13.7.2); clearing keyed by warning, not text; ACTIVE printed; no state on an empty free session.
+- 17 · Reassign list (Chen Tue 21 PM, Rutherford Wed 22 AM) · tiers order within groups; seeded directors at Tier 1 are a guess; a notes-only edit on a not-preferred pairing does not warn.
+- 28 · Free block drawer, Assign List, Find available; `/admin/day/2026-11-24` · vacated session Free (OQ-84); List kinds outside the statuses (DM-04); horizon 1 to 24 months.
+- 30 / 31 · Wed 22, Tue 21 · pre-op Lists at AA rooms name the assessing surgeon; acute Lists the on-call surgeon.
+- 32 / 32b · Notifications card, Change status · panel place and count (US-13.8.1 Verify); office hand-on posts no notice; AUTHORISED refuses.
+- 32c · "Open out-of-hours session" · one a day, 18:00 to 21:00; who opens it when the office is closed is open with AA.
+- 32d · Tue 21, a Public session · Public CPH; Draft Lists 16 to 10.
+- 37 · Reconciliation card · checks are our reading; clearing account and bank feed wait on Greg and Sam (US-13.2.4 Proposed).
+- 43 · full-scale data · Day 30 a page; Next day 1.8 s.
+- 44 · Day after S4's cancel · "Awaiting review: Souter · Forte Health AM · 0 bookings · submitted".
+- 44 · Reassign sheet after an anaesthetist's hand-on · reads "Souter, Melanie's session after the move", naming the wrong session.
+- 44 · phone-advice Booking · Continue creates the List at once, so abandoning leaves an empty ACTIVE List; it allows Look up with an empty NHI, which Add a Booking disables.
+- 44 · S2 seed · Souter's "Public hospital, Thursday AM, every week" series sits over a Private List at Christchurch Public with 8 Bookings on Thu 23 and Thu 30 Jul AM (a Public session should hold none, D86).
+
+**Admin · Draft Lists, Notifications, Conflicts.**
+- 30 · `/admin/conflicts` · the "Conflict" chip is legend and filter.
+- 31 · `/admin/draft-lists?open=LD-001`, LD-002 · prepayment on a first assignment treated as Booking setup.
+- 32 / 32b / 35 · `/admin/notifications` · List moves only, six a page, no un-tick; a return is not emailable until assigned.
+- 44 · a new List made by a moved Booking · reads "Origin From a recurring booking".
+
+**Admin · Intake and Matching.**
+- 33 · `/admin/matching` · sample files across several days (OQ-13); SUBMITTED rows applied, AUTHORISED refused (US-02.5.4); the row's insurer recorded (D28); no correcting a row's surgeon. Wave 1: the New-row preview's prepaid basis: check it is closed.
+- 33a · R4 Add NHI (ZQA1008); Day 4 Aug · a stub's Booking waits on "Needs an invoice destination" · D66; caption "How a stub reads is our reading, to confirm with AA." kept (borderline).
+- 34 · `/admin/intake/pdfs` · a later PDF replaces the List's sender; AR-35 wording is AI-made; re-sent match by surgeon, hospital, date, session (our reading).
 - 43 · View raw row · `RAW_ROW_MASKING`.
+- 44 · Draft update email after S1's import · names "Procedure added: Appendicectomy, laparoscopic" (the RVG name, not the text received); Send update repeats the import's Diane Foster row.
+- 44 · Add NHI under Hub Unavailable · keeps the stale "Matches Losa Tuilagi ..." line.
+- 44 · "Surgeon's rooms PDF", "From the surgeon's rooms", "A call from the surgeon's rooms" · kept as plain words for the surgeon's practice, not the retired rooms record (D74); the guide says "the rooms' PDF list".
 
-Admin, Review and Bookings:
-- 21 / 21a · Chen Lists · contact rule at Review only; flags A49, A41; "Not complete" and "Not marked completed" both shown.
-- 23 · two Souter Lists queued; the sheet uses Mon 20. 25 · NEEDS OWNER: a lock rejected for another reason is held for good.
-- 25a · Ellery on the Disabled Contract. 39 / 39b · reviewer may be the creator. 24 / 25 · history Bookings show invoiced amounts.
-- 19 / 19a / 19b · BK0119, BK0163, BK0028 · ranges backdatable (Greg 23 Oct: not backdatable; sources differ); Merivale ex GST; hernia $61.
-- 20 · destination card lists 7 at reset; PWA stand-in picks the first Contract. 22 · split rules; GST cent $243.81 vs $243.80.
-- 22a · copy-payer offer; contact edit per payer. 24 · typed price whole; no-charge invoice no payable, no BCTI.
-- 35 · manual save (OQ-82); "View as at" on 16:00 rows. 38b · total counts invoiced events (US-03.1.10). 41 · credit at once, no review; "Split requested" reason left.
+**Admin · Review.**
+- 21 / 21a · `/admin/review/L-45178-2026-07-17-AM`, `-14-AM` · contact rule at Review only; flags A49, A41; "Not complete" and "Not marked completed" both shown.
+- 23 · `/admin/review/L-34821-2026-07-13-AM` · two Souter Lists queued; the sheet uses Mon 20.
+- 25a · Ellery on the Disabled Contract (`L-45178-2026-07-14-AM`).
+- 39 / 39b · Events tab · the reviewer may be the creator.
+- 44 · the authorised stamp shows the List date, not the authorise date ("FRI 24 JUL, 08:00", "MON 20 JUL, 08:00").
+- 44 · Fri 24 PM after authorise · still "FLAGS 1 · to check before authorising".
+- 44 · Chen Fri 17 · "1 flag open" beside two triangles.
+- 44 · a List holding only a stub · reads 0 of 0 with Mark list completed enabled and authorises (no stub guard; S5 told as built).
 
-Admin, master data:
+**Admin · Bookings.**
+- 19 / 19a / 19b · BK0119, BK0163, BK0028, BK0009 · ranges backdatable (Greg 23 Oct: not; sources differ); Merivale ex GST; hernia $61 on No contract · RVG; modifier actions shown as labels.
+- 20 · BK0046, BK0009 · "Needs an invoice destination" lists 7 at reset; the PWA stand-in picks the hospital's first Contract.
+- 22 / 22a · BK0025 Split, BK0033, BK0183 · split rules; GST cent $243.81 against $243.80; copy-payer offer; a contact edit applies to every Procedure on that payer.
+- 24 · BK0179, Change price · a typed price is the whole price; a no-charge invoice has no payable and no BCTI.
+- 25 · BK0023, Locked record, Regenerate · the snapshot field list (`domain/billing/lock.ts`).
+- 35 · `/admin/day/2026-07-21/bookings/<id>` · manual save for every change (OQ-82); update email kinds our split; S5 "View as at" on 16:00 rows.
+- 38b · Events, Create additional invoice · the total counts invoice-ticked events ex GST (US-03.1.10).
+- 39 / 41 · Sarah Mitchell, BK0034, BK0038 · combined split rules; cancellation credit at once with no review; "Split requested" still offered on a prepayment invoice.
+- 44 · Split sheet · Apply is enabled while the new person has no email or address.
+- 44 · nib's AA-2026-0005 Locked record · reads "Billed to Alan Prentice".
+- 44 · Nair's Booking · two identical "Create additional invoice" and "Credit note" pairs (the prepayment block's is the second).
+- 44 · INVOICED PRICE · counts an unreviewed additional invoice ($237.00); Sarah Mitchell after credit and rebill reads Events $7.00, Invoiced $214.00 (verify).
+- 44 · rebooked Riley · shows a "Surgeon's rooms PDF" source line and "5 units" on a fixed price; the rebook dialog defaults to Dr Ngata (no price) and allows an unpriced not-prepaid rebook; no To-do row for the rebooked prepayment until the date jump.
+- 44 · Raise sample warnings on Riley · overwrites her prepaid Rhinoplasty code to H4.
+- 44 · Lattimer's moved Booking · "Agreed fee" without the Contract name.
+- 44 · a loaded 3-procedure Booking · sits at 16:30 on an AM List.
+- 44 · History · reopens on the last as-at view; grouped-save rows carry no clock time; seeded rows at 14:20 and 14:22 on Tue 21 Jul sit after the 08:00 clock.
+- 44 · S1 as built · no Booking screen shows or edits the invoice description (`EditInvoiceDescriptionSheet` unreachable; History "View as at" shows it); Mark complete checks Contract, RVG detail and price only; Suggested comes from the insurer or funder on the Booking.
+
+**Admin · Contracts and Parties.**
 - 18 / 18a · Parties, Contracts, specialties, tags · AR-58 readings (A42, A43, A40, A38/9, A36, A18); interim identities; twelve specialties; several per surgeon (D3; Ben said "No").
-- 19a · Souter $1,200 then $1,300, $900, $1,450; COS ACC $1,250 from 1 Aug 2026. 20a · D37 order not put to Ben and Vanessa; D73 unlabelled.
-- 25 / 25a · History, Disable, Replaces · warning only. 39b · event fee a Contract child. 17 / 17a / 17b · surgeons · no address book (OQ-126, OQ-127 pt 4); three blank-HPI.
-- 28 / 29 / 30 · horizon 4.6 MB at 24 months; reserved status names; office-only recurring edits (US-01.3.2). 26 · GST number optional.
-- 35 · four templates. 41 · letter names the anaesthetist (OQ-120). 42 · loads; rail omits Disabled Contracts. 19 / 19b · 84 RVG rows demo-sized; age bands labelled on Modifiers.
+- 19a · MER-001 Face lift ranges, `?holder=PY-SOUTER` · Souter $1,200 then $1,300, $900, $1,450; COS ACC $1,250 from 1 Aug 2026.
+- 20a · D37's description order not put to Ben and Vanessa; D73 built with no label; hospital text replaces the rooms' text (not yet put to Greg).
+- 25 / 25a · History, Disable, Replaces · History shows audited edits and locked Procedures; "Replaces" warns only.
+- 39b · Event fees · a Contract event fee as a child the proposal lacks.
+- 17 / 17a / 17b · surgeon profiles · no address book (OQ-126, OQ-127 part 4); three blank-HPI surgeons; Rosalind Pemberton invented; Leanne seeded twice.
+- 44 · S5 against the doc · a new Contract does not disable the old one (a separate step).
 
-Admin, money:
-- 16 · AA fees · sample schedule; prepayment ACCPAY counted (rule now `prepaymentPairs: false`: check the line). 37 · monitor · divergence policy AA's (EP-09).
-- 27a / 41 · holding card · read-only; journal captioned to confirm; credited row dating. 39a · run steps · OQ-47 readings; held line rolls whole.
-- 36 / 39 · Ledger · attribution from bank reference; US-13.5.2 carve-out. 22 · To post (D70); GST number synthetic.
-- 27 · one prepayment invoice per payer. 39 · credit note not found by its number. 43 · 28,226 against 28,268 (now 28,232, 28,279).
+**Admin · Master data.**
+- 26 · anaesthetist record · GST number optional, "GST number not held".
+- 28 / 29 / 30 · horizon (4.6 MB at 24 months); reserved status names; recurring bookings office only (US-01.3.2).
+- 35 · Email templates · four seeded kinds; the cover template says "booking(s)".
+- 19 / 19b / 42 · RVG groups, Modifiers, Seed load, Go-live · 84 rows demo-sized; age bands labelled on Modifiers; the rail omits Disabled Contracts; practice names joined as text.
 
-Admin, Patients, Help, Audit:
-- 40 / 40a · payer gate; one threshold field (US-11.3.2, US-13.7.4); refresh on demand. Wave 5 · 41's sends miss 40's follow-up log: decide.
-- 43b · call-out approval an office stand-in. 43a · popovers. 28 / 17 · `session.*` codes raw. Wave 3 · `xero.queued` in the office's change set.
+**Admin · Billing monitor, Ledger, Invoices, Payment runs.**
+- 16 · `/admin/billing/aa-fees` · sample fixed schedule ($350 + $150, $5 per BCTI); current month runnable to date.
+- 27a / 41 · AA Holding card · read-only; the journal captioned to confirm; a credited row dated at the credit while a later payment grows it.
+- 37 · `/admin/billing` · approval stays on Review; grouping and filters Greg suggested not settled; the divergence policy is AA's (EP-09, "Provisional: the policy for each mismatch is to be agreed with AA.").
+- 39a · payment week · OQ-47 parts as readings; a held line rolls whole into next week; approval refuses while an anomaly is open.
+- 36 / 39 · `/admin/ledger` · attribution from the bank reference; the US-13.5.2 carve-out.
+- 22 / 27 / 39 · Invoices · To post (D70); AA's GST number synthetic; one prepayment invoice per payer; a credit note not found by its own number.
+- 39a · `/admin/billing/payment-runs/PR0001` · runs show when approved, not by whom; a missing bank account is an anomaly.
+- 43 · Invoices at full scale · 28,232 on the pager against 28,279 on the banner (backdrop invoices left out).
+- 44 · monitor · the $0 no-charge invoice reads "Paid in · Not disbursed" and its List "Disbursed 0 of 2" (the Xero pair is fixed).
+- 44 · remittance advice · lists the transfer PXT0001 under "BCTIs paid (1 BCTI)".
+- 44 · S4 Beat 4 · two events for one party approved together raise two invoices in one run (the rule says the same party's invoice where it can be).
+- 44 · AA-2026-0007 row · "Booking time not set" (Chen's event).
+- 44 · Data inspector · 54 invoices and 56 ledger pairs against Xero's Invoices (55); "4 sessions" beside "894 lists" (verify the units).
+- 44 · Xero ACCREC "Awaiting payment" beside the pair's "Part paid" (probably Xero's own status).
 
-Demo-only and cross-cutting:
-- 16 / 36 / 37 · Xero contacts, pair, bank · ask Greg about holding-account payments (OQ-111, D53). 33 / 34 · `feed-changes-primary` writes as integration.
-- 32a / 33a / 39 · no Copy, photo source or "DRAFT" creeps back (15b).
-- U1 to U7 · NEEDS A LOOK rail focus on arrows (U4); no back links on Review, Invoices (U5); Bug 7 (U6); allow-list 58 files, 90 buttons and its debt (U7).
+**Admin · Patients, Help, Audit.**
+- 40 / 40a · `/admin/patients/CQY9304`, `/admin/patients/waiting`, Refresh from NHI register · payer gate; one threshold field (US-11.3.2, US-13.7.4); refresh on demand per patient.
+- 43a / 43b · popovers; Product support · call-out approval an office stand-in.
+- 28 / 17 · Audit · `session.*` codes print raw.
+- Wave 3 · `xero.queued` during an outage carries the office's change set id.
+- 44 · raw-row refusal for another role · drops the row's name.
 
-Open defaults:
-- D55's part · OQ-114 · email or post, no portal · Parties, Delivery.
-- D68 · OQ-120 · invoice and letter name the anaesthetist · "Provisional (OQ-120)" on the patient email; Prepayment letters.
-- D70 · OQ-122 · postal alone, posted · "Provisional (OQ-122)", `/admin/review/L-45178-2026-07-17-AM`.
-- D71 · OQ-124 · emailed Lists and update email stay · no label.
-- D72 · OQ-125 · release at authorisation · holding card pill.
-- D78 · OQ-132 · no base units on a fixed primary · BK0184, BK0028, BK0009.
+**Demo-only surfaces.**
+- 16 / 36 / 37 · `/demo/xero`, `/demo/xero/bank` · neutral contact labels; ask Greg about payments from the holding account (OQ-111, D53).
+- 44 · Xero refund "Refund paid from AA trust account" and its audit label · kept: the bank account (US-06.5.1).
+- 27a · Xero MJ "How this posts in Xero is still to be confirmed." (twice) · US-06.5.1 open · D38, OQ-125.
+- 33 / 34 · `/demo/integrations` · `feed-changes-primary` writes as the integration actor.
+- 40a / 43 · harness bar over an open dialog; Hub modes; Data inspector privacy checks; the `FULL_SCALE` mix.
+- 44 · the app switcher says "Demo: Billing Monitor & Xero"; the page says "Xero simulation".
+- U7 · `/demo/catalogue/admin|web|mobile` · families and the "Shared component" column.
 
-Capture backlog (`phase-check.mjs --capture <ids>`, on `master`, after approval):
-- 40a: US-14.4.1, US-11.1.3, US-11.1.1, US-04.3.4, US-02.4.1, US-12.1.4, US-11.2.2.
-- 43a: US-15.0.1, US-13.5.3, US-05.5.2, US-03.2.1; lane extras US-12.1.1, US-03.1.2, FT-05.1.
-- 43b: US-15.0.8, US-15.0.9.
-- U7: US-13.6.3, US-07.1.1, US-07.1.2, US-03.6.2, US-03.6.1, US-01.2.1, US-01.5.3, US-15.0.2, US-01.4.3, US-03.6.3, US-13.8.1, US-01.4.7, US-13.7.2, US-03.1.6, US-07.2.1.
-- Wave 5: US-15.0.4 (raise `ACTION_TIMEOUT` if it times out). Then `--capture all`. Totals differ in the sources (log: 29 plus US-15.0.4 plus 4; `owner-review.md`: about 31): run the lists.
-
-**Handoffs (to Session 2).**
-- Names: `DEMO_SCENARIOS`, `demoScenarioById`; hooks `scenario-s1` to `scenario-s5`, `scenario-confirm`, `scenario-result`, `scenario-beats`, `scenario-beat-<n>`, `scenario-beat-<n>-steps` (count beat links with `button[data-shot^="scenario-beat-"]`), `data-scenario="Sn"`; the beat field `does`; `extractGuidePresses`, `htmlToGuideText` (`demoGuidePresses.ts`); `NOT_SCRIPTED` (`demoGuideSync.test.ts`); `firstOpenXeroPairPath` (`registry.ts`); `MUST_KEEP`, `ALLOWLIST` (`src/appCopy.test.ts`); `visual/demo-actions-audit.spec.ts`, `visual/pwa-demo-parity.spec.ts`.
-- Item 8 writes each press bold and exact (the sync test reads them), then un-skips the two asserts. `NOT_SCRIPTED` lists `stage-recurring-clash` as unscripted, but S2 Beat 3 now presses it: drop it.
-- If a beat moves, `demoScenarios.ts` and its test move with it.
-- Item 12 starts from "For item 12" and the parity gap; the handset was the emulated iPhone 14 Pro, not a real phone. Not walked: S1 T7, the Lattimer move end to end, the PWA-only paths.
-- Working files in `.build-phase/`: `44.md` (context pack), `44-plan.md`, `44-log.md`; `44-inv/` (`decisions.md`, `beats.md`, `registry.md`, `vitest-audit-notes.md`, `pwa-chip-table.md`, `scenarios.md`, `copy-sweep.md`, `owner-review.md`); `44-figures/` (`S1-S2.md`, `S3.md`, `S4.md`, `S5.md`; `s12/`, `s3/`, `s4/`, `s5/` scripts and screenshots); `44-dist/` (frozen build); `44-progress-draft.md` (this entry as drafted).
+**Cross-cutting (UI unification).**
+- U1 · grouped money everywhere; "Fixed price" and "Price typed" show cents; `parseAmount`'s refusals.
+- U2 / U3 · titled dialogs, corner X; Preferred's tint close to Free's.
+- U4 · NEEDS A LOOK: rail answers move focus only on arrows (a pick saves and moves on).
+- U5 · Review and Invoices have no back links; teal Remove, neutral Disable, red Cancel booking.
+- U6 · Bug 7 (Wed 22 PM Unavailable hatched everywhere); four master tables on old row code.
+- U7 · the allow-list ends at 58 files and 90 buttons, with its named debt (`RESULTS.md` U08).
+- 17 · the office's pairing data ships in every build's store, never read by an anaesthetist screen (`officePrivacy.test.ts`).

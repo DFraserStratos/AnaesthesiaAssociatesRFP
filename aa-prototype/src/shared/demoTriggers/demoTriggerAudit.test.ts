@@ -184,10 +184,11 @@ const WITHDRAWN: readonly { re: RegExp; why: string }[] = [
     why: 'the flat Contract model (D77; 18, 20)',
   },
   {
-    re: /surgeons?'? rooms?|Public (List|kind)|hospital (reference|sync)|Simulate sync|part credit|holder references?/i,
+    re: /surgeons?['’]? rooms?|Public (List|kind)|hospital (reference|sync)|Simulate sync|part credit|holder references?/i,
     why: "surgeons' rooms, Public Lists, hospital sync, part credits, holder references (D74, D86, D52, D31, D82; 17b, 32d, 33, 34, 25a)",
   },
   { re: /child billed directly/i, why: 'the child billed directly (21)' },
+  { re: /\bphase \d|\bBK\d{4}\b/i, why: 'build history and internal ids are not demo copy (44)' },
 ]
 
 describe('withdrawn flows and superseded readings', () => {

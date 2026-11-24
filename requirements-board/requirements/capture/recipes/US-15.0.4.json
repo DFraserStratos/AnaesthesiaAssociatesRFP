@@ -1,7 +1,7 @@
 {
   "id": "US-15.0.4",
   "status": "partial",
-  "absentReason": "full-scale volumes are generated in memory and timed on screen; formal performance testing is a Testing-milestone task",
+  "absentReason": "Full-scale volumes are generated in memory and timed on screen; whether performance holds at these volumes needs formal performance testing, which the prototype has not had.",
   "shots": [
     {
       "name": "full-scale-day",

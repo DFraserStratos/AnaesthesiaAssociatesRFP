@@ -1,6 +1,6 @@
 {
   "id": "US-04.2.10",
   "status": "absent",
-  "absentReason": "Retired: the flat Contract model has no lines, versions or defaults",
+  "absentReason": "Retired: removed in Phase 19a. A fixed price changes through price ranges (US-04.2.15).",
   "shots": []
 }

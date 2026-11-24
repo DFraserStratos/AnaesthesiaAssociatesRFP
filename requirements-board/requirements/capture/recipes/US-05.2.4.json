@@ -1,21 +1,6 @@
 {
   "id": "US-05.2.4",
-  "status": "captured",
-  "absentReason": "",
-  "shots": [
-    {
-      "name": "contract-rate",
-      "app": "admin",
-      "caption": "Booking priced at the contract's agreed $24 per unit instead of Dr Rutherford's $32",
-      "start": "/admin/day/2026-07-09/bookings/BK0031",
-      "states": [
-        {
-          "steps": [],
-          "highlight": [
-            "[data-testid=booking-calculation]"
-          ]
-        }
-      ]
-    }
-  ]
+  "status": "absent",
+  "absentReason": "Retired: merged into US-05.2.1, where a Contract's own rate is shot.",
+  "shots": []
 }

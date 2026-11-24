@@ -1,6 +1,6 @@
 {
   "id": "US-12.1.2",
   "status": "absent",
-  "absentReason": "Retired",
+  "absentReason": "Retired: removed in Phase 26. The profile holds no GST period; the GST report is monthly (US-12.2.2).",
   "shots": []
 }

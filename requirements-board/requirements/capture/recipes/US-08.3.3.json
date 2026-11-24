@@ -1,7 +1,7 @@
 {
   "id": "US-08.3.3",
   "status": "partial",
-  "absentReason": "Purging a contact is not shown.",
+  "absentReason": "Archiving a patient's Xero contact is shown; purging one is not modelled.",
   "shots": [
     {
       "name": "archived-contacts",

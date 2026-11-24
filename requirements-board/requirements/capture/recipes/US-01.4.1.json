@@ -1,7 +1,7 @@
 {
   "id": "US-01.4.1",
   "status": "partial",
-  "absentReason": "Reassignment moves the List (same id, Bookings and history) into a colleague's free session, and the vacated session returns to Free unless marked otherwise; the update email to the hospital is Phase 35's on-demand button.",
+  "absentReason": "Reassignment moves the List (same id, Bookings and history) into a colleague's free session, and the vacated session returns to Free unless marked otherwise. The hospital is told with Draft update email (US-02.3.3).",
   "shots": [
     {
       "name": "reassign",

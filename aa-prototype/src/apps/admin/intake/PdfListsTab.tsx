@@ -29,7 +29,7 @@ export function PdfListsTab({ actor }: { actor: Actor }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 320, fontSize: 13, color: neutral.slate, maxWidth: 760 }}>
-          Surgeons&rsquo; rooms email their Lists as PDFs, and send the whole List again whenever it changes. Upload each one
+          A surgeon&rsquo;s practice emails its Lists as PDFs, and sends the whole List again whenever it changes. Upload each one
           with the address it came from, check and correct its rows, then send them to Matching, where each waits for
           your decision.
         </div>

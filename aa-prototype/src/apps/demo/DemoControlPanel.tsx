@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
+import { create } from 'zustand'
 import { useNavigate } from 'react-router-dom'
 import { RotateCcw, CalendarDays, Route, ListChecks, ArrowRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { DemoSurface } from './DemoSurface'
 import { DEMO_SCENARIOS, type DemoScenario, type DemoScenarioId, type ScenarioStageResult } from './demoScenarios'
-import { useAppStore, useClockTimeLabel, useToday } from '../../store'
+import { onDomainReset, useAppStore, useClockTimeLabel, useToday } from '../../store'
 import { demoClockShortcuts } from '../../shared/demoClockShortcuts'
 import { BILLING_MONITOR_SCREEN, DEMO_TRIGGERS, DemoTriggerBadge, groupTriggersByScreen } from '../../shared/demoTriggers'
 import { DemoBadge } from '../../shared'
@@ -202,17 +203,31 @@ export function DemoControlPanel() {
   )
 }
 
+/**
+ * The last jump's result, UI only (catch-up Phase 44 QA): a beat link leaves the
+ * Control Panel, so the result and its beat links outlive the page and come back
+ * when the presenter returns. A reset (Reset, or the next jump's own reset)
+ * clears it; a reload forgets it. No domain state, no audit.
+ */
+type LastJump = { id: DemoScenarioId; res: ScenarioStageResult }
+const useLastScenarioJump = create<{ last: LastJump | null; remember: (last: LastJump | null) => void }>((set) => ({
+  last: null,
+  remember: (last) => set({ last }),
+}))
+onDomainReset(() => useLastScenarioJump.getState().remember(null))
+
 /** The guided-script scenario jumps (S1 to S5): confirm, reset and stage, then the beats in order. */
 function ScenarioJumps() {
   const [confirming, setConfirming] = useState<DemoScenarioId | null>(null)
-  const [result, setResult] = useState<{ id: DemoScenarioId; res: ScenarioStageResult } | null>(null)
+  const result = useLastScenarioJump((m) => m.last)
+  const setResult = useLastScenarioJump((m) => m.remember)
 
   return (
     <ControlCard icon={Route} eyebrow="Guided script" title="Jump to a scenario">
       <div><DemoBadge label="Resets data" /></div>
       <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
         A jump replaces all current demo data, so it asks first. Each beat's link opens its screen,
-        with what to do there beside it.
+        with what to do there beside it. The links stay here until the next reset or a reload.
       </span>
       <div style={{ display: 'flex', flexDirection: 'column', marginTop: 4 }}>
         {DEMO_SCENARIOS.map((s) => (

@@ -1,6 +1,6 @@
 {
   "id": "US-03.3.7",
   "status": "absent",
-  "absentReason": "Retired. The rate x time line was removed in Phase 24.",
+  "absentReason": "Retired: removed in Phase 24 (the rate x time line).",
   "shots": []
 }

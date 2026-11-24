@@ -1,45 +1,6 @@
 {
   "id": "US-08.1.2",
-  "status": "captured",
-  "absentReason": "",
-  "shots": [
-    {
-      "name": "review-contracts",
-      "app": "admin",
-      "caption": "Each Procedure carries its locked Contract into billing: the lock shows against it once the List is authorised",
-      "start": "/admin/review/L-34821-2026-07-20-PM",
-      "setup": [
-        {
-          "scenario": "S3"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "goto": "/admin/review/L-34821-2026-07-20-PM"
-        },
-        {
-          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
-        },
-        {
-          "wait": 800
-        }
-      ],
-      "states": [
-        {
-          "steps": [],
-          "highlight": [
-            "[data-testid=review-detail-table-shell] thead th:nth-child(4)",
-            "[data-testid=review-detail-table-shell] tbody tr:has(td:nth-child(9)) td:nth-child(4)"
-          ]
-        }
-      ]
-    }
-  ]
+  "status": "absent",
+  "absentReason": "Retired: merged into US-08.1.1, where authorising locks each Procedure's Contract for billing.",
+  "shots": []
 }

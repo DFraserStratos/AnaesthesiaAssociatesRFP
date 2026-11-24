@@ -1,6 +1,6 @@
 {
   "id": "US-04.3.6",
   "status": "absent",
-  "absentReason": "Not planned: Future Work, in no catch-up phase.",
+  "absentReason": "Future Work: the hospital's data does not set the Contract; in the first release the office sets it (US-04.3.4).",
   "shots": []
 }

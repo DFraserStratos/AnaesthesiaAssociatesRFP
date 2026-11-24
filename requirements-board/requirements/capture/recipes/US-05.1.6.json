@@ -1,6 +1,6 @@
 {
   "id": "US-05.1.6",
   "status": "absent",
-  "absentReason": "Not built yet: catch-up Phase 19 builds this.",
+  "absentReason": "Retired: removed in Phase 19. There is no procedure master: the procedure is free text on the Booking and the RVG code comes from the RVG groups (US-05.1.1).",
   "shots": []
 }

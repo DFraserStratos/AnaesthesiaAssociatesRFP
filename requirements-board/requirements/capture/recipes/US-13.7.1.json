@@ -1,7 +1,7 @@
 {
   "id": "US-13.7.1",
   "status": "partial",
-  "absentReason": "One routine evaluates every Booking and raises warnings with their text, kind and strength, never a block, but only the unpaid prepayment rule exists so far. Later phases add theirs: base units outside the RVG group's range (19), a child as the payer on the Booking and insurer-will-pay with no insurer Contract (21).",
+  "absentReason": "One routine raises every warning the story lists, each with its text, kind and strength and never a block: the unpaid prepayment, a patient's balance, a child as a Procedure's payer, base units outside the RVG code's range and a missing approval number. The shot shows the unpaid prepayment; the others are shot on their own stories.",
   "shots": [
     {
       "name": "warning-text",

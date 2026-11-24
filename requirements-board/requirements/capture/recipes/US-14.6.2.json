@@ -1,6 +1,6 @@
 {
   "id": "US-14.6.2",
   "status": "absent",
-  "absentReason": "Not planned: Future Work, in no catch-up phase.",
+  "absentReason": "Future Work: rows are not matched automatically. In the first release the office matches each row and approves each update on the matching screen (US-02.1.2).",
   "shots": []
 }

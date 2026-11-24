@@ -47,6 +47,10 @@ test('control panel: scenario jump, procedure-day jump, PDF ingest and jobs run 
   await expect(result.locator('[data-shot="scenario-beat-4"]')).toBeDisabled()
   await result.locator('[data-shot="scenario-beat-1"]').click()
   await expect(page).toHaveURL(/\/mobile\/more$/)
+  // The beat links outlive the page (Phase 44 QA): back on the Control Panel they are still there.
+  await page.goBack()
+  await expect(page).toHaveURL(/\/demo\/control$/)
+  await expect(page.locator('[data-shot="scenario-result"] button[data-shot^="scenario-beat-"]')).toHaveCount(7)
 
   // PDF arrival (catch-up Phase 34): Admin Intake, PDF lists, correct the flagged NHI and send to matching.
   await page.goto('/admin/intake/pdfs')

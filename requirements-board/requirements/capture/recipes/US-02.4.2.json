@@ -1,6 +1,6 @@
 {
   "id": "US-02.4.2",
   "status": "absent",
-  "absentReason": "Retired: photo capture is US-02.4.4 (Future Work); the Add a booking choice was removed in Phase 15b",
+  "absentReason": "Retired: removed in Phase 15b. Photo capture is US-02.4.4 (Future Work).",
   "shots": []
 }

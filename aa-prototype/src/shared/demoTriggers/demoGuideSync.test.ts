@@ -14,36 +14,26 @@ import { extractGuidePresses, htmlToGuideText, type GuidePress } from './demoGui
 import { DEMO_TRIGGERS } from './registry'
 
 /**
- * Entries the run sheet does not press, each with why. Drafted in Session 1
- * from the registry: diagnostics, undo-only entries, and handset stand-ins that
- * repeat an Admin step the scripted beat shows in Admin. Session 2 finalises it
- * against the rewritten run sheet (item 8).
+ * Entries the run sheet does not press, each with why: diagnostics, the
+ * Future-scope message surface, and handset stand-ins that repeat an Admin step
+ * the scripted beat shows in Admin. An entry the run sheet does press must not
+ * be listed here (the last test below).
  */
 const NOT_SCRIPTED: Readonly<Record<string, string>> = {
+  'fire-hospital-message': 'Future scope (HL7 v2, FHIR R4): narrated from the Future-scope surface, never a scripted beat.',
+  'record-fee-payment': "The AA fee pair's own Record fee payment button tells the same story in S3's aside.",
   'arm-handoff-fault': 'Diagnostic: one failed Xero call that retries itself; the outage pair and Trigger billing failure tell the retry story.',
   'run-archive-job': 'Diagnostic: runs the nightly Xero contact-archive job now; no beat waits on it.',
-  'simulate-sign-in': 'Fills Admin Audit with sample account rows; shown only if asked about sign-in auditing.',
   'payment-replay': 'Diagnostic: re-sends the last payment webhook to show it is ignored.',
   'run-scheduled-fee-run': "Stands in for the month-end job; the AA fee beat uses the screen's own run.",
   'xero-pay-bill': 'Pays one bill in the Xero simulation; the scripted payment week pays through the weekly run.',
-  'photo-capture-future': 'Future scope (US-02.4.4); shown only if asked about paper booking cards.',
   'replay-hospital-message': 'Future scope diagnostic: replays the last HL7 or FHIR message to show the dedupe.',
-  'clear-sample-warnings': 'Undo only: removes what Raise sample warnings staged.',
   'add-draft-list-for-day': 'Adds a Draft List to any day; the scripted Draft List beats use the seeded ones and Simulate incoming request.',
-  'stage-recurring-clash': 'Stages a recurring booking onto an unavailable session; no scripted beat needs it.',
   'ask-colleague-make-available': 'Plays a colleague freeing a session inside the Assign picker; no scripted beat needs it.',
-  'office-approves-contract-change': 'Handset stand-in for Approve on Admin Review; the parity matrix (item 12) covers it.',
-  'pwa-office-approves-prepayment': 'Handset stand-in for Approve and send on Admin Invoices; the parity matrix (item 12) covers it.',
-  'office-clears-warning': "Handset stand-in for Clear on Admin's To-do card; the parity matrix (item 12) covers it.",
   'office-sets-booking-contract': "Handset stand-in for the office's step rail; the parity matrix (item 12) covers it.",
   'office-assigns-next-free': 'Handset stand-in for Assign List in Admin; the parity matrix (item 12) covers it.',
   'office-assigns-draft-list': 'Handset stand-in for Assign on Draft Lists; the parity matrix (item 12) covers it.',
   'availability-office-sets-public': "Handset stand-in for Change status in Admin Day's drawer; the parity matrix (item 12) covers it.",
-  'office-resolves-alert': "Handset stand-in for Resolve in Admin's notifications; the parity matrix (item 12) covers it.",
-  'office-edits-booking': "Handset stand-in for an office save on Admin's Booking; the parity matrix (item 12) covers it.",
-  'colleague-moves-booking-to-me': 'Handset stand-in for a colleague moving a Booking; the parity matrix (item 12) covers it.',
-  'colleague-moves-list-to-me': 'Handset stand-in for a colleague moving a List; the parity matrix (item 12) covers it.',
-  'support-help-line-responds': 'Handset stand-in for Advance ticket; the parity matrix (item 12) covers it.',
 }
 
 describe('extractGuidePresses', () => {
@@ -150,8 +140,7 @@ describe.skipIf(!guidePresent)(`the demo guide against the registry${SKIP_NOTE}`
     for (const { file, presses } of guides()) expect(presses.length, file).toBeGreaterThan(0)
   })
 
-  // enabled after the item 8 rewrite
-  it.skip('every scripted press names a registered entry on its surface (write the label bold, exactly as the entry reads)', () => {
+  it('every scripted press names a registered entry on its surface (write the label bold, exactly as the entry reads)', () => {
     const unknown: string[] = []
     for (const { file, presses } of guides()) {
       for (const p of presses) {
@@ -162,12 +151,19 @@ describe.skipIf(!guidePresent)(`the demo guide against the registry${SKIP_NOTE}`
     expect(unknown).toEqual([])
   })
 
-  // enabled after the item 8 rewrite
-  it.skip('every registered entry is pressed in the run sheet or is on NOT_SCRIPTED', () => {
+  it('every registered entry is pressed in the run sheet or is on NOT_SCRIPTED', () => {
     const presses = guides().find((g) => g.file === '03-demo-script.md')!.presses
     const missing = DEMO_TRIGGERS.filter(
       (t) => NOT_SCRIPTED[t.id] === undefined && !presses.some((p) => p.label === t.label && t.surfaces.includes(p.surface)),
     ).map((t) => `${t.id} "${t.label}" (${t.surfaces.join(', ')})`)
     expect(missing).toEqual([])
+  })
+
+  it('NOT_SCRIPTED names no entry the run sheet presses', () => {
+    const presses = guides().find((g) => g.file === '03-demo-script.md')!.presses
+    const pressed = DEMO_TRIGGERS.filter(
+      (t) => NOT_SCRIPTED[t.id] !== undefined && presses.some((p) => p.label === t.label && t.surfaces.includes(p.surface)),
+    ).map((t) => t.id)
+    expect(pressed).toEqual([])
   })
 })

@@ -87,7 +87,7 @@ export function HoldingAccountPanel() {
                 <Td data-cause={causeOf(row, creditNotes) ?? undefined} style={{ color: neutral.slate }}>{causeOf(row, creditNotes) ?? ''}</Td>
                 <Td style={{ color: row.anaesthetistName !== undefined ? neutral.ink : neutral.mist }}>{row.anaesthetistName ?? ''}</Td>
                 <Td mono align="right" style={{ color: row.kind === 'transferred' ? semantic.success.onTint : row.kind === 'refunded' ? neutral.slate : neutral.ink }}>
-                  {row.kind === 'transferred' || row.kind === 'credited' ? `-${formatCurrency(row.amount)}` : formatCurrency(row.amount)}
+                  {(row.kind === 'transferred' || row.kind === 'credited') && row.amount !== 0 ? `-${formatCurrency(row.amount)}` : formatCurrency(row.amount)}
                 </Td>
               </tr>
             ))}

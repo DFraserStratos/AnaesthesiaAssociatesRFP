@@ -1,0 +1,6 @@
+{
+  "id": "US-02.3.5",
+  "status": "absent",
+  "absentReason": "Future Work: the system does not send booking change emails itself. The office drafts each one with Draft update email (US-02.3.3).",
+  "shots": []
+}

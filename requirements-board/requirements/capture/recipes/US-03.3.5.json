@@ -1,6 +1,6 @@
 {
   "id": "US-03.3.5",
   "status": "absent",
-  "absentReason": "Retired: merged into US-03.3.4; itemised modifiers are shot there (Phase 19b)",
+  "absentReason": "Retired: merged into US-03.3.4, where itemised modifiers are shot.",
   "shots": []
 }

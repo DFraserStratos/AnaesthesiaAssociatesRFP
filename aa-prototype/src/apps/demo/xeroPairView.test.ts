@@ -240,3 +240,24 @@ describe('Xero invoice-pair view: a cancelled prepayment refunded (catch-up Phas
     }
   })
 })
+
+describe('a no-charge invoice in the Xero simulation (catch-up Phase 44 QA)', () => {
+  it('reads as complete with no payable leg, flagged noCharge, so the pair page offers no payout', async () => {
+    const { SEED_LIST_IDS } = await import('../../domain/seed')
+    const { runBillingForList } = await import('../../store/billingRun')
+    const { handoffListPairs } = await import('../../store/xeroHandoff')
+    const api = createAppStore()
+    const listId = SEED_LIST_IDS.multiProcedure
+    const bookingId = SEED_MARKERS['noChargeBooking']!.entityId
+    expect(authoriseList(api, OFFICE, listId).ok).toBe(true)
+    expect(runBillingForList(api, listId).ok).toBe(true)
+    handoffListPairs(api, listId)
+    const s = api.getState()
+    const invoice = Object.values(s.billing.invoices).find((i) => i.bookingId === bookingId && i.noCharge === true)!
+    const view = xeroInvoicePairViews(s).find((v) => v.accRec.invoiceId === invoice.id)!
+    expect(view).toMatchObject({ noCharge: true, incomplete: false })
+    expect(view.accPay).toBeUndefined()
+    // Every other procedure pair keeps its payable and is not flagged.
+    expect(xeroInvoicePairViews(s).filter((v) => v.kind === 'procedure' && v.noCharge !== true).every((v) => v.accPay !== undefined)).toBe(true)
+  })
+})

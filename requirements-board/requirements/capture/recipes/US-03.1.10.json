@@ -1,7 +1,7 @@
 {
   "id": "US-03.1.10",
   "status": "partial",
-  "absentReason": "The total counts every invoice-ticked event, ex GST with GST beside; whether events on an invoice of their own count and whether GST shows are still open.",
+  "absentReason": "Built as our reading of a Proposed story: the total counts every invoice-ticked event, an event on an invoice of its own included, ex GST with GST beside.",
   "shots": [
     {
       "name": "booking-total",

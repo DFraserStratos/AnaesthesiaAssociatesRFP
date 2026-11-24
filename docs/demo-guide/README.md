@@ -1,172 +1,181 @@
 # AA Prototype Demo Guide
 
-This folder is the single hub for learning, presenting and reasoning about the Anaesthesia Associates
-(AA) Booking & Billing prototype. It turns the RFP into a practical guide for understanding the
-business, the personas, the workflows and the guided demo, so one presenter can drive the demo cold
-and answer the RFP's discovery questions with authority.
+This folder is the hub for learning, presenting and answering questions about the Anaesthesia
+Associates (AA) Booking & Billing prototype. It explains the business, the personas, the workflows and
+the guided demo, so one presenter can run the demo cold and handle the open questions with authority.
 
-It is written for Donald and assumes the reader has not read the full RFP.
+It is written for Donald and assumes the reader has not read the requirements catalogue or the RFP.
 
 ## Start here
 
-Open the [interactive master demo guide](master-demo-guide.html) for a single self-contained page: the
-mental model, personas, workflows, the S1 to S5 presenter script, the cheat sheet and the RFP
-discovery items, with light tab and collapse navigation. This is the primary read-to-get-up-to-speed
-artifact. It needs no server and no internet: open the file in a browser.
+Open the [interactive master demo guide](master-demo-guide.html): one self-contained page with the
+mental model, personas, workflows, the S1 to S5 run sheet, the cheat sheet and the **Open questions**
+tab, with tabs and collapsible sections. It needs no server and no internet: open the file in a
+browser.
 
 ## Read these in order
 
-1. [Personas and responsibilities](01-personas-and-responsibilities.md) explains who uses each app,
-   what they are trying to achieve and what they are allowed to do.
-2. [Workflows and handoffs](02-workflows-and-handoffs.md) explains the business process from schedule
-   setup through booking, procedure capture, authorisation, billing and payment.
-3. [Demo script](03-demo-script.md) is the canonical presenter run-sheet: setup, then the five
-   scenarios S1 to S5, each with where to click, the one-line RFP tie-in to say, and the expected
-   result. It also lists the discovery talking points and how to recover from demo accidents.
-4. [Presenter cheat sheet](04-presenter-cheat-sheet.md) contains the vocabulary, key rules,
-   permissions, talking points and RFP ambiguities worth memorising.
+1. [Personas and responsibilities](01-personas-and-responsibilities.md): who uses each app, what they
+   are trying to do and what they are allowed to do.
+2. [Workflows and handoffs](02-workflows-and-handoffs.md): the business process from the schedule
+   through booking, capture, review, billing and payment, with the readiness of each area.
+3. [Demo script](03-demo-script.md): the presenter's run sheet. Setup, then the five scenarios S1 to
+   S5, each beat with where to click, what to say and what the screen shows, then what to narrate
+   rather than click and how to recover from accidents.
+4. [Presenter cheat sheet](04-presenter-cheat-sheet.md): the vocabulary, the rules, permissions, the
+   money model, likely evaluator questions and **Open questions to raise**.
 
 ## The one-sentence product description
 
-Anaesthesia Associates coordinates anaesthetists' half-day operating Lists, keeps the patient Bookings
-within those Lists current, captures the clinical inputs needed for billing, checks and authorises
-completed Lists, then calculates invoices and manages collection and disbursement through Xero.
+Anaesthesia Associates runs the schedule of its anaesthetists' operating Lists, keeps the patient
+Bookings on those Lists current, captures what billing needs, checks and authorises each completed
+List, then raises the invoices, keeps the ledger and pays the anaesthetists through Xero.
 
 ## The mental model
 
 ```text
-Schedule
+Schedule (four months ahead)
   -> Day
     -> Anaesthetist
-      -> AM List and PM List
-        -> Booking (one patient appointment)
-          -> Procedure(s)
-            -> Event(s): pre-op, post-op, billing, additional invoice
+      -> Slot: AM, PM, and an out-of-hours one the office opens (on screen: a session)
+        -> List
+          -> Booking (one patient)
+            -> Procedure (RVG code, Contract, Paid by)
+              -> Event (pre-op, post-op, billing event, additional invoice, credit note)
 ```
 
-- The system creates a rolling four-month canvas containing exactly two Lists, AM and PM, for every
-  active anaesthetist on every day.
-- Recurring bookings, availability, hospital, surgeon, status and Bookings are applied to that
-  canvas.
-- A List is not an employment shift and a Booking is not a shift application.
-- The anaesthetist completes Bookings and submits the whole List.
-- The office checks and authorises the whole List.
-- Authorisation locks its Bookings and hands the List to the Billing Engine.
+- **Slot.** A status container for one anaesthetist, one day, one part of the day. Its status comes
+  from the anaesthetist's availability (Free, Unavailable, Public and the rest of the list the office
+  keeps), and a List goes into it. Every anaesthetist has an AM and a PM one every day; the office can
+  open an out-of-hours one after PM, one a day. On screen it is a session, and in the demo you say
+  session, AM or PM.
+- **List.** One anaesthetist's work in one session at one hospital with one surgeon. Its state is
+  `ACTIVE`, `SUBMITTED` or `AUTHORISED`; a Draft List, with no anaesthetist yet, is `DRAFT` until the
+  office assigns it.
+- **Booking.** One patient on a List.
+- **Procedure.** What is booked inside a Booking. The first is the primary, which carries the base
+  units and modifiers; every Procedure bills its own time. Each has its own Contract, RVG code and
+  **Paid by** line (the payer on that Procedure).
+- **RVG group and code.** The RVG groups are the one master list of procedures and base units. The
+  anaesthetist picks the RVG code by typing.
+- **Contract and Party.** Every pricing arrangement is a Contract held by a Party: a hospital, an
+  insurer, a funder, a surgeon or surgeon group, an anaesthetist, or AA. One Contract per priced item,
+  each with its pricing kind and, for a fixed price, price ranges from dates. The Contract decides
+  who is invoiced: its holder, or the payer on the Procedure.
+- **No contract · RVG.** The backstop for a patient paying at the standard rate: RVG units at the
+  anaesthetist's own rate, invoiced to the payer. Its partner, No contract · Fixed price, takes a
+  typed amount.
+- **Event.** Work or money on a Procedure after the fact: a pre-op or post-op event, a billing event,
+  an additional invoice or a credit note. It sits on the Procedure, on no List, goes through one
+  review step and bills in the next run.
 
-## Important terminology correction
+The flow over that model:
 
-The RFP does not define an "SSA" user or a self-service shift marketplace.
+- Availability paints first, then the surgeons' recurring bookings fill sessions with Lists. A
+  recurring booking that meets an unavailable session becomes a Draft List.
+- The office imports and matches bookings, sets each Procedure's Contract, and assigns Draft Lists.
+- The anaesthetist completes each Booking and submits the whole List. She can still change it until
+  the office authorises it.
+- The office checks and authorises the whole List. Authorise locks the pricing snapshot, and the
+  Billing Engine raises and sends one invoice per payer from it.
+- Every invoice is a receivable and payable pair in AA's own ledger and in Xero. Anaesthetists are
+  paid in a weekly payment run; AA invoices its own fee monthly.
 
-The field user is an **anaesthetist**. The scheduling unit is a half-day **List**. Anaesthetists can:
+## Terminology to correct early
 
-- maintain their availability;
-- see their assigned Lists;
-- find Free colleagues and move a List to them; and
-- help arrange locum cover.
-
-The RFP does not say an anaesthetist browses open shifts and claims one. Office staff coordinate
-assignment and reassignment. If the demo presents "sign up for a shift", it will be promising a
-workflow that is not in the source material.
+The field user is an anaesthetist, and the unit of work is a List in a session. There is no "SSA"
+user and no marketplace of open shifts. Anaesthetists keep their availability, see their Lists, and
+find their own cover by moving a List or a single Booking to a free colleague. Draft Lists are
+assigned by the office alone. Never show or describe an anaesthetist signing up for a shift.
 
 ## Source priority
 
-When documents differ, use this priority:
+When sources differ, use this order:
 
-1. [The RFP](../../requirements-board/requirements/reference/RFP.md) is the source of truth for business needs.
-2. [Prototype requirements](../prototype-build/REQUIREMENTS.md) record the chosen demo readings of
-   RFP ambiguities.
-3. [Prototype progress](../prototype-build/PROGRESS.md) records what is formally complete.
-4. The current code shows the finished behaviour.
+1. [The requirements catalogue](../../requirements-board/requirements/README.md)
+   (`requirements-board/requirements/`): the system's requirements, one file per epic, feature and
+   story, with its open questions. It wins wherever it differs from anything below.
+2. The Decisions log in [PROGRESS.md](../prototype-build/PROGRESS.md): the readings the prototype
+   took and why.
+3. The code in `aa-prototype/`: what the prototype does.
 
-The RFP calls its proposed architecture a **candidate architecture**. It is a strong starting point,
-not a final specification. Where this guide says "prototype reading", present it as a design proposal
-to confirm during discovery.
+The [RFP](../../requirements-board/requirements/reference/RFP.md) is historical input: the prototype
+was first built against it, and the catalogue has superseded it. For Contracts and pricing, read
+AR-58 (the contract model proposal, `requirements-board/requirements/artifacts/AR-58.md`) and AR-61
+(its flat ERD, `requirements-board/requirements/artifacts/AR-61.md`).
 
 ## Prototype readiness snapshot
 
-Snapshot date: **24 July 2026**
+Snapshot date: **24 November 2026**. Every catch-up phase is built, and everything in S1 to S5 runs in
+the app. Settled rules show on screen as rules, with no label. The few readings still open with AA
+carry the label the run sheet quotes, listed under "How to read the readiness" in the
+[demo script](03-demo-script.md). The phase behind each area is in the readiness table of
+[workflows and handoffs](02-workflows-and-handoffs.md).
 
-| Area | Status | Safe demo position |
-|---|---|---|
-| Mobile Lists, Bookings, BTM capture, completion and submit | Ready | Strong primary workflow |
-| Anaesthetist web dashboard, Lists, availability and accounts views | Ready | Strong supporting workflow |
-| Admin day view, changes, cover, review, authorisation, masters and audit | Ready | Strong primary workflow |
-| Billing run and invoice documents | Ready | Phase 08 |
-| Events and additional invoices, credit notes (credit and rebill, the split, the anaesthetist's credit note), and billing monitor (grouped by anaesthetist, with filters for one anaesthetist, hospital, dates and Problems only; Lists awaiting approval open in Review) | Ready | Phase 09; grouping and filters from catch-up Phase 37; credit notes from catch-up Phase 39 |
-| Pre-op and post-op events (the anaesthetist's own, from the Booking or search), the ACC pre-op event (CS250, CS260, CS70, codes provisional), Contract event fees and billing events (a free-text charge or credit), one review, billed in the next run on the party's invoice or their own | Ready | Catch-up Phase 39b |
-| Pre-payment from a prepaid Contract: one invoice per payer, approve and send (switchable), escalating warning, left off the final invoice | Ready | Catch-up Phase 27 |
-| Prepayment held in the AA Holding account (its card on the Billing monitor), transferred to the anaesthetist automatically when the List is authorised, then paid by the next weekly payment run | Ready | Catch-up Phase 27a |
-| Prepayment letter, cancellation and differences by hand: the letter on Approve and send (Preview letter, Master data · Prepayment letters), Send prepayment reminder, the Prepaid settlement block (nothing further but by hand: a whole-invoice credit note, an additional invoice), credit or refund on cancel from the AA Holding account, a move changing nothing (the honour line, the optional anaesthetist-changed email), and Rebook with another anaesthetist | Ready (whether the invoice names the anaesthetist is open, OQ-120) | Catch-up Phase 41 |
-| Xero pairs, payments, payables, payment history, live balances and GST report | Ready | Phase 10 |
-| The weekly payment cycle on the Billing monitor (close the week, Monday checks with Hold out of this run, Approve the week's BCTIs, Send payment schedule, Run payables in Xero), negative invoices netted in the run, each run's page and schedule, the week on every payment, and a remittance advice per run (Admin, and web Accounts · Remittances) | Ready (the cycle is Greg's proposal, still with AA's accountant, OQ-47) | Catch-up Phase 39a |
-| Xero resilience: the payment made in Xero (each disbursement recorded by webhook or poll), the Xero sync queue through an outage, voids and edits made in Xero flagged at the poll, bulk remittances matched in Xero, and the Reconciliation card on Admin Day | Ready | Catch-up Phase 37 |
-| Internal ledger with in-balance view: Admin Ledger (the whole ledger and one anaesthetist), the out-of-balance list, unmatched receipts allocated or refunded; Xero mirrors the ledger | Ready | Catch-up Phase 36 |
-| Anaesthetist profile and bank details (own rate per unit on mobile and web; office-held contact, HPI CPN and masked bank details, payments made in Xero) | Ready | Catch-up Phase 26 |
-| Admin Intake (one home: Matching, PDF lists, Data quality, Validators; `/admin/intake`) | Ready | Catch-up Phase 34 |
-| Hospital file import and matching screen (Import hospital file, match, create or reject each row; nothing applied automatically, nothing synced) | Ready | Catch-up Phase 33; under Intake from Phase 34 |
-| The rooms' PDF lists through matching (upload with its sender, correct a row, Send to matching; a re-sent list's differences wait for approval) and where each List came from (its sender, "Replies go to") | Ready | Catch-up Phase 34 |
-| Explicit save on the Admin Booking (one change set a save, History grouped, View as at), Switch office user, the on-demand update email (drafted, opened in the office's own mail client, never sent by the system) and Master data · Email templates | Ready | Catch-up Phase 35 |
-| Demo control panel (the index) with S1 to S5 scenario jumps; demo actions on each screen under **Demo actions** in the top bar, and a **Demo** sheet on a handset | Ready | Phase 12; per-screen actions from catch-up Phase 14 |
-| HL7/FHIR simulator, message log and feed mapping (**Demo: Future scope, HL7 and FHIR**, `/demo/integrations`) | Ready, badged Future scope (a fired message lands on Admin Intake as a row; Christchurch Public not integrated today) | Phase 11; re-routed in catch-up Phase 33; its own demo surface from Phase 34 |
-| Mobile atmospheric gradient (visual only) | Upcoming | Phase 13, does not change any workflow |
+| Area | Where it shows |
+|---|---|
+| Sign-in on the handset (provisional, OQ-83), Lists, Bookings, capture, submit, search | S1 |
+| Intake: hospital file import, Matching, the rooms' PDF lists, stubs, each List's sender | S1 |
+| The step rail, No contract · RVG and No contract · Fixed price, the descriptions | S1 |
+| Day view, sessions and Public sessions, out-of-hours sessions, help line and product support | S2 |
+| Warnings and the to-do list, Draft Lists with tiers and pairings, sickness, Conflicts | S2 |
+| An anaesthetist's own move of a List or a single Booking, the notification pool, the update email | S2 |
+| Review and authorise, the pricing snapshot, one invoice per payer, the Split, the five pricing kinds | S2, S3 |
+| Xero pairs, payment by webhook, the weekly payment run (proposed, OQ-47), remittances, GST report | S3 |
+| AA's monthly fee run (the BCTI count provisional, OQ-29, OQ-60) and the ledger in balance | S3 |
+| Prepayment: approval, letter, AA Holding account, transfer at authorise (OQ-125), cancel, rebook | S4 |
+| Events, additional invoices, billing failure and retry, credit note and credit and rebill | S4 |
+| Audit trail and change sets, NHI at entry, no NHI in Xero, the lock, each Contract's history | S5 |
+| The unit value read at authorise and kept in the lock, the go-live load | S5 |
+| Full-scale data (85 anaesthetists, four months, a year of invoices) | S2 aside |
+| Automatic hospital feeds over HL7 and FHIR | Future scope, on its own badged demo surface |
 
-Phases 00 to 12 are built and clickable. Phase 13 is the only remaining phase and is purely a visual
-polish of the mobile background; it changes nothing in the workflows, data, web or admin apps.
-
-Demo-only surfaces stay honestly labelled. The Xero simulator, integration simulator and the control
-panel carry a "demo simulation" badge: they simulate external systems and are not proposed end-user
-product screens. The billing monitor is proposed product UI; only its simulation triggers are badged,
-and its **Run payables in Xero** (badged Simulated Xero, the accountant paying the week's schedule once
-the week is closed, approved and scheduled). It is grouped by anaesthetist and filters by
-anaesthetist, hospital, dates and **Problems only**; Lists awaiting approval open in Review, where they
-are authorised.
-
-The anaesthetist Booking (Mobile and Anaesthetist Web) shows what the price comes to as she records,
-on every Contract: a quiet **Price** card in the capture and the Booking total above **Mark complete**
-(the phone's dock strip, the web rail panel), rising as she claims a modifier or adds time. She types a
-price only where an RVG Contract allows it, or the amount on No contract · Fixed price, with no reason
-asked; elsewhere the figures are read-only. Aria Skin and Laser Clinic is RVG at the Contract's rate,
-$26.50 a unit. The Booking-complete animation shows the tick alone. Admin Booking details keep the full
-billing view. The top bar's **Reset → Confirm reset** control restores the pristine data and clock
-from any app while preserving the current app.
+Demo-only surfaces stay labelled. The Control Panel, the **Demo actions** menu in the harness bar, the
+**Demo sheet** on a handset, the Xero simulation and the Future scope surface are there to simulate
+people and systems outside the apps; none of them is a proposed product screen. **Play the office** on
+the handset is off by default. The **Synthetic data only** badge sits in the top bar: every patient,
+NHI, List and figure is made up.
 
 ## Best demo shape
 
-Use one continuous business object rather than touring unrelated screens:
+Follow one recognisable business object instead of touring screens:
 
-> Dr Melanie Souter's Tuesday 21 July PM List at Southern Cross.
+> Dr Melanie Souter's operating Lists, at Southern Cross, St George's and Forte Health.
 
-It contains patient Bookings on hospital, insurer and No contract · RVG Contracts and one unfinished Booking, Margaret
-Ellison, that is designed for live BTM capture.
-
-The full story now runs end to end without narration gaps:
+Her Tue 28 Jul AM List at St George's takes S1's imported Booking, Sarah Mitchell, for live capture on
+the phone. Her two Mon 20 Jul Lists wait on Review for S3. Her Fri 24 Jul Lists carry the prepaid
+Bookings for S4.
 
 ```text
-Office schedule
-  -> Anaesthetist web overview
-  -> Mobile procedure capture
-  -> List submitted
-  -> Office review
-  -> List authorised
-  -> Invoices generated
-  -> Xero collection and payable pair
-  -> Payment into AA
-  -> Disbursement to anaesthetist
-  -> The ledger balances
+Hospital file imported and matched        S1
+  -> Office sets the Contract
+  -> Anaesthetist captures on the phone and submits
+  -> Office reviews and authorises         S2, S3
+  -> Invoices raised and sent, one per payer
+  -> Xero pair, payment into AA
+  -> Weekly payment run, remittance advice
+  -> AA's monthly fee, the ledger in balance
 ```
 
-Every step above is clickable. The [demo script](03-demo-script.md) sequences it as scenario S3
-(money end-to-end), with S1 (booking to theatre), S2 (office day), S4 (exceptions) and S5 (compliance
-tour) around it.
+S4 then takes the hard cases (prepayment, events, a billing failure, credit and rebill) and S5 the
+compliance questions. Each scenario starts from a Reset or its own jump on the Control Panel. The
+[demo script](03-demo-script.md) has the run orders: the full run is 50 to 59 minutes, the short run 30
+to 40.
 
-## Primary source sections
+## Where each topic lives in the catalogue
 
-- RFP overview and applications: `Project Overview`
-- Scheduling model: `Schedule Management - Candidate Architecture`
-- Lifecycle: `Card Immutability and the List Approval Process`
-- Billing capture: `The Big Picture: What Are We Actually Calculating?`
-- Billing routes and recipients: `Billing Route Resolution` and `Who Receives the Invoice?`
-- Billing handoff: `Billing Engine Integration Point`
-- Xero/payment model: `Xero Integration - Candidate Design`
-- Integrations: `Health Systems Integration` and `Integration Requirements`
-- Legacy screen references: Appendices 3 to 5
+- The schedule canvas, sessions and Lists: EP-01
+- Booking intake and change handling: EP-02
+- Booking and Procedure capture by the anaesthetist: EP-03
+- Contracts: EP-04, with AR-58 and AR-61
+- RVG master data and fee rules: EP-05
+- Prepayment: EP-06
+- List approval: EP-07
+- Billing Engine and internal ledger: EP-08
+- Xero: EP-09
+- Payments, disbursement and AA fees: EP-10
+- Patients and billable parties: EP-11
+- Anaesthetist profile and reporting: EP-12
+- Admin oversight and master data: EP-13
+- Health systems integration: EP-14
+- Non-functional requirements: EP-15

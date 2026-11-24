@@ -1,6 +1,6 @@
 {
   "id": "US-06.3.3",
   "status": "absent",
-  "absentReason": "Retired in catch-up Phase 27: the unpaid-prepayment alert is now US-06.3.2's status and escalating warning; there is no separate story and no gate to show.",
+  "absentReason": "Retired: merged into US-06.3.2, where the unpaid prepayment's status and strengthening warning are shot.",
   "shots": []
 }

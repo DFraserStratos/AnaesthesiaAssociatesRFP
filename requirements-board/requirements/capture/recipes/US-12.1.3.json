@@ -1,6 +1,6 @@
 {
   "id": "US-12.1.3",
   "status": "absent",
-  "absentReason": "Retired",
+  "absentReason": "Retired: removed in Phases 18 and 26. Prepaid procedures are not on the profile; the office sets up the anaesthetist's prepaid Contracts (US-04.2.14).",
   "shots": []
 }

@@ -2153,7 +2153,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         message:
           bookingId === undefined
             ? `Raised ${plural(res.value, 'sample warning')} on Dr Rutherford's Tue 21 Jul Lists, Grace Park's Booking and a NIB Booking. They show on the To-do card, the day grid and each Booking. ${RULES_NOTE}${skipped}`
-            : `Raised ${plural(res.value, 'sample warning')}: the triangle and the warning at the top of the Booking. The child payer sample stages on a minor's Booking (Grace Park's unless this one is a child's) and the approval number sample on an insurer's (BK0074 unless this one names an insurer). ${RULES_NOTE}${skipped}`,
+            : `Raised ${plural(res.value, 'sample warning')}: the triangle and the warning at the top of the Booking. The child payer sample stages on a minor's Booking (Grace Park's unless this one is a child's) and the approval number sample on an insurer's Booking (a nib Booking on Dr Ngata's Mon 20 Jul List unless this one names an insurer). ${RULES_NOTE}${skipped}`,
       }
     },
     indexPath: () => '/admin/day/2026-07-21',
@@ -2299,7 +2299,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'matching-office-matches-row',
     label: 'Hospital file imported and my booking matched',
     description:
-      "Stands in for the office on the phone (catch-up Phase 34): the office imports St George's file, as on Admin, Intake, decides the rows for your Tue 28 Jul AM List with the suggested decision, and answers where each new Booking's invoice goes (Patient, Standard: No contract · RVG; the RVG code stays yours). Sarah Mitchell arrives with the hospital's wording as received; the file's other rows wait for the office. On a St George's or Southern Cross List, a new hospital booking; on a Booking, a hospital update approved by the office (on Diane Foster's, the hospital's fuller wording replaces WLE MM).",
+      "Stands in for the office on the phone: the office imports St George's file, as on Admin, Intake, decides the rows for your Tue 28 Jul AM List with the suggested decision, and answers where each new Booking's invoice goes (Patient › Standard, No contract · RVG; the RVG code stays yours). Sarah Mitchell arrives with the hospital's wording as received; the file's other rows wait for the office. On a St George's or Southern Cross List, a new hospital booking; on a Booking, a hospital update approved by the office (on Diane Foster's, the hospital's fuller wording replaces WLE MM).",
     screen: 'Mobile · Lists and the Booking screen',
     routes: [...MOBILE_LISTS],
     surfaces: ['pwa'],
@@ -2338,7 +2338,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'stub-office-adds-nhi',
     label: 'Office adds the NHI to this stub',
     description:
-      "Stands in for the office on the phone (catch-up Phase 33a): on a List holding a stub, the office adds the NHI the sample holds for its waiting row on Matching, through the one resolve path, and the Booking takes the stub's place. On Dr Souter's Tue 4 Aug PM List, Mere Tipene (ZQA1024); after the Southern Cross import, Tama Henare on Tue 28 Jul PM (ZQA1008).",
+      "Stands in for the office on the phone: on a List holding a stub, the office adds the NHI the sample holds for its waiting row on Matching, through the one resolve path, and the Booking takes the stub's place. On Dr Souter's Tue 4 Aug PM List, Mere Tipene (ZQA1024); after the Southern Cross import, Tama Henare on Tue 28 Jul PM (ZQA1008).",
     screen: 'Mobile · List detail',
     routes: ['/mobile/lists/:listId'],
     surfaces: ['pwa'],
@@ -2543,7 +2543,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'feed-changes-primary',
     label: 'Hospital feed changes the primary',
     description:
-      "Plays the List's hospital feed making the next procedure on this Booking the primary, audited as an integration: base units then come from it and it moves to the top. Applied directly until the matching screen exists (Phase 33).",
+      "Plays the List's hospital feed making the next procedure on this Booking the primary, audited as an integration: base units then come from it and it moves to the top. A demo shortcut: a real hospital update waits on Matching for the office.",
     screen: 'Booking detail',
     routes: [MOBILE_BOOKING, WEB_BOOKING, ADMIN_BOOKING],
     surfaces: ['bar', 'pwa'],
@@ -2589,7 +2589,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'office-edits-booking',
     label: 'Office edits this Booking',
     description:
-      'Stands in for the office (catch-up Phase 35): Kirsty W. saves one change on this Booking, its time 30 minutes later, as one change set. The handset shows that the office saved changes, and History shows the grouped office save.',
+      'Stands in for the office: Kirsty W. saves one change on this Booking, its time 30 minutes later, as one change set. The handset shows that the office saved changes, and History shows the grouped office save.',
     screen: 'Mobile · Booking detail',
     routes: ['/mobile/lists/:listId/bookings/:bookingId'],
     surfaces: ['pwa'],

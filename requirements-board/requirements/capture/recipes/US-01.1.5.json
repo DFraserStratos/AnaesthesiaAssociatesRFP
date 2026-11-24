@@ -1,0 +1,6 @@
+{
+  "id": "US-01.1.5",
+  "status": "absent",
+  "absentReason": "Not in the prototype: splitting a session into an A and a B List is Proposed and not built.",
+  "shots": []
+}

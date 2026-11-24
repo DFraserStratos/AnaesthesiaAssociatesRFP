@@ -107,3 +107,12 @@ describe('AdditionalInvoiceButton', () => {
     expect(renderButton(OFFICE, active).container.textContent).toBe('')
   })
 })
+
+describe('raisedByText (catch-up Phase 44 QA)', () => {
+  it('names the system plainly, never "Dr System"', async () => {
+    const { raisedByText } = await import('../procedureEventCopy')
+    expect(raisedByText({ role: 'system', who: 'System' })).toBe('Raised automatically')
+    expect(raisedByText({ role: 'office', who: 'Kirsty W.' })).toBe('Raised by the office')
+    expect(raisedByText({ role: 'anaesthetist', who: 'Dr Melanie Souter', anaesthetistId: 'X' })).toBe('Raised by Dr Souter')
+  })
+})

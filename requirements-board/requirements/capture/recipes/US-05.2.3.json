@@ -1,6 +1,6 @@
 {
   "id": "US-05.2.3",
   "status": "absent",
-  "absentReason": "Retired: a modifier the base units include is now shown selected at 0 and removable (US-05.1.4, Phase 19b)",
+  "absentReason": "Retired: removed in Phase 19b. A base code never absorbs a modifier; an included modifier shows selected at 0 and removable (US-05.1.4).",
   "shots": []
 }

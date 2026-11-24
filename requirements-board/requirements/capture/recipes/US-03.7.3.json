@@ -103,7 +103,7 @@
         },
         {
           "state": "pre-post-op",
-          "caption": "On the staged ACL reconstruction: an ACC pre-op assessment, a post-op ward review and a billing event, each with its own date",
+          "caption": "On Coral Bennett's ACL reconstruction: an ACC pre-op assessment, a post-op ward review and a billing event, each with its own date",
           "steps": [
             {
               "goto": "/web/lists"
@@ -238,7 +238,7 @@
         },
         {
           "state": "pre-post-op",
-          "caption": "On the staged ACL reconstruction: an ACC pre-op assessment, a post-op ward review and a billing event, each with its own date",
+          "caption": "On Coral Bennett's ACL reconstruction: an ACC pre-op assessment, a post-op ward review and a billing event, each with its own date",
           "steps": [
             {
               "goto": "/web/lists"
@@ -358,7 +358,7 @@
         },
         {
           "state": "pre-post-op",
-          "caption": "On the staged ACL reconstruction: an ACC pre-op assessment, a post-op ward review and a billing event, each with its own date, on the phone",
+          "caption": "On Coral Bennett's ACL reconstruction: an ACC pre-op assessment, a post-op ward review and a billing event, each with its own date, on the phone",
           "steps": [
             {
               "goto": "/mobile/lists"

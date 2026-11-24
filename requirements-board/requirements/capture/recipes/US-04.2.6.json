@@ -1,6 +1,6 @@
 {
   "id": "US-04.2.6",
   "status": "absent",
-  "absentReason": "Retired: merged into US-04.2.2, where the Contract's anaesthetist override setting is shot (Phase 24).",
+  "absentReason": "Retired: merged into US-04.2.2, where the Contract's anaesthetist override setting is shot.",
   "shots": []
 }

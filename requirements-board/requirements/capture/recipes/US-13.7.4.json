@@ -1,6 +1,6 @@
 {
   "id": "US-13.7.4",
   "status": "absent",
-  "absentReason": "Future Work lane: out of the current scope, so not planned in the catch-up.",
+  "absentReason": "Future Work: there is no settings page for the warning routine or the check steps. The patient balance threshold is on Master data (US-11.3.2), and the prepayment approval switch on Invoices (US-06.3.1).",
   "shots": []
 }

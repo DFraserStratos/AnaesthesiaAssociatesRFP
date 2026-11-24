@@ -253,7 +253,8 @@ describe('DEMO_SCENARIOS (catch-up Phase 44)', () => {
     }
     // The capture recipes (US-11.3.3, US-08.4.4) open S5's first invoice by id and by Hemi Walker's row.
     expect(state.billing.invoices['INV0002']?.invoiceNumber).toBe('AA-2026-0002')
-    expect(scenario('S5').beats[4]!.path(state)).toBe('/admin/invoices/INV0002')
+    // Beat 5 authorises Dr Souter's Mon 20 Jul AM List: Dr Whitaker's Contract carries its own rate, so his unit value moves nothing.
+    expect(scenario('S5').beats[4]!.path(state)).toBe('/admin/review/L-34821-2026-07-20-AM')
   })
 
   it('staging twice from reset gives deep-equal domain state', () => {
@@ -372,5 +373,25 @@ describe('DEMO_SCENARIOS (catch-up Phase 44)', () => {
       }
     }
     expect(problems).toEqual([])
+  })
+})
+
+describe('the run sheet quotes the beat links as the Control Panel shows them (catch-up Phase 44 review)', () => {
+  it('every "Beat n · ..." the run sheet names is a label of that scenario', async () => {
+    const { existsSync, readFileSync } = await import('node:fs')
+    const { resolve } = await import('node:path')
+    const runSheet = resolve(__dirname, '../../../../docs/demo-guide/03-demo-script.md')
+    if (!existsSync(runSheet)) return
+    const text = readFileSync(runSheet, 'utf8')
+    const misses: string[] = []
+    for (const s of DEMO_SCENARIOS) {
+      const start = text.indexOf(`## ${s.id} · `)
+      const next = text.indexOf('\n## ', start + 1)
+      const section = text.slice(start, next === -1 ? undefined : next)
+      expect(start, s.id).toBeGreaterThanOrEqual(0)
+      const labels = new Set(s.beats.map((b) => b.label))
+      for (const m of section.matchAll(/\*\*(Beat \d+ · [^*]+)\*\*/g)) if (!labels.has(m[1]!)) misses.push(`${s.id}: "${m[1]}"`)
+    }
+    expect(misses).toEqual([])
   })
 })

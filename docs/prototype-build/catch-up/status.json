@@ -1,21 +1,15 @@
 {
-  "in_progress": [
-    "44"
-  ],
+  "in_progress": [],
   "next": {
-    "phases": [
-      "44"
-    ],
-    "note": "44 Session 1 is done and green (items 1 to 7, not committed): the scenario jumps as a tested module with beat links on the Control Panel, the trigger audit (Vitest and two Playwright specs), the guide-to-registry sync test (its two file checks skipped until the rewrite), the stale copy sweep with its copy guard, and the figures re-read from the app. Session 2 starts at item 8, the run sheet rewrite, from the draft Phase 44 entry in PROGRESS.md. PERSIST_VERSION 75, unchanged. Nothing is captured yet: the owner tests first."
+    "phases": [],
+    "note": "44 is done and green (not committed): the S1 to S5 run sheet, the four companion files and the master guide rewritten from walks of the app, a no-ai-slop pass, QA from Reset and from each jump, the handset parity matrix, four review lenses and their fixes, the recipe and ATLAS sweep, and the catch-up closed in PROGRESS.md. Every catch-up phase is DONE. The full screenshot capture is held until the owner has tested and approved; then run it (`phase-check.mjs --capture all`). PERSIST_VERSION 75, unchanged."
   },
   "guidance": {
-    "as_of": "2026-11-23",
-    "headline": "Resume 44 at item 8 (Session 2). Session 1 rebuilt the scenario jumps, audited every demo trigger, swept stale copy and re-read every figure.",
-    "headline_sub": "44 Session 1 built the scenario-jump module with beat links, the trigger and copy guard tests and the re-baselined figures; it is green and not yet committed. Session 2 rewrites the S1 to S5 run sheet and the master guide, runs the QA pass and the final screenshot sweep, and closes the catch-up.",
-    "parallel": "44 runs alone, in the main folder on master: it rewrites the demo guide and regenerates every screenshot, so nothing runs beside it. Paste the same kick-off prompt into a fresh session; it finds the draft entry and starts at item 8.",
-    "safe": {
-      "44": "Resume only: Session 1 is green and its draft entry is in PROGRESS.md. Commit Session 1 first, then run the same prompt in the main folder."
-    },
+    "as_of": "2026-11-24",
+    "headline": "The catch-up is complete. 44 rewrote the demo guide against the finished app and closed the plan.",
+    "headline_sub": "44 rewrote the S1 to S5 run sheet, the cheat sheet, workflows, personas, README and the master guide, ran the QA and handset passes and the review, and swept the screenshot recipes; it is done and not yet committed. No phase remains: test the app from the guide, approve the screenshot capture, then work from the owner review list in PROGRESS.md.",
+    "parallel": "Nothing left to run in parallel: the plan is complete. Future changes follow the ROADMAP's \"When the catalogue changes\" procedure.",
+    "safe": {},
     "wait": {}
   }
 }

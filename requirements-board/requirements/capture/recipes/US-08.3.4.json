@@ -1,7 +1,7 @@
 {
   "id": "US-08.3.4",
   "status": "partial",
-  "absentReason": "Per-patient position arrives with the patient screen (catch-up Phase 40).",
+  "absentReason": "The shots show money in and out overall, for one anaesthetist and for one Booking. A patient's position is on the patient record in Admin Patients (US-13.2.2).",
   "shots": [
     {
       "name": "money-in-out",

@@ -8,7 +8,7 @@ import { creditDetailOf, eventLines } from '../../../domain/billing/procedureEve
 import type { ProcedureEvent } from '../../../domain/types'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { daysBetween } from '../../../domain/dateDays'
-import { CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, PRE_POST_OP_COPY, kindRowText, pricingText } from '../../../shared/procedureEventCopy'
+import { CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, PRE_POST_OP_COPY, kindRowText, pricingText, raisedByText } from '../../../shared/procedureEventCopy'
 import { drSurname, formatCurrency, plural } from '../../../shared/format'
 import { EventReviewSheet } from '../flows/EventReviewSheet'
 import { ChangedSinceSubmittedPill } from '../components/ChangedSinceSubmitted'
@@ -277,7 +277,7 @@ function EventsQueue({ actor }: { actor: Actor }) {
                   <Td>
                     <span data-shot={credit !== undefined ? 'review-credit-row' : undefined}>{description}</span>
                     {credit !== undefined && credit.reason !== '' && <div style={{ marginTop: 2, fontSize: 12, color: neutral.slate }}>{credit.reason}</div>}
-                    {credit !== undefined && e.addedBy.role !== 'office' && <div style={{ marginTop: 2, fontSize: 12, color: neutral.slate }}>{EVENT_LABELS.raisedBy(drSurname(e.addedBy.who))}</div>}
+                    {credit !== undefined && e.addedBy.role !== 'office' && <div style={{ marginTop: 2, fontSize: 12, color: neutral.slate }}>{raisedByText(e.addedBy)}</div>}
                   </Td>
                   <Td>{partyName}</Td>
                   <Td mono bold align="right" nowrap>

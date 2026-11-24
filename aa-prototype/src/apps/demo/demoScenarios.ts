@@ -34,7 +34,7 @@ import { ANAE, SEED_LIST_IDS, SEED_MARKERS } from '../../domain/seed'
 import { projectedListId } from '../../domain/slots'
 import { rvgModifierByCode } from '../../domain/billing/modifiers'
 import { resetFramedDemo } from '../../shell/framedReset'
-import { DRAFT_LIST } from '../../shared/scheduleTerms'
+import { DRAFT_LIST, DRAFT_LISTS } from '../../shared/scheduleTerms'
 import type { Booking, Invoice } from '../../domain/types'
 
 export type DemoScenarioId = 'S1' | 'S2' | 'S3' | 'S4' | 'S5'
@@ -272,14 +272,19 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       {
         beat: `A recurring clash becomes a ${DRAFT_LIST}`,
         label: 'Beat 3 · Recurring bookings',
-        does: `Demo actions → Stage recurring clash, then assign the ${DRAFT_LIST}, which becomes ACTIVE`,
+        does: `Demo actions → Stage recurring clash, then on ${DRAFT_LISTS} assign Ms A. Reid's Wed 22 Jul ${DRAFT_LIST}, which becomes ACTIVE`,
         path: () => '/admin/masters?view=recurringBookings',
       },
-      { beat: 'Illness cover and unavailability', label: 'Beat 4 · Admin Conflicts', does: 'Demo actions → Simulate sickness', path: () => '/admin/conflicts' },
+      {
+        beat: 'Illness cover and unavailability',
+        label: 'Beat 4 · Admin Day, Wed 22 Jul',
+        does: `Assign Mr J. Whitford's ${DRAFT_LIST}, Draft update email, Demo actions → Simulate sickness, then Conflicts`,
+        path: () => '/admin/day/2026-07-22',
+      },
       {
         beat: 'An anaesthetist moves their own List',
         label: 'Beat 5 · Mobile Lists',
-        does: 'Return a List to the office; on Admin Day, Demo actions → Colleague moves a List to the office',
+        does: 'Return Tue 28 Jul PM to the office, then hand Mon 27 Jul PM on to Dr Ropata',
         path: () => '/mobile/lists',
       },
       {
@@ -291,7 +296,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       {
         beat: 'The notification pool',
         label: 'Beat 7 · Admin Notifications',
-        does: 'Tick a notice resolved, then Show resolved',
+        does: 'Alert the office from the phone, Resolve it, then Show resolved; Demo actions → Colleague moves a List to the office',
         path: () => '/admin/notifications',
       },
       {
@@ -392,9 +397,9 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       },
       {
         beat: 'Cancelling a prepaid Booking',
-        label: 'Beat 3 · Admin Booking, Priya Nair',
-        does: 'Cancel booking while her List is not yet authorised',
-        path: (s) => adminBookingPath(s, markerId('prepaymentPaidBooking')),
+        label: 'Beat 3 · Admin Booking, Annette Riley',
+        does: 'Cancel booking with a reason, then Rebook with another anaesthetist',
+        path: (s) => adminBookingPath(s, markerId('prepaymentBooking')),
       },
       {
         beat: 'Events on a Procedure, on no List',
@@ -455,9 +460,9 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       },
       {
         beat: 'Authorise, then edit the unit value',
-        label: "Beat 5 · Hemi Walker's invoice, after authorise",
-        does: "Change Dr Whitaker's unit value on Master data, then Demo actions → Regenerate from locked data",
-        path: (s) => invoicePath(standardInvoicesFor(s, liveBookingOn(s, SEED_LIST_IDS.whitakerFri17, 'Walker')?.id)[0]),
+        label: 'Beat 5 · Admin Review, Mon 20 Jul AM',
+        does: "Authorise for billing, change Dr Souter's unit value on Master data, then Demo actions → Regenerate from locked data",
+        path: (s) => reviewPath(s, SEED_LIST_IDS.souterMon20Am),
       },
     ],
   },

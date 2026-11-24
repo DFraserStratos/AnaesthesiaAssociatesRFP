@@ -1,0 +1,6 @@
+{
+  "id": "US-04.2.13",
+  "status": "absent",
+  "absentReason": "Future Work: Contracts are not exported to or re-imported from a spreadsheet. The office edits each Contract on Master data (US-04.1.2).",
+  "shots": []
+}

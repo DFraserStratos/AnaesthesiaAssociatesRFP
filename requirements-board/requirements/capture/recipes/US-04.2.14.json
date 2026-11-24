@@ -1,7 +1,7 @@
 {
   "id": "US-04.2.14",
   "status": "partial",
-  "absentReason": "Offered only on her Lists under Patient › Prepaid in Phase 20; the prepaid amount in 27.",
+  "absentReason": "The shots show Dr Souter's price list on Master data. The step rail offers it only on her Lists under Patient › Prepaid (US-04.3.8), and the prepaid amount is shot on US-06.2.2.",
   "shots": [
     {
       "name": "price-list",

@@ -61,7 +61,7 @@ import { enqueueXeroWork, gateFor } from './xeroGate'
 const HANDOFF_ACTOR: Actor = { who: 'Xero handoff', role: 'system', source: 'system' }
 
 const UNARCHIVE_NOTE =
-  'This contact was archived; it is unarchived to invoice against it. The Xero unarchive step is TBC in the sandbox.'
+  'This contact was archived; it is unarchived to invoice against it.'
 
 export interface ContactSpec {
   /** Composite cache key `${kind}:${id}` — never a raw id (4 disjoint org namespaces). */

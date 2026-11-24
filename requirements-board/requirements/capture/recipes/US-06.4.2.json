@@ -1,6 +1,6 @@
 {
   "id": "US-06.4.2",
   "status": "absent",
-  "absentReason": "Retired in catch-up Phase 27: there is no balance run and no deduction, so no credit arises when a prepaid amount exceeds a final amount; the prepaid Procedure is left off the final invoice.",
+  "absentReason": "Retired: removed in Phases 27 and 41. There is no balance run and no deduction, so no credit arises; the prepaid Procedure is left off the final invoice (US-08.2.2).",
   "shots": []
 }

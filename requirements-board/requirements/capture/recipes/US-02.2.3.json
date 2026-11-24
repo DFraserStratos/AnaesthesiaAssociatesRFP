@@ -1,0 +1,6 @@
+{
+  "id": "US-02.2.3",
+  "status": "absent",
+  "absentReason": "Future Work: Bookings missing from a re-sent List are not detected. In the first release the office decides each row of a re-sent List on the matching screen (US-02.2.1).",
+  "shots": []
+}

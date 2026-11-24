@@ -1,7 +1,7 @@
 {
   "id": "US-04.2.18",
   "status": "partial",
-  "absentReason": "Found by typing on the step rail in Phase 20; the invoice description reaches the invoice in 20a; the holder reference code is printed in 22.",
+  "absentReason": "The shots show the three settings and the search on Master data. The step rail's search is shot on US-04.3.2, the default RVG code filling a Procedure on US-03.3.1, and the printed holder reference code on US-04.2.8.",
   "shots": [
     {
       "name": "contract-codes",

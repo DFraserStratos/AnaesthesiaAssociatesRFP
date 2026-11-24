@@ -1,7 +1,7 @@
 {
   "id": "US-04.1.4",
   "status": "partial",
-  "absentReason": "Found by typing on the step rail from Phase 20; holder reference codes are seeded in 19a.",
+  "absentReason": "The shots show the AA code on Master data. Typing it on the step rail finds the Contract too (US-04.3.8).",
   "shots": [
     {
       "name": "aa-code",

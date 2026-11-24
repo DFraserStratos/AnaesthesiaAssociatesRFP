@@ -1,0 +1,6 @@
+{
+  "id": "FT-06.1",
+  "status": "absent",
+  "absentReason": "Retired: removed in Phases 18 and 26. Prepayment follows a prepaid Contract (FT-06.2), not a setting on the anaesthetist's profile.",
+  "shots": []
+}

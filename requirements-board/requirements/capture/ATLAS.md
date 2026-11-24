@@ -181,7 +181,7 @@ Hooks already added:
 | `mobile-availability-sheet` (the bottom sheet), inside it `availability-session-panel`, `availability-series-line`, `availability-series-confirm`, `availability-form`, `availability-result`, status chips `[data-status-choice=<id>]`, weekday chips `[data-weekday=1..7]` | The availability sheet (mobile) |
 | `web-availability-mine`, `web-availability-rail`, `web-availability-rail-empty`, `web-availability-series`; day cells `button[data-date=…]` | `/web/availability/mine` (catch-up Phase 29) |
 | `admin-availability-statuses` (table, rows `tr[data-status-row=<id>]`), `availability-statuses-list-types`, `admin-availability-status-sheet` (`status-sheet-id`, `status-sheet-preview`, swatches `[data-swatch=<token>]`), `admin-availability-status-retire` | `/admin/masters?view=availability-statuses` (catch-up Phase 29) |
-| `scenario-s1` to `scenario-s5`, `scenario-confirm` | `/demo/control`, used by the `scenario` step |
+| `scenario-s1` to `scenario-s5`, `scenario-confirm` | `/demo/control`, used by the `scenario` step; after a jump `scenario-result`, `scenario-beats`, `scenario-beat-<n>`, `scenario-beat-<n>-steps`; each block `[data-scenario=Sn]` (see [Scenario jumps](#demo-control-panel-democontrol-and-demo-actions)) |
 | `demo-actions` | The harness bar's "Demo actions" pill (only on screens with entries), used by the `trigger` step |
 | `demo-action-<id>` | One row of that menu, with its Run button and `role=status` result line |
 | `control-demo-index`, `index-<id>` | `/demo/control`: the "Demo actions by screen" index and each entry's row ("Open screen") |
@@ -263,7 +263,7 @@ Hooks already added:
 
 - **Anaesthetist, web and mobile:** Dr Melanie Souter, initials MS, anaesthetist ID `34821`.
 - **Admin, and every `/demo/*` page:** Kirsty W., office staff. Catch-up Phase 35 adds a second named office user,
-  Sam T.: the `switch-office-user` trigger (Day view and Booking detail) swaps the Admin app between them, so two
+  Sam T.: the `switch-office-user` trigger (Day view and Booking detail) switches the Admin app between them, so two
   users' saves show named in one Booking's History.
 - **Patients keyed on NHI** (catch-up Phase 40; `/admin/patients/<NHI>`): Sarah Mitchell `CQY9304` (the strong
   balance case: Dr Sharma's AA-2026-HS01, $610.00 raised 14 Apr, 98 days, billed to her, unpaid; also HS02 $540 paid),
@@ -296,7 +296,7 @@ Hooks already added:
 
 | Kind | Format | Notes |
 |---|---|---|
-| Session (Slot) | `S-<anaesthetistId>-<YYYY-MM-DD>-<AM\|PM>` | Catch-up Phase 28: every active anaesthetist's AM and PM session, stored, free by default. Grid blocks, mobile rows, web Lists rows and web availability cells carry `data-slot-id`. The UI never says "slot". |
+| Session | `S-<anaesthetistId>-<YYYY-MM-DD>-<AM\|PM>` | Catch-up Phase 28: every active anaesthetist's AM and PM session, stored, free by default. Grid blocks, mobile rows, web Lists rows and web availability cells carry `data-slot-id`. The UI never says "slot". |
 | List (seeded or projected) | `L-<anaesthetistId>-<YYYY-MM-DD>-<AM\|PM>` | From `projectedListId`: names the session the List was born in (a reassigned List keeps it), never parsed. For example `L-34821-2026-07-21-PM`. Only sessions holding a List have one: a Free session has no `L-` id. |
 | List (runtime) | `LG0001`… | Created by Assign List, Book (phone advice) and the PWA stand-in, and by New Draft List (the Draft List keeps its id when assigned). |
 | Draft List | `LD-001`… (request), `LD-<RCBnnn>-<date>-<session>` (recurring clash) | Seeded Draft Lists (catch-up Phase 31). Unassigned until the office assigns an anaesthetist; runtime ones are `LG####`. |
@@ -485,7 +485,7 @@ the ledger's failed checks (none at reset, so no badge; 1 after "Inject unmatche
 | `/demo/integrations` | Future scope: HL7 and FHIR (catch-up Phase 34), the integration simulator: feeds, message library, raw HL7 to FHIR, then pane 3 "Sent to matching" (a message stages a row on `/admin/intake/matching`, never applies). Header line `demo-surface-future-scope`, page strip `future-scope-pages` (Simulator, Message log, Feed mapping). App `simulator`. |
 | `/demo/integrations/log` | Future scope: the HL7 message log (catch-up Phase 34; was Admin Integrations' Messages tab): `future-scope-log` (its table is `[data-shot=future-scope-log] table`), the dead-letter callout `integrations-attention`. Empty until a message is replayed or fired. |
 | `/demo/integrations/mapping` | Future scope: feed mapping (catch-up Phase 34; was Admin Integrations' Feed config tab): `future-scope-mapping`, one card per feed `[data-feed-id=<id>]`. |
-| `/demo/data` | Data inspector: today's lists, seeded scenario finder, audit trail, lifecycle states, guard console. |
+| `/demo/data` | Data inspector: the demo clock and entity counts, Privacy checks (`nhi-scan-panel`), Today's sessions, Seeded scenario finder, Audit trail, Lifecycle states, Guard console. |
 | `/demo/data` (catch-up Phase 43) | A "Privacy checks" panel `nhi-scan-panel` sits above Today's canvas; its report `nhi-scan-report` reads "No scan yet" (`data-scanned="false"`) until the `scan-nhi-leaks` demo action runs, then a table (`data-scanned="true"`) with one row per area, `tr[data-scan-area=<key>]` with `data-hits` (`xero` with "NHIs or personal details", `diagnostics`, `failures`, `planted` only with the planted choice, and core rows marked "Held by design"). At full scale the line `data-saving-paused` shows. Selectors already scoped to `data-guard-console` are unaffected; it now sits lower, so a highlight scrolls to it. |
 | `/demo/xero` (catch-up Phase 43) | The callout `xero-volume-callout` ("Contact archiving & volume"); at full scale each table caps at 200 rows with `xero-table-cap` ("Showing 200 of N"). |
 
@@ -641,7 +641,7 @@ the ledger's failed checks (none at reset, so no badge; 1 after "Inject unmatche
 - **The Spine Booking** (catch-up Phase 19b, marker `includedModifierBooking`): `BK0158`, Callum
   Graham, Dr Souter's Mon 27 Jul PM List (`L-34821-2026-07-27-PM`), uncaptured, RVG code S3a (B 10),
   so **P1 shows pre-applied at 0** ("Included in the base units of S3a. Cannot be added twice.").
-  Its procedure text is still the generated "Knee, total replacement". S2 Beat 3c moves this List to
+  Its procedure text is still the generated "Knee, total replacement". S2 Beat 5 moves this List to
   Dr Ropata, so shoot it from a fresh store.
 - **Seeded modifier claims:** every Procedure the old seed graded ASA III claims AS3 with "ASA III,
   severe systemic disease on pre-op review"; there is no ASA seed and no other claim. Patients 70 and
@@ -680,9 +680,9 @@ invoice only); the Booking's Procedure card shows the text. The wording below is
 - Draft Lists band (`daygrid-draft-band`) on Tue 21 (catch-up Phase 32d): only St George's PM (request `LD-001`). Header reads "1 Draft List"; Ngata's acute AM clash `LD-RCB016-2026-07-21-AM` is gone. Every block carries a booking count pill (`daygrid-block-count`).
 - Public (catch-up Phase 32d): Dr Ropata's Tue 21 AM (`button[data-slot-id="S-39560-2026-07-21-AM"]`) is a Public session with the note "CPH" and no List; its block reads "Public" then "CPH". Its drawer Status row reads "Public hospital · CPH", and `[data-shot=drawer-change-status]` opens the Change status sheet, where the office can pick Public and type a note. Dr Hughes Tue 21 AM (`S-46822-2026-07-21-AM`) is Free, a handy session to set to Public.
 
-**Public is a Slot status (catch-up Phase 32d).** Id `publicHospital`, label "Public", long label "Public hospital", the purple public colour, solid; not open for bookings or cover, so it works like Unavailable. Four statuses in Master data, Availability statuses (rows `tr[data-status-row=publicHospital]`; the footnote `[data-shot=availability-statuses-list-types]` reads "Private and Pre-op are kinds of List, shown on the List, not availability."). The `public` List kind is gone: List kinds are Private and Pre-op, and the seeded public Lists holding Bookings are private Lists with the same ids (Dr Sharma Tue 14 Jul AM `L-41267-2026-07-14-AM`, Dr Souter Thu 23 Jul AM `L-34821-2026-07-23-AM` with 8 Bookings, Dr Ropata Tue 21 Jul PM, Dr Whitaker Tue 21 Jul AM and Fri 17 Jul AM, Ropata Thu 16 Jul AM and others). Bookless public sessions are Public with the note "CPH". Seven weekly Public series, `AS0001` to `AS0007`: Souter Thu AM, Sharma Tue AM, Ngata Tue AM, Ropata Tue and Thu both sessions, Delaney Mon PM, Hughes Mon AM, Whitaker Tue, Thu and Fri AM. On the phone, My calendar (`/mobile/availability/calendar`) status chips include Public hospital, "Your series" lists "Public hospital, Thursday AM, every week, no end date" for Dr Souter, and Add days off (`mobile-add-days-off`) offers four status choices (`[data-status-choice=publicHospital]`, note placeholder "For example, CPH").
+**Public is a session status (catch-up Phase 32d).** Id `publicHospital`, label "Public", long label "Public hospital", the purple public colour, solid; not open for bookings or cover, so it works like Unavailable. Four statuses in Master data, Availability statuses (rows `tr[data-status-row=publicHospital]`; the footnote `[data-shot=availability-statuses-list-types]` reads "Private and Pre-op are kinds of List, shown on the List, not availability."). The `public` List kind is gone: List kinds are Private and Pre-op, and the seeded public Lists holding Bookings are private Lists with the same ids (Dr Sharma Tue 14 Jul AM `L-41267-2026-07-14-AM`, Dr Souter Thu 23 Jul AM `L-34821-2026-07-23-AM` with 8 Bookings, Dr Ropata Tue 21 Jul PM, Dr Whitaker Tue 21 Jul AM and Fri 17 Jul AM, Ropata Thu 16 Jul AM and others). Bookless public sessions are Public with the note "CPH". Seven weekly Public series, `AS0001` to `AS0007`: Souter Thu AM, Sharma Tue AM, Ngata Tue AM, Ropata Tue and Thu both sessions, Delaney Mon PM, Hughes Mon AM, Whitaker Tue, Thu and Fri AM. On the phone, My calendar (`/mobile/availability/calendar`) status chips include Public hospital, "Your series" lists "Public hospital, Thursday AM, every week, no end date" for Dr Souter, and Add days off (`mobile-add-days-off`) offers four status choices (`[data-status-choice=publicHospital]`, note placeholder "For example, CPH").
 
-**Draft Lists** (catch-up Phase 31, `/admin/draft-lists`). 10 in the pristine seed since catch-up Phase 32d (was 15, then 16), ascending by date. Three request Draft Lists: `LD-001` St George's / Mr S. Tan Tue 21 PM (phone), `LD-002` Forte Health / Mr V. Nand Wed 22 PM (email, 2 Bookings), `LD-003` Christchurch Eye Surgery / Ms A. Reid Mon 27 AM (PDF). The rest are recurring-clash Draft Lists, ids `LD-<RCBnnn>-<date>-<session>` (e.g. Beaumont Southern Cross Wed 22 AM and PM and Fri 24 AM `LD-RCB022-2026-07-24-AM`; Ngatai Wed 22 AM and Mon 27 PM). Phase 32d removed `LD-RCB013`, `LD-RCB016`, `LD-RCB027`, `LD-RCB028`, `LD-RCB029` and `LD-RCB030` (Ngata's Tue 21 AM and the others fell on Public sessions); use `LD-RCB022-2026-07-24-AM` for an "unavailable colleague" clash. A List's state is DRAFT, ACTIVE, SUBMITTED or AUTHORISED; assigning a Draft List makes it ACTIVE. The Unassigned table is `[data-shot=draft-lists-table]` with rows `[data-draft-list-row=<id>]` (Origin is the 7th column; the Day cell is blank on all but the first row of a day). Demo actions: `simulate-incoming-request` (Draft Lists page; adds a Reid Thu 23 PM request by default), `add-draft-list-for-day` (Day view), `stage-recurring-clash` (Recurring bookings view). Adding Dr Beaumont (`31902`) on Thursday AM with hospital and surgeon on the recurring sheet creates a Draft List. Dr Sharma (`41267`) is not preferred with Ms Reid.
+**Draft Lists** (catch-up Phase 31, `/admin/draft-lists`). 10 in the pristine seed since catch-up Phase 32d (was 15, then 16), ascending by date. Three request Draft Lists: `LD-001` St George's / Mr S. Tan Tue 21 PM (phone), `LD-002` Forte Health / Mr V. Nand Wed 22 PM (email, 2 Bookings), `LD-003` Christchurch Eye Surgery / Ms A. Reid Mon 27 AM (PDF). Dr Rutherford's Wed 22 AM List returned to the office (`L-29104-2026-07-22-AM`, catch-up Phase 32b, below) is one too. The other six are recurring-clash Draft Lists, ids `LD-<RCBnnn>-<date>-<session>` (e.g. Dr Beaumont's Southern Cross Wed 22 AM and PM, `LD-RCB020-2026-07-22-AM` and `LD-RCB021-2026-07-22-PM`, and her Christchurch Eye Surgery Fri 24 AM `LD-RCB022-2026-07-24-AM`; Ngatai Wed 22 AM and Mon 27 PM). Phase 32d removed `LD-RCB013`, `LD-RCB016`, `LD-RCB027`, `LD-RCB028`, `LD-RCB029` and `LD-RCB030` (Ngata's Tue 21 AM and the others fell on Public sessions); use `LD-RCB022-2026-07-24-AM` for an "unavailable colleague" clash. A List's state is DRAFT, ACTIVE, SUBMITTED or AUTHORISED; assigning a Draft List makes it ACTIVE. The Unassigned table is `[data-shot=draft-lists-table]` with rows `[data-draft-list-row=<id>]` (Origin is the 7th column; the Day cell is blank on all but the first row of a day). Demo actions: `simulate-incoming-request` (Draft Lists page; adds a Reid Thu 23 PM request by default), `add-draft-list-for-day` (Day view), `stage-recurring-clash` (Recurring bookings view). Adding Dr Beaumont (`31902`) on Thursday AM with hospital and surgeon on the recurring sheet creates a Draft List. Dr Sharma (`41267`) is not preferred with Ms Reid.
 
 **Wed 22**
 
@@ -691,7 +691,7 @@ invoice only); the Booking's Procedure card shows the text. The wording below is
   "Unwell, short notice", recorded by the office (Kirsty W., 07:40), with no List and no conflict: the
   office returned his Christchurch Eye Surgery List, now a Draft List with the same id
   (`L-29104-2026-07-22-AM`, origin "Returned: anaesthetist unavailable", block
-  `[data-draft-block=L-29104-2026-07-22-AM]` in the Wed 22 band). The S2 Beat 3 target: assign it to
+  `[data-draft-block=L-29104-2026-07-22-AM]` in the Wed 22 band). The S2 Beat 4 target: assign it to
   Dr Sharma (Wed 22 AM Free). Unavailability is never a conflict.
 - Real conflicts (catch-up Phase 30), four Lists, each block `button[data-conflict=true]` in the amber
   conflict colour:
@@ -716,9 +716,10 @@ outline (`[data-shot=drawer-booking-warning]`), and the To-do card under the cal
 (`[data-shot=admin-warnings-todo]`) lists the warning with Open and Clear. PM is paid (Priya Nair:
 the panel `booking-prepayment` reads "Pre-payment received").
 
-**Review queue (pristine):** Morrison, Whitaker, Souter Mon 20 AM and PM, Ropata, Delaney, and since catch-up
-Phase 23 Souter Mon 13 AM (the three-procedure Booking; a second "Souter · Forte Health" row, so open a List by its
-route, never by row text).
+**Review queue (pristine):** nine SUBMITTED Lists: Morrison, Whitaker, Souter Mon 20 AM and PM, Ropata, Delaney,
+Dr Chen's Tue 14 Jul AM (the review-flags List, catch-up Phase 21a) and Fri 17 Jul AM (the payer review List, catch-up
+Phase 21), and since catch-up Phase 23 Souter Mon 13 AM (the three-procedure Booking; a second "Souter · Forte Health"
+row, so open a List by its route, never by row text).
 Authorising Morrison raises 6 invoices.
 
 **Web accounts (backdrop history)**
@@ -772,7 +773,7 @@ six-day strip). Colleagues' triggers never pick a List or session in `SCRIPTED_B
 with a conflict. The notification pool seeds empty; ids are `NT0001` on.
 
 **Single-Booking move** (catch-up Phase 32a; `BOOKING_MOVE_DEMO` in the seed, pinned by
-`domain/seed/bookingMoveSeed.test.ts`). S2 Beat 3d: Dr Souter's Wed 22 Jul AM Christchurch Eye Surgery
+`domain/seed/bookingMoveSeed.test.ts`). S2 Beat 6: Dr Souter's Wed 22 Jul AM Christchurch Eye Surgery
 List `L-34821-2026-07-22-AM` (Mr J. Whitford, 6 Bookings), Booking `BK0046` (Lachlan Robinson). Free that
 session, in name order: Delaney, Morrison, Ngata, Ropata, Sharma, Whitaker (tiers mixed); Dr Whitaker
 (`36208`) is the scripted receiver, Dr Ropata (`39560`) the second (`BK0047`, office tick off). Dr Chen
@@ -789,7 +790,7 @@ is unchanged; the Admin Day ruler runs 07:00 to 18:00 unless the day has an out-
 evening Draft List). The schedule settings hold its default times, 18:00 to 21:00. Stage one live:
 - **Admin (product control):** on `/admin/day/2026-07-21`, `hover` the row's right gutter `[data-day-grid-row="34821"] .aa-row-gutter`,
   click `[data-day-grid-row="34821"] [data-shot=out-of-hours-open]`, then
-  `[data-shot=out-of-hours-open-sheet] >> role=button[name="Open out-of-hours session"]`. It opens Slot
+  `[data-shot=out-of-hours-open-sheet] >> role=button[name="Open out-of-hours session"]`. It opens session
   `S-34821-2026-07-21-OOH` (Free) and lands on its drawer: `role=button[name="Assign List"]` (the usual
   `[data-shot=admin-assign-list]`, `H-SX` and the second `select` `S-PATEL`), or a waiting evening Draft List
   under `[data-shot=drawer-session-draft-lists]` (`role=button[name="Assign here"]`). The block is
@@ -809,10 +810,10 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   Procedure insurer. Who is billed follows the Contract (`billablePartyForProcedure`): one that bills
   its holder bills the holder Party (a hospital, nib, COS, the Aria clinic's `BP0002` record); any other
   (No contract · RVG `CT-NO-CONTRACT`, the surgeon and anaesthetist price lists, every prepaid one)
-  bills the payer on the Booking. Doyle's bariatric Booking (BK0028) is one invoice to the patient,
+  bills the Procedure's payer. Doyle's bariatric Booking (BK0028) is one invoice to the patient,
   Gareth Mills ($2,861 + GST).
-- **The payer on the Booking (catch-up Phase 21):** every seeded patient has an `@example.net` email and
-  an NZ Post postal address, except Kevin Doherty (none on purpose); every Booking's payer is the patient
+- **Payers (catch-up Phase 21; on each Procedure since 22a):** every seeded patient has an `@example.net` email and
+  an NZ Post postal address, except Kevin Doherty (none on purpose); every Procedure's payer is its patient
   except Grace Park's (Hana Park, `BP0001`) and the family trust below (`BP0003`). New payers are `BP0004`
   on.
 - **The payer review List (catch-up Phase 21):** `SEED_LIST_IDS.payerReview` = `L-45178-2026-07-17-AM`
@@ -837,7 +838,8 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   with none, unless the office chose one.
 - Good rail Bookings: BK0046 (Souter Wed 22 AM, Christchurch Eye Surgery, Mr Whitford: Patient, the
   hospital under SXAP, HNZ and ACC, Special); BK0009 (Southern Cross, one tag, SXAP fills itself in;
-  Other price is Southern Cross · SXAP · Fixed price); BK0034 (Ms Lim: Merivale's items under
+  its Contract combo starts with the No contract backstops, No contract · Fixed price reading "Type the amount", a
+  typed one "Price typed $X" or "No price typed yet" in the procedure stack); BK0034 (Ms Lim: Merivale's items under
   Patient › Standard, Souter's list under Prepaid for the office); BK0023 (Mon 20 AM, SUBMITTED).
 
 ### A payer on each Procedure (catch-up Phase 22a)
@@ -1149,7 +1151,7 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   Payables run panel (`[data-shot=billing-payables-run]`) shows nothing due: a held payable is never in the run.
 - **Billing monitor** `/admin/billing`: the card `[data-shot=billing-prepay-holding]` "AA Holding account": the
   balance (mono, `data-holding-balance`, $1,380.00 at reset), "Held for 1 prepaid Booking. Leaves only by a system
-  transfer or refund.", a warning pill "Moves to the anaesthetist when the List is authorised · to confirm with AA",
+  transfer or refund.", a warning pill "Moves to the anaesthetist when the List is authorised · to confirm with AA (OQ-125)",
   and entry rows `[data-shot=holding-entry]` (`data-entry-kind` received|transferred, `data-booking-id`); empty
   state "Nothing held". A journal fault shows on the List's pipeline Booking row as
   `[data-shot=monitor-journal-fault]` ("Transfer journal waiting for Xero · attempt N · next try HH:mm ...", catch-up
@@ -2141,7 +2143,7 @@ NHI register: Noah Prescott, ..."). Demo action rows `demo-action-nhi-hub-mode` 
   `invoice-correct` ("Correct this invoice", caption or refusal `invoice-correct-refusal`) holds `credit-note-button`
   ("Credit note"), `credit-rebill-button` ("Credit in full and rebill") and `split-combined-rail-button` ("Split into
   additional invoices"; refusal `split-combined-refusal`); all three disabled while a credit waits or once credited.
-  Procedure button slot (beside Create additional invoice and 22's Split): Admin `procedure-credit-note-button` and
+  Procedure button row (beside Create additional invoice and 22's Split): Admin `procedure-credit-note-button` and
   `split-combined-button`, web and mobile `anaesthetist-credit-note-button` (both "Credit note", `data-invoice-id`;
   hidden on a colleague's Procedure and before the invoice; on a prepaid Procedure it credits the whole prepayment
   invoice, from the `prepaid-settlement` block once the List is authorised: catch-up Phase 41 removed
@@ -2228,7 +2230,7 @@ NHI register: Noah Prescott, ..."). Demo action rows `demo-action-nhi-hub-mode` 
   Matching: `matching-stub` (the panel notice "A stub stands on Dr Souter's Tue 4 Aug PM List"), `stub-add-nhi` (Add
   NHI beside the NHI field; the field's input carries `data-row-nhi`) and `matching-stub-resolved` (the banner line
   "The Booking takes the stub's place on the List." after Add NHI).
-- Public status (catch-up Phase 32d, no new hook names): `[data-status-choice=publicHospital]` in the mobile and web availability forms and the Day drawer's Change status sheet; `tr[data-status-row=publicHospital]` in Availability statuses; `[data-shot=drawer-change-status]` opens the sheet; the Day block for a Public session is `button[data-slot-id=<id>]` showing "Public" and its note; the legend and the "Status filters" group gain a "Public status" chip (a Slot status, no longer a List kind).
+- Public status (catch-up Phase 32d, no new hook names): `[data-status-choice=publicHospital]` in the mobile and web availability forms and the Day drawer's Change status sheet; `tr[data-status-row=publicHospital]` in Availability statuses; `[data-shot=drawer-change-status]` opens the sheet; the Day block for a Public session is `button[data-slot-id=<id>]` showing "Public" and its note; the legend and the "Status filters" group gain a "Public status" chip (a session status, no longer a List kind).
 - UI unification Phase U6 (every earlier hook kept, none moved off its element): table shells are the shared
   `shared/table/TableShell`. Its `shot`, `testId` and `data-*` sit on the scroller `div` (as before:
   `invoice-list-table-shell`, `review-queue-table-shell`, `review-detail-table-shell`, `draft-lists-table`,
@@ -2448,7 +2450,8 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   `conflict-clear-sheet`, `conflicts-table`, `conflicts-filters`, `conflicts-count`,
   `conflicts-confirmation`, `conflicts-empty`, `admin-todo-conflicts` (the To-do card's line),
   `assign-list-conflict-warning`, `phone-advice-conflict-warning`, `edit-list-conflict-warning`,
-  `reassign-conflict-warning`, `reassign-not-available` (the collapsed group), `move-booking-conflict-warning`,
+  `reassign-not-available` (the collapsed group), `reassign-pairing-warning`, `reassign-vacated` (GONE in 32b:
+  `reassign-conflict-warning`), `move-booking-conflict-warning`,
   `hospitals-mode`, `hospital-calendar` (cells `button[data-calendar-day=<date>]`), holiday pills
   `button[data-holiday=<id>]`, `holiday-add-sheet`, `holiday-edit-sheet`, `holiday-delete-confirm`.
 - Recurring bookings (`data-shot`, catch-up Phase 30): `recurring-bookings-table` (rows
@@ -2616,7 +2619,7 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   drawer with `[data-list-id="L-..."]`. The drawer's surgeon is a link (`drawer-surgeon-link`) to the
   profile.
 
-- Draft Lists (catch-up Phase 31): `admin-draft-lists` (page), `admin-draft-list-drawer`, `admin-draft-lists-rail` (Day rail card, with `admin-draft-lists-see-all`), `admin-assign-draft-list` (sheet; becomes `admin-assign-draft-list-not-preferred` when a not-preferred pick is shown; `draft-list-reach`, `draft-list-candidates`, `assign-draft-list-pairing-warning`, `assign-draft-list-closed-warning`, `assign-draft-list-confirm`), `admin-new-draft-list` (`draft-list-hospital`, `draft-list-surgeon`, `draft-list-date`), `admin-redate-draft-list`, `admin-remove-draft-list`, `draft-lists-table`, `draft-lists-history`, `draft-lists-assigned`, `draft-list-available`, `draft-list-add-booking`, `daygrid-draft-band`, `daygrid-block-count`; nav badge `nav-badge-draftLists`. The List drawer's ACTIVE state is plain text in its subtitle, so highlight `[data-testid=admin-list-drawer] > header`.
+- Draft Lists (catch-up Phase 31): `admin-draft-lists` (page), `admin-draft-list-drawer`, `admin-draft-lists-rail` (Day rail card, with `admin-draft-lists-see-all`), `admin-assign-draft-list` (sheet; becomes `admin-assign-draft-list-not-preferred` when a not-preferred pick is shown; `draft-list-reach`, `draft-list-candidates`, `assign-draft-list-pairing-warning`, `assign-draft-list-holiday-warning`, `assign-draft-list-confirm`; `assign-draft-list-closed-warning` is GONE since catch-up Phase 32b), `admin-new-draft-list` (`draft-list-hospital`, `draft-list-surgeon`, `draft-list-date`), `admin-redate-draft-list`, `admin-remove-draft-list`, `draft-lists-table`, `draft-lists-history`, `draft-lists-assigned`, `draft-list-available`, `draft-list-add-booking`, `daygrid-draft-band`, `daygrid-block-count`; nav badge `nav-badge-draftLists`. The List drawer's ACTIVE state is plain text in its subtitle, so highlight `[data-testid=admin-list-drawer] > header`.
 
 - Ledger (catch-up Phase 36, `/admin/ledger` and `/admin/ledger/anaesthetists/:anaesthetistId`): `ledger-system-of-record`
   (the page header), `ledger-anaesthetist-select` (one-anaesthetist scope), `ledger-balance` (the balance indicator,
@@ -2652,7 +2655,8 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   something: rows `tr[data-divergence-id][data-divergence-kind=voidedInXero|amendedInXero]`, "Xero shows" pill against
   "Receivable open, $X", "Resolve" `billing-xero-resolve-<id>`), its side panel `billing-xero-resolve-panel` (outcomes
   `[data-outcome]`, `billing-xero-resolve-note`, `billing-xero-resolve-save`, `billing-xero-resolve-provisional`);
-  `billing-payables-run` ("Authorised, awaiting Xero's payables run"), `billing-payables-due`,
+  `billing-payables-run` ("Authorised, awaiting Xero's payables run"; since catch-up Phase 39a the payment cycle's draft
+  section, and `billing-payables-due` is gone),
   `billing-run-payables-in-xero` (button "Run payables in Xero", Simulated Xero badge), `billing-payables-result`,
   `billing-open-ledger`. Review, opened from the monitor: `review-back-to-billing`. The invoice rail:
   `invoice-waiting-for-xero`, `invoice-xero-flag`, `invoice-open-billing-monitor`.
@@ -2823,9 +2827,9 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   (on the Billing monitor with a link "Open AA-..."); on the Billing monitor it targets Sarah Mitchell's invoice and is
   disabled "Stage post-op scenario first" before `stage-post-op`; elsewhere disabled "Already paid out", "Invoice
   credited", "Credit waiting for review", "Not handed off to Xero" or "AA fee and prepayment invoices are not credited
-  here". The Billing monitor now has eight entries: `billing-failure`, `arm-handoff-fault`, `xero-outage-start`,
-  `xero-outage-restore`, `run-reconciliation-poll`, `run-archive-job`, `run-next-billing-run` and
-  `stage-refund-after-payout`. `run-next-billing-run` also issues approved credits: its message counts credit notes and
+  here". The Billing monitor has ten entries: `billing-failure`, `arm-handoff-fault`, `xero-outage-start`,
+  `xero-outage-restore`, `run-reconciliation-poll`, `run-archive-job`, `run-next-billing-run`, `stage-payment-week`,
+  `stage-bank-mismatch` and `stage-refund-after-payout`. `run-next-billing-run` also issues approved credits: its message counts credit notes and
   invoices, numbers in brackets. The PWA-only `office-reviews-credit` ("Office reviews this credit", badged Office
   stand-in, a mobile Booking) approves the oldest credit awaiting review on the Booking with its new invoices and issues
   it in a run narrowed to it: "Approved by the office and issued in the next billing run (CN-2026-0001)."; disabled "No
@@ -2851,8 +2855,8 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   changed directly in Xero." or "Reconciliation poll ran: nothing missed and nothing changed in Xero." (during an
   outage it waits in the queue). Payables are paid in Xero: the Billing monitor's "Run payables in Xero"
   (`billing-run-payables-in-xero`, Simulated Xero badge) is a product button, not a demo action, and the engine
-  records each disbursement from the bill-paid webhook or the poll. The PWA stand-in `pwa-office-runs-payables` is
-  labelled "Office runs payables in Xero". `inject-unmatched-receipt` also runs on Admin Day (it puts the
+  records each disbursement from the bill-paid webhook or the poll. The PWA stand-in `pwa-office-runs-payables` reads
+  "Office runs this week's payment cycle" (since catch-up Phase 39a). `inject-unmatched-receipt` also runs on Admin Day (it puts the
   Reconciliation card out of balance).
 
 - Catch-up Phase 36: "Inject unmatched receipt" (`inject-unmatched-receipt`, bar only) on the Ledger, with
@@ -2862,7 +2866,7 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   the payment entries' choices are the open receivables with a Xero ACCREC ("AA-2026-0002 · payer · $x"),
   defaulting to the first, and are disabled "No open invoice in Xero" when none is open. `arm-handoff-fault`
   means the next authorise still makes every pair; since catch-up Phase 37 the failed hand-off waits in the Xero
-  sync queue (see above). The PWA-only `pwa-office-runs-payables` ("Office runs payables in Xero" since Phase 37,
+  sync queue (see above). The PWA-only `pwa-office-runs-payables` ("Office runs this week's payment cycle" since Phase 39a,
   office stand-in) on Mobile Balances pays out what is due to Dr Souter (disabled "Nothing due to pay out", as it is
   at reset). There is no "Run payables" demo action: "Run payables in Xero" is the Billing monitor's own button.
 
@@ -2872,7 +2876,7 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
 - Catch-up Phase 20: the PWA-only "Office sets this Booking's Contract"
   (`[data-shot=pwa-demo-action-office-sets-booking-contract]`) on a mobile Booking with a Procedure that
   needs an invoice destination sets the List's hospital's first Contract on offer, else No contract ·
-  RVG, as the office. "Fire hospital message" now notes the new Booking arrives with no Contract.
+  RVG, as the office. A Booking created from a hospital row arrives with no Contract.
 
 Since catch-up Phase 14 every demo action lives **on its own screen**, in the harness bar's
 "Demo actions" menu (`[data-shot=demo-actions]`, shown only where the screen registers entries),
@@ -2885,21 +2889,133 @@ and in the installed PWA's "Demo" sheet. The registry is
 - Clock buttons: "+15 min", "+1 hour", "Next day", "Next morning", "+7 days" and "Procedure day
   · 28 Jul".
 - "Reset demo data", then "Confirm reset".
-- Scenario jumps (the `scenario` step).
+- "Scenario jumps · S1 to S5" (the `scenario` step), each followed after its jump by its beats, one link per beat.
 - "Demo actions by screen" (`[data-shot=control-demo-index]`): each entry's row
   (`[data-shot=index-<id>]`) with an "Open screen" button.
 
-**Scenario jumps.** Use the `{ "scenario": "Sn" }` step. Every jump resets first.
+**Scenario jumps** (`aa-prototype/src/apps/demo/demoScenarios.ts`, `DEMO_SCENARIOS`). Use the `{ "scenario": "Sn" }`
+step: it opens `/demo/control`, clicks `scenario-sn`, then `scenario-confirm`. Every jump resets to the pristine seed
+first (the framed reset: the sign-in session forgotten, the first-run hint dismissals kept), then stages only what its
+scenario cannot reach from there, through the product's own guarded store actions. The same jump always gives the
+same data.
 
-| Scenario | What the jump does | Story |
+Hooks on `/demo/control`: each scenario's block `[data-scenario=S1]` to `[data-scenario=S5]`; its Jump button
+`scenario-s1` to `scenario-s5`; the confirm button `scenario-confirm` ("Confirm jump", beside Cancel); after the jump
+the result notice `scenario-result` (the staging message, `role=status`); inside it, on a successful jump, the beats
+list `scenario-beats`, one link button per beat `scenario-beat-<n>` (1-based, run-sheet order, labelled "Beat n ·
+<screen>"; disabled while its target does not exist yet, and the label says what it waits for) and beside it the
+beat's steps `scenario-beat-<n>-steps`. A beat link reads its path from the store when clicked, so after a live
+action (an import, an authorise) it lands on what that action made.
+
+| Scenario | What the jump stages | Story (its beats) |
 |---|---|---|
-| S1 · Booking to theatre | Reset only. | On Admin, Intake, Matching (`/admin/intake/matching`), Import hospital file `SAMPLE_STG` and create Sarah Mitchell's Booking (R1, "Create Booking", her text `lap appy ?conv to open`); she then appears on Souter Tue 28 Jul AM, and her Contract is answered on the rail (No contract · RVG). No MSG-STG-1001, sync or default Contract (catch-up Phase 34). On the PWA, `matching-office-matches-row` (S1 choice "St George's file, Tue 28 Jul AM (S1)") plays it. |
-| S2 · Office day | Reset only. | Admin work. |
-| S3 · Money end to end | Reset, then checks both Souter Mon 20 lists are SUBMITTED. | Authorise them in `/admin/review/...`. Billing then gives AA-2026-0005 in Xero (nib, $152.38, its share of the fee-split Booking) and emails every invoice. |
-| S4 · Exceptions | Reset only. | Admin Day, then Invoices and Mobile. Beat 1 is the prepayment: Riley's $1,200.00 (Dr Souter's Fri 24 Jul AM, prepaid Rhinoplasty) awaits approval; the office approves and sends it on `/admin/invoices` (Approve and send), the patient pays (`payment-full` / `payment-half`), and Nair is the paid, mixed case whose rhinoplasty is left off the final invoice. |
-| S5 · Compliance tour | Reset, three audited edits on David Chen's booking, then authorises Whitaker Fri 17, which raises invoices. | Admin audit and Xero. |
+| S1 · Booking to theatre | Reset only: "Reset to the pristine seed; nothing staged." | Seven beats: Mobile sign-in (`/mobile/more`); Admin Intake, Matching (`/admin/intake/matching`): Import hospital file (St George's, `SAMPLE_STG`), then Create Booking on Sarah Mitchell's row (R1, her text `lap appy ?conv to open`); Admin Day: open her Booking from Needs an invoice destination and set its Contract on the step rail (it arrives with none; No contract · RVG is the usual answer); her Admin Booking (the wording as received and each description); the Mobile List Tue 28 Jul AM (`L-34821-2026-07-28-AM`) after "Procedure day · 28 Jul"; her Mobile Booking (capture, Mark complete, submit); Mobile search `/mobile/lists?q=Mitchell`. Beats 4 and 6 are disabled until her Booking exists. No hospital message: S1 never fires `fire-hospital-message`, which since catch-up Phase 34 is only on the Future scope pages. On the PWA, `matching-office-matches-row` (choice "St George's file, Tue 28 Jul AM (S1)") plays the import and match. |
+| S2 · Office day | Reset only. | Eight beats, mostly Admin: Admin Day; its to-do list (`raise-sample-warnings`); Recurring bookings (`stage-recurring-clash`, then assign the Draft List); Conflicts (`simulate-sickness`); Mobile Lists (return a List to the office; on Admin Day `colleague-moves-list-to-office`); Lachlan Robinson's Mobile Booking on Souter Wed 22 Jul AM (Move to a colleague); Admin Notifications; Admin Review of Dr Morrison's Mon 20 Jul List (`/admin/review/L-25490-2026-07-20-AM`, Authorise for billing). |
+| S3 · Money end to end | Reset, then checks that Dr Souter's Mon 20 Jul AM and PM Lists (`L-34821-2026-07-20-AM`, `-PM`) are both SUBMITTED in the Review queue; the jump fails with a warning if not. Nothing else is staged. | Seven beats: authorise the AM List, then the PM List, on `/admin/review/...` (AM first keeps AA-2026-0002 to 0004 on Holt's; see the Phase 22 seed notes); the $0 no-charge Booking's Review (Mon 13 Jul); the Xero pair of AA-2026-0005 (nib's $152.38 share of the fee-split Booking; disabled until authorised); the Billing monitor (payment in, payout); the weekly payment run (`stage-payment-week`); AA fee invoices (`seed-month-of-bctis`, Run monthly fee invoices); the Ledger (`inject-unmatched-receipt`). Billing emails every invoice. |
+| S4 · Exceptions | Reset only. | Eight beats: Riley's prepayment on her Admin Booking (`BK0034`, Dr Souter's Fri 24 Jul AM, prepaid Rhinoplasty $1,200.00: Approve, Approve and send, `payment-half`); the Fri 24 Jul PM List's Review once Dr Souter submits it (Nair's transfer; disabled until submitted); Nair's Admin Booking (`BK0038`, Cancel booking); Dr Sharma's Tue 14 Jul AM Review (`stage-post-op`); Sarah Mitchell's Admin Booking there once authorised (Create additional invoice, `run-next-billing-run`); the Billing monitor (`billing-failure`, Retry now); her invoice (`stage-refund-after-payout`, Credit in full and rebill); Admin Day (`prepayment-two-days-before`). |
+| S5 · Compliance tour | Reset, then on David Chen's Booking (`overriddenTimeUnitsBooking`, `BK0008`): Dr Souter claims the RVG modifier AS3 (ASA III, with its explanation), Kirsty W. saves his note and a time 15 minutes later as one change set, and Dr Souter removes AS3, so his fee ends where it started; then authorises Dr Whitaker's Fri 17 Jul List (`L-36208-2026-07-17-AM`), which locks each Procedure's pricing and raises its invoices, so `INV0002` is AA-2026-0002 (Hemi Walker's). | Five beats: David Chen's Admin Booking History (View as at on Kirsty W.'s save); Patients, Waiting for NHI (`receive-no-nhi-list`, `nhi-hub-mode`); the Data inspector (`scan-nhi-leaks`); Master data, Contracts (Health NZ agreed rate, its History); Hemi Walker's invoice `/admin/invoices/INV0002` (`regenerate-invoice` after a unit-value edit). |
 
-**Demo actions by screen** (`trigger` ids)
+**Demo actions by screen** (generated from `aa-prototype/src/shared/demoTriggers/registry.ts`, 88 entries: 55 bar
+only, 24 PWA only, 9 both; badges Future scope 3, Office stand-in 19, Colleague stand-in 3). Grouped and ordered as
+the Control Panel index (`groupTriggersByScreen`): an entry with `alsoScreens` is listed under each of its headings.
+"Bar" entries run with the `trigger` step on :5173 after a `goto` to a matching route; "PWA" entries are in the
+handset's Demo sheet only, so a `trigger` step for them works only in a mobile shot (:5174). An entry with a `when`
+gate shows on a matching route only when its condition holds (see the notes below).
+
+| Screen (index heading) | id | Label | Shows in | Badge | Routes (`matchPath`) |
+|---|---|---|---|---|---|
+| Admin · Billing monitor | `billing-failure` | Trigger billing failure | Bar |  | `/admin/billing` |
+|  | `arm-handoff-fault` | Arm handoff failure | Bar |  | `/admin/billing`, `/admin/ledger`, `/admin/ledger/anaesthetists/:anaesthetistId` |
+|  | `xero-outage-start` | Simulate Xero outage | Bar |  | `/admin/billing`, `/demo/xero`, `/demo/xero/invoices`, `/demo/xero/invoices/:accRecId`, `/demo/xero/bank` |
+|  | `xero-outage-restore` | Restore Xero | Bar |  | `/admin/billing`, `/demo/xero`, `/demo/xero/invoices`, `/demo/xero/invoices/:accRecId`, `/demo/xero/bank` |
+|  | `run-reconciliation-poll` | Run reconciliation poll | Bar |  | `/admin/billing`, `/demo/xero`, `/demo/xero/invoices`, `/demo/xero/invoices/:accRecId`, `/demo/xero/bank` |
+|  | `run-archive-job` | Run archive job | Bar |  | `/admin/billing`, `/demo/xero`, `/demo/xero/invoices`, `/demo/xero/invoices/:accRecId`, `/demo/xero/bank`, `/admin/ledger`, `/admin/ledger/anaesthetists/:anaesthetistId` |
+|  | `run-next-billing-run` | Run the next billing run | Bar |  | `/admin/billing`, `/admin/review` |
+|  | `stage-payment-week` | Stage a payment week | Bar |  | `/admin/billing` |
+|  | `stage-bank-mismatch` | Stage a bank mismatch | Bar |  | `/admin/billing` |
+|  | `stage-refund-after-payout` | Stage refund after payout (also listed under Admin · Invoice) | Bar |  | `/admin/billing`, `/admin/invoices/:invoiceId` |
+| Admin · Ledger | `inject-unmatched-receipt` | Inject unmatched receipt | Bar |  | `/admin/ledger`, `/admin/ledger/anaesthetists/:anaesthetistId`, `/admin/day/:dateISO` |
+| Admin · Audit | `simulate-sign-in` | Simulate sign-in attempts | Bar |  | `/admin/audit` |
+| Admin · Booking detail | `hospital-description-arrives` | Hospital description arrives | Bar |  | `/admin/day/:dateISO/bookings/:bookingId` |
+|  | `prepayment-late-payment` | Payment arrives after the credit note | Bar |  | `/admin/day/:dateISO/bookings/:bookingId` |
+|  | `prepayment-contract-changed` | Change Contract after prepayment sent | Bar |  | `/admin/day/:dateISO/bookings/:bookingId` |
+| Admin · Review and Booking detail; Mobile and Web · Lists and Booking | `stage-post-op` | Stage post-op scenario | Bar and PWA |  | `/admin/review/:listId`, `/admin/day/:dateISO/bookings/:bookingId`, `/mobile/lists`, `/mobile/lists/:listId`, `/mobile/lists/:listId/bookings/:bookingId`, `/web/lists`, `/web/lists/:listId`, `/web/lists/:listId/bookings/:bookingId` |
+| Admin · Invoices | `stage-combined-procedure` | Stage combined procedure | Bar |  | `/admin/invoices` |
+| Admin · Intake | `pdf-list-resend` | Receive updated PDF from rooms | Bar |  | `/admin/intake/pdfs` |
+|  | `matching-receive-theatre-list` | Import hospital file | Bar |  | `/admin/intake/matching` |
+|  | `matching-send-update` | Send update for a matched Booking | Bar |  | `/admin/intake/matching` |
+| Admin · Invoice | `regenerate-invoice` | Regenerate from locked data | Bar |  | `/admin/invoices/:invoiceId` |
+|  | `stage-refund-after-payout` | Stage refund after payout | Bar |  | see Admin · Billing monitor |
+| Admin · Invoice and Booking detail | `payment-full` | Payment received · full | Bar |  | `/admin/invoices/:invoiceId`, `/demo/xero/invoices/:accRecId`, `/admin/day/:dateISO/bookings/:bookingId`, `/admin/ledger`, `/admin/ledger/anaesthetists/:anaesthetistId` |
+|  | `payment-half` | Payment received · half | Bar |  | `/admin/invoices/:invoiceId`, `/demo/xero/invoices/:accRecId`, `/admin/day/:dateISO/bookings/:bookingId`, `/admin/ledger`, `/admin/ledger/anaesthetists/:anaesthetistId` |
+|  | `payment-replay` | Replay last payment event | Bar |  | `/admin/invoices/:invoiceId`, `/demo/xero/invoices/:accRecId`, `/admin/day/:dateISO/bookings/:bookingId`, `/admin/ledger`, `/admin/ledger/anaesthetists/:anaesthetistId` |
+| Admin · AA fee invoices | `run-scheduled-fee-run` | Run scheduled month-end fee run | Bar |  | `/admin/billing/aa-fees` |
+|  | `seed-month-of-bctis` | Seed a month of BCTIs | Bar |  | `/admin/billing/aa-fees` |
+| Xero simulation · AA fee pair | `record-fee-payment` | Record fee payment | Bar |  | `/demo/xero/invoices/:accRecId` |
+| Xero simulation · pair | `xero-amend-invoice` | Edit this invoice's total in Xero | Bar |  | `/demo/xero/invoices/:accRecId` |
+|  | `xero-void-invoice` | Void this invoice in Xero | Bar |  | `/demo/xero/invoices/:accRecId` |
+|  | `xero-pay-bill` | Pay anaesthetist in Xero (payables run) | Bar |  | `/demo/xero/invoices/:accRecId` |
+| Xero simulation · invoices | `xero-bulk-remittance` | Simulate bulk hospital remittance | Bar |  | `/demo/xero/invoices`, `/demo/xero/bank` |
+| Mobile · List | `office-authorises-list` | Office authorises this List | PWA | Office stand-in | `/mobile/lists/:listId`, `/mobile/lists/:listId/bookings/:bookingId` |
+|  | `photo-capture-future` | Photo capture (Future scope) | Bar and PWA | Future scope | `/mobile/lists/:listId` |
+|  | `pwa-office-adds-nhi` | Office adds the NHI (also listed under Mobile · Booking) | PWA | Office stand-in | `/mobile/lists/:listId`, `/mobile/lists/:listId/bookings/:bookingId` |
+| Mobile · Booking | `office-reviews-additional-invoice` | Office reviews this event | PWA | Office stand-in | `/mobile/lists/:listId/bookings/:bookingId` |
+|  | `office-reviews-credit` | Office reviews this credit | PWA | Office stand-in | `/mobile/lists/:listId/bookings/:bookingId` |
+|  | `office-approves-contract-change` | Office approves this Contract change | PWA | Office stand-in | `/mobile/lists/:listId/bookings/:bookingId` |
+|  | `pwa-office-approves-prepayment` | Office approves and sends the prepayment invoice | PWA | Office stand-in | `/mobile/lists/:listId/bookings/:bookingId` |
+|  | `pwa-office-sends-prepayment-reminder` | Office sends a prepayment reminder | PWA | Office stand-in | `/mobile/lists/:listId/bookings/:bookingId` |
+|  | `office-clears-warning` | Office clears this warning | PWA | Office stand-in | `/mobile/lists/:listId/bookings/:bookingId` |
+|  | `office-sets-booking-contract` | Office sets this Booking's Contract | PWA | Office stand-in | `/mobile/lists/:listId/bookings/:bookingId` |
+|  | `pwa-office-adds-nhi` | Office adds the NHI | PWA | Office stand-in | see Mobile · List |
+| Mobile · Lists | `office-assigns-next-free` | Office assigns a List to my next free session | PWA | Office stand-in | `/mobile/lists` |
+|  | `office-adds-out-of-hours-list` | The office adds an out-of-hours List for me tonight | PWA | Office stand-in | `/mobile/lists` |
+|  | `office-assigns-draft-list` | Office assigns a Draft List to me | PWA | Office stand-in | `/mobile/lists` |
+|  | `colleague-moves-booking-to-me` | Colleague moves a Booking to me | PWA | Colleague stand-in | `/mobile/lists`, `/mobile/lists/:listId`, `/mobile/lists/:listId/bookings/:bookingId` |
+| Mobile · My calendar, the day last opened | `availability-office-sets-public` | Office sets this session to Public | PWA | Office stand-in | `/mobile/availability/calendar` |
+| Admin · Day view and Conflicts | `simulate-sickness` | Simulate sickness | Bar |  | `/admin/day/:dateISO`, `/admin/conflicts` |
+| Admin · Assign Draft List and Reassign pickers | `ask-colleague-make-available` | Ask a colleague to make their session available | Bar | Colleague stand-in | `/admin/day/:dateISO`, `/admin/draft-lists`, `/admin/conflicts` |
+| Mobile · List and Booking | `office-resolves-alert` | Office resolves this alert | PWA | Office stand-in | `/mobile/lists/:listId`, `/mobile/lists/:listId/bookings/:bookingId` |
+| Admin · Day view and Notifications | `colleague-moves-list-to-office` | Colleague moves a List to the office | Bar |  | `/admin/day/:dateISO`, `/admin/notifications` |
+| Mobile · Availability | `colleague-moves-list-to-me` | Colleague moves a List into my free session | PWA | Colleague stand-in | `/mobile/availability` |
+| Admin · Day view | `colleague-hands-booking-to-souter` | Colleague hands a Booking to Dr Souter | Bar |  | `/admin/day/:dateISO` |
+|  | `add-draft-list-for-day` | Add Draft List for this day | Bar |  | `/admin/day/:dateISO` |
+| Admin · Draft Lists | `simulate-incoming-request` | Simulate incoming request | Bar |  | `/admin/draft-lists` |
+| Admin · Master data, Contracts | `demo-backdated-range` | Demo: add a backdated price range | Bar |  | `/admin/masters` |
+| Admin · Master data, Recurring bookings | `stage-recurring-clash` | Stage recurring clash | Bar |  | `/admin/masters` |
+| Admin · Master data | `load-sample-spreadsheet` | Load sample spreadsheet | Bar |  | `/admin/masters` |
+|  | `go-live-data-load` | Go-live data load (demo) | Bar |  | `/admin/masters` |
+| Admin · Review | `stage-longer-prepaid-procedure` | Stage longer prepaid procedure | Bar |  | `/admin/review/:listId` |
+| Admin · Day and Booking detail, Mobile · Booking | `prepayment-two-days-before` | Move to 2 days before procedure | Bar and PWA |  | `/admin/day/:dateISO`, `/admin/day/:dateISO/bookings/:bookingId`, `/mobile/lists/:listId/bookings/:bookingId` |
+|  | `raise-sample-warnings` | Raise sample warnings | Bar and PWA |  | `/admin/day/:dateISO`, `/admin/day/:dateISO/bookings/:bookingId`, `/mobile/lists/:listId/bookings/:bookingId` |
+|  | `clear-sample-warnings` | Clear sample warnings | Bar and PWA |  | `/admin/day/:dateISO`, `/admin/day/:dateISO/bookings/:bookingId`, `/mobile/lists/:listId/bookings/:bookingId` |
+| Admin · Day and Booking detail | `add-prepaid-booking` | Add prepaid Booking | Bar |  | `/admin/day/:dateISO`, `/admin/day/:dateISO/bookings/:bookingId` |
+| Mobile · Lists and the Booking screen | `matching-office-matches-row` | Hospital file imported and my booking matched | PWA | Office stand-in | `/mobile/lists`, `/mobile/lists/:listId`, `/mobile/lists/:listId/bookings/:bookingId` |
+| Mobile · List detail | `stub-office-adds-nhi` | Office adds the NHI to this stub | PWA | Office stand-in | `/mobile/lists/:listId` |
+| Admin · Patients · Waiting for NHI | `receive-no-nhi-list` | Receive list with a missing NHI | Bar |  | `/admin/patients/waiting` |
+| Future scope: HL7 and FHIR | `fire-hospital-message` | Fire hospital message | Bar | Future scope | `/demo/integrations`, `/demo/integrations/log`, `/demo/integrations/mapping` |
+|  | `replay-hospital-message` | Replay last message (dedupe) | Bar | Future scope | `/demo/integrations`, `/demo/integrations/log`, `/demo/integrations/mapping` |
+| Mobile · Balances | `pwa-office-runs-payables` | Office runs this week's payment cycle | PWA | Office stand-in | `/mobile/balances` |
+| Mobile · Balances and Booking | `pwa-payment-full` | Payment received · full | PWA |  | `/mobile/balances`, `/mobile/lists/:listId/bookings/:bookingId` |
+|  | `pwa-payment-half` | Payment received · half | PWA |  | `/mobile/balances`, `/mobile/lists/:listId/bookings/:bookingId` |
+| Web · Dashboard and Accounts | `web-payment-full` | Payment received · full | Bar |  | `/web`, `/web/accounts/:subTab` |
+|  | `web-payment-half` | Payment received · half | Bar |  | `/web`, `/web/accounts/:subTab` |
+| List and Booking detail | `load-multi-procedure-booking` | Load 3-procedure Booking (7 modifier units) | Bar and PWA |  | `/mobile/lists/:listId`, `/mobile/lists/:listId/bookings/:bookingId`, `/web/lists/:listId`, `/web/lists/:listId/bookings/:bookingId`, `/admin/day/:dateISO/bookings/:bookingId` |
+| Booking detail | `feed-changes-primary` | Hospital feed changes the primary | Bar and PWA |  | `/mobile/lists/:listId/bookings/:bookingId`, `/web/lists/:listId/bookings/:bookingId`, `/admin/day/:dateISO/bookings/:bookingId` |
+| Admin · Day view and Booking detail | `switch-office-user` | Switch office user | Bar |  | `/admin/day/:dateISO`, `/admin/day/:dateISO/bookings/:bookingId` |
+| Mobile · Booking detail | `office-edits-booking` | Office edits this Booking | PWA | Office stand-in | `/mobile/lists/:listId/bookings/:bookingId` |
+| Admin · Day view and Invoices | `load-full-scale` | Load full-scale data | Bar |  | `/admin/day/:dateISO`, `/admin/invoices`, `/admin/invoices/:invoiceId` |
+| Demo · Data inspector | `scan-nhi-leaks` | Scan for NHI leaks | Bar |  | `/demo/data` |
+| Admin · Intake, Matching | `matching-raw-row-other-role` | View raw row as another role | Bar |  | `/admin/intake/matching` |
+| Add booking, and Admin · Patients | `nhi-hub-mode` | Hub: Available / Slow / Unavailable | Bar and PWA |  | `/mobile/lists`, `/mobile/lists/:listId`, `/mobile/lists/:listId/bookings/:bookingId`, `/web/lists/:listId`, `/admin/day/:dateISO`, `/admin/draft-lists`, `/admin/patients`, `/admin/patients/waiting`, `/admin/patients/:nhi` |
+| Mobile · any screen | `pwa-sign-out` | Sign out | PWA |  | `/mobile`, `/mobile/*` |
+|  | `support-help-line-responds` | Help line responds to this request | PWA |  | `/mobile`, `/mobile/*` |
+| All apps | `show-first-run-hints` | Show first-run hints again | Bar and PWA |  | `/mobile`, `/mobile/*`, `/web`, `/web/*`, `/admin`, `/admin/*` |
+| All apps · Help | `support-advance-ticket` | Advance ticket | Bar |  | `/mobile`, `/mobile/*`, `/web`, `/web/*`, `/admin`, `/admin/*` |
+|  | `support-raise-out-of-hours` | Raise out of hours | Bar |  | `/mobile`, `/mobile/*`, `/web`, `/web/*`, `/admin`, `/admin/*` |
+|  | `support-raise-public-holiday` | Raise ticket on a public holiday | Bar |  | `/mobile`, `/mobile/*`, `/web`, `/web/*`, `/admin`, `/admin/*` |
+|  | `support-approve-call-out` | AA approves call-out | Bar | Office stand-in | `/mobile`, `/mobile/*`, `/web`, `/web/*`, `/admin`, `/admin/*` |
+
+**Recipe notes by trigger** (what each does, its choices, disabled reasons and the pattern a recipe follows)
 
 | Screen (`goto`) | ids | Notes |
 |---|---|---|
@@ -2908,7 +3024,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/admin/invoices/<invoiceId>` | `regenerate-invoice` | Catch-up Phase 25, "Regenerate from locked data". Rebuilds the invoice on screen from its Booking's lock and compares it with the invoice as stored, read-only: the result shows under the Locked record card as `[data-shot=invoice-regenerated]`, `data-identical="true"` with "Regenerated from locked data: identical (n lines, total $x)", or the differences. Disabled on prepayment and AA fee invoices and on an invoice with no lock. Stage an edit first (a Contract edit, a backdated range, a unit-value edit) to show it holds; US-08.4.4 shows the pattern (S3 AM authorise, a unit-value edit, open AA-2026-0002, trigger) |
 | `/demo/xero`, `/demo/xero/invoices[/<accRecId>]`, `/demo/xero/bank` | `xero-outage-start`, `xero-outage-restore`, `run-reconciliation-poll`, `run-archive-job` | Catch-up Phase 37 adds the outage pair and `/demo/xero/bank`. While the outage is on, every tab shows `xero-outage-banner`. The poll's result line reports missed payments, missed bill payments and invoices changed directly in Xero |
 | `/demo/xero/invoices/<accRecId>` (a procedure pair) | `xero-void-invoice`, `xero-amend-invoice`, `xero-pay-bill` (choice `deliver` or `missed`) | Catch-up Phase 37, bar only, acting as AA staff or Xero on the pair in the URL. Void: disabled once a payment is applied; the engine learns at the next poll, which flags it on the Billing monitor (`billing-xero-divergence`, "Voided in Xero" against "Receivable open"). Amend: the total $20.00 lower in Xero; the poll flags "Amended in Xero". Pay bill: Xero's payables run pays this pair's bill; `deliver` records the disbursement at once ("disbursement recorded HH:mm by webhook"), `missed` leaves the engine "not yet detected" until `run-reconciliation-poll` records it "by the poll", dated at the bill payment; disabled "Nothing authorised to pay yet" until the receivable is paid in (so not on the seeded history pairs `XRH..`, whose payments the demo cannot send: use AA-2026-0002 after the S3 AM authorise and `payment-full`, as US-09.2.4 does). Hidden on an AA fee pair |
-| `/demo/xero/invoices`, `/demo/xero/bank` | `xero-bulk-remittance` | Catch-up Phase 37, bar only. St George's pays Dr Souter's aged `XRH01` and `XRH03` in one deposit, matched by the add-on and learned by the engine by webhook, and a $980.00 line quoting AA-2026-H40 (meant for AA-2026-H04, `XRH04`) left unmatched on `/demo/xero/bank`. Disabled once run (those invoices are paid) |
+| `/demo/xero/invoices`, `/demo/xero/bank` | `xero-bulk-remittance` | Catch-up Phase 37, bar only. St George's pays Dr Souter's aged `XRH01` and `XRH03` with one bank payment, matched by the add-on and learned by the engine by webhook, and a $980.00 line quoting AA-2026-H40 (meant for AA-2026-H04, `XRH04`) left unmatched on `/demo/xero/bank`. Disabled once run (those invoices are paid) |
 | `/demo/xero/invoices/<accRecId>` of an AA fee pair | `record-fee-payment` | Only on a fee pair; the payment triggers below are hidden there |
 | `/admin/billing/aa-fees` | `run-scheduled-fee-run`, `seed-month-of-bctis` | The scheduled run raises the month in the picker as the system actor; "Run monthly fee invoices" is the screen's own product button |
 | `/admin/review/L-41267-2026-07-14-AM` or that List's Booking detail; `/web/lists`, `/web/lists/<listId>`, `/web/lists/<listId>/bookings/<id>`; `/mobile/lists[...]` (bar and the PWA Demo sheet) | `stage-post-op` ("Stage post-op scenario") | On Admin shown only for Dr Sharma's Tue 14 AM List; on the anaesthetist's Lists and Booking screens always. Two halves, each idempotent: 38b's authorises and bills Dr Sharma's List (no addendum Booking), leaving Sarah Mitchell's BK0032 invoiced and offering the additional invoice button; catch-up Phase 39b's stages Dr Souter's SUBMITTED ACL reconstruction for Coral Bennett on Wed 15 Jul PM at St George's (Mr T. Hale, `CT-STG-ACC`), a new runtime List and Booking, so it also adds a List to Admin Review's queue and a Booking to Dr Souter's Lists and search. Message: "Staged. Search Bennett, open Wednesday's Booking and use Add pre-op or post-op event. Sarah Mitchell's Tue 14 Jul List is authorised and billed for Create additional invoice." Disabled "Already staged: search Bennett and open Wednesday's Booking" once both are done. US-03.7.1 shows the pattern (`setup` on `/web/lists` or `/mobile/lists`, `start` `?q=Bennett`) |
@@ -2937,7 +3053,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 | `/admin/day/<date>`, `/admin/day/<date>/bookings/<bookingId>` | `switch-office-user` | Catch-up Phase 35, bar only, no choice. Swaps the Admin app's office user between Kirsty W. and Sam T. ("The office is now Sam T."), so two users' saves show named in one Booking's History (US-02.5.8 stages it after a first save). Disabled "Save or discard this Booking's changes first" while the Booking draft has unsaved changes. Not on other Admin screens |
 | `/mobile/lists/<listId>/bookings/<bookingId>` (PWA Demo sheet only) | `office-edits-booking` | Catch-up Phase 35, badged Office stand-in, PWA only. Kirsty W. saves one change set on this Booking, its time 30 minutes later; the phone shows the office's save and History the grouped row. In the framed build make the change in Admin and save it |
 | `/mobile/lists`, `/mobile/lists/<listId>`, `/mobile/lists/<listId>/bookings/<bookingId>` (PWA Demo sheet) | `colleague-moves-booking-to-me` (choice by its label, e.g. "Dr Hughes · Wed 22 Jul PM · Christchurch Eye Surgery") | Catch-up Phase 32a, badged "Colleague stand-in". A colleague hands her one Booking as a new List in a session she is free in; a session she is not available in (Fri 31 Jul AM, `BK0162`) is offered once she sets it available. PWA only |
-| `/mobile/availability/calendar` (PWA Demo sheet, after a day has been opened and closed in My calendar: it acts on the last day opened) | `availability-office-sets-public` ("Office sets this session to Public", `[data-shot=pwa-demo-action-availability-office-sets-public]`) | Catch-up Phase 32d, PWA only (port 5374). Acts on the AM or PM of the open day: the office sets that session to Public. |
+| `/mobile/availability/calendar` (PWA Demo sheet, after a day has been opened and closed in My calendar: it acts on the last day opened) | `availability-office-sets-public` ("Office sets this session to Public", `[data-shot=pwa-demo-action-availability-office-sets-public]`) | Catch-up Phase 32d, PWA only (:5174). Acts on the AM or PM of the open day: the office sets that session to Public. |
 | `/mobile/availability` (PWA Demo sheet) | `colleague-moves-list-to-me` | Catch-up Phase 32, badged "Colleague stand-in". A colleague hands a List into Dr Souter's free session (from the pristine seed, Morrison's Wed 22 PM Southern Cross into her Wed 22 PM); the Moved to you panel and Forward Lists' "New" follow. PWA only |
 | `/admin/day/<date>`, `/admin/conflicts` | `simulate-sickness` (choice: `<listId>|office` or `<listId>|colleague`) | Catch-up Phase 30, re-pointed in 32b. The office records a phoned-in sickness on the chosen List's session (Unavailable, note "Unwell, short notice (phoned in, simulated)") and, in the same step, the List goes back to the Draft Lists or to the first open colleague in the office's order; never a conflict. Choices are the day in the URL (on Conflicts, today), Lists with Bookings first. Disabled "Already unavailable" on a closed session. Bar only |
 | `/admin/day/<date>`, `/admin/draft-lists`, `/admin/conflicts` (only while an Assign or Reassign picker is open) | `ask-colleague-make-available` (choice: a closed session id) | Catch-up Phase 32b, badged Colleague stand-in. Plays the anaesthetist freeing their own closed, empty session (Free, as themselves), so the picker row becomes assignable. Shots use the inline copy on the row, `[data-candidate-closed=<reg>] [data-shot=demo-action-ask-colleague-make-available-inline]`, since the dialog's scrim covers the bar. |
@@ -3020,7 +3136,8 @@ until `{ "trigger": "office-authorises-list" }` runs (US-07.4.1 and US-08.6.1 sh
 
 **Data inspector** (`/demo/data`)
 
-- Seeded scenario finder, audit trail ("Choose a booking"), lifecycle states.
+- Privacy checks (`nhi-scan-panel`, filled by `scan-nhi-leaks`), Today's sessions, Seeded scenario finder, Audit trail
+  ("Choose a booking"), Lifecycle states.
 - Guard console: pick a persona and an action, then "Attempt".
 
 ## Gotchas
@@ -3033,8 +3150,9 @@ until `{ "trigger": "office-authorises-list" }` runs (US-07.4.1 and US-08.6.1 sh
   - A `goto` step inside `setup` reloads the page. Add `{ "wait": 400 }` before it if you just
     mutated state.
   - The move to `start` after setup does not reload, so no wait is needed there.
-- **PWA office simulation.** On :5174, a list submitted on mobile is auto-authorised and billed
-  4s later. Shoot the submitted state within that window, or shoot it on web.
+- **PWA office simulation is off.** "Play the office" (More tab, Office simulation card) is off by default and in every
+  fresh context, so a List submitted on :5174 stays SUBMITTED; move it on with `{ "trigger": "office-authorises-list" }`.
+  Only if a recipe switched it on would the List be authorised and billed about 4s after submit.
 - **Numbers created at runtime vary.** Runtime invoice and Xero numbers depend on the order
   things are authorised. Reach them by clicking rows rather than hard-coding IDs, except
   `INV0001`, `XRB0` and the history ids (`HINV<nn>`, `XRH<nn>`), which are seeded. The S3 invoice numbers are stable

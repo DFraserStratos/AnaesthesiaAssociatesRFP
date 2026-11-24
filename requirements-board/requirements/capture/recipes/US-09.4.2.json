@@ -1,12 +1,12 @@
 {
   "id": "US-09.4.2",
   "status": "partial",
-  "absentReason": "The Xero setting is only described in a note on the simulator; it is not modelled as a configurable or enforced setting (open question OQ-11).",
+  "absentReason": "The setting is described in a note on the Xero simulation, not modelled as a setting the simulation enforces; AA is still to confirm it as a mandated setting.",
   "shots": [
     {
       "name": "duplicate-number-setting",
       "app": "simulator",
-      "caption": "Duplicate invoice number prevention, noted as an open setting: the unique InvoiceNumber is the key Xero's bank reconciliation matches remittances on",
+      "caption": "Duplicate invoice number prevention, described on the Xero simulation: the unique InvoiceNumber is the key Xero's bank reconciliation matches remittances on",
       "start": "/demo/xero",
       "states": [
         {

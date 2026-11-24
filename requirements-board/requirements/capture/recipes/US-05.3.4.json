@@ -1,6 +1,6 @@
 {
   "id": "US-05.3.4",
   "status": "absent",
-  "absentReason": "Retired: removed in Phase 19a",
+  "absentReason": "Retired: removed in Phases 19a and 23. One multi-procedure rule prices every Booking (US-05.3.1).",
   "shots": []
 }

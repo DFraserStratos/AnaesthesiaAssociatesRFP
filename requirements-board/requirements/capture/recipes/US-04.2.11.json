@@ -1,7 +1,7 @@
 {
   "id": "US-04.2.11",
   "status": "partial",
-  "absentReason": "Additional invoices are built (Phase 38b); fee extras billed as events are Phase 39b's.",
+  "absentReason": "The shot shows the combinations on Master data. A fee extra billed as an event is shot on US-03.7.2, an additional invoice on US-08.6.3.",
   "shots": [
     {
       "name": "combination-contracts",

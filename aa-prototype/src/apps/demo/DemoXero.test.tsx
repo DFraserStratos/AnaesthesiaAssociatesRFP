@@ -149,6 +149,26 @@ describe('DemoXero invoice table', () => {
   })
 })
 
+describe('a no-charge pair (catch-up Phase 44 QA)', () => {
+  beforeEach(() => useAppStore.setState(freshAppState()))
+
+  it('reads as complete with no payable: no warning, no payout button, a No charge chip', () => {
+    const unwire = wireBillingRun(useAppStore)
+    try {
+      expect(authoriseList(useAppStore, OFFICE, SEED_LIST_IDS.multiProcedure).ok).toBe(true)
+    } finally {
+      unwire()
+    }
+    const pair = xeroInvoicePairViews(useAppStore.getState()).find((p) => p.noCharge === true)!
+    renderInvoices(`/demo/xero/invoices/${pair.accRec.id}`)
+    expect(screen.queryByText('Incomplete simulated pair')).toBeNull()
+    expect(screen.queryByText('ACCPAY unavailable')).toBeNull()
+    expect(screen.getAllByText('No charge').length).toBeGreaterThan(0)
+    expect(screen.getByTestId('xero-money-flow-grid')).toHaveTextContent('No payable: a no-charge invoice has nothing to pay out and no BCTI.')
+    expect(screen.queryByRole('button', { name: /Pay .* now|Simulate payment/ })).toBeNull()
+  })
+})
+
 describe('DemoXero mirror resilience (catch-up Phase 37)', () => {
   beforeEach(() => {
     useAppStore.setState(freshAppState())

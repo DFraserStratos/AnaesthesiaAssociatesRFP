@@ -168,7 +168,7 @@ const RETIRED_WORDS: readonly RegExp[] = [
   /Insurers? master/i,
   /second pair/i,
   /prepay\w* deduct|deduct\w* .{0,20}prepay/i,
-  /surgeons?'? rooms?|Public (List|kind)|hospital (reference|sync)|Simulate sync|part credit|holder references\b/i,
+  /surgeons?['’]? rooms?|Public (List|kind)|hospital (reference|sync)|Simulate sync|part credit|holder references\b/i,
   /Contract (lines?|versions?)|staged (Contract )?changes?|contract holder|No contract \(RVG\)|Needs a Contract/i,
 ]
 
@@ -176,7 +176,7 @@ const SLOT = /\bslots?\b/i
 
 /** A provisional or to-confirm label: the words a screen uses to mark an open point. */
 const PROVISIONAL_MARKER =
-  /\bprovisional\b|to confirm with AA|being confirmed with AA|awaiting AA's confirmation|still to be (confirmed|agreed|decided)|to be agreed with AA|for AA to (agree|confirm)|\bour reading\b/i
+  /\bprovisional\b|\bTBC\b|still to check|to confirm with AA|being confirmed with AA|awaiting AA's confirmation|still to be (confirmed|agreed|decided)|to be agreed with AA|for AA to (agree|confirm)|\bour reading\b/i
 
 /**
  * The questions not answered at HEAD (2026-11-23, catalogue `questions/`):
@@ -324,14 +324,24 @@ const allowed = (s: CopyString): boolean => ALLOWLIST.some((a) => a.file === s.f
 const mustKept = (s: CopyString): boolean => MUST_KEEP.some((m) => m.file === s.file && m.text !== undefined && (s.text.includes(m.text) || m.text.includes(s.text.trim())))
 const show = (s: CopyString): string => `${s.file}:${s.line}  ${s.text.slice(0, 160)}`
 
+/** Curly quotes read as straight ones, so "AA’s" and "Surgeons’" match the same patterns as "AA's" (Phase 44 review). */
+const plain = (text: string): string => text.replace(/[‘’]/g, "'")
+
+/** Build history and internal ids never show in demo copy (Phase 44 review): "(catch-up Phase 34)", "BK0074". */
+const DEMO_COPY_LEAK = /\bphase \d|\b(BK|INV|LG)\d{4}\b/i
+const isDemoCopyFile = (file: string): boolean =>
+  (file.startsWith('apps/demo/') && !file.startsWith('apps/demo/catalogue/')) || file.startsWith('shared/demoTriggers/')
+
 /** Every way a string can fail the guard: the dash, a stale caveat, a retired word or "slot" in rendered copy. */
-function copyFailures(s: Pick<CopyString, 'kind' | 'text'>): string[] {
+function copyFailures(s: Pick<CopyString, 'kind' | 'text'> & { file?: string }): string[] {
   const failures: string[] = []
-  if (DASH.test(s.text)) failures.push('dash')
-  for (const re of STALE_CAVEATS) if (re.test(s.text)) failures.push(`stale caveat ${re}`)
+  const text = plain(s.text)
+  if (DASH.test(text)) failures.push('dash')
+  for (const re of STALE_CAVEATS) if (re.test(text)) failures.push(`stale caveat ${re}`)
   if (isRenderedCopy(s)) {
-    for (const re of RETIRED_WORDS) if (re.test(s.text)) failures.push(`retired word ${re}`)
-    if (SLOT.test(s.text)) failures.push('slot')
+    for (const re of RETIRED_WORDS) if (re.test(text)) failures.push(`retired word ${re}`)
+    if (SLOT.test(text)) failures.push('slot')
+    if (s.file !== undefined && isDemoCopyFile(s.file) && DEMO_COPY_LEAK.test(text)) failures.push('build history or internal id in demo copy')
   }
   return failures
 }
@@ -410,6 +420,16 @@ describe('the guard catches every plan-time hit (phase doc, Reference list)', ()
     expect(copyFailures({ kind: 'jsx', text }).some((f) => f.startsWith(kind))).toBe(true)
   })
 
+  it('reads curly quotes as straight, and catches build history and ids in demo copy only (Phase 44 review)', () => {
+    expect(copyFailures({ kind: 'jsx', text: 'Surgeons’ rooms email their Lists' }).some((f) => f.startsWith('retired word'))).toBe(true)
+    expect(PROVISIONAL_MARKER.test(plain('Awaiting AA’s confirmation'))).toBe(true)
+    expect(PROVISIONAL_MARKER.test('The unarchive step is TBC in the sandbox')).toBe(true)
+    for (const text of ['Stands in for the office (catch-up Phase 34): it imports', 'Staged on BK0074 unless this one names an insurer']) {
+      expect(copyFailures({ kind: 'string', text, file: 'shared/demoTriggers/registry.ts' })).toContain('build history or internal id in demo copy')
+      expect(copyFailures({ kind: 'string', text, file: 'apps/admin/screens/DayView.tsx' })).toEqual([])
+    }
+  })
+
   it('passes the catalogue words that look alike', () => {
     expect(copyFailures({ kind: 'jsx', text: 'No holder references on the invoice' }).some((f) => f.startsWith('retired word'))).toBe(true)
     for (const text of ['Holder reference code', 'Holder reference', 'Needs an invoice destination', 'No contract · RVG', 'Bank deposit · SOUTER JULY', 'Recurring bookings']) {
@@ -432,7 +452,7 @@ describe('app copy (src and pwa, tests left out)', () => {
   it('labels nothing provisional that is answered: every label cites an open question or is a kept caveat', () => {
     const hits: string[] = []
     for (const s of ALL) {
-      if (!isRenderedCopy(s) || !PROVISIONAL_MARKER.test(s.text)) continue
+      if (!isRenderedCopy(s) || !PROVISIONAL_MARKER.test(plain(s.text))) continue
       const ids = citedIds(s.text)
       const answered = ids.filter((id) => (id.startsWith('OQ-') ? !OPEN_QUESTIONS.has(id) : !OPEN_DECISIONS.has(id)))
       if (answered.length > 0) hits.push(`${show(s)}  [answered: ${answered.join(', ')}]`)
@@ -443,7 +463,7 @@ describe('app copy (src and pwa, tests left out)', () => {
 
   it.each(NAMED_ANSWERED)('%s is never labelled provisional', (id) => {
     const re = new RegExp(`\\b${id}\\b`)
-    expect(ALL.filter((s) => isRenderedCopy(s) && PROVISIONAL_MARKER.test(s.text) && re.test(s.text)).map(show)).toEqual([])
+    expect(ALL.filter((s) => isRenderedCopy(s) && PROVISIONAL_MARKER.test(plain(s.text)) && re.test(s.text)).map(show)).toEqual([])
   })
 
   it('no screen cites a question whose label a phase cleared', () => {

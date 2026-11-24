@@ -86,6 +86,8 @@ export interface XeroInvoicePairView {
     aaFeeMonthISO?: string
   }
   incomplete: boolean
+  /** A $0.00 no-charge invoice (catch-up Phase 24): its receivable only, with no payable leg by design. */
+  noCharge?: true
   /**
    * The engine's correction as Xero shows it (catch-up Phase 39; US-08.6.2
    * "Both sides move"): the ACCRECCREDIT against this ACCREC and the
@@ -273,11 +275,12 @@ export function xeroInvoicePairViews(state: XeroPairState, opts: { accRecIds?: r
           ...(patientName !== undefined ? { patientName } : {}),
           ...(list?.anaesthetistId !== undefined ? { anaesthetistId: list.anaesthetistId } : {}),
         },
+        ...(invoice?.noCharge === true ? { noCharge: true as const } : {}),
         incomplete:
           linkedPair === undefined ||
-          accPay === undefined ||
           payer === undefined ||
-          payee === undefined ||
+          // A no-charge invoice has no payable leg, so no ACCPAY and no payee, by design.
+          (invoice?.noCharge !== true && (accPay === undefined || payee === undefined)) ||
           invoice === undefined,
       }
     })

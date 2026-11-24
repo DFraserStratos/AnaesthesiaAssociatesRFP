@@ -1,6 +1,6 @@
 {
   "id": "US-04.1.6",
   "status": "absent",
-  "absentReason": "Retired: the flat Contract model has no lines, versions or defaults",
+  "absentReason": "Retired: removed in Phase 18. Contracts have no versions to stage: each is edited in place, every change audited (US-04.1.2).",
   "shots": []
 }

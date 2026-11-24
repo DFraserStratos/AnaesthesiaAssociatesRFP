@@ -38,6 +38,20 @@
           ]
         }
       ]
+    },
+    {
+      "name": "contract-rate",
+      "app": "admin",
+      "caption": "A Contract's own rate: the Booking priced at the Contract's agreed $24 per unit instead of Dr Rutherford's $32",
+      "start": "/admin/day/2026-07-09/bookings/BK0031",
+      "states": [
+        {
+          "steps": [],
+          "highlight": [
+            "[data-testid=booking-calculation]"
+          ]
+        }
+      ]
     }
   ]
 }

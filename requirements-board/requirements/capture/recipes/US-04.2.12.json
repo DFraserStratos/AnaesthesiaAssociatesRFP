@@ -1,6 +1,6 @@
 {
   "id": "US-04.2.12",
   "status": "absent",
-  "absentReason": "Retired: splitting is a button on the Booking (US-08.2.3), built in Phase 22; no Contract payment setting.",
+  "absentReason": "Retired: removed in Phase 22. A fee is split with the Split button on the Procedure (US-08.2.3), not a Contract setting.",
   "shots": []
 }
