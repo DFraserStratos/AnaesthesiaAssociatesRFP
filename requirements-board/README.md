@@ -31,12 +31,13 @@ This folder is a **portable kit**, three parts:
 npm install
 npm run dev          # http://localhost:5180 (BOARD_PORT moves it; a worktree's .lane.env sets it)
 npm test             # Vitest: file round-trip, check rules, IDs, the file API, store (incl. undo), board graph, both layouts, move planner
-npm run test:e2e     # Playwright on a fixture catalogue (BOARD_PORT + 2: 5182); BOARD_E2E_REAL=1 adds the live catalogue's checks (BOARD_PORT + 3: 5183, read-only)
-npm run build        # typecheck + bundle (sanity only; the app needs the dev server)
+npm run test:e2e     # Playwright on a fixture catalogue (BOARD_PORT + 2: 5182) and a snapshot of it (BOARD_PORT + 1: 5181); BOARD_E2E_REAL=1 adds the live catalogue's checks (BOARD_PORT + 3: 5183, read-only)
+npm run build        # typecheck + bundle (sanity only; the app needs the dev server, and a hosted copy is a snapshot)
 npm run typecheck    # tsc -b over the app, server, scripts and tests (plain `tsc -p .` checks nothing)
 npm run verify       # typecheck + unit tests + catalogue check + the agent tools' node --test suites: run before handing work back
 npm run check        # validate the catalogue, exit 1 on errors
 npm run export:csv   # regenerate the Miro CSVs (-- --out <dir> to write elsewhere)
+npm run snapshot     # a read-only copy of the board to host for readers outside the team (-- --out "<folder>"); see Sharing a snapshot
 npm run links:index  # compact catalogue index and epic batches for the linking agents (.links/); starts a link run
 npm run links:apply  # apply the latest link run's verified proposals (-- --dry-run first; -- <dir> for another run)
 npm run artifact:new # register a file or a mermaid diagram as an artifact (-- --help)
@@ -107,6 +108,7 @@ shared/        code shared by server, scripts and browser
   highlight.ts   the red box, shared by the capture runner and the artifact viewers
   csv.ts         CSV export in the old generator's shape
   delivery.ts    the `catalogue:changed` delivery: one re-sync's or one write's changes in one message
+  snapshot.ts    a snapshot's data file (`catalogue.json`, `SnapshotInfo`) and where its artifact files sit
 server/
   catalogueFs.ts     load the folder, atomic / exclusive / in-place writes, ID claiming, layout file; REQUIREMENTS_DIR (env override for fixtures)
   boardPaths.ts      the board folder, and the folder-naming environment values (relative to the board folder)
@@ -131,10 +133,14 @@ server/
                      never pruned (an old version's entry stays): delete the folder any time, it only costs speed
 scripts/       check, export-csv, capture (+ captureFiles: generated-file naming, pruning and `--only`, testable;
                captureReport), link-index, apply-links (+ linkProposals: the applier, linkRuns: run folders, testable),
-               new-artifact, shoot-steps, resolve-source, recode-statuses, install-skills;
+               new-artifact, shoot-steps, resolve-source, recode-statuses, install-skills,
+               snapshot (+ snapshotFiles: where it may go, the data and files it writes, testable);
                userPath: a typed path read from the folder the command was run from
 src/
   store.ts       catalogue mirror (deliveries in order, never under a snapshot), card-move queue, derived index, view prefs
+  snapshot.ts    `SNAPSHOT`: built by `npm run snapshot`, the board reads catalogue.json and shows no editing
+  responses/     a snapshot reader's responses: model (shape check, the downloaded file, pure), store (browser
+                 storage), Respond (the sheets' form, list and buttons), ResponsesButton (the masthead's sheet), SnapshotMark
   artifactIndex.ts  which cards point at each artifact, its spots, the Artifacts view's prefs
   nav.ts         URL-driven sheets (?item, ?question, one-shot ?edit=<id>), the docked panel's leave guard,
                  `hasUnsavedWork` (the reload prompt)
@@ -575,6 +581,39 @@ user decides. Each decision is tied to a fingerprint of the change it was made o
 never applies it to a different change; the apply step writes only inside the catalogue folder (never
 notes, change logs, reference files, question answers, retired records or protected artifacts), and
 each change whole or not at all.
+
+### Sharing a snapshot
+
+`npm run snapshot -- --out "<folder>"` writes a read-only copy of the board for people outside the
+team (a client, a reviewer) to a folder of static files, to host anywhere: GitHub Pages, Cloudflare
+Pages, any web server. A relative `--out` reads from the folder the command was run from. It must be
+new, empty or an earlier snapshot, which is replaced whole (a `.board-snapshot.json` marks one); the
+board's own folder, one inside it or one holding it is refused. It takes about ten seconds.
+
+- **What is in it:** the board built with `vite build --mode snapshot` (relative paths, so it works
+  under any sub-path); `catalogue.json`, the catalogue as `GET /api/catalogue` serves it, taken from
+  the files on disk (uncommitted changes included, and said so), without check output, plus a
+  `snapshot` block (when, commit, board version, project); every screenshot under `requirements/assets/`;
+  every artifact's file as `artifact-file/<ID>.<ext>` (the extension kept, so a static host sends the
+  right type); `.nojekyll` for GitHub Pages and `_headers` for Cloudflare Pages (no type sniffing, the
+  dev server's SVG lock-down, the data file never cached stale).
+- **It holds the whole catalogue**, transcripts and documents included. Host it behind a sign-in
+  (Cloudflare Access, a private Pages site) unless it is meant to be public. Size limits to know:
+  GitHub Pages sites up to 1 GB; Cloudflare Pages files up to 25 MB each. The script warns past either.
+- **Read-only (`SNAPSHOT`, `src/snapshot.ts`):** no edit, delete, retire, status change, new card or
+  question, drag, tidy, lane edit, Settings, History or Diff review; every store write is refused
+  besides. The masthead says "Snapshot · <date>" (commit and board version in its tooltip), and the
+  About page is a reader's guide.
+- **Responses (`src/responses/`):** a reader answers an outstanding item (one answer each, changed in
+  place), comments on a card or an artifact (on the spot shown, if one is), or suggests an edit to a
+  card's title, description or acceptance criteria (only changed fields are kept, beside the text as
+  it was). They are kept in browser storage per project (`requirements-board:responses:<project>`),
+  so a newer snapshot on the same address keeps responses not yet sent. **Your responses** in the
+  masthead lists them; with the reader's name it downloads `responses-<name>-<date>.md` (or copies
+  it, for an email): each response under a heading naming its kind, the record's ID and title, an
+  edit as Was / Suggested, then the same data as JSON.
+- **Reading them back:** hand the file to `/update-requirements` as evidence, as with meeting notes.
+  Nothing a reader writes reaches the catalogue except through the skill.
 
 <!-- kit:omit -->
 ## Sharing the board (the kit)

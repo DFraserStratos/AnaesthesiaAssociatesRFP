@@ -7,6 +7,7 @@ import { QUESTION_KINDS, type QuestionKind } from '../../shared/types.ts'
 import { questionFilter, questionGroups, useQuestionFilters } from '../questionWalk.ts'
 import { KIND_LABEL, typeClass } from '../vocab.ts'
 import { Highlight, TypeIcon } from '../components/bits.tsx'
+import { SNAPSHOT } from '../snapshot.ts'
 
 export function QuestionsView() {
   const index = useIndex()
@@ -55,7 +56,7 @@ export function QuestionsView() {
             <p>Open questions and requirements with no known source, and the items each one touches.</p>
           </div>
           <span style={{ flex: 1 }} />
-          {!adding && (
+          {!adding && !SNAPSHOT && (
             <button className="btn primary" onClick={() => setAdding(true)}>
               <Plus size={15} /> New question
             </button>

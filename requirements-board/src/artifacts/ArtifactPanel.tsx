@@ -27,6 +27,8 @@ import { sourceRow, useSourceIndex } from '../sourceRows.ts'
 import { useCatalogue, useComponents, useConfig, useView } from '../store.ts'
 import { ARTIFACT_KIND_LABEL, ARTIFACT_STATUS_HELP, BASELINE_ARTIFACT_STATUS, artifactDate } from '../vocab.ts'
 import { ArtifactHistory } from './ArtifactHistory.tsx'
+import { SNAPSHOT } from '../snapshot.ts'
+import { RespondButtons, RespondSection, useRespond } from '../responses/Respond.tsx'
 
 export type PanelTab = 'steps' | 'spots' | 'linked' | 'details' | 'history'
 
@@ -66,6 +68,10 @@ export function ArtifactPanel({ rec, spot, onSpot, onPreview }: Props) {
   const superseder = a.supersededBy ? ix.byId.get(a.supersededBy) : undefined
   const open = useOpen()
   const confirm = discardConfirm(ed, a.title)
+  /** A snapshot reader's comment form, when open: about the spot shown, if one is. */
+  const [responding, setResponding] = useRespond()
+  const spotLabel = spot ? spotName(rec, spot) : null
+  const target = { type: 'artifact' as const, id: a.id, title: a.title, ...(spot && { spot, spotName: spotLabel ?? spot }) }
 
   usePanelKeys(ed, confirm)
 
@@ -74,7 +80,8 @@ export function ArtifactPanel({ rec, spot, onSpot, onPreview }: Props) {
     ['spots', 'Highlights', named.length || null],
     ['linked', 'Linked', linkCount(ix, a.id) + asked.length || null],
     ['details', 'Details', null],
-    ['history', 'History', null],
+    // A snapshot has no git, so no history.
+    ...(SNAPSHOT ? [] : [['history', 'History', null] as [PanelTab, string, null]]),
   ]
 
   return (
@@ -121,6 +128,7 @@ export function ArtifactPanel({ rec, spot, onSpot, onPreview }: Props) {
         </div>
       ) : (
         <div className="artifact-panel-body" role="tabpanel">
+          {SNAPSHOT && <RespondSection target={target} responding={responding} setResponding={setResponding} />}
           {tab === 'steps' && <Steps rec={rec} spot={spot} links={links} onSpot={onSpot} />}
           {tab === 'spots' && <Spots rec={rec} named={named} auto={auto} spot={spot} links={links} onSpot={onSpot} onPreview={onPreview} />}
           {tab === 'linked' && <Linked rec={rec} links={links} asked={asked} onSpot={onSpot} />}
@@ -129,7 +137,12 @@ export function ArtifactPanel({ rec, spot, onSpot, onPreview }: Props) {
         </div>
       )}
       <footer className="sheet-foot artifact-panel-foot">
-        {ed.editing ? (
+        {SNAPSHOT ? (
+          <>
+            <span className="spacer" />
+            <RespondButtons target={target} setResponding={setResponding} />
+          </>
+        ) : ed.editing ? (
           <EditActions ed={ed} />
         ) : (
           <>

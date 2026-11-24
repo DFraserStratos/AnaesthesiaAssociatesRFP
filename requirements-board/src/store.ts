@@ -15,6 +15,8 @@ import { ApiError, api, type RecordPatch } from './api.ts'
 import { forgetDrafts } from './drafts.ts'
 import { fields, isBoolean, isRecord, isStringArray, oneOf, readJson, removeJson, writeJson } from './storage.ts'
 import { idMatch } from './itemSearch.ts'
+import { SNAPSHOT_DATA, type SnapshotInfo, type StaticCatalogue } from '../shared/snapshot.ts'
+import { READ_ONLY, SNAPSHOT } from './snapshot.ts'
 
 type PosPatch = Record<string, { x: number; y: number } | null>
 
@@ -40,6 +42,8 @@ interface CatalogueState {
   /** The project's vocabulary (`board.config.json`): read it through `useConfig`. */
   config: BoardConfig
   issues: Issue[]
+  /** In snapshot mode, what the snapshot was taken from (`src/snapshot.ts`); unset on the dev board. */
+  snapshot?: SnapshotInfo
   /** Every screenshot's version (D-10): `assets/<ID>/<name>` to its git blob hash. Read it for an image URL (`assetUrl`). */
   assets: AssetVersions
   /**
@@ -194,10 +198,11 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
     const token = ++loadsStarted
     loadsInFlight++
     try {
-      const snap = await api.catalogue()
+      const snap = SNAPSHOT ? await readSnapshot() : await api.catalogue()
       if (token < loadApplied) return // a load started after this one has already landed
       loadApplied = token
-      const restoring = firstLoad
+      // A snapshot never saves card moves, so it has none to restore.
+      const restoring = firstLoad && !SNAPSHOT
       firstLoad = false
       // Moves kept from before a reload, for cards that are gone now, are dropped (FINDINGS R-57).
       if (restoring) for (const id of Object.keys(kept0.positions)) if (!snap.items[id]) delete pendingLayout[id]
@@ -211,6 +216,7 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
         issues: snap.issues,
         assets: snap.assets ?? {},
         layout: layoutOver(snap.layout),
+        ...('snapshot' in snap && { snapshot: (snap as StaticCatalogue).snapshot }),
       })
       seen = snap.epoch ? { epoch: snap.epoch, seq: snap.seq } : null
       // Everything that arrived while the snapshot was on its way and is newer than it goes on top.
@@ -541,6 +547,37 @@ export const useCatalogue = create<CatalogueState>((set, get) => ({
     return run
   },
 }))
+
+/** A snapshot's data file, beside its page (relative, so it works under any sub-path). */
+async function readSnapshot(): Promise<StaticCatalogue> {
+  const res = await fetch(SNAPSHOT_DATA)
+  if (!res.ok) throw new Error(`Could not read ${SNAPSHOT_DATA} (${res.status})`)
+  return (await res.json()) as StaticCatalogue
+}
+
+// A snapshot shows no control that writes; should one slip through, every write is refused here.
+if (SNAPSHOT) {
+  const refuse = () => Promise.reject(new Error(READ_ONLY))
+  useCatalogue.setState({
+    saveItem: refuse,
+    saveConfig: refuse,
+    createItem: refuse,
+    saveQuestion: refuse,
+    createQuestion: refuse,
+    deleteQuestion: refuse,
+    deleteItem: refuse,
+    saveArtifact: refuse,
+    moveItems: () => Promise.resolve(false),
+    undo: () => Promise.resolve(false),
+    redo: () => Promise.resolve(false),
+    setLanes: () => Promise.resolve(false),
+    renameLane: () => Promise.resolve(false),
+    deleteLane: () => Promise.resolve(false),
+    changeLane: () => Promise.resolve(false),
+    setPositions: () => {},
+    flushLayout: () => Promise.resolve(true),
+  })
+}
 
 /** Push a new move onto the undo history; a new move clears redo. */
 function record(entry: MoveEntry) {

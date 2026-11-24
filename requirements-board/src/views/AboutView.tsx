@@ -7,12 +7,14 @@ import { ARTIFACT_STATUSES, firstLaneName } from '../../shared/types.ts'
 import { StatusLabel, TypeIcon } from '../components/bits.tsx'
 import { useCatalogue, useConfig } from '../store.ts'
 import { ARTIFACT_STATUS_HELP, typeClass } from '../vocab.ts'
+import { SNAPSHOT } from '../snapshot.ts'
 
 /**
  * How to use the board: what it is, the loop a team goes round with it and the agent skills, what
  * is on the board, and where the files live. Statuses and lanes are read from this project's own
  * config, so the page always matches the board. `?s=<section>` scrolls to a section, so cards can
- * link straight to the part they explain.
+ * link straight to the part they explain. A snapshot's reader gets a page of their own: how to read
+ * it and how to respond, then what is on the board.
  */
 export function AboutView() {
   const [params] = useSearchParams()
@@ -24,6 +26,7 @@ export function AboutView() {
     if (section) document.getElementById(`about-${section}`)?.scrollIntoView({ block: 'start' })
   }, [section, key])
 
+  if (SNAPSHOT) return <ReaderAbout />
   return (
     <div className="page">
       <div className="page-inner about">
@@ -48,6 +51,7 @@ export function AboutView() {
         <Skills />
         <Anatomy />
         <Files />
+        <Snapshot />
         <section id="about-version" className="about-section">
           <h2>Version</h2>
           <p className="about-lede">
@@ -68,8 +72,93 @@ const SECTIONS = [
   ['skills', 'Skills'],
   ['board', 'On the board'],
   ['files', 'Files and commands'],
+  ['snapshot', 'Sharing a snapshot'],
   ['version', 'Version'],
 ] as const
+
+/** The About page in a snapshot: for someone outside the team reading it, and responding. */
+function ReaderAbout() {
+  const snap = useCatalogue((s) => s.snapshot)
+  const project = snap?.project
+  const day = snap ? new Date(snap.takenAt).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' }) : null
+  return (
+    <div className="page">
+      <div className="page-inner about">
+        <div className="page-head">
+          <div>
+            <h1>About this snapshot</h1>
+            <p>
+              A read-only copy of {project ? `the ${project}` : 'the'} requirements{day ? `, as they stood on ${day}` : ''}. Nothing you do here changes them.
+            </p>
+          </div>
+        </div>
+        <section id="about-reader" className="about-section">
+          <h2>Reading and responding</h2>
+          <div className="about-three">
+            <div className="about-tile">
+              <h3>Read</h3>
+              <p>
+                The Board maps every epic, feature and story; Outline lists them; Outstanding items are the questions still open; Artifacts are the diagrams, documents and
+                transcripts behind them. Open anything to read it in full.
+              </p>
+            </div>
+            <div className="about-tile">
+              <h3>Respond</h3>
+              <p>
+                Answer an outstanding item, comment on a card or an artifact (on one highlighted spot, if one is open), or suggest an edit to a card's text. Each is kept in this
+                browser as you go.
+              </p>
+            </div>
+            <div className="about-tile">
+              <h3>Send them back</h3>
+              <p>
+                Open <strong>Your responses</strong> at the top right, add your name, and download them. Send the file to whoever shared this board with you: your responses are
+                read and worked into the requirements.
+              </p>
+            </div>
+          </div>
+          <p className="about-note">
+            Responses stay only in this browser until you download them: another browser or device starts empty, and clearing your browser's data removes them.
+          </p>
+        </section>
+        <Anatomy />
+      </div>
+    </div>
+  )
+}
+
+/** For the team: sharing a read-only snapshot with people outside it, and reading their responses back in. */
+function Snapshot() {
+  return (
+    <section id="about-snapshot" className="about-section">
+      <h2>Sharing a snapshot</h2>
+      <p className="about-lede">
+        For people outside the team (a client, a reviewer): a read-only copy of the board as static files, to host anywhere. Readers answer, comment and suggest edits, and send their responses back as a file.
+      </p>
+      <div className="about-three">
+        <div className="about-tile">
+          <h3>Make one</h3>
+          <p>
+            <code>npm --prefix requirements-board run snapshot -- --out "&lt;folder&gt;"</code> writes the board, the catalogue as it is on disk, every screenshot and every artifact file to a folder of its own.
+          </p>
+        </div>
+        <div className="about-tile">
+          <h3>Host it</h3>
+          <p>
+            Any static host: GitHub Pages, Cloudflare Pages, a shared drive behind a web server. It holds the whole catalogue, so put it behind a sign-in unless it is meant to be public.
+          </p>
+        </div>
+        <div className="about-tile">
+          <h3>Read the responses</h3>
+          <p>
+            Each reader downloads a Markdown file: answers, comments and suggested edits, each citing its record's ID. Give it to <code>/update-requirements</code> as evidence, as you would meeting notes.
+          </p>
+        </div>
+      </div>
+      <p className="about-note">The snapshot shows no editing, history or Diff review, and never writes to the catalogue: the responses are proposals, worked in by the skill in the catalogue's own voice.</p>
+    </section>
+  )
+}
 
 function WhatItIs() {
   return (
@@ -432,6 +521,7 @@ const COMMANDS: [string, string][] = [
   ['npm --prefix requirements-board run check', 'Check every file, ID, parent and link'],
   ['npm --prefix requirements-board run verify', 'Typecheck, tests and check: run before sharing a change to the board itself'],
   ['npm --prefix requirements-board run export:csv', 'Export the catalogue as CSV'],
+  ['npm --prefix requirements-board run snapshot -- --out <folder>', 'Write a read-only snapshot of the board to host for readers outside the team'],
   ['npm --prefix requirements-board run install-skills', 'Install the skills into .claude/ at the repo root again, after editing one: it keeps the mode in use (copies, or links with -- --link)'],
 ]
 

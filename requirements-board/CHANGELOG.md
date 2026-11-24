@@ -2,6 +2,14 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.29.0 · 2026-11-25
+
+- **Share a read-only snapshot.** New `npm run snapshot -- --out "<folder>"` writes the board as static files to host for people outside the team (GitHub Pages, Cloudflare Pages, any web server, best behind a sign-in): the board built in a new snapshot mode (`vite build --mode snapshot`, relative paths), the catalogue as `catalogue.json` (taken from disk, with the commit, whether it had uncommitted changes, the board version and the date), every screenshot, every artifact file under its ID with its extension, and host files (`.nojekyll`, Cloudflare `_headers`). It refuses the board's folder, one inside it or holding it, and any folder with files that no earlier snapshot made; a failed run leaves an earlier snapshot as it was.
+- **Snapshots read only.** No editing, deleting, retiring, status changes, new cards or questions, drags, tidying, lane edits, Settings, History or Diff review; every store write is refused as well. The masthead says "Snapshot · <date>", and the About page becomes a reader's guide.
+- **Readers respond.** In a snapshot, a reader answers outstanding items, comments on cards and artifacts (on the highlighted spot shown), and suggests edits to a card's title, description and acceptance criteria. Responses are kept in the browser (per project, so a newer snapshot keeps them) and listed under **Your responses** in the masthead, which downloads them, with the reader's name, as one Markdown file citing each record's ID (edits as Was / Suggested, plus the same data as JSON). `update-requirements` reads that file as evidence.
+- **Artifact file URLs carry the file** (`artifactFileUrl(id, fileRev, file)`), so a snapshot's keep their extension.
+- New Playwright project `snapshot` (BOARD_PORT + 1, `BOARD_E2E_SNAPSHOT_PORT` moves it): a snapshot of the fixture catalogue served by `vite preview`.
+
 ## 1.28.0 · 2026-11-24
 
 - **A finished plan is continued, not remade.** update-build-plan's Stage 0 no longer proposes a fresh plan because every phase is built: it updates, grading only the changed items and appending new phases. A fresh plan is now only on request or when more than about 60% of in-scope items changed; with no plan at all, the skill asks whether to seed one or grade everything.

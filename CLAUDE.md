@@ -115,6 +115,10 @@ requirement text with this rule.
     clean kit from HEAD (commit first; `--uncommitted` to try work). Build anything new for the board
     here first, bump its `package.json` version and `CHANGELOG.md`, then export.
     `requirements-board/ADOPTING.md` is the checklist for another repo.
+  - **To share the catalogue with people outside the team**, `npm --prefix requirements-board run snapshot
+    -- --out "<folder>"` writes a read-only static copy of the board (screenshots and artifacts
+    included) to host behind a sign-in. Readers' answers, comments and suggested edits come back as a
+    downloaded Markdown file: evidence for `/update-requirements`, never edits.
   - **Finish green on board work:** `npm run verify:board` from the repo root.
 
 ## Working in the app

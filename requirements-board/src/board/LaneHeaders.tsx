@@ -17,6 +17,7 @@ import { firstLaneName } from '../../shared/types.ts'
 import { followCollapsedLane, useCatalogue } from '../store.ts'
 import { useDismiss } from '../useDismiss.ts'
 import { LANE_MARGIN, laneKey, type LaneBand } from './mappedLayout.ts'
+import { SNAPSHOT } from '../snapshot.ts'
 
 /** The gap between a header and the board's left edge, in screen pixels. */
 const GUTTER = 16
@@ -45,7 +46,7 @@ export function LaneHeaders({ bands, collapsed, onToggle, inset = 0 }: { bands: 
               onToggle={() => onToggle(laneKey(b.key))}
             />
           ))}
-        {last && <AddLane top={last.y + last.h} left={left} />}
+        {last && !SNAPSHOT && <AddLane top={last.y + last.h} left={left} />}
       </div>
     </ViewportPortal>
   )
@@ -80,7 +81,10 @@ function LaneHeader({ band, left, up, open, onToggle }: { band: LaneBand; left: 
       <button className="lane-toggle" onClick={onToggle} aria-expanded={open} aria-label={`${open ? 'Collapse' : 'Expand'} ${band.name}`} title={open ? 'Collapse lane' : 'Expand lane'}>
         {open ? <ChevronDown size="1em" /> : <ChevronRight size="1em" />}
       </button>
-      {renaming ? (
+      {SNAPSHOT ? (
+        // A snapshot reads only: the lane's name, no rename.
+        <span className="lane-name">{band.name}</span>
+      ) : renaming ? (
         <LaneNameInput
           initial={band.name}
           label={`Rename ${band.name}`}
@@ -113,7 +117,7 @@ function LaneHeader({ band, left, up, open, onToggle }: { band: LaneBand; left: 
         {band.count}
       </span>
       {band.unknown && <span className="lane-flag">not a lane</span>}
-      {band.key !== null && !renaming && (
+      {band.key !== null && !renaming && !SNAPSHOT && (
         <button ref={menuBtn} className="lane-menu-btn" aria-label={`${band.name} lane actions`} aria-expanded={menu} onClick={() => setMenu((v) => !v)}>
           <MoreHorizontal size="1.1em" />
         </button>

@@ -12,9 +12,12 @@ loadLaneEnv()
 
 const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }
 
-// A local dev tool: the dev server is the app's file API, so there is no production build to host.
-export default defineConfig({
-  plugins: [react(), cataloguePlugin()],
+// A local dev tool: the dev server is the app's file API. The one build meant to be hosted is a
+// snapshot (`--mode snapshot`, run by `npm run snapshot`): read-only, reading the catalogue from a
+// `catalogue.json` beside it, with relative paths so it works under any sub-path of a static host.
+export default defineConfig(({ mode }) => ({
+  plugins: mode === 'snapshot' ? [react()] : [react(), cataloguePlugin()],
+  base: mode === 'snapshot' ? './' : '/',
   // BOARD_PORT moves it (a second checkout or worktree running its own board). The dev server is
   // also the catalogue's file API, so no other page may read it: CORS is off (Vite's default lets
   // any localhost page read every response), and host checking stays on (the API's Origin check
@@ -33,4 +36,4 @@ export default defineConfig({
     // overran the 10 s default with every test passing.
     hookTimeout: 60_000,
   },
-})
+}))

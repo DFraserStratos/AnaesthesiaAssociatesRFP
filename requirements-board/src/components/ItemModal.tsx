@@ -1,5 +1,5 @@
 import { Archive, ArrowLeft, ChevronLeft, ChevronRight, History, Map as MapIcon, Pencil, Plus, Trash2, X } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { tidyText } from '../../shared/files.ts'
 import { plainText } from '../../shared/links.ts'
 import { planDelete, type DeletePlan } from '../../shared/remove.ts'
@@ -21,6 +21,8 @@ import { Gallery, ImagesEditor } from './Screenshots.tsx'
 import { Sheet, type SheetConfirm } from './Sheet.tsx'
 import { StatusPicker } from './StatusPicker.tsx'
 import { useEditableRecord } from './useEditableRecord.ts'
+import { SNAPSHOT } from '../snapshot.ts'
+import { RespondButtons, RespondSection, useRespond } from '../responses/Respond.tsx'
 
 /** An item's sheet: a modal over Outline and Outstanding items, the docked side panel on the board. */
 export function ItemModal({ id, docked = false }: { id: string; docked?: boolean }) {
@@ -93,6 +95,8 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
   }
   /** The body shows the card, or its history timeline (read mode only; a new card opens on the card). */
   const [view, setView] = useState<'card' | 'history'>('card')
+  /** A snapshot reader's response form, when one is open. */
+  const [responding, setResponding] = useRespond()
   const bodyRef = useRef<HTMLDivElement>(null)
   /** A one-click status write: only the status, so a change on disk to anything else merges. */
   const writeStatus = (r: Rev<Item>, status: ItemStatus) => saveItem(id, { patch: { status }, baseRev: r.rev, base: { status: r.data.status } })
@@ -164,10 +168,36 @@ export function ItemModal({ id, docked = false }: { id: string; docked?: boolean
       {/* Ctrl F finds in the card while it is open; editing leaves it to the browser, which reads the fields. */}
       <CardFind root={bodyRef} resetKey={`${id}:${view}`} disabled={ed.editing || !!confirm} />
       <div ref={bodyRef} className="sheet-body">
-        {ed.editing ? <EditForm draft={ed.draft} set={set} index={index} /> : view === 'history' ? <HistoryView item={item} index={index} /> : <ReadView item={item} index={shown} onStatus={(s) => void changeStatus(s)} statusBusy={statusBusy} />}
+        {ed.editing ? <EditForm draft={ed.draft} set={set} index={index} /> : view === 'history' ? <HistoryView item={item} index={index} /> : (
+          <ReadView
+            item={item}
+            index={shown}
+            onStatus={(s) => void changeStatus(s)}
+            statusBusy={statusBusy}
+            respond={
+              SNAPSHOT && (
+                <RespondSection
+                  target={{ type: 'item', id: item.id, title: item.title }}
+                  responding={responding}
+                  setResponding={setResponding}
+                  card={{ title: item.title, description: item.description, acceptance: item.acceptance }}
+                />
+              )
+            }
+          />
+        )}
       </div>
       <footer className="sheet-foot">
-        {ed.editing ? (
+        {SNAPSHOT ? (
+          // A snapshot reads only: no history (it needs git), no status changes, no edits; the reader responds instead.
+          <>
+            <button className="btn" onClick={() => open.showOnBoard(item.id)}>
+              <MapIcon size={15} /> {docked ? 'Find on board' : 'Show on board'}
+            </button>
+            <span className="spacer" />
+            <RespondButtons target={{ type: 'item', id: item.id, title: item.title }} setResponding={setResponding} />
+          </>
+        ) : ed.editing ? (
           <EditActions ed={ed} />
         ) : view === 'history' ? (
           <button className="btn" onClick={() => setView('card')}>
@@ -284,7 +314,7 @@ function SheetHead({ item, index, leave }: { item: Item; index: Index; leave: (g
   )
 }
 
-function ReadView({ item, index, onStatus, statusBusy }: { item: Item; index: Index; onStatus: (s: ItemStatus) => void; statusBusy: boolean }) {
+function ReadView({ item, index, onStatus, statusBusy, respond }: { item: Item; index: Index; onStatus: (s: ItemStatus) => void; statusBusy: boolean; respond?: ReactNode }) {
   const open = useOpen()
   const lanes = useCatalogue((s) => s.layout.lanes)
   const children = index.children.get(item.id) ?? []
@@ -335,6 +365,7 @@ function ReadView({ item, index, onStatus, statusBusy }: { item: Item; index: In
         )}
 
         {item.type !== 'story' && <Children item={item} children={children} />}
+        {respond}
       </div>
 
       {/* Screenshots and the facts sit at the foot of a docked panel while the content is short. */}
@@ -350,7 +381,7 @@ function ReadView({ item, index, onStatus, statusBusy }: { item: Item; index: In
           <div className="facts">
             <div>
               <h3 className="section-head">Status</h3>
-              <StatusPicker status={item.status} onPick={onStatus} busy={statusBusy} />
+              {SNAPSHOT ? <StatusLabel kind="item" status={item.status} /> : <StatusPicker status={item.status} onPick={onStatus} busy={statusBusy} />}
             </div>
             {/* Only a story in a named lane: the first lane is the baseline, left unmarked (so no lanes, no row). */}
             {item.type === 'story' && item.swimlane && (
@@ -494,8 +525,8 @@ function Children({ item, children }: { item: Item; children: Item[] }) {
     }
   }
   const label = item.type === 'epic' ? 'Features and stories' : 'Stories'
-  // Nothing new goes under a retired card.
-  const retired = isRetired(config, item)
+  // Nothing new goes under a retired card, nor under any card in a snapshot.
+  const retired = isRetired(config, item) || SNAPSHOT
   if (retired && children.length === 0) return null
 
   return (

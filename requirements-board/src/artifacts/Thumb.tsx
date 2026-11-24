@@ -35,7 +35,7 @@ export function Thumb({ rec }: { rec: ArtifactRec }) {
 
 function ThumbBody({ rec }: { rec: ArtifactRec }) {
   const format = rec.meta.format!
-  const url = artifactFileUrl(rec.data.id, rec.meta.fileRev)
+  const url = artifactFileUrl(rec.data.id, rec.meta.fileRev, rec.data.file)
   if (format === 'svg' || format === 'raster') return <img src={url} alt="" loading="lazy" draggable={false} />
   if (format === 'mermaid') return <MermaidThumb rec={rec} />
   if (format === 'pdf') return <PdfThumb url={url} />

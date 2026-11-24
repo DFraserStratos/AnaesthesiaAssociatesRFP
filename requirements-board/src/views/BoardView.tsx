@@ -38,6 +38,7 @@ import { guarded, useOpen } from '../nav.ts'
 import { ancestorsOf, descendantsOf, filtersActive, matchesFilters, shownIndex, useCatalogue, useComponents, useConfig, useIndex, useView, type BoardMode, type Index } from '../store.ts'
 import { isFiniteNumber, isRecord, readJson, writeJson } from '../storage.ts'
 import { useDismiss } from '../useDismiss.ts'
+import { SNAPSHOT } from '../snapshot.ts'
 
 const nodeTypes = { card: CardNode, lane: LaneNode, add: AddNode, marker: MarkerNode }
 const edgeTypes = { rise: RiseEdge }
@@ -438,7 +439,7 @@ function Board({ mode }: { mode: BoardMode }) {
     const typing = !!target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)
     // Undo / redo card moves, unless a field or the item panel has focus (they keep their own undo).
     const key = e.key.toLowerCase()
-    if ((e.metaKey || e.ctrlKey) && !e.altKey && (key === 'z' || (key === 'y' && e.ctrlKey && !e.shiftKey))) {
+    if (!SNAPSHOT && (e.metaKey || e.ctrlKey) && !e.altKey && (key === 'z' || (key === 'y' && e.ctrlKey && !e.shiftKey))) {
       if (typing || target?.isContentEditable || target?.closest('.sheet')) return
       e.preventDefault()
       step(key === 'z' && !e.shiftKey ? 'undo' : 'redo')
@@ -520,9 +521,11 @@ function Board({ mode }: { mode: BoardMode }) {
           multiSelectionKeyCode={mapped ? null : undefined}
           onNodeClick={(_, n) => n.type === 'card' && n.id !== selected && select(n.id)}
           onPaneClick={() => selected && select(null)}
-          onNodeDragStart={onNodeDragStart}
-          onNodeDrag={onNodeDrag}
-          onNodeDragStop={onNodeDragStop}
+          // A snapshot reads only: cards stay where the catalogue puts them.
+          nodesDraggable={!SNAPSHOT}
+          onNodeDragStart={SNAPSHOT ? undefined : onNodeDragStart}
+          onNodeDrag={SNAPSHOT ? undefined : onNodeDrag}
+          onNodeDragStop={SNAPSHOT ? undefined : onNodeDragStop}
           onMove={(_, vp) => setZoomClass((z) => (zoomBand(vp.zoom) === z ? z : zoomBand(vp.zoom)))}
           onMoveEnd={(_, vp) => writeJson(VIEWPORT_KEY[mode], vp)}
           defaultViewport={initialViewport}
@@ -619,7 +622,7 @@ function Board({ mode }: { mode: BoardMode }) {
             <button className="btn ghost" aria-pressed={view.showRetired} onClick={() => view.set({ showRetired: !view.showRetired })}>
               Retired
             </button>
-            {!mapped && (
+            {!mapped && !SNAPSHOT && (
             <button
               className="btn ghost"
               disabled={!moved}
@@ -644,7 +647,7 @@ function Board({ mode }: { mode: BoardMode }) {
         </div>
 
         {/* Only worth showing when this epic has cards dragged out of the story map. */}
-        {!mapped && epicOfSelected && movedInEpic > 0 && (
+        {!mapped && !SNAPSHOT && epicOfSelected && movedInEpic > 0 && (
           <div className="selection-bar" role="status">
             <span className="selection-note">
               {movedInEpic} card{movedInEpic > 1 ? 's' : ''} moved in {epicOfSelected.title}
@@ -699,7 +702,8 @@ function mappedExtras(map: MappedLayout, index: Index, named: boolean, target: M
     if (!lane.head) continue // the only lane, unnamed: no rule, a plain map
     out.push({ id: `lane:${laneKey(lane.key)}`, type: 'lane', position: { x: -LANE_MARGIN, y: lane.y }, width: w, height: lane.h, data: { w, h: lane.h }, zIndex: -1, ...fixed })
   }
-  for (const a of map.adds) {
+  // A snapshot adds nothing: no "add a story" slots.
+  for (const a of SNAPSHOT ? [] : map.adds) {
     const where = index.byId.get(a.parent)?.title ?? a.parent
     const label = `Add a story to ${where}${named ? ` in ${a.swimlane ?? map.lanes[0]!.name}` : ''}`
     out.push({ id: `add:${a.parent}|${laneKey(a.swimlane)}`, type: 'add', position: { x: a.x, y: a.y }, data: { w: CARD.story.w, parent: a.parent, swimlane: a.swimlane, label }, zIndex: 1, ...fixed })

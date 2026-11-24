@@ -48,7 +48,7 @@ export const fetchText = async (url: string) => {
 export function ArtifactViewer({ rec, spot, focusKey, preview = null, onSpot, fullScreen }: ArtifactViewerProps) {
   const a = rec.data
   const format = rec.meta.format
-  const url = artifactFileUrl(a.id, rec.meta.fileRev)
+  const url = artifactFileUrl(a.id, rec.meta.fileRev, a.file)
   const region: Region | null = spot ? (a.regions.find((r) => r.id === spot) ?? null) : null
   const auto = spot && !region ? spot : null
   // Whether the viewer found the spot, kept with the request it answers (the spot, the file version and

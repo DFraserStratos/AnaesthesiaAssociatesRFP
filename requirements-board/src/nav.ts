@@ -3,6 +3,7 @@ import { UNSAFE_NavigationContext, useLocation, useNavigate, useSearchParams } f
 import { isQuestionId } from '../shared/links.ts'
 import { hasUnsavedDrafts } from './drafts.ts'
 import { hasUnsavedMoves } from './store.ts'
+import { SNAPSHOT } from './snapshot.ts'
 
 /**
  * The docked item panel on the board registers its unsaved-edit guard here, so
@@ -116,10 +117,11 @@ export function artifactUrl(id: string, region?: string | null): string {
  * Whether this record's sheet should open in its edit form. The request is
  * one-shot: it is read once on mount and then dropped from the URL, so a
  * reload (or Back) reopens the sheet read-only rather than editing again.
+ * A snapshot never edits, so it drops the request without honouring it.
  */
 export function useEditOnOpen(id: string): boolean {
   const open = useOpen()
-  const [asked] = useState(() => open.params.get('edit') === id)
+  const [asked] = useState(() => open.params.get('edit') === id && !SNAPSHOT)
   useEffect(() => {
     if (asked) open.clearEdit()
   }, []) // once, on mount

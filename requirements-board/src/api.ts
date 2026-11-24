@@ -4,6 +4,8 @@ import type { ArtifactDetails } from '../shared/files.ts'
 import type { CommitsResponse, DiffCountResponse, DiffResponse } from '../shared/diff.ts'
 import type { TimelineEntry } from '../shared/history.ts'
 import type { ArtifactRec, CatalogueSnapshot, Item, Layout, Question, Rev } from '../shared/types.ts'
+import { snapshotArtifactFile } from '../shared/snapshot.ts'
+import { SNAPSHOT } from './snapshot.ts'
 
 export interface BatchChange {
   id: string
@@ -129,8 +131,14 @@ export const api = {
 /** URL of one version of a screenshot (by git blob hash), for a card's history. */
 export const historyBlobUrl = (v: { src: string; sha: string }) => `/history-blob/${v.sha}?src=${encodeURIComponent(v.src)}`
 
-/** The file an artifact shows, versioned by its content so a change on disk reloads it. */
-export const artifactFileUrl = (id: string, fileRev: string | null) => `/artifact-file/${encodeURIComponent(id)}${fileRev ? `?v=${fileRev.slice(0, 12)}` : ''}`
+/**
+ * The file an artifact shows, versioned by its content so a change on disk reloads it. A snapshot keeps it
+ * beside the page under its ID and its file's extension (`file`), so a static host sends the right type.
+ */
+export const artifactFileUrl = (id: string, fileRev: string | null, file?: string | null) => {
+  const v = fileRev ? `?v=${fileRev.slice(0, 12)}` : ''
+  return SNAPSHOT ? `${snapshotArtifactFile(id, file ?? '')}${v}` : `/artifact-file/${encodeURIComponent(id)}${v}`
+}
 
 /** One version of an artifact's file (by git blob hash), for its history. `file` names its type when the artifact is gone. */
 export const artifactBlobUrl = (id: string, sha: string, file?: string | null) =>
@@ -139,6 +147,6 @@ export const artifactBlobUrl = (id: string, sha: string, file?: string | null) =
 /**
  * A screenshot's URL. With its version (`assets` in the store, D-10) the URL changes when the file's
  * content does, so a re-captured screenshot is fetched afresh and an unchanged one stays cached. Any
- * version is served the current file.
+ * version is served the current file. A snapshot's path is relative, so it works under any sub-path.
  */
-export const assetUrl = (src: string, version?: string) => `/requirements/${src.split('/').map(encodeURIComponent).join('/')}${version ? `?v=${encodeURIComponent(version)}` : ''}`
+export const assetUrl = (src: string, version?: string) => `${SNAPSHOT ? '' : '/'}requirements/${src.split('/').map(encodeURIComponent).join('/')}${version ? `?v=${encodeURIComponent(version)}` : ''}`

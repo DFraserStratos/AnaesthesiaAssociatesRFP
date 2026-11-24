@@ -73,6 +73,14 @@ place too; nothing else (no toast, no banner) reports a problem. When the last p
 green "All clear" shows for about three seconds and fades. Check notes are not problems: they never raise the pill and are read under
 Checks on Settings (and under the errors in the pill's list).
 
+**A snapshot reads, and its reader responds.** A snapshot (`npm run snapshot`) shows no editing at
+all: controls that would write are gone, not disabled. Its masthead says so quietly, "Snapshot ·
+<date>" as grey text beside the project's name, never a pill, and offers **Your responses** (a
+plain button with a count) where Settings would be. A reader's answer, comment or suggested edit is
+written in a teal-tinted box inline in the sheet (teal, the action colour, since it is the reader's
+own action) and kept as a quiet row under "Your responses" on the record; it never looks like the
+catalogue's own text.
+
 ## Cards
 
 - Top line: the title. No ID, no component codes.

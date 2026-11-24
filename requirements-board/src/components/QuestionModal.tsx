@@ -19,6 +19,8 @@ import { MarkdownTextarea } from './MarkdownTextarea.tsx'
 import { Prose } from './Prose.tsx'
 import { Sheet, type SheetConfirm } from './Sheet.tsx'
 import { useEditableRecord } from './useEditableRecord.ts'
+import { SNAPSHOT } from '../snapshot.ts'
+import { RespondButtons, RespondSection, useRespond } from '../responses/Respond.tsx'
 
 /** Markdown fields go through `tidyText`, like a file read, so a leading code-block indent survives a save. */
 const normalise = (q: Question): Question => ({
@@ -65,6 +67,7 @@ export function QuestionModal({ id }: { id: string }) {
   })
   const answerRef = useRef<HTMLTextAreaElement>(null)
   const [askDelete, setAskDelete] = useState(false)
+  const [responding, setResponding] = useRespond()
   const remove = async () => {
     if (!rec) return
     setAskDelete(false)
@@ -127,9 +130,15 @@ export function QuestionModal({ id }: { id: string }) {
       <div className="sheet-body">
         {ed.editing ? <EditForm draft={ed.draft} set={set} index={index} answerRef={answerRef} /> : <ReadView q={q} index={index} />}
         {flipOffer && !ed.editing && <FlipOffer items={flipOffer} question={q} onDone={() => setFlipOffer(null)} />}
+        {SNAPSHOT && <RespondSection target={{ type: 'question', id: q.id, title: q.title }} responding={responding} setResponding={setResponding} />}
       </div>
       <footer className="sheet-foot">
-        {ed.editing ? (
+        {SNAPSHOT ? (
+          <>
+            <span className="spacer" />
+            <RespondButtons target={{ type: 'question', id: q.id, title: q.title }} answered={isAnswered(config, q)} setResponding={setResponding} />
+          </>
+        ) : ed.editing ? (
           <EditActions ed={ed} />
         ) : (
           <>

@@ -1,7 +1,7 @@
 {
   "name": "requirements-board",
   "private": true,
-  "version": "1.28.0",
+  "version": "1.29.0",
   "type": "module",
   "engines": {
     "node": ">=22.18.0"
@@ -15,6 +15,7 @@
     "test:e2e": "playwright test",
     "check": "node scripts/check.ts",
     "export:csv": "node scripts/export-csv.ts",
+    "snapshot": "node scripts/snapshot.ts",
     "capture": "node scripts/capture.ts",
     "links:index": "node scripts/link-index.ts",
     "links:apply": "node scripts/apply-links.ts",

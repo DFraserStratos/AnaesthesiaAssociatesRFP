@@ -22,6 +22,9 @@ import { OutlineView } from './views/OutlineView.tsx'
 import { useUncommittedCount } from './diff/useUncommittedCount.ts'
 import { QuestionsView } from './views/QuestionsView.tsx'
 import { SettingsView } from './views/SettingsView.tsx'
+import { SNAPSHOT } from './snapshot.ts'
+import { ResponsesButton } from './responses/ResponsesButton.tsx'
+import { SnapshotMark } from './responses/SnapshotMark.tsx'
 
 /** Set by the pill's Reload: card moves are kept across it (session storage), so the leave prompt does not ask for them. */
 let reloading = false
@@ -134,21 +137,24 @@ export function App() {
             <Route path="/artifacts/:id" element={<ArtifactPage />} />
             <Route path="/questions" element={<QuestionsView />} />
             <Route path="/outline" element={<OutlineView />} />
-            <Route
-              path="/diff"
-              element={
-                <Suspense fallback={<div className="page" />}>
-                  <DiffView />
-                </Suspense>
-              }
-            />
-            <Route path="/settings" element={<SettingsView />} />
+            {/* A snapshot has no git to compare and nothing to set: neither page is there. */}
+            {!SNAPSHOT && (
+              <Route
+                path="/diff"
+                element={
+                  <Suspense fallback={<div className="page" />}>
+                    <DiffView />
+                  </Suspense>
+                }
+              />
+            )}
+            {!SNAPSHOT && <Route path="/settings" element={<SettingsView />} />}
             <Route path="/about" element={<AboutView />} />
             <Route path="*" element={<Navigate to="/board" replace />} />
           </Routes>
           </RegionBoundary>
         )}
-        {status === 'ready' && !onArtifact && <NewCardButton />}
+        {status === 'ready' && !onArtifact && !SNAPSHOT && <NewCardButton />}
       </main>
       {/* On the board the item docks beside the map (BoardView); elsewhere it is a modal. */}
       {status === 'ready' && itemId && !onBoard && (
@@ -204,6 +210,7 @@ function Masthead({ connected, serverBack }: { connected: boolean; serverBack: b
             {project}
           </span>
         )}
+        {SNAPSHOT && <SnapshotMark />}
       </div>
       <nav className="tabs" aria-label="Views">
         <NavLink className="tab" to="/board">
@@ -218,15 +225,18 @@ function Masthead({ connected, serverBack }: { connected: boolean; serverBack: b
         <NavLink className="tab" to="/outline">
           Outline <span className="count">{shown.items.length}</span>
         </NavLink>
-        <NavLink className="tab" to="/diff" title={uncommitted ? `${uncommitted} record${uncommitted === 1 ? '' : 's'} changed since the last commit` : 'Compare the catalogue between two versions'}>
-          Diff review {!!uncommitted && <span className="count">{uncommitted}</span>}
-        </NavLink>
+        {!SNAPSHOT && (
+          <NavLink className="tab" to="/diff" title={uncommitted ? `${uncommitted} record${uncommitted === 1 ? '' : 's'} changed since the last commit` : 'Compare the catalogue between two versions'}>
+            Diff review {!!uncommitted && <span className="count">{uncommitted}</span>}
+          </NavLink>
+        )}
       </nav>
       <div className="masthead-right">
         {/* Nothing shows while all is well: the pill appears only when something needs attention. */}
         <ProblemPill connected={connected} serverBack={serverBack} onReload={reloadKeepingMoves} />
+        {SNAPSHOT && <ResponsesButton />}
         {/* Until the project is named, a new team is pointed at the guide. */}
-        {(!project || project === STARTER_PROJECT_NAME) && (
+        {!SNAPSHOT && (!project || project === STARTER_PROJECT_NAME) && (
           <NavLink className="btn ghost sm start-here" to="/about">
             Start here
           </NavLink>
@@ -234,9 +244,11 @@ function Masthead({ connected, serverBack }: { connected: boolean; serverBack: b
         <NavLink className="btn icon ghost settings-link" to="/about" title="How to use this board" aria-label="About this board">
           <Info size={16} />
         </NavLink>
-        <NavLink className="btn icon ghost settings-link" to="/settings" title="Settings" aria-label="Settings">
-          <Settings size={16} />
-        </NavLink>
+        {!SNAPSHOT && (
+          <NavLink className="btn icon ghost settings-link" to="/settings" title="Settings" aria-label="Settings">
+            <Settings size={16} />
+          </NavLink>
+        )}
       </div>
     </header>
   )

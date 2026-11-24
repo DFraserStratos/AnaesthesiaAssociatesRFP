@@ -98,6 +98,16 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
   a line (`16. **Title.** ...`, continuation lines indented), numbered once across the whole note.
   Keep that shape: a point written as a heading, a bold `**16.**`, or numbering that restarts per
   section does not resolve.
+- **A snapshot responses file** (`responses-<name>-<date>.md`, downloaded by a reader of a board
+  snapshot made with `npm run snapshot`) is evidence like an email: file it as raw material, and
+  write the note's points from it, one per response, keeping the reader's wording and naming them.
+  Each response cites its record (`## Answer · OQ-12 · <title>`, `## Suggested edit · <ID> · <title>`,
+  `## Comment · AR-04#<spot> · <title>`), and its JSON block holds the same data exactly. An answer
+  is a board answer from that reader: it settles the question only if the user says it does (their
+  word, or the reader's standing); otherwise the question gets the answer as a proposal (its
+  `proposed` status, if the project has one). A suggested edit is a proposal: weigh it and rewrite it
+  in the catalogue's voice, never paste it. Compare the file's snapshot commit with the catalogue: a
+  response about a record changed since then is flagged in the note and at the checkpoint.
 - Register each new transcript and each new note as an artifact, so the board can show it and items
   can link to a spot in it (a heading, or a line range such as `#L27-33`): follow the `add-artifact`
   skill (kind `transcript` or `note`; the file is already in `REQ/artifacts/files/` or `REQ/notes/`). Diagrams supplied as evidence are
