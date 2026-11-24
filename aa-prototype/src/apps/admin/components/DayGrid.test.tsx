@@ -342,7 +342,7 @@ describe('DayGrid pager (catch-up Phase 43)', () => {
     const { container } = render(<DayGrid anaesthetists={anaesthetists} viewsByAnaesthetist={views} masters={masters} warningFlags={new Map()} onSelectSlot={vi.fn()} page={2} onPage={vi.fn()} rowMode="scroll" onRowMode={onRowMode} />)
     expect(container.querySelectorAll('[data-day-grid-row]')).toHaveLength(85)
     expect(container.querySelector('[data-shot="day-grid-pager"]')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Show 30 anaesthetists a page' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Pages/ }))
     expect(onRowMode).toHaveBeenCalledWith('pages')
   })
 

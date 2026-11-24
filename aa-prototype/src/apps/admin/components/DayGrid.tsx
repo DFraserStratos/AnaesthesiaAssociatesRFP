@@ -1,6 +1,6 @@
 import { InfoTip } from '../../../shared/help/InfoTip'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { FoldVertical, Moon, Plus, TriangleAlert, UnfoldVertical } from 'lucide-react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { BookOpen, Moon, Plus, ScrollText, TriangleAlert } from 'lucide-react'
 import { accent, neutral, semantic, radius, elevation } from '../../../theme/tokens'
 import { AttentionDot } from '../../../shared/warnings/AttentionDot'
 import type { DisplayKey, DraftList } from '../../../domain/types'
@@ -11,7 +11,7 @@ import { useAppStore, useConflictLookups } from '../../../store'
 import { CONFLICT_REASONS } from '../../../domain/conflicts'
 import { blockFill, resolveDisplayStatus, StatusLegend, useLegendKeys, useSlotStatusRecords } from '../../../shared'
 import { Eyebrow } from '../../../shared/ui/Eyebrow'
-import { IconButton } from '../../../shared/ui'
+import { SlidingSegmentedControl, type SlidingSegmentOption } from '../../../shared/ui'
 import { attentionReasons, blockGeometry, DAY_RULER, GRID_GUTTER, hoursOf, rulerEndLabel, rulerFor, rulerLabels, slotSpan, surnameFirst, type Ruler } from '../util'
 import { compareSessions, isOutOfHours } from '../../../domain/outOfHours'
 import { OPEN_OUT_OF_HOURS, OUT_OF_HOURS } from '../../../shared/outOfHoursTerms'
@@ -58,14 +58,23 @@ interface DayGridProps {
   page?: number
   onPage?: (page: number) => void
   /**
-   * Pages of 30, or every anaesthetist in one scrolling list: an icon toggle in
-   * the grid's bottom-right corner, offered only when there is more than one page.
+   * Pages of as many rows as fit the window (never a scroll bar), or every
+   * anaesthetist in one scrolling list: the icon switch in the grid's
+   * bottom-right corner, offered only when there is more than one page.
    */
   rowMode?: DayRowMode
   onRowMode?: (mode: DayRowMode) => void
 }
 
 export type DayRowMode = 'pages' | 'scroll'
+
+const ROW_MODE_OPTIONS: readonly SlidingSegmentOption<DayRowMode>[] = [
+  { value: 'pages', label: <BookOpen size={15} aria-hidden />, title: 'Pages: as many anaesthetists as fit, no scrolling' },
+  { value: 'scroll', label: <ScrollText size={15} aria-hidden />, title: 'Scroll: every anaesthetist in one list' },
+]
+
+/** One anaesthetist row: 44px and its 1px rule. Pages hold as many as fit the window. */
+const ROW_PX = 45
 
 /** The needs-attention amber (the warning token, not the pre-op status hue). */
 const ATTENTION = semantic.warning.solid
@@ -205,14 +214,26 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
     }
     return [...matching, ...inactive]
   }, [filtered, filteredRows])
-  const pageSize = FULL_SCALE.pageSizes.day
+  // A page is as many rows as fit the rows area (measured; 30 before the first measure and in tests).
+  const rowsRef = useRef<HTMLDivElement>(null)
+  const [fitRows, setFitRows] = useState<number | null>(null)
+  useLayoutEffect(() => {
+    const el = rowsRef.current
+    if (el === null) return
+    const measure = () => setFitRows(el.clientHeight > 0 ? Math.max(1, Math.floor(el.clientHeight / ROW_PX)) : null)
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+  const pageSize = fitRows ?? FULL_SCALE.pageSizes.day
   const pageable = displayedRows.length > pageSize
   const paged = pageable && rowMode === 'pages'
   const pageRows = paged ? pageOf(displayedRows, pageSize, page) : displayedRows
   const pageStart = paged ? pageWindow(displayedRows.length, pageSize, page).start : 0
 
-  // The rows scroll inside the card; a new page starts at its top.
-  const rowsRef = useRef<HTMLDivElement>(null)
+  // In Scroll the rows scroll inside the card; a new page or mode starts at the top.
   useEffect(() => {
     if (rowsRef.current !== null) rowsRef.current.scrollTop = 0
   }, [page, rowMode])
@@ -246,7 +267,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
   return (
     // The card is never taller than its column: the ruler and the Draft List band stay at the top, the
     // legend, filters and pager at the bottom, and only the anaesthetist rows scroll between them.
-    <div data-day-grid style={{ flex: 1, minWidth: 0, maxHeight: '100%', display: 'flex', flexDirection: 'column', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden', boxShadow: elevation.e1 }}>
+    <div data-day-grid style={{ flex: 1, minWidth: 0, alignSelf: 'stretch', display: 'flex', flexDirection: 'column', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden', boxShadow: elevation.e1 }}>
       {/* Ruler header and Draft List band: they reserve the rows' scrollbar gutter, so the ruler lines up with the blocks. */}
       <div style={{ flex: 'none', overflowY: 'hidden', scrollbarGutter: 'stable', background: neutral.bg }}>
       <div style={{ display: 'flex', padding: '8px 0', borderBottom: `1px solid ${neutral.line}`, background: neutral.bg }}>
@@ -264,7 +285,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
       <DraftListBand draftLists={draftLists} bookingCounts={bookingCounts} onOpen={(id) => onOpenDraftList?.(id)} ruler={ruler} />
       </div>
 
-      <div ref={rowsRef} data-day-grid-rows style={{ flex: '0 1 auto', minHeight: 0, overflowY: 'auto', scrollbarGutter: 'stable' }}>
+      <div ref={rowsRef} data-day-grid-rows style={{ flex: '1 1 0', minHeight: 0, overflowY: paged ? 'hidden' : 'auto', scrollbarGutter: 'stable' }}>
       {pageRows.map(({ anaesthetist, segments }, pageIndex) => {
         const index = pageStart + pageIndex
         const inactive = filtered && segments.length === 0
@@ -375,22 +396,12 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
         {/* The grid's bottom-right corner, only when the day has more anaesthetists than a page:
             the pager, then the toggle between pages and one scrolling list. */}
         {pageable && (
-          <div data-shot="day-grid-footer" style={{ marginLeft: 'auto', minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: neutral.mist }}>
+          <div data-shot="day-grid-footer" style={{ marginLeft: 'auto', minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 11, color: neutral.mist }}>
             {paged && onPage !== undefined && (
-              <Pager total={displayedRows.length} size={pageSize} page={page} onPage={onPage} lead="Anaesthetists" shot="day-grid-pager" nested showRange={false} />
+              <Pager total={displayedRows.length} size={pageSize} page={page} onPage={onPage} lead="Anaesthetists" shot="day-grid-pager" nested showRange={false} dense />
             )}
             {onRowMode !== undefined && (
-              <IconButton
-                size={32}
-                tone="action"
-                shot="day-grid-row-mode"
-                data-row-mode={rowMode}
-                label={rowMode === 'pages' ? 'Show all anaesthetists in one list' : `Show ${pageSize} anaesthetists a page`}
-                title={rowMode === 'pages' ? 'Show all in one list' : `Show ${pageSize} a page`}
-                onClick={() => onRowMode(rowMode === 'pages' ? 'scroll' : 'pages')}
-              >
-                {rowMode === 'pages' ? <UnfoldVertical size={15} aria-hidden /> : <FoldVertical size={15} aria-hidden />}
-              </IconButton>
+              <SlidingSegmentedControl size="sm" variant="teal" ariaLabel="Show anaesthetists" value={rowMode} options={ROW_MODE_OPTIONS} onSelect={onRowMode} />
             )}
           </div>
         )}
