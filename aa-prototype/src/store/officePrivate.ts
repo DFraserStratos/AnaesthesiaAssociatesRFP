@@ -18,7 +18,6 @@ import {
   isPriorityTier,
   activeEntryOnSide,
   tierFor,
-  tierLabel,
 } from '../domain/pairingPreferences'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
@@ -189,9 +188,4 @@ export function selectPriorityTiers(s: AppState): AppState['officePrivate']['pri
 /** The anaesthetist's tier, the default when there is no entry. */
 export function selectPriorityTier(s: AppState, anaesthetistId: AnaesthetistId): PriorityTier {
   return tierFor(s.officePrivate.priorityTiers, anaesthetistId)
-}
-
-/** The tier's display label (from the one label set). */
-export function priorityTierLabel(s: AppState, anaesthetistId: AnaesthetistId): string {
-  return tierLabel(selectPriorityTier(s, anaesthetistId))
 }

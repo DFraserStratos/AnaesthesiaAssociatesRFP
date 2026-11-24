@@ -204,14 +204,6 @@ export function onlyHoldersBilled(
   )
 }
 
-/** True when at least one Procedure's Contract bills its payer. */
-export function anyPayerBilled(
-  procedures: readonly Pick<Procedure, 'governingContractId'>[],
-  contracts: Readonly<Record<string, Pick<Contract, 'billsTo'>>>,
-): boolean {
-  return procedures.some((p) => isPayerBilled(p.governingContractId !== undefined ? contracts[p.governingContractId] : undefined))
-}
-
 /**
  * US-11.2.3, per Procedure (catch-up Phase 22a): the Procedure's Contract
  * bills its payer and that payer has neither an email nor a valid postal

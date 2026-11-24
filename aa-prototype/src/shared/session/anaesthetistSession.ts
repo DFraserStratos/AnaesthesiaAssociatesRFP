@@ -33,9 +33,6 @@ export const SIGN_IN_PROVISIONAL = {
   note: 'How anaesthetists sign in (two-step codes, single sign-on, Face ID) is still to be decided. This screen stands in for it.',
 } as const
 
-/** The one constant an OQ-83 answer changes. */
-export const SIGN_IN_RULE = { platform: 'pwa', provider: 'simulated', preFilled: true } as const
-
 export type SessionDefault = 'signed-in' | 'signed-out'
 
 function readStored(): StoredSession | null {
@@ -112,9 +109,4 @@ export function signOutSession(): void {
 /** Forget the session, so the host's default applies again (the framed Reset). */
 export function clearAnaesthetistSession(): void {
   setStored(null)
-}
-
-/** Re-read storage. Nothing listens for another tab's change yet: a second framed tab follows on its next reload. */
-export function reloadAnaesthetistSession(): void {
-  useSessionStore.getState().reload()
 }

@@ -74,10 +74,6 @@ export interface SeedXeroSlice {
   refunds: Record<string, XeroRefund>
 }
 
-export function emptySeedXeroSlice(): SeedXeroSlice {
-  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {}, creditNotes: {}, creditAllocations: {}, batchPayments: {}, refunds: {} }
-}
-
 export interface SeedBillingSlice {
   invoices: Record<string, Invoice>
   invoiceLines: Record<string, InvoiceLine>

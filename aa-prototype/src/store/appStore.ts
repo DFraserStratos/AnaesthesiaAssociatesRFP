@@ -480,16 +480,6 @@ export const PERSIST_KEY = 'aa-demo'
  *  v75 (lane/b): catch-up Phase 43b, support: the `support` slice (TK0001 to TK0005, counter `supportTicket` 6). Reseeds on load. */
 export const PERSIST_VERSION = 75
 
-export function emptyBillingSlice(): BillingSlice {
-  return { invoices: {}, invoiceLines: {}, ledger: {}, receipts: {}, disbursements: {}, unmatchedReceipts: {}, exceptions: {}, contactIdCache: {}, aaFeeInvoices: {}, locks: {}, transfers: {}, xeroQueue: {}, xeroDivergences: {}, creditNotes: {}, negativeInvoices: {}, payablesRuns: {}, bankLines: {}, prepaymentRefunds: {} }
-}
-export function emptyXeroSlice(): XeroSlice {
-  return { contacts: {}, accRecs: {}, accPays: {}, payments: {}, disbursements: {}, journals: {}, remittances: {}, bankLines: {}, creditNotes: {}, creditAllocations: {}, batchPayments: {}, refunds: {} }
-}
-export function emptyIntegrationsSlice(): IntegrationsSlice {
-  return { feeds: {}, messages: {} }
-}
-
 /** The intake slice: seeded empty, the presenter imports or a trigger delivers (catch-up Phase 33). */
 export function emptyIntakeSlice(): IntakeSlice {
   return { batches: {}, rows: {}, stubs: {}, pdfLists: {} }

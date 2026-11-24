@@ -7,16 +7,16 @@
  * screenshot where it was. New specs that test those states opt out with
  * `test.use({ storageState: { cookies: [], origins: [] } })`.
  *
- * Built from the live URLs, not a fixed JSON file, because a build lane runs on
- * its own ports (LANES.md) and a storage state is keyed by exact origin.
+ * Built from the live URLs, not a fixed JSON file, because AA_PROTO_PORT and
+ * AA_PWA_PORT can move the ports and a storage state is keyed by exact origin.
  */
 
 /** Must match `shared/session/anaesthetistSession.ts`'s `SESSION_KEY`. */
-export const SESSION_KEY = 'aa-anaesthetist-session'
-export const SIGNED_IN_SESSION = JSON.stringify({ signedIn: true, account: 'm.souter@aa-associates.example' })
+const SESSION_KEY = 'aa-anaesthetist-session'
+const SIGNED_IN_SESSION = JSON.stringify({ signedIn: true, account: 'm.souter@aa-associates.example' })
 
 /** The first-run welcome cards' dismissal keys (catch-up Phase 43a, session 2). */
-export const FIRST_RUN_HINT_KEYS = ['aa-first-run-hint-mobile', 'aa-first-run-hint-web', 'aa-first-run-hint-admin'] as const
+const FIRST_RUN_HINT_KEYS = ['aa-first-run-hint-mobile', 'aa-first-run-hint-web', 'aa-first-run-hint-admin'] as const
 
 type Origin = { origin: string; localStorage: { name: string; value: string }[] }
 

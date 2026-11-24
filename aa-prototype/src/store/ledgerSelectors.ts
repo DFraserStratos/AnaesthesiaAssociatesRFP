@@ -88,13 +88,6 @@ export function openBillingExceptions(state: BillingState): BillingException[] {
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
-/** Every pair not yet mirrored in Xero, in id order. */
-export function pairsNotInXero(state: BillingState): LedgerPair[] {
-  return allPairs(state)
-    .filter((p) => !isInXero(p))
-    .sort((a, b) => a.id.localeCompare(b.id))
-}
-
 // ---------------------------------------------------------------------------
 // The Xero sync queue and divergence flags (catch-up Phase 37; EP-09)
 // ---------------------------------------------------------------------------

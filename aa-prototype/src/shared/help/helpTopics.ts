@@ -153,10 +153,6 @@ export const HELP_TOPICS: Readonly<Record<HelpTopicId, HelpTopic>> = {
   },
 }
 
-export function helpTopic(id: HelpTopicId): HelpTopic {
-  return HELP_TOPICS[id]
-}
-
 /** Words in a topic's body, for the 60-word rule. */
 export function helpWordCount(topic: HelpTopic): number {
   return topic.body.join(' ').split(/\s+/).filter((w) => w !== '').length

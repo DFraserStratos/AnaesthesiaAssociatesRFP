@@ -13,11 +13,11 @@ import { Button, Card, FormError, ResultLine, TextAction, TextField } from '../.
 import { neutral } from '../../../../theme/tokens'
 import { MasterHeader } from './chrome'
 
-export const PATIENT_BALANCE_THRESHOLD_CAPTION =
+const PATIENT_BALANCE_THRESHOLD_CAPTION =
   'Counts from the invoice date, and only amounts the patient owes on invoices billed to them. Under the threshold the warning is mild; over it, strong. A patient in credit gets a mild warning. A change applies at the next Booking check.'
 
 /** The field's live reason: a whole number of days from 1 to 730, else null. */
-export function thresholdProblem(raw: string): string | null {
+function thresholdProblem(raw: string): string | null {
   const t = raw.trim()
   if (!/^\d+$/.test(t)) return THRESHOLD_RANGE_MESSAGE
   const n = Number(t)

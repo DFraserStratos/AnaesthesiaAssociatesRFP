@@ -79,11 +79,6 @@ export function anyHintDismissed(): boolean {
   return HINT_APPS.some((app) => dismissed[app])
 }
 
-/** Re-read storage (tests). */
-export function reloadFirstRunHints(): void {
-  useHintStore.getState().reload()
-}
-
 /** Whether this app's card shows now. */
 export function useHintShown(app: HintApp): boolean {
   return useHintStore((s) => !s.dismissed[app])

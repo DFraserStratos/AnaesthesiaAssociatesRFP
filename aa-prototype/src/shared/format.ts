@@ -17,7 +17,7 @@ import { validateNhi } from '../domain/nhi'
 import { formatMoney as formatMoneyOf } from '../domain/billing/money'
 import { nameWithoutTitle } from '../domain/names'
 import { normaliseHpiCpn } from '../domain/surgeons'
-import type { BookingSource, Hospital, InvoiceDescriptionOrigin, List, ProcedureTextSource, Surgeon } from '../domain/types'
+import type { BookingSource, Hospital, List, ProcedureTextSource, Surgeon } from '../domain/types'
 
 export {
   dateRange,
@@ -218,13 +218,4 @@ export const PROCEDURE_TEXT_SOURCE_LABELS: Record<ProcedureTextSource, string> =
   phone: 'Phone',
   anaesthetist: 'Anaesthetist',
   unrecorded: 'Source not recorded',
-}
-
-/** Where the invoice description's value came from. */
-export const INVOICE_DESCRIPTION_ORIGIN_LABELS: Record<InvoiceDescriptionOrigin, string> = {
-  rooms: "From the surgeon's rooms",
-  entered: 'As entered',
-  hospital: 'From the hospital',
-  contract: 'From the Contract',
-  edited: 'Edited by the office',
 }

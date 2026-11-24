@@ -79,7 +79,6 @@ import {
   ConflictCalloutExample,
   ContractPanelExample,
   ContractPriceRangesExample,
-  ContractSelectExample,
   DayGridExample,
   DayNavExample,
   DraftListBandExample,
@@ -260,9 +259,6 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="NameSearchBox" source="shared/ui/NameSearchBox.tsx" usedIn={AWM} what="The one search box in all three apps since UI unification U4: field (48px) and pill (36px, or 38px on the web Lists row) sizes; fill well (grey) inside a sheet, card or drawer and surface (white, the default) on the page; a clear button (clearLabel, a 44px touch target on the phone), Escape clears, testId and shot hooks. Each caller filters its own rows." shared="shared/ui/NameSearchBox.tsx" note="WebSearchField and the mobile Lists input are gone: both Lists pages use it. The aa-field class gives it the one teal focus ring.">
           <NameSearchBoxExample />
-        </CatalogueRow>
-        <CatalogueRow name="ContractSelect (SelectField)" source="shared/contracts/ContractSelect.tsx" usedIn={A} what="A native select of every active Contract grouped by holder, on the shared SelectField (UI unification U4): 48px, grey well, its label above it." shared="shared/contracts/ContractSelect.tsx" note="A select without a visible label takes SelectField's hideLabel, which names it.">
-          <ContractSelectExample />
         </CatalogueRow>
         <CatalogueRow name="SurgeonPicker" source="apps/admin/components/pairing/SurgeonPicker.tsx" usedIn={A} what="A native select of surgeons with a 'Not preferred with Dr X' optgroup for the chosen anaesthetist, on the shared SelectField (UI unification U4): a label (or hideLabel), size, fill and width." shared="shared/ui/Field.tsx" note="Stays a native select (the catch-up 17 ruling). The list is long and not searchable. Opens on an anaesthetist with a not-preferred surgeon, so the second optgroup shows.">
           <SurgeonPickerExample />

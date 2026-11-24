@@ -480,10 +480,6 @@ export function WarningTriangleExample() {
   )
 }
 
-export function DraftListPartsExample({ children }: { children: ReactNode }) {
-  return <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', fontSize: 13 }}>{children}</div>
-}
-
 // ---------------------------------------------------------------------------
 // Form fields
 // ---------------------------------------------------------------------------

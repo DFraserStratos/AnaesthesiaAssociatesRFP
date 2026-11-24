@@ -3,7 +3,7 @@
  * A change set is a group of audit entries, so these read the audit.
  */
 
-import type { AuditEntry, ChangeSetId, ChangeSetKind } from '../domain/types'
+import type { ChangeSetId, ChangeSetKind } from '../domain/types'
 import type { AppState } from './appStore'
 
 export interface ChangeSetSummary {
@@ -37,9 +37,4 @@ export function lastChangeSetFor(state: Pick<AppState, 'audit'>, bookingId: stri
     }
   }
   return undefined
-}
-
-/** Every entry of one change set, in audit order. */
-export function changeSetEntries(audit: readonly AuditEntry[], changeSetId: ChangeSetId): AuditEntry[] {
-  return audit.filter((e) => e.changeSetId === changeSetId)
 }

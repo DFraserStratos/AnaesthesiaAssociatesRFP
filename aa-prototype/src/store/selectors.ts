@@ -21,7 +21,7 @@ import {
   type RailContext,
   type RailMasters,
 } from '../domain/billing/contractRail'
-import { billablePartyForProcedure, otherPayerHeld, partyForCounterparty, payerCounterparty, payerDetails, type PayerDetails } from '../domain/billing/whoIsBilled'
+import { billablePartyForProcedure, otherPayerHeld, partyForCounterparty, payerCounterparty } from '../domain/billing/whoIsBilled'
 import { refKey } from '../domain/billing/procedurePayer'
 import type {
   AssignedList,
@@ -92,7 +92,7 @@ import { clockISO } from './mutate'
 import { compareSessions } from '../domain/outOfHours'
 import { SESSIONS_IN_ORDER } from '../domain/outOfHours'
 import { officeAddressFor } from '../domain/surgeonContacts'
-import { pickableChanges, type PickableChange, type UpdateEmailRecipient, type UpdateEmailSubject } from '../domain/updateEmail'
+import { type UpdateEmailRecipient, type UpdateEmailSubject } from '../domain/updateEmail'
 import { titledSurname } from '../domain/names'
 
 // ---------------------------------------------------------------------------
@@ -1261,14 +1261,6 @@ export function invoiceAddresseeName(state: CounterpartyNameState, invoice: Pick
   return invoice.billedTo?.name ?? counterpartyName(state, invoice.counterparty, invoice.bookingId)
 }
 
-/** A Procedure's payer's details (catch-up Phases 21, 22a): the patient's record unless another payer is ticked. */
-export function payerDetailsForProcedure(state: Pick<AppState, 'masters' | 'schedule'>, procedureId: string): PayerDetails | undefined {
-  const procedure = state.schedule.procedures[procedureId]
-  const booking = procedure !== undefined ? state.schedule.bookings[procedure.bookingId] : undefined
-  if (procedure === undefined || booking === undefined) return undefined
-  return payerDetails(procedure.payer, state.masters.patients[booking.patientId])
-}
-
 /**
  * True when a Procedure's payer is locked by their own raised prepayment
  * invoice (US-06.3.1 "Payer locked"; catch-up Phase 22a, the one lock, read
@@ -1439,13 +1431,6 @@ export function findBookingByCorrelation(
       c.correlationRef !== undefined &&
       c.correlationRef.sourceFeedId === ref.sourceFeedId &&
       c.correlationRef.externalAppointmentId === ref.externalAppointmentId,
-  )
-}
-
-/** Non-cancelled Bookings on a List whose patient carries the given (normalised) NHI (PDF dedupe). */
-export function bookingsOnListByNhi(state: Pick<AppState, 'schedule' | 'masters'>, listId: string, normalisedNhi: string): Booking[] {
-  return bookingsForList(state, listId).filter(
-    (c) => c.cancellation === undefined && state.masters.patients[c.patientId]?.nhi === normalisedNhi,
   )
 }
 
@@ -2338,11 +2323,6 @@ export function updateEmailRecipients(
   const to = [office, hospital].filter((a) => a !== '').join(', ')
   const reason = reasons.length > 0 ? `${reasons.join(' ')}${to === '' ? ' To will be left empty.' : ''}` : undefined
   return { to, alternatives, ...(reason !== undefined ? { reason } : {}) }
-}
-
-/** The picker's rows for a Booking or a List, read from the whole audit (`pickableChanges`). */
-export function pickableChangesFor(state: Pick<AppState, 'audit' | 'schedule' | 'masters'>, subject: UpdateEmailSubject): PickableChange[] {
-  return pickableChanges(state.audit, subject, { ...state.schedule, ...state.masters })
 }
 
 // ── Pickers offer active masters only (catch-up Phase 42, US-13.4.1) ────────

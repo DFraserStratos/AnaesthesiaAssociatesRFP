@@ -96,11 +96,6 @@ export function runsNewestFirst(state: Pick<AppState, 'billing'>): PayablesRun[]
   return Object.values(state.billing.payablesRuns).sort((a, b) => b.closedAtISO.localeCompare(a.closedAtISO) || b.id.localeCompare(a.id, 'en', { numeric: true }))
 }
 
-/** What a run has settled on one line so far, from the ledger: the disbursements and nettings recorded for it. */
-export function settledInRun(state: Pick<AppState, 'billing'>, runId: string, pairId: string): number {
-  return settledCentsInRun(state, runId, pairId) / 100
-}
-
 /** Indexed (`disbursedByRunPair`, `nettedByRunPair`): what a run settled on one line, in cents, and when the last of it landed. */
 function settledCentsInRun(state: Pick<AppState, 'billing'>, runId: string, pairId: string): number {
   const key = `${runId}|${pairId}`
@@ -442,14 +437,6 @@ export function lineDetection(state: Pick<AppState, 'billing'>, run: PayablesRun
   const latest = settledLatestInRun(state, run.id, line.pairId)
   const base = run.paidAtISO ?? run.closedAtISO
   return { state: 'paid', atISO: latest !== undefined && latest > base ? latest : base }
-}
-
-/** A run's derived payment state: each unheld line's detection, and whether all are paid. */
-export function payablesRunState(state: Pick<AppState, 'billing'>, runId: string): { lines: { pairId: string; detection: ReturnType<typeof lineDetection> }[]; allPaid: boolean } | undefined {
-  const run = state.billing.payablesRuns[runId]
-  if (run === undefined) return undefined
-  const lines = run.lines.filter((l) => l.heldOut === undefined).map((l) => ({ pairId: l.pairId, detection: lineDetection(state, run, l) }))
-  return { lines, allPaid: lines.every((l) => l.detection.state === 'paid') }
 }
 
 /**

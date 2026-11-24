@@ -288,11 +288,6 @@ export function useModalLayer({ open, onClose, rootRef, panelRef, initialFocusRe
   }, [open, kind])
 }
 
-/** True while `root` is the top layer of the stack (tests and popovers). */
-export function isTopLayer(root: HTMLElement | null): boolean {
-  return root !== null && stack[stack.length - 1]?.root === root
-}
-
 /** How many layers are open (tests). */
 export function openLayerCount(): number {
   return stack.length

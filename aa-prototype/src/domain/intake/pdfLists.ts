@@ -142,10 +142,6 @@ export const PDF_RESEND_SAMPLES: readonly PdfListSample[] = [
   },
 ]
 
-export function pdfListSample(id: string): PdfListSample | undefined {
-  return PDF_LIST_SAMPLES.find((s) => s.id === id) ?? PDF_RESEND_SAMPLES.find((s) => s.id === id)
-}
-
 /** The re-sent version of a first sample, if one exists. */
 export function resendSampleFor(sampleId: string): PdfListSample | undefined {
   return PDF_RESEND_SAMPLES.find((s) => s.resendOf === sampleId)

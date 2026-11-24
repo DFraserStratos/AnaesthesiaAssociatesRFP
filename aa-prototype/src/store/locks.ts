@@ -66,17 +66,6 @@ export function takeLockFor(state: AppState, booking: Booking, takenBy: string, 
   })
 }
 
-/** A Booking's lock, once its List is authorised. */
-export function lockFor(state: Pick<AppState, 'billing'>, bookingId: BookingId): BookingLock | undefined {
-  return state.billing.locks[bookingId]
-}
-
-/** The one view of a Booking's lock every screen reads (undefined before authorise). */
-export function lockViewForBooking(state: Pick<AppState, 'billing'>, bookingId: BookingId, procedureId?: ProcedureId): LockView | undefined {
-  const lock = state.billing.locks[bookingId]
-  return lock !== undefined ? lockViewFor(lock, procedureId) : undefined
-}
-
 export interface LockedAgainst {
   bookingId: BookingId
   listId: string

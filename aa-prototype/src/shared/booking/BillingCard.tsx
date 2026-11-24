@@ -99,7 +99,6 @@ interface BillingCardProps {
 }
 
 export const NEEDS_INVOICE_DESTINATION = 'Needs an invoice destination'
-export const CONTRACT_CHANGE_CAPTION = 'The office sees any change to the Contract at review.'
 
 export function BillingCard(props: BillingCardProps) {
   const { variant } = useSurface()

@@ -7,7 +7,6 @@ import { HistorySheet } from '../../../../shared/booking'
 import { PricingSheet } from '../../../../shared/flows'
 import { SEED_MARKERS } from '../../../../domain/seed'
 import { CodePickerSheet } from '../../../../shared/capture/CodePickerSheet'
-import { ContractSelect } from '../../../../shared/contracts'
 import type { DayNote } from '../../../../domain/types'
 import { billingMonitor, OFFICE_ACTOR, useAppStore } from '../../../../store'
 import { SideNav, type NavSection } from '../../../admin/components/SideNav'
@@ -265,16 +264,6 @@ export function SlotStatusSheetExample() {
 // ---------------------------------------------------------------------------
 // Pickers and fields
 // ---------------------------------------------------------------------------
-
-export function ContractSelectExample() {
-  const [value, setValue] = useState('')
-  return (
-    <div>
-      <ContractSelect value={value} onChange={setValue} />
-      <Echo>Value: {value === '' ? '(none)' : value}</Echo>
-    </div>
-  )
-}
 
 /** The first active not-preferred pairing in the seed, so the pairing rows open on a case that shows it. */
 function useNotPreferredPair(): { anaesthetistId: string; surgeonId: string } | undefined {

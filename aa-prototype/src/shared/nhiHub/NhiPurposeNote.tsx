@@ -8,7 +8,7 @@
 import { ShieldCheck } from 'lucide-react'
 import { neutral } from '../../theme/tokens'
 import { useAppStore } from '../../store'
-import { formatHpiCpn, practitionerWithHpiCpn } from '../format'
+import { formatHpiCpn } from '../format'
 
 /** Who the office looks an NHI up as, with no anaesthetist to name (a Draft List, a waiting row, the record). */
 export const AA_OFFICE_PRACTITIONER = 'the AA office'
@@ -20,11 +20,6 @@ export interface PurposePractitioner {
 }
 
 export const AA_OFFICE: PurposePractitioner = { name: AA_OFFICE_PRACTITIONER }
-
-/** The statement as one line of text (tests, the demo guide). */
-export function nhiPurposeText(practitioner: PurposePractitioner): string {
-  return `Looked up on behalf of ${practitionerWithHpiCpn(practitioner.name, practitioner.hpiId)}, only to identify this patient. Health Information Privacy Code 2020.`
-}
 
 /** The practitioner a List's lookup is made for: its anaesthetist with their HPI CPN, or the AA office for a Draft List. */
 export function usePurposePractitioner(listId?: string): PurposePractitioner {

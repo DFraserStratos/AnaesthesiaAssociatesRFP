@@ -32,5 +32,5 @@ tmp/
 # Discovery meeting recordings (large media, kept local)
 /docs/discovery-reference/Recordings/
 
-# A build lane worktree's own ports (docs/prototype-build/catch-up/LANES.md)
+# A worktree's own ports (BOARD_PORT and friends), read by requirements-board/server/laneEnv.ts
 .lane.env

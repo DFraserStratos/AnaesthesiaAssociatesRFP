@@ -1,5 +1,4 @@
 import { defineConfig, devices } from '@playwright/test'
-import './laneEnv.ts'
 import { demoReadyStorageState } from './visual/storage/demoReady'
 
 /**
@@ -20,9 +19,9 @@ import { demoReadyStorageState } from './visual/storage/demoReady'
  * Both dev servers start together (`webServer` takes an array). `dev:pwa` uses
  * `vite.pwa.config.ts`, which pins port 5174 with `strictPort`.
  *
- * AA_PROTO_PORT and AA_PWA_PORT move both servers (and every URL here) for a
- * parallel build lane in its own worktree (docs/prototype-build/catch-up/LANES.md),
- * set or read from the lane's `.lane.env` (laneEnv.ts); the dev servers and workers inherit them. Unset, the ports are 5173 and 5174.
+ * AA_PROTO_PORT and AA_PWA_PORT move both servers (and every URL here), for a
+ * second checkout or worktree on its own ports; the dev servers and workers
+ * inherit them. Unset, the ports are 5173 and 5174.
  */
 const PROTO_URL = `http://localhost:${process.env['AA_PROTO_PORT'] ?? 5173}`
 const PWA_URL = `http://localhost:${process.env['AA_PWA_PORT'] ?? 5174}`

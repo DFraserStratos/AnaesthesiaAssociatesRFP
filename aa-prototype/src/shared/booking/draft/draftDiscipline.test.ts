@@ -60,7 +60,6 @@ const REAL_STORE_ALLOWED: Record<string, string> = {
   'flows/ManualBookingForm.tsx': "List-level flow: createBooking adds a new Booking to a List (AddBookingFlow), never mounted in a Booking's draft",
   'warnings/useBookingWarnings.ts': 'warnings read the saved Booking, so they update on Save, not while drafting (a recorded Phase 35 deviation)',
   'warnings/WarningsPanel.tsx': "command clearWarning: clearing a warning writes the real store at once and stays enabled while the draft is dirty (the phase doc's rule)",
-  'contracts/ContractSelect.tsx': "reads the Contract and party masters only (never a Booking), and is not mounted on the Booking detail (the catalogue's store example)",
   'status/useSlotStatuses.ts': "the schedule grid's slot statuses (StatusChip, StatusLegend), read from the saved schedule; writes nothing",
 }
 

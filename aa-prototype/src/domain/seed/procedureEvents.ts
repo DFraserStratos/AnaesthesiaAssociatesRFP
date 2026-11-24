@@ -15,7 +15,6 @@ import { ANAE } from './cast'
 export const SEED_EVENT_ID = 'EV0001'
 export const SEED_EVENT_PROCEDURE_ID = 'HP03'
 export const SEED_EVENT_BOOKING_ID = 'HBK03'
-export const SEED_EVENT_LIST_ID = 'L-HIST-03'
 
 export const SEED_PROCEDURE_EVENTS: readonly ProcedureEvent[] = [
   {

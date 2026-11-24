@@ -67,9 +67,3 @@ export function changedFieldLabels(changes: readonly ChangeRef[], procedures: re
 export function changeCount(changes: readonly ChangeRef[], procedures: readonly Procedure[]): number {
   return changedFieldLabels(changes, procedures).length
 }
-
-/** A save's header fields (`booking.save`'s `after.fields`), or none. */
-export function savedFieldRefs(header: { after?: unknown } | undefined): ChangeRef[] {
-  const fields = (header?.after as { fields?: unknown } | undefined)?.fields
-  return Array.isArray(fields) ? (fields as ChangeRef[]) : []
-}

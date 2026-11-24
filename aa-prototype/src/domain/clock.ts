@@ -31,9 +31,6 @@ export interface DemoClockState {
 /** Pinned demo date — the mockups' content date. ISO `YYYY-MM-DD`. */
 export const DEMO_TODAY = '2026-07-21'
 
-/** Human-readable form of {@link DEMO_TODAY} (matches the mockups' headers). */
-export const DEMO_TODAY_LABEL = 'Tuesday 21 July 2026'
-
 const MINUTES_PER_DAY = 24 * 60
 
 /** The clock's seed state: {@link DEMO_TODAY} at 08:00 (a fixed morning time). */

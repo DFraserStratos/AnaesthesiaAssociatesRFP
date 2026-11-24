@@ -101,8 +101,6 @@ export function contractChoosableForProcedure(contract: Pick<Contract, 'pricing'
   return contract.pricing.kind !== 'open'
 }
 
-export const OPEN_PRICE_NOT_CHOSEN_MESSAGE = 'That Contract has no price of its own. Choose a priced Contract.'
-
 /** The one AA Party (exactly one exists; Phase 18's Party guard). */
 function aaPartyId(parties: Parties): PartyId {
   const aa = Object.values(parties).find((p) => p.kind === 'aa')

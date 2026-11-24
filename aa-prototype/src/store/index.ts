@@ -622,7 +622,7 @@ export {
   type EmailTemplateFields,
   type UpdateEmailDraftRecord,
 } from './emailTemplateActions'
-export { changeSetEntries, lastChangeSetFor, type ChangeSetSummary } from './changeSetSelectors'
+export { lastChangeSetFor, type ChangeSetSummary } from './changeSetSelectors'
 // Catch-up Phase 35: the PWA's office stand-in for an office save.
 export { officeEditsBooking, officeEditsBookingRefusal } from './officeSaveDemo'
 

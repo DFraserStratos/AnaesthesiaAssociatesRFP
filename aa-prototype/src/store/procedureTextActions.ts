@@ -29,7 +29,7 @@ import { editRefusal, getBooking } from './lifecycle'
 
 export const PROCEDURE_TEXT_BLANK_MESSAGE = 'The procedure text cannot be blank.'
 export const INVOICE_DESCRIPTION_BLANK_MESSAGE = 'The invoice needs a description.'
-export const INVOICE_DESCRIPTION_OFFICE_ONLY_MESSAGE = 'Only the AA office changes the invoice description.'
+const INVOICE_DESCRIPTION_OFFICE_ONLY_MESSAGE = 'Only the AA office changes the invoice description.'
 
 /**
  * Put a later text in place of the held one (US-02.5.7): when
