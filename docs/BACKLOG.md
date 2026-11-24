@@ -138,3 +138,5 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 - `store/appStore.ts` carries about 320 lines of per-version `PERSIST_VERSION` notes (v1 to v75); git holds them, trim to the last few. S
 - Housekeeping: 37 Playwright specs and a dozen Vitest files are named by phase (`phase11.spec.ts`, `phase43Copy.test.ts`); `phase12`, `demo-actions` and `demo-actions-audit` specs overlap; the parity fixtures (`store/__parity__/`, `domain/seed/__fixtures__/`, 2.5 MB) could become one money golden. Rename or merge only when touching them. M
 - Root `package.json` `test:plan-state` is misnamed (it runs `req-changes.test.mjs`) and redundant with `verify:board`. S
+- Christmas shutdown follow-ups: the Add holiday sheet can't mark a closure as a shutdown (`HospitalHoliday.shutdown`, seed only); Hospitals & holidays lists one chip per shutdown day (group into a range); the Day view and anaesthetist calendars don't say a hospital is closed, its Lists are just absent. S
+- After the move to Tue 24 Nov: code comments still name the July design dates, and S2's optional availability opening includes Dr Souter's Fri 1 Jan PM (New Year's Day). S
