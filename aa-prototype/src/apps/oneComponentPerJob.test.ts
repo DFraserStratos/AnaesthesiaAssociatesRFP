@@ -80,7 +80,7 @@ export const ALLOW_LIST: readonly { file: string; count: number; reason: string 
   { file: 'apps/web/components/WebNav.tsx', count: 2, reason: 'Web nav tabs and the profile link with the crimson underline (question 3; README section 5)' },
   { file: 'apps/mobile/MobileApp.tsx', count: 1, reason: 'The bottom tab bar items, teal active tab (question 3; README section 5)' },
   // Calendar and grid cells, tiles, swatches and chips: a different job from a command button.
-  { file: 'apps/admin/components/RightRail.tsx', count: 3, reason: "The mini calendar's day cells (crimson today, README section 5) and 22px month arrows (no IconButton size), and the Awaiting review rows that open a List" },
+  { file: 'apps/admin/components/RightRail.tsx', count: 2, reason: "The mini calendar's day cells (crimson today, README section 5) and 22px month arrows (no IconButton size)" },
   { file: 'apps/admin/screens/masters/HospitalsView.tsx', count: 2, reason: "The hospital calendar's day cells and the holiday chips that open their holiday" },
   { file: 'apps/mobile/screens/MyAvailabilityCalendarScreen.tsx', count: 1, reason: 'Calendar day cells with aria-current, not command buttons' },
   { file: 'apps/web/screens/MyAvailabilityCalendar.tsx', count: 1, reason: 'Calendar day cells with aria-pressed and aria-current, not command buttons' },
@@ -95,9 +95,7 @@ export const ALLOW_LIST: readonly { file: string; count: number; reason: string 
   { file: 'shared/StatusLegend.tsx', count: 1, reason: 'Status chip filter toggles (aria-pressed); FilterPills are solid teal' },
   // Rows and cards that open a record: one whole target, not a command button.
   { file: 'apps/admin/components/DraftListBand.tsx', count: 1, reason: 'A Draft List block placed on the Day ruler that opens its drawer' },
-  { file: 'apps/admin/components/NeedsInvoiceDestinationCard.tsx', count: 1, reason: 'Rail rows that open a Booking' },
   { file: 'apps/admin/components/PrepaymentsRailCard.tsx', count: 1, reason: 'Rail rows that open a Booking or Invoices' },
-  { file: 'apps/admin/components/draftLists/DraftListsCard.tsx', count: 1, reason: 'Rail rows that open a Draft List' },
   { file: 'apps/admin/components/WarningsToDo.tsx', count: 1, reason: "The to-do card's row that opens Conflicts (warning edge)" },
   { file: 'apps/admin/flows/MoveBookingFlow.tsx', count: 1, reason: 'Candidate List cards that move the Booking on tap' },
   { file: 'apps/admin/components/pairing/AnaesthetistCandidates.tsx', count: 1, reason: "The office's candidate row (name, pills, tier): a pick row PickRow's two looks do not cover" },
@@ -132,8 +130,8 @@ export const ALLOW_LIST: readonly { file: string; count: number; reason: string 
 ]
 
 /** The list's length, and its buttons in all, when U7 closed (23 November 2026). Both may only come down. */
-export const ALLOW_LIST_CEILING = 58
-export const ALLOWED_BUTTONS_CEILING = 90
+export const ALLOW_LIST_CEILING = 56
+export const ALLOWED_BUTTONS_CEILING = 87
 
 /** Block and line comments blanked (newlines kept, so offsets and line numbers hold). */
 export function stripComments(src: string): string {

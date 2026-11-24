@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { reconciliationStatusOf, useAppStore } from '../../../store'
-import type { UnresolvedItemSource } from '../../../domain/billing/reconciliation'
+import type { ReconciliationStatus, UnresolvedItemSource } from '../../../domain/billing/reconciliation'
 import { neutral, radius, semantic } from '../../../theme/tokens'
 import { Card, Notice, TextAction } from '../../../shared/ui'
 import { formatMoney, plural } from '../../../shared/format'
@@ -26,14 +26,8 @@ const HANDLED_AT: Record<UnresolvedItemSource, { to: string; label: string }> = 
  * our reading until the posting design settles them.
  */
 export function ReconciliationCard() {
-  const billing = useAppStore((s) => s.billing)
-  const xero = useAppStore((s) => s.xero)
-  const clock = useAppStore((s) => s.clock)
-  const status = useMemo(() => reconciliationStatusOf({ billing, xero, clock }), [billing, xero, clock])
-  const [showAll, setShowAll] = useState(false)
+  const status = useReconciliationStatus()
   const square = status.status === 'square'
-  const items = showAll ? status.items : status.items.slice(0, VISIBLE_ITEMS)
-
   return (
     <Card shot="dashboard-reconciliation" headingId="admin-reconciliation-heading" title="Reconciliation" data-status={status.status}>
       <Notice tone={square ? 'success' : 'warning'} live="status" shot="dashboard-reconciliation-status">
@@ -42,7 +36,30 @@ export function ReconciliationCard() {
           {!square && <span>{plural(status.items.length, 'item')} to resolve</span>}
         </span>
       </Notice>
+      <ReconciliationDetail status={status} />
+    </Card>
+  )
+}
 
+/** The reconciliation status, derived on every render from the ledger and the Xero mirror (never stored). */
+export function useReconciliationStatus(): ReconciliationStatus {
+  const billing = useAppStore((s) => s.billing)
+  const xero = useAppStore((s) => s.xero)
+  const clock = useAppStore((s) => s.clock)
+  return useMemo(() => reconciliationStatusOf({ billing, xero, clock }), [billing, xero, clock])
+}
+
+/**
+ * What sits under the status: square, one plain line; out of balance, each failing check with its
+ * difference, then the unresolved items oldest first, each linking to where it is handled. Then the
+ * Proposed caption. The card above and the rail's Books square tile both show it.
+ */
+export function ReconciliationDetail({ status }: { status: ReconciliationStatus }) {
+  const [showAll, setShowAll] = useState(false)
+  const square = status.status === 'square'
+  const items = showAll ? status.items : status.items.slice(0, VISIBLE_ITEMS)
+  return (
+    <>
       {square ? (
         <div style={{ fontSize: 12.5, color: neutral.slate }}>The ledger, its Xero mirror and Xero's bank lines all agree.</div>
       ) : (
@@ -93,6 +110,6 @@ export function ReconciliationCard() {
       <div data-shot="dashboard-reconciliation-proposed" style={{ fontSize: 11, color: neutral.mist }}>
         Proposed · checks the ledger, the ledger against Xero, and Xero's bank lines.
       </div>
-    </Card>
+    </>
   )
 }

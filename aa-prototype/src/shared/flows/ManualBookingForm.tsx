@@ -46,7 +46,7 @@ interface ManualBookingFormProps {
 }
 
 /** Saved with no Contract: it waits on the office's list (US-04.3.4, catch-up Phase 20). */
-export const SAVED_WITHOUT_CONTRACT = 'Saved without a Contract, this Booking waits on Needs an invoice destination.'
+export const SAVED_WITHOUT_CONTRACT = "Saved without a Contract, this Booking waits on the office's To-do."
 
 export function ManualBookingForm({ listId, actor, initial, emptyLookupPrefill, source, onSaved }: ManualBookingFormProps) {
   const rvgGroups = useAppStore((s) => s.masters.rvgGroups)

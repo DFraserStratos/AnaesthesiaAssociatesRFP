@@ -25,7 +25,9 @@ const PWA = process.env['PWA_URL'] ?? `http://localhost:${process.env['AA_PWA_PO
 test('admin: rail card, Riley awaiting approval, Approve and send, then part paid from the Booking', async ({ page }) => {
   await page.goto('/admin/day/2026-11-24')
   await page.waitForLoadState('networkidle')
-  const rail = page.locator('[data-shot="rail-prepayments"]')
+  // The Pre-payments tile opens its rows under the rail's two readings.
+  await page.locator('[data-shot="rail-prepayments"]').click()
+  const rail = page.locator('[data-shot="rail-prepayments-detail"]')
   await expect(rail).toBeVisible()
   const rileyRow = rail.locator(`[data-shot="rail-prepayment-row"][data-booking-id="${RILEY}"]`)
   await expect(rileyRow).toContainText('Annette Riley')

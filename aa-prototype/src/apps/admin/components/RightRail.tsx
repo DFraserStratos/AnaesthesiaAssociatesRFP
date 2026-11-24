@@ -1,27 +1,16 @@
 import { useEffect, useState } from 'react'
 import { addMonths, format, parseISO, startOfMonth } from 'date-fns'
-import { accent, brand, neutral, radius, semantic } from '../../../theme/tokens'
+import { brand, neutral, radius, semantic } from '../../../theme/tokens'
 import type { DayNote } from '../../../domain/types'
 import type { Actor, OpenWarningRow } from '../../../store'
-import { WarningsToDo } from './WarningsToDo'
-import { NeedsInvoiceDestinationCard } from './NeedsInvoiceDestinationCard'
-import { PrepaymentsRailCard } from './PrepaymentsRailCard'
-import { ReconciliationCard } from './ReconciliationCard'
-import { DraftListsCard } from './draftLists/DraftListsCard'
-import { NotificationsCard } from './NotificationsCard'
+import { RailReadings } from './RailReadings'
+import { RailWorkCard } from './RailWorkCard'
 import type { NotificationTarget } from '../../../store'
 import { ADMIN_RIGHT_RAIL_WIDTH } from '../layout'
 import { hhmm, longDay } from '../../../shared/format'
 import { useCalendarKeys } from '../../../shared/calendar'
 import { monthCells, WEEKDAY_INITIALS } from '../../../shared/availability/monthCells'
-import { EmptyState } from '../../../shared/ui/EmptyState'
-import { Button, Card, Checkbox, TextArea } from '../../../shared/ui'
-
-interface ReviewRow {
-  listId: string
-  title: string
-  sub: string
-}
+import { Button, Card, Checkbox, TextAction, TextArea } from '../../../shared/ui'
 
 interface RightRailProps {
   /** The month to show (derived from the selected day). */
@@ -31,9 +20,7 @@ interface RightRailProps {
   onNavigateDate: (dateISO: string) => void
   notes: DayNote[]
   onAddNote: (text: string, flagged: boolean) => void
-  reviewRows: ReviewRow[]
   shellScrollbarWidth: number
-  onReviewList: (listId: string) => void
   /** Every open warning (US-13.7.2), and the office actor that clears them. */
   todoRows: readonly OpenWarningRow[]
   actor: Actor
@@ -41,9 +28,6 @@ interface RightRailProps {
   onOpenConflicts?: () => void
   /** The Invoices screen's Awaiting approval strip (catch-up Phase 27). */
   onOpenInvoices?: () => void
-  /** Catch-up Phase 31: open a Draft List's drawer, and the Draft Lists page. */
-  onOpenDraftList?: (listId: string) => void
-  onSeeAllDraftLists?: () => void
   /** Catch-up Phase 32: open a notification's List or Draft List, and the Notifications page. */
   onOpenNotification?: (target: NotificationTarget) => void
   onSeeAllNotifications?: () => void
@@ -51,27 +35,26 @@ interface RightRailProps {
   onShowResolvedNotifications?: () => void
 }
 
+/**
+ * The Admin Day rail: the calendar, two readings (Books square, Pre-payments), one work card with
+ * To-do and Notifications tabs, and the day's notes. Draft Lists and Lists awaiting review have
+ * their own pages; the day's Draft Lists also sit in the band above the grid.
+ */
 export function RightRail(props: RightRailProps) {
   return (
     <div data-testid="admin-right-rail" style={{ width: ADMIN_RIGHT_RAIL_WIDTH - props.shellScrollbarWidth, flex: 'none', display: 'flex', flexDirection: 'column', gap: 14 }}>
       <MiniCalendar monthDateISO={props.monthDateISO} selectedDateISO={props.selectedDateISO} todayISO={props.todayISO} onNavigateDate={props.onNavigateDate} />
-      {/* Rail order (Decisions log 2026-10-10): calendar, To-do (15a), Draft
-          Lists (31), the shared notification pool (32), notes, Awaiting review;
-          "Needs an invoice destination" (20) under the To-do. */}
-      <WarningsToDo rows={props.todoRows} actor={props.actor} onOpenBooking={props.onOpenBooking} {...(props.onOpenConflicts !== undefined ? { onOpenConflicts: props.onOpenConflicts } : {})} />
-      {/* Whether the books are square, beside the To-do (catch-up Phase 37; US-13.2.4). */}
-      <ReconciliationCard />
-      {/* Upcoming pre-payments, under the To-do (catch-up Phase 27, US-06.3.2). */}
-      <PrepaymentsRailCard onOpenBooking={props.onOpenBooking} {...(props.onOpenInvoices !== undefined ? { onOpenInvoices: props.onOpenInvoices } : {})} />
-      <NeedsInvoiceDestinationCard onOpenBooking={props.onOpenBooking} />
-      {props.onOpenDraftList !== undefined && props.onSeeAllDraftLists !== undefined && (
-        <DraftListsCard onOpenDraftList={props.onOpenDraftList} onSeeAll={props.onSeeAllDraftLists} />
-      )}
-      {props.onOpenNotification !== undefined && props.onSeeAllNotifications !== undefined && (
-        <NotificationsCard actor={props.actor} onOpen={props.onOpenNotification} onSeeAll={props.onSeeAllNotifications} {...(props.onShowResolvedNotifications !== undefined ? { onShowResolved: props.onShowResolvedNotifications } : {})} />
-      )}
-      <InternalNotes notes={props.notes} onAddNote={props.onAddNote} />
-      <AwaitingReview rows={props.reviewRows} onReviewList={props.onReviewList} />
+      <RailReadings onOpenBooking={props.onOpenBooking} {...(props.onOpenInvoices !== undefined ? { onOpenInvoices: props.onOpenInvoices } : {})} />
+      <RailWorkCard
+        todoRows={props.todoRows}
+        actor={props.actor}
+        onOpenBooking={props.onOpenBooking}
+        {...(props.onOpenConflicts !== undefined ? { onOpenConflicts: props.onOpenConflicts } : {})}
+        onOpenNotification={props.onOpenNotification ?? (() => undefined)}
+        onSeeAllNotifications={props.onSeeAllNotifications ?? (() => undefined)}
+        {...(props.onShowResolvedNotifications !== undefined ? { onShowResolvedNotifications: props.onShowResolvedNotifications } : {})}
+      />
+      <DayNotes notes={props.notes} onAddNote={props.onAddNote} />
     </div>
   )
 }
@@ -167,10 +150,11 @@ function NavArrow({ label, glyph, onClick }: { label: string; glyph: string; onC
 }
 
 // ---------------------------------------------------------------------------
-// Internal notes
+// Day notes
 // ---------------------------------------------------------------------------
 
-function InternalNotes({ notes, onAddNote }: { notes: DayNote[]; onAddNote: (text: string, flagged: boolean) => void }) {
+/** Notes pinned to the day on screen: one line until there is a note, "Add note" in the heading. */
+function DayNotes({ notes, onAddNote }: { notes: DayNote[]; onAddNote: (text: string, flagged: boolean) => void }) {
   const [adding, setAdding] = useState(false)
   const [text, setText] = useState('')
   const [flagged, setFlagged] = useState(false)
@@ -184,55 +168,31 @@ function InternalNotes({ notes, onAddNote }: { notes: DayNote[]; onAddNote: (tex
   }
 
   return (
-    <Card title="Internal notes">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {notes.length === 0 && <EmptyState>No notes for this day.</EmptyState>}
-        {notes.map((n) => (
-          <div key={n.id} style={{ display: 'flex', flexDirection: 'column', gap: 2, borderLeft: `3px solid ${n.flagged ? semantic.warning.solid : neutral.line}`, paddingLeft: 10 }}>
-            <span className="mono" style={{ fontSize: 10, color: neutral.mist }}>{hhmm(n.atISO)} · {n.initials}</span>
-            <span style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.ink }}>{n.text}</span>
-          </div>
-        ))}
-      </div>
-
-      {adding ? (
+    <Card
+      shot="admin-day-notes"
+      title="Day notes"
+      {...(adding ? {} : { action: <TextAction size="sm" flush onClick={() => setAdding(true)}>Add note</TextAction> })}
+    >
+      {notes.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {notes.map((n) => (
+            <div key={n.id} style={{ display: 'flex', flexDirection: 'column', gap: 2, borderLeft: `3px solid ${n.flagged ? semantic.warning.solid : neutral.line}`, paddingLeft: 10 }}>
+              <span className="mono" style={{ fontSize: 10, color: neutral.mist }}>{hhmm(n.atISO)} · {n.initials}</span>
+              <span style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.ink }}>{n.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {adding && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <TextArea size="compact" ariaLabel="Internal note for this day" value={text} onChange={setText} placeholder="Add an internal note for this day" autoFocus />
+          <TextArea size="compact" ariaLabel="Note for this day" value={text} onChange={setText} placeholder="Add a note for this day" autoFocus />
           <Checkbox checked={flagged} onChange={setFlagged} style={{ gap: 6, fontSize: 12, color: neutral.slate }}>Flag (amber)</Checkbox>
           <div style={{ display: 'flex', gap: 8 }}>
             <Button variant="primary" size="compact" onClick={save} disabled={text.trim() === ''} style={{ flex: 1 }}>Save note</Button>
             <Button variant="secondary" size="compact" onClick={() => { setAdding(false); setText('') }} style={{ flex: 'none' }}>Cancel</Button>
           </div>
         </div>
-      ) : (
-        <Button variant="secondary" size="compact" onClick={() => setAdding(true)}>+ Add note</Button>
       )}
-    </Card>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Awaiting review
-// ---------------------------------------------------------------------------
-
-function AwaitingReview({ rows, onReviewList }: { rows: ReviewRow[]; onReviewList: (listId: string) => void }) {
-  return (
-    <Card title="Awaiting review">
-      {rows.length === 0 && <EmptyState>Nothing awaiting review.</EmptyState>}
-      {rows.map((r) => (
-        <button
-          key={r.listId}
-          type="button"
-          onClick={() => onReviewList(r.listId)}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '10px 12px', background: neutral.bg, borderRadius: radius.ctl, border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
-        >
-          <span style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: neutral.ink }}>{r.title}</span>
-            <span style={{ fontSize: 11, color: neutral.slate }}>{r.sub}</span>
-          </span>
-          <span style={{ fontSize: 13, fontWeight: 600, color: accent.base }}>Review →</span>
-        </button>
-      ))}
     </Card>
   )
 }

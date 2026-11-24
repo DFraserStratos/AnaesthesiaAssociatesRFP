@@ -155,16 +155,12 @@ export function AdminDayRoute() {
           onNavigateDate={goToDay}
           notes={ctx.notes}
           onAddNote={ctx.onAddNote}
-          reviewRows={ctx.reviewRows}
           shellScrollbarWidth={ctx.shellScrollbarWidth}
-          onReviewList={(listId) => navigate(`/admin/review/${listId}`)}
           todoRows={ctx.todoRows}
           actor={ctx.actor}
           onOpenBooking={(d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`)}
           onOpenConflicts={() => navigate('/admin/conflicts')}
           onOpenInvoices={() => navigate('/admin/invoices')}
-          onOpenDraftList={ctx.onOpenDraftList}
-          onSeeAllDraftLists={() => navigate('/admin/draft-lists')}
           onOpenNotification={(target) => openNotificationTarget(target, ctx, (d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`))}
           onSeeAllNotifications={() => navigate('/admin/notifications')}
           onShowResolvedNotifications={() => navigate('/admin/notifications?resolved=1')}

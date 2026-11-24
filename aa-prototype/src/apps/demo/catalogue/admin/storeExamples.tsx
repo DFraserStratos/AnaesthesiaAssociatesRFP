@@ -158,9 +158,7 @@ export function RightRailExample() {
         onAddNote={(text, flagged) =>
           setNotes((cur) => [...cur, { id: `local-${cur.length + 1}`, text, flagged, by: 'You (local)', initials: 'YL', atISO: `${dateISO}T09:00:00` }])
         }
-        reviewRows={[]}
         shellScrollbarWidth={0}
-        onReviewList={noop}
         todoRows={day.todoRows}
         actor={OFFICE_ACTOR}
         onOpenBooking={noop}

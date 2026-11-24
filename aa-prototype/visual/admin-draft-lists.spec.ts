@@ -38,7 +38,8 @@ test('Draft Lists: soonest first, the band and rail card, and assigning St Georg
   await page.waitForLoadState('networkidle')
   const band = page.locator('[data-shot="daygrid-draft-band"]')
   await expect(band).toHaveAttribute('data-draft-band-count', '1')
-  await expect(page.locator('[data-shot="admin-draft-lists-rail"]')).toContainText('See all 10')
+  // Draft Lists left the rail: the band above the grid and the Draft Lists page carry them.
+  await expect(page.locator('[data-shot="admin-draft-lists-rail"]')).toHaveCount(0)
   await expect(page.getByText(/· 1 Draft List$/)).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p31-02-day-band.png', fullPage: true })
 

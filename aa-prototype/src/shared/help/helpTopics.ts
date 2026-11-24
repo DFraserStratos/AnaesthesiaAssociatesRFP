@@ -23,7 +23,6 @@ export type HelpTopicId =
   | 'capture.warnings'
   | 'day.statuses'
   | 'day.draftLists'
-  | 'day.needsDestination'
   | 'day.todo'
   | 'review.flags'
   | 'review.contracts'
@@ -109,18 +108,11 @@ export const HELP_TOPICS: Readonly<Record<HelpTopicId, HelpTopic>> = {
       'A List lands here when, for example, its anaesthetist returns it or a surgeon\'s regular booking falls on a session marked unavailable. Suggestions come in tier order, Tier 1 first, with any Not preferred pairing shown apart.',
     ],
   },
-  'day.needsDestination': {
-    title: 'Needs an invoice destination',
-    body: [
-      'These Bookings arrived without a place for the invoice to go, and no procedure can be completed without a Contract.',
-      'Open one and work down the steps: where the invoice goes, the step that narrows it, then the Contract. An RVG-priced Contract goes to the anaesthetist for the RVG code. Nothing is chosen for you from the hospital.',
-    ],
-  },
   'day.todo': {
     title: 'To-do',
     body: [
-      'Warnings that need action land here. None of them blocks anything. Open one to see the Booking, and Clear it once it is dealt with.',
-      'Notices that need no action, such as a List an anaesthetist moved, go to Notifications instead.',
+      'Warnings that need action land here, with Bookings that have no Contract yet. None of them blocks anything. Open one, and Clear a warning once it is dealt with.',
+      'Notices that need no action, such as a List an anaesthetist moved, sit on the Notifications tab until someone ticks them.',
     ],
   },
   'review.flags': {

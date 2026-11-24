@@ -2222,7 +2222,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         const res = setProcedureContract(api, OFFICE_SIMULATION_ACTOR, pick.procedureId, pick.contractId)
         if (!res.ok) return { ok: false, message: `Refused: ${res.message}` }
       }
-      return { ok: true, message: "The office set this Booking's Contract. It leaves the office's Needs an invoice destination list." }
+      return { ok: true, message: "The office set this Booking's Contract. It leaves the office's To-do." }
     },
     indexPath: () => null,
   },

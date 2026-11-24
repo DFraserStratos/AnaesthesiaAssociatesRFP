@@ -130,12 +130,8 @@ export function NotificationsCard({
   onShowResolved?: () => void
 }) {
   const pool = usePoolState()
-  const rows = useMemo(() => latestNotifications(pool, RAIL_ROWS), [pool])
   const count = useMemo(() => activeNotificationCount(pool), [pool])
   const heading = useRef<HTMLHeadingElement>(null)
-  // After a tick the row leaves; focus goes to the heading, not the page.
-  const { resolving, resolve, error } = useResolveWithTick(actor, () => heading.current?.focus())
-  const office = actor.role === 'office'
   return (
     <Card
       shot="admin-notifications-rail"
@@ -148,6 +144,36 @@ export function NotificationsCard({
         </>
       }
     >
+      {/* After a tick the row leaves; focus goes to the heading, not the page. */}
+      <NotificationList actor={actor} onOpen={onOpen} onSeeAll={onSeeAll} {...(onShowResolved !== undefined ? { onShowResolved } : {})} onTicked={() => heading.current?.focus()} />
+    </Card>
+  )
+}
+
+/**
+ * The pool's newest active notices with their ticks, then See all and Show resolved: the body of the
+ * card above and of the Notices tab on the Admin Day rail's work card. `onTicked` says where focus goes
+ * once a ticked row has left.
+ */
+export function NotificationList({
+  actor,
+  onOpen,
+  onSeeAll,
+  onShowResolved,
+  onTicked,
+}: {
+  actor: Actor
+  onOpen: (target: NotificationTarget) => void
+  onSeeAll: () => void
+  onShowResolved?: () => void
+  onTicked?: () => void
+}) {
+  const pool = usePoolState()
+  const rows = useMemo(() => latestNotifications(pool, RAIL_ROWS), [pool])
+  const { resolving, resolve, error } = useResolveWithTick(actor, onTicked)
+  const office = actor.role === 'office'
+  return (
+    <>
       {rows.length === 0 && (
         <EmptyState>Nothing waiting. When an anaesthetist moves a List or alerts the office, it shows here until someone ticks it.</EmptyState>
       )}
@@ -193,6 +219,6 @@ export function NotificationsCard({
           </TextAction>
         )}
       </div>
-    </Card>
+    </>
   )
 }

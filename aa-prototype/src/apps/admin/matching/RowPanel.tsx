@@ -670,7 +670,7 @@ export function RowPanel({
             </TextAction>
           </div>
           <div style={{ fontSize: 12, color: neutral.mist, lineHeight: '17px' }}>
-            Leave either to choose later: the Booking waits on Needs an invoice destination, and the RVG code is the anaesthetist's.
+            Leave either to choose later: the Booking waits on the office's To-do, and the RVG code is the anaesthetist's.
           </div>
           {insurer !== null && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5, color: neutral.ink }}>

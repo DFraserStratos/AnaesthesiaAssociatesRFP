@@ -15,14 +15,14 @@ test('admin phase 06 walkthrough', async ({ page }) => {
 
   // Day dashboard reproduces the mockup day.
   await expect(page.getByRole('heading', { name: /Tuesday 24 November 2026/ })).toBeVisible()
-  await expect(page.getByText('Internal notes')).toBeVisible()
-  await expect(page.getByText('Awaiting review')).toBeVisible()
+  await expect(page.getByText('Day notes')).toBeVisible()
+  await expect(page.locator('[data-shot="admin-work-card"]')).toBeVisible()
   const rightRailLeft = await page.getByTestId('admin-right-rail').evaluate((element) => element.getBoundingClientRect().left)
   await page.screenshot({ path: 'visual/shots/a-01-day.png', fullPage: true })
 
   // Add an internal note.
-  await page.getByRole('button', { name: '+ Add note' }).click()
-  await page.getByPlaceholder('Add an internal note for this day').fill('Locum cover confirmed for Ngata PM.')
+  await page.getByRole('button', { name: 'Add note' }).click()
+  await page.getByPlaceholder('Add a note for this day').fill('Locum cover confirmed for Ngata PM.')
   await page.getByRole('button', { name: 'Save note' }).click()
   await page.waitForTimeout(200)
   await expect(page.getByText('Locum cover confirmed for Ngata PM.')).toBeVisible()
@@ -238,8 +238,8 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   })
   // The store persists on a short debounce.
   await expect.poll(readSaved).toEqual({ text: 'Appendicectomy, laparoscopic', source: 'phone', origin: 'entered' })
-  // Saved with no Contract, it waits on Admin Day's "Needs an invoice destination" (catch-up Phase 20).
-  await expect(page.locator('[data-shot=admin-needs-invoice-destination]')).toContainText('Demo Patient')
+  // Saved with no Contract, it waits on the To-do tab of Admin Day's work card (catch-up Phase 20).
+  await expect(page.locator('[data-shot=admin-warnings-todo] [data-shot=needs-destination-row]').filter({ hasText: 'Demo Patient' })).toHaveCount(1)
   // The session now holds a Private List (P5 closed): the block reads St George's.
   await page.keyboard.press('Escape')
   await expect(page.locator('button[data-slot-id="S-41267-2026-11-24-PM"]')).toContainText("St George's")

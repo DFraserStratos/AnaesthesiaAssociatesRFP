@@ -37,11 +37,11 @@ test('admin: To-do card, outline down to the Booking, Clear, sample triggers', a
   await expect(todo).toContainText('awaiting approval on Invoices')
   await expect(todo).toContainText('Annette Riley')
   await expect(todo).not.toContainText('Provisional')
-  // The To-do card sits directly under the mini calendar in the rail.
+  // The work card (To-do and Notifications tabs) sits under the calendar and the two readings.
   const railOrder = await page.locator('[data-testid="admin-right-rail"] > *').evaluateAll((els) =>
     els.map((el) => el.getAttribute('data-shot') ?? el.textContent?.slice(0, 20) ?? ''),
   )
-  expect(railOrder[1]).toBe('admin-warnings-todo')
+  expect(railOrder.slice(1, 3)).toEqual(['rail-readings', 'admin-work-card'])
 
   const block = page.locator('[data-shot="daygrid-block-warnings"]')
   await expect(block).toHaveCount(1)
