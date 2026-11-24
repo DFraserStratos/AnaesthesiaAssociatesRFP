@@ -12,7 +12,8 @@ const TITLE: Record<PageHeaderSize, CSSProperties> = {
 
 const SUB: Record<PageHeaderSize, CSSProperties> = {
   web: { fontSize: 14, color: neutral.slate, marginTop: 4 },
-  admin: { fontSize: 13, color: neutral.slate, marginTop: 4 },
+  // Prose keeps a measure under 80 characters (docs/admin-layout-audit.md); the page does not.
+  admin: { fontSize: 13, color: neutral.slate, marginTop: 4, maxWidth: '75ch', lineHeight: '19px' },
   section: { fontSize: 12.5, color: neutral.mist, marginTop: 2, maxWidth: 820 },
 }
 

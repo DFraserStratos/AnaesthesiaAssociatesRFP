@@ -34,6 +34,8 @@ interface SideNavProps {
   /** Patients needing the office (catch-up Phase 40; `patientAttentionCount`): amber, an attention count. */
   patientBadge?: number
   onNavigate: (section: NavSection) => void
+  /** The scroll box's height: the nav's contents stay this tall and in view while a long page scrolls. */
+  stickyHeight?: number
   /** Opens the support panel (catch-up Phase 43b): an action at the foot, not a section. Shown only when given. */
   onHelp?: () => void
 }
@@ -64,7 +66,7 @@ function navItemStyle(active: boolean): CSSProperties {
  * (Decisions log 2026-07-21). The Review-queue badge derives from the SUBMITTED
  * list count (2026-07-23 decision) rather than a hardcoded figure.
  */
-export function SideNav({ active, reviewBadge, billingBadge = 0, conflictBadge = 0, draftListBadge = 0, notificationBadge = 0, intakeBadge = 0, ledgerBadge = 0, patientBadge = 0, onNavigate, onHelp }: SideNavProps) {
+export function SideNav({ active, reviewBadge, billingBadge = 0, conflictBadge = 0, draftListBadge = 0, notificationBadge = 0, intakeBadge = 0, ledgerBadge = 0, patientBadge = 0, onNavigate, onHelp, stickyHeight }: SideNavProps) {
   const officeUser = useAppStore((s) => s.shell.officeUser)
   const items: NavItem[] = [
     { section: 'day', label: 'Day view' },
@@ -86,7 +88,10 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, conflictBadge =
   ]
 
   return (
-    <div style={{ width: 216, flex: 'none', background: neutral.ink, display: 'flex', flexDirection: 'column', padding: '20px 12px', gap: 24, boxSizing: 'border-box' }}>
+    // The ink column runs the page's full height; its contents stick to the top of the scroll box at the
+    // window's height, so Help and the persona stay in view on a long page.
+    <div style={{ width: 216, flex: 'none', background: neutral.ink }}>
+    <div style={{ position: 'sticky', top: 0, ...(stickyHeight !== undefined ? { height: stickyHeight } : { minHeight: '100%' }), overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: '20px 12px', gap: 24, boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, padding: '0 8px' }}>
         <Wordmark tone="dark" size={15} />
         <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.14em', color: brand.onDarkMuted, paddingLeft: 2 }}>ADMIN</span>
@@ -128,6 +133,7 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, conflictBadge =
           <PersonaChip persona={officePersona(officeUser)} />
         </div>
       </div>
+    </div>
     </div>
   )
 }

@@ -469,6 +469,16 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
   outline-offset: -3px;
 }
 
+/* The list card of an Admin `fit` page (shared `TableShell fit`): the column header stays in view
+   while the rows scroll inside the card. A collapsed border does not travel with a sticky cell, so
+   the header's rule is drawn as an inset shadow. */
+.aa-table-fit > thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  box-shadow: inset 0 -1px 0 var(--color-line);
+}
+
 .aa-clickable-table-row {
   cursor: pointer;
 }

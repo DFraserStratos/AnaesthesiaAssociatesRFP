@@ -11,7 +11,8 @@ import {
   formatAuditStamp,
   summariseAuditChanges,
 } from '../../../shared/audit'
-import { FilterDateInput, PageHeader, SelectField } from '../../../shared/ui'
+import { FilterDateInput, SelectField } from '../../../shared/ui'
+import { AdminPage, PageBody, PageToolbar } from '../components/AdminPage'
 import { TableShell, Td, Th } from '../../../shared/table'
 import { auditNewestFirst } from '../../../store/indexes'
 import { FULL_SCALE } from '../../../domain/seed/fullScale/constants'
@@ -114,34 +115,44 @@ export function AuditViewer() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>
-      <PageHeader size="admin" title="Audit" sub="Every recorded action, with the acting role and source. Nothing here is ever edited or deleted." />
-
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <SelectField label="Entity type" size="compact" fill="surface" value={entityType} onChange={filterThen(setEntityType)}>
+    <AdminPage mode="fit" title="Audit" sub="Every recorded action, with the acting role and source. Nothing here is ever edited or deleted.">
+      <PageToolbar
+        end={
+          <>
+            {changeSetId !== null && (
+              <span data-shot="audit-change-set-filter">
+                Change set <span className="mono">{changeSetId}</span> ·{' '}
+                <TextAction size="sm" flush onClick={() => { setChangeSetId(null); setPage(1) }}>
+                  Show all
+                </TextAction>
+              </span>
+            )}
+            <span className="mono" data-shot="audit-count">{formatCount(filtered.length)} entries</span>
+          </>
+        }
+      >
+        <SelectField label="Entity type" hideLabel size="compact" fill="surface" value={entityType} onChange={filterThen(setEntityType)}>
           {entityTypes.map((t) => (
-            <option key={t} value={t}>{t}</option>
+            <option key={t} value={t}>{t === 'all' ? 'All entity types' : t}</option>
           ))}
         </SelectField>
-        <SelectField label="Source" size="compact" fill="surface" value={source} onChange={filterThen(setSource)}>
+        <SelectField label="Source" hideLabel size="compact" fill="surface" value={source} onChange={filterThen(setSource)}>
           {SOURCES.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>{s === 'all' ? 'All sources' : s}</option>
           ))}
         </SelectField>
-        <FilterDateInput label="From" value={fromISO} onChange={filterThen(setFromISO)} />
-        <FilterDateInput label="To" value={toISO} onChange={filterThen(setToISO)} />
-        <span className="mono" data-shot="audit-count" style={{ fontSize: 12.5, color: neutral.mist, paddingBottom: 9 }}>{formatCount(filtered.length)} entries</span>
-        {changeSetId !== null && (
-          <span data-shot="audit-change-set-filter" style={{ fontSize: 12.5, color: neutral.slate, paddingBottom: 9 }}>
-            Change set <span className="mono">{changeSetId}</span> ·{' '}
-            <TextAction size="sm" flush onClick={() => { setChangeSetId(null); setPage(1) }}>
-              Show all
-            </TextAction>
-          </span>
-        )}
-      </div>
+        <FilterDateInput label="From" labelPlacement="inline" value={fromISO} onChange={filterThen(setFromISO)} />
+        <FilterDateInput label="To" labelPlacement="inline" value={toISO} onChange={filterThen(setToISO)} />
+      </PageToolbar>
 
-      <TableShell label="Audit" density="dense" minWidth={900}>
+      <PageBody>
+      <TableShell
+        fit
+        label="Audit"
+        density="dense"
+        minWidth={900}
+        {...(filtered.length > pageSize ? { footer: <Pager total={filtered.length} size={pageSize} page={page} onPage={setPage} shot="audit-pager" /> } : {})}
+      >
           <thead>
             <tr>
               {['At', 'Action', 'Who', 'Role · source', 'Entity', 'Change set', 'Change'].map((h) => (
@@ -183,7 +194,7 @@ export function AuditViewer() {
             })}
           </tbody>
       </TableShell>
-      {filtered.length > pageSize && <Pager total={filtered.length} size={pageSize} page={page} onPage={setPage} shot="audit-pager" />}
-    </div>
+      </PageBody>
+    </AdminPage>
   )
 }

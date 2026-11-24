@@ -1,11 +1,14 @@
 import { useSearchParams } from 'react-router-dom'
-import { neutral, radius } from '../../../theme/tokens'
+import { neutral } from '../../../theme/tokens'
 import { stampText } from '../../../shared/format'
-import { useMemo, useRef, type CSSProperties } from 'react'
+import { useMemo, useRef } from 'react'
 import { activeNotificationCount, notificationPool, type Actor, type NotificationTarget } from '../../../store'
+import { NOTIFICATION_POOL_RULE } from '../../../domain/notifications'
 import { TableShell, Td, Th } from '../../../shared/table'
 import { ActiveCount, NotificationText, usePoolState, useResolveWithTick } from '../components/NotificationsCard'
-import { Button, Checkbox, FormError, PageHeader, TextAction, TickBadge, TickButton } from '../../../shared/ui'
+import { Checkbox, FormError, TextAction, TickBadge, TickButton } from '../../../shared/ui'
+import { AdminPage, PageBody, PageToolbar } from '../components/AdminPage'
+import { Pager } from '../components/Pager'
 import { DRAFT_LIST } from '../../../shared/scheduleTerms'
 import { NotificationEmailAction } from '../flows/UpdateEmailActions'
 
@@ -43,24 +46,29 @@ export function NotificationsScreen({ actor, onOpen }: { actor: Actor; onOpen: (
   const go = (p: number) => setQuery({ page: p })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>
-      <PageHeader
-        size="admin"
-        title="Notifications"
-        count={<ActiveCount count={count} shot="admin-notifications-page-count" />}
-        headingRef={heading}
-        subStyle={{ maxWidth: 760, lineHeight: '19px' }}
-        sub="Lists anaesthetists have moved themselves, and their alerts to the office, newest first. A notice stays until someone resolves it; resolving it hides it for everyone in the office."
-      />
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <AdminPage
+      mode="fit"
+      title="Notifications"
+      count={<ActiveCount count={count} shot="admin-notifications-page-count" />}
+      headingRef={heading}
+      sub="Lists anaesthetists moved themselves, and their alerts to the office, newest first. Resolving a notice hides it for everyone."
+    >
+      <PageToolbar>
         <Checkbox labelShot="admin-notifications-show-resolved" checked={showResolved} onChange={(c) => setQuery({ page: 1, resolved: c })} style={{ display: 'inline-flex', gap: 6, fontSize: 13, color: neutral.slate }}>
           Show resolved
         </Checkbox>
         <FormError message={error} />
-      </div>
+      </PageToolbar>
 
-      <TableShell shot="admin-notifications-table" label="Notifications" density="compact" minWidth={760}>
+      <PageBody>
+      <TableShell
+        fit
+        shot="admin-notifications-table"
+        label="Notifications"
+        density="compact"
+        minWidth={760}
+        {...(pool.pageCount > 1 ? { footer: <Pager shot="admin-notifications-pager" total={pool.total} size={NOTIFICATION_POOL_RULE.pageSize} page={pool.page} onPage={go} /> } : {})}
+      >
           <colgroup>
             <col style={{ width: 150 }} />
             <col />
@@ -114,24 +122,7 @@ export function NotificationsScreen({ actor, onOpen }: { actor: Actor; onOpen: (
             ))}
           </tbody>
       </TableShell>
-
-      {pool.total > 0 && (
-        <div data-shot="admin-notifications-pager" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Button variant="secondary" size="compact" disabled={pool.page <= 1} style={pagerStyle(pool.page <= 1)} onClick={() => go(pool.page - 1)}>Newer</Button>
-          <span className="mono" style={{ fontSize: 12.5, color: neutral.slate }}>
-            Page {pool.page} of {pool.pageCount}
-          </span>
-          <Button variant="secondary" size="compact" disabled={pool.page >= pool.pageCount} style={pagerStyle(pool.page >= pool.pageCount)} onClick={() => go(pool.page + 1)}>Older</Button>
-        </div>
-      )}
-    </div>
+      </PageBody>
+    </AdminPage>
   )
-}
-
-/**
- * The pager keeps its pill shape, ink label and stronger border on the compact secondary
- * `Button` (U5); disabled takes the shared disabled treatment.
- */
-function pagerStyle(disabled: boolean): CSSProperties {
-  return disabled ? { borderRadius: radius.pill } : { borderRadius: radius.pill, border: `1px solid ${neutral.lineStrong}`, color: neutral.ink }
 }

@@ -15,6 +15,11 @@ import { TableDensityContext, type TableDensity } from './cells'
  * table that fits gets none of these. `label` is the screen's heading or the table's section title.
  * `shot`, `testId` and any `data-*` land on the scroller (where recipes and specs find them today);
  * `tableData` lands on the `<table>` itself.
+ *
+ * `fit` is the list card of an Admin `fit` page (docs/admin-layout-audit.md): the card hugs a short
+ * list and, once it reaches the window's bottom, scrolls its rows inside itself under a sticky column
+ * header. `footer` is the card's foot row (the pager, a legend), outside the scroller so it stays in
+ * view; it works with or without `fit`.
  */
 export function TableShell({
   children,
@@ -25,6 +30,8 @@ export function TableShell({
   testId,
   nested = false,
   bare = false,
+  fit = false,
+  footer,
   style,
   tableStyle,
   tableData,
@@ -38,6 +45,10 @@ export function TableShell({
   testId?: string
   nested?: boolean
   bare?: boolean
+  /** The list card of an Admin `fit` page: shrinks to the space left, rows scrolling under a sticky header. */
+  fit?: boolean
+  /** The card's foot row (pager, legend), kept in view below the rows. */
+  footer?: ReactNode
   style?: CSSProperties
   tableStyle?: CSSProperties
   tableData?: DataAttributes
@@ -45,43 +56,73 @@ export function TableShell({
   const scroller = useRef<HTMLDivElement>(null)
   const overflows = useOverflows(scroller)
   const resolved = density ?? 'comfortable'
-  return (
-    <TableDensityContext.Provider value={resolved}>
-      <div
-        ref={scroller}
-        {...data}
-        data-shot={shot}
-        data-testid={testId}
-        {...(overflows ? { role: 'region', 'aria-label': label, tabIndex: 0, className: 'aa-ctl' } : {})}
+  const chrome: CSSProperties = bare
+    ? {}
+    : {
+        background: nested ? undefined : neutral.surface,
+        border: `1px solid ${neutral.line}`,
+        borderRadius: nested ? radius.ctl : radius.card,
+        boxShadow: nested ? undefined : elevation.e1,
+      }
+  // With a footer (or `fit`) the card is an outer frame holding the scroller and the foot row; else the
+  // scroller is the card, as before.
+  const framed = fit || footer !== undefined
+  const scrollerEl = (
+    <div
+      ref={scroller}
+      {...data}
+      data-shot={shot}
+      data-testid={testId}
+      {...(overflows ? { role: 'region', 'aria-label': label, tabIndex: 0, className: 'aa-ctl' } : {})}
+      style={{
+        overflowX: 'auto',
+        // The containing block for anything absolute inside (a visually hidden header label), so it
+        // stays clipped by the scroller instead of stretching the page.
+        position: 'relative',
+        ...(framed ? { flex: '0 1 auto', minHeight: 0, ...(fit ? { overflowY: 'auto' } : {}) } : chrome),
+        ...(framed ? {} : style),
+      }}
+    >
+      <table
+        {...tableData}
+        className={fit ? 'aa-table-fit' : undefined}
         style={{
-          overflowX: 'auto',
-          // The containing block for anything absolute inside (a visually hidden header label), so it
-          // stays clipped by the scroller instead of stretching the page.
-          position: 'relative',
-          ...(bare
-            ? {}
-            : {
-                background: nested ? undefined : neutral.surface,
-                border: `1px solid ${neutral.line}`,
-                borderRadius: nested ? radius.ctl : radius.card,
-                boxShadow: nested ? undefined : elevation.e1,
-              }),
-          ...style,
+          borderCollapse: 'collapse',
+          width: '100%',
+          ...(minWidth !== undefined ? { minWidth } : {}),
+          ...(resolved === 'comfortable' ? { fontSize: 14 } : {}),
+          ...tableStyle,
         }}
       >
-        <table
-          {...tableData}
+        {children}
+      </table>
+    </div>
+  )
+  return (
+    <TableDensityContext.Provider value={resolved}>
+      {framed ? (
+        <div
+          data-table-card
           style={{
-            borderCollapse: 'collapse',
-            width: '100%',
-            ...(minWidth !== undefined ? { minWidth } : {}),
-            ...(resolved === 'comfortable' ? { fontSize: 14 } : {}),
-            ...tableStyle,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            ...(fit ? { flex: '0 1 auto', minHeight: 0 } : {}),
+            ...chrome,
+            ...style,
           }}
         >
-          {children}
-        </table>
-      </div>
+          {scrollerEl}
+          {footer !== undefined && (
+            <div data-table-footer style={{ flex: 'none', borderTop: `1px solid ${neutral.line}`, padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              {/* One full-width box, so a footer's own spacing (the pager's range left, buttons right) holds. */}
+              <div style={{ flex: 1, minWidth: 0 }}>{footer}</div>
+            </div>
+          )}
+        </div>
+      ) : (
+        scrollerEl
+      )}
     </TableDensityContext.Provider>
   )
 }

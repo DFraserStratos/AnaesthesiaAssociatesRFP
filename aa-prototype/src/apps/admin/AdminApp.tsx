@@ -37,7 +37,8 @@ import type { AdminOutletContext } from './outlet'
 import { surnameOf } from './util'
 import { locationName } from '../../shared/format'
 import type { AssignedList } from '../../domain/types'
-import { ADMIN_PAGE_HORIZONTAL_PADDING } from './layout'
+import { ADMIN_MIN_WIDTH, ADMIN_PAGE_HORIZONTAL_PADDING } from './layout'
+import { AdminFrameContext } from './components/AdminPage'
 import { sessionText } from '../../domain/outOfHours'
 import { OpenOutOfHoursSheet } from './flows/OpenOutOfHoursSheet'
 import { CreditSheet } from './flows/CreditSheet'
@@ -113,6 +114,10 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   // Set when Find available opens a session: the drawer starts on Assign List.
   const [drawerAssign, setDrawerAssign] = useState<{ surgeonId?: string } | undefined>(undefined)
   const [shellScrollbarWidth, setShellScrollbarWidth] = useState(0)
+  // The scroll box's height: the side nav stays this tall and in view while a long page scrolls.
+  const [viewportHeight, setViewportHeight] = useState<number | undefined>(undefined)
+  // Set by a `fit` AdminPage while it is mounted: the shell then stops scrolling, as on the Day view.
+  const [pageFits, setPageFits] = useState(false)
   const shellRef = useRef<HTMLDivElement>(null)
 
   // The harness scrolls inside <main>. Browsers with classic scrollbars reserve
@@ -123,7 +128,10 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     const main = shellRef.current?.closest('main')
     if (!(main instanceof HTMLElement)) return
 
-    const measure = () => setShellScrollbarWidth(main.offsetWidth - main.clientWidth)
+    const measure = () => {
+      setShellScrollbarWidth(main.offsetWidth - main.clientWidth)
+      setViewportHeight(main.clientHeight)
+    }
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(main)
@@ -137,7 +145,8 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const dayMatch = useMatch('/admin/day/:dateISO/*')
   // The Day view itself (not a Booking under it) fits the window: the page stops scrolling,
   // the grid scrolls its rows inside the card, and the rail scrolls on its own.
-  const fitsWindow = useMatch('/admin/day/:dateISO') !== null
+  const dayFits = useMatch('/admin/day/:dateISO') !== null
+  const fitsWindow = dayFits || pageFits
   const urlDate = dayMatch?.params.dateISO
   const lastDayRef = useRef(todayISO)
   const lastSortRef = useRef<SortMode>('roster')
@@ -335,8 +344,9 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   }
 
   return (
-    <div ref={shellRef} style={{ display: 'flex', minHeight: '100%', ...(fitsWindow ? { height: '100%' } : {}), minWidth: 1320, background: neutral.bg, color: neutral.ink }}>
+    <div ref={shellRef} style={{ display: 'flex', minHeight: '100%', ...(fitsWindow ? { height: '100%' } : {}), minWidth: ADMIN_MIN_WIDTH, background: neutral.bg, color: neutral.ink }}>
       <SideNav
+        {...(viewportHeight !== undefined ? { stickyHeight: viewportHeight } : {})}
         onHelp={() => setHelpOpen(true)}
         active={sectionForPath(pathname)}
         reviewBadge={reviewLists.length + eventsAwaiting}
@@ -351,7 +361,9 @@ function AdminShell({ todayISO }: { todayISO: string }) {
       />
 
       <div style={{ flex: 1, minWidth: 0, minHeight: 0, padding: `24px ${ADMIN_PAGE_HORIZONTAL_PADDING}px ${fitsWindow ? 24 : 40}px`, display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <Outlet context={context} />
+        <AdminFrameContext.Provider value={setPageFits}>
+          <Outlet context={context} />
+        </AdminFrameContext.Provider>
       </div>
 
       <SupportSidePanel open={helpOpen} onClose={() => setHelpOpen(false)} actor={officeActor} app="admin" />
