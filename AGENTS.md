@@ -1,91 +1,59 @@
 # Repository Guidelines
 
+**`CLAUDE.md` is the full guide for this repo; read it first.** It wins wherever this file differs.
+This file is the short version for agents that don't load `CLAUDE.md` automatically.
+
 ## Communication
 
 When reporting information to me, be extremely concise and sacrifice grammar for the sake of
 concision.
 
-## Requirements
+## What this is
 
-The system's requirements live in `requirements-board/requirements/` (one Markdown file per epic,
-feature and story in `stories/`, per open question in `questions/`; format in its `SCHEMA.md`, folder
-guide in its `README.md`). Edit those files to change requirements, then run `npm run check` from the
-repo root. The same folder holds the domain model (`domain-model.md`), meeting notes (`notes/`),
-change logs (`changes/`) and artifacts (`artifacts/AR-nn.md` sidecars: the diagrams, transcripts,
-notes and documents requirements link to, or to a highlighted spot in; the files themselves in
-`artifacts/files/`). The board edits only an artifact's details (name, kind, status, date, author,
-area, sources, description), never its file, regions or links: add one, or change those, as files,
-with `npm --prefix requirements-board run artifact:new` and the `add-artifact` skill
-(`requirements-board/agent/skills/`, symlinked into `.claude/skills/`). The rest of
-`requirements-board/` is the editing app; `requirements-board/requirements/reference/RFP.md` is the
-historical RFP; `docs/prototype-build/REQUIREMENTS.md` is the prototype's build checklist, not the
-system's requirements.
+`aa-prototype/` is a finished demo prototype of the Anaesthesia Associates Booking & Billing system:
+three React apps (Anaesthetist Mobile, Anaesthetist Web, Admin) over a fake in-browser backend, plus
+demo simulators. It matches the requirements catalogue in `requirements-board/requirements/` (format
+in its `SCHEMA.md`; read its `VOICE.md` before writing requirement text). `requirements-board/` is a
+separate local dev tool and portable skills kit over that catalogue.
 
-## Project Structure & Module Organization
+## How to work
 
-The app lives in `aa-prototype/`; run npm commands there. `requirements-board/` is a separate
-local dev tool over the future-state requirements catalogue
-(`requirements-board/requirements/`, format in its `SCHEMA.md`); root
-`npm run dev` starts both, root `npm run check` validates the catalogue. Board design rules:
-`requirements-board/DESIGN.md`. Under `src/`, `domain/` contains pure
-business rules, `store/` owns the Zustand-backed mock backend,
-`apps/` contains the mobile, web, admin, and demo surfaces, and `shared/`, `shell/`, and `theme/`
-hold reusable UI, routing, and design tokens. Tests are colocated as `*.test.ts(x)`; Playwright
-specs live in `visual/`. Decisions, demo scripts, and mockups live under `docs/`; requirements as above.
-The mobile app also builds on its own as an installable PWA from a second Vite config
-(`vite.pwa.config.ts`): `pwa/` is that target's entry, `src/pwa/` its target-only modules, and
-`dist-pwa/` its output, so anything under `src/apps/mobile/`, `src/shared/`, or `src/theme/` now
-ships to both targets.
+- Routine changes (fixes, UI/UX polish, small features): change the app directly, finish green. No
+  progress log. Check `docs/DECISIONS.md` before "fixing" something that looks wrong; open work is in
+  `docs/BACKLOG.md` (delete a line when you finish it).
+- Every change keeps the catalogue screenshot recipes (`requirements-board/requirements/capture/`,
+  found with `npm --prefix aa-prototype run affected`) and the demo guide (`docs/demo-guide/`) in step
+  for what it changed. Never run the capture, even `--dry`, until the owner has tested and approved.
+- Requirement changes become build-plan phases in `docs/build-plan/` (skills `update-requirements`,
+  `update-build-plan`, `run-build-phase`). `docs/archive/` is the finished build's record: read it only
+  for history.
 
-The prototype build is complete. For routine fixes and polish, do not read or update
-`docs/prototype-build/PROGRESS.md` by default. Consult it when a task depends on build history, an
-open review item, or a settled decision, and consult
-`docs/prototype-build/prototype-review/00-SUMMARY.md` for RFP-wide conformance work. Mirror changes
-to scripted demo behavior in `docs/demo-guide/`, and check the decisions log before revisiting a
-previously reviewed defect.
+## Code rules (details in CLAUDE.md)
 
-## Build, Test, and Development Commands
+- Mock backend only: no `fetch`; components use typed store hooks; every write goes through
+  `src/store/mutate.ts` and the lifecycle guards. Simulated events are demo triggers on their screen.
+- Determinism: demo clock and seeded RNG, never `Date.now()`, `new Date()` or `Math.random()`. Bump
+  `PERSIST_VERSION` (`src/store/appStore.ts`) when the seed's shape or content changes.
+- Billing maths is pure, in `src/domain/billing/`, with Vitest tests.
+- Follow `docs/design/` and the tokens in `src/theme/`: crimson `#A91E3E` is identity only, teal
+  `#0D6E63` the only action colour. Use the shared components in `src/shared/{ui,surface,table,calendar}`;
+  extend them, never copy them.
+- No en or em dashes in app-facing copy. Formatting through `src/shared/format.ts` helpers.
+- TypeScript, two-space indent, single quotes, no semicolons; components in `PascalCase` files.
+- Colocated `*.test.ts(x)` for changed behaviour; Playwright specs in `aa-prototype/visual/`.
 
-From `aa-prototype/`:
+## Commands
 
-- `npm install` installs dependencies (Node 20.19 or newer; `engines` in `package.json` carries the
-  exact range).
-- `npm run dev` starts Vite at `http://localhost:5173`.
-- `npm run dev:pwa` starts the PWA target at `http://localhost:5174`, bound to every interface so a
-  phone on the same wifi can reach it.
-- `npm run build` runs strict TypeScript checks and creates the production bundle.
-- `npm run build:pwa` runs the same checks and builds the PWA target into `dist-pwa/`.
-- `npm run test` runs the Vitest suite once.
-- `npm run lint` checks source with oxlint.
-- `npm run shots` runs Playwright specs and writes visual artifacts.
-- `npm run preview` serves the built bundle locally.
-- `npm run preview:pwa` serves `dist-pwa/` on 5174, service worker included.
-- `npm run icons` re-rasterises the app icons into `public/`; run by hand, outputs committed.
+From `aa-prototype/`: `npm run dev` (5173), `npm run dev:pwa` (5174), `npm run build`,
+`npm run build:pwa`, `npx vitest run`, `npm run lint`, `npm run shots` (Playwright),
+`npm run affected`. From the root: `npm run setup`, `npm run dev` (prototype, PWA and board),
+`npm run check` (catalogue), `npm run verify:board` (board work).
 
-## Coding Style & Naming Conventions
+**Finish green:** `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run lint` pass
+before handing back; board work also `npm run verify:board`.
 
-Use TypeScript with two-space indentation, single quotes, and no semicolons, matching existing
-files. Name React components and their files in `PascalCase`; use `camelCase` for functions,
-hooks, selectors, and store actions. Keep domain calculations pure and UI formatting in
-`src/shared/format.ts`.
+## Git
 
-All domain writes must pass through `src/store/mutate.ts` and lifecycle guards. Do not add real
-APIs or `fetch`; integrations are simulations. Preserve determinism: use the demo clock and seeded
-RNG instead of `Date.now()`, `new Date()`, or `Math.random()`. Bump `PERSIST_VERSION` when seed
-shape or content changes. Follow `docs/design/` and existing theme tokens; app-facing copy must not
-contain en or em dashes.
-
-## Testing Guidelines
-
-Add focused, colocated `*.test.ts` or `*.test.tsx` coverage for changed behavior, especially domain,
-billing, lifecycle, and store invariants. No numeric coverage threshold is configured. Treat
-Playwright as a visual review aid, not the primary correctness gate. Before handoff, run
-`npm run build`, `npm run build:pwa`, `npm run test`, and `npm run lint`.
-
-## Commit & Pull Request Guidelines
-
-History uses short, sentence-case summaries such as `Naming fixes` or `Capture card heights and
-removable attachments`; keep commits focused and descriptive. Pull requests should explain the
-user-visible effect, cite relevant RFP or decision-log entries, list verification commands, and
-include screenshots for UI changes. Do not commit, push, merge, tag, or open PRs on the user's
-behalf; leave changes for user review.
+Agents may commit and merge (and create local branches) when work is green; never push or write to a
+remote. Stage by path, commit only your own changes, never rewrite pushed history. Short sentence-case
+commit messages.

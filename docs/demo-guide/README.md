@@ -95,8 +95,7 @@ When sources differ, use this order:
 1. [The requirements catalogue](../../requirements-board/requirements/README.md)
    (`requirements-board/requirements/`): the system's requirements, one file per epic, feature and
    story, with its open questions. It wins wherever it differs from anything below.
-2. The Decisions log in [PROGRESS.md](../prototype-build/PROGRESS.md): the readings the prototype
-   took and why.
+2. [DECISIONS.md](../DECISIONS.md): the readings the prototype took and why.
 3. The code in `aa-prototype/`: what the prototype does.
 
 The [RFP](../../requirements-board/requirements/reference/RFP.md) is historical input: the prototype

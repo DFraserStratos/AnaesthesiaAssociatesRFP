@@ -533,7 +533,7 @@ S3 Beat 6: **Demo actions → Seed a month of BCTIs**, then **Run monthly fee in
 
 ## Workflow readiness
 
-Every workflow above is built and runs in the prototype. The phase ids are from the build record (`docs/prototype-build/PROGRESS.md`): 00 to 13 are the original build, the rest the requirements catch-up.
+Every workflow above is built and runs in the prototype. The phase ids are from the build record (archived in `docs/archive/prototype-build/PROGRESS.md`): 00 to 13 are the original build, the rest the requirements catch-up.
 
 | Workflow | Built | Phases |
 |---|---|---|
