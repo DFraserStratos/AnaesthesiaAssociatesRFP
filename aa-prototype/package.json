@@ -17,7 +17,9 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "preview:pwa": "vite preview --config vite.pwa.config.ts",
-    "rvg:modifiers": "node scripts/generate-rvg-modifiers.mjs"
+    "rvg:modifiers": "node scripts/generate-rvg-modifiers.mjs",
+    "affected": "node scripts/affected-shots.mjs",
+    "test:affected": "node --test scripts/affected-shots.test.mjs"
   },
   "dependencies": {
     "date-fns": "^4.4.0",
