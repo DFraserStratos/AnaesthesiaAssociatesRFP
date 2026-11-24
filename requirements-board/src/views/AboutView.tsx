@@ -207,9 +207,9 @@ const SKILLS: Skill[] = [
     name: 'update-build-plan',
     kind: 'skill',
     role: 'Step 5 of the loop',
-    when: 'After a requirements update is committed. With no plan yet, it makes the first one.',
+    when: 'After a requirements update is committed. With no plan yet, it makes the first one: graded in full, or seeded empty at a commit so only later changes get phases.',
     say: '/update-build-plan',
-    changes: 'Re-grades the requirements that changed since the plan’s last commit against the app, re-plans the phases they touch, and updates their docs and kick-off prompts. With a phase runner set in the plan’s config, a prompt is a few lines that load /run-build-phase; the phase doc holds the rest. It never rewrites a phase already built.',
+    changes: 'Re-grades the requirements that changed since the plan’s last commit against the app, re-plans the phases they touch, and updates their docs and kick-off prompts. With a phase runner set in the plan’s config, a prompt is a few lines that load /run-build-phase; the phase doc holds the rest. It never rewrites a phase already built: when every phase is built, it adds new ones, numbered on from the last, and a change a built phase left unfinished goes to a new phase.',
     then: 'Build the next phase from its kick-off prompt.',
   },
   {

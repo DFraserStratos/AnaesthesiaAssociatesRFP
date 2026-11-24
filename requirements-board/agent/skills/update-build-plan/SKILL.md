@@ -1,6 +1,6 @@
 ---
 name: update-build-plan
-description: Update (or make) the build plan that takes the app to the requirements catalogue, from requirements changes committed to the repo. It re-grades the changed requirements against the app, re-plans and triages the affected phases, updates their phase docs and kick-off prompts from per-phase briefs, moves the drift-check baseline, and regenerates the HTML plan; with no plan yet, it grades the whole catalogue and writes a fresh plan. Use after a requirements update has been committed, or to start a build plan. Pass the commit, a GitHub commit link, or nothing for HEAD.
+description: Update (or make) the build plan that takes the app to the requirements catalogue, from requirements changes committed to the repo. It re-grades the changed requirements against the app, re-plans and triages the affected phases, updates their phase docs and kick-off prompts from per-phase briefs, moves the drift-check baseline, and regenerates the HTML plan; with no plan yet, it seeds an empty plan at a commit (no gap analysis) or grades the whole catalogue and writes a fresh plan. A plan whose phases are all built is continued with new phases, not remade. Use after a requirements update has been committed, or to start a build plan. Pass the commit, a GitHub commit link, or nothing for HEAD.
 argument-hint: "<commit sha or GitHub commit link> (default: HEAD)"
 ---
 
@@ -9,7 +9,9 @@ argument-hint: "<commit sha or GitHub commit link> (default: HEAD)"
 The build plan (the plan folder, `PLAN` below) is a verified gap analysis between the app and the
 requirements catalogue, plus numbered phases, each with a plan doc and a kick-off prompt that a fresh
 agent session runs. It records the catalogue commit it matches in `PLAN/plan.json` `"commit"`. This
-skill brings it up to a newer commit, or makes the plan when there is none yet.
+skill brings it up to a newer commit, or makes the plan when there is none yet: graded in full (a fresh
+plan), or seeded empty at a commit and grown only from the requirements changes after it ("Seed an empty
+plan").
 
 Outputs, all in `PLAN/`:
 - `gaps.json`, `GAP-ANALYSIS.md`, `epics/<EP>.md`, `units.json` and `analysis/` (code maps, data-model
@@ -97,7 +99,10 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
 - **Spend where judgement is needed** (see "Cost" at the end). A plan update should cost a fraction of
   a weekly budget, not a third of it. Never send every phase through a writer and a reviewer by
   default.
-- Phases already built are frozen. Never rewrite them; follow-up work goes to a later phase.
+- Phases already built are frozen. Never rewrite them; follow-up work goes to a later phase. A plan
+  whose phases are all built is still updated, not remade: the changes are graded and new phases are
+  appended. A re-graded gap whose only home is a built phase is "stranded"; the outline's coverage check
+  fails until it moves to an unbuilt phase or is parked.
 - A phase **in progress** (progress file row `IN PROGRESS`, for example a phase after its first of two
   sessions, even once its session-1 entry is written; or a checkpoint commit on a build lane) is
   partly built, never built. Its built part is frozen. Its doc keeps its own drift-check baseline, and
@@ -122,8 +127,8 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
 ## The tools and the plan's config
 
 Run every tool from the repo root as `node T/<tool>`. Each finds the plan by itself: `--plan <dir>` if
-given, else the `BUILD_PLAN` environment variable, else the repo's only `plan.config.json`, else
-`docs/build-plan`. Pass `--plan PLAN` when the repo has more than one plan. `node T/config.mjs --json`
+given, else the `BUILD_PLAN` environment variable, else the repo's only `plan.config.json` not marked
+`"archived": true`, else `docs/build-plan`. Pass `--plan PLAN` when the repo has more than one plan. `node T/config.mjs --json`
 prints the resolved config: pass its output as the `config` argument of every workflow. Workflow
 script paths are absolute: `<repo>/T/workflow-<name>.js`.
 
@@ -139,8 +144,9 @@ from this folder), so a change to one must keep both skills working:
   --check`: whether a prompt loads the runner skill or runs the capture step, and home-folder paths
   that are not this checkout).
 
-`node --test T/*.test.mjs` tests the change detection (`req-changes.test.mjs`) and the plan readers
-(`plan-docs.test.mjs`). After changing a shared module, run the runner's `tools/*.test.mjs` too.
+`node --test T/*.test.mjs` tests the change detection (`req-changes.test.mjs`), the plan readers
+(`plan-docs.test.mjs`), the seed (`plan-init.test.mjs`) and the outline's coverage and numbering checks
+(`workflows.test.mjs`, in a stubbed Workflow runtime). After changing a shared module, run the runner's `tools/*.test.mjs` too.
 
 `PLAN/plan.config.json` holds everything project-specific the tools and workflows use. Every key is
 optional; without the file, defaults apply (a new adopter's plan). The keys:
@@ -148,10 +154,11 @@ optional; without the file, defaults apply (a new adopter's plan). The keys:
 | Key | What it is (default) |
 |---|---|
 | `name`, `title` | The plan's name in prompts and pages (`build plan`, `Build plan`) |
+| `archived` | `true` marks a finished plan kept for reference (false). Discovery skips it, so it does not count as a second config; `--plan <dir>` still reads it. Set it when a plan is closed and a new one starts |
 | `subject`, `appNoun`, `app`, `appCode`, `appSummary` | What is built (`the app`), the word for it (`app`), its folder, the code paths whose change makes the code maps stale (`[app]`), and one sentence for agents |
 | `board`, `requirements`, `boardUrl` | The board folder (`requirements-board`), its requirements folder (`<board>/requirements`), its dev server (`http://localhost:5180`) |
 | `progress` | The progress file (none): a status table with rows `\| NN \| <title> \| DONE \| <date> \|` or `IN PROGRESS`, and a `### [<word>] Phase NN` entry per built phase (a phase with an `IN PROGRESS` row is partly built, not built, whatever entry it has; an entry with no row at all counts as built). `NN` is two digits with an optional letter (`15a`), or a capital letter and digits (`U1`) for an owner-added track outside the numbered run. Without one, `PLAN/status.json` `done` and `in_progress` lists say which phases are built |
-| `firstPhase` | The first phase number this plan owns (`01`); phases below it are ignored in the progress file |
+| `firstPhase` | The first phase number this plan owns (`01`); phases below it are ignored in the progress file. New phases number upward from the highest phase in the plan, or from this when the plan has none (`plan-init.mjs --first` sets it) |
 | `lanes` | Build lanes, when phases are built in parallel git worktrees (none): `{ "branches": ["lane/a", "lane/b"], "complete": "{id} complete:", "checkpoint": "{id} checkpoint:" }` (the two subject patterns are these defaults). The update view (plan-state, apply-plan-update, `recipe-status.mjs --check`) reads each branch other than the current one: a `complete` commit or a DONE row in the branch's progress file means built, a `checkpoint` commit or an IN PROGRESS row partly built. When `status.json` declares `guidance.lanes` but this key names fewer branches, plan-state says so and apply-plan-update refuses (`--ignore-lanes` overrides). A phase's own context pack reads only its own branch |
 | `outOfScopeLanes` | Board swim lanes left out of the plan, e.g. `["Future Work"]` (none) |
 | `settledStatuses`, `unsettledStatuses` | Status codes to build first and to flag "confirm before building" (from the board config's `settle` flags) |
@@ -175,7 +182,9 @@ third cell (`15b, 28 to 32`, or `all`): `phase-briefs.mjs` reads them.
    - Get the full sha with `git rev-parse`, running `git fetch` first if needed.
    - If the working tree has uncommitted catalogue changes, say so and ask whether to commit them
      first: the plan should match a real commit.
-   - If `PLAN/plan.json` does not exist, there is no plan yet: go to "Fresh plan" below.
+   - If `PLAN/plan.json` does not exist, there is no plan yet: ask the user whether to seed an empty
+     plan at a commit ("Seed an empty plan" below, cheap: no gap analysis) or grade everything ("Fresh
+     plan").
 2. **Read the plan state.** Run `node T/plan-state.mjs --to <sha>`. It gives:
    - the baseline;
    - the changed items (with current status) and changed questions;
@@ -213,10 +222,12 @@ third cell (`15b, 28 to 32`, or `all`): `phase-briefs.mjs` reads them.
    - the items added, changed, retired or moved, with the change-log paths;
    - any owner directives the user gave for this update.
 5. **Choose the mode.**
-   - **Update** is the default.
-   - **Fresh plan** if there is no plan, if every phase is built, if `regrade-ids` reports more than
-     about 60% of in-scope items, or if the user asks. Confirm with the user first (except when there
-     is no plan): it is the most expensive path.
+   - **Update** is the default, also when every phase is built: grade only the changes and append new
+     phases (numbered upward from the highest phase in the plan; config `firstPhase` when it has none).
+     A finished plan is continued, not remade.
+   - **Fresh plan** only if the user asks, or if `regrade-ids` reports more than about 60% of in-scope
+     items. Confirm with the user first: it is the most expensive path. (With no plan at all, step 1
+     already chose between a seed and a fresh plan.)
    - For a **small update** (a handful of items touching one or two phases), use "Small updates"
      below.
 
@@ -234,6 +245,9 @@ third cell (`15b, 28 to 32`, or `all`): `phase-briefs.mjs` reads them.
    - `epics`: the parsed JSON from step 1;
    - `reuseMaps`: `!appCodeChanged`;
    - `runDelta`: `domainModelChanged`;
+   - `missingMaps` and `deltaMissing`: copied from `plan-state.mjs`'s `analysis`. A map file that was
+     never written is made even with `reuseMaps`, and with no delta file the delta runs and is written
+     fresh (a seeded plan has a stub, so its delta updates it);
    - `runReverse`: true if any changed item is now retired or has moved to an out-of-scope lane (any
      id in `regrade-ids.mjs`'s `dropped`);
    - `runThemes`: true only if you re-grade more than about 40% of in-scope items.
@@ -243,6 +257,8 @@ third cell (`15b, 28 to 32`, or `all`): `phase-briefs.mjs` reads them.
 4. Merge: `node T/assemble-gaps.mjs <transcript dir>/journal.jsonl <sha> <today> --merge`.
    The transcript dir is in the Workflow tool's result. Check that `problems` is empty, and note how
    the verdict counts moved. This rewrites `gaps.json`, `GAP-ANALYSIS.md`, `epics/` and `units.json`.
+   On a seeded plan (`gaps.json` `"seeded"`), items never graded since the seed were taken as built:
+   they are left out and counted as `notGradedSinceSeed`, not reported as problems.
 
 ## Stage 2: re-plan (two workflows and a brief builder)
 
@@ -255,10 +271,20 @@ Run `Workflow({ scriptPath: "<repo>/T/workflow-plan-outline.js", args })` with:
 - `builtPhases`;
 - `partlyBuilt`: `[{num, note}]` for each in-progress phase. The note says what is built and frozen,
   and what is left;
+- `regraded`: the ids from `regrade-ids.mjs <sha> --ids-only`, plus every DM id when the delta ran and
+  every RV id when the reverse check ran (from `gaps.json`);
 - `changeNotes`.
 
 The architect updates the outline and `ROADMAP.md`, coverage is fixed in code, and a critic
-challenges it, with one revision if the critic asks. The architect also **triages** every unbuilt
+challenges it, with one revision if the critic asks (and one last coverage fix if the revision broke
+it). The coverage check in code fails, and sends the outline back to be fixed, when:
+- a unit is in no phase and not parked, or in more than one place;
+- a re-graded id is still a gap but sits only on built phases ("stranded"): it leaves the built phase's
+  covers (the one change a built phase's entry may take; its doc is untouched) for an unbuilt phase, a
+  new one if none fits, or is parked;
+- a new phase breaks the numbering rule: the next number above the highest phase in the plan (config
+  `firstPhase` when it has none), upward; a letter suffix (`27a`) only beside an unbuilt phase; an
+  owner-added track (`U1`) only extended above its highest. The architect also **triages** every unbuilt
 phase:
 - **left out**: only its drift baseline moves, and a script does that;
 - **light**: one Sonnet writer, no reviewer;
@@ -380,9 +406,31 @@ If only a few items changed and they touch one or two phases, skip the workflows
 3. Update `plan.json` with a short node script, not by retyping it.
 4. Run `node T/build-index.mjs`, then the Stage 3 checks.
 
+## Seed an empty plan
+
+The light way to start a plan: no gap analysis, no phases. Use it when the app is taken as matching the
+catalogue at a commit (a finished plan was just closed, or the team starts tracking changes from now),
+so only the requirements changes after that commit need phases.
+
+1. **Close the old plan, if there is one.** Add `"archived": true` to its `plan.config.json` (or move
+   it), so it no longer counts as a second config. Keep its folder for reference.
+2. **The config.** Write `PLAN/plan.config.json` as for a fresh plan (step 1 below). `firstPhase` is the
+   number after the last phase of any earlier plan, so phase ids stay unique; `--first` below sets it.
+3. **Seed.** `node T/plan-init.mjs --plan PLAN --at <sha> [--first <NN>]`. It writes `plan.json` (the
+   commit, no phases), an empty `gaps.json` marked `"seeded"`, `units.json`, `status.json` ("No phase
+   planned."), a stub `analysis/domain-model-delta.md` and `GAP-ANALYSIS.md`, and `ROADMAP.md` and
+   `README.md` when absent; then renders `index.html`. It refuses, writing nothing, when the plan's data
+   files exist (`--force` overwrites them; `ROADMAP.md` and `README.md` are never overwritten).
+4. **Fill in what is the project's.** Add the standing rules every phase follows to `ROADMAP.md`, and
+   start the progress file if the config names one.
+5. **From then on**, each requirements change runs the usual update (Stage 0 on). Only the changed items
+   are graded; the first update makes the code maps (none exist yet), and new phases number from
+   `firstPhase`.
+
 ## Fresh plan
 
-For a project with no plan yet, or when the plan is to be remade. Confirm the cost with the user
+For a project with no plan yet, or when the plan is to be remade. It grades the whole catalogue: for a
+plan that only needs to follow changes from now on, seed an empty plan instead. Confirm the cost with the user
 first when a plan exists.
 
 1. **The plan folder and its config.** If `PLAN/plan.config.json` does not exist, create `PLAN/` and

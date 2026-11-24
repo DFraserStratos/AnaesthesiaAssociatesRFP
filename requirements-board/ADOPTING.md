@@ -95,7 +95,11 @@ each block, and change nothing else unless it is plainly wrong:
   project-specific (the app's description and rules for its agents, out-of-scope lanes, the plan
   page's words) goes in the plan folder's `plan.config.json`, which the first run writes; its keys are
   in the skill's "The tools and the plan's config" (with, for a plan built in parallel lanes, the
-  `lanes` key naming the lane branches). Its tools are in the skill's `tools/` folder.
+  `lanes` key naming the lane branches). Its tools are in the skill's `tools/` folder. The first run
+  either grades the whole catalogue ("Fresh plan") or, when the app already matches the catalogue,
+  seeds an empty plan at a commit (`plan-init.mjs --at <sha>`, "Seed an empty plan") so only later
+  changes get phases. To start a new plan beside a finished one, mark the old config
+  `"archived": true` so the tools do not see two plans.
 - `run-build-phase` (optional: it builds one phase of the plan per session, from a short kick-off
   prompt): the plan folder, the file holding the project's coding rules and the standing rules every
   phase follows, the app's folder, its house rules in brief, the design references and viewports

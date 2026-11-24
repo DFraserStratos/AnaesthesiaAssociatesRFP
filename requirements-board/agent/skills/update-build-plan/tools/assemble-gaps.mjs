@@ -2,7 +2,9 @@
 // Usage (repo root): node <tools>/assemble-gaps.mjs [--plan <dir>] <journal.jsonl> <commit> <date> [--merge]
 // Writes gaps.json, GAP-ANALYSIS.md, epics/ and units.json in the plan folder.
 // --merge: for a partial re-run, items (and the delta, reverse check and themes) the journal does not
-// cover keep their entry from the existing gaps.json.
+// cover keep their entry from the existing gaps.json. With no gaps.json yet, it merges onto nothing (and
+// says so). A plan seeded by plan-init.mjs (gaps.json "seeded": <sha>) was taken as built at that commit,
+// so an item never graded since is left out quietly (counted as notGradedSinceSeed), not a problem.
 import fs from 'node:fs'
 import path from 'node:path'
 import { loadRecodes, loadStatuses, normaliseStatus, outOfScopeRule } from './scope.mjs'
@@ -29,7 +31,12 @@ const labelOf = new Map(lines.filter(l => l.type === 'started').map(l => [l.agen
 const byLabel = new Map()
 for (const l of lines) if (l.type === 'result' && labelOf.has(l.agentId)) byLabel.set(labelOf.get(l.agentId), l.result)
 const get = label => byLabel.get(label) ?? null
-const prev = MERGE ? JSON.parse(fs.readFileSync(path.join(CU, 'gaps.json'), 'utf8')) : null
+const PREV_FILE = path.join(CU, 'gaps.json')
+if (MERGE && !fs.existsSync(PREV_FILE)) console.error(`assemble-gaps: --merge, but ${path.relative(ROOT, PREV_FILE)} does not exist yet: merging onto an empty gap analysis.`)
+const prev = MERGE && fs.existsSync(PREV_FILE) ? JSON.parse(fs.readFileSync(PREV_FILE, 'utf8')) : null
+// The seed commit of a plan started empty (plan-init.mjs): carried forward on every merge.
+const SEEDED = prev?.seeded || null
+let notGradedSinceSeed = 0
 const prevItem = new Map((prev?.items || []).map(i => [i.id, i]))
 const prevEpic = new Map((prev?.epics || []).map(e => [e.id, e]))
 
@@ -73,6 +80,7 @@ for (const e of epicIds) {
     let x = verified.get(meta.id)
     if (!x && reviewed.has(meta.id)) { x = { ...reviewed.get(meta.id), verify_outcome: 'unverified', original_verdict: reviewed.get(meta.id).verdict, verify_note: 'Verifier did not return this item.' }; problems.push(`${meta.id} unverified`) }
     if (!x && prevItem.has(meta.id)) x = prevItem.get(meta.id)
+    if (!x && SEEDED) { notGradedSinceSeed++; return null }
     if (!x) { problems.push(`${meta.id} not graded`); return null }
     return { ...x, epic: e, title: meta.title, type: meta.type, status: statuses.label('item', meta.status), open_questions: openOqs(meta.id), file: `stories/${meta.id}.md` }
   }).filter(Boolean)
@@ -91,6 +99,7 @@ const excludedList = Object.values(items).filter(excluded).map(i => ({ id: i.id,
 
 const gaps = {
   generated: date, catalogue_commit: commit,
+  ...(SEEDED ? { seeded: SEEDED } : {}),
   method: `Per-epic Sonnet reviewers against ${NUMBER[MAPS] ?? MAPS} ${APP} map${MAPS === 1 ? '' : 's'}, each review re-checked by an adversarial Sonnet verifier; plus a verified data-model delta and a verified reverse check.`,
   counts, in_scope: allItems.length,
   themes: themes?.themes || [],
@@ -118,6 +127,7 @@ const vOrder = Object.fromEntries(VERDICTS.map((v, i) => [v, i]))
 const md = []
 md.push(`# ${config.title} · Gap analysis`, '')
 md.push(`Catalogue snapshot \`${commit.slice(0, 7)}\` · generated ${date} · ${allItems.length} in-scope items (${excludedList.length} retired${LANES.length ? ` or ${LANES.join(' or ')}` : ''} excluded)`, '')
+if (SEEDED) md.push(`The plan was seeded empty at \`${SEEDED.slice(0, 7)}\`, with no gap analysis: the ${APP} was taken as matching the catalogue then. Only items changed since are graded here; ${notGradedSinceSeed} in-scope item${notGradedSinceSeed === 1 ? '' : 's'} not graded since ${notGradedSinceSeed === 1 ? 'is' : 'are'} left out.`, '')
 md.push(`**Method.** ${gaps.method} Supporting analysis: [${APP} maps](analysis/), [data-model delta](analysis/domain-model-delta.md), [reverse check](analysis/reverse-check.md). Machine-readable data: [gaps.json](gaps.json). The development plan built from this is in [ROADMAP.md](ROADMAP.md) and [index.html](index.html).`, '')
 md.push(`**Verdicts.** Matches: the ${APP} demonstrates the requirement as now written. Partial: present but missing rules or acceptance criteria. Contradicts: implemented, but some behaviour now differs from the requirement. Missing: nothing represents it. OutOfScope: ${config.gapAnalysis.outOfScopeShort ?? `cannot be shown in the ${APP} at all`}. Grouping: an epic or feature with no rules of its own. Sizes are for a Claude Code session: S under an hour, M a few hours, L about a session, XL more.`, '')
 
@@ -209,4 +219,4 @@ const units = [
   ...gaps.reverseFindings.filter(f => f.recommended_action !== 'Keep as demo scaffold').map(f => f.id),
 ]
 fs.writeFileSync(path.join(CU, 'units.json'), JSON.stringify(units))
-console.log(JSON.stringify({ counts, inScope: allItems.length, corrected: corrected.length, problems, deltas: gaps.dataModelDeltas.length, reverse: gaps.reverseFindings.length, units: units.length, themes: (themes?.themes || []).map(t => t.title) }, null, 1))
+console.log(JSON.stringify({ counts, inScope: allItems.length, ...(SEEDED ? { seeded: SEEDED, notGradedSinceSeed } : {}), corrected: corrected.length, problems, deltas: gaps.dataModelDeltas.length, reverse: gaps.reverseFindings.length, units: units.length, themes: (themes?.themes || []).map(t => t.title) }, null, 1))

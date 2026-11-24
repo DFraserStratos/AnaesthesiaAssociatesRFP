@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
-import { phaseStatus } from './config.mjs'
+import { loadConfig, phaseStatus, planDirOf } from './config.mjs'
 
 const tmp = prefix => fs.mkdtempSync(path.join(os.tmpdir(), prefix))
 
@@ -109,4 +109,26 @@ test('custom subject patterns are honoured', () => {
     const s = phaseStatus(c, r.dir, { lanes: true })
     assert.deepEqual(s.built, [])
   } finally { r.cleanup() }
+})
+
+test('discovery skips a plan.config.json marked "archived": true; --plan still reads it', () => {
+  const dir = tmp('plan-archived-')
+  try {
+    execFileSync('git', ['init', '-q'], { cwd: dir })
+    const w = (f, t) => { fs.mkdirSync(path.dirname(path.join(dir, f)), { recursive: true }); fs.writeFileSync(path.join(dir, f), t) }
+    w('old/plan/plan.config.json', JSON.stringify({ archived: true, firstPhase: '14' }))
+    w('docs/build/plan.config.json', JSON.stringify({ firstPhase: '45' }))
+    const saved = process.env.BUILD_PLAN
+    delete process.env.BUILD_PLAN
+    try {
+      assert.equal(planDirOf([], dir), 'docs/build', 'the archived plan is not a second config')
+      const live = loadConfig({ argv: [], root: dir })
+      assert.deepEqual([live.plan, live.planFlag, live.archived, live.firstPhase], ['docs/build', '', false, '45'])
+      const old = loadConfig({ argv: ['--plan', 'old/plan'], root: dir })
+      assert.deepEqual([old.archived, old.firstPhase, old.planFlag], [true, '14', ' --plan "old/plan"'])
+      // With only the archived one, discovery falls back to the default folder.
+      fs.rmSync(path.join(dir, 'docs'), { recursive: true })
+      assert.equal(planDirOf([], dir), 'docs/build-plan')
+    } finally { if (saved !== undefined) process.env.BUILD_PLAN = saved }
+  } finally { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5 }) }
 })

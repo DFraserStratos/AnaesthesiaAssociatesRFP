@@ -1,7 +1,8 @@
 // The build plan's folder and its plan.config.json, shared by every tool. Run the tools from the repo root.
 //
 // Which plan: `--plan <dir>` on any tool, else the BUILD_PLAN environment variable, else the one
-// plan.config.json in the repo (tracked or not), else docs/build-plan. Every config key is optional;
+// plan.config.json in the repo (tracked or not) that is not marked `"archived": true`, else
+// docs/build-plan. An archived plan is still read when named with --plan. Every config key is optional;
 // a missing file means all defaults (a new plan). The keys are documented in the skill's SKILL.md
 // ("The plan's config").
 //
@@ -17,7 +18,7 @@ export const TOOLS = path.dirname(fileURLToPath(import.meta.url))
 export const DEFAULT_PLAN = 'docs/build-plan'
 const CONFIG_FILE = 'plan.config.json'
 
-/** The plan folder, repo-relative, from argv / BUILD_PLAN / the repo's only plan.config.json / the default. */
+/** The plan folder, repo-relative, from argv / BUILD_PLAN / the repo's only live plan.config.json / the default. */
 export function planDirOf(argv = process.argv.slice(2), root = process.cwd()) {
   const i = argv.indexOf('--plan')
   if (i >= 0 && argv[i + 1]) return path.relative(root, path.resolve(root, argv[i + 1])) || '.'
@@ -30,11 +31,16 @@ export function planDirOf(argv = process.argv.slice(2), root = process.cwd()) {
   return found.length ? path.dirname(found[0]) : DEFAULT_PLAN
 }
 
-/** Every plan.config.json in the repo, tracked or not (git-ignored ones aside). */
-function discover(root) {
+/** A config marked `"archived": true`: a finished plan kept for reference, never found by discovery. */
+export function isArchived(file) {
+  try { return JSON.parse(fs.readFileSync(file, 'utf8'))?.archived === true } catch { return false }
+}
+
+/** Every live plan.config.json in the repo, tracked or not (git-ignored and archived ones aside). */
+export function discover(root) {
   try {
     return execFileSync('git', ['ls-files', '-co', '--exclude-standard', '--', `:(glob)**/${CONFIG_FILE}`], { cwd: root, encoding: 'utf8' })
-      .split('\n').filter(f => f && fs.existsSync(path.join(root, f)))
+      .split('\n').filter(f => f && fs.existsSync(path.join(root, f)) && !isArchived(path.join(root, f)))
   } catch {
     return []
   }
@@ -69,6 +75,8 @@ export function loadConfig({ argv = process.argv.slice(2), root = process.cwd() 
     planFlag: findable ? '' : ` --plan "${plan}"`,
     configFile: path.relative(root, file),
     configExists: fs.existsSync(file),
+    // A finished plan kept for reference (`"archived": true`): discovery skips it; --plan still reads it.
+    archived: raw.archived === true,
     name,
     title: raw.title ?? titleCase(name),
     subject: raw.subject ?? `the ${appNoun}`,

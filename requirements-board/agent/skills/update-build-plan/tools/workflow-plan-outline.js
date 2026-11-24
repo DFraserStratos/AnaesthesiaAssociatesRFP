@@ -18,7 +18,15 @@ export const meta = {
  *   oldPhases    [{num, title, file, covers}] from plan.json before this run
  *   builtPhases  phase numbers already built (frozen)
  *   partlyBuilt  [{num, note}] phases in progress: their built part is frozen (optional)
+ *   regraded     the ids re-graded this update (regrade-ids.mjs --ids-only, plus every DM id when the
+ *                delta ran and every RV id when the reverse check ran) (optional). One that is still a
+ *                unit (a gap) and sits only in built phases' covers is "stranded": nothing would build it,
+ *                so the coverage check fails until it moves to an unbuilt phase or is parked.
  *   changeNotes  short text: what changed, the change log paths, and any owner directives
+ * Numbering, checked in code with coverage: a new phase takes the next number above the highest numbered
+ * phase in the plan (config firstPhase when the plan has none, or when that is higher); a letter suffix
+ * (27a) only beside an unbuilt phase 27; a new phase on an owner-added track (U1) only on a track the plan
+ * already has, numbered above it.
  */
 const ROOT = args.root
 const C = args.config || {}
@@ -34,8 +42,37 @@ const UNITS = args.units
 const OLD = args.oldPhases
 const BUILT = new Set(args.builtPhases || [])
 const PARTLY = args.partlyBuilt || []
+const REGRADED = new Set((args.regraded || []).map(String))
 const B7 = args.baseline.slice(0, 7)
 const C7 = args.commit.slice(0, 7)
+
+// ---- numbering ----
+const OLD_NUMS = new Set(OLD.map(p => String(p.num)))
+const lead = n => { const m = String(n).match(/^(\d+)/); return m ? parseInt(m[1], 10) : null }
+const FIRST = String(C.firstPhase || '01')
+const highest = Math.max(-1, ...OLD.map(p => lead(p.num)).filter(n => n !== null))
+const nextNum = Math.max(highest + 1, lead(FIRST) ?? 1)
+const NEXT = String(nextNum).padStart(Math.max(2, FIRST.length), '0')
+const NUMBERING = `Numbering new phases: the next new phase is ${NEXT}, then upward (${OLD.length ? `the highest phase in the plan is ${highest < 0 ? 'none numbered' : String(highest).padStart(2, '0')}` : `the plan has no phases yet, so numbering starts at config firstPhase ${FIRST}`}). Never reuse or fill in a lower number. A letter suffix (27a) only for a phase that must run just after an UNBUILT phase 27; never beside a built phase (built: ${[...BUILT].join(', ') || 'none'}). A new phase on an owner-added track (a capital letter and digits, U1) only on a track the plan already has, above its highest. Existing phases keep their numbers.`
+/** New phase ids that break the numbering rule, each with why. */
+const numbering = o => {
+  const bad = []
+  const tracks = new Map()
+  for (const n of OLD_NUMS) { const m = n.match(/^([A-Z])(\d+)$/); if (m) tracks.set(m[1], Math.max(tracks.get(m[1]) ?? 0, +m[2])) }
+  for (const p of o.phases) {
+    const n = String(p.num)
+    if (OLD_NUMS.has(n)) continue
+    let m
+    if ((m = n.match(/^(\d+)$/))) { if (+m[1] < nextNum) bad.push(`${n}: a new phase numbers from ${NEXT} upward`) }
+    else if ((m = n.match(/^(\d+)[a-z]$/))) {
+      const base = [...OLD_NUMS, ...o.phases.map(x => String(x.num))].find(x => /^\d+$/.test(x) && +x === +m[1])
+      if (!base) bad.push(`${n}: no phase ${m[1]} to sit beside; use ${NEXT} upward`)
+      else if (BUILT.has(base)) bad.push(`${n}: phase ${base} is built; a letter suffix only beside an unbuilt phase, so use ${NEXT} upward`)
+    } else if ((m = n.match(/^([A-Z])(\d+)$/))) { if (!tracks.has(m[1]) || +m[2] <= tracks.get(m[1])) bad.push(`${n}: no owner-added ${m[1]} track to extend (or not above its highest); use ${NEXT} upward`) }
+    else bad.push(`${n}: not a phase number (two digits, an optional letter); use ${NEXT} upward`)
+  }
+  return bad
+}
 
 const CTX = `You are one agent updating the "${C.name || 'build plan'}" build plan of ${C.subject || 'the app'}.
 - Repo root: ${ROOT} (use absolute paths; folder names may contain spaces).
@@ -45,12 +82,13 @@ const CTX = `You are one agent updating the "${C.name || 'build plan'}" build pl
   Item diffs: node ${T}/plan-state.mjs${PF} --to ${C7} --diff <IDs> (rename-aware; never a plain git diff of the catalogue folder).
 - Built phases (frozen; follow-up work goes to a later phase): ${[...BUILT].join(', ') || 'none'}.${PARTLY.length ? `\n- Partly built phases (their built part is frozen; only the unbuilt part may change): ${PARTLY.map(p => `${p.num}: ${p.note}`).join('; ')}.` : ''}
 - Standing rules: ${STANDING}
+- ${NUMBERING}
 - Only write the files you are told to write. Never commit.`
 
 const PHASE = {
   type: 'object',
   properties: {
-    num: { type: 'string' }, slug: { type: 'string' }, title: { type: 'string' }, track: { type: 'string' },
+    num: { type: 'string', description: `An existing phase keeps its number; a new one takes ${NEXT} upward (see the numbering rule).` }, slug: { type: 'string' }, title: { type: 'string' }, track: { type: 'string' },
     goal: { type: 'string' }, delivers: { type: 'string' },
     depends_on: { type: 'array', items: { type: 'string' } }, est_sessions: { type: 'string' },
     covers: { type: 'array', items: { type: 'string' } }, demo_triggers: { type: 'array', items: { type: 'string' } },
@@ -97,16 +135,26 @@ const coverage = o => {
   const missing = UNITS.filter(u => !seen.has(u))
   const dupes = [...seen].filter(([, v]) => v.length > 1).map(([k, v]) => `${k} in ${v.join(' + ')}`)
   const unknown = [...seen.keys()].filter(k => !UNITS.includes(k))
-  return { ok: !missing.length && !dupes.length, missing, dupes, unknown }
+  // Re-graded this update, still a gap, and homed only on built phases: nothing would build it.
+  const stranded = UNITS.filter(u => REGRADED.has(u) && seen.get(u)?.length && seen.get(u).every(n => BUILT.has(n))).map(u => `${u} (built ${seen.get(u).join(' + ')})`)
+  const misnumbered = numbering(o)
+  return { ok: !missing.length && !dupes.length && !stranded.length && !misnumbered.length, missing, dupes, unknown, stranded, misnumbered }
 }
-const covText = c => `Missing (in no phase and not parked): ${c.missing.join(', ') || 'none'}\nIn more than one place: ${c.dupes.join('; ') || 'none'}\nNo longer units (now Matches, retired or out of scope: remove them from covers, or keep them only on a built phase): ${c.unknown.join(', ') || 'none'}`
+const covText = c => [
+  `Missing (in no phase and not parked): ${c.missing.join(', ') || 'none'}`,
+  `In more than one place: ${c.dupes.join('; ') || 'none'}`,
+  `No longer units (now Matches, retired or out of scope: remove them from covers, or keep them only on a built phase): ${c.unknown.join(', ') || 'none'}`,
+  `Stranded (re-graded this update and still a gap, but covered only by a built phase, so nothing would build it: take it out of the built phase's covers, the one change a built phase's entry may take (its doc stays as it is), and put it in an unbuilt phase, a new one if none fits, or park it with a reason): ${c.stranded.join(', ') || 'none'}`,
+  `Misnumbered new phases (renumber them, and every depends_on, milestone and ROADMAP mention): ${c.misnumbered.join('; ') || 'none'}`,
+].join('\n')
 
 const ROADMAP_FILE = `${ROOT}/${CU}/ROADMAP.md`
 const guidance = `How to update:
 - Read ROADMAP.md, plan.json, the change logs, the changed catalogue items (plan-state --diff above) and the re-graded gaps.json entries for the changed items (query by id).
-- Keep the plan stable: change only what the catalogue changes require. Keep phase numbers; add new phases at the end of their track with the next free number, or a letter suffix (27a) if order matters more.
+- Keep the plan stable: change only what the catalogue changes require. Keep phase numbers. ${NUMBERING}
 - Answered questions and owner decisions: the phase that planned a default now builds the answer; record it in ROADMAP's decisions table (mark superseded rows and say by what) and drop the default; add a row, with a built default from its Recommendation, for each new open question that gates an unbuilt phase.
 - New gaps go to the best-fitting unbuilt phase or a new phase. Items now Matches, retired or out of scope leave covers (note any code the phase must remove).
+- A re-graded id that is still a gap and sits only on a built phase is stranded: the built phase did not finish it. Move it out of the built phase's covers into an unbuilt phase (a new one if none fits), or park it with a reason. That is the only change a built phase's entry may take.${REGRADED.size ? ` Re-graded this update: ${[...REGRADED].join(', ')}.` : ''}
 - Re-check dependencies, ordering, estimates, milestones and the parked list.
 - Every unit below must be in exactly one phase's covers or parked.
 ${TIERS}
@@ -126,11 +174,11 @@ Return the full updated outline (all phases, built ones unchanged) and the tiere
 
 for (let i = 0; i < 2; i++) {
   const c = coverage(outline)
-  log(`coverage: ${c.missing.length} missing, ${c.dupes.length} duplicated, ${c.unknown.length} stale`)
+  log(`coverage: ${c.missing.length} missing, ${c.dupes.length} duplicated, ${c.unknown.length} stale, ${c.stranded.length} stranded, ${c.misnumbered.length} misnumbered`)
   if (c.ok && !c.unknown.filter(u => !outline.phases.some(p => BUILT.has(p.num) && p.covers.includes(u))).length) break
   outline = await agent(`${CTX}
 
-TASK: fix coverage in this updated outline. Every unit must be in exactly one phase's covers or parked; stale ids leave unbuilt phases. Keep everything else unchanged, and keep "affected" complete and tiered (add any phase you change, at least light).
+TASK: fix coverage and numbering in this updated outline. Every unit must be in exactly one phase's covers or parked; stale ids leave unbuilt phases; stranded ids leave their built phase for an unbuilt one or the parked list; misnumbered new phases are renumbered. Keep everything else unchanged, and keep "affected" complete and tiered (add any phase you change, at least light).
 ${covText(c)}
 
 Outline (JSON):
@@ -141,7 +189,7 @@ Then update "${ROADMAP_FILE}" to match. Return the fixed outline.`, { label: `co
 
 const critique = await agent(`${CTX}
 
-TASK: independent critic of the updated outline below (also in ${ROADMAP_FILE}). Read the catalogue diff, the change logs and the re-graded gaps yourself. Challenge: did every change reach a phase? Are answered decisions built as answered, not as the old default? Is newly placed work in the wrong phase or before its dependencies? Is any phase now too big (more than two sessions) or empty? Built phases untouched?
+TASK: independent critic of the updated outline below (also in ${ROADMAP_FILE}). Read the catalogue diff, the change logs and the re-graded gaps yourself. Challenge: did every change reach a phase? Are answered decisions built as answered, not as the old default? Is newly placed work in the wrong phase or before its dependencies? Is any phase now too big (more than two sessions) or empty? Built phases untouched (bar a stranded id moved out of their covers)? Is a re-graded gap left only on a built phase? Are new phases numbered by the rule above?
 Also check the triage: is any phase missing from "affected" whose doc still builds on a superseded reading? Is any phase tiered higher than its change needs (substantive where light would do, hard on more than four)? Over-tiering wastes the budget as surely as under-tiering loses changes. Return "revise" only for material issues.
 
 ${TIERS}
@@ -165,6 +213,23 @@ Current outline (JSON): ${JSON.stringify(outline)}
 Then ${roadmapSpec}
 Return the revised outline.`, { label: 'architect:revise', phase: 'Outline', model: O, effort: 'xhigh', schema: OUTLINE })
   if (revised) outline = revised
+}
+// The critic's revision can undo coverage or numbering: one last fix when it did.
+if (critique && critique.verdict === 'revise') {
+  const c = coverage(outline)
+  if (!c.ok) {
+    log(`after revision: ${covText(c).split('\n').filter(l => !/: none$/.test(l)).join('; ')}`)
+    const fixed = await agent(`${CTX}
+
+TASK: fix coverage and numbering in this revised outline. Every unit must be in exactly one phase's covers or parked; stranded ids leave their built phase for an unbuilt one or the parked list; misnumbered new phases are renumbered. Keep everything else unchanged, and keep "affected" complete and tiered (add any phase you change, at least light).
+${covText(c)}
+
+Outline (JSON):
+${JSON.stringify(outline)}
+
+Then update "${ROADMAP_FILE}" to match. Return the fixed outline.`, { label: 'coverage-fix-final', phase: 'Outline', model: O, effort: 'high', schema: OUTLINE })
+    if (fixed) outline = fixed
+  }
 }
 const finalCov = coverage(outline)
 const unbuiltAffected = outline.affected.filter(a => !BUILT.has(a.num))

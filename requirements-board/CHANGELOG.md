@@ -2,6 +2,16 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.28.0 · 2026-11-24
+
+- **A finished plan is continued, not remade.** update-build-plan's Stage 0 no longer proposes a fresh plan because every phase is built: it updates, grading only the changed items and appending new phases. A fresh plan is now only on request or when more than about 60% of in-scope items changed; with no plan at all, the skill asks whether to seed one or grade everything.
+- **Seed an empty plan.** New `plan-init.mjs --at <ref> [--first <NN>]` writes a plan with no gap analysis and no phases: `plan.json` at the commit, an empty `gaps.json` marked `"seeded"`, `units.json`, `status.json` ("No phase planned."), stubs for the data-model delta and `GAP-ANALYSIS.md`, and `ROADMAP.md` and `README.md` when absent, then renders `index.html`. `--first` sets the config's `firstPhase`. It refuses, writing nothing, when the plan's data files exist (`--force` overwrites them; `ROADMAP.md` and `README.md` never). plan-state, regrade-ids, build-index and the coverage check run cleanly on the result (tested).
+- **Seeded and missing gap analyses merge.** `assemble-gaps.mjs --merge` merges onto nothing when there is no `gaps.json` yet (and says so). On a seeded plan, items never graded since the seed are left out as `notGradedSinceSeed`, not reported as problems, and the seed is carried forward.
+- **New phases are numbered by rule, checked in code.** The outline workflow names the next number (above the highest phase in the plan, or config `firstPhase` when it has none) and fails coverage on a new phase that breaks it: a lower number, a letter suffix beside a built phase, or a new owner-added track.
+- **No stranded gaps.** Given the re-graded ids (new `regraded` argument), the outline's coverage check fails on one that is still a gap but sits only on built phases, until it moves to an unbuilt phase or is parked. A critic's revision that breaks coverage now gets one final fix.
+- **Missing analysis files are made, not assumed.** plan-state prints `analysis.missingMaps` and `analysis.deltaMissing`; the gap-analysis workflow takes them, making missing code maps even with `reuseMaps`, and running the data-model delta fresh when its file is missing.
+- **Archived plans are skipped.** A `plan.config.json` with `"archived": true` is no longer discovered, so closing a plan and starting another does not leave the tools seeing two configs; `--plan` still reads it.
+
 ## 1.27.0 · 2026-11-23
 
 - **Capture presets browser storage.** A capture app in `board.config.json` can name `localStorage` keys
