@@ -111,6 +111,10 @@ describe('catch-up Phase 17b seed', () => {
   it('keeps groups, pairings, tiers and every List\'s surgeon', () => {
     expect(seed.masters.surgeonGroups).toEqual(baseline.surgeonGroups)
     expect(seed.officePrivate).toEqual(baseline.officePrivate)
-    expect(Object.fromEntries(Object.values(seed.schedule.lists).map((l) => [l.id, l.surgeonId ?? null]))).toEqual(baseline.listSurgeons)
+    // Recurring Lists skip public holidays (24 Nov 2026): the ten Labour Day and Anniversary Day Lists are no longer made.
+    const gone = Object.keys(baseline.listSurgeons).filter((id) => /-(2026-10-26|2026-11-13)-/.test(id) && seed.schedule.lists[id] === undefined)
+    expect(gone).toHaveLength(10)
+    const expected = Object.fromEntries(Object.entries(baseline.listSurgeons).filter(([id]) => !gone.includes(id)))
+    expect(Object.fromEntries(Object.values(seed.schedule.lists).map((l) => [l.id, l.surgeonId ?? null]))).toEqual(expected)
   })
 })

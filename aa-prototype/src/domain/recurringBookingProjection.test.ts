@@ -18,7 +18,8 @@ import {
 import { buildSeed, generateCanvasForDates, seedSlotStatusRecords, type CanvasMasters } from './seed'
 import { enumerateDatesISO, horizonFor, DEMO_TODAY } from './clock'
 import { slotIdFor } from './slots'
-import type { List, RecurringBooking, Slot } from './types'
+import { closureSourcesOf, recurringSkipFor, type ClosureSources } from './holidays'
+import type { List, PublicHoliday, RecurringBooking, Slot } from './types'
 
 const statuses = seedSlotStatusRecords()
 // Mon 3 Aug to Sun 30 Aug 2026: four Mondays, four Saturdays.
@@ -184,11 +185,51 @@ describe('projectAllRecurringBookings', () => {
       listBySlot: new Map(Object.values(lists).flatMap((l) => (l.slotId !== undefined ? [[l.slotId, l] as const] : []))),
       bookedListIds: booked,
       statuses: seed.masters.slotStatuses,
+      skipsDate: recurringSkipFor(closureSourcesOf(seed.masters)),
       recurringBookings: Object.values(seed.masters.recurringBookings),
     })
     expect(plan.create).toEqual([])
     expect(plan.update).toEqual([])
     expect(plan.remove).toEqual([])
     expect(plan.skipped.length).toBeGreaterThan(0)
+  })
+})
+
+describe('public holidays (24 Nov 2026): recurring Lists skip them', () => {
+  const statuses = seedSlotStatusRecords()
+  const rb: RecurringBooking = { id: 'RB-T1', anaesthetistId: 'A1', dayOfWeek: 1, session: 'AM', hospitalId: 'H-SX', surgeonId: 'S-1', kind: 'private' }
+  const holidays: ClosureSources = {
+    hospitalHolidays: [{ id: 'HH-T1', hospitalId: 'H-SX', dateISO: '2026-11-02', name: 'Maintenance' }],
+    publicHolidays: [{ id: 'PH-T1', dateISO: '2026-10-26', name: 'Labour Day', kind: 'national', openHospitalIds: ['H-AAROOMS'] }],
+  }
+  const labourDay: PublicHoliday = { id: 'PH-T1', dateISO: '2026-10-26', name: 'Labour Day', kind: 'national', openHospitalIds: ['H-AAROOMS'] }
+  const skipsDate = recurringSkipFor(holidays)
+  const dates = enumerateDatesISO('2026-10-19', '2026-11-02')
+  const masters: CanvasMasters = { anaesthetists: [{ id: 'A1', startDateISO: '2020-01-01', active: true }], recurringBookings: [rb], leave: [], series: [], statuses, skipsDate }
+
+  it('the generator makes no List on a public holiday, but does on a hospital\'s own closure (flagged there)', () => {
+    const generated = generateCanvasForDates(masters, dates)
+    expect(generated.lists.map((l) => l.dateISO).sort()).toEqual(['2026-10-19', '2026-11-02'])
+    expect(generated.clashes).toEqual([])
+  })
+
+  it('a public holiday open to the hospital is not skipped', () => {
+    const open = recurringSkipFor({ ...holidays, publicHolidays: [{ ...labourDay, openHospitalIds: ['H-SX'] }] })
+    expect(generateCanvasForDates({ ...masters, skipsDate: open }, dates).lists.map((l) => l.dateISO)).toContain('2026-10-26')
+  })
+
+  it('re-projecting creates nothing on the holiday and removes its own empty List there; a booked one stays', () => {
+    const withoutSkip = generateCanvasForDates({ ...masters, skipsDate: undefined }, dates)
+    const slots = Object.fromEntries(withoutSkip.slots.map((s) => [s.id, s]))
+    const lists = Object.fromEntries(withoutSkip.lists.map((l) => [l.id, l]))
+    const listBySlot = new Map(withoutSkip.lists.map((l) => [l.slotId!, l] as const))
+    const input = { fromISO: '2026-10-20', toISO: '2026-11-02', slots, lists, listBySlot, statuses, skipsDate }
+    const holidayList = withoutSkip.lists.find((l) => l.dateISO === '2026-10-26')!
+    const plan = projectRecurringBookingChange({ ...input, bookedListIds: new Set<string>(), before: rb, after: rb })
+    expect(plan.create).toEqual([])
+    expect(plan.remove.map((r) => r.listId)).toEqual([holidayList.id])
+    const booked = projectRecurringBookingChange({ ...input, bookedListIds: new Set([holidayList.id]), before: rb, after: rb })
+    expect(booked.remove).toEqual([])
+    expect(booked.kept.map((k) => k.listId)).toContain(holidayList.id)
   })
 })

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { activeOnly, isRetired, retireBlockers } from '../domain/masterLifecycle'
 import { pairingIssues } from '../domain/listPairing'
 import { DEFAULT_RVG_TIME_RULE } from '../domain/billing/timeUnits'
-import { HOSP } from '../domain/seed'
+import { HOSP, SURG } from '../domain/seed'
+import { assignListToSlot } from './slotActions'
 import { createAppStore, type BoundAppStore } from './appStore'
 import { OFFICE_ACTOR, SOUTER_ACTOR } from './demoActors'
 import { createHospital, editHospital } from './mastersActions'
@@ -279,6 +280,11 @@ describe('retire facts and the guards around them (catch-up Phase 42)', () => {
   it('an office clear of a Labour Day conflict holds while the holiday stands, and drops once the hospital is listed open', () => {
     const api = store()
     const CAUSE = 'publicHoliday:PH001'
+    // Recurring Lists skip public holidays (24 Nov 2026): the office books a List at St George's on Labour Day, and it is flagged.
+    const listIds = new Set(Object.values(api.getState().schedule.lists).flatMap((l) => (l.slotId !== undefined ? [l.slotId] : [])))
+    const open = Object.values(api.getState().schedule.slots).find((x) => x.dateISO === '2026-10-26' && x.session === 'AM' && x.status === 'free' && !listIds.has(x.id))!
+    const made = assignListToSlot(api, OFFICE_ACTOR, open.id, { hospitalId: HOSP.stg, surgeonId: SURG.hale, kind: 'private' })
+    expect(made.ok).toBe(true)
     const list = Object.values(api.getState().schedule.lists).find((l) => l.hospitalId === HOSP.stg && l.conflicts.some((c) => c.cause === CAUSE))!
     expect(list).toBeDefined()
     expect(code(clearListConflict(api, OFFICE_ACTOR, list.id, CAUSE, 'Theatre running regardless'))).toBe('ok')

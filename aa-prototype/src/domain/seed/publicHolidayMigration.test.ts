@@ -37,13 +37,14 @@ function moved(row: string): string {
 }
 
 describe('the public-holiday migration (catch-up Phase 42)', () => {
-  it('flags exactly the same Lists; only the cause key changes', () => {
+  it('flags the same hospital-closure Lists; the public-holiday ones are no longer made (recurring Lists skip public holidays, 24 Nov 2026)', () => {
     const seed = buildSeed()
     const now: string[] = []
     for (const l of Object.values(seed.schedule.lists)) for (const c of l.conflicts) now.push(`${l.id} ${c.cause}`)
-    expect(now.sort()).toEqual(BEFORE.map(moved).sort())
-    const ids = (rows: string[]) => [...new Set(rows.map((r) => r.split(' ')[0]))].sort()
-    expect(ids(now)).toEqual(ids(BEFORE))
+    const publicRows = BEFORE.map(moved).filter((r) => r.includes('publicHoliday:'))
+    expect(publicRows.length).toBe(10)
+    expect(now.sort()).toEqual(BEFORE.map(moved).filter((r) => !r.includes('publicHoliday:')).sort())
+    for (const row of publicRows) expect(seed.schedule.lists[row.split(' ')[0]!], row).toBeUndefined()
   })
 
   it('two builds deep-equal', () => {

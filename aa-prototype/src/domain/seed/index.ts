@@ -49,6 +49,7 @@ import { canvasAnaesthetists, generateCanvasForDates, type CanvasMasters, type R
 import { projectedListId, slotIdFor } from '../slots'
 import { isClosedKey, SEED_STATUS } from '../slotStatus'
 import { reconcileAllConflicts } from '../conflicts'
+import { recurringSkipFor } from '../holidays'
 import { draftFromActive, isAssignedList } from '../draftLists'
 import { clearSlot, listInSlotOf, placeList, seedRecordedWindow, setSlot } from './recordedWindow'
 import {
@@ -421,12 +422,15 @@ function buildSeedInternal(): SeedBuild {
   // private Lists) so every draw and Booking holds; `rehomePublicLists` settles them below.
   const firstPassRecurring = [...RECURRING_BOOKINGS, ...publicPatternsForFirstPass()]
   const publicPatternIds = new Set(PUBLIC_SESSION_PATTERNS.map((p) => p.id))
+  const skipPublicHoliday = recurringSkipFor({ hospitalHolidays: HOSPITAL_HOLIDAYS, publicHolidays: PUBLIC_HOLIDAYS })
   const canvasMasters: CanvasMasters = {
     anaesthetists: canvasAnaesthetists(ANAESTHETISTS),
     recurringBookings: firstPassRecurring,
     leave: SEED_LEAVE,
     series: [],
     statuses: slotStatuses,
+    // Recurring bookings skip public holidays (the first pass's public patterns excepted: they are re-homed as Public sessions below).
+    skipsDate: (rb, dateISO) => !publicPatternIds.has(rb.id) && skipPublicHoliday(rb, dateISO),
   }
   const appSettings: AppSettings = { ...defaultAppSettings(), aaFee: SAMPLE_AA_FEE_SETTINGS }
   const horizon = horizonFor(DEMO_TODAY, appSettings.schedule.horizonMonths)

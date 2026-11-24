@@ -8,7 +8,7 @@ import type { CompletionContext } from '../domain/billing/completion'
  */
 
 import { byIdOrder, creditNoteByOriginal, occupiedSlotIdsOf, pairByAccRecIndex, bookingsByList, invoicesByBooking, openExceptionByBooking, proceduresByBooking, transfersByBooking } from './indexes'
-import { closuresAt, closuresIndex, closureSourcesOf } from '../domain/holidays'
+import { closuresAt, closuresIndex, closureSourcesOf, recurringSkipFor } from '../domain/holidays'
 import { rvgCodeToFill } from '../domain/billing/rvgDetail'
 import { procedureStackView, type ProcedureStackView, type StackSurface } from '../domain/billing/procedureStack'
 import { isOpenPriceFallback } from '../domain/billing/fallbacks'
@@ -1718,6 +1718,7 @@ export function projectionInputsFrom(state: Pick<AppState, 'clock' | 'appSetting
     movedFrom: movedFromIndex(state.schedule.lists),
     answered: answeredIndex(state.schedule.lists),
     statuses: state.masters.slotStatuses,
+    skipsDate: recurringSkipFor(closureSourcesOf(state.masters)),
   }
 }
 

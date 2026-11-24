@@ -65,6 +65,8 @@ describe('canvas fingerprint (Phase 17, re-pinned in Phase 28)', () => {
     // Re-pinned in catch-up Phase 32d: the public List kind retired (D86). 234 bookless public Lists
     // are Public sessions ("CPH") and the six recurring-clash Draft Lists the public rows raised are gone
     // (1129 - 240 = 889); the 12 that hold Bookings are private. Slots unchanged in number.
-    expect(canvasFingerprint(seedWithoutPhase40(buildSeed()))).toEqual({ slots: 3864, lists: 889, hash: 1796667773 })
+    // Re-pinned 24 Nov 2026: recurring Lists skip public holidays, so the ten Labour Day and Canterbury
+    // Anniversary Day Lists are no longer made (889 - 10 = 879). Slots unchanged.
+    expect(canvasFingerprint(seedWithoutPhase40(buildSeed()))).toEqual({ slots: 3864, lists: 879, hash: 143523923 })
   })
 })

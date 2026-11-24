@@ -97,7 +97,7 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 - 11 directory surgeons have no title ("N. Darnell", "T. Underhill"), and the directory's "Dr E. Fitzgerald" sits beside anaesthetist Dr Emma Fitzgerald. `domain/seed/specialistDirectory.ts`. S
 - The demo's 14 keep only their demo history at full scale (Dr Souter 9 unpaid invoices against colleagues' ~330 a year). (owner) M
 - Shortening the horizon keeps recurring-clash Draft Lists past the new edge (at 85, 17 when going from four months to three). `store/slotActions.ts` (`setHorizonMonths`). S
-- Public holidays: at 85 the Labour Day and Canterbury Anniversary Day Lists make about 130 conflicts. Decide whether the office's recurring Lists skip public holidays instead. (owner) M
+- Record the owner's rule "recurring Lists skip public holidays" (24 Nov 2026, `docs/DECISIONS.md`) in the catalogue (US-01.3.2, US-01.5.2) with `/update-requirements`. S
 - Start-up builds the whole practice on every load: about 1 s on a laptop, about 3 s on a 4x-slowed CPU (dev server). Cache the built start, or build the 71's billing lazily. `store/appStore.ts` (`practiceAppState`). M
 
 ## Prototype: provisional captions

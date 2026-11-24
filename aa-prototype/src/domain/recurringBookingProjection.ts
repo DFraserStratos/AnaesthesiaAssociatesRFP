@@ -23,6 +23,10 @@
  * arrangement no longer covers its day (`draftRemove`, a soft removal); one
  * with Bookings is kept.
  *
+ * Public holidays (owner, 24 Nov 2026): a day a master public holiday closes
+ * the arrangement's hospital (`skipsDate`, `recurringSkipFor`) is not covered,
+ * so nothing is created there and its own empty Lists on it go.
+ *
  * `generateCanvasForDates` (seed/canvas.ts) uses `activeOn` and paints in the
  * same order, so a fresh generation leaves `projectAllRecurringBookings` with
  * nothing to create, update or remove. Pure: no store, no React.
@@ -146,6 +150,8 @@ export interface ProjectionInputs {
   /** Days already answered for by a Draft List or a List assigned from one, by `answeredKey` (`answeringLists`). */
   answered?: ReadonlyMap<string, List>
   statuses: SlotStatusRecords
+  /** Days the arrangement skips though it covers them: a public holiday closing its hospital (`recurringSkipFor`). */
+  skipsDate?: (recurringBooking: RecurringBooking, dateISO: string) => boolean
 }
 
 export const emptyPlan = (): ProjectionPlan => ({ create: [], update: [], remove: [], kept: [], skipped: [], draftUpdate: [], draftRemove: [] })
@@ -221,7 +227,7 @@ export function projectRecurringBookingChange(
 
   if (after !== undefined) {
     for (const dateISO of dates) {
-      if (!coversDate(after, dateISO)) continue
+      if (!coversDate(after, dateISO) || input.skipsDate?.(after, dateISO) === true) continue
       const slotId = slotIdFor(after.anaesthetistId, dateISO, after.session)
       const slot = input.slots[slotId]
       // No Slot: the anaesthetist is inactive or not started that day.

@@ -107,7 +107,7 @@ import { originForNewList } from '../../lists/listOrigin'
 import { seedBankAccountNumber } from '../../bankAccount'
 import { nameWithoutTitle } from '../../names'
 import { seriesOccurrences } from '../../availabilitySeries'
-import { closuresAt, closuresIndex, closureSourcesOf } from '../../holidays'
+import { closuresAt, closuresIndex, closureSourcesOf, recurringSkipFor } from '../../holidays'
 import { reconcileAllConflicts } from '../../conflicts'
 import { generateCanvasForDates } from '../canvas'
 import { SEED_CLASH_RUN_ISO, seedRecurringClashDraftLists } from '../draftLists'
@@ -771,6 +771,7 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
       leave,
       series: seriesEntries,
       statuses: base.masters.slotStatuses,
+      skipsDate: recurringSkipFor(closureSourcesOf(base.masters)),
     },
     horizonDates,
   )

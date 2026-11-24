@@ -161,10 +161,11 @@ describe('conflict selectors', () => {
     expect(conflictRows(s, { anaesthetistId: ANAE.morrison }).every((r) => r.anaesthetistId === ANAE.morrison)).toBe(true)
   })
 
-  it('counts open conflicts from today: Wed 22, Mon 26 Oct and Fri 13 Nov (Rutherford no longer one)', () => {
+  it('counts open conflicts from today: Wed 22 only (Rutherford no longer one; recurring Lists skip public holidays)', () => {
     const api = store()
-    // 19 until catch-up Phase 32d: three bookless public Lists at Christchurch Public on a closure day are now Public sessions.
-    expect(openConflictCount(api.getState())).toBe(16)
+    // 19 until catch-up Phase 32d (three bookless public Lists became Public sessions); 16 until 24 Nov 2026,
+    // when recurring Lists stopped being made on Labour Day and Canterbury Anniversary Day.
+    expect(openConflictCount(api.getState())).toBe(6)
   })
 
   it('hospitalMonth: closures, Lists and conflicted Lists per day', () => {

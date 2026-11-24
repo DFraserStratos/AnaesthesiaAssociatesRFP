@@ -80,6 +80,23 @@ export function closuresAt(index: ClosureIndex, dateISO: string, hospitalId: str
   return out
 }
 
+/**
+ * Does a master public holiday close this hospital on this date? A recurring
+ * booking projects no List on such a day (owner, 24 Nov 2026): the office's
+ * standing Lists skip public holidays, so they never stand as conflicts. A
+ * hospital's own closure is not skipped: its Lists are made and flagged
+ * (US-01.5.2), and a List that already holds Bookings is never removed.
+ */
+export function publicHolidayClosesAt(index: ClosureIndex, dateISO: string, hospitalId: string): boolean {
+  return closuresAt(index, dateISO, hospitalId).some((c) => c.source === 'public')
+}
+
+/** The recurring projection's skip rule (`publicHolidayClosesAt`) read from the two calendars. */
+export function recurringSkipFor(sources: ClosureSources): (recurring: { hospitalId: string }, dateISO: string) => boolean {
+  const index = closuresIndex(sources)
+  return (recurring, dateISO) => publicHolidayClosesAt(index, dateISO, recurring.hospitalId)
+}
+
 /** The closures at one hospital on one date (a one-off lookup; build an index for many). */
 export function closuresFor(dateISO: string, hospitalId: string, sources: ClosureSources): Closure[] {
   return closuresAt(closuresIndex(sources), dateISO, hospitalId)

@@ -48,6 +48,7 @@ import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta
 import type { AppState, AppStoreApi } from './appStore'
 import { listInSlot, moveInputOf, scheduleHorizon, slotFor } from './selectors'
 import { seriesCalendarFor, setOneSessionAvailability } from './availabilityActions'
+import { closureSourcesOf, recurringSkipFor } from '../domain/holidays'
 import { instanceKey } from '../domain/availabilitySeries'
 import { SESSIONS_IN_ORDER, sessionText, outOfHoursTimesRefusal } from '../domain/outOfHours'
 
@@ -72,6 +73,7 @@ export function canvasMastersFrom(state: Pick<AppState, 'masters' | 'schedule'>,
     leave: SEED_LEAVE,
     series: seriesCalendarFor(state, datesISO),
     statuses: state.masters.slotStatuses,
+    skipsDate: recurringSkipFor(closureSourcesOf(state.masters)),
   }
 }
 

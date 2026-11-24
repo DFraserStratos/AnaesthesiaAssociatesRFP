@@ -55,6 +55,8 @@ export interface CanvasMasters {
   series: readonly SeriesCalendarEntry[]
   /** The status master: the default status and the closed test read it, never a literal. */
   statuses: SlotStatusRecords
+  /** Days a recurring booking skips though it covers them: a public holiday closing its hospital (`recurringSkipFor`). */
+  skipsDate?: (recurringBooking: RecurringBooking, dateISO: string) => boolean
 }
 
 /** One series instance as calendar input (an `edited` exception carries its own status; a `deleted` one is absent). */
@@ -145,7 +147,7 @@ export function generateCanvasForDates(masters: CanvasMasters, datesISO: readonl
         }
 
         // 4. The recurring bookings, on top.
-        const recurring = recurringBySlot.get(`${anaesthetist.id}|${dayOfWeek}|${session}`)?.find((r) => activeOn(r, dateISO))
+        const recurring = recurringBySlot.get(`${anaesthetist.id}|${dayOfWeek}|${session}`)?.find((r) => activeOn(r, dateISO) && masters.skipsDate?.(r, dateISO) !== true)
         if (recurring !== undefined) {
           if (isClosedKey(masters.statuses, slot.status)) {
             clashes.push({ recurringBookingId: recurring.id, slotId: slot.id })

@@ -271,10 +271,10 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
     expect(listBySlot.has(sharmaPm!.id)).toBe(false)
   })
 
-  it('flags Lists on hospital holidays (conflict, never a status change)', () => {
-    const conflicted = Object.values(seed.schedule.lists).filter(
-      (l) => l.conflicts.some((c) => c.kind === 'holiday') && (l.dateISO === '2026-10-26' || l.dateISO === '2026-11-13'),
-    )
+  it('makes no recurring List on a public holiday, and flags Lists on a hospital closure (conflict, never a status change)', () => {
+    // Recurring Lists skip public holidays (24 Nov 2026): Labour Day and Canterbury Anniversary Day hold none.
+    expect(Object.values(seed.schedule.lists).filter((l) => (l.dateISO === '2026-10-26' || l.dateISO === '2026-11-13') && l.recurringBookingId !== undefined)).toEqual([])
+    const conflicted = Object.values(seed.schedule.lists).filter((l) => l.conflicts.some((c) => c.kind === 'holiday') && l.dateISO === '2026-07-22')
     expect(conflicted.length).toBeGreaterThan(0)
     for (const list of conflicted) {
       expect(list.hospitalId).toBeDefined()
@@ -305,19 +305,8 @@ const PINNED_CLASHES = 12
  * List is no longer flagged: his sickness returned it as a Draft List (D59).
  */
 /** Catch-up Phase 32d removed three (bookless public Lists at a closed Christchurch Public, now Public sessions): L-27731-2026-10-26-PM, L-36208-2026-11-13-AM, L-46822-2026-10-26-AM. */
-const FLAGGED_BEFORE_PHASE_30 = [
-  'L-25490-2026-07-22-PM',
-  'L-25490-2026-10-26-AM',
-  'L-27731-2026-11-13-AM',
-  'L-29104-2026-10-26-AM',
-  'L-31902-2026-10-26-AM',
-  'L-31902-2026-11-13-AM',
-  'L-34821-2026-10-26-AM',
-  'L-34821-2026-10-26-PM',
-  'L-38455-2026-11-13-AM',
-  'L-44519-2026-10-26-PM',
-  'L-45178-2026-11-13-AM',
-]
+/** 24 Nov 2026: recurring Lists skip public holidays, so the ten Labour Day and Anniversary Day Lists are no longer made. */
+const FLAGGED_BEFORE_PHASE_30 = ['L-25490-2026-07-22-PM']
 const SOUTHERN_CROSS_WED22_ADDITIONS = ['L-38455-2026-07-22-PM', 'L-41267-2026-07-22-PM', 'L-46822-2026-07-22-AM']
 /** Catch-up Phase 31: Dr Beaumont's Wed 22 recurring clashes at Southern Cross are Draft Lists, and carry HH900 like any List. */
 const SOUTHERN_CROSS_WED22_DRAFT_LISTS = ['LD-RCB020-2026-07-22-AM', 'LD-RCB021-2026-07-22-PM']

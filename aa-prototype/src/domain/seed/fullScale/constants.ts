@@ -54,7 +54,7 @@ export const FULL_SCALE = {
    * Cover already arranged: of the recurring Lists that fall under leave (Draft Lists by the clash rule), the share
    * the office has given a free colleague, within the next `nearDays` and after; the rest wait as Draft Lists.
    */
-  cover: { nearDays: 28, nearShare: 0.9, laterShare: 0.6 },
+  cover: { nearDays: 28, nearShare: 0.9, laterShare: 0.9 },
   /** The everyday practice (`scope: 'practice'`): Bookings on each of the 71's past-fortnight Lists, and the share of its invoices already paid in. */
   practicePastBookingsPerList: { min: 2, max: 5 },
   practicePaidShare: 0.7,

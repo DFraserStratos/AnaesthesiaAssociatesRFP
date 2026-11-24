@@ -174,6 +174,8 @@ describe('Phase 32d parity: what must not move', () => {
   it('every other List is unchanged, apart from the bookless public Lists and the public rows\' clash Draft Lists', () => {
     for (const [id, list] of Object.entries(before.otherLists)) {
       if (removedListIds.has(id) || removedDraftIds.has(id)) continue
+      // Recurring Lists skip public holidays (24 Nov 2026): Labour Day's and Anniversary Day's are no longer made.
+      if (seed.schedule.lists[id] === undefined && (list.dateISO === '2026-10-26' || list.dateISO === '2026-11-13') && list.recurringBookingId !== undefined) continue
       expect(withoutOrigin(seed.schedule.lists[id]), id).toEqual(phase42Cause(list))
     }
     const known = new Set([...Object.keys(before.otherLists), ...Object.keys(before.listsWithBookings)])
