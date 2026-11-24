@@ -77,7 +77,7 @@ export const SAMPLE_SHEETS: readonly SampleSheet[] = [
     fileName: 'anaesthetists.csv',
     label: 'Anaesthetists',
     csv: sheet([
-      ['Registration number', 'Name', 'Email', 'Phone', 'HPI CPN', 'Unit value', 'Bank account name', 'Bank account number', 'Start date'],
+      ['Registration number', 'Name', 'Email', 'Phone', 'HPI CPN', 'Rate per unit', 'Bank account name', 'Bank account number', 'Start date'],
       ['51234', 'Dr Laura Finlay', 'laura.finlay@anaesthesia.example', '021 555 0101', '36FINL', '38', 'L Finlay', '12-3456-7654321-00', '2026-09-01'],
       ['52345', 'Dr Michael Okeke', 'michael.okeke@anaesthesia.example', '021 555 0102', '37OKEM', '36.5', 'M Okeke', '02-1234-0567890-01', '2026-10-05'],
       // Refused: a held HPI CPN, a start date that is not a date, a unit value that is not a number.

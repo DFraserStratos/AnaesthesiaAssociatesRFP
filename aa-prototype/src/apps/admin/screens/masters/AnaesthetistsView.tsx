@@ -13,12 +13,13 @@ import { ClickableRow } from '../../../../shared/table'
 import { EditCell, MasterHeader, MasterTable } from './chrome'
 import { rowCellStyle } from './tableStyles'
 import { anaesthetistRecordPath } from '../../mastersPaths'
-import { HPI_CPN_LABEL } from '../../../../shared/format'
+import { formatCurrency, HPI_CPN_LABEL } from '../../../../shared/format'
+import { RATE_PER_UNIT } from '../../../../shared/profile/profileCopy'
 
 /**
  * Anaesthetists (catch-up Phase 17 adds the Tier column and the row that opens
  * the record; Phase 26 the HPI CPN, the masked bank account and the email, and
- * drops the GST period). Unit $ stays the third column: recipes highlight it. The row's "Edit" link and "Add anaesthetist" keep their names:
+ * drops the GST period). Rate per unit stays the third column: recipes highlight it. The row's "Edit" link and "Add anaesthetist" keep their names:
  * the catalogue's capture recipes click them.
  */
 export function AnaesthetistsView({ actor }: { actor: Actor }) {
@@ -37,7 +38,7 @@ export function AnaesthetistsView({ actor }: { actor: Actor }) {
         sub="Open an anaesthetist for their record, tier and pairing preferences. Adding one creates their sessions from their start date."
         add={{ label: 'Add anaesthetist', onClick: () => setAdding(true) }}
       />
-      <MasterTable columns={['Name', 'Reg', 'Unit $', 'Tier', HPI_CPN_LABEL, 'Bank account', 'GST number', 'Phone', 'Email', 'Start date', 'Active', '']} rightAlign={[11]} shot="masters-anaesthetists" label="Anaesthetists">
+      <MasterTable columns={['Name', 'Reg', RATE_PER_UNIT, 'Tier', HPI_CPN_LABEL, 'Bank account', 'GST number', 'Phone', 'Email', 'Start date', 'Active', '']} rightAlign={[11]} shot="masters-anaesthetists" label="Anaesthetists">
         {rows.map((a) => (
           <ClickableRow
             key={a.registrationNumber}
@@ -50,7 +51,7 @@ export function AnaesthetistsView({ actor }: { actor: Actor }) {
               </Link>
             </td>
             <td className="mono" style={rowCellStyle}>{a.registrationNumber}</td>
-            <td className="mono" style={rowCellStyle}>{a.unitValue.toFixed(2)}</td>
+            <td className="mono" style={rowCellStyle}>{formatCurrency(a.unitValue)}</td>
             <td style={rowCellStyle}><TierPill tier={tierFor(tiers, a.registrationNumber)} /></td>
             <td className="mono" style={rowCellStyle}>{a.hpiId}</td>
             <td data-shot="anaesthetist-bank" className="mono" style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>{maskBankAccount(a.bankAccount.accountNumber)}</td>

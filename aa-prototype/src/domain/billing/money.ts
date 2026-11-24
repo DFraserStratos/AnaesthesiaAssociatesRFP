@@ -17,9 +17,10 @@ export function toCents(amount: number): number {
 /**
  * How `formatMoney` prints an amount. `cents`: 'always' (the default) prints
  * two decimals; 'whenAny' drops ".00" on a whole-dollar amount ("$3,100").
- * `sign`: 'auto' (the default) prints a negative as the app always has
- * ("$-5.00"); 'always' puts the sign before the dollar sign ("+$5.00",
- * "-$5.00", zero unsigned), for the signed figures Phase 39a shows.
+ * `sign`: 'auto' (the default) prints a negative with a hyphen-minus before
+ * the dollar sign ("-$5.00") and a positive unsigned; 'always' also signs a
+ * positive ("+$5.00"). Zero, and a negative that rounds to zero, is always
+ * "$0.00". Never "$-5.00", an en dash or a U+2212 minus.
  */
 export interface MoneyFormat {
   cents?: 'always' | 'whenAny'
@@ -28,21 +29,18 @@ export interface MoneyFormat {
 
 /**
  * NZ dollars as every screen prints them: "$3,100.00", grouped with `en-NZ`
- * (UI unification U1, question 21). The defaults print exactly what
- * `formatCurrency` printed before U1, negatives and zero included, so the cent
- * rounding is `Intl`'s (half away from zero), as it always was; on the cent
- * amounts the fee maths produces (`roundToCents`) there is nothing to round.
+ * (UI unification U1, question 21), a negative as "-$34.45" (the sign before
+ * the dollar sign, as the remittance advice always printed it). The cent
+ * rounding is `Intl`'s (half away from zero); on the cent amounts the fee
+ * maths produces (`roundToCents`) there is nothing to round.
  * `shared/format.ts` re-exports it as `formatCurrency`.
  */
 export function formatMoney(amount: number, options: MoneyFormat = {}): string {
-  const twoPlaces = (n: number) => n.toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  const trim = (figure: string) => (options.cents === 'whenAny' && figure.endsWith('.00') ? figure.slice(0, -3) : figure)
-  if (options.sign === 'always') {
-    const figure = twoPlaces(Math.abs(amount))
-    if (figure === '0.00') return `$${trim(figure)}`
-    return `${amount > 0 ? '+' : '-'}$${trim(figure)}`
-  }
-  return `$${trim(twoPlaces(amount))}`
+  const figure = Math.abs(amount).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const shown = options.cents === 'whenAny' && figure.endsWith('.00') ? figure.slice(0, -3) : figure
+  if (figure === '0.00') return `$${shown}`
+  const sign = amount < 0 ? '-' : options.sign === 'always' ? '+' : ''
+  return `${sign}$${shown}`
 }
 
 /**

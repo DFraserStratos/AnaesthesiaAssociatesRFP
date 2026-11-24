@@ -316,7 +316,7 @@
     {
       "name": "mobile-raise-additional-invoice",
       "app": "mobile",
-      "caption": "The anaesthetist raises an additional invoice on their own Procedure, on the phone",
+      "caption": "The anaesthetist creates an additional invoice on their own Procedure, on the phone",
       "start": "/mobile/lists/L-HIST-03/bookings/HBK03",
       "states": [
         {
@@ -332,7 +332,7 @@
           "highlight": [
             "[data-aa-mobile-product] [data-shot=additional-invoice-button]"
           ],
-          "caption": "Raise additional invoice on the anaesthetist's own invoiced Procedure, beside Add pre-op or post-op event and Add billing event, on the phone"
+          "caption": "Create additional invoice on the anaesthetist's own invoiced Procedure, beside Add pre-op or post-op event and Add billing event, on the phone"
         },
         {
           "state": "sheet",
@@ -353,7 +353,7 @@
     {
       "name": "web-raise-additional-invoice",
       "app": "web",
-      "caption": "The anaesthetist raises an additional invoice on their own Procedure",
+      "caption": "The anaesthetist creates an additional invoice on their own Procedure",
       "start": "/web/lists/L-HIST-03/bookings/HBK03",
       "states": [
         {
@@ -369,7 +369,7 @@
           "highlight": [
             "[data-shot=additional-invoice-button]"
           ],
-          "caption": "Raise additional invoice on the anaesthetist's own invoiced Procedure, beside Add pre-op or post-op event and Add billing event"
+          "caption": "Create additional invoice on the anaesthetist's own invoiced Procedure, beside Add pre-op or post-op event and Add billing event"
         },
         {
           "state": "sheet",

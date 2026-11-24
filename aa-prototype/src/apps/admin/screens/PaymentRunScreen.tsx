@@ -12,7 +12,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { Button, Card, DefList, DefRow, EmptyState, PageHeader, Pill } from '../../../shared/ui'
 import { Td, Th, TableShell } from '../../../shared/table'
-import { drSurname, formatCurrency, formatSignedCurrency, plural } from '../../../shared/format'
+import { drSurname, formatCurrency, plural } from '../../../shared/format'
 import { neutral, radius } from '../../../theme/tokens'
 import { cycleLabel, cycleRangeLabel } from '../../../domain/billing/paymentCycle'
 import { ANOMALY_LABEL, paymentScheduleFor, remittanceAdviceFor, useAppStore } from '../../../store'
@@ -102,9 +102,9 @@ export function PaymentRunScreen({ runId }: { runId: string }) {
                   <Td>{name(t.anaesthetistId)}</Td>
                   <Td mono align="right">{t.bctiCount}</Td>
                   <Td mono align="right">{formatCurrency(t.positives)}</Td>
-                  <Td mono align="right">{t.netted > 0 ? formatSignedCurrency(-t.netted) : formatCurrency(0)}</Td>
+                  <Td mono align="right">{t.netted > 0 ? formatCurrency(-t.netted) : formatCurrency(0)}</Td>
                   <Td mono align="right">{formatCurrency(t.net)}</Td>
-                  <Td mono align="right">{t.remainingToNet > 0 ? formatSignedCurrency(-t.remainingToNet) : ''}</Td>
+                  <Td mono align="right">{t.remainingToNet > 0 ? formatCurrency(-t.remainingToNet) : ''}</Td>
                   <Td>
                     {run.approvedAtISO !== undefined ? (
                       <Link to={`/admin/billing/payment-runs/${run.id}/remittance/${t.anaesthetistId}`} data-shot="payables-run-remittance-link" style={{ color: neutral.ink }}>Remittance advice</Link>
@@ -202,7 +202,7 @@ export function PaymentRunScreen({ runId }: { runId: string }) {
                     <Td>{drSurname(r.name)}</Td>
                     <Td mono align="right">{r.bctiCount}</Td>
                     <Td mono align="right">{formatCurrency(r.positives)}</Td>
-                    <Td mono align="right">{r.netted > 0 ? formatSignedCurrency(-r.netted) : formatCurrency(0)}</Td>
+                    <Td mono align="right">{r.netted > 0 ? formatCurrency(-r.netted) : formatCurrency(0)}</Td>
                     <Td mono align="right" style={{ fontWeight: 650 }}>{formatCurrency(r.net)}</Td>
                     <Td mono>{r.destinationMasked ?? 'No bank account on file'}</Td>
                   </tr>
@@ -211,7 +211,7 @@ export function PaymentRunScreen({ runId }: { runId: string }) {
                   <Td style={{ fontWeight: 650 }}>Total</Td>
                   <Td mono align="right">{schedule.bctiCount}</Td>
                   <Td mono align="right">{formatCurrency(schedule.positives)}</Td>
-                  <Td mono align="right">{schedule.netted > 0 ? formatSignedCurrency(-schedule.netted) : formatCurrency(0)}</Td>
+                  <Td mono align="right">{schedule.netted > 0 ? formatCurrency(-schedule.netted) : formatCurrency(0)}</Td>
                   <Td mono align="right" style={{ fontWeight: 700 }}>{formatCurrency(schedule.total)}</Td>
                   <Td />
                 </tr>

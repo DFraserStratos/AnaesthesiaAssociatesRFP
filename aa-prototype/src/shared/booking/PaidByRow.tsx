@@ -136,7 +136,7 @@ export function PaidByRow({ contract, procedureId, actor, canEdit, variant, paye
       {pills}
       {/* The invoice's actions on their own wrapping row under the payer (phone, web and Admin alike), so a long payer name never meets them. */}
       <span data-shot="paid-by-invoice-actions" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 16 }}>
-        {/* On an invoiced Procedure (catch-up Phase 38b): Create (Admin) or Raise (anaesthetist, own Procedure) additional invoice.
+        {/* On an invoiced Procedure (catch-up Phase 38b): Create additional invoice (Admin on any, the anaesthetist on their own).
             A prepaid Procedure's settlement block holds these two while it shows (catch-up Phase 41). */}
         {!inSettlement && <AdditionalInvoiceButton procedureId={procedureId} actor={actor} />}
         {/* Its credit note option (catch-up Phase 39; US-08.6.5): the office's on any Procedure, the anaesthetist's on their own. */}

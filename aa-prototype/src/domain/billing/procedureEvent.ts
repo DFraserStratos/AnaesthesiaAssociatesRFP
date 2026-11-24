@@ -275,7 +275,7 @@ export function validateEventBase(
   if (!mayRaise(kind, actor, ctx.ownerAnaesthetistId, kinds)) {
     return {
       code: 'notOwnProcedure',
-      message: kind === 'additionalInvoice' ? 'You can raise an additional invoice only on your own Procedure.' : 'You can add this only on your own Procedure.',
+      message: kind === 'additionalInvoice' ? 'You can create an additional invoice only on your own Procedure.' : 'You can add this only on your own Procedure.',
     }
   }
   if (rules.needsInvoicedProcedure && !ctx.procedureInvoiced) {

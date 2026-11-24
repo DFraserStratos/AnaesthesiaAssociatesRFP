@@ -394,7 +394,7 @@
   .card.oq h3 { margin: 6px 0 10px; font-size: 16px; }
   .oq-head { display: flex; align-items: center; gap: 8px; }
   .oq-id { font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; color: var(--accent); background: var(--accent-tint); border-radius: 6px; padding: 2px 8px; }
-  .oq-row { display: grid; grid-template-columns: 104px 1fr; gap: 10px; font-size: 14px; margin: 6px 0; }
+  .oq-row { display: grid; grid-template-columns: 172px 1fr; gap: 10px; font-size: 14px; margin: 6px 0; }
   .oq-row .k { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mist); padding-top: 2px; }
   .oq-row ul { margin: 0; padding-left: 18px; }
   .oq-row li { font-size: 13.5px; margin: 2px 0; }
@@ -753,7 +753,7 @@ carry the label the run sheet quotes, listed under &quot;How to read the readine
 <td>S5</td>
 </tr>
 <tr>
-<td>The unit value read at authorise and kept in the lock, the go-live load</td>
+<td>The rate per unit read at authorise and kept in the lock, the go-live load</td>
 <td>S5</td>
 </tr>
 <tr>
@@ -912,7 +912,7 @@ review, pain consult, the ACC pre-op assessment with its CS250, CS260 or CS70 co
 confirm (OQ-12), or other work, with its own date and a time or a fixed fee) and <strong>Add billing
 event</strong> (a free-text charge, or a credit before the Procedure is invoiced). The office reviews
 each one and it bills in the next run.</li>
-<li>On her own invoiced Procedure, <strong>Raise additional invoice</strong> for a late charge such as a ward
+<li>On her own invoiced Procedure, <strong>Create additional invoice</strong> for a late charge such as a ward
 review; she can edit or remove it until the office reviews it. <strong>Credit note</strong> beside it credits
 the whole invoice (less work than expected, the wrong payer, paid twice), with a new lower invoice
 if one is due. The office reviews it, and her payment for that invoice is reversed by a negative
@@ -1044,7 +1044,7 @@ it, shown in <strong>History</strong>, where <strong>View as at</strong> shows t
 drawer after a cover change, or the notice of an anaesthetist&#39;s move. She ticks the saved changes
 to report, the template from <strong>Master data → Email templates</strong> fills the wording, and the email
 opens in her own mail client. The system does not send it.</li>
-<li>Keep master data by hand after the one-off go-live load: anaesthetists (profile, unit value, HPI
+<li>Keep master data by hand after the one-off go-live load: anaesthetists (profile, rate per unit, HPI
 CPN and bank details, which every anaesthetist record needs), hospitals and holidays, surgeons,
 specialties, surgeon groups, recurring bookings, availability statuses, public holidays, Parties,
 funding tags, Contracts and their price ranges, RVG groups and modifiers, email templates and
@@ -1128,7 +1128,7 @@ Booking, <strong>Rebook with another anaesthetist</strong> at that anaesthetist&
 <li>Review every event, the anaesthetists&#39; and the office&#39;s, on <strong>Review → Events</strong>. She adds pre-op,
 post-op and billing events herself, prices an event&#39;s time at review, and keeps each Contract&#39;s
 <strong>Event fees</strong>. An approved event bills in the next billing run.</li>
-<li>Raise an additional invoice to any party with <strong>Create additional invoice</strong>, free-form lines,
+<li>Create an additional invoice to any party with <strong>Create additional invoice</strong>, free-form lines,
 reviewed and billed in the next run with its own number and its own Xero pair.</li>
 <li>Correct an issued invoice without editing it, from <strong>Correct this invoice</strong>: <strong>Credit note</strong>,
 <strong>Credit in full and rebill</strong> (the new invoice starts from a copy of the original&#39;s lines), or
@@ -1734,14 +1734,14 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
 </ul>
 <h3>Additional invoices</h3>
 <ul>
-<li>A later ward review or pain consult never reopens the Booking. The office, or the anaesthetist on her own invoiced Procedure (found through search), raises an additional invoice with free-form lines (description, quantity, amount) to whoever should pay (<strong>Create additional invoice</strong>, or <strong>Raise additional invoice</strong> for the anaesthetist).</li>
+<li>A later ward review or pain consult never reopens the Booking. The office, or the anaesthetist on her own invoiced Procedure (found through search), creates an additional invoice with free-form lines (description, quantity, amount) to whoever should pay (<strong>Create additional invoice</strong>, in all three apps).</li>
 <li>It goes through the same review step and bills in the next run, with its own number and Xero pair, linked both ways to the original.</li>
-<li>After a prepaid or fixed-price procedure nothing is billed by itself; any extra is an additional invoice raised by hand.</li>
+<li>After a prepaid or fixed-price procedure nothing is billed by itself; any extra is an additional invoice created by hand.</li>
 </ul>
 <h3>Correction after invoicing</h3>
 <ul>
 <li>An issued invoice is never edited. A wrong amount or billable party, an invoice paid twice, or less work than a fixed price assumed, is corrected by crediting the invoice in full and rebilling.</li>
-<li>The office does it from the invoice&#39;s <strong>Correct this invoice</strong> card (<strong>Credit note</strong>, or <strong>Credit in full and rebill</strong>, whose draft starts from a copy of the original&#39;s lines). The anaesthetist does it on her own invoiced Procedure (<strong>Credit note</strong>, beside <strong>Raise additional invoice</strong>).</li>
+<li>The office does it from the invoice&#39;s <strong>Correct this invoice</strong> card (<strong>Credit note</strong>, or <strong>Credit in full and rebill</strong>, whose draft starts from a copy of the original&#39;s lines). The anaesthetist does it on her own invoiced Procedure (<strong>Credit note</strong>, beside <strong>Create additional invoice</strong>).</li>
 <li>The credit is an event on the Procedure, through the same review step, and is issued in the next billing run with its credit note number (CN-2026-nnnn). Any new invoice raised with it gets its own number and is linked to the original.</li>
 <li>The anaesthetist&#39;s payable is always reversed by a negative invoice: offset against the payable while it is unpaid, or netted in her next weekly payment run once she has been paid. A negative invoice with no later payment to net against is settled with the anaesthetist outside the system. Both sides move together in the ledger and in Xero.</li>
 <li>A credit note is not a refund. Nothing is credited without a person deciding. A disputed invoice with no AA error stays outstanding.</li>
@@ -3423,7 +3423,7 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
 </div></div>
       <div class="row"><span class="k">Expected</span><div class="v"><ul>
 <li>The price card reads &quot;13 units x $26.50 = $344.50&quot;, &quot;Discount 10% · minus $34.45&quot;, Price $310.05; the save bar &quot;1 unsaved change&quot;. Review shows her row at $310.05 and the List at $866.55.</li>
-<li>AA-2026-0003: &quot;Base 6 + Time 5 + Modifiers 2 = 13 units at $26.50&quot; $344.50, a &quot;Discount 10%&quot; line, Subtotal $310.05, GST $46.51, Total due $356.56; Locked record &quot;13 units @ $26.50/unit (locked), less 10%&quot;.</li>
+<li>AA-2026-0003: &quot;Base 6 + Time 5 + Modifiers 2 = 13 units at $26.50&quot; $344.50, a &quot;Discount 10%&quot; line of -$34.45, Subtotal $310.05, GST $46.51, Total due $356.56; Locked record &quot;13 units @ $26.50/unit (locked), less 10%&quot;.</li>
 <li>This replaces Ruth Kim&#39;s $396.18 in Beat 1, so every later total that includes it moves. Read those from the app.</li>
 </ul>
 </div></div>
@@ -3777,14 +3777,14 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
 <li><strong>Billing monitor</strong>: the <strong>AA Holding account</strong> card. Then <strong>Demo: Billing Monitor &amp; Xero → Invoices → AA-2026-0001</strong>.</li>
 </ul>
 </div></div>
-      <div class="row"><span class="k">Say</span><div class="v say"><p>&quot;Priya Nair paid in full last week for her rhinoplasty, and her septoplasty is on Forte&#39;s Contract. When the office authorises the List, the system moves her prepaid amount out of the AA Holding account to whoever did the List, as a transfer, with no invoice and no GST. The prepaid amount is the price, so the rhinoplasty stays off the final invoice even though it ran four hours. If Dr Souter wants more she raises an additional invoice by hand, and to give some back she raises a credit note for the whole invoice.&quot;</p>
+      <div class="row"><span class="k">Say</span><div class="v say"><p>&quot;Priya Nair paid in full last week for her rhinoplasty, and her septoplasty is on Forte&#39;s Contract. When the office authorises the List, the system moves her prepaid amount out of the AA Holding account to whoever did the List, as a transfer, with no invoice and no GST. The prepaid amount is the price, so the rhinoplasty stays off the final invoice even though it ran four hours. If Dr Souter wants more she creates an additional invoice by hand, and to give some back she raises a credit note for the whole invoice.&quot;</p>
 <ul>
 <li><strong>Open:</strong> releasing the prepayment at authorisation is still to be confirmed with AA (OQ-125); the holding card&#39;s pill says so.</li>
 </ul>
 </div></div>
       <div class="row"><span class="k">Expected</span><div class="v"><ul>
 <li>Mobile: &quot;Prepaid $1,200.00 · paid · held by AA until the List is authorised&quot; on Nair&#39;s rhinoplasty; the List reads <strong>Submitted to office</strong>.</li>
-<li>Stage longer prepaid procedure: &quot;Recorded BTM now 25 units, for reference only. Authorise bills nothing more for the prepaid procedure; raise an additional invoice by hand if one is needed.&quot; The review row shows &quot;Rhinoplasty · Prepaid amount $1,200.00 · paid&quot;, &quot;Prepaid, left off&quot;, TOTAL UNITS 33, TOTAL FEE $1,412.00.</li>
+<li>Stage longer prepaid procedure: &quot;Recorded BTM now 25 units, for reference only. Authorise bills nothing more for the prepaid procedure; create an additional invoice by hand if one is needed.&quot; The review row shows &quot;Rhinoplasty · Prepaid amount $1,200.00 · paid&quot;, &quot;Prepaid, left off&quot;, TOTAL UNITS 33, TOTAL FEE $1,412.00.</li>
 <li>Authorise: &quot;1 invoice raised. 1 emailed, 0 to post.&quot; On <strong>Invoices</strong>, AA-2026-0003 to Forte Health, $243.80, the septoplasty alone.</li>
 <li>Prepaid settlement: &quot;Prepaid $1,200.00 · the price for this procedure&quot;, AA-2026-0001, &quot;Recorded BTM 25 units · for reference only&quot;, &quot;Moved from the AA Holding account to Dr Souter on 21 Jul&quot;, &quot;Nothing is invoiced or credited automatically.&quot;, with the second <strong>Create additional invoice</strong> and <strong>Credit note</strong> buttons on the page.</li>
 <li>AA Holding account card: a <strong>Transferred</strong> row, Priya Nair, AA-2026-0001, Dr Melanie Souter, -$1,380.00; balance $690.00, &quot;Held for 1 prepaid Booking.&quot;</li>
@@ -3793,7 +3793,7 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
 </div></div>
       <div class="row"><span class="k">Worth pointing at</span><div class="v"><p>the transfer goes to whoever did the List, so if the Booking had moved to a colleague, the colleague would get it. Nothing is deducted from the final invoice, and nothing is raised for the extra time. The 25 units are recorded for reference only.</p>
 </div></div>
-      <div class="row"><span class="k">Handset</span><div class="v"><p>on Nair&#39;s List after submitting, <strong>Demo sheet → Office authorises this List</strong> (&quot;Done. The office authorised this List and the billing run raised its invoices. They are in Balances now, and search finds the List.&quot;). Her Booking reads &quot;Moved from the AA Holding account to you on 21 Jul&quot; with <strong>Raise additional invoice</strong> and <strong>Credit note</strong>.</p>
+      <div class="row"><span class="k">Handset</span><div class="v"><p>on Nair&#39;s List after submitting, <strong>Demo sheet → Office authorises this List</strong> (&quot;Done. The office authorised this List and the billing run raised its invoices. They are in Balances now, and search finds the List.&quot;). Her Booking reads &quot;Moved from the AA Holding account to you on 21 Jul&quot; with <strong>Create additional invoice</strong> and <strong>Credit note</strong>.</p>
 </div></div>
     </div>
     <div class="beat aside">
@@ -3802,7 +3802,7 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
 </div></div>
       <div class="row"><span class="k">Say</span><div class="v say"><p>&quot;A credit on a prepayment covers the whole invoice. Anything still owed goes on a new additional invoice.&quot;</p>
 </div></div>
-      <div class="row"><span class="k">Expected</span><div class="v"><p>&quot;Credit note · Priya Nair · Rhinoplasty, cosmetic component, self f…&quot;, &quot;Credits AA-2026-0001 in full. Nothing on it is edited.&quot;, TOTAL $1,380.00, &quot;Paid $1,380.00: $1,380.00 will be held for Priya Nair.&quot;, &quot;Dr Souter&#39;s payment is reversed: a negative invoice for $1,380.00, offset against the unpaid payable.&quot; and &quot;This credits the whole prepayment invoice. Raise an additional invoice for anything still owed.&quot; Closed unsaved, nothing changes.</p>
+      <div class="row"><span class="k">Expected</span><div class="v"><p>&quot;Credit note · Priya Nair · Rhinoplasty, cosmetic component, self f…&quot;, &quot;Credits AA-2026-0001 in full. Nothing on it is edited.&quot;, TOTAL $1,380.00, &quot;Paid $1,380.00: $1,380.00 will be held for Priya Nair.&quot;, &quot;Dr Souter&#39;s payment is reversed: a negative invoice for $1,380.00, offset against the unpaid payable.&quot; and &quot;This credits the whole prepayment invoice. Create an additional invoice for anything still owed.&quot; Closed unsaved, nothing changes.</p>
 </div></div>
       <div class="row"><span class="k">Handset</span><div class="v"><p>the <strong>Credit note</strong> on Nair&#39;s Booking opens Dr Souter&#39;s own version of the sheet, with TOTAL EX GST $1,200.00.</p>
 </div></div>
@@ -3883,12 +3883,12 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
       <h4>Beat 5: An additional invoice to any party</h4>
       <div class="row"><span class="k">Click</span><div class="v"><ul>
 <li>Sarah Mitchell&#39;s Admin Booking (the Beat 5 link, <code>/admin/day/2026-07-14/bookings/BK0032</code>). On the <strong>Paid by</strong> row, <strong>Create additional invoice</strong>. Line &quot;Post-op ward review, Wed 15 Jul, 15 min&quot;, quantity 1, amount $30. Keep <strong>Same as the original invoice (Christchurch Public)</strong> ticked. <strong>Save for review</strong>.</li>
-<li>Dr Souter&#39;s own: on web or the phone, search <strong>Chen</strong>, open David Chen&#39;s <strong>Mon 22 Jun</strong> Booking. Events shows her additional invoice waiting for review, raised from <strong>Raise additional invoice</strong> on the Contract row.</li>
+<li>Dr Souter&#39;s own: on web or the phone, search <strong>Chen</strong>, open David Chen&#39;s <strong>Mon 22 Jun</strong> Booking. Events shows her additional invoice waiting for review, created from <strong>Create additional invoice</strong> on the Contract row.</li>
 <li><strong>Review queue → Events</strong>: <strong>Approve for billing</strong> on both rows.</li>
 <li><strong>Billing monitor</strong>, <strong>Demo actions → Run the next billing run</strong>, <strong>Run</strong>.</li>
 </ul>
 </div></div>
-      <div class="row"><span class="k">Say</span><div class="v say"><p>&quot;A ward review the day after surgery doesn&#39;t reopen the Booking. The office raises an additional invoice with free-form lines, to whoever should pay. The anaesthetist can do the same on her own Procedure. Both go through the same review and bill in the next run, each with its own number and its own Xero pair, linked to the original.&quot;</p>
+      <div class="row"><span class="k">Say</span><div class="v say"><p>&quot;A ward review the day after surgery doesn&#39;t reopen the Booking. The office creates an additional invoice with free-form lines, to whoever should pay. The anaesthetist can do the same on her own Procedure. Both go through the same review and bill in the next run, each with its own number and its own Xero pair, linked to the original.&quot;</p>
 </div></div>
       <div class="row"><span class="k">Expected</span><div class="v"><ul>
 <li>The dialog reads &quot;Additional invoice · Sarah Mitchell · Appendicectomy, laparoscopic&quot; and &quot;Additional to AA-2026-0004&quot;; subtotal $30.00, GST $4.50, total $34.50. The Booking&#39;s events show it Awaiting review, &quot;Raised by the office · Christchurch Public&quot;.</li>
@@ -4258,30 +4258,30 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
 </div></div>
     </div>
     <div class="beat">
-      <h4>Beat 5: Authorise, then edit the unit value</h4>
+      <h4>Beat 5: Authorise, then edit the rate per unit</h4>
       <div class="row"><span class="k">Click</span><div class="v"><ul>
 <li><strong>Review queue</strong>, open Dr Souter&#39;s Mon 20 Jul AM List, Forte Health (<code>/admin/review/L-34821-2026-07-20-AM</code>). Point at the rate in the totals row.</li>
 <li><strong>Authorise for billing</strong>, then <strong>Authorise for billing</strong> in the dialog.</li>
-<li><strong>Master data → Anaesthetists</strong>, <strong>Edit</strong> on Dr Melanie Souter. Change <strong>Unit value ($)</strong> from 26.50 to 28.00, <strong>Save changes</strong>.</li>
+<li><strong>Master data → Anaesthetists</strong>, <strong>Edit</strong> on Dr Melanie Souter. Change <strong>Rate per unit ($)</strong> from 26.50 to 28.00, <strong>Save changes</strong>.</li>
 <li>Back to the authorised List (<code>/admin/review/L-34821-2026-07-20-AM</code>). It has left the queue. <strong>Review queue</strong> lists it under <strong>Recently billed</strong>, which does not open it.</li>
 <li><strong>Invoices</strong>, open Brian Holt&#39;s <strong>AA-2026-0007</strong>. <strong>Demo actions → Regenerate from locked data</strong> → <strong>Run</strong>.</li>
 <li>Open an ACTIVE Booking of hers: Hemi Walker on the Tue 21 Jul AM List (<code>/admin/day/2026-07-21/bookings/BK0001</code>).</li>
 </ul>
 </div></div>
-      <div class="row"><span class="k">Say</span><div class="v say"><p>&quot;Dr Souter&#39;s rate per unit, which Admin calls the unit value, is read when the List is authorised and kept in the lock. Change the unit value afterwards and her invoices stay as they were. Work not yet authorised takes the new unit value.&quot;</p>
+      <div class="row"><span class="k">Say</span><div class="v say"><p>&quot;Dr Souter&#39;s rate per unit is read when the List is authorised and kept in the lock. Change it afterwards and her invoices stay as they were. Work not yet authorised takes the new rate.&quot;</p>
 </div></div>
       <div class="row"><span class="k">Expected</span><div class="v"><ul>
 <li>Before authorise the totals read 34 units, $901.00, &quot;@ $26.50/unit (list rate)&quot;.</li>
 <li>The dialog reads &quot;Authorise this list for billing?&quot; and names what is locked: &quot;its settings, the price range in force, the rate, the price, who is billed and who is paid.&quot;</li>
 <li>After it the totals read &quot;@ $26.50/unit (locked)&quot;.</li>
 <li>The invoices list shows AA-2026-0007 Brian Holt $365.70, AA-2026-0008 Ruth Kim $396.18 and AA-2026-0009 Esther Patel $274.28, to Forte Health, &quot;Emailed 08:00&quot;.</li>
-<li>The Anaesthetists list reads 28.00 for Dr Souter. Review still reads $901.00 &quot;@ $26.50/unit (locked)&quot;.</li>
+<li>The Anaesthetists list reads $28.00 for Dr Souter. Review still reads $901.00 &quot;@ $26.50/unit (locked)&quot;.</li>
 <li>Brian Holt&#39;s Locked record reads &quot;10 units @ $26.50/unit (locked)&quot; and &quot;2 units @ $26.50/unit (locked)&quot;, Paid to Dr Melanie Souter, Priced on Mon 20 Jul 2026. Regenerate reads &quot;Regenerated from locked data: identical (2 lines, total $365.70)&quot;.</li>
 <li>Hemi Walker&#39;s ACTIVE Booking reads &quot;13 units x $28.00 = $364.00&quot; (it was $344.50).</li>
 <li>From a plain Reset, Brian Holt&#39;s invoice is AA-2026-0002 instead. <strong>Reset → Confirm reset</strong> (or jump S5 again) afterwards.</li>
 </ul>
 </div></div>
-      <div class="row"><span class="k">Worth pointing at</span><div class="v"><p>Dr Whitaker&#39;s invoices from Beat 4 price at his Contract&#39;s own rate ($23.00), so his unit value never enters them. Dr Souter&#39;s Forte Health List prices at her own rate, so the lock shows there.</p>
+      <div class="row"><span class="k">Worth pointing at</span><div class="v"><p>Dr Whitaker&#39;s invoices from Beat 4 price at his Contract&#39;s own rate ($23.00), so his rate per unit never enters them. Dr Souter&#39;s Forte Health List prices at her own rate, so the lock shows there.</p>
 </div></div>
       <div class="row"><span class="k">Handset</span><div class="v"><p>on Dr Souter&#39;s Mon 20 Jul AM List, <strong>Demo sheet → Office authorises this List</strong>, then <strong>More → Rate per unit</strong>, change it to 28.00 and save. Hemi Walker&#39;s ACTIVE Booking (Tue 21 Jul AM) then reads &quot;13 units x $28.00 = $364.00&quot;, and Brian Holt&#39;s authorised invoice keeps $26.50 a unit.</p>
 </div></div>
@@ -4735,7 +4735,7 @@ own ledger is what each anaesthetist sees.</p>
 <td>Yes</td>
 </tr>
 <tr>
-<td>Raise an event, additional invoice or credit note</td>
+<td>Add an event, create an additional invoice or a credit note</td>
 <td>On her own Procedure</td>
 <td>Yes</td>
 </tr>
@@ -5019,14 +5019,14 @@ own ledger is what each anaesthetist sees.</p>
 <li>Point at the <strong>Synthetic data only</strong> badge: &quot;All patients, NHIs, Lists and figures are synthetic.&quot;</li>
 </ul>
 <h2>Open questions to raise</h2>
-<p>Each is built with a default, labelled on screen where the app shows it. Raise the one a beat touches.</p>
+<p>Each is built with a default, labelled on screen where the app shows it. Raise the one a beat touches. Each &quot;Our recommendation&quot; is our proposal for AA to decide, not a settled answer.</p>
 <div class="table-wrap"><table>
 <thead>
 <tr>
 <th>OQ</th>
 <th>Question</th>
 <th>Built</th>
-<th>Recommend</th>
+<th>Our recommendation</th>
 </tr>
 </thead>
 <tbody><tr>
@@ -5169,7 +5169,7 @@ own ledger is what each anaesthetist sees.</p>
 <p>Only on an RVG Contract that allows it, such as No contract · RVG, or by typing the amount on No contract · Fixed price. A hospital&#39;s or funder&#39;s fixed price is read only. To change it she changes the Contract or alerts the office.</p>
 </div></details>
 <details><summary>&quot;What if the procedure turns out bigger than the prepaid one?&quot;</summary><div class="details-body">
-<p>Nothing happens automatically. The prepaid amount is the price. If more is owed, the anaesthetist or the office raises an additional invoice by hand.</p>
+<p>Nothing happens automatically. The prepaid amount is the price. If more is owed, the anaesthetist or the office creates an additional invoice by hand.</p>
 </div></details>
 <details><summary>&quot;Does the system notice when a prepaid Booking moves?&quot;</summary><div class="details-body">
 <p>There is nothing to notice. A move changes nothing in the ledger. When the office authorises the List, the transfer pays whoever did it.</p>
@@ -5241,14 +5241,14 @@ record, the office&#39;s authorisation, the invoices, and the money collected an
 <!-- ===================== OPEN QUESTIONS (04, 03) ===================== -->
 <section class="panel" id="discovery" role="tabpanel">
   <h1 class="pt">Open questions</h1>
-  <p class="lead">Each is built with a default, labelled on screen where the app shows it. Raise the one a beat touches.</p>
+  <p class="lead">Each is built with a default, labelled on screen where the app shows it. Raise the one a beat touches. Each &quot;Our recommendation&quot; is our proposal for AA to decide, not a settled answer.</p>
   <p class="muted">Open questions with nothing on screen, raised only where a beat touches them: OQ-112 (AA&#39;s fee invoice at month end or on the 20th), OQ-123 (billing practice reporting), OQ-138 (pre-op consults in AA&#39;s room) and OQ-142 (the approval and ACC numbers on the holder&#39;s invoice).</p>
   <div class="oq-list">
     <div class="card oq">
       <div class="oq-head"><span class="oq-id">OQ-12</span></div>
       <h3>ACC pre-op assessment codes and fixed fee</h3>
       <div class="oq-row"><span class="k">Built</span><span>CS250, CS260 and CS70 as preconfigured pre-op events, priced by the generic event rules</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Ask AA&#39;s accountant to confirm the three codes.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Ask AA&#39;s accountant to confirm the three codes.</span></div>
       <div class="oq-row"><span class="k">On screen</span><span>&quot;Codes to confirm with AA&#39;s accountant (OQ-12).&quot;, shown to the office on the event sheet</span></div>
       <div class="oq-row"><span class="k">In the demo</span><ul><li><strong class="sc">S1</strong> OQ-12 · ACC pre-op assessment codes and fixed fee: the pre-op aside records an ACC pre-op assessment under CS250, CS260 or CS70 with a fee typed in; the office&#39;s sheet reads &quot;Codes to confirm with AA&#39;s accountant (OQ-12).&quot;</li></ul></div>
     </div>
@@ -5256,7 +5256,7 @@ record, the office&#39;s authorisation, the invoices, and the money collected an
       <div class="oq-head"><span class="oq-id">OQ-13</span></div>
       <h3>Hospital download format and fields, per hospital</h3>
       <div class="oq-row"><span class="k">Built</span><span>Sample files per hospital, imported on Matching</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Get one real file and its field list from each hospital before the integration is priced.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Get one real file and its field list from each hospital before the integration is priced.</span></div>
       <div class="oq-row"><span class="k">On screen</span><span>No id: &quot;Sample files stand in for each hospital&#39;s bookings while the integration team confirms how each hospital provides them.&quot; on Matching</span></div>
       <div class="oq-row"><span class="k">In the demo</span><ul><li><strong class="sc">S1</strong> OQ-13 · Hospital download format and fields, per hospital: Beat 2 imports sample files per hospital, each by an action; the fields, cadence and whether a file carries the insurer and approval number are still to be confirmed with each hospital.</li><li><strong class="sc">S5</strong> OQ-13 · Hospital download format and fields, per hospital: the missing-NHI sheet and Mere Tipene&#39;s row come from sample files that stand in until the integration team confirms each hospital&#39;s format.</li></ul></div>
     </div>
@@ -5264,7 +5264,7 @@ record, the office&#39;s authorisation, the invoices, and the money collected an
       <div class="oq-head"><span class="oq-id">OQ-29</span></div>
       <h3>GST agency treatment of the receivable and payable invoices</h3>
       <div class="oq-row"><span class="k">Built</span><span>Invoices in the anaesthetist&#39;s name with AA as agent; the ACCPAY is the BCTI, one per invoice</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Put the wording and the BCTI to AA&#39;s accountant, with the IRD&#39;s current name for it.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Put the wording and the BCTI to AA&#39;s accountant, with the IRD&#39;s current name for it.</span></div>
       <div class="oq-row"><span class="k">On screen</span><span>&quot;Provisional (OQ-29)&quot; on the BCTI agent block and in the Xero simulation; on AA fee invoices, &quot;Provisional: being confirmed with AA&#39;s accountant (OQ-29, OQ-60).&quot; and a <strong>Sample schedule</strong> pill</span></div>
       <div class="oq-row"><span class="k">In the demo</span><ul><li><strong class="sc">S3</strong> OQ-29 · GST agency treatment of the receivable and payable invoices: the agent wording on every invoice and BCTI, and one BCTI per receivable invoice (Beats 1, 3, 5), built as proposed and labelled Provisional (OQ-29).</li><li><strong class="sc">S4</strong> OQ-29 · GST agency treatment of the receivable and payable invoices: the BCTI wording and the count in Beat 7&#39;s weekly run, one BCTI per paid receivable invoice, the transfer included.</li></ul></div>
     </div>
@@ -5272,7 +5272,7 @@ record, the office&#39;s authorisation, the invoices, and the money collected an
       <div class="oq-head"><span class="oq-id">OQ-47</span><span class="chip upcoming">proposed</span></div>
       <h3>Does the accountant agree to the weekly payment cycle?</h3>
       <div class="oq-row"><span class="k">Built</span><span>Friday close, Monday checks, Tuesday schedule, paid in Xero</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Adopt it if Ben agrees, and settle the payment day with the accountant.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Adopt it if Ben agrees, and settle the payment day with the accountant.</span></div>
       <div class="oq-row"><span class="k">On screen</span><span>No label on screen. Say it is proposed.</span></div>
       <div class="oq-row"><span class="k">In the demo</span><ul><li><strong class="sc">S3</strong> OQ-47 · Does the accountant agree to the weekly payment cycle?: the proposed cycle, Friday close, Monday checks, Tuesday schedule, paid in Xero (Beat 5).</li><li><strong class="sc">S4</strong> OQ-47 · Does the accountant agree to the weekly payment cycle?: proposed; Beat 7&#39;s run follows it while AA&#39;s accountant confirms it.</li></ul></div>
     </div>
@@ -5280,7 +5280,7 @@ record, the office&#39;s authorisation, the invoices, and the money collected an
       <div class="oq-head"><span class="oq-id">OQ-60</span></div>
       <h3>What the AA per-invoice fee counts, and how the fee is paid</h3>
       <div class="oq-row"><span class="k">Built</span><span>One paid BCTI per receivable invoice, counted once, against a sample fixed schedule</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Count each BCTI once against the anaesthetist who did the procedure, and keep the fee a separate invoice.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Count each BCTI once against the anaesthetist who did the procedure, and keep the fee a separate invoice.</span></div>
       <div class="oq-row"><span class="k">On screen</span><span>&quot;Provisional (OQ-29)&quot; on the BCTI agent block and in the Xero simulation; on AA fee invoices, &quot;Provisional: being confirmed with AA&#39;s accountant (OQ-29, OQ-60).&quot; and a <strong>Sample schedule</strong> pill</span></div>
       <div class="oq-row"><span class="k">In the demo</span><ul><li><strong class="sc">S3</strong> OQ-60 · What the AA per-invoice fee counts, and how the fee is paid: the fee run counts one paid BCTI per receivable invoice, in the month it is paid in full, against a sample fixed schedule (Beat 6).</li><li><strong class="sc">S4</strong> OQ-60 · What the AA per-invoice fee counts, and how the fee is paid: the same BCTI count, which AA&#39;s monthly fee is charged on.</li></ul></div>
     </div>
@@ -5288,7 +5288,7 @@ record, the office&#39;s authorisation, the invoices, and the money collected an
       <div class="oq-head"><span class="oq-id">OQ-73</span><span class="chip upcoming">awaiting confirmation</span></div>
       <h3>Prepayment invoice when the patient is not the billable party</h3>
       <div class="oq-row"><span class="k">Built</span><span>A prepaid Contract always bills the person paying</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Confirm that no Contract billing its holder ever needs to be prepaid.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Confirm that no Contract billing its holder ever needs to be prepaid.</span></div>
       <div class="oq-row"><span class="k">On screen</span><span>Awaiting AA&#39;s confirmation: &quot;A prepaid Contract always bills the payer, awaiting AA&#39;s confirmation.&quot; on the Contract form</span></div>
       <div class="oq-row"><span class="k">In the demo</span><ul><li><strong class="sc">S4</strong> OQ-73 · Prepayment invoice when the patient is not the billable party: a prepaid Contract always bills the Procedure&#39;s payer (Beat 1), labelled on the Contract as awaiting AA&#39;s confirmation.</li></ul></div>
     </div>
@@ -5296,7 +5296,7 @@ record, the office&#39;s authorisation, the invoices, and the money collected an
       <div class="oq-head"><span class="oq-id">OQ-83</span></div>
       <h3>The anaesthetist&#39;s sign-in experience</h3>
       <div class="oq-row"><span class="k">Built</span><span>Email and password on a stand-in screen</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Settle the platforms first, then the sign-in.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Settle the platforms first, then the sign-in.</span></div>
       <div class="oq-row"><span class="k">On screen</span><span>A <strong>Provisional</strong> pill and &quot;How anaesthetists sign in (two-step codes, single sign-on, Face ID) is still to be decided. This screen stands in for it.&quot; on the sign-in screen</span></div>
       <div class="oq-row"><span class="k">In the demo</span><ul><li><strong class="sc">S1</strong> OQ-83 · The anaesthetist&#39;s sign-in experience: Beat 1&#39;s screen stands in for it, labelled &quot;Provisional&quot;; the demo account signs in with email and password.</li><li><strong class="sc">S5</strong> OQ-83 · The anaesthetist&#39;s sign-in experience: the sign-in screen stands in for it, marked Provisional; two-step codes, single sign-on and Face ID are still to be decided.</li></ul></div>
     </div>
@@ -5304,14 +5304,14 @@ record, the office&#39;s authorisation, the invoices, and the money collected an
       <div class="oq-head"><span class="oq-id">OQ-112</span></div>
       <h3>Monthly AA fee invoice: month end or the 20th?</h3>
       <div class="oq-row"><span class="k">Built</span><span>Month end</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Ask the accountant whether the 20th is the day it is raised or the day it is paid.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Ask the accountant whether the 20th is the day it is raised or the day it is paid.</span></div>
       <div class="oq-row"><span class="k">In the demo</span><ul><li><strong class="sc">S3</strong> OQ-112 · Monthly AA fee invoice: month end or the 20th?: the demo raises it at month end (Beat 6).</li></ul></div>
     </div>
     <div class="card oq">
       <div class="oq-head"><span class="oq-id">OQ-114</span></div>
       <h3>How each Party&#39;s invoices are delivered</h3>
       <div class="oq-row"><span class="k">Built</span><span>Email or post, set on the Party</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Ask nib how its portal takes claims.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Ask nib how its portal takes claims.</span></div>
       <div class="oq-row"><span class="k">On screen</span><span>No label on screen</span></div>
       <div class="oq-row"><span class="k">In the demo</span><ul><li><strong class="sc">S3</strong> OQ-114 · How each Party&#39;s invoices are delivered: email or post only; nib&#39;s invoice is emailed while how nib&#39;s portal takes claims is open (Beat 1).</li></ul></div>
     </div>
@@ -5319,7 +5319,7 @@ record, the office&#39;s authorisation, the invoices, and the money collected an
       <div class="oq-head"><span class="oq-id">OQ-120</span></div>
       <h3>Does a prepayment invoice name the anaesthetist?</h3>
       <div class="oq-row"><span class="k">Built</span><span>Yes: the letter names Dr Souter</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Show the moved-Booking case and let Vanessa or Ben choose.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Show the moved-Booking case and let Vanessa or Ben choose.</span></div>
       <div class="oq-row"><span class="k">On screen</span><span>&quot;Provisional (OQ-120)&quot;, on the patient email offered when a prepaid Booking moves</span></div>
       <div class="oq-row"><span class="k">In the demo</span><ul><li><strong class="sc">S4</strong> OQ-120 · Does a prepayment invoice name the anaesthetist?: built as yes, so the letter in Beat 1 names Dr Souter; the anaesthetist-changed email carries &quot;Provisional (OQ-120)&quot;.</li></ul></div>
     </div>
@@ -5327,7 +5327,7 @@ record, the office&#39;s authorisation, the invoices, and the money collected an
       <div class="oq-head"><span class="oq-id">OQ-122</span></div>
       <h3>Posted invoices for payers without email</h3>
       <div class="oq-row"><span class="k">Built</span><span>A postal address alone is accepted; the invoice is marked To post</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Ask Vanessa how AA posts invoices today.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Ask Vanessa how AA posts invoices today.</span></div>
       <div class="oq-row"><span class="k">On screen</span><span>&quot;Provisional (OQ-122)&quot;, the pill on a posted invoice</span></div>
       <div class="oq-row"><span class="k">In the demo</span><ul><li><strong class="sc">S1</strong> OQ-122 · Posted invoices for payers without email: Beat 3&#39;s payer may have only a postal address, and the invoice is then marked to post; built as provisional.</li><li><strong class="sc">S2</strong> OQ-122 · Posted invoices for payers without email: a payer with only a postal address gets an invoice marked to post, labelled provisional on its Delivery block (payer review aside).</li></ul></div>
     </div>
@@ -5335,13 +5335,13 @@ record, the office&#39;s authorisation, the invoices, and the money collected an
       <div class="oq-head"><span class="oq-id">OQ-123</span></div>
       <h3>Reporting on billing practice for contract negotiation</h3>
       <div class="oq-row"><span class="k">Built</span><span>No reports; the data is kept</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Keep the data in release one and scope the reports with Ben later.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Keep the data in release one and scope the reports with Ben later.</span></div>
     </div>
     <div class="card oq">
       <div class="oq-head"><span class="oq-id">OQ-124</span></div>
       <h3>The app as the anaesthetist&#39;s source of truth instead of emailed Lists</h3>
       <div class="oq-row"><span class="k">Built</span><span>Emailed Lists and the on-demand update email stay alongside the app</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Keep both until Ben and Vanessa choose.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Keep both until Ben and Vanessa choose.</span></div>
       <div class="oq-row"><span class="k">On screen</span><span>No label on screen</span></div>
       <div class="oq-row"><span class="k">In the demo</span><ul><li><strong class="sc">S2</strong> OQ-124 · The app as the anaesthetist&#39;s source of truth instead of emailed Lists: the emailed Lists and Beat 4&#39;s update email stay alongside the app; nothing on screen labels it.</li></ul></div>
     </div>
@@ -5349,7 +5349,7 @@ record, the office&#39;s authorisation, the invoices, and the money collected an
       <div class="oq-head"><span class="oq-id">OQ-125</span></div>
       <h3>What triggers the release of a prepayment from the holding account?</h3>
       <div class="oq-row"><span class="k">Built</span><span>When the office authorises the List</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Keep authorise: the office has checked the List by then.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Keep authorise: the office has checked the List by then.</span></div>
       <div class="oq-row"><span class="k">On screen</span><span>&quot;Moves to the anaesthetist when the List is authorised · to confirm with AA (OQ-125)&quot; on the AA Holding account panel; the Xero simulation adds &quot;How this posts in Xero is still to be confirmed.&quot;</span></div>
       <div class="oq-row"><span class="k">In the demo</span><ul><li><strong class="sc">S4</strong> OQ-125 · What triggers the release of a prepayment from the holding account?: the transfer out of the AA Holding account runs when the office authorises the List (Beat 2), shown on the holding card&#39;s pill.</li></ul></div>
     </div>
@@ -5357,7 +5357,7 @@ record, the office&#39;s authorisation, the invoices, and the money collected an
       <div class="oq-head"><span class="oq-id">OQ-132</span></div>
       <h3>Base units on a mixed Booking whose primary has a fixed price</h3>
       <div class="oq-row"><span class="k">Built</span><span>No base units bill</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Show Ben Gareth Mills&#39;s Booking and let him pick one of the three options.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Show Ben Gareth Mills&#39;s Booking and let him pick one of the three options.</span></div>
       <div class="oq-row"><span class="k">On screen</span><span>Office screens: &quot;No base units billed on a fixed price (provisional, OQ-132)&quot;. The anaesthetist sees &quot;None on a fixed price&quot;, with no label.</span></div>
       <div class="oq-row"><span class="k">In the demo</span><ul><li><strong class="sc">S3</strong> OQ-132 · Base units on a mixed Booking whose primary has a fixed price: no base units bill on the fixed-price primary (the 3-procedure aside).</li></ul></div>
     </div>
@@ -5365,13 +5365,13 @@ record, the office&#39;s authorisation, the invoices, and the money collected an
       <div class="oq-head"><span class="oq-id">OQ-138</span></div>
       <h3>Pre-op consults in AA&#39;s room</h3>
       <div class="oq-row"><span class="k">Built</span><span>Not built</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Ask AA to describe the case first.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Ask AA to describe the case first.</span></div>
     </div>
     <div class="card oq">
       <div class="oq-head"><span class="oq-id">OQ-141</span></div>
       <h3>Support cover from 8:00am</h3>
       <div class="oq-row"><span class="k">Built</span><span>Both channels open at 8:30am</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Ask whether AA needs 8:00am cover, on which channel, and whether it is extra.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Ask whether AA needs 8:00am cover, on which channel, and whether it is extra.</span></div>
       <div class="oq-row"><span class="k">On screen</span><span>&quot;... whether AA needs cover from 8:00am is still to be agreed (OQ-141).&quot; in Help</span></div>
       <div class="oq-row"><span class="k">In the demo</span><ul><li><strong class="sc">S2</strong> OQ-141 · Support cover from 8:00am: both support channels open at 8:30am, and the help panel says whether AA needs cover from 8:00am is still to be agreed.</li></ul></div>
     </div>
@@ -5379,13 +5379,13 @@ record, the office&#39;s authorisation, the invoices, and the money collected an
       <div class="oq-head"><span class="oq-id">OQ-142</span></div>
       <h3>Approval number and ACC claim number on the holder&#39;s invoice</h3>
       <div class="oq-row"><span class="k">Built</span><span>Neither is printed; there is no ACC claim number field</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Add them only if a holder asks.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Add them only if a holder asks.</span></div>
     </div>
     <div class="card oq">
       <div class="oq-head"><span class="oq-id">OQ-143</span></div>
       <h3>Surgeons without an HPI CPN or a full name</h3>
       <div class="oq-row"><span class="k">Built</span><span>A surgeon saves and books without an HPI CPN (&quot;No HPI CPN yet&quot;)</span></div>
-      <div class="oq-row"><span class="k">Recommend</span><span>Warn, never refuse.</span></div>
+      <div class="oq-row"><span class="k">Our recommendation</span><span>Warn, never refuse.</span></div>
       <div class="oq-row"><span class="k">On screen</span><span>&quot;No HPI CPN yet&quot;, with no provisional label</span></div>
       <div class="oq-row"><span class="k">In the demo</span><ul><li><strong class="sc">S5</strong> OQ-143 · Surgeons without an HPI CPN or a full name: a surgeon saves and books with no HPI CPN and reads &quot;No HPI CPN yet&quot;; whether rows with no title or surname should load is open.</li></ul></div>
     </div>

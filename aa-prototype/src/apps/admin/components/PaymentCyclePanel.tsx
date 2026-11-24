@@ -15,7 +15,7 @@ import { Button, Card, DisclosureButton, EmptyState, FormError, Notice, Pill, Re
 import { Td, Th, TableShell } from '../../../shared/table'
 import { DemoBadge } from '../../../shared/DemoBadge'
 import { StepRail, type RailStep } from '../../../shared/contracts/railParts'
-import { drSurname, formatCurrency, formatSignedCurrency, plural, shortDay, stampText } from '../../../shared/format'
+import { drSurname, formatCurrency, plural, shortDay, stampText } from '../../../shared/format'
 import { neutral, radius } from '../../../theme/tokens'
 import { cycleFor, cycleLabel, cycleOfId, cycleRangeLabel, nextCycleId, plannedDayLabel, weekdayName, type PaymentCycle } from '../../../domain/billing/paymentCycle'
 import type { CycleAnomaly, PayablesRun, PayablesRunLine, PayablesRunStatus, RunAnaesthetistTotal } from '../../../domain/types'
@@ -292,9 +292,9 @@ function TotalsTable({
                   </Td>
                   <Td mono align="right">{t.bctiCount}</Td>
                   <Td mono align="right">{formatCurrency(t.positives)}</Td>
-                  <Td mono align="right">{t.netted > 0 ? formatSignedCurrency(-t.netted) : formatCurrency(0)}</Td>
+                  <Td mono align="right">{t.netted > 0 ? formatCurrency(-t.netted) : formatCurrency(0)}</Td>
                   <Td mono align="right" style={{ fontWeight: 650 }}>{formatCurrency(t.net)}</Td>
-                  {anyStill && <Td mono align="right">{t.remainingToNet > 0 ? formatSignedCurrency(-t.remainingToNet) : ''}</Td>}
+                  {anyStill && <Td mono align="right">{t.remainingToNet > 0 ? formatCurrency(-t.remainingToNet) : ''}</Td>}
                   <Td mono>{dest ?? <Pill tone="warning" size="sm" shot="payment-cycle-no-bank">No bank account</Pill>}</Td>
                 </tr>
                 {isOpen &&

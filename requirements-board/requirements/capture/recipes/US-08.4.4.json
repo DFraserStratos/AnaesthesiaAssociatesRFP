@@ -72,7 +72,7 @@
           "wait": 500
         },
         {
-          "fill": "[role=dialog] >> role=textbox[name=\"Unit value ($)\"]",
+          "fill": "[role=dialog] >> role=textbox[name=\"Rate per unit ($)\"]",
           "value": "28.00"
         },
         {
@@ -85,7 +85,7 @@
       "states": [
         {
           "state": "record",
-          "caption": "Raised from the record locked at authorise; Dr Souter's unit value has since changed and the record has not",
+          "caption": "Raised from the record locked at authorise; Dr Souter's rate per unit has since changed and the record has not",
           "steps": [
             {
               "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0002\") >> role=button[name=/^View invoice /]"
@@ -106,7 +106,7 @@
         },
         {
           "state": "regenerated",
-          "caption": "Regenerated from locked data after the unit value change: identical to the invoice as raised",
+          "caption": "Regenerated from locked data after the rate per unit change: identical to the invoice as raised",
           "steps": [
             {
               "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0002\") >> role=button[name=/^View invoice /]"

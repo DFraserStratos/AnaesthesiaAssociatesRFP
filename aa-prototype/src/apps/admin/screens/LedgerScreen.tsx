@@ -611,12 +611,12 @@ export function CreditTrails({ anaesthetistId, surname }: { anaesthetistId: stri
     const cn = billing.creditNotes[n.creditNoteId]
     const out: { step: string; record: ReactNode; amount: string; note?: string; kind: string }[] = []
     if (original !== undefined) out.push({ kind: 'debit', step: CREDIT_LABELS.trailDebit, record: number(original.invoiceNumber, `/admin/invoices/${original.id}`), amount: formatCurrency(original.total) })
-    if (cn !== undefined) out.push({ kind: 'credit', step: CREDIT_LABELS.trailCredit, record: number(cn.creditNoteNumber, `/admin/credit-notes/${cn.id}`), amount: formatCurrency(-cn.total, { sign: 'always' }) })
+    if (cn !== undefined) out.push({ kind: 'credit', step: CREDIT_LABELS.trailCredit, record: number(cn.creditNoteNumber, `/admin/credit-notes/${cn.id}`), amount: formatCurrency(-cn.total) })
     out.push({
       kind: 'contra',
       step: CREDIT_LABELS.trailContra,
       record: number(n.number, cn !== undefined ? `/admin/credit-notes/${cn.id}` : undefined),
-      amount: formatCurrency(-n.amount, { sign: 'always' }),
+      amount: formatCurrency(-n.amount),
       note: nettingNote(n),
     })
     for (const r of replacementsOf({ billing }, n.originalInvoiceId)) out.push({ kind: 'newDebit', step: CREDIT_LABELS.trailNewDebit, record: number(r.invoiceNumber, `/admin/invoices/${r.id}`), amount: formatCurrency(r.total) })

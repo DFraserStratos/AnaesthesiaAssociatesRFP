@@ -1,7 +1,7 @@
 {
   "id": "US-04.3.3",
   "status": "partial",
-  "absentReason": "The shots show No contract · RVG on the step rail. Its price at the anaesthetist's unit value and billing the Procedure's payer are shot on US-05.2.1 and US-11.2.1.",
+  "absentReason": "The shots show No contract · RVG on the step rail. Its price at the anaesthetist's rate per unit and billing the Procedure's payer are shot on US-05.2.1 and US-11.2.1.",
   "shots": [
     {
       "name": "no-contract-rvg",

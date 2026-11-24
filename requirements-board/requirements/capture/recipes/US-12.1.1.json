@@ -6,7 +6,7 @@
     {
       "name": "unit-value",
       "app": "admin",
-      "caption": "Anaesthetists in Master data with their unit value",
+      "caption": "Anaesthetists in Master data with their rate per unit",
       "start": "/admin/masters",
       "states": [
         {
@@ -20,7 +20,7 @@
         },
         {
           "state": "edit",
-          "caption": "Editing an anaesthetist's unit value",
+          "caption": "Editing an anaesthetist's rate per unit",
           "steps": [
             {
               "click": "tr:has-text(\"Souter\") >> text=\"Edit\""
@@ -30,7 +30,7 @@
             }
           ],
           "highlight": [
-            "[role=dialog] label:has-text(\"Unit value\")"
+            "[role=dialog] label:has-text(\"Rate per unit\")"
           ]
         }
       ]

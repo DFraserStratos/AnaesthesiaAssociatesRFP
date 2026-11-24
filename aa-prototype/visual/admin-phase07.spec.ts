@@ -90,7 +90,7 @@ test('admin phase 07 master data', async ({ page }) => {
   // Edit an anaesthetist's unit value.
   await page.getByRole('button', { name: 'Edit' }).first().click()
   await page.waitForTimeout(200)
-  await page.getByLabel('Unit value ($)').fill('55')
+  await page.getByLabel('Rate per unit ($)').fill('55')
   await page.getByRole('button', { name: 'Save changes' }).click()
   await page.waitForTimeout(300)
   await expect(page.getByText('55.00').first()).toBeVisible()

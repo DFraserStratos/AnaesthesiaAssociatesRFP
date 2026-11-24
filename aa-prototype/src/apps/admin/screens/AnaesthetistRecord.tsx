@@ -3,7 +3,7 @@ import { neutral } from '../../../theme/tokens'
 import { TIER_LABELS, TIER_VALUES, isPriorityTier } from '../../../domain/pairingPreferences'
 import { useAppStore, type Actor } from '../../../store'
 import { selectPriorityTier, setPriorityTier } from '../../../store/officePrivate'
-import { FormError } from '../../../shared'
+import { FormError, RATE_PER_UNIT } from '../../../shared'
 import { HistorySheet } from '../../../shared/booking'
 import { formatCurrency, HPI_CPN_LABEL } from '../../../shared/format'
 import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
@@ -60,7 +60,7 @@ export function AnaesthetistRecord({ anaesthetistId, actor }: { anaesthetistId: 
 
         <Card style={PROFILE_CARD} title="Profile" shot="anaesthetist-details">
           <DefList gap={12} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-            <DefRow layout="stacked" label="Unit value" mono>{formatCurrency(anaesthetist.unitValue)}</DefRow>
+            <DefRow layout="stacked" label={RATE_PER_UNIT} mono>{formatCurrency(anaesthetist.unitValue)}</DefRow>
             <DefRow layout="stacked" label="Status">{anaesthetist.active ? 'Active' : 'Inactive'}</DefRow>
             <DefRow layout="stacked" label="Phone">{anaesthetist.phone}</DefRow>
             <DefRow layout="stacked" label="Email">{anaesthetist.email}</DefRow>

@@ -58,7 +58,7 @@
       "start": "/admin/day/2026-07-15/bookings/BK0029",
       "states": [
         {
-          "caption": "Fitzgerald's Aria Booking: 22 units x $26.50 = $583.00, whatever her own unit value",
+          "caption": "Fitzgerald's Aria Booking: 22 units x $26.50 = $583.00, whatever her own rate per unit",
           "steps": [
             {
               "scroll": "[data-shot=price-card]"

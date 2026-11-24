@@ -18,6 +18,7 @@
  */
 
 import { DRAFT_LISTS } from '../scheduleTerms'
+import { RATE_PER_UNIT } from '../profile/profileCopy'
 import { HPI_CPN_LABEL } from '../format'
 
 export const FIELD_LABELS: Record<string, string> = {
@@ -228,7 +229,7 @@ export const FIELD_LABELS: Record<string, string> = {
 
   // --- Anaesthetist --------------------------------------------------------
   registrationNumber: 'Registration number',
-  unitValue: 'Unit value',
+  unitValue: RATE_PER_UNIT,
   // Catch-up Phase 26: the anaesthetist's bank details (US-12.1.4), the number always masked.
   bankAccount: 'Bank account',
   // OQ-52: one identifier for surgeons and anaesthetists alike (catch-up Phase 17).

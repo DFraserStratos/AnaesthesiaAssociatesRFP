@@ -94,10 +94,10 @@ describe('ProcedureEventsList', () => {
 })
 
 describe('AdditionalInvoiceButton', () => {
-  it('reads Create for the office, Raise for the owner, and is absent for a colleague', () => {
+  it('reads Create additional invoice for the office and the owner alike, and is absent for a colleague', () => {
     expect(renderButton(OFFICE).container.textContent).toBe('Create additional invoice')
     cleanup()
-    expect(renderButton(SOUTER).container.textContent).toBe('Raise additional invoice')
+    expect(renderButton(SOUTER).container.textContent).toBe('Create additional invoice')
     cleanup()
     expect(renderButton(SHARMA).container.textContent).toBe('')
   })

@@ -484,14 +484,14 @@ S3 Beat 6: **Demo actions → Seed a month of BCTIs**, then **Run monthly fee in
 
 ### Additional invoices
 
-- A later ward review or pain consult never reopens the Booking. The office, or the anaesthetist on her own invoiced Procedure (found through search), raises an additional invoice with free-form lines (description, quantity, amount) to whoever should pay (**Create additional invoice**, or **Raise additional invoice** for the anaesthetist).
+- A later ward review or pain consult never reopens the Booking. The office, or the anaesthetist on her own invoiced Procedure (found through search), creates an additional invoice with free-form lines (description, quantity, amount) to whoever should pay (**Create additional invoice**, in all three apps).
 - It goes through the same review step and bills in the next run, with its own number and Xero pair, linked both ways to the original.
-- After a prepaid or fixed-price procedure nothing is billed by itself; any extra is an additional invoice raised by hand.
+- After a prepaid or fixed-price procedure nothing is billed by itself; any extra is an additional invoice created by hand.
 
 ### Correction after invoicing
 
 - An issued invoice is never edited. A wrong amount or billable party, an invoice paid twice, or less work than a fixed price assumed, is corrected by crediting the invoice in full and rebilling.
-- The office does it from the invoice's **Correct this invoice** card (**Credit note**, or **Credit in full and rebill**, whose draft starts from a copy of the original's lines). The anaesthetist does it on her own invoiced Procedure (**Credit note**, beside **Raise additional invoice**).
+- The office does it from the invoice's **Correct this invoice** card (**Credit note**, or **Credit in full and rebill**, whose draft starts from a copy of the original's lines). The anaesthetist does it on her own invoiced Procedure (**Credit note**, beside **Create additional invoice**).
 - The credit is an event on the Procedure, through the same review step, and is issued in the next billing run with its credit note number (CN-2026-nnnn). Any new invoice raised with it gets its own number and is linked to the original.
 - The anaesthetist's payable is always reversed by a negative invoice: offset against the payable while it is unpaid, or netted in her next weekly payment run once she has been paid. A negative invoice with no later payment to net against is settled with the anaesthetist outside the system. Both sides move together in the ledger and in Xero.
 - A credit note is not a refund. Nothing is credited without a person deciding. A disputed invoice with no AA error stays outstanding.

@@ -94,7 +94,7 @@ DRAFT (a Draft List) -> ACTIVE -> SUBMITTED -> AUTHORISED
 | Move a List, or one Booking | Her own, at once | Any, at any time before authorise |
 | Assign a Draft List | No | Yes |
 | See tiers and pairing preferences | No | Yes |
-| Raise an event, additional invoice or credit note | On her own Procedure | Yes |
+| Add an event, create an additional invoice or a credit note | On her own Procedure | Yes |
 | Approve events | No | Yes, on **Review queue → Events** |
 | Change her rate per unit | Yes, her own | Yes |
 | Edit master data | No | Yes, every change audited |
@@ -371,9 +371,9 @@ Receipts held = payables due + the AA Holding account + credits held for payers 
 
 ## Open questions to raise
 
-Each is built with a default, labelled on screen where the app shows it. Raise the one a beat touches.
+Each is built with a default, labelled on screen where the app shows it. Raise the one a beat touches. Each "Our recommendation" is our proposal for AA to decide, not a settled answer.
 
-| OQ | Question | Built | Recommend |
+| OQ | Question | Built | Our recommendation |
 |---|---|---|---|
 | OQ-12 | ACC pre-op assessment codes and fixed fee | CS250, CS260 and CS70 as preconfigured pre-op events, priced by the generic event rules | Ask AA's accountant to confirm the three codes. |
 | OQ-13 | Hospital download format and fields, per hospital | Sample files per hospital, imported on Matching | Get one real file and its field list from each hospital before the integration is priced. |
@@ -431,7 +431,7 @@ Only on an RVG Contract that allows it, such as No contract · RVG, or by typing
 
 ### "What if the procedure turns out bigger than the prepaid one?"
 
-Nothing happens automatically. The prepaid amount is the price. If more is owed, the anaesthetist or the office raises an additional invoice by hand.
+Nothing happens automatically. The prepaid amount is the price. If more is owed, the anaesthetist or the office creates an additional invoice by hand.
 
 ### "Does the system notice when a prepaid Booking moves?"
 

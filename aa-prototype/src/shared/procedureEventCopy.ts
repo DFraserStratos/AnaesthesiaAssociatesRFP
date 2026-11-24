@@ -23,10 +23,8 @@ export const EVENT_LABELS = {
   decline: 'Decline',
   edit: 'Edit',
   remove: 'Remove',
-  /** The button on the Procedure's Contract row, Admin. */
+  /** The button on the Procedure's Contract row: Admin's on any Procedure, mobile's and web's on the anaesthetist's own. */
   createAdditional: 'Create additional invoice',
-  /** The same button on mobile and web, on the anaesthetist's own Procedure. */
-  raiseAdditional: 'Raise additional invoice',
   saveForReview: 'Save for review',
   raisedByYou: 'Raised by you',
   raisedByOffice: 'Raised by the office',
@@ -144,7 +142,7 @@ export const CREDIT_MESSAGES = {
   /** Catch-up Phase 41: a cancelled Booking's prepayment was credited or refunded by the cancellation. */
   prepaymentBookingCancelled: "A cancelled booking's prepayment was settled when it was cancelled.",
   /** Catch-up Phase 41 (D31): a prepayment invoice is credited whole, never split. */
-  prepaymentNoSplit: 'A prepayment invoice is credited in full. Raise an additional invoice for anything still owed.',
+  prepaymentNoSplit: 'A prepayment invoice is credited in full. Create an additional invoice for anything still owed.',
   /** Catch-up Phase 41: before the List is authorised, only the office credits a prepayment invoice. */
   prepaymentBeforeAuthorise: 'The office credits a prepayment invoice before the List is authorised.',
   aaFeeNotCreditable: 'AA fee invoices are not credited here.',
@@ -497,7 +495,7 @@ export const PRE_POST_OP_COPY = {
   /** "40 min". */
   minutes: (n: number) => `${n} min`,
   /** An event's amount with a plain hyphen for a credit: "-$40.00", "$180.00". */
-  amount: (n: number) => (n < 0 ? `-${formatCurrency(-n)}` : formatCurrency(n)),
+  amount: (n: number) => formatCurrency(n),
   /** A timed event before the office prices it (US-03.7.1; the anaesthetist sees no calculation). */
   timePricingCaption: 'The office prices the time at review.',
   /** A Contract event fee shown read-only in the sheet. */
@@ -530,9 +528,9 @@ export const PRE_POST_OP_COPY = {
   creditTooBig: 'Needs a change: the credit is more than the invoice.',
   /** "Contract fee STGACC-PAIN · $120.00 replaces 40 min". */
   feeReplaces: (code: string | undefined, amount: string, minutes: number) => `Contract fee${code !== undefined && code !== "" ? ` ${code}` : ""} · ${amount} replaces ${minutes} min`,
-  /** "45 min · 3 time units x $25.00 Contract rate = $75.00" (office only). */
+  /** "45 min · 3 time units x $25.00 Contract rate = $75.00", or "... x $30.00 rate per unit = $90.00" (office only). */
   timeCalculation: (minutes: number, units: number, rate: string, origin: 'contractRate' | 'unitValue', amount: string, discountPercent?: number) =>
-    `${minutes} min · ${units} time units x ${rate} ${origin === 'contractRate' ? 'Contract rate' : 'unit value'}${discountPercent !== undefined ? ` less ${discountPercent}%` : ''} = ${amount}`,
+    `${minutes} min · ${units} time units x ${rate} ${origin === 'contractRate' ? 'Contract rate' : 'rate per unit'}${discountPercent !== undefined ? ` less ${discountPercent}%` : ''} = ${amount}`,
   /** The invoice line's lead, per kind. */
   lineLead: { preOp: 'Pre-op event', postOp: 'Post-op event', billing: 'Billing event', credit: 'Credit' },
   /** An event invoice's relates-to line: "Post-op event · relates to AA-2026-0012 · {Procedure}". */
@@ -635,5 +633,5 @@ export const PREPAID_SETTLEMENT_COPY = {
   credited: 'Credited',
   additionalInvoice: 'Additional invoice',
   /** The credit form's notice on a prepayment invoice, before `CREDIT_LABELS.notARefund`. */
-  creditWhole: 'This credits the whole prepayment invoice. Raise an additional invoice for anything still owed.',
+  creditWhole: 'This credits the whole prepayment invoice. Create an additional invoice for anything still owed.',
 } as const

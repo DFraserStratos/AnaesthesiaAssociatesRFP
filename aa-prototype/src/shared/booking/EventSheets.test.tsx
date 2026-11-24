@@ -83,7 +83,7 @@ describe("the events list's new rows", () => {
     expect(row.textContent).not.toMatch(/ x |units/)
   })
 
-  it("on a billed Booking the owner's controls are the two add buttons (beside 38b's Raise additional invoice on the Paid by row)", () => {
+  it("on a billed Booking the owner's controls are the two add buttons (beside 38b's Create additional invoice on the Paid by row)", () => {
     const { container } = wrap(<ProcedureEventsList procedureId="HP03" actor={SOUTER} />)
     expect(container.querySelector('[data-shot="add-pre-post-op-event"]')?.textContent).toBe('Add pre-op or post-op event')
     expect(container.querySelector('[data-shot="add-billing-event"]')?.textContent).toBe('Add billing event')

@@ -17,6 +17,7 @@
  */
 
 import type { LoaderSpec, LoadEntity } from '../domain/masterLoad/types'
+import { RATE_PER_UNIT } from '../shared/profile/profileCopy'
 import { DATE_INVALID, foldName, parseDateCell, parseListCell, parseOptionalNumber, parseYesNo } from '../domain/masterLoad/validate'
 import { normaliseAaCode } from '../domain/billing/contracts'
 import { suggestCodePrefix } from '../domain/billing/parties'
@@ -156,7 +157,7 @@ const anaesthetists: StoreLoaderSpec<NewAnaesthetistFields> = {
     col('email', 'Email', false),
     col('phone', 'Phone', false),
     col('hpi', 'HPI CPN', true),
-    col('unit', 'Unit value', true, 'Dollars per unit'),
+    col('unit', RATE_PER_UNIT, true, 'Dollars per unit'),
     col('bankName', 'Bank account name', true),
     col('bankNumber', 'Bank account number', true),
     col('start', 'Start date', true),
@@ -165,8 +166,8 @@ const anaesthetists: StoreLoaderSpec<NewAnaesthetistFields> = {
   keyColumns: ['Registration number', 'Name'],
   parseRow: (c) => {
     const reasons: string[] = []
-    const unit = parseOptionalNumber(c['Unit value'] ?? '')
-    if (unit !== null && Number.isNaN(unit)) reasons.push(numberReason('Unit value'))
+    const unit = parseOptionalNumber(c[RATE_PER_UNIT] ?? '')
+    if (unit !== null && Number.isNaN(unit)) reasons.push(numberReason(RATE_PER_UNIT))
     const start = parseDateCell(c['Start date'] ?? '')
     if (start === null) reasons.push(DATE_INVALID)
     if (reasons.length > 0) return { reasons }

@@ -7,7 +7,7 @@ import type { Anaesthetist } from '../../../domain/types'
 import { normaliseNzBankAccount } from '../../../domain/bankAccount'
 import { normaliseHpiCpn } from '../../../domain/surgeons'
 import { UNIT_VALUE_INVALID, editAnaesthetist, useAppStore, type Actor } from '../../../store'
-import { Button, Segmented, TextField } from '../../../shared'
+import { Button, RATE_LABEL, Segmented, TextField } from '../../../shared'
 import { OverlayHeader, SheetActions } from '../../../shared/surface'
 import { useSurface } from '../../../shared'
 import { anaesthetistRecordPath } from '../mastersPaths'
@@ -110,7 +110,7 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
           }
         />
         <div className="mono" style={{ fontSize: 12, color: neutral.mist }}>Registration {anaesthetist.registrationNumber}</div>
-        <TextField label="Unit value ($)" value={unitValue} onChange={setUnitValue} mono inputMode="decimal" hint="The dollar value per RVG unit. The anaesthetist can change it too." />
+        <TextField label={RATE_LABEL} value={unitValue} onChange={setUnitValue} mono inputMode="decimal" hint="The dollar value per RVG unit. The anaesthetist can change it too." />
         <TextField label="Phone" value={phone} onChange={setPhone} type="tel" />
         <TextField label="Email" value={email} onChange={setEmail} type="email" />
         <HpiCpnField value={hpiId} onChange={setHpiId} />

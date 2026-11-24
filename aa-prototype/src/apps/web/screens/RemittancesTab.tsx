@@ -10,7 +10,7 @@
 import { useMemo, useState } from 'react'
 import { neutral, semantic } from '../../../theme/tokens'
 import { remittanceAdviceFor, remittancesFor, stillToNetFor, useAppStore } from '../../../store'
-import { formatCurrency, formatSignedCurrency, shortDay } from '../../../shared/format'
+import { formatCurrency, shortDay } from '../../../shared/format'
 import { Card, EmptyState, Notice, Pill } from '../../../shared/ui'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 import { OverlayHeader, useSurface } from '../../../shared/surface'
@@ -24,7 +24,7 @@ export function StillToNetPanel({ anaesthetistId }: { anaesthetistId: string }) 
     <Notice tone="neutral" shot="web-still-to-net">
       <span>
         {'You have '}
-        <span className="mono" style={{ fontWeight: 650 }}>{formatSignedCurrency(-open)}</span>
+        <span className="mono" style={{ fontWeight: 650 }}>{formatCurrency(-open)}</span>
         {' still to net. It is netted against your next payment run.'}
       </span>
     </Notice>
@@ -77,7 +77,7 @@ export function RemittancesTab({ anaesthetistId, focusRunId }: { anaesthetistId:
                   <Td mono nowrap>{r.week}</Td>
                   <Td mono nowrap>{r.paidOnISO !== undefined && r.status === 'paid' ? shortDay(r.paidOnISO.slice(0, 10)) : 'Awaiting Xero'}</Td>
                   <Td mono align="right">{r.bctis}</Td>
-                  <Td mono align="right">{r.netted > 0 ? formatSignedCurrency(-r.netted) : formatCurrency(0)}</Td>
+                  <Td mono align="right">{r.netted > 0 ? formatCurrency(-r.netted) : formatCurrency(0)}</Td>
                   <Td mono align="right" bold>{formatCurrency(r.net)}</Td>
                   <Td>
                     <Pill size="lg" tone={r.status === 'paid' ? 'success' : 'warning'}>{r.status === 'paid' ? 'Paid' : 'Awaiting Xero'}</Pill>

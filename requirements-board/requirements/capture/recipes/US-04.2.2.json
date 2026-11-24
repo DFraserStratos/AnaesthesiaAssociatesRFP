@@ -11,7 +11,7 @@
       "states": [
         {
           "state": "anaesthetist-rate",
-          "caption": "RVG at the anaesthetist's rate: the units at her own unit value; this one lets her override the price",
+          "caption": "RVG at the anaesthetist's rate: the units at her own rate per unit; this one lets her override the price",
           "steps": [
             {
               "fill": "[data-shot=contract-search] input",

@@ -840,7 +840,7 @@ Nothing is invoiced until you authorise live. Run the beats in order, because th
 - **Say:** "The office can change a Contract until the List is authorised. The discount then prints as its own line on the invoice."
 - **Expected:**
   - The price card reads "13 units x $26.50 = $344.50", "Discount 10% · minus $34.45", Price $310.05; the save bar "1 unsaved change". Review shows her row at $310.05 and the List at $866.55.
-  - AA-2026-0003: "Base 6 + Time 5 + Modifiers 2 = 13 units at $26.50" $344.50, a "Discount 10%" line, Subtotal $310.05, GST $46.51, Total due $356.56; Locked record "13 units @ $26.50/unit (locked), less 10%".
+  - AA-2026-0003: "Base 6 + Time 5 + Modifiers 2 = 13 units at $26.50" $344.50, a "Discount 10%" line of -$34.45, Subtotal $310.05, GST $46.51, Total due $356.56; Locked record "13 units @ $26.50/unit (locked), less 10%".
   - This replaces Ruth Kim's $396.18 in Beat 1, so every later total that includes it moves. Read those from the app.
 - **Handset:** no mobile side.
 
@@ -1094,23 +1094,23 @@ Beat 2 authorises Priya Nair's List, so Beat 3 cancels Annette Riley's Booking. 
   - **Authorise for billing**, then confirm.
   - Open Nair's Booking: the **Prepaid settlement** block under the rhinoplasty.
   - **Billing monitor**: the **AA Holding account** card. Then **Demo: Billing Monitor & Xero → Invoices → AA-2026-0001**.
-- **Say:** "Priya Nair paid in full last week for her rhinoplasty, and her septoplasty is on Forte's Contract. When the office authorises the List, the system moves her prepaid amount out of the AA Holding account to whoever did the List, as a transfer, with no invoice and no GST. The prepaid amount is the price, so the rhinoplasty stays off the final invoice even though it ran four hours. If Dr Souter wants more she raises an additional invoice by hand, and to give some back she raises a credit note for the whole invoice."
+- **Say:** "Priya Nair paid in full last week for her rhinoplasty, and her septoplasty is on Forte's Contract. When the office authorises the List, the system moves her prepaid amount out of the AA Holding account to whoever did the List, as a transfer, with no invoice and no GST. The prepaid amount is the price, so the rhinoplasty stays off the final invoice even though it ran four hours. If Dr Souter wants more she creates an additional invoice by hand, and to give some back she raises a credit note for the whole invoice."
   - **Open:** releasing the prepayment at authorisation is still to be confirmed with AA (OQ-125); the holding card's pill says so.
 - **Expected:**
   - Mobile: "Prepaid $1,200.00 · paid · held by AA until the List is authorised" on Nair's rhinoplasty; the List reads **Submitted to office**.
-  - Stage longer prepaid procedure: "Recorded BTM now 25 units, for reference only. Authorise bills nothing more for the prepaid procedure; raise an additional invoice by hand if one is needed." The review row shows "Rhinoplasty · Prepaid amount $1,200.00 · paid", "Prepaid, left off", TOTAL UNITS 33, TOTAL FEE $1,412.00.
+  - Stage longer prepaid procedure: "Recorded BTM now 25 units, for reference only. Authorise bills nothing more for the prepaid procedure; create an additional invoice by hand if one is needed." The review row shows "Rhinoplasty · Prepaid amount $1,200.00 · paid", "Prepaid, left off", TOTAL UNITS 33, TOTAL FEE $1,412.00.
   - Authorise: "1 invoice raised. 1 emailed, 0 to post." On **Invoices**, AA-2026-0003 to Forte Health, $243.80, the septoplasty alone.
   - Prepaid settlement: "Prepaid $1,200.00 · the price for this procedure", AA-2026-0001, "Recorded BTM 25 units · for reference only", "Moved from the AA Holding account to Dr Souter on 21 Jul", "Nothing is invoiced or credited automatically.", with the second **Create additional invoice** and **Credit note** buttons on the page.
   - AA Holding account card: a **Transferred** row, Priya Nair, AA-2026-0001, Dr Melanie Souter, -$1,380.00; balance $690.00, "Held for 1 prepaid Booking."
   - Xero simulation: **MANUAL JOURNAL MJ-0001**, "Transfer, not a payment", debit AA Holding account $1,380.00, credit Dr Melanie Souter $1,380.00, "How this posts in Xero is still to be confirmed."
 - **Worth pointing at:** the transfer goes to whoever did the List, so if the Booking had moved to a colleague, the colleague would get it. Nothing is deducted from the final invoice, and nothing is raised for the extra time. The 25 units are recorded for reference only.
-- **Handset:** on Nair's List after submitting, **Demo sheet → Office authorises this List** ("Done. The office authorised this List and the billing run raised its invoices. They are in Balances now, and search finds the List."). Her Booking reads "Moved from the AA Holding account to you on 21 Jul" with **Raise additional invoice** and **Credit note**.
+- **Handset:** on Nair's List after submitting, **Demo sheet → Office authorises this List** ("Done. The office authorised this List and the billing run raised its invoices. They are in Balances now, and search finds the List."). Her Booking reads "Moved from the AA Holding account to you on 21 Jul" with **Create additional invoice** and **Credit note**.
 
 #### Optional aside: crediting a prepayment by hand
 
 - **Click:** on Nair's Admin Booking, the **Credit note** inside **Prepaid settlement** (the second one on the page). Read the sheet, then close it without saving.
 - **Say:** "A credit on a prepayment covers the whole invoice. Anything still owed goes on a new additional invoice."
-- **Expected:** "Credit note · Priya Nair · Rhinoplasty, cosmetic component, self f…", "Credits AA-2026-0001 in full. Nothing on it is edited.", TOTAL $1,380.00, "Paid $1,380.00: $1,380.00 will be held for Priya Nair.", "Dr Souter's payment is reversed: a negative invoice for $1,380.00, offset against the unpaid payable." and "This credits the whole prepayment invoice. Raise an additional invoice for anything still owed." Closed unsaved, nothing changes.
+- **Expected:** "Credit note · Priya Nair · Rhinoplasty, cosmetic component, self f…", "Credits AA-2026-0001 in full. Nothing on it is edited.", TOTAL $1,380.00, "Paid $1,380.00: $1,380.00 will be held for Priya Nair.", "Dr Souter's payment is reversed: a negative invoice for $1,380.00, offset against the unpaid payable." and "This credits the whole prepayment invoice. Create an additional invoice for anything still owed." Closed unsaved, nothing changes.
 - **Handset:** the **Credit note** on Nair's Booking opens Dr Souter's own version of the sheet, with TOTAL EX GST $1,200.00.
 
 ### Beat 3: Cancelling a prepaid Booking
@@ -1168,10 +1168,10 @@ Run it from a fresh Reset (or the S4 jump), so the main order's figures stay as 
 
 - **Click:**
   - Sarah Mitchell's Admin Booking (the Beat 5 link, `/admin/day/2026-07-14/bookings/BK0032`). On the **Paid by** row, **Create additional invoice**. Line "Post-op ward review, Wed 15 Jul, 15 min", quantity 1, amount $30. Keep **Same as the original invoice (Christchurch Public)** ticked. **Save for review**.
-  - Dr Souter's own: on web or the phone, search **Chen**, open David Chen's **Mon 22 Jun** Booking. Events shows her additional invoice waiting for review, raised from **Raise additional invoice** on the Contract row.
+  - Dr Souter's own: on web or the phone, search **Chen**, open David Chen's **Mon 22 Jun** Booking. Events shows her additional invoice waiting for review, created from **Create additional invoice** on the Contract row.
   - **Review queue → Events**: **Approve for billing** on both rows.
   - **Billing monitor**, **Demo actions → Run the next billing run**, **Run**.
-- **Say:** "A ward review the day after surgery doesn't reopen the Booking. The office raises an additional invoice with free-form lines, to whoever should pay. The anaesthetist can do the same on her own Procedure. Both go through the same review and bill in the next run, each with its own number and its own Xero pair, linked to the original."
+- **Say:** "A ward review the day after surgery doesn't reopen the Booking. The office creates an additional invoice with free-form lines, to whoever should pay. The anaesthetist can do the same on her own Procedure. Both go through the same review and bill in the next run, each with its own number and its own Xero pair, linked to the original."
 - **Expected:**
   - The dialog reads "Additional invoice · Sarah Mitchell · Appendicectomy, laparoscopic" and "Additional to AA-2026-0004"; subtotal $30.00, GST $4.50, total $34.50. The Booking's events show it Awaiting review, "Raised by the office · Christchurch Public".
   - David Chen: "Additional invoice · Tue 23 Jun · $85.00 ex GST · Post-op ward review, Tue 23 Jun, 20 min · Raised by you · St George's · Awaiting review".
@@ -1447,26 +1447,26 @@ Each link only opens the screen, in the same tab. In Beat 1 open **History** you
   - **Reset → Confirm reset** (or jump S5 again) to undo.
 - **Handset:** no mobile side.
 
-### Beat 5: Authorise, then edit the unit value
+### Beat 5: Authorise, then edit the rate per unit
 
 - **Click:**
   - **Review queue**, open Dr Souter's Mon 20 Jul AM List, Forte Health (`/admin/review/L-34821-2026-07-20-AM`). Point at the rate in the totals row.
   - **Authorise for billing**, then **Authorise for billing** in the dialog.
-  - **Master data → Anaesthetists**, **Edit** on Dr Melanie Souter. Change **Unit value ($)** from 26.50 to 28.00, **Save changes**.
+  - **Master data → Anaesthetists**, **Edit** on Dr Melanie Souter. Change **Rate per unit ($)** from 26.50 to 28.00, **Save changes**.
   - Back to the authorised List (`/admin/review/L-34821-2026-07-20-AM`). It has left the queue. **Review queue** lists it under **Recently billed**, which does not open it.
   - **Invoices**, open Brian Holt's **AA-2026-0007**. **Demo actions → Regenerate from locked data** → **Run**.
   - Open an ACTIVE Booking of hers: Hemi Walker on the Tue 21 Jul AM List (`/admin/day/2026-07-21/bookings/BK0001`).
-- **Say:** "Dr Souter's rate per unit, which Admin calls the unit value, is read when the List is authorised and kept in the lock. Change the unit value afterwards and her invoices stay as they were. Work not yet authorised takes the new unit value."
+- **Say:** "Dr Souter's rate per unit is read when the List is authorised and kept in the lock. Change it afterwards and her invoices stay as they were. Work not yet authorised takes the new rate."
 - **Expected:**
   - Before authorise the totals read 34 units, $901.00, "@ $26.50/unit (list rate)".
   - The dialog reads "Authorise this list for billing?" and names what is locked: "its settings, the price range in force, the rate, the price, who is billed and who is paid."
   - After it the totals read "@ $26.50/unit (locked)".
   - The invoices list shows AA-2026-0007 Brian Holt $365.70, AA-2026-0008 Ruth Kim $396.18 and AA-2026-0009 Esther Patel $274.28, to Forte Health, "Emailed 08:00".
-  - The Anaesthetists list reads 28.00 for Dr Souter. Review still reads $901.00 "@ $26.50/unit (locked)".
+  - The Anaesthetists list reads $28.00 for Dr Souter. Review still reads $901.00 "@ $26.50/unit (locked)".
   - Brian Holt's Locked record reads "10 units @ $26.50/unit (locked)" and "2 units @ $26.50/unit (locked)", Paid to Dr Melanie Souter, Priced on Mon 20 Jul 2026. Regenerate reads "Regenerated from locked data: identical (2 lines, total $365.70)".
   - Hemi Walker's ACTIVE Booking reads "13 units x $28.00 = $364.00" (it was $344.50).
   - From a plain Reset, Brian Holt's invoice is AA-2026-0002 instead. **Reset → Confirm reset** (or jump S5 again) afterwards.
-- **Worth pointing at:** Dr Whitaker's invoices from Beat 4 price at his Contract's own rate ($23.00), so his unit value never enters them. Dr Souter's Forte Health List prices at her own rate, so the lock shows there.
+- **Worth pointing at:** Dr Whitaker's invoices from Beat 4 price at his Contract's own rate ($23.00), so his rate per unit never enters them. Dr Souter's Forte Health List prices at her own rate, so the lock shows there.
 - **Handset:** on Dr Souter's Mon 20 Jul AM List, **Demo sheet → Office authorises this List**, then **More → Rate per unit**, change it to 28.00 and save. Hemi Walker's ACTIVE Booking (Tue 21 Jul AM) then reads "13 units x $28.00 = $364.00", and Brian Holt's authorised invoice keeps $26.50 a unit.
 
 #### Optional aside: a controlled go-live load

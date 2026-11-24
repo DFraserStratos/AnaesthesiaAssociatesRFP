@@ -8,7 +8,7 @@
 import { Link } from 'react-router-dom'
 import { Card, EmptyState, Notice, Pill } from '../../../shared/ui'
 import { Td, Th, TableShell } from '../../../shared/table'
-import { formatCurrency, formatSignedCurrency } from '../../../shared/format'
+import { formatCurrency } from '../../../shared/format'
 import { neutral } from '../../../theme/tokens'
 import { cycleLabel } from '../../../domain/billing/paymentCycle'
 import { PAYMENT_CYCLE_COPY, runsForAnaesthetist, stillToNetFor, useAppStore } from '../../../store'
@@ -23,7 +23,7 @@ export function StillToNetNotice({ anaesthetistId, surname }: { anaesthetistId: 
     <Notice tone="neutral" shot="ledger-still-to-net">
       <span>
         {`${surname} has negative invoices to net: `}
-        <span className="mono" style={{ fontWeight: 650 }}>{formatSignedCurrency(-open)}</span>
+        <span className="mono" style={{ fontWeight: 650 }}>{formatCurrency(-open)}</span>
         {`. ${PAYMENT_CYCLE_COPY.stillToNetCaption}`}
       </span>
     </Notice>
@@ -60,7 +60,7 @@ export function LedgerPaymentRuns({ anaesthetistId }: { anaesthetistId: string }
                     <Link to={`/admin/billing/payment-runs/${r.id}`} style={{ color: neutral.ink }}>{r.id}</Link>
                   </Td>
                   <Td mono align="right">{t.bctiCount}</Td>
-                  <Td mono align="right">{t.netted > 0 ? formatSignedCurrency(-t.netted) : formatCurrency(0)}</Td>
+                  <Td mono align="right">{t.netted > 0 ? formatCurrency(-t.netted) : formatCurrency(0)}</Td>
                   <Td mono align="right">{formatCurrency(t.net)}</Td>
                   <Td>
                     <span style={{ display: 'inline-flex', gap: 6 }}>

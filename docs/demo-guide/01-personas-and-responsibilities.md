@@ -104,7 +104,7 @@ needs to bill.
     confirm (OQ-12), or other work, with its own date and a time or a fixed fee) and **Add billing
     event** (a free-text charge, or a credit before the Procedure is invoiced). The office reviews
     each one and it bills in the next run.
-20. On her own invoiced Procedure, **Raise additional invoice** for a late charge such as a ward
+20. On her own invoiced Procedure, **Create additional invoice** for a late charge such as a ward
     review; she can edit or remove it until the office reviews it. **Credit note** beside it credits
     the whole invoice (less work than expected, the wrong payer, paid twice), with a new lower invoice
     if one is due. The office reviews it, and her payment for that invoice is reversed by a negative
@@ -245,7 +245,7 @@ bookings by phone, email and PDF, hospital changes, cancellations and short-noti
     drawer after a cover change, or the notice of an anaesthetist's move. She ticks the saved changes
     to report, the template from **Master data → Email templates** fills the wording, and the email
     opens in her own mail client. The system does not send it.
-14. Keep master data by hand after the one-off go-live load: anaesthetists (profile, unit value, HPI
+14. Keep master data by hand after the one-off go-live load: anaesthetists (profile, rate per unit, HPI
     CPN and bank details, which every anaesthetist record needs), hospitals and holidays, surgeons,
     specialties, surgeon groups, recurring bookings, availability statuses, public holidays, Parties,
     funding tags, Contracts and their price ranges, RVG groups and modifiers, email templates and
@@ -337,7 +337,7 @@ for billing.
 8. Review every event, the anaesthetists' and the office's, on **Review → Events**. She adds pre-op,
    post-op and billing events herself, prices an event's time at review, and keeps each Contract's
    **Event fees**. An approved event bills in the next billing run.
-9. Raise an additional invoice to any party with **Create additional invoice**, free-form lines,
+9. Create an additional invoice to any party with **Create additional invoice**, free-form lines,
    reviewed and billed in the next run with its own number and its own Xero pair.
 10. Correct an issued invoice without editing it, from **Correct this invoice**: **Credit note**,
     **Credit in full and rebill** (the new invoice starts from a copy of the original's lines), or

@@ -147,7 +147,7 @@ describe('raise, edit, remove (Button)', () => {
     expect(addProcedureEvent(api, OFFICE, procedureOf(activeBooking), input())).toMatchObject({ ok: false, code: 'notInvoiced' })
     expect(raiseRefusal(api.getState(), { role: 'office' }, procedureOf(activeBooking))?.code).toBe('notInvoiced')
     const { procedureId } = stageMitchell()
-    expect(addProcedureEvent(api, souter(), procedureId, input())).toMatchObject({ ok: false, code: 'notOwnProcedure', message: 'You can raise an additional invoice only on your own Procedure.' })
+    expect(addProcedureEvent(api, souter(), procedureId, input())).toMatchObject({ ok: false, code: 'notOwnProcedure', message: 'You can create an additional invoice only on your own Procedure.' })
     expect(raiseRefusal(api.getState(), { role: 'anaesthetist', anaesthetistId: ANAE.souter }, procedureId)?.code).toBe('notOwnProcedure')
     expect(raiseRefusal(api.getState(), { role: 'office' }, procedureId)).toBeNull()
     expect(addProcedureEvent(api, OFFICE, procedureId, input({ lines: [{ description: '', quantity: 1, unitAmount: 30 }] }))).toMatchObject({ ok: false, code: 'descriptionMissing' })

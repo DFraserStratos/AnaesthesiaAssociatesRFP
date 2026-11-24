@@ -130,6 +130,7 @@ describe('the anaesthetist profile (catch-up Phase 26)', () => {
     expect(formatAuditValue('bankAccount', { accountName: 'Melanie Souter', accountNumber: '99-0101-0034821-00' })).toBe('Melanie Souter · 99-0101-•••••21-00')
     expect(fieldLabel('bankAccount')).toBe('Bank account')
     expect(fieldLabel('hpiId')).toBe('HPI CPN')
+    expect(fieldLabel('unitValue')).toBe('Rate per unit')
     expect(formatAuditValue('unitValue', 27)).toBe('$27.00')
   })
 })
@@ -155,7 +156,7 @@ describe('formatAuditValue', () => {
 
   it('degrades an unrecognised object to labelled fields, never to braces', () => {
     const rendered = formatAuditValue('somethingNew', { unitValue: 22, active: true })
-    expect(rendered).toBe('unit value $22.00 · active yes')
+    expect(rendered).toBe('rate per unit $22.00 · active yes')
     expect(rendered).not.toContain('{')
   })
 })

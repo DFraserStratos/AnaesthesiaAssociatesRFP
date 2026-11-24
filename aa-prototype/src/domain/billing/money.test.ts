@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { formatMoney, parseAmount, parseAmountOrNaN, roundToCents } from './money'
 import { parsePriceText } from './priceRanges'
 
-/** `formatCurrency` exactly as it was before U1 (shared/format.ts), the pin formatMoney's defaults must match. */
+/** `formatCurrency` as it was before U1 (shared/format.ts), the pin formatMoney's defaults match on everything but the sign. */
 function formatCurrencyBeforeU1(n: number): string {
   return `$${n.toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
@@ -16,17 +16,25 @@ describe('formatMoney', () => {
     expect(formatMoney(999.99)).toBe('$999.99')
   })
 
-  it('prints zero and negatives as formatCurrency did before U1 (pinned)', () => {
-    expect(formatMoney(0)).toBe('$0.00')
-    expect(formatMoney(-5)).toBe('$-5.00')
-    expect(formatMoney(-1234.5)).toBe('$-1,234.50')
-    expect(formatMoney(-0)).toBe('$-0.00')
+  it('prints a negative as "-$34.45", the sign before the dollar sign', () => {
+    expect(formatMoney(-34.45)).toBe('-$34.45')
+    expect(formatMoney(-1234.5)).toBe('-$1,234.50')
+    expect(formatMoney(-0.005)).toBe('-$0.01')
+    expect(formatMoney(-1).includes('\u2212')).toBe(false)
+    expect(formatMoney(-1).includes('$-')).toBe(false)
   })
 
-  it('matches the pre-U1 formatCurrency on every value it is likely to meet', () => {
-    const values = [0, -0, 0.005, 0.01, 1.005, 2.675, 30, 365.7, 1440, 2861, 3290.15, 1e6 + 0.5, -0.001, -50, -3100.25]
+  it('prints zero, negative zero and a negative that rounds to zero as "$0.00"', () => {
+    expect(formatMoney(0)).toBe('$0.00')
+    expect(formatMoney(-0)).toBe('$0.00')
+    expect(formatMoney(-0.004)).toBe('$0.00')
+    expect(formatMoney(-0.004, { cents: 'whenAny' })).toBe('$0')
+  })
+
+  it('matches the pre-U1 formatCurrency on every value it is likely to meet, but for where the minus sits', () => {
+    const values = [0, 0.005, 0.01, 1.005, 2.675, 30, 365.7, 1440, 2861, 3290.15, 1e6 + 0.5, -50, -3100.25]
     for (let cents = -200000; cents <= 400000; cents += 137) values.push(cents / 100)
-    for (const v of values) expect(formatMoney(v), String(v)).toBe(formatCurrencyBeforeU1(v))
+    for (const v of values) expect(formatMoney(v), String(v)).toBe(formatCurrencyBeforeU1(v).replace('$-', '-$'))
   })
 
   it("'whenAny' drops .00 on whole dollars only", () => {

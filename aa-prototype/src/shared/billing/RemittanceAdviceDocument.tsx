@@ -9,7 +9,7 @@
  * amounts are neutral, never red.
  */
 
-import { formatCurrency, formatHpiCpn, formatSignedCurrency, plural, shortDay } from '../format'
+import { formatCurrency, formatHpiCpn, plural, shortDay } from '../format'
 import { neutral } from '../../theme/tokens'
 import { AA_AGENT } from '../../domain/billing/invoicePresentation'
 import { Pill } from '../ui'
@@ -50,10 +50,10 @@ export function RemittanceAdviceDocument({ advice, shot = 'remittance-advice' }:
       ),
       amount: l.amount,
     })),
-    ...advice.netted.map((n) => ({ key: n.negativeInvoiceId, description: REMITTANCE_COPY.negativeLine(n.number, n.creditOf), amount: -n.amount, amountText: formatSignedCurrency(-n.amount), shot: 'remittance-netted' })),
+    ...advice.netted.map((n) => ({ key: n.negativeInvoiceId, description: REMITTANCE_COPY.negativeLine(n.number, n.creditOf), amount: -n.amount, amountText: formatCurrency(-n.amount), shot: 'remittance-netted' })),
   ]
   const totals = [{ label: `${REMITTANCE_COPY.bctisPaid} (${plural(advice.lines.length, 'BCTI')})`, value: formatCurrency(advice.positives) }]
-  if (advice.nettedTotal > 0) totals.push({ label: REMITTANCE_COPY.negativesNetted, value: formatSignedCurrency(-advice.nettedTotal) })
+  if (advice.nettedTotal > 0) totals.push({ label: REMITTANCE_COPY.negativesNetted, value: formatCurrency(-advice.nettedTotal) })
   return (
     <div data-shot={shot} data-run-id={advice.run.id} style={{ display: 'flex', flexDirection: 'column', gap: 22, color: neutral.ink }}>
       <DocMasthead supplier={advice.supplier} heading={REMITTANCE_COPY.heading} number={advice.reference} />
@@ -85,7 +85,7 @@ export function RemittanceAdviceDocument({ advice, shot = 'remittance-advice' }:
         totalLabel={REMITTANCE_COPY.paidToYou}
         totalValue={formatCurrency(advice.net)}
         totalShot="remittance-net"
-        after={advice.remainingToNet > 0 ? [{ label: REMITTANCE_COPY.stillToNet, value: formatSignedCurrency(-advice.remainingToNet), shot: 'remittance-still-to-net' }] : []}
+        after={advice.remainingToNet > 0 ? [{ label: REMITTANCE_COPY.stillToNet, value: formatCurrency(-advice.remainingToNet), shot: 'remittance-still-to-net' }] : []}
       />
       <div>
         <Pill size="sm" tone={advice.status === 'paid' ? 'success' : 'warning'}>{advice.status === 'paid' ? 'Paid' : 'Awaiting Xero'}</Pill>

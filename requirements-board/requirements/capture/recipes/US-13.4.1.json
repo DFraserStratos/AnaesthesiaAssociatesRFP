@@ -17,7 +17,7 @@
         },
         {
           "state": "anaesthetists",
-          "caption": "Master data, anaesthetists with their unit value, priority tier, HPI CPN, masked bank account and active flag, editable",
+          "caption": "Master data, anaesthetists with their rate per unit, priority tier, HPI CPN, masked bank account and active flag, editable",
           "steps": [],
           "highlight": []
         },

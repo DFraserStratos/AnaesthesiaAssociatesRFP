@@ -21,7 +21,7 @@ import { addHistoryAccounts, historyIds } from '../domain/seed/history'
 import { backdropBankLines, backdropRunsFor } from '../domain/seed/backdropRuns'
 import { ANAE, HOSP, SURG } from '../domain/seed/cast'
 import { cycleLabel } from '../domain/billing/paymentCycle'
-import { formatSignedCurrency, plural } from '../shared/format'
+import { formatCurrency, plural } from '../shared/format'
 import { mutate, ok, refuse, type Actor, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { anaesthetistContactSpec, resolveContactInto, type ContactSpec } from './xeroHandoff'
@@ -223,7 +223,7 @@ export function stagePaymentWeek(api: AppStoreApi, actor: Actor, choiceId: strin
   const week = cycleLabel(openCycle(api.getState()))
   const message =
     `${plural(released, 'payable')} released for Dr Sharma into ${week}. Close the week to start the run.` +
-    (negative !== undefined ? ` A negative invoice of ${formatSignedCurrency(-negative)} is waiting to be netted.` : '')
+    (negative !== undefined ? ` A negative invoice of ${formatCurrency(-negative)} is waiting to be netted.` : '')
   return ok({ message, released, ...(negative !== undefined ? { negative } : {}) })
 }
 

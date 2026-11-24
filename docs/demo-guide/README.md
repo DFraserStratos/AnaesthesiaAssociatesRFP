@@ -125,7 +125,7 @@ carry the label the run sheet quotes, listed under "How to read the readiness" i
 | Prepayment: approval, letter, AA Holding account, transfer at authorise (OQ-125), cancel, rebook | S4 |
 | Events, additional invoices, billing failure and retry, credit note and credit and rebill | S4 |
 | Audit trail and change sets, NHI at entry, no NHI in Xero, the lock, each Contract's history | S5 |
-| The unit value read at authorise and kept in the lock, the go-live load | S5 |
+| The rate per unit read at authorise and kept in the lock, the go-live load | S5 |
 | Full-scale data (85 anaesthetists, four months, a year of invoices) | S2 aside |
 | Automatic hospital feeds over HL7 and FHIR | Future scope, on its own badged demo surface |
 

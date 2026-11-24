@@ -1,7 +1,7 @@
 /** Phase 05 — the Monday-anchored week helpers behind the dashboard week strip. */
 
 import { describe, expect, it } from 'vitest'
-import { mondayOf, weekDays, shiftWeeks, formatCurrency, formatSignedCurrency, drSurname, initialsOf, nameWithoutTitle, surnameOf, titledSurname, waitingLabel, locationName, pairingLine } from './format'
+import { mondayOf, weekDays, shiftWeeks, formatCurrency, drSurname, initialsOf, nameWithoutTitle, surnameOf, titledSurname, waitingLabel, locationName, pairingLine } from './format'
 
 // DEMO_TODAY (2026-07-21) is a Tuesday; its week runs Mon 20 to Sun 26 Jul.
 
@@ -47,14 +47,14 @@ describe('formatCurrency', () => {
   })
 })
 
-describe('formatSignedCurrency (catch-up Phase 39a)', () => {
+describe('formatCurrency on a negative', () => {
   it('puts a hyphen-minus before the dollar sign for a negative, and nothing on zero or a positive', () => {
-    expect(formatSignedCurrency(-120)).toBe('-$120.00')
-    expect(formatSignedCurrency(2529.52)).toBe('$2,529.52')
-    expect(formatSignedCurrency(0)).toBe('$0.00')
-    expect(formatSignedCurrency(-0.004)).toBe('$0.00')
-    expect(formatSignedCurrency(-0.005)).toBe('-$0.01')
-    expect(formatSignedCurrency(-1).includes('\u2212')).toBe(false)
+    expect(formatCurrency(-120)).toBe('-$120.00')
+    expect(formatCurrency(2529.52)).toBe('$2,529.52')
+    expect(formatCurrency(0)).toBe('$0.00')
+    expect(formatCurrency(-0.004)).toBe('$0.00')
+    expect(formatCurrency(-0.005)).toBe('-$0.01')
+    expect(formatCurrency(-1).includes('\u2212')).toBe(false)
   })
 })
 

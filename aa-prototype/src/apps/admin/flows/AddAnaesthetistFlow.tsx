@@ -3,7 +3,7 @@ import { format, parseISO } from 'date-fns'
 import { neutral } from '../../../theme/tokens'
 import { parseAmount } from '../../../domain/billing/money'
 import { UNIT_VALUE_INVALID, addAnaesthetist, useAppStore, useToday, type Actor } from '../../../store'
-import { Button, TextField } from '../../../shared'
+import { Button, RATE_LABEL, TextField } from '../../../shared'
 import { OverlayHeader, SheetActions } from '../../../shared/surface'
 import { useSurface } from '../../../shared'
 import { FormError } from '../../../shared/ui'
@@ -99,7 +99,7 @@ export function AddAnaesthetistFlow({ open, actor, onClose }: Props) {
         <TextField label="Name" value={name} onChange={setName} placeholder="e.g. Dr Nadia Kerr" />
         <TextField label="Phone" value={phone} onChange={setPhone} type="tel" />
         <TextField label="Email" value={email} onChange={setEmail} type="email" />
-        <TextField label="Unit value ($)" value={unitValue} onChange={setUnitValue} mono inputMode="decimal" />
+        <TextField label={RATE_LABEL} value={unitValue} onChange={setUnitValue} mono inputMode="decimal" />
         <HpiCpnField value={hpiId} onChange={setHpiId} />
         <BankAccountFields accountName={accountName} accountNumber={accountNumber} onAccountName={setAccountName} onAccountNumber={setAccountNumber} />
         <TextField label="GST number (optional)" value={gstNumber} onChange={setGstNumber} mono placeholder="123-456-789" />

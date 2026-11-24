@@ -1,7 +1,7 @@
 /**
  * The additional invoice form (catch-up Phase 38b; US-08.6.3, D10, D22): one
- * form, raised from the Procedure's Contract row ("Create additional invoice"
- * in Admin, "Raise additional invoice" on mobile and web) and from the events
+ * form, opened from the Procedure's Contract row ("Create additional invoice"
+ * in all three apps) and from the events
  * list's Edit. Free form: lines of description, quantity and amount, with the
  * live subtotal, GST and total; the "Same as the original invoice" tick
  * (Greg's courier-style tick, ticked by default, `EVENT_RULES.sameAsDefault`)

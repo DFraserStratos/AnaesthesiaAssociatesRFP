@@ -1994,7 +1994,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'stage-longer-prepaid-procedure',
     label: 'Stage longer prepaid procedure',
     description:
-      "On a submitted List, lengthens a Booking's prepaid procedure to four hours of anaesthetic time as the office, so Authorise can show that nothing further is billed for the difference: the prepaid amount is the price, and an additional invoice is raised by hand if one is needed.",
+      "On a submitted List, lengthens a Booking's prepaid procedure to four hours of anaesthetic time as the office, so Authorise can show that nothing further is billed for the difference: the prepaid amount is the price, and an additional invoice is created by hand if one is needed.",
     screen: 'Admin · Review',
     routes: ['/admin/review/:listId'],
     surfaces: ['bar'],

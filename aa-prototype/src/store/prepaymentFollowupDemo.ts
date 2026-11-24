@@ -22,7 +22,7 @@ export const LONGER_PREPAID_COPY = {
   noSentPrepayment: 'No sent prepayment on this List',
   alreadyStaged: 'Already staged',
   staged: (units: number) =>
-    `Recorded BTM now ${units} units, for reference only. Authorise bills nothing more for the prepaid procedure; raise an additional invoice by hand if one is needed.`,
+    `Recorded BTM now ${units} units, for reference only. Authorise bills nothing more for the prepaid procedure; create an additional invoice by hand if one is needed.`,
 } as const
 
 type DemoState = Pick<AppState, 'schedule' | 'billing' | 'masters'>

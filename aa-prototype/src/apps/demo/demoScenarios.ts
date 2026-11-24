@@ -458,9 +458,9 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
         path: () => '/admin/masters?view=contracts',
       },
       {
-        beat: 'Authorise, then edit the unit value',
+        beat: 'Authorise, then edit the rate per unit',
         label: 'Beat 5 · Admin Review, Mon 20 Jul AM',
-        does: "Authorise for billing, change Dr Souter's unit value on Master data, then Demo actions → Regenerate from locked data",
+        does: "Authorise for billing, change Dr Souter's rate per unit on Master data, then Demo actions → Regenerate from locked data",
         path: (s) => reviewPath(s, SEED_LIST_IDS.souterMon20Am),
       },
     ],

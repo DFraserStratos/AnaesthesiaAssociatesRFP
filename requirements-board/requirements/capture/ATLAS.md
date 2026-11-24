@@ -418,7 +418,7 @@ unsaved-changes guard can block a navigation). No URL changed; the Admin Booking
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (`surgeon-profile`, catch-up Phase 17b): cards `surgeon-specialties`, `surgeon-identifiers`, `surgeon-groups`, then the full-width `surgeon-contacts` ("Practice and contacts": Practice `[data-practice]`, `surgeon-personal-contact-card`, `surgeon-office-contacts-card`). "Edit details" opens `surgeon-edit-sheet`. |
 | `/admin/masters` | Master data. The view is the `?view=` param: `anaesthetists` (default), `contracts`, `recurringBookings` (catch-up Phase 30; was `permanentLists`), `hospitals` (List or Calendar), `surgeons` (the old `surgeonRooms` value opens it, catch-up Phase 17b), `surgeonGroups`, `parties` (catch-up Phase 18; the old `insurers` and `organisations` values open it), `specialties` and `fundingTags` (catch-up Phase 18a), `rvgGroups` (catch-up Phase 19, "RVG groups"; the old `rvgCodes` value opens it), `modifiers` (catch-up Phase 19b, "Modifiers"; the old `modifierCodes` value opens it), `availability-statuses` (catch-up Phase 29; the old `listStatuses` value still opens it), `emailTemplates` (catch-up Phase 35, "Email templates": the table `email-templates`, rows `tr[data-email-template=ET001..ET004]` (Change of anaesthetist, Cancellation, Correction of an error, Booking change), each with History, Edit and Retire named "Edit <name>" etc.; "Add template" in the header), `xeroArchiving`, `scheduleSettings`, and since catch-up Phase 42 `publicHolidays` ("Public holidays", the master public-holiday calendar), `seedLoad` ("Seed load") and `goLive` ("Go-live load"), the last two demo-badged. Catch-up Phase 42 groups the sub-nav (`nav[aria-label="Master data"]`) into five `role=group` blocks `[data-masters-group="People and places"|"Schedule"|"Billing"|"Settings"|"Go-live"]`: People and places (Anaesthetists, Hospitals & holidays, Surgeons, Specialties, Surgeon groups), Schedule (Recurring bookings, Availability statuses, Public holidays, Schedule settings), Billing (Parties, Funding tags, Contracts, RVG groups, Modifiers), Settings (Email templates, Xero & archiving), Go-live (Seed load, Go-live load). Labels are unchanged; the current button has `aria-current=page`. Each sub-nav button carries `data-masters-view=<view>` (click that, not the name). `?view=contracts&holder=<PartyId>` opens Contracts filtered to a holder (the Parties "N active" link). A Contract's panel has Details and History tabs (catch-up Phase 25). |
 | `/admin/masters/surgeons/:surgeonId` | Surgeon profile (catch-up Phase 17): HPI CPN chip ("No HPI CPN yet" when blank), "History" and "Edit details" top right. An unknown id falls back to `/admin/masters`. Catch-up Phase 17b: Specialties, Identifiers and Groups in the first row, then one full-width "Practice and contacts" card (`surgeon-contacts`), then Pairing preferences. No room cards. |
-| `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Profile, Pairing preferences. Office only. The Profile card (catch-up Phase 26; was "Details", hook `anaesthetist-details` kept) shows Unit value, Status, Phone, Email, HPI CPN and Bank account (masked, row `anaesthetist-bank-account`); it has no action of its own. The page header's secondary button "Edit details" (beside "History") opens the Edit sheet: click `button:text-is("Edit details")` at page level, not inside `anaesthetist-details`. |
+| `/admin/masters/anaesthetists/:anaesthetistId` | Admin anaesthetist record: Priority tier card, Profile, Pairing preferences. Office only. The Profile card (catch-up Phase 26; was "Details", hook `anaesthetist-details` kept) shows Rate per unit, Status, Phone, Email, HPI CPN and Bank account (masked, row `anaesthetist-bank-account`); it has no action of its own. The page header's secondary button "Edit details" (beside "History") opens the Edit sheet: click `button:text-is("Edit details")` at page level, not inside `anaesthetist-details`. |
 | `/admin/audit` | Audit viewer. Catch-up Phase 35 adds a Change set column: each grouped entry's id is a link `audit-change-set` that filters the viewer to that change set (the filter line `audit-change-set-filter`). |
 | `/admin/credit-notes/:creditNoteId` (catch-up Phase 39) | A credit note (`CRN0001` the first): the document `credit-note-document` ("CREDIT NOTE", "Total credited") with its rail, the negative invoice card `negative-invoice-card` ("Negative invoice CN-2026-0001-P", "offset against the unpaid payable" or "... nets in the next payment run"), `credit-note-credits`, `credit-note-new-invoices`, `credit-note-xero`. Reached from the original's `invoice-credited-banner` link `CN-2026-...`, a credit note row on `/admin/invoices` (`tr[data-credit-note-id]`) or the Procedure's `procedure-event-credit-note`. An unknown id is handled as an unknown invoice is (`RequireEntity`). |
 | `/admin/invoices/:invoiceId` (catch-up Phase 39) | The rail adds the "Correct this invoice" card `invoice-correct` (Credit note, Credit in full and rebill, Split into additional invoices). A credited original shows the standing pill `invoice-standing` ("Credit waiting for review", then "Credited") and `invoice-credited-banner` ("Credited in full by CN-2026-... · rebilled as AA-2026-..." or "replaced by ..."); a rebill shows `invoice-rebill-of`, a split component `invoice-split-part`. The bar adds `stage-refund-after-payout` here. |
@@ -1062,8 +1062,8 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   `/admin/review/L-45178-2026-07-14-AM` shows `review-needs-price-blocker` ("<patient>: Needs a price: No contract ·
   Fixed price has no price of its own." with an Open link) and "Authorise for billing" disabled. No seeded scripted List
   is blocked.
-- **A unit-value edit re-prices unlocked Bookings only.** Edit Dr Souter on `/admin/masters` (`[data-shot=masters-anaesthetists]
-  tr:has-text("Souter") >> text="Edit"`, fill `[role=dialog] >> role=textbox[name="Unit value"]`, "Save changes"): after
+- **A rate-per-unit edit re-prices unlocked Bookings only.** Edit Dr Souter on `/admin/masters` (`[data-shot=masters-anaesthetists]
+  tr:has-text("Souter") >> text="Edit"`, fill `[role=dialog] >> role=textbox[name="Rate per unit ($)"]`, "Save changes"): after
   the S3 AM authorise, BK0023 keeps "@ $26.50/unit (locked)" while her ACTIVE BK0186 (Mon 27 Jul AM, No contract · RVG)
   reads "4 units x $28.00 = $112.00". Forte Health RVG (`CT-FORTE-D1`) is RVG at the anaesthetist's rate; Health NZ
   (`CT-HNZ`) is RVG at its own $23 rate and has no price ranges (only fixed-price Contracts have ranges).
@@ -1092,8 +1092,8 @@ evening Draft List). The schedule settings hold its default times, 18:00 to 21:0
   bank 99, `99-0101-<registration, 7 digits>-00`: Dr Souter's is `99-0101-0034821-00`, shown masked
   `99-0101-•••••21-00` everywhere but the office's Edit field. There is no GST period anywhere (retired; the web GST tab
   is a calendar month); the GST number (Phase 22) stays office-held and off the anaesthetist's profile.
-- Master data, Anaesthetists (`/admin/masters?view=anaesthetists`, `masters-anaesthetists`): columns Name, Reg, Unit $
-  (the third column, so `table th:nth-child(3)` is the unit value), Tier, HPI CPN, Bank account (masked, cell
+- Master data, Anaesthetists (`/admin/masters?view=anaesthetists`, `masters-anaesthetists`): columns Name, Reg, Rate per unit
+  (the third column, so `table th:nth-child(3)` is the rate per unit), Tier, HPI CPN, Bank account (masked, cell
   `anaesthetist-bank`), GST number, Phone, Email, Start date, Active, Edit.
 - The Edit sheet (`edit-anaesthetist-sheet`) and the Add sheet (`add-anaesthetist-sheet`) both hold "HPI CPN (required)"
   and the bank block `anaesthetist-bank-fields` ("Bank account name (required)", "Bank account number (required)");
@@ -1308,7 +1308,7 @@ were already imported. Nothing new.").
   `L-HIST-03` (Mon 22 Jun 2026, St George's), $85.00 ex GST, "Post-op ward review, Tue 23 Jun, 20 min", awaiting review.
   Admin `/admin/day/2026-06-22/bookings/HBK03`; web `/web/lists/L-HIST-03/bookings/HBK03`; mobile
   `/mobile/lists/L-HIST-03/bookings/HBK03` (persona Dr Souter). The anaesthetist apps are Dr Souter only, so an
-  anaesthetist shot of raising an additional invoice uses Dr Souter's own Procedure on `HBK03`, never Dr Sharma's.
+  anaesthetist shot of creating an additional invoice uses Dr Souter's own Procedure on `HBK03`, never Dr Sharma's.
   The Events tab `/admin/review?tab=events` lists `EV0001`.
 - **Sarah Mitchell after `stage-post-op`**: Booking `BK0032` on Dr Sharma's Tue 14 Jul AM List
   `L-41267-2026-07-14-AM` (Admin `/admin/day/2026-07-14/bookings/BK0032`). The trigger authorises and bills the
@@ -1522,14 +1522,14 @@ were already imported. Nothing new.").
   steps) and the prepaid Rhinoplasty gets `prepaid-settlement`: "Prepaid · $1,200.00 · the price", the recorded BTM
   `prepaid-settlement-btm` "for reference", the move from the AA Holding account `prepaid-settlement-transfer` (Dr
   Souter on Admin, "you" on web and mobile), `prepaid-settlement-nothing-automatic` "Nothing is invoiced or credited
-  automatically." and `prepaid-settlement-actions` (Create or Raise additional invoice, Credit note). Before Authorise,
+  automatically." and `prepaid-settlement-actions` (Create additional invoice, Credit note). Before Authorise,
   on Review with the List SUBMITTED, `stage-longer-prepaid-procedure` lengthens it to 240 minutes; Authorise still
   bills nothing more. Before Authorise the office's Change price on the prepaid Procedure
   (`[data-shot=office-billing-setup-2] >> role=button[name="Change price"]`) shows the price read-only with
   `pricing-sheet-refusal`.
 - **By hand.** The settlement block's Credit note (`[data-shot=prepaid-settlement] [data-shot=procedure-credit-note-button]`,
   web and mobile `anaesthetist-credit-note-button`) credits the whole prepayment invoice: the form shows
-  `prepayment-credit` ("This credits the whole prepayment invoice. Raise an additional invoice for anything still
+  `prepayment-credit` ("This credits the whole prepayment invoice. Create an additional invoice for anything still
   owed.") and no new-invoice cards. It waits in Review's Events tab like any credit (`tr[data-kind=credit]`); once
   approved and issued by `run-next-billing-run`, the block lists `prepaid-settlement-credit` and hides its Credit
   note. A fresh additional invoice (`[data-shot=prepaid-settlement] [data-shot=additional-invoice-button]`, reviewed
@@ -1611,7 +1611,7 @@ were already imported. Nothing new.").
   "Close"; the header also has a "Close" X, so scope it `[data-shot=matching-raw-row-sheet] >> role=button[name="Close"] >> nth=-1`.
   Opening it again asks for a reason again (each view is a fresh, audited request).
 - **Additional invoice (catch-up Phase 38b).** Admin: `[data-shot=additional-invoice-button]` ("Create additional
-  invoice") opens `[data-shot=additional-invoice-sheet]` (a dialog); web the same button reads "Raise additional invoice"
+  invoice") opens `[data-shot=additional-invoice-sheet]` (a dialog); web the same button, same words
   (dialog); mobile it is a bottom sheet, scope it `[data-aa-mobile-product] [data-shot=additional-invoice-sheet]`. Fill
   `input[data-shot=line-description]` and `input[data-shot=line-amount]` (quantity `line-quantity`), leave
   `event-same-as` ticked or clear it and pick a party in `event-party-picker`, then `additional-invoice-save`. Review: the
@@ -2111,7 +2111,7 @@ NHI register: Noah Prescott, ..."). Demo action rows `demo-action-nhi-hub-mode` 
   three apps; Admin always, the anaesthetist on their own Procedure since catch-up Phase 39b, otherwise only when it has events), rows `procedure-event-row`
   (`data-event-id`, `data-status`) with `procedure-event-status`, `procedure-event-review`, `procedure-event-edit`,
   `procedure-event-remove` and `procedure-event-invoice`. `additional-invoice-button` (on the Procedure's Paid by row
-  beside Split: "Create additional invoice" on Admin, "Raise additional invoice" on web and mobile).
+  beside Split: "Create additional invoice" in all three apps).
   `additional-invoice-sheet` (the form: a dialog on web and Admin, a bottom sheet on mobile) with inputs
   `input[data-shot=line-description]`, `input[data-shot=line-amount]`, `input[data-shot=line-quantity]`, the tick
   `event-same-as`, the picker `event-party-picker`, `additional-invoice-totals` and `additional-invoice-save`. Review:

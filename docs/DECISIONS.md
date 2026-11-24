@@ -63,7 +63,7 @@ Paths are relative to `aa-prototype/src/` unless they start with `docs/` or `aa-
 - **Schedule words have one home**, `shared/scheduleTerms.ts` (Draft List, Unassigned, DRAFT, origin labels), test-checked for stray literals. List state labels come from `LIST_STATE_LABELS`, progress labels from `LIST_PROGRESS_LABEL`, and "left the main view" from the one predicate `hasLeftMainView` (`domain/listProgress.ts`).
 - **One short name form, "Dr <Surname>"** (`drSurname`): both dashboard greetings and cover chips. Full name where there is room; `initialsOf` for avatars.
 - **HPI CPN has one label and one formatter** (`HPI_CPN_LABEL`, `formatHpiCpn`), shape-checked only; a source-scan test refuses other wording.
-- **Money prints one way, "$3,100.00"**, negatives "$-5.00", via `formatMoney` (`domain/billing/money.ts`, re-exported as `formatCurrency`). `parseAmount` is the one input parser.
+- **Money prints one way, "$3,100.00"**, negatives "-$34.45" (the sign before the dollar sign, on every screen, invoice and remittance alike), via `formatMoney` (`domain/billing/money.ts`, re-exported as `formatCurrency`). `parseAmount` is the one input parser.
 - **Date text has one home**, `domain/dateText.ts` (re-exported from `shared/format.ts`): "Tue 21 Jul to Fri 24 Jul" in the apps, "1 Oct 2026 to 1 Nov 2026" for money and contracts, stamps "Tue 21 Jul, 08:00".
 - **The internal patient id is never shown**; the NHI is the identifier in routes, search and copy.
 

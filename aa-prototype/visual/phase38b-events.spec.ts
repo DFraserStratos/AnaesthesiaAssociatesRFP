@@ -98,10 +98,10 @@ test('the office creates, reviews and runs an additional invoice; it links both 
   await expect(page.locator('[data-shot="invoice-additional-links"]')).toContainText('Raised by the office')
 })
 
-test("Dr Souter raises an additional invoice on her own invoiced Procedure: a dialog on web, a bottom sheet on the phone", async ({ page }) => {
+test("Dr Souter creates an additional invoice on her own invoiced Procedure: a dialog on web, a bottom sheet on the phone", async ({ page }) => {
   await page.goto('/web/lists/L-HIST-03/bookings/HBK03')
   const raise = page.locator('[data-shot="additional-invoice-button"]').first()
-  await expect(raise).toHaveText('Raise additional invoice')
+  await expect(raise).toHaveText('Create additional invoice')
   await raise.click()
   const sheet = page.locator('[data-shot="additional-invoice-sheet"]')
   await expect(sheet).toContainText('Additional to AA-2026-H03')

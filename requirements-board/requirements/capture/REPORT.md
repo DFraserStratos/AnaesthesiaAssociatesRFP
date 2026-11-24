@@ -6,17 +6,16 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 232 | 211 |
+| Captured | 233 | 211 |
 | Partial | 24 | 24 |
 | Absent from the app | 70 | 66 |
-| Failed recipe | 2 | 1 |
+| Failed recipe | 1 | 1 |
 | No recipe | 0 | 0 |
 
-1041 screenshots. Items per app: admin 203, web 96, mobile 96, simulator 33.
+1042 screenshots. Items per app: admin 204, web 96, mobile 96, simulator 33.
 
-## Failed recipes (2)
+## Failed recipes (1)
 
-- **FT-01.6** Draft Lists · admin-draft-list-origins: highlight [data-shot=draft-lists-table] th:nth-child(7): selector [data-shot=draft-lists-table] th:nth-child(7) matched nothing (at http://localhost:5773/admin/draft-lists)
 - **US-03.6.1** Mark a Booking complete · mobile-mark-complete-fixed-price: highlight: the element is outside the visible screen
 
 ## Absent from the app (70)
@@ -102,7 +101,7 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 - **US-04.2.11** Combinations as Contracts · The shot shows the combinations on Master data. A fee extra billed as an event is shot on US-03.7.2, an additional invoice on US-08.6.3.
 - **US-04.2.14** Anaesthetist's own price list Contracts · The shots show Dr Souter's price list on Master data. The step rail offers it only on her Lists under Patient › Prepaid (US-04.3.8), and the prepaid amount is shot on US-06.2.2.
 - **US-04.2.18** Holder reference code, invoice description and default RVG code · The shots show the three settings and the search on Master data. The step rail's search is shot on US-04.3.2, the default RVG code filling a Procedure on US-03.3.1, and the printed holder reference code on US-04.2.8.
-- **US-04.3.3** No contract · RVG · The shots show No contract · RVG on the step rail. Its price at the anaesthetist's unit value and billing the Procedure's payer are shot on US-05.2.1 and US-11.2.1.
+- **US-04.3.3** No contract · RVG · The shots show No contract · RVG on the step rail. Its price at the anaesthetist's rate per unit and billing the Procedure's payer are shot on US-05.2.1 and US-11.2.1.
 - **US-05.2.5** Fixed fee schedule pricing · The shots show the fixed and the open price. An additional invoice and a credit note raised by hand are shot on US-08.6.3 and US-08.6.5.
 - **US-06.2.1** Detect prepayment requirement · The shots show the prepayment warning on the anaesthetist's List. A Procedure on a prepaid Contract flagged on the office's Booking is shot on US-06.2.2 and US-06.3.2.
 - **US-08.3.3** Patient-linked history survives Xero archiving · Archiving a patient's Xero contact is shown; purging one is not modelled.
@@ -123,8 +122,9 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 
 None.
 
-## Captured (232)
+## Captured (233)
 
+- **FT-01.6** Draft Lists · admin
 - **FT-02.2** Surgeon PDF list ingest · admin
 - **FT-03.5** Anaesthetist adjustment · mobile
 - **FT-04.1** Contract catalogue · admin

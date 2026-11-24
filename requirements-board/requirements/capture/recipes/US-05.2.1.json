@@ -6,7 +6,7 @@
     {
       "name": "unit-values",
       "app": "admin",
-      "caption": "Each anaesthetist's own unit value",
+      "caption": "Each anaesthetist's own rate per unit",
       "start": "/admin/masters",
       "states": [
         {
@@ -21,7 +21,7 @@
     {
       "name": "card-fee",
       "app": "admin",
-      "caption": "The fee on the office's view of the Booking, at the anaesthetist's unit value",
+      "caption": "The fee on the office's view of the Booking, at the anaesthetist's rate per unit",
       "start": "/admin/day/2026-07-21/bookings/BK0001",
       "states": [
         {

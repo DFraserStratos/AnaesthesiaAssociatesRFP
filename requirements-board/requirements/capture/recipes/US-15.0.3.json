@@ -92,7 +92,7 @@
           "wait": 500
         },
         {
-          "fill": "[role=dialog] >> role=textbox[name=\"Unit value ($)\"]",
+          "fill": "[role=dialog] >> role=textbox[name=\"Rate per unit ($)\"]",
           "value": "28.00"
         },
         {
@@ -105,7 +105,7 @@
       "states": [
         {
           "state": "locked",
-          "caption": "Dr Souter's unit value changed to $28.00 after authorise: the authorised Booking keeps its locked $26.50 rate",
+          "caption": "Dr Souter's rate per unit changed to $28.00 after authorise: the authorised Booking keeps its locked $26.50 rate",
           "steps": [
             {
               "wait": "[data-shot=office-billing-setup-1] [data-shot=booking-lock-badge]"

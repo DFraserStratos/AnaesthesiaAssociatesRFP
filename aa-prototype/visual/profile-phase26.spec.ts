@@ -61,7 +61,7 @@ test('phase 26 admin: Master data columns and the record page Profile card', asy
   await page.goto('/admin/masters?view=anaesthetists')
   await page.waitForLoadState('networkidle')
   const table = page.locator('[data-shot="masters-anaesthetists"]')
-  await expect(table.locator('th').nth(2)).toHaveText('Unit $')
+  await expect(table.locator('th').nth(2)).toHaveText('Rate per unit')
   await expect(table.locator('th', { hasText: 'GST period' })).toHaveCount(0)
   const souter = table.locator('tr[data-anaesthetist="34821"]')
   await expect(souter).toContainText('10SOUM')
