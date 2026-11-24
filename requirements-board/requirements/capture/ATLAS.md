@@ -462,7 +462,7 @@ the ledger's failed checks (none at reset, so no badge; 1 after "Inject unmatche
 | `/mobile/balances` (catch-up Phase 36) | The header card adds the line `balances-collected-paid-out` "Collected $X · Paid out $Y" under the unpaid count, and `balances-you-owe-aa` "You owe AA $Z" only when Dr Souter has an unpaid AA fee invoice (she does at reset: AA-FEE-2026-H02). The PWA Demo sheet adds `pwa-office-runs-payables` here (labelled "Office runs payables in Xero" since catch-up Phase 37). |
 | `/mobile/more` | Settings. The PWA adds a demo panel with a non-deterministic build ID. Avoid shooting that panel. |
 | `/mobile/more` (catch-up Phase 26) | The "Profile" card `mobile-profile` sits between the persona card and the Demo card: rows `mobile-profile-rate` (Rate per unit $26.50, with the "Change" text action `mobile-profile-rate-change`), Phone, Email, Registration, HPI CPN (`mobile-profile-hpi`) and Bank account (`mobile-profile-bank`, masked), the office-held rows with lock glyphs and captions. Its lower rows sit near the fold: `scroll` to `mobile-profile-bank` first. "Change" opens the bottom sheet `mobile-rate-sheet` (field "Rate per unit ($)", "Save rate" `mobile-rate-save`). |
-| `/mobile/more` (catch-up Phase 43) | The Demo card ("Demo prototype") also holds the "Synthetic data only" badge `synthetic-data-badge`. On the PWA the build panel sits below that card: keep it out of frame. |
+| `/mobile/more` (catch-up Phase 43) | On the PWA the build panel sits below the Demo card ("Demo prototype"): keep it out of frame. |
 | `/mobile/more` (catch-up Phase 43a) | The account card `more-account` ("Signed in as m.souter@aa-associates.example") sits under 26's Profile card, so everything below the Profile card moves down by one card. Its Sign out text action `more-sign-out` signs out and shows the sign-in screen `sign-in-screen` on the same route; Sign in (`sign-in-submit`) returns to it. `scroll` to `more-account` and keep the PWA build panel out of frame. |
 
 - The tab bar is `[data-testid=mobile-tab-bar]`, with buttons Lists, Availability, Balances and
@@ -1466,10 +1466,8 @@ were already imported. Nothing new.").
   test leak (proves the scan finds one)"): fills `nhi-scan-report`. Scan now finds none (the `xero` row also checks
   personal details; core rows read "Held by design"); planted adds the row `tr[data-scan-area=planted]` with one masked
   hit.
-- **Synthetic data only** badge `synthetic-data-badge`: in the harness bar (hidden in shots), the Admin side nav under
-  ADMIN (outside `nav[aria-label="Admin"]`), the web top nav before the persona, and the phone's More card (the Demo
-  card, `/mobile/more`). The framed copies sit inside `[data-aa-modal-scope]` (the routed app), the harness one does
-  not, so scope a highlight `[data-aa-modal-scope] [data-shot=synthetic-data-badge]`.
+- **Synthetic data only** badge `synthetic-data-badge`: in the harness bar only (hidden in shots), so no shot can show
+  it. It is not repeated inside the apps.
 - **Changes show without signing out** (US-15.0.7): an Admin save on `BK0009` (Margaret Ellison, Dr Souter Tue 21 PM,
   16:00; six "5 minutes later" clicks then `booking-save` make it 16:30) shows on the web List after a `setup` (same
   origin). The PWA (:5174) cannot see an Admin save, so its shot uses the `office-edits-booking` stand-in (the time 30
@@ -2694,8 +2692,7 @@ These are the `data-testid` values in `src/`. Use them as `[data-testid=...]`.
   `tr[data-raw-column=<name>]`), `matching-raw-row-policy`. Data inspector: `nhi-scan-panel`, `nhi-scan-report`
   (`data-scanned`), rows `tr[data-scan-area=<key>]` with `data-hits`, `data-saving-paused` (full scale only),
   `data-lifecycle-cap`. Xero simulation: `xero-volume-callout`, `xero-table-cap` (full scale only). Master data, Xero
-  & archiving: `archive-scale-line`. Every shell: `synthetic-data-badge` (harness bar, Admin side nav, web top nav,
-  mobile More card). Demo action rows `demo-action-load-full-scale`, `demo-action-scan-nhi-leaks`,
+  & archiving: `archive-scale-line`. Harness bar only: `synthetic-data-badge`. Demo action rows `demo-action-load-full-scale`, `demo-action-scan-nhi-leaks`,
   `demo-action-matching-raw-row-other-role`.
 - Weekly payment cycle and remittance (catch-up Phase 39a; US-10.2.5 to US-10.2.7). Billing monitor: `payment-cycle`
   (the card), `payment-cycle-status`, `payment-cycle-step-1` to `-4` (the rail), `payables-run-draft`,
@@ -3170,10 +3167,8 @@ until `{ "trigger": "office-authorises-list" }` runs (US-07.4.1 and US-08.6.1 sh
   `[data-shot=admin-day-beyond-horizon]` instead of a grid.
 - **Stale IDs redirect** instead of showing a blank page. If a shot shows a list page when you
   expected a booking, the ID is wrong.
-- **The Synthetic data only badge sits in every shell** (catch-up Phase 43): the harness bar, the Admin side nav, the
-  web top nav and the phone's More card. Nearly every web, admin and mobile image moves by a few pixels; check that no
-  highlight box overlaps it. A bare `[data-shot=synthetic-data-badge]` finds the hidden harness copy first on :5173, so
-  scope it `[data-aa-modal-scope] [data-shot=synthetic-data-badge]`.
+- **The Synthetic data only badge sits in the harness bar only** (catch-up Phase 43, moved out of the Admin side nav,
+  the web top nav, the phone's More card and sign-in screen in November 2026). The harness bar is hidden in shots.
 - **Full-scale generation takes a few seconds** (catch-up Phase 43). After the `load-full-scale` trigger add
   `{ "wait": 3000 }`, then wait for `[data-shot=scale-timings-toggle]` (it shows only once loaded; the banner itself
   also shows while generating). The banner's generation time and the Timings differ on every run, so those images

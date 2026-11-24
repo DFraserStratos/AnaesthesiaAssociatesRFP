@@ -140,27 +140,6 @@
           "highlight": ["[data-shot=nhi-scan-report] tr[data-scan-area=planted]"]
         }
       ]
-    },
-    {
-      "name": "synthetic-badge",
-      "app": "admin",
-      "caption": "Synthetic data only: the environment marker under ADMIN in the side nav",
-      "start": "/admin/day/2026-07-21",
-      "states": [ { "steps": [], "highlight": ["[data-aa-modal-scope] [data-shot=synthetic-data-badge]"] } ]
-    },
-    {
-      "name": "synthetic-badge",
-      "app": "web",
-      "caption": "Synthetic data only: the environment marker in the anaesthetist web app's top nav",
-      "start": "/web/lists",
-      "states": [ { "steps": [], "highlight": ["[data-aa-modal-scope] [data-shot=synthetic-data-badge]"] } ]
-    },
-    {
-      "name": "synthetic-badge",
-      "app": "mobile",
-      "caption": "Synthetic data only: the environment marker on the phone's More screen",
-      "start": "/mobile/more",
-      "states": [ { "steps": [], "highlight": ["[data-shot=synthetic-data-badge]"] } ]
     }
   ]
 }

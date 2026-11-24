@@ -25,7 +25,7 @@ The seed keeps:
 3. Under **Clock & reset**, select **Reset demo data**, then **Confirm reset**. The demo clock reads Tuesday 21 July 2026 · 8:00.
 4. Keep this document, or the master HTML, open in a second tab. Do not present from the Data inspector.
 5. Optional check: **Admin → Intake** opens on **Matching** with one row waiting (Mere Tipene, Southern Cross, "Waiting for an NHI"), and its **PDF lists** tab holds Mr Okafor's list, received and not yet sent to Matching.
-6. Point at the **Synthetic data only** badge in the top bar. It also sits in the Admin side nav and the web top nav, and the phone's More screen says "All patients, NHIs, Lists and figures are synthetic." Nothing in the prototype is real patient or integration data.
+6. Point at the **Synthetic data only** badge in the top bar, above every app. The phone's More screen also says "All patients, NHIs, Lists and figures are synthetic." Nothing in the prototype is real patient or integration data.
 7. NHIs for the lookup beats (S5 Beat 2): `ZBR4417` Mereana Tipene, `ZBT2253` Lucas Brennan and `ZBX41AL` Ana Fifita (new format) are on the NHI register; `ZBW6638` is valid but not on the register; `ZAA0068` fails its check digit.
 8. After a Reset each app shows a welcome card once: **Welcome to your Lists** on the phone's Lists screen, **Welcome** on the web Dashboard and **The day at a glance** on Admin Day. Select **Got it** on each before the audience arrives, or leave the phone's card to open S1 with. A scenario jump keeps your dismissals; a Reset brings the cards back. **Demo actions → Show first-run hints again** brings them back from any Mobile, Web or Admin screen. That entry stays greyed out, reading "No welcome card has been dismissed", until you have dismissed one.
 9. Help: after a Reset the clock reads 8:00am, so every Help panel says "Closed, opens 8:30am". Press **+1 hour** on the clock before a support beat if you want it open.
@@ -1408,7 +1408,7 @@ Each link only opens the screen, in the same tab. In Beat 1 open **History** you
   - The panel then reads "Raw row viewed once · last Kirsty W. 08:00".
   - The other role reads "Refused: only office staff can view a raw hospital row (Mere Tipene's row). The attempt is in the audit trail."
   - Audit shows **Raw row view refused** (Dr Melanie Souter, anaesthetist) above **Raw row viewed** (Kirsty W., Reason Find why this row did not match), and no values from the row.
-  - **Synthetic data only** shows in the harness bar and the Admin side nav.
+  - **Synthetic data only** shows in the top bar, above the app.
   - Beat 2's **Add NHI** also left **Hospital row corrected** (NHI not set → JKL1188) and **Hospital row decided** under importRow, below the two raw row entries.
 - **Handset:** no mobile side.
 

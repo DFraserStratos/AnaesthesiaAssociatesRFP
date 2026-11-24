@@ -1,5 +1,4 @@
 import { Avatar, Logo } from '../../../shared'
-import { SyntheticDataBadge } from '../../../shared/SyntheticDataBadge'
 import { brand, neutral } from '../../../theme/tokens'
 import { TextAction } from '../../../shared/ui'
 
@@ -76,9 +75,6 @@ export function WebNav({ tab, onTab, personaName, initials, profileActive, onPro
             Help
           </TextAction>
         )}
-
-        {/* Catch-up Phase 43 (US-15.0.6): an environment marker before the persona, neutral. */}
-        <span style={{ display: 'inline-flex', alignItems: 'center', marginRight: -12 }}><SyntheticDataBadge tone="onLight" /></span>
 
         <button
           type="button"
