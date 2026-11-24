@@ -105,7 +105,7 @@ that need work are repeated here.
 
 ## Tests and tooling
 
-- Run the full catalogue capture once the owner has approved Phase 44 and this cleanup: `node requirements-board/agent/skills/run-build-phase/tools/phase-check.mjs --capture all` from the repo root (about 30 to 35 min), then `--stop-servers`. The committed images are stale (backlogs from 40a, 43a, 43b, U7 and US-15.0.4 were never captured). M (owner)
+- Two capture recipes fail (full capture of 2026-11-24): FT-01.6 `admin-draft-list-origins` (the Origin header highlight `th:nth-child(7)` matched nothing; on a loaded machine the page also timed out), and US-03.6.1 mobile `mark-complete-complete` / `mark-complete-fixed-price` (the `mobile-booking-commit` highlight is off screen even after a `scroll` step). `requirements-board/requirements/capture/recipes/`. S
 - The PWA has never been checked on a real handset, only the emulated iPhone 14 Pro: walk S1 T7, the Lattimer move end to end and the PWA-only paths (`aa-prototype/README.md`, "Testing on a real device"). M
 - US-15.0.4's full-scale recipe times out at the fixed 6 s `ACTION_TIMEOUT`. `requirements-board/scripts/capture.ts`. S
 - Flaky under load: `mastersPages.test.tsx` (Vitest timeouts) and `visual/booking-detail-layout.spec.ts`; board e2e `one-rule` R-101, `board-mapped` lane rename, `artifacts` reduced motion, `diff` live edits. Watch. S
