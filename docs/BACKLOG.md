@@ -15,8 +15,8 @@ that need work are repeated here.
 
 ## Prototype: billing, invoices and money
 
-- A rejected lock (split no longer fits, holder Party gone, prepaid payer changed) holds the Booking back for good: block authorise on any rejection, or build a relock. `domain/billing/lock.ts`. M (owner)
-- The T stepper's manual time-units override ("Adjusted manually", seeded on Chen BK0008) survives beside the tiers; Phase 24's fold into the typed price never happened, and S5 Beat 1 scripts it. `shared/capture/UnitsCard.tsx`, `domain/billing/fee.ts`, `domain/seed/bookings.ts`. M (owner)
+- A rejected lock (split no longer fits, holder Party gone, prepaid payer changed) holds the Booking back for good. Decided: a rejected lock becomes an authorise blocker beside "Needs a price" (`authoriseBlockersFor`), so the office fixes the Contract and then authorises; no relock. `domain/billing/lock.ts`, `domain/billing/reviewFlags.ts`. M
+- Remove the T stepper's manual time-units override ("Adjusted manually", seeded on Chen BK0008): time units come only from recorded time and the tiers. Reseed Chen (bump `PERSIST_VERSION`) and rewrite S5 Beat 1 and the master guide. `shared/capture/UnitsCard.tsx`, `domain/billing/fee.ts`, `domain/seed/bookings.ts`. M
 - INVOICED PRICE counts an unreviewed additional invoice ($237.00); Sarah Mitchell after credit and rebill reads Events $7.00 and Invoiced $214.00 (verify first). `domain/billing/bookingTotal.ts`. S
 - A credit still waiting for review already shows the Booking total as $0.00. `domain/billing/bookingTotal.ts`. S
 - The AA Holding card's rows do not sum to its balance (Refunded positive beside negative Credited and Transferred), and a credited row is dated at the credit while a later payment grows it. `apps/admin/components/HoldingAccountPanel.tsx`. S
@@ -28,7 +28,7 @@ that need work are repeated here.
 - Invoices pager counts invoices only (their credit notes ride along); at full scale it reads 28,232 against the banner's 28,279 (backdrop left out). `apps/admin/screens/InvoicesScreen.tsx`. S
 - During a Xero outage the system-actor `xero.queued` entry joins the office's change set: `mutate()` scopes change sets by store, not actor. `store/mutate.ts`. S
 - `paymentDisabledReason` and `openAccRecs` read the whole ledger once per render rather than once per screen. S
-- At reset the Reconciliation card reads "Books square" while the Ledger shows a pair not yet in Xero (AA-2026-S2401), and it ignores Xero-only items until the poll runs. Admin Day. S (owner)
+- At reset the Reconciliation card reads "Books square" while the Ledger shows a pair not yet in Xero (AA-2026-S2401). Decided: the card counts pairs pending to Xero as not square ("1 pair not yet in Xero"); also count Xero-only items once polled. Admin Day. S
 - Payment runs list shows when a run was approved, not by whom (the run detail does). `apps/admin/screens/PaymentRunScreen.tsx`. S
 - Web Remittances' paid-on dates differ from Admin Payment runs for seeded weeks 12 and 13. S
 - nib's AA-2026-0005 Locked record reads "Billed to Alan Prentice". S
@@ -36,20 +36,20 @@ that need work are repeated here.
 ## Prototype: prepayments and patients
 
 - "Pre-payment" and "Prepayment" both render (rail card, Ledger kind, Review flags, the Booking's prepayment statuses, Xero sim); the catalogue's word is "prepayment". Sweep the copy with the guide, the specs and the recipe captions that quote it. `apps/admin/components/PrepaymentsRailCard.tsx`, `apps/admin/screens/LedgerScreen.tsx`, `domain/billing/reviewFlags.ts`. M
-- 41's patient contacts (prepayment reminders, `Booking.patientNotices`) never reach 40's follow-up log or send history, and the record's Resend sits beside 41's reminder: append, or merge on read. `store/prepaymentActions.ts`, `apps/admin/screens/patients/`. M (owner)
+- 41's patient contacts (prepayment reminders, `Booking.patientNotices`) never reach 40's follow-up log or send history. Decided: merge on read, so the patient record's history shows one timeline from both sources (no seed change); drop the duplicate Resend beside 41's reminder. `store/prepaymentActions.ts`, `apps/admin/screens/patients/`. M
 - Phase 41 leftovers: settlement audit rows show `by: System` only in the summary row; releasing a prepaid Procedure's Contract settles nothing until a non-prepaid Contract is picked; "Split requested" is still offered as a credit reason on a prepayment invoice (`shared/procedureEventCopy.ts`). M
 - Rebooked Riley shows a "Surgeon's rooms PDF" source line and "5 units" on a fixed price; the rebook dialog defaults to Dr Ngata (no price) and allows an unpriced not-prepaid rebook; no To-do row for the rebooked prepayment until the date jump. M
 - Raise sample warnings overwrites Riley's prepaid Rhinoplasty code to H4. `store/warningSamples.ts`. S
-- Nair's Booking shows two identical "Create additional invoice" and "Credit note" pairs (the prepayment block's is the second; the guide carries an Open note). `shared/booking/PrepaidSettlementBlock.tsx`. S (owner)
-- Add NHI with the Hub Unavailable still shows "Matches Losa Tuilagi ..." (AA's own record, not the register): decide whether it should hide or say so. `apps/admin/screens/patients/AddNhiSheet.tsx`. S (owner)
+- Nair's Booking shows two identical "Create additional invoice" and "Credit note" pairs. Decided: the actions live only in the events list; the prepayment block shows status and settlement. Update the guide's Open note. `shared/booking/PrepaidSettlementBlock.tsx`. S
+- Add NHI with the Hub Unavailable shows "Matches Losa Tuilagi ..." from AA's own record. Decided: keep the match but say where it is from ("In AA's records; the NHI register is unavailable"). `apps/admin/screens/patients/AddNhiSheet.tsx`. S
 
 ## Prototype: Admin Day, Review, Bookings and intake
 
-- A List holding only a stub reads 0 of 0 with Mark list completed enabled, and authorises: no stub guard, though S5 tells it as built. M (owner)
-- S5 promises what is not built: a missing-NHI list with attach or merge, and a new Contract disabling the old one. The guide scripts them as built. M to L (owner)
-- The office cannot edit an invoice description: `shared/flows/EditInvoiceDescriptionSheet.tsx` is built but never mounted, so D73's admin layer is reachable only through "Use it". M (owner)
+- Build the stub guard: a List holding only a stub reads 0 of 0 with Mark list completed enabled, and authorises. S5 tells the guard as built. M
+- Build what S5 promises: a missing-NHI list with attach or merge, and a new Contract disabling (superseding) the old one. The guide already scripts them. M to L
+- Mount `shared/flows/EditInvoiceDescriptionSheet.tsx`: an Edit action beside the invoice description on the admin Booking, so the office can edit it (D73's admin layer is otherwise reachable only through "Use it"). S
 - The matching panel cannot correct a row's surgeon, and the newer-text cue sits above the Booking detail instead of under the invoice description. `apps/admin/matching/`. M (owner)
-- Review shows both the "Not complete" pill and the "Not marked completed" flag for one fact. `domain/billing/reviewFlags.ts`. S (owner)
+- Review shows both the "Not complete" pill and the "Not marked completed" flag for one fact. Decided: keep the pill, drop the flag. `domain/billing/reviewFlags.ts`. S
 - Review counts disagree: the badge says 10 while the queue says "9 in the queue"; Chen Fri 17 shows "1 flag open" beside two triangles; Fri 24 PM still reads "FLAGS 1" after authorise. S
 - Review's authorised stamp shows the List date, not the authorise date ("FRI 24 JUL, 08:00"). S
 - History: grouped-save rows carry no clock time, it reopens on the last as-at view, and seeded rows (14:20, 14:22, Chen's 16:00) sit after the 08:00 clock. `shared/audit/`, `domain/seed/`. S
@@ -69,14 +69,12 @@ that need work are repeated here.
 ## Prototype: anaesthetist apps (mobile, PWA, web)
 
 - Mobile has no list of her prepaid Contracts under the profile (PWA parity gap). `apps/mobile/screens/MoreScreen.tsx`. M
-- Mobile has no AA fee view (US-10.3.2 partly built; web has `/web/accounts/fees`). M (owner)
 - On Dr Souter's history Booking HBK03, mobile Paid by shows the raw id "H-STG". S
 - PWA, S1: "Office authorises this List" authorises while her Contract change still awaits office approval. `store/officeStandIn.ts`. S
 - The PWA Hub card pre-ticks Slow in a fresh session while the Hub answers Available. S
 - Framed phone BK0025 after Raise sample warnings: the Paid by line shows the split warning text in place of the payer. S
 - Demo sheet "Colleague moves a Booking to me" after S2 Beat 5 offers two rows, and the Dr Ropata row hands Souter her own former Booking back. `store/listMoveDemo.ts`. S
 - Parked stories never built: US-01.1.5 (the A and B split of a session, DM-65) and US-03.7.4 (pre-op consults in AA's room, OQ-138). L (owner)
-- The photo-capture Future-scope demo flow still ships: keep it or delete it. S (owner)
 
 ## Prototype: provisional captions
 
@@ -90,7 +88,7 @@ that need work are repeated here.
 - Left by U7 for the owner: PickRow heights 56 and 60, DockSpacer's hard-coded 74/82/86, the stamps in DraftListDrawer, UpdateEmailComposer and `auditNarrative`, no `data-progress` on the phone ListRow. S to M (owner)
 - oxlint's 144 warnings: 122 `only-export-components` (helpers beside components) and 21 `exhaustive-deps` (`ModifierPickerSheet.tsx:74`, missing `claimFor` and `modifiers`, is worth a look). S to M
 - Tailwind supplies only Preflight and the `@theme` variables (no utility class is used): drop it for a small reset and a `:root` block, with a visual check. `theme/global.css`. M
-- The Gradient Lab still ships (`GRADIENT_LAB_ENABLED`, `theme/gradientLabGate.ts`); once the gradient is signed off, remove `shell/gradientLab/` and `visual/mobile-phase13.spec.ts`. S (owner)
+- Remove the Gradient Lab (the gradient is signed off): delete `shell/gradientLab/`, `GRADIENT_LAB_ENABLED` and `theme/gradientLabGate.ts`, and `visual/mobile-phase13.spec.ts`; the shipped look stays `AA_DEFAULT_GRADIENT`. Update CLAUDE.md's Design section. S
 - The app switcher says "Demo: Billing Monitor & Xero" while the page says "Xero simulation". `shell/appConfig.ts`. S
 
 ## Requirements Board
@@ -117,9 +115,9 @@ that need work are repeated here.
 - Housekeeping: 37 Playwright specs and a dozen Vitest files are named by phase (`phase11.spec.ts`, `phase43Copy.test.ts`); `phase12`, `demo-actions` and `demo-actions-audit` specs overlap; the parity fixtures (`store/__parity__/`, `domain/seed/__fixtures__/`, 2.5 MB) could become one money golden. Rename or merge only when touching them. M
 - Root `package.json` `test:plan-state` is misnamed (it runs `req-changes.test.mjs`) and redundant with `verify:board`. S
 
-## Owner questions
+## Decided: wording and formats
 
-- Negative money prints "$-34.45" (invoice discount line) and "$-15.90" (BK0185 breakdown) through `formatMoney`'s default, while the remittance prints "-$365.70" (`sign: 'always'`). The default is a ruling (`docs/DECISIONS.md`); changing it touches every screen. Keep or switch? `domain/billing/money.ts`. S (owner)
-- "Create additional invoice" (office) and "Raise additional invoice" (anaesthetist) name one action by role: keep the two words or use one? `shared/procedureEventCopy.ts`. S (owner)
-- Admin's "Unit value" and the profile's "Rate per unit" name the same figure: pick one. S (owner)
-- `docs/demo-guide/04-presenter-cheat-sheet.md`'s "Open questions to raise" carries our recommendations where an OQ file had none: check they are ours to make. S (owner)
+- Negative money prints as "-$34.45" everywhere: change `formatMoney`'s default (`domain/billing/money.ts`) so the invoice discount line and Booking breakdowns match the remittance; update the ruling in `docs/DECISIONS.md`, tests, guide figures and affected recipes. S
+- Call the action "Create additional invoice" in all three apps (the anaesthetist apps say "Raise" today), and in the guide and recipe captions. `shared/procedureEventCopy.ts`. S
+- Call the figure "Rate per unit" everywhere: Admin's "Unit value" label changes to match the profile. Guide and captions too. S
+- `docs/demo-guide/04-presenter-cheat-sheet.md` "Open questions to raise": mark each of our recommendations "Our recommendation" (and the same in `master-demo-guide.html`) so AA sees they are proposals. S

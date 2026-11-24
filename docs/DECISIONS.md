@@ -53,6 +53,9 @@ Paths are relative to `aa-prototype/src/` unless they start with `docs/` or `aa-
 - **Invoices print through the browser** (`window.print()` on the on-screen document). No PDF library.
 - **No phase numbers or build scaffolding in app copy**, and no placeholder control posing as a real action. Honest simulation boundaries ("referenced, not implemented") may stay. `appCopy.test.ts` enforces this along with the dash rule and the retired words.
 
+- **The photo-capture flow stays as a Future-scope demo** (behind its Future badge), though photo capture is out of scope: it shows AA what a later phase could look like.
+- **AA fee invoices are web only.** The mobile app has no AA fee view; fee invoices are a desk task (`/web/accounts/fees`).
+
 ## Words and formatting
 
 - **Catalogue vocabulary in identifiers as well as copy**: Booking (never Card), Lists reassigned or moved (never swapped), recurring booking (not Permanent List), no "timesheet". "Card" survives only in visual component and token names (`radius.card`, `ControlCard`). `appCopy.test.ts` refuses the retired words in rendered copy.
