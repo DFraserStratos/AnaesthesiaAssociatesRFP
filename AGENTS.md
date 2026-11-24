@@ -20,7 +20,8 @@ separate local dev tool and portable skills kit over that catalogue.
 
 - Routine changes (fixes, UI/UX polish, small features): speed first. Change the app in the main
   checkout on `master`, run the quick checks, commit by path, say where to look. No progress log, no
-  worktrees. Check `docs/DECISIONS.md` before "fixing" something that looks wrong; open work is in
+  worktrees. The owner never opens the app from a worktree: any worktree or branch work merges into
+  `master` as soon as it is finished and green, without waiting to be tested. Check `docs/DECISIONS.md` before "fixing" something that looks wrong; open work is in
   `docs/BACKLOG.md` (delete a line when you finish it).
 - Don't edit the capture recipes (`requirements-board/requirements/capture/`) or the demo guide
   (`docs/demo-guide/`), and never run the capture, even `--dry`: the owner catches both up with

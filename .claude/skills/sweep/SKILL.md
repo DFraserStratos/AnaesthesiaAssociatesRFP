@@ -60,7 +60,8 @@ with no recipe.
    count or "all"), failures.
 2. Commit by path in `W`: recipes, ATLAS, images and the item `images` lines the runner wrote,
    `REQ/capture/REPORT.md`, the demo guide, `docs/SWEEP.md`, and any fixes.
-3. In the main checkout: `git merge sweep/<date>`. If it conflicts with the owner's uncommitted
+3. Merge straight away (the owner never opens the app from a worktree; they look at it on
+   `master`). In the main checkout: `git merge sweep/<date>`. If it conflicts with the owner's uncommitted
    files, stop and tell them. Then `git worktree remove ../AnaesthesiaAssociatesRFP-sweep` and
    delete the branch. Never push.
 4. Report in a few lines: commits swept, recipes captured and failed, guide sections changed.

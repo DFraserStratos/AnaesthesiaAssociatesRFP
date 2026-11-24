@@ -23,6 +23,10 @@ app does; the catalogue is the truth about what it should do.
   owner watches changes live on the dev servers and iterates. Read only the code the change needs,
   build it, run the quick checks, commit by path, say where to look. No progress log, plan page or
   phase doc. Work in the main checkout on `master`; no worktrees or branches unless the owner asks.
+- **The owner never opens the app from a worktree.** Anything done in a worktree or branch (a sweep,
+  or work the owner asked to isolate) merges into `master` as soon as it is finished and the full
+  gate is green, without waiting to be tested; the owner tests it on `master`. Then remove the
+  worktree and branch.
 - **Screenshots and the demo guide are caught up in a sweep, not per change.** A version of the demo
   guide (`docs/demo-guide/`, incl. `master-demo-guide.html`) and the catalogue screenshots goes to AA
   for testing and approvals; the owner brings both in step when they choose with `/sweep`
