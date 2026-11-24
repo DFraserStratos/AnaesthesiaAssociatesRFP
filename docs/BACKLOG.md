@@ -45,6 +45,9 @@ that need work are repeated here.
 
 ## Prototype: Admin Day, Review, Bookings and intake
 
+- Catalogue wording for the new Admin Day rail (work card, readings): US-13.8.1 says the pool is a panel "beside the to-do list" (now a tab alongside it); drop US-01.6.2's "space reserved beside the day view" example (Draft Lists live in the grid band and their page). Run `/update-requirements`. S (owner)
+- Rename Notifications to Notices across the rail tab, side nav and page, as the rail ideas page proposed (`docs/explorations/admin-day-rail-ideas.html`). `apps/admin/components/RailWorkCard.tsx`, `SideNav.tsx`, `screens/NotificationsScreen.tsx`. S (owner)
+- The four Playwright specs updated for the new rail (`aa-prototype/visual/warnings.spec.ts`, `admin-phase06.spec.ts`, `admin-draft-lists.spec.ts`, `prepayment-phase27.spec.ts`) have not been run; check them at the next sweep. S
 - Build the stub guard: a List holding only a stub reads 0 of 0 with Mark list completed enabled, and authorises. S5 tells the guard as built. M
 - Build what S5 promises: a missing-NHI list with attach or merge, and a new Contract disabling (superseding) the old one. The guide already scripts them. M to L
 - Mount `shared/flows/EditInvoiceDescriptionSheet.tsx`: an Edit action beside the invoice description on the admin Booking, so the office can edit it (D73's admin layer is otherwise reachable only through "Use it"). S
