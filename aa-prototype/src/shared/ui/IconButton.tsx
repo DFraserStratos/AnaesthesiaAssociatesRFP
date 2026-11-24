@@ -1,12 +1,13 @@
 import type { CSSProperties, ReactNode, RefObject } from 'react'
 import { X } from 'lucide-react'
 import { accent, neutral, radius } from '../../theme/tokens'
+import { dataAttributesOf, type DataAttributes } from './Field'
 
 export type IconButtonSize = 32 | 36 | 38 | 44
 export type IconButtonShape = 'square' | 'round'
 export type IconButtonTone = 'neutral' | 'action'
 
-interface IconButtonProps {
+interface IconButtonProps extends DataAttributes {
   /** The accessible name: required, because an icon or a glyph alone names nothing (bug 5). */
   label: string
   onClick: () => void
@@ -21,7 +22,24 @@ interface IconButtonProps {
   shot?: string
   title?: string
   style?: CSSProperties
+  /**
+   * Where focus goes after the click, as on `CloseButton`: a remove button leaves the page with the
+   * row it removed, so it hands focus on (the next row's remove, or the add button). A function is
+   * read at click time, before the row goes, for a target that depends on what is left.
+   */
+  returnFocusTo?: FocusTarget
   children: ReactNode
+}
+
+/** A focus target: a ref, or a function read at click time. */
+export type FocusTarget = RefObject<HTMLElement | null> | (() => HTMLElement | null | undefined)
+
+/** Run a click, then focus its target: a function target is read before the click, a ref after it. */
+function clickThenFocus(onClick: () => void, target: FocusTarget | undefined): void {
+  const before = typeof target === 'function' ? target() : undefined
+  onClick()
+  const el = typeof target === 'function' ? before : target?.current
+  el?.focus()
 }
 
 /** Square radius and glyph size per step size, from each mockup (radius 9 at 32 is drift: 10). */
@@ -37,7 +55,8 @@ const SQUARE: Record<IconButtonSize, { radius: number; fontSize: number }> = {
  * navigation. White, a 1px line and a slate glyph on desktop; the phone's 44px round month button
  * in the action tone; disabled draws the glyph in `lineStrong`. UI unification U5.
  */
-export function IconButton({ label, onClick, disabled = false, size = 36, shape = 'square', tone = 'neutral', bordered = true, shot, title, style, children }: IconButtonProps) {
+export function IconButton(props: IconButtonProps) {
+  const { label, onClick, disabled = false, size = 36, shape = 'square', tone = 'neutral', bordered = true, shot, title, style, returnFocusTo, children } = props
   const sq = SQUARE[size]
   return (
     <button
@@ -45,9 +64,14 @@ export function IconButton({ label, onClick, disabled = false, size = 36, shape 
       className={`aa-ctl${bordered ? ' aa-icon-btn' : ''}`}
       aria-label={label}
       title={title}
+      {...dataAttributesOf(props)}
       data-shot={shot}
       disabled={disabled}
-      onClick={disabled ? undefined : onClick}
+      onClick={
+        disabled
+          ? undefined
+          : () => clickThenFocus(onClick, returnFocusTo)
+      }
       style={{
         width: size,
         height: size,
@@ -84,7 +108,7 @@ interface CloseButtonProps {
    * Where focus goes after the click (bug 9): a clear or remove button leaves the page with what it
    * cleared, so it hands focus to the search input, the chip input or the next chip.
    */
-  returnFocusTo?: RefObject<HTMLElement | null>
+  returnFocusTo?: FocusTarget
   shot?: string
   style?: CSSProperties
 }
@@ -101,10 +125,7 @@ export function CloseButton({ onClick, label = 'Close', iconSize = 20, strokeWid
       className="aa-ctl"
       aria-label={label}
       data-shot={shot}
-      onClick={() => {
-        onClick()
-        returnFocusTo?.current?.focus()
-      }}
+      onClick={() => clickThenFocus(onClick, returnFocusTo)}
       style={{ border: 'none', background: 'none', color: neutral.slate, cursor: 'pointer', padding: 4, borderRadius: radius.xs, ...style }}
     >
       <X size={iconSize} {...(strokeWidth !== undefined ? { strokeWidth } : {})} aria-hidden />

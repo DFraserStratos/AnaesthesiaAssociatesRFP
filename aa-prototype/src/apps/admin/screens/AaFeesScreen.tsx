@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { addMonths, format, parseISO } from 'date-fns'
 import { Plus, X } from 'lucide-react'
 import { accent, neutral, radius } from '../../../theme/tokens'
@@ -358,6 +358,8 @@ function FeeSettingsTab({ actor }: { actor: Actor }) {
   const [items, setItems] = useState<DraftItem[]>(() => toDraft(saved).items)
   const [perBcti, setPerBcti] = useState(() => toDraft(saved).perBcti)
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
+  const itemsRef = useRef<HTMLDivElement>(null)
+  const addItemRef = useRef<HTMLButtonElement>(null)
   // Re-sync the form whenever the stored settings change (a save, or a Reset).
   useEffect(() => {
     const next = toDraft(saved)
@@ -398,7 +400,7 @@ function FeeSettingsTab({ actor }: { actor: Actor }) {
             <Eyebrow as="span" style={{ textAlign: 'right' }}>Amount (ex GST)</Eyebrow>
             <span />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div ref={itemsRef} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {items.map((item, index) => (
               <div key={item.id} data-testid={`aa-fee-item-${index}`} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 36px', gap: 8, alignItems: 'center' }}>
                 <TextField label={`Fixed item ${index + 1} description`} hideLabel size="compact" value={item.description} onChange={(v) => update(item.id, { description: v })} />
@@ -406,6 +408,12 @@ function FeeSettingsTab({ actor }: { actor: Actor }) {
                 <IconButton
                   size={36}
                   label={`Remove ${item.description.trim() === '' ? `fixed item ${index + 1}` : item.description}`}
+                  // the row goes with its button: focus the next row's remove, else the last one left, else Add item
+                  returnFocusTo={() => {
+                    const removes = Array.from(itemsRef.current?.querySelectorAll<HTMLElement>('[data-fee-remove]') ?? []).filter((_, i) => i !== index)
+                    return removes[Math.min(index, removes.length - 1)] ?? addItemRef.current
+                  }}
+                  data-fee-remove
                   onClick={() => {
                     setItems((prev) => prev.filter((x) => x.id !== item.id))
                     setMessage(null)
@@ -417,6 +425,7 @@ function FeeSettingsTab({ actor }: { actor: Actor }) {
             ))}
           </div>
           <button
+            ref={addItemRef}
             type="button"
             onClick={() => {
               setItems((prev) => [...prev, { id: nextItemId(prev), description: '', amount: '0.00' }])

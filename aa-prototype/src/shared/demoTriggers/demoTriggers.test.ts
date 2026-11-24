@@ -1188,7 +1188,8 @@ describe('Phase 43 entries (scale and privacy)', () => {
     expect(t.disabledReason(api.getState(), ctxFor('/admin/intake/matching', {}, published))).toBeNull()
     const before = api.getState().audit.length
     const out = t.run(api, ctxFor('/admin/intake/matching', {}, published), 'souter')
-    expect(out).toEqual({ ok: true, message: 'Refused: only office staff can view a raw hospital row. The attempt is in the audit trail.' })
+    // the result names the row it acted on (Mere Tipene's, IRS001)
+    expect(out).toEqual({ ok: true, message: "Refused: only office staff can view a raw hospital row (Mere Tipene's row). The attempt is in the audit trail." })
     expect(api.getState().audit.slice(before).map((e) => e.action)).toEqual(['importRow.rawViewDenied'])
   })
 })

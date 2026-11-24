@@ -1406,7 +1406,7 @@ Each link only opens the screen, in the same tab. In Beat 1 open **History** you
   - The panel reads "Only the fields needed to match are shown. The rest of what the hospital sent is held under restricted access." View raw row stays disabled until a reason is chosen ("Give a reason first.").
   - The sheet reads "Mere Tipene · Restricted. Viewing is recorded with your reason." and "Masking policy is for AA to agree. Identifiers are masked. The audit keeps your reason, never these values." It shows Hospital patient number •••017, date of birth 1981-••-••, address •••, Ilam, email •••@example.net, next of kin J. T., NHI Blank.
   - The panel then reads "Raw row viewed once · last Kirsty W. 08:00".
-  - The other role reads "Refused: only office staff can view a raw hospital row. The attempt is in the audit trail."
+  - The other role reads "Refused: only office staff can view a raw hospital row (Mere Tipene's row). The attempt is in the audit trail."
   - Audit shows **Raw row view refused** (Dr Melanie Souter, anaesthetist) above **Raw row viewed** (Kirsty W., Reason Find why this row did not match), and no values from the row.
   - **Synthetic data only** shows in the harness bar and the Admin side nav.
   - Beat 2's **Add NHI** also left **Hospital row corrected** (NHI not set → JKL1188) and **Hospital row decided** under importRow, below the two raw row entries.

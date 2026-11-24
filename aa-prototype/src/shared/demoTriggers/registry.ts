@@ -2659,9 +2659,12 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const rowId = rawRowTarget(state, ctx.published['matching.selectedRowId'])
       if (rowId === undefined) return { ok: false, message: 'No hospital row needs resolving' }
       const res = viewRawImportRow(api, choiceId === 'feed' ? HOSPITAL_FEED_ACTOR : SOUTER_ACTOR, rowId, 'Demo: access check')
+      // Name the row it acted on: with none selected it falls back to the oldest row needing resolving.
+      const name = state.intake.rows[rowId]?.incoming.patient.name
+      const whose = name !== undefined && name !== '' ? ` (${name}'s row)` : ''
       return res.ok
         ? { ok: false, message: 'The view was not refused.' }
-        : { ok: true, message: res.code === 'officeOnly' ? 'Refused: only office staff can view a raw hospital row. The attempt is in the audit trail.' : res.message }
+        : { ok: true, message: res.code === 'officeOnly' ? `Refused: only office staff can view a raw hospital row${whose}. The attempt is in the audit trail.` : res.message }
     },
     indexPath: () => ADMIN_MATCHING,
   },

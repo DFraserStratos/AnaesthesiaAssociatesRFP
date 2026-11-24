@@ -33,6 +33,59 @@ describe('IconButton', () => {
   })
 })
 
+describe('IconButton returnFocusTo', () => {
+  function Rows({ start }: { start: string[] }) {
+    const [rows, setRows] = useState(start)
+    const add = useRef<HTMLButtonElement>(null)
+    return (
+      <>
+        {rows.map((r, i) => (
+          <IconButton
+            key={r}
+            label={`Remove ${r}`}
+            data-row-remove
+            returnFocusTo={() => {
+              const rest = Array.from(document.querySelectorAll<HTMLElement>('[data-row-remove]')).filter((_, j) => j !== i)
+              return rest[Math.min(i, rest.length - 1)] ?? add.current
+            }}
+            onClick={() => setRows((prev) => prev.filter((x) => x !== r))}
+          >
+            x
+          </IconButton>
+        ))}
+        <button ref={add} type="button">Add</button>
+      </>
+    )
+  }
+
+  it('a function target is read before the click and focused after it, so a removed row hands focus on', () => {
+    render(<Rows start={['a', 'b', 'c']} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Remove b' }))
+    expect(screen.getByRole('button', { name: 'Remove c' })).toHaveFocus()
+    fireEvent.click(screen.getByRole('button', { name: 'Remove c' }))
+    expect(screen.getByRole('button', { name: 'Remove a' })).toHaveFocus()
+    fireEvent.click(screen.getByRole('button', { name: 'Remove a' }))
+    expect(screen.getByRole('button', { name: 'Add' })).toHaveFocus()
+  })
+
+  it('passes data attributes through, and a ref target is focused after the click', () => {
+    function One() {
+      const ref = useRef<HTMLInputElement>(null)
+      return (
+        <>
+          <input ref={ref} aria-label="Field" />
+          <IconButton label="Go" data-kind="go" returnFocusTo={ref} onClick={() => {}}>›</IconButton>
+        </>
+      )
+    }
+    render(<One />)
+    const go = screen.getByRole('button', { name: 'Go' })
+    expect(go).toHaveAttribute('data-kind', 'go')
+    fireEvent.click(go)
+    expect(screen.getByRole('textbox', { name: 'Field' })).toHaveFocus()
+  })
+})
+
 describe('CloseButton', () => {
   it('is named "Close" by default', () => {
     const onClick = vi.fn()

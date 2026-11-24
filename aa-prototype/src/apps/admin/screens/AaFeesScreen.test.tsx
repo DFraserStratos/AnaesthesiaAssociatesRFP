@@ -80,6 +80,20 @@ describe('AA fee settings screen (catch-up Phase 16)', () => {
     expect(useAppStore.getState().appSettings.aaFee.fixedItems).toHaveLength(2)
   })
 
+  it('removing an item hands focus to the next remove button, then the last one left, then Add item', () => {
+    renderTab('settings')
+    const removes = () => screen.getAllByRole('button', { name: /^Remove / })
+    expect(removes()).toHaveLength(2)
+    const [first, second] = removes()
+    first!.focus()
+    fireEvent.click(first!)
+    expect(removes()).toEqual([second])
+    expect(second).toHaveFocus()
+    fireEvent.click(second!)
+    expect(screen.queryAllByRole('button', { name: /^Remove / })).toHaveLength(0)
+    expect(screen.getByRole('button', { name: /Add item/ })).toHaveFocus()
+  })
+
   it('re-syncs the form when the stored settings change, for example after a Reset', () => {
     renderTab('settings')
     fireEvent.change(screen.getByLabelText('Charge per BCTI paid that month (ex GST)'), { target: { value: '9' } })

@@ -93,16 +93,26 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
   )
 
   // Search then page (catch-up Phase 43; US-15.0.4): 50 a page over the existing sort; the search
-  // ("Find by invoice number or payer") filters before paging and returns to page 1.
+  // ("Find by invoice number or payer") filters before paging and returns to page 1. A credit note
+  // is found by its own number or addressee too: it shows above the invoice it credits.
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
+  const q = query.trim().toLowerCase()
   const matching = useMemo(() => {
-    const q = query.trim().toLowerCase()
     if (q === '') return invoices
-    return invoices.filter((i) => i.invoiceNumber.toLowerCase().includes(q) || invoiceAddresseeName({ masters, schedule, billing }, i).toLowerCase().includes(q))
-  }, [invoices, query, masters, schedule, billing])
+    const state = { masters, schedule, billing }
+    const matches = (number: string, doc: Invoice | CreditNote) => number.toLowerCase().includes(q) || invoiceAddresseeName(state, doc).toLowerCase().includes(q)
+    return invoices.filter((i) => matches(i.invoiceNumber, i) || (creditNotesByOriginal.get(i.id) ?? []).some((cn) => matches(cn.creditNoteNumber, cn)))
+  }, [invoices, q, masters, schedule, billing, creditNotesByOriginal])
   const pageSize = FULL_SCALE.pageSizes.invoices
   const shownInvoices = useMemo(() => pageOf(matching, pageSize, page), [matching, pageSize, page])
+  // A credit note whose invoice the table leaves out lists once, on the first page, and only when it matches.
+  const shownLooseCreditNotes = useMemo(() => {
+    if (page !== 1) return []
+    if (q === '') return looseCreditNotes
+    const state = { masters, schedule, billing }
+    return looseCreditNotes.filter((cn) => cn.creditNoteNumber.toLowerCase().includes(q) || invoiceAddresseeName(state, cn).toLowerCase().includes(q))
+  }, [page, q, looseCreditNotes, masters, schedule, billing])
   useScreenTiming('invoices', [invoices, query, page])
 
   const rows = useMemo(
@@ -213,7 +223,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
           />
           {matching.length > pageSize && <Pager total={matching.length} size={pageSize} page={page} onPage={setPage} shot="invoices-pager" />}
         </div>
-        {matching.length === 0 ? (
+        {matching.length === 0 && shownLooseCreditNotes.length === 0 ? (
           <div style={{ fontSize: 13, color: neutral.mist }}>No invoice matches that number or payer.</div>
         ) : (
         <TableShell testId="invoice-list-table-shell" label="Invoices" density="compact" minWidth={1460}>
@@ -227,7 +237,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
               </tr>
             </thead>
             <tbody>
-              {looseCreditNotes.map(creditRow)}
+              {shownLooseCreditNotes.map(creditRow)}
               {rows.map(({ invoice, booking, list, patient, anaesthetist, source }) => {
                 const patientName = booking === undefined ? 'Booking unavailable' : (patient?.name ?? 'Unknown patient')
                 const bookingLabel =
