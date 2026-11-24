@@ -1,0 +1,1382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contracts Section Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Tokens: the app's own (aa-prototype/src/theme/tokens.ts), so the mocks read as the app. */
+:root{
+  --ink:#172320;--slate:#58635F;--mist:#8A9490;--lineStrong:#C9D1CE;--line:#E2E7E5;--sunken:#EDF1EF;--bg:#F6F8F7;--surface:#FFFFFF;--grid:#F1F4F2;
+  --brand:#A91E3E;--brandDeep:#8C1533;--brandTint:#F7E7EC;--brandMuted:#D89AA9;
+  --teal:#0D6E63;--tealHover:#0A5A51;--tealTint:#E1F0ED;
+  --ok:#1E8E5A;--okTint:#E3F4EB;--okOn:#157A49;
+  --warn:#A16207;--warnTint:#F9F0DC;--warnOn:#7C4D08;
+  --err:#C2403C;--errTint:#FAE9E7;--errOn:#9C332F;
+  --e1:0 1px 2px rgba(23,35,32,.05),0 2px 6px rgba(23,35,32,.05);
+  --e2:0 2px 4px rgba(23,35,32,.06),0 8px 20px rgba(23,35,32,.09);
+  --e3:0 8px 16px rgba(23,35,32,.10),0 24px 56px rgba(23,35,32,.18);
+  --r-xs:6px;--r-sm:8px;--r-ctl:10px;--r-md:12px;--r-card:14px;--r-lg:16px;--r-panel:20px;
+  --shadow:0 1px 2px rgba(23,35,32,.06),0 4px 14px rgba(23,35,32,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:"Spline Sans Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+a{color:var(--teal)}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1560px;margin:0 auto;padding:0 32px}
+h1,h2,h3,h4,p{margin:0}
+h2{font-size:24px;line-height:30px;letter-spacing:-.005em;margin-bottom:6px}
+h3{font-size:19px;line-height:25px;margin-bottom:4px}
+.sub{color:var(--slate);margin:0 0 20px;max-width:74ch}
+section{padding:48px 0 8px}
+
+/* ===== hero ===== */
+header.top{background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{padding-top:40px;padding-bottom:36px}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:56px;align-items:start}
+.kicker{font-size:14px;color:var(--slate)}
+.hero h1{font-size:50px;line-height:1.06;letter-spacing:-.025em;margin:14px 0 18px;font-weight:800;max-width:17ch}
+.hero h1 span{display:block;color:var(--slate);font-weight:700}
+.lede{font-size:17px;color:var(--slate);max-width:62ch}
+.lede+.lede{margin-top:12px}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px;max-width:720px}
+.toc a{font-size:13px;font-weight:600;text-decoration:none;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:6px 11px;border-radius:999px}
+.toc a:hover{border-color:var(--teal);color:var(--teal)}
+.toc a .tn{color:var(--mist);margin-right:6px;font-variant-numeric:tabular-nums}
+.navpair{display:flex;gap:20px;align-items:flex-start}
+.navpair figure{margin:0}
+.navpair figcaption{font-size:13px;font-weight:600;color:var(--slate);margin:0 0 10px}
+.navpair .arrow{align-self:center;color:var(--mist);font-size:22px;padding-top:24px}
+
+/* ===== side nav, as SideNav.tsx draws it ===== */
+.mnav{background:var(--ink);display:flex;flex-direction:column;padding:20px 12px;gap:2px;width:216px;flex:none}
+.mnav .logo{display:flex;flex-direction:column;gap:5px;padding:0 8px 18px}
+.mnav .logo b{color:#fff;font-family:Georgia,"Times New Roman",serif;font-weight:400;font-size:15px;letter-spacing:.01em}
+.mnav .logo small{font-size:9px;font-weight:600;letter-spacing:.14em;color:var(--brandMuted);padding-left:2px}
+.mnav .it{display:flex;justify-content:space-between;align-items:center;color:rgba(255,255,255,.9);font-size:13.5px;font-weight:500;padding:9px 12px;border-radius:9px;white-space:nowrap}
+.mnav .it.on{background:rgba(255,255,255,.08);color:#fff;font-weight:600;box-shadow:inset 3px 0 0 var(--brand)}
+.mnav .it.new{outline:1.5px dashed rgba(216,154,169,.7);outline-offset:-1px}
+.mnav .it em{font-style:normal;font-size:11px;font-weight:700;background:var(--warn);color:#fff;border-radius:999px;padding:0 7px;line-height:18px}
+.mnav .it em.c{background:var(--brand)}
+.mnav .me{margin-top:auto;display:flex;align-items:center;gap:10px;padding:8px;color:#fff;font-size:13px;font-weight:600}
+.mnav .me i{width:30px;height:30px;border-radius:50%;background:var(--brandTint);color:var(--brand);font-style:normal;font-size:11px;font-weight:700;display:grid;place-items:center}
+.mnav .me span{display:block;font-size:11.5px;font-weight:400;color:rgba(255,255,255,.55)}
+.mnav.short{min-height:0;padding-bottom:14px}
+.subnav{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 10px;width:190px;font-size:13px}
+.subnav .g{font-size:11px;font-weight:700;color:var(--mist);padding:8px 8px 4px}
+.subnav .s{padding:5px 8px;border-radius:7px;color:var(--slate)}
+.subnav .s.on{background:var(--tealTint);color:var(--teal);font-weight:600}
+.nowstack{display:flex;gap:10px;align-items:flex-start}
+.clicks{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--warnOn);background:var(--warnTint);border-radius:999px;padding:2px 9px;margin-left:6px}
+.clicks.ok{color:var(--okOn);background:var(--okTint)}
+
+/* ===== why diagram ===== */
+.why{display:grid;grid-template-columns:1fr 340px 1fr;gap:0;align-items:center;background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:28px}
+.why .col{display:flex;flex-direction:column;gap:8px}
+.why .colh{font-size:14px;font-weight:700;margin-bottom:4px}
+.why .colh span{display:block;font-size:13px;font-weight:400;color:var(--slate)}
+.why .in,.why .out{background:var(--bg);border-radius:10px;padding:9px 12px;font-size:13.5px;position:relative}
+.why .in b,.why .out b{font-weight:600}
+.why .in small,.why .out small{display:block;color:var(--slate);font-size:12.5px;line-height:17px}
+.why .in{margin-right:28px}
+.why .in::after{content:"";position:absolute;right:-28px;top:50%;width:28px;border-top:1.5px solid var(--lineStrong)}
+.why .out{margin-left:28px}
+.why .out::before{content:"";position:absolute;left:-28px;top:50%;width:28px;border-top:1.5px solid var(--lineStrong)}
+.hub{background:var(--ink);color:#fff;border-radius:var(--r-panel);padding:22px;box-shadow:var(--e2);position:relative}
+.hub .code{display:inline-block;font-family:"Spline Sans Mono",monospace;font-size:12px;background:rgba(255,255,255,.1);border-radius:6px;padding:2px 8px}
+.hub h4{font-size:21px;line-height:26px;margin:10px 0 4px}
+.hub p{font-size:13px;color:#C8D2CE;line-height:19px}
+.hub dl{margin:14px 0 0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px}
+.hub dt{color:#9FB0AA}
+.hub dd{margin:0;font-weight:600}
+.hub .foot{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.12);font-size:12.5px;color:#C8D2CE}
+
+/* ===== tables in the explainer ===== */
+.invtable{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow);font-size:13.5px}
+.invtable th{text-align:left;font-size:12.5px;color:var(--mist);font-weight:700;padding:10px 14px;border-bottom:1px solid var(--line)}
+.invtable td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.invtable tr:last-child td{border-bottom:none}
+.invtable td:first-child{font-weight:600;width:230px}
+.invtable .gap td:first-child{color:var(--errOn)}
+.storyid{font-family:"Spline Sans Mono",monospace;font-size:11.5px;color:var(--mist);white-space:nowrap}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.twocol h3{font-size:16px;margin:0 0 10px}
+
+/* ===== idea blocks ===== */
+.idea{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);margin:0 0 32px;overflow:hidden}
+.idea-head{display:flex;align-items:flex-start;gap:16px;padding:24px 28px 0}
+.num{flex:none;min-width:30px;color:var(--mist);font-weight:700;font-size:19px;line-height:25px;font-variant-numeric:tabular-nums}
+.idea-head p{margin:4px 0 0;color:var(--slate);max-width:84ch}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.tag{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--slate);background:var(--bg)}
+.tag.fit{background:var(--okTint);color:var(--okOn);border-color:transparent}
+.tag.edit{background:var(--warnTint);color:var(--warnOn);border-color:transparent}
+.tag.rule{background:var(--errTint);color:var(--errOn);border-color:transparent}
+.tag.pick{background:var(--ink);color:#fff;border-color:transparent}
+.idea-body{display:flex;flex-direction:column;gap:22px;padding:22px 28px 28px}
+.notes{display:grid;grid-template-columns:1fr 1fr 1.15fr;column-gap:28px;align-items:start}
+.notes h4{font-size:14px;margin:0 0 6px}
+.notes ul{margin:0;padding-left:18px;font-size:14.5px}
+.notes li{margin:0 0 5px}
+.notes .req{font-size:14px;background:var(--bg);border-radius:var(--r-ctl);padding:12px 14px}
+.notes .req p{margin:0 0 6px}.notes .req p:last-child{margin:0}
+.mock-cap{font-size:13px;font-weight:600;color:var(--slate);margin:0 0 8px}
+.mockwrap{border:1px solid var(--line);border-radius:var(--r-card);overflow-x:auto;background:var(--bg)}
+.frame{display:flex;min-width:1440px;min-height:760px;font-size:13px}
+.page{flex:1;min-width:0;padding:22px 28px 28px;display:flex;flex-direction:column;gap:14px}
+.page.withrail{display:grid;grid-template-columns:minmax(0,1fr) 412px;gap:20px;align-items:start}
+.page.withrail>.head,.page.withrail>.tabsrow{grid-column:1/-1}
+.maincol,.railcol{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+/* ===== app parts, drawn at the app's sizes ===== */
+.head{display:flex;align-items:flex-start;gap:12px}
+.head .t{flex:1;min-width:0}
+.head .t b{display:block;font-size:24px;line-height:30px;font-weight:700;letter-spacing:-.01em}
+.head .t small{display:block;font-size:13px;color:var(--slate);margin-top:2px}
+.back{font-size:13px;font-weight:600;color:var(--teal);margin-bottom:6px;display:inline-block}
+.btn{height:36px;padding:0 14px;border-radius:var(--r-ctl);display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;white-space:nowrap;border:1px solid transparent}
+.btn.lg{height:44px;padding:0 18px;font-size:14px}
+.btn.pri{background:var(--teal);color:#fff}
+.btn.sec{background:var(--surface);border-color:var(--lineStrong);color:var(--ink)}
+.btn.ghost{color:var(--teal);padding:0 4px}
+.txt{font-size:12.5px;font-weight:700;color:var(--teal);white-space:nowrap}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.search{height:36px;flex:1 1 280px;max-width:420px;border:1px solid var(--line);background:var(--surface);border-radius:999px;display:flex;align-items:center;gap:8px;padding:0 14px;color:var(--mist);font-size:13px}
+.search svg{flex:none}
+.sel{height:36px;padding:0 12px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-ctl);display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--ink);white-space:nowrap}
+.sel::after{content:"";width:6px;height:6px;border-right:1.5px solid var(--slate);border-bottom:1.5px solid var(--slate);transform:rotate(45deg) translateY(-2px);margin-left:2px}
+.seg{display:inline-flex;background:var(--sunken);border-radius:9px;padding:3px;font-size:12.5px;font-weight:600}
+.seg span{text-align:center;padding:5px 12px;border-radius:7px;color:var(--slate)}
+.seg span.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(23,35,32,.2)}
+.count{font-size:12.5px;color:var(--slate)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tab{font-size:14px;font-weight:500;color:var(--slate);padding:6px 10px 9px;border-bottom:2px solid transparent;display:flex;gap:6px;align-items:center;white-space:nowrap;margin-bottom:-1px}
+.tab.on{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
+.cnt{font-family:"Spline Sans Mono",monospace;font-size:11px;font-weight:600;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--sunken);color:var(--slate);display:inline-grid;place-items:center}
+.cnt.w{background:var(--warnTint);color:var(--warnOn)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--sunken);color:var(--slate);white-space:nowrap;line-height:17px}
+.pill.ok{background:var(--okTint);color:var(--okOn)}
+.pill.warn{background:var(--warnTint);color:var(--warnOn)}
+.pill.err{background:var(--errTint);color:var(--errOn)}
+.pill.line{background:var(--surface);box-shadow:inset 0 0 0 1px var(--lineStrong);color:var(--ink)}
+.pill.code{font-family:"Spline Sans Mono",monospace;font-size:11px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--e1)}
+.card.pad{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.ch{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:14px}
+.ch .l{display:flex;align-items:center;gap:8px}
+.ch small{font-weight:500;font-size:12px;color:var(--mist)}
+.row{background:var(--bg);border-radius:var(--r-sm);padding:10px 12px;display:flex;flex-direction:column;gap:3px;position:relative}
+.row.edge{box-shadow:inset 3px 0 0 var(--warn)}
+.row.edge-e{box-shadow:inset 3px 0 0 var(--err)}
+.row.edge-t{box-shadow:inset 3px 0 0 var(--teal)}
+.row .t{font-weight:600;font-size:12.5px;line-height:17px}
+.row .s{font-size:11.5px;line-height:15px;color:var(--slate)}
+.row .acts{display:flex;gap:12px;margin-top:4px}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:9px 14px;font-size:13px}
+.kv dt{color:var(--slate)}
+.kv dd{margin:0;font-weight:500}
+.chipline{display:flex;gap:6px;flex-wrap:wrap}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl thead th{position:sticky;top:0;background:var(--bg);text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mist);padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--grid);vertical-align:top}
+.tbl td.r,.tbl th.r{text-align:right}
+.tbl tr.grp td{background:var(--surface);padding-top:14px;padding-bottom:8px;border-bottom:1px solid var(--sunken)}
+.tbl tr.grp b{font-size:13px;margin-right:8px}
+.tbl tr.grp .car{color:var(--mist);margin-right:6px;font-size:11px}
+.tbl tr.picked td{background:#F3F9F7}
+.tbl .nm{font-weight:500}
+.tbl .nm small{display:block;color:var(--mist);font-size:12px;font-weight:400;margin-top:1px}
+.tbl .dim{color:var(--mist)}
+.tbl tr.off td{color:var(--mist)}
+.next{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--warnOn);background:var(--warnTint);border-radius:999px;padding:1px 8px;margin-top:3px;white-space:nowrap}
+.box{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--lineStrong);display:inline-block;vertical-align:-3px;background:var(--surface)}
+.box.on{background:var(--teal);border-color:var(--teal);position:relative}
+.box.on::after{content:"";position:absolute;left:4.5px;top:1.5px;width:4px;height:8px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(45deg)}
+.tablecard{overflow:hidden}
+.tablefoot{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;font-size:12.5px;color:var(--slate);border-top:1px solid var(--line);background:var(--surface)}
+
+/* price timeline */
+.tl{position:relative;margin:30px 0 26px}
+.tl .track{display:flex;height:34px;border-radius:9px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.tl .seg1{flex:5;background:var(--sunken);display:flex;align-items:center;padding:0 12px;font-weight:600;color:var(--slate)}
+.tl .seg2{flex:2.2;background:var(--tealTint);display:flex;align-items:center;padding:0 12px;font-weight:700;color:var(--teal);box-shadow:inset 3px 0 0 var(--teal)}
+.tl .seg2 .open{margin-left:auto;font-size:11.5px;font-weight:500;color:var(--teal)}
+.tl .lab{position:absolute;top:-22px;font-size:11.5px;color:var(--slate);white-space:nowrap}
+.tl .today{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--brand)}
+.tl .today span{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:700;color:var(--brand);white-space:nowrap}
+.path{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px}
+.path span{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-weight:600}
+.path i{font-style:normal;color:var(--mist)}
+
+/* idea 2 */
+.holders{width:270px;flex:none;background:var(--surface);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:2px}
+.holders .hs{height:34px;border:1px solid var(--line);border-radius:999px;display:flex;align-items:center;padding:0 12px;color:var(--mist);font-size:12.5px;margin:0 4px 10px}
+.holders .g{font-size:11.5px;font-weight:700;color:var(--mist);padding:10px 10px 4px}
+.holders .h{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:8px;font-size:13px}
+.holders .h.on{background:var(--tealTint);color:var(--teal);font-weight:600}
+.holders .h .cnt{background:transparent}
+.holders .h.on .cnt{background:var(--surface);color:var(--teal)}
+.partystrip{display:flex;gap:28px;font-size:12.5px;color:var(--slate);flex-wrap:wrap}
+.partystrip b{display:block;color:var(--ink);font-size:13px;font-weight:600}
+.bulkbar{display:flex;align-items:center;gap:12px;background:var(--ink);color:#fff;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600}
+.bulkbar .btn.pri{margin-left:auto}
+.bulkbar .txt{color:#9FE3D6}
+.pop{position:absolute;right:28px;top:208px;width:430px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--e3);border:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:12px;z-index:2}
+.pop h5{font-size:16px;margin:0}
+.fld{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--ink)}
+.fld .in{height:38px;border:1px solid var(--lineStrong);border-radius:var(--r-ctl);display:flex;align-items:center;padding:0 12px;font-weight:500;background:var(--surface)}
+.fld .hint{font-weight:400;color:var(--slate);font-size:12px}
+.preview{background:var(--bg);border-radius:10px;padding:8px 12px;font-size:12.5px}
+.preview div{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line)}
+.preview div:last-child{border-bottom:none;color:var(--slate)}
+
+/* idea 3 */
+.tryl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);padding:12px 14px;box-shadow:var(--e1)}
+.tryl b{font-size:13.5px;margin-right:4px}
+.cols{display:grid;grid-template-columns:196px 172px minmax(0,1fr);gap:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--e1);overflow:hidden;min-height:470px}
+.cols .c{border-right:1px solid var(--line);display:flex;flex-direction:column}
+.cols .c:last-child{border-right:none}
+.cols .ct{display:flex;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);font-weight:700;font-size:13.5px;background:var(--bg)}
+.cols .ct i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;font-size:11.5px;display:grid;place-items:center;flex:none}
+.opt{all:unset;box-sizing:border-box;width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--grid);font-size:13px;cursor:pointer}
+.opt:hover{background:var(--bg)}
+.opt.on{background:var(--tealTint);color:var(--teal);font-weight:600;box-shadow:inset 3px 0 0 var(--teal)}
+.opt:focus-visible{outline:2px solid var(--teal);outline-offset:-2px}
+.opt small{display:block;font-weight:400;color:var(--slate);font-size:12px}
+.opt .sug{font-size:11px;font-weight:700;color:var(--okOn);background:var(--okTint);border-radius:999px;padding:0 7px}
+.clist{padding:4px 0}
+.clist .gh{font-size:11.5px;font-weight:700;color:var(--mist);padding:10px 14px 4px}
+.ci{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:baseline;padding:9px 14px;border-bottom:1px solid var(--grid)}
+.ci .mono{font-size:11px;color:var(--mist);display:block;margin-top:1px}
+.ci b{font-weight:600}
+.ci small{display:block;color:var(--slate);font-size:12px}
+.ci .price{font-family:"Spline Sans Mono",monospace;font-size:12.5px;white-space:nowrap}
+.ci.bs b{font-weight:500}
+.why-not .row .s b{color:var(--ink);font-weight:600}
+
+/* idea 4 */
+.desk{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:16px;align-items:start}
+.desk .col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.soon{display:flex;flex-direction:column}
+.soon .d{display:grid;grid-template-columns:62px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--grid)}
+.soon .d:last-child{border-bottom:none}
+.soon .day{background:var(--bg);border-radius:8px;text-align:center;padding:5px 0;line-height:1.1}
+.soon .day b{display:block;font-size:18px;font-family:"Spline Sans Mono",monospace}
+.soon .day small{font-size:11px;color:var(--slate);font-weight:600}
+.soon .what b{font-size:13px;font-weight:600;display:block}
+.soon .what span{font-size:12px;color:var(--slate)}
+.soon .what .mono{color:var(--ink)}
+.soon .what .chg{display:inline-flex;gap:6px;align-items:center;margin-top:3px;font-size:12.5px}
+.soon .what .chg s{color:var(--mist)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--e1)}
+.stat b{display:block;font-size:22px;font-family:"Spline Sans Mono",monospace;font-weight:600}
+.stat span{font-size:12.5px;color:var(--slate)}
+.stat.w{background:var(--warnTint);border-color:transparent}
+.stat.w b,.stat.w span{color:var(--warnOn)}
+.dimpage{position:relative}
+.dimpage .ghost{opacity:.35;filter:saturate(.6)}
+.scrim{position:absolute;inset:0;background:rgba(23,35,32,.32)}
+.sheet{position:absolute;top:0;right:0;bottom:0;width:600px;background:var(--surface);box-shadow:var(--e3);display:flex;flex-direction:column}
+.sheet .sh{padding:20px 24px 14px;border-bottom:1px solid var(--line)}
+.sheet .sh b{font-size:18px;line-height:24px;display:block}
+.sheet .sh small{font-size:13px;color:var(--slate)}
+.sheet .sb{padding:18px 24px;display:flex;flex-direction:column;gap:18px;flex:1;overflow:hidden}
+.sheet .sf{padding:14px 24px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+.step{display:grid;grid-template-columns:26px 1fr;gap:12px}
+.step>i{font-style:normal;width:26px;height:26px;border-radius:50%;background:var(--tealTint);color:var(--teal);font-weight:700;font-size:12.5px;display:grid;place-items:center}
+.step h6{font-size:14px;margin:3px 0 8px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cmp .fld .in.was{background:var(--bg);color:var(--slate)}
+.radio{display:flex;gap:10px;align-items:flex-start;font-size:13px;padding:8px 0}
+.radio i{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--lineStrong);flex:none;margin-top:1px;position:relative}
+.radio i.on{border-color:var(--teal)}
+.radio i.on::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--teal)}
+.radio small{display:block;color:var(--slate);font-size:12px}
+.notice{border-radius:10px;padding:10px 12px;font-size:12.5px;background:var(--bg);color:var(--slate)}
+.notice.w{background:var(--warnTint);color:var(--warnOn)}
+
+/* recommendation */
+.reco{background:var(--ink);color:#fff;border-radius:var(--r-lg);padding:30px;display:grid;grid-template-columns:1.15fr 1fr;gap:32px}
+.reco h2{color:#fff}
+.reco p,.reco li{color:#D7DEDB}
+.reco ol{padding-left:20px;margin:12px 0 0}
+.reco li{margin-bottom:10px}
+.reco strong{color:#fff}
+.reco .q{background:rgba(255,255,255,.06);border-radius:var(--r-card);padding:18px 20px}
+.reco .q h4{margin:0 0 10px;font-size:15px;color:#fff}
+.reco .q ul{padding-left:18px;margin:0}
+footer{color:var(--mist);font-size:12.5px;padding:36px 0 48px}
+
+@media (max-width:1180px){
+  .hero{grid-template-columns:1fr}
+  .why{grid-template-columns:1fr;gap:14px}
+  .why .in,.why .out{margin:0}
+  .why .in::after,.why .out::before{display:none}
+  .notes,.twocol,.reco{grid-template-columns:1fr}
+  .notes ul{margin-bottom:14px}
+}
+@media (max-width:640px){
+  .wrap{padding:0 16px}
+  .hero h1{font-size:34px}
+  .navpair{flex-direction:column}
+  .navpair .arrow{display:none}
+  .nowstack{flex-direction:column}
+  .invtable{display:block;overflow-x:auto}
+  .idea-head{padding:20px 16px 0}
+  .idea-body{padding:18px 16px 20px}
+}
+
+/* ===== second pass additions ===== */
+.hero.single{grid-template-columns:minmax(0,1fr)}
+.hero h1.wide{max-width:20ch}
+.passnote{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.passnote span{font-size:13px;font-weight:600;border-radius:999px;padding:4px 12px}
+.passnote .y{background:var(--okTint);color:var(--okOn)}
+.passnote .n{background:var(--errTint);color:var(--errOn)}
+.chapter{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);margin:0 0 32px;overflow:hidden}
+.chapter>.ch-head{padding:24px 28px 0;max-width:none}
+.chapter>.ch-head p{color:var(--slate);max-width:84ch;margin-top:4px}
+.chapter>.ch-body{padding:22px 28px 28px;display:flex;flex-direction:column;gap:22px}
+.from{font-size:12px;font-weight:700;color:var(--slate);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px 9px;margin-left:8px;vertical-align:3px;white-space:nowrap}
+
+/* section map */
+.map{display:grid;grid-template-columns:200px 1fr;gap:20px;align-items:start}
+.map .navcol{background:var(--ink);border-radius:var(--r-card);padding:16px 12px;display:flex;flex-direction:column;gap:2px}
+.map .navcol .it{color:rgba(255,255,255,.55);font-size:13px;padding:7px 12px;border-radius:8px}
+.map .navcol .it.on{background:rgba(255,255,255,.08);color:#fff;font-weight:600;box-shadow:inset 3px 0 0 var(--brand)}
+.map .tabsgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.map .tcard{background:var(--bg);border-radius:var(--r-md);padding:14px 16px;display:flex;flex-direction:column;gap:6px;border:1px solid var(--line)}
+.map .tcard.land{background:var(--tealTint);border-color:transparent}
+.map .tcard b{font-size:15px}
+.map .tcard .route{font-family:"Spline Sans Mono",monospace;font-size:11.5px;color:var(--slate)}
+.map .tcard p{font-size:13.5px;color:var(--slate);margin:0}
+.map .tcard .orig{font-size:12px;color:var(--mist)}
+.map .record{grid-column:2;background:var(--ink);color:#fff;border-radius:var(--r-md);padding:14px 18px;display:grid;grid-template-columns:auto 1fr;gap:6px 18px;align-items:center}
+.map .record b{font-size:15px}
+.map .record .route{font-family:"Spline Sans Mono",monospace;font-size:11.5px;color:#9FB0AA}
+.map .record p{grid-column:1/-1;margin:0;font-size:13.5px;color:#C8D2CE}
+.map .leaves{grid-column:2;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.map .leaves div{border-radius:var(--r-md);padding:12px 16px;font-size:13.5px}
+.map .leaves .out{background:var(--warnTint);color:var(--warnOn)}
+.map .leaves .stay{background:var(--sunken);color:var(--slate)}
+.map .leaves b{display:block;color:inherit;margin-bottom:2px}
+
+/* live catalogue */
+.ctl{font:inherit}
+.gb{display:inline-flex;background:var(--sunken);border-radius:9px;padding:3px;gap:2px;flex-wrap:wrap}
+.gb button{all:unset;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--slate);padding:5px 11px;border-radius:7px;white-space:nowrap}
+.gb button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(23,35,32,.2)}
+.gb button:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+.gblabel{font-size:12.5px;font-weight:600;color:var(--slate);margin-right:2px}
+input.searchin{all:unset;box-sizing:border-box;height:36px;flex:1 1 260px;max-width:380px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:0 14px 0 36px;font-size:13px;color:var(--ink);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238A9490' stroke-width='2.2'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:14px center}
+input.searchin:focus-visible{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,110,99,.3)}
+.split{display:grid;grid-template-columns:250px minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--e1);overflow:hidden;min-height:560px}
+.gidx{border-right:1px solid var(--line);padding:10px 8px;display:flex;flex-direction:column;gap:1px;background:var(--surface)}
+.gidx .gh{font-size:11.5px;font-weight:700;color:var(--mist);padding:10px 10px 4px}
+.gidx button{all:unset;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;font-size:13px}
+.gidx button:hover{background:var(--bg)}
+.gidx button[aria-pressed="true"]{background:var(--tealTint);color:var(--teal);font-weight:600}
+.gidx button[aria-pressed="true"] .cnt{background:var(--surface);color:var(--teal)}
+.gidx button .cnt{background:transparent}
+.gidx button:focus-visible{outline:2px solid var(--teal);outline-offset:-2px}
+.gidx .note{font-size:12px;color:var(--slate);padding:10px;margin-top:auto;border-top:1px solid var(--line)}
+.gtable{overflow:auto;max-height:640px}
+.gtable .tbl tr.grp td{position:static}
+.tbl .holder{font-size:12px;color:var(--slate)}
+.empty{padding:40px 24px;text-align:center;color:var(--slate)}
+
+/* parties */
+.plist{width:250px;flex:none;border-right:1px solid var(--line);padding:10px 8px;background:var(--surface)}
+.plist .gh{font-size:11.5px;font-weight:700;color:var(--mist);padding:10px 10px 4px}
+.plist .p{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:8px;font-size:13px}
+.plist .p.on{background:var(--tealTint);color:var(--teal);font-weight:600}
+.plist .p .cnt{background:transparent}
+.plist .p.on .cnt{background:var(--surface);color:var(--teal)}
+.plist .p.zero{color:var(--mist)}
+.tagrows{display:flex;flex-direction:column}
+.tagrow{display:grid;grid-template-columns:70px 1fr auto auto;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--grid);font-size:13px}
+.tagrow:last-child{border-bottom:none}
+.tagrow .s{color:var(--slate);font-size:12.5px}
+
+/* record editing */
+.editing{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,110,99,.14),var(--e1)}
+.inlineform{display:grid;grid-template-columns:170px 170px auto;gap:12px;align-items:end;background:var(--bg);border-radius:10px;padding:12px}
+.cardfoot{display:flex;justify-content:flex-end;gap:10px;padding-top:4px;border-top:1px solid var(--line);margin-top:2px;padding-top:12px}
+.chipx{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--lineStrong);border-radius:999px;padding:3px 6px 3px 11px;font-size:12.5px;font-weight:500}
+.chipx i{font-style:normal;width:16px;height:16px;border-radius:50%;background:var(--sunken);display:grid;place-items:center;font-size:11px;color:var(--slate)}
+.addchip{font-size:12.5px;font-weight:700;color:var(--teal);padding:3px 4px}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+.locked{display:flex;flex-direction:column;gap:3px;font-size:12.5px;font-weight:600}
+.locked .in{height:38px;border-radius:var(--r-ctl);display:flex;align-items:center;gap:8px;padding:0 12px;font-weight:500;background:var(--bg);color:var(--slate);border:1px dashed var(--lineStrong)}
+.locked .hint{font-weight:400;color:var(--slate);font-size:12px}
+.fld .in.sel2::after{content:"";width:6px;height:6px;border-right:1.5px solid var(--slate);border-bottom:1.5px solid var(--slate);transform:rotate(45deg) translateY(-2px);margin-left:auto}
+.diff{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12.5px}
+.diff dt{color:var(--slate)}
+.diff dd{margin:0}
+.diff s{color:var(--mist)}
+.dialogstage{background:rgba(23,35,32,.32);border-radius:var(--r-card);padding:40px;display:grid;place-items:center}
+.dialog{width:560px;max-width:100%;background:var(--surface);border-radius:var(--r-panel);box-shadow:var(--e3);overflow:hidden}
+.dialog .dh{padding:20px 24px 6px}
+.dialog .dh b{font-size:18px;line-height:24px;display:block}
+.dialog .db{padding:8px 24px 18px;display:flex;flex-direction:column;gap:12px;font-size:13.5px;color:var(--slate)}
+.dialog .df{padding:14px 24px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+.btn.danger{background:var(--surface);border-color:var(--err);color:var(--errOn)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.formsec{display:grid;grid-template-columns:26px 1fr;gap:12px}
+.formsec>i{font-style:normal;width:26px;height:26px;border-radius:50%;background:var(--tealTint);color:var(--teal);font-weight:700;font-size:12.5px;display:grid;place-items:center}
+.formsec.todo>i{background:var(--sunken);color:var(--mist)}
+.formsec h6{font-size:14px;margin:3px 0 10px}
+.formsec.todo h6{color:var(--mist)}
+.opts{display:flex;gap:8px;flex-wrap:wrap}
+.optcard{border:1px solid var(--lineStrong);border-radius:10px;padding:9px 12px;font-size:12.5px;min-width:150px;background:var(--surface)}
+.optcard b{display:block;font-size:13px}
+.optcard span{color:var(--slate)}
+.optcard.on{border-color:var(--teal);box-shadow:inset 0 0 0 1px var(--teal);background:#F7FBFA}
+.optcard.off{color:var(--mist);background:var(--bg);border-style:dashed}
+.optcard.off b,.optcard.off span{color:var(--mist)}
+.tagorder .tr{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg);border-radius:8px;font-size:13px}
+.tagorder .tr .grip{color:var(--mist);letter-spacing:-2px;font-weight:700}
+.tagorder .tr .mono{font-weight:600}
+.tagorder .tr small{margin-left:auto;color:var(--slate);font-size:12px}
+
+/* contracts and parties */
+.pc{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:20px;background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:24px}
+.pcol{display:flex;flex-direction:column;gap:10px}
+.pch{font-size:14px;font-weight:700;margin-bottom:2px}
+.pch span{display:block;font-size:12.5px;font-weight:400;color:var(--slate)}
+.pcard{background:var(--ink);color:#fff;border-radius:var(--r-md);padding:14px 16px}
+.pcard b{font-size:15px}
+.pcard small{display:block;color:#9FB0AA;font-size:12px;margin-bottom:8px}
+.pcard dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12.5px}
+.pcard dt{color:#9FB0AA}.pcard dd{margin:0}
+.ccard{background:var(--bg);border-radius:10px;padding:9px 12px;font-size:13px}
+.ccard .mono{font-size:11px;color:var(--slate);display:block}
+.ccard small .mono{display:inline;font-size:12px;color:var(--ink)}
+.ccard b{font-weight:600}
+.ccard small{display:block;color:var(--slate);font-size:12px;margin-top:2px}
+.ccard .bh{color:var(--teal);font-weight:700}
+.ccard .bp{color:var(--warnOn);font-weight:700}
+.ccard.more{color:var(--slate);font-size:12.5px;background:transparent;border:1px dashed var(--lineStrong)}
+.dest{border-radius:var(--r-md);padding:14px 16px}
+.dest b{display:block;font-size:14px}
+.dest small{display:block;font-size:12.5px;margin-top:3px}
+.dest.h{background:var(--tealTint);color:var(--teal)}
+.dest.h small{color:#2F5F58}
+.dest.p{background:var(--warnTint);color:var(--warnOn)}
+
+/* funding tags */
+.tg-hero{display:grid;grid-template-columns:240px 1fr;gap:16px;background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:22px;align-items:stretch}
+.tg-hosp{background:var(--ink);color:#fff;border-radius:var(--r-md);padding:18px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.tg-hosp small{color:#9FB0AA;font-size:12px}
+.tg-hosp b{font-size:18px;line-height:23px}
+.tg-hosp span{font-size:12.5px;color:#C8D2CE}
+.tg-lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tg-lane{background:var(--bg);border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:8px;border-top:3px solid var(--teal)}
+.tg-tag{display:flex;align-items:center;gap:8px}
+.tg-tag .pill{font-size:12.5px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--lineStrong);color:var(--ink)}
+.tg-tag small{font-size:12.5px;font-weight:600}
+.tg-what{font-size:13px;color:var(--slate);line-height:18px}
+.tg-ex{background:var(--surface);border-radius:8px;padding:9px 11px;display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-size:12.5px}
+.tg-ex b{font-weight:600}
+.tg-ex .mono{font-size:13px;white-space:nowrap}
+.tg-n{font-size:12px;color:var(--slate);margin-top:auto}
+.flow{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:22px;display:flex;flex-direction:column;gap:10px;max-width:980px}
+.fq{background:var(--ink);color:#fff;border-radius:10px;padding:11px 14px;font-size:14px}
+.fq small{display:block;color:#9FB0AA;font-size:12px;font-weight:400}
+.fa{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:center;margin-left:24px}
+.fl{font-size:12px;font-weight:700;color:var(--slate);text-align:center;border-left:2px solid var(--lineStrong);padding:10px 0}
+.fo{border-radius:10px;padding:10px 14px;font-size:13.5px}
+.fo small{display:block;font-size:12.5px;margin-top:2px}
+.fo.pat{background:var(--warnTint);color:var(--warnOn)}
+.fo.hos{background:var(--tealTint);color:var(--teal)}
+.fo.hos small{color:#2F5F58}
+.fo.spe{background:var(--sunken);color:var(--ink)}
+.fo.spe small{color:var(--slate)}
+.tg-cols{min-height:0;margin-top:4px}
+.tg-cols .opt{cursor:default}
+.tg-cols .opt:hover{background:inherit}
+.tg-cols .opt.on:hover{background:var(--tealTint)}
+.tg-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:12px;font-size:14px;color:var(--slate)}
+.tg-steps b{color:var(--ink)}
+.tg-watch{background:var(--warnTint);border-radius:var(--r-md);padding:16px 20px;margin-top:20px}
+.tg-watch h4{margin:0 0 8px;color:var(--warnOn);font-size:15px}
+.tg-watch ul{margin:0;padding-left:18px;font-size:14px;color:#5E3B06}
+.tg-watch li{margin-bottom:6px}
+
+/* price ranges table */
+.ptable{width:100%;border-collapse:collapse;font-size:13px}
+.ptable th{text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mist);padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.ptable td{padding:9px 10px;border-bottom:1px solid var(--grid);white-space:nowrap;vertical-align:middle}
+.ptable .r{text-align:right}
+.ptable .dim{color:var(--mist)}
+.ptable tr.now td{background:#F3F9F7}
+.ptable tr.now td:first-child{box-shadow:inset 3px 0 0 var(--teal)}
+.ptable tr.ended td{color:var(--slate)}
+.ptable tr.ended td.mono{color:var(--slate)}
+.ptable tr.more td{text-align:center;color:var(--teal);font-weight:700;font-size:12.5px;border-bottom:none}
+.ptable tr.adding td{background:var(--surface);box-shadow:inset 0 1px 0 var(--teal),inset 0 -1px 0 var(--teal)}
+.ptable tr.adding td:first-child{box-shadow:inset 3px 0 0 var(--teal),inset 0 1px 0 var(--teal),inset 0 -1px 0 var(--teal)}
+.ptable .cellin{height:32px;min-width:118px;border:1px solid var(--lineStrong);border-radius:8px;padding:0 10px;display:inline-flex;align-items:center;font-family:"Spline Sans Mono",monospace;font-size:12.5px;background:var(--surface)}
+.ptable .was{color:var(--mist);text-decoration:line-through;margin-right:6px}
+.tnote{font-size:12px;color:var(--slate);margin:0}
+
+/* changes / build */
+.slices{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.slice{background:var(--surface);border-radius:var(--r-md);box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column;gap:8px}
+.slice .n{font-family:"Spline Sans Mono",monospace;font-size:12px;color:var(--mist);font-weight:600}
+.slice b{font-size:15px;line-height:20px}
+.slice p{font-size:13px;color:var(--slate);margin:0}
+.slice .sz{margin-top:auto;font-size:12px;font-weight:700;color:var(--slate)}
+.notdoing{background:var(--surface);border-radius:var(--r-md);box-shadow:var(--shadow);padding:16px 20px;font-size:14px;margin-top:16px}
+.notdoing b{color:var(--errOn)}
+
+@media (max-width:1180px){
+  .map{grid-template-columns:1fr}
+  .map .record,.map .leaves{grid-column:1}
+  .map .tabsgrid{grid-template-columns:1fr 1fr}
+  .slices{grid-template-columns:1fr 1fr}
+  .pair{grid-template-columns:1fr}
+  .pc{grid-template-columns:1fr}
+  .tg-hero{grid-template-columns:1fr}
+  .tg-lanes,.tg-steps{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .map .tabsgrid,.map .leaves,.slices{grid-template-columns:1fr}
+  .map .navcol{display:none}
+  .chapter>.ch-head{padding:20px 16px 0}
+  .chapter>.ch-body{padding:18px 16px 20px}
+  .dialogstage{padding:16px}
+}
+
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="hero single">
+      <div>
+        <p class="kicker">Admin Web App, Contracts. Design brief, 25 November 2026. <a href="contracts-ideas.html">First pass: four ideas</a></p>
+        <h1 class="wide">Contracts gets its own section. <span>A catalogue you can group, an address book of Parties, and a page for each Contract.</span></h1>
+        <p class="lede">The section takes idea 1's side nav entry and a page for every Contract, idea 2's grouping (by holder, kind, funding tag or surgeon) and idea 4's single-step "Replace from a date". Parties and Funding tags become tabs. This version drops the desk and the step rail test screen, explains how Contracts, Parties and funding tags fit together, and shows price ranges as a table that will still read well after ten years of changes. It is the design brief for build phases 45 to 49.</p>
+        <div class="passnote"><span class="y">In: 1, 2's grouping, 4's Replace from a date, Parties, Funding tags</span><span class="n">Out: the desk, bulk price ranges, the step rail test screen</span></div>
+        <nav class="toc" aria-label="On this page">
+          <a href="#map">The section</a>
+          <a href="#model">Contracts and Parties</a>
+          <a href="#tags">Funding tags</a>
+          <a href="#catalogue">Grouped catalogue</a>
+          <a href="#parties">Parties</a>
+          <a href="#record">The record</a>
+          <a href="#updating">Updating a Contract</a>
+          <a href="#new">New contract</a>
+          <a href="#tagstab">Funding tags tab</a>
+          <a href="#changes">What changes</a>
+          <a href="#build">Build order</a>
+        </nav>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============ MAP ============ -->
+<section id="map">
+  <h2>The section</h2>
+  <p class="sub">One side nav entry with three routed tabs, plus a record page that every tab, review flag, Billing card and Audit row can link to. The layout audit says routed sub-pages get LineTabs, list pages use fit mode, and records use fluid mode with a 412px rail. All of that applies here.</p>
+  <div class="map">
+    <div class="navcol" aria-hidden="true"><div class="it">Invoices</div><div class="it">Patients</div><div class="it">Billing monitor</div><div class="it">Ledger</div><div class="it on">Contracts</div><div class="it">Master data</div><div class="it">Audit</div></div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="tabsgrid">
+        <div class="tcard land"><b>Contracts</b><span class="route">/admin/contracts?group=kind</span><p>Where the section opens: the whole catalogue. Search, Active or Disabled, and group by holder, kind, funding tag, surgeon, where the invoice goes, or pricing.</p><span class="orig">Ideas 1 and 2</span></div>
+        <div class="tcard"><b>Parties</b><span class="route">/admin/contracts/parties</span><p>The holders, insurers and funders: billing name, delivery, code prefix. Each one's Contracts, by funding tag.</p><span class="orig">Moves from Master data</span></div>
+        <div class="tcard"><b>Funding tags</b><span class="route">/admin/contracts/tags</span><p>AA's ordered tag list with each tag's funder, and the Contracts under each tag, grouped by hospital.</p><span class="orig">Moves from Master data</span></div>
+      </div>
+      <div class="record"><b>The Contract</b><span class="route">/admin/contracts/:contractId</span><p>Its own page, replacing the side panel, keyed by the Contract's fixed id because the AA code can be edited. Price ranges as a table, then cards for where it is offered, who it bills, and invoice and codes, each edited in place. A rail shows the Bookings on it and its history. Disable and Replace from a date sit in the header.</p></div>
+      <div class="leaves">
+        <div class="out"><b>Leave Master data</b>Contracts, Parties, Funding tags. Master data keeps a line pointing across.</div>
+        <div class="stay"><b>Stay in Master data</b>Specialties, RVG groups, Modifiers. Booking capture and surgeons use them too, not only Contracts.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MODEL ============ -->
+<section id="model">
+  <h2>Contracts and Parties</h2>
+  <p class="sub">Yes: the address book idea from the 23 and 28 Oct sessions with Greg still stands. The Parties are that address book, and every Contract picks one of them as its holder. The model has tightened since then in a few places, set out in the table below. In short, a <b>Party</b> is who: a name and where their invoices go. A <b>Contract</b> is what and how much: one priced item, and whether it bills its Party or the patient's payer.</p>
+  <div class="pc">
+    <div class="pcol">
+      <p class="pch">Party<span>AA's address book · one per organisation or person</span></p>
+      <div class="pcard"><b>Christchurch Eye Surgery</b><small>Hospital</small><dl><dt>Billing name</dt><dd>Christchurch Eye Surgery Limited</dd><dt>Invoices by</dt><dd>Email · accounts@chcheyesurgery.example</dd><dt>Code prefix</dt><dd class="mono">CES</dd></dl></div>
+      <div class="pcard"><b>Mr P. Doyle</b><small>Surgeon</small><dl><dt>Billing name</dt><dd style="color:var(--mist)">Not needed: none of his Contracts bill him</dd><dt>Code prefix</dt><dd class="mono">DOYLE</dd></dl></div>
+    </div>
+    <div class="pcol">
+      <p class="pch">Contract<span>one priced item · names one Party as holder</span></p>
+      <div class="ccard"><span class="mono">CES-SXAP-001</span><b>Cataract IOL (LA by Anaesthetist)</b><small><span class="mono">$357.39</span> · SXAP · <b class="bh">bills its holder</b></small></div>
+      <div class="ccard"><span class="mono">CES-HNZ-001</span><b>Cataract, inclusive of Standard IOL</b><small><span class="mono">$420.00</span> · HNZ · <b class="bh">bills its holder</b></small></div>
+      <div class="ccard more">and 142 more held by Christchurch Eye Surgery</div>
+      <div class="ccard"><span class="mono">DOYLE-001</span><b>Gastric bypass</b><small><span class="mono">$2,800.00</span> · linked to Mr Doyle · <b class="bp">bills the payer</b></small></div>
+    </div>
+    <div class="pcol">
+      <p class="pch">The invoice goes to<span>decided by the Contract, per Procedure</span></p>
+      <div class="dest h"><b>The Party</b><small>Christchurch Eye Surgery Limited, by email. One invoice per Party per Booking.</small></div>
+      <div class="dest p"><b>The Procedure's payer</b><small>The patient, or a parent, guardian or family trust typed onto the Procedure. Never a Party.</small></div>
+    </div>
+  </div>
+  <table class="invtable" style="margin-top:20px">
+    <thead><tr><th>The address book idea (23 and 28 Oct)</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>An address book of people and places that can hold a Contract</td><td><b>Still true.</b> These are the Parties: hospitals, insurers, funders, surgeon groups, surgeons, anaesthetists and AA. A new Contract picks one as its holder, fixed once saved (US-04.1.5, US-04.2.1).</td></tr>
+      <tr><td>The Party is where the invoice goes</td><td><b>Only when the Contract bills its holder.</b> The CES, St George's, nib and surgeon-group Contracts do. Doyle's, Merivale's, every prepaid one and AA's No contract · RVG bill the payer, so their Party just owns the price.</td></tr>
+      <tr><td>A separate billable party record behind the holder (Greg: "might not need it")</td><td><b>Gone.</b> The Party is the billing record: billing name, email or postal address and delivery live on it, never on the Contract (OQ-67).</td></tr>
+      <tr><td>A "dynamic" address book entry for the patient or payer named on the Booking</td><td><b>Not a Party.</b> The payer is typed on each Procedure, kept for the life of the debt, and never added to the address book (OQ-140).</td></tr>
+      <tr><td>One holder with different invoice emails for different Contracts (Greg, 28 Oct)</td><td><b>Not adopted.</b> One email per Party. A holder needing two addresses would be two Parties.</td></tr>
+      <tr><td>Insurers as their own master list, flagged for direct claims</td><td><b>Folded in.</b> Insurers and funders are Parties, with no direct-claims flag. A Party also serves as a Booking's insurer or funder, where it only suggests a path on the step rail.</td></tr>
+    </tbody>
+  </table>
+  <p class="sub" style="margin-top:16px">For the screens this means the Parties tab is the address book and step 1 of the New contract page is its picker. A Party's details are edited once and every Contract that bills it follows. The terms are drawn in AR-44 (Billable Party Terms); the rules are in the domain model under "Patient, payer and billable party".</p>
+</section>
+
+<!-- ============ FUNDING TAGS ============ -->
+<section id="tags">
+  <h2>Funding tags and the step rail</h2>
+  <p class="sub">A funding tag is a short label from a list AA keeps (SXAP, HNZ, ACC) saying <b>who funds the work</b> a Contract covers. It exists for one situation: a hospital that does the same operation for several funders, at a different price for each, and is billed for all of them. The tag sorts that hospital's Contracts into one pile per funder, so the step rail can ask "which funder?" before it shows a long list of prices.</p>
+
+  <div class="tg-hero">
+    <div class="tg-hosp"><small>One hospital</small><b>Christchurch Eye Surgery</b><span>144 Contracts, all billed to CES</span></div>
+    <div class="tg-lanes">
+      <div class="tg-lane"><div class="tg-tag"><span class="pill code">SXAP</span><small>Southern Cross Health Society</small></div><div class="tg-what">Patients insured with Southern Cross, at the prices on CES's affiliated provider schedule</div><div class="tg-ex"><b>Cataract IOL (LA by Anaesthetist)</b><span class="mono">$357.39</span></div><div class="tg-n"><span class="mono">56</span> Contracts</div></div>
+      <div class="tg-lane"><div class="tg-tag"><span class="pill code">HNZ</span><small>Health NZ</small></div><div class="tg-what">Public patients whose surgery Health NZ has outsourced to CES</div><div class="tg-ex"><b>Cataract, incl. Standard IOL (Unilateral)</b><span class="mono">$420.00</span></div><div class="tg-n"><span class="mono">62</span> Contracts</div></div>
+      <div class="tg-lane"><div class="tg-tag"><span class="pill code">ACC</span><small>ACC</small></div><div class="tg-what">Injury cases ACC is paying for</div><div class="tg-ex"><b>Cataract Extraction Simple, Phaco + IOL</b><span class="mono">$450.00</span></div><div class="tg-n"><span class="mono">26</span> Contracts</div></div>
+    </div>
+  </div>
+  <p class="sub" style="margin-top:12px">Same operation, three funders, three prices. In each case CES is the one AA invoices; CES recovers the money from the funder. The tag says nothing about who is billed. It only says which of CES's price lists the Contract belongs to.</p>
+
+  <h3 style="margin-top:28px">Where a Contract lands on the step rail</h3>
+  <p class="sub">Nobody chooses a Contract's place on the step rail. It is worked out from two of its settings, who it bills and its funding tag, plus what kind of Party holds it. The tag only counts in the middle case.</p>
+  <div class="flow">
+    <div class="fq"><b>Does it bill the payer?</b><small>The patient, or whoever is typed on the Procedure</small></div>
+    <div class="fa yes"><span class="fl">Yes</span><div class="fo pat"><b>Patient › Standard</b> or <b>Patient › Prepaid</b><small>Any tag is ignored. Doyle's gastric bypass, Merivale's face lift, Dr Souter's prepaid list.</small></div></div>
+    <div class="fq"><b>No: it bills its holder. Is the holder a hospital, and does it have a tag?</b></div>
+    <div class="fa yes"><span class="fl">Yes</span><div class="fo hos"><b>That hospital › its tag</b><small>CES › SXAP, St George's › ACC, Southern Cross › SXAP, Christchurch Public › HNZ.</small></div></div>
+    <div class="fa no"><span class="fl">No</span><div class="fo spe"><b>Special › the holder</b><small>A hospital's untagged Contract (St George's RVG), an insurer (nib), a funder (NZDF), a surgeon group (Canterbury Orthopaedic Surgeons, even with its ACC tag).</small></div></div>
+  </div>
+
+  <h3 style="margin-top:28px">Worked example: one Booking at CES</h3>
+  <p class="sub">P. Hart is booked on Ms Reid's CES List on Fri 27 Nov. The Booking names Southern Cross Health Society as the insurer. The office opens the step rail on the Procedure.</p>
+  <div class="cols tg-cols" aria-label="The step rail for this Booking">
+    <div class="c"><div class="ct"><i>1</i>Where does the invoice go?</div>
+      <div class="opt"><span>Patient<small>bills the payer</small></span><span class="cnt">3</span></div>
+      <div class="opt on"><span>Christchurch Eye Surgery<small>the List's hospital</small></span><span class="cnt">144</span></div>
+      <div class="opt"><span>Special<small>another holder</small></span><span class="cnt">3</span></div>
+    </div>
+    <div class="c"><div class="ct"><i>2</i>Funding tag</div>
+      <div class="opt on"><span>SXAP</span><span><span class="sug">Suggested</span> <span class="cnt">56</span></span></div>
+      <div class="opt"><span>HNZ</span><span class="cnt">62</span></div>
+      <div class="opt"><span>ACC</span><span class="cnt">26</span></div>
+    </div>
+    <div class="c"><div class="ct"><i>3</i>Contract</div><div class="clist">
+      <div class="gh">Contracts</div>
+      <div class="ci"><span><b>Cataract IOL (LA by Anaesthetist)</b><small>Fixed price · 8268</small><span class="mono">CES-SXAP-001</span></span><span class="price">$357.39</span></div>
+      <div class="ci"><span><b>MIGS add on to cataract, category A (LA)</b><small>Fixed price · AP1318</small><span class="mono">CES-SXAP-005</span></span><span class="price">$400.00</span></div>
+      <div class="ci"><span><b>and 54 more, found by typing</b></span><span></span></div>
+      <div class="gh">No contract</div>
+      <div class="ci bs"><span><b>CES · SXAP · Fixed price</b><small>Typed on the Procedure</small></span><span class="price">Typed</span></div>
+    </div></div>
+  </div>
+  <div class="tg-steps">
+    <p><b>Step 1.</b> CES is offered because it holds tagged Contracts and it is this List's hospital.</p>
+    <p><b>Step 2.</b> The tags show in the order AA's list sets. SXAP is marked Suggested because the Booking's insurer, Southern Cross Health Society, is the funder that the SXAP tag names. It is only a hint: HNZ and ACC stay open.</p>
+    <p><b>Step 3.</b> Only CES's SXAP Contracts are listed, 56 instead of 144, with a backstop at the bottom for when none fits.</p>
+  </div>
+
+  <table class="invtable" style="margin-top:24px">
+    <thead><tr><th>A funding tag</th><th>In practice</th></tr></thead>
+    <tbody>
+      <tr><td>Places a Contract on the step rail</td><td>Only for a hospital-held Contract that bills the hospital: it goes under that hospital, under its tag (US-04.2.17).</td></tr>
+      <tr><td>Suggests a path</td><td>Each tag can name a funder Party (SXAP: Southern Cross Health Society; HNZ: Health NZ; ACC: ACC). When the Booking's insurer or funder matches, that hospital's tag is marked Suggested. It never hides anything (US-04.3.10).</td></tr>
+      <tr><td>Gets its own backstops</td><td>Each hospital and tag pair gets a "No contract" Fixed price option the system makes, such as "CES · SXAP · Fixed price", for when no Contract fits (US-04.3.9).</td></tr>
+      <tr><td>Sets the order of step 2</td><td>AA's tag list is kept in order, and step 2 shows a hospital's tags in that order (US-13.4.5).</td></tr>
+      <tr><td>Does not change</td><td>The price, who is billed, the invoice, or anything ACC- or insurer-specific. There is no claim record. On a Contract that isn't hospital-billed, the tag is only a label you can search and group by.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="tg-watch">
+    <h4>Things that may catch people out</h4>
+    <ul>
+      <li><b>A hospital's untagged Contracts sit under Special, not under the hospital.</b> St George's plain RVG Contract is under Special › St George's. Under the rules this is right, but staff may look for it under St George's first. It's worth asking Ben.</li>
+      <li><b>An ACC tag on a surgeon group does not put it under ACC.</b> Canterbury Orthopaedic Surgeons' ACC Contract bills the group, so it sits under Special › Canterbury Orthopaedic Surgeons.</li>
+      <li><b>Backstops disagree in the catalogue.</b> US-04.3.9 gives each hospital and tag an RVG backstop as well as the Fixed price one; the domain model has only the Fixed price one.</li>
+      <li><b>Not yet confirmed.</b> Tags come from Donald's decisions of 5 Nov (D4, D7), still at Verify. AA and Greg haven't confirmed them.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ CATALOGUE ============ -->
+<section id="catalogue">
+  <article class="chapter">
+    <div class="ch-head"><h3>Grouped catalogue <span class="from">ideas 1 and 2</span></h3><p>Idea 2's two panes, without the checkboxes. The left pane is an index of whatever the catalogue is grouped by; the right pane lists the Contracts in the chosen group, with sub-headings. Grouping by holder gives idea 2's view. Grouping by funding tag puts every SXAP Contract together across hospitals. Grouping by surgeon shows what Mr Hale's Lists can be priced at. <b>This mock is live:</b> change the grouping, pick a group, search, or switch to Disabled.</p></div>
+    <div class="ch-body">
+      <div class="mockwrap"><div class="frame">
+        <div class="mnav" data-nav></div>
+        <div class="page">
+          <div class="head"><div class="t"><b>Contracts</b><small>What each Procedure can be priced at, and who it bills.</small></div><span class="btn pri lg">New contract</span></div>
+          <div class="tabs"><span class="tab on">Contracts <span class="cnt">343</span></span><span class="tab">Parties <span class="cnt">24</span></span><span class="tab">Funding tags <span class="cnt">3</span></span></div>
+          <div class="toolbar" id="catbar">
+            <input class="searchin" id="catq" type="search" placeholder="Search by name, code, AA code or RVG code" aria-label="Search Contracts">
+            <span class="gb" role="group" aria-label="Status" id="catstatus"><button type="button" data-v="active" aria-pressed="true">Active</button><button type="button" data-v="disabled" aria-pressed="false">Disabled</button><button type="button" data-v="all" aria-pressed="false">All</button></span>
+            <span class="gblabel">Group by</span>
+            <span class="gb" role="group" aria-label="Group by" id="catgroup"></span>
+          </div>
+          <div class="split">
+            <div class="gidx" id="catidx" aria-label="Groups"></div>
+            <div class="gtable"><table class="tbl" aria-live="polite"><thead id="cathead"></thead><tbody id="catbody"></tbody></table></div>
+          </div>
+          <div class="count" id="catcount"></div>
+        </div>
+      </div></div>
+      <div class="notes">
+        <div><h4>The groupings</h4><ul><li><b>Holder:</b> idea 2's view. Sub-headed by funding tag.</li><li><b>Kind:</b> Hospitals, Insurers, Funders, Surgeon groups, Surgeons, Anaesthetists. Sub-headed by holder.</li><li><b>Funding tag:</b> SXAP, HNZ, ACC, No tag. Sub-headed by holder.</li><li><b>Surgeon:</b> a Contract linked to two surgeons shows under both. Unlinked Contracts sit together at the end.</li><li><b>Invoice goes to:</b> the step rail's first two steps.</li><li><b>Pricing:</b> the four kinds.</li></ul></div>
+        <div><h4>How it behaves</h4><ul><li>The grouping and the chosen group live in the URL, so a review flag can link to "Funding tag › ACC". The grouping is remembered for each person.</li><li>Search runs across every group, and the index counts update to show where the matches are.</li><li>A row opens the Contract's page. No checkboxes and no bulk actions: every change is made on one Contract.</li><li>A "next price" chip shows when a later range is already set.</li></ul></div>
+        <div class="req"><p><b>Catalogue:</b> US-04.1.2 already asks for an Active filter and a Holder filter. "Group by" extends that story; the Holder filter becomes one grouping.</p><p><b>Seed:</b> 32 Contracts drawn from the seed here; the real list is about 340, which is why the index pane earns its space.</p><p><b>Not doing:</b> adding one price range to many Contracts. A schedule's yearly rise is entered Contract by Contract.</p></div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<!-- ============ PARTIES ============ -->
+<section id="parties">
+  <article class="chapter">
+    <div class="ch-head"><h3>Parties <span class="from">moves from Master data</span></h3><p>A Party is a holder, insurer or funder. Its details (billing name, where invoices go, code prefix) shape every invoice billed under its Contracts, so it belongs next to them. The list is grouped by kind, like idea 2's holder column. Parties with no Contracts still show, because insurers and funders are also chosen as a Booking's funder. A Party's page shows its details, edited in place, and its Contracts counted by funding tag, each count linking to the grouped catalogue.</p></div>
+    <div class="ch-body">
+      <div class="mockwrap"><div class="frame">
+        <div class="mnav" data-nav></div>
+        <div class="page" style="padding-bottom:0">
+          <div class="head"><div class="t"><b>Contracts</b><small>What each Procedure can be priced at, and who it bills.</small></div><span class="btn sec">New party</span></div>
+          <div class="tabs"><span class="tab">Contracts <span class="cnt">343</span></span><span class="tab on">Parties <span class="cnt">24</span></span><span class="tab">Funding tags <span class="cnt">3</span></span></div>
+          <div style="display:flex;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--e1);overflow:hidden;min-height:560px">
+            <div class="plist">
+              <div class="p"><span>Anaesthesia Associates</span><span class="cnt">3</span></div>
+              <div class="gh">Hospitals</div>
+              <div class="p on"><span>Christchurch Eye Surgery</span><span class="cnt">144</span></div>
+              <div class="p"><span>Christchurch Public</span><span class="cnt">9</span></div>
+              <div class="p"><span>Forte Health</span><span class="cnt">22</span></div>
+              <div class="p"><span>Southern Cross</span><span class="cnt">26</span></div>
+              <div class="p"><span>St George's</span><span class="cnt">31</span></div>
+              <div class="gh">Insurers</div>
+              <div class="p"><span>nib</span><span class="cnt">2</span></div>
+              <div class="p"><span>Southern Cross Health Society</span><span class="cnt">1</span></div>
+              <div class="p zero"><span>AIA Health</span><span class="cnt">0</span></div>
+              <div class="gh">Funders</div>
+              <div class="p"><span>ACC</span><span class="cnt">3</span></div>
+              <div class="p"><span>NZDF</span><span class="cnt">2</span></div>
+              <div class="p zero"><span>Veterans Affairs</span><span class="cnt">0</span></div>
+              <div class="gh">Surgeon groups</div>
+              <div class="p"><span>Canterbury Orthopaedic Surgeons</span><span class="cnt">14</span></div>
+              <div class="p"><span>Merivale Plastic Surgery</span><span class="cnt">18</span></div>
+              <div class="gh">Surgeons and anaesthetists</div>
+              <div class="p"><span>Mr P. Doyle</span><span class="cnt">2</span></div>
+              <div class="p"><span>Dr Melanie Souter</span><span class="cnt">3</span></div>
+            </div>
+            <div style="flex:1;min-width:0;padding:20px 22px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-content:start">
+              <div class="head" style="grid-column:1/-1"><div class="t"><b style="font-size:20px;line-height:26px">Christchurch Eye Surgery <span class="pill" style="vertical-align:3px">Hospital</span></b><small>Holds 144 Contracts · invoices by email</small></div><span class="btn pri">New contract for this party</span></div>
+              <div class="maincol">
+                <div class="card pad">
+                  <div class="ch"><span class="l">Details</span><span class="txt">Edit</span></div>
+                  <dl class="kv">
+                    <dt>Short name</dt><dd>Christchurch Eye Surgery<br><span style="font-size:12px;color:var(--slate);font-weight:400">What the step rail shows</span></dd>
+                    <dt>Kind</dt><dd>Hospital · Christchurch Eye Surgery</dd>
+                    <dt>Billing name</dt><dd>Christchurch Eye Surgery Limited</dd>
+                    <dt>Invoices by</dt><dd>Email · accounts@chcheyesurgery.example</dd>
+                    <dt>Code prefix</dt><dd class="mono">CES</dd>
+                  </dl>
+                </div>
+                <div class="card pad">
+                  <div class="ch"><span class="l">Its Contracts <span class="cnt">144</span></span><span class="txt">Open in Contracts</span></div>
+                  <div class="tagrows">
+                    <div class="tagrow"><span class="pill code">SXAP</span><span>Southern Cross Health Society</span><span class="mono">56</span><span class="txt">View</span></div>
+                    <div class="tagrow"><span class="pill code">HNZ</span><span>Health NZ</span><span class="mono">62</span><span class="txt">View</span></div>
+                    <div class="tagrow"><span class="pill code">ACC</span><span>ACC</span><span class="mono">26</span><span class="txt">View</span></div>
+                    <div class="tagrow"><span class="pill">No tag</span><span>Christchurch Eye Surgery RVG</span><span class="mono">1</span><span class="txt">View</span></div>
+                    <div class="tagrow" style="color:var(--mist)"><span class="pill">Disabled</span><span>Christchurch Eye Surgery 2025 rate</span><span class="mono">1</span><span class="txt">View</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="railcol">
+                <div class="card pad">
+                  <div class="ch">On the step rail</div>
+                  <div class="row"><span class="t">Christchurch Eye Surgery › SXAP</span><span class="s">56 Contracts and its 2 backstops</span></div>
+                  <div class="row"><span class="t">Christchurch Eye Surgery › HNZ</span><span class="s">62 Contracts and its 2 backstops</span></div>
+                  <div class="row"><span class="t">Christchurch Eye Surgery › ACC</span><span class="s">26 Contracts and its 2 backstops</span></div>
+                  <div class="row"><span class="t">Special › Christchurch Eye Surgery</span><span class="s">Christchurch Eye Surgery RVG</span></div>
+                </div>
+                <div class="card pad">
+                  <div class="ch">History</div>
+                  <div class="row"><span class="t">Invoices by: post → email</span><span class="s">Sam · Tue 3 Nov</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+      <div class="notes">
+        <div><h4>What it gives</h4><ul><li>The question "who do CES invoices go to?" is answered in the same section as their prices.</li><li>Each count drills into the grouped catalogue, filtered to that Party and tag.</li><li>"New contract for this party" opens the new contract page with the holder already chosen.</li></ul></div>
+        <div><h4>Rules it keeps</h4><ul><li>Billing name and delivery are needed only once a Party holds a Contract that bills it (AR-58).</li><li>Exactly one AA Party, and it is never removed.</li><li>A Party is never deleted while anything refers to it.</li></ul></div>
+        <div class="req"><p><b>Catalogue:</b> US-04.1.5 Parties is unchanged; only where it lives changes. US-13.4.1's "in one place" needs a line saying Contracts, Parties and Funding tags live in the Contracts section.</p><p><b>Name:</b> the catalogue word is Party. The tab could read "Address book" if that is what the office would say. Your call.</p></div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<!-- ============ RECORD ============ -->
+<section id="record">
+  <article class="chapter">
+    <div class="ch-head"><h3>The record <span class="from">idea 1</span></h3><p>Every Contract gets a page at its AA code. The example is a CES schedule item because it bills its holder, so its Party matters, and because it has years of yearly price changes. The page reads top to bottom in the order the office checks things: the price ranges, where it is offered, who the invoice goes to, and what prints on it. The rail answers "who does this touch?" before any change is made.</p></div>
+    <div class="ch-body">
+      <div class="mockwrap"><div class="frame">
+        <div class="mnav" data-nav></div>
+        <div class="page withrail">
+          <div class="head">
+            <div class="t"><span class="back">‹ Contracts</span><b>Cataract IOL (LA by Anaesthetist) <span class="pill code" style="vertical-align:5px;margin-left:6px">CES-SXAP-001</span> <span class="pill ok" style="vertical-align:5px">Active</span></b><small>Held by Christchurch Eye Surgery · bills its holder · fixed price</small></div>
+            <span class="btn sec">Replace from a date</span><span class="btn sec">Disable</span>
+          </div>
+          <div class="tabsrow tabs"><span class="tab on">Overview</span><span class="tab">Bookings <span class="cnt">86</span></span><span class="tab">Event fees <span class="cnt">0</span></span><span class="tab">History <span class="cnt">11</span></span></div>
+          <div class="maincol">
+            <div class="card pad">
+              <div class="ch"><span class="l">Price ranges <span class="cnt">8</span></span><span class="btn sec" style="height:32px">Add a price range</span></div>
+              <table class="ptable">
+                <thead><tr><th>From</th><th>To</th><th class="r">Price ex GST</th><th class="r">Change</th><th class="r">Procedures</th><th></th></tr></thead>
+                <tbody>
+                  <tr class="now"><td>1 Apr 2026</td><td class="dim">Onwards</td><td class="r mono">$357.39</td><td class="r mono">+3.0%</td><td class="r"><span class="mono">86</span></td><td class="r"><span class="pill ok">In force</span> <span class="txt" style="margin-left:8px">Correct</span></td></tr>
+                  <tr class="ended"><td>1 Apr 2025</td><td>31 Mar 2026</td><td class="r mono">$347.00</td><td class="r mono">+2.8%</td><td class="r mono">212</td><td class="r"><span class="txt">Correct</span></td></tr>
+                  <tr class="ended"><td>1 Apr 2024</td><td>31 Mar 2025</td><td class="r mono">$337.55</td><td class="r mono">+4.0%</td><td class="r mono">198</td><td class="r"><span class="txt">Correct</span></td></tr>
+                  <tr class="ended"><td>1 Apr 2023</td><td>31 Mar 2024</td><td class="r mono">$324.57</td><td class="r mono">+5.1%</td><td class="r mono">205</td><td class="r"><span class="txt">Correct</span></td></tr>
+                  <tr class="more"><td colspan="6">Show 4 earlier ranges, back to 1 Apr 2019</td></tr>
+                </tbody>
+              </table>
+              <p class="tnote">Newest first. A range runs to the day before the next one starts, so there are no gaps and no overlaps. The current range and anything still to come always show; ended ranges fold away after three.</p>
+            </div>
+            <div class="card pad">
+              <div class="ch"><span class="l">Where it is offered</span><span class="txt">Edit</span></div>
+              <dl class="kv">
+                <dt>On the step rail</dt><dd><div class="path"><span>Christchurch Eye Surgery</span><i>›</i><span>SXAP</span><i>›</i><span>Cataract IOL (LA by Anaesthetist)</span></div></dd>
+                <dt>Lists</dt><dd>At Christchurch Eye Surgery. A hospital's Contract takes no surgeon or anaesthetist links.</dd>
+                <dt>Specialties</dt><dd>Ophthalmology</dd>
+                <dt>Funding tag</dt><dd><span class="pill code">SXAP</span> Southern Cross Health Society</dd>
+              </dl>
+            </div>
+            <div class="card pad">
+              <div class="ch"><span class="l">Who it bills</span><span class="txt">Edit</span></div>
+              <dl class="kv">
+                <dt>Bills</dt><dd>Its holder</dd>
+                <dt>Invoices go to</dt><dd>Christchurch Eye Surgery Limited<br><span style="color:var(--slate);font-weight:400">Email · accounts@chcheyesurgery.example</span></dd>
+              </dl>
+              <div class="notice">The name and address come from the Party, Christchurch Eye Surgery, and are changed there for all 144 of its Contracts. <span class="txt">Open the Party</span></div>
+            </div>
+            <div class="card pad">
+              <div class="ch"><span class="l">Invoice and codes</span><span class="txt">Edit</span></div>
+              <dl class="kv">
+                <dt>Name</dt><dd>Cataract IOL (LA by Anaesthetist)</dd>
+                <dt>AA code</dt><dd class="mono">CES-SXAP-001</dd>
+                <dt>Holder reference</dt><dd class="mono">8268</dd>
+                <dt>Invoice description</dt><dd>Cataract IOL (LA by Anaesthetist)</dd>
+                <dt>Default RVG code</dt><dd class="mono">H6A</dd>
+              </dl>
+            </div>
+            <div class="card pad">
+              <div class="ch"><span class="l">Fixed when it was created</span></div>
+              <dl class="kv">
+                <dt>Holder</dt><dd>Christchurch Eye Surgery</dd>
+                <dt>Pricing kind</dt><dd>Fixed price</dd>
+                <dt>Prepaid</dt><dd>No</dd>
+              </dl>
+              <div class="notice">To change one of these from a date, use Replace from a date.</div>
+            </div>
+          </div>
+          <div class="railcol">
+            <div class="card pad">
+              <div class="ch"><span class="l">On this Contract <span class="cnt">86</span></span><small>upcoming and unbilled</small></div>
+              <div class="row"><span class="t">P. Hart · Fri 27 Nov</span><span class="s">Christchurch Eye Surgery AM · Ms A. Reid · Dr Hannah Ropata</span></div>
+              <div class="row"><span class="t">D. Lowe · Fri 27 Nov</span><span class="s">Christchurch Eye Surgery AM · Ms A. Reid · Dr Hannah Ropata</span></div>
+              <div class="row"><span class="t">K. Singh · Tue 1 Dec</span><span class="s">Christchurch Eye Surgery PM · Mr J. Whitford · Dr Ben Whitaker</span></div>
+              <div class="row"><span class="t">E. Watts · Thu 19 Nov</span><span class="s">Authorised · locked at <span class="mono">$357.39</span></span></div>
+              <span class="txt">See all 86</span>
+            </div>
+            <div class="card pad">
+              <div class="ch">History</div>
+              <div class="row"><span class="t">Price range added: <span class="mono">$357.39</span> from 1 Apr 2026</span><span class="s">Kirsty · Mon 16 Mar 2026, 2:14 pm</span></div>
+              <div class="row"><span class="t">Holder reference changed: 8267 → 8268</span><span class="s">Sam · Mon 2 Feb 2026, 9:02 am</span></div>
+              <span class="txt">See all 11</span>
+            </div>
+          </div>
+        </div>
+      </div></div>
+      <div class="notes">
+        <div><h4>The price ranges table</h4><ul><li>One row per range: from, to, price, the change on the one before, and how many Procedures it priced. Ten years of yearly changes is ten rows, most of them folded.</li><li>"To" is worked out, never typed: the day before the next range starts.</li><li>"Correct" fixes a range's price or start date in place, with the same warning as adding one. The last range can't be removed.</li><li>Only a fixed price has ranges. An RVG Contract shows its rate or discount in this card instead, undated.</li></ul></div>
+        <div><h4>What changed since the last version</h4><ul><li>The timeline is gone. A table holds any number of ranges and is plain to build.</li><li>"Who it bills" is its own card, showing what comes from the Party, so the office sees where the name and email live.</li><li>Each card still has its own Edit and saves as one audited change.</li></ul></div>
+        <div class="req"><p><b>Catalogue:</b> US-04.1.2, US-04.1.3 (audit), US-04.2.1, US-04.2.15, US-04.2.18. No change to what a Contract is.</p><p><b>Mock data:</b> the ranges before 1 Apr 2026, the patient names and the counts are made up to show scale. At go-live only current prices are loaded, so the table starts with one or two rows.</p></div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<!-- ============ UPDATING ============ -->
+<section id="updating">
+  <article class="chapter">
+    <div class="ch-head"><h3>Updating a Contract</h3><p>Four ways to change a Contract, matched to the flat model's rules. A setting with no date (where it is offered, codes and wording) is edited in place. A fixed price changes by adding a price range. Anything else that must start on a date is a new Contract, via Replace from a date. Stopping a Contract is Disable. Every one of them shows who it touches before it saves (D79), and nothing moves on its own.</p></div>
+    <div class="ch-body">
+      <div>
+        <p class="mock-cap">Editing in place: adding a price range, and changing where it is offered</p>
+        <div class="mockwrap"><div class="frame">
+          <div class="mnav" data-nav></div>
+          <div class="page withrail">
+            <div class="head">
+              <div class="t"><span class="back">‹ Contracts</span><b>Face lift <span class="pill code" style="vertical-align:5px;margin-left:6px">MER-001</span> <span class="pill ok" style="vertical-align:5px">Active</span></b><small>Held by Merivale Plastic Surgery · bills the payer · fixed price</small></div>
+              <span class="btn sec">Replace from a date</span><span class="btn sec">Disable</span>
+            </div>
+            <div class="tabsrow tabs"><span class="tab on">Overview</span><span class="tab">Bookings <span class="cnt">14</span></span><span class="tab">Event fees <span class="cnt">1</span></span><span class="tab">History <span class="cnt">5</span></span></div>
+            <div class="maincol">
+              <div class="card pad editing">
+                <div class="ch"><span class="l">Price ranges <span class="cnt">2</span></span><small>Adding a price range</small></div>
+                <table class="ptable">
+                  <thead><tr><th>From</th><th>To</th><th class="r">Price ex GST</th><th class="r">Change</th><th class="r">Procedures</th></tr></thead>
+                  <tbody>
+                    <tr class="adding"><td><span class="cellin">1 Apr 2027</span></td><td class="dim">Onwards</td><td class="r"><span class="cellin" style="justify-content:flex-end">$3,350.00</span></td><td class="r mono">+4.7%</td><td class="r"><span class="mono">3</span> re-price</td></tr>
+                    <tr class="now"><td>1 Oct 2026</td><td><span class="was">Onwards</span>31 Mar 2027</td><td class="r mono">$3,200.00</td><td class="r mono">+3.2%</td><td class="r mono">11</td></tr>
+                    <tr class="ended"><td>1 Jun 2026</td><td>30 Sep 2026</td><td class="r mono">$3,100.00</td><td class="r dim">First</td><td class="r mono">6</td></tr>
+                  </tbody>
+                </table>
+                <div class="notice"><b>3 Bookings</b> dated on or after 1 Apr 2027 will price at $3,350.00 when you add this. None are authorised, so none keep an old price. A start date may be in the past.</div>
+                <div class="cardfoot"><span class="btn sec">Cancel</span><span class="btn pri">Add price range</span></div>
+              </div>
+              <div class="card pad editing">
+                <div class="ch"><span class="l">Where it is offered</span><small>Editing</small></div>
+                <div class="formgrid">
+                  <div class="fld" style="grid-column:1/-1">Linked surgeons<div class="chipline"><span class="chipx">Ms G. Lim <i>×</i></span><span class="chipx">Mr R. Fenwick <i>×</i></span><span class="addchip">Add a surgeon</span></div></div>
+                  <div class="fld">Linked anaesthetist<div class="in sel2">None</div><span class="hint">At most one, for an anaesthetist's own price list.</span></div>
+                  <div class="fld">Funding tag<div class="in sel2">None</div><span class="hint">Billing the payer, so it sits under Patient whatever the tag.</span></div>
+                  <div class="fld" style="grid-column:1/-1">Specialties<div class="chipline"><span class="chipx">Plastic surgery <i>×</i></span><span class="addchip">Add a specialty</span></div><span class="hint">None means every specialty.</span></div>
+                </div>
+                <div class="notice w">Adding Mr R. Fenwick offers it on his Lists from now on. Removing someone never takes it off a Procedure that already has it; a Booking that no longer fits is flagged at review.</div>
+                <div class="cardfoot"><span class="btn sec">Cancel</span><span class="btn pri">Save</span></div>
+              </div>
+            </div>
+            <div class="railcol">
+              <div class="card pad">
+                <div class="ch">This change</div>
+                <dl class="diff">
+                  <dt>Price</dt><dd><span class="mono">$3,350.00</span> from 1 Apr 2027</dd>
+                  <dt>Surgeons</dt><dd>Ms G. Lim, <b>Mr R. Fenwick</b></dd>
+                  <dt>Step rail</dt><dd>Patient › Standard (no change)</dd>
+                </dl>
+                <div class="notice">Each card saves on its own and writes its own audit entry, with who, when, and before and after.</div>
+              </div>
+              <div class="card pad">
+                <div class="ch"><span class="l">On this Contract <span class="cnt">14</span></span></div>
+                <div class="row edge-t"><span class="t">3 dated from 1 Apr 2027</span><span class="s">Re-price to <span class="mono">$3,350.00</span> once added</span></div>
+                <div class="row"><span class="t">11 before then</span><span class="s">Stay at <span class="mono">$3,200.00</span></span></div>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="pair">
+        <div>
+          <p class="mock-cap">Disable: who still has it, then confirm</p>
+          <div class="dialogstage"><div class="dialog" role="dialog" aria-label="Disable a Contract">
+            <div class="dh"><b>Disable Christchurch Eye Surgery 2025 rate?</b></div>
+            <div class="db">
+              <p>It leaves the step rail today, and no new Procedure can be put on it. Procedures already on it keep it and bill as normal. You can make it active again later.</p>
+              <div class="row edge"><span class="t">1 Booking from today is still on it</span><span class="s">M. Kereama · Thu 10 Dec · Christchurch Eye Surgery AM. It will be flagged at review.</span><span class="acts"><span class="txt">Open Booking</span></span></div>
+              <p style="font-size:12.5px">Authorised Bookings are locked and are not listed.</p>
+            </div>
+            <div class="df"><span class="btn sec">Cancel</span><span class="btn danger">Disable</span></div>
+          </div></div>
+        </div>
+        <div>
+          <p class="mock-cap">Replace from a date: one sheet for a dated change that isn't a price</p>
+          <div class="mockwrap" style="background:var(--surface)"><div class="sheet" style="position:static;width:auto;box-shadow:none">
+            <div class="sh"><b>Replace Unisports Ortho from a date</b><small>A new Contract takes over. Everything is copied except what you change here.</small></div>
+            <div class="sb">
+              <div class="step"><i>1</i><div><h6>What changes</h6><div class="cmp"><div class="fld">Now<div class="in was mono">$93.47 per unit</div></div><div class="fld">New Contract<div class="in mono">$97.00 per unit</div></div></div><p style="font-size:12px;color:var(--slate);margin-top:6px">Any setting can change here, the fixed ones included. AA code UNI-002 is assigned on save.</p></div></div>
+              <div class="step"><i>2</i><div><h6>From</h6><div class="fld"><div class="in mono" style="width:200px">Fri 1 Jan 2027</div></div></div></div>
+              <div class="step"><i>3</i><div><h6>Bookings from 1 Jan still on UNI-001 <span class="cnt">3</span></h6>
+                <table class="tbl" style="background:var(--surface);border:1px solid var(--line);border-radius:10px"><tbody>
+                  <tr><td style="width:28px"><span class="box on"></span></td><td>T. Walsh</td><td>Tue 5 Jan · Forte AM</td></tr>
+                  <tr><td><span class="box on"></span></td><td>A. Kumar</td><td>Tue 5 Jan · Forte AM</td></tr>
+                  <tr><td><span class="box on"></span></td><td>H. Fraser-Ngata</td><td>Tue 12 Jan · Forte PM</td></tr>
+                </tbody></table>
+                <p style="font-size:12px;color:var(--slate);margin-top:6px">Ticked Bookings move to UNI-002 when you save.</p></div></div>
+              <div class="step"><i>4</i><div><h6>The old Contract</h6>
+                <div class="radio"><i class="on"></i><div>Leave UNI-001 active; disable it on 1 Jan<small>Until then both are offered on Mr Hale's Lists, so a Booking before 1 Jan should stay on UNI-001.</small></div></div>
+                <div class="radio"><i></i><div>Disable UNI-001 now<small>Bookings already on it keep it. A new Booking before 1 Jan can then only get UNI-002, at the new rate.</small></div></div>
+                <div class="notice w">A rate has no dates, so UNI-002 is offered from the day it is saved, not from 1 Jan. Only a fixed price follows the calendar. This is the case for a scheduled disable, if AA want one.</div>
+              </div></div>
+            </div>
+            <div class="sf"><span class="btn sec">Cancel</span><span class="btn pri">Create UNI-002 and move 3</span></div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="notes">
+        <div><h4>Which change is which</h4><ul><li><b>Edit in place:</b> where it is offered, invoice and codes, the anaesthetist's override, who it bills. No date, so it applies now.</li><li><b>Add a price range:</b> a new row at the top of the price ranges table, from a date, backdating included. Correcting a range edits its row the same way.</li><li><b>Replace from a date:</b> a rate, a discount, the holder, the pricing kind, prepaid.</li><li><b>Disable:</b> it stops being offered. Make active undoes it.</li></ul></div>
+        <div><h4>Changed since the first pass</h4><ul><li>The replace sheet drops "disable on a date", so no ruling is needed. "Leave it active" is the default; a To-do on the Day rail reminds the office on the day.</li><li>The catch: a rate, a discount or a setting change has no date, so the new Contract is offered from the day it is saved. The sheet says so. A scheduled disable would close the gap, which makes it a real question for AA.</li><li>The sheet can change any setting, not just the price, because that is what a dated change means in the flat model.</li><li>Disable is a red-outlined button in a dialog. It is the only change that takes a Contract off the rail.</li></ul></div>
+        <div class="req"><p><b>Catalogue:</b> US-04.1.2 gains "Replace from a date" as one action. Moving the ticked Bookings is the office's own act, which D79 ("nothing moves by itself") allows; the story should say so.</p><p><b>Backlog:</b> closes "Build what S5 promises: a new Contract disabling the old one".</p><p><b>Open:</b> whether ranges may be backdated is still disputed (Greg, 23 Oct). The form allows it, as the build does today.</p></div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<!-- ============ NEW ============ -->
+<section id="new">
+  <article class="chapter">
+    <div class="ch-head"><h3>New contract</h3><p>A full page, not a panel, filled in the order the rules depend on each other. The holder decides who it may bill and whether it takes links. The pricing kind and prepaid are fixed once saved. Then where it is offered, then the wording. The rail shows, live, where it will land on the step rail and what the holder already has, so the office doesn't create a duplicate.</p></div>
+    <div class="ch-body">
+      <div class="mockwrap"><div class="frame">
+        <div class="mnav" data-nav></div>
+        <div class="page withrail">
+          <div class="head"><div class="t"><span class="back">‹ Contracts</span><b>New contract</b><small>For Merivale Plastic Surgery</small></div><span class="btn sec">Cancel</span><span class="btn pri">Create contract</span></div>
+          <div class="maincol">
+            <div class="card pad">
+              <div class="formsec"><i>1</i><div><h6>Holder and who it bills</h6>
+                <div class="formgrid">
+                  <div class="fld">Holder<div class="in sel2">Merivale Plastic Surgery</div><span class="hint">Fixed once created.</span></div>
+                  <div class="fld">Bills<span class="seg" style="align-self:flex-start"><span>Its holder</span><span class="on">The payer</span></span><span class="hint">A surgeon group may bill either.</span></div>
+                </div></div></div>
+            </div>
+            <div class="card pad">
+              <div class="formsec"><i>2</i><div><h6>Pricing</h6>
+                <div class="opts" style="margin-bottom:12px">
+                  <div class="optcard"><b>RVG, anaesthetist's rate</b><span>Units × their rate</span></div>
+                  <div class="optcard"><b>RVG, Contract's rate</b><span>Units × a rate set here</span></div>
+                  <div class="optcard"><b>RVG less a discount</b><span>A percentage off</span></div>
+                  <div class="optcard on"><b>Fixed price</b><span>From dated ranges</span></div>
+                </div>
+                <div class="formgrid">
+                  <div class="fld">First price from<div class="in mono">1 Dec 2026</div><span class="hint">May be in the past.</span></div>
+                  <div class="fld">Price (ex GST)<div class="in mono">$2,450.00</div></div>
+                  <div class="fld">Prepaid<span class="seg" style="align-self:flex-start"><span class="on">No</span><span>Yes</span></span><span class="hint">Kind and prepaid are fixed once created.</span></div>
+                  <div class="fld">Anaesthetist may change the price<div class="in" style="background:var(--bg);color:var(--mist)">Not on a fixed price</div></div>
+                </div></div></div>
+            </div>
+            <div class="card pad">
+              <div class="formsec"><i>3</i><div><h6>Where it is offered</h6>
+                <div class="formgrid">
+                  <div class="fld" style="grid-column:1/-1">Linked surgeons<div class="chipline"><span class="chipx">Ms G. Lim <i>×</i></span><span class="addchip">Add a surgeon</span></div></div>
+                  <div class="fld">Specialties<div class="chipline"><span class="chipx">Plastic surgery <i>×</i></span></div></div>
+                  <div class="fld">Funding tag<div class="in sel2">None</div></div>
+                </div></div></div>
+            </div>
+            <div class="card pad">
+              <div class="formsec"><i>4</i><div><h6>Name, codes and invoice wording</h6>
+                <div class="formgrid">
+                  <div class="fld">Name<div class="in">Abdominoplasty with liposuction</div><span class="hint">What the step rail shows.</span></div>
+                  <div class="fld">Holder reference<div class="in mono" style="color:var(--mist)">Optional</div></div>
+                  <div class="fld">Invoice description<div class="in">Abdominoplasty with liposuction</div></div>
+                  <div class="fld">Default RVG code<div class="in" style="color:var(--mist)">Choose</div></div>
+                </div></div></div>
+            </div>
+          </div>
+          <div class="railcol">
+            <div class="card pad">
+              <div class="ch">Where it will show</div>
+              <div class="path"><span>Patient</span><i>›</i><span>Standard</span><i>›</i><span>Abdominoplasty with liposuction</span></div>
+              <p style="font-size:12.5px;color:var(--slate)">On Ms G. Lim's Lists, for Plastic surgery, from 1 Dec 2026. Bills the patient or their insurer.</p>
+            </div>
+            <div class="card pad">
+              <div class="ch"><span class="l">Merivale already has <span class="cnt">18</span></span></div>
+              <div class="row edge"><span class="t">Abdominoplasty, simple <span class="mono" style="font-weight:400;color:var(--slate)">MER-006</span></span><span class="s"><span class="mono">$2,100.00</span> · Ms G. Lim · similar name</span></div>
+              <div class="row"><span class="t">Face lift <span class="mono" style="font-weight:400;color:var(--slate)">MER-001</span></span><span class="s"><span class="mono">$3,200.00</span> · Ms G. Lim</span></div>
+              <span class="txt">See all 18</span>
+            </div>
+            <div class="card pad">
+              <div class="ch">On save</div>
+              <p style="font-size:12.5px;color:var(--slate)">AA code <span class="mono" style="color:var(--ink)">MER-019</span> is assigned. You land on its page.</p>
+            </div>
+          </div>
+        </div>
+      </div></div>
+      <div class="notes">
+        <div><h4>Why this order</h4><ul><li>Choosing the holder first means only the allowed choices appear: AA, anaesthetist and prepaid Contracts can only bill the payer, and a hospital-held one takes no links.</li><li>Pricing comes before links because the override only exists on RVG kinds.</li></ul></div>
+        <div><h4>Other ways in</h4><ul><li>"New contract for this party" on a Party page fills step 1.</li><li>Replace from a date is a new Contract too, with every step filled from the old one.</li><li>The Billing monitor's "Choose a Contract" keeps its link here.</li></ul></div>
+        <div class="req"><p><b>Catalogue:</b> US-04.1.2, US-04.2.1, US-04.2.2, US-04.2.16 to US-04.2.18. The "similar name" hint is new, a light check, never a block.</p></div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<!-- ============ FUNDING TAGS TAB ============ -->
+<section id="tagstab">
+  <article class="chapter">
+    <div class="ch-head"><h3>Funding tags <span class="from">moves from Master data</span></h3><p>AA's ordered list of funding tags (<a href="#tags">explained above</a>), each with the funder it names, and the Contracts under each tag, grouped by hospital. The list order is the order a hospital's tags show at step 2 of the step rail, so it is set here with Up and Down. Picking a tag answers "which hospitals have SXAP schedules, and how many items each?"</p></div>
+    <div class="ch-body">
+      <div class="mockwrap"><div class="frame">
+        <div class="mnav" data-nav></div>
+        <div class="page" style="padding-bottom:28px">
+          <div class="head"><div class="t"><b>Contracts</b><small>What each Procedure can be priced at, and who it bills.</small></div><span class="btn sec">Add a tag</span></div>
+          <div class="tabs"><span class="tab">Contracts <span class="cnt">343</span></span><span class="tab">Parties <span class="cnt">24</span></span><span class="tab on">Funding tags <span class="cnt">3</span></span></div>
+          <div style="display:flex;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--e1);overflow:hidden;min-height:480px">
+            <div class="plist" style="width:300px">
+              <div class="gh">In step rail order</div>
+              <div class="p on"><span><span class="mono" style="font-weight:700">SXAP</span> <span style="font-weight:400;color:var(--slate)">Southern Cross Health Society</span></span><span class="cnt">98</span></div>
+              <div class="p"><span><span class="mono" style="font-weight:700">HNZ</span> <span style="font-weight:400;color:var(--slate)">Health NZ</span></span><span class="cnt">71</span></div>
+              <div class="p"><span><span class="mono" style="font-weight:700">ACC</span> <span style="font-weight:400;color:var(--slate)">ACC</span></span><span class="cnt">45</span></div>
+              <div class="note" style="font-size:12px;color:var(--slate);padding:12px 10px">Counts are Active Contracts carrying the tag.</div>
+            </div>
+            <div style="flex:1;min-width:0;padding:20px 22px;display:flex;flex-direction:column;gap:16px">
+              <div class="head"><div class="t"><b style="font-size:20px;line-height:26px"><span class="mono">SXAP</span> <span style="font-weight:600">Southern Cross Health Society</span></b><small>First in the list, so it shows first at step 2 under every hospital that has it</small></div><span class="btn sec">Move down</span><span class="btn sec">Edit</span></div>
+              <div class="card tablecard">
+                <table class="tbl">
+                  <thead><tr><th>Hospital</th><th class="r">Contracts</th><th>On the step rail</th><th></th></tr></thead>
+                  <tbody>
+                    <tr><td class="nm">Christchurch Eye Surgery</td><td class="r mono">56</td><td>Christchurch Eye Surgery › SXAP</td><td class="r"><span class="txt">View Contracts</span></td></tr>
+                    <tr><td class="nm">Forte Health</td><td class="r mono">20</td><td>Forte Health › SXAP</td><td class="r"><span class="txt">View Contracts</span></td></tr>
+                    <tr><td class="nm">Southern Cross</td><td class="r mono">18</td><td>Southern Cross › SXAP</td><td class="r"><span class="txt">View Contracts</span></td></tr>
+                    <tr><td class="nm">Southern Endoscopy</td><td class="r mono">4</td><td>Southern Endoscopy › SXAP</td><td class="r"><span class="txt">View Contracts</span></td></tr>
+                    <tr class="grp"><td colspan="4"><b>Not under a hospital</b><span class="pill">0</span> <span class="dim" style="font-size:12px">Tagged Contracts that bill a surgeon group or the payer sit elsewhere; the tag is only a label on them</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="notice">A tag can't be removed while a Contract carries it. Renaming the code or changing its funder is audited.</div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+      <div class="notes">
+        <div><h4>What it gives</h4><ul><li>One place to see how each funder's work is spread across hospitals.</li><li>"View Contracts" opens the catalogue grouped by funding tag, filtered to that hospital.</li><li>The tag order is visible where it is set, not hidden in Master data.</li></ul></div>
+        <div><h4>What it doesn't do</h4><ul><li>No step rail test screen: the earlier "Try a List" idea is out.</li><li>No bulk changes to the Contracts under a tag.</li></ul></div>
+        <div class="req"><p><b>Catalogue:</b> US-13.4.5 (the tag list and its order), US-04.2.17 (a Contract's tag). Moves from Master data with Parties.</p><p><b>Mock data:</b> counts other than CES's are made up.</p></div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<!-- ============ CHANGES ============ -->
+<section id="changes">
+  <h2>What changes</h2>
+  <p class="sub">This touches stories, so it fits the plan route (requirements update, then phases from 45) better than routine app changes.</p>
+  <table class="invtable">
+    <tbody>
+      <tr><td>US-04.1.2 Create, edit and disable</td><td>Add: a page per Contract; group by holder, kind, funding tag, surgeon, invoice destination or pricing; Replace from a date as one action, moving only the Bookings the office ticks; Disable asks to confirm; New contract is a page.</td></tr>
+            <tr><td>US-13.4.1 Reference tables</td><td>Contracts, Parties and Funding tags are kept in the Contracts section; the rest stays in Master data.</td></tr>
+      <tr><td>US-04.1.5 Parties</td><td>Grouped by kind, Parties with no Contracts included; each Party's page shows its details and its Contracts counted by funding tag.</td></tr>
+      <tr><td>US-13.4.5 Funding tags</td><td>The ordered list with each tag's funder, and the Contracts under each tag grouped by hospital.</td></tr>
+      <tr><td>US-04.2.15 Price ranges</td><td>Shown as a table, newest first, with the change on the one before and the Procedures each priced; ended ranges fold after three.</td></tr>
+      <tr><td>App</td><td>A new side nav entry and routes; the side panel retired for a record page; Master data's Billing group shrinks to RVG groups and Modifiers. Old <span class="mono">?view=contracts</span> links redirect.</td></tr>
+      <tr><td>Sweep</td><td>Capture recipes for contracts and parties, the S5 run sheet, and the demo guide are left for your sweep, as usual.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ BUILD ============ -->
+<section id="build">
+  <h2>Build order</h2>
+  <p class="sub">Five phases, numbered from 45, each run in a fresh session once the catalogue is updated.</p>
+  <div class="slices">
+    <div class="slice"><span class="n">45</span><b>The section and the Contract page</b><p>Nav entry, routes, tab strip, the list moved. The Contract page with the price ranges table, cards edited in place and the Disable dialog. The edit panel goes; old links redirect.</p><span class="sz">Large</span></div>
+    <div class="slice"><span class="n">46</span><b>New contract page</b><p>The ordered page with where it will show and the holder's similar Contracts. The panel goes entirely.</p><span class="sz">Medium</span></div>
+    <div class="slice"><span class="n">47</span><b>Grouped catalogue</b><p>Six groupings with the index pane, in the URL, remembered per person.</p><span class="sz">Medium</span></div>
+    <div class="slice"><span class="n">48</span><b>Parties and Funding tags tabs</b><p>Both move from Master data; a page per Party; each tag's Contracts by hospital.</p><span class="sz">Medium</span></div>
+    <div class="slice"><span class="n">49</span><b>Replace from a date</b><p>The sheet, moving ticked Bookings in one change, and a To-do on the day to disable the old one.</p><span class="sz">Medium</span></div>
+  </div>
+  <div class="notdoing"><b>Not doing:</b> a desk of Contract work; adding one price range to many Contracts at once; a step rail test screen. Price ranges are added one Contract at a time, from that Contract's page.</div>
+</section>
+
+<section id="questions">
+  <div class="reco">
+    <div>
+      <h2>Settled</h2>
+      <ol>
+        <li><strong>Idea 1, idea 2's grouping and idea 4's Replace from a date</strong>, with Parties and Funding tags as tabs. <strong>No desk</strong> and <strong>no step rail test screen</strong>: the section opens on the catalogue.</li>
+        <li><strong>No bulk price ranges.</strong> Every change is made on one Contract.</li>
+        <li><strong>Edit in place, card by card</strong>, each its own audited change.</li>
+        <li><strong>Replace from a date</strong> leaves the old one active with a reminder, or disables it now. No scheduled disable for now, though it is the only way to stop a rate's replacement being offered early.</li>
+        <li><strong>Price ranges as a table</strong>, newest first, ended ranges folded, built to hold ten years.</li><li><strong>Parties are the address book</strong>: who, and where their invoices go. Contracts are what and how much. The tab stays "Parties".</li><li><strong>Funding tags stay</strong>, labelled "Funding tag": they are the SXAP / HNZ / ACC step AA accepted in the contract picker workshop.</li><li><strong>Built through the plan route:</strong> catalogue first, then phases 45 to 49.</li>
+      </ol>
+    </div>
+    <div class="q">
+      <h4>Open questions going to the catalogue</h4>
+      <ul>
+        <li><b>Scheduled disable</b> (for AA): should a Contract be able to stop on a future date, so a replaced rate stops being offered on the day?</li>
+        <li><b>Untagged hospital Contracts</b> (for Ben): St George's plain RVG Contract sits under Special, not under St George's. Is that where the office would look?</li>
+        <li><b>Backstops:</b> US-04.3.9 gives each hospital and tag an RVG backstop; the domain model has only the Fixed price one.</li>
+        <li>Still to settle in build: the default grouping (Kind is drawn) and the nav position (after Ledger is drawn).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>Second pass on <a href="contracts-ideas.html">Contracts screen ideas</a>. Built on the requirements catalogue (EP-04, AR-58), the catch-up build record and the layout audit. Contract names, codes and prices come from the seed and AR-58; patient names, Mr R. Fenwick and some counts are made up for the mocks.</footer>
+</main>
+
+<script>
+/* The admin side nav, as SideNav.tsx draws it, with Contracts as its own entry. */
+(function(){
+  var items=[['Day view'],['Intake','3'],['Draft Lists','3'],['Conflicts'],['Notifications','4'],['Review queue','5','c'],['Invoices'],['Patients'],['Billing monitor'],['Ledger'],['Contracts',null,null,true],['Master data'],['Audit']];
+  document.querySelectorAll('.mnav[data-nav]').forEach(function(el){
+    var badge=el.getAttribute('data-badge');
+    var h='<div class="logo"><b>Anaesthesia Associates</b><small>ADMIN</small></div>';
+    items.forEach(function(it){
+      var b=it[3]?badge:it[1];
+      h+='<div class="it'+(it[3]?' on':'')+'">'+it[0]+(b?' <em'+(it[2]?' class="c"':'')+'>'+b+'</em>':'')+'</div>';
+    });
+    h+='<div class="me"><i>KM</i><div>Kirsty<span>Office</span></div></div>';
+    el.innerHTML=h;
+  });
+})();
+
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+/* The grouped catalogue, live. Contracts drawn from the seed and AR-58; counts in "In use" are made up. */
+(function(){
+  var KIND={aa:'Anaesthesia Associates',hospital:'Hospitals',insurer:'Insurers',funder:'Funders',surgeonGroup:'Surgeon groups',surgeon:'Surgeons',anaesthetist:'Anaesthetists'};
+  var KIND_ORDER=['aa','hospital','insurer','funder','surgeonGroup','surgeon','anaesthetist'];
+  var PRICING={rvgA:"RVG at the anaesthetist's rate",rvgC:"RVG at the Contract's rate",rvgD:'RVG less a discount',fixed:'Fixed price',open:'Typed on the Procedure'};
+  var PRICING_ORDER=['rvgA','rvgC','rvgD','fixed','open'];
+  var TAG_ORDER=['SXAP','HNZ','ACC','No tag'];
+  function C(c,n,h,k,t,s,b,p,pr,u,o){o=o||{};return {c:c,n:n,h:h,k:k,t:t,s:s,b:b,p:p,pr:pr,u:u,ref:o.ref||'',nx:o.nx||'',st:o.st||'active',sys:!!o.sys,pre:!!o.pre,sp:o.sp||''}}
+  var STG="St George's",SX='Southern Cross',FORTE='Forte Health',CES='Christchurch Eye Surgery',CPH='Christchurch Public',COS='Canterbury Orthopaedic Surgeons',MER='Merivale Plastic Surgery',AA='Anaesthesia Associates';
+  var HALE='Mr T. Hale',LIM='Ms G. Lim',OKA='Mr C. Okafor',DOY='Mr P. Doyle';
+  var ROWS=[
+    C('AA-RVG','No contract · RVG',AA,'aa','',[],'payer','rvgA',"RVG at the anaesthetist's rate",1204,{sys:1}),
+    C('AA-FIX','No contract · Fixed price',AA,'aa','',[],'payer','open','Typed on the Procedure',37,{sys:1}),
+    C('AA-PRE','Prepaid · Fixed price',AA,'aa','',[],'payer','open','Typed on the Procedure',4,{sys:1,pre:1}),
+    C('STG-001',"St George's RVG",STG,'hospital','',[],'holder','rvgA',"RVG at the anaesthetist's rate",212,{ref:'SGANAES01'}),
+    C('STG-ACC-001',"ACC elective services via St George's",STG,'hospital','ACC',[],'holder','rvgC','$25.00 per unit',48),
+    C('SX-001','Southern Cross RVG',SX,'hospital','',[],'holder','rvgA',"RVG at the anaesthetist's rate",301),
+    C('SX-SXAP-001','Southern Cross Affiliated Provider',SX,'hospital','SXAP',[],'holder','rvgC','$26.50 per unit',154),
+    C('FORTE-001','Forte Health RVG',FORTE,'hospital','',[],'holder','rvgA',"RVG at the anaesthetist's rate",88),
+    C('FORTE-002','Forte Health RVG less 10%',FORTE,'hospital','',[],'holder','rvgD','RVG less 10%',6),
+    C('CES-SXAP-001','Cataract IOL (LA by Anaesthetist)',CES,'hospital','SXAP',[],'holder','fixed','$357.39',86,{ref:'8268'}),
+    C('CES-SXAP-002','Blepharoplasty, unilateral, LA (Day Stay/Theatre)',CES,'hospital','SXAP',[],'holder','fixed','$791.30',12,{ref:'AP0126'}),
+    C('CES-SXAP-007','Vitrectomy · 0 to 60 mins',CES,'hospital','SXAP',[],'holder','fixed','$739.13',7,{ref:'AP0163'}),
+    C('CES-HNZ-001','Cataract, inclusive of Standard Intraocular Lens (Unilateral)',CES,'hospital','HNZ',[],'holder','fixed','$420.00',41,{ref:'HNZCATall'}),
+    C('CES-ACC-001','Cataract Extraction Simple, Phacoemulsion + IOL',CES,'hospital','ACC',[],'holder','fixed','$450.00',19,{ref:'OPT101'}),
+    C('CES-001','Christchurch Eye Surgery RVG',CES,'hospital','',[],'holder','rvgA',"RVG at the anaesthetist's rate",15),
+    C('CES-002','Christchurch Eye Surgery 2025 rate',CES,'hospital','',[],'holder','rvgC','$25.00 per unit',1,{st:'disabled'}),
+    C('CPH-HNZ-001','Health NZ agreed rate',CPH,'hospital','HNZ',[],'holder','rvgC','$23.00 per unit',63),
+    C('NIB-001','nib RVG','nib','insurer','',[],'holder','rvgA',"RVG at the anaesthetist's rate",27,{ref:'NIBAN2026'}),
+    C('NZDF-001','NZDF','NZDF','funder','',[],'holder','rvgA',"RVG at the anaesthetist's rate",3),
+    C('COS-ACC-001','ACC orthopaedic services',COS,'surgeonGroup','ACC',[HALE],'holder','rvgC','$24.00 per unit',22),
+    C('COS-ACC-002','COS ACC fixed fees',COS,'surgeonGroup','ACC',[HALE],'holder','fixed','No price yet',1,{nx:'$1,250.00 from 5 Dec'}),
+    C('ARIA-001','Aria Skin and Laser Clinic','Aria Skin and Laser Clinic','surgeonGroup','',[LIM,OKA],'holder','rvgC','$26.50 per unit',9),
+    C('UNI-001','Unisports Ortho','Unisports Ortho','surgeonGroup','',[HALE],'holder','rvgC','$93.47 per unit',3),
+    C('MER-001','Face lift',MER,'surgeonGroup','',[LIM],'payer','fixed','$3,200.00',14,{sp:'Plastic surgery'}),
+    C('MER-004','Facelift plus 1 add on (eg bleph)',MER,'surgeonGroup','',[LIM],'payer','fixed','$3,400.00',3,{sp:'Plastic surgery'}),
+    C('MER-006','Abdominoplasty, simple',MER,'surgeonGroup','',[LIM],'payer','fixed','$2,100.00',5,{sp:'Plastic surgery'}),
+    C('DOYLE-001','Gastric bypass',DOY,'surgeon','',[DOY],'payer','fixed','$2,800.00',9,{nx:'$2,950.00 from 1 Dec',sp:'General surgery'}),
+    C('DOYLE-002','Sleeve gastrectomy',DOY,'surgeon','',[DOY],'payer','fixed','$2,400.00',4,{sp:'General surgery'}),
+    C('SOUTER-001','Rhinoplasty','Dr Melanie Souter','anaesthetist','',[],'payer','fixed','$1,200.00',2,{pre:1,nx:'$1,300.00 from 5 Jan',sp:'Plastic surgery, ENT'}),
+    C('SOUTER-002','Blepharoplasty, upper lids','Dr Melanie Souter','anaesthetist','',[],'payer','fixed','$900.00',1,{pre:1}),
+    C('SOUTER-003','Breast augmentation','Dr Melanie Souter','anaesthetist','',[],'payer','fixed','$1,450.00',0,{pre:1})
+  ];
+  function dest(r){
+    if(r.b==='payer') return ['Patient', r.pre?'Prepaid':'Standard'];
+    if(r.k==='hospital'&&r.t) return [r.h, r.t];
+    return ['Special', r.h];
+  }
+  var GROUPINGS=[
+    {key:'kind',label:'Kind',keys:function(r){return [[KIND[r.k], r.h]]},order:function(g){return KIND_ORDER.map(function(k){return KIND[k]}).indexOf(g)}},
+    {key:'holder',label:'Holder',keys:function(r){return [[r.h, r.t||'No tag']]},section:function(r){return KIND[r.k]},order:function(g,rows){var r=rows[0];return KIND_ORDER.indexOf(r.k)*1000+(g===AA?-1:0)}},
+    {key:'tag',label:'Funding tag',keys:function(r){return [[r.t||'No tag', r.h]]},order:function(g){return TAG_ORDER.indexOf(g)}},
+    {key:'surgeon',label:'Surgeon',keys:function(r){return r.s.length?r.s.map(function(s){return [s, r.h]}):[['Not linked to a surgeon', r.h]]},order:function(g){return g==='Not linked to a surgeon'?999:0}},
+    {key:'dest',label:'Invoice goes to',keys:function(r){return [dest(r)]},order:function(g){return g==='Patient'?-1:g==='Special'?999:0}},
+    {key:'pricing',label:'Pricing',keys:function(r){return [[PRICING[r.p], r.h]]},order:function(g){return PRICING_ORDER.map(function(k){return PRICING[k]}).indexOf(g)}}
+  ];
+  var state={g:'kind',sel:'',q:'',st:'active'};
+  var gEl=document.getElementById('catgroup'),idx=document.getElementById('catidx'),head=document.getElementById('cathead'),body=document.getElementById('catbody'),count=document.getElementById('catcount'),q=document.getElementById('catq'),stEl=document.getElementById('catstatus');
+  if(!gEl) return;
+  gEl.innerHTML=GROUPINGS.map(function(g){return '<button type="button" data-g="'+g.key+'" aria-pressed="'+(g.key===state.g)+'">'+g.label+'</button>'}).join('');
+  function matches(r){
+    if(state.st!=='all'&&r.st!==state.st) return false;
+    var t=state.q.trim().toLowerCase(); if(!t) return true;
+    return (r.n+' '+r.c+' '+r.ref+' '+r.h).toLowerCase().indexOf(t)>=0;
+  }
+  function build(){
+    var G=GROUPINGS.filter(function(g){return g.key===state.g})[0];
+    var groups={},order=[];
+    ROWS.filter(matches).forEach(function(r){
+      G.keys(r).forEach(function(k){
+        if(!groups[k[0]]){groups[k[0]]={name:k[0],rows:[],section:G.section?G.section(r):''};order.push(k[0])}
+        groups[k[0]].rows.push({r:r,sub:k[1]});
+      });
+    });
+    order.sort(function(a,b){var oa=G.order(a,groups[a].rows.map(function(x){return x.r})),ob=G.order(b,groups[b].rows.map(function(x){return x.r}));return oa-ob||a.localeCompare(b)});
+    return {G:G,groups:groups,order:order};
+  }
+  function pricingCell(r){
+    var h='<span class="mono">'+esc(r.pr)+'</span>';
+    if(r.p==='rvgA'||r.p==='open') h='<span>'+esc(r.pr)+'</span>';
+    if(r.p==='fixed'&&r.pr==='No price yet') h='<span style="color:var(--slate)">No price yet</span>';
+    if(r.nx) h+='<br><span class="next">→ <span class="mono">'+esc(r.nx)+'</span></span>';
+    return h;
+  }
+  function render(){
+    var B=build(),G=B.G;
+    if(state.sel&&!B.groups[state.sel]) state.sel='';
+    var total=0; ROWS.forEach(function(r){if(matches(r)) total++});
+    var h='<button type="button" data-sel="" aria-pressed="'+(state.sel==='')+'"><span>All Contracts</span><span class="cnt">'+total+'</span></button>';
+    var lastSec=null;
+    B.order.forEach(function(name){
+      var g=B.groups[name];
+      if(g.section&&g.section!==lastSec&&g.section!==AA){h+='<div class="gh">'+esc(g.section)+'</div>';}
+      lastSec=g.section;
+      h+='<button type="button" data-sel="'+esc(name)+'" aria-pressed="'+(state.sel===name)+'"><span>'+esc(name)+'</span><span class="cnt">'+g.rows.length+'</span></button>';
+    });
+    if(state.g==='surgeon') h+='<div class="note">A Contract linked to two surgeons shows under both.</div>';
+    idx.innerHTML=h;
+    var showHolder=state.g!=='holder';
+    var cols=['AA code','Name'].concat(showHolder?['Holder']:[]).concat(['Bills','Pricing','Tag','In use','Status']);
+    head.innerHTML='<tr>'+cols.map(function(c){return '<th'+(c==='In use'?' class="r"':'')+'>'+c+'</th>'}).join('')+'</tr>';
+    var span=cols.length,rowsH='';
+    function row(x){
+      var r=x.r;
+      return '<tr'+(r.st==='disabled'?' class="off"':'')+'><td class="mono" style="white-space:nowrap">'+esc(r.c)+'</td><td class="nm">'+esc(r.n)+(r.ref?' <span class="mono dim">'+esc(r.ref)+'</span>':'')+(r.sp?'<small>'+esc(r.sp)+'</small>':'')+'</td>'
+        +(showHolder?'<td class="holder">'+esc(r.h)+'</td>':'')
+        +'<td style="white-space:nowrap">'+(r.b==='payer'?'The payer':'Its holder')+'</td><td>'+pricingCell(r)+'</td>'
+        +'<td><span style="display:inline-flex;gap:4px;flex-wrap:wrap">'+(r.sys?'<span class="pill line">System</span>':'')+(r.t?'<span class="pill code">'+r.t+'</span>':'')+(r.pre?'<span class="pill">Prepaid</span>':'')+'</span></td>'
+        +'<td class="r mono">'+r.u.toLocaleString('en-NZ')+'</td><td>'+(r.st==='active'?'<span class="pill ok">Active</span>':'<span class="pill">Disabled</span>')+'</td></tr>';
+    }
+    if(B.order.length===0){
+      rowsH='<tr><td colspan="'+span+'"><div class="empty">No Contracts match. Check the spelling, or switch to All to include Disabled ones.</div></td></tr>';
+    } else if(state.sel===''){
+      B.order.forEach(function(name){
+        var g=B.groups[name];
+        rowsH+='<tr class="grp"><td colspan="'+span+'"><b>'+esc(name)+'</b><span class="pill">'+g.rows.length+'</span></td></tr>';
+        g.rows.slice().sort(function(a,b){return a.sub.localeCompare(b.sub)}).forEach(function(x){rowsH+=row(x)});
+      });
+    } else {
+      var g=B.groups[state.sel],subs={},so=[];
+      g.rows.forEach(function(x){if(!subs[x.sub]){subs[x.sub]=[];so.push(x.sub)}subs[x.sub].push(x)});
+      so.sort(function(a,b){return (a==='No tag')-(b==='No tag')||a.localeCompare(b)});
+      rowsH+='<tr class="grp"><td colspan="'+span+'" style="padding-top:12px"><b style="font-size:15px">'+esc(state.sel)+'</b><span class="pill">'+g.rows.length+'</span></td></tr>';
+      so.forEach(function(s){
+        rowsH+='<tr class="grp"><td colspan="'+span+'" style="padding-top:10px"><span class="car">▾</span><b>'+esc(s)+'</b><span class="pill">'+subs[s].length+'</span></td></tr>';
+        subs[s].forEach(function(x){rowsH+=row(x)});
+      });
+    }
+    body.innerHTML=rowsH;
+    var shown=state.sel===''?total:B.groups[state.sel].rows.length;
+    count.innerHTML='<span class="mono">'+shown+'</span> '+(shown===1?'Contract':'Contracts')+(state.st==='active'?' active':state.st==='disabled'?' disabled':'')+(state.sel?' in '+esc(state.sel):'')+(state.q.trim()?' matching "'+esc(state.q.trim())+'"':'')+'. Grouped by '+G.label.toLowerCase()+'.';
+  }
+  gEl.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;state.g=b.dataset.g;state.sel='';gEl.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',String(x===b))});render()});
+  stEl.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;state.st=b.dataset.v;stEl.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',String(x===b))});render()});
+  idx.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;state.sel=b.dataset.sel;render();var nb=idx.querySelector('button[data-sel="'+CSS.escape(state.sel)+'"]');if(nb)nb.focus()});
+  q.addEventListener('input',function(){state.q=q.value;render()});
+  render();
+})();
+
+</script>
+</body>
+</html>

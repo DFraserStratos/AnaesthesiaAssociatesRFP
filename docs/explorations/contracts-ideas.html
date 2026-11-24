@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contracts Screen Ideas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Tokens: the app's own (aa-prototype/src/theme/tokens.ts), so the mocks read as the app. */
+:root{
+  --ink:#172320;--slate:#58635F;--mist:#8A9490;--lineStrong:#C9D1CE;--line:#E2E7E5;--sunken:#EDF1EF;--bg:#F6F8F7;--surface:#FFFFFF;--grid:#F1F4F2;
+  --brand:#A91E3E;--brandDeep:#8C1533;--brandTint:#F7E7EC;--brandMuted:#D89AA9;
+  --teal:#0D6E63;--tealHover:#0A5A51;--tealTint:#E1F0ED;
+  --ok:#1E8E5A;--okTint:#E3F4EB;--okOn:#157A49;
+  --warn:#A16207;--warnTint:#F9F0DC;--warnOn:#7C4D08;
+  --err:#C2403C;--errTint:#FAE9E7;--errOn:#9C332F;
+  --e1:0 1px 2px rgba(23,35,32,.05),0 2px 6px rgba(23,35,32,.05);
+  --e2:0 2px 4px rgba(23,35,32,.06),0 8px 20px rgba(23,35,32,.09);
+  --e3:0 8px 16px rgba(23,35,32,.10),0 24px 56px rgba(23,35,32,.18);
+  --r-xs:6px;--r-sm:8px;--r-ctl:10px;--r-md:12px;--r-card:14px;--r-lg:16px;--r-panel:20px;
+  --shadow:0 1px 2px rgba(23,35,32,.06),0 4px 14px rgba(23,35,32,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:"Spline Sans Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+a{color:var(--teal)}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1560px;margin:0 auto;padding:0 32px}
+h1,h2,h3,h4,p{margin:0}
+h2{font-size:24px;line-height:30px;letter-spacing:-.005em;margin-bottom:6px}
+h3{font-size:19px;line-height:25px;margin-bottom:4px}
+.sub{color:var(--slate);margin:0 0 20px;max-width:74ch}
+section{padding:48px 0 8px}
+
+/* ===== hero ===== */
+header.top{background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{padding-top:40px;padding-bottom:36px}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:56px;align-items:start}
+.kicker{font-size:14px;color:var(--slate)}
+.hero h1{font-size:50px;line-height:1.06;letter-spacing:-.025em;margin:14px 0 18px;font-weight:800;max-width:17ch}
+.hero h1 span{display:block;color:var(--slate);font-weight:700}
+.lede{font-size:17px;color:var(--slate);max-width:62ch}
+.lede+.lede{margin-top:12px}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px;max-width:720px}
+.toc a{font-size:13px;font-weight:600;text-decoration:none;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:6px 11px;border-radius:999px}
+.toc a:hover{border-color:var(--teal);color:var(--teal)}
+.toc a .tn{color:var(--mist);margin-right:6px;font-variant-numeric:tabular-nums}
+.navpair{display:flex;gap:20px;align-items:flex-start}
+.navpair figure{margin:0}
+.navpair figcaption{font-size:13px;font-weight:600;color:var(--slate);margin:0 0 10px}
+.navpair .arrow{align-self:center;color:var(--mist);font-size:22px;padding-top:24px}
+
+/* ===== side nav, as SideNav.tsx draws it ===== */
+.mnav{background:var(--ink);display:flex;flex-direction:column;padding:20px 12px;gap:2px;width:216px;flex:none}
+.mnav .logo{display:flex;flex-direction:column;gap:5px;padding:0 8px 18px}
+.mnav .logo b{color:#fff;font-family:Georgia,"Times New Roman",serif;font-weight:400;font-size:15px;letter-spacing:.01em}
+.mnav .logo small{font-size:9px;font-weight:600;letter-spacing:.14em;color:var(--brandMuted);padding-left:2px}
+.mnav .it{display:flex;justify-content:space-between;align-items:center;color:rgba(255,255,255,.9);font-size:13.5px;font-weight:500;padding:9px 12px;border-radius:9px;white-space:nowrap}
+.mnav .it.on{background:rgba(255,255,255,.08);color:#fff;font-weight:600;box-shadow:inset 3px 0 0 var(--brand)}
+.mnav .it.new{outline:1.5px dashed rgba(216,154,169,.7);outline-offset:-1px}
+.mnav .it em{font-style:normal;font-size:11px;font-weight:700;background:var(--warn);color:#fff;border-radius:999px;padding:0 7px;line-height:18px}
+.mnav .it em.c{background:var(--brand)}
+.mnav .me{margin-top:auto;display:flex;align-items:center;gap:10px;padding:8px;color:#fff;font-size:13px;font-weight:600}
+.mnav .me i{width:30px;height:30px;border-radius:50%;background:var(--brandTint);color:var(--brand);font-style:normal;font-size:11px;font-weight:700;display:grid;place-items:center}
+.mnav .me span{display:block;font-size:11.5px;font-weight:400;color:rgba(255,255,255,.55)}
+.mnav.short{min-height:0;padding-bottom:14px}
+.subnav{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 10px;width:190px;font-size:13px}
+.subnav .g{font-size:11px;font-weight:700;color:var(--mist);padding:8px 8px 4px}
+.subnav .s{padding:5px 8px;border-radius:7px;color:var(--slate)}
+.subnav .s.on{background:var(--tealTint);color:var(--teal);font-weight:600}
+.nowstack{display:flex;gap:10px;align-items:flex-start}
+.clicks{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--warnOn);background:var(--warnTint);border-radius:999px;padding:2px 9px;margin-left:6px}
+.clicks.ok{color:var(--okOn);background:var(--okTint)}
+
+/* ===== why diagram ===== */
+.why{display:grid;grid-template-columns:1fr 340px 1fr;gap:0;align-items:center;background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:28px}
+.why .col{display:flex;flex-direction:column;gap:8px}
+.why .colh{font-size:14px;font-weight:700;margin-bottom:4px}
+.why .colh span{display:block;font-size:13px;font-weight:400;color:var(--slate)}
+.why .in,.why .out{background:var(--bg);border-radius:10px;padding:9px 12px;font-size:13.5px;position:relative}
+.why .in b,.why .out b{font-weight:600}
+.why .in small,.why .out small{display:block;color:var(--slate);font-size:12.5px;line-height:17px}
+.why .in{margin-right:28px}
+.why .in::after{content:"";position:absolute;right:-28px;top:50%;width:28px;border-top:1.5px solid var(--lineStrong)}
+.why .out{margin-left:28px}
+.why .out::before{content:"";position:absolute;left:-28px;top:50%;width:28px;border-top:1.5px solid var(--lineStrong)}
+.hub{background:var(--ink);color:#fff;border-radius:var(--r-panel);padding:22px;box-shadow:var(--e2);position:relative}
+.hub .code{display:inline-block;font-family:"Spline Sans Mono",monospace;font-size:12px;background:rgba(255,255,255,.1);border-radius:6px;padding:2px 8px}
+.hub h4{font-size:21px;line-height:26px;margin:10px 0 4px}
+.hub p{font-size:13px;color:#C8D2CE;line-height:19px}
+.hub dl{margin:14px 0 0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px}
+.hub dt{color:#9FB0AA}
+.hub dd{margin:0;font-weight:600}
+.hub .foot{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.12);font-size:12.5px;color:#C8D2CE}
+
+/* ===== tables in the explainer ===== */
+.invtable{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow);font-size:13.5px}
+.invtable th{text-align:left;font-size:12.5px;color:var(--mist);font-weight:700;padding:10px 14px;border-bottom:1px solid var(--line)}
+.invtable td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.invtable tr:last-child td{border-bottom:none}
+.invtable td:first-child{font-weight:600;width:230px}
+.invtable .gap td:first-child{color:var(--errOn)}
+.storyid{font-family:"Spline Sans Mono",monospace;font-size:11.5px;color:var(--mist);white-space:nowrap}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.twocol h3{font-size:16px;margin:0 0 10px}
+
+/* ===== idea blocks ===== */
+.idea{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);margin:0 0 32px;overflow:hidden}
+.idea-head{display:flex;align-items:flex-start;gap:16px;padding:24px 28px 0}
+.num{flex:none;min-width:30px;color:var(--mist);font-weight:700;font-size:19px;line-height:25px;font-variant-numeric:tabular-nums}
+.idea-head p{margin:4px 0 0;color:var(--slate);max-width:84ch}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.tag{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--slate);background:var(--bg)}
+.tag.fit{background:var(--okTint);color:var(--okOn);border-color:transparent}
+.tag.edit{background:var(--warnTint);color:var(--warnOn);border-color:transparent}
+.tag.rule{background:var(--errTint);color:var(--errOn);border-color:transparent}
+.tag.pick{background:var(--ink);color:#fff;border-color:transparent}
+.idea-body{display:flex;flex-direction:column;gap:22px;padding:22px 28px 28px}
+.notes{display:grid;grid-template-columns:1fr 1fr 1.15fr;column-gap:28px;align-items:start}
+.notes h4{font-size:14px;margin:0 0 6px}
+.notes ul{margin:0;padding-left:18px;font-size:14.5px}
+.notes li{margin:0 0 5px}
+.notes .req{font-size:14px;background:var(--bg);border-radius:var(--r-ctl);padding:12px 14px}
+.notes .req p{margin:0 0 6px}.notes .req p:last-child{margin:0}
+.mock-cap{font-size:13px;font-weight:600;color:var(--slate);margin:0 0 8px}
+.mockwrap{border:1px solid var(--line);border-radius:var(--r-card);overflow-x:auto;background:var(--bg)}
+.frame{display:flex;min-width:1440px;min-height:760px;font-size:13px}
+.page{flex:1;min-width:0;padding:22px 28px 28px;display:flex;flex-direction:column;gap:14px}
+.page.withrail{display:grid;grid-template-columns:minmax(0,1fr) 412px;gap:20px;align-items:start}
+.page.withrail>.head,.page.withrail>.tabsrow{grid-column:1/-1}
+.maincol,.railcol{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+/* ===== app parts, drawn at the app's sizes ===== */
+.head{display:flex;align-items:flex-start;gap:12px}
+.head .t{flex:1;min-width:0}
+.head .t b{display:block;font-size:24px;line-height:30px;font-weight:700;letter-spacing:-.01em}
+.head .t small{display:block;font-size:13px;color:var(--slate);margin-top:2px}
+.back{font-size:13px;font-weight:600;color:var(--teal);margin-bottom:6px;display:inline-block}
+.btn{height:36px;padding:0 14px;border-radius:var(--r-ctl);display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;white-space:nowrap;border:1px solid transparent}
+.btn.lg{height:44px;padding:0 18px;font-size:14px}
+.btn.pri{background:var(--teal);color:#fff}
+.btn.sec{background:var(--surface);border-color:var(--lineStrong);color:var(--ink)}
+.btn.ghost{color:var(--teal);padding:0 4px}
+.txt{font-size:12.5px;font-weight:700;color:var(--teal);white-space:nowrap}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.search{height:36px;flex:1 1 280px;max-width:420px;border:1px solid var(--line);background:var(--surface);border-radius:999px;display:flex;align-items:center;gap:8px;padding:0 14px;color:var(--mist);font-size:13px}
+.search svg{flex:none}
+.sel{height:36px;padding:0 12px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-ctl);display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--ink);white-space:nowrap}
+.sel::after{content:"";width:6px;height:6px;border-right:1.5px solid var(--slate);border-bottom:1.5px solid var(--slate);transform:rotate(45deg) translateY(-2px);margin-left:2px}
+.seg{display:inline-flex;background:var(--sunken);border-radius:9px;padding:3px;font-size:12.5px;font-weight:600}
+.seg span{text-align:center;padding:5px 12px;border-radius:7px;color:var(--slate)}
+.seg span.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(23,35,32,.2)}
+.count{font-size:12.5px;color:var(--slate)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tab{font-size:14px;font-weight:500;color:var(--slate);padding:6px 10px 9px;border-bottom:2px solid transparent;display:flex;gap:6px;align-items:center;white-space:nowrap;margin-bottom:-1px}
+.tab.on{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
+.cnt{font-family:"Spline Sans Mono",monospace;font-size:11px;font-weight:600;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--sunken);color:var(--slate);display:inline-grid;place-items:center}
+.cnt.w{background:var(--warnTint);color:var(--warnOn)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--sunken);color:var(--slate);white-space:nowrap;line-height:17px}
+.pill.ok{background:var(--okTint);color:var(--okOn)}
+.pill.warn{background:var(--warnTint);color:var(--warnOn)}
+.pill.err{background:var(--errTint);color:var(--errOn)}
+.pill.line{background:var(--surface);box-shadow:inset 0 0 0 1px var(--lineStrong);color:var(--ink)}
+.pill.code{font-family:"Spline Sans Mono",monospace;font-size:11px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--e1)}
+.card.pad{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.ch{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:14px}
+.ch .l{display:flex;align-items:center;gap:8px}
+.ch small{font-weight:500;font-size:12px;color:var(--mist)}
+.row{background:var(--bg);border-radius:var(--r-sm);padding:10px 12px;display:flex;flex-direction:column;gap:3px;position:relative}
+.row.edge{box-shadow:inset 3px 0 0 var(--warn)}
+.row.edge-e{box-shadow:inset 3px 0 0 var(--err)}
+.row.edge-t{box-shadow:inset 3px 0 0 var(--teal)}
+.row .t{font-weight:600;font-size:12.5px;line-height:17px}
+.row .s{font-size:11.5px;line-height:15px;color:var(--slate)}
+.row .acts{display:flex;gap:12px;margin-top:4px}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:9px 14px;font-size:13px}
+.kv dt{color:var(--slate)}
+.kv dd{margin:0;font-weight:500}
+.chipline{display:flex;gap:6px;flex-wrap:wrap}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl thead th{position:sticky;top:0;background:var(--bg);text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mist);padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--grid);vertical-align:top}
+.tbl td.r,.tbl th.r{text-align:right}
+.tbl tr.grp td{background:var(--surface);padding-top:14px;padding-bottom:8px;border-bottom:1px solid var(--sunken)}
+.tbl tr.grp b{font-size:13px;margin-right:8px}
+.tbl tr.grp .car{color:var(--mist);margin-right:6px;font-size:11px}
+.tbl tr.picked td{background:#F3F9F7}
+.tbl .nm{font-weight:500}
+.tbl .nm small{display:block;color:var(--mist);font-size:12px;font-weight:400;margin-top:1px}
+.tbl .dim{color:var(--mist)}
+.tbl tr.off td{color:var(--mist)}
+.next{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--warnOn);background:var(--warnTint);border-radius:999px;padding:1px 8px;margin-top:3px;white-space:nowrap}
+.box{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--lineStrong);display:inline-block;vertical-align:-3px;background:var(--surface)}
+.box.on{background:var(--teal);border-color:var(--teal);position:relative}
+.box.on::after{content:"";position:absolute;left:4.5px;top:1.5px;width:4px;height:8px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(45deg)}
+.tablecard{overflow:hidden}
+.tablefoot{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;font-size:12.5px;color:var(--slate);border-top:1px solid var(--line);background:var(--surface)}
+
+/* price timeline */
+.tl{position:relative;margin:30px 0 26px}
+.tl .track{display:flex;height:34px;border-radius:9px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.tl .seg1{flex:5;background:var(--sunken);display:flex;align-items:center;padding:0 12px;font-weight:600;color:var(--slate)}
+.tl .seg2{flex:2.2;background:var(--tealTint);display:flex;align-items:center;padding:0 12px;font-weight:700;color:var(--teal);box-shadow:inset 3px 0 0 var(--teal)}
+.tl .seg2 .open{margin-left:auto;font-size:11.5px;font-weight:500;color:var(--teal)}
+.tl .lab{position:absolute;top:-22px;font-size:11.5px;color:var(--slate);white-space:nowrap}
+.tl .today{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--brand)}
+.tl .today span{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:700;color:var(--brand);white-space:nowrap}
+.path{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px}
+.path span{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-weight:600}
+.path i{font-style:normal;color:var(--mist)}
+
+/* idea 2 */
+.holders{width:270px;flex:none;background:var(--surface);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:2px}
+.holders .hs{height:34px;border:1px solid var(--line);border-radius:999px;display:flex;align-items:center;padding:0 12px;color:var(--mist);font-size:12.5px;margin:0 4px 10px}
+.holders .g{font-size:11.5px;font-weight:700;color:var(--mist);padding:10px 10px 4px}
+.holders .h{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:8px;font-size:13px}
+.holders .h.on{background:var(--tealTint);color:var(--teal);font-weight:600}
+.holders .h .cnt{background:transparent}
+.holders .h.on .cnt{background:var(--surface);color:var(--teal)}
+.partystrip{display:flex;gap:28px;font-size:12.5px;color:var(--slate);flex-wrap:wrap}
+.partystrip b{display:block;color:var(--ink);font-size:13px;font-weight:600}
+.bulkbar{display:flex;align-items:center;gap:12px;background:var(--ink);color:#fff;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600}
+.bulkbar .btn.pri{margin-left:auto}
+.bulkbar .txt{color:#9FE3D6}
+.pop{position:absolute;right:28px;top:208px;width:430px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--e3);border:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:12px;z-index:2}
+.pop h5{font-size:16px;margin:0}
+.fld{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--ink)}
+.fld .in{height:38px;border:1px solid var(--lineStrong);border-radius:var(--r-ctl);display:flex;align-items:center;padding:0 12px;font-weight:500;background:var(--surface)}
+.fld .hint{font-weight:400;color:var(--slate);font-size:12px}
+.preview{background:var(--bg);border-radius:10px;padding:8px 12px;font-size:12.5px}
+.preview div{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line)}
+.preview div:last-child{border-bottom:none;color:var(--slate)}
+
+/* idea 3 */
+.tryl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);padding:12px 14px;box-shadow:var(--e1)}
+.tryl b{font-size:13.5px;margin-right:4px}
+.cols{display:grid;grid-template-columns:196px 172px minmax(0,1fr);gap:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--e1);overflow:hidden;min-height:470px}
+.cols .c{border-right:1px solid var(--line);display:flex;flex-direction:column}
+.cols .c:last-child{border-right:none}
+.cols .ct{display:flex;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);font-weight:700;font-size:13.5px;background:var(--bg)}
+.cols .ct i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;font-size:11.5px;display:grid;place-items:center;flex:none}
+.opt{all:unset;box-sizing:border-box;width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--grid);font-size:13px;cursor:pointer}
+.opt:hover{background:var(--bg)}
+.opt.on{background:var(--tealTint);color:var(--teal);font-weight:600;box-shadow:inset 3px 0 0 var(--teal)}
+.opt:focus-visible{outline:2px solid var(--teal);outline-offset:-2px}
+.opt small{display:block;font-weight:400;color:var(--slate);font-size:12px}
+.opt .sug{font-size:11px;font-weight:700;color:var(--okOn);background:var(--okTint);border-radius:999px;padding:0 7px}
+.clist{padding:4px 0}
+.clist .gh{font-size:11.5px;font-weight:700;color:var(--mist);padding:10px 14px 4px}
+.ci{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:baseline;padding:9px 14px;border-bottom:1px solid var(--grid)}
+.ci .mono{font-size:11px;color:var(--mist);display:block;margin-top:1px}
+.ci b{font-weight:600}
+.ci small{display:block;color:var(--slate);font-size:12px}
+.ci .price{font-family:"Spline Sans Mono",monospace;font-size:12.5px;white-space:nowrap}
+.ci.bs b{font-weight:500}
+.why-not .row .s b{color:var(--ink);font-weight:600}
+
+/* idea 4 */
+.desk{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:16px;align-items:start}
+.desk .col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.soon{display:flex;flex-direction:column}
+.soon .d{display:grid;grid-template-columns:62px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--grid)}
+.soon .d:last-child{border-bottom:none}
+.soon .day{background:var(--bg);border-radius:8px;text-align:center;padding:5px 0;line-height:1.1}
+.soon .day b{display:block;font-size:18px;font-family:"Spline Sans Mono",monospace}
+.soon .day small{font-size:11px;color:var(--slate);font-weight:600}
+.soon .what b{font-size:13px;font-weight:600;display:block}
+.soon .what span{font-size:12px;color:var(--slate)}
+.soon .what .mono{color:var(--ink)}
+.soon .what .chg{display:inline-flex;gap:6px;align-items:center;margin-top:3px;font-size:12.5px}
+.soon .what .chg s{color:var(--mist)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--e1)}
+.stat b{display:block;font-size:22px;font-family:"Spline Sans Mono",monospace;font-weight:600}
+.stat span{font-size:12.5px;color:var(--slate)}
+.stat.w{background:var(--warnTint);border-color:transparent}
+.stat.w b,.stat.w span{color:var(--warnOn)}
+.dimpage{position:relative}
+.dimpage .ghost{opacity:.35;filter:saturate(.6)}
+.scrim{position:absolute;inset:0;background:rgba(23,35,32,.32)}
+.sheet{position:absolute;top:0;right:0;bottom:0;width:600px;background:var(--surface);box-shadow:var(--e3);display:flex;flex-direction:column}
+.sheet .sh{padding:20px 24px 14px;border-bottom:1px solid var(--line)}
+.sheet .sh b{font-size:18px;line-height:24px;display:block}
+.sheet .sh small{font-size:13px;color:var(--slate)}
+.sheet .sb{padding:18px 24px;display:flex;flex-direction:column;gap:18px;flex:1;overflow:hidden}
+.sheet .sf{padding:14px 24px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+.step{display:grid;grid-template-columns:26px 1fr;gap:12px}
+.step>i{font-style:normal;width:26px;height:26px;border-radius:50%;background:var(--tealTint);color:var(--teal);font-weight:700;font-size:12.5px;display:grid;place-items:center}
+.step h6{font-size:14px;margin:3px 0 8px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cmp .fld .in.was{background:var(--bg);color:var(--slate)}
+.radio{display:flex;gap:10px;align-items:flex-start;font-size:13px;padding:8px 0}
+.radio i{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--lineStrong);flex:none;margin-top:1px;position:relative}
+.radio i.on{border-color:var(--teal)}
+.radio i.on::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--teal)}
+.radio small{display:block;color:var(--slate);font-size:12px}
+.notice{border-radius:10px;padding:10px 12px;font-size:12.5px;background:var(--bg);color:var(--slate)}
+.notice.w{background:var(--warnTint);color:var(--warnOn)}
+
+/* recommendation */
+.reco{background:var(--ink);color:#fff;border-radius:var(--r-lg);padding:30px;display:grid;grid-template-columns:1.15fr 1fr;gap:32px}
+.reco h2{color:#fff}
+.reco p,.reco li{color:#D7DEDB}
+.reco ol{padding-left:20px;margin:12px 0 0}
+.reco li{margin-bottom:10px}
+.reco strong{color:#fff}
+.reco .q{background:rgba(255,255,255,.06);border-radius:var(--r-card);padding:18px 20px}
+.reco .q h4{margin:0 0 10px;font-size:15px;color:#fff}
+.reco .q ul{padding-left:18px;margin:0}
+footer{color:var(--mist);font-size:12.5px;padding:36px 0 48px}
+
+@media (max-width:1180px){
+  .hero{grid-template-columns:1fr}
+  .why{grid-template-columns:1fr;gap:14px}
+  .why .in,.why .out{margin:0}
+  .why .in::after,.why .out::before{display:none}
+  .notes,.twocol,.reco{grid-template-columns:1fr}
+  .notes ul{margin-bottom:14px}
+}
+@media (max-width:640px){
+  .wrap{padding:0 16px}
+  .hero h1{font-size:34px}
+  .navpair{flex-direction:column}
+  .navpair .arrow{display:none}
+  .nowstack{flex-direction:column}
+  .invtable{display:block;overflow-x:auto}
+  .idea-head{padding:20px 16px 0}
+  .idea-body{padding:18px 16px 20px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <p class="kicker">Admin Web App, Contracts. Brainstorm for the office, 25 November 2026.</p>
+        <h1>Every Procedure is priced by a Contract. <span>The office finds them under Master data.</span></h1>
+        <p class="lede">A Contract decides whether a choice shows on the step rail, where the invoice goes, what the Procedure costs until it is held, whether it needs a prepayment, and what prints on the invoice. At go-live there will be about 340 of them. Today they sit third in the Billing group of the Master data sub-nav, edited in a side panel over a 1,180px table.</p>
+        <p class="lede">Below: what hangs off a Contract, what the office has today, four ways to give Contracts a page of their own, and what I would build first.</p>
+        <nav class="toc" aria-label="On this page">
+          <a href="#why">What hangs off a Contract</a>
+          <a href="#now">What's there now</a>
+          <a href="#i1"><span class="tn">1</span>List and record</a>
+          <a href="#i2"><span class="tn">2</span>Holder schedules</a>
+          <a href="#i3"><span class="tn">3</span>Through the step rail</a>
+          <a href="#i4"><span class="tn">4</span>Contracts desk</a>
+          <a href="#reco">What I'd do</a>
+        </nav>
+      </div>
+      <div class="navpair" aria-label="Side nav, now and proposed">
+        <figure>
+          <figcaption>Now <span class="clicks">2 clicks + scroll</span></figcaption>
+          <div class="nowstack">
+            <div class="mnav short">
+              <div class="logo"><b>Anaesthesia Associates</b><small>ADMIN</small></div>
+              <div class="it">Day view</div><div class="it">Intake</div><div class="it">Draft Lists</div><div class="it">Conflicts</div><div class="it">Notifications</div><div class="it">Review queue</div><div class="it">Invoices</div><div class="it">Patients</div><div class="it">Billing monitor</div><div class="it">Ledger</div><div class="it on">Master data</div><div class="it">Audit</div>
+            </div>
+            <div class="subnav" aria-label="Master data sub-nav">
+              <div class="g">People and places</div><div class="s">Anaesthetists</div><div class="s">Hospitals &amp; holidays</div><div class="s">Surgeons</div><div class="s">Specialties</div><div class="s">Surgeon groups</div>
+              <div class="g">Schedule</div><div class="s">Recurring bookings</div><div class="s">Availability statuses</div><div class="s">…</div>
+              <div class="g">Billing</div><div class="s">Parties</div><div class="s">Funding tags</div><div class="s on">Contracts</div><div class="s">RVG groups</div><div class="s">Modifiers</div>
+            </div>
+          </div>
+        </figure>
+        <div class="arrow" aria-hidden="true">→</div>
+        <figure>
+          <figcaption>Proposed <span class="clicks ok">1 click</span></figcaption>
+          <div class="mnav short">
+            <div class="logo"><b>Anaesthesia Associates</b><small>ADMIN</small></div>
+            <div class="it">Day view</div><div class="it">Intake</div><div class="it">Draft Lists</div><div class="it">Conflicts</div><div class="it">Notifications</div><div class="it">Review queue</div><div class="it">Invoices</div><div class="it">Patients</div><div class="it">Billing monitor</div><div class="it">Ledger</div><div class="it on new">Contracts <em>2</em></div><div class="it">Master data</div><div class="it">Audit</div>
+          </div>
+        </figure>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="why">
+  <h2>What hangs off one Contract</h2>
+  <p class="sub">The flat model (AR-58, decided 5 Nov): one priced item, held by a Party, edited in place and audited, Active or Disabled, never versioned. Its settings on the left decide everything on the right. Mr Doyle's gastric bypass is the example, straight from the seed.</p>
+  <div class="why">
+    <div class="col">
+      <p class="colh">Set on the Contract<span>by the office only (US-04.1.2)</span></p>
+      <div class="in"><b>Holder and who it bills</b><small>A Party; bills its holder or the Procedure's payer</small></div>
+      <div class="in"><b>Linked surgeons, anaesthetist</b><small>Who it is offered for; none means unlinked</small></div>
+      <div class="in"><b>Specialties, funding tag</b><small>Narrow the offer; the tag places it under a hospital</small></div>
+      <div class="in"><b>Pricing kind and its figure</b><small>RVG at a rate, less a discount, or fixed with dated price ranges</small></div>
+      <div class="in"><b>Prepaid, the override</b><small>Both fixed rules about who can change the price</small></div>
+      <div class="in"><b>Codes and wording</b><small>AA code, holder reference, invoice description, default RVG code</small></div>
+      <div class="in"><b>Event fees</b><small>A fixed fee that replaces a recorded time</small></div>
+    </div>
+    <div class="hub">
+      <span class="code">DOYLE-001</span>
+      <h4>Gastric bypass</h4>
+      <p>Held by Mr P. Doyle. Bills the payer. Linked to Mr Doyle, General surgery.</p>
+      <dl>
+        <dt>Pricing</dt><dd>Fixed price</dd>
+        <dt>Now</dt><dd class="mono">$2,800.00</dd>
+        <dt>From 1 Dec</dt><dd class="mono">$2,950.00</dd>
+        <dt>Status</dt><dd>Active</dd>
+      </dl>
+      <p class="foot">One Contract per Procedure, chosen on the step rail, locked when the List is authorised.</p>
+    </div>
+    <div class="col">
+      <p class="colh">What it decides<span>across every app</span></p>
+      <div class="out"><b>Whether the step rail offers it</b><small>On a List's hospital, surgeon, anaesthetist and date (US-04.3.2)</small></div>
+      <div class="out"><b>Where the invoice goes</b><small>Patient, the List's hospital, or Special (US-04.3.8)</small></div>
+      <div class="out"><b>The Procedure's price</b><small>Worked out, not stored, until it is held (US-05.2.8)</small></div>
+      <div class="out"><b>Prepayment</b><small>A prepaid Contract means a prepayment invoice (US-06.2.1)</small></div>
+      <div class="out"><b>The lock at AUTHORISED</b><small>A snapshot of its settings (US-04.3.5)</small></div>
+      <div class="out"><b>What prints on the invoice</b><small>Layout follows who it bills; codes and wording print (US-04.2.8)</small></div>
+      <div class="out"><b>Review flags</b><small>Changed by an anaesthetist, no longer fits, Disabled (US-07.2.2)</small></div>
+    </div>
+  </div>
+</section>
+
+<section id="now">
+  <h2>What the office has today</h2>
+  <p class="sub">Built across catch-up phases 18 to 25a and 39b (<span class="mono">ContractsView.tsx</span>, <span class="mono">ContractEditSheet.tsx</span>). The parts work; what is missing is a place for them to live, and a view of the Contract in use.</p>
+  <div class="twocol">
+    <div>
+      <h3>Works today</h3>
+      <table class="invtable">
+        <tbody>
+          <tr><td>The list</td><td>One search over name, holder reference and AA code. Active, Disabled or All. Holder and funding tag filters. Rows under holder headings, No contract · RVG first.</td></tr>
+          <tr><td>The editor</td><td>A wide side panel with Details and History: codes, holder and who it bills, where it is offered, pricing, price ranges, event fees, and Replaces.</td></tr>
+          <tr><td>Change warnings</td><td>Replacing or disabling lists the Procedures still on the old Contract; a backdated range lists the authorised ones that kept their price (D79).</td></tr>
+          <tr><td>System Contracts</td><td>No contract · RVG and the fixed price backstops, read-only except name, AA code and wording.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h3>Missing</h3>
+      <table class="invtable">
+        <tbody>
+          <tr class="gap"><td>A page and a link</td><td>A Contract opens in a modal panel over the list, so it can't be linked from a Procedure, a review flag or the audit, and the rest of the app is blocked while it is open.</td></tr>
+          <tr class="gap"><td>The Contract in use</td><td>Nowhere shows which Bookings sit on a Contract, which are locked, or what re-prices when a range starts.</td></tr>
+          <tr class="gap"><td>Where it appears</td><td>The office can't see which step rail path a Contract lands under, or why it isn't offered on a given List.</td></tr>
+          <tr class="gap"><td>Replace from a date</td><td>A dated change is three steps by hand: create, warn, then disable the old one. The S5 script already promises one step (backlog).</td></tr>
+          <tr class="gap"><td>What's coming</td><td>Price ranges that start next week are visible only by opening each Contract.</td></tr>
+          <tr class="gap"><td>Room to read</td><td>Capped at 1,180px beside a 190px sub-nav; nine columns wrap (layout audit).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="ideas">
+  <h2>Four ideas</h2>
+  <p class="sub">Each puts Contracts in the side nav. They differ in what the office lands on and how it gets around. The mocks are drawn at the app's real sizes (216px nav, 28px inset, 412px rail) with seed data; scroll them sideways on a small screen.</p>
+
+  <!-- ============ IDEA 1 ============ -->
+  <article class="idea" id="i1">
+    <div class="idea-head">
+      <span class="num">1</span>
+      <div>
+        <h3>List and record</h3>
+        <p>The plain promotion. Contracts gets a full-width list page in the layout audit's fit mode (sticky header, pager in the card footer), and every Contract gets its own routed record page, <span class="mono">/admin/contracts/DOYLE-001</span>, in place of the side panel. The record page shows the settings, a price timeline, and a rail with the Bookings on it and its history. Parties and Funding tags move with it as routed tabs, because they only exist to shape Contracts.</p>
+        <div class="tags"><span class="tag fit">Fits the catalogue as it stands</span><span class="tag">Medium build</span><span class="tag">Reuses every existing flow</span></div>
+      </div>
+    </div>
+    <div class="idea-body">
+      <div>
+        <p class="mock-cap">The list: all holders, full width, filters in one toolbar</p>
+        <div class="mockwrap"><div class="frame" style="min-height:640px">
+          <div class="mnav">
+            <div class="logo"><b>Anaesthesia Associates</b><small>ADMIN</small></div>
+            <div class="it">Day view</div><div class="it">Intake <em>3</em></div><div class="it">Draft Lists <em>3</em></div><div class="it">Conflicts</div><div class="it">Notifications <em>4</em></div><div class="it">Review queue <em class="c">5</em></div><div class="it">Invoices</div><div class="it">Patients</div><div class="it">Billing monitor</div><div class="it">Ledger</div><div class="it on">Contracts</div><div class="it">Master data</div><div class="it">Audit</div>
+            <div class="me"><i>KM</i><div>Kirsty<span>Office</span></div></div>
+          </div>
+          <div class="page">
+            <div class="head"><div class="t"><b>Contracts</b><small>What each Procedure can be priced at, and who it bills.</small></div><span class="btn pri lg">New contract</span></div>
+            <div class="tabs"><span class="tab on">Contracts <span class="cnt">343</span></span><span class="tab">Holders <span class="cnt">24</span></span><span class="tab">Funding tags <span class="cnt">3</span></span></div>
+            <div class="toolbar">
+              <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search by name, code, AA code or RVG code</div>
+              <span class="seg"><span class="on">Active</span><span>Disabled</span><span>All</span></span>
+              <span class="sel">Every holder</span><span class="sel">Every tag</span><span class="sel">Any pricing</span>
+              <span class="count" style="margin-left:auto"><span class="mono">316</span> Contracts active</span>
+            </div>
+            <div class="card tablecard">
+              <table class="tbl">
+                <thead><tr><th>AA code</th><th>Name</th><th>Bills</th><th>Pricing</th><th>Offered for</th><th>Tags</th><th class="r">In use</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr class="grp"><td colspan="8"><span class="car">▾</span><b>Anaesthesia Associates</b><span class="pill">3</span></td></tr>
+                  <tr><td class="mono">AA-RVG</td><td class="nm">No contract · RVG</td><td>The payer</td><td>RVG at the anaesthetist's rate</td><td class="dim">Every List</td><td><span class="pill line">System</span></td><td class="r mono">1,204</td><td><span class="pill ok">Active</span></td></tr>
+                  <tr class="grp"><td colspan="8"><span class="car">▾</span><b>Christchurch Eye Surgery</b><span class="pill">Hospital</span> <span class="pill">144</span></td></tr>
+                  <tr><td class="mono">CES-001</td><td class="nm">Cataract IOL (LA by Anaesthetist) <span class="mono dim">8268</span></td><td>Its holder</td><td><span class="mono">$357.39</span> from 1 Apr 2026</td><td class="dim">Lists at CES</td><td><span class="pill code">SXAP</span></td><td class="r mono">86</td><td><span class="pill ok">Active</span></td></tr>
+                  <tr><td class="mono">CES-002</td><td class="nm">Blepharoplasty, unilateral, LA (Day Stay/Theatre) <span class="mono dim">AP0126</span></td><td>Its holder</td><td><span class="mono">$791.30</span> from 1 Apr 2026</td><td class="dim">Lists at CES</td><td><span class="pill code">SXAP</span></td><td class="r mono">12</td><td><span class="pill ok">Active</span></td></tr>
+                  <tr><td class="mono">CES-009</td><td class="nm">Cataract, inclusive of Standard Intraocular Lens (Unilateral) <span class="mono dim">HNZCATall</span></td><td>Its holder</td><td><span class="mono">$420.00</span> from 1 Jan 2026</td><td class="dim">Lists at CES</td><td><span class="pill code">HNZ</span></td><td class="r mono">41</td><td><span class="pill ok">Active</span></td></tr>
+                  <tr class="grp"><td colspan="8"><span class="car">▸</span><b>Canterbury Orthopaedic Surgeons</b><span class="pill">Surgeon group</span> <span class="pill">2</span></td></tr>
+                  <tr class="grp"><td colspan="8"><span class="car">▾</span><b>Mr P. Doyle</b><span class="pill">Surgeon</span> <span class="pill">2</span></td></tr>
+                  <tr class="picked"><td class="mono">DOYLE-001</td><td class="nm">Gastric bypass<small>General surgery</small></td><td>The payer</td><td><span class="mono">$2,800.00</span> from 1 Jan 2025<br><span class="next">→ <span class="mono">$2,950.00</span> from 1 Dec</span></td><td>Mr P. Doyle</td><td></td><td class="r mono">9</td><td><span class="pill ok">Active</span></td></tr>
+                  <tr><td class="mono">DOYLE-002</td><td class="nm">Sleeve gastrectomy<small>General surgery</small></td><td>The payer</td><td><span class="mono">$2,400.00</span> from 1 Jan 2025</td><td>Mr P. Doyle</td><td></td><td class="r mono">4</td><td><span class="pill ok">Active</span></td></tr>
+                  <tr class="grp"><td colspan="8"><span class="car">▸</span><b>St George's</b><span class="pill">Hospital</span> <span class="pill">31</span></td></tr>
+                  <tr class="grp"><td colspan="8"><span class="car">▸</span><b>Unisports Ortho</b><span class="pill">Surgeon group</span> <span class="pill">1</span></td></tr>
+                </tbody>
+              </table>
+              <div class="tablefoot"><span>Showing holders 1 to 6 of 24</span><span class="txt">Next page</span></div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
+      <div>
+        <p class="mock-cap">The record: its own page, the price as a timeline, the Bookings on it in the rail</p>
+        <div class="mockwrap"><div class="frame">
+          <div class="mnav">
+            <div class="logo"><b>Anaesthesia Associates</b><small>ADMIN</small></div>
+            <div class="it">Day view</div><div class="it">Intake <em>3</em></div><div class="it">Draft Lists <em>3</em></div><div class="it">Conflicts</div><div class="it">Notifications <em>4</em></div><div class="it">Review queue <em class="c">5</em></div><div class="it">Invoices</div><div class="it">Patients</div><div class="it">Billing monitor</div><div class="it">Ledger</div><div class="it on">Contracts</div><div class="it">Master data</div><div class="it">Audit</div>
+            <div class="me"><i>KM</i><div>Kirsty<span>Office</span></div></div>
+          </div>
+          <div class="page withrail">
+            <div class="head">
+              <div class="t"><span class="back">‹ Contracts</span><b>Gastric bypass <span class="pill code" style="vertical-align:5px;margin-left:6px">DOYLE-001</span> <span class="pill ok" style="vertical-align:5px">Active</span></b><small>Held by Mr P. Doyle · bills the payer · fixed price</small></div>
+              <span class="btn sec">Replace from a date</span><span class="btn sec">Disable</span><span class="btn pri">Edit</span>
+            </div>
+            <div class="tabsrow tabs"><span class="tab on">Overview</span><span class="tab">Bookings <span class="cnt">9</span></span><span class="tab">Event fees <span class="cnt">0</span></span><span class="tab">History <span class="cnt">3</span></span></div>
+            <div class="maincol">
+              <div class="card pad">
+                <div class="ch"><span class="l">Price</span><span class="txt">Add a price range</span></div>
+                <div class="tl" aria-label="Price ranges">
+                  <span class="lab" style="left:0">from 1 Jan 2025</span><span class="lab" style="left:69.4%">from 1 Dec 2026</span>
+                  <div class="track"><div class="seg1 mono">$2,800.00</div><div class="seg2"><span class="mono">$2,950.00</span><span class="open">onwards</span></div></div>
+                  <div class="today" style="left:68.2%"><span>Today, 24 Nov</span></div>
+                </div>
+                <div class="notice">The next range starts in 7 days. <b>6 Bookings</b> dated on or after 1 Dec will price at $2,950.00. Authorised Bookings keep the price they were locked at.</div>
+              </div>
+              <div class="card pad">
+                <div class="ch">Where it is offered</div>
+                <dl class="kv">
+                  <dt>On the step rail</dt><dd><div class="path"><span>Patient</span><i>›</i><span>Standard</span><i>›</i><span>Gastric bypass</span></div></dd>
+                  <dt>Linked surgeons</dt><dd>Mr P. Doyle</dd>
+                  <dt>Linked anaesthetist</dt><dd class="dim" style="color:var(--mist)">None</dd>
+                  <dt>Specialties</dt><dd>General surgery</dd>
+                  <dt>Funding tag</dt><dd style="color:var(--mist)">None</dd>
+                </dl>
+              </div>
+              <div class="card pad">
+                <div class="ch">Invoice and codes</div>
+                <dl class="kv">
+                  <dt>Invoice description</dt><dd>Gastric bypass, laparoscopic</dd>
+                  <dt>Holder reference</dt><dd style="color:var(--mist)">None</dd>
+                  <dt>Default RVG code</dt><dd>Gastric bypass (AA group)</dd>
+                  <dt>Prepaid</dt><dd>No</dd>
+                  <dt>Price override</dt><dd>Fixed price: the anaesthetist can't change it</dd>
+                </dl>
+              </div>
+            </div>
+            <div class="railcol">
+              <div class="card pad">
+                <div class="ch"><span class="l">On this Contract <span class="cnt">9</span></span><small>upcoming and unbilled</small></div>
+                <div class="row edge-t"><span class="t">R. Tipene · Thu 3 Dec</span><span class="s">Southern Cross AM · Dr Alistair Chen · <span class="mono">$2,950.00</span> from 1 Dec</span></div>
+                <div class="row edge-t"><span class="t">S. Moana · Thu 3 Dec</span><span class="s">Southern Cross AM · Dr Alistair Chen · <span class="mono">$2,950.00</span> from 1 Dec</span></div>
+                <div class="row"><span class="t">L. Barrett · Thu 26 Nov</span><span class="s">Southern Cross PM · Dr Priya Sharma · <span class="mono">$2,800.00</span></span></div>
+                <div class="row"><span class="t">J. Wu · Thu 19 Nov</span><span class="s">Authorised · locked at <span class="mono">$2,800.00</span></span></div>
+                <span class="txt">See all 9</span>
+              </div>
+              <div class="card pad">
+                <div class="ch">History</div>
+                <div class="row"><span class="t">Price range added: <span class="mono">$2,950.00</span> from 1 Dec</span><span class="s">Kirsty · Fri 10 Jul 2026, 2:14 pm</span></div>
+                <div class="row"><span class="t">Invoice description changed</span><span class="s">Sam · Mon 6 Jul 2026, 9:02 am</span></div>
+                <span class="txt">Open in Audit</span>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="notes">
+        <div><h4>What it fixes</h4><ul><li>One click to Contracts, and a URL for every Contract: review flags, the Booking's Billing card and the Audit can link straight to it.</li><li>The page isn't modal, so the office can keep a Contract open while working a Booking.</li><li>"In use" answers the question the office asks before every change: who does this touch?</li><li>Full width ends the nine-column wrap.</li></ul></div>
+        <div><h4>What it costs</h4><ul><li>The panel's sections move into cards; the store calls, warnings and History stay as they are.</li><li>A new selector, Procedures by Contract. The 25a warning lists already compute most of it.</li><li>Master data's sub-nav loses three entries and gains a link across.</li><li>Recipes and demo guide need a sweep afterwards.</li></ul></div>
+        <div class="req"><p><b>Catalogue:</b> fits US-04.1.2 to US-04.1.5, US-04.2.15, US-13.4.1 ("in one place" still holds if Master data links across).</p><p><b>Design:</b> Admin Review's record layout; the layout audit's fit list and fluid record with a 412px rail.</p><p><b>New:</b> the "In use" list and the price timeline. Both read existing data.</p></div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ============ IDEA 2 ============ -->
+  <article class="idea" id="i2">
+    <div class="idea-head">
+      <span class="num">2</span>
+      <div>
+        <h3>Holder schedules</h3>
+        <p>The page is organised the way contracts arrive at AA: as one holder's schedule. Holders sit in a left column, grouped by kind. Picking one shows its Party details (billing name, delivery) above its Contracts, grouped by funding tag, the same shape as the CES SXAP schedule of 1 Apr 2026. Because a schedule changes all at once, the office can select many Contracts and add the same dated price range to every one.</p>
+        <div class="tags"><span class="tag fit">Holder view fits</span><span class="tag edit">Bulk price range needs a story</span><span class="tag">Medium to large build</span></div>
+      </div>
+    </div>
+    <div class="idea-body">
+      <div>
+        <p class="mock-cap">Christchurch Eye Surgery's SXAP schedule, with all 56 selected for next year's increase</p>
+        <div class="mockwrap"><div class="frame" style="position:relative">
+          <div class="mnav">
+            <div class="logo"><b>Anaesthesia Associates</b><small>ADMIN</small></div>
+            <div class="it">Day view</div><div class="it">Intake <em>3</em></div><div class="it">Draft Lists <em>3</em></div><div class="it">Conflicts</div><div class="it">Notifications <em>4</em></div><div class="it">Review queue <em class="c">5</em></div><div class="it">Invoices</div><div class="it">Patients</div><div class="it">Billing monitor</div><div class="it">Ledger</div><div class="it on">Contracts</div><div class="it">Master data</div><div class="it">Audit</div>
+            <div class="me"><i>KM</i><div>Kirsty<span>Office</span></div></div>
+          </div>
+          <div class="holders" aria-label="Holders">
+            <div class="hs">Find a holder</div>
+            <div class="h"><span>Anaesthesia Associates</span><span class="cnt">3</span></div>
+            <div class="g">Hospitals</div>
+            <div class="h on"><span>Christchurch Eye Surgery</span><span class="cnt">144</span></div>
+            <div class="h"><span>Christchurch Public</span><span class="cnt">9</span></div>
+            <div class="h"><span>Forte Health</span><span class="cnt">22</span></div>
+            <div class="h"><span>Southern Cross</span><span class="cnt">26</span></div>
+            <div class="h"><span>St George's</span><span class="cnt">31</span></div>
+            <div class="g">Insurers and funders</div>
+            <div class="h"><span>ACC</span><span class="cnt">3</span></div>
+            <div class="h"><span>nib</span><span class="cnt">2</span></div>
+            <div class="h"><span>NZDF</span><span class="cnt">2</span></div>
+            <div class="g">Surgeon groups</div>
+            <div class="h"><span>Canterbury Orthopaedic Surgeons</span><span class="cnt">14</span></div>
+            <div class="h"><span>Merivale Plastic Surgery</span><span class="cnt">18</span></div>
+            <div class="h"><span>Unisports Ortho</span><span class="cnt">2</span></div>
+            <div class="g">Surgeons and anaesthetists</div>
+            <div class="h"><span>Mr P. Doyle</span><span class="cnt">2</span></div>
+            <div class="h"><span>Dr Melanie Souter</span><span class="cnt">3</span></div>
+          </div>
+          <div class="page">
+            <div class="head"><div class="t"><b>Christchurch Eye Surgery <span class="pill" style="vertical-align:5px;margin-left:4px">Hospital</span></b><small>144 Contracts · 56 SXAP · 62 HNZ · 26 ACC</small></div><span class="btn sec">Edit holder</span><span class="btn pri">New contract</span></div>
+            <div class="partystrip"><div><b>Christchurch Eye Surgery Limited</b>Billing name</div><div><b>accounts@chcheyesurgery.example</b>Invoices by email</div><div><b>Its holder</b>Bills, on 141 of 144</div></div>
+            <div class="bulkbar"><span class="box on"></span>56 selected in SXAP<span class="txt">Clear</span><span class="btn pri">Add a price range</span></div>
+            <div class="card tablecard">
+              <table class="tbl">
+                <thead><tr><th style="width:34px"></th><th>AA code</th><th>Name</th><th>Holder code</th><th class="r">Price now</th><th>Since</th><th class="r">In use</th></tr></thead>
+                <tbody>
+                  <tr class="grp"><td><span class="box on"></span></td><td colspan="6"><span class="car">▾</span><b>SXAP</b><span class="pill">56</span> <span class="dim" style="font-size:12px">Southern Cross Health Society · schedule from 1 Apr 2026</span></td></tr>
+                  <tr class="picked"><td><span class="box on"></span></td><td class="mono">CES-001</td><td class="nm">Cataract IOL (LA by Anaesthetist)</td><td class="mono">8268</td><td class="r mono">$357.39</td><td>1 Apr 2026</td><td class="r mono">86</td></tr>
+                  <tr class="picked"><td><span class="box on"></span></td><td class="mono">CES-002</td><td class="nm">Blepharoplasty, unilateral, LA (Day Stay/Theatre)</td><td class="mono">AP0126</td><td class="r mono">$791.30</td><td>1 Apr 2026</td><td class="r mono">12</td></tr>
+                  <tr class="picked"><td><span class="box on"></span></td><td class="mono">CES-003</td><td class="nm">Blepharoplasty &amp; ptosis bilateral, LA (Day Stay/Theatre)</td><td class="mono">AP0135</td><td class="r mono">$1,152.17</td><td>1 Apr 2026</td><td class="r mono">5</td></tr>
+                  <tr class="picked"><td><span class="box on"></span></td><td class="mono">CES-004</td><td class="nm">Unilateral repair of ectropion, LA</td><td class="mono">AP0138</td><td class="r mono">$900.00</td><td>1 Apr 2026</td><td class="r mono">3</td></tr>
+                  <tr class="picked"><td><span class="box on"></span></td><td class="mono">CES-005</td><td class="nm">MIGS add on to cataract, category A (LA)</td><td class="mono">AP1318</td><td class="r mono">$400.00</td><td>1 Apr 2026</td><td class="r mono">17</td></tr>
+                  <tr class="picked"><td><span class="box on"></span></td><td class="mono">CES-007</td><td class="nm">Vitrectomy · 0 to 60 mins</td><td class="mono">AP0163</td><td class="r mono">$739.13</td><td>1 Apr 2026</td><td class="r mono">7</td></tr>
+                  <tr class="picked"><td><span class="box on"></span></td><td class="mono">CES-008</td><td class="nm">Vitrectomy · 61 to 90 mins</td><td class="mono">AP0163</td><td class="r mono">$834.78</td><td>1 Apr 2026</td><td class="r mono">2</td></tr>
+                  <tr class="grp"><td><span class="box"></span></td><td colspan="6"><span class="car">▸</span><b>HNZ</b><span class="pill">62</span> <span class="dim" style="font-size:12px">Health NZ · commitment fees from 1 Jul 2026</span></td></tr>
+                  <tr class="grp"><td><span class="box"></span></td><td colspan="6"><span class="car">▸</span><b>ACC</b><span class="pill">26</span></td></tr>
+                  <tr class="grp off"><td><span class="box"></span></td><td colspan="6"><span class="car">▸</span><b style="color:var(--mist)">Disabled</b><span class="pill">1</span> <span style="font-size:12px">Christchurch Eye Surgery 2025 rate</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="pop" role="dialog" aria-label="Add a price range to 56 Contracts">
+            <h5>Add a price range to 56 Contracts</h5>
+            <div class="fld">From<div class="in mono">1 Apr 2027</div><span class="hint">Each Contract's current price runs to 31 Mar 2027.</span></div>
+            <div class="fld">New price<span class="seg" style="align-self:flex-start"><span class="on">Raise by a percentage</span><span>Type each price</span></span><div class="in mono">3.5%</div><span class="hint">Rounded to the cent, ex GST.</span></div>
+            <div class="preview"><div><span>Cataract IOL (LA by Anaesthetist)</span><span class="mono">$357.39 → $369.90</span></div><div><span>Blepharoplasty, unilateral, LA</span><span class="mono">$791.30 → $819.00</span></div><div><span>Blepharoplasty &amp; ptosis bilateral</span><span class="mono">$1,152.17 → $1,192.50</span></div><div><span>and 53 more</span><span>Check all</span></div></div>
+            <div style="display:flex;gap:10px;justify-content:flex-end"><span class="btn sec">Cancel</span><span class="btn pri">Add 56 price ranges</span></div>
+          </div>
+        </div></div>
+      </div>
+      <div class="notes">
+        <div><h4>What it fixes</h4><ul><li>Matches how the office thinks of a contract: "the CES SXAP schedule", not 56 separate items.</li><li>Holder details and their Contracts on one screen, so the Parties page is no longer a separate trip.</li><li>An annual schedule increase becomes one action, not 56 panel edits.</li></ul></div>
+        <div><h4>What it costs</h4><ul><li>A third column makes Special holders with one Contract feel heavy; a cross-holder search is still needed.</li><li>The bulk range needs its own warnings: kept prices across 56 Contracts, and one audit change set.</li><li>Close to the export and re-import that D34 parked as Future Work.</li></ul></div>
+        <div class="req"><p><b>Catalogue:</b> the holder view fits US-04.1.5 and US-04.2.1.</p><p><b>New story needed:</b> "Add one price range to many Contracts". It sits next to US-04.2.13 (export and re-import, Future Work), and Greg's second-person check on large imports is still open there.</p><p><b>Ask AA:</b> how often does a whole schedule move on one date? CES's 1 Apr and Merivale's 1 Jun suggest yearly.</p></div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ============ IDEA 3 ============ -->
+  <article class="idea" id="i3">
+    <div class="idea-head">
+      <span class="num">3</span>
+      <div>
+        <h3>Through the step rail</h3>
+        <p>The catalogue arranged the way it is used: the step rail's three steps as columns. Where does the invoice go, then the funding tag or payment type, then the Contracts. A "Try a List" bar sets a hospital, surgeon, anaesthetist and date, and the columns show exactly what the rail would offer on that List, with a list of what it leaves out and why. This answers the office's commonest Contract question, "why can't Dr Ngata see it?". Click through the columns below; they are live.</p>
+        <div class="tags"><span class="tag fit">Fits: reads the step rail's own rules</span><span class="tag">Small to medium build</span><span class="tag">Best as a tab, not the whole page</span></div>
+      </div>
+    </div>
+    <div class="idea-body">
+      <div>
+        <p class="mock-cap">Trying a List: St George's, Mr T. Hale, Dr Tom Ngata, Thu 3 Dec</p>
+        <div class="mockwrap"><div class="frame">
+          <div class="mnav">
+            <div class="logo"><b>Anaesthesia Associates</b><small>ADMIN</small></div>
+            <div class="it">Day view</div><div class="it">Intake <em>3</em></div><div class="it">Draft Lists <em>3</em></div><div class="it">Conflicts</div><div class="it">Notifications <em>4</em></div><div class="it">Review queue <em class="c">5</em></div><div class="it">Invoices</div><div class="it">Patients</div><div class="it">Billing monitor</div><div class="it">Ledger</div><div class="it on">Contracts</div><div class="it">Master data</div><div class="it">Audit</div>
+            <div class="me"><i>KM</i><div>Kirsty<span>Office</span></div></div>
+          </div>
+          <div class="page withrail">
+            <div class="head"><div class="t"><b>Contracts</b><small>What each Procedure can be priced at, and who it bills.</small></div><span class="btn pri lg">New contract</span></div>
+            <div class="tabsrow tabs"><span class="tab">Contracts</span><span class="tab on">Where invoices go</span><span class="tab">Holders</span><span class="tab">Funding tags</span></div>
+            <div class="maincol">
+              <div class="tryl"><b>Try a List</b><span class="sel">St George's</span><span class="sel">Mr T. Hale · Orthopaedics</span><span class="sel">Dr Tom Ngata</span><span class="sel mono">Thu 3 Dec 2026</span><span class="txt" style="margin-left:auto">Clear, show every Contract</span></div>
+              <div class="cols" id="rail3">
+                <div class="c"><div class="ct"><i>1</i>Where does the invoice go?</div><div id="c1"></div></div>
+                <div class="c"><div class="ct"><i>2</i><span id="c2t">Payment type</span></div><div id="c2"></div></div>
+                <div class="c"><div class="ct"><i>3</i>Contract</div><div class="clist" id="c3"></div></div>
+              </div>
+            </div>
+            <div class="railcol">
+              <div class="card pad why-not">
+                <div class="ch"><span class="l">Not offered on this List <span class="cnt">6</span></span></div>
+                <div class="row edge"><span class="t">COS ACC fixed fees</span><span class="s"><b>No price on Thu 3 Dec.</b> Its first range starts Sat 5 Dec.</span><span class="acts"><span class="txt">Open</span></span></div>
+                <div class="row"><span class="t">Gastric bypass · Mr P. Doyle</span><span class="s"><b>Linked to Mr P. Doyle,</b> not this List's surgeon.</span></div>
+                <div class="row"><span class="t">Rhinoplasty · Dr Melanie Souter</span><span class="s"><b>Linked to Dr Souter,</b> not Dr Ngata. Prepaid.</span></div>
+                <div class="row"><span class="t">Southern Cross Affiliated Provider</span><span class="s"><b>Held by Southern Cross,</b> not this List's hospital.</span></div>
+                <div class="row"><span class="t">Health NZ agreed rate</span><span class="s"><b>Held by Christchurch Public,</b> not this List's hospital.</span></div>
+                <div class="row"><span class="t">Christchurch Eye Surgery 2025 rate</span><span class="s"><b>Disabled</b> since Fri 10 Jul 2026.</span></div>
+              </div>
+              <div class="notice">Same rules as the step rail itself (<span class="mono">contractRailFor</span>), so what the office sees here is what the anaesthetist gets on their phone.</div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+      <div class="notes">
+        <div><h4>What it fixes</h4><ul><li>Shows the catalogue as anaesthetists and the office meet it, so gaps show up: a hospital and tag with only backstops under it.</li><li>"Why isn't it offered?" gets an answer in words, without opening six Contracts.</li><li>Also useful for training: a new office person learns the three steps here.</li></ul></div>
+        <div><h4>What it costs</h4><ul><li>A reasons list for each filter the rail applies (link, holder, specialty, date, status). The rail filters already exist; they would need to say why.</li><li>As a whole page it's weak for editing. It should sit beside a list (idea 1) or a desk (idea 4).</li></ul></div>
+        <div class="req"><p><b>Catalogue:</b> reads US-04.3.2, US-04.3.8 and US-04.3.9 without changing them.</p><p><b>Mind:</b> the catalogue and the domain model disagree on the backstops. US-04.3.9 gives each hospital and tag an RVG backstop; the model lists only the fixed price one. This view would make whichever answer AA picks visible, which is a reason to settle it first.</p></div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ============ IDEA 4 ============ -->
+  <article class="idea" id="i4">
+    <div class="idea-head">
+      <span class="num">4</span>
+      <div>
+        <h3>Contracts desk</h3>
+        <p>Land on the work, not the catalogue. The first tab shows what is about to change or has gone wrong: price ranges starting soon, Bookings still on a Disabled Contract, fixed prices with no range in force, and Contracts that anaesthetists have changed. The catalogue is the second tab. It comes with one guided flow the S5 script already promises: replace a Contract from a date. That flow copies the Contract, changes the setting, lists the Bookings to move, and disables the old one, all in one sheet.</p>
+        <div class="tags"><span class="tag fit">Desk cards read existing data</span><span class="tag rule">Replace flow needs a ruling</span><span class="tag">Medium build</span><span class="tag">Closes backlog: S5 supersede</span></div>
+      </div>
+    </div>
+    <div class="idea-body">
+      <div>
+        <p class="mock-cap">The desk: Tuesday 24 November</p>
+        <div class="mockwrap"><div class="frame">
+          <div class="mnav">
+            <div class="logo"><b>Anaesthesia Associates</b><small>ADMIN</small></div>
+            <div class="it">Day view</div><div class="it">Intake <em>3</em></div><div class="it">Draft Lists <em>3</em></div><div class="it">Conflicts</div><div class="it">Notifications <em>4</em></div><div class="it">Review queue <em class="c">5</em></div><div class="it">Invoices</div><div class="it">Patients</div><div class="it">Billing monitor</div><div class="it">Ledger</div><div class="it on">Contracts <em>2</em></div><div class="it">Master data</div><div class="it">Audit</div>
+            <div class="me"><i>KM</i><div>Kirsty<span>Office</span></div></div>
+          </div>
+          <div class="page">
+            <div class="head"><div class="t"><b>Contracts</b><small>What each Procedure can be priced at, and who it bills.</small></div><span class="btn sec">Replace from a date</span><span class="btn pri lg">New contract</span></div>
+            <div class="tabs"><span class="tab on">Desk <span class="cnt w">2</span></span><span class="tab">Contracts <span class="cnt">343</span></span><span class="tab">Where invoices go</span><span class="tab">Holders</span></div>
+            <div class="stats">
+              <div class="stat"><b>316</b><span>Active Contracts</span></div>
+              <div class="stat"><b>4</b><span>Prices change in the next 60 days</span></div>
+              <div class="stat w"><b>2</b><span>Bookings need a Contract fixed</span></div>
+              <div class="stat"><b>3</b><span>Edits this week</span></div>
+            </div>
+            <div class="desk">
+              <div class="col">
+                <div class="card pad">
+                  <div class="ch"><span class="l">Starting soon <span class="cnt">4</span></span><small>next 60 days</small></div>
+                  <div class="soon">
+                    <div class="d"><div class="day"><b>1</b><small>Dec</small></div><div class="what"><b>Gastric bypass · Mr P. Doyle</b><span class="chg"><s class="mono">$2,800.00</s>→<span class="mono">$2,950.00</span></span><br><span>6 upcoming Bookings re-price</span></div></div>
+                    <div class="d"><div class="day"><b>5</b><small>Dec</small></div><div class="what"><b>COS ACC fixed fees</b><span class="chg">First price <span class="mono">$1,250.00</span></span><br><span>1 Booking before it has no price</span></div></div>
+                    <div class="d"><div class="day"><b>1</b><small>Jan</small></div><div class="what"><b>Unisports Ortho → UNI-002</b><span class="chg"><s class="mono">$93.47</s>→<span class="mono">$97.00</span> per unit</span><br><span>Replacement takes over; 3 Bookings to move</span></div></div>
+                    <div class="d"><div class="day"><b>5</b><small>Jan</small></div><div class="what"><b>Rhinoplasty · Dr Melanie Souter</b><span class="chg"><s class="mono">$1,200.00</s>→<span class="mono">$1,300.00</span></span><br><span>Prepaid: 1 prepayment already sent at $1,200.00</span></div></div>
+                  </div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="card pad">
+                  <div class="ch"><span class="l">Needs fixing <span class="cnt w">2</span></span></div>
+                  <div class="row edge"><span class="t">Still on a Disabled Contract</span><span class="s">M. Kereama · Thu 10 Dec · Christchurch Eye Surgery 2025 rate</span><span class="acts"><span class="txt">Choose a Contract</span></span></div>
+                  <div class="row edge"><span class="t">No price on its date</span><span class="s">L. Tuilagi · Thu 3 Dec · COS ACC fixed fees starts 5 Dec</span><span class="acts"><span class="txt">Open Booking</span><span class="txt">Open Contract</span></span></div>
+                </div>
+                <div class="card pad">
+                  <div class="ch"><span class="l">Changed by anaesthetists <span class="cnt">2</span></span></div>
+                  <div class="row"><span class="t">Dr Priya Sharma moved a Procedure</span><span class="s">Southern Cross RVG → Southern Cross Affiliated Provider · Fri 27 Nov</span></div>
+                  <div class="row"><span class="t">Dr Tom Ngata typed a price</span><span class="s">No contract · Fixed price, <span class="mono">$640.00</span> · Mon 30 Nov</span></div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="card pad">
+                  <div class="ch">Recent edits</div>
+                  <div class="row"><span class="t">Unisports Ortho rate $97.00 from 1 Jan (UNI-002)</span><span class="s">Kirsty · today, 9:40 am</span></div>
+                  <div class="row"><span class="t">nib RVG: holder reference NIBAN2026</span><span class="s">Sam · Mon 23 Nov</span></div>
+                  <div class="row"><span class="t">Forte Health RVG less 10%: specialties</span><span class="s">Kirsty · Fri 20 Nov</span></div>
+                  <span class="txt">Open in Audit</span>
+                </div>
+                <div class="card pad">
+                  <div class="ch">Gaps on the step rail</div>
+                  <div class="row"><span class="t">Southern Endo · ACC</span><span class="s">Only the backstops: no ACC Contract held by Southern Endo.</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
+      <div>
+        <p class="mock-cap">Replace from a date: one sheet in place of create, warn, then disable</p>
+        <div class="mockwrap"><div class="frame dimpage" style="min-height:860px">
+          <div class="mnav ghost">
+            <div class="logo"><b>Anaesthesia Associates</b><small>ADMIN</small></div>
+            <div class="it">Day view</div><div class="it">Intake</div><div class="it">Draft Lists</div><div class="it">Conflicts</div><div class="it">Notifications</div><div class="it">Review queue</div><div class="it">Invoices</div><div class="it">Patients</div><div class="it">Billing monitor</div><div class="it">Ledger</div><div class="it on">Contracts</div><div class="it">Master data</div><div class="it">Audit</div>
+          </div>
+          <div class="page ghost">
+            <div class="head"><div class="t"><span class="back">‹ Contracts</span><b>Unisports Ortho <span class="pill code">UNI-001</span></b><small>Held by Unisports Ortho · bills its holder · RVG at $93.47 per unit</small></div></div>
+            <div class="card pad" style="height:220px"></div><div class="card pad" style="height:160px"></div>
+          </div>
+          <div class="scrim"></div>
+          <div class="sheet" role="dialog" aria-label="Replace Unisports Ortho from a date">
+            <div class="sh"><b>Replace Unisports Ortho from a date</b><small>A new Contract takes over. Everything is copied except what you change here.</small></div>
+            <div class="sb">
+              <div class="step"><i>1</i><div><h6>What changes</h6><div class="cmp"><div class="fld">Now<div class="in was mono">$93.47 per unit</div></div><div class="fld">New Contract<div class="in mono">$97.00 per unit</div></div></div><p style="font-size:12px;color:var(--slate);margin-top:6px">Holder, who it bills, Mr T. Hale's link and the codes are copied. AA code UNI-002 is assigned on save.</p></div></div>
+              <div class="step"><i>2</i><div><h6>From</h6><div class="fld"><div class="in mono" style="width:200px">Fri 1 Jan 2027</div><span class="hint">The first procedure date the new Contract covers.</span></div></div></div>
+              <div class="step"><i>3</i><div><h6>Bookings on or after 1 Jan still on UNI-001 <span class="cnt">3</span></h6>
+                <table class="tbl" style="background:var(--surface);border:1px solid var(--line);border-radius:10px"><tbody>
+                  <tr><td style="width:28px"><span class="box on"></span></td><td>T. Walsh</td><td>Tue 5 Jan · Forte AM</td><td class="r mono">13 units</td></tr>
+                  <tr><td><span class="box on"></span></td><td>A. Kumar</td><td>Tue 5 Jan · Forte AM</td><td class="r mono">9 units</td></tr>
+                  <tr><td><span class="box on"></span></td><td>H. Fraser-Ngata</td><td>Tue 12 Jan · Forte PM</td><td class="r mono">11 units</td></tr>
+                </tbody></table>
+                <p style="font-size:12px;color:var(--slate);margin-top:6px">Ticked Bookings move to UNI-002. Authorised Lists are locked and never move.</p></div></div>
+              <div class="step"><i>4</i><div><h6>The old Contract</h6>
+                <div class="radio"><i class="on"></i><div>Keep UNI-001 active until 1 Jan, then disable it<small>Both are offered until then; the step rail picks by date.</small></div></div>
+                <div class="radio"><i></i><div>Disable UNI-001 now<small>Bookings before 1 Jan that are already on it keep it.</small></div></div>
+                <div class="notice w">"Disable on a date" is new: Contracts have no dates today (D77). It needs a ruling, or the first option drops away.</div>
+              </div></div>
+            </div>
+            <div class="sf"><span class="btn sec">Cancel</span><span class="btn pri">Create UNI-002 and move 3</span></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="notes">
+        <div><h4>What it fixes</h4><ul><li>The things that go wrong with Contracts (a price that starts next week, a Booking left on a Disabled one) come to the office instead of waiting for review day.</li><li>The commonest dated change is one sheet, with nothing to forget.</li><li>The nav badge is earned: it counts Bookings that need a Contract fixed.</li></ul></div>
+        <div><h4>What it costs</h4><ul><li>Another badge in the side nav, and an overlap with the Day rail's To-do and the Review queue's flags, so they need one source.</li><li>The replace flow moves Bookings when the office ticks them. That is office action, not "moving by itself" (D79), but it should be said out loud.</li><li>"Disable on a date" puts a date on a Contract, which D77 avoided.</li></ul></div>
+        <div class="req"><p><b>Catalogue:</b> desk cards read US-04.1.2, US-04.2.15, US-07.2.2 and the OQ-135 review flag.</p><p><b>Edit:</b> US-04.1.2 gains "replace from a date" as one action.</p><p><b>Ruling:</b> a scheduled disable, or keep "disable now" only.</p><p><b>Backlog:</b> closes "Build what S5 promises: a new Contract disabling the old one".</p></div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<section id="reco">
+  <div class="reco">
+    <div>
+      <h2>What I'd do</h2>
+      <p>Start with <strong>idea 1</strong>. It is the base every other idea needs (a side nav entry, a URL per Contract, room to read), and it needs no new requirement. Then add the best parts of the others as tabs, in order of value:</p>
+      <ol>
+        <li><strong>Contracts in the side nav, the list at full width, and a record page</strong> with the price timeline and "On this Contract". Holders and Funding tags move across as tabs; Master data keeps a link.</li>
+        <li><strong>"Replace from a date"</strong> from idea 4, using "disable now" only, so it needs no ruling. It closes the S5 backlog item.</li>
+        <li><strong>"Where invoices go" with Try a List</strong> from idea 3, as a tab. It is cheap because the rules already exist, and it is the best demo moment of the four.</li>
+        <li><strong>The desk</strong> from idea 4, once the warning sources are one list shared with the Day rail.</li>
+        <li><strong>Bulk price ranges</strong> from idea 2: only if AA say whole schedules move on one date. Ask at the next workshop; it needs a story first.</li>
+      </ol>
+    </div>
+    <div class="q">
+      <h4>Questions for you before building</h4>
+      <ul>
+        <li>Do Parties and Funding tags move under Contracts, or stay in Master data with a link both ways?</li>
+        <li>Where should Contracts sit in the nav: after Ledger as drawn, or beside Invoices?</li>
+        <li>Should the record page's "Edit" open the sections in place, or keep the panel for editing and use the page for reading?</li>
+        <li>Is a scheduled disable worth taking to AA, or is "disable now" enough?</li>
+        <li>Should the anaesthetist get a read-only view of their own price list on the same pattern? It's in the backlog for mobile.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>Drawn from the requirements catalogue (EP-04, AR-58, US-04.1.2 to US-04.3.11), the catch-up build record (phases 18 to 25a, 39b, 42), <span class="mono">docs/BACKLOG.md</span> and <span class="mono">docs/admin-layout-audit.md</span>. Names and counts come from the seed and AR-58's go-live shape; patient names are made up for the mock.</footer>
+</main>
+
+<script>
+/* Idea 3: the step rail columns, live. The data mirrors the seed for a St George's List with Mr T. Hale and Dr Tom Ngata on Thu 3 Dec 2026. */
+(function(){
+  var DATA = {
+    patient: { label:'Patient', note:'bills the payer', step2:'Payment type', opts:{
+      standard:{ label:'Standard', note:'', groups:[
+        {h:'No contract', rows:[['AA-RVG','No contract · RVG','RVG at the anaesthetist’s rate','$28.00/unit'],['AA-FIX','No contract · Fixed price','Typed on the Procedure','Typed']]}
+      ]},
+      prepaid:{ label:'Prepaid', note:'', groups:[
+        {h:'No contract', rows:[['AA-PRE','Prepaid · Fixed price','Typed on the Procedure','Typed']]}
+      ]}
+    }},
+    hospital: { label:"St George's", note:'the List’s hospital', step2:'Funding tag', opts:{
+      acc:{ label:'ACC', note:'', sug:true, groups:[
+        {h:'Contracts', rows:[['STG-ACC-001','ACC elective services via St George’s','RVG at the Contract’s rate','$25.00/unit']]},
+        {h:'No contract', rows:[['STG-ACC-RVG','St George’s · ACC · RVG','RVG at the anaesthetist’s rate','$28.00/unit'],['STG-ACC-FIX','St George’s · ACC · Fixed price','Typed on the Procedure','Typed']]}
+      ]}
+    }},
+    special: { label:'Special', note:'another holder', step2:'Holder', opts:{
+      stg:{ label:"St George's", note:'', groups:[{h:'Contracts', rows:[['STG-001','St George’s RVG','RVG at the anaesthetist’s rate · SGANAES01','$28.00/unit']]}]},
+      nib:{ label:'nib', note:'', groups:[{h:'Contracts', rows:[['NIB-001','nib RVG','RVG at the anaesthetist’s rate · NIBAN2026','$28.00/unit']]}]},
+      cos:{ label:'Canterbury Orthopaedic Surgeons', note:'', groups:[{h:'Contracts', rows:[['COS-001','ACC orthopaedic services','RVG at the Contract’s rate · ACC','$24.00/unit']]}]},
+      uni:{ label:'Unisports Ortho', note:'', groups:[{h:'Contracts', rows:[['UNI-001','Unisports Ortho','RVG at the Contract’s rate','$93.47/unit']]}]}
+    }}
+  };
+  var COUNTS = {patient:3, hospital:3, special:4};
+  var s1='hospital', s2='acc';
+  var c1=document.getElementById('c1'), c2=document.getElementById('c2'), c2t=document.getElementById('c2t'), c3=document.getElementById('c3');
+  function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function opt(key,label,note,count,on,sug,attr){
+    return '<button type="button" class="opt'+(on?' on':'')+'" '+attr+'="'+key+'" aria-pressed="'+on+'"><span>'+esc(label)+(note?'<small>'+esc(note)+'</small>':'')+'</span><span>'+(sug?'<span class="sug">Suggested</span> ':'')+'<span class="cnt">'+count+'</span></span></button>';
+  }
+  function countOf(o){var n=0;o.groups.forEach(function(g){n+=g.rows.length});return n}
+  function render(){
+    var h='';
+    Object.keys(DATA).forEach(function(k){h+=opt(k,DATA[k].label,DATA[k].note,COUNTS[k],k===s1,false,'data-s1')});
+    c1.innerHTML=h;
+    var d=DATA[s1]; c2t.textContent=d.step2;
+    if(!d.opts[s2]) s2=Object.keys(d.opts)[0];
+    h='';
+    Object.keys(d.opts).forEach(function(k){var o=d.opts[k];h+=opt(k,o.label,o.note,countOf(o),k===s2,o.sug,'data-s2')});
+    c2.innerHTML=h;
+    h='';
+    d.opts[s2].groups.forEach(function(g){
+      h+='<div class="gh">'+esc(g.h)+'</div>';
+      g.rows.forEach(function(r){h+='<div class="ci'+(g.h==='No contract'?' bs':'')+'"><span><b>'+esc(r[1])+'</b><small>'+esc(r[2])+'</small><span class="mono">'+esc(r[0])+'</span></span><span class="price">'+esc(r[3])+'</span></div>'});
+    });
+    c3.innerHTML=h;
+  }
+  document.getElementById('rail3').addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    if(b.dataset.s1){s1=b.dataset.s1;s2='';render();c2.querySelector('button').focus()}
+    else if(b.dataset.s2){s2=b.dataset.s2;render();var nb=c2.querySelector('[data-s2="'+s2+'"]');if(nb)nb.focus()}
+  });
+  render();
+})();
+</script>
+</body>
+</html>

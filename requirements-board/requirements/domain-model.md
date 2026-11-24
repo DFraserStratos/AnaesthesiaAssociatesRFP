@@ -458,7 +458,7 @@ given date means creating a new Contract (and disabling the old one when it is n
 | Field | Notes |
 | --- | --- |
 | id, aaCode, name | Every Contract carries AA's own unique identifier (`aaCode`), a short structured code; holder codes are kept as references and do not replace it. The code format is part of designing the Contract (OQ-66). The name is what the step rail shows (for example "Cataract IOL (LA by Anaesthetist)", "Forte' SXAP", "No contract · RVG"). |
-| holder | The party that holds it. |
+| holder | The party that holds it; fixed once the Contract is created. |
 | bills holder or payer | Whether the Contract **bills its holder** (the holder pays AA itself) or **bills the payer** named on the Procedure (the holder only sets the price). A Contract held by AA or an anaesthetist always bills the payer, and so does a prepaid Contract (our reading). Drives the invoice layout (below). |
 | funding tag | Optional, from an AA-maintained list (SXAP, HNZ, ACC, ...). On a Contract that bills a hospital it decides that the Contract sits under Hospital on the step rail, under that tag. The tag also lets the Booking's insurer or funder suggest a path (Southern Cross Health Society for SXAP, ACC for ACC, Health NZ for HNZ). |
 | specialties | Zero or more from AA's list of broad specialties; none means every specialty (RVG arrangements, the built-ins). The step rail hides a Contract whose specialties do not include the List surgeon's; there is no "show all". A procedure done by more than one specialty (a breast reduction, by a plastic or a general surgeon) carries both (Ben, 5 November). |
