@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Logo } from '../../../shared/Logo'
 import { DemoBadge } from '../../../shared/DemoBadge'
-import { SyntheticDataBadge } from '../../../shared/SyntheticDataBadge'
 import { Button, Card, Pill, TextField } from '../../../shared/ui'
 import { ANAE } from '../../../domain/seed'
 import { recordAnaesthetistSignIn, useAppStore } from '../../../store'
@@ -143,7 +142,6 @@ export function SignInScreen() {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <DemoBadge label="Demo prototype" />
-          <SyntheticDataBadge tone="onLight" />
         </div>
       </div>
     </div>

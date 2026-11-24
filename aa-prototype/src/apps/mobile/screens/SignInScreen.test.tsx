@@ -53,7 +53,6 @@ describe('SignInScreen', () => {
     const text = container.textContent ?? ''
     expect(text).toContain('Provisional')
     expect(text).toContain('still to be decided')
-    expect(text).toContain('Synthetic data only')
     expect(text).not.toMatch(/[–—]|Forgot|Google|Face ID sign/)
   })
 

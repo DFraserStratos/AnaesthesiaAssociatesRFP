@@ -213,7 +213,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="Pill" source="shared/ui/Pill.tsx" usedIn={AWM} what="The one label pill (UI unification U3): neutral, success, warning and error tones; sm, md (inline) and lg (table, the Admin Review size); a tint, a full-alpha outline, or onInk (catch-up Phase 43: quiet white on the dark harness bar and admin side nav); a leading icon or dot. Never teal or crimson, so no pill reads as a button." shared="shared/ui/Pill.tsx">
           <PillExample />
         </CatalogueRow>
-        <CatalogueRow name="SyntheticDataBadge" source="shared/SyntheticDataBadge.tsx" usedIn={AWM} what="Synthetic data only (catch-up Phase 43; US-15.0.6): an environment marker on a Pill with a shield icon and its tooltip, onInk in the harness bar and admin side nav, the neutral outline on the web nav and the mobile More card. Neutral: never crimson, teal or the demo warning tint." shared="shared/SyntheticDataBadge.tsx">
+        <CatalogueRow name="SyntheticDataBadge" source="shared/SyntheticDataBadge.tsx" usedIn="Harness bar" what="Synthetic data only (catch-up Phase 43; US-15.0.6): an environment marker on a Pill with a shield icon and its tooltip, onInk in the prototype's harness bar only (it is not repeated inside the apps). The neutral outline tone stays for a light surface. Neutral: never crimson, teal or the demo warning tint." shared="shared/SyntheticDataBadge.tsx">
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             <span style={{ background: neutral.ink, padding: 8, borderRadius: 8 }}><SyntheticDataBadge tone="onInk" /></span>
             <SyntheticDataBadge tone="onLight" />

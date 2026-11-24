@@ -1,7 +1,7 @@
 /**
  * Catch-up Phase 43's copy: the banner, the triggers and the privacy surfaces
  * say sessions, never "slot" (OQ-64), and carry no en or em dash; the
- * Synthetic data badge renders in every shell with its label and tooltip.
+ * Synthetic data badge renders with its label and tooltip, in the harness bar only.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -66,9 +66,10 @@ describe('SyntheticDataBadge', () => {
     }
   })
 
-  it('is placed in the harness bar, the web nav, the admin side nav and the mobile More card', () => {
-    const placements = import.meta.glob(['../../shell/AppShell.tsx', '../../apps/web/components/WebNav.tsx', '../../apps/admin/components/SideNav.tsx', '../../apps/mobile/screens/MoreScreen.tsx'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
-    expect(Object.keys(placements)).toHaveLength(4)
-    for (const [file, source] of Object.entries(placements)) expect(source.includes('<SyntheticDataBadge'), file).toBe(true)
+  it('is placed in the harness bar only, never repeated inside an app', () => {
+    const shell = import.meta.glob('../../shell/AppShell.tsx', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+    expect(Object.values(shell)[0]?.includes('<SyntheticDataBadge')).toBe(true)
+    const apps = import.meta.glob('../../apps/{admin,web,mobile}/**/*.tsx', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+    for (const [file, source] of Object.entries(apps)) expect(source.includes('<SyntheticDataBadge'), file).toBe(false)
   })
 })
