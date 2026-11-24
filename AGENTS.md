@@ -49,8 +49,10 @@ From `aa-prototype/`: `npm run dev` (5173), `npm run dev:pwa` (5174), `npm run b
 `npm run affected`. From the root: `npm run setup`, `npm run dev` (prototype, PWA and board),
 `npm run check` (catalogue), `npm run verify:board` (board work).
 
-**Finish green:** `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run lint` pass
-before handing back; board work also `npm run verify:board`.
+**Checks, two tiers** (tools in `requirements-board/agent/skills/run-build-phase/tools/`): per change,
+`phase-check.mjs --changed` plus `npm run lint` and the Playwright specs for changed screens; before
+anything lands on `master` (a branch merge, or once at the end of a batch of direct commits), the full
+`phase-check.mjs` plus lint. Board work also `npm run verify:board`.
 
 ## Git
 

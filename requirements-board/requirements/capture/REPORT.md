@@ -1,114 +1,130 @@
 # Screenshot report
 
-Written by `npm run capture` (the board's scripts/capture.ts) on a full run. Do not edit by hand.
+Written by `npm run capture` (the board's scripts/capture.ts); a run limited to some IDs updates their rows and keeps other failures. Do not edit by hand.
 
 Scope: every story plus every feature with no stories (302 items, 302 stories). Features with stories are captured only when they have an overview screen.
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 245 | 223 |
+| Captured | 232 | 211 |
 | Partial | 24 | 24 |
-| Absent from the app | 46 | 45 |
-| Failed recipe | 1 | 1 |
-| No recipe | 9 | 9 |
+| Absent from the app | 70 | 66 |
+| Failed recipe | 2 | 1 |
+| No recipe | 0 | 0 |
 
-1041 screenshots. Items per app: admin 208, web 101, mobile 99, simulator 36.
+1044 screenshots. Items per app: admin 203, web 96, mobile 96, simulator 33.
 
-## Failed recipes (1)
+## Failed recipes (2)
 
-- **US-15.0.4** Volumes · admin-full-scale-day-paged: locator.click: Timeout 6000ms exceeded.
+- **FT-01.6** Draft Lists · admin-draft-list-origins: highlight [data-shot=draft-lists-table] th:nth-child(7): selector [data-shot=draft-lists-table] th:nth-child(7) matched nothing (at http://localhost:5773/admin/draft-lists)
+- **US-03.6.1** Mark a Booking complete · mobile-mark-complete-fixed-price: highlight: the element is outside the visible screen
 
-## Absent from the app (46)
+## Absent from the app (70)
 
+- **FT-04.4** Default Contracts for hospitals, insurers and procedures · Retired: removed in Phases 18, 19a and 20. There are no default Contracts; No contract · RVG is the backstop on every List (US-04.3.3).
+- **FT-06.1** Prepaid procedure settings on the anaesthetist profile · Retired: removed in Phases 18 and 26. Prepayment follows a prepaid Contract (FT-06.2), not a setting on the anaesthetist's profile.
+- **FT-06.4** Settlement after the procedure · Retired: removed in Phase 41. The feature was dissolved; its story is US-06.4.1, under FT-06.5.
 - **FT-11.4** Insurers · Retired: removed in Phase 18
+- **US-01.1.5** Split a session between two surgeons · Not in the prototype: splitting a session into an A and a B List is Proposed and not built.
+- **US-01.3.4** AM and PM can differ · Retired: merged into US-01.3.1, where AM and PM Lists that differ are shot.
 - **US-02.1.5** Automatic sync from St George's and Southern Cross · Future Work: the automatic sync from St George's and Southern Cross is not in the first release, so there is no shot. Hospital files come in through Import hospital file on the matching screen (US-02.1.1).
-- **US-02.4.2** Photo capture of the physical card · Retired: photo capture is US-02.4.4 (Future Work); the Add a booking choice was removed in Phase 15b
+- **US-02.2.2** Edit then ingest · Retired: merged into US-02.2.1, where an extracted row is corrected before it is sent to matching.
+- **US-02.2.3** Detect Bookings removed from a re-sent List · Future Work: Bookings missing from a re-sent List are not detected. In the first release the office decides each row of a re-sent List on the matching screen (US-02.2.1).
+- **US-02.3.5** Send booking change emails automatically · Future Work: the system does not send booking change emails itself. The office drafts each one with Draft update email (US-02.3.3).
+- **US-02.4.2** Photo capture of the physical card · Retired: removed in Phase 15b. Photo capture is US-02.4.4 (Future Work).
 - **US-02.4.3** Copy a Booking · Retired: removed in Phase 15b
-- **US-02.4.4** Add a Booking from a photo of the booking card · Future Work lane: photo capture is Future Work; Phase 15b took it out of the Add a booking sheet and keeps it only as a badged Future-scope demo action on the mobile List
+- **US-02.4.4** Add a Booking from a photo of the booking card · Future Work: photo capture is not in the first release. A badged demo action on the mobile List, Photo capture (Future scope), shows a simulated photo for discussion.
+- **US-02.5.1** Apply a modification · Future Work: a modification from an integration is not applied automatically. In the first release the office applies each hospital modification on the matching screen (US-02.1.2, US-02.1.3).
+- **US-02.5.2** Reschedule to another day arrives as cancel and new Booking · Future Work: a day move is not detected from a re-sent List or handled automatically. In the first release the office decides each row on the matching screen (US-02.1.2).
+- **US-02.5.3** Record a cancellation · Future Work: a cancellation from an integration is not recorded automatically. In the first release the office records a hospital's cancellation on the matching screen (US-02.1.2).
+- **US-02.5.4** Inbound changes accepted until the List is authorised · Future Work: there are no automated inbound changes. In the first release every hospital change waits on the matching screen for the office, who may apply it until the List is authorised (US-02.1.2).
 - **US-02.5.6** Concurrent edits · Future Work: concurrent edits between an automated update and a person.
 - **US-03.1.3** Attachments · Retired: removed in Phase 20a
 - **US-03.3.2** Override a ranged base code · Retired: merged into US-03.3.1
-- **US-03.3.5** Itemise modifiers · Retired: merged into US-03.3.4; itemised modifiers are shot there (Phase 19b)
+- **US-03.3.5** Itemise modifiers · Retired: merged into US-03.3.4, where itemised modifiers are shot.
 - **US-03.3.6** Other billing lines · Retired: removed in Phase 39b (billing lines are billing events, US-03.7.2)
-- **US-03.3.7** Rate x time capture · Retired. The rate x time line was removed in Phase 24.
-- **US-04.1.6** Stage Contract changes for review, then submit · Retired: the flat Contract model has no lines, versions or defaults
-- **US-04.2.3** Base unit override · A contract cannot override base units for an RVG code or group. Base units always come from the RVG code master; a fixed-price Contract prices a code with a fixed price instead. Searched domain/types.ts (Contract, ContractPrice), domain/billing/fee.ts and ContractEditSheet.tsx.
+- **US-03.3.7** Rate x time capture · Retired: removed in Phase 24 (the rate x time line).
+- **US-03.5.3** Adjustment reason · Retired: merged into US-03.5.1; a typed price asks for no reason, as shot there.
+- **US-03.7.4** Bill a pre-op consult held in AA's room · Not in the prototype: what is billed for a pre-op consult in AA's room, to whom and at what price is open (OQ-138).
+- **US-04.1.6** Stage Contract changes for review, then submit · Retired: removed in Phase 18. Contracts have no versions to stage: each is edited in place, every change audited (US-04.1.2).
+- **US-04.2.3** Base unit override · Retired: merged into US-04.2.2. Base units always come from the RVG code; a Contract sets a rate, a discount or a fixed price instead.
 - **US-04.2.4** Contract lines · Retired: removed in Phase 19a
 - **US-04.2.5** Multi-procedure rule per Contract · Retired: removed in Phase 19a
-- **US-04.2.6** Adjustment and override permissions · Retired: merged into US-04.2.2, where the Contract's anaesthetist override setting is shot (Phase 24).
-- **US-04.2.7** Required booking inputs · A contract cannot declare required booking inputs. Completion checks come from the Contract's pricing kind and fixed validator rules, not from the contract. Searched domain/types.ts (Contract), domain/billing/validateBookingForBilling.ts and ContractEditSheet.tsx.
-- **US-04.2.9** Organisational and individual Contracts · Retired: the flat Contract model has no lines, versions or defaults
-- **US-04.2.10** Contract prices effective from a date · Retired: the flat Contract model has no lines, versions or defaults
-- **US-04.2.12** Payment setting: full payment or split · Retired: splitting is a button on the Booking (US-08.2.3), built in Phase 22; no Contract payment setting.
-- **US-04.3.6** Hospital data sets the Contract · Not planned: Future Work, in no catch-up phase.
-- **US-04.3.7** Confirm a price with the hospital · Not built yet: catch-up Phase 21 builds this.
-- **US-04.4.1** Mandatory default Contract · Retired: the flat Contract model has no lines, versions or defaults
+- **US-04.2.6** Adjustment and override permissions · Retired: merged into US-04.2.2, where the Contract's anaesthetist override setting is shot.
+- **US-04.2.7** Required booking inputs · Retired: never in the prototype. A Contract declares no required booking inputs; what a Booking needs to be complete follows its Contract's pricing kind (US-03.6.1).
+- **US-04.2.9** Organisational and individual Contracts · Retired: merged into US-04.2.1, where a Contract's holder and where it is offered are shot.
+- **US-04.2.10** Contract prices effective from a date · Retired: removed in Phase 19a. A fixed price changes through price ranges (US-04.2.15).
+- **US-04.2.12** Payment setting: full payment or split · Retired: removed in Phase 22. A fee is split with the Split button on the Procedure (US-08.2.3), not a Contract setting.
+- **US-04.2.13** Export and re-import Contracts · Future Work: Contracts are not exported to or re-imported from a spreadsheet. The office edits each Contract on Master data (US-04.1.2).
+- **US-04.3.6** Hospital data sets the Contract · Future Work: the hospital's data does not set the Contract; in the first release the office sets it (US-04.3.4).
+- **US-04.3.7** Confirm a price with the hospital · Future Work: there is no flag to confirm a price with the hospital. A Procedure can be priced on the hospital's open-price fallback (US-04.3.9).
+- **US-04.4.1** Mandatory default Contract · Retired: removed in Phases 18, 19a and 20. There is no default Contract; No contract · RVG is the backstop on every List (US-04.3.3).
+- **US-04.4.2** Default RVG Contract for every procedure · Retired: removed in Phases 18, 19a and 20. There are no per-procedure default Contracts; No contract · RVG is the backstop on every List (US-04.3.3).
 - **US-05.1.2** Add AA codes · Retired: merged into US-05.1.1
-- **US-05.1.6** Procedure master mapped to RVG codes · Not built yet: catch-up Phase 19 builds this.
-- **US-05.2.3** Conditional positioning modifier · Retired: a modifier the base units include is now shown selected at 0 and removable (US-05.1.4, Phase 19b)
-- **US-05.3.3** Modifier split above four units · Retired: merged into US-05.3.1 (the split is built in Phase 23)
-- **US-05.3.4** Contract-specific second-procedure rules · Retired: removed in Phase 19a
-- **US-06.1.1** Tick procedures or groups · Retired
-- **US-06.1.2** Admin can maintain on behalf · Retired
-- **US-06.2.3** Prepayment is an estimate · Retired in catch-up Phase 27: a prepayment is the Procedure's price on its prepaid Contract, billed in full, not an estimate, so there is no estimated-fee invoice to show.
-- **US-06.2.4** Calculate the prepayment estimate · Retired in catch-up Phase 27: there is no prepayment estimate to calculate; the prepaid amount is the Procedure's price on its prepaid Contract.
-- **US-06.2.5** Estimated duration from the surgeon's rooms · Retired in catch-up Phase 27: no estimated duration is used, since the prepaid amount is the Contract's price and not an estimate.
-- **US-06.3.3** Alert on unpaid prepayment · Retired in catch-up Phase 27: the unpaid-prepayment alert is now US-06.3.2's status and escalating warning; there is no separate story and no gate to show.
-- **US-06.4.2** No automatic credit when prepaid exceeds final · Retired in catch-up Phase 27: there is no balance run and no deduction, so no credit arises when a prepaid amount exceeds a final amount; the prepaid Procedure is left off the final invoice.
+- **US-05.1.6** Procedure master mapped to RVG codes · Retired: removed in Phase 19. There is no procedure master: the procedure is free text on the Booking and the RVG code comes from the RVG groups (US-05.1.1).
+- **US-05.2.3** Conditional positioning modifier · Retired: removed in Phase 19b. A base code never absorbs a modifier; an included modifier shows selected at 0 and removable (US-05.1.4).
+- **US-05.2.4** Contract rate or discount · Retired: merged into US-05.2.1, where a Contract's own rate is shot.
+- **US-05.3.2** Time units on every Procedure · Retired: merged into US-05.3.1, where an additional Procedure's own time units are shot.
+- **US-05.3.3** Modifier split above four units · Retired: merged into US-05.3.1, where the modifier split above four units is shot.
+- **US-05.3.4** Contract-specific second-procedure rules · Retired: removed in Phases 19a and 23. One multi-procedure rule prices every Booking (US-05.3.1).
+- **US-06.1.1** Tick procedures or groups · Retired: removed in Phases 18 and 26. Prepayment follows a prepaid Contract (US-04.2.14); the anaesthetist's profile has no prepaid procedures or groups.
+- **US-06.1.2** Admin can maintain on behalf · Retired: removed in Phases 18 and 26. The office keeps each anaesthetist's price list Contracts (US-04.2.14); the profile has no prepaid setting.
+- **US-06.2.3** Prepayment is an estimate · Retired: removed in Phase 27. A prepayment is the Procedure's price on its prepaid Contract, billed in full, not an estimate.
+- **US-06.2.4** Calculate the prepayment estimate · Retired: removed in Phase 27. There is no estimate to calculate: the prepaid amount is the Procedure's price on its prepaid Contract.
+- **US-06.2.5** Estimated duration from the surgeon's rooms · Retired: removed in Phase 27. No estimated duration is used, since the prepaid amount is the Contract's price.
+- **US-06.3.3** Alert on unpaid prepayment · Retired: merged into US-06.3.2, where the unpaid prepayment's status and strengthening warning are shot.
+- **US-06.4.2** No automatic credit when prepaid exceeds final · Retired: removed in Phases 27 and 41. There is no balance run and no deduction, so no credit arises; the prepaid Procedure is left off the final invoice (US-08.2.2).
+- **US-07.1.2** Cannot submit an incomplete List · Retired: merged into US-07.1.1, where a List with a Booking still to finish cannot be submitted.
+- **US-08.1.2** Contract already resolved · Retired: merged into US-08.1.1, where authorising locks each Procedure's Contract for billing.
+- **US-09.1.2** InvoiceNumber and Reference · Retired: merged into US-09.1.1, where both records of a pair carry InvoiceNumber and Reference.
+- **US-09.3.2** NHI never sent to Xero · Retired: merged into US-09.3.1, where Xero contacts carry only the hidden internal ID.
+- **US-10.2.2** Partial payment releases exactly that amount · Retired: merged into US-10.2.1, where a part payment releases a payable for exactly the amount received.
+- **US-11.1.3** Deduplicate on NHI · Retired: merged into US-11.1.1, where a returning patient is matched on the NHI.
 - **US-11.4.1** Insurer master data · Retired: removed in Phase 18
 - **US-11.4.2** Insured patient who forwards the invoice · Retired: removed in Phase 18
-- **US-12.1.2** GST period · Retired
-- **US-12.1.3** Prepaid procedures · Retired
+- **US-12.1.2** GST period · Retired: removed in Phase 26. The profile holds no GST period; the GST report is monthly (US-12.2.2).
+- **US-12.1.3** Prepaid procedures · Retired: removed in Phases 18 and 26. Prepaid procedures are not on the profile; the office sets up the anaesthetist's prepaid Contracts (US-04.2.14).
 - **US-12.1.5** Bank details for disbursement · Retired: merged into US-12.1.4
-- **US-13.2.3** Per-anaesthetist balance · No per-anaesthetist ledger view for the office. Each anaesthetist sees their own balances in the Anaesthetist app (web Accounts, mobile Balances), but the Admin app has no equivalent. Searched apps/admin for balance and receivable views.
+- **US-13.2.3** Per-anaesthetist balance · Retired: merged into US-13.2.1, where the ledger's view for one anaesthetist is shot.
 - **US-13.6.1** Surgeons' rooms master record · Retired: removed in Phase 17b
-- **US-13.7.4** Warning and check-step settings · Future Work lane: out of the current scope, so not planned in the catch-up.
-- **US-14.6.1** Feeds from the other Christchurch providers · Not planned: Future Work, in no catch-up phase.
-- **US-14.6.2** Automatic matching and updates · Not planned: Future Work, in no catch-up phase.
+- **US-13.7.4** Warning and check-step settings · Future Work: there is no settings page for the warning routine or the check steps. The patient balance threshold is on Master data (US-11.3.2), and the prepayment approval switch on Invoices (US-06.3.1).
+- **US-14.6.1** Feeds from the other Christchurch providers · Future Work: there are no feeds from Forte Health, Christchurch Eye, Burwood, Southern Endo or the McMurray Centre; their Bookings come in by hand or from the rooms' PDF lists.
+- **US-14.6.2** Automatic matching and updates · Future Work: rows are not matched automatically. In the first release the office matches each row and approves each update on the matching screen (US-02.1.2).
 - **US-15.0.5** Testable billing rules · No screen shows this. It is met in the prototype's code rather than its UI: fee, unit, Contract and split logic is pure and deterministic in aa-prototype/src/domain/billing with Vitest suites of worked examples.
 
 ## Partial (24)
 
-- **US-01.4.1** Reassign a List with its bookings · Reassignment moves the List (same id, Bookings and history) into a colleague's free session, and the vacated session returns to Free unless marked otherwise; the update email to the hospital is Phase 35's on-demand button.
-- **US-02.5.1** Apply a modification · Automated application from an integration is Future Work (US-14.6.2). In the first release the office applies a hospital modification on the matching screen, shown here.
-- **US-02.5.2** Reschedule to another day arrives as cancel and new Booking · Detecting the move or the missing Booking from a re-sent List, and automated handling, are Future Work (US-02.2.3). In the first release the office decides each row.
-- **US-02.5.3** Record a cancellation · Automated cancellation from an integration is Future Work. In the first release the office records a hospital cancellation on the matching screen.
-- **US-02.5.4** Inbound changes accepted until the List is authorised · Automated changes are Future Work. In the first release every hospital change waits for the office, who may apply it until the List is authorised.
-- **US-03.1.10** Booking total on the office's Booking page · The total counts every invoice-ticked event, ex GST with GST beside; whether events on an invoice of their own count and whether GST shows are still open.
-- **US-04.1.1** Typical Contract arrangements · Funding tags arrive in Phase 18a, price ranges in 19a and the invoice destination on the step rail in 20.
-- **US-04.1.4** AA identifier for every Contract · Found by typing on the step rail from Phase 20; holder reference codes are seeded in 19a.
-- **US-04.2.1** Holder, who is billed, and where a Contract is offered · Who is billed acts in Phase 21; where a Contract is offered narrows the step rail in Phase 20; specialties arrive in 18a.
-- **US-04.2.11** Combinations as Contracts · Additional invoices are built (Phase 38b); fee extras billed as events are Phase 39b's.
-- **US-04.2.14** Anaesthetist's own price list Contracts · Offered only on her Lists under Patient › Prepaid in Phase 20; the prepaid amount in 27.
-- **US-04.2.18** Holder reference code, invoice description and default RVG code · Found by typing on the step rail in Phase 20; the invoice description reaches the invoice in 20a; the holder reference code is printed in 22.
-- **US-04.3.3** No contract · RVG · No contract · RVG is pinned first under Patient › Standard on the step rail and bills the patient, or the payer override on the Procedure; the payer named on the Booking (a parent, an employer) is Phase 21.
-- **US-05.2.5** Fixed fee schedule pricing · The additional invoice by hand is built (Phase 38b); the credit note by hand is Phase 39's.
-- **US-06.2.1** Detect prepayment requirement · The prototype flags a booking as needing pre-payment when a procedure's patient payment category is set to self funded pre-payment. There is no per-anaesthetist prepaid set of RVG codes or groups to match against.
-- **US-08.3.3** Patient-linked history survives Xero archiving · Purging a contact is not shown.
-- **US-08.3.4** Money in and money out · Per-patient position arrives with the patient screen (catch-up Phase 40).
-- **US-08.4.6** Invoice description on each Procedure · The invoice description shows on the invoice only; the office's edit of it has no screen yet (it left the Booking at the owner's review, 12 November).
+- **US-01.4.1** Reassign a List with its bookings · Reassignment moves the List (same id, Bookings and history) into a colleague's free session, and the vacated session returns to Free unless marked otherwise. The hospital is told with Draft update email (US-02.3.3).
+- **US-03.1.10** Booking total on the office's Booking page · Built as our reading of a Proposed story: the total counts every invoice-ticked event, an event on an invoice of its own included, ex GST with GST beside.
+- **US-04.1.1** Typical Contract arrangements · The shot shows the settings every Contract shares on Master data. Funding tags (US-04.2.17), price ranges (US-04.2.15) and where the invoice goes on the step rail (US-04.3.8) are shot on their own stories.
+- **US-04.1.4** AA identifier for every Contract · The shots show the AA code on Master data. Typing it on the step rail finds the Contract too (US-04.3.8).
+- **US-04.2.1** Holder, who is billed, and where a Contract is offered · The shot shows the holder, who is billed and the linked surgeons on Master data. The narrowing on the step rail is shot on US-04.3.2, specialties on US-04.2.16.
+- **US-04.2.11** Combinations as Contracts · The shot shows the combinations on Master data. A fee extra billed as an event is shot on US-03.7.2, an additional invoice on US-08.6.3.
+- **US-04.2.14** Anaesthetist's own price list Contracts · The shots show Dr Souter's price list on Master data. The step rail offers it only on her Lists under Patient › Prepaid (US-04.3.8), and the prepaid amount is shot on US-06.2.2.
+- **US-04.2.18** Holder reference code, invoice description and default RVG code · The shots show the three settings and the search on Master data. The step rail's search is shot on US-04.3.2, the default RVG code filling a Procedure on US-03.3.1, and the printed holder reference code on US-04.2.8.
+- **US-04.3.3** No contract · RVG · The shots show No contract · RVG on the step rail. Its price at the anaesthetist's unit value and billing the Procedure's payer are shot on US-05.2.1 and US-11.2.1.
+- **US-05.2.5** Fixed fee schedule pricing · The shots show the fixed and the open price. An additional invoice and a credit note raised by hand are shot on US-08.6.3 and US-08.6.5.
+- **US-06.2.1** Detect prepayment requirement · The shots show the prepayment warning on the anaesthetist's List. A Procedure on a prepaid Contract flagged on the office's Booking is shot on US-06.2.2 and US-06.3.2.
+- **US-08.3.3** Patient-linked history survives Xero archiving · Archiving a patient's Xero contact is shown; purging one is not modelled.
+- **US-08.3.4** Money in and money out · The shots show money in and out overall, for one anaesthetist and for one Booking. A patient's position is on the patient record in Admin Patients (US-13.2.2).
+- **US-08.4.6** Invoice description on each Procedure · The invoice prints the invoice description, but the office has no screen to edit it as free text, so the admin edit, and its winning over a later description or a Contract change, are not shown.
 - **US-09.4.1** Dedicated Xero organisation · The simulator models a single Xero organisation used only for receivables, payables and payments, but no organisation setup or separation from general accounting is shown.
-- **US-09.4.2** Duplicate invoice number prevention · The Xero setting is only described in a note on the simulator; it is not modelled as a configurable or enforced setting (open question OQ-11).
+- **US-09.4.2** Duplicate invoice number prevention · The setting is described in a note on the Xero simulation, not modelled as a setting the simulation enforces; AA is still to confirm it as a mandated setting.
 - **US-10.3.2** AA fee visible to the anaesthetist · Web shows AA fee invoices and their status; the mobile app shows only the total owed to AA, not the invoices.
-- **US-13.7.1** Warning routine · One routine evaluates every Booking and raises warnings with their text, kind and strength, never a block, but only the unpaid prepayment rule exists so far. Later phases add theirs: base units outside the RVG group's range (19), a child as the payer on the Booking and insurer-will-pay with no insurer Contract (21).
-- **US-14.4.1** NHI lookup via Digital Services Hub · The NHI lookup is simulated against a small set of demo records, not the NHI FHIR API, and anaesthetists carry an HPI only as an optional field; nothing is validated against HPI.
-- **US-15.0.1** Ease of use · Ease of use is a quality that screenshots can only suggest: the shots show the calm, large-target capture screen and the operational day view. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had.
+- **US-13.7.1** Warning routine · One routine raises every warning the story lists, each with its text, kind and strength and never a block: the unpaid prepayment, a patient's balance, a child as a Procedure's payer, base units outside the RVG code's range and a missing approval number. The shot shows the unpaid prepayment; the others are shot on their own stories.
+- **US-14.1.1** Parse SIU messages · Future Work: shown only on the badged Future scope: HL7 and FHIR demo, for discussion. In the first release hospital files are imported and matched by the office (US-02.1.1).
+- **US-14.2.1** Internal booking model · Future Work: shown only on the badged Future scope: HL7 and FHIR demo, for discussion. The internal booking model behind real feeds is not in the first release.
+- **US-14.3.1** Real-time processing · Future Work: shown only on the badged Future scope: HL7 and FHIR demo, for discussion. In the first release hospital files are imported by the office (US-02.1.1).
+- **US-14.5.1** Integration failure visibility · Future Work: shown only on the badged Future scope: HL7 and FHIR demo, for discussion. There are no automatic feeds in the first release.
+- **US-15.0.1** Ease of use · Ease of use is a quality that screenshots can only suggest. The shots show the calm Booking capture screen with the procedure stack and the Price section kept, help at the point of need beside each section on the phone, the web app and the office screens, and the welcome card each app shows on a first visit. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had. The capture shot's Booking (BK0009) holds no insurer, so its Insurance row reads None and shows no approval number.
+- **US-15.0.4** Volumes · Full-scale volumes are generated in memory and timed on screen; whether performance holds at these volumes needs formal performance testing, which the prototype has not had.
 
-## No recipe (9)
+## No recipe (0)
 
-- **US-01.1.5** Split a session between two surgeons
-- **US-02.2.3** Detect Bookings removed from a re-sent List
-- **US-02.3.5** Send booking change emails automatically
-- **US-03.7.4** Bill a pre-op consult held in AA's room
-- **US-04.2.13** Export and re-import Contracts
-- **US-04.4.2** Default RVG Contract for every procedure
-- **US-13.5.3** Sign in to the anaesthetist app
-- **US-15.0.8** Help line for app users
-- **US-15.0.9** Product support for AA
+None.
 
-## Captured (245)
+## Captured (232)
 
-- **FT-01.6** Draft Lists · admin
 - **FT-02.2** Surgeon PDF list ingest · admin
 - **FT-03.5** Anaesthetist adjustment · mobile
 - **FT-04.1** Contract catalogue · admin
@@ -141,7 +157,6 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 - **US-01.3.1** Assigned List pairing rule · admin
 - **US-01.3.2** Recurring bookings drive most assignments · admin
 - **US-01.3.3** Manual List assignment · admin, web, mobile
-- **US-01.3.4** AM and PM can differ · admin, web, mobile
 - **US-01.3.5** Not-preferred pairing warning when assigning or moving a List · admin
 - **US-01.3.6** Anaesthetist priority tiers for assignment · admin
 - **US-01.4.2** Availability finder · admin, web, mobile
@@ -163,7 +178,6 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 - **US-02.1.3** Show differences on match · admin
 - **US-02.1.4** Unmatched queue · admin
 - **US-02.2.1** Read, correct and ingest a surgeon PDF list · admin
-- **US-02.2.2** Edit then ingest · admin
 - **US-02.2.4** A List keeps where it came from · admin
 - **US-02.3.1** Create or amend a Booking · admin
 - **US-02.3.2** Save Booking changes explicitly · admin
@@ -196,8 +210,6 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 - **US-03.4.1** Anaesthetist can change the Contract · web, mobile
 - **US-03.5.1** Apply an anaesthetist adjustment · web, mobile
 - **US-03.5.2** BTM still recorded in full · web, mobile, admin
-- **US-03.5.3** Adjustment reason · web, mobile
-- **US-03.6.1** Mark a Booking complete · web, mobile
 - **US-03.6.2** Incomplete Bookings listed · web, mobile
 - **US-03.6.3** Ask the office to check a Booking or List · web, mobile, admin
 - **US-03.7.1** Add a pre-op or post-op event to a Procedure · web, mobile, admin
@@ -225,12 +237,10 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 - **US-05.1.5** Modifier code master · admin
 - **US-05.2.1** Per-unit pricing rate · admin
 - **US-05.2.2** Tiered time units · web, mobile, admin
-- **US-05.2.4** Contract rate or discount · admin
 - **US-05.2.6** RVG at the Contract's rate · web, mobile, admin
 - **US-05.2.7** GST · admin
 - **US-05.2.8** A Procedure's price follows its Contract until held · admin, web
 - **US-05.3.1** Multi-procedure BTM rule · web, mobile, admin
-- **US-05.3.2** Time units on every Procedure · web, mobile
 - **US-05.3.5** Ledger tracks each Procedure's share · admin
 - **US-05.4.1** Apply anaesthetist adjustment · web, mobile, admin
 - **US-05.4.2** Office can change any price · admin
@@ -251,7 +261,6 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 - **US-06.5.3** Prepayment for a replacement anaesthetist · admin
 - **US-06.5.4** Prepaid Booking moved to another anaesthetist · admin, web, mobile
 - **US-07.1.1** Submit a List · web, mobile
-- **US-07.1.2** Cannot submit an incomplete List · web, mobile
 - **US-07.2.1** Anaesthetist can still edit a submitted List · mobile, web
 - **US-07.2.2** Office review of Contracts and references · admin
 - **US-07.2.3** Office corrections · admin
@@ -260,7 +269,6 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 - **US-07.4.1** List leaves the main view once authorised · mobile, web
 - **US-07.4.2** Anaesthetist's main view · mobile, web
 - **US-08.1.1** Process an AUTHORISED List using each Procedure's locked Contract · admin
-- **US-08.1.2** Contract already resolved · admin
 - **US-08.2.1** Group by billable party · admin
 - **US-08.2.2** Prepaid Procedures left off the final invoice · admin
 - **US-08.2.3** Split one Procedure's fee between two payers · admin, web, mobile
@@ -281,7 +289,6 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 - **US-08.6.5** Credit note option on additional invoices · admin, web, mobile
 - **US-08.6.6** Start a rebill from a copy of the original lines · admin
 - **US-09.1.1** Invoice pair creation and identification · simulator, admin
-- **US-09.1.2** InvoiceNumber and Reference · simulator
 - **US-09.1.3** Prepayment invoices also paired · simulator
 - **US-09.1.4** ACCPAY as buyer-created tax invoice · simulator
 - **US-09.2.1** Webhook on INVOICE events · simulator
@@ -289,13 +296,11 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 - **US-09.2.3** Idempotent by InvoiceID · simulator, admin
 - **US-09.2.4** Detect disbursement · simulator, admin
 - **US-09.3.1** Contact identification without NHI · simulator
-- **US-09.3.2** NHI never sent to Xero · simulator
 - **US-09.3.3** Scheduled archiving · admin, simulator
 - **US-09.3.4** Invoice against an archived contact · simulator
 - **US-10.1.1** All payments into AA · simulator
 - **US-10.1.2** Two payment states · admin
 - **US-10.2.1** Payable released to match the amount received · simulator, admin
-- **US-10.2.2** Partial payment releases exactly that amount · simulator
 - **US-10.2.3** Reconcile back to the ledger · web, simulator
 - **US-10.2.4** Bulk remittance stays in Xero · simulator
 - **US-10.2.5** Negative invoices netted in the payment run · admin, web
@@ -303,9 +308,8 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 - **US-10.2.7** Weekly payment cycle · admin
 - **US-10.3.1** Generate AA fee invoices · admin, simulator
 - **US-10.3.3** AA fee settings · admin
-- **US-11.1.1** Patient record keyed on NHI · admin
+- **US-11.1.1** Patient record keyed on NHI · admin, web, mobile
 - **US-11.1.2** Dual-format NHI validation · admin
-- **US-11.1.3** Deduplicate on NHI · web, mobile
 - **US-11.1.4** Patient without NHI · admin
 - **US-11.1.5** Intake rows waiting for an NHI · admin, web, mobile
 - **US-11.2.1** Patient billed when the Contract does not bill its holder · admin
@@ -335,6 +339,7 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 - **US-13.4.5** Funding tags · admin
 - **US-13.5.1** Role-based access · admin, simulator
 - **US-13.5.2** Audit trail of changes · admin
+- **US-13.5.3** Sign in to the anaesthetist app · mobile
 - **US-13.6.2** Surgeon profile · admin
 - **US-13.6.3** Not-preferred pairings of surgeons and anaesthetists · admin
 - **US-13.6.4** Preferred pairings · admin
@@ -345,11 +350,10 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 - **US-13.8.1** See the team's notifications · admin
 - **US-13.8.2** Notify the team when an anaesthetist moves a List · admin
 - **US-13.8.3** Resolve a notice · admin
-- **US-14.1.1** Parse SIU messages · simulator
-- **US-14.2.1** Internal booking model · simulator
-- **US-14.3.1** Real-time processing · simulator
-- **US-14.5.1** Integration failure visibility · simulator
+- **US-14.4.1** NHI lookup via Digital Services Hub · web, mobile, admin
 - **US-15.0.2** Mobile-first for anaesthetists · mobile, web
 - **US-15.0.3** Enter once · web, admin
 - **US-15.0.6** Privacy and data minimisation · simulator, admin, web, mobile
 - **US-15.0.7** Changes show without signing out · admin, web, mobile
+- **US-15.0.8** Help line for app users · admin, web, mobile
+- **US-15.0.9** Product support for AA · admin

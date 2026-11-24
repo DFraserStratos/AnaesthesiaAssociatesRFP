@@ -30,11 +30,15 @@ Paths: `APP` = `aa-prototype/`, `REQ` = `requirements-board/requirements/`, `T` 
   mobile and the PWA, 1440x900 for web and admin) and compare them with the design page. Fix what
   doesn't match before moving on. These self-check shots go in the scratchpad, never in the repo.
 
-## 3. Finish green
+## 3. Check (two tiers)
 
-In `APP/`: `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run lint` (or, from the
-repo root, `node T/phase-check.mjs`, which runs the whole gate side by side; `--changed` for a quick
-inner loop). Add or update
+- **Per change, quick:** from the repo root `node T/phase-check.mjs --changed` (typecheck, the Vitest
+  tests related to uncommitted changes, catalogue check), plus `npm run lint` in `APP/`. That is enough
+  to hand over and to commit on a branch.
+- **Before it lands on `master`, full, once per batch:** `node T/phase-check.mjs` (both builds, all of
+  Vitest, verify-board, all Playwright) plus lint. Run it when merging a branch, or, for small changes
+  made directly on `master`, once at the end of the batch before its last commit. Don't run it after
+  every small change. Add or update
 colocated tests for changed behaviour. Run the Playwright specs in `APP/visual/` that cover the changed
 screens (`npx playwright test visual/<spec>`); update their expectations only for intended changes.
 Board work: `npm run verify:board` at the root.
