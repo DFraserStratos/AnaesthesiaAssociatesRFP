@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AA Prototype · Build plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#eef2f1; --sheet:#ffffff; --ink:#1c2a2e; --ink-2:#4a5b5f; --ink-3:#7f8e90; --line:#d3dcdb;
+  --teal:#0d6e63; --teal-2:#0a5a51; --teal-t:#d8ece8; --amber:#9c5f0c; --amber-t:#f6e8d2;
+  --sage:#8aa59e; --sage-t:#e3eae8; --focus:#0d6e63;
+  --ui:'Schibsted Grotesk',system-ui,sans-serif; --data:'Spline Sans Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#121a1c; --sheet:#1a2427; --ink:#e4ecea; --ink-2:#b2c0bf; --ink-3:#7f8f90; --line:#2c3a3d;
+  --teal:#3fb3a3; --teal-2:#5cc7b8; --teal-t:#173d38; --amber:#e0a552; --amber-t:#3a2c17; --sage:#5d7a73; --sage-t:#213230; --focus:#5cc7b8; } }
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
+body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 var(--ui); }
+.chip, .num, .cnt, .map thead th { font-variant-numeric:tabular-nums; }
+a { color:var(--teal); text-underline-offset:2px; }
+:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+code { font:500 .86em var(--data); background:var(--sage-t); padding:1px 5px; border-radius:4px; }
+.wrap { max-width:1120px; margin:0 auto; padding:40px 32px 96px; }
+.top { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; color:var(--ink-3); font-size:14px; margin:0 0 28px; }
+.top b { color:var(--ink-2); font-weight:600; }
+h1 { font:800 clamp(30px,4.6vw,52px)/1.04 var(--ui); letter-spacing:-.02em; margin:0 0 12px; max-width:20ch; }
+.sub-h { font-size:18px; color:var(--ink-2); margin:0 0 28px; max-width:62ch; }
+.progress { display:flex; height:6px; border-radius:3px; overflow:hidden; background:var(--line); max-width:420px; margin:0 0 8px; }
+.progress span { background:var(--sage); }
+.fine { font-size:13.5px; color:var(--ink-3); margin:8px 0 0; max-width:70ch; }
+h2 { font:750 24px/1.2 var(--ui); letter-spacing:-.01em; margin:56px 0 14px; }
+h3 { margin:0; }
+.sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+
+/* the map */
+.map-scroll { overflow-x:auto; background:var(--sheet); border:1px solid var(--line); border-radius:10px; }
+.map { border-collapse:separate; border-spacing:0; width:100%; min-width:720px; }
+.map th, .map td { padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:middle; text-align:left; }
+.map tr:last-child th, .map tr:last-child td { border-bottom:none; }
+.map thead th { font:600 12.5px var(--ui); color:var(--ink-3); padding-top:10px; padding-bottom:10px; }
+.map th.tk { position:sticky; left:0; background:var(--sheet); font:600 13px var(--ui); color:var(--ink-2); white-space:nowrap; padding-left:14px; min-width:116px; z-index:1; }
+.map .now { background:color-mix(in srgb, var(--teal-t) 55%, transparent); }
+.map thead th.now { color:var(--teal); }
+.map td { min-width:60px; }
+.map td.dn { width:150px; }
+.map td.lt { width:30%; }
+.map td.dn .chip { min-width:36px; height:24px; font-size:11.5px; }
+.chip { position:relative; display:inline-flex; align-items:center; justify-content:center; min-width:42px; height:28px; padding:0 7px; margin:2px 4px 2px 0;
+  font:600 12.5px var(--data); border-radius:6px; text-decoration:none; border:1.5px solid transparent; }
+.chip .mk { position:absolute; top:-4px; right:-4px; width:9px; height:9px; border-radius:50%; background:var(--amber); border:2px solid var(--sheet); }
+.s-done { background:var(--sage-t); color:var(--ink-3); }
+.s-wip { background:var(--amber-t); color:var(--amber); border-color:var(--amber); border-style:dashed; }
+.s-safe { background:var(--teal); color:#fff; }
+.s-safe:hover { background:var(--teal-2); }
+.s-safe-later { background:var(--sheet); color:var(--teal); border-color:var(--teal); }
+.s-wait { background:var(--amber-t); color:var(--amber); border-color:var(--amber); }
+.s-ready { background:var(--sheet); color:var(--ink); border-color:var(--ink-2); }
+.s-later { background:transparent; color:var(--ink-3); border-color:var(--line); }
+a.chip:hover { border-color:var(--ink); }
+.key { list-style:none; padding:0; margin:14px 0 0; display:flex; flex-wrap:wrap; gap:8px 20px; font-size:13.5px; color:var(--ink-2); }
+.key li { display:inline-flex; align-items:center; gap:8px; }
+.key .chip { min-width:34px; height:22px; font-size:11px; margin:0; }
+
+/* start now */
+.lead { color:var(--ink-2); max-width:70ch; margin:0 0 16px; }
+.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; }
+.card { background:var(--sheet); border:1px solid var(--line); border-top:4px solid var(--teal); border-radius:10px; padding:18px 20px 18px; display:flex; flex-direction:column; }
+.card-top { display:flex; gap:12px; align-items:baseline; margin-bottom:8px; }
+.num { font:600 14px var(--data); color:var(--teal); flex:none; }
+.card h3 { font:700 19px/1.25 var(--ui); }
+.what { margin:0 0 10px; color:var(--ink); }
+.why { margin:0 0 10px; color:var(--ink-2); font-size:14.5px; padding-left:12px; border-left:3px solid var(--teal-t); }
+.why.w { border-left-color:var(--amber-t); }
+.meta { margin:0 0 14px; color:var(--ink-3); font-size:13.5px; }
+.acts { display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-top:auto; }
+.btn { font:600 14px var(--ui); background:var(--teal); color:#fff; border:none; padding:9px 14px; border-radius:7px; cursor:pointer; }
+.btn:hover { background:var(--teal-2); }
+.btn.quiet { background:transparent; color:var(--teal); border:1.5px solid var(--teal); padding:6px 11px; font-size:13.5px; }
+.btn.ok { background:var(--sage); color:#fff; border-color:var(--sage); }
+.lnk { font-weight:600; font-size:14px; }
+h3.sub { font:700 16px var(--ui); margin:28px 0 8px; color:var(--ink-2); }
+.rows { list-style:none; padding:0; margin:0; max-width:900px; }
+.rows li { display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:start; padding:12px 0; border-bottom:1px solid var(--line); color:var(--ink-2); }
+.rows li b { color:var(--ink); font-weight:650; }
+.rows .chip { margin-top:-2px; }
+.rows.tight li { padding:8px 0; font-size:14.5px; }
+
+/* folds */
+.folds { margin-top:56px; border-top:1px solid var(--line); }
+details.fold > summary { cursor:pointer; list-style:none; }
+details.fold > summary::-webkit-details-marker { display:none; }
+details.fold.big { border-bottom:1px solid var(--line); }
+details.fold.big > summary { font:700 18px var(--ui); padding:16px 0; display:flex; align-items:center; gap:10px; }
+details.fold > summary::before { content:''; width:8px; height:8px; border-right:2px solid var(--ink-3); border-bottom:2px solid var(--ink-3); transform:rotate(-45deg); transition:transform .15s; flex:none; }
+details.fold[open] > summary::before { transform:rotate(45deg); }
+@media (prefers-reduced-motion: reduce) { details.fold > summary::before { transition:none; } }
+section > details.fold > summary { font:600 15px var(--ui); color:var(--ink-2); padding:14px 0 4px; display:flex; align-items:center; gap:10px; }
+.cnt { font:500 13px var(--data); color:var(--ink-3); }
+.fold-body { padding:0 0 24px 18px; max-width:900px; }
+.fold-body p { max-width:75ch; }
+.how li { margin:8px 0; }
+.note { color:var(--ink-2); font-size:14.5px; }
+.plain { padding-left:18px; } .plain li { margin:8px 0; color:var(--ink-2); } .plain b { color:var(--ink); }
+details.ph { border-bottom:1px solid var(--line); }
+details.ph > summary { cursor:pointer; list-style:none; display:grid; grid-template-columns:48px 1fr auto; gap:12px; align-items:baseline; padding:10px 0; }
+details.ph > summary::-webkit-details-marker { display:none; }
+details.ph .t { font-weight:600; }
+details.ph.st-done .t { color:var(--ink-3); font-weight:500; }
+details.ph:target > summary { background:var(--teal-t); }
+.pill { font:600 12px var(--ui); padding:2px 9px; border-radius:20px; white-space:nowrap; }
+.p-done { background:var(--sage-t); color:var(--ink-3); }
+.p-safe, .p-safe-later { background:var(--teal-t); color:var(--teal); }
+.p-wait, .p-wip { background:var(--amber-t); color:var(--amber); }
+.p-ready { background:var(--sheet); color:var(--ink-2); border:1px solid var(--line); }
+.p-later { color:var(--ink-3); }
+.ph-body { padding:0 0 16px 60px; }
+.ph-body p { margin:4px 0 8px; }
+details.pr { margin-top:10px; }
+details.pr > summary { cursor:pointer; font-size:13.5px; color:var(--ink-3); }
+pre { margin:8px 0 0; padding:14px 16px; font:400 12px/1.65 var(--data); white-space:pre-wrap; background:var(--sheet); border:1px solid var(--line); border-radius:8px; color:var(--ink-2); max-height:340px; overflow:auto; }
+footer { color:var(--ink-3); font-size:13px; margin-top:48px; }
+@media (max-width:640px) {
+  .wrap { padding:24px 16px 72px; }
+  .rows li { grid-template-columns:auto 1fr; } .rows li .acts { grid-column:2; }
+  .ph-body { padding-left:0; }
+  details.ph > summary { grid-template-columns:44px 1fr; } details.ph .pill { grid-column:2; justify-self:start; }
+}
+@media print { pre { max-height:none; } details { display:block; } }
+</style>
+</head>
+<body>
+<!-- Generated by requirements-board/agent/skills/update-build-plan/tools/build-index.mjs. Do not edit by hand: edit plan.json, status.json or the phase prompt files and re-run it. -->
+<main class="wrap">
+  <div class="top"><b>AA Prototype · Build plan</b><span>0 of 0 phases done. </span></div>
+  <h1>Nothing is ready to start.</h1>
+  
+  <div class="progress" aria-hidden="true"><span style="width:0%"></span></div>
+  <p class="fine">0 phases to go.</p>
+  <h2 class="sr">The phases by track</h2>
+  <div style="margin-top:28px">
+<div class="map-scroll" tabindex="0" aria-label="Phases by track and wave">
+  <table class="map">
+    <thead><tr><th scope="col" class="tk"><span class="sr">Track</span></th><th scope="col" class="dn">Done</th></tr></thead>
+    <tbody>
+
+    </tbody>
+  </table>
+</div>
+<ul class="key">
+  <li><span class="chip s-done">00</span> Done</li>
+  <li><span class="chip s-safe">00</span> Safe to start</li>
+  <li><span class="chip s-safe-later">00</span> Safe, once the phases to its left are done</li>
+  <li><span class="chip s-wait">00</span> Can start, but wait</li>
+  
+  <li><span class="chip s-later">00</span> Later</li>
+  <li><span class="chip s-later">00<i class="mk" aria-hidden="true"></i></span> Its questions were answered after the plan was written: re-plan first</li>
+</ul>
+<p class="fine">Each column needs the columns to its left. Phases in the same column don't depend on each other, so they can run side by side.</p></div>
+
+<section class="now" aria-labelledby="h-now">
+  <h2 id="h-now">Start now</h2>
+  
+  
+  
+  <p class="lead">No phase is marked safe to start. Add calls to <code>status.json</code> "guidance".</p>
+  
+  
+</section>
+
+
+<section class="folds" aria-label="Reference">
+  
+  <details class="fold big" id="all"><summary>Every phase <span class="cnt">0</span></summary>
+    <div class="fold-body"><p class="fine">0 done, 0 to go. Status comes from the status table in <code>PROGRESS.md</code>.</p></div>
+  </details>
+  
+  <details class="fold big" id="rules"><summary>Sequencing rules</summary>
+    <div class="fold-body"><p>None recorded.</p></div>
+  </details>
+  
+  <details class="fold big" id="how"><summary>How a phase runs</summary>
+    <div class="fold-body"><ol class="how"><li><b>Phases come from requirement changes.</b> Record them with <code>/update-requirements</code>, commit, then run <code>/update-build-plan</code>: it grades only what changed and appends phases here. Routine fixes and polish use the <code>app-change</code> skill instead.</li><li><b>Pick the next phase</b> from the table below, respecting the order in "Sequencing and rules".</li><li><b>Open a fresh Claude Code session</b> and paste that phase's kick-off prompt. It loads the <code>run-build-phase</code> skill, which reads a context pack and the phase doc before touching anything.</li><li><b>Drift check first.</b> Each session diffs its items against <code>64b3dff</code>, reports what changed, and adapts the plan before building.</li><li><b>The agent plans, builds and tests itself</b> without waiting for approval (ROADMAP.md "Owner review: agents test themselves").</li><li><b>Every phase ends the same way:</b> <code>npm run build</code>, <code>npm run build:pwa</code>, <code>npx vitest run</code>, the board check and (for UI work) <code>npm run shots</code> green; the checklist run item by item; the adversarial review-and-fix pass; the capture recipes, ATLAS and the demo guide (with <code>master-demo-guide.html</code>) brought in step for exactly what changed; a <code>PROGRESS.md</code> entry; a commit when green (never a push).</li><li><b>Then the owner tests.</b> The phase hands over with the recipe IDs to capture. The capture (even <code>--dry</code>) and its commit run only once the owner has approved, because the screenshots and demo guide go to Anaesthesia Associates for testing and approvals.</li></ol><p class="note"><strong>Demo buttons live on their screens.</strong> Anything that cannot be shown through normal use gets a trigger in the harness bar's "Demo actions" menu, listed only on the screen where it matters, and the installed PWA gets the same in its Demo sheet. The mechanism exists (<code>src/shared/demoTriggers</code>): phases register into it.</p><p class="note"><strong>The demo guide and screenshots are deliverables.</strong> A version of each goes to Anaesthesia Associates, so every phase leaves them matching the app for exactly what it changed, and the screenshots are captured only after the owner approves the phase.</p></div>
+  </details>
+  
+  
+  
+  <details class="fold big" id="about"><summary>About this plan</summary>
+    <div class="fold-body"><p>The requirements catch-up (phases 14 to 44, archived) left the prototype matching the catalogue at 64b3dff7. This plan holds the phases that follow requirement changes committed since (0 so far), numbered upward from 45, each one focused session with one coherent deliverable. Most are expected to be UI and UX improvements.</p><p>Plan baseline <code>64b3dff</code>. The full plan is <a href="ROADMAP.md">ROADMAP.md</a>, the gap analysis <a href="GAP-ANALYSIS.md">GAP-ANALYSIS.md</a>, the data <a href="plan.json">plan.json</a>.</p></div>
+  </details>
+</section>
+  <footer>Rendered by <code>build-index.mjs</code> from <code>plan.json</code> and <code>status.json</code>, plan baseline <code>64b3dff</code>.</footer>
+</main>
+<script>
+document.querySelectorAll('[data-copy]').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var el = document.getElementById(b.getAttribute('data-copy'));
+    if (!el) return;
+    var label = b.textContent;
+    navigator.clipboard.writeText(el.textContent).then(function () {
+      b.textContent = 'Copied'; b.classList.add('ok');
+      setTimeout(function () { b.textContent = label; b.classList.remove('ok'); }, 1600);
+    });
+  });
+});
+function openTarget() {
+  var id = decodeURIComponent(location.hash.slice(1));
+  var el = id && document.getElementById(id);
+  if (!el) return;
+  for (var n = el; n; n = n.parentElement) if (n.tagName === 'DETAILS') n.open = true;
+}
+window.addEventListener('hashchange', openTarget);
+openTarget();
+</script>
+</body>
+</html>

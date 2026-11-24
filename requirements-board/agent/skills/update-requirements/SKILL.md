@@ -30,7 +30,8 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
   (`statuses`, `questionStatuses`): look them up there, never infer one from its number. Items: 1 Proposed (default),
   2 Open (waiting), 3 Verify (settle), 4 Agreed (settle; agreed with Greg), 5 Confirmed (signed off by AA, final;
   never set without AA's explicit sign-off), 6 Retired. Questions: 1 Open (default), 2 Confirm, 3 Proposed, 4 Answered.
-- Out of bounds for this skill: the prototype and its build plan (`aa-prototype/`, `docs/prototype-build/`).
+- Out of bounds for this skill: the prototype, its build plan and the archived build record (`aa-prototype/`,
+  `docs/build-plan/`, `docs/archive/`).
 - Follow-on skill: `update-build-plan`, which reads the change log once the user has committed it.
 - Shape precedent for a note: the newest meeting note in `REQ/notes/` (for example
   `2026-09-29-aa-client-meeting.md`).

@@ -54,40 +54,35 @@ block (the board's `ADOPTING.md` says how) and leave the rest alone.
 - `BOARD` = `requirements-board`; `REQ` = `requirements-board/requirements`; `T` =
   `requirements-board/agent/skills/update-build-plan/tools` (the tools below). Paths are relative to
   the repo root.
-- `PLAN` = `docs/prototype-build/catch-up`: the prototype's "requirements catch-up" (start at its
-  `README.md`). Its config is `PLAN/plan.config.json`, the repo's only one, so the tools find it without
-  `--plan`. Phases are numbered from 14; 00 to 13 are the original build (`docs/prototype-build/`).
-- The app: the prototype in `aa-prototype/`. Progress file: `docs/prototype-build/PROGRESS.md` (status
-  table rows and `### Catch-up Phase NN` entries say which phases are built or in progress).
-- Node: agent shells default to Node 22.16, too old for the board's `source` command (22.18 or newer).
-  Prefix commands with `PATH="$HOME/.nvm/versions/node/v24.20.0/bin:$PATH"`.
-- Standing rules live in `PLAN/ROADMAP.md`: "Owner review: agents test themselves", "Catalogue
-  screenshots" (PROGRESS convention 19) and "Front-end design" (the runner skill loads the
-  `frontend-design` skill before any UI step, so prompts no longer carry the bullet; each UI phase's
-  doc names the design page for every screen it changes).
+- `PLAN` = `docs/build-plan` (start at its `README.md`). Its config is `PLAN/plan.config.json`, the
+  repo's only live one (the catch-up's, in `docs/archive/prototype-build/catch-up/`, is marked
+  `"archived": true`), so the tools find it without `--plan`. The plan was seeded empty at `64b3dff`
+  ("Seed an empty plan"), where the prototype matched the catalogue after the requirements catch-up;
+  phases come only from requirement changes committed since, and are numbered from 45 (00 to 44 and U1
+  to U7 are built and archived). Expect mostly UI and UX work.
+- The first update after the seed makes the code maps and runs the data-model delta fresh (plan-state
+  reports them missing); for 5 changed items or fewer, use "Small updates".
+- The app: the prototype in `aa-prototype/`. Progress file: `PLAN/PROGRESS.md`, written by phases only
+  (status rows and `### Phase NN` entries say which phases are built or in progress). Settled rulings:
+  `docs/DECISIONS.md`; known open work: `docs/BACKLOG.md`.
+- Node: agent shells may default to a Node older than 22.18, too old for the board's `source` command.
+  Prefix commands with `PATH="$HOME/.nvm/versions/node/v24.20.0/bin:$PATH"` if `node --version` is older.
+- Standing rules live in `PLAN/ROADMAP.md` "Standing rules": "Running a phase", "Owner review: agents
+  test themselves", "Front-end design", "One component per job", "Demo triggers", "PWA parity", "Demo
+  guide", "Catalogue screenshots" (the capture runs only after the owner approves a phase) and "Confirm
+  before building".
 - Phase runner: `run-build-phase` (`PLAN/plan.config.json` `runner.skill`; its tools read the rest of
-  `runner`). Prompts not yet in the slim shape still carry the old procedure and pass the checks until
-  their phase is next updated. Twelve unbuilt prompts written before the repo moved still name its old
-  root: `recipe-status.mjs --check` notes them.
+  `runner`). Every kick-off prompt carries the Override block in config `phaseDoc.promptRules` (commit
+  when green, never push; no capture until the owner approves, hand over with the recipe IDs).
 - Screenshot capture: on. The runner is `requirements-board/scripts/capture.ts`; recipes are
   `REQ/capture/recipes/<ID>.json` (format, routes, seed ids and hooks in `REQ/capture/ATLAS.md`);
   `npm run capture` in `requirements-board/` drives the prototype (5173) and the PWA (5174) and writes
-  `REQ/assets/<ID>/<app>-<name>[-<state>].png` and `REQ/capture/REPORT.md`. Phase 14's baseline sweep
-  gives every live story a recipe, and Phase 44's final sweep leaves no "partial" reason naming a later
-  phase. Shots hide the harness bar, so recipes stage demo triggers with the runner's `trigger` step
-  (Phase 14 adds it); anything every fresh browser context would show, such as a first-run welcome
-  card, needs the runner to preset it (Phase 43a).
-- **Owner-added track: UI unification (U1 to U7).** Seven phases outside the gap analysis, with empty
-  `covers` by design (`PLAN/ROADMAP.md`, "Sequencing rules", first rule; source `docs/ui-unification/`).
-  On every update, add "keep the UI unification track: phases U1 to U7, their sequencing rule, the U
-  entries in catch-up phases' `depends_on`, and the 'Build on the shared components' work item and
-  review line in each unbuilt UI phase" to the owner directives in `changeNotes`, and check after
-  Stage 3 that `plan.json` still has U1 to U7. The outline architect and critic would otherwise drop
-  a phase that covers nothing.
-- After an update, also change the baseline commit and phase count in `CLAUDE.md`'s "Current state"
-  paragraph, and the "Catalogue snapshot" line in `PLAN/README.md`.
-- Worked example: the 2026-10-08 update (133 items re-graded, 40 phases rewritten; DM ids remapped
-  after a renumbering) is in `PLAN/README.md`, "Update history".
+  `REQ/assets/<ID>/<app>-<name>[-<state>].png` and `REQ/capture/REPORT.md`. Shots hide the harness bar,
+  so recipes stage demo triggers with the runner's `trigger` step. Every phase doc names the recipes it
+  creates or changes and the demo guide files and beats (`docs/demo-guide/`, `master-demo-guide.html`
+  included) it brings in step.
+- After an update, also change the "Catalogue snapshot" line in `PLAN/README.md`, and, where
+  `CLAUDE.md`'s "Current state" paragraph names the plan's baseline or phase count, that too.
 
 ## Ground rules
 

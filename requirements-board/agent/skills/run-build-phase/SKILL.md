@@ -24,17 +24,31 @@ The only repo-specific facts this skill uses. When the board moves to another re
 block (the board's `ADOPTING.md` says how) and leave the rest alone. Paths are relative to the repo
 root (`git rev-parse --show-toplevel`; folder names contain spaces, so quote every path).
 
-- `PLAN` = `docs/prototype-build/catch-up` (start at its `README.md`); its config is
-  `PLAN/plan.config.json`, key `runner` (below). `T` = `requirements-board/agent/skills/run-build-phase/tools`;
+- `PLAN` = `docs/build-plan` (start at its `README.md`); its config is `PLAN/plan.config.json`, key
+  `runner` (below). `T` = `requirements-board/agent/skills/run-build-phase/tools`;
   `P` = `requirements-board/agent/skills/update-build-plan/tools`. `REQ` = `requirements-board/requirements`.
-- **Rules:** `CLAUDE.md` (you have it). Standing rules: `PLAN/ROADMAP.md` "Owner review: agents test
-  themselves", "Front-end design", "One component per job", "Demo triggers", "PWA parity", "Demo
-  guide", "Catalogue screenshots", "Confirm before building" (the pack quotes them). Binding
-  conventions in `docs/prototype-build/PROGRESS.md` (the pack quotes them): 17 design, 18 review, 19
-  screenshots, 20 warning rules.
+  Phases are numbered from 45; 00 to 44 and U1 to U7 are built and archived in
+  `docs/archive/prototype-build/` (history only: leads, never rules).
+- **Rules:** `CLAUDE.md` (you have it). Standing rules: `PLAN/ROADMAP.md` "Running a phase", "Owner
+  review: agents test themselves", "Front-end design", "One component per job", "Demo triggers", "PWA
+  parity", "Demo guide", "Catalogue screenshots", "Confirm before building" (the pack quotes them).
+  Binding conventions in `PLAN/PROGRESS.md` (the pack quotes them): 17 design, 18 review, 19
+  screenshots, 20 warning rules, 21 one component per job, 22 demo guide. Settled rulings:
+  `docs/DECISIONS.md` (never re-raise one); known open work: `docs/BACKLOG.md`.
+- **Commits and capture (every prompt's Override says the same):** commit when the gate is green,
+  staging by path (never `git add -A`; another session may be committing in the same tree); merge
+  allowed; never push. Never run the capture, not even `--dry`, before the owner has tested the phase
+  and approved it: in Stage 5 step 2 the subagent edits recipes and ATLAS only and you skip the
+  `--capture` runs of steps 2, 5 and 6; the phase hands over with the recipe IDs to capture (final
+  notes and the entry's `**Catalogue screenshots.**` bullet) and stops. On approval: `node
+  T/phase-check.mjs --capture <IDs>` (`--capture all` after a shared component, token or seed change),
+  open the new images, `npm run verify:board`, commit the capture by path, and fill the REPORT counts
+  into the entry. The `shots` check is the app's Playwright suite, not the capture: it stays in the gate.
 - **The app:** `aa-prototype/` (React demo over a fake in-browser backend). A phase doc's `src/` paths
   are relative to it; Playwright specs live in `aa-prototype/visual/`. Its `README.md` has the `src/`
   folder map; `src/shared/ui/README.md` lists the shared components and how to add a variant.
+  `npm --prefix aa-prototype run affected` lists the capture recipes and S1 to S5 demo beats a change
+  reaches.
 - **House rules (brief; CLAUDE.md "Working in the app" is the full set):** every write is a store
   action through the audited `mutate()`, with a label for each new action code in
   `src/shared/audit/actionLabels.ts`; time from the demo clock and randomness from the seeded RNG,
@@ -43,14 +57,15 @@ root (`git rev-parse --show-toplevel`; folder names contain spaces, so quote eve
   and extend the migrate test; seed additions go after every existing record with pinned patients,
   never `takePatient()`, no new RNG draws, so no id moves and S1 to S5's figures hold; bottom sheets
   on mobile, dialogs or side panels on web and admin; teal the only action colour, crimson identity
-  only; no en or em dashes in app copy; code the PWA uses lives in `src/shared` or `src/store` so
-  `pwaPurity.test.ts` stays green; UI from `src/shared/{ui,surface,table,calendar}`, extended by a
-  variant that defaults to today's look, never copied, keeping every `shot`, `data-shot`,
-  `data-testid` and `data-*` hook, with the `/demo/catalogue/*` rows changed in the same session.
+  only; tokens only, formatting through `shared/format.ts`; no en or em dashes in app copy; code the
+  PWA uses lives in `src/shared` or `src/store` so `pwaPurity.test.ts` stays green; UI from
+  `src/shared/{ui,surface,table,calendar}`, extended by a variant that defaults to today's look, never
+  copied (`src/apps/oneComponentPerJob.test.ts`), keeping every `shot`, `data-shot`, `data-testid`
+  and `data-*` hook, with the `/demo/catalogue/*` rows changed in the same session.
 - **Demo triggers:** registered in `src/shared/demoTriggers` on their screen only (harness bar, the
   PWA's Demo sheet, or both), acting on the entity in the URL or context, bodies in `src/store`,
   deterministic, idempotent, with a disabled state; PWA office stand-ins run as
-  `OFFICE_SIMULATION_ACTOR`; nothing new on the Control Panel page.
+  `OFFICE_SIMULATION_ACTOR`; nothing new on the Control Panel page; `demoGuideSync.test.ts` stays green.
 - **Design:** `docs/design/*.dc.html` mockups, opened straight from disk in a browser (they load
   `support.js` beside them); `Design Language.dc.html` holds the tokens. Viewports: desktop 1440x900,
   mobile 390x844 (the framed phone in the prototype, or the PWA on 5174). Contract screens also
@@ -63,35 +78,31 @@ root (`git rev-parse --show-toplevel`; folder names contain spaces, so quote eve
   or any artifact: it names the change for `/update-requirements` in its progress entry.
 - **Screenshots:** recipes `REQ/capture/recipes/<ID>.json`; their format, routes, seed ids and hooks in
   `REQ/capture/ATLAS.md`; results in `REQ/capture/REPORT.md`; `node P/recipe-status.mjs <id>` lists a
-  phase's covered items and recipes.
-- **Demo guide:** `docs/demo-guide/` (`03-demo-script.md` run sheet, `04-presenter-cheat-sheet.md`,
-  `02-workflows-and-handoffs.md`, `01-personas-and-responsibilities.md`), the matching sections of
-  `docs/demo-guide/master-demo-guide.html` (a large page: grep it, never read it whole), and the
-  Control Panel scenario text (`aa-prototype/src/apps/demo/DemoControlPanel.tsx`) when a scenario
-  changed. Milestone phases (consistency read of `master-demo-guide.html` against the run sheet): 38a,
-  25, 27a, 35, 39a.
+  phase's covered items and recipes. Capture only on approval (above).
+- **Demo guide:** a version goes to Anaesthesia Associates for testing and approvals, so every phase
+  brings it in step for exactly what it changed: `docs/demo-guide/` (`03-demo-script.md` run sheet,
+  `04-presenter-cheat-sheet.md`, `02-workflows-and-handoffs.md`, `01-personas-and-responsibilities.md`,
+  `README.md`), the matching sections of `docs/demo-guide/master-demo-guide.html` (maintained by hand:
+  patch it to match the Markdown; a large page: grep it, never read it whole), and the Control Panel
+  scenario text (`aa-prototype/src/apps/demo/DemoControlPanel.tsx`) when a scenario changed. Every
+  figure from the running app.
 - **State version:** `PERSIST_VERSION` in `aa-prototype/src/store/appStore.ts` (house rules say when it
   moves). Note it at the drift check, log each move, and write it in the entry's `**Built.**` bullet as
   `PERSIST_VERSION <a> to <b>`. The app's demo clock (`src/domain/clock.ts`) is not today's date.
-- **Source rule:** where a design mockup simplified a business rule, the RFP rule as the catalogue now
-  states it wins (CLAUDE.md "Design", rule 2); the progress file's Decisions log records the readings.
-- **Progress file:** `docs/prototype-build/PROGRESS.md` (900 KB: grep, never read whole). Status rows
-  `| <id> | Catch-up · <title> | DONE | <YYYY-MM-DD> | <summary> |` (or `IN PROGRESS`); entries
-  `### Catch-up Phase <id> · <title> (<YYYY-MM-DD>)`; Decisions-log entries (its decisions section,
-  `## Decisions log`) `- **<date> · Catch-up Phase <id> (<n>): <title>** (<ids>; supersedes ...).
-  <body>`; the handoff list is `## Discovered for later`. Tools parse all of these: keep them exact.
+- **Source rule:** where a design mockup simplified a business rule, the rule as the catalogue now
+  states it wins (CLAUDE.md "Design", rule 2); `docs/DECISIONS.md` records the settled readings.
+- **Progress file:** `docs/build-plan/PROGRESS.md`, written by phases only. Status rows
+  `| <id> | <title> | DONE | <YYYY-MM-DD> | <summary> |` (or `IN PROGRESS`); entries
+  `### Phase <id> · <title> (<YYYY-MM-DD>)`; Decisions-log entries (`## Decisions log`)
+  `- **<date> · Phase <id> (<n>): <title>** (<ids>; supersedes ...). <body>`, each lasting one also
+  added to `docs/DECISIONS.md`; the handoff list is `## Discovered for later`, and work a phase finds
+  and leaves undone goes to `docs/BACKLOG.md`. Tools parse all of these: keep them exact.
 - **Plan page:** `PLAN/status.json` (`in_progress`, `next`, `guidance`) rendered into
-  `PLAN/index.html` by `node P/build-index.mjs`. Run order: `PLAN/ROADMAP.md`, the "Run order from
-  here" paragraph under "Tracks" and the "Run order" bullet of the UI unification rule under
-  "Sequencing rules".
-- **Tracks:** catch-up phases (14 to 44, some lettered) cover catalogue items and drift-check them.
-  UI unification phases (U1 to U7, owner-added) cover none: their doc's drift check is predecessor
-  status, `rg` copy counts and the baseline shots in `docs/ui-unification/shots/`
-  (`shoot.mjs`), and their rules are `docs/ui-unification/README.md` sections 5, 6 and 8 (no
-  redesign: a visible change cites the README question that approved it; never re-open the 27
-  answers). U2 and U3 ran side by side in worktrees, and 23 and 17a do (after U5); their prompts and
-  docs ("Running beside") carry the branch, port-lock (`phase-ports.lock` in the git common dir) and
-  merge rules.
+  `PLAN/index.html` by `node P/build-index.mjs`. Run order: `PLAN/ROADMAP.md` "Sequencing rules", the
+  "**Run order.**" bullet. In `headline_sub` say the phase is committed and waiting for the owner's
+  test and capture approval (not "not yet committed").
+- **Tracks:** one, the plan's numbered phases. No lanes, no worktrees ("Phases in a worktree" does not
+  apply).
 
 ## Ground rules
 

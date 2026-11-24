@@ -1,0 +1,323 @@
+{
+  "name": "build plan",
+  "title": "Build plan",
+  "subject": "the Anaesthesia Associates (AA) prototype",
+  "appNoun": "prototype",
+  "app": "aa-prototype",
+  "appCode": [
+    "aa-prototype/src"
+  ],
+  "appSummary": "The prototype (aa-prototype/) is a React demo over a fake in-browser backend, shown in live vendor workshops; a version of it, its demo guide and the catalogue screenshots go to Anaesthesia Associates for testing and approvals.",
+  "board": "requirements-board",
+  "progress": "docs/build-plan/PROGRESS.md",
+  "firstPhase": "45",
+  "outOfScopeLanes": [
+    "Future Work"
+  ],
+  "settledStatuses": [
+    4,
+    5
+  ],
+  "unsettledStatuses": [
+    2,
+    3
+  ],
+  "olderCatalogues": [
+    {
+      "root": "docs/discovery-reference/Updated Requirements",
+      "items": "catalogue/requirements",
+      "questions": "catalogue/questions",
+      "notes": "catalogue/notes"
+    }
+  ],
+  "capture": true,
+  "standingRules": "The prototype matched the catalogue at 64b3dff7 (the close of the requirements catch-up, phases 14 to 44 and U1 to U7, archived in docs/archive/prototype-build/catch-up/); phases come only from requirement changes committed after that, and the work expected is mostly UI and UX improvement. The Future Work lane and retired items are excluded. Anything not demoable through normal use gets a screen-contextual demo-trigger button (ROADMAP.md \"Demo triggers\"), with a PWA equivalent where the screen is mobile (ROADMAP.md \"PWA parity\"). Phases are numbered upward from 45 (00 to 44 and U1 to U7 are built and archived), each one focused session (two at most) with one coherent deliverable, leaving the app green; one track, no lanes, no worktrees, no owner-added track. Agents test themselves (ROADMAP.md \"Owner review: agents test themselves\"): no plan-approval stop; \"ask the owner\" becomes a built default logged on the phase's \"For the owner's review\" list. Every phase brings the catalogue capture recipes (and ATLAS.md) and the demo guide (docs/demo-guide/, including the hand-maintained master-demo-guide.html) in step for exactly what it changed, because a version of both goes to Anaesthesia Associates for testing and approvals (ROADMAP.md \"Demo guide\", \"Catalogue screenshots\"). The capture (even --dry) runs only after the owner has tested the phase and approved it: a phase edits recipes and ATLAS, hands over with the list of recipe IDs to capture, and stops; the capture and its commit happen on approval. Agents may commit and merge when green, staging by path, but never push (CLAUDE.md \"Git\"). One component per job (ROADMAP.md \"One component per job\"; CLAUDE.md): UI is built from the shared components in src/shared/ui, src/shared/surface, src/shared/table and src/shared/calendar; a component that cannot do the job is extended with a variant or prop that defaults to today's look, never copied into a screen file; shared components keep their shot and data-* hooks; the /demo/catalogue/* rows change in the same session; a new private copy of a shared component is a review finding (enforced by aa-prototype/src/apps/oneComponentPerJob.test.ts, whose allow-list only shrinks).",
+  "projectRules": "Project rules (CLAUDE.md, which you already have): mock backend only, store hooks + audited mutate(), determinism (demo clock, seeded RNG), bump PERSIST_VERSION on seed changes, pure billing maths with Vitest tests, design files in docs/design are authoritative (crimson identity only, teal the only action colour), one component per job, tokens only, formatting through shared/format.ts, no en/em dashes in app copy, finish green (npm run build, npm run build:pwa, npx vitest run), the demo guide (docs/demo-guide, master-demo-guide.html included) and the capture recipes kept in step with every change, capture only after the owner approves, settled rulings in docs/DECISIONS.md not re-litigated; agents may commit and merge when green (staging by path) but never push.",
+  "greenCommands": "npm run build, npm run build:pwa and npx vitest run",
+  "gapAnalysis": {
+    "codeGuide": "Prototype: aa-prototype/ (React demo over a fake in-browser backend: store in src/store, domain types/rules in src/domain, seed in src/domain/seed, three apps in src/apps/{mobile,web,admin}, demo simulators in src/apps/demo, shell/harness in src/shell, PWA build in src/pwa).",
+    "history": "The requirements catch-up (phases 14 to 44 and the UI unification track U1 to U7, archived in docs/archive/prototype-build/catch-up/) brought the prototype up to the catalogue at commit 64b3dff7; this plan starts empty there, so only items changed since are graded. The archived docs (docs/archive/prototype-build/: PROGRESS.md, the catch-up phase docs, ROADMAP.md, gap analysis) describe what was intended and built at the time: use them only as leads to find code, never as proof something exists. THE CODE IS THE TRUTH about the prototype.",
+    "sourcesExample": "(\"RFP p.27 · ...\", \"Notes 2026-10-01 · AA meeting with Greg #16\", \"Q&A 2026-09-24 #2\")",
+    "outOfScope": "cannot be meaningfully represented in a front-end demo over a fake backend, even with a demo button (e.g. hosting region, backup RPO, uptime SLA). Use sparingly: if there is ANY user-visible effect or presenter-explainable outcome, it is not OutOfScope.",
+    "outOfScopeShort": "cannot be shown in a front-end demo, even with a demo button",
+    "demoTriggerRule": "Demo-trigger rule (from the product owner): \"If it can't be demoed, then I would expect a button, perhaps in the control panel at the top of the screen, which only shows up on the correct screen, to demo a function.\" So for anything automatic, scheduled, time-driven, external-system-driven or backend-only (jobs, webhooks, reminders, auto-generation, feeds, integrations), set demo_trigger to a concrete proposal: button label, the screen it appears on, and what it does to the visible state. If an existing demo control already covers it, name it. Otherwise leave demo_trigger \"\".",
+    "surfaces": [
+      "mobile",
+      "web",
+      "admin",
+      "pwa",
+      "simulator (src/apps/demo)",
+      "shell (harness/app switcher/control panel)",
+      "domain",
+      "store",
+      "seed",
+      "demo-guide (docs/demo-guide scripted beats would change)"
+    ],
+    "maps": [
+      {
+        "key": "apps-mobile-web",
+        "scope": "aa-prototype/src/apps/mobile and aa-prototype/src/apps/web (the Anaesthetist Mobile App and Anaesthetist Web App). Note which src/shared components each screen uses, but do not document src/shared internals (another mapper does)."
+      },
+      {
+        "key": "shared",
+        "scope": "aa-prototype/src/shared (shared components, flows, capture, card, schedule, surface, ui, format) and aa-prototype/src/theme (briefly: tokens only)."
+      },
+      {
+        "key": "admin",
+        "scope": "aa-prototype/src/apps/admin (Admin Web App): every route/screen, flows, review flags, master-data screens, roles."
+      },
+      {
+        "key": "shell-demo-pwa",
+        "scope": "aa-prototype/src/shell, aa-prototype/src/apps/demo, aa-prototype/src/pwa, aa-prototype/pwa, aa-prototype/src/router.tsx, aa-prototype/src/App.tsx. IMPORTANT: document precisely the top harness bar / app switcher / demo control panel, the screen-contextual demo-trigger registry (src/shared/demoTriggers: every registered trigger, the screen it shows on, its surfaces, how it calls the store), the scenario jumps, and the PWA demo sheet, so new triggers can be placed by name."
+      },
+      {
+        "key": "domain",
+        "scope": "aa-prototype/src/domain EXCEPT src/domain/seed: every entity type with its fields and enums/statuses, lifecycle definitions, pure rules (billing maths in src/domain/billing, integrations in src/domain/integrations, NHI, clock)."
+      },
+      {
+        "key": "store-seed",
+        "scope": "aa-prototype/src/store and aa-prototype/src/domain/seed: every store action (one line each: name, file, what it does, which guard), lifecycle guards, audit/mutate wrapper, persistence + PERSIST_VERSION, selectors/hooks; and the seed: personas, hospitals, surgeons, contracts, RVG data, demo scenarios S1 to S5, anything time-relative."
+      }
+    ],
+    "modelCode": "aa-prototype/src/domain (types, lifecycle, billing, integrations), the store shape in aa-prototype/src/store/appStore.ts and related slices, and the seed's shape in aa-prototype/src/domain/seed",
+    "decisionsLog": "the settled prototype rulings in docs/DECISIONS.md, the \"## Decisions log\" section of docs/build-plan/PROGRESS.md (this plan's phases), and, as history only, the \"## Decisions log\" of docs/archive/prototype-build/PROGRESS.md; known open work is in docs/BACKLOG.md",
+    "demoScript": "scripted demo beats S1 to S5 (docs/demo-guide/03-demo-script.md)",
+    "themeBullets": [
+      "Demo-trigger buttons: the pattern the product owner asked for (screen-contextual buttons in the top control area), how many items need one, and the main clusters."
+    ]
+  },
+  "planning": {
+    "history": "The prototype (aa-prototype/) is a finished React demo over a fake in-browser backend. It was built in July 2026 against the original RFP (phases 00 to 13), then brought up to the requirements catalogue by the catch-up (phases 14 to 44 and U1 to U7, finished 24 November 2026 at 64b3dff7); both are archived in docs/archive/prototype-build/. It is used in live vendor workshops, and a version of it, its demo guide and the catalogue screenshots go to Anaesthesia Associates for testing and approvals.",
+    "ownerRules": [
+      "The prototype matched the catalogue at 64b3dff7: plan phases only for requirement changes committed since. The Future Work lane and retired items are excluded (retired behaviour still in the prototype is removed or reworked).",
+      "Expect mostly UI and UX improvement: build on the shared components and the docs/design pages, extend a shared component with a variant rather than copying it, and keep the design language.",
+      "Anything that cannot be demoed through normal use (automatic, scheduled, backend, external-system events) gets a demo-trigger BUTTON registered in src/shared/demoTriggers, shown ONLY on the screen where it is relevant (the harness bar's Demo actions menu), with a PWA equivalent (the Demo sheet) where the screen is mobile.",
+      "Every phase brings the capture recipes and the demo guide (docs/demo-guide, master-demo-guide.html included) in step for exactly what it changed; the capture itself waits for the owner's approval.",
+      "One track, no lanes, no worktrees, no owner-added track; phases numbered upward from 45."
+    ],
+    "styleRefs": "docs/archive/prototype-build/catch-up/ROADMAP.md (by section; it is large), two catch-up phase docs (docs/archive/prototype-build/catch-up/phases/phase-43b-support-help-line-and-product-support.md and phase-32d-public-slot-status.md) and their .prompt.md kick-off prompts",
+    "guidance": [
+      "Each phase updates the demo guide beats it changes itself (no closing demo phase): name the docs/demo-guide files and S1 to S5 beats, and the matching master-demo-guide.html sections, in its \"Demo guide updates\" section.",
+      "Demo triggers register into the existing mechanism (src/shared/demoTriggers); no phase builds a new trigger mechanism or adds to the Control Panel page."
+    ],
+    "research": [
+      "Check the design references in docs/design/ that apply to the screens you touch."
+    ],
+    "criticChecks": [
+      "Demo triggers screen-contextual with the PWA equivalent, removal of retired behaviour, demo-guide and capture-recipe updates for exactly what each phase changes: all planned?"
+    ]
+  },
+  "phaseDoc": {
+    "extraSections": {
+      "afterWorkItems": "## Demo triggers: each screen-contextual harness-bar button this phase adds or changes (label, screen, effect), plus the PWA equivalent where the screen is mobile, or \"none\".",
+      "afterChecklist": "## Demo guide updates: which docs/demo-guide files, S1 to S5 beats and master-demo-guide.html sections change, or \"none\".",
+      "afterScreenshots": "## Adversarial review (after build): the standard pass (PROGRESS.md binding convention 18), with \"Steer this phase's reviewers at:\" bullets specific to this phase."
+    },
+    "readFirst": "the design pages (and the screens within them) for every screen the phase changes; the ROADMAP.md owner decisions (D-numbers, each with a one-line gist) and sequencing rules that name the phase; its GAP-ANALYSIS.md epic tables and DM and RV rows; the catalogue stories, context items and questions (answered or open), domain-model.md sections and artifact sections it builds from; the docs/DECISIONS.md rulings it supersedes or honours, the docs/BACKLOG.md lines it closes, and the PROGRESS.md entries of the phases it builds on, each with what to read it for (the names that phase shipped). Not the binding conventions, ROADMAP's standing rules, ATLAS.md or the Design Language: the run-build-phase context pack and skill carry those",
+    "workItemRules": "Include PERSIST_VERSION bumps, Vitest tests for any domain or billing rule, and removal/rework of retired behaviour where covered. A phase that touches UI has a work item \"Build on the shared components\" naming the shared components it uses or extends (with the variant it adds) and any private copies on its screens it migrates.",
+    "promptRules": "The run-build-phase skill holds the frontend-design step (it loads the skill named frontend-design before building or reshaping any screen, sheet, dialog, panel, row, banner or state), the house rules, the green commands, the adversarial review pass (PROGRESS.md binding convention 18), the catalogue screenshot recipes, the demo guide updates and the PROGRESS entry, so a prompt never restates them; the phase doc names the design page for each screen it changes. Every prompt carries this Override block, word for word: \"Override: commit when green (stage by path; never push). Do not run the capture, even --dry: hand over with the recipe IDs to capture and stop; the capture and its commit follow the owner's approval.\" No phase runs in a worktree, so a prompt names no absolute path.",
+    "reviewChecks": [
+      "demo triggers are screen-contextual (harness bar, plus the PWA equivalent) and the demo guide beats and master-demo-guide.html sections it changes are named",
+      "a phase that touches UI names in its doc the design page (and the screen within it) for each screen it changes, so the runner's design-fidelity check has its references; its prompt carries no frontend-design bullet (the run-build-phase skill loads frontend-design)",
+      "a phase that touches UI has the \"Build on the shared components\" work item, and its adversarial review steer says a new private copy of a shared component is a finding",
+      "the prompt carries the commit-when-green and capture-on-approval Override block, and the phase doc lists the recipe IDs it creates or changes"
+    ]
+  },
+  "index": {
+    "title": "AA Prototype · Build plan",
+    "kicker": "AA Prototype · Build plan",
+    "heading": "The build plan: <em>keeping the prototype on the catalogue</em>",
+    "intro": "The requirements catch-up (phases 14 to 44, archived) left the prototype matching the catalogue at 64b3dff7. This plan holds the phases that follow requirement changes committed since ({phases} so far), numbered upward from 45, each one focused session with one coherent deliverable. Most are expected to be UI and UX improvements.",
+    "themesHeading": "What changed since the catch-up",
+    "footer": "AA prototype build plan",
+    "howTo": [
+      "<b>Phases come from requirement changes.</b> Record them with <code>/update-requirements</code>, commit, then run <code>/update-build-plan</code>: it grades only what changed and appends phases here. Routine fixes and polish use the <code>app-change</code> skill instead.",
+      "<b>Pick the next phase</b> from the table below, respecting the order in \"Sequencing and rules\".",
+      "<b>Open a fresh Claude Code session</b> and paste that phase's kick-off prompt. It loads the <code>run-build-phase</code> skill, which reads a context pack and the phase doc before touching anything.",
+      "<b>Drift check first.</b> Each session diffs its items against <code>{commit}</code>, reports what changed, and adapts the plan before building.",
+      "<b>The agent plans, builds and tests itself</b> without waiting for approval (ROADMAP.md \"Owner review: agents test themselves\").",
+      "<b>Every phase ends the same way:</b> <code>npm run build</code>, <code>npm run build:pwa</code>, <code>npx vitest run</code>, the board check and (for UI work) <code>npm run shots</code> green; the checklist run item by item; the adversarial review-and-fix pass; the capture recipes, ATLAS and the demo guide (with <code>master-demo-guide.html</code>) brought in step for exactly what changed; a <code>PROGRESS.md</code> entry; a commit when green (never a push).",
+      "<b>Then the owner tests.</b> The phase hands over with the recipe IDs to capture. The capture (even <code>--dry</code>) and its commit run only once the owner has approved, because the screenshots and demo guide go to Anaesthesia Associates for testing and approvals."
+    ],
+    "callouts": [
+      {
+        "cls": "green",
+        "html": "<strong>Demo buttons live on their screens.</strong> Anything that cannot be shown through normal use gets a trigger in the harness bar's \"Demo actions\" menu, listed only on the screen where it matters, and the installed PWA gets the same in its Demo sheet. The mechanism exists (<code>src/shared/demoTriggers</code>): phases register into it."
+      },
+      {
+        "cls": "",
+        "html": "<strong>The demo guide and screenshots are deliverables.</strong> A version of each goes to Anaesthesia Associates, so every phase leaves them matching the app for exactly what it changed, and the screenshots are captured only after the owner approves the phase."
+      }
+    ]
+  },
+  "runner": {
+    "skill": "run-build-phase",
+    "maxParallel": 4,
+    "logDir": ".build-phase",
+    "concurrency": "npm run build and npm run build:pwa both start with tsc -b on the same solution (aa-prototype/tsconfig.json: app + node references), which rewrites node_modules/.tmp/*.tsbuildinfo; two at once race on those files, so the typecheck runs once and both vite builds need it (typecheck + build = npm run build, typecheck + build-pwa = npm run build:pwa, without changing package.json). The two vite builds run side by side: different outDir (dist/ and dist-pwa/, each emptied by its own build), different cacheDir (node_modules/.vite and node_modules/.vite-pwa), publicDir only read. vitest (jsdom, src/**/*.test.*, no output folder, cache node_modules/.vite/vitest) runs beside them from the start; it is the long pole (about 90 s wall, 4 to 5 cores). verify-board is another folder with its own tsconfig and tsbuildinfo, so it is safe beside everything, but two of its tests (git history, skill links) do git and file work under a 5 s timeout and timed out when run beside the app's Vitest on 16 November 2026, so it waits for vitest (ordering only) and shots wait for it. shots (Playwright) does not read dist; its webServer entries reuse a dev server already on 5173/5174 (reuseExistingServer: true) and otherwise start npm run dev and dev:pwa itself, so it never clashes with the dev servers; it waits for vitest and both builds (ordering only, not success) so CPU contention cannot slow its screenshots into timeouts. Catalogue capture is its own mode (--capture) and needs the dev servers on 5173 and 5174.",
+    "checks": [
+      {
+        "name": "typecheck",
+        "aliases": [
+          "tsc"
+        ],
+        "cwd": "aa-prototype",
+        "cmd": "tsc -b",
+        "changed": true,
+        "focus": "error TS",
+        "timeout": 600,
+        "equivalent": "the tsc -b that starts npm run build and npm run build:pwa (run once for both)"
+      },
+      {
+        "name": "build",
+        "cwd": "aa-prototype",
+        "cmd": "vite build",
+        "needs": [
+          "typecheck"
+        ],
+        "timeout": 600,
+        "equivalent": "with typecheck: npm run build (dist/)"
+      },
+      {
+        "name": "build-pwa",
+        "aliases": [
+          "build:pwa",
+          "pwa"
+        ],
+        "cwd": "aa-prototype",
+        "cmd": "vite build --config vite.pwa.config.ts",
+        "needs": [
+          "typecheck"
+        ],
+        "timeout": 600,
+        "equivalent": "with typecheck: npm run build:pwa (dist-pwa/)"
+      },
+      {
+        "name": "vitest",
+        "aliases": [
+          "test"
+        ],
+        "cwd": "aa-prototype",
+        "cmd": "vitest run",
+        "changed": "vitest run --changed --passWithNoTests",
+        "timeout": 900,
+        "equivalent": "npx vitest run (--changed: only tests related to uncommitted changes)"
+      },
+      {
+        "name": "verify-board",
+        "aliases": [
+          "verify",
+          "verify:board",
+          "board"
+        ],
+        "cwd": ".",
+        "cmd": "npm run verify:board",
+        "after": [
+          "vitest"
+        ],
+        "changed": {
+          "cmd": "npm run check"
+        },
+        "timeout": 600,
+        "equivalent": "npm run verify:board: board typecheck, Vitest, catalogue check (--changed: the catalogue check only)"
+      },
+      {
+        "name": "shots",
+        "aliases": [
+          "playwright"
+        ],
+        "cwd": "aa-prototype",
+        "cmd": "playwright test",
+        "after": [
+          "vitest",
+          "build",
+          "build-pwa",
+          "verify-board"
+        ],
+        "focus": "✘|Error:|expect\\(|\\d+ (failed|flaky)|Timeout",
+        "timeout": 1200,
+        "equivalent": "npm run shots"
+      }
+    ],
+    "devServers": [
+      {
+        "name": "prototype",
+        "port": 5173,
+        "url": "http://localhost:5173",
+        "portEnv": "AA_PROTO_PORT",
+        "cwd": ".",
+        "cmd": "npm run dev:proto"
+      },
+      {
+        "name": "pwa",
+        "port": 5174,
+        "url": "http://localhost:5174",
+        "portEnv": "AA_PWA_PORT",
+        "cwd": ".",
+        "cmd": "npm run dev:pwa"
+      }
+    ],
+    "devCommand": {
+      "cwd": ".",
+      "cmd": "npm run dev"
+    },
+    "startTimeout": 120,
+    "node": {
+      "min": "22.18",
+      "paths": [
+        "/opt/homebrew/opt/node@24/bin",
+        "$HOME/.nvm/versions/node/v24.20.0/bin"
+      ]
+    },
+    "context": {
+      "budgetKB": 60,
+      "fullEntryKB": 8,
+      "progressSections": [
+        "Binding conventions"
+      ],
+      "sequencingSection": "Sequencing rules",
+      "sequencingAlways": [
+        "Every phase"
+      ],
+      "runOrder": [
+        {
+          "section": "Sequencing rules",
+          "marker": "**Run order.**"
+        }
+      ],
+      "roadmapSections": [
+        "Running a phase",
+        "Owner review: agents test themselves",
+        "Front-end design",
+        "One component per job",
+        "Demo triggers",
+        "PWA parity",
+        "Demo guide",
+        "Catalogue screenshots",
+        "Confirm before building"
+      ],
+      "designDir": "docs/design",
+      "countNouns": [
+        "Lists?",
+        "Bookings?",
+        "Procedures?",
+        "Contracts?",
+        "patients?",
+        "invoices?"
+      ],
+      "notPhaseBefore": [
+        "BK0*"
+      ],
+      "decisionsSection": "Decisions log",
+      "handoffSection": "Discovered for later"
+    },
+    "capture": {
+      "cwd": "requirements-board",
+      "cmd": "node scripts/capture.ts",
+      "onlyFlag": "--only",
+      "dryFlag": "--dry",
+      "report": "requirements-board/requirements/capture/REPORT.md",
+      "timeout": 3600
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+ "generated": "2026-11-24",
+ "catalogue_commit": "64b3dff7aef0a2a290e6f6a50f42a28d3874c540",
+ "seeded": "64b3dff7aef0a2a290e6f6a50f42a28d3874c540",
+ "method": "Seeded empty at 64b3dff with plan-init.mjs: no gap analysis was run, and the prototype was taken as matching the catalogue then. Plan updates grade only the items changed since.",
+ "counts": {
+  "Contradicts": 0,
+  "Partial": 0,
+  "Missing": 0,
+  "OutOfScope": 0,
+  "Matches": 0,
+  "Grouping": 0
+ },
+ "in_scope": 0,
+ "themes": [],
+ "epics": [],
+ "items": [],
+ "summary_md": "",
+ "dataModelDeltas": [],
+ "deltaSummary": "",
+ "reverseFindings": [],
+ "reverseSummary": "",
+ "excluded": []
+}
