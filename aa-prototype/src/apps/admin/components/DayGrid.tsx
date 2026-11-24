@@ -1,5 +1,5 @@
 import { InfoTip } from '../../../shared/help/InfoTip'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Moon, Plus, TriangleAlert } from 'lucide-react'
 import { accent, neutral, semantic, radius, elevation } from '../../../theme/tokens'
 import { AttentionDot } from '../../../shared/warnings/AttentionDot'
@@ -204,6 +204,12 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
   const pageRows = paged ? pageOf(displayedRows, pageSize, page) : displayedRows
   const pageStart = paged ? pageWindow(displayedRows.length, pageSize, page).start : 0
 
+  // The rows scroll inside the card; a new page starts at its top.
+  const rowsRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (rowsRef.current !== null) rowsRef.current.scrollTop = 0
+  }, [page])
+
   function toggleStatus(status: DisplayKey) {
     setHiddenStatuses((current) => {
       const next = new Set(current)
@@ -231,8 +237,11 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
   }
 
   return (
-    <div style={{ flex: 1, minWidth: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden', boxShadow: elevation.e1 }}>
-      {/* Ruler header */}
+    // The card is never taller than its column: the ruler and the Draft List band stay at the top, the
+    // legend, filters and pager at the bottom, and only the anaesthetist rows scroll between them.
+    <div data-day-grid style={{ flex: 1, minWidth: 0, maxHeight: '100%', display: 'flex', flexDirection: 'column', background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, overflow: 'hidden', boxShadow: elevation.e1 }}>
+      {/* Ruler header and Draft List band: they reserve the rows' scrollbar gutter, so the ruler lines up with the blocks. */}
+      <div style={{ flex: 'none', overflowY: 'hidden', scrollbarGutter: 'stable', background: neutral.bg }}>
       <div style={{ display: 'flex', padding: '8px 0', borderBottom: `1px solid ${neutral.line}`, background: neutral.bg }}>
         <Eyebrow as="span" style={{ width: 148, flex: 'none', paddingLeft: 16, boxSizing: 'border-box' }}>ANAESTHETIST</Eyebrow>
         <span style={{ flex: 1, display: 'flex' }}>
@@ -246,7 +255,9 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
 
       {/* The day's Draft Lists, above the anaesthetists on the same ruler; never filtered. */}
       <DraftListBand draftLists={draftLists} bookingCounts={bookingCounts} onOpen={(id) => onOpenDraftList?.(id)} ruler={ruler} />
+      </div>
 
+      <div ref={rowsRef} data-day-grid-rows style={{ flex: '0 1 auto', minHeight: 0, overflowY: 'auto', scrollbarGutter: 'stable' }}>
       {pageRows.map(({ anaesthetist, segments }, pageIndex) => {
         const index = pageStart + pageIndex
         const inactive = filtered && segments.length === 0
@@ -300,13 +311,16 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
         </div>
         )
       })}
+      </div>
 
       {/* Interactive legend strip + focus filters */}
       <div
         data-filter-footer-divider={filtered && matchingAnaesthetists < rows.length ? 'true' : undefined}
         style={{
+          flex: 'none',
           display: 'flex',
           gap: 14,
+          borderTop: `1px solid ${neutral.line}`,
           flexWrap: 'wrap',
           alignItems: 'center',
           padding: '10px 16px',
@@ -351,7 +365,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
           </button>
         )}
       </div>
-      <div data-shot="day-grid-footer" style={{ padding: '0 16px 12px', background: neutral.bg, fontSize: 11, color: neutral.mist }}>
+      <div data-shot="day-grid-footer" style={{ flex: 'none', padding: '0 16px 12px', background: neutral.bg, fontSize: 11, color: neutral.mist }}>
         {`${matchingAnaesthetists} of ${rows.length} anaesthetists ${matchingAnaesthetists === 1 ? 'has' : 'have'} matching blocks. Showing ${visibleBlocks} of ${totalBlocks} blocks${draftLists.length > 0 ? ` · ${draftListCount(draftLists.length)} unassigned` : ''}.`}
         {paged && onPage !== undefined && <Pager total={displayedRows.length} size={pageSize} page={page} onPage={onPage} lead="Anaesthetists" shot="day-grid-pager" nested />}
       </div>

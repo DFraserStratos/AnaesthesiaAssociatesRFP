@@ -111,7 +111,9 @@ export function AdminDayRoute() {
           ctx.onAssignFromFinder(slotId, surgeonId)
         }}
       />
-      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+      {/* The grid and the rail fill the rest of the window (minimum 360px): the grid's ruler and
+          footer stay put while its rows scroll, and the rail scrolls on its own. */}
+      <div style={{ flex: 1, minHeight: 360, display: 'flex', gap: 16, alignItems: 'flex-start' }}>
         {beyondHorizon ? (
           <BeyondHorizon endISO={ctx.horizonEndISO} onGoToEnd={() => goToDay(ctx.horizonEndISO)} />
         ) : (
@@ -135,6 +137,8 @@ export function AdminDayRoute() {
             }}
           />
         )}
+        {/* The negative margin gives the cards' shadows room inside the scroll box without moving the rail. */}
+        <div data-day-rail-scroll style={{ alignSelf: 'stretch', flex: 'none', overflowY: 'auto', margin: '-4px -6px', padding: '4px 6px' }}>
         <RightRail
           monthDateISO={dateISO}
           selectedDateISO={dateISO}
@@ -156,6 +160,7 @@ export function AdminDayRoute() {
           onSeeAllNotifications={() => navigate('/admin/notifications')}
           onShowResolvedNotifications={() => navigate('/admin/notifications?resolved=1')}
         />
+        </div>
       </div>
     </>
   )

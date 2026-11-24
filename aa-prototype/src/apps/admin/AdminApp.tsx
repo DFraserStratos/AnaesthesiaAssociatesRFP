@@ -135,6 +135,9 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   // returns to it — the one piece of state the URL cannot carry while it is not
   // showing (it replaces the old `selectedDate` / `sortMode` useState 1:1).
   const dayMatch = useMatch('/admin/day/:dateISO/*')
+  // The Day view itself (not a Booking under it) fits the window: the page stops scrolling,
+  // the grid scrolls its rows inside the card, and the rail scrolls on its own.
+  const fitsWindow = useMatch('/admin/day/:dateISO') !== null
   const urlDate = dayMatch?.params.dateISO
   const lastDayRef = useRef(todayISO)
   const lastSortRef = useRef<SortMode>('roster')
@@ -327,7 +330,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   }
 
   return (
-    <div ref={shellRef} style={{ display: 'flex', minHeight: '100%', minWidth: 1320, background: neutral.bg, color: neutral.ink }}>
+    <div ref={shellRef} style={{ display: 'flex', minHeight: '100%', ...(fitsWindow ? { height: '100%' } : {}), minWidth: 1320, background: neutral.bg, color: neutral.ink }}>
       <SideNav
         onHelp={() => setHelpOpen(true)}
         active={sectionForPath(pathname)}
@@ -342,7 +345,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         onNavigate={(next) => navigate(SECTION_PATH[next])}
       />
 
-      <div style={{ flex: 1, minWidth: 0, padding: `24px ${ADMIN_PAGE_HORIZONTAL_PADDING}px 40px`, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ flex: 1, minWidth: 0, minHeight: 0, padding: `24px ${ADMIN_PAGE_HORIZONTAL_PADDING}px ${fitsWindow ? 24 : 40}px`, display: 'flex', flexDirection: 'column', gap: 16 }}>
         <Outlet context={context} />
       </div>
 
