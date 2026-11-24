@@ -46,8 +46,6 @@ const LANDS: readonly string[] = [
   'photo-capture-future', 'load-multi-procedure-booking', 'web-payment-full', 'web-payment-half',
   // Future scope and the Demo data inspector
   'fire-hospital-message', 'replay-hospital-message', 'scan-nhi-leaks',
-  // All apps
-  'show-first-run-hints',
 ]
 
 interface Drive {
@@ -210,23 +208,14 @@ test('the three Xero pair entries open on the Xero pair of an open invoice, wher
   }
 })
 
-test('a screen that registers nothing shows no pill; a screen with only the app-wide entry lists only it', async ({ page }) => {
-  // No entry routes to the Control Panel or the component catalogue (the Control Panel is only the index).
-  for (const path of ['/demo/control', '/demo/catalogue/admin']) {
+test('a screen that registers nothing shows no pill', async ({ page }) => {
+  // No entry routes to the Control Panel or the component catalogue (the Control Panel is only the index),
+  // nor to a web screen with nothing of its own (the web profile, My availability).
+  for (const path of ['/demo/control', '/demo/catalogue/admin', '/web/profile', '/web/availability/mine']) {
     await page.goto(path)
     await page.waitForLoadState('networkidle')
     // The harness bar has rendered (its clock), so an absent pill is the menu choosing not to show.
     await expect(page.getByRole('button', { name: /Demo clock/ })).toBeVisible()
     await expect(pill(page), `${path}: no Demo actions pill`).toHaveCount(0)
-  }
-  // Since catch-up Phase 43a "Show first-run hints again" is on every app route, so a web screen that
-  // registers nothing of its own (the web profile, My availability) lists that one entry and nothing else.
-  for (const path of ['/web/profile', '/web/availability/mine']) {
-    await page.goto(path)
-    await page.waitForLoadState('networkidle')
-    await expect(pill(page), `${path}: only the app-wide entry`).toHaveAccessibleName('Demo actions for this screen, 1')
-    await pill(page).click()
-    await expect(page.locator('[data-shot="demo-action-show-first-run-hints"]')).toBeVisible()
-    await page.keyboard.press('Escape')
   }
 })

@@ -291,11 +291,6 @@ export function MobileCatalogue() {
           note={`Drawer adds the focus trap; Field binds the note's error to the textarea. Send ${WRITES}`}>
           <Ex.AlertOfficeSheetExample picks={picks} />
         </CatalogueRow>
-        <CatalogueRow name="FirstRunHint (mobile)" source="shared/help/FirstRunHint.tsx" usedIn={SW} stage="mobile" height={220}
-          what="The welcome card on a first visit (catch-up Phase 43a): an inline teal-tint card in the page flow, never a modal, with Got it. Dismissed per browser (firstRunHints.ts); Reset and Show first-run hints again bring it back."
-          shared="shared/help/FirstRunHint.tsx">
-          <Ex.FirstRunHintExample />
-        </CatalogueRow>
         <CatalogueRow name="EmptyState" source="shared/ui/EmptyState.tsx" usedIn={SW} stage="mobile" height={260}
           what="The one empty state (UI unification U3, which replaced EmptyCard): the inline mist line, the card (as on Balances) and the phone list screens' centred line."
           shared="shared/ui/EmptyState.tsx">

@@ -1,7 +1,6 @@
 /**
- * Catch-up Phase 43a's demo triggers: the PWA's "Sign out" stand-in and "Show
- * first-run hints again" on every app. Neither touches AppState: the session
- * and the dismissals are per-viewer browser storage.
+ * Catch-up Phase 43a's demo trigger: the PWA's "Sign out" stand-in. It doesn't
+ * touch AppState: the session is per-viewer browser storage.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -10,7 +9,6 @@ import { DEMO_TRIGGERS } from './registry'
 import { demoTriggersFor } from './match'
 import type { DemoTrigger, DemoTriggerCtx } from './types'
 import { clearAnaesthetistSession, isSignedIn, signInSession, useSessionStore } from '../session/anaesthetistSession'
-import { anyHintDismissed, clearFirstRunHintDismissals, dismissHint, useHintStore } from '../help/firstRunHints'
 
 function byId(id: string): DemoTrigger {
   const t = DEMO_TRIGGERS.find((x) => x.id === id)
@@ -51,34 +49,5 @@ describe('Sign out (catch-up Phase 43a, PWA parity)', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0]!.action).toBe('auth.signOut')
     expect(t.disabledReason(api.getState(), ctx('/mobile/lists'))).toBe('Already signed out')
-  })
-})
-
-describe('Show first-run hints again (catch-up Phase 43a)', () => {
-  beforeEach(() => {
-    window.localStorage.clear()
-    clearFirstRunHintDismissals()
-  })
-  afterEach(() => window.localStorage.clear())
-
-  it('shows on a mobile, web and admin route in the bar and on the PWA surface', () => {
-    const api = createAppStore()
-    for (const path of ['/mobile/lists', '/web/dashboard', '/admin', '/admin/day/2026-07-21']) expect(visible(api, path, 'bar')).toContain('show-first-run-hints')
-    expect(visible(api, '/mobile/lists', 'pwa')).toContain('show-first-run-hints')
-  })
-
-  it('is disabled until a hint is dismissed; running it clears all three and touches no AppState', () => {
-    const api = createAppStore()
-    const t = byId('show-first-run-hints')
-    expect(t.disabledReason(api.getState(), ctx('/admin'))).toBe('No welcome card has been dismissed')
-    dismissHint('mobile')
-    dismissHint('web')
-    dismissHint('admin')
-    expect(t.disabledReason(api.getState(), ctx('/admin'))).toBeNull()
-    const state = api.getState()
-    expect(t.run(api, ctx('/admin'))).toEqual({ ok: true, message: 'The welcome cards will show again.' })
-    expect(anyHintDismissed()).toBe(false)
-    expect(useHintStore.getState().dismissed).toEqual({ mobile: false, web: false, admin: false })
-    expect(api.getState()).toBe(state)
   })
 })

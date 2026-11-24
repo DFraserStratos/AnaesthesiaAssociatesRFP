@@ -1,5 +1,4 @@
 import { expect, test, type Page } from '@playwright/test'
-import { keepHintsDismissedScript } from './storage/demoReady'
 
 /**
  * Catch-up Phase 44, item 4: the installed PWA's Demo chip, screen by screen,
@@ -14,8 +13,7 @@ import { keepHintsDismissedScript } from './storage/demoReady'
  * include 'pwa' and whose routes match the screen, minus those gated by a
  * `when` the screen alone does not satisfy (WHEN_GATED, each with its reason;
  * where the state can be driven, a row of its own drives it). Since catch-up
- * Phase 43a two app-wide entries (Sign out, Show first-run hints again) put the
- * chip on every mobile screen, so the chip is absent only while a product sheet
+ * Phase 43a the app-wide Sign out puts the chip on every mobile screen, so the chip is absent only while a product sheet
  * is open that no entry acts over.
  *
  * Every row also checks 17's privacy boundary end to end: no mobile screen, and
@@ -27,10 +25,6 @@ import { keepHintsDismissedScript } from './storage/demoReady'
  */
 
 test.use({ storageState: { cookies: [], origins: [] } })
-test.beforeEach(async ({ context }) => {
-  // Signed out (the sign-in screen is the way in), but the welcome cards stay dismissed so no row moves.
-  await context.addInitScript(keepHintsDismissedScript)
-})
 
 const LABELS = {
   'stage-post-op': 'Stage post-op scenario',
@@ -64,7 +58,6 @@ const LABELS = {
   'office-edits-booking': 'Office edits this Booking',
   'nhi-hub-mode': 'Hub: Available / Slow / Unavailable',
   'pwa-sign-out': 'Sign out',
-  'show-first-run-hints': 'Show first-run hints again',
   'support-help-line-responds': 'Help line responds to this request',
 } as const
 
@@ -78,7 +71,7 @@ const WHEN_GATED: Readonly<Partial<Record<PwaEntry, string>>> = {
   'feed-changes-primary': 'Only on a Booking with two or more Procedures (catch-up Phase 23). Driven: "A Booking with three Procedures (after Load 3-procedure Booking)".',
 }
 
-const ALWAYS: readonly PwaEntry[] = ['pwa-sign-out', 'show-first-run-hints']
+const ALWAYS: readonly PwaEntry[] = ['pwa-sign-out']
 const LISTS: readonly PwaEntry[] = ['stage-post-op', 'office-assigns-next-free', 'office-adds-out-of-hours-list', 'office-assigns-draft-list', 'colleague-moves-booking-to-me', 'matching-office-matches-row', ...ALWAYS]
 const A_LIST: readonly PwaEntry[] = ['stage-post-op', 'office-authorises-list', 'office-resolves-alert', 'colleague-moves-booking-to-me', 'photo-capture-future', 'matching-office-matches-row', 'stub-office-adds-nhi', 'pwa-office-adds-nhi', 'load-multi-procedure-booking', ...ALWAYS]
 const A_BOOKING: readonly PwaEntry[] = [
@@ -153,7 +146,7 @@ const SCREENS: readonly ScreenRow[] = [
       await settle(page)
       await expect(page.locator('[data-shot="procedure-primary-pill"]').first()).toBeVisible()
     },
-    chip: [...A_BOOKING.slice(0, -2), 'feed-changes-primary', ...ALWAYS],
+    chip: [...A_BOOKING.slice(0, -ALWAYS.length), 'feed-changes-primary', ...ALWAYS],
   },
   { screen: 'Availability', path: '/mobile/availability', chip: ['colleague-moves-list-to-me', ...ALWAYS] },
   { screen: 'Availability · My calendar', path: '/mobile/availability/calendar', chip: ALWAYS },

@@ -1,4 +1,3 @@
-import { FirstRunHint } from '../../../shared/help/FirstRunHint'
 import { useMemo, useState } from 'react'
 import { format, parseISO, addDays } from 'date-fns'
 import { neutral, radius } from '../../../theme/tokens'
@@ -142,8 +141,6 @@ export function DashboardScreen({
           </Button>
         }
       />
-      {/* The welcome card on a first visit (catch-up Phase 43a): under the greeting. */}
-      <FirstRunHint app="web" />
 
       <Overlay open={picking} onClose={() => setPicking(false)}>
         <div data-shot="dashboard-move-picker" style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 460, maxWidth: '100%' }}>

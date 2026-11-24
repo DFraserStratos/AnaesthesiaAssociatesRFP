@@ -49,7 +49,7 @@ Paths are relative to `aa-prototype/src/` unless they start with `docs/` or `aa-
 - **Demo settings vs product settings.** Rule parameters live in `appSettings` (product); demo modes such as `nhiHubMode` live in `DemoSettings` and Reset clears them. Simulated waits (`HUB_TIMING`) are UI timers; stored times always come from the demo clock.
 - **Named office users are a harness switch** (`shell.officeUser`, Day view and Booking detail only). Accounts and sign-in are simulated audit rows (`account` entity); the PWA has a simulated account login, the framed build is signed in by default, and no IDaaS, MFA screen or social buttons are built. `shared/session/`.
 - **Full-scale data is an in-memory demonstration.** Loading it pauses saving (`pausableStorage`) and drops the saved key, so Reset, a jump or a reload returns the demo data; its invoice numbers use the reserved `AA-S-` series. `store/persistStorage.ts`, `domain/seed/fullScale/`.
-- **First-run hints are per-viewer browser storage**, not domain state, not audited, no persist bump. Playwright and the capture runner preset them dismissed and the PWA signed in.
+- **No first-run welcome cards.** The owner removed them (24 Nov 2026); help is the info sign beside each heading only. The PWA's sign-in session is per-viewer browser storage, not domain state; Playwright and the capture runner preset it signed in.
 - **Invoices print through the browser** (`window.print()` on the on-screen document). No PDF library.
 - **No phase numbers or build scaffolding in app copy**, and no placeholder control posing as a real action. Honest simulation boundaries ("referenced, not implemented") may stay. `appCopy.test.ts` enforces this along with the dash rule and the retired words.
 

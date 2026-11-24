@@ -192,7 +192,6 @@ import { isBookingPair } from '../../domain/billing/ledger'
 import { APP_CONFIG } from '../../shell/appConfig'
 import { recordAnaesthetistSignIn } from '../../store/authDemoActions'
 import { isSignedIn, signOutSession } from '../session/anaesthetistSession'
-import { anyHintDismissed, clearFirstRunHintDismissals } from '../help/firstRunHints'
 import { newerInvoiceDescription } from '../../domain/billing/procedureStack'
 import {
   defaultHospitalDescription,
@@ -2700,9 +2699,9 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     indexPath: () => `/web/lists/${SEED_LIST_IDS.souterPm21}`,
     indexHint: 'Open Add a booking (or a patient record\'s Refresh from NHI register) first: the entry shows only while a lookup surface is open.',
   },
-  // ── Catch-up Phase 43a: sign-in and the first-run welcome cards ────────
-  // Neither touches AppState: the session and the dismissals are per-viewer
-  // browser storage, so the menus re-read them when they change.
+  // ── Catch-up Phase 43a: sign-in ────────
+  // Doesn't touch AppState: the session is per-viewer browser storage, so the
+  // menus re-read it when it changes.
   {
     id: 'pwa-sign-out',
     label: 'Sign out',
@@ -2719,20 +2718,6 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => '/mobile/more',
     indexHint: 'On a handset, from the Demo sheet; in the framed phone, use Sign out on More.',
-  },
-  {
-    id: 'show-first-run-hints',
-    label: 'Show first-run hints again',
-    description: 'Brings back the welcome card on Mobile, Web and Admin, as for a first visit.',
-    screen: 'All apps',
-    routes: ['/mobile', '/mobile/*', '/web', '/web/*', '/admin', '/admin/*'],
-    surfaces: ['bar', 'pwa'],
-    disabledReason: () => (anyHintDismissed() ? null : 'No welcome card has been dismissed'),
-    run: () => {
-      clearFirstRunHintDismissals()
-      return { ok: true, message: 'The welcome cards will show again.' }
-    },
-    indexPath: () => '/admin',
   },
   // ── Catch-up Phase 43b: support, the help line and product support (shown while the support panel is open) ──
   {

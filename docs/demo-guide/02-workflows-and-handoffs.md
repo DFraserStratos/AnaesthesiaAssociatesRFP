@@ -263,7 +263,7 @@ A "Suggested" mark follows the insurer or funder on the Booking and never hides 
 9. She can add an event under the Procedure: **Add pre-op or post-op event**, or **Add billing event** (a charge or credit with free text). Workflow 8 covers both.
 10. **Mark complete** checks three things: every Procedure has a Contract; on an RVG price, the RVG code, both times and the modifiers step, with a reason for each claimed modifier; and a price (a Procedure with none reads **Needs a price**). An early press jumps to the first thing missing and shows its message. A warning never stops it.
 11. Something only the office can fix goes through **Alert the office**.
-12. The info sign beside each heading explains the section, and each app's welcome card explains the screen on first use.
+12. The info sign beside each heading explains the section.
 
 ### More than one Procedure
 

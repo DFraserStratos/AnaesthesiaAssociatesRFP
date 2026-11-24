@@ -166,7 +166,7 @@ export function DemoControlPanel() {
               <button
                 type="button"
                 onClick={() => {
-                  resetFramedDemo({ clearHints: true })
+                  resetFramedDemo()
                   setConfirmingReset(false)
                 }}
                 style={primaryButtonStyle}

@@ -129,7 +129,7 @@ export function DemoIntegrations() {
   }
 
   function resetSimulator() {
-    resetFramedDemo({ clearHints: false })
+    resetFramedDemo()
     setFeedId(FEED.stg)
     setSelectedId(null)
     setLive(false)

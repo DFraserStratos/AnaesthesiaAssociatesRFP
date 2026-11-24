@@ -1536,7 +1536,7 @@ EP-10 (billing, Xero, payments and AA fees) and EP-13 (admin oversight and maste
 <li>She can add an event under the Procedure: <strong>Add pre-op or post-op event</strong>, or <strong>Add billing event</strong> (a charge or credit with free text). Workflow 8 covers both.</li>
 <li><strong>Mark complete</strong> checks three things: every Procedure has a Contract; on an RVG price, the RVG code, both times and the modifiers step, with a reason for each claimed modifier; and a price (a Procedure with none reads <strong>Needs a price</strong>). An early press jumps to the first thing missing and shows its message. A warning never stops it.</li>
 <li>Something only the office can fix goes through <strong>Alert the office</strong>.</li>
-<li>The info sign beside each heading explains the section, and each app&#39;s welcome card explains the screen on first use.</li>
+<li>The info sign beside each heading explains the section.</li>
 </ol>
 <h3>More than one Procedure</h3>
 <ul>
@@ -2086,7 +2086,6 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
 <li>Optional check: <strong>Admin → Intake</strong> opens on <strong>Matching</strong> with one row waiting (Mere Tipene, Southern Cross, &quot;Waiting for an NHI&quot;), and its <strong>PDF lists</strong> tab holds Mr Okafor&#39;s list, received and not yet sent to Matching.</li>
 <li>Point at the <strong>Synthetic data only</strong> badge in the top bar. It also sits in the Admin side nav and the web top nav, and the phone&#39;s More screen says &quot;All patients, NHIs, Lists and figures are synthetic.&quot; Nothing in the prototype is real patient or integration data.</li>
 <li>NHIs for the lookup beats (S5 Beat 2): <code>ZBR4417</code> Mereana Tipene, <code>ZBT2253</code> Lucas Brennan and <code>ZBX41AL</code> Ana Fifita (new format) are on the NHI register; <code>ZBW6638</code> is valid but not on the register; <code>ZAA0068</code> fails its check digit.</li>
-<li>After a Reset each app shows a welcome card once: <strong>Welcome to your Lists</strong> on the phone&#39;s Lists screen, <strong>Welcome</strong> on the web Dashboard and <strong>The day at a glance</strong> on Admin Day. Select <strong>Got it</strong> on each before the audience arrives, or leave the phone&#39;s card to open S1 with. A scenario jump keeps your dismissals; a Reset brings the cards back. <strong>Demo actions → Show first-run hints again</strong> brings them back from any Mobile, Web or Admin screen. That entry stays greyed out, reading &quot;No welcome card has been dismissed&quot;, until you have dismissed one.</li>
 <li>Help: after a Reset the clock reads 8:00am, so every Help panel says &quot;Closed, opens 8:30am&quot;. Press <strong>+1 hour</strong> on the clock before a support beat if you want it open.</li>
 </ol>
 <p>Each scenario on the Control Panel has a <strong>Jump</strong> button. It asks first (<strong>Confirm jump</strong> or <strong>Cancel</strong>), resets to the pristine seed and stages only what that scenario cannot reach from there. S1, S2 and S4 stage nothing (&quot;Reset to the pristine seed; nothing staged.&quot;). S3 checks that Dr Souter&#39;s two Mon 20 Jul Lists are waiting on Review. S5 stages David Chen&#39;s audit trail and authorises Dr Whitaker&#39;s Fri 17 Jul List. After a jump the scenario lists its beats, one link per beat (&quot;Beat 2 · Admin Intake&quot; and so on), each with a one-line note of what to do there. A beat whose screen does not exist yet says what it waits for (&quot;Beat 4 · Admin Booking, after Create Booking&quot;) and stays greyed out until it does. The links stay on the Control Panel until the next reset, so come back to it between beats (a browser reload clears them). The same jump always gives the same data, so it doubles as recovery.</p>
@@ -2493,7 +2492,7 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
 </div></div>
       <div class="row"><span class="k">Expected</span><div class="v"><p>the sign-in screen reads &quot;Sign in · Your Lists, Bookings and balances, on your phone.&quot;, with the email m.souter@aa-associates.example and a password filled in, and a &quot;Provisional&quot; pill: &quot;How anaesthetists sign in (two-step codes, single sign-on, Face ID) is still to be decided. This screen stands in for it.&quot; (OQ-83). <strong>Sign in</strong> returns to More, which reads &quot;Signed in as m.souter@aa-associates.example&quot;. A wrong email reads &quot;No account with that email. Use the demo account.&quot;</p>
 </div></div>
-      <div class="row"><span class="k">Handset</span><div class="v"><p>self-contained. A fresh handset opens on the same sign-in screen; <strong>Sign in</strong> lands on Lists with the welcome card. <strong>Demo sheet → Sign out</strong> signs her out again from any screen.</p>
+      <div class="row"><span class="k">Handset</span><div class="v"><p>self-contained. A fresh handset opens on the same sign-in screen; <strong>Sign in</strong> lands on Lists. <strong>Demo sheet → Sign out</strong> signs her out again from any screen.</p>
 </div></div>
     </div>
     <div class="beat">
@@ -2740,7 +2739,7 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
       <div class="row"><span class="k">Worth pointing at</span><div class="v"><ul>
 <li>On No contract · RVG the Price section has a <strong>PRICE $</strong> field and <strong>Save price</strong>: she may type a different price there.</li>
 <li><strong>Mark complete</strong> checks three things: a Contract; on an RVG price, the RVG code, both times and the modifiers step, with a reason for each claimed modifier; and a price. A warning never stops it.</li>
-<li>The info sign beside each heading opens a short explanation, and the Lists welcome card explains the screen on first use.</li>
+<li>The info sign beside each heading opens a short explanation.</li>
 </ul>
 </div></div>
       <div class="row"><span class="k">Handset</span><div class="v"><p>self-contained, with the same figures. Between <strong>Start now</strong> and <strong>Finish now</strong>, back out to <strong>Lists</strong>, then <strong>More</strong>, and press <strong>+1 hour</strong> (the Booking and List screens have no tab bar). <strong>Submit to office</strong> shows the same sheet.</p>
@@ -5218,7 +5217,7 @@ own ledger is what each anaesthetist sees.</p>
 <p>Show it: <strong>Admin → Day view → Demo actions → Load full-scale data → Confirm</strong>. It builds 85 anaesthetists, 21,080 sessions and 28,279 invoices in the browser. The banner&#39;s <strong>Timings</strong> shows each screen&#39;s render time. These are timings on one laptop, with no server; formal performance testing is a Testing-milestone task. <strong>Reset</strong> returns to the demo data.</p>
 </div></details>
 <details><summary>&quot;How will people who are not comfortable with new systems cope?&quot;</summary><div class="details-body">
-<p>One clear action on each screen, and each procedure shown the same way in every app. The info sign beside each heading explains the section, and each app shows a welcome card on first use. Training runs per user group before go-live.</p>
+<p>One clear action on each screen, and each procedure shown the same way in every app. The info sign beside each heading explains the section. Training runs per user group before go-live.</p>
 </div></details>
 <details><summary>&quot;How do anaesthetists sign in?&quot;</summary><div class="details-body">
 <p>With an account on the phone app. The screen is a stand-in, marked Provisional: how they sign in is still to be decided (OQ-83). Every sign-in, refusal and sign-out is in the audit.</p>

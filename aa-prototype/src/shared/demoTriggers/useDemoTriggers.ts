@@ -5,7 +5,6 @@ import { useDemoTriggerPublished } from './context'
 import { demoTriggersFor, initialChoice, type MatchedDemoTrigger } from './match'
 import { useDemoTriggerMemory } from './memory'
 import { useSessionStore } from '../session/anaesthetistSession'
-import { useHintStore } from '../help/firstRunHints'
 import type { DemoTriggerChoice, DemoTriggerResult, DemoTriggerSurface } from './types'
 
 /**
@@ -14,8 +13,8 @@ import type { DemoTriggerChoice, DemoTriggerResult, DemoTriggerSurface } from '.
  * below re-render on a route change, a store change (so `when` and
  * `disabledReason` follow a run or a reset), a published-context change, a
  * trigger-memory change (read inside the replay entries), and the sign-in
- * session and first-run hint stores (catch-up Phase 43a: browser state, not
- * AppState, read by "Sign out" and "Show first-run hints again").
+ * session store (catch-up Phase 43a: browser state, not AppState, read by
+ * "Sign out").
  */
 export function useDemoTriggers(surface: DemoTriggerSurface): { state: AppState; entries: MatchedDemoTrigger[] } {
   const { pathname } = useLocation()
@@ -23,7 +22,6 @@ export function useDemoTriggers(surface: DemoTriggerSurface): { state: AppState;
   const published = useDemoTriggerPublished()
   useDemoTriggerMemory()
   useSessionStore((s) => s.stored)
-  useHintStore((s) => s.dismissed)
   return { state, entries: demoTriggersFor(state, pathname, surface, published) }
 }
 

@@ -1,11 +1,9 @@
 import { expect, test, type Page } from '@playwright/test'
-import { runDemoAction } from './demoActions'
 
 /**
- * Catch-up Phase 43a (US-15.0.1, US-13.5.3): the first-run welcome cards, the
- * framed phone's sign-in and Sign out, and point-of-need help on mobile capture,
- * Admin Day and Admin Review. Fresh storage (no demo-ready preset), so the
- * welcome cards show as on a first visit.
+ * Catch-up Phase 43a (US-15.0.1, US-13.5.3): the framed phone's sign-in and
+ * Sign out, and point-of-need help on mobile capture, Admin Day and Admin
+ * Review. Fresh storage (no demo-ready preset).
  */
 
 test.use({ storageState: { cookies: [], origins: [] } })
@@ -18,31 +16,6 @@ async function settle(page: Page, ms = 400): Promise<void> {
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(ms)
 }
-
-test('fresh storage: each app shows its welcome card; Got it hides it across a reload; the demo action brings them back', async ({ page }) => {
-  for (const [path, app] of [
-    [DAY, 'admin'],
-    ['/web', 'web'],
-    ['/mobile/lists', 'mobile'],
-  ] as const) {
-    await page.goto(path)
-    await settle(page)
-    const card = page.locator(`[data-shot="first-run-hint-${app}"]`)
-    await expect(card).toBeVisible()
-    await card.getByRole('button', { name: 'Got it' }).click()
-    await expect(card).toHaveCount(0)
-    await page.reload()
-    await settle(page)
-    await expect(page.locator(`[data-shot="first-run-hint-${app}"]`)).toHaveCount(0)
-  }
-  // All three dismissed: the demo action is live and brings them back.
-  const message = await runDemoAction(page, 'show-first-run-hints')
-  expect(message).toBe('The welcome cards will show again.')
-  await expect(page.locator('[data-shot="first-run-hint-mobile"]')).toBeVisible()
-  await page.goto(DAY)
-  await settle(page)
-  await expect(page.locator('[data-shot="first-run-hint-admin"]')).toBeVisible()
-})
 
 test('the framed phone opens signed in; Sign out on More shows the sign-in screen pre-filled; Sign in returns; Reset stays signed in; the audit has the rows', async ({ page }) => {
   await page.goto('/mobile/more')

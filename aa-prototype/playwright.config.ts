@@ -25,7 +25,7 @@ import { demoReadyStorageState } from './visual/storage/demoReady'
  */
 const PROTO_URL = `http://localhost:${process.env['AA_PROTO_PORT'] ?? 5173}`
 const PWA_URL = `http://localhost:${process.env['AA_PWA_PORT'] ?? 5174}`
-// The PWA signed in and the first-run cards dismissed (catch-up Phase 43a), so no existing spec moves.
+// The PWA signed in (catch-up Phase 43a), so no existing spec moves.
 const DEMO_READY = demoReadyStorageState(PROTO_URL, PWA_URL)
 export default defineConfig({
   testDir: './visual',

@@ -2062,7 +2062,7 @@ Admin panel is `[data-testid=support-side-panel]`. Demo rows `demo-action-suppor
 `demo-action-support-raise-out-of-hours`, `demo-action-support-raise-public-holiday`,
 `demo-action-support-approve-call-out`; PWA `pwa-demo-action-support-help-line-responds`.
 
-**Sign-in, info tips and welcome cards (catch-up Phase 43a).** PWA sign-in (mobile, :5174): the screen
+**Sign-in and info tips (catch-up Phase 43a).** PWA sign-in (mobile, :5174): the screen
 `sign-in-screen` (the logo, then a card holding `sign-in-email` (pre-filled with the demo account), `sign-in-password`
 and the teal `sign-in-submit` "Sign in", then the `sign-in-provisional` pill with its caption and the demo badges);
 More tab: the account card `more-account` ("Signed in as ...") with its Sign out text action `more-sign-out`; PWA Demo
@@ -2072,11 +2072,7 @@ sheet row `pwa-demo-action-pwa-sign-out`. Info tips: the button `info-tip-<topic
 `day-todo`, `review-flags`, `review-contracts` (Review table's Procedures heading), `review-price` (Fee heading),
 `review-authorise`) and what it opens: `info-tip-<topic>-sheet` (mobile bottom sheet), `info-tip-<topic>-note` (inline,
 inside another sheet) or `info-tip-<topic>-popover` (web and Admin). Their accessible names are "About <title>"
-(aria-labels, not text). Welcome cards: `first-run-hint-mobile` (`/mobile/lists`, under the greeting),
-`first-run-hint-web` (`/web` Dashboard, under the header), `first-run-hint-admin` (`/admin/day/<date>`, between the day
-navigation and the grid), each with a "Got it" text action `first-run-hint-<app>-dismiss`. Demo action rows
-`demo-action-show-first-run-hints` and `pwa-demo-action-show-first-run-hints` ("Show first-run hints again", every
-/mobile, /web and /admin route).
+(aria-labels, not text).
 
 **Patients, the NHI and the balance warning (catch-up Phase 40).** Admin: `admin-patients`, `admin-waiting-nhi`,
 `admin-patient-follow-up`, `admin-patient-record` and the record's cards (listed under Routes, `/admin/patients/:nhi`);
@@ -2895,7 +2891,7 @@ and in the installed PWA's "Demo" sheet. The registry is
 
 **Scenario jumps** (`aa-prototype/src/apps/demo/demoScenarios.ts`, `DEMO_SCENARIOS`). Use the `{ "scenario": "Sn" }`
 step: it opens `/demo/control`, clicks `scenario-sn`, then `scenario-confirm`. Every jump resets to the pristine seed
-first (the framed reset: the sign-in session forgotten, the first-run hint dismissals kept), then stages only what its
+first (the framed reset: the sign-in session forgotten), then stages only what its
 scenario cannot reach from there, through the product's own guarded store actions. The same jump always gives the
 same data.
 
@@ -3009,7 +3005,6 @@ gate shows on a matching route only when its condition holds (see the notes belo
 | Add booking, and Admin · Patients | `nhi-hub-mode` | Hub: Available / Slow / Unavailable | Bar and PWA |  | `/mobile/lists`, `/mobile/lists/:listId`, `/mobile/lists/:listId/bookings/:bookingId`, `/web/lists/:listId`, `/admin/day/:dateISO`, `/admin/draft-lists`, `/admin/patients`, `/admin/patients/waiting`, `/admin/patients/:nhi` |
 | Mobile · any screen | `pwa-sign-out` | Sign out | PWA |  | `/mobile`, `/mobile/*` |
 |  | `support-help-line-responds` | Help line responds to this request | PWA |  | `/mobile`, `/mobile/*` |
-| All apps | `show-first-run-hints` | Show first-run hints again | Bar and PWA |  | `/mobile`, `/mobile/*`, `/web`, `/web/*`, `/admin`, `/admin/*` |
 | All apps · Help | `support-advance-ticket` | Advance ticket | Bar |  | `/mobile`, `/mobile/*`, `/web`, `/web/*`, `/admin`, `/admin/*` |
 |  | `support-raise-out-of-hours` | Raise out of hours | Bar |  | `/mobile`, `/mobile/*`, `/web`, `/web/*`, `/admin`, `/admin/*` |
 |  | `support-raise-public-holiday` | Raise ticket on a public holiday | Bar |  | `/mobile`, `/mobile/*`, `/web`, `/web/*`, `/admin`, `/admin/*` |
@@ -3201,11 +3196,6 @@ until `{ "trigger": "office-authorises-list" }` runs (US-07.4.1 and US-08.6.1 sh
   `board.config.json`), so mobile shots start signed in. To shoot the sign-in screen, sign out first: `/mobile/more`,
   click `more-sign-out` (or the PWA trigger `pwa-sign-out`). Signing out writes the session key (signed out), so the
   preset (set only when the key is absent) does not undo it on a later `goto`. Sign in returns to the same route.
-- **First-run welcome cards are dismissed by the runner** (catch-up Phase 43a). The welcome cards on `/mobile/lists`,
-  the web Dashboard and the Admin Day view show in any fresh context, so the runner presets the three dismissal keys
-  `aa-first-run-hint-mobile`, `-web` and `-admin` ("1") in every app's context. The preset is set-if-absent on every
-  page load: a card brought back with the `show-first-run-hints` trigger ("Show first-run hints again") must be shot
-  without a reload, so no `goto` after the trigger (in-app clicks are fine). See `recipes/US-15.0.1.json`.
 - **The support line reads closed until 8:30am** (catch-up Phase 43b). Every state starts at the seed's 8:00am, so to
   shoot "Open now" with no cover note move the clock first: on :5173 a `setup` that does `{ "goto": "/demo/control" }`,
   then clicks `role=button[name="+1 hour"] >> nth=0` (the harness clock menu is hidden in shots); on :5174 click the

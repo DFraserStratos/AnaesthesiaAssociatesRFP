@@ -1,7 +1,7 @@
 {
   "id": "US-15.0.1",
   "status": "partial",
-  "absentReason": "Ease of use is a quality that screenshots can only suggest. The shots show the calm Booking capture screen with the procedure stack and the Price section kept, help at the point of need beside each section on the phone, the web app and the office screens, and the welcome card each app shows on a first visit. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had. The capture shot's Booking (BK0009) holds no insurer, so its Insurance row reads None and shows no approval number.",
+  "absentReason": "Ease of use is a quality that screenshots can only suggest. The shots show the calm Booking capture screen with the procedure stack and the Price section kept, help at the point of need beside each section on the phone, the web app and the office screens. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had. The capture shot's Booking (BK0009) holds no insurer, so its Insurance row reads None and shows no approval number.",
   "shots": [
     {
       "name": "card-capture",
@@ -50,54 +50,6 @@
             { "wait": 400 }
           ],
           "highlight": ["[data-shot=info-tip-day-statuses-popover]"]
-        }
-      ]
-    },
-    {
-      "name": "first-run-hint-mobile",
-      "app": "mobile",
-      "caption": "Welcome card shown on first visit",
-      "start": "/mobile/lists",
-      "states": [
-        {
-          "steps": [
-            { "trigger": "show-first-run-hints" },
-            { "wait": "[data-shot=first-run-hint-mobile]" },
-            { "wait": 400 }
-          ],
-          "highlight": ["[data-shot=first-run-hint-mobile]"]
-        }
-      ]
-    },
-    {
-      "name": "first-run-hint-web",
-      "app": "web",
-      "caption": "Welcome card shown on first visit",
-      "start": "/web",
-      "states": [
-        {
-          "steps": [
-            { "trigger": "show-first-run-hints" },
-            { "wait": "[data-shot=first-run-hint-web]" },
-            { "wait": 400 }
-          ],
-          "highlight": ["[data-shot=first-run-hint-web]"]
-        }
-      ]
-    },
-    {
-      "name": "first-run-hint-admin",
-      "app": "admin",
-      "caption": "Welcome card shown on first visit",
-      "start": "/admin/day/2026-07-21",
-      "states": [
-        {
-          "steps": [
-            { "trigger": "show-first-run-hints" },
-            { "wait": "[data-shot=first-run-hint-admin]" },
-            { "wait": 400 }
-          ],
-          "highlight": ["[data-shot=first-run-hint-admin]"]
         }
       ]
     },

@@ -76,12 +76,11 @@ export interface DemoScenario {
 /**
  * The pristine seed. On the framed app's own store this is the framed reset
  * (`resetFramedDemo`: the anaesthetist's sign-in session forgotten too, so no
- * jump lands on a login; catch-up Phase 43a), keeping the presenter's
- * dismissed first-run hints. An isolated store (the tests) gets the same
+ * jump lands on a login; catch-up Phase 43a). An isolated store (the tests) gets the same
  * domain reset with no session to forget.
  */
 function resetFirst(api: AppStoreApi): void {
-  if (api === useAppStore) resetFramedDemo({ clearHints: false })
+  if (api === useAppStore) resetFramedDemo()
   else resetDomainState(api)
 }
 

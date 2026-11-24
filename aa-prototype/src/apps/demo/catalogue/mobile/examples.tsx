@@ -5,7 +5,6 @@
  * line under the example instead of changing the route.
  */
 
-import { FirstRunHint } from '../../../../shared/help/FirstRunHint'
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { ArrowLeftRight, BellRing, ChevronLeft } from 'lucide-react'
 import { accent, neutral, radius } from '../../../../theme/tokens'
@@ -1067,9 +1066,5 @@ export function InfoTipExample() {
       <Caption>Tap the info sign beside the label.</Caption>
     </CaptureSection>
   )
-}
-
-export function FirstRunHintExample() {
-  return <FirstRunHint app="mobile" />
 }
 

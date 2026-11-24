@@ -1,12 +1,10 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { fireEvent, render, screen, within } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
 import { SurfaceProvider } from '../surface'
 import { BottomSheet } from '../surface/BottomSheet'
 import { CaptureSection } from '../capture/ui'
 import { InfoTip, InfoTipHeader } from './InfoTip'
-import { FirstRunHint } from './FirstRunHint'
 import { HELP_TOPICS } from './helpTopics'
-import { clearFirstRunHintDismissals, useHintStore } from './firstRunHints'
 
 describe('InfoTip (Phase 43a, US-15.0.1)', () => {
   it('is named "About {title}" and opens a bottom sheet with the topic on the phone', () => {
@@ -105,24 +103,5 @@ describe('InfoTip (Phase 43a, US-15.0.1)', () => {
     )
     expect(screen.getByRole('button', { name: 'About Times' })).toBeTruthy()
     expect(screen.getByText('Times')).toBeTruthy()
-  })
-})
-
-describe('FirstRunHint (Phase 43a)', () => {
-  beforeEach(() => {
-    window.localStorage.clear()
-    clearFirstRunHintDismissals()
-  })
-  afterEach(() => window.localStorage.clear())
-
-  it('shows until Got it, then stays dismissed for this browser', () => {
-    render(<FirstRunHint app="admin" />)
-    expect(screen.getByText('The day at a glance')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Got it' }))
-    expect(screen.queryByText('The day at a glance')).toBeNull()
-    expect(window.localStorage.getItem('aa-first-run-hint-admin')).not.toBeNull()
-    act(() => clearFirstRunHintDismissals())
-    expect(screen.getByText('The day at a glance')).toBeTruthy()
-    expect(useHintStore.getState().dismissed.admin).toBe(false)
   })
 })

@@ -1,5 +1,4 @@
 import { InfoTip } from '../../../shared/help/InfoTip'
-import { FirstRunHint } from '../../../shared/help/FirstRunHint'
 import { OFFICE_ACTOR } from '../../../store'
 import { SyntheticDataBadge } from '../../../shared/SyntheticDataBadge'
 import { Notice } from '../../../shared/ui'
@@ -489,9 +488,6 @@ export function AdminCatalogue() {
 
       {/* ------------------------------------------------------------------ */}
       <FamilySection id="feedback">
-        <CatalogueRow name="FirstRunHint (desktop)" source="shared/help/FirstRunHint.tsx" usedIn={AWM} what="The welcome card on the web Dashboard and the Admin Day view (catch-up Phase 43a): inline, teal tint, e1, Got it. Per-browser dismissal; Reset and Show first-run hints again bring it back." shared="shared/help/FirstRunHint.tsx">
-          <FirstRunHint app="admin" />
-        </CatalogueRow>
         <CatalogueRow name="WarningPreviewRow" source="shared/warnings/WarningPreviewRow.tsx" usedIn={A} what="One warning that is not raised yet (catch-up Phase 40): the balance warning a save will raise, before the office saves a Booking (Admin phone advice) or decides a Matching row. A WarningsPanel row's tint, triangle and text with the StrengthPill, the caption and the record link under it; no Clear." shared="shared/warnings/WarningPreviewRow.tsx" note="Mild and strong, with fixed text; nothing reads the demo store.">
           <WarningPreviewRowExample />
         </CatalogueRow>

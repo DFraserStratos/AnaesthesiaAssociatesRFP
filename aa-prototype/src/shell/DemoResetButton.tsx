@@ -14,7 +14,7 @@ export function DemoResetButton() {
   const titleId = useId()
 
   function confirmReset() {
-    resetFramedDemo({ clearHints: true })
+    resetFramedDemo()
     setConfirming(false)
     triggerRef.current?.focus()
   }

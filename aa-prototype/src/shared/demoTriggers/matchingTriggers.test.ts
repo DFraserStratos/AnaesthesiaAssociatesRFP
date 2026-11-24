@@ -14,11 +14,11 @@ import type { DemoTrigger, DemoTriggerCtx } from './types'
 import { FOSTER_HOSPITAL_WORDING } from '../../domain/intake'
 
 const byId = (id: string): DemoTrigger => DEMO_TRIGGERS.find((t) => t.id === id)!
-/** Leaves out catch-up Phase 43a's app-wide "Show first-run hints again" (`phase43aTriggers.test.ts`). */
+/** Leaves out catch-up Phase 43a's PWA "Sign out" (`phase43aTriggers.test.ts`). */
 const ids = (api: BoundAppStore, pathname: string, surface: 'bar' | 'pwa') =>
   demoTriggersFor(api.getState(), pathname, surface)
     .map((m) => m.trigger.id)
-    .filter((id) => id !== 'show-first-run-hints' && id !== 'pwa-sign-out')
+    .filter((id) => id !== 'pwa-sign-out')
 const matchingCtx = (selected?: string): DemoTriggerCtx => ({ pathname: '/admin/intake/matching', params: {}, published: selected !== undefined ? { 'matching.selectedRowId': selected } : {} })
 const snapshot = (api: BoundAppStore) => JSON.stringify({ s: api.getState().schedule, p: api.getState().masters.patients })
 const FOSTER = 'BK0043'

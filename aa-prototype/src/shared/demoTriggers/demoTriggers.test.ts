@@ -43,8 +43,8 @@ function ctxFor(pathname: string, params: Record<string, string> = {}, published
   return { pathname, params, published }
 }
 
-/** Catch-up Phase 43a's two app-wide entries (Show first-run hints again; the PWA's Sign out), left out of per-screen lists; `phase43aTriggers.test.ts` covers them. */
-const APP_WIDE_TRIGGERS: ReadonlySet<string> = new Set(['show-first-run-hints', 'pwa-sign-out'])
+/** Catch-up Phase 43a's app-wide entry (the PWA's Sign out), left out of per-screen lists; `phase43aTriggers.test.ts` covers it. */
+const APP_WIDE_TRIGGERS: ReadonlySet<string> = new Set(['pwa-sign-out'])
 
 function ids(api: BoundAppStore, pathname: string, surface: 'bar' | 'pwa' = 'bar', published: Partial<DemoContextValues> = {}) {
   return demoTriggersFor(api.getState(), pathname, surface, published)

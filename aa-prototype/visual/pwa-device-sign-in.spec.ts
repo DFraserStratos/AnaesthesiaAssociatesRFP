@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 /**
  * Catch-up Phase 43a (US-13.5.3, PWA first): a fresh handset. Runs under the
  * `pwa-device` project (iPhone 14 Pro on the PWA server) with empty storage,
- * so the PWA opens on its sign-in screen and the Lists welcome card shows.
+ * so the PWA opens on its sign-in screen.
  * Apart from `pwa-device.spec.ts`, whose tests start signed in.
  */
 
@@ -44,18 +44,8 @@ test('opens on the sign-in screen, pre-filled; the inline messages; Sign in land
   await expect(screen).toHaveCount(0)
   await expect(page).toHaveURL(/\/mobile\/lists$/)
 
-  // The welcome card under the greeting, clear of the insets and above the dock.
-  const card = page.locator('[data-shot="first-run-hint-mobile"]')
-  await expect(card).toBeVisible()
-  const cardBox = (await card.boundingBox())!
-  expect(cardBox.y).toBeGreaterThanOrEqual(44)
-  const tabBar = (await page.getByTestId('mobile-tab-bar').boundingBox())!
-  expect(cardBox.y + cardBox.height).toBeLessThanOrEqual(tabBar.y)
-  await page.screenshot({ path: 'visual/shots/pwa-43a-welcome.png' })
-
-  // The Demo chip on Lists offers both app-wide entries.
+  // The Demo chip on Lists offers the app-wide Sign out.
   await page.locator('[data-shot="pwa-demo-actions"]').click()
-  await expect(page.locator('[data-shot="pwa-demo-action-show-first-run-hints"]')).toBeVisible()
   await expect(page.locator('[data-shot="pwa-demo-action-pwa-sign-out"]')).toBeVisible()
   await page.keyboard.press('Escape')
 

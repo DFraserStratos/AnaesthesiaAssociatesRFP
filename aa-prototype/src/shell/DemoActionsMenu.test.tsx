@@ -18,19 +18,17 @@ describe('DemoActionsMenu', () => {
   })
 
   it('is not rendered on a screen with no entries', () => {
-    // Not an app route: since catch-up Phase 43a every Mobile, Web and Admin screen holds "Show first-run hints again".
     const { container } = renderAt('/demo/catalogue/admin')
     expect(container.innerHTML).toBe('')
   })
 
   it('lists the Billing monitor entries, runs one, and closes on Escape', () => {
     renderAt('/admin/billing')
-    // Ten Billing monitor entries and catch-up Phase 43a's app-wide "Show first-run hints again".
-    const pill = screen.getByRole('button', { name: /Demo actions for this screen, 11/ })
+    const pill = screen.getByRole('button', { name: /Demo actions for this screen, 10/ })
     fireEvent.click(pill)
     const dialog = screen.getByRole('dialog')
     expect(dialog).toBeInTheDocument()
-    for (const label of ['Trigger billing failure', 'Arm handoff failure', 'Simulate Xero outage', 'Restore Xero', 'Run reconciliation poll', 'Run archive job', 'Run the next billing run', 'Stage refund after payout', 'Stage a payment week', 'Stage a bank mismatch', 'Show first-run hints again']) {
+    for (const label of ['Trigger billing failure', 'Arm handoff failure', 'Simulate Xero outage', 'Restore Xero', 'Run reconciliation poll', 'Run archive job', 'Run the next billing run', 'Stage refund after payout', 'Stage a payment week', 'Stage a bank mismatch']) {
       expect(screen.getByText(label)).toBeInTheDocument()
     }
     const row = document.querySelector('[data-shot="demo-action-arm-handoff-fault"]')

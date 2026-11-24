@@ -102,7 +102,7 @@ describe('surfaces and routes', () => {
 
   it('every entry on both surfaces has at least one /mobile route', () => {
     const both = DEMO_TRIGGERS.filter((t) => sameSurfaces(t, ['bar', 'pwa']))
-    for (const id of ['nhi-hub-mode', 'load-multi-procedure-booking', 'feed-changes-primary', 'stage-post-op', 'show-first-run-hints']) {
+    for (const id of ['nhi-hub-mode', 'load-multi-procedure-booking', 'feed-changes-primary', 'stage-post-op']) {
       expect(both.map((t) => t.id), id).toContain(id)
     }
     for (const t of both) expect(t.routes.some((r) => MOBILE.test(r)), t.id).toBe(true)

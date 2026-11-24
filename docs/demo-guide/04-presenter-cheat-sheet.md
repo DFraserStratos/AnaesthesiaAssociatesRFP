@@ -495,7 +495,7 @@ Show it: **Admin → Day view → Demo actions → Load full-scale data → Conf
 
 ### "How will people who are not comfortable with new systems cope?"
 
-One clear action on each screen, and each procedure shown the same way in every app. The info sign beside each heading explains the section, and each app shows a welcome card on first use. Training runs per user group before go-live.
+One clear action on each screen, and each procedure shown the same way in every app. The info sign beside each heading explains the section. Training runs per user group before go-live.
 
 ### "How do anaesthetists sign in?"
 

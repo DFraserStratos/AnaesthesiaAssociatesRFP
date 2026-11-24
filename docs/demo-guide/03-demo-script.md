@@ -27,8 +27,7 @@ The seed keeps:
 5. Optional check: **Admin → Intake** opens on **Matching** with one row waiting (Mere Tipene, Southern Cross, "Waiting for an NHI"), and its **PDF lists** tab holds Mr Okafor's list, received and not yet sent to Matching.
 6. Point at the **Synthetic data only** badge in the top bar. It also sits in the Admin side nav and the web top nav, and the phone's More screen says "All patients, NHIs, Lists and figures are synthetic." Nothing in the prototype is real patient or integration data.
 7. NHIs for the lookup beats (S5 Beat 2): `ZBR4417` Mereana Tipene, `ZBT2253` Lucas Brennan and `ZBX41AL` Ana Fifita (new format) are on the NHI register; `ZBW6638` is valid but not on the register; `ZAA0068` fails its check digit.
-8. After a Reset each app shows a welcome card once: **Welcome to your Lists** on the phone's Lists screen, **Welcome** on the web Dashboard and **The day at a glance** on Admin Day. Select **Got it** on each before the audience arrives, or leave the phone's card to open S1 with. A scenario jump keeps your dismissals; a Reset brings the cards back. **Demo actions → Show first-run hints again** brings them back from any Mobile, Web or Admin screen. That entry stays greyed out, reading "No welcome card has been dismissed", until you have dismissed one.
-9. Help: after a Reset the clock reads 8:00am, so every Help panel says "Closed, opens 8:30am". Press **+1 hour** on the clock before a support beat if you want it open.
+8. Help: after a Reset the clock reads 8:00am, so every Help panel says "Closed, opens 8:30am". Press **+1 hour** on the clock before a support beat if you want it open.
 
 Each scenario on the Control Panel has a **Jump** button. It asks first (**Confirm jump** or **Cancel**), resets to the pristine seed and stages only what that scenario cannot reach from there. S1, S2 and S4 stage nothing ("Reset to the pristine seed; nothing staged."). S3 checks that Dr Souter's two Mon 20 Jul Lists are waiting on Review. S5 stages David Chen's audit trail and authorises Dr Whitaker's Fri 17 Jul List. After a jump the scenario lists its beats, one link per beat ("Beat 2 · Admin Intake" and so on), each with a one-line note of what to do there. A beat whose screen does not exist yet says what it waits for ("Beat 4 · Admin Booking, after Create Booking") and stays greyed out until it does. The links stay on the Control Panel until the next reset, so come back to it between beats (a browser reload clears them). The same jump always gives the same data, so it doubles as recovery.
 
@@ -174,7 +173,7 @@ Then open the **Anaesthetist Mobile App**.
   - On the sign-in screen, press **Sign in**.
 - **Say:** "Dr Souter signs in once on her phone, and it remembers her. How anaesthetists sign in for real is still to be decided, and the screen says so."
 - **Expected:** the sign-in screen reads "Sign in · Your Lists, Bookings and balances, on your phone.", with the email m.souter@aa-associates.example and a password filled in, and a "Provisional" pill: "How anaesthetists sign in (two-step codes, single sign-on, Face ID) is still to be decided. This screen stands in for it." (OQ-83). **Sign in** returns to More, which reads "Signed in as m.souter@aa-associates.example". A wrong email reads "No account with that email. Use the demo account."
-- **Handset:** self-contained. A fresh handset opens on the same sign-in screen; **Sign in** lands on Lists with the welcome card. **Demo sheet → Sign out** signs her out again from any screen.
+- **Handset:** self-contained. A fresh handset opens on the same sign-in screen; **Sign in** lands on Lists. **Demo sheet → Sign out** signs her out again from any screen.
 
 ### Beat 2: Import, then match
 
@@ -350,7 +349,7 @@ Then open the **Anaesthetist Mobile App**.
 - **Worth pointing at:**
   - On No contract · RVG the Price section has a **PRICE $** field and **Save price**: she may type a different price there.
   - **Mark complete** checks three things: a Contract; on an RVG price, the RVG code, both times and the modifiers step, with a reason for each claimed modifier; and a price. A warning never stops it.
-  - The info sign beside each heading opens a short explanation, and the Lists welcome card explains the screen on first use.
+  - The info sign beside each heading opens a short explanation.
 - **Handset:** self-contained, with the same figures. Between **Start now** and **Finish now**, back out to **Lists**, then **More**, and press **+1 hour** (the Booking and List screens have no tab bar). **Submit to office** shows the same sheet.
 
 #### Optional aside: who may type a price
