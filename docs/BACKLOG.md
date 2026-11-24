@@ -106,6 +106,7 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 
 ## UI consistency debt
 
+- Admin page layout: every screen picks its own width (full, 1080, 1180, 1280 left, 1048 centred). Unify on one page frame (fit, fluid, document), a sticky side nav and a shell that fits 1280 wide. Findings and open questions in `docs/admin-layout-audit.md`. L (owner)
 - Shared components still to build: a Breadcrumb (Review and Invoices' hand crumbs), `TextAction` 13px and quiet sizes, an `OptionChip` small size, `IconButton` ARIA passthrough and 22 and 48 sizes, a pill-outline `Button`, a `TotalsBlock` (AA fees `FeeInvoiceDetail`). `shared/ui/`. M
 - The one-component guardrail's allow-list still holds 58 files and 90 styled raw buttons; each component above retires entries. `apps/oneComponentPerJob.test.ts`. M
 - Token drift: 65 inline `=== 1 ?` plurals not using `plural`, 13 `'EEE d MMM'` literals, off-scale font sizes (12.5 x307, 11.5 x79, 13.5 x48), no token for the white-alpha on-ink ladder (41 sites). M
