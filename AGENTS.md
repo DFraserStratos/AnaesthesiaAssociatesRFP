@@ -18,12 +18,13 @@ separate local dev tool and portable skills kit over that catalogue.
 
 ## How to work
 
-- Routine changes (fixes, UI/UX polish, small features): change the app directly, finish green. No
-  progress log. Check `docs/DECISIONS.md` before "fixing" something that looks wrong; open work is in
+- Routine changes (fixes, UI/UX polish, small features): speed first. Change the app in the main
+  checkout on `master`, run the quick checks, commit by path, say where to look. No progress log, no
+  worktrees. Check `docs/DECISIONS.md` before "fixing" something that looks wrong; open work is in
   `docs/BACKLOG.md` (delete a line when you finish it).
-- Every change keeps the catalogue screenshot recipes (`requirements-board/requirements/capture/`,
-  found with `npm --prefix aa-prototype run affected`) and the demo guide (`docs/demo-guide/`) in step
-  for what it changed. Never run the capture, even `--dry`, until the owner has tested and approved.
+- Don't edit the capture recipes (`requirements-board/requirements/capture/`) or the demo guide
+  (`docs/demo-guide/`), and never run the capture, even `--dry`: the owner catches both up with
+  `/sweep` (`docs/SWEEP.md`). Keep `demoGuideSync.test.ts` green.
 - Requirement changes become build-plan phases in `docs/build-plan/` (skills `update-requirements`,
   `update-build-plan`, `run-build-phase`). `docs/archive/` is the finished build's record: read it only
   for history.
@@ -50,9 +51,9 @@ From `aa-prototype/`: `npm run dev` (5173), `npm run dev:pwa` (5174), `npm run b
 `npm run check` (catalogue), `npm run verify:board` (board work).
 
 **Checks, two tiers** (tools in `requirements-board/agent/skills/run-build-phase/tools/`): per change,
-`phase-check.mjs --changed` plus `npm run lint` and the Playwright specs for changed screens; before
-anything lands on `master` (a branch merge, or once at the end of a batch of direct commits), the full
-`phase-check.mjs` plus lint. Board work also `npm run verify:board`.
+`phase-check.mjs --changed` plus `npm run lint`, nothing more; the full `phase-check.mjs` plus lint
+only in a sweep, before a branch merge, at the end of a plan phase, or when the owner asks. Board work
+also `npm run verify:board`.
 
 ## Git
 

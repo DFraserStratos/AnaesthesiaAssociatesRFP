@@ -19,15 +19,16 @@ catch-up (phases 14 to 44, finished November 2026) are complete. The code is the
 app does; the catalogue is the truth about what it should do.
 
 - **Routine work (fixes, UI/UX polish, small features, demo prep):** use the `app-change` skill (a
-  project skill, `.claude/skills/app-change/`, not part of the board kit). Read only the code the
-  change needs, build it, finish green. No progress log, plan page or phase doc.
-- **Every change keeps the screenshots and demo guide in step, in a plan or not.** A version of the
-  demo guide and the catalogue screenshots goes to AA so they can test and approve the app, so they
-  must always match it. For exactly what changed: update the capture recipes (`REQ/capture/recipes/`,
-  found with `npm --prefix aa-prototype run affected`) and the demo guide (`docs/demo-guide/`, incl.
-  `master-demo-guide.html`), then hand over for the owner to test. **Never run the capture, even
-  `--dry`, until the owner has tested and approved;** then capture those recipes and commit code,
-  recipes, images and guide together.
+  project skill, `.claude/skills/app-change/`, not part of the board kit). **Speed matters most:** the
+  owner watches changes live on the dev servers and iterates. Read only the code the change needs,
+  build it, run the quick checks, commit by path, say where to look. No progress log, plan page or
+  phase doc. Work in the main checkout on `master`; no worktrees or branches unless the owner asks.
+- **Screenshots and the demo guide are caught up in a sweep, not per change.** A version of the demo
+  guide (`docs/demo-guide/`, incl. `master-demo-guide.html`) and the catalogue screenshots goes to AA
+  for testing and approvals; the owner brings both in step when they choose with `/sweep`
+  (`.claude/skills/sweep/`; last run in `docs/SWEEP.md`). Routine changes and plan phases don't edit
+  the capture recipes, ATLAS or the demo guide, and **never run the capture, even `--dry`**. Only
+  keep green the tests that read them (`demoGuideSync.test.ts`).
 - **Before "fixing" something that looks wrong,** check `docs/DECISIONS.md`: it lists the prototype's
   settled rulings (things that look like bugs but were chosen on purpose).
 - **Known open work** is in `docs/BACKLOG.md`. Pick from it when asked; delete an item's line when you
@@ -136,13 +137,11 @@ requirement text with this rule.
 - **Checks come in two tiers** (`T` = `requirements-board/agent/skills/run-build-phase/tools/`, run
   from the repo root):
   - **Per change (quick, about a minute):** `node T/phase-check.mjs --changed` (typecheck, the Vitest
-    tests related to uncommitted changes, catalogue check), `npm run lint` in `aa-prototype/`, and the
-    Playwright specs for the screens you changed (`npx playwright test visual/<spec>`). Enough to hand
-    over for testing and to commit on a branch.
-  - **Before anything lands on `master` (full, about 11 minutes):** `node T/phase-check.mjs` (both
-    builds, all of Vitest, verify-board, all Playwright) plus lint, once per batch: when merging a
-    branch, or, for small changes made directly on `master`, once at the end of the batch before its
-    last commit. Plan phases always run the full gate.
+    tests related to uncommitted changes, catalogue check) and `npm run lint` in `aa-prototype/`.
+    That is all a routine change needs before its commit.
+  - **Full gate (about 11 minutes):** `node T/phase-check.mjs` (both builds, all of Vitest,
+    verify-board, all Playwright) plus lint: in every sweep, before merging a branch, at the end of a
+    plan phase, or when the owner asks. Not after routine changes.
 
 ## Design: follow the design files
 
