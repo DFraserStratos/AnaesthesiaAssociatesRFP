@@ -1,6 +1,6 @@
 import { InfoTip } from '../../../shared/help/InfoTip'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Moon, Plus, TriangleAlert } from 'lucide-react'
+import { FoldVertical, Moon, Plus, TriangleAlert, UnfoldVertical } from 'lucide-react'
 import { accent, neutral, semantic, radius, elevation } from '../../../theme/tokens'
 import { AttentionDot } from '../../../shared/warnings/AttentionDot'
 import type { DisplayKey, DraftList } from '../../../domain/types'
@@ -11,7 +11,7 @@ import { useAppStore, useConflictLookups } from '../../../store'
 import { CONFLICT_REASONS } from '../../../domain/conflicts'
 import { blockFill, resolveDisplayStatus, StatusLegend, useLegendKeys, useSlotStatusRecords } from '../../../shared'
 import { Eyebrow } from '../../../shared/ui/Eyebrow'
-import { SlidingSegmentedControl, type SlidingSegmentOption } from '../../../shared/ui'
+import { IconButton } from '../../../shared/ui'
 import { attentionReasons, blockGeometry, DAY_RULER, GRID_GUTTER, hoursOf, rulerEndLabel, rulerFor, rulerLabels, slotSpan, surnameFirst, type Ruler } from '../util'
 import { compareSessions, isOutOfHours } from '../../../domain/outOfHours'
 import { OPEN_OUT_OF_HOURS, OUT_OF_HOURS } from '../../../shared/outOfHoursTerms'
@@ -58,19 +58,14 @@ interface DayGridProps {
   page?: number
   onPage?: (page: number) => void
   /**
-   * Pages of 30, or every anaesthetist in one scrolling list: the choice in the
-   * footer, beside the pager, offered only when there is more than one page.
+   * Pages of 30, or every anaesthetist in one scrolling list: an icon toggle in
+   * the grid's bottom-right corner, offered only when there is more than one page.
    */
   rowMode?: DayRowMode
   onRowMode?: (mode: DayRowMode) => void
 }
 
 export type DayRowMode = 'pages' | 'scroll'
-
-const ROW_MODE_OPTIONS: readonly SlidingSegmentOption<DayRowMode>[] = [
-  { value: 'pages', label: 'Pages' },
-  { value: 'scroll', label: 'Scroll' },
-]
 
 /** The needs-attention amber (the warning token, not the pre-op status hue). */
 const ATTENTION = semantic.warning.solid
@@ -377,22 +372,29 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
             Reset filters
           </button>
         )}
+        {/* The grid's bottom-right corner, only when the day has more anaesthetists than a page:
+            the pager, then the toggle between pages and one scrolling list. */}
+        {pageable && (
+          <div data-shot="day-grid-footer" style={{ marginLeft: 'auto', minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: neutral.mist }}>
+            {paged && onPage !== undefined && (
+              <Pager total={displayedRows.length} size={pageSize} page={page} onPage={onPage} lead="Anaesthetists" shot="day-grid-pager" nested showRange={false} />
+            )}
+            {onRowMode !== undefined && (
+              <IconButton
+                size={32}
+                tone="action"
+                shot="day-grid-row-mode"
+                data-row-mode={rowMode}
+                label={rowMode === 'pages' ? 'Show all anaesthetists in one list' : `Show ${pageSize} anaesthetists a page`}
+                title={rowMode === 'pages' ? 'Show all in one list' : `Show ${pageSize} a page`}
+                onClick={() => onRowMode(rowMode === 'pages' ? 'scroll' : 'pages')}
+              >
+                {rowMode === 'pages' ? <UnfoldVertical size={15} aria-hidden /> : <FoldVertical size={15} aria-hidden />}
+              </IconButton>
+            )}
+          </div>
+        )}
       </div>
-      {/* The row choice and the pager, only when the day has more anaesthetists than a page. */}
-      {pageable && (
-        <div data-shot="day-grid-footer" style={{ flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 44, padding: '0 16px 6px', background: neutral.bg, fontSize: 11, color: neutral.mist }}>
-          {onRowMode !== undefined ? (
-            <SlidingSegmentedControl size="sm" variant="surface" ariaLabel="Show anaesthetists" value={rowMode} options={ROW_MODE_OPTIONS} onSelect={onRowMode} />
-          ) : (
-            <span />
-          )}
-          {paged && onPage !== undefined ? (
-            <Pager total={displayedRows.length} size={pageSize} page={page} onPage={onPage} lead="Anaesthetists" shot="day-grid-pager" nested rangeAt="end" />
-          ) : (
-            <span className="mono" data-day-grid-total style={{ fontVariantNumeric: 'tabular-nums', padding: '6px 0' }}>{`All ${displayedRows.length} anaesthetists`}</span>
-          )}
-        </div>
-      )}
     </div>
   )
 }

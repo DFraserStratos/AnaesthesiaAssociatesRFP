@@ -334,7 +334,7 @@ describe('DayGrid pager (catch-up Phase 43)', () => {
     return { ...utils, onPage }
   }
 
-  it('Scroll shows every anaesthetist in one list, with no pager; Pages goes back', () => {
+  it('the scroll toggle shows every anaesthetist in one list, with no pager; it toggles back to pages', () => {
     const onRowMode = vi.fn()
     const masters = useAppStore.getState().masters
     const anaesthetists = Array.from({ length: 85 }, (_, i) => anaesthetist(`C${i + 1}`, `Dr Col${String(i + 1).padStart(2, '0')} Test`))
@@ -342,8 +342,7 @@ describe('DayGrid pager (catch-up Phase 43)', () => {
     const { container } = render(<DayGrid anaesthetists={anaesthetists} viewsByAnaesthetist={views} masters={masters} warningFlags={new Map()} onSelectSlot={vi.fn()} page={2} onPage={vi.fn()} rowMode="scroll" onRowMode={onRowMode} />)
     expect(container.querySelectorAll('[data-day-grid-row]')).toHaveLength(85)
     expect(container.querySelector('[data-shot="day-grid-pager"]')).toBeNull()
-    expect(screen.getByText('All 85 anaesthetists')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Pages' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Show 30 anaesthetists a page' }))
     expect(onRowMode).toHaveBeenCalledWith('pages')
   })
 
@@ -353,11 +352,11 @@ describe('DayGrid pager (catch-up Phase 43)', () => {
     expect(container.querySelectorAll('[data-day-grid-row]')).toHaveLength(14)
   })
 
-  it('pages 85 rows in three pages of 30, the range beside the buttons', () => {
+  it('pages 85 rows in three pages of 30', () => {
     const { container } = bigGrid(85, 3)
     expect(container.querySelector('[data-shot="day-grid-pager"]')?.getAttribute('data-pages')).toBe('3')
     expect(container.querySelectorAll('[data-day-grid-row]')).toHaveLength(25)
-    expect(screen.getByText('Anaesthetists 61 to 85 of 85')).toBeInTheDocument()
+    expect(container.querySelector('[data-shot="day-grid-pager"]')?.getAttribute('data-page')).toBe('3')
   })
 
   it('a filter narrows before paging and returns to page 1', () => {
