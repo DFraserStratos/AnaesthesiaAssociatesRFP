@@ -17,6 +17,7 @@ import {
   parseDiff,
   parseModule,
   parseRoutes,
+  parseScenarioBeats,
 } from './affected-shots.mjs'
 
 // ---------------------------------------------------------------------------
@@ -185,6 +186,37 @@ export const DEMO_TRIGGERS = [
   },
 ]
 `,
+  'proto/src/apps/demo/demoScenarios.ts': `function ledgerPath(): string {
+  return '/admin/ledger'
+}
+
+function dayPath(state: { today: string }): string {
+  return \`/admin/day/\${state.today}\`
+}
+
+export const DEMO_SCENARIOS = [
+  {
+    id: 'S1',
+    title: 'S1 · Money',
+    stage: () => 1,
+    beats: [
+      { beat: 'the day', label: 'Beat 1 · Admin Day', path: dayPath },
+      {
+        beat: 'the books',
+        label: 'Beat 2 · Mobile Lists',
+        does: 'Demo actions → Do the thing',
+        path: () => '/mobile/lists',
+      },
+      {
+        beat: 'nothing here',
+        label: 'Beat 3 · Admin Ledger',
+        path: () => ledgerPath(),
+      },
+      { beat: 'an extra', label: 'Beat 4 · Admin Booking', path: () => '/admin/day/2026-07-21/bookings/BK1' },
+    ],
+  },
+]
+`,
   'proto/src/theme/global.css': `body {
   margin: 0;
 }
@@ -245,7 +277,7 @@ function fixture() {
     hubs: ['proto/src/store/appStore.ts'],
     dataPrefixes: ['proto/src/store/', 'proto/src/domain/'],
     registry: 'proto/src/shared/demoTriggers/registry.ts',
-    scenarios: 'proto/src/apps/demo/DemoControlPanel.tsx',
+    scenarios: 'proto/src/apps/demo/demoScenarios.ts',
     recipes: 'recipes',
     guide: ['docs/script.md'],
     urlTable: 'docs/script.md',
@@ -431,9 +463,70 @@ test('beats link by URL and by capitalised screen name, not by the plain word', 
   const fx = fixture()
   t.after(fx.cleanup)
   const rep = run(fx, ['proto/src/apps/admin/LedgerScreen.tsx'])
-  assert.deepEqual(rep.beats.map((b) => [b.title, b.strength]), [['Beat 2: the books', 'mention']])
+  // Beat 2 only names the ledger (a mention); Beat 3's text doesn't, but its DEMO_SCENARIOS link lands there
+  assert.deepEqual(rep.beats.map((b) => [b.title, b.strength]), [
+    ['Beat 2: the books', 'mention'],
+    ['Beat 3: nothing here', 'link'],
+  ])
+  assert.ok(rep.beats[1].why.some((w) => w.startsWith('S1 Beat 3 · Admin Ledger links /admin/ledger')))
   const day = run(fx, ['proto/src/apps/admin/DayGrid.tsx'])
   assert.deepEqual(day.beats.map((b) => [b.title, b.strength]), [['Beat 1: the day', 'link']])
+})
+
+test('parseScenarioBeats reads each beat, its line span and the URLs its path links to', () => {
+  const { beats, helpers } = parseScenarioBeats(FILES['proto/src/apps/demo/demoScenarios.ts'])
+  assert.deepEqual(helpers.map((h) => [h.name, h.start, h.end]), [['ledgerPath', 1, 3], ['dayPath', 5, 7]])
+  assert.deepEqual(
+    beats.map((b) => [b.scenario, b.n, b.beat, b.start, b.end, b.urls, b.helpers]),
+    [
+      ['S1', 1, 'the day', 15, 15, ['/admin/day/:x'], ['dayPath']],
+      ['S1', 2, 'the books', 16, 21, ['/mobile/lists'], []],
+      ['S1', 3, 'nothing here', 22, 26, ['/admin/ledger'], ['ledgerPath']],
+      ['S1', 4, 'an extra', 27, 27, ['/admin/day/2026-07-21/bookings/BK1'], []],
+    ],
+  )
+  assert.equal(beats[1].does, 'Demo actions → Do the thing')
+  assert.equal(beats[0].scenarioTitle, 'S1 · Money')
+})
+
+test('DEMO_SCENARIOS links are the primary beat source: a mobile screen reaches the beat whose text never names it', (t) => {
+  const fx = fixture()
+  t.after(fx.cleanup)
+  const rep = run(fx, ['proto/src/apps/mobile/ListsHome.tsx'])
+  const beat2 = rep.beats.find((b) => b.title === 'Beat 2: the books')
+  assert.equal(beat2?.strength, 'link')
+  assert.equal(beat2?.file, 'docs/script.md')
+  assert.ok(beat2.why[0].startsWith('S1 Beat 2 · Mobile Lists links /mobile/lists'))
+})
+
+test('a change inside a beat entry or its path helper marks that beat; elsewhere it is the scenario jump', (t) => {
+  const fx = fixture()
+  t.after(fx.cleanup)
+  const file = 'proto/src/apps/demo/demoScenarios.ts'
+  const entry = run(fx, [{ path: file, ranges: [[24, 24]] }])
+  assert.deepEqual(entry.beats.map((b) => b.title), ['Beat 3: nothing here'])
+  assert.ok(entry.beats[0].why.includes('S1 Beat 3 · Admin Ledger: its DEMO_SCENARIOS entry changed'))
+  const helper = run(fx, [{ path: file, ranges: [[2, 2]] }])
+  assert.ok(helper.beats.find((b) => b.title === 'Beat 3: nothing here')?.why.includes('S1 Beat 3 · Admin Ledger: its link helper ledgerPath changed'))
+  assert.ok(!helper.beats.some((b) => b.title === 'Beat 1: the day'))
+  const jump = run(fx, [{ path: file, ranges: [[12, 12]] }])
+  assert.deepEqual(jump.beats.map((b) => [b.title, b.why]), [['S1 · Money', ['scenario S1 jump changed']]])
+})
+
+test('a scenario beat with no guide heading is reported at its DEMO_SCENARIOS entry', (t) => {
+  const fx = fixture()
+  t.after(fx.cleanup)
+  const rep = run(fx, [{ path: 'proto/src/apps/admin/routes.tsx', ranges: [[9, 11]] }])
+  const extra = rep.beats.find((b) => b.title === 'Beat 4: an extra')
+  assert.deepEqual([extra?.file, extra?.line, extra?.section, extra?.strength], ['proto/src/apps/demo/demoScenarios.ts', 27, 'S1 · Money', 'link'])
+})
+
+test("a demo action named on a beat's does line marks the beat", (t) => {
+  const fx = fixture()
+  t.after(fx.cleanup)
+  const rep = run(fx, [{ path: 'proto/src/shared/demoTriggers/registry.ts', ranges: [[8, 8]] }])
+  assert.deepEqual(rep.triggers.map((x) => x.id), ['do-thing'])
+  assert.ok(rep.beats.find((b) => b.title === 'Beat 2: the books')?.why.some((w) => w.startsWith('S1 Beat 2 · Mobile Lists presses demo action "Do the thing"')))
 })
 
 test('tests and files outside src are ignored; absent recipes never match', (t) => {
@@ -470,6 +563,11 @@ test('smoke: the real prototype parses cleanly and a screen change maps to its r
   assert.ok(rep.recipes.length > 0 && rep.recipes.length < 20, `${rep.recipes.length} recipes`)
   assert.ok(rep.recipes.every((r) => r.reasons.length > 0))
   assert.ok(rep.beats.some((b) => b.strength === 'link'))
+  // every DEMO_SCENARIOS beat yields a link, and Admin Ledger is S3 Beat 7's
+  const { beats } = parseScenarioBeats(provider.read(DEFAULT_CONFIG.scenarios))
+  assert.deepEqual([...new Set(beats.map((b) => b.scenario))], ['S1', 'S2', 'S3', 'S4', 'S5'])
+  assert.deepEqual(beats.filter((b) => b.urls.length === 0).map((b) => `${b.scenario} ${b.label}`), [])
+  assert.ok(rep.beats.some((b) => b.section.startsWith('S3') && b.title.startsWith('Beat 7') && b.why.some((w) => w.startsWith('S3 Beat 7 · Admin Ledger links /admin/ledger'))))
   // the mobile booking screen reaches mobile booking shots, not the Lists home
   const mob = analyse({ provider, changes: [{ path: 'aa-prototype/src/apps/mobile/screens/BookingDetailScreen.tsx', status: 'M', ranges: null, text: [] }] })
   const mobImages = mob.recipes.flatMap((r) => r.images).filter((i) => i.startsWith('mobile-'))

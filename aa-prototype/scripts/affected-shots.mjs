@@ -37,9 +37,15 @@
  *    params beat splats); by its selectors (`data-shot`, `data-testid` values in highlights and
  *    steps) against the hooks rendered by affected chunks; and by its `trigger` steps against the
  *    demo actions whose registry entries changed or call changed code.
- * 6. Demo beats (`###` sections of docs/demo-guide/03-demo-script.md and the cheat sheet) are
- *    matched by URLs written in the beat, by screen names from the script's "Direct URLs" table and
- *    the trigger registry's `screen` headings, by demo action labels, and by scenario jump changes.
+ * 6. Demo beats come first from `DEMO_SCENARIOS` (src/apps/demo/demoScenarios.ts): each S1 to S5 beat
+ *    carries a deep link, read statically here (a `path` literal or template, or the URL in a path
+ *    helper it calls), so a beat is affected when its link lands on an affected screen or its entry
+ *    (or a helper it calls) changed. Scenario beat N is reported at "### Beat N" under the guide's
+ *    "## Sn" section, or at its line in demoScenarios.ts when the guide has no such heading. As a
+ *    fallback for everything else (asides, the cheat sheet), `###` sections of
+ *    docs/demo-guide/03-demo-script.md and the cheat sheet are matched by URLs written in the beat, by
+ *    screen names from the script's "Direct URLs" table and the trigger registry's `screen` headings,
+ *    by demo action labels, and by scenario jump changes outside the beats.
  *
  * Known blind spots (see also the --help text):
  * - Screens reached only by clicking (a recipe that starts on Day and clicks into a sheet) are found
@@ -90,7 +96,8 @@ export const DEFAULT_CONFIG = {
   hubs: ['aa-prototype/src/store/appStore.ts'],
   dataPrefixes: ['aa-prototype/src/store/', 'aa-prototype/src/domain/'],
   registry: 'aa-prototype/src/shared/demoTriggers/registry.ts',
-  scenarios: 'aa-prototype/src/apps/demo/DemoControlPanel.tsx',
+  /** DEMO_SCENARIOS: the S1 to S5 jumps and each beat's deep link, the primary beat source. */
+  scenarios: 'aa-prototype/src/apps/demo/demoScenarios.ts',
   recipes: 'requirements-board/requirements/capture/recipes',
   /** recipe `app` → route table target */
   appTargets: { admin: 'framed', web: 'framed', simulator: 'framed', mobile: 'pwa' },
@@ -981,6 +988,92 @@ export function screenPhrases(urlTableSrc, triggers) {
   return phrases
 }
 
+/** App URLs in a piece of source: string literals and templates (`${...}` read as a `:x` param). */
+function urlsInSource(text) {
+  const out = new Set()
+  for (const m of text.matchAll(/(['"`])(\/(?:admin|web|mobile|demo)(?:(?!\1)[^\n])*)\1/g)) {
+    // the query stays: a `?view=` switch narrows the screen
+    out.add(m[2].replace(/\$\{[^}]*\}/g, ':x'))
+  }
+  return out
+}
+
+/**
+ * The beats of `DEMO_SCENARIOS` (demoScenarios.ts), read statically: per beat its scenario, number,
+ * run-sheet name, label, line span and the URL patterns its `path` can link to (literals in the path,
+ * plus the URLs of the module's top-level path helpers it calls, followed transitively). Helper line
+ * spans are returned too, so a change to a helper marks the beats that call it.
+ */
+export function parseScenarioBeats(src) {
+  const lines = (src ?? '').split('\n')
+  // top-level helpers: `function name(` at column 0 (optionally exported) up to the next `}` at column 0
+  const helpers = new Map()
+  lines.forEach((l, i) => {
+    const m = /^(?:export\s+)?function\s+(\w+)\s*\(/.exec(l)
+    if (!m) return
+    let end = i
+    while (end < lines.length - 1 && !/^}/.test(lines[end])) end++
+    const text = lines.slice(i, end + 1).join('\n')
+    helpers.set(m[1], { name: m[1], start: i + 1, end: end + 1, text, urls: urlsInSource(text) })
+  })
+  // a call (`reviewPath(s, id)`) or a bare reference (`path: adminDayPath`)
+  const helperRe = (name) => new RegExp(`(?<![\\w.])${name}(?![\\w])`)
+  const helperUrls = (text, seen = new Set()) => {
+    const out = new Set(urlsInSource(text))
+    const used = []
+    for (const h of helpers.values()) {
+      if (seen.has(h.name) || !helperRe(h.name).test(text)) continue
+      seen.add(h.name)
+      used.push(h.name)
+      const inner = helperUrls(h.text.split('\n').slice(1).join('\n'), seen)
+      for (const u of inner.urls) out.add(u)
+      used.push(...inner.used)
+    }
+    return { urls: out, used }
+  }
+  const startAt = lines.findIndex((l) => /DEMO_SCENARIOS\b.*=\s*\[/.test(l))
+  const beats = []
+  if (startAt < 0) return { beats, helpers: [...helpers.values()] }
+  let scenario = null
+  let scenarioTitle = ''
+  let inBeats = false
+  let n = 0
+  const str = (l, key) => new RegExp(`\\b${key}:\\s*(['"\`])((?:\\\\.|(?!\\1).)*)\\1`).exec(l)?.[2]
+  for (let i = startAt + 1; i < lines.length; i++) {
+    const l = lines[i]
+    const id = /^\s*id:\s*'(S\d)'/.exec(l)?.[1]
+    if (id) {
+      scenario = id
+      scenarioTitle = id
+      inBeats = false
+      n = 0
+      continue
+    }
+    const title = str(l, 'title')
+    if (title && scenario && !inBeats) scenarioTitle = title
+    if (/^\s*beats:\s*\[/.test(l)) {
+      inBeats = true
+      continue
+    }
+    if (inBeats && /^\s*\],?\s*$/.test(l)) {
+      inBeats = false
+      continue
+    }
+    const beat = inBeats ? str(l, 'beat') : undefined
+    if (beat === undefined || !scenario) continue
+    const start = /^\s*\{\s*$/.test(lines[i - 1]) ? i : i + 1
+    let end = i
+    // the entry runs to the line before the next entry or the close of the beats array
+    while (end + 1 < lines.length && !/^\s*(\{|\],?\s*$)/.test(lines[end + 1])) end++
+    const text = lines.slice(start - 1, end + 1).join('\n')
+    const pathAt = text.search(/\bpath:/)
+    const { urls, used } = helperUrls(pathAt >= 0 ? text.slice(pathAt) : '')
+    n++
+    beats.push({ scenario, scenarioTitle, n, beat, label: str(text, 'label') ?? beat, does: str(text, 'does') ?? '', start, end: end + 1, urls: [...urls], helpers: used })
+  }
+  return { beats, helpers: [...helpers.values()] }
+}
+
 /** `###` beats (and `##` sections) of a guide file, with the URLs and phrases each mentions. */
 export function parseBeats(file, src, phrases) {
   const lines = (src ?? '').split('\n')
@@ -1576,24 +1669,59 @@ export function analyse({ provider, changes, config = DEFAULT_CONFIG }) {
   const phrases = screenPhrases(provider.read(config.urlTable), triggers)
   const scenarioChange = new Set()
   const scChange = changes.find((c) => c.path === config.scenarios)
+  const scenarioSrc = provider.read(config.scenarios) ?? ''
+  const scenarioParse = parseScenarioBeats(scenarioSrc)
+  // Primary source: each DEMO_SCENARIOS beat's deep link. Key `Sn#N` → why[].
+  const scenarioHits = new Map()
+  const overlaps = (ranges, a, b) => (ranges ?? []).some(([x, y]) => x <= b && y >= a)
+  const changedHelpers = new Set(
+    scChange ? scenarioParse.helpers.filter((h) => !scChange.ranges || overlaps(scChange.ranges, h.start, h.end)).map((h) => h.name) : [],
+  )
+  for (const sb of scenarioParse.beats) {
+    const why = []
+    const name = `${sb.scenario} ${sb.label}`
+    if (scChange && (!scChange.ranges || overlaps(scChange.ranges, sb.start, sb.end))) why.push(`${name}: its DEMO_SCENARIOS entry changed`)
+    for (const h of sb.helpers) if (changedHelpers.has(h) && scChange?.ranges) why.push(`${name}: its link helper ${h} changed`)
+    const does = sb.does.toLowerCase()
+    for (const t of report.triggers) if (t.label && does.includes(t.label.toLowerCase())) why.push(`${name} presses demo action "${t.label}" (${t.why})`)
+    for (const u of sb.urls) {
+      for (const target of u.startsWith('/mobile') ? ['framed', 'pwa'] : ['framed']) {
+        const h = visitHit(target, u)
+        if (h) {
+          why.push(`${name} links ${u}${target === 'pwa' ? ' (PWA)' : ''} ← ${h.chain[0]}`)
+          break
+        }
+      }
+    }
+    if (why.length) scenarioHits.set(`${sb.scenario}#${sb.n}`, { sb, why: [...new Set(why)] })
+  }
   if (scChange) {
-    const src = provider.read(config.scenarios) ?? ''
-    const lines = src.split('\n')
+    const lines = scenarioSrc.split('\n')
     const marks = []
     lines.forEach((l, i) => {
       const m = /^\s*id:\s*'(S\d)'/.exec(l)
       if (m) marks.push({ id: m[1], line: i + 1 })
     })
-    for (const [a] of scChange.ranges ?? []) {
+    const inBeat = (a, b) => scenarioParse.beats.some((sb) => sb.start <= b && sb.end >= a)
+    for (const [a, b] of scChange.ranges ?? []) {
+      // a change inside a beat entry is that beat's (above); the rest of a scenario is its jump
+      if (inBeat(a, b)) continue
       const before = marks.filter((mk) => mk.line <= a + 2).pop()
       const next = marks.find((mk) => mk.line > a + 2)
       if (before && (next || a < lines.length) && a - before.line < 60) scenarioChange.add(before.id)
     }
   }
+  const usedScenarioHits = new Set()
   const affectedLabels = report.triggers.filter((t) => t.label).map((t) => ({ ...t, lower: t.label.toLowerCase() }))
   for (const gf of config.guide) {
     for (const b of parseBeats(gf, provider.read(gf), phrases)) {
       const why = []
+      const beatNo = b.level === 3 && b.scenario ? /^Beat (\d+)\b/.exec(b.title)?.[1] : undefined
+      const linked = beatNo ? scenarioHits.get(`${b.scenario}#${beatNo}`) : undefined
+      if (linked) {
+        why.push(...linked.why)
+        usedScenarioHits.add(`${b.scenario}#${beatNo}`)
+      }
       if (b.level === 2 && b.scenario && scenarioChange.has(b.scenario)) why.push(`scenario ${b.scenario} jump changed`)
       for (const u of b.urls) {
         for (const target of ['framed']) {
@@ -1612,6 +1740,11 @@ export function analyse({ provider, changes, config = DEFAULT_CONFIG }) {
         report.beats.push({ file: b.file, line: b.line, title: b.title, section: b.section, strength: strong ? 'link' : 'mention', why: [...new Set(why)] })
       }
     }
+  }
+  // a scenario beat the guide has no heading for is still reported, at its entry
+  for (const [key, { sb, why }] of scenarioHits) {
+    if (usedScenarioHits.has(key)) continue
+    report.beats.push({ file: config.scenarios, line: sb.start, title: `Beat ${sb.n}: ${sb.beat}`, section: sb.scenarioTitle, strength: 'link', why })
   }
 
   // ---- totals and broadness ------------------------------------------------------
