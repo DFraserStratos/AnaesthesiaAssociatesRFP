@@ -103,6 +103,8 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
   )
   const shownTargets = targets.filter((t) => matchesNameQuery(t.name, query))
 
+  const prepaidOnList = useAppStore((s) => listHasSentPrepayment(s, listId))
+
   if (list === undefined) return null
 
   const dayLine = `${shortDay(list.dateISO)} · ${sessionText(list.session)}`
@@ -112,7 +114,6 @@ export function MoveListSheet({ open, actor, listId, toSlotId, unavailable, prog
   const bookingWord = plural(bookingCount, 'Booking')
   const colleague = targetSlotId !== undefined ? anaesthetists[slots[targetSlotId]?.anaesthetistId ?? ''] : undefined
   const colleagueShort = colleague !== undefined ? drSurname(colleague.name) : 'Your colleague'
-  const prepaidOnList = useAppStore((s) => listHasSentPrepayment(s, listId))
 
   const unavailableLabel = unavailable !== undefined ? resolveDisplayStatus(unavailable.statusKey, statuses).label : ''
 

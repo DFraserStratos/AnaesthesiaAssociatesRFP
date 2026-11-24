@@ -400,6 +400,9 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
   const addRailContext = useMemo(() => (list !== undefined ? railContextForList({ masters }, list, booking) : undefined), [masters, list, booking])
   const { start: addRailStart } = startForAddedProcedure(railMastersOf({ masters }), addRailContext, railActorOf(actor), procedures)
 
+  // In the Admin draft (catch-up Phase 35) the notes and time write to the draft as typed; Save changes saves them.
+  const draftMode = useBookingStoreMode() === 'draft'
+
   if (booking === undefined || list === undefined) return null
   const patient = masters.patients[booking.patientId]
   // The store's editRefusal decides, so the UI never offers an action the guard
@@ -433,8 +436,6 @@ export function BookingDetailBody({ bookingId, actor, onBack, header, officeLink
     run(editBooking(bookingApi, actor, bookingId, { scheduledTime: shiftTime(booking!.scheduledTime ?? '', delta) }))
   }
 
-  // In the Admin draft (catch-up Phase 35) the notes and time write to the draft as typed; Save changes saves them.
-  const draftMode = useBookingStoreMode() === 'draft'
   // Empty text is no notes (undefined), so typing then deleting leaves the draft clean.
   const notesValue = (text: string): string | undefined => (text === '' ? undefined : text)
   function changeNotes(text: string) {

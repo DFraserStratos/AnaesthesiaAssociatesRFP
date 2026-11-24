@@ -484,6 +484,40 @@ describe('app copy (src and pwa, tests left out)', () => {
   })
 })
 
+// The two HTML entries (the framed prototype and the PWA) carry copy too: the
+// browser-tab title and the install metadata. Comments are stripped; an
+// entity (&ndash; or &mdash;) counts as its dash.
+const HTML_ENTRIES = import.meta.glob(['../index.html', '../pwa/index.html'], {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>
+
+function htmlDashLines(html: string): string[] {
+  const visible = html.replace(/<!--[\s\S]*?-->/g, (c) => c.replace(/[^\n]/g, ' '))
+  return visible
+    .split('\n')
+    .map((line, i) => ({ line: i + 1, text: line.replace(/&(ndash|mdash);/g, (e) => ENTITIES[e] ?? e) }))
+    .filter((l) => DASH.test(l.text))
+    .map((l) => `${l.line}: ${l.text.trim()}`)
+}
+
+describe('HTML entries (index.html and pwa/index.html)', () => {
+  it('reads both entries', () => {
+    expect(Object.keys(HTML_ENTRIES).sort()).toEqual(['../index.html', '../pwa/index.html'])
+  })
+
+  it.each(Object.entries(HTML_ENTRIES))('%s has no en or em dash outside comments', (_key, html) => {
+    expect(htmlDashLines(html)).toEqual([])
+  })
+
+  it('catches a dash or its entity, and ignores one in a comment', () => {
+    expect(htmlDashLines('<title>A — B</title>')).toHaveLength(1)
+    expect(htmlDashLines('<title>A &ndash; B</title>')).toHaveLength(1)
+    expect(htmlDashLines('<!-- a — b\n c – d -->\n<title>A · B</title>')).toEqual([])
+  })
+})
+
 describe('the allowlist and the must-keep list', () => {
   it('every allowlist entry still matches, has a reason, and names no answered question', () => {
     for (const a of ALLOWLIST) {
