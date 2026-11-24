@@ -133,8 +133,16 @@ requirement text with this rule.
   owner's say.
 - **Tests**: colocated `*.test.ts(x)` for changed behaviour, especially domain, billing, lifecycle and
   store invariants. Playwright specs in `visual/` are a review aid (`npm run shots`).
-- **Finish green:** `npm run build`, `npm run build:pwa`, `npx vitest run` and `npm run lint` (in
-  `aa-prototype/`) all pass before handing work back.
+- **Checks come in two tiers** (`T` = `requirements-board/agent/skills/run-build-phase/tools/`, run
+  from the repo root):
+  - **Per change (quick, about a minute):** `node T/phase-check.mjs --changed` (typecheck, the Vitest
+    tests related to uncommitted changes, catalogue check), `npm run lint` in `aa-prototype/`, and the
+    Playwright specs for the screens you changed (`npx playwright test visual/<spec>`). Enough to hand
+    over for testing and to commit on a branch.
+  - **Before anything lands on `master` (full, about 11 minutes):** `node T/phase-check.mjs` (both
+    builds, all of Vitest, verify-board, all Playwright) plus lint, once per batch: when merging a
+    branch, or, for small changes made directly on `master`, once at the end of the batch before its
+    last commit. Plan phases always run the full gate.
 
 ## Design: follow the design files
 
