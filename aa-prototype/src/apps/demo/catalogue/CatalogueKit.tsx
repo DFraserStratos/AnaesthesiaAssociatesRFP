@@ -8,7 +8,7 @@ import { accent, neutral, radius } from '../../../theme/tokens'
  * One page per app shows every hand-built component LIVE, one component per
  * row, grouped by component family. Each row names the shared component it is,
  * or is built on, in src/ (or says it stays custom), so the page documents the
- * shared kit (src/shared/ui/README.md, docs/ui-unification/). Not product UI.
+ * shared kit (src/shared/ui/README.md, docs/archive/ui-unification/). Not product UI.
  */
 
 /** The component families, in the order every page lists them. */
@@ -203,7 +203,7 @@ export interface CatalogueRowProps {
 
 /**
  * One component per row: live example, name, what it does, shared component.
- * The stage stays the row's first child: the shots (docs/ui-unification/shots)
+ * The stage stays the row's first child: the shots (docs/archive/ui-unification/shots)
  * capture it by that position.
  */
 export function CatalogueRow({ name, source, usedIn, what, shared, note, stage = 'web', height, children }: CatalogueRowProps) {

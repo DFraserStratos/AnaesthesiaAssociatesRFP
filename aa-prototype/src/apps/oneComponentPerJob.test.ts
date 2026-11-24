@@ -1,6 +1,6 @@
 /**
  * One component per job: the guardrail (UI unification Phase U7; CLAUDE.md "One component per job";
- * docs/ui-unification/README.md section 8). A source scan in the style of `pwa/pwaPurity.test.ts`: a
+ * docs/archive/ui-unification/README.md section 8). A source scan in the style of `pwa/pwaPurity.test.ts`: a
  * scanner good enough for this codebase, not a general one.
  *
  * It reads every `.tsx` under `src/apps/` and `src/shared/` (test files skipped) and fails on:
@@ -58,7 +58,7 @@ const DEMO_SCOPE = 'apps/demo/'
 /**
  * Files still allowed a raw styled `<button>`, each with its exact count and why. Starts with the stays-custom
  * surfaces that still hold one (DayGrid; the invoice document and SlideStack hold none since U5), then the sites
- * U7's sweep left with a written reason (docs/ui-unification/RESULTS.md). The count is exact: one more styled
+ * U7's sweep left with a written reason (docs/archive/ui-unification/RESULTS.md). The count is exact: one more styled
  * button in a listed file fails, and one fewer fails until the count comes down. NEVER ADD: extend a shared
  * component instead.
  */

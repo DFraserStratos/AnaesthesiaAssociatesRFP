@@ -205,7 +205,7 @@ const routeTree = (
             <Route path="mapping" element={<FutureScopeFeedMapping />} />
           </Route>
           <Route path="demo/data" element={<DemoData />} />
-          {/* UI component catalogue (docs/ui-library-research): URL only, not in the app switcher. */}
+          {/* UI component catalogue (demo only; docs/archive/ui-unification/): URL only, not in the app switcher. */}
           <Route path="demo/catalogue" element={<Navigate to="/demo/catalogue/admin" replace />} />
           <Route path="demo/catalogue/:app" element={<ComponentCatalogue />} />
           <Route path="*" element={<RootRedirect />} />

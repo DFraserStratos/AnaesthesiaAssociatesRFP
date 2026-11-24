@@ -1,8 +1,9 @@
 # Shared UI: one component per job
 
 Written in UI unification Phase U1 (16 November 2026); final after U7 (23 November 2026). The audit behind it is
-`docs/ui-unification/README.md` (what was built twice, and why some differences stay); the phased plan
-is `docs/ui-unification/PLAN.md`. Each later U phase adds its rows to the table below as it lands.
+`docs/archive/ui-unification/README.md` (what was built twice, and why some differences stay); the phased
+plan, now archived, is `docs/archive/ui-unification/PLAN.md`. Keep the table below in step when a shared
+component is added, renamed or removed.
 
 ## Where shared UI lives
 
@@ -157,5 +158,5 @@ extend the shared component with a variant (above) and migrate the site.
 
 The live catalogue (`/demo/catalogue/admin|web|mobile`) is grouped by family; each row's last column names
 its shared component's file (or "Stays custom" or "Demo only"), and its three tests check every named file
-exists. A component's catalogue row carries its name; `docs/ui-unification/RESULTS.md` maps the rows renamed
+exists. A component's catalogue row carries its name; `docs/archive/ui-unification/RESULTS.md` maps the rows renamed
 since the 12 November audit.

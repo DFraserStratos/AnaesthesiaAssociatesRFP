@@ -23,7 +23,14 @@ npm run test      # unit + component tests (Vitest)
 npm run shots     # Playwright specs / screenshots (visual aid, boots the dev server)
 npm run lint      # oxlint
 npm run preview   # preview the production build
+npm run rvg:modifiers  # regenerate src/domain/seed/rvgModifiers.generated.ts from the catalogue's RVG files
+npm run affected  # which capture recipes and demo beats a change touches (working tree vs HEAD; -- --base <ref>)
+npm run test:affected  # the affected-shots script's own tests (node --test)
 ```
+
+From the repo root, `npm run setup` installs every folder and `npm run dev` starts this dev server,
+the PWA (5174) and the Requirements Board (5180) together; only that launch shows the harness bar's
+link to the board.
 
 The second build target — the Anaesthetist Mobile App on its own, as an installable PWA — has its
 own three scripts plus the icon generator. See [the PWA section](#second-build-target--the-installable-pwa).
@@ -36,8 +43,11 @@ npm run icons        # re-rasterise the app icons into public/ (run by hand, out
 ```
 
 Requires **Node 20.19 or newer** — `engines` in `package.json` carries the exact range,
-`^20.19.0 || ^22.13.0 || >=24.0.0`: Vite 8 and oxlint set the 20.19 floor, and jsdom rules out 22.12
-and the odd-numbered majors.
+`^20.19.0 || ^22.12.0 || >=24.0.0`: Vite 8 and oxlint set the 20.19 and 22.12 floors, and Vitest rules
+out Node 23. jsdom, which only the tests load, asks for 22.13 or newer on the 22 line.
+
+**Ports:** 5173 for the framed prototype and 5174 for the PWA. `AA_PROTO_PORT` and `AA_PWA_PORT` move
+them (for a second checkout or worktree); a moved port is strict, and Playwright follows both.
 
 Once running, use the app-switcher (top right) to move between the three apps and the demo surfaces.
 The demo control panel (`Demo: Control Panel`, `/demo/control`,
@@ -223,7 +233,10 @@ Contract holder) and one surgeon. Draft Lists never reach the mobile, web or PWA
   amendment check in `divergence.ts`); `billing/reconciliation.ts` derives the reconciliation status.
   `domain/xeroSim/` simulates Xero's own bank reconciliation and remittance add-on: **the engine never
   imports it** (only `store/xeroSimActions.ts` and the Xero simulator UI may; `xeroSim/scopeFence.test.ts`
-  fails otherwise), because bulk remittance matching stays in Xero (US-10.2.4).
+  fails otherwise), because bulk remittance matching stays in Xero (US-10.2.4). Smaller pure modules sit in
+  their own folders: `intake/` (the rooms' PDF lists), `lists/` (where a List came from),
+  `masterLoad/` (bulk master-data loads), `nhiRegister/`, `patients/`, `privacy/` and `warnings/` (the
+  one warnings routine).
 - **`store/`** — the one Zustand store: the audit-writing `mutate()` wrapper, lifecycle guards,
   Slot and List actions (`slotActions.ts`: assign, move and reassign, availability, session
   times, default times, the horizon, cover markers, and the Draft List internals), the Draft List
@@ -244,20 +257,28 @@ Contract holder) and one surgeon. Draft Lists never reach the mobile, web or PWA
   that context; `routes.tsx` holds one thin wrapper per screen, mapping URL params to props and the
   screens' `onBack` / `onOpen…` callbacks to `navigate()`. Screens themselves know nothing about
   routing. Mobile adds `navigation.ts` (the Lists slide-stack depth derived from the URL).
-- **`apps/demo/`** — demo-only surfaces: the control panel (the demo-action index), the Xero +
-  billing-monitor simulator, Future scope: HL7 and FHIR (the integration simulator, its message log and
-  feed mapping, `futureScope/`), and the seed-data inspector.
+- **`apps/demo/`** — demo-only surfaces: the control panel (the demo-action index) and its scenario
+  jumps (`demoScenarios.ts`), the Xero + billing-monitor simulator, Future scope: HL7 and FHIR (the
+  integration simulator, its message log and feed mapping, `futureScope/`), the seed-data inspector, and
+  the component catalogue (`catalogue/`, served at `/demo/catalogue/admin|web|mobile`, URL only: every
+  hand-built component, one row each, grouped by family).
 - **`shared/`** — cross-app components (the capture suite, `booking/BookingDetailBody`, the
   procedure stack `booking/ProcedureStack`, schedule rows, flows, status chips, the legacy
   `/cards/` link redirect in `legacy/`, `format.ts` for NZ number/currency/date output,
-  `scheduleTerms.ts`: every Draft List word, in one place). **Shared UI** (`shared/ui/`,
-  `shared/surface/`, `shared/calendar/`): one component per job; read
+  `scheduleTerms.ts`: every Draft List word, in one place). Other `shared/` folders by job:
+  `audit/` (history labels), `availability/`, `billing/`, `capture/`, `contracts/`, `demoTriggers/`
+  (the demo-action registry), `flows/` (sheets that run one command), `help/`, `nhiHub/`, `notes/`,
+  `patients/`, `profile/`, `scale/`, `schedule/`, `session/`, `status/`, `stubs/`, `support/` and
+  `warnings/`. **Shared UI** (`shared/ui/`,
+  `shared/surface/`, `shared/table/`, `shared/calendar/`): one component per job; read
   [`src/shared/ui/README.md`](src/shared/ui/README.md) before adding a button, pill, field or sheet, and
   for how to add a variant.
-- **`shell/`** — the app switcher, harness bar, phone frame, app registry, and the routing guards
+- **`shell/`** — the app switcher, harness bar, phone frame, app registry (`appConfig.ts`), the Gradient
+  Lab (`gradientLab/`), and the routing guards
   (`RequireEntity.tsx` for stale entity ids, `routeParams.ts` for untrusted date params).
 - **`theme/`** — the design tokens (`tokens.ts`, `statusColours.ts`, `motion.ts`) transcribed from the
-  design mockups, mirrored into `global.css`'s `@theme`.
+  design mockups, mirrored into `global.css`'s `@theme`; the mobile atmosphere (`mobileGradient.ts`),
+  the Gradient Lab's flag (`gradientLabGate.ts`) and the phone's haptics (`haptics.ts`).
 - **`pwa/`** — the modules that exist only for the second build target: the `MobileViewport`
   host, the update pill and its registration handle, the More-tab presenter panel, the handset's
   Demo chip and sheet (`PwaDemoActions`), the install coach and the entry-time
@@ -280,26 +301,27 @@ entry (`pwa/main.tsx`), and the `vite-plugin-pwa` plugin. `root: 'pwa'` brings f
 `outDir` outside it, and the `server.fs.allow` that deliberately needs no change. Each is commented
 where it sits in that file.
 
-Of the 163 modules `pwa/main.tsx` pulls in, **139 are shared** with the prototype — the whole store,
-the whole domain, the BTM capture suite, `BookingDetailBody`, the sheets, the theme — **14 are the
-mobile app itself** (`src/apps/mobile/`), and **10 exist only for this target** (`pwa/main.tsx` plus
-the nine files in `src/pwa/`). One omission carries the entire difference: the PWA entry never
+Of the roughly 590 source modules `pwa/main.tsx` pulls in, **about 560 are shared** with the
+prototype — the whole store, the whole domain, the BTM capture suite, `BookingDetailBody`, the sheets,
+the theme — **20 are the mobile app itself** (`src/apps/mobile/`), and **12 exist only for this
+target** (`pwa/main.tsx` plus the 11 non-test files in `src/pwa/`). Counted 24 November 2026; they
+drift. One omission carries the entire difference: the PWA entry never
 renders `AppShell`, and with it go the app switcher, the two web apps, the admin app, the four demo
 surfaces, `PhoneFrame` and the Gradient Lab.
 
 | Target | Build | Output | Entry chunk |
 | --- | --- | --- | --- |
-| All three apps, framed | `npm run build` | `dist/` | 889.18 kB raw · 235.63 kB gzip |
-| Mobile app only, installable | `npm run build:pwa` | `dist-pwa/` | 552.11 kB raw · 158.64 kB gzip |
+| All three apps, framed | `npm run build` | `dist/` | 3,245.60 kB raw · 884.94 kB gzip |
+| Mobile app only, installable | `npm run build:pwa` | `dist-pwa/` | 1,737.96 kB raw · 495.40 kB gzip |
 
 Those are `vite build`'s own figures for the single entry chunk on the tree as it stands — measure
-again rather than trusting them, they drift. The 17.22 kB stylesheet is byte-identical in both; the
-PWA adds a 5.65 kB Workbox shim and a service worker precaching **17 distinct URLs (729.7 KiB)**,
-which is what makes it work offline.
+again rather than trusting them, they drift (measured 24 November 2026). The 20.67 kB stylesheet is
+byte-identical in both; the PWA adds a 5.65 kB Workbox shim and a service worker precaching **18
+distinct URLs (about 1,897 KiB)**, which is what makes it work offline.
 
-`dist-pwa/sw.js` lists 22 entries rather than 17, and that is not a miscount: `includeManifestIcons`
+`dist-pwa/sw.js` lists 23 entries rather than 18, and that is not a miscount: `includeManifestIcons`
 and `globPatterns` both match the four icons and `manifest.webmanifest`, so those five appear twice
-(757.6 KiB across the 22 as listed). The duplicates are inert — Workbox throws only when two entries
+(1,924.7 KiB across the 23 as listed). The duplicates are inert — Workbox throws only when two entries
 for one URL carry *conflicting* revisions, and each of these pairs carries the identical revision.
 
 The saving is invisible and easy to lose: nothing about adding `import { x } from '../../shared'` to
@@ -310,7 +332,7 @@ the Gradient Lab. It runs with `npm run test`.
 
 ### Ports and shared assets
 
-The PWA dev server is on **5174** with `strictPort`, because Playwright's `webServer` owns 5173 and a
+The PWA dev server is on **5174** (or `AA_PWA_PORT`) with `strictPort`, because Playwright's `webServer` owns 5173 and a
 silent fallback port would leave `npm run shots` pointing at the wrong app. It also sets `host: true`,
 because a phone on the same wifi is the only way to judge half of what this target adds; Vite's
 `preview` inherits `server.host`, so `preview:pwa` is reachable from the LAN as well.
@@ -473,7 +495,7 @@ folded into Workers Static Assets.
   link starts 404ing. Nothing generates one today; this is a tripwire, not a task.
 - **Pin the Node version.** See `engines` in `package.json` — `^20.19.0 || ^22.12.0 || >=24.0.0`, which
   is the intersection of what Vite and oxlint need (`^20.19.0 || >=22.12.0`) with Vitest's exclusion of
-  Node 23. Meanwhile
+  Node 23 (see [Run it](#run-it)). Meanwhile
   the Pages build images default variously to Node 22.16.0, 18.17.1 or 12.18.0 depending on which one
   the project lands on. Set `NODE_VERSION` explicitly.
 - **Set preview branch builds to "None"**, and pass `--branch=main` explicitly on a direct upload
@@ -665,12 +687,14 @@ and not worth roughly doubling the font payload.
 
 ## Docs
 
-The build plan and requirements live in **[`../docs/prototype-build/`](../docs/prototype-build/)**:
-
-- `PROGRESS.md` — the living record: binding conventions, phase status, decisions log, per-phase
-  entries. Read it first.
-- `REQUIREMENTS.md` — the numbered requirements catalogue.
-- `ROADMAP.md` — the 14-phase sequence and milestone demos.
+- **Requirements:** the catalogue in
+  [`../requirements-board/requirements/`](../requirements-board/requirements/) (one file per epic,
+  feature and story; read and edited on the Requirements Board). It supersedes the RFP.
+- **Settled rulings:** [`../docs/DECISIONS.md`](../docs/DECISIONS.md). Check it before "fixing"
+  something that looks wrong.
+- **Open work:** [`../docs/BACKLOG.md`](../docs/BACKLOG.md), one line per item.
+- **Build record:** archived in [`../docs/archive/`](../docs/archive/) (the original and catch-up build
+  plans, PROGRESS, the UI unification record). History only; don't read it unless asked.
 
 To learn, present or reason about the prototype, the hub is
 **[`../docs/demo-guide/`](../docs/demo-guide/)** — start with `master-demo-guide.html` (a single

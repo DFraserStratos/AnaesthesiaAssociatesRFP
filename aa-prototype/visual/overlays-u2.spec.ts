@@ -5,7 +5,7 @@ import { test, expect, type Page } from '@playwright/test'
  * with the RVG code picker open over the Contract panel, one Escape used to
  * close both and lose the form. Now it closes the picker only; the panel and
  * its edit stay. `visual/shots/u2-escape-after.png` sits beside
- * `docs/ui-unification/shots/escape-bug-after.png`, which shows nothing open.
+ * `docs/archive/ui-unification/shots/escape-bug-after.png`, which shows nothing open.
  */
 
 const panel = (page: Page) => page.locator('[data-shot=contract-detail]')
