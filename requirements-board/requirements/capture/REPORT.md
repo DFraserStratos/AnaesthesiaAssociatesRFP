@@ -12,7 +12,7 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 | Failed recipe | 2 | 1 |
 | No recipe | 0 | 0 |
 
-1044 screenshots. Items per app: admin 203, web 96, mobile 96, simulator 33.
+1041 screenshots. Items per app: admin 203, web 96, mobile 96, simulator 33.
 
 ## Failed recipes (2)
 
@@ -116,7 +116,7 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 - **US-14.2.1** Internal booking model · Future Work: shown only on the badged Future scope: HL7 and FHIR demo, for discussion. The internal booking model behind real feeds is not in the first release.
 - **US-14.3.1** Real-time processing · Future Work: shown only on the badged Future scope: HL7 and FHIR demo, for discussion. In the first release hospital files are imported by the office (US-02.1.1).
 - **US-14.5.1** Integration failure visibility · Future Work: shown only on the badged Future scope: HL7 and FHIR demo, for discussion. There are no automatic feeds in the first release.
-- **US-15.0.1** Ease of use · Ease of use is a quality that screenshots can only suggest. The shots show the calm Booking capture screen with the procedure stack and the Price section kept, help at the point of need beside each section on the phone, the web app and the office screens, and the welcome card each app shows on a first visit. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had. The capture shot's Booking (BK0009) holds no insurer, so its Insurance row reads None and shows no approval number.
+- **US-15.0.1** Ease of use · Ease of use is a quality that screenshots can only suggest. The shots show the calm Booking capture screen with the procedure stack and the Price section kept, help at the point of need beside each section on the phone, the web app and the office screens. Whether people not comfortable with modern systems find it intuitive needs usability testing, which the prototype has not had. The capture shot's Booking (BK0009) holds no insurer, so its Insurance row reads None and shows no approval number.
 - **US-15.0.4** Volumes · Full-scale volumes are generated in memory and timed on screen; whether performance holds at these volumes needs formal performance testing, which the prototype has not had.
 
 ## No recipe (0)
