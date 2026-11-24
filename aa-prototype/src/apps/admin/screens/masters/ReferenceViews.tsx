@@ -17,7 +17,8 @@ import { useNavigate } from 'react-router-dom'
 import { RecurringBookingSheet } from '../../flows/RecurringBookingSheet'
 import { EditCell, MasterHeader, MasterTable } from './chrome'
 import { cellStyle } from './tableStyles'
-import { ResultLine, TextAction } from '../../../../shared/ui'
+import { Card, ResultLine, TextAction } from '../../../../shared/ui'
+import { ADMIN_FORM_WIDTH } from '../../layout'
 import { sessionText } from '../../../../domain/outOfHours'
 
 /**
@@ -85,7 +86,7 @@ function RecurringBookingsView({ actor, onEdit, onAdd }: { actor: Actor; onEdit:
     <>
       <MasterHeader
         title="Recurring bookings"
-        sub="Standing arrangements of hospital, anaesthetist and surgeon on a day and session. Each one creates its Lists across the schedule ahead, before any Bookings. Applying changes the canvas from tomorrow: empty Lists are added or updated, and Lists with Bookings or office edits are left as they are."
+        sub="Standing arrangements of hospital, anaesthetist and surgeon on a day and session, each creating its Lists across the schedule ahead. Applying adds or updates empty Lists from tomorrow; Lists with Bookings or office edits are left as they are."
         actions={<Button variant="secondary" size="desktop" onClick={applyAll}>Apply to canvas now</Button>}
         add={{ label: 'Add recurring booking', onClick: onAdd }}
       />
@@ -169,8 +170,7 @@ export function XeroArchivingView({ actor }: { actor: Actor }) {
       <MasterHeader title="Xero & archiving" sub="Contact-archive policy for the Xero contact store. Patient and Billable Party contacts archive once fully paid and inactive; organisational contacts never archive." />
 
       {/* Configurable window */}
-      <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 560 }}>
-        <div style={{ fontSize: 14, fontWeight: 700 }}>Contact archive inactivity window</div>
+      <Card padding="card" titleLevel={3} title="Contact archive inactivity window" style={{ maxWidth: ADMIN_FORM_WIDTH }}>
         <div style={{ fontSize: 12.5, color: neutral.slate }}>
           A contact is archived once every invoice is paid and this many days pass with no activity. 90
           days is an example, not a fixed rule. Changing it changes which contacts the next nightly run archives.
@@ -182,11 +182,10 @@ export function XeroArchivingView({ actor }: { actor: Actor }) {
           <Button variant="secondary" onClick={saveWindow}>Save window</Button>
         </div>
         {windowMsg !== null && <div style={{ fontSize: 12.5, color: accent.pressed }}>{windowMsg}</div>}
-      </div>
+      </Card>
 
       {/* Nightly job */}
-      <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 560 }}>
-        <div style={{ fontSize: 14, fontWeight: 700 }}>Nightly contact-archive job</div>
+      <Card padding="card" titleLevel={3} title="Nightly contact-archive job" style={{ maxWidth: ADMIN_FORM_WIDTH }}>
         <div style={{ fontSize: 12.5, color: neutral.slate }}>
           The scheduled job runs automatically each time the demo clock advances a day. Run it now to
           archive currently-eligible contacts. {eligible.length} contact{eligible.length === 1 ? '' : 's'} eligible right now;
@@ -210,7 +209,7 @@ export function XeroArchivingView({ actor }: { actor: Actor }) {
           <Button variant="secondary" onClick={runNow}>Run nightly archive job now</Button>
         </div>
         {runMsg !== null && <div style={{ fontSize: 12.5, color: accent.pressed }}>{runMsg}</div>}
-      </div>
+      </Card>
     </>
   )
 }

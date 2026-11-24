@@ -7,7 +7,8 @@ import { TableShell, Td, Th } from '../../../../shared/table'
 import { dayWithYear, plural, shortDay } from '../../../../shared/format'
 import type { Hospital, PublicHoliday } from '../../../../domain/types'
 import { PublicHolidaySheet } from '../../flows/PublicHolidaySheet'
-import { MasterHeader } from './chrome'
+import { MASTER_VIEW_COLUMN, MasterHeader } from './chrome'
+import { useAdminPageMode } from '../../components/AdminPage'
 
 /** "National", or "Regional · Canterbury". */
 function publicHolidayKindText(p: Pick<PublicHoliday, 'kind' | 'region'>): string {
@@ -33,6 +34,7 @@ export function PublicHolidaysView({ actor }: { actor: Actor }) {
   const hospitals = useAppStore((s) => s.masters.hospitals)
   const schedule = useAppStore((s) => s.schedule)
   const [sheet, setSheet] = useState<{ id?: string } | null>(null)
+  const fit = useAdminPageMode() === 'fit'
   const [confirm, setConfirm] = useState<PublicHoliday | null>(null)
   const [result, setResult] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -60,7 +62,7 @@ export function PublicHolidaysView({ actor }: { actor: Actor }) {
   const confirmCount = confirm !== null ? (flagged.get(confirm.id) ?? 0) : 0
 
   return (
-    <div data-shot="masters-public-holidays" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div data-shot="masters-public-holidays" style={MASTER_VIEW_COLUMN}>
       <MasterHeader
         title="Public holidays"
         sub="The national and regional public holidays. Every hospital not listed open that day is closed, and its Lists are flagged."
@@ -71,7 +73,7 @@ export function PublicHolidaysView({ actor }: { actor: Actor }) {
       {rows.length === 0 ? (
         <EmptyState variant="card" title="No public holidays">Add one to close the hospitals on that day.</EmptyState>
       ) : (
-        <TableShell density="dense" label="Public holidays">
+        <TableShell density="dense" label="Public holidays" fit={fit}>
           <thead>
             <tr>
               <Th>Date</Th>

@@ -41,7 +41,7 @@ import { isBookingPair, isCreditedPair, type LedgerCheck } from '../../../domain
 import { Avatar } from '../../../shared/Avatar'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
-import { Button, Card, EmptyState, FilterPills, FormError, Notice, OptionRow, PageHeader, Pill, Segmented, SelectField, StatTile, TextAction, TextArea } from '../../../shared/ui'
+import { Button, Card, EmptyState, FilterPills, FormError, Notice, OptionRow, PageHeader, Pill, SelectField, SlidingSegmentedControl, StatTile, TextAction, TextArea } from '../../../shared/ui'
 import { dateTimeMicroCap, drSurname, formatCurrency, plural } from '../../../shared/format'
 import { CREDIT_LABELS } from '../../../shared/procedureEventCopy'
 import type { LedgerPair, NegativeInvoice, UnmatchedReceipt } from '../../../domain/types'
@@ -49,6 +49,8 @@ import { FULL_SCALE } from '../../../domain/seed/fullScale/constants'
 import { Pager, pageOf } from '../components/Pager'
 import { LedgerPaymentRuns, StillToNetNotice } from '../components/LedgerPaymentRuns'
 import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
+import { AdminPage, PageToolbar } from '../components/AdminPage'
+import { ADMIN_PROSE_WIDTH } from '../layout'
 
 type Scope = 'whole' | 'one'
 type RowFilter = 'open' | 'all'
@@ -118,32 +120,32 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <PageHeader
-        size="admin"
-        title="Ledger"
-        sub="The Billing Engine's own ledger is AA's system of record. Every invoice is a receivable from the billable party and a linked payable to the anaesthetist. Xero mirrors it for receivables and banking."
-        subStyle={{ maxWidth: 820 }}
-        shot="ledger-system-of-record"
-      />
-
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ minWidth: 320 }}>
-        <Segmented
-          label="Scope"
+    <AdminPage
+      mode="fluid"
+      title="Ledger"
+      sub={
+        <span data-shot="ledger-system-of-record">
+          The Billing Engine's ledger is AA's system of record: each invoice is a receivable from the billable party and a linked payable to the anaesthetist. Xero mirrors it.
+        </span>
+      }
+    >
+      <PageToolbar>
+        <SlidingSegmentedControl
+          ariaLabel="Scope"
+          size="sm"
+          layout="wrap"
           value={scope}
           options={[
             { value: 'whole', label: 'Whole ledger' },
             { value: 'one', label: 'One anaesthetist' },
           ]}
-          onChange={(next) => {
+          onSelect={(next) => {
             if (next === 'whole') navigate('/admin/ledger')
             else if (anaesthetistId === undefined && firstOther !== undefined) navigate(`/admin/ledger/anaesthetists/${outOfBalance[0]?.anaesthetistId ?? firstOther}`)
           }}
         />
-        </div>
         {scope === 'one' && (
-          <SelectField label="Anaesthetist" size="compact" fill="surface" value={anaesthetistId ?? ''} onChange={(id) => navigate(`/admin/ledger/anaesthetists/${id}`)} shot="ledger-anaesthetist-select">
+          <SelectField label="Anaesthetist" hideLabel size="compact" fill="surface" value={anaesthetistId ?? ''} onChange={(id) => navigate(`/admin/ledger/anaesthetists/${id}`)} shot="ledger-anaesthetist-select">
             {roster.map((a) => (
               <option key={a.registrationNumber} value={a.registrationNumber}>
                 {drSurname(a.name)}
@@ -151,7 +153,7 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
             ))}
           </SelectField>
         )}
-      </div>
+      </PageToolbar>
 
       {scope === 'whole' ? (
         <BalanceIndicator
@@ -178,7 +180,7 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
 
       {scope === 'whole' ? (
         <div data-shot="ledger-tiles" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
             <StatTile variant="outlined" label="Receivables outstanding" value={formatCurrency(whole.receivablesOutstanding)} sub="Owed by billable parties" />
             <StatTile variant="outlined" label="Receipts held" value={formatCurrency(whole.receiptsHeld)} sub="Money AA holds for anaesthetists" />
             <StatTile
@@ -189,7 +191,7 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
             />
             <StatTile variant="outlined" label="Disbursed" value={formatCurrency(whole.disbursed)} sub="Paid out to anaesthetists" />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
             <StatTile variant="outlined" label="Awaiting collection" value={formatCurrency(whole.awaitingCollection)} sub="Billed, not yet paid by the payer" />
             <StatTile
               variant="outlined"
@@ -206,7 +208,7 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
             <StatTile variant="outlined" label="Not yet in Xero" value={String(whole.notInXero)} sub={whole.notInXero === 1 ? 'pair waiting for its mirror' : 'pairs waiting for their mirror'} />
           </div>
           {/* The credit terms (catch-up Phase 39; US-08.6.5, OQ-42): what payers paid on credited invoices, and what was paid out on them to net. */}
-          <div data-shot="ledger-credit-tiles" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+          <div data-shot="ledger-credit-tiles" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
             <StatTile variant="outlined" label={CREDIT_LABELS.creditsHeldForPayers} value={formatCurrency(whole.creditsHeldForPayers)} sub={CREDIT_LABELS.creditsHeldSub} />
             <StatTile variant="outlined" label={CREDIT_LABELS.negativeToNet} value={formatCurrency(whole.recoveryDueFromAnaesthetists)} sub={CREDIT_LABELS.negativeToNetSub} />
           </div>
@@ -331,21 +333,25 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
       )}
 
       <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-          <PageHeader size="section" level={2} title={scope === 'whole' ? 'Pairs' : `${surname}'s pairs`} />
-          <FilterPills
-            ariaLabel="Which pairs"
-            value={filter}
-            onSelect={(v) => {
-              setFilter(v)
-              setPage(1)
-            }}
-            options={[
-              { value: 'open', label: 'Open' },
-              { value: 'all', label: 'All' },
-            ]}
-          />
-        </div>
+        <PageHeader
+          size="section"
+          level={2}
+          title={scope === 'whole' ? 'Pairs' : `${surname}'s pairs`}
+          actions={
+            <FilterPills
+              ariaLabel="Which pairs"
+              value={filter}
+              onSelect={(v) => {
+                setFilter(v)
+                setPage(1)
+              }}
+              options={[
+                { value: 'open', label: 'Open' },
+                { value: 'all', label: 'All' },
+              ]}
+            />
+          }
+        />
         {rows.length === 0 ? (
           <EmptyState variant="card" shot="ledger-pairs">{filter === 'open' ? 'Nothing outstanding or waiting to be paid out.' : 'No pairs yet.'}</EmptyState>
         ) : (
@@ -423,7 +429,7 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
         {rows.length > pageSize && <Pager total={rows.length} size={pageSize} page={shownPage} onPage={setPage} shot="ledger-pager" />}
       </section>
 
-      <div data-shot="ledger-footnotes" style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11.5, color: neutral.mist, maxWidth: 820 }}>
+      <div data-shot="ledger-footnotes" style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11.5, color: neutral.mist, maxWidth: ADMIN_PROSE_WIDTH }}>
         <span>Receipts held is the money AA holds for anaesthetists, including pre-payments received, which sit in the AA Holding account until the List is authorised.</span>
         <span>One payable per invoice, for the same amount.</span>
         <span>At full practice volume this table pages.</span>
@@ -431,7 +437,7 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
 
       <AllocateDialog key={`allocate-${allocating?.id ?? 'none'}`} receipt={allocating} actor={actor} onClose={() => setAllocating(null)} />
       <RefundDialog key={`refund-${refunding?.id ?? 'none'}`} receipt={refunding} actor={actor} onClose={() => setRefunding(null)} />
-    </div>
+    </AdminPage>
   )
 }
 

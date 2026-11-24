@@ -79,7 +79,7 @@ test('Conflicts screen: closures only, grouped by day, filters in the URL; Simul
   // 14 Lists plus Dr Beaumont's two Draft Lists at the Southern Cross closure (catch-up Phase 31); no sickness (32b);
   // three bookless public Lists at a closed Christchurch Public are Public sessions since catch-up Phase 32d.
   await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('16')
-  for (const d of ['2026-11-25', '2026-10-26', '2026-11-13']) await expect(page.locator(`section[data-conflict-date="${d}"]`)).toBeVisible()
+  for (const d of ['2026-11-25', '2026-10-26', '2026-11-13']) await expect(page.locator(`tr[data-conflict-date="${d}"]`)).toBeVisible()
   await expect(page.getByText('Anaesthetist unavailable')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Hospital closed' })).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p30-04-conflicts.png', fullPage: true })
@@ -92,7 +92,7 @@ test('Conflicts screen: closures only, grouped by day, filters in the URL; Simul
   expect(msg).toMatch(/recorded as Unavailable for Tue 24 Nov (AM|PM)\. The List went (back to the Draft Lists|to Dr \w+) with its Bookings\. No conflict\./)
   await page.goto('/admin/conflicts')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('section[data-conflict-date="2026-11-24"]')).toHaveCount(0)
+  await expect(page.locator('tr[data-conflict-date="2026-11-24"]')).toHaveCount(0)
   await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('16')
   await page.screenshot({ path: 'visual/shots/p30-05-simulated-sickness.png', fullPage: true })
 

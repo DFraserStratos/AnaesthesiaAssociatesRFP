@@ -61,3 +61,25 @@ export function masterViewEntry(view: MastersView): MasterViewEntry {
 
 /** The one subtitle line a seeded view ends with. */
 export const SEEDED_SUBTITLE = "Loaded once at go-live from AA's controlled spreadsheet, then kept here by hand."
+
+/**
+ * The page frame's mode for each view (docs/admin-layout-audit.md, "Layout decisions"): a list of
+ * records is `fit` (the window high, its table's rows scrolling inside the card), a settings, form,
+ * card or load view is `fluid` (the page scrolls). Hospitals is a list of cards with their holidays,
+ * and has a calendar mode, so it stays fluid.
+ */
+const FLUID_VIEWS: ReadonlySet<MastersView> = new Set<MastersView>([
+  'hospitals',
+  'availability-statuses',
+  'scheduleSettings',
+  'emailTemplates',
+  'prepaymentLetters',
+  'xeroArchiving',
+  'patientBalance',
+  'seedLoad',
+  'goLive',
+])
+
+export function masterViewMode(view: MastersView): 'fit' | 'fluid' {
+  return FLUID_VIEWS.has(view) ? 'fluid' : 'fit'
+}

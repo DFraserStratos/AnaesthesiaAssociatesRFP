@@ -44,23 +44,26 @@ export function AvailabilityStatusesView({ actor }: { actor: Actor }) {
       <FormError message={error} />
       <MasterTable
         shot="admin-availability-statuses"
-        columns={['Status', 'ID', 'Long label', 'Open for bookings', 'Anaesthetists can set', 'Default', 'Description', 'Use', '']}
+        columns={['Status · ID', 'Long label', 'Open for bookings', 'Anaesthetists can set', 'Default', 'Description', '']}
       >
         {rows.map((s) => {
           const retired = s.retiredAtISO !== undefined
           const muted = retired ? { color: neutral.mist } : {}
           return (
             <tr key={s.key} data-status-row={s.key} style={retired ? { background: neutral.bg } : undefined}>
-              <td style={cellStyle}><StatusChip status={s.key} style={retired ? { opacity: 0.6 } : undefined} /></td>
-              <td className="mono" style={{ ...cellStyle, ...muted }}>{s.key}</td>
+              {/* The chip over its ID and whether it is in use: one column, so the table fits a 1280 laptop. */}
+              <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
+                <StatusChip status={s.key} style={retired ? { opacity: 0.6 } : undefined} />
+                <div className="mono" style={{ marginTop: 4, color: neutral.slate, ...muted }}>{s.key}</div>
+                <div style={{ fontSize: 12, color: neutral.mist }}>
+                  {retired ? `Retired ${format(parseISO(s.retiredAtISO ?? ''), 'd MMM yyyy')}` : 'In use'}
+                </div>
+              </td>
               <td style={{ ...cellStyle, ...muted }}>{s.longLabel}</td>
               <td style={{ ...cellStyle, ...muted }}>{yesNo(s.bookable)}</td>
               <td style={{ ...cellStyle, ...muted }}>{yesNo(s.anaesthetistCanSet)}</td>
               <td style={{ ...cellStyle, ...muted }}>{s.isDefault === true ? 'Default' : ''}</td>
-              <td style={{ ...cellStyle, ...muted, maxWidth: 260 }}>{s.description}</td>
-              <td style={{ ...cellStyle, ...muted, whiteSpace: 'nowrap' }}>
-                {retired ? `Retired ${format(parseISO(s.retiredAtISO ?? ''), 'd MMM yyyy')}` : 'In use'}
-              </td>
+              <td style={{ ...cellStyle, ...muted }}>{s.description}</td>
               <td style={{ ...cellStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
                 <span style={{ display: 'inline-flex', gap: 12 }}>
                   {!retired && inUse[0]?.key !== s.key && (

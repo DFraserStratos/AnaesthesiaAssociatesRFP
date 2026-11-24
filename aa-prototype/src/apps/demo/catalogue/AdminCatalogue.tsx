@@ -9,7 +9,7 @@ import { StubSetExample } from './stubExamples'
 import { DRAFT_LIST, DRAFT_LISTS, UNASSIGNED } from '../../../shared/scheduleTerms'
 import { ResponseTableExample, SupportHoursExample, SupportPanelExample, SupportRequestFormExample, SupportSidePanelExample, TicketListExample } from './supportExamples'
 import { CataloguePage, CatalogueRow, FamilySection, StageHint } from './CatalogueKit'
-import { CardExample, DefRowExample, EyebrowExample, PageHeaderExample, TableKitExample } from './admin/pageChromeExamples'
+import { AdminPageExample, CardExample, DefRowExample, EyebrowExample, PageHeaderExample, TableKitExample } from './admin/pageChromeExamples'
 import { ReviewQueue } from '../../admin/screens/ReviewQueue'
 import { AuditViewer } from '../../admin/screens/AuditViewer'
 import { RowField } from '../../admin/components/RowField'
@@ -568,7 +568,7 @@ export function AdminCatalogue() {
             <LoadResultPanelExample />
           </Wide>
         </CatalogueRow>
-        <CatalogueRow name="Table kit (TableShell · Th · Td · GroupRow · ClickableRow)" source="shared/table/" usedIn={AWM} what="The one table kit (UI unification U6, question 19): TableShell (white, line, radius 14, e1; a named focusable region only when it overflows), Th (scope col) on the Admin Review header, sortable with `sort` (aria-sort and a button, teal underline on the active column; the Billing monitor), Td with sunken dividers, GroupRow (th scope colgroup), and ClickableRow with one RowOpenButton as the keyboard handle. Density comfortable (web), compact (admin) or dense (audit and masters) keeps each table's row height." shared="shared/table/TableShell.tsx" note={`The ${DRAFT_LISTS} table is built this way: Tab to a session, Enter opens the ${DRAFT_LIST} drawer (bug 3). An inner button does only its own action.`}>
+        <CatalogueRow name="Table kit (TableShell · Th · Td · GroupRow · ClickableRow)" source="shared/table/" usedIn={AWM} what="The one table kit (UI unification U6, question 19): TableShell (white, line, radius 14, e1; a named focusable region only when it overflows; footer for a foot row such as the pager, kept below the rows; fit for an Admin fit page's list card), Th (scope col) on the Admin Review header, sortable with `sort` (aria-sort and a button, teal underline on the active column; the Billing monitor), Td with sunken dividers, GroupRow (th scope colgroup), and ClickableRow with one RowOpenButton as the keyboard handle. Density comfortable (web), compact (admin) or dense (audit and masters) keeps each table's row height." shared="shared/table/TableShell.tsx" note={`The ${DRAFT_LISTS} table is built this way: Tab to a session, Enter opens the ${DRAFT_LIST} drawer (bug 3). An inner button does only its own action.`}>
           <TableKitExample />
         </CatalogueRow>
         <CatalogueRow name="ReviewQueue (clickable rows)" source="apps/admin/screens/ReviewQueue.tsx" usedIn={A} what="Submitted Lists to authorise, and since catch-up Phase 38b an Events tab (LineTabLink with its count) of events awaiting review, on the shared table kit (UI unification U6): TableShell (compact), Th, Td and ClickableRow, whose row click opens the List while the Review button stays the keyboard handle." shared="shared/table/ClickableRow.tsx" note="Rows never take focus; the Review button is the one handle per row. Open is stubbed." height={380}>
@@ -659,6 +659,11 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="MasterHeader" source="apps/admin/screens/masters/chrome.tsx" usedIn={A} what="A master view's title row over the shared PageHeader (section size): the title, one subtitle line, an optional count and the teal Add action. A seeded view's subtitle ends with the seeded line (Loaded once at go-live from AA's controlled spreadsheet, then kept here by hand.) and the waiting-load banner follows; section is a second header inside a view, with neither." shared="shared/ui/PageHeader.tsx" note="Replaced the masters Header. The Add action is stubbed here.">
           <MasterHeaderExample />
+        </CatalogueRow>
+        <CatalogueRow name="AdminPage / PageToolbar / PageBody" source="apps/admin/components/AdminPage.tsx" usedIn={A} what="The one Admin page frame: every Admin screen is one AdminPage, so the back link, the title row (the shared PageHeader, admin size), the tabs, one PageToolbar and the PageBody sit in the same places on every page and no screen sets its own width. Three modes: fit for list pages (one window high, the list card a TableShell fit whose rows scroll inside it under a sticky header, the pager in its footer), fluid for records and dashboards (the full width, the page scrolling) and document for the invoice, credit note and remittance advice (the paper at its print width with the rail beside it, both on the left). PageToolbar holds the compact filters and a count at its end; PageBody takes an optional section nav on the left and the one-width rail on the right." shared="shared/ui/PageHeader.tsx" note="On the shared PageHeader and BackLink; its list card is the shared TableShell (fit, footer). A fluid example: a title, one action, a toolbar with a hospital filter and a count, and a table with its pager in the footer beside a rail Card. The widths are in apps/admin/layout.ts.">
+          <Wide minWidth={980}>
+            <AdminPageExample />
+          </Wide>
         </CatalogueRow>
         <CatalogueRow name="PageHeader" source="shared/ui/PageHeader.tsx" usedIn={AW} what="A page's title row (U6): web 28/34, admin 24/30, or the 18/700 section title; an h1, a slate sub-line, right-aligned actions, a count inside the heading or an aside beside it, headingRef for focus return." shared="shared/ui/PageHeader.tsx">
           <PageHeaderExample />

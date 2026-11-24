@@ -9,6 +9,8 @@ import { neutral, radius, semantic } from '../../../theme/tokens'
 import { Pill, TextField } from '../../../shared/ui'
 import { validateNhi } from '../../../domain/nhi'
 import { validateEthnicityCode, ETHNICITY_DEMO_SUBSET } from '../../../domain/nzhis'
+import { PageBody } from '../components/AdminPage'
+import { ADMIN_FORM_WIDTH } from '../layout'
 
 export function ValidatorsTab() {
   const [nhi, setNhi] = useState('')
@@ -17,7 +19,8 @@ export function ValidatorsTab() {
   const ethVerdict = eth.trim() !== '' ? validateEthnicityCode(eth) : undefined
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 720 }}>
+    <PageBody gap={20}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: ADMIN_FORM_WIDTH }}>
       <div data-shot="integrations-nhi-validator" style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ fontSize: 14, fontWeight: 700 }}>NHI validator</div>
         <div style={{ fontSize: 12, color: neutral.slate }}>
@@ -72,6 +75,7 @@ export function ValidatorsTab() {
         </div>
       </div>
     </div>
+    </PageBody>
   )
 }
 

@@ -34,7 +34,7 @@ import { dayMicroCap, formatCount, formatCurrency, hhmm, plural, shortDay } from
 import { FULL_SCALE } from '../../../domain/seed/fullScale/constants'
 import { Pager, pageOf, pageParam } from '../components/Pager'
 import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
-import { Button, Card, CountBadge, DisclosureButton, TickGlyph, EmptyState, FilterDateInput, FilterPills, FormError, Notice, PageHeader, Pill, SelectField, StatTile, TextAction, visuallyHidden, type PillTone } from '../../../shared/ui'
+import { Button, Card, CountBadge, DisclosureButton, TickGlyph, EmptyState, FilterDateInput, FilterPills, FormError, Notice, Pill, SelectField, StatTile, TextAction, visuallyHidden, type PillTone } from '../../../shared/ui'
 import { ClickableRow, Td, Th, TableShell } from '../../../shared/table'
 import { sessionText } from '../../../domain/outOfHours'
 import { HoldingAccountPanel } from '../components/HoldingAccountPanel'
@@ -46,6 +46,7 @@ import { correctionQueuedFor } from '../../../store/ledgerSelectors'
 import type { Invoice, XeroQueueItem } from '../../../domain/types'
 import { XeroConnectionLine, XeroDivergencePanel, XeroQueuePanel } from '../components/XeroPanels'
 import { PaymentCyclePanel } from '../components/PaymentCyclePanel'
+import { AdminPage, PageBody, PageToolbar } from '../components/AdminPage'
 
 interface BillingMonitorScreenProps {
   actor: Actor
@@ -56,7 +57,7 @@ export const RETRY_FROM_LOCK_NOTE = 'Retry rebuilds from the locked record. A wr
 
 /** The intro (catch-up Phase 37; US-13.3.1, FT-13.3 Confirmed in the Admin App). */
 export const BILLING_MONITOR_INTRO =
-  'Every list awaiting approval or authorised, grouped by anaesthetist: whether it has been invoiced, sent and mirrored to Xero, and why anything failed. A failed booking blocks only its own invoice, never the rest of the list.'
+  'Every list awaiting approval or authorised, by anaesthetist: invoiced, sent, in Xero, or why it failed. Lists awaiting approval open in Review, where they are authorised.'
 
 /** The URL search params this screen owns (filters, sort, expansion); nothing here is stored. */
 const PARAM = { anaesthetist: 'anaesthetist', hospital: 'hospital', from: 'from', to: 'to', problems: 'problems', sort: 'sort', list: 'list', open: 'open', shut: 'shut', fold: 'fold', page: 'page' } as const
@@ -188,13 +189,11 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
   const panelAnaesthetist = view.applied.anaesthetistId
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>
-      <PageHeader size="admin" title="Billing monitor" sub={BILLING_MONITOR_INTRO} />
-
+    <AdminPage mode="fluid" title="Billing monitor" sub={BILLING_MONITOR_INTRO}>
       <XeroConnectionLine />
 
       {/* Summary tiles: Admin Review's tile anatomy. "With problems" turns its filter on; "Payables due" goes to the payables panel. */}
-      <div data-shot="billing-monitor-tiles" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }}>
+      <div data-shot="billing-monitor-tiles" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
         <StatTile variant="outlined" label="Awaiting approval" value={formatCount(view.totals.awaiting)} shot="billing-tile-awaiting" />
         <StatTile variant="outlined" label="Authorised" value={formatCount(view.totals.authorised)} shot="billing-tile-authorised" />
         <StatTile
@@ -217,23 +216,33 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
         />
       </div>
 
-      {/* Filter bar: AuditViewer's label-over-control pattern from the shared fields. */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div data-shot="billing-monitor-filters" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <SelectField label="Anaesthetist" size="compact" fill="surface" value={view.applied.anaesthetistId ?? ''} onChange={(v) => update({ [PARAM.anaesthetist]: v })} shot="billing-filter-anaesthetist">
+      <PageToolbar
+        shot="billing-monitor-filters"
+        end={
+          <>
+            <span className="mono" data-shot="billing-monitor-count">{plural(view.listsInView, 'list')}</span>
+            {filtersOn && (
+              <TextAction size="sm" flush onClick={() => update({ [PARAM.anaesthetist]: null, [PARAM.hospital]: null, [PARAM.from]: null, [PARAM.to]: null, [PARAM.problems]: null })} shot="billing-filter-clear">
+                Clear filters
+              </TextAction>
+            )}
+          </>
+        }
+      >
+        <SelectField label="Anaesthetist" hideLabel size="compact" fill="surface" width={160} value={view.applied.anaesthetistId ?? ''} onChange={(v) => update({ [PARAM.anaesthetist]: v })} shot="billing-filter-anaesthetist">
           <option value="">All anaesthetists</option>
           {view.anaesthetistOptions.map((a) => (
             <option key={a.id} value={a.id}>{a.name}</option>
           ))}
         </SelectField>
-        <SelectField label="Hospital" size="compact" fill="surface" value={view.applied.hospitalId ?? ''} onChange={(v) => update({ [PARAM.hospital]: v })} shot="billing-filter-hospital">
+        <SelectField label="Hospital" hideLabel size="compact" fill="surface" width={170} value={view.applied.hospitalId ?? ''} onChange={(v) => update({ [PARAM.hospital]: v })} shot="billing-filter-hospital">
           <option value="">All hospitals</option>
           {view.hospitalOptions.map((h) => (
             <option key={h.id} value={h.id}>{h.name}</option>
           ))}
         </SelectField>
-        <FilterDateInput label="From" value={view.applied.fromISO ?? ''} onChange={(v) => update({ [PARAM.from]: v })} shot="billing-filter-from" />
-        <FilterDateInput label="To" value={view.applied.toISO ?? ''} onChange={(v) => update({ [PARAM.to]: v })} shot="billing-filter-to" />
+        <FilterDateInput label="From" labelPlacement="inline" value={view.applied.fromISO ?? ''} onChange={(v) => update({ [PARAM.from]: v })} shot="billing-filter-from" />
+        <FilterDateInput label="To" labelPlacement="inline" value={view.applied.toISO ?? ''} onChange={(v) => update({ [PARAM.to]: v })} shot="billing-filter-to" />
         <FilterPills
           ariaLabel="Which lists"
           value={view.applied.problemsOnly ? 'problems' : 'all'}
@@ -242,20 +251,10 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
             { value: 'problems', label: 'Problems only' },
           ]}
           onSelect={(v) => update({ [PARAM.problems]: v === 'problems' ? '1' : null })}
-          style={{ paddingBottom: 2 }}
         />
-        <span className="mono" data-shot="billing-monitor-count" style={{ fontSize: 12.5, color: neutral.mist, paddingBottom: 9 }}>{plural(view.listsInView, 'list')}</span>
-        {filtersOn && (
-          <span style={{ paddingBottom: 7 }}>
-            <TextAction size="sm" flush onClick={() => update({ [PARAM.anaesthetist]: null, [PARAM.hospital]: null, [PARAM.from]: null, [PARAM.to]: null, [PARAM.problems]: null })} shot="billing-filter-clear">
-              Clear filters
-            </TextAction>
-          </span>
-        )}
-      </div>
-      <div style={{ fontSize: 12.5, color: neutral.slate }}>Lists awaiting approval open in Review, where they are authorised.</div>
-      </div>
+      </PageToolbar>
 
+      <PageBody>
       {/* The Xero panels (catch-up Phase 37): the sync queue and changes made in Xero, which the anaesthetist filter narrows; then the weekly payment cycle (catch-up Phase 39a). */}
       <XeroQueuePanel actor={actor} {...(panelAnaesthetist !== undefined ? { anaesthetistId: panelAnaesthetist } : {})} />
       <XeroDivergencePanel actor={actor} {...(panelAnaesthetist !== undefined ? { anaesthetistId: panelAnaesthetist } : {})} />
@@ -306,7 +305,8 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
         {groupsPaged && <Pager total={view.groups.length} size={groupPageSize} page={groupPage} onPage={setGroupPage} lead="Anaesthetists" />}
         </>
       )}
-    </div>
+      </PageBody>
+    </AdminPage>
   )
 }
 

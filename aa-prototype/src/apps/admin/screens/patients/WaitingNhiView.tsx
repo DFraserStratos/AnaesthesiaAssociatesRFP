@@ -17,10 +17,11 @@ import { formatDob, plural, shortDay, stampText } from '../../../../shared/forma
 import { sessionText } from '../../../../domain/outOfHours'
 import { neutral } from '../../../../theme/tokens'
 import { StubMarker } from '../../../../shared/stubs'
+import { PageBody, PageToolbar } from '../../components/AdminPage'
 import { AddNhiSheet } from './AddNhiSheet'
 
 export const WAITING_NHI_CAPTION =
-  'These rows are not Bookings yet; each stands as a stub on its List. No Booking or patient is created until the office adds the NHI.'
+  'These rows are not Bookings yet. Each stands as a stub on its List; nothing is created until the office adds the NHI.'
 
 export function WaitingNhiView({
   rows,
@@ -38,15 +39,19 @@ export function WaitingNhiView({
   const [error, setError] = useState<string | null>(null)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <p style={{ margin: 0, fontSize: 13, color: neutral.slate, maxWidth: 760, lineHeight: '19px' }}>{WAITING_NHI_CAPTION}</p>
+    <>
+      <PageToolbar end={<span className="mono">{plural(rows.length, 'row')}</span>}>
+        <span style={{ fontSize: 13, color: neutral.slate }}>{WAITING_NHI_CAPTION}</span>
+      </PageToolbar>
+      <PageBody>
       <FormError message={error} />
       {rows.length === 0 ? (
         <EmptyState variant="card" shot="waiting-nhi-empty">No intake rows are waiting for an NHI.</EmptyState>
       ) : (
-        <TableShell label="Waiting for NHI" density="compact" minWidth={1100} shot="waiting-nhi-table" tableStyle={{ tableLayout: 'fixed' }}>
+        // List takes the spare width; the actions stack in their own column, so the table fits 1008 at 1280.
+        <TableShell fit label="Waiting for NHI" density="compact" minWidth={960} shot="waiting-nhi-table" tableStyle={{ tableLayout: 'fixed' }}>
           <colgroup>
-            {[160, 190, 140, 230, 90, 100, undefined].map((w, i) => (
+            {[140, undefined, 124, 228, 80, 96, 166].map((w, i) => (
               <col key={i} style={w !== undefined ? { width: w } : undefined} />
             ))}
           </colgroup>
@@ -76,8 +81,9 @@ export function WaitingNhiView({
           </tbody>
         </TableShell>
       )}
+      </PageBody>
       <AddNhiSheet row={sheetRow} actor={actor} onClose={() => setSheetRow(null)} onOpenList={onOpenList} onOpenMatching={onOpenMatching} />
-    </div>
+    </>
   )
 }
 
@@ -166,7 +172,7 @@ export function WaitingNhiRowView({
         </span>
       </Td>
       <Td>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
           {email !== undefined && (
             <Button
               variant="outline"

@@ -113,7 +113,8 @@ test('authorise raises and sends invoices; contract-holder document, Resend and 
   await page.getByRole('button', { name: 'View invoices' }).click()
   await page.waitForTimeout(300)
   await expect(page.getByRole('heading', { name: 'Invoices' })).toBeVisible()
-  await expect(page.getByText('Recently billed')).toBeVisible()
+  // Recently billed left Invoices (it repeated the table's top rows); the Review queue keeps it.
+  await expect(page.locator('[data-shot="invoices-tabs"]')).toBeVisible()
   await expect(page.getByText(/AA-2026-\d{4}/).first()).toBeVisible()
   await expect(page.getByTestId('invoice-list-table-shell').getByRole('columnheader', { name: 'Patient / booking' })).toBeVisible()
   await expect(page.getByTestId('invoice-list-table-shell').getByRole('columnheader', { name: 'Anaesthetist' })).toBeVisible()
@@ -156,7 +157,8 @@ test('authorise raises and sends invoices; contract-holder document, Resend and 
   await expect(page.locator('[data-shot="invoice-gst-caption"]')).toHaveText('Prices are held GST exclusive. GST is added at the foot of the invoice.')
   await expect(page.getByRole('button', { name: /^Email inv/ })).toHaveCount(0)
 
-  // Desktop composition: a centred 760px document + 24px gap + 264px sticky rail.
+  // Desktop composition (document mode): the 760px paper + 24px gap + the sticky rail, from the page's left edge;
+  // the rail is ADMIN_RIGHT_RAIL_WIDTH (412) where the window has room, giving way to no less than 264.
   const detailLayout = await page.getByTestId('invoice-detail-workspace').evaluate((workspace) => {
     const document = workspace.querySelector('.aa-invoice-doc')
     const rail = workspace.querySelector('[data-testid="invoice-info-rail"]')
@@ -164,26 +166,23 @@ test('authorise raises and sends invoices; contract-holder document, Resend and 
     if (!(document instanceof HTMLElement) || !(rail instanceof HTMLElement) || !(screen instanceof HTMLElement)) {
       throw new Error('Invoice detail layout nodes are missing')
     }
-    const workspaceBox = workspace.getBoundingClientRect()
     const documentBox = document.getBoundingClientRect()
     const railBox = rail.getBoundingClientRect()
     const screenBox = screen.getBoundingClientRect()
     return {
-      workspaceWidth: workspaceBox.width,
       documentWidth: documentBox.width,
       railWidth: railBox.width,
       gap: railBox.left - documentBox.right,
-      leftInset: workspaceBox.left - screenBox.left,
-      rightInset: screenBox.right - workspaceBox.right,
+      leftInset: documentBox.left - screenBox.left,
       railPosition: getComputedStyle(rail).position,
       railTop: getComputedStyle(rail).top,
     }
   })
-  expect(detailLayout.workspaceWidth).toBeCloseTo(1048, 0)
   expect(detailLayout.documentWidth).toBeCloseTo(760, 0)
-  expect(detailLayout.railWidth).toBeCloseTo(264, 0)
+  expect(detailLayout.railWidth).toBeGreaterThanOrEqual(264)
+  expect(detailLayout.railWidth).toBeLessThanOrEqual(412)
   expect(detailLayout.gap).toBeCloseTo(24, 0)
-  expect(detailLayout.leftInset).toBeCloseTo(detailLayout.rightInset, 0)
+  expect(detailLayout.leftInset).toBeCloseTo(0, 0)
   expect(detailLayout.railPosition).toBe('sticky')
   expect(detailLayout.railTop).toBe('24px')
 
@@ -396,15 +395,15 @@ test('exemplar staging via the guard console: patient layout and the fee split',
   await expect(page.getByText('Upload portal')).toHaveCount(0)
   const alanRows = page.getByTestId('invoice-list-table-shell').locator('tbody tr').filter({ hasText: 'Alan Prentice' })
   await expect(alanRows).toHaveCount(2)
-  // Catch-up Phase 38b put a Kind column after Number, so every column after it moved one on.
-  await expect(alanRows.locator('[data-shot="invoice-list-kind"]')).toHaveText(['Invoice', 'Invoice'])
-  await expect(alanRows.locator('td:nth-child(4)')).toHaveText(['Dr Melanie Souter', 'Dr Melanie Souter'])
-  await expect(alanRows.locator('td:nth-child(5)')).toHaveText([
+  // A standard invoice carries no kind pill (only a credit note, prepayment or additional invoice does).
+  await expect(alanRows.locator('[data-shot="invoice-list-kind"]')).toHaveCount(0)
+  await expect(alanRows.locator('td:nth-child(3)')).toHaveText(['Dr Souter', 'Dr Souter'])
+  await expect(alanRows.locator('td:nth-child(4)')).toHaveText([
     /St George's · PM.*Ms G\. Lim/,
     /St George's · PM.*Ms G\. Lim/,
   ])
-  await expect(alanRows.locator('td:nth-child(6)')).toHaveText(['MON 20 JUL', 'MON 20 JUL'])
-  expect((await alanRows.locator('td:nth-child(8)').allTextContents()).map((t) => t.replace(/Split$/, '').trim()).sort()).toEqual(['Alan Prentice', 'nib'])
+  await expect(alanRows.locator('td:nth-child(5)')).toHaveText(['MON 20 JUL', 'MON 20 JUL'])
+  expect((await alanRows.locator('td:nth-child(6)').allTextContents()).map((t) => t.replace(/(Patient|Holder) layout$/, '').replace(/Split$/, '').trim()).sort()).toEqual(['Alan Prentice', 'nib'])
   await expect(alanRows.locator('[data-shot="invoice-list-split"]')).toHaveCount(2)
   await expect(alanRows.locator('[data-shot="invoice-list-delivery"]')).toHaveText([/^Emailed \d{2}:\d{2}$/, /^Emailed \d{2}:\d{2}$/])
   await page.screenshot({ path: 'visual/shots/a8-06-invoices-mixed.png', fullPage: true })

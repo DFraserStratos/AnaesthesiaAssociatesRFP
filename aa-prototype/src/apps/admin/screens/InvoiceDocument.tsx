@@ -50,6 +50,7 @@ import { HOLDING_ACCOUNT } from '../../../domain/billing/prepayHolding'
 import { transferOfPair } from '../../../domain/billing/ledger'
 import { handoffQueuedFor, openDivergenceFor, pairForInvoice } from '../../../store/ledgerSelectors'
 import { toCents } from '../../../domain/billing/money'
+import { DOCUMENT_DESK_STYLE, DOCUMENT_PAPER_STYLE, DOCUMENT_RAIL_STYLE } from '../components/documentDesk'
 
 interface InvoiceDocumentProps {
   invoiceId: string
@@ -140,22 +141,11 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
   }
 
   return (
-    <div
-      data-testid="invoice-detail-workspace"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '760px 264px',
-        alignItems: 'start',
-        gap: 24,
-        width: '100%',
-        maxWidth: 1048,
-        margin: '0 auto',
-      }}
-    >
+    <div data-testid="invoice-detail-workspace" style={DOCUMENT_DESK_STYLE}>
       {/* ---- the printable document ---- */}
       <div
         className="aa-invoice-doc"
-        style={{ minWidth: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.panel, padding: '36px 40px', display: 'flex', flexDirection: 'column', gap: 22 }}
+        style={{ ...DOCUMENT_PAPER_STYLE, display: 'flex', flexDirection: 'column', gap: 22 }}
       >
         {/* The prepayment letter sent with it (catch-up Phase 41; US-06.3.6): its cover, on the same paper, above the masthead. */}
         {invoice.kind === 'prePayment' && invoice.letter !== undefined && <DocLetter body={invoice.letter.body} />}
@@ -417,7 +407,7 @@ function InvoiceInfoRail({
     <aside
       data-testid="invoice-info-rail"
       aria-label="Invoice information and actions"
-      style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 12, width: 264 }}
+      style={DOCUMENT_RAIL_STYLE}
     >
       <RailCard title="Delivery">
         <DeliveryState delivery={invoice.delivery} onSend={onSend} {...(credited ? { sendDisabledReason: CREDIT_MESSAGES.alreadyCredited } : {})} />
@@ -982,12 +972,12 @@ export function CreditNoteDocument({ creditNoteId }: { creditNoteId: string }) {
   const accPayCredit = cn.xero?.accPayCreditNoteId !== undefined ? xeroCreditNotes[cn.xero.accPayCreditNoteId] : undefined
 
   return (
-    <div data-testid="credit-note-workspace" style={{ display: 'grid', gridTemplateColumns: '760px 264px', alignItems: 'start', gap: 24, width: '100%', maxWidth: 1048, margin: '0 auto' }}>
+    <div data-testid="credit-note-workspace" style={DOCUMENT_DESK_STYLE}>
       <div
         className="aa-invoice-doc"
         data-shot="credit-note-document"
         data-credit-note-id={cn.id}
-        style={{ minWidth: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.panel, padding: '36px 40px', display: 'flex', flexDirection: 'column', gap: 22 }}
+        style={{ ...DOCUMENT_PAPER_STYLE, display: 'flex', flexDirection: 'column', gap: 22 }}
       >
         <DocMasthead supplier={supplier} heading={CREDIT_LABELS.documentHeading} number={cn.creditNoteNumber}>
           {original !== undefined && (
@@ -1027,7 +1017,7 @@ export function CreditNoteDocument({ creditNoteId }: { creditNoteId: string }) {
         </div>
       </div>
 
-      <aside data-testid="credit-note-info-rail" aria-label="Credit note information" style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 12, width: 264 }}>
+      <aside data-testid="credit-note-info-rail" aria-label="Credit note information" style={DOCUMENT_RAIL_STYLE}>
         <RailCard title="Delivery">
           <DeliveryState delivery={cn.delivery} caption={CREDIT_LABELS.deliveryCaption} />
         </RailCard>

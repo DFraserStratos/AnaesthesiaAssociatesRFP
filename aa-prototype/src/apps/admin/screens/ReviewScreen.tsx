@@ -45,12 +45,13 @@ import { stampText } from '../../../domain/dateText'
 import type { Notification } from '../../../domain/types'
 import { procedureStackViewFor } from '../../../store/selectors'
 import { ProcedureStack } from '../../../shared/booking/ProcedureStack'
+import { AdminPage } from '../components/AdminPage'
 import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../components/ChangedSinceSubmitted'
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { allocationNote, inDisplayOrder } from '../../../domain/billing/multiProcedure'
-import { BackLink, FormError, Notice, PageHeader, Pill, ResultLine, StatTile, TickButton } from '../../../shared/ui'
+import { FormError, Notice, Pill, ResultLine, StatTile, TickButton } from '../../../shared/ui'
 import { TextAction } from '../../../shared/ui/TextAction'
 import { ClearWarningButton } from '../../../shared/warnings'
 import { withStubsInTimeOrder } from '../../../domain/intake/stubs'
@@ -259,35 +260,21 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
   }
 
   return (
-    <div data-testid="review-detail-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
-      {backToBillingMonitor && (
-        <BackLink onClick={onBack} shot="review-back-to-billing">Back to Billing monitor</BackLink>
-      )}
-      {/* Breadcrumb */}
-      {!backToBillingMonitor && (
-      <div style={{ fontSize: 13, color: neutral.mist }}>
-        <button type="button" className="aa-ctl" onClick={onBack} style={{ border: 'none', background: 'none', padding: 0, color: neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Review queue</button>
-        <span style={{ color: neutral.lineStrong }}> / </span>
-        <span>{anaesthetist !== undefined ? anaesthetist.name : list.anaesthetistId} · {hospitalName} {sessionText(list.session)}</span>
-      </div>
-      )}
-
-      {/* Header */}
-      <PageHeader
-        size="admin"
-        wrap
-        style={{ alignItems: 'flex-start' }}
-        actionsStyle={{ marginLeft: 'auto', maxWidth: '100%' }}
-        title={<>{hospitalName} · {sessionText(list.session)} list</>}
-        sub={
-          <>
-            {anaesthetist !== undefined ? anaesthetist.name : list.anaesthetistId}
-            {surgeon !== undefined ? ` · ${surgeon.name}` : ''}
-            {surgeonSpecialtyLabel(masters, surgeon) !== '' ? ` · ${surgeonSpecialtyLabel(masters, surgeon)}` : ''}
-            {` · ${dayLabel}${times !== undefined ? ` · ${slotTimeRange(times)}` : ''}`}
-          </>
-        }
-        actions={
+    <AdminPage
+      mode="fluid"
+      actionsAlign="start"
+      testId="review-detail-screen"
+      back={backToBillingMonitor ? { label: 'Billing monitor', onClick: onBack, shot: 'review-back-to-billing' } : { label: 'Review queue', onClick: onBack }}
+      title={<>{hospitalName} · {sessionText(list.session)} list</>}
+      sub={
+        <>
+          {anaesthetist !== undefined ? anaesthetist.name : list.anaesthetistId}
+          {surgeon !== undefined ? ` · ${surgeon.name}` : ''}
+          {surgeonSpecialtyLabel(masters, surgeon) !== '' ? ` · ${surgeonSpecialtyLabel(masters, surgeon)}` : ''}
+          {` · ${dayLabel}${times !== undefined ? ` · ${slotTimeRange(times)}` : ''}`}
+        </>
+      }
+      actions={
         <div style={{ display: 'flex', flex: '0 0 auto', flexDirection: 'column', alignItems: 'flex-end', gap: 10, marginLeft: 'auto', maxWidth: '100%' }}>
           <div data-testid="review-queue-navigation" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
             <Button
@@ -319,9 +306,8 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
             {changed !== null && <ChangedSinceSubmittedPill cue={changed} />}
           </div>
         </div>
-        }
-      />
-
+      }
+    >
       {/* Authorised banner (choreography) */}
       {authorised && (
         <div data-shot="review-authorised-banner" style={{ display: 'flex', alignItems: 'center', gap: 16, background: semantic.success.tint, border: `1px solid ${semantic.success.solid}44`, borderRadius: radius.card, padding: 16, animation: 'aa-fade-in 260ms ease' }}>
@@ -348,7 +334,7 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
       )}
 
       {/* Summary strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
         <StatTile variant="outlined" label="Bookings" value={String(rows.length)} />
         <StatTile variant="outlined" label="Total units" value={String(listTotals.units)} />
         <StatTile variant="outlined" label="Total fee" value={listFeeText} />
@@ -589,7 +575,7 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
           onClose={() => setHistory(null)}
         />
       )}
-    </div>
+    </AdminPage>
   )
 }
 

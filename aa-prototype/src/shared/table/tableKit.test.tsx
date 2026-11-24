@@ -146,4 +146,41 @@ describe('table kit', () => {
     expect(screen.getByText('Time')).toHaveStyle({ verticalAlign: 'top' })
     expect((document.querySelector('tr[data-diff="plain"]') as HTMLElement).style.background).toBe('')
   })
+  it('fit puts aa-table-fit on the table and wraps the scroller in the card', () => {
+    render(<TableShell label="Notifications" fit testId="t" tableData={{ 'data-table': 'n' }}><tbody /></TableShell>)
+    const scroller = screen.getByTestId('t')
+    expect(document.querySelector('table')).toHaveClass('aa-table-fit')
+    expect(scroller).toHaveStyle({ overflowY: 'auto' })
+    // The card is the frame around the scroller now, not the scroller itself.
+    expect(scroller.style.boxShadow).toBe('')
+    const card = scroller.parentElement as HTMLElement
+    expect(card).toHaveAttribute('data-table-card')
+    expect(card).toHaveStyle({ borderRadius: `${radius.card}px`, boxShadow: elevation.e1, background: neutral.surface })
+    expect(document.querySelector('[data-table-footer]')).toBeNull()
+  })
+
+  it('footer renders below the scroller, outside it, with or without fit', () => {
+    for (const fit of [true, false]) {
+      const { unmount } = render(
+        <TableShell label="Invoices" fit={fit} testId="t" footer={<span>Showing 1 to 50 of 120</span>}><tbody /></TableShell>,
+      )
+      const scroller = screen.getByTestId('t')
+      const footer = document.querySelector('[data-table-footer]') as HTMLElement
+      expect(footer, `fit ${fit}`).toHaveTextContent('Showing 1 to 50 of 120')
+      expect(scroller.contains(footer)).toBe(false)
+      expect(footer.parentElement).toBe(scroller.parentElement)
+      expect(footer.previousElementSibling).toBe(scroller)
+      expect(scroller.parentElement).toHaveAttribute('data-table-card')
+      expect(document.querySelector('table')?.classList.contains('aa-table-fit')).toBe(fit)
+      unmount()
+    }
+  })
+
+  it('without fit or footer the scroller is still the card', () => {
+    render(<TableShell label="T" testId="t"><tbody /></TableShell>)
+    const scroller = screen.getByTestId('t')
+    expect(document.querySelector('[data-table-card]')).toBeNull()
+    expect(scroller).toHaveStyle({ borderRadius: `${radius.card}px`, boxShadow: elevation.e1 })
+    expect(document.querySelector('table')).not.toHaveClass('aa-table-fit')
+  })
 })

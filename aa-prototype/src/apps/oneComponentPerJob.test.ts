@@ -123,15 +123,11 @@ export const ALLOW_LIST: readonly { file: string; count: number; reason: string 
   { file: 'shared/capture/UnitsCard.tsx', count: 1, reason: "'Use seeded value', a 12px word inside a caption sentence: TextAction's smallest size is 12.5 (U5's handoff), logged for a TextAction size" },
   { file: 'shared/availability/AvailabilityEditor.tsx', count: 1, reason: "Done at 48px with radius 14, a lineStrong border and teal words; no Button variant" },
   // The breadcrumb crumb (Admin Review mockup): four copies, no shared Breadcrumb yet.
-  { file: 'apps/admin/routes.tsx', count: 1, reason: "The credit note's breadcrumb crumb (Admin Review mockup): four copies with PaymentRun's Trail, no shared Breadcrumb yet (logged for the owner)" },
-  { file: 'apps/admin/screens/InvoicesScreen.tsx', count: 1, reason: "The invoice's breadcrumb crumb (Admin Review mockup): four copies with PaymentRun's Trail, no shared Breadcrumb yet (logged for the owner)" },
-  { file: 'apps/admin/screens/PaymentRunScreen.tsx', count: 1, reason: "The payment run's breadcrumb crumbs, Trail (Admin Review mockup): no shared Breadcrumb yet (logged for the owner)" },
-  { file: 'apps/admin/screens/ReviewScreen.tsx', count: 1, reason: "Review's breadcrumb crumb (Admin Review mockup): four copies with PaymentRun's Trail, no shared Breadcrumb yet (logged for the owner)" },
 ]
 
 /** The list's length, and its buttons in all, when U7 closed (23 November 2026). Both may only come down. */
-export const ALLOW_LIST_CEILING = 56
-export const ALLOWED_BUTTONS_CEILING = 87
+export const ALLOW_LIST_CEILING = 52
+export const ALLOWED_BUTTONS_CEILING = 83
 
 /** Block and line comments blanked (newlines kept, so offsets and line numbers hold). */
 export function stripComments(src: string): string {

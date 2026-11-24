@@ -10,11 +10,29 @@ import { EditAnaesthetistSheet } from '../../flows/EditAnaesthetistSheet'
 import { AddAnaesthetistFlow } from '../../flows/AddAnaesthetistFlow'
 import { TierPill, usePriorityTiers } from '../../components/pairing'
 import { ClickableRow } from '../../../../shared/table'
-import { EditCell, MasterHeader, MasterTable } from './chrome'
+import { EditCell, MasterHeader, MasterTable, type MasterColumn } from './chrome'
 import { rowCellStyle } from './tableStyles'
 import { anaesthetistRecordPath } from '../../mastersPaths'
 import { formatCurrency, HPI_CPN_LABEL } from '../../../../shared/format'
 import { RATE_PER_UNIT } from '../../../../shared/profile/profileCopy'
+
+/**
+ * The columns: the short ones never wrap, and the name and the email take the spare width. Each
+ * column holds two facts, one over the other (the registration over the HPI CPN, the bank account
+ * over the GST number, the email over the phone, the start date over Active), so the table fits a
+ * 1280 laptop beside the view list without scrolling sideways. The rate per unit stays the third
+ * column.
+ */
+const COLUMNS: readonly MasterColumn[] = [
+  'Name',
+  `Reg · ${HPI_CPN_LABEL}`,
+  RATE_PER_UNIT,
+  'Tier',
+  'Bank account · GST',
+  'Email · phone',
+  'Start date',
+  '',
+]
 
 /**
  * Anaesthetists (catch-up Phase 17 adds the Tier column and the row that opens
@@ -38,7 +56,7 @@ export function AnaesthetistsView({ actor }: { actor: Actor }) {
         sub="Open an anaesthetist for their record, tier and pairing preferences. Adding one creates their sessions from their start date."
         add={{ label: 'Add anaesthetist', onClick: () => setAdding(true) }}
       />
-      <MasterTable columns={['Name', 'Reg', RATE_PER_UNIT, 'Tier', HPI_CPN_LABEL, 'Bank account', 'GST number', 'Phone', 'Email', 'Start date', 'Active', '']} rightAlign={[11]} shot="masters-anaesthetists" label="Anaesthetists">
+      <MasterTable columns={COLUMNS} rightAlign={[7]} shot="masters-anaesthetists" label="Anaesthetists">
         {rows.map((a) => (
           <ClickableRow
             key={a.registrationNumber}
@@ -50,18 +68,29 @@ export function AnaesthetistsView({ actor }: { actor: Actor }) {
                 <span className="aa-table-entity-link-title">{a.name}</span>
               </Link>
             </td>
-            <td className="mono" style={rowCellStyle}>{a.registrationNumber}</td>
-            <td className="mono" style={rowCellStyle}>{formatCurrency(a.unitValue)}</td>
-            <td style={rowCellStyle}><TierPill tier={tierFor(tiers, a.registrationNumber)} /></td>
-            <td className="mono" style={rowCellStyle}>{a.hpiId}</td>
-            <td data-shot="anaesthetist-bank" className="mono" style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>{maskBankAccount(a.bankAccount.accountNumber)}</td>
-            <td data-shot="anaesthetist-gst-number" className={a.gstNumber !== undefined ? 'mono' : undefined} style={{ ...rowCellStyle, whiteSpace: 'nowrap', ...(a.gstNumber === undefined ? { color: neutral.mist } : {}) }}>
-              {a.gstNumber !== undefined ? formatGstNumber(a.gstNumber) : 'Not held'}
+            {/* The registration number over the HPI CPN. */}
+            <td className="mono" style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>
+              <div>{a.registrationNumber}</div>
+              <div style={{ fontSize: 12, color: neutral.slate }}>{a.hpiId}</div>
             </td>
-            <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>{a.phone}</td>
-            <td style={rowCellStyle}>{a.email}</td>
-            <td className="mono" style={rowCellStyle}>{format(parseISO(a.startDateISO), 'd MMM yyyy')}</td>
-            <td style={rowCellStyle}>{a.active ? 'Yes' : 'No'}</td>
+            <td className="mono" style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>{formatCurrency(a.unitValue)}</td>
+            <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}><TierPill tier={tierFor(tiers, a.registrationNumber)} /></td>
+            {/* The bank account over the GST number: one column, so the table fits a laptop without scrolling sideways. */}
+            <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>
+              <div data-shot="anaesthetist-bank" className="mono">{maskBankAccount(a.bankAccount.accountNumber)}</div>
+              <div data-shot="anaesthetist-gst-number" className={a.gstNumber !== undefined ? 'mono' : undefined} style={{ fontSize: 12, color: a.gstNumber !== undefined ? neutral.slate : neutral.mist }}>
+                {a.gstNumber !== undefined ? formatGstNumber(a.gstNumber) : 'Not held'}
+              </div>
+            </td>
+            {/* Email over phone: the column that takes the spare width. */}
+            <td style={rowCellStyle}>
+              <div style={{ overflowWrap: 'anywhere' }}>{a.email}</div>
+              <div style={{ fontSize: 12, color: neutral.slate, whiteSpace: 'nowrap' }}>{a.phone}</div>
+            </td>
+            <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>
+              <div className="mono">{format(parseISO(a.startDateISO), 'd MMM yyyy')}</div>
+              <div style={{ fontSize: 12, color: a.active ? neutral.slate : neutral.mist }}>{a.active ? 'Active' : 'Inactive'}</div>
+            </td>
             <EditCell onClick={() => setEditId(a.registrationNumber)} style={rowCellStyle} />
           </ClickableRow>
         ))}

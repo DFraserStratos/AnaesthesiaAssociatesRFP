@@ -8,13 +8,15 @@ import { useMemo, useState } from 'react'
 import { neutral, radius } from '../../../theme/tokens'
 import { correctEthnicityCode, dataQualityItems, useAppStore, type Actor } from '../../../store'
 import { Button, EmptyState, FormError, Pill, TextField } from '../../../shared/ui'
+import { PageBody } from '../components/AdminPage'
+import { ADMIN_FORM_WIDTH, ADMIN_PROSE_WIDTH } from '../layout'
 
 export function DataQualityTab({ actor }: { actor: Actor }) {
   const masters = useAppStore((s) => s.masters)
   const items = useMemo(() => dataQualityItems({ masters }), [masters])
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ fontSize: 12.5, color: neutral.slate, maxWidth: 820, lineHeight: 1.5 }}>
+    <PageBody gap={12}>
+      <div style={{ fontSize: 12.5, color: neutral.slate, maxWidth: ADMIN_PROSE_WIDTH, lineHeight: 1.5 }}>
         Ethnicity is coded to NZHIS Level 4, so an inbound code that is not a valid code is
         quarantined &ldquo;pending correction&rdquo;, never stored, and the Booking still books. Supply a valid code to
         clear each item.
@@ -24,7 +26,7 @@ export function DataQualityTab({ actor }: { actor: Actor }) {
       ) : (
         items.map((item) => <DataQualityCard key={item.patientId} item={item} actor={actor} />)
       )}
-    </div>
+    </PageBody>
   )
 }
 
@@ -36,7 +38,7 @@ function DataQualityCard({ item, actor }: { item: { patientId: string; name: str
     setError(outcome.ok ? null : outcome.message)
   }
   return (
-    <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 14, maxWidth: ADMIN_FORM_WIDTH, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 14, fontWeight: 700 }}>{item.name}</span>
         {item.nhi !== undefined && <span className="mono" style={{ fontSize: 12, color: neutral.mist }}>{item.nhi}</span>}

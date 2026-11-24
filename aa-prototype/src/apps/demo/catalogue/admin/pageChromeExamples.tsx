@@ -1,6 +1,7 @@
 /**
  * Catalogue examples for UI unification U6's shared page parts: the table kit, the card, the eyebrow,
- * the page header and the label and value rows. Each renders the real shared component. Demo only.
+ * the page header, the Admin page frame and the label and value rows. Each renders the real shared
+ * component. Demo only.
  */
 
 import { useState } from 'react'
@@ -8,7 +9,9 @@ import { Lock } from 'lucide-react'
 import { neutral } from '../../../../theme/tokens'
 import { ClickableRow, GroupRow, RowOpenButton, TableShell, Td, Th, type TableDensity } from '../../../../shared/table'
 import { DRAFT_LIST, DRAFT_LISTS, UNASSIGNED } from '../../../../shared/scheduleTerms'
-import { Button, Card, DefList, DefRow, Eyebrow, PageHeader, visuallyHidden } from '../../../../shared/ui'
+import { Button, Card, DefList, DefRow, Eyebrow, PageHeader, SelectField, visuallyHidden } from '../../../../shared/ui'
+import { AdminPage, PageBody, PageToolbar } from '../../../admin/components/AdminPage'
+import { Pager } from '../../../admin/components/Pager'
 
 function Echo({ children }: { children: string }) {
   return <div style={{ fontSize: 12.5, color: neutral.slate }}>{children}</div>
@@ -31,7 +34,7 @@ export function TableKitExample() {
           </Button>
         ))}
       </div>
-      <TableShell label={DRAFT_LISTS} density={density} minWidth={560}>
+      <TableShell label={DRAFT_LISTS} density={density} minWidth={560} footer={<Pager total={ROWS.length} size={25} page={1} onPage={() => {}} />}>
         <thead>
           <tr>
             <Th>Date</Th>
@@ -62,6 +65,49 @@ export function TableKitExample() {
       </TableShell>
       <Echo>{last}</Echo>
     </div>
+  )
+}
+
+const FRAME_ROWS = [
+  { id: 'N-1', when: '24 Nov 09:12', who: 'Dr Hale', what: 'Moved a List to Wed 25 Nov AM' },
+  { id: 'N-2', when: '24 Nov 08:40', who: 'Dr Reid', what: 'Asked the office to call the surgeon' },
+  { id: 'N-3', when: '23 Nov 17:05', who: 'Dr Moss', what: 'Marked Thu 26 Nov unavailable' },
+]
+
+/** The Admin page frame at fluid: the title row, one toolbar, then the body with a footer pager and a rail. */
+export function AdminPageExample() {
+  const [hospital, setHospital] = useState('all')
+  const [page, setPage] = useState(1)
+  return (
+    <AdminPage mode="fluid" title="Notifications" sub="Lists anaesthetists moved themselves, newest first." actions={<Button size="desktop">Resolve all</Button>}>
+      <PageToolbar end={<span className="mono">{FRAME_ROWS.length} notices</span>}>
+        <SelectField label="Hospital" hideLabel size="compact" fill="surface" value={hospital} onChange={setHospital}>
+          <option value="all">All hospitals</option>
+          <option value="stg">St George&apos;s</option>
+          <option value="mercy">Mercy Hospital</option>
+        </SelectField>
+      </PageToolbar>
+      <PageBody rail={<Card title="About notices"><span style={{ fontSize: 13, color: neutral.slate }}>The rail: one width on every Admin page.</span></Card>} railLabel="About notices">
+        <TableShell label="Notifications" density="compact" footer={<Pager total={FRAME_ROWS.length * 20} size={20} page={page} onPage={setPage} />}>
+          <thead>
+            <tr>
+              <Th nowrap>When</Th>
+              <Th nowrap>Anaesthetist</Th>
+              <Th>Notice</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {FRAME_ROWS.map((r) => (
+              <tr key={r.id}>
+                <Td mono nowrap>{r.when}</Td>
+                <Td nowrap>{r.who}</Td>
+                <Td>{r.what}</Td>
+              </tr>
+            ))}
+          </tbody>
+        </TableShell>
+      </PageBody>
+    </AdminPage>
   )
 }
 

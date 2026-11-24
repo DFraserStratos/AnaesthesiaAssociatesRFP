@@ -6,7 +6,7 @@ import { addAaModifier, editAaModifier, useAppStore, type Actor } from '../../..
 import { Button, FieldLabel, FormError, TextField } from '../../../../shared'
 import { EmptyState, Pill } from '../../../../shared/ui'
 import { OverlayHeader, SheetActions, useSurface } from '../../../../shared/surface'
-import { ACTIONS_COLUMN, EditCell, MasterHeader, MasterTable, RetiredPill, RetireSection, ShowRetiredToggle, retiredRowStyle, type MasterColumn } from './chrome'
+import { ACTIONS_COLUMN, EditCell, MASTER_VIEW_COLUMN, MasterHeader, MasterTable, RetiredPill, RetireSection, ShowRetiredToggle, retiredRowStyle, type MasterColumn } from './chrome'
 import { cellStyle } from './tableStyles'
 
 const RVG_COLUMNS: readonly MasterColumn[] = ['Code', 'Block', 'Modifying factor', { label: 'Units', align: 'right' }, 'Priced as', 'Applied', { label: 'Page', align: 'right' }, 'Source']
@@ -51,7 +51,7 @@ export function ModifiersView({ actor }: { actor: Actor }) {
   const aaRows = showRetired ? aa : aa.filter((m) => !isRetired(m))
 
   return (
-    <div data-shot="masters-modifiers" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div data-shot="masters-modifiers" style={MASTER_VIEW_COLUMN}>
       <MasterHeader
         title="Modifiers"
         sub="The NZSA RVG 2021 modifier table, as printed, plus AA's own."
@@ -65,7 +65,7 @@ export function ModifiersView({ actor }: { actor: Actor }) {
             <td style={{ ...cellStyle, whiteSpace: 'nowrap', color: neutral.slate }}>{m.block}</td>
             <td style={cellStyle}>{m.factor}</td>
             <td className="mono" style={{ ...cellStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{m.unitsAsPrinted}</td>
-            <td style={{ ...cellStyle, whiteSpace: 'nowrap', color: m.units === null ? neutral.slate : neutral.ink }}>
+            <td style={{ ...cellStyle, color: m.units === null ? neutral.slate : neutral.ink }}>
               {m.units === null ? 'Entered at capture' : <span className="mono">{m.units}</span>}
             </td>
             <td style={{ ...cellStyle, color: neutral.slate }}>{appliedText(m, included.has(m.id))}</td>

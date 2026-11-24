@@ -1,21 +1,22 @@
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useMemo, useState, type ReactNode } from 'react'
 import { ChevronRight } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
-import { fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { fontFamily, neutral } from '../../../theme/tokens'
 import type { CreditNote, Invoice } from '../../../domain/types'
 import { invoiceDeliveryLabel, layoutShortLabel } from '../../../domain/billing'
-import { Card, Eyebrow, PageHeader, Pill, TextAction, TextField } from '../../../shared/ui'
+import { CountBadge, EmptyState, LineTabLink, LineTabs, NameSearchBox, Pill, TextAction } from '../../../shared/ui'
 import { FULL_SCALE } from '../../../domain/seed/fullScale/constants'
 import { Pager, pageOf } from '../components/Pager'
 import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 import type { Actor } from '../../../store'
-import { billedLists, invoiceAddresseeName, invoiceCountsByList, invoiceStanding, isBackdropCreditNote, isBackdropInvoice, originalInvoiceFor, rebillOriginFor, useAppStore, openBillingExceptions } from '../../../store'
+import { invoiceAddresseeName, invoiceStanding, isBackdropCreditNote, isBackdropInvoice, originalInvoiceFor, rebillOriginFor, useAppStore, usePendingPrepayments, openBillingExceptions } from '../../../store'
 import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, PRE_POST_OP_COPY } from '../../../shared/procedureEventCopy'
-import { dateTimeMicroCap, dayMicroCap, formatCount, formatCurrency, hhmm, plural } from '../../../shared/format'
+import { dayMicroCap, drSurname, formatCount, formatCurrency, plural, pluralWord, shortDay, stampText } from '../../../shared/format'
 import { listShortLabel, listSourceLabels } from '../util'
 import { InvoiceDocument } from './InvoiceDocument'
 import { PrepaymentApprovalStrip } from '../components/PrepaymentApprovalStrip'
+import { AdminPage, PageBody, PageToolbar } from '../components/AdminPage'
 
 /** The Kind column's words (catch-up Phase 38b). A credit note's row reads `CREDIT_LABELS.kind` (catch-up Phase 39): it is its own record, never an invoice kind. */
 const INVOICE_KIND_LABEL: Record<Invoice['kind'], string> = {
@@ -32,11 +33,13 @@ interface InvoicesScreenProps {
 
 
 /**
- * The invoices raised by the billing run (Phase 08; B6). A table of every
- * invoice with how the run delivered it (emailed, to post, or no address), a recently-billed strip, and an inline
- * document view — inline rather than a dialog, because the print stylesheet
- * isolates the `.aa-invoice-doc` node and a fixed-position Dialog ancestor
- * would break `position: absolute` print isolation.
+ * The invoices raised by the billing run (Phase 08; B6). A `fit` Admin page with two tabs in the
+ * URL: All invoices (`/admin/invoices`), the table of every invoice with how the run delivered it
+ * (emailed, to post, or no address), the search in the toolbar and the pager in the card's foot; and
+ * Awaiting approval (`?view=approval`), the prepayment invoices waiting on an admin with the
+ * Prepayment approval switch. An invoice opens as a `document` page (the paper and its rail) inline
+ * rather than in a dialog, because the print stylesheet isolates the `.aa-invoice-doc` node and a
+ * fixed-position Dialog ancestor would break `position: absolute` print isolation.
  */
 export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesScreenProps) {
   const billing = useAppStore((s) => s.billing)
@@ -129,108 +132,97 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
     [shownInvoices, schedule.bookings, schedule.lists, masters],
   )
 
-  const billed = useMemo(() => billedLists({ schedule }), [schedule])
-  const invoiceCountByList = useMemo(() => invoiceCountsByList({ schedule, billing }), [schedule, billing])
+  // Prepayment invoices waiting on an admin (catch-up Phase 27, US-06.3.1): the "Awaiting approval" tab's count.
+  const awaitingCount = usePendingPrepayments().length
+  // The tab is in the URL (`?view=approval`), so a refresh or a link lands on it.
+  const [params] = useSearchParams()
+  const view: 'all' | 'approval' = params.get('view') === 'approval' ? 'approval' : 'all'
 
   // Billing-run exceptions not yet resolved (catch-up Phase 36; the Phase 09 monitor's seam).
   const failedCases = useMemo(() => openBillingExceptions({ billing }), [billing])
-  // At scale the strip names the first few; the monitor holds the rest.
-  const failedShown = failedCases.slice(0, 5)
 
   if (selectedInvoiceId !== null && billing.invoices[selectedInvoiceId] !== undefined) {
-    const invoice = billing.invoices[selectedInvoiceId]
     return (
-      <div data-testid="invoice-detail-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', maxWidth: 1048, margin: '0 auto' }}>
-          <div style={{ fontSize: 13, color: neutral.mist }}>
-            <button type="button" className="aa-ctl" onClick={() => onSelect(null)} style={{ border: 'none', background: 'none', padding: 0, color: neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Invoices</button>
-            <span style={{ color: neutral.lineStrong }}> / </span>
-            <span className="mono">{invoice.invoiceNumber}</span>
-          </div>
-        </div>
+      <AdminPage mode="document" testId="invoice-detail-screen" back={{ label: 'Invoices', onClick: () => onSelect(null) }}>
         <InvoiceDocument key={selectedInvoiceId} invoiceId={selectedInvoiceId} actor={actor} />
-      </div>
+      </AdminPage>
+    )
+  }
+
+  const tabs = (
+    <LineTabs label="Invoices views" shot="invoices-tabs">
+      <LineTabLink to="/admin/invoices" active={view === 'all'} data-view="all">All invoices</LineTabLink>
+      <LineTabLink to="/admin/invoices?view=approval" active={view === 'approval'} data-view="approval" badge={<CountBadge count={awaitingCount} srNoun="to approve" />}>
+        Awaiting approval
+      </LineTabLink>
+    </LineTabs>
+  )
+  const title = 'Invoices'
+  const sub = "Raised when a list is authorised: one per billable party per Booking, or per share of a split fee, then emailed or marked to post as the party's delivery says."
+
+  if (view === 'approval') {
+    return (
+      <AdminPage mode="fluid" testId="invoice-list-screen" data-view="approval" title={title} sub={sub} tabs={tabs}>
+        <PageBody>
+          {/* Prepayment invoices waiting on an admin, with the approval switch (catch-up Phase 27, US-06.3.1). */}
+          <PrepaymentApprovalStrip actor={actor} />
+        </PageBody>
+      </AdminPage>
     )
   }
 
   return (
-    <div data-testid="invoice-list-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
-      <PageHeader
-        size="admin"
-        title="Invoices"
-        subStyle={{ maxWidth: 720 }}
-        sub={
-          <>
-            Raised and sent by the billing run when a list is authorised: one invoice per billable party per Booking, and
-            one per share where a procedure&apos;s fee is split on the Booking. Each is emailed, or marked to post, as its
-            party&apos;s delivery says.
-          </>
-        }
-      />
-
-      {/* Prepayment invoices waiting on an admin, with the approval switch (catch-up Phase 27, US-06.3.1). */}
-      <PrepaymentApprovalStrip actor={actor} />
-
-      {/* Recently billed lists */}
-      {billed.length > 0 && (
-        <Card style={{ background: neutral.sunken, padding: '12px 16px', gap: 6 }}>
-          <Eyebrow as="h2">Recently billed</Eyebrow>
-          {billed.slice(0, 6).map((l) => (
-            <div key={l.id} style={{ fontSize: 12.5, color: neutral.ink, display: 'flex', gap: 8, alignItems: 'baseline' }}>
-              <span>{listShortLabel(l, masters)} · {dayMicroCap(l.dateISO)}</span>
-              <span style={{ color: neutral.mist }}>
-                billed {hhmm(l.billedAtISO)} · {plural(invoiceCountByList[l.id] ?? 0, 'invoice')}
-              </span>
-            </div>
-          ))}
-        </Card>
-      )}
-
-      {/* Billing exceptions are resolved through the monitor workflow. */}
-      {failedCases.length > 0 && (
-        <div style={{ background: semantic.warning.tint, border: `1px solid ${semantic.warning.solid}44`, borderRadius: radius.card, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: semantic.warning.onTint }}>
-            {plural(failedCases.length, 'booking')} raised a billing exception
-          </span>
-          {failedShown.map((c) => (
-            <div key={c.id} style={{ fontSize: 12.5, color: semantic.warning.onTint }}>
-              <span className="mono">{c.bookingId}</span> · {c.message}
-            </div>
-          ))}
-          {failedCases.length > failedShown.length && <span style={{ fontSize: 12.5, color: semantic.warning.onTint }}>{`and ${formatCount(failedCases.length - failedShown.length)} more`}</span>}
-          <span style={{ fontSize: 12, color: semantic.warning.onTint }}>Open Billing monitor to resolve and retry.</span>
-        </div>
-      )}
-
-      {invoices.length === 0 ? (
-        <div style={{ fontSize: 13, color: neutral.mist }}>
-          No invoices yet. Authorise a submitted list and the billing run raises its invoices immediately.
-        </div>
-      ) : (
-        <>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <TextField
+    <AdminPage mode="fit" testId="invoice-list-screen" data-view="all" title={title} sub={sub} tabs={tabs}>
+      {invoices.length > 0 && (
+        <PageToolbar
+          end={
+            <>
+              {/* Billing exceptions are resolved through the monitor workflow. */}
+              {failedCases.length > 0 && (
+                <span data-shot="invoices-billing-exceptions" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <Pill tone="warning" size="sm" title={failedCases.slice(0, 5).map((c) => `${c.bookingId} · ${c.message}`).join('\n')}>
+                    {`${plural(failedCases.length, 'booking')} raised a billing exception`}
+                  </Pill>
+                  <TextAction size="sm" flush onClick={() => navigate('/admin/billing')}>Open Billing monitor</TextAction>
+                </span>
+              )}
+              <span className="mono" data-shot="invoices-count">{`${formatCount(matching.length)} ${pluralWord(matching.length, 'invoice')}`}</span>
+            </>
+          }
+        >
+          <NameSearchBox
+            size="pill"
             label="Find by invoice number or payer"
-            size="compact"
-            fill="surface"
             value={query}
             onChange={(v) => {
               setQuery(v)
               setPage(1)
             }}
             shot="invoices-search"
-            width={320}
+            width={300}
           />
-          {matching.length > pageSize && <Pager total={matching.length} size={pageSize} page={page} onPage={setPage} shot="invoices-pager" />}
-        </div>
-        {matching.length === 0 && shownLooseCreditNotes.length === 0 ? (
-          <div style={{ fontSize: 13, color: neutral.mist }}>No invoice matches that number or payer.</div>
-        ) : (
-        <TableShell testId="invoice-list-table-shell" label="Invoices" density="compact" minWidth={1460}>
+        </PageToolbar>
+      )}
+
+      <PageBody>
+      {invoices.length === 0 ? (
+        <EmptyState variant="inline">No invoices yet. Authorise a submitted list and the billing run raises its invoices immediately.</EmptyState>
+      ) : matching.length === 0 && shownLooseCreditNotes.length === 0 ? (
+        <EmptyState variant="inline">No invoice matches that number or payer.</EmptyState>
+      ) : (
+        <TableShell
+          fit
+          testId="invoice-list-table-shell"
+          label="Invoices"
+          density="dense"
+          minWidth={900}
+          {...(matching.length > pageSize ? { footer: <Pager total={matching.length} size={pageSize} page={page} onPage={setPage} shot="invoices-pager" /> } : {})}
+        >
             <thead>
               <tr>
-                {['Number', 'Kind', 'Patient / booking', 'Anaesthetist', 'List', 'List date', 'Raised', 'Counterparty', 'Layout', 'Total', 'Delivery', ''].map((h, i) => (
-                  <Th key={h === '' ? 'view' : h} align={h === 'Total' ? 'right' : 'left'} {...(i <= 1 || i >= 5 ? { nowrap: true } : {})}>
+                {/* Patient / booking and Counterparty take the spare width; the rest hug their content. */}
+                {INVOICE_COLUMNS.map((h) => (
+                  <Th key={h === '' ? 'view' : h} align={h === 'Total' ? 'right' : 'left'} nowrap {...(FLEX_COLUMNS.has(h) ? {} : { width: '1%' })}>
                     {h}
                   </Th>
                 ))}
@@ -252,19 +244,19 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                   <Fragment key={invoice.id}>
                   {(creditNotesByOriginal.get(invoice.id) ?? []).map(creditRow)}
                   <ClickableRow onOpen={() => onSelect(invoice.id)} data-invoice-id={invoice.id}>
-                  <Td mono bold nowrap>
-                    {invoice.invoiceNumber}
+                  <Td mono bold>
+                    <NumberLine number={invoice.invoiceNumber} kind={invoice.kind} />
                     {/* An additional invoice names its original (catch-up Phase 38b). */}
                     {invoice.kind === 'additional' && originalOf(invoice) !== undefined && (
-                      <div data-shot="invoice-list-additional-to" style={{ marginTop: 2, fontSize: 11.5, fontWeight: 400, color: neutral.mist }}>{ADDITIONAL_INVOICE_COPY.additionalTo(originalOf(invoice)!.invoiceNumber)}</div>
+                      <div data-shot="invoice-list-additional-to" style={SUBLINE}>{ADDITIONAL_INVOICE_COPY.additionalTo(originalOf(invoice)!.invoiceNumber)}</div>
                     )}
                     {/* Its event lines (catch-up Phase 39b): "+2 event lines". */}
                     {(eventLineCounts.get(invoice.id) ?? 0) > 0 && (
-                      <div data-shot="invoice-list-event-lines" style={{ marginTop: 2, fontSize: 11.5, fontWeight: 400, color: neutral.mist }}>{PRE_POST_OP_COPY.eventLines(eventLineCounts.get(invoice.id)!)}</div>
+                      <div data-shot="invoice-list-event-lines" style={SUBLINE}>{PRE_POST_OP_COPY.eventLines(eventLineCounts.get(invoice.id)!)}</div>
                     )}
                     {/* A replacement names the invoice it rebills (catch-up Phase 39). */}
                     {rebillOrigin !== undefined && (
-                      <div data-shot="invoice-list-rebills" style={{ marginTop: 2, fontSize: 11.5, fontWeight: 400, color: neutral.mist }}>{CREDIT_LABELS.rebills(rebillOrigin.invoiceNumber)}</div>
+                      <div data-shot="invoice-list-rebills" style={SUBLINE}>{CREDIT_LABELS.rebills(rebillOrigin.invoiceNumber)}</div>
                     )}
                     {/* Its standing (catch-up Phase 39): derived, neutral. */}
                     {standing !== 'live' && (
@@ -273,7 +265,6 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                       </div>
                     )}
                   </Td>
-                  <Td nowrap><span data-shot="invoice-list-kind" data-kind={invoice.kind}>{INVOICE_KIND_LABEL[invoice.kind]}</span></Td>
                   <Td>
                     {booking !== undefined && list !== undefined ? (
                       <Link
@@ -284,21 +275,18 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                       >
                         <span>
                           <span className="aa-table-entity-link-title">{patientName}</span>
-                          <span className="mono" style={{ display: 'block', marginTop: 2, fontSize: 11.5, color: neutral.mist, whiteSpace: 'nowrap' }}>
+                          <span className="mono" style={{ ...SUBLINE, display: 'block', fontWeight: undefined, whiteSpace: 'nowrap' }}>
                             {bookingLabel}
                           </span>
                         </span>
                         <ChevronRight size={14} strokeWidth={2.2} color={neutral.mist} aria-hidden />
                       </Link>
                     ) : (
-                      <>
-                        <div style={{ fontWeight: 600 }}>{patientName}</div>
-                        <div className="mono" style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist, whiteSpace: 'nowrap' }}>{bookingLabel}</div>
-                      </>
+                      <PatientLines patientName={patientName} bookingLabel={bookingLabel} />
                     )}
                   </Td>
-                  <Td bold>{anaesthetist?.name ?? 'Anaesthetist unavailable'}</Td>
-                  <Td>
+                  <Td bold nowrap><span title={anaesthetist?.name}>{anaesthetist !== undefined ? drSurname(anaesthetist.name) : 'Anaesthetist unavailable'}</span></Td>
+                  <Td nowrap>
                     {list !== undefined && source !== undefined ? (
                       <Link
                         aria-label={`Open ${listShortLabel(list, masters)} in day view`}
@@ -309,7 +297,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                         <span>
                           <span className="aa-table-entity-link-title">{source.primary}</span>
                           {source.secondary !== undefined && (
-                            <span style={{ display: 'block', marginTop: 2, fontSize: 11.5, color: neutral.mist }}>{source.secondary}</span>
+                            <span style={{ ...SUBLINE, display: 'block' }}>{source.secondary}</span>
                           )}
                         </span>
                         <ChevronRight size={14} strokeWidth={2.2} color={neutral.mist} aria-hidden />
@@ -319,18 +307,9 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                     )}
                   </Td>
                   <Td mono nowrap>{list !== undefined ? dayMicroCap(list.dateISO) : '·'}</Td>
-                  <Td mono nowrap>{dateTimeMicroCap(invoice.raisedAtISO)}</Td>
-                  <Td>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                      {invoiceAddresseeName({ masters, schedule, billing }, invoice)}
-                      {invoice.split !== undefined && <Pill size="sm" shot="invoice-list-split">Split</Pill>}
-                    </span>
-                  </Td>
-                  <Td>{layoutShortLabel(invoice.layout)}</Td>
+                  <CounterpartyCell name={invoiceAddresseeName({ masters, schedule, billing }, invoice)} layout={invoice.layout} split={invoice.split !== undefined} />
                   <Td mono bold nowrap align="right">{formatCurrency(invoice.total)}</Td>
-                  <Td>
-                    <DeliveryPill invoice={invoice} />
-                  </Td>
+                  <DeliveryCell pill={<DeliveryPill invoice={invoice} />} raisedISO={invoice.raisedAtISO} />
                   <Td nowrap>
                     {/* The row's keyboard handle, named in full (U6, U09); the row click stays for the mouse. */}
                     <TextAction size="sm" flush label={`View invoice ${invoice.invoiceNumber}`} onClick={() => onSelect(invoice.id)}>
@@ -343,11 +322,66 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
               })}
             </tbody>
         </TableShell>
-        )}
-        {matching.length > pageSize && <Pager total={matching.length} size={pageSize} page={page} onPage={setPage} />}
-        </>
       )}
-    </div>
+      </PageBody>
+    </AdminPage>
+  )
+}
+
+/** The table's columns: Delivery carries the day it was raised under it, Counterparty the layout, Number a credit note's or a non-standard invoice's kind. */
+const INVOICE_COLUMNS = ['Number', 'Patient / booking', 'Anaesthetist', 'List', 'List date', 'Counterparty', 'Total', 'Delivery', ''] as const
+const FLEX_COLUMNS: ReadonlySet<string> = new Set(['Patient / booking', 'Counterparty'])
+
+/** A cell's quiet second line (mist, 11.5). */
+const SUBLINE = { marginTop: 2, fontSize: 11.5, fontWeight: 400, color: neutral.mist } as const
+
+/**
+ * The number, with the kind as a pill beside it for anything but a standard invoice (a credit note, a
+ * prepayment, an additional invoice). The column hugs the number: the pill and the lines under it wrap
+ * rather than widen the table.
+ */
+function NumberLine({ number, kind }: { number: string; kind: Invoice['kind'] | 'creditNote' }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px 6px', flexWrap: 'wrap' }}>
+      <span style={{ whiteSpace: 'nowrap' }}>{number}</span>
+      {kind !== 'standard' && (
+        <Pill size="sm" shot="invoice-list-kind" data-kind={kind} style={{ fontFamily: fontFamily.ui }}>
+          {kind === 'creditNote' ? CREDIT_LABELS.kind : INVOICE_KIND_LABEL[kind]}
+        </Pill>
+      )}
+    </span>
+  )
+}
+
+function PatientLines({ patientName, bookingLabel }: { patientName: string; bookingLabel: string }) {
+  return (
+    <>
+      <div style={{ fontWeight: 600 }}>{patientName}</div>
+      <div className="mono" style={{ ...SUBLINE, whiteSpace: 'nowrap' }}>{bookingLabel}</div>
+    </>
+  )
+}
+
+/** How it went (the Delivery pill, with the send time), and under it the day it was raised (an invoice) or issued (a credit note), the full stamp in its title. */
+function DeliveryCell({ pill, raisedISO, stampLabel = 'Raised' }: { pill: ReactNode; raisedISO: string | undefined; stampLabel?: 'Raised' | 'Issued' }) {
+  return (
+    <Td nowrap>
+      {pill}
+      <div data-shot="invoice-list-raised" title={raisedISO !== undefined ? `${stampLabel} ${stampText(raisedISO)}` : undefined} style={SUBLINE}>{`${stampLabel} ${raisedISO !== undefined ? shortDay(raisedISO) : '·'}`}</div>
+    </Td>
+  )
+}
+
+/** The party it goes to, a Split pill for a share, and the layout it prints in. */
+function CounterpartyCell({ name, layout, split = false }: { name: string; layout: Invoice['layout']; split?: boolean }) {
+  return (
+    <Td>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        {name}
+        {split && <Pill size="sm" shot="invoice-list-split">Split</Pill>}
+      </span>
+      <div data-shot="invoice-list-layout" style={SUBLINE}>{`${layoutShortLabel(layout)} layout`}</div>
+    </Td>
   )
 }
 
@@ -381,34 +415,28 @@ function CreditNoteRow({
 }) {
   return (
     <ClickableRow onOpen={onOpen} data-credit-note-id={creditNote.id}>
-      <Td mono bold nowrap>
-        {creditNote.creditNoteNumber}
-        <div data-shot="invoice-list-credits" style={{ marginTop: 2, fontSize: 11.5, fontWeight: 400, color: neutral.mist }}>{CREDIT_LABELS.credits(original.invoiceNumber)}</div>
+      <Td mono bold>
+        <NumberLine number={creditNote.creditNoteNumber} kind="creditNote" />
+        <div data-shot="invoice-list-credits" style={SUBLINE}>{CREDIT_LABELS.credits(original.invoiceNumber)}</div>
       </Td>
-      <Td nowrap><span data-shot="invoice-list-kind" data-kind="creditNote">{CREDIT_LABELS.kind}</span></Td>
       <Td>
-        <div style={{ fontWeight: 600 }}>{patientName}</div>
-        <div className="mono" style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist, whiteSpace: 'nowrap' }}>{bookingLabel}</div>
+        <PatientLines patientName={patientName} bookingLabel={bookingLabel} />
       </Td>
-      <Td bold>{anaesthetistName ?? 'Anaesthetist unavailable'}</Td>
-      <Td>
+      <Td bold nowrap><span title={anaesthetistName}>{anaesthetistName !== undefined ? drSurname(anaesthetistName) : 'Anaesthetist unavailable'}</span></Td>
+      <Td nowrap>
         {listSource !== undefined ? (
           <>
             <div style={{ fontWeight: 600 }}>{listSource.primary}</div>
-            {listSource.secondary !== undefined && <div style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist }}>{listSource.secondary}</div>}
+            {listSource.secondary !== undefined && <div style={SUBLINE}>{listSource.secondary}</div>}
           </>
         ) : (
           <div style={{ fontWeight: 600 }}>List unavailable</div>
         )}
       </Td>
       <Td mono nowrap>{listDateISO !== undefined ? dayMicroCap(listDateISO) : '·'}</Td>
-      <Td mono nowrap>{dateTimeMicroCap(creditNote.issuedAtISO)}</Td>
-      <Td>{addressee}</Td>
-      <Td>{layoutShortLabel(original.layout)}</Td>
+      <CounterpartyCell name={addressee} layout={original.layout} />
       <Td mono bold nowrap align="right">{formatCurrency(creditNote.total)}</Td>
-      <Td>
-        <DeliveryPill delivery={creditNote.delivery} />
-      </Td>
+      <DeliveryCell pill={<DeliveryPill delivery={creditNote.delivery} />} raisedISO={creditNote.issuedAtISO} stampLabel="Issued" />
       <Td nowrap>
         <TextAction size="sm" flush label={`View credit note ${creditNote.creditNoteNumber}`} onClick={onOpen}>
           View →

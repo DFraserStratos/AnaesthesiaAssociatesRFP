@@ -235,7 +235,7 @@ export function GoLiveLoadView({ actor }: { actor: Actor }) {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
           <StatTile variant="outlined" label={staged ? 'Will load' : 'Loaded'} value={willLoad} sub="From the controlled spreadsheets" shot="go-live-tile-load" />
           <StatTile variant="outlined" label="Not loaded" value={notLoaded} sub="Solutions Plus entries" />
           <StatTile variant="outlined" label="Rows rejected" value={rejectedRows} tone={rejectedRows > 0 ? 'warning' : undefined} sub="In the controlled spreadsheets" />

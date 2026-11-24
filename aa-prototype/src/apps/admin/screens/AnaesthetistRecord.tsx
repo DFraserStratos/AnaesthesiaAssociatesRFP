@@ -8,8 +8,8 @@ import { HistorySheet } from '../../../shared/booking'
 import { formatCurrency, HPI_CPN_LABEL } from '../../../shared/format'
 import { SlidingSegmentedControl } from '../../../shared/ui/SlidingSegmentedControl'
 import { PairingSection, useProfileHistory } from '../components/pairing'
-import { HeaderActions, IdChip, PROFILE_CARD, ProfileHeader, ProfilePage } from '../components/ProfileChrome'
-import { BackLink, Card, DefList, DefRow } from '../../../shared/ui'
+import { HeaderActions, IdChip, PROFILE_CARD, PROFILE_FACTS, PROFILE_GRID, PROFILE_WIDE_CARD, ProfilePage } from '../components/ProfileChrome'
+import { Card, DefList, DefRow } from '../../../shared/ui'
 import { EditAnaesthetistSheet } from '../flows/EditAnaesthetistSheet'
 import { maskBankAccount } from '../../../domain/bankAccount'
 import { mastersViewPath } from '../mastersPaths'
@@ -42,24 +42,23 @@ export function AnaesthetistRecord({ anaesthetistId, actor }: { anaesthetistId: 
   }
 
   return (
-    <ProfilePage shot="anaesthetist-record">
-      <BackLink to={mastersViewPath('anaesthetists')} size="desktop">Anaesthetists</BackLink>
-      <ProfileHeader
-        name={anaesthetist.name}
-        chip={<IdChip label={HPI_CPN_LABEL} value={anaesthetist.hpiId} shot="anaesthetist-hpi-chip" />}
-        sub={<>Registration <span className="mono">{anaesthetist.registrationNumber}</span> · {anaesthetist.active ? 'Active' : 'Inactive'}</>}
-        action={<HeaderActions onHistory={() => setHistory(true)} onEdit={() => setEditing(true)} />}
-      />
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, alignItems: 'start' }}>
+    <ProfilePage
+      shot="anaesthetist-record"
+      back={{ label: 'Anaesthetists', to: mastersViewPath('anaesthetists') }}
+      name={anaesthetist.name}
+      chip={<IdChip label={HPI_CPN_LABEL} value={anaesthetist.hpiId} shot="anaesthetist-hpi-chip" />}
+      sub={<>Registration <span className="mono">{anaesthetist.registrationNumber}</span> · {anaesthetist.active ? 'Active' : 'Inactive'}</>}
+      action={<HeaderActions onHistory={() => setHistory(true)} onEdit={() => setEditing(true)} />}
+    >
+      <div style={PROFILE_GRID}>
         <Card style={PROFILE_CARD} title="Priority tier" shot="tier-card">
           <SlidingSegmentedControl ariaLabel="Priority tier" value={String(tier)} options={TIER_OPTIONS} onSelect={changeTier} />
           <div style={{ fontSize: 12.5, color: neutral.mist }}>Only the office sees this. It orders the suggestions when you assign or move a List.</div>
           <FormError message={tierError} />
         </Card>
 
-        <Card style={PROFILE_CARD} title="Profile" shot="anaesthetist-details">
-          <DefList gap={12} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+        <Card style={PROFILE_WIDE_CARD} title="Profile" shot="anaesthetist-details">
+          <DefList gap={12} style={PROFILE_FACTS}>
             <DefRow layout="stacked" label={RATE_PER_UNIT} mono>{formatCurrency(anaesthetist.unitValue)}</DefRow>
             <DefRow layout="stacked" label="Status">{anaesthetist.active ? 'Active' : 'Inactive'}</DefRow>
             <DefRow layout="stacked" label="Phone">{anaesthetist.phone}</DefRow>

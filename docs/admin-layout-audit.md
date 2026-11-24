@@ -1,7 +1,11 @@
 # Admin page layout audit
 
 An investigation (25 November 2026) ahead of the work that brings every Admin Web App page into one
-layout. No code changed. Target: desktop only. It must work on a 1080p laptop (a CSS width of 1280 to
+layout. **Built the same day:** every Admin page except the Day view now sits on `AdminPage`
+(`aa-prototype/src/apps/admin/components/AdminPage.tsx`), and `visual/admin-layout.spec.ts` holds the
+rules at four window sizes. Two things settled while building: the pager sits in the list card's
+footer with its range ("Showing 1 to 50 of 2,570"), and a rail narrows from 412 to 320 on a laptop
+(`adminRailWidth` in `layout.ts`). The findings below describe the app before that work. Target: desktop only. It must work on a 1080p laptop (a CSS width of 1280 to
 1536 after OS scaling) and use the room on bigger screens, the way the Day view does.
 
 Method: read the shell (`apps/admin/AdminApp.tsx`, `layout.ts`, `SideNav.tsx`, `routes.tsx`) and the

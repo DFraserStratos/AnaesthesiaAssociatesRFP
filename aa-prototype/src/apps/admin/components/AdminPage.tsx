@@ -2,7 +2,10 @@ import { createContext, useContext, useLayoutEffect, type CSSProperties, type Re
 import { BackLink, PageHeader } from '../../../shared/ui'
 import type { DataAttributes } from '../../../shared/ui/Field'
 import { neutral } from '../../../theme/tokens'
-import { ADMIN_FIT_MIN_BODY_HEIGHT, ADMIN_RIGHT_RAIL_WIDTH, ADMIN_SUBNAV_WIDTH } from '../layout'
+import { ADMIN_FIT_MIN_BODY_HEIGHT, ADMIN_SUBNAV_WIDTH, adminRailWidth } from '../layout'
+
+/** The main column's least width before a body's rail starts to narrow (1008 at 1280 less a 320 rail and the gap, rounded up). */
+const MAIN_RESERVE = 756
 
 /**
  * The Admin page frame (docs/admin-layout-audit.md, "Layout decisions"): every Admin screen is one
@@ -41,6 +44,8 @@ export interface AdminPageProps extends DataAttributes {
   sub?: ReactNode
   /** The page's one primary action (a `Button size="desktop"`), right of the title. */
   actions?: ReactNode
+  /** `start` lines the actions up with the title's top (a record whose header runs to several lines); default `end`, the sub-line's foot. */
+  actionsAlign?: 'start' | 'end'
   /** A count badge inside the heading. */
   count?: ReactNode
   /** An identifier chip or warning beside the heading. */
@@ -56,7 +61,7 @@ export interface AdminPageProps extends DataAttributes {
   style?: CSSProperties
 }
 
-export function AdminPage({ mode, title, sub, actions, count, aside, headingRef, back, tabs, children, shot, testId, style, ...data }: AdminPageProps) {
+export function AdminPage({ mode, title, sub, actions, actionsAlign = 'end', count, aside, headingRef, back, tabs, children, shot, testId, style, ...data }: AdminPageProps) {
   const setFits = useContext(AdminFrameContext)
   const fits = mode === 'fit'
   useLayoutEffect(() => {
@@ -98,6 +103,7 @@ export function AdminPage({ mode, title, sub, actions, count, aside, headingRef,
                 {...(count !== undefined ? { count } : {})}
                 {...(aside !== undefined ? { aside } : {})}
                 {...(headingRef !== undefined ? { headingRef } : {})}
+                {...(actionsAlign === 'start' ? { style: { alignItems: 'flex-start' } } : {})}
               />
             )}
           </div>
@@ -129,7 +135,7 @@ export function PageToolbar({ children, end, shot }: { children?: ReactNode; end
 
 /**
  * The page's body: the main column, with an optional section navigation on its left (`nav`, Master
- * data's view list) and an optional rail on its right (`rail`, always `ADMIN_RIGHT_RAIL_WIDTH`). In a
+ * data's view list) and an optional rail on its right (`rail`, `ADMIN_RIGHT_RAIL_WIDTH` where there is room, narrowing to `ADMIN_RIGHT_RAIL_MIN_WIDTH` on a laptop). In a
  * `fit` page it takes the rest of the window's height (at least `ADMIN_FIT_MIN_BODY_HEIGHT`), the
  * main column lays its children out in a column so a `TableShell fit` can shrink to fit, and the rail
  * scrolls on its own.
@@ -155,7 +161,7 @@ export function PageBody({ children, rail, nav, railLabel, gap = 16, shot }: { c
           aria-label={railLabel}
           data-page-rail
           style={{
-            width: ADMIN_RIGHT_RAIL_WIDTH,
+            width: adminRailWidth(MAIN_RESERVE),
             flex: 'none',
             display: 'flex',
             flexDirection: 'column',

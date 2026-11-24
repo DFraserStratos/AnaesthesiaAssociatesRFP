@@ -1,11 +1,13 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { SEED_STUB } from '../../../domain/seed/intakeSeed'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { freshAppState, importHospitalDownload, OFFICE_ACTOR, useAppStore } from '../../../store'
 import { SurfaceProvider } from '../../../shared'
 import { MatchingScreen } from './MatchingScreen'
 import { emptyIntakeSlice } from '../../../store/appStore'
+import { IntakeScreen } from './IntakeScreen'
+import { PdfListsTab } from '../intake/PdfListsTab'
 
 afterEach(cleanup)
 
@@ -145,5 +147,52 @@ describe('MatchingScreen with the seeded stub (catch-up Phase 33a)', () => {
     fireEvent.click(within(footer).getByRole('button', { name: /Reject/ }))
     expect(useAppStore.getState().intake.stubs[SEED_STUB.stubId]?.status).toBe('removed')
     expect(useAppStore.getState().audit.some((a) => a.action === 'stub.remove')).toBe(true)
+  })
+})
+
+describe('Matching on the Intake page (the Admin page frame)', () => {
+  beforeEach(() => {
+    useAppStore.setState({ ...freshAppState(), intake: emptyIntakeSlice() })
+  })
+
+  function renderIntake(path: string) {
+    return render(
+      <MemoryRouter initialEntries={[path]}>
+        <SurfaceProvider variant="web">
+          <Routes>
+            <Route path="/admin/intake" element={<IntakeScreen />}>
+              <Route path="matching" element={<MatchingScreen actor={OFFICE_ACTOR} todayISO="2026-11-24" onOpenBooking={vi.fn()} />} />
+              <Route path="pdfs" element={<PdfListsTab actor={OFFICE_ACTOR} />} />
+            </Route>
+          </Routes>
+        </SurfaceProvider>
+      </MemoryRouter>,
+    )
+  }
+
+  it('is a fit page whose one primary action, Import hospital file, sits by the Intake title; Open, Unmatched and Decided are filter pills', () => {
+    const { container } = renderIntake('/admin/intake/matching')
+    const page = container.querySelector('[data-shot="admin-intake"]') as HTMLElement
+    expect(page).toHaveAttribute('data-admin-page', 'fit')
+    expect(screen.getAllByRole('button', { name: /Import hospital file/ })).toHaveLength(1)
+    expect(container.querySelector('[data-page-toolbar] [data-shot="matching-import-open"]')).toBeNull()
+    const pills = screen.getByRole('group', { name: 'Show rows' })
+    fireEvent.click(within(pills).getByRole('button', { name: /Unmatched/ }))
+    expect(within(pills).getByRole('button', { name: /Unmatched/ })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('the PDF lists tab names its own action instead, and the page turns fluid while a list is reviewed', () => {
+    useAppStore.setState(freshAppState()) // the seed holds one received PDF list
+    const { container } = renderIntake('/admin/intake/pdfs')
+    expect(screen.queryByRole('button', { name: /Import hospital file/ })).toBeNull()
+    expect(screen.getAllByRole('button', { name: 'Upload PDF list' })).toHaveLength(1)
+    const page = () => container.querySelector('[data-shot="admin-intake"]') as HTMLElement
+    expect(page()).toHaveAttribute('data-admin-page', 'fit')
+    fireEvent.click(container.querySelector('[data-pdf-list-id]') as HTMLElement)
+    expect(page()).toHaveAttribute('data-admin-page', 'fluid')
+    expect(screen.queryByRole('button', { name: 'Upload PDF list' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Back to PDF lists' }))
+    expect(page()).toHaveAttribute('data-admin-page', 'fit')
+    expect(screen.getAllByRole('button', { name: 'Upload PDF list' })).toHaveLength(1)
   })
 })

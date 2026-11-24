@@ -11,7 +11,8 @@ import {
   XeroArchivingView,
 } from './ReferenceViews'
 import { parseMastersView, type MastersView } from './view'
-import { MASTER_VIEW_GROUPS, MASTER_VIEWS } from './masterViews'
+import { MASTER_VIEW_GROUPS, MASTER_VIEWS, masterViewMode } from './masterViews'
+import { AdminPage, PageBody } from '../../components/AdminPage'
 import { PublicHolidaysView } from './PublicHolidaysView'
 import { SeedLoadView } from './SeedLoadView'
 import { GoLiveLoadView } from './GoLiveLoadView'
@@ -32,6 +33,11 @@ interface MasterDataProps {
 }
 
 /**
+ * Master data on the Admin page frame: the "Master data" title across the top, then the grouped
+ * view list as the body's section navigation (`PageBody nav`) and the view on its right. The mode
+ * follows the view (`masterViewMode`): a list of records fits the window, a settings or load view
+ * scrolls as a fluid page.
+ *
  * Master data: a grouped sub-nav of every master (catch-up Phase 42's registry, `masterViews.ts`). The selected view lives in the
  * `?view=` search param (catch-up Phase 17), so the surgeon profile and the
  * anaesthetist record link back to their view. Each view owns its sheets.
@@ -51,36 +57,37 @@ export function MasterData({ actor }: MasterDataProps) {
     }, { replace: true })
   }
 
-  return (
-    <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', maxWidth: 1180 }}>
-      <nav aria-label="Master data" style={{ width: 190, flex: 'none', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <h1 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 700 }}>Master data</h1>
-        {MASTER_VIEW_GROUPS.map((group) => (
-          <div key={group} role="group" aria-label={group} data-masters-group={group} style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 10 }}>
-            <div style={{ fontSize: 11.5, fontWeight: 600, color: neutral.mist, padding: '4px 10px 2px' }}>{group}</div>
-            {MASTER_VIEWS.filter((n) => n.group === group).map((n) => {
-              const active = n.view === view
-              return (
-                <button
-                  key={n.view}
-                  type="button"
-                  aria-current={active ? 'page' : undefined}
-                  data-masters-view={n.view}
-                  onClick={() => select(n.view)}
-                  style={{ textAlign: 'left', padding: '8px 10px', borderRadius: radius.sm, border: 'none', background: active ? accent.tint : 'transparent', color: active ? accent.pressed : neutral.slate, fontFamily: 'inherit', fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer' }}
-                >
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    {n.label}
-                    {n.view === 'goLive' && goLiveWaiting && <AttentionDot size={12} label="A go-live load is ready to review" />}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        ))}
-      </nav>
+  const nav = (
+    <nav aria-label="Master data" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      {MASTER_VIEW_GROUPS.map((group) => (
+        <div key={group} role="group" aria-label={group} data-masters-group={group} style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 10 }}>
+          <div style={{ fontSize: 11.5, fontWeight: 600, color: neutral.mist, padding: '4px 10px 2px' }}>{group}</div>
+          {MASTER_VIEWS.filter((n) => n.group === group).map((n) => {
+            const active = n.view === view
+            return (
+              <button
+                key={n.view}
+                type="button"
+                aria-current={active ? 'page' : undefined}
+                data-masters-view={n.view}
+                onClick={() => select(n.view)}
+                style={{ textAlign: 'left', padding: '8px 10px', borderRadius: radius.sm, border: 'none', background: active ? accent.tint : 'transparent', color: active ? accent.pressed : neutral.slate, fontFamily: 'inherit', fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer' }}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  {n.label}
+                  {n.view === 'goLive' && goLiveWaiting && <AttentionDot size={12} label="A go-live load is ready to review" />}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      ))}
+    </nav>
+  )
 
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+  return (
+    <AdminPage mode={masterViewMode(view)} title="Master data">
+      <PageBody nav={nav} gap={12}>
         {view === 'anaesthetists' && <AnaesthetistsView actor={actor} />}
         {view === 'contracts' && <ContractsView actor={actor} />}
         {view === 'fundingTags' && <FundingTagsView actor={actor} />}
@@ -101,7 +108,7 @@ export function MasterData({ actor }: MasterDataProps) {
         {view === 'publicHolidays' && <PublicHolidaysView actor={actor} />}
         {view === 'seedLoad' && <SeedLoadView actor={actor} />}
         {view === 'goLive' && <GoLiveLoadView actor={actor} />}
-      </div>
-    </div>
+      </PageBody>
+    </AdminPage>
   )
 }

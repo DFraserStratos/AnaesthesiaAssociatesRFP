@@ -8,8 +8,8 @@ import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { Pill } from '../components/MasterPills'
 import { HistorySheet } from '../../../shared/booking'
 import { PairingSection, useProfileHistory } from '../components/pairing'
-import { HeaderActions, IdChip, PROFILE_CARD, ProfileHeader, ProfilePage } from '../components/ProfileChrome'
-import { BackLink, Card, DefList, DefRow } from '../../../shared/ui'
+import { HeaderActions, IdChip, PROFILE_CARD, PROFILE_FACTS, PROFILE_GRID, ProfilePage } from '../components/ProfileChrome'
+import { Card, DefList, DefRow } from '../../../shared/ui'
 import { SurgeonEditSheet } from '../flows/SurgeonEditSheet'
 import { mastersViewPath } from '../mastersPaths'
 import { HPI_CPN_LABEL } from '../../../shared/format'
@@ -38,16 +38,15 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
   const firstIndex = firstTo === undefined ? -1 : surgeon.officeContacts.findIndex((c) => cleanContact(c).email?.toLowerCase() === firstTo)
 
   return (
-    <ProfilePage shot="surgeon-profile">
-      <BackLink to={mastersViewPath('surgeons')} size="desktop">Surgeons</BackLink>
-      <ProfileHeader
-        name={surgeon.name}
-        chip={<IdChip label={HPI_CPN_LABEL} value={surgeon.hpiId} empty={NO_HPI_CPN} shot="surgeon-hpi-chip" />}
-        sub={[surgeonSpecialtyLabel({ specialties }, surgeon), surgeon.practiceName].filter((v) => v !== undefined && v !== '').join(' · ')}
-        action={<HeaderActions onHistory={() => setHistory(true)} onEdit={() => setEditing(true)} />}
-      />
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, alignItems: 'start' }}>
+    <ProfilePage
+      shot="surgeon-profile"
+      back={{ label: 'Surgeons', to: mastersViewPath('surgeons') }}
+      name={surgeon.name}
+      chip={<IdChip label={HPI_CPN_LABEL} value={surgeon.hpiId} empty={NO_HPI_CPN} shot="surgeon-hpi-chip" />}
+      sub={[surgeonSpecialtyLabel({ specialties }, surgeon), surgeon.practiceName].filter((v) => v !== undefined && v !== '').join(' · ')}
+      action={<HeaderActions onHistory={() => setHistory(true)} onEdit={() => setEditing(true)} />}
+    >
+      <div style={PROFILE_GRID}>
         <Card style={PROFILE_CARD} title="Specialties" shot="surgeon-specialties">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {surgeon.specialtyIds.filter((id) => specialties[id] !== undefined).map((id) => (
@@ -84,14 +83,15 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
       </div>
 
       <Card style={PROFILE_CARD} title="Practice and contacts" shot="surgeon-contacts">
-        <DefList gap={14}>
+        {/* The practice and the personal contact side by side, the office contacts across the card under them. */}
+        <DefList gap={14} style={PROFILE_FACTS}>
           <DefRow layout="stacked" label="Practice" data-practice={surgeon.practiceName ?? ''}>
             {surgeon.practiceName ?? <span style={{ color: neutral.mist }}>Not recorded</span>}
           </DefRow>
           <DefRow layout="stacked" label="Personal contact" shot="surgeon-personal-contact-card">
             <ContactLines contact={surgeon.personalContact} />
           </DefRow>
-          <DefRow layout="stacked" label="Office contacts" shot="surgeon-office-contacts-card">
+          <DefRow layout="stacked" label="Office contacts" shot="surgeon-office-contacts-card" style={{ gridColumn: '1 / -1' }}>
             {surgeon.officeContacts.length === 0 ? (
               <span style={{ color: neutral.mist }}>None held</span>
             ) : (

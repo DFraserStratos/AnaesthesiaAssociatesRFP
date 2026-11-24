@@ -19,8 +19,10 @@ import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { drSurname, formatCurrency, parseAmountOrNaN, plainDate, plural } from '../../../shared/format'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 import { Pill } from '../../../shared/ui/Pill'
-import { Button, Card, DisclosureButton, Eyebrow, FormError, IconButton, LineTabLink, LineTabs, PageHeader, TextField, visuallyHidden } from '../../../shared/ui'
+import { Button, Card, DisclosureButton, Eyebrow, FormError, IconButton, LineTabLink, LineTabs, TextField, visuallyHidden } from '../../../shared/ui'
 import { ResultLine } from '../../../shared/ui/ResultLine'
+import { AdminPage } from '../components/AdminPage'
+import { ADMIN_FORM_WIDTH, ADMIN_PROSE_WIDTH } from '../layout'
 
 export type AaFeesTab = 'invoices' | 'settings'
 
@@ -41,27 +43,19 @@ function dateLabel(iso: string | undefined): string {
  */
 export function AaFeesScreen({ actor, tab }: { actor: Actor; tab: AaFeesTab }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>
-      <PageHeader
-        size="admin"
-        title="AA fee invoices"
-        subStyle={{ maxWidth: 780 }}
-        sub={
-          <>
-            AA invoices each anaesthetist its own fee once a month: fixed charges plus a charge for each
-            buyer-created tax invoice (BCTI) paid that month. It is a separate invoice, never taken out of a
-            payment to the anaesthetist.
-          </>
-        }
-      />
-
-      <LineTabs label="AA fees">
-        <LineTabLink active={tab === 'invoices'} to="/admin/billing/aa-fees">Fee invoices</LineTabLink>
-        <LineTabLink active={tab === 'settings'} to="/admin/billing/aa-fees/settings">Fee settings</LineTabLink>
-      </LineTabs>
-
+    <AdminPage
+      mode="fluid"
+      title="AA fee invoices"
+      sub="AA invoices each anaesthetist its fee monthly: fixed charges plus a charge per buyer-created tax invoice (BCTI) paid. A separate invoice, never deducted from a payment."
+      tabs={
+        <LineTabs label="AA fees">
+          <LineTabLink active={tab === 'invoices'} to="/admin/billing/aa-fees">Fee invoices</LineTabLink>
+          <LineTabLink active={tab === 'settings'} to="/admin/billing/aa-fees/settings">Fee settings</LineTabLink>
+        </LineTabs>
+      }
+    >
       {tab === 'invoices' ? <FeeInvoicesTab actor={actor} /> : <FeeSettingsTab actor={actor} />}
-    </div>
+    </AdminPage>
   )
 }
 
@@ -175,7 +169,7 @@ function FeeInvoicesTab({ actor }: { actor: Actor }) {
         </TableShell>
       </Card>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12.5, lineHeight: 1.5, color: neutral.slate, maxWidth: 780 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12.5, lineHeight: 1.5, color: neutral.slate, maxWidth: ADMIN_PROSE_WIDTH }}>
         <span data-testid="aa-fee-count-rule">
           Counts one BCTI per receivable invoice, once, against the anaesthetist who did the procedure, in the
           month its invoice is paid in full. Provisional: being confirmed with AA's accountant (OQ-29, OQ-60).
@@ -382,7 +376,7 @@ function FeeSettingsTab({ actor }: { actor: Actor }) {
   }
 
   return (
-    <div data-shot="admin-aa-fee-settings" style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 680 }}>
+    <div data-shot="admin-aa-fee-settings" style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: ADMIN_FORM_WIDTH }}>
       <Card
         title="Monthly fee schedule"
         aside={<Pill data-testid="aa-fee-sample">Sample schedule</Pill>}

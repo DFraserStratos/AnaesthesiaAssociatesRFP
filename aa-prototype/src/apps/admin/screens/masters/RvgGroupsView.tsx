@@ -19,10 +19,12 @@ import {
   type RvgGroupInput,
 } from '../../../../domain/billing/rvgGroups'
 import { createRvgGroup, editRvgGroup, restoreRvgGroup, retireRvgGroup, useAppStore, type Actor } from '../../../../store'
-import { Button, FieldLabel, FormError, Segmented, TextField, useSurface } from '../../../../shared'
+import { Button, FormError, TextField, useSurface } from '../../../../shared'
 import { OverlayHeader, SheetActions } from '../../../../shared/surface'
 import { HistorySheet } from '../../../../shared/booking'
-import { Checkbox, NameSearchBox, SelectField } from '../../../../shared/ui'
+import { Checkbox, FilterPills, NameSearchBox, SelectField } from '../../../../shared/ui'
+import { PageToolbar } from '../../components/AdminPage'
+import { ADMIN_PROSE_WIDTH } from '../../layout'
 import { neutral, radius } from '../../../../theme/tokens'
 import { Pill } from '../../components/MasterPills'
 import { MasterHeader, MasterTable, type MasterColumn } from './chrome'
@@ -91,35 +93,35 @@ export function RvgGroupsView({ actor }: { actor: Actor }) {
 
       <TimeRulePanel onEdit={() => setEditingRule(true)} />
 
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
-        <div data-shot="rvg-group-search" style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Search</FieldLabel>
-          <NameSearchBox size="pill" width="100%" value={query} onChange={setQuery} label="Search RVG code or description" />
-          <div style={{ fontSize: 12.5, color: neutral.slate }}>
+      <PageToolbar
+        end={
+          <span>
             <span className="mono">{results.length}</span>
             {status === 'active' ? ' active' : ''} {results.length === 1 ? 'group' : 'groups'}
             {anatomy !== '' ? ` under ${anatomy}` : ''}
             {query.trim() !== '' ? ` matching "${query.trim()}"` : ''}
-          </div>
+          </span>
+        }
+      >
+        <div data-shot="rvg-group-search">
+          <NameSearchBox size="pill" width={240} value={query} onChange={setQuery} label="Search RVG code or description" />
         </div>
-        <SelectField label="Anatomy heading" width={230} size="compact" fill="surface" value={anatomy} onChange={setAnatomy}>
-          <option value="">Every heading</option>
+        <SelectField label="Anatomy heading" hideLabel width={210} size="compact" fill="surface" value={anatomy} onChange={setAnatomy}>
+          <option value="">All anatomy headings</option>
           {anatomyOptions.map((h) => (
             <option key={h} value={h}>{h}</option>
           ))}
         </SelectField>
-        <div style={{ width: 200 }}>
-          <Segmented
-            label="Show"
-            value={status}
-            options={[
-              { value: 'active', label: 'Active' },
-              { value: 'all', label: 'All' },
-            ]}
-            onChange={setStatus}
-          />
-        </div>
-      </div>
+        <FilterPills
+          ariaLabel="Show"
+          value={status}
+          options={[
+            { value: 'active', label: 'Active' },
+            { value: 'all', label: 'All' },
+          ]}
+          onSelect={setStatus}
+        />
+      </PageToolbar>
 
       <FormError message={error} />
 
@@ -296,7 +298,7 @@ function TimeRulePanel({ onEdit }: { onEdit: () => void }) {
           <h3 id="rvg-time-rule-title" style={{ margin: 0, fontSize: 14, fontWeight: 700, color: neutral.ink }}>RVG time rule</h3>
           <TextAction size="sm" flush onClick={onEdit} label="Edit the RVG time rule" shot="rvg-time-rule-edit">Edit</TextAction>
         </div>
-        <div style={{ fontSize: 13, color: neutral.slate, maxWidth: 520 }}>{describeTimeRule(rule)}</div>
+        <div style={{ fontSize: 13, color: neutral.slate, maxWidth: ADMIN_PROSE_WIDTH }}>{describeTimeRule(rule)}</div>
         <div style={{ fontSize: 12, color: neutral.mist }}>A part interval always rounds up. The anaesthetist enters start and finish; the time units follow these tiers.</div>
       </div>
       <table style={{ borderCollapse: 'collapse', flex: '0 1 300px' }}>

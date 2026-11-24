@@ -15,10 +15,11 @@ import { useMemo, useState } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { Plus, TriangleAlert } from 'lucide-react'
-import { accent, fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
+import { accent, fontFamily, neutral, semantic } from '../../../theme/tokens'
 import { removeBlockedReason } from '../../../domain/draftLists'
 import { bookingCountsByList, finishedDraftLists, useAppStore, waitingDraftLists, type Actor } from '../../../store'
-import { Button, LineTabLink, LineTabs, PageHeader, TextAction } from '../../../shared/ui'
+import { Button, LineTabLink, LineTabs, TextAction } from '../../../shared/ui'
+import { AdminPage, PageBody } from '../components/AdminPage'
 import { ClickableRow, RowOpenButton, TableShell, Td, Th } from '../../../shared/table'
 import { drSurname, hhmm, initialsOf, locationName, shortDay } from '../../../shared/format'
 import { DRAFT_LIST, DRAFT_LISTS, ORIGIN_SHORT_LABELS, SOURCE_LABELS, UNASSIGNED, draftListCount, unavailableDetail } from '../../../shared/scheduleTerms'
@@ -110,19 +111,17 @@ export function DraftListsScreen({
   }
 
   return (
-    <div data-shot="admin-draft-lists" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <PageHeader
-        size="admin"
-        title={DRAFT_LISTS}
-        sub="Lists with no anaesthetist yet, soonest first. Assign each one to an anaesthetist for its session."
-        subStyle={{ maxWidth: 720, lineHeight: '19px' }}
-        actions={
-          <Button variant="primary" onClick={() => setSheet({ kind: 'new' })}>
-            <Plus size={16} aria-hidden /> New {DRAFT_LIST}
-          </Button>
-        }
-      />
-
+    <AdminPage
+      mode="fit"
+      shot="admin-draft-lists"
+      title={DRAFT_LISTS}
+      sub="Lists with no anaesthetist yet, soonest first. Assign each one to an anaesthetist for its session."
+      actions={
+        <Button variant="primary" size="desktop" onClick={() => setSheet({ kind: 'new' })}>
+          <Plus size={16} aria-hidden /> New {DRAFT_LIST}
+        </Button>
+      }
+      tabs={
       <LineTabs label={DRAFT_LISTS}>
         {(
           [
@@ -145,7 +144,9 @@ export function DraftListsScreen({
           )
         })}
       </LineTabs>
-
+      }
+    >
+      <PageBody>
       <ResultLine
         shot="draft-lists-assigned"
         line={assignedNote?.text}
@@ -165,16 +166,17 @@ export function DraftListsScreen({
             No {DRAFT_LISTS} are waiting. New requests appear here until they are assigned.
           </EmptyState>
         ) : (
-          <TableShell shot="draft-lists-table" label={DRAFT_LISTS} density="compact" minWidth={1140} tableStyle={{ tableLayout: 'fixed' }}>
+          <TableShell fit shot="draft-lists-table" label={DRAFT_LISTS} density="compact" minWidth={880} tableStyle={{ tableLayout: 'fixed' }}>
+              {/* Fits a 1280 laptop's 1008px: the surgeon sits under the hospital, when and by whom under the origin; the note takes the spare width. */}
               <colgroup>
-                {[84, 56, 136, 112, 84, 78, 168, undefined, 172, 214].map((w, i) => (
+                {[84, 68, 176, 84, 78, 176, undefined, 214].map((w, i) => (
                   <col key={i} style={w !== undefined ? { width: w } : undefined} />
                 ))}
               </colgroup>
               <thead>
                 <tr>
-                  {['Day', 'Session', 'Hospital', 'Surgeon', 'Bookings', 'Waiting', 'Origin', 'Note', 'Since', ''].map((h, i) => (
-                    <Th key={h === '' ? 'actions' : h} align={i === 4 || i === 5 ? 'right' : 'left'}>{h}</Th>
+                  {['Day', 'Session', 'Hospital · Surgeon', 'Bookings', 'Waiting', 'Origin', 'Note', ''].map((h, i) => (
+                    <Th key={h === '' ? 'actions' : h} nowrap align={i === 3 || i === 4 ? 'right' : 'left'}>{h}</Th>
                   ))}
                 </tr>
               </thead>
@@ -201,14 +203,17 @@ export function DraftListsScreen({
                             {sessionText(l.session)}
                           </RowOpenButton>
                         </Td>
-                        <Td bold>{locationName(l.hospitalId, masters.hospitals)}</Td>
-                        <Td>{surgeon(l)}</Td>
+                        <Td>
+                          <div style={{ fontWeight: 600 }}>{locationName(l.hospitalId, masters.hospitals)}</div>
+                          <div style={{ marginTop: 2, fontSize: 12.5, color: neutral.slate }}>{surgeon(l)}</div>
+                        </Td>
                         <Td align="right"><BookingCount count={counts.get(l.id) ?? 0} style={{ fontSize: 13 }} /></Td>
                         <Td align="right" nowrap><WaitingTime list={l} style={{ fontSize: 13 }} /></Td>
                         <Td>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
                             <UnassignedPill />
                             <span style={{ fontSize: 12.5, color: neutral.slate }}>{origin(l)}</span>
+                            <span className="mono" title={since(l)} style={{ fontSize: 12, color: neutral.slate }}>{since(l)}</span>
                             {passed && <Pill tone="warning" data-day-passed="true">Day passed</Pill>}
                             {holiday && (
                               <span data-holiday-flag="true" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: semantic.warning.onTint }}>
@@ -219,7 +224,6 @@ export function DraftListsScreen({
                           </div>
                         </Td>
                         <Td clip style={{ color: neutral.slate }}><span title={l.notes}>{l.notes ?? ''}</span></Td>
-                        <Td clip mono style={{ fontSize: 12, color: neutral.slate }}><span title={since(l)}>{since(l)}</span></Td>
                         <Td nowrap>
                           <span style={{ display: 'inline-flex', gap: 12 }}>
                             <TextAction
@@ -252,11 +256,11 @@ export function DraftListsScreen({
           </TableShell>
         )
       ) : finished.length === 0 ? (
-        <div style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: 24, fontSize: 13, color: neutral.slate }}>
+        <EmptyState variant="card">
           Nothing yet. {DRAFT_LISTS} appear here once they are assigned or removed.
-        </div>
+        </EmptyState>
       ) : (
-        <TableShell shot="draft-lists-history" label={`${DRAFT_LISTS} history`} density="compact" minWidth={960}>
+        <TableShell fit shot="draft-lists-history" label={`${DRAFT_LISTS} history`} density="compact" minWidth={880}>
             <thead>
               <tr>
                 {['Day', 'Hospital', 'Surgeon', 'Outcome', 'Waited', 'By', ''].map((h) => (
@@ -273,18 +277,18 @@ export function DraftListsScreen({
                 return (
                   <tr key={l.id} data-draft-history-row={l.id}>
                     <Td nowrap>{shortDay(l.dateISO)} {sessionText(l.session)}</Td>
-                    <Td>{locationName(l.hospitalId, masters.hospitals)}</Td>
-                    <Td>{surgeon(l)}</Td>
+                    <Td nowrap>{locationName(l.hospitalId, masters.hospitals)}</Td>
+                    <Td nowrap>{surgeon(l)}</Td>
                     <Td>
                       {assigned
                         ? `Assigned to ${drSurname(who?.name ?? l.anaesthetistId ?? '')}, ${shortDay(l.dateISO)} ${sessionText(l.session)}`
                         : `Removed${l.removeReason !== undefined ? `: ${l.removeReason}` : ''}`}
                     </Td>
-                    <Td><WaitingTime list={l} style={{ fontSize: 13 }} /></Td>
+                    <Td nowrap><WaitingTime list={l} style={{ fontSize: 13 }} /></Td>
                     <Td mono nowrap style={{ fontSize: 12, color: neutral.slate }}>
                       {at !== undefined ? `${format(parseISO(at), 'd MMM')} ${hhmm(at)}` : ''} · {by ?? ''}
                     </Td>
-                    <Td>
+                    <Td nowrap>
                       {assigned && <TextAction size="sm" flush onClick={() => onOpenList(l.id)}>Open List</TextAction>}
                     </Td>
                   </tr>
@@ -293,6 +297,7 @@ export function DraftListsScreen({
             </tbody>
         </TableShell>
       )}
+      </PageBody>
 
       {sheet !== null && sheet.kind === 'assign' && (
         <AssignDraftListSheet
@@ -322,6 +327,6 @@ export function DraftListsScreen({
       />
       {/* The count the nav badge shows, for screen readers on this page. */}
       <span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>{draftListCount(waiting.length)} waiting</span>
-    </div>
+    </AdminPage>
   )
 }

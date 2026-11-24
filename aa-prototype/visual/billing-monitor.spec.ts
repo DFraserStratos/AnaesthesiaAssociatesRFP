@@ -102,7 +102,7 @@ test('Open in Review with a filter on: authorise there, Back to Billing monitor 
   await page.locator(`[data-shot="billing-open-in-review-${SOUTER_MON_AM}"]`).click()
   await expect(page).toHaveURL(new RegExp(`/admin/review/${SOUTER_MON_AM}$`))
   const back = page.locator('[data-shot="review-back-to-billing"]')
-  await expect(back).toHaveText(/Back to Billing monitor/)
+  await expect(back).toHaveText(/Billing monitor/)
 
   // Authorise on Review, with its usual confirm.
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()

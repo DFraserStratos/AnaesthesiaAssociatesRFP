@@ -2,8 +2,9 @@
  * The rooms' PDF lists (catch-up Phase 34; FT-02.2, US-02.2.1, US-02.2.4):
  * product UI, unbadged. The inbox holds one row per stored list (who sent it,
  * the surgeon, the hospital, when it arrived, the List it suggests, a Re-sent
- * chip and its status); "Upload PDF list" adds one from the sample picker;
- * opening a row reviews it beside its facsimile.
+ * chip and its status); "Upload PDF list" (Intake's page action on this tab)
+ * adds one from the sample picker; opening a row reviews it beside its
+ * facsimile, with the Intake page `fluid` while it does.
  */
 
 import { useState } from 'react'
@@ -15,6 +16,8 @@ import { ClickableRow, RowOpenButton, TableShell, Td, Th } from '../../../shared
 import { dateTimeMicroCap, drSurname, locationName, plural } from '../../../shared/format'
 import { PdfUploadDialog } from './PdfUploadDialog'
 import { PdfListReview } from './PdfListReview'
+import { PageBody, PageToolbar } from '../components/AdminPage'
+import { useIntakePage } from '../screens/IntakeScreen'
 
 export function PdfListsTab({ actor }: { actor: Actor }) {
   const pdfLists = useAppStore((s) => s.intake.pdfLists)
@@ -22,26 +25,38 @@ export function PdfListsTab({ actor }: { actor: Actor }) {
   const [openId, setOpenId] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const open = openId !== null ? pdfLists[openId] : undefined
+  // Intake's page action while the inbox shows (only a stable setter inside: see `useIntakePage`).
+  const uploadAction =
+    open === undefined ? (
+      <Button variant="primary" size="desktop" onClick={() => setUploading(true)} shot="pdf-upload-open">
+        Upload PDF list
+      </Button>
+    ) : undefined
+  const hosted = useIntakePage(uploadAction, open !== undefined)
   if (open !== undefined) return <PdfListReview list={open} actor={actor} onBack={() => setOpenId(null)} />
 
   const rows = Object.values(pdfLists).sort((a, b) => b.receivedAtISO.localeCompare(a.receivedAtISO) || b.id.localeCompare(a.id))
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 320, fontSize: 13, color: neutral.slate, maxWidth: 760 }}>
-          A surgeon&rsquo;s practice emails its Lists as PDFs, and sends the whole List again whenever it changes. Upload each one
-          with the address it came from, check and correct its rows, then send them to Matching, where each waits for
-          your decision.
-        </div>
-        <Button variant="primary" size="compact" onClick={() => setUploading(true)} shot="pdf-upload-open" style={{ marginLeft: 'auto' }}>
-          Upload PDF list
-        </Button>
-      </div>
+    <>
+      <PageToolbar
+        end={
+          <>
+            <span className="mono">{plural(rows.length, 'list')}</span>
+            {!hosted && uploadAction}
+          </>
+        }
+      >
+        <span style={{ fontSize: 13, color: neutral.slate }}>
+          The rooms email each List as a PDF, and again whenever it changes. Check its rows, then send them to Matching.
+        </span>
+      </PageToolbar>
 
+      <PageBody>
       {rows.length === 0 ? (
         <EmptyState variant="card" title="No PDF lists yet">Upload the PDF list the rooms emailed to check it and send it to Matching.</EmptyState>
       ) : (
-        <TableShell label="PDF lists" shot="pdf-inbox" minWidth={880}>
+        // At the admin compact density the inbox fits 1008 at 1280 (Sent from breaks after the @).
+        <TableShell fit label="PDF lists" shot="pdf-inbox" density="compact" minWidth={880}>
           <thead>
             <tr>
               <Th>Sent from</Th>
@@ -91,6 +106,7 @@ export function PdfListsTab({ actor }: { actor: Actor }) {
           </tbody>
         </TableShell>
       )}
+      </PageBody>
 
       <PdfUploadDialog
         open={uploading}
@@ -103,6 +119,6 @@ export function PdfListsTab({ actor }: { actor: Actor }) {
           return null
         }}
       />
-    </div>
+    </>
   )
 }

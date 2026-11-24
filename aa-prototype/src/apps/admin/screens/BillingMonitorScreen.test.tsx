@@ -69,7 +69,7 @@ describe('Billing monitor restyle (US-13.3.1)', () => {
     for (const l of submitted) expect(document.querySelector(`[data-shot="billing-awaiting-${l.id}"]`)).not.toBeNull()
     expect(document.querySelector(`[data-shot="billing-group-${ANAE.souter}"]`)).not.toBeNull()
     expect(screen.queryByRole('button', { name: /^authorise/i })).toBeNull()
-    expect(screen.getByText(/grouped by anaesthetist/)).toBeInTheDocument()
+    expect(screen.getByText(/by anaesthetist: invoiced, sent, in Xero/)).toBeInTheDocument()
     expect(screen.queryByText(/RFP leaves open/)).toBeNull()
     expect(document.querySelector('[data-shot="billing-tile-awaiting"]')).toHaveTextContent(String(submitted.length))
   })
@@ -83,7 +83,7 @@ describe('Billing monitor restyle (US-13.3.1)', () => {
     expect(billingMonitorReturn({ from: 'queue' })).toBeNull()
   })
 
-  it("Review opened from the monitor shows Back to Billing monitor; otherwise its breadcrumb", () => {
+  it("Review opened from the monitor goes back to Billing monitor; otherwise to the Review queue", () => {
     const onBack = vi.fn()
     const { unmount } = render(
       <SurfaceProvider variant="web">
@@ -92,7 +92,7 @@ describe('Billing monitor restyle (US-13.3.1)', () => {
         </MemoryRouter>
       </SurfaceProvider>,
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Billing monitor' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Billing monitor' }))
     expect(onBack).toHaveBeenCalledTimes(1)
     unmount()
     render(
@@ -102,7 +102,7 @@ describe('Billing monitor restyle (US-13.3.1)', () => {
         </MemoryRouter>
       </SurfaceProvider>,
     )
-    expect(screen.queryByRole('button', { name: 'Back to Billing monitor' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Billing monitor' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Review queue' })).toBeInTheDocument()
   })
 

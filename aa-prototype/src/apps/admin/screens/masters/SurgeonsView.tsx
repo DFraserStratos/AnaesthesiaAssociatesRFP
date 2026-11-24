@@ -71,7 +71,7 @@ export function SurgeonsView({ actor }: { actor: Actor }) {
               onOpen={() => navigate(surgeonProfilePath(s.id))}
               style={retired ? retiredRowStyle : undefined}
             >
-              <td style={rowCellStyle}>
+              <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <SurgeonLink id={s.id} name={s.name} />
                   {retired && <RetiredPill reason={s.retiredReason} />}

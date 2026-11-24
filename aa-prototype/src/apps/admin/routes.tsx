@@ -21,6 +21,7 @@ import { PdfListsTab } from './intake/PdfListsTab'
 import { DataQualityTab } from './intake/DataQualityTab'
 import { ValidatorsTab } from './intake/ValidatorsTab'
 import { InvoicesScreen } from './screens/InvoicesScreen'
+import { AdminPage } from './components/AdminPage'
 import { CreditNoteDocument } from './screens/InvoiceDocument'
 import { MasterData } from './screens/masters/MasterData'
 import { SurgeonProfile } from './screens/SurgeonProfile'
@@ -160,7 +161,7 @@ export function AdminDayRoute() {
           actor={ctx.actor}
           onOpenBooking={(d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`)}
           onOpenConflicts={() => navigate('/admin/conflicts')}
-          onOpenInvoices={() => navigate('/admin/invoices')}
+          onOpenInvoices={() => navigate('/admin/invoices?view=approval')}
           onOpenNotification={(target) => openNotificationTarget(target, ctx, (d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`))}
           onSeeAllNotifications={() => navigate('/admin/notifications')}
           onShowResolvedNotifications={() => navigate('/admin/notifications?resolved=1')}
@@ -210,7 +211,7 @@ export function AdminBookingDetailRoute() {
             : `Invoice ${returnInvoice.invoiceNumber}`
         }
         officeLinks={{
-          onOpenInvoices: () => navigate('/admin/invoices'),
+          onOpenInvoices: () => navigate('/admin/invoices?view=approval'),
           onOpenInvoice: (invoiceId) => navigate(`/admin/invoices/${invoiceId}`),
           onOpenCreditNote: (creditNoteId) => navigate(`/admin/credit-notes/${creditNoteId}`),
         }}
@@ -305,16 +306,9 @@ export function AdminCreditNoteRoute() {
   return (
     <RequireEntity exists={creditNote !== undefined}>
       {creditNote !== undefined && (
-        <div data-testid="credit-note-detail-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', maxWidth: 1048, margin: '0 auto' }}>
-            <div style={{ fontSize: 13, color: neutral.mist }}>
-              <button type="button" className="aa-ctl" onClick={() => navigate('/admin/invoices')} style={{ border: 'none', background: 'none', padding: 0, color: neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Invoices</button>
-              <span style={{ color: neutral.lineStrong }}> / </span>
-              <span className="mono">{creditNote.creditNoteNumber}</span>
-            </div>
-          </div>
+        <AdminPage mode="document" testId="credit-note-detail-screen" back={{ label: 'Invoices', onClick: () => navigate('/admin/invoices') }}>
           <CreditNoteDocument key={creditNote.id} creditNoteId={creditNote.id} />
-        </div>
+        </AdminPage>
       )}
     </RequireEntity>
   )

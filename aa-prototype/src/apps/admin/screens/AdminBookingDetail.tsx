@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { UnassignedPill } from '../components/draftLists/DraftListParts'
 import { neutral } from '../../../theme/tokens'
-import { BackLink, FormError, PageHeader, TextAction } from '../../../shared/ui'
+import { FormError, TextAction } from '../../../shared/ui'
+import { AdminPage } from '../components/AdminPage'
 import type { Procedure } from '../../../domain/types'
 import { applyDefaultInvoiceDescription, lastChangeSetFor, onDomainReset, useAppStore, type Actor } from '../../../store'
 import { changeCount } from '../../../shared/booking/changeLabels'
@@ -125,63 +126,56 @@ function AdminBookingDetailDraft({ bookingId, actor, todayISO, onBack, backLabel
   const hospitalName = locationName(list.hospitalId, masters.hospitals)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <BackLink onClick={onBack} size="desktop">{backLabel}</BackLink>
-
-      {/* The admin page title, 24/30 since UI unification U6 (was 26/32). */}
-      <PageHeader
-        size="admin"
-        wrap
-        title={
-          patient !== undefined ? (
-            // The patient's record (catch-up Phase 40): by NHI, never the internal id.
-            <Link to={patientPath(patient.nhi)} data-shot="booking-patient-record-link" className="aa-table-entity-link" style={{ color: 'inherit' }}>
-              <span className="aa-table-entity-link-title">{patient.name}</span>
-            </Link>
-          ) : (
-            'Unknown patient'
-          )
-        }
-        aside={<WarningTriangle warnings={warnings} />}
-        subStyle={{ marginTop: 0 }}
-        // Top-right, level with the title (Admin Day's header), not sunk to the foot of the sub-lines.
-        actionsStyle={{ alignSelf: 'flex-start', marginLeft: 'auto' }}
-        sub={
-          <>
-            <div className="mono" style={{ fontSize: 12, color: neutral.mist, marginTop: 6 }}>
-              {badge.text}
-              {patient !== undefined && ` · DOB ${formatDob(patient.dobISO)} (${ageYears(patient.dobISO, todayISO)}y)`}
-            </div>
-            <div style={{ fontSize: 14, color: neutral.slate, marginTop: 2 }}>
-              {primary !== undefined ? procedureLabel(primary, masters.rvgGroups, 1) : 'Procedure to capture'} · {hospitalName}
-            </div>
-            {/* Where its List came from (catch-up Phase 34; US-02.2.4), beside the Booking's own source in the body. */}
-            <div data-shot="booking-list-origin" data-origin={list.origin.kind} style={{ fontSize: 12.5, color: neutral.slate, marginTop: 2 }}>
-              List origin · {listOriginText(list.origin, (id) => locationName(id, masters.hospitals))}
-            </div>
-            {fromRowId !== undefined && (
-              <div style={{ marginTop: 4 }}>
-                <TextAction size="sm" flush shot="booking-from-hospital-row" onClick={() => navigate('/admin/intake/matching', { state: { selectRowId: fromRowId } })} style={{ color: neutral.slate }}>
-                  From hospital row {fromRowId}
-                </TextAction>
-              </div>
-            )}
-          </>
-        }
-        actions={
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            {/* A Booking on a Draft List has no anaesthetist yet (catch-up Phase 31). */}
-            {list.state === 'DRAFT' && <UnassignedPill />}
-            {changed !== null && changed.bookingIds.includes(bookingId) && <ChangedSinceSubmittedPill cue={changed} />}
-            <StatusChip status={list.kind} />
-            {/* The update email, on demand on every Booking (catch-up Phase 35; US-02.3.3, OQ-69). */}
-            <span style={{ marginLeft: 6 }}>
-              <BookingUpdateEmailButton bookingId={bookingId} actor={actor} />
-            </span>
+    <AdminPage
+      mode="fluid"
+      actionsAlign="start"
+      back={{ label: backLabel, onClick: onBack }}
+      title={
+        patient !== undefined ? (
+          // The patient's record (catch-up Phase 40): by NHI, never the internal id.
+          <Link to={patientPath(patient.nhi)} data-shot="booking-patient-record-link" className="aa-table-entity-link" style={{ color: 'inherit' }}>
+            <span className="aa-table-entity-link-title">{patient.name}</span>
+          </Link>
+        ) : (
+          'Unknown patient'
+        )
+      }
+      aside={<WarningTriangle warnings={warnings} />}
+      sub={
+        <>
+          <div className="mono" style={{ fontSize: 12, color: neutral.mist, marginTop: 2 }}>
+            {badge.text}
+            {patient !== undefined && ` · DOB ${formatDob(patient.dobISO)} (${ageYears(patient.dobISO, todayISO)}y)`}
           </div>
-        }
-      />
-
+          <div style={{ fontSize: 14, color: neutral.slate, marginTop: 2 }}>
+            {primary !== undefined ? procedureLabel(primary, masters.rvgGroups, 1) : 'Procedure to capture'} · {hospitalName}
+          </div>
+          {/* Where its List came from (catch-up Phase 34; US-02.2.4), beside the Booking's own source in the body. */}
+          <div data-shot="booking-list-origin" data-origin={list.origin.kind} style={{ fontSize: 12.5, color: neutral.slate, marginTop: 2 }}>
+            List origin · {listOriginText(list.origin, (id) => locationName(id, masters.hospitals))}
+          </div>
+          {fromRowId !== undefined && (
+            <div style={{ marginTop: 4 }}>
+              <TextAction size="sm" flush shot="booking-from-hospital-row" onClick={() => navigate('/admin/intake/matching', { state: { selectRowId: fromRowId } })} style={{ color: neutral.slate }}>
+                From hospital row {fromRowId}
+              </TextAction>
+            </div>
+          )}
+        </>
+      }
+      actions={
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {/* A Booking on a Draft List has no anaesthetist yet (catch-up Phase 31). */}
+          {list.state === 'DRAFT' && <UnassignedPill />}
+          {changed !== null && changed.bookingIds.includes(bookingId) && <ChangedSinceSubmittedPill cue={changed} />}
+          <StatusChip status={list.kind} />
+          {/* The update email, on demand on every Booking (catch-up Phase 35; US-02.3.3, OQ-69). */}
+          <span style={{ marginLeft: 6 }}>
+            <BookingUpdateEmailButton bookingId={bookingId} actor={actor} />
+          </span>
+        </div>
+      }
+    >
       {draft?.notice != null && (
         <Notice tone="neutral" shot="booking-draft-reset" action={<TextAction size="sm" flush onClick={draft.dismissNotice}>Dismiss</TextAction>}>
           {draft.notice}
@@ -240,6 +234,6 @@ function AdminBookingDetailDraft({ bookingId, actor, todayISO, onBack, backLabel
       <BookingDetailBody bookingId={bookingId} actor={actor} onBack={onBack} onReviewEvent={setReviewing} {...(officeLinks !== undefined ? { officeLinks } : {})} />
       {/* The one standard review step for an event on this Booking's Procedures (catch-up Phase 38b). */}
       <EventReviewSheet eventId={reviewing} actor={actor} onClose={() => setReviewing(null)} />
-    </div>
+    </AdminPage>
   )
 }

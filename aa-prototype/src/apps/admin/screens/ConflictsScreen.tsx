@@ -10,7 +10,7 @@
  * in the Admin chrome (Admin Review's header and table anatomy).
  */
 
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { addDays, format, parseISO } from 'date-fns'
 import { CONFLICT_REASONS, conflictFromCause, type ExpectedConflict } from '../../../domain/conflicts'
@@ -20,14 +20,15 @@ import { UNASSIGNED } from '../../../shared/scheduleTerms'
 import { isAssignedList } from '../../../domain/draftLists'
 import { AttentionDot } from '../../../shared/warnings/AttentionDot'
 import { neutral, radius, semantic } from '../../../theme/tokens'
-import { TableShell, Td, Th } from '../../../shared/table'
+import { GroupRow, TableShell, Td, Th } from '../../../shared/table'
+import { AdminPage, PageBody, PageToolbar } from '../components/AdminPage'
 import { ReassignListFlow } from '../flows/ReassignListFlow'
 import { UnassignedPill } from '../components/draftLists/DraftListParts'
 import { ClearConflictSheet } from '../components/conflicts/ClearConflictSheet'
 import { sessionText } from '../../../domain/outOfHours'
 import { ResultLine } from '../../../shared/ui/ResultLine'
 import { EmptyState } from '../../../shared/ui/EmptyState'
-import { Checkbox, PageHeader, SelectField, TextAction } from '../../../shared/ui'
+import { Checkbox, SelectField, TextAction } from '../../../shared/ui'
 
 type WhenFilter = 'today' | 'twoWeeks' | 'canvas' | 'past'
 
@@ -123,37 +124,29 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
   }
 
   return (
-    <div data-testid="conflicts-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
-      <PageHeader
-        size="admin"
-        title="Conflicts"
-        subStyle={{ maxWidth: 760, lineHeight: '19px' }}
-        sub={
-          <>
-            Lists at a hospital that is closed that day. Bookings stay in place; reassign to cover, or clear.{' '}
-            <span data-shot="conflicts-count" style={{ color: neutral.ink, fontWeight: 600 }}>
-              {liveCount} open
-            </span>
-            {' '}in this range.
-          </>
+    <AdminPage mode="fit" testId="conflicts-screen" title="Conflicts" sub="Lists at a hospital that is closed that day. Bookings stay in place; reassign to cover, or clear.">
+      {/* Filters, state in the URL; the open count in this range at the right. */}
+      <PageToolbar
+        shot="conflicts-filters"
+        end={
+          <span data-shot="conflicts-count" style={{ color: neutral.ink, fontWeight: 600 }}>
+            {liveCount} open
+          </span>
         }
-      />
-
-      {/* Filters: Admin Review's chips and selects, state in the URL. */}
-      <div data-shot="conflicts-filters" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
+      >
         <SelectField label="When" hideLabel size="compact" fill="surface" value={whenParam} onChange={(v) => setParam('when', v === 'today' ? null : v)}>
           {WHEN_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </SelectField>
         <SelectField label="Hospital" hideLabel size="compact" fill="surface" value={hospitalParam} onChange={(v) => setParam('hospital', v)}>
-          <option value="">Every hospital</option>
+          <option value="">All hospitals</option>
           {Object.values(masters.hospitals).map((h) => (
             <option key={h.id} value={h.id}>{h.name}</option>
           ))}
         </SelectField>
         <SelectField label="Anaesthetist" hideLabel size="compact" fill="surface" value={anaesthetistParam} onChange={(v) => setParam('anaesthetist', v)}>
-          <option value="">Every anaesthetist</option>
+          <option value="">All anaesthetists</option>
           {Object.values(masters.anaesthetists)
             .sort((a, b) => a.name.localeCompare(b.name))
             .map((a) => (
@@ -163,8 +156,9 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
         <Checkbox checked={showCleared} onChange={(c) => setParam('cleared', c ? '1' : null)} style={{ display: 'inline-flex', gap: 6, fontSize: 13, color: neutral.slate }}>
           Show cleared
         </Checkbox>
-      </div>
+      </PageToolbar>
 
+      <PageBody>
       <ResultLine
         shot="conflicts-confirmation"
         line={confirmation}
@@ -180,30 +174,29 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
           No conflicts in this range.
         </EmptyState>
       ) : (
-        <div data-shot="conflicts-table" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <TableShell fit shot="conflicts-table" label="Conflicts" density="compact" minWidth={900} tableStyle={{ tableLayout: 'fixed' }}>
+            {/* One table, a group row per day; fits a 1280 laptop's 1008px, the reason taking the spare width. */}
+            <colgroup>
+              {[64, 150, 150, 110, undefined, 82, 220].map((w, i) => (
+                <col key={i} style={w !== undefined ? { width: w } : undefined} />
+              ))}
+            </colgroup>
+            <thead>
+              <tr>
+                {['Session', 'Anaesthetist', 'Hospital', 'Surgeon', 'Reason', 'Bookings', ''].map((h, i) => (
+                  <Th key={h === '' ? 'actions' : h} nowrap align={i === 5 ? 'right' : 'left'}>{h}</Th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
           {groups.map(([dateISO, dayRows]) => {
             const open = dayRows.filter((r) => r.clear === undefined).length
             return (
-              <section key={dateISO} aria-label={shortDay(dateISO)} data-conflict-date={dateISO}>
-                <h2 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 700 }}>
-                  {shortDay(dateISO)}
+              <Fragment key={dateISO}>
+                <GroupRow span={7} data-conflict-date={dateISO}>
+                  <span style={{ color: neutral.ink }}>{shortDay(dateISO)}</span>
                   <span style={{ color: neutral.mist, fontWeight: 500 }}> · {open} conflict{open === 1 ? '' : 's'}{dayRows.length > open ? `, ${dayRows.length - open} cleared` : ''}</span>
-                </h2>
-                <TableShell label={`Conflicts, ${shortDay(dateISO)}`} density="compact" minWidth={1040} tableStyle={{ tableLayout: 'fixed' }}>
-                    {/* One set of widths, so the day groups line up. */}
-                    <colgroup>
-                      {[64, 170, 160, 130, undefined, 84, 236].map((w, i) => (
-                        <col key={i} style={w !== undefined ? { width: w } : undefined} />
-                      ))}
-                    </colgroup>
-                    <thead>
-                      <tr>
-                        {['Session', 'Anaesthetist', 'Hospital', 'Surgeon', 'Reason', 'Bookings', ''].map((h, i) => (
-                          <Th key={h === '' ? 'actions' : h} align={i === 5 ? 'right' : 'left'}>{h}</Th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
+                </GroupRow>
                       {dayRows.map((r) => {
                         const cleared = r.clear !== undefined
                         const muted = cleared ? { color: neutral.mist } : {}
@@ -268,13 +261,13 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
                           </tr>
                         )
                       })}
-                    </tbody>
-                </TableShell>
-              </section>
+              </Fragment>
             )
           })}
-        </div>
+            </tbody>
+        </TableShell>
       )}
+      </PageBody>
 
       {reassignList !== undefined && (
         <ReassignListFlow open list={reassignList} actor={actor} onClose={() => setReassigning(null)} onReassigned={() => onReassigned(reassignList.id)} />
@@ -287,6 +280,6 @@ export function ConflictsScreen({ actor, onOpenSession, onOpenDraftList }: { act
         onClose={() => setClearing(null)}
         onCleared={() => setConfirmation('Conflict cleared. It shows again under "Show cleared", where "Flag again" restores it.')}
       />
-    </div>
+    </AdminPage>
   )
 }

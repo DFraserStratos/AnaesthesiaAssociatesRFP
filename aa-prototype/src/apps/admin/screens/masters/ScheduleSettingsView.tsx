@@ -25,6 +25,7 @@ import { Button, FormError, useSurface } from '../../../../shared'
 import { TextField, TimeRangeFields } from '../../../../shared/ui'
 import { OverlayHeader, SheetActions } from '../../../../shared/surface'
 import { MasterHeader, MasterTable } from './chrome'
+import { ADMIN_FORM_WIDTH } from '../../layout'
 import { TextAction } from '../../../../shared/ui'
 import { cellStyle } from './tableStyles'
 import { sessionText, SESSIONS_IN_ORDER } from '../../../../domain/outOfHours'
@@ -47,7 +48,7 @@ export function ScheduleSettingsView({ actor }: { actor: Actor }) {
           sub="Every active anaesthetist has an AM and a PM session each day up to the horizon. It rolls forward each day."
           actions={<Button variant="secondary" onClick={() => setSheet('horizon')}>Edit horizon</Button>}
         />
-        <MasterTable columns={['Horizon', 'Last day', '']} rightAlign={[2]} label="Schedule horizon">
+        <MasterTable columns={['Horizon', 'Last day', '']} rightAlign={[2]} label="Schedule horizon" style={{ maxWidth: ADMIN_FORM_WIDTH }}>
           <tr>
             <td style={cellStyle}>
               <span style={{ fontWeight: 600 }}>{settings.horizonMonths} {settings.horizonMonths === 1 ? 'month' : 'months'}</span>
@@ -66,7 +67,7 @@ export function ScheduleSettingsView({ actor }: { actor: Actor }) {
           section
           actions={<Button variant="secondary" onClick={() => setSheet('times')}>Edit session times</Button>}
         />
-        <MasterTable columns={['Session', 'Start', 'End', '']} rightAlign={[3]} shot="admin-session-times">
+        <MasterTable columns={['Session', 'Start', 'End', '']} rightAlign={[3]} shot="admin-session-times" style={{ maxWidth: ADMIN_FORM_WIDTH }}>
           {SESSIONS_IN_ORDER.map((session) => (
             <tr key={session}>
               <td style={{ ...cellStyle, fontWeight: 600 }}>{sessionText(session)}</td>

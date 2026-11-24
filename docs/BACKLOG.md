@@ -109,8 +109,10 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 
 ## UI consistency debt
 
-- Admin page layout: every screen picks its own width (full, 1080, 1180, 1280 left, 1048 centred). Unify on one page frame (fit, fluid, document), a sticky side nav and a shell that fits 1280 wide. Findings and the layout decisions in `docs/admin-layout-audit.md`. L
-- Shared components still to build: a Breadcrumb (Review and Invoices' hand crumbs), `TextAction` 13px and quiet sizes, an `OptionChip` small size, `IconButton` ARIA passthrough and 22 and 48 sizes, a pill-outline `Button`, a `TotalsBlock` (AA fees `FeeInvoiceDetail`). `shared/ui/`. M
+- Admin page frame follow-ups (`apps/admin/components/AdminPage.tsx`, `docs/admin-layout-audit.md`): the Day view keeps its own frame (its rail stays 412 at 1280, so the grid is 580 there); the Contracts toolbar wraps to two rows at 1280; Patients Follow-up stays fluid (three tables of different shapes); the catalogue's ProfileChrome row still previews `ProfileHeader`, not `ProfilePage`; Billing monitor is about 15,600px long (collapse its anaesthetist groups by default). M
+- Older layout bugs seen in the frame work: on one anaesthetist's Ledger at 1280, $11,350.50 spills out of its tile; on Review detail at 1920 the table stops short of its card (the totals row has one cell too many). S
+- Twelve Playwright specs fail on master before and after the page frame (same set both times): `admin-phase08` (92, 321, 359), `billing-monitor` (46, 199), `conflicts-phase30` (30, 56, 76, 129), `list-moves-phase32` (27, 162). Stale seed expectations (for example "MON 20 JUL", the Conflicts badge 16); bring them in step at the next sweep. M
+- Shared components still to build: `TextAction` 13px and quiet sizes, an `OptionChip` small size, `IconButton` ARIA passthrough and 22 and 48 sizes, a pill-outline `Button`, a `TotalsBlock` (AA fees `FeeInvoiceDetail`). `shared/ui/`. M
 - The one-component guardrail's allow-list still holds 58 files and 90 styled raw buttons; each component above retires entries. `apps/oneComponentPerJob.test.ts`. M
 - Token drift: 65 inline `=== 1 ?` plurals not using `plural`, 13 `'EEE d MMM'` literals, off-scale font sizes (12.5 x307, 11.5 x79, 13.5 x48), no token for the white-alpha on-ink ladder (41 sites). M
 - Left by U7 for the owner: PickRow heights 56 and 60, DockSpacer's hard-coded 74/82/86, the stamps in DraftListDrawer, UpdateEmailComposer and `auditNarrative`, no `data-progress` on the phone ListRow. S to M (owner)

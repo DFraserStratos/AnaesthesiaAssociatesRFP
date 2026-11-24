@@ -12,6 +12,7 @@ import { HistorySheet } from '../../../../shared/booking'
 import { Button, Card, FormError, ResultLine, TextAction, TextField } from '../../../../shared/ui'
 import { neutral } from '../../../../theme/tokens'
 import { MasterHeader } from './chrome'
+import { ADMIN_FORM_WIDTH } from '../../layout'
 
 const PATIENT_BALANCE_THRESHOLD_CAPTION =
   'Counts from the invoice date, and only amounts the patient owes on invoices billed to them. Under the threshold the warning is mild; over it, strong. A patient in credit gets a mild warning. A change applies at the next Booking check.'
@@ -50,7 +51,7 @@ export function PatientBalanceThresholdView({ actor }: { actor: Actor }) {
         sub="When a patient's unpaid invoice makes the balance warning strong."
         actions={<TextAction size="sm" flush onClick={() => setHistory(true)} label="History of the patient balance warning">History</TextAction>}
       />
-      <Card padding="card" style={{ maxWidth: 560 }}>
+      <Card padding="card" style={{ maxWidth: ADMIN_FORM_WIDTH }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <TextField
             label="Patient balance warning after N days"

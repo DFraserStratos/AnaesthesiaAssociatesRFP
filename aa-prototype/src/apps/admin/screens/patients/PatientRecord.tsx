@@ -3,10 +3,10 @@
  * US-11.3.2, US-11.3.3, US-13.2.2): `/admin/patients/:nhi`. The NHI is the
  * key and the identifier; the internal id is never shown.
  *
- * A main column (the three balance tiles in the Admin Review anatomy, the By
- * payer line, 15a's warnings, the Invoices and the Bookings) beside a rail
- * that reads as the patient's file: Details differ, Details and the
- * Follow-up log. Everything reads `patientRecordView`, which reads 36's
+ * A `fluid` record: a main column (the three balance tiles in the Admin Review
+ * anatomy, the By payer line, 15a's warnings, the Invoices, the Bookings and
+ * the Follow-up log) beside the page rail, which reads as the patient's file:
+ * Details differ and Details. Back goes to Patients. Everything reads `patientRecordView`, which reads 36's
  * ledger, never `state.xero`.
  */
 
@@ -29,7 +29,7 @@ import {
   type PatientRecordView,
 } from '../../../../store'
 import type { PatientDetailField, PatientFollowUp } from '../../../../domain/types'
-import { Button, Card, DefList, DefRow, EmptyState, FormError, PageHeader, Pill, ResultLine, SelectField, StatTile, TextAction, TextArea, TextField } from '../../../../shared/ui'
+import { Button, Card, DefList, DefRow, EmptyState, FormError, Pill, ResultLine, SelectField, StatTile, TextAction, TextArea, TextField } from '../../../../shared/ui'
 import { Segmented } from '../../../../shared/ui'
 import { TableShell, Td, Th } from '../../../../shared/table'
 import { useBookingWarnings, WarningsPanel, WarningTriangle, ClearWarningButton, StrengthPill } from '../../../../shared/warnings'
@@ -40,6 +40,7 @@ import { formatPostalAddress } from '../../../../domain/billing/payer'
 import { sessionText } from '../../../../domain/outOfHours'
 import { neutral } from '../../../../theme/tokens'
 import { UNASSIGNED } from '../../../../shared/scheduleTerms'
+import { AdminPage, PageBody } from '../../components/AdminPage'
 import { usePatientSlices } from './PatientsScreen'
 import { balanceText, DetailChoiceTable, detailsFromText, InvoiceStatusPill } from './patientParts'
 import { RegisterRefreshPanel, RegisterRefreshRow } from './RegisterRefresh'
@@ -58,54 +59,48 @@ export function PatientRecord({ nhi, actor, onOpenBooking }: { nhi: string; acto
 
   if (view === undefined || patient === undefined) return null
 
-  return (
-    <div data-shot="admin-patient-record" data-patient-nhi={view.patient.nhi} style={{ display: 'flex', flexDirection: 'column', gap: 18, maxWidth: 1280 }}>
-      <div style={{ fontSize: 13, color: neutral.mist }}>
-        <TextAction to="/admin/patients" size="sm" flush style={{ fontSize: 'inherit', color: neutral.ink }}>Patients</TextAction>
-        <span style={{ color: neutral.lineStrong }}> / </span>
-        <span>{view.patient.name}</span>
-      </div>
-      <PageHeader
-        size="admin"
-        title={view.patient.name}
-        aside={
-          <Pill size="lg" mono shot="patient-record-nhi" ariaLabel={`NHI ${view.patient.nhi}`}>
-            NHI {view.patient.nhi}
-          </Pill>
-        }
-        sub={
-          <span>
-            Born {view.patient.dobISO === '' ? NOT_SUPPLIED : <span className="mono">{formatDob(view.patient.dobISO)}</span>}
-            {view.age !== undefined && <>, {view.age}</>}
-            {' · '}
-            <TextAction to="/admin/patients" size="sm" flush style={{ fontSize: 'inherit' }}>Search patients</TextAction>
-          </span>
-        }
-      />
+  const rail = (
+    <>
+      {view.pendingDetails !== undefined && view.pendingDetails.differences.length > 0 && <DetailsDifferCard view={view} patientId={patient.hiddenInternalId} actor={actor} />}
+      <DetailsCard view={view} patient={patient} actor={actor} />
+    </>
+  )
 
-      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-        <div style={{ flex: '1 1 640px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 18 }}>
-          <BalanceTiles view={view} patientId={patient.hiddenInternalId} />
-          <RecordWarnings view={view} actor={actor} />
-        </div>
-        <div style={{ flex: '0 1 360px', minWidth: 300, display: 'flex', flexDirection: 'column', gap: 18 }}>
-          {view.pendingDetails !== undefined && view.pendingDetails.differences.length > 0 && <DetailsDifferCard view={view} patientId={patient.hiddenInternalId} actor={actor} />}
-          <DetailsCard view={view} patient={patient} actor={actor} />
-        </div>
-      </div>
-      {/* Full width below the two columns, so the invoice table's columns all show at 1440 (design pass). */}
-      <InvoicesCard
-        view={view}
-        actor={actor}
-        onLogFollowUp={(invoiceId) => {
-          setLinkInvoice(invoiceId)
-          composerRef.current?.focus()
-        }}
-        onOpenBooking={openBooking}
-      />
-      <BookingsCard view={view} onOpenBooking={openBooking} />
-      <FollowUpLogCard view={view} actor={actor} linkInvoice={linkInvoice} onLinkInvoice={setLinkInvoice} composerRef={composerRef} />
-    </div>
+  return (
+    <AdminPage
+      mode="fluid"
+      shot="admin-patient-record"
+      data-patient-nhi={view.patient.nhi}
+      back={{ label: 'Patients', to: '/admin/patients' }}
+      title={view.patient.name}
+      aside={
+        <Pill size="lg" mono shot="patient-record-nhi" ariaLabel={`NHI ${view.patient.nhi}`}>
+          NHI {view.patient.nhi}
+        </Pill>
+      }
+      sub={
+        <span>
+          Born {view.patient.dobISO === '' ? NOT_SUPPLIED : <span className="mono">{formatDob(view.patient.dobISO)}</span>}
+          {view.age !== undefined && <>, {view.age}</>}
+        </span>
+      }
+    >
+      <PageBody gap={18} rail={rail} railLabel="Patient details">
+        <BalanceTiles view={view} patientId={patient.hiddenInternalId} />
+        <RecordWarnings view={view} actor={actor} />
+        <InvoicesCard
+          view={view}
+          actor={actor}
+          onLogFollowUp={(invoiceId) => {
+            setLinkInvoice(invoiceId)
+            composerRef.current?.focus()
+          }}
+          onOpenBooking={openBooking}
+        />
+        <BookingsCard view={view} onOpenBooking={openBooking} />
+        <FollowUpLogCard view={view} actor={actor} linkInvoice={linkInvoice} onLinkInvoice={setLinkInvoice} composerRef={composerRef} />
+      </PageBody>
+    </AdminPage>
   )
 }
 
@@ -124,7 +119,7 @@ function BalanceTiles({ view, patientId }: { view: PatientRecordView; patientId:
         : 'Nothing owing'
   return (
     <div data-shot="patient-balance" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
         <StatTile variant="outlined" label="Balance" value={balanceText(view.balance.outstandingTotal)} sub="Every invoice, whoever pays" data-tile="balance" />
         <StatTile
           variant="outlined"

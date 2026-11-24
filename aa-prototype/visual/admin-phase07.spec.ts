@@ -19,8 +19,7 @@ test('admin phase 07 review + authorise', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Review queue' })).toBeVisible()
   // Phase 08 replaced the "Handed to billing" placeholder with the live panel.
   await expect(page.getByText('Recently billed')).toBeVisible()
-  await expect(page.getByRole('columnheader', { name: 'Anaesthetist' })).toBeVisible()
-  await expect(page.getByRole('columnheader', { name: 'List', exact: true })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'Anaesthetist · List' })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'List date' })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'Bookings' })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'Submitted' })).toBeVisible()
@@ -28,7 +27,9 @@ test('admin phase 07 review + authorise', async ({ page }) => {
   const tableWidth = await page.getByTestId('review-queue-table-shell').evaluate((element) => element.getBoundingClientRect().width)
   const recentlyBilledWidth = await page.getByTestId('review-queue-recently-billed').evaluate((element) => element.getBoundingClientRect().width)
   expect(queueWidth).toBeGreaterThan(1080)
-  expect(Math.abs(tableWidth - recentlyBilledWidth)).toBeLessThanOrEqual(1)
+  // Recently billed sits in the page's rail, beside the table.
+  expect(recentlyBilledWidth).toBeLessThan(tableWidth)
+  await expect(page.locator('[data-page-rail]').getByTestId('review-queue-recently-billed')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a7-01-queue.png', fullPage: true })
 
   // Open Morrison's submitted list → the sanity-check review screen.

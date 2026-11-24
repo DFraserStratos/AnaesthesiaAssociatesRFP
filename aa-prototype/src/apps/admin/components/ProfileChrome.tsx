@@ -1,22 +1,66 @@
 /**
  * The chrome of the Admin profile pages (catch-up Phase 17): the surgeon
- * profile and the Admin anaesthetist record. A header with the name, its
- * identifier chip and the page's action; its cards are the shared `Card` and
- * its facts `DefRow layout="stacked"` since UI unification U6 (the back link
- * to the Master data view is the shared `BackLink` since U5).
+ * profile and the Admin anaesthetist record. `ProfilePage` is the Admin page
+ * frame (`AdminPage`, fluid) with the back link to the Master data view, the
+ * name as the title, its identifier chip beside it and the page's actions; its
+ * cards are the shared `Card` and its facts `DefRow layout="stacked"` since UI
+ * unification U6. `PROFILE_GRID` lays the cards across the full width.
  * Phase 26 extends the anaesthetist record on it.
  */
 
 import type { CSSProperties, ReactNode } from 'react'
 import { neutral, radius } from '../../../theme/tokens'
 import { Button, PageHeader } from '../../../shared/ui'
+import { AdminPage } from './AdminPage'
 
-export function ProfilePage({ shot, children }: { shot: string; children: ReactNode }) {
-  return <div data-shot={shot} style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>{children}</div>
+export function ProfilePage({
+  shot,
+  back,
+  name,
+  chip,
+  sub,
+  action,
+  children,
+}: {
+  shot: string
+  /** The Master data view the record belongs to: "Anaesthetists", "Surgeons". */
+  back: { label: string; to: string }
+  name: string
+  chip?: ReactNode
+  sub?: ReactNode
+  action?: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <AdminPage
+      mode="fluid"
+      shot={shot}
+      back={back}
+      title={name}
+      {...(chip !== undefined ? { aside: chip } : {})}
+      {...(sub !== undefined ? { sub } : {})}
+      {...(action !== undefined ? { actions: action } : {})}
+    >
+      {children}
+    </AdminPage>
+  )
 }
 
 /**
- * The page's title row: the shared `PageHeader` (admin, 24/30; UI unification U6) with the identifier
+ * The record's cards side by side across the full width (docs/admin-layout-audit.md): columns of at
+ * least 320px, the cards stretching to fill the row. A wide card spans two (`PROFILE_WIDE_CARD`).
+ */
+export const PROFILE_GRID: CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, alignItems: 'start' }
+
+/** A card that takes two of the grid's columns (the anaesthetist's Profile). */
+export const PROFILE_WIDE_CARD: CSSProperties = { minWidth: 0, gridColumn: 'span 2' }
+
+/** A label and value list inside a profile card, flowing into as many columns as the card holds. */
+export const PROFILE_FACTS: CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }
+
+/**
+ * The title row on its own (the component catalogue's preview; the pages take it from `ProfilePage`):
+ * the shared `PageHeader` (admin, 24/30; UI unification U6) with the identifier
  * chip beside the name (outside the heading, 12px from it, as before), the sub-line and the
  * page's action.
  */

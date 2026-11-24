@@ -22,6 +22,18 @@ export const ADMIN_LIST_DRAWER_WIDTH = SIDE_PANEL_WIDTH.list
  */
 export const ADMIN_RIGHT_RAIL_WIDTH = ADMIN_LIST_DRAWER_WIDTH - ADMIN_PAGE_HORIZONTAL_PADDING
 
+/** The narrowest a rail gets: on a 1280 laptop the rail gives way before the main column does. */
+export const ADMIN_RIGHT_RAIL_MIN_WIDTH = 320
+
+/**
+ * A rail's width beside a main column that needs `reserve` px: the full `ADMIN_RIGHT_RAIL_WIDTH` where
+ * there is room, narrowing to `ADMIN_RIGHT_RAIL_MIN_WIDTH` as the body narrows (a percentage of the
+ * body, so it holds whatever surrounds the body).
+ */
+export function adminRailWidth(reserve: number): string {
+  return `clamp(${ADMIN_RIGHT_RAIL_MIN_WIDTH}px, calc(100% - ${reserve}px), ${ADMIN_RIGHT_RAIL_WIDTH}px)`
+}
+
 /** A section's own left navigation inside a page (Master data's view list). */
 export const ADMIN_SUBNAV_WIDTH = 200
 

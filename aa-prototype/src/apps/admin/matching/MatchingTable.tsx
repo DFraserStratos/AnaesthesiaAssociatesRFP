@@ -6,6 +6,7 @@
  * Admin Review mockup's flags column.
  */
 
+import type { ReactNode } from 'react'
 import { Check } from 'lucide-react'
 import { fontFamily, neutral, semantic } from '../../../theme/tokens'
 import { effectiveIncoming, suggestionText, type MatchingView } from '../../../domain/intake'
@@ -25,6 +26,7 @@ export function MatchingTable({
   dimmedId,
   todayISO,
   onOpen,
+  footer,
 }: {
   rows: readonly ImportRowView[]
   view: MatchingView
@@ -35,13 +37,16 @@ export function MatchingTable({
   dimmedId: string | null
   todayISO: string
   onOpen: (rowId: string) => void
+  /** The card's foot row (the sample-file note). */
+  footer?: ReactNode
 }) {
   const nowISO = useAppStore((s) => clockISO(s.clock))
   let newSeen = false
   return (
-    <TableShell shot="matching-table" testId="matching-table-shell" label="Matching" density="compact" minWidth={1180} tableStyle={{ tableLayout: 'fixed' }}>
+    // The list card of Intake's fit page: fits 1008 at 1280, the procedure as received and the suggestion sharing the spare width.
+    <TableShell fit footer={footer} shot="matching-table" testId="matching-table-shell" label="Matching" density="compact" minWidth={900} tableStyle={{ tableLayout: 'fixed' }}>
       <colgroup>
-        {[104, 128, 168, 128, undefined, 116, 220, 150].map((w, i) => (
+        {[84, 116, 144, 104, undefined, 116, undefined, 116].map((w, i) => (
           <col key={i} style={w !== undefined ? { width: w } : undefined} />
         ))}
       </colgroup>
@@ -84,7 +89,7 @@ export function MatchingTable({
                 ...(dim ? { opacity: 0.55, transition: 'opacity 260ms ease' } : {}),
               }}
             >
-              <Td mono nowrap style={{ fontSize: 12, color: neutral.slate }}>
+              <Td mono style={{ fontSize: 12, color: neutral.slate }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   {dim && <Check size={14} strokeWidth={3} aria-label="Decided" style={{ color: semantic.success.solid }} />}
                   {stampText(row.receivedAtISO, { weekday: false })}
@@ -146,7 +151,8 @@ export function MatchingTable({
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                   {unmatched && !assessment!.waitingForNhi && <Pill size="sm" tone="warning">Unmatched</Pill>}
                   {(assessment?.flags ?? []).map((f) => (
-                    <Pill key={f.code} size="sm" tone={f.code === 'nhiInvalid' ? 'error' : 'warning'}>{f.label}</Pill>
+                    // A long flag ("Earlier row for this Booking still open") wraps inside the column rather than widening the table.
+                    <Pill key={f.code} size="sm" tone={f.code === 'nhiInvalid' ? 'error' : 'warning'} style={{ whiteSpace: 'normal' }}>{f.label}</Pill>
                   ))}
                 </div>
               </Td>

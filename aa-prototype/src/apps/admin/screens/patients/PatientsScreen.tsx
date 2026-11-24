@@ -1,7 +1,10 @@
 /**
  * Admin · Patients (catch-up Phase 40, item 12; US-11.1.1, US-11.1.5,
- * US-11.3.2, US-11.3.3): the three list views behind one segmented control,
- * each with its count: Search, Waiting for NHI and Follow-up. The NHI is the
+ * US-11.3.2, US-11.3.3): the three list views on routed tabs, each with its
+ * count: Search, Waiting for NHI and Follow-up. Search and Waiting for NHI are
+ * `fit` list pages; Follow-up is `fluid`, because its three sections are
+ * tables of different shapes (money on the warnings, a reminder's text, a
+ * received set of details), not groups of one list. The NHI is the
  * identifier everywhere; the internal patient id is never shown. Every figure
  * comes from the session-1 selectors (`store/patientSelectors.ts`), which read
  * 36's ledger, never `state.xero`.
@@ -22,13 +25,15 @@ import {
   waitingNhiRows,
   type Actor,
 } from '../../../../store'
-import { EmptyState, FormError, NameSearchBox, PageHeader, SlidingSegmentedControl, TextAction } from '../../../../shared/ui'
+import { EmptyState, FormError, LineTabLink, LineTabs, NameSearchBox, PageHeader, TextAction } from '../../../../shared/ui'
 import { ClickableRow, RowOpenButton, TableShell, Td, Th } from '../../../../shared/table'
 import { ClearWarningButton, StrengthPill } from '../../../../shared/warnings'
 import { patientPath } from '../../../../shared/patients'
 import { formatDob, plural, shortDay, stampText } from '../../../../shared/format'
 import { sessionText } from '../../../../domain/outOfHours'
-import { neutral } from '../../../../theme/tokens'
+import { accent, fontFamily, neutral } from '../../../../theme/tokens'
+import { AdminPage, PageBody, PageToolbar } from '../../components/AdminPage'
+import { ADMIN_PROSE_WIDTH } from '../../layout'
 import { balanceText, detailsFromText } from './patientParts'
 import { WaitingNhiView } from './WaitingNhiView'
 
@@ -74,7 +79,6 @@ export function PatientsScreen({
   onOpenList: (listId: string) => void
   onOpenMatching: (rowId: string) => void
 }) {
-  const navigate = useNavigate()
   const slices = usePatientSlices()
   const [query, setQuery] = useState('')
   const searchRows = useMemo(() => patientSearch(slices, query), [slices, query])
@@ -88,35 +92,34 @@ export function PatientsScreen({
   const labels: Record<PatientListView, string> = { search: 'Search', waiting: 'Waiting for NHI', followUp: 'Follow-up' }
 
   return (
-    <div data-shot={SHOTS[view]} style={{ display: 'flex', flexDirection: 'column', gap: 18, maxWidth: 1180 }}>
-      <PageHeader
-        size="admin"
-        title="Patients"
-        sub="Find a patient by name, NHI or date of birth. The NHI is the patient's identifier."
-        subStyle={{ maxWidth: 720 }}
-      />
-      <div style={{ display: 'flex' }}>
-        <SlidingSegmentedControl
-          layout="wrap"
-          ariaLabel="Patients view"
-          value={view}
-          onSelect={(v) => navigate(PATIENT_LIST_PATHS[v])}
-          options={(['search', 'waiting', 'followUp'] as const).map((v) => ({
-            value: v,
-            label: (
-              <span data-patients-view={v} style={{ display: 'inline-flex', alignItems: 'baseline', gap: 6, whiteSpace: 'nowrap' }}>
+    <AdminPage
+      mode={view === 'followUp' ? 'fluid' : 'fit'}
+      shot={SHOTS[view]}
+      title="Patients"
+      sub="Find a patient by name, NHI or date of birth. The NHI is the patient's identifier."
+      tabs={
+        <LineTabs label="Patients view" shot="patients-tabs">
+          {(['search', 'waiting', 'followUp'] as const).map((v) => {
+            const active = v === view
+            return (
+              <LineTabLink
+                key={v}
+                to={PATIENT_LIST_PATHS[v]}
+                active={active}
+                data-patients-view={v}
+                badge={<span style={{ fontFamily: fontFamily.mono, fontSize: 12, fontWeight: 500, fontVariantNumeric: 'tabular-nums', color: active ? accent.base : neutral.slate }}>{counts[v]}</span>}
+              >
                 {labels[v]}
-                <span className="mono" style={{ fontSize: 12, fontWeight: 500, opacity: 0.8 }}>{counts[v]}</span>
-              </span>
-            ),
-          }))}
-        />
-      </div>
-
+              </LineTabLink>
+            )
+          })}
+        </LineTabs>
+      }
+    >
       {view === 'search' && <SearchView query={query} onQuery={setQuery} rows={searchRows} />}
       {view === 'waiting' && <WaitingNhiView rows={waiting} actor={actor} onOpenList={onOpenList} onOpenMatching={onOpenMatching} />}
       {view === 'followUp' && <FollowUpView actor={actor} />}
-    </div>
+    </AdminPage>
   )
 }
 
@@ -127,13 +130,23 @@ export function PatientsScreen({
 function SearchView({ query, onQuery, rows }: { query: string; onQuery: (q: string) => void; rows: ReturnType<typeof patientSearch> }) {
   const navigate = useNavigate()
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <NameSearchBox label="Search patients" placeholder="Name, NHI or date of birth" value={query} onChange={onQuery} size="pill" width={420} shot="patient-search-box" />
-      {query.trim() === '' && <span style={{ fontSize: 12.5, color: neutral.mist }}>Showing patients booked in the next 14 days, then anyone with something to follow up.</span>}
+    <>
+      <PageToolbar
+        end={
+          query.trim() === '' ? (
+            <span>Booked in the next 14 days, then anyone to follow up</span>
+          ) : (
+            <span className="mono">{plural(rows.length, 'patient')}</span>
+          )
+        }
+      >
+        <NameSearchBox label="Search patients" placeholder="Name, NHI or date of birth" value={query} onChange={onQuery} size="pill" width={420} shot="patient-search-box" />
+      </PageToolbar>
+      <PageBody>
       {rows.length === 0 ? (
         <EmptyState variant="card" shot="patient-search-empty">No patient matches "{query.trim()}". Try the NHI or the date of birth.</EmptyState>
       ) : (
-        <TableShell label="Patients" density="compact" minWidth={900} shot="patient-search-table">
+        <TableShell fit label="Patients" density="compact" minWidth={760} shot="patient-search-table">
           <thead>
             <tr>
               <Th>Name</Th>
@@ -163,7 +176,8 @@ function SearchView({ query, onQuery, rows }: { query: string; onQuery: (q: stri
           </tbody>
         </TableShell>
       )}
-    </div>
+      </PageBody>
+    </>
   )
 }
 
@@ -195,8 +209,8 @@ function FollowUpView({ actor }: { actor: Actor }) {
   const pending = useMemo(() => patientsWithPendingDetails(slices), [slices])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      <p data-shot="patient-threshold-line" style={{ margin: 0, fontSize: 13, color: neutral.slate, maxWidth: 760, lineHeight: '19px' }}>
+    <PageBody gap={24}>
+      <p data-shot="patient-threshold-line" style={{ margin: 0, fontSize: 13, color: neutral.slate, maxWidth: ADMIN_PROSE_WIDTH, lineHeight: '19px' }}>
         Strong when an invoice billed to the patient is unpaid more than <span className="mono">{threshold}</span> days from its invoice date. A patient in credit shows a mild warning.{' '}
         <TextAction to="/admin/masters?view=patientBalance" size="sm" flush style={{ fontSize: 'inherit' }}>Change in Master data</TextAction>
       </p>
@@ -317,6 +331,6 @@ function FollowUpView({ actor }: { actor: Actor }) {
           </TableShell>
         )}
       </section>
-    </div>
+    </PageBody>
   )
 }

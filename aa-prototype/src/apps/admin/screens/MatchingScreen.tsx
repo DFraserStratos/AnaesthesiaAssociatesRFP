@@ -1,18 +1,19 @@
 /**
  * Matching (catch-up Phase 33; US-02.1.1 to US-02.1.4, FT-02.5; AR-21; Admin
- * Intake's first tab since Phase 34, so its title is a section heading under
- * Intake's;
+ * Intake's first tab since Phase 34, so it sits under Intake's title;
  * `matching-screen`, `rows-wait`). Hospital bookings and sheets land here as
  * rows; the office matches each to a Booking or List, creates what is
  * missing, or rejects it. Nothing changes the schedule until it decides (no
- * silent apply, RV-13). Laid out as the Admin Review mockup: the title and one
- * line, a stats strip, one table with a flags column, and the decided row's
- * banner, tick and dimmed row with Next row; the row panel is the Admin Day
- * drawer's.
+ * silent apply, RV-13). Intake's `fit` list page: Import hospital file is
+ * Intake's page action while this tab shows; the toolbar holds the Open,
+ * Unmatched and Decided filter with counts and the New, Modifications and
+ * Cancellations summary; one table with a flags column and the sample-file
+ * note in its footer; and the decided row's banner, tick and dimmed row with
+ * Next row. The row panel is the Admin Day drawer's.
  *
- * Built on the shared kit (UI unification): `PageHeader`, `StatTile`, the
- * table kit, `SidePanel`, `Pill`, `EmptyState`, `Notice`, `ResultLine`,
- * `TextField`, `useRovingRadio` and `Button`.
+ * Built on the shared kit (UI unification): `FilterPills`, the table kit,
+ * `SidePanel`, `Pill`, `EmptyState`, `Notice`, `ResultLine`, `TextField`,
+ * `useRovingRadio` and `Button`.
  */
 
 import { useEffect, useMemo, useState } from 'react'
@@ -20,13 +21,15 @@ import { useLocation } from 'react-router-dom'
 import { Upload } from 'lucide-react'
 import { neutral } from '../../../theme/tokens'
 import { importHospitalDownload, importRowViews, matchingCounts, matchingView, useAppStore, type Actor, type ImportRowView, type MatchingFilter } from '../../../store'
-import { Button, EmptyState, PageHeader, ResultLine, SlidingSegmentedControl, StatTile } from '../../../shared/ui'
+import { Button, EmptyState, FilterPills, ResultLine } from '../../../shared/ui'
 import { useDemoTriggerContextWhile } from '../../../shared/demoTriggers'
 import { locationName, plural } from '../../../shared/format'
 import { hospitalDownloadSample } from '../../../domain/intake'
 import { ImportDialog } from '../matching/ImportDialog'
 import { MatchingTable } from '../matching/MatchingTable'
 import { RowPanel } from '../matching/RowPanel'
+import { PageBody, PageToolbar } from '../components/AdminPage'
+import { useIntakePage } from './IntakeScreen'
 
 const EMPTY: Record<MatchingFilter, string> = {
   open: "No rows waiting. Imported St George's and Southern Cross files, the rooms' PDF lists and received sheets land here.",
@@ -57,6 +60,14 @@ export function MatchingScreen({ actor, todayISO, onOpenBooking }: { actor: Acto
   const [justDecided, setJustDecided] = useState<{ rowId: string; index: number } | null>(null)
 
   useDemoTriggerContextWhile('matching.selectedRowId', selectedId ?? '', selectedId !== null)
+
+  // Intake's page action while this tab shows (only a stable setter inside: see `useIntakePage`).
+  const importAction = (
+    <Button variant="primary" size="desktop" onClick={() => setImportOpen(true)} shot="matching-import-open">
+      <Upload size={16} aria-hidden /> Import hospital file
+    </Button>
+  )
+  const hosted = useIntakePage(importAction)
 
   // Rows staged while the screen is open (the bar's "Import hospital file" or "Send update"):
   // select the first new row, as the dialog's import does.
@@ -128,64 +139,60 @@ export function MatchingScreen({ actor, todayISO, onOpenBooking }: { actor: Acto
     if (first !== undefined) setSelectedId(first)
   }
 
+  // Nothing changes the schedule until the office decides; the samples stand in for the hospitals' files (OQ-13).
+  const note = (
+    <span style={{ fontSize: 12.5, color: neutral.slate }}>
+      Nothing changes the schedule until you decide.{' '}
+      <span data-shot="matching-interim">Sample files stand in for each hospital's bookings while the integration team confirms how each hospital provides them.</span>
+    </span>
+  )
+
   const table =
     rows.length === 0 ? (
-      <EmptyState variant="card" shot="matching-empty">
-        {EMPTY[filter]}
-      </EmptyState>
+      <>
+        <EmptyState variant="card" shot="matching-empty">
+          {EMPTY[filter]}
+        </EmptyState>
+        {note}
+      </>
     ) : (
-      <MatchingTable rows={rows} view={view} decided={filter === 'decided'} selectedId={selectedId} dimmedId={justDecided?.rowId ?? null} todayISO={todayISO} onOpen={open} />
+      <MatchingTable rows={rows} view={view} decided={filter === 'decided'} selectedId={selectedId} dimmedId={justDecided?.rowId ?? null} todayISO={todayISO} onOpen={open} footer={note} />
     )
 
+  const count = (stat: string, label: string, n: number) => (
+    <span data-stat={stat}>
+      {label} <span className="mono" style={{ color: neutral.ink }}>{n}</span>
+    </span>
+  )
+
   return (
-    <div data-shot="admin-matching" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <PageHeader
-        size="section"
-        title="Matching"
-        subStyle={{ maxWidth: 760, lineHeight: '19px' }}
-        sub={
+    <>
+      <PageToolbar
+        end={
           <>
-            <span style={{ display: 'block' }}>
-              Hospital bookings and sheets land here. Match each row to a Booking or List, create what is missing, or reject it. Nothing changes the schedule until you decide, including updates to Bookings already matched.
+            <span data-shot="matching-stats" style={{ display: 'inline-flex', gap: 6 }}>
+              {count('new', 'New', counts.new)} · {count('modification', 'Modifications', counts.modification)} · {count('cancellation', 'Cancellations', counts.cancellation)}
             </span>
-            <span data-shot="matching-interim" style={{ display: 'block', marginTop: 6, fontSize: 12.5, color: neutral.mist }}>
-              Sample files stand in for each hospital's bookings while the integration team confirms how each hospital provides them. A real list is one day's; the samples span a week so every case shows.
-            </span>
+            {!hosted && importAction}
           </>
         }
-        actions={
-          <Button variant="primary" size="desktop" onClick={() => setImportOpen(true)} shot="matching-import-open">
-            <Upload size={16} aria-hidden /> Import hospital file
-          </Button>
-        }
-      />
-
-      <ResultLine shot="matching-import-result" line={result} onDismiss={() => setResult(null)} />
-
-      <div data-shot="matching-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
-        <StatTile variant="outlined" label="Open" value={String(counts.open)} data-stat="open" />
-        <StatTile variant="outlined" label="New" value={String(counts.new)} data-stat="new" />
-        <StatTile variant="outlined" label="Modifications" value={String(counts.modification)} data-stat="modification" />
-        <StatTile variant="outlined" label="Cancellations" value={String(counts.cancellation)} data-stat="cancellation" />
-        <StatTile variant="outlined" label="Unmatched" value={String(counts.unmatched)} data-stat="unmatched" {...(counts.unmatched > 0 ? { tone: 'warning' as const } : {})} />
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <SlidingSegmentedControl
+      >
+        <FilterPills
           ariaLabel="Show rows"
-          size="sm"
-          variant="surface"
           value={filter}
           onSelect={(f) => setFilter(f)}
           options={[
-            { value: 'open', label: `Open · ${counts.open}` },
-            { value: 'unmatched', label: `Unmatched · ${counts.unmatched}` },
-            { value: 'decided', label: `Decided · ${decidedRows.length}` },
+            { value: 'open', label: <span data-stat="open">Open · {counts.open}</span> },
+            { value: 'unmatched', label: <span data-stat="unmatched">Unmatched · {counts.unmatched}</span> },
+            { value: 'decided', label: <span data-stat="decided">Decided · {decidedRows.length}</span> },
           ]}
         />
-      </div>
+      </PageToolbar>
 
-      {filter === 'unmatched' ? <div data-shot="matching-unmatched">{table}</div> : table}
+      <PageBody shot="admin-matching">
+        <ResultLine shot="matching-import-result" line={result} onDismiss={() => setResult(null)} />
+        {filter === 'unmatched' ? <div data-shot="matching-unmatched" style={{ display: 'flex', flexDirection: 'column', gap: 16, minHeight: 0 }}>{table}</div> : table}
+      </PageBody>
 
       <ImportDialog open={importOpen} onClose={() => setImportOpen(false)} onImport={runImport} />
 
@@ -213,6 +220,6 @@ export function MatchingScreen({ actor, todayISO, onOpenBooking }: { actor: Acto
           onOpenBooking={onOpenBooking}
         />
       )}
-    </div>
+    </>
   )
 }

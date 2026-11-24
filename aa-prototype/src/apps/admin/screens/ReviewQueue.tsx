@@ -13,9 +13,11 @@ import { drSurname, formatCurrency, plural } from '../../../shared/format'
 import { EventReviewSheet } from '../flows/EventReviewSheet'
 import { ChangedSinceSubmittedPill } from '../components/ChangedSinceSubmitted'
 import { dayMicroCap, hhmm, shortDay } from '../../../shared/format'
-import type { AssignedList } from '../../../domain/types'
+import type { AssignedList, List } from '../../../domain/types'
 import { listShortLabel, listSourceLabels } from '../util'
-import { Card, LineTabLink, LineTabs, PageHeader, Pill, TextAction } from '../../../shared/ui'
+import { Card, LineTabLink, LineTabs, Pill, TextAction } from '../../../shared/ui'
+import { EmptyState } from '../../../shared/ui/EmptyState'
+import { AdminPage, PageBody } from '../components/AdminPage'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 
 interface ReviewQueueProps {
@@ -30,8 +32,8 @@ type ReviewTab = 'lists' | 'events'
 /**
  * The authorisation review queue (Phase 07): every SUBMITTED list awaiting
  * sanity-check + authorisation, ordered by date then anaesthetist. Selecting one
- * opens the `ReviewScreen`. At the foot, a "Recently billed" panel shows where
- * authorised lists went — the Phase 08 billing run raises invoices in the same
+ * opens the `ReviewScreen`. In the Lists tab's rail, a "Recently billed" card shows where
+ * authorised lists went: the Phase 08 billing run raises invoices in the same
  * moment a list is authorised, so authorising is never a dead end. (An
  * AUTHORISED-but-unbilled list is a transient state that Phase 09's monitor
  * surfaces if a run ever leaves one behind.)
@@ -86,10 +88,13 @@ export function ReviewQueue({ onOpen, onViewInvoices, actor = OFFICE_ACTOR }: Re
   const invoiceCountByList = useMemo(() => invoiceCountsByList({ schedule, billing }), [schedule, billing])
 
   return (
-    <div data-testid="review-queue-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
-      <PageHeader size="admin" title="Review queue" sub={tab === 'events' ? EVENT_LABELS.eventsTabSub(awaitingEvents.length) : <>Submitted lists awaiting a sanity check and authorisation for billing. {submitted.length} in the queue.</>} />
-
-      {/* Lists (the queue as it was) and Events (catch-up Phase 38b: every event's one review step). */}
+    <AdminPage
+      mode="fit"
+      testId="review-queue-screen"
+      title="Review queue"
+      sub={tab === 'events' ? EVENT_LABELS.eventsTabSub(awaitingEvents.length) : <>Submitted lists awaiting a sanity check and authorisation for billing. {submitted.length} in the queue.</>}
+      tabs={
+      /* Lists (the queue as it was) and Events (catch-up Phase 38b: every event's one review step). */
       <LineTabs label="Review queue">
         {(
           [
@@ -112,19 +117,19 @@ export function ReviewQueue({ onOpen, onViewInvoices, actor = OFFICE_ACTOR }: Re
           )
         })}
       </LineTabs>
-
+      }
+    >
+      {/* The Lists tab's rail: where authorised lists went (the billing run raises invoices immediately). */}
+      <PageBody railLabel="Recently billed" {...(tab === 'lists' ? { rail: <RecentlyBilledCard lists={recentlyBilled} invoiceCountByList={invoiceCountByList} onViewInvoices={onViewInvoices} /> } : {})}>
       {tab === 'events' ? (
         <EventsQueue actor={actor} />
+      ) : submitted.length === 0 ? (
+        <EmptyState variant="card">Nothing awaiting review.</EmptyState>
       ) : (
-      <>
-      {submitted.length === 0 ? (
-        <div style={{ fontSize: 13, color: neutral.mist }}>Nothing awaiting review.</div>
-      ) : (
-        <TableShell testId="review-queue-table-shell" label="Review queue" density="compact" minWidth={980}>
+        <TableShell fit testId="review-queue-table-shell" label="Review queue" density="compact" minWidth={540}>
           <thead>
             <tr>
-              <Th>Anaesthetist</Th>
-              <Th>List</Th>
+              <Th nowrap>Anaesthetist · List</Th>
               <Th nowrap>List date</Th>
               <Th align="right" nowrap>Bookings</Th>
               <Th nowrap>Submitted</Th>
@@ -137,23 +142,24 @@ export function ReviewQueue({ onOpen, onViewInvoices, actor = OFFICE_ACTOR }: Re
               const source = listSourceLabels(list, masters)
               return (
                 <ClickableRow key={list.id} onOpen={() => onOpen(list.id)}>
-                  <Td bold>{anaesthetist?.name ?? 'Anaesthetist unavailable'}</Td>
+                  {/* The anaesthetist over their List, and the change cue under both, so the table fits beside the rail. */}
                   <Td>
-                    <div style={{ fontWeight: 600 }}>{source.primary}</div>
-                    {source.secondary !== undefined && (
-                      <div style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist }}>{source.secondary}</div>
+                    <div style={{ fontWeight: 600 }}>{anaesthetist?.name ?? 'Anaesthetist unavailable'}</div>
+                    <div style={{ marginTop: 2, fontSize: 12.5, color: neutral.slate }}>
+                      {source.primary}
+                      {source.secondary !== undefined && <span style={{ color: neutral.mist }}> · {source.secondary}</span>}
+                    </div>
+                    {changedByList.has(list.id) && (
+                      <div style={{ marginTop: 6 }}>
+                        <ChangedSinceSubmittedPill cue={changedByList.get(list.id)!} />
+                      </div>
                     )}
                   </Td>
                   <Td mono nowrap>{dayMicroCap(list.dateISO)}</Td>
                   <Td mono bold align="right" nowrap>
                     {bookingCount[list.id] ?? 0}
                   </Td>
-                  <Td nowrap>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span className="mono">{submitTimes[list.id] !== undefined ? hhmm(submitTimes[list.id]) : 'Submitted'}</span>
-                      {changedByList.has(list.id) && <ChangedSinceSubmittedPill cue={changedByList.get(list.id)!} />}
-                    </div>
-                  </Td>
+                  <Td mono nowrap>{submitTimes[list.id] !== undefined ? hhmm(submitTimes[list.id]) : 'Submitted'}</Td>
                   <Td align="right" nowrap>
                     {/* The row's keyboard handle, named in full (U6, U09); the row click stays for the mouse. */}
                     <TextAction
@@ -171,39 +177,49 @@ export function ReviewQueue({ onOpen, onViewInvoices, actor = OFFICE_ACTOR }: Re
           </tbody>
         </TableShell>
       )}
+      </PageBody>
+    </AdminPage>
+  )
+}
 
-      {/* Where authorised lists went — the billing run raises invoices immediately. */}
-      <Card
-        data-testid="review-queue-recently-billed"
-        title="Recently billed"
-        action={
-          <TextAction size="sm" flush onClick={onViewInvoices}>
-            View invoices →
-          </TextAction>
-        }
-        style={{ background: neutral.sunken, gap: 8 }}
-      >
-        <div style={{ fontSize: 12.5, color: neutral.slate }}>
-          Authorising a list hands it to the Billing Engine as a unit; its invoices are raised in the same moment.
-        </div>
-        {recentlyBilled.length === 0 ? (
-          <div style={{ fontSize: 12.5, color: neutral.mist }}>Nothing billed yet.</div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {recentlyBilled.map((l) => (
-              <div key={l.id} style={{ fontSize: 12.5, color: neutral.ink }}>
-                {listShortLabel(l, masters)} · {dayMicroCap(l.dateISO)}
-                <span style={{ color: neutral.mist }}>
-                  {' '}· billed {hhmm(l.billedAtISO)} · {invoiceCountByList[l.id] ?? 0} invoice{(invoiceCountByList[l.id] ?? 0) === 1 ? '' : 's'}
-                </span>
+/**
+ * The Lists tab's rail card: where authorised lists went. The billing run raises a List's invoices in
+ * the moment it is authorised, so authorising is never a dead end.
+ */
+function RecentlyBilledCard({ lists, invoiceCountByList, onViewInvoices }: { lists: List[]; invoiceCountByList: Record<string, number>; onViewInvoices: () => void }) {
+  const masters = useAppStore((s) => s.masters)
+  return (
+    <Card
+      data-testid="review-queue-recently-billed"
+      title="Recently billed"
+      action={
+        <TextAction size="sm" flush onClick={onViewInvoices}>
+          View invoices →
+        </TextAction>
+      }
+      style={{ gap: 10 }}
+    >
+      <div style={{ fontSize: 12.5, color: neutral.slate }}>
+        Authorising a list hands it to the Billing Engine as a unit; its invoices are raised in the same moment.
+      </div>
+      {lists.length === 0 ? (
+        <div style={{ fontSize: 12.5, color: neutral.mist }}>Nothing billed yet.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {lists.map((l) => {
+            const n = invoiceCountByList[l.id] ?? 0
+            return (
+              <div key={l.id} style={{ fontSize: 12.5 }}>
+                <div style={{ color: neutral.ink, fontWeight: 600 }}>{listShortLabel(l, masters)}</div>
+                <div style={{ marginTop: 2, color: neutral.mist }}>
+                  <span className="mono">{dayMicroCap(l.dateISO)}</span> · billed <span className="mono">{l.billedAtISO !== undefined ? hhmm(l.billedAtISO) : ''}</span> · {n} invoice{n === 1 ? '' : 's'}
+                </div>
               </div>
-            ))}
-          </div>
-        )}
-      </Card>
-      </>
+            )
+          })}
+        </div>
       )}
-    </div>
+    </Card>
   )
 }
 
@@ -221,18 +237,18 @@ function EventsQueue({ actor }: { actor: Actor }) {
   return (
     <>
       {rows.length === 0 ? (
-        <div style={{ fontSize: 13, color: neutral.mist }}>{EVENT_LABELS.queueEmpty}</div>
+        <EmptyState variant="card">{EVENT_LABELS.queueEmpty}</EmptyState>
       ) : (
-        <TableShell testId="admin-events-queue" label={EVENT_LABELS.eventsTab} density="compact" minWidth={1100}>
+        <TableShell fit testId="admin-events-queue" label={EVENT_LABELS.eventsTab} density="compact" minWidth={960}>
+          {/* Fits a 1280 laptop's 1008px: the procedure sits under the patient; patient and description take the spare width. */}
           <thead>
             <tr>
               <Th>Kind</Th>
-              <Th>Anaesthetist</Th>
-              <Th>Patient</Th>
-              <Th>Procedure</Th>
+              <Th nowrap>Anaesthetist</Th>
+              <Th nowrap>Patient · Procedure</Th>
               <Th nowrap>Charge date</Th>
               <Th>Description</Th>
-              <Th>Billed to</Th>
+              <Th nowrap>Billed to</Th>
               <Th align="right" nowrap>Total ex GST</Th>
               <Th nowrap>Raised by</Th>
               <Th align="right" nowrap>Waiting</Th>
@@ -267,10 +283,10 @@ function EventsQueue({ actor }: { actor: Actor }) {
                 <Fragment key={e.id}>
                 <ClickableRow onOpen={() => setOpen(e.id)} data-event-id={e.id} data-kind={e.kind}>
                   <Td bold>{EVENT_KIND_LABEL[e.kind]}</Td>
-                  <Td>{anaesthetist !== undefined ? drSurname(anaesthetist.name) : ''}</Td>
-                  <Td>{patient?.name ?? ''}</Td>
+                  <Td nowrap>{anaesthetist !== undefined ? drSurname(anaesthetist.name) : ''}</Td>
                   <Td>
-                    <div>{procedure !== undefined ? procedureLabel(procedure, state.masters.rvgGroups, 1) : ''}</div>
+                    <div style={{ fontWeight: 600 }}>{patient?.name ?? ''}</div>
+                    <div style={{ marginTop: 2, fontSize: 12.5, color: neutral.slate }}>{procedure !== undefined ? procedureLabel(procedure, state.masters.rvgGroups, 1) : ''}</div>
                     {list !== undefined && <div className="mono" style={{ marginTop: 2, fontSize: 11.5, color: neutral.mist }}>{dayMicroCap(list.dateISO)}</div>}
                   </Td>
                   <Td mono nowrap>{dayMicroCap(e.occurredOnISO)}</Td>
@@ -319,7 +335,6 @@ function NestedReplacementRow({ event, partyName, onOpen }: { event: ProcedureEv
           {CREDIT_LABELS.newInvoice}
         </span>
       </Td>
-      <Td />
       <Td />
       <Td />
       <Td mono nowrap>{dayMicroCap(event.occurredOnISO)}</Td>

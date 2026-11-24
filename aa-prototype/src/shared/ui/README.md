@@ -48,6 +48,14 @@ their height. When the table is wider than its scroller, the scroller becomes a 
 `label` (pass the screen's heading or the table's section title); a table that fits gets no tab stop.
 `shot`, `testId` and `data-*` land on the scroller; `tableData` on the `<table>`.
 
+`footer` adds the card's foot row (the admin `Pager` with its range, a legend) below the scroller and outside
+it, so it stays in view; the card then becomes an outer frame (`data-table-card`) around the scroller and the
+foot row (`data-table-footer`). `fit` is the list card of an Admin `fit` page: it puts `aa-table-fit` on the
+table (a sticky column header), hugs a short list and, once it reaches the window's bottom, scrolls its rows
+inside itself. Without either, the scroller is still the card. For Admin page layout (title row, one toolbar,
+body and rail, the `fit`, `fluid` and `document` modes) use `AdminPage`, `PageToolbar` and `PageBody` in
+`apps/admin/components/AdminPage.tsx`; never set a page width in a screen.
+
 A row that opens a record is a `ClickableRow` (`.aa-clickable-table-row`, the sunken hover; clicks on an inner
 link, button or field do only their own action) with one `RowOpenButton` (or link) as its keyboard handle,
 carrying the full name ("Open List Tue 21 Jul AM, ..."). Rows never take focus. `today` tints the cells `bg`,

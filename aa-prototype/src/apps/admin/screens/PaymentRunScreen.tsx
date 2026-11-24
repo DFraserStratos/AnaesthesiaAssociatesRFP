@@ -10,37 +10,26 @@
  */
 
 import { Link, useNavigate } from 'react-router-dom'
-import { Button, Card, DefList, DefRow, EmptyState, PageHeader, Pill } from '../../../shared/ui'
+import { Button, Card, DefList, DefRow, EmptyState, Pill } from '../../../shared/ui'
 import { Td, Th, TableShell } from '../../../shared/table'
 import { drSurname, formatCurrency, plural } from '../../../shared/format'
-import { neutral, radius } from '../../../theme/tokens'
+import { neutral } from '../../../theme/tokens'
 import { cycleLabel, cycleRangeLabel } from '../../../domain/billing/paymentCycle'
 import { ANOMALY_LABEL, paymentScheduleFor, remittanceAdviceFor, useAppStore } from '../../../store'
 import { RemittanceAdviceDocument } from '../../../shared/billing/RemittanceAdviceDocument'
 import { RUN_STATUS, stampOf } from '../components/PaymentCyclePanel'
+import { AdminPage } from '../components/AdminPage'
+import { ADMIN_PROSE_WIDTH } from '../layout'
+import { DOCUMENT_DESK_STYLE, DOCUMENT_PAPER_STYLE, DOCUMENT_RAIL_STYLE } from '../components/documentDesk'
 
 const EXCLUSION_LABEL = { heldInHoldingAccount: 'Held in the AA Holding account (never paid by a run)' } as const
 
-function Trail({ items }: { items: { label: string; to?: string }[] }) {
-  const navigate = useNavigate()
-  return (
-    <div style={{ fontSize: 13, color: neutral.mist }}>
-      {items.map((it, i) => (
-        <span key={i}>
-          {i > 0 && <span style={{ color: neutral.lineStrong }}> / </span>}
-          {it.to !== undefined ? (
-            <button className="aa-ctl" type="button" onClick={() => navigate(it.to!)} style={{ border: 'none', background: 'none', padding: 0, color: neutral.ink, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{it.label}</button>
-          ) : (
-            <span className="mono">{it.label}</span>
-          )}
-        </span>
-      ))}
-    </div>
-  )
-}
+/** Label and value lists flow into columns on a wide window (docs/admin-layout-audit.md, Q1). */
+const DEF_COLUMNS = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', columnGap: 24, rowGap: 8 } as const
 
 export function PaymentRunScreen({ runId }: { runId: string }) {
   const state = useAppStore((s) => s)
+  const navigate = useNavigate()
   const run = state.billing.payablesRuns[runId]
   if (run === undefined) return null
   const name = (id: string) => drSurname(state.masters.anaesthetists[id]?.name ?? id)
@@ -51,12 +40,16 @@ export function PaymentRunScreen({ runId }: { runId: string }) {
   const paidOut = run.byAnaesthetist.reduce((n, t) => n + Math.round(t.net * 100), 0) / 100
 
   return (
-    <div data-testid="payment-run-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1080 }}>
-      <Trail items={[{ label: 'Billing monitor', to: '/admin/billing' }, { label: run.id }]} />
-      <PageHeader size="admin" title={`Payment run · ${cycleLabel(run)}`} sub={`${cycleRangeLabel(run)} · ${run.kind === 'staged' ? 'A one-line staged run (demo payout)' : 'The weekly payment cycle'}`} />
+    <AdminPage
+      mode="fluid"
+      testId="payment-run-screen"
+      back={{ label: 'Billing monitor', onClick: () => navigate('/admin/billing') }}
+      title={`Payment run · ${cycleLabel(run)}`}
+      sub={`${cycleRangeLabel(run)} · ${run.kind === 'staged' ? 'A one-line staged run (demo payout)' : 'The weekly payment cycle'}`}
+    >
 
       <Card shot="payables-run-detail" title="The run" action={<span style={{ display: 'inline-flex', gap: 6 }}><Pill tone={RUN_STATUS[run.status].tone} size="sm">{RUN_STATUS[run.status].label}</Pill>{run.seeded === true && <Pill size="sm" variant="outline">Seeded</Pill>}{run.kind === 'staged' && <Pill size="sm" variant="outline">Staged</Pill>}</span>}>
-        <DefList>
+        <DefList style={DEF_COLUMNS}>
           <DefRow label="Run" labelWidth={170} mono>{run.id}</DefRow>
           <DefRow label="Closed" labelWidth={170} mono>{step(run.closedAtISO, run.closedBy)}</DefRow>
           <DefRow label="Approved" labelWidth={170} mono>{step(run.approvedAtISO, run.approvedBy)}</DefRow>
@@ -72,7 +65,7 @@ export function PaymentRunScreen({ runId }: { runId: string }) {
       </Card>
 
       <Card title="Ledger at close" shot="payables-run-snapshot">
-        <DefList>
+        <DefList style={DEF_COLUMNS}>
           <DefRow label="Receipts held" labelWidth={170} mono>{formatCurrency(run.snapshot.receiptsHeld)}</DefRow>
           <DefRow label="Payables due" labelWidth={170} mono>{formatCurrency(run.snapshot.payablesDue)}</DefRow>
           <DefRow label="Negative invoices to net" labelWidth={170} mono>{formatCurrency(run.snapshot.recoveryDue)}</DefRow>
@@ -221,25 +214,28 @@ export function PaymentRunScreen({ runId }: { runId: string }) {
           </div>
         </Card>
       )}
-      {schedule === undefined && <div style={{ fontSize: 13, color: neutral.slate }}>{`The payment schedule is drawn up once the week's BCTIs are approved. Planned net: ${formatCurrency(paidOut)}, nothing paid yet.`}</div>}
-    </div>
+      {schedule === undefined && <div style={{ fontSize: 13, color: neutral.slate, maxWidth: ADMIN_PROSE_WIDTH }}>{`The payment schedule is drawn up once the week's BCTIs are approved. Planned net: ${formatCurrency(paidOut)}, nothing paid yet.`}</div>}
+    </AdminPage>
   )
 }
 
 export function RemittanceAdviceScreen({ runId, anaesthetistId }: { runId: string; anaesthetistId: string }) {
   const state = useAppStore((s) => s)
+  const navigate = useNavigate()
   const advice = remittanceAdviceFor(state, runId, anaesthetistId)
   if (advice === undefined) return null
+  const run = state.billing.payablesRuns[runId]
   return (
-    <div data-testid="remittance-advice-screen" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
-      <div style={{ width: '100%', maxWidth: 1048, margin: '0 auto' }}>
-        <Trail items={[{ label: 'Billing monitor', to: '/admin/billing' }, { label: runId, to: `/admin/billing/payment-runs/${runId}` }, { label: drSurname(advice.anaesthetistName) }]} />
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '760px 264px', alignItems: 'start', gap: 24, width: '100%', maxWidth: 1048, margin: '0 auto' }}>
-        <div className="aa-invoice-doc aa-print-report" style={{ minWidth: 0, background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.panel, padding: '36px 40px' }}>
+    <AdminPage
+      mode="document"
+      testId="remittance-advice-screen"
+      back={{ label: `Payment run · ${run !== undefined ? cycleLabel(run) : runId}`, onClick: () => navigate(`/admin/billing/payment-runs/${runId}`) }}
+    >
+      <div style={DOCUMENT_DESK_STYLE}>
+        <div className="aa-invoice-doc aa-print-report" style={DOCUMENT_PAPER_STYLE}>
           <RemittanceAdviceDocument advice={advice} />
         </div>
-        <aside aria-label="Remittance advice information" style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 12, width: 264 }}>
+        <aside aria-label="Remittance advice information" style={DOCUMENT_RAIL_STYLE}>
           <Card title="Remittance advice" titleLevel={3}>
             <Button variant="outline" size="compact" onClick={() => window.print()} shot="remittance-print">Print</Button>
             <Link to={`/admin/billing/payment-runs/${runId}`} style={{ fontSize: 12.5, color: neutral.ink }}>{`Open ${advice.week}'s run`}</Link>
@@ -250,6 +246,6 @@ export function RemittanceAdviceScreen({ runId, anaesthetistId }: { runId: strin
           </Card>
         </aside>
       </div>
-    </div>
+    </AdminPage>
   )
 }

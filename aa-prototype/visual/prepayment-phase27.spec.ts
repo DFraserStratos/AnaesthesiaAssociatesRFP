@@ -50,7 +50,7 @@ test('admin: rail card, Riley awaiting approval, Approve and send, then part pai
 
   // Approve on Invoices leads to the strip.
   await panel.locator('[data-shot="prepayment-approve-link"]').click()
-  await expect(page).toHaveURL(/\/admin\/invoices$/)
+  await expect(page).toHaveURL(/\/admin\/invoices\?view=approval$/)
   const strip = page.locator('[data-shot="invoices-awaiting-approval"]')
   await expect(strip.getByRole('switch', { name: 'Prepayment approval' })).toHaveAttribute('aria-checked', 'true')
   const row = strip.locator(`[data-shot="awaiting-approval-row"][data-booking-id="${RILEY}"]`)
@@ -76,7 +76,7 @@ test('admin: two payers give two strip rows; approving one leaves the other', as
   await page.waitForLoadState('networkidle')
   const added = await runDemoAction(page, 'add-prepaid-booking', { choice: 'two-payers', close: true })
   expect(added).toContain('2 payers await approval')
-  await page.goto('/admin/invoices')
+  await page.goto('/admin/invoices?view=approval')
   const strip = page.locator('[data-shot="invoices-awaiting-approval"]')
   const rows = strip.locator('[data-shot="awaiting-approval-row"]')
   await expect(rows).toHaveCount(3)
@@ -90,7 +90,7 @@ test('admin: two payers give two strip rows; approving one leaves the other', as
 })
 
 test('admin: switching approval off confirms, and the next prepaid Booking is sent at once', async ({ page }) => {
-  await page.goto('/admin/invoices')
+  await page.goto('/admin/invoices?view=approval')
   await page.waitForLoadState('networkidle')
   const strip = page.locator('[data-shot="invoices-awaiting-approval"]')
   await strip.getByRole('switch', { name: 'Prepayment approval' }).click()

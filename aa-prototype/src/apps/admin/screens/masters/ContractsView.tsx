@@ -24,8 +24,8 @@ import type { Contract } from '../../../../domain/types'
 import { useAppStore, useToday, type Actor } from '../../../../store'
 import { fundingTagsInOrder } from '../../../../domain/billing/fundingTags'
 import { specialtyNames } from '../../../../domain/specialties'
-import { FieldLabel, Segmented } from '../../../../shared'
-import { NameSearchBox, SelectField } from '../../../../shared/ui'
+import { FilterPills, NameSearchBox, SelectField } from '../../../../shared/ui'
+import { PageToolbar } from '../../components/AdminPage'
 import { BILLS_LABEL, OVERRIDE_PILL_LABEL, PARTY_KIND_LABEL, STATUS_LABEL, pricingLabel } from '../../../../shared/contracts'
 import { neutral } from '../../../../theme/tokens'
 import { ContractPanel } from '../../flows/ContractEditSheet'
@@ -37,7 +37,12 @@ import { EmptyState, TextAction } from '../../../../shared/ui'
 import { rowCellStyle } from './tableStyles'
 
 /** Layout and Delivery are derived and read-only (catch-up Phase 22; US-04.2.8): nothing about invoicing is stored on a Contract. */
-const COLUMNS = ['AA code', 'Name', 'Bills', 'Layout', 'Delivery', 'Pricing', 'Tags', 'Status', '']
+/**
+ * Invoicing holds who it bills, the invoice layout and the delivery, one over the other, and the
+ * status leads the tags, so the list fits a 1280 laptop beside the view list without scrolling
+ * sideways.
+ */
+const COLUMNS = ['AA code', 'Name', 'Invoicing', 'Pricing', 'Status · tags', '']
 
 export function ContractsView({ actor }: { actor: Actor }) {
   const contracts = useAppStore((s) => s.masters.contracts)
@@ -106,47 +111,49 @@ export function ContractsView({ actor }: { actor: Actor }) {
     <>
       <MasterHeader
         title="Contracts"
-        sub="Every arrangement is a Contract held by a Party, with its own AA code, who it bills and how it is priced. Contracts are edited in place and disabled, never deleted. A fixed price changes from a date by adding a price range; any other change that must start on a date is a new Contract."
+        sub="Each arrangement is a Contract held by a Party, with its own AA code, who it bills and how it is priced. Contracts are disabled, never deleted: a fixed price changes from a date with a price range, any other dated change is a new Contract."
         add={{ label: 'New contract', onClick: () => setPanel({}) }}
       />
 
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
-        <div data-shot="contract-search" style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <FieldLabel>Search</FieldLabel>
-          <NameSearchBox size="pill" width="100%" value={query} onChange={setQuery} label="Search by name, code or AA code" />
-          <div data-shot="contract-result-count" style={{ fontSize: 12.5, color: neutral.slate }}>
+      <PageToolbar
+        end={
+          <span data-shot="contract-result-count">
             <span className="mono">{results.length}</span> {results.length === 1 ? 'Contract' : 'Contracts'}
             {status === 'active' ? ' active' : status === 'disabled' ? ' disabled' : ''}
             {holderId !== '' ? ` held by ${parties[holderId]?.name ?? holderId}` : ''}
             {tagId !== '' ? ` tagged ${fundingTags[tagId]?.code ?? tagId}` : ''}
             {query.trim() !== '' ? ` matching "${query.trim()}"` : ''}
-          </div>
+          </span>
+        }
+      >
+        <div data-shot="contract-search">
+          <NameSearchBox size="pill" width={260} value={query} onChange={setQuery} label="Search by name, code or AA code" />
         </div>
-        <div data-shot="contract-status-filter" style={{ width: 260 }}>
-          <Segmented
-            label="Status"
+        <div data-shot="contract-status-filter">
+          <FilterPills
+            ariaLabel="Status"
             value={status}
             options={[
               { value: 'active', label: 'Active' },
               { value: 'disabled', label: 'Disabled' },
               { value: 'all', label: 'All' },
             ]}
-            onChange={setStatus}
+            onSelect={setStatus}
           />
         </div>
-        <SelectField label="Holder" labelShot="contract-holder-filter" width={210} size="compact" fill="surface" value={holderId} onChange={setHolder}>
-          <option value="">Every holder</option>
+        <SelectField label="Holder" hideLabel labelShot="contract-holder-filter" width={190} size="compact" fill="surface" value={holderId} onChange={setHolder}>
+          <option value="">All holders</option>
           {holderOptions.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
         </SelectField>
-        <SelectField label="Funding tag" labelShot="contract-tag-filter" width={140} size="compact" fill="surface" value={tagId} onChange={setTagFilter}>
-          <option value="">Every tag</option>
+        <SelectField label="Funding tag" hideLabel labelShot="contract-tag-filter" width={150} size="compact" fill="surface" value={tagId} onChange={setTagFilter}>
+          <option value="">All funding tags</option>
           {fundingTagsInOrder(fundingTags).map((t) => (
             <option key={t.id} value={t.id}>{t.code}</option>
           ))}
         </SelectField>
-      </div>
+      </PageToolbar>
 
       {results.length === 0 ? (
         <EmptyState
@@ -173,7 +180,7 @@ export function ContractsView({ actor }: { actor: Actor }) {
           Check the spelling, or search all Contracts, Disabled ones included.
         </EmptyState>
       ) : (
-        <MasterTable columns={COLUMNS} rightAlign={[8]} shot="contract-catalogue" label="Contracts">
+        <MasterTable columns={COLUMNS} rightAlign={[5]} shot="contract-catalogue" label="Contracts">
           {groups.map(([holder, list]) => {
             const party = parties[holder]
             return [
@@ -196,12 +203,15 @@ export function ContractsView({ actor }: { actor: Actor }) {
                       <div style={{ fontSize: 12.5, color: neutral.mist, fontWeight: 400, marginTop: 2 }}>{specialtyNames({ specialties }, c.specialtyIds).join(', ')}</div>
                     )}
                   </td>
-                  <td style={rowCellStyle}>{BILLS_LABEL[c.billsTo]}</td>
-                  <td data-shot="contract-layout" style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>{contractInvoicingSummary(c, party).layout}</td>
-                  <td data-shot="contract-delivery" style={rowCellStyle}>{contractInvoicingSummary(c, party).delivery}</td>
+                  <td style={rowCellStyle}>
+                    <div>{`Bills the ${BILLS_LABEL[c.billsTo].toLowerCase()}`}</div>
+                    <div data-shot="contract-layout" style={{ fontSize: 12, color: neutral.slate, whiteSpace: 'nowrap' }}>{contractInvoicingSummary(c, party).layout}</div>
+                    <div data-shot="contract-delivery" style={{ fontSize: 12, color: neutral.slate }}>{contractInvoicingSummary(c, party).delivery}</div>
+                  </td>
                   <td style={rowCellStyle}><PricingText contract={c} todayISO={today} /></td>
                   <td style={rowCellStyle}>
                     <span style={{ display: 'inline-flex', gap: 4, flexWrap: 'wrap' }}>
+                      <Pill tone={c.status === 'active' ? 'success' : 'neutral'}>{STATUS_LABEL[c.status]}</Pill>
                       {c.systemRole !== undefined && <Pill shot="contract-system-pill">System</Pill>}
                       {c.fundingTagId !== undefined && <Pill><span className="mono">{fundingTags[c.fundingTagId]?.code ?? c.fundingTagId}</span></Pill>}
                       {c.prepaid && <Pill>Prepaid</Pill>}
@@ -210,9 +220,6 @@ export function ContractsView({ actor }: { actor: Actor }) {
                         <Pill shot="contract-override-pill">{c.anaesthetistMayOverridePrice ? OVERRIDE_PILL_LABEL.may : OVERRIDE_PILL_LABEL.fixed}</Pill>
                       )}
                     </span>
-                  </td>
-                  <td style={rowCellStyle}>
-                    <Pill tone={c.status === 'active' ? 'success' : 'neutral'}>{STATUS_LABEL[c.status]}</Pill>
                   </td>
                   <EditCell onClick={() => setPanel({ id: c.id })} label={`Edit ${c.name}`} style={rowCellStyle} />
                 </ClickableRow>

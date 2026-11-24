@@ -22,6 +22,7 @@ import { isRetired, retireBlockers, type RetireKind } from '../../../../domain/m
 import { plainDate } from '../../../../shared/format'
 import { reinstateMaster, retireMaster, stagedLoadFor, useAppStore, type Actor } from '../../../../store'
 import { masterViewEntry, SEEDED_SUBTITLE } from './masterViews'
+import { useAdminPageMode } from '../../components/AdminPage'
 import { parseMastersView, type MastersView } from './view'
 
 // ---------------------------------------------------------------------------
@@ -106,11 +107,14 @@ function MasterHeaderRow({ title, sub, count, add, actions, view, section = fals
 // ---------------------------------------------------------------------------
 
 /** A column of a master table: its head words, or the words and an alignment. */
-export type MasterColumn = string | { label: string; align?: CellAlign; width?: number | string }
+export type MasterColumn = string | { label: string; align?: CellAlign; width?: number | string; nowrap?: boolean }
 
 /**
  * A master view's table: the shared `TableShell` (dense, e1) with a `Th` per
- * column. `label` names the scroller when it overflows (the view's title).
+ * column. `label` names the scroller when it overflows (the view's title). On a
+ * `fit` page (a list view) it is the page's list card (`TableShell fit`): it hugs
+ * a short list and scrolls a long one's rows under a sticky header. `style` sizes
+ * the card (a settings table at `ADMIN_FORM_WIDTH`).
  */
 export function MasterTable({
   columns,
@@ -118,6 +122,7 @@ export function MasterTable({
   shot,
   label = 'Master data',
   rightAlign,
+  style,
 }: {
   columns: readonly MasterColumn[]
   children: ReactNode
@@ -125,15 +130,17 @@ export function MasterTable({
   label?: string
   /** Column indexes to right-align (a plain-string column's shorthand). */
   rightAlign?: readonly number[]
+  style?: CSSProperties
 }) {
+  const fit = useAdminPageMode() === 'fit'
   return (
-    <TableShell density="dense" shot={shot} label={label}>
+    <TableShell density="dense" shot={shot} label={label} fit={fit} {...(style !== undefined ? { style } : {})}>
       <thead>
         <tr>
           {columns.map((c, i) => {
-            const col: { label: string; align?: CellAlign; width?: number | string } = typeof c === 'string' ? { label: c } : c
+            const col: Exclude<MasterColumn, string> = typeof c === 'string' ? { label: c } : c
             return (
-              <Th key={`${col.label}-${i}`} align={col.align ?? (rightAlign?.includes(i) ? 'right' : 'left')} width={col.width}>
+              <Th key={`${col.label}-${i}`} align={col.align ?? (rightAlign?.includes(i) ? 'right' : 'left')} width={col.width} {...(col.nowrap !== undefined ? { nowrap: col.nowrap } : {})}>
                 {col.label}
               </Th>
             )
@@ -144,6 +151,12 @@ export function MasterTable({
     </TableShell>
   )
 }
+
+/**
+ * A view that wraps its parts in its own column (to carry its `data-shot`): on a `fit` page it shrinks
+ * with its table, so the table's rows, not the page, scroll.
+ */
+export const MASTER_VIEW_COLUMN: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0, minHeight: 0, flex: '0 1 auto' }
 
 /** A right-aligned head with no words (the actions column). */
 export const ACTIONS_COLUMN: MasterColumn = { label: '', align: 'right' }
