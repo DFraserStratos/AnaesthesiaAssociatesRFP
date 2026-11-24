@@ -98,7 +98,7 @@ test('secondary-screen and bottom-sheet highlights stay aligned', async ({ page 
   await page.waitForTimeout(220)
   await expectHighlightAligned(balances)
   // Catch-up Phase 38: the current month of the GST report (payments AA passed on), not amounts received.
-  await expect(page.locator('[data-shot=balances-gst-month-header]')).toContainText('July 2026 · paid to you')
+  await expect(page.locator('[data-shot=balances-gst-month-header]')).toContainText('November 2026 · paid to you')
   await page.screenshot({ path: 'visual/shots/mobile-native-balances.png', fullPage: true })
 
   await page.goto('/mobile')
@@ -125,7 +125,7 @@ test('Start now becomes the travelling Finish action without a validation-focus 
 
   await page.getByLabel('NHI').fill('ZZZ9005')
   await page.getByLabel('Name').fill('Timer Motion Test')
-  await page.getByLabel('Date of birth').fill('1980-01-01')
+  await page.getByLabel('Date of birth').fill('1980-05-06')
   await page.getByLabel('Procedure description').fill('Timer interaction review')
   await page.getByRole('button', { name: 'Save booking' }).click()
   await page.getByRole('button', { name: 'Done' }).click()

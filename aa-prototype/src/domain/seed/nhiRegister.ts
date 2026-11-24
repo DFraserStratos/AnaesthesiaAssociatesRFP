@@ -29,11 +29,11 @@ export const NHI_REGISTER_UPDATES: Readonly<Record<string, NhiRegisterUpdate>> =
 
 /** Named people on the register who are not AA patients (the demo script's). */
 export const NHI_REGISTER_ONLY: readonly Omit<NhiRegisterPerson, 'format'>[] = [
-  { nhi: 'ZBR4417', name: 'Mereana Tipene', dobISO: '1981-03-09', ethnicityCode: '21111' },
-  { nhi: 'ZBT2253', name: 'Lucas Brennan', dobISO: '1994-08-15', ethnicityCode: '11111' },
-  { nhi: 'ZBX41AL', name: 'Ana Fifita', dobISO: '1977-12-02', ethnicityCode: '33111' },
+  { nhi: 'ZBR4417', name: 'Mereana Tipene', dobISO: '1981-07-13', ethnicityCode: '21111' },
+  { nhi: 'ZBT2253', name: 'Lucas Brennan', dobISO: '1994-12-19', ethnicityCode: '11111' },
+  { nhi: 'ZBX41AL', name: 'Ana Fifita', dobISO: '1978-04-07', ethnicityCode: '33111' },
   // S2's phone-advice person, exactly as Phase 01's canned lookup had her.
-  { nhi: 'DEM1239', name: 'Demo Patient', dobISO: '1990-01-01', phone: '021 555 0190', ethnicityCode: '11111' },
+  { nhi: 'DEM1239', name: 'Demo Patient', dobISO: '1990-05-07', phone: '021 555 0190', ethnicityCode: '11111' },
 ]
 
 /** Generated people who are not AA patients yet. */

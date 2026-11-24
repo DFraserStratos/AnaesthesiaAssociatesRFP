@@ -43,7 +43,7 @@ const PARTIES: Record<string, Party> = Object.fromEntries(
   ].map((p) => [p.id, p]),
 )
 
-const LIST_DATE = '2026-07-21'
+const LIST_DATE = '2026-11-24'
 
 /** The hospital Party's plain RVG Contract. */
 const HOSPITAL_DEFAULT = mkContract({ id: 'con-def', name: 'Test hospital RVG' })
@@ -109,20 +109,20 @@ describe('the lock builder resolves each Procedure\'s Contract', () => {
       name: 'COS ACC fixed fees',
       holderId: 'party-org',
       linkedSurgeonIds: ['surg-9'],
-      pricing: { kind: 'fixed', ranges: [{ startISO: '2026-08-01', price: 1250 }] },
+      pricing: { kind: 'fixed', ranges: [{ startISO: '2026-12-05', price: 1250 }] },
     })
     const ctx = withContracts(HOSPITAL_DEFAULT, fixed)
     const primary = mkProcedure({ rvgGroupId: 'RG-T-GA10', governingContractId: 'con-fix' })
     const needs = {
       kind: 'exception',
       code: 'needsPrice',
-      message: 'Needs a price: no price range in force on 21 Jul 2026 under COS ACC fixed fees.',
+      message: 'Needs a price: no price range in force on 24 Nov 2026 under COS ACC fixed fees.',
     }
     expect(resolveContractForProcedure(primary, ctx)).toEqual(needs)
     // An additional Procedure is no exception: a fixed price is the whole price on any Procedure.
     expect(resolveContractForProcedure({ ...primary, isPrimary: false }, ctx)).toEqual(needs)
     // On or after the first start it resolves; a typed price is a price (catch-up Phase 24).
-    expect(resolveContractForProcedure(primary, { ...ctx, listDateISO: '2026-08-01' }).kind).toBe('resolved')
+    expect(resolveContractForProcedure(primary, { ...ctx, listDateISO: '2026-12-05' }).kind).toBe('resolved')
     const typed = { ...primary, enteredPrice: 900 }
     expect(resolveContractForProcedure(typed, ctx).kind).toBe('resolved')
   })
@@ -343,7 +343,7 @@ describe('buildInvoicesForBooking', () => {
 
   it('a cancelled Booking yields no invoices', () => {
     const cancelled = mkBooking({
-      cancellation: { reason: 'Patient unwell', by: 'Kirsty W.', role: 'office', source: 'office', atISO: '2026-07-20T09:00:00' },
+      cancellation: { reason: 'Patient unwell', by: 'Kirsty W.', role: 'office', source: 'office', atISO: '2026-11-23T09:00:00' },
     })
     const result = buildInvoicesForBooking(cancelled, [primary], mkCtx())
     expect(result).toEqual({ kind: 'invoices', invoices: [] })
@@ -379,12 +379,12 @@ describe('buildInvoicesForBooking', () => {
   })
 
   it('a backdated range re-prices an un-billed Procedure (catch-up Phase 19a; an issued invoice is pinned in billingRun.test.ts)', () => {
-    const before = mkContract({ id: 'con-fx', name: 'Face lift', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-06-01', price: 3100 }] } })
+    const before = mkContract({ id: 'con-fx', name: 'Face lift', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-10-05', price: 3100 }] } })
     const issued = buildInvoicesForBooking(mkBooking(), [{ ...primary, governingContractId: 'con-fx' }], withContracts(HOSPITAL_DEFAULT, before))
     if (issued.kind !== 'invoices') throw new Error('expected invoices')
     // GST at the foot: $3,100 ex GST + 15%.
     expect(issued.invoices[0]!).toMatchObject({ subtotal: 3100, gst: 465, total: 3565 })
-    const after = { ...before, pricing: { kind: 'fixed' as const, ranges: [{ startISO: '2026-06-01', price: 3100 }, { startISO: '2026-07-01', price: 3200 }] } }
+    const after = { ...before, pricing: { kind: 'fixed' as const, ranges: [{ startISO: '2026-10-05', price: 3100 }, { startISO: '2026-11-04', price: 3200 }] } }
     const rebuilt = buildInvoicesForBooking(mkBooking(), [{ ...primary, governingContractId: 'con-fx' }], withContracts(HOSPITAL_DEFAULT, after))
     if (rebuilt.kind !== 'invoices') throw new Error('expected invoices')
     expect(rebuilt.invoices[0]!.subtotal).toBe(3200)

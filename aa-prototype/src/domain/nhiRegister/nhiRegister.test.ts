@@ -124,9 +124,9 @@ describe('lookupOnRegister', () => {
   })
 
   it("keeps what Phase 01's canned lookup returned", () => {
-    expect(lookupOnRegister(nhiRegister(), 'CQY9304')).toMatchObject({ kind: 'found', person: { name: 'Sarah Mitchell', dobISO: '1988-04-12', ethnicityCode: '11111' } })
-    expect(lookupOnRegister(nhiRegister(), 'MYY54SL')).toMatchObject({ kind: 'found', person: { name: 'Priya Nair', dobISO: '1969-11-08', ethnicityCode: '43111' } })
-    expect(lookupOnRegister(nhiRegister(), 'DEM1239')).toMatchObject({ kind: 'found', person: { name: 'Demo Patient', dobISO: '1990-01-01', phone: '021 555 0190', ethnicityCode: '11111' } })
+    expect(lookupOnRegister(nhiRegister(), 'CQY9304')).toMatchObject({ kind: 'found', person: { name: 'Sarah Mitchell', dobISO: '1988-08-16', ethnicityCode: '11111' } })
+    expect(lookupOnRegister(nhiRegister(), 'MYY54SL')).toMatchObject({ kind: 'found', person: { name: 'Priya Nair', dobISO: '1970-03-14', ethnicityCode: '43111' } })
+    expect(lookupOnRegister(nhiRegister(), 'DEM1239')).toMatchObject({ kind: 'found', person: { name: 'Demo Patient', dobISO: '1990-05-07', phone: '021 555 0190', ethnicityCode: '11111' } })
   })
 
   it('reads not found for a valid NHI off the register', () => {
@@ -159,7 +159,7 @@ describe('registerDifferences and applyRegisterRefresh', () => {
   })
 
   it('a field the record lacks is an enrichment, not a difference', () => {
-    const bare: Patient = { hiddenInternalId: 'PTX', nhi: 'DEM1239', name: 'Demo Patient', dobISO: '1990-01-01' }
+    const bare: Patient = { hiddenInternalId: 'PTX', nhi: 'DEM1239', name: 'Demo Patient', dobISO: '1990-05-07' }
     const { differences, enrichments } = registerDifferences(bare, nhiRegister().get('DEM1239')!)
     expect(differences).toEqual([])
     expect(enrichments.map((e) => e.field)).toEqual(['phone', 'ethnicityCode'])
@@ -178,7 +178,7 @@ describe('registerDifferences and applyRegisterRefresh', () => {
     expect(used.changed).toEqual(['name'])
     expect(used.patient.name).toBe('Fiona Tamihana')
     expect(used.patient.postalAddress).toEqual(fiona.postalAddress)
-    const bare: Patient = { hiddenInternalId: 'PTX', nhi: 'DEM1239', name: 'Demo Patient', dobISO: '1990-01-01' }
+    const bare: Patient = { hiddenInternalId: 'PTX', nhi: 'DEM1239', name: 'Demo Patient', dobISO: '1990-05-07' }
     expect(applyRegisterRefresh(bare, nhiRegister().get('DEM1239')!, {}).patient).toMatchObject({ phone: '021 555 0190', ethnicityCode: '11111' })
   })
 })
@@ -186,12 +186,12 @@ describe('registerDifferences and applyRegisterRefresh', () => {
 describe('refresh fixes (catch-up Phase 40a review)', () => {
   it('a record from intake with no DOB gets the register DOB as an enrichment', () => {
     const noDob: Patient = { hiddenInternalId: 'PTX', nhi: 'DEM1239', name: 'Demo Patient', dobISO: '', phone: '021 555 0190', ethnicityCode: '11111' }
-    expect(registerDifferences(noDob, nhiRegister().get('DEM1239')!).enrichments).toEqual([{ field: 'dobISO', onRegister: '1990-01-01' }])
-    expect(applyRegisterRefresh(noDob, nhiRegister().get('DEM1239')!, {}).patient.dobISO).toBe('1990-01-01')
+    expect(registerDifferences(noDob, nhiRegister().get('DEM1239')!).enrichments).toEqual([{ field: 'dobISO', onRegister: '1990-05-07' }])
+    expect(applyRegisterRefresh(noDob, nhiRegister().get('DEM1239')!, {}).patient.dobISO).toBe('1990-05-07')
   })
 
   it("the register's ethnicity code replaces a code held for review", () => {
-    const held: Patient = { hiddenInternalId: 'PTX', nhi: 'DEM1239', name: 'Demo Patient', dobISO: '1990-01-01', phone: '021 555 0190', ethnicityPending: { receivedCode: '99999', reason: 'Not in the code set.' } }
+    const held: Patient = { hiddenInternalId: 'PTX', nhi: 'DEM1239', name: 'Demo Patient', dobISO: '1990-05-07', phone: '021 555 0190', ethnicityPending: { receivedCode: '99999', reason: 'Not in the code set.' } }
     const out = applyRegisterRefresh(held, nhiRegister().get('DEM1239')!, {})
     expect(out.changed).toEqual(['ethnicityCode'])
     expect(out.patient.ethnicityCode).toBe('11111')

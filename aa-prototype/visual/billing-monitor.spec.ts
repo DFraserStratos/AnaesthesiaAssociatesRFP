@@ -12,9 +12,9 @@ import { runDemoAction } from './demoActions'
 const SOUTER = '34821'
 const ROPATA = '39560'
 const DELANEY = '27731'
-const SOUTER_MON_AM = 'L-34821-2026-07-20-AM'
-const SOUTER_THU_PM = 'L-34821-2026-07-16-PM'
-const ROPATA_THU_AM = 'L-39560-2026-07-16-AM'
+const SOUTER_MON_AM = 'L-34821-2026-11-23-AM'
+const SOUTER_THU_PM = 'L-34821-2026-11-19-PM'
+const ROPATA_THU_AM = 'L-39560-2026-11-19-AM'
 
 /** A clean seed: the store persists to localStorage, so clear it and load again. */
 async function fresh(page: Page, path = '/admin/billing'): Promise<void> {
@@ -58,7 +58,7 @@ test('reset: one group per anaesthetist in surname order, the Lists awaiting app
   const awaitingCount = await awaiting.count()
   expect(awaitingCount).toBeGreaterThanOrEqual(6)
   await expect(tileValue(page, 'awaiting')).toContainText(String(awaitingCount))
-  for (const listId of [SOUTER_MON_AM, 'L-34821-2026-07-20-PM', ROPATA_THU_AM, 'L-25490-2026-07-20-AM', 'L-27731-2026-07-17-AM', 'L-36208-2026-07-17-AM']) {
+  for (const listId of [SOUTER_MON_AM, 'L-34821-2026-11-23-PM', ROPATA_THU_AM, 'L-25490-2026-11-23-AM', 'L-27731-2026-11-20-AM', 'L-36208-2026-11-20-AM']) {
     const anaesthetistId = listId.split('-')[1]!
     const row = group(page, anaesthetistId).locator(`tr[data-shot="billing-awaiting-${listId}"]`)
     await expect(row).toBeVisible()
@@ -226,10 +226,10 @@ test('filters: one anaesthetist, a hospital, a date range, Clear filters, an unk
   await expect(group(page, '45178')).toHaveCount(0) // Chen's Lists are at Christchurch Eye Surgery
 
   // A date range on top: Fri 17 Jul only.
-  await page.locator('[data-shot="billing-filter-from"]').fill('2026-07-17')
-  await page.locator('[data-shot="billing-filter-to"]').fill('2026-07-17')
-  await expect(page).toHaveURL(/from=2026-07-17/)
-  await expect(page).toHaveURL(/to=2026-07-17/)
+  await page.locator('[data-shot="billing-filter-from"]').fill('2026-11-20')
+  await page.locator('[data-shot="billing-filter-to"]').fill('2026-11-20')
+  await expect(page).toHaveURL(/from=2026-11-20/)
+  await expect(page).toHaveURL(/to=2026-11-20/)
   await expect(groups(page)).toHaveCount(1)
   await expect(group(page, DELANEY)).toBeVisible()
   await expect(count(page)).toHaveText('1 list')

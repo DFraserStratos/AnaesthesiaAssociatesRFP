@@ -18,7 +18,7 @@ import {
 import { DEFAULT_RVG_TIME_RULE as R } from './timeUnits'
 
 /** The fee context every case shares: the List's date, the seeded time rule, no patient DOB and the RVG modifier master. */
-const ON = { dateISO: '2026-07-21', timeRule: R, patientDobISO: undefined, modifiers: RVG_MODIFIER_MASTER }
+const ON = { dateISO: '2026-11-24', timeRule: R, patientDobISO: undefined, modifiers: RVG_MODIFIER_MASTER }
 
 const anaesthetist = mkAnaesthetist({ unitValue: 30 })
 
@@ -100,7 +100,7 @@ describe('resolveBtm', () => {
 
   it('pre-applies the age modifier from the date of birth on the procedure date (US-03.3.8)', () => {
     const p = mkProcedure({ rvgGroupId: BASE_SINGLE_10.id })
-    const btm = resolveBtm(p, BASE_SINGLE_10, R, { ...MI, patientDobISO: '1954-03-14' })
+    const btm = resolveBtm(p, BASE_SINGLE_10, R, { ...MI, patientDobISO: '1954-07-18' })
     expect(btm.modifiers.units).toBe(1)
     expect(btm.modifierItems).toMatchObject([{ code: 'A1', origin: 'age', units: 1 }])
   })
@@ -168,16 +168,16 @@ describe('feeFor · a fixed price from its range in force (catch-up Phase 19a)',
   // Ranges from 1 Apr and 1 Jul 2026 (US-04.2.15's own example).
   const fixedPrice = mkContract({
     id: 'con-3',
-    pricing: { kind: 'fixed', ranges: [{ startISO: '2026-04-01', price: 650 }, { startISO: '2026-07-01', price: 700 }] },
+    pricing: { kind: 'fixed', ranges: [{ startISO: '2026-04-01', price: 650 }, { startISO: '2026-11-04', price: 700 }] },
   })
 
   it("the List's date picks the range in force; the price is the whole price", () => {
-    const june = feeFor(spotCheckProcedure, { ...ON, dateISO: '2026-06-15', anaesthetist, contract: fixedPrice, rvgGroup: BASE_SINGLE_10 })
+    const june = feeFor(spotCheckProcedure, { ...ON, dateISO: '2026-10-19', anaesthetist, contract: fixedPrice, rvgGroup: BASE_SINGLE_10 })
     expect(june.unitRate).toBeNull()
     expect(june.lines).toEqual([{ description: 'Contract price', amount: 650 }])
     expect(june.total).toBe(650)
     expect(june.needsPrice).toBe(false)
-    expect(feeFor(spotCheckProcedure, { ...ON, dateISO: '2026-07-01', anaesthetist, contract: fixedPrice, rvgGroup: BASE_SINGLE_10 }).total).toBe(700)
+    expect(feeFor(spotCheckProcedure, { ...ON, dateISO: '2026-11-04', anaesthetist, contract: fixedPrice, rvgGroup: BASE_SINGLE_10 }).total).toBe(700)
     // BTM is still worked out, for reference only.
     expect(june.btm.totalUnits).toBe(23)
   })
@@ -208,9 +208,9 @@ describe('feeFor · a fixed price from its range in force (catch-up Phase 19a)',
   it('a backdated range re-prices an unedited Procedure; an office override holds its own figure', () => {
     const backdated = mkContract({
       ...fixedPrice,
-      pricing: { kind: 'fixed', ranges: [...(fixedPrice.pricing.kind === 'fixed' ? fixedPrice.pricing.ranges : []), { startISO: '2026-06-01', price: 680 }] },
+      pricing: { kind: 'fixed', ranges: [...(fixedPrice.pricing.kind === 'fixed' ? fixedPrice.pricing.ranges : []), { startISO: '2026-10-05', price: 680 }] },
     })
-    const ctx = { ...ON, dateISO: '2026-06-15', anaesthetist, rvgGroup: BASE_SINGLE_10 }
+    const ctx = { ...ON, dateISO: '2026-10-19', anaesthetist, rvgGroup: BASE_SINGLE_10 }
     expect(feeFor(spotCheckProcedure, { ...ctx, contract: fixedPrice }).total).toBe(650)
     expect(feeFor(spotCheckProcedure, { ...ctx, contract: backdated }).total).toBe(680)
     const edited = mkProcedure({ ...spotCheckProcedure, enteredPrice: 640 })
@@ -220,7 +220,7 @@ describe('feeFor · a fixed price from its range in force (catch-up Phase 19a)',
   it("the rate kinds ignore the date and the anaesthetist's value where the Contract sets the rate", () => {
     const rate = mkContract({ pricing: { kind: 'rvgContractRate', unitRate: 26.5 } })
     const dear = mkAnaesthetist({ unitValue: 42 })
-    expect(feeFor(spotCheckProcedure, { ...ON, dateISO: '2020-01-01', anaesthetist: dear, contract: rate, rvgGroup: BASE_SINGLE_10 }).total).toBe(23 * 26.5)
+    expect(feeFor(spotCheckProcedure, { ...ON, dateISO: '2020-05-06', anaesthetist: dear, contract: rate, rvgGroup: BASE_SINGLE_10 }).total).toBe(23 * 26.5)
   })
 
   it('an open price needs a price too: its RVG working is never shown as its price', () => {
@@ -229,8 +229,8 @@ describe('feeFor · a fixed price from its range in force (catch-up Phase 19a)',
   })
 
   it("Merivale's Facelift plus 1 add on is priced as one, $3,400 ex GST", () => {
-    const combo = mkContract({ name: 'Facelift plus 1 add on (eg bleph)', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-06-01', price: 3400 }] } })
-    const fee = feeFor(mkProcedure({ rvgGroupId: undefined }), { ...ON, dateISO: '2026-07-29', anaesthetist, contract: combo })
+    const combo = mkContract({ name: 'Facelift plus 1 add on (eg bleph)', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-10-05', price: 3400 }] } })
+    const fee = feeFor(mkProcedure({ rvgGroupId: undefined }), { ...ON, dateISO: '2026-12-02', anaesthetist, contract: combo })
     expect(fee.lines).toEqual([{ description: 'Contract price', amount: 3400 }])
     expect(fee.total).toBe(3400)
   })

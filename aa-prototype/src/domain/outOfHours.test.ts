@@ -9,11 +9,11 @@ import { OUT_OF_HOURS, OUT_OF_HOURS_DESIGN, compareSessions, isOutOfHours, lists
 import { defaultScheduleSettings } from './slots'
 import type { AssignedList, DraftList, List } from './types'
 
-const base = { kind: 'private' as const, hospitalId: 'H1', surgeonId: 'S1', conflicts: [], origin: { kind: 'manual' as const }, state: 'ACTIVE' as const, anaesthetistId: 'A', dateISO: '2026-07-21' }
-const am: AssignedList = { ...base, id: 'L-AM', session: 'AM', slotId: 'S-A-2026-07-21-AM' }
-const pm: AssignedList = { ...base, id: 'L-PM', session: 'PM', slotId: 'S-A-2026-07-21-PM' }
-const ooh: AssignedList = { ...base, id: 'L-OOH', session: 'OOH', slotId: 'S-A-2026-07-21-OOH' }
-const draft: DraftList = { ...base, id: 'LG1', state: 'DRAFT', anaesthetistId: undefined, session: 'OOH', draft: { origin: 'request', sinceISO: '2026-07-20T09:00:00', by: 'Kirsty W.' } }
+const base = { kind: 'private' as const, hospitalId: 'H1', surgeonId: 'S1', conflicts: [], origin: { kind: 'manual' as const }, state: 'ACTIVE' as const, anaesthetistId: 'A', dateISO: '2026-11-24' }
+const am: AssignedList = { ...base, id: 'L-AM', session: 'AM', slotId: 'S-A-2026-11-24-AM' }
+const pm: AssignedList = { ...base, id: 'L-PM', session: 'PM', slotId: 'S-A-2026-11-24-PM' }
+const ooh: AssignedList = { ...base, id: 'L-OOH', session: 'OOH', slotId: 'S-A-2026-11-24-OOH' }
+const draft: DraftList = { ...base, id: 'LG1', state: 'DRAFT', anaesthetistId: undefined, session: 'OOH', draft: { origin: 'request', sinceISO: '2026-11-23T09:00:00', by: 'Kirsty W.' } }
 const lists: Record<string, List> = Object.fromEntries([ooh, pm, draft, am].map((l) => [l.id, l]))
 
 describe('the out-of-hours session', () => {
@@ -37,29 +37,29 @@ describe('the out-of-hours session', () => {
 
 describe('listsOnDay', () => {
   it('AM, PM, then out-of-hours; never a Draft List, a colleague or another day', () => {
-    expect(listsOnDay(lists, 'A', '2026-07-21').map((l) => l.id)).toEqual(['L-AM', 'L-PM', 'L-OOH'])
-    expect(listsOnDay(Object.values(lists), 'B', '2026-07-21')).toEqual([])
-    expect(listsOnDay(lists, 'A', '2026-07-22')).toEqual([])
+    expect(listsOnDay(lists, 'A', '2026-11-24').map((l) => l.id)).toEqual(['L-AM', 'L-PM', 'L-OOH'])
+    expect(listsOnDay(Object.values(lists), 'B', '2026-11-24')).toEqual([])
+    expect(listsOnDay(lists, 'A', '2026-11-25')).toEqual([])
   })
 })
 
 describe('openOutOfHoursRefusal', () => {
   const office = { role: 'office' as const, source: 'office' as const }
-  const ok = { actor: office, dateISO: '2026-07-21', todayISO: '2026-07-21', hasRow: true, alreadyOpen: false }
+  const ok = { actor: office, dateISO: '2026-11-24', todayISO: '2026-11-24', hasRow: true, alreadyOpen: false }
 
   it('opens for the office, today or later, on a day the anaesthetist is on the schedule, once', () => {
     expect(openOutOfHoursRefusal(ok)).toBeNull()
-    expect(openOutOfHoursRefusal({ ...ok, dateISO: '2026-07-30' })).toBeNull()
+    expect(openOutOfHoursRefusal({ ...ok, dateISO: '2026-12-03' })).toBeNull()
   })
 
   it('refuses in a plain sentence: the anaesthetist, a feed, a past day, no row, already open', () => {
     expect(openOutOfHoursRefusal({ ...ok, actor: { role: 'anaesthetist', source: 'anaesthetist' } })?.code).toBe('officeOnly')
     expect(openOutOfHoursRefusal({ ...ok, actor: { role: 'office', source: 'integration' } })?.code).toBe('officeOnly')
-    expect(openOutOfHoursRefusal({ ...ok, dateISO: '2026-07-20' })?.code).toBe('pastDate')
+    expect(openOutOfHoursRefusal({ ...ok, dateISO: '2026-11-23' })?.code).toBe('pastDate')
     expect(openOutOfHoursRefusal({ ...ok, hasRow: false })?.code).toBe('noRow')
     expect(openOutOfHoursRefusal({ ...ok, alreadyOpen: true })).toMatchObject({ code: 'alreadyOpen', message: 'This anaesthetist already has an out-of-hours session that day.' })
     for (const r of [
-      openOutOfHoursRefusal({ ...ok, dateISO: '2026-07-20' }),
+      openOutOfHoursRefusal({ ...ok, dateISO: '2026-11-23' }),
       openOutOfHoursRefusal({ ...ok, hasRow: false }),
       openOutOfHoursRefusal({ ...ok, alreadyOpen: true }),
     ]) {

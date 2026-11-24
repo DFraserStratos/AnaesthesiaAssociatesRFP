@@ -16,7 +16,7 @@ import { runDemoAction } from './demoActions'
 async function openBennett(page: Page, app: 'web' | 'mobile') {
   await page.goto(`/${app}/lists?q=Bennett`)
   const results = page.locator(app === 'web' ? '[data-shot="web-lookback-search"] tr[data-booking-id]' : '[data-shot="mobile-lookback-search"] button[data-booking-id]')
-  await results.filter({ hasText: '15 Jul' }).first().click()
+  await results.filter({ hasText: '18 Nov' }).first().click()
   await expect(page.locator('[data-shot="procedure-events"]').first()).toBeVisible()
 }
 
@@ -80,8 +80,8 @@ test('events through review onto the Procedure invoice, then an own invoice in t
   await page.locator('[data-shot="invoice-list-event-lines"]').first().click()
   const lines = page.locator('[data-shot="invoice-event-lines"]')
   await expect(lines).toHaveCount(2)
-  await expect(lines.nth(0)).toContainText('Post-op event · Post-op ward review · 16 Jul 2026 · 30 min')
-  await expect(lines.nth(1)).toContainText('Billing event · Nerve catheter · 15 Jul 2026')
+  await expect(lines.nth(0)).toContainText('Post-op event · Post-op ward review · 19 Nov 2026 · 30 min')
+  await expect(lines.nth(1)).toContainText('Billing event · Nerve catheter · 18 Nov 2026')
 
   // A pain consult on the invoiced Booking: the Contract fee replaces its time, and it is its own invoice.
   await openBennett(page, 'web')

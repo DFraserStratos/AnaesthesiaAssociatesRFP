@@ -33,7 +33,7 @@ describe('upsertPatient', () => {
     const outcome = upsertPatient(api, OFFICE, {
       nhi: 'cqy9304',
       name: 'Sarah Mitchell',
-      dobISO: '1988-04-12',
+      dobISO: '1988-08-16',
       postalAddress: { line1: '4 Beach Road', suburb: 'Sumner', city: 'Christchurch', postcode: '8081' },
     })
     expect(outcome.ok).toBe(true)
@@ -51,7 +51,7 @@ describe('upsertPatient', () => {
 
   it('reuses by new-format NHI too (both formats, one patient row)', () => {
     const api = createAppStore()
-    const outcome = upsertPatient(api, OFFICE, { nhi: 'MYY54SL', name: 'Priya Nair', dobISO: '1969-11-08' })
+    const outcome = upsertPatient(api, OFFICE, { nhi: 'MYY54SL', name: 'Priya Nair', dobISO: '1970-03-14' })
     expect(outcome.ok).toBe(true)
     if (outcome.ok) {
       expect(outcome.value.outcome).toBe('reused')
@@ -62,7 +62,7 @@ describe('upsertPatient', () => {
   it('refuses a blank NHI and writes nothing (catch-up Phase 40; D11: no provisional record)', () => {
     const api = createAppStore()
     const before = api.getState()
-    const outcome = upsertPatient(api, OFFICE, { nhi: '  ', name: 'Tom Aldridge', dobISO: '1971-02-02' })
+    const outcome = upsertPatient(api, OFFICE, { nhi: '  ', name: 'Tom Aldridge', dobISO: '1971-06-08' })
     expect(outcome).toMatchObject({ ok: false, code: 'nhiRequired' })
     expect(api.getState().masters.patients).toBe(before.masters.patients)
     expect(api.getState().audit.length).toBe(before.audit.length)
@@ -70,7 +70,7 @@ describe('upsertPatient', () => {
 
   it('creates a new full record for an unseen valid NHI', () => {
     const api = createAppStore()
-    const outcome = upsertPatient(api, OFFICE, { nhi: 'ACA31FM', name: 'Riki Tamati', dobISO: '1990-03-03' })
+    const outcome = upsertPatient(api, OFFICE, { nhi: 'ACA31FM', name: 'Riki Tamati', dobISO: '1990-07-07' })
     expect(outcome.ok).toBe(true)
     if (outcome.ok) {
       expect(outcome.value.outcome).toBe('created')
@@ -80,7 +80,7 @@ describe('upsertPatient', () => {
 
   it('refuses an invalid NHI outright', () => {
     const api = createAppStore()
-    const outcome = upsertPatient(api, OFFICE, { nhi: 'ZAE0311', name: 'X', dobISO: '1980-01-01' })
+    const outcome = upsertPatient(api, OFFICE, { nhi: 'ZAE0311', name: 'X', dobISO: '1980-05-06' })
     expect(outcome.ok).toBe(false)
     if (!outcome.ok) expect(outcome.code).toBe('invalidNhi')
   })
@@ -90,7 +90,7 @@ describe('upsertPatient', () => {
     const good = upsertPatient(api, OFFICE, {
       nhi: nextTestNhi(),
       name: 'A Good Code',
-      dobISO: '1980-01-01',
+      dobISO: '1980-05-06',
       ethnicityCode: '21111',
     })
     expect(good.ok).toBe(true)
@@ -99,7 +99,7 @@ describe('upsertPatient', () => {
     const bad = upsertPatient(api, OFFICE, {
       nhi: nextTestNhi(),
       name: 'A Bad Code',
-      dobISO: '1980-01-01',
+      dobISO: '1980-05-06',
       ethnicityCode: '99',
     })
     expect(bad.ok).toBe(true)
@@ -115,7 +115,7 @@ describe('upsertPatient', () => {
     const first = upsertPatient(api, OFFICE, {
       nhi: 'ACA31FM',
       name: 'Riki Tamati',
-      dobISO: '1990-03-03',
+      dobISO: '1990-07-07',
       ethnicityCode: '99',
     })
     expect(first.ok).toBe(true)
@@ -127,7 +127,7 @@ describe('upsertPatient', () => {
     const second = upsertPatient(api, OFFICE, {
       nhi: 'ACA31FM',
       name: 'Riki Tamati',
-      dobISO: '1990-03-03',
+      dobISO: '1990-07-07',
       ethnicityCode: '21111',
     })
     expect(second.ok).toBe(true)

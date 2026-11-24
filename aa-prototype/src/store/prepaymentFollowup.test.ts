@@ -82,7 +82,7 @@ describe('the letter goes with every send (US-06.3.6)', () => {
     expect(invoice.letter).toMatchObject({ templateId: 'LT001', templateName: 'Standard prepayment letter', kind: 'request' })
     expect(invoice.letter!.body).toContain(patient.name)
     expect(invoice.letter!.body).toContain('Rhinoplasty')
-    expect(invoice.letter!.body).toContain('Friday 24 July 2026')
+    expect(invoice.letter!.body).toContain('Friday 27 November 2026')
     expect(invoice.letter!.body).toContain('The anaesthetic fee is $1,380.00, payable before your procedure.')
     expect(invoice.letter!.body).toContain('Dr Melanie Souter')
     expect(invoice.letter!.body).toContain(invoice.invoiceNumber)
@@ -200,7 +200,7 @@ describe('longer than planned (Stage longer prepaid procedure)', () => {
     expect(runEventInvoicing(api, OFFICE).ok).toBe(false)
     // Set aside the seed's own credit, Heather Sinclair's (`HS` ids, catch-up Phase 40, D24; Wave 5 join).
     expect(Object.values(api.getState().billing.negativeInvoices).filter((r) => !r.id.startsWith('HS'))).toEqual([])
-    const add = addProcedureEvent(api, OFFICE, nairProcedure(), { kind: 'additionalInvoice', occurredOnISO: '2026-07-24', party: { sameAs: true }, lines: [{ description: 'Rhinoplasty, longer than planned', quantity: 1, unitAmount: 300 }] })
+    const add = addProcedureEvent(api, OFFICE, nairProcedure(), { kind: 'additionalInvoice', occurredOnISO: '2026-11-27', party: { sameAs: true }, lines: [{ description: 'Rhinoplasty, longer than planned', quantity: 1, unitAmount: 300 }] })
     if (!add.ok) throw new Error(add.message)
     expect(approveProcedureEvent(api, OFFICE, add.value.eventId).ok).toBe(true)
     const run = runEventInvoicing(api, OFFICE)
@@ -236,7 +236,7 @@ describe('differences by hand: the whole prepayment invoice credited, then a fre
     expect(api.getState().schedule.procedureEvents[note.creditEventId]).toMatchObject({ kind: 'credit', procedureId: nairProcedure() })
     expectInBalance()
     // Anything still owed: a fresh additional invoice, its payable to whoever did the List.
-    const add = addProcedureEvent(api, souter(), nairProcedure(), { kind: 'additionalInvoice', occurredOnISO: '2026-07-24', party: { sameAs: true }, lines: [{ description: 'Rhinoplasty, half the procedure', quantity: 1, unitAmount: 600 }] })
+    const add = addProcedureEvent(api, souter(), nairProcedure(), { kind: 'additionalInvoice', occurredOnISO: '2026-11-27', party: { sameAs: true }, lines: [{ description: 'Rhinoplasty, half the procedure', quantity: 1, unitAmount: 600 }] })
     if (!add.ok) throw new Error(add.message)
     expect(approveProcedureEvent(api, OFFICE, add.value.eventId).ok).toBe(true)
     const run = runEventInvoicing(api, OFFICE)

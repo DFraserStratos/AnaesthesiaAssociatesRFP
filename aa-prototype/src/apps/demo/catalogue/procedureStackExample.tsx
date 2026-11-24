@@ -10,7 +10,7 @@ import { Segmented } from '../../../shared/ui'
 import type { ProcedureStackView } from '../../../domain/billing/procedureStack'
 
 const SHORT: ProcedureStackView = {
-  procedureText: { text: 'right total knee', source: 'hospitalDownload', receivedAtISO: '2026-07-20T16:00:00', from: "St George's" },
+  procedureText: { text: 'right total knee', source: 'hospitalDownload', receivedAtISO: '2026-11-23T16:00:00', from: "St George's" },
   invoiceDescription: { text: 'right total knee', origin: 'hospital' },
   contract: {
     id: 'CT-STG-D1',
@@ -28,7 +28,7 @@ const LONG: ProcedureStackView = {
   procedureText: {
     text: 'WLE MM, left shoulder + flap repair + SNB + excision SCC and flap, left sternum + BCC, under general anaesthetic, day stay with overnight option if the flap needs observation',
     source: 'hospitalFeed',
-    receivedAtISO: '2026-07-21T08:00:00',
+    receivedAtISO: '2026-11-24T08:00:00',
     from: "St George's",
   },
   contract: null,

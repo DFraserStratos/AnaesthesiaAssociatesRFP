@@ -115,7 +115,7 @@ describe('Phase 24 price parity', () => {
     expect(now.fees.find((r) => r.bookingId === typedBooking)).toMatchObject({ total: 1200, computed: 265.5 })
   })
 
-  it("Fitzgerald's Aria Booking moves from $1,440 (3.0 hours at $480) to $583.00 (22 units at $26.50); the uncaptured Mon 27 one stays $0.00", () => {
+  it("Fitzgerald's Aria Booking moves from $1,440 (3.0 hours at $480) to $583.00 (22 units at $26.50); the uncaptured Mon 30 one stays $0.00", () => {
     const fitz = SEED_MARKERS['contractRateBooking']!.entityId
     expect(baseline.bookingTotals.find((r) => r.bookingId === fitz)?.total).toBe(1440)
     expect(now.bookingTotals.find((r) => r.bookingId === fitz)?.total).toBe(583)

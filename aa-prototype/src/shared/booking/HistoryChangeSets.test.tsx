@@ -41,7 +41,7 @@ describe('the Booking change history', () => {
     const cover = (id: string, cs: string, action: string, atISO: string) =>
       ({ id, who: 'Kirsty W.', role: 'office', source: 'office', atISO, entityType: 'list', entityId: listId, action, before: { anaesthetistId: 'A1' }, after: { anaesthetistId: null }, changeSetId: cs, changeSetKind: 'listReassign' }) as const
     useAppStore.setState({
-      audit: [cover('AU-before', 'CS9001', 'list.reassign', '2026-07-01T08:00:00'), ...s.audit, cover('AU-after', 'CS9002', 'draftList.detach', '2026-07-21T09:00:00')],
+      audit: [cover('AU-before', 'CS9001', 'list.reassign', '2026-11-04T08:00:00'), ...s.audit, cover('AU-after', 'CS9002', 'draftList.detach', '2026-11-24T09:00:00')],
     })
     const { container } = renderHistory()
     const ids = [...container.querySelectorAll('[data-shot="history-change-set"]')].map((r) => r.getAttribute('data-change-set-id'))

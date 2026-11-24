@@ -17,7 +17,7 @@ import { ANAE, PAT, SEED_LOOKBACK } from '../domain/seed'
 import type { AssignedList } from '../domain/types'
 
 const state = freshAppState()
-const TODAY = '2026-07-21'
+const TODAY = '2026-11-24'
 const canvasStart = horizonFor(TODAY, state.appSettings.schedule.horizonMonths).startISO
 const backdrop = Object.values(state.schedule.lists).filter((l): l is AssignedList => isBackdropList(l) && l.state !== 'DRAFT')
 const lookback = backdrop.filter((l) => /^L-HIST-\d{4}-\d{2}-\d{2}-(AM|PM)$/.test(l.id))
@@ -71,7 +71,7 @@ describe('the browsable history', () => {
       const id = `L-HIST-${String(n).padStart(2, '0')}`
       expect(state.schedule.lists[id], id).toBeDefined()
     }
-    expect(state.schedule.lists['L-HIST-07']).toMatchObject({ dateISO: '2026-04-14', session: 'AM' })
+    expect(state.schedule.lists['L-HIST-07']).toMatchObject({ dateISO: '2026-08-18', session: 'AM' })
     expect(state.schedule.lists['L-HIST-08']).toMatchObject({ dateISO: '2026-03-18', session: 'AM' })
     const h07 = Object.values(state.billing.invoices).find((i) => i.invoiceNumber === 'AA-2026-H07')
     expect(h07?.id).toBe('HINV07')
@@ -83,7 +83,7 @@ describe('the browsable history', () => {
     const keys = backdrop.map((l) => `${l.anaesthetistId}|${l.dateISO}|${l.session}`)
     expect(new Set(keys).size).toBe(keys.length)
     const months = new Set(backdrop.filter((l) => l.anaesthetistId === ANAE.souter).map((l) => l.dateISO.slice(0, 7)))
-    for (const m of ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06']) expect(months.has(m), m).toBe(true)
+    for (const m of ['2026-01', '2026-02', '2026-03', '2026-08', '2026-09', '2026-10']) expect(months.has(m), m).toBe(true)
   })
 })
 
@@ -108,13 +108,13 @@ describe('no money figure moves', () => {
 
   it('the seeded AA fee invoices and their totals are as before; the new BCTIs fall in January to March only', () => {
     expect(aaFeeInvoicesFor(state, ANAE.souter).map((r) => [r.invoiceNumber, r.monthISO, r.bctiCount, r.total])).toEqual([
-      ['AA-FEE-2026-H02', '2026-06', 1, 580.75],
-      ['AA-FEE-2026-H01', '2026-05', 2, 586.5],
+      ['AA-FEE-2026-H02', '2026-10', 1, 580.75],
+      ['AA-FEE-2026-H01', '2026-09', 2, 586.5],
     ])
     const records = bctiRecords(state)
     const count = (m: string) => bctisFor(records, ANAE.souter, m).length
     // July was 3 until catch-up Phase 27a: Nair's prepayment payable credits the AA Holding account and is not a BCTI.
-    expect(['2026-04', '2026-05', '2026-06', '2026-07'].map(count)).toEqual([0, 2, 1, 2])
+    expect(['2026-08', '2026-09', '2026-10', '2026-11'].map(count)).toEqual([0, 2, 1, 2])
     expect(['2026-01', '2026-02', '2026-03'].map(count)).toEqual([2, 10, 17])
   })
 })

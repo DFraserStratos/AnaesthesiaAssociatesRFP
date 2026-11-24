@@ -19,7 +19,7 @@ function renderBooking(bookingId: string) {
     <MemoryRouter initialEntries={[`/admin/day/${list.dateISO}/bookings/${bookingId}`]}>
       <SurfaceProvider variant="web">
         <Routes>
-          <Route path="/admin" element={<Outlet context={{ actor: OFFICE, todayISO: '2026-07-21' }} />}>
+          <Route path="/admin" element={<Outlet context={{ actor: OFFICE, todayISO: '2026-11-24' }} />}>
             <Route path="day/:dateISO/bookings/:bookingId" element={<AdminBookingDetailRoute />} />
           </Route>
         </Routes>

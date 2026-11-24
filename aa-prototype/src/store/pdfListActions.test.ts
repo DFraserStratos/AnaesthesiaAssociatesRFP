@@ -19,9 +19,9 @@ import type { Actor } from './mutate'
 const ANAESTHETIST: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: '34821' }
 const OKAFOR = SEED_PDF_LIST.id
 const WHITFORD_SAMPLE = 'PDF-WHITFORD-0812'
-const WHITFORD_LIST = 'L-47733-2026-08-12-PM'
+const WHITFORD_LIST = 'L-47733-2026-12-16-PM'
 /** Dr Rutherford's Wed 5 Aug AM: the session Mr Okafor's list suggests, which holds no List. */
-const OKAFOR_SLOT = 'S-29104-2026-08-05-AM'
+const OKAFOR_SLOT = 'S-29104-2026-12-09-AM'
 
 function fresh(): AppStoreApi {
   return createAppStore()

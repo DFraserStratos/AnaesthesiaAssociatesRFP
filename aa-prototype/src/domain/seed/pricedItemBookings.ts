@@ -23,7 +23,7 @@ import { PRICED_ITEM } from './pricedItems'
 import { RVG_GROUPS } from './rvgGroups'
 import { seedText } from './procedureText'
 
-export const MERIVALE_BOOKING_LIST_ID = projectedListId(ANAE.souter, '2026-08-10', 'PM')
+export const MERIVALE_BOOKING_LIST_ID = projectedListId(ANAE.souter, '2026-12-14', 'PM')
 /** A generated patient with one past Booking, so no scripted patient gains another. */
 export const MERIVALE_BOOKING_PATIENT_ID = 'PT0129'
 
@@ -42,7 +42,7 @@ export function seedPricedItemBookings(next: { booking: number; procedure: numbe
     // The seed's source rule: St George's sends a feed, so its Bookings are hospital downloads.
     source: 'hospitalDownload',
     lastModifiedBy: 'Kirsty W.',
-    lastModifiedAtISO: '2026-07-20T15:10:00',
+    lastModifiedAtISO: '2026-11-23T15:10:00',
   }
   const faceLift = CONTRACTS.find((c) => c.id === PRICED_ITEM.merFaceLift)
   const groups = Object.fromEntries(RVG_GROUPS.map((g) => [g.id, g]))

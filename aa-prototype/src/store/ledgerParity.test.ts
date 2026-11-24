@@ -63,7 +63,7 @@ describe('Phase 36 parity: the seed reads the same from the ledger', () => {
 })
 
 describe('Phase 36 parity: the scripted flows, step by step', () => {
-  it('S3: Mon 20 authorised, the nib invoice paid half, run, rest, run', () => {
+  it('S3: Mon 23 authorised, the nib invoice paid half, run, rest, run', () => {
     expect(captured.s3).toEqual(BASELINE.s3)
   })
   it('S4 Beat 3: the billing failure and its retry', () => {

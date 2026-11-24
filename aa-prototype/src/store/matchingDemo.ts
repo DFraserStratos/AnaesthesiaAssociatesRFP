@@ -169,9 +169,9 @@ export function stageUpdateForBooking(api: AppStoreApi, actor: Actor, bookingId:
 
 /** Three synthetic patients with AR-35 wording and valid NHIs, used in order (the stand-in's "new hospital booking"). */
 export const STAND_IN_POOL: readonly { name: string; nhi: string; dobISO: string; text: string; time: string }[] = [
-  { name: 'Mere Tautahi', nhi: 'ZQA4333', dobISO: '1966-03-14', text: 'R inguinal hernia mesh', time: '10:30' },
-  { name: 'Liam Gordon', nhi: 'ZQA4708', dobISO: '1981-08-02', text: 'L knee scope + partial menisectomy', time: '11:15' },
-  { name: 'Hana Ruru', nhi: 'ZQA5445', dobISO: '1990-12-09', text: 'carpal tunnel decomp L', time: '12:00' },
+  { name: 'Mere Tautahi', nhi: 'ZQA4333', dobISO: '1966-07-18', text: 'R inguinal hernia mesh', time: '10:30' },
+  { name: 'Liam Gordon', nhi: 'ZQA4708', dobISO: '1981-12-06', text: 'L knee scope + partial menisectomy', time: '11:15' },
+  { name: 'Hana Ruru', nhi: 'ZQA5445', dobISO: '1991-04-14', text: 'carpal tunnel decomp L', time: '12:00' },
 ]
 
 const STAND_IN_HOSPITALS = new Set(['H-STG', 'H-SX'])
@@ -208,10 +208,10 @@ function newRowForList(state: AppState, listId: string): IncomingBookingFields |
 export type StandInChoice = { kind: 's1' } | { kind: 'list'; listId: string } | { kind: 'booking'; bookingId: string }
 
 /** S1's List: Dr Souter's Tue 28 Jul AM at St George's (SAMPLE_STG R1 and R2). */
-export const S1_LIST_ID = projectedListId(ANAE.souter, '2026-07-28', 'AM')
+export const S1_LIST_ID = projectedListId(ANAE.souter, '2026-12-01', 'AM')
 
 /** The St George's file's rows for S1's List: Sarah Mitchell (new) and Dylan Kereama (no change). */
-const S1_ROWS = SAMPLE_STG.rows.filter((r) => r.dateISO === '2026-07-28' && r.session === 'AM')
+const S1_ROWS = SAMPLE_STG.rows.filter((r) => r.dateISO === '2026-12-01' && r.session === 'AM')
 
 /**
  * The S1 rows the stand-in may still decide: each not yet staged, or open and

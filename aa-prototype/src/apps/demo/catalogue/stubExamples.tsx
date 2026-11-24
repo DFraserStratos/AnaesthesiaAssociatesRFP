@@ -15,8 +15,8 @@ const EXAMPLE: Stub = {
   listId: 'L-EXAMPLE',
   importRowId: 'IR-EXAMPLE',
   reason: 'noNhi',
-  asReceived: { patientName: 'Mere Tipene', procedureText: 'Lap chole', scheduledTime: '14:00', hospitalId: 'H-SX', sourceLabel: 'Southern Cross theatre list, Tue 4 Aug' },
-  createdAtISO: '2026-07-21T07:30:00',
+  asReceived: { patientName: 'Mere Tipene', procedureText: 'Lap chole', scheduledTime: '14:00', hospitalId: 'H-SX', sourceLabel: 'Southern Cross theatre list, Tue 8 Dec' },
+  createdAtISO: '2026-11-24T07:30:00',
   status: 'standing',
 }
 

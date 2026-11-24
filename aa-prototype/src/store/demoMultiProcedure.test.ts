@@ -50,7 +50,7 @@ describe('Load 3-procedure Booking (catch-up Phase 23)', () => {
 
   it('is disabled when Dr Souter has no open List ahead', () => {
     const api = createAppStore()
-    api.setState((s) => ({ clock: { ...s.clock, todayISO: '2027-06-30' } }))
+    api.setState((s) => ({ clock: { ...s.clock, todayISO: '2027-11-03' } }))
     expect(multiProcedureLoadRefusal(api.getState())).toBe('Dr Souter has no open List ahead')
   })
 })

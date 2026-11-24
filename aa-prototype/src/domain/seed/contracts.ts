@@ -122,7 +122,7 @@ const SEED: readonly SeedContract[] = [
   { id: CONTRACT.stgAcc, name: "ACC elective services via St George's", holderId: PARTY.stg, billsTo: 'holder', pricing: rate(25), fundingTagId: TAG.acc },
   // Doyle's gastric bypass: his old $2,800 row and the upcoming $2,950 as ranges; bills the
   // Procedure's payer (catch-up Phases 21 and 22a). His sleeve gastrectomy is in pricedItems.ts.
-  { id: CONTRACT.doyleBariatric, name: 'Gastric bypass', invoiceDescription: 'Gastric bypass, laparoscopic', holderId: PARTY.doyle, billsTo: 'payer', pricing: fixed(['2025-01-01', 2800], ['2026-07-28', 2950]), defaultRvgGroupId: RVG_GROUP.aaGastricBypass, linkedSurgeonIds: [SURG.doyle], specialtyIds: [SPC.generalSurgery] },
+  { id: CONTRACT.doyleBariatric, name: 'Gastric bypass', invoiceDescription: 'Gastric bypass, laparoscopic', holderId: PARTY.doyle, billsTo: 'payer', pricing: fixed(['2025-01-01', 2800], ['2026-12-01', 2950]), defaultRvgGroupId: RVG_GROUP.aaGastricBypass, linkedSurgeonIds: [SURG.doyle], specialtyIds: [SPC.generalSurgery] },
   { id: CONTRACT.cosAcc, name: 'ACC orthopaedic services, Canterbury Orthopaedic Surgeons', holderId: PARTY.cos, billsTo: 'holder', pricing: rate(24), linkedSurgeonIds: COS_SURGEONS, fundingTagId: TAG.acc },
   // RVG at the Contract's rate, $26.50 (catch-up Phase 24, RV-03: the hourly rate x time line and its gate
   // are gone), the override off; linked to the surgeons on its seeded Bookings (Ms G. Lim, Mr C. Okafor; logged).
@@ -132,7 +132,7 @@ const SEED: readonly SeedContract[] = [
   { id: CONTRACT.unisports, name: 'Unisports Ortho', holderId: PARTY.unisports, billsTo: 'holder', pricing: rate(93.47), linkedSurgeonIds: [SURG.hale] },
   // Its one range starts 1 Aug 2026 (demo figure), after the billing-failure demo's Thu 16 Jul
   // List, so Losa Tuilagi's Procedure, pointed at it, still "Needs a price" (Phase 20's "not offered").
-  { id: CONTRACT.cosFixed, name: 'COS ACC fixed fees', holderId: PARTY.cos, billsTo: 'holder', pricing: fixed(['2026-08-01', 1250]), linkedSurgeonIds: COS_SURGEONS, fundingTagId: TAG.acc },
+  { id: CONTRACT.cosFixed, name: 'COS ACC fixed fees', holderId: PARTY.cos, billsTo: 'holder', pricing: fixed(['2026-12-05', 1250]), linkedSurgeonIds: COS_SURGEONS, fundingTagId: TAG.acc },
   // Catch-up Phase 19a: the priced items (one fixed-price Contract per item).
   ...PRICED_ITEMS,
   // Catch-up Phase 24 (demo values): Forte Health at standard RVG less 10%, the override off; last, so no AA code moves.

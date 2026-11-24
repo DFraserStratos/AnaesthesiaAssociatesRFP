@@ -13,8 +13,8 @@ import { SurfaceProvider } from '../../../shared/surface'
 import { SessionStatusSheet } from './SessionStatusSheet'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-const CHEN_PM_SLOT = slotIdFor(ANAE.chen, '2026-07-21', 'PM')
-const CHEN_PM = `L-${ANAE.chen}-2026-07-21-PM`
+const CHEN_PM_SLOT = slotIdFor(ANAE.chen, '2026-11-24', 'PM')
+const CHEN_PM = `L-${ANAE.chen}-2026-11-24-PM`
 
 function renderSheet(slotId: string) {
   return render(
@@ -32,7 +32,7 @@ describe('SessionStatusSheet', () => {
   })
 
   it('an empty session saves at once', () => {
-    const slotId = slotIdFor(ANAE.sharma, '2026-07-21', 'PM')
+    const slotId = slotIdFor(ANAE.sharma, '2026-11-24', 'PM')
     renderSheet(slotId)
     chooseStatus(/Unavailable/)
     fireEvent.click(screen.getByRole('button', { name: 'Save status' }))

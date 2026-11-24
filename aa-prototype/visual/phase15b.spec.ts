@@ -8,11 +8,11 @@ import { runDemoAction } from './demoActions'
  * the mobile List.
  */
 
-const LIST = 'L-34821-2026-07-21-PM'
+const LIST = 'L-34821-2026-11-24-PM'
 const ELLISON = 'BK0009'
 
 test('no Booking detail offers Copy booking, on mobile, web or Admin', async ({ page }) => {
-  for (const path of [`/mobile/lists/${LIST}/bookings/${ELLISON}`, `/web/lists/${LIST}/bookings/${ELLISON}`, `/admin/day/2026-07-21/bookings/${ELLISON}`]) {
+  for (const path of [`/mobile/lists/${LIST}/bookings/${ELLISON}`, `/web/lists/${LIST}/bookings/${ELLISON}`, `/admin/day/2026-11-24/bookings/${ELLISON}`]) {
     await page.goto(path)
     await page.waitForLoadState('networkidle')
     await expect(page.getByRole('button', { name: 'Cancel booking' }).first(), path).toBeVisible()

@@ -70,17 +70,17 @@ describe('StickyDock on a parked layer', () => {
 })
 
 describe('NoticeLine', () => {
-  it('prints the sentence, the quoted message and the stamp as "Tue 21 Jul, 08:00" (question 24)', () => {
-    render(<NoticeLine shot="n" text="Dr Hughes moved a List to you" message="Can you take it?" atISO="2026-07-21T08:00:00" stampSuffix=" · Kirsty W." />)
+  it('prints the sentence, the quoted message and the stamp as "Tue 24 Nov, 08:00" (question 24)', () => {
+    render(<NoticeLine shot="n" text="Dr Hughes moved a List to you" message="Can you take it?" atISO="2026-11-24T08:00:00" stampSuffix=" · Kirsty W." />)
     const line = document.querySelector('[data-shot="n"]')!
     expect(line).toHaveTextContent('Dr Hughes moved a List to you')
     expect(line).toHaveTextContent('"Can you take it?"')
-    expect(line).toHaveTextContent('Tue 21 Jul, 08:00 · Kirsty W.')
+    expect(line).toHaveTextContent('Tue 24 Nov, 08:00 · Kirsty W.')
   })
 
   it('opening: the whole row is one button named by its words, the chevron hidden', () => {
     const onOpen = vi.fn()
-    render(<NoticeLine boxed shot="moved-to-you-booking-row" data-row="r1" text="Dr Hughes moved a Booking to you" atISO="2026-07-21T08:00:00" onOpen={onOpen} />)
+    render(<NoticeLine boxed shot="moved-to-you-booking-row" data-row="r1" text="Dr Hughes moved a Booking to you" atISO="2026-11-24T08:00:00" onOpen={onOpen} />)
     const button = screen.getByRole('button', { name: /Dr Hughes moved a Booking to you/ })
     expect(button).toHaveAttribute('type', 'button')
     expect(button).toHaveAttribute('data-shot', 'moved-to-you-booking-row')
@@ -108,15 +108,15 @@ describe('NoticeLine', () => {
   })
 
   it('inline stamp: inside the sentence, after a middot', () => {
-    render(<NoticeLine shot="d" stampInline text="Moved here by Dr Souter" atISO="2026-07-21T08:05:00" />)
-    expect(document.querySelector('[data-shot="d"]')).toHaveTextContent('Moved here by Dr Souter · Tue 21 Jul, 08:05')
+    render(<NoticeLine shot="d" stampInline text="Moved here by Dr Souter" atISO="2026-11-24T08:05:00" />)
+    expect(document.querySelector('[data-shot="d"]')).toHaveTextContent('Moved here by Dr Souter · Tue 24 Nov, 08:05')
   })
 })
 
 describe('PickRow', () => {
   it('colleague: one button named for the colleague, the chevron hidden, hooks passed through', () => {
     const onPick = vi.fn()
-    render(<PickRow look="colleague" shot="move-booking-receiver" data-anaesthetist-id="an-1" name="Dr Hughes" line="Free on Tue 21 Jul" minHeight={60} first onPick={onPick} />)
+    render(<PickRow look="colleague" shot="move-booking-receiver" data-anaesthetist-id="an-1" name="Dr Hughes" line="Free on Tue 24 Nov" minHeight={60} first onPick={onPick} />)
     const row = screen.getByRole('button', { name: /Dr Hughes/ })
     expect(row).toHaveAttribute('type', 'button')
     expect(row).toHaveAttribute('data-anaesthetist-id', 'an-1')
@@ -177,8 +177,8 @@ describe('Disclosure', () => {
 
   it('DisclosureButton: a named type="button" with aria-expanded and aria-controls', () => {
     const onToggle = vi.fn()
-    render(<DisclosureButton open={false} label="Tue 21 Jul AM details" controls="detail-1" onToggle={onToggle} />)
-    const toggle = screen.getByRole('button', { name: 'Tue 21 Jul AM details' })
+    render(<DisclosureButton open={false} label="Tue 24 Nov AM details" controls="detail-1" onToggle={onToggle} />)
+    const toggle = screen.getByRole('button', { name: 'Tue 24 Nov AM details' })
     expect(toggle).toHaveAttribute('type', 'button')
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
     expect(toggle).toHaveAttribute('aria-controls', 'detail-1')

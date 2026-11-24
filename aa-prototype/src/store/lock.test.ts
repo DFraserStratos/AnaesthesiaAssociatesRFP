@@ -71,7 +71,7 @@ describe('parity: the lock prices exactly as the live engine', () => {
       if (list.anaesthetistId === undefined || list.state === 'AUTHORISED') continue
       for (const booking of bookingsForList(state, list.id)) {
         if (booking.cancellation !== undefined) continue
-        const lock = takeLockFor(state, booking, 'test', '2026-07-21T09:00:00')
+        const lock = takeLockFor(state, booking, 'test', '2026-11-24T09:00:00')
         if (lock === undefined || lock.state !== 'locked') continue
         const live = bookingFee({ procedures: proceduresForBooking(state, booking.id), list: list as AssignedList, masters: state.masters, patientId: booking.patientId, held: heldPricesForBooking(state, booking.id) })
         expect(priceBookingFromLock(lock).total, booking.id).toBe(live.total)
@@ -122,7 +122,7 @@ describe('authorise writes the lock in the same commit (US-07.3.1)', () => {
     expect(written[0]).toBe('list.authorise')
     expect(written.filter((a) => a === 'booking.lock')).toHaveLength(bookings.length)
     const lockRow = api.getState().audit.find((a) => a.action === 'booking.lock')!
-    expect(lockRow.after).toMatchObject({ payee: 'Dr Melanie Souter', pricingDateISO: '2026-07-20' })
+    expect(lockRow.after).toMatchObject({ payee: 'Dr Melanie Souter', pricingDateISO: '2026-11-23' })
   })
 
   it('a Procedure that needs a price refuses the whole authorise and writes nothing; typing a price clears it', () => {
@@ -235,7 +235,7 @@ describe('Contract history (US-04.1.3)', () => {
   it('a price range added and corrected each show, the earlier value kept', () => {
     const api = createAppStore()
     const fixed = Object.values(api.getState().masters.contracts).find((c) => c.pricing.kind === 'fixed' && c.systemRole === undefined)!
-    expect(addPriceRange(api, OFFICE, fixed.id, { startISO: '2026-07-01', price: 1234 }).ok).toBe(true)
+    expect(addPriceRange(api, OFFICE, fixed.id, { startISO: '2026-11-04', price: 1234 }).ok).toBe(true)
     const rows = contractHistoryFor(api.getState().audit, fixed.id)
     expect(rows[0]!.action).toBe('contract.priceRange.add')
     expect(contractFieldChanges(rows[0]!).find((c) => c.field === 'priceRange')?.after).toContain('$1,234.00')
@@ -252,7 +252,7 @@ describe('review-pass fixes (catch-up Phase 25)', () => {
     const drafts = invoiceDraftsFromLock({ ...lock, parties: lock.parties.map((p) => ({ ...p, delivery: { method: 'none' as const } })) })
     const draft = drafts.kind === 'invoices' ? drafts.invoices.find((d) => d.counterparty.id === invoice.counterparty.id)! : undefined
     const lines = Object.values(api.getState().billing.invoiceLines).filter((l) => l.invoiceId === invoice.id).sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
-    const resent = { ...invoice, delivery: { method: 'email' as const, status: 'sent' as const, sends: [{ atISO: '2026-07-21T09:00:00', to: 'typed@example.net', by: 'Kirsty W.' }] } }
+    const resent = { ...invoice, delivery: { method: 'email' as const, status: 'sent' as const, sends: [{ atISO: '2026-11-24T09:00:00', to: 'typed@example.net', by: 'Kirsty W.' }] } }
     expect(compareInvoice(resent, lines, draft!, lock.payee).identical).toBe(true)
     expect(compareInvoice({ ...invoice, crossMatch: { procedureDateISO: '2026-01-01' } }, lines, draft!, lock.payee).differences.map((d) => d.field)).toEqual(['Cross-match'])
   })

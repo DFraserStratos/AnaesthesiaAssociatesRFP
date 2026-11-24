@@ -113,7 +113,7 @@ describe('the wrapper stamps lastModifiedBy/At in lockstep with the audit entry'
     // Ellison seeds pre-capture — stamp her finish so completion validates.
     const ellisonProc = proceduresForBooking(api.getState(), ELLISON_BOOKING)[0]
     if (ellisonProc === undefined) throw new Error('no procedure')
-    expect(editProcedure(api, SOUTER, ellisonProc.id, { handoverISO: '2026-07-21T17:20:00' }).ok).toBe(true)
+    expect(editProcedure(api, SOUTER, ellisonProc.id, { handoverISO: '2026-11-24T17:20:00' }).ok).toBe(true)
     expect(completeAnswered(api, SOUTER, ELLISON_BOOKING).ok).toBe(true)
     let state = api.getState()
     expect(state.schedule.bookings[ELLISON_BOOKING]?.lastModifiedBy).toBe('Dr Melanie Souter')

@@ -82,12 +82,12 @@ describe('setProcedurePayer: the one writer', () => {
   it('every creation path names a payer: the patient, or a ticked payer from the form', () => {
     const api = createAppStore()
     const made = createBooking(api, OFFICE_ACTOR, SEED_LIST_IDS.souterAm21, {
-      patient: { nhi: nextTestNhi(), name: 'New Patient', dobISO: '1980-01-01' },
+      patient: { nhi: nextTestNhi(), name: 'New Patient', dobISO: '1980-05-06' },
       sourceText: { text: 'Knee arthroscopy', source: 'phone', from: 'Kirsty W.' },
     })
     expect(made.ok && payerOf(api, made.value.bookingId)).toEqual({ kind: 'patient' })
     const ticked = createBooking(api, OFFICE_ACTOR, SEED_LIST_IDS.souterAm21, {
-      patient: { nhi: nextTestNhi(), name: 'Second Patient', dobISO: '2012-01-01' },
+      patient: { nhi: nextTestNhi(), name: 'Second Patient', dobISO: '2012-05-06' },
       sourceText: { text: 'Grommets', source: 'phone', from: 'Kirsty W.' },
       payer: { kind: 'other', name: 'Tia Second', relationship: 'Mother', email: 'tia@example.net' },
     })

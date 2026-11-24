@@ -27,7 +27,7 @@ const SHARMA: Actor = { who: 'Dr Priya Sharma', role: 'anaesthetist', source: 'a
 const DELANEY: Actor = { who: 'Dr Mark Delaney', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.delaney }
 
 const MOVABLE = LIST_MOVE_DEMO.movableListId // Souter, Mon 27 Jul PM, St George's, Ms G. Lim
-const MON27 = '2026-07-27'
+const MON27 = '2026-11-30'
 const store = (): BoundAppStore => createAppStore()
 const code = (o: { ok: boolean; code?: string }) => (o.ok ? 'ok' : o.code)
 const actions = (api: BoundAppStore, from = 0) => api.getState().audit.slice(from).map((a) => a.action)
@@ -66,7 +66,7 @@ describe('refusals (ownership is enforced in the store)', () => {
     const api = store()
     expect(code(moveListToOffice(api, SOUTER, 'LD-001'))).toBe('draftList')
     expect(code(moveListToOffice(api, DELANEY, SEED_LIST_IDS.integrationLocked))).toBe('listSubmitted')
-    const past = Object.values(api.getState().schedule.lists).find((l) => l.state === 'ACTIVE' && l.anaesthetistId === ANAE.souter && l.dateISO < '2026-07-21')!
+    const past = Object.values(api.getState().schedule.lists).find((l) => l.state === 'ACTIVE' && l.anaesthetistId === ANAE.souter && l.dateISO < '2026-11-24')!
     expect(code(moveListToOffice(api, SOUTER, past.id))).toBe('pastDate')
   })
 
@@ -85,7 +85,7 @@ describe('refusals (ownership is enforced in the store)', () => {
   it('markUnavailableAndMoveList refuses a status that keeps the session open, and a session with no List', () => {
     const api = store()
     expect(code(markUnavailableAndMoveList(api, SOUTER, LIST_MOVE_DEMO.unavailableSlotId, 'free', { route: 'office' }))).toBe('notClosedStatus')
-    const empty = slotIdFor(ANAE.souter, '2026-07-22', 'PM')
+    const empty = slotIdFor(ANAE.souter, '2026-11-25', 'PM')
     expect(listInSlot(api.getState(), empty)).toBeUndefined()
     expect(code(markUnavailableAndMoveList(api, SOUTER, empty, 'unavailable', { route: 'office' }))).toBe('noList')
   })
@@ -97,7 +97,7 @@ describe('refusals (ownership is enforced in the store)', () => {
       moveListToOffice(api, SHARMA, MOVABLE),
       pushListToSlot(api, SOUTER, MOVABLE, colleagueSlot(ANAE.chen, MON27, 'AM')),
       markUnavailableAndMoveList(api, SOUTER, LIST_MOVE_DEMO.unavailableSlotId, 'free', { route: 'office' }),
-      setAvailability(api, SOUTER, ANAE.souter, '2026-07-23', 'PM', 'unavailable'),
+      setAvailability(api, SOUTER, ANAE.souter, '2026-11-26', 'PM', 'unavailable'),
     ]
     for (const o of outs) {
       expect(o.ok).toBe(false)
@@ -228,7 +228,7 @@ describe('no preference warning, nothing revealed (US-01.4.5, US-13.6.3, D44)', 
 
 describe('mark unavailable while holding a List (US-01.5.5)', () => {
   const slotId = LIST_MOVE_DEMO.unavailableSlotId // Souter Thu 23 PM
-  const THU23 = '2026-07-23'
+  const THU23 = '2026-11-26'
   it('AC1: the plain status change is refused with holdsList, so the offer is the only way through', () => {
     const api = store()
     const listId = listInSlot(api.getState(), slotId)!.id
@@ -277,11 +277,11 @@ describe('mark unavailable while holding a List (US-01.5.5)', () => {
 
   it('a series and a single-session edit over a booked session are refused for her and for the office alike (D59)', () => {
     const api = store()
-    // Souter's Monday PM recurring Lists.
-    const series: AvailabilitySeriesDraft = { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: 'PM', weekdays: [1], everyWeeks: 1, startISO: '2026-08-24', untilISO: '2026-08-24' }
+    // Souter's Monday PM recurring Lists (the first Monday St George's is open after the Christmas shutdown and the holidays).
+    const series: AvailabilitySeriesDraft = { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: 'PM', weekdays: [1], everyWeeks: 1, startISO: '2027-01-18', untilISO: '2027-01-18' }
     for (const actor of [SOUTER, OFFICE]) {
       expect(createAvailabilitySeries(api, actor, series)).toMatchObject({ ok: false, code: 'holdsList' })
-      const one = setAvailabilityRange(api, actor, { anaesthetistId: ANAE.souter, fromISO: '2026-08-24', toISO: '2026-08-24', sessions: 'PM', statusKey: 'holiday' })
+      const one = setAvailabilityRange(api, actor, { anaesthetistId: ANAE.souter, fromISO: '2027-01-18', toISO: '2027-01-18', sessions: 'PM', statusKey: 'holiday' })
       expect(one).toMatchObject({ ok: false, code: 'holdsList' })
     }
   })
@@ -289,7 +289,7 @@ describe('mark unavailable while holding a List (US-01.5.5)', () => {
   it('a series retried after the prompt takes the moved sessions as its own (review fix)', () => {
     const api = store()
     // Souter's Monday PM recurring Lists: 27 Jul, 3 Aug and 10 Aug.
-    const series: AvailabilitySeriesDraft = { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: 'PM', weekdays: [1], everyWeeks: 1, startISO: '2026-07-27', untilISO: '2026-08-10' }
+    const series: AvailabilitySeriesDraft = { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: 'PM', weekdays: [1], everyWeeks: 1, startISO: '2026-11-30', untilISO: '2026-12-14' }
     const refused = createAvailabilitySeries(api, SOUTER, series)
     const listIds = refused.ok ? [] : (refused.details as { listIds: string[] }).listIds
     expect(listIds).toHaveLength(3)
@@ -305,7 +305,7 @@ describe('mark unavailable while holding a List (US-01.5.5)', () => {
     const list = assigned(api.getState().schedule.lists[LIST_MOVE_DEMO.returnListId])
     api.setState({ schedule: { ...api.getState().schedule, lists: { ...api.getState().schedule.lists, [list.id]: { ...list, state: 'SUBMITTED' } } } })
     const out = setAvailability(api, SOUTER, ANAE.souter, list.dateISO, list.session, 'unavailable')
-    expect(out).toMatchObject({ ok: false, code: 'holdsLockedList', message: 'Your Thu 23 Jul AM List has been submitted, so only the office can move it. Ask the office to change this session.' })
+    expect(out).toMatchObject({ ok: false, code: 'holdsLockedList', message: 'Your Thu 26 Nov AM List has been submitted, so only the office can move it. Ask the office to change this session.' })
   })
 
   it("the office's sickness entry on a booked session is asked where the List goes too, and never raises a conflict (D59)", () => {
@@ -336,7 +336,7 @@ describe('nothing recalculated on a move (US-06.3.5 AC2, US-06.5.4, D20)', () =>
     expect(Object.values(api.getState().billing.invoices).filter((i) => i.kind === 'prePayment').length).toBeGreaterThanOrEqual(2)
     return api
   }
-  const paidSlot = () => slotIdFor(ANAE.souter, '2026-07-24', 'PM')
+  const paidSlot = () => slotIdFor(ANAE.souter, '2026-11-27', 'PM')
 
   it.each(['office', 'colleague', 'unavailable', 'unavailable-to-office'] as const)('the %s move leaves every invoice, prepayment, billing case and Xero record as it was', (kind) => {
     const api = prepared()

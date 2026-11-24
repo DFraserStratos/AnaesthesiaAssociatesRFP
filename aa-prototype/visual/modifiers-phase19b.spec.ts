@@ -9,11 +9,11 @@ import { expect, test, type Page } from '@playwright/test'
  * provisional note. Mobile uses the bottom sheet, web and Admin the dialog.
  */
 
-const ELLISON_MOBILE = '/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009'
-const ELLISON_WEB = '/web/lists/L-34821-2026-07-21-PM/bookings/BK0009'
+const ELLISON_MOBILE = '/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009'
+const ELLISON_WEB = '/web/lists/L-34821-2026-11-24-PM/bookings/BK0009'
 // The `includedModifierBooking` seed marker (BK0158, re-coded to S3a).
-const SPINE_MOBILE = '/mobile/lists/L-34821-2026-07-27-PM/bookings/BK0158'
-const ELLISON_ADMIN = '/admin/day/2026-07-21/bookings/BK0009'
+const SPINE_MOBILE = '/mobile/lists/L-34821-2026-11-30-PM/bookings/BK0158'
+const ELLISON_ADMIN = '/admin/day/2026-11-24/bookings/BK0009'
 
 async function fresh(page: Page, path: string): Promise<void> {
   await page.goto('/mobile')
@@ -173,7 +173,7 @@ test('completion backstop: a claim with no explanation stops Mark complete and i
     const raw = window.localStorage.getItem('aa-demo')!
     const persisted = JSON.parse(raw) as { state: { schedule: { procedures: Record<string, Record<string, unknown>> } } }
     const p = persisted.state.schedule.procedures.P0009!
-    p.handoverISO = '2026-07-21T17:20:00'
+    p.handoverISO = '2026-11-24T17:20:00'
     p.modifierClaims = [{ modifierId: 'MOD-RVG-AS3', explanation: '' }]
     window.localStorage.setItem('aa-demo', JSON.stringify(persisted))
   })

@@ -25,8 +25,8 @@ import { nextTestNhi } from './testNhi'
 
 const OFFICE = OFFICE_ACTOR
 const store = (): BoundAppStore => createAppStore()
-const MORRISON_PM = 'L-25490-2026-07-22-PM'
-const RUTHERFORD_AM = `L-${ANAE.rutherford}-2026-07-22-AM`
+const MORRISON_PM = 'L-25490-2026-11-25-PM'
+const RUTHERFORD_AM = `L-${ANAE.rutherford}-2026-11-25-AM`
 const code = (o: { ok: boolean; code?: string }) => (o.ok ? 'ok' : o.code)
 
 describe('clearListConflict and restoreListConflict', () => {
@@ -53,9 +53,9 @@ describe('clearListConflict and restoreListConflict', () => {
   it('a clear is dropped when its cause goes, and the clash coming back flags again', () => {
     const api = store()
     clearListConflict(api, OFFICE, MORRISON_PM, 'holiday:HH900')
-    editHospitalHoliday(api, OFFICE, 'HH900', { dateISO: '2026-07-23' })
+    editHospitalHoliday(api, OFFICE, 'HH900', { dateISO: '2026-11-26' })
     expect(api.getState().schedule.lists[MORRISON_PM]!.conflictClears).toBeUndefined()
-    editHospitalHoliday(api, OFFICE, 'HH900', { dateISO: '2026-07-22' })
+    editHospitalHoliday(api, OFFICE, 'HH900', { dateISO: '2026-11-25' })
     expect(api.getState().schedule.lists[MORRISON_PM]!.conflicts).toMatchObject([{ holidayId: 'HH900' }])
   })
 
@@ -77,13 +77,13 @@ describe('hospital holidays: edit and delete (US-01.5.1)', () => {
     // Four Lists plus Dr Beaumont's two Draft Lists that day (catch-up Phase 31).
     const wed = listsFlaggedByHoliday(api.getState(), 'HH900')
     expect(wed).toBe(6)
-    const out = editHospitalHoliday(api, OFFICE, 'HH900', { dateISO: '2026-07-23' })
+    const out = editHospitalHoliday(api, OFFICE, 'HH900', { dateISO: '2026-11-26' })
     expect(out.ok).toBe(true)
     if (!out.ok) return
     expect(out.value.resolved).toBe(6)
-    expect(out.value.flagged).toBe(Object.values(api.getState().schedule.lists).filter((l) => l.dateISO === '2026-07-23' && l.hospitalId === HOSP.sx).length)
+    expect(out.value.flagged).toBe(Object.values(api.getState().schedule.lists).filter((l) => l.dateISO === '2026-11-26' && l.hospitalId === HOSP.sx).length)
     expect(api.getState().schedule.lists[MORRISON_PM]!.conflicts).toEqual([])
-    expect(api.getState().audit.find((a) => a.action === 'holiday.update')).toMatchObject({ before: { dateISO: '2026-07-22' }, after: { dateISO: '2026-07-23' } })
+    expect(api.getState().audit.find((a) => a.action === 'holiday.update')).toMatchObject({ before: { dateISO: '2026-11-25' }, after: { dateISO: '2026-11-26' } })
   })
 
   it('a rename changes the wording with no conflict meta', () => {
@@ -111,8 +111,8 @@ describe('hospital holidays: edit and delete (US-01.5.1)', () => {
     expect(code(editHospitalHoliday(api, OFFICE, 'HH900', { name: '  ' }))).toBe('nameRequired')
     expect(code(editHospitalHoliday(api, OFFICE, 'HH900', { dateISO: '22/07/2026' }))).toBe('dateRequired')
     // Labour Day is a master public holiday since catch-up Phase 42; a second closure of the hospital's own on HH900's date is the duplicate.
-    expect(addHospitalHoliday(api, OFFICE, HOSP.sx, '2026-07-29', 'Lift repairs').ok).toBe(true)
-    expect(code(editHospitalHoliday(api, OFFICE, 'HH900', { dateISO: '2026-07-29' }))).toBe('duplicateHoliday')
+    expect(addHospitalHoliday(api, OFFICE, HOSP.sx, '2026-12-02', 'Lift repairs').ok).toBe(true)
+    expect(code(editHospitalHoliday(api, OFFICE, 'HH900', { dateISO: '2026-12-02' }))).toBe('duplicateHoliday')
     expect(code(deleteHospitalHoliday(api, OFFICE, 'HHnope'))).toBe('notFound')
     expect(code(deleteHospitalHoliday(api, SOUTER_ACTOR, 'HH900'))).toBe('officeOnly')
   })
@@ -121,7 +121,7 @@ describe('hospital holidays: edit and delete (US-01.5.1)', () => {
 describe('accept and flag on Booking paths (US-01.5.2 AC1)', () => {
   it('a Booking created on, or moved onto, a conflicted List is accepted; the List stays flagged', () => {
     const api = store()
-    const created = createBooking(api, OFFICE, MORRISON_PM, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Test', source: 'anaesthetist' } })
+    const created = createBooking(api, OFFICE, MORRISON_PM, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-05-07' }, sourceText: { text: 'Test', source: 'anaesthetist' } })
     expect(created.ok).toBe(true)
     expect(api.getState().schedule.lists[MORRISON_PM]!.conflicts).toHaveLength(1)
     const souterBooking = Object.values(api.getState().schedule.bookings).find((b) => b.listId === SEED_LIST_IDS.souterAm21 && b.cancellation === undefined)!
@@ -133,7 +133,7 @@ describe('accept and flag on Booking paths (US-01.5.2 AC1)', () => {
     const api = store()
     const bookings = () => Object.values(api.getState().schedule.bookings).filter((b) => b.listId === SEED_LIST_IDS.souterAm21).length
     const n = bookings()
-    const out = addHospitalHoliday(api, OFFICE, HOSP.stg, '2026-07-21', 'Power outage')
+    const out = addHospitalHoliday(api, OFFICE, HOSP.stg, '2026-11-24', 'Power outage')
     expect(out.ok && out.value.flaggedListCount).toBeGreaterThan(0)
     expect(bookings()).toBe(n)
     expect(api.getState().schedule.lists[SEED_LIST_IDS.souterAm21]!.conflicts).toMatchObject([{ kind: 'holiday' }])
@@ -143,15 +143,15 @@ describe('accept and flag on Booking paths (US-01.5.2 AC1)', () => {
 describe('conflict selectors', () => {
   it('lists hospital closures only (D59: unavailability is never a conflict), sorted by date, session then roster order, with reason and Booking count', () => {
     const api = store()
-    const rows = conflictRows(api.getState(), { fromISO: '2026-07-22', toISO: '2026-07-22' })
+    const rows = conflictRows(api.getState(), { fromISO: '2026-11-25', toISO: '2026-11-25' })
     // Dr Beaumont's two Draft Lists show as hospital-closed rows with no anaesthetist (catch-up Phase 31).
     // Rutherford's returned Wed 22 AM List is a Draft List with no conflict (catch-up Phase 32b).
-    expect([...rows.map((r) => r.listId)].sort()).toEqual(['L-46822-2026-07-22-AM', 'L-25490-2026-07-22-PM', 'L-41267-2026-07-22-PM', 'L-38455-2026-07-22-PM', 'LD-RCB020-2026-07-22-AM', 'LD-RCB021-2026-07-22-PM'].sort())
+    expect([...rows.map((r) => r.listId)].sort()).toEqual(['L-46822-2026-11-25-AM', 'L-25490-2026-11-25-PM', 'L-41267-2026-11-25-PM', 'L-38455-2026-11-25-PM', 'LD-RCB020-2026-11-25-AM', 'LD-RCB021-2026-11-25-PM'].sort())
     expect(rows.every((r, i) => i === 0 || rows[i - 1]!.session <= r.session)).toBe(true)
     expect(rows.some((r) => r.listId === RUTHERFORD_AM)).toBe(false)
     expect(rows.every((r) => r.reason === 'Hospital closed')).toBe(true)
     expect(rows.filter((r) => r.listId.startsWith('LD-')).every((r) => r.anaesthetistId === undefined && r.slotId === undefined)).toBe(true)
-    expect(rows.find((r) => r.listId === 'L-41267-2026-07-22-PM')?.bookingCount).toBe(2)
+    expect(rows.find((r) => r.listId === 'L-41267-2026-11-25-PM')?.bookingCount).toBe(2)
   })
 
   it('filters by hospital and anaesthetist (one reason left)', () => {
@@ -161,7 +161,7 @@ describe('conflict selectors', () => {
     expect(conflictRows(s, { anaesthetistId: ANAE.morrison }).every((r) => r.anaesthetistId === ANAE.morrison)).toBe(true)
   })
 
-  it('counts open conflicts from today: Wed 22 only (Rutherford no longer one; recurring Lists skip public holidays)', () => {
+  it('counts open conflicts from today: Wed 25 only (Rutherford no longer one; recurring Lists skip public holidays)', () => {
     const api = store()
     // 19 until catch-up Phase 32d (three bookless public Lists became Public sessions); 16 until 24 Nov 2026,
     // when recurring Lists stopped being made on Labour Day and Canterbury Anniversary Day.
@@ -170,9 +170,9 @@ describe('conflict selectors', () => {
 
   it('hospitalMonth: closures, Lists and conflicted Lists per day', () => {
     const api = store()
-    const july = hospitalMonth(api.getState(), HOSP.sx, '2026-07')
-    expect(july).toHaveLength(31)
-    const wed = july.find((d) => d.dateISO === '2026-07-22')!
+    const nov = hospitalMonth(api.getState(), HOSP.sx, '2026-11')
+    expect(nov).toHaveLength(30)
+    const wed = nov.find((d) => d.dateISO === '2026-11-25')!
     expect(wed.closures.map((h) => h.id)).toEqual(['HH900'])
     expect(wed.listCount).toBe(6)
     expect(wed.conflictedCount).toBe(6)
@@ -182,5 +182,10 @@ describe('conflict selectors', () => {
     expect(oct.publicClosures.map((h) => h.name)).toEqual(['Labour Day'])
     const rooms = hospitalMonth(api.getState(), HOSP.aaRooms, '2026-10').find((d) => d.dateISO === '2026-10-26')!
     expect(rooms.publicClosures).toEqual([])
+    // The Christmas shutdown is the hospital's own closure, and its days hold no Lists.
+    const dec = hospitalMonth(api.getState(), HOSP.sx, '2026-12')
+    const xmasEve = dec.find((d) => d.dateISO === '2026-12-24')!
+    expect(xmasEve.closures.map((h) => h.name)).toEqual(['Christmas shutdown'])
+    expect(xmasEve.listCount).toBe(0)
   })
 })

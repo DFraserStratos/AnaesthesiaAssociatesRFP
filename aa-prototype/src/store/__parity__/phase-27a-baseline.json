@@ -2,14 +2,14 @@
   "payablesDue": [],
   "souterFeeHistory": [
     {
-      "monthISO": "2026-05",
+      "monthISO": "2026-09",
       "bctiCount": 2,
       "subtotal": 510,
       "total": 586.5,
       "status": "paid"
     },
     {
-      "monthISO": "2026-06",
+      "monthISO": "2026-10",
       "bctiCount": 1,
       "subtotal": 505,
       "total": 580.75,

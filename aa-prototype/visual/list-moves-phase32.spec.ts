@@ -25,7 +25,7 @@ async function clean(page: Page, scope: string, where: string) {
 }
 
 test('web: hand a List on to a colleague with no warning, then the office sees it', async ({ page }) => {
-  await fresh(page, '/web/availability?date=2026-07-27')
+  await fresh(page, '/web/availability?date=2026-11-30')
   await expect(page.locator('[data-shot="availability-move-mine-pm"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p32-01-web-grid.png', fullPage: true })
 
@@ -56,14 +56,14 @@ test('web: hand a List on to a colleague with no warning, then the office sees i
   await page.screenshot({ path: 'visual/shots/p32-03b-web-moved.png', fullPage: true })
   await sheet.getByRole('button', { name: 'Done' }).click()
   // Her old cell is Free; the List is on Ropata's row.
-  await expect(page.locator('[data-slot-id="S-34821-2026-07-27-PM"]')).toContainText('Free')
-  await expect(page.locator('[data-slot-id="S-39560-2026-07-27-PM"]')).toContainText("St George's")
+  await expect(page.locator('[data-slot-id="S-34821-2026-11-30-PM"]')).toContainText('Free')
+  await expect(page.locator('[data-slot-id="S-39560-2026-11-30-PM"]')).toContainText("St George's")
 
   // Admin Day on that date: the notification on the rail, the drawer line.
-  await page.goto('/admin/day/2026-07-27')
+  await page.goto('/admin/day/2026-11-30')
   await page.waitForLoadState('networkidle')
   const card = page.locator('[data-shot="admin-notifications-rail"]')
-  await expect(card).toContainText("Dr Souter moved Mon 27 Jul PM (St George's, Ms G. Lim) to Dr Ropata")
+  await expect(card).toContainText("Dr Souter moved Mon 30 Nov PM (St George's, Ms G. Lim) to Dr Ropata")
   await page.screenshot({ path: 'visual/shots/p32-04-admin-rail.png', fullPage: true })
   await card.locator('[data-notification-row]').first().click()
   await expect(page.locator('[data-shot="drawer-moved-here"]')).toContainText('Moved here by Dr Souter')
@@ -79,14 +79,14 @@ test('web: hand a List on to a colleague with no warning, then the office sees i
 
 test('web: a colleague free cell is status only where she has no List that session', async ({ page }) => {
   // Wed 22 PM: Dr Souter's session is free, so nothing in the PM column moves; her AM List does.
-  await fresh(page, '/web/availability?date=2026-07-22')
+  await fresh(page, '/web/availability?date=2026-11-25')
   await expect(page.locator('[data-shot="availability-move-mine-am"]')).toBeVisible()
   await expect(page.locator('[data-shot$="-pm"][data-shot^="availability-move-to-"]')).toHaveCount(0)
   await expect(page.locator('[data-shot$="-am"][data-shot^="availability-move-to-"]').first()).toBeVisible()
 })
 
 test('web: return a List to the office from List detail, choosing Unavailable', async ({ page }) => {
-  await fresh(page, '/web/lists/L-34821-2026-07-23-AM')
+  await fresh(page, '/web/lists/L-34821-2026-11-26-AM')
   await page.locator('[data-shot="list-move"]').click()
   const sheet = page.locator('[data-shot="move-sheet"]')
   await sheet.locator('[data-shot="move-choice-office"]').click()
@@ -101,11 +101,11 @@ test('web: return a List to the office from List detail, choosing Unavailable', 
   await page.screenshot({ path: 'visual/shots/p32-07-web-returned.png', fullPage: true })
   await sheet.getByRole('button', { name: 'Done' }).click()
   // The List left her schedule: the page falls back.
-  await expect(page).not.toHaveURL(/L-34821-2026-07-23-AM/)
+  await expect(page).not.toHaveURL(/L-34821-2026-11-26-AM/)
 
   await page.goto('/admin/notifications')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="admin-notifications-table"]')).toContainText('Dr Souter returned Thu 23 Jul AM')
+  await expect(page.locator('[data-shot="admin-notifications-table"]')).toContainText('Dr Souter returned Thu 26 Nov AM')
   await page.getByRole('button', { name: 'Open Draft List' }).first().click()
   await expect(page.locator('[data-shot="draft-list-returned-by"]')).toContainText('Returned to the office by Dr Souter')
   await expect(page.locator('[data-shot="draft-list-returned-by"]').locator('..')).toContainText('Moved to the office')
@@ -114,13 +114,13 @@ test('web: return a List to the office from List detail, choosing Unavailable', 
 
 test('mobile: marking a booked session Unavailable asks where its List goes', async ({ page }) => {
   await fresh(page, '/mobile/availability')
-  await page.locator('button[data-date="2026-07-23"]').click()
+  await page.locator('button[data-date="2026-11-26"]').click()
   await expect(page.locator('[data-shot="availability-move-pm"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p32-09-mobile-find-cover.png' })
   await page.locator('[data-shot="availability-change"]').click()
   const editor = page.locator('[data-shot="mobile-availability-sheet"]')
   await expect(editor).toBeVisible()
-  await editor.locator('[data-slot-id="S-34821-2026-07-23-PM"]').getByRole('button', { name: 'Change', exact: true }).click()
+  await editor.locator('[data-slot-id="S-34821-2026-11-26-PM"]').getByRole('button', { name: 'Change', exact: true }).click()
   await editor.locator('[data-status-choice="unavailable"]').click()
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
 
@@ -143,14 +143,14 @@ test('mobile: marking a booked session Unavailable asks where its List goes', as
   await expect(sheet.locator('[data-shot="move-done"]')).toBeVisible()
   await sheet.getByRole('button', { name: 'Done' }).click()
   // The status saved once the List had gone, with no conflict.
-  await expect(editor.locator('[data-shot="availability-result"]')).toContainText('1 session set to Unavailable on Thu 23 Jul. Its List went first, where you chose.')
+  await expect(editor.locator('[data-shot="availability-result"]')).toContainText('1 session set to Unavailable on Thu 26 Nov. Its List went first, where you chose.')
   await expect(editor).not.toContainText(/flagged|conflict/i)
   await page.screenshot({ path: 'visual/shots/p32-11-mobile-after-prompt.png' })
 })
 
 test('mobile: the move sheet from Find cover', async ({ page }) => {
   await fresh(page, '/mobile/availability')
-  await page.locator('button[data-date="2026-07-23"]').click()
+  await page.locator('button[data-date="2026-11-26"]').click()
   await page.locator('[data-shot="availability-move-am"]').click()
   const sheet = page.locator('[data-aa-mobile-product] [data-shot="move-sheet"]')
   await expect(sheet.locator('[data-shot="move-where"]')).toBeVisible()
@@ -160,7 +160,7 @@ test('mobile: the move sheet from Find cover', async ({ page }) => {
 })
 
 test('admin: a colleague returns a List, then a busy morning pages the pool', async ({ page }) => {
-  await fresh(page, '/admin/day/2026-07-21')
+  await fresh(page, '/admin/day/2026-11-24')
   await expect(page.locator('[data-shot="admin-notifications-rail"]')).toContainText('Nothing waiting')
   const one = await runDemoAction(page, 'colleague-moves-list-to-office', { choice: 'one', close: true })
   expect(one).toMatch(/returned .+ to the office\. It is now a Draft List\./)
@@ -184,13 +184,13 @@ test('admin: a colleague returns a List, then a busy morning pages the pool', as
   await page.goto('/admin/notifications?page=2')
   await expect(page.locator('[data-notification-row]')).toHaveCount(3)
 
-  await page.goto('/admin/day/2026-07-21')
+  await page.goto('/admin/day/2026-11-24')
   await page.waitForLoadState('networkidle')
   await page.screenshot({ path: 'visual/shots/p32-15-admin-day-after.png', fullPage: true })
 })
 
 test('web: days off over two booked sessions prompt one List at a time, then apply', async ({ page }) => {
-  await fresh(page, '/web/availability/mine?date=2026-07-27')
+  await fresh(page, '/web/availability/mine?date=2026-11-30')
   const rail = page.locator('[data-shot="web-availability-rail"]')
   await rail.getByRole('button', { name: 'Change both sessions' }).click()
   await rail.locator('[data-status-choice="holiday"]').click()
@@ -213,13 +213,13 @@ test('web: days off over two booked sessions prompt one List at a time, then app
     await expect(sheet.locator('[data-shot="move-done"]')).toContainText('Returned to the office')
     await sheet.getByRole('button', { name: 'Done' }).click()
   }
-  await expect(rail.locator('[data-shot="availability-result"]')).toContainText('2 sessions set to On holiday on Mon 27 Jul. 2 Lists went first, where you chose.')
+  await expect(rail.locator('[data-shot="availability-result"]')).toContainText('2 sessions set to On holiday on Mon 30 Nov. 2 Lists went first, where you chose.')
   await page.screenshot({ path: 'visual/shots/p32-18-web-range-applied.png', fullPage: true })
 })
 
 test('My calendar (mobile and web): a day holding a movable List offers Move this List', async ({ page }) => {
   await fresh(page, '/mobile/availability/calendar')
-  await page.locator('[data-shot="mobile-availability-calendar"] button[data-date="2026-07-23"]').click()
+  await page.locator('[data-shot="mobile-availability-calendar"] button[data-date="2026-11-26"]').click()
   const move = page.locator('[data-shot="availability-panel-move"]').first()
   await expect(move).toBeVisible()
   await move.getByRole('button', { name: 'Move this List' }).click()
@@ -227,7 +227,7 @@ test('My calendar (mobile and web): a day holding a movable List offers Move thi
   await page.waitForTimeout(400)
   await page.screenshot({ path: 'visual/shots/p32-19-mobile-calendar-move.png' })
 
-  await fresh(page, '/web/availability/mine?date=2026-07-23')
+  await fresh(page, '/web/availability/mine?date=2026-11-26')
   await page.locator('[data-shot="web-availability-rail"] [data-shot="availability-panel-move"]').first().getByRole('button', { name: 'Move this List' }).click()
   await expect(page.locator('[data-shot="move-where"]')).toBeVisible()
 })

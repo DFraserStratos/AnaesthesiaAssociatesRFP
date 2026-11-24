@@ -41,7 +41,7 @@ import { resendInvoice } from './billingRun'
 import { EVENT_MESSAGES } from '../shared/procedureEventCopy'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-const SHARMA_TUE14 = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
+const SHARMA_TUE14 = projectedListId(ANAE.sharma, '2026-11-17', 'AM')
 
 let api: BoundAppStore
 let unwire: () => void
@@ -88,9 +88,9 @@ function stageMitchell(): { bookingId: string; procedureId: string } {
 
 const input = (over: Partial<ProcedureEventInput> = {}): ProcedureEventInput => ({
   kind: 'additionalInvoice',
-  occurredOnISO: '2026-07-15',
+  occurredOnISO: '2026-11-18',
   party: { sameAs: true },
-  lines: [{ description: 'Post-op ward review, Wed 15 Jul, 15 min', quantity: 1, unitAmount: 30 }],
+  lines: [{ description: 'Post-op ward review, Wed 18 Nov, 15 min', quantity: 1, unitAmount: 30 }],
   ...over,
 })
 
@@ -151,8 +151,8 @@ describe('raise, edit, remove (Button)', () => {
     expect(raiseRefusal(api.getState(), { role: 'anaesthetist', anaesthetistId: ANAE.souter }, procedureId)?.code).toBe('notOwnProcedure')
     expect(raiseRefusal(api.getState(), { role: 'office' }, procedureId)).toBeNull()
     expect(addProcedureEvent(api, OFFICE, procedureId, input({ lines: [{ description: '', quantity: 1, unitAmount: 30 }] }))).toMatchObject({ ok: false, code: 'descriptionMissing' })
-    expect(addProcedureEvent(api, OFFICE, procedureId, input({ occurredOnISO: '2026-07-22' }))).toMatchObject({ ok: false, code: 'dateInFuture' })
-    expect(addProcedureEvent(api, OFFICE, procedureId, input({ occurredOnISO: '2026-07-13' }))).toMatchObject({ ok: false, code: 'dateBeforeProcedure' })
+    expect(addProcedureEvent(api, OFFICE, procedureId, input({ occurredOnISO: '2026-11-25' }))).toMatchObject({ ok: false, code: 'dateInFuture' })
+    expect(addProcedureEvent(api, OFFICE, procedureId, input({ occurredOnISO: '2026-11-16' }))).toMatchObject({ ok: false, code: 'dateBeforeProcedure' })
   })
 
   it('refuses on a SUBMITTED List and on a cancelled Booking', () => {
@@ -173,10 +173,10 @@ describe('raise, edit, remove (Button)', () => {
     expect(updateProcedureEvent(api, sharma(), officeEv.value.eventId, { lines: [{ description: 'x', quantity: 1, unitAmount: 1 }] })).toMatchObject({ ok: false, code: 'notYours' })
     expect(removeProcedureEvent(api, sharma(), officeEv.value.eventId)).toMatchObject({ ok: false, code: 'notYours' })
     expect(updateProcedureEvent(api, sharma(), hers.value.eventId, { lines: [{ description: 'Nerve catheter review', quantity: 1, unitAmount: 45 }] }).ok).toBe(true)
-    expect(updateProcedureEvent(api, OFFICE, hers.value.eventId, { occurredOnISO: '2026-07-16' }).ok).toBe(true)
-    expect(api.getState().schedule.procedureEvents[hers.value.eventId]).toMatchObject({ occurredOnISO: '2026-07-16', detail: { lines: [{ description: 'Nerve catheter review', unitAmount: 45 }] } })
+    expect(updateProcedureEvent(api, OFFICE, hers.value.eventId, { occurredOnISO: '2026-11-19' }).ok).toBe(true)
+    expect(api.getState().schedule.procedureEvents[hers.value.eventId]).toMatchObject({ occurredOnISO: '2026-11-19', detail: { lines: [{ description: 'Nerve catheter review', unitAmount: 45 }] } })
     expect(approveProcedureEvent(api, OFFICE, hers.value.eventId).ok).toBe(true)
-    expect(updateProcedureEvent(api, OFFICE, hers.value.eventId, { occurredOnISO: '2026-07-15' })).toMatchObject({ ok: false, code: 'approved', message: EVENT_MESSAGES.approvedLocked })
+    expect(updateProcedureEvent(api, OFFICE, hers.value.eventId, { occurredOnISO: '2026-11-18' })).toMatchObject({ ok: false, code: 'approved', message: EVENT_MESSAGES.approvedLocked })
     expect(removeProcedureEvent(api, sharma(), hers.value.eventId)).toMatchObject({ ok: false, code: 'approved' })
     expect(removeProcedureEvent(api, OFFICE, officeEv.value.eventId).ok).toBe(true)
     expect(api.getState().schedule.procedureEvents[officeEv.value.eventId]).toBeUndefined()
@@ -191,7 +191,7 @@ describe('the review step (Review step)', () => {
     expect(declineProcedureEvent(api, OFFICE, 'EV0001', 'Please split the time').ok).toBe(true)
     expect(api.getState().schedule.procedureEvents['EV0001']!.review).toMatchObject({ state: 'declined', reason: 'Please split the time', by: { who: 'Kirsty W.' } })
     expect(approveProcedureEvent(api, OFFICE, 'EV0001')).toMatchObject({ ok: false, code: 'notAwaitingReview' })
-    expect(updateProcedureEvent(api, souter(), 'EV0001', { lines: [{ description: 'Post-op ward review, Tue 23 Jun, 20 min', quantity: 1, unitAmount: 80 }] }).ok).toBe(true)
+    expect(updateProcedureEvent(api, souter(), 'EV0001', { lines: [{ description: 'Post-op ward review, Tue 27 Oct, 20 min', quantity: 1, unitAmount: 80 }] }).ok).toBe(true)
     expect(api.getState().schedule.procedureEvents['EV0001']!.review).toEqual({ state: 'awaitingReview' })
     expect(approveProcedureEvent(api, OFFICE, 'EV0001').ok).toBe(true)
     expect(approveProcedureEvent(api, OFFICE, 'EV0001')).toMatchObject({ ok: false, code: 'notAwaitingReview' })
@@ -216,7 +216,7 @@ describe('the next billing run (Own pair, Linked)', () => {
     expect(inv.invoiceNumber).toBe(`AA-2026-${String(counters['invoiceNumber']).padStart(4, '0')}`)
     expect(inv.counterparty).toEqual(s.billing.invoices['HINV03']!.counterparty)
     const lines = Object.values(s.billing.invoiceLines).filter((l) => l.invoiceId === invoiceId)
-    expect(lines).toMatchObject([{ description: 'Post-op ward review, Tue 23 Jun, 20 min', quantity: 1, unitAmount: 85, amount: 85 }])
+    expect(lines).toMatchObject([{ description: 'Post-op ward review, Tue 27 Oct, 20 min', quantity: 1, unitAmount: 85, amount: 85 }])
     const pair = pairForInvoice(s, invoiceId!)!
     expect(pair).toMatchObject({ kind: 'procedure', anaesthetistId: ANAE.souter, receivable: { amount: 97.75 }, payable: { amount: 97.75, number: `${inv.invoiceNumber}-P`, payee: { kind: 'anaesthetist', anaesthetistId: ANAE.souter } } })
     expect(pair.receivable.xeroAccRecId).toBeDefined()
@@ -254,7 +254,7 @@ describe('the next billing run (Own pair, Linked)', () => {
   it('Dr Sharma raises, the office approves and runs it: it pays her and leaves the original as it was (Not a correction)', () => {
     const { bookingId, procedureId } = stageMitchell()
     const before = frozen(bookingId)
-    const out = addProcedureEvent(api, sharma(), procedureId, input({ lines: [{ description: 'Nerve catheter review, Wed 15 Jul', quantity: 1, unitAmount: 45 }] }))
+    const out = addProcedureEvent(api, sharma(), procedureId, input({ lines: [{ description: 'Nerve catheter review, Wed 18 Nov', quantity: 1, unitAmount: 45 }] }))
     if (!out.ok) throw new Error(out.message)
     expect(approveProcedureEvent(api, OFFICE, out.value.eventId).ok).toBe(true)
     const run = runEventInvoicing(api, OFFICE, { eventIds: [out.value.eventId] })
@@ -309,7 +309,7 @@ describe('after a fixed price (After a fixed price)', () => {
     const original = liveInvoiceForProcedure(api.getState(), procedureId)!
     // Left off the final invoice (27): its only invoice is the prepayment invoice.
     expect(original.id).toBe(prepayment.id)
-    const out = addProcedureEvent(api, souter(), procedureId, input({ occurredOnISO: '2026-07-24', lines: [{ description: 'Extended case, 40 min over', quantity: 1, unitAmount: 120 }] }))
+    const out = addProcedureEvent(api, souter(), procedureId, input({ occurredOnISO: '2026-11-27', lines: [{ description: 'Extended case, 40 min over', quantity: 1, unitAmount: 120 }] }))
     if (!out.ok) throw new Error(out.message)
     expect(approveProcedureEvent(api, OFFICE, out.value.eventId).ok).toBe(true)
     const run = runEventInvoicing(api, OFFICE)
@@ -330,11 +330,11 @@ describe('the BCTI count (OQ-60, provisional: an additional invoice is one BCTI)
     const run = runEventInvoicing(api, OFFICE)
     if (!run.ok) throw new Error(run.message)
     expect(count()).toBe(base + 1)
-    const julyBefore = bctisFor(bctiRecords(api.getState()), ANAE.souter, '2026-07').length
+    const julyBefore = bctisFor(bctiRecords(api.getState()), ANAE.souter, '2026-11').length
     const pair = pairForInvoice(api.getState(), run.value.invoiceIds[0]!)!
     const paid = receivePayment(api, { accRecId: pair.receivable.xeroAccRecId!, amount: pair.receivable.amount, idempotencyKey: 'ev-pay', source: 'webhook' })
     expect(paid.ok).toBe(true)
-    expect(bctisFor(bctiRecords(api.getState()), ANAE.souter, '2026-07').length).toBe(julyBefore + 1)
+    expect(bctisFor(bctiRecords(api.getState()), ANAE.souter, '2026-11').length).toBe(julyBefore + 1)
   })
 })
 
@@ -366,7 +366,7 @@ describe('the run through a Xero outage, never on a List, and Regenerate (catch-
   it('an event is never a List, Slot or Booking: raising one adds none', () => {
     const { procedureId } = stageMitchell()
     const before = { lists: Object.keys(api.getState().schedule.lists), slots: Object.keys(api.getState().schedule.slots), bookings: Object.keys(api.getState().schedule.bookings) }
-    expect(addProcedureEvent(api, OFFICE, procedureId, input({ occurredOnISO: '2026-07-21' })).ok).toBe(true)
+    expect(addProcedureEvent(api, OFFICE, procedureId, input({ occurredOnISO: '2026-11-24' })).ok).toBe(true)
     expect({ lists: Object.keys(api.getState().schedule.lists), slots: Object.keys(api.getState().schedule.slots), bookings: Object.keys(api.getState().schedule.bookings) }).toEqual(before)
     expect(bookingsForList(api.getState(), SHARMA_TUE14).map((b) => b.id)).not.toContain('EV0002')
   })

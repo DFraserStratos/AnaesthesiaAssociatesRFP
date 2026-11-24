@@ -5,7 +5,7 @@ import { practiceAppState } from './appStore'
 type Rec = Record<string, unknown>
 
 const start = (): Rec => ({
-  clock: { todayISO: '2026-07-21', timeHHmm: '08:00' },
+  clock: { todayISO: '2026-11-24', timeHHmm: '08:00' },
   schedule: {
     lists: { L1: { id: 'L1', state: 'ACTIVE' }, L2: { id: 'L2', state: 'ACTIVE' } },
     bookings: { B1: { id: 'B1', listId: 'L1' } },
@@ -32,11 +32,11 @@ describe('persistDelta: saving only what changed since the start', () => {
 
   it('saves the audit entries appended after the start, and changed values whole; never a function', () => {
     const s = start()
-    const next = { ...s, audit: [...(s['audit'] as unknown[]), { id: 'A3' }], clock: { todayISO: '2026-07-22', timeHHmm: '09:00' }, act: () => 1 }
+    const next = { ...s, audit: [...(s['audit'] as unknown[]), { id: 'A3' }], clock: { todayISO: '2026-11-25', timeHHmm: '09:00' }, act: () => 1 }
     const d = deltaOf(next, s)
     expect(d.top['audit']).toEqual({ $append: [{ id: 'A3' }] })
     // A small object of values saves field by field.
-    expect(d.top['clock']).toEqual({ $sub: { todayISO: { $value: '2026-07-22' }, timeHHmm: { $value: '09:00' } } })
+    expect(d.top['clock']).toEqual({ $sub: { todayISO: { $value: '2026-11-25' }, timeHHmm: { $value: '09:00' } } })
     expect('act' in d.top).toBe(false)
   })
 

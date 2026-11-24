@@ -18,8 +18,8 @@ import { timedRateFor } from './timedRate'
 import { DEFAULT_RVG_TIME_RULE } from './timeUnits'
 import type { ContractPricing } from './contracts'
 
-const LIST = '2026-07-16'
-const TODAY = '2026-07-21'
+const LIST = '2026-11-19'
+const TODAY = '2026-11-24'
 const dates = { listDateISO: LIST, todayISO: TODAY }
 
 const stgAcc = { id: 'CT-STG-ACC', pricing: { kind: 'rvgContractRate', unitRate: 25 } as ContractPricing }
@@ -150,12 +150,12 @@ describe('the module imports no modifier module and derives no rate of its own',
 })
 
 describe('validatePrePostOpEvent', () => {
-  const base: PrePostOpInput = { kind: 'postOp', type: 'postOpWardReview', occurredOnISO: '2026-07-17', startTime: '08:00', recording: { kind: 'time', minutes: 45 } }
+  const base: PrePostOpInput = { kind: 'postOp', type: 'postOpWardReview', occurredOnISO: '2026-11-20', startTime: '08:00', recording: { kind: 'time', minutes: 45 } }
   const v = (patch: Partial<PrePostOpInput>) => validatePrePostOpEvent({ ...base, ...patch }, dates)
 
   it('accepts a valid post-op and pre-op event', () => {
     expect(v({})).toBeNull()
-    expect(v({ kind: 'preOp', type: 'accPreOpAssessment', occurredOnISO: '2026-07-13', code: 'CS250', recording: { kind: 'fixedFee', source: 'typed', amount: 60 } })).toBeNull()
+    expect(v({ kind: 'preOp', type: 'accPreOpAssessment', occurredOnISO: '2026-11-16', code: 'CS250', recording: { kind: 'fixedFee', source: 'typed', amount: 60 } })).toBeNull()
   })
 
   it('refuses a type of the other kind', () => {
@@ -163,8 +163,8 @@ describe('validatePrePostOpEvent', () => {
   })
 
   it('refuses a post-op event dated before the List, and a pre-op event after it', () => {
-    expect(v({ occurredOnISO: '2026-07-15' })).toMatchObject({ code: 'dateBeforeProcedure', message: 'A post-op event cannot be dated before the procedure.', field: 'occurredOnISO' })
-    expect(v({ kind: 'preOp', type: 'otherPreOp', occurredOnISO: '2026-07-17' })?.code).toBe('dateAfterProcedure')
+    expect(v({ occurredOnISO: '2026-11-18' })).toMatchObject({ code: 'dateBeforeProcedure', message: 'A post-op event cannot be dated before the procedure.', field: 'occurredOnISO' })
+    expect(v({ kind: 'preOp', type: 'otherPreOp', occurredOnISO: '2026-11-20' })?.code).toBe('dateAfterProcedure')
   })
 
   it('accepts both edges: a pre-op and a post-op on the List date, a post-op today', () => {
@@ -174,7 +174,7 @@ describe('validatePrePostOpEvent', () => {
   })
 
   it('refuses a date in the future', () => {
-    expect(v({ occurredOnISO: '2026-07-22' })).toMatchObject({ code: 'dateInFuture', message: 'An event cannot be dated in the future.' })
+    expect(v({ occurredOnISO: '2026-11-25' })).toMatchObject({ code: 'dateInFuture', message: 'An event cannot be dated in the future.' })
   })
 
   it('refuses a bad start time, minutes outside 1 to 720, a bad typed fee and a foreign code', () => {
@@ -203,36 +203,36 @@ describe('the tables', () => {
 
   it('the date rule', () => {
     expect(eventDateRefusal('onOrAfterList', 'x', dates)?.code).toBe('dateInvalid')
-    expect(eventDateRefusal('onOrBeforeList', '2026-07-01', dates)).toBeNull()
+    expect(eventDateRefusal('onOrBeforeList', '2026-11-04', dates)).toBeNull()
   })
 })
 
 describe('eventInvoiceLine', () => {
   it('describes a timed post-op event replaced by a Contract fee', () => {
     const line = eventInvoiceLine(
-      { id: 'EV0009', procedureId: 'P1', occurredOnISO: '2026-07-18' },
+      { id: 'EV0009', procedureId: 'P1', occurredOnISO: '2026-11-21' },
       { basis: 'contractEventFee', amount: 120, replacedMinutes: 40 },
       { lead: 'Post-op event', subject: 'Pain consult' },
     )
-    expect(line).toEqual({ procedureId: 'P1', eventId: 'EV0009', serviceDateISO: '2026-07-18', description: 'Post-op event · Pain consult · 18 Jul 2026 · 40 min, Contract fee', quantity: 1, unitAmount: 120, amount: 120, kind: 'fee' })
+    expect(line).toEqual({ procedureId: 'P1', eventId: 'EV0009', serviceDateISO: '2026-11-21', description: 'Post-op event · Pain consult · 21 Nov 2026 · 40 min, Contract fee', quantity: 1, unitAmount: 120, amount: 120, kind: 'fee' })
   })
 
   it('carries an ACC code, and a credit as a negative adjustment', () => {
-    expect(eventInvoiceLine({ id: 'E', procedureId: 'P', occurredOnISO: '2026-07-13' }, { basis: 'typedFixedFee', amount: 60 }, { lead: 'Pre-op event', subject: 'ACC pre-op assessment', code: 'CS250' }).description).toBe(
-      'Pre-op event · ACC pre-op assessment · CS250 · 13 Jul 2026 · Fixed fee',
+    expect(eventInvoiceLine({ id: 'E', procedureId: 'P', occurredOnISO: '2026-11-16' }, { basis: 'typedFixedFee', amount: 60 }, { lead: 'Pre-op event', subject: 'ACC pre-op assessment', code: 'CS250' }).description).toBe(
+      'Pre-op event · ACC pre-op assessment · CS250 · 16 Nov 2026 · Fixed fee',
     )
-    const credit = eventInvoiceLine({ id: 'E', procedureId: 'P', occurredOnISO: '2026-07-18' }, { basis: 'billingEvent', amount: -40 }, { lead: 'Credit', subject: 'Goodwill adjustment' })
-    expect(credit).toMatchObject({ description: 'Credit · Goodwill adjustment · 18 Jul 2026', amount: -40, kind: 'adjustment' })
+    const credit = eventInvoiceLine({ id: 'E', procedureId: 'P', occurredOnISO: '2026-11-21' }, { basis: 'billingEvent', amount: -40 }, { lead: 'Credit', subject: 'Goodwill adjustment' })
+    expect(credit).toMatchObject({ description: 'Credit · Goodwill adjustment · 21 Nov 2026', amount: -40, kind: 'adjustment' })
   })
 
   it('no en or em dash in any line', () => {
-    const line = eventInvoiceLine({ id: 'E', procedureId: 'P', occurredOnISO: '2026-07-18' }, { basis: 'time', amount: 75, minutes: 45 }, { lead: 'Post-op event', subject: 'Post-op ward review' })
+    const line = eventInvoiceLine({ id: 'E', procedureId: 'P', occurredOnISO: '2026-11-21' }, { basis: 'time', amount: 75, minutes: 45 }, { lead: 'Post-op event', subject: 'Post-op ward review' })
     expect(line.description).not.toMatch(/[–—]/)
   })
 })
 
 describe('billing events', () => {
-  const ok = { direction: 'charge' as const, description: 'Nerve catheter', amount: 180, occurredOnISO: '2026-07-18' }
+  const ok = { direction: 'charge' as const, description: 'Nerve catheter', amount: 180, occurredOnISO: '2026-11-21' }
   it('a charge and a credit validate and price as typed (+$180.00, -$40.00)', () => {
     expect(validateBillingEvent(ok, dates)).toBeNull()
     expect(validateBillingEvent({ ...ok, direction: 'credit', description: 'Goodwill adjustment', amount: 40 }, dates)).toBeNull()
@@ -246,8 +246,8 @@ describe('billing events', () => {
     expect(validateBillingEvent({ ...ok, description: 'x'.repeat(121) }, dates)?.code).toBe('descriptionTooLong')
     expect(validateBillingEvent({ ...ok, amount: 0 }, dates)?.code).toBe('amountInvalid')
     expect(validateBillingEvent({ ...ok, amount: 100000 }, dates)?.code).toBe('amountInvalid')
-    expect(validateBillingEvent({ ...ok, occurredOnISO: '2026-07-15' }, dates)?.code).toBe('dateBeforeProcedure')
-    expect(validateBillingEvent({ ...ok, occurredOnISO: '2026-07-22' }, dates)?.code).toBe('dateInFuture')
+    expect(validateBillingEvent({ ...ok, occurredOnISO: '2026-11-18' }, dates)?.code).toBe('dateBeforeProcedure')
+    expect(validateBillingEvent({ ...ok, occurredOnISO: '2026-11-25' }, dates)?.code).toBe('dateInFuture')
   })
 
   it('an un-ticked billing event is never priced', () => {

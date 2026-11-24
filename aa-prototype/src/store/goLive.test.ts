@@ -64,7 +64,7 @@ describe('the go-live load (catch-up Phase 42; US-13.4.2, US-13.4.3)', () => {
     expect(made.every((c) => c.status === 'active')).toBe(true)
     // Prices come from the controlled sheet, never from Solutions Plus units.
     const lap = made.find((c) => c.aaCode === 'HSG-GL01')!
-    expect(lap.pricing).toEqual({ kind: 'fixed', ranges: [{ startISO: '2026-04-01', price: 1450 }, { startISO: '2026-07-01', price: 1490 }] })
+    expect(lap.pricing).toEqual({ kind: 'fixed', ranges: [{ startISO: '2026-04-01', price: 1450 }, { startISO: '2026-11-04', price: 1490 }] })
     const units = new Set(SOLUTIONS_PLUS_OPERATIONS.map((o) => o.spUnits))
     for (const c of made) if (c.pricing.kind === 'fixed') for (const r of c.pricing.ranges) expect(units.has(r.price)).toBe(false)
     // Not approved (Tonsillectomy) never loads, nor its range.

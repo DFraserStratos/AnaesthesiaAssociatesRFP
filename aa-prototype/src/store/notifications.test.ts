@@ -19,7 +19,7 @@ import { NOTIFICATION_POOL_RULE } from '../domain/notifications'
 
 const store = (): BoundAppStore => createAppStore()
 const SOUTER = SOUTER_ACTOR
-const MON27 = '2026-07-27'
+const MON27 = '2026-11-30'
 
 describe('"Appears": every move posts exactly one notification', () => {
   it('for each of the three actions', () => {
@@ -32,8 +32,8 @@ describe('"Appears": every move posts exactly one notification', () => {
     expect(Object.keys(api.getState().notifications)).toHaveLength(3)
     const rows = notificationPool(api.getState(), { page: 1 }).rows
     expect(rows.map((r) => r.notification.id)).toEqual(['NT0003', 'NT0002', 'NT0001'])
-    expect(rows[1]?.text).toBe("Dr Souter moved Mon 27 Jul PM (St George's, Ms G. Lim) to Dr Chen")
-    expect(rows[0]?.text).toMatch(/^Dr Souter returned Thu 23 Jul PM \(.+\) to the office when marking the session not available$/)
+    expect(rows[1]?.text).toBe("Dr Souter moved Mon 30 Nov PM (St George's, Ms G. Lim) to Dr Chen")
+    expect(rows[0]?.text).toMatch(/^Dr Souter returned Thu 26 Nov PM \(.+\) to the office when marking the session not available$/)
     expect(rows[0]?.target).toEqual({ kind: 'draftList', listId: listIdOf(rows[0]) })
     expect(rows[1]?.target).toMatchObject({ kind: 'list', dateISO: MON27 })
     expect(latestNotifications(api.getState(), 2).map((r) => r.notification.id)).toEqual(['NT0003', 'NT0002'])
@@ -74,9 +74,9 @@ describe('"Shared": one pool for the whole team', () => {
     stageColleagueMoveToOffice(api)
     const first = notificationPool(api.getState(), { page: 1 })
     // Kirsty works (a day note), then a second admin does: the pool reads the same for both.
-    expect(addDayNote(api, OFFICE_ACTOR, '2026-07-21', 'Checked the overnight moves', false).ok).toBe(true)
+    expect(addDayNote(api, OFFICE_ACTOR, '2026-11-24', 'Checked the overnight moves', false).ok).toBe(true)
     const afterKirsty = notificationPool(api.getState(), { page: 1 })
-    expect(addDayNote(api, { who: 'Vanessa P.', role: 'office', source: 'office' }, '2026-07-21', 'Seen', false).ok).toBe(true)
+    expect(addDayNote(api, { who: 'Vanessa P.', role: 'office', source: 'office' }, '2026-11-24', 'Seen', false).ok).toBe(true)
     const afterSecond = notificationPool(api.getState(), { page: 1 })
     expect(afterKirsty.rows.map((r) => r.notification)).toEqual(first.rows.map((r) => r.notification))
     expect(afterSecond.rows.map((r) => [r.notification, r.text])).toEqual(afterKirsty.rows.map((r) => [r.notification, r.text]))
@@ -141,7 +141,7 @@ describe('postNotification', () => {
   it('appends one record with the next NT id, never overwriting', () => {
     const api = store()
     const s = api.getState()
-    const input = { atISO: '2026-07-21T08:00:00', byActor: 'x', listId: 'L', route: 'office' as const, cause: 'move' as const, fromAnaesthetistId: 'A', dateISO: '2026-07-21', session: 'AM' as const, hospitalId: 'H', surgeonId: 'S', message: '  ' }
+    const input = { atISO: '2026-11-24T08:00:00', byActor: 'x', listId: 'L', route: 'office' as const, cause: 'move' as const, fromAnaesthetistId: 'A', dateISO: '2026-11-24', session: 'AM' as const, hospitalId: 'H', surgeonId: 'S', message: '  ' }
     const one = postNotification(s, input)
     expect(one.id).toBe('NT0001')
     expect(one.notifications['NT0001']).not.toHaveProperty('message')

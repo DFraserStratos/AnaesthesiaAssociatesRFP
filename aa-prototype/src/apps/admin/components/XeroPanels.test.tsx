@@ -27,7 +27,7 @@ import { projectedListId } from '../../../domain/slots'
 import { XeroDivergencePanel, XeroQueuePanel } from './XeroPanels'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-const AM20 = projectedListId(ANAE.souter, '2026-07-20', 'AM')
+const AM20 = projectedListId(ANAE.souter, '2026-11-23', 'AM')
 
 let unwire: () => void = () => {}
 beforeEach(() => {

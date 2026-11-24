@@ -39,8 +39,8 @@ function commits(api: BoundAppStore, run: () => unknown): number {
 }
 
 /** Dr Chen's Tue 21 PM Christchurch Eye Surgery List (Ms A. Reid): an ACTIVE colleague List the office can mark. */
-const CHEN_PM = `L-${ANAE.chen}-2026-07-21-PM`
-const chenSlot = slotIdFor(ANAE.chen, '2026-07-21', 'PM')
+const CHEN_PM = `L-${ANAE.chen}-2026-11-24-PM`
+const chenSlot = slotIdFor(ANAE.chen, '2026-11-24', 'PM')
 const freeColleague = (api: BoundAppStore, dateISO: string, session: 'AM' | 'PM' | 'OOH', not: string) =>
   Object.values(api.getState().schedule.slots).find((s) => s.dateISO === dateISO && s.session === session && s.anaesthetistId !== not && s.status === 'free' && listInSlot(api.getState(), s.id) === undefined)!
 
@@ -62,7 +62,7 @@ describe('the office marks a booked session not available (D59)', () => {
   it('hand-on: the List moves ACTIVE into an open colleague session, list.reassign plus the acknowledgement for a not-preferred pairing', () => {
     const api = store()
     // Dr Sharma is not preferred with Ms Reid (seeded) and free on Tue 21 PM.
-    const sharmaPm = slotIdFor(ANAE.sharma, '2026-07-21', 'PM')
+    const sharmaPm = slotIdFor(ANAE.sharma, '2026-11-24', 'PM')
     expect(markUnavailableAndMoveList(api, OFFICE, chenSlot, 'unavailable', { route: 'colleague', toSlotId: sharmaPm }).ok).toBe(true)
     expect(api.getState().schedule.lists[CHEN_PM]).toMatchObject({ state: 'ACTIVE', slotId: sharmaPm, anaesthetistId: ANAE.sharma })
     const actions = api.getState().audit.filter((a) => a.entityId === CHEN_PM).map((a) => a.action)
@@ -72,7 +72,7 @@ describe('the office marks a booked session not available (D59)', () => {
 
   it('never onto a closed session: the hand-on refuses targetNotOpen with plain words', () => {
     const api = store()
-    const ngataPm = slotIdFor(ANAE.ngata, '2026-07-21', 'PM')
+    const ngataPm = slotIdFor(ANAE.ngata, '2026-11-24', 'PM')
     const before = api.getState().schedule
     const out = markUnavailableAndMoveList(api, OFFICE, chenSlot, 'unavailable', { route: 'colleague', toSlotId: ngataPm })
     expect(out).toMatchObject({ ok: false, code: 'targetNotOpen', message: 'Dr Ngata has marked this session not available. They need to make it available first.' })
@@ -86,15 +86,15 @@ describe('the office marks a booked session not available (D59)', () => {
     api.setState({ schedule: { ...api.getState().schedule, lists: { ...api.getState().schedule.lists, [CHEN_PM]: submitted } } })
     expect(code(markUnavailableAndMoveList(api, OFFICE, chenSlot, 'unavailable', { route: 'office' }))).toBe('submittedHandOnOnly')
     // The guard on the plain status write names it for the prompt (a hand-on is possible).
-    expect(setAvailability(api, OFFICE, ANAE.chen, '2026-07-21', 'PM', 'unavailable')).toMatchObject({ ok: false, code: 'holdsList' })
-    const to = freeColleague(api, '2026-07-21', 'PM', ANAE.chen)
+    expect(setAvailability(api, OFFICE, ANAE.chen, '2026-11-24', 'PM', 'unavailable')).toMatchObject({ ok: false, code: 'holdsList' })
+    const to = freeColleague(api, '2026-11-24', 'PM', ANAE.chen)
     expect(markUnavailableAndMoveList(api, OFFICE, chenSlot, 'unavailable', { route: 'colleague', toSlotId: to.id }).ok).toBe(true)
     expect(api.getState().schedule.lists[CHEN_PM]).toMatchObject({ state: 'SUBMITTED', slotId: to.id })
     const api2 = store()
     const authorised = { ...assigned(api2.getState().schedule.lists[CHEN_PM]), state: 'AUTHORISED' as const }
     api2.setState({ schedule: { ...api2.getState().schedule, lists: { ...api2.getState().schedule.lists, [CHEN_PM]: authorised } } })
     expect(code(markUnavailableAndMoveList(api2, OFFICE, chenSlot, 'unavailable', { route: 'office' }))).toBe('listAuthorised')
-    expect(setAvailability(api2, OFFICE, ANAE.chen, '2026-07-21', 'PM', 'unavailable')).toMatchObject({ ok: false, code: 'holdsLockedList', message: 'The Tue 21 Jul PM List is authorised and locked, so its session cannot be marked not available.' })
+    expect(setAvailability(api2, OFFICE, ANAE.chen, '2026-11-24', 'PM', 'unavailable')).toMatchObject({ ok: false, code: 'holdsLockedList', message: 'The Tue 24 Nov PM List is authorised and locked, so its session cannot be marked not available.' })
   })
 
   it('a feed may not; a status that keeps the session open is refused', () => {
@@ -108,7 +108,7 @@ describe('the office marks a booked session not available (D59)', () => {
 describe('review fixes (catch-up Phase 32b review pass)', () => {
   it('the office cannot return or hand on a List whose day has passed (it could never be assigned again); Simulate sickness skips past Lists', () => {
     const api = store()
-    const past = Object.values(api.getState().schedule.lists).find((l) => l.state === 'ACTIVE' && l.dateISO < '2026-07-21' && !l.id.startsWith('L-HIST'))!
+    const past = Object.values(api.getState().schedule.lists).find((l) => l.state === 'ACTIVE' && l.dateISO < '2026-11-24' && !l.id.startsWith('L-HIST'))!
     const slotId = assigned(past).slotId
     expect(code(markUnavailableAndMoveList(api, OFFICE, slotId, 'unavailable', { route: 'office' }))).toBe('pastDate')
     expect(api.getState().schedule.lists[past.id]?.state).toBe('ACTIVE')
@@ -139,8 +139,8 @@ describe('review fixes (catch-up Phase 32b review pass)', () => {
   it('the colleague stand-in is not offered on a status only the office sets', () => {
     const api = store()
     expect(addSlotStatus(api, OFFICE, { label: 'Office hold', longLabel: 'Held by the office', description: 'Office use.', colour: 'unavailable', treatment: 'hatched', bookable: false, anaesthetistCanSet: false, isDefault: false }).ok).toBe(true)
-    const sharmaPm = slotIdFor(ANAE.sharma, '2026-07-21', 'PM')
-    expect(setAvailabilityRange(api, OFFICE, { anaesthetistId: ANAE.sharma, fromISO: '2026-07-21', toISO: '2026-07-21', sessions: 'PM', statusKey: 'ST0001' }).ok).toBe(true)
+    const sharmaPm = slotIdFor(ANAE.sharma, '2026-11-24', 'PM')
+    expect(setAvailabilityRange(api, OFFICE, { anaesthetistId: ANAE.sharma, fromISO: '2026-11-24', toISO: '2026-11-24', sessions: 'PM', statusKey: 'ST0001' }).ok).toBe(true)
     expect(makeAvailableRefusal(api.getState(), sharmaPm)).toBe('Set by the office: the office changes it')
     expect(closedColleagueSessions(api.getState(), CHEN_PM)).not.toContain(sharmaPm)
   })
@@ -161,18 +161,18 @@ describe('the vacated-session choice, validated in the store (D60)', () => {
     const api = store()
     expect(code(moveListToOffice(api, SOUTER, LIST_MOVE_DEMO.movableListId, { vacatedStatus: 'holiday' }))).toBe('invalidVacatedStatus')
     expect(moveListToOffice(api, SOUTER, LIST_MOVE_DEMO.movableListId).ok).toBe(true)
-    expect(api.getState().schedule.slots[slotIdFor(ANAE.souter, '2026-07-27', 'PM')]?.status).toBe('free')
+    expect(api.getState().schedule.slots[slotIdFor(ANAE.souter, '2026-11-30', 'PM')]?.status).toBe('free')
     const slotId = LIST_MOVE_DEMO.unavailableSlotId
     expect(markUnavailableAndMoveList(api, SOUTER, slotId, 'unavailable', { route: 'office' }, { vacatedStatus: 'free' }).ok).toBe(true)
     expect(api.getState().schedule.slots[slotId]?.status).toBe('free')
-    expect(code(pushListToSlot(api, SOUTER, SEED_LIST_IDS.souterPm21, slotIdFor(ANAE.chen, '2026-07-21', 'PM'), { vacatedStatus: 'nope' }))).toBe('invalidVacatedStatus')
+    expect(code(pushListToSlot(api, SOUTER, SEED_LIST_IDS.souterPm21, slotIdFor(ANAE.chen, '2026-11-24', 'PM'), { vacatedStatus: 'nope' }))).toBe('invalidVacatedStatus')
   })
 })
 
 describe('Ask Dr X to make this session available (the colleague stand-in, US-01.6.3)', () => {
   it('sets a closed, empty session Free as that anaesthetist; never one holding a List or one already open', () => {
     const api = store()
-    const ngataAm = slotIdFor(ANAE.ngata, '2026-07-21', 'AM')
+    const ngataAm = slotIdFor(ANAE.ngata, '2026-11-24', 'AM')
     expect(makeAvailableRefusal(api.getState(), ngataAm)).toBeNull()
     const out = makeSessionAvailableAsColleague(api, ngataAm)
     expect(out.ok).toBe(true)
@@ -185,8 +185,8 @@ describe('Ask Dr X to make this session available (the colleague stand-in, US-01
 
   it("lists a List's closed, empty colleague sessions that day and session, never the List's own", () => {
     const api = store()
-    const ids = closedColleagueSessions(api.getState(), 'L-29104-2026-07-22-AM')
-    expect(ids).toContain(slotIdFor(ANAE.rutherford, '2026-07-22', 'AM'))
+    const ids = closedColleagueSessions(api.getState(), 'L-29104-2026-11-25-AM')
+    expect(ids).toContain(slotIdFor(ANAE.rutherford, '2026-11-25', 'AM'))
     for (const id of ids) expect(makeAvailableRefusal(api.getState(), id)).toBeNull()
     const own = closedColleagueSessions(api.getState(), SEED_LIST_IDS.souterAm21)
     expect(own.some((id) => id.startsWith(`S-${ANAE.souter}-`))).toBe(false)

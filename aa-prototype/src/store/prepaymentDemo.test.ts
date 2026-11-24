@@ -87,7 +87,7 @@ describe('Move to 2 days before procedure (prepayment-two-days-before)', () => {
     expect(twoDaysBeforeRefusal(api.getState(), RILEY)).toBeNull()
     const res = moveToTwoDaysBefore(api, RILEY)
     expect(res.ok).toBe(true)
-    expect(api.getState().clock.todayISO).toBe('2026-07-22')
+    expect(api.getState().clock.todayISO).toBe('2026-11-25')
     const warning = warningsForBooking(api.getState(), RILEY).find((w) => w.ruleId === 'prepaymentUnpaid')
     expect(warning?.strength).toBe('strong')
     // Never rewinds: a second jump is refused.

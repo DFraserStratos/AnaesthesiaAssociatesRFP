@@ -59,7 +59,7 @@ describe('the mobile main view (US-07.4.2)', () => {
     if (realOffsetTop !== undefined) Object.defineProperty(HTMLElement.prototype, 'offsetTop', realOffsetTop)
   })
 
-  it("shows Mon 20 Jul's submitted Lists in the earlier group above Today, quieter, Done · unbilled", () => {
+  it("shows Mon 23 Nov's submitted Lists in the earlier group above Today, quieter, Done · unbilled", () => {
     renderAt('/mobile/lists')
     const earlier = screen.getByRole('region', { name: 'Earlier Lists not yet authorised' })
     for (const id of [SEED_LIST_IDS.souterMon20Am, SEED_LIST_IDS.souterMon20Pm]) {
@@ -73,7 +73,7 @@ describe('the mobile main view (US-07.4.2)', () => {
     expect(earlier.compareDocumentPosition(today) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     // No backdrop List and none of the empty 7 to 16 July Lists.
     expect(document.querySelector('[data-list-id^="L-HIST"]')).toBeNull()
-    expect(document.querySelector('[data-list-id="L-34821-2026-07-14-AM"]')).toBeNull()
+    expect(document.querySelector('[data-list-id="L-34821-2026-11-17-AM"]')).toBeNull()
   })
 
   it('opens with Today at the top of the scroller and the hint scrolls back', () => {
@@ -165,8 +165,8 @@ describe('mobile search and date lookup (US-03.1.6, US-03.1.7)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Month' }))
     fireEvent.click(screen.getByRole('button', { name: 'Go to a date' }))
     const sheet = document.querySelector('[data-shot="mobile-lookback-calendar"]') as HTMLElement
-    fireEvent.click(within(sheet).getByRole('button', { name: /^Monday 20 July 2026/ }))
-    expect(where()).toBe('/mobile/lists?day=2026-07-20')
+    fireEvent.click(within(sheet).getByRole('button', { name: /^Monday 23 November 2026/ }))
+    expect(where()).toBe('/mobile/lists?day=2026-11-23')
     fireEvent.click(screen.getByTestId('mobile-lists-day-chip'))
     expect(screen.getByRole('button', { name: 'Month' })).toHaveAttribute('aria-pressed', 'true')
   })
@@ -182,8 +182,8 @@ describe('mobile search and date lookup (US-03.1.6, US-03.1.7)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Go to a date' }))
     const sheet = document.querySelector('[data-shot="mobile-lookback-calendar"]') as HTMLElement
     expect(sheet).not.toBeNull()
-    fireEvent.click(within(sheet).getByRole('button', { name: /^Tuesday 21 July 2026/ }))
-    expect(where()).toBe('/mobile/lists?day=2026-07-21')
+    fireEvent.click(within(sheet).getByRole('button', { name: /^Tuesday 24 November 2026/ }))
+    expect(where()).toBe('/mobile/lists?day=2026-11-24')
   })
 })
 
@@ -192,7 +192,7 @@ describe("a submitted List's Booking stays editable (US-07.2.1)", () => {
     useAppStore.setState(freshAppState())
   })
 
-  it('Mon 20 Jul PM shows Add a booking and the Booking its Amend control', () => {
+  it('Mon 23 Nov PM shows Add a booking and the Booking its Amend control', () => {
     const booking = Object.values(useAppStore.getState().schedule.bookings).find((b) => b.listId === SEED_LIST_IDS.souterMon20Pm)!
     renderAt(`/mobile/lists/${SEED_LIST_IDS.souterMon20Pm}`)
     expect(screen.getAllByText('Add a booking').length).toBeGreaterThan(0)

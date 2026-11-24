@@ -33,10 +33,10 @@ import type { Actor } from './mutate'
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const PROC = 'P0012'
 const BOOKING = 'BK0012'
-const LIST = 'L-25490-2026-07-20-AM'
+const LIST = 'L-25490-2026-11-23-AM'
 const OWNER_ID = '25490'
 const DOYLE_PROC = 'P0029'
-const DOYLE_LIST = 'L-43015-2026-07-14-AM'
+const DOYLE_LIST = 'L-43015-2026-11-17-AM'
 
 let api: BoundAppStore
 let unwire: () => void
@@ -67,7 +67,7 @@ function authorise(listId: string) {
 const ward = (patch: Partial<PrePostOpEventInput> = {}): PrePostOpEventInput => ({
   kind: 'postOp',
   type: 'postOpWardReview',
-  occurredOnISO: '2026-07-21',
+  occurredOnISO: '2026-11-24',
   startTime: '08:00',
   recording: { kind: 'time', minutes: 45 },
   party: { sameAs: true },
@@ -77,7 +77,7 @@ const accPreOp = (): PrePostOpEventInput => ({
   kind: 'preOp',
   type: 'accPreOpAssessment',
   code: 'CS250',
-  occurredOnISO: '2026-07-13',
+  occurredOnISO: '2026-11-16',
   recording: { kind: 'fixedFee', source: 'typed', amount: 60 },
   party: { sameAs: true },
 })
@@ -101,7 +101,7 @@ describe('adding (US-03.7.1 AC 1, 5; the guard)', () => {
     const before = structuredClone(immutable())
     const a = add(ward())
     const b = add(accPreOp(), OFFICE)
-    const c = addBillingEvent(api, owner(), PROC, { direction: 'charge', description: 'Nerve catheter', amount: 180, occurredOnISO: '2026-07-21', party: { sameAs: true } })
+    const c = addBillingEvent(api, owner(), PROC, { direction: 'charge', description: 'Nerve catheter', amount: 180, occurredOnISO: '2026-11-24', party: { sameAs: true } })
     expect(c.ok).toBe(true)
     expect(immutable()).toEqual(before)
     const s = api.getState()
@@ -114,9 +114,9 @@ describe('adding (US-03.7.1 AC 1, 5; the guard)', () => {
 
   it('refuses another anaesthetist, a cancelled Booking, a date out of the rule, and a modifier-free shape only', () => {
     expect(addPrePostOpEvent(api, colleague(), PROC, ward())).toMatchObject({ ok: false, code: 'notOwnProcedure' })
-    expect(addPrePostOpEvent(api, owner(), PROC, ward({ occurredOnISO: '2026-07-19' }))).toMatchObject({ ok: false, code: 'dateBeforeProcedure', message: 'A post-op event cannot be dated before the procedure.' })
-    expect(addPrePostOpEvent(api, owner(), PROC, ward({ occurredOnISO: '2026-07-22' }))).toMatchObject({ ok: false, code: 'dateInFuture' })
-    expect(addPrePostOpEvent(api, owner(), PROC, { ...accPreOp(), occurredOnISO: '2026-07-21' })).toMatchObject({ ok: false, code: 'dateAfterProcedure' })
+    expect(addPrePostOpEvent(api, owner(), PROC, ward({ occurredOnISO: '2026-11-22' }))).toMatchObject({ ok: false, code: 'dateBeforeProcedure', message: 'A post-op event cannot be dated before the procedure.' })
+    expect(addPrePostOpEvent(api, owner(), PROC, ward({ occurredOnISO: '2026-11-25' }))).toMatchObject({ ok: false, code: 'dateInFuture' })
+    expect(addPrePostOpEvent(api, owner(), PROC, { ...accPreOp(), occurredOnISO: '2026-11-24' })).toMatchObject({ ok: false, code: 'dateAfterProcedure' })
     expect(addPrePostOpEvent(api, owner(), PROC, ward({ party: { sameAs: false, party: { kind: 'party', id: ' ' } } }))).toMatchObject({ ok: false, code: 'partyMissing' })
     expect(cancelBooking(api, OFFICE, BOOKING, 'Patient unwell').ok).toBe(true)
     expect(addPrePostOpEvent(api, owner(), PROC, ward())).toMatchObject({ ok: false, code: 'bookingCancelled' })
@@ -132,9 +132,9 @@ describe('adding (US-03.7.1 AC 1, 5; the guard)', () => {
   })
 
   it('an event dated on another day is on no List', () => {
-    const before = bookingsForList(api.getState(), 'L-25490-2026-07-21-AM').map((b) => b.id)
+    const before = bookingsForList(api.getState(), 'L-25490-2026-11-24-AM').map((b) => b.id)
     add(ward())
-    expect(bookingsForList(api.getState(), 'L-25490-2026-07-21-AM').map((b) => b.id)).toEqual(before)
+    expect(bookingsForList(api.getState(), 'L-25490-2026-11-24-AM').map((b) => b.id)).toEqual(before)
     expect(bookingsForList(api.getState(), LIST).filter((b) => b.id === BOOKING)).toHaveLength(1)
   })
 })
@@ -145,7 +145,7 @@ describe('edit and remove until reviewed', () => {
     expect(updateProcedureEvent(api, owner(), id, { detail: { kind: 'postOp', type: 'hduReview', recording: { kind: 'time', minutes: 30 } } }).ok).toBe(true)
     expect(api.getState().schedule.procedureEvents[id]!.detail).toMatchObject({ type: 'hduReview' })
     approve(id)
-    expect(updateProcedureEvent(api, owner(), id, { occurredOnISO: '2026-07-20' })).toMatchObject({ ok: false, code: 'approved' })
+    expect(updateProcedureEvent(api, owner(), id, { occurredOnISO: '2026-11-23' })).toMatchObject({ ok: false, code: 'approved' })
     expect(removeProcedureEvent(api, owner(), id)).toMatchObject({ ok: false, code: 'approved' })
     const other = add(ward())
     expect(removeProcedureEvent(api, owner(), other).ok).toBe(true)
@@ -155,7 +155,7 @@ describe('edit and remove until reviewed', () => {
   it('editing a declined event sends it back to review', () => {
     const id = add(ward())
     expect(declineProcedureEvent(api, OFFICE, id, 'Wrong day').ok).toBe(true)
-    expect(updateProcedureEvent(api, owner(), id, { occurredOnISO: '2026-07-20' }).ok).toBe(true)
+    expect(updateProcedureEvent(api, owner(), id, { occurredOnISO: '2026-11-23' }).ok).toBe(true)
     expect(api.getState().schedule.procedureEvents[id]!.review.state).toBe('awaitingReview')
   })
 
@@ -194,8 +194,8 @@ describe('review, then the run (OQ-121, D69)', () => {
 
     const pre = add(accPreOp())
     const w = add(ward())
-    const charge = addBillingEvent(api, owner(), PROC, { direction: 'charge', description: 'Nerve catheter', amount: 180, occurredOnISO: '2026-07-21', party: { sameAs: true } })
-    const credit = addBillingEvent(api, owner(), PROC, { direction: 'credit', description: 'Goodwill adjustment', amount: 40, occurredOnISO: '2026-07-21', party: { sameAs: true } })
+    const charge = addBillingEvent(api, owner(), PROC, { direction: 'charge', description: 'Nerve catheter', amount: 180, occurredOnISO: '2026-11-24', party: { sameAs: true } })
+    const credit = addBillingEvent(api, owner(), PROC, { direction: 'credit', description: 'Goodwill adjustment', amount: 40, occurredOnISO: '2026-11-24', party: { sameAs: true } })
     if (!charge.ok || !credit.ok) throw new Error('add')
     for (const id of [pre, w, charge.value.eventId, credit.value.eventId]) approve(id)
     const bctis = bctiRecords(api.getState()).length
@@ -205,10 +205,10 @@ describe('review, then the run (OQ-121, D69)', () => {
     expect(inv.subtotal).toBeCloseTo(plain.subtotal + 60 + 75 + 180 - 40, 2)
     const lines = eventLinesFor(s, inv.id)
     expect(lines.map((l) => [l.description, l.amount])).toEqual([
-      ['Pre-op event · ACC pre-op assessment · CS250 · 13 Jul 2026 · Fixed fee', 60],
-      ['Post-op event · Post-op ward review · 21 Jul 2026 · 45 min', 75],
-      ['Billing event · Nerve catheter · 21 Jul 2026', 180],
-      ['Credit · Goodwill adjustment · 21 Jul 2026', -40],
+      ['Pre-op event · ACC pre-op assessment · CS250 · 16 Nov 2026 · Fixed fee', 60],
+      ['Post-op event · Post-op ward review · 24 Nov 2026 · 45 min', 75],
+      ['Billing event · Nerve catheter · 24 Nov 2026', 180],
+      ['Credit · Goodwill adjustment · 24 Nov 2026', -40],
     ])
     expect(lines.every((l) => l.serviceDateISO !== undefined && l.eventId !== undefined)).toBe(true)
     for (const id of [pre, w, charge.value.eventId, credit.value.eventId]) {
@@ -260,19 +260,19 @@ describe('review, then the run (OQ-121, D69)', () => {
     const inv = api.getState().billing.invoices[run.value.invoiceIds[0]!]!
     expect(inv.subtotal).toBe(120)
     expect(api.getState().billing.invoiceLines[Object.keys(api.getState().billing.invoiceLines).find((k) => api.getState().billing.invoiceLines[k]!.invoiceId === inv.id)!]!.description).toBe(
-      'Post-op event · Pain consult · 21 Jul 2026 · 40 min, Contract fee',
+      'Post-op event · Pain consult · 24 Nov 2026 · 40 min, Contract fee',
     )
   })
 
   it('a timed event on a fixed price needs the office price (noEventRate), and bills at it', () => {
     const doyle = api.getState().schedule.lists[DOYLE_LIST]!.anaesthetistId!
-    const id = add(ward({ occurredOnISO: '2026-07-15', recording: { kind: 'time', minutes: 30 } }), actorFor(doyle), DOYLE_PROC)
+    const id = add(ward({ occurredOnISO: '2026-11-18', recording: { kind: 'time', minutes: 30 } }), actorFor(doyle), DOYLE_PROC)
     expect(approveProcedureEvent(api, OFFICE, id)).toMatchObject({ ok: false, code: 'noEventRate', message: 'This procedure has a fixed price, so a timed event is not calculated. Set a price in review.' })
     expect(approveProcedureEvent(api, OFFICE, id, { officePrice: { amount: 60, reason: '' } })).toMatchObject({ ok: false, code: 'officeReasonRequired' })
     approve(id, { amount: 60, reason: 'Agreed with the surgeon' })
     expect(api.getState().schedule.procedureEvents[id]!.pricing).toMatchObject({ basis: 'officePrice', amount: 60, officeReason: 'Agreed with the surgeon', pricingKind: 'fixed' })
     // A billing event there is typed and never refused.
-    const charge = addBillingEvent(api, actorFor(doyle), DOYLE_PROC, { direction: 'charge', description: 'Extra consult', amount: 50, occurredOnISO: '2026-07-15', party: { sameAs: true } })
+    const charge = addBillingEvent(api, actorFor(doyle), DOYLE_PROC, { direction: 'charge', description: 'Extra consult', amount: 50, occurredOnISO: '2026-11-18', party: { sameAs: true } })
     expect(charge.ok).toBe(true)
     // Approved before its List is invoiced: the next run bills it on its own (never held, D69).
     const run = runEventInvoicing(api, OFFICE)
@@ -285,7 +285,7 @@ describe('review, then the run (OQ-121, D69)', () => {
   })
 
   it('a credit that would take its invoice below $0.00 goes back to review', () => {
-    const credit = addBillingEvent(api, owner(), PROC, { direction: 'credit', description: 'Write off', amount: 99999, occurredOnISO: '2026-07-21', party: { sameAs: true } })
+    const credit = addBillingEvent(api, owner(), PROC, { direction: 'credit', description: 'Write off', amount: 99999, occurredOnISO: '2026-11-24', party: { sameAs: true } })
     if (!credit.ok) throw new Error(credit.message)
     approve(credit.value.eventId)
     authorise(LIST)
@@ -296,7 +296,7 @@ describe('review, then the run (OQ-121, D69)', () => {
 
   it('a credit is not offered once the Procedure is invoiced (39 credit note is the route)', () => {
     authorise(LIST)
-    expect(addBillingEvent(api, owner(), PROC, { direction: 'credit', description: 'Goodwill', amount: 40, occurredOnISO: '2026-07-21', party: { sameAs: true } })).toMatchObject({ ok: false, code: 'creditAfterInvoice' })
+    expect(addBillingEvent(api, owner(), PROC, { direction: 'credit', description: 'Goodwill', amount: 40, occurredOnISO: '2026-11-24', party: { sameAs: true } })).toMatchObject({ ok: false, code: 'creditAfterInvoice' })
   })
 })
 
@@ -344,7 +344,7 @@ describe('review fixes (catch-up Phase 39b review pass)', () => {
   })
 
   it('a credit with no invoice for its party in the run goes back to review, unpriced; never stuck approved', () => {
-    const credit = addBillingEvent(api, owner(), PROC, { direction: 'credit', description: 'Goodwill', amount: 40, occurredOnISO: '2026-07-21', party: { sameAs: false, personInput: { kind: 'other', name: 'Ward 5 Trust', email: 'accounts@ward5.example' } } })
+    const credit = addBillingEvent(api, owner(), PROC, { direction: 'credit', description: 'Goodwill', amount: 40, occurredOnISO: '2026-11-24', party: { sameAs: false, personInput: { kind: 'other', name: 'Ward 5 Trust', email: 'accounts@ward5.example' } } })
     if (!credit.ok) throw new Error(credit.message)
     approve(credit.value.eventId)
     // The explicit run before the List is billed leaves it waiting for the List's run.
@@ -368,7 +368,7 @@ describe('review fixes (catch-up Phase 39b review pass)', () => {
     const subtotal = liveInvoiceForProcedure(baseline.getState(), PROC)!.subtotal
     unwireB()
     api = prev
-    const credit = addBillingEvent(api, owner(), PROC, { direction: 'credit', description: 'Written off', amount: subtotal, occurredOnISO: '2026-07-21', party: { sameAs: true } })
+    const credit = addBillingEvent(api, owner(), PROC, { direction: 'credit', description: 'Written off', amount: subtotal, occurredOnISO: '2026-11-24', party: { sameAs: true } })
     if (!credit.ok) throw new Error(credit.message)
     approve(credit.value.eventId)
     authorise(LIST)

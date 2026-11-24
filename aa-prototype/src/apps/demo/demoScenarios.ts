@@ -95,9 +95,9 @@ const FOLLOW_THE_BEATS = 'Follow the beats below in order.'
 /** Souter's Tue 28 Jul AM List at St George's, where S1's import lands Sarah Mitchell. */
 const S1_LIST_ID = SEED_LIST_IDS.integrationStgList
 /** Souter's Wed 22 Jul AM List, where S2 Beat 6 hands Lachlan Robinson's Booking on. */
-const S2_MOVE_LIST_ID = projectedListId(ANAE.souter, '2026-07-22', 'AM')
+const S2_MOVE_LIST_ID = projectedListId(ANAE.souter, '2026-11-25', 'AM')
 /** Dr Sharma's Tue 14 Jul AM List, where S4's post-op and additional invoice beats run. */
-const S4_POST_OP_LIST_ID = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
+const S4_POST_OP_LIST_ID = projectedListId(ANAE.sharma, '2026-11-17', 'AM')
 
 function markerId(key: string): string | undefined {
   return SEED_MARKERS[key]?.entityId
@@ -194,11 +194,11 @@ function stageCompliance(api: AppStoreApi): ScenarioStageResult {
   // Authorise writes each Procedure's pricing snapshot (catch-up Phase 25); the
   // billing run wired to it raises the invoices from that record.
   const authorised = authoriseList(api, OFFICE_ACTOR, SEED_LIST_IDS.whitakerFri17)
-  if (!authorised.ok) return { ok: false, message: `Audit trail staged, but Dr Whitaker's Fri 17 Jul List was not authorised: ${authorised.message}` }
+  if (!authorised.ok) return { ok: false, message: `Audit trail staged, but Dr Whitaker's Fri 20 Nov List was not authorised: ${authorised.message}` }
   return {
     ok: true,
     message:
-      "Reset, then staged David Chen's audit trail (an ASA III modifier claimed with its explanation and removed, and Kirsty W.'s save of his note and time as one change set) and authorised Dr Whitaker's Fri 17 Jul List, which locked each Procedure's pricing and raised its invoices. " +
+      "Reset, then staged David Chen's audit trail (an ASA III modifier claimed with its explanation and removed, and Kirsty W.'s save of his note and time as one change set) and authorised Dr Whitaker's Fri 20 Nov List, which locked each Procedure's pricing and raised its invoices. " +
       FOLLOW_THE_BEATS,
   }
 }
@@ -212,7 +212,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
     id: 'S1',
     title: 'S1 · Booking to theatre',
     blurb:
-      "A St George's file arrives, the office matches Sarah Mitchell onto Dr Souter's Tue 28 Jul AM List and sets her Contract, and Dr Souter captures her Booking on the day.",
+      "A St George's file arrives, the office matches Sarah Mitchell onto Dr Souter's Tue 1 Dec AM List and sets her Contract, and Dr Souter captures her Booking on the day.",
     stage: (api) => {
       resetFirst(api)
       return { ok: true, message: `${NOTHING_STAGED} ${FOLLOW_THE_BEATS}` }
@@ -239,8 +239,8 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       },
       {
         beat: 'The day arrives',
-        label: 'Beat 5 · Mobile List, Tue 28 Jul AM',
-        does: 'Procedure day · 28 Jul on the clock beside the app switcher',
+        label: 'Beat 5 · Mobile List, Tue 1 Dec AM',
+        does: 'Procedure day · 1 Dec on the clock beside the app switcher',
         path: (s) => (s.schedule.lists[S1_LIST_ID] === undefined ? null : `/mobile/lists/${S1_LIST_ID}`),
       },
       {
@@ -271,19 +271,19 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       {
         beat: `A recurring clash becomes a ${DRAFT_LIST}`,
         label: 'Beat 3 · Recurring bookings',
-        does: `Demo actions → Stage recurring clash, then on ${DRAFT_LISTS} assign Ms A. Reid's Wed 22 Jul ${DRAFT_LIST}, which becomes ACTIVE`,
+        does: `Demo actions → Stage recurring clash, then on ${DRAFT_LISTS} assign Ms A. Reid's Wed 25 Nov ${DRAFT_LIST}, which becomes ACTIVE`,
         path: () => '/admin/masters?view=recurringBookings',
       },
       {
         beat: 'Illness cover and unavailability',
-        label: 'Beat 4 · Admin Day, Wed 22 Jul',
+        label: 'Beat 4 · Admin Day, Wed 25 Nov',
         does: `Assign Mr J. Whitford's ${DRAFT_LIST}, Draft update email, Demo actions → Simulate sickness, then Conflicts`,
-        path: () => '/admin/day/2026-07-22',
+        path: () => '/admin/day/2026-11-25',
       },
       {
         beat: 'An anaesthetist moves their own List',
         label: 'Beat 5 · Mobile Lists',
-        does: 'Return Tue 28 Jul PM to the office, then hand Mon 27 Jul PM on to Dr Ropata',
+        does: 'Return Tue 1 Dec PM to the office, then hand Mon 30 Nov PM on to Dr Ropata',
         path: () => '/mobile/lists',
       },
       {
@@ -301,7 +301,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       {
         beat: 'Authorise a submitted List',
         label: 'Beat 8 · Admin Review',
-        does: "Authorise for billing on Dr Morrison's Mon 20 Jul List",
+        does: "Authorise for billing on Dr Morrison's Mon 23 Nov List",
         path: (s) => reviewPath(s, SEED_LIST_IDS.morrisonMon20),
       },
     ],
@@ -310,18 +310,18 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
     id: 'S3',
     title: 'S3 · Money end to end',
     blurb:
-      "Authorise Dr Souter's two Mon 20 Jul Lists, follow the nib invoice's Xero pair to payment and payout, run the weekly payment run and AA's monthly fee run, then balance the ledger.",
+      "Authorise Dr Souter's two Mon 23 Nov Lists, follow the nib invoice's Xero pair to payment and payout, run the weekly payment run and AA's monthly fee run, then balance the ledger.",
     stage: (api) => {
       resetFirst(api)
       const state = api.getState()
       const am = state.schedule.lists[SEED_LIST_IDS.souterMon20Am]
       const pm = state.schedule.lists[SEED_LIST_IDS.souterMon20Pm]
       if (am?.state !== 'SUBMITTED' || pm?.state !== 'SUBMITTED') {
-        return { ok: false, message: "Reset done, but Dr Souter's two Mon 20 Jul Lists are not both SUBMITTED in the Review queue." }
+        return { ok: false, message: "Reset done, but Dr Souter's two Mon 23 Nov Lists are not both SUBMITTED in the Review queue." }
       }
       return {
         ok: true,
-        message: `Reset to the pristine seed, where Dr Souter's Mon 20 Jul AM and PM Lists are SUBMITTED in the Review queue. ${FOLLOW_THE_BEATS}`,
+        message: `Reset to the pristine seed, where Dr Souter's Mon 23 Nov AM and PM Lists are SUBMITTED in the Review queue. ${FOLLOW_THE_BEATS}`,
       }
     },
     beats: [
@@ -333,7 +333,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       },
       {
         beat: 'A discount line and a $0 invoice',
-        label: 'Beat 2 · Admin Review, Mon 13 Jul',
+        label: 'Beat 2 · Admin Review, Mon 16 Nov',
         does: 'The $0 Booking raises a no-charge invoice when the List is authorised',
         path: (s) => {
           const id = markerId('noChargeBooking')
@@ -390,7 +390,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       },
       {
         beat: 'The prepaid Procedure billed',
-        label: 'Beat 2 · Admin Review, after Fri 24 Jul PM is submitted',
+        label: 'Beat 2 · Admin Review, after Fri 27 Nov PM is submitted',
         does: 'Dr Souter submits the List on Mobile, then Authorise for billing for the transfer',
         path: (s) => (listIsAtLeastSubmitted(s, SEED_LIST_IDS.prepaymentPaidList) ? reviewPath(s, SEED_LIST_IDS.prepaymentPaidList) : null),
       },
@@ -402,7 +402,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       },
       {
         beat: 'Events on a Procedure, on no List',
-        label: 'Beat 4 · Admin Review, Tue 14 Jul AM',
+        label: 'Beat 4 · Admin Review, Tue 17 Nov AM',
         does: 'Demo actions → Stage post-op scenario',
         path: (s) => reviewPath(s, S4_POST_OP_LIST_ID),
       },
@@ -432,7 +432,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
     id: 'S5',
     title: 'S5 · Compliance tour',
     blurb:
-      "David Chen's audit trail with a grouped office save and a claimed modifier, the NHI at entry and never in Xero, and Dr Whitaker's Fri 17 Jul invoices raised from each Procedure's locked pricing.",
+      "David Chen's audit trail with a grouped office save and a claimed modifier, the NHI at entry and never in Xero, and Dr Whitaker's Fri 20 Nov invoices raised from each Procedure's locked pricing.",
     stage: (api) => {
       resetFirst(api)
       return stageCompliance(api)
@@ -459,7 +459,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       },
       {
         beat: 'Authorise, then edit the rate per unit',
-        label: 'Beat 5 · Admin Review, Mon 20 Jul AM',
+        label: 'Beat 5 · Admin Review, Mon 23 Nov AM',
         does: "Authorise for billing, change Dr Souter's rate per unit on Master data, then Demo actions → Regenerate from locked data",
         path: (s) => reviewPath(s, SEED_LIST_IDS.souterMon20Am),
       },

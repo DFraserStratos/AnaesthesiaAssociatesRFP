@@ -83,7 +83,7 @@ describe('the Ellison live-demo flow (mockup demo script, real calculator)', () 
     // taps Finish now — which stamps clockISO, exactly as TimesCard does.
     advanceClockMinutes(api, 9 * 60 + 20)
     const stamped = clockISO(api.getState().clock)
-    expect(stamped).toBe('2026-07-21T17:20:00')
+    expect(stamped).toBe('2026-11-24T17:20:00')
     expect(editProcedure(api, SOUTER, ellisonProcedureId(api), { handoverISO: stamped }).ok).toBe(true)
 
     // The relocated mockup pins (Decisions log 2026-07-23): B7 + T5 + M1 at
@@ -127,14 +127,14 @@ describe("per-anaesthetist rates (RVG at the anaesthetist's rate)", () => {
       modifierClaims: [],
       removedModifierIds: [],
       rvgGroupId: RVG_GROUP.a3!,
-      anaestheticStartISO: '2026-07-21T09:00:00',
-      handoverISO: '2026-07-21T09:30:00',
+      anaestheticStartISO: '2026-11-24T09:00:00',
+      handoverISO: '2026-11-24T09:30:00',
     }
     const rvgGroup = masters.rvgGroups[RVG_GROUP.a3!]
     if (rvgGroup === undefined) throw new Error('missing RVG group')
 
-    const souterFee = feeFor(procedure, { anaesthetist: souter, rvgGroup, dateISO: '2026-07-21', timeRule: masters.rvgTimeRule, patientDobISO: undefined, modifiers: masters.modifiers })
-    const strandFee = feeFor(procedure, { anaesthetist: strand, rvgGroup, dateISO: '2026-07-21', timeRule: masters.rvgTimeRule, patientDobISO: undefined, modifiers: masters.modifiers })
+    const souterFee = feeFor(procedure, { anaesthetist: souter, rvgGroup, dateISO: '2026-11-24', timeRule: masters.rvgTimeRule, patientDobISO: undefined, modifiers: masters.modifiers })
+    const strandFee = feeFor(procedure, { anaesthetist: strand, rvgGroup, dateISO: '2026-11-24', timeRule: masters.rvgTimeRule, patientDobISO: undefined, modifiers: masters.modifiers })
     expect(souterFee.billableUnits).toBe(8)
     expect(souterFee.total).toBe(212)
     expect(strandFee.billableUnits).toBe(8)
@@ -158,14 +158,14 @@ describe('isListBilled, the billing stamp the office reads (no longer the main v
         entityType: 'list',
         entityId: morrison,
         action: 'list.billed',
-        after: { billedAtISO: '2026-07-21T09:00:00' },
+        after: { billedAtISO: '2026-11-24T09:00:00' },
       },
       (s) => ({
         schedule: {
           ...s.schedule,
           lists: {
             ...s.schedule.lists,
-            [morrison]: { ...assigned(s.schedule.lists[morrison]), billedAtISO: '2026-07-21T09:00:00' },
+            [morrison]: { ...assigned(s.schedule.lists[morrison]), billedAtISO: '2026-11-24T09:00:00' },
           },
         },
       }),

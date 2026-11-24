@@ -255,8 +255,8 @@ interface Canvas {
 /** Paint the mockups' content days over the generated canvas. */
 function applyDesignFixups({ slots, lists }: Canvas): void {
   const TUE21 = DEMO_TODAY
-  const WED22 = '2026-07-22'
-  const THU23 = '2026-07-23'
+  const WED22 = '2026-11-25'
+  const THU23 = '2026-11-26'
   const times = (startTime: string, endTime: string) => ({ startTime, endTime })
 
   // --- Tuesday 21 July: the Admin Day slate (statuses from recurring bookings
@@ -318,7 +318,7 @@ const SEED_OFFICE_WHO = 'Kirsty W.'
 
 export const SEED_SICKNESS = {
   anaesthetistId: ANAE.rutherford,
-  dateISO: '2026-07-22',
+  dateISO: '2026-11-25',
   session: 'AM' as const,
   note: 'Unwell, short notice',
   /** When the office recorded the phone call (before the clock's 08:00 start). */
@@ -366,8 +366,8 @@ function applySicknessReturn({ lists, slots }: Canvas): void {
  * never books them.
  */
 function applyPhase09Slots({ slots, lists }: Canvas): void {
-  const FRI24 = '2026-07-24'
-  const THU16 = '2026-07-16'
+  const FRI24 = '2026-11-27'
+  const THU16 = '2026-11-19'
   placeList(lists, slots, ANAE.souter, FRI24, 'AM', {
     kind: 'private',
     hospitalId: HOSP.forte,
@@ -736,24 +736,24 @@ export const SEED_LIST_IDS = {
   souterPm21: projectedListId(ANAE.souter, DEMO_TODAY, 'PM'),
   rutherfordAm21: projectedListId(ANAE.rutherford, DEMO_TODAY, 'AM'),
   rutherfordPm21: projectedListId(ANAE.rutherford, DEMO_TODAY, 'PM'),
-  morrisonMon20: projectedListId(ANAE.morrison, '2026-07-20', 'AM'),
-  whitakerFri17: projectedListId(ANAE.whitaker, '2026-07-17', 'AM'),
-  souterMon20Am: projectedListId(ANAE.souter, '2026-07-20', 'AM'),
-  souterMon20Pm: projectedListId(ANAE.souter, '2026-07-20', 'PM'),
+  morrisonMon20: projectedListId(ANAE.morrison, '2026-11-23', 'AM'),
+  whitakerFri17: projectedListId(ANAE.whitaker, '2026-11-20', 'AM'),
+  souterMon20Am: projectedListId(ANAE.souter, '2026-11-23', 'AM'),
+  souterMon20Pm: projectedListId(ANAE.souter, '2026-11-23', 'PM'),
   // Phase 09: the unpaid pre-payment booking's list, the mixed + full (seeded
   // paid) booking's list, and the multi-booking billing-failure exemplar list.
-  prepaymentUnpaidList: projectedListId(ANAE.souter, '2026-07-24', 'AM'),
-  prepaymentPaidList: projectedListId(ANAE.souter, '2026-07-24', 'PM'),
-  billingFailure: projectedListId(ANAE.ropata, '2026-07-16', 'AM'),
+  prepaymentUnpaidList: projectedListId(ANAE.souter, '2026-11-27', 'AM'),
+  prepaymentPaidList: projectedListId(ANAE.souter, '2026-11-27', 'PM'),
+  billingFailure: projectedListId(ANAE.ropata, '2026-11-19', 'AM'),
   // Phase 11: the SUBMITTED List (closed to integrations) holding the locked-target
   // integration Booking, the clean S1 create destination, and separate modify
   // targets that keep S1's List uncluttered.
-  integrationLocked: projectedListId(ANAE.delaney, '2026-07-17', 'AM'),
-  integrationStgList: projectedListId(ANAE.souter, '2026-07-28', 'AM'),
-  integrationModifyStgList: projectedListId(ANAE.souter, '2026-08-04', 'AM'),
-  integrationMoveSourceStgList: projectedListId(ANAE.souter, '2026-08-03', 'PM'),
-  integrationSxList: projectedListId(ANAE.souter, '2026-07-28', 'PM'),
-  integrationCphList: projectedListId(ANAE.souter, '2026-07-30', 'AM'),
+  integrationLocked: projectedListId(ANAE.delaney, '2026-11-20', 'AM'),
+  integrationStgList: projectedListId(ANAE.souter, '2026-12-01', 'AM'),
+  integrationModifyStgList: projectedListId(ANAE.souter, '2026-12-08', 'AM'),
+  integrationMoveSourceStgList: projectedListId(ANAE.souter, '2026-12-07', 'PM'),
+  integrationSxList: projectedListId(ANAE.souter, '2026-12-01', 'PM'),
+  integrationCphList: projectedListId(ANAE.souter, '2026-12-03', 'AM'),
   // Catch-up Phase 21: the payer review List (Dr Chen, Fri 17 Jul AM, Christchurch Eye Surgery), SUBMITTED.
   payerReview: PAYER_REVIEW_LIST_ID,
   // Catch-up Phase 21a: the review-flags List (Dr Chen, Tue 14 Jul AM, Christchurch Eye Surgery), SUBMITTED.
@@ -789,18 +789,18 @@ export const SCRIPTED_BEAT_SCHEDULE = {
     // S2: Beat 3's sick Rutherford Wed 22 AM List, Beat 3a's Sharma Wed 22 PM
     // (Simulate sickness), the optional pointer on Chen's Tue 21 PM (Ms Reid),
     // Beat 3b's Rutherford Monday AM recurring Lists, Beat 4's Morrison Mon 20.
-    projectedListId(ANAE.rutherford, '2026-07-22', 'AM'),
-    projectedListId(ANAE.sharma, '2026-07-22', 'PM'),
+    projectedListId(ANAE.rutherford, '2026-11-25', 'AM'),
+    projectedListId(ANAE.sharma, '2026-11-25', 'PM'),
     projectedListId(ANAE.chen, DEMO_TODAY, 'PM'),
-    projectedListId(ANAE.rutherford, '2026-07-27', 'AM'),
+    projectedListId(ANAE.rutherford, '2026-11-30', 'AM'),
     // S2 Beat 3a: the Wed 22 Southern Cross Lists under the theatre maintenance
     // closure, and the Thu 23 Southern Cross Lists the closure moves onto.
-    projectedListId(ANAE.hughes, '2026-07-22', 'AM'),
-    projectedListId(ANAE.morrison, '2026-07-22', 'PM'),
-    projectedListId(ANAE.ngata, '2026-07-22', 'PM'),
-    projectedListId(ANAE.fitzgerald, '2026-07-23', 'AM'),
-    projectedListId(ANAE.ngata, '2026-07-23', 'PM'),
-    projectedListId(ANAE.rutherford, '2026-08-03', 'AM'),
+    projectedListId(ANAE.hughes, '2026-11-25', 'AM'),
+    projectedListId(ANAE.morrison, '2026-11-25', 'PM'),
+    projectedListId(ANAE.ngata, '2026-11-25', 'PM'),
+    projectedListId(ANAE.fitzgerald, '2026-11-26', 'AM'),
+    projectedListId(ANAE.ngata, '2026-11-26', 'PM'),
+    projectedListId(ANAE.rutherford, '2026-12-07', 'AM'),
     SEED_LIST_IDS.morrisonMon20,
     // S3: Souter's Mon 20 Lists.
     SEED_LIST_IDS.souterMon20Am,
@@ -809,32 +809,32 @@ export const SCRIPTED_BEAT_SCHEDULE = {
     // Sharma Tue 14 AM (S4 Beat 2's additional invoice), Beat 3's billing failure.
     SEED_LIST_IDS.prepaymentUnpaidList,
     SEED_LIST_IDS.prepaymentPaidList,
-    projectedListId(ANAE.sharma, '2026-07-14', 'AM'),
+    projectedListId(ANAE.sharma, '2026-11-17', 'AM'),
     SEED_LIST_IDS.billingFailure,
     // S5: Souter Tue 21 PM and Whitaker Fri 17.
     SEED_LIST_IDS.souterPm21,
     SEED_LIST_IDS.whitakerFri17,
     // S2 Beat 3d (catch-up Phase 32a): the List Dr Souter hands one Booking from,
     // and Dr Fitzgerald's List, the beat's "Already has a List this session" row.
-    projectedListId(ANAE.souter, '2026-07-22', 'AM'),
-    projectedListId(ANAE.fitzgerald, '2026-07-22', 'AM'),
+    projectedListId(ANAE.souter, '2026-11-25', 'AM'),
+    projectedListId(ANAE.fitzgerald, '2026-11-25', 'AM'),
   ],
   slotIds: [
     // S2: Beat 1b assigns the St George's Draft List into Fitzgerald's Tue 21
     // PM; Beat 2 books Sharma's Tue 21 PM; Beat 3 reassigns into Sharma's Wed 22 AM.
     slotIdFor(ANAE.fitzgerald, DEMO_TODAY, 'PM'),
     slotIdFor(ANAE.sharma, DEMO_TODAY, 'PM'),
-    slotIdFor(ANAE.sharma, '2026-07-22', 'AM'),
+    slotIdFor(ANAE.sharma, '2026-11-25', 'AM'),
     // S2's optional availability opening: Souter's Fri 14 Aug, Fri 28 Aug PM and Fri 11 Sep PM.
-    slotIdFor(ANAE.souter, '2026-08-14', 'AM'),
-    slotIdFor(ANAE.souter, '2026-08-14', 'PM'),
-    slotIdFor(ANAE.souter, '2026-08-28', 'PM'),
-    slotIdFor(ANAE.souter, '2026-09-11', 'PM'),
+    slotIdFor(ANAE.souter, '2026-12-18', 'AM'),
+    slotIdFor(ANAE.souter, '2026-12-18', 'PM'),
+    slotIdFor(ANAE.souter, '2027-01-01', 'PM'),
+    slotIdFor(ANAE.souter, '2027-01-15', 'PM'),
     // S2 Beat 3d (catch-up Phase 32a): Dr Whitaker's Wed 22 AM, where the Booking lands as a new List;
     // Dr Ropata's (the second, unticked move) and Dr Chen's (the "Not available" row).
-    slotIdFor(ANAE.whitaker, '2026-07-22', 'AM'),
-    slotIdFor(ANAE.ropata, '2026-07-22', 'AM'),
-    slotIdFor(ANAE.chen, '2026-07-22', 'AM'),
+    slotIdFor(ANAE.whitaker, '2026-11-25', 'AM'),
+    slotIdFor(ANAE.ropata, '2026-11-25', 'AM'),
+    slotIdFor(ANAE.chen, '2026-11-25', 'AM'),
   ],
 } as const
 
@@ -848,10 +848,10 @@ export const SCRIPTED_BEAT_SCHEDULE = {
  * six-day strip, for the unavailable prompt. None is scripted.
  */
 export const LIST_MOVE_DEMO = {
-  movableListId: projectedListId(ANAE.souter, '2026-07-27', 'PM'),
+  movableListId: projectedListId(ANAE.souter, '2026-11-30', 'PM'),
   privacyColleagueId: ANAE.ropata,
-  returnListId: projectedListId(ANAE.souter, '2026-07-23', 'AM'),
-  unavailableSlotId: slotIdFor(ANAE.souter, '2026-07-23', 'PM'),
+  returnListId: projectedListId(ANAE.souter, '2026-11-26', 'AM'),
+  unavailableSlotId: slotIdFor(ANAE.souter, '2026-11-26', 'PM'),
 } as const
 
 /**
@@ -870,7 +870,7 @@ export const LIST_MOVE_DEMO = {
  * Whitaker's session are scripted.
  */
 export const BOOKING_MOVE_DEMO = {
-  sourceListId: projectedListId(ANAE.souter, '2026-07-22', 'AM'),
+  sourceListId: projectedListId(ANAE.souter, '2026-11-25', 'AM'),
   bookingId: 'BK0046',
   secondBookingId: 'BK0047',
   receiverId: ANAE.whitaker,
@@ -881,9 +881,9 @@ export const BOOKING_MOVE_DEMO = {
   notPreferredReceiverId: ANAE.ropata,
   prepaidBookingId: 'BK0038',
   standInBookingId: 'BK0140',
-  standInSlotId: slotIdFor(ANAE.souter, '2026-07-22', 'PM'),
+  standInSlotId: slotIdFor(ANAE.souter, '2026-11-25', 'PM'),
   acceptanceListId: ACCEPTANCE_BEAT_LIST_ID,
-  acceptanceSlotId: slotIdFor(ANAE.souter, '2026-07-31', 'AM'),
+  acceptanceSlotId: slotIdFor(ANAE.souter, '2026-12-04', 'AM'),
 } as const
 
 /**
@@ -1003,7 +1003,7 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       label: "Draft List: St George's request (Tue 21 PM)",
       entityType: 'list',
       entityId: SEED_DRAFT_LIST_IDS.stGeorges,
-      detail: "St George's / Mr Tan, no anaesthetist yet, waiting since Mon 20 15:40 (S2 Beat 1b).",
+      detail: "St George's / Mr Tan, no anaesthetist yet, waiting since Mon 23 15:40 (S2 Beat 1b).",
     },
     draftListForte: {
       label: 'Draft List with Bookings: Forte Health (Wed 22 PM)',
@@ -1015,7 +1015,7 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       label: 'Draft List, long wait: Christchurch Eye Surgery (Mon 27 AM)',
       entityType: 'list',
       entityId: SEED_DRAFT_LIST_IDS.eyeSurgery,
-      detail: 'Christchurch Eye Surgery / Ms Reid, waiting since Fri 17; Dr Sharma is not preferred with Ms Reid.',
+      detail: 'Christchurch Eye Surgery / Ms Reid, waiting since Fri 20; Dr Sharma is not preferred with Ms Reid.',
     },
     designDayAmList: {
       label: 'Design day AM list (done, unbilled)',
@@ -1042,13 +1042,13 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       detail: 'Captured time units carry overridden provenance for authorisation review.',
     },
     submittedListMorrison: {
-      label: 'SUBMITTED list (Morrison, Mon 20)',
+      label: 'SUBMITTED list (Morrison, Mon 23)',
       entityType: 'list',
       entityId: SEED_LIST_IDS.morrisonMon20,
       detail: "St George's / Mr Tan, 6 completed bookings plus 1 cancelled, awaiting authorisation.",
     },
     submittedListWhitaker: {
-      label: 'SUBMITTED list (Whitaker, Fri 17)',
+      label: 'SUBMITTED list (Whitaker, Fri 20)',
       entityType: 'list',
       entityId: SEED_LIST_IDS.whitakerFri17,
       detail: 'Christchurch Public acute, 5 completed bookings, awaiting authorisation.',
@@ -1072,13 +1072,13 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       detail: 'Split on the Booking: nib $132.50 and Alan Prentice the rest, an invoice each.',
     },
     contractRateBooking: {
-      label: "Contract rate booking (Aria, Fitzgerald Wed 15 Jul)",
+      label: "Contract rate booking (Aria, Fitzgerald Wed 18 Nov)",
       entityType: 'booking',
       entityId: scenario.contractRate,
       detail: "RVG at Aria's own rate: 22 units at $26.50, $583.00.",
     },
     contractRateCaptureBooking: {
-      label: 'Contract rate capture booking (Souter, Mon 27)',
+      label: 'Contract rate capture booking (Souter, Mon 30)',
       entityType: 'booking',
       entityId: scenario.contractRateCapture,
       detail: "Not yet captured; her price line reads the units at Aria's $26.50, read-only.",
@@ -1123,7 +1123,7 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       label: 'Billing failure booking (COS ACC)',
       entityType: 'booking',
       entityId: scenario.billingFailure,
-      detail: 'Ropata Thu 16, SUBMITTED. Fails when it is pointed at COS ACC fixed fees, which has no price for its procedure; its sibling still invoices.',
+      detail: 'Ropata Thu 19, SUBMITTED. Fails when it is pointed at COS ACC fixed fees, which has no price for its procedure; its sibling still invoices.',
     },
     needsInvoiceDestinationBooking: {
       label: 'Needs an invoice destination (no Contract)',
@@ -1156,16 +1156,16 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       detail: `Two episodes: bookings ${scenario.repeatWalker[0]} and ${scenario.repeatWalker[1]}.`,
     },
     mon20HolderBilled1: {
-      label: 'Hospital-billed Procedure, Mon 20 Jul (1 of 2)',
+      label: 'Hospital-billed Procedure, Mon 23 Nov (1 of 2)',
       entityType: 'procedure',
       entityId: scenario.mon20HolderBilledProcedures[0],
-      detail: "On Dr Morrison's Mon 20 Jul List, billed to St George's.",
+      detail: "On Dr Morrison's Mon 23 Nov List, billed to St George's.",
     },
     mon20HolderBilled2: {
-      label: 'Hospital-billed Procedure, Mon 20 Jul (2 of 2)',
+      label: 'Hospital-billed Procedure, Mon 23 Nov (2 of 2)',
       entityType: 'procedure',
       entityId: scenario.mon20HolderBilledProcedures[1],
-      detail: "On Dr Souter's Mon 20 Jul AM List, billed to Forte Health.",
+      detail: "On Dr Souter's Mon 23 Nov AM List, billed to Forte Health.",
     },
     allDayBooking: {
       label: 'All day booking (Rutherford)',
@@ -1183,37 +1183,37 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       label: 'Integration booking · S13 reschedule target (same list)',
       entityType: 'booking',
       entityId: scenario.integrationS13Time,
-      detail: "Souter Tue 4 Aug AM (St George's); correlationRef set. The same-list S13 message retimes it.",
+      detail: "Souter Tue 8 Dec AM (St George's); correlationRef set. The same-list S13 message retimes it.",
     },
     integrationS13Move: {
       label: 'Integration booking · S13 move target',
       entityType: 'booking',
       entityId: scenario.integrationS13Move,
-      detail: "Souter Mon 3 Aug PM (St George's); the cross-list S13 message reassigns it to Tue 4 Aug AM.",
+      detail: "Souter Mon 7 Dec PM (St George's); the cross-list S13 message reassigns it to Tue 8 Dec AM.",
     },
     integrationS14: {
       label: 'Integration booking · S14 modification target',
       entityType: 'booking',
       entityId: scenario.integrationS14,
-      detail: "Souter Tue 4 Aug AM (St George's); the S14 message updates it, located by appointment id.",
+      detail: "Souter Tue 8 Dec AM (St George's); the S14 message updates it, located by appointment id.",
     },
     integrationS15: {
       label: 'Integration booking · S15 cancellation target',
       entityType: 'booking',
       entityId: scenario.integrationS15,
-      detail: "Souter Tue 4 Aug AM (St George's); the S15 message soft-cancels it.",
+      detail: "Souter Tue 8 Dec AM (St George's); the S15 message soft-cancels it.",
     },
     integrationLockedTarget: {
       label: 'Integration booking · locked target (SUBMITTED list)',
       entityType: 'booking',
       entityId: scenario.integrationLockedTarget,
-      detail: 'Delaney Fri 17 (SUBMITTED); the S14 message for it stages an ordinary row on Matching, which the office can apply until AUTHORISED.',
+      detail: 'Delaney Fri 20 (SUBMITTED); the S14 message for it stages an ordinary row on Matching, which the office can apply until AUTHORISED.',
     },
     includedModifierBooking: {
       label: 'Included modifier · P1 on a Spine group (S3a)',
       entityType: 'booking',
       entityId: scenario.includedModifier,
-      detail: 'Souter Mon 27 Jul PM; RVG code S3a, whose base units include P1: P1 shows selected at 0 units, removable, never added twice.',
+      detail: 'Souter Mon 30 Nov PM; RVG code S3a, whose base units include P1: P1 shows selected at 0 units, removable, never added twice.',
     },
   }
 }
@@ -1226,21 +1226,21 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
     label: "Merivale's Face lift (fixed price from its range in force)",
     entityType: 'booking',
     entityId: MERIVALE_FACE_LIFT_BOOKING_ID,
-    detail: 'Souter Mon 10 Aug PM, Ms Lim; unedited, $3,100 from 1 Jun 2026. Add a price range before 10 Aug in the Contract editor and it re-prices.',
+    detail: 'Souter Mon 14 Dec PM, Ms Lim; unedited, $3,100 from 5 Oct 2026. Add a price range before 14 Dec in the Contract editor and it re-prices.',
   },
   // Catch-up Phase 20a: the hospital's text replaced the rooms' (AR-35 rows 1 and 2, illustrative).
   procedureTextReplaced: {
     label: 'Procedure text replaced (right total knee, was RTK)',
     entityType: 'booking',
     entityId: RTK_BOOKING_ID,
-    detail: "Souter Tue 4 Aug AM (St George's), 09:30; the rooms' RTK is in its History.",
+    detail: "Souter Tue 8 Dec AM (St George's), 09:30; the rooms' RTK is in its History.",
   },
   // Catch-up Phase 23: the domain model's worked example, waiting in the Review queue.
   multiProcedureBooking: {
     label: 'Three procedures, 7 modifier units, split 3 · 2 · 2',
     entityType: 'booking',
     entityId: SEED_BUILD.multiProcedure.booking,
-    detail: 'Souter Mon 13 Jul AM (Forte, Mr Okafor), SUBMITTED: a laparoscopic cholecystectomy primary and two hernia repairs; AS3, OB3, ASE and the pre-applied A1.',
+    detail: 'Souter Mon 16 Nov AM (Forte, Mr Okafor), SUBMITTED: a laparoscopic cholecystectomy primary and two hernia repairs; AS3, OB3, ASE and the pre-applied A1.',
   },
   // Catch-up Phase 21: the payer review List (Dr Chen, Fri 17 Jul AM, Christchurch Eye Surgery, SUBMITTED).
   childPayer: {
@@ -1284,51 +1284,51 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
     label: 'Southern Cross Health Society suggests SXAP',
     entityType: 'booking',
     entityId: SEED_BUILD.payerReview.suggestedTag,
-    detail: 'Fitzgerald Thu 23 Jul AM (Southern Cross), 08:30, no Contract yet: the step rail marks Southern Cross › SXAP "Suggested"; every path stays offered.',
+    detail: 'Fitzgerald Thu 26 Nov AM (Southern Cross), 08:30, no Contract yet: the step rail marks Southern Cross › SXAP "Suggested"; every path stays offered.',
   },
   // Catch-up Phase 21a: what the capture form asks for follows the pricing kind; completion needs a price.
   fixedPriceNoTimes: {
     label: 'Fixed price with no times, code or modifiers (Merivale)',
     entityType: 'booking',
     entityId: SEED_BUILD.completion.fixedPriceNoTimes,
-    detail: "Souter Mon 10 Aug PM (St George's, Ms Lim), 14:45. Merivale's Facelift plus 1 add on: no times or modifiers asked, the RVG code for reference only; Mark complete passes.",
+    detail: "Souter Mon 14 Dec PM (St George's, Ms Lim), 14:45. Merivale's Facelift plus 1 add on: no times or modifiers asked, the RVG code for reference only; Mark complete passes.",
   },
   needsPriceBooking: {
     label: 'Open price with no amount (Needs a price)',
     entityType: 'booking',
     entityId: SEED_BUILD.completion.needsPriceBooking,
-    detail: "Souter Mon 10 Aug PM (St George's, Ms Lim), 16:00. No contract · Fixed price with no amount typed: \"Needs a price\", and Mark complete refuses until one is typed.",
+    detail: "Souter Mon 14 Dec PM (St George's, Ms Lim), 16:00. No contract · Fixed price with no amount typed: \"Needs a price\", and Mark complete refuses until one is typed.",
   },
   // Catch-up Phase 21a session 2: the review-flags List (Chen Tue 14 Jul AM, SUBMITTED) and the movable Booking.
   contractChangeBooking: {
     label: "The anaesthetist's Contract change awaiting approval",
     entityType: 'booking',
     entityId: SEED_BUILD.reviewFlags.contractChangeBooking,
-    detail: 'Chen Tue 14 Jul AM (Christchurch Eye Surgery), 08:00. Dr Chen changed the Contract to Christchurch Eye Surgery RVG: Review flags "Changed by Dr Chen" with Approve and Correct.',
+    detail: 'Chen Tue 17 Nov AM (Christchurch Eye Surgery), 08:00. Dr Chen changed the Contract to Christchurch Eye Surgery RVG: Review flags "Changed by Dr Chen" with Approve and Correct.',
   },
   typedPriceBooking: {
     label: 'Typed price beside the computed price',
     entityType: 'booking',
     entityId: SEED_BUILD.reviewFlags.typedPriceBooking,
-    detail: 'Chen Tue 14 Jul AM, 09:00. No contract · RVG with the office\'s fixed fee of $1,200.00: Review shows it beside the computed fee.',
+    detail: 'Chen Tue 17 Nov AM, 09:00. No contract · RVG with the office\'s fixed fee of $1,200.00: Review shows it beside the computed fee.',
   },
   reviewNeedsPrice: {
     label: 'Needs a price at review',
     entityType: 'booking',
     entityId: SEED_BUILD.reviewFlags.reviewNeedsPrice,
-    detail: 'Chen Tue 14 Jul AM, 10:15. No contract · Fixed price with no amount, not complete: "Needs a price" and "Not marked completed". The office types the price and completes it before authorising.',
+    detail: 'Chen Tue 17 Nov AM, 10:15. No contract · Fixed price with no amount, not complete: "Needs a price" and "Not marked completed". The office types the price and completes it before authorising.',
   },
   otherSurgeonContract: {
     label: "A Contract linked to another surgeon",
     entityType: 'booking',
     entityId: SEED_BUILD.reviewFlags.otherSurgeonContract,
-    detail: 'Chen Tue 14 Jul AM, 11:00. Merivale\'s fixed price, linked to Ms Lim, on Dr Whitford\'s List: "Contract not offered on this List".',
+    detail: 'Chen Tue 17 Nov AM, 11:00. Merivale\'s fixed price, linked to Ms Lim, on Dr Whitford\'s List: "Contract not offered on this List".',
   },
   movableFixedBooking: {
     label: 'A fixed-price Booking to move to another surgeon',
     entityType: 'booking',
     entityId: SEED_BUILD.reviewFlags.movableFixedBooking,
-    detail: "Souter Mon 10 Aug PM (St George's, Ms Lim), 17:00. Merivale's Face lift: Move it on Admin Day to her Mon 10 Aug AM List (Mr Okafor); it keeps its Contract and Review flags it there.",
+    detail: "Souter Mon 14 Dec PM (St George's, Ms Lim), 17:00. Merivale's Face lift: Move it on Admin Day to her Mon 14 Dec AM List (Mr Okafor); it keeps its Contract and Review flags it there.",
   },
   // Catch-up Phase 24 (seed/pricingBookings.ts): the price beats.
   discountContract: {
@@ -1338,40 +1338,40 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
     detail: "Forte Health at standard RVG less 10%, the discount its own invoice line; the anaesthetist cannot override it.",
   },
   discountBooking: {
-    label: 'Discount Booking (Souter Mon 27 Jul AM)',
+    label: 'Discount Booking (Souter Mon 30 Nov AM)',
     entityType: 'booking',
     entityId: SEED_BUILD.pricing.discountBooking,
     detail: 'Uncaptured, on Forte RVG less 10%: her price line shows the discount applied, read-only.',
   },
   ownListFixedBooking: {
-    label: 'Her own price list, a fixed price (Souter Fri 24 Jul AM)',
+    label: 'Her own price list, a fixed price (Souter Fri 27 Nov AM)',
     entityType: 'booking',
     entityId: SEED_BUILD.scenario.prepayment,
-    detail: "Riley's Rhinoplasty on her own prepaid price list (Fri 24 Jul AM): a fixed price, read-only, never overridden.",
+    detail: "Riley's Rhinoplasty on her own prepaid price list (Fri 27 Nov AM): a fixed price, read-only, never overridden.",
   },
   priceCaptureBooking: {
-    label: 'Price capture Booking (Souter Mon 27 Jul AM)',
+    label: 'Price capture Booking (Souter Mon 30 Nov AM)',
     entityType: 'booking',
     entityId: SEED_BUILD.pricing.priceCaptureBooking,
     detail: 'No contract · RVG, uncaptured: the price rises as she records, and she may type a price.',
   },
   openPriceBooking: {
-    label: 'Open price Booking (Souter Mon 10 Aug PM)',
+    label: 'Open price Booking (Souter Mon 14 Dec PM)',
     entityType: 'booking',
     entityId: SEED_BUILD.completion.needsPriceBooking,
-    detail: '21a\'s No contract · Fixed price with no amount (Souter Mon 10 Aug PM): "Needs a price" until she types it.',
+    detail: '21a\'s No contract · Fixed price with no amount (Souter Mon 14 Dec PM): "Needs a price" until she types it.',
   },
   rangeTypedBooking: {
     label: 'Face lift with a typed price (range beat)',
     entityType: 'booking',
     entityId: SEED_BUILD.pricing.rangeTypedBooking,
-    detail: "Souter Mon 10 Aug PM, 17:45. The office typed $2,950.00: a new range does not move it.",
+    detail: "Souter Mon 14 Dec PM, 17:45. The office typed $2,950.00: a new range does not move it.",
   },
   rangeAuthorisedBooking: {
     label: 'Face lift on an AUTHORISED List (range beat)',
     entityType: 'booking',
     entityId: SEED_BUILD.pricing.rangeAuthorisedBooking,
-    detail: "Souter Thu 16 Jul PM at AA's rooms, AUTHORISED and invoiced at $3,100.00: a new range does not move it.",
+    detail: "Souter Thu 19 Nov PM at AA's rooms, AUTHORISED and invoiced at $3,100.00: a new range does not move it.",
   },
   rangePrepaidBooking: {
     label: 'Prepaid Booking with its prepayment invoice raised (range beat)',
@@ -1380,7 +1380,7 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
     detail: 'The seeded paid prepayment: its price is held at the prepaid amount and read-only for the office.',
   },
   noChargeBooking: {
-    label: 'No-charge Booking (Souter Mon 13 Jul AM)',
+    label: 'No-charge Booking (Souter Mon 16 Nov AM)',
     entityType: 'booking',
     entityId: SEED_BUILD.pricing.noChargeBooking,
     detail: 'Completed with a typed $0.00 on a SUBMITTED List: authorising it raises a "No charge" invoice, with no payable.',
@@ -1390,7 +1390,7 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
     label: 'Booking on a Disabled Contract (review flag)',
     entityType: 'booking',
     entityId: SEED_BUILD.disabledContract.disabledContractBooking,
-    detail: "Chen Tue 14 Jul AM, 11:45, on Christchurch Eye Surgery 2025 rate, disabled Fri 10 Jul: Review reads \"Contract disabled on Fri 10 Jul\"; the List still authorises.",
+    detail: "Chen Tue 17 Nov AM, 11:45, on Christchurch Eye Surgery 2025 rate, disabled Fri 13 Nov: Review reads \"Contract disabled on Fri 13 Nov\"; the List still authorises.",
   },
   // Catch-up Phase 40: in place of the retired patient record that had no NHI, the screen of intake rows that wait for an NHI.
   waitingForNhi: {

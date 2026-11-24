@@ -69,7 +69,7 @@ export function TicketListExample() {
   const support = useAppStore((s) => s.support)
   return (
     <div style={{ maxWidth: 552 }}>
-      <TicketList tickets={ticketsFor({ support }, { channel: 'productSupport' })} clockISO="2026-07-21T08:00:00" showRequester title="Every request" />
+      <TicketList tickets={ticketsFor({ support }, { channel: 'productSupport' })} clockISO="2026-11-24T08:00:00" showRequester title="Every request" />
     </div>
   )
 }

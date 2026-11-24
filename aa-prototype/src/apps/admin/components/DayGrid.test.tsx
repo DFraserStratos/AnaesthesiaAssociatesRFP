@@ -6,7 +6,7 @@ import { bookingCountsByList, draftListsForDate, freshAppState, useAppStore, typ
 import { displayStatusKey, effectiveSlotTimes, slotIdFor } from '../../../domain/slots'
 import { DayGrid } from './DayGrid'
 
-const DATE = '2026-07-21'
+const DATE = '2026-11-24'
 
 function anaesthetist(id: string, name: string): Anaesthetist {
   return {
@@ -17,7 +17,7 @@ function anaesthetist(id: string, name: string): Anaesthetist {
     unitValue: 100,
     bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' },
     hpiId: `HPI-${id}`,
-    startDateISO: '2020-01-06',
+    startDateISO: '2020-05-11',
     active: true,
   }
 }
@@ -69,7 +69,7 @@ function renderGrid() {
   const attention = view('A1', {
     kind: 'preop',
     id: 'attention',
-    patch: { conflicts: [{ kind: 'holiday', cause: 'holiday:HHX', holidayId: 'HHX', raisedAtISO: '2026-07-21T08:00:00' }] },
+    patch: { conflicts: [{ kind: 'holiday', cause: 'holiday:HHX', holidayId: 'HHX', raisedAtISO: '2026-11-24T08:00:00' }] },
   })
   // A private List's note is an office annotation (a pre-op List's note is its subtitle).
   const noted = view('A2', { kind: 'private', id: 'noted', patch: { surgeonId, notes: 'Called hospital' } })
@@ -194,7 +194,7 @@ describe('DayGrid conflicts (catch-up Phase 30: the List changes colour)', () =>
     const conflicted = view('A1', {
       kind: 'private',
       id: 'conflicted',
-      patch: { hospitalId, surgeonId, conflicts: [{ kind: 'holiday', cause: 'holiday:HHX', holidayId: 'HHX', raisedAtISO: '2026-07-21T08:00:00' }] },
+      patch: { hospitalId, surgeonId, conflicts: [{ kind: 'holiday', cause: 'holiday:HHX', holidayId: 'HHX', raisedAtISO: '2026-11-24T08:00:00' }] },
     })
     const surgeonOnly = view('A2', { kind: 'private', id: 'surgeon-only', patch: { hospitalId } })
     return render(
@@ -280,7 +280,7 @@ describe('DayGrid Draft Lists band and booking counts (catch-up Phase 31; US-13.
   function renderWithDrafts(withDrafts: boolean) {
     useAppStore.setState(freshAppState())
     const state = useAppStore.getState()
-    const drafts = withDrafts ? draftListsForDate(state, '2026-07-21') : []
+    const drafts = withDrafts ? draftListsForDate(state, '2026-11-24') : []
     const counts = bookingCountsByList(state.schedule.bookings)
     const list = view('A1', { kind: 'private', id: 'counted' })
     return render(
@@ -307,7 +307,7 @@ describe('DayGrid Draft Lists band and booking counts (catch-up Phase 31; US-13.
     expect(stg).toHaveTextContent('UNASSIGNED')
     expect(stg).toHaveTextContent("St George's · Mr S. Tan")
     expect(stg).toHaveTextContent('16 h')
-    expect(container.querySelector('[data-draft-block="LD-RCB016-2026-07-21-AM"]')).toBeNull()
+    expect(container.querySelector('[data-draft-block="LD-RCB016-2026-11-24-AM"]')).toBeNull()
     expect(container.querySelector('[data-shot="daygrid-draft-band"]')?.getAttribute('data-draft-band-count')).toBe('1')
   })
 

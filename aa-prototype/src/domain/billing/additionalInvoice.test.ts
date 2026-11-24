@@ -4,8 +4,8 @@ import source from './additionalInvoice.ts?raw'
 
 describe('priceFreeFormInvoice (D10, OQ-45)', () => {
   it('prices the worked figure', () => {
-    const r = priceFreeFormInvoice([{ description: 'Post-op ward review, Wed 15 Jul, 15 min', quantity: 1, unitAmount: 30 }])
-    expect(r).toEqual({ kind: 'priced', lines: [{ description: 'Post-op ward review, Wed 15 Jul, 15 min', quantity: 1, unitAmount: 30, amount: 30 }], subtotal: 30, gst: 4.5, total: 34.5 })
+    const r = priceFreeFormInvoice([{ description: 'Post-op ward review, Wed 18 Nov, 15 min', quantity: 1, unitAmount: 30 }])
+    expect(r).toEqual({ kind: 'priced', lines: [{ description: 'Post-op ward review, Wed 18 Nov, 15 min', quantity: 1, unitAmount: 30, amount: 30 }], subtotal: 30, gst: 4.5, total: 34.5 })
   })
   it('rounds each line to the cent and sums three lines exactly', () => {
     const r = priceFreeFormInvoice([

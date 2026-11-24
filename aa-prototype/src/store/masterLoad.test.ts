@@ -128,8 +128,8 @@ describe('a rejected row reads as the manual refusal', () => {
   it('price range: a start already on the Contract', () => {
     const api = createAppStore()
     const id = stage(api, 'priceRanges')
-    const manual = addPriceRange(createAppStore(), OFFICE_ACTOR, 'CT-COS-FIXED', { startISO: '2026-08-01', price: 1275 })
-    const row = loadOf(api, id).rows.find((r) => r.cells[1] === '2026-08-01')!
+    const manual = addPriceRange(createAppStore(), OFFICE_ACTOR, 'CT-COS-FIXED', { startISO: '2026-12-05', price: 1275 })
+    const row = loadOf(api, id).rows.find((r) => r.cells[1] === '2026-12-05')!
     expect(row.status).toBe('rejected')
     expect(row.reasons).toEqual([message(manual)])
   })
@@ -184,7 +184,7 @@ describe('a rejected row reads as the manual refusal', () => {
       // A fixed price with no first range.
       ['SX-202', 'No range', 'Southern Cross', '', '', '', 'Holder', 'Standard', 'Fixed price', '', '', '', '', 'No', '', '', '', ''],
       // An override on a fixed price.
-      ['SX-203', 'Override fixed', 'Southern Cross', '', '', '', 'Holder', 'Standard', 'Fixed price', '', '', '500', '2026-08-01', 'Yes', '', '', '', ''],
+      ['SX-203', 'Override fixed', 'Southern Cross', '', '', '', 'Holder', 'Standard', 'Fixed price', '', '', '500', '2026-12-05', 'Yes', '', '', '', ''],
       // Linked surgeons on a hospital Contract.
       ['SX-204', 'Linked hospital', 'Southern Cross', '', '', '', 'Holder', 'Standard', "RVG at the anaesthetist's rate", '', '', '', '', 'No', '', '', '40HALT', ''],
     ]
@@ -195,7 +195,7 @@ describe('a rejected row reads as the manual refusal', () => {
     const manual = [
       createContract(createAppStore(), OFFICE_ACTOR, { ...base, aaCode: 'SX-201', pricing: { kind: 'rvgContractRate', unitRate: 0 } }),
       createContract(createAppStore(), OFFICE_ACTOR, { ...base, aaCode: 'SX-202', pricing: { kind: 'fixed', ranges: [] } }),
-      createContract(createAppStore(), OFFICE_ACTOR, { ...base, aaCode: 'SX-203', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-08-01', price: 500 }] }, anaesthetistMayOverridePrice: true }),
+      createContract(createAppStore(), OFFICE_ACTOR, { ...base, aaCode: 'SX-203', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-12-05', price: 500 }] }, anaesthetistMayOverridePrice: true }),
       createContract(createAppStore(), OFFICE_ACTOR, { ...base, aaCode: 'SX-204', linkedSurgeonIds: ['S-HALE'] }),
     ].map(message)
     expect(manual.every((m) => m !== '')).toBe(true)
@@ -380,10 +380,10 @@ describe('what the samples load', () => {
     const byDate = Object.values(api.getState().masters.publicHolidays).map((p) => [p.dateISO, p.name])
     expect(byDate).toEqual(
       expect.arrayContaining([
-        ['2027-03-26', 'Good Friday'],
-        ['2027-03-29', 'Easter Monday'],
-        ['2027-04-26', 'ANZAC Day (observed)'],
-        ['2027-06-07', "King's Birthday"],
+        ['2027-07-30', 'Good Friday'],
+        ['2027-08-02', 'Easter Monday'],
+        ['2027-08-30', 'ANZAC Day (observed)'],
+        ['2027-10-11', "King's Birthday"],
       ]),
     )
   })
@@ -392,6 +392,6 @@ describe('what the samples load', () => {
     const api = createAppStore()
     expect(commitMasterLoad(api, SEED_LOAD_ACTOR, stage(api, 'priceRanges')).ok).toBe(true)
     const c = api.getState().masters.contracts['CT-COS-FIXED']!
-    expect(c.pricing.kind === 'fixed' && c.pricing.ranges.map((r) => r.startISO)).toEqual(['2026-03-01', '2026-08-01', '2027-01-01'])
+    expect(c.pricing.kind === 'fixed' && c.pricing.ranges.map((r) => r.startISO)).toEqual(['2026-03-01', '2026-12-05', '2027-01-01'])
   })
 })

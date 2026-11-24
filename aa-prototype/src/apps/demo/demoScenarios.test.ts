@@ -209,7 +209,7 @@ describe('DEMO_SCENARIOS (catch-up Phase 44)', () => {
     }
   })
 
-  it("S3 leaves both of Dr Souter's Mon 20 Jul Lists SUBMITTED and authorises nothing", () => {
+  it("S3 leaves both of Dr Souter's Mon 23 Nov Lists SUBMITTED and authorises nothing", () => {
     const api = wiredStore()
     expect(scenario('S3').stage(api).ok).toBe(true)
     const lists = api.getState().schedule.lists
@@ -238,7 +238,7 @@ describe('DEMO_SCENARIOS (catch-up Phase 44)', () => {
     expect(state.schedule.procedures[procedureIds[0]!]?.modifierClaims).toEqual([])
   })
 
-  it("S5 authorises Dr Whitaker's Fri 17 Jul List: a pricing snapshot on each Procedure and the invoices raised", () => {
+  it("S5 authorises Dr Whitaker's Fri 20 Nov List: a pricing snapshot on each Procedure and the invoices raised", () => {
     const api = wiredStore()
     expect(scenario('S5').stage(api).ok).toBe(true)
     const state = api.getState()
@@ -254,7 +254,7 @@ describe('DEMO_SCENARIOS (catch-up Phase 44)', () => {
     // The capture recipes (US-11.3.3, US-08.4.4) open S5's first invoice by id and by Hemi Walker's row.
     expect(state.billing.invoices['INV0002']?.invoiceNumber).toBe('AA-2026-0002')
     // Beat 5 authorises Dr Souter's Mon 20 Jul AM List: Dr Whitaker's Contract carries its own rate, so his unit value moves nothing.
-    expect(scenario('S5').beats[4]!.path(state)).toBe('/admin/review/L-34821-2026-07-20-AM')
+    expect(scenario('S5').beats[4]!.path(state)).toBe('/admin/review/L-34821-2026-11-23-AM')
   })
 
   it('staging twice from reset gives deep-equal domain state', () => {
@@ -315,7 +315,7 @@ describe('DEMO_SCENARIOS (catch-up Phase 44)', () => {
     // S4: Dr Sharma's Tue 14 Jul AM authorised (Stage post-op scenario's first half), Fri 24 Jul PM submitted.
     const s4 = wiredStore()
     scenario('S4').stage(s4)
-    const postOp = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
+    const postOp = projectedListId(ANAE.sharma, '2026-11-17', 'AM')
     if (s4.getState().schedule.lists[postOp]?.state === 'ACTIVE') expect(submitList(s4, OFFICE_ACTOR, postOp).ok).toBe(true)
     expect(authoriseList(s4, OFFICE_ACTOR, postOp).ok).toBe(true)
     // Dr Souter completes and submits her Fri 24 Jul PM List, as Beat 2 has her do on Mobile.

@@ -36,7 +36,7 @@ export function mkClaim(code: string, explanation = 'Test reason', units?: numbe
 }
 
 /** Modifier inputs with no patient (no age modifier) and the RVG master. */
-export const NO_PATIENT_MODIFIERS = { procedureDateISO: '2026-07-21', modifiers: RVG_MODIFIER_MASTER }
+export const NO_PATIENT_MODIFIERS = { procedureDateISO: '2026-11-24', modifiers: RVG_MODIFIER_MASTER }
 
 export function mkAnaesthetist(overrides: Partial<Anaesthetist> = {}): Anaesthetist {
   return {
@@ -47,7 +47,7 @@ export function mkAnaesthetist(overrides: Partial<Anaesthetist> = {}): Anaesthet
     unitValue: 30,
     hpiId: '91ZBBB',
     bankAccount: { accountName: 'Melanie Souter', accountNumber: '99-0101-0030821-00' },
-    startDateISO: '2015-01-05',
+    startDateISO: '2015-05-11',
     active: true,
     ...overrides,
   }
@@ -74,7 +74,7 @@ export function mkBooking(overrides: Partial<Booking> = {}): Booking {
     patientId: 'pat-1',
     completed: false,
     lastModifiedBy: 'Dr Melanie Souter',
-    lastModifiedAtISO: '2026-07-21T08:00:00',
+    lastModifiedAtISO: '2026-11-24T08:00:00',
     ...overrides,
   }
 }
@@ -160,8 +160,8 @@ export const BASE_RANGE_5_9: RvgGroup = {
 }
 
 /** 2h30m on the demo day: 08:00 start, 10:30 handover (T = 11 units). */
-export const START_0800 = '2026-07-21T08:00:00'
-export const HANDOVER_1030 = '2026-07-21T10:30:00'
+export const START_0800 = '2026-11-24T08:00:00'
+export const HANDOVER_1030 = '2026-11-24T10:30:00'
 
 /**
  * Test support (catch-up Phase 23): the fee of a Booking's only Procedure,

@@ -81,7 +81,7 @@ const A_BOOKING: readonly PwaEntry[] = [
   'office-sets-booking-contract', 'matching-office-matches-row', 'pwa-office-adds-nhi', 'pwa-payment-full', 'pwa-payment-half',
   'load-multi-procedure-booking', 'office-edits-booking', ...ALWAYS,
 ]
-const LIST_ID = 'L-34821-2026-07-21-PM'
+const LIST_ID = 'L-34821-2026-11-24-PM'
 const BOOKING_ID = 'BK0009'
 
 interface ScreenRow {
@@ -133,7 +133,7 @@ const SCREENS: readonly ScreenRow[] = [
   {
     screen: 'A Booking with three Procedures (after Load 3-procedure Booking)',
     // Dr Souter's next open List after Tue 21 Jul, where the entry stages the Booking (as `pwa-device.spec.ts` does).
-    path: '/mobile/lists/L-34821-2026-07-22-AM',
+    path: '/mobile/lists/L-34821-2026-11-25-AM',
     drive: async (page) => {
       await page.locator('[data-shot="pwa-demo-actions"]').click()
       const load = page.locator('[data-shot="pwa-demo-action-load-multi-procedure-booking"]')
@@ -142,7 +142,7 @@ const SCREENS: readonly ScreenRow[] = [
       await page.keyboard.press('Escape')
       await expect(load).toBeHidden()
       // The staged Booking takes the next Booking id after the seed's last (BK0191, as in `pwa-device.spec.ts`).
-      await page.goto('/mobile/lists/L-34821-2026-07-22-AM/bookings/BK0191')
+      await page.goto('/mobile/lists/L-34821-2026-11-25-AM/bookings/BK0191')
       await settle(page)
       await expect(page.locator('[data-shot="procedure-primary-pill"]').first()).toBeVisible()
     },
@@ -154,7 +154,7 @@ const SCREENS: readonly ScreenRow[] = [
     screen: 'Availability · My calendar, after opening a day',
     path: '/mobile/availability/calendar',
     drive: async (page) => {
-      await page.locator('[data-shot="mobile-availability-grid"] button[data-date="2026-07-22"]').click()
+      await page.locator('[data-shot="mobile-availability-grid"] button[data-date="2026-11-25"]').click()
       await expect(page.getByRole('dialog')).toBeVisible()
       await page.keyboard.press('Escape')
       await expect(page.getByRole('dialog')).toHaveCount(0)

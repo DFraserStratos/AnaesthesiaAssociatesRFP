@@ -49,7 +49,7 @@ export const PAIRING_PREFERENCES: readonly PairingPreference[] = [
     reason: 'Asked after a difficult cataract list',
     addedAtISO: '2025-11-03T09:30:00',
     addedBy: OFFICE,
-    endedAtISO: '2026-05-12T14:15:00',
+    endedAtISO: '2026-09-15T14:15:00',
     endedBy: OFFICE,
     endReason: "Resolved with the surgeon's rooms",
   },
@@ -70,7 +70,7 @@ export const PAIRING_PREFERENCES: readonly PairingPreference[] = [
     anaesthetistId: ANAE.ngata,
     surgeonId: SURG.cameron,
     reason: 'Works well together on gynaecology lists',
-    addedAtISO: '2026-04-07T15:45:00',
+    addedAtISO: '2026-08-11T15:45:00',
     addedBy: OFFICE,
   },
   // Catch-up Phase 32: the privacy case for an anaesthetist's own move
@@ -85,7 +85,7 @@ export const PAIRING_PREFERENCES: readonly PairingPreference[] = [
     anaesthetistId: ANAE.ropata,
     surgeonId: SURG.lim,
     reason: 'Prefers not to do long plastics lists',
-    addedAtISO: '2026-06-02T09:10:00',
+    addedAtISO: '2026-10-06T09:10:00',
     addedBy: OFFICE,
   },
 ] as const

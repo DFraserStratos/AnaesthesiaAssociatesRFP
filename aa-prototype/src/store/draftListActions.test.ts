@@ -68,8 +68,8 @@ const OFFICE = OFFICE_ACTOR
 const FEED: Actor = { who: 'HL7 feed', role: 'system', source: 'integration' }
 const store = (): BoundAppStore => createAppStore()
 const code = (o: { ok: boolean; code?: string }) => (o.ok ? 'ok' : o.code)
-const TUE21 = '2026-07-21'
-const THU23 = '2026-07-23'
+const TUE21 = '2026-11-24'
+const THU23 = '2026-11-26'
 
 /** Thu 23 PM, St George's, Mr Tan: a fresh request no seed fact touches. */
 const request: NewDraftListInput = { hospitalId: HOSP.stg, surgeonId: SURG.tan, dateISO: THU23, session: 'PM', source: 'phone' }
@@ -117,8 +117,8 @@ describe('createDraftList (US-01.6.1)', () => {
     expect(code(createDraftList(api, OFFICE, { ...request, surgeonId: 'S-NOPE' }))).toBe('pairingIncomplete')
     expect(code(createDraftList(api, OFFICE, { ...request, dateISO: '' }))).toBe('dateRequired')
     expect(code(createDraftList(api, OFFICE, { ...request, session: 'XX' as never }))).toBe('invalidSession')
-    expect(code(createDraftList(api, OFFICE, { ...request, dateISO: '2026-07-20' }))).toBe('datePassed')
-    const beyond = createDraftList(api, OFFICE, { ...request, dateISO: '2027-01-15' })
+    expect(code(createDraftList(api, OFFICE, { ...request, dateISO: '2026-11-23' }))).toBe('datePassed')
+    const beyond = createDraftList(api, OFFICE, { ...request, dateISO: '2027-05-21' })
     expect(beyond.ok ? '' : beyond.message).toBe('That day is beyond the schedule, which runs 4 months ahead.')
     expect(code(createDraftList(api, OFFICE, { ...request, source: undefined }))).toBe('sourceRequired')
     expect(code(createDraftList(api, SOUTER_ACTOR, request))).toBe('officeOnly')
@@ -131,7 +131,7 @@ describe('createDraftList (US-01.6.1)', () => {
 
   it('a Draft List at a hospital with a holiday that day carries the holiday conflict, as any List does', () => {
     const api = store()
-    const id = create(api, { hospitalId: HOSP.sx, dateISO: '2026-07-22', session: 'AM' })
+    const id = create(api, { hospitalId: HOSP.sx, dateISO: '2026-11-25', session: 'AM' })
     expect(api.getState().schedule.lists[id]!.conflicts).toMatchObject([{ kind: 'holiday', holidayId: 'HH900' }])
     const row = conflictRows(api.getState()).find((r) => r.listId === id)!
     expect(row).toMatchObject({ reason: 'Hospital closed', listState: 'DRAFT' })
@@ -143,10 +143,10 @@ describe('Bookings on a Draft List (US-01.6.1 "Bookings allowed")', () => {
   it('the office adds a Booking and moves one off it; an anaesthetist cannot; it cannot be submitted or authorised', () => {
     const api = store()
     const id = create(api)
-    const added = createBooking(api, OFFICE, id, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Cystoscopy', source: 'anaesthetist' } })
+    const added = createBooking(api, OFFICE, id, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-05-07' }, sourceText: { text: 'Cystoscopy', source: 'anaesthetist' } })
     expect(added.ok).toBe(true)
     const bookingId = added.ok ? added.value.bookingId : ''
-    expect(code(createBooking(api, SOUTER_ACTOR, id, { patient: { nhi: nextTestNhi(), name: 'X Y', dobISO: '1970-01-01' }, sourceText: { text: 'X', source: 'anaesthetist' } }))).toBe('notOwnList')
+    expect(code(createBooking(api, SOUTER_ACTOR, id, { patient: { nhi: nextTestNhi(), name: 'X Y', dobISO: '1970-05-07' }, sourceText: { text: 'X', source: 'anaesthetist' } }))).toBe('notOwnList')
     expect(code(submitList(api, OFFICE, id))).toBe('listNotActive')
     const sub = submitList(api, OFFICE, id)
     expect(sub.ok ? '' : sub.message).toBe('Assign an anaesthetist first.')
@@ -174,7 +174,7 @@ describe('assignDraftList (US-01.6.3)', () => {
     expect(out.ok && out.value.warnings).toEqual([])
     expect(out.ok && out.value.firstAssignmentBookingIds).toEqual(bookingIds)
     const after = assigned(api.getState().schedule.lists[id])
-    expect(after).toMatchObject({ state: 'ACTIVE', anaesthetistId: ANAE.souter, slotId: slotIdFor(ANAE.souter, '2026-07-22', 'PM'), hospitalId: before.hospitalId, surgeonId: before.surgeonId, notes: before.notes })
+    expect(after).toMatchObject({ state: 'ACTIVE', anaesthetistId: ANAE.souter, slotId: slotIdFor(ANAE.souter, '2026-11-25', 'PM'), hospitalId: before.hospitalId, surgeonId: before.surgeonId, notes: before.notes })
     expect(after.draft).toMatchObject({ ...before.draft, assignedAtISO: clockISO(api.getState().clock), assignedBy: 'Kirsty W.' })
     expect(listInSlot(api.getState(), after.slotId)?.id).toBe(id)
     expect(Object.values(api.getState().schedule.bookings).filter((b) => b.listId === id).map((b) => b.id)).toEqual(bookingIds)
@@ -184,7 +184,7 @@ describe('assignDraftList (US-01.6.3)', () => {
     expect(waitingDraftLists(api.getState()).some((l) => l.id === id)).toBe(false)
     expect(finishedDraftLists(api.getState())[0]?.id).toBe(id)
     // Now it is the anaesthetist's ACTIVE List.
-    expect(slotViewsForAnaesthetist(api.getState(), ANAE.souter, '2026-07-22', '2026-07-22').some((v) => v.list?.id === id)).toBe(true)
+    expect(slotViewsForAnaesthetist(api.getState(), ANAE.souter, '2026-11-25', '2026-11-25').some((v) => v.list?.id === id)).toBe(true)
     expectLifecycleInvariant(api)
   })
 
@@ -213,14 +213,14 @@ describe('assignDraftList (US-01.6.3)', () => {
   it('refuses a session marked not available (US-01.6.3, D59): it is made available first, then assigns', () => {
     const api = store()
     // Dr Beaumont's Fri 24 Jul AM clash (Dr Ngata's Tue 21 acute clash left with the public List kind, catch-up Phase 32d).
-    const clash = 'LD-RCB022-2026-07-24-AM'
+    const clash = 'LD-RCB022-2026-11-27-AM'
     const before = api.getState().schedule
     const out = assignDraftList(api, OFFICE, clash, { anaesthetistId: ANAE.beaumont })
     expect(code(out)).toBe('sessionNotOpen')
     expect(out.ok ? '' : out.message).toBe('Dr Beaumont has marked this session not available. They need to make it available first.')
     expect(api.getState().schedule).toBe(before)
     // Dr Beaumont agrees and makes it available: the assignment goes through, with no conflict.
-    expect(setAvailability(api, OFFICE, ANAE.beaumont, '2026-07-24', 'AM', 'free').ok).toBe(true)
+    expect(setAvailability(api, OFFICE, ANAE.beaumont, '2026-11-27', 'AM', 'free').ok).toBe(true)
     const again = assignDraftList(api, OFFICE, clash, { anaesthetistId: ANAE.beaumont })
     expect(again.ok).toBe(true)
     expect(again.ok && again.value.warnings.some((w) => /flags a conflict/.test(w))).toBe(false)
@@ -241,24 +241,24 @@ describe('assignDraftList (US-01.6.3)', () => {
 
   it('a hospital holiday stays on the List after assignment, and the warning says so', () => {
     const api = store()
-    const id = create(api, { hospitalId: HOSP.sx, dateISO: '2026-07-22', session: 'AM' })
-    const free = slotViewsForDate(api.getState(), '2026-07-22').find((v) => v.slot.session === 'AM' && v.open)!
+    const id = create(api, { hospitalId: HOSP.sx, dateISO: '2026-11-25', session: 'AM' })
+    const free = slotViewsForDate(api.getState(), '2026-11-25').find((v) => v.slot.session === 'AM' && v.open)!
     const out = assignDraftList(api, OFFICE, id, { anaesthetistId: free.slot.anaesthetistId })
     expect(out.ok && out.value.warnings).toEqual(['Southern Cross is closed that day (hospital holiday). The List keeps its conflict.'])
     expect(api.getState().schedule.lists[id]!.conflicts).toMatchObject([{ kind: 'holiday' }])
   })
 
-  it('a public holiday names itself in the warning: Labour Day (PH001, Mon 26 Oct) at St George’s', () => {
+  it('a public holiday names itself in the warning: Waitangi Day (PH007, Mon 8 Feb) at St George’s', () => {
     const api = store()
-    const LABOUR_DAY = '2026-10-26'
-    const id = create(api, { hospitalId: HOSP.stg, dateISO: LABOUR_DAY, session: 'AM' })
-    expect(api.getState().schedule.lists[id]!.conflicts).toMatchObject([{ kind: 'holiday', publicHolidayId: 'PH001' }])
-    const closures = closuresFor(LABOUR_DAY, HOSP.stg, closureSourcesOf(api.getState().masters))
-    expect(draftClosureWarning("St George's", closures)).toBe("St George's is closed that day (Labour Day, public holiday). The List keeps its conflict.")
-    const free = slotViewsForDate(api.getState(), LABOUR_DAY).find((v) => v.slot.session === 'AM' && v.open)!
+    const WAITANGI_DAY = '2027-02-08'
+    const id = create(api, { hospitalId: HOSP.stg, dateISO: WAITANGI_DAY, session: 'AM' })
+    expect(api.getState().schedule.lists[id]!.conflicts).toMatchObject([{ kind: 'holiday', publicHolidayId: 'PH007' }])
+    const closures = closuresFor(WAITANGI_DAY, HOSP.stg, closureSourcesOf(api.getState().masters))
+    expect(draftClosureWarning("St George's", closures)).toBe("St George's is closed that day (Waitangi Day (observed), public holiday). The List keeps its conflict.")
+    const free = slotViewsForDate(api.getState(), WAITANGI_DAY).find((v) => v.slot.session === 'AM' && v.open)!
     expect(free).toBeDefined()
     const out = assignDraftList(api, OFFICE, id, { anaesthetistId: free.slot.anaesthetistId })
-    expect(out.ok && out.value.warnings).toContain("St George's is closed that day (Labour Day, public holiday). The List keeps its conflict.")
+    expect(out.ok && out.value.warnings).toContain("St George's is closed that day (Waitangi Day (observed), public holiday). The List keeps its conflict.")
   })
 
   it('draftListFitsAnaesthetist: a boolean, true only on a free session with no not-preferred pairing', () => {
@@ -267,8 +267,8 @@ describe('assignDraftList (US-01.6.3)', () => {
     expect(draftListFitsAnaesthetist(s, SEED_DRAFT_LIST_IDS.forte, ANAE.souter)).toBe(true)
     expect(draftListFitsAnaesthetist(s, SEED_DRAFT_LIST_IDS.eyeSurgery, ANAE.sharma)).toBe(false)
     // Dr Beaumont's own Fri 24 AM clash does not fit her: that session is closed (catch-up Phase 32d removed Dr Ngata's).
-    expect(s.schedule.lists['LD-RCB022-2026-07-24-AM']).toBeDefined()
-    expect(draftListFitsAnaesthetist(s, 'LD-RCB022-2026-07-24-AM', ANAE.beaumont)).toBe(false)
+    expect(s.schedule.lists['LD-RCB022-2026-11-27-AM']).toBeDefined()
+    expect(draftListFitsAnaesthetist(s, 'LD-RCB022-2026-11-27-AM', ANAE.beaumont)).toBe(false)
   })
 })
 
@@ -289,13 +289,13 @@ describe('redateDraftList and removeDraftList (US-01.6.4)', () => {
     const id = SEED_DRAFT_LIST_IDS.forte
     const since = draft(api.getState().schedule.lists[id]).draft.sinceISO
     const auditBefore = api.getState().audit.length
-    expect(redateDraftList(api, OFFICE, id, { dateISO: '2026-07-24', session: 'AM' }).ok).toBe(true)
+    expect(redateDraftList(api, OFFICE, id, { dateISO: '2026-11-27', session: 'AM' }).ok).toBe(true)
     const l = draft(api.getState().schedule.lists[id])
-    expect(l).toMatchObject({ dateISO: '2026-07-24', session: 'AM', state: 'DRAFT' })
+    expect(l).toMatchObject({ dateISO: '2026-11-27', session: 'AM', state: 'DRAFT' })
     expect(l.draft.sinceISO).toBe(since)
     expect(Object.values(api.getState().schedule.bookings).filter((b) => b.listId === id)).toHaveLength(2)
-    expect(draftListsForDate(api.getState(), '2026-07-24').map((d) => d.id)).toContain(id)
-    expect(draftListsForDate(api.getState(), '2026-07-22').map((d) => d.id)).not.toContain(id)
+    expect(draftListsForDate(api.getState(), '2026-11-27').map((d) => d.id)).toContain(id)
+    expect(draftListsForDate(api.getState(), '2026-11-25').map((d) => d.id)).not.toContain(id)
     expect(api.getState().audit.slice(auditBefore).map((a) => a.action)).toEqual(['draftList.redate'])
   })
 
@@ -303,8 +303,8 @@ describe('redateDraftList and removeDraftList (US-01.6.4)', () => {
     const api = store()
     const id = create(api)
     expect(code(redateDraftList(api, OFFICE, id, { dateISO: THU23, session: 'PM' }))).toBe('sameDay')
-    expect(code(redateDraftList(api, OFFICE, id, { dateISO: '2026-07-01', session: 'PM' }))).toBe('datePassed')
-    expect(code(redateDraftList(api, OFFICE, id, { dateISO: '2027-07-01', session: 'PM' }))).toBe('outsideCanvas')
+    expect(code(redateDraftList(api, OFFICE, id, { dateISO: '2026-11-04', session: 'PM' }))).toBe('datePassed')
+    expect(code(redateDraftList(api, OFFICE, id, { dateISO: '2027-11-04', session: 'PM' }))).toBe('outsideCanvas')
     expect(code(redateDraftList(api, OFFICE, slotViewsForDate(api.getState(), THU23).find((v) => v.list !== undefined)!.list!.id, { dateISO: THU23, session: 'AM' }))).toBe('notDraftList')
     expect(code(redateDraftList(api, SOUTER_ACTOR, id, { dateISO: THU23, session: 'AM' }))).toBe('officeOnly')
   })
@@ -365,7 +365,7 @@ describe('the recurring clash (OQ-81 part 2; US-01.3.2 AC2, US-01.5.4 AC3)', () 
     const clash = draft(api.getState().schedule.lists[`LD-${result.id}-${THU23}-AM`])
     expect(clash).toMatchObject({ hospitalId: HOSP.ces, surgeonId: SURG.whitford, recurringBookingId: result.id, draft: { origin: 'recurringClash', fromAnaesthetistId: ANAE.beaumont, by: 'Kirsty W.' } })
     expect(clash.conflicts).toEqual([])
-    expect(listInSlot(api.getState(), slotIdFor(ANAE.beaumont, '2026-07-30', 'AM'))?.recurringBookingId).toBe(result.id)
+    expect(listInSlot(api.getState(), slotIdFor(ANAE.beaumont, '2026-12-03', 'AM'))?.recurringBookingId).toBe(result.id)
     // One commit: the Draft List's meta sits in the same batch as the recurring booking's.
     const actions = api.getState().audit.slice(auditBefore).map((a) => a.action)
     expect(actions[0]).toBe('recurringBooking.create')
@@ -382,7 +382,7 @@ describe('the recurring clash (OQ-81 part 2; US-01.3.2 AC2, US-01.5.4 AC3)', () 
     const count = () => Object.values(api.getState().schedule.lists).filter((l) => l.draft?.projectedFor?.recurringBookingId === result.id).length
     expect(applyRecurringBookingsToCanvas(api, OFFICE).ok).toBe(true)
     expect(count()).toBe(1)
-    expect(redateDraftList(api, OFFICE, clashId, { dateISO: '2026-07-24', session: 'AM' }).ok).toBe(true)
+    expect(redateDraftList(api, OFFICE, clashId, { dateISO: '2026-11-27', session: 'AM' }).ok).toBe(true)
     applyRecurringBookingsToCanvas(api, OFFICE)
     expect(count()).toBe(1)
     expect(removeDraftList(api, OFFICE, clashId).ok).toBe(true)
@@ -410,7 +410,7 @@ describe('the recurring clash (OQ-81 part 2; US-01.3.2 AC2, US-01.5.4 AC3)', () 
     const edited = editRecurringBooking(api, OFFICE, result.id, { surgeonId: SURG.reid })
     expect(edited.ok && edited.value.draftListsUpdated).toBe(1)
     expect(api.getState().schedule.lists[clashId]?.surgeonId).toBe(SURG.reid)
-    createBooking(api, OFFICE, clashId, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Cataract', source: 'anaesthetist' } })
+    createBooking(api, OFFICE, clashId, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-05-07' }, sourceText: { text: 'Cataract', source: 'anaesthetist' } })
     const again = editRecurringBooking(api, OFFICE, result.id, { surgeonId: SURG.whitford })
     expect(again.ok && again.value.kept.some((k) => k.listId === clashId && k.reason === 'hasBookings')).toBe(true)
     expect(api.getState().schedule.lists[clashId]?.surgeonId).toBe(SURG.reid)
@@ -427,7 +427,7 @@ describe('the recurring clash (OQ-81 part 2; US-01.3.2 AC2, US-01.5.4 AC3)', () 
     const result = beaumontThursday(api)
     const clashId = `LD-${result.id}-${THU23}-AM`
     advanceClockDays(api, 2)
-    expect(redateDraftList(api, OFFICE, clashId, { dateISO: '2026-07-24', session: 'PM' }).ok).toBe(true)
+    expect(redateDraftList(api, OFFICE, clashId, { dateISO: '2026-11-27', session: 'PM' }).ok).toBe(true)
     const edited = editRecurringBooking(api, OFFICE, result.id, { notes: 'Bring the loupes' })
     expect(edited.ok && (edited.value.draftListsRemoved ?? 0)).toBe(0)
     expect(api.getState().schedule.lists[clashId]?.removedAtISO).toBeUndefined()
@@ -460,7 +460,7 @@ describe('the recurring clash (OQ-81 part 2; US-01.3.2 AC2, US-01.5.4 AC3)', () 
 
   it('shortening the horizon keeps Draft Lists beyond it, waiting or removed (review fix)', () => {
     const api = store()
-    const ropata = waitingDraftLists(api.getState()).filter((l) => l.dateISO >= '2026-08-25')
+    const ropata = waitingDraftLists(api.getState()).filter((l) => l.dateISO >= '2026-12-29')
     expect(ropata.length).toBeGreaterThan(0)
     expect(setHorizonMonths(api, OFFICE, 1).ok).toBe(true)
     for (const l of ropata) expect(api.getState().schedule.lists[l.id]?.state).toBe('DRAFT')
@@ -475,33 +475,35 @@ describe('the recurring clash (OQ-81 part 2; US-01.3.2 AC2, US-01.5.4 AC3)', () 
 
   it('a roll forward onto a day a series already closed makes one Draft List, waiting from the roll; a second roll makes none', () => {
     const api = store()
-    const souterWed = Object.values(api.getState().masters.recurringBookings).find((r) => r.anaesthetistId === ANAE.souter && r.dayOfWeek === 3 && r.session === 'AM')!
+    const souterTue = Object.values(api.getState().masters.recurringBookings).find((r) => r.anaesthetistId === ANAE.souter && r.dayOfWeek === 2 && r.session === 'AM')!
     const end = scheduleHorizon(api.getState()).endISO
-    expect(createAvailabilitySeries(api, OFFICE, { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: 'AM', weekdays: [3], everyWeeks: 1, startISO: end }).ok).toBe(true)
-    // The next Wednesday past the horizon's end.
-    let wed = parseISO(end)
-    do wed = addDays(wed, 1)
-    while (wed.getDay() !== 3)
-    const wedISO = format(wed, 'yyyy-MM-dd')
-    advanceClockDays(api, Math.round((wed.getTime() - parseISO(end).getTime()) / 86_400_000))
-    const id = `LD-${souterWed.id}-${wedISO}-AM`
+    // The series starts on the horizon's last day (a Wednesday), so it touches no Tuesday session already made.
+    expect(createAvailabilitySeries(api, OFFICE, { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: 'AM', weekdays: [2], everyWeeks: 1, startISO: end }).ok).toBe(true)
+    // The next Tuesday past the horizon's end.
+    let tue = parseISO(end)
+    do tue = addDays(tue, 1)
+    while (tue.getDay() !== 2)
+    const tueISO = format(tue, 'yyyy-MM-dd')
+    advanceClockDays(api, Math.round((tue.getTime() - parseISO(end).getTime()) / 86_400_000))
+    const id = `LD-${souterTue.id}-${tueISO}-AM`
     const clash = draft(api.getState().schedule.lists[id])
     expect(clash.draft.sinceISO).toBe(clockISO(api.getState().clock))
     expect(clash.draft.by).toBe('Demo control')
-    expect(listInSlot(api.getState(), slotIdFor(ANAE.souter, wedISO, 'AM'))).toBeUndefined()
+    expect(listInSlot(api.getState(), slotIdFor(ANAE.souter, tueISO, 'AM'))).toBeUndefined()
     expect(api.getState().audit.some((a) => a.action === 'draftList.fromRecurringClash' && a.entityType === 'canvas')).toBe(true)
     advanceClockMinutes(api, 60)
     applyRecurringBookingsToCanvas(api, OFFICE)
-    expect(Object.values(api.getState().schedule.lists).filter((l) => l.draft?.projectedFor?.recurringBookingId === souterWed.id && l.draft.projectedFor.dateISO === wedISO)).toHaveLength(1)
+    expect(Object.values(api.getState().schedule.lists).filter((l) => l.draft?.projectedFor?.recurringBookingId === souterTue.id && l.draft.projectedFor.dateISO === tueISO)).toHaveLength(1)
   })
 
   it('a horizon extend over a series-closed recurring-booking day makes the Draft List too', () => {
     const api = store()
-    const souterWed = Object.values(api.getState().masters.recurringBookings).find((r) => r.anaesthetistId === ANAE.souter && r.dayOfWeek === 3 && r.session === 'AM')!
+    const souterTue = Object.values(api.getState().masters.recurringBookings).find((r) => r.anaesthetistId === ANAE.souter && r.dayOfWeek === 2 && r.session === 'AM')!
     const end = scheduleHorizon(api.getState()).endISO
-    expect(createAvailabilitySeries(api, OFFICE, { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: 'AM', weekdays: [3], everyWeeks: 1, startISO: end }).ok).toBe(true)
+    // The series starts on the horizon's last day (a Wednesday), so it touches no Tuesday session already made.
+    expect(createAvailabilitySeries(api, OFFICE, { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: 'AM', weekdays: [2], everyWeeks: 1, startISO: end }).ok).toBe(true)
     expect(setHorizonMonths(api, OFFICE, 5).ok).toBe(true)
-    const made = Object.values(api.getState().schedule.lists).filter((l) => l.state === 'DRAFT' && l.recurringBookingId === souterWed.id && l.dateISO > end)
+    const made = Object.values(api.getState().schedule.lists).filter((l) => l.state === 'DRAFT' && l.recurringBookingId === souterTue.id && l.dateISO > end)
     expect(made.length).toBeGreaterThan(0)
     for (const l of made) expect(l.draft?.by).toBe('Kirsty W.')
   })
@@ -557,11 +559,11 @@ describe('Draft Lists never reach an anaesthetist (OQ-86 answered no, D46)', () 
     expect(draftIds.size).toBeGreaterThan(0)
     const seen: string[] = []
     for (const a of Object.keys(s.masters.anaesthetists)) {
-      for (const v of slotViewsForAnaesthetist(s, a, TUE21, '2026-11-30')) if (v.list !== undefined) seen.push(v.list.id)
+      for (const v of slotViewsForAnaesthetist(s, a, TUE21, '2027-04-05')) if (v.list !== undefined) seen.push(v.list.id)
     }
     for (const v of slotViewsForDate(s, TUE21)) if (v.list !== undefined) seen.push(v.list.id)
-    seen.push(...listsForDate(s, TUE21).map((l) => l.id), ...listsForDate(s, '2026-07-22').map((l) => l.id))
-    seen.push(...sicknessCandidates(s, TUE21).map((l) => l.id), ...sicknessCandidates(s, '2026-07-22').map((l) => l.id))
+    seen.push(...listsForDate(s, TUE21).map((l) => l.id), ...listsForDate(s, '2026-11-25').map((l) => l.id))
+    seen.push(...sicknessCandidates(s, TUE21).map((l) => l.id), ...sicknessCandidates(s, '2026-11-25').map((l) => l.id))
     expect(seen.filter((id) => draftIds.has(id))).toEqual([])
   })
 })
@@ -571,13 +573,13 @@ describe('the store-wide lifecycle and pairing invariant (FT-07.1)', () => {
     const api = store()
     expectLifecycleInvariant(api)
     const a = create(api)
-    const b = create(api, { dateISO: '2026-07-24', session: 'AM' })
-    createDraftList(api, OFFICE_SIMULATION_ACTOR, { ...request, dateISO: '2026-07-28', session: 'AM', source: 'email' })
+    const b = create(api, { dateISO: '2026-11-27', session: 'AM' })
+    createDraftList(api, OFFICE_SIMULATION_ACTOR, { ...request, dateISO: '2026-12-01', session: 'AM', source: 'email' })
     const free = slotViewsForDate(api.getState(), THU23).find((v) => v.slot.session === 'PM' && v.open)!
     assignDraftList(api, OFFICE, a, { anaesthetistId: free.slot.anaesthetistId })
-    redateDraftList(api, OFFICE, b, { dateISO: '2026-07-27', session: 'PM' })
+    redateDraftList(api, OFFICE, b, { dateISO: '2026-11-30', session: 'PM' })
     removeDraftList(api, OFFICE, b)
-    const booking = createBooking(api, OFFICE, SEED_DRAFT_LIST_IDS.stGeorges, { patient: { nhi: nextTestNhi(), name: 'Sweep Patient', dobISO: '1980-01-01' }, sourceText: { text: 'Cystoscopy', source: 'anaesthetist' } })
+    const booking = createBooking(api, OFFICE, SEED_DRAFT_LIST_IDS.stGeorges, { patient: { nhi: nextTestNhi(), name: 'Sweep Patient', dobISO: '1980-05-06' }, sourceText: { text: 'Cystoscopy', source: 'anaesthetist' } })
     if (booking.ok) reassignBooking(api, OFFICE, booking.value.bookingId, a)
     const result = addRecurringBooking(api, OFFICE, { anaesthetistId: ANAE.beaumont, dayOfWeek: 4, session: 'AM', kind: 'private', hospitalId: HOSP.ces, surgeonId: SURG.whitford })
     if (result.ok) editRecurringBooking(api, OFFICE, result.value.id, { surgeonId: SURG.reid })

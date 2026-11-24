@@ -122,16 +122,16 @@ const golden = JSON.parse(goldenRaw) as Golden
  * sessions) and the List has no note.
  */
 const DELIBERATE: Record<string, Partial<GoldenRow>> = {
-  '34821|2026-07-24|AM': { notes: null },
-  '34821|2026-07-24|PM': { notes: null },
+  '34821|2026-11-27|AM': { notes: null },
+  '34821|2026-11-27|PM': { notes: null },
   // Catch-up Phase 21: Dr Chen's Fri 17 Jul AM List holds the payer review Bookings and waits in the Review queue.
-  '45178|2026-07-17|AM': { state: 'SUBMITTED' },
+  '45178|2026-11-20|AM': { state: 'SUBMITTED' },
   // Catch-up Phase 21a: Dr Chen's Tue 14 Jul AM List holds the review-flags Bookings and waits in the Review queue.
-  '45178|2026-07-14|AM': { state: 'SUBMITTED' },
+  '45178|2026-11-17|AM': { state: 'SUBMITTED' },
   // Catch-up Phase 23: Dr Souter's Mon 13 Jul AM List holds the three-procedure Booking and waits in the Review queue.
-  '34821|2026-07-13|AM': { state: 'SUBMITTED' },
+  '34821|2026-11-16|AM': { state: 'SUBMITTED' },
   // Catch-up Phase 24: Dr Souter's Thu 16 Jul PM List holds the range beat's invoiced Face lift, AUTHORISED.
-  '34821|2026-07-16|PM': { state: 'AUTHORISED' },
+  '34821|2026-11-19|PM': { state: 'AUTHORISED' },
 }
 
 const seed = seedWithoutPhase40(buildSeed())

@@ -9,7 +9,7 @@ import { expect, test, type Page } from '@playwright/test'
 
 test.use({ storageState: { cookies: [], origins: [] } })
 
-const DEEP_BOOKING = '/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009'
+const DEEP_BOOKING = '/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009'
 
 async function settle(page: Page, ms = 400): Promise<void> {
   await page.waitForLoadState('networkidle')

@@ -24,15 +24,15 @@ async function cleanCopy(page: Page, where: string) {
   expect(/[\u2013\u2014]/.test(text), `${where} shows an en or em dash`).toBe(false)
 }
 
-const RUTHERFORD_WED22_AM = 'L-29104-2026-07-22-AM'
-const MORRISON_WED22_PM = 'L-25490-2026-07-22-PM'
+const RUTHERFORD_WED22_AM = 'L-29104-2026-11-25-AM'
+const MORRISON_WED22_PM = 'L-25490-2026-11-25-PM'
 
-test('Wed 22 Day grid: conflicted Lists in the amber colour, the legend and the Conflict filter', async ({ page }) => {
-  await fresh(page, '/admin/day/2026-07-22')
+test('Wed 25 Day grid: conflicted Lists in the amber colour, the legend and the Conflict filter', async ({ page }) => {
+  await fresh(page, '/admin/day/2026-11-25')
   const conflicted = page.locator('button[data-conflict="true"]')
   // Closures only since catch-up Phase 32b (D59): Rutherford's sickness returned his List.
   await expect(conflicted).toHaveCount(4)
-  const rutherfordAm = page.locator('button[data-slot-id="S-29104-2026-07-22-AM"]')
+  const rutherfordAm = page.locator('button[data-slot-id="S-29104-2026-11-25-AM"]')
   await expect(rutherfordAm).toContainText('Unavailable')
   await expect(rutherfordAm).not.toHaveAttribute('data-conflict', 'true')
   await expect(page.locator(`button[data-list-id="${RUTHERFORD_WED22_AM}"]`)).toHaveCount(0)
@@ -54,7 +54,7 @@ test('Wed 22 Day grid: conflicted Lists in the amber colour, the legend and the 
 })
 
 test('Clear from the drawer, Show cleared and Flag again', async ({ page }) => {
-  await fresh(page, '/admin/day/2026-07-22')
+  await fresh(page, '/admin/day/2026-11-25')
   await page.locator(`button[data-list-id="${MORRISON_WED22_PM}"]`).click()
   const drawer = page.getByTestId('admin-list-drawer')
   await drawer.getByRole('button', { name: 'Clear conflict' }).click()
@@ -79,20 +79,20 @@ test('Conflicts screen: closures only, grouped by day, filters in the URL; Simul
   // 14 Lists plus Dr Beaumont's two Draft Lists at the Southern Cross closure (catch-up Phase 31); no sickness (32b);
   // three bookless public Lists at a closed Christchurch Public are Public sessions since catch-up Phase 32d.
   await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('16')
-  for (const d of ['2026-07-22', '2026-10-26', '2026-11-13']) await expect(page.locator(`section[data-conflict-date="${d}"]`)).toBeVisible()
+  for (const d of ['2026-11-25', '2026-10-26', '2026-11-13']) await expect(page.locator(`section[data-conflict-date="${d}"]`)).toBeVisible()
   await expect(page.getByText('Anaesthetist unavailable')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Hospital closed' })).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p30-04-conflicts.png', fullPage: true })
   await cleanCopy(page, 'Conflicts')
 
   // Simulate sickness on today's grid: the List goes to the Draft Lists; Conflicts gains nothing.
-  await page.goto('/admin/day/2026-07-21')
+  await page.goto('/admin/day/2026-11-24')
   await page.waitForLoadState('networkidle')
   const msg = await runDemoAction(page, 'simulate-sickness', { close: true })
-  expect(msg).toMatch(/recorded as Unavailable for Tue 21 Jul (AM|PM)\. The List went (back to the Draft Lists|to Dr \w+) with its Bookings\. No conflict\./)
+  expect(msg).toMatch(/recorded as Unavailable for Tue 24 Nov (AM|PM)\. The List went (back to the Draft Lists|to Dr \w+) with its Bookings\. No conflict\./)
   await page.goto('/admin/conflicts')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('section[data-conflict-date="2026-07-21"]')).toHaveCount(0)
+  await expect(page.locator('section[data-conflict-date="2026-11-24"]')).toHaveCount(0)
   await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('16')
   await page.screenshot({ path: 'visual/shots/p30-05-simulated-sickness.png', fullPage: true })
 
@@ -106,9 +106,9 @@ test('Conflicts screen: closures only, grouped by day, filters in the URL; Simul
 })
 
 test('An unavailable session takes no List or Booking: the drawer says why and offers Change status; phone advice at a closed hospital warns', async ({ page }) => {
-  await fresh(page, '/admin/day/2026-07-21')
+  await fresh(page, '/admin/day/2026-11-24')
   // Ngata is unavailable all Tue 21 (ICU on call): an empty closed session.
-  await page.locator('button[data-slot-id="S-38455-2026-07-21-AM"]').click()
+  await page.locator('button[data-slot-id="S-38455-2026-11-24-AM"]').click()
   const drawer = page.getByTestId('admin-list-drawer')
   await expect(drawer.locator('[data-shot="drawer-closed-session"]')).toContainText('This session is marked')
   await expect(drawer.locator('[data-shot="drawer-closed-session"]')).toContainText("needs to be made available, with Dr Ngata's agreement")
@@ -117,9 +117,9 @@ test('An unavailable session takes no List or Booking: the drawer says why and o
   await expect(drawer.locator('[data-shot="drawer-change-status"]')).toBeVisible()
   await page.keyboard.press('Escape')
   // A closed hospital still warns, never blocks (US-01.5.2): Sharma's free Wed 22 AM at Southern Cross.
-  await page.goto('/admin/day/2026-07-22')
+  await page.goto('/admin/day/2026-11-25')
   await page.waitForLoadState('networkidle')
-  await page.locator('button[data-slot-id="S-41267-2026-07-22-AM"]').click()
+  await page.locator('button[data-slot-id="S-41267-2026-11-25-AM"]').click()
   await page.getByTestId('admin-list-drawer').getByRole('button', { name: 'Book (phone advice)' }).click()
   await page.getByLabel('Hospital').selectOption({ label: 'Southern Cross · closed' })
   await expect(page.locator('[data-shot="phone-advice-conflict-warning"]')).toContainText('The Booking will be accepted and the List flagged as a conflict.')
@@ -132,7 +132,7 @@ test('Hospitals & holidays: the calendar, and moving and deleting a closure clea
   const sheet = page.locator('[data-shot="holiday-edit-sheet"]')
   await expect(sheet).toContainText('It flags 6 Lists now')
   await page.screenshot({ path: 'visual/shots/p30-08-holiday-edit.png', fullPage: true })
-  await sheet.locator('input[type="date"]').fill('2026-07-23')
+  await sheet.locator('input[type="date"]').fill('2026-11-26')
   await sheet.getByRole('button', { name: 'Save changes' }).click()
   await expect(sheet).toContainText(/Holiday updated\. \d+ Lists? flagged, 6 flags cleared\./)
   await sheet.getByRole('button', { name: 'Done' }).click()

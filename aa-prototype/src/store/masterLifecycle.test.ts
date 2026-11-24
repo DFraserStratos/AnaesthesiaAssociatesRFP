@@ -24,7 +24,7 @@ const code = (o: { ok: boolean; code?: string }) => (o.ok ? 'ok' : o.code)
 
 describe('masterLifecycle (pure)', () => {
   it('activeOnly keeps the current value even when retired', () => {
-    const rows = [{ id: 'a' }, { id: 'b', retiredAtISO: '2026-07-21' }]
+    const rows = [{ id: 'a' }, { id: 'b', retiredAtISO: '2026-11-24' }]
     expect(activeOnly(rows).map((r) => r.id)).toEqual(['a'])
     expect(activeOnly(rows, 'b').map((r) => r.id)).toEqual(['a', 'b'])
     expect(isRetired(rows[1])).toBe(true)
@@ -44,7 +44,7 @@ describe('retire and reinstate (catch-up Phase 42; US-13.4.1)', () => {
     expect(code(retireMaster(api, SOUTER_ACTOR, 'hospital', HOSP.stg, 'x'))).toBe('officeOnly')
     expect(code(reinstateMaster(api, SOUTER_ACTOR, 'hospital', HOSP.stg))).toBe('officeOnly')
     expect(code(editAaModifier(api, SOUTER_ACTOR, 'x', { factor: 'y', units: 1 }))).toBe('officeOnly')
-    expect(code(addPublicHoliday(api, SOUTER_ACTOR, { dateISO: '2027-03-26', name: 'Good Friday', kind: 'national', openHospitalIds: [] }))).toBe('officeOnly')
+    expect(code(addPublicHoliday(api, SOUTER_ACTOR, { dateISO: '2027-07-30', name: 'Good Friday', kind: 'national', openHospitalIds: [] }))).toBe('officeOnly')
     expect(code(editRvgTimeRule(api, SOUTER_ACTOR, DEFAULT_RVG_TIME_RULE))).toBe('officeOnly')
   })
 
@@ -65,7 +65,7 @@ describe('retire and reinstate (catch-up Phase 42; US-13.4.1)', () => {
     expect(code(retireMaster(api, OFFICE_ACTOR, 'hospital', id, '  '))).toBe('reasonRequired')
     expect(code(retireMaster(api, OFFICE_ACTOR, 'hospital', 'nope', 'x'))).toBe('notFound')
     expect(code(retireMaster(api, OFFICE_ACTOR, 'hospital', id, 'Closed for good'))).toBe('ok')
-    expect(api.getState().masters.hospitals[id]).toMatchObject({ retiredAtISO: '2026-07-21', retiredReason: 'Closed for good' })
+    expect(api.getState().masters.hospitals[id]).toMatchObject({ retiredAtISO: '2026-11-24', retiredReason: 'Closed for good' })
     expect(code(retireMaster(api, OFFICE_ACTOR, 'hospital', id, 'again'))).toBe('alreadyRetired')
     // An edit keeps the retire fields; a rename still follows through.
     expect(editHospital(api, OFFICE_ACTOR, id, { contactEmail: 'b@rangiora.example' }).ok).toBe(true)
@@ -78,7 +78,7 @@ describe('retire and reinstate (catch-up Phase 42; US-13.4.1)', () => {
   })
 
   it('a retired hospital or surgeon is refused when newly chosen, and tolerated when unchanged', () => {
-    const masters = { hospitals: { H1: { name: 'Old Hospital', retiredAtISO: '2026-07-21' } }, surgeons: { S1: { name: 'Mr Gone', retiredAtISO: '2026-07-21' } } }
+    const masters = { hospitals: { H1: { name: 'Old Hospital', retiredAtISO: '2026-11-24' } }, surgeons: { S1: { name: 'Mr Gone', retiredAtISO: '2026-11-24' } } }
     expect(pairingIssues({ hospitalId: 'H1', surgeonId: 'S1' }, masters).map((i) => i.message)).toEqual(['Old Hospital is retired.', 'Mr Gone is retired.'])
     expect(pairingIssues({ hospitalId: 'H1', surgeonId: 'S1' }, masters, { hospitalId: 'H1', surgeonId: 'S1' })).toEqual([])
   })
@@ -127,7 +127,7 @@ describe('the public-holiday calendar (catch-up Phase 42; DM-38)', () => {
   function busyDay(api: BoundAppStore): { dateISO: string; hospitals: string[] } {
     const byDate = new Map<string, Set<string>>()
     for (const l of Object.values(api.getState().schedule.lists)) {
-      if (l.dateISO <= '2026-07-21' || l.state === 'AUTHORISED' || l.id.startsWith('L-HIST')) continue
+      if (l.dateISO <= '2026-11-24' || l.state === 'AUTHORISED' || l.id.startsWith('L-HIST')) continue
       if (l.conflicts.length > 0) continue
       const set = byDate.get(l.dateISO) ?? new Set<string>()
       set.add(l.hospitalId)
@@ -151,7 +151,7 @@ describe('the public-holiday calendar (catch-up Phase 42; DM-38)', () => {
     const opened = editPublicHoliday(api, OFFICE_ACTOR, id, { openHospitalIds: [open] })
     expect(opened.ok && opened.value.resolved).toBe(atOpen)
     expect(listsFlaggedByPublicHoliday(api.getState(), id)).toBe(added.value.flagged - atOpen)
-    const moved = editPublicHoliday(api, OFFICE_ACTOR, id, { dateISO: '2027-03-26' })
+    const moved = editPublicHoliday(api, OFFICE_ACTOR, id, { dateISO: '2027-07-30' })
     expect(moved.ok && moved.value.resolved).toBe(added.value.flagged - atOpen)
     expect(listsFlaggedByPublicHoliday(api.getState(), id)).toBe(0)
     expect(code(deletePublicHoliday(api, OFFICE_ACTOR, id))).toBe('ok')
@@ -163,9 +163,9 @@ describe('the public-holiday calendar (catch-up Phase 42; DM-38)', () => {
     const api = store()
     const base = { name: 'X', kind: 'national' as const, openHospitalIds: [] as string[] }
     expect(addPublicHoliday(api, OFFICE_ACTOR, { ...base, dateISO: '2026-12-25' })).toMatchObject({ ok: false, code: 'duplicatePublicHoliday', message: 'Christmas Day is already a public holiday on that date.' })
-    expect(code(addPublicHoliday(api, OFFICE_ACTOR, { ...base, name: ' ', dateISO: '2027-03-26' }))).toBe('nameRequired')
+    expect(code(addPublicHoliday(api, OFFICE_ACTOR, { ...base, name: ' ', dateISO: '2027-07-30' }))).toBe('nameRequired')
     expect(code(addPublicHoliday(api, OFFICE_ACTOR, { ...base, dateISO: '2027-02-31' }))).toBe('dateRequired')
-    expect(code(addPublicHoliday(api, OFFICE_ACTOR, { ...base, dateISO: '2027-03-26', openHospitalIds: ['H-NOPE'] }))).toBe('unknownHospital')
+    expect(code(addPublicHoliday(api, OFFICE_ACTOR, { ...base, dateISO: '2027-07-30', openHospitalIds: ['H-NOPE'] }))).toBe('unknownHospital')
     expect(code(editPublicHoliday(api, OFFICE_ACTOR, 'PH999', { name: 'x' }))).toBe('notFound')
   })
 
@@ -242,7 +242,7 @@ describe('retire facts and the guards around them (catch-up Phase 42)', () => {
     const { linkedAnaesthetistId: _drop, ...base } = template
     const surgeonOnly: Contract = { ...base, id: 'CT-TEST-SOLE', aaCode: 'TEST-SOLE', linkedSurgeonIds: [a!, b!] }
     const withAnaesthetist: Contract = { ...base, id: 'CT-TEST-ANAE', aaCode: 'TEST-ANAE', linkedSurgeonIds: [a!, b!], linkedAnaesthetistId: Object.keys(s0.masters.anaesthetists)[0]! }
-    const retiredB = { ...s0.masters.surgeons, [b!]: { ...s0.masters.surgeons[b!]!, retiredAtISO: '2026-07-01', retiredReason: 'Left' } }
+    const retiredB = { ...s0.masters.surgeons, [b!]: { ...s0.masters.surgeons[b!]!, retiredAtISO: '2026-11-04', retiredReason: 'Left' } }
     api.setState({ masters: { ...s0.masters, surgeons: retiredB } })
     const before = retireFactsFor(api.getState(), 'surgeon', a!)!.soleLinkContracts ?? 0
     api.setState({ masters: { ...api.getState().masters, contracts: { ...s0.masters.contracts, [surgeonOnly.id]: surgeonOnly, [withAnaesthetist.id]: withAnaesthetist } } })
@@ -259,7 +259,7 @@ describe('retire facts and the guards around them (catch-up Phase 42)', () => {
     const rb = Object.values(s0.masters.recurringBookings).find((r) => r.retiredAtISO === undefined)!
     expect(retireFactsFor(s0, 'surgeon', rb.surgeonId)!.activeRecurringBookings).toBeGreaterThan(0)
     const ended = Object.fromEntries(
-      Object.entries(s0.masters.recurringBookings).map(([id, r]) => [id, r.surgeonId === rb.surgeonId ? { ...r, effectiveToISO: '2026-07-20' } : r]),
+      Object.entries(s0.masters.recurringBookings).map(([id, r]) => [id, r.surgeonId === rb.surgeonId ? { ...r, effectiveToISO: '2026-11-23' } : r]),
     )
     api.setState({ masters: { ...s0.masters, recurringBookings: ended } })
     const after = retireFactsFor(api.getState(), 'surgeon', rb.surgeonId)!
@@ -277,12 +277,12 @@ describe('retire facts and the guards around them (catch-up Phase 42)', () => {
     expect(api.getState().schedule.procedures['P0009']!.modifierClaims.some((c) => c.modifierId === id)).toBe(false)
   })
 
-  it('an office clear of a Labour Day conflict holds while the holiday stands, and drops once the hospital is listed open', () => {
+  it('an office clear of a Waitangi Day conflict holds while the holiday stands, and drops once the hospital is listed open', () => {
     const api = store()
-    const CAUSE = 'publicHoliday:PH001'
-    // Recurring Lists skip public holidays (24 Nov 2026): the office books a List at St George's on Labour Day, and it is flagged.
+    const CAUSE = 'publicHoliday:PH007'
+    // Recurring Lists skip public holidays (24 Nov 2026): the office books a List at St George's on Waitangi Day, and it is flagged.
     const listIds = new Set(Object.values(api.getState().schedule.lists).flatMap((l) => (l.slotId !== undefined ? [l.slotId] : [])))
-    const open = Object.values(api.getState().schedule.slots).find((x) => x.dateISO === '2026-10-26' && x.session === 'AM' && x.status === 'free' && !listIds.has(x.id))!
+    const open = Object.values(api.getState().schedule.slots).find((x) => x.dateISO === '2027-02-08' && x.session === 'AM' && x.status === 'free' && !listIds.has(x.id))!
     const made = assignListToSlot(api, OFFICE_ACTOR, open.id, { hospitalId: HOSP.stg, surgeonId: SURG.hale, kind: 'private' })
     expect(made.ok).toBe(true)
     const list = Object.values(api.getState().schedule.lists).find((l) => l.hospitalId === HOSP.stg && l.conflicts.some((c) => c.cause === CAUSE))!
@@ -292,8 +292,8 @@ describe('retire facts and the guards around them (catch-up Phase 42)', () => {
     // An unrelated master change re-runs the reconcile: the clear holds.
     expect(editPublicHoliday(api, OFFICE_ACTOR, 'PH002', { name: 'Canterbury Anniversary' }).ok).toBe(true)
     expect(api.getState().schedule.lists[list.id]!.conflictClears?.map((c) => c.cause)).toEqual([CAUSE])
-    // St George's listed open on Labour Day: the cause goes, and the clear with it.
-    expect(editPublicHoliday(api, OFFICE_ACTOR, 'PH001', { openHospitalIds: [HOSP.aaRooms, HOSP.stg] }).ok).toBe(true)
+    // St George's listed open on Waitangi Day: the cause goes, and the clear with it.
+    expect(editPublicHoliday(api, OFFICE_ACTOR, 'PH007', { openHospitalIds: [HOSP.stg] }).ok).toBe(true)
     const after = api.getState().schedule.lists[list.id]!
     expect(after.conflicts.some((c) => c.cause === CAUSE)).toBe(false)
     expect(after.conflictClears).toBeUndefined()

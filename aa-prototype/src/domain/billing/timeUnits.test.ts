@@ -52,13 +52,13 @@ describe('timeUnitsFromMinutes: the RVG time tiers held as data (US-05.2.2, D25)
 
 describe('timeUnits over Dates', () => {
   it('computes from the start and finish stamps', () => {
-    expect(timeUnits(new Date('2026-07-21T08:00:00'), new Date('2026-07-21T10:30:00'), R)).toBe(11)
+    expect(timeUnits(new Date('2026-11-24T08:00:00'), new Date('2026-11-24T10:30:00'), R)).toBe(11)
   })
 
   it('yields 0 when the finish is not after the start', () => {
-    const start = new Date('2026-07-21T10:00:00')
+    const start = new Date('2026-11-24T10:00:00')
     expect(timeUnits(start, start, R)).toBe(0)
-    expect(timeUnits(start, new Date('2026-07-21T09:00:00'), R)).toBe(0)
+    expect(timeUnits(start, new Date('2026-11-24T09:00:00'), R)).toBe(0)
   })
 })
 

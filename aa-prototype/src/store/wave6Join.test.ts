@@ -12,7 +12,7 @@ import { OFFICE_ACTOR } from './demoActors'
 import { nhiRegister } from '../domain/seed/nhiRegister'
 import { lookupOnRegister } from '../domain/nhiRegister'
 
-const LIST = 'L-34821-2026-07-27-AM'
+const LIST = 'L-34821-2026-11-30-AM'
 
 function bookFound(api: ReturnType<typeof createAppStore>, nhi: string) {
   const found = lookupOnRegister(nhiRegister(), nhi)

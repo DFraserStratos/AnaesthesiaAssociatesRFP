@@ -52,7 +52,7 @@ export const MULTI_PROCEDURE_DEMO = {
 } as const
 
 /** The List the seeded copy sits on: Dr Souter, Mon 13 Jul AM (Forte, Mr Okafor). */
-export const MULTI_PROCEDURE_LIST_DATE = '2026-07-13'
+export const MULTI_PROCEDURE_LIST_DATE = '2026-11-16'
 export const MULTI_PROCEDURE_LIST_SESSION = 'AM' as const
 
 /** When the anaesthetic starts: 08:30 on a morning List, 13:30 otherwise. */

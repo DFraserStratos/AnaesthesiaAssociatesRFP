@@ -68,7 +68,7 @@ test("U2 Escape bug: the demo catalogue's ContractPanel example keeps its panel 
 })
 
 test('U2 one Escape, one layer: the Admin Day List drawer, its History, then the drawer', async ({ page }) => {
-  await page.goto('/admin/day/2026-07-21')
+  await page.goto('/admin/day/2026-11-24')
   await page.waitForLoadState('networkidle')
   await page.locator('[data-list-id]').first().click()
   const drawer = page.getByTestId('admin-list-drawer')

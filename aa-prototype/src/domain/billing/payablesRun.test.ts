@@ -12,14 +12,14 @@ function leg(n: number, amount: number, payee: PayeeRef = sharma, extra: Partial
     payee,
     billNumber: `AA-2026-${String(n).padStart(4, '0')}-P`,
     receivableInvoiceNumber: `AA-2026-${String(n).padStart(4, '0')}`,
-    serviceDateISO: `2026-07-${String(1 + (n % 20)).padStart(2, '0')}`,
+    serviceDateISO: `2026-11-${String(1 + (n % 20)).padStart(2, '0')}`,
     payerName: 'Payer',
     available: amount,
     nettable: true,
     ...extra,
   }
 }
-const neg = (id: string, open: number, issuedAtISO = '2026-07-10T09:00:00', anaesthetistId = 'SHARMA'): OpenNegative => ({ id, anaesthetistId, issuedAtISO, open })
+const neg = (id: string, open: number, issuedAtISO = '2026-11-13T09:00:00', anaesthetistId = 'SHARMA'): OpenNegative => ({ id, anaesthetistId, issuedAtISO, open })
 
 describe('runExclusionFor (the one standing exclusion point)', () => {
   it("keeps a collect payable to the AA Holding account out of every run (27a)", () => {
@@ -43,7 +43,7 @@ describe('US-10.2.5: netting a negative in the payment run', () => {
   })
   it('the remittance advice lists all twenty with the negative netted', () => {
     const run = buildWeekRun({ legs: nineteen, negatives: [neg('NEG0001', 365.7)] })
-    const advice = remittanceAdvice(run, 'SHARMA', () => ({ state: 'paid', atISO: '2026-07-21T10:00:00' }))!
+    const advice = remittanceAdvice(run, 'SHARMA', () => ({ state: 'paid', atISO: '2026-11-24T10:00:00' }))!
     expect(advice.lines).toHaveLength(19)
     expect(advice.netted).toEqual([{ negativeInvoiceId: 'NEG0001', amount: 365.7 }])
     expect([advice.positives, advice.nettedTotal, advice.net, advice.remainingToNet, advice.status]).toEqual([2895.22, 365.7, 2529.52, 0, 'paid'])
@@ -57,7 +57,7 @@ describe('US-10.2.5: netting a negative in the payment run', () => {
     expect([t.net, t.remainingToNet]).toEqual([0, 0])
   })
   it('nets two negatives oldest first', () => {
-    const run = buildWeekRun({ legs: [leg(1, 100)], negatives: [neg('N2', 80, '2026-07-12T09:00:00'), neg('N1', 50, '2026-07-11T09:00:00')] })
+    const run = buildWeekRun({ legs: [leg(1, 100)], negatives: [neg('N2', 80, '2026-11-15T09:00:00'), neg('N1', 50, '2026-11-14T09:00:00')] })
     expect(run.nettings.map((n) => [n.negativeInvoiceId, n.amount])).toEqual([['N1', 50], ['N2', 50]])
     expect(run.byAnaesthetist[0]!.remainingToNet).toBe(30)
   })
@@ -78,7 +78,7 @@ describe('US-10.2.5: netting a negative in the payment run', () => {
 })
 
 describe('US-10.2.7: holds roll forward', () => {
-  const hold = { reason: 'Receipt not on the bank download', atISO: '2026-07-21T10:00:00', by: 'Kirsty W.' }
+  const hold = { reason: 'Receipt not on the bank download', atISO: '2026-11-24T10:00:00', by: 'Kirsty W.' }
   it('a held line is out of the totals and the schedule, and rolls into the next run tagged', () => {
     const run = buildWeekRun({ legs: [leg(1, 100), leg(2, 60)], negatives: [] })
     const held = applyHolds(run.lines, new Map([['BC0002', hold]]), [])

@@ -67,6 +67,11 @@ describe('canvas fingerprint (Phase 17, re-pinned in Phase 28)', () => {
     // (1129 - 240 = 889); the 12 that hold Bookings are private. Slots unchanged in number.
     // Re-pinned 24 Nov 2026: recurring Lists skip public holidays, so the ten Labour Day and Canterbury
     // Anniversary Day Lists are no longer made (889 - 10 = 879). Slots unchanged.
-    expect(canvasFingerprint(seedWithoutPhase40(buildSeed()))).toEqual({ slots: 3864, lists: 879, hash: 143523923 })
+    // Re-pinned 25 Nov 2026: the demo day moved 18 weeks to Tue 24 Nov 2026 (every seeded date with it).
+    // The four-month horizon now ends Wed 24 Mar 2027, three days short of the shifted end: 84 fewer Slots
+    // (3 days x 14 x 2) and 15 fewer far-edge Lists. Recurring Lists skip the Christmas, New Year and
+    // Waitangi public holidays and the hospitals' Christmas shutdowns (110 fewer), while the shifted
+    // Labour Day and Anniversary Day dates are ordinary days again (10 back): 879 - 15 - 110 + 10 = 764.
+    expect(canvasFingerprint(seedWithoutPhase40(buildSeed()))).toEqual({ slots: 3780, lists: 764, hash: 1324293038 })
   })
 })

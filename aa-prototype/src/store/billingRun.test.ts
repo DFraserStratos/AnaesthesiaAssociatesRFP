@@ -443,7 +443,7 @@ describe('contract lifecycle at billing time', () => {
     const before = JSON.parse(JSON.stringify(api.getState().billing)) as unknown
     // Health NZ's rate edited in place after its invoices were issued.
     expect(editContract(api, OFFICE, CONTRACT.healthNz, { pricing: { kind: 'rvgContractRate', unitRate: 30 } }).ok).toBe(true)
-    expect(addPriceRange(api, OFFICE, CONTRACT.doyleBariatric, { startISO: '2026-07-01', price: 9999 }).ok).toBe(true)
+    expect(addPriceRange(api, OFFICE, CONTRACT.doyleBariatric, { startISO: '2026-11-04', price: 9999 }).ok).toBe(true)
     expect(disableContract(api, OFFICE, CONTRACT.doyleBariatric).ok).toBe(true)
     expect(api.getState().billing).toEqual(before)
   })
@@ -535,10 +535,10 @@ describe('invoice identity and delivery', () => {
     const bookingId = 'BK0033'
     const proc = proceduresForBooking(api.getState(), bookingId)[0]!
     expect(proc.payer).toMatchObject({ kind: 'other', name: 'Hana Park', email: 'hana.park@example.net' })
-    expect(editProcedure(api, OFFICE, proc.id, { anaestheticStartISO: '2026-07-24T08:00:00', handoverISO: '2026-07-24T09:00:00' }).ok).toBe(true)
+    expect(editProcedure(api, OFFICE, proc.id, { anaestheticStartISO: '2026-11-27T08:00:00', handoverISO: '2026-11-27T09:00:00' }).ok).toBe(true)
     // Her second Procedure (catch-up Phase 22a), the same anaesthetic.
     const second = proceduresForBooking(api.getState(), bookingId)[1]!
-    expect(editProcedure(api, OFFICE, second.id, { anaestheticStartISO: '2026-07-24T09:00:00', handoverISO: '2026-07-24T09:20:00' }).ok).toBe(true)
+    expect(editProcedure(api, OFFICE, second.id, { anaestheticStartISO: '2026-11-27T09:00:00', handoverISO: '2026-11-27T09:20:00' }).ok).toBe(true)
     expect(completeAnswered(api, OFFICE, bookingId).ok).toBe(true)
     stageAndBill(api, api.getState().schedule.bookings[bookingId]!.listId)
     const invoices = invoicesForBooking(api, bookingId)

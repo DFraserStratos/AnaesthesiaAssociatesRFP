@@ -14,7 +14,7 @@ import { deltaOf } from './persistDelta'
 import { reconcileAllConflicts } from '../domain/conflicts'
 import { addDaysISO } from '../domain/clock'
 
-const TODAY = '2026-07-21'
+const TODAY = '2026-11-24'
 let core: AppState
 let s: AppState
 
@@ -84,7 +84,7 @@ describe('the everyday practice', () => {
   it('is settled: conflicts reconciled, and applying every recurring booking now changes nothing', () => {
     expect(reconcileAllConflicts(s.schedule.lists, { holidays: s.masters.holidays, publicHolidays: s.masters.publicHolidays }, `${TODAY}T08:00:00`)).toBe(s.schedule.lists)
     // The S2 day's Southern Cross closure flags exactly the Lists it flagged in the core seed.
-    const flaggedWed22 = (x: AppState) => Object.values(x.schedule.lists).filter((l) => l.dateISO === '2026-07-22' && l.conflicts.length > 0).map((l) => l.id).sort()
+    const flaggedWed22 = (x: AppState) => Object.values(x.schedule.lists).filter((l) => l.dateISO === '2026-11-25' && l.conflicts.length > 0).map((l) => l.id).sort()
     expect(flaggedWed22(s)).toEqual(flaggedWed22(core))
     const plan = previewApplyAllRecurringBookings(s)
     const mentionsGenerated = (rows: readonly unknown[]): unknown[] => rows.filter((r) => JSON.stringify(r).includes('RB-FS-'))

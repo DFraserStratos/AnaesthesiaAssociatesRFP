@@ -36,7 +36,7 @@ const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER = '34821'
 const SOUTER_ME: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: SOUTER }
 const RILEY = SEED_MARKERS.prepaymentBooking!.entityId
-const FRI = '2026-07-24'
+const FRI = '2026-11-27'
 
 let api: BoundAppStore
 let unwire: () => void
@@ -95,7 +95,7 @@ function completeAndSubmit(listId: string) {
 function officeMovesRiley(): string {
   const holds = (listId: string) => Object.values(api.getState().schedule.bookings).some((b) => b.listId === listId && b.cancellation === undefined)
   const candidates = Object.values(api.getState().schedule.lists)
-    .filter((l) => l.anaesthetistId !== undefined && l.anaesthetistId !== SOUTER && l.state === 'ACTIVE' && l.dateISO >= '2026-07-21' && !holds(l.id))
+    .filter((l) => l.anaesthetistId !== undefined && l.anaesthetistId !== SOUTER && l.state === 'ACTIVE' && l.dateISO >= '2026-11-24' && !holds(l.id))
     .sort((a, b) => Number(b.dateISO === FRI) - Number(a.dateISO === FRI) || a.id.localeCompare(b.id))
   const moved = candidates.find((l) => reassignBooking(api, OFFICE, RILEY, l.id).ok)
   expect(moved, 'a colleague List the office can move Riley onto').toBeDefined()

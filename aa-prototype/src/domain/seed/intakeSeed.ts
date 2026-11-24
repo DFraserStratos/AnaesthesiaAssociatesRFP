@@ -21,14 +21,14 @@ export const SEED_STUB = {
   batchId: 'IBS001',
   rowId: 'IRS001',
   stubId: 'STB0001',
-  listId: projectedListId(ANAE.souter, '2026-08-04', 'PM'),
+  listId: projectedListId(ANAE.souter, '2026-12-08', 'PM'),
   patientName: 'Mere Tipene',
   /** The NHI the office types on Matching (and the PWA stand-in adds): synthetic, valid, held by no seeded patient. */
   nhiToType: 'ZQA1024',
 } as const
 
 const RECEIVED_AT = `${DEMO_TODAY}T07:30:00`
-const SOURCE_LABEL = 'Southern Cross theatre list, Tue 4 Aug'
+const SOURCE_LABEL = 'Southern Cross theatre list, Tue 8 Dec'
 
 /**
  * The seeded PDF list (catch-up Phase 34; DM-61): Mr Okafor's Wed 5 Aug AM
@@ -69,11 +69,11 @@ export function seededIntake(): { batches: Record<string, ImportBatch>; rows: Re
     receivedAtISO: RECEIVED_AT,
     incoming: {
       hospitalId: HOSP.sx,
-      dateISO: '2026-08-04',
+      dateISO: '2026-12-08',
       session: 'PM',
       surgeon: { name: 'Ms K. Patel', hpiId: '41PATK' },
       scheduledTime: '14:00',
-      patient: { name: SEED_STUB.patientName, dobISO: '1981-06-14' },
+      patient: { name: SEED_STUB.patientName, dobISO: '1981-10-18' },
       procedure: { text: 'Lap chole', code: 'G4' },
       hospitalStatus: 'booked',
     },

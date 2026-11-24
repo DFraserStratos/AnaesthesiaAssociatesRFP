@@ -27,7 +27,7 @@ import { initialsOf, surnameOf } from '../shared/format'
 import { ENGLISH_NAMES, FULL_SCALE_ANAESTHETISTS, FULL_SCALE_SURGEONS, GUIDE_PATIENT_SURNAMES, poolFor } from '../domain/seed/fullScale/names'
 import type { Contract } from '../domain/billing/contracts'
 
-const TODAY = '2026-07-21'
+const TODAY = '2026-11-24'
 let pristine: AppState
 let full: FullScaleDataset<AppState>
 let state: AppState

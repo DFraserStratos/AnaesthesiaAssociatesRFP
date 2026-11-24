@@ -26,6 +26,6 @@ describe('stub-office-adds-nhi', () => {
   })
   it('is disabled on a List with no stub', () => {
     const api = createAppStore()
-    expect(t.disabledReason?.(api.getState(), ctx('L-34821-2026-07-21-AM'), undefined)).toBe('No stub on this List')
+    expect(t.disabledReason?.(api.getState(), ctx('L-34821-2026-11-24-AM'), undefined)).toBe('No stub on this List')
   })
 })

@@ -22,7 +22,7 @@ function renderAdmin(path: string) {
     <MemoryRouter initialEntries={[path]}>
       <SurfaceProvider variant="web">
         <Routes>
-          <Route path="/admin" element={<Outlet context={{ actor: OFFICE, todayISO: '2026-07-21' }} />}>
+          <Route path="/admin" element={<Outlet context={{ actor: OFFICE, todayISO: '2026-11-24' }} />}>
             <Route path="masters">
               <Route index element={<AdminMastersRoute />} />
             </Route>
@@ -65,7 +65,7 @@ describe('Public holidays view', () => {
     renderAdmin('/admin/masters?view=publicHolidays')
     fireEvent.click(screen.getByRole('button', { name: 'Add public holiday' }))
     const add = shot('public-holiday-add-sheet')
-    fireEvent.change(within(add).getByLabelText('Date'), { target: { value: '2026-07-23' } })
+    fireEvent.change(within(add).getByLabelText('Date'), { target: { value: '2026-11-26' } })
     fireEvent.change(within(add).getByLabelText('Name'), { target: { value: 'Demo holiday' } })
     fireEvent.click(within(add).getByRole('button', { name: 'Add public holiday' }))
     const added = Object.values(useAppStore.getState().masters.publicHolidays).find((p) => p.name === 'Demo holiday')!
@@ -119,7 +119,7 @@ describe('Seed load view', () => {
     fireEvent.click(within(panel).getByRole('button', { name: 'Only rejected' }))
     expect(panel.querySelectorAll('tr[data-load-row]').length).toBe(rejected)
     fireEvent.click(within(panel).getByRole('button', { name: `Load ${valid} valid ${valid === 1 ? 'row' : 'rows'}` }))
-    expect(shot('master-load-result')).toHaveTextContent(`Loaded ${valid} ${valid === 1 ? 'row' : 'rows'} on 21 Jul 2026 · ${rejected} rejected ${rejected === 1 ? 'row was' : 'rows were'} not loaded`)
+    expect(shot('master-load-result')).toHaveTextContent(`Loaded ${valid} ${valid === 1 ? 'row' : 'rows'} on 24 Nov 2026 · ${rejected} rejected ${rejected === 1 ? 'row was' : 'rows were'} not loaded`)
   })
 
   it('checks a chosen .csv file as the developer', async () => {

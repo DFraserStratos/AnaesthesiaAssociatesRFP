@@ -74,7 +74,7 @@ describe(`Phase 27a parity: declared (${PHASE_27A_REASON})`, () => {
   it("Dr Rutherford's seeded month of 40 BCTIs and its $700.00 fee are unchanged", () => {
     const api = storeWithoutPhase40()
     seedMonthOfBctis(api, DEMO_TRIGGER_ACTOR, ANAE.rutherford)
-    const row = aaFeeRunPreview(api.getState(), '2026-07').find((r) => r.anaesthetistId === ANAE.rutherford)!
+    const row = aaFeeRunPreview(api.getState(), '2026-11').find((r) => r.anaesthetistId === ANAE.rutherford)!
     expect([row.bctiCount, row.subtotal]).toEqual([40, 700])
   })
 })

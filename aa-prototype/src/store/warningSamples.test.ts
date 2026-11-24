@@ -54,7 +54,7 @@ function seedFieldsOf(bookingId: string) {
 }
 
 describe('pinned sample targets', () => {
-  it('sit on Dr Rutherford’s Tue 21 Jul Lists, assigned and not submitted', () => {
+  it('sit on Dr Rutherford’s Tue 24 Nov Lists, assigned and not submitted', () => {
     const seed = buildSeed()
     expect(SEED_WARNING_SAMPLE_BOOKINGS.targets).toHaveLength(2)
     expect(seed.schedule.bookings[AM_TARGET!]!.listId).toBe(SEED_LIST_IDS.rutherfordAm21)
@@ -160,7 +160,7 @@ describe('refusals on one Booking', () => {
     api.setState({
       schedule: {
         ...s.schedule,
-        bookings: { ...s.schedule.bookings, [b.id]: { ...b, cancellation: { reason: 'Postponed', by: 'Kirsty W.', role: 'office', source: 'office', atISO: '2026-07-21T09:00:00' } } },
+        bookings: { ...s.schedule.bookings, [b.id]: { ...b, cancellation: { reason: 'Postponed', by: 'Kirsty W.', role: 'office', source: 'office', atISO: '2026-11-24T09:00:00' } } },
       },
     })
     expect(sampleRaiseRefusal(api.getState(), AM_TARGET!)).toBe('Nothing to stage on this Booking')

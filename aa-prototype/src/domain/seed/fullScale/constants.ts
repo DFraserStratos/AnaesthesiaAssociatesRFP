@@ -61,7 +61,7 @@ export const FULL_SCALE = {
   /** A leave block's length in weekdays. */
   leaveBlockWeekdays: { min: 5, max: 10 },
   /** The spring school holidays' weekdays (2026): this share of leave blocks starts inside them. */
-  schoolHolidays: { startISO: '2026-09-28', endISO: '2026-10-09', share: 0.35 },
+  schoolHolidays: { startISO: '2027-02-01', endISO: '2027-02-12', share: 0.35 },
   /** Single leave days besides the block. */
   singleLeaveDays: { min: 0, max: 2 },
   /** The office's priority tiers for the 71 (the directors in Tier 1 are the demo's): shares in Tier 2 and Tier 3, the rest at the Tier 4 default. */

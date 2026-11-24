@@ -28,8 +28,12 @@ export interface DemoClockState {
   minutesSinceMidnight: number
 }
 
-/** Pinned demo date — the mockups' content date. ISO `YYYY-MM-DD`. */
-export const DEMO_TODAY = '2026-07-21'
+/**
+ * Pinned demo date. ISO `YYYY-MM-DD`. The mockups' content date was Tue 21 Jul
+ * 2026; the seed moved 18 weeks with it (same weekdays) so the demo reads as
+ * late November, with the Christmas shutdown a few weeks ahead.
+ */
+export const DEMO_TODAY = '2026-11-24'
 
 const MINUTES_PER_DAY = 24 * 60
 

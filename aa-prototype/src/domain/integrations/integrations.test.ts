@@ -27,10 +27,10 @@ describe('HL7 mapping-driven extractor', () => {
     expect(parsed.patient.nhi).toBe('CQY9304')
     expect(validateNhi(parsed.patient.nhi!).valid).toBe(true)
     expect(parsed.patient.name).toBe('Sarah Mitchell')
-    expect(parsed.patient.dobISO).toBe('1988-04-12')
+    expect(parsed.patient.dobISO).toBe('1988-08-16')
     expect(parsed.appointmentId).toBe(APPT.s12)
     expect(parsed.operation).toBe('lap appy ?conv to open')
-    expect(parsed.scheduledDateISO).toBe('2026-07-28')
+    expect(parsed.scheduledDateISO).toBe('2026-12-01')
     expect(parsed.scheduledTime).toBe('08:30')
   })
 

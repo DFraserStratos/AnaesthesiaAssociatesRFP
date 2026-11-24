@@ -40,20 +40,20 @@ describe('the scripted beat schedule', () => {
     for (const id of SCRIPTED_BEAT_SCHEDULE.slotIds) expect(seed.schedule.slots[id], id).toBeDefined()
   })
 
-  it("holds S2 Beat 3a's Southern Cross Lists on Wed 22 and Thu 23 (the closure and where it moves)", () => {
-    const sx = Object.values(seed.schedule.lists).filter((l) => l.state !== 'DRAFT' && l.hospitalId === 'H-SX' && (l.dateISO === '2026-07-22' || l.dateISO === '2026-07-23'))
+  it("holds S2 Beat 3a's Southern Cross Lists on Wed 25 and Thu 26 (the closure and where it moves)", () => {
+    const sx = Object.values(seed.schedule.lists).filter((l) => l.state !== 'DRAFT' && l.hospitalId === 'H-SX' && (l.dateISO === '2026-11-25' || l.dateISO === '2026-11-26'))
     expect(sx.length).toBeGreaterThan(0)
     for (const l of sx) expect(scriptedLists.has(l.id), l.id).toBe(true)
   })
 
   it("holds S2 Beat 3's target, Dr Sharma's Wed 22 AM session, and Dr Rutherford's sick List", () => {
-    expect(scriptedSlots.has(`S-${ANAE.sharma}-2026-07-22-AM`)).toBe(true)
-    expect(scriptedLists.has(`L-${ANAE.rutherford}-2026-07-22-AM`)).toBe(true)
+    expect(scriptedSlots.has(`S-${ANAE.sharma}-2026-11-25-AM`)).toBe(true)
+    expect(scriptedLists.has(`L-${ANAE.rutherford}-2026-11-25-AM`)).toBe(true)
   })
 })
 
 describe('Dr Souter can move a List (the demo beat)', () => {
-  it('her St George\'s Mon 27 Jul PM List is ACTIVE, has a surgeon, is in the next six days, unscripted and has colleagues to take it', () => {
+  it('her St George\'s Mon 30 Nov PM List is ACTIVE, has a surgeon, is in the next six days, unscripted and has colleagues to take it', () => {
     const list = souterList(LIST_MOVE_DEMO.movableListId)
     expect(list).toMatchObject({ anaesthetistId: ANAE.souter, state: 'ACTIVE', hospitalId: 'H-STG', surgeonId: SURG.lim })
     expect(list.dateISO <= SIX_DAYS_ON).toBe(true)
@@ -72,14 +72,14 @@ describe('Dr Souter can move a List (the demo beat)', () => {
     expect(scriptedSlots.has(colleague?.slotId ?? '')).toBe(false)
   })
 
-  it('her Thu 23 Jul AM List can go back to the office from List detail', () => {
+  it('her Thu 26 Nov AM List can go back to the office from List detail', () => {
     const list = souterList(LIST_MOVE_DEMO.returnListId)
     expect(list.dateISO <= SIX_DAYS_ON).toBe(true)
     expect(scriptedLists.has(list.id)).toBe(false)
     expect(ownMoveRefusal(input, list.id, ANAE.souter, DEMO_TODAY)).toBeNull()
   })
 
-  it('the unavailable prompt is demoable: her Thu 23 Jul PM session holds a different movable List with colleagues to take it', () => {
+  it('the unavailable prompt is demoable: her Thu 26 Nov PM session holds a different movable List with colleagues to take it', () => {
     const slot = seed.schedule.slots[LIST_MOVE_DEMO.unavailableSlotId]
     expect(slot?.anaesthetistId).toBe(ANAE.souter)
     const list = Object.values(seed.schedule.lists).find((l) => l.slotId === LIST_MOVE_DEMO.unavailableSlotId)

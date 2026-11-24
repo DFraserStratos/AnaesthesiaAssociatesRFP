@@ -41,7 +41,7 @@ export function PrepaidSettlementExample({ as = 'office' }: { as?: 'office' | 'a
   if (!authorised) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
-        <Button variant="secondary" size="compact" onClick={authorise}>Authorise Dr Souter&apos;s Fri 24 Jul PM List</Button>
+        <Button variant="secondary" size="compact" onClick={authorise}>Authorise Dr Souter&apos;s Fri 27 Nov PM List</Button>
         {error !== null && <span style={{ fontSize: 13 }}>{error}</span>}
       </div>
     )

@@ -483,14 +483,14 @@ describe('Phase 19a price range parity', () => {
     expect(invoicesOf('BK0028')).toEqual(HERNIA_INVOICES)
   })
 
-  it('holds every scripted S1 to S5 Booking (the seed markers and the Mon 20 Jul Review queue Lists)', () => {
+  it('holds every scripted S1 to S5 Booking (the seed markers and the Mon 23 Nov Review queue Lists)', () => {
     const scripted = new Set<string>(
       Object.values(SEED_MARKERS)
         .filter((m) => m.entityType === 'booking')
         .map((m) => m.entityId),
     )
     // S2 Beat 4 (Dr Morrison) and S3 Beat 1 (Dr Souter's AM and PM): the Mon 20 Jul Review queue.
-    for (const list of assignedLists.filter((l) => l.dateISO === '2026-07-20' && l.state === 'SUBMITTED')) {
+    for (const list of assignedLists.filter((l) => l.dateISO === '2026-11-23' && l.state === 'SUBMITTED')) {
       for (const b of bookingsForList(state, list.id)) scripted.add(b.id)
     }
     scripted.delete('BK0028') // the declared difference, asserted above

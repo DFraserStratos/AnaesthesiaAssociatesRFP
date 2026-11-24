@@ -13,7 +13,7 @@ import { PrepaymentHistory } from './PrepaymentHistory'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const NAIR = SEED_PREPAID_BOOKING_ID
-const BEAUMONT_ENT_LIST = 'L-31902-2026-08-04-PM'
+const BEAUMONT_ENT_LIST = 'L-31902-2026-12-08-PM'
 
 function rows(): string[] {
   return [...document.querySelectorAll<HTMLElement>('[data-shot="prepayment-history-row"]')].map((r) => r.textContent ?? '')

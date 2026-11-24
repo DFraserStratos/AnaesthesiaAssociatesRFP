@@ -32,7 +32,7 @@ export interface RemittanceFixture {
 
 /** Dr Souter's backdrop (domain/seed/history.ts): oa01, oa03, oa04 are XRH01, XRH03, XRH04; oa07 Mitchell is XRH07. */
 export const ST_GEORGES_REMITTANCE: RemittanceFixture = {
-  reference: "St George's remittance 21 Jul",
+  reference: "St George's remittance 24 Nov",
   lines: [
     { key: 'L1', accRecId: 'XRH01', quote: { exact: true } },
     { key: 'L2', accRecId: 'XRH03', quote: { exact: true } },

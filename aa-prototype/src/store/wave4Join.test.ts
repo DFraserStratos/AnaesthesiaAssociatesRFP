@@ -19,7 +19,7 @@ import { scanForNhiLeaks } from './privacyScan'
 import { validateNhi } from '../domain/nhi'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-const rebill = (unitAmount: number) => ({ occurredOnISO: '2026-07-15', party: { sameAs: true as const }, lines: [{ description: 'Anaesthesia, corrected', quantity: 1, unitAmount }] })
+const rebill = (unitAmount: number) => ({ occurredOnISO: '2026-11-18', party: { sameAs: true as const }, lines: [{ description: 'Anaesthesia, corrected', quantity: 1, unitAmount }] })
 
 let unwire: (() => void) | undefined
 afterEach(() => {
@@ -44,7 +44,7 @@ function creditAndRebill(api: BoundAppStore, original: Invoice, unitAmount: numb
 describe('Wave 4 join: full-scale data with 38b events and 39 credits', () => {
   let full: AppState
   beforeAll(() => {
-    full = buildFullScaleDataset(freshAppState(), { todayISO: '2026-07-21' }).state
+    full = buildFullScaleDataset(freshAppState(), { todayISO: '2026-11-24' }).state
   }, 120_000)
 
   it('keeps the seeded event and empty credit slices, and credits and rebills a generated invoice', () => {

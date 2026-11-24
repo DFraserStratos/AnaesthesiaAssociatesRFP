@@ -1476,6 +1476,12 @@ export interface HospitalHoliday {
   hospitalId: HospitalId
   dateISO: IsoDate
   name: string
+  /**
+   * A planned shutdown (the Christmas break): recurring bookings make no List
+   * that day, as on a public holiday. A one-off closure leaves it unset, so
+   * its Lists are made and flagged (US-01.5.2).
+   */
+  shutdown?: boolean
 }
 
 export type PublicHolidayId = string

@@ -18,9 +18,9 @@ import { AssignListSheet } from './AssignListSheet'
 import { projectedListId, slotIdFor } from '../../../domain/slots'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-const SHARMA_AM = projectedListId(ANAE.sharma, '2026-07-21', 'AM')
+const SHARMA_AM = projectedListId(ANAE.sharma, '2026-11-24', 'AM')
 /** Sharma's free Tue 21 PM session (catch-up Phase 28: an empty Slot, no List). */
-const SHARMA_PM_SLOT = slotIdFor(ANAE.sharma, '2026-07-21', 'PM')
+const SHARMA_PM_SLOT = slotIdFor(ANAE.sharma, '2026-11-24', 'PM')
 
 function surgeonSelect(): HTMLSelectElement {
   return document.querySelector('select[data-shot="surgeon-picker"]') as HTMLSelectElement

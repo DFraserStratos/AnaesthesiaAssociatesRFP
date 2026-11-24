@@ -27,7 +27,7 @@ import { CREDIT_MESSAGES } from '../shared/procedureEventCopy'
 import type { Invoice } from '../domain/types'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-const SHARMA_TUE14 = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
+const SHARMA_TUE14 = projectedListId(ANAE.sharma, '2026-11-17', 'AM')
 
 let api: BoundAppStore
 let unwire: () => void
@@ -48,7 +48,7 @@ function stage(): Invoice {
   return liveInvoiceForProcedure(api.getState(), procedureId)!
 }
 
-const line = (unitAmount: number, description = 'Corrected') => ({ occurredOnISO: '2026-07-15', party: { sameAs: true as const }, lines: [{ description, quantity: 1, unitAmount }] })
+const line = (unitAmount: number, description = 'Corrected') => ({ occurredOnISO: '2026-11-18', party: { sameAs: true as const }, lines: [{ description, quantity: 1, unitAmount }] })
 
 function submitAndApprove(input: CreditInput): string {
   const sub = submitCredit(api, OFFICE, input)

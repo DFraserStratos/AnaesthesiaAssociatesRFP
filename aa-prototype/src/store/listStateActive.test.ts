@@ -21,7 +21,7 @@ const STATES: readonly ListState[] = ['ACTIVE', 'SUBMITTED', 'AUTHORISED']
 describe('the seed', () => {
   it('stamps every List with an anaesthetist ACTIVE, SUBMITTED or AUTHORISED, and only a Draft List DRAFT (catch-up Phase 31)', () => {
     const lists = Object.values(buildSeed().schedule.lists)
-    expect(lists.length).toBeGreaterThan(800)
+    expect(lists.length).toBeGreaterThan(700) // fewer since the Christmas shutdown skips its recurring Lists
     for (const l of lists) {
       if (l.anaesthetistId === undefined) expect(l.state, l.id).toBe('DRAFT')
       else expect(STATES, l.id).toContain(l.state)

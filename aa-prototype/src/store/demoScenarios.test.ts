@@ -43,7 +43,7 @@ const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 
 describe('S1 · booking to theatre (rebuilt in catch-up Phase 34)', () => {
-  const listId = projectedListId(ANAE.souter, '2026-07-28', 'AM')
+  const listId = projectedListId(ANAE.souter, '2026-12-01', 'AM')
 
   /** Beat 1: import the St George's file and Create Booking for Sarah Mitchell's row. */
   function importAndCreateSarah(api: ReturnType<typeof createAppStore>) {
@@ -126,7 +126,7 @@ describe('S1 · booking to theatre (rebuilt in catch-up Phase 34)', () => {
     const sent = sendPdfListToMatching(api, OFFICE, okafor)
     if (!sent.ok) throw new Error(sent.message)
     const [first, ...rest] = api.getState().intake.batches[sent.value.batchId!]!.rowIds
-    const made = decideImportRow(api, OFFICE, first!, { kind: 'createList', slotId: 'S-29104-2026-08-05-AM' })
+    const made = decideImportRow(api, OFFICE, first!, { kind: 'createList', slotId: 'S-29104-2026-12-09-AM' })
     if (!made.ok) throw new Error(made.message)
     expect(api.getState().schedule.lists[made.value.listId!]!.origin).toEqual({ kind: 'pdf', senderEmail: sender, pdfListId: okafor })
     for (const id of rest) {
@@ -137,16 +137,16 @@ describe('S1 · booking to theatre (rebuilt in catch-up Phase 34)', () => {
 
   it('the seeded PDF list and the pinned origins touch no scripted List', () => {
     const s = createAppStore().getState()
-    const scripted = [listId, projectedListId(ANAE.souter, '2026-07-28', 'PM'), SEED_STUB.listId, ...Object.values(SEED_LIST_IDS)]
+    const scripted = [listId, projectedListId(ANAE.souter, '2026-12-01', 'PM'), SEED_STUB.listId, ...Object.values(SEED_LIST_IDS)]
     const target = s.intake.pdfLists[SEED_PDF_LIST.id]!.target
     expect(scripted).not.toContain(projectedListId(target.anaesthetistId, target.dateISO, target.session))
     for (const id of Object.values(SEED_ORIGIN_LISTS)) expect(scripted).not.toContain(id)
   })
 
-  it('Jump to procedure day advances forward to Tue 28 Jul 08:00', () => {
+  it('Jump to procedure day advances forward to Tue 1 Dec 08:00', () => {
     const api = createAppStore()
-    advanceClockToDate(api, '2026-07-28')
-    expect(api.getState().clock.todayISO).toBe('2026-07-28')
+    advanceClockToDate(api, '2026-12-01')
+    expect(api.getState().clock.todayISO).toBe('2026-12-01')
     expect(api.getState().clock.minutesSinceMidnight).toBe(8 * 60)
   })
 
@@ -163,12 +163,12 @@ describe('S2 · office day', () => {
 })
 
 describe('S3 · money end-to-end', () => {
-  it('authorising both seeded Mon 20 Lists runs billing, the Xero pair, a payment and payables', () => {
+  it('authorising both seeded Mon 23 Lists runs billing, the Xero pair, a payment and payables', () => {
     const api = createAppStore()
     const unwire = wireBillingRun(api)
     try {
-      const amListId = projectedListId(ANAE.souter, '2026-07-20', 'AM')
-      const pmListId = projectedListId(ANAE.souter, '2026-07-20', 'PM')
+      const amListId = projectedListId(ANAE.souter, '2026-11-23', 'AM')
+      const pmListId = projectedListId(ANAE.souter, '2026-11-23', 'PM')
 
       expect(api.getState().schedule.lists[amListId]?.state).toBe('SUBMITTED')
       expect(api.getState().schedule.lists[pmListId]?.state).toBe('SUBMITTED')
@@ -257,7 +257,7 @@ describe('S4 · exceptions', () => {
     const procedureId = proceduresForBooking(api.getState(), mitchell.id)[0]!.id
     const original = liveInvoiceForProcedure(api.getState(), procedureId)!
     const bctisBefore = bctiRecords(api.getState()).length
-    const out = addProcedureEvent(api, OFFICE, procedureId, { kind: 'additionalInvoice', occurredOnISO: '2026-07-15', party: { sameAs: true }, lines: [{ description: 'Post-op ward review, Wed 15 Jul, 15 min', quantity: 1, unitAmount: 30 }] })
+    const out = addProcedureEvent(api, OFFICE, procedureId, { kind: 'additionalInvoice', occurredOnISO: '2026-11-18', party: { sameAs: true }, lines: [{ description: 'Post-op ward review, Wed 18 Nov, 15 min', quantity: 1, unitAmount: 30 }] })
     if (!out.ok) throw new Error(out.message)
     expect(approveProcedureEvent(api, OFFICE, out.value.eventId).ok).toBe(true)
     const run = runEventInvoicing(api, OFFICE, { eventIds: [out.value.eventId] })
@@ -268,7 +268,7 @@ describe('S4 · exceptions', () => {
     expect(bctiRecords(api.getState()).length).toBe(bctisBefore + 1)
     // The aside: Dr Sharma raises one on her own Procedure; the office approves and runs it.
     const sharma: Actor = { who: 'Dr Priya Sharma', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.sharma }
-    const hers = addProcedureEvent(api, sharma, procedureId, { kind: 'additionalInvoice', occurredOnISO: '2026-07-15', party: { sameAs: true }, lines: [{ description: 'Nerve catheter review, Wed 15 Jul', quantity: 1, unitAmount: 45 }] })
+    const hers = addProcedureEvent(api, sharma, procedureId, { kind: 'additionalInvoice', occurredOnISO: '2026-11-18', party: { sameAs: true }, lines: [{ description: 'Nerve catheter review, Wed 18 Nov', quantity: 1, unitAmount: 45 }] })
     if (!hers.ok) throw new Error(hers.message)
     expect(approveProcedureEvent(api, OFFICE, hers.value.eventId).ok).toBe(true)
     expect(runEventInvoicing(api, OFFICE).ok).toBe(true)
@@ -282,7 +282,7 @@ describe('S4 · exceptions', () => {
     expect(approveAllPrepayments(api, SEED_MARKERS['prepaymentBooking']!.entityId, OFFICE)).toHaveLength(1)
     expect(DEMO_TRIGGERS.find((t) => t.id === 'stage-post-op')!.run(api, ctx('/admin/review', { listId: POST_OP_ORIGINAL_LIST_ID })).ok).toBe(true)
     const mitchell = bookingsForList(api.getState(), POST_OP_ORIGINAL_LIST_ID)[0]!
-    const out = addProcedureEvent(api, OFFICE, proceduresForBooking(api.getState(), mitchell.id)[0]!.id, { kind: 'additionalInvoice', occurredOnISO: '2026-07-15', party: { sameAs: true }, lines: [{ description: 'Post-op ward review, Wed 15 Jul, 15 min', quantity: 1, unitAmount: 30 }] })
+    const out = addProcedureEvent(api, OFFICE, proceduresForBooking(api.getState(), mitchell.id)[0]!.id, { kind: 'additionalInvoice', occurredOnISO: '2026-11-18', party: { sameAs: true }, lines: [{ description: 'Post-op ward review, Wed 18 Nov, 15 min', quantity: 1, unitAmount: 30 }] })
     if (!out.ok) throw new Error(out.message)
     expect(approveProcedureEvent(api, OFFICE, out.value.eventId).ok).toBe(true)
     expect(runEventInvoicing(api, OFFICE, { eventIds: [out.value.eventId] }).ok).toBe(true)
@@ -318,7 +318,7 @@ describe('S4 · exceptions', () => {
     const mitchell = bookingsForList(api.getState(), POST_OP_ORIGINAL_LIST_ID)[0]!
     const procedureId = proceduresForBooking(api.getState(), mitchell.id)[0]!.id
     const original = liveInvoiceForProcedure(api.getState(), procedureId)!
-    const extra = addProcedureEvent(api, OFFICE, procedureId, { kind: 'additionalInvoice', occurredOnISO: '2026-07-15', party: { sameAs: true }, lines: [{ description: 'Post-op ward review, Wed 15 Jul, 15 min', quantity: 1, unitAmount: 30 }] })
+    const extra = addProcedureEvent(api, OFFICE, procedureId, { kind: 'additionalInvoice', occurredOnISO: '2026-11-18', party: { sameAs: true }, lines: [{ description: 'Post-op ward review, Wed 18 Nov, 15 min', quantity: 1, unitAmount: 30 }] })
     if (!extra.ok) throw new Error(extra.message)
     approve(extra.value.eventId)
     expect(nextRun().ok).toBe(true)
@@ -353,7 +353,7 @@ describe('S4 · exceptions', () => {
     const combined = api.getState().billing.invoices[staged.link!.to.split('/').pop()!]!
     const combinedProcedure = combined.procedureIds![0]!
     const bctis = bctiRecords(api.getState()).length
-    const parts = [2000, 1000, 700].map((unitAmount, i) => ({ occurredOnISO: '2026-07-21', party: { sameAs: true as const }, lines: [{ description: `Component ${i + 1}`, quantity: 1, unitAmount }] }))
+    const parts = [2000, 1000, 700].map((unitAmount, i) => ({ occurredOnISO: '2026-11-24', party: { sameAs: true as const }, lines: [{ description: `Component ${i + 1}`, quantity: 1, unitAmount }] }))
     const split = splitCombinedProcedure(api, OFFICE, { procedureId: combinedProcedure, reason: 'Split requested', replacements: parts })
     if (!split.ok) throw new Error(split.message)
     approve(split.value.creditEventId)
@@ -363,7 +363,7 @@ describe('S4 · exceptions', () => {
     inBalance()
 
     // Dr Souter credits David Chen's invoice on her own Procedure (HP03); the PWA stand-in reviews and issues it.
-    const hers = submitCredit(api, SOUTER, { invoiceId: 'HINV03', reason: 'Less work than expected', cause: 'correction', replacements: [{ occurredOnISO: '2026-07-21', party: { sameAs: true }, lines: [{ description: 'Hip hemiarthroplasty, shorter case', quantity: 1, unitAmount: 400 }] }] })
+    const hers = submitCredit(api, SOUTER, { invoiceId: 'HINV03', reason: 'Less work than expected', cause: 'correction', replacements: [{ occurredOnISO: '2026-11-24', party: { sameAs: true }, lines: [{ description: 'Hip hemiarthroplasty, shorter case', quantity: 1, unitAmount: 400 }] }] })
     if (!hers.ok) throw new Error(hers.message)
     const standIn = trigger('office-reviews-credit').run(api, ctx('/mobile/lists/L-HIST-03/bookings/HBK03', { listId: 'L-HIST-03', bookingId: 'HBK03' }))
     unwire()

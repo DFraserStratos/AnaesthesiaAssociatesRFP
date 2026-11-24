@@ -25,7 +25,7 @@ describe('clockAdvanced', () => {
     const api = createAppStore()
     const seen = record()
     advanceClockMinutes(api, 15)
-    expect(seen).toEqual([{ type: 'clockAdvanced', fromISO: '2026-07-21T08:00:00', toISO: '2026-07-21T08:15:00' }])
+    expect(seen).toEqual([{ type: 'clockAdvanced', fromISO: '2026-11-24T08:00:00', toISO: '2026-11-24T08:15:00' }])
   })
 
   it('Next day emits dayAdvanced, then clockAdvanced', () => {
@@ -33,6 +33,6 @@ describe('clockAdvanced', () => {
     const seen = record()
     advanceClockToNextMorning(api)
     expect(seen.map((e) => e.type)).toEqual(['dayAdvanced', 'clockAdvanced'])
-    expect(seen[1]).toEqual({ type: 'clockAdvanced', fromISO: '2026-07-21T08:00:00', toISO: '2026-07-22T08:00:00' })
+    expect(seen[1]).toEqual({ type: 'clockAdvanced', fromISO: '2026-11-24T08:00:00', toISO: '2026-11-25T08:00:00' })
   })
 })

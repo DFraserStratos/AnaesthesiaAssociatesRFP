@@ -95,8 +95,8 @@ describe('registry shape', () => {
     expect(standIn.disabledReason(api.getState(), ctx)).toBeNull()
     const out = standIn.run(api, ctx)
     expect(out.ok, out.message).toBe(true)
-    expect(out.message).toMatch(/^The office ran Week 30's payment cycle and the accountant paid it in Xero: \$[\d,]+\.\d\d to Dr Souter/)
-    expect(Object.values(api.getState().billing.payablesRuns).some((r) => r.kind === 'week' && r.cycleId === '2026-W30' && r.status === 'paid')).toBe(true)
+    expect(out.message).toMatch(/^The office ran Week 48's payment cycle and the accountant paid it in Xero: \$[\d,]+\.\d\d to Dr Souter/)
+    expect(Object.values(api.getState().billing.payablesRuns).some((r) => r.kind === 'week' && r.cycleId === '2026-W48' && r.status === 'paid')).toBe(true)
     expect(standIn.disabledReason(api.getState(), ctx)).toBe('Nothing due to pay out')
     unwire()
   })
@@ -113,7 +113,7 @@ describe('registry shape', () => {
       const view = new URLSearchParams(path.split('?')[1] ?? '').get('view')
       if (view !== null) published['adminMasters.view'] = view
       // The colleague stand-in shows while an Assign or Reassign picker is open (catch-up Phase 32b).
-      if (t.id === 'ask-colleague-make-available') published['adminPicker.listId'] = 'L-29104-2026-07-22-AM'
+      if (t.id === 'ask-colleague-make-available') published['adminPicker.listId'] = 'L-29104-2026-11-25-AM'
       // The backdated range shows while Merivale's Face lift is open in its detail (catch-up Phase 24; the index hint says so).
       if (t.id === 'demo-backdated-range') published['adminContracts.openContractId'] = 'CT-MER-FACELIFT'
       // The Hub's mode shows while Add a booking (or another lookup surface) is open (catch-up Phase 40a; the index hint says so).
@@ -170,7 +170,7 @@ describe('route scoping', () => {
     expect(week.choices!(api.getState(), ctx).map((c) => c.label)).toEqual(['19 BCTIs', '19 BCTIs and a credit after payout'])
     expect(mismatch.disabledReason(api.getState(), ctx)).toBe('Nothing received this week')
     const out = week.run(api, ctx, 'bctis')
-    expect(out).toMatchObject({ ok: true, message: '19 payables released for Dr Sharma into Week 30. Close the week to start the run.' })
+    expect(out).toMatchObject({ ok: true, message: '19 payables released for Dr Sharma into Week 48. Close the week to start the run.' })
     expect(week.disabledReason(api.getState(), ctx)).toBe('Already staged for this week')
     expect(mismatch.disabledReason(api.getState(), ctx)).toBeNull()
     expect(mismatch.run(api, ctx).message).toMatch(/^The bank download is missing the receipt for AA-2026-PP\d\d\. Close the week to see the anomaly\.$/)
@@ -219,18 +219,18 @@ describe('route scoping', () => {
   })
 
   it('Inject unmatched receipt also shows on the Admin Day dashboard, for its Reconciliation card (catch-up Phase 37)', () => {
-    expect(ids(createAppStore(), '/admin/day/2026-07-21')).toContain('inject-unmatched-receipt')
+    expect(ids(createAppStore(), '/admin/day/2026-11-24')).toContain('inject-unmatched-receipt')
   })
 
   it('the Admin day view shows the sample-warning entries (15a) and Simulate sickness (catch-up Phase 30)', () => {
-    const onDay = ids(createAppStore(), '/admin/day/2026-07-21')
+    const onDay = ids(createAppStore(), '/admin/day/2026-11-24')
     expect(onDay).toEqual(expect.arrayContaining(['raise-sample-warnings', 'clear-sample-warnings', 'simulate-sickness']))
   })
 
   it('Simulate sickness shows on the Day view and Conflicts, bar only, and not on a Booking', () => {
     const api = createAppStore()
     expect(ids(api, '/admin/conflicts')).toContain('simulate-sickness')
-    expect(ids(api, '/admin/day/2026-07-22/bookings/BK0001')).not.toContain('simulate-sickness')
+    expect(ids(api, '/admin/day/2026-11-25/bookings/BK0001')).not.toContain('simulate-sickness')
     const entry = DEMO_TRIGGERS.find((t) => t.id === 'simulate-sickness')!
     expect(entry.surfaces).toEqual(['bar'])
   })
@@ -238,23 +238,23 @@ describe('route scoping', () => {
   it('Simulate sickness (re-pointed in catch-up Phase 32b): a "to the office" row per List and a "to Dr X" row; the List goes, never a conflict', () => {
     const api = createAppStore()
     const t = byId('simulate-sickness')
-    const ctx = ctxFor('/admin/day/2026-07-22', { dateISO: '2026-07-22' })
+    const ctx = ctxFor('/admin/day/2026-11-25', { dateISO: '2026-11-25' })
     const choices = t.choices!(api.getState(), ctx)
-    const sharma = choices.filter((c) => c.id.startsWith('L-41267-2026-07-22-PM|'))
-    expect(sharma.map((c) => c.id)).toEqual(['L-41267-2026-07-22-PM|office', 'L-41267-2026-07-22-PM|colleague'])
+    const sharma = choices.filter((c) => c.id.startsWith('L-41267-2026-11-25-PM|'))
+    expect(sharma.map((c) => c.id)).toEqual(['L-41267-2026-11-25-PM|office', 'L-41267-2026-11-25-PM|colleague'])
     expect(sharma[0]!.label).toMatch(/, to the office$/)
     expect(sharma[1]!.label).toMatch(/, to Dr \w+$/)
-    expect(choices.some((c) => c.id.startsWith('L-29104-2026-07-22-AM'))).toBe(false)
+    expect(choices.some((c) => c.id.startsWith('L-29104-2026-11-25-AM'))).toBe(false)
     expect(t.description).not.toMatch(/provisional|conflict shows/i)
     const office = t.run(api, ctx, sharma[0]!.id)
     expect(office.ok).toBe(true)
     expect(office.message).toMatch(/went back to the Draft Lists with its Bookings\. No conflict\.$/)
-    expect(api.getState().schedule.lists['L-41267-2026-07-22-PM']?.state).toBe('DRAFT')
+    expect(api.getState().schedule.lists['L-41267-2026-11-25-PM']?.state).toBe('DRAFT')
     const api2 = createAppStore()
-    const colleague = t.run(api2, ctx, 'L-41267-2026-07-22-PM|colleague')
+    const colleague = t.run(api2, ctx, 'L-41267-2026-11-25-PM|colleague')
     expect(colleague.ok).toBe(true)
     expect(colleague.message).toMatch(/went to Dr \w+ with its Bookings\. No conflict\.$/)
-    expect(api2.getState().schedule.lists['L-41267-2026-07-22-PM']?.state).toBe('ACTIVE')
+    expect(api2.getState().schedule.lists['L-41267-2026-11-25-PM']?.state).toBe('ACTIVE')
     expect(api2.getState().audit.some((a) => a.action === 'list.conflict')).toBe(false)
   })
 
@@ -302,16 +302,16 @@ describe('route scoping', () => {
     const t = byId('ask-colleague-make-available')
     expect(t.badge).toBe('colleague-stand-in')
     expect(ids(api, '/admin/draft-lists')).not.toContain(t.id)
-    const published = { 'adminPicker.listId': 'L-29104-2026-07-22-AM' }
+    const published = { 'adminPicker.listId': 'L-29104-2026-11-25-AM' }
     expect(ids(api, '/admin/draft-lists', 'bar', published)).toContain(t.id)
     const ctx = ctxFor('/admin/draft-lists', {}, published)
-    const rutherford = 'S-29104-2026-07-22-AM'
+    const rutherford = 'S-29104-2026-11-25-AM'
     expect(t.choices!(api.getState(), ctx).map((c) => c.id)).toContain(rutherford)
     expect(t.disabledReason(api.getState(), ctx, rutherford)).toBeNull()
-    expect(t.disabledReason(api.getState(), ctx, `S-${'34821'}-2026-07-22-AM`)).toBe('This session holds a List')
+    expect(t.disabledReason(api.getState(), ctx, `S-${'34821'}-2026-11-25-AM`)).toBe('This session holds a List')
     const out = t.run(api, ctx, rutherford)
     expect(out.ok).toBe(true)
-    expect(out.message).toMatch(/^Dr Rutherford made Wed 22 Jul AM available\./)
+    expect(out.message).toMatch(/^Dr Rutherford made Wed 25 Nov AM available\./)
     expect(api.getState().schedule.slots[rutherford]?.status).toBe('free')
     expect(t.disabledReason(api.getState(), ctx, rutherford)).toBe('Already available')
   })
@@ -321,7 +321,7 @@ describe('route scoping', () => {
     expect(ids(api, `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`)).toContain('stage-post-op')
     const booking = bookingsForList(api.getState(), POST_OP_ORIGINAL_LIST_ID)[0]
     expect(booking).toBeDefined()
-    expect(ids(api, `/admin/day/2026-07-14/bookings/${booking?.id ?? ''}`)).toContain('stage-post-op')
+    expect(ids(api, `/admin/day/2026-11-17/bookings/${booking?.id ?? ''}`)).toContain('stage-post-op')
     expect(ids(api, `/admin/review/${SEED_LIST_IDS.souterMon20Am}`)).not.toContain('stage-post-op')
   })
 
@@ -406,13 +406,13 @@ describe('re-homed bodies match the Control Panel', () => {
     const out = t.run(api, ctx)
     expect(out).toEqual({
       ok: true,
-      message: "Staged. Search Bennett, open Wednesday's Booking and use Add pre-op or post-op event. Sarah Mitchell's Tue 14 Jul List is authorised and billed for Create additional invoice.",
+      message: "Staged. Search Bennett, open Wednesday's Booking and use Add pre-op or post-op event. Sarah Mitchell's Tue 17 Nov List is authorised and billed for Create additional invoice.",
     })
     expect(api.getState().schedule.lists[POST_OP_ORIGINAL_LIST_ID]?.state).toBe('AUTHORISED')
     // Dr Souter's half: one List in her free Wed 15 Jul PM session, SUBMITTED, Coral Bennett on St George's ACC.
     expect(Object.keys(api.getState().schedule.lists)).toHaveLength(lists + 1)
     const staged = stagedSouterBooking(api.getState())!
-    expect(api.getState().schedule.lists[staged.listId]).toMatchObject({ state: 'SUBMITTED', dateISO: '2026-07-15', session: 'PM', anaesthetistId: ANAE.souter })
+    expect(api.getState().schedule.lists[staged.listId]).toMatchObject({ state: 'SUBMITTED', dateISO: '2026-11-18', session: 'PM', anaesthetistId: ANAE.souter })
     const procedure = Object.values(api.getState().schedule.procedures).find((p) => p.bookingId === staged.id)!
     expect(procedure).toMatchObject({ governingContractId: 'CT-STG-ACC', isPrimary: true })
     expect(Object.keys(api.getState().schedule.procedureEvents)).toEqual(events)
@@ -623,9 +623,9 @@ describe('an anaesthetist moves her own List (catch-up Phase 32)', () => {
 
   it('shows the Admin entry in the bar on Admin Day and Notifications, never on the PWA', () => {
     const api = createAppStore()
-    expect(ids(api, '/admin/day/2026-07-21')).toContain(ADMIN)
+    expect(ids(api, '/admin/day/2026-11-24')).toContain(ADMIN)
     expect(ids(api, '/admin/notifications')).toContain(ADMIN)
-    expect(ids(api, '/admin/day/2026-07-21', 'pwa')).not.toContain(ADMIN)
+    expect(ids(api, '/admin/day/2026-11-24', 'pwa')).not.toContain(ADMIN)
     expect(ids(api, '/mobile/availability', 'pwa')).not.toContain(ADMIN)
   })
 
@@ -640,7 +640,7 @@ describe('an anaesthetist moves her own List (catch-up Phase 32)', () => {
   it('"One move" makes one move and one notification; the busy morning makes eight, two pages', () => {
     const api = createAppStore()
     const t = byId(ADMIN)
-    const ctx = ctxFor('/admin/day/2026-07-21', { dateISO: '2026-07-21' })
+    const ctx = ctxFor('/admin/day/2026-11-24', { dateISO: '2026-11-24' })
     expect(t.disabledReason(api.getState(), ctx, 'one')).toBeNull()
     expect(t.run(api, ctx, 'one').ok).toBe(true)
     expect(Object.keys(api.getState().notifications)).toHaveLength(1)
@@ -680,15 +680,15 @@ describe('a colleague hands a single Booking over (catch-up Phase 32a)', () => {
 
   it('shows the Admin entry in the bar on Admin Day only, never on the PWA', () => {
     const api = createAppStore()
-    expect(ids(api, '/admin/day/2026-07-21')).toContain(ADMIN)
+    expect(ids(api, '/admin/day/2026-11-24')).toContain(ADMIN)
     expect(ids(api, '/admin/notifications')).not.toContain(ADMIN)
-    expect(ids(api, '/admin/day/2026-07-21', 'pwa')).not.toContain(ADMIN)
+    expect(ids(api, '/admin/day/2026-11-24', 'pwa')).not.toContain(ADMIN)
     expect(ids(api, '/mobile/lists', 'pwa')).not.toContain(ADMIN)
   })
 
   it('shows the stand-in on the PWA on the mobile Lists routes, with its badge, never in the bar', () => {
     const api = createAppStore()
-    for (const path of ['/mobile/lists', '/mobile/lists/L-34821-2026-07-22-AM', '/mobile/lists/L-34821-2026-07-22-AM/bookings/BK0046']) {
+    for (const path of ['/mobile/lists', '/mobile/lists/L-34821-2026-11-25-AM', '/mobile/lists/L-34821-2026-11-25-AM/bookings/BK0046']) {
       expect(ids(api, path, 'pwa')).toContain(PWA)
       expect(ids(api, path)).not.toContain(PWA)
     }
@@ -698,15 +698,15 @@ describe('a colleague hands a single Booking over (catch-up Phase 32a)', () => {
 
   it('the Admin entry makes exactly one move, with the office notice, a new List on Souter\'s row and a plain message', () => {
     const api = createAppStore()
-    const ctx = ctxFor('/admin/day/2026-07-21', { dateISO: '2026-07-21' })
+    const ctx = ctxFor('/admin/day/2026-11-24', { dateISO: '2026-11-24' })
     expect(byId(ADMIN).disabledReason(api.getState(), ctx)).toBeNull()
     const out = byId(ADMIN).run(api, ctx)
     expect(out.ok).toBe(true)
-    expect(out.message).toBe("Dr Hughes moved a Booking (Wed 22 Jul PM, Christchurch Eye Surgery) to Dr Souter. A new List was created.")
+    expect(out.message).toBe("Dr Hughes moved a Booking (Wed 25 Nov PM, Christchurch Eye Surgery) to Dr Souter. A new List was created.")
     const s = api.getState()
     expect(s.audit.filter((a) => a.action === 'booking.movedToAnaesthetist')).toHaveLength(1)
     expect(Object.values(s.notifications).map((n) => n.kind)).toEqual(['bookingMoved'])
-    expect(s.schedule.bookings['BK0140']?.listId).toBe(Object.values(s.schedule.lists).find((l) => l.state === 'ACTIVE' && l.slotId === 'S-34821-2026-07-22-PM')?.id)
+    expect(s.schedule.bookings['BK0140']?.listId).toBe(Object.values(s.schedule.lists).find((l) => l.state === 'ACTIVE' && l.slotId === 'S-34821-2026-11-25-PM')?.id)
     // Its only candidate is used: nothing else fits a session she is free in.
     expect(byId(ADMIN).disabledReason(api.getState(), ctx)).toBe('No colleague Booking fits a session Dr Souter is free in')
   })
@@ -716,7 +716,7 @@ describe('a colleague hands a single Booking over (catch-up Phase 32a)', () => {
     const t = byId(PWA)
     const ctx = ctxFor('/mobile/lists')
     const choices = t.choices!(api.getState(), ctx)
-    expect(choices).toEqual([{ id: 'BK0140', label: 'Dr Hughes · Wed 22 Jul PM · Christchurch Eye Surgery' }])
+    expect(choices).toEqual([{ id: 'BK0140', label: 'Dr Hughes · Wed 25 Nov PM · Christchurch Eye Surgery' }])
     expect(t.defaultChoice!(api.getState(), ctx)).toBe('BK0140')
     const out = t.run(api, ctx, 'BK0140')
     expect(out.ok).toBe(true)
@@ -729,12 +729,12 @@ describe('a colleague hands a single Booking over (catch-up Phase 32a)', () => {
     const api = createAppStore()
     const t = byId(PWA)
     const ctx = ctxFor('/mobile/lists')
-    const slotBefore = api.getState().schedule.slots['S-34821-2026-07-31-AM']
+    const slotBefore = api.getState().schedule.slots['S-34821-2026-12-04-AM']
     expect(t.choices!(api.getState(), ctx).map((c) => c.id)).not.toContain('BK0162')
     t.run(api, ctx, 'BK0140')
-    expect(api.getState().schedule.slots['S-34821-2026-07-31-AM']).toEqual(slotBefore)
+    expect(api.getState().schedule.slots['S-34821-2026-12-04-AM']).toEqual(slotBefore)
     expect(t.disabledReason(api.getState(), ctx)).toBe('No colleague Booking fits a session you are free in. Set a session available first.')
-    expect(setAvailabilityRange(api, SOUTER_ACTOR, { anaesthetistId: '34821', fromISO: '2026-07-31', toISO: '2026-07-31', sessions: 'AM', statusKey: 'free' }).ok).toBe(true)
+    expect(setAvailabilityRange(api, SOUTER_ACTOR, { anaesthetistId: '34821', fromISO: '2026-12-04', toISO: '2026-12-04', sessions: 'AM', statusKey: 'free' }).ok).toBe(true)
     expect(t.choices!(api.getState(), ctx).map((c) => c.id)).toEqual(['BK0162'])
     expect(t.run(api, ctx, 'BK0162').ok).toBe(true)
     expect(api.getState().schedule.lists[api.getState().schedule.bookings['BK0162']!.listId]?.anaesthetistId).toBe('34821')
@@ -748,7 +748,7 @@ describe('sample warnings (catch-up Phase 15a)', () => {
 
   it('show on Admin Day, Admin Booking detail and the mobile Booking, on both surfaces there, and nowhere else', () => {
     const api = createAppStore()
-    for (const path of ['/admin/day/2026-07-24', `/admin/day/2026-07-21/bookings/${AM_TARGET}`]) {
+    for (const path of ['/admin/day/2026-11-27', `/admin/day/2026-11-24/bookings/${AM_TARGET}`]) {
       expect(ids(api, path, 'bar')).toEqual(expect.arrayContaining(['raise-sample-warnings', 'clear-sample-warnings']))
     }
     const mobile = `/mobile/lists/${SEED_LIST_IDS.rutherfordAm21}/bookings/${AM_TARGET}`
@@ -767,14 +767,14 @@ describe('sample warnings (catch-up Phase 15a)', () => {
     expect(t.badge).toBe('office-stand-in')
     expect(ids(api, rileyPath, 'bar')).not.toContain('office-clears-warning')
     expect(ids(api, rileyPath, 'pwa')).toContain('office-clears-warning')
-    expect(ids(api, `/admin/day/2026-07-24/bookings/${RILEY}`, 'bar')).not.toContain('office-clears-warning')
+    expect(ids(api, `/admin/day/2026-11-27/bookings/${RILEY}`, 'bar')).not.toContain('office-clears-warning')
   })
 
   it('raise then clear on the Day view: disabled states, seed values back, no clearance left', () => {
     const api = createAppStore()
     const raise = byId('raise-sample-warnings')
     const clear = byId('clear-sample-warnings')
-    const day = ctxFor('/admin/day/2026-07-21')
+    const day = ctxFor('/admin/day/2026-11-24')
     expect(clear.disabledReason(api.getState(), day)).toBe('Nothing staged')
     expect(raise.disabledReason(api.getState(), day)).toBeNull()
     const before = proceduresForBooking(api.getState(), AM_TARGET!)[0]!
@@ -804,7 +804,7 @@ describe('sample warnings (catch-up Phase 15a)', () => {
     expect(raise.disabledReason(api.getState(), riley)).toBeNull()
     expect(raise.run(api, riley).ok).toBe(true)
     expect(raise.disabledReason(api.getState(), riley)).toBe('Samples already raised')
-    expect(raise.disabledReason(api.getState(), ctxFor('/admin/day/2026-07-21/bookings/BK9999', { bookingId: 'BK9999' }))).toBe(
+    expect(raise.disabledReason(api.getState(), ctxFor('/admin/day/2026-11-24/bookings/BK9999', { bookingId: 'BK9999' }))).toBe(
       'Samples stage on seeded Bookings only',
     )
   })
@@ -838,7 +838,7 @@ describe('Photo capture (Future scope) (catch-up Phase 15b)', () => {
     expect(t.badge).toBe('future-scope')
     expect(ids(api, `/mobile/lists/${OPEN_LIST}`, 'bar')).toContain('photo-capture-future')
     expect(ids(api, `/mobile/lists/${OPEN_LIST}`, 'pwa')).toContain('photo-capture-future')
-    for (const path of ['/mobile/lists', `/mobile/lists/${OPEN_LIST}/bookings/BK0009`, `/web/lists/${OPEN_LIST}`, '/admin/day/2026-07-21', '/mobile/more']) {
+    for (const path of ['/mobile/lists', `/mobile/lists/${OPEN_LIST}/bookings/BK0009`, `/web/lists/${OPEN_LIST}`, '/admin/day/2026-11-24', '/mobile/more']) {
       expect(ids(api, path, 'bar'), path).not.toContain('photo-capture-future')
       expect(ids(api, path, 'pwa'), path).not.toContain('photo-capture-future')
     }
@@ -917,23 +917,23 @@ describe('AA fee entries (catch-up Phase 16)', () => {
     const api = createAppStore()
     const seed = byId('seed-month-of-bctis')
     const run = byId('run-scheduled-fee-run')
-    const ctx = ctxFor(FEE, {}, { 'aaFees.month': '2026-07' })
+    const ctx = ctxFor(FEE, {}, { 'aaFees.month': '2026-11' })
     expect(seed.disabledReason(api.getState(), ctx)).toBeNull()
-    expect(seed.run(api, ctx).message).toMatch(/now has 40 paid in July 2026\. At the current settings his fee is \$700\.00 before GST/)
-    expect(seed.disabledReason(api.getState(), ctx)).toBe('Already 40 BCTIs paid in July 2026')
+    expect(seed.run(api, ctx).message).toMatch(/now has 40 paid in November 2026\. At the current settings his fee is \$700\.00 before GST/)
+    expect(seed.disabledReason(api.getState(), ctx)).toBe('Already 40 BCTIs paid in November 2026')
 
     expect(run.disabledReason(api.getState(), ctx)).toBeNull()
     expect(run.run(api, ctx).ok).toBe(true)
-    const rutherford = Object.values(api.getState().billing.aaFeeInvoices).find((f) => f.anaesthetistId === '29104' && f.monthISO === '2026-07')!
+    const rutherford = Object.values(api.getState().billing.aaFeeInvoices).find((f) => f.anaesthetistId === '29104' && f.monthISO === '2026-11')!
     expect([rutherford.bctiCount, rutherford.subtotal, rutherford.gst, rutherford.total]).toEqual([40, 700, 105, 805])
     expect(new Set(rutherford.bctis.map((b) => b.accPayId)).size).toBe(40)
-    expect(rutherford.bctis.every((b) => b.receivablePaidAtISO?.startsWith('2026-07'))).toBe(true)
+    expect(rutherford.bctis.every((b) => b.receivablePaidAtISO?.startsWith('2026-11'))).toBe(true)
     expect(rutherford.raisedBy).toBe('scheduled')
-    expect(run.disabledReason(api.getState(), ctx)).toBe('Every active anaesthetist already has a fee invoice for July 2026.')
-    expect(seed.disabledReason(api.getState(), ctx)).toBe('Already invoiced for July 2026')
+    expect(run.disabledReason(api.getState(), ctx)).toBe('Every active anaesthetist already has a fee invoice for November 2026.')
+    expect(seed.disabledReason(api.getState(), ctx)).toBe('Already invoiced for November 2026')
   })
 
-  it('the seeded BCTIs add nothing to Outstanding or the payables run, and no List from 7 July on', () => {
+  it('the seeded BCTIs add nothing to Outstanding or the payables run, and no List from 10 November on', () => {
     const api = createAppStore()
     const openBefore = openAccRecs(api.getState()).length
     byId('seed-month-of-bctis').run(api, ctxFor(FEE))
@@ -941,7 +941,7 @@ describe('AA fee entries (catch-up Phase 16)', () => {
     expect(openAccRecs(s).length).toBe(openBefore)
     const added = Object.values(s.schedule.lists).filter((l) => l.id.startsWith('L-RB-'))
     expect(added).toHaveLength(8)
-    expect(added.every((l) => l.anaesthetistId === '29104' && l.dateISO < '2026-07-07' && l.state === 'AUTHORISED')).toBe(true)
+    expect(added.every((l) => l.anaesthetistId === '29104' && l.dateISO < '2026-11-10' && l.state === 'AUTHORISED')).toBe(true)
     const pays = Object.values(s.xero.accPays).filter((p) => p.id.startsWith('XPRB'))
     expect(pays.every((p) => p.amountDisbursed === p.amountPayable && p.status === 'paid')).toBe(true)
   })
@@ -949,8 +949,8 @@ describe('AA fee entries (catch-up Phase 16)', () => {
   it('the run trigger reads the month in the picker and refuses a future one', () => {
     const api = createAppStore()
     const run = byId('run-scheduled-fee-run')
-    expect(run.disabledReason(api.getState(), ctxFor(FEE, {}, { 'aaFees.month': '2026-08' }))).toBe('August 2026 has not started yet.')
-    expect(run.run(api, ctxFor(FEE, {}, { 'aaFees.month': '2026-06' })).message).toMatch(/for June 2026/)
+    expect(run.disabledReason(api.getState(), ctxFor(FEE, {}, { 'aaFees.month': '2026-12' }))).toBe('December 2026 has not started yet.')
+    expect(run.run(api, ctxFor(FEE, {}, { 'aaFees.month': '2026-10' })).message).toMatch(/for October 2026/)
   })
 })
 
@@ -980,11 +980,11 @@ describe('Regenerate from locked data (catch-up Phase 25)', () => {
 describe('prepayment entries (catch-up Phase 27)', () => {
   const RILEY = SEED_MARKERS.prepaymentBooking!.entityId
   const rileyList = (api: BoundAppStore) => api.getState().schedule.bookings[RILEY]!.listId
-  const adminBooking = `/admin/day/2026-07-24/bookings/${RILEY}`
+  const adminBooking = `/admin/day/2026-11-27/bookings/${RILEY}`
 
   it('show on their routes only', () => {
     const api = createAppStore()
-    expect(ids(api, '/admin/day/2026-07-21')).toEqual(expect.arrayContaining(['prepayment-two-days-before', 'add-prepaid-booking']))
+    expect(ids(api, '/admin/day/2026-11-24')).toEqual(expect.arrayContaining(['prepayment-two-days-before', 'add-prepaid-booking']))
     expect(ids(api, adminBooking)).toEqual(expect.arrayContaining(['prepayment-two-days-before', 'add-prepaid-booking', 'payment-full', 'payment-half']))
     const mobile = `/mobile/lists/${rileyList(api)}/bookings/${RILEY}`
     expect(ids(api, mobile, 'pwa')).toEqual(expect.arrayContaining(['prepayment-two-days-before', 'pwa-office-approves-prepayment', 'pwa-payment-full', 'pwa-payment-half']))
@@ -994,7 +994,7 @@ describe('prepayment entries (catch-up Phase 27)', () => {
 
   it('give their disabled reasons', () => {
     const api = createAppStore()
-    const ctx = ctxFor(adminBooking, { dateISO: '2026-07-24', bookingId: RILEY })
+    const ctx = ctxFor(adminBooking, { dateISO: '2026-11-27', bookingId: RILEY })
     // Riley awaits approval: no payment yet.
     expect(byId('payment-half').disabledReason(api.getState(), ctx)).toBe('Not approved yet')
     expect(byId('prepayment-two-days-before').disabledReason(api.getState(), ctx)).toBeNull()
@@ -1012,7 +1012,7 @@ describe('prepayment entries (catch-up Phase 27)', () => {
 
   it('the clock jump never rewinds; add-prepaid-booking refuses a second run', () => {
     const api = createAppStore()
-    const day = ctxFor('/admin/day/2026-07-21', { dateISO: '2026-07-21' })
+    const day = ctxFor('/admin/day/2026-11-24', { dateISO: '2026-11-24' })
     const jump = byId('prepayment-two-days-before')
     const first = jump.choices!(api.getState(), day)[0]!.id
     expect(jump.run(api, day, first).ok).toBe(true)
@@ -1031,23 +1031,23 @@ describe('Office sets this session to Public (catch-up Phase 32d; PWA parity)', 
   it('shows on the PWA only, with a day open in My calendar', () => {
     const api = createAppStore()
     expect(ids(api, path, 'pwa')).not.toContain('availability-office-sets-public')
-    expect(ids(api, path, 'pwa', day('2026-08-21'))).toContain('availability-office-sets-public')
-    expect(ids(api, path, 'bar', day('2026-08-21'))).not.toContain('availability-office-sets-public')
+    expect(ids(api, path, 'pwa', day('2026-12-25'))).toContain('availability-office-sets-public')
+    expect(ids(api, path, 'bar', day('2026-12-25'))).not.toContain('availability-office-sets-public')
   })
 
   it('sets the session Public with the note "CPH" as the simulated office, then is disabled; a List or a past day disables it', () => {
     const api = createAppStore()
     const t = byId('availability-office-sets-public')
-    const ctx = ctxFor(path, {}, day('2026-08-21'))
-    const am = `S-${SOUTER}-2026-08-21-AM`
+    const ctx = ctxFor(path, {}, day('2026-12-25'))
+    const am = `S-${SOUTER}-2026-12-25-AM`
     expect(t.disabledReason(api.getState(), ctx, am)).toBeNull()
     const out = t.run(api, ctx, am)
     expect(out).toEqual({ ok: true, message: 'The office set this session to Public · CPH.' })
     expect(api.getState().schedule.slots[am]).toMatchObject({ status: 'publicHospital', note: 'CPH' })
     expect(api.getState().audit.at(-1)).toMatchObject({ role: 'office', who: 'AA office (simulated)' })
     expect(t.disabledReason(api.getState(), ctx, am)).toBe('Already Public')
-    expect(t.disabledReason(api.getState(), ctxFor(path, {}, day('2026-08-17')), `S-${SOUTER}-2026-08-17-AM`)).toBe('This session holds a List')
-    expect(t.disabledReason(api.getState(), ctxFor(path, {}, day('2026-07-20')), `S-${SOUTER}-2026-07-20-AM`)).toBe('This session is past')
+    expect(t.disabledReason(api.getState(), ctxFor(path, {}, day('2026-12-21')), `S-${SOUTER}-2026-12-21-AM`)).toBe('This session holds a List')
+    expect(t.disabledReason(api.getState(), ctxFor(path, {}, day('2026-11-23')), `S-${SOUTER}-2026-11-23-AM`)).toBe('This session is past')
   })
 })
 
@@ -1083,7 +1083,7 @@ describe('the Ledger triggers (catch-up Phase 36)', () => {
     const api = createAppStore()
     const unwire = wireBillingRun(api)
     try {
-      authoriseList(api, OFFICE_ACTOR, projectedListId('34821', '2026-07-20', 'AM'))
+      authoriseList(api, OFFICE_ACTOR, projectedListId('34821', '2026-11-23', 'AM'))
     } finally {
       unwire()
     }
@@ -1106,7 +1106,7 @@ describe('the Ledger triggers (catch-up Phase 36)', () => {
     expect(t.disabledReason(api.getState(), ctx)).toBe('Nothing due to pay out')
     const unwire = wireBillingRun(api)
     try {
-      authoriseList(api, OFFICE_ACTOR, projectedListId('34821', '2026-07-20', 'AM'))
+      authoriseList(api, OFFICE_ACTOR, projectedListId('34821', '2026-11-23', 'AM'))
     } finally {
       unwire()
     }
@@ -1160,7 +1160,7 @@ describe('Phase 43 entries (scale and privacy)', () => {
 
   it('Load full-scale data sits on the Day view and Invoices, bar only, with a confirm line', () => {
     const api = createAppStore()
-    expect(ids(api, '/admin/day/2026-07-21')).toContain('load-full-scale')
+    expect(ids(api, '/admin/day/2026-11-24')).toContain('load-full-scale')
     expect(ids(api, '/admin/invoices')).toContain('load-full-scale')
     expect(ids(api, '/admin/billing')).not.toContain('load-full-scale')
     expect(ids(api, '/mobile/lists', 'pwa')).not.toContain('load-full-scale')
@@ -1263,7 +1263,7 @@ describe('credit entries (catch-up Phase 39 session 2)', () => {
     unwire()
     expect(out).toMatchObject({ ok: true, message: "Paid in full, approved for payment and paid out to Dr Sharma in Xero. Credit it to see the negative invoice. Once credited, the negative invoice is netted in Dr Sharma's next payment run." })
     // The payout went through a one-line staged run the office approved (no back door).
-    expect(Object.values(api.getState().billing.payablesRuns).filter((r) => r.kind === 'staged')).toEqual([expect.objectContaining({ status: 'paid', cycleId: '2026-W30' })])
+    expect(Object.values(api.getState().billing.payablesRuns).filter((r) => r.kind === 'staged')).toEqual([expect.objectContaining({ status: 'paid', cycleId: '2026-W48' })])
     const invoiceId = out.link!.to.split('/').pop()!
     expect(t.disabledReason(api.getState(), monitor)).toBe('Already paid out')
     expect(t.disabledReason(api.getState(), ctxFor(`/admin/invoices/${invoiceId}`, { invoiceId }))).toBe('Already paid out')
@@ -1292,7 +1292,7 @@ describe('credit entries (catch-up Phase 39 session 2)', () => {
   it('"Run the next billing run" counts a correction: the credit note and its new invoice', () => {
     const api = createAppStore()
     const unwire = wireBillingRun(api)
-    const { creditEventId } = credit(api, OFFICE_ACTOR, 'HINV03', [{ occurredOnISO: '2026-07-21', party: { sameAs: true }, lines: [{ description: 'Shorter case', quantity: 1, unitAmount: 400 }] }])
+    const { creditEventId } = credit(api, OFFICE_ACTOR, 'HINV03', [{ occurredOnISO: '2026-11-24', party: { sameAs: true }, lines: [{ description: 'Shorter case', quantity: 1, unitAmount: 400 }] }])
     expect(approveProcedureEvent(api, OFFICE_ACTOR, creditEventId).ok).toBe(true)
     const out = byId('run-next-billing-run').run(api, ctxFor('/admin/billing'))
     unwire()
@@ -1307,7 +1307,7 @@ describe('credit entries (catch-up Phase 39 session 2)', () => {
     expect(t.disabledReason(api.getState(), hbk03())).toBe('No credit on this Booking is awaiting review')
     // The seeded additional invoice first, so only the credit and its replacement wait.
     expect(additional.run(api, hbk03()).ok).toBe(true)
-    credit(api, SOUTER_ACTOR, 'HINV03', [{ occurredOnISO: '2026-07-21', party: { sameAs: true }, lines: [{ description: 'Shorter case', quantity: 1, unitAmount: 400 }] }])
+    credit(api, SOUTER_ACTOR, 'HINV03', [{ occurredOnISO: '2026-11-24', party: { sameAs: true }, lines: [{ description: 'Shorter case', quantity: 1, unitAmount: 400 }] }])
     expect(additional.disabledReason(api.getState(), hbk03())).toBe('No event awaiting review or the next run on this Booking')
     expect(t.disabledReason(api.getState(), hbk03())).toBeNull()
     const out = t.run(api, hbk03())

@@ -13,7 +13,7 @@ import {
   type PatientBalanceRow,
 } from '.'
 
-const TODAY = '2026-07-21'
+const TODAY = '2026-11-24'
 const ME = 'PT0005'
 
 function row(over: Partial<PatientBalanceRow> & Pick<PatientBalanceRow, 'invoiceId' | 'raisedAtISO'>): PatientBalanceRow {
@@ -33,8 +33,8 @@ const daysAgo = (n: number): string => `${addDaysISO(TODAY, -n)}T09:00:00`
 
 describe('invoiceAgeDays: the only place the basis lives (the invoice date)', () => {
   it('counts whole calendar days from the invoice date', () => {
-    expect(invoiceAgeDays('2026-04-14T09:00:00', TODAY)).toBe(98)
-    expect(invoiceAgeDays('2026-06-21', TODAY)).toBe(30)
+    expect(invoiceAgeDays('2026-08-18T09:00:00', TODAY)).toBe(98)
+    expect(invoiceAgeDays('2026-10-25', TODAY)).toBe(30)
   })
 })
 
@@ -140,15 +140,15 @@ describe('waitingNhiUrgency (our reading of "close": within 3 days or passed)', 
 })
 
 describe('detailDifferences (the "details differ" prompt)', () => {
-  const existing = { name: 'Sarah Mitchell', dobISO: '1988-04-12', phone: '021 555 3458', email: 's@example.net', postalAddress: { line1: '4 Beach Road', city: 'Christchurch', postcode: '8081' } }
+  const existing = { name: 'Sarah Mitchell', dobISO: '1988-08-16', phone: '021 555 3458', email: 's@example.net', postalAddress: { line1: '4 Beach Road', city: 'Christchurch', postcode: '8081' } }
 
   it('finds none for the same details, trimmed and case-insensitive, phone by digits', () => {
-    expect(detailDifferences(existing, { name: '  sarah  MITCHELL ', phone: '0215553458', dobISO: '1988-04-12' })).toEqual([])
+    expect(detailDifferences(existing, { name: '  sarah  MITCHELL ', phone: '0215553458', dobISO: '1988-08-16' })).toEqual([])
   })
 
   it('reports each differing field', () => {
     expect(detailDifferences(existing, { name: 'Sarah Brown' }).map((d) => d.field)).toEqual(['name'])
-    expect(detailDifferences(existing, { dobISO: '1988-04-13' }).map((d) => d.field)).toEqual(['dobISO'])
+    expect(detailDifferences(existing, { dobISO: '1988-08-17' }).map((d) => d.field)).toEqual(['dobISO'])
     expect(detailDifferences(existing, { phone: '021 555 0000' }).map((d) => d.field)).toEqual(['phone'])
     expect(detailDifferences(existing, { email: 'other@example.net' }).map((d) => d.field)).toEqual(['email'])
     expect(detailDifferences(existing, { postalAddress: { line1: '9 Hill Street', city: 'Christchurch', postcode: '8011' } })).toEqual([
@@ -157,7 +157,7 @@ describe('detailDifferences (the "details differ" prompt)', () => {
   })
 
   it('a field the record lacks is enrichment, not a difference; one the incoming side lacks is ignored', () => {
-    expect(detailDifferences({ name: 'A', dobISO: '1980-01-01' }, { name: 'A', phone: '021 1' })).toEqual([])
+    expect(detailDifferences({ name: 'A', dobISO: '1980-05-06' }, { name: 'A', phone: '021 1' })).toEqual([])
     expect(detailDifferences(existing, {})).toEqual([])
   })
 })

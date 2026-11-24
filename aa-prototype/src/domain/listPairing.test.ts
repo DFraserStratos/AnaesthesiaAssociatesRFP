@@ -31,7 +31,7 @@ describe('pairingIssues (US-01.3.1)', () => {
 })
 
 describe('isActivePairing (FT-07.1)', () => {
-  const full = { anaesthetistId: 'A1', slotId: 'S-A1-2026-07-21-AM', dateISO: '2026-07-21', session: 'AM' as const, hospitalId: 'H-1', surgeonId: 'S-1' }
+  const full = { anaesthetistId: 'A1', slotId: 'S-A1-2026-11-24-AM', dateISO: '2026-11-24', session: 'AM' as const, hospitalId: 'H-1', surgeonId: 'S-1' }
   it('is true only with all five of its pairing', () => {
     expect(isActivePairing(full)).toBe(true)
     for (const key of ['anaesthetistId', 'slotId', 'dateISO', 'hospitalId', 'surgeonId'] as const) {

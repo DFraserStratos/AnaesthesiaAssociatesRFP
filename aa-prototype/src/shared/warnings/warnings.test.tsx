@@ -57,7 +57,7 @@ describe('WarningTriangle', () => {
     expect(container).toBeEmptyDOMElement()
     rerender(
       <WarningTriangle
-        warnings={[warning({ clearance: { key: 'k', bookingId: RILEY, ruleId: 'prepaymentUnpaid', strength: 'strong', by: 'Kirsty W.', role: 'office', atISO: '2026-07-21T10:05:00' } })]}
+        warnings={[warning({ clearance: { key: 'k', bookingId: RILEY, ruleId: 'prepaymentUnpaid', strength: 'strong', by: 'Kirsty W.', role: 'office', atISO: '2026-11-24T10:05:00' } })]}
       />,
     )
     expect(screen.getByRole('img')).toHaveAttribute('data-strength', 'cleared')
@@ -93,7 +93,7 @@ describe('WarningsPanel', () => {
     const clearance = useAppStore.getState().schedule.warningClearances[RILEY_KEY]
     expect(clearance).toMatchObject({ by: 'Kirsty W.', role: 'office' })
     rerender(<WarningsPanel warnings={[warning({ clearance })]} actor={OFFICE_ACTOR} canClear />)
-    expect(screen.getByText(/^Cleared by Kirsty W\., Tue 21 Jul \d\d:\d\d$/)).toBeInTheDocument()
+    expect(screen.getByText(/^Cleared by Kirsty W\., Tue 24 Nov \d\d:\d\d$/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Clear/ })).toBeNull()
     expect(screen.getByRole('heading', { name: /All cleared/ })).toBeInTheDocument()
   })

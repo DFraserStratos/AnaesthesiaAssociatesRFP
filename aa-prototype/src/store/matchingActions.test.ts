@@ -71,7 +71,7 @@ describe('corrections', () => {
     expect(assessImportRow(api.getState(), waiting)?.waitingForNhi).toBe(true)
     expect(correctImportRow(api, OFFICE_ACTOR, waiting, { nhi: SX_NO_NHI_TYPED }).ok).toBe(true)
     const a = assessImportRow(api.getState(), waiting)!
-    expect(a).toMatchObject({ waitingForNhi: false, changeType: 'new', queue: 'ready', suggestion: { kind: 'createBooking', listId: 'L-34821-2026-07-28-PM' } })
+    expect(a).toMatchObject({ waitingForNhi: false, changeType: 'new', queue: 'ready', suggestion: { kind: 'createBooking', listId: 'L-34821-2026-12-01-PM' } })
     expect(api.getState().intake.rows[waiting]!.incoming.procedure?.text).toBe('T&A')
   })
 })
@@ -81,7 +81,7 @@ describe('decisions (US-02.1.2, US-02.1.3, FT-02.5)', () => {
     const api = fresh()
     const waiting = imported(api, 'SAMPLE_SX')[3]!
     const before = scheduleOf(api)
-    expect(decideImportRow(api, OFFICE_ACTOR, waiting, { kind: 'createBooking', listId: 'L-34821-2026-07-28-PM' })).toMatchObject({ ok: false, code: 'nhiRequired' })
+    expect(decideImportRow(api, OFFICE_ACTOR, waiting, { kind: 'createBooking', listId: 'L-34821-2026-12-01-PM' })).toMatchObject({ ok: false, code: 'nhiRequired' })
     expect(decideImportRow(api, OFFICE_ACTOR, waiting, { kind: 'createDraft' })).toMatchObject({ ok: false, code: 'nhiRequired' })
     expect(scheduleOf(api)).toBe(before)
     expect(decideImportRow(api, OFFICE_ACTOR, waiting, { kind: 'reject', reason: '' })).toMatchObject({ ok: false, code: 'reasonRequired' })
@@ -94,12 +94,12 @@ describe('decisions (US-02.1.2, US-02.1.3, FT-02.5)', () => {
     const api = fresh()
     const r1 = imported(api, 'SAMPLE_STG')[0]!
     const patientsBefore = Object.keys(api.getState().masters.patients).length
-    const res = decideImportRow(api, OFFICE_ACTOR, r1, { kind: 'createBooking', listId: 'L-34821-2026-07-28-AM' })
+    const res = decideImportRow(api, OFFICE_ACTOR, r1, { kind: 'createBooking', listId: 'L-34821-2026-12-01-AM' })
     expect(res.ok).toBe(true)
     const bookingId = res.ok ? res.value.bookingId! : ''
     const s = api.getState()
     const booking = s.schedule.bookings[bookingId]!
-    expect(booking).toMatchObject({ listId: 'L-34821-2026-07-28-AM', patientId: 'PT0005', scheduledTime: '08:30', source: 'hospitalDownload', correlationRef: { sourceFeedId: 'FEED-STG', externalAppointmentId: '1661243' } })
+    expect(booking).toMatchObject({ listId: 'L-34821-2026-12-01-AM', patientId: 'PT0005', scheduledTime: '08:30', source: 'hospitalDownload', correlationRef: { sourceFeedId: 'FEED-STG', externalAppointmentId: '1661243' } })
     expect(Object.keys(s.masters.patients)).toHaveLength(patientsBefore)
     const [procedure] = proceduresForBooking(s, bookingId)
     expect(procedure!.procedureText).toMatchObject({ text: 'lap appy ?conv to open', source: 'hospitalDownload', from: "St George's" })
@@ -117,7 +117,7 @@ describe('decisions (US-02.1.2, US-02.1.3, FT-02.5)', () => {
   it("a later update for the Booking R1 created matches it, changes nothing until decided, then applies time, note and text", () => {
     const api = fresh()
     const r1 = imported(api, 'SAMPLE_STG')[0]!
-    const created = decideImportRow(api, OFFICE_ACTOR, r1, { kind: 'createBooking', listId: 'L-34821-2026-07-28-AM' })
+    const created = decideImportRow(api, OFFICE_ACTOR, r1, { kind: 'createBooking', listId: 'L-34821-2026-12-01-AM' })
     const bookingId = created.ok ? created.value.bookingId! : ''
     const before = scheduleOf(api)
     const update = imported(api, 'SAMPLE_STG_UPDATE')[0]!
@@ -127,7 +127,7 @@ describe('decisions (US-02.1.2, US-02.1.3, FT-02.5)', () => {
     expect(a.diffs.map((d) => d.key)).toEqual(['time', 'procedureText', 'note'])
     expect(decideImportRow(api, OFFICE_ACTOR, update, { kind: 'match', bookingId, fieldsApplied: ['time', 'procedureText', 'note'] }).ok).toBe(true)
     const s = api.getState()
-    expect(s.schedule.bookings[bookingId]).toMatchObject({ scheduledTime: '09:00', notes: "St George's, 21 Jul: Moved to 09:00 at theatre request" })
+    expect(s.schedule.bookings[bookingId]).toMatchObject({ scheduledTime: '09:00', notes: "St George's, 24 Nov: Moved to 09:00 at theatre request" })
     expect(proceduresForBooking(s, bookingId)[0]!.procedureText?.text).toBe(SARAH_UPDATE_WORDING)
     const procedureId = proceduresForBooking(s, bookingId)[0]!.id
     const replaced = s.audit.find((e) => e.action === 'procedure.procedureText.replace' && e.entityId === procedureId)
@@ -157,13 +157,13 @@ describe('decisions (US-02.1.2, US-02.1.3, FT-02.5)', () => {
     const api = fresh()
     const rows = imported(api, 'SAMPLE_STG')
     expect(decideImportRow(api, OFFICE_ACTOR, rows[3]!, { kind: 'match', bookingId: 'BK0042', fieldsApplied: [] }).ok).toBe(true)
-    const created = decideImportRow(api, OFFICE_ACTOR, rows[4]!, { kind: 'createBooking', listId: 'L-34821-2026-08-04-AM' })
+    const created = decideImportRow(api, OFFICE_ACTOR, rows[4]!, { kind: 'createBooking', listId: 'L-34821-2026-12-08-AM' })
     expect(created.ok).toBe(true)
     const s = api.getState()
-    expect(s.schedule.bookings['BK0042']).toMatchObject({ listId: 'L-34821-2026-08-03-PM', cancellation: { reason: "Moved to another day by St George's booking office" } })
+    expect(s.schedule.bookings['BK0042']).toMatchObject({ listId: 'L-34821-2026-12-07-PM', cancellation: { reason: "Moved to another day by St George's booking office" } })
     const newId = created.ok ? created.value.bookingId! : ''
     expect(newId).not.toBe('BK0042')
-    expect(s.schedule.bookings[newId]).toMatchObject({ listId: 'L-34821-2026-08-04-AM', patientId: s.schedule.bookings['BK0042']!.patientId })
+    expect(s.schedule.bookings[newId]).toMatchObject({ listId: 'L-34821-2026-12-08-AM', patientId: s.schedule.bookings['BK0042']!.patientId })
   })
 
   it('an AUTHORISED List is refused listLocked and nothing changes; a SUBMITTED List applies (US-02.5.4)', () => {
@@ -173,7 +173,7 @@ describe('decisions (US-02.1.2, US-02.1.3, FT-02.5)', () => {
     expect(decideImportRow(api, OFFICE_ACTOR, r3, { kind: 'match', bookingId: 'HBK08', fieldsApplied: ['time'] })).toMatchObject({ ok: false, code: 'listLocked' })
     expect(scheduleOf(api)).toBe(before)
     const staged = stageImportRows(api, OFFICE_ACTOR, 'download', 'H-STG', 'test', [
-      { hospitalId: 'H-STG', dateISO: '2026-07-17', session: 'AM', surgeon: { name: 'Mr P. Doyle', hpiId: '45DOYP' }, scheduledTime: '10:15', patient: { name: 'Alan Prentice', nhi: 'ZAC3326' }, hospitalStatus: 'booked' },
+      { hospitalId: 'H-STG', dateISO: '2026-11-20', session: 'AM', surgeon: { name: 'Mr P. Doyle', hpiId: '45DOYP' }, scheduledTime: '10:15', patient: { name: 'Alan Prentice', nhi: 'ZAC3326' }, hospitalStatus: 'booked' },
     ])
     const rowId = staged.ok ? staged.value.rowIds[0]! : ''
     const a = assessImportRow(api.getState(), rowId)!
@@ -190,14 +190,14 @@ describe('decisions (US-02.1.2, US-02.1.3, FT-02.5)', () => {
     const s = api.getState()
     const b = s.schedule.bookings['BK0166']!
     expect(b).toMatchObject({ funderPartyId: 'PY-NIB', insuranceApprovalNumber: '4471203' })
-    expect(s.masters.patients[b.patientId]).toMatchObject({ name: 'Olivia Ratima', dobISO: '1955-02-27' })
+    expect(s.masters.patients[b.patientId]).toMatchObject({ name: 'Olivia Ratima', dobISO: '1955-07-03' })
     expect(proceduresForBooking(s, 'BK0166')[0]!.payer).toEqual({ kind: 'patient' })
   })
 
   it('Create a List in a session (through assignListToSlot) and Create a Draft List holding the Booking', () => {
     const api = fresh()
     const sx5 = imported(api, 'SAMPLE_SX')[4]!
-    const list = decideImportRow(api, OFFICE_ACTOR, sx5, { kind: 'createList', slotId: 'S-41267-2026-08-06-PM' })
+    const list = decideImportRow(api, OFFICE_ACTOR, sx5, { kind: 'createList', slotId: 'S-41267-2026-12-10-PM' })
     expect(list.ok).toBe(true)
     const s1 = api.getState()
     const listId = list.ok ? list.value.listId! : ''
@@ -209,7 +209,7 @@ describe('decisions (US-02.1.2, US-02.1.3, FT-02.5)', () => {
     expect(draft.ok).toBe(true)
     const s2 = api.getState()
     const draftId = draft.ok ? draft.value.listId! : ''
-    expect(s2.schedule.lists[draftId]).toMatchObject({ state: 'DRAFT', hospitalId: 'H-FORTE', surgeonId: 'S-OKAFOR', dateISO: '2026-07-31', session: 'PM', draft: { origin: 'hospitalRow' } })
+    expect(s2.schedule.lists[draftId]).toMatchObject({ state: 'DRAFT', hospitalId: 'H-FORTE', surgeonId: 'S-OKAFOR', dateISO: '2026-12-04', session: 'PM', draft: { origin: 'hospitalRow' } })
     expect(s2.schedule.lists[draftId]!.notes).toBe('From Forte Health daily sheet: Hugh Barnett, 14:00, TURBT')
     const bookingId = draft.ok ? draft.value.bookingId! : ''
     expect(proceduresForBooking(s2, bookingId)[0]!.procedureText).toMatchObject({ text: 'TURBT', source: 'hospitalSheet', from: 'Forte Health daily sheet' })
@@ -219,11 +219,11 @@ describe('decisions (US-02.1.2, US-02.1.3, FT-02.5)', () => {
     const api = fresh()
     const forte = imported(api, 'SAMPLE_FORTE_SHEET')
     expect(correctImportRow(api, OFFICE_ACTOR, forte[2]!, { surgeonId: 'S-NOPE' })).toMatchObject({ ok: false, code: 'notFound' })
-    expect(decideImportRow(api, OFFICE_ACTOR, forte[1]!, { kind: 'createBooking', listId: 'L-25490-2026-07-28-PM' })).toMatchObject({ ok: false, code: 'invalidNhi' })
+    expect(decideImportRow(api, OFFICE_ACTOR, forte[1]!, { kind: 'createBooking', listId: 'L-25490-2026-12-01-PM' })).toMatchObject({ ok: false, code: 'invalidNhi' })
     expect(correctImportRow(api, OFFICE_ACTOR, forte[1]!, { nhi: FORTE_CORRECTED_NHI }).ok).toBe(true)
-    expect(decideImportRow(api, OFFICE_ACTOR, forte[1]!, { kind: 'createBooking', listId: 'L-25490-2026-07-28-PM' }).ok).toBe(true)
+    expect(decideImportRow(api, OFFICE_ACTOR, forte[1]!, { kind: 'createBooking', listId: 'L-25490-2026-12-01-PM' }).ok).toBe(true)
     const staged = stageImportRows(api, OFFICE_ACTOR, 'download', 'H-SX', 'test', [
-      { hospitalId: 'H-SX', dateISO: '2026-08-06', session: 'PM', patient: { name: 'No Surgeon', nhi: 'ZQA4333' }, procedure: { text: 'x' }, hospitalStatus: 'booked' },
+      { hospitalId: 'H-SX', dateISO: '2026-12-10', session: 'PM', patient: { name: 'No Surgeon', nhi: 'ZQA4333' }, procedure: { text: 'x' }, hospitalStatus: 'booked' },
     ])
     expect(decideImportRow(api, OFFICE_ACTOR, staged.ok ? staged.value.rowIds[0]! : '', { kind: 'createDraft' })).toMatchObject({ ok: false, code: 'surgeonRequired' })
   })
@@ -231,15 +231,15 @@ describe('decisions (US-02.1.2, US-02.1.3, FT-02.5)', () => {
   it('a row with no wording needs an RVG code; picks land through their checks; an unoffered Contract changes nothing', () => {
     const api = fresh()
     const staged = stageImportRows(api, OFFICE_ACTOR, 'download', 'H-STG', 'test', [
-      { hospitalId: 'H-STG', dateISO: '2026-07-28', session: 'AM', surgeon: { name: 'Mr T. Hale', hpiId: '40HALT' }, patient: { name: 'Ana Code', nhi: 'ZQA4708' }, hospitalStatus: 'booked' },
+      { hospitalId: 'H-STG', dateISO: '2026-12-01', session: 'AM', surgeon: { name: 'Mr T. Hale', hpiId: '40HALT' }, patient: { name: 'Ana Code', nhi: 'ZQA4708' }, hospitalStatus: 'booked' },
     ])
     const rowId = staged.ok ? staged.value.rowIds[0]! : ''
-    expect(decideImportRow(api, OFFICE_ACTOR, rowId, { kind: 'createBooking', listId: 'L-34821-2026-07-28-AM' })).toMatchObject({ ok: false, code: 'wordingOrCodeRequired' })
+    expect(decideImportRow(api, OFFICE_ACTOR, rowId, { kind: 'createBooking', listId: 'L-34821-2026-12-01-AM' })).toMatchObject({ ok: false, code: 'wordingOrCodeRequired' })
     const before = JSON.stringify({ s: api.getState().schedule, a: api.getState().audit.length, i: api.getState().intake })
-    const bad = decideImportRow(api, OFFICE_ACTOR, rowId, { kind: 'createBooking', listId: 'L-34821-2026-07-28-AM', picks: { rvgGroupId: 'RG001', contract: { contractId: 'CT-FORTE-D1' } } })
+    const bad = decideImportRow(api, OFFICE_ACTOR, rowId, { kind: 'createBooking', listId: 'L-34821-2026-12-01-AM', picks: { rvgGroupId: 'RG001', contract: { contractId: 'CT-FORTE-D1' } } })
     expect(bad.ok).toBe(false)
     expect(JSON.stringify({ s: api.getState().schedule, a: api.getState().audit.length, i: api.getState().intake })).toBe(before)
-    const good = decideImportRow(api, OFFICE_ACTOR, rowId, { kind: 'createBooking', listId: 'L-34821-2026-07-28-AM', picks: { rvgGroupId: 'RG001', contract: { contractId: 'CT-STG-D1' } } })
+    const good = decideImportRow(api, OFFICE_ACTOR, rowId, { kind: 'createBooking', listId: 'L-34821-2026-12-01-AM', picks: { rvgGroupId: 'RG001', contract: { contractId: 'CT-STG-D1' } } })
     expect(good.ok).toBe(true)
     const p = proceduresForBooking(api.getState(), good.ok ? good.value.bookingId! : '')[0]!
     expect(p.governingContractId).toBe('CT-STG-D1')
@@ -249,7 +249,7 @@ describe('decisions (US-02.1.2, US-02.1.3, FT-02.5)', () => {
   it('a stale decision is refused; another hospital is refused', () => {
     const api = fresh()
     const r1 = imported(api, 'SAMPLE_STG')[0]!
-    expect(decideImportRow(api, OFFICE_ACTOR, r1, { kind: 'createBooking', listId: 'L-43015-2026-07-28-AM' })).toMatchObject({ ok: false, code: 'hospitalMismatch' })
+    expect(decideImportRow(api, OFFICE_ACTOR, r1, { kind: 'createBooking', listId: 'L-43015-2026-12-01-AM' })).toMatchObject({ ok: false, code: 'hospitalMismatch' })
     expect(decideImportRow(api, OFFICE_ACTOR, r1, { kind: 'match', bookingId: 'BK0043', fieldsApplied: [] })).toMatchObject({ ok: false, code: 'staleSuggestion' })
   })
 })
@@ -257,11 +257,11 @@ describe('decisions (US-02.1.2, US-02.1.3, FT-02.5)', () => {
 describe('review fixes (catch-up Phase 33)', () => {
   const stg = (over: Record<string, unknown> = {}) => ({
     hospitalId: 'H-STG',
-    dateISO: '2026-07-28',
+    dateISO: '2026-12-01',
     session: 'AM' as const,
     surgeon: { name: 'Mr T. Hale', hpiId: '40HALT' },
     scheduledTime: '07:45',
-    patient: { name: 'Dylan Kereama', nhi: 'GBB9305', dobISO: '1992-04-16' },
+    patient: { name: 'Dylan Kereama', nhi: 'GBB9305', dobISO: '1992-08-20' },
     hospitalStatus: 'booked' as const,
     ...over,
   })
@@ -272,7 +272,7 @@ describe('review fixes (catch-up Phase 33)', () => {
 
   it("a Booking chosen by hand with another NHI never renames that patient's record", () => {
     const api = fresh()
-    const rowId = stage(api, stg({ patient: { name: 'Jane Doe', nhi: 'ZQA1008', dobISO: '1970-01-01' }, procedure: { text: 'x' } }))!
+    const rowId = stage(api, stg({ patient: { name: 'Jane Doe', nhi: 'ZQA1008', dobISO: '1970-05-07' }, procedure: { text: 'x' } }))!
     const before = api.getState().masters.patients[api.getState().schedule.bookings['BK0066']!.patientId]
     expect(decideImportRow(api, OFFICE_ACTOR, rowId, { kind: 'match', bookingId: 'BK0066', fieldsApplied: ['patientName', 'dob', 'procedureText'] }).ok).toBe(true)
     expect(api.getState().masters.patients[api.getState().schedule.bookings['BK0066']!.patientId]).toEqual(before)
@@ -284,8 +284,8 @@ describe('review fixes (catch-up Phase 33)', () => {
     expect(rowId).toBeDefined()
     // BK0133 holds nib; give it a number, then a row naming Southern Cross Health Society with none.
     const sx = stageImportRows(api, OFFICE_ACTOR, 'download', 'H-SX', 'test', [
-      { hospitalId: 'H-SX', dateISO: '2026-07-21', session: 'AM', surgeon: { name: 'Mr P. Doyle', hpiId: '45DOYP' }, patient: { name: 'Leon Pereira', nhi: 'LMF9498' }, insurer: { text: 'nib', insurerPartyId: 'PY-NIB', approvalNumber: '111' }, hospitalStatus: 'booked' },
-      { hospitalId: 'H-SX', dateISO: '2026-07-21', session: 'AM', surgeon: { name: 'Mr P. Doyle', hpiId: '45DOYP' }, patient: { name: 'Leon Pereira', nhi: 'LMF9498' }, insurer: { text: 'Southern Cross', insurerPartyId: 'PY-SCHS' }, hospitalStatus: 'booked' },
+      { hospitalId: 'H-SX', dateISO: '2026-11-24', session: 'AM', surgeon: { name: 'Mr P. Doyle', hpiId: '45DOYP' }, patient: { name: 'Leon Pereira', nhi: 'LMF9498' }, insurer: { text: 'nib', insurerPartyId: 'PY-NIB', approvalNumber: '111' }, hospitalStatus: 'booked' },
+      { hospitalId: 'H-SX', dateISO: '2026-11-24', session: 'AM', surgeon: { name: 'Mr P. Doyle', hpiId: '45DOYP' }, patient: { name: 'Leon Pereira', nhi: 'LMF9498' }, insurer: { text: 'Southern Cross', insurerPartyId: 'PY-SCHS' }, hospitalStatus: 'booked' },
     ])
     const [a, b] = sx.ok ? sx.value.rowIds : []
     expect(decideImportRow(api, OFFICE_ACTOR, a!, { kind: 'match', bookingId: 'BK0133', fieldsApplied: ['insurer'] }).ok).toBe(true)
@@ -306,8 +306,8 @@ describe('review fixes (catch-up Phase 33)', () => {
   it('a create never double-books a patient already booked in that session', () => {
     const api = fresh()
     const rows = imported(api, 'SAMPLE_STG')
-    const dupe = stage(api, stg({ scheduledTime: '08:30', patient: { name: 'Sarah Mitchell', nhi: 'CQY9304', dobISO: '1988-04-12' }, procedure: { text: 'appendicectomy' } }))!
-    expect(decideImportRow(api, OFFICE_ACTOR, rows[0]!, { kind: 'createBooking', listId: 'L-34821-2026-07-28-AM' }).ok).toBe(true)
+    const dupe = stage(api, stg({ scheduledTime: '08:30', patient: { name: 'Sarah Mitchell', nhi: 'CQY9304', dobISO: '1988-08-16' }, procedure: { text: 'appendicectomy' } }))!
+    expect(decideImportRow(api, OFFICE_ACTOR, rows[0]!, { kind: 'createBooking', listId: 'L-34821-2026-12-01-AM' }).ok).toBe(true)
     const before = scheduleOf(api)
     expect(decideImportRow(api, OFFICE_ACTOR, dupe, { kind: 'createDraft' })).toMatchObject({ ok: false, code: 'alreadyBooked' })
     expect(scheduleOf(api)).toBe(before)

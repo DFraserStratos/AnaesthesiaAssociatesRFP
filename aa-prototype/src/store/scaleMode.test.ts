@@ -108,7 +108,7 @@ describe('loading full-scale data', () => {
 
   it('a Booking created after the load gets an unused id and the same Contract candidates as at demo scale', async () => {
     const listId = SEED_MARKERS['designDayPmList']!.entityId
-    const input = { patient: { name: 'Scale Check', dobISO: '1990-05-05', nhi: 'ZZZ0016' }, sourceText: { text: 'Diagnostic laparoscopy', source: 'phone' as const }, rvgGroupId: RVG_GROUP.a3!, scheduledTime: '17:00' }
+    const input = { patient: { name: 'Scale Check', dobISO: '1990-09-08', nhi: 'ZZZ0016' }, sourceText: { text: 'Diagnostic laparoscopy', source: 'phone' as const }, rvgGroupId: RVG_GROUP.a3!, scheduledTime: '17:00' }
     const demo = createAppStore()
     const demoOut = createBooking(demo, OFFICE, listId, input)
     expect(demoOut.ok).toBe(true)

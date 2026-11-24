@@ -82,7 +82,7 @@ describe('table kit', () => {
       <TableShell label="T">
         <tbody>
           <ClickableRow onOpen={onOpen} data-list-id="L1" data-quiet="true" quiet today>
-            <Td>Tue 21 Jul</Td>
+            <Td>Tue 24 Nov</Td>
             <Td><button type="button" onClick={inner}>Assign</button></Td>
           </ClickableRow>
         </tbody>
@@ -94,8 +94,8 @@ describe('table kit', () => {
     expect(row).toHaveAttribute('data-quiet', 'true')
     expect(row).not.toHaveAttribute('tabindex')
     expect(row).toHaveStyle({ color: neutral.slate })
-    expect(screen.getByText('Tue 21 Jul')).toHaveStyle({ verticalAlign: 'middle' })
-    fireEvent.click(screen.getByText('Tue 21 Jul'))
+    expect(screen.getByText('Tue 24 Nov')).toHaveStyle({ verticalAlign: 'middle' })
+    fireEvent.click(screen.getByText('Tue 24 Nov'))
     expect(onOpen).toHaveBeenCalledOnce()
     fireEvent.click(screen.getByRole('button', { name: 'Assign' }))
     expect(inner).toHaveBeenCalledOnce()
@@ -122,12 +122,12 @@ describe('table kit', () => {
       <TableShell label="T">
         <tbody>
           <ClickableRow onOpen={onOpen}>
-            <Td><RowOpenButton label="Open List Tue 21 Jul AM, Mercy" onOpen={onOpen}>Tue 21 Jul</RowOpenButton></Td>
+            <Td><RowOpenButton label="Open List Tue 24 Nov AM, Mercy" onOpen={onOpen}>Tue 24 Nov</RowOpenButton></Td>
           </ClickableRow>
         </tbody>
       </TableShell>,
     )
-    const handle = screen.getByRole('button', { name: 'Open List Tue 21 Jul AM, Mercy' })
+    const handle = screen.getByRole('button', { name: 'Open List Tue 24 Nov AM, Mercy' })
     expect(handle).toHaveAttribute('type', 'button')
     fireEvent.click(handle)
     expect(onOpen).toHaveBeenCalledOnce()

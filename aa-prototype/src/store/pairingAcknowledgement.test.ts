@@ -19,9 +19,9 @@ import { projectedListId } from '../domain/slots'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SHARMA: Actor = { who: 'Dr Priya Sharma', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.sharma }
-const SHARMA_AM = projectedListId(ANAE.sharma, '2026-07-21', 'AM')
-const CHEN_PM = projectedListId(ANAE.chen, '2026-07-21', 'PM')
-const RUTHERFORD_WED = projectedListId(ANAE.rutherford, '2026-07-22', 'AM')
+const SHARMA_AM = projectedListId(ANAE.sharma, '2026-11-24', 'AM')
+const CHEN_PM = projectedListId(ANAE.chen, '2026-11-24', 'PM')
+const RUTHERFORD_WED = projectedListId(ANAE.rutherford, '2026-11-25', 'AM')
 
 function acks(api: ReturnType<typeof createAppStore>) {
   return api.getState().audit.filter((a) => a.action.endsWith('.pairingAcknowledged'))

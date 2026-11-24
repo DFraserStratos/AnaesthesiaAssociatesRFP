@@ -74,18 +74,18 @@ describe('isOpenSlot (US-01.4.2)', () => {
 })
 
 describe('slotDatesFor (US-01.1.3)', () => {
-  const dates = ['2026-08-02', '2026-08-03', '2026-08-04']
+  const dates = ['2026-12-06', '2026-12-07', '2026-12-08']
   it('keeps the dates on or after the start date', () => {
-    expect(slotDatesFor('2026-08-03', dates)).toEqual(['2026-08-03', '2026-08-04'])
-    expect(slotDatesFor('2026-08-01', dates)).toEqual(dates)
-    expect(slotDatesFor('2026-08-05', dates)).toEqual([])
+    expect(slotDatesFor('2026-12-07', dates)).toEqual(['2026-12-07', '2026-12-08'])
+    expect(slotDatesFor('2026-12-05', dates)).toEqual(dates)
+    expect(slotDatesFor('2026-12-09', dates)).toEqual([])
   })
 })
 
 describe('ids and settings', () => {
   it('Slot and projected List ids are deterministic and distinct', () => {
-    expect(slotIdFor('34821', '2026-07-21', 'AM')).toBe('S-34821-2026-07-21-AM')
-    expect(projectedListId('34821', '2026-07-21', 'AM')).toBe('L-34821-2026-07-21-AM')
+    expect(slotIdFor('34821', '2026-11-24', 'AM')).toBe('S-34821-2026-11-24-AM')
+    expect(projectedListId('34821', '2026-11-24', 'AM')).toBe('L-34821-2026-11-24-AM')
   })
 
   it('seeds four months and today\'s default times', () => {

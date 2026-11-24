@@ -10,7 +10,7 @@ import { test, expect, type Page } from '@playwright/test'
  * callout. Screenshots land in `visual/shots/p19a-*.png`.
  */
 
-const FACE_LIFT_BOOKING = '/admin/day/2026-08-10/bookings/BK0163'
+const FACE_LIFT_BOOKING = '/admin/day/2026-12-14/bookings/BK0163'
 
 async function openContract(page: Page, search: string, id: string) {
   await page.goto('/admin/masters?view=contracts')
@@ -30,25 +30,25 @@ test("phase 19a Merivale's Face lift: a backdated range re-prices the seeded Boo
   await openContract(page, 'Face lift', 'CT-MER-FACELIFT')
   const ranges = page.locator('[data-shot=contract-price-ranges]')
   await expect(ranges.locator('[data-shot=price-range-row]')).toHaveCount(1)
-  await expect(ranges.locator('[data-shot=price-range-row]').first()).toContainText('From 1 Jun 2026')
+  await expect(ranges.locator('[data-shot=price-range-row]').first()).toContainText('From 5 Oct 2026')
   await expect(ranges.getByText('In force today')).toBeVisible()
   await ranges.scrollIntoViewIfNeeded()
   await page.screenshot({ path: 'visual/shots/p19a-02-face-lift-ranges.png', fullPage: true })
 
   // A backdated range from 1 Jul (before today, 21 Jul, and the Booking's 10 Aug List): the earlier range now ends 30 Jun.
-  await ranges.getByLabel('New range start').fill('2026-07-01')
+  await ranges.getByLabel('New range start').fill('2026-11-04')
   await ranges.getByLabel('New range price (ex GST)').fill('3200')
   await ranges.getByRole('button', { name: 'Add price range' }).click()
   await expect(ranges.locator('[data-shot=price-range-row]')).toHaveCount(2)
-  await expect(ranges.locator('[data-shot=price-range-row]').first()).toContainText('1 Jun 2026 to 30 Jun 2026')
-  await expect(ranges.locator('[data-shot=price-range-row]').nth(1)).toContainText('From 1 Jul 2026')
+  await expect(ranges.locator('[data-shot=price-range-row]').first()).toContainText('5 Oct 2026 to 3 Nov 2026')
+  await expect(ranges.locator('[data-shot=price-range-row]').nth(1)).toContainText('From 4 Nov 2026')
   await expect(ranges.locator('[data-shot=price-range-row]').nth(1)).toContainText('In force today')
   await page.screenshot({ path: 'visual/shots/p19a-03-face-lift-backdated.png', fullPage: true })
 
   await page.goto(FACE_LIFT_BOOKING)
   await expect(page.getByTestId('booking-calculation')).toContainText('$3,200.00')
   await page.screenshot({ path: 'visual/shots/p19a-04-booking-after.png', fullPage: true })
-  await page.goto('/web/lists/L-34821-2026-08-10-PM')
+  await page.goto('/web/lists/L-34821-2026-12-14-PM')
   await expect(page.locator('tr', { hasText: '13:30' })).toContainText('$3,200.00')
   await page.screenshot({ path: 'visual/shots/p19a-05-web-list-after.png', fullPage: true })
 
@@ -62,16 +62,16 @@ test('phase 19a range refusals: a duplicate start, the last range, a prepaid zer
   const ranges = page.locator('[data-shot=contract-price-ranges]')
   // The only range offers no Delete.
   await expect(ranges.getByRole('button', { name: 'Delete (a Contract keeps at least one price range)' })).toBeDisabled()
-  await ranges.getByLabel('New range start').fill('2026-06-01')
+  await ranges.getByLabel('New range start').fill('2026-10-05')
   await ranges.getByLabel('New range price (ex GST)').fill('3300')
   await ranges.getByRole('button', { name: 'Add price range' }).click()
-  await expect(page.locator('[data-shot=contract-detail] [role=alert]')).toContainText('Another price range already starts on 1 Jun 2026.')
+  await expect(page.locator('[data-shot=contract-detail] [role=alert]')).toContainText('Another price range already starts on 5 Oct 2026.')
   await page.screenshot({ path: 'visual/shots/p19a-06-duplicate-start.png', fullPage: true })
 
   await openContract(page, 'Rhinoplasty', 'CT-SOUTER-RHINO')
   const souter = page.locator('[data-shot=contract-price-ranges]')
   await expect(souter.locator('[data-shot=price-range-row]')).toHaveCount(2)
-  await souter.getByLabel('New range start').fill('2026-12-01')
+  await souter.getByLabel('New range start').fill('2027-04-06')
   await souter.getByLabel('New range price (ex GST)').fill('0')
   await souter.getByRole('button', { name: 'Add price range' }).click()
   await expect(page.locator('[data-shot=contract-detail] [role=alert]')).toContainText("A prepaid Contract's price must be above zero.")
@@ -100,7 +100,7 @@ test("phase 19a Dr Souter's price list, and the Contracts search by CAT, AP0126 
   await expect(rows).toHaveCount(1)
   await page.locator('[data-shot=contract-search] input').fill('H3')
   for (const id of ['CT-MER-FACELIFT', 'CT-MER-FACELIFT-1', 'CT-MER-FACELIFT-2']) await expect(page.locator(`tr[data-contract="${id}"]`)).toBeVisible()
-  await expect(page.locator('tr[data-contract="CT-MER-FACELIFT-1"]')).toContainText('$3,400.00 from 1 Jun 2026')
+  await expect(page.locator('tr[data-contract="CT-MER-FACELIFT-1"]')).toContainText('$3,400.00 from 5 Oct 2026')
   await page.screenshot({ path: 'visual/shots/p19a-10-search-h3.png', fullPage: true })
 
   // The codes: holder reference, invoice description and the default RVG code.
@@ -116,7 +116,7 @@ test('phase 19a a default RVG code fills an empty Procedure', async ({ page }) =
   // Annette Riley's rhinoplasty (Fri 24 Jul) has no RVG code. Catch-up Phase 20:
   // the office moves it off Dr Souter's prepaid list on the step rail, to
   // Merivale's Face lift under Patient › Standard.
-  await page.goto('/admin/day/2026-07-24/bookings/BK0034')
+  await page.goto('/admin/day/2026-11-27/bookings/BK0034')
   await page.waitForLoadState('networkidle')
   // Prepaid at a fixed price: the code is only offered for reference (catch-up Phase 20).
   await expect(page.locator('[data-shot=rvg-code-add-reference]').first()).toBeVisible()
@@ -136,7 +136,7 @@ test('phase 19a time units as data: the time rule panel, the T caption, no Billi
   await expect(panel).toContainText('1 unit per 15 minutes or part for the first 2 hours, then 1 unit per 10 minutes or part.')
   await page.screenshot({ path: 'visual/shots/p19a-13-time-rule.png' })
 
-  await page.goto('/mobile/lists/L-34821-2026-07-21-AM/bookings/BK0001')
+  await page.goto('/mobile/lists/L-34821-2026-11-24-AM/bookings/BK0001')
   await page.waitForLoadState('networkidle')
   const t = page.locator('[data-shot=units-row-t]').first()
   await t.scrollIntoViewIfNeeded()

@@ -53,7 +53,7 @@ function entry(over: Partial<PairingPreference> & Pick<PairingPreference, 'id'>)
 
 const SURGEON_SIDE = entry({ id: 'P1', reason: "Surgeon's preference" })
 const ANAE_SIDE = entry({ id: 'P2', raisedBy: 'ANAESTHETIST' })
-const ENDED = entry({ id: 'P3', anaesthetistId: 'A2', raisedBy: 'ANAESTHETIST', endedAtISO: '2026-05-12T14:15:00', endedBy: 'Kirsty W.' })
+const ENDED = entry({ id: 'P3', anaesthetistId: 'A2', raisedBy: 'ANAESTHETIST', endedAtISO: '2026-09-15T14:15:00', endedBy: 'Kirsty W.' })
 const PREFERRED = entry({ id: 'P4', kind: 'PREFERRED', surgeonId: 'WHIT' })
 
 describe('pairing status and the warning', () => {
@@ -86,7 +86,7 @@ describe('pairing status and the warning', () => {
   })
 
   it('re-adding after an end warns again', () => {
-    const readded = entry({ id: 'P9', anaesthetistId: 'A2', raisedBy: 'ANAESTHETIST', addedAtISO: '2026-07-21T09:00:00' })
+    const readded = entry({ id: 'P9', anaesthetistId: 'A2', raisedBy: 'ANAESTHETIST', addedAtISO: '2026-11-24T09:00:00' })
     expect(notPreferredWarning(MASTERS, [ENDED, readded], 'A2', 'REID')?.entries.map((e) => e.entryId)).toEqual(['P9'])
   })
 
@@ -269,7 +269,7 @@ describe('the one label set', () => {
 })
 
 describe('profiles', () => {
-  const ENDED_LATER = entry({ id: 'P5', anaesthetistId: 'A3', endedAtISO: '2026-06-01T09:00:00', endedBy: 'Kirsty W.' })
+  const ENDED_LATER = entry({ id: 'P5', anaesthetistId: 'A3', endedAtISO: '2026-10-05T09:00:00', endedBy: 'Kirsty W.' })
   const all = [SURGEON_SIDE, ANAE_SIDE, ENDED, PREFERRED, ENDED_LATER]
 
   it('splits one surgeon profile into active not preferred, preferred and ended (latest end first)', () => {

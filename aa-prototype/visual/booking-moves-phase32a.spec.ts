@@ -10,7 +10,7 @@ import { runDemoAction } from './demoActions'
  * (Fri 24 PM) for the honour-system line.
  */
 
-const SOURCE = 'L-34821-2026-07-22-AM'
+const SOURCE = 'L-34821-2026-11-25-AM'
 const FORBIDDEN = /\bslots?\b|swap|blacklist|whitelist|preferred|\btier\b|warning|anyway|estimate|deposit|Draft List|[–—]/i
 
 async function fresh(page: Page, path: string): Promise<void> {
@@ -58,7 +58,7 @@ test('web: Move to a colleague, find by name, a blocked colleague, tell the offi
   await search.fill('whit')
   await sheet.locator('[data-shot="move-booking-receiver"][data-anaesthetist-id="36208"]').click()
   const confirm = sheet.locator('[data-shot="move-booking-confirm"]')
-  await expect(confirm).toContainText("A new List is created in Dr Whitaker's Wed 22 Jul AM session at Christchurch Eye Surgery.")
+  await expect(confirm).toContainText("A new List is created in Dr Whitaker's Wed 25 Nov AM session at Christchurch Eye Surgery.")
   await expect(confirm).toContainText('Dr Whitaker is paid for it.')
   await expect(confirm.locator('[data-shot="move-booking-honour"]')).toHaveCount(0)
   const tick = confirm.locator('[data-shot="move-booking-tell-office"] input')
@@ -85,9 +85,9 @@ test('web: Move to a colleague, find by name, a blocked colleague, tell the offi
   await expect(done).not.toContainText('The office has been told.')
 
   // The office's side: a new ACTIVE List on Dr Whitaker's row, the drawer line, and one pool row.
-  await page.goto('/admin/day/2026-07-22')
+  await page.goto('/admin/day/2026-11-25')
   await page.waitForLoadState('networkidle')
-  const whitaker = page.locator('[data-slot-id="S-36208-2026-07-22-AM"]')
+  const whitaker = page.locator('[data-slot-id="S-36208-2026-11-25-AM"]')
   await expect(whitaker).toHaveAttribute('data-list-id', /^LG\d{4}$/)
   await expect(whitaker).toContainText('Christchurch Eye Surgery')
   await expect(page.locator('[data-shot="admin-notifications-rail"]')).toContainText('Dr Souter moved a Booking')
@@ -119,7 +119,7 @@ test('mobile: the same flow from the Booking sheet, as a bottom sheet', async ({
 })
 
 test('prepaid: the confirm step shows the honour-system line, never estimate or deposit', async ({ page }) => {
-  await fresh(page, '/web/lists/L-34821-2026-07-24-PM/bookings/BK0038')
+  await fresh(page, '/web/lists/L-34821-2026-11-27-PM/bookings/BK0038')
   await page.locator('[data-shot="move-booking-action"]').getByRole('button', { name: 'Move to a colleague' }).click()
   const sheet = page.locator('[data-shot="move-booking-sheet"]')
   await sheet.locator('[data-shot="move-booking-receiver"]').first().click()
@@ -130,7 +130,7 @@ test('prepaid: the confirm step shows the honour-system line, never estimate or 
 })
 
 test('the submit sheet says who did the procedures, in one sentence and no extra step', async ({ page }) => {
-  await fresh(page, '/web/lists/L-34821-2026-07-21-AM')
+  await fresh(page, '/web/lists/L-34821-2026-11-24-AM')
   await page.getByRole('button', { name: 'Mark list completed' }).click()
   const note = page.locator('[data-shot="submit-doer-note"]')
   await expect(note).toHaveText('Submitting says you did every procedure on this List. If a colleague is doing one, move it to them first.')
@@ -139,31 +139,31 @@ test('the submit sheet says who did the procedures, in one sentence and no extra
 })
 
 test('Admin Day: Colleague hands a Booking to Dr Souter puts a new List on her row and the pool', async ({ page }) => {
-  await fresh(page, '/admin/day/2026-07-21')
+  await fresh(page, '/admin/day/2026-11-24')
   const message = await runDemoAction(page, 'colleague-hands-booking-to-souter', { close: true })
-  expect(message).toBe('Dr Hughes moved a Booking (Wed 22 Jul PM, Christchurch Eye Surgery) to Dr Souter. A new List was created.')
+  expect(message).toBe('Dr Hughes moved a Booking (Wed 25 Nov PM, Christchurch Eye Surgery) to Dr Souter. A new List was created.')
   await expect(page.locator('[data-shot="admin-notifications-rail"]')).toContainText('Dr Hughes moved a Booking')
-  await page.goto('/admin/day/2026-07-22')
+  await page.goto('/admin/day/2026-11-25')
   await page.waitForLoadState('networkidle')
-  const souter = page.locator('[data-slot-id="S-34821-2026-07-22-PM"]')
+  const souter = page.locator('[data-slot-id="S-34821-2026-11-25-PM"]')
   await expect(souter).toHaveAttribute('data-list-id', /^LG\d{4}$/)
   await page.screenshot({ path: 'visual/shots/p32a-12-admin-trigger.png' })
 
   // Her side, in the framed mobile app: the Moved to you panel on Find cover.
   await page.goto('/mobile/availability')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="moved-to-you-booking-row"]')).toContainText('Dr Hughes moved a Booking to you: Wed 22 Jul PM, Christchurch Eye Surgery')
+  await expect(page.locator('[data-shot="moved-to-you-booking-row"]')).toContainText('Dr Hughes moved a Booking to you: Wed 25 Nov PM, Christchurch Eye Surgery')
   await page.screenshot({ path: 'visual/shots/p32a-13-moved-to-you.png' })
 })
 
 test('no warning for a not-preferred receiver: Mrs Riley (Ms Lim) to Dr Ropata reads like any other move', async ({ page }) => {
-  await fresh(page, '/web/lists/L-34821-2026-07-24-AM/bookings/BK0034')
+  await fresh(page, '/web/lists/L-34821-2026-11-27-AM/bookings/BK0034')
   await page.locator('[data-shot="move-booking-action"]').getByRole('button', { name: 'Move to a colleague' }).click()
   const sheet = page.locator('[data-shot="move-booking-sheet"]')
   await clean(page, '[data-shot="move-booking-sheet"]', 'free colleagues')
   await sheet.locator('[data-shot="move-booking-receiver"][data-anaesthetist-id="39560"]').click()
   const confirm = sheet.locator('[data-shot="move-booking-confirm"]')
-  await expect(confirm).toContainText("A new List is created in Dr Ropata's Fri 24 Jul AM session at Forte Health.")
+  await expect(confirm).toContainText("A new List is created in Dr Ropata's Fri 27 Nov AM session at Forte Health.")
   await expect(confirm.locator('[data-shot="move-booking-honour"]')).toContainText('moves to Dr Ropata once the List is authorised.')
   await clean(page, '[data-shot="move-booking-confirm"]', 'not-preferred confirm')
   // Web footer (UI unification U2, question 13): Back hugging first, the primary last.

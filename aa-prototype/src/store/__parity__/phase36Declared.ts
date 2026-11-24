@@ -17,7 +17,7 @@ export const DECLARED_36 = {
   anaesthetistId: '34821',
   amount: 3565,
   /** The month its BCTI is issued in. */
-  issuedMonth: '2026-07',
+  issuedMonth: '2026-11',
   reason: 'an unmirrored invoice is owed and its BCTI issued (AA-2026-S2401, the seed range beat)',
 } as const
 

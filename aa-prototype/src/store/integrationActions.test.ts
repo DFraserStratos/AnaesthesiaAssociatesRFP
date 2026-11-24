@@ -86,7 +86,7 @@ describe('no silent apply: every message stages one row and changes nothing (cat
     const old = findBookingByCorrelation(api.getState(), { sourceFeedId: FEED.stg, externalAppointmentId: APPT.s13Move })!
     processMessage(api, 'MSG-STG-1011')
     const row = stagedRow(api, 'MSG-STG-1011')!
-    expect(row.incoming).toMatchObject({ dateISO: '2026-08-04', session: 'AM', hospitalStatus: 'booked' })
+    expect(row.incoming).toMatchObject({ dateISO: '2026-12-08', session: 'AM', hospitalStatus: 'booked' })
     expect(api.getState().schedule.bookings[old.id]).toMatchObject({ listId: old.listId })
     expect(api.getState().schedule.bookings[old.id]!.cancellation).toBeUndefined()
   })

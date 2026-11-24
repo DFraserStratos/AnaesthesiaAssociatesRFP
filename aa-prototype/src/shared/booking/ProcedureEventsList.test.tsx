@@ -85,7 +85,7 @@ describe('ProcedureEventsList', () => {
   })
 
   it('orders rows by date, then id', () => {
-    const later = addProcedureEvent(useAppStore, OFFICE, 'HP03', { kind: 'additionalInvoice', occurredOnISO: '2026-06-22', party: { sameAs: true }, lines: [{ description: 'Earlier charge', quantity: 1, unitAmount: 10 }] })
+    const later = addProcedureEvent(useAppStore, OFFICE, 'HP03', { kind: 'additionalInvoice', occurredOnISO: '2026-10-26', party: { sameAs: true }, lines: [{ description: 'Earlier charge', quantity: 1, unitAmount: 10 }] })
     expect(later.ok).toBe(true)
     const { container } = renderList(OFFICE)
     const ids = [...container.querySelectorAll('[data-shot="procedure-event-row"]')].map((r) => r.getAttribute('data-event-id'))

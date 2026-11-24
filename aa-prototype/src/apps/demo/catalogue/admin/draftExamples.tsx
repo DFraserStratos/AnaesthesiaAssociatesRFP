@@ -31,7 +31,7 @@ export function BookingSaveBarExample() {
     changeSetId: 'CS0042',
     kind: 'save',
     who: OFFICE_ACTOR.who,
-    atISO: '2026-07-21T09:14:00',
+    atISO: '2026-11-24T09:14:00',
     count: changes.length,
     fields: changes.map((c) => ({ entityType: c.entityType, entityId: c.entityId, field: c.field })),
     index: 0,

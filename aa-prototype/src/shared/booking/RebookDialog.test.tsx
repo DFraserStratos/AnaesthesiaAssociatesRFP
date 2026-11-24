@@ -15,9 +15,9 @@ import { RebookDialog } from './RebookDialog'
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const NAIR = SEED_PREPAID_BOOKING_ID
 /** Dr Beaumont's Tue 4 Aug PM List at Forte Health with Mr V. Nand (ENT): her prepaid Rhinoplasty is offered there. */
-const BEAUMONT_ENT_LIST = 'L-31902-2026-08-04-PM'
+const BEAUMONT_ENT_LIST = 'L-31902-2026-12-08-PM'
 /** Her Mon 27 Jul AM List at St George's with Mr T. Hale (orthopaedics): it is not. */
-const BEAUMONT_ORTHO_LIST = 'L-31902-2026-07-27-AM'
+const BEAUMONT_ORTHO_LIST = 'L-31902-2026-11-30-AM'
 
 function shot(name: string): HTMLElement | null {
   return document.querySelector<HTMLElement>(`[data-shot="${name}"]`)
@@ -58,9 +58,9 @@ describe('RebookDialog', () => {
     chooseBeaumont()
     // Her ACTIVE Lists from today: the date in mono, the session, the hospital and the surgeon.
     const card = document.querySelector<HTMLElement>(`[data-shot="rebook-list"][data-list-id="${BEAUMONT_ENT_LIST}"]`)!
-    expect(card.textContent).toContain('Tue 4 Aug · PM')
+    expect(card.textContent).toContain('Tue 8 Dec · PM')
     expect(card.textContent).toContain('Forte Health · Mr V. Nand')
-    expect(card.querySelector('.mono')?.textContent).toBe('Tue 4 Aug')
+    expect(card.querySelector('.mono')?.textContent).toBe('Tue 8 Dec')
 
     pickList(BEAUMONT_ENT_LIST)
     const price = shot('rebook-price')!

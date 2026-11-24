@@ -39,7 +39,7 @@ import { PUBLIC_SESSION_PATTERNS, type PublicSessionPattern } from './recurringB
 export const PUBLIC_SESSION_NOTE = 'CPH'
 
 /** When the seed's Public series were created (the canvas's notional set-up). */
-export const PUBLIC_SERIES_CREATED_AT = '2026-07-01T08:00:00'
+export const PUBLIC_SERIES_CREATED_AT = '2026-11-04T08:00:00'
 
 /** The patterns as the first pass projects them: private Lists, every field as before. */
 export function publicPatternsForFirstPass(patterns: readonly PublicSessionPattern[] = PUBLIC_SESSION_PATTERNS): RecurringBooking[] {

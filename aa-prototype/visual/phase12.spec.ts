@@ -29,7 +29,7 @@ test('control panel: scenario jump, procedure-day jump, PDF ingest and jobs run 
 
   // Procedure-day jump advances the clock to 28 July.
   await page.getByRole('button', { name: /Procedure day/ }).click()
-  await expect(page.getByText(/28 July 2026/)).toBeVisible()
+  await expect(page.getByText(/1 December 2026/)).toBeVisible()
 
   // S1 scenario jump (catch-up Phase 44): reset only, then the seven beats in order, each a link to
   // its screen with its steps beside it; a beat whose target does not exist yet waits, disabled, its
@@ -41,7 +41,7 @@ test('control panel: scenario jump, procedure-day jump, PDF ingest and jobs run 
   await expect(result.locator('[data-shot="scenario-beat-2-steps"]')).toHaveText(
     "Demo actions → Import hospital file (St George's), then Create Booking on Sarah Mitchell's row",
   )
-  await expect(page.getByText(/^Tuesday 21 July 2026 · /)).toBeVisible()
+  await expect(page.getByText(/^Tuesday 24 November 2026 · /)).toBeVisible()
   await expect(result.locator('button[data-shot^="scenario-beat-"]')).toHaveCount(7)
   await expect(result.locator('[data-shot="scenario-beat-4"]')).toHaveText('Beat 4 · Admin Booking, after Create Booking')
   await expect(result.locator('[data-shot="scenario-beat-4"]')).toBeDisabled()

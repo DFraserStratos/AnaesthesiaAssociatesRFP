@@ -118,7 +118,7 @@ describe('Times card action', () => {
     (variant) => {
       const procedureId = pendingProcedureId()
       const outcome = editProcedure(useAppStore, SOUTER, procedureId, {
-        anaestheticStartISO: '2026-07-21T16:05:00',
+        anaestheticStartISO: '2026-11-24T16:05:00',
       })
       if (!outcome.ok) throw new Error(outcome.message)
 
@@ -127,7 +127,7 @@ describe('Times card action', () => {
 
       expect(screen.getByText('16:10', { exact: true })).toBeVisible()
       expect(useAppStore.getState().schedule.procedures[procedureId]?.handoverISO).toBe(
-        '2026-07-21T16:10:00',
+        '2026-11-24T16:10:00',
       )
       expect(screen.queryByText(/^Duration /)).not.toBeInTheDocument()
       expect(screen.queryByText(/1 unit per 15 min/)).not.toBeInTheDocument()

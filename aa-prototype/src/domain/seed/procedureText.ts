@@ -35,7 +35,7 @@ const SOURCE_BY_BOOKING: Record<BookingSource, ProcedureTextSource> = {
 }
 
 /** The latest a seeded text can have arrived: the evening before the demo clock (Tue 21 Jul 08:00). */
-const LATEST_ARRIVAL_ISO = '2026-07-20T17:30:00'
+const LATEST_ARRIVAL_ISO = '2026-11-23T17:30:00'
 
 function shiftDays(dateISO: string, days: number): string {
   return format(addDays(parseISO(dateISO), days), 'yyyy-MM-dd')
@@ -66,7 +66,7 @@ export function finaliseSeedProcedureTexts(
       const source =
         text.source !== 'unrecorded' ? text.source : booking?.source !== undefined ? SOURCE_BY_BOOKING[booking.source] : 'unrecorded'
       const listDate = booking !== undefined ? lists[booking.listId]?.dateISO : undefined
-      text = { ...text, source, receivedAtISO: seedArrivalISO(source, listDate ?? '2026-07-20') }
+      text = { ...text, source, receivedAtISO: seedArrivalISO(source, listDate ?? '2026-11-23') }
     }
     procedures[id] = {
       ...procedure,

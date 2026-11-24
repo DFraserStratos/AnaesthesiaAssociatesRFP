@@ -19,7 +19,7 @@ import { ANAE } from '../domain/seed'
 import { projectedListId } from '../domain/slots'
 import { roundToCents } from '../domain/billing/money'
 
-const AM20 = projectedListId(ANAE.souter, '2026-07-20', 'AM')
+const AM20 = projectedListId(ANAE.souter, '2026-11-23', 'AM')
 
 const unwires: (() => void)[] = []
 afterEach(() => {

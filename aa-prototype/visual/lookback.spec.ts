@@ -20,7 +20,7 @@ test('mobile: the main view opens at Today with the earlier hint; submitted rows
   await page.screenshot({ path: `${SHOTS}/mobile-main-view.png` })
   await hint.click()
   await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBe(0)
-  await expect(page.locator('[data-list-id="L-34821-2026-07-20-PM"][data-quiet="true"]')).toContainText('Done · unbilled')
+  await expect(page.locator('[data-list-id="L-34821-2026-11-23-PM"][data-quiet="true"]')).toContainText('Done · unbilled')
   await page.screenshot({ path: `${SHOTS}/mobile-main-view-earlier.png` })
 })
 
@@ -30,7 +30,7 @@ test('mobile: the date sheet goes to March 2026 and Fri 13 Mar shows its invoice
   await page.getByRole('button', { name: 'Go to a date' }).click()
   const sheet = page.locator('[data-shot="mobile-lookback-calendar"]')
   await expect(sheet).toBeVisible()
-  await sheet.getByRole('button', { name: /July 2026\. Choose a month and year/ }).click()
+  await sheet.getByRole('button', { name: /November 2026\. Choose a month and year/ }).click()
   await sheet.getByRole('button', { name: 'March 2026', exact: true }).click()
   await page.screenshot({ path: `${SHOTS}/mobile-date-sheet-march.png` })
   await sheet.getByRole('button', { name: /^Friday 13 March 2026, 1 List/ }).click()

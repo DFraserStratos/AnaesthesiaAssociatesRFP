@@ -21,7 +21,7 @@ import { PAYER_REVIEW_LIST_ID } from './payerReviewBookings'
 import { rvgGroupIdForLegacyCode } from './rvgGroups'
 import { seedText } from './procedureText'
 
-const DAY = '2026-07-17'
+const DAY = '2026-11-20'
 
 /** The same person, typed in separately on each Procedure: two payers (two BP ids), never matched on name or email. */
 const TYPED_PAYER = { kind: 'other', name: 'Erik Halvorsen', relationship: 'Son', email: 'erik.halvorsen@example.net' } as const

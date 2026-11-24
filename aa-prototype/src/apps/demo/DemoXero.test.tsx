@@ -313,7 +313,7 @@ describe('DemoXero refund on a cancelled prepayment (catch-up Phase 41; US-06.5.
     const pair = xeroInvoicePairViews(state).find((p) => p.ledger.billingInvoiceId === note.originalInvoiceId)!
     renderInvoices(`/demo/xero/invoices/${pair.accRec.id}`)
     const refund = shot('xero-prepayment-refund')!
-    expect(refund).toHaveTextContent('Refund paid from AA trust account · $1,380.00 · Paid 21 Jul')
+    expect(refund).toHaveTextContent('Refund paid from AA trust account · $1,380.00 · Paid 24 Nov')
     expect(refund).toHaveTextContent(note.creditNoteNumber)
     expect(refund.querySelectorAll('[data-shot="xero-prepayment-refund-row"]')).toHaveLength(1)
   })

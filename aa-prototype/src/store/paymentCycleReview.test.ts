@@ -118,7 +118,7 @@ describe('credits beside a payment run', () => {
       const pair = api.getState().billing.ledger[pairId]!
       return isBookingPair(pair) ? pair.invoiceId : ''
     }
-    expect(creditRefusalFor(api.getState(), OFFICE, invoiceOf(second!.pairId))).toMatchObject({ code: 'inPaymentRun', message: "Being paid in Week 30's payment run. Credit it once the run is paid." })
+    expect(creditRefusalFor(api.getState(), OFFICE, invoiceOf(second!.pairId))).toMatchObject({ code: 'inPaymentRun', message: "Being paid in Week 48's payment run. Credit it once the run is paid." })
     // The bill Xero has paid is not this wait.
     expect(creditRefusalFor(api.getState(), OFFICE, invoiceOf(first!.pairId))?.code).not.toBe('inPaymentRun')
   })

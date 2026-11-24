@@ -47,9 +47,11 @@ const SINCLAIR = {
 /**
  * PT0001 to PT0151 as they stood before Phase 40, Noah Prescott's NHI left
  * out (sha-256 of their JSON, in id order). Verified once against the seed at
- * 6b296726 (the commit before Phase 40) when this was pinned.
+ * 6b296726 (the commit before Phase 40) when this was pinned; re-pinned when the
+ * seed moved 18 weeks (every birth date 126 days later; moved back, the old pin
+ * 6a7319263328… matched exactly).
  */
-const PATIENTS_BEFORE_40 = '6a7319263328b3b44f06b2ea32c018c1d1c9af903170f1831383b20004bb88c3'
+const PATIENTS_BEFORE_40 = '36fc9547cbc831b05ba9545558a028ea424d976c6242ff664ce79f5a713c6b6c'
 
 describe('Phase 40 seed', () => {
   it('two fresh seeds deep-equal', () => {
@@ -109,20 +111,20 @@ describe("Heather Sinclair's credit in full (D24)", () => {
   const pair = state.billing.ledger[SINCLAIR.pair] as BookingLedgerPair
 
   it('is a backdrop account billed to her under No contract, RVG, kept off the office lists', () => {
-    expect(state.schedule.lists[SINCLAIR.list]).toMatchObject({ dateISO: '2026-05-08', anaesthetistId: ANAE.sharma, state: 'AUTHORISED' })
+    expect(state.schedule.lists[SINCLAIR.list]).toMatchObject({ dateISO: '2026-09-11', anaesthetistId: ANAE.sharma, state: 'AUTHORISED' })
     expect(state.schedule.bookings[SINCLAIR.booking]).toMatchObject({ patientId: PAT.sinclair, listId: SINCLAIR.list })
     expect(state.schedule.procedures[SINCLAIR.procedure]).toMatchObject({ payer: { kind: 'patient' }, governingContractId: CONTRACT.noContractRvg })
     const inv = state.billing.invoices[SINCLAIR.invoice]!
-    expect(inv).toMatchObject({ invoiceNumber: SINCLAIR.invoiceNumber, counterparty: { kind: 'patient', id: PAT.sinclair }, total: 260, raisedAtISO: '2026-05-12T09:00:00' })
+    expect(inv).toMatchObject({ invoiceNumber: SINCLAIR.invoiceNumber, counterparty: { kind: 'patient', id: PAT.sinclair }, total: 260, raisedAtISO: '2026-09-15T09:00:00' })
     expect(isBackdropInvoice(inv)).toBe(true)
     expect(invoiceStanding(state, SINCLAIR.invoice)).toBe('credited')
   })
 
-  it('was paid on 19 May, never paid out, and is credited with $260.00 held for her', () => {
-    expect(pair.receivable).toMatchObject({ amount: 260, receivedAmount: 260, creditedAmount: 260, paidInAtISO: '2026-05-19T10:00:00' })
+  it('was paid on 22 Sep, never paid out, and is credited with $260.00 held for her', () => {
+    expect(pair.receivable).toMatchObject({ amount: 260, receivedAmount: 260, creditedAmount: 260, paidInAtISO: '2026-09-22T10:00:00' })
     expect(pair.payable).toMatchObject({ amount: 260, disbursedAmount: 0, releasedAmount: 0, reversedAmount: 260 })
     expect(pair.payable?.paidOutAtISO).toBeUndefined()
-    expect(pair.credit).toEqual({ creditNoteId: SINCLAIR.creditNote, negativeInvoiceId: SINCLAIR.negativeInvoice, atISO: '2026-06-02T11:00:00', heldForPayer: 260, recoveryDue: 0 })
+    expect(pair.credit).toEqual({ creditNoteId: SINCLAIR.creditNote, negativeInvoiceId: SINCLAIR.negativeInvoice, atISO: '2026-10-06T11:00:00', heldForPayer: 260, recoveryDue: 0 })
     expect(pairStatusLabel(pair)).toBe('credited')
     // Nothing is due, so no payment run picks it up, and no seeded run holds it.
     expect(dueOn(pair.payable!)).toBe(0)

@@ -23,7 +23,7 @@ import {
 } from './modifiers'
 import { BASE_INCLUDES_P1, BASE_SINGLE_10, RVG_MODIFIER_MASTER as M, mkClaim, modId } from './fixtures'
 
-const ON = '2026-07-21'
+const ON = '2026-11-24'
 const HIP = { ...BASE_SINGLE_10, code: 'LL4', includedModifierIds: [] }
 const H7A = { ...BASE_INCLUDES_P1, code: 'H7A' }
 const H7B = { ...BASE_INCLUDES_P1, code: 'H7b' }
@@ -33,9 +33,9 @@ const facts = (over: Partial<ModifierFacts> = {}): ModifierFacts => ({ procedure
 
 describe('ageInCompletedYears (string based, no clock)', () => {
   it('counts completed years, a birthday completing the year', () => {
-    expect(ageInCompletedYears('1954-03-14', '2026-07-21')).toBe(72)
-    expect(ageInCompletedYears('1956-07-21', '2026-07-21')).toBe(70)
-    expect(ageInCompletedYears('1956-07-22', '2026-07-21')).toBe(69)
+    expect(ageInCompletedYears('1954-07-18', '2026-11-24')).toBe(72)
+    expect(ageInCompletedYears('1956-11-24', '2026-11-24')).toBe(70)
+    expect(ageInCompletedYears('1956-11-25', '2026-11-24')).toBe(69)
   })
 
   it('takes a 29 February birthday as completing on 1 March in a common year', () => {
@@ -46,7 +46,7 @@ describe('ageInCompletedYears (string based, no clock)', () => {
 
   it('is undefined for a malformed date or a date before the birth', () => {
     expect(ageInCompletedYears('not a date', ON)).toBeUndefined()
-    expect(ageInCompletedYears('2026-08-01', ON)).toBeUndefined()
+    expect(ageInCompletedYears('2026-12-05', ON)).toBeUndefined()
   })
 })
 
@@ -58,18 +58,18 @@ describe('the age bands (D29; OQ-95 part 1 answered)', () => {
 
   it('pre-applies A1 or A2 on the procedure date, with its printed units and reason', () => {
     const row = (dob: string) => preApplicableModifiersFor(facts({ patientDobISO: dob }))[0]
-    expect(row('1954-03-14')).toMatchObject({ code: 'A1', units: 1, origin: 'age', detail: "From the patient's age (72) on the procedure date" })
-    expect(row('1946-07-21')).toMatchObject({ code: 'A2', units: 2 }) // 80 that day
-    expect(row('1946-07-22')).toMatchObject({ code: 'A1', units: 1 }) // the day before 80
-    expect(row('2025-07-21')).toMatchObject({ code: 'A1' }) // 1
-    expect(row('2025-07-22')).toMatchObject({ code: 'A2' }) // 0
-    expect(row('2024-07-22')).toMatchObject({ code: 'A1' }) // the day before 2
-    expect(row('2024-07-21')).toBeUndefined() // 2
-    expect(row('1956-07-22')).toBeUndefined() // the day before 70
+    expect(row('1954-07-18')).toMatchObject({ code: 'A1', units: 1, origin: 'age', detail: "From the patient's age (72) on the procedure date" })
+    expect(row('1946-11-24')).toMatchObject({ code: 'A2', units: 2 }) // 80 that day
+    expect(row('1946-11-25')).toMatchObject({ code: 'A1', units: 1 }) // the day before 80
+    expect(row('2025-11-24')).toMatchObject({ code: 'A1' }) // 1
+    expect(row('2025-11-25')).toMatchObject({ code: 'A2' }) // 0
+    expect(row('2024-11-25')).toMatchObject({ code: 'A1' }) // the day before 2
+    expect(row('2024-11-24')).toBeUndefined() // 2
+    expect(row('1956-11-25')).toBeUndefined() // the day before 70
   })
 
   it('applies no age modifier on a group already split by age (H6b, P2), or with no date of birth', () => {
-    expect(preApplicableModifiersFor(facts({ patientDobISO: '1950-01-01', group: H6B }))).toEqual([])
+    expect(preApplicableModifiersFor(facts({ patientDobISO: '1950-05-07', group: H6B }))).toEqual([])
     expect(preApplicableModifiersFor(facts())).toEqual([])
   })
 })
@@ -97,13 +97,13 @@ describe('included modifiers (US-05.1.4, D43)', () => {
   })
 
   it('pre-fills nothing else: no ASA grade, no procedure default', () => {
-    const rows = preApplicableModifiersFor(facts({ patientDobISO: '1990-01-01', group: BASE_INCLUDES_P1 }))
+    const rows = preApplicableModifiersFor(facts({ patientDobISO: '1990-05-07', group: BASE_INCLUDES_P1 }))
     expect(rows.map((r) => r.code)).toEqual(['P1'])
   })
 })
 
 describe('removal and restore (nothing is locked)', () => {
-  const ellison = facts({ patientDobISO: '1954-03-14', group: BASE_INCLUDES_P1 })
+  const ellison = facts({ patientDobISO: '1954-07-18', group: BASE_INCLUDES_P1 })
 
   it('a removed A1 or P1 stays off and adds nothing; put back, it returns', () => {
     const all = preAppliedModifiersFor({ ...ellison, removedModifierIds: [] })
@@ -116,7 +116,7 @@ describe('removal and restore (nothing is locked)', () => {
 })
 
 describe('claims', () => {
-  const ctx = { claims: [], preApplied: preAppliedModifiersFor({ ...facts({ patientDobISO: '1954-03-14', group: BASE_INCLUDES_P1 }), removedModifierIds: [] }), modifiers: M }
+  const ctx = { claims: [], preApplied: preAppliedModifiersFor({ ...facts({ patientDobISO: '1954-07-18', group: BASE_INCLUDES_P1 }), removedModifierIds: [] }), modifiers: M }
 
   it('refuses an unknown modifier, a duplicate of a pre-applied one, and a second claim of the same', () => {
     expect(claimRefusal({ modifierId: 'MOD-NOPE', explanation: 'x' }, ctx)).toBe('That modifier is not in the modifier list.')
@@ -173,7 +173,7 @@ describe('resolveModifiers: the itemised list and the M total', () => {
   })
 
   it('adds the starting modifier units, lists pre-applied rows first, and prices a non-numeric modifier from its claim', () => {
-    const preApplied = preApplicableModifiersFor(facts({ patientDobISO: '1954-03-14' }))
+    const preApplied = preApplicableModifiersFor(facts({ patientDobISO: '1954-07-18' }))
     const r = resolveModifiers({ claims: [mkClaim('PA3', 'Seen in clinic', 3)], preApplied, start: 2, modifiers: M })
     expect(r.items.map((i) => [i.code, i.units, i.origin])).toEqual([
       ['A1', 1, 'age'],

@@ -29,9 +29,9 @@ const keptOn = (s: AppState, id: string) => {
 describe('the dated-change and disable list (US-04.1.2, D79)', () => {
   it("lists the un-authorised Face lifts from the day; Judith Calloway's AUTHORISED one is never listed", () => {
     const api = createAppStore()
-    const rows = stillOnContract(api.getState(), FACE_LIFT, '2026-07-21')
+    const rows = stillOnContract(api.getState(), FACE_LIFT, '2026-11-24')
     expect(rows.length).toBeGreaterThan(0)
-    expect(rows.every((r) => r.dateISO >= '2026-07-21')).toBe(true)
+    expect(rows.every((r) => r.dateISO >= '2026-11-24')).toBe(true)
     const names = rows.map((r) => r.patientName)
     expect(names).toEqual(expect.arrayContaining(['Sophie Matthews', 'Paula Westerman', 'Fiona Lattimer']))
     expect(names).not.toContain('Judith Calloway')
@@ -47,14 +47,14 @@ describe('the dated-change and disable list (US-04.1.2, D79)', () => {
 })
 
 describe('the Disabled Contract flag on the seeded store (US-07.2.2, D81)', () => {
-  it("disable today: Review of Dr Souter's Mon 10 Aug PM flags each Face lift, Authorise is not blocked by it; Make active clears them", () => {
+  it("disable today: Review of Dr Souter's Mon 14 Dec PM flags each Face lift, Authorise is not blocked by it; Make active clears them", () => {
     const api = createAppStore()
     const blockersBefore = authoriseBlockersFor(api.getState(), MERIVALE_BOOKING_LIST_ID)
     expect(reviewFlagsOnList(api.getState(), MERIVALE_BOOKING_LIST_ID).filter((f) => f.rule === 'contractDisabled')).toEqual([])
     disableContract(api, OFFICE_ACTOR, FACE_LIFT)
     const flags = reviewFlagsOnList(api.getState(), MERIVALE_BOOKING_LIST_ID).filter((f) => f.rule === 'contractDisabled')
     expect(flags.length).toBeGreaterThanOrEqual(3)
-    expect(new Set(flags.map((f) => f.text))).toEqual(new Set(['Contract disabled on Tue 21 Jul']))
+    expect(new Set(flags.map((f) => f.text))).toEqual(new Set(['Contract disabled on Tue 24 Nov']))
     expect(authoriseBlockersFor(api.getState(), MERIVALE_BOOKING_LIST_ID)).toEqual(blockersBefore)
     enableContract(api, OFFICE_ACTOR, FACE_LIFT)
     expect(reviewFlagsOnList(api.getState(), MERIVALE_BOOKING_LIST_ID).filter((f) => f.rule === 'contractDisabled')).toEqual([])
@@ -64,10 +64,10 @@ describe('the Disabled Contract flag on the seeded store (US-07.2.2, D81)', () =
 describe('the seeded Disabled Contract case (work item 7)', () => {
   it("the flag fires on exactly its seeded Booking, from the audit's disable day, and never blocks", () => {
     const s = createAppStore().getState()
-    expect(contractDisabledOn(s.audit, 'CT-CES-2025')).toBe('2026-07-10')
+    expect(contractDisabledOn(s.audit, 'CT-CES-2025')).toBe('2026-11-13')
     const id = SEED_MARKERS.disabledContractBooking!.entityId
     const flagged = Object.values(s.schedule.bookings).flatMap((b) => reviewFlagsFor(s, b.id)).filter((f) => f.rule === 'contractDisabled')
-    expect(flagged.map((f) => [f.bookingId, f.text])).toEqual([[id, 'Contract disabled on Fri 10 Jul']])
+    expect(flagged.map((f) => [f.bookingId, f.text])).toEqual([[id, 'Contract disabled on Fri 13 Nov']])
     const booking = s.schedule.bookings[id]!
     expect(booking.listId).toBe(SEED_LIST_IDS.reviewFlags)
     expect(s.schedule.lists[booking.listId]?.state).toBe('SUBMITTED')

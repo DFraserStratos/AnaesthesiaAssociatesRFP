@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test'
 
 test('global demo clock advances live, stays on route and persists across reload', async ({ page }) => {
-  await page.goto('/admin/day/2026-07-21')
+  await page.goto('/admin/day/2026-11-24')
   await page.waitForLoadState('networkidle')
 
   // Enter a routed Booking first: clock use must not interrupt the workflow being presented.
-  await page.locator('[data-list-id="L-34821-2026-07-21-AM"]').click() // Souter's St George's AM (the band and rail card also name St George's since catch-up Phase 31)
+  await page.locator('[data-list-id="L-34821-2026-11-24-AM"]').click() // Souter's St George's AM (the band and rail card also name St George's since catch-up Phase 31)
   await page.getByRole('button', { name: 'Open', exact: true }).first().click()
-  await expect(page).toHaveURL(/\/admin\/day\/2026-07-21\/bookings\/[^/]+$/)
+  await expect(page).toHaveURL(/\/admin\/day\/2026-11-24\/bookings\/[^/]+$/)
   await expect(page.getByText(/Office billing setup/).first()).toBeVisible()
   const bookingURL = page.url()
 
@@ -23,7 +23,7 @@ test('global demo clock advances live, stays on route and persists across reload
 
   await trigger.focus()
   await page.keyboard.press('Enter')
-  const dialog = page.getByRole('dialog', { name: /Tuesday 21 July 2026/ })
+  const dialog = page.getByRole('dialog', { name: /Tuesday 24 November 2026/ })
   await expect(dialog).toBeVisible()
 
   const shortcutNames = [
@@ -32,7 +32,7 @@ test('global demo clock advances live, stays on route and persists across reload
     'Next day',
     'Next morning',
     '+7 days',
-    'Procedure day · 28 Jul',
+    'Procedure day · 1 Dec',
   ] as const
   for (const name of shortcutNames) {
     await expect(dialog.getByRole('button', { name, exact: true })).toBeVisible()
@@ -46,7 +46,7 @@ test('global demo clock advances live, stays on route and persists across reload
   await expect(trigger).toBeFocused()
 
   await trigger.click()
-  const openDialog = page.getByRole('dialog', { name: /Tuesday 21 July 2026/ })
+  const openDialog = page.getByRole('dialog', { name: /Tuesday 24 November 2026/ })
   await openDialog.getByRole('button', { name: '+1 hour', exact: true }).click()
   await expect(openDialog).toBeVisible()
   await expect(openDialog).toContainText('9:00')
@@ -54,11 +54,11 @@ test('global demo clock advances live, stays on route and persists across reload
   expect(page.url()).toBe(bookingURL)
 
   // Procedure day resets the target to 08:00; the same open popup can then add an hour.
-  await openDialog.getByRole('button', { name: 'Procedure day · 28 Jul', exact: true }).click()
-  const procedureDialog = page.getByRole('dialog', { name: /Tuesday 28 July 2026/ })
+  await openDialog.getByRole('button', { name: 'Procedure day · 1 Dec', exact: true }).click()
+  const procedureDialog = page.getByRole('dialog', { name: /Tuesday 1 December 2026/ })
   await expect(procedureDialog).toContainText('8:00')
   await expect(
-    procedureDialog.getByRole('button', { name: 'Procedure day · 28 Jul', exact: true }),
+    procedureDialog.getByRole('button', { name: 'Procedure day · 1 Dec', exact: true }),
   ).toBeDisabled()
   await procedureDialog.getByRole('button', { name: '+1 hour', exact: true }).click()
   await expect(procedureDialog).toContainText('9:00')

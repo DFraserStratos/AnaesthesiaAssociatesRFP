@@ -150,8 +150,8 @@ describe('lines (US-08.4.1)', () => {
     expect(views.map((v) => [v.kind, v.description, v.amount])).toEqual([['fee', 'Knee', 200]])
   })
   it('the cross-match fields: the procedure date and the surgeon, no Booking reference (catch-up Phase 25a, D82; OQ-142 open)', () => {
-    expect(crossMatchFor('2026-07-20', 'Ms Lim')).toEqual({ procedureDateISO: '2026-07-20', surgeon: 'Ms Lim' })
-    expect(crossMatchFor('2026-07-20', undefined)).toEqual({ procedureDateISO: '2026-07-20' })
+    expect(crossMatchFor('2026-11-23', 'Ms Lim')).toEqual({ procedureDateISO: '2026-11-23', surgeon: 'Ms Lim' })
+    expect(crossMatchFor('2026-11-23', undefined)).toEqual({ procedureDateISO: '2026-11-23' })
   })
 })
 
@@ -162,7 +162,7 @@ describe('delivery (US-08.4.2; D55, D70)', () => {
     'PY-BARE': { id: 'PY-BARE', kind: 'surgeonGroup', name: 'Bare', codePrefix: 'BARE', deliveryMethod: 'email' },
   }
   const procs = [{ payer: { kind: 'patient' as const } }]
-  const at = '2026-07-21T10:00:00'
+  const at = '2026-11-24T10:00:00'
   const stamp = (ref: { kind: 'insurer' | 'party' | 'patient'; id: string }, patient: Parameters<typeof invoiceDeliveryFor>[3]) =>
     deliveryStampFor(invoiceDeliveryFor(ref, procs, 'PT0001', patient, parties), at, 'Billing run')
 
@@ -202,8 +202,8 @@ describe('the BTM breakdown line (US-08.4.1)', () => {
 })
 
 describe('delivery wording (US-08.4.2)', () => {
-  const sent = { delivery: { method: 'email' as const, status: 'sent' as const, sends: [{ atISO: '2026-07-21T08:00:00', to: 'a@example.net', by: 'Billing run' }] } }
-  const post = { delivery: { method: 'post' as const, status: 'toPost' as const, address: ['PO Box 1'], markedAtISO: '2026-07-21T08:00:00' } }
+  const sent = { delivery: { method: 'email' as const, status: 'sent' as const, sends: [{ atISO: '2026-11-24T08:00:00', to: 'a@example.net', by: 'Billing run' }] } }
+  const post = { delivery: { method: 'post' as const, status: 'toPost' as const, address: ['PO Box 1'], markedAtISO: '2026-11-24T08:00:00' } }
   const none = { delivery: { method: 'email' as const, status: 'noAddress' as const } }
 
   it('runDeliverySummary with and without missing addresses', () => {

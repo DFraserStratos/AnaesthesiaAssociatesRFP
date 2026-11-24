@@ -28,8 +28,8 @@ vi.mock('../../../store', async (importOriginal) => {
 })
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-const AM20 = projectedListId(ANAE.souter, '2026-07-20', 'AM')
-const PM20 = projectedListId(ANAE.souter, '2026-07-20', 'PM')
+const AM20 = projectedListId(ANAE.souter, '2026-11-23', 'AM')
+const PM20 = projectedListId(ANAE.souter, '2026-11-23', 'PM')
 
 function Probe() {
   const loc = useLocation()

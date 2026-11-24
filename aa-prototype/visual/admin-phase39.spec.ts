@@ -16,8 +16,8 @@ import { runDemoAction } from './demoActions'
  * opened by URL here). Shots land in `visual/shots/` (gitignored).
  */
 
-const MITCHELL_ADMIN = '/admin/day/2026-07-14/bookings/BK0032'
-const SHARMA_TUE14 = 'L-41267-2026-07-14-AM'
+const MITCHELL_ADMIN = '/admin/day/2026-11-17/bookings/BK0032'
+const SHARMA_TUE14 = 'L-41267-2026-11-17-AM'
 const SOUTER_WEB_HBK03 = '/web/lists/L-HIST-03/bookings/HBK03'
 const SOUTER_MOBILE_HBK03 = '/mobile/lists/L-HIST-03/bookings/HBK03'
 

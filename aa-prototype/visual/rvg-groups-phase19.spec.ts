@@ -108,7 +108,7 @@ test('H4 with 14 typed: the caption, completion goes through, the warning on the
   await page.getByRole('button', { name: 'Mark complete' }).click()
   await expect(page.getByRole('button', { name: 'Mark list completed' })).toBeVisible()
 
-  await page.goto('/admin/day/2026-07-21')
+  await page.goto('/admin/day/2026-11-24')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot="admin-warnings-todo"]')).toContainText('Base units 14 are outside the RVG guide for H4 (10 to 12).')
 })

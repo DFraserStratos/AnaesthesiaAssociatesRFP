@@ -32,7 +32,7 @@ const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 const MORRISON: Actor = { who: 'Dr Kate Morrison', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.morrison }
 /** Dr Souter's Mon 27 Jul AM Forte List with Mr Okafor. */
-const SOUTER_FORTE = 'L-34821-2026-07-27-AM'
+const SOUTER_FORTE = 'L-34821-2026-11-30-AM'
 
 function book(api: AppStoreApi, actor: Actor, patient: { nhi: string; name: string; dobISO: string }, listId = SOUTER_FORTE) {
   const made = createBooking(api, actor, listId, { patient, sourceText: { text: 'Knee arthroscopy', source: 'phone' } })
@@ -40,8 +40,8 @@ function book(api: AppStoreApi, actor: Actor, patient: { nhi: string; name: stri
   return made.value.bookingId
 }
 
-const MITCHELL = { nhi: 'CQY9304', name: 'Sarah Mitchell', dobISO: '1988-04-12' }
-const TUILAGI = { nhi: 'JKL1188', name: 'Losa Tuilagi', dobISO: '1992-01-27' }
+const MITCHELL = { nhi: 'CQY9304', name: 'Sarah Mitchell', dobISO: '1988-08-16' }
+const TUILAGI = { nhi: 'JKL1188', name: 'Losa Tuilagi', dobISO: '1992-06-01' }
 const FOSTER_NHI = 'ZAK8873'
 const CHEN_NHI = 'ZAE0310'
 
@@ -54,7 +54,7 @@ describe('the mandatory NHI (D11): createBooking is the one guard', () => {
   ])('refuses a %s NHI and writes nothing', (_label, nhi, code) => {
     const api = createAppStore()
     const before = api.getState()
-    const made = createBooking(api, OFFICE, SOUTER_FORTE, { patient: { nhi, name: 'No One', dobISO: '1980-01-01' }, sourceText: { text: 'x', source: 'phone' } })
+    const made = createBooking(api, OFFICE, SOUTER_FORTE, { patient: { nhi, name: 'No One', dobISO: '1980-05-06' }, sourceText: { text: 'x', source: 'phone' } })
     expect(made).toMatchObject({ ok: false, code })
     expect(api.getState().schedule.bookings).toBe(before.schedule.bookings)
     expect(api.getState().masters.patients).toBe(before.masters.patients)
@@ -63,7 +63,7 @@ describe('the mandatory NHI (D11): createBooking is the one guard', () => {
 
   it('an anaesthetist is refused the same way', () => {
     const api = createAppStore()
-    expect(createBooking(api, SOUTER, SOUTER_FORTE, { patient: { nhi: '', name: 'X', dobISO: '1980-01-01' }, sourceText: { text: 'x', source: 'anaesthetist' } })).toMatchObject({ ok: false, code: 'nhiRequired' })
+    expect(createBooking(api, SOUTER, SOUTER_FORTE, { patient: { nhi: '', name: 'X', dobISO: '1980-05-06' }, sourceText: { text: 'x', source: 'anaesthetist' } })).toMatchObject({ ok: false, code: 'nhiRequired' })
   })
 
   it('every seeded patient has a valid NHI and no NHI is held twice', () => {
@@ -240,8 +240,8 @@ describe('waiting rows: add the NHI, ask the one address (US-11.1.5)', () => {
   it('lists both rows by date, the close one urgent, each with one address to chase', () => {
     const { rows } = staged()
     expect(rows.map((r) => [r.patientName, r.dateISO, r.urgency])).toEqual([
-      ['Aroha Ngata', '2026-07-23', 'urgent'],
-      ['Losa Tuilagi', '2026-07-27', 'normal'],
+      ['Aroha Ngata', '2026-11-26', 'urgent'],
+      ['Losa Tuilagi', '2026-11-30', 'normal'],
     ])
     for (const r of rows) expect(r.chase.to.includes(',')).toBe(false)
   })
@@ -302,8 +302,8 @@ describe('patient selectors', () => {
     const s = api.getState()
     expect(patientSearch(s, 'mitchell').map((r) => r.nhi)).toContain('CQY9304')
     expect(patientSearch(s, 'cqy 9304').map((r) => r.name)).toEqual(['Sarah Mitchell'])
-    expect(patientSearch(s, '12/04/1988').map((r) => r.name)).toContain('Sarah Mitchell')
-    expect(patientSearch(s, '1988-04-12').map((r) => r.name)).toContain('Sarah Mitchell')
+    expect(patientSearch(s, '16/08/1988').map((r) => r.name)).toContain('Sarah Mitchell')
+    expect(patientSearch(s, '1988-08-16').map((r) => r.name)).toContain('Sarah Mitchell')
     expect(JSON.stringify(patientSearch(s, 'mitchell'))).not.toContain('PT0005')
   })
 

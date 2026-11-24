@@ -9,7 +9,7 @@ const entry = (id: string, partial: Partial<AuditEntry> & Pick<AuditEntry, 'enti
   who: 'Kirsty W.',
   role: 'office',
   source: 'office',
-  atISO: '2026-07-21T09:00:00',
+  atISO: '2026-11-24T09:00:00',
   ...partial,
 })
 

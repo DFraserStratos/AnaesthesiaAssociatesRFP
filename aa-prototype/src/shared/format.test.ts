@@ -7,35 +7,35 @@ import { mondayOf, weekDays, shiftWeeks, formatCurrency, drSurname, initialsOf, 
 
 describe('mondayOf', () => {
   it('returns the Monday of the week for any day', () => {
-    expect(mondayOf('2026-07-21')).toBe('2026-07-20') // Tue -> Mon
-    expect(mondayOf('2026-07-20')).toBe('2026-07-20') // Mon -> itself
-    expect(mondayOf('2026-07-26')).toBe('2026-07-20') // Sun -> Mon of the same week
+    expect(mondayOf('2026-11-24')).toBe('2026-11-23') // Tue -> Mon
+    expect(mondayOf('2026-11-23')).toBe('2026-11-23') // Mon -> itself
+    expect(mondayOf('2026-11-29')).toBe('2026-11-23') // Sun -> Mon of the same week
   })
 })
 
 describe('weekDays', () => {
   it('returns the seven ISO dates Monday..Sunday', () => {
-    expect(weekDays('2026-07-21')).toEqual([
-      '2026-07-20',
-      '2026-07-21',
-      '2026-07-22',
-      '2026-07-23',
-      '2026-07-24',
-      '2026-07-25',
-      '2026-07-26',
+    expect(weekDays('2026-11-24')).toEqual([
+      '2026-11-23',
+      '2026-11-24',
+      '2026-11-25',
+      '2026-11-26',
+      '2026-11-27',
+      '2026-11-28',
+      '2026-11-29',
     ])
   })
 
   it('anchors on the Monday regardless of the day passed', () => {
-    expect(weekDays('2026-07-24')).toEqual(weekDays('2026-07-20'))
+    expect(weekDays('2026-11-27')).toEqual(weekDays('2026-11-23'))
   })
 })
 
 describe('shiftWeeks', () => {
   it('shifts a date by whole weeks', () => {
-    expect(shiftWeeks('2026-07-21', 1)).toBe('2026-07-28')
-    expect(shiftWeeks('2026-07-21', -1)).toBe('2026-07-14')
-    expect(shiftWeeks('2026-07-21', 0)).toBe('2026-07-21')
+    expect(shiftWeeks('2026-11-24', 1)).toBe('2026-12-01')
+    expect(shiftWeeks('2026-11-24', -1)).toBe('2026-11-17')
+    expect(shiftWeeks('2026-11-24', 0)).toBe('2026-11-24')
   })
 })
 

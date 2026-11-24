@@ -59,7 +59,7 @@ interface Drive {
 
 /** Authorise Dr Souter's Mon 20 Jul AM List on Review, so its invoices reach Xero (as `demo-actions.spec.ts` does). */
 async function authoriseAList(page: Page): Promise<void> {
-  await page.goto('/admin/review/L-34821-2026-07-20-AM')
+  await page.goto('/admin/review/L-34821-2026-11-23-AM')
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()
   await page.getByRole('button', { name: 'Authorise for billing' }).last().click()
@@ -86,7 +86,7 @@ async function openProductSupport(page: Page): Promise<void> {
   await expect(page.locator('[data-shot="support-panel"]')).toHaveAttribute('data-tab', 'productSupport')
 }
 
-const INVOICE_FIRST = 'No open invoice until a List is authorised (index path null at seed, catch-up Phase 39): authorise Dr Souter\'s Mon 20 Jul AM List first.'
+const INVOICE_FIRST = 'No open invoice until a List is authorised (index path null at seed, catch-up Phase 39): authorise Dr Souter\'s Mon 23 Nov AM List first.'
 
 /** Rows whose `when` (or empty index path) needs a state the screen alone does not give; each is driven to it. */
 const DRIVEN: Readonly<Record<string, Drive>> = {

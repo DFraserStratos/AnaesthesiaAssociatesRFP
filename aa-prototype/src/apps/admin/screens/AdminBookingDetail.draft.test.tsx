@@ -27,7 +27,7 @@ function mountAdmin() {
         path: '/admin',
         element: (
           <SurfaceProvider variant="web">
-            <Outlet context={{ actor: OFFICE_ACTOR, todayISO: '2026-07-21' }} />
+            <Outlet context={{ actor: OFFICE_ACTOR, todayISO: '2026-11-24' }} />
           </SurfaceProvider>
         ),
         children: [
@@ -129,7 +129,7 @@ describe("the anaesthetist's web Booking", () => {
     render(
       <MemoryRouter>
         <SurfaceProvider variant="web">
-          <BookingDetailView bookingId={BOOKING} actor={SOUTER_ACTOR} todayISO="2026-07-21" onBack={() => {}} />
+          <BookingDetailView bookingId={BOOKING} actor={SOUTER_ACTOR} todayISO="2026-11-24" onBack={() => {}} />
         </SurfaceProvider>
       </MemoryRouter>,
     )

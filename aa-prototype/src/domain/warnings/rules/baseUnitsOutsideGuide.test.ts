@@ -16,7 +16,7 @@ function facts(procedures: Procedure[], rvgGroups: WarningFacts['rvgGroups'] | '
     list: { id: 'L1' } as List,
     procedures,
     prepaymentStatus: 'none',
-    todayISO: '2026-07-21',
+    todayISO: '2026-11-24',
     ...(rvgGroups !== 'none' && rvgGroups !== undefined ? { rvgGroups } : {}),
   }
 }

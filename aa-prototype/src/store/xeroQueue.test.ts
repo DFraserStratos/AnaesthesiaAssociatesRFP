@@ -23,8 +23,8 @@ import { ANAE } from '../domain/seed'
 import { projectedListId } from '../domain/slots'
 import { roundToCents } from '../domain/billing/money'
 
-const AM20 = projectedListId(ANAE.souter, '2026-07-20', 'AM')
-const PM20 = projectedListId(ANAE.souter, '2026-07-20', 'PM')
+const AM20 = projectedListId(ANAE.souter, '2026-11-23', 'AM')
+const PM20 = projectedListId(ANAE.souter, '2026-11-23', 'PM')
 
 const unwires: (() => void)[] = []
 afterEach(() => {
@@ -58,7 +58,7 @@ describe('the outage and the queue (work items 6 and 7)', () => {
     expect(Object.keys(api.getState().xero.accRecs)).toHaveLength(accRecsBefore)
     const queued = openXeroQueueItems(api.getState())
     expect(queued.filter((q) => q.kind === 'handoff').map((q) => q.target.pairId).sort()).toEqual(pairs.map((p) => p.id).sort())
-    expect(queued.every((q) => q.attempts === 1 && q.lastError === XERO_OUTAGE_ERROR && q.nextAttemptAtISO === '2026-07-21T08:02:00')).toBe(true)
+    expect(queued.every((q) => q.attempts === 1 && q.lastError === XERO_OUTAGE_ERROR && q.nextAttemptAtISO === '2026-11-24T08:02:00')).toBe(true)
     // A pair merely waiting does not raise the nav badge.
     expect(billingAttentionCount(api.getState())).toBe(0)
   })
@@ -69,9 +69,9 @@ describe('the outage and the queue (work items 6 and 7)', () => {
     authorise(api, AM20)
     const id = openXeroQueueItems(api.getState())[0]!.id
     advanceClockMinutes(api, 15)
-    expect(api.getState().billing.xeroQueue[id]).toMatchObject({ attempts: 2, nextAttemptAtISO: '2026-07-21T08:19:00', status: 'waiting' })
+    expect(api.getState().billing.xeroQueue[id]).toMatchObject({ attempts: 2, nextAttemptAtISO: '2026-11-24T08:19:00', status: 'waiting' })
     advanceClockMinutes(api, 15)
-    expect(api.getState().billing.xeroQueue[id]).toMatchObject({ attempts: 3, nextAttemptAtISO: '2026-07-21T08:38:00' })
+    expect(api.getState().billing.xeroQueue[id]).toMatchObject({ attempts: 3, nextAttemptAtISO: '2026-11-24T08:38:00' })
     // A seven-day jump is one more attempt, not a burst.
     advanceClockDays(api, 7)
     expect(api.getState().billing.xeroQueue[id]!.attempts).toBe(4)

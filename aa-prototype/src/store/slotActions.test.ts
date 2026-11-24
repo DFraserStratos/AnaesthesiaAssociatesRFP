@@ -46,8 +46,8 @@ import { nextTestNhi } from './testNhi'
 const OFFICE = OFFICE_ACTOR
 const SOUTER = SOUTER_ACTOR
 const SHARMA: Actor = { who: 'Dr Priya Sharma', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.sharma }
-const TUE21 = '2026-07-21'
-const WED22 = '2026-07-22'
+const TUE21 = '2026-11-24'
+const WED22 = '2026-11-25'
 const SHARMA_PM = slotIdFor(ANAE.sharma, TUE21, 'PM') // free, open for cover
 const STRAND_PM = slotIdFor(ANAE.strand, TUE21, 'PM') // free, open for cover
 
@@ -77,9 +77,9 @@ describe('generation: free Slots, then the calendar, then recurring bookings', (
   })
   const masters = (over: Partial<CanvasMasters> = {}): CanvasMasters => ({
     anaesthetists: [
-      { id: 'A1', startDateISO: '2020-01-06', active: true },
-      { id: 'A2', startDateISO: '2020-01-06', active: false },
-      { id: 'A3', startDateISO: '2026-08-05', active: true },
+      { id: 'A1', startDateISO: '2020-05-11', active: true },
+      { id: 'A2', startDateISO: '2020-05-11', active: false },
+      { id: 'A3', startDateISO: '2026-12-09', active: true },
     ],
     recurringBookings: [recurring({}), recurring({ id: 'PLY', dayOfWeek: 6 })],
     leave: [],
@@ -88,46 +88,46 @@ describe('generation: free Slots, then the calendar, then recurring bookings', (
     ...over,
   })
   // Mon 3 Aug to Sun 9 Aug 2026.
-  const week = enumerateDatesISO('2026-08-03', '2026-08-09')
+  const week = enumerateDatesISO('2026-12-07', '2026-12-13')
 
   it('writes exactly two Slots per active anaesthetist per day, none for an inactive one or before a start date', () => {
     const { slots } = generateCanvasForDates(masters(), week)
     const by = (a: string) => slots.filter((s) => s.anaesthetistId === a)
     expect(by('A1')).toHaveLength(14)
     expect(by('A2')).toHaveLength(0)
-    expect(by('A3').map((s) => s.dateISO).sort()[0]).toBe('2026-08-05')
+    expect(by('A3').map((s) => s.dateISO).sort()[0]).toBe('2026-12-09')
     expect(by('A3')).toHaveLength(10)
   })
 
   it('every Slot is free unless a recurring booking projected a List; weekend recurring bookings project too (catch-up Phase 30)', () => {
     const { slots, lists } = generateCanvasForDates(masters(), week)
     expect(lists).toHaveLength(2)
-    expect(lists[0]).toMatchObject({ id: 'L-A1-2026-08-03-AM', slotId: 'S-A1-2026-08-03-AM', state: 'ACTIVE', kind: 'private', recurringBookingId: 'PLX' })
-    expect(lists[1]).toMatchObject({ id: 'L-A1-2026-08-08-AM', recurringBookingId: 'PLY' })
+    expect(lists[0]).toMatchObject({ id: 'L-A1-2026-12-07-AM', slotId: 'S-A1-2026-12-07-AM', state: 'ACTIVE', kind: 'private', recurringBookingId: 'PLX' })
+    expect(lists[1]).toMatchObject({ id: 'L-A1-2026-12-12-AM', recurringBookingId: 'PLY' })
     expect(slots.every((s) => s.status === 'free')).toBe(true)
   })
 
   it('the calendar wins: a recurring booking under leave projects no List and is traced as a clash', () => {
-    const leave: SeedLeaveWindow[] = [{ anaesthetistId: 'A1', dateISO: '2026-08-03', session: 'AM', status: 'holiday', note: 'Annual leave' }]
+    const leave: SeedLeaveWindow[] = [{ anaesthetistId: 'A1', dateISO: '2026-12-07', session: 'AM', status: 'holiday', note: 'Annual leave' }]
     const { slots, lists, clashes } = generateCanvasForDates(masters({ leave }), week)
-    expect(lists.filter((l) => l.dateISO === '2026-08-03')).toHaveLength(0)
-    expect(clashes).toEqual([{ recurringBookingId: 'PLX', slotId: 'S-A1-2026-08-03-AM' }])
-    expect(slots.find((s) => s.id === 'S-A1-2026-08-03-AM')).toMatchObject({ status: 'holiday', note: 'Annual leave' })
+    expect(lists.filter((l) => l.dateISO === '2026-12-07')).toHaveLength(0)
+    expect(clashes).toEqual([{ recurringBookingId: 'PLX', slotId: 'S-A1-2026-12-07-AM' }])
+    expect(slots.find((s) => s.id === 'S-A1-2026-12-07-AM')).toMatchObject({ status: 'holiday', note: 'Annual leave' })
   })
 
   it('recurring-booking times become the Slot\'s own times; generation stamps no conflict (the one rule does)', () => {
     const { slots, lists } = generateCanvasForDates(masters({ recurringBookings: [recurring({ startTime: '09:00', endTime: '12:00' })] }), week)
-    expect(slots.find((s) => s.id === 'S-A1-2026-08-03-AM')).toMatchObject({ startTime: '09:00', endTime: '12:00' })
+    expect(slots.find((s) => s.id === 'S-A1-2026-12-07-AM')).toMatchObject({ startTime: '09:00', endTime: '12:00' })
     expect(lists[0]?.conflicts).toEqual([])
   })
 
   it('start and end dates bound a recurring booking; the first running row in id order paints a shared session', () => {
-    const ended = recurring({ id: 'PLA', effectiveToISO: '2026-08-02' })
-    const next = recurring({ id: 'PLB', effectiveFromISO: '2026-08-03', surgeonId: SURG.lim })
-    const { lists } = generateCanvasForDates(masters({ recurringBookings: [next, ended] }), enumerateDatesISO('2026-07-27', '2026-08-03'))
+    const ended = recurring({ id: 'PLA', effectiveToISO: '2026-12-06' })
+    const next = recurring({ id: 'PLB', effectiveFromISO: '2026-12-07', surgeonId: SURG.lim })
+    const { lists } = generateCanvasForDates(masters({ recurringBookings: [next, ended] }), enumerateDatesISO('2026-11-30', '2026-12-07'))
     expect(lists.map((l) => [l.dateISO, l.recurringBookingId])).toEqual([
-      ['2026-07-27', 'PLA'],
-      ['2026-08-03', 'PLB'],
+      ['2026-11-30', 'PLA'],
+      ['2026-12-07', 'PLB'],
     ])
   })
 })
@@ -164,9 +164,9 @@ describe('assignListToSlot', () => {
     expect(Object.values(api.getState().schedule.lists).some((l) => l.slotId === STRAND_PM)).toBe(false)
   })
 
-  it('flags a hospital closed that day on the new List, never blocking (Labour Day)', () => {
+  it('flags a hospital closed that day on the new List, never blocking (Waitangi Day)', () => {
     const api = store()
-    const slot = openSlotOn(api, '2026-10-26', 'AM')
+    const slot = openSlotOn(api, '2027-02-08', 'AM')
     const out = assign(api, slot.id)
     expect(out.ok).toBe(true)
     if (out.ok) expect(api.getState().schedule.lists[out.value.listId]?.conflicts).toMatchObject([{ kind: 'holiday' }])
@@ -191,11 +191,11 @@ describe('assignListToSlot', () => {
     const acks = () => api.getState().audit.filter((a) => a.action === 'list.pairingAcknowledged')
     expect(assign(api, SHARMA_PM, SURG.reid, HOSP.ces).ok).toBe(true)
     expect(acks()).toHaveLength(1)
-    expect(assign(api, slotIdFor(ANAE.sharma, '2026-07-23', 'PM'), SURG.whitford, HOSP.ces).ok).toBe(true)
+    expect(assign(api, slotIdFor(ANAE.sharma, '2026-11-26', 'PM'), SURG.whitford, HOSP.ces).ok).toBe(true)
     expect(acks()).toHaveLength(1)
     const entry = Object.values(selectPairingPreferences(api.getState())).find((e) => e.anaesthetistId === ANAE.sharma && e.surgeonId === SURG.reid)!
     expect(endPairingPreference(api, OFFICE, entry.id).ok).toBe(true)
-    const sharmaOpen = slotViewsForAnaesthetist(api.getState(), ANAE.sharma, '2026-08-01', '2026-11-21').find(isOpenSlotView)!
+    const sharmaOpen = slotViewsForAnaesthetist(api.getState(), ANAE.sharma, '2026-12-05', '2027-03-27').find(isOpenSlotView)!
     expect(assign(api, sharmaOpen.slot.id, SURG.reid, HOSP.ces).ok).toBe(true)
     expect(acks()).toHaveLength(1)
   })
@@ -211,7 +211,7 @@ describe('the displayed status', () => {
     const list = assigned(api.getState().schedule.lists[SEED_LIST_IDS.souterAm21])
     const keyOf = () => slotView(api.getState(), list.slotId)?.displayKey
     const start = keyOf()
-    const created = createBooking(api, OFFICE, list.id, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Test', source: 'anaesthetist' } })
+    const created = createBooking(api, OFFICE, list.id, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-05-07' }, sourceText: { text: 'Test', source: 'anaesthetist' } })
     expect(created.ok).toBe(true)
     expect(keyOf()).toBe(start)
     const existing = bookingsForList(api.getState(), list.id).find((b) => b.cancellation === undefined && !b.completed)!
@@ -241,7 +241,7 @@ describe('the displayed status', () => {
     const api = store()
     const out = assign(api, SHARMA_PM)
     expect(out.ok).toBe(true)
-    if (out.ok) createBooking(api, OFFICE, out.value.listId, { patient: { nhi: nextTestNhi(), name: 'Phone Patient', dobISO: '1980-02-02' }, sourceText: { text: 'Appendicectomy', source: 'anaesthetist' } })
+    if (out.ok) createBooking(api, OFFICE, out.value.listId, { patient: { nhi: nextTestNhi(), name: 'Phone Patient', dobISO: '1980-06-07' }, sourceText: { text: 'Appendicectomy', source: 'anaesthetist' } })
     const state = api.getState()
     const admin = slotViewsForDate(state, TUE21).find((v) => v.slot.id === SHARMA_PM)!
     const personal = slotViewsForAnaesthetist(state, ANAE.sharma, TUE21, TUE21).find((v) => v.slot.id === SHARMA_PM)!
@@ -286,7 +286,7 @@ describe('setAvailability', () => {
     const api = store()
     expect(setAvailability(api, SOUTER, ANAE.sharma, TUE21, 'PM', 'unavailable')).toMatchObject({ ok: false, code: 'notOwnAvailability' })
     expect(setAvailability(api, { who: 'Feed', role: 'system', source: 'integration' }, ANAE.sharma, TUE21, 'PM', 'free')).toMatchObject({ ok: false, code: 'integrationForbidden' })
-    expect(setAvailability(api, SHARMA, ANAE.sharma, '2027-06-01', 'PM', 'unavailable')).toMatchObject({ ok: false, code: 'noSlot' })
+    expect(setAvailability(api, SHARMA, ANAE.sharma, '2027-10-05', 'PM', 'unavailable')).toMatchObject({ ok: false, code: 'noSlot' })
   })
 })
 
@@ -431,14 +431,14 @@ describe('the horizon setting', () => {
     const api = store()
     const original = api.getState().schedule
     const preview = previewHorizonChange(api.getState(), 3)
-    expect(preview).toMatchObject({ direction: 'shorten', fromEndISO: '2026-11-21', toEndISO: '2026-10-21', days: 31, listsWithBookings: 0 })
+    expect(preview).toMatchObject({ direction: 'shorten', fromEndISO: '2027-03-24', toEndISO: '2027-02-24', days: 28, listsWithBookings: 0 })
     const out = setHorizonMonths(api, OFFICE, 3)
     expect(out.ok).toBe(true)
     const s = api.getState()
-    expect(scheduleHorizon(s).endISO).toBe('2026-10-21')
-    expect(Object.values(s.schedule.slots).some((x) => x.dateISO > '2026-10-21')).toBe(false)
-    expect(Object.values(s.schedule.lists).some((l) => l.dateISO > '2026-10-21')).toBe(false)
-    expect(Object.keys(s.schedule.slots).length).toBe(Object.keys(original.slots).length - 31 * 14 * 2)
+    expect(scheduleHorizon(s).endISO).toBe('2027-02-24')
+    expect(Object.values(s.schedule.slots).some((x) => x.dateISO > '2027-02-24')).toBe(false)
+    expect(Object.values(s.schedule.lists).some((l) => l.dateISO > '2027-02-24')).toBe(false)
+    expect(Object.keys(s.schedule.slots).length).toBe(Object.keys(original.slots).length - 28 * 14 * 2)
 
     expect(setHorizonMonths(api, OFFICE, 4).ok).toBe(true)
     expect(api.getState().schedule.slots).toEqual(original.slots)
@@ -448,16 +448,16 @@ describe('the horizon setting', () => {
 
   it('refuses to shorten over a List that holds a Booking, and changes nothing', () => {
     const api = store()
-    const far = openSlotOn(api, '2026-11-02', 'AM')
+    const far = openSlotOn(api, '2027-03-08', 'AM')
     const assigned = assign(api, far.id)
     if (!assigned.ok) throw new Error('assign failed')
-    createBooking(api, OFFICE, assigned.value.listId, { patient: { nhi: nextTestNhi(), name: 'Far Patient', dobISO: '1960-03-03' }, sourceText: { text: 'Hip', source: 'anaesthetist' } })
+    createBooking(api, OFFICE, assigned.value.listId, { patient: { nhi: nextTestNhi(), name: 'Far Patient', dobISO: '1960-07-07' }, sourceText: { text: 'Hip', source: 'anaesthetist' } })
     const before = api.getState().schedule
     const out = setHorizonMonths(api, OFFICE, 3)
     expect(out).toMatchObject({
       ok: false,
       code: 'listsBeyondHorizon',
-      message: '1 List after Wed 21 Oct 2026 holds Bookings (cancelled Bookings count). Move them first, or keep the longer horizon.',
+      message: '1 List after Wed 24 Feb 2027 holds Bookings (cancelled Bookings count). Move them first, or keep the longer horizon.',
     })
     expect(api.getState().schedule).toBe(before)
     expect(api.getState().appSettings.schedule.horizonMonths).toBe(4)
@@ -465,10 +465,10 @@ describe('the horizon setting', () => {
 
   it('a cancelled Booking beyond the new end also blocks shortening (nothing orphaned)', () => {
     const api = store()
-    const far = openSlotOn(api, '2026-11-03', 'AM')
+    const far = openSlotOn(api, '2027-03-09', 'AM')
     const assigned = assign(api, far.id)
     if (!assigned.ok) throw new Error('assign failed')
-    const booked = createBooking(api, OFFICE, assigned.value.listId, { patient: { nhi: nextTestNhi(), name: 'Far Patient', dobISO: '1960-03-03' }, sourceText: { text: 'Hip', source: 'anaesthetist' } })
+    const booked = createBooking(api, OFFICE, assigned.value.listId, { patient: { nhi: nextTestNhi(), name: 'Far Patient', dobISO: '1960-07-07' }, sourceText: { text: 'Hip', source: 'anaesthetist' } })
     if (booked.ok) cancelBooking(api, OFFICE, booked.value.bookingId, 'Changed plans')
     expect(setHorizonMonths(api, OFFICE, 3)).toMatchObject({ ok: false, code: 'listsBeyondHorizon' })
   })
@@ -494,9 +494,9 @@ describe('the horizon setting', () => {
     expect(setHorizonMonths(api, OFFICE, 25)).toMatchObject({ ok: false, code: 'invalidHorizon' })
     expect(setHorizonMonths(api, SOUTER, 5)).toMatchObject({ ok: false, code: 'officeOnly' })
     expect(setHorizonMonths(api, OFFICE, 5).ok).toBe(true)
-    expect(scheduleHorizon(api.getState()).endISO).toBe('2026-12-21')
+    expect(scheduleHorizon(api.getState()).endISO).toBe('2027-04-24')
     advanceClockDays(api, 1)
-    expect(Object.values(api.getState().schedule.slots).some((s) => s.dateISO === '2026-12-22')).toBe(true)
+    expect(Object.values(api.getState().schedule.slots).some((s) => s.dateISO === '2027-04-25')).toBe(true)
   })
 })
 
@@ -509,8 +509,9 @@ describe('rosterForDate', () => {
     const api = store()
     expect(rosterForDate(api.getState(), TUE21).map((a) => a.registrationNumber)[0]).toBe(ANAE.souter)
     expect(rosterForDate(api.getState(), TUE21)).toHaveLength(14)
-    expect(rosterForDate(api.getState(), '2027-01-01')).toHaveLength(0)
-    expect(slotFor(api.getState(), ANAE.souter, '2027-01-01', 'AM')).toBeUndefined()
+    // Past the horizon's end (Wed 24 Mar 2027): no sessions yet.
+    expect(rosterForDate(api.getState(), '2027-04-01')).toHaveLength(0)
+    expect(slotFor(api.getState(), ANAE.souter, '2027-04-01', 'AM')).toBeUndefined()
     expect(displayStatusKey({ status: 'free' }, undefined)).toBe('free')
   })
 })

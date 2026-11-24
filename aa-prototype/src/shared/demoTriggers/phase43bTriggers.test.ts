@@ -20,8 +20,8 @@ const visible = (state: ReturnType<ReturnType<typeof createAppStore>['getState']
 describe('support triggers (catch-up Phase 43b)', () => {
   it('show only while the panel is open, split by tab, on every app', () => {
     const state = createAppStore().getState()
-    expect(visible(state, '/admin/day/2026-07-21', 'bar', {})).toEqual([])
-    expect(visible(state, '/admin/day/2026-07-21', 'bar', office('helpLine'))).toEqual(['support-advance-ticket', 'support-raise-out-of-hours'])
+    expect(visible(state, '/admin/day/2026-11-24', 'bar', {})).toEqual([])
+    expect(visible(state, '/admin/day/2026-11-24', 'bar', office('helpLine'))).toEqual(['support-advance-ticket', 'support-raise-out-of-hours'])
     expect(visible(state, '/admin/masters', 'bar', office('productSupport'))).toEqual(['support-advance-ticket', 'support-raise-public-holiday', 'support-approve-call-out'])
     expect(visible(state, '/web', 'bar', souter)).toEqual(['support-advance-ticket', 'support-raise-out-of-hours'])
     expect(visible(state, '/mobile/more', 'bar', souter)).toEqual(['support-advance-ticket', 'support-raise-out-of-hours'])
@@ -45,31 +45,31 @@ describe('support triggers (catch-up Phase 43b)', () => {
     const api = createAppStore()
     const t = byId('support-raise-out-of-hours')
     const ordinary = t.run(api, ctx('/mobile/more', souter), 'other')
-    expect(ordinary.message).toBe('Clock now Tue 21 Jul, 7:00pm. TK0006 logged: not answered out of hours, picked up at the next opening.')
-    expect(api.getState().clock).toEqual({ todayISO: '2026-07-21', minutesSinceMidnight: 19 * 60 })
+    expect(ordinary.message).toBe('Clock now Tue 24 Nov, 7:00pm. TK0006 logged: not answered out of hours, picked up at the next opening.')
+    expect(api.getState().clock).toEqual({ todayISO: '2026-11-24', minutesSinceMidnight: 19 * 60 })
     expect(api.getState().support.tickets['TK0006']).toMatchObject({ raisedBy: { who: 'Dr Melanie Souter', app: 'mobile' }, cover: 'afterHours' })
     // Already at or past 7:00pm: the next weekday's evening, never back.
     const breach = t.run(api, ctx('/admin', office('helpLine')), 'securityBreach')
-    expect(breach.message).toBe('Clock now Wed 22 Jul, 7:00pm. TK0007 logged as P1 and answered out of hours: respond by Wed 22 Jul, 8:00pm.')
+    expect(breach.message).toBe('Clock now Wed 25 Nov, 7:00pm. TK0007 logged as P1 and answered out of hours: respond by Wed 25 Nov, 8:00pm.')
     expect(api.getState().support.tickets['TK0007']).toMatchObject({ priority: 'P1', reason: 'securityBreach', raisedBy: { who: 'Kirsty W.', app: 'admin' } })
   })
 
-  it('Raise ticket on a public holiday jumps to Labour Day 10:00am; the call-out waits for AA', () => {
+  it('Raise ticket on a public holiday jumps to Christmas Day 10:00am; the call-out waits for AA', () => {
     const api = createAppStore()
     const raise = byId('support-raise-public-holiday')
     const approve = byId('support-approve-call-out')
     const advance = byId('support-advance-ticket')
     const c = ctx('/admin', office('productSupport'))
     expect(approve.disabledReason(api.getState(), c)).toBe('No call-out awaiting approval')
-    expect(raise.run(api, c).message).toBe("Clock now 10:00am, Labour Day. TK0006 logged: the call-out waits for AA's approval.")
-    expect(api.getState().clock).toEqual({ todayISO: '2026-10-26', minutesSinceMidnight: 600 })
+    expect(raise.run(api, c).message).toBe("Clock now 10:00am, Christmas Day. TK0006 logged: the call-out waits for AA's approval.")
+    expect(api.getState().clock).toEqual({ todayISO: '2026-12-25', minutesSinceMidnight: 600 })
     expect(advance.disabledReason(api.getState(), c)).toBeNull()
     expect(approve.badge).toBe('office-stand-in')
     expect(approve.run(api, c)).toEqual({ ok: true, message: 'Call-out approved for TK0006. Stratos can now respond.' })
     expect(api.getState().audit.at(-1)).toMatchObject({ action: 'support.callOutApprove', who: 'AA office (simulated)' })
     expect(advance.disabledReason(api.getState(), c)).toBeNull()
-    // The next national holiday after Labour Day 10:00am is Christmas Day (Canterbury Anniversary is regional).
-    expect(raise.run(api, c).message).toMatch(/^Clock now 10:00am, Christmas Day\./)
+    // The next national holiday after Christmas Day 10:00am is Boxing Day (observed).
+    expect(raise.run(api, c).message).toMatch(/^Clock now 10:00am, Boxing Day \(observed\)\./)
   })
 
   it('the PWA stand-in advances Dr Souter\'s own newest open request', () => {

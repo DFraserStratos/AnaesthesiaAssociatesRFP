@@ -23,14 +23,14 @@ function booking(id: string, over: Partial<MatchingBooking> = {}): MatchingBooki
   return {
     id,
     listId: 'L-1',
-    patient: { name: 'Sarah Mitchell', nhi: 'CQY9304', dobISO: '1988-04-12' },
+    patient: { name: 'Sarah Mitchell', nhi: 'CQY9304', dobISO: '1988-08-16' },
     scheduledTime: '08:30',
     cancelled: false,
     procedures: [
       {
         id: `P-${id}`,
         isPrimary: true,
-        procedureText: { text: 'WLE MM', source: 'surgeonPdf', receivedAtISO: '2026-07-20T09:00:00' },
+        procedureText: { text: 'WLE MM', source: 'surgeonPdf', receivedAtISO: '2026-11-23T09:00:00' },
         invoiceDescription: { text: 'WLE MM', origin: 'rooms' },
         contractInvoiceDescription: null,
       },
@@ -43,10 +43,10 @@ function view(over: Partial<MatchingView> = {}): MatchingView {
   return {
     bookings: { B1: booking('B1') },
     lists: {
-      'L-1': { id: 'L-1', hospitalId: STG, surgeonId: HALE, dateISO: '2026-07-28', session: 'AM', state: 'ACTIVE', anaesthetistId: '34821', slotId: 'S-1' },
-      'L-SX': { id: 'L-SX', hospitalId: SX, surgeonId: HALE, dateISO: '2026-07-28', session: 'AM', state: 'ACTIVE', anaesthetistId: '29104', slotId: 'S-2' },
+      'L-1': { id: 'L-1', hospitalId: STG, surgeonId: HALE, dateISO: '2026-12-01', session: 'AM', state: 'ACTIVE', anaesthetistId: '34821', slotId: 'S-1' },
+      'L-SX': { id: 'L-SX', hospitalId: SX, surgeonId: HALE, dateISO: '2026-12-01', session: 'AM', state: 'ACTIVE', anaesthetistId: '29104', slotId: 'S-2' },
     },
-    openSlots: [{ id: 'S-9', anaesthetistId: '41267', dateISO: '2026-08-06', session: 'PM' }],
+    openSlots: [{ id: 'S-9', anaesthetistId: '41267', dateISO: '2026-12-10', session: 'PM' }],
     surgeons: { [HALE]: { id: HALE, name: 'Mr T. Hale', hpiId: '40HALT' }, 'S-HALEY': { id: 'S-HALEY', name: 'Ms R. Haley', hpiId: '41HALR' } },
     hospitals: { [STG]: { id: STG, name: "St George's" }, [SX]: { id: SX, name: 'Southern Cross' } },
     anaesthetists: { '34821': { name: 'Dr Melanie Souter' }, '29104': { name: 'Dr James Rutherford' } },
@@ -59,18 +59,18 @@ function view(over: Partial<MatchingView> = {}): MatchingView {
 function fields(over: Partial<IncomingBookingFields> = {}): IncomingBookingFields {
   return {
     hospitalId: STG,
-    dateISO: '2026-07-28',
+    dateISO: '2026-12-01',
     session: 'AM',
     surgeon: { name: 'Mr T. Hale', hpiId: '40HALT' },
     scheduledTime: '08:30',
-    patient: { name: 'Sarah Mitchell', nhi: 'CQY9304', dobISO: '1988-04-12' },
+    patient: { name: 'Sarah Mitchell', nhi: 'CQY9304', dobISO: '1988-08-16' },
     hospitalStatus: 'booked',
     ...over,
   }
 }
 
 function row(id: string, incoming: IncomingBookingFields, over: Partial<ImportRow> = {}): ImportRow {
-  return { id, batchId: 'IB0001', channel: 'download', source: 'hospital', receivedAtISO: '2026-07-21T09:00:00', incoming, status: 'open', ...over }
+  return { id, batchId: 'IB0001', channel: 'download', source: 'hospital', receivedAtISO: '2026-11-24T09:00:00', incoming, status: 'open', ...over }
 }
 
 describe('the match key: the List, then the patient (US-02.1.3)', () => {
@@ -85,7 +85,7 @@ describe('the match key: the List, then the patient (US-02.1.3)', () => {
     expect(findMatch(view(), fields({ hospitalId: SX }), HALE)).toBeUndefined()
   })
   it('the same patient on another day is a New row, never a move (D62)', () => {
-    const a = suggestDecision(view(), row('IR1', fields({ dateISO: '2026-07-29' })))
+    const a = suggestDecision(view(), row('IR1', fields({ dateISO: '2026-12-02' })))
     expect(a.changeType).toBe('new')
     expect(a.match).toBeUndefined()
   })
@@ -131,7 +131,7 @@ describe('differences and change types (FT-02.5)', () => {
   it('a note is appended once; classifyChange covers the four types', () => {
     const v = view()
     expect(diffFields(v, v.bookings.B1!, row('IR1', fields({ note: 'Bumped' }))).diffs[0]).toMatchObject({ key: 'note', effect: 'appends' })
-    const noted = booking('B1', { notes: "St George's, 21 Jul: Bumped" })
+    const noted = booking('B1', { notes: "St George's, 24 Nov: Bumped" })
     expect(diffFields(v, noted, row('IR1', fields({ note: 'Bumped' }))).diffs).toEqual([])
     expect(classifyChange(undefined, fields(), [])).toBe('new')
     expect(classifyChange({ cancelled: false }, fields({ hospitalStatus: 'cancelled' }), [])).toBe('cancellation')
@@ -145,7 +145,7 @@ describe('suggestions and the unmatched queue (US-02.1.2, US-02.1.4)', () => {
     expect(a).toMatchObject({ waitingForNhi: true, queue: 'unmatched', targetListId: 'L-1', unmatchedReason: 'No NHI. Add the NHI to continue.' })
     expect(a.suggestion).toBeUndefined()
     expect(a.flags.find((f) => f.code === 'noNhi')?.blocks).toBe('allButReject')
-    const none = suggestDecision(view(), row('IR1', fields({ dateISO: '2026-08-06', patient: { name: 'Tama Henare' } })))
+    const none = suggestDecision(view(), row('IR1', fields({ dateISO: '2026-12-10', patient: { name: 'Tama Henare' } })))
     expect(none.targetListId).toBeUndefined()
   })
   it('a valid NHI added by a correction makes it a ready New row; corrections never touch the wording', () => {
@@ -156,16 +156,16 @@ describe('suggestions and the unmatched queue (US-02.1.2, US-02.1.4)', () => {
   })
   it('a New row onto a Draft List when no assigned List has the key', () => {
     const v = view({
-      lists: { 'LD-1': { id: 'LD-1', hospitalId: STG, surgeonId: HALE, dateISO: '2026-07-28', session: 'AM', state: 'DRAFT' } },
+      lists: { 'LD-1': { id: 'LD-1', hospitalId: STG, surgeonId: HALE, dateISO: '2026-12-01', session: 'AM', state: 'DRAFT' } },
       bookings: {},
     })
     expect(suggestDecision(v, row('IR1', fields({ procedure: { text: 'x' } }))).suggestion).toEqual({ kind: 'createBooking', listId: 'LD-1' })
   })
   it('a session with no List is unmatched with the reason; a cancellation with no Booking is unmatched', () => {
-    const a = suggestDecision(view(), row('IR1', fields({ dateISO: '2026-08-06', session: 'PM', procedure: { text: 'lap chole' } })))
+    const a = suggestDecision(view(), row('IR1', fields({ dateISO: '2026-12-10', session: 'PM', procedure: { text: 'lap chole' } })))
     expect(a.queue).toBe('unmatched')
-    expect(a.unmatchedReason).toBe("No List at St George's for Mr Hale on Thu 6 Aug PM")
-    expect(suggestionText(view(), a)).toBe("Unmatched: no List at St George's for Mr Hale on Thu 6 Aug PM")
+    expect(a.unmatchedReason).toBe("No List at St George's for Mr Hale on Thu 10 Dec PM")
+    expect(suggestionText(view(), a)).toBe("Unmatched: no List at St George's for Mr Hale on Thu 10 Dec PM")
     const c = suggestDecision(view(), row('IR2', fields({ patient: { name: 'X', nhi: 'ZQA1008' }, hospitalStatus: 'cancelled' })))
     expect(c.queue).toBe('unmatched')
     expect(c.unmatchedReason).toMatch(/^No Booking for this patient on Mr Hale's List at St George's/)
@@ -191,7 +191,7 @@ describe('suggestions and the unmatched queue (US-02.1.2, US-02.1.4)', () => {
     expect(a.suggestion).toEqual({ kind: 'match', bookingId: 'B1', changeType: 'modification', fieldsApplied: ['time', 'procedureText'] })
   })
   it('no suggestion ever carries a Contract or an RVG code; the result is deterministic', () => {
-    const rows = [row('IR1', fields({ procedure: { text: 'x' }, scheduledTime: '10:00' })), row('IR2', fields({ dateISO: '2026-07-29', procedure: { text: 'y' } }))]
+    const rows = [row('IR1', fields({ procedure: { text: 'x' }, scheduledTime: '10:00' })), row('IR2', fields({ dateISO: '2026-12-02', procedure: { text: 'y' } }))]
     const once = matchingQueue(view({ rows }), rows)
     expect(JSON.stringify(once)).not.toMatch(/contract|rvgGroup/i)
     expect(matchingQueue(view({ rows }), rows)).toEqual(once)

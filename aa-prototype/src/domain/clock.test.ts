@@ -11,15 +11,15 @@ import {
 
 describe('demo clock state', () => {
   it('starts on DEMO_TODAY at 08:00', () => {
-    expect(INITIAL_CLOCK).toEqual({ todayISO: '2026-07-21', minutesSinceMidnight: 480 })
+    expect(INITIAL_CLOCK).toEqual({ todayISO: '2026-11-24', minutesSinceMidnight: 480 })
     expect(today(INITIAL_CLOCK)).toBe(DEMO_TODAY)
   })
 
   it('now() is deterministic and built from the state', () => {
     const d = now(INITIAL_CLOCK)
     expect(d.getFullYear()).toBe(2026)
-    expect(d.getMonth()).toBe(6)
-    expect(d.getDate()).toBe(21)
+    expect(d.getMonth()).toBe(10)
+    expect(d.getDate()).toBe(24)
     expect(d.getHours()).toBe(8)
     expect(d.getMinutes()).toBe(0)
   })
@@ -37,65 +37,65 @@ describe('demo clock state', () => {
 describe('advanceMinutes', () => {
   it('advances within the day', () => {
     const s = advanceMinutes(INITIAL_CLOCK, 95)
-    expect(s).toEqual({ todayISO: '2026-07-21', minutesSinceMidnight: 480 + 95 })
+    expect(s).toEqual({ todayISO: '2026-11-24', minutesSinceMidnight: 480 + 95 })
   })
 
   it('rolls past midnight into the next day', () => {
-    const lateEvening = { todayISO: '2026-07-21', minutesSinceMidnight: 23 * 60 + 50 }
+    const lateEvening = { todayISO: '2026-11-24', minutesSinceMidnight: 23 * 60 + 50 }
     const s = advanceMinutes(lateEvening, 20)
-    expect(s).toEqual({ todayISO: '2026-07-22', minutesSinceMidnight: 10 })
+    expect(s).toEqual({ todayISO: '2026-11-25', minutesSinceMidnight: 10 })
   })
 
   it('carries multiple days', () => {
     const s = advanceMinutes(INITIAL_CLOCK, 2 * 24 * 60 + 30)
-    expect(s).toEqual({ todayISO: '2026-07-23', minutesSinceMidnight: 480 + 30 })
+    expect(s).toEqual({ todayISO: '2026-11-26', minutesSinceMidnight: 480 + 30 })
   })
 })
 
 describe('advanceDays', () => {
   it('advances whole days keeping the time of day', () => {
     const s = advanceDays(INITIAL_CLOCK, 3)
-    expect(s).toEqual({ todayISO: '2026-07-24', minutesSinceMidnight: 480 })
+    expect(s).toEqual({ todayISO: '2026-11-27', minutesSinceMidnight: 480 })
   })
 
   it('crosses month boundaries', () => {
-    const s = advanceDays({ todayISO: '2026-07-31', minutesSinceMidnight: 0 }, 1)
-    expect(s.todayISO).toBe('2026-08-01')
+    const s = advanceDays({ todayISO: '2026-12-04', minutesSinceMidnight: 0 }, 1)
+    expect(s.todayISO).toBe('2026-12-05')
   })
 })
 
 describe('horizon helpers (Phase 02 seeder seams)', () => {
   it('spans DEMO_TODAY minus 14 days to plus 4 months', () => {
-    expect(horizonFor(DEMO_TODAY, 4)).toEqual({ startISO: '2026-07-07', endISO: '2026-11-21' })
+    expect(horizonFor(DEMO_TODAY, 4)).toEqual({ startISO: '2026-11-10', endISO: '2027-03-24' })
   })
 
   it('takes the horizon setting in months (catch-up Phase 28; FT-01.1)', () => {
-    expect(horizonFor(DEMO_TODAY, 1).endISO).toBe('2026-08-21')
-    expect(horizonFor(DEMO_TODAY, 3).endISO).toBe('2026-10-21')
-    expect(horizonFor(DEMO_TODAY, 12).endISO).toBe('2027-07-21')
-    expect(horizonFor(DEMO_TODAY, 12).startISO).toBe('2026-07-07')
+    expect(horizonFor(DEMO_TODAY, 1).endISO).toBe('2026-12-24')
+    expect(horizonFor(DEMO_TODAY, 3).endISO).toBe('2027-02-24')
+    expect(horizonFor(DEMO_TODAY, 12).endISO).toBe('2027-11-24')
+    expect(horizonFor(DEMO_TODAY, 12).startISO).toBe('2026-11-10')
   })
 
   it('horizonDatesBetween lists the dates gained after the old end, and none when the end did not move forward', () => {
-    expect(horizonDatesBetween('2026-11-21', '2026-11-24')).toEqual(['2026-11-22', '2026-11-23', '2026-11-24'])
-    expect(horizonDatesBetween('2026-11-21', '2026-11-21')).toEqual([])
-    expect(horizonDatesBetween('2026-11-21', '2026-10-21')).toEqual([])
+    expect(horizonDatesBetween('2027-03-24', '2027-03-27')).toEqual(['2027-03-25', '2027-03-26', '2027-03-27'])
+    expect(horizonDatesBetween('2027-03-24', '2027-03-24')).toEqual([])
+    expect(horizonDatesBetween('2027-03-24', '2027-02-24')).toEqual([])
   })
 
   it('enumerateDatesISO is inclusive of both ends and spans month boundaries', () => {
-    expect(enumerateDatesISO('2026-07-30', '2026-08-02')).toEqual([
-      '2026-07-30',
-      '2026-07-31',
-      '2026-08-01',
-      '2026-08-02',
+    expect(enumerateDatesISO('2026-12-03', '2026-12-06')).toEqual([
+      '2026-12-03',
+      '2026-12-04',
+      '2026-12-05',
+      '2026-12-06',
     ])
   })
 
-  it('the full horizon enumerates 138 days', () => {
+  it('the full horizon enumerates 135 days', () => {
     const { startISO, endISO } = horizonFor(DEMO_TODAY, 4)
     const dates = enumerateDatesISO(startISO, endISO)
-    expect(dates).toHaveLength(138)
-    expect(dates[0]).toBe('2026-07-07')
-    expect(dates[dates.length - 1]).toBe('2026-11-21')
+    expect(dates).toHaveLength(135)
+    expect(dates[0]).toBe('2026-11-10')
+    expect(dates[dates.length - 1]).toBe('2027-03-24')
   })
 })

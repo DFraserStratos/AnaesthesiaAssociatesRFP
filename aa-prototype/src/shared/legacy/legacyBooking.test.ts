@@ -20,9 +20,9 @@ describe('legacyBookingId', () => {
 
 describe('legacyBookingPath', () => {
   it('rewrites the web, admin and mobile Card routes', () => {
-    expect(legacyBookingPath('/web/lists/L-34821-2026-07-21-PM/cards/C0009')).toBe('/web/lists/L-34821-2026-07-21-PM/bookings/BK0009')
-    expect(legacyBookingPath('/admin/day/2026-07-21/cards/C0009')).toBe('/admin/day/2026-07-21/bookings/BK0009')
-    expect(legacyBookingPath('/mobile/lists/L-34821-2026-07-21-PM/cards/HC05/')).toBe('/mobile/lists/L-34821-2026-07-21-PM/bookings/HBK05')
+    expect(legacyBookingPath('/web/lists/L-34821-2026-11-24-PM/cards/C0009')).toBe('/web/lists/L-34821-2026-11-24-PM/bookings/BK0009')
+    expect(legacyBookingPath('/admin/day/2026-11-24/cards/C0009')).toBe('/admin/day/2026-11-24/bookings/BK0009')
+    expect(legacyBookingPath('/mobile/lists/L-34821-2026-11-24-PM/cards/HC05/')).toBe('/mobile/lists/L-34821-2026-11-24-PM/bookings/HBK05')
   })
   it('keeps a malformed escape raw instead of throwing', () => {
     expect(legacyBookingPath('/web/lists/L1/cards/%E0')).toBe('/web/lists/L1/bookings/%E0')

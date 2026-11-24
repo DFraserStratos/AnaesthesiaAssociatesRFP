@@ -31,7 +31,7 @@ const P1 = seedModifierId('P1')
 function twoProcedures(): { api: BoundAppStore; bookingId: string; primary: string; additional: string } {
   const api = createAppStore()
   const created = createBooking(api, SOUTER, SOUTER_PM, {
-    patient: { nhi: nextTestNhi(), name: 'Multi Procedure', dobISO: '1954-03-14' },
+    patient: { nhi: nextTestNhi(), name: 'Multi Procedure', dobISO: '1954-07-18' },
     sourceText: { text: 'Laparoscopic cholecystectomy', source: 'anaesthetist' },
     rvgGroupId: RVG_GROUP.a3!,
     scheduledTime: '17:00',

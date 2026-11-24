@@ -12,8 +12,8 @@ describe('acceptedJumpDate (the jump guard)', () => {
   it('drops dates outside the bounds and takes a full date inside them', () => {
     expect(acceptedJumpDate('2025-12-31', '2026-01-01', '2026-12-31')).toBeNull()
     expect(acceptedJumpDate('2027-01-01', '2026-01-01', '2026-12-31')).toBeNull()
-    expect(acceptedJumpDate('2026-07-21', '2026-01-01', '2026-12-31')).toBe('2026-07-21')
-    expect(acceptedJumpDate('2026-07-21', undefined, '2026-11-21')).toBe('2026-07-21')
+    expect(acceptedJumpDate('2026-11-24', '2026-01-01', '2026-12-31')).toBe('2026-11-24')
+    expect(acceptedJumpDate('2026-11-24', undefined, '2027-03-27')).toBe('2026-11-24')
   })
 })
 
@@ -21,22 +21,22 @@ describe('DateJumpInput', () => {
   it('is always named: by its visible label, or by aria-label when hidden', () => {
     render(
       <>
-        <DateJumpInput label="Go to date" value="" onPick={() => undefined} height={36} max="2026-11-21" />
+        <DateJumpInput label="Go to date" value="" onPick={() => undefined} height={36} max="2027-03-27" />
         <DateJumpInput label="Jump here" labelVisible value="" onPick={() => undefined} height={38} testId="jump" />
       </>,
     )
-    expect(screen.getByLabelText('Go to date')).toHaveAttribute('max', '2026-11-21')
+    expect(screen.getByLabelText('Go to date')).toHaveAttribute('max', '2027-03-27')
     expect(screen.getByLabelText('Jump here')).toHaveAttribute('data-testid', 'jump')
   })
 
   it('emits only full in-bounds dates, and null when cleared', () => {
     const onPick = vi.fn()
-    render(<DateJumpInput label="Go to date" value="2026-07-21" min="2026-01-01" max="2026-11-21" onPick={onPick} height={38} />)
+    render(<DateJumpInput label="Go to date" value="2026-11-24" min="2026-01-01" max="2027-03-27" onPick={onPick} height={38} />)
     const input = screen.getByLabelText('Go to date')
-    fireEvent.change(input, { target: { value: '2027-01-05' } })
+    fireEvent.change(input, { target: { value: '2027-05-11' } })
     expect(onPick).not.toHaveBeenCalled()
-    fireEvent.change(input, { target: { value: '2026-08-03' } })
-    expect(onPick).toHaveBeenLastCalledWith('2026-08-03')
+    fireEvent.change(input, { target: { value: '2026-12-07' } })
+    expect(onPick).toHaveBeenLastCalledWith('2026-12-07')
     fireEvent.change(input, { target: { value: '' } })
     expect(onPick).toHaveBeenLastCalledWith(null)
   })
@@ -64,11 +64,11 @@ describe('TimeRangeFields', () => {
 describe('DateJumpInput beyondMax (Admin Day)', () => {
   it('takes a full date past max, still drops a partial year', () => {
     const onPick = vi.fn()
-    render(<DateJumpInput label="Go to date" value="2026-07-21" max="2026-11-21" onPick={onPick} height={36} beyondMax />)
+    render(<DateJumpInput label="Go to date" value="2026-11-24" max="2027-03-27" onPick={onPick} height={36} beyondMax />)
     const input = screen.getByLabelText('Go to date')
     fireEvent.change(input, { target: { value: '0002-03-13' } })
     expect(onPick).not.toHaveBeenCalled()
-    fireEvent.change(input, { target: { value: '2027-02-01' } })
-    expect(onPick).toHaveBeenLastCalledWith('2027-02-01')
+    fireEvent.change(input, { target: { value: '2027-06-07' } })
+    expect(onPick).toHaveBeenLastCalledWith('2027-06-07')
   })
 })

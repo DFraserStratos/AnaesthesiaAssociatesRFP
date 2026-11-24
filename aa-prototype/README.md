@@ -54,12 +54,12 @@ The demo control panel (`Demo: Control Panel`, `/demo/control`,
 `src/apps/demo/DemoControlPanel.tsx`) is the presenter's **index**, in three groups:
 
 - **Clock & reset:** the demo clock with its advance buttons (+15 min, +1 hour, Next day, Next
-  morning, +7 days, Procedure day · 28 Jul), and Reset demo data (asks first).
+  morning, +7 days, Procedure day · 1 Dec), and Reset demo data (asks first).
 - **Scenario jumps · S1 to S5:** each jump asks first, resets to the pristine seed, then stages only
   what its scenario cannot reach from there, through the product's own guarded store actions. The
   jumps are `DEMO_SCENARIOS` in `src/apps/demo/demoScenarios.ts`: S1, S2 and S4 stage nothing; S3
-  checks that Dr Souter's two Mon 20 Jul Lists are SUBMITTED; S5 stages David Chen's audit trail and
-  authorises Dr Whitaker's Fri 17 Jul List. After a jump its result line is followed by one link per
+  checks that Dr Souter's two Mon 23 Nov Lists are SUBMITTED; S5 stages David Chen's audit trail and
+  authorises Dr Whitaker's Fri 20 Nov List. After a jump its result line is followed by one link per
   beat, in run-sheet order, each with what to do there; a link whose target does not exist yet is
   disabled and says what it waits for. The same jump always gives the same data, so it doubles as
   recovery mid-demo.
@@ -161,8 +161,8 @@ takes no Bookings, read through the Slot views (`slotViewsForDate`, `slotViewsFo
 `slotView`) by all three apps and every finder; "free" for a finder is `isOpenSlot` (free and
 holding no List). Generation (`generateCanvasForDates`) writes every Slot free, then paints the
 calendar, then the recurring bookings (a recurring booking under leave is returned as a clash,
-which becomes a Draft List) and invents nothing; the seed alone records an ad hoc demo window (2026-07-07 to
-2026-08-16, `seedRecordedWindow`) with the old per-slot draws. The horizon and the default AM and
+which becomes a Draft List) and invents nothing; the seed alone records an ad hoc demo window (2026-11-10 to
+2026-12-20, `seedRecordedWindow`) with the old per-slot draws. The horizon and the default AM and
 PM times are one settings record, `appSettings.schedule`; every horizon reader goes through
 `horizonFor(today, months)` / `scheduleHorizon`. A reassign moves the List between Slots
 (`reassignList` over `moveListToSlot`), keeping its id, Bookings and history. "Slot" is a code
@@ -444,7 +444,7 @@ is the thing it replaced.
 **What any static host needs**, in order of how badly it fails without it:
 
 1. **An SPA fallback to `index.html`.** `src/router.tsx` is a `BrowserRouter`, so `/mobile/lists` and
-   `/admin/day/2026-07-21/bookings/x` are not files on disk — a refresh or a pasted deep link 404s
+   `/admin/day/2026-11-24/bookings/x` are not files on disk — a refresh or a pasted deep link 404s
    without it. The PWA needs it for a second reason that bites earlier: the manifest's
    `start_url: '/mobile/lists'` is not a file either, so the **first** load, before any worker exists,
    would 404 and nothing would install. It must be a **fallback**, evaluated after the filesystem

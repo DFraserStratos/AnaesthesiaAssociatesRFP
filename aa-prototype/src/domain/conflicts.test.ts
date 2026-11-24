@@ -21,11 +21,11 @@ import {
 } from './conflicts'
 import type { AssignedList, HospitalHoliday, List } from './types'
 
-const DATE = '2026-07-22'
+const DATE = '2026-11-25'
 
 const list = (over: Partial<AssignedList> = {}): AssignedList => ({
   id: 'L-1',
-  slotId: 'S-1-2026-07-22-AM',
+  slotId: 'S-1-2026-11-25-AM',
   dateISO: DATE,
   anaesthetistId: 'A1',
   session: 'AM',
@@ -58,7 +58,7 @@ describe('expectedConflicts', () => {
   })
 
   it('a holiday at another hospital or date does not apply', () => {
-    expect(expectedFor(list(), [hol('HH1', { hospitalId: 'H-CES' }), hol('HH2', { dateISO: '2026-07-23' })])).toEqual([])
+    expect(expectedFor(list(), [hol('HH1', { hospitalId: 'H-CES' }), hol('HH2', { dateISO: '2026-11-26' })])).toEqual([])
   })
 
   it('AUTHORISED and backdrop Lists never conflict; ignoreLock sees the facts', () => {
@@ -74,20 +74,20 @@ describe('expectedConflicts', () => {
     const { slotId: _s, anaesthetistId: _a, ...rest } = list()
     void _s
     void _a
-    const draft = { ...rest, state: 'DRAFT' as const, draft: { origin: 'request' as const, sinceISO: '2026-07-21T08:00:00', by: 'Kirsty W.' } }
+    const draft = { ...rest, state: 'DRAFT' as const, draft: { origin: 'request' as const, sinceISO: '2026-11-24T08:00:00', by: 'Kirsty W.' } }
     expect(expectedFor(draft, [hol('HH1')]).map((c) => c.kind)).toEqual(['holiday'])
   })
 })
 
 describe('reconcileListConflicts', () => {
-  const AT = '2026-07-21T09:00:00'
+  const AT = '2026-11-24T09:00:00'
 
   it('is referentially stable when nothing changed', () => {
     const l = list()
     expect(reconcileListConflicts(l, [], AT).next).toBe(l)
     const e = expectedFor(l, [hol('HH1')])
     const once = reconcileListConflicts(l, e, AT).next
-    expect(reconcileListConflicts(once, e, '2026-07-22T10:00:00').next).toBe(once)
+    expect(reconcileListConflicts(once, e, '2026-11-25T10:00:00').next).toBe(once)
   })
 
   it('stamps new conflicts, keeps raisedAtISO on persisting ones and reports resolved ones', () => {
@@ -95,7 +95,7 @@ describe('reconcileListConflicts', () => {
     const first = reconcileListConflicts(l, expectedFor(l, [hol('HH1'), hol('HH2')]), AT)
     expect(first.raised).toHaveLength(2)
     expect(first.next.conflicts.every((c) => c.raisedAtISO === AT)).toBe(true)
-    const second = reconcileListConflicts(first.next, expectedFor(l, [hol('HH1')]), '2026-07-23T08:00:00')
+    const second = reconcileListConflicts(first.next, expectedFor(l, [hol('HH1')]), '2026-11-26T08:00:00')
     expect(second.resolved.map((c) => c.cause)).toEqual([holidayCause('HH2')])
     expect(second.next.conflicts).toEqual([first.next.conflicts[0]])
   })

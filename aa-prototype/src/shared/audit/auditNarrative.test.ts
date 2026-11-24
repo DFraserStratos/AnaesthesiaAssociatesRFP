@@ -25,7 +25,7 @@ import {
   summariseAuditChanges,
 } from './auditNarrative'
 
-const AT = '2026-07-21T08:00:00'
+const AT = '2026-11-24T08:00:00'
 
 function entry(partial: Partial<AuditEntry> & Pick<AuditEntry, 'id'>): AuditEntry {
   return {
@@ -116,7 +116,7 @@ describe('auditFieldChanges', () => {
 
 describe('a typed price change (catch-up Phase 24)', () => {
   const entry = (before: number | null, after: number | null): AuditEntry =>
-    ({ id: 'A1', entityType: 'procedure', entityId: 'P1', action: 'procedure.price', who: 'Kirsty W.', role: 'office', source: 'office', atISO: '2026-07-21T09:00:00', before: { enteredPrice: before }, after: { enteredPrice: after } }) as AuditEntry
+    ({ id: 'A1', entityType: 'procedure', entityId: 'P1', action: 'procedure.price', who: 'Kirsty W.', role: 'office', source: 'office', atISO: '2026-11-24T09:00:00', before: { enteredPrice: before }, after: { enteredPrice: after } }) as AuditEntry
   it('reads "Price changed", Price $450.00, and a clear as computed again', () => {
     expect(actionLabel('procedure.price')).toBe('Price changed')
     expect(auditFieldChanges(entry(null, 450))).toEqual([{ key: 'enteredPrice', label: 'Price', before: 'not set', after: '$450.00' }])
@@ -143,15 +143,15 @@ describe('formatAuditValue', () => {
     // The one typed price (catch-up Phase 24): money, no reason.
     expect(formatAuditValue('enteredPrice', 450)).toBe('$450.00')
     // Catch-up Phase 27: a prepayment invoice's approval (the deposit detail is gone).
-    expect(formatAuditValue('approval', { mode: 'approved', by: 'Kirsty W.', role: 'office', atISO: '2026-07-21T09:00:00' })).toBe('Approved by Kirsty W.')
-    expect(formatAuditValue('approval', { mode: 'automatic', by: 'System', role: 'system', atISO: '2026-07-21T09:00:00' })).toBe('Sent with approval off')
+    expect(formatAuditValue('approval', { mode: 'approved', by: 'Kirsty W.', role: 'office', atISO: '2026-11-24T09:00:00' })).toBe('Approved by Kirsty W.')
+    expect(formatAuditValue('approval', { mode: 'automatic', by: 'System', role: 'system', atISO: '2026-11-24T09:00:00' })).toBe('Sent with approval off')
     expect(formatAuditValue('counterparty', { kind: 'hospital', id: 'HH001' })).toBe('Hospital HH001')
     expect(formatAuditValue('approvalRequired', false)).toBe('off')
     expect(formatAuditValue('approvalRequired', true)).toBe('on')
     expect(formatAuditValue('completed', true)).toBe('yes')
     expect(formatAuditValue('total', 1234.5)).toBe('$1,234.50')
-    expect(formatAuditValue('handoverISO', '2026-07-21T10:15:00')).toBe('21 Jul 10:15')
-    expect(formatAuditValue('dateISO', '2026-07-21')).toBe('21 Jul 2026')
+    expect(formatAuditValue('handoverISO', '2026-11-24T10:15:00')).toBe('24 Nov 10:15')
+    expect(formatAuditValue('dateISO', '2026-11-24')).toBe('24 Nov 2026')
   })
 
   it('degrades an unrecognised object to labelled fields, never to braces', () => {
@@ -164,9 +164,9 @@ describe('formatAuditValue', () => {
 describe('sortAuditNewestFirst', () => {
   it('sorts on atISO, newest first', () => {
     const rows = [
-      entry({ id: 'A0001', atISO: '2026-07-20T09:05:00' }),
-      entry({ id: 'A0002', atISO: '2026-07-21T08:00:00' }),
-      entry({ id: 'A0003', atISO: '2026-07-19T16:40:00' }),
+      entry({ id: 'A0001', atISO: '2026-11-23T09:05:00' }),
+      entry({ id: 'A0002', atISO: '2026-11-24T08:00:00' }),
+      entry({ id: 'A0003', atISO: '2026-11-22T16:40:00' }),
     ]
     expect(sortAuditNewestFirst(rows).map((r) => r.id)).toEqual(['A0002', 'A0001', 'A0003'])
   })
@@ -205,7 +205,7 @@ describe('coalesceAudit', () => {
       entry({ id: 'A0062', before: { intNotes: 'Grade 2 view' }, after: { intNotes: 'Grade 3 view' } }), // other field
       entry({ id: 'A0063', entityId: 'P0013', before: { baseUnitsCaptured: { units: 4, source: 'overridden' } }, after: { baseUnitsCaptured: { units: 3, source: 'overridden' } } }), // other procedure
       entry({ id: 'A0064', who: 'Kate Ngata', role: 'office', source: 'office', before: { baseUnitsCaptured: { units: 3, source: 'overridden' } }, after: { baseUnitsCaptured: { units: 2, source: 'overridden' } } }), // other actor
-      { ...tap('A0065', 2, 1), atISO: '2026-07-21T09:30:00' }, // other time
+      { ...tap('A0065', 2, 1), atISO: '2026-11-24T09:30:00' }, // other time
     ])
     expect(groups).toHaveLength(5)
     expect(groups.every((g) => g.steps.length === 1)).toBe(true)
@@ -316,7 +316,7 @@ describe('an RVG code in the audit (catch-up Phase 19)', () => {
   })
 
   it('a pick narrates from row to row', () => {
-    const entry = { id: 'A1', atISO: '2026-07-21T08:00:00', who: 'x', role: 'office', source: 'office', entityType: 'procedure', entityId: 'P1', action: 'procedure.update', before: { rvgGroupId: undefined }, after: { rvgGroupId: 'RG005' } } as unknown as AuditEntry
+    const entry = { id: 'A1', atISO: '2026-11-24T08:00:00', who: 'x', role: 'office', source: 'office', entityType: 'procedure', entityId: 'P1', action: 'procedure.update', before: { rvgGroupId: undefined }, after: { rvgGroupId: 'RG005' } } as unknown as AuditEntry
     expect(auditFieldChanges(entry, names)).toEqual([{ key: 'rvgGroupId', label: 'RVG code', before: 'not set', after: 'H4 · Complex procedures' }])
   })
 })

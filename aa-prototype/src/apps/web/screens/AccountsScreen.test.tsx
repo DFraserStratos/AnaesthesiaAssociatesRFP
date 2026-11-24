@@ -114,7 +114,7 @@ describe('Accounts payment history', () => {
 
   it('lists AA fee invoices paid or unpaid on the AA fees tab, with the focused row highlighted', () => {
     renderIn(<AccountsScreen anaesthetistId={ANAE.souter} subTab="fees" onSubTab={() => undefined} focusInvoiceNumber="AA-FEE-2026-H02" />)
-    expect(screen.getByTestId('aa-fee-history-row-AA-FEE-2026-H01')).toHaveTextContent('Paid 5 Jun 2026')
+    expect(screen.getByTestId('aa-fee-history-row-AA-FEE-2026-H01')).toHaveTextContent('Paid 9 Oct 2026')
     const h02 = screen.getByTestId('aa-fee-history-row-AA-FEE-2026-H02')
     expect(h02).toHaveTextContent('Unpaid')
     expect(h02).toHaveTextContent('$505.00')
@@ -134,13 +134,13 @@ describe('the monthly GST report (US-12.2.2, cash basis)', () => {
   it('defaults to the demo month, has no View by or period control, and the picker changes the rows and totals', () => {
     renderIn(<AccountsScreen anaesthetistId={ANAE.souter} subTab="gst" onSubTab={() => undefined} />)
     const picker = screen.getByLabelText('Month') as HTMLSelectElement
-    expect(picker.value).toBe('2026-07')
-    expect(within(picker).getAllByRole('option').map((o) => o.textContent)).toContain('June 2026')
+    expect(picker.value).toBe('2026-11')
+    expect(within(picker).getAllByRole('option').map((o) => o.textContent)).toContain('October 2026')
     expect(screen.queryByText(/View by|Six-monthly|Bi-monthly|GST period|GST activity/)).toBeNull()
     expect(screen.queryByRole('radiogroup')).toBeNull()
     expect(screen.getByText('Month total')).toBeInTheDocument()
-    fireEvent.change(picker, { target: { value: '2026-06' } })
-    expect(screen.getByText(/^June 2026 · GST on a cash basis/)).toBeInTheDocument()
+    fireEvent.change(picker, { target: { value: '2026-10' } })
+    expect(screen.getByText(/^October 2026 · GST on a cash basis/)).toBeInTheDocument()
     expect(screen.queryAllByTestId(/^gst-report-row-/).length).toBeGreaterThan(0)
     expect(screen.getAllByRole('columnheader').map((h) => h.textContent)).toEqual([
       'Date paid', 'Invoice', 'Billable party', 'Paid to you (incl GST)', 'GST component', 'Paid ex GST',
@@ -162,16 +162,16 @@ describe('the monthly GST report (US-12.2.2, cash basis)', () => {
     const spy = vi.spyOn(download, 'downloadTextFile').mockImplementation(() => undefined)
     const print = vi.spyOn(window, 'print').mockImplementation(() => undefined)
     renderIn(<AccountsScreen anaesthetistId={ANAE.souter} subTab="gst" onSubTab={() => undefined} />)
-    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-06' } })
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-10' } })
     fireEvent.click(screen.getByRole('button', { name: 'Download' }))
     expect(spy).toHaveBeenCalledTimes(1)
-    expect(spy.mock.calls[0]![0]).toBe('gst-report-2026-06.csv')
+    expect(spy.mock.calls[0]![0]).toBe('gst-report-2026-10.csv')
     expect(spy.mock.calls[0]![1]).toMatch(/^Date paid,Invoice,Billable party,/)
     fireEvent.click(screen.getByRole('button', { name: 'Print' }))
     expect(print).toHaveBeenCalledTimes(1)
     fireEvent.click(screen.getByRole('button', { name: 'Email to me' }))
     const email = useAppStore.getState().masters.anaesthetists[ANAE.souter]!.email
-    expect(screen.getByRole('status')).toHaveTextContent(`Sent to ${email}: the GST report for June 2026.`)
+    expect(screen.getByRole('status')).toHaveTextContent(`Sent to ${email}: the GST report for October 2026.`)
   })
 
   it('disables the three actions on a month with no payments', () => {
@@ -188,15 +188,15 @@ describe('Remittances (catch-up Phase 39a; US-10.2.5)', () => {
     renderIn(<AccountsScreen anaesthetistId={ANAE.souter} subTab="remittances" onSubTab={() => undefined} focusRunId="PRH12" />)
     const table = document.querySelector<HTMLElement>('[data-shot="web-remittances"] table')!
     const rows = within(table).getAllByRole('row').slice(1)
-    expect(rows[0]).toHaveTextContent('Week 29')
+    expect(rows[0]).toHaveTextContent('Week 47')
     expect(rows[0]).toHaveTextContent('$690.00')
     expect(rows[0]).toHaveTextContent('Paid')
-    expect(rows.find((r) => r.getAttribute('data-focused') === 'true')).toHaveTextContent('Week 28')
+    expect(rows.find((r) => r.getAttribute('data-focused') === 'true')).toHaveTextContent('Week 46')
     expect(screen.queryByText(/still to net/)).not.toBeInTheDocument()
     fireEvent.click(rows[0]!)
     const sheet = document.querySelector('[data-shot="web-remittance-sheet"]')!
     expect(sheet).toHaveTextContent('REMITTANCE ADVICE')
-    expect(sheet).toHaveTextContent('Week 29, 2026')
+    expect(sheet).toHaveTextContent('Week 47, 2026')
     expect(sheet).toHaveTextContent('Paid to you')
   })
 
@@ -207,7 +207,7 @@ describe('Remittances (catch-up Phase 39a; US-10.2.5)', () => {
       billing: {
         ...s.billing,
         negativeInvoices: {
-          NEG0001: { id: 'NEG0001', number: 'CN-2026-0001-P', anaesthetistId: ANAE.souter, creditNoteId: 'CRN0001', originalInvoiceId: 'INV0001', pairId: 'BC0001', cause: 'credit', amount: 120, offsetAmount: 0, recoveryDue: 120, status: 'toNet', issuedAtISO: '2026-07-21T09:00:00' },
+          NEG0001: { id: 'NEG0001', number: 'CN-2026-0001-P', anaesthetistId: ANAE.souter, creditNoteId: 'CRN0001', originalInvoiceId: 'INV0001', pairId: 'BC0001', cause: 'credit', amount: 120, offsetAmount: 0, recoveryDue: 120, status: 'toNet', issuedAtISO: '2026-11-24T09:00:00' },
         },
       },
     })
@@ -217,6 +217,6 @@ describe('Remittances (catch-up Phase 39a; US-10.2.5)', () => {
 
   it('Payments shows the week each payment to you went out in', () => {
     renderIn(<AccountsScreen anaesthetistId={ANAE.souter} subTab="payments" onSubTab={() => undefined} />)
-    expect(screen.getByTestId('payment-history-row-AA-2026-H09')).toHaveTextContent('Week 29')
+    expect(screen.getByTestId('payment-history-row-AA-2026-H09')).toHaveTextContent('Week 47')
   })
 })

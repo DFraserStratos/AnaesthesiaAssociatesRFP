@@ -43,7 +43,7 @@ import { CREDIT_DEMO_COPY, CREDIT_MESSAGES, SPLIT_MESSAGES } from '../shared/pro
 import type { Invoice } from '../domain/types'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-const SHARMA_TUE14 = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
+const SHARMA_TUE14 = projectedListId(ANAE.sharma, '2026-11-17', 'AM')
 
 let api: BoundAppStore
 let unwire: () => void
@@ -83,7 +83,7 @@ function stageCombined() {
   return { ...out.value, original: api.getState().billing.invoices[out.value.invoiceId]! }
 }
 
-const component = (unitAmount: number, description: string): CreditReplacementInput => ({ occurredOnISO: '2026-07-21', party: { sameAs: true }, lines: [{ description, quantity: 1, unitAmount }] })
+const component = (unitAmount: number, description: string): CreditReplacementInput => ({ occurredOnISO: '2026-11-24', party: { sameAs: true }, lines: [{ description, quantity: 1, unitAmount }] })
 
 const creditInput = (invoiceId: string, over: Partial<CreditInput> = {}): CreditInput => ({ invoiceId, reason: 'Wrong amount', cause: 'correction', replacements: [], ...over })
 
@@ -134,7 +134,7 @@ describe('the rebill from a copy of the original lines (US-08.6.6)', () => {
     const original = stageMitchell()
     const copy = rebillReplacementFor(api.getState(), original.id)!
     expect(copy.party).toEqual({ sameAs: true })
-    expect(copy.occurredOnISO).toBe('2026-07-21')
+    expect(copy.occurredOnISO).toBe('2026-11-24')
     const { run } = issue(OFFICE, creditInput(original.id, { reason: 'Wrong amount', replacements: [copy] }))
     const rebill = api.getState().billing.invoices[run.invoiceIds[0]!]!
     expect(rebill).toMatchObject({ kind: 'additional', subtotal: original.subtotal, gst: original.gst, total: original.total, counterparty: original.counterparty })
@@ -147,7 +147,7 @@ describe('the rebill from a copy of the original lines (US-08.6.6)', () => {
 
   it('a corrected line changes only that line', () => {
     // Dr Souter's three-procedure Booking on Mon 13 Jul AM bills one invoice with a line per Procedure.
-    const listId = projectedListId(ANAE.souter, '2026-07-13', 'AM')
+    const listId = projectedListId(ANAE.souter, '2026-11-16', 'AM')
     authorise(listId)
     const original = Object.values(api.getState().billing.invoices).find((i) => i.kind === 'standard' && i.bookingId === 'BK0184')!
     const lines = linesOf(original.id)
@@ -251,7 +251,7 @@ describe('the combined split (US-08.6.4, OQ-77)', () => {
   it('each refusal: office only, not yet invoiced, a prepaid Procedure, fewer than two, pending and credited', () => {
     // Before authorise the split is a normal admin edit: no path here, and a price edit raises no credit.
     const made = createBooking(api, OFFICE, COMBINED_DEMO.listId, {
-      patient: { name: 'Lorraine Petrie', dobISO: '1964-08-19', nhi: 'ZBN1004' },
+      patient: { name: 'Lorraine Petrie', dobISO: '1964-12-23', nhi: 'ZBN1004' },
       sourceText: { text: 'Facelift', source: 'email' },
       governingContractId: PRICED_ITEM.merFaceLift2,
     })

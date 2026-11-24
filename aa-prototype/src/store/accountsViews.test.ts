@@ -27,7 +27,7 @@ import { toCents } from '../domain/billing/money'
 import type { Actor } from './mutate'
 
 const SOUTER: string = ANAE.souter
-const TODAY = '2026-07-21'
+const TODAY = '2026-11-24'
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
 function views(api: BoundAppStore) {
@@ -51,8 +51,8 @@ function expectOwedEqualsOutstanding(api: BoundAppStore, id = SOUTER) {
 
 /** S3: authorise both Mon 20 Lists (the wired billing run raises and hands off their invoices). */
 function s3(api: BoundAppStore) {
-  expect(authoriseList(api, OFFICE, projectedListId(SOUTER, '2026-07-20', 'AM')).ok).toBe(true)
-  expect(authoriseList(api, OFFICE, projectedListId(SOUTER, '2026-07-20', 'PM')).ok).toBe(true)
+  expect(authoriseList(api, OFFICE, projectedListId(SOUTER, '2026-11-23', 'AM')).ok).toBe(true)
+  expect(authoriseList(api, OFFICE, projectedListId(SOUTER, '2026-11-23', 'PM')).ok).toBe(true)
 }
 
 function nibAccRec(api: BoundAppStore) {
@@ -87,7 +87,7 @@ describe('Outstanding: one row per unpaid payable, oldest first, no ageing (US-1
   it('never lists a held prepayment (the AA Holding account holds it) or an AA fee invoice', () => {
     const api = createAppStore()
     seedMonthOfBctis(api, DEMO_TRIGGER_ACTOR, SOUTER)
-    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
+    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-11' })
     const rows = outstandingPayableRowsFor(views(api), SOUTER)
     expect(rows.some((r) => r.held)).toBe(false)
     expect(rows.some((r) => r.invoiceNumber.startsWith('AA-FEE'))).toBe(false)
@@ -126,7 +126,7 @@ describe('S3: a payment keeps the row, the payout removes it; the GST report mov
       const row = () => outstandingPayableRowsFor(views(api), SOUTER).find((r) => r.invoiceNumber === 'AA-2026-0005')
       expect(row()).toMatchObject({ stage: 'awaitingPayment', outstandingToYou: 152.38 })
       const p0 = owed(api)
-      const gst0 = gstReportFor(api.getState(), SOUTER, '2026-07', TODAY)
+      const gst0 = gstReportFor(api.getState(), SOUTER, '2026-11', TODAY)
 
       // The billable party pays in full: Collected rises, the row stays (paid in, due to you), no GST row.
       const accRec = nibAccRec(api)
@@ -135,7 +135,7 @@ describe('S3: a payment keeps the row, the payout removes it; the GST report mov
       expect(toCents(p1.collected) - toCents(p0.collected)).toBe(15238)
       expect(row()).toMatchObject({ stage: 'dueToYou', outstandingToYou: 152.38 })
       expect(OUTSTANDING_STAGE_LABEL[row()!.stage]).toBe('Paid in, due to you')
-      const gst1 = gstReportFor(api.getState(), SOUTER, '2026-07', TODAY)
+      const gst1 = gstReportFor(api.getState(), SOUTER, '2026-11', TODAY)
       expect(gst1.rows).toEqual(gst0.rows)
       expect(toCents(gst1.notYetPaid ?? 0) - toCents(gst0.notYetPaid ?? 0)).toBe(15238)
       expectOwedEqualsOutstanding(api)
@@ -145,7 +145,7 @@ describe('S3: a payment keeps the row, the payout removes it; the GST report mov
       const p2 = owed(api)
       expect(toCents(p2.paidOut) - toCents(p1.paidOut)).toBe(15238)
       expect(row()).toBeUndefined()
-      const gst2 = gstReportFor(api.getState(), SOUTER, '2026-07', TODAY)
+      const gst2 = gstReportFor(api.getState(), SOUTER, '2026-11', TODAY)
       const added = gst2.rows.filter((r) => !gst1.rows.some((x) => x.disbursementId === r.disbursementId))
       expect(added).toHaveLength(1)
       const invoice = Object.values(api.getState().billing.invoices).find((i) => i.invoiceNumber === 'AA-2026-0005')!
@@ -172,7 +172,7 @@ describe('S3: a payment keeps the row, the payout removes it; the GST report mov
       receivePayment(api, { accRecId: accRec.accRecId, amount: 76.19, idempotencyKey: 'T-REST', source: 'webhook' })
       expect(approveAndPayPairForDemo(api, OFFICE, nibPairId(api)).ok).toBe(true)
       expect(row()).toBeUndefined()
-      const parts = gstReportFor(api.getState(), SOUTER, '2026-07', TODAY).rows.filter((r) => r.invoiceNumber === 'AA-2026-0005')
+      const parts = gstReportFor(api.getState(), SOUTER, '2026-11', TODAY).rows.filter((r) => r.invoiceNumber === 'AA-2026-0005')
       expect(parts).toHaveLength(2)
       const invoice = Object.values(api.getState().billing.invoices).find((i) => i.invoiceNumber === 'AA-2026-0005')!
       expect(parts.reduce((c, r) => c + toCents(r.gst), 0)).toBe(toCents(invoice.gst))
@@ -218,13 +218,13 @@ describe('the financial position (US-12.2.3 with US-08.3.5)', () => {
   it('an AA fee payment moves no figure and adds no GST row', () => {
     const api = createAppStore()
     seedMonthOfBctis(api, DEMO_TRIGGER_ACTOR, ANAE.rutherford)
-    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
+    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-11' })
     const before = { ...owed(api, ANAE.rutherford), theyOweAa: 0 }
-    const gstBefore = gstReportFor(api.getState(), ANAE.rutherford, '2026-07', TODAY)
-    const fee = Object.values(api.getState().billing.aaFeeInvoices).find((f) => f.anaesthetistId === ANAE.rutherford && f.monthISO === '2026-07')!
+    const gstBefore = gstReportFor(api.getState(), ANAE.rutherford, '2026-11', TODAY)
+    const fee = Object.values(api.getState().billing.aaFeeInvoices).find((f) => f.anaesthetistId === ANAE.rutherford && f.monthISO === '2026-11')!
     expect(recordAaFeePayment(api, { aaFeeInvoiceId: fee.id, idempotencyKey: 'FEE' }).ok).toBe(true)
     expect({ ...owed(api, ANAE.rutherford), theyOweAa: 0 }).toEqual(before)
-    expect(gstReportFor(api.getState(), ANAE.rutherford, '2026-07', TODAY)).toEqual(gstBefore)
+    expect(gstReportFor(api.getState(), ANAE.rutherford, '2026-11', TODAY)).toEqual(gstBefore)
     expectOwedEqualsOutstanding(api, ANAE.rutherford)
   })
 
@@ -233,19 +233,19 @@ describe('the financial position (US-12.2.3 with US-08.3.5)', () => {
     const b = createAppStore()
     expect(owed(a)).toEqual(owed(b))
     expect(outstandingPayableRowsFor(views(a), SOUTER)).toEqual(outstandingPayableRowsFor(views(b), SOUTER))
-    expect(gstReportFor(a.getState(), SOUTER, '2026-06', TODAY)).toEqual(gstReportFor(b.getState(), SOUTER, '2026-06', TODAY))
+    expect(gstReportFor(a.getState(), SOUTER, '2026-10', TODAY)).toEqual(gstReportFor(b.getState(), SOUTER, '2026-10', TODAY))
   })
 })
 
 describe('the GST report from the seed (cash basis, by calendar month)', () => {
-  it('June 2026 holds the backdrop payouts; the months run from the first payment to July', () => {
+  it('October 2026 holds the backdrop payouts; the months run from the first payment to July', () => {
     const api = createAppStore()
-    const june = gstReportFor(api.getState(), SOUTER, '2026-06', TODAY)
+    const june = gstReportFor(api.getState(), SOUTER, '2026-10', TODAY)
     expect(june.rows.length).toBeGreaterThan(0)
     expect(june.notYetPaid).toBeUndefined()
-    expect(june.rows.every((r) => r.paidOnISO.startsWith('2026-06'))).toBe(true)
+    expect(june.rows.every((r) => r.paidOnISO.startsWith('2026-10'))).toBe(true)
     const months = gstReportMonthsFor(api.getState(), SOUTER, TODAY)
-    expect(months[0]).toBe('2026-07')
+    expect(months[0]).toBe('2026-11')
     expect(months.at(-1)).toBe('2026-01')
   })
 })

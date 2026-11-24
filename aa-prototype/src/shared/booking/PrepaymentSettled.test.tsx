@@ -79,12 +79,12 @@ describe('the prepayment panel on a settled Booking', () => {
     wrap(<PrepaymentPanel bookingId={NAIR} actor={OFFICE_ACTOR} links={{ onOpenInvoices: () => {}, onOpenInvoice: () => {}, onOpenCreditNote: (id) => (opened = id) }} />)
     const settled = shot('prepayment-settled')!
     expect(settled).toHaveTextContent(`Credited · ${note.creditNoteNumber}`)
-    expect(settled).toHaveTextContent('Refunded to the payer from the AA Holding account · $1,380.00 on 21 Jul')
+    expect(settled).toHaveTextContent('Refunded to the payer from the AA Holding account · $1,380.00 on 24 Nov')
     fireEvent.click(screen.getByRole('button', { name: note.creditNoteNumber }))
     expect(opened).toBe(note.id)
   })
 
-  it('cancelled unpaid, then a late payment: credited, then "Late payment of $1,380.00 refunded on 21 Jul"; plain number for the anaesthetist', () => {
+  it('cancelled unpaid, then a late payment: credited, then "Late payment of $1,380.00 refunded on 24 Nov"; plain number for the anaesthetist', () => {
     approveRiley()
     expect(cancelBooking(useAppStore, SOUTER_ACTOR, RILEY, 'Surgery postponed').ok).toBe(true)
     wrap(<PrepaymentPanel bookingId={RILEY} actor={SOUTER_ACTOR} />, 'mobile')
@@ -95,7 +95,7 @@ describe('the prepayment panel on a settled Booking', () => {
     const late = stageLatePrepaymentPayment(useAppStore, RILEY)
     if (!late.ok) throw new Error(late.message)
     wrap(<PrepaymentPanel bookingId={RILEY} actor={SOUTER_ACTOR} />, 'mobile')
-    expect(shot('prepayment-settled')).toHaveTextContent(/Late payment of \$[\d,.]+ refunded on 21 Jul/)
+    expect(shot('prepayment-settled')).toHaveTextContent(/Late payment of \$[\d,.]+ refunded on 24 Nov/)
   })
 
   it('Contract changed off prepaid: "Credited · CN-… · Contract changed off prepaid" and its refund', () => {
@@ -104,7 +104,7 @@ describe('the prepayment panel on a settled Booking', () => {
     wrap(<PrepaymentPanel bookingId={NAIR} actor={OFFICE_ACTOR} />)
     const settled = shot('prepayment-settled')!
     expect(settled).toHaveTextContent(`Credited · ${out.value.creditNoteNumber} · Contract changed off prepaid`)
-    expect(settled).toHaveTextContent('Refunded to the payer from the AA Holding account · $1,380.00 on 21 Jul')
+    expect(settled).toHaveTextContent('Refunded to the payer from the AA Holding account · $1,380.00 on 24 Nov')
   })
 
   it('the Contract-change line names the invoice, plainly', () => {

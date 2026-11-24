@@ -142,7 +142,7 @@ describe('roles, participants and order', () => {
   })
 
   it('a primary with a later start time than an additional Procedure stays primary and first', () => {
-    const procedures = [proc('A', false, 'rvg', '2026-07-20T08:00:00+12:00'), proc('B', true, 'rvg', '2026-07-20T10:00:00+12:00')]
+    const procedures = [proc('A', false, 'rvg', '2026-11-23T08:00:00+12:00'), proc('B', true, 'rvg', '2026-11-23T10:00:00+12:00')]
     expect(inDisplayOrder(procedures)[0]!.id).toBe('B')
     const result = primaryOf(procedures)
     expect(result.kind === 'ok' && result.primary.id).toBe('B')

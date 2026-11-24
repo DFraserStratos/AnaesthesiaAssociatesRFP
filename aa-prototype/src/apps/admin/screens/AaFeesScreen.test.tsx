@@ -27,27 +27,27 @@ describe('AA fee invoices screen (catch-up Phase 16)', () => {
     expect(screen.getAllByTestId(/^aa-fee-row-/)).toHaveLength(2)
 
     fireEvent.click(screen.getByRole('button', { name: 'Run monthly fee invoices' }))
-    expect(screen.getByRole('status')).toHaveTextContent(`Raised ${active} fee invoices for July 2026`)
+    expect(screen.getByRole('status')).toHaveTextContent(`Raised ${active} fee invoices for November 2026`)
     expect(screen.getAllByTestId(/^aa-fee-row-/)).toHaveLength(2 + active)
     expect(screen.getByRole('button', { name: 'Run monthly fee invoices' })).toBeDisabled()
-    expect(screen.getByText('Every active anaesthetist already has a fee invoice for July 2026.')).toBeInTheDocument()
+    expect(screen.getByText('Every active anaesthetist already has a fee invoice for November 2026.')).toBeInTheDocument()
   })
 
   it('shows the seeded fee history paid and unpaid, and expands a row to its counted BCTIs', () => {
     renderTab('invoices')
-    expect(screen.getByTestId('aa-fee-row-AA-FEE-2026-H01')).toHaveTextContent('Paid 5 Jun 2026')
+    expect(screen.getByTestId('aa-fee-row-AA-FEE-2026-H01')).toHaveTextContent('Paid 9 Oct 2026')
     expect(screen.getByTestId('aa-fee-row-AA-FEE-2026-H02')).toHaveTextContent('Unpaid')
     fireEvent.click(screen.getByRole('button', { name: 'Show AA-FEE-2026-H01 details' }))
     const detail = screen.getByTestId('aa-fee-detail-AA-FEE-2026-H01')
     expect(detail).toHaveTextContent('Counted BCTIs (2)')
-    expect(detail).toHaveTextContent('BCTIs paid in May 2026: 2 x $5.00')
+    expect(detail).toHaveTextContent('BCTIs paid in September 2026: 2 x $5.00')
   })
 
   it('steps months back but never past the demo month', () => {
     renderTab('invoices')
     expect(screen.getByRole('button', { name: 'Next month' })).toBeDisabled()
     fireEvent.click(screen.getByRole('button', { name: 'Previous month' }))
-    expect(screen.getByTestId('aa-fee-month')).toHaveTextContent('June 2026')
+    expect(screen.getByTestId('aa-fee-month')).toHaveTextContent('October 2026')
     // Dr Souter already has June's fee invoice.
     expect(screen.getByTestId('aa-fee-preview-34821')).toHaveTextContent('AA-FEE-2026-H02')
   })

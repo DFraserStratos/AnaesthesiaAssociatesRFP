@@ -70,7 +70,7 @@ describe('completion in the store reads only the rule (catch-up Phase 21a)', () 
     const api = createAppStore()
     const state = api.getState()
     const p = state.schedule.procedures[ELLISON]!
-    api.setState({ schedule: { ...state.schedule, procedures: { ...state.schedule.procedures, [ELLISON]: { ...p, handoverISO: '2026-07-21T17:20:00' } } } })
+    api.setState({ schedule: { ...state.schedule, procedures: { ...state.schedule.procedures, [ELLISON]: { ...p, handoverISO: '2026-11-24T17:20:00' } } } })
     const blockers = completionBlockersFor(api.getState(), api.getState().schedule.bookings[ELLISON_BOOKING]!)
     expect((blockers[0]!.details as { code: string }[]).map((f) => f.code)).toEqual(['modifiersStep'])
     confirmNoModifiers(api, SOUTER, ELLISON)

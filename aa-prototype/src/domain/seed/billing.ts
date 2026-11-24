@@ -101,7 +101,7 @@ export interface SeedBillingSlice {
 }
 
 /** Fixed pre-day instant the seeded prepayment invoice was approved, sent and paid (never the clock). */
-const SEED_PREPAYMENT_RAISED_ISO = '2026-07-14T09:00:00'
+const SEED_PREPAYMENT_RAISED_ISO = '2026-11-17T09:00:00'
 /** Who approved the seeded prepayment invoice (catch-up Phase 27). */
 const SEED_PREPAYMENT_APPROVER = 'Kirsty W.'
 /** The AA Holding account's seeded Xero contact (catch-up Phase 27). */

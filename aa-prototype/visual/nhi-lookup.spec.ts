@@ -13,7 +13,7 @@ import { runDemoAction } from './demoActions'
  * data-shot selectors, never fixed sleeps. Shots land in `visual/shots/`.
  */
 
-const LIST = 'L-34821-2026-07-21-PM'
+const LIST = 'L-34821-2026-11-24-PM'
 
 async function open(page: Page, path: string): Promise<void> {
   await page.goto(path)
@@ -85,7 +85,7 @@ test("Admin patient record: Fiona Gray's refresh from the NHI register", async (
   await table.locator('[data-field=name] select').selectOption('use')
   await panel.locator('[data-shot=patient-register-apply]').click()
   await expect(page.locator('[data-shot=patient-register-done]')).toContainText('Refreshed from the NHI register.')
-  await expect(page.locator('[data-shot=patient-register-stamp]')).toHaveText('Last refreshed 21 Jul 2026, 08:00')
+  await expect(page.locator('[data-shot=patient-register-stamp]')).toHaveText('Last refreshed 24 Nov 2026, 08:00')
   await expect(page.locator('[data-shot=patient-details]')).toContainText('Fiona Tamihana')
 
   // Refresh again: the name now matches; the kept address still differs (Keep is the default).

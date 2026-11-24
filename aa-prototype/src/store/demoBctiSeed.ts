@@ -34,7 +34,7 @@ export const BCTI_SEED_TARGET = 40
 
 const NS = 'RB'
 const IDS = historyIds(NS)
-const DAYS = ['2026-07-01', '2026-07-02', '2026-07-03', '2026-07-06'] as const
+const DAYS = ['2026-11-04', '2026-11-05', '2026-11-06', '2026-11-09'] as const
 const SESSIONS = ['AM', 'PM'] as const
 const PER_LIST = 5
 const LIST_PLAN = [

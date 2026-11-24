@@ -440,7 +440,7 @@ export function ChangedSinceSubmittedExample() {
   const [count, setCount] = useState(2)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start' }}>
-      <ChangedSinceSubmittedPill cue={{ count, bookingIds: [], lastAtISO: '2026-07-21T10:42:00' }} />
+      <ChangedSinceSubmittedPill cue={{ count, bookingIds: [], lastAtISO: '2026-11-24T10:42:00' }} />
       <div style={{ display: 'flex', gap: 8 }}>
         <Button variant="pill" onClick={() => setCount((n) => n + 1)}>One more change</Button>
         <Button variant="pill" onClick={() => setCount(1)}>Reset</Button>
@@ -831,7 +831,7 @@ export function SidePanelExample() {
         onClose={() => setOpen(false)}
         width="list"
         title="Example drawer"
-        meta={<div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>Tue 21 Jul · PM</div>}
+        meta={<div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>Tue 24 Nov · PM</div>}
         footer={
           <>
             <Button size="compact" style={{ flex: '1 1 auto' }} onClick={() => setOpen(false)}>Done</Button>

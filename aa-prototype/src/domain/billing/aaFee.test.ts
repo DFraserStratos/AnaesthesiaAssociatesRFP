@@ -41,7 +41,7 @@ describe('aaFeeFor (US-10.3.1, US-10.3.3)', () => {
   })
 
   it('names the BCTI line with the label given', () => {
-    expect(aaFeeFor(SETTINGS, 2, 'BCTIs paid in July 2026').lines[2]!.description).toBe('BCTIs paid in July 2026: 2 x $5.00')
+    expect(aaFeeFor(SETTINGS, 2, 'BCTIs paid in November 2026').lines[2]!.description).toBe('BCTIs paid in November 2026: 2 x $5.00')
   })
 })
 

@@ -14,7 +14,7 @@ test('demo actions: one on the Review queue, eleven on the Day view, ten on the 
   await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 1')
 
   // The Day view carries the sample warnings (catch-up Phase 15a), Simulate sickness (catch-up Phase 30), Add Draft List for this day (catch-up Phase 31), Colleague moves a List to the office (catch-up Phase 32) and Colleague hands a Booking to Dr Souter (catch-up Phase 32a), Move to 2 days before procedure and Add prepaid Booking (catch-up Phase 27), Inject unmatched receipt for the Reconciliation card (catch-up Phase 37), Switch office user (catch-up Phase 35) and Load full-scale data (catch-up Phase 43).
-  await page.goto('/admin/day/2026-07-21')
+  await page.goto('/admin/day/2026-11-24')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 11')
   await expect(page.locator('[data-shot="demo-action-inject-unmatched-receipt"]')).toHaveCount(0)
@@ -46,7 +46,7 @@ test('demo actions: one on the Review queue, eleven on the Day view, ten on the 
 
 test('demo actions: a half payment from an invoice page moves that invoice\'s money chip', async ({ page }) => {
   // Authorise Dr Souter's Mon 20 AM List so its invoices reach Xero.
-  await page.goto('/admin/review/L-34821-2026-07-20-AM')
+  await page.goto('/admin/review/L-34821-2026-11-23-AM')
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()
   await page.getByRole('button', { name: 'Authorise for billing' }).last().click()

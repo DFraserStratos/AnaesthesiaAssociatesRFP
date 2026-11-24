@@ -8,7 +8,7 @@ import { runDemoAction } from './demoActions'
  * draft walk-through.
  */
 
-const BOOKING = '/admin/day/2026-07-21/bookings/BK0009'
+const BOOKING = '/admin/day/2026-11-24/bookings/BK0009'
 
 async function fresh(page: Page, path: string): Promise<void> {
   await page.goto(path)
@@ -122,7 +122,7 @@ test('the composer: two saves ticked and the preview', async ({ page }) => {
 })
 
 test('the composer opened from a pool notification', async ({ page }) => {
-  await fresh(page, '/admin/day/2026-07-21')
+  await fresh(page, '/admin/day/2026-11-24')
   await runDemoAction(page, 'colleague-moves-list-to-office', { choice: 'busy', close: true })
   await page.goto('/admin/notifications')
   await page.waitForLoadState('networkidle')
@@ -152,16 +152,16 @@ test('Master data · Email templates: the editor', async ({ page }) => {
 })
 
 test('the List drawer: Draft update email after an assignment, and Add Booking on a booked List', async ({ page }) => {
-  await fresh(page, '/admin/day/2026-07-22')
-  await page.locator('[data-draft-block="L-29104-2026-07-22-AM"]').click()
+  await fresh(page, '/admin/day/2026-11-25')
+  await page.locator('[data-draft-block="L-29104-2026-11-25-AM"]').click()
   const draftDrawer = page.locator('[data-shot="admin-draft-list-drawer"]')
   await draftDrawer.locator('[data-available="41267"]').getByRole('button', { name: 'Assign' }).click()
   await page.getByRole('button', { name: 'Assign Draft List', exact: true }).click()
   await expect(page.getByText('Draft List assigned')).toBeVisible()
   await page.keyboard.press('Escape')
-  await page.goto('/admin/day/2026-07-22')
+  await page.goto('/admin/day/2026-11-25')
   await page.waitForLoadState('networkidle')
-  await page.locator('button[data-slot-id="S-41267-2026-07-22-AM"]').click()
+  await page.locator('button[data-slot-id="S-41267-2026-11-25-AM"]').click()
   const drawer = page.getByTestId('admin-list-drawer')
   const email = drawer.locator('[data-shot="drawer-update-email"]')
   await expect(email).toBeVisible()
@@ -175,7 +175,7 @@ test('the List drawer: Draft update email after an assignment, and Add Booking o
   // Add Booking on a booked List (Dr Souter's Wed 22 AM, six Bookings), with the Procedure description.
   await page.keyboard.press('Escape')
   await expect(drawer).toHaveCount(0)
-  await page.locator('button[data-list-id="L-34821-2026-07-22-AM"]').click()
+  await page.locator('button[data-list-id="L-34821-2026-11-25-AM"]').click()
   await expect(drawer).toContainText('Souter')
   await expect(drawer).toContainText(/Bookings \([1-9]/i)
   await drawer.locator('[data-shot="list-add-booking"]').click()

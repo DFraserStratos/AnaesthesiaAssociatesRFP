@@ -132,7 +132,7 @@ describe('saveBookingChanges', () => {
     const s = setup()
     const next = snapshotBooking(s.draft.getState(), BOOKING)!
     const [pid, p] = Object.entries(next.procedures)[0]!
-    const rewritten = { ...next, procedures: { ...next.procedures, [pid]: { ...p, procedureText: { text: 'Edited', source: 'phone' as const, receivedAtISO: '2026-07-21T08:00:00' } } } }
+    const rewritten = { ...next, procedures: { ...next.procedures, [pid]: { ...p, procedureText: { text: 'Edited', source: 'phone' as const, receivedAtISO: '2026-11-24T08:00:00' } } } }
     const length = s.real.getState().audit.length
     const out = saveBookingChanges(s.real, OFFICE_ACTOR, BOOKING, { base: s.base, next: rewritten })
     expect(out.ok ? '' : out.message).toContain(RECEIVED_TEXT_MESSAGE)

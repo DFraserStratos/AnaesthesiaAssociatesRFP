@@ -23,7 +23,7 @@ describe('Simulate incoming request', () => {
   it('logs the default Reid request for the next Thursday PM, by email, as the simulated office; Dr Sharma is free and not preferred there', () => {
     const api = createAppStore()
     const res = simulateIncomingDraftListRequest(api, 'ces-reid-thu-pm')
-    expect(res.ok && res.value).toMatchObject({ dateISO: '2026-07-23', session: 'PM' })
+    expect(res.ok && res.value).toMatchObject({ dateISO: '2026-11-26', session: 'PM' })
     if (!res.ok) return
     const l = api.getState().schedule.lists[res.value.listId]!
     expect(l).toMatchObject({ state: 'DRAFT', hospitalId: 'H-CES', surgeonId: 'S-REID', draft: { origin: 'request', source: 'email', by: 'AA office (simulated)' } })
@@ -35,21 +35,21 @@ describe('Simulate incoming request', () => {
 
   it('the canned days follow the clock', () => {
     const api = createAppStore()
-    expect(cannedRequestDay(api.getState(), 'ces-reid-thu-pm')?.dateISO).toBe('2026-07-23')
+    expect(cannedRequestDay(api.getState(), 'ces-reid-thu-pm')?.dateISO).toBe('2026-11-26')
     advanceClockDays(api, 2)
-    expect(cannedRequestDay(api.getState(), 'ces-reid-thu-pm')?.dateISO).toBe('2026-07-30')
-    expect(cannedRequestDay(api.getState(), 'forte-nand-mon-am')?.dateISO).toBe('2026-07-27')
+    expect(cannedRequestDay(api.getState(), 'ces-reid-thu-pm')?.dateISO).toBe('2026-12-03')
+    expect(cannedRequestDay(api.getState(), 'forte-nand-mon-am')?.dateISO).toBe('2026-11-30')
   })
 })
 
 describe('Add Draft List for this day', () => {
   it('adds one for the day, shows it on that day, and guards a passed day, a day beyond the schedule and a repeat', () => {
     const api = createAppStore()
-    expect(addDraftListForDay(api, '2026-07-29', 'pm-forte-nand').ok).toBe(true)
-    expect(waitingDraftLists(api.getState()).some((l) => l.dateISO === '2026-07-29' && l.session === 'PM')).toBe(true)
-    expect(addDraftListForDay(api, '2026-07-29', 'pm-forte-nand')).toMatchObject({ ok: false, message: 'Already added' })
-    expect(addDraftListForDay(api, '2026-07-01', 'am-stg-tan')).toMatchObject({ ok: false, message: 'This day has passed' })
-    expect(addDraftListForDay(api, '2027-07-01', 'am-stg-tan')).toMatchObject({ ok: false, message: 'Beyond the schedule' })
+    expect(addDraftListForDay(api, '2026-12-02', 'pm-forte-nand').ok).toBe(true)
+    expect(waitingDraftLists(api.getState()).some((l) => l.dateISO === '2026-12-02' && l.session === 'PM')).toBe(true)
+    expect(addDraftListForDay(api, '2026-12-02', 'pm-forte-nand')).toMatchObject({ ok: false, message: 'Already added' })
+    expect(addDraftListForDay(api, '2026-11-04', 'am-stg-tan')).toMatchObject({ ok: false, message: 'This day has passed' })
+    expect(addDraftListForDay(api, '2027-11-04', 'am-stg-tan')).toMatchObject({ ok: false, message: 'Beyond the schedule' })
   })
 })
 

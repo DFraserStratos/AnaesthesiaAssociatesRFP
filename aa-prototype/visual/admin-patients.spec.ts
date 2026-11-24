@@ -111,7 +111,7 @@ test('Follow-up: log a call and a reminder for today on the record, Done takes i
   await expect(log.locator('[data-kind="call"]').filter({ hasText: 'Spoke to Sarah, she will pay on Friday' })).toBeVisible()
 
   await log.getByRole('button', { name: 'Reminder', exact: true }).click()
-  await expect(log.locator('[data-shot="patient-follow-up-date"]')).toHaveValue('2026-07-21')
+  await expect(log.locator('[data-shot="patient-follow-up-date"]')).toHaveValue('2026-11-24')
   await log.locator('[data-shot="patient-follow-up-text"]').fill('Check the Friday payment arrived')
   await log.locator('[data-shot="patient-follow-up-save"]').click()
   await expect(log.locator('[data-kind="reminder"]').filter({ hasText: 'Check the Friday payment arrived' })).toBeVisible()

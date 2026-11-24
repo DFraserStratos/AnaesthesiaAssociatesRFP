@@ -15,7 +15,7 @@ test.beforeEach(async ({ context }) => {
  * sheet (no warning text, no extra step).
  */
 
-const RILEY_LIST = 'L-34821-2026-07-24-AM'
+const RILEY_LIST = 'L-34821-2026-11-27-AM'
 // The PWA dev server (5174; another port when a worktree runs its own, via PWA_URL).
 const PWA = process.env['PWA_URL'] ?? `http://localhost:${process.env['AA_PWA_PORT'] ?? 5174}`
 
@@ -29,7 +29,7 @@ async function inViewport(page: Page, selector: string): Promise<boolean> {
 }
 
 test('admin: To-do card, outline down to the Booking, Clear, sample triggers', async ({ page }) => {
-  await page.goto('/admin/day/2026-07-24')
+  await page.goto('/admin/day/2026-11-27')
   await page.waitForLoadState('networkidle')
 
   const todo = page.locator('[data-shot="admin-warnings-todo"]')
@@ -67,7 +67,7 @@ test('admin: To-do card, outline down to the Booking, Clear, sample triggers', a
   await expect(page.locator('[data-shot="daygrid-block-warnings"]')).toHaveCount(0)
 
   // Samples on the demo day fill the list; clearing them empties it again.
-  await page.goto('/admin/day/2026-07-21')
+  await page.goto('/admin/day/2026-11-24')
   await page.waitForLoadState('networkidle')
   const raised = await runDemoAction(page, 'raise-sample-warnings', { close: true })
   // Four rules since catch-up Phase 21: each target carries the prepayment and the base-units sample;
@@ -83,7 +83,7 @@ test('admin: To-do card, outline down to the Booking, Clear, sample triggers', a
 })
 
 test('admin: the Booking detail shows the warning first, awaiting approval, with no raise button (catch-up Phase 27)', async ({ page }) => {
-  await page.goto('/admin/day/2026-07-24')
+  await page.goto('/admin/day/2026-11-27')
   await page.waitForLoadState('networkidle')
   await page.locator('[data-shot="admin-warnings-todo"]').getByRole('button', { name: "Open Annette Riley's Booking" }).click()
   const panel = page.locator('[data-shot="booking-warnings"]')

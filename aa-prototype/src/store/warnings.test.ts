@@ -63,7 +63,7 @@ describe('selectors', () => {
     expect(warningsForList(state, list.id).map((w) => w.key)).toEqual([RILEY_KEY])
     // Catch-up Phase 27: three days out on the demo clock, awaiting approval, so mild (strong from two days).
     expect(warningSummaryByList(state, list.dateISO).get(list.id)).toEqual({ open: 1, strongest: 'mild' })
-    expect(warningSummaryByList(state, '2026-07-21').has(list.id)).toBe(false)
+    expect(warningSummaryByList(state, '2026-11-24').has(list.id)).toBe(false)
   })
 })
 

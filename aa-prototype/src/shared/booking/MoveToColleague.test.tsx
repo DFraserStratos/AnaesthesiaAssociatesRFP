@@ -42,14 +42,14 @@ describe('Move to a colleague on the Booking screen', () => {
     expect(locked.container.querySelector('[data-shot="move-booking-action"]')).toBeNull()
     locked.unmount()
     // A past day: the office's to move.
-    useAppStore.setState({ clock: { ...useAppStore.getState().clock, todayISO: '2026-07-23' } })
+    useAppStore.setState({ clock: { ...useAppStore.getState().clock, todayISO: '2026-11-26' } })
     const past = renderBody(D.bookingId, SOUTER_ACTOR)
     expect(past.container.querySelector('[data-shot="move-booking-action"]')).toBeNull()
     past.unmount()
     // A cancelled Booking.
     useAppStore.setState(freshAppState())
     const b = useAppStore.getState().schedule.bookings[D.secondBookingId]!
-    useAppStore.setState({ schedule: { ...useAppStore.getState().schedule, bookings: { ...useAppStore.getState().schedule.bookings, [b.id]: { ...b, cancellation: { atISO: '2026-07-21T08:00:00', by: 'Kirsty W.', reason: 'Patient unwell' } as typeof b.cancellation } } } })
+    useAppStore.setState({ schedule: { ...useAppStore.getState().schedule, bookings: { ...useAppStore.getState().schedule.bookings, [b.id]: { ...b, cancellation: { atISO: '2026-11-24T08:00:00', by: 'Kirsty W.', reason: 'Patient unwell' } as typeof b.cancellation } } } })
     const cancelled = renderBody(D.secondBookingId, SOUTER_ACTOR)
     expect(cancelled.container.querySelector('[data-shot="move-booking-action"]')).toBeNull()
   })
@@ -62,7 +62,7 @@ describe('Move to a colleague on the Booking screen', () => {
     expect(receiver).not.toBeNull()
     fireEvent.click(receiver!)
     const confirm = doc.querySelector('[data-shot="move-booking-confirm"]')!
-    expect(confirm.textContent).toContain("A new List is created in Dr Whitaker's Wed 22 Jul AM session at Christchurch Eye Surgery.")
+    expect(confirm.textContent).toContain("A new List is created in Dr Whitaker's Wed 25 Nov AM session at Christchurch Eye Surgery.")
     expect(confirm.textContent).toContain('Dr Whitaker is paid for it.')
     expect(confirm.textContent).not.toMatch(/warning|prefer|anyway|estimate|deposit|[–—]/i)
     expect((doc.querySelector('[data-shot="move-booking-tell-office"] input') as HTMLInputElement).checked).toBe(false)

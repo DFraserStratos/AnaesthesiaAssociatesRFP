@@ -14,7 +14,7 @@ test('admin phase 06 walkthrough', async ({ page }) => {
   await page.waitForTimeout(400)
 
   // Day dashboard reproduces the mockup day.
-  await expect(page.getByRole('heading', { name: /Tuesday 21 July 2026/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Tuesday 24 November 2026/ })).toBeVisible()
   await expect(page.getByText('Internal notes')).toBeVisible()
   await expect(page.getByText('Awaiting review')).toBeVisible()
   const rightRailLeft = await page.getByTestId('admin-right-rail').evaluate((element) => element.getBoundingClientRect().left)
@@ -29,7 +29,7 @@ test('admin phase 06 walkthrough', async ({ page }) => {
   await page.screenshot({ path: 'visual/shots/a-02-note.png', fullPage: true })
 
   // Open a booked block → the list drawer.
-  await page.locator('[data-list-id="L-34821-2026-07-21-AM"]').click() // Souter's St George's AM (the band and rail card also name St George's since catch-up Phase 31)
+  await page.locator('[data-list-id="L-34821-2026-11-24-AM"]').click() // Souter's St George's AM (the band and rail card also name St George's since catch-up Phase 31)
   await page.waitForTimeout(300)
   await expect(page.getByRole('button', { name: 'Edit list' })).toBeVisible()
   const listDrawerLeft = await page.getByTestId('admin-list-drawer').evaluate((element) => element.getBoundingClientRect().left)
@@ -71,7 +71,7 @@ test('admin mini calendar supports keyboard date navigation', async ({ page }) =
   await page.waitForLoadState('networkidle')
 
   const calendar = page.getByTestId('admin-right-rail')
-  const selectedDay = calendar.getByRole('button', { name: 'Tuesday 21 July 2026', exact: true })
+  const selectedDay = calendar.getByRole('button', { name: 'Tuesday 24 November 2026', exact: true })
   await expect(selectedDay).toHaveAttribute('aria-current', 'date')
   await expect(selectedDay).toHaveAttribute('aria-pressed', 'true')
   await expect(selectedDay).toHaveAttribute('tabindex', '0')
@@ -80,47 +80,47 @@ test('admin mini calendar supports keyboard date navigation', async ({ page }) =
   expect(await selectedDay.evaluate((element) => getComputedStyle(element).boxShadow)).toContain('rgb(169, 30, 62)')
   await page.screenshot({ path: 'visual/shots/a-12-calendar-keyboard.png', fullPage: true })
   await page.keyboard.press('ArrowRight')
-  const nextDay = calendar.getByRole('button', { name: 'Wednesday 22 July 2026', exact: true })
+  const nextDay = calendar.getByRole('button', { name: 'Wednesday 25 November 2026', exact: true })
   await expect(nextDay).toBeFocused()
   await expect(nextDay).toHaveAttribute('aria-pressed', 'false')
   expect(await nextDay.evaluate((element) => getComputedStyle(element).boxShadow)).toContain('rgb(169, 30, 62)')
-  await expect(page.getByRole('heading', { name: /Tuesday 21 July 2026/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Tuesday 24 November 2026/ })).toBeVisible()
 
   await page.keyboard.press('ArrowDown')
-  await expect(calendar.getByRole('button', { name: 'Wednesday 29 July 2026', exact: true })).toBeFocused()
+  await expect(calendar.getByRole('button', { name: 'Wednesday 2 December 2026', exact: true })).toBeFocused()
   await page.keyboard.press('Home')
-  await expect(calendar.getByRole('button', { name: 'Monday 27 July 2026', exact: true })).toBeFocused()
+  await expect(calendar.getByRole('button', { name: 'Monday 30 November 2026', exact: true })).toBeFocused()
   await page.keyboard.press('End')
-  const nextMonthDay = calendar.getByRole('button', { name: 'Sunday 2 August 2026', exact: true })
+  const nextMonthDay = calendar.getByRole('button', { name: 'Sunday 6 December 2026', exact: true })
   await expect(nextMonthDay).toBeFocused()
-  await expect(page.getByRole('group', { name: /^August 2026 calendar/ })).toBeVisible()
+  await expect(page.getByRole('group', { name: /^December 2026 calendar/ })).toBeVisible()
 
   await page.keyboard.press('Enter')
-  await expect(page).toHaveURL(/\/admin\/day\/2026-08-02$/)
-  await expect(page.getByRole('heading', { name: /Sunday 2 August 2026/ })).toBeVisible()
+  await expect(page).toHaveURL(/\/admin\/day\/2026-12-06$/)
+  await expect(page.getByRole('heading', { name: /Sunday 6 December 2026/ })).toBeVisible()
   await expect(nextMonthDay).toHaveAttribute('aria-pressed', 'true')
   await expect(nextMonthDay).toHaveCSS('border-color', 'rgb(169, 30, 62)')
 
   await page.keyboard.press('PageUp')
-  await expect(calendar.getByRole('button', { name: 'Thursday 2 July 2026', exact: true })).toBeFocused()
+  await expect(calendar.getByRole('button', { name: 'Thursday 5 November 2026', exact: true })).toBeFocused()
   await page.keyboard.press('Shift+PageDown')
-  const nextYearDay = calendar.getByRole('button', { name: 'Friday 2 July 2027', exact: true })
+  const nextYearDay = calendar.getByRole('button', { name: 'Friday 5 November 2027', exact: true })
   await expect(nextYearDay).toBeFocused()
   await page.keyboard.press('Space')
-  await expect(page).toHaveURL(/\/admin\/day\/2027-07-02$/)
-  await expect(page.getByRole('heading', { name: /Friday 2 July 2027/ })).toBeVisible()
+  await expect(page).toHaveURL(/\/admin\/day\/2027-11-05$/)
+  await expect(page.getByRole('heading', { name: /Friday 5 November 2027/ })).toBeVisible()
 })
 
 test('admin phase 06 list reassignment', async ({ page }) => {
   // S2 Beat 3 since catch-up Phase 32b (D59): Rutherford phoned in sick and the
   // office returned his Wed 22 AM List, so it waits in the Draft Lists with no
   // conflict. The office assigns it to Dr Sharma from the tier-ordered picker.
-  await page.goto('/admin/day/2026-07-22')
+  await page.goto('/admin/day/2026-11-25')
   await page.waitForLoadState('networkidle')
-  const vacatedBlock = page.locator('button[data-slot-id="S-29104-2026-07-22-AM"]')
+  const vacatedBlock = page.locator('button[data-slot-id="S-29104-2026-11-25-AM"]')
   await expect(vacatedBlock).toContainText('Unavailable')
   await expect(vacatedBlock).not.toHaveAttribute('data-list-id', /.+/)
-  await page.locator('[data-draft-block="L-29104-2026-07-22-AM"]').click()
+  await page.locator('[data-draft-block="L-29104-2026-11-25-AM"]').click()
   const drawer = page.locator('[data-shot="admin-draft-list-drawer"]')
   await expect(drawer).toContainText('Returned: anaesthetist unavailable')
   await page.screenshot({ path: 'visual/shots/a-07-reassign-pick.png', fullPage: true })
@@ -131,10 +131,10 @@ test('admin phase 06 list reassignment', async ({ page }) => {
   await expect(page.getByText('Draft List assigned')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a-09-reassign-success.png', fullPage: true })
   await page.keyboard.press('Escape')
-  await page.goto('/admin/day/2026-07-22')
+  await page.goto('/admin/day/2026-11-25')
   await page.waitForLoadState('networkidle')
-  const sharmaAm = page.locator('button[data-slot-id="S-41267-2026-07-22-AM"]')
-  await expect(sharmaAm).toHaveAttribute('data-list-id', 'L-29104-2026-07-22-AM')
+  const sharmaAm = page.locator('button[data-slot-id="S-41267-2026-11-25-AM"]')
+  await expect(sharmaAm).toHaveAttribute('data-list-id', 'L-29104-2026-11-25-AM')
   await sharmaAm.click()
   const listDrawer = page.getByTestId('admin-list-drawer')
   await expect(listDrawer.getByText('Sharma, Priya', { exact: true })).toBeVisible()
@@ -148,11 +148,11 @@ test('admin phase 06 office edits a SUBMITTED booking', async ({ page }) => {
   await page.waitForTimeout(400)
 
   // Navigate to Mon 20 (Morrison's SUBMITTED list) and open it.
-  await page.locator('input[type="date"]').fill('2026-07-20')
+  await page.locator('input[type="date"]').fill('2026-11-23')
   await page.waitForTimeout(300)
   await page.getByText(/Mr S\. Tan/).first().click()
   await page.waitForTimeout(300)
-  await expect(page.getByText(/Mon 20 Jul .* SUBMITTED/)).toBeVisible()
+  await expect(page.getByText(/Mon 23 Nov .* SUBMITTED/)).toBeVisible()
   await page.getByRole('button', { name: 'Open', exact: true }).first().click()
   await page.waitForTimeout(300)
   // The office can cancel a booking on a SUBMITTED list (checklist item 7); it was
@@ -168,9 +168,9 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   // Sharma's free Tue 21 PM is an empty session (catch-up Phase 28): its drawer
   // offers Assign List (the teal primary), then Book (phone advice), Edit times
   // and History, and prints no List state.
-  await page.locator('button[data-slot-id="S-41267-2026-07-21-PM"]').click()
+  await page.locator('button[data-slot-id="S-41267-2026-11-24-PM"]').click()
   const drawer = page.getByTestId('admin-list-drawer')
-  await expect(drawer).toHaveAttribute('data-slot-id', 'S-41267-2026-07-21-PM')
+  await expect(drawer).toHaveAttribute('data-slot-id', 'S-41267-2026-11-24-PM')
   await expect(drawer.getByText(/ACTIVE|DRAFT|\bOpen\b/)).toHaveCount(0)
   const assignList = drawer.getByRole('button', { name: 'Assign List', exact: true })
   const bookPhoneAdvice = drawer.getByRole('button', { name: 'Book (phone advice)', exact: true })
@@ -208,7 +208,7 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   await expect(page.locator('[data-shot=nhi-purpose]')).toContainText('Looked up on behalf of Dr Priya Sharma (HPI CPN 12SHAP)')
   await expect(page.getByLabel('NHI')).toHaveValue('DEM1239')
   await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Demo Patient')
-  await expect(page.getByLabel('Date of birth')).toHaveValue('1990-01-01')
+  await expect(page.getByLabel('Date of birth')).toHaveValue('1990-05-07')
   await expect(page.getByLabel('Phone')).toHaveValue('021 555 0190')
   await expect(page.locator('[data-shot=manual-rvg-code]')).toContainText('A3')
   await expect(page.locator('[data-shot=manual-rvg-code]')).toContainText('Appendicectomy, laparoscopic')
@@ -242,7 +242,7 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   await expect(page.locator('[data-shot=admin-needs-invoice-destination]')).toContainText('Demo Patient')
   // The session now holds a Private List (P5 closed): the block reads St George's.
   await page.keyboard.press('Escape')
-  await expect(page.locator('button[data-slot-id="S-41267-2026-07-21-PM"]')).toContainText("St George's")
+  await expect(page.locator('button[data-slot-id="S-41267-2026-11-24-PM"]')).toContainText("St George's")
 })
 
 test('generic manual-booking lookup still requires an NHI', async ({ page }) => {

@@ -34,10 +34,10 @@ describe('WarningsToDo', () => {
     expect(rows[0]).toHaveTextContent('Prepayment of $1,200.00 from Annette Riley is awaiting approval on Invoices')
     expect(rows[0]).toHaveTextContent('Annette Riley')
     expect(rows[0]).toHaveTextContent('Dr Souter')
-    expect(rows[0]).toHaveTextContent('Fri 24 Jul AM')
+    expect(rows[0]).toHaveTextContent('Fri 27 Nov AM')
     expect(card).not.toHaveTextContent(/Provisional/)
     fireEvent.click(within(card).getByRole('button', { name: "Open Annette Riley's Booking" }))
-    expect(onOpen).toHaveBeenCalledWith('2026-07-24', RILEY)
+    expect(onOpen).toHaveBeenCalledWith('2026-11-27', RILEY)
   })
 
   it('a new warning appears (Appears)', () => {

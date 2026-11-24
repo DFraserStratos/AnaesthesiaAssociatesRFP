@@ -83,7 +83,7 @@ describe('the Hub states', () => {
     })
     expect(status()?.textContent).toContain('Found Mereana Tipene on the NHI register.')
     expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Mereana Tipene')
-    expect((screen.getByLabelText('Date of birth') as HTMLInputElement).value).toBe('1981-03-09')
+    expect((screen.getByLabelText('Date of birth') as HTMLInputElement).value).toBe('1981-07-13')
     const payer = document.querySelector('[data-shot="add-booking-payer"]') as HTMLElement
     expect(within(payer).getByText('Mereana Tipene')).toBeInTheDocument()
   })
@@ -106,7 +106,7 @@ describe('the Hub states', () => {
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
     const before = new Set(bookingsForList(useAppStore.getState(), LIST).map((b) => b.id))
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Mereana Tipene' } })
-    fireEvent.change(screen.getByLabelText('Date of birth'), { target: { value: '1981-03-09' } })
+    fireEvent.change(screen.getByLabelText('Date of birth'), { target: { value: '1981-07-13' } })
     fireEvent.change(screen.getByLabelText('Procedure description'), { target: { value: 'Knee arthroscopy' } })
     type('')
     expect(screen.getByRole('button', { name: 'Save booking' })).toBeDisabled()

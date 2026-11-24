@@ -18,7 +18,8 @@
 import type { Patient, PostalAddress, ProcedurePayer } from '../types'
 import { generateNhi } from '../nhi'
 import { ETHNICITY_DEMO_SUBSET } from '../nzhis'
-import { slotRng } from './slotHash'
+import { addDaysISO } from '../clock'
+import { SEED_MOVE_DAYS, slotRng } from './slotHash'
 
 /**
  * The `BP####` ids the retired guardian master held (catch-up Phase 21, RV-30):
@@ -77,29 +78,29 @@ export const PAT = {
 
 const PINNED: readonly Patient[] = [
   // The design day's Southern Cross PM bookings.
-  { hiddenInternalId: PAT.tane, nhi: 'ZBC1123', name: 'Wiremu Tane', dobISO: '1979-08-22', phone: '021 555 3011', ethnicityCode: '21111' },
-  { hiddenInternalId: PAT.marsh, nhi: 'ZAD2210', name: 'Susan Marsh', dobISO: '1961-02-09', phone: '03 555 3122', ethnicityCode: '11111' },
-  { hiddenInternalId: PAT.chen, nhi: 'ZAE0310', name: 'David Chen', dobISO: '1988-11-30', phone: '021 555 3230', ethnicityCode: '42111' },
-  { hiddenInternalId: PAT.ellison, nhi: 'ZAA0067', name: 'Margaret Ellison', dobISO: '1954-03-14', phone: '03 555 3349', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT.tane, nhi: 'ZBC1123', name: 'Wiremu Tane', dobISO: '1979-12-26', phone: '021 555 3011', ethnicityCode: '21111' },
+  { hiddenInternalId: PAT.marsh, nhi: 'ZAD2210', name: 'Susan Marsh', dobISO: '1961-06-15', phone: '03 555 3122', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT.chen, nhi: 'ZAE0310', name: 'David Chen', dobISO: '1989-04-05', phone: '021 555 3230', ethnicityCode: '42111' },
+  { hiddenInternalId: PAT.ellison, nhi: 'ZAA0067', name: 'Margaret Ellison', dobISO: '1954-07-18', phone: '03 555 3349', ethnicityCode: '11111' },
   // Phase 01's five lookup patients (on the NHI register like every seeded patient, catch-up Phase 40a).
-  { hiddenInternalId: PAT.mitchell, nhi: 'CQY9304', name: 'Sarah Mitchell', dobISO: '1988-04-12', phone: '021 555 3458', ethnicityCode: '11111' },
-  { hiddenInternalId: PAT.walker, nhi: 'WQS3635', name: 'Hemi Walker', dobISO: '1975-09-03', phone: '021 555 3560', ethnicityCode: '21111' },
-  { hiddenInternalId: PAT.tuilagi, nhi: 'JKL1188', name: 'Losa Tuilagi', dobISO: '1992-01-27', phone: '021 555 3676', ethnicityCode: '31111' },
-  { hiddenInternalId: PAT.nair, nhi: 'MYY54SL', name: 'Priya Nair', dobISO: '1969-11-08', phone: '03 555 3781', ethnicityCode: '43111' },
-  { hiddenInternalId: PAT.park, nhi: 'RUE29KR', name: 'Grace Park', dobISO: '2014-06-30', ethnicityCode: '42111' },
+  { hiddenInternalId: PAT.mitchell, nhi: 'CQY9304', name: 'Sarah Mitchell', dobISO: '1988-08-16', phone: '021 555 3458', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT.walker, nhi: 'WQS3635', name: 'Hemi Walker', dobISO: '1976-01-07', phone: '021 555 3560', ethnicityCode: '21111' },
+  { hiddenInternalId: PAT.tuilagi, nhi: 'JKL1188', name: 'Losa Tuilagi', dobISO: '1992-06-01', phone: '021 555 3676', ethnicityCode: '31111' },
+  { hiddenInternalId: PAT.nair, nhi: 'MYY54SL', name: 'Priya Nair', dobISO: '1970-03-14', phone: '03 555 3781', ethnicityCode: '43111' },
+  { hiddenInternalId: PAT.park, nhi: 'RUE29KR', name: 'Grace Park', dobISO: '2014-11-03', ethnicityCode: '42111' },
   // Booked from a PDF referral (catch-up Phase 40: the NHI is mandatory, so the record has one; the `provisional` key is historical).
-  { hiddenInternalId: PAT.provisional, nhi: 'ZAP3016', name: 'Noah Prescott', dobISO: '1983-05-17', phone: '021 555 3899', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT.provisional, nhi: 'ZAP3016', name: 'Noah Prescott', dobISO: '1983-09-20', phone: '021 555 3899', ethnicityCode: '11111' },
   // Scenario patients.
-  { hiddenInternalId: PAT.prentice, nhi: 'ZAC3326', name: 'Alan Prentice', dobISO: '1966-07-04', phone: '03 555 3902', ethnicityCode: '11111' },
-  { hiddenInternalId: PAT.holt, nhi: 'ZAF4434', name: 'Brian Holt', dobISO: '1971-12-18', phone: '021 555 4013', ethnicityCode: '61118' },
-  { hiddenInternalId: PAT.bennett, nhi: 'ZAG5541', name: 'Coral Bennett', dobISO: '1985-04-02', phone: '021 555 4127', ethnicityCode: '11111' },
-  { hiddenInternalId: PAT.webb, nhi: 'ZAH6659', name: 'Marcus Webb', dobISO: '1977-10-11', phone: '021 555 4238', ethnicityCode: '53111' },
-  { hiddenInternalId: PAT.mills, nhi: 'ZAJ7766', name: 'Gareth Mills', dobISO: '1969-03-25', phone: '03 555 4344', ethnicityCode: '11111' },
-  { hiddenInternalId: PAT.foster, nhi: 'ZAK8873', name: 'Diane Foster', dobISO: '1958-09-19', phone: '03 555 4459', ethnicityCode: '11111' },
-  { hiddenInternalId: PAT.riley, nhi: 'ZAL9972', name: 'Annette Riley', dobISO: '1990-01-06', phone: '021 555 4561', ethnicityCode: '52111' },
-  { hiddenInternalId: PAT.gray, nhi: 'ZAM1098', name: 'Fiona Gray', dobISO: '1963-06-13', phone: '03 555 4678', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT.prentice, nhi: 'ZAC3326', name: 'Alan Prentice', dobISO: '1966-11-07', phone: '03 555 3902', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT.holt, nhi: 'ZAF4434', name: 'Brian Holt', dobISO: '1972-04-22', phone: '021 555 4013', ethnicityCode: '61118' },
+  { hiddenInternalId: PAT.bennett, nhi: 'ZAG5541', name: 'Coral Bennett', dobISO: '1985-08-06', phone: '021 555 4127', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT.webb, nhi: 'ZAH6659', name: 'Marcus Webb', dobISO: '1978-02-14', phone: '021 555 4238', ethnicityCode: '53111' },
+  { hiddenInternalId: PAT.mills, nhi: 'ZAJ7766', name: 'Gareth Mills', dobISO: '1969-07-29', phone: '03 555 4344', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT.foster, nhi: 'ZAK8873', name: 'Diane Foster', dobISO: '1959-01-23', phone: '03 555 4459', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT.riley, nhi: 'ZAL9972', name: 'Annette Riley', dobISO: '1990-05-12', phone: '021 555 4561', ethnicityCode: '52111' },
+  { hiddenInternalId: PAT.gray, nhi: 'ZAM1098', name: 'Fiona Gray', dobISO: '1963-10-17', phone: '03 555 4678', ethnicityCode: '11111' },
   // The Aria capture Booking's patient (Phase 04; Souter, Mon 27 Jul).
-  { hiddenInternalId: PAT.sinclair, nhi: 'ZAN2219', name: 'Heather Sinclair', dobISO: '1968-02-21', phone: '021 555 4785', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT.sinclair, nhi: 'ZAN2219', name: 'Heather Sinclair', dobISO: '1968-06-26', phone: '021 555 4785', ethnicityCode: '11111' },
 ] as const
 
 // ---------------------------------------------------------------------------
@@ -156,7 +157,8 @@ export function buildPatients(seed: number): Patient[] {
       hiddenInternalId: `PT${String(PINNED.length + i + 1).padStart(4, '0')}`,
       nhi,
       name: `${first} ${last}`,
-      dobISO: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+      // Drawn as before the seed moved, then moved with it, so each patient's age on their Lists holds.
+      dobISO: addDaysISO(`${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`, SEED_MOVE_DAYS),
       ethnicityCode: ethnicity,
     }
     if (rng() < 0.7) patient.phone = `021 555 ${String(4700 + i).padStart(4, '0')}`
@@ -222,7 +224,7 @@ export const PAT_25A = {
 } as const
 
 const DISABLED_CONTRACT_PATIENTS: readonly Patient[] = [
-  { hiddenInternalId: PAT_25A.disabledContract, nhi: 'ZBM1009', name: 'Margaret Ellery', dobISO: '1956-03-17', phone: '03 555 7323', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_25A.disabledContract, nhi: 'ZBM1009', name: 'Margaret Ellery', dobISO: '1956-07-21', phone: '03 555 7323', ethnicityCode: '11111' },
 ]
 
 /**
@@ -235,50 +237,50 @@ export const PAT_39 = {
 } as const
 
 const COMBINED_SPLIT_PATIENTS: readonly Patient[] = [
-  { hiddenInternalId: PAT_39.combined, nhi: 'ZBN1004', name: 'Lorraine Petrie', dobISO: '1964-08-19', phone: '021 555 7434', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_39.combined, nhi: 'ZBN1004', name: 'Lorraine Petrie', dobISO: '1964-12-23', phone: '021 555 7434', ethnicityCode: '11111' },
 ]
 
 const PRICING_PATIENTS: readonly Patient[] = [
-  { hiddenInternalId: PAT_24.discount, nhi: 'ZBE1019', name: 'Natalie Brennan', dobISO: '1979-05-14', phone: '021 555 6656', ethnicityCode: '11111' },
-  { hiddenInternalId: PAT_24.priceCapture, nhi: 'ZBG1001', name: 'Tama Rewiri', dobISO: '1975-02-26', phone: '021 555 6878', ethnicityCode: '21111' },
-  { hiddenInternalId: PAT_24.rangeTyped, nhi: 'ZBJ1002', name: 'Paula Westerman', dobISO: '1966-12-08', phone: '021 555 7090', ethnicityCode: '11111' },
-  { hiddenInternalId: PAT_24.rangeAuthorised, nhi: 'ZBK1008', name: 'Judith Calloway', dobISO: '1959-04-22', phone: '021 555 7101', ethnicityCode: '11111' },
-  { hiddenInternalId: PAT_24.noCharge, nhi: 'ZBL1003', name: 'Ihaia Paewai', dobISO: '1984-09-11', phone: '021 555 7212', ethnicityCode: '21111' },
+  { hiddenInternalId: PAT_24.discount, nhi: 'ZBE1019', name: 'Natalie Brennan', dobISO: '1979-09-17', phone: '021 555 6656', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_24.priceCapture, nhi: 'ZBG1001', name: 'Tama Rewiri', dobISO: '1975-07-02', phone: '021 555 6878', ethnicityCode: '21111' },
+  { hiddenInternalId: PAT_24.rangeTyped, nhi: 'ZBJ1002', name: 'Paula Westerman', dobISO: '1967-04-13', phone: '021 555 7090', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_24.rangeAuthorised, nhi: 'ZBK1008', name: 'Judith Calloway', dobISO: '1959-08-26', phone: '021 555 7101', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_24.noCharge, nhi: 'ZBL1003', name: 'Ihaia Paewai', dobISO: '1985-01-15', phone: '021 555 7212', ethnicityCode: '21111' },
 ]
 
 const MULTI_PROCEDURE_PATIENTS: readonly Patient[] = [
-  { hiddenInternalId: PAT_23.multiProcedure, nhi: 'ZBD1005', name: 'Graeme Tullett', dobISO: '1951-09-02', phone: '03 555 6545', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_23.multiProcedure, nhi: 'ZBD1005', name: 'Graeme Tullett', dobISO: '1952-01-06', phone: '03 555 6545', ethnicityCode: '11111' },
 ]
 
 /** The two-payer Booking's patient: an adult whose two Procedures name two payers typed in separately. */
 const PROCEDURE_PAYER_PATIENTS: readonly Patient[] = [
-  { hiddenInternalId: PAT_22A.twoPayers, nhi: 'ZBC1000', name: 'Joyce Halvorsen', dobISO: '1944-07-30', phone: '03 555 6434', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_22A.twoPayers, nhi: 'ZBC1000', name: 'Joyce Halvorsen', dobISO: '1944-12-03', phone: '03 555 6434', ethnicityCode: '11111' },
 ]
 
 const REVIEW_FLAG_PATIENTS: readonly Patient[] = [
-  { hiddenInternalId: PAT_21A_REVIEW.contractChange, nhi: 'ZAX1009', name: 'Diane Fairweather', dobISO: '1953-02-11', phone: '021 555 5989', ethnicityCode: '11111' },
-  { hiddenInternalId: PAT_21A_REVIEW.typedPrice, nhi: 'ZAY1004', name: 'Owen Prendergast', dobISO: '1947-11-30', phone: '03 555 6090', ethnicityCode: '11111' },
-  { hiddenInternalId: PAT_21A_REVIEW.needsPrice, nhi: 'ZAZ1000', name: 'Hemi Walker', dobISO: '1970-06-18', phone: '021 555 6101', ethnicityCode: '21111' },
-  { hiddenInternalId: PAT_21A_REVIEW.otherSurgeon, nhi: 'ZBA1009', name: 'Rosalind Kerr', dobISO: '1961-09-05', phone: '021 555 6212', ethnicityCode: '11111' },
-  { hiddenInternalId: PAT_21A_REVIEW.movableFixed, nhi: 'ZBB1004', name: 'Fiona Lattimer', dobISO: '1968-01-24', phone: '021 555 6323', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_21A_REVIEW.contractChange, nhi: 'ZAX1009', name: 'Diane Fairweather', dobISO: '1953-06-17', phone: '021 555 5989', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_21A_REVIEW.typedPrice, nhi: 'ZAY1004', name: 'Owen Prendergast', dobISO: '1948-04-04', phone: '03 555 6090', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_21A_REVIEW.needsPrice, nhi: 'ZAZ1000', name: 'Hemi Walker', dobISO: '1970-10-22', phone: '021 555 6101', ethnicityCode: '21111' },
+  { hiddenInternalId: PAT_21A_REVIEW.otherSurgeon, nhi: 'ZBA1009', name: 'Rosalind Kerr', dobISO: '1962-01-09', phone: '021 555 6212', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_21A_REVIEW.movableFixed, nhi: 'ZBB1004', name: 'Fiona Lattimer', dobISO: '1968-05-29', phone: '021 555 6323', ethnicityCode: '11111' },
 ]
 
 const COMPLETION_PATIENTS: readonly Patient[] = [
-  { hiddenInternalId: PAT_21A.fixedPriceNoTimes, nhi: 'ZAV1008', name: 'Miriam Holloway', dobISO: '1966-04-21', phone: '021 555 5767', ethnicityCode: '11111' },
-  { hiddenInternalId: PAT_21A.needsPrice, nhi: 'ZAW1003', name: 'Graham Pulley', dobISO: '1958-09-03', phone: '021 555 5878', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_21A.fixedPriceNoTimes, nhi: 'ZAV1008', name: 'Miriam Holloway', dobISO: '1966-08-25', phone: '021 555 5767', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_21A.needsPrice, nhi: 'ZAW1003', name: 'Graham Pulley', dobISO: '1959-01-07', phone: '021 555 5878', ethnicityCode: '11111' },
 ]
 
 const PAYER_REVIEW_PATIENTS: readonly Patient[] = [
   // 15 on the review List's date: the child payer warning (US-11.2.4).
-  { hiddenInternalId: PAT_REVIEW.childPayer, nhi: 'ZAP3318', name: 'Ella Moana', dobISO: '2011-03-08', phone: '021 555 5101', ethnicityCode: '21111' },
+  { hiddenInternalId: PAT_REVIEW.childPayer, nhi: 'ZAP3318', name: 'Ella Moana', dobISO: '2011-07-12', phone: '021 555 5101', ethnicityCode: '21111' },
   // An adult with no email and no postal address on file: "Email or postal address needed" (US-11.2.3).
-  { hiddenInternalId: PAT_REVIEW.contactMissing, nhi: 'ZAQ4425', name: 'Kevin Doherty', dobISO: '1972-10-14', phone: '03 555 5212', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_REVIEW.contactMissing, nhi: 'ZAQ4425', name: 'Kevin Doherty', dobISO: '1973-02-17', phone: '03 555 5212', ethnicityCode: '11111' },
   // An adult whose payer is a family trust by post (no flag; Phase 22 posts its invoice).
-  { hiddenInternalId: PAT_REVIEW.familyTrust, nhi: 'ZAR5532', name: 'Robert Whitcombe', dobISO: '1949-05-02', phone: '03 555 5323', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_REVIEW.familyTrust, nhi: 'ZAR5532', name: 'Robert Whitcombe', dobISO: '1949-09-05', phone: '03 555 5323', ethnicityCode: '11111' },
   // Session 2's insurance cases (US-11.4.3) and the "Suggested" Booking (US-04.3.10).
-  { hiddenInternalId: PAT_REVIEW.approvalMissing, nhi: 'ZAS6640', name: 'Janet Ormsby', dobISO: '1981-08-27', phone: '021 555 5434', ethnicityCode: '11111' },
-  { hiddenInternalId: PAT_REVIEW.funderNoWarning, nhi: 'ZAT7757', name: 'Peter Tawhiri', dobISO: '1964-12-09', phone: '021 555 5545', ethnicityCode: '21111' },
-  { hiddenInternalId: PAT_REVIEW.suggestedTag, nhi: 'ZAU8864', name: 'Lucy Fairhall', dobISO: '1977-02-16', phone: '021 555 5656', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_REVIEW.approvalMissing, nhi: 'ZAS6640', name: 'Janet Ormsby', dobISO: '1981-12-31', phone: '021 555 5434', ethnicityCode: '11111' },
+  { hiddenInternalId: PAT_REVIEW.funderNoWarning, nhi: 'ZAT7757', name: 'Peter Tawhiri', dobISO: '1965-04-14', phone: '021 555 5545', ethnicityCode: '21111' },
+  { hiddenInternalId: PAT_REVIEW.suggestedTag, nhi: 'ZAU8864', name: 'Lucy Fairhall', dobISO: '1977-06-22', phone: '021 555 5656', ethnicityCode: '11111' },
 ]
 
 /** Patients left with no email or postal address on purpose. */

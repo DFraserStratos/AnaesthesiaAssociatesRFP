@@ -37,7 +37,7 @@ function marker(key: string): string {
 
 const FEE_SPLIT_BOOKING = marker('feeSplitBooking')
 const PREPAYMENT_BOOKING = marker('prepaymentBooking')
-const PRENTICE_PM = 'L-34821-2026-07-20-PM'
+const PRENTICE_PM = 'L-34821-2026-11-23-PM'
 const NIB: CounterpartyRef = { kind: 'insurer', id: INS.nib }
 const PARTY_GONE = 'a party in the split is no longer on this Booking'
 

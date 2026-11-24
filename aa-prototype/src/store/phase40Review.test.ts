@@ -27,8 +27,8 @@ import { HOSPITAL_DOWNLOAD_SAMPLES } from '../domain/intake/hospitalDownloads'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
-const SOUTER_FORTE = 'L-34821-2026-07-27-AM'
-const MITCHELL = { nhi: 'CQY9304', name: 'Sarah Mitchell', dobISO: '1988-04-12' }
+const SOUTER_FORTE = 'L-34821-2026-11-30-AM'
+const MITCHELL = { nhi: 'CQY9304', name: 'Sarah Mitchell', dobISO: '1988-08-16' }
 
 describe('bug 1: the matching preview reads the matched Booking', () => {
   it("leaves out the matched Booking's own invoices, as the warning does", () => {
@@ -155,7 +155,7 @@ describe('quality 7 and 9: one patientByNhi; createBooking reports the patient o
     const reused = createBooking(api, OFFICE, SOUTER_FORTE, { patient: { ...MITCHELL, phone: '021 999 8888' }, sourceText: { text: 'x', source: 'phone' } })
     expect(reused.ok && reused.value.patientOutcome).toBe('reused')
     expect(reused.ok && reused.value.pendingDifferences?.map((d) => d.field)).toEqual(['phone'])
-    const created = createBooking(api, OFFICE, SOUTER_FORTE, { patient: { nhi: 'ZQE4017', name: 'Tomasz Nowak', dobISO: '1970-01-01' }, sourceText: { text: 'x', source: 'phone' } })
+    const created = createBooking(api, OFFICE, SOUTER_FORTE, { patient: { nhi: 'ZQE4017', name: 'Tomasz Nowak', dobISO: '1970-05-07' }, sourceText: { text: 'x', source: 'phone' } })
     expect(created.ok && created.value.patientOutcome).toBe('created')
   })
 })

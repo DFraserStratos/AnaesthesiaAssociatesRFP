@@ -95,9 +95,9 @@ describe('"Another person" on a split (US-08.2.3, DM-28)', () => {
     const flags = reviewFlagsForBooking(reviewInputFor(s, s.schedule.bookings[TWO]!)!)
     expect(flags.some((f) => f.shot === 'review-payer-contact' && f.procedureId === proc.id)).toBe(true)
     // A child patient: only a share billed to the patient warns.
-    const child = { dobISO: '2015-01-01' }
-    expect(childPayerOn(proc, child, contract, '2026-07-17')).toBe(false)
-    expect(childPayerOn({ ...proc, split: { shares: [{ party: { kind: 'patient', id: 'x' }, basis: { kind: 'rest' } }] } }, child, contract, '2026-07-17')).toBe(true)
+    const child = { dobISO: '2015-05-07' }
+    expect(childPayerOn(proc, child, contract, '2026-11-20')).toBe(false)
+    expect(childPayerOn({ ...proc, split: { shares: [{ party: { kind: 'patient', id: 'x' }, basis: { kind: 'rest' } }] } }, child, contract, '2026-11-20')).toBe(true)
   })
 })
 

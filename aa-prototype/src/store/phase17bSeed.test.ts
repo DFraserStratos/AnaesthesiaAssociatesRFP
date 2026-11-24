@@ -111,9 +111,18 @@ describe('catch-up Phase 17b seed', () => {
   it('keeps groups, pairings, tiers and every List\'s surgeon', () => {
     expect(seed.masters.surgeonGroups).toEqual(baseline.surgeonGroups)
     expect(seed.officePrivate).toEqual(baseline.officePrivate)
-    // Recurring Lists skip public holidays (24 Nov 2026): the ten Labour Day and Anniversary Day Lists are no longer made.
-    const gone = Object.keys(baseline.listSurgeons).filter((id) => /-(2026-10-26|2026-11-13)-/.test(id) && seed.schedule.lists[id] === undefined)
-    expect(gone).toHaveLength(10)
+    // Recurring Lists skip public holidays (24 Nov 2026) and the hospitals' Christmas shutdowns, and the
+    // horizon ends Wed 24 Mar 2027 (the baseline's ran three days further): only those Lists are no longer made.
+    const closedDates = new Set([
+      ...Object.values(seed.masters.publicHolidays).map((p) => p.dateISO),
+      ...Object.values(seed.masters.holidays).filter((h) => h.shutdown === true).map((h) => h.dateISO),
+    ])
+    const gone = Object.keys(baseline.listSurgeons).filter((id) => seed.schedule.lists[id] === undefined)
+    for (const id of gone) {
+      const dateISO = /\d{4}-\d\d-\d\d/.exec(id)?.[0]
+      expect(dateISO !== undefined && (dateISO > '2027-03-24' || dateISO < '2026-11-10' || closedDates.has(dateISO)), id).toBe(true)
+    }
+    expect(gone.length).toBeGreaterThan(10)
     const expected = Object.fromEntries(Object.entries(baseline.listSurgeons).filter(([id]) => !gone.includes(id)))
     expect(Object.fromEntries(Object.values(seed.schedule.lists).map((l) => [l.id, l.surgeonId ?? null]))).toEqual(expected)
   })

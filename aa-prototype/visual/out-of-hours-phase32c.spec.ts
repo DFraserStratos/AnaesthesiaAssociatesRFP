@@ -16,9 +16,9 @@ test.beforeEach(async ({ context }) => {
 const SOUTER = '34821'
 const SHARMA = '41267'
 const CHEN = '45178'
-const SOUTER_PM = 'L-34821-2026-07-21-PM'
-const SOUTER_OOH = 'S-34821-2026-07-21-OOH'
-const DAY = '/admin/day/2026-07-21'
+const SOUTER_PM = 'L-34821-2026-11-24-PM'
+const SOUTER_OOH = 'S-34821-2026-11-24-OOH'
+const DAY = '/admin/day/2026-11-24'
 const PWA = process.env['PWA_URL'] ?? `http://localhost:${process.env['AA_PWA_PORT'] ?? 5174}`
 
 async function fresh(page: Page, path: string): Promise<void> {
@@ -67,7 +67,7 @@ async function closeDrawer(page: Page) {
   if (await close.count()) await close.first().click()
 }
 
-test('1 · Reset: Admin Day Tue 21 Jul as before (ruler to 18:00, no evening block)', async ({ page }) => {
+test('1 · Reset: Admin Day Tue 24 Nov as before (ruler to 18:00, no evening block)', async ({ page }) => {
   await fresh(page, DAY)
   expect((await rulerLabels(page)).at(-1)).toBe('18:00')
   await expect(page.locator('[data-shot="daygrid-evening-block"]')).toHaveCount(0)
@@ -179,7 +179,7 @@ test('4 · Mobile as Dr Souter: the List after PM, moon and 18:00; add a Booking
   await page.getByText('Add a booking', { exact: false }).first().click()
   await page.getByLabel('NHI').fill('ZZZ0016')
   await page.getByLabel('Name').fill('Evening Patient')
-  await page.getByLabel('Date of birth').fill('1980-02-02')
+  await page.getByLabel('Date of birth').fill('1980-06-07')
   await page.getByLabel('Procedure description').fill('Appendicectomy, laparoscopic')
   await page.getByRole('button', { name: 'Choose an RVG code' }).click()
   await page.getByPlaceholder('Search RVG code or description').fill('appendicectomy')
@@ -234,7 +234,7 @@ test('5 · Web as Dr Souter: Lists, week strip and the availability grid show th
   await page.waitForLoadState('networkidle')
   await expect(page.locator(`[data-slot-id="${SOUTER_OOH}"]`)).toContainText('Southern Cross')
   await page.screenshot({ path: 'visual/shots/p32c-13-web-dashboard.png', fullPage: true })
-  await page.goto('/web/availability?date=2026-07-21')
+  await page.goto('/web/availability?date=2026-11-24')
   await page.waitForLoadState('networkidle')
   await expect(page.getByText('Out-of-hours', { exact: true }).first()).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p32c-14-web-availability.png', fullPage: true })
@@ -244,11 +244,11 @@ test('6 · Review authorises it and the billing run bills it; the audit shows th
   await stageSouterEveningList(page)
   const id = (await page.locator(`[data-day-grid-row="${SOUTER}"] [data-shot="daygrid-evening-block"]`).getAttribute('data-list-id')) ?? ''
   // The office moves Dr Souter's completed Mon 20 PM Booking onto it, she submits, the office authorises.
-  await page.goto('/admin/day/2026-07-20')
+  await page.goto('/admin/day/2026-11-23')
   await page.waitForLoadState('networkidle')
-  await page.locator('button[data-list-id="L-34821-2026-07-20-PM"]').click()
+  await page.locator('button[data-list-id="L-34821-2026-11-23-PM"]').click()
   await page.getByTestId('admin-list-drawer').getByRole('button', { name: 'Move' }).first().click()
-  await page.locator('input[type="date"]').last().fill('2026-07-21')
+  await page.locator('input[type="date"]').last().fill('2026-11-24')
   await page.locator('button', { hasText: 'Souter · Out-of-hours' }).first().click()
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto(`/mobile/lists/${id}`)
@@ -290,7 +290,7 @@ test('7 · Availability: the office finder offers a free evening session; she ma
   await expect(page.locator('[data-shot="availability-mine-ooh"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p32c-18-mobile-availability.png' })
   await page.goto('/mobile/availability')
-  await page.locator('button[data-date="2026-07-21"]').click()
+  await page.locator('button[data-date="2026-11-24"]').click()
   await page.locator('[data-shot="availability-change"]').click()
   const editor = page.locator('[data-shot="mobile-availability-sheet"]')
   await editor.locator(`[data-slot-id="${SOUTER_OOH}"]`).getByRole('button', { name: 'Change', exact: true }).click()

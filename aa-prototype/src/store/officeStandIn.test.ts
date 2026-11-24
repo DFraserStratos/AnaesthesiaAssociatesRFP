@@ -90,7 +90,7 @@ describe('assignDraftListAsSimulatedOffice (catch-up Phase 31; the PWA stand-in 
     expect(res.ok).toBe(true)
     if (!res.ok) return
     expect(res.value).toMatchObject({ listId: SEED_DRAFT_LIST_IDS.forte, logged: false, bookings: 2 })
-    expect(res.value.slot).toMatchObject({ dateISO: '2026-07-22', session: 'PM' })
+    expect(res.value.slot).toMatchObject({ dateISO: '2026-11-25', session: 'PM' })
     expect(api.getState().schedule.lists[SEED_DRAFT_LIST_IDS.forte]).toMatchObject({ state: 'ACTIVE', anaesthetistId: ANAE.souter })
     expect(api.getState().audit.find((a) => a.action === 'draftList.assign')).toMatchObject({ who: OFFICE_SIMULATION_ACTOR.who })
   })
@@ -100,7 +100,7 @@ describe('assignDraftListAsSimulatedOffice (catch-up Phase 31; the PWA stand-in 
     expect(assignNextFreeSlotAsSimulatedOffice(api, ANAE.souter).ok).toBe(true)
     const res = assignDraftListAsSimulatedOffice(api, ANAE.souter)
     expect(res.ok).toBe(true)
-    if (res.ok) expect(res.value.slot.dateISO > '2026-07-22' || res.value.slot.session === 'AM').toBe(true)
+    if (res.ok) expect(res.value.slot.dateISO > '2026-11-25' || res.value.slot.session === 'AM').toBe(true)
     const api2 = createAppStore()
     expect(assignDraftListAsSimulatedOffice(api2, ANAE.souter).ok).toBe(true)
     expect(assignNextFreeSlotAsSimulatedOffice(api2, ANAE.souter).ok).toBe(true)

@@ -45,8 +45,8 @@ import { projectedListId } from '../domain/slots'
 import type { BookingLedgerPair } from '../domain/types'
 
 const OFFICE: Actor = TEST_OFFICE
-const AM20 = projectedListId(ANAE.souter, '2026-07-20', 'AM')
-const PM20 = projectedListId(ANAE.souter, '2026-07-20', 'PM')
+const AM20 = projectedListId(ANAE.souter, '2026-11-23', 'AM')
+const PM20 = projectedListId(ANAE.souter, '2026-11-23', 'PM')
 
 function wired<T>(api: BoundAppStore, body: () => T): T {
   const unwire = wireBillingRun(api)
@@ -224,7 +224,7 @@ describe('pairs are made with the invoice (work item 4)', () => {
     const souterId = api.getState().schedule.lists[api.getState().schedule.bookings[riley]!.listId]!.anaesthetistId
     const target = Object.values(api.getState().schedule.lists)
       .filter((l) => l.anaesthetistId !== undefined && l.anaesthetistId !== souterId && l.state === 'ACTIVE')
-      .sort((a, b) => Number(b.dateISO === '2026-07-24') - Number(a.dateISO === '2026-07-24') || a.id.localeCompare(b.id))
+      .sort((a, b) => Number(b.dateISO === '2026-11-27') - Number(a.dateISO === '2026-11-27') || a.id.localeCompare(b.id))
       .find((l) => reassignBooking(api, OFFICE, riley, l.id).ok)
     expect(target).toBeDefined()
     expect(JSON.stringify(pairsForBooking(api.getState(), riley))).toBe(before)
@@ -286,7 +286,7 @@ describe('money in is recorded in the ledger first (work item 6)', () => {
 
   it('a payment on an ACCREC no pair links is held as one unmatched receipt; a replay adds none', () => {
     const api = createAppStore()
-    api.setState((s) => ({ xero: { ...s.xero, accRecs: { ...s.xero.accRecs, XRORPHAN: { id: 'XRORPHAN', kind: 'procedure', invoiceId: 'NONE', contactId: 'X', invoiceNumber: 'AA-2026-9999', reference: 'NONE', issuedAtISO: '2026-07-21T09:00:00', amountDue: 50, amountReceived: 0, status: 'awaitingPayment' } } } }))
+    api.setState((s) => ({ xero: { ...s.xero, accRecs: { ...s.xero.accRecs, XRORPHAN: { id: 'XRORPHAN', kind: 'procedure', invoiceId: 'NONE', contactId: 'X', invoiceNumber: 'AA-2026-9999', reference: 'NONE', issuedAtISO: '2026-11-24T09:00:00', amountDue: 50, amountReceived: 0, status: 'awaitingPayment' } } } }))
     const out = receivePayment(api, { accRecId: 'XRORPHAN', amount: 50, idempotencyKey: 'ORPH', source: 'webhook' })
     expect(out.ok && out.value.unmatchedReceiptId).toBeTruthy()
     receivePayment(api, { accRecId: 'XRORPHAN', amount: 50, idempotencyKey: 'ORPH', source: 'webhook' })
@@ -338,16 +338,16 @@ describe('money in is recorded in the ledger first (work item 6)', () => {
   it('AA fee payments never reach the GST report, payment history or the BCTI count', () => {
     const api = createAppStore()
     seedMonthOfBctis(api, DEMO_TRIGGER_ACTOR, ANAE.rutherford)
-    const gstBefore = gstReportFor(api.getState(), ANAE.rutherford, '2026-07', DEMO_TODAY)
+    const gstBefore = gstReportFor(api.getState(), ANAE.rutherford, '2026-11', DEMO_TODAY)
     const historyBefore = paymentHistoryFor(api.getState(), ANAE.rutherford)
     const bctisBefore = bctiRecords(api.getState())
-    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
-    const fee = Object.values(api.getState().billing.aaFeeInvoices).find((f) => f.anaesthetistId === ANAE.rutherford && f.monthISO === '2026-07')!
+    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-11' })
+    const fee = Object.values(api.getState().billing.aaFeeInvoices).find((f) => f.anaesthetistId === ANAE.rutherford && f.monthISO === '2026-11')!
     expect(fee.subtotal).toBe(700)
     expect(api.getState().billing.ledger[fee.ledgerPairId]?.receivable.xeroAccRecId).toBeDefined()
     expect(recordAaFeePayment(api, { aaFeeInvoiceId: fee.id, idempotencyKey: 'FEE' }).ok).toBe(true)
     expect(api.getState().billing.ledger[fee.ledgerPairId]?.receivable.receivedAmount).toBe(fee.total)
-    expect(gstReportFor(api.getState(), ANAE.rutherford, '2026-07', DEMO_TODAY)).toEqual(gstBefore)
+    expect(gstReportFor(api.getState(), ANAE.rutherford, '2026-11', DEMO_TODAY)).toEqual(gstBefore)
     expect(paymentHistoryFor(api.getState(), ANAE.rutherford)).toEqual(historyBefore)
     expect(bctiRecords(api.getState())).toEqual(bctisBefore)
     inBalance(api.getState())

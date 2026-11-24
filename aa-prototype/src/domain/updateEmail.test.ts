@@ -36,8 +36,8 @@ const LOOKUPS: PickLookups = {
     P2: { id: 'P2', bookingId: 'BK1', isPrimary: false },
   },
   lists: {
-    L1: { id: 'L1', dateISO: '2026-07-21', session: 'AM', hospitalId: 'H1', surgeonId: 'S1', anaesthetistId: 'A3' },
-    L2: { id: 'L2', dateISO: '2026-07-22', session: 'PM', hospitalId: 'H2', surgeonId: 'S1', anaesthetistId: 'A2' },
+    L1: { id: 'L1', dateISO: '2026-11-24', session: 'AM', hospitalId: 'H1', surgeonId: 'S1', anaesthetistId: 'A3' },
+    L2: { id: 'L2', dateISO: '2026-11-25', session: 'PM', hospitalId: 'H2', surgeonId: 'S1', anaesthetistId: 'A2' },
   },
   rvgGroups: { RG1: { description: 'Knee arthroscopy' }, RG2: { description: 'Total knee replacement' } },
   anaesthetists: { A1: { name: 'Dr James Rutherford' }, A2: { name: 'Dr Priya Sharma' }, A3: { name: 'Dr Melanie Souter' } },
@@ -48,12 +48,12 @@ const LOOKUPS: PickLookups = {
 let n = 0
 function entry(partial: Partial<AuditEntry> & Pick<AuditEntry, 'entityType' | 'entityId' | 'action'>): AuditEntry {
   n += 1
-  return { id: `A${String(n).padStart(4, '0')}`, who: 'Kirsty W.', role: 'office', source: 'office', atISO: `2026-07-21T09:${String(n).padStart(2, '0')}:00`, ...partial }
+  return { id: `A${String(n).padStart(4, '0')}`, who: 'Kirsty W.', role: 'office', source: 'office', atISO: `2026-11-24T09:${String(n).padStart(2, '0')}:00`, ...partial }
 }
 
 /** A save change set: its entries, then the `booking.save` header last. */
 function save(cs: string, bookingId: string, entries: Omit<AuditEntry, 'id' | 'who' | 'role' | 'source' | 'atISO'>[]): AuditEntry[] {
-  const at = `2026-07-21T10:${String((n += 1)).padStart(2, '0')}:00`
+  const at = `2026-11-24T10:${String((n += 1)).padStart(2, '0')}:00`
   const out = entries.map((e, i) => ({ ...entry({ ...e }), atISO: at, changeSetId: cs, ...(i === 0 ? { changeSetKind: 'save' as const } : {}) }))
   out.push({ ...entry({ entityType: 'booking', entityId: bookingId, action: 'booking.save', after: { kind: 'save', fields: [] } }), atISO: at, changeSetId: cs })
   return out
@@ -65,7 +65,7 @@ function byKey(rows: PickableChange[], key: string): PickableChange {
   return row
 }
 
-const CONTEXT: UpdateEmailContext = { patient: 'Aroha Ngata', date: 'Tue 21 Jul', session: 'AM', hospital: "St George's", surgeon: 'Mr T. Hale', anaesthetist: 'Dr Melanie Souter', previousAnaesthetist: '', bookingCount: 4 }
+const CONTEXT: UpdateEmailContext = { patient: 'Aroha Ngata', date: 'Tue 24 Nov', session: 'AM', hospital: "St George's", surgeon: 'Mr T. Hale', anaesthetist: 'Dr Melanie Souter', previousAnaesthetist: '', bookingCount: 4 }
 const TEMPLATE = SEED_EMAIL_TEMPLATES.find((t) => t.kind === 'bookingChange')!
 
 describe('pickableChanges', () => {
@@ -79,7 +79,7 @@ describe('pickableChanges', () => {
         { entityType: 'procedure', entityId: 'P1', action: 'procedure.price', before: { bookingId: 'BK1', enteredPrice: undefined }, after: { bookingId: 'BK1', enteredPrice: 1200 } },
         { entityType: 'procedure', entityId: 'P1', action: 'procedure.invoiceDescription.set', before: { bookingId: 'BK1', invoiceDescription: 'Knee' }, after: { bookingId: 'BK1', invoiceDescription: 'Knee scope' } },
         { entityType: 'procedure', entityId: 'P1', action: 'procedure.procedureText.replace', before: { bookingId: 'BK1', procedureText: 'knee scope' }, after: { bookingId: 'BK1', procedureText: 'L knee scope' } },
-        { entityType: 'patient', entityId: 'PT1', action: 'patient.update', before: { nhi: 'ZZZ0016', dobISO: '1970-01-01' }, after: { nhi: 'ZZZ0024', dobISO: '1971-01-01' } },
+        { entityType: 'patient', entityId: 'PT1', action: 'patient.update', before: { nhi: 'ZZZ0016', dobISO: '1970-05-07' }, after: { nhi: 'ZZZ0024', dobISO: '1971-05-07' } },
       ]),
       ...save('CS0002', 'BK1', [
         { entityType: 'procedure', entityId: 'P1', action: 'procedure.contract', before: { bookingId: 'BK1', governingContractId: 'CT-B' }, after: { bookingId: 'BK1', governingContractId: 'CT-C' } },
@@ -113,7 +113,7 @@ describe('pickableChanges', () => {
 
   it('coalesces ungrouped edits by one person in one minute into one edit row', () => {
     n = 0
-    const at = '2026-07-21T11:00:00'
+    const at = '2026-11-24T11:00:00'
     const audit = [
       { ...entry({ entityType: 'booking', entityId: 'BK1', action: 'booking.update', before: { scheduledTime: '09:00' }, after: { scheduledTime: '09:15' } }), who: 'Dr Melanie Souter', role: 'anaesthetist' as const, source: 'anaesthetist' as const, atISO: at },
       { ...entry({ entityType: 'booking', entityId: 'BK1', action: 'booking.update', before: { scheduledTime: '09:15' }, after: { scheduledTime: '09:45' } }), who: 'Dr Melanie Souter', role: 'anaesthetist' as const, source: 'anaesthetist' as const, atISO: at },
@@ -210,7 +210,7 @@ describe('pickableChanges', () => {
     const rows = pickableChanges(audit, { kind: 'booking', bookingId: 'BK1' }, LOOKUPS)
     expect(rows[0]!.kind).toBe('move')
     expect(rows[0]!.lines.map(emailLineText)).toEqual([
-      '- List: was Tue 21 Jul AM, now Wed 22 Jul PM',
+      '- List: was Tue 24 Nov AM, now Wed 25 Nov PM',
       '- Anaesthetist: was Dr Melanie Souter, now Dr Priya Sharma',
       "- Hospital: was St George's, now Forte Health",
     ])
@@ -333,7 +333,7 @@ describe('buildUpdateEmail', () => {
 
   it('renders plain text with CRLF and the change lines', () => {
     const email = buildUpdateEmail({ template: TEMPLATE, context: CONTEXT, lines: [{ key: 'time', label: 'Time', before: '09:00', after: '09:30' }], to: 'office@x.example', signature: 'Kirsty W.' })
-    expect(email.subject).toBe('Booking update: Aroha Ngata, Tue 21 Jul AM')
+    expect(email.subject).toBe('Booking update: Aroha Ngata, Tue 24 Nov AM')
     expect(email.body).toContain('- Time: was 09:00, now 09:30')
     expect(email.body).toContain('\r\n')
     expect(email.body.replace(/\r\n/g, '')).not.toContain('\n')
@@ -407,8 +407,8 @@ describe('buildUpdateEmail', () => {
     expect(context.patient).toBeUndefined()
     const template = SEED_EMAIL_TEMPLATES.find((t) => t.kind === 'anaesthetistChange')!
     const email = buildUpdateEmail({ template, context, lines: [cover], to: 'bookings@stgeorges.example', signature: 'Kirsty W.' })
-    expect(email.body).toContain('Dr James Rutherford is no longer the anaesthetist for the Tue 21 Jul AM List at St George\'s. Dr Priya Sharma will be the anaesthetist.')
+    expect(email.body).toContain('Dr James Rutherford is no longer the anaesthetist for the Tue 24 Nov AM List at St George\'s. Dr Priya Sharma will be the anaesthetist.')
     expect(email.body).toContain('3 booking')
-    expect(email.subject).toBe("Change of anaesthetist: Tue 21 Jul AM list at St George's")
+    expect(email.subject).toBe("Change of anaesthetist: Tue 24 Nov AM list at St George's")
   })
 })

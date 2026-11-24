@@ -36,7 +36,7 @@ import { openCycle, openCycleDraft, paymentCycleSettingsOf, weekRunInProgress } 
 const NS = 'PP'
 const IDS = historyIds(NS)
 export const PAYMENT_WEEK_BCTIS = 19
-const DAYS = ['2026-06-29', '2026-06-30'] as const
+const DAYS = ['2026-11-02', '2026-11-03'] as const
 const SESSIONS = ['AM', 'PM'] as const
 const PER_LIST = 5
 const LIST_PLAN = [
@@ -47,7 +47,7 @@ const LIST_PLAN = [
 ] as const
 const TOTALS = [420, 515.5, 690, 845, 310.25, 980, 560, 735.8, 152.38] as const
 /** The credited account: paid 13 Jul, paid out 15 Jul (Week 29), credited in full. */
-const CREDITED = { serviceISO: '2026-06-26', total: 365.7, paidAtISO: '2026-07-13T10:00:00', disbursedAtISO: '2026-07-15T09:00:00' } as const
+const CREDITED = { serviceISO: '2026-10-30', total: 365.7, paidAtISO: '2026-11-16T10:00:00', disbursedAtISO: '2026-11-18T09:00:00' } as const
 
 export const PAYMENT_WEEK_CHOICES = [
   { id: 'bctis', label: `${PAYMENT_WEEK_BCTIS} BCTIs` },

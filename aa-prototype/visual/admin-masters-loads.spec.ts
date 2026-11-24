@@ -50,7 +50,7 @@ test('Public holidays: the master calendar, and Labour Day on the hospital calen
   const calendar = page.locator('[data-shot="hospital-calendar"]')
   await calendar.getByLabel('Hospital').selectOption({ label: "St George's" })
   for (let i = 0; i < 3; i++) await calendar.getByRole('button', { name: 'Next month' }).click()
-  await expect(calendar).toContainText('October 2026')
+  await expect(calendar).toContainText('February 2027')
   const labour = calendar.locator('button[data-calendar-day="2026-10-26"]')
   await expect(labour).toContainText('Labour Day')
   await expect(labour).toContainText('Public holiday')
@@ -86,7 +86,7 @@ test('Seed load: a staged hospitals load, its result panel, and the loaded state
 
   await commit.click()
   await expect(panel).toHaveAttribute('data-load-status', 'loaded')
-  await expect(panel.locator('[data-shot="master-load-loaded"]')).toContainText('Loaded 2 rows on 21 Jul 2026 · 4 rejected rows were not loaded')
+  await expect(panel.locator('[data-shot="master-load-loaded"]')).toContainText('Loaded 2 rows on 24 Nov 2026 · 4 rejected rows were not loaded')
   await expect(panel.getByRole('button', { name: /Open the record from row/ })).toHaveCount(2)
   await page.screenshot({ path: 'visual/shots/p42-05-hospitals-loaded.png', fullPage: true })
   await cleanCopy(page, 'Seed load, loaded')

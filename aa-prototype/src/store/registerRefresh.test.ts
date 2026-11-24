@@ -30,13 +30,13 @@ describe('refreshPatientFromRegister (catch-up Phase 40a)', () => {
     const fiona = api.getState().masters.patients[PAT.gray]!
     expect(fiona.name).toBe('Fiona Tamihana')
     expect(fiona.postalAddress).toEqual(addressBefore)
-    expect(fiona.registerRefreshedAtISO).toBe('2026-07-21T08:00:00')
+    expect(fiona.registerRefreshedAtISO).toBe('2026-11-24T08:00:00')
 
     const entry = api.getState().audit.at(-1)!
     expect(entry.action).toBe('patient.registerRefreshed')
     expect(entry.entityId).toBe(PAT.gray)
     expect(entry.before).toEqual({ name: 'Fiona Gray' })
-    expect(entry.after).toEqual({ name: 'Fiona Tamihana', registerRefreshedAtISO: '2026-07-21T08:00:00', from: 'NHI register' })
+    expect(entry.after).toEqual({ name: 'Fiona Tamihana', registerRefreshedAtISO: '2026-11-24T08:00:00', from: 'NHI register' })
   })
 
   it('Use register for both takes the Halswell address too', () => {
@@ -52,7 +52,7 @@ describe('refreshPatientFromRegister (catch-up Phase 40a)', () => {
     const after = api.getState().masters.patients[PAT.gray]!
     const { registerRefreshedAtISO, ...rest } = after
     expect(rest).toEqual(before)
-    expect(registerRefreshedAtISO).toBe('2026-07-21T08:00:00')
+    expect(registerRefreshedAtISO).toBe('2026-11-24T08:00:00')
     expect(api.getState().audit.at(-1)!.after).toMatchObject({ changes: 'no changes' })
   })
 
@@ -60,10 +60,10 @@ describe('refreshPatientFromRegister (catch-up Phase 40a)', () => {
     const api = createAppStore()
     refreshPatientFromRegister(api, OFFICE_ACTOR, PAT.gray, { name: 'useRegister', address: 'useRegister' })
     const second = registerRefreshPreview(api.getState(), PAT.gray)
-    expect(second).toMatchObject({ kind: 'ready', differences: [], enrichments: [], lastRefreshedAtISO: '2026-07-21T08:00:00' })
+    expect(second).toMatchObject({ kind: 'ready', differences: [], enrichments: [], lastRefreshedAtISO: '2026-11-24T08:00:00' })
     advanceClockMinutes(api, 90)
     refreshPatientFromRegister(api, OFFICE_ACTOR, PAT.gray, {})
-    expect(api.getState().masters.patients[PAT.gray]!.registerRefreshedAtISO).toBe('2026-07-21T09:30:00')
+    expect(api.getState().masters.patients[PAT.gray]!.registerRefreshedAtISO).toBe('2026-11-24T09:30:00')
     expect(api.getState().audit.at(-1)!.after).toMatchObject({ changes: 'no changes' })
   })
 

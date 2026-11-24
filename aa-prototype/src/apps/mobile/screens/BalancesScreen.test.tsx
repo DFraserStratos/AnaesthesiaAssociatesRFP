@@ -43,7 +43,7 @@ describe('mobile Balances (catch-up Phase 38; US-12.2.1, US-12.2.2)', () => {
     }
     render(<BalancesScreen initials="MS" anaesthetistId={ANAE.souter} />)
     fireEvent.click(screen.getByText('GST this month'))
-    expect(screen.getByText('July 2026 · paid to you')).toBeInTheDocument()
+    expect(screen.getByText('November 2026 · paid to you')).toBeInTheDocument()
     expect(screen.getByText('Open the web app for past months, download, print or email.')).toBeInTheDocument()
     const before = screen.queryAllByTestId(/^balances-gst-row-/).length
     const pair = xeroInvoicePairViews(useAppStore.getState()).find((p) => p.accRec.invoiceNumber === 'AA-2026-0005')!

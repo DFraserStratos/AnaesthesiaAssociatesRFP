@@ -39,8 +39,8 @@ interface SeedFeeRow {
 }
 
 const SOUTER_FEE_HISTORY: SeedFeeRow[] = [
-  { n: 'H01', monthISO: '2026-05', raisedAtISO: '2026-06-01T09:00:00', paidAtISO: '2026-06-05T10:00:00' },
-  { n: 'H02', monthISO: '2026-06', raisedAtISO: '2026-07-01T09:00:00' },
+  { n: 'H01', monthISO: '2026-09', raisedAtISO: '2026-10-05T09:00:00', paidAtISO: '2026-10-09T10:00:00' },
+  { n: 'H02', monthISO: '2026-10', raisedAtISO: '2026-11-04T09:00:00' },
 ]
 
 export interface SeedAaFeeHistory {

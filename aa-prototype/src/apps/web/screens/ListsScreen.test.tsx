@@ -30,7 +30,7 @@ function renderAt(entry: string) {
             path="/web"
             element={
               <>
-                <Outlet context={{ actor: SOUTER, anaesthetistId: ANAE.souter, personaName: 'Dr Melanie Souter', todayISO: '2026-07-21' }} />
+                <Outlet context={{ actor: SOUTER, anaesthetistId: ANAE.souter, personaName: 'Dr Melanie Souter', todayISO: '2026-11-24' }} />
                 <Where />
               </>
             }
@@ -125,16 +125,16 @@ describe('the web Lists main view (US-07.4.2, US-03.1.4)', () => {
 describe('the week strip marks submitted blocks (US-07.2.1)', () => {
   beforeEach(() => useAppStore.setState(freshAppState()))
 
-  it('labels Mon 20 Jul blocks Done · unbilled; an authorised List leaves the strip', () => {
+  it('labels Mon 23 Nov blocks Done · unbilled; an authorised List leaves the strip', () => {
     const { rerender } = render(
-      <WeekStrip anaesthetistId={ANAE.souter} weekAnchorISO="2026-07-20" todayISO="2026-07-21" onPrevWeek={vi.fn()} onNextWeek={vi.fn()} onOpenList={vi.fn()} />,
+      <WeekStrip anaesthetistId={ANAE.souter} weekAnchorISO="2026-11-23" todayISO="2026-11-24" onPrevWeek={vi.fn()} onNextWeek={vi.fn()} onOpenList={vi.fn()} />,
     )
     const am = screen.getByRole('button', { name: /Forte Health.*Done · unbilled/ })
     expect(am).toHaveAttribute('data-progress', 'submitted')
     const s = useAppStore.getState()
     const pm = s.schedule.lists[SEED_LIST_IDS.souterMon20Pm]!
     useAppStore.setState({ schedule: { ...s.schedule, lists: { ...s.schedule.lists, [pm.id]: { ...pm, state: 'AUTHORISED' } as typeof pm } } })
-    rerender(<WeekStrip anaesthetistId={ANAE.souter} weekAnchorISO="2026-07-20" todayISO="2026-07-21" onPrevWeek={vi.fn()} onNextWeek={vi.fn()} onOpenList={vi.fn()} />)
+    rerender(<WeekStrip anaesthetistId={ANAE.souter} weekAnchorISO="2026-11-23" todayISO="2026-11-24" onPrevWeek={vi.fn()} onNextWeek={vi.fn()} onOpenList={vi.fn()} />)
     expect(document.querySelector(`[data-slot-id="${pm.slotId}"]`)).toBeNull()
   })
   it('draws a hatched (Unavailable) session hatched, through blockFill (UI unification U6, bug 7)', () => {
@@ -142,10 +142,10 @@ describe('the week strip marks submitted blocks (US-07.2.1)', () => {
     const hatched = Object.values(s.masters.slotStatuses).find((st) => st.treatment === 'hatched')!
     const listSlots = new Set(Object.values(s.schedule.lists).map((l) => l.slotId))
     const slot = Object.values(s.schedule.slots).find(
-      (sl) => sl.anaesthetistId === ANAE.souter && sl.dateISO >= '2026-07-20' && sl.dateISO <= '2026-07-26' && sl.session !== 'OOH' && !listSlots.has(sl.id),
+      (sl) => sl.anaesthetistId === ANAE.souter && sl.dateISO >= '2026-11-23' && sl.dateISO <= '2026-11-29' && sl.session !== 'OOH' && !listSlots.has(sl.id),
     )!
     useAppStore.setState({ schedule: { ...s.schedule, slots: { ...s.schedule.slots, [slot.id]: { ...slot, status: hatched.key } } } })
-    render(<WeekStrip anaesthetistId={ANAE.souter} weekAnchorISO="2026-07-20" todayISO="2026-07-21" onPrevWeek={vi.fn()} onNextWeek={vi.fn()} onOpenList={vi.fn()} />)
+    render(<WeekStrip anaesthetistId={ANAE.souter} weekAnchorISO="2026-11-23" todayISO="2026-11-24" onPrevWeek={vi.fn()} onNextWeek={vi.fn()} onOpenList={vi.fn()} />)
     const block = document.querySelector(`[data-slot-id="${slot.id}"]`) as HTMLElement
     expect(block.style.background).toContain('repeating-linear-gradient')
   })

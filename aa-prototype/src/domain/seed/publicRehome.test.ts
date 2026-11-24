@@ -24,6 +24,8 @@ import { auditLine, capturePhase32d, freeSessionsOn, PARITY_DAYS, type Phase32dS
 import { buildSeed, DISABLED_CONTRACT_BOOKING_IDS, SEED_LIST_IDS } from './index'
 import { projectedListId } from '../slots'
 import { ANAE } from './cast'
+import { closuresAt, closuresIndex, closureSourcesOf } from '../holidays'
+import type { List } from '../types'
 // Catch-up Phase 40's declared move: Dr Sharma's appended HS history is set aside.
 import { seedWithoutPhase40 } from './__fixtures__/phase40Declared'
 
@@ -114,9 +116,9 @@ const isShifted25a = (line: string): boolean => {
 const withoutTime = (line: string): string => line.split('|').slice(0, 4).join('|')
 
 /** Dr Sharma's Tue 14 Jul AM List: 14's "Stage post-op scenario" anchor (POST_OP_ORIGINAL_LIST_ID). */
-const POST_OP_ANCHOR = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
+const POST_OP_ANCHOR = projectedListId(ANAE.sharma, '2026-11-17', 'AM')
 /** Dr Souter's Thu 23 Jul AM List at Christchurch Public, eight Health NZ Bookings. */
-const SOUTER_THU23 = projectedListId(ANAE.souter, '2026-07-23', 'AM')
+const SOUTER_THU23 = projectedListId(ANAE.souter, '2026-11-26', 'AM')
 
 /** The two prepaid Rhinoplasty Procedures Lane A's Phase 27 re-seeded: Riley's (BK0034) and Nair's (BK0038). */
 const PHASE_27_MOVED = ['P0036', 'P0041'] as const
@@ -126,6 +128,25 @@ const omit = <T,>(rec: Record<string, T>, ids: readonly string[]): Record<string
 const removedListIds = new Set(before.publicBookless)
 const removedSlotIds = new Set(before.publicBookless.map((id) => before.otherLists[id]!.slotId!))
 const removedDraftIds = new Set(before.draftListIds.filter((id) => !now.draftListIds.includes(id)))
+
+/**
+ * The seed moved 18 weeks after this fixture was written (demo day Tue 24 Nov 2026), and the fixture's
+ * dates moved with it. The horizon now ends Wed 24 Mar 2027 (three days short of the fixture's far edge),
+ * recurring Lists skip public holidays (24 Nov 2026) and the hospitals' Christmas shutdowns, and the
+ * fixture's Labour Day and Anniversary Day (moved to Mon 1 and Fri 19 Mar 2027) are ordinary days.
+ */
+const HORIZON_END = '2027-03-24'
+const OLD_HOLIDAYS = ['2027-03-01', '2027-03-19']
+const closures = closuresIndex(closureSourcesOf(seed.masters))
+const recurringClosed = (list: List): boolean =>
+  list.dateISO > HORIZON_END ||
+  (list.hospitalId !== undefined && closuresAt(closures, list.dateISO, list.hospitalId).some((c) => c.source === 'public' || seed.masters.holidays[c.holidayId]?.shutdown === true))
+/** The Slots whose recurring List is no longer made (their lines read free). */
+const skippedSlotIds = new Set(
+  Object.entries(before.otherLists)
+    .filter(([id, l]) => seed.schedule.lists[id] === undefined && l.recurringBookingId !== undefined && recurringClosed(l))
+    .map(([, l]) => l.slotId!),
+)
 
 describe('Phase 32d parity: what must not move', () => {
   it('the baseline is the pre-re-home seed: 12 public Lists hold Bookings, 240 are bookless', () => {
@@ -174,25 +195,28 @@ describe('Phase 32d parity: what must not move', () => {
   it('every other List is unchanged, apart from the bookless public Lists and the public rows\' clash Draft Lists', () => {
     for (const [id, list] of Object.entries(before.otherLists)) {
       if (removedListIds.has(id) || removedDraftIds.has(id)) continue
-      // Recurring Lists skip public holidays (24 Nov 2026): Labour Day's and Anniversary Day's are no longer made.
-      if (seed.schedule.lists[id] === undefined && (list.dateISO === '2026-10-26' || list.dateISO === '2026-11-13') && list.recurringBookingId !== undefined) continue
-      expect(withoutOrigin(seed.schedule.lists[id]), id).toEqual(phase42Cause(list))
+      // Recurring Lists skip public holidays (24 Nov 2026) and Christmas shutdowns, and the horizon ends Wed 24 Mar.
+      if (seed.schedule.lists[id] === undefined && list.recurringBookingId !== undefined && recurringClosed(list)) continue
+      // The fixture's Labour Day and Anniversary Day are ordinary days now: their Lists stand unflagged.
+      const was = OLD_HOLIDAYS.includes(list.dateISO) ? { ...phase42Cause(list), conflicts: [] } : phase42Cause(list)
+      expect(withoutOrigin(seed.schedule.lists[id]), id).toEqual(was)
     }
     const known = new Set([...Object.keys(before.otherLists), ...Object.keys(before.listsWithBookings)])
     expect(Object.keys(seed.schedule.lists).filter((id) => !known.has(id))).toEqual([])
   })
 
   it('every Slot is unchanged, apart from the sessions the bookless public Lists sat in', () => {
+    const inHorizon = (id: string) => /\d{4}-\d\d-\d\d/.exec(id)![0] <= HORIZON_END
     for (const [id, line] of Object.entries(before.slots)) {
-      if (removedSlotIds.has(id)) continue
+      if (removedSlotIds.has(id) || skippedSlotIds.has(id) || !inHorizon(id)) continue
       expect(now.slots[id], id).toBe(line)
     }
-    expect(Object.keys(now.slots).sort()).toEqual(Object.keys(before.slots).sort())
+    expect(Object.keys(now.slots).sort()).toEqual(Object.keys(before.slots).filter(inHorizon).sort())
   })
 
-  it('free sessions per day, Tue 21 to Fri 24 Jul, are unchanged (a public List and a Public session are both not free)', () => {
+  it('free sessions per day, Tue 24 to Fri 27 Nov, are unchanged (a public List and a Public session are both not free)', () => {
     for (const d of PARITY_DAYS) expect(freeSessionsOn(seed, d), d).toBe(before.freeByDay[d])
-    expect(before.freeByDay).toEqual({ '2026-07-21': 6, '2026-07-22': 13, '2026-07-23': 7, '2026-07-24': 16 })
+    expect(before.freeByDay).toEqual({ '2026-11-24': 6, '2026-11-25': 13, '2026-11-26': 7, '2026-11-27': 16 })
   })
 
   it('the seeded audit is unchanged, apart from entries about removed Lists (sequence numbers close up after them)', () => {
@@ -221,7 +245,7 @@ describe('Phase 32d parity: what must not move', () => {
     expect(procs.some((p) => p.id === hers!.id)).toBe(true)
   })
 
-  it('Souter\'s Thu 23 Jul AM keeps its eight Bookings, and the billing-failure List its own', () => {
+  it('Souter\'s Thu 26 Nov AM keeps its eight Bookings, and the billing-failure List its own', () => {
     expect(Object.values(seed.schedule.bookings).filter((b) => b.listId === SOUTER_THU23)).toHaveLength(8)
     expect(seed.schedule.lists[SEED_LIST_IDS.billingFailure]).toBeDefined()
     expect(Object.values(seed.schedule.bookings).some((b) => b.listId === SEED_LIST_IDS.billingFailure)).toBe(true)
@@ -233,17 +257,18 @@ describe('Phase 32d parity: what may move, each pinned', () => {
   const bookless = before.publicBookless.filter((id) => before.otherLists[id]!.state !== 'DRAFT')
   const clashDrafts = before.publicBookless.filter((id) => before.otherLists[id]!.state === 'DRAFT')
 
-  it('234 bookless public Lists are gone; each session is Public with the note "CPH", never under a List', () => {
+  it('234 bookless public Lists are gone; each session in the horizon is Public with the note "CPH", never under a List', () => {
     expect(bookless).toHaveLength(234)
     for (const id of bookless) {
       expect(lists[id], id).toBeUndefined()
+      if (before.otherLists[id]!.dateISO > HORIZON_END) continue
       const slot = seed.schedule.slots[before.otherLists[id]!.slotId!]!
       expect(slot.status).toBe('publicHospital')
       expect(slot.note).toBe('CPH')
     }
     const held = new Set(Object.values(lists).flatMap((l) => (l.slotId !== undefined ? [l.slotId] : [])))
     const publicSlots = Object.values(seed.schedule.slots).filter((s) => s.status === 'publicHospital')
-    expect(publicSlots).toHaveLength(234)
+    expect(publicSlots).toHaveLength(bookless.filter((id) => before.otherLists[id]!.dateISO <= HORIZON_END).length)
     expect(publicSlots.filter((s) => held.has(s.id))).toEqual([])
   })
 
@@ -273,7 +298,7 @@ describe('Phase 32d parity: what may move, each pinned', () => {
     }
     expect(series.find((s) => s.anaesthetistId === ANAE.whitaker)).toMatchObject({ weekdays: [2, 4, 5], sessions: 'AM' })
     expect(series.find((s) => s.anaesthetistId === ANAE.ropata)).toMatchObject({ weekdays: [2, 4], sessions: 'both' })
-    expect(Object.keys(series.find((s) => s.anaesthetistId === ANAE.sharma)!.exceptions)).toContain('2026-07-14-AM')
+    expect(Object.keys(series.find((s) => s.anaesthetistId === ANAE.sharma)!.exceptions)).toContain('2026-11-17-AM')
     expect(seed.counters.availabilitySeries).toBe(8)
   })
 })

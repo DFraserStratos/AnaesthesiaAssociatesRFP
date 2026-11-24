@@ -20,7 +20,7 @@ const AGREED_RATE = mkContract({ id: 'con-rate', name: 'Agreed rate', pricing: {
 const DISCOUNT = mkContract({ id: 'con-disc', name: 'Discounted', pricing: { kind: 'rvgDiscount', discountPct: 10 } })
 const NO_CONTRACT = mkContract({ id: 'con-ncr', aaCode: 'AA-RVG', name: 'No contract · RVG', holderId: 'party-aa', billsTo: 'payer', systemRole: 'noContractRvg' })
 const FIXED = mkContract({ id: 'con-fix', name: 'Fixed item', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-01-01', price: 400 }] } })
-const FIXED_LATER = mkContract({ id: 'con-fix-later', name: 'Face lift', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-09-01', price: 3100 }] } })
+const FIXED_LATER = mkContract({ id: 'con-fix-later', name: 'Face lift', pricing: { kind: 'fixed', ranges: [{ startISO: '2027-01-05', price: 3100 }] } })
 const OPEN = mkContract({ id: 'con-open', name: 'No contract · Fixed price', holderId: 'party-aa', billsTo: 'payer', pricing: { kind: 'open' }, systemRole: 'openPriceFallback' })
 const OPEN_SPECIAL = mkContract({ id: 'con-open-sp', name: "St George's · Fixed price", pricing: { kind: 'open' }, systemRole: 'openPriceFallback' })
 const CONTRACTS = Object.fromEntries([PLAIN_RVG, AGREED_RATE, DISCOUNT, NO_CONTRACT, FIXED, FIXED_LATER, OPEN, OPEN_SPECIAL].map((c) => [c.id, c]))
@@ -34,7 +34,7 @@ function ctx(overrides: Partial<CompletionContext> = {}): CompletionContext {
     },
     rvgGroups: { [BASE_SINGLE_10.id]: BASE_SINGLE_10, [BASE_RANGE_5_9.id]: BASE_RANGE_5_9 },
     modifiers: RVG_MODIFIER_MASTER,
-    listDateISO: '2026-07-21',
+    listDateISO: '2026-11-24',
     patientDobISO: undefined,
     ...overrides,
   }
@@ -77,8 +77,8 @@ describe('completion is exactly three conditions (catch-up Phase 21a; US-03.6.1,
       ['modifiersStep', 'modifierClaims', MODIFIERS_STEP_MESSAGE, 'anaesthetist'],
     ])
     expect(bare.some((f) => /handover/i.test(f.message))).toBe(false)
-    expect(codes([rvgDone({ handoverISO: '2026-07-21T07:30:00' })])).toEqual(['finishTime'])
-    expect(completionFailuresFor(booking, [rvgDone({ handoverISO: '2026-07-21T07:30:00' })], ctx())[0]?.message).toBe(FINISH_ORDER_MESSAGE)
+    expect(codes([rvgDone({ handoverISO: '2026-11-24T07:30:00' })])).toEqual(['finishTime'])
+    expect(completionFailuresFor(booking, [rvgDone({ handoverISO: '2026-11-24T07:30:00' })], ctx())[0]?.message).toBe(FINISH_ORDER_MESSAGE)
   })
 
   it('the modifiers step: unanswered refuses; "None apply" passes; a claim answers it; an unexplained claim refuses', () => {
@@ -105,9 +105,9 @@ describe('completion is exactly three conditions (catch-up Phase 21a; US-03.6.1,
     expect(special[0]?.fixableBy).toBe('office')
     const noRange = completionFailuresFor(booking, [mkProcedure({ governingContractId: FIXED_LATER.id })], ctx())
     expect(noRange.map((f) => [f.code, f.field, f.message, f.fixableBy])).toEqual([
-      ['needsPrice', 'governingContractId', 'Needs a price: no price range in force on 21 Jul 2026.', 'office'],
+      ['needsPrice', 'governingContractId', 'Needs a price: no price range in force on 24 Nov 2026.', 'office'],
     ])
-    expect(codes([mkProcedure({ governingContractId: FIXED_LATER.id })], ctx({ listDateISO: '2026-09-02' }))).toEqual([])
+    expect(codes([mkProcedure({ governingContractId: FIXED_LATER.id })], ctx({ listDateISO: '2027-01-06' }))).toEqual([])
   })
 
   it('Ben\'s two routes both complete: RVG detail with a price override, or No contract · Fixed price with a typed amount and a reference code', () => {
@@ -125,7 +125,7 @@ describe('completion is exactly three conditions (catch-up Phase 21a; US-03.6.1,
   })
 
   it('a cancelled Booking has no failures; failures are in Procedure order', () => {
-    const cancelled = mkBooking({ cancellation: { reason: 'Unwell', by: 'Kirsty W.', role: 'office', source: 'office', atISO: '2026-07-21T09:00:00' } })
+    const cancelled = mkBooking({ cancellation: { reason: 'Unwell', by: 'Kirsty W.', role: 'office', source: 'office', atISO: '2026-11-24T09:00:00' } })
     expect(completionFailuresFor(cancelled, [mkProcedure()], ctx())).toEqual([])
     const two = completionFailuresFor(booking, [mkProcedure({ id: 'p-a' }), mkProcedure({ id: 'p-b', governingContractId: OPEN.id })], ctx())
     expect(two.map((f) => f.procedureId)).toEqual(['p-a', 'p-b'])

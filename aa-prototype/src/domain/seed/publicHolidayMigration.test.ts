@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest'
 import { buildSeed } from './index'
 
 const BEFORE = [
-  'L-25490-2026-07-22-PM holiday:HH900',
+  'L-25490-2026-11-25-PM holiday:HH900',
   'L-25490-2026-10-26-AM holiday:HH001',
   'L-27731-2026-11-13-AM holiday:HH002',
   'L-29104-2026-10-26-AM holiday:HH003',
@@ -19,14 +19,14 @@ const BEFORE = [
   'L-31902-2026-11-13-AM holiday:HH008',
   'L-34821-2026-10-26-AM holiday:HH005',
   'L-34821-2026-10-26-PM holiday:HH001',
-  'L-38455-2026-07-22-PM holiday:HH900',
+  'L-38455-2026-11-25-PM holiday:HH900',
   'L-38455-2026-11-13-AM holiday:HH006',
-  'L-41267-2026-07-22-PM holiday:HH900',
+  'L-41267-2026-11-25-PM holiday:HH900',
   'L-44519-2026-10-26-PM holiday:HH003',
   'L-45178-2026-11-13-AM holiday:HH008',
-  'L-46822-2026-07-22-AM holiday:HH900',
-  'LD-RCB020-2026-07-22-AM holiday:HH900',
-  'LD-RCB021-2026-07-22-PM holiday:HH900',
+  'L-46822-2026-11-25-AM holiday:HH900',
+  'LD-RCB020-2026-11-25-AM holiday:HH900',
+  'LD-RCB021-2026-11-25-PM holiday:HH900',
 ]
 
 function moved(row: string): string {
@@ -37,14 +37,20 @@ function moved(row: string): string {
 }
 
 describe('the public-holiday migration (catch-up Phase 42)', () => {
-  it('flags the same hospital-closure Lists; the public-holiday ones are no longer made (recurring Lists skip public holidays, 24 Nov 2026)', () => {
+  it('flags the same hospital-closure Lists; the public-holiday ones are no longer flagged (recurring Lists skip public holidays, 24 Nov 2026)', () => {
     const seed = buildSeed()
     const now: string[] = []
     for (const l of Object.values(seed.schedule.lists)) for (const c of l.conflicts) now.push(`${l.id} ${c.cause}`)
     const publicRows = BEFORE.map(moved).filter((r) => r.includes('publicHoliday:'))
     expect(publicRows.length).toBe(10)
     expect(now.sort()).toEqual(BEFORE.map(moved).filter((r) => !r.includes('publicHoliday:')).sort())
-    for (const row of publicRows) expect(seed.schedule.lists[row.split(' ')[0]!], row).toBeUndefined()
+    // Labour Day is now before the horizon, so its Lists are not made; Anniversary Day now leaves the
+    // private hospitals open (PH002 closes only Christchurch Public), so a List there is made, unflagged.
+    for (const row of publicRows) {
+      const list = seed.schedule.lists[row.split(' ')[0]!]
+      if (row.endsWith('PH001')) expect(list, row).toBeUndefined()
+      else expect(list?.conflicts ?? [], row).toEqual([])
+    }
   })
 
   it('two builds deep-equal', () => {

@@ -179,7 +179,7 @@ describe('the run reads the lock, not the masters (US-08.1.1)', () => {
 
     const api = createAppStore()
     expect(authoriseList(api, OFFICE, LIST).ok).toBe(true)
-    expect(addPriceRange(api, OFFICE, CONTRACT.cosFixed, { startISO: '2026-07-01', price: 1100 }).ok).toBe(true)
+    expect(addPriceRange(api, OFFICE, CONTRACT.cosFixed, { startISO: '2026-11-04', price: 1100 }).ok).toBe(true)
     expect(editContract(api, OFFICE, CONTRACT.stgAcc, { name: 'St George ACC renamed' }).ok).toBe(true)
     const ropata = api.getState().schedule.lists[LIST]!.anaesthetistId!
     expect(editAnaesthetist(api, OFFICE, ropata, { unitValue: 99 }).ok).toBe(true)

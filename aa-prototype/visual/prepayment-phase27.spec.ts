@@ -17,13 +17,13 @@ test.beforeEach(async ({ context }) => {
  */
 
 const RILEY = 'BK0034'
-const RILEY_LIST = 'L-34821-2026-07-24-AM'
+const RILEY_LIST = 'L-34821-2026-11-27-AM'
 const NAIR = 'BK0038'
-const NAIR_LIST = 'L-34821-2026-07-24-PM'
+const NAIR_LIST = 'L-34821-2026-11-27-PM'
 const PWA = process.env['PWA_URL'] ?? `http://localhost:${process.env['AA_PWA_PORT'] ?? 5174}`
 
 test('admin: rail card, Riley awaiting approval, Approve and send, then part paid from the Booking', async ({ page }) => {
-  await page.goto('/admin/day/2026-07-21')
+  await page.goto('/admin/day/2026-11-24')
   await page.waitForLoadState('networkidle')
   const rail = page.locator('[data-shot="rail-prepayments"]')
   await expect(rail).toBeVisible()
@@ -35,7 +35,7 @@ test('admin: rail card, Riley awaiting approval, Approve and send, then part pai
   await expect(rail.locator(`[data-shot="rail-prepayment-row"][data-booking-id="${NAIR}"]`)).toContainText('Paid')
   await rail.screenshot({ path: 'visual/shots/p27-01-rail-prepayments.png' })
 
-  await page.goto(`/admin/day/2026-07-24/bookings/${RILEY}`)
+  await page.goto(`/admin/day/2026-11-27/bookings/${RILEY}`)
   const panel = page.locator('[data-shot="booking-prepayment"][data-prepayment-status]')
   await expect(panel).toContainText('Pre-payment awaiting approval')
   await expect(panel).toContainText('Rhinoplasty')
@@ -62,7 +62,7 @@ test('admin: rail card, Riley awaiting approval, Approve and send, then part pai
   await expect(row).toHaveCount(0)
 
   // Half a payment, from the Booking detail.
-  await page.goto(`/admin/day/2026-07-24/bookings/${RILEY}`)
+  await page.goto(`/admin/day/2026-11-27/bookings/${RILEY}`)
   const paid = await runDemoAction(page, 'payment-half', { close: true })
   expect(paid).toContain('$690.00')
   await expect(page.locator('[data-shot="booking-prepayment"][data-prepayment-status]')).toContainText('Pre-payment part paid · $690.00 of $1,380.00 received')
@@ -70,7 +70,7 @@ test('admin: rail card, Riley awaiting approval, Approve and send, then part pai
 })
 
 test('admin: two payers give two strip rows; approving one leaves the other', async ({ page }) => {
-  await page.goto('/admin/day/2026-07-21')
+  await page.goto('/admin/day/2026-11-24')
   await page.waitForLoadState('networkidle')
   const added = await runDemoAction(page, 'add-prepaid-booking', { choice: 'two-payers', close: true })
   expect(added).toContain('2 payers await approval')
@@ -96,16 +96,16 @@ test('admin: switching approval off confirms, and the next prepaid Booking is se
   await expect(strip.getByRole('switch', { name: 'Prepayment approval' })).toHaveAttribute('aria-checked', 'false')
   // Riley's was ready, so it went now.
   await expect(strip.locator('[data-shot="awaiting-approval-row"]')).toHaveCount(0)
-  await page.goto('/admin/day/2026-07-21')
+  await page.goto('/admin/day/2026-11-24')
   const added = await runDemoAction(page, 'add-prepaid-booking', { choice: 'one-payer', close: true })
   expect(added).toContain('sent at once')
 })
 
 test('admin: the warning turns strong two days before', async ({ page }) => {
-  await page.goto(`/admin/day/2026-07-24/bookings/${RILEY}`)
+  await page.goto(`/admin/day/2026-11-27/bookings/${RILEY}`)
   await page.waitForLoadState('networkidle')
   const moved = await runDemoAction(page, 'prepayment-two-days-before', { close: true })
-  expect(moved).toContain('Wed 22 Jul')
+  expect(moved).toContain('Wed 25 Nov')
   await expect(page.locator('[data-shot="booking-warnings"]')).toContainText('Strong')
   await page.screenshot({ path: 'visual/shots/p27-06-admin-riley-strong.png', fullPage: true })
 })

@@ -27,7 +27,7 @@ const FEED: Actor = { who: 'Hospital booking feed', role: 'system', source: 'int
 const TANE_PROC = 'P0006'
 /** Doyle's bariatric primary, on Doyle's Gastric bypass (its invoice description "Gastric bypass, laparoscopic"). */
 const DOYLE_PROC = 'P0029'
-const SOUTER_PM = 'L-34821-2026-07-21-PM'
+const SOUTER_PM = 'L-34821-2026-11-24-PM'
 
 const store = (): BoundAppStore => createAppStore()
 const proc = (api: BoundAppStore, id: string) => api.getState().schedule.procedures[id]!
@@ -136,7 +136,7 @@ describe('editProcedure never touches either text', () => {
 })
 
 describe('createBooking: hand entry kept as typed (US-02.4.1)', () => {
-  const patient = { nhi: 'ZZZ9005', name: 'Test Patient', dobISO: '1980-01-01' }
+  const patient = { nhi: 'ZZZ9005', name: 'Test Patient', dobISO: '1980-05-06' }
 
   it('stores the text verbatim with its source and sender, and starts the invoice description from it', () => {
     const api = store()

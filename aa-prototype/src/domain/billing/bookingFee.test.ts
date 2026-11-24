@@ -20,8 +20,8 @@ const H4: RvgGroup = { ...BASE_SINGLE_10, id: 'RG-T-H4', code: 'H4', description
 const GROUPS: Record<string, RvgGroup> = { [BASE_SINGLE_10.id]: BASE_SINGLE_10, [H6.id]: H6, [H4.id]: H4 }
 
 const anaesthetist = mkAnaesthetist({ unitValue: 30 })
-const SEVENTY_TWO = '1954-03-14'
-const t = (hhmm: string) => `2026-07-21T${hhmm}:00`
+const SEVENTY_TWO = '1954-07-18'
+const t = (hhmm: string) => `2026-11-24T${hhmm}:00`
 
 const A = mkProcedure({
   id: 'P-A',
@@ -38,7 +38,7 @@ function ctxFor(contracts: Record<string, Contract> = {}, dob: string | null = S
   return (p: Procedure): ProcedureFeeContext => {
     const ctx: ProcedureFeeContext = {
       anaesthetist,
-      dateISO: '2026-07-21',
+      dateISO: '2026-11-24',
       timeRule: DEFAULT_RVG_TIME_RULE,
       patientDobISO: dob ?? undefined,
       modifiers: RVG_MODIFIER_MASTER,

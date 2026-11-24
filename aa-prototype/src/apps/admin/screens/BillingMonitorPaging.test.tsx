@@ -38,7 +38,7 @@ function renderAt(url: string) {
 }
 
 beforeAll(() => {
-  full = buildFullScaleDataset(freshAppState(), { todayISO: '2026-07-21' }).state
+  full = buildFullScaleDataset(freshAppState(), { todayISO: '2026-11-24' }).state
 }, 120_000)
 
 describe('the Billing monitor pages at full scale', () => {

@@ -8,13 +8,13 @@ function ev(id: string, procedureId: string, amount: number, over: Partial<Proce
     procedureId,
     bookingId: 'B1',
     kind: 'additionalInvoice',
-    occurredOnISO: '2026-07-15',
+    occurredOnISO: '2026-11-18',
     billable: true,
     party: { sameAs: true },
     detail: { kind: 'additionalInvoice', lines: [{ description: 'Post-op review', quantity: 1, unitAmount: amount }] },
     review: { state: 'awaitingReview' },
     addedBy: { who: 'Kirsty W.', role: 'office' },
-    addedAtISO: '2026-07-21T09:00:00',
+    addedAtISO: '2026-11-24T09:00:00',
     ...over,
   }
 }

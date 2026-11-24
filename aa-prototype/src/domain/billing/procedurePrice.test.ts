@@ -21,8 +21,8 @@ import type { Contract, ContractPricing, Procedure } from '../types'
 
 const UV = 30
 const rvg = (pricing: ContractPricing = { kind: 'rvgAnaesthetistRate' }) => ({ pricing })
-const base = (over: Partial<PriceInput> = {}): PriceInput => ({ contract: rvg(), dateISO: '2026-07-21', enteredPrice: undefined, units: 12, unitValue: UV, ...over })
-const FIXED: ContractPricing = { kind: 'fixed', ranges: [{ startISO: '2026-01-01', price: 500 }, { startISO: '2026-12-01', price: 550 }] }
+const base = (over: Partial<PriceInput> = {}): PriceInput => ({ contract: rvg(), dateISO: '2026-11-24', enteredPrice: undefined, units: 12, unitValue: UV, ...over })
+const FIXED: ContractPricing = { kind: 'fixed', ranges: [{ startISO: '2026-01-01', price: 500 }, { startISO: '2027-04-06', price: 550 }] }
 
 describe('priceFor: the kinds (computed)', () => {
   it("W1 RVG at the anaesthetist's rate: 12 units x $30.00 = $360.00", () => {
@@ -45,7 +45,7 @@ describe('priceFor: the kinds (computed)', () => {
   })
 
   it('W4 a fixed price is the range in force on the procedure date; before the first range it needs a price', () => {
-    expect(priceFor(base({ contract: { pricing: FIXED }, dateISO: '2026-12-10' }))).toMatchObject({ price: 550, computed: { kind: 'fixed', rangeStartISO: '2026-12-01' } })
+    expect(priceFor(base({ contract: { pricing: FIXED }, dateISO: '2027-04-15' }))).toMatchObject({ price: 550, computed: { kind: 'fixed', rangeStartISO: '2027-04-06' } })
     expect(priceFor(base({ contract: { pricing: FIXED }, dateISO: '2025-12-31' }))).toEqual({ status: 'needsPrice', reason: 'noRangeInForce' })
   })
 
@@ -78,7 +78,7 @@ describe('priceFor: the ladder', () => {
   })
 
   it('W9 an AUTHORISED price stands when a new range arrives, ahead of every other rung', () => {
-    const r = priceFor(base({ contract: { pricing: FIXED }, dateISO: '2026-12-10', enteredPrice: 400, held: { authorised: 500, prepaid: 480 } }))
+    const r = priceFor(base({ contract: { pricing: FIXED }, dateISO: '2027-04-15', enteredPrice: 400, held: { authorised: 500, prepaid: 480 } }))
     expect(r).toMatchObject({ price: 500, heldBy: 'authorised', computed: { total: 550 } })
     // Even with nothing the kind can work out, a held price is a price.
     expect(priceFor(base({ contract: rvg({ kind: 'open' }), held: { authorised: 300 } }))).toMatchObject({ status: 'priced', price: 300 })
@@ -107,8 +107,8 @@ describe('priceFor: the ladder', () => {
     const fixed = mkContract({ pricing: FIXED })
     expect(procedureNeedsPrice(fixed, '2025-06-01', {})).toBe(true)
     expect(procedureNeedsPrice(fixed, '2025-06-01', { enteredPrice: 0 })).toBe(false)
-    expect(procedureNeedsPrice(mkContract({ pricing: { kind: 'open' } }), '2026-07-21', {})).toBe(true)
-    expect(procedureNeedsPrice(mkContract(), '2020-01-01', {})).toBe(false)
+    expect(procedureNeedsPrice(mkContract({ pricing: { kind: 'open' } }), '2026-11-24', {})).toBe(true)
+    expect(procedureNeedsPrice(mkContract(), '2020-05-06', {})).toBe(false)
     // The ladder's order holds: a held price is a price even with no range in force.
     expect(procedureNeedsPrice(fixed, '2025-06-01', {}, { prepaid: 2800 })).toBe(false)
     expect(procedureNeedsPrice(fixed, '2025-06-01', {}, { authorised: 2800 })).toBe(false)
@@ -116,12 +116,12 @@ describe('priceFor: the ladder', () => {
 })
 
 describe('W12 under the multi-procedure rule a discount changes only its own Procedure', () => {
-  const t = (hhmm: string) => `2026-07-21T${hhmm}:00`
+  const t = (hhmm: string) => `2026-11-24T${hhmm}:00`
   const A = mkProcedure({ id: 'P-A', isPrimary: true, rvgGroupId: BASE_SINGLE_10.id, anaestheticStartISO: t('08:00'), handoverISO: t('09:00') })
   const B = mkProcedure({ id: 'P-B', isPrimary: false, rvgGroupId: BASE_SINGLE_10.id, anaestheticStartISO: t('09:00'), handoverISO: t('09:30') })
   const ctx = (contracts: Record<string, Contract>) => (p: Procedure): ProcedureFeeContext => ({
     anaesthetist: mkAnaesthetist({ unitValue: UV }),
-    dateISO: '2026-07-21',
+    dateISO: '2026-11-24',
     timeRule: DEFAULT_RVG_TIME_RULE,
     patientDobISO: undefined,
     modifiers: RVG_MODIFIER_MASTER,

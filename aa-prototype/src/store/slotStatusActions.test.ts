@@ -47,23 +47,23 @@ describe('availability status master actions', () => {
     const out = addSlotStatus(api, OFFICE, publicHospital)
     expect(out.ok && out.value.key).toBe('ST0001')
     expect(api.getState().audit.at(-1)).toMatchObject({ action: 'availabilityStatus.create', entityId: 'ST0001' })
-    const freeBefore = openSlotViews(api.getState(), '2026-08-14', 'PM').length
-    const set = setAvailabilityRange(api, SOUTER, { anaesthetistId: ANAE.souter, fromISO: '2026-08-14', toISO: '2026-08-14', sessions: 'PM', statusKey: 'ST0001' })
+    const freeBefore = openSlotViews(api.getState(), '2026-12-18', 'PM').length
+    const set = setAvailabilityRange(api, SOUTER, { anaesthetistId: ANAE.souter, fromISO: '2026-12-18', toISO: '2026-12-18', sessions: 'PM', statusKey: 'ST0001' })
     expect(set.ok).toBe(true)
-    expect(api.getState().schedule.slots[slotIdFor(ANAE.souter, '2026-08-14', 'PM')]!.status).toBe('ST0001')
-    expect(openSlotViews(api.getState(), '2026-08-14', 'PM').length).toBe(freeBefore - 1)
+    expect(api.getState().schedule.slots[slotIdFor(ANAE.souter, '2026-12-18', 'PM')]!.status).toBe('ST0001')
+    expect(openSlotViews(api.getState(), '2026-12-18', 'PM').length).toBe(freeBefore - 1)
     expect(isClosedKey(api.getState().masters.slotStatuses, 'ST0001')).toBe(true)
     expect(addSlotStatus(api, OFFICE, { ...publicHospital, label: 'Lecturing', longLabel: 'Lecturing' }).ok && 'ST0002').toBe('ST0002')
   })
 
   it('an edit round-trips every editable field and never the key; a rename changes no rule (criterion 1)', () => {
     const api = createAppStore()
-    const openBefore = slotViewsForDate(api.getState(), '2026-07-21').map((v) => [v.slot.id, v.open])
+    const openBefore = slotViewsForDate(api.getState(), '2026-11-24').map((v) => [v.slot.id, v.open])
     const next: SlotStatusDraft = { ...draftOf('unavailable', api), label: 'Blocked', longLabel: 'Blocked out', description: 'Blocked.', colour: 'holiday', treatment: 'solid', anaesthetistCanSet: false }
     expect(editSlotStatus(api, OFFICE, 'unavailable', next).ok).toBe(true)
     const s = api.getState().masters.slotStatuses['unavailable']!
     expect(s).toMatchObject({ key: 'unavailable', label: 'Blocked', longLabel: 'Blocked out', description: 'Blocked.', colour: 'holiday', treatment: 'solid', anaesthetistCanSet: false, bookable: false })
-    expect(slotViewsForDate(api.getState(), '2026-07-21').map((v) => [v.slot.id, v.open])).toEqual(openBefore)
+    expect(slotViewsForDate(api.getState(), '2026-11-24').map((v) => [v.slot.id, v.open])).toEqual(openBefore)
     expect(api.getState().audit.at(-1)).toMatchObject({ action: 'availabilityStatus.update', before: { label: 'Unavailable' }, after: { label: 'Blocked' } })
     // No change writes nothing.
     const n = api.getState().audit.length
@@ -100,17 +100,17 @@ describe('availability status master actions', () => {
     const free = retireSlotStatus(api, OFFICE, 'free')
     expect(free.ok ? '' : free.message).toMatch(/default status cannot be retired/)
     addSlotStatus(api, OFFICE, publicHospital)
-    createAvailabilitySeries(api, SOUTER, { anaesthetistId: ANAE.souter, statusKey: 'ST0001', sessions: 'PM', weekdays: [5], everyWeeks: 2, startISO: '2026-07-31' })
+    createAvailabilitySeries(api, SOUTER, { anaesthetistId: ANAE.souter, statusKey: 'ST0001', sessions: 'PM', weekdays: [5], everyWeeks: 2, startISO: '2026-12-04' })
     const used = retireSlotStatus(api, OFFICE, 'ST0001')
     expect(used.ok ? '' : used.message).toBe('1 repeating series uses this status. Delete it first.')
     deleteAvailabilitySeries(api, SOUTER, 'AS0008')
-    setAvailabilityRange(api, SOUTER, { anaesthetistId: ANAE.souter, fromISO: '2026-08-21', toISO: '2026-08-21', sessions: 'PM', statusKey: 'ST0001' })
+    setAvailabilityRange(api, SOUTER, { anaesthetistId: ANAE.souter, fromISO: '2026-12-25', toISO: '2026-12-25', sessions: 'PM', statusKey: 'ST0001' })
     expect(retireSlotStatus(api, OFFICE, 'ST0001').ok).toBe(true)
     const st = api.getState()
     expect(st.masters.slotStatuses['ST0001']!.retiredAtISO).toBeDefined()
     // A session already carrying it keeps it; it is no longer offered.
-    expect(st.schedule.slots[slotIdFor(ANAE.souter, '2026-08-21', 'PM')]!.status).toBe('ST0001')
-    const refused = setAvailabilityRange(api, SOUTER, { anaesthetistId: ANAE.souter, fromISO: '2026-08-28', toISO: '2026-08-28', sessions: 'PM', statusKey: 'ST0001' })
+    expect(st.schedule.slots[slotIdFor(ANAE.souter, '2026-12-25', 'PM')]!.status).toBe('ST0001')
+    const refused = setAvailabilityRange(api, SOUTER, { anaesthetistId: ANAE.souter, fromISO: '2027-01-01', toISO: '2027-01-01', sessions: 'PM', statusKey: 'ST0001' })
     expect(refused.ok ? '' : refused.code).toBe('statusRetired')
     expect(restoreSlotStatus(api, OFFICE, 'ST0001').ok).toBe(true)
     expect(api.getState().masters.slotStatuses['ST0001']!.retiredAtISO).toBeUndefined()
@@ -126,12 +126,12 @@ describe('a status never closes over a List (catch-up Phase 32b review fix, D59)
     expect(added.ok).toBe(true)
     const key = added.ok ? added.value.key : ''
     // Souter's Tue 21 AM holds a List; an open status over it is allowed.
-    expect(setAvailabilityRange(api, OFFICE, { anaesthetistId: ANAE.souter, fromISO: '2026-07-21', toISO: '2026-07-21', sessions: 'AM', statusKey: key }).ok).toBe(true)
+    expect(setAvailabilityRange(api, OFFICE, { anaesthetistId: ANAE.souter, fromISO: '2026-11-24', toISO: '2026-11-24', sessions: 'AM', statusKey: key }).ok).toBe(true)
     const out = editSlotStatus(api, OFFICE, key, { ...open, bookable: false })
     expect(out.ok ? 'ok' : out.code).toBe('statusHoldsLists')
     expect(api.getState().masters.slotStatuses[key]?.bookable).toBe(true)
     // With no List on it, the same edit goes through.
-    expect(setAvailabilityRange(api, OFFICE, { anaesthetistId: ANAE.souter, fromISO: '2026-07-21', toISO: '2026-07-21', sessions: 'AM', statusKey: 'free' }).ok).toBe(true)
+    expect(setAvailabilityRange(api, OFFICE, { anaesthetistId: ANAE.souter, fromISO: '2026-11-24', toISO: '2026-11-24', sessions: 'AM', statusKey: 'free' }).ok).toBe(true)
     expect(editSlotStatus(api, OFFICE, key, { ...open, bookable: false }).ok).toBe(true)
   })
 })

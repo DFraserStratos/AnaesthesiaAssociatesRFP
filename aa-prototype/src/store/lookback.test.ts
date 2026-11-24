@@ -31,8 +31,8 @@ import { nextTestNhi } from './testNhi'
 
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-const TODAY = '2026-07-21'
-const MONTH_END = '2026-08-21'
+const TODAY = '2026-11-24'
+const MONTH_END = '2026-12-25'
 
 function store(): BoundAppStore {
   return createAppStore()
@@ -42,7 +42,7 @@ function view(api: BoundAppStore, anaesthetistId: string = ANAE.souter) {
 }
 
 describe('mainViewFor (US-07.4.2)', () => {
-  it('at the demo today, earlier is exactly Mon 13 Jul AM (catch-up Phase 23\'s three-procedure Booking) and Mon 20 Jul AM and PM (not the empty 7 to 16 July Lists), oldest first', () => {
+  it('at the demo today, earlier is exactly Mon 16 Nov AM (catch-up Phase 23\'s three-procedure Booking) and Mon 23 Nov AM and PM (not the empty 7 to 19 November Lists), oldest first', () => {
     const api = store()
     expect(api.getState().clock.todayISO).toBe(TODAY)
     const v = view(api)
@@ -79,11 +79,11 @@ describe('mainViewFor (US-07.4.2)', () => {
   it('a past completed ACTIVE List shows in earlier as ready to submit', () => {
     const api = store()
     const past = Object.values(api.getState().schedule.lists).find(
-      (l) => l.state === 'ACTIVE' && l.anaesthetistId === ANAE.souter && l.dateISO === '2026-07-14',
+      (l) => l.state === 'ACTIVE' && l.anaesthetistId === ANAE.souter && l.dateISO === '2026-11-17',
     )
     expect(past).toBeDefined()
     const created = createBooking(api, SOUTER, past!.id, {
-      patient: { nhi: nextTestNhi(), name: 'Past Patient', dobISO: '1970-01-01' },
+      patient: { nhi: nextTestNhi(), name: 'Past Patient', dobISO: '1970-05-07' },
       sourceText: { text: 'Arthroscopy', source: 'anaesthetist' },
     })
     expect(created.ok).toBe(true)
@@ -127,15 +127,15 @@ describe('searchBookingsFor (US-03.1.7)', () => {
     const api = store()
     for (const q of ['mitchell', 'mitch', 'CQY9304', 'cqy 9304']) {
       const r = search(api, q)
-      expect(r.upcoming.map((x) => x.dateISO), q).toEqual(['2026-07-27'])
-      expect(r.past.map((x) => x.dateISO), q).toEqual(['2026-04-14', '2026-03-13'])
+      expect(r.upcoming.map((x) => x.dateISO), q).toEqual(['2026-11-30'])
+      expect(r.past.map((x) => x.dateISO), q).toEqual(['2026-08-18', '2026-03-13'])
       expect(r.total).toBe(3)
       for (const row of [...r.upcoming, ...r.past]) {
         expect(api.getState().schedule.lists[row.listId]?.anaesthetistId).toBe(ANAE.souter)
       }
     }
     // Her Booking on Dr Sharma's List exists, and only Dr Sharma finds it, with her two Sharma history Bookings (catch-up Phase 40).
-    const sharma = searchBookingsFor(api.getState(), ANAE.sharma, 'mitchell', '2026-07-21')
+    const sharma = searchBookingsFor(api.getState(), ANAE.sharma, 'mitchell', '2026-11-24')
     expect(sharma.total).toBe(3)
   })
 
@@ -166,7 +166,7 @@ describe('searchBookingsFor (US-03.1.7)', () => {
     const api = store()
     for (let i = 0; i < 60; i++) {
       const out = createBooking(api, OFFICE, SEED_LIST_IDS.souterAm21, {
-        patient: { nhi: nextTestNhi(), name: `Capstone Patient ${i}`, dobISO: '1980-01-01' },
+        patient: { nhi: nextTestNhi(), name: `Capstone Patient ${i}`, dobISO: '1980-05-06' },
         sourceText: { text: 'Test', source: 'anaesthetist' },
       })
       expect(out.ok).toBe(true)
@@ -176,13 +176,13 @@ describe('searchBookingsFor (US-03.1.7)', () => {
     expect(r.upcoming.length + r.past.length).toBe(BOOKING_SEARCH_CAP)
   })
 
-  it('still finds a List the office just authorised (Mon 20 Jul PM, Alan Prentice)', () => {
+  it('still finds a List the office just authorised (Mon 23 Nov PM, Alan Prentice)', () => {
     const api = store()
     expect(authoriseAsSimulatedOffice(api, SEED_LIST_IDS.souterMon20Pm).ok).toBe(true)
     const r = search(api, 'prentice')
     const monday = r.past.find((x) => x.listId === SEED_LIST_IDS.souterMon20Pm)
     expect(monday?.progress).toBe('invoiced')
-    expect(r.past.some((x) => x.dateISO === '2026-06-04')).toBe(true)
+    expect(r.past.some((x) => x.dateISO === '2026-10-08')).toBe(true)
     expect(mainViewFor(api.getState(), ANAE.souter, TODAY, MONTH_END).earlier.some((l) => l.id === SEED_LIST_IDS.souterMon20Pm)).toBe(false)
   })
 
@@ -224,8 +224,8 @@ describe('the date lookup (US-03.1.6)', () => {
     expect(day[0]!.bookings.every((b) => b.procedureNames.length > 0 && b.scheduledTime !== undefined)).toBe(true)
   })
 
-  it('listsOnDayFor shows Mon 20 Jul AM before PM, submitted', () => {
-    const day = listsOnDayFor(store().getState(), ANAE.souter, '2026-07-20', TODAY)
+  it('listsOnDayFor shows Mon 23 Nov AM before PM, submitted', () => {
+    const day = listsOnDayFor(store().getState(), ANAE.souter, '2026-11-23', TODAY)
     expect(day.map((d) => [d.list.session, d.progress])).toEqual([
       ['AM', 'submitted'],
       ['PM', 'submitted'],
@@ -272,12 +272,12 @@ describe('history survives the clock and the canvas', () => {
         sessions: 'PM',
         weekdays: [5],
         everyWeeks: 2,
-        startISO: '2026-08-07',
+        startISO: '2026-12-11',
       }).ok,
     ).toBe(true)
-    expect(addHospitalHoliday(api, OFFICE, HOSP.stg, '2026-08-14', 'Shutdown').ok).toBe(true)
+    expect(addHospitalHoliday(api, OFFICE, HOSP.stg, '2026-12-18', 'Shutdown').ok).toBe(true)
     expect(
-      addAnaesthetist(api, OFFICE, { registrationNumber: '99001', name: 'Dr Nadia Kerr', phone: '021 000 0000', email: 'n@example.test', unitValue: 25, bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, hpiId: '99KERN', startDateISO: '2026-08-12' } as never).ok,
+      addAnaesthetist(api, OFFICE, { registrationNumber: '99001', name: 'Dr Nadia Kerr', phone: '021 000 0000', email: 'n@example.test', unitValue: 25, bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, hpiId: '99KERN', startDateISO: '2026-12-16' } as never).ok,
     ).toBe(true)
     advanceClockDays(api, 30)
     // The horizon shortened and lengthened again.

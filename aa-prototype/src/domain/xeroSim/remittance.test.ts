@@ -3,7 +3,7 @@ import type { XeroAccRec } from '../types'
 import { matchRemittanceLines } from './remittance'
 
 function rec(id: string, invoiceNumber: string, over: Partial<XeroAccRec> = {}): XeroAccRec {
-  return { id, kind: 'procedure', invoiceId: `INV-${id}`, contactId: 'XC0009', invoiceNumber, reference: `BC-${id}`, issuedAtISO: '2026-06-01T09:00:00', amountDue: 845, amountReceived: 0, status: 'awaitingPayment', ...over }
+  return { id, kind: 'procedure', invoiceId: `INV-${id}`, contactId: 'XC0009', invoiceNumber, reference: `BC-${id}`, issuedAtISO: '2026-10-05T09:00:00', amountDue: 845, amountReceived: 0, status: 'awaitingPayment', ...over }
 }
 
 describe('matchRemittanceLines (catch-up Phase 37, Xero side only)', () => {

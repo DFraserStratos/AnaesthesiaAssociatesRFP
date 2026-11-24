@@ -11,7 +11,7 @@ import { runDemoAction } from './demoActions'
  * locked against it.
  */
 
-const S3_AM = 'L-34821-2026-07-20-AM'
+const S3_AM = 'L-34821-2026-11-23-AM'
 
 async function authoriseS3Am(page: Page): Promise<void> {
   await page.goto(`/admin/review/${S3_AM}`)
@@ -32,7 +32,7 @@ test('Review after authorise: the lock glyph on each Contract and the locked rat
 
 test('the locked Booking shows the badge and a read-only office setup from the lock', async ({ page }) => {
   await authoriseS3Am(page)
-  await page.goto('/admin/day/2026-07-20/bookings/BK0023')
+  await page.goto('/admin/day/2026-11-23/bookings/BK0023')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot="booking-lock-badge"]').first()).toContainText('Contract locked at authorise')
   await expect(page.locator('[data-shot="office-billing-setup-1"]')).toHaveAttribute('data-locked', 'true')

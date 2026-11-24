@@ -20,11 +20,11 @@ import { REVIEW_FLAGS_LIST_ID } from './reviewFlagBookings'
 import { rvgGroupIdForLegacyCode } from './rvgGroups'
 import { seedText } from './procedureText'
 
-const DAY = '2026-07-14'
+const DAY = '2026-11-17'
 const CHEN = 'Dr Alistair Chen'
 
 /** The office's disable of the old rate (Kirsty W., Fri 10 Jul 2026). */
-export const DISABLED_CONTRACT_ON = '2026-07-10'
+export const DISABLED_CONTRACT_ON = '2026-11-13'
 
 export function seedDisabledContractBooking(next: { booking: number; procedure: number }): {
   bookings: Booking[]

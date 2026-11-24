@@ -34,7 +34,7 @@ const masters: RailMasters = {
 }
 const SOUTER = '34821'
 const RUTHERFORD = Object.values(seed.masters.anaesthetists).find((a) => a.name.includes('Rutherford'))!.registrationNumber
-const JUL = '2026-07-24'
+const JUL = '2026-11-27'
 
 const ctx = (over: Partial<RailContext>): RailContext => ({ listDateISO: JUL, anaesthetistId: SOUTER, ...over })
 const ids = (cs: readonly Contract[]) => cs.map((c) => c.id)
@@ -92,8 +92,8 @@ describe('contractCandidatesFor (US-04.3.2)', () => {
   })
 
   it('excludes a fixed price with no range in force on the List date', () => {
-    const july = ids(contractCandidatesFor(masters, ctx({ listDateISO: '2026-07-16', hospitalId: 'H-STG', surgeonId: 'S-HALE' })))
-    const august = ids(contractCandidatesFor(masters, ctx({ listDateISO: '2026-08-03', hospitalId: 'H-STG', surgeonId: 'S-HALE' })))
+    const july = ids(contractCandidatesFor(masters, ctx({ listDateISO: '2026-11-19', hospitalId: 'H-STG', surgeonId: 'S-HALE' })))
+    const august = ids(contractCandidatesFor(masters, ctx({ listDateISO: '2026-12-07', hospitalId: 'H-STG', surgeonId: 'S-HALE' })))
     expect(july).not.toContain('CT-COS-FIXED')
     expect(august).toContain('CT-COS-FIXED')
   })
@@ -237,7 +237,7 @@ describe('railAnswersFor', () => {
       if (contract.systemRole !== undefined) continue
       const booking = seed.schedule.bookings[p.bookingId]!
       const list = seed.schedule.lists[booking.listId]!
-      if (list.anaesthetistId === undefined || list.dateISO < '2026-07-01') continue
+      if (list.anaesthetistId === undefined || list.dateISO < '2026-11-04') continue
       const at: RailContext = { listDateISO: list.dateISO, anaesthetistId: list.anaesthetistId }
       if (list.surgeonId !== undefined) at.surgeonId = list.surgeonId
       if (list.hospitalId !== undefined && list.hospitalId !== 'H-AAROOMS') at.hospitalId = list.hospitalId

@@ -77,7 +77,7 @@ function hasUnpaidOtherEpisode(state: AppState, patientId: string, excludeBookin
   })
 }
 const SOUTER: Actor = { who: 'Dr M. Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
-const MONTHS = ['2026-03', '2026-04', '2026-05', '2026-06', '2026-07'] as const
+const MONTHS = ['2026-03', '2026-08', '2026-09', '2026-10', '2026-11'] as const
 
 // ---------------------------------------------------------------------------
 // Readers
@@ -174,7 +174,7 @@ function feeInvoices(state: AppState) {
 
 function feePreviews(state: AppState) {
   const out: Record<string, { anaesthetistId: string; bctiCount: number; subtotal: number; total: number }[]> = {}
-  for (const m of ['2026-05', '2026-06', '2026-07']) {
+  for (const m of ['2026-09', '2026-10', '2026-11']) {
     out[m] = aaFeeRunPreview(state, m).map((r) => ({ anaesthetistId: r.anaesthetistId, bctiCount: r.bctiCount, subtotal: r.subtotal, total: r.total }))
   }
   return out
@@ -278,8 +278,8 @@ function standardNumbersFor(state: AppState, bookingIds: readonly string[]): str
 
 function s3Flow() {
   const api = storeWithoutPhase40()
-  const am = projectedListId(ANAE.souter, '2026-07-20', 'AM')
-  const pm = projectedListId(ANAE.souter, '2026-07-20', 'PM')
+  const am = projectedListId(ANAE.souter, '2026-11-23', 'AM')
+  const pm = projectedListId(ANAE.souter, '2026-11-23', 'PM')
   withWiredRun(api, () => {
     authoriseList(api, OFFICE, am)
     authoriseList(api, OFFICE, pm)
@@ -387,10 +387,10 @@ function seededPaidPrepaymentFlow() {
 function feeRunFlow() {
   const api = storeWithoutPhase40()
   seedMonthOfBctis(api, DEMO_TRIGGER_ACTOR, ANAE.rutherford)
-  const preview = feePreviews(api.getState())['2026-07']
-  const ran = runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
+  const preview = feePreviews(api.getState())['2026-11']
+  const ran = runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-11' })
   const raised = feeInvoices(api.getState())
-  const rutherford = aaFeeInvoicesFor(api.getState(), ANAE.rutherford).find((f) => f.monthISO === '2026-07')
+  const rutherford = aaFeeInvoicesFor(api.getState(), ANAE.rutherford).find((f) => f.monthISO === '2026-11')
   let paid: ReturnType<typeof feeInvoices> | null = null
   if (rutherford !== undefined) {
     recordAaFeePayment(api, { aaFeeInvoiceId: rutherford.id, idempotencyKey: 'P36-FEE' })
@@ -431,7 +431,7 @@ function recheckFlow() {
   const souterId = moveApi.getState().schedule.lists[moveApi.getState().schedule.bookings[riley]!.listId]!.anaesthetistId
   const candidates = Object.values(moveApi.getState().schedule.lists)
     .filter((l) => l.anaesthetistId !== undefined && l.anaesthetistId !== souterId && l.state === 'ACTIVE')
-    .sort((a, b) => Number(b.dateISO === '2026-07-24') - Number(a.dateISO === '2026-07-24') || a.id.localeCompare(b.id))
+    .sort((a, b) => Number(b.dateISO === '2026-11-27') - Number(a.dateISO === '2026-11-27') || a.id.localeCompare(b.id))
   const moved = candidates.find((l) => reassignBooking(moveApi, OFFICE, riley, l.id).ok)
   const afterMove = step(moveApi.getState())
   return { withdrawn, sent, changed, moved: moved !== undefined, beforeMove, afterMove, prior: hasUnpaidOtherEpisode(moveApi.getState(), moveApi.getState().schedule.bookings[riley]!.patientId, riley) }

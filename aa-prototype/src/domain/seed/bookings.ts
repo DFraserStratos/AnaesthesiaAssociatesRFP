@@ -89,19 +89,19 @@ export interface BookingsBuild {
 // Dates & helpers
 // ---------------------------------------------------------------------------
 
-const TUE21 = '2026-07-21'
-const MON20 = '2026-07-20'
-const WED22 = '2026-07-22'
-const THU23 = '2026-07-23'
-const FRI24 = '2026-07-24'
-const MON27 = '2026-07-27'
-const MON03_AUG = '2026-08-03'
-const TUE04_AUG = '2026-08-04'
-const THU09 = '2026-07-09'
-const TUE14 = '2026-07-14'
-const WED15 = '2026-07-15'
-const THU16 = '2026-07-16'
-const FRI17 = '2026-07-17'
+const TUE21 = '2026-11-24'
+const MON20 = '2026-11-23'
+const WED22 = '2026-11-25'
+const THU23 = '2026-11-26'
+const FRI24 = '2026-11-27'
+const MON27 = '2026-11-30'
+const MON03_AUG = '2026-12-07'
+const TUE04_AUG = '2026-12-08'
+const THU09 = '2026-11-12'
+const TUE14 = '2026-11-17'
+const WED15 = '2026-11-18'
+const THU16 = '2026-11-19'
+const FRI17 = '2026-11-20'
 
 const NAME_BY_ID = new Map(ANAESTHETISTS.map((a) => [a.registrationNumber, a.name]))
 /** The legacy five-digit codes the scenarios and generator still name, through the one seed-only bridge (catch-up Phase 19). */
@@ -946,7 +946,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   // intervention.
   // -------------------------------------------------------------------------
 
-  const souterTue28Am = projectedListId(ANAE.souter, '2026-07-28', 'AM')
+  const souterTue28Am = projectedListId(ANAE.souter, '2026-12-01', 'AM')
   const souterTue04AugAm = projectedListId(ANAE.souter, TUE04_AUG, 'AM')
   const souterMon03AugPm = projectedListId(ANAE.souter, MON03_AUG, 'PM')
   // Delaney Fri 17 AM (St George's / Mr Doyle) — a real past operating list (Delaney
@@ -1094,7 +1094,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
     // Phase 11 integration demo lists: S1's S12 destination (hand-authored
     // above), the separate seeded modify targets, and the create destinations.
     souterTue28Am, souterTue04AugAm, souterMon03AugPm, delaneyFri17Am,
-    projectedListId(ANAE.souter, '2026-07-28', 'PM'), projectedListId(ANAE.souter, '2026-07-30', 'AM'),
+    projectedListId(ANAE.souter, '2026-12-01', 'PM'), projectedListId(ANAE.souter, '2026-12-03', 'AM'),
   ])
 
   const sortedLists = [...lists].sort((a, b) =>
@@ -1173,7 +1173,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   let futureBudget = 24
 
   // Past: newest first so the fortnight nearest today is richest.
-  const pastLists = sortedLists.filter((l) => l.dateISO >= '2026-07-07' && l.dateISO <= MON20 && bookable(l)).reverse()
+  const pastLists = sortedLists.filter((l) => l.dateISO >= '2026-11-10' && l.dateISO <= MON20 && bookable(l)).reverse()
   for (const list of pastLists) {
     if (pastBudget <= 0) break
     const rng = slotRng(seed, 'cards', list.id)
@@ -1195,7 +1195,7 @@ export function buildBookings(seed: number, lists: readonly AssignedList[]): Boo
   }
 
   // Future: thinning out to ten days ahead.
-  for (const list of sortedLists.filter((l) => l.dateISO >= WED22 && l.dateISO <= '2026-07-31' && bookable(l))) {
+  for (const list of sortedLists.filter((l) => l.dateISO >= WED22 && l.dateISO <= '2026-12-04' && bookable(l))) {
     if (futureBudget <= 0) break
     const rng = slotRng(seed, 'cards', list.id)
     const daysAhead = (Date.parse(list.dateISO) - Date.parse(TUE21)) / 86400000

@@ -40,7 +40,7 @@ function newBookingIds(before: Set<string>): string[] {
 function saveManual() {
   fireEvent.change(screen.getByLabelText('NHI'), { target: { value: 'ZZZ9005' } })
   fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ad Hoc Patient' } })
-  fireEvent.change(screen.getByLabelText('Date of birth'), { target: { value: '1990-05-05' } })
+  fireEvent.change(screen.getByLabelText('Date of birth'), { target: { value: '1990-09-08' } })
   fireEvent.change(screen.getByLabelText('Procedure description'), { target: { value: 'Diagnostic laparoscopy' } })
   fireEvent.click(screen.getByRole('button', { name: 'Save booking' }))
 }
@@ -125,7 +125,7 @@ describe('the Procedure description field (catch-up Phase 20a; US-02.4.1)', () =
   function fillPatient() {
     fireEvent.change(screen.getByLabelText('NHI'), { target: { value: 'ZZZ9005' } })
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Typed Patient' } })
-    fireEvent.change(screen.getByLabelText('Date of birth'), { target: { value: '1990-05-05' } })
+    fireEvent.change(screen.getByLabelText('Date of birth'), { target: { value: '1990-09-08' } })
   }
   const newestProcedure = (before: Set<string>) => {
     const created = newBookingIds(before)
@@ -185,7 +185,7 @@ describe('the mandatory NHI and the matched record (catch-up Phase 40; D11, US-0
   it.each(FORMS)('the %s form disables Save with a blank NHI, says why, and enables it with a valid one', (_app, variant, actor) => {
     renderOn(variant, actor)
     type('Name', 'Ad Hoc Patient')
-    type('Date of birth', '1990-05-05')
+    type('Date of birth', '1990-09-08')
     expect(saveButton()).toBeDisabled()
     expect(saveButton()).toHaveAccessibleDescription(NHI_NEEDED_TO_SAVE)
 
@@ -207,7 +207,7 @@ describe('the mandatory NHI and the matched record (catch-up Phase 40; D11, US-0
     expect(screen.queryByText(DETAILS_DIFFER_LINE)).toBeNull()
 
     type('Name', 'Sarah Mitchell')
-    type('Date of birth', '1988-04-12')
+    type('Date of birth', '1988-08-16')
     expect(screen.queryByText(DETAILS_DIFFER_LINE)).toBeNull()
     type('Phone', '027 000 1111')
     expect(screen.getByText(DETAILS_DIFFER_LINE)).toBeInTheDocument()

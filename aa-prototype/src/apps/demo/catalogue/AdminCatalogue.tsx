@@ -706,7 +706,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="StubRow and StubMarker" source="shared/stubs/StubParts.tsx" usedIn={AWM} what="A stub on a List (catch-up Phase 33a): a booking waiting at intake, not a Booking. StubRow is the Booking row with the dashed placeholder edge on the mild warning tint and the triangle disc: time, name and wording as received, the reason and who resolves it. StubTableRow holds it in a Bookings table and shows what was received inline; StubMarker is the triangle beside a List's count (Lists rows, the Day grid block); ListStubNote reads '1 waiting at intake' beside the progress. On Admin it ends in StubResolveLink, 'Resolve on Matching'." shared="shared/stubs/StubParts.tsx" note="A fixed example stub; nothing writes to the demo data.">
           <StubSetExample />
         </CatalogueRow>
-        <CatalogueRow name="RemittanceAdviceDocument (on the document parts)" source="shared/billing/RemittanceAdviceDocument.tsx · shared/billing/docParts.tsx" usedIn={AW} what="A payment run's remittance advice (catch-up Phase 39a; US-10.2.5): REMITTANCE ADVICE with the anaesthetist as supplier and AA as agent, the week, paid on and paid to, every BCTI paid, every negative netted as a signed amount, and Paid to you. The Admin document and web Accounts' sheet are one component." shared="shared/billing/RemittanceAdviceDocument.tsx" note="Built from the document parts the tax invoice and the credit note share (DocMasthead, AgentBlock, DocLinesTable with a printed signed amount, DocTotalLines), lifted out of InvoiceDocument so the three documents stay one family. Dr Souter's Week 29 advice here.">
+        <CatalogueRow name="RemittanceAdviceDocument (on the document parts)" source="shared/billing/RemittanceAdviceDocument.tsx · shared/billing/docParts.tsx" usedIn={AW} what="A payment run's remittance advice (catch-up Phase 39a; US-10.2.5): REMITTANCE ADVICE with the anaesthetist as supplier and AA as agent, the week, paid on and paid to, every BCTI paid, every negative netted as a signed amount, and Paid to you. The Admin document and web Accounts' sheet are one component." shared="shared/billing/RemittanceAdviceDocument.tsx" note="Built from the document parts the tax invoice and the credit note share (DocMasthead, AgentBlock, DocLinesTable with a printed signed amount, DocTotalLines), lifted out of InvoiceDocument so the three documents stay one family. Dr Souter's Week 47 advice here.">
           <RemittanceAdviceDocumentExample />
         </CatalogueRow>
         <CatalogueRow name="ContractHistory" source="apps/admin/flows/ContractHistory.tsx" usedIn={A} what="A Contract's History tab (catch-up Phase 25; US-04.1.3): its audited changes newest first through the shared HistoryTimeline (who, when, the values before and after), then the Procedures locked against it with links to their Bookings and invoices; EmptyState before any change." shared="shared/booking/HistoryTimeline.tsx" note="Shown on the fixed-price Contract of the seeded AUTHORISED Face lift.">
@@ -790,7 +790,7 @@ function RadioCardExample() {
   const radio = useRovingRadio<string>({ values, value, onChange: setValue, isDisabled: (v) => v === 'sx' })
   return (
     <div {...radio.groupProps} aria-label="Sample files" style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 440 }}>
-      <RadioCard radio={radio.itemProps(0)} checked={value === 'stg'} onSelect={() => setValue('stg')} title="St George's" titleExtra={<span className="mono" style={{ fontSize: 12 }}>5 rows</span>} description="Theatre list, week of 27 July">
+      <RadioCard radio={radio.itemProps(0)} checked={value === 'stg'} onSelect={() => setValue('stg')} title="St George's" titleExtra={<span className="mono" style={{ fontSize: 12 }}>5 rows</span>} description="Theatre list, week of 30 November">
         <span style={{ fontSize: 12.5 }}>The checked card's own controls sit here.</span>
       </RadioCard>
       <RadioCard radio={radio.itemProps(1)} checked={value === 'mercy'} onSelect={() => setValue('mercy')} title="Mercy Hospital" titleExtra={<Pill size="sm">Suggested</Pill>} description="Bookings export" />
@@ -807,7 +807,7 @@ function DecisionCardsExample() {
       <DecisionCards
         options={[
           { kind: 'createBooking', title: 'Create a Booking on a List', description: 'Add the Booking to a List at this hospital that day.' },
-          { kind: 'createList', title: 'Create a List in a session', description: 'A new List holding this Booking.', disabledReason: 'No anaesthetist is free on Tue 28 Jul AM.' },
+          { kind: 'createList', title: 'Create a List in a session', description: 'A new List holding this Booking.', disabledReason: 'No anaesthetist is free on Tue 1 Dec AM.' },
           { kind: 'reject', title: 'Reject', description: 'Nothing is created or changed. The reason is kept with the row.' },
         ]}
         value={kind}
@@ -891,7 +891,7 @@ function DisclosureExample() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14, width: 360 }}>
       <Disclosure summary="Ended (2)" style={{ borderTop: `1px solid ${neutral.line}`, paddingTop: 14 }} gap={10}>
-        <div style={{ fontSize: 13, color: neutral.slate }}>Dr Chen · Not preferred · ended 3 Jul</div>
+        <div style={{ fontSize: 13, color: neutral.slate }}>Dr Chen · Not preferred · ended 6 Nov</div>
       </Disclosure>
       <div style={{ fontSize: 13 }}>
         <DisclosureButton open={rowOpen} onToggle={() => setRowOpen((v) => !v)} style={{ color: neutral.ink }}>

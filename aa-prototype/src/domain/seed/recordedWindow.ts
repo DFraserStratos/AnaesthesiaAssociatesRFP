@@ -21,7 +21,7 @@ import { HOSP, SURG } from './cast'
 import { originForNewList } from '../lists/listOrigin'
 
 /** The recorded window: the demo's fixed past and near future. */
-export const RECORDED_WINDOW = { fromISO: '2026-07-07', toISO: '2026-08-16' } as const
+export const RECORDED_WINDOW = { fromISO: '2026-11-10', toISO: '2026-12-20' } as const
 
 // ---------------------------------------------------------------------------
 // Placement helpers (seed only)

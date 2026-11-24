@@ -199,13 +199,13 @@ describe('procedureNeedsPrice with nothing typed: "Needs a price" (catch-up Phas
   it('is true on a fixed price before its first range, and on any open price; never on an RVG kind', () => {
     expect(needsPriceUntyped(fixed, '2026-03-31')).toBe(true)
     expect(needsPriceUntyped(fixed, '2026-04-01')).toBe(false)
-    expect(needsPriceUntyped(fixed, '2026-11-05')).toBe(false)
+    expect(needsPriceUntyped(fixed, '2027-03-11')).toBe(false)
     // Catch-up Phase 18a: an open-price Contract has no price of its own, so nothing bills one silently.
-    expect(needsPriceUntyped(mkContract({ pricing: { kind: 'open' } }), '2026-07-21')).toBe(true)
-    expect(needsPriceUntyped(mkContract(), '2020-01-01')).toBe(false)
-    expect(needsPriceMessage(fixed, '2026-07-16')).toBe('Needs a price: no price range in force on 16 Jul 2026.')
-    expect(needsPriceMessage({ ...fixed, name: 'COS ACC fixed fees' }, '2026-07-16', { named: true })).toBe('Needs a price: no price range in force on 16 Jul 2026 under COS ACC fixed fees.')
-    expect(needsPriceMessage(mkContract({ name: 'No contract · Fixed price', pricing: { kind: 'open' } }), '2026-07-16')).toBe('Needs a price: No contract · Fixed price has no price of its own.')
+    expect(needsPriceUntyped(mkContract({ pricing: { kind: 'open' } }), '2026-11-24')).toBe(true)
+    expect(needsPriceUntyped(mkContract(), '2020-05-06')).toBe(false)
+    expect(needsPriceMessage(fixed, '2026-11-19')).toBe('Needs a price: no price range in force on 19 Nov 2026.')
+    expect(needsPriceMessage({ ...fixed, name: 'COS ACC fixed fees' }, '2026-11-19', { named: true })).toBe('Needs a price: no price range in force on 19 Nov 2026 under COS ACC fixed fees.')
+    expect(needsPriceMessage(mkContract({ name: 'No contract · Fixed price', pricing: { kind: 'open' } }), '2026-11-19')).toBe('Needs a price: No contract · Fixed price has no price of its own.')
   })
 })
 
@@ -216,18 +216,18 @@ describe('the fixed price\'s ranges and the default RVG code in the save guard (
 
   it('a fixed price needs at least one range, unique starts and prices of 0 or more', () => {
     expect(code(fixedWith([]))).toBe('noRange')
-    expect(code(fixedWith([{ startISO: '2026-06-01', price: 3100 }, { startISO: '2026-06-01', price: 3200 }]))).toBe('duplicateStart')
-    expect(contractRefusal(fixedWith([{ startISO: '2026-06-01', price: 3100 }, { startISO: '2026-06-01', price: 3200 }]), ctx())?.message).toBe(
-      'Another price range already starts on 1 Jun 2026.',
+    expect(code(fixedWith([{ startISO: '2026-10-05', price: 3100 }, { startISO: '2026-10-05', price: 3200 }]))).toBe('duplicateStart')
+    expect(contractRefusal(fixedWith([{ startISO: '2026-10-05', price: 3100 }, { startISO: '2026-10-05', price: 3200 }]), ctx())?.message).toBe(
+      'Another price range already starts on 5 Oct 2026.',
     )
-    expect(code(fixedWith([{ startISO: '2026-06-01', price: -1 }]))).toBe('negativePrice')
+    expect(code(fixedWith([{ startISO: '2026-10-05', price: -1 }]))).toBe('negativePrice')
     // 0 gives a no-charge invoice (AR-58 2.4) on a Contract that is not prepaid.
-    expect(code(fixedWith([{ startISO: '2026-06-01', price: 0 }]))).toBeNull()
+    expect(code(fixedWith([{ startISO: '2026-10-05', price: 0 }]))).toBeNull()
   })
 
   it('every range above zero on a prepaid Contract (OQ-92, D30)', () => {
     expect(code(fixedWith([{ startISO: '2026-01-01', price: 1200 }], prepaidList))).toBeNull()
-    expect(code(fixedWith([{ startISO: '2026-01-01', price: 1200 }, { startISO: '2026-09-01', price: 0 }], prepaidList))).toBe('prepaidPriceNotAboveZero')
+    expect(code(fixedWith([{ startISO: '2026-01-01', price: 1200 }, { startISO: '2027-01-05', price: 0 }], prepaidList))).toBe('prepaidPriceNotAboveZero')
     expect(code(fixedWith([{ startISO: '2026-01-01', price: Number.NaN }], prepaidList))).toBe('prepaidPriceNotAboveZero')
     expect(contractRefusal(fixedWith([{ startISO: '2026-01-01', price: 0 }], prepaidList), ctx())?.message).toBe("A prepaid Contract's price must be above zero.")
   })

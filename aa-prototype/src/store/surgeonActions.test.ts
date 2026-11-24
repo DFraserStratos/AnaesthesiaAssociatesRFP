@@ -115,7 +115,7 @@ describe('hospitals and the anaesthetist HPI CPN', () => {
 
   it("addAnaesthetist refuses a surgeon's HPI CPN and stores a typed one upper-cased", () => {
     const api = createAppStore()
-    const base = { registrationNumber: '50001', name: 'Dr New Person', phone: '', email: '', unitValue: 30, bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, startDateISO: '2026-07-21' }
+    const base = { registrationNumber: '50001', name: 'Dr New Person', phone: '', email: '', unitValue: 30, bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, startDateISO: '2026-11-24' }
     const clash = addAnaesthetist(api, OFFICE, { ...base, hpiId: '47reia' })
     expect(clash.ok ? '' : clash.message).toBe('That HPI CPN already belongs to Ms A. Reid.')
     expect(addAnaesthetist(api, OFFICE, { ...base, hpiId: ' 24newp ' }).ok).toBe(true)
@@ -154,7 +154,7 @@ describe("catch-up Phase 17b: contacts on the surgeon, the HPI CPN optional (D74
 
   it("the anaesthetist's HPI CPN stays mandatory (catch-up Phase 26): a blank one is still refused", () => {
     const api = createAppStore()
-    const base = { registrationNumber: '50003', name: 'Dr Blank Number', phone: '', email: '', unitValue: 30, bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, startDateISO: '2026-07-21' }
+    const base = { registrationNumber: '50003', name: 'Dr Blank Number', phone: '', email: '', unitValue: 30, bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, startDateISO: '2026-11-24' }
     expect(addAnaesthetist(api, OFFICE, { ...base, hpiId: '' })).toMatchObject({ ok: false, code: 'hpiCpnRequired' })
   })
 

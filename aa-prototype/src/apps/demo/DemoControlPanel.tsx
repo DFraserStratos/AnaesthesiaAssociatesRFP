@@ -129,7 +129,7 @@ export function DemoControlPanel() {
           Advancing past midnight rolls the schedule forward: each new far-edge day gets an AM and a PM
           session for every active anaesthetist, free, with the calendar and the recurring bookings
           painted on, by the same generator the seed uses. Next morning jumps to 08:00 tomorrow;
-          Procedure day jumps forward to Tue 28 Jul, S1's operating day. These advance controls are
+          Procedure day jumps forward to Tue 1 Dec, S1's operating day. These advance controls are
           also available from the live clock beside the app switcher.
         </span>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
@@ -158,7 +158,7 @@ export function DemoControlPanel() {
       <ControlCard icon={RotateCcw} eyebrow="Seed data" title="Reset to pristine seed">
         <span style={{ fontSize: 13, lineHeight: 1.45, color: neutral.slate }}>
           Restores the deterministic seed exactly as it first loaded, and returns the clock to
-          Tuesday 21 July 2026, 8:00. Identical data every time.
+          Tuesday 24 November 2026, 8:00. Identical data every time.
         </span>
         <div style={{ display: 'flex', gap: 8, marginTop: 4, alignItems: 'center' }}>
           {confirmingReset ? (

@@ -39,7 +39,7 @@ import { roundToCents, toCents } from '../domain/billing/money'
 import { isBookingPair, settledOn } from '../domain/billing/ledger'
 import type { BookingLedgerPair } from '../domain/types'
 
-const AM20 = projectedListId(ANAE.souter, '2026-07-20', 'AM')
+const AM20 = projectedListId(ANAE.souter, '2026-11-23', 'AM')
 const ANAESTHETIST: typeof OFFICE_ACTOR = { who: 'Dr Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 
 const unwires: (() => void)[] = []
@@ -77,9 +77,9 @@ function conserved(api: BoundAppStore): void {
 }
 
 describe('the open week (US-10.2.7)', () => {
-  it('opens on Week 30 with nothing waiting on a fresh seed; closing refuses', () => {
+  it('opens on Week 48 with nothing waiting on a fresh seed; closing refuses', () => {
     const api = createAppStore()
-    expect(openCycle(api.getState()).cycleId).toBe('2026-W30')
+    expect(openCycle(api.getState()).cycleId).toBe('2026-W48')
     expect(openCycleDraft(api.getState()).lines).toEqual([])
     expect(closeWeek(api, OFFICE_ACTOR)).toMatchObject({ ok: false, code: 'nothingToClose', message: PAYMENT_CYCLE_COPY.nothingToClose })
   })
@@ -107,7 +107,7 @@ describe('close, approve, schedule, pay (the gate, US-10.2.6)', () => {
     expect(payBillsInXero(api, XERO_PAYABLES_ACTOR, [{ accPayId: pairs[0]!.payable!.xeroAccPayId! }], { webhook: 'deliver', runId: 'PR0099' })).toMatchObject({ ok: false, code: 'notApproved' })
 
     const closed = closeWeek(api, OFFICE_ACTOR)
-    expect(closed).toMatchObject({ ok: true, value: { cycleId: '2026-W30', anomalies: 0 } })
+    expect(closed).toMatchObject({ ok: true, value: { cycleId: '2026-W48', anomalies: 0 } })
     const runId = closed.ok ? closed.value.runId : ''
     const run = api.getState().billing.payablesRuns[runId]!
     expect(run.lines.map((l) => [l.pairId, l.amount])).toEqual([[pairs[0]!.id, half]])
@@ -127,16 +127,16 @@ describe('close, approve, schedule, pay (the gate, US-10.2.6)', () => {
     expect(api.getState().billing.payablesRuns[runId]!.status).toBe('paid')
     expect(leg(api, pairs[0]!.id)!.disbursedAmount).toBe(half)
     const ld = Object.values(api.getState().billing.disbursements).find((d) => d.pairId === pairs[0]!.id)!
-    expect(paymentWeekFor(api.getState(), ld.payablesRunId)).toBe('Week 30')
+    expect(paymentWeekFor(api.getState(), ld.payablesRunId)).toBe('Week 48')
     // Pressing Run again pays nothing more.
     expect(runPayables(api, OFFICE_ACTOR)).toMatchObject({ ok: false, code: 'nothingScheduled' })
     conserved(api)
 
     // The balance received now waits for Week 31, never Week 30's run.
     pay(api, pairs[0]!, 0.5, 'REST')
-    expect(openCycle(api.getState()).cycleId).toBe('2026-W31')
+    expect(openCycle(api.getState()).cycleId).toBe('2026-W49')
     const out = runThisWeeksCycle(api, OFFICE_ACTOR)
-    expect(out).toMatchObject({ ok: true, value: { cycleId: '2026-W31' } })
+    expect(out).toMatchObject({ ok: true, value: { cycleId: '2026-W49' } })
     expect(leg(api, pairs[0]!.id)!.disbursedAmount).toBe(pairs[0]!.receivable.amount)
     conserved(api)
   })
@@ -147,7 +147,7 @@ describe('close, approve, schedule, pay (the gate, US-10.2.6)', () => {
     const closed = closeWeek(api, OFFICE_ACTOR)
     const runId = closed.ok ? closed.value.runId : ''
     pay(api, pairs[1]!, 1, 'B')
-    expect(closeWeek(api, OFFICE_ACTOR)).toMatchObject({ ok: false, code: 'previousWeekOpen', message: "Finish Week 30's run first." })
+    expect(closeWeek(api, OFFICE_ACTOR)).toMatchObject({ ok: false, code: 'previousWeekOpen', message: "Finish Week 48's run first." })
     expect(api.getState().billing.payablesRuns[runId]!.lines.map((l) => l.pairId)).toEqual([pairs[0]!.id])
     approveWeekBctis(api, OFFICE_ACTOR, runId)
     sendPaymentSchedule(api, OFFICE_ACTOR, runId)
@@ -179,7 +179,7 @@ describe('the check day: holds roll forward (US-10.2.7 second criterion)', () =>
     run = api.getState().billing.payablesRuns[runId]!
     expect(run.status).toBe('paid')
     const next = openCycleDraft(api.getState())
-    expect(next.cycle.cycleId).toBe('2026-W31')
+    expect(next.cycle.cycleId).toBe('2026-W49')
     expect(next.lines).toEqual([expect.objectContaining({ pairId: pairs[1]!.id, rolledFromRunId: runId })])
     conserved(api)
   })
@@ -211,7 +211,7 @@ describe('the check day: holds roll forward (US-10.2.7 second criterion)', () =>
     expect(api.getState().billing.payablesRuns[runId]!.status).toBe('paid')
     expect(leg(api, pairs[0]!.id)!.disbursedAmount).toBe(0)
     const next = closeWeek(api, OFFICE_ACTOR)
-    expect(next).toMatchObject({ ok: true, value: { cycleId: '2026-W31' } })
+    expect(next).toMatchObject({ ok: true, value: { cycleId: '2026-W49' } })
     expect(api.getState().billing.payablesRuns[next.ok ? next.value.runId : '']!.lines).toEqual([expect.objectContaining({ pairId: pairs[0]!.id, rolledFromRunId: runId })])
   })
 })
@@ -222,7 +222,7 @@ describe('staged one-pair runs (the demo payouts, no back door)', () => {
     pay(api, pairs[0]!, 1, 'A')
     pay(api, pairs[1]!, 1, 'B')
     const out = approveAndPayPairForDemo(api, OFFICE_SIMULATION_ACTOR, pairs[0]!.id)
-    expect(out).toMatchObject({ ok: true, value: { cycleId: '2026-W30', billsPaid: 1 } })
+    expect(out).toMatchObject({ ok: true, value: { cycleId: '2026-W48', billsPaid: 1 } })
     const staged = api.getState().billing.payablesRuns[out.ok ? out.value.payablesRunId! : '']!
     expect(staged).toMatchObject({ kind: 'staged', status: 'paid', approvedBy: { who: OFFICE_SIMULATION_ACTOR.who } })
     expect(leg(api, pairs[1]!.id)!.disbursedAmount).toBe(0)
@@ -250,7 +250,7 @@ describe('the stale run', () => {
     expect(re.ok).toBe(true)
     const fresh = api.getState().billing.payablesRuns[re.ok ? re.value.runId : '']!
     expect(api.getState().billing.payablesRuns[runId]).toMatchObject({ status: 'superseded', supersededBy: fresh.id })
-    expect(fresh.cycleId).toBe('2026-W30')
+    expect(fresh.cycleId).toBe('2026-W48')
     expect(fresh.lines.find((l) => l.pairId === pairs[1]!.id)?.heldOut?.reason).toBe('Check')
     expect(unsettledRuns(api.getState()).map((r) => r.id)).toEqual([fresh.id])
   })
@@ -316,7 +316,7 @@ describe('US-10.2.5: netting in the weekly run (Stage a payment week)', () => {
     const cashBefore = ledgerPositionOf(api.getState()).disbursed
 
     const ran = runThisWeeksCycle(api, OFFICE_ACTOR)
-    expect(ran).toMatchObject({ ok: true, value: { cycleId: '2026-W30', billsPaid: 19, netted: 365.7 } })
+    expect(ran).toMatchObject({ ok: true, value: { cycleId: '2026-W48', billsPaid: 19, netted: 365.7 } })
     const runId = ran.ok ? ran.value.payablesRunId! : ''
     const run = api.getState().billing.payablesRuns[runId]!
     expect(run.status).toBe('paid')

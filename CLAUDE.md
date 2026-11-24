@@ -125,7 +125,7 @@ requirement text with this rule.
   events are `DemoTrigger` entries in `src/shared/demoTriggers/registry.ts`, shown only on their own
   screen.
 - **Determinism.** Never `Date.now()`, `new Date()` or `Math.random()`. Time comes from the demo
-  clock (`src/domain/clock.ts`; `DEMO_TODAY` = 2026-07-21), randomness from the seeded RNG. Same seed
+  clock (`src/domain/clock.ts`; `DEMO_TODAY` = 2026-11-24), randomness from the seeded RNG. Same seed
   → identical data.
 - **The everyday data is AA's whole practice**: `freshAppState()` is the core seed (the scripted cast of 14,
   `domain/seed/`) plus the 71 colleagues of `domain/seed/fullScale/names.ts`

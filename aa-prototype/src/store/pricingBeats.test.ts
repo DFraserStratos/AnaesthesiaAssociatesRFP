@@ -125,7 +125,7 @@ describe('no difference invoice ever (US-05.2.8)', () => {
     // Catch-up Phase 27: Nair's rhinoplasty is on Dr Souter's prepaid Rhinoplasty Contract at $1,200.
     const prepaid = proceduresForBooking(api.getState(), bookingId).find((p) => p.governingContractId === 'CT-SOUTER-RHINO')!
     const before = totalOf(api, bookingId)
-    expect(addPriceRange(api, OFFICE_ACTOR, 'CT-SOUTER-RHINO', { startISO: '2026-07-01', price: 5000 }).ok).toBe(true)
+    expect(addPriceRange(api, OFFICE_ACTOR, 'CT-SOUTER-RHINO', { startISO: '2026-11-04', price: 5000 }).ok).toBe(true)
     expect(totalOf(api, bookingId)).toBe(before)
     const listId = api.getState().schedule.bookings[bookingId]!.listId
     for (const b of bookingsForList(api.getState(), listId)) {
@@ -150,7 +150,7 @@ describe("the Contract's discount, its own invoice line (item 9; US-05.4.3)", ()
     const api = createAppStore()
     const bookingId = marker('discountBooking')
     const p = proceduresForBooking(api.getState(), bookingId)[0]!
-    expect(editProcedure(api, OFFICE_ACTOR, p.id, { anaestheticStartISO: '2026-07-27T11:20:00', handoverISO: '2026-07-27T13:05:00' }).ok).toBe(true)
+    expect(editProcedure(api, OFFICE_ACTOR, p.id, { anaestheticStartISO: '2026-11-30T11:20:00', handoverISO: '2026-11-30T13:05:00' }).ok).toBe(true)
     const s = api.getState()
     const booking = s.schedule.bookings[bookingId]!
     const list = s.schedule.lists[booking.listId]!

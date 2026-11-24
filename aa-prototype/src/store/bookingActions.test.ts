@@ -47,7 +47,7 @@ describe('createBooking', () => {
     const bookingsBefore = bookingsForList(api.getState(), SOUTER_PM).length
 
     const outcome = createBooking(api, SOUTER, SOUTER_PM, {
-      patient: { nhi: nextTestNhi(), name: 'Ad Hoc Patient', dobISO: '1990-05-05' },
+      patient: { nhi: nextTestNhi(), name: 'Ad Hoc Patient', dobISO: '1990-09-08' },
       sourceText: { text: 'Diagnostic laparoscopy', source: 'anaesthetist' },
       rvgGroupId: RVG_GROUP.a3!,
       scheduledTime: '17:00',
@@ -79,7 +79,7 @@ describe('createBooking', () => {
     const patientsBefore = Object.keys(api.getState().masters.patients).length
 
     const outcome = createBooking(api, SOUTER, SOUTER_PM, {
-      patient: { nhi: 'cqy9304', name: 'Sarah Mitchell', dobISO: '1988-04-12' },
+      patient: { nhi: 'cqy9304', name: 'Sarah Mitchell', dobISO: '1988-08-16' },
       sourceText: { text: 'Laparoscopic cholecystectomy', source: 'anaesthetist' },
       rvgGroupId: RVG_GROUP.a3!,
     })
@@ -95,7 +95,7 @@ describe('createBooking', () => {
     const api = store()
     const bookingsBefore = Object.keys(api.getState().schedule.bookings).length
     const outcome = createBooking(api, SOUTER, SOUTER_PM, {
-      patient: { nhi: 'AAA9999', name: 'Bad NHI', dobISO: '1990-01-01' },
+      patient: { nhi: 'AAA9999', name: 'Bad NHI', dobISO: '1990-05-07' },
       sourceText: { text: 'Test', source: 'anaesthetist' },
     })
     expect(outcome.ok).toBe(false)
@@ -106,7 +106,7 @@ describe('createBooking', () => {
   it('the anaesthetist may add a Booking to their own SUBMITTED list (catch-up Phase 38a)', () => {
     const api = store()
     const outcome = createBooking(api, MORRISON, MORRISON_LIST, {
-      patient: { nhi: nextTestNhi(), name: 'X', dobISO: '1990-01-01' },
+      patient: { nhi: nextTestNhi(), name: 'X', dobISO: '1990-05-07' },
       sourceText: { text: 'Test', source: 'anaesthetist' },
     })
     expect(outcome.ok).toBe(true)
@@ -116,7 +116,7 @@ describe('createBooking', () => {
   it('refuses a non-owned list', () => {
     const api = store()
     const outcome = createBooking(api, SOUTER, MORRISON_LIST, {
-      patient: { nhi: nextTestNhi(), name: 'X', dobISO: '1990-01-01' },
+      patient: { nhi: nextTestNhi(), name: 'X', dobISO: '1990-05-07' },
       sourceText: { text: 'Test', source: 'anaesthetist' },
     })
     expect(outcome.ok).toBe(false)
@@ -128,7 +128,7 @@ describe('createBooking', () => {
     // Authorise the Morrison SUBMITTED list first.
     expect(authoriseList(api, OFFICE, MORRISON_LIST).ok).toBe(true)
     const outcome = createBooking(api, OFFICE, MORRISON_LIST, {
-      patient: { nhi: nextTestNhi(), name: 'X', dobISO: '1990-01-01' },
+      patient: { nhi: nextTestNhi(), name: 'X', dobISO: '1990-05-07' },
       sourceText: { text: 'Test', source: 'anaesthetist' },
     })
     expect(outcome.ok).toBe(false)
@@ -141,7 +141,7 @@ describe('createBooking', () => {
     const api = store()
     const amList = marker('designDayAmList')
     const outcome = createBooking(api, SOUTER, amList, {
-      patient: { nhi: nextTestNhi(), name: 'Ad Hoc Patient', dobISO: '1990-05-05' },
+      patient: { nhi: nextTestNhi(), name: 'Ad Hoc Patient', dobISO: '1990-09-08' },
       sourceText: { text: 'Diagnostic laparoscopy', source: 'anaesthetist' },
       rvgGroupId: RVG_GROUP.a3!,
       scheduledTime: '11:30',

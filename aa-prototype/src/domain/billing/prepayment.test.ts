@@ -32,7 +32,7 @@ const SOUTER_PARTY = mkParty({ id: 'party-souter', kind: 'anaesthetist', name: '
 const SURGEON_PARTY = mkParty({ id: 'party-surgeon', kind: 'surgeon', name: 'Mr Okafor', codePrefix: 'OKA', hospitalId: undefined })
 
 const HOSPITAL_RVG = mkContract({ id: 'con-hosp' })
-const RHINO = mkContract({ id: 'con-rhino', aaCode: 'SOU-001', name: 'Rhinoplasty', holderId: SOUTER_PARTY.id, billsTo: 'payer', prepaid: true, pricing: { kind: 'fixed', ranges: [{ startISO: '2026-01-01', price: 1200 }, { startISO: '2026-09-01', price: 1300 }] } })
+const RHINO = mkContract({ id: 'con-rhino', aaCode: 'SOU-001', name: 'Rhinoplasty', holderId: SOUTER_PARTY.id, billsTo: 'payer', prepaid: true, pricing: { kind: 'fixed', ranges: [{ startISO: '2026-01-01', price: 1200 }, { startISO: '2027-01-05', price: 1300 }] } })
 const BLEPH = mkContract({ id: 'con-bleph', aaCode: 'SOU-002', name: 'Blepharoplasty, upper lids', holderId: SOUTER_PARTY.id, billsTo: 'payer', prepaid: true, pricing: { kind: 'fixed', ranges: [{ startISO: '2026-01-01', price: 900 }] } })
 const SURGEON_PREPAID = mkContract({ id: 'con-surg', aaCode: 'OKA-001', name: 'Septorhinoplasty', holderId: SURGEON_PARTY.id, billsTo: 'payer', prepaid: true, pricing: { kind: 'fixed', ranges: [{ startISO: '2026-01-01', price: 1500 }] } })
 const NOT_PREPAID_FIXED = mkContract({ id: 'con-fixed', aaCode: 'SOU-003', name: 'Face lift', holderId: SOUTER_PARTY.id, billsTo: 'payer', prepaid: false, pricing: { kind: 'fixed', ranges: [{ startISO: '2026-01-01', price: 2950 }] } })
@@ -51,7 +51,7 @@ function proc(id: string, contractId: string, over: Partial<Procedure> = {}): Pr
 function priceOf(p: Procedure): number | null {
   if (p.enteredPrice !== undefined) return p.enteredPrice
   const c = p.governingContractId !== undefined ? CONTRACTS[p.governingContractId] : undefined
-  if (c?.pricing.kind === 'fixed') return c.pricing.ranges.filter((r) => r.startISO <= '2026-07-24').at(-1)?.price ?? null
+  if (c?.pricing.kind === 'fixed') return c.pricing.ranges.filter((r) => r.startISO <= '2026-11-27').at(-1)?.price ?? null
   return null
 }
 
@@ -71,7 +71,7 @@ describe('detection (FT-06.2)', () => {
   it('per Procedure: a mixed Booking gives exactly its prepaid one; a cancelled Booking gives none', () => {
     const procs = [proc('p1', HOSPITAL_RVG.id), proc('p2', RHINO.id)]
     expect(prepaidProceduresFor(BOOKING, procs, CONTRACTS).map((p) => p.id)).toEqual(['p2'])
-    expect(prepaidProceduresFor({ cancellation: { reason: 'x', by: 'y', role: 'office', atISO: '2026-07-21T09:00:00' } } as never, procs, CONTRACTS)).toEqual([])
+    expect(prepaidProceduresFor({ cancellation: { reason: 'x', by: 'y', role: 'office', atISO: '2026-11-24T09:00:00' } } as never, procs, CONTRACTS)).toEqual([])
   })
 
   it("the Procedure's payer is addressed, a guardian too, never a holder (OQ-73)", () => {
@@ -192,7 +192,7 @@ describe('left off the final invoice (US-08.2.2, D57, US-05.3.1)', () => {
     rvgGroups: { [BASE_SINGLE_10.id]: BASE_SINGLE_10 },
     contracts: CONTRACTS,
     parties: { [HOSPITAL.id]: HOSPITAL, [SOUTER_PARTY.id]: SOUTER_PARTY, [SURGEON_PARTY.id]: SURGEON_PARTY },
-    listDateISO: '2026-07-24',
+    listDateISO: '2026-11-27',
     timeRule: DEFAULT_RVG_TIME_RULE,
     listHospitalId: 'hosp-1',
     patientId: 'pat-1',

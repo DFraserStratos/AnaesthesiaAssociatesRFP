@@ -28,7 +28,7 @@ import { actionLabel } from '../shared/audit/actionLabels'
 
 const OFFICE = OFFICE_ACTOR
 const FEED: Actor = { who: 'HL7 feed', role: 'system', source: 'integration' }
-const TODAY = '2026-07-21'
+const TODAY = '2026-11-24'
 const SOUTER_OOH = slotIdFor(ANAE.souter, TODAY, 'OOH')
 const store = (): BoundAppStore => createAppStore()
 
@@ -79,7 +79,7 @@ describe('openOutOfHoursSession', () => {
     expect(openOutOfHoursSession(api, OFFICE, ANAE.souter, TODAY)).toMatchObject({ ok: false, code: 'alreadyOpen' })
     expect(openOutOfHoursSession(store(), SOUTER_ACTOR, ANAE.souter, TODAY)).toMatchObject({ ok: false, code: 'officeOnly' })
     expect(openOutOfHoursSession(store(), FEED, ANAE.souter, TODAY)).toMatchObject({ ok: false, code: 'officeOnly' })
-    expect(openOutOfHoursSession(store(), OFFICE, ANAE.souter, '2026-07-20')).toMatchObject({ ok: false, code: 'pastDate' })
+    expect(openOutOfHoursSession(store(), OFFICE, ANAE.souter, '2026-11-23')).toMatchObject({ ok: false, code: 'pastDate' })
     expect(openOutOfHoursSession(store(), OFFICE, ANAE.souter, '2031-01-01')).toMatchObject({ ok: false, code: 'noRow' })
     // The PWA's office stand-in is the office.
     expect(openOutOfHoursSession(store(), OFFICE_SIMULATION_ACTOR, ANAE.souter, TODAY).ok).toBe(true)
@@ -157,7 +157,7 @@ describe('once open, it is a session like any other', () => {
     const api = opened()
     expect(setAvailabilityRange(api, SOUTER_ACTOR, { anaesthetistId: ANAE.souter, fromISO: TODAY, toISO: TODAY, sessions: 'OOH', statusKey: 'unavailable' }).ok).toBe(true)
     expect(api.getState().schedule.slots[SOUTER_OOH]?.status).toBe('unavailable')
-    expect(setAvailabilityRange(api, SOUTER_ACTOR, { anaesthetistId: ANAE.souter, fromISO: TODAY, toISO: '2026-07-22', sessions: 'OOH', statusKey: 'free' })).toMatchObject({ ok: false, message: 'An out-of-hours session is changed one day at a time.' })
+    expect(setAvailabilityRange(api, SOUTER_ACTOR, { anaesthetistId: ANAE.souter, fromISO: TODAY, toISO: '2026-11-25', sessions: 'OOH', statusKey: 'free' })).toMatchObject({ ok: false, message: 'An out-of-hours session is changed one day at a time.' })
     expect(setAvailabilityRange(store(), SOUTER_ACTOR, { anaesthetistId: ANAE.souter, fromISO: TODAY, toISO: TODAY, sessions: 'OOH', statusKey: 'unavailable' })).toMatchObject({ ok: false, code: 'noSlot' })
   })
 
@@ -174,7 +174,7 @@ describe('its Bookings go the whole way, as on any List', () => {
     const out = assignListToSlot(api, OFFICE, SOUTER_OOH, { hospitalId: HOSP.sx, surgeonId: SURG.patel, kind: 'private' })
     if (!out.ok) throw new Error(out.message)
     // A completed Booking from her submitted Mon 20 PM List.
-    const done = Object.values(api.getState().schedule.bookings).find((b) => b.listId === `L-${ANAE.souter}-2026-07-20-PM` && b.completed && b.cancellation === undefined)!
+    const done = Object.values(api.getState().schedule.bookings).find((b) => b.listId === `L-${ANAE.souter}-2026-11-23-PM` && b.completed && b.cancellation === undefined)!
     expect(reassignBooking(api, OFFICE, done.id, out.value.listId).ok).toBe(true)
     expect(submitList(api, OFFICE, out.value.listId).ok).toBe(true)
     expect(authoriseList(api, OFFICE, out.value.listId).ok).toBe(true)

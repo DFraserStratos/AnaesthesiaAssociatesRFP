@@ -17,7 +17,7 @@ const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 let full: AppState
 
 beforeAll(() => {
-  full = buildFullScaleDataset(freshAppState(), { todayISO: '2026-07-21' }).state
+  full = buildFullScaleDataset(freshAppState(), { todayISO: '2026-11-24' }).state
 }, 120_000)
 
 function invoices() {

@@ -101,7 +101,7 @@ export function PhoneAdviceBooking({ open, slotId, actor, onClose, onBooked }: P
 
   const isScriptedS2Booking =
     slot.anaesthetistId === ANAE.sharma &&
-    slot.dateISO === '2026-07-21' &&
+    slot.dateISO === '2026-11-24' &&
     slot.session === 'PM' &&
     draft.hospitalId === HOSP.stg &&
     draft.surgeonId === SURG.hale

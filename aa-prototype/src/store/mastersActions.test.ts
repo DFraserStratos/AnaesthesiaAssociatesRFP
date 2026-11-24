@@ -101,7 +101,7 @@ describe('editAnaesthetist: who edits what (catch-up Phase 26; US-12.1.1, US-12.
     ['hpiId', { hpiId: '88ZZZZ' }],
     ['bankAccount', { bankAccount: BANK }],
     ['active', { active: false }],
-    ['startDateISO', { startDateISO: '2014-01-01' }],
+    ['startDateISO', { startDateISO: '2014-05-07' }],
     ['gstNumber', { gstNumber: '' }],
   ]
 
@@ -229,7 +229,7 @@ describe('editAnaesthetist: who edits what (catch-up Phase 26; US-12.1.1, US-12.
 })
 
 describe('addAnaesthetist: HPI CPN and bank details mandatory (catch-up Phase 26; US-12.1.4)', () => {
-  const NEW = { registrationNumber: '99009', name: 'Dr Nadia Kerr', phone: '021 555 9009', email: 'n.kerr@aa-associates.example', unitValue: 30, startDateISO: '2026-07-21', hpiId: '12abcd', bankAccount: { accountName: 'Nadia Kerr', accountNumber: '990101009900900' } }
+  const NEW = { registrationNumber: '99009', name: 'Dr Nadia Kerr', phone: '021 555 9009', email: 'n.kerr@aa-associates.example', unitValue: 30, startDateISO: '2026-11-24', hpiId: '12abcd', bankAccount: { accountName: 'Nadia Kerr', accountNumber: '990101009900900' } }
   const code = (o: { ok: boolean; code?: string }) => (o.ok ? 'ok' : o.code)
 
   it('refuses a missing or malformed HPI CPN and missing or malformed bank details', () => {
@@ -291,32 +291,32 @@ describe('addAnaesthetist (catch-up Phase 28: Slots from the start date, US-01.1
 
   it('from a future date inside the horizon: no Slot before it', () => {
     const api = createAppStore()
-    expect(addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-08-03' }).ok).toBe(true)
+    expect(addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-12-07' }).ok).toBe(true)
     const slots = theirSlots(api)
     expect(slots.length).toBeGreaterThan(0)
-    expect(slots.every((s) => s.dateISO >= '2026-08-03')).toBe(true)
-    expect(slots.some((s) => s.dateISO === '2026-08-03')).toBe(true)
+    expect(slots.every((s) => s.dateISO >= '2026-12-07')).toBe(true)
+    expect(slots.some((s) => s.dateISO === '2026-12-07')).toBe(true)
   })
 
   it('from a date beyond the horizon: none yet, then the roll-forward creates them when the horizon reaches it', () => {
     const api = createAppStore()
     const end = horizonFor(api.getState().clock.todayISO, 4).endISO
-    const outcome = addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-11-23' })
-    expect(end).toBe('2026-11-21')
+    const outcome = addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2027-03-26' })
+    expect(end).toBe('2027-03-24')
     expect(outcome.ok && outcome.value.generatedSlots).toBe(0)
     expect(theirSlots(api)).toHaveLength(0)
     advanceClockDays(api, 3)
     const after = theirSlots(api)
-    expect(after.map((s) => s.dateISO).sort()).toEqual(['2026-11-23', '2026-11-23', '2026-11-24', '2026-11-24'])
+    expect(after.map((s) => s.dateISO).sort()).toEqual(['2027-03-26', '2027-03-26', '2027-03-27', '2027-03-27'])
   })
 
   it('refuses a missing or malformed start date, a duplicate registration number, and is office-only', () => {
     const api = createAppStore()
     const bad = addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '' })
     expect(bad.ok ? '' : bad.code).toBe('invalidStartDate')
-    const dup = addAnaesthetist(api, OFFICE, { ...NEW, registrationNumber: ANAE.souter, startDateISO: '2026-07-21' })
+    const dup = addAnaesthetist(api, OFFICE, { ...NEW, registrationNumber: ANAE.souter, startDateISO: '2026-11-24' })
     expect(dup.ok ? '' : dup.code).toBe('duplicateRegistration')
-    expect(addAnaesthetist(api, SOUTER, { ...NEW, startDateISO: '2026-07-21' }).ok).toBe(false)
+    expect(addAnaesthetist(api, SOUTER, { ...NEW, startDateISO: '2026-11-24' }).ok).toBe(false)
   })
 })
 
@@ -327,28 +327,28 @@ describe('editAnaesthetist: start date and active (catch-up Phase 28; US-01.1.3,
 
   it('moving the start date earlier fills the Slots in, later removes the early ones, and nothing before today is touched', () => {
     const api = createAppStore()
-    addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-08-03' })
-    expect(editAnaesthetist(api, OFFICE, '99002', { startDateISO: '2026-07-29' }).ok).toBe(true)
-    expect(slotsOf(api).some((s) => s.dateISO === '2026-07-29')).toBe(true)
-    expect(slotsOf(api).some((s) => s.dateISO < '2026-07-29')).toBe(false)
+    addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-12-07' })
+    expect(editAnaesthetist(api, OFFICE, '99002', { startDateISO: '2026-12-02' }).ok).toBe(true)
+    expect(slotsOf(api).some((s) => s.dateISO === '2026-12-02')).toBe(true)
+    expect(slotsOf(api).some((s) => s.dateISO < '2026-12-02')).toBe(false)
     expect(api.getState().audit.at(-1)?.action).toBe('canvas.generate')
 
-    expect(editAnaesthetist(api, OFFICE, '99002', { startDateISO: '2026-08-05' }).ok).toBe(true)
-    expect(slotsOf(api).some((s) => s.dateISO < '2026-08-05')).toBe(false)
+    expect(editAnaesthetist(api, OFFICE, '99002', { startDateISO: '2026-12-09' }).ok).toBe(true)
+    expect(slotsOf(api).some((s) => s.dateISO < '2026-12-09')).toBe(false)
     expect(api.getState().audit.at(-1)?.action).toBe('canvas.trim')
 
     // A start date in the past never creates past Slots (only today on is touched).
-    expect(editAnaesthetist(api, OFFICE, '99002', { startDateISO: '2026-07-01' }).ok).toBe(true)
-    expect(slotsOf(api).every((s) => s.dateISO >= '2026-07-21')).toBe(true)
+    expect(editAnaesthetist(api, OFFICE, '99002', { startDateISO: '2026-11-04' }).ok).toBe(true)
+    expect(slotsOf(api).every((s) => s.dateISO >= '2026-11-24')).toBe(true)
   })
 
   it('refuses a later start date while a removed session holds a List (listsBeforeStart)', () => {
     const api = createAppStore()
-    addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-08-03' })
-    const slotId = slotIdFor('99002', '2026-08-03', 'AM')
+    addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-12-07' })
+    const slotId = slotIdFor('99002', '2026-12-07', 'AM')
     expect(assignListToSlot(api, OFFICE, slotId, { hospitalId: HOSP.stg, surgeonId: SURG.hale, kind: 'private' }).ok).toBe(true)
     const before = api.getState()
-    const out = editAnaesthetist(api, OFFICE, '99002', { startDateISO: '2026-08-04' })
+    const out = editAnaesthetist(api, OFFICE, '99002', { startDateISO: '2026-12-08' })
     expect(out.ok ? '' : out.code).toBe('listsBeforeStart')
     expect(out.ok ? '' : out.message).toBe('Dr Second Person has 1 List before that date. Reassign it first.')
     expect(api.getState().schedule).toBe(before.schedule)
@@ -356,8 +356,8 @@ describe('editAnaesthetist: start date and active (catch-up Phase 28; US-01.1.3,
 
   it('switching inactive removes the Slots from today on (refused while a List stands); active again brings them back', () => {
     const api = createAppStore()
-    addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-07-21' })
-    const slotId = slotIdFor('99002', '2026-07-22', 'PM')
+    addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-11-24' })
+    const slotId = slotIdFor('99002', '2026-11-25', 'PM')
     expect(assignListToSlot(api, OFFICE, slotId, { hospitalId: HOSP.stg, surgeonId: SURG.hale, kind: 'private' }).ok).toBe(true)
     const refused = editAnaesthetist(api, OFFICE, '99002', { active: false })
     expect(refused.ok ? '' : refused.code).toBe('listsAhead')
@@ -368,20 +368,20 @@ describe('editAnaesthetist: start date and active (catch-up Phase 28; US-01.1.3,
     expect(reassignList(api, OFFICE, listId, ANAE.souter).ok).toBe(true)
     expect(editAnaesthetist(api, OFFICE, '99002', { active: false }).ok).toBe(true)
     expect(slotsOf(api)).toHaveLength(0)
-    expect(rosterForDate(api.getState(), '2026-07-22').some((a) => a.registrationNumber === '99002')).toBe(false)
+    expect(rosterForDate(api.getState(), '2026-11-25').some((a) => a.registrationNumber === '99002')).toBe(false)
 
     expect(editAnaesthetist(api, OFFICE, '99002', { active: true }).ok).toBe(true)
-    expect(slotsOf(api).length).toBe(enumerateDatesISO('2026-07-21', '2026-11-21').length * 2)
+    expect(slotsOf(api).length).toBe(enumerateDatesISO('2026-11-24', '2027-03-24').length * 2)
   })
 
   it('an inactive anaesthetist gets no Slots on roll-forward, and keeps past days', () => {
     const api = createAppStore()
-    addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-07-21' })
+    addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-11-24' })
     advanceClockDays(api, 1)
     expect(editAnaesthetist(api, OFFICE, '99002', { active: false }).ok).toBe(true)
     advanceClockDays(api, 2)
     // Only Tue 21, the day before today when the switch went off, keeps its two Slots.
-    expect(slotsOf(api).map((s) => s.dateISO)).toEqual(['2026-07-21', '2026-07-21'])
+    expect(slotsOf(api).map((s) => s.dateISO)).toEqual(['2026-11-24', '2026-11-24'])
   })
 })
 
@@ -410,11 +410,11 @@ describe('addHospitalHoliday', () => {
 
   it('refuses a duplicate holiday and is office-only', () => {
     const api = createAppStore()
-    expect(addHospitalHoliday(api, OFFICE, HOSP.stg, '2026-08-03', 'Test day').ok).toBe(true)
-    const dup = addHospitalHoliday(api, OFFICE, HOSP.stg, '2026-08-03', 'Test day again')
+    expect(addHospitalHoliday(api, OFFICE, HOSP.stg, '2026-12-07', 'Test day').ok).toBe(true)
+    const dup = addHospitalHoliday(api, OFFICE, HOSP.stg, '2026-12-07', 'Test day again')
     expect(dup.ok).toBe(false)
     if (!dup.ok) expect(dup.code).toBe('duplicateHoliday')
-    expect(addHospitalHoliday(api, SOUTER, HOSP.stg, '2026-08-04', 'x').ok).toBe(false)
+    expect(addHospitalHoliday(api, SOUTER, HOSP.stg, '2026-12-08', 'x').ok).toBe(false)
   })
 })
 
@@ -438,9 +438,13 @@ describe('recurring bookings', () => {
     // The pairing rule (US-01.3.1, catch-up Phase 31): the surgeon can change, never clear.
     const cleared = editRecurringBooking(api, OFFICE, add.value.id, { surgeonId: '' })
     expect(cleared.ok ? '' : cleared.code).toBe('pairingRequired')
+    const auditBefore = api.getState().audit.length
     expect(editRecurringBooking(api, OFFICE, add.value.id, { surgeonId: SURG.patel }).ok).toBe(true)
     expect(api.getState().masters.recurringBookings[add.value.id]?.surgeonId).toBe(SURG.patel)
-    expect(api.getState().audit.at(-1)?.action).toBe('recurringBooking.update')
+    // The edit is audited first; any projected List it re-pairs follows as its own list.update.
+    const entries = api.getState().audit.slice(auditBefore)
+    expect(entries[0]).toMatchObject({ action: 'recurringBooking.update', entityId: add.value.id })
+    expect(entries.slice(1).every((e) => e.action === 'list.update')).toBe(true)
   })
 
   it('is office-only', () => {

@@ -23,7 +23,7 @@ import { roundToCents, toCents } from '../domain/billing/money'
 import { isBookingPair } from '../domain/billing/ledger'
 import type { BookingLedgerPair } from '../domain/types'
 
-const AM20 = projectedListId(ANAE.souter, '2026-07-20', 'AM')
+const AM20 = projectedListId(ANAE.souter, '2026-11-23', 'AM')
 
 const unwires: (() => void)[] = []
 afterEach(() => {
@@ -103,7 +103,7 @@ describe('detecting a bill paid in Xero (work item 8)', () => {
     expect(approveAndPayPairForDemo(api, OFFICE_SIMULATION_ACTOR, pair.id, { webhook: 'deliver' })).toMatchObject({ ok: true, value: { totalDisbursed: rest } })
     expect(legOf(api, pair.id)!.disbursedAmount).toBe(pair.receivable.amount)
     // An amount above what is released is refused.
-    expect(recordDisbursement(api, { accPayId, xeroDisbursementId: 'DSBX', amount: 1, atISO: '2026-07-21T09:00:00', idempotencyKey: 'BILLPAY-X', detectedBy: 'webhook', payablesRunId: 'PRX' })).toMatchObject({ ok: false, code: 'aboveReleased' })
+    expect(recordDisbursement(api, { accPayId, xeroDisbursementId: 'DSBX', amount: 1, atISO: '2026-11-24T09:00:00', idempotencyKey: 'BILLPAY-X', detectedBy: 'webhook', payablesRunId: 'PRX' })).toMatchObject({ ok: false, code: 'aboveReleased' })
     conserved(api)
   })
 

@@ -195,7 +195,7 @@ describe('the notification pool and the cover marker gone (catch-up Phase 32)', 
       ...fresh,
       schedule: {
         ...fresh.schedule,
-        slots: { ...fresh.schedule.slots, [slotId]: { ...fresh.schedule.slots[slotId], coverRequest: { by: 'Dr Melanie Souter', kind: 'offer', atISO: '2026-07-21T08:00:00', status: 'pending' } } },
+        slots: { ...fresh.schedule.slots, [slotId]: { ...fresh.schedule.slots[slotId], coverRequest: { by: 'Dr Melanie Souter', kind: 'offer', atISO: '2026-11-24T08:00:00', status: 'pending' } } },
       },
     } as Record<string, unknown>
     delete stale['notifications']
@@ -244,7 +244,7 @@ describe('the single-Booking move seed (catch-up Phase 32a)', () => {
     const stale = { ...fresh, schedule: { ...fresh.schedule, bookings } }
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 27 }))
     const s = createAppStore({ persisted: true }).getState()
-    expect(s.schedule.bookings['BK0162']?.listId).toBe('L-31902-2026-07-31-AM')
+    expect(s.schedule.bookings['BK0162']?.listId).toBe('L-31902-2026-12-04-AM')
   })
 })
 
@@ -258,15 +258,15 @@ describe('unavailability is never a conflict (catch-up Phase 32b)', () => {
   it("discards a v28 store holding an 'availability' conflict on Rutherford's Wed 22 AM List, and reseeds it as a returned Draft List", () => {
     expect(PERSIST_VERSION).toBeGreaterThanOrEqual(29)
     const fresh = freshAppState()
-    const id = 'L-29104-2026-07-22-AM'
+    const id = 'L-29104-2026-11-25-AM'
     const draft = fresh.schedule.lists[id]!
     // The v28 shape: the List in Rutherford's closed session, flagged by the old availability rule.
     const staleList = {
       ...draft,
       state: 'ACTIVE',
       anaesthetistId: '29104',
-      slotId: 'S-29104-2026-07-22-AM',
-      conflicts: [{ kind: 'availability', cause: 'availability:S-29104-2026-07-22-AM:unavailable', raisedAtISO: '2026-07-21T08:00:00', slotId: 'S-29104-2026-07-22-AM', statusKey: 'unavailable' }],
+      slotId: 'S-29104-2026-11-25-AM',
+      conflicts: [{ kind: 'availability', cause: 'availability:S-29104-2026-11-25-AM:unavailable', raisedAtISO: '2026-11-24T08:00:00', slotId: 'S-29104-2026-11-25-AM', statusKey: 'unavailable' }],
     }
     const stale = { ...fresh, schedule: { ...fresh.schedule, lists: { ...fresh.schedule.lists, [id]: staleList } } }
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: stale, version: 28 }))
@@ -298,7 +298,7 @@ describe('the out-of-hours session (catch-up Phase 32c)', () => {
 
   it('a v30 store holding an opened out-of-hours session reloads it intact', () => {
     const api = createAppStore({ persisted: true })
-    const out = openOutOfHoursSession(api, OFFICE_ACTOR, ANAE.souter, '2026-07-21')
+    const out = openOutOfHoursSession(api, OFFICE_ACTOR, ANAE.souter, '2026-11-24')
     expect(out.ok).toBe(true)
     if (!out.ok) return
     flushPersist()
@@ -386,7 +386,7 @@ describe('price ranges (catch-up Phase 19a)', () => {
     const s = createAppStore({ persisted: true }).getState()
     expect((s.masters as unknown as Record<string, unknown>)['contractPrices']).toBeUndefined()
     expect(s.masters.rvgTimeRule.tiers).toHaveLength(2)
-    expect(s.masters.contracts['CT-DOYLE-BAR']?.pricing).toMatchObject({ kind: 'fixed', ranges: [{ startISO: '2025-01-01', price: 2800 }, { startISO: '2026-07-28', price: 2950 }] })
+    expect(s.masters.contracts['CT-DOYLE-BAR']?.pricing).toMatchObject({ kind: 'fixed', ranges: [{ startISO: '2025-01-01', price: 2800 }, { startISO: '2026-12-01', price: 2950 }] })
     expect(s.masters.contracts['CT-MER-FACELIFT']?.defaultRvgGroupId).not.toBeNull()
   })
 })
@@ -698,7 +698,7 @@ describe('one typed price (catch-up Phase 24 session 1)', () => {
     expect(PERSIST_VERSION).toBeGreaterThanOrEqual(51)
     const fresh = freshAppState()
     const { publicHospital: _p, ...oldStatuses } = fresh.masters.slotStatuses
-    const sharmaTue14 = 'L-41267-2026-07-14-AM'
+    const sharmaTue14 = 'L-41267-2026-11-17-AM'
     const old = {
       ...fresh,
       masters: { ...fresh.masters, slotStatuses: oldStatuses },
@@ -785,7 +785,7 @@ describe('the matching screen (catch-up Phase 33)', () => {
     expect(PERSIST_VERSION).toBeGreaterThanOrEqual(53)
     const { intake: _i, ...fresh } = freshAppState()
     const messages = {
-      IM0001: { id: 'IM0001', feedId: 'FEED-STG', messageControlId: 'MSG-STG-1014', eventType: 'S14', status: 'manualIntervention', attempts: 1, receivedAtISO: '2026-07-21T09:00:00', resultBookingId: 'BK0001' },
+      IM0001: { id: 'IM0001', feedId: 'FEED-STG', messageControlId: 'MSG-STG-1014', eventType: 'S14', status: 'manualIntervention', attempts: 1, receivedAtISO: '2026-11-24T09:00:00', resultBookingId: 'BK0001' },
     }
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, integrations: { ...fresh.integrations, messages } }, version: 52 }))
     const s = createAppStore({ persisted: true }).getState()
@@ -849,7 +849,7 @@ describe('stubs on a List (catch-up Phase 33a)', () => {
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, intake: { batches: {}, rows: {} } }, version: 55 }))
     const s = createAppStore({ persisted: true }).getState()
     expect(Object.keys(s.intake.stubs)).toEqual(['STB0001'])
-    expect(s.intake.stubs.STB0001).toMatchObject({ status: 'standing', listId: 'L-34821-2026-08-04-PM', importRowId: 'IRS001' })
+    expect(s.intake.stubs.STB0001).toMatchObject({ status: 'standing', listId: 'L-34821-2026-12-08-PM', importRowId: 'IRS001' })
     expect(s.counters.stub).toBe(2)
   })
 })
@@ -1121,7 +1121,7 @@ describe('catch-up Phase 42 (v65): the master public-holiday calendar and the ma
     const { masterLoads: _m, ...rest } = fresh
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...rest, masters: { ...masters, holidays } }, version: 64 }))
     const s = createAppStore({ persisted: true }).getState()
-    expect(Object.keys(s.masters.publicHolidays).sort()).toEqual(['PH001', 'PH002', 'PH003', 'PH004', 'PH005', 'PH006', 'PH007'])
+    expect(Object.keys(s.masters.publicHolidays).sort()).toEqual(['PH001', 'PH002', 'PH003', 'PH004', 'PH005', 'PH006', 'PH007', 'PH008', 'PH009', 'PH010'])
     expect(s.masters.holidays['HH001']).toBeUndefined()
     expect(s.masterLoads).toEqual({ loads: {}, goLive: null })
   })
@@ -1143,7 +1143,7 @@ describe('Wave 4 sync (v66): Lane B\'s 42 joined into lane/a beside 38b', () => 
     const s = createAppStore({ persisted: true }).getState()
     // Catch-up Phase 40 adds Heather Sinclair's issued credit event (HSEV05) beside EV0001.
     expect(Object.keys(s.schedule.procedureEvents)).toEqual(['EV0001', 'HSEV05'])
-    expect(Object.keys(s.masters.publicHolidays)).toHaveLength(7)
+    expect(Object.keys(s.masters.publicHolidays)).toHaveLength(10)
   })
 })
 

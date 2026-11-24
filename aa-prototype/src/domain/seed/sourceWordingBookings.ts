@@ -33,13 +33,13 @@ import { RVG_GROUP } from './rvgGroups'
 import { SOURCE_WORDING, type SourceWordingRow } from './sourceWording'
 import { seedArrivalISO, seedText } from './procedureText'
 
-export const RTK_BOOKING_LIST_ID = projectedListId(ANAE.souter, '2026-08-04', 'AM')
-const SX_TUE28_PM = projectedListId(ANAE.souter, '2026-07-28', 'PM')
-const CPH_THU30_AM = projectedListId(ANAE.souter, '2026-07-30', 'AM')
+export const RTK_BOOKING_LIST_ID = projectedListId(ANAE.souter, '2026-12-08', 'AM')
+const SX_TUE28_PM = projectedListId(ANAE.souter, '2026-12-01', 'PM')
+const CPH_THU30_AM = projectedListId(ANAE.souter, '2026-12-03', 'AM')
 
 /** When the rooms' "RTK" arrived, and when the hospital's download replaced it. */
-const RTK_ROOMS_AT = '2026-07-14T09:00:00'
-const RTK_HOSPITAL_AT = '2026-07-20T16:00:00'
+const RTK_ROOMS_AT = '2026-11-17T09:00:00'
+const RTK_HOSPITAL_AT = '2026-11-23T16:00:00'
 /** The hospital that sent "right total knee". */
 const RTK_FROM = "St George's"
 
@@ -95,7 +95,7 @@ export function seedSourceWordingBookings(
       completed: false,
       source: spec.bookingSource,
       lastModifiedBy: 'Kirsty W.',
-      lastModifiedAtISO: '2026-07-20T16:30:00',
+      lastModifiedAtISO: '2026-11-23T16:30:00',
     })
     const procedure: Procedure = {
       id: procedureId,

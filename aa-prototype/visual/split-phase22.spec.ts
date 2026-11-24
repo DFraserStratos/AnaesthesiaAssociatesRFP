@@ -13,7 +13,7 @@ async function shareRow(page: Page, index: number) {
 }
 
 test('the office splits a fee on the Admin Booking detail', async ({ page }) => {
-  await page.goto('/admin/day/2026-07-20/bookings/BK0025')
+  await page.goto('/admin/day/2026-11-23/bookings/BK0025')
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(400)
 
@@ -85,7 +85,7 @@ test('Master data Contracts: Layout and Delivery are derived, read-only columns'
 
 test('the anaesthetist splits a fee on the phone, before the List is authorised', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/mobile/lists/L-34821-2026-07-21-AM/bookings/BK0002')
+  await page.goto('/mobile/lists/L-34821-2026-11-24-AM/bookings/BK0002')
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(800)
 

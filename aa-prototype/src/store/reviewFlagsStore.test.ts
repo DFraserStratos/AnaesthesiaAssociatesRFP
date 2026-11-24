@@ -184,10 +184,10 @@ function contractFields(api: BoundAppStore): Record<string, unknown> {
 }
 
 describe('a moved Booking keeps its Contracts on every move path (US-04.3.11, A41)', () => {
-  const ropataPm = slotIdFor(ANAE.ropata, '2026-07-27', 'PM')
+  const ropataPm = slotIdFor(ANAE.ropata, '2026-11-30', 'PM')
   const PATHS: { name: string; move: (api: BoundAppStore) => { ok: boolean } }[] = [
-    { name: "reassignBooking (Admin Day's Move)", move: (api) => reassignBooking(api, OFFICE, MOVABLE, 'L-34821-2026-08-10-AM') },
-    { name: 'reassignBooking (the integration day-move)', move: (api) => reassignBooking(api, { who: 'Hospital feed', role: 'system', source: 'integration' }, MOVABLE, 'L-34821-2026-08-10-AM') },
+    { name: "reassignBooking (Admin Day's Move)", move: (api) => reassignBooking(api, OFFICE, MOVABLE, 'L-34821-2026-12-14-AM') },
+    { name: 'reassignBooking (the integration day-move)', move: (api) => reassignBooking(api, { who: 'Hospital feed', role: 'system', source: 'integration' }, MOVABLE, 'L-34821-2026-12-14-AM') },
     { name: "32a's moveBookingToAnaesthetist (a prepaid Booking among them)", move: (api) => moveBookingToAnaesthetist(api, SOUTER_ACTOR, BOOKING_MOVE_DEMO.bookingId, BOOKING_MOVE_DEMO.receiverId) },
     { name: "32a's moveBookingToAnaesthetist, the prepaid Booking", move: (api) => moveBookingToAnaesthetist(api, SOUTER_ACTOR, BOOKING_MOVE_DEMO.prepaidBookingId, BOOKING_MOVE_DEMO.secondReceiverId) },
     { name: "32's reassignList", move: (api) => reassignList(api, OFFICE, LIST_MOVE_DEMO.movableListId, ANAE.ropata) },
@@ -210,17 +210,17 @@ describe('a moved Booking keeps its Contracts on every move path (US-04.3.11, A4
     const p = procOf(api, needs)
     expect(p.governingContractId).toBe(seedFallbackId('patient-standard'))
     expect(setProcedurePrice(api, OFFICE, p.id, 650).ok).toBe(true)
-    expect(reassignBooking(api, OFFICE, needs, 'L-34821-2026-08-10-AM').ok).toBe(true)
+    expect(reassignBooking(api, OFFICE, needs, 'L-34821-2026-12-14-AM').ok).toBe(true)
     expect(procOf(api, needs)).toMatchObject({ governingContractId: seedFallbackId('patient-standard'), enteredPrice: 650 })
   })
 
   it('the movable fixed price moved to another surgeon keeps its Contract, is flagged at review, and clears on a move back', () => {
     const api = createAppStore()
     const contractId = procOf(api, MOVABLE).governingContractId
-    expect(reassignBooking(api, OFFICE, MOVABLE, 'L-34821-2026-08-10-AM').ok).toBe(true)
+    expect(reassignBooking(api, OFFICE, MOVABLE, 'L-34821-2026-12-14-AM').ok).toBe(true)
     expect(procOf(api, MOVABLE).governingContractId).toBe(contractId)
     expect(rulesOf(api, MOVABLE)).toContain('contractNoLongerFits')
-    expect(reassignBooking(api, OFFICE, MOVABLE, 'L-34821-2026-08-10-PM').ok).toBe(true)
+    expect(reassignBooking(api, OFFICE, MOVABLE, 'L-34821-2026-12-14-PM').ok).toBe(true)
     expect(rulesOf(api, MOVABLE)).not.toContain('contractNoLongerFits')
   })
 
@@ -229,10 +229,10 @@ describe('a moved Booking keeps its Contracts on every move path (US-04.3.11, A4
     const p = procOf(api, MOVABLE)
     const s = api.getState()
     const contract = s.masters.contracts[p.governingContractId!]!
-    api.setState({ masters: { ...s.masters, contracts: { ...s.masters.contracts, [contract.id]: { ...contract, pricing: { kind: 'fixed', ranges: [{ startISO: '2026-06-01', price: 3100 }, { startISO: '2026-08-11', price: 3300 }] } } } } })
+    api.setState({ masters: { ...s.masters, contracts: { ...s.masters.contracts, [contract.id]: { ...contract, pricing: { kind: 'fixed', ranges: [{ startISO: '2026-10-05', price: 3100 }, { startISO: '2026-12-15', price: 3300 }] } } } } })
     const priceOf = () => reviewInputFor(api.getState(), api.getState().schedule.bookings[MOVABLE]!)!.procedures[0]!.computedPrice
     expect(priceOf()).toBe(3100)
-    const later = Object.values(api.getState().schedule.lists).find((l) => l.anaesthetistId === ANAE.souter && l.state === 'ACTIVE' && l.dateISO >= '2026-08-11' && l.surgeonId === api.getState().schedule.lists['L-34821-2026-08-10-PM']!.surgeonId)
+    const later = Object.values(api.getState().schedule.lists).find((l) => l.anaesthetistId === ANAE.souter && l.state === 'ACTIVE' && l.dateISO >= '2026-12-15' && l.surgeonId === api.getState().schedule.lists['L-34821-2026-12-14-PM']!.surgeonId)
     expect(later).toBeDefined()
     expect(reassignBooking(api, OFFICE, MOVABLE, later!.id).ok).toBe(true)
     expect(procOf(api, MOVABLE).governingContractId).toBe(contract.id)
@@ -247,7 +247,7 @@ describe('a moved Booking keeps its Contracts on every move path (US-04.3.11, A4
     // Link the Face lift to Dr Souter alone (no surgeons), then carry the Booking to a colleague's List.
     api.setState({ masters: { ...s.masters, contracts: { ...s.masters.contracts, [contract.id]: { ...contract, linkedSurgeonIds: [], linkedAnaesthetistId: ANAE.souter } } } })
     expect(rulesOf(api, MOVABLE)).not.toContain('contractNoLongerFits')
-    const colleague = Object.values(api.getState().schedule.lists).find((l) => l.state === 'ACTIVE' && l.dateISO === '2026-08-10' && l.anaesthetistId !== undefined && l.anaesthetistId !== ANAE.souter)
+    const colleague = Object.values(api.getState().schedule.lists).find((l) => l.state === 'ACTIVE' && l.dateISO === '2026-12-14' && l.anaesthetistId !== undefined && l.anaesthetistId !== ANAE.souter)
     expect(colleague).toBeDefined()
     expect(reassignBooking(api, OFFICE, MOVABLE, colleague!.id).ok).toBe(true)
     expect(procOf(api, MOVABLE).governingContractId).toBe(contract.id)
@@ -260,7 +260,7 @@ describe('a moved Booking keeps its Contracts on every move path (US-04.3.11, A4
     const s = api.getState()
     const contract = s.masters.contracts[p.governingContractId!]!
     // Two ranges: from 1 Aug at $3,100.00, from 10 Aug at $3,300.00 (the List's own date).
-    api.setState({ masters: { ...s.masters, contracts: { ...s.masters.contracts, [contract.id]: { ...contract, pricing: { kind: 'fixed', ranges: [{ startISO: '2026-08-01', price: 3100 }, { startISO: '2026-08-10', price: 3300 }] } } } } })
+    api.setState({ masters: { ...s.masters, contracts: { ...s.masters.contracts, [contract.id]: { ...contract, pricing: { kind: 'fixed', ranges: [{ startISO: '2026-12-05', price: 3100 }, { startISO: '2026-12-14', price: 3300 }] } } } } })
     const priced = reviewInputFor(api.getState(), api.getState().schedule.bookings[MOVABLE]!)!.procedures[0]!.computedPrice
     expect(priced).toBe(3300)
     // Moved to an earlier List of hers (Tue 28 Jul AM, before any range): no price, and flagged.
@@ -268,7 +268,7 @@ describe('a moved Booking keeps its Contracts on every move path (US-04.3.11, A4
     expect(procOf(api, MOVABLE).governingContractId).toBe(contract.id)
     expect(rulesOf(api, MOVABLE)).toEqual(expect.arrayContaining(['contractNoLongerFits', 'needsPrice']))
     // Back on a date inside the first range: works out again at that range's price.
-    expect(reassignBooking(api, OFFICE, MOVABLE, 'L-34821-2026-08-04-AM').ok).toBe(true)
+    expect(reassignBooking(api, OFFICE, MOVABLE, 'L-34821-2026-12-08-AM').ok).toBe(true)
     expect(reviewInputFor(api.getState(), api.getState().schedule.bookings[MOVABLE]!)!.procedures[0]!.computedPrice).toBe(3100)
   })
 })

@@ -27,7 +27,7 @@ const RECIPIENTS: readonly UpdateEmailRecipient[] = ['office', 'hospital', 'both
 /** The editor's preview Booking: a made-up sample, never a real patient. */
 const SAMPLE_CONTEXT: UpdateEmailContext = {
   patient: 'Aroha Sample',
-  date: 'Tue 21 Jul',
+  date: 'Tue 24 Nov',
   session: 'AM',
   hospital: "St George's",
   surgeon: 'Mr T. Hale',

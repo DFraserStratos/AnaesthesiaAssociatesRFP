@@ -278,9 +278,9 @@ export function setSessionPublicAsSimulatedOffice(api: AppStoreApi, slotId: stri
  * outside every block the seed and the samples use (`ZQE4..`).
  */
 export const NO_NHI_FIXTURES = [
-  { name: 'Tomasz Nowak', dobISO: '1971-03-08', nhi: 'ZQE4017', wording: 'Knee arthroscopy' },
-  { name: 'Priya Raman', dobISO: '1988-11-19', nhi: 'ZQE4025', wording: 'Excision of skin lesion' },
-  { name: 'Ana Fifita', dobISO: '1964-06-02', nhi: 'ZQE4033', wording: 'Cystoscopy' },
+  { name: 'Tomasz Nowak', dobISO: '1971-07-12', nhi: 'ZQE4017', wording: 'Knee arthroscopy' },
+  { name: 'Priya Raman', dobISO: '1989-03-25', nhi: 'ZQE4025', wording: 'Excision of skin lesion' },
+  { name: 'Ana Fifita', dobISO: '1964-10-06', nhi: 'ZQE4033', wording: 'Cystoscopy' },
 ] as const
 
 export const NO_FIXTURE_ROWS_LEFT = 'No fixture rows left'

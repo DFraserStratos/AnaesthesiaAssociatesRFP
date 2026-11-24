@@ -24,7 +24,7 @@ describe('every seeded Procedure\'s text', () => {
     for (const p of procedures) {
       if (p.procedureText === null) continue
       expect(p.procedureText.text.trim(), p.id).not.toBe('')
-      expect(p.procedureText.receivedAtISO < '2026-07-21T08:00:00', p.id).toBe(true)
+      expect(p.procedureText.receivedAtISO < '2026-11-24T08:00:00', p.id).toBe(true)
     }
   })
 
@@ -53,16 +53,16 @@ describe('every seeded Procedure\'s text', () => {
 
 describe("AR-35's rows, placed as the plan's table says", () => {
   it('the S1 List: rows 6 and 8 on the 07:45 and 11:15 cases, the 09:45 case unchanged, three Bookings', () => {
-    const list = projectedListId(ANAE.souter, '2026-07-28', 'AM')
+    const list = projectedListId(ANAE.souter, '2026-12-01', 'AM')
     const rows = onList(list).sort((a, b) => (a.scheduledTime ?? '').localeCompare(b.scheduledTime ?? ''))
     expect(rows.map((b) => b.scheduledTime)).toEqual(['07:45', '09:45', '11:15'])
     expect(firstOf(rows[0]!.id).procedureText).toMatchObject({ text: SOURCE_WORDING[6].asReceived, source: 'surgeonPdf' })
     expect(firstOf(rows[2]!.id).procedureText).toMatchObject({ text: SOURCE_WORDING[8].asReceived, source: 'email' })
   })
 
-  it('the "RTK" Booking holds "right total knee" (hospital) on Tue 4 Aug AM, and its history "RTK" (rooms) earlier', () => {
+  it('the "RTK" Booking holds "right total knee" (hospital) on Tue 8 Dec AM, and its history "RTK" (rooms) earlier', () => {
     const booking = seed.schedule.bookings[RTK_BOOKING_ID]!
-    expect(booking.listId).toBe(projectedListId(ANAE.souter, '2026-08-04', 'AM'))
+    expect(booking.listId).toBe(projectedListId(ANAE.souter, '2026-12-08', 'AM'))
     expect(booking.scheduledTime).toBe('09:30')
     const p = firstOf(RTK_BOOKING_ID)
     expect(p.procedureText).toMatchObject({ text: 'right total knee', source: 'hospitalDownload' })
@@ -80,9 +80,9 @@ describe("AR-35's rows, placed as the plan's table says", () => {
   })
 
   it('the expert rows sit on Dr Souter\'s forward Lists with their sources and codes', () => {
-    const tue28pm = textsOn(projectedListId(ANAE.souter, '2026-07-28', 'PM'))
+    const tue28pm = textsOn(projectedListId(ANAE.souter, '2026-12-01', 'PM'))
     expect(tue28pm).toEqual(expect.arrayContaining([SOURCE_WORDING[15].asReceived, SOURCE_WORDING[17].asReceived]))
-    const thu30am = textsOn(projectedListId(ANAE.souter, '2026-07-30', 'AM'))
+    const thu30am = textsOn(projectedListId(ANAE.souter, '2026-12-03', 'AM'))
     expect(thu30am).toEqual(expect.arrayContaining([SOURCE_WORDING[21].asReceived, SOURCE_WORDING[34].asReceived, SOURCE_WORDING[35].asReceived]))
     const byText = (t: string) => procedures.find((p) => p.procedureText?.text === t)!
     expect(byText('L3-5 decomp + fusion').procedureText?.source).toBe('email')
@@ -94,9 +94,9 @@ describe("AR-35's rows, placed as the plan's table says", () => {
   it('today\'s and S3\'s Lists read as received: rows 3, 11, 13 and 25', () => {
     const am21 = textsOn(SEED_LIST_IDS.souterAm21)
     expect(am21).toContain(SOURCE_WORDING[3].asReceived)
-    const pm21 = textsOn(projectedListId(ANAE.souter, '2026-07-21', 'PM'))
+    const pm21 = textsOn(projectedListId(ANAE.souter, '2026-11-24', 'PM'))
     expect(pm21).toEqual(expect.arrayContaining([SOURCE_WORDING[11].asReceived, SOURCE_WORDING[13].asReceived]))
-    expect(textsOn(projectedListId(ANAE.morrison, '2026-07-20', 'AM'))).toContain(SOURCE_WORDING[25].asReceived)
+    expect(textsOn(projectedListId(ANAE.morrison, '2026-11-23', 'AM'))).toContain(SOURCE_WORDING[25].asReceived)
   })
 
   it('a Contract invoice description shows on the Doyle Booking', () => {

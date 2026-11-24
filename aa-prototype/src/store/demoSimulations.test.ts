@@ -11,8 +11,8 @@ import { createAppStore } from './appStore'
 import { conflictRows, listInSlot } from './selectors'
 import { simulateSickness, sicknessCandidates, sicknessColleagueSlot, sicknessRefusal, SIMULATED_SICKNESS_NOTE } from './demoSimulations'
 
-const WED22 = '2026-07-22'
-const SHARMA_PM = 'L-41267-2026-07-22-PM'
+const WED22 = '2026-11-25'
+const SHARMA_PM = 'L-41267-2026-11-25-PM'
 
 describe('simulateSickness', () => {
   it('to the office: the List becomes a Draft List with its Bookings, the session is Unavailable with the note, no conflict, the office audited, no notice', () => {
@@ -67,7 +67,7 @@ describe('simulateSickness', () => {
     const api = createAppStore()
     const ids = sicknessCandidates(api.getState(), WED22).map((l) => l.id)
     expect(ids).toContain(SHARMA_PM)
-    expect(ids).not.toContain('L-29104-2026-07-22-AM')
-    expect(sicknessRefusal(api.getState(), 'L-29104-2026-07-22-AM')).toBe('This List has no anaesthetist yet')
+    expect(ids).not.toContain('L-29104-2026-11-25-AM')
+    expect(sicknessRefusal(api.getState(), 'L-29104-2026-11-25-AM')).toBe('This List has no anaesthetist yet')
   })
 })

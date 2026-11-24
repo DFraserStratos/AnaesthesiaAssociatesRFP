@@ -33,8 +33,8 @@ function addBookingFor(patient: { nhi: string; name: string; dobISO: string }): 
   return out.value.bookingId
 }
 
-const SARAH = { nhi: 'CQY9304', name: 'Sarah Mitchell', dobISO: '1988-04-12' }
-const LOSA = { nhi: 'JKL1188', name: 'Losa Tuilagi', dobISO: '1992-01-27' }
+const SARAH = { nhi: 'CQY9304', name: 'Sarah Mitchell', dobISO: '1988-08-16' }
+const LOSA = { nhi: 'JKL1188', name: 'Losa Tuilagi', dobISO: '1992-06-01' }
 
 function chipIn(root: HTMLElement): HTMLElement {
   const chip = root.querySelector('[data-shot="balance-alert-chip"]') as HTMLElement | null
@@ -84,7 +84,7 @@ describe('the balance colour code (catch-up Phase 40)', () => {
     const { container } = render(
       <MemoryRouter>
         <SurfaceProvider variant="web">
-          <ListDetailView listId={LIST} actor={SOUTER} todayISO="2026-07-21" onBack={() => undefined} onOpenBooking={() => undefined} />
+          <ListDetailView listId={LIST} actor={SOUTER} todayISO="2026-11-24" onBack={() => undefined} onOpenBooking={() => undefined} />
         </SurfaceProvider>
       </MemoryRouter>,
     )
@@ -117,7 +117,7 @@ describe('the balance colour code (catch-up Phase 40)', () => {
     const { container } = render(
       <MemoryRouter>
         <SurfaceProvider variant="web">
-          <BookingDetailView bookingId={losa} actor={SOUTER} todayISO="2026-07-21" onBack={() => undefined} />
+          <BookingDetailView bookingId={losa} actor={SOUTER} todayISO="2026-11-24" onBack={() => undefined} />
         </SurfaceProvider>
       </MemoryRouter>,
     )
@@ -156,7 +156,7 @@ describe('the shared note (catch-up Phase 40; US-11.3.3)', () => {
     const web = render(
       <MemoryRouter>
         <SurfaceProvider variant="web">
-          <ListDetailView listId={LIST} actor={SOUTER} todayISO="2026-07-21" onBack={() => undefined} onOpenBooking={() => undefined} />
+          <ListDetailView listId={LIST} actor={SOUTER} todayISO="2026-11-24" onBack={() => undefined} onOpenBooking={() => undefined} />
         </SurfaceProvider>
       </MemoryRouter>,
     )

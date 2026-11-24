@@ -15,7 +15,7 @@ import { SurfaceProvider } from '../../../shared/surface'
 import { SlotDrawer } from './SlotDrawer'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-const STRAND_PM = slotIdFor(ANAE.strand, '2026-07-21', 'PM')
+const STRAND_PM = slotIdFor(ANAE.strand, '2026-11-24', 'PM')
 
 function renderDrawer(slotId: string, onClose = vi.fn()) {
   render(
@@ -71,7 +71,7 @@ describe('SlotDrawer', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirm reassignment' }))
     expect(screen.getByTestId('list-reassignment-overlay')).toHaveTextContent('Moved to Sharma, Priya')
     // The drawer followed the List into Dr Sharma's session.
-    expect(screen.getByTestId('admin-list-drawer')).toHaveAttribute('data-slot-id', slotIdFor(ANAE.sharma, '2026-07-21', 'PM'))
+    expect(screen.getByTestId('admin-list-drawer')).toHaveAttribute('data-slot-id', slotIdFor(ANAE.sharma, '2026-11-24', 'PM'))
     act(() => vi.advanceTimersByTime(1100))
     expect(onClose).toHaveBeenCalled()
   })

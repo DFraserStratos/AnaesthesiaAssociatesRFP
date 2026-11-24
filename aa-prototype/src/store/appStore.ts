@@ -483,8 +483,10 @@ export const PERSIST_KEY = 'aa-demo'
  *  v76: the whole practice is the everyday data (the 71 of `fullScale/names.ts` join the 14, `scope: 'practice'`), and the
  *  payload is a delta against the shared start (`persistDelta.ts`), not a full copy. Reseeds on load.
  *  v77: recurring Lists skip public holidays (`recurringSkipFor`): the cast's ten Labour Day and Anniversary Day Lists and
- *  the practice's go; the practice covers 90% of its later leave clashes. Reseeds on load. */
-export const PERSIST_VERSION = 77
+ *  the practice's go; the practice covers 90% of its later leave clashes. Reseeds on load.
+ *  v78: the demo day moves 18 weeks to Tue 24 Nov 2026 (every seeded date with it), and the hospitals' Christmas
+ *  shutdowns (`shutdown` closures) skip recurring Lists. Reseeds on load. */
+export const PERSIST_VERSION = 78
 
 /** The intake slice: seeded empty, the presenter imports or a trigger delivers (catch-up Phase 33). */
 export function emptyIntakeSlice(): IntakeSlice {

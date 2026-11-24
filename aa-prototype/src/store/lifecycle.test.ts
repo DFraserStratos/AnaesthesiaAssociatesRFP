@@ -65,7 +65,7 @@ function firstBookingOf(api: BoundAppStore, listId: string): string {
 function captureEllisonFinish(api: BoundAppStore): void {
   const procedure = proceduresForBooking(api.getState(), ELLISON_BOOKING)[0]
   if (procedure === undefined) throw new Error('Ellison has no procedure')
-  expect(editProcedure(api, SOUTER, procedure.id, { handoverISO: '2026-07-21T17:20:00' }).ok).toBe(true)
+  expect(editProcedure(api, SOUTER, procedure.id, { handoverISO: '2026-11-24T17:20:00' }).ok).toBe(true)
 }
 
 describe('completeBooking', () => {

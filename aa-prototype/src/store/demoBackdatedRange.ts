@@ -16,7 +16,7 @@ import { addPriceRange } from './contractActions'
 import { DEMO_OFFICE_ACTOR } from './demoActors'
 
 export const BACKDATED_RANGE_CONTRACT_ID = 'CT-MER-FACELIFT'
-export const BACKDATED_RANGE = { startISO: '2026-07-01', price: 3300 } as const
+export const BACKDATED_RANGE = { startISO: '2026-11-04', price: 3300 } as const
 
 /** True once the demo range is on the Contract (the trigger then hides). */
 export function backdatedRangeAdded(state: Pick<AppState, 'masters'>): boolean {

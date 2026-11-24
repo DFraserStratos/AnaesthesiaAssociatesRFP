@@ -265,7 +265,7 @@ test('the office stand-in assigns a List to the next free session, from the List
   await page.goto('/mobile/lists')
   await page.waitForLoadState('networkidle')
   // Dr Souter's next free session from Tue 21 Jul is Wed 22 PM ("Open for cover").
-  const session = page.locator('[data-slot-id="S-34821-2026-07-22-PM"]')
+  const session = page.locator('[data-slot-id="S-34821-2026-11-25-PM"]')
   await page.getByRole('button', { name: 'Month', exact: true }).click()
   await expect(session).toContainText('Free session')
 
@@ -273,10 +273,10 @@ test('the office stand-in assigns a List to the next free session, from the List
   const row = page.locator('[data-shot="pwa-demo-action-office-assigns-next-free"]')
   await expect(row).toBeVisible()
   await row.getByRole('button', { name: 'Run' }).click()
-  await expect(row.getByRole('status')).toContainText("Assigned St George's · Mr T. Hale to your Wed 22 Jul PM session.")
+  await expect(row.getByRole('status')).toContainText("Assigned St George's · Mr T. Hale to your Wed 25 Nov PM session.")
   await page.screenshot({ path: 'visual/shots/pwa-07-office-assigns.png' })
   await row.getByRole('button', { name: 'Run' }).click()
-  await expect(row.getByRole('status')).not.toContainText('Wed 22 Jul PM')
+  await expect(row.getByRole('status')).not.toContainText('Wed 25 Nov PM')
   await page.keyboard.press('Escape')
 
   await page.goto('/mobile/lists')
@@ -297,7 +297,7 @@ test('the office stand-in assigns a waiting request to Dr Souter, from the Lists
   await expect(row).toBeVisible()
   await row.getByRole('button', { name: 'Run' }).click()
   const status = row.getByRole('status')
-  await expect(status).toContainText('The office assigned a waiting request to your Wed 22 Jul PM: Forte Health · Mr V. Nand, 2 bookings.')
+  await expect(status).toContainText('The office assigned a waiting request to your Wed 25 Nov PM: Forte Health · Mr V. Nand, 2 bookings.')
   const text = (await status.textContent()) ?? ''
   expect(/Draft List|slot|preferred|tier/i.test(text)).toBe(false)
   await page.screenshot({ path: 'visual/shots/pwa-09-office-assigns-draft.png' })
@@ -306,7 +306,7 @@ test('the office stand-in assigns a waiting request to Dr Souter, from the Lists
   await page.goto('/mobile/lists')
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Month', exact: true }).click()
-  const session = page.locator('[data-slot-id="S-34821-2026-07-22-PM"]')
+  const session = page.locator('[data-slot-id="S-34821-2026-11-25-PM"]')
   await expect(session).toHaveAttribute('data-list-id', 'LD-002')
   await expect(session).toContainText('Forte Health')
   // No Draft List shows on any PWA screen.
@@ -341,7 +341,7 @@ test('a colleague moves a List into my free session, then I return one of mine t
   await page.screenshot({ path: 'visual/shots/pwa-12-new-on-lists.png' })
 
   // Return one of her own Lists to the office from List detail: it leaves Forward Lists.
-  await page.goto('/mobile/lists/L-34821-2026-07-23-AM')
+  await page.goto('/mobile/lists/L-34821-2026-11-26-AM')
   await page.waitForLoadState('networkidle')
   await page.locator('[data-shot="list-options"]').click()
   await page.locator('[data-shot="list-move"]').click()
@@ -352,7 +352,7 @@ test('a colleague moves a List into my free session, then I return one of mine t
   await page.screenshot({ path: 'visual/shots/pwa-13-returned.png' })
   await sheet.getByRole('button', { name: 'Done' }).click()
   await expect(page).toHaveURL(/\/mobile\/lists$/)
-  await expect(page.locator('[data-list-id="L-34821-2026-07-23-AM"]')).toHaveCount(0)
+  await expect(page.locator('[data-list-id="L-34821-2026-11-26-AM"]')).toHaveCount(0)
 })
 
 test('a colleague moves a Booking to me; the acceptance beat; then I move one of mine (catch-up Phase 32a)', async ({ page }) => {
@@ -365,7 +365,7 @@ test('a colleague moves a Booking to me; the acceptance beat; then I move one of
   await page.locator('[data-shot="pwa-demo-actions"]').click()
   const row = page.locator('[data-shot="pwa-demo-action-colleague-moves-booking-to-me"]')
   await expect(row).toBeVisible()
-  await expect(row.getByRole('radio')).toHaveText(['Dr Hughes · Wed 22 Jul PM · Christchurch Eye Surgery'])
+  await expect(row.getByRole('radio')).toHaveText(['Dr Hughes · Wed 25 Nov PM · Christchurch Eye Surgery'])
   await row.scrollIntoViewIfNeeded()
   await page.screenshot({ path: 'visual/shots/pwa-14-booking-stand-in.png' })
   await row.getByRole('button', { name: 'Run' }).click()
@@ -378,21 +378,21 @@ test('a colleague moves a Booking to me; the acceptance beat; then I move one of
   await page.screenshot({ path: 'visual/shots/pwa-15-booking-new-list.png' })
   // The Booking is on a new List of hers in Wed 22 PM (Christchurch Eye Surgery, Ms Reid), one Booking.
   await page.getByRole('button', { name: 'Month', exact: true }).click()
-  const wed22pm = page.locator('[data-slot-id="S-34821-2026-07-22-PM"]')
+  const wed22pm = page.locator('[data-slot-id="S-34821-2026-11-25-PM"]')
   await expect(wed22pm).toHaveAttribute('data-list-id', /^LG\d{4}$/)
   await expect(wed22pm).toContainText('Christchurch Eye Surgery')
   await page.getByRole('button', { name: 'Week', exact: true }).click()
   await page.goto('/mobile/availability')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="moved-to-you-booking-row"]')).toContainText('Dr Hughes moved a Booking to you: Wed 22 Jul PM, Christchurch Eye Surgery')
+  await expect(page.locator('[data-shot="moved-to-you-booking-row"]')).toContainText('Dr Hughes moved a Booking to you: Wed 25 Nov PM, Christchurch Eye Surgery')
 
   // The acceptance beat: nothing fits until she sets Fri 31 Jul AM available herself in My calendar.
   await page.locator('[data-shot="availability-open-calendar"]').click()
   await page.locator('[data-shot="mobile-add-days-off"]').click()
   const sheet = page.locator('[data-shot="mobile-availability-sheet"]')
   await sheet.locator('[data-status-choice="free"]').click()
-  await sheet.getByLabel('From').fill('2026-07-31')
-  await sheet.getByLabel('To').fill('2026-07-31')
+  await sheet.getByLabel('From').fill('2026-12-04')
+  await sheet.getByLabel('To').fill('2026-12-04')
   await sheet.getByRole('group', { name: 'Sessions' }).getByRole('button', { name: 'AM' }).click()
   await sheet.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(sheet.locator('[data-shot="availability-result"]')).toBeVisible()
@@ -400,13 +400,13 @@ test('a colleague moves a Booking to me; the acceptance beat; then I move one of
   await page.goto('/mobile/lists')
   await page.waitForLoadState('networkidle')
   await page.locator('[data-shot="pwa-demo-actions"]').click()
-  await expect(row.getByRole('radio')).toHaveText(['Dr Beaumont · Fri 31 Jul AM · Christchurch Eye Surgery'])
+  await expect(row.getByRole('radio')).toHaveText(['Dr Beaumont · Fri 4 Dec AM · Christchurch Eye Surgery'])
   await row.getByRole('button', { name: 'Run' }).click()
-  await expect(row.getByRole('status')).toContainText('Fri 31 Jul AM')
+  await expect(row.getByRole('status')).toContainText('Fri 4 Dec AM')
   await page.screenshot({ path: 'visual/shots/pwa-16-acceptance.png' })
 
   // Her own move: the pinned Booking to Dr Whitaker, from its Booking screen; it leaves her List.
-  await page.goto('/mobile/lists/L-34821-2026-07-22-AM/bookings/BK0046')
+  await page.goto('/mobile/lists/L-34821-2026-11-25-AM/bookings/BK0046')
   await page.waitForLoadState('networkidle')
   const action = page.locator('[data-shot="move-booking-action"]')
   await action.scrollIntoViewIfNeeded()
@@ -418,7 +418,7 @@ test('a colleague moves a Booking to me; the acceptance beat; then I move one of
   await expect(move.locator('[data-shot="move-booking-done"]')).toContainText('Moved to Dr Whitaker.')
   await page.screenshot({ path: 'visual/shots/pwa-17-own-booking-move.png' })
   await move.getByRole('button', { name: 'Back to your List' }).click()
-  await expect(page).toHaveURL(/\/mobile\/lists\/L-34821-2026-07-22-AM$/)
+  await expect(page).toHaveURL(/\/mobile\/lists\/L-34821-2026-11-25-AM$/)
   // Her List held six Bookings; it now holds five, and still exists.
   await expect(page.getByText('0 of 5 complete')).toBeVisible()
 })
@@ -427,7 +427,7 @@ test('the 3-procedure Booking loads from the Demo sheet, and the hospital feed c
   await page.goto('/mobile/lists')
   await page.evaluate(() => window.localStorage.clear())
   // Dr Souter's next open List after Tue 21 Jul: Wed 22 Jul AM (Christchurch Eye Surgery).
-  await page.goto('/mobile/lists/L-34821-2026-07-22-AM')
+  await page.goto('/mobile/lists/L-34821-2026-11-25-AM')
   await page.waitForLoadState('networkidle')
   await settleSlide(page)
   await page.locator('[data-shot="pwa-demo-actions"]').click()
@@ -438,7 +438,7 @@ test('the 3-procedure Booking loads from the Demo sheet, and the hospital feed c
   await page.keyboard.press('Escape')
 
   // The staged Booking takes the next Booking id after the seed's last (BK0190 since catch-up Phase 25a).
-  await page.goto('/mobile/lists/L-34821-2026-07-22-AM/bookings/BK0191')
+  await page.goto('/mobile/lists/L-34821-2026-11-25-AM/bookings/BK0191')
   await page.waitForLoadState('networkidle')
   await settleSlide(page)
   await expect(page.locator('[data-testid="procedure-header"]').first().locator('[data-shot="procedure-primary-pill"]')).toHaveText('Primary')
@@ -464,11 +464,11 @@ test('the hospital file is imported and my booking matched, from the Lists Demo 
   // "Fire hospital message" is on the Future-scope surface only: never on a handset.
   await expect(page.locator('[data-shot="pwa-demo-action-fire-hospital-message"]')).toHaveCount(0)
   await row.getByRole('button', { name: 'Run' }).click()
-  await expect(row.getByRole('status')).toContainText("The office imported St George's file and matched it. Sarah Mitchell is now on your Tue 28 Jul AM List")
+  await expect(row.getByRole('status')).toContainText("The office imported St George's file and matched it. Sarah Mitchell is now on your Tue 1 Dec AM List")
   await page.screenshot({ path: 'visual/shots/pwa-24-office-matches-row.png' })
   await page.keyboard.press('Escape')
 
-  await page.goto('/mobile/lists/L-34821-2026-07-28-AM')
+  await page.goto('/mobile/lists/L-34821-2026-12-01-AM')
   await page.waitForLoadState('networkidle')
   await settleSlide(page)
   await expect(page.getByText('Sarah Mitchell').first()).toBeVisible()
@@ -484,9 +484,9 @@ test('the hospital file is imported and my booking matched, from the Lists Demo 
 
 test("the office stand-in adds a missing NHI and the Booking takes the stub's place on an ACTIVE List (catch-up Phase 40)", async ({ page }) => {
   // Dr Souter's Tue 21 Jul PM List, ACTIVE at reset.
-  await page.goto('/mobile/lists/L-34821-2026-07-21-PM')
+  await page.goto('/mobile/lists/L-34821-2026-11-24-PM')
   await page.evaluate(() => window.localStorage.clear())
-  await page.goto('/mobile/lists/L-34821-2026-07-21-PM')
+  await page.goto('/mobile/lists/L-34821-2026-11-24-PM')
   await page.waitForLoadState('networkidle')
   await settleSlide(page)
   await expect(page.getByTestId('mobile-list-header')).toBeVisible()
@@ -508,7 +508,7 @@ test("the office stand-in adds a missing NHI and the Booking takes the stub's pl
 test('the Hub entry runs from the Demo sheet over Add a booking, and the manual fallback still saves (catch-up Phase 40a)', async ({ page }) => {
   await page.goto('/mobile/lists')
   await page.evaluate(() => window.localStorage.clear())
-  await page.goto('/mobile/lists/L-34821-2026-07-21-PM')
+  await page.goto('/mobile/lists/L-34821-2026-11-24-PM')
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: /Add a booking/ }).first().click()
   const sheet = page.getByRole('dialog')
@@ -530,7 +530,7 @@ test('the Hub entry runs from the Demo sheet over Add a booking, and the manual 
   await expect(sheet.locator('[data-shot=nhi-lookup-status]')).toContainText('The Digital Services Hub is not answering.')
   await page.screenshot({ path: 'visual/shots/pwa-40a-hub-unavailable.png' })
   await sheet.getByLabel('Name', { exact: true }).first().fill('Mereana Tipene')
-  await sheet.getByLabel('Date of birth').fill('1981-03-09')
+  await sheet.getByLabel('Date of birth').fill('1981-07-13')
   await sheet.getByLabel('Procedure description').fill('Knee arthroscopy')
   await sheet.getByRole('button', { name: 'Save booking' }).click()
   await expect(page.getByRole('heading', { name: 'Booking added' })).toBeVisible()

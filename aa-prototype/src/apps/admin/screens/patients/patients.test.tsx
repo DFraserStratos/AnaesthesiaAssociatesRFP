@@ -80,7 +80,7 @@ describe('Waiting for NHI', () => {
     const save = within(sheet).getByRole('button', { name: 'Add NHI' })
     expect(save).toBeDisabled()
     fireEvent.change(within(sheet).getByLabelText('NHI'), { target: { value: NO_NHI_RETURNING_NHI } })
-    expect(sheet.querySelector('[data-shot="add-nhi-preview"]')?.textContent).toMatch(/^Matches Losa Tuilagi, born 27 JAN 1992, \d+ earlier Bookings?\. The row uses this record; no second one is made\.$/)
+    expect(sheet.querySelector('[data-shot="add-nhi-preview"]')?.textContent).toMatch(/^Matches Losa Tuilagi, born 1 JUN 1992, \d+ earlier Bookings?\. The row uses this record; no second one is made\.$/)
     fireEvent.click(within(sheet).getByRole('button', { name: 'Add NHI' }))
     expect(waitingNhiRows(useAppStore.getState()).some((r) => r.patientName === 'Losa Tuilagi')).toBe(false)
     expect(Object.keys(useAppStore.getState().masters.patients).length).toBe(before)

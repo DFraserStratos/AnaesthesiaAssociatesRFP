@@ -11,7 +11,7 @@ import { ProcedureStack } from './ProcedureStack'
 import type { ProcedureStackView } from '../../domain/billing/procedureStack'
 
 const VIEW: ProcedureStackView = {
-  procedureText: { text: 'right total knee', source: 'hospitalDownload', receivedAtISO: '2026-07-20T16:00:00', from: "St George's" },
+  procedureText: { text: 'right total knee', source: 'hospitalDownload', receivedAtISO: '2026-11-23T16:00:00', from: "St George's" },
   invoiceDescription: { text: 'Knee replacement', origin: 'edited', newer: { text: 'right total knee', origin: 'hospital' } },
   contract: {
     id: 'CT-X',
@@ -29,7 +29,7 @@ describe('ProcedureStack, the Booking card', () => {
     const { container } = render(<ProcedureStack view={VIEW} density="full" surface="anaesthetist" />)
     const text = container.querySelector('[data-shot=procedure-text]')!
     expect(text.textContent).toContain('right total knee')
-    expect(text.textContent).toContain('20 Jul, 16:00 · Hospital download, St George')
+    expect(text.textContent).toContain('23 Nov, 16:00 · Hospital download, St George')
   })
 
   it('shows no invoice description, Contract or RVG code: those live on the invoice and in the Billing and RVG cards', () => {

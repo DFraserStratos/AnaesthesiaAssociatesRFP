@@ -13,9 +13,9 @@ import { runDemoAction } from './demoActions'
  * Units only for the anaesthetist: no fee on the phone.
  */
 
-const ELLISON_MOBILE = '/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009'
-const SEEDED_ADMIN = '/admin/day/2026-07-13/bookings/BK0184'
-const SEEDED_LIST = 'L-34821-2026-07-13-AM'
+const ELLISON_MOBILE = '/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009'
+const SEEDED_ADMIN = '/admin/day/2026-11-16/bookings/BK0184'
+const SEEDED_LIST = 'L-34821-2026-11-16-AM'
 
 async function settle(page: Page, ms = 500): Promise<void> {
   await page.waitForLoadState('networkidle')
@@ -98,7 +98,7 @@ test('admin: Make primary on the second procedure, then back, moves the 3 and th
 })
 
 test('admin: the mixed bariatric Booking bills no base, labelled provisional (OQ-132)', async ({ page }) => {
-  await page.goto('/admin/day/2026-07-14/bookings/BK0028')
+  await page.goto('/admin/day/2026-11-17/bookings/BK0028')
   await settle(page)
   const split = page.locator('[data-shot="booking-total-split"]')
   await expect(split).toContainText('Primary · fixed price')
@@ -123,7 +123,7 @@ test('demo actions: load the 3-procedure Booking, then the hospital feed changes
   await page.keyboard.press('Escape')
 
   // The staged Booking (the next id after the seed's last, BK0190 since catch-up Phase 25a) on Dr Souter's Wed 22 Jul AM List.
-  await page.goto('/web/lists/L-34821-2026-07-22-AM/bookings/BK0191')
+  await page.goto('/web/lists/L-34821-2026-11-25-AM/bookings/BK0191')
   await settle(page)
   const first = page.locator('[data-shot="procedure-stack"]').first()
   await expect(first).toContainText('Laparoscopic cholecystectomy')

@@ -125,34 +125,34 @@ test('web: the dashboard jump links land on their own routes', async ({ page }) 
 test('admin: the app root lands on today, and a deep-linked day + sort survives a refresh', async ({ page }) => {
   await page.goto('/admin')
   await page.waitForLoadState('networkidle')
-  await expect(page).toHaveURL(/\/admin\/day\/2026-07-21$/)
+  await expect(page).toHaveURL(/\/admin\/day\/2026-11-24$/)
 
-  await page.goto('/admin/day/2026-07-22?sort=az')
+  await page.goto('/admin/day/2026-11-25?sort=az')
   await page.waitForLoadState('networkidle')
-  await expect(page.getByRole('heading', { name: 'Wednesday 22 July 2026' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Wednesday 25 November 2026' })).toBeVisible()
 
   await page.reload()
   await page.waitForLoadState('networkidle')
-  await expect(page).toHaveURL(/\/admin\/day\/2026-07-22\?sort=az$/)
-  await expect(page.getByRole('heading', { name: 'Wednesday 22 July 2026' })).toBeVisible()
+  await expect(page).toHaveURL(/\/admin\/day\/2026-11-25\?sort=az$/)
+  await expect(page.getByRole('heading', { name: 'Wednesday 25 November 2026' })).toBeVisible()
 
   // Row order is a view preference: it round-trips through the query string.
   await page.getByRole('button', { name: 'Roster order' }).click()
-  await expect(page).toHaveURL(/\/admin\/day\/2026-07-22$/)
+  await expect(page).toHaveURL(/\/admin\/day\/2026-11-25$/)
 })
 
 test('admin: leaving the day view and returning lands back on the day and order you were on', async ({ page }) => {
-  await page.goto('/admin/day/2026-07-22?sort=az')
+  await page.goto('/admin/day/2026-11-25?sort=az')
   await page.waitForLoadState('networkidle')
-  await expect(page.getByRole('heading', { name: 'Wednesday 22 July 2026' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Wednesday 25 November 2026' })).toBeVisible()
 
   await page.getByRole('button', { name: /Review queue/ }).first().click()
   await expect(page).toHaveURL(/\/admin\/review$/)
 
   // Both are remembered while the office is off in another section.
   await page.getByRole('button', { name: 'Day view', exact: true }).first().click()
-  await expect(page).toHaveURL(/\/admin\/day\/2026-07-22\?sort=az$/)
-  await expect(page.getByRole('heading', { name: 'Wednesday 22 July 2026' })).toBeVisible()
+  await expect(page).toHaveURL(/\/admin\/day\/2026-11-25\?sort=az$/)
+  await expect(page.getByRole('heading', { name: 'Wednesday 25 November 2026' })).toBeVisible()
 })
 
 test('admin: review queue → review screen is a URL; refresh holds it, Back returns to the queue', async ({ page }) => {
@@ -197,10 +197,10 @@ test('admin: a booking opened from the day drawer is a URL under its day', async
 
   // Open a booked block → the List drawer (a transient overlay, deliberately
   // NOT in the URL), then a booking from it → a routed screen under the day.
-  await page.locator('[data-list-id="L-34821-2026-07-21-AM"]').click() // Souter's St George's AM (the band and rail card also name St George's since catch-up Phase 31)
+  await page.locator('[data-list-id="L-34821-2026-11-24-AM"]').click() // Souter's St George's AM (the band and rail card also name St George's since catch-up Phase 31)
   await expect(page.getByRole('button', { name: 'Edit list' })).toBeVisible()
   await page.getByRole('button', { name: 'Open', exact: true }).first().click()
-  await expect(page).toHaveURL(/\/admin\/day\/2026-07-21\/bookings\/[^/]+$/)
+  await expect(page).toHaveURL(/\/admin\/day\/2026-11-24\/bookings\/[^/]+$/)
   const bookingURL = page.url()
 
   await page.reload()
@@ -211,7 +211,7 @@ test('admin: a booking opened from the day drawer is a URL under its day', async
   await expect(page.getByRole('button', { name: 'Edit list' })).toHaveCount(0)
 
   await page.goBack()
-  await expect(page).toHaveURL(/\/admin\/day\/2026-07-21$/)
+  await expect(page).toHaveURL(/\/admin\/day\/2026-11-24$/)
 })
 
 // ---------------------------------------------------------------------------
@@ -313,7 +313,7 @@ test('stale ids redirect to their parent instead of blanking', async ({ page }) 
   await expect(page).toHaveURL(/\/admin\/invoices$/)
 
   await page.goto('/admin/day/not-a-date')
-  await expect(page).toHaveURL(/\/admin\/day\/2026-07-21$/)
+  await expect(page).toHaveURL(/\/admin\/day\/2026-11-24$/)
 
   await page.goto('/mobile/lists/NOPE')
   await expect(page).toHaveURL(/\/mobile\/lists$/)
@@ -325,10 +325,10 @@ test('stale ids redirect to their parent instead of blanking', async ({ page }) 
 
 test('legacy /cards/ bookmarks redirect, replacing history, to the same Booking', async ({ page }) => {
   // C0009 was Margaret Ellison's Card; the rename kept the number, so BK0009.
-  const list = 'L-34821-2026-07-21-PM'
+  const list = 'L-34821-2026-11-24-PM'
   const cases = [
     { from: `/web/lists/${list}/cards/C0009`, to: `/web/lists/${list}/bookings/BK0009` },
-    { from: `/admin/day/2026-07-21/cards/C0009`, to: `/admin/day/2026-07-21/bookings/BK0009` },
+    { from: `/admin/day/2026-11-24/cards/C0009`, to: `/admin/day/2026-11-24/bookings/BK0009` },
     { from: `/mobile/lists/${list}/cards/C0009`, to: `/mobile/lists/${list}/bookings/BK0009` },
   ]
   for (const { from, to } of cases) {

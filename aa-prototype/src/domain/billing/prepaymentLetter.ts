@@ -58,7 +58,7 @@ export type LetterMergeData = Partial<Record<LetterMergeField, string>>
 export const LETTER_PREVIEW_SAMPLE: LetterMergeData = {
   patientName: 'Jordan Sample',
   procedure: 'Rhinoplasty',
-  procedureDate: 'Friday 24 July 2026',
+  procedureDate: 'Friday 27 November 2026',
   prepaidAmount: '$1,380.00',
   anaesthetist: 'Dr Melanie Souter',
   invoiceNumber: 'AA-2026-0099',

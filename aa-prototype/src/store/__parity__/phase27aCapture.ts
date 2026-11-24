@@ -97,7 +97,7 @@ function pairOfInvoice(state: AppState, invoiceId: string): BookingLedgerPair | 
 }
 
 function julyPreview(state: AppState): FeeRow27a[] {
-  return aaFeeRunPreview(state, '2026-07').map((r) => ({ anaesthetistId: r.anaesthetistId, bctiCount: r.bctiCount, subtotal: r.subtotal, total: r.total }))
+  return aaFeeRunPreview(state, '2026-11').map((r) => ({ anaesthetistId: r.anaesthetistId, bctiCount: r.bctiCount, subtotal: r.subtotal, total: r.total }))
 }
 
 function pairShapes(state: AppState, bookingId: string): PairShape27a[] {
@@ -179,8 +179,8 @@ export function capturePhase27a(): Phase27aCapture {
   // S3 Beats 2 and 3: both Mon 20 Lists authorised, then AA-2026-0005 paid in full.
   const s3 = storeWithoutPhase40()
   withWiredRun(s3, () => {
-    authoriseList(s3, OFFICE, projectedListId(ANAE.souter, '2026-07-20', 'AM'))
-    authoriseList(s3, OFFICE, projectedListId(ANAE.souter, '2026-07-20', 'PM'))
+    authoriseList(s3, OFFICE, projectedListId(ANAE.souter, '2026-11-23', 'AM'))
+    authoriseList(s3, OFFICE, projectedListId(ANAE.souter, '2026-11-23', 'PM'))
   })
   const nib = Object.values(s3.getState().billing.invoices).find((i) => i.invoiceNumber === 'AA-2026-0005')
   const nibCase = nib !== undefined ? pairOfInvoice(s3.getState(), nib.id) : undefined

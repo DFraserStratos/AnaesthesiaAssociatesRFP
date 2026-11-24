@@ -36,7 +36,7 @@ function stagedRunFor(api: BoundAppStore, accPayId: string): string {
 function stagedS3State(): AppState {
   const api = createAppStore()
   const unwire = wireBillingRun(api)
-  const pmListId = projectedListId(ANAE.souter, '2026-07-20', 'PM')
+  const pmListId = projectedListId(ANAE.souter, '2026-11-23', 'PM')
   try {
     expect(api.getState().schedule.lists[pmListId]?.state).toBe('SUBMITTED')
     expect(authoriseList(api, OFFICE, pmListId).ok).toBe(true)
@@ -125,7 +125,7 @@ describe('Xero invoice-pair view: the Xero side and the engine side (catch-up Ph
     const api = createAppStore()
     const unwire = wireBillingRun(api)
     try {
-      expect(authoriseList(api, OFFICE, projectedListId(ANAE.souter, '2026-07-20', 'PM')).ok).toBe(true)
+      expect(authoriseList(api, OFFICE, projectedListId(ANAE.souter, '2026-11-23', 'PM')).ok).toBe(true)
     } finally {
       unwire()
     }
@@ -217,7 +217,7 @@ describe('Xero invoice-pair view: a cancelled prepayment refunded (catch-up Phas
     const note = Object.values(state.billing.creditNotes).find((c) => c.cause === 'prepaymentCancelled')!
     const pair = xeroInvoicePairViews(state).find((p) => p.ledger.billingInvoiceId === note.originalInvoiceId)!
     expect(pair.credit?.creditNoteNumber).toBe(note.creditNoteNumber)
-    expect(pair.credit?.refunds).toEqual([expect.objectContaining({ amount: 1380, bankAccount: 'AA trust account', paidAtISO: expect.stringMatching(/^2026-07-21/) })])
+    expect(pair.credit?.refunds).toEqual([expect.objectContaining({ amount: 1380, bankAccount: 'AA trust account', paidAtISO: expect.stringMatching(/^2026-11-24/) })])
     expect(pair.credit!.refunds![0]!.reference).toContain(note.creditNoteNumber)
     const patient = state.masters.patients[state.schedule.bookings[SEED_PREPAID_BOOKING_ID]!.patientId]!
     expect(JSON.stringify(pair.credit)).not.toContain(patient.nhi!)

@@ -60,9 +60,9 @@ describe('renderPrepaymentLetter', () => {
 
 describe('letterMergeDataOf and defaultTemplateOf', () => {
   it('joins names with "and", spells the date in full and formats money', () => {
-    expect(letterMergeDataOf({ procedureNames: ['Rhinoplasty', 'Septoplasty', 'Turbinates'], procedureDateISO: '2026-07-24', prepaidAmount: 1380, amountOutstanding: 690 })).toEqual({
+    expect(letterMergeDataOf({ procedureNames: ['Rhinoplasty', 'Septoplasty', 'Turbinates'], procedureDateISO: '2026-11-27', prepaidAmount: 1380, amountOutstanding: 690 })).toEqual({
       procedure: 'Rhinoplasty, Septoplasty and Turbinates',
-      procedureDate: 'Friday 24 July 2026',
+      procedureDate: 'Friday 27 November 2026',
       prepaidAmount: '$1,380.00',
       amountOutstanding: '$690.00',
     })

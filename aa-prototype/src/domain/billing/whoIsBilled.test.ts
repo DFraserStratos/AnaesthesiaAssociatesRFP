@@ -72,8 +72,8 @@ describe('billablePartyForProcedure', () => {
 })
 
 describe('the payer helpers', () => {
-  const patient: Patient = { hiddenInternalId: 'PT0001', nhi: 'ZAA0067', name: 'Wiremu Tane', dobISO: '1979-08-22', email: 'w@example.net', postalAddress: { line1: '1 Clyde Road', city: 'Christchurch', postcode: '8041' } }
-  const noContact: Patient = { hiddenInternalId: 'PT0002', nhi: 'ZAA0075', name: 'Kevin Doherty', dobISO: '1972-10-14' }
+  const patient: Patient = { hiddenInternalId: 'PT0001', nhi: 'ZAA0067', name: 'Wiremu Tane', dobISO: '1979-12-26', email: 'w@example.net', postalAddress: { line1: '1 Clyde Road', city: 'Christchurch', postcode: '8041' } }
+  const noContact: Patient = { hiddenInternalId: 'PT0002', nhi: 'ZAA0075', name: 'Kevin Doherty', dobISO: '1973-02-17' }
   const rvg = [{ governingContractId: 'CT-NO-CONTRACT' }]
   const held = [{ governingContractId: 'CT-STG-D1' }]
 
@@ -112,11 +112,11 @@ describe('the payer helpers', () => {
   })
 
   it('childPayerOn: under 18 on the List date, the patient pays, a Procedure bills the payer (US-11.2.4)', () => {
-    const child = { dobISO: '2008-07-22' }
-    expect(childPayerOn({ payer: { kind: 'patient' } }, child, contract('CT-NO-CONTRACT'), '2026-07-21')).toBe(true) // 17 years, 364 days
-    expect(childPayerOn({ payer: { kind: 'patient' } }, child, contract('CT-NO-CONTRACT'), '2026-07-22')).toBe(false) // the 18th birthday
-    expect(childPayerOn(guardianProcedure, child, contract('CT-NO-CONTRACT'), '2026-07-21')).toBe(false)
-    expect(childPayerOn({ payer: { kind: 'patient' } }, child, contract('CT-STG-D1'), '2026-07-21')).toBe(false)
+    const child = { dobISO: '2008-11-25' }
+    expect(childPayerOn({ payer: { kind: 'patient' } }, child, contract('CT-NO-CONTRACT'), '2026-11-24')).toBe(true) // 17 years, 364 days
+    expect(childPayerOn({ payer: { kind: 'patient' } }, child, contract('CT-NO-CONTRACT'), '2026-11-25')).toBe(false) // the 18th birthday
+    expect(childPayerOn(guardianProcedure, child, contract('CT-NO-CONTRACT'), '2026-11-24')).toBe(false)
+    expect(childPayerOn({ payer: { kind: 'patient' } }, child, contract('CT-STG-D1'), '2026-11-24')).toBe(false)
   })
 
   it('invoiceDeliveryFor: a payer by email, else by post (D70), else none; a holder by its Party setting', () => {

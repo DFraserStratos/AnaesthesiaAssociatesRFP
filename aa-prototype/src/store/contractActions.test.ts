@@ -164,65 +164,65 @@ describe('price ranges (catch-up Phase 19a; US-04.2.15, US-04.2.14)', () => {
 
   it("adds a backdated range on Merivale's Face lift, audited in words", () => {
     const api = createAppStore()
-    expect(addPriceRange(api, OFFICE, FACE, { startISO: '2026-07-01', price: 3200 }).ok).toBe(true)
+    expect(addPriceRange(api, OFFICE, FACE, { startISO: '2026-11-04', price: 3200 }).ok).toBe(true)
     expect(rangesOf(api, FACE)).toEqual([
-      { startISO: '2026-06-01', price: 3100 },
-      { startISO: '2026-07-01', price: 3200 },
+      { startISO: '2026-10-05', price: 3100 },
+      { startISO: '2026-11-04', price: 3200 },
     ])
     expect(api.getState().audit.at(-1)).toMatchObject({
       action: 'contract.priceRange.add',
       entityType: 'contract',
       entityId: FACE,
-      after: { contract: 'Face lift', priceRange: 'From 1 Jul 2026, $3,200.00' },
+      after: { contract: 'Face lift', priceRange: 'From 4 Nov 2026, $3,200.00' },
     })
   })
 
   it('corrects a range in place and deletes one entered in error, both audited', () => {
     const api = createAppStore()
-    addPriceRange(api, OFFICE, FACE, { startISO: '2026-10-01', price: 3200 })
-    expect(editPriceRange(api, OFFICE, FACE, '2026-10-01', { startISO: '2026-10-01', price: 3250 }).ok).toBe(true)
+    addPriceRange(api, OFFICE, FACE, { startISO: '2027-02-04', price: 3200 })
+    expect(editPriceRange(api, OFFICE, FACE, '2027-02-04', { startISO: '2027-02-04', price: 3250 }).ok).toBe(true)
     expect(api.getState().audit.at(-1)).toMatchObject({
       action: 'contract.priceRange.update',
-      before: { priceRange: 'From 1 Oct 2026, $3,200.00' },
-      after: { priceRange: 'From 1 Oct 2026, $3,250.00' },
+      before: { priceRange: 'From 4 Feb 2027, $3,200.00' },
+      after: { priceRange: 'From 4 Feb 2027, $3,250.00' },
     })
-    expect(deletePriceRange(api, OFFICE, FACE, '2026-10-01').ok).toBe(true)
-    expect(api.getState().audit.at(-1)).toMatchObject({ action: 'contract.priceRange.delete', before: { priceRange: 'From 1 Oct 2026, $3,250.00' } })
-    expect(rangesOf(api, FACE)).toEqual([{ startISO: '2026-06-01', price: 3100 }])
+    expect(deletePriceRange(api, OFFICE, FACE, '2027-02-04').ok).toBe(true)
+    expect(api.getState().audit.at(-1)).toMatchObject({ action: 'contract.priceRange.delete', before: { priceRange: 'From 4 Feb 2027, $3,250.00' } })
+    expect(rangesOf(api, FACE)).toEqual([{ startISO: '2026-10-05', price: 3100 }])
   })
 
   it('refuses each rule with its sentence, and audits nothing refused', () => {
     const api = createAppStore()
     const auditBefore = api.getState().audit.length
-    expect(addPriceRange(api, OFFICE, FACE, { startISO: '2026-06-01', price: 3300 })).toMatchObject({
+    expect(addPriceRange(api, OFFICE, FACE, { startISO: '2026-10-05', price: 3300 })).toMatchObject({
       ok: false,
-      message: 'Another price range already starts on 1 Jun 2026.',
+      message: 'Another price range already starts on 5 Oct 2026.',
     })
-    expect(deletePriceRange(api, OFFICE, FACE, '2026-06-01')).toMatchObject({ ok: false, message: 'A Contract keeps at least one price range.' })
-    expect(addPriceRange(api, OFFICE, PRICED_ITEM.souterRhinoplasty, { startISO: '2026-12-01', price: 0 })).toMatchObject({
-      ok: false,
-      message: "A prepaid Contract's price must be above zero.",
-    })
-    expect(addPriceRange(api, OFFICE, PRICED_ITEM.souterRhinoplasty, { startISO: '2026-12-01', price: Number.NaN })).toMatchObject({
+    expect(deletePriceRange(api, OFFICE, FACE, '2026-10-05')).toMatchObject({ ok: false, message: 'A Contract keeps at least one price range.' })
+    expect(addPriceRange(api, OFFICE, PRICED_ITEM.souterRhinoplasty, { startISO: '2027-04-06', price: 0 })).toMatchObject({
       ok: false,
       message: "A prepaid Contract's price must be above zero.",
     })
-    expect(addPriceRange(api, OFFICE, CONTRACT.sxap, { startISO: '2026-12-01', price: 30 })).toMatchObject({
+    expect(addPriceRange(api, OFFICE, PRICED_ITEM.souterRhinoplasty, { startISO: '2027-04-06', price: Number.NaN })).toMatchObject({
+      ok: false,
+      message: "A prepaid Contract's price must be above zero.",
+    })
+    expect(addPriceRange(api, OFFICE, CONTRACT.sxap, { startISO: '2027-04-06', price: 30 })).toMatchObject({
       ok: false,
       message: 'Only a fixed-price Contract has price ranges.',
     })
     expect(editPriceRange(api, OFFICE, FACE, '2026-01-01', { startISO: '2026-01-01', price: 1 })).toMatchObject({ ok: false, code: 'rangeMissing' })
     expect(api.getState().audit.length).toBe(auditBefore)
-    expect(rangesOf(api, FACE)).toEqual([{ startISO: '2026-06-01', price: 3100 }])
+    expect(rangesOf(api, FACE)).toEqual([{ startISO: '2026-10-05', price: 3100 }])
   })
 
   it('a save that changes nothing writes no audit entry; one rounding on every path', () => {
     const api = createAppStore()
     const before = api.getState().audit.length
-    expect(editPriceRange(api, OFFICE, FACE, '2026-06-01', { startISO: '2026-06-01', price: 3100 }).ok).toBe(true)
+    expect(editPriceRange(api, OFFICE, FACE, '2026-10-05', { startISO: '2026-10-05', price: 3100 }).ok).toBe(true)
     expect(api.getState().audit.length).toBe(before)
-    expect(addPriceRange(api, OFFICE, FACE, { startISO: '2026-10-01', price: 1.005 }).ok).toBe(true)
-    expect(rangesOf(api, FACE).at(-1)).toEqual({ startISO: '2026-10-01', price: 1.01 })
+    expect(addPriceRange(api, OFFICE, FACE, { startISO: '2027-02-04', price: 1.005 }).ok).toBe(true)
+    expect(rangesOf(api, FACE).at(-1)).toEqual({ startISO: '2027-02-04', price: 1.01 })
   })
 
   it('refuses a start that is not a calendar day', () => {
@@ -231,15 +231,15 @@ describe('price ranges (catch-up Phase 19a; US-04.2.15, US-04.2.14)', () => {
 
   it('a fixed price\'s ranges change only through the range actions, never a raw Contract edit', () => {
     const api = createAppStore()
-    expect(editContract(api, OFFICE, FACE, { pricing: { kind: 'fixed', ranges: [{ startISO: '2026-06-01', price: 1 }] } })).toMatchObject({ ok: false, code: 'useRangeActions' })
-    expect(rangesOf(api, FACE)).toEqual([{ startISO: '2026-06-01', price: 3100 }])
+    expect(editContract(api, OFFICE, FACE, { pricing: { kind: 'fixed', ranges: [{ startISO: '2026-10-05', price: 1 }] } })).toMatchObject({ ok: false, code: 'useRangeActions' })
+    expect(rangesOf(api, FACE)).toEqual([{ startISO: '2026-10-05', price: 3100 }])
   })
 
   it('is office only: no anaesthetist edits a Contract, their own price list included', () => {
     const api = createAppStore()
-    expect(addPriceRange(api, SOUTER, PRICED_ITEM.souterRhinoplasty, { startISO: '2026-12-01', price: 1400 })).toMatchObject({ ok: false, code: 'officeOnly' })
+    expect(addPriceRange(api, SOUTER, PRICED_ITEM.souterRhinoplasty, { startISO: '2027-04-06', price: 1400 })).toMatchObject({ ok: false, code: 'officeOnly' })
     expect(editPriceRange(api, SOUTER, PRICED_ITEM.souterRhinoplasty, '2026-01-01', { startISO: '2026-01-01', price: 1 })).toMatchObject({ ok: false, code: 'officeOnly' })
-    expect(deletePriceRange(api, SOUTER, PRICED_ITEM.souterRhinoplasty, '2026-09-01')).toMatchObject({ ok: false, code: 'officeOnly' })
+    expect(deletePriceRange(api, SOUTER, PRICED_ITEM.souterRhinoplasty, '2027-01-05')).toMatchObject({ ok: false, code: 'officeOnly' })
     expect(editContract(api, SOUTER, PRICED_ITEM.souterRhinoplasty, { name: 'Nose' })).toMatchObject({ ok: false, code: 'officeOnly' })
   })
 

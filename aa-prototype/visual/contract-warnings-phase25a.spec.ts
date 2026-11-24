@@ -11,8 +11,8 @@ import { test, expect, type Page } from '@playwright/test'
  */
 
 const FACE_LIFT = 'CT-MER-FACELIFT'
-const MON_10_AUG = 'L-34821-2026-08-10-PM'
-const REVIEW_FLAGS_LIST = 'L-45178-2026-07-14-AM'
+const MON_10_AUG = 'L-34821-2026-12-14-PM'
+const REVIEW_FLAGS_LIST = 'L-45178-2026-11-17-AM'
 
 async function openContract(page: Page, search: string, id: string, opts: { all?: boolean } = {}) {
   await page.goto('/admin/masters?view=contracts')
@@ -35,9 +35,9 @@ test('phase 25a a new Contract replacing the Face lift from a date lists the Pro
   await panel.getByLabel('Name').fill('Face lift 2026')
   const replaces = panel.locator('[data-shot=contract-replaces]')
   await replaces.getByLabel('Replaces').selectOption(FACE_LIFT)
-  await replaces.getByLabel('From').fill('2026-08-01')
+  await replaces.getByLabel('From').fill('2026-12-05')
   const warning = panel.locator('[data-shot=contract-still-on-warning]')
-  await expect(warning).toContainText('dated on or after Sat 1 Aug')
+  await expect(warning).toContainText('dated on or after Sat 5 Dec')
   await expect(warning).toContainText('Nothing moves by itself')
   const rows = warning.locator('[data-shot=contract-still-on-row]')
   await expect(rows.first()).toBeVisible()
@@ -57,9 +57,9 @@ test('phase 25a Disable lists the Procedures still on the Face lift; Review flag
   await openContract(page, 'Face lift', FACE_LIFT)
   const panel = page.locator('[data-shot=contract-detail]')
   await panel.locator('[data-shot=contract-disable]').click()
-  await expect(panel.locator('[data-shot=contract-disabled-note]')).toContainText('Disabled on Tue 21 Jul')
+  await expect(panel.locator('[data-shot=contract-disabled-note]')).toContainText('Disabled on Tue 24 Nov')
   const warning = panel.locator('[data-shot=contract-still-on-warning]')
-  await expect(warning).toContainText('dated on or after Tue 21 Jul')
+  await expect(warning).toContainText('dated on or after Tue 24 Nov')
   await expect(warning).toContainText('Sophie Matthews')
   await expect(warning).toContainText('Paula Westerman')
   await page.screenshot({ path: 'visual/shots/p25a-02-disable-warning.png', fullPage: true })
@@ -70,9 +70,9 @@ test('phase 25a Disable lists the Procedures still on the Face lift; Review flag
 
   await page.goto(`/admin/review/${MON_10_AUG}`)
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot=review-flag]', { hasText: 'Contract disabled on Tue 21 Jul' }).first()).toBeVisible()
+  await expect(page.locator('[data-shot=review-flag]', { hasText: 'Contract disabled on Tue 24 Nov' }).first()).toBeVisible()
   // A flag, never a block: no authorise blocker names it (contractChangeSelectors.test.ts pins the blockers unchanged).
-  await expect(page.getByText(/Contract disabled on Tue 21 Jul:/)).toHaveCount(0)
+  await expect(page.getByText(/Contract disabled on Tue 24 Nov:/)).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p25a-03-review-flag-disabled.png', fullPage: true })
 
   await openContract(page, 'Face lift', FACE_LIFT, { all: true })
@@ -86,7 +86,7 @@ test('phase 25a the backdated range warns that an authorised Procedure kept its 
   await openContract(page, 'Face lift', FACE_LIFT)
   const ranges = page.locator('[data-shot=contract-price-ranges]')
   await expect(ranges.locator('[data-shot=price-range-kept]')).toHaveCount(0)
-  await ranges.getByLabel('New range start').fill('2026-07-01')
+  await ranges.getByLabel('New range start').fill('2026-11-04')
   await ranges.getByLabel('New range price (ex GST)').fill('3300')
   await ranges.getByRole('button', { name: 'Add price range' }).click()
   const kept = ranges.locator('[data-shot=price-range-kept]')
@@ -102,7 +102,7 @@ test('phase 25a the backdated range warns that an authorised Procedure kept its 
 test('phase 25a the seeded Disabled Contract: its Booking on the review-flags List is flagged', async ({ page }) => {
   await page.goto(`/admin/review/${REVIEW_FLAGS_LIST}`)
   await page.waitForLoadState('networkidle')
-  const flag = page.locator('[data-shot=review-flag]', { hasText: 'Contract disabled on Fri 10 Jul' })
+  const flag = page.locator('[data-shot=review-flag]', { hasText: 'Contract disabled on Fri 13 Nov' })
   await expect(flag).toHaveCount(1)
   await page.screenshot({ path: 'visual/shots/p25a-05-seeded-disabled-flag.png', fullPage: true })
 })

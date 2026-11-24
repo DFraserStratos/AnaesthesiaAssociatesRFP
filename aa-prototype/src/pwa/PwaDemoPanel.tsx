@@ -263,7 +263,7 @@ function ResetCard() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 4 }}>
           <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.01em' }}>Reset all demo data?</div>
           <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
-            This restores the pristine seed and returns the demo clock to Tuesday 21 July 2026, 8:00. Your
+            This restores the pristine seed and returns the demo clock to Tuesday 24 November 2026, 8:00. Your
             display choices are preserved.
           </div>
           <button

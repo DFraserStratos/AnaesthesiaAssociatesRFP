@@ -62,20 +62,20 @@ describe('payerForNewProcedure: the one copy rule (US-11.2.2 "Procedure added la
 })
 
 describe('the contact rule and the child warning per Procedure (US-11.2.3, US-11.2.4, US-13.7.1)', () => {
-  const child = { dobISO: '2015-01-01' }
+  const child = { dobISO: '2015-05-07' }
   const noContact = { name: 'Kevin Doherty' }
   it('a holder-billed or no-Contract Procedure asks for nothing and warns of nothing', () => {
     expect(payerContactMissing({ payer: { kind: 'patient' } }, noContact, contract('CT-NO-CONTRACT'))).toBe(true)
     expect(payerContactMissing({ payer: { kind: 'patient' } }, noContact, contract('CT-STG-D1'))).toBe(false)
     expect(payerContactMissing({ payer: { kind: 'patient' } }, noContact, undefined)).toBe(false)
-    expect(childPayerOn({ payer: { kind: 'patient' } }, child, contract('CT-NO-CONTRACT'), '2026-07-21')).toBe(true)
-    expect(childPayerOn({ payer: { kind: 'patient' } }, child, contract('CT-STG-D1'), '2026-07-21')).toBe(false)
-    expect(childPayerOn({ payer: { kind: 'patient' } }, child, undefined, '2026-07-21')).toBe(false)
+    expect(childPayerOn({ payer: { kind: 'patient' } }, child, contract('CT-NO-CONTRACT'), '2026-11-24')).toBe(true)
+    expect(childPayerOn({ payer: { kind: 'patient' } }, child, contract('CT-STG-D1'), '2026-11-24')).toBe(false)
+    expect(childPayerOn({ payer: { kind: 'patient' } }, child, undefined, '2026-11-24')).toBe(false)
   })
   it('split, only a share billed to the patient warns (US-08.2.3)', () => {
     const toPatient = { payer: hana, split: { shares: [{ party: { kind: 'patient' as const, id: PT }, basis: { kind: 'rest' as const } }] } }
     const toOthers = { payer: { kind: 'patient' as const }, split: { shares: [{ party: { kind: 'insurer' as const, id: 'I-NIB' }, basis: { kind: 'percent' as const, percent: 50 } }, { party: { kind: 'payer' as const, id: 'BP0001' }, basis: { kind: 'rest' as const } }] } }
-    expect(childPayerOn(toPatient, child, contract('CT-NO-CONTRACT'), '2026-07-21')).toBe(true)
-    expect(childPayerOn(toOthers, child, contract('CT-NO-CONTRACT'), '2026-07-21')).toBe(false)
+    expect(childPayerOn(toPatient, child, contract('CT-NO-CONTRACT'), '2026-11-24')).toBe(true)
+    expect(childPayerOn(toOthers, child, contract('CT-NO-CONTRACT'), '2026-11-24')).toBe(false)
   })
 })

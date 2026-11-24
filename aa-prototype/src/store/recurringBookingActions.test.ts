@@ -43,8 +43,8 @@ describe('editRecurringBooking', () => {
   it('a surgeon change updates every future empty projected List and keeps a booked one unchanged', () => {
     const api = store()
     const rb = rutherfordMonday(api)
-    const target = projectedOf(api, rb.id).find((l) => l.dateISO === '2026-08-10')!
-    expect(createBooking(api, OFFICE, target.id, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Test', source: 'anaesthetist' } }).ok).toBe(true)
+    const target = projectedOf(api, rb.id).find((l) => l.dateISO === '2026-12-14')!
+    expect(createBooking(api, OFFICE, target.id, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-05-07' }, sourceText: { text: 'Test', source: 'anaesthetist' } }).ok).toBe(true)
     const bookedBefore = assigned(api.getState().schedule.lists[target.id])
     const auditBefore = api.getState().audit.length
     const out = editRecurringBooking(api, OFFICE, rb.id, { surgeonId: SURG.lim })
@@ -57,7 +57,7 @@ describe('editRecurringBooking', () => {
     const future = projectedOf(api, rb.id).filter((l) => l.dateISO >= tomorrowISO(api.getState()) && !kept.has(l.id))
     expect(future.every((l) => l.surgeonId === SURG.lim)).toBe(true)
     // Mon 27 Jul already holds seeded Bookings: kept as it was.
-    expect(api.getState().schedule.lists[`L-${ANAE.rutherford}-2026-07-27-AM`]?.surgeonId).toBe(SURG.doyle)
+    expect(api.getState().schedule.lists[`L-${ANAE.rutherford}-2026-11-30-AM`]?.surgeonId).toBe(SURG.doyle)
     // Nothing before tomorrow changed.
     expect(projectedOf(api, rb.id).filter((l) => l.dateISO < tomorrowISO(api.getState())).every((l) => l.surgeonId === SURG.doyle)).toBe(true)
     // One audit batch: the update plus a list.update per List.
@@ -86,14 +86,14 @@ describe('editRecurringBooking', () => {
     const kept = new Set(out.value.kept.map((k) => k.listId))
     const future = projectedOf(api, rb.id).filter((l) => l.dateISO >= tomorrowISO(api.getState()) && !kept.has(l.id))
     expect(future.some((l) => isMonday(l.dateISO))).toBe(false)
-    expect(kept.has(`L-${ANAE.rutherford}-2026-07-27-AM`)).toBe(true)
+    expect(kept.has(`L-${ANAE.rutherford}-2026-11-30-AM`)).toBe(true)
     expect(api.getState().audit.filter((a) => a.action === 'list.remove')).toHaveLength(out.value.removed)
   })
 
   it('a hand-edited projected List is kept (editList drops its provenance)', () => {
     const api = store()
     const rb = rutherfordMonday(api)
-    const target = projectedOf(api, rb.id).find((l) => l.dateISO === '2026-08-17')!
+    const target = projectedOf(api, rb.id).find((l) => l.dateISO === '2026-12-21')!
     editList(api, OFFICE, target.id, { notes: 'Office note' })
     expect(api.getState().schedule.lists[target.id]?.recurringBookingId).toBeUndefined()
     const out = editRecurringBooking(api, OFFICE, rb.id, { surgeonId: SURG.lim })
@@ -104,13 +104,13 @@ describe('editRecurringBooking', () => {
   it('a session already marked unavailable is skipped, counted, and left unavailable (the calendar first)', () => {
     const api = store()
     const rb = rutherfordMonday(api)
-    const monday = '2026-08-24'
+    const monday = '2027-01-18' // past the Christmas shutdown and the New Year holidays
     const projected = projectedOf(api, rb.id).find((l) => l.dateISO === monday)!
     // Free the session first (as if never projected), then the anaesthetist marks it unavailable.
-    expect(retireRecurringBooking(api, OFFICE, rb.id, '2026-08-23').ok).toBe(true)
+    expect(retireRecurringBooking(api, OFFICE, rb.id, '2027-01-17').ok).toBe(true)
     expect(api.getState().schedule.lists[projected.id]).toBeUndefined()
     expect(setAvailability(api, { who: 'Dr Rutherford', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.rutherford }, ANAE.rutherford, monday, 'AM', 'unavailable').ok).toBe(true)
-    const out = addRecurringBooking(api, OFFICE, { anaesthetistId: ANAE.rutherford, dayOfWeek: 1, session: 'AM', kind: 'private', hospitalId: HOSP.sx, surgeonId: SURG.lim, effectiveFromISO: '2026-08-24' })
+    const out = addRecurringBooking(api, OFFICE, { anaesthetistId: ANAE.rutherford, dayOfWeek: 1, session: 'AM', kind: 'private', hospitalId: HOSP.sx, surgeonId: SURG.lim, effectiveFromISO: monday })
     expect(out.ok).toBe(true)
     if (!out.ok) return
     expect(out.value.skipped.map((s) => s.dateISO)).toContain(monday)
@@ -122,8 +122,8 @@ describe('editRecurringBooking', () => {
     const api = store()
     const rb = rutherfordMonday(api)
     const code = (o: { ok: boolean; code?: string }) => (o.ok ? 'ok' : o.code)
-    expect(code(editRecurringBooking(api, OFFICE, rb.id, { effectiveFromISO: '2026-09-10', effectiveToISO: '2026-09-01' }))).toBe('invalidRange')
-    expect(code(editRecurringBooking(api, OFFICE, rb.id, { effectiveToISO: '2026-07-01' }))).toBe('endInPast')
+    expect(code(editRecurringBooking(api, OFFICE, rb.id, { effectiveFromISO: '2027-01-14', effectiveToISO: '2027-01-05' }))).toBe('invalidRange')
+    expect(code(editRecurringBooking(api, OFFICE, rb.id, { effectiveToISO: '2026-11-04' }))).toBe('endInPast')
     expect(code(editRecurringBooking(api, SOUTER_ACTOR, rb.id, { notes: 'x' }))).toBe('officeOnly')
     expect(retireRecurringBooking(api, OFFICE, rb.id).ok).toBe(true)
     expect(code(editRecurringBooking(api, OFFICE, rb.id, { notes: 'x' }))).toBe('alreadyRetired')
@@ -161,17 +161,17 @@ describe('retireRecurringBooking', () => {
   it('removes the empty Lists after its last date, keeps booked ones, and never projects again (also on a roll-forward)', () => {
     const api = store()
     const rb = rutherfordMonday(api)
-    const late = projectedOf(api, rb.id).find((l) => l.dateISO === '2026-09-14')!
-    createBooking(api, OFFICE, late.id, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Test', source: 'anaesthetist' } })
-    const out = retireRecurringBooking(api, OFFICE, rb.id, '2026-08-31')
+    const late = projectedOf(api, rb.id).find((l) => l.dateISO === '2027-01-18')!
+    createBooking(api, OFFICE, late.id, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-05-07' }, sourceText: { text: 'Test', source: 'anaesthetist' } })
+    const out = retireRecurringBooking(api, OFFICE, rb.id, '2027-01-04')
     expect(out.ok).toBe(true)
     if (!out.ok) return
-    const remaining = projectedOf(api, rb.id).filter((l) => l.dateISO > '2026-08-31')
+    const remaining = projectedOf(api, rb.id).filter((l) => l.dateISO > '2027-01-04')
     expect(remaining.map((l) => l.id)).toEqual([late.id])
-    expect(api.getState().masters.recurringBookings[rb.id]).toMatchObject({ effectiveToISO: '2026-08-31' })
+    expect(api.getState().masters.recurringBookings[rb.id]).toMatchObject({ effectiveToISO: '2027-01-04' })
     expect(api.getState().masters.recurringBookings[rb.id]?.retiredAtISO).toBeDefined()
     advanceClockDays(api, 7)
-    expect(projectedOf(api, rb.id).filter((l) => l.dateISO > '2026-08-31').map((l) => l.id)).toEqual([late.id])
+    expect(projectedOf(api, rb.id).filter((l) => l.dateISO > '2027-01-04').map((l) => l.id)).toEqual([late.id])
     expect(api.getState().audit.some((a) => a.action === 'recurringBooking.retire' && a.entityId === rb.id)).toBe(true)
   })
 })
@@ -180,10 +180,10 @@ describe('applyRecurringBookingsToCanvas', () => {
   it('fills a projected session that came free; a second press is a no-op with no List meta', () => {
     const api = store()
     const rb = rutherfordMonday(api)
-    const monday = '2026-09-07'
+    const monday = '2027-01-11'
     // The session comes free: the arrangement ends before it, then is extended again
     // (an edit that would re-paint is not used, to test the view-level apply).
-    expect(editRecurringBooking(api, OFFICE, rb.id, { effectiveToISO: '2026-09-06' }).ok).toBe(true)
+    expect(editRecurringBooking(api, OFFICE, rb.id, { effectiveToISO: '2027-01-10' }).ok).toBe(true)
     expect(listInSlot(api.getState(), slotIdFor(ANAE.rutherford, monday, 'AM'))).toBeUndefined()
     // Extend directly in the master (as a later phase's loader might), then apply.
     api.setState((s) => ({ masters: { ...s.masters, recurringBookings: { ...s.masters.recurringBookings, [rb.id]: { ...rb } } } }))
@@ -236,9 +236,9 @@ describe('the projection never loses office work', () => {
   it('a projected List with a phone note is kept, not removed, on retire', () => {
     const api = store()
     const rb = rutherfordMonday(api)
-    const noted = projectedOf(api, rb.id).find((l) => l.dateISO === '2026-08-17')!
+    const noted = projectedOf(api, rb.id).find((l) => l.dateISO === '2026-12-21')!
     expect(logListNote(api, OFFICE, noted.id, 'Theatre 3 confirmed').ok).toBe(true)
-    const out = retireRecurringBooking(api, OFFICE, rb.id, '2026-08-10')
+    const out = retireRecurringBooking(api, OFFICE, rb.id, '2026-12-14')
     expect(out.ok && out.value.kept.some((k) => k.listId === noted.id && k.reason === 'hasRecords')).toBe(true)
     expect(api.getState().schedule.lists[noted.id]).toBeDefined()
   })
@@ -246,11 +246,11 @@ describe('the projection never loses office work', () => {
   it('a projected List the office moved is not painted again in the session it left', () => {
     const api = store()
     const rb = rutherfordMonday(api)
-    const moved = projectedOf(api, rb.id).find((l) => l.dateISO === '2026-08-10')!
+    const moved = projectedOf(api, rb.id).find((l) => l.dateISO === '2026-12-14')!
     const vacated = moved.slotId
     // Move it to a colleague whose Mon 10 Aug AM is open, leaving Rutherford's session Free.
     const colleague = Object.values(api.getState().schedule.slots).find(
-      (s) => s.dateISO === '2026-08-10' && s.session === 'AM' && s.anaesthetistId !== ANAE.rutherford && s.status === 'free' && listInSlot(api.getState(), s.id) === undefined,
+      (s) => s.dateISO === '2026-12-14' && s.session === 'AM' && s.anaesthetistId !== ANAE.rutherford && s.status === 'free' && listInSlot(api.getState(), s.id) === undefined,
     )!
     expect(reassignList(api, OFFICE, moved.id, colleague.anaesthetistId, 'free').ok).toBe(true)
     expect(api.getState().schedule.lists[moved.id]?.recurringOrigin).toEqual({ recurringBookingId: rb.id, slotId: vacated })
@@ -264,8 +264,8 @@ describe('the projection never loses office work', () => {
   it('retire only removes: it never creates or updates, and its preview is what it applies', () => {
     const api = store()
     const rb = rutherfordMonday(api)
-    const preview = previewRetireRecurringBooking(api.getState(), rb, '2026-08-31')
-    const out = retireRecurringBooking(api, OFFICE, rb.id, '2026-08-31')
+    const preview = previewRetireRecurringBooking(api.getState(), rb, '2027-01-04')
+    const out = retireRecurringBooking(api, OFFICE, rb.id, '2027-01-04')
     expect(out.ok && [out.value.created, out.value.updated, out.value.removed]).toEqual([0, 0, preview.remove.length])
   })
 
@@ -281,7 +281,7 @@ describe('the projection never loses office work', () => {
   it('blanking a recurring booking\'s session times resets them on its projected sessions', () => {
     const api = store()
     const preop = Object.values(api.getState().masters.recurringBookings).find((r) => r.kind === 'preop' && r.startTime !== undefined)!
-    const list = projectedOf(api, preop.id).find((l) => l.dateISO > '2026-08-01' && !Object.values(api.getState().schedule.bookings).some((b) => b.listId === l.id))!
+    const list = projectedOf(api, preop.id).find((l) => l.dateISO > '2026-12-05' && !Object.values(api.getState().schedule.bookings).some((b) => b.listId === l.id))!
     expect(api.getState().schedule.slots[list.slotId]?.startTime).toBe(preop.startTime)
     const out = editRecurringBooking(api, OFFICE, preop.id, { startTime: '', endTime: '' })
     expect(out.ok && out.value.updated).toBeGreaterThan(0)

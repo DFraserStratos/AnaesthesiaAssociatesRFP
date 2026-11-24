@@ -55,7 +55,7 @@ describe('a stub on the phone\'s List', () => {
 
   it("Southern Cross R4's stub sits in time order among the Bookings, and the bar is held, never done green", () => {
     importHospitalDownload(useAppStore, OFFICE_ACTOR, 'SAMPLE_SX')
-    const { container } = renderList('L-34821-2026-07-28-PM')
+    const { container } = renderList('L-34821-2026-12-01-PM')
     const rows = [...container.querySelectorAll('[data-testid="mobile-list-scroll"] > button, [data-testid="mobile-list-scroll"] > [data-shot="list-stub"]')]
     const stubAt = rows.findIndex((r) => r.getAttribute('data-shot') === 'list-stub')
     expect(stubAt).toBe(2) // after 13:00 and 14:00, before "Add a booking"

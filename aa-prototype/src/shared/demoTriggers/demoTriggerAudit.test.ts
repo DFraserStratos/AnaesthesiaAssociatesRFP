@@ -257,7 +257,7 @@ describe('sample warnings cover every rule (15a, 19, 21, 40)', () => {
   it('"Raise sample warnings" on the Day view opens a warning for every rule, and for nothing else', () => {
     const api = createAppStore()
     const raise = byId('raise-sample-warnings')
-    const ctx: DemoTriggerCtx = { pathname: '/admin/day/2026-07-21', params: { dateISO: '2026-07-21' }, published: {} }
+    const ctx: DemoTriggerCtx = { pathname: '/admin/day/2026-11-24', params: { dateISO: '2026-11-24' }, published: {} }
     expect(raise.disabledReason(api.getState(), ctx)).toBeNull()
     const perRule = raisedPerRule(api, () => {
       const res = raise.run(api, ctx)
@@ -331,7 +331,7 @@ describe('the privacy boundary holds (17, D44, US-13.6.3)', () => {
   function ctxFor(t: DemoTrigger, state: StoreState): DemoTriggerCtx {
     const listId = SEED_LIST_IDS.souterPm21
     const bookingId = bookingsForList(state, listId)[0]?.id ?? 'x'
-    const values: Record<string, string> = { listId, bookingId, dateISO: '2026-07-21', anaesthetistId: ANAE.souter, subTab: 'outstanding' }
+    const values: Record<string, string> = { listId, bookingId, dateISO: '2026-11-24', anaesthetistId: ANAE.souter, subTab: 'outstanding' }
     const index = t.indexPath(state)
     const indexPattern = index !== null ? t.routes.find((r) => matchPath({ path: r, end: true }, pathnameOf(index)) !== null) : undefined
     const pattern = indexPattern ?? t.routes.find((r) => MOBILE.test(r)) ?? t.routes[0]!

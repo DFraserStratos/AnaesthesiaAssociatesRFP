@@ -56,12 +56,12 @@ export const SEED_DRAFT_LISTS: readonly DraftList[] = [
     conflicts: [],
     origin: originForNewList({ kind: 'office' }),
     notes: "St George's booking office needs an anaesthetist",
-    draft: { origin: 'request', source: 'phone', sinceISO: '2026-07-20T15:40:00', by: OFFICE },
+    draft: { origin: 'request', source: 'phone', sinceISO: '2026-11-23T15:40:00', by: OFFICE },
   },
   {
     id: SEED_DRAFT_LIST_IDS.forte,
     state: 'DRAFT',
-    dateISO: '2026-07-22',
+    dateISO: '2026-11-25',
     session: 'PM',
     kind: 'private',
     hospitalId: HOSP.forte,
@@ -69,12 +69,12 @@ export const SEED_DRAFT_LISTS: readonly DraftList[] = [
     conflicts: [],
     origin: originForNewList({ kind: 'office' }),
     notes: "Emailed by Mr Nand's secretary",
-    draft: { origin: 'request', source: 'email', sinceISO: '2026-07-20T17:10:00', by: OFFICE },
+    draft: { origin: 'request', source: 'email', sinceISO: '2026-11-23T17:10:00', by: OFFICE },
   },
   {
     id: SEED_DRAFT_LIST_IDS.eyeSurgery,
     state: 'DRAFT',
-    dateISO: '2026-07-27',
+    dateISO: '2026-11-30',
     session: 'AM',
     kind: 'private',
     hospitalId: HOSP.ces,
@@ -82,7 +82,7 @@ export const SEED_DRAFT_LISTS: readonly DraftList[] = [
     conflicts: [],
     origin: originForNewList({ kind: 'office' }),
     notes: 'PDF from the rooms, cataract list',
-    draft: { origin: 'request', source: 'pdf', sinceISO: '2026-07-17T09:50:00', by: OFFICE },
+    draft: { origin: 'request', source: 'pdf', sinceISO: '2026-11-20T09:50:00', by: OFFICE },
   },
 ]
 
@@ -117,7 +117,7 @@ export function seedDraftListBookings(next: { booking: number; procedure: number
       source: 'admin',
       notes: spec.note,
       lastModifiedBy: OFFICE,
-      lastModifiedAtISO: '2026-07-20T17:10:00',
+      lastModifiedAtISO: '2026-11-23T17:10:00',
     })
     procedures.push({
       id: `P${String(p).padStart(4, '0')}`,

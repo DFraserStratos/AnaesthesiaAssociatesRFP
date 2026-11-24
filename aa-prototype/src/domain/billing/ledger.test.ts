@@ -30,7 +30,7 @@ import {
 } from './ledger'
 import { reversalPlan } from './creditNote'
 
-const AT = '2026-07-21T10:00:00'
+const AT = '2026-11-24T10:00:00'
 const SOUTER = '34821'
 const RUTHERFORD = '29104'
 
@@ -117,10 +117,10 @@ describe('both legs move together', () => {
   it('a half receipt releases exactly half (16 rule); the rest releases the rest and stamps paid once', () => {
     const half = receive(pair('BC1', 230), 115)
     expect([half.receivable.receivedAmount, half.payable!.releasedAmount, half.receivable.paidInAtISO]).toEqual([115, 115, undefined])
-    const full = applyReceipt(half, 500, '2026-07-22T09:00:00').pair
-    expect([full.receivable.receivedAmount, full.payable!.releasedAmount, full.receivable.paidInAtISO]).toEqual([230, 230, '2026-07-22T09:00:00'])
+    const full = applyReceipt(half, 500, '2026-11-25T09:00:00').pair
+    expect([full.receivable.receivedAmount, full.payable!.releasedAmount, full.receivable.paidInAtISO]).toEqual([230, 230, '2026-11-25T09:00:00'])
     // A replay on a fully received receivable changes nothing (the paid date never moves).
-    expect(applyReceipt(full, 50, '2026-08-01T09:00:00')).toMatchObject({ added: 0, pair: full })
+    expect(applyReceipt(full, 50, '2026-12-05T09:00:00')).toMatchObject({ added: 0, pair: full })
   })
 
   it('a disbursement above what is released is refused; the AA Holding account is never paid out', () => {

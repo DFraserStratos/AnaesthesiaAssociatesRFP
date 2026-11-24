@@ -11,8 +11,8 @@ describe('Phase 35 entries (explicit save and named office users)', () => {
   it('Switch office user shows on the Day view and the Booking detail, bar only, toggles the user and waits on an unsaved draft', () => {
     const api = createAppStore()
     const on = (path: string) => demoTriggersFor(api.getState(), path, 'bar', {}).map((m) => m.trigger.id)
-    expect(on('/admin/day/2026-07-21')).toContain('switch-office-user')
-    expect(on('/admin/day/2026-07-21/bookings/BK0001')).toContain('switch-office-user')
+    expect(on('/admin/day/2026-11-24')).toContain('switch-office-user')
+    expect(on('/admin/day/2026-11-24/bookings/BK0001')).toContain('switch-office-user')
     expect(on('/admin/review')).not.toContain('switch-office-user')
     expect(on('/mobile/lists')).not.toContain('switch-office-user')
     const entry = byId('switch-office-user')

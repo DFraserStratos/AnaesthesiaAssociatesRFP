@@ -20,29 +20,29 @@ const clean = (line: string) => {
 
 describe('describeAvailabilityOutcome', () => {
   it('a range: the count, the status and the dates', () => {
-    expect(clean(describeAvailabilityOutcome(outcome({ set: 10 }), { kind: 'range', statusLabel: 'On holiday', fromISO: '2026-07-24', toISO: '2026-08-07' })))
-      .toBe('10 sessions set to On holiday, 24 Jul to 7 Aug.')
-    expect(describeAvailabilityOutcome(outcome({ set: 1 }), { kind: 'range', statusLabel: 'Unavailable', fromISO: '2026-07-21', toISO: '2026-07-21' }))
-      .toBe('1 session set to Unavailable on Tue 21 Jul.')
+    expect(clean(describeAvailabilityOutcome(outcome({ set: 10 }), { kind: 'range', statusLabel: 'On holiday', fromISO: '2026-11-27', toISO: '2026-12-11' })))
+      .toBe('10 sessions set to On holiday, 27 Nov to 11 Dec.')
+    expect(describeAvailabilityOutcome(outcome({ set: 1 }), { kind: 'range', statusLabel: 'Unavailable', fromISO: '2026-11-24', toISO: '2026-11-24' }))
+      .toBe('1 session set to Unavailable on Tue 24 Nov.')
     expect(describeAvailabilityOutcome(outcome({ unchanged: 2 }), { kind: 'range', statusLabel: 'Free' })).toBe('Already Free. Nothing changed.')
   })
 
   it('never says a List was flagged or the office told (a closed status over a List is asked about first, for every actor)', () => {
-    const line = clean(describeAvailabilityOutcome(outcome({ set: 1 }), { kind: 'range', statusLabel: 'Unavailable', fromISO: '2026-07-21' }))
-    expect(line).toBe('1 session set to Unavailable on Tue 21 Jul.')
+    const line = clean(describeAvailabilityOutcome(outcome({ set: 1 }), { kind: 'range', statusLabel: 'Unavailable', fromISO: '2026-11-24' }))
+    expect(line).toBe('1 session set to Unavailable on Tue 24 Nov.')
     expect(line).not.toMatch(/flagged|office/i)
   })
 
   it('after the unavailable prompt moved the Lists first, counts their sessions and says where the Lists went (catch-up Phase 32)', () => {
-    expect(clean(describeAvailabilityOutcome(outcome({ unchanged: 1 }), { kind: 'range', statusLabel: 'Unavailable', fromISO: '2026-07-23', movedFirst: { lists: 1, sessionsAlreadySet: 1 } })))
-      .toBe('1 session set to Unavailable on Thu 23 Jul. Its List went first, where you chose.')
+    expect(clean(describeAvailabilityOutcome(outcome({ unchanged: 1 }), { kind: 'range', statusLabel: 'Unavailable', fromISO: '2026-11-26', movedFirst: { lists: 1, sessionsAlreadySet: 1 } })))
+      .toBe('1 session set to Unavailable on Thu 26 Nov. Its List went first, where you chose.')
     expect(describeAvailabilityOutcome(outcome({ set: 4 }), { kind: 'range', statusLabel: 'On holiday', movedFirst: { lists: 2, sessionsAlreadySet: 2 } }))
       .toBe('6 sessions set to On holiday. 2 Lists went first, where you chose.')
   })
 
   it('a bookable status over a List: the List stays in place, nothing flagged', () => {
-    expect(describeAvailabilityOutcome(outcome({ set: 1, holdingLists: 1 }), { kind: 'range', statusLabel: 'Free', fromISO: '2026-07-21' }))
-      .toBe('1 session set to Free on Tue 21 Jul. The List stays in place.')
+    expect(describeAvailabilityOutcome(outcome({ set: 1, holdingLists: 1 }), { kind: 'range', statusLabel: 'Free', fromISO: '2026-11-24' }))
+      .toBe('1 session set to Free on Tue 24 Nov. The List stays in place.')
   })
 
   it('a series and its deletion', () => {
@@ -53,8 +53,8 @@ describe('describeAvailabilityOutcome', () => {
   })
 
   it('a removal, and an instance deleted from its series', () => {
-    expect(describeAvailabilityOutcome(outcome({ set: 1 }), { kind: 'cleared', statusLabel: 'Free', fromISO: '2026-08-21' })).toBe('Back to Free on Fri 21 Aug.')
-    expect(describeAvailabilityOutcome(outcome({ set: 1, seriesEdited: 1 }), { kind: 'cleared', statusLabel: 'Free', fromISO: '2026-08-21' }))
-      .toBe('Back to Free on Fri 21 Aug. It is no longer part of the series.')
+    expect(describeAvailabilityOutcome(outcome({ set: 1 }), { kind: 'cleared', statusLabel: 'Free', fromISO: '2026-12-25' })).toBe('Back to Free on Fri 25 Dec.')
+    expect(describeAvailabilityOutcome(outcome({ set: 1, seriesEdited: 1 }), { kind: 'cleared', statusLabel: 'Free', fromISO: '2026-12-25' }))
+      .toBe('Back to Free on Fri 25 Dec. It is no longer part of the series.')
   })
 })

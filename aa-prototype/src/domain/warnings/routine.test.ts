@@ -17,12 +17,12 @@ const BOOKING: Booking = {
   patientId: 'PT1',
   completed: false,
   lastModifiedBy: 'seed',
-  lastModifiedAtISO: '2026-07-21T08:00:00',
+  lastModifiedAtISO: '2026-11-24T08:00:00',
 }
-const LIST = { id: 'L-1', dateISO: '2026-07-24', session: 'AM', state: 'ACTIVE' } as unknown as List
+const LIST = { id: 'L-1', dateISO: '2026-11-27', session: 'AM', state: 'ACTIVE' } as unknown as List
 
 function facts(over: Partial<WarningFacts> = {}): WarningFacts {
-  return { booking: BOOKING, list: LIST, procedures: [], prepaymentStatus: 'none', todayISO: '2026-07-21', ...over }
+  return { booking: BOOKING, list: LIST, procedures: [], prepaymentStatus: 'none', todayISO: '2026-11-24', ...over }
 }
 
 // Test rules reuse the registered id type through a cast: the union is narrow on purpose.
@@ -40,7 +40,7 @@ const MILD = rule('testMild', 'mild', 'A mild condition.')
 const STRONG = rule('testStrong', 'strong', 'A strong condition.')
 
 function clearance(key: string, strength: 'mild' | 'strong'): WarningClearance {
-  return { key, bookingId: BOOKING.id, ruleId: 'prepaymentUnpaid', strength, by: 'Kirsty W.', role: 'office', atISO: '2026-07-21T09:00:00' }
+  return { key, bookingId: BOOKING.id, ruleId: 'prepaymentUnpaid', strength, by: 'Kirsty W.', role: 'office', atISO: '2026-11-24T09:00:00' }
 }
 
 describe('evaluateWarnings', () => {

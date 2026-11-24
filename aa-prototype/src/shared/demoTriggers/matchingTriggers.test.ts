@@ -28,7 +28,7 @@ describe('Matching bar entries', () => {
     const api = createAppStore()
     expect(ids(api, '/admin/intake/matching', 'bar')).toEqual(expect.arrayContaining(['matching-receive-theatre-list', 'matching-send-update']))
     expect(ids(api, '/admin/intake/matching', 'pwa')).toEqual([])
-    expect(ids(api, '/admin/day/2026-07-21', 'bar')).not.toContain('matching-receive-theatre-list')
+    expect(ids(api, '/admin/day/2026-11-24', 'bar')).not.toContain('matching-receive-theatre-list')
   })
 
   it('Import hospital file stages exactly the sample rows, applies nothing, and is then disabled', () => {
@@ -65,12 +65,12 @@ describe('the PWA office stand-in', () => {
     expect(byId('matching-office-matches-row').badge).toBe('office-stand-in')
   })
 
-  it("S1 (catch-up Phase 34): St George's file imported, Sarah Mitchell on Dr Souter's Tue 28 Jul AM List with her wording and No contract · RVG, the other rows left for the office, then disabled", () => {
+  it("S1 (catch-up Phase 34): St George's file imported, Sarah Mitchell on Dr Souter's Tue 1 Dec AM List with her wording and No contract · RVG, the other rows left for the office, then disabled", () => {
     const api = createAppStore()
     const t = byId('matching-office-matches-row')
     const ctx: DemoTriggerCtx = { pathname: '/mobile/lists', params: {}, published: {} }
     expect(t.label).toBe('Hospital file imported and my booking matched')
-    expect(t.choices!(api.getState(), ctx)[0]).toEqual({ id: 's1', label: "St George's file, Tue 28 Jul AM (S1)" })
+    expect(t.choices!(api.getState(), ctx)[0]).toEqual({ id: 's1', label: "St George's file, Tue 1 Dec AM (S1)" })
     const res = t.run(api, ctx, 's1')
     expect(res.ok).toBe(true)
     const rows = Object.values(api.getState().intake.rows).filter((r) => r.id !== SEED_STUB.rowId)
@@ -82,7 +82,7 @@ describe('the PWA office stand-in', () => {
     expect(sarahRow).toMatchObject({ status: 'applied', decidedBy: 'AA office (simulated)' })
     const bookingId = sarahRow.decision!.kind === 'createBooking' ? sarahRow.decision!.bookingId : ''
     const [p] = proceduresForBooking(api.getState(), bookingId)
-    expect(api.getState().schedule.bookings[bookingId]!.listId).toBe('L-34821-2026-07-28-AM')
+    expect(api.getState().schedule.bookings[bookingId]!.listId).toBe('L-34821-2026-12-01-AM')
     expect(p!.procedureText?.text).toBe('lap appy ?conv to open')
     // The office's rail answer (D33): No contract · RVG; the RVG code stays the anaesthetist's.
     expect(p!.governingContractId).toBe('CT-NO-CONTRACT')
@@ -107,7 +107,7 @@ describe('the PWA office stand-in', () => {
   it("on Diane Foster's Booking the office approves the update: the hospital's text replaces WLE MM", () => {
     const api = createAppStore()
     const t = byId('matching-office-matches-row')
-    const ctx: DemoTriggerCtx = { pathname: `/mobile/lists/L-34821-2026-08-04-AM/bookings/${FOSTER}`, params: { listId: 'L-34821-2026-08-04-AM', bookingId: FOSTER }, published: {} }
+    const ctx: DemoTriggerCtx = { pathname: `/mobile/lists/L-34821-2026-12-08-AM/bookings/${FOSTER}`, params: { listId: 'L-34821-2026-12-08-AM', bookingId: FOSTER }, published: {} }
     expect(t.run(api, ctx, 'booking').ok).toBe(true)
     expect(proceduresForBooking(api.getState(), FOSTER)[0]!.procedureText?.text).toBe(FOSTER_HOSPITAL_WORDING)
     expect(t.disabledReason?.(api.getState(), ctx, 'booking')).toBe('This update was already applied')
@@ -116,7 +116,7 @@ describe('the PWA office stand-in', () => {
   it('a new hospital booking on an ACTIVE St George\'s List takes the next pool patient, deterministically', () => {
     const runOnce = () => {
       const api = createAppStore()
-      const ctx: DemoTriggerCtx = { pathname: '/mobile/lists/L-34821-2026-07-28-AM', params: { listId: 'L-34821-2026-07-28-AM' }, published: {} }
+      const ctx: DemoTriggerCtx = { pathname: '/mobile/lists/L-34821-2026-12-01-AM', params: { listId: 'L-34821-2026-12-01-AM' }, published: {} }
       const res = byId('matching-office-matches-row').run(api, ctx, 'list')
       return { ok: res.ok, message: res.message }
     }

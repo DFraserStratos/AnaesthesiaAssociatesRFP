@@ -19,7 +19,7 @@ describe('closuresFor (catch-up Phase 42)', () => {
     for (const h of ['H-STG', 'H-SX', 'H-AAROOMS', 'H-RETIRED']) {
       expect(closuresFor('2026-10-26', h, sources)).toEqual([{ source: 'public', publicHolidayId: 'PH1', name: 'Labour Day' }])
     }
-    expect(closuresFor('2026-10-27', 'H-STG', sources)).toEqual([])
+    expect(closuresFor('2027-03-02', 'H-STG', sources)).toEqual([])
   })
 
   it('a hospital listed open that day is excluded', () => {
@@ -45,9 +45,9 @@ describe('closuresFor (catch-up Phase 42)', () => {
 describe('the seeded master calendar (catch-up Phase 42)', () => {
   const seed = buildSeed()
 
-  it('holds PH001 to PH007 in date order; no hospital holiday is a statutory day', () => {
+  it('holds PH001 to PH010 in date order; no hospital holiday is a statutory day', () => {
     const rows = Object.values(seed.masters.publicHolidays).sort((a, b) => a.id.localeCompare(b.id))
-    expect(rows.map((r) => r.id)).toEqual(['PH001', 'PH002', 'PH003', 'PH004', 'PH005', 'PH006', 'PH007'])
+    expect(rows.map((r) => r.id)).toEqual(['PH001', 'PH002', 'PH003', 'PH004', 'PH005', 'PH006', 'PH007', 'PH008', 'PH009', 'PH010'])
     expect(rows.map((r) => r.dateISO)).toEqual([...rows.map((r) => r.dateISO)].sort())
     expect(rows[1]).toMatchObject({ name: 'Canterbury Anniversary Day', kind: 'regional', region: 'Canterbury' })
     for (const h of Object.values(seed.masters.holidays)) {

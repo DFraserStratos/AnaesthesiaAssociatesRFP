@@ -47,10 +47,10 @@ describe('backdrop weekly runs in the seed', () => {
     }
   })
 
-  it('Week 29 is the newest, so the monitor opens on Week 30 with nothing waiting; the ledger is in balance', () => {
+  it('Week 47 is the newest, so the monitor opens on Week 48 with nothing waiting; the ledger is in balance', () => {
     const s = freshAppState()
-    expect(runsNewestFirst(s)[0]).toMatchObject({ cycleId: '2026-W29', status: 'paid' })
-    expect(openCycle(s).cycleId).toBe('2026-W30')
+    expect(runsNewestFirst(s)[0]).toMatchObject({ cycleId: '2026-W47', status: 'paid' })
+    expect(openCycle(s).cycleId).toBe('2026-W48')
     expect(openCycleDraft(s).lines).toEqual([])
     expect(ledgerPositionOf(s).inBalance).toBe(true)
     expect(anaesthetistLedgerPosition(s, ANAE.souter).inBalance).toBe(true)
@@ -59,7 +59,7 @@ describe('backdrop weekly runs in the seed', () => {
   it("Dr Souter's remittance advices are there on load, newest first", () => {
     const rows = remittancesFor(freshAppState(), ANAE.souter)
     expect(rows.length).toBeGreaterThan(0)
-    expect(rows[0]).toMatchObject({ week: 'Week 29', status: 'paid', netted: 0 })
+    expect(rows[0]).toMatchObject({ week: 'Week 47', status: 'paid', netted: 0 })
   })
 
   it('Reset restores the backdrop runs and the bank download', () => {

@@ -23,8 +23,8 @@ import type { List, PublicHoliday, RecurringBooking, Slot } from './types'
 
 const statuses = seedSlotStatusRecords()
 // Mon 3 Aug to Sun 30 Aug 2026: four Mondays, four Saturdays.
-const FROM = '2026-08-03'
-const TO = '2026-08-30'
+const FROM = '2026-12-07'
+const TO = '2027-01-03'
 
 const rb = (over: Partial<RecurringBooking> = {}): RecurringBooking => ({
   id: 'RCB900',
@@ -39,7 +39,7 @@ const rb = (over: Partial<RecurringBooking> = {}): RecurringBooking => ({
 
 function canvas(recurringBookings: RecurringBooking[], over: Partial<CanvasMasters> = {}): { slots: Record<string, Slot>; lists: Record<string, List> } {
   const generated = generateCanvasForDates(
-    { anaesthetists: [{ id: 'A1', startDateISO: '2020-01-06', active: true }, { id: 'A2', startDateISO: '2020-01-06', active: true }], recurringBookings, leave: [], series: [], statuses, ...over },
+    { anaesthetists: [{ id: 'A1', startDateISO: '2020-05-11', active: true }, { id: 'A2', startDateISO: '2020-05-11', active: true }], recurringBookings, leave: [], series: [], statuses, ...over },
     enumerateDatesISO(FROM, TO),
   )
   return { slots: Object.fromEntries(generated.slots.map((s) => [s.id, s])), lists: Object.fromEntries(generated.lists.map((l) => [l.id, l])) }
@@ -56,23 +56,23 @@ function inputs(c: { slots: Record<string, Slot>; lists: Record<string, List> },
   }
 }
 
-const mondays = ['2026-08-03', '2026-08-10', '2026-08-17', '2026-08-24']
+const mondays = ['2026-12-07', '2026-12-14', '2026-12-21', '2026-12-28']
 
 describe('activeOn and coversDate', () => {
   it('honours start and end dates; weekends work', () => {
-    const r = rb({ effectiveFromISO: '2026-08-10', effectiveToISO: '2026-08-17' })
-    expect(activeOn(r, '2026-08-09')).toBe(false)
-    expect(activeOn(r, '2026-08-10')).toBe(true)
-    expect(activeOn(r, '2026-08-18')).toBe(false)
-    expect(coversDate(rb({ dayOfWeek: 6 }), '2026-08-08')).toBe(true)
-    expect(coversDate(rb({ dayOfWeek: 6 }), '2026-08-09')).toBe(false)
+    const r = rb({ effectiveFromISO: '2026-12-14', effectiveToISO: '2026-12-21' })
+    expect(activeOn(r, '2026-12-13')).toBe(false)
+    expect(activeOn(r, '2026-12-14')).toBe(true)
+    expect(activeOn(r, '2026-12-22')).toBe(false)
+    expect(coversDate(rb({ dayOfWeek: 6 }), '2026-12-12')).toBe(true)
+    expect(coversDate(rb({ dayOfWeek: 6 }), '2026-12-13')).toBe(false)
   })
 
   it('the first running row in id order paints a shared session', () => {
     const a = rb({ id: 'RCB002' })
-    const b = rb({ id: 'RCB001', effectiveToISO: '2026-08-09' })
-    expect(recurringBookingFor([a, b], 'A1', '2026-08-03', 'AM')?.id).toBe('RCB001')
-    expect(recurringBookingFor([a, b], 'A1', '2026-08-10', 'AM')?.id).toBe('RCB002')
+    const b = rb({ id: 'RCB001', effectiveToISO: '2026-12-13' })
+    expect(recurringBookingFor([a, b], 'A1', '2026-12-07', 'AM')?.id).toBe('RCB001')
+    expect(recurringBookingFor([a, b], 'A1', '2026-12-14', 'AM')?.id).toBe('RCB002')
   })
 })
 
@@ -81,21 +81,21 @@ describe('projectRecurringBookingChange', () => {
     const c = canvas([])
     const plan = projectRecurringBookingChange({ ...inputs(c), after: rb() })
     expect(plan.create.map((e) => e.dateISO)).toEqual(mondays)
-    expect(plan.create[0]).toMatchObject({ slotId: slotIdFor('A1', '2026-08-03', 'AM'), fields: { kind: 'private', hospitalId: 'H-STG', surgeonId: 'S-HALE' } })
+    expect(plan.create[0]).toMatchObject({ slotId: slotIdFor('A1', '2026-12-07', 'AM'), fields: { kind: 'private', hospitalId: 'H-STG', surgeonId: 'S-HALE' } })
     expect([plan.update, plan.remove, plan.kept, plan.skipped].every((x) => x.length === 0)).toBe(true)
   })
 
   it('a Saturday recurring booking projects onto Saturdays', () => {
     const plan = projectRecurringBookingChange({ ...inputs(canvas([])), after: rb({ dayOfWeek: 6 }) })
-    expect(plan.create.map((e) => e.dateISO)).toEqual(['2026-08-08', '2026-08-15', '2026-08-22', '2026-08-29'])
+    expect(plan.create.map((e) => e.dateISO)).toEqual(['2026-12-12', '2026-12-19', '2026-12-26', '2027-01-02'])
   })
 
   it('edit: empty projected Lists follow the new surgeon; a List with Bookings is kept', () => {
     const before = rb()
     const c = canvas([before])
-    const booked = `L-A1-2026-08-10-AM`
+    const booked = `L-A1-2026-12-14-AM`
     const plan = projectRecurringBookingChange({ ...inputs(c, [booked]), before, after: { ...before, surgeonId: 'S-LIM' } })
-    expect(plan.update.map((e) => e.dateISO)).toEqual(['2026-08-03', '2026-08-17', '2026-08-24'])
+    expect(plan.update.map((e) => e.dateISO)).toEqual(['2026-12-07', '2026-12-21', '2026-12-28'])
     expect(plan.update[0]?.fields.surgeonId).toBe('S-LIM')
     expect(plan.kept).toEqual([expect.objectContaining({ listId: booked, reason: 'hasBookings' })])
     expect(plan.create).toEqual([])
@@ -106,34 +106,34 @@ describe('projectRecurringBookingChange', () => {
     const c = canvas([before])
     const plan = projectRecurringBookingChange({ ...inputs(c), before, after: { ...before, dayOfWeek: 2 } })
     expect(plan.remove.map((e) => e.dateISO)).toEqual(mondays)
-    expect(plan.create.map((e) => e.dateISO)).toEqual(['2026-08-04', '2026-08-11', '2026-08-18', '2026-08-25'])
+    expect(plan.create.map((e) => e.dateISO)).toEqual(['2026-12-08', '2026-12-15', '2026-12-22', '2026-12-29'])
   })
 
   it('retire: removes the empty Lists after its last date and keeps booked ones', () => {
     const before = rb()
     const c = canvas([before])
-    const plan = projectRecurringBookingChange({ ...inputs(c, ['L-A1-2026-08-24-AM']), before, after: { ...before, effectiveToISO: '2026-08-10', retiredAtISO: '2026-08-02T09:00:00' } })
-    expect(plan.remove.map((e) => e.dateISO)).toEqual(['2026-08-17'])
-    expect(plan.kept.map((e) => [e.dateISO, e.reason])).toEqual([['2026-08-24', 'hasBookings']])
+    const plan = projectRecurringBookingChange({ ...inputs(c, ['L-A1-2026-12-28-AM']), before, after: { ...before, effectiveToISO: '2026-12-14', retiredAtISO: '2026-12-06T09:00:00' } })
+    expect(plan.remove.map((e) => e.dateISO)).toEqual(['2026-12-21'])
+    expect(plan.kept.map((e) => [e.dateISO, e.reason])).toEqual([['2026-12-28', 'hasBookings']])
     expect(plan.create).toEqual([])
   })
 
   it('the calendar is painted first: Holiday and Unavailable sessions are skipped, never created', () => {
-    const c = canvas([], { leave: [{ anaesthetistId: 'A1', dateISO: '2026-08-10', session: 'AM', status: 'holiday' }, { anaesthetistId: 'A1', dateISO: '2026-08-17', session: 'AM', status: 'unavailable' }] })
+    const c = canvas([], { leave: [{ anaesthetistId: 'A1', dateISO: '2026-12-14', session: 'AM', status: 'holiday' }, { anaesthetistId: 'A1', dateISO: '2026-12-21', session: 'AM', status: 'unavailable' }] })
     const plan = projectRecurringBookingChange({ ...inputs(c), after: rb() })
-    expect(plan.skipped.map((e) => [e.dateISO, e.statusKey])).toEqual([['2026-08-10', 'holiday'], ['2026-08-17', 'unavailable']])
-    expect(plan.create.map((e) => e.dateISO)).toEqual(['2026-08-03', '2026-08-24'])
+    expect(plan.skipped.map((e) => [e.dateISO, e.statusKey])).toEqual([['2026-12-14', 'holiday'], ['2026-12-21', 'unavailable']])
+    expect(plan.create.map((e) => e.dateISO)).toEqual(['2026-12-07', '2026-12-28'])
   })
 
   it('keeps an office-edited List, another recurring booking\'s List, and SUBMITTED or AUTHORISED ones', () => {
     const before = rb()
     const c = canvas([before])
-    const edited = { ...c.lists['L-A1-2026-08-03-AM']! }
+    const edited = { ...c.lists['L-A1-2026-12-07-AM']! }
     delete edited.recurringBookingId
     c.lists[edited.id] = edited
-    c.lists['L-A1-2026-08-10-AM'] = { ...c.lists['L-A1-2026-08-10-AM']!, recurringBookingId: 'RCB001' }
-    c.lists['L-A1-2026-08-17-AM'] = { ...assigned(c.lists['L-A1-2026-08-17-AM']), state: 'SUBMITTED' }
-    c.lists['L-A1-2026-08-24-AM'] = { ...assigned(c.lists['L-A1-2026-08-24-AM']), state: 'AUTHORISED' }
+    c.lists['L-A1-2026-12-14-AM'] = { ...c.lists['L-A1-2026-12-14-AM']!, recurringBookingId: 'RCB001' }
+    c.lists['L-A1-2026-12-21-AM'] = { ...assigned(c.lists['L-A1-2026-12-21-AM']), state: 'SUBMITTED' }
+    c.lists['L-A1-2026-12-28-AM'] = { ...assigned(c.lists['L-A1-2026-12-28-AM']), state: 'AUTHORISED' }
     const plan = projectRecurringBookingChange({ ...inputs(c), before, after: { ...before, surgeonId: 'S-LIM' } })
     expect(plan.kept.map((e) => e.reason)).toEqual(['officeEdited', 'otherRecurringBooking', 'submitted', 'authorised'])
     expect(plan.update).toEqual([])
@@ -141,8 +141,8 @@ describe('projectRecurringBookingChange', () => {
 
   it('every created List holds no Bookings and nothing before fromISO or after toISO changes', () => {
     const c = canvas([])
-    const plan = projectRecurringBookingChange({ ...inputs(c, [], { fromISO: '2026-08-04', toISO: '2026-08-20' }), after: rb() })
-    expect(plan.create.map((e) => e.dateISO)).toEqual(['2026-08-10', '2026-08-17'])
+    const plan = projectRecurringBookingChange({ ...inputs(c, [], { fromISO: '2026-12-08', toISO: '2026-12-24' }), after: rb() })
+    expect(plan.create.map((e) => e.dateISO)).toEqual(['2026-12-14', '2026-12-21'])
   })
 
   it('is deterministic', () => {
@@ -157,19 +157,19 @@ describe('projectAllRecurringBookings', () => {
   it('never removes; fills a session that has come free; earlier id wins a shared session', () => {
     const r = rb()
     const c = canvas([r])
-    delete c.lists['L-A1-2026-08-10-AM']
+    delete c.lists['L-A1-2026-12-14-AM']
     const plan = projectAllRecurringBookings({ ...inputs(c), recurringBookings: [rb({ id: 'RCB999', surgeonId: 'S-LIM' }), r] })
-    expect(plan.create.map((e) => [e.dateISO, e.recurringBookingId])).toEqual([['2026-08-10', 'RCB900']])
+    expect(plan.create.map((e) => [e.dateISO, e.recurringBookingId])).toEqual([['2026-12-14', 'RCB900']])
     expect(plan.remove).toEqual([])
   })
 
   it('counts a kept or skipped session once when two arrangements cover it', () => {
     const r = rb()
-    const c = canvas([r], { leave: [{ anaesthetistId: 'A1', dateISO: '2026-08-10', session: 'AM', status: 'holiday' }] })
+    const c = canvas([r], { leave: [{ anaesthetistId: 'A1', dateISO: '2026-12-14', session: 'AM', status: 'holiday' }] })
     const twin = rb({ id: 'RCB999' })
-    const plan = projectAllRecurringBookings({ ...inputs(c, ['L-A1-2026-08-03-AM']), recurringBookings: [r, twin] })
-    expect(plan.kept.filter((k) => k.slotId === 'S-A1-2026-08-03-AM')).toHaveLength(1)
-    expect(plan.skipped.filter((k) => k.slotId === 'S-A1-2026-08-10-AM')).toHaveLength(1)
+    const plan = projectAllRecurringBookings({ ...inputs(c, ['L-A1-2026-12-07-AM']), recurringBookings: [r, twin] })
+    expect(plan.kept.filter((k) => k.slotId === 'S-A1-2026-12-07-AM')).toHaveLength(1)
+    expect(plan.skipped.filter((k) => k.slotId === 'S-A1-2026-12-14-AM')).toHaveLength(1)
   })
 
   it('agrees with the generator: over the fresh seed it creates, updates and removes nothing', () => {
@@ -178,7 +178,7 @@ describe('projectAllRecurringBookings', () => {
     const lists = seed.schedule.lists
     const booked = new Set(Object.values(seed.schedule.bookings).map((b) => b.listId))
     const plan = projectAllRecurringBookings({
-      fromISO: '2026-07-22',
+      fromISO: '2026-11-25',
       toISO: horizon.endISO,
       slots: seed.schedule.slots,
       lists,
@@ -199,23 +199,23 @@ describe('public holidays (24 Nov 2026): recurring Lists skip them', () => {
   const statuses = seedSlotStatusRecords()
   const rb: RecurringBooking = { id: 'RB-T1', anaesthetistId: 'A1', dayOfWeek: 1, session: 'AM', hospitalId: 'H-SX', surgeonId: 'S-1', kind: 'private' }
   const holidays: ClosureSources = {
-    hospitalHolidays: [{ id: 'HH-T1', hospitalId: 'H-SX', dateISO: '2026-11-02', name: 'Maintenance' }],
-    publicHolidays: [{ id: 'PH-T1', dateISO: '2026-10-26', name: 'Labour Day', kind: 'national', openHospitalIds: ['H-AAROOMS'] }],
+    hospitalHolidays: [{ id: 'HH-T1', hospitalId: 'H-SX', dateISO: '2027-03-08', name: 'Maintenance' }],
+    publicHolidays: [{ id: 'PH-T1', dateISO: '2027-03-01', name: 'Public holiday', kind: 'national', openHospitalIds: ['H-AAROOMS'] }],
   }
-  const labourDay: PublicHoliday = { id: 'PH-T1', dateISO: '2026-10-26', name: 'Labour Day', kind: 'national', openHospitalIds: ['H-AAROOMS'] }
+  const labourDay: PublicHoliday = { id: 'PH-T1', dateISO: '2027-03-01', name: 'Public holiday', kind: 'national', openHospitalIds: ['H-AAROOMS'] }
   const skipsDate = recurringSkipFor(holidays)
-  const dates = enumerateDatesISO('2026-10-19', '2026-11-02')
-  const masters: CanvasMasters = { anaesthetists: [{ id: 'A1', startDateISO: '2020-01-01', active: true }], recurringBookings: [rb], leave: [], series: [], statuses, skipsDate }
+  const dates = enumerateDatesISO('2027-02-22', '2027-03-08')
+  const masters: CanvasMasters = { anaesthetists: [{ id: 'A1', startDateISO: '2020-05-06', active: true }], recurringBookings: [rb], leave: [], series: [], statuses, skipsDate }
 
   it('the generator makes no List on a public holiday, but does on a hospital\'s own closure (flagged there)', () => {
     const generated = generateCanvasForDates(masters, dates)
-    expect(generated.lists.map((l) => l.dateISO).sort()).toEqual(['2026-10-19', '2026-11-02'])
+    expect(generated.lists.map((l) => l.dateISO).sort()).toEqual(['2027-02-22', '2027-03-08'])
     expect(generated.clashes).toEqual([])
   })
 
   it('a public holiday open to the hospital is not skipped', () => {
     const open = recurringSkipFor({ ...holidays, publicHolidays: [{ ...labourDay, openHospitalIds: ['H-SX'] }] })
-    expect(generateCanvasForDates({ ...masters, skipsDate: open }, dates).lists.map((l) => l.dateISO)).toContain('2026-10-26')
+    expect(generateCanvasForDates({ ...masters, skipsDate: open }, dates).lists.map((l) => l.dateISO)).toContain('2027-03-01')
   })
 
   it('re-projecting creates nothing on the holiday and removes its own empty List there; a booked one stays', () => {
@@ -223,8 +223,8 @@ describe('public holidays (24 Nov 2026): recurring Lists skip them', () => {
     const slots = Object.fromEntries(withoutSkip.slots.map((s) => [s.id, s]))
     const lists = Object.fromEntries(withoutSkip.lists.map((l) => [l.id, l]))
     const listBySlot = new Map(withoutSkip.lists.map((l) => [l.slotId!, l] as const))
-    const input = { fromISO: '2026-10-20', toISO: '2026-11-02', slots, lists, listBySlot, statuses, skipsDate }
-    const holidayList = withoutSkip.lists.find((l) => l.dateISO === '2026-10-26')!
+    const input = { fromISO: '2027-02-23', toISO: '2027-03-08', slots, lists, listBySlot, statuses, skipsDate }
+    const holidayList = withoutSkip.lists.find((l) => l.dateISO === '2027-03-01')!
     const plan = projectRecurringBookingChange({ ...input, bookedListIds: new Set<string>(), before: rb, after: rb })
     expect(plan.create).toEqual([])
     expect(plan.remove.map((r) => r.listId)).toEqual([holidayList.id])

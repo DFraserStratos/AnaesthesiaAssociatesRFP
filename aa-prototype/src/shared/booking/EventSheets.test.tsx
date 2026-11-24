@@ -75,7 +75,7 @@ describe('the billing event sheet', () => {
 describe("the events list's new rows", () => {
   it('a credit reads negative with a plain hyphen; the owner sees totals, never a calculation', () => {
     const pid = ownProcedure()
-    expect(addBillingEvent(useAppStore, SOUTER, pid, { direction: 'credit', description: 'Goodwill adjustment', amount: 40, occurredOnISO: '2026-07-21', party: { sameAs: true } }).ok).toBe(true)
+    expect(addBillingEvent(useAppStore, SOUTER, pid, { direction: 'credit', description: 'Goodwill adjustment', amount: 40, occurredOnISO: '2026-11-24', party: { sameAs: true } }).ok).toBe(true)
     const { container } = wrap(<ProcedureEventsList procedureId={pid} actor={SOUTER} />)
     const row = container.querySelector('[data-kind="billing"]') as HTMLElement
     expect(row.textContent).toContain('-$40.00')

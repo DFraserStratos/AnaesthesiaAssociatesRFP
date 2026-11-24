@@ -13,7 +13,7 @@ import { ANAE } from '../../domain/seed'
 export const PHASE_27A_REASON = "a prepayment's payable credits the AA Holding account and is not a BCTI, Phase 27a"
 
 /** The one BCTI count that moves: Dr Souter, July 2026, one fewer. */
-export const PHASE_27A_BCTI_MOVE = { anaesthetistId: ANAE.souter, monthISO: '2026-07', delta: -1 } as const
+export const PHASE_27A_BCTI_MOVE = { anaesthetistId: ANAE.souter, monthISO: '2026-11', delta: -1 } as const
 
 /** A baseline's BCTI rows with 27a's declared move applied (a row reaching zero is dropped, as the captures drop them). */
 export function withPhase27aBctis<T extends { anaesthetistId: string; monthISO: string; count: number }>(rows: readonly T[]): T[] {

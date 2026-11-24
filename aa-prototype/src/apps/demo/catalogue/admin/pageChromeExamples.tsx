@@ -15,8 +15,8 @@ function Echo({ children }: { children: string }) {
 }
 
 const ROWS = [
-  { id: 'LD-001', day: 'Tue 21 Jul', session: 'PM', where: "St George's · Mr Hale", since: '3 d 22 h' },
-  { id: 'LD-002', day: 'Wed 22 Jul', session: 'AM', where: 'Mercy Hospital · Ms Reid', since: '1 d 4 h' },
+  { id: 'LD-001', day: 'Tue 24 Nov', session: 'PM', where: "St George's · Mr Hale", since: '3 d 22 h' },
+  { id: 'LD-002', day: 'Wed 25 Nov', session: 'AM', where: 'Mercy Hospital · Ms Reid', since: '1 d 4 h' },
 ]
 
 export function TableKitExample() {

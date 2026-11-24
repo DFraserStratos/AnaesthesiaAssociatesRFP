@@ -11,9 +11,9 @@ import { runDemoAction } from './demoActions'
  * proven by the store and component tests.
  */
 
-const CHEN_ADMIN = '/admin/day/2026-06-22/bookings/HBK03'
-const MITCHELL_ADMIN = '/admin/day/2026-07-14/bookings/BK0032'
-const SHARMA_TUE14 = 'L-41267-2026-07-14-AM'
+const CHEN_ADMIN = '/admin/day/2026-10-26/bookings/HBK03'
+const MITCHELL_ADMIN = '/admin/day/2026-11-17/bookings/BK0032'
+const SHARMA_TUE14 = 'L-41267-2026-11-17-AM'
 
 test('the seeded event: Admin, web and mobile, with the office and the anaesthetist views', async ({ page }) => {
   await page.goto(CHEN_ADMIN)
@@ -22,7 +22,7 @@ test('the seeded event: Admin, web and mobile, with the office and the anaesthet
   const row = events.locator('[data-shot="procedure-event-row"]')
   await expect(row).toHaveCount(1)
   await expect(row).toContainText('Additional invoice')
-  await expect(row).toContainText('Post-op ward review, Tue 23 Jun, 20 min')
+  await expect(row).toContainText('Post-op ward review, Tue 27 Oct, 20 min')
   await expect(row).toContainText('$85.00')
   await expect(row).toContainText('Raised by Dr Souter')
   await expect(row).toContainText("St George's")
@@ -43,9 +43,9 @@ test('the seeded event: Admin, web and mobile, with the office and the anaesthet
 })
 
 test('a Booking with no events: the add controls on the owner\'s apps, the empty line on Admin', async ({ page }) => {
-  await page.goto('/admin/day/2026-07-21/bookings/BK0001')
+  await page.goto('/admin/day/2026-11-24/bookings/BK0001')
   await expect(page.locator('[data-shot="procedure-events"]').first()).toContainText('No events on this Procedure yet.')
-  await page.goto('/web/lists/L-34821-2026-07-21-AM/bookings/BK0001')
+  await page.goto('/web/lists/L-34821-2026-11-24-AM/bookings/BK0001')
   await expect(page.locator('[data-shot="procedure-block"]').first()).toBeVisible()
   // Catch-up Phase 39b: the section now always shows on the owner's Procedure, so the add buttons have a home; no event rows.
   await expect(page.locator('[data-shot="procedure-event-row"]')).toHaveCount(0)
@@ -64,7 +64,7 @@ test('the office creates, reviews and runs an additional invoice; it links both 
   const sheet = page.locator('[data-shot="additional-invoice-sheet"]')
   await expect(sheet).toContainText('Additional to AA-2026-')
   await expect(sheet.locator('[data-shot="event-same-as"]')).toBeVisible()
-  await sheet.locator('input[data-shot="line-description"]').fill('Post-op ward review, Wed 15 Jul, 15 min')
+  await sheet.locator('input[data-shot="line-description"]').fill('Post-op ward review, Wed 18 Nov, 15 min')
   await sheet.locator('input[data-shot="line-amount"]').fill('30')
   await expect(sheet.locator('[data-shot="additional-invoice-totals"]')).toContainText('$34.50')
   await sheet.locator('[data-shot="additional-invoice-save"]').click()
@@ -105,7 +105,7 @@ test("Dr Souter creates an additional invoice on her own invoiced Procedure: a d
   await raise.click()
   const sheet = page.locator('[data-shot="additional-invoice-sheet"]')
   await expect(sheet).toContainText('Additional to AA-2026-H03')
-  await sheet.locator('input[data-shot="line-description"]').fill('Nerve catheter review, Wed 24 Jun')
+  await sheet.locator('input[data-shot="line-description"]').fill('Nerve catheter review, Wed 28 Oct')
   await sheet.locator('input[data-shot="line-amount"]').fill('45')
   await sheet.locator('[data-shot="additional-invoice-save"]').click()
   const mine = page.locator('[data-shot="procedure-event-row"]', { hasText: 'Nerve catheter review' })

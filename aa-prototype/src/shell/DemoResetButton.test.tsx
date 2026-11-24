@@ -16,12 +16,12 @@ describe('DemoResetButton', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Reset demo data' }))
     expect(screen.getByRole('dialog', { name: 'Reset all demo data?' })).toBeInTheDocument()
-    expect(useAppStore.getState().clock.todayISO).toBe('2026-07-23')
+    expect(useAppStore.getState().clock.todayISO).toBe('2026-11-26')
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirm reset' }))
 
     const state = useAppStore.getState()
-    expect(state.clock.todayISO).toBe('2026-07-21')
+    expect(state.clock.todayISO).toBe('2026-11-24')
     expect(state.clock.minutesSinceMidnight).toBe(8 * 60)
     expect(state.shell.currentApp).toBe('admin')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()

@@ -24,13 +24,13 @@ function event(over: Partial<ProcedureEvent> = {}): ProcedureEvent {
     procedureId: 'HP03',
     bookingId: 'HBK03',
     kind: 'additionalInvoice',
-    occurredOnISO: '2026-06-23',
+    occurredOnISO: '2026-10-27',
     billable: true,
     party: { sameAs: true },
     detail: { kind: 'additionalInvoice', lines: [{ description: 'Review', quantity: 1, unitAmount: 85 }] },
     review: { state: 'awaitingReview' },
     addedBy: { who: 'Dr Melanie Souter', role: 'anaesthetist', anaesthetistId: OWNER },
-    addedAtISO: '2026-07-20T16:30:00',
+    addedAtISO: '2026-11-23T16:30:00',
     ...over,
   }
 }
@@ -149,8 +149,8 @@ describe('resolveEventParty', () => {
 })
 
 describe('validateEventBase', () => {
-  const ctx = { ownerAnaesthetistId: OWNER, listDateISO: '2026-07-14', todayISO: '2026-07-21', procedureInvoiced: true }
-  const input = { occurredOnISO: '2026-07-15', party: { sameAs: true as const } }
+  const ctx = { ownerAnaesthetistId: OWNER, listDateISO: '2026-11-17', todayISO: '2026-11-24', procedureInvoiced: true }
+  const input = { occurredOnISO: '2026-11-18', party: { sameAs: true as const } }
   const office = { role: 'office' as const }
   it('accepts a valid charge for the office and the owner', () => {
     expect(validateEventBase(input, 'additionalInvoice', office, ctx)).toBeNull()
@@ -162,18 +162,18 @@ describe('validateEventBase', () => {
     expect(validateEventBase(input, 'additionalInvoice', office, { ...ctx, procedureInvoiced: false })?.message).toBe('This Procedure has no invoice yet. An additional invoice is for charges after invoicing.')
   })
   it('holds both date edges', () => {
-    expect(validateEventBase({ ...input, occurredOnISO: '2026-07-14' }, 'additionalInvoice', office, ctx)).toBeNull()
-    expect(validateEventBase({ ...input, occurredOnISO: '2026-07-21' }, 'additionalInvoice', office, ctx)).toBeNull()
-    expect(validateEventBase({ ...input, occurredOnISO: '2026-07-13' }, 'additionalInvoice', office, ctx)?.code).toBe('dateBeforeProcedure')
-    expect(validateEventBase({ ...input, occurredOnISO: '2026-07-22' }, 'additionalInvoice', office, ctx)?.code).toBe('dateInFuture')
+    expect(validateEventBase({ ...input, occurredOnISO: '2026-11-17' }, 'additionalInvoice', office, ctx)).toBeNull()
+    expect(validateEventBase({ ...input, occurredOnISO: '2026-11-24' }, 'additionalInvoice', office, ctx)).toBeNull()
+    expect(validateEventBase({ ...input, occurredOnISO: '2026-11-16' }, 'additionalInvoice', office, ctx)?.code).toBe('dateBeforeProcedure')
+    expect(validateEventBase({ ...input, occurredOnISO: '2026-11-25' }, 'additionalInvoice', office, ctx)?.code).toBe('dateInFuture')
     expect(validateEventBase({ ...input, occurredOnISO: '' }, 'additionalInvoice', office, ctx)?.code).toBe('dateInvalid')
   })
   it('allows a List dated after today its own date (the future-dated List case)', () => {
-    const future = { ...ctx, listDateISO: '2026-07-24' }
-    expect(validateEventBase({ ...input, occurredOnISO: '2026-07-24' }, 'additionalInvoice', office, future)).toBeNull()
-    expect(validateEventBase({ ...input, occurredOnISO: '2026-07-25' }, 'additionalInvoice', office, future)?.code).toBe('dateInFuture')
-    expect(defaultEventDate('2026-07-24', '2026-07-21')).toBe('2026-07-24')
-    expect(defaultEventDate('2026-07-14', '2026-07-21')).toBe('2026-07-21')
+    const future = { ...ctx, listDateISO: '2026-11-27' }
+    expect(validateEventBase({ ...input, occurredOnISO: '2026-11-27' }, 'additionalInvoice', office, future)).toBeNull()
+    expect(validateEventBase({ ...input, occurredOnISO: '2026-11-28' }, 'additionalInvoice', office, future)?.code).toBe('dateInFuture')
+    expect(defaultEventDate('2026-11-27', '2026-11-24')).toBe('2026-11-27')
+    expect(defaultEventDate('2026-11-17', '2026-11-24')).toBe('2026-11-24')
   })
   it('refuses a named party with nowhere to send the invoice', () => {
     const named = { ...input, party: { sameAs: false as const, party: { kind: 'party' as const, id: 'PY-X' } } }

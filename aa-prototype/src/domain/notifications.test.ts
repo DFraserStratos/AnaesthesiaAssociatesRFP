@@ -20,7 +20,7 @@ const masters = {
 function n(extra: Partial<Notification> = {}): Notification {
   return {
     id: 'NT0001',
-    atISO: '2026-07-21T09:12:00',
+    atISO: '2026-11-24T09:12:00',
     kind: 'listMoved',
     byActor: 'Dr Rachel Hughes',
     listId: 'L1',
@@ -28,7 +28,7 @@ function n(extra: Partial<Notification> = {}): Notification {
     cause: 'move',
     fromAnaesthetistId: 'A1',
     toAnaesthetistId: 'A2',
-    dateISO: '2026-07-23',
+    dateISO: '2026-11-26',
     session: 'AM',
     hospitalId: 'H-STG',
     surgeonId: 'S-REID',
@@ -38,12 +38,12 @@ function n(extra: Partial<Notification> = {}): Notification {
 
 describe('notificationText', () => {
   it('names both anaesthetists on a move to a colleague (US-13.8.2 "Moved to a colleague")', () => {
-    expect(notificationText(n(), masters)).toBe("Dr Hughes moved Thu 23 Jul AM (St George's, Ms A. Reid) to Dr Sharma")
+    expect(notificationText(n(), masters)).toBe("Dr Hughes moved Thu 26 Nov AM (St George's, Ms A. Reid) to Dr Sharma")
   })
 
   it('says a return went to the office (US-13.8.2 "Returned to the office")', () => {
     expect(notificationText(n({ route: 'office', toAnaesthetistId: undefined }), masters)).toBe(
-      "Dr Hughes returned Thu 23 Jul AM (St George's, Ms A. Reid) to the office",
+      "Dr Hughes returned Thu 26 Nov AM (St George's, Ms A. Reid) to the office",
     )
   })
 
@@ -65,7 +65,7 @@ describe('notificationText', () => {
 
 describe('pageOf', () => {
   const rows = Array.from({ length: 13 }, (_, i) =>
-    n({ id: `NT${String(i + 1).padStart(4, '0')}`, atISO: `2026-07-21T09:${String(10 + Math.floor(i / 2)).padStart(2, '0')}:00` }),
+    n({ id: `NT${String(i + 1).padStart(4, '0')}`, atISO: `2026-11-24T09:${String(10 + Math.floor(i / 2)).padStart(2, '0')}:00` }),
   )
 
   it('orders newest first and breaks a tie by id, descending', () => {
@@ -90,7 +90,7 @@ describe('NOTIFICATION_POOL_RULE (OQ-79 answered, D58; catch-up Phase 32b)', () 
 
   it('a notice is active until it carries resolvedAt; the count is the active ones', () => {
     const active = n()
-    const resolved = n({ id: 'NT0002', resolvedAt: '2026-07-21T10:00:00', resolvedBy: 'Kirsty W.' })
+    const resolved = n({ id: 'NT0002', resolvedAt: '2026-11-24T10:00:00', resolvedBy: 'Kirsty W.' })
     expect(isActive(active)).toBe(true)
     expect(isActive(resolved)).toBe(false)
     expect(activeCount([active, resolved, n({ id: 'NT0003' })])).toBe(2)
@@ -104,9 +104,9 @@ describe('an alert to the office (catch-up Phase 32b; US-03.6.3)', () => {
     void _c
     void _t
     const list: Notification = { ...base, kind: 'officeAlert', message: 'Is the Contract right?' }
-    expect(notificationText(list, masters)).toBe("Dr Hughes asked the office to check Thu 23 Jul AM (St George's, Ms A. Reid)")
+    expect(notificationText(list, masters)).toBe("Dr Hughes asked the office to check Thu 26 Nov AM (St George's, Ms A. Reid)")
     const booking: Notification = { ...list, bookingId: 'BK1', patientName: surnameCommaInitial('Hemi Walker') }
-    expect(notificationText(booking, masters)).toBe("Dr Hughes asked the office to check a Booking (Walker, H., Thu 23 Jul AM, St George's)")
+    expect(notificationText(booking, masters)).toBe("Dr Hughes asked the office to check a Booking (Walker, H., Thu 26 Nov AM, St George's)")
     for (const t of [notificationText(list, masters), notificationText(booking, masters)]) {
       expect(t).not.toMatch(/[–—]|slot|flag/i)
     }
@@ -116,8 +116,8 @@ describe('an alert to the office (catch-up Phase 32b; US-03.6.3)', () => {
 describe('a single Booking moved (catch-up Phase 32a)', () => {
   it('reads as one sentence naming both anaesthetists, the patient, the session and the new List', () => {
     const booking = n({ kind: 'bookingMoved', bookingId: 'BK1', patientName: surnameCommaInitial('Annette Riley') })
-    expect(notificationText(booking, masters)).toBe("Dr Hughes moved a Booking (Riley, A., Thu 23 Jul AM, St George's) to Dr Sharma. A new List was created.")
-    expect(notificationText({ ...booking, patientName: undefined }, masters)).toBe("Dr Hughes moved a Booking (Thu 23 Jul AM, St George's) to Dr Sharma. A new List was created.")
+    expect(notificationText(booking, masters)).toBe("Dr Hughes moved a Booking (Riley, A., Thu 26 Nov AM, St George's) to Dr Sharma. A new List was created.")
+    expect(notificationText({ ...booking, patientName: undefined }, masters)).toBe("Dr Hughes moved a Booking (Thu 26 Nov AM, St George's) to Dr Sharma. A new List was created.")
     expect(notificationText(booking, masters)).not.toMatch(/[–—]|prefer|tier/i)
   })
   it('shortens a patient to surname and initial', () => {

@@ -255,9 +255,9 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
     expect(seed.schedule.slots[ruthPm!.slotId]).toMatchObject({ startTime: '13:30', endTime: '17:00' })
 
     // Fitzgerald's recurring-booking-derived design days.
-    const fitzTueAm = seed.schedule.lists[projectedListId(ANAE.fitzgerald, '2026-07-21', 'AM')]
-    const fitzThuAm = seed.schedule.lists[projectedListId(ANAE.fitzgerald, '2026-07-23', 'AM')]
-    const fitzThuPm = seed.schedule.lists[projectedListId(ANAE.fitzgerald, '2026-07-23', 'PM')]
+    const fitzTueAm = seed.schedule.lists[projectedListId(ANAE.fitzgerald, '2026-11-24', 'AM')]
+    const fitzThuAm = seed.schedule.lists[projectedListId(ANAE.fitzgerald, '2026-11-26', 'AM')]
+    const fitzThuPm = seed.schedule.lists[projectedListId(ANAE.fitzgerald, '2026-11-26', 'PM')]
     expect(fitzTueAm?.kind).toBe('private')
     expect(fitzTueAm?.hospitalId).toBe(HOSP.sx)
     expect(fitzTueAm?.surgeonId).toBe(SURG.doyle)
@@ -272,9 +272,14 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
   })
 
   it('makes no recurring List on a public holiday, and flags Lists on a hospital closure (conflict, never a status change)', () => {
-    // Recurring Lists skip public holidays (24 Nov 2026): Labour Day and Canterbury Anniversary Day hold none.
-    expect(Object.values(seed.schedule.lists).filter((l) => (l.dateISO === '2026-10-26' || l.dateISO === '2026-11-13') && l.recurringBookingId !== undefined)).toEqual([])
-    const conflicted = Object.values(seed.schedule.lists).filter((l) => l.conflicts.some((c) => c.kind === 'holiday') && l.dateISO === '2026-07-22')
+    // Recurring Lists skip public holidays (24 Nov 2026): Christmas, New Year and Waitangi Day hold none.
+    const holidays = ['2026-12-25', '2026-12-28', '2027-01-01', '2027-01-04', '2027-02-08']
+    expect(Object.values(seed.schedule.lists).filter((l) => holidays.includes(l.dateISO) && l.recurringBookingId !== undefined)).toEqual([])
+    // …and each hospital's Christmas shutdown: St George's holds none until it reopens Mon 11 Jan.
+    const stg = Object.values(seed.schedule.lists).filter((l) => l.hospitalId === HOSP.stg && l.recurringBookingId !== undefined && l.dateISO >= '2026-12-24' && l.dateISO <= '2027-01-11')
+    expect(stg.length).toBeGreaterThan(0)
+    expect(stg.every((l) => l.dateISO === '2027-01-11')).toBe(true)
+    const conflicted = Object.values(seed.schedule.lists).filter((l) => l.conflicts.some((c) => c.kind === 'holiday') && l.dateISO === '2026-11-25')
     expect(conflicted.length).toBeGreaterThan(0)
     for (const list of conflicted) {
       expect(list.hospitalId).toBeDefined()
@@ -306,10 +311,10 @@ const PINNED_CLASHES = 12
  */
 /** Catch-up Phase 32d removed three (bookless public Lists at a closed Christchurch Public, now Public sessions): L-27731-2026-10-26-PM, L-36208-2026-11-13-AM, L-46822-2026-10-26-AM. */
 /** 24 Nov 2026: recurring Lists skip public holidays, so the ten Labour Day and Anniversary Day Lists are no longer made. */
-const FLAGGED_BEFORE_PHASE_30 = ['L-25490-2026-07-22-PM']
-const SOUTHERN_CROSS_WED22_ADDITIONS = ['L-38455-2026-07-22-PM', 'L-41267-2026-07-22-PM', 'L-46822-2026-07-22-AM']
+const FLAGGED_BEFORE_PHASE_30 = ['L-25490-2026-11-25-PM']
+const SOUTHERN_CROSS_WED22_ADDITIONS = ['L-38455-2026-11-25-PM', 'L-41267-2026-11-25-PM', 'L-46822-2026-11-25-AM']
 /** Catch-up Phase 31: Dr Beaumont's Wed 22 recurring clashes at Southern Cross are Draft Lists, and carry HH900 like any List. */
-const SOUTHERN_CROSS_WED22_DRAFT_LISTS = ['LD-RCB020-2026-07-22-AM', 'LD-RCB021-2026-07-22-PM']
+const SOUTHERN_CROSS_WED22_DRAFT_LISTS = ['LD-RCB020-2026-11-25-AM', 'LD-RCB021-2026-11-25-PM']
 
 describe('seed conflicts are facts (catch-up Phase 30)', () => {
   const lists = Object.values(seed.schedule.lists)
@@ -322,25 +327,25 @@ describe('seed conflicts are facts (catch-up Phase 30)', () => {
     }
   })
 
-  it('flags the pre-phase set plus the Southern Cross Wed 22 additions, and nothing else', () => {
+  it('flags the pre-phase set plus the Southern Cross Wed 25 additions, and nothing else', () => {
     const flagged = lists.filter((l) => l.conflicts.length > 0).map((l) => l.id).sort()
     expect(flagged).toEqual([...FLAGGED_BEFORE_PHASE_30, ...SOUTHERN_CROSS_WED22_DRAFT_LISTS, ...SOUTHERN_CROSS_WED22_ADDITIONS].sort())
   })
 
   it('Rutherford Wed 22 AM (catch-up Phase 32b, D59): the office recorded his sickness and returned the List, a Draft List with no conflict', () => {
-    const id = projectedListId(ANAE.rutherford, '2026-07-22', 'AM')
+    const id = projectedListId(ANAE.rutherford, '2026-11-25', 'AM')
     const list = seed.schedule.lists[id]!
-    expect(list).toMatchObject({ state: 'DRAFT', dateISO: '2026-07-22', session: 'AM', hospitalId: HOSP.ces, conflicts: [] })
+    expect(list).toMatchObject({ state: 'DRAFT', dateISO: '2026-11-25', session: 'AM', hospitalId: HOSP.ces, conflicts: [] })
     expect(list.draft).toMatchObject({ origin: 'unavailableReturn', by: 'Kirsty W.', fromAnaesthetistId: ANAE.rutherford, sinceISO: SEED_SICKNESS.recordedAtISO })
     expect(list.slotId).toBeUndefined()
     expect(list.anaesthetistId).toBeUndefined()
-    const slotId = slotIdFor(ANAE.rutherford, '2026-07-22', 'AM')
+    const slotId = slotIdFor(ANAE.rutherford, '2026-11-25', 'AM')
     expect(seed.schedule.slots[slotId]).toMatchObject({ status: 'unavailable', note: SEED_SICKNESS.note })
     expect(Object.values(seed.schedule.lists).some((l) => l.slotId === slotId)).toBe(false)
     expect(seed.audit.find((a) => a.action === 'session.status' && a.entityId === slotId)).toMatchObject({ role: 'office', who: 'Kirsty W.' })
     expect(seed.audit.find((a) => a.action === 'draftList.detach' && a.entityId === id)).toMatchObject({ role: 'office', who: 'Kirsty W.', after: { origin: 'unavailableReturn' } })
     // S2 Beat 3's receiver: Dr Sharma's Wed 22 AM is Free and empty.
-    const sharma = slotIdFor(ANAE.sharma, '2026-07-22', 'AM')
+    const sharma = slotIdFor(ANAE.sharma, '2026-11-25', 'AM')
     expect(seed.schedule.slots[sharma]?.status).toBe('free')
     expect(Object.values(seed.schedule.lists).some((l) => l.slotId === sharma)).toBe(false)
   })
@@ -354,16 +359,16 @@ describe('seed conflicts are facts (catch-up Phase 30)', () => {
     }
   })
 
-  it('the Southern Cross Wed 22 closure (HH900) flags every List there that day, Morrison PM included', () => {
-    expect(seed.masters.holidays['HH900']).toMatchObject({ hospitalId: HOSP.sx, dateISO: '2026-07-22' })
-    const sx = lists.filter((l) => l.dateISO === '2026-07-22' && l.hospitalId === HOSP.sx)
-    expect(sx.map((l) => l.id).sort()).toEqual(['L-25490-2026-07-22-PM', ...SOUTHERN_CROSS_WED22_ADDITIONS, ...SOUTHERN_CROSS_WED22_DRAFT_LISTS].sort())
+  it('the Southern Cross Wed 25 closure (HH900) flags every List there that day, Morrison PM included', () => {
+    expect(seed.masters.holidays['HH900']).toMatchObject({ hospitalId: HOSP.sx, dateISO: '2026-11-25' })
+    const sx = lists.filter((l) => l.dateISO === '2026-11-25' && l.hospitalId === HOSP.sx)
+    expect(sx.map((l) => l.id).sort()).toEqual(['L-25490-2026-11-25-PM', ...SOUTHERN_CROSS_WED22_ADDITIONS, ...SOUTHERN_CROSS_WED22_DRAFT_LISTS].sort())
     for (const l of sx) expect(l.conflicts).toMatchObject([{ kind: 'holiday', holidayId: 'HH900' }])
   })
 
-  it('keeps Tue 21 and every Souter session pristine', () => {
+  it('keeps Tue 24 and every Souter session pristine', () => {
     expect(lists.filter((l) => l.dateISO === DEMO_TODAY && l.conflicts.length > 0)).toEqual([])
-    const souterWindow = lists.filter((l) => l.anaesthetistId === ANAE.souter && l.dateISO <= '2026-08-16')
+    const souterWindow = lists.filter((l) => l.anaesthetistId === ANAE.souter && l.dateISO <= '2026-12-20')
     expect(souterWindow.filter((l) => l.conflicts.length > 0)).toEqual([])
   })
 
@@ -667,11 +672,11 @@ describe('Booking id numbering (catch-up Phase 15)', () => {
   }
 
   it('BK0001 is Hemi Walker on Dr Souter\'s Tue 21 AM List', () => {
-    expect(pin('BK0001')).toEqual({ patient: 'Hemi Walker', anaesthetist: ANAE.souter, dateISO: '2026-07-21', session: 'AM' })
+    expect(pin('BK0001')).toEqual({ patient: 'Hemi Walker', anaesthetist: ANAE.souter, dateISO: '2026-11-24', session: 'AM' })
   })
 
   it('BK0009 is Margaret Ellison on Dr Souter\'s Tue 21 PM List', () => {
-    expect(pin('BK0009')).toEqual({ patient: 'Margaret Ellison', anaesthetist: ANAE.souter, dateISO: '2026-07-21', session: 'PM' })
+    expect(pin('BK0009')).toEqual({ patient: 'Margaret Ellison', anaesthetist: ANAE.souter, dateISO: '2026-11-24', session: 'PM' })
   })
 
   it('no Booking or history Booking keeps a legacy Card id', () => {
@@ -691,16 +696,16 @@ describe('Booking id numbering (catch-up Phase 15)', () => {
  * AM, Ropata Tue 25 and Thu 27 Aug AM and PM): the leave stands and the Public series leaves it alone.
  */
 const SEEDED_DRAFT_LISTS = [
-  'L-29104-2026-07-22-AM',
+  'L-29104-2026-11-25-AM',
   'LD-001',
   'LD-002',
   'LD-003',
-  'LD-RCB014-2026-09-16-PM',
-  'LD-RCB020-2026-07-22-AM',
-  'LD-RCB021-2026-07-22-PM',
-  'LD-RCB022-2026-07-24-AM',
-  'LD-RCB044-2026-07-27-PM',
-  'LD-RCB045-2026-07-22-AM',
+  'LD-RCB014-2027-01-20-PM',
+  'LD-RCB020-2026-11-25-AM',
+  'LD-RCB021-2026-11-25-PM',
+  'LD-RCB022-2026-11-27-AM',
+  'LD-RCB044-2026-11-30-PM',
+  'LD-RCB045-2026-11-25-AM',
 ]
 
 describe('seeded Draft Lists (catch-up Phase 31; FT-01.6, US-01.6.1, OQ-81 part 2)', () => {
@@ -711,7 +716,7 @@ describe('seeded Draft Lists (catch-up Phase 31; FT-01.6, US-01.6.1, OQ-81 part 
     expect(drafts.map((l) => l.id).sort()).toEqual(SEEDED_DRAFT_LISTS)
     expect(drafts.filter((l) => l.draft?.origin === 'request')).toHaveLength(3)
     expect(drafts.filter((l) => l.draft?.origin === 'recurringClash')).toHaveLength(6)
-    expect(drafts.filter((l) => l.draft?.origin === 'unavailableReturn').map((l) => l.id)).toEqual(['L-29104-2026-07-22-AM'])
+    expect(drafts.filter((l) => l.draft?.origin === 'unavailableReturn').map((l) => l.id)).toEqual(['L-29104-2026-11-25-AM'])
   })
 
   it('every Draft List is DRAFT with a hospital and surgeon that resolve and neither anaesthetist nor session; every other List has both', () => {
@@ -735,9 +740,9 @@ describe('seeded Draft Lists (catch-up Phase 31; FT-01.6, US-01.6.1, OQ-81 part 
       return slot.status === 'free' && !all.some((l) => l.slotId === slot.id)
     }
     expect(open(ANAE.fitzgerald, DEMO_TODAY, 'PM')).toBe(true)
-    expect(open(ANAE.souter, '2026-07-22', 'PM')).toBe(true)
-    expect(seed.schedule.lists['LD-001']).toMatchObject({ hospitalId: HOSP.stg, surgeonId: SURG.tan, dateISO: DEMO_TODAY, session: 'PM', draft: { origin: 'request', source: 'phone', sinceISO: '2026-07-20T15:40:00', by: 'Kirsty W.' } })
-    expect(seed.schedule.lists['LD-003']).toMatchObject({ hospitalId: HOSP.ces, surgeonId: SURG.reid, dateISO: '2026-07-27', session: 'AM', draft: { sinceISO: '2026-07-17T09:50:00' } })
+    expect(open(ANAE.souter, '2026-11-25', 'PM')).toBe(true)
+    expect(seed.schedule.lists['LD-001']).toMatchObject({ hospitalId: HOSP.stg, surgeonId: SURG.tan, dateISO: DEMO_TODAY, session: 'PM', draft: { origin: 'request', source: 'phone', sinceISO: '2026-11-23T15:40:00', by: 'Kirsty W.' } })
+    expect(seed.schedule.lists['LD-003']).toMatchObject({ hospitalId: HOSP.ces, surgeonId: SURG.reid, dateISO: '2026-11-30', session: 'AM', draft: { sinceISO: '2026-11-20T09:50:00' } })
   })
 
   it('LD-002 holds two active Bookings with a procedure each, on no prepaid Contract, and fits Souter\'s open Wed 22 PM', () => {
@@ -751,7 +756,7 @@ describe('seeded Draft Lists (catch-up Phase 31; FT-01.6, US-01.6.1, OQ-81 part 
       expect(procs[0]).toMatchObject({ governingContractId: 'CT-NO-CONTRACT' })
       expect(procs[0]!.rvgGroupId).toBeDefined()
     }
-    expect(seed.schedule.lists['LD-002']).toMatchObject({ dateISO: '2026-07-22', session: 'PM', hospitalId: HOSP.forte })
+    expect(seed.schedule.lists['LD-002']).toMatchObject({ dateISO: '2026-11-25', session: 'PM', hospitalId: HOSP.forte })
   })
 
   it('every recurring booking running on a closed session from today on has exactly one Draft List for it, with no availability conflict; no past day has one', () => {
@@ -769,7 +774,7 @@ describe('seeded Draft Lists (catch-up Phase 31; FT-01.6, US-01.6.1, OQ-81 part 
   })
 
   it('the S2 not-preferred beat is reachable: Dr Sharma is open on Thu 23 PM (the canned Reid request) and Mon 27 AM (LD-003)', () => {
-    for (const [d, s] of [['2026-07-23', 'PM'], ['2026-07-27', 'AM']] as const) {
+    for (const [d, s] of [['2026-11-26', 'PM'], ['2026-11-30', 'AM']] as const) {
       const slot = seed.schedule.slots[slotIdFor(ANAE.sharma, d, s)]!
       expect(slot.status).toBe('free')
       expect(all.some((l) => l.slotId === slot.id)).toBe(false)
@@ -782,7 +787,7 @@ describe('seeded Draft Lists (catch-up Phase 31; FT-01.6, US-01.6.1, OQ-81 part 
     for (const l of preop) expect(l.hospitalId, l.id).toBe(HOSP.aaRooms)
     expect(seed.masters.hospitals[HOSP.aaRooms]).toMatchObject({ name: 'AA rooms', locationType: 'aaRooms' })
     expect(Object.values(seed.masters.hospitals).filter((h) => h.locationType === 'aaRooms')).toHaveLength(1)
-    expect(Object.values(seed.masters.holidays).some((h) => h.hospitalId === HOSP.aaRooms)).toBe(false)
+    expect(Object.values(seed.masters.holidays).filter((h) => h.hospitalId === HOSP.aaRooms).every((h) => h.shutdown === true)).toBe(true)
     for (const rb of Object.values(seed.masters.recurringBookings)) {
       expect(seed.masters.hospitals[rb.hospitalId], rb.id).toBeDefined()
       expect(seed.masters.surgeons[rb.surgeonId], rb.id).toBeDefined()
@@ -904,13 +909,13 @@ describe('seeded flat Contracts (catch-up Phase 18)', () => {
     expect([rate('CT-SXAP'), rate('CT-HNZ'), rate('CT-STG-ACC'), rate('CT-COS-ACC'), rate('CT-UNISPORTS')]).toEqual([26.5, 23, 25, 24, 93.47])
     expect(contracts['CT-DOYLE-BAR']).toMatchObject({
       name: 'Gastric bypass',
-      pricing: { kind: 'fixed', ranges: [{ startISO: '2025-01-01', price: 2800 }, { startISO: '2026-07-28', price: 2950 }] },
+      pricing: { kind: 'fixed', ranges: [{ startISO: '2025-01-01', price: 2800 }, { startISO: '2026-12-01', price: 2950 }] },
       billsTo: 'payer',
       linkedSurgeonIds: ['S-DOYLE'],
     })
     expect(contracts['CT-DOYLE-SLEEVE']).toMatchObject({ pricing: { kind: 'fixed', ranges: [{ startISO: '2025-01-01', price: 2400 }] } })
     // COS ACC fixed fees starts after the billing-failure demo's Thu 16 Jul List.
-    expect(contracts['CT-COS-FIXED']?.pricing).toEqual({ kind: 'fixed', ranges: [{ startISO: '2026-08-01', price: 1250 }] })
+    expect(contracts['CT-COS-FIXED']?.pricing).toEqual({ kind: 'fixed', ranges: [{ startISO: '2026-12-05', price: 1250 }] })
     // Aria keeps its id and is RVG at its own rate, $26.50, the override off (catch-up Phase 24, RV-03).
     expect(contracts['CT-ARIA-HOURLY']).toMatchObject({ name: 'Aria Skin and Laser Clinic', pricing: { kind: 'rvgContractRate', unitRate: 26.5 }, anaesthetistMayOverridePrice: false })
     expect(Object.values(contracts).some((c) => 'permitsRateTime' in c)).toBe(false)
@@ -944,7 +949,7 @@ describe('the RVG groups (catch-up Phase 19; US-05.1.1, US-05.1.3, RV-41)', () =
     expect(new Set(published('T2').map((g) => g.description)).size).toBe(2)
   })
 
-  it('holds every group the 8 October wording table maps to, and the published ranges', () => {
+  it('holds every group the 11 February wording table maps to, and the published ranges', () => {
     const ar35 = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6a', 'N1', 'T1', 'T2', 'T3', 'UL1', 'UL2', 'UL3', 'LL1', 'LL3', 'LL4', 'LL5', 'LL6', 'A1', 'A2', 'A3', 'A4', 'P1', 'P2', 'P4', 'E1', 'E2', 'S2', 'S6', 'S8b', 'S9b']
     for (const code of ar35) expect(codes(code).length, code).toBeGreaterThan(0)
     const ranged: Record<string, [number, number]> = { H4: [10, 12], N4: [10, 14], T5c: [8, 10], A4: [6, 8], A6: [12, 14], A12: [8, 10], A13: [12, 14], R2: [6, 8] }
@@ -1154,7 +1159,7 @@ describe('the seeded event (catch-up Phase 38b)', () => {
     const events = Object.values(seed.schedule.procedureEvents).filter((e) => e.id.startsWith('EV'))
     expect(events).toHaveLength(1)
     const ev = events[0]!
-    expect(ev).toMatchObject({ id: 'EV0001', procedureId: 'HP03', bookingId: 'HBK03', kind: 'additionalInvoice', occurredOnISO: '2026-06-23', billable: true, party: { sameAs: true }, review: { state: 'awaitingReview' } })
+    expect(ev).toMatchObject({ id: 'EV0001', procedureId: 'HP03', bookingId: 'HBK03', kind: 'additionalInvoice', occurredOnISO: '2026-10-27', billable: true, party: { sameAs: true }, review: { state: 'awaitingReview' } })
     expect(ev.addedBy).toEqual({ who: 'Dr Melanie Souter', role: 'anaesthetist', anaesthetistId: ANAE.souter })
     expect(ev.invoiceId).toBeUndefined()
     expect(seed.schedule.procedures['HP03']?.bookingId).toBe('HBK03')

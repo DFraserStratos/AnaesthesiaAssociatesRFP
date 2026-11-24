@@ -52,8 +52,8 @@ describe('candidates on the pristine seed', () => {
 describe('"One move"', () => {
   it('a colleague returns one List to the office, as themselves: one move, one notification, a Draft List', () => {
     const api = createAppStore()
-    const expected = colleagueMoveCandidates(api.getState(), '2026-07-21')[0]!
-    const out = stageColleagueMoveToOffice(api, '2026-07-21')
+    const expected = colleagueMoveCandidates(api.getState(), '2026-11-24')[0]!
+    const out = stageColleagueMoveToOffice(api, '2026-11-24')
     expect(out.ok).toBe(true)
     if (!out.ok) return
     expect(out.value.listId).toBe(expected.id)
@@ -67,8 +67,8 @@ describe('"One move"', () => {
 
   it('on a date with no candidate, takes the next date that has one', () => {
     const api = createAppStore()
-    const out = stageColleagueMoveToOffice(api, '2026-07-25')
-    expect(out.ok && out.value.dateISO >= '2026-07-25').toBe(true)
+    const out = stageColleagueMoveToOffice(api, '2026-11-28')
+    expect(out.ok && out.value.dateISO >= '2026-11-28').toBe(true)
   })
 
   it('is deterministic', () => {

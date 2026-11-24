@@ -71,11 +71,11 @@ describe('the seeded prepayments', () => {
     expect(payablesDue(api.getState()).count).toBe(0)
   })
 
-  it("Riley's warning is mild on Tue 21 Jul (3 days out) and strong from Wed 22", () => {
+  it("Riley's warning is mild on Tue 24 Nov (3 days out) and strong from Wed 25", () => {
     const api = createAppStore()
     const on = () => warningsForBooking(api.getState(), RILEY).filter((w) => w.ruleId === 'prepaymentUnpaid').map((w) => w.strength)
     expect(on()).toEqual(['mild'])
-    advanceClockToDate(api, '2026-07-22')
+    advanceClockToDate(api, '2026-11-25')
     expect(on()).toEqual(['strong'])
   })
 })
@@ -243,7 +243,7 @@ describe('the re-check (US-06.3.5) and a move (US-04.3.11)', () => {
     // A colleague's ACTIVE List the office can move her to, the procedure day first: the test must really move her.
     const candidates = Object.values(api.getState().schedule.lists)
       .filter((l) => l.anaesthetistId !== undefined && l.anaesthetistId !== souterId && l.state === 'ACTIVE')
-      .sort((a, b) => Number(b.dateISO === '2026-07-24') - Number(a.dateISO === '2026-07-24') || a.id.localeCompare(b.id))
+      .sort((a, b) => Number(b.dateISO === '2026-11-27') - Number(a.dateISO === '2026-11-27') || a.id.localeCompare(b.id))
     const moved = candidates.find((l) => reassignBooking(api, OFFICE, RILEY, l.id).ok)
     expect(moved, 'a colleague List Riley can move to').toBeDefined()
     expect(api.getState().schedule.bookings[RILEY]!.listId).toBe(moved!.id)

@@ -8,7 +8,7 @@ import {
 } from '../store/clockActions'
 
 /** The S1 booking's procedure day (Dr Souter's seeded Tue 28 Jul St George's List). */
-export const S1_PROCEDURE_DAY = '2026-07-28'
+export const S1_PROCEDURE_DAY = '2026-12-01'
 
 export interface DemoClockShortcut {
   id: string
@@ -63,7 +63,7 @@ export function demoClockShortcuts(api: AppStoreApi, todayISO: string): readonly
     },
     {
       id: 'procedure-day',
-      label: 'Procedure day · 28 Jul',
+      label: 'Procedure day · 1 Dec',
       icon: MapPin,
       run: () => advanceClockToDate(api, S1_PROCEDURE_DAY),
       disabled: todayISO >= S1_PROCEDURE_DAY,

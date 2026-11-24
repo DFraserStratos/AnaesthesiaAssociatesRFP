@@ -57,7 +57,7 @@ describe('the patient balance sample (catch-up Phase 40)', () => {
   it('stamps the balance check on the multiWarning Booking as the demo actor: a strong balance warning', () => {
     const api = createAppStore()
     const raise = byId('raise-sample-warnings')
-    const route = ctx(`/admin/day/2026-07-21/bookings/${MULTI}`, { dateISO: '2026-07-21', bookingId: MULTI })
+    const route = ctx(`/admin/day/2026-11-24/bookings/${MULTI}`, { dateISO: '2026-11-24', bookingId: MULTI })
     const res = raise.run(api, route)
     expect(res.ok).toBe(true)
     expect(res.message).toContain('patient balance')
@@ -71,7 +71,7 @@ describe('the patient balance sample (catch-up Phase 40)', () => {
   it('is skipped where the patient owes nothing, counts as done, and the message never names it', () => {
     const api = createAppStore()
     const raise = byId('raise-sample-warnings')
-    const route = ctx(`/admin/day/2026-07-21/bookings/${PM_TARGET}`, { dateISO: '2026-07-21', bookingId: PM_TARGET! })
+    const route = ctx(`/admin/day/2026-11-24/bookings/${PM_TARGET}`, { dateISO: '2026-11-24', bookingId: PM_TARGET! })
     const res = raise.run(api, route)
     expect(res.ok).toBe(true)
     expect(res.message).not.toContain('patient balance')
@@ -81,7 +81,7 @@ describe('the patient balance sample (catch-up Phase 40)', () => {
 
   it('unstage removes the stamp and its clearance', () => {
     const api = createAppStore()
-    byId('raise-sample-warnings').run(api, ctx(`/admin/day/2026-07-21/bookings/${MULTI}`, { bookingId: MULTI }))
+    byId('raise-sample-warnings').run(api, ctx(`/admin/day/2026-11-24/bookings/${MULTI}`, { bookingId: MULTI }))
     const w = warningsForBooking(api.getState(), MULTI).find((x) => x.ruleId === 'patientBalance')!
     expect(clearWarning(api, OFFICE_ACTOR, MULTI, w.key).ok).toBe(true)
     expect(clearSamplesOn(api, MULTI).ok).toBe(true)
@@ -94,7 +94,7 @@ describe('the patient balance sample (catch-up Phase 40)', () => {
 describe("Office clears this warning never lists the balance warning on the PWA (catch-up Phase 40, item 17)", () => {
   it('offers the other open warnings but not patientBalance', () => {
     const api = createAppStore()
-    byId('raise-sample-warnings').run(api, ctx(`/admin/day/2026-07-21/bookings/${MULTI}`, { bookingId: MULTI }))
+    byId('raise-sample-warnings').run(api, ctx(`/admin/day/2026-11-24/bookings/${MULTI}`, { bookingId: MULTI }))
     const listId = api.getState().schedule.bookings[MULTI]!.listId
     expect(warningsForBooking(api.getState(), MULTI).some((w) => w.ruleId === 'patientBalance' && w.clearance === undefined)).toBe(true)
     const matched = demoTriggersFor(api.getState(), `/mobile/lists/${listId}/bookings/${MULTI}`, 'pwa').find((m) => m.trigger.id === 'office-clears-warning')
@@ -157,7 +157,7 @@ describe('Office adds the NHI (PWA stand-in, catch-up Phase 40)', () => {
     expect(t.disabledReason(api.getState(), c)).toBe(NO_FIXTURE_ROWS_LEFT)
   })
 
-  it('uses a row already waiting on the List first (the seeded stub on Tue 4 Aug PM)', () => {
+  it('uses a row already waiting on the List first (the seeded stub on Tue 8 Dec PM)', () => {
     const api = createAppStore()
     const list = Object.values(api.getState().schedule.lists).find((l) => stubsOnList(api.getState().intake.stubs, l.id).length > 0)
     expect(list).toBeDefined()

@@ -83,7 +83,7 @@ describe('lookups and behaviour by ID', () => {
   it('statusFor is undefined-safe; activeStatuses drops retired ones', () => {
     expect(statusFor(seeded, 'nope')).toBeUndefined()
     expect(statusFor(seeded, undefined)).toBeUndefined()
-    const retired = { ...seeded, unavailable: { ...unavailable, retiredAtISO: '2026-07-21T09:00:00' } }
+    const retired = { ...seeded, unavailable: { ...unavailable, retiredAtISO: '2026-11-24T09:00:00' } }
     expect(activeStatuses(retired).map((s) => s.key)).toEqual(['free', 'holiday', 'publicHospital'])
   })
 
@@ -171,22 +171,22 @@ describe('validateRetireSlotStatus', () => {
 })
 
 describe('ranges', () => {
-  const ctx = { todayISO: '2026-07-21', horizonEndISO: '2026-11-21' }
+  const ctx = { todayISO: '2026-11-24', horizonEndISO: '2027-03-27' }
   it('refuses an end before the start, a past date and a date past the horizon', () => {
-    expect(validateAvailabilityRange({ ...ctx, fromISO: '2026-08-10', toISO: '2026-08-09' })).toContain('The end date is before the start date.')
-    expect(validateAvailabilityRange({ ...ctx, fromISO: '2026-07-20', toISO: '2026-07-22' }).join(' ')).toMatch(/from today on/)
-    expect(validateAvailabilityRange({ ...ctx, fromISO: '2026-11-20', toISO: '2026-11-22' }).join(' ')).toMatch(/The schedule runs to Sat 21 Nov/)
-    expect(validateAvailabilityRange({ ...ctx, fromISO: '2026-07-21', toISO: '2026-11-21' })).toEqual([])
+    expect(validateAvailabilityRange({ ...ctx, fromISO: '2026-12-14', toISO: '2026-12-13' })).toContain('The end date is before the start date.')
+    expect(validateAvailabilityRange({ ...ctx, fromISO: '2026-11-23', toISO: '2026-11-25' }).join(' ')).toMatch(/from today on/)
+    expect(validateAvailabilityRange({ ...ctx, fromISO: '2027-03-26', toISO: '2027-03-28' }).join(' ')).toMatch(/The schedule runs to Sat 27 Mar/)
+    expect(validateAvailabilityRange({ ...ctx, fromISO: '2026-11-24', toISO: '2027-03-27' })).toEqual([])
   })
 
   it('enumerates the sessions, date then AM before PM', () => {
-    expect(slotsInRange('2026-08-10', '2026-08-11', 'both')).toEqual([
-      { dateISO: '2026-08-10', session: 'AM' },
-      { dateISO: '2026-08-10', session: 'PM' },
-      { dateISO: '2026-08-11', session: 'AM' },
-      { dateISO: '2026-08-11', session: 'PM' },
+    expect(slotsInRange('2026-12-14', '2026-12-15', 'both')).toEqual([
+      { dateISO: '2026-12-14', session: 'AM' },
+      { dateISO: '2026-12-14', session: 'PM' },
+      { dateISO: '2026-12-15', session: 'AM' },
+      { dateISO: '2026-12-15', session: 'PM' },
     ])
-    expect(slotsInRange('2026-08-10', '2026-08-23', 'both')).toHaveLength(28)
-    expect(slotsInRange('2026-08-10', '2026-08-10', 'PM')).toEqual([{ dateISO: '2026-08-10', session: 'PM' }])
+    expect(slotsInRange('2026-12-14', '2026-12-27', 'both')).toHaveLength(28)
+    expect(slotsInRange('2026-12-14', '2026-12-14', 'PM')).toEqual([{ dateISO: '2026-12-14', session: 'PM' }])
   })
 })

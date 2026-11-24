@@ -54,8 +54,8 @@ export interface PdfListSample {
   note?: string
 }
 
-const OKAFOR_TARGET = { anaesthetistId: ANAE.rutherford, dateISO: '2026-08-05', session: 'AM' as const }
-const WHITFORD_TARGET = { anaesthetistId: ANAE.strand, dateISO: '2026-08-12', session: 'PM' as const }
+const OKAFOR_TARGET = { anaesthetistId: ANAE.rutherford, dateISO: '2026-12-09', session: 'AM' as const }
+const WHITFORD_TARGET = { anaesthetistId: ANAE.strand, dateISO: '2026-12-16', session: 'PM' as const }
 
 /**
  * The uploadable lists. Mr Okafor's targets a session in Dr Rutherford's
@@ -69,36 +69,36 @@ const WHITFORD_TARGET = { anaesthetistId: ANAE.strand, dateISO: '2026-08-12', se
 export const PDF_LIST_SAMPLES: readonly PdfListSample[] = [
   {
     id: 'PDF-OKAFOR-0805',
-    fileName: 'Okafor theatre list Wed 5 Aug AM.pdf',
+    fileName: 'Okafor theatre list Wed 9 Dec AM.pdf',
     surgeonId: SURG.okafor,
     surgeonName: 'Mr C. Okafor',
     hospitalId: HOSP.forte,
     hospitalName: 'Forte Health',
-    subject: 'Operating list · Wednesday 5 August (AM)',
+    subject: 'Operating list · Wednesday 9 December (AM)',
     defaultSender: 'leanne.pa@avonsidesurgical.example',
     target: OKAFOR_TARGET,
     note: 'One NHI is printed wrongly: ZAA0068 fails its check digit; the correct NHI is ZAA0067.',
     rows: [
-      { id: 'R1', nhi: 'ZAF4434', name: 'Brian Holt', dobISO: '1971-12-18', scheduledTime: '08:00', ethnicityCode: '61118', procedureText: 'R inguinal hernia mesh' },
-      { id: 'R2', nhi: 'ZAA0068', name: 'Margaret Ellison', dobISO: '1954-03-14', scheduledTime: '09:15', ethnicityCode: '11111', procedureText: 'lap chole +/- IOC' },
-      { id: 'R3', nhi: 'ZQB1003', name: 'Hemi Parata', dobISO: '1979-05-22', scheduledTime: '10:30', ethnicityCode: '21111', procedureText: 'gastro/colon' },
+      { id: 'R1', nhi: 'ZAF4434', name: 'Brian Holt', dobISO: '1972-04-22', scheduledTime: '08:00', ethnicityCode: '61118', procedureText: 'R inguinal hernia mesh' },
+      { id: 'R2', nhi: 'ZAA0068', name: 'Margaret Ellison', dobISO: '1954-07-18', scheduledTime: '09:15', ethnicityCode: '11111', procedureText: 'lap chole +/- IOC' },
+      { id: 'R3', nhi: 'ZQB1003', name: 'Hemi Parata', dobISO: '1979-09-25', scheduledTime: '10:30', ethnicityCode: '21111', procedureText: 'gastro/colon' },
     ],
   },
   {
     id: 'PDF-WHITFORD-0812',
-    fileName: 'Whitford cataract list Wed 12 Aug PM.pdf',
+    fileName: 'Whitford cataract list Wed 16 Dec PM.pdf',
     surgeonId: SURG.whitford,
     surgeonName: 'Mr J. Whitford',
     hospitalId: HOSP.ces,
     hospitalName: 'Christchurch Eye Surgery',
-    subject: 'Cataract list · Wednesday 12 August (PM)',
+    subject: 'Cataract list · Wednesday 16 December (PM)',
     defaultSender: 'bookings@merivaleeye.example',
     target: WHITFORD_TARGET,
     note: 'One row has no NHI: it waits at intake, with a stub on the List.',
     rows: [
-      { id: 'R1', nhi: 'ZAG5541', name: 'Coral Bennett', dobISO: '1985-04-02', scheduledTime: '13:00', ethnicityCode: '11111', procedureText: 'phaco + IOL L' },
-      { id: 'R2', nhi: 'ZAL9972', name: 'Annette Riley', dobISO: '1990-01-06', scheduledTime: '13:40', ethnicityCode: '52111', procedureText: 'blephs' },
-      { id: 'R3', name: 'Joan Pickering', dobISO: '1948-11-03', scheduledTime: '14:20', ethnicityCode: '11111', procedureText: 'phaco + IOL R' },
+      { id: 'R1', nhi: 'ZAG5541', name: 'Coral Bennett', dobISO: '1985-08-06', scheduledTime: '13:00', ethnicityCode: '11111', procedureText: 'phaco + IOL L' },
+      { id: 'R2', nhi: 'ZAL9972', name: 'Annette Riley', dobISO: '1990-05-12', scheduledTime: '13:40', ethnicityCode: '52111', procedureText: 'blephs' },
+      { id: 'R3', name: 'Joan Pickering', dobISO: '1949-03-09', scheduledTime: '14:20', ethnicityCode: '11111', procedureText: 'phaco + IOL R' },
     ],
   },
 ]
@@ -114,30 +114,30 @@ export const PDF_RESEND_SAMPLES: readonly PdfListSample[] = [
   {
     ...PDF_LIST_SAMPLES[0]!,
     id: 'PDF-OKAFOR-0805-R2',
-    fileName: 'Okafor theatre list Wed 5 Aug AM (updated).pdf',
-    subject: 'Operating list · Wednesday 5 August (AM) · updated',
+    fileName: 'Okafor theatre list Wed 9 Dec AM (updated).pdf',
+    subject: 'Operating list · Wednesday 9 December (AM) · updated',
     defaultSender: 'admin@avonsidesurgical.example',
     resendOf: 'PDF-OKAFOR-0805',
     note: 'Re-sent from the practice inbox: Margaret Ellison moved to 09:45, and Ruth Calder added.',
     rows: [
-      { id: 'R1', nhi: 'ZAF4434', name: 'Brian Holt', dobISO: '1971-12-18', scheduledTime: '08:00', ethnicityCode: '61118', procedureText: 'R inguinal hernia mesh' },
-      { id: 'R2', nhi: 'ZAA0067', name: 'Margaret Ellison', dobISO: '1954-03-14', scheduledTime: '09:45', ethnicityCode: '11111', procedureText: 'lap chole +/- IOC' },
-      { id: 'R3', nhi: 'ZQB1003', name: 'Hemi Parata', dobISO: '1979-05-22', scheduledTime: '10:30', ethnicityCode: '21111', procedureText: 'gastro/colon' },
-      { id: 'R4', nhi: 'ZQC1009', name: 'Ruth Calder', dobISO: '1966-09-30', scheduledTime: '11:30', ethnicityCode: '11111', procedureText: 'lap chole' },
+      { id: 'R1', nhi: 'ZAF4434', name: 'Brian Holt', dobISO: '1972-04-22', scheduledTime: '08:00', ethnicityCode: '61118', procedureText: 'R inguinal hernia mesh' },
+      { id: 'R2', nhi: 'ZAA0067', name: 'Margaret Ellison', dobISO: '1954-07-18', scheduledTime: '09:45', ethnicityCode: '11111', procedureText: 'lap chole +/- IOC' },
+      { id: 'R3', nhi: 'ZQB1003', name: 'Hemi Parata', dobISO: '1979-09-25', scheduledTime: '10:30', ethnicityCode: '21111', procedureText: 'gastro/colon' },
+      { id: 'R4', nhi: 'ZQC1009', name: 'Ruth Calder', dobISO: '1967-02-03', scheduledTime: '11:30', ethnicityCode: '11111', procedureText: 'lap chole' },
     ],
   },
   {
     ...PDF_LIST_SAMPLES[1]!,
     id: 'PDF-WHITFORD-0812-R2',
-    fileName: 'Whitford cataract list Wed 12 Aug PM (updated).pdf',
-    subject: 'Cataract list · Wednesday 12 August (PM) · updated',
+    fileName: 'Whitford cataract list Wed 16 Dec PM (updated).pdf',
+    subject: 'Cataract list · Wednesday 16 December (PM) · updated',
     resendOf: 'PDF-WHITFORD-0812',
     note: 'Re-sent: Coral Bennett moved to 13:15, and Peter Lusk added.',
     rows: [
-      { id: 'R1', nhi: 'ZAG5541', name: 'Coral Bennett', dobISO: '1985-04-02', scheduledTime: '13:15', ethnicityCode: '11111', procedureText: 'phaco + IOL L' },
-      { id: 'R2', nhi: 'ZAL9972', name: 'Annette Riley', dobISO: '1990-01-06', scheduledTime: '13:40', ethnicityCode: '52111', procedureText: 'blephs' },
-      { id: 'R3', name: 'Joan Pickering', dobISO: '1948-11-03', scheduledTime: '14:20', ethnicityCode: '11111', procedureText: 'phaco + IOL R' },
-      { id: 'R4', nhi: 'ZQD1004', name: 'Peter Lusk', dobISO: '1952-02-11', scheduledTime: '15:00', ethnicityCode: '11111', procedureText: 'phaco + IOL R' },
+      { id: 'R1', nhi: 'ZAG5541', name: 'Coral Bennett', dobISO: '1985-08-06', scheduledTime: '13:15', ethnicityCode: '11111', procedureText: 'phaco + IOL L' },
+      { id: 'R2', nhi: 'ZAL9972', name: 'Annette Riley', dobISO: '1990-05-12', scheduledTime: '13:40', ethnicityCode: '52111', procedureText: 'blephs' },
+      { id: 'R3', name: 'Joan Pickering', dobISO: '1949-03-09', scheduledTime: '14:20', ethnicityCode: '11111', procedureText: 'phaco + IOL R' },
+      { id: 'R4', nhi: 'ZQD1004', name: 'Peter Lusk', dobISO: '1952-06-16', scheduledTime: '15:00', ethnicityCode: '11111', procedureText: 'phaco + IOL R' },
     ],
   },
 ]

@@ -12,11 +12,11 @@ import { SEED_STATUS } from './slotStatus'
 import { slotIdFor } from './slots'
 import type { Anaesthetist, AssignedList, DraftList, List, Session, Slot } from './types'
 
-const DAY = '2026-07-23'
-const TODAY = '2026-07-21'
+const DAY = '2026-11-26'
+const TODAY = '2026-11-24'
 
 function anaesthetist(id: string, name: string, active = true): Anaesthetist {
-  return { registrationNumber: id, name, phone: `021 ${id}`, email: `${id}@x.example`, unitValue: 25, hpiId: id, bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, startDateISO: '2010-01-01', active }
+  return { registrationNumber: id, name, phone: `021 ${id}`, email: `${id}@x.example`, unitValue: 25, hpiId: id, bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, startDateISO: '2010-05-07', active }
 }
 
 function slot(anaesthetistId: string, session: Session = 'AM', status: string = SEED_STATUS.free, dateISO = DAY): Slot {
@@ -128,8 +128,8 @@ describe('ownMoveRefusal', () => {
         ...fixture().lists,
         LD1: draft,
         LS: list('LS', 'A1', { state: 'SUBMITTED', session: 'PM' }),
-        LA: list('LA', 'A1', { state: 'AUTHORISED', dateISO: '2026-07-24' }),
-        LP: list('LP', 'A1', { dateISO: '2026-07-20' }),
+        LA: list('LA', 'A1', { state: 'AUTHORISED', dateISO: '2026-11-27' }),
+        LP: list('LP', 'A1', { dateISO: '2026-11-23' }),
       },
     }
     expect(ownMoveRefusal(input, 'NOPE', 'A1', TODAY)?.code).toBe('notFound')
@@ -142,7 +142,7 @@ describe('ownMoveRefusal', () => {
   })
 
   it('never uses a dash or the word "slot"', () => {
-    const input = { lists: { ...fixture().lists, LP: list('LP', 'A1', { dateISO: '2026-07-20' }) } }
+    const input = { lists: { ...fixture().lists, LP: list('LP', 'A1', { dateISO: '2026-11-23' }) } }
     for (const [id, who] of [['NOPE', 'A1'], ['L5', 'A1'], ['LP', 'A1']] as const) {
       const message = ownMoveRefusal(input, id, who, TODAY)?.message ?? ''
       expect(message).not.toMatch(/[–—]/)
@@ -188,8 +188,8 @@ describe('pushTargets (US-01.4.5 "Availability only")', () => {
 
 describe('movableListsFor and the vacated default', () => {
   it("lists the persona's movable Lists in a window, by date then session", () => {
-    const input = { lists: { ...fixture().lists, L2: list('L2', 'A1', { dateISO: '2026-07-22', session: 'PM' }), LX: list('LX', 'A1', { dateISO: '2026-08-30' }) } }
-    expect(movableListsFor(input, 'A1', TODAY, '2026-07-27').map((l) => l.id)).toEqual(['L2', 'L1'])
+    const input = { lists: { ...fixture().lists, L2: list('L2', 'A1', { dateISO: '2026-11-25', session: 'PM' }), LX: list('LX', 'A1', { dateISO: '2027-01-03' }) } }
+    expect(movableListsFor(input, 'A1', TODAY, '2026-11-30').map((l) => l.id)).toEqual(['L2', 'L1'])
   })
 
   it('the vacated-session choice (D60): Free first on a plain move, the status being set first when marking not available', () => {

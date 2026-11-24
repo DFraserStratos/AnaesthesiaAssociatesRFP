@@ -127,10 +127,10 @@ export interface CannedMessage {
 }
 
 // Souter forward ACTIVE Lists the creates land on (hospital-coherent with the feed).
-const STG_LIST = { anaesthetistId: ANAE.souter, dateISO: '2026-07-28', session: 'AM' } as const // St George's / Mr Hale
-const STG_MODIFY_LIST = { anaesthetistId: ANAE.souter, dateISO: '2026-08-04', session: 'AM' } as const // St George's / Mr Hale
-const SX_LIST = { anaesthetistId: ANAE.souter, dateISO: '2026-07-28', session: 'PM' } as const // Southern Cross / Ms Patel
-const CPH_LIST = { anaesthetistId: ANAE.souter, dateISO: '2026-07-30', session: 'AM' } as const // Christchurch Public acute
+const STG_LIST = { anaesthetistId: ANAE.souter, dateISO: '2026-12-01', session: 'AM' } as const // St George's / Mr Hale
+const STG_MODIFY_LIST = { anaesthetistId: ANAE.souter, dateISO: '2026-12-08', session: 'AM' } as const // St George's / Mr Hale
+const SX_LIST = { anaesthetistId: ANAE.souter, dateISO: '2026-12-01', session: 'PM' } as const // Southern Cross / Ms Patel
+const CPH_LIST = { anaesthetistId: ANAE.souter, dateISO: '2026-12-03', session: 'AM' } as const // Christchurch Public acute
 
 // ---------------------------------------------------------------------------
 // The FHIR-native create bundle (built from a parsed spec so extraction round-trips)
@@ -146,7 +146,7 @@ const FHIR_CREATE_PARSED: ParsedMessage = {
   patient: {
     nhi: 'MYY54SL', // Priya Nair (seeded, valid new-format) — proves upsertPatient reuse
     name: 'Priya Nair',
-    dobISO: '1969-11-08',
+    dobISO: '1970-03-14',
     ethnicityCode: '43111', // Indian (valid NZHIS L4)
   },
 }
@@ -173,7 +173,7 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
       scheduled: { dateISO: STG_LIST.dateISO, time: '08:30' },
       // AR-35 row 14 (AI-made, illustrative; catch-up Phase 20a): the hospital's shorthand as received.
       operation: { code: 'A3', description: 'lap appy ?conv to open' },
-      patient: { nhi: 'CQY9304', nhiField: 'PID-2', localId: 'SG-880021', name: { family: 'Mitchell', given: 'Sarah' }, dobISO: '1988-04-12', ethnicity: '11111' },
+      patient: { nhi: 'CQY9304', nhiField: 'PID-2', localId: 'SG-880021', name: { family: 'Mitchell', given: 'Sarah' }, dobISO: '1988-08-16', ethnicity: '11111' },
     }),
   },
   {
@@ -192,7 +192,7 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
       appointmentId: APPT.s12NewFormat,
       scheduled: { dateISO: STG_LIST.dateISO, time: '09:15' },
       operation: { code: 'A3', description: 'Laparoscopic cholecystectomy' },
-      patient: { nhi: 'ACA31FM', nhiField: 'PID-2', localId: 'SG-880102', name: { family: 'Manaia', given: 'Te Ariki' }, dobISO: '1990-07-19', ethnicity: '21111' },
+      patient: { nhi: 'ACA31FM', nhiField: 'PID-2', localId: 'SG-880102', name: { family: 'Manaia', given: 'Te Ariki' }, dobISO: '1990-11-22', ethnicity: '21111' },
     }),
   },
   {
@@ -211,7 +211,7 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
       appointmentId: APPT.s12Ethnicity,
       scheduled: { dateISO: STG_LIST.dateISO, time: '10:00' },
       operation: { code: 'LL1', description: 'Knee arthroscopy' },
-      patient: { nhi: 'TFP7896', nhiField: 'PID-2', localId: 'SG-880140', name: { family: 'Ashford', given: 'Rongo' }, dobISO: '1980-05-14', ethnicity: '77777' },
+      patient: { nhi: 'TFP7896', nhiField: 'PID-2', localId: 'SG-880140', name: { family: 'Ashford', given: 'Rongo' }, dobISO: '1980-09-17', ethnicity: '77777' },
     }),
   },
   {
@@ -231,7 +231,7 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
       appointmentId: APPT.transient,
       scheduled: { dateISO: STG_LIST.dateISO, time: '10:45' },
       operation: { code: 'A2', description: 'Inguinal hernia repair' },
-      patient: { nhi: 'JKL1188', nhiField: 'PID-2', localId: 'SG-880175', name: { family: 'Tuilagi', given: 'Losa' }, dobISO: '1992-01-27', ethnicity: '31111' },
+      patient: { nhi: 'JKL1188', nhiField: 'PID-2', localId: 'SG-880175', name: { family: 'Tuilagi', given: 'Losa' }, dobISO: '1992-06-01', ethnicity: '31111' },
     }),
   },
   {
@@ -250,7 +250,7 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
       appointmentId: APPT.malformedCph,
       scheduled: { dateISO: CPH_LIST.dateISO, time: '08:15' },
       operation: { code: 'A5', description: 'Laparotomy, exploratory' },
-      patient: { nhi: 'ZBC1123', nhiField: 'PID-3', localId: 'CPH-44718', name: { family: 'Tane', given: 'Wiremu' }, dobISO: '1979-08-22', ethnicity: '21111' },
+      patient: { nhi: 'ZBC1123', nhiField: 'PID-3', localId: 'CPH-44718', name: { family: 'Tane', given: 'Wiremu' }, dobISO: '1979-12-26', ethnicity: '21111' },
     }),
   },
   {
@@ -280,7 +280,7 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
       appointmentId: APPT.s13Time,
       scheduled: { dateISO: STG_MODIFY_LIST.dateISO, time: '11:30' },
       operation: { code: 'LL1', description: 'Knee arthroscopy' },
-      patient: { nhi: 'ZAF4434', nhiField: 'PID-2', localId: 'SG-880201', name: { family: 'Holt', given: 'Brian' }, dobISO: '1971-12-18', ethnicity: '61118' },
+      patient: { nhi: 'ZAF4434', nhiField: 'PID-2', localId: 'SG-880201', name: { family: 'Holt', given: 'Brian' }, dobISO: '1972-04-22', ethnicity: '61118' },
     }),
   },
   {
@@ -299,7 +299,7 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
       appointmentId: APPT.s13Move,
       scheduled: { dateISO: STG_MODIFY_LIST.dateISO, time: '09:00' },
       operation: { code: 'UL2', description: 'Wrist ORIF, distal radius' },
-      patient: { nhi: 'ZAH6659', nhiField: 'PID-2', localId: 'SG-880233', name: { family: 'Webb', given: 'Marcus' }, dobISO: '1977-10-11', ethnicity: '53111' },
+      patient: { nhi: 'ZAH6659', nhiField: 'PID-2', localId: 'SG-880233', name: { family: 'Webb', given: 'Marcus' }, dobISO: '1978-02-14', ethnicity: '53111' },
     }),
   },
   {
@@ -320,7 +320,7 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
       note: 'Bumped 15 min at surgeon request',
       // AR-35 row 27 (illustrative; catch-up Phase 20a): the hospital's fuller wording replaces the rooms' row 26.
       operation: { code: 'LL4', description: 'WLE MM, left shoulder + flap repair + SNB + excision SCC and flap, left sternum + BCC' },
-      patient: { nhi: 'ZAK8873', nhiField: 'PID-2', localId: 'SG-880260', name: { family: 'Foster', given: 'Diane' }, dobISO: '1958-09-19', ethnicity: '11111' },
+      patient: { nhi: 'ZAK8873', nhiField: 'PID-2', localId: 'SG-880260', name: { family: 'Foster', given: 'Diane' }, dobISO: '1959-01-23', ethnicity: '11111' },
     }),
   },
   {
@@ -339,7 +339,7 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
       appointmentId: APPT.s15,
       reason: 'Cancelled by St George\'s booking office, patient deferred',
       operation: { code: 'P1', description: 'Cystoscopy' },
-      patient: { nhi: 'ZAM1098', nhiField: 'PID-2', localId: 'SG-880290', name: { family: 'Gray', given: 'Fiona' }, dobISO: '1963-06-13', ethnicity: '11111' },
+      patient: { nhi: 'ZAM1098', nhiField: 'PID-2', localId: 'SG-880290', name: { family: 'Gray', given: 'Fiona' }, dobISO: '1963-10-17', ethnicity: '11111' },
     }),
   },
   {
@@ -356,10 +356,10 @@ export const CANNED_MESSAGES: readonly CannedMessage[] = [
       controlId: 'MSG-STG-1014',
       sendingFacility: 'STG',
       appointmentId: APPT.lockedTarget,
-      scheduled: { dateISO: '2026-07-17', time: '10:15' },
+      scheduled: { dateISO: '2026-11-20', time: '10:15' },
       note: 'Surgeon changed to Mr Tan',
       operation: { code: 'P4', description: 'TURP' },
-      patient: { nhi: 'ZAC3326', nhiField: 'PID-2', localId: 'SG-880310', name: { family: 'Prentice', given: 'Alan' }, dobISO: '1966-07-04', ethnicity: '11111' },
+      patient: { nhi: 'ZAC3326', nhiField: 'PID-2', localId: 'SG-880310', name: { family: 'Prentice', given: 'Alan' }, dobISO: '1966-11-07', ethnicity: '11111' },
     }),
   },
 ] as const

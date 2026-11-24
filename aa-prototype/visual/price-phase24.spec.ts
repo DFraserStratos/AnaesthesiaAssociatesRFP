@@ -7,7 +7,7 @@ import { test, expect, type Page } from '@playwright/test'
  * no-charge invoices. Screenshots land in `visual/shots/p24-*.png`.
  */
 
-const MON27 = '/lists/L-34821-2026-07-27-AM/bookings'
+const MON27 = '/lists/L-34821-2026-11-30-AM/bookings'
 
 async function open(page: Page, url: string): Promise<void> {
   await page.goto(url)
@@ -52,7 +52,7 @@ test('phase 24 mobile: read-only on Aria, the discount and her own price list; t
   await expect(discount.locator('[data-shot=price-card-price]')).toHaveText('$143.10')
   await page.screenshot({ path: 'visual/shots/p24-03-mobile-discount.png' })
 
-  await open(page, '/mobile/lists/L-34821-2026-07-24-AM/bookings/BK0034')
+  await open(page, '/mobile/lists/L-34821-2026-11-27-AM/bookings/BK0034')
   const own = page.locator('[data-shot=price-card]').first()
   await expect(own).toHaveAttribute('data-state', 'read-only')
   await expect(own).toContainText('Fixed price')
@@ -61,7 +61,7 @@ test('phase 24 mobile: read-only on Aria, the discount and her own price list; t
   await expect(own).not.toContainText('alert the office')
   await expect(own.locator('input')).toHaveCount(0)
 
-  await open(page, '/mobile/lists/L-34821-2026-08-10-PM/bookings/BK0177')
+  await open(page, '/mobile/lists/L-34821-2026-12-14-PM/bookings/BK0177')
   const amount = page.locator('[data-shot=price-card]').first()
   await expect(amount).toHaveAttribute('data-state', 'amount')
   await expect(amount.locator('[data-shot=price-card-needs-price]')).toHaveText('Needs a price')
@@ -81,11 +81,11 @@ test('phase 24 web: the same card, its states and the rail total', async ({ page
   await open(page, `/web${MON27}/BK0185`)
   await expect(page.locator('[data-shot=price-card]').first()).toHaveAttribute('data-state', 'read-only')
   await expect(page.locator('[data-shot=price-card]').first()).toContainText('Discount 10% · minus $15.90')
-  await open(page, '/web/lists/L-34821-2026-08-10-PM/bookings/BK0177')
+  await open(page, '/web/lists/L-34821-2026-12-14-PM/bookings/BK0177')
   await expect(page.locator('[data-shot=price-card]').first()).toHaveAttribute('data-state', 'amount')
   await expect(page.locator('[data-shot=price-card-needs-price]').first()).toHaveText('Needs a price')
   // Her AUTHORISED List: the figures only, locked.
-  await open(page, '/web/lists/L-34821-2026-07-16-PM/bookings/BK0188')
+  await open(page, '/web/lists/L-34821-2026-11-19-PM/bookings/BK0188')
   const locked = page.locator('[data-shot=price-card]').first()
   await expect(locked).toHaveAttribute('data-state', 'locked')
   await expect(locked.locator('input')).toHaveCount(0)
@@ -94,7 +94,7 @@ test('phase 24 web: the same card, its states and the rail total', async ({ page
 })
 
 test('phase 24 admin: the discount Booking total shows the gross, the discount line and the price', async ({ page }) => {
-  await page.goto('/admin/day/2026-07-27/bookings/BK0185')
+  await page.goto('/admin/day/2026-11-30/bookings/BK0185')
   await page.waitForLoadState('networkidle')
   const lines = page.locator('[data-shot=booking-total-lines]')
   await expect(lines).toContainText('$159.00')
@@ -104,7 +104,7 @@ test('phase 24 admin: the discount Booking total shows the gross, the discount l
 })
 
 test('phase 24 admin: Review shows the typed price beside the computed one; Contracts name who may change the price', async ({ page }) => {
-  await page.goto('/admin/review/L-45178-2026-07-14-AM')
+  await page.goto('/admin/review/L-45178-2026-11-17-AM')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot=review-fee-computed]').first()).toHaveText('Computed $265.50')
   await page.screenshot({ path: 'visual/shots/p24-05-review-fee.png', fullPage: true })
@@ -117,7 +117,7 @@ test('phase 24 admin: Review shows the typed price beside the computed one; Cont
 })
 
 test('phase 24 admin: authorising the no-charge List raises a $0.00 "No charge" invoice', async ({ page }) => {
-  await page.goto('/admin/review/L-34821-2026-07-13-AM')
+  await page.goto('/admin/review/L-34821-2026-11-16-AM')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot=review-no-charge]')).toHaveText('No charge')
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()

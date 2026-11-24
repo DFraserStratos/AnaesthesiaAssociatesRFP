@@ -39,8 +39,8 @@ import { PRICED_ITEM } from './pricedItems'
 import { rvgGroupIdForLegacyCode } from './rvgGroups'
 import { seedText } from './procedureText'
 
-export const REVIEW_FLAGS_LIST_ID = projectedListId(ANAE.chen, '2026-07-14', 'AM')
-const DAY = '2026-07-14'
+export const REVIEW_FLAGS_LIST_ID = projectedListId(ANAE.chen, '2026-11-17', 'AM')
+const DAY = '2026-11-17'
 const CHEN = 'Dr Alistair Chen'
 
 /** The Contract Dr Chen changed from (a candidate on his List: Southern Cross's fixed price at Christchurch Eye Surgery). */
@@ -112,7 +112,7 @@ export function seedReviewFlagBookings(next: { booking: number; procedure: numbe
       // The seed's source rule: Christchurch Eye Surgery's rooms send PDFs; St George's sends a feed.
       source: onReview ? 'surgeonPdf' : 'hospitalDownload',
       lastModifiedBy: spec.completed ? CHEN : 'Kirsty W.',
-      lastModifiedAtISO: spec.completed ? completedAtISO : '2026-07-20T15:20:00',
+      lastModifiedAtISO: spec.completed ? completedAtISO : '2026-11-23T15:20:00',
     }
     if (spec.completed) booking.completedAtISO = completedAtISO
     bookings.push(booking)

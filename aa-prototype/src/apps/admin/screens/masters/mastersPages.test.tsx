@@ -32,7 +32,7 @@ function renderAdmin(path: string) {
     <MemoryRouter initialEntries={[path]}>
       <SurfaceProvider variant="web">
         <Routes>
-          <Route path="/admin" element={<Outlet context={{ actor: OFFICE, todayISO: '2026-07-21' }} />}>
+          <Route path="/admin" element={<Outlet context={{ actor: OFFICE, todayISO: '2026-11-24' }} />}>
             <Route path="masters">
               <Route index element={<AdminMastersRoute />} />
               <Route path="surgeons/:surgeonId" element={<AdminSurgeonProfileRoute />} />
@@ -258,10 +258,10 @@ describe('cross-links', () => {
   })
 
   it("the List drawer's surgeon opens the profile and closes the drawer", () => {
-    const listId = projectedListId(ANAE.chen, '2026-07-21', 'PM')
+    const listId = projectedListId(ANAE.chen, '2026-11-24', 'PM')
     const onClose = vi.fn()
     render(
-      <MemoryRouter initialEntries={['/admin/day/2026-07-21']}>
+      <MemoryRouter initialEntries={['/admin/day/2026-11-24']}>
         <SurfaceProvider variant="web">
           <SlotDrawer slotId={assigned(useAppStore.getState().schedule.lists[listId]).slotId} actor={OFFICE} onClose={onClose} onOpenBooking={vi.fn()} />
           <LocationProbe />

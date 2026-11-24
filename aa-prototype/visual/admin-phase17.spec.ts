@@ -10,10 +10,10 @@ import { test, expect, type Page } from '@playwright/test'
  * the List into Dr Sharma's Free PM, which S2 Beat 2 books by phone.
  */
 
-const CHEN_TUE_PM = 'L-45178-2026-07-21-PM'
-const SHARMA_TUE_AM = 'L-41267-2026-07-21-AM'
+const CHEN_TUE_PM = 'L-45178-2026-11-24-PM'
+const SHARMA_TUE_AM = 'L-41267-2026-11-24-AM'
 // Dr Souter's Wed 22 AM (Mr Whitford): Rutherford's own Wed 22 AM List is a returned Draft List since catch-up Phase 32b.
-const RUTHERFORD_WED_AM = 'L-34821-2026-07-22-AM'
+const RUTHERFORD_WED_AM = 'L-34821-2026-11-25-AM'
 
 async function openList(page: Page, dateISO: string, listId: string) {
   await page.goto(`/admin/day/${dateISO}`)
@@ -76,7 +76,7 @@ test('phase 17 anaesthetist record', async ({ page }) => {
 })
 
 test('phase 17 edit list warning', async ({ page }) => {
-  await openList(page, '2026-07-21', SHARMA_TUE_AM)
+  await openList(page, '2026-11-24', SHARMA_TUE_AM)
   await page.getByRole('button', { name: 'Edit list', exact: true }).click()
   await page.locator('select[data-shot="surgeon-picker"]').selectOption('S-REID')
   await expect(page.locator('[data-shot="edit-list-pairing-warning"]')).toContainText('Ms A. Reid prefers not to work with Dr Priya Sharma')
@@ -86,7 +86,7 @@ test('phase 17 edit list warning', async ({ page }) => {
 })
 
 test('phase 17 reassign pickers (open only)', async ({ page }) => {
-  await openList(page, '2026-07-21', CHEN_TUE_PM)
+  await openList(page, '2026-11-24', CHEN_TUE_PM)
   await page.getByRole('button', { name: 'Reassign list', exact: true }).click()
   const apart = page.locator('[data-shot="candidates-not-preferred"]')
   await expect(apart).toContainText('Not preferred with Ms Reid')
@@ -96,7 +96,7 @@ test('phase 17 reassign pickers (open only)', async ({ page }) => {
   await page.waitForTimeout(450)
   await page.screenshot({ path: 'visual/shots/p17-07-reassign-apart.png', fullPage: true })
 
-  await openList(page, '2026-07-22', RUTHERFORD_WED_AM)
+  await openList(page, '2026-11-25', RUTHERFORD_WED_AM)
   await page.getByRole('button', { name: 'Reassign list', exact: true }).click()
   await expect(page.locator('[data-shot="candidates-clear"] [data-candidate="41267"]').getByText('Preferred')).toBeVisible()
   await page.waitForTimeout(450)

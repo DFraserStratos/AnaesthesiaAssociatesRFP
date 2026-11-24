@@ -45,7 +45,7 @@ import type { AppState } from './appStore'
 import type { Invoice } from '../domain/types'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-const SHARMA_TUE14 = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
+const SHARMA_TUE14 = projectedListId(ANAE.sharma, '2026-11-17', 'AM')
 
 let api: BoundAppStore
 let unwire: () => void
@@ -80,7 +80,7 @@ function stageHolt() {
   return { bookingId, p1: p1!.id, p2: p2!.id, original }
 }
 
-const rebill = (unitAmount: number, description = 'Corrected') => ({ occurredOnISO: '2026-07-21', party: { sameAs: true as const }, lines: [{ description, quantity: 1, unitAmount }] })
+const rebill = (unitAmount: number, description = 'Corrected') => ({ occurredOnISO: '2026-11-24', party: { sameAs: true as const }, lines: [{ description, quantity: 1, unitAmount }] })
 
 function submitAndApprove(input: CreditInput): string {
   const sub = submitCredit(api, OFFICE, input)

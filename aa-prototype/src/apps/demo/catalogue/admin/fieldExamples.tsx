@@ -98,8 +98,8 @@ export function FieldHintExample() {
   )
 }
 
-const JUMP_MIN = '2026-07-21'
-const JUMP_MAX = '2027-01-31'
+const JUMP_MIN = '2026-11-24'
+const JUMP_MAX = '2027-06-06'
 
 export function DateJumpInputExample() {
   const [admin, setAdmin] = useState(JUMP_MIN)
@@ -118,7 +118,7 @@ export function DateJumpInputExample() {
 }
 
 export function FilterDateInputExample() {
-  const [from, setFrom] = useState('2026-07-01')
+  const [from, setFrom] = useState('2026-11-04')
   const [to, setTo] = useState('')
   const [toInline, setToInline] = useState('')
   return (

@@ -28,9 +28,9 @@ test('mobile: My calendar, Add days off for a week, a fortnightly Friday PM seri
   await page.locator('[data-shot="availability-open-calendar"]').click()
   await expect(page).toHaveURL(/\/mobile\/availability\/calendar$/)
   const calendar = page.locator('[data-shot="mobile-availability-calendar"]')
-  await expect(calendar.getByText('July 2026')).toBeVisible()
+  await expect(calendar.getByText('November 2026')).toBeVisible()
   // Souter's seeded leave, Sat 25 and Sun 26 Jul, as Holiday half-blocks.
-  await expect(calendar.locator('[data-slot-id="S-34821-2026-07-25-AM"]')).toHaveAttribute('title', 'AM Holiday')
+  await expect(calendar.locator('[data-slot-id="S-34821-2026-11-28-AM"]')).toHaveAttribute('title', 'AM Holiday')
   await expect(page.getByRole('button', { name: 'Lists', exact: true })).toHaveCount(0) // no tab bar on the layer
   await page.waitForTimeout(400)
   await page.screenshot({ path: 'visual/shots/p29-01-mobile-calendar.png' })
@@ -45,23 +45,23 @@ test('mobile: My calendar, Add days off for a week, a fortnightly Friday PM seri
   // Four since catch-up Phase 32d: Public joins Free, On holiday and Unavailable.
   await expect(sheet.locator('[data-status-choice]')).toHaveCount(4)
   await expect(sheet.locator('[data-status-choice="holiday"]')).toHaveAttribute('aria-pressed', 'true')
-  await sheet.getByLabel('From').fill('2026-08-14')
-  await sheet.getByLabel('To').fill('2026-08-16')
+  await sheet.getByLabel('From').fill('2026-12-18')
+  await sheet.getByLabel('To').fill('2026-12-20')
   await page.waitForTimeout(300)
   await page.screenshot({ path: 'visual/shots/p29-02-mobile-sheet-week.png' })
   await noSlot(page, 'mobile sheet')
   await sheet.getByRole('button', { name: 'Save', exact: true }).click()
-  await expect(sheet.locator('[data-shot="availability-result"]')).toContainText('6 sessions set to On holiday, 14 Aug to 16 Aug.')
+  await expect(sheet.locator('[data-shot="availability-result"]')).toContainText('6 sessions set to On holiday, 18 Dec to 20 Dec.')
   await sheet.getByRole('button', { name: 'Done', exact: true }).click()
   await page.locator('[data-shot="mobile-availability-calendar"]').getByRole('button', { name: 'Next month' }).click()
-  await expect(calendar.locator('[data-slot-id="S-34821-2026-08-15-PM"]')).toHaveAttribute('title', 'PM Holiday')
+  await expect(calendar.locator('[data-slot-id="S-34821-2026-12-19-PM"]')).toHaveAttribute('title', 'PM Holiday')
 
   // A series: Unavailable, PM, every 2 weeks, Friday, no end date.
   await page.locator('[data-shot="mobile-add-days-off"]').click()
   await sheet.locator('[data-status-choice="unavailable"]').click()
   await sheet.getByRole('group', { name: 'Sessions' }).getByRole('button', { name: 'PM' }).click()
   await sheet.getByRole('group', { name: 'Repeat' }).getByRole('button', { name: 'Every 2 weeks' }).click()
-  await sheet.getByLabel('Starts').fill('2026-08-14')
+  await sheet.getByLabel('Starts').fill('2026-12-18')
   await expect(sheet.locator('[data-weekday="5"]')).toHaveAttribute('aria-pressed', 'true')
   await page.waitForTimeout(300)
   await page.screenshot({ path: 'visual/shots/p29-03-mobile-sheet-series.png' })
@@ -72,7 +72,7 @@ test('mobile: My calendar, Add days off for a week, a fortnightly Friday PM seri
   await expect(calendar.locator('[data-shot="mobile-availability-series"]')).toContainText('Unavailable, Friday PM, every 2 weeks, no end date')
 
   // One instance: Fri 28 Aug.
-  await calendar.locator(`button[data-date="2026-08-28"]`).click()
+  await calendar.locator(`button[data-date="2027-01-01"]`).click()
   await expect(sheet.getByRole('button', { name: 'Change this one' })).toBeVisible()
   await expect(sheet.getByRole('button', { name: 'Delete this one' })).toBeVisible()
   await expect(sheet.getByRole('button', { name: 'Delete the series' })).toBeVisible()
@@ -86,19 +86,19 @@ test('web: My availability, click then shift-click a range, the rail form', asyn
   await page.getByRole('navigation', { name: 'Availability page' }).getByRole('link', { name: 'My availability' }).click()
   await expect(page).toHaveURL(/\/web\/availability\/mine$/)
   await page.getByRole('button', { name: 'Next month' }).click()
-  await page.locator('button[data-date="2026-08-17"]').click()
-  await page.locator('button[data-date="2026-08-21"]').click({ modifiers: ['Shift'] })
+  await page.locator('button[data-date="2026-12-21"]').click()
+  await page.locator('button[data-date="2026-12-25"]').click({ modifiers: ['Shift'] })
   const rail = page.locator('[data-shot="web-availability-rail"]')
-  await expect(rail).toContainText('Mon 17 Aug to Fri 21 Aug')
-  await expect(rail.getByLabel('To')).toHaveValue('2026-08-21')
+  await expect(rail).toContainText('Mon 21 Dec to Fri 25 Dec')
+  await expect(rail.getByLabel('To')).toHaveValue('2026-12-25')
   await page.waitForTimeout(300)
   await page.screenshot({ path: 'visual/shots/p29-05-web-mine-range.png', fullPage: true })
   await noSlot(page, 'web My availability')
   // The Find cover grid's own row opens My availability on that date.
   await page.goto('/web/availability')
   await page.locator('[data-shot="availability-change-mine"]').click()
-  await expect(page).toHaveURL(/\/web\/availability\/mine\?date=2026-07-21$/)
-  await expect(page.locator('[data-shot="web-availability-rail"]')).toContainText('Tuesday 21 July')
+  await expect(page).toHaveURL(/\/web\/availability\/mine\?date=2026-11-24$/)
+  await expect(page.locator('[data-shot="web-availability-rail"]')).toContainText('Tuesday 24 November')
 })
 
 test('admin: Availability statuses, the sheet with its live preview, and a rename every view follows', async ({ page }) => {
@@ -126,6 +126,6 @@ test('admin: Availability statuses, the sheet with its live preview, and a renam
   await sheet.getByRole('button', { name: 'Save changes' }).click()
   await expect(table).toContainText('Blocked')
 
-  await page.goto('/admin/day/2026-07-21')
+  await page.goto('/admin/day/2026-11-24')
   await expect(page.getByRole('button', { name: 'Blocked status' })).toBeVisible()
 })

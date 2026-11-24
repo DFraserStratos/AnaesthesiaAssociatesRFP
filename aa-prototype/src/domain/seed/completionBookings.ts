@@ -59,7 +59,7 @@ export function seedCompletionBookings(next: { booking: number; procedure: numbe
       // The seed's source rule: St George's sends a feed, so its Bookings are hospital downloads.
       source: 'hospitalDownload',
       lastModifiedBy: 'Kirsty W.',
-      lastModifiedAtISO: '2026-07-20T15:20:00',
+      lastModifiedAtISO: '2026-11-23T15:20:00',
     })
     procedures.push({
       id: `P${String(p).padStart(4, '0')}`,

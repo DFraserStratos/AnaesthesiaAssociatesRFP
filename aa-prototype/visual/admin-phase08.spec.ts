@@ -132,11 +132,11 @@ test('authorise raises and sends invoices; contract-holder document, Resend and 
   const firstInvoiceRow = page.getByTestId('invoice-list-table-shell').locator('tbody tr').first()
   await expect(firstInvoiceRow.locator('td').first()).toHaveCSS('vertical-align', 'middle')
   const sourceListLink = firstInvoiceRow.getByRole('link', { name: /in day view$/ })
-  await expect(sourceListLink).toHaveAttribute('href', '/admin/day/2026-07-20')
+  await expect(sourceListLink).toHaveAttribute('href', '/admin/day/2026-11-23')
   await expect(sourceListLink).toHaveCSS('display', 'inline-flex')
   await expect(sourceListLink).toHaveCSS('text-decoration-line', 'none')
   await sourceListLink.click()
-  await expect(page).toHaveURL(/\/admin\/day\/2026-07-20$/)
+  await expect(page).toHaveURL(/\/admin\/day\/2026-11-23$/)
   await expect(page.getByTestId('admin-list-drawer')).toBeVisible()
   await expect(page.getByTestId('admin-list-drawer')).toContainText("St George's")
   await page.goBack()
@@ -378,12 +378,12 @@ test('exemplar staging via the guard console: patient layout and the fee split',
     await page.getByRole('button', { name: 'Attempt' }).click()
     await page.waitForTimeout(300)
   }
-  await runGuard('Submit list', /2026-07-16 AM · Dr James Rutherford/)
-  await runGuard('Authorise list', /2026-07-16 AM · Dr James Rutherford/)
+  await runGuard('Submit list', /2026-11-19 AM · Dr James Rutherford/)
+  await runGuard('Authorise list', /2026-11-19 AM · Dr James Rutherford/)
 
   // The fee-split exemplar (Souter Mon 20 PM): nib $132.50 and Alan Prentice the rest (catch-up Phase 22).
-  await runGuard('Submit list', /2026-07-20 PM · Dr Melanie Souter/)
-  await runGuard('Authorise list', /2026-07-20 PM · Dr Melanie Souter/)
+  await runGuard('Submit list', /2026-11-23 PM · Dr Melanie Souter/)
+  await runGuard('Authorise list', /2026-11-23 PM · Dr Melanie Souter/)
 
   // Into the admin Invoices section.
   await page.goto('/admin')

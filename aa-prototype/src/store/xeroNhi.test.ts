@@ -126,7 +126,7 @@ describe('an additional invoice in Xero (catch-up Phase 38b)', () => {
     expect(approveProcedureEvent(api, OFFICE, 'EV0001').ok).toBe(true)
     const named = addProcedureEvent(api, OFFICE, 'HP03', {
       kind: 'additionalInvoice',
-      occurredOnISO: '2026-06-23',
+      occurredOnISO: '2026-10-27',
       party: { sameAs: false, personInput: { kind: 'other', name: 'Mei Chen', email: 'mei.chen@example.com' } },
       lines: [{ description: 'Ward review', quantity: 1, unitAmount: 40 }],
     })
@@ -161,7 +161,7 @@ describe('a credit note in Xero (catch-up Phase 39)', () => {
       reason: 'Wrong billable party',
       cause: 'correction',
       party: { sameAs: false, personInput: { kind: 'other', name: 'Mei Chen', email: 'mei.chen@example.com' } },
-      replacements: [{ occurredOnISO: '2026-06-23', party: { sameAs: false, personInput: { kind: 'other', name: 'Mei Chen', email: 'mei.chen@example.com' } }, lines: [{ description: 'Anaesthesia', quantity: 1, unitAmount: 200 }] }],
+      replacements: [{ occurredOnISO: '2026-10-27', party: { sameAs: false, personInput: { kind: 'other', name: 'Mei Chen', email: 'mei.chen@example.com' } }, lines: [{ description: 'Anaesthesia', quantity: 1, unitAmount: 200 }] }],
     })
     if (!sub.ok) throw new Error(sub.message)
     expect(approveProcedureEvent(api, OFFICE, sub.value.creditEventId).ok).toBe(true)

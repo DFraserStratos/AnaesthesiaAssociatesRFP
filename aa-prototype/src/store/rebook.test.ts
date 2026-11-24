@@ -224,7 +224,7 @@ describe('rebook with another anaesthetist (US-06.5.3)', () => {
       cancel(NAIR)
       const listId = beaumontPrepaidList(NAIR)
       const s = api.getState()
-      api.setState({ clock: { ...s.clock, todayISO: '2026-08-10' } })
+      api.setState({ clock: { ...s.clock, todayISO: '2026-12-14' } })
       expect(rebookWithAnotherAnaesthetist(api, OFFICE, NAIR, listId)).toMatchObject({ ok: false, code: 'pastDate' })
     })
 

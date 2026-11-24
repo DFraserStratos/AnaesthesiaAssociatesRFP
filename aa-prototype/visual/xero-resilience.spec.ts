@@ -11,7 +11,7 @@ import { advanceClock, runDemoAction } from './demoActions'
  * left for the office to match in Xero's Bank reconciliation.
  */
 
-const SOUTER_MON_AM = 'L-34821-2026-07-20-AM'
+const SOUTER_MON_AM = 'L-34821-2026-11-23-AM'
 
 /** A clean seed: the store persists to localStorage, so clear it and load again. */
 async function fresh(page: Page, path: string): Promise<void> {

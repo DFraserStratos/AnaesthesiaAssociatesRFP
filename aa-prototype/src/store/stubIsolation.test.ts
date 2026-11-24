@@ -31,7 +31,7 @@ function withAndWithout(): { withStub: AppState; without: AppState } {
 
 function bookingPaths(s: AppState) {
   const today = s.clock.todayISO
-  const lists = [SEED_STUB.listId, 'L-34821-2026-07-28-PM']
+  const lists = [SEED_STUB.listId, 'L-34821-2026-12-01-PM']
   return {
     bookingsForList: lists.map((id) => bookingsForList(s, id).map((b) => b.id)),
     bookingCount: Object.keys(s.schedule.bookings).length,

@@ -26,7 +26,7 @@ const SAMPLE: Record<string, { title: string; detail: string }> = {
   preop: { title: 'Pre-op clinic', detail: '6 appts' },
   // Public is a status since catch-up Phase 32d: its note, never List detail.
   [SEED_STATUS.publicHospital]: { title: 'Public', detail: 'CPH' },
-  [SEED_STATUS.holiday]: { title: 'Annual leave', detail: 'Back Mon 27' },
+  [SEED_STATUS.holiday]: { title: 'Annual leave', detail: 'Back Mon 30' },
   [SEED_STATUS.unavailable]: { title: 'Not available', detail: 'All day' },
   [SEED_STATUS.free]: { title: 'Free to book', detail: 'Tap to assign' },
 }

@@ -84,12 +84,12 @@ describe('office-private seed', () => {
     // Beat 2: Sharma's Tue 21 PM with Mr T. Hale.
     expect(pairingStatus(entries, ANAE.sharma, SURG.hale)).toBe('NONE')
     // Beat 3: Rutherford's Wed 22 AM (Whitford's) reassigned to Sharma: preferred, never warned.
-    const beat3 = seed.schedule.lists[projectedListId(ANAE.rutherford, '2026-07-22', 'AM')]
+    const beat3 = seed.schedule.lists[projectedListId(ANAE.rutherford, '2026-11-25', 'AM')]
     expect(beat3?.surgeonId).toBe(SURG.whitford)
     expect(pairingStatus(entries, ANAE.sharma, beat3?.surgeonId ?? '')).not.toBe('NOT_PREFERRED')
     // The not-preferred demo: Chen's Tue 21 PM is Reid's, with Sharma free that session.
-    expect(seed.schedule.lists[projectedListId(ANAE.chen, '2026-07-21', 'PM')]?.surgeonId).toBe(SURG.reid)
-    const sharmaPm = seed.schedule.slots[slotIdFor(ANAE.sharma, '2026-07-21', 'PM')]
+    expect(seed.schedule.lists[projectedListId(ANAE.chen, '2026-11-24', 'PM')]?.surgeonId).toBe(SURG.reid)
+    const sharmaPm = seed.schedule.slots[slotIdFor(ANAE.sharma, '2026-11-24', 'PM')]
     expect(sharmaPm?.status).toBe('free')
     expect(Object.values(seed.schedule.lists).some((l) => l.slotId === sharmaPm?.id)).toBe(false)
   })
@@ -101,7 +101,7 @@ describe('office-private seed', () => {
     expect(Object.values(priorityTiers)).not.toContain(4)
     const occupied = new Set(Object.values(seed.schedule.lists).map((l) => l.slotId))
     const free = Object.values(seed.schedule.slots)
-      .filter((s) => s.dateISO === '2026-07-22' && s.session === 'AM' && s.status === 'free' && !occupied.has(s.id))
+      .filter((s) => s.dateISO === '2026-11-25' && s.session === 'AM' && s.status === 'free' && !occupied.has(s.id))
       .map((s) => tierFor(priorityTiers, s.anaesthetistId))
     expect(new Set(free).size).toBeGreaterThanOrEqual(3)
     expect(free.filter((t) => t === 1).length).toBeGreaterThanOrEqual(2)

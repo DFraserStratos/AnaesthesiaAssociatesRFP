@@ -18,7 +18,7 @@ function renderContracts() {
     <MemoryRouter initialEntries={['/admin/masters?view=contracts']}>
       <SurfaceProvider variant="web">
         <Routes>
-          <Route path="/admin" element={<Outlet context={{ actor: OFFICE, todayISO: '2026-07-21' }} />}>
+          <Route path="/admin" element={<Outlet context={{ actor: OFFICE, todayISO: '2026-11-24' }} />}>
             <Route path="masters" element={<AdminMastersRoute />} />
           </Route>
         </Routes>

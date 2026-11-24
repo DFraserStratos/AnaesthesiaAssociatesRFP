@@ -27,7 +27,7 @@ describe('creation paths stamp their source', () => {
   it('createBooking stores a given source and records it in the create audit', () => {
     const api = store()
     const outcome = createBooking(api, SOUTER, SEED_LIST_IDS.souterPm21, {
-      patient: { nhi: nextTestNhi(), name: 'Ad Hoc Patient', dobISO: '1990-05-05' },
+      patient: { nhi: nextTestNhi(), name: 'Ad Hoc Patient', dobISO: '1990-09-08' },
       sourceText: { text: 'Diagnostic laparoscopy', source: 'anaesthetist' },
       source: 'anaesthetistAdHoc',
     })
@@ -40,7 +40,7 @@ describe('creation paths stamp their source', () => {
   it('createBooking without a source leaves it unset', () => {
     const api = store()
     const outcome = createBooking(api, SOUTER, SEED_LIST_IDS.souterPm21, {
-      patient: { nhi: nextTestNhi(), name: 'Ad Hoc Patient', dobISO: '1990-05-05' },
+      patient: { nhi: nextTestNhi(), name: 'Ad Hoc Patient', dobISO: '1990-09-08' },
       sourceText: { text: 'Diagnostic laparoscopy', source: 'anaesthetist' },
     })
     if (!outcome.ok) throw new Error(outcome.message)
@@ -52,7 +52,7 @@ describe('creation paths stamp their source', () => {
     const imported = importHospitalDownload(api, OFFICE, 'SAMPLE_FORTE_SHEET')
     if (!imported.ok) throw new Error(imported.message)
     const r1 = api.getState().intake.batches[imported.value.batchId!]!.rowIds[0]!
-    const res = decideImportRow(api, OFFICE, r1, { kind: 'createBooking', listId: 'L-29104-2026-07-28-AM' })
+    const res = decideImportRow(api, OFFICE, r1, { kind: 'createBooking', listId: 'L-29104-2026-12-01-AM' })
     if (!res.ok) throw new Error(res.message)
     // A keyed sheet is the hospital pathway too: its channel lives on the row and the text's source.
     expect(api.getState().schedule.bookings[res.value.bookingId ?? '']?.source).toBe('hospitalDownload')

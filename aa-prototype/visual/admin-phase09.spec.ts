@@ -45,7 +45,7 @@ test('admin phase 09: prepayment warning on a booking (never a block)', async ({
     await page.getByTestId('admin-day-nav').getByRole('button', { name: 'Next day', exact: true }).click()
     await page.waitForTimeout(200)
   }
-  await expect(page.getByRole('heading', { name: /Friday 24 July 2026/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Friday 27 November 2026/ })).toBeVisible()
   // The day grid's focus filters carry the warnings key (catch-up Phase 15a).
   await expect(page.getByRole('button', { name: 'Has warnings' })).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p9-04-friday.png', fullPage: true })

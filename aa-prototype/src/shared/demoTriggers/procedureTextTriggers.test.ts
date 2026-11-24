@@ -35,7 +35,7 @@ beforeEach(() => {
 describe('Fire hospital message, Future scope only (catch-up Phase 34)', () => {
   it('shows only on the Future-scope surface, in the bar, badged: never on a Booking or in the PWA', () => {
     const api = createAppStore()
-    for (const path of [`/mobile/lists/L-34821-2026-08-04-AM/bookings/${FOSTER}`, `/web/lists/L-34821-2026-08-04-AM/bookings/${FOSTER}`, `/admin/day/2026-08-04/bookings/${FOSTER}`]) {
+    for (const path of [`/mobile/lists/L-34821-2026-12-08-AM/bookings/${FOSTER}`, `/web/lists/L-34821-2026-12-08-AM/bookings/${FOSTER}`, `/admin/day/2026-12-08/bookings/${FOSTER}`]) {
       expect(ids(api, path, 'bar')).not.toContain('fire-hospital-message')
       expect(ids(api, path, 'pwa')).not.toContain('fire-hospital-message')
     }
@@ -64,9 +64,9 @@ describe('Hospital description arrives', () => {
 
   it('sits on the Admin Booking route only, in the bar, with no Future-scope badge', () => {
     const api = createAppStore()
-    expect(ids(api, `/admin/day/2026-07-21/bookings/${TANE}`, 'bar')).toContain('hospital-description-arrives')
-    expect(ids(api, `/mobile/lists/L-34821-2026-07-21-PM/bookings/${TANE}`, 'pwa')).not.toContain('hospital-description-arrives')
-    expect(ids(api, `/mobile/lists/L-34821-2026-07-21-PM/bookings/${TANE}`, 'bar')).not.toContain('hospital-description-arrives')
+    expect(ids(api, `/admin/day/2026-11-24/bookings/${TANE}`, 'bar')).toContain('hospital-description-arrives')
+    expect(ids(api, `/mobile/lists/L-34821-2026-11-24-PM/bookings/${TANE}`, 'pwa')).not.toContain('hospital-description-arrives')
+    expect(ids(api, `/mobile/lists/L-34821-2026-11-24-PM/bookings/${TANE}`, 'bar')).not.toContain('hospital-description-arrives')
     expect(trigger().badge).toBeUndefined()
   })
 

@@ -67,8 +67,8 @@ export function WarningPreviewRowExample() {
 }
 
 const SEED_NOTES: SharedNote[] = [
-  { id: 'NTE-EX-2', text: 'Noted, the theatre knows.', atISO: '2026-07-21T09:40', by: 'Kirsty W.' },
-  { id: 'NTE-EX-1', text: 'Patient 3 is latex allergic.', atISO: '2026-07-21T08:15', by: 'Dr Melanie Souter' },
+  { id: 'NTE-EX-2', text: 'Noted, the theatre knows.', atISO: '2026-11-24T09:40', by: 'Kirsty W.' },
+  { id: 'NTE-EX-1', text: 'Patient 3 is latex allergic.', atISO: '2026-11-24T08:15', by: 'Dr Melanie Souter' },
 ]
 
 export function SharedNotesExample({ size = 'desktop', by }: { size?: SharedNotesSize; by: string }) {
@@ -80,7 +80,7 @@ export function SharedNotesExample({ size = 'desktop', by }: { size?: SharedNote
       size={size}
       onAdd={(text) => {
         if (text.trim() === '') return NOTE_REQUIRED_MESSAGE
-        setNotes((n) => [{ id: `NTE-EX-${n.length + 1}`, text: text.trim(), atISO: '2026-07-21T10:05', by }, ...n])
+        setNotes((n) => [{ id: `NTE-EX-${n.length + 1}`, text: text.trim(), atISO: '2026-11-24T10:05', by }, ...n])
         return null
       }}
     />

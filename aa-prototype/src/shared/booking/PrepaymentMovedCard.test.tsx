@@ -31,7 +31,7 @@ function moveRiley(): string {
   const s = useAppStore.getState()
   const from = s.schedule.lists[s.schedule.bookings[RILEY]!.listId]!.anaesthetistId
   const target = Object.values(s.schedule.lists)
-    .filter((l) => l.anaesthetistId !== undefined && l.anaesthetistId !== from && l.state === 'ACTIVE' && l.dateISO >= '2026-07-21')
+    .filter((l) => l.anaesthetistId !== undefined && l.anaesthetistId !== from && l.state === 'ACTIVE' && l.dateISO >= '2026-11-24')
     .sort((a, b) => a.id.localeCompare(b.id))
     .find((l) => reassignBooking(useAppStore, OFFICE, RILEY, l.id).ok)
   if (target === undefined) throw new Error('no List to move Riley to')

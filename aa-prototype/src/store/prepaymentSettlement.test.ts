@@ -113,7 +113,7 @@ describe('the transfer at authorisation (OQ-125 provisional)', () => {
     const invoicesBefore = Object.keys(api.getState().billing.invoices).filter((id) => api.getState().billing.invoices[id]!.kind === 'prePayment')
     const receiptsBefore = Object.keys(api.getState().billing.receipts).length
     const paymentsBefore = Object.keys(api.getState().xero.payments).length
-    const gstBefore = gstReportFor(api.getState(), '34821', '2026-07', '2026-07-21').rows
+    const gstBefore = gstReportFor(api.getState(), '34821', '2026-11', '2026-11-24').rows
     authorise(NAIR_LIST)
     expect(transfers()).toHaveLength(1)
     const t = transfers()[0]!
@@ -139,7 +139,7 @@ describe('the transfer at authorisation (OQ-125 provisional)', () => {
     expect(Object.keys(api.getState().billing.invoices).filter((id) => api.getState().billing.invoices[id]!.kind === 'prePayment')).toEqual(invoicesBefore)
     expect(Object.keys(api.getState().billing.receipts)).toHaveLength(receiptsBefore)
     expect(Object.keys(api.getState().xero.payments)).toHaveLength(paymentsBefore)
-    expect(gstReportFor(api.getState(), '34821', '2026-07', '2026-07-21').rows).toEqual(gstBefore)
+    expect(gstReportFor(api.getState(), '34821', '2026-11', '2026-11-24').rows).toEqual(gstBefore)
     // The account falls; exactly the transferred payable is due.
     expect(balance()).toBe(0)
     expect(payablesDue(api.getState())).toEqual({ count: 1, total: 1380, byAnaesthetist: [{ anaesthetistId: '34821', count: 1, total: 1380 }] })
@@ -253,8 +253,8 @@ describe('a move changes nothing; the transfer pays whoever did the List', () =>
     // A colleague's ACTIVE List holding no other Booking, so authorising it needs only Riley completed.
     const holds = (listId: string) => Object.values(api.getState().schedule.bookings).some((b) => b.listId === listId && b.cancellation === undefined)
     const candidates = Object.values(api.getState().schedule.lists)
-      .filter((l) => l.anaesthetistId !== undefined && l.anaesthetistId !== souterId && l.state === 'ACTIVE' && l.dateISO >= '2026-07-21' && !holds(l.id))
-      .sort((a, b) => Number(b.dateISO === '2026-07-24') - Number(a.dateISO === '2026-07-24') || a.id.localeCompare(b.id))
+      .filter((l) => l.anaesthetistId !== undefined && l.anaesthetistId !== souterId && l.state === 'ACTIVE' && l.dateISO >= '2026-11-24' && !holds(l.id))
+      .sort((a, b) => Number(b.dateISO === '2026-11-27') - Number(a.dateISO === '2026-11-27') || a.id.localeCompare(b.id))
     const moved = candidates.find((l) => reassignBooking(api, OFFICE, RILEY, l.id).ok)
     expect(moved).toBeDefined()
     expect(JSON.stringify({ a: api.getState().xero.accPays, t: api.getState().billing.transfers })).toBe(before)
@@ -275,8 +275,8 @@ describe("the anaesthetist's own moves change nothing here either", () => {
     const listId = listOf(RILEY)
     const before = JSON.stringify({ a: api.getState().xero.accPays, c: caseOfInvoice(invoiceId!), t: api.getState().billing.transfers })
     const from = api.getState().audit.length
-    const to = others().find((id) => pushListToSlot(api, SOUTER_ME, listId, slotIdFor(id, '2026-07-24', 'AM')).ok)
-    expect(to, 'a colleague with a free Fri 24 Jul AM').toBeDefined()
+    const to = others().find((id) => pushListToSlot(api, SOUTER_ME, listId, slotIdFor(id, '2026-11-27', 'AM')).ok)
+    expect(to, 'a colleague with a free Fri 27 Nov AM').toBeDefined()
     const moves = api.getState().audit.slice(from).map((e) => e.action)
     expect(moves.filter((a) => a === 'list.ownerMove')).toHaveLength(1)
     expect(moves).not.toContain('list.reassign')

@@ -66,7 +66,7 @@ describe('refusals (enforced in the store)', () => {
 
   it("refuses a past day's Booking (the office's to move)", () => {
     const api = store()
-    api.setState({ clock: { ...api.getState().clock, todayISO: '2026-07-23' } })
+    api.setState({ clock: { ...api.getState().clock, todayISO: '2026-11-26' } })
     const out = moveBookingToAnaesthetist(api, SOUTER, D.bookingId, D.receiverId)
     expect(out).toMatchObject({ ok: false, code: 'pastDate', message: "This List's day has passed. Ask the office to move it." })
   })
@@ -101,8 +101,8 @@ describe('US-01.4.7 and US-01.4.6: one move, a new List', () => {
     expect(created).toMatchObject({
       state: 'ACTIVE',
       anaesthetistId: D.receiverId,
-      slotId: slotIdFor(D.receiverId, '2026-07-22', 'AM'),
-      dateISO: '2026-07-22',
+      slotId: slotIdFor(D.receiverId, '2026-11-25', 'AM'),
+      dateISO: '2026-11-25',
       session: 'AM',
       hospitalId: source.hospitalId,
       surgeonId: source.surgeonId,
@@ -118,7 +118,7 @@ describe('US-01.4.7 and US-01.4.6: one move, a new List', () => {
     const api = store()
     const input = bookingMoveInputOf(api.getState())
     expect(freeColleagues(input, D.bookingId, ANAE.souter).map((r) => r.anaesthetistId)).not.toContain(D.listHoldingColleagueId)
-    const theirList = Object.values(api.getState().schedule.lists).find((l) => l.state !== 'DRAFT' && l.slotId === slotIdFor(D.listHoldingColleagueId, '2026-07-22', 'AM'))!
+    const theirList = Object.values(api.getState().schedule.lists).find((l) => l.state !== 'DRAFT' && l.slotId === slotIdFor(D.listHoldingColleagueId, '2026-11-25', 'AM'))!
     const theirCount = bookingsForList(api.getState(), theirList.id).length
     expect(code(moveBookingToAnaesthetist(api, SOUTER, D.bookingId, D.listHoldingColleagueId))).toBe('hasList')
     expect(bookingsForList(api.getState(), theirList.id).length).toBe(theirCount)
@@ -128,7 +128,7 @@ describe('US-01.4.7 and US-01.4.6: one move, a new List', () => {
     const api = store()
     expect(code(moveBookingToAnaesthetist(api, SOUTER, D.bookingId, D.unavailableColleagueId))).toBe('notAvailable')
     const chen = as(api, D.unavailableColleagueId)
-    expect(setAvailabilityRange(api, chen, { anaesthetistId: D.unavailableColleagueId, fromISO: '2026-07-22', toISO: '2026-07-22', sessions: 'AM', statusKey: 'free' }).ok).toBe(true)
+    expect(setAvailabilityRange(api, chen, { anaesthetistId: D.unavailableColleagueId, fromISO: '2026-11-25', toISO: '2026-11-25', sessions: 'AM', statusKey: 'free' }).ok).toBe(true)
     expect(freeColleagues(bookingMoveInputOf(api.getState()), D.bookingId, ANAE.souter).map((r) => r.anaesthetistId)).toContain(D.unavailableColleagueId)
     expect(moveBookingToAnaesthetist(api, SOUTER, D.bookingId, D.unavailableColleagueId).ok).toBe(true)
   })
@@ -150,18 +150,18 @@ describe('US-01.4.7 and US-01.4.6: one move, a new List', () => {
     expect(pool.total).toBe(1)
     const row = pool.rows[0]!
     expect(row.notification).toMatchObject({ kind: 'bookingMoved', bookingId: D.bookingId, fromAnaesthetistId: ANAE.souter, toAnaesthetistId: D.receiverId, message: 'Patient asked for an early start' })
-    expect(row.text).toMatch(/^Dr Souter moved a Booking \(.+, Wed 22 Jul AM, Christchurch Eye Surgery\) to Dr Whitaker\. A new List was created\.$/)
-    expect(row.target).toEqual({ kind: 'booking', bookingId: D.bookingId, dateISO: '2026-07-22' })
+    expect(row.text).toMatch(/^Dr Souter moved a Booking \(.+, Wed 25 Nov AM, Christchurch Eye Surgery\) to Dr Whitaker\. A new List was created\.$/)
+    expect(row.target).toEqual({ kind: 'booking', bookingId: D.bookingId, dateISO: '2026-11-25' })
     expect(a.ok && a.value.notificationId).toBe(row.notification.id)
     // Not a to-do, and not Phase 32's List notice.
     expect(openWarnings(ticked.getState()).some((w) => JSON.stringify(w).includes(row.notification.id))).toBe(false)
-    expect(movedToMe(ticked.getState(), D.receiverId, '2026-07-21')).toEqual([])
+    expect(movedToMe(ticked.getState(), D.receiverId, '2026-11-24')).toEqual([])
 
     const quiet = store()
     expect(moveBookingToAnaesthetist(quiet, SOUTER, D.bookingId, D.receiverId).ok).toBe(true)
     expect(Object.keys(quiet.getState().notifications)).toEqual([])
     for (const api of [ticked, quiet]) {
-      const notices = bookingsMovedToMe(api.getState(), D.receiverId, '2026-07-21')
+      const notices = bookingsMovedToMe(api.getState(), D.receiverId, '2026-11-24')
       expect(notices.map((n) => n.bookingId)).toEqual([D.bookingId])
       expect(bookingMoveFor(api.getState(), D.bookingId)?.fromAnaesthetistId).toBe(ANAE.souter)
       expect(bookingMovesOntoList(api.getState(), notices[0]!.listId)).toHaveLength(1)
@@ -205,7 +205,7 @@ describe('US-01.4.7 and US-01.4.6: one move, a new List', () => {
     expect(moved).toMatchObject({
       entityId: D.bookingId,
       who: 'Dr Melanie Souter',
-      atISO: '2026-07-21T08:00:00',
+      atISO: '2026-11-24T08:00:00',
       before: { listId: D.sourceListId, anaesthetistId: ANAE.souter },
       after: { anaesthetistId: D.receiverId, createdListId: out!.ok ? out!.value.createdListId : '', message: 'Over to you' },
     })
@@ -295,7 +295,7 @@ describe('US-01.4.6: the payable follows, nothing recalculated (US-06.3.5 AC2, U
 describe('the old guard, replaced', () => {
   it("reassignBooking still refuses an anaesthetist putting a Booking onto a colleague's List, and points at Move to a colleague", () => {
     const api = store()
-    const colleagueList = Object.values(api.getState().schedule.lists).find((l) => l.state === 'ACTIVE' && l.anaesthetistId === ANAE.morrison && l.dateISO >= '2026-07-21')!
+    const colleagueList = Object.values(api.getState().schedule.lists).find((l) => l.state === 'ACTIVE' && l.anaesthetistId === ANAE.morrison && l.dateISO >= '2026-11-24')!
     expect(reassignBooking(api, SOUTER, D.bookingId, colleagueList.id)).toMatchObject({
       ok: false,
       code: 'notOwnList',
@@ -323,5 +323,5 @@ describe('determinism', () => {
 })
 
 function projectedSouterTue21Am(): string {
-  return `L-${ANAE.souter}-2026-07-21-AM`
+  return `L-${ANAE.souter}-2026-11-24-AM`
 }

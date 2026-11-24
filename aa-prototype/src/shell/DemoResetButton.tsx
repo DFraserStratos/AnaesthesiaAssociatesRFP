@@ -52,7 +52,7 @@ export function DemoResetButton() {
             Reset all demo data?
           </div>
           <p style={{ margin: '6px 0 12px', color: neutral.slate, fontSize: 12, lineHeight: 1.45 }}>
-            This restores the pristine seed and returns the demo clock to Tuesday 21 July 2026, 8:00.
+            This restores the pristine seed and returns the demo clock to Tuesday 24 November 2026, 8:00.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button

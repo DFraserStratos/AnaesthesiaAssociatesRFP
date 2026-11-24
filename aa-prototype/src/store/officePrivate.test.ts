@@ -101,7 +101,7 @@ describe('priority tiers', () => {
 
   it('a new anaesthetist reads as Tier 4 until the office changes it', () => {
     const api = createAppStore()
-    addAnaesthetist(api, OFFICE, { registrationNumber: '50001', name: 'Dr New Person', phone: '', email: '', unitValue: 30, hpiId: '50NEWP', bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, startDateISO: '2026-07-21' })
+    addAnaesthetist(api, OFFICE, { registrationNumber: '50001', name: 'Dr New Person', phone: '', email: '', unitValue: 30, hpiId: '50NEWP', bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, startDateISO: '2026-11-24' })
     expect(api.getState().officePrivate.priorityTiers['50001']).toBeUndefined()
     expect(selectPriorityTier(api.getState(), '50001')).toBe(4)
   })

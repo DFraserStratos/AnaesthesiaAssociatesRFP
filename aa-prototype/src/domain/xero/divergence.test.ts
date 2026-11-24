@@ -3,7 +3,7 @@ import type { XeroAccRec } from '../types'
 import { detectXeroDivergences, type EngineReceivable } from './divergence'
 
 function accRec(id: string, over: Partial<XeroAccRec> = {}): XeroAccRec {
-  return { id, kind: 'procedure', invoiceId: `INV-${id}`, contactId: 'XC0001', invoiceNumber: `AA-${id}`, reference: `BC-${id}`, issuedAtISO: '2026-07-21T09:00:00', amountDue: 500, amountReceived: 0, status: 'awaitingPayment', ...over }
+  return { id, kind: 'procedure', invoiceId: `INV-${id}`, contactId: 'XC0001', invoiceNumber: `AA-${id}`, reference: `BC-${id}`, issuedAtISO: '2026-11-24T09:00:00', amountDue: 500, amountReceived: 0, status: 'awaitingPayment', ...over }
 }
 function engine(id: string, over: Partial<EngineReceivable> = {}): EngineReceivable {
   return { pairId: `BC-${id}`, invoiceId: `INV-${id}`, accRecId: id, amount: 500, receivedAmount: 0, ...over }
@@ -19,10 +19,10 @@ describe('detectXeroDivergences (catch-up Phase 37)', () => {
   })
 
   it('never re-flags a change the office resolved; flags again only if Xero changes again', () => {
-    const recs = { XR1: accRec('XR1', { amountDue: 480, amendedAtISO: '2026-07-21T10:00:00' }) }
-    const resolved = { accRecId: 'XR1', kind: 'amendedInXero' as const, status: 'resolved' as const, xeroShows: { total: 480, changedAtISO: '2026-07-21T10:00:00' } }
+    const recs = { XR1: accRec('XR1', { amountDue: 480, amendedAtISO: '2026-11-24T10:00:00' }) }
+    const resolved = { accRecId: 'XR1', kind: 'amendedInXero' as const, status: 'resolved' as const, xeroShows: { total: 480, changedAtISO: '2026-11-24T10:00:00' } }
     expect(detectXeroDivergences([engine('XR1')], recs, [resolved])).toEqual([])
-    const changedAgain = { XR1: accRec('XR1', { amountDue: 460, amendedAtISO: '2026-07-22T10:00:00' }) }
+    const changedAgain = { XR1: accRec('XR1', { amountDue: 460, amendedAtISO: '2026-11-25T10:00:00' }) }
     expect(detectXeroDivergences([engine('XR1')], changedAgain, [resolved])).toHaveLength(1)
   })
 

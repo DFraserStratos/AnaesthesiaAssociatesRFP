@@ -47,7 +47,7 @@ function draftListId(api: BoundAppStore): string {
 }
 
 describe('the edit window (D63)', () => {
-  it('the seeded Mon 20 Jul Lists are SUBMITTED and Dr Souter can change their Bookings, audited as her', () => {
+  it('the seeded Mon 23 Nov Lists are SUBMITTED and Dr Souter can change their Bookings, audited as her', () => {
     const api = store()
     expect(api.getState().schedule.lists[MON_PM]?.state).toBe('SUBMITTED')
     const id = firstBooking(api, MON_PM)
@@ -63,7 +63,7 @@ describe('the edit window (D63)', () => {
     if (!notOwn.ok) expect(notOwn.code).toBe('notOwnList')
 
     const draft = createBooking(api, SOUTER, draftListId(api), {
-      patient: { nhi: nextTestNhi(), name: 'X', dobISO: '1990-01-01' },
+      patient: { nhi: nextTestNhi(), name: 'X', dobISO: '1990-05-07' },
       sourceText: { text: 'Test', source: 'anaesthetist' },
     })
     expect(draft.ok).toBe(false)
@@ -126,7 +126,7 @@ describe('authorise is completion-gated (catch-up Phase 38a)', () => {
   it('a Booking added to a SUBMITTED List blocks authorise too', () => {
     const api = store()
     const added = createBooking(api, SOUTER, MON_AM, {
-      patient: { nhi: nextTestNhi(), name: 'Late Addition', dobISO: '1980-02-02' },
+      patient: { nhi: nextTestNhi(), name: 'Late Addition', dobISO: '1980-06-07' },
       sourceText: { text: 'Arthroscopy', source: 'anaesthetist' },
     })
     expect(added.ok).toBe(true)

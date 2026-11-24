@@ -37,7 +37,7 @@ describe('the later-address rule', () => {
     expect(originAfterRoomsRow(pdf, 'PA@rooms.example', 'PDL0003')).toBeUndefined()
   })
   it('a row from an earlier PDF never puts the older address back (review fix)', () => {
-    const at: Record<string, string> = { PDL0001: '2026-07-21T07:10', PDL0003: '2026-07-21T09:00' }
+    const at: Record<string, string> = { PDL0001: '2026-11-24T07:10', PDL0003: '2026-11-24T09:00' }
     const fromLater = { kind: 'pdf' as const, senderEmail: 'inbox@rooms.example', pdfListId: 'PDL0003' }
     expect(originAfterRoomsRow(fromLater, 'pa@rooms.example', 'PDL0001', (id) => at[id])).toBeUndefined()
     const fromEarlier = { kind: 'pdf' as const, senderEmail: 'pa@rooms.example', pdfListId: 'PDL0001' }
@@ -61,19 +61,19 @@ describe('the later-address rule', () => {
 describe('every store creation path stamps the origin', () => {
   it('the office\'s List in a session is entered by hand, with no sender', () => {
     const api = createAppStore()
-    const out = assignListToSlot(api, OFFICE_ACTOR, 'S-45178-2026-08-05-AM', { hospitalId: HOSP.stg, surgeonId: SURG.tan, kind: 'private' })
+    const out = assignListToSlot(api, OFFICE_ACTOR, 'S-45178-2026-12-09-AM', { hospitalId: HOSP.stg, surgeonId: SURG.tan, kind: 'private' })
     if (!out.ok) throw new Error(out.message)
     expect(api.getState().schedule.lists[out.value.listId]!.origin).toEqual({ kind: 'manual' })
   })
 
   it('a Draft List request from a PDF records its "Sent from" address, kept after a re-date and after assignment', () => {
     const api = createAppStore()
-    expect(createDraftList(api, OFFICE_ACTOR, { hospitalId: HOSP.stg, surgeonId: SURG.tan, dateISO: '2026-08-05', session: 'PM', source: 'pdf', senderEmail: 'nope' })).toMatchObject({ ok: false, code: 'invalidEmail' })
-    const made = createDraftList(api, OFFICE_ACTOR, { hospitalId: HOSP.stg, surgeonId: SURG.tan, dateISO: '2026-08-04', session: 'PM', source: 'pdf', senderEmail: 'pa@papanui.example' })
+    expect(createDraftList(api, OFFICE_ACTOR, { hospitalId: HOSP.stg, surgeonId: SURG.tan, dateISO: '2026-12-09', session: 'PM', source: 'pdf', senderEmail: 'nope' })).toMatchObject({ ok: false, code: 'invalidEmail' })
+    const made = createDraftList(api, OFFICE_ACTOR, { hospitalId: HOSP.stg, surgeonId: SURG.tan, dateISO: '2026-12-08', session: 'PM', source: 'pdf', senderEmail: 'pa@papanui.example' })
     if (!made.ok) throw new Error(made.message)
     const id = made.value.listId
     expect(api.getState().schedule.lists[id]!.origin).toEqual({ kind: 'pdf', senderEmail: 'pa@papanui.example' })
-    expect(redateDraftList(api, OFFICE_ACTOR, id, { dateISO: '2026-08-05', session: 'PM' }).ok).toBe(true)
+    expect(redateDraftList(api, OFFICE_ACTOR, id, { dateISO: '2026-12-09', session: 'PM' }).ok).toBe(true)
     const assigned = assignDraftList(api, OFFICE_ACTOR, id, { anaesthetistId: '45178' })
     if (!assigned.ok) throw new Error(assigned.message)
     const list = api.getState().schedule.lists[id]!
@@ -83,7 +83,7 @@ describe('every store creation path stamps the origin', () => {
 
   it('a phone request is entered by hand', () => {
     const api = createAppStore()
-    const made = createDraftList(api, OFFICE_ACTOR, { hospitalId: HOSP.stg, surgeonId: SURG.tan, dateISO: '2026-08-05', session: 'PM', source: 'phone' })
+    const made = createDraftList(api, OFFICE_ACTOR, { hospitalId: HOSP.stg, surgeonId: SURG.tan, dateISO: '2026-12-09', session: 'PM', source: 'phone' })
     if (!made.ok) throw new Error(made.message)
     expect(api.getState().schedule.lists[made.value.listId]!.origin).toEqual({ kind: 'manual' })
   })

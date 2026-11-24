@@ -159,7 +159,7 @@ describe('reconciliation status (work item 12a; US-13.2.4, DM-67)', () => {
     const api = createAppStore()
     unwires.push(wireBillingRun(api))
     setXeroOutage(api, OFFICE_ACTOR, true)
-    expect(authoriseList(api, OFFICE_ACTOR, projectedListId(ANAE.souter, '2026-07-20', 'AM')).ok).toBe(true)
+    expect(authoriseList(api, OFFICE_ACTOR, projectedListId(ANAE.souter, '2026-11-23', 'AM')).ok).toBe(true)
     const status = reconciliationStatusOf(api.getState())
     expect(status.failing.map((c) => c.id)).toEqual(['ledgerAgainstXero'])
     expect(status.items.every((i) => i.source === 'xeroQueue' && i.amount > 0)).toBe(true)

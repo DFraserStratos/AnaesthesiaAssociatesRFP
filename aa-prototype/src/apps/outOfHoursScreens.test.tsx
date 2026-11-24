@@ -20,7 +20,7 @@ afterEach(cleanup)
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
-const TODAY = '2026-07-21'
+const TODAY = '2026-11-24'
 const SOUTER_OOH = slotIdFor(ANAE.souter, TODAY, 'OOH')
 
 function renderGrid(onOpen = vi.fn()) {
@@ -52,7 +52,7 @@ describe('Admin Day', () => {
     const first = renderGrid()
     const before = styles(first.container)
     first.unmount()
-    expect(openOutOfHoursSession(useAppStore, OFFICE, ANAE.souter, '2026-07-22').ok).toBe(true)
+    expect(openOutOfHoursSession(useAppStore, OFFICE, ANAE.souter, '2026-11-25').ok).toBe(true)
     expect(styles(renderGrid().container)).toEqual(before)
   })
 

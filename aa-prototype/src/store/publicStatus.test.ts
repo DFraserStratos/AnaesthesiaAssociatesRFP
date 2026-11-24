@@ -21,7 +21,7 @@ import { projectedListId, slotIdFor } from '../domain/slots'
 import { SEED_STATUS } from '../domain/slotStatus'
 import { DEMO_TRIGGERS, POST_OP_ORIGINAL_LIST_ID } from '../shared/demoTriggers/registry'
 
-const FRI21AUG = '2026-08-21'
+const FRI21AUG = '2026-12-25'
 const PUBLIC = SEED_STATUS.publicHospital
 
 describe('Public as a Slot status (catch-up Phase 32d)', () => {
@@ -46,9 +46,9 @@ describe('Public as a Slot status (catch-up Phase 32d)', () => {
     const api = createAppStore()
     expect(setAvailability(api, OFFICE_ACTOR, ANAE.souter, FRI21AUG, 'PM', PUBLIC, 'CPH').ok).toBe(true)
     expect(api.getState().schedule.slots[slotIdFor(ANAE.souter, FRI21AUG, 'PM')]).toMatchObject({ status: PUBLIC, note: 'CPH' })
-    const range = setAvailabilityRange(api, SOUTER_ACTOR, { anaesthetistId: ANAE.souter, fromISO: '2026-08-22', toISO: '2026-08-23', sessions: 'both', statusKey: PUBLIC, note: 'CPH' })
+    const range = setAvailabilityRange(api, SOUTER_ACTOR, { anaesthetistId: ANAE.souter, fromISO: '2026-12-26', toISO: '2026-12-27', sessions: 'both', statusKey: PUBLIC, note: 'CPH' })
     expect(range.ok).toBe(true)
-    for (const d of ['2026-08-22', '2026-08-23']) for (const s of ['AM', 'PM'] as const) expect(api.getState().schedule.slots[slotIdFor(ANAE.souter, d, s)]).toMatchObject({ status: PUBLIC, note: 'CPH' })
+    for (const d of ['2026-12-26', '2026-12-27']) for (const s of ['AM', 'PM'] as const) expect(api.getState().schedule.slots[slotIdFor(ANAE.souter, d, s)]).toMatchObject({ status: PUBLIC, note: 'CPH' })
     const audit = api.getState().audit.filter((a) => a.entityId === slotIdFor(ANAE.souter, FRI21AUG, 'PM'))
     expect(audit.at(-1)?.role).toBe('office')
   })
@@ -57,17 +57,17 @@ describe('Public as a Slot status (catch-up Phase 32d)', () => {
     const api = createAppStore()
     const target = slotIdFor(ANAE.souter, FRI21AUG, 'AM')
     expect(setAvailability(api, OFFICE_ACTOR, ANAE.souter, FRI21AUG, 'AM', PUBLIC, 'CPH').ok).toBe(true)
-    const listId = projectedListId(ANAE.souter, '2026-08-17', 'AM')
+    const listId = projectedListId(ANAE.souter, '2026-12-21', 'AM')
     expect(api.getState().schedule.lists[listId]).toBeDefined()
     const pushed = pushListToSlot(api, SOUTER_ACTOR, listId, target)
     expect(pushed.ok).toBe(false)
-    expect(api.getState().schedule.lists[listId]?.slotId).toBe(slotIdFor(ANAE.souter, '2026-08-17', 'AM'))
+    expect(api.getState().schedule.lists[listId]?.slotId).toBe(slotIdFor(ANAE.souter, '2026-12-21', 'AM'))
   })
 
   it('Public on a session holding a List runs the return-or-hand-on choice (32b): the List goes back, the session is Public', () => {
     const api = createAppStore()
-    const listId = projectedListId(ANAE.souter, '2026-08-17', 'AM')
-    const slotId = slotIdFor(ANAE.souter, '2026-08-17', 'AM')
+    const listId = projectedListId(ANAE.souter, '2026-12-21', 'AM')
+    const slotId = slotIdFor(ANAE.souter, '2026-12-21', 'AM')
     const out = markUnavailableAndMoveList(api, OFFICE_ACTOR, slotId, PUBLIC, { route: 'office' }, { note: 'CPH' })
     expect(out.ok).toBe(true)
     expect(api.getState().schedule.lists[listId]?.state).toBe('DRAFT')
@@ -107,21 +107,21 @@ describe('Public as a Slot status (catch-up Phase 32d)', () => {
   it('a Draft List is never assigned into a Public session; back to Free it is', () => {
     const api = createAppStore()
     // St George's request LD-001 is for Tue 21 Jul PM: Dr Hughes is free then.
-    expect(setAvailability(api, OFFICE_ACTOR, ANAE.hughes, '2026-07-21', 'PM', PUBLIC, 'CPH').ok).toBe(true)
+    expect(setAvailability(api, OFFICE_ACTOR, ANAE.hughes, '2026-11-24', 'PM', PUBLIC, 'CPH').ok).toBe(true)
     const refused = assignDraftList(api, OFFICE_ACTOR, 'LD-001', { anaesthetistId: ANAE.hughes })
     expect(refused.ok ? '' : refused.code).toBe('sessionNotOpen')
-    expect(setAvailability(api, OFFICE_ACTOR, ANAE.hughes, '2026-07-21', 'PM', SEED_STATUS.free).ok).toBe(true)
+    expect(setAvailability(api, OFFICE_ACTOR, ANAE.hughes, '2026-11-24', 'PM', SEED_STATUS.free).ok).toBe(true)
     expect(assignDraftList(api, OFFICE_ACTOR, 'LD-001', { anaesthetistId: ANAE.hughes }).ok).toBe(true)
   })
 
   it('a List is never handed on into a colleague\'s Public session (32b\'s receive rule)', () => {
     const api = createAppStore()
-    const from = slotIdFor(ANAE.souter, '2026-08-17', 'AM')
-    const to = slotIdFor(ANAE.hughes, '2026-08-17', 'PM')
-    expect(setAvailability(api, OFFICE_ACTOR, ANAE.hughes, '2026-08-17', 'PM', PUBLIC, 'CPH').ok).toBe(true)
+    const from = slotIdFor(ANAE.souter, '2026-12-21', 'AM')
+    const to = slotIdFor(ANAE.hughes, '2026-12-21', 'PM')
+    expect(setAvailability(api, OFFICE_ACTOR, ANAE.hughes, '2026-12-21', 'PM', PUBLIC, 'CPH').ok).toBe(true)
     const out = markUnavailableAndMoveList(api, SOUTER_ACTOR, from, 'unavailable', { route: 'colleague', toSlotId: to })
     expect(out.ok).toBe(false)
-    expect(api.getState().schedule.lists[projectedListId(ANAE.souter, '2026-08-17', 'AM')]?.slotId).toBe(from)
+    expect(api.getState().schedule.lists[projectedListId(ANAE.souter, '2026-12-21', 'AM')]?.slotId).toBe(from)
   })
 
   it('extending the horizon paints the weekly Public series onto the added months, never a List', () => {

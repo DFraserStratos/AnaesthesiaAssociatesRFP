@@ -18,8 +18,8 @@ import { projectedListId } from '../slots'
 import { ANAE } from './cast'
 
 export const SEED_ORIGIN_LISTS = {
-  pdf: projectedListId(ANAE.hughes, '2026-08-11', 'AM'),
-  hospital: projectedListId(ANAE.sharma, '2026-08-03', 'PM'),
+  pdf: projectedListId(ANAE.hughes, '2026-12-15', 'AM'),
+  hospital: projectedListId(ANAE.sharma, '2026-12-07', 'PM'),
 } as const
 
 /** The address the seeded `pdf` List's PDF arrived from (synthetic; not Mr Nand's first office contact). */

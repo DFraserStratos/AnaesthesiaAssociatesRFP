@@ -17,7 +17,7 @@ function renderSheet() {
   const onCreated = vi.fn()
   render(
     <SurfaceProvider variant="web">
-      <DraftListSheet open actor={OFFICE} initialDateISO="2026-07-23" onClose={vi.fn()} onCreated={onCreated} />
+      <DraftListSheet open actor={OFFICE} initialDateISO="2026-11-26" onClose={vi.fn()} onCreated={onCreated} />
     </SurfaceProvider>,
   )
   fireEvent.change(screen.getByLabelText('Hospital'), { target: { value: HOSP.stg } })

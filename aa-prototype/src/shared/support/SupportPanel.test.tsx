@@ -49,7 +49,7 @@ describe('SupportPanel (catch-up Phase 43b)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send request' }))
     const first = list.querySelector('[data-ticket-id]')!
     expect(first.getAttribute('data-ticket-id')).toBe('TK0006')
-    expect(first.textContent).toContain('Respond by Tue 21 Jul, 1:00pm')
+    expect(first.textContent).toContain('Respond by Tue 24 Nov, 1:00pm')
     expect((within(shot('support-request-form')).getByLabelText('Subject') as HTMLInputElement).value).toBe('')
     expect(useAppStore.getState().audit.at(-1)).toMatchObject({ action: 'support.raise', entityId: 'TK0006' })
   })
@@ -68,7 +68,7 @@ describe('SupportPanel (catch-up Phase 43b)', () => {
     fireEvent.click(within(form).getByRole('radio', { name: 'Security breach' }))
     fireEvent.change(within(form).getByLabelText('Subject'), { target: { value: 'Strange sign-in' } })
     fireEvent.click(screen.getByRole('button', { name: 'Send request' }))
-    expect(useAppStore.getState().support.tickets['TK0006']).toMatchObject({ priority: 'P1', reason: 'securityBreach', respondByISO: '2026-07-21T20:00:00' })
+    expect(useAppStore.getState().support.tickets['TK0006']).toMatchObject({ priority: 'P1', reason: 'securityBreach', respondByISO: '2026-11-24T20:00:00' })
   })
 
   it('Admin shows both tabs, every request with its requester, and product support\'s own table', () => {

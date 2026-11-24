@@ -17,7 +17,7 @@ import { SEED_STUB } from '../domain/seed/intakeSeed'
 import type { Actor } from './mutate'
 
 const ANAESTHETIST: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: '34821' }
-const R4_LIST = 'L-34821-2026-07-28-PM'
+const R4_LIST = 'L-34821-2026-12-01-PM'
 
 function fresh(): AppStoreApi {
   return createAppStore()
@@ -35,7 +35,7 @@ function sxRowIds(api: AppStoreApi): string[] {
 }
 
 describe('the seeded stub', () => {
-  it('stands on Dr Souter\'s Tue 4 Aug PM List for a waiting row, on its own id, never a Booking', () => {
+  it('stands on Dr Souter\'s Tue 8 Dec PM List for a waiting row, on its own id, never a Booking', () => {
     const s = fresh().getState()
     const stub = s.intake.stubs[SEED_STUB.stubId]!
     expect(stub).toMatchObject({ status: 'standing', listId: SEED_STUB.listId, importRowId: SEED_STUB.rowId, reason: 'noNhi' })
@@ -71,7 +71,7 @@ describe('placing (US-02.6.1)', () => {
   it('a row with no List to land on places none', () => {
     const api = fresh()
     const staged = stageImportRows(api, OFFICE_ACTOR, 'download', 'H-SX', 'Test', [
-      { hospitalId: 'H-SX', dateISO: '2026-08-06', session: 'PM', surgeon: { name: 'Ms K. Patel', hpiId: '41PATK' }, patient: { name: 'Nobody Listed' }, procedure: { text: 'Lap chole' }, hospitalStatus: 'booked' },
+      { hospitalId: 'H-SX', dateISO: '2026-12-10', session: 'PM', surgeon: { name: 'Ms K. Patel', hpiId: '41PATK' }, patient: { name: 'Nobody Listed' }, procedure: { text: 'Lap chole' }, hospitalStatus: 'booked' },
     ])
     expect(staged.ok).toBe(true)
     expect(standingStubCount(api.getState())).toBe(1)
@@ -182,14 +182,14 @@ describe('the List changes', () => {
   })
   it('a List removed by another path hides its stub (the row still waits)', () => {
     const api = fresh()
-    api.setState((s) => ({ schedule: { ...s.schedule, lists: { ...s.schedule.lists, [SEED_STUB.listId]: { ...s.schedule.lists[SEED_STUB.listId]!, removedAtISO: '2026-07-21T09:00:00' } } } }))
+    api.setState((s) => ({ schedule: { ...s.schedule, lists: { ...s.schedule.lists, [SEED_STUB.listId]: { ...s.schedule.lists[SEED_STUB.listId]!, removedAtISO: '2026-11-24T09:00:00' } } } }))
     expect(stubsForList(api.getState(), SEED_STUB.listId)).toEqual([])
     expect(api.getState().intake.rows[SEED_STUB.rowId]?.status).toBe('open')
   })
   function stubOnDraft(api: AppStoreApi): { listId: string; rowId: string; stubId: string } {
     // A day with no Southern Cross List for Ms Patel, so the row lands on the new Draft List.
     const taken = new Set(Object.values(api.getState().schedule.lists).filter((l) => l.hospitalId === 'H-SX' && l.surgeonId === 'S-PATEL' && l.session === 'PM').map((l) => l.dateISO))
-    const dateISO = ['2026-08-12', '2026-08-13', '2026-08-14', '2026-08-19', '2026-08-20'].find((d) => !taken.has(d))!
+    const dateISO = ['2026-12-16', '2026-12-17', '2026-12-18', '2026-12-23', '2026-12-24'].find((d) => !taken.has(d))!
     const draft = createDraftList(api, OFFICE_ACTOR, { hospitalId: 'H-SX', surgeonId: 'S-PATEL', dateISO, session: 'PM', note: 'Test' }, 'hospitalRow')
     if (!draft.ok) throw new Error(draft.message)
     const staged = stageImportRows(api, OFFICE_ACTOR, 'download', 'H-SX', 'Test file', [

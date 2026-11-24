@@ -41,11 +41,11 @@ import { rvgGroupIdForLegacyCode } from './rvgGroups'
 import { seedText } from './procedureText'
 
 /** Dr Souter's Mon 27 Jul AM List at Forte (Aria's uncaptured Booking is on it). */
-export const PRICE_LINE_LIST_ID = projectedListId(ANAE.souter, '2026-07-27', 'AM')
+export const PRICE_LINE_LIST_ID = projectedListId(ANAE.souter, '2026-11-30', 'AM')
 /** Dr Souter's Thu 16 Jul PM List at AA's rooms: made AUTHORISED and invoiced for the range beat. */
-export const RANGE_AUTHORISED_LIST_ID = projectedListId(ANAE.souter, '2026-07-16', 'PM')
+export const RANGE_AUTHORISED_LIST_ID = projectedListId(ANAE.souter, '2026-11-19', 'PM')
 /** When the seeded AUTHORISED List was billed (never the clock). */
-export const RANGE_AUTHORISED_BILLED_ISO = '2026-07-17T09:00:00'
+export const RANGE_AUTHORISED_BILLED_ISO = '2026-11-20T09:00:00'
 /** The office's typed price on the range beat's Face lift (a demo figure). */
 export const RANGE_TYPED_PRICE = 2950
 
@@ -79,14 +79,14 @@ interface Spec {
 }
 
 function specs(noChargeListId: string): readonly Spec[] {
-  const MON27 = '2026-07-27'
-  const MON10AUG = '2026-08-10'
+  const MON27 = '2026-11-30'
+  const MON10AUG = '2026-12-14'
   return [
     { key: 'discountBooking', listId: PRICE_LINE_LIST_ID, day: MON27, patientId: PAT_24.discount, time: '11:15', text: 'Breast reduction, bilateral', contractId: CONTRACT.forteDiscount, legacyCode: '45200', completed: false, source: 'surgeonPdf' },
     { key: 'priceCaptureBooking', listId: PRICE_LINE_LIST_ID, day: MON27, patientId: PAT_24.priceCapture, time: '12:15', text: 'Skin flap repair, cheek', contractId: CONTRACT.noContractRvg, legacyCode: '45030', completed: false, source: 'surgeonPdf' },
     { key: 'rangeTypedBooking', listId: MERIVALE_BOOKING_LIST_ID, day: MON10AUG, patientId: PAT_24.rangeTyped, time: '17:45', text: 'Face lift', contractId: PRICED_ITEM.merFaceLift, completed: false, enteredPrice: RANGE_TYPED_PRICE, typedBy: 'office', source: 'hospitalDownload' },
-    { key: 'rangeAuthorisedBooking', listId: RANGE_AUTHORISED_LIST_ID, day: '2026-07-16', patientId: PAT_24.rangeAuthorised, time: '13:30', text: 'Face lift', contractId: PRICED_ITEM.merFaceLift, start: '13:35', finish: '16:05', completed: true, source: 'admin' },
-    { key: 'noChargeBooking', listId: noChargeListId, day: '2026-07-13', patientId: PAT_24.noCharge, time: '11:30', text: 'Scar revision, forearm', contractId: CONTRACT.noContractRvg, legacyCode: '45030', start: '11:35', finish: '12:20', completed: true, enteredPrice: 0, typedBy: 'anaesthetist', source: 'surgeonPdf' },
+    { key: 'rangeAuthorisedBooking', listId: RANGE_AUTHORISED_LIST_ID, day: '2026-11-19', patientId: PAT_24.rangeAuthorised, time: '13:30', text: 'Face lift', contractId: PRICED_ITEM.merFaceLift, start: '13:35', finish: '16:05', completed: true, source: 'admin' },
+    { key: 'noChargeBooking', listId: noChargeListId, day: '2026-11-16', patientId: PAT_24.noCharge, time: '11:30', text: 'Scar revision, forearm', contractId: CONTRACT.noContractRvg, legacyCode: '45030', start: '11:35', finish: '12:20', completed: true, enteredPrice: 0, typedBy: 'anaesthetist', source: 'surgeonPdf' },
   ]
 }
 
@@ -118,7 +118,7 @@ export function seedPricingBookings(
       completed: spec.completed,
       source: spec.source,
       lastModifiedBy: spec.completed ? SOUTER : OFFICE,
-      lastModifiedAtISO: spec.completed ? completedAtISO : '2026-07-20T15:40:00',
+      lastModifiedAtISO: spec.completed ? completedAtISO : '2026-11-23T15:40:00',
     }
     if (spec.completed) booking.completedAtISO = completedAtISO
     bookings.push(booking)
@@ -152,7 +152,7 @@ export function seedPricingBookings(
         action: 'procedure.price',
         before: { enteredPrice: null },
         after: { enteredPrice: spec.enteredPrice },
-        atISO: office ? '2026-07-20T15:40:00' : `${spec.day}T12:25:00`,
+        atISO: office ? '2026-11-23T15:40:00' : `${spec.day}T12:25:00`,
       })
     }
     ids[spec.key] = bookingId

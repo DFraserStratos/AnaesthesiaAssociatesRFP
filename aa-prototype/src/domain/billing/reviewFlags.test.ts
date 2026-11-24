@@ -20,7 +20,7 @@ const AA = mkParty({ id: 'party-aa', kind: 'aa', name: 'AA', codePrefix: 'AA', h
 const RVG = mkContract({ id: 'con-rvg' })
 const DISABLED = mkContract({ id: 'con-off', status: 'disabled' })
 const OPEN = mkContract({ id: 'con-open', holderId: 'party-aa', billsTo: 'payer', pricing: { kind: 'open' } })
-const FIXED_LATER = mkContract({ id: 'con-later', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-09-01', price: 3100 }] } })
+const FIXED_LATER = mkContract({ id: 'con-later', pricing: { kind: 'fixed', ranges: [{ startISO: '2027-01-05', price: 3100 }] } })
 const SURGEON_LINKED = mkContract({ id: 'con-sur', holderId: 'party-aa', linkedSurgeonIds: ['sur-a'], pricing: { kind: 'fixed', ranges: [{ startISO: '2026-01-01', price: 900 }] } })
 const NO_CONTRACT_RVG = mkContract({ id: 'con-ncr', holderId: 'party-aa', billsTo: 'payer', systemRole: 'noContractRvg' })
 
@@ -49,7 +49,7 @@ function input(procedures: ReviewProcedureInput[], over: Partial<ReviewBookingIn
   return {
     booking: booking(),
     procedures,
-    rail: { masters: MASTERS, ctx: { listDateISO: '2026-07-21', hospitalId: 'hosp-1', surgeonId: 'sur-a' } },
+    rail: { masters: MASTERS, ctx: { listDateISO: '2026-11-24', hospitalId: 'hosp-1', surgeonId: 'sur-a' } },
     patient: { name: 'Test Patient', email: 'test.patient@example.net' },
     timeRule: DEFAULT_RVG_TIME_RULE,
     modifierInputs: { modifiers: RVG_MODIFIER_MASTER },
@@ -64,11 +64,11 @@ describe('the review-flag list (catch-up Phase 21a)', () => {
   })
 
   it("contractChanged: the anaesthetist's pending change, warn, naming who and what it was; none once approved", () => {
-    const pending = input([{ procedure: proc(), fee: fee(), contractChange: { status: 'pending', by: 'Dr Souter', wasContractId: OPEN.id, atISO: '2026-07-21T10:00:00' } }])
+    const pending = input([{ procedure: proc(), fee: fee(), contractChange: { status: 'pending', by: 'Dr Souter', wasContractId: OPEN.id, atISO: '2026-11-24T10:00:00' } }])
     expect(reviewFlagsForBooking(pending)).toEqual([
       { tone: 'warn', text: `Changed by Dr Souter: was ${OPEN.name}`, bookingId: 'BK1', procedureId: 'P1', rule: 'contractChanged', shot: 'review-flag' },
     ])
-    const approved = input([{ procedure: proc(), fee: fee(), contractChange: { status: 'approved', by: 'Dr Souter', atISO: '2026-07-21T10:00:00' } }])
+    const approved = input([{ procedure: proc(), fee: fee(), contractChange: { status: 'approved', by: 'Dr Souter', atISO: '2026-11-24T10:00:00' } }])
     expect(rules(approved)).toEqual([])
   })
 
@@ -81,7 +81,7 @@ describe('the review-flag list (catch-up Phase 21a)', () => {
 
   it('contractNoLongerFits: a Contract linked to another surgeon is flagged; it clears on the original List (derived)', () => {
     const p = { procedure: proc({ governingContractId: SURGEON_LINKED.id }), fee: fee() }
-    const moved = input([p], { rail: { masters: MASTERS, ctx: { listDateISO: '2026-07-21', hospitalId: 'hosp-1', surgeonId: 'sur-b' } } })
+    const moved = input([p], { rail: { masters: MASTERS, ctx: { listDateISO: '2026-11-24', hospitalId: 'hosp-1', surgeonId: 'sur-b' } } })
     expect(reviewFlagsForBooking(moved)).toContainEqual(expect.objectContaining({ rule: 'contractNoLongerFits', tone: 'warn', text: 'Contract not offered on this List' }))
     expect(rules(input([p]))).not.toContain('contractNoLongerFits')
   })
@@ -108,29 +108,29 @@ describe('the review-flag list (catch-up Phase 21a)', () => {
     const onDisabled = (listDateISO: string, over: Partial<ReviewBookingInput> = {}) =>
       input([{ procedure: proc({ governingContractId: DISABLED.id }), fee: fee() }], {
         rail: { masters: MASTERS, ctx: { listDateISO, hospitalId: 'hosp-1', surgeonId: 'sur-a' } },
-        disabledOn: { [DISABLED.id]: '2026-12-01' },
+        disabledOn: { [DISABLED.id]: '2027-04-06' },
         listState: 'SUBMITTED',
         ...over,
       })
 
-    it('US-07.2.2 "Disabled Contract": disabled 1 Dec, a Procedure on 3 Dec is flagged (warn, with the day); one on 28 Nov is not', () => {
-      expect(reviewFlagsForBooking(onDisabled('2026-12-03'))).toEqual([
-        { tone: 'warn', text: 'Contract disabled on Tue 1 Dec', bookingId: 'BK1', procedureId: 'P1', rule: 'contractDisabled', shot: 'review-flag' },
+    it('US-07.2.2 "Disabled Contract": disabled 6 Apr, a Procedure on 8 Apr is flagged (warn, with the day); one on 3 Apr is not', () => {
+      expect(reviewFlagsForBooking(onDisabled('2027-04-08'))).toEqual([
+        { tone: 'warn', text: 'Contract disabled on Tue 6 Apr', bookingId: 'BK1', procedureId: 'P1', rule: 'contractDisabled', shot: 'review-flag' },
       ])
-      expect(reviewFlagsForBooking(onDisabled('2026-11-28'))).toEqual([])
+      expect(reviewFlagsForBooking(onDisabled('2027-04-03'))).toEqual([])
     })
 
     it('the disable day itself is flagged ("on or after")', () => {
-      expect(rules(onDisabled('2026-12-01'))).toEqual(['contractDisabled'])
+      expect(rules(onDisabled('2027-04-06'))).toEqual(['contractDisabled'])
     })
 
     it('an AUTHORISED List raises none (its Procedures are authorised); no disable day (re-enabled) raises none', () => {
-      expect(rules(onDisabled('2026-12-03', { listState: 'AUTHORISED' }))).toEqual([])
-      expect(rules(onDisabled('2026-12-03', { disabledOn: {} }))).toEqual([])
+      expect(rules(onDisabled('2027-04-08', { listState: 'AUTHORISED' }))).toEqual([])
+      expect(rules(onDisabled('2027-04-08', { disabledOn: {} }))).toEqual([])
     })
 
     it('an Active Contract with a stale disable day raises none (the status decides first)', () => {
-      const active = input([{ procedure: proc(), fee: fee() }], { disabledOn: { [RVG.id]: '2026-07-01' }, listState: 'SUBMITTED' })
+      const active = input([{ procedure: proc(), fee: fee() }], { disabledOn: { [RVG.id]: '2026-11-04' }, listState: 'SUBMITTED' })
       expect(rules(active)).toEqual([])
     })
   })
@@ -150,7 +150,7 @@ describe('the review-flag list (catch-up Phase 21a)', () => {
   })
 
   it('gone: "No billing reference" (D82), and no route, ACC or prepayment gate flag', () => {
-    const all = reviewFlagsForBooking(input([{ procedure: proc({ procedureText: { text: 'ACL, ACC claim', source: 'surgeonPdf', receivedAtISO: '2026-07-14T09:00:00' } }), fee: fee() }]))
+    const all = reviewFlagsForBooking(input([{ procedure: proc({ procedureText: { text: 'ACL, ACC claim', source: 'surgeonPdf', receivedAtISO: '2026-11-17T09:00:00' } }), fee: fee() }]))
     expect(all).toEqual([])
     // Catch-up Phase 27 adds the raised-prepayment chip, last; never a gate. Phase 25a adds the Disabled Contract flag after "not offered".
     expect(REVIEW_FLAG_RULES.map((r) => r.rule)).toEqual(['contractChanged', 'contractNoLongerFits', 'contractDisabled', 'needsInvoiceDestination', 'needsPrice', 'typedPrice', 'notCompleted', 'payerContactMissing', 'btmOverride', 'prepayment'])
@@ -170,13 +170,13 @@ describe('the review-flag list (catch-up Phase 21a)', () => {
   it('several on one Booking come out in rule order; a cancelled Booking yields none; the List sums them', () => {
     const several = input(
       [
-        { procedure: proc({ id: 'P1', governingContractId: OPEN.id }), fee: fee(), contractChange: { status: 'pending', by: 'Dr Souter', atISO: '2026-07-21T10:00:00' } },
+        { procedure: proc({ id: 'P1', governingContractId: OPEN.id }), fee: fee(), contractChange: { status: 'pending', by: 'Dr Souter', atISO: '2026-11-24T10:00:00' } },
         { procedure: proc({ id: 'P2', governingContractId: SURGEON_LINKED.id }), fee: fee() },
       ],
-      { booking: booking({ completed: false }), rail: { masters: MASTERS, ctx: { listDateISO: '2026-07-21', surgeonId: 'sur-b' } } },
+      { booking: booking({ completed: false }), rail: { masters: MASTERS, ctx: { listDateISO: '2026-11-24', surgeonId: 'sur-b' } } },
     )
     expect(rules(several)).toEqual(['contractChanged', 'contractNoLongerFits', 'needsPrice', 'notCompleted'])
-    const cancelled = { ...several, booking: booking({ cancellation: { reason: 'x', by: 'y', role: 'office', source: 'office', atISO: '2026-07-21T09:00:00' } }) }
+    const cancelled = { ...several, booking: booking({ cancellation: { reason: 'x', by: 'y', role: 'office', source: 'office', atISO: '2026-11-24T09:00:00' } }) }
     expect(reviewFlagsForBooking(cancelled)).toEqual([])
     expect(reviewFlagsForList([several, cancelled])).toHaveLength(4)
   })

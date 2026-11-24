@@ -7,9 +7,9 @@ const S = defaultPaymentCycleSettings()
 const fmt = (n: number) => `$${n.toFixed(2)}`
 
 describe('ISO weeks (US-10.2.7)', () => {
-  it('names the demo day Week 30 of 2026', () => {
-    expect(isoWeekOf(DEMO_TODAY)).toEqual({ isoYear: 2026, isoWeek: 30 })
-    expect(cycleFor(DEMO_TODAY, S).cycleId).toBe('2026-W30')
+  it('names the demo day Week 48 of 2026', () => {
+    expect(isoWeekOf(DEMO_TODAY)).toEqual({ isoYear: 2026, isoWeek: 48 })
+    expect(cycleFor(DEMO_TODAY, S).cycleId).toBe('2026-W48')
   })
   it('is right at the year ends: 2026 has 53 weeks', () => {
     expect(isoWeekOf('2026-01-01')).toEqual({ isoYear: 2026, isoWeek: 1 })
@@ -20,26 +20,26 @@ describe('ISO weeks (US-10.2.7)', () => {
     expect(cycleOfId('2026-W53', S).weekStartISO).toBe('2026-12-28')
   })
   it('reads a timestamp by its date', () => {
-    expect(isoWeekOf('2026-07-26T23:59:00')).toEqual({ isoYear: 2026, isoWeek: 30 })
-    expect(isoWeekOf('2026-07-27T00:00:00')).toEqual({ isoYear: 2026, isoWeek: 31 })
+    expect(isoWeekOf('2026-11-29T23:59:00')).toEqual({ isoYear: 2026, isoWeek: 48 })
+    expect(isoWeekOf('2026-11-30T00:00:00')).toEqual({ isoYear: 2026, isoWeek: 49 })
   })
 })
 
 describe('cycleFor', () => {
-  it("gives Week 30's range and planned close, check and schedule days", () => {
+  it("gives Week 48's range and planned close, check and schedule days", () => {
     const c = cycleFor(DEMO_TODAY, S)
-    expect(c).toMatchObject({ weekStartISO: '2026-07-20', weekEndISO: '2026-07-26', closeDateISO: '2026-07-24', checkDateISO: '2026-07-27', scheduleDateISO: '2026-07-28' })
-    expect(cycleLabel(c)).toBe('Week 30')
-    expect(cycleRangeLabel(c)).toBe('20 Jul to 26 Jul 2026')
-    expect(plannedDayLabel(c.closeDateISO)).toBe('Friday 24 Jul')
+    expect(c).toMatchObject({ weekStartISO: '2026-11-23', weekEndISO: '2026-11-29', closeDateISO: '2026-11-27', checkDateISO: '2026-11-30', scheduleDateISO: '2026-12-01' })
+    expect(cycleLabel(c)).toBe('Week 48')
+    expect(cycleRangeLabel(c)).toBe('23 Nov to 29 Nov 2026')
+    expect(plannedDayLabel(c.closeDateISO)).toBe('Friday 27 Nov')
   })
   it('follows a changed setting (the accountant moves the days)', () => {
     const c = cycleFor(DEMO_TODAY, { weekIdentity: 'isoWeek', closeWeekday: 7, checkWeekday: 1, scheduleWeekday: 4 })
-    expect(c).toMatchObject({ closeDateISO: '2026-07-26', checkDateISO: '2026-07-27', scheduleDateISO: '2026-07-30' })
+    expect(c).toMatchObject({ closeDateISO: '2026-11-29', checkDateISO: '2026-11-30', scheduleDateISO: '2026-12-03' })
   })
   it('round-trips a cycle id and steps a week', () => {
-    expect(cycleOfId('2026-W30', S).weekStartISO).toBe('2026-07-20')
-    expect(nextCycleId('2026-W30', S)).toBe('2026-W31')
+    expect(cycleOfId('2026-W48', S).weekStartISO).toBe('2026-11-23')
+    expect(nextCycleId('2026-W48', S)).toBe('2026-W49')
   })
   it('names weekdays from the setting', () => {
     expect(weekdayName(S.closeWeekday)).toBe('Friday')
@@ -50,8 +50,8 @@ describe('cycleFor', () => {
 
 describe('reconcileWeek and weekAnomalies', () => {
   const receipts = [
-    { receiptId: 'R1', pairId: 'P1', reference: 'AA-1', amount: 100, atISO: '2026-07-21T09:00:00' },
-    { receiptId: 'R2', pairId: 'P2', reference: 'AA-2', amount: 50, atISO: '2026-07-21T09:00:00' },
+    { receiptId: 'R1', pairId: 'P1', reference: 'AA-1', amount: 100, atISO: '2026-11-24T09:00:00' },
+    { receiptId: 'R2', pairId: 'P2', reference: 'AA-2', amount: 50, atISO: '2026-11-24T09:00:00' },
   ]
   const lines = [
     { pairId: 'P1', anaesthetistId: 'A1', billNumber: 'AA-1-P' },

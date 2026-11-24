@@ -41,9 +41,9 @@ describe('picker selectors (catch-up Phase 42)', () => {
     const groupId = Object.keys(s.masters.surgeonGroups)[0]
     const retired = {
       masters: {
-        surgeons: { ...s.masters.surgeons, [surgeonId]: { ...s.masters.surgeons[surgeonId]!, retiredAtISO: '2026-07-21' } },
+        surgeons: { ...s.masters.surgeons, [surgeonId]: { ...s.masters.surgeons[surgeonId]!, retiredAtISO: '2026-11-24' } },
         surgeonGroups:
-          groupId !== undefined ? { ...s.masters.surgeonGroups, [groupId]: { ...s.masters.surgeonGroups[groupId]!, retiredAtISO: '2026-07-21' } } : s.masters.surgeonGroups,
+          groupId !== undefined ? { ...s.masters.surgeonGroups, [groupId]: { ...s.masters.surgeonGroups[groupId]!, retiredAtISO: '2026-11-24' } } : s.masters.surgeonGroups,
       },
     }
     expect(ids(activeSurgeons(retired))).not.toContain(surgeonId)
@@ -79,7 +79,7 @@ describe('the step rail and retired surgeons (catch-up Phase 42)', () => {
   it('a Contract linked only to retired surgeons is not offered; the Procedure holding it keeps it', () => {
     const s = createAppStore().getState()
     const live = railMastersOf(s)
-    const ctxFor = (c: { linkedSurgeonIds: readonly string[] }) => ({ listDateISO: '2026-07-24', surgeonId: c.linkedSurgeonIds[0]! })
+    const ctxFor = (c: { linkedSurgeonIds: readonly string[] }) => ({ listDateISO: '2026-11-27', surgeonId: c.linkedSurgeonIds[0]! })
     // A surgeon-linked Contract the rail offers today.
     const contract = Object.values(s.masters.contracts).find(
       (c) => c.linkedSurgeonIds.length > 0 && c.linkedAnaesthetistId === undefined && isContractCandidate(live, ctxFor(c), c),
@@ -88,7 +88,7 @@ describe('the step rail and retired surgeons (catch-up Phase 42)', () => {
     const ctx = ctxFor(contract)
 
     const retiredSurgeons = { ...s.masters.surgeons }
-    for (const sid of contract.linkedSurgeonIds) retiredSurgeons[sid] = { ...retiredSurgeons[sid]!, retiredAtISO: '2026-07-21' }
+    for (const sid of contract.linkedSurgeonIds) retiredSurgeons[sid] = { ...retiredSurgeons[sid]!, retiredAtISO: '2026-11-24' }
     const retired = { ...live, surgeons: retiredSurgeons }
 
     expect(linkedOnlyToRetiredSurgeons(live, contract)).toBe(false)

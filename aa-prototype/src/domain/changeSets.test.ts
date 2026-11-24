@@ -112,7 +112,7 @@ describe('diffSnapshots', () => {
     const p = firstProcedure(s)
     const next = withProcedure(s, {
       ...p,
-      procedureText: { text: 'Something else', source: 'rooms' as never, receivedAtISO: '2026-07-21T09:00:00' },
+      procedureText: { text: 'Something else', source: 'rooms' as never, receivedAtISO: '2026-11-24T09:00:00' },
     })
     const changes = diffSnapshots(s, next)
     expect(changes).toHaveLength(1)
@@ -147,19 +147,19 @@ describe('changeSetsFor', () => {
       role: 'office',
       source: 'office',
       action: 'booking.update',
-      atISO: '2026-07-21T10:00:00',
+      atISO: '2026-11-24T10:00:00',
       ...extra,
     }
   }
 
   it('groups by change set, newest first by audit order (not time), ungrouped entries one per group, filtered by entity', () => {
-    const e1 = entry('BK1', { atISO: '2026-07-21T11:00:00' })
+    const e1 = entry('BK1', { atISO: '2026-11-24T11:00:00' })
     const e2 = entry('BK1', { changeSetId: 'CS0001', changeSetKind: 'save', action: 'booking.save' })
     const e3 = entry('PR1', { entityType: 'procedure', changeSetId: 'CS0001', action: 'procedure.update' })
     const other = entry('BK2', { changeSetId: 'CS0002', changeSetKind: 'save' })
-    const e4 = entry('BK1', { atISO: '2026-07-21T09:00:00' })
-    const e5 = entry('PR1', { entityType: 'procedure', changeSetId: 'CS0003', changeSetKind: 'cancel', atISO: '2026-07-21T08:00:00' })
-    const e6 = entry('BK1', { changeSetId: 'CS0003', atISO: '2026-07-21T08:00:00' })
+    const e4 = entry('BK1', { atISO: '2026-11-24T09:00:00' })
+    const e5 = entry('PR1', { entityType: 'procedure', changeSetId: 'CS0003', changeSetKind: 'cancel', atISO: '2026-11-24T08:00:00' })
+    const e6 = entry('BK1', { changeSetId: 'CS0003', atISO: '2026-11-24T08:00:00' })
 
     const groups = changeSetsFor([e1, e2, e3, other, e4, e5, e6], new Set(['BK1', 'PR1']))
     expect(groups.map((g) => g.changeSetId)).toEqual(['CS0003', null, 'CS0001', null])

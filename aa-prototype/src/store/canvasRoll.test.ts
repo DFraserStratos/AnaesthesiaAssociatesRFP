@@ -25,6 +25,7 @@ import type { Actor } from './mutate'
 import { canvasAnaesthetists, generateCanvasForDates, SEED_LEAVE, SEED_MARKERS, ANAE, type CanvasMasters } from '../domain/seed'
 import { HOSP, SURG, seedSlotStatusRecords } from '../domain/seed'
 import { enumerateDatesISO, horizonFor } from '../domain/clock'
+import { closureSourcesOf, recurringSkipFor } from '../domain/holidays'
 import type { RecurringBooking, Slot } from '../domain/types'
 import { projectedListId } from '../domain/slots'
 
@@ -64,7 +65,7 @@ describe('clock roll-forward', () => {
 
     advanceClockDays(api, 3)
     const state = api.getState()
-    expect(state.clock.todayISO).toBe('2026-07-24')
+    expect(state.clock.todayISO).toBe('2026-11-27')
 
     const newHorizon = horizonFor(state.clock.todayISO, MONTHS)
     const anaesthetistIds = Object.keys(state.masters.anaesthetists)
@@ -83,6 +84,8 @@ describe('clock roll-forward', () => {
       // The seeded weekly Public series (catch-up Phase 32d) paint the rolled days.
       series: seriesCalendarFor(state, newDates),
       statuses: state.masters.slotStatuses,
+      // Recurring Lists skip public holidays and planned shutdowns (Good Friday 26 Mar 2027 is a rolled day).
+      skipsDate: recurringSkipFor(closureSourcesOf(state.masters)),
     }
     const fresh = generateCanvasForDates(masters, newDates)
     const byId = <T extends { id: string }>(xs: T[]) => [...xs].sort((a, b) => a.id.localeCompare(b.id))
@@ -108,7 +111,7 @@ describe('clock roll-forward', () => {
     // 08:00 + 16h05 crosses midnight.
     advanceClockMinutes(api, 16 * 60 + 5)
     const state = api.getState()
-    expect(state.clock.todayISO).toBe('2026-07-22')
+    expect(state.clock.todayISO).toBe('2026-11-25')
     expect(state.clock.minutesSinceMidnight).toBe(5)
     const farEdge = Object.values(state.schedule.slots).filter((s) => s.dateISO > oldEnd)
     expect(farEdge.length).toBe(Object.keys(state.masters.anaesthetists).length * 2)
@@ -126,21 +129,21 @@ describe('clock roll-forward', () => {
     const api = createAppStore()
     // Seeded at 08:00 exactly: still rolls to the FOLLOWING morning.
     advanceClockToNextMorning(api)
-    expect(api.getState().clock.todayISO).toBe('2026-07-22')
+    expect(api.getState().clock.todayISO).toBe('2026-11-25')
     expect(api.getState().clock.minutesSinceMidnight).toBe(8 * 60)
     // From an afternoon time it also lands on the next morning.
     advanceClockMinutes(api, 9 * 60) // -> 17:00 same day
     advanceClockToNextMorning(api)
-    expect(api.getState().clock.todayISO).toBe('2026-07-23')
+    expect(api.getState().clock.todayISO).toBe('2026-11-26')
     expect(api.getState().clock.minutesSinceMidnight).toBe(8 * 60)
   })
 
   it('advanceToDate jumps forward to 08:00 on the target and rolls the canvas', () => {
     const api = createAppStore()
     const oldEnd = horizonFor(api.getState().clock.todayISO, MONTHS).endISO
-    advanceClockToDate(api, '2026-07-28')
+    advanceClockToDate(api, '2026-12-01')
     const state = api.getState()
-    expect(state.clock.todayISO).toBe('2026-07-28')
+    expect(state.clock.todayISO).toBe('2026-12-01')
     expect(state.clock.minutesSinceMidnight).toBe(8 * 60)
     expect(Object.values(state.schedule.slots).some((s) => s.dateISO > oldEnd)).toBe(true)
   })
@@ -150,7 +153,7 @@ describe('clock roll-forward', () => {
     advanceClockMinutes(api, 3 * 60) // 11:00 today
     const before = api.getState().clock
     advanceClockToDate(api, before.todayISO) // today
-    advanceClockToDate(api, '2026-07-01') // past
+    advanceClockToDate(api, '2026-11-04') // past
     expect(api.getState().clock).toEqual(before)
   })
 })
@@ -171,8 +174,8 @@ describe('reset determinism', () => {
       expect(editBooking(api, OFFICE, marker.entityId, { notes: 'scribble' }).ok).toBe(true)
       expect(cancelBooking(api, OFFICE, marker.entityId, 'test').ok).toBe(true)
       expect(processMessage(api, 'MSG-STG-1001').ok).toBe(true)
-      expect(addDayNote(api, OFFICE, '2026-07-21', 'reset-test note').ok).toBe(true)
-      const splitList = projectedListId(ANAE.souter, '2026-07-20', 'AM')
+      expect(addDayNote(api, OFFICE, '2026-11-24', 'reset-test note').ok).toBe(true)
+      const splitList = projectedListId(ANAE.souter, '2026-11-23', 'AM')
       expect(api.getState().schedule.lists[splitList]?.state).toBe('SUBMITTED')
       expect(authoriseList(api, OFFICE, splitList).ok).toBe(true)
       // Sanity: those slices are genuinely dirty before we reset.
@@ -224,13 +227,13 @@ describe('canvas generator scale (the RFP production scale)', () => {
       })),
     )
     const masters: CanvasMasters = {
-      anaesthetists: anaesthetistIds.map((id) => ({ id, startDateISO: '2020-01-06', active: true })),
+      anaesthetists: anaesthetistIds.map((id) => ({ id, startDateISO: '2020-05-11', active: true })),
       recurringBookings,
       leave: [],
       series: [],
       statuses: seedSlotStatusRecords(),
     }
-    const horizon = horizonFor('2026-07-21', MONTHS)
+    const horizon = horizonFor('2026-11-24', MONTHS)
     const dates = enumerateDatesISO(horizon.startISO, horizon.endISO)
 
     const startedAt = performance.now()

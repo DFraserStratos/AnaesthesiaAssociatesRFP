@@ -61,14 +61,14 @@ const ctx = (surface: ProcedureStackCtx['surface'] = 'anaesthetist'): ProcedureS
   parties: masters.parties,
   rvgGroups: masters.rvgGroups,
   booking: { patientId: 'PT0001' },
-  dateISO: '2026-08-04',
+  dateISO: '2026-12-08',
   surface,
   nameOf,
 })
 
-const rooms = (text: string): ProcedureText => ({ text, source: 'surgeonPdf', receivedAtISO: '2026-07-14T09:00:00' })
-const hospital = (text: string): ProcedureText => ({ text, source: 'hospitalDownload', receivedAtISO: '2026-07-20T16:00:00' })
-const entered = (text: string): ProcedureText => ({ text, source: 'phone', receivedAtISO: '2026-07-20T10:00:00' })
+const rooms = (text: string): ProcedureText => ({ text, source: 'surgeonPdf', receivedAtISO: '2026-11-17T09:00:00' })
+const hospital = (text: string): ProcedureText => ({ text, source: 'hospitalDownload', receivedAtISO: '2026-11-23T16:00:00' })
+const entered = (text: string): ProcedureText => ({ text, source: 'phone', receivedAtISO: '2026-11-23T10:00:00' })
 
 function proc(over: Partial<Procedure>): Procedure {
   const p = mkProcedure(over)
@@ -118,7 +118,7 @@ describe('pricingBasisFor: one member per pricing kind, the basis never the fee'
     [OPEN, { enteredPrice: 2000 }, { kind: 'open', amount: 2000 }],
     [OPEN, {}, { kind: 'open', amount: null }],
   ] as const)('%s', (contract, over, basis) => {
-    expect(pricingBasisFor(over, contract, '2026-08-04')).toEqual(basis)
+    expect(pricingBasisFor(over, contract, '2026-12-08')).toEqual(basis)
   })
 
   it('a fixed price with no range in force on the date has no amount', () => {

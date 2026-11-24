@@ -10,7 +10,7 @@ const OLD: RvgGroup = { ...H3, id: 'rg-old', code: 'X9', retired: true }
 const GROUPS = { [H3.id]: H3, [OLD.id]: OLD, [BASE_SINGLE_10.id]: BASE_SINGLE_10 }
 
 describe('fillFromContract (DM-43; US-04.2.18 "Default RVG code"; A15)', () => {
-  const faceLift = mkContract({ defaultRvgGroupId: H3.id, pricing: { kind: 'fixed', ranges: [{ startISO: '2026-06-01', price: 3100 }] } })
+  const faceLift = mkContract({ defaultRvgGroupId: H3.id, pricing: { kind: 'fixed', ranges: [{ startISO: '2026-10-05', price: 3100 }] } })
 
   it('fills an empty RVG code from the default', () => {
     expect(fillFromContract(mkProcedure({ rvgGroupId: undefined }), faceLift, GROUPS)).toEqual({ rvgGroupId: H3.id })
@@ -31,8 +31,8 @@ describe('fillFromContract (DM-43; US-04.2.18 "Default RVG code"; A15)', () => {
   })
 
   it("on a fixed price the filled code's units never reach the fee (reference only)", () => {
-    const filled = mkProcedure({ rvgGroupId: H3.id, anaestheticStartISO: '2026-07-21T08:00:00', handoverISO: '2026-07-21T10:00:00' })
-    const fee = feeFor(filled, { anaesthetist: mkAnaesthetist(), contract: faceLift, rvgGroup: H3, dateISO: '2026-07-21', timeRule: DEFAULT_RVG_TIME_RULE, patientDobISO: undefined, modifiers: {} })
+    const filled = mkProcedure({ rvgGroupId: H3.id, anaestheticStartISO: '2026-11-24T08:00:00', handoverISO: '2026-11-24T10:00:00' })
+    const fee = feeFor(filled, { anaesthetist: mkAnaesthetist(), contract: faceLift, rvgGroup: H3, dateISO: '2026-11-24', timeRule: DEFAULT_RVG_TIME_RULE, patientDobISO: undefined, modifiers: {} })
     expect(fee.btm.base.units).toBe(6) // base units from the RVG group alone
     expect(fee.total).toBe(3100)
     expect(fee.lines).toEqual([{ description: 'Contract price', amount: 3100 }])

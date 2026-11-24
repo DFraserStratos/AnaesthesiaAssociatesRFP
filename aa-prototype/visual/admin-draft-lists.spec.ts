@@ -34,7 +34,7 @@ test('Draft Lists: soonest first, the band and rail card, and assigning St Georg
   await page.screenshot({ path: 'visual/shots/p31-01-draft-lists.png', fullPage: true })
   await cleanCopy(page, 'Draft Lists')
 
-  await page.goto('/admin/day/2026-07-21')
+  await page.goto('/admin/day/2026-11-24')
   await page.waitForLoadState('networkidle')
   const band = page.locator('[data-shot="daygrid-draft-band"]')
   await expect(band).toHaveAttribute('data-draft-band-count', '1')
@@ -54,9 +54,9 @@ test('Draft Lists: soonest first, the band and rail card, and assigning St Georg
   const sessionDrawer = page.locator('[data-testid="admin-list-drawer"][data-list-id="LD-001"]')
   await expect(sessionDrawer).toContainText('ACTIVE')
   await page.keyboard.press('Escape')
-  await page.goto('/admin/day/2026-07-21')
+  await page.goto('/admin/day/2026-11-24')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-slot-id="S-43015-2026-07-21-PM"]')).toContainText("St George's")
+  await expect(page.locator('[data-slot-id="S-43015-2026-11-24-PM"]')).toContainText("St George's")
   // The band empties (catch-up Phase 32d: LD-001 was the day's only Draft List).
   await expect(page.locator('[data-shot="daygrid-draft-band"]')).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p31-03-assigned.png', fullPage: true })
@@ -65,8 +65,8 @@ test('Draft Lists: soonest first, the band and rail card, and assigning St Georg
 test('The Reid request puts Dr Sharma apart as not preferred; changing the date moves it; removing an empty one goes to History', async ({ page }) => {
   await fresh(page, '/admin/draft-lists')
   const msg = await runDemoAction(page, 'simulate-incoming-request', { close: true })
-  expect(msg).toContain('Christchurch Eye Surgery · Ms A. Reid, Thu 23 Jul PM')
-  const row = page.locator('tr[data-draft-list-row]', { hasText: 'Thu 23 Jul' }).first()
+  expect(msg).toContain('Christchurch Eye Surgery · Ms A. Reid, Thu 26 Nov PM')
+  const row = page.locator('tr[data-draft-list-row]', { hasText: 'Thu 26 Nov' }).first()
   await row.getByRole('button', { name: /^Assign/ }).click()
   const sheet = page.locator('[data-shot="admin-assign-draft-list"]')
   await expect(sheet.locator('[data-shot="candidates-not-preferred"]')).toContainText('Sharma, Priya')
@@ -80,12 +80,12 @@ test('The Reid request puts Dr Sharma apart as not preferred; changing the date 
 
   await page.locator('tr[data-draft-list-row="LD-003"]').getByRole('button', { name: 'Change date' }).click()
   const redate = page.locator('[data-shot="admin-redate-draft-list"]')
-  await redate.locator('input[type="date"]').fill('2026-07-29')
+  await redate.locator('input[type="date"]').fill('2026-12-02')
   await redate.getByRole('button', { name: 'Change date' }).click()
-  await expect(page.locator('tr[data-draft-list-row="LD-003"]')).toContainText('Wed 29 Jul')
+  await expect(page.locator('tr[data-draft-list-row="LD-003"]')).toContainText('Wed 2 Dec')
   await expect(page.locator('tr[data-draft-list-row="LD-003"]')).toContainText('3 d 22 h')
   // It now waits on its new day's band.
-  await page.goto('/admin/day/2026-07-29')
+  await page.goto('/admin/day/2026-12-02')
   await expect(page.locator('[data-shot="daygrid-draft-band"] [data-draft-block="LD-003"]')).toBeVisible()
   await page.goto('/admin/draft-lists')
 
@@ -98,7 +98,7 @@ test('The Reid request puts Dr Sharma apart as not preferred; changing the date 
   await page.screenshot({ path: 'visual/shots/p31-05-history.png', fullPage: true })
 })
 
-test('A recurring booking for Dr Beaumont on Thursday AM, while she is away, makes a Draft List for Thu 23 Jul', async ({ page }) => {
+test('A recurring booking for Dr Beaumont on Thursday AM, while she is away, makes a Draft List for Thu 26 Nov', async ({ page }) => {
   await fresh(page, '/admin/masters?view=recurringBookings')
   await page.getByRole('button', { name: 'Add recurring booking' }).click()
   const sheet = page.locator('[data-shot="recurring-booking-sheet"]')
@@ -111,7 +111,7 @@ test('A recurring booking for Dr Beaumont on Thursday AM, while she is away, mak
   await expect(sheet.locator('[data-shot="recurring-booking-result"]')).toContainText('1 session to a Draft List')
   await page.screenshot({ path: 'visual/shots/p31-06-recurring-clash.png', fullPage: true })
   await sheet.locator('[data-shot="recurring-booking-draft-lists"]').click()
-  await expect(page.locator('tr[data-draft-list-row]', { hasText: 'Thu 23 Jul' })).toContainText('Recurring booking · Dr Beaumont unavailable')
+  await expect(page.locator('tr[data-draft-list-row]', { hasText: 'Thu 26 Nov' })).toContainText('Recurring booking · Dr Beaumont unavailable')
 })
 
 test('Draft Lists by keyboard (UI unification U6, bug 3): Tab to a row handle past the rail\'s first five, Enter opens its drawer', async ({ page }) => {

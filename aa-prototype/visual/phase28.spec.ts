@@ -20,7 +20,7 @@ const tiersIn = async (page: Page, shot: string) =>
 test('Find available lists open PM sessions by tier; with Ms Reid chosen, Dr Sharma sits apart and opens Assign List with Reid prefilled', async ({ page }) => {
   // Tue 21 Jul PM: Dr Sharma's session is free (open for cover), and the seed
   // records Ms Reid as not preferred with Dr Sharma (Phase 17).
-  await fresh(page, '/admin/day/2026-07-21')
+  await fresh(page, '/admin/day/2026-11-24')
   await page.locator('[data-shot="admin-availability-finder-open"]').click()
   const finder = page.locator('[data-shot="admin-availability-finder"]')
   await expect(finder).toBeVisible()
@@ -52,8 +52,8 @@ test('Find available lists open PM sessions by tier; with Ms Reid chosen, Dr Sha
 })
 
 test('Assign List on Dr Souter\'s free Wed 22 PM shows as a booked List in Admin, mobile and web', async ({ page }) => {
-  await fresh(page, '/admin/day/2026-07-22')
-  await page.locator('button[data-slot-id="S-34821-2026-07-22-PM"]').click()
+  await fresh(page, '/admin/day/2026-11-25')
+  await page.locator('button[data-slot-id="S-34821-2026-11-25-PM"]').click()
   const drawer = page.locator('[data-shot="admin-slot-drawer"]')
   await expect(drawer).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p28-04-empty-session-drawer.png' })
@@ -72,7 +72,7 @@ test('Assign List on Dr Souter\'s free Wed 22 PM shows as a booked List in Admin
 
   await page.goto('/mobile/lists')
   await page.waitForLoadState('networkidle')
-  const row = page.locator('[data-slot-id="S-34821-2026-07-22-PM"]')
+  const row = page.locator('[data-slot-id="S-34821-2026-11-25-PM"]')
   await expect(row).toHaveAttribute('data-list-id', /^LG\d{4}$/)
   await expect(row).toContainText("St George's")
   await expect(row).not.toContainText('Open for bookings')
@@ -80,7 +80,7 @@ test('Assign List on Dr Souter\'s free Wed 22 PM shows as a booked List in Admin
 
   await page.goto('/web/lists')
   await page.waitForLoadState('networkidle')
-  const webRow = page.locator('tr[data-slot-id="S-34821-2026-07-22-PM"]')
+  const webRow = page.locator('tr[data-slot-id="S-34821-2026-11-25-PM"]')
   await expect(webRow).toContainText("St George's")
   await expect(webRow).toContainText('Private')
 })
@@ -89,41 +89,41 @@ test('Schedule settings: the horizon shortens to 3 months with a preview and con
   await fresh(page, '/admin/masters?view=scheduleSettings')
   const settings = page.locator('[data-shot="admin-schedule-settings"]')
   await expect(settings).toContainText('4 months')
-  await expect(settings).toContainText('Sat 21 Nov 2026')
+  await expect(settings).toContainText('Sat 27 Mar 2027')
   await expect(settings).toContainText('Sessions with their own times keep them.')
   await page.screenshot({ path: 'visual/shots/p28-07-schedule-settings.png' })
 
   await settings.getByRole('button', { name: 'Edit horizon' }).click()
   const sheet = page.locator('[data-shot="admin-horizon-months"]')
   await sheet.getByLabel('Months ahead').fill('3')
-  await expect(sheet.locator('[data-shot="horizon-preview"]')).toContainText('Removes 31 days after Wed 21 Oct 2026')
+  await expect(sheet.locator('[data-shot="horizon-preview"]')).toContainText('Removes 31 days after Wed 24 Feb 2027')
   await sheet.getByRole('button', { name: 'Save horizon' }).click()
   await sheet.getByRole('button', { name: 'Confirm and remove 31 days' }).click()
   await expect(settings).toContainText('3 months')
 
-  await page.goto('/admin/day/2026-11-07')
+  await page.goto('/admin/day/2027-03-13')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="admin-day-beyond-horizon"]')).toContainText('Beyond the schedule horizon, which ends Wed 21 Oct 2026.')
-  await expect(page.locator('input[type="date"]').first()).toHaveAttribute('max', '2026-10-21')
+  await expect(page.locator('[data-shot="admin-day-beyond-horizon"]')).toContainText('Beyond the schedule horizon, which ends Wed 24 Feb 2027.')
+  await expect(page.locator('input[type="date"]').first()).toHaveAttribute('max', '2027-02-24')
   await page.screenshot({ path: 'visual/shots/p28-08-beyond-horizon.png' })
 
   await page.goto('/admin/masters?view=scheduleSettings')
   await settings.getByRole('button', { name: 'Edit horizon' }).click()
   await sheet.getByLabel('Months ahead').fill('4')
-  await expect(sheet.locator('[data-shot="horizon-preview"]')).toContainText('Adds 31 days, to Sat 21 Nov 2026.')
+  await expect(sheet.locator('[data-shot="horizon-preview"]')).toContainText('Adds 31 days, to Sat 27 Mar 2027.')
   await sheet.getByRole('button', { name: 'Save horizon' }).click()
   await expect(settings).toContainText('4 months')
 })
 
 test('"slot" never appears on the screens this phase touched', async ({ page }) => {
-  await fresh(page, '/admin/day/2026-07-21')
+  await fresh(page, '/admin/day/2026-11-24')
   const SLOT = /\bslots?\b/i
   const check = async (where: string) => {
     const text = await page.locator('body').innerText()
     expect(SLOT.test(text), `${where} shows "slot"`).toBe(false)
   }
   await check('Admin Day')
-  await page.locator('button[data-slot-id="S-41267-2026-07-21-PM"]').click()
+  await page.locator('button[data-slot-id="S-41267-2026-11-24-PM"]').click()
   await check('empty-session drawer')
   await page.getByRole('button', { name: 'Edit times', exact: true }).click()
   await check('Edit times')

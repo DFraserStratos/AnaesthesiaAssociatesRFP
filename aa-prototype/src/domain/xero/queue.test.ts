@@ -14,18 +14,18 @@ describe('Xero queue rules (catch-up Phase 37)', () => {
   })
 
   it('moves an ISO stamp on by minutes, across midnight', () => {
-    expect(addMinutesISO('2026-07-21T09:00:00', 2)).toBe('2026-07-21T09:02:00')
-    expect(addMinutesISO('2026-07-21T23:50:00', 32)).toBe('2026-07-22T00:22:00')
-    expect(nextAttemptISO('2026-07-21T09:00:00', 3)).toBe('2026-07-21T09:08:00')
+    expect(addMinutesISO('2026-11-24T09:00:00', 2)).toBe('2026-11-24T09:02:00')
+    expect(addMinutesISO('2026-11-24T23:50:00', 32)).toBe('2026-11-25T00:22:00')
+    expect(nextAttemptISO('2026-11-24T09:00:00', 3)).toBe('2026-11-24T09:08:00')
   })
 
   it('is due at and after the boundary, not before; sent is never due', () => {
-    const item = { status: 'waiting', nextAttemptAtISO: '2026-07-21T09:02:00' }
-    expect(isDue(item, '2026-07-21T09:01:00')).toBe(false)
-    expect(isDue(item, '2026-07-21T09:02:00')).toBe(true)
-    expect(isDue(item, '2026-07-21T09:03:00')).toBe(true)
-    expect(isDue({ ...item, status: 'alerted' }, '2026-07-21T09:03:00')).toBe(true)
-    expect(isDue({ ...item, status: 'sent' }, '2026-07-21T09:03:00')).toBe(false)
+    const item = { status: 'waiting', nextAttemptAtISO: '2026-11-24T09:02:00' }
+    expect(isDue(item, '2026-11-24T09:01:00')).toBe(false)
+    expect(isDue(item, '2026-11-24T09:02:00')).toBe(true)
+    expect(isDue(item, '2026-11-24T09:03:00')).toBe(true)
+    expect(isDue({ ...item, status: 'alerted' }, '2026-11-24T09:03:00')).toBe(true)
+    expect(isDue({ ...item, status: 'sent' }, '2026-11-24T09:03:00')).toBe(false)
   })
 
   it('alerts from the fifth attempt', () => {
@@ -34,6 +34,6 @@ describe('Xero queue rules (catch-up Phase 37)', () => {
   })
 
   it('is deterministic', () => {
-    expect(nextAttemptISO('2026-07-21T09:00:00', 4)).toBe(nextAttemptISO('2026-07-21T09:00:00', 4))
+    expect(nextAttemptISO('2026-11-24T09:00:00', 4)).toBe(nextAttemptISO('2026-11-24T09:00:00', 4))
   })
 })

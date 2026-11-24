@@ -14,7 +14,7 @@ import { SurfaceProvider } from '../../../shared/surface'
 import { AvailabilityFinderSheet } from './AvailabilityFinderSheet'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
-const TUE21 = '2026-07-21'
+const TUE21 = '2026-11-24'
 
 function renderFinder(onPick = vi.fn()) {
   const ui = (open: boolean) => (

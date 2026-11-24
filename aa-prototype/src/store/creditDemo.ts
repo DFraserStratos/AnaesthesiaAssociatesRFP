@@ -47,7 +47,7 @@ import type { AppState, AppStoreApi } from './appStore'
  * held by the rooms, which is not billed, so the patient is.
  */
 export const COMBINED_DEMO = {
-  listId: projectedListId(ANAE.delaney, '2026-07-10', 'PM'),
+  listId: projectedListId(ANAE.delaney, '2026-11-13', 'PM'),
   patientId: PAT_39.combined,
   contractId: PRICED_ITEM.merFaceLift2,
   procedureText: 'Facelift, upper blepharoplasty and fat grafting',
@@ -117,7 +117,7 @@ export function stageCombinedProcedure(api: AppStoreApi): Outcome<{ bookingId: s
 // ---------------------------------------------------------------------------
 
 /** Sarah Mitchell's first episode (38b's `stage-post-op` List): Dr Sharma's Tue 14 Jul AM. */
-export const POST_OP_LIST_ID = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
+export const POST_OP_LIST_ID = projectedListId(ANAE.sharma, '2026-11-17', 'AM')
 
 /** Sarah Mitchell's live invoice once `stage-post-op` has run (a rebill once credited), else undefined. */
 export function mitchellLiveInvoice(state: Pick<AppState, 'schedule' | 'billing'>): Invoice | undefined {

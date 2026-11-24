@@ -36,7 +36,7 @@ export interface Phase32dSeedBaseline {
   audit: string[]
 }
 
-export const PARITY_DAYS = ['2026-07-21', '2026-07-22', '2026-07-23', '2026-07-24'] as const
+export const PARITY_DAYS = ['2026-11-24', '2026-11-25', '2026-11-26', '2026-11-27'] as const
 
 function face(list: List): ListFace {
   const { kind: _kind, recurringBookingId: _rb, recurringOrigin: _ro, ...rest } = list as List & { recurringOrigin?: unknown }

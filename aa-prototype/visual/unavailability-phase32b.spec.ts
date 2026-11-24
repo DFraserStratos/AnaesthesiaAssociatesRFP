@@ -33,14 +33,14 @@ async function noCrimsonControls(page: Page, scope: string) {
   expect(colours.includes(CRIMSON), `${scope}: a control uses crimson`).toBe(false)
 }
 
-const RUTHERFORD_WED22_AM = 'L-29104-2026-07-22-AM'
-const SHARMA_WED22_PM = 'L-41267-2026-07-22-PM'
-const SOUTER_WED22_AM = 'L-34821-2026-07-22-AM'
+const RUTHERFORD_WED22_AM = 'L-29104-2026-11-25-AM'
+const SHARMA_WED22_PM = 'L-41267-2026-11-25-PM'
+const SOUTER_WED22_AM = 'L-34821-2026-11-25-AM'
 const SOUTER_BOOKING = 'BK0046'
 
 test('1 · Reset: Rutherford Wed 22 AM reads Unavailable with no flag; his List waits in Draft Lists; Conflicts lists closures only', async ({ page }) => {
-  await fresh(page, '/admin/day/2026-07-22')
-  const am = page.locator('button[data-slot-id="S-29104-2026-07-22-AM"]')
+  await fresh(page, '/admin/day/2026-11-25')
+  const am = page.locator('button[data-slot-id="S-29104-2026-11-25-AM"]')
   await expect(am).toContainText('Unavailable')
   await expect(am).not.toHaveAttribute('data-conflict', 'true')
   await expect(page.locator(`[data-draft-block="${RUTHERFORD_WED22_AM}"]`)).toBeVisible()
@@ -59,7 +59,7 @@ test('1 · Reset: Rutherford Wed 22 AM reads Unavailable with no flag; his List 
 })
 
 test('2 · Admin Change status on a booked session forces where the List goes, then the vacated choice; both routes; no conflict', async ({ page }) => {
-  await fresh(page, '/admin/day/2026-07-22')
+  await fresh(page, '/admin/day/2026-11-25')
   // Route 1: return to the office.
   await page.locator(`button[data-list-id="${SHARMA_WED22_PM}"]`).click()
   await page.getByTestId('admin-list-drawer').locator('[data-shot="drawer-change-status"]').click()
@@ -84,7 +84,7 @@ test('2 · Admin Change status on a booked session forces where the List goes, t
   await expect(page.locator(`[data-draft-block="${SHARMA_WED22_PM}"]`)).toBeVisible()
 
   // Route 2: hand on to a colleague (open sessions only, tier order, Not preferred apart).
-  await fresh(page, '/admin/day/2026-07-22')
+  await fresh(page, '/admin/day/2026-11-25')
   await page.locator(`button[data-list-id="${SHARMA_WED22_PM}"]`).click()
   await page.getByTestId('admin-list-drawer').locator('[data-shot="drawer-change-status"]').click()
   await sheet.locator('[data-status-choice="unavailable"]').click()
@@ -100,16 +100,16 @@ test('2 · Admin Change status on a booked session forces where the List goes, t
   await expect(sheet.locator('[data-shot="office-status-done"]')).toContainText('Moved to')
   await sheet.getByRole('button', { name: 'Done' }).click()
   await page.keyboard.press('Escape')
-  await page.goto('/admin/day/2026-07-22')
+  await page.goto('/admin/day/2026-11-25')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator(`button[data-slot-id="S-${pickedId}-2026-07-22-PM"]`)).toHaveAttribute('data-list-id', SHARMA_WED22_PM)
-  await expect(page.locator('button[data-slot-id="S-41267-2026-07-22-PM"]')).toContainText('Unavailable')
+  await expect(page.locator(`button[data-slot-id="S-${pickedId}-2026-11-25-PM"]`)).toHaveAttribute('data-list-id', SHARMA_WED22_PM)
+  await expect(page.locator('button[data-slot-id="S-41267-2026-11-25-PM"]')).toContainText('Unavailable')
   await page.goto('/admin/conflicts')
   await expect(page.locator('body')).not.toContainText('Anaesthetist unavailable')
 })
 
 test('3 · Simulate sickness on a List with Bookings: the result says where the List went; no Conflicts row', async ({ page }) => {
-  await fresh(page, '/admin/day/2026-07-22')
+  await fresh(page, '/admin/day/2026-11-25')
   const msg = await runDemoAction(page, 'simulate-sickness', { close: true })
   expect(msg).toMatch(/The List went (back to the Draft Lists|to Dr \w+) with its Bookings\. No conflict\./)
   await page.screenshot({ path: 'visual/shots/p32b-08-simulate-sickness.png', fullPage: true })
@@ -122,7 +122,7 @@ test('3 · Simulate sickness on a List with Bookings: the result says where the 
 test('4 · Assign Draft List and Reassign: an unavailable colleague shows but cannot be picked; Ask Dr X frees the row; Preferred first within a tier', async ({ page }) => {
   await fresh(page, '/admin/draft-lists')
   // Dr Beaumont's Fri 24 AM clash (Dr Ngata's Tue 21 acute clash went with the public List kind, catch-up Phase 32d).
-  await page.locator(`tr[data-draft-list-row="LD-RCB022-2026-07-24-AM"]`).click()
+  await page.locator(`tr[data-draft-list-row="LD-RCB022-2026-11-27-AM"]`).click()
   await page.locator('[data-shot="admin-draft-list-drawer"]').getByRole('button', { name: /See everyone/ }).click()
   const closed = page.locator('[data-shot="candidates-not-available"] [data-candidate-closed="31902"]')
   await expect(closed).toBeVisible()
@@ -139,7 +139,7 @@ test('4 · Assign Draft List and Reassign: an unavailable colleague shows but ca
   await page.screenshot({ path: 'visual/shots/p32b-10-assign-after-agree.png', fullPage: true })
 
   // Rutherford's returned List: Preferred (Dr Sharma, Mr Whitford) first within her tier.
-  await fresh(page, '/admin/day/2026-07-22')
+  await fresh(page, '/admin/day/2026-11-25')
   await page.locator(`[data-draft-block="${RUTHERFORD_WED22_AM}"]`).click()
   await page.locator('[data-shot="admin-draft-list-drawer"]').getByRole('button', { name: /See everyone/ }).click()
   const rows = page.locator('[data-shot="candidates-clear"] button[data-candidate]')
@@ -157,9 +157,9 @@ test('4 · Assign Draft List and Reassign: an unavailable colleague shows but ca
 })
 
 test('5 · Web and mobile as Dr Souter: mark a booked session unavailable, hand on, vacated pre-selected; the pool gets one notice', async ({ page }) => {
-  await fresh(page, '/web/availability/mine?date=2026-07-23')
+  await fresh(page, '/web/availability/mine?date=2026-11-26')
   const rail = page.locator('[data-shot="web-availability-rail"]')
-  await rail.locator('[data-slot-id="S-34821-2026-07-23-PM"]').getByRole('button', { name: 'Change', exact: true }).click()
+  await rail.locator('[data-slot-id="S-34821-2026-11-26-PM"]').getByRole('button', { name: 'Change', exact: true }).click()
   await rail.locator('[data-status-choice="unavailable"]').click()
   await rail.getByRole('button', { name: 'Save', exact: true }).click()
   const sheet = page.locator('[data-shot="move-sheet"]')
@@ -178,10 +178,10 @@ test('5 · Web and mobile as Dr Souter: mark a booked session unavailable, hand 
 
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/mobile/availability')
-  await page.locator('button[data-date="2026-07-23"]').click()
+  await page.locator('button[data-date="2026-11-26"]').click()
   await page.locator('[data-shot="availability-change"]').click()
   const editor = page.locator('[data-shot="mobile-availability-sheet"]')
-  await editor.locator('[data-slot-id="S-34821-2026-07-23-AM"]').getByRole('button', { name: 'Change', exact: true }).click()
+  await editor.locator('[data-slot-id="S-34821-2026-11-26-AM"]').getByRole('button', { name: 'Change', exact: true }).click()
   await editor.locator('[data-status-choice="unavailable"]').click()
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
   const msheet = page.locator('[data-aa-mobile-product] [data-shot="move-sheet"]')
@@ -193,7 +193,7 @@ test('5 · Web and mobile as Dr Souter: mark a booked session unavailable, hand 
 })
 
 test('6 · Notifications: count, tick hides for every admin (reload), Show resolved with who and when; the tick is the To-do Clear shape', async ({ page }) => {
-  await fresh(page, '/admin/day/2026-07-21')
+  await fresh(page, '/admin/day/2026-11-24')
   await runDemoAction(page, 'colleague-moves-list-to-office', { choice: 'one', close: true })
   const card = page.locator('[data-shot="admin-notifications-rail"]')
   await expect(card.locator('[data-shot="admin-notifications-count"]')).toHaveText(/^1/)
@@ -218,7 +218,7 @@ test('6 · Notifications: count, tick hides for every admin (reload), Show resol
   await page.goto('/admin/notifications?resolved=1')
   await page.waitForLoadState('networkidle')
   const row = page.locator('[data-notification-row][data-notification-resolved="true"]')
-  await expect(row).toContainText(/Resolved by Kirsty W\., Tue 21 Jul, \d\d:\d\d/)
+  await expect(row).toContainText(/Resolved by Kirsty W\., Tue 24 Nov, \d\d:\d\d/)
   await page.screenshot({ path: 'visual/shots/p32b-16-show-resolved.png', fullPage: true })
   await clean(page, 'Notifications')
 })
@@ -261,7 +261,7 @@ test('7 · Alert the office on a Booking and a List (web and mobile): active in 
   await page.screenshot({ path: 'visual/shots/p32b-21-admin-booking-alert.png', fullPage: true })
 
   // Submitting still works while an alert is open (undecided: submit stays allowed).
-  await page.goto('/web/lists/L-34821-2026-07-21-AM')
+  await page.goto('/web/lists/L-34821-2026-11-24-AM')
   await page.waitForLoadState('networkidle')
   await page.locator('[data-shot="alert-office-list"]').getByRole('button', { name: 'Alert the office' }).click()
   await page.locator('[data-shot="alert-office-sheet"]').getByLabel('Note for the office').fill('Check before it goes through.')

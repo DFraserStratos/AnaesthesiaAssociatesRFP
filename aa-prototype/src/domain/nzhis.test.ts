@@ -47,17 +47,17 @@ describe('validateEthnicityCode — three-way verdict', () => {
 
 describe('lookupOnRegister: the NHI lookup over the synthetic register (catch-up Phase 40a, replacing the Phase 01 stand-in)', () => {
   it('returns the patient for a seeded current-format NHI', () => {
-    expect(lookupOnRegister(nhiRegister(), 'CQY9304')).toMatchObject({ kind: 'found', person: { name: 'Sarah Mitchell', dobISO: '1988-04-12', ethnicityCode: '11111' } })
+    expect(lookupOnRegister(nhiRegister(), 'CQY9304')).toMatchObject({ kind: 'found', person: { name: 'Sarah Mitchell', dobISO: '1988-08-16', ethnicityCode: '11111' } })
   })
 
   it('returns the patient for a seeded new-format NHI', () => {
-    expect(lookupOnRegister(nhiRegister(), 'MYY54SL')).toMatchObject({ kind: 'found', person: { name: 'Priya Nair', dobISO: '1969-11-08', ethnicityCode: '43111' } })
+    expect(lookupOnRegister(nhiRegister(), 'MYY54SL')).toMatchObject({ kind: 'found', person: { name: 'Priya Nair', dobISO: '1970-03-14', ethnicityCode: '43111' } })
   })
 
   it('returns the complete phone-advice demo patient', () => {
     expect(lookupOnRegister(nhiRegister(), 'DEM1239')).toEqual({
       kind: 'found',
-      person: { nhi: 'DEM1239', name: 'Demo Patient', dobISO: '1990-01-01', phone: '021 555 0190', ethnicityCode: '11111', format: 'current' },
+      person: { nhi: 'DEM1239', name: 'Demo Patient', dobISO: '1990-05-07', phone: '021 555 0190', ethnicityCode: '11111', format: 'current' },
     })
   })
 

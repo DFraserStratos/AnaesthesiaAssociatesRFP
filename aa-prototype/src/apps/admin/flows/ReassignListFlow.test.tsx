@@ -10,10 +10,10 @@ import { projectedListId } from '../../../domain/slots'
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 // Dr Souter's Wed 22 AM Christchurch Eye Surgery List (Mr J. Whitford): Dr Rutherford's
 // sickness returned his own Wed 22 AM List as a Draft List (catch-up Phase 32b), and his AM is closed.
-const SOURCE_ID = projectedListId(ANAE.souter, '2026-07-22', 'AM')
+const SOURCE_ID = projectedListId(ANAE.souter, '2026-11-25', 'AM')
 // Dr Chen's Tue 21 PM Christchurch Eye Surgery List is Ms A. Reid's; Reid has a
 // seeded not-preferred entry with Dr Sharma, who is free that PM (Phase 17).
-const CHEN_PM = projectedListId(ANAE.chen, '2026-07-21', 'PM')
+const CHEN_PM = projectedListId(ANAE.chen, '2026-11-24', 'PM')
 
 function renderFlow(listId: string, open = true) {
   const list = assigned(useAppStore.getState().schedule.lists[listId])
@@ -129,7 +129,7 @@ describe('ReassignListFlow', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
     // The stand-in plays Dr Rutherford making his session available: his row becomes a candidate.
     fireEvent.click(within(row).getByRole('button', { name: 'Ask Dr Rutherford to make this session available' }))
-    expect(useAppStore.getState().schedule.slots[`S-${ANAE.rutherford}-2026-07-22-AM`]?.status).toBe('free')
+    expect(useAppStore.getState().schedule.slots[`S-${ANAE.rutherford}-2026-11-25-AM`]?.status).toBe('free')
     expect(screen.getByRole('button', { name: /Rutherford, James.*Free AM/ })).toBeInTheDocument()
   })
 

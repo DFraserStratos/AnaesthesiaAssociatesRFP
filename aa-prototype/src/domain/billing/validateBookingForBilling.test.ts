@@ -43,7 +43,7 @@ function mkCtx(overrides: Partial<BookingBillingContext> = {}): BookingBillingCo
       'party-aa': mkParty({ id: 'party-aa', kind: 'aa', name: 'AA', codePrefix: 'AA', hospitalId: undefined }),
       'party-anaes': mkParty({ id: 'party-anaes', kind: 'anaesthetist', name: 'Dr Test', codePrefix: 'DRT', hospitalId: undefined }),
     },
-    listDateISO: '2026-07-21',
+    listDateISO: '2026-11-24',
     timeRule: DEFAULT_RVG_TIME_RULE,
     patientDobISO: undefined,
     modifiers: RVG_MODIFIER_MASTER,
@@ -99,7 +99,7 @@ describe('validateBookingForBilling — happy paths', () => {
         by: 'Kirsty W.',
         role: 'office',
         source: 'office',
-        atISO: '2026-07-21T09:00:00',
+        atISO: '2026-11-24T09:00:00',
       },
     })
     // Deliberately broken procedure — still no failures because the Booking is cancelled.
@@ -173,22 +173,22 @@ describe('who the Contract bills (catch-up Phase 21: a holder Party bills as its
 })
 
 describe('"Needs a price" on a fixed price with no range in force (catch-up Phase 19a)', () => {
-  const fixed = mkContract({ id: 'con-fx', name: 'Face lift', pricing: { kind: 'fixed', ranges: [{ startISO: '2026-09-01', price: 3100 }] } })
+  const fixed = mkContract({ id: 'con-fx', name: 'Face lift', pricing: { kind: 'fixed', ranges: [{ startISO: '2027-01-05', price: 3100 }] } })
   const ctxOn = (dateISO: string) => mkCtx({ contracts: { 'con-fx': fixed }, listDateISO: dateISO, listHospitalId: 'hosp-1' })
 
   it("refuses with the one sentence, dated by the List's date; never priced at RVG instead", () => {
     const p = validProcedure({ governingContractId: 'con-fx' })
-    expect(validateBookingForBilling(booking, [p], ctxOn('2026-07-21')).find((f) => f.field === 'governingContractId')?.message).toBe(
-      'Needs a price: no price range in force on 21 Jul 2026.',
+    expect(validateBookingForBilling(booking, [p], ctxOn('2026-11-24')).find((f) => f.field === 'governingContractId')?.message).toBe(
+      'Needs a price: no price range in force on 24 Nov 2026.',
     )
-    expect(validateBookingForBilling(booking, [p], ctxOn('2026-09-01')).filter((f) => f.field === 'governingContractId')).toEqual([])
+    expect(validateBookingForBilling(booking, [p], ctxOn('2027-01-05')).filter((f) => f.field === 'governingContractId')).toEqual([])
   })
 
   it('an additional Procedure needs a price too, and an office fixed fee is a typed price', () => {
     const add = validProcedure({ governingContractId: 'con-fx', isPrimary: false })
-    expect(fieldsOf(validateBookingForBilling(booking, [add], ctxOn('2026-07-21')))).toContain('governingContractId')
+    expect(fieldsOf(validateBookingForBilling(booking, [add], ctxOn('2026-11-24')))).toContain('governingContractId')
     const typed = validProcedure({ governingContractId: 'con-fx', enteredPrice: 3000 })
-    expect(fieldsOf(validateBookingForBilling(booking, [typed], ctxOn('2026-07-21')))).not.toContain('governingContractId')
+    expect(fieldsOf(validateBookingForBilling(booking, [typed], ctxOn('2026-11-24')))).not.toContain('governingContractId')
   })
 
   it('an open price is never priced at RVG: with no amount typed no price can be worked out, and a typed one passes', () => {

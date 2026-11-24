@@ -184,8 +184,8 @@ describe('office privacy: no anaesthetist-app history shows a pairing or tier en
     endPairingPreference(api, OFFICE, 'PP-001')
     addPairingPreference(api, OFFICE, { kind: 'NOT_PREFERRED', raisedBy: 'SURGEON', anaesthetistId: ANAE.sharma, surgeonId: SURG.reid })
     setPriorityTier(api, OFFICE, ANAE.sharma, 1)
-    editList(api, OFFICE, projectedListId(ANAE.sharma, '2026-07-21', 'AM'), { surgeonId: SURG.reid })
-    reassignList(api, OFFICE, projectedListId(ANAE.chen, '2026-07-21', 'PM'), ANAE.sharma)
+    editList(api, OFFICE, projectedListId(ANAE.sharma, '2026-11-24', 'AM'), { surgeonId: SURG.reid })
+    reassignList(api, OFFICE, projectedListId(ANAE.chen, '2026-11-24', 'PM'), ANAE.sharma)
     addRecurringBooking(api, OFFICE, { anaesthetistId: ANAE.sharma, dayOfWeek: 5, session: 'PM', kind: 'private', hospitalId: HOSP.forte, surgeonId: SURG.reid })
 
     const s = api.getState()

@@ -60,7 +60,7 @@ function moneySnapshot(api: BoundAppStore) {
     receipts: Object.values(s.billing.receipts).filter((r) => r.pairKind !== 'aaFee'),
     ledger: Object.values(s.billing.ledger).filter((p) => p.kind !== 'aaFee'),
     due: payablesDue(s),
-    gst: gstReportMonthsFor(s, ANAE.souter, '2026-07-21').map((m) => gstReportFor(s, ANAE.souter, m, '2026-07-21')),
+    gst: gstReportMonthsFor(s, ANAE.souter, '2026-11-24').map((m) => gstReportFor(s, ANAE.souter, m, '2026-11-24')),
     open: openAccRecs(s),
   }
 }
@@ -71,8 +71,8 @@ describe('seeded fee history (Dr Souter)', () => {
     const state = api.getState()
     const rows = aaFeeInvoicesFor(state, ANAE.souter)
     expect(rows.map((r) => [r.invoiceNumber, r.monthISO, r.status])).toEqual([
-      ['AA-FEE-2026-H02', '2026-06', 'unpaid'],
-      ['AA-FEE-2026-H01', '2026-05', 'paid'],
+      ['AA-FEE-2026-H02', '2026-10', 'unpaid'],
+      ['AA-FEE-2026-H01', '2026-09', 'paid'],
     ])
     const records = bctiRecords(state)
     for (const row of rows) {
@@ -95,7 +95,7 @@ describe('seeded fee history (Dr Souter)', () => {
 
   it('reset restores the fee map and the settings', () => {
     const api = store()
-    expect(runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' }).ok).toBe(true)
+    expect(runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-11' }).ok).toBe(true)
     expect(saveAaFeeSettings(api, OFFICE, { ...api.getState().appSettings.aaFee, perBctiCharge: 9 }).ok).toBe(true)
     resetDomainState(api)
     expect(allAaFeeInvoices(api.getState())).toHaveLength(2)
@@ -106,11 +106,11 @@ describe('seeded fee history (Dr Souter)', () => {
 describe('runMonthlyFeeInvoices', () => {
   it('raises one fee invoice per active anaesthetist for the month, fixed items only with no BCTIs', () => {
     const api = store()
-    const preview = aaFeeRunPreview(api.getState(), '2026-07')
+    const preview = aaFeeRunPreview(api.getState(), '2026-11')
     expect(preview).toHaveLength(activeCount(api))
-    const res = runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
+    const res = runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-11' })
     expect(res.ok && res.value.raisedCount).toBe(activeCount(api))
-    const july = allAaFeeInvoices(api.getState()).filter((f) => f.monthISO === '2026-07')
+    const july = allAaFeeInvoices(api.getState()).filter((f) => f.monthISO === '2026-11')
     expect(july).toHaveLength(activeCount(api))
     expect(new Set(july.map((f) => f.anaesthetistId)).size).toBe(july.length)
     for (const f of july) {
@@ -126,47 +126,47 @@ describe('runMonthlyFeeInvoices', () => {
 
   it('reuses each anaesthetist contact: no duplicate for Dr Souter, one created once for the others', () => {
     const api = store()
-    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
+    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-11' })
     const s = api.getState()
-    const souterFee = aaFeeInvoicesFor(s, ANAE.souter).find((f) => f.monthISO === '2026-07')!
+    const souterFee = aaFeeInvoicesFor(s, ANAE.souter).find((f) => f.monthISO === '2026-11')!
     expect(s.xero.accRecs[feeAccRecId(api, souterFee)]!.contactId).toBe('XCH01')
     const numbers = Object.values(s.xero.contacts).map((c) => c.contactNumber).filter((n) => n.startsWith('ANAE-'))
     expect(new Set(numbers).size).toBe(numbers.length)
     expect(numbers).toHaveLength(activeCount(api))
     // A later run for another month reuses them all.
     const contactsBefore = Object.keys(s.xero.contacts).length
-    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-04' })
+    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-08' })
     expect(Object.keys(api.getState().xero.contacts)).toHaveLength(contactsBefore)
   })
 
   it('a rerun for an invoiced month raises nothing and does not mutate', () => {
     const api = store()
-    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
+    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-11' })
     const auditBefore = api.getState().audit.length
-    const res = runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
+    const res = runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-11' })
     expect(res).toMatchObject({ ok: true, value: { raisedCount: 0 } })
     expect(api.getState().audit.length).toBe(auditBefore)
-    expect(aaFeeRunDisabledReason(api.getState(), '2026-07')).toBe('Every active anaesthetist already has a fee invoice for July 2026.')
+    expect(aaFeeRunDisabledReason(api.getState(), '2026-11')).toBe('Every active anaesthetist already has a fee invoice for November 2026.')
   })
 
   it('June raises for everyone but Dr Souter, who was invoiced by the seed', () => {
     const api = store()
-    const res = runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-06' })
+    const res = runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-10' })
     expect(res.ok && res.value.raisedCount).toBe(activeCount(api) - 1)
-    expect(aaFeeInvoicesFor(api.getState(), ANAE.souter).filter((f) => f.monthISO === '2026-06')).toHaveLength(1)
+    expect(aaFeeInvoicesFor(api.getState(), ANAE.souter).filter((f) => f.monthISO === '2026-10')).toHaveLength(1)
   })
 
   it('refuses a future month and an anaesthetist', () => {
     const api = store()
-    expect(runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-08' })).toMatchObject({ ok: false, code: 'futureMonth' })
-    expect(aaFeeRunDisabledReason(api.getState(), '2026-08')).toBe('August 2026 has not started yet.')
-    expect(runMonthlyFeeInvoices(api, SOUTER, { monthISO: '2026-07' })).toMatchObject({ ok: false, code: 'officeOnly' })
+    expect(runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-12' })).toMatchObject({ ok: false, code: 'futureMonth' })
+    expect(aaFeeRunDisabledReason(api.getState(), '2026-12')).toBe('December 2026 has not started yet.')
+    expect(runMonthlyFeeInvoices(api, SOUTER, { monthISO: '2026-11' })).toMatchObject({ ok: false, code: 'officeOnly' })
   })
 
   it('the scheduled run is audited as the system actor', () => {
     const api = store()
     const auditBefore = api.getState().audit.length
-    runMonthlyFeeInvoices(api, AA_FEE_RUN_ACTOR, { monthISO: '2026-07' })
+    runMonthlyFeeInvoices(api, AA_FEE_RUN_ACTOR, { monthISO: '2026-11' })
     const raised = api.getState().audit.filter((e) => e.action === 'aaFee.invoiceRaised')
     expect(raised).toHaveLength(activeCount(api))
     for (const e of raised) expect([e.who, e.role, e.source]).toEqual(['AA fee run (scheduled)', 'system', 'system'])
@@ -175,12 +175,12 @@ describe('runMonthlyFeeInvoices', () => {
     const after = api.getState().audit.slice(auditBefore)
     expect(after.filter((e) => e.action === 'ledger.pairCreated')).toHaveLength(activeCount(api))
     expect(after.filter((e) => e.action === 'xero.pairCreated' && e.entityType === 'aaFeeInvoice')).toHaveLength(activeCount(api))
-    expect(allAaFeeInvoices(api.getState()).filter((f) => f.monthISO === '2026-07').every((f) => f.raisedBy === 'scheduled')).toBe(true)
+    expect(allAaFeeInvoices(api.getState()).filter((f) => f.monthISO === '2026-11').every((f) => f.raisedBy === 'scheduled')).toBe(true)
   })
 
   it('counts a BCTI only once its receivable is paid, in the month it is paid', () => {
     const api = store()
-    const before = aaFeeRunPreview(api.getState(), '2026-07').find((r) => r.anaesthetistId === ANAE.souter)!.bctiCount
+    const before = aaFeeRunPreview(api.getState(), '2026-11').find((r) => r.anaesthetistId === ANAE.souter)!.bctiCount
     for (const listId of [SEED_LIST_IDS.souterMon20Am, SEED_LIST_IDS.souterMon20Pm]) {
       authoriseList(api, OFFICE, listId)
       runBillingForList(api, listId)
@@ -191,13 +191,13 @@ describe('runMonthlyFeeInvoices', () => {
       return pay?.anaesthetistId === ANAE.souter
     })
     expect(souterOpen.length).toBeGreaterThan(0)
-    expect(aaFeeRunPreview(api.getState(), '2026-07').find((r) => r.anaesthetistId === ANAE.souter)!.bctiCount).toBe(before)
+    expect(aaFeeRunPreview(api.getState(), '2026-11').find((r) => r.anaesthetistId === ANAE.souter)!.bctiCount).toBe(before)
     const target = souterOpen[0]!
     // A part payment does not count it yet; the completing payment does.
     receivePayment(api, { accRecId: target.accRecId, amount: 1, idempotencyKey: 'PART', source: 'webhook' })
-    expect(aaFeeRunPreview(api.getState(), '2026-07').find((r) => r.anaesthetistId === ANAE.souter)!.bctiCount).toBe(before)
+    expect(aaFeeRunPreview(api.getState(), '2026-11').find((r) => r.anaesthetistId === ANAE.souter)!.bctiCount).toBe(before)
     receivePayment(api, { accRecId: target.accRecId, amount: target.remaining, idempotencyKey: 'REST', source: 'webhook' })
-    expect(aaFeeRunPreview(api.getState(), '2026-07').find((r) => r.anaesthetistId === ANAE.souter)!.bctiCount).toBe(before + 1)
+    expect(aaFeeRunPreview(api.getState(), '2026-11').find((r) => r.anaesthetistId === ANAE.souter)!.bctiCount).toBe(before + 1)
   })
 })
 
@@ -209,18 +209,18 @@ describe('saveAaFeeSettings', () => {
     expect(saveAaFeeSettings(api, OFFICE, { ...settings, perBctiCharge: -1 })).toMatchObject({ ok: false, code: 'invalidSettings' })
     const h02Before = aaFeeInvoicesFor(api.getState(), ANAE.souter)[0]!
 
-    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
-    const julyBefore = allAaFeeInvoices(api.getState()).filter((f) => f.monthISO === '2026-07')
+    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-11' })
+    const julyBefore = allAaFeeInvoices(api.getState()).filter((f) => f.monthISO === '2026-11')
     expect(saveAaFeeSettings(api, OFFICE, { ...settings, perBctiCharge: 6 }).ok).toBe(true)
     const entry = api.getState().audit.at(-1)!
     expect([entry.action, entry.entityType, entry.role]).toEqual(['aaFee.settingsChanged', 'appSettings', 'office'])
 
     // Raised invoices keep their snapshot.
-    expect(allAaFeeInvoices(api.getState()).filter((f) => f.monthISO === '2026-07')).toEqual(julyBefore)
+    expect(allAaFeeInvoices(api.getState()).filter((f) => f.monthISO === '2026-11')).toEqual(julyBefore)
     expect(aaFeeInvoicesFor(api.getState(), ANAE.souter).find((f) => f.id === h02Before.id)).toEqual(h02Before)
     // The next run (June, everyone but Dr Souter) uses the new rate.
-    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-06' })
-    const june = allAaFeeInvoices(api.getState()).filter((f) => f.monthISO === '2026-06' && f.anaesthetistId !== ANAE.souter)
+    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-10' })
+    const june = allAaFeeInvoices(api.getState()).filter((f) => f.monthISO === '2026-10' && f.anaesthetistId !== ANAE.souter)
     expect(june.every((f) => f.settings.perBctiCharge === 6)).toBe(true)
   })
 })
@@ -255,7 +255,7 @@ describe('recordAaFeePayment', () => {
 describe('guards on the procedure money paths', () => {
   it('receivePayment refuses a fee ACCREC; openAccRecs never lists one', () => {
     const api = store()
-    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
+    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-11' })
     const fee = allAaFeeInvoices(api.getState())[0]!
     expect(receivePayment(api, { accRecId: feeAccRecId(api, fee), amount: 10, idempotencyKey: 'X', source: 'webhook' })).toMatchObject({
       ok: false,
@@ -292,7 +292,7 @@ describe('guards on the procedure money paths', () => {
     const before = moneySnapshot(api)
     expect(before.due.total).toBeGreaterThan(0)
 
-    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
+    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-11' })
     for (const f of allAaFeeInvoices(api.getState())) recordAaFeePayment(api, { aaFeeInvoiceId: f.id, idempotencyKey: `PAY-${f.id}` })
     expect(saveAaFeeSettings(api, OFFICE, { ...api.getState().appSettings.aaFee, perBctiCharge: 7 }).ok).toBe(true)
     expect(moneySnapshot(api)).toEqual(before)
@@ -306,8 +306,8 @@ describe('guards on the procedure money paths', () => {
 describe('review fixes (catch-up Phase 16)', () => {
   it('a BCTI paid after its month was run to date is charged in the next month, never missed', () => {
     const api = store()
-    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
-    const julyCount = aaFeeInvoicesFor(api.getState(), ANAE.souter).find((f) => f.monthISO === '2026-07')!.bctiCount
+    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-11' })
+    const julyCount = aaFeeInvoicesFor(api.getState(), ANAE.souter).find((f) => f.monthISO === '2026-11')!.bctiCount
     // A Souter receivable paid in full after the July run (still July on the clock).
     authoriseList(api, OFFICE, SEED_LIST_IDS.souterMon20Am)
     runBillingForList(api, SEED_LIST_IDS.souterMon20Am)
@@ -315,38 +315,38 @@ describe('review fixes (catch-up Phase 16)', () => {
     const open = openAccRecs(api.getState()).find((c) => Object.values(api.getState().xero.accPays).some((p) => p.accRecId === c.accRecId && p.anaesthetistId === ANAE.souter))!
     receivePayment(api, { accRecId: open.accRecId, amount: open.remaining, idempotencyKey: 'LATE', source: 'webhook' })
     // July's invoice is unchanged; August's preview carries the late BCTI.
-    expect(aaFeeInvoicesFor(api.getState(), ANAE.souter).find((f) => f.monthISO === '2026-07')!.bctiCount).toBe(julyCount)
+    expect(aaFeeInvoicesFor(api.getState(), ANAE.souter).find((f) => f.monthISO === '2026-11')!.bctiCount).toBe(julyCount)
     advanceClockDays(api, 12) // into August
-    const aug = aaFeeRunPreview(api.getState(), '2026-08').find((r) => r.anaesthetistId === ANAE.souter)!
+    const aug = aaFeeRunPreview(api.getState(), '2026-12').find((r) => r.anaesthetistId === ANAE.souter)!
     expect(aug.bctiCount).toBe(1)
-    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-08' })
-    const augFee = aaFeeInvoicesFor(api.getState(), ANAE.souter).find((f) => f.monthISO === '2026-08')!
-    const july = aaFeeInvoicesFor(api.getState(), ANAE.souter).find((f) => f.monthISO === '2026-07')!
+    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-12' })
+    const augFee = aaFeeInvoicesFor(api.getState(), ANAE.souter).find((f) => f.monthISO === '2026-12')!
+    const july = aaFeeInvoicesFor(api.getState(), ANAE.souter).find((f) => f.monthISO === '2026-11')!
     const charged = [...july.bctis, ...augFee.bctis].map((b) => b.accPayId)
     expect(new Set(charged).size).toBe(charged.length)
   })
 
   it('a payment the poll backdates into an invoiced month is charged in the next open month', () => {
     const api = store()
-    // June is invoiced by the seed (H02). The seeded missed webhook is July, so pick
-    // a live receivable and backdate a missed payment into June through the poll.
+    // October is invoiced by the seed (H02). The seeded missed webhook is November, so pick
+    // a live receivable and backdate a missed payment into October through the poll.
     authoriseList(api, OFFICE, SEED_LIST_IDS.souterMon20Am)
     runBillingForList(api, SEED_LIST_IDS.souterMon20Am)
     handoffListCases(api, SEED_LIST_IDS.souterMon20Am)
     const open = openAccRecs(api.getState()).find((c) => Object.values(api.getState().xero.accPays).some((p) => p.accRecId === c.accRecId && p.anaesthetistId === ANAE.souter))!
-    receivePayment(api, { accRecId: open.accRecId, amount: open.remaining, idempotencyKey: 'BACKDATED', source: 'poll', atISO: '2026-06-30T10:00:00' })
-    expect(api.getState().xero.accRecs[open.accRecId]!.paidAtISO).toBe('2026-06-30T10:00:00')
-    const before = bctisFor(bctiRecords(api.getState()), ANAE.souter, '2026-07').length
-    const july = aaFeeRunPreview(api.getState(), '2026-07').find((r) => r.anaesthetistId === ANAE.souter)!
+    receivePayment(api, { accRecId: open.accRecId, amount: open.remaining, idempotencyKey: 'BACKDATED', source: 'poll', atISO: '2026-10-30T10:00:00' })
+    expect(api.getState().xero.accRecs[open.accRecId]!.paidAtISO).toBe('2026-10-30T10:00:00')
+    const before = bctisFor(bctiRecords(api.getState()), ANAE.souter, '2026-11').length
+    const july = aaFeeRunPreview(api.getState(), '2026-11').find((r) => r.anaesthetistId === ANAE.souter)!
     expect(july.bctiCount).toBe(before + 1)
   })
 
   it('an invoiced preview row shows the invoice snapshot, not today\'s settings', () => {
     const api = store()
-    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
-    const raised = aaFeeRunPreview(api.getState(), '2026-07').map((r) => [r.anaesthetistId, r.subtotal, r.bctiCount])
+    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-11' })
+    const raised = aaFeeRunPreview(api.getState(), '2026-11').map((r) => [r.anaesthetistId, r.subtotal, r.bctiCount])
     expect(saveAaFeeSettings(api, OFFICE, { ...api.getState().appSettings.aaFee, perBctiCharge: 9 }).ok).toBe(true)
-    expect(aaFeeRunPreview(api.getState(), '2026-07').map((r) => [r.anaesthetistId, r.subtotal, r.bctiCount])).toEqual(raised)
+    expect(aaFeeRunPreview(api.getState(), '2026-11').map((r) => [r.anaesthetistId, r.subtotal, r.bctiCount])).toEqual(raised)
   })
 
   it('refuses a month before the demo year, and a fee payment whose Xero record is missing', () => {
@@ -358,7 +358,7 @@ describe('review fixes (catch-up Phase 16)', () => {
   it('the Xero privacy scan stays clean after seeding BCTIs and a fee run', () => {
     const api = store()
     seedMonthOfBctis(api, DEMO_TRIGGER_ACTOR, ANAE.rutherford)
-    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' })
+    runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-11' })
     const serialised = JSON.stringify(api.getState().xero)
     // Patients and the other payers named on Procedures (catch-up Phases 21, 22a: no payer master).
     const people = [
@@ -382,8 +382,8 @@ describe('the AA fee run is unchanged by catch-up Phase 22', () => {
     const api = store()
     const invoicesBefore = api.getState().billing.invoices
     const auditBefore = api.getState().audit.length
-    expect(runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-07' }).ok).toBe(true)
-    const july = allAaFeeInvoices(api.getState()).filter((f) => f.monthISO === '2026-07')
+    expect(runMonthlyFeeInvoices(api, OFFICE, { monthISO: '2026-11' }).ok).toBe(true)
+    const july = allAaFeeInvoices(api.getState()).filter((f) => f.monthISO === '2026-11')
     expect(july.length).toBeGreaterThan(0)
     for (const fee of july) {
       expect(fee).not.toHaveProperty('supplier')

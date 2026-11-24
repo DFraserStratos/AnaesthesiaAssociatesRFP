@@ -20,7 +20,7 @@ function renderScreen() {
   return render(
     <MemoryRouter initialEntries={['/admin/intake/matching']}>
       <SurfaceProvider variant="web">
-        <MatchingScreen actor={OFFICE_ACTOR} todayISO="2026-07-21" onOpenBooking={() => undefined} />
+        <MatchingScreen actor={OFFICE_ACTOR} todayISO="2026-11-24" onOpenBooking={() => undefined} />
       </SurfaceProvider>
     </MemoryRouter>,
   )

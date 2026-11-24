@@ -7,7 +7,7 @@ const row = (over: Partial<ImportRow['incoming']> = {}, corrections?: ImportRow[
   id: 'IR0009',
   incoming: {
     hospitalId: 'H-SX',
-    dateISO: '2026-07-28',
+    dateISO: '2026-12-01',
     session: 'PM',
     scheduledTime: '15:30',
     patient: { name: 'Tama Henare' },
@@ -18,7 +18,7 @@ const row = (over: Partial<ImportRow['incoming']> = {}, corrections?: ImportRow[
   ...(corrections !== undefined ? { corrections } : {}),
 })
 
-const AT = '2026-07-21T09:00:00'
+const AT = '2026-11-24T09:00:00'
 
 describe('stubFor (US-02.6.1)', () => {
   it('places a stub for a row with no NHI and a List to land on, keyed on the row, never the NHI', () => {

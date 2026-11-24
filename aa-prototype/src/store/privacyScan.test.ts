@@ -44,7 +44,7 @@ function exercised(): BoundAppStore {
   for (const cand of openAccRecs(api.getState())) receivePayment(api, { accRecId: cand.accRecId, amount: cand.remaining, idempotencyKey: `P${i++}`, source: 'webhook' })
   expect(runThisWeeksCycle(api, OFFICE_ACTOR).ok).toBe(true)
   // The monthly AA fee run (16).
-  expect(runMonthlyFeeInvoices(api, OFFICE_ACTOR, { monthISO: '2026-07' }).ok).toBe(true)
+  expect(runMonthlyFeeInvoices(api, OFFICE_ACTOR, { monthISO: '2026-11' }).ok).toBe(true)
   // An additional invoice (38b) through the next run.
   expect(approveProcedureEvent(api, OFFICE_ACTOR, 'EV0001').ok).toBe(true)
   expect(runEventInvoicing(api, OFFICE_ACTOR).ok).toBe(true)
@@ -98,7 +98,7 @@ describe('the NHI leak scan', () => {
     const api = createAppStore()
     const s = api.getState()
     const patient = Object.values(s.masters.patients).find((p) => p.nhi !== undefined)!
-    const bx = { id: 'BX9999', bookingId: 'BK0001', listId: 'L', code: 'x', message: `Lookup failed for ${patient.nhi}`, atISO: '2026-07-21T08:00:00' }
+    const bx = { id: 'BX9999', bookingId: 'BK0001', listId: 'L', code: 'x', message: `Lookup failed for ${patient.nhi}`, atISO: '2026-11-24T08:00:00' }
     const contactId = Object.keys(s.xero.contacts)[0]!
     api.setState({
       billing: { ...s.billing, exceptions: { ...s.billing.exceptions, BX9999: bx } },
@@ -111,7 +111,7 @@ describe('the NHI leak scan', () => {
   })
 
   it('finds nothing in the full-scale data either', () => {
-    const state = buildFullScaleDataset(freshAppState(), { todayISO: '2026-07-21' }).state
+    const state = buildFullScaleDataset(freshAppState(), { todayISO: '2026-11-24' }).state
     const report = scanForNhiLeaks(state)
     expect(leakHits(report)).toBe(0)
     expect(report.items).toBeGreaterThan(50000)

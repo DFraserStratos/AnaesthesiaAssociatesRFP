@@ -117,7 +117,7 @@ describe('admin clickable table rows', () => {
           <Routes>
             <Route
               path="/admin"
-              element={<Outlet context={{ actor: OFFICE, todayISO: '2026-07-21' }} />}
+              element={<Outlet context={{ actor: OFFICE, todayISO: '2026-11-24' }} />}
             >
               <Route path="day/:dateISO/bookings/:bookingId" element={<AdminBookingDetailRoute />} />
               <Route path="invoices/:invoiceId" element={<div>Returned to invoice</div>} />
@@ -136,7 +136,7 @@ describe('admin clickable table rows', () => {
     render(
       <MemoryRouter>
         <SurfaceProvider variant="web">
-          <MatchingScreen actor={OFFICE} todayISO="2026-07-21" onOpenBooking={vi.fn()} />
+          <MatchingScreen actor={OFFICE} todayISO="2026-11-24" onOpenBooking={vi.fn()} />
         </SurfaceProvider>
       </MemoryRouter>,
     )
@@ -157,10 +157,10 @@ describe('admin clickable table rows', () => {
     const bookingId = out.ok ? out.value.bookingId! : ''
 
     render(
-      <MemoryRouter initialEntries={[`/admin/day/2026-07-28/bookings/${bookingId}`]}>
+      <MemoryRouter initialEntries={[`/admin/day/2026-12-01/bookings/${bookingId}`]}>
         <SurfaceProvider variant="web">
           <Routes>
-            <Route path="/admin" element={<Outlet context={{ actor: OFFICE, todayISO: '2026-07-21' }} />}>
+            <Route path="/admin" element={<Outlet context={{ actor: OFFICE, todayISO: '2026-11-24' }} />}>
               <Route path="day/:dateISO/bookings/:bookingId" element={<AdminBookingDetailRoute />} />
             </Route>
           </Routes>

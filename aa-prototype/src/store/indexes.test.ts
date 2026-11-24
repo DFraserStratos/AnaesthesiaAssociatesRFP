@@ -54,7 +54,7 @@ describe('indexes equal the plain scans', () => {
     const indexBefore = bookingsByList(before)
     const count = (indexBefore.get(listId) ?? []).length
     const out = createBooking(api, { who: 'Kirsty W.', role: 'office', source: 'office' }, listId, {
-      patient: { name: 'Index Check', dobISO: '1980-01-01', nhi: 'ZZZ0016' },
+      patient: { name: 'Index Check', dobISO: '1980-05-06', nhi: 'ZZZ0016' },
       sourceText: { text: 'Cystoscopy', source: 'phone' },
       rvgGroupId: RVG_GROUP.a3!,
     })

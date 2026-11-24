@@ -396,7 +396,7 @@ const SAMPLE_WARNING_ROUTES = [ADMIN_DAY, ADMIN_BOOKING, MOBILE_BOOKING] as cons
 // ---------------------------------------------------------------------------
 
 /** Stage post-op: Dr Sharma's Tue 14 Jul AM List (Sarah Mitchell's first episode). */
-export const POST_OP_ORIGINAL_LIST_ID = projectedListId(ANAE.sharma, '2026-07-14', 'AM')
+export const POST_OP_ORIGINAL_LIST_ID = projectedListId(ANAE.sharma, '2026-11-17', 'AM')
 
 const DEFAULT_MESSAGE_ID = CANNED_MESSAGES[0]?.id ?? 'MSG-STG-1001'
 
@@ -821,7 +821,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'billing-failure',
     label: 'Trigger billing failure',
     description:
-      "Arms the Xero hand-off to fault for Losa Tuilagi's Booking alone and authorises Dr Ropata's Thu 16 Jul List. Each Booking bills from its locked record: hers waits for Xero in the sync queue, Hemi Walker's bills and hands off, and the List is not failed. Retry now (or the clock) hands hers off once. No Contract changes.",
+      "Arms the Xero hand-off to fault for Losa Tuilagi's Booking alone and authorises Dr Ropata's Thu 19 Nov List. Each Booking bills from its locked record: hers waits for Xero in the sync queue, Hemi Walker's bills and hands off, and the List is not failed. Retry now (or the clock) hands hers off once. No Contract changes.",
     screen: BILLING_MONITOR_SCREEN,
     routes: BILLING_MONITOR,
     surfaces: ['bar'],
@@ -1010,7 +1010,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const cue = after !== undefined && newerInvoiceDescription(after, api.getState().masters.contracts) !== undefined
       return { ok: true, message: hospitalDescriptionOutcome(text, after?.invoiceDescription?.origin, cue, hadText) }
     },
-    indexPath: () => '/admin/day/2026-07-21/bookings/BK0006',
+    indexPath: () => '/admin/day/2026-11-24/bookings/BK0006',
   },
 
   // ── Admin · Review and Booking detail (seed-scoped) ──────────────────────
@@ -1018,7 +1018,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'stage-post-op',
     label: 'Stage post-op scenario',
     description:
-      "Gives Dr Souter a submitted ACL reconstruction (Coral Bennett, Wed 15 Jul) awaiting review, to add pre-op and post-op events to, and keeps Dr Sharma's Tue 14 Jul List ready for the additional invoice.",
+      "Gives Dr Souter a submitted ACL reconstruction (Coral Bennett, Wed 18 Nov) awaiting review, to add pre-op and post-op events to, and keeps Dr Sharma's Tue 17 Nov List ready for the additional invoice.",
     screen: 'Admin · Review and Booking detail; Mobile and Web · Lists and Booking',
     // Catch-up Phase 39b: also on the anaesthetist's Lists and Booking (bar and the PWA sheet).
     routes: ['/admin/review/:listId', '/admin/day/:dateISO/bookings/:bookingId', ...MOBILE_LISTS, '/web/lists', '/web/lists/:listId', WEB_BOOKING],
@@ -1051,7 +1051,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return {
         ok: true,
         message:
-          "Staged. Search Bennett, open Wednesday's Booking and use Add pre-op or post-op event. Sarah Mitchell's Tue 14 Jul List is authorised and billed for Create additional invoice.",
+          "Staged. Search Bennett, open Wednesday's Booking and use Add pre-op or post-op event. Sarah Mitchell's Tue 17 Nov List is authorised and billed for Create additional invoice.",
       }
     },
     indexPath: () => `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`,
@@ -1081,7 +1081,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'stage-combined-procedure',
     label: 'Stage combined procedure',
     description:
-      "Books, completes, authorises and bills a post-paid Merivale combination (Facelift plus 2 add ons) on Dr Delaney's Fri 10 Jul PM List, billed to the patient, so its invoice can be credited and split into additional invoices that add up to it.",
+      "Books, completes, authorises and bills a post-paid Merivale combination (Facelift plus 2 add ons) on Dr Delaney's Fri 13 Nov PM List, billed to the patient, so its invoice can be credited and split into additional invoices that add up to it.",
     screen: 'Admin · Invoices',
     routes: ['/admin/invoices'],
     surfaces: ['bar'],
@@ -1301,7 +1301,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
   {
     id: 'seed-month-of-bctis',
     label: 'Seed a month of BCTIs',
-    description: `Tops Dr Rutherford up to ${BCTI_SEED_TARGET} BCTIs paid in ${aaFeeMonthLabel(BCTI_SEED_MONTH)} (paid and disbursed procedure invoices on 1 to 6 July), so the next fee run shows the worked example.`,
+    description: `Tops Dr Rutherford up to ${BCTI_SEED_TARGET} BCTIs paid in ${aaFeeMonthLabel(BCTI_SEED_MONTH)} (paid and disbursed procedure invoices on 1 to 9 November), so the next fee run shows the worked example.`,
     screen: 'Admin · AA fee invoices',
     routes: [AA_FEE_INVOICES],
     surfaces: ['bar'],
@@ -1643,7 +1643,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
           : `went back to the ${DRAFT_LISTS}`
       return { ok: true, message: `${who} recorded as ${status} for ${when}. The List ${where} with its Bookings. No conflict.` }
     },
-    indexPath: () => '/admin/day/2026-07-22',
+    indexPath: () => '/admin/day/2026-11-25',
   },
   // ── Admin · the Assign and Reassign pickers: a colleague makes a session available (catch-up Phase 32b) ──
   {
@@ -1751,7 +1751,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const where = list !== undefined ? state.masters.hospitals[list.hospitalId]?.name ?? list.hospitalId : ''
       return { ok: true, message: `${who} returned ${shortDay(res.value.dateISO)} ${sessionText(list?.session ?? '')} (${where}) to the office. It is now a ${DRAFT_LIST}.` }
     },
-    indexPath: () => '/admin/day/2026-07-21',
+    indexPath: () => '/admin/day/2026-11-24',
   },
   // ── Mobile · Availability: a colleague moves a List to the persona (catch-up Phase 32; PWA parity) ──
   {
@@ -1796,7 +1796,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const where = state.masters.hospitals[res.value.hospitalId]?.name ?? res.value.hospitalId
       return { ok: true, message: `${who} moved a Booking (${shortDay(res.value.dateISO)} ${sessionText(res.value.session)}, ${where}) to Dr Souter. A new List was created.` }
     },
-    indexPath: () => '/admin/day/2026-07-22',
+    indexPath: () => '/admin/day/2026-11-25',
   },
   // ── Mobile · Lists: a colleague moves a Booking to the persona (catch-up Phase 32a; PWA parity) ──
   {
@@ -1885,7 +1885,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'demo-backdated-range',
     label: 'Demo: add a backdated price range',
     description:
-      "Adds a range from 1 Jul 2026 at $3,300.00 (a demo figure) to Merivale's Face lift, as the office. The unedited Face lift Bookings re-price; the one with a typed price and the AUTHORISED, invoiced one stay put.",
+      "Adds a range from 4 Nov 2026 at $3,300.00 (a demo figure) to Merivale's Face lift, as the office. The unedited Face lift Bookings re-price; the one with a typed price and the AUTHORISED, invoiced one stay put.",
     screen: 'Admin · Master data, Contracts',
     routes: [ADMIN_MASTERS],
     surfaces: ['bar'],
@@ -1899,7 +1899,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       // The kept-price count and names come from the same list the ranges section shows (catch-up Phase 25a, D79).
       const kept = keptPriceForRange(api.getState(), BACKDATED_RANGE_CONTRACT_ID, BACKDATED_RANGE)
       const keptText = kept.length > 0 ? ` ${keptPriceTitle(kept.length)}: ${kept.map((r) => `${r.patientName}, ${formatMoney(r.lockedPrice)}`).join('; ')}.` : ''
-      return { ok: true, message: `Added a range from 1 Jul 2026 at $3,300.00 to the Face lift. Unedited Face lift Bookings now price at $3,300.00; the typed and the invoiced ones are held.${keptText}` }
+      return { ok: true, message: `Added a range from 4 Nov 2026 at $3,300.00 to the Face lift. Unedited Face lift Bookings now price at $3,300.00; the typed and the invoiced ones are held.${keptText}` }
     },
     indexPath: () => '/admin/masters?view=contracts',
     indexHint: "Then open Merivale's Face lift (search \"Face lift\", then Edit) to see its ranges.",
@@ -2005,7 +2005,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return out.ok ? { ok: true, message: LONGER_PREPAID_COPY.staged(out.value.units) } : { ok: false, message: out.message }
     },
     indexPath: () => `/admin/review/${SEED_LIST_IDS.prepaymentPaidList}`,
-    indexHint: "Submit Dr Souter's Fri 24 Jul PM List first.",
+    indexHint: "Submit Dr Souter's Fri 27 Nov PM List first.",
   },
   // ── Admin · Booking detail: a prepayment settled automatically (catch-up Phase 41; US-06.5.2, US-06.3.7) ──
   {
@@ -2059,7 +2059,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         ? { ok: true, message: `The demo clock is now ${shortDay(res.value.dateISO)}, 2 days before ${res.value.patientName}'s procedure. The prepayment warning is strong.` }
         : { ok: false, message: res.message }
     },
-    indexPath: () => '/admin/day/2026-07-21',
+    indexPath: () => '/admin/day/2026-11-24',
   },
   {
     id: 'add-prepaid-booking',
@@ -2078,7 +2078,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const res = addPrepaidBooking(api, choiceId === 'two-payers' ? 'two-payers' : 'one-payer')
       return res.ok ? { ok: true, message: res.value.message } : { ok: false, message: res.message }
     },
-    indexPath: () => '/admin/day/2026-07-21',
+    indexPath: () => '/admin/day/2026-11-24',
   },
   {
     id: 'pwa-office-approves-prepayment',
@@ -2133,7 +2133,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'raise-sample-warnings',
     label: 'Raise sample warnings',
     description:
-      "Stages every warning rule's sample, as Demo actions, on Dr Rutherford's Tue 21 Jul Bookings (from the Day view) or on the Booking on screen: a prepayment awaiting approval (the List's own prepaid Contract, else Prepaid · Fixed price at $500), base units outside the range, a child as the payer on each Procedure billed to the patient (on the Booking on screen when its patient is under 18, otherwise on Grace Park's two Procedures, one to-do row), and an insurer named with no approval number (on the Booking on screen when it names an insurer, otherwise on the first seeded NIB Booking). And a balance check on a Booking whose patient owes AA on an invoice billed to them and pays a Procedure (the strong balance warning; skipped where the patient owes nothing).",
+      "Stages every warning rule's sample, as Demo actions, on Dr Rutherford's Tue 24 Nov Bookings (from the Day view) or on the Booking on screen: a prepayment awaiting approval (the List's own prepaid Contract, else Prepaid · Fixed price at $500), base units outside the range, a child as the payer on each Procedure billed to the patient (on the Booking on screen when its patient is under 18, otherwise on Grace Park's two Procedures, one to-do row), and an insurer named with no approval number (on the Booking on screen when it names an insurer, otherwise on the first seeded NIB Booking). And a balance check on a Booking whose patient owes AA on an invoice billed to them and pays a Procedure (the strong balance warning; skipped where the patient owes nothing).",
     screen: 'Admin · Day and Booking detail, Mobile · Booking',
     routes: SAMPLE_WARNING_ROUTES,
     surfaces: ['bar', 'pwa'],
@@ -2151,11 +2151,11 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         ok: true,
         message:
           bookingId === undefined
-            ? `Raised ${plural(res.value, 'sample warning')} on Dr Rutherford's Tue 21 Jul Lists, Grace Park's Booking and a NIB Booking. They show on the To-do card, the day grid and each Booking. ${RULES_NOTE}${skipped}`
-            : `Raised ${plural(res.value, 'sample warning')}: the triangle and the warning at the top of the Booking. The child payer sample stages on a minor's Booking (Grace Park's unless this one is a child's) and the approval number sample on an insurer's Booking (a nib Booking on Dr Ngata's Mon 20 Jul List unless this one names an insurer). ${RULES_NOTE}${skipped}`,
+            ? `Raised ${plural(res.value, 'sample warning')} on Dr Rutherford's Tue 24 Nov Lists, Grace Park's Booking and a NIB Booking. They show on the To-do card, the day grid and each Booking. ${RULES_NOTE}${skipped}`
+            : `Raised ${plural(res.value, 'sample warning')}: the triangle and the warning at the top of the Booking. The child payer sample stages on a minor's Booking (Grace Park's unless this one is a child's) and the approval number sample on an insurer's Booking (a nib Booking on Dr Ngata's Mon 23 Nov List unless this one names an insurer). ${RULES_NOTE}${skipped}`,
       }
     },
-    indexPath: () => '/admin/day/2026-07-21',
+    indexPath: () => '/admin/day/2026-11-24',
   },
   {
     id: 'clear-sample-warnings',
@@ -2172,7 +2172,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       if (!res.ok) return { ok: false, message: res.message }
       return { ok: true, message: `Removed ${plural(res.value, 'sample warning')}. The seeded values are back.` }
     },
-    indexPath: () => '/admin/day/2026-07-21',
+    indexPath: () => '/admin/day/2026-11-24',
   },
   // ── Mobile · Booking, installed PWA only: the office stand-in ─────────
   {
@@ -2278,7 +2278,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'matching-send-update',
     label: 'Send update for a matched Booking',
     description:
-      "Stands in for the hospital sending a later update: for the Booking matched by the row selected on Matching (if open and not authorised), else Diane Foster's (Tue 4 Aug AM), a row for the same List and patient with a later time and the hospital's fuller wording. It waits for the office to check the differences and approve it.",
+      "Stands in for the hospital sending a later update: for the Booking matched by the row selected on Matching (if open and not authorised), else Diane Foster's (Tue 8 Dec AM), a row for the same List and patient with a later time and the hospital's fuller wording. It waits for the office to check the differences and approve it.",
     screen: ADMIN_INTAKE_SCREEN,
     routes: [ADMIN_MATCHING],
     surfaces: ['bar'],
@@ -2298,13 +2298,13 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'matching-office-matches-row',
     label: 'Hospital file imported and my booking matched',
     description:
-      "Stands in for the office on the phone: the office imports St George's file, as on Admin, Intake, decides the rows for your Tue 28 Jul AM List with the suggested decision, and answers where each new Booking's invoice goes (Patient › Standard, No contract · RVG; the RVG code stays yours). Sarah Mitchell arrives with the hospital's wording as received; the file's other rows wait for the office. On a St George's or Southern Cross List, a new hospital booking; on a Booking, a hospital update approved by the office (on Diane Foster's, the hospital's fuller wording replaces WLE MM).",
+      "Stands in for the office on the phone: the office imports St George's file, as on Admin, Intake, decides the rows for your Tue 1 Dec AM List with the suggested decision, and answers where each new Booking's invoice goes (Patient › Standard, No contract · RVG; the RVG code stays yours). Sarah Mitchell arrives with the hospital's wording as received; the file's other rows wait for the office. On a St George's or Southern Cross List, a new hospital booking; on a Booking, a hospital update approved by the office (on Diane Foster's, the hospital's fuller wording replaces WLE MM).",
     screen: 'Mobile · Lists and the Booking screen',
     routes: [...MOBILE_LISTS],
     surfaces: ['pwa'],
     badge: 'office-stand-in',
     choices: (_state, ctx) => {
-      const out = [{ id: 's1', label: "St George's file, Tue 28 Jul AM (S1)" }]
+      const out = [{ id: 's1', label: "St George's file, Tue 1 Dec AM (S1)" }]
       if (ctx.params['bookingId'] !== undefined) out.push({ id: 'booking', label: 'A hospital update for this Booking, approved by the office' })
       else if (ctx.params['listId'] !== undefined) out.push({ id: 'list', label: 'A new hospital booking on this List' })
       return out
@@ -2320,8 +2320,8 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
           ok: true,
           message:
             n > 0
-              ? `The office imported St George's file and matched it. ${s1.value.patients.join(' and ')} ${n === 1 ? 'is' : 'are'} now on your Tue 28 Jul AM List, the invoice going to the patient at the standard rate (No contract · RVG). The RVG code is yours to add.`
-              : "The office imported St George's file and matched it. Your Tue 28 Jul AM List already held everything it sent.",
+              ? `The office imported St George's file and matched it. ${s1.value.patients.join(' and ')} ${n === 1 ? 'is' : 'are'} now on your Tue 1 Dec AM List, the invoice going to the patient at the standard rate (No contract · RVG). The RVG code is yours to add.`
+              : "The office imported St George's file and matched it. Your Tue 1 Dec AM List already held everything it sent.",
         }
       }
       const res = officeMatchesHospitalRow(api, choice)
@@ -2337,7 +2337,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'stub-office-adds-nhi',
     label: 'Office adds the NHI to this stub',
     description:
-      "Stands in for the office on the phone: on a List holding a stub, the office adds the NHI the sample holds for its waiting row on Matching, through the one resolve path, and the Booking takes the stub's place. On Dr Souter's Tue 4 Aug PM List, Mere Tipene (ZQA1024); after the Southern Cross import, Tama Henare on Tue 28 Jul PM (ZQA1008).",
+      "Stands in for the office on the phone: on a List holding a stub, the office adds the NHI the sample holds for its waiting row on Matching, through the one resolve path, and the Booking takes the stub's place. On Dr Souter's Tue 8 Dec PM List, Mere Tipene (ZQA1024); after the Southern Cross import, Tama Henare on Tue 1 Dec PM (ZQA1008).",
     screen: 'Mobile · List detail',
     routes: ['/mobile/lists/:listId'],
     surfaces: ['pwa'],
@@ -2359,7 +2359,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
   {
     id: 'receive-no-nhi-list',
     label: 'Receive list with a missing NHI',
-    description: `Imports a Forte Health sheet with two bookings sent without an NHI: ${NO_NHI_LIST.rows[0]!.patient.name} on Thu 23 Jul PM (urgent, a new patient) and ${NO_NHI_LIST.rows[1]!.patient.name} on Mon 27 Jul (a returning patient). Both wait here and on Matching; nothing is created until the office adds the NHI.`,
+    description: `Imports a Forte Health sheet with two bookings sent without an NHI: ${NO_NHI_LIST.rows[0]!.patient.name} on Thu 26 Nov PM (urgent, a new patient) and ${NO_NHI_LIST.rows[1]!.patient.name} on Mon 30 Nov (a returning patient). Both wait here and on Matching; nothing is created until the office adds the NHI.`,
     screen: 'Admin · Patients · Waiting for NHI',
     routes: ['/admin/patients/waiting'],
     surfaces: ['bar'],

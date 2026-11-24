@@ -891,7 +891,7 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
     }
     // A couple have ended (the profile shows them as history).
     if (k % 6 === 0) {
-      pref.endedAtISO = `2026-07-${pad(intBetween(officeRng, 1, 15), 2)}T15:00:00`
+      pref.endedAtISO = `2026-11-${pad(intBetween(officeRng, 1, 15), 2)}T15:00:00`
       pref.endedBy = officeWho
       pref.endReason = 'No longer needed'
     }

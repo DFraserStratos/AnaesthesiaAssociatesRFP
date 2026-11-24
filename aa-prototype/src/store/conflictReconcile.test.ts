@@ -39,7 +39,7 @@ import { nextTestNhi } from './testNhi'
 
 const OFFICE = OFFICE_ACTOR
 const SOUTER = SOUTER_ACTOR
-const WED22 = '2026-07-22'
+const WED22 = '2026-11-25'
 
 const store = (): BoundAppStore => createAppStore()
 const audit = (api: BoundAppStore, action: string, entityId?: string) =>
@@ -80,15 +80,15 @@ describe('the "no stale flag anywhere" invariant over a scripted run', () => {
     step('phone-book onto a free session', () => {
       const out = assignListToSlot(api, OFFICE, slotIdFor(ANAE.sharma, DEMO_TODAY, 'PM'), { hospitalId: HOSP.stg, surgeonId: SURG.hale, kind: 'private' })
       if (out.ok) phoneList = out.value.listId
-      return out.ok ? createBooking(api, OFFICE, phoneList, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-01-01' }, sourceText: { text: 'Test', source: 'anaesthetist' } }) : out
+      return out.ok ? createBooking(api, OFFICE, phoneList, { patient: { nhi: nextTestNhi(), name: 'Test Patient', dobISO: '1970-05-07' }, sourceText: { text: 'Test', source: 'anaesthetist' } }) : out
     })
     let holidayId = ''
     step('add a holiday', () => {
-      const out = addHospitalHoliday(api, OFFICE, HOSP.stg, '2026-07-23', 'Test closure')
+      const out = addHospitalHoliday(api, OFFICE, HOSP.stg, '2026-11-26', 'Test closure')
       if (out.ok) holidayId = out.value.holidayId
       return out
     })
-    step('edit it to another date', () => editHospitalHoliday(api, OFFICE, holidayId, { dateISO: '2026-07-28' }))
+    step('edit it to another date', () => editHospitalHoliday(api, OFFICE, holidayId, { dateISO: '2026-12-01' }))
     step('change a List hospital onto a closure', () => editList(api, OFFICE, SEED_LIST_IDS.integrationSxList, { hospitalId: HOSP.stg }))
     step("assign the sick anaesthetist's returned List", () => assignDraftList(api, OFFICE, `L-${ANAE.rutherford}-${WED22}-AM`, { anaesthetistId: ANAE.sharma }))
     step('un-block', () => setAvailability(api, SOUTER, ANAE.souter, DEMO_TODAY, 'AM', 'free'))
@@ -104,9 +104,9 @@ describe('the "no stale flag anywhere" invariant over a scripted run', () => {
     })
     const monday = Object.values(api.getState().masters.recurringBookings).find((r) => r.dayOfWeek === 1 && r.hospitalId !== null)!
     step('edit a recurring booking and apply it', () => editRecurringBooking(api, OFFICE, monday.id, { hospitalId: HOSP.sx }))
-    step('retire one', () => retireRecurringBooking(api, OFFICE, monday.id, '2026-09-01'))
+    step('retire one', () => retireRecurringBooking(api, OFFICE, monday.id, '2027-01-05'))
     step('add a Saturday recurring booking at a closed hospital', () => {
-      const hol = addHospitalHoliday(api, OFFICE, HOSP.cph, '2026-08-08', 'Saturday shutdown')
+      const hol = addHospitalHoliday(api, OFFICE, HOSP.cph, '2026-12-12', 'Saturday shutdown')
       if (!hol.ok) return hol
       return addRecurringBooking(api, OFFICE, { anaesthetistId: ANAE.hughes, dayOfWeek: 6, session: 'AM', kind: 'private', hospitalId: HOSP.cph, surgeonId: SURG.hale })
     })
@@ -116,7 +116,7 @@ describe('the "no stale flag anywhere" invariant over a scripted run', () => {
       return markUnavailableAndMoveList(api, OFFICE, slotIdFor(ANAE.ngata, WED22, 'PM'), 'unavailable', { route: 'colleague', toSlotId: to.id }, { note: 'Unwell' })
     })
     step('a series over empty sessions (the office)', () =>
-      createAvailabilitySeries(api, OFFICE, { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: 'AM', weekdays: [6], everyWeeks: 2, startISO: '2026-08-01' }),
+      createAvailabilitySeries(api, OFFICE, { anaesthetistId: ANAE.souter, statusKey: 'unavailable', sessions: 'AM', weekdays: [6], everyWeeks: 2, startISO: '2026-12-05' }),
     )
     const instance = Object.values(api.getState().schedule.slots).find((s) => s.anaesthetistId === ANAE.souter && s.seriesId === 'AS0008')!
     step('clear one instance', () => clearAvailability(api, SOUTER, instance.id))
@@ -157,7 +157,7 @@ describe('each path raises once and resolves the right conflict', () => {
 
   it('changing the hospital off a closure resolves it; onto one raises it', () => {
     const api = store()
-    const id = 'L-25490-2026-07-22-PM'
+    const id = 'L-25490-2026-11-25-PM'
     expect(api.getState().schedule.lists[id]!.conflicts).toMatchObject([{ kind: 'holiday', holidayId: 'HH900' }])
     editList(api, OFFICE, id, { hospitalId: HOSP.stg })
     expect(api.getState().schedule.lists[id]!.conflicts).toEqual([])
@@ -169,7 +169,7 @@ describe('each path raises once and resolves the right conflict', () => {
   it('the MutationResult counts match the metas; a mutation that touches no fact writes no conflict meta', () => {
     const api = store()
     const result = mutate(api, OFFICE, { entityType: 'holiday', entityId: 'HHX', action: 'holiday.create', stampBookingId: null }, (s) => ({
-      masters: { ...s.masters, holidays: { ...s.masters.holidays, HHX: { id: 'HHX', hospitalId: HOSP.stg, dateISO: '2026-08-03', name: 'X' } } },
+      masters: { ...s.masters, holidays: { ...s.masters.holidays, HHX: { id: 'HHX', hospitalId: HOSP.stg, dateISO: '2026-12-07', name: 'X' } } },
     }))
     expect(result.conflictsRaised.length).toBe(audit(api, 'list.conflict').length)
     expect(result.conflictsRaised.length).toBeGreaterThan(0)

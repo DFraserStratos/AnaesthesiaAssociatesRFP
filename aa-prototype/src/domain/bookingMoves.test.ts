@@ -12,11 +12,11 @@ import { SEED_STATUS } from './slotStatus'
 import { slotIdFor } from './slots'
 import type { Anaesthetist, AssignedList, Booking, DraftList, List, Session, Slot } from './types'
 
-const DAY = '2026-07-23'
-const TODAY = '2026-07-21'
+const DAY = '2026-11-26'
+const TODAY = '2026-11-24'
 
 function anaesthetist(id: string, name: string, active = true): Anaesthetist {
-  return { registrationNumber: id, name, phone: `021 ${id}`, email: `${id}@x.example`, unitValue: 25, hpiId: id, bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, startDateISO: '2010-01-01', active }
+  return { registrationNumber: id, name, phone: `021 ${id}`, email: `${id}@x.example`, unitValue: 25, hpiId: id, bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, startDateISO: '2010-05-07', active }
 }
 
 function slot(anaesthetistId: string, status: string = SEED_STATUS.free, session: Session = 'AM'): Slot {
@@ -32,7 +32,7 @@ function list(id: string, anaesthetistId: string, extra: Partial<AssignedList> =
 }
 
 function booking(id: string, listId: string, extra: Partial<Booking> = {}): Booking {
-  return { id, listId, patientId: 'PT1', completed: false, lastModifiedBy: 'seed', lastModifiedAtISO: '2026-07-20T08:00:00', ...extra }
+  return { id, listId, patientId: 'PT1', completed: false, lastModifiedBy: 'seed', lastModifiedAtISO: '2026-11-23T08:00:00', ...extra }
 }
 
 /**
@@ -70,7 +70,7 @@ function fixture(): BookingMoveInput {
   }
   const bookings = {
     B1: booking('B1', 'L1'),
-    B2: booking('B2', 'L1', { cancellation: { atISO: '2026-07-20T09:00:00', by: 'office', reason: 'x' } as Booking['cancellation'] }),
+    B2: booking('B2', 'L1', { cancellation: { atISO: '2026-11-23T09:00:00', by: 'office', reason: 'x' } as Booking['cancellation'] }),
     B6: booking('B6', 'L6'),
     BD: booking('BD', 'D1'),
   }
@@ -111,7 +111,7 @@ describe('bookingMoveRefusal', () => {
     expect(bookingMoveRefusal(submitted, 'B1', 'A1', TODAY)?.code).toBe('listSubmitted')
     const authorised = { ...input, lists: { ...input.lists, L1: list('L1', 'A1', { state: 'AUTHORISED' }) } }
     expect(bookingMoveRefusal(authorised, 'B1', 'A1', TODAY)?.code).toBe('listAuthorised')
-    expect(bookingMoveRefusal(input, 'B1', 'A1', '2026-07-24')).toEqual({ code: 'pastDate', message: "This List's day has passed. Ask the office to move it." })
+    expect(bookingMoveRefusal(input, 'B1', 'A1', '2026-11-27')).toEqual({ code: 'pastDate', message: "This List's day has passed. Ask the office to move it." })
   })
 })
 

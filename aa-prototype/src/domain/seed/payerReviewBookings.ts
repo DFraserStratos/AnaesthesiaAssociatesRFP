@@ -36,8 +36,8 @@ import { PAT_REVIEW } from './patients'
 import { rvgGroupIdForLegacyCode } from './rvgGroups'
 import { seedText } from './procedureText'
 
-export const PAYER_REVIEW_LIST_ID = projectedListId(ANAE.chen, '2026-07-17', 'AM')
-const DAY = '2026-07-17'
+export const PAYER_REVIEW_LIST_ID = projectedListId(ANAE.chen, '2026-11-20', 'AM')
+const DAY = '2026-11-20'
 
 /** The Whitcombe Family Trust, paying by post (BP0003, the first payer id after the retired master's two). */
 export const FAMILY_TRUST_PAYER: ProcedurePayer = {
@@ -49,7 +49,7 @@ export const FAMILY_TRUST_PAYER: ProcedurePayer = {
 }
 
 /** Dr Fitzgerald's Thu 23 Jul AM List at Southern Cross with Ms Patel (SX-002 is tagged SXAP): empty in the seed, off every beat. */
-export const SUGGESTED_TAG_LIST_ID = projectedListId(ANAE.fitzgerald, '2026-07-23', 'AM')
+export const SUGGESTED_TAG_LIST_ID = projectedListId(ANAE.fitzgerald, '2026-11-26', 'AM')
 
 interface Spec {
   key: 'childPayer' | 'payerContactMissing' | 'familyTrustPayer' | 'approvalMissing' | 'funderNoWarning' | 'suggestedTag'
@@ -105,7 +105,7 @@ export function seedPayerReviewBookings(next: { booking: number; procedure: numb
       // The seed's source rule: Christchurch Eye Surgery's rooms send PDFs; Southern Cross sends a feed.
       source: spec.open === true ? 'hospitalDownload' : 'surgeonPdf',
       lastModifiedBy: spec.open === true ? 'Kirsty W.' : 'Dr Alistair Chen',
-      lastModifiedAtISO: spec.open === true ? '2026-07-20T16:30:00' : completedAtISO,
+      lastModifiedAtISO: spec.open === true ? '2026-11-23T16:30:00' : completedAtISO,
     }
     if (spec.open !== true) booking.completedAtISO = completedAtISO
     if (spec.funderPartyId !== undefined) booking.funderPartyId = spec.funderPartyId

@@ -22,8 +22,8 @@ import { ANAE, SEED_LIST_IDS } from '../domain/seed'
 import { projectedListId } from '../domain/slots'
 import { surnameOf } from '../shared/format'
 
-const AM20 = projectedListId(ANAE.souter, '2026-07-20', 'AM')
-const PM20 = projectedListId(ANAE.souter, '2026-07-20', 'PM')
+const AM20 = projectedListId(ANAE.souter, '2026-11-23', 'AM')
+const PM20 = projectedListId(ANAE.souter, '2026-11-23', 'PM')
 
 const unwires: (() => void)[] = []
 afterEach(() => {
@@ -147,8 +147,8 @@ describe('billingMonitorView: filters and sorting', () => {
     const hospital = all.hospitalOptions[0]!.id
     const byHospital = billingMonitorView(api.getState(), { hospitalId: hospital })
     expect(byHospital.groups.flatMap((g) => g.awaiting).every((a) => a.list.hospitalId === hospital)).toBe(true)
-    const dated = billingMonitorView(api.getState(), { fromISO: '2026-07-20', toISO: '2026-07-20' })
-    expect(dated.groups.flatMap((g) => g.awaiting).every((a) => a.list.dateISO === '2026-07-20')).toBe(true)
+    const dated = billingMonitorView(api.getState(), { fromISO: '2026-11-23', toISO: '2026-11-23' })
+    expect(dated.groups.flatMap((g) => g.awaiting).every((a) => a.list.dateISO === '2026-11-23')).toBe(true)
     expect(dated.listsInView).toBeLessThan(all.listsInView)
   })
 

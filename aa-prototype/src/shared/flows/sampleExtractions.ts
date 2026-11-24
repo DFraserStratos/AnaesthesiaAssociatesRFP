@@ -25,7 +25,7 @@ export const SAMPLE_EXTRACTIONS: readonly SampleExtraction[] = [
     fields: {
       nhi: 'ZBC1123',
       name: 'Wiremu Tane',
-      dobISO: '1979-08-22',
+      dobISO: '1979-12-26',
       ethnicityCode: '21111',
       description: 'Laparoscopic cholecystectomy',
       rvgGroupId: RVG_GROUP.a3!,
@@ -38,7 +38,7 @@ export const SAMPLE_EXTRACTIONS: readonly SampleExtraction[] = [
     fields: {
       nhi: 'JKL1188',
       name: 'Losa Tuilagi',
-      dobISO: '1992-01-27',
+      dobISO: '1992-06-01',
       ethnicityCode: '31111',
       description: 'Right knee arthroscopy',
       rvgGroupId: RVG_GROUP.ll1!,

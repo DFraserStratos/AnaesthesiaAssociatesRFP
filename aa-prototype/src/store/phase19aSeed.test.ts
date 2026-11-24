@@ -63,12 +63,12 @@ describe('every fixed price is a Contract with valid ranges', () => {
 })
 
 describe("Doyle's price list (US-05.2.5)", () => {
-  it('Gastric bypass $2,800 then $2,950 from 28 Jul 2026; Sleeve gastrectomy $2,400', () => {
+  it('Gastric bypass $2,800 then $2,950 from 1 Dec 2026; Sleeve gastrectomy $2,400', () => {
     const bypass = contracts['CT-DOYLE-BAR']!
     expect(bypass).toMatchObject({ name: 'Gastric bypass', aaCode: 'DOYLE-001' })
-    expect(rangeInForce(bypass, '2026-07-14')?.price).toBe(2800)
-    expect(rangeInForce(bypass, '2026-07-28')?.price).toBe(2950)
-    expect(rangeInForce(contracts[PRICED_ITEM.doyleSleeve]!, '2026-07-21')?.price).toBe(2400)
+    expect(rangeInForce(bypass, '2026-11-17')?.price).toBe(2800)
+    expect(rangeInForce(bypass, '2026-12-01')?.price).toBe(2950)
+    expect(rangeInForce(contracts[PRICED_ITEM.doyleSleeve]!, '2026-11-24')?.price).toBe(2400)
   })
 })
 
@@ -95,13 +95,13 @@ describe('the schedule items (US-04.2.18)', () => {
 describe("Merivale Plastic Surgery's combinations (US-04.2.11, D48)", () => {
   const merivale = [PRICED_ITEM.merFaceLift, PRICED_ITEM.merFaceLift1, PRICED_ITEM.merFaceLift2].map((id) => contracts[id]!)
 
-  it('three fixed-price Contracts held by the surgeon group, billing the payer, from 1 Jun 2026', () => {
-    expect(merivale.map((c) => [c.name, c.holderId, c.billsTo, rangeInForce(c, '2026-07-21')?.price])).toEqual([
+  it('three fixed-price Contracts held by the surgeon group, billing the payer, from 5 Oct 2026', () => {
+    expect(merivale.map((c) => [c.name, c.holderId, c.billsTo, rangeInForce(c, '2026-11-24')?.price])).toEqual([
       ['Face lift', 'PY-MER', 'payer', 3100],
       ['Facelift plus 1 add on (eg bleph)', 'PY-MER', 'payer', 3400],
       ['Facelift plus 2 add ons (eg bleph & fat grafting)', 'PY-MER', 'payer', 3700],
     ])
-    expect(merivale.every((c) => c.pricing.kind === 'fixed' && c.pricing.ranges[0]?.startISO === '2026-06-01')).toBe(true)
+    expect(merivale.every((c) => c.pricing.kind === 'fixed' && c.pricing.ranges[0]?.startISO === '2026-10-05')).toBe(true)
   })
 
   it('a search by H3 finds all three', () => {
@@ -129,9 +129,9 @@ describe("Dr Souter's own price list (US-04.2.14; D42, D30)", () => {
     }
   })
 
-  it('Rhinoplasty is $1,200 (the figure Riley’s prepayment uses), with a price change from 1 Sep 2026', () => {
+  it('Rhinoplasty is $1,200 (the figure Riley’s prepayment uses), with a price change from 5 Jan 2027', () => {
     const rhino = contracts[PRICED_ITEM.souterRhinoplasty]!
-    expect(rangeInForce(rhino, '2026-07-24')?.price).toBe(1200)
-    expect(rangeInForce(rhino, '2026-09-01')?.price).toBe(1300)
+    expect(rangeInForce(rhino, '2026-11-27')?.price).toBe(1200)
+    expect(rangeInForce(rhino, '2027-01-05')?.price).toBe(1300)
   })
 })

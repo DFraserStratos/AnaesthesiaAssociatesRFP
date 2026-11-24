@@ -41,8 +41,8 @@ export const NO_EVENT_AWAITING_ON_BOOKING = 'No event awaiting review or the nex
  * no claim or holder reference (D82), left SUBMITTED.
  */
 export const SOUTER_POST_OP = {
-  slotId: slotIdFor(ANAE.souter, '2026-07-15', 'PM'),
-  dateISO: '2026-07-15',
+  slotId: slotIdFor(ANAE.souter, '2026-11-18', 'PM'),
+  dateISO: '2026-11-18',
   hospitalId: HOSP.stg,
   surgeonId: SURG.hale,
   patientId: PAT.bennett,

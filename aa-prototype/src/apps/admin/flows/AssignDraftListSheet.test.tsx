@@ -18,8 +18,8 @@ import { DraftListDrawer } from '../components/DraftListDrawer'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 /** Seeded recurring clash: Dr Beaumont's Fri 24 AM at CES (RCB022). Dr Ngata's acute Tue 21 AM went with the public List kind (catch-up Phase 32d). */
-const CLOSED_CLASH = recurringClashListId('RCB022', '2026-07-24', 'AM')
-const BEAUMONT_FRI = recurringClashListId('RCB022', '2026-07-24', 'AM')
+const CLOSED_CLASH = recurringClashListId('RCB022', '2026-11-27', 'AM')
+const BEAUMONT_FRI = recurringClashListId('RCB022', '2026-11-27', 'AM')
 
 function renderSheet(listId: string, initialAnaesthetistId?: string) {
   const onAssigned = vi.fn()
@@ -131,7 +131,7 @@ describe('AssignDraftListSheet', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Assign Draft List' }))
     expect(screen.getByText('Draft List assigned')).toBeInTheDocument()
     act(() => vi.advanceTimersByTime(1100))
-    expect(onAssigned).toHaveBeenCalledWith(CLOSED_CLASH, slotIdFor(ANAE.beaumont, '2026-07-24', 'AM'))
+    expect(onAssigned).toHaveBeenCalledWith(CLOSED_CLASH, slotIdFor(ANAE.beaumont, '2026-11-27', 'AM'))
     expect(useAppStore.getState().schedule.lists[CLOSED_CLASH]?.state).toBe('ACTIVE')
   })
 

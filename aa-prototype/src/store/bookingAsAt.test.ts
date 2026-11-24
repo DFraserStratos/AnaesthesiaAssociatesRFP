@@ -170,7 +170,7 @@ describe('bookingAsAt: the seed', () => {
       action: 'booking.somethingNew',
       before: { notes: 'a' },
       after: { notes: 'b' },
-      atISO: '2026-07-21T10:00:00',
+      atISO: '2026-11-24T10:00:00',
     }
     const result = bookingAsAt(now, [...entries, odd], { afterEntryId: entries[0]!.id })
     expect(result.incompleteAt).toEqual({ entryId: 'A9998', action: 'booking.somethingNew' })

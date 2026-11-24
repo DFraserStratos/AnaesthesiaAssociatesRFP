@@ -22,13 +22,13 @@ export const SEED_PROCEDURE_EVENTS: readonly ProcedureEvent[] = [
     procedureId: SEED_EVENT_PROCEDURE_ID,
     bookingId: SEED_EVENT_BOOKING_ID,
     kind: 'additionalInvoice',
-    occurredOnISO: '2026-06-23',
+    occurredOnISO: '2026-10-27',
     billable: true,
     party: { sameAs: true },
-    detail: { kind: 'additionalInvoice', lines: [{ description: 'Post-op ward review, Tue 23 Jun, 20 min', quantity: 1, unitAmount: 85 }] },
+    detail: { kind: 'additionalInvoice', lines: [{ description: 'Post-op ward review, Tue 27 Oct, 20 min', quantity: 1, unitAmount: 85 }] },
     review: { state: 'awaitingReview' },
     addedBy: { who: 'Dr Melanie Souter', role: 'anaesthetist', anaesthetistId: ANAE.souter },
-    addedAtISO: '2026-07-20T16:30:00',
+    addedAtISO: '2026-11-23T16:30:00',
   },
 ]
 

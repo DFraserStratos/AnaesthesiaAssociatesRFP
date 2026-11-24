@@ -44,7 +44,7 @@ const MORRISON: Actor = {
   anaesthetistId: ANAE.morrison,
 }
 
-const WED22 = '2026-07-22'
+const WED22 = '2026-11-25'
 
 function store(): BoundAppStore {
   return createAppStore()
@@ -268,9 +268,9 @@ describe('addDayNote', () => {
   it('rejects an empty note and persists notes on a fresh date', () => {
     const api = store()
     expect(addDayNote(api, OFFICE, DEMO_TODAY, '   ').ok).toBe(false)
-    expect(dayNotesFor(api.getState(), '2026-08-15').length).toBe(0)
-    addDayNote(api, OFFICE, '2026-08-15', 'Public holiday, skeleton roster.')
-    expect(dayNotesFor(api.getState(), '2026-08-15').length).toBe(1)
+    expect(dayNotesFor(api.getState(), '2026-12-19').length).toBe(0)
+    addDayNote(api, OFFICE, '2026-12-19', 'Public holiday, skeleton roster.')
+    expect(dayNotesFor(api.getState(), '2026-12-19').length).toBe(1)
   })
 
   it('initialsFor handles single and multi word names', () => {
@@ -296,7 +296,7 @@ describe('seeded day notes', () => {
 // ---------------------------------------------------------------------------
 
 describe('Wed-22 conflicts (real facts since catch-up Phase 30)', () => {
-  it('seeds hospital-closure conflicts on Wed 22 (never an availability one, D59), leaving Tue 21 pristine', () => {
+  it('seeds hospital-closure conflicts on Wed 25 (never an availability one, D59), leaving Tue 24 pristine', () => {
     const api = store()
     const wed = listsForDate(api.getState(), WED22)
     const kinds = wed.flatMap((l) => l.conflicts.map((c) => c.kind as string))

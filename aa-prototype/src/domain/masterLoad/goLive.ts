@@ -64,15 +64,15 @@ export const GO_LIVE_PACK: readonly GoLiveSheet[] = [
   ]),
   sheet('priceRanges', 'go-live-price-ranges.csv', [
     ['AA code', 'Start date', 'Price (ex GST)'],
-    ['HSG-GL01', '2026-07-01', '1490'],
-    ['HSG-GL05', '2026-07-01', '780'],
+    ['HSG-GL01', '2026-11-04', '1490'],
+    ['HSG-GL05', '2026-11-04', '780'],
   ]),
   sheet('publicHolidays', 'go-live-public-holidays-2027.csv', [
     ['Date', 'Name', 'Kind', 'Region', 'Open hospitals'],
-    ['2027-03-26', 'Good Friday', 'National', '', ''],
-    ['2027-03-29', 'Easter Monday', 'National', '', ''],
-    ['2027-04-26', 'ANZAC Day (observed)', 'National', '', ''],
-    ['2027-06-07', "King's Birthday", 'National', '', ''],
+    ['2027-07-30', 'Good Friday', 'National', '', ''],
+    ['2027-08-02', 'Easter Monday', 'National', '', ''],
+    ['2027-08-30', 'ANZAC Day (observed)', 'National', '', ''],
+    ['2027-10-11', "King's Birthday", 'National', '', ''],
   ]),
 ]
 

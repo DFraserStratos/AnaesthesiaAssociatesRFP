@@ -64,7 +64,7 @@ export function RegisterRefreshRowExample() {
     <div style={{ maxWidth: 420 }}>
       <DefList gap={8}>
         <RegisterRefreshRow open={false} onRefresh={noop} />
-        <RegisterRefreshRow open={false} onRefresh={noop} lastRefreshedAtISO="2026-07-21T08:00:00" />
+        <RegisterRefreshRow open={false} onRefresh={noop} lastRefreshedAtISO="2026-11-24T08:00:00" />
       </DefList>
     </div>
   )

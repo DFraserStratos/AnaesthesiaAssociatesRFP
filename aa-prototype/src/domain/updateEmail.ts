@@ -66,7 +66,7 @@ export type EmailPlaceholder = (typeof EMAIL_PLACEHOLDERS)[number]
 /** What each placeholder fills in with (the editor's list). */
 export const EMAIL_PLACEHOLDER_HINTS: Record<EmailPlaceholder, string> = {
   patient: "The patient's name (blank for a whole List)",
-  date: 'The List date, such as Tue 21 Jul',
+  date: 'The List date, such as Tue 24 Nov',
   session: 'AM, PM or out of hours',
   hospital: 'The hospital',
   surgeon: 'The surgeon',

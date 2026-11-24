@@ -17,7 +17,7 @@ import { ANAE } from '../domain/seed'
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 const MITCHELL = 'CQY9304'
-const SOUTER_FORTE = 'L-34821-2026-07-27-AM'
+const SOUTER_FORTE = 'L-34821-2026-11-30-AM'
 
 const unpaidPatientInvoice = (api: AppStoreApi) => patientRecordView(api.getState(), MITCHELL)!.invoices.find((i) => i.countsTowardBalance && i.status === 'unpaid')!
 
@@ -40,7 +40,7 @@ describe('logPatientFollowUp and completeFollowUp', () => {
   it('refuses an anaesthetist, blank text, a past reminder and a reminder with no day', () => {
     const api = createAppStore()
     const before = api.getState().audit.length
-    const yesterday = '2026-07-20'
+    const yesterday = '2026-11-23'
     expect(logPatientFollowUp(api, SOUTER, { nhi: MITCHELL, kind: 'call', text: 'x' })).toMatchObject({ ok: false, code: 'officeOnly' })
     expect(logPatientFollowUp(api, OFFICE, { nhi: MITCHELL, kind: 'note', text: '   ' })).toMatchObject({ ok: false, code: 'textRequired' })
     expect(logPatientFollowUp(api, OFFICE, { nhi: MITCHELL, kind: 'reminder', text: 'x', dueDateISO: yesterday })).toMatchObject({ ok: false, code: 'reminderDate' })
@@ -52,7 +52,7 @@ describe('logPatientFollowUp and completeFollowUp', () => {
   it('Done ticks an open reminder once; a later reminder is not due until its day', () => {
     const api = createAppStore()
     const today = api.getState().clock.todayISO
-    const later = logPatientFollowUp(api, OFFICE, { nhi: MITCHELL, kind: 'reminder', text: 'Next week', dueDateISO: '2026-07-28' })
+    const later = logPatientFollowUp(api, OFFICE, { nhi: MITCHELL, kind: 'reminder', text: 'Next week', dueDateISO: '2026-12-01' })
     const now = logPatientFollowUp(api, OFFICE, { nhi: MITCHELL, kind: 'reminder', text: 'Today', dueDateISO: today })
     if (!later.ok || !now.ok) throw new Error('not logged')
     expect(followUpsDue(api.getState()).map((f) => f.text)).toEqual(['Today'])
@@ -94,7 +94,7 @@ describe('Resend from the record', () => {
 describe('clearing a balance warning with a note', () => {
   function mitchellWarning() {
     const api = createAppStore()
-    const made = createBooking(api, OFFICE, SOUTER_FORTE, { patient: { nhi: MITCHELL, name: 'Sarah Mitchell', dobISO: '1988-04-12' }, sourceText: { text: 'Knee arthroscopy', source: 'phone' } })
+    const made = createBooking(api, OFFICE, SOUTER_FORTE, { patient: { nhi: MITCHELL, name: 'Sarah Mitchell', dobISO: '1988-08-16' }, sourceText: { text: 'Knee arthroscopy', source: 'phone' } })
     if (!made.ok) throw new Error(made.message)
     const w = warningsForBooking(api.getState(), made.value.bookingId).find((x) => x.ruleId === 'patientBalance')!
     return { api, bookingId: made.value.bookingId, key: w.key }

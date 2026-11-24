@@ -14,7 +14,7 @@ function renderScreen(state?: unknown) {
   const utils = render(
     <MemoryRouter initialEntries={[{ pathname: '/admin/intake/matching', state }]}>
       <SurfaceProvider variant="web">
-        <MatchingScreen actor={OFFICE_ACTOR} todayISO="2026-07-21" onOpenBooking={onOpenBooking} />
+        <MatchingScreen actor={OFFICE_ACTOR} todayISO="2026-11-24" onOpenBooking={onOpenBooking} />
       </SurfaceProvider>
     </MemoryRouter>,
   )
@@ -69,7 +69,7 @@ describe('MatchingScreen', () => {
     fireEvent.click(within(panel).getByRole('button', { name: 'Create Booking' }))
 
     const banner = container.ownerDocument.querySelector('[data-shot="matching-banner"]') as HTMLElement
-    expect(banner).toHaveTextContent("Applied: Booking created on Dr Souter's Tue 28 Jul AM List")
+    expect(banner).toHaveTextContent("Applied: Booking created on Dr Souter's Tue 1 Dec AM List")
     expect(banner).toHaveTextContent('Needs an invoice destination')
     expect(stat(container, 'open')).toContain('4')
     const decided = Object.values(useAppStore.getState().intake.rows).filter((r) => r.status === 'applied')
@@ -110,13 +110,13 @@ describe('MatchingScreen', () => {
     const panel = screen.getByTestId('matching-panel')
     expect(within(panel).getByRole('button', { name: 'Choose a decision' })).toBeDisabled()
     expect(within(panel).getAllByText('Add the NHI first.').length).toBeGreaterThan(0)
-    expect(container.ownerDocument.querySelector('[data-shot="matching-stub"]')).toHaveTextContent("A stub stands on Dr Souter's Tue 28 Jul PM List")
+    expect(container.ownerDocument.querySelector('[data-shot="matching-stub"]')).toHaveTextContent("A stub stands on Dr Souter's Tue 1 Dec PM List")
     fireEvent.change(within(panel).getByRole('textbox', { name: 'NHI' }), { target: { value: 'ZQA1008' } })
     // The NHI waits for Add NHI: one audited path (resolveStub).
     expect(useAppStore.getState().intake.rows[row.id]?.corrections?.nhi).toBeUndefined()
     fireEvent.click(within(panel).getByRole('button', { name: 'Add NHI' }))
     const decided = useAppStore.getState().intake.rows[row.id]!
-    expect(decided).toMatchObject({ status: 'applied', decision: { kind: 'createBooking', listId: 'L-34821-2026-07-28-PM' } })
+    expect(decided).toMatchObject({ status: 'applied', decision: { kind: 'createBooking', listId: 'L-34821-2026-12-01-PM' } })
     expect(container.ownerDocument.querySelector('[data-shot="matching-stub-resolved"]')).toHaveTextContent("The Booking takes the stub's place on the List.")
   })
 })
