@@ -106,35 +106,140 @@ the card) is the obvious one to reuse for these list pages.
 - `docs/DECISIONS.md` and `docs/BACKLOG.md` contain no ruling on page width, so nothing settled
   stands in the way.
 
-## Suggested direction (not yet decided)
+## Layout decisions
 
-1. **One page frame for Admin** (an `AdminPage`, owned by `apps/admin/` or `shared/ui/`). It holds
-   the header, the optional tabs row, a toolbar row (filters on the left, count and pager on the
-   right) and the body. It has three modes, and screens stop setting their own maxWidth:
-   - `fit`: the Day view's behaviour. The page is one window high, the header and toolbar stay in
-     place, and the table body scrolls inside its card with the pager in the footer. Use it for the
-     list pages: Draft Lists, Conflicts, Notifications, Review queue, Invoices, Patients lists,
-     Audit, Master data tables, Ledger pairs, Matching.
-   - `fluid`: full width with the page scrolling. Use it for dashboards and records: Billing
-     monitor, Ledger summary, AA fees, Booking, Review, Patient, Anaesthetist and Surgeon records,
-     each as a main column plus one standard right rail width.
-   - `document`: the paper and side panel, centred. Keep it for Invoice, Credit note and Remittance,
-     where a printed-page shape is the point.
-2. **Prose keeps a readable measure. Containers do not.** `PageHeader` caps the intro sub-line at one
-   default width (about 760), and the per-screen `subStyle` widths go away. Forms and settings cards
-   that should stay narrow (Validators, AA fee settings, Schedule settings) keep a named form width
-   inside the fluid page, so the narrowness is a deliberate choice and not an accident of the page
-   width.
-3. **Shell:** make the side nav sticky, at the viewport's height. Lower `minWidth` so a 1280-wide
-   laptop does not scroll sideways (for example by letting the Day rail narrow or collapse below
-   about 1360).
-4. **Pick one idiom per job:** `LineTabs` for routed sub-pages (Patients moves to tabs), and
-   `FilterPills` or the segmented control only for filtering the list on the page. Choose either a
-   breadcrumb or a `BackLink` for detail pages, and use one filter-bar layout everywhere.
-5. **Check at 1280x720, 1536x864, 1920x1080 and 2560x1440.** A Playwright pass that measures each nav
-   page's root width and horizontal overflow, as this investigation did, would catch any regression.
+The owner asked for the open questions to be answered on design grounds. The palette, type and
+components are fixed by `docs/design/` and `src/theme/`. These rules cover only the free axis: how a
+page uses the screen.
 
-Questions for the owner when the work starts: should records go fluid or keep a comfortable cap
-(about 1400) on very wide screens? Should every list page go to `fit`, or only the long ones? Should
-`document` stay centred or align left like everything else?
+### Who it is for, and the stance this leads to
 
+The users are AA's office staff. They spend the whole working day in this app on a desktop, moving
+between queues: triage a row, act on it, move to the next. Most pages are lists to work through, not
+documents to read. That leads to one stance:
+
+**The Admin app is an instrument panel, not a document.** Every page is shaped like the Day view, the
+page the office already lives in. The title and controls stay where they are, the work fills the rest
+of the window, and the page itself never scrolls. That shape is the one memorable choice. Everything
+around it stays quiet: one left edge, one right edge, one rail width, one place for each kind of
+control.
+
+### Q1. Records fill the width. Text keeps a measure, containers don't.
+
+The owner wants pages to use the space, so records get no page cap. Width is still a problem for
+**reading**: a label and its value 1,200px apart, or a paragraph 1,000px wide, is hard to read. So
+the limit goes on the content, not on the page:
+
+- **Prose** (intros, captions, explanations) stops at about 75 characters (`maxWidth: '75ch'`), within
+  the under-80 rule.
+- **Label and value lists** (`DefList`) flow into columns of at least 320px (`repeat(auto-fill,
+  minmax(320px, 1fr))`). A wider screen shows more columns side by side, never longer rows.
+- **Stat tiles** sit in an auto-fill grid with a 200px minimum, as the Patient record already does.
+- **Tables** span their card.
+- **Forms** keep one named form width (`ADMIN_FORM_WIDTH`, about 560) wherever they appear
+  (Validators, AA fee settings, Schedule settings, the threshold card), so a narrow form is a choice,
+  not an accident of the page.
+
+A record is a main column plus the standard rail (below), both filling the width.
+
+```
+| nav | ‹ Back to Invoice AA-S-002568                                       |
+|     | Dean Wells   NHI YRA9301                      [Draft update email] |
+|     | ┌──────────── main (fluid) ───────────────┐  ┌── rail 412 ──┐      |
+|     | │ Procedure  …                             │  │ Booking total│      |
+|     | │ Billing    …   (label/value in columns)  │  │ Patient      │      |
+|     | │ Times · Units · Procedures (tables span) │  │ Notes        │      |
+|     | └──────────────────────────────────────────┘  └──────────────┘      |
+```
+
+### Q2. Every list page fits the window. The card hugs short lists.
+
+Fitting the window keeps the title, toolbar, column headers and pager in the same place on every list,
+which is what the office reaches for. Only doing it for long lists would make the same controls move
+from page to page. The worry with short lists (Conflicts has 6 rows, Notifications is often empty) is
+a tall empty card. The answer is that **the card's height is "up to the window", not "the window"**
+(`maxHeight`, with the body scrolling once it reaches it). A six-row list looks as it does today, and
+a 2,570-row list gets a fixed header and toolbar, a sticky column header and the pager in the card
+footer. The Day view keeps its full-height canvas, because its grid is a timeline and not a list.
+
+Three rules follow from "the table owns the page's height":
+
+1. **Above the card go only the title row, the tabs (if any) and one toolbar row.** Anything else
+   moves into the page's rail. On Invoices, "Awaiting approval" becomes rail cards, the same way the
+   Day rail already shows "2 pre-payments". "Recently billed" leaves Invoices, where it repeats the top
+   rows of the table, and sits in the Review queue's rail.
+2. **A list table fits 1,008px with no sideways scroll** (the content width on a 1280 laptop). Each
+   table names one or two flexible text columns (patient, procedure, reason, note) that take up any
+   spare width. Every other column is sized to its content and doesn't wrap. Where 1,008px is too
+   narrow, columns are merged; for example, Invoices' "Kind" becomes a pill on the number for credit
+   notes.
+3. **The rows area is never shorter than 360px.** At 1280x720 that holds with a single toolbar row,
+   which is another reason for rule 1.
+
+Billing monitor is not a list. It is a dashboard of about 23 grouped tables, and its 15,600px length is
+a content problem. It uses the fluid mode, with its anaesthetist groups collapsed by default. That is a
+separate change.
+
+### Q3. Documents align left, at their paper width.
+
+A centred invoice moves the page's left edge 300px to the right of every other page at 1920 (look at
+where the "Invoices" crumb lands), and that jump is the inconsistency the owner noticed. The invoice
+keeps its fixed paper width (760; it prints at that width) and starts at the common left edge. The
+side panel sits beside it at the standard rail width (412 instead of 264; at 264 the delivery email
+breaks over three lines). On a wide screen the space to the right of the panel stays empty: it is the
+desk the paper lies on. This is the one mode where empty space is right. The same rule applies to the
+credit note and the remittance advice.
+
+### The page frame (one component, three modes)
+
+```
+| nav | Title  count                                         [Primary action] |  title row
+|     | One-sentence intro, at most 75ch                                       |
+|     | Tab  Tab  Tab                                                          |  routed views only
+|     | [All hospitals ▾] [From today ▾] [Search…]                2,570 items |  toolbar
+|     | ┌───────────────── card (fit) ──────────────────┐  ┌── rail 412 ──┐   |
+|     | │ COLUMN  COLUMN  FLEX COLUMN ………… COLUMN       │  │ context cards│   |
+|     | │ rows scroll here                               │  │ (optional)   │   |
+|     | │ …                                              │  │              │   |
+|     | │ legend / notes            « ‹  1 of 52  › »    │  └──────────────┘   |
+|     | └────────────────────────────────────────────────┘                     |
+```
+
+- **Modes:** `fit` for list pages, `fluid` for records and dashboards, and `document` for the invoice,
+  credit note and remittance. A screen picks a mode and never sets its own `maxWidth` again.
+- **Edges:** one left edge (the content inset) for the back link, title, toolbar and card on every
+  page. One right edge (the inset from the window's right) for every mode except `document`.
+- **Rail:** one width, `ADMIN_RIGHT_RAIL_WIDTH` (412), on every page that has one: the Day view,
+  Review queue, Invoices, Booking, Patient and Anaesthetist records, and documents. Below 1440 wide the
+  rail narrows to 320, so the 1280 laptop keeps a usable grid.
+- **Title row:** `PageHeader` size `admin`. The page's single primary action sits on the right at
+  `Button` `desktop` size (44), never the touch size. "New Draft List" shrinks to it. A count sits
+  beside the title (Notifications already does this).
+- **Intro:** one sentence, at most two lines, capped at 75ch by `PageHeader` itself. The per-screen
+  `subStyle` widths go. The longer explanations (Billing monitor, Ledger, Matching's sample-file note)
+  move to the info popover the Day view uses, or into the rail.
+- **Tabs:** `LineTabs` for routed sub-pages only. Patients' three views move from the segmented control
+  to tabs. Filtering the rows on the page is `FilterPills` (Matching's Open, Unmatched and Decided move
+  to pills, which also fixes the wrapped labels). The segmented control stays for a mode switch inside
+  one view (the Day view's roster order, the Ledger's scope).
+- **Toolbar:** a single row of compact (36) controls. Each select names itself through its value ("All
+  hospitals", "From today") with a visually hidden label, so there are no eyebrow labels above fields:
+  those cost a row of height in `fit` and add a label the value already gives. Date ranges carry a short
+  inline label ("From", "To"). The result count sits at the toolbar's right edge. The pager lives in the
+  card footer, as on the Day view.
+- **Going back:** one `BackLink` above the title on every detail page, named for where the user came
+  from ("‹ Invoice AA-S-002568", "‹ Anaesthetists"). A breadcrumb would claim a hierarchy that
+  cross-links (a Booking reached from an Invoice) don't have. The hand-built crumbs on Invoice, Credit
+  note, Review and Patient record go, and the Breadcrumb in the backlog's shared-components item falls away when this lands.
+- **Shell:** the side nav is sticky, one window high, so Help and the persona chip are always visible.
+  The minimum width drops from 1320 to 1280, the width of a 1080p laptop at 150%.
+
+### Check
+
+Add a Playwright pass that, for every side-nav page at 1280x720, 1536x864, 1920x1080 and 2560x1440,
+asserts:
+
+- the page root reaches the right edge (except `document`)
+- `main` has no sideways overflow
+- no list table scrolls sideways at 1280
+- the page itself doesn't scroll in `fit` mode
