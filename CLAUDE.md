@@ -127,6 +127,11 @@ requirement text with this rule.
 - **Determinism.** Never `Date.now()`, `new Date()` or `Math.random()`. Time comes from the demo
   clock (`src/domain/clock.ts`; `DEMO_TODAY` = 2026-07-21), randomness from the seeded RNG. Same seed
   → identical data.
+- **The everyday data is AA's whole practice**: `freshAppState()` is the core seed (the scripted cast of 14,
+  `domain/seed/`) plus the 71 colleagues of `domain/seed/fullScale/names.ts`
+  (`buildFullScaleDataset(core, { scope: 'practice' })`), built once per page and shared. The store saves
+  only a delta against it (`store/persistDelta.ts`), so never edit a state record in place. Under Vitest
+  `freshAppState()` is the core seed; `everydayPractice.test.ts` holds the practice to the same invariants.
 - **Bump `PERSIST_VERSION`** (`src/store/appStore.ts`) whenever the seed's shape or content changes,
   or stale persisted state survives the reload.
 - **Billing maths is pure**: all fee/unit/route/split logic lives in `src/domain/billing/` with

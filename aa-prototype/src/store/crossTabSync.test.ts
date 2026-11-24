@@ -8,7 +8,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createAppStore, PERSIST_KEY, PERSIST_VERSION, type AppState } from './appStore'
+import { createAppStore, freshAppState, PERSIST_KEY, PERSIST_VERSION, type AppState } from './appStore'
+import { applyDelta, deltaOf, type PersistDelta } from './persistDelta'
 import { bindCrossTabSync } from './crossTabSync'
 import { flushPersist } from './persistStorage'
 
@@ -109,6 +110,16 @@ describe('cross-tab sync', () => {
     expect(store.getState()).toBe(before)
   })
 
+  it('adopts another tab\'s delta payload (persistDelta.ts) onto the start, keeping the start\'s untouched slices', () => {
+    const store = createAppStore({ persisted: true })
+    unbind = bindCrossTabSync(store, PERSIST_KEY)
+    const start = freshAppState()
+    const delta = deltaOf({ ...start, settings: { ...start.settings, contactArchiveInactivityDays: 44 } } as unknown as Record<string, unknown>, start as unknown as Record<string, unknown>)
+    arrive(JSON.stringify({ state: delta, version: PERSIST_VERSION }))
+    expect(store.getState().settings.contactArchiveInactivityDays).toBe(44)
+    expect(store.getState().masters.anaesthetists).toBe(start.masters.anaesthetists)
+  })
+
   it('resumes ordinary writes after an adopt', () => {
     const store = createAppStore({ persisted: true })
     unbind = bindCrossTabSync(store, PERSIST_KEY)
@@ -117,8 +128,10 @@ describe('cross-tab sync', () => {
 
     store.getState().nextSuggestionSeq()
     flushPersist()
-    const stored = JSON.parse(localStorage.getItem(PERSIST_KEY) ?? '{}') as { state: AppState }
-    expect(stored.state.shell.suggestionSeq).toBe(1)
-    expect(stored.state.settings.contactArchiveInactivityDays).toBe(33)
+    // The payload is a delta against the start (persistDelta.ts): read it back as the state it stands for.
+    const stored = JSON.parse(localStorage.getItem(PERSIST_KEY) ?? '{}') as { state: PersistDelta }
+    const saved = applyDelta(freshAppState() as unknown as Record<string, unknown>, stored.state) as unknown as AppState
+    expect(saved.shell.suggestionSeq).toBe(1)
+    expect(saved.settings.contactArchiveInactivityDays).toBe(33)
   })
 })

@@ -121,9 +121,9 @@ function personalIn(text: string, known: Map<string, string>): string | undefine
 function internalIdsOf(state: ScanState): Set<string> {
   const ids = new Set<string>()
   const maps: Record<string, unknown>[] = [
-    state.xero.contacts, state.xero.accRecs, state.xero.accPays, state.xero.payments, state.xero.disbursements, state.xero.journals, state.xero.remittances, state.xero.bankLines, state.xero.creditNotes, state.xero.refunds,
+    state.xero.contacts, state.xero.accRecs, state.xero.accPays, state.xero.payments, state.xero.disbursements, state.xero.journals, state.xero.remittances, state.xero.bankLines, state.xero.creditNotes, state.xero.refunds, state.xero.batchPayments,
     state.billing.invoices, state.billing.invoiceLines, state.billing.ledger, state.billing.receipts, state.billing.disbursements, state.billing.exceptions, state.billing.xeroQueue, state.billing.transfers, state.billing.aaFeeInvoices,
-    state.billing.creditNotes, state.billing.negativeInvoices, state.billing.prepaymentRefunds,
+    state.billing.creditNotes, state.billing.negativeInvoices, state.billing.prepaymentRefunds, state.billing.payablesRuns, state.billing.bankLines,
     state.schedule.lists, state.schedule.bookings, state.schedule.procedures, state.intake.rows, state.intake.batches, state.intake.stubs, state.integrations.messages,
   ]
   for (const m of maps) for (const k of Object.keys(m)) if (k.length === 7) ids.add(k.toUpperCase())

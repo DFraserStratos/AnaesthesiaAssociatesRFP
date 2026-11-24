@@ -22,6 +22,9 @@ import { isMinorOn } from '../domain/billing/whoIsBilled'
 import { addDaysISO, horizonFor } from '../domain/clock'
 import { SEED_STATUS } from '../domain/slotStatus'
 import { billingMonitorView } from './billingMonitorView'
+import { previewApplyAllRecurringBookings } from './selectors'
+import { initialsOf, surnameOf } from '../shared/format'
+import { ENGLISH_NAMES, FULL_SCALE_ANAESTHETISTS, FULL_SCALE_SURGEONS, GUIDE_PATIENT_SURNAMES, poolFor } from '../domain/seed/fullScale/names'
 import type { Contract } from '../domain/billing/contracts'
 
 const TODAY = '2026-07-21'
@@ -141,13 +144,17 @@ describe('the claims (US-15.0.4)', () => {
     expect(full.counts.invoicesLast12Months).toBeLessThanOrEqual(28500)
   })
 
-  it('one AA fee invoice per generated anaesthetist per month, its per-BCTI line by 16\'s one count', () => {
+  it('one AA fee invoice per generated anaesthetist per month since joining, its per-BCTI line by 16\'s one count', () => {
     const generated = Object.keys(state.masters.anaesthetists).filter((id) => pristine.masters.anaesthetists[id] === undefined)
     const fees = Object.values(state.billing.aaFeeInvoices).filter((f) => generated.includes(f.anaesthetistId))
     const perMonth = new Map<string, number>()
     for (const f of fees) perMonth.set(`${f.anaesthetistId}|${f.monthISO}`, (perMonth.get(`${f.anaesthetistId}|${f.monthISO}`) ?? 0) + 1)
     for (const n of perMonth.values()) expect(n).toBe(1)
-    expect(perMonth.size).toBe(generated.length * 12)
+    // Twelve months each for the established; none for a new starter, who joins after today.
+    const starters = generated.filter((id) => state.masters.anaesthetists[id]!.startDateISO > TODAY)
+    expect(starters.length).toBe(2)
+    expect(perMonth.size).toBe((generated.length - starters.length) * 12)
+    for (const f of fees) expect(starters.includes(f.anaesthetistId)).toBe(false)
     const sample = fees.filter((f) => f.anaesthetistId === generated[3])
     const records = bctiRecordsOf(Object.values(state.billing.ledger)).filter((r) => r.anaesthetistId === generated[3])
     const earlier: typeof sample = []
@@ -450,5 +457,162 @@ describe('payment runs at full scale (catch-up Phase 39a)', () => {
       if (p.source === 'aaFee' || state.xero.accRecs[p.accRecId]?.kind === 'aaFee') continue
       expect(lined.has(p.id), p.id).toBe(true)
     }
+  })
+})
+
+describe('the practice: the 71 as people (names, working lives, the office\'s view)', () => {
+  const generatedIds = (): string[] => Object.keys(state.masters.anaesthetists).filter((id) => pristine.masters.anaesthetists[id] === undefined)
+
+  it('the roster: 71 hand-picked names, 36 women and 35 men, about the New Zealand mix', () => {
+    expect(FULL_SCALE_ANAESTHETISTS.length).toBe(71)
+    expect(FULL_SCALE_ANAESTHETISTS.filter((r) => r.sex === 'F').length).toBe(36)
+    const groups: Record<string, number> = {}
+    for (const r of FULL_SCALE_ANAESTHETISTS) groups[r.group] = (groups[r.group] ?? 0) + 1
+    expect(groups).toEqual({ European: 39, Māori: 12, Asian: 13, Pacific: 5, MELAA: 2 })
+    const profiles: Record<string, number> = {}
+    for (const r of FULL_SCALE_ANAESTHETISTS) profiles[r.profile] = (profiles[r.profile] ?? 0) + 1
+    expect(profiles).toEqual({ full: 32, part: 28, light: 11 })
+    // The prepaid price lists sit on the first six: none of them a new starter.
+    for (const r of FULL_SCALE_ANAESTHETISTS.slice(0, FULL_SCALE.prepaidPriceListAnaesthetists)) expect(r.startsISO).toBeUndefined()
+    const generated = generatedIds().map((id) => state.masters.anaesthetists[id]!.name)
+    expect(generated).toEqual(FULL_SCALE_ANAESTHETISTS.map((r) => `Dr ${r.first} ${r.last}`))
+  })
+
+  it('every one of the 85 has a unique surname, initials, email and HPI CPN; no surname is a surgeon\'s or a guide patient\'s', () => {
+    const all = Object.values(state.masters.anaesthetists)
+    expect(all.length).toBe(85)
+    expect(new Set(all.map((a) => surnameOf(a.name))).size).toBe(85)
+    expect(new Set(all.map((a) => a.email)).size).toBe(85)
+    expect(new Set(all.map((a) => a.hpiId)).size).toBe(85)
+    // No two avatars alike (the shared Avatar shows initials only).
+    expect(new Set(all.map((a) => initialsOf(a.name))).size).toBe(85)
+    const surgeonSurnames = new Set(Object.values(state.masters.surgeons).map((s) => surnameOf(s.name)))
+    for (const id of generatedIds()) {
+      const surname = surnameOf(state.masters.anaesthetists[id]!.name)
+      expect(surgeonSurnames.has(surname), surname).toBe(false)
+      expect(GUIDE_PATIENT_SURNAMES.has(surname), surname).toBe(false)
+    }
+  })
+
+  it('the 24 generated surgeons come from their roster, with surnames no other surgeon or anaesthetist has', () => {
+    const generated = Object.values(state.masters.surgeons).filter((s) => pristine.masters.surgeons[s.id] === undefined)
+    expect(generated.map((s) => s.name)).toEqual(FULL_SCALE_SURGEONS.slice(0, FULL_SCALE.surgeons).map((r) => `${r.title} ${r.first.charAt(0)}. ${r.last}`))
+    const others = new Set([
+      ...Object.values(pristine.masters.surgeons).map((s) => surnameOf(s.name)),
+      ...Object.values(state.masters.anaesthetists).map((a) => surnameOf(a.name)),
+    ])
+    for (const s of generated) expect(others.has(surnameOf(s.name)), s.name).toBe(false)
+    expect(new Set(generated.map((s) => surnameOf(s.name))).size).toBe(generated.length)
+  })
+
+  it('every generated patient\'s name comes from the pool of their ethnicity code, and no guide patient\'s surname is reused', () => {
+    const english = new Set<string>([...ENGLISH_NAMES.female, ...ENGLISH_NAMES.male])
+    const englishSurnames = new Set<string>(ENGLISH_NAMES.surnames)
+    const generated = Object.values(state.masters.patients).filter((p) => pristine.masters.patients[p.hiddenInternalId] === undefined)
+    expect(generated.length).toBeGreaterThan(20000)
+    const codes = new Set<string>()
+    for (const p of generated) {
+      const pool = poolFor(p.ethnicityCode)
+      expect(pool.code, p.hiddenInternalId).toBe(p.ethnicityCode)
+      codes.add(pool.code)
+      const [first, surname] = p.name.split(' ') as [string, string]
+      expect(p.name.split(' ').length, p.name).toBe(2)
+      const firstOk = pool.female.includes(first) || pool.male.includes(first) || (pool.englishFirstShare !== undefined && english.has(first))
+      const surnameOk = pool.surnames.includes(surname) || (pool.englishSurnameShare !== undefined && englishSurnames.has(surname))
+      expect(firstOk && surnameOk, `${p.name} (${p.ethnicityCode})`).toBe(true)
+      expect(GUIDE_PATIENT_SURNAMES.has(surname), p.name).toBe(false)
+    }
+    expect(codes.size).toBe(12)
+  })
+
+  it('work profiles: days off are one weekly Unavailable series (weekdays off for part time and light, the weekend for most), with no recurring session on them', () => {
+    const roster = new Map(generatedIds().map((id, i) => [id, FULL_SCALE_ANAESTHETISTS[i]!]))
+    const seriesByAnaesthetist = new Map<string, typeof state.schedule.availabilitySeries[string][]>()
+    for (const s of Object.values(state.schedule.availabilitySeries)) {
+      if (pristine.schedule.availabilitySeries[s.id] !== undefined) continue
+      seriesByAnaesthetist.set(s.anaesthetistId, [...(seriesByAnaesthetist.get(s.anaesthetistId) ?? []), s])
+    }
+    const recurring = Object.values(state.masters.recurringBookings).filter((r) => pristine.masters.recurringBookings[r.id] === undefined)
+    let weekendsOff = 0
+    for (const [id, row] of roster) {
+      const profile = FULL_SCALE.workProfiles[row.profile]
+      const mine = recurring.filter((r) => r.anaesthetistId === id)
+      expect(mine.length, id).toBeGreaterThanOrEqual(profile.sessionsPerWeek.min)
+      expect(mine.length, id).toBeLessThanOrEqual(profile.sessionsPerWeek.max)
+      const series = seriesByAnaesthetist.get(id) ?? []
+      expect(series.length, id).toBeLessThanOrEqual(1)
+      const weekdays = (series[0]?.weekdays ?? []) as number[]
+      const off = weekdays.filter((d) => d <= 5)
+      expect(off.length, id).toBeGreaterThanOrEqual(profile.weekdaysOff.min)
+      expect(off.length, id).toBeLessThanOrEqual(profile.weekdaysOff.max)
+      if (series[0] !== undefined) expect(series[0].statusKey).toBe(SEED_STATUS.unavailable)
+      for (const r of mine) expect(weekdays.includes(r.dayOfWeek), r.id).toBe(false)
+      if (weekdays.includes(6)) weekendsOff += 1
+    }
+    expect(weekendsOff).toBeGreaterThan(40)
+    // The series painted the canvas: their Slots carry the series id.
+    const painted = Object.values(state.schedule.slots).filter((sl) => sl.seriesId !== undefined && seriesByAnaesthetist.has(sl.anaesthetistId))
+    expect(painted.length).toBeGreaterThan(1000)
+  })
+
+  it('a new starter has no Slot, List or Booking before joining; everyone established has Lists in the next four weeks', () => {
+    const listsByAnaesthetist = new Map<string, string[]>()
+    for (const l of Object.values(state.schedule.lists)) {
+      if (l.anaesthetistId === undefined) continue
+      listsByAnaesthetist.set(l.anaesthetistId, [...(listsByAnaesthetist.get(l.anaesthetistId) ?? []), l.dateISO])
+    }
+    for (const id of generatedIds()) {
+      const start = state.masters.anaesthetists[id]!.startDateISO
+      const dates = listsByAnaesthetist.get(id) ?? []
+      if (start > TODAY) {
+        for (const d of dates) expect(d >= start, `${id} ${d}`).toBe(true)
+        for (const s of Object.values(state.schedule.slots)) if (s.anaesthetistId === id) expect(s.dateISO >= start).toBe(true)
+        continue
+      }
+      expect(dates.some((d) => d >= TODAY && d <= addDaysISO(TODAY, 28)), id).toBe(true)
+    }
+  })
+
+  it('the canvas is settled: applying every recurring booking now would change nothing for the 71 (covered days stay answered)', () => {
+    const plan = previewApplyAllRecurringBookings(state)
+    const mentionsGenerated = (rows: readonly unknown[]): unknown[] => rows.filter((r) => JSON.stringify(r).includes('RB-FS-'))
+    expect(mentionsGenerated(plan.create)).toEqual([])
+    expect(mentionsGenerated(plan.update)).toEqual([])
+    expect(mentionsGenerated(plan.remove)).toEqual([])
+    expect(mentionsGenerated(plan.skipped)).toEqual([])
+    expect(mentionsGenerated(plan.draftUpdate)).toEqual([])
+    expect(mentionsGenerated(plan.draftRemove)).toEqual([])
+    // Some recurring days under leave were covered by a colleague: they keep their draft trail.
+    const covered = Object.values(state.schedule.lists).filter((l) => l.state === 'ACTIVE' && l.draft?.projectedFor !== undefined && pristine.schedule.lists[l.id] === undefined)
+    expect(covered.length).toBeGreaterThan(50)
+  }, 120_000)
+
+  it('no Slot holds two Lists, and every assigned List ahead sits on an open Slot', () => {
+    const seen = new Set<string>()
+    for (const l of Object.values(state.schedule.lists)) {
+      if (l.slotId === undefined) continue
+      expect(seen.has(l.slotId), l.id).toBe(false)
+      seen.add(l.slotId)
+      if (pristine.schedule.lists[l.id] !== undefined || l.dateISO < TODAY || l.state !== 'ACTIVE') continue
+      expect(state.schedule.slots[l.slotId]?.status, l.id).toBe(SEED_STATUS.free)
+    }
+  })
+
+  it('the office\'s view: the cast\'s tiers and preferences stay as seeded; the new ones are among the generated people only', () => {
+    for (const [id, tier] of Object.entries(pristine.officePrivate.priorityTiers)) expect(state.officePrivate.priorityTiers[id]).toBe(tier)
+    for (const [id, pref] of Object.entries(pristine.officePrivate.pairingPreferences)) expect(state.officePrivate.pairingPreferences[id]).toEqual(pref)
+    const generated = new Set(generatedIds())
+    const tiers = Object.entries(state.officePrivate.priorityTiers).filter(([id]) => generated.has(id))
+    expect(tiers.length).toBeGreaterThan(15)
+    for (const [, tier] of tiers) expect([2, 3]).toContain(tier)
+    const prefs = Object.values(state.officePrivate.pairingPreferences).filter((p) => pristine.officePrivate.pairingPreferences[p.id] === undefined)
+    expect(prefs.length).toBe(FULL_SCALE.pairingPreferences)
+    for (const p of prefs) {
+      expect(generated.has(p.anaesthetistId), p.id).toBe(true)
+      expect(pristine.masters.surgeons[p.surgeonId], p.id).toBeUndefined()
+      expect(state.masters.surgeons[p.surgeonId], p.id).toBeDefined()
+      expect(p.addedAtISO < `${TODAY}T00:00:00`).toBe(true)
+    }
+    expect(new Set(prefs.map((p) => `${p.anaesthetistId}|${p.surgeonId}`)).size).toBe(prefs.length)
   })
 })

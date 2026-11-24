@@ -16,7 +16,9 @@ const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
 /** The pristine seed plus a credit note on a live invoice (the seed's only one credits Dr Sharma's history). */
 function withLiveCreditNote(): { state: AppState; invoiceNumber: string; seeded: CreditNote } {
-  const state = freshAppState()
+  // A copy: the starting state is shared (and frozen under test).
+  const start = freshAppState()
+  const state: AppState = { ...start, billing: { ...start.billing } }
   const seeded = Object.values(state.billing.creditNotes)[0]!
   const invoice = Object.values(state.billing.invoices).filter((i) => !isBackdropInvoice(i)).sort((a, b) => a.id.localeCompare(b.id))[0]!
   const note: CreditNote = { ...seeded, id: 'CRN-T1', creditNoteNumber: 'CN-2026-T001', originalInvoiceId: invoice.id, bookingId: invoice.bookingId, counterparty: invoice.counterparty }

@@ -14,13 +14,10 @@
  * the matching screen can show a refused decision's reason and change nothing.
  */
 
-import { emptyMasterLoadsSlice } from '../domain/masterLoad/types'
 import type { ActorRole, AuditEntry, AuditSource, BookingId, ChangeSetId, ChangeSetKind } from '../domain/types'
-import { buildSeed, buildSeedBillingSlice, SEED_AUTHORISED_INVOICED_BOOKING_IDS, SEED_PREPAID_BOOKING_ID } from '../domain/seed'
-import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
-import { seededIntakeSlice, seededIntegrationsSlice, type AppState, type AppStoreApi } from './appStore'
+import type { DemoClockState } from '../domain/clock'
+import { freshAppState, type AppState, type AppStoreApi } from './appStore'
 import { reconcileConflictsInPatch, type MutationResult } from './conflictReconcile'
-import { seedLocks } from './locks'
 import { clearScaleMode } from './scaleMode'
 import { reportDiagnostic } from './diagnostics'
 import { resumePersist } from './persistStorage'
@@ -488,53 +485,9 @@ export function installDomainState(api: AppStoreApi, domain: DomainState): void 
 }
 
 function resetDomainStateOnly(api: AppStoreApi): void {
-  const seed = buildSeed()
-  // Restore the seeded PAID pre-payment slice through the same seam as
-  // freshAppState (Phase 09), with the counters it bumped.
-  const seedBilling = buildSeedBillingSlice(seed, SEED_PREPAID_BOOKING_ID, SEED_AUTHORISED_INVOICED_BOOKING_IDS)
-  const pristine: DomainState = {
-    clock: INITIAL_CLOCK,
-    masters: seed.masters,
-    schedule: seed.schedule,
-    audit: seed.audit,
-    settings: seed.settings,
-    appSettings: seed.appSettings,
-    dayNotes: seed.dayNotes,
-    officePrivate: seed.officePrivate,
-    notifications: seed.notifications,
-    patientCare: seed.patientCare,
-    support: seed.support,
-    counters: seedBilling.counters,
-    billing: {
-      invoices: seedBilling.invoices,
-      invoiceLines: seedBilling.invoiceLines,
-      ledger: seedBilling.ledger,
-      receipts: seedBilling.receipts,
-      disbursements: seedBilling.disbursements,
-      unmatchedReceipts: {},
-      exceptions: {},
-      contactIdCache: seedBilling.contactIdCache,
-      aaFeeInvoices: seedBilling.aaFeeInvoices,
-      locks: {},
-      transfers: {},
-      // The seed ships no queue and no flags; settings come from the seed, so the outage clears (catch-up Phase 37).
-      xeroQueue: {},
-      xeroDivergences: {},
-      // The seed's one credit, Heather Sinclair's (catch-up Phase 40, D24), as `freshAppState` has it.
-      creditNotes: seedBilling.creditNotes,
-      negativeInvoices: seedBilling.negativeInvoices,
-      // The backdrop weekly runs and the bank download (catch-up Phase 39a).
-      payablesRuns: seedBilling.payablesRuns,
-      bankLines: seedBilling.bankLines,
-      // None in the seed (catch-up Phase 41).
-      prepaymentRefunds: {},
-    },
-    xero: seedBilling.xero,
-    integrations: seededIntegrationsSlice(),
-    intake: seededIntakeSlice(),
-    masterLoads: emptyMasterLoadsSlice(),
-  }
-  // Every seeded AUTHORISED List locked, as `freshAppState` does (catch-up Phase 25).
-  const locked = seedLocks({ ...api.getState(), ...pristine })
-  installDomainState(api, { ...pristine, billing: { ...pristine.billing, locks: locked.locks } })
+  // The same starting state as a first load (the core seed and the practice), the shared object itself: never
+  // rebuilt, so saving finds nothing changed (persistDelta.ts). The shell survives, as `installDomainState` says.
+  const { shell: _shell, ...domain } = freshAppState()
+  void _shell
+  installDomainState(api, domain)
 }

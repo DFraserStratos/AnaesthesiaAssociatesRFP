@@ -19,6 +19,7 @@ import { emptyMasterLoadsSlice, type MasterLoadsSlice } from '../domain/masterLo
 import { create, type StateCreator, type StoreApi, type UseBoundStore } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { pausableStorage, resilientLocalStorage } from './persistStorage'
+import { applyDelta, deltaOf, isPersistDelta } from './persistDelta'
 import { bindCrossTabSync } from './crossTabSync'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
 import { buildSeed, buildSeedBillingSlice, SEED_AUTHORISED_INVOICED_BOOKING_IDS, SEED_PREPAID_BOOKING_ID, type SeedState } from '../domain/seed'
@@ -67,6 +68,7 @@ import type { AppId } from '../shell/appConfig'
 import type { BookingLock } from '../domain/billing/lock'
 import { seedLocks } from './locks'
 import { seededIntake } from '../domain/seed/intakeSeed'
+import { buildFullScaleDataset } from '../domain/seed/fullScale'
 
 // ---------------------------------------------------------------------------
 // Slice shapes (typed now, filled in Phases 08 to 11)
@@ -477,8 +479,10 @@ export const PERSIST_KEY = 'aa-demo'
  *  in the seed; the credit's `refundedAmount`; Dr Beaumont's prepaid Rhinoplasty price-list Contract for the rebook. Reseeds on load.
  *  v74: Wave 5 join, Lane A's 41 (v73, holding 39a and the 39b sync) joined with Lane B's 40 (v72): one past the higher.
  *  Reseeds on load.
- *  v75 (lane/b): catch-up Phase 43b, support: the `support` slice (TK0001 to TK0005, counter `supportTicket` 6). Reseeds on load. */
-export const PERSIST_VERSION = 75
+ *  v75 (lane/b): catch-up Phase 43b, support: the `support` slice (TK0001 to TK0005, counter `supportTicket` 6). Reseeds on load.
+ *  v76: the whole practice is the everyday data (the 71 of `fullScale/names.ts` join the 14, `scope: 'practice'`), and the
+ *  payload is a delta against the shared start (`persistDelta.ts`), not a full copy. Reseeds on load. */
+export const PERSIST_VERSION = 76
 
 /** The intake slice: seeded empty, the presenter imports or a trigger delivers (catch-up Phase 33). */
 export function emptyIntakeSlice(): IntakeSlice {
@@ -497,8 +501,12 @@ export function seededIntegrationsSlice(): IntegrationsSlice {
   return { feeds, messages: {} }
 }
 
-/** A pristine full app state from the deterministic seed. */
-export function freshAppState(): AppState {
+/**
+ * The core seed: the demo's own cast of 14 and everything scripted around
+ * them, before the practice joins. The full-scale volume demonstration is
+ * built on it (`fullScaleActions.ts`); the everyday data is `freshAppState`.
+ */
+export function coreAppState(): AppState {
   const seed = buildSeed()
   // The pristine seed ships one PAID pre-payment slice (Phase 09), with the
   // counters bumped past the ids it consumed so the first runtime billing run
@@ -537,6 +545,54 @@ export function freshAppState(): AppState {
   // Every seeded AUTHORISED List is locked (catch-up Phase 25); its pairs carry the same payee from the seed.
   const locked = seedLocks(state)
   return { ...state, billing: { ...state.billing, locks: locked.locks } }
+}
+
+/** Freeze a whole tree (tests only: an in-place edit of the shared start then throws instead of leaking between tests). */
+function deepFreeze<T>(value: T): T {
+  const stack: unknown[] = [value]
+  while (stack.length > 0) {
+    const v = stack.pop()
+    if (typeof v !== 'object' || v === null || Object.isFrozen(v)) continue
+    Object.freeze(v)
+    for (const child of Object.values(v)) stack.push(child)
+  }
+  return value
+}
+
+let practiceState: AppState | null = null
+let coreStart: AppState | null = null
+
+/**
+ * The whole practice: the core seed and the practice that joins it, AA's
+ * whole company (the 71 of `domain/seed/fullScale/names.ts` with their working
+ * lives over the horizon, their Lists and Bookings, and their past fortnight
+ * billed; `scope: 'practice'`). Deterministic, built once per page and shared.
+ */
+export function practiceAppState(): AppState {
+  if (practiceState === null) {
+    const core = coreAppState()
+    const built = buildFullScaleDataset(core, { todayISO: core.clock.todayISO, scope: 'practice' }).state
+    practiceState = import.meta.env.MODE === 'test' ? deepFreeze(built) : built
+  }
+  return practiceState
+}
+
+/**
+ * The starting state: the whole practice (`practiceAppState`). A first load,
+ * Reset and a migrate all start from this same shared object, and saving
+ * writes only what differs from it (`persistDelta.ts`).
+ *
+ * Under test it is the core seed instead (frozen, so an in-place edit of a
+ * starting record fails loudly): the unit tests pin the scripted demo's own
+ * behaviour and figures, and `everydayPractice.test.ts` holds the practice to
+ * the same invariants.
+ */
+export function freshAppState(): AppState {
+  if (import.meta.env.MODE === 'test') {
+    coreStart ??= deepFreeze(coreAppState())
+    return coreStart
+  }
+  return practiceAppState()
 }
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
@@ -623,7 +679,15 @@ export function createAppStore(options: CreateAppStoreOptions = {}): BoundAppSto
         // sub-keys are added, and record maps (invoices, contacts, ...) are taken
         // wholesale from the persisted store, so no deleted seed record is
         // resurrected. Deep record-SHAPE changes still require a version bump.
-        merge: (persisted, current) => backfillMerge(current as AppStore, persisted),
+        // Only what differs from the shared start is saved (persistDelta.ts): the everyday data is
+        // the whole practice, far past the storage budget as a full copy. Loading applies the delta
+        // to the start (never to the live state, which a cross-tab rehydrate would double-apply to).
+        partialize: (state) => deltaOf(state as unknown as Record<string, unknown>, freshAppState() as unknown as Record<string, unknown>) as unknown as AppStore,
+        merge: (persisted, current) => {
+          const start = { ...(current as AppStore), ...freshAppState() } as AppStore
+          if (isPersistDelta(persisted)) return backfillMerge(start, applyDelta(start as unknown as Record<string, unknown>, persisted))
+          return backfillMerge(current as AppStore, persisted)
+        },
       }),
     )
   }

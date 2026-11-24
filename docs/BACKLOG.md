@@ -25,7 +25,7 @@ that need work are repeated here.
 - Two events for one party approved together raise two invoices in one run; the rule says the same party's invoice where it can. `store/procedureEventActions.ts`. M
 - AA-2026-0007's row (Chen's event invoice) reads "Booking time not set". `apps/admin/screens/InvoicesScreen.tsx`. S
 - Data inspector totals disagree (54 invoices, 56 ledger pairs, 55 in Xero; "4 sessions" beside "894 lists"), and `entityCounts` has no credit-note count. `store/selectors.ts`, `apps/demo/DemoData.tsx`. S
-- Invoices pager counts invoices only (their credit notes ride along); at full scale it reads 28,232 against the banner's 28,279 (backdrop left out). `apps/admin/screens/InvoicesScreen.tsx`. S
+- Invoices pager counts invoices only (their credit notes ride along); at full scale it reads a few dozen fewer than the banner's invoice count (backdrop left out). `apps/admin/screens/InvoicesScreen.tsx`. S
 - During a Xero outage the system-actor `xero.queued` entry joins the office's change set: `mutate()` scopes change sets by store, not actor. `store/mutate.ts`. S
 - `paymentDisabledReason` and `openAccRecs` read the whole ledger once per render rather than once per screen. S
 - At reset the Reconciliation card reads "Books square" while the Ledger shows a pair not yet in Xero (AA-2026-S2401). Decided: the card counts pairs pending to Xero as not square ("1 pair not yet in Xero"); also count Xero-only items once polled. Admin Day. S
@@ -75,6 +75,30 @@ that need work are repeated here.
 - Framed phone BK0025 after Raise sample warnings: the Paid by line shows the split warning text in place of the payer. S
 - Demo sheet "Colleague moves a Booking to me" after S2 Beat 5 offers two rows, and the Dr Ropata row hands Souter her own former Booking back. `store/listMoveDemo.ts`. S
 - Parked stories never built: US-01.1.5 (the A and B split of a session, DM-65) and US-03.7.4 (pre-op consults in AA's room, OQ-138). L (owner)
+
+## Prototype: at AA's size (85 anaesthetists, now the everyday data)
+
+Found walking the three apps with all 85 loaded; nothing errors, these are screens at size. Counts are from
+the full-scale data; the everyday data shows the same screens with its own (smaller) billing history.
+
+- Ledger takes 3 to 4 s to open and about 1 s per page or scope change, while its Timings row reads about 1 s painted. `apps/admin/screens/LedgerScreen.tsx`. M
+- Patient search stops at 50 matches with no pager or "more" note ("Smith" shows 50), and Patients has no Timings row. `store/patientSelectors.ts` (`PATIENT_SEARCH_LIMIT`). S
+- Long admin lists with no paging or search: Draft Lists (150), Review queue (130), Recurring bookings (393), AA fees "Every fee invoice" (830), Masters → Anaesthetists (85) and Surgeons (165), the Billing monitor's payment-cycle table. M
+- Anaesthetist names sort three ways: by first name (Masters → Anaesthetists, the Conflicts filter, Recurring bookings, AA fees, web Availability and Who's free, mobile Availability), in roster order (the Recurring booking sheet, the Ledger select), by surname (Day view, Billing monitor, the move pickers). One rule, surname, everywhere. S
+- New Draft List's surgeon select has 166 options sorted by display string ("A. Kingsley" before "Dr A. Dacre"); the pairing and recurring sheets' 166-option selects have no type-ahead. `apps/admin/flows/DraftListSheet.tsx`. S
+- Admin Move booking lists every List that day (about 88) with no search, each with the same advisory line. S
+- Invoices and Audit dates show no year though they span 12 months; the Billing monitor reads "18014 lists" with no thousands separator. S
+- Web Dashboard "Who's free · next 5 days" lists every free colleague with no cap. `apps/web/screens/DashboardScreen.tsx`. S
+- Web Availability draws all 85 rows: Dr Souter's own row is not pinned and reads "Dr Melanie Soute…", and the AM/PM header does not stick. `apps/web/screens/AvailabilityGrid.tsx`. S
+- Mobile Availability: 82 colleague cards with no search; a tile's subtitle repeats the hospital ("St George's · St George's · Mr D. Gri…"). `apps/mobile/screens/AvailabilityScreen.tsx`. S
+- Move a Booking to a colleague: a search mixes busy colleagues among the free in surname order, "Dr" matches everyone, the search box scrolls away, each free row repeats "Free this session. A new List is created for them", and the List picker shows phone numbers instead. `shared/flows/MoveBookingToColleagueSheet.tsx`. S
+- On a 4x-slowed CPU the mobile app freezes 0.6 to 1.7 s (Availability, opening a List or Booking, the Booking move sheet): `bookingMoveEntries` (`store/notifications.ts`) filters the whole audit on every store change (ships to the PWA), and the demo-actions menu re-checks every action against the whole dataset each render (`shell/DemoActionsMenu.tsx`). M
+- The scale banner's Timings cover admin screens only. `shared/scale/useScreenTiming.ts`. S
+- 11 directory surgeons have no title ("N. Darnell", "T. Underhill"), and the directory's "Dr E. Fitzgerald" sits beside anaesthetist Dr Emma Fitzgerald. `domain/seed/specialistDirectory.ts`. S
+- The demo's 14 keep only their demo history at full scale (Dr Souter 9 unpaid invoices against colleagues' ~330 a year). (owner) M
+- Shortening the horizon keeps recurring-clash Draft Lists past the new edge (at 85, 17 when going from four months to three). `store/slotActions.ts` (`setHorizonMonths`). S
+- Public holidays: at 85 the Labour Day and Canterbury Anniversary Day Lists make about 130 conflicts. Decide whether the office's recurring Lists skip public holidays instead. (owner) M
+- Start-up builds the whole practice on every load: about 1 s on a laptop, about 3 s on a 4x-slowed CPU (dev server). Cache the built start, or build the 71's billing lazily. `store/appStore.ts` (`practiceAppState`). M
 
 ## Prototype: provisional captions
 

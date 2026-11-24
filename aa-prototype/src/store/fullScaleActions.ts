@@ -3,8 +3,9 @@
  *
  * `loadFullScaleData` answers at once, like every demo trigger's `run`, and
  * does the work after one frame (so the "Generating" banner paints first):
- * Reset to the pristine seed, import the generator on demand (code-split: the
- * main chunk and the PWA never carry it until used), build the dataset, pause
+ * Reset to the everyday data, import the generator (no longer code-split: the
+ * everyday practice is built by it at start-up; the import stays as the load's one
+ * wait), build the dataset on the core seed, pause
  * saving, drop the saved payload (so a reload returns the pristine seed, never a
  * half state), install the dataset in one wholesale replace and record the
  * timings in `scaleMode`. Reset, a scenario jump or the PWA reset leave full
@@ -12,7 +13,7 @@
  */
 
 import type { AppStoreApi } from './appStore'
-import { PERSIST_KEY } from './appStore'
+import { coreAppState, PERSIST_KEY } from './appStore'
 import { installDomainState, ok, refuse, resetDomainState, type DomainState, type Outcome } from './mutate'
 import { pausePersist, resilientLocalStorage } from './persistStorage'
 import { nowMs, scaleMode, setScaleMode, timed } from './scaleMode'
@@ -77,7 +78,8 @@ async function run(api: AppStoreApi, frame: FrameScheduler, options: LoadFullSca
       return
     }
     const base = api.getState()
-    const generatedAt = timed(() => buildFullScaleDataset(base, { todayISO: base.clock.todayISO }))
+    // Built on the core seed (the demo's 14), not the everyday practice: the volume demonstration generates its own 71.
+    const generatedAt = timed(() => buildFullScaleDataset(coreAppState(), { todayISO: base.clock.todayISO }))
     pausePersist(FULL_SCALE_PAUSE_REASON)
     resilientLocalStorage.removeItem(PERSIST_KEY)
     const installed = timed(() => installDomainState(api, generatedAt.result.state as DomainState))

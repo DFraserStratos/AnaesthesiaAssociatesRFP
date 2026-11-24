@@ -31,11 +31,13 @@ import { parseISO } from 'date-fns'
 import type {
   Anaesthetist,
   AuditEntry,
+  AvailabilitySeries,
   BillingException,
   Booking,
   BookingLedgerPair,
   Disbursement,
   Hospital,
+  HospitalHoliday,
   Invoice,
   InvoiceLine,
   LedgerDisbursement,
@@ -43,14 +45,20 @@ import type {
   LedgerReceipt,
   LedgerTransfer,
   List,
+  OfficePrivateSlice,
+  PairingPreference,
   Patient,
   PaymentIn,
+  PublicHoliday,
+  PriorityTier,
   Procedure,
   ProcedurePayer,
   RecurringBooking,
   SeedLeaveWindow,
+  Session,
   Slot,
   Surgeon,
+  Weekday,
   XeroAccPay,
   XeroAccRec,
   XeroContact,
@@ -98,11 +106,14 @@ import { SEED_STATUS } from '../../slotStatus'
 import { originForNewList } from '../../lists/listOrigin'
 import { seedBankAccountNumber } from '../../bankAccount'
 import { nameWithoutTitle } from '../../names'
-import { ETHNICITY_DEMO_SUBSET } from '../../nzhis'
+import { seriesOccurrences } from '../../availabilitySeries'
+import { closuresAt, closuresIndex, closureSourcesOf } from '../../holidays'
+import { reconcileAllConflicts } from '../../conflicts'
 import { generateCanvasForDates } from '../canvas'
-import { seedRecurringClashDraftLists } from '../draftLists'
+import { SEED_CLASH_RUN_ISO, seedRecurringClashDraftLists } from '../draftLists'
+import { assignDraftToSlot } from '../../draftLists'
 import { slotRng } from '../slotHash'
-import { FIRST_NAMES, SURNAMES, withSeedContact } from '../patients'
+import { withSeedContact } from '../patients'
 import { HOSP } from '../cast'
 import { SPC } from '../specialties'
 import { EYE_CODES, GENERAL_CODES, LEGACY_CODE_TO_RVG_GROUP, RVG_GROUP } from '../rvgGroups'
@@ -110,6 +121,7 @@ import { seedText } from '../procedureText'
 import { finaliseSeedProcedureTexts } from '../procedureText'
 import { syntheticGstNumber } from '../cast'
 import { FULL_SCALE } from './constants'
+import { drawFirstName, drawPerson, drawPool, FULL_SCALE_ANAESTHETISTS, FULL_SCALE_SURGEONS, poolFor, type DrawnName, type NamePool, type RosterAnaesthetist } from './names'
 
 export { FULL_SCALE } from './constants'
 
@@ -135,13 +147,18 @@ export interface FullScaleInput {
     modifiers: InvoiceBuildContext['modifiers']
     rvgTimeRule: InvoiceBuildContext['timeRule']
     slotStatuses: Parameters<typeof generateCanvasForDates>[0]['statuses']
+    holidays: Record<string, HospitalHoliday>
+    publicHolidays: Record<string, PublicHoliday>
   }
   schedule: {
     slots: Record<string, Slot>
     lists: Record<string, List>
     bookings: Record<string, Booking>
     procedures: Record<string, Procedure>
+    availabilitySeries: Record<string, AvailabilitySeries>
   }
+  /** The office-only slice (US-01.3.6): the generated tiers and pairing preferences join the seed's. */
+  officePrivate: OfficePrivateSlice
   billing: {
     invoices: Record<string, Invoice>
     invoiceLines: Record<string, InvoiceLine>
@@ -211,6 +228,14 @@ export interface FullScaleDataset<S extends FullScaleInput> {
 export interface FullScaleOptions {
   /** The demo day (`clock.todayISO`): history ends the day before, the horizon starts here. */
   todayISO: string
+  /**
+   * `practice`: the everyday demo data's practice, built into the seed (`store/appStore.ts`): the 71 with
+   * their working lives over the horizon, forward Bookings, and only the past fortnight's history, billed and
+   * paid in with the payouts waiting for the next weekly run. It leaves every seeded record, the Review queue,
+   * intake, the processing monitor's problems, the seeded payment runs and the volume story as seeded.
+   * `full` (the default): the volume demonstration (US-15.0.4) on top: a year of billed history.
+   */
+  scope?: 'practice' | 'full'
   /** Who authorised the generated Lists (the office). */
   officeWho?: string
 }
@@ -286,6 +311,7 @@ const FORMATS: Record<string, { prefix: string; pad: number }> = {
   importBatch: { prefix: 'IB', pad: 4 },
   importRow: { prefix: 'IR', pad: 4 },
   stub: { prefix: 'STB', pad: 4 },
+  availabilitySeries: { prefix: 'AS', pad: 4 },
 }
 
 /** Three-letter prefixes the app's seven-character ids start with (the generator keeps patient NHIs off them). */
@@ -308,7 +334,16 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   const todayISO = options.todayISO
   const officeWho = options.officeWho ?? 'Kirsty W.'
   const horizon = horizonFor(todayISO, base.appSettings.schedule.horizonMonths)
-  const historyStartISO = addDaysISO(todayISO, -Math.round((FULL_SCALE.historyMonths * 365) / 12))
+  const practice = options.scope === 'practice'
+  // The practice keeps only the horizon's past fortnight; the volume demonstration a year of history.
+  const historyStartISO = practice ? horizon.startISO : addDaysISO(todayISO, -Math.round((FULL_SCALE.historyMonths * 365) / 12))
+  const closures = closuresIndex(closureSourcesOf(base.masters))
+  const closedOn = (dateISO: string, hospitalId: string): boolean => closuresAt(closures, dateISO, hospitalId).length > 0
+  /** A hospital closed on this weekday within the next four weeks (a weekly pattern there would raise a conflict at once). */
+  const closedSoonOnWeekday = (hospitalId: string, dow: number): boolean => {
+    for (let d = addDaysISO(todayISO, 1); d <= addDaysISO(todayISO, 28); d = addDaysISO(d, 1)) if (dayOfWeek(d) === dow && closedOn(d, hospitalId)) return true
+    return false
+  }
   const counters: Record<string, number> = { ...base.counters }
   const nextId = makeAllocator(counters)
   const stream = (...parts: string[]): Rng => slotRng(FULL_SCALE_SEED, 'fullScale', ...parts)
@@ -347,24 +382,25 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   }
 
   // -------------------------------------------------------------------------
-  // 1. The 71 generated anaesthetists (a reserved registration block)
+  // 1. The 71 generated anaesthetists: the hand-picked roster (`names.ts`), a reserved registration block
   // -------------------------------------------------------------------------
   const generatedCount = FULL_SCALE.anaesthetists - Object.keys(base.masters.anaesthetists).length
+  if (generatedCount > FULL_SCALE_ANAESTHETISTS.length) throw new Error(`The full-scale roster holds ${FULL_SCALE_ANAESTHETISTS.length} anaesthetists; ${generatedCount} are needed`)
   const anaesRng = stream('anaesthetists')
-  const usedNames = new Set(Object.values(anaesthetists).map((a) => a.name))
   const usedHpi = new Set(Object.values(anaesthetists).map((a) => a.hpiId))
   const generatedAnaesthetistIds: string[] = []
+  const rosterOf = new Map<string, RosterAnaesthetist>()
   for (let i = 0; i < generatedCount; i++) {
+    const row = FULL_SCALE_ANAESTHETISTS[i]!
     const registrationNumber = String(FULL_SCALE.registrationBase + i)
-    let name = ''
-    do name = `Dr ${pick(anaesRng, FIRST_NAMES)} ${pick(anaesRng, SURNAMES)}`
-    while (usedNames.has(name))
-    usedNames.add(name)
-    let hpiId = ''
-    do hpiId = `${pad(intBetween(anaesRng, 10, 99), 2)}${Array.from({ length: 4 }, () => String.fromCharCode(65 + intBetween(anaesRng, 0, 25))).join('')}`
-    while (usedHpi.has(hpiId))
+    const name = `Dr ${row.first} ${row.last}`
+    // The cast's CPN pattern (two digits, three surname letters, the first initial), numbered on from the cast's 10 to 23.
+    const hpiId = `${pad(24 + i, 2)}${row.last.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3).padEnd(3, 'X')}${row.first.charAt(0).toUpperCase()}`
+    if (usedHpi.has(hpiId)) throw new Error(`Full-scale HPI CPN ${hpiId} is taken`)
     usedHpi.add(hpiId)
-    const local = nameWithoutTitle(name).toLowerCase().replace(/[^a-z ]/g, '').split(' ').join('.')
+    const local = `${row.first.charAt(0)}.${row.last}`.toLowerCase().replace(/[^a-z.]/g, '')
+    // Established members joined between 2008 and 2023; a new starter joins inside the horizon.
+    const established = `20${pad(intBetween(anaesRng, 8, 23), 2)}-${pad(intBetween(anaesRng, 1, 6), 2)}-01`
     const a: Anaesthetist = {
       registrationNumber,
       name,
@@ -373,14 +409,16 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
       unitValue: roundToCents(26 + intBetween(anaesRng, 0, 32) * 0.5),
       hpiId,
       bankAccount: { accountName: nameWithoutTitle(name), accountNumber: seedBankAccountNumber(registrationNumber) },
-      startDateISO: `20${pad(intBetween(anaesRng, 8, 23), 2)}-${pad(intBetween(anaesRng, 1, 6), 2)}-01`,
+      startDateISO: row.startsISO ?? established,
       active: true,
       gstNumber: syntheticGstNumber(registrationNumber),
     }
     anaesthetists[registrationNumber] = a
     generatedAnaesthetistIds.push(registrationNumber)
+    rosterOf.set(registrationNumber, row)
   }
   const generatedSet = new Set(generatedAnaesthetistIds)
+  const startOf = (aid: string): string => anaesthetists[aid]!.startDateISO
 
   // -------------------------------------------------------------------------
   // 2. Surgeons (17b: a practice name and contacts, an HPI CPN a few lack, no rooms)
@@ -390,15 +428,14 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   const SPECIALTY_POOL = [SPC.generalSurgery, SPC.orthopaedics, SPC.plasticSurgery, SPC.ent, SPC.gynaecology, SPC.urology, SPC.gastroenterology, SPC.ophthalmology]
   const PRACTICES = ['Avonhead Surgical', 'Riccarton Specialists', 'Papanui Surgical Rooms', 'Sumner Road Clinic', 'Merivale Surgical', 'Halswell Specialists', 'Linwood Surgical Group', 'Cashmere Clinic']
   const generatedSurgeonIds: string[] = []
+  if (FULL_SCALE.surgeons > FULL_SCALE_SURGEONS.length) throw new Error(`The full-scale roster holds ${FULL_SCALE_SURGEONS.length} surgeons; ${FULL_SCALE.surgeons} are needed`)
   for (let i = 0; i < FULL_SCALE.surgeons; i++) {
     const id = `SFS${pad(i + 1, 3)}`
-    const first = pick(surgRng, FIRST_NAMES)
-    const last = pick(surgRng, SURNAMES)
-    const title = surgRng() < 0.5 ? 'Mr' : 'Ms'
+    const { title, first, last, eye } = FULL_SCALE_SURGEONS[i]!
     const name = `${title} ${first.charAt(0)}. ${last}`
     const practiceName = pick(surgRng, PRACTICES)
     const practiceDomain = practiceName.toLowerCase().replace(/[^a-z]/g, '')
-    const specialty = i < 3 ? SPC.ophthalmology : pick(surgRng, SPECIALTY_POOL)
+    const specialty = eye === true ? SPC.ophthalmology : pick(surgRng, SPECIALTY_POOL.filter((x) => x !== SPC.ophthalmology))
     const surgeon: Surgeon = {
       id,
       name,
@@ -588,25 +625,56 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   const railMasters: RailMasters = { contracts, parties, fundingTags: base.masters.fundingTags, rvgGroups: base.masters.rvgGroups, surgeons }
 
   // -------------------------------------------------------------------------
-  // 4. Recurring bookings, leave and Public sessions, then the canvas (Phase 28's generator)
+  // 4. Working lives: recurring bookings by work profile, weekdays off, leave and Public sessions, the canvas
+  //    (Phase 28's generator), then ad hoc Lists on Free sessions ahead
   // -------------------------------------------------------------------------
   const HOSPITAL_POOL = [HOSP.stg, HOSP.sx, HOSP.forte, HOSP.ces]
-  const recRng = stream('recurring')
+  const surgeonsAt = (hospitalId: string): string[] => (hospitalId === HOSP.ces ? eyeSurgeonIds : generalSurgeonIds)
+  const later = (a: string, b: string): string => (a > b ? a : b)
   const generatedRecurring: RecurringBooking[] = []
   const recurringByAnaesthetist = new Map<string, RecurringBooking[]>()
+  /** Each anaesthetist's home hospital and the regular surgeons they work with there. */
+  const regularsOf = new Map<string, { home: string; surgeons: string[] }>()
+  const daysOffOf = new Map<string, Set<number>>()
+  const generatedSeries: AvailabilitySeries[] = []
   let recN = 0
   for (const aid of generatedAnaesthetistIds) {
-    const count = intBetween(recRng, FULL_SCALE.recurringPerWeek.min, FULL_SCALE.recurringPerWeek.max)
+    const rng = stream('recurring', aid)
+    const profile = FULL_SCALE.workProfiles[rosterOf.get(aid)!.profile]
+    // Whole weekdays off (part time and light), then the sessions on the days left.
+    const daysOff = new Set<number>()
+    const offCount = intBetween(rng, profile.weekdaysOff.min, profile.weekdaysOff.max)
+    while (daysOff.size < offCount) daysOff.add(intBetween(rng, 1, 5))
+    daysOffOf.set(aid, daysOff)
+    const workdays = [1, 2, 3, 4, 5].filter((d) => !daysOff.has(d))
+    const home = pick(rng, HOSPITAL_POOL)
+    const pool = surgeonsAt(home)
+    const regulars: string[] = []
+    const regularCount = Math.min(intBetween(rng, FULL_SCALE.regularSurgeons.min, FULL_SCALE.regularSurgeons.max), pool.length)
+    while (regulars.length < regularCount) {
+      const sid = pick(rng, pool)
+      if (!regulars.includes(sid)) regulars.push(sid)
+    }
+    regularsOf.set(aid, { home, surgeons: regulars })
+    const count = Math.min(intBetween(rng, profile.sessionsPerWeek.min, profile.sessionsPerWeek.max), workdays.length * 2)
+    const effectiveFromISO = later(historyStartISO, startOf(aid))
     const taken = new Set<string>()
     const mine: RecurringBooking[] = []
     while (mine.length < count) {
-      const dow = intBetween(recRng, 1, 5) as RecurringBooking['dayOfWeek']
-      const session = recRng() < 0.55 ? 'AM' : 'PM'
+      const dow = pick(rng, workdays) as RecurringBooking['dayOfWeek']
+      const session = rng() < 0.55 ? 'AM' : 'PM'
       const key = `${dow}|${session}`
       if (taken.has(key)) continue
       taken.add(key)
-      const hospitalId = pick(recRng, HOSPITAL_POOL)
-      const surgeonId = hospitalId === HOSP.ces ? pick(recRng, eyeSurgeonIds) : pick(recRng, generalSurgeonIds)
+      // Home with their regular surgeons, or elsewhere; never a hospital closing on this weekday in the next four weeks.
+      let atHome = rng() < FULL_SCALE.homeHospitalShare && !closedSoonOnWeekday(home, dow)
+      let hospitalId = atHome ? home : pick(rng, HOSPITAL_POOL)
+      if (!atHome && closedSoonOnWeekday(hospitalId, dow)) {
+        const open = HOSPITAL_POOL.filter((h) => !closedSoonOnWeekday(h, dow))
+        hospitalId = open.length > 0 ? pick(rng, open) : hospitalId
+        atHome = hospitalId === home
+      }
+      const surgeonId = atHome ? pick(rng, regulars) : pick(rng, surgeonsAt(hospitalId))
       recN += 1
       const rb: RecurringBooking = {
         id: `RB-FS-${pad(recN, 4)}`,
@@ -616,33 +684,67 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
         hospitalId,
         surgeonId,
         kind: 'private',
-        effectiveFromISO: historyStartISO,
+        effectiveFromISO,
       }
       mine.push(rb)
       generatedRecurring.push(rb)
       recurringBookings[rb.id] = rb
     }
     recurringByAnaesthetist.set(aid, mine)
+    // The days off as one weekly Unavailable series (catch-up Phase 29), so a horizon roll paints them too:
+    // the weekdays off, and the weekend for most (private lists are a weekday practice).
+    const closed = [...daysOff]
+    if (rng() < FULL_SCALE.weekendsOffShare) closed.push(6, 7)
+    if (closed.length > 0) {
+      const series: AvailabilitySeries = {
+        id: nextId('availabilitySeries'),
+        anaesthetistId: aid,
+        statusKey: SEED_STATUS.unavailable,
+        sessions: 'both',
+        note: 'Not working',
+        weekdays: closed.sort((x, y) => x - y) as Weekday[],
+        everyWeeks: 1,
+        startISO: later(horizon.startISO, startOf(aid)),
+        exceptions: {},
+        createdAtISO: `${horizon.startISO}T08:00:00`,
+      }
+      generatedSeries.push(series)
+    }
   }
 
   const horizonDates = enumerateDatesISO(horizon.startISO, horizon.endISO)
   const leave: SeedLeaveWindow[] = []
   let publicSessions = 0
+  /** Weekdays from `fromISO` on (inclusive), at most `count`, none past the horizon. */
+  const weekdaysFrom = (fromISO: string, count: number): string[] => {
+    const out: string[] = []
+    for (let d = fromISO; out.length < count && d <= horizon.endISO; d = addDaysISO(d, 1)) if (isWeekday(d)) out.push(d)
+    return out
+  }
+  const schoolHolidayDays = enumerateDatesISO(FULL_SCALE.schoolHolidays.startISO, FULL_SCALE.schoolHolidays.endISO).filter(isWeekday)
   for (const aid of generatedAnaesthetistIds) {
     const rng = stream('leave', aid)
     const mine = recurringByAnaesthetist.get(aid) ?? []
     const patterned = new Set(mine.map((r) => `${r.dayOfWeek}|${r.session}`))
-    // A few leave days ahead (their recurring Lists become Draft Lists by Phase 31's rule).
-    const days = intBetween(rng, FULL_SCALE.leaveDaysPerAnaesthetist.min, FULL_SCALE.leaveDaysPerAnaesthetist.max)
-    const future = horizonDates.filter((d) => d > todayISO && isWeekday(d))
-    const start = pick(rng, future)
-    for (const d of enumerateDatesISO(start, addDaysISO(start, days - 1))) {
-      if (d > horizon.endISO) break
+    const daysOff = daysOffOf.get(aid)!
+    const firstDay = later(addDaysISO(todayISO, 1), startOf(aid))
+    const future = horizonDates.filter((d) => d >= firstDay && isWeekday(d))
+    const onLeave = new Set<string>()
+    // A block of leave for most (their recurring Lists in it become Draft Lists by Phase 31's rule), a share in the school holidays.
+    if (future.length > 0 && rng() < FULL_SCALE.leaveBlockShare) {
+      const holidays = schoolHolidayDays.filter((d) => d >= firstDay)
+      const start = holidays.length > 0 && rng() < FULL_SCALE.schoolHolidays.share ? pick(rng, holidays) : pick(rng, future)
+      for (const d of weekdaysFrom(start, intBetween(rng, FULL_SCALE.leaveBlockWeekdays.min, FULL_SCALE.leaveBlockWeekdays.max))) onLeave.add(d)
+    }
+    // And a single day or two.
+    const singles = future.length === 0 ? 0 : intBetween(rng, FULL_SCALE.singleLeaveDays.min, FULL_SCALE.singleLeaveDays.max)
+    for (let k = 0; k < singles; k++) onLeave.add(pick(rng, future))
+    for (const d of [...onLeave].sort()) {
       for (const session of ['AM', 'PM'] as const) leave.push({ anaesthetistId: aid, dateISO: d, session, status: SEED_STATUS.holiday })
     }
-    // Public sessions (32d, D86): bookless sessions with no recurring booking, the note "CPH".
+    // Public sessions (32d, D86): bookless sessions with no recurring booking, the note "CPH" (never on a weekday off).
     for (const d of horizonDates) {
-      if (!isWeekday(d) || (d >= start && d <= addDaysISO(start, days - 1))) continue
+      if (!isWeekday(d) || d < startOf(aid) || onLeave.has(d) || daysOff.has(dayOfWeek(d))) continue
       for (const session of ['AM', 'PM'] as const) {
         if (patterned.has(`${dayOfWeek(d)}|${session}`)) continue
         if (rng() < FULL_SCALE.publicSessionShare) {
@@ -652,22 +754,147 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
       }
     }
   }
+  const seriesEntries = generatedSeries.flatMap((series) =>
+    seriesOccurrences(series, horizon.startISO, horizon.endISO).map((o) => ({
+      anaesthetistId: series.anaesthetistId,
+      dateISO: o.dateISO,
+      session: o.session,
+      status: series.statusKey,
+      ...(series.note !== undefined ? { note: series.note } : {}),
+      seriesId: series.id,
+    })),
+  )
   const generated = generateCanvasForDates(
     {
       anaesthetists: generatedAnaesthetistIds.map((id) => ({ id, startDateISO: anaesthetists[id]!.startDateISO, active: true })),
       recurringBookings: generatedRecurring,
       leave,
-      series: [],
+      series: seriesEntries,
       statuses: base.masters.slotStatuses,
     },
     horizonDates,
   )
   for (const s of generated.slots) slots[s.id] = s
   for (const l of generated.lists) lists[l.id] = l
+  /** Lists placed after the canvas (covered clashes, ad hoc Lists): they take forward Bookings like the projected ones. */
+  const extraLists: (List & { anaesthetistId: string })[] = []
+  const slotsWithList = new Set(generated.lists.map((l) => l.slotId))
+  const placeExtraList = (aid: string, dateISO: string, session: Session, hospitalId: string, surgeonId: string, origin: List['origin']): void => {
+    const slotId = slotIdFor(aid, dateISO, session)
+    const list: List & { anaesthetistId: string } = {
+      id: projectedListId(aid, dateISO, session),
+      slotId,
+      dateISO,
+      anaesthetistId: aid,
+      session,
+      state: 'ACTIVE',
+      kind: 'private',
+      hospitalId,
+      surgeonId,
+      conflicts: [],
+      origin,
+    }
+    lists[list.id] = list
+    slotsWithList.add(slotId)
+    extraLists.push(list)
+  }
+  const freeFor = (aid: string, dateISO: string, session: Session): boolean => {
+    const slot = slots[slotIdFor(aid, dateISO, session)]
+    return slot !== undefined && slot.status === SEED_STATUS.free && !slotsWithList.has(slot.id)
+  }
+
+  // A recurring List under leave is a Draft List (Phase 31's clash rule). The office has already found a colleague
+  // for most of the next few weeks' and some later ones: those are the colleague's Lists now, the rest wait as Draft Lists.
   const draftLists = seedRecurringClashDraftLists(generated.clashes, slots, generatedRecurring)
+  const coverRng = stream('cover')
+  const coverUntil = addDaysISO(todayISO, FULL_SCALE.cover.nearDays)
   for (const d of draftLists) {
     if (lists[d.id] !== undefined) continue
+    // The practice covers every clash in the next four weeks, so the scripted Draft Lists stay the soonest.
+    if (coverRng() < (d.dateISO <= coverUntil ? (practice ? 1 : FULL_SCALE.cover.nearShare) : FULL_SCALE.cover.laterShare)) {
+      const colleagues = generatedAnaesthetistIds.filter((id) => freeFor(id, d.dateISO, d.session))
+      if (colleagues.length > 0) {
+        // The store's own DRAFT to ACTIVE step: the List keeps its id and draft trail, so it still answers the recurring day.
+        const slot = slots[slotIdFor(pick(coverRng, colleagues), d.dateISO, d.session)]!
+        const covered = assignDraftToSlot(d, slot, officeWho, SEED_CLASH_RUN_ISO) as List & { anaesthetistId: string }
+        lists[covered.id] = covered
+        slotsWithList.add(slot.id)
+        extraLists.push(covered)
+        continue
+      }
+    }
     lists[d.id] = d
+  }
+
+  // Ad hoc Lists (an extra List the office books in, from the hospital's list or by hand) on Free weekday sessions ahead.
+  for (const aid of generatedAnaesthetistIds) {
+    const rng = stream('adhoc', aid)
+    const { home, surgeons: regulars } = regularsOf.get(aid)!
+    for (let w = 0; w < FULL_SCALE.adhocWeeks; w++) {
+      const weekStart = addDaysISO(todayISO, 1 + w * 7)
+      const free: { dateISO: string; session: 'AM' | 'PM' }[] = []
+      for (const d of enumerateDatesISO(weekStart, addDaysISO(weekStart, 6))) {
+        if (!isWeekday(d) || d > horizon.endISO) continue
+        for (const session of ['AM', 'PM'] as const) if (freeFor(aid, d, session)) free.push({ dateISO: d, session })
+      }
+      const count = Math.min(intBetween(rng, FULL_SCALE.adhocListsPerWeek.min, FULL_SCALE.adhocListsPerWeek.max), free.length)
+      for (let k = 0; k < count; k++) {
+        const at = free.splice(Math.floor(rng() * free.length), 1)[0]!
+        const atHome = rng() < FULL_SCALE.homeHospitalShare
+        const hospitalId = atHome ? home : pick(rng, HOSPITAL_POOL)
+        const surgeonId = atHome ? pick(rng, regulars) : pick(rng, surgeonsAt(hospitalId))
+        if (closedOn(at.dateISO, hospitalId)) continue
+        const origin = hospitalId === HOSP.stg || hospitalId === HOSP.sx ? originForNewList({ kind: 'importRow', source: 'hospital', hospitalId }) : originForNewList({ kind: 'office' })
+        placeExtraList(aid, at.dateISO, at.session, hospitalId, surgeonId, origin)
+      }
+    }
+  }
+
+  // The office's own view (US-01.3.6, Admin only): priority tiers and a few pairing preferences, all among the
+  // generated people, so the cast's tiers and the five scripted preferences stay exactly as seeded.
+  const officeRng = stream('officePrivate')
+  const priorityTiers: Record<string, PriorityTier> = { ...base.officePrivate.priorityTiers }
+  for (const aid of generatedAnaesthetistIds) {
+    const r = officeRng()
+    if (r < FULL_SCALE.priorityTierShares.tier2) priorityTiers[aid] = 2
+    else if (r < FULL_SCALE.priorityTierShares.tier2 + FULL_SCALE.priorityTierShares.tier3) priorityTiers[aid] = 3
+  }
+  const pairingPreferences: Record<string, PairingPreference> = { ...base.officePrivate.pairingPreferences }
+  const generatedSurgeonSet = new Set(generatedSurgeonIds)
+  const paired = new Set<string>()
+  const PREFERRED_REASONS = ['Works well together on long lists', "Surgeon's preference", 'Regular team', 'Asked for by the rooms']
+  const NOT_PREFERRED_REASONS = ["Surgeon's preference", 'Asked after a difficult list', 'Different approach to day-stay cases']
+  for (let k = 0, tries = 0; k < FULL_SCALE.pairingPreferences && tries < 1000; tries++) {
+    const aid = pick(officeRng, generatedAnaesthetistIds)
+    const preferred = officeRng() < 0.5
+    const worksWith = new Set((recurringByAnaesthetist.get(aid) ?? []).map((r) => r.surgeonId))
+    // Preferred: one of their regular surgeons; not preferred: a surgeon they have no pattern with.
+    const candidates = preferred
+      ? regularsOf.get(aid)!.surgeons.filter((sid) => generatedSurgeonSet.has(sid))
+      : generatedSurgeonIds.filter((sid) => !worksWith.has(sid))
+    if (candidates.length === 0) continue
+    const surgeonId = pick(officeRng, candidates)
+    if (paired.has(`${aid}|${surgeonId}`)) continue
+    paired.add(`${aid}|${surgeonId}`)
+    k += 1
+    const addedAtISO = `2026-${pad(intBetween(officeRng, 1, 6), 2)}-${pad(intBetween(officeRng, 1, 28), 2)}T10:00:00`
+    const pref: PairingPreference = {
+      id: `PP-FS-${pad(k, 3)}`,
+      kind: preferred ? 'PREFERRED' : 'NOT_PREFERRED',
+      raisedBy: officeRng() < 0.5 ? 'SURGEON' : 'ANAESTHETIST',
+      anaesthetistId: aid,
+      surgeonId,
+      reason: pick(officeRng, preferred ? PREFERRED_REASONS : NOT_PREFERRED_REASONS),
+      addedAtISO,
+      addedBy: officeWho,
+    }
+    // A couple have ended (the profile shows them as history).
+    if (k % 6 === 0) {
+      pref.endedAtISO = `2026-07-${pad(intBetween(officeRng, 1, 15), 2)}T15:00:00`
+      pref.endedBy = officeWho
+      pref.endReason = 'No longer needed'
+    }
+    pairingPreferences[pref.id] = pref
   }
 
   // -------------------------------------------------------------------------
@@ -675,7 +902,14 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   // -------------------------------------------------------------------------
   const usedNhis = new Set(Object.values(patients).flatMap((p) => (p.nhi !== undefined ? [p.nhi] : [])))
   const patRng = stream('patients')
-  const ethnicity = ETHNICITY_DEMO_SUBSET.map((e) => e.code)
+  // No patient or payer shares a full name with an anaesthetist, whose name the Xero mirror carries (a payee contact):
+  // the privacy scan reads any patient name in Xero as a leak.
+  const reservedNames = new Set(Object.values(anaesthetists).map((a) => nameWithoutTitle(a.name).toLowerCase()))
+  const personFor = (rng: Rng, pool?: NamePool): DrawnName => {
+    let person = drawPerson(rng, pool ?? drawPool(rng))
+    while (reservedNames.has(person.name.toLowerCase())) person = drawPerson(rng, pool ?? drawPool(rng))
+    return person
+  }
   const generatedPatientIds: string[] = []
   let patientN = 0
   const newPatient = (): Patient => {
@@ -688,12 +922,14 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
     const id = nextId('patient')
     // Mostly adults; a few children (their Procedures' payer is a guardian).
     const year = patRng() < 0.04 ? 2012 + intBetween(patRng, 0, 12) : 1938 + intBetween(patRng, 0, 66)
+    // A name and an ethnicity code from one pool (about the Census mix), so the two always agree.
+    const person = personFor(patRng)
     const patient = withSeedContact({
       hiddenInternalId: id,
       nhi,
-      name: `${pick(patRng, FIRST_NAMES)} ${pick(patRng, SURNAMES)}`,
+      name: person.name,
       dobISO: `${year}-${pad(intBetween(patRng, 1, 12), 2)}-${pad(intBetween(patRng, 1, 28), 2)}`,
-      ethnicityCode: pick(patRng, ethnicity),
+      ethnicityCode: person.code,
       phone: `022 55${pad(patientN % 100000, 5)}`,
     })
     patients[id] = patient
@@ -706,6 +942,11 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
       return patients[pick(patRng, generatedPatientIds)]!
     }
     return newPatient()
+  }
+  const guardianName = (rng: Rng, code: string | undefined, surname: string): string => {
+    let name = `${drawFirstName(rng, poolFor(code), rng() < 0.5 ? 'F' : 'M')} ${surname}`
+    while (reservedNames.has(name.toLowerCase())) name = `${drawFirstName(rng, poolFor(code), rng() < 0.5 ? 'F' : 'M')} ${surname}`
+    return name
   }
   const ageOn = (dobISO: string, dateISO: string): number => {
     const years = Number(dateISO.slice(0, 4)) - Number(dobISO.slice(0, 4))
@@ -748,12 +989,13 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
     let payer: ProcedurePayer = { kind: 'patient' }
     if (ageOn(patient.dobISO, list.dateISO) < FULL_SCALE.guardianPayerAgeUnder) {
       const surname = patient.name.split(' ').pop() ?? 'Parent'
-      payer = { kind: 'other', id: nextId('billableParty'), name: `${pick(rng, FIRST_NAMES)} ${surname}`, relationship: 'Parent', email: `guardian.${patient.hiddenInternalId.toLowerCase()}@example.net` }
+      payer = { kind: 'other', id: nextId('billableParty'), name: guardianName(rng, patient.ethnicityCode, surname), relationship: 'Parent', email: `guardian.${patient.hiddenInternalId.toLowerCase()}@example.net` }
     }
     const procs: Procedure[] = []
     const procedureCount = rng() < FULL_SCALE.secondProcedureShare ? 2 : 1
     const ctx = { listDateISO: list.dateISO, hospitalId: billingHospitalId(list.hospitalId, base.masters.hospitals), surgeonId: list.surgeonId, anaesthetistId: list.anaesthetistId }
-    const prepaid = prepaidAnaesthetists.has(list.anaesthetistId) && procedureCount === 1 && payer.kind === 'patient' && rng() < (FULL_SCALE.prepaidShare * generatedAnaesthetistIds.length) / prepaidAnaesthetistIds.length
+    // The practice's upcoming Bookings are never prepaid: a prepayment waiting for approval belongs to the scripted demo (S4).
+    const prepaid = (completed || !practice) && prepaidAnaesthetists.has(list.anaesthetistId) && procedureCount === 1 && payer.kind === 'patient' && rng() < (FULL_SCALE.prepaidShare * generatedAnaesthetistIds.length) / prepaidAnaesthetistIds.length
     for (let k = 0; k < procedureCount; k++) {
       const code = list.hospitalId === HOSP.ces ? pick(rng, EYE_CODES) : pick(rng, GENERAL_CODES)
       const legacy = LEGACY_CODE_TO_RVG_GROUP[code]!
@@ -769,7 +1011,7 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
         id: nextId('procedure'),
         bookingId,
         // A second Procedure's payer is copied from the first (the same BP id), or, on a few, another person.
-        payer: k === 1 && rng() < FULL_SCALE.secondPayerShare ? { kind: 'other', id: nextId('billableParty'), name: `${pick(rng, FIRST_NAMES)} ${pick(rng, SURNAMES)}`, relationship: 'Employer', email: `payer.${bookingId.toLowerCase()}@example.net` } : payer,
+        payer: k === 1 && rng() < FULL_SCALE.secondPayerShare ? { kind: 'other', id: nextId('billableParty'), name: personFor(rng).name, relationship: 'Employer', email: `payer.${bookingId.toLowerCase()}@example.net` } : payer,
         procedureText: seedText(legacy.description, booking.source === 'surgeonPdf' ? 'surgeonPdf' : 'hospitalDownload'),
         invoiceDescription: null,
         governingContractId: contract.id,
@@ -823,7 +1065,7 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   for (const aid of generatedAnaesthetistIds) {
     for (const rb of recurringByAnaesthetist.get(aid) ?? []) {
       for (const d of backdropDates) {
-        if (dayOfWeek(d) !== rb.dayOfWeek) continue
+        if (dayOfWeek(d) !== rb.dayOfWeek || d < (rb.effectiveFromISO ?? historyStartISO)) continue
         const id = projectedListId(aid, d, rb.session)
         const list: List = {
           id,
@@ -848,7 +1090,7 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   const pastCanvas = generated.lists.filter((l) => l.dateISO < todayISO) as (List & { anaesthetistId: string })[]
   // The review backlog: the last two working days before today stay SUBMITTED (not billed).
   const workingDaysBack: string[] = []
-  for (let d = addDaysISO(todayISO, -1); workingDaysBack.length < 2; d = addDaysISO(d, -1)) if (isWeekday(d)) workingDaysBack.push(d)
+  for (let d = addDaysISO(todayISO, -1); !practice && workingDaysBack.length < 2; d = addDaysISO(d, -1)) if (isWeekday(d)) workingDaysBack.push(d)
   const backlogDates = new Set(workingDaysBack)
   const toBill = [...backdrop, ...pastCanvas].sort((a, b) => a.dateISO.localeCompare(b.dateISO) || a.id.localeCompare(b.id))
 
@@ -909,15 +1151,29 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   }
 
   /** Money in and out on one pair, mirrored in Xero (the history's payment mix). */
+  /** The practice's payers pay after the last weekly run before today, so every payout waits for the next run (the seeded runs stay as seeded). */
+  const lastRunBeforeToday = (() => {
+    let d = addDaysISO(todayISO, -1)
+    while (dayOfWeek(d) !== 3) d = addDaysISO(d, -1)
+    return d
+  })()
   const settle = (pair: BookingLedgerPair, accRecId: string, accPayId: string | undefined, raisedISO: string, anaesthetistId: string, payeeContactId: string): BookingLedgerPair => {
     const ageDays = (Date.parse(todayISO) - Date.parse(raisedISO.slice(0, 10))) / 86400000
     const older = ageDays > FULL_SCALE.paymentMix.settledAfterDays
     const draw = paidRng()
     let share = 0
-    if (older) share = draw < FULL_SCALE.paymentMix.olderOutstandingShare ? 0 : draw < FULL_SCALE.paymentMix.olderOutstandingShare + FULL_SCALE.paymentMix.olderPartPaidShare ? 0.5 : 1
+    if (practice) share = draw < FULL_SCALE.practicePaidShare ? 1 : 0
+    else if (older) share = draw < FULL_SCALE.paymentMix.olderOutstandingShare ? 0 : draw < FULL_SCALE.paymentMix.olderOutstandingShare + FULL_SCALE.paymentMix.olderPartPaidShare ? 0.5 : 1
     else share = draw < FULL_SCALE.paymentMix.newerPaidShare ? 1 : 0
     if (share === 0 || pair.receivable.amount === 0) return pair
-    const paidAt = addDaysISO(raisedISO.slice(0, 10), intBetween(paidRng, 5, Math.max(6, Math.min(30, Math.floor(ageDays) - 1))))
+    let paidAt = addDaysISO(raisedISO.slice(0, 10), intBetween(paidRng, 5, Math.max(6, Math.min(30, Math.floor(ageDays) - 1))))
+    if (practice) {
+      const from = [addDaysISO(raisedISO.slice(0, 10), 2), addDaysISO(lastRunBeforeToday, 1)].sort()[1]!
+      const to = addDaysISO(todayISO, -1)
+      if (from > to) return pair
+      const span = (Date.parse(to) - Date.parse(from)) / 86400000
+      paidAt = addDaysISO(from, intBetween(paidRng, 0, span))
+    }
     if (paidAt >= todayISO) return pair
     const paidAtISO = `${paidAt}T10:00:00`
     const amount = roundToCents(pair.receivable.amount * share)
@@ -1131,7 +1387,8 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   let problemLists = 0
   for (const list of toBill) {
     const rng = stream('list', list.id)
-    const count = Math.max(1, Math.floor(mean + rng()))
+    // The practice's fortnight: a List's usual few; the volume demonstration's density lands on the yearly target.
+    const count = practice ? intBetween(rng, FULL_SCALE.practicePastBookingsPerList.min, FULL_SCALE.practicePastBookingsPerList.max) : Math.max(1, Math.floor(mean + rng()))
     const built = placeBookings(list, count, true, rng)
     const anaesthetistName = anaesthetists[list.anaesthetistId]!.name
     const submittedAtISO = `${list.dateISO}T17:30:00`
@@ -1146,16 +1403,21 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
       lists[list.id] = { ...list, state: 'SUBMITTED' }
       continue
     }
-    const authorisedAtISO = `${addDaysISO(list.dateISO, 1)}T10:00:00`
-    const billedAtISO = `${addDaysISO(list.dateISO, 1)}T17:00:00`
-    if (authorisedAtISO.slice(0, 10) >= todayISO) {
+    let authorisedAtISO = `${addDaysISO(list.dateISO, 1)}T10:00:00`
+    let billedAtISO = `${addDaysISO(list.dateISO, 1)}T17:00:00`
+    // The practice's last working day was authorised first thing today, so its Review queue is the seed's own.
+    if (practice && authorisedAtISO.slice(0, 10) >= todayISO) {
+      authorisedAtISO = `${todayISO}T07:00:00`
+      billedAtISO = `${todayISO}T07:15:00`
+    }
+    if (authorisedAtISO.slice(0, 10) >= todayISO && !practice) {
       lists[list.id] = { ...list, state: 'SUBMITTED' }
       continue
     }
     lists[list.id] = { ...list, state: 'AUTHORISED', billedAtISO }
     audited({ entityType: 'list', entityId: list.id, who: officeWho, role: 'office', source: 'office', action: 'list.authorise', atISO: authorisedAtISO, after: { state: 'AUTHORISED' } })
     // A practice-sized handful of problems the processing monitor recognises (37): a billing exception.
-    const problem = problemRng() < FULL_SCALE.monitorProblemShare
+    const problem = !practice && problemRng() < FULL_SCALE.monitorProblemShare
     for (const [i, b] of built.entries()) {
       const prepaid = b.procedures.some((p) => contracts[p.governingContractId ?? '']?.prepaid === true)
       let leftOff: InvoiceBuildContext['prepaidLeftOff']
@@ -1184,7 +1446,7 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   // 9. Forward Bookings on the 71's ACTIVE Lists (richest over the next ten days)
   // -------------------------------------------------------------------------
   const forwardEnd = addDaysISO(todayISO, FULL_SCALE.forwardDays)
-  for (const list of generated.lists) {
+  for (const list of [...generated.lists, ...extraLists]) {
     if (list.dateISO < todayISO || list.dateISO > forwardEnd || list.state !== 'ACTIVE' || list.anaesthetistId === undefined) continue
     const rng = stream('forward', list.id)
     const daysAhead = (Date.parse(list.dateISO) - Date.parse(todayISO)) / 86400000
@@ -1206,7 +1468,7 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
     .filter((l) => l.state === 'ACTIVE' && l.dateISO > addDaysISO(todayISO, 2) && l.dateISO <= forwardEnd && (l.hospitalId === HOSP.stg || l.hospitalId === HOSP.sx))
     .sort((a, b) => a.dateISO.localeCompare(b.dateISO) || a.id.localeCompare(b.id))
   for (const list of stubTargets) {
-    if (stubCount >= FULL_SCALE.stubs) break
+    if (practice || stubCount >= FULL_SCALE.stubs) break
     if (stubRng() < 0.7) continue
     const receivedAtISO = `${todayISO}T07:30:00`
     const hospitalName = base.masters.hospitals[list.hospitalId]?.name ?? list.hospitalId
@@ -1226,7 +1488,7 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
         session: list.session,
         surgeon: { name: surgeon?.name ?? list.surgeonId, ...(surgeon?.hpiId !== undefined ? { hpiId: surgeon.hpiId } : {}) },
         scheduledTime: list.session === 'AM' ? '11:30' : '16:00',
-        patient: { name: `${pick(stubRng, FIRST_NAMES)} ${pick(stubRng, SURNAMES)}`, dobISO: `19${intBetween(stubRng, 40, 99)}-0${intBetween(stubRng, 1, 9)}-1${intBetween(stubRng, 0, 9)}` },
+        patient: { name: personFor(stubRng).name, dobISO: `19${intBetween(stubRng, 40, 99)}-0${intBetween(stubRng, 1, 9)}-1${intBetween(stubRng, 0, 9)}` },
         procedure: { text: pick(stubRng, ['Lap chole', 'Knee scope', 'Hernia repair', 'Cystoscopy']) },
         hospitalStatus: 'booked',
       },
@@ -1269,10 +1531,14 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   let aaFeeCount = 0
   let feeN = 0
   for (const aid of generatedAnaesthetistIds) {
+    // A new starter joins after today: no fee months, and no Xero contact yet.
+    if (startOf(aid) > todayISO) continue
     const mine = recordsByAnaesthetist.get(aid) ?? []
     const issued: AaFeeInvoice[] = []
     const payeeContactId = contactFor('anaesthetist', aid, anaesthetists[aid]!.name, 'organisation')
     for (const monthISO of months) {
+      // None before they joined (a new starter has none in the history at all).
+      if (monthISO < startOf(aid).slice(0, 7)) continue
       const y = Number(monthISO.slice(0, 4))
       const m = Number(monthISO.slice(5, 7))
       const raisedDate = m === 12 ? `${y + 1}-01-01` : `${y}-${pad(m + 1, 2)}-01`
@@ -1314,7 +1580,8 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   // -------------------------------------------------------------------------
   // 11. Archive by the real rule, then count the active contacts
   // -------------------------------------------------------------------------
-  const archivable = eligibleArchiveContactIdsOf({ contacts, accRecs, payments, invoices, todayISO, windowDays: base.settings.contactArchiveInactivityDays })
+  // The practice archives nothing: the seed's contacts stay as seeded.
+  const archivable = practice ? [] : eligibleArchiveContactIdsOf({ contacts, accRecs, payments, invoices, todayISO, windowDays: base.settings.contactArchiveInactivityDays })
   for (const id of archivable) contacts[id] = { ...contacts[id]!, archived: true }
   const activeContacts = Object.values(contacts).filter((c) => !c.archived).length
 
@@ -1328,8 +1595,9 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   const slotsInHorizon = allSlots.filter((s) => s.dateISO >= todayISO && s.dateISO <= horizon.endISO).length
   const invoiceCount = Object.keys(invoices).length
   const invoicesLast12Months = Object.values(invoices).filter((i) => (i.raisedAtISO ?? '').slice(0, 10) >= historyStartISO && (i.raisedAtISO ?? '').slice(0, 10) < todayISO).length
-  const auditEntries = base.audit.length + audit.length + 1
-  const loaded: AuditEntry = {
+  const auditEntries = base.audit.length + audit.length + (practice ? 0 : 1)
+  // The volume demonstration's load is the newest entry; the practice is part of the seed and records none.
+  const loaded: AuditEntry | null = practice ? null : {
     id: nextId('audit'),
     entityType: 'demo',
     entityId: 'fullScale',
@@ -1380,7 +1648,10 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   const liveRuns = Object.fromEntries(Object.entries(base.billing.payablesRuns).filter(([, r]) => r.seeded !== true))
   const liveBatches = Object.fromEntries(Object.entries(base.xero.batchPayments).filter(([, b]) => liveRuns[b.payablesRunId] !== undefined))
   const bookingPairs = Object.fromEntries(Object.entries(ledger).filter((e): e is [string, BookingLedgerPair] => e[1].kind !== 'aaFee'))
-  const paidRuns = backdropRunsFor({
+  // The practice pays nothing out (its payouts wait for the next run), so the seeded runs stay exactly as seeded.
+  const paidRuns = practice
+    ? { runs: base.billing.payablesRuns, ledgerDisbursements: {}, xeroDisbursements, batchPayments: base.xero.batchPayments }
+    : backdropRunsFor({
     ns: 'FS',
     settings: base.appSettings.paymentCycle,
     ledger: bookingPairs,
@@ -1398,30 +1669,36 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   })
   const generatedPayments = Object.fromEntries(Object.entries(payments).filter(([id]) => base.xero.payments[id] === undefined))
 
+  // Conflicts come from facts, by the rule `mutate()` runs (catch-up Phase 30): a generated List on a closed day is
+  // flagged as the seed's are, stamped at the seed clock, so the first live change finds nothing to reconcile.
+  const generatedLists = Object.fromEntries(Object.entries(lists).filter(([id]) => base.schedule.lists[id] === undefined))
+  Object.assign(lists, reconcileAllConflicts(generatedLists, { holidays: base.masters.holidays, publicHolidays: base.masters.publicHolidays }, `${todayISO}T08:00:00`))
+
   const state = {
     ...base,
     masters: { ...base.masters, anaesthetists, surgeons, parties, contracts, patients, recurringBookings },
-    schedule: { ...base.schedule, slots, lists, bookings, procedures },
+    schedule: { ...base.schedule, slots, lists, bookings, procedures, availabilitySeries: { ...base.schedule.availabilitySeries, ...Object.fromEntries(generatedSeries.map((x) => [x.id, x])) } },
+    officePrivate: { pairingPreferences, priorityTiers },
     billing: {
       ...base.billing,
       invoices,
       invoiceLines,
       ledger,
       receipts,
-      disbursements: { ...ledgerDisbursements, ...paidRuns.ledgerDisbursements },
+      disbursements: practice ? ledgerDisbursements : { ...ledgerDisbursements, ...paidRuns.ledgerDisbursements },
       exceptions,
       contactIdCache,
       aaFeeInvoices,
       locks,
       transfers,
-      payablesRuns: { ...liveRuns, ...paidRuns.runs },
+      payablesRuns: practice ? paidRuns.runs : { ...liveRuns, ...paidRuns.runs },
       bankLines: { ...base.billing.bankLines, ...backdropBankLines('FS', generatedPayments, accRecs) },
     },
-    xero: { ...base.xero, contacts, accRecs, accPays, payments, disbursements: paidRuns.xeroDisbursements, journals, batchPayments: { ...liveBatches, ...paidRuns.batchPayments } },
+    xero: { ...base.xero, contacts, accRecs, accPays, payments, disbursements: paidRuns.xeroDisbursements, journals, batchPayments: practice ? paidRuns.batchPayments : { ...liveBatches, ...paidRuns.batchPayments } },
     intake: { ...base.intake, batches, rows, stubs },
-    audit: [...base.audit, ...audit, loaded],
+    audit: loaded === null ? [...base.audit, ...audit] : [...base.audit, ...audit, loaded],
     counters,
-    settings: { ...base.settings, volumeStory: { ...base.settings.volumeStory, activeContacts, invoicesPerYear: invoicesLast12Months } },
+    settings: practice ? base.settings : { ...base.settings, volumeStory: { ...base.settings.volumeStory, activeContacts, invoicesPerYear: invoicesLast12Months } },
   } as S
   return { state, counts, problemListIds }
 }

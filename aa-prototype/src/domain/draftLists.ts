@@ -34,6 +34,27 @@ import type {
 // Guards
 // ---------------------------------------------------------------------------
 
+/**
+ * The one DRAFT to ACTIVE step (EP-07; US-01.6.3 "Becomes active"): the
+ * Draft List goes into the Slot, taking its anaesthetist (denormalised, as
+ * Phase 28's invariant says) and state ACTIVE. It keeps its id, Bookings,
+ * notes and conflicts; the draft trail is kept with `assignedAtISO`, so a
+ * List that answers a recurring day (`draft.projectedFor`) still answers it.
+ * Pure: the store's `attachListToSlot` and the full-scale seed's cover both use it.
+ */
+export function assignDraftToSlot(list: DraftList, slot: Slot, by: string, atISO: IsoDateTime): AssignedList {
+  const { draft, ...rest } = list
+  return {
+    ...rest,
+    state: 'ACTIVE',
+    slotId: slot.id,
+    anaesthetistId: slot.anaesthetistId,
+    dateISO: slot.dateISO,
+    session: slot.session,
+    draft: { ...draft, assignedAtISO: atISO, assignedBy: by },
+  }
+}
+
 /** A removed Draft List (US-01.6.4): kept for History, gone from every other view. */
 export function isRemoved(list: Pick<List, 'removedAtISO'>): boolean {
   return list.removedAtISO !== undefined

@@ -84,7 +84,8 @@ describe('the Billing monitor pages at full scale', () => {
     useAppStore.setState(full)
     const view = billingMonitorView(full)
     const group = view.groups.slice(0, 20).find((g) => g.authorised.length > 25)!
-    renderAt('/admin/billing')
-    expect(screen.getByText(`Show all ${group.authorised.length}`, { exact: false })).toBeTruthy()
+    const { container } = renderAt('/admin/billing')
+    // By the group's own hook: two groups can hold the same number of Lists.
+    expect(container.querySelector(`[data-shot="billing-group-show-all-${group.anaesthetistId}"]`)?.textContent).toContain(`Show all ${group.authorised.length}`)
   }, 60_000)
 })

@@ -42,7 +42,7 @@ import {
 import { pairingAcknowledgement, rankAnaesthetistCandidates } from '../domain/pairingPreferences'
 import { defaultVacated, receiveRefusal, sessionNotOpenRefusal, vacatedChoices } from '../domain/listMoves'
 import { pairingIssues } from '../domain/listPairing'
-import { answeringLists, draftFromActive, recurringClashDraft, type NormalisedClash } from '../domain/draftLists'
+import { answeringLists, assignDraftToSlot, draftFromActive, recurringClashDraft, type NormalisedClash } from '../domain/draftLists'
 import { answeredKey } from '../domain/recurringBookingProjection'
 import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome, withChangeSet } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
@@ -293,16 +293,7 @@ export function clashDraftsInto(
  * notes and conflicts; the draft trail is kept with `assignedAtISO`.
  */
 export function attachListToSlot(list: DraftList, slot: Slot, by: string, atISO: string): AssignedList {
-  const { draft, ...rest } = list
-  return {
-    ...rest,
-    state: 'ACTIVE',
-    slotId: slot.id,
-    anaesthetistId: slot.anaesthetistId,
-    dateISO: slot.dateISO,
-    session: slot.session,
-    draft: { ...draft, assignedAtISO: atISO, assignedBy: by },
-  }
+  return assignDraftToSlot(list, slot, by, atISO)
 }
 
 export interface DetachOptions {
