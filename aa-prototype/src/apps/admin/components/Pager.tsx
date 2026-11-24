@@ -43,11 +43,13 @@ export interface PagerProps {
   shot?: string
   /** A smaller pager inside a table (the monitor's per-group rows). */
   nested?: boolean
+  /** Where the range sits: `start` across from the buttons (default), `end` beside them (the Day view's footer). */
+  rangeAt?: 'start' | 'end'
 }
 
 const MONO = { fontFamily: fontFamily.mono, fontVariantNumeric: 'tabular-nums' as const }
 
-export function Pager({ total, size, page, onPage, lead = 'Showing', shot, nested = false }: PagerProps) {
+export function Pager({ total, size, page, onPage, lead = 'Showing', shot, nested = false, rangeAt = 'start' }: PagerProps) {
   const w = pageWindow(total, size, page)
   const range = total === 0 ? `${lead} 0 of 0` : `${lead} ${formatCount(w.start + 1)} to ${formatCount(w.end)} of ${formatCount(total)}`
   return (
@@ -56,7 +58,7 @@ export function Pager({ total, size, page, onPage, lead = 'Showing', shot, neste
       data-shot={shot}
       data-page={w.page}
       data-pages={w.pages}
-      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: nested ? '6px 0' : '8px 0', fontSize: nested ? 'inherit' : 12.5, color: nested ? 'inherit' : neutral.slate }}
+      style={{ display: 'flex', alignItems: 'center', justifyContent: rangeAt === 'end' ? 'flex-end' : 'space-between', gap: 12, flexWrap: 'wrap', padding: nested ? '6px 0' : '8px 0', fontSize: nested ? 'inherit' : 12.5, color: nested ? 'inherit' : neutral.slate }}
     >
       <span style={MONO} data-pager-range>{range}</span>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>

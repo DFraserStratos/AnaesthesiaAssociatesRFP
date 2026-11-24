@@ -135,6 +135,15 @@ export function AdminDayRoute() {
               else next.set('page', String(p))
               setParams(next, { replace: true })
             }}
+            rowMode={params.get('rows') === 'all' ? 'scroll' : 'pages'}
+            onRowMode={(mode) => {
+              // Pages or one scrolling list (`?rows=all`): a view preference, kept from day to day like the sort.
+              const next = new URLSearchParams(params)
+              next.delete('page')
+              if (mode === 'scroll') next.set('rows', 'all')
+              else next.delete('rows')
+              setParams(next, { replace: true })
+            }}
           />
         )}
         {/* The negative margin gives the cards' shadows room inside the scroll box without moving the rail. */}

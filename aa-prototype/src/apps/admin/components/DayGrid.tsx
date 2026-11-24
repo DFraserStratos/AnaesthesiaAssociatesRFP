@@ -11,12 +11,12 @@ import { useAppStore, useConflictLookups } from '../../../store'
 import { CONFLICT_REASONS } from '../../../domain/conflicts'
 import { blockFill, resolveDisplayStatus, StatusLegend, useLegendKeys, useSlotStatusRecords } from '../../../shared'
 import { Eyebrow } from '../../../shared/ui/Eyebrow'
+import { SlidingSegmentedControl, type SlidingSegmentOption } from '../../../shared/ui'
 import { attentionReasons, blockGeometry, DAY_RULER, GRID_GUTTER, hoursOf, rulerEndLabel, rulerFor, rulerLabels, slotSpan, surnameFirst, type Ruler } from '../util'
 import { compareSessions, isOutOfHours } from '../../../domain/outOfHours'
 import { OPEN_OUT_OF_HOURS, OUT_OF_HOURS } from '../../../shared/outOfHoursTerms'
 import { DraftListBand } from './DraftListBand'
 import { BookingCount } from './draftLists/DraftListParts'
-import { draftListCount } from '../../../shared/scheduleTerms'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { plural } from '../../../shared/format'
 import { StubMarker } from '../../../shared/stubs'
@@ -57,7 +57,20 @@ interface DayGridProps {
    */
   page?: number
   onPage?: (page: number) => void
+  /**
+   * Pages of 30, or every anaesthetist in one scrolling list: the choice in the
+   * footer, beside the pager, offered only when there is more than one page.
+   */
+  rowMode?: DayRowMode
+  onRowMode?: (mode: DayRowMode) => void
 }
+
+export type DayRowMode = 'pages' | 'scroll'
+
+const ROW_MODE_OPTIONS: readonly SlidingSegmentOption<DayRowMode>[] = [
+  { value: 'pages', label: 'Pages' },
+  { value: 'scroll', label: 'Scroll' },
+]
 
 /** The needs-attention amber (the warning token, not the pre-op status hue). */
 const ATTENTION = semantic.warning.solid
@@ -119,7 +132,7 @@ function hasNoteSignal(view: SlotView): boolean {
 const NO_DRAFTS: readonly DraftList[] = []
 const NO_COUNTS: ReadonlyMap<string, number> = new Map()
 
-export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFlags, onSelectSlot, draftLists = NO_DRAFTS, bookingCounts = NO_COUNTS, onOpenDraftList, onOpenOutOfHours, page = 1, onPage }: DayGridProps) {
+export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFlags, onSelectSlot, draftLists = NO_DRAFTS, bookingCounts = NO_COUNTS, onOpenDraftList, onOpenOutOfHours, page = 1, onPage, rowMode = 'pages', onRowMode }: DayGridProps) {
   // The ruler: 07:00 to 18:00, longer only on a day with an out-of-hours session or an evening Draft List.
   const eveningDefaults = useAppStore((s) => s.appSettings.schedule.defaultTimes.OOH)
   // Stubs standing on each List (catch-up Phase 33a): a marker beside the count, never in it.
@@ -185,9 +198,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
     () => new Set(legendKeys.filter((status) => !hiddenStatuses.has(status))),
     [hiddenStatuses, legendKeys],
   )
-  const totalBlocks = rows.reduce((total, row) => total + row.segments.length, 0)
   const matchingAnaesthetists = filteredRows.filter((row) => row.segments.length > 0).length
-  const visibleBlocks = filteredRows.reduce((total, row) => total + row.segments.length, 0)
   const filtered = hiddenStatuses.size > 0 || focusFilters.size > 0
   const displayedRows = useMemo(() => {
     if (!filtered) return filteredRows
@@ -200,7 +211,8 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
     return [...matching, ...inactive]
   }, [filtered, filteredRows])
   const pageSize = FULL_SCALE.pageSizes.day
-  const paged = displayedRows.length > pageSize
+  const pageable = displayedRows.length > pageSize
+  const paged = pageable && rowMode === 'pages'
   const pageRows = paged ? pageOf(displayedRows, pageSize, page) : displayedRows
   const pageStart = paged ? pageWindow(displayedRows.length, pageSize, page).start : 0
 
@@ -208,7 +220,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
   const rowsRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (rowsRef.current !== null) rowsRef.current.scrollTop = 0
-  }, [page])
+  }, [page, rowMode])
 
   function toggleStatus(status: DisplayKey) {
     setHiddenStatuses((current) => {
@@ -320,10 +332,11 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
           flex: 'none',
           display: 'flex',
           gap: 14,
+          rowGap: 8,
           borderTop: `1px solid ${neutral.line}`,
           flexWrap: 'wrap',
           alignItems: 'center',
-          padding: '10px 16px',
+          padding: '10px 16px 8px',
           background: neutral.bg,
           boxShadow:
             filtered && matchingAnaesthetists < rows.length
@@ -365,10 +378,21 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
           </button>
         )}
       </div>
-      <div data-shot="day-grid-footer" style={{ flex: 'none', padding: '0 16px 12px', background: neutral.bg, fontSize: 11, color: neutral.mist }}>
-        {`${matchingAnaesthetists} of ${rows.length} anaesthetists ${matchingAnaesthetists === 1 ? 'has' : 'have'} matching blocks. Showing ${visibleBlocks} of ${totalBlocks} blocks${draftLists.length > 0 ? ` · ${draftListCount(draftLists.length)} unassigned` : ''}.`}
-        {paged && onPage !== undefined && <Pager total={displayedRows.length} size={pageSize} page={page} onPage={onPage} lead="Anaesthetists" shot="day-grid-pager" nested />}
-      </div>
+      {/* The row choice and the pager, only when the day has more anaesthetists than a page. */}
+      {pageable && (
+        <div data-shot="day-grid-footer" style={{ flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 44, padding: '0 16px 6px', background: neutral.bg, fontSize: 11, color: neutral.mist }}>
+          {onRowMode !== undefined ? (
+            <SlidingSegmentedControl size="sm" variant="surface" ariaLabel="Show anaesthetists" value={rowMode} options={ROW_MODE_OPTIONS} onSelect={onRowMode} />
+          ) : (
+            <span />
+          )}
+          {paged && onPage !== undefined ? (
+            <Pager total={displayedRows.length} size={pageSize} page={page} onPage={onPage} lead="Anaesthetists" shot="day-grid-pager" nested rangeAt="end" />
+          ) : (
+            <span className="mono" data-day-grid-total style={{ fontVariantNumeric: 'tabular-nums', padding: '6px 0' }}>{`All ${displayedRows.length} anaesthetists`}</span>
+          )}
+        </div>
+      )}
     </div>
   )
 }

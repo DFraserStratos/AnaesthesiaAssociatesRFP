@@ -105,7 +105,6 @@ describe('DayGrid filters', () => {
     expect(privateFilter).toHaveAttribute('aria-pressed', 'false')
     expect(container.querySelector('[data-list-id="noted"]')).toBeNull()
     expect(screen.getByText('Beta, Bea')).toBeInTheDocument()
-    expect(screen.getByText('3 of 4 anaesthetists have matching blocks. Showing 3 of 4 blocks.', { exact: false })).toBeInTheDocument()
     const filteredRows = Array.from(container.querySelectorAll('[data-day-grid-row]'))
     expect(filteredRows.map((row) => row.getAttribute('data-day-grid-row'))).toEqual(['A1', 'A3', 'A4', 'A2'])
     expect(filteredRows[3]).toHaveAttribute('data-filter-match', 'false')
@@ -132,14 +131,12 @@ describe('DayGrid filters', () => {
     expect(container.querySelector('[data-list-id="attention"]')).not.toBeNull()
     expect(screen.queryByRole('button', { name: /open for cover/ })).not.toBeInTheDocument()
     expect(screen.getByText('Gamma, Cia')).toBeInTheDocument()
-    expect(screen.getByText('1 of 4 anaesthetists has matching blocks. Showing 1 of 4 blocks.', { exact: false })).toBeInTheDocument()
     const focusedRows = Array.from(container.querySelectorAll('[data-day-grid-row]'))
     expect(focusedRows.map((row) => row.getAttribute('data-day-grid-row'))).toEqual(['A1', 'A2', 'A3', 'A4'])
     expect(focusedRows[1]).toHaveAttribute('data-filter-divider', 'true')
 
     fireEvent.click(noteFilter)
     expect(screen.getByTitle(/^Note: Called hospital/)).toBeInTheDocument()
-    expect(screen.getByText('2 of 4 anaesthetists have matching blocks. Showing 2 of 4 blocks.', { exact: false })).toBeInTheDocument()
 
     fireEvent.click(attentionFilter)
     expect(container.querySelector('[data-list-id="attention"]')).toBeNull()
@@ -152,7 +149,6 @@ describe('DayGrid filters', () => {
     expect(attentionFilter).toHaveAttribute('aria-pressed', 'false')
     expect(noteFilter).toHaveAttribute('aria-pressed', 'false')
     expect(prepaymentFilter).toHaveAttribute('aria-pressed', 'false')
-    expect(screen.getByText('4 of 4 anaesthetists have matching blocks. Showing 4 of 4 blocks.', { exact: false })).toBeInTheDocument()
   })
 
   it('marks a List with open warnings: triangle with the count, the capture hook (US-13.7.3)', () => {
@@ -301,7 +297,7 @@ describe('DayGrid Draft Lists band and booking counts (catch-up Phase 31; US-13.
     )
   }
 
-  it('shows the day\'s Draft Lists in a band, flagged Unassigned, with the waiting time and booking count; the footer counts them', () => {
+  it('shows the day\'s Draft Lists in a band, flagged Unassigned, with the waiting time and booking count; the band counts them', () => {
     const { container } = renderWithDrafts(true)
     const band = container.querySelector('[data-shot="daygrid-draft-band"]') as HTMLElement
     expect(band).not.toBeNull()
@@ -312,7 +308,7 @@ describe('DayGrid Draft Lists band and booking counts (catch-up Phase 31; US-13.
     expect(stg).toHaveTextContent("St George's · Mr S. Tan")
     expect(stg).toHaveTextContent('16 h')
     expect(container.querySelector('[data-draft-block="LD-RCB016-2026-07-21-AM"]')).toBeNull()
-    expect(screen.getByText(/1 Draft List unassigned/)).toBeInTheDocument()
+    expect(container.querySelector('[data-shot="daygrid-draft-band"]')?.getAttribute('data-draft-band-count')).toBe('1')
   })
 
   it('has no band on a day without Draft Lists', () => {
@@ -338,18 +334,30 @@ describe('DayGrid pager (catch-up Phase 43)', () => {
     return { ...utils, onPage }
   }
 
+  it('Scroll shows every anaesthetist in one list, with no pager; Pages goes back', () => {
+    const onRowMode = vi.fn()
+    const masters = useAppStore.getState().masters
+    const anaesthetists = Array.from({ length: 85 }, (_, i) => anaesthetist(`C${i + 1}`, `Dr Col${String(i + 1).padStart(2, '0')} Test`))
+    const views: Record<string, SlotView[]> = Object.fromEntries(anaesthetists.map((a) => [a.registrationNumber, [view(a.registrationNumber, { status: 'holiday' })]]))
+    const { container } = render(<DayGrid anaesthetists={anaesthetists} viewsByAnaesthetist={views} masters={masters} warningFlags={new Map()} onSelectSlot={vi.fn()} page={2} onPage={vi.fn()} rowMode="scroll" onRowMode={onRowMode} />)
+    expect(container.querySelectorAll('[data-day-grid-row]')).toHaveLength(85)
+    expect(container.querySelector('[data-shot="day-grid-pager"]')).toBeNull()
+    expect(screen.getByText('All 85 anaesthetists')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Pages' }))
+    expect(onRowMode).toHaveBeenCalledWith('pages')
+  })
+
   it('shows no pager at demo scale (14 rows)', () => {
     const { container } = bigGrid(14, 1)
     expect(container.querySelector('[data-shot="day-grid-pager"]')).toBeNull()
     expect(container.querySelectorAll('[data-day-grid-row]')).toHaveLength(14)
   })
 
-  it('pages 85 rows in three pages of 30, and counts all 85 in the footer', () => {
+  it('pages 85 rows in three pages of 30, the range beside the buttons', () => {
     const { container } = bigGrid(85, 3)
     expect(container.querySelector('[data-shot="day-grid-pager"]')?.getAttribute('data-pages')).toBe('3')
     expect(container.querySelectorAll('[data-day-grid-row]')).toHaveLength(25)
     expect(screen.getByText('Anaesthetists 61 to 85 of 85')).toBeInTheDocument()
-    expect(screen.getByText(/of 85 anaesthetists have matching blocks/)).toBeInTheDocument()
   })
 
   it('a filter narrows before paging and returns to page 1', () => {

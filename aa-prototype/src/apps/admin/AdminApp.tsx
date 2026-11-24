@@ -141,13 +141,18 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const urlDate = dayMatch?.params.dateISO
   const lastDayRef = useRef(todayISO)
   const lastSortRef = useRef<SortMode>('roster')
+  const lastAllRowsRef = useRef(false)
   const selectedDate = isISODate(urlDate) ? urlDate : lastDayRef.current
   const sortMode: SortMode =
     dayMatch !== null ? (params.get('sort') === 'az' ? 'az' : 'roster') : lastSortRef.current
+  // Pages or one scrolling list (`?rows=all`), remembered the same way.
+  const allRows = dayMatch !== null ? params.get('rows') === 'all' : lastAllRowsRef.current
   useEffect(() => {
     lastDayRef.current = selectedDate
     lastSortRef.current = sortMode
-  }, [selectedDate, sortMode])
+    lastAllRowsRef.current = allRows
+  }, [selectedDate, sortMode, allRows])
+  const dayQuery = [sortMode === 'az' ? 'sort=az' : '', allRows ? 'rows=all' : ''].filter(Boolean).join('&')
 
   // Any route change closes the old drawer. A List link may carry a transient
   // target in navigation state: it opens the matching day first, then the
@@ -315,7 +320,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   }
 
   const SECTION_PATH: Record<NavSection, string> = {
-    day: `/admin/day/${selectedDate}${sortMode === 'az' ? '?sort=az' : ''}`,
+    day: `/admin/day/${selectedDate}${dayQuery === '' ? '' : `?${dayQuery}`}`,
     intake: '/admin/intake/matching',
     draftLists: '/admin/draft-lists',
     conflicts: '/admin/conflicts',
