@@ -7,8 +7,8 @@ import { assignDraftList, bookingMovesOntoList, closeOutOfHoursRefusal, closeOut
 import { StatusChip } from '../../../shared'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { displayStatusLabel, isClosedKey, statusLine } from '../../../domain/slotStatus'
-import { strongestOpen, useListWarnings, WarningTriangle, warningTone } from '../../../shared/warnings'
-import { HistorySheet, ProcedureStack } from '../../../shared/booking'
+import { useListWarnings } from '../../../shared/warnings'
+import { HistorySheet } from '../../../shared/booking'
 import { AddBookingFlow, OfficeAlertLine, useBookingMoveEntries } from '../../../shared/flows'
 import { drSurname, LIST_STATE_LABELS, locationName, pairingLine, slotTimeRange, shortDay } from '../../../shared/format'
 import { surnameFirst } from '../util'
@@ -25,16 +25,13 @@ import { SessionStatusSheet } from '../flows/SessionStatusSheet'
 import type { AssignedList, Slot } from '../../../domain/types'
 import type { EffectiveSlotTimes } from '../../../domain/slots'
 import { surgeonProfilePath } from '../mastersPaths'
-import { withStubsInTimeOrder } from '../../../domain/intake/stubs'
 import { useListStubs } from '../../../store/stubSelectors'
-import { StubRow } from '../../../shared/stubs'
-import { StubResolveLink } from './StubResolveLink'
+import { ListBookingsTable } from './ListBookingsTable'
 import { isOutOfHours, sessionText } from '../../../domain/outOfHours'
 import { CLOSE_OUT_OF_HOURS } from '../../../shared/outOfHoursTerms'
 import { Button, DefList, DefRow, FormError, TextAction } from '../../../shared/ui'
 import { Notice } from '../../../shared/ui/Notice'
 import { NoticeLine } from '../../../shared/ui/NoticeLine'
-import { EmptyState } from '../../../shared/ui/EmptyState'
 import { ListOriginRow } from './ListOriginRow'
 import { useListUpdateEmail } from '../flows/UpdateEmailActions'
 import { SharedNotes } from '../../../shared/notes'
@@ -207,71 +204,23 @@ function ListBody({
           </DrawerSection>
 
           <DrawerSection label={`Bookings (${activeBookings.length})`}>
-            {bookings.length === 0 && stubs.length === 0 && <EmptyState>No bookings on this List yet.</EmptyState>}
-            {withStubsInTimeOrder(bookings, (b) => b.scheduledTime, stubs).map((entry) => {
-              if (entry.kind === 'stub') {
-                return <StubRow key={entry.stub.id} stub={entry.stub} density="table" trailing={<StubResolveLink stub={entry.stub} />} style={{ margin: '6px 0' }} />
+            <ListBookingsTable
+              bookings={bookings}
+              stubs={stubs}
+              warningsByBooking={warningsByBooking}
+              procedureViews={(bookingId) =>
+                inDisplayOrder(
+                  Object.values(schedule.procedures)
+                    .filter((p) => p.bookingId === bookingId)
+                    .sort((a, b) => a.id.localeCompare(b.id)),
+                ).flatMap((p) => procedureStackViewFor({ masters, schedule, billing }, p.id, 'office') ?? [])
               }
-              const booking = entry.booking
-              const patient = masters.patients[booking.patientId]
-              const cancelled = booking.cancellation !== undefined
-              const warnings = warningsByBooking.get(booking.id) ?? []
-              // The Day view's outline carries down to the Booking (US-13.7.3):
-              // the same colour as the block, strong red or mild amber.
-              const strongest = strongestOpen(warnings)
-              const outline = strongest !== undefined ? warningTone(strongest).solid : undefined
-              return (
-                <div
-                  key={booking.id}
-                  data-shot={outline !== undefined ? 'drawer-booking-warning' : undefined}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    justifyContent: 'space-between',
-                    gap: 8,
-                    padding: '8px 10px',
-                    margin: '0 -10px',
-                    borderBottom: `1px solid ${outline !== undefined ? 'transparent' : neutral.line}`,
-                    borderRadius: outline !== undefined ? radius.ctl : 0,
-                    boxShadow: outline !== undefined ? `inset 0 0 0 1.5px ${outline}` : 'none',
-                    opacity: cancelled ? 0.5 : 1,
-                  }}
-                >
-                  <div style={{ minWidth: 0, flex: '1 1 auto' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: neutral.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{patient?.name ?? 'Unknown'}</span>
-                      <WarningTriangle warnings={warnings} size="sm" />
-                    </div>
-                    <div style={{ fontSize: 11, color: neutral.slate }}>{cancelled ? 'Cancelled' : booking.completed ? 'Completed' : 'In progress'}</div>
-                    {/* Each Procedure's stack, compact (catch-up Phase 20a; US-03.1.9). */}
-                    {!cancelled && (
-                      <div data-shot="drawer-procedure-stack" style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6 }}>
-                        {inDisplayOrder(
-                          Object.values(schedule.procedures)
-                            .filter((p) => p.bookingId === booking.id)
-                            .sort((a, b) => a.id.localeCompare(b.id)),
-                        ).map((p, i, all) => {
-                            const view = procedureStackViewFor({ masters, schedule, billing }, p.id, 'office')
-                            return view === undefined ? null : (
-                              <ProcedureStack key={p.id} view={view} density="compact" surface="office" heading={all.length > 1 ? `Procedure ${i + 1}` : 'Procedure'} />
-                            )
-                          })}
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', gap: 6, flex: 'none' }}>
-                    <DrawerLink onClick={() => onOpenBooking(booking.id)}>Open</DrawerLink>
-                    {!cancelled && list.state !== 'AUTHORISED' && <DrawerLink onClick={() => setSheet({ move: booking.id })}>Move</DrawerLink>}
-                  </div>
-                </div>
-              )
-            })}
-            {/* The office adds a Booking to any List it may edit, booked or not (catch-up Phase 35; US-02.3.1, FT-02.3): the Draft List drawer's control. */}
-            {list.state !== 'AUTHORISED' && (
-              <TextAction size="sm" shot="list-add-booking" onClick={() => setSheet('addBooking')} style={{ alignSelf: 'flex-start' }}>
-                Add Booking
-              </TextAction>
-            )}
+              patientName={(booking) => masters.patients[booking.patientId]?.name ?? 'Unknown'}
+              editable={list.state !== 'AUTHORISED'}
+              onOpen={onOpenBooking}
+              onMove={(bookingId) => setSheet({ move: bookingId })}
+              onAdd={() => setSheet('addBooking')}
+            />
           </DrawerSection>
 
           {/* The shared note on the List (catch-up Phase 40; US-11.3.3): the anaesthetist reads it on mobile and web. */}

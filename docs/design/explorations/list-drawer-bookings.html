@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>List drawer bookings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #172320; --slate: #58635F; --mist: #8A9490;
+  --line-strong: #C9D1CE; --line: #E2E7E5; --sunken: #EDF1EF; --bg: #F6F8F7; --surface: #FFFFFF; --gridline: #F1F4F2;
+  --crimson: #A91E3E;
+  --teal: #0D6E63; --teal-hover: #0A5A51; --teal-tint: #E1F0ED;
+  --ok: #1E8E5A; --ok-tint: #E3F4EB; --ok-on: #157A49;
+  --warn: #A16207; --warn-tint: #F9F0DC; --warn-on: #7C4D08;
+  --err: #C2403C; --err-tint: #FAE9E7; --err-on: #9C332F;
+  --private: #2E66E5; --private-tint: #E8EEFC; --private-on: #1F44A3;
+  --ui: 'Schibsted Grotesk', system-ui, sans-serif;
+  --mono: 'Spline Sans Mono', ui-monospace, monospace;
+  --e1: 0 1px 2px rgba(23,35,32,0.05), 0 2px 6px rgba(23,35,32,0.05);
+  --e3: 0 8px 16px rgba(23,35,32,0.10), 0 24px 56px rgba(23,35,32,0.18);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #DDE3E0; color: var(--ink); font-family: var(--ui); font-size: 15px; line-height: 22px; -webkit-font-smoothing: antialiased; }
+button { font-family: inherit; }
+:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* ---------- page chrome ---------- */
+.page-head { background: var(--surface); border-bottom: 1px solid var(--line); padding: 20px 32px; position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 16px 40px; align-items: center; justify-content: space-between; }
+.page-head h1 { margin: 0; font-size: 22px; line-height: 28px; letter-spacing: -0.01em; }
+.page-head p { margin: 2px 0 0; font-size: 13.5px; color: var(--slate); max-width: 64ch; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; font-size: 13px; color: var(--slate); }
+.seg { display: inline-flex; background: var(--sunken); border-radius: 10px; padding: 3px; gap: 2px; }
+.seg button { border: 0; background: transparent; padding: 4px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--slate); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(23,35,32,0.2); }
+.toggle { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; user-select: none; }
+.toggle input { accent-color: var(--teal); width: 15px; height: 15px; margin: 0; }
+
+.board { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 32px 24px; padding: 28px 32px 56px; align-items: start; }
+.option-head { padding: 0 4px 12px; min-height: 112px; }
+.option-head h2 { margin: 0; font-size: 17px; line-height: 24px; display: flex; gap: 8px; align-items: baseline; }
+.option-head h2 .letter { font-family: var(--mono); font-size: 13px; color: var(--teal); font-weight: 600; }
+.option-head.current h2 .letter { color: var(--mist); }
+.option-head p { margin: 4px 0 0; font-size: 13px; line-height: 19px; color: var(--slate); max-width: 52ch; }
+
+/* ---------- the drawer (shared shell, matches SidePanel) ---------- */
+.drawer { width: 100%; max-width: 440px; height: 860px; background: var(--surface); box-shadow: var(--e3); border-radius: 4px; display: flex; flex-direction: column; overflow: hidden; }
+.d-head { padding: 20px 24px 16px; border-bottom: 1px solid var(--line); position: relative; }
+.d-title { font-size: 18px; line-height: 24px; font-weight: 700; }
+.d-meta { font-size: 13px; color: var(--slate); margin-top: 2px; }
+.d-close { position: absolute; right: 18px; top: 18px; width: 28px; height: 28px; border: 0; background: none; color: var(--slate); }
+.chip { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--private-tint); color: var(--private-on); }
+.chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--private); }
+.d-body { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 24px; }
+.d-sec { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mist); margin: 0; }
+.deflist { display: grid; grid-template-columns: 80px 1fr; gap: 6px 12px; font-size: 13.5px; line-height: 20px; margin: 0; }
+.deflist dt { color: var(--mist); }
+.deflist dd { margin: 0; }
+.deflist .link { color: var(--teal); font-weight: 600; }
+.notes-box { border: 1px solid var(--line); border-radius: 10px; height: 56px; padding: 8px 12px; font-size: 13px; color: var(--mist); }
+.d-foot { border-top: 1px solid var(--line); padding: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 600; border-radius: 10px; padding: 6px 12px; cursor: pointer; }
+.btn:hover { background: var(--bg); }
+.btn.teal-text { color: var(--teal); }
+.btn.sm { font-size: 12.5px; padding: 4px 10px; border-radius: 8px; }
+.text-action { border: 0; background: none; padding: 4px 0; color: var(--teal); font-weight: 600; font-size: 13px; cursor: pointer; align-self: flex-start; display: inline-flex; gap: 6px; align-items: center; }
+.text-action:hover { color: var(--teal-hover); text-decoration: underline; text-underline-offset: 3px; }
+.ico { width: 14px; height: 14px; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.code-chip { font-family: var(--mono); font-size: 11.5px; font-weight: 600; line-height: 18px; padding: 0 6px; border-radius: 6px; background: var(--sunken); color: var(--ink); white-space: nowrap; }
+.empty { font-size: 13px; color: var(--mist); padding: 8px 0; }
+
+/* ---------- Current (as built) ---------- */
+.cur-row { display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px; margin: 0 -10px; border-bottom: 1px solid var(--line); }
+.cur-row.warn { border-bottom-color: transparent; border-radius: 10px; box-shadow: inset 0 0 0 1.5px var(--w); }
+.cur-row.cancelled { opacity: .5; }
+.cur-name { font-size: 14px; font-weight: 600; display: flex; gap: 6px; align-items: center; }
+.cur-state { font-size: 11px; color: var(--slate); line-height: 16px; }
+.cur-stack { list-style: none; margin: 6px 0 0; padding: 0 0 0 8px; border-left: 1.5px solid var(--line); display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.cur-stack li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; line-height: 17px; color: var(--slate); max-width: 220px; }
+.cur-stack + .cur-stack { margin-top: 6px; }
+.cur-acts { display: flex; gap: 6px; flex: none; }
+.cur-acts button { border: 1px solid var(--line); background: var(--surface); color: var(--teal); font-size: 12.5px; font-weight: 600; border-radius: 8px; padding: 4px 10px; height: fit-content; }
+
+/* ---------- A · Running order ---------- */
+.ro { list-style: none; margin: 0; padding: 0; }
+.ro-item { display: grid; grid-template-columns: 46px 18px 1fr; position: relative; }
+.ro-time { font-family: var(--mono); font-size: 12.5px; line-height: 20px; color: var(--slate); padding-top: 10px; font-variant-numeric: tabular-nums; }
+.ro-rail { position: relative; display: flex; justify-content: center; }
+.ro-rail::before { content: ""; position: absolute; top: 0; bottom: 0; width: 1.5px; background: var(--line); }
+.ro-item:first-child .ro-rail::before { top: 16px; }
+.ro-item:last-child .ro-rail::before { bottom: calc(100% - 16px); }
+.ro-dot { position: relative; margin-top: 15px; width: 10px; height: 10px; border-radius: 50%; background: var(--surface); border: 2px solid var(--teal); }
+.ro-item.done .ro-dot { background: var(--ok); border-color: var(--ok); }
+.ro-item.cancelled .ro-dot { border-color: var(--line-strong); }
+.ro-item.warn .ro-dot { border-color: var(--w); background: var(--w); box-shadow: 0 0 0 3px var(--wt); }
+.ro-card { display: block; width: 100%; text-align: left; border: 0; background: none; color: inherit; padding: 8px 10px 10px; margin: 2px 0; border-radius: 10px; cursor: pointer; position: relative; }
+.ro-card:hover, .ro-card:focus-within { background: var(--bg); }
+.ro-name { font-size: 14px; line-height: 20px; font-weight: 600; display: flex; gap: 8px; align-items: baseline; padding-right: 64px; }
+.ro-state { font-size: 12px; font-weight: 500; color: var(--mist); }
+.ro-item.done .ro-state { color: var(--ok-on); }
+.ro-proc { font-size: 13.5px; line-height: 19px; color: var(--ink); margin-top: 1px; }
+.ro-bill { font-size: 12.5px; line-height: 18px; color: var(--slate); margin-top: 3px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ro-proc + .ro-proc { margin-top: 6px; }
+.ro-flag { margin-top: 6px; font-size: 12.5px; line-height: 18px; font-weight: 500; color: var(--won); display: flex; gap: 6px; align-items: center; }
+.ro-item.cancelled .ro-name span:first-child { text-decoration: line-through; text-decoration-color: var(--mist); color: var(--mist); }
+.ro-item.cancelled .ro-time { color: var(--mist); text-decoration: line-through; }
+.ro-acts { position: absolute; right: 8px; top: 6px; display: flex; gap: 2px; opacity: 0; transition: opacity .12s; }
+.ro-card:hover .ro-acts, .ro-card:focus-within .ro-acts { opacity: 1; }
+.icon-btn { width: 28px; height: 28px; display: grid; place-items: center; border: 0; background: none; border-radius: 8px; color: var(--slate); cursor: pointer; }
+.icon-btn:hover { background: var(--sunken); color: var(--teal); }
+.ro-add { margin-left: 64px; }
+
+/* ---------- B · Compact ledger ---------- */
+.lg { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.lg-sum { display: flex; justify-content: space-between; padding: 8px 12px; background: var(--bg); border-bottom: 1px solid var(--line); font-size: 12px; color: var(--slate); }
+.lg-row { display: grid; grid-template-columns: 44px 1fr auto 28px; gap: 10px; align-items: center; padding: 9px 4px 9px 12px; border-bottom: 1px solid var(--gridline); cursor: pointer; position: relative; }
+.lg-row:last-child { border-bottom: 0; }
+.lg-row:hover { background: var(--bg); }
+.lg-row.warn::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--w); }
+.lg-time { font-family: var(--mono); font-size: 12.5px; color: var(--slate); align-self: start; padding-top: 1px; }
+.lg-main { min-width: 0; }
+.lg-name { font-size: 13.5px; line-height: 19px; font-weight: 600; display: flex; gap: 6px; align-items: center; }
+.lg-sub { font-size: 12.5px; line-height: 17px; color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lg-sub.flag { color: var(--won); font-weight: 500; }
+.lg-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; align-self: start; }
+.lg-dot { font-size: 11.5px; color: var(--mist); display: inline-flex; gap: 5px; align-items: center; }
+.lg-dot::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--teal); }
+.lg-row.done .lg-dot::before { background: var(--ok); }
+.lg-row.cancelled .lg-dot::before { background: var(--line-strong); }
+.lg-row.cancelled .lg-name, .lg-row.cancelled .lg-time { color: var(--mist); text-decoration: line-through; }
+.lg-menu { position: relative; align-self: start; }
+.pop { position: absolute; right: 0; top: 30px; z-index: 3; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 2px 4px rgba(23,35,32,0.06), 0 8px 20px rgba(23,35,32,0.09); padding: 4px; min-width: 190px; display: none; }
+.pop.open { display: block; }
+.pop button { display: flex; width: 100%; gap: 8px; align-items: center; text-align: left; border: 0; background: none; padding: 7px 10px; border-radius: 8px; font-size: 13px; color: var(--ink); cursor: pointer; }
+.pop button:hover { background: var(--bg); color: var(--teal); }
+.lg-foot { padding: 6px 12px; border-top: 1px solid var(--line); background: var(--surface); }
+
+/* ---------- C · Billing readiness cards ---------- */
+.cards { display: flex; flex-direction: column; gap: 8px; background: var(--sunken); margin: 0 -24px; padding: 12px 24px 14px; }
+.bc { background: var(--surface); border-radius: 12px; box-shadow: var(--e1); border: 1px solid var(--line); overflow: hidden; }
+.bc.warn { border-color: var(--w); box-shadow: 0 0 0 1px var(--w), var(--e1); }
+.bc.cancelled { opacity: .55; box-shadow: none; }
+.bc-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px 0 14px; }
+.bc-who { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.bc-time { font-family: var(--mono); font-size: 12px; color: var(--slate); }
+.bc-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pill { font-size: 11.5px; font-weight: 600; line-height: 18px; padding: 0 8px; border-radius: 999px; background: var(--sunken); color: var(--slate); white-space: nowrap; }
+.pill.done { background: var(--ok-tint); color: var(--ok-on); }
+.pill.prog { background: var(--teal-tint); color: var(--teal); }
+.bc-proc { padding: 4px 14px 0; font-size: 13.5px; line-height: 19px; }
+.bc-proc small { display: block; font-size: 11.5px; color: var(--mist); font-weight: 600; margin-top: 6px; }
+.ready { display: grid; grid-template-columns: 1fr 1fr; margin: 10px 14px 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.ready div { padding: 5px 8px 6px; border-right: 1px solid var(--line); min-width: 0; }
+.ready div:last-child { border-right: 0; } .ready div:first-child { grid-column: 1 / -1; border-right: 0; border-bottom: 1px solid var(--line); }
+.ready dt { font-size: 11px; color: var(--mist); font-weight: 600; display: flex; gap: 4px; align-items: center; }
+.ready dd { margin: 0; font-size: 12.5px; line-height: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ready .ok dt .ico { color: var(--ok); }
+.ready .miss { background: var(--wt); }
+.ready .miss dt, .ready .miss dd { color: var(--won); }
+.bc-foot { display: flex; gap: 6px; padding: 10px 12px 12px 14px; justify-content: flex-end; }
+.bc-flag { margin: 8px 14px 0; font-size: 12.5px; color: var(--won); font-weight: 500; display: flex; gap: 6px; align-items: center; }
+
+/* ---------- D · Accordion ---------- */
+.ac-sum { font-size: 12.5px; color: var(--slate); margin-top: -2px; }
+.ac-sum b { color: var(--warn-on); font-weight: 600; }
+.ac { border-top: 1px solid var(--line); }
+.ac-item { border-bottom: 1px solid var(--line); }
+.ac-btn { width: 100%; display: grid; grid-template-columns: 14px 44px 1fr auto; gap: 8px; align-items: center; border: 0; background: none; padding: 10px 2px; text-align: left; cursor: pointer; color: inherit; }
+.ac-btn:hover { background: var(--bg); }
+.ac-btn .chev { transition: transform .15s; color: var(--mist); }
+.ac-item.open .chev { transform: rotate(90deg); color: var(--teal); }
+.ac-time { font-family: var(--mono); font-size: 12.5px; color: var(--slate); }
+.ac-mid { min-width: 0; display: flex; gap: 8px; align-items: baseline; }
+.ac-name { font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+.ac-proc { font-size: 12.5px; color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ac-right { display: flex; gap: 6px; align-items: center; }
+.ac-item.cancelled .ac-name, .ac-item.cancelled .ac-time { color: var(--mist); text-decoration: line-through; }
+.ac-panel { display: none; padding: 2px 2px 14px 66px; }
+.ac-item.open .ac-panel { display: block; animation: drop .16s ease-out; }
+@keyframes drop { from { opacity: 0; transform: translateY(-4px); } }
+.ac-grid { display: grid; grid-template-columns: 64px 1fr; gap: 4px 10px; font-size: 12.5px; line-height: 18px; margin: 0; }
+.ac-grid dt { color: var(--mist); }
+.ac-grid dd { margin: 0; }
+.ac-grid dd.miss { color: var(--won); font-weight: 600; }
+.ac-split { grid-column: 1 / -1; height: 1px; background: var(--gridline); margin: 4px 0; }
+.ac-acts { display: flex; gap: 6px; margin-top: 10px; }
+.ac-state { font-size: 12px; color: var(--slate); margin-bottom: 6px; }
+.tri { color: var(--w); }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+@media (max-width: 520px) {
+  .page-head, .board { padding-left: 16px; padding-right: 16px; }
+  .board { grid-template-columns: 1fr; }
+  .option-head { min-height: 0; }
+}
+</style>
+</head>
+<body>
+<header class="page-head">
+  <div>
+    <h1>Bookings in the List drawer</h1>
+    <p>Four ways to draw the Bookings on a List in the Admin Day view drawer, beside what ships today. Change the count and states to see how each one holds up.</p>
+  </div>
+  <div class="controls">
+    <span>Bookings on the List</span>
+    <div class="seg" role="group" aria-label="Bookings on the List" id="count"></div>
+    <label class="toggle"><input type="checkbox" id="warn" checked> With warnings</label>
+    <label class="toggle"><input type="checkbox" id="cancel"> One cancelled</label>
+  </div>
+</header>
+
+<main class="board" id="board"></main>
+
+<script>
+const ICON = {
+  tri: '<svg class="ico" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>',
+  open: '<svg class="ico" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>',
+  move: '<svg class="ico" viewBox="0 0 24 24"><path d="M16 3l4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16"/></svg>',
+  more: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>',
+  check: '<svg class="ico" viewBox="0 0 24 24" style="width:11px;height:11px;stroke-width:3"><path d="M20 6 9 17l-5-5"/></svg>',
+  plus: '<svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  x: '<svg class="ico" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+};
+
+// Okafor's general surgery morning at Christchurch Public. Times are each Booking's scheduledTime.
+const ALL = [
+  { id: 'b1', time: '07:45', name: 'Jordan Mete', state: 'Completed',
+    procs: [{ text: 'Laparoscopic cholecystectomy', contract: 'Health NZ agreed rate', basis: 'RVG at $23.00 per unit', code: 'G4', codeDesc: 'Major abdominal' }] },
+  { id: 'b2', time: '08:50', name: 'Wei Kaur', state: 'In progress',
+    procs: [{ text: 'Thyroidectomy', contract: 'Health NZ agreed rate', basis: 'RVG at $23.00 per unit', code: 'N3', codeDesc: 'Moderate procedures' }] },
+  { id: 'b3', time: '09:40', name: 'Aroha Tipene', state: 'In progress', warn: 'amber', flag: 'RVG code to choose',
+    procs: [{ text: 'Umbilical hernia repair', contract: 'Southern Cross Affiliated', basis: 'RVG', code: null }] },
+  { id: 'b4', time: '10:30', name: 'Sam Whitaker', state: 'In progress',
+    procs: [
+      { text: 'Inguinal hernia repair, right', contract: 'nib First Choice', basis: 'Fixed price $640.00', code: 'G2', codeDesc: 'Minor abdominal' },
+      { text: 'Excision of skin lesion, back', contract: 'nib First Choice', basis: 'Fixed price $180.00', code: 'S1', codeDesc: 'Superficial' },
+    ] },
+  { id: 'b5', time: '11:15', name: 'Margaret Liu', state: 'In progress', warn: 'red', flag: 'Needs an invoice destination',
+    procs: [{ text: 'Excision of breast lump, left', contract: null, basis: null, code: 'G1', codeDesc: 'Breast, minor' }] },
+];
+
+const TONES = {
+  amber: { w: 'var(--warn)', wt: 'var(--warn-tint)', won: 'var(--warn-on)' },
+  red: { w: 'var(--err)', wt: 'var(--err-tint)', won: 'var(--err-on)' },
+};
+const S = { count: 3, warn: true, cancel: false, openD: null };
+
+function data() {
+  return ALL.slice(0, S.count).map((b) => {
+    const c = { ...b };
+    if (!S.warn) { delete c.warn; delete c.flag; if (c.id === 'b3') c.procs = [{ ...c.procs[0], code: 'G2', codeDesc: 'Minor abdominal' }]; if (c.id === 'b5') c.procs = [{ ...c.procs[0], contract: 'ACC Treatment Provider', basis: 'RVG at $26.10 per unit' }]; }
+    if (S.cancel && c.id === (S.count >= 4 ? 'b4' : S.count >= 2 ? 'b2' : 'b1')) c.cancelled = true;
+    return c;
+  });
+}
+const toneStyle = (b) => b.warn ? `--w:${TONES[b.warn].w};--wt:${TONES[b.warn].wt};--won:${TONES[b.warn].won}` : '';
+const stateOf = (b) => b.cancelled ? 'Cancelled' : b.state;
+const billOf = (p) => p.contract ? `${p.contract} · ${p.basis}` : 'Needs an invoice destination';
+const esc = (s) => String(s);
+
+function shell(body) {
+  const n = data().filter((b) => !b.cancelled).length;
+  return `<div class="drawer" role="region" aria-label="List drawer">
+    <div class="d-head">
+      <div class="d-title">Sharma, Priya</div>
+      <div class="d-meta">Tue 24 Nov · AM · Active · ${n} booking${n === 1 ? '' : 's'}</div>
+      <span class="chip">Private</span>
+      <button class="d-close" aria-label="Close">${ICON.x}</button>
+    </div>
+    <div class="d-body">
+      <section class="d-sec"><h3 class="eyebrow">Session</h3>
+        <dl class="deflist">
+          <dt>Times</dt><dd>07:30 to 12:00 <span style="font-size:12px;color:var(--mist);margin-left:6px">Own times</span></dd>
+          <dt>Hospital</dt><dd>Christchurch Public</dd>
+          <dt>Surgeon</dt><dd class="link">Mr C. Okafor</dd>
+          <dt>Note</dt><dd>Acute theatre</dd>
+        </dl>
+      </section>
+      ${body}
+      <section class="d-sec"><h3 class="eyebrow">Shared notes</h3><div class="notes-box">A note the office and the anaesthetist both see on this List</div></section>
+    </div>
+    <div class="d-foot"><button class="btn">Edit list</button><button class="btn">Reassign list</button><button class="btn">Change status</button><button class="btn">History</button></div>
+  </div>`;
+}
+
+// ---- Current ----
+function current() {
+  const rows = data().map((b) => `
+    <div class="cur-row ${b.warn ? 'warn' : ''} ${b.cancelled ? 'cancelled' : ''}" style="${toneStyle(b)}">
+      <div style="min-width:0;flex:1">
+        <div class="cur-name">${b.name}${b.warn ? `<span class="tri">${ICON.tri}</span>` : ''}</div>
+        <div class="cur-state">${stateOf(b)}</div>
+        ${b.cancelled ? '' : b.procs.map((p) => `<ol class="cur-stack">
+          <li><span class="mono" style="color:var(--ink)">“${p.text}”</span></li>
+          <li>${p.contract ? `<b style="color:var(--ink)">${p.contract}</b> · ${p.basis}` : '<span style="color:var(--mist)">Needs an invoice destination</span>'}</li>
+          ${p.code ? `<li><b class="mono" style="color:var(--ink)">${p.code}</b> ${p.codeDesc}</li>` : '<li>RVG code: for the anaesthetist</li>'}
+        </ol>`).join('')}
+      </div>
+      <div class="cur-acts"><button>Open</button>${b.cancelled ? '' : '<button>Move</button>'}</div>
+    </div>`).join('');
+  const n = data().filter((b) => !b.cancelled).length;
+  return shell(`<section class="d-sec"><h3 class="eyebrow">Bookings (${n})</h3>${rows}<button class="text-action">Add Booking</button></section>`);
+}
+
+// ---- A · Running order ----
+function runningOrder() {
+  const items = data().map((b) => `
+    <li class="ro-item ${b.state === 'Completed' && !b.cancelled ? 'done' : ''} ${b.warn ? 'warn' : ''} ${b.cancelled ? 'cancelled' : ''}" style="${toneStyle(b)}">
+      <div class="ro-time">${b.time}</div>
+      <div class="ro-rail"><span class="ro-dot"></span></div>
+      <div class="ro-card" tabindex="0" role="button" aria-label="Open ${b.name}'s Booking">
+        <div class="ro-name"><span>${b.name}</span><span class="ro-state">${stateOf(b)}</span></div>
+        ${b.cancelled ? '' : b.procs.map((p) => `<div class="ro-proc">${p.text}</div>
+          <div class="ro-bill">${p.code ? `<span class="code-chip">${p.code}</span>` : ''}<span>${p.contract ? `${p.contract}, ${p.basis.replace(/^RVG at /, '')}` : ''}</span></div>`).join('')}
+        ${b.flag ? `<div class="ro-flag">${ICON.tri}${b.flag}</div>` : ''}
+        <div class="ro-acts">${b.cancelled ? '' : `<button class="icon-btn" title="Move to another List" aria-label="Move">${ICON.move}</button>`}<button class="icon-btn" title="Open Booking" aria-label="Open">${ICON.open}</button></div>
+      </div>
+    </li>`).join('');
+  const n = data().filter((b) => !b.cancelled).length;
+  return shell(`<section class="d-sec"><h3 class="eyebrow">Bookings (${n})</h3>
+    ${data().length ? `<ol class="ro">${items}</ol>` : ''}
+    <button class="text-action ro-add">${ICON.plus}Add Booking</button></section>`);
+}
+
+// ---- B · Compact ledger ----
+function ledger() {
+  const ds = data();
+  const attention = ds.filter((b) => b.warn && !b.cancelled).length;
+  const rows = ds.map((b, i) => {
+    const p = b.procs[0];
+    const more = b.procs.length > 1 ? ` +${b.procs.length - 1}` : '';
+    return `<div class="lg-row ${b.state === 'Completed' && !b.cancelled ? 'done' : ''} ${b.warn ? 'warn' : ''} ${b.cancelled ? 'cancelled' : ''}" style="${toneStyle(b)}" tabindex="0">
+      <span class="lg-time">${b.time}</span>
+      <div class="lg-main">
+        <div class="lg-name">${b.name}${b.warn ? `<span class="tri">${ICON.tri}</span>` : ''}</div>
+        <div class="lg-sub">${p.text}${more}</div>
+        ${b.cancelled ? '' : b.flag ? `<div class="lg-sub flag">${b.flag}</div>` : `<div class="lg-sub" style="color:var(--mist)">${p.contract}</div>`}
+      </div>
+      <div class="lg-right">${p.code && !b.cancelled ? `<span class="code-chip">${b.procs.map((q) => q.code).join(' ')}</span>` : ''}<span class="lg-dot">${stateOf(b)}</span></div>
+      <div class="lg-menu"><button class="icon-btn" aria-label="Actions for ${b.name}" data-pop="lg${i}">${ICON.more}</button>
+        <div class="pop" id="pop-lg${i}"><button>${ICON.open}Open Booking</button>${b.cancelled ? '' : `<button>${ICON.move}Move to another List</button>`}</div></div>
+    </div>`;
+  }).join('');
+  const first = ds[0]?.time, last = ds[ds.length - 1]?.time;
+  return shell(`<section class="d-sec"><h3 class="eyebrow">Bookings</h3>
+    <div class="lg">
+      <div class="lg-sum"><span>${ds.filter((b) => !b.cancelled).length} on this List${ds.length ? `, ${first} to ${last}` : ''}</span>${attention ? `<span style="color:var(--warn-on);font-weight:600">${attention} need${attention === 1 ? 's' : ''} attention</span>` : '<span>All ready</span>'}</div>
+      ${rows}
+      <div class="lg-foot"><button class="text-action">${ICON.plus}Add Booking</button></div>
+    </div></section>`);
+}
+
+// ---- C · Billing readiness cards ----
+function cards() {
+  const cs = data().map((b) => {
+    const p0 = b.procs[0];
+    const cell = (label, value, ok) => `<div class="${ok ? 'ok' : 'miss'}"><dt>${ok ? ICON.check : ''}${label}</dt><dd title="${value}">${value}</dd></div>`;
+    return `<article class="bc ${b.warn ? 'warn' : ''} ${b.cancelled ? 'cancelled' : ''}" style="${toneStyle(b)}">
+      <div class="bc-head"><div class="bc-who"><span class="bc-time">${b.time}</span><span class="bc-name">${b.name}</span></div>
+        <span class="pill ${b.cancelled ? '' : b.state === 'Completed' ? 'done' : 'prog'}">${stateOf(b)}</span></div>
+      ${b.cancelled ? '<div class="bc-proc" style="color:var(--mist)">' + p0.text + '</div><div style="height:12px"></div>' : b.procs.map((p, i) => `
+        <div class="bc-proc">${b.procs.length > 1 ? `<small>Procedure ${i + 1}</small>` : ''}${p.text}</div>
+        <dl class="ready" style="${b.procs.length > 1 ? 'margin-top:6px' : ''}">
+          ${cell('Contract', p.contract ?? 'None yet', !!p.contract)}
+          ${cell('Code', p.code ? `${p.code} ${p.codeDesc}` : 'To choose', !!p.code)}
+          ${cell('Price', p.basis ? p.basis.replace(/^RVG at /, '').replace(/^Fixed price /, '') : 'Unknown', !!p.basis && p.basis !== 'RVG' || (!!p.basis && !!p.code))}
+        </dl>`).join('')}
+      ${b.cancelled ? '' : `<div class="bc-foot">${b.flag ? `<span class="bc-flag" style="margin:0 auto 0 0">${ICON.tri}${b.flag}</span>` : ''}<button class="btn sm">Move</button><button class="btn sm teal-text">Open Booking</button></div>`}
+    </article>`;
+  }).join('');
+  const n = data().filter((b) => !b.cancelled).length;
+  return shell(`<section class="d-sec"><h3 class="eyebrow">Bookings (${n})</h3>
+    <div class="cards">${cs}<button class="text-action">${ICON.plus}Add Booking</button></div></section>`);
+}
+
+// ---- D · Accordion ----
+function accordion() {
+  const ds = data();
+  const openId = S.openD ?? (ds.find((b) => b.warn && !b.cancelled) ?? ds[0])?.id;
+  const attention = ds.filter((b) => b.warn && !b.cancelled).length;
+  const items = ds.map((b) => {
+    const open = b.id === openId;
+    return `<div class="ac-item ${open ? 'open' : ''} ${b.cancelled ? 'cancelled' : ''}" style="${toneStyle(b)}">
+      <button class="ac-btn" aria-expanded="${open}" data-ac="${b.id}">
+        <span class="chev">${ICON.open}</span>
+        <span class="ac-time">${b.time}</span>
+        <span class="ac-mid"><span class="ac-name">${b.name}</span><span class="ac-proc">${b.procs.map((p) => p.text).join(', ')}</span></span>
+        <span class="ac-right">${b.warn ? `<span class="tri">${ICON.tri}</span>` : ''}${!b.cancelled ? `<span class="code-chip">${b.procs.map((p) => p.code ?? '?').join(' ')}</span>` : '<span class="pill">Cancelled</span>'}</span>
+      </button>
+      <div class="ac-panel">
+        <div class="ac-state">${stateOf(b)}</div>
+        ${b.cancelled ? '' : `<dl class="ac-grid">${b.procs.map((p, i) => `
+          ${i ? '<div class="ac-split"></div>' : ''}
+          <dt>Procedure</dt><dd>${p.text}</dd>
+          <dt>Contract</dt><dd class="${p.contract ? '' : 'miss'}">${p.contract ?? 'Needs an invoice destination'}</dd>
+          ${p.basis ? `<dt>Price</dt><dd>${p.basis}</dd>` : ''}
+          <dt>RVG code</dt><dd class="${p.code ? '' : 'miss'}">${p.code ? `<b class="mono">${p.code}</b> ${p.codeDesc}` : 'To choose'}</dd>`).join('')}</dl>`}
+        <div class="ac-acts"><button class="btn sm teal-text">Open Booking</button>${b.cancelled ? '' : '<button class="btn sm">Move to another List</button>'}</div>
+      </div>
+    </div>`;
+  }).join('');
+  const n = ds.filter((b) => !b.cancelled).length;
+  return shell(`<section class="d-sec"><h3 class="eyebrow">Bookings (${n})</h3>
+    ${ds.length ? `<div class="ac-sum">${ds[0].time} to ${ds[ds.length - 1].time}${attention ? ` · <b>${attention} need${attention === 1 ? 's' : ''} attention</b>` : ''}</div>` : ''}
+    <div class="ac">${items}</div>
+    <button class="text-action">${ICON.plus}Add Booking</button></section>`);
+}
+
+const OPTIONS = [
+  { letter: 'Now', title: 'As built', cls: 'current', note: 'Each Booking repeats the compact Procedure stack: quoted mono text, a clipped contract line, two outlined links floating top right. No time, so the order is implied.', render: current },
+  { letter: 'A', title: 'Running order', note: 'The List as the theatre runs it: scheduled time on a rail, a dot for progress, the procedure in plain words with its RVG code as a chip. Open and Move appear on hover or focus; the whole row opens the Booking.', render: runningOrder },
+  { letter: 'B', title: 'Compact ledger', note: 'A tight, scannable table in one frame with a summary bar ("2 need attention"). One line per Booking plus a hint line; actions move into a menu. Five Bookings fit without scrolling.', render: ledger },
+  { letter: 'C', title: 'Billing readiness', note: 'Built for the office\'s real question, "can this be billed?". Each Booking is a card with a Contract, Code and Price strip; whatever is missing turns amber in place. Taller, so five Bookings scroll.', render: cards },
+  { letter: 'D', title: 'Summary rows that open', note: 'Every Booking is one calm line (time, patient, procedure, code). One opens at a time to show the full billing detail and its actions; the one that needs attention opens first.', render: accordion },
+];
+
+function render() {
+  document.getElementById('count').innerHTML = [1, 2, 3, 4, 5].map((n) => `<button aria-pressed="${S.count === n}" data-n="${n}">${n}</button>`).join('');
+  document.getElementById('board').innerHTML = OPTIONS.map((o) => `
+    <div>
+      <div class="option-head ${o.cls ?? ''}"><h2><span class="letter">${o.letter}</span>${o.title}</h2><p>${o.note}</p></div>
+      ${o.render()}
+    </div>`).join('');
+}
+
+document.addEventListener('click', (e) => {
+  const n = e.target.closest('[data-n]');
+  if (n) { S.count = Number(n.dataset.n); S.openD = null; render(); return; }
+  const ac = e.target.closest('[data-ac]');
+  if (ac) { S.openD = ac.dataset.ac; render(); return; }
+  const pop = e.target.closest('[data-pop]');
+  document.querySelectorAll('.pop.open').forEach((p) => { if (!pop || p.id !== 'pop-' + pop.dataset.pop) p.classList.remove('open'); });
+  if (pop) { document.getElementById('pop-' + pop.dataset.pop).classList.toggle('open'); e.stopPropagation(); }
+});
+document.getElementById('warn').addEventListener('change', (e) => { S.warn = e.target.checked; render(); });
+document.getElementById('cancel').addEventListener('change', (e) => { S.cancel = e.target.checked; render(); });
+render();
+</script>
+</body>
+</html>

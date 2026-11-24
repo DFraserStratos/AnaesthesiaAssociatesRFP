@@ -17,11 +17,11 @@ import { SlotDrawer } from './SlotDrawer'
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const STRAND_PM = slotIdFor(ANAE.strand, '2026-11-24', 'PM')
 
-function renderDrawer(slotId: string, onClose = vi.fn()) {
+function renderDrawer(slotId: string, onClose = vi.fn(), onOpenBooking = vi.fn()) {
   render(
     <MemoryRouter>
       <SurfaceProvider variant="web">
-        <SlotDrawer slotId={slotId} actor={OFFICE} onClose={onClose} onOpenBooking={vi.fn()} />
+        <SlotDrawer slotId={slotId} actor={OFFICE} onClose={onClose} onOpenBooking={onOpenBooking} />
       </SurfaceProvider>
     </MemoryRouter>,
   )
@@ -119,5 +119,21 @@ describe('SlotDrawer', () => {
     expect(onClose).not.toHaveBeenCalled()
     fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
     expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('lists a List\'s Bookings as one table: a summary row, time order, a named open handle and Move per row', () => {
+    const onOpenBooking = vi.fn()
+    renderDrawer(slotIdFor(ANAE.sharma, '2026-11-24', 'AM'), vi.fn(), onOpenBooking)
+    const table = screen.getByTestId('admin-list-drawer').querySelector('[data-shot="drawer-bookings-table"] table') as HTMLTableElement
+    expect(table).not.toBeNull()
+    const rows = within(table).getAllByRole('row').filter((r) => r.hasAttribute('data-booking-id'))
+    expect(rows.length).toBeGreaterThan(0)
+    expect(within(table).getByRole('columnheader', { name: /on this List/ })).toBeInTheDocument()
+    const times = rows.map((r) => r.querySelector('td')!.textContent)
+    expect([...times].sort()).toEqual(times)
+    const handle = within(rows[0]!).getByRole('button', { name: /^Open Booking for / })
+    fireEvent.click(handle)
+    expect(onOpenBooking).toHaveBeenCalledWith(rows[0]!.getAttribute('data-booking-id'))
+    expect(within(rows[0]!).getByRole('button', { name: /^Move .* to another List$/ })).toBeInTheDocument()
   })
 })
