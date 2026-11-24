@@ -1,0 +1,125 @@
+# Backlog
+
+The open work on the prototype, the Requirements Board and their tooling, one line per item. Agents
+pick from it when asked. Whoever finishes an item deletes its line in the same change; anything
+knowingly left unfinished gets a line. No other upkeep: no dates, owners or status columns.
+
+Size: **S** under half a day, **M** one or two days, **L** more. **(owner)** means it waits on a
+decision from the owner (or AA through the owner): ask before building. Paths are relative to
+`aa-prototype/src/` unless they start with `aa-prototype/`, `requirements-board/` or `docs/`. Check
+`docs/DECISIONS.md` before "fixing" anything that looks wrong: several look like bugs and are rulings.
+
+The readings built while AA's answer is awaited (Open defaults, Parked, the per-screen readings to walk)
+are on the owner review list at the end of `docs/archive/prototype-build/PROGRESS.md`; only the ones
+that need work are repeated here.
+
+## Prototype: billing, invoices and money
+
+- A rejected lock (split no longer fits, holder Party gone, prepaid payer changed) holds the Booking back for good: block authorise on any rejection, or build a relock. `domain/billing/lock.ts`. M (owner)
+- The T stepper's manual time-units override ("Adjusted manually", seeded on Chen BK0008) survives beside the tiers; Phase 24's fold into the typed price never happened, and S5 Beat 1 scripts it. `shared/capture/UnitsCard.tsx`, `domain/billing/fee.ts`, `domain/seed/bookings.ts`. M (owner)
+- INVOICED PRICE counts an unreviewed additional invoice ($237.00); Sarah Mitchell after credit and rebill reads Events $7.00 and Invoiced $214.00 (verify first). `domain/billing/bookingTotal.ts`. S
+- A credit still waiting for review already shows the Booking total as $0.00. `domain/billing/bookingTotal.ts`. S
+- The AA Holding card's rows do not sum to its balance (Refunded positive beside negative Credited and Transferred), and a credited row is dated at the credit while a later payment grows it. `apps/admin/components/HoldingAccountPanel.tsx`. S
+- Billing monitor: the $0 no-charge invoice reads "Paid in · Not disbursed" and its List "Disbursed 0 of 2". S
+- The remittance advice lists the transfer PXT0001 under "BCTIs paid (1 BCTI)". S
+- Two events for one party approved together raise two invoices in one run; the rule says the same party's invoice where it can. `store/procedureEventActions.ts`. M
+- AA-2026-0007's row (Chen's event invoice) reads "Booking time not set". `apps/admin/screens/InvoicesScreen.tsx`. S
+- Data inspector totals disagree (54 invoices, 56 ledger pairs, 55 in Xero; "4 sessions" beside "894 lists"), and `entityCounts` has no credit-note count. `store/selectors.ts`, `apps/demo/DemoData.tsx`. S
+- Invoices pager counts invoices only (their credit notes ride along); at full scale it reads 28,232 against the banner's 28,279 (backdrop left out). `apps/admin/screens/InvoicesScreen.tsx`. S
+- During a Xero outage the system-actor `xero.queued` entry joins the office's change set: `mutate()` scopes change sets by store, not actor. `store/mutate.ts`. S
+- `paymentDisabledReason` and `openAccRecs` read the whole ledger once per render rather than once per screen. S
+- At reset the Reconciliation card reads "Books square" while the Ledger shows a pair not yet in Xero (AA-2026-S2401), and it ignores Xero-only items until the poll runs. Admin Day. S (owner)
+- Payment runs list shows when a run was approved, not by whom (the run detail does). `apps/admin/screens/PaymentRunScreen.tsx`. S
+- Web Remittances' paid-on dates differ from Admin Payment runs for seeded weeks 12 and 13. S
+- nib's AA-2026-0005 Locked record reads "Billed to Alan Prentice". S
+
+## Prototype: prepayments and patients
+
+- "Pre-payment" and "Prepayment" both render (rail card, Ledger kind, Review flags, the Booking's prepayment statuses, Xero sim); the catalogue's word is "prepayment". Sweep the copy with the guide, the specs and the recipe captions that quote it. `apps/admin/components/PrepaymentsRailCard.tsx`, `apps/admin/screens/LedgerScreen.tsx`, `domain/billing/reviewFlags.ts`. M
+- 41's patient contacts (prepayment reminders, `Booking.patientNotices`) never reach 40's follow-up log or send history, and the record's Resend sits beside 41's reminder: append, or merge on read. `store/prepaymentActions.ts`, `apps/admin/screens/patients/`. M (owner)
+- Phase 41 leftovers: settlement audit rows show `by: System` only in the summary row; releasing a prepaid Procedure's Contract settles nothing until a non-prepaid Contract is picked; "Split requested" is still offered as a credit reason on a prepayment invoice (`shared/procedureEventCopy.ts`). M
+- Rebooked Riley shows a "Surgeon's rooms PDF" source line and "5 units" on a fixed price; the rebook dialog defaults to Dr Ngata (no price) and allows an unpriced not-prepaid rebook; no To-do row for the rebooked prepayment until the date jump. M
+- Raise sample warnings overwrites Riley's prepaid Rhinoplasty code to H4. `store/warningSamples.ts`. S
+- Nair's Booking shows two identical "Create additional invoice" and "Credit note" pairs (the prepayment block's is the second; the guide carries an Open note). `shared/booking/PrepaidSettlementBlock.tsx`. S (owner)
+- Add NHI with the Hub Unavailable still shows "Matches Losa Tuilagi ..." (AA's own record, not the register): decide whether it should hide or say so. `apps/admin/screens/patients/AddNhiSheet.tsx`. S (owner)
+
+## Prototype: Admin Day, Review, Bookings and intake
+
+- A List holding only a stub reads 0 of 0 with Mark list completed enabled, and authorises: no stub guard, though S5 tells it as built. M (owner)
+- S5 promises what is not built: a missing-NHI list with attach or merge, and a new Contract disabling the old one. The guide scripts them as built. M to L (owner)
+- The office cannot edit an invoice description: `shared/flows/EditInvoiceDescriptionSheet.tsx` is built but never mounted, so D73's admin layer is reachable only through "Use it". M (owner)
+- The matching panel cannot correct a row's surgeon, and the newer-text cue sits above the Booking detail instead of under the invoice description. `apps/admin/matching/`. M (owner)
+- Review shows both the "Not complete" pill and the "Not marked completed" flag for one fact. `domain/billing/reviewFlags.ts`. S (owner)
+- Review counts disagree: the badge says 10 while the queue says "9 in the queue"; Chen Fri 17 shows "1 flag open" beside two triangles; Fri 24 PM still reads "FLAGS 1" after authorise. S
+- Review's authorised stamp shows the List date, not the authorise date ("FRI 24 JUL, 08:00"). S
+- History: grouped-save rows carry no clock time, it reopens on the last as-at view, and seeded rows (14:20, 14:22, Chen's 16:00) sit after the 08:00 clock. `shared/audit/`, `domain/seed/`. S
+- The Mon 10 Aug PM drawer shows "4 bookings" after the Lattimer move (verify first). S
+- The Mon 27 Jul price-rule List cannot be authorised: its date is in the future (demo-data staging). S (owner)
+- Draft update email after S1's import names the RVG name, not the text received, and Send update repeats the import's Diane Foster row. `store/matchingDemo.ts`. S
+- The Split sheet's Apply is enabled while the new person has no email or address. S
+- Lattimer's moved Booking reads "Agreed fee" without the Contract name. S
+- A loaded 3-procedure Booking sits at 16:30 on an AM List. `store/demoMultiProcedure.ts`. S
+- Day after S4's cancel reads "Awaiting review: Souter · Forte Health AM · 0 bookings · submitted". S
+- The Reassign sheet after an anaesthetist's hand-on names the wrong session ("Souter, Melanie's session after the move"). S
+- Phone-advice Booking: Continue creates the List at once, so abandoning leaves an empty ACTIVE List; Look up is allowed with an empty NHI. S
+- A new List made by a moved Booking reads "Origin From a recurring booking". S
+- S2 seed: Souter's "Public hospital, Thursday AM" series sits over a Private List with 8 Bookings on Thu 23 and Thu 30 Jul (a Public session holds none, D86). `domain/seed/`; bump `PERSIST_VERSION`. S
+- Demo stand-ins: "A hospital update for this Booking" writes the RVG group's description as the hospital's wording (Wiremu Tane), and "A new hospital booking" on Tue 28 Jul PM adds a patient at 10:30, before the session. `shared/demoTriggers/registry.ts`. S
+
+## Prototype: anaesthetist apps (mobile, PWA, web)
+
+- Mobile has no list of her prepaid Contracts under the profile (PWA parity gap). `apps/mobile/screens/MoreScreen.tsx`. M
+- Mobile has no AA fee view (US-10.3.2 partly built; web has `/web/accounts/fees`). M (owner)
+- On Dr Souter's history Booking HBK03, mobile Paid by shows the raw id "H-STG". S
+- PWA, S1: "Office authorises this List" authorises while her Contract change still awaits office approval. `store/officeStandIn.ts`. S
+- The PWA Hub card pre-ticks Slow in a fresh session while the Hub answers Available. S
+- Framed phone BK0025 after Raise sample warnings: the Paid by line shows the split warning text in place of the payer. S
+- Demo sheet "Colleague moves a Booking to me" after S2 Beat 5 offers two rows, and the Dr Ropata row hands Souter her own former Booking back. `store/listMoveDemo.ts`. S
+- Parked stories never built: US-01.1.5 (the A and B split of a session, DM-65) and US-03.7.4 (pre-op consults in AA's room, OQ-138). L (owner)
+- The photo-capture Future-scope demo flow still ships: keep it or delete it. S (owner)
+
+## Prototype: provisional captions
+
+- Captions tied to open questions, each removed or reworded when its question is answered (`appCopy.test.ts` `MUST_KEEP` pins them): D23 Contracts editor helper (`apps/admin/flows/ContractEditSheet.tsx`), D68 (`shared/booking/PrepaymentMovedCard.tsx`), D70 (`InvoiceDocument.tsx`), D72 (`HoldingAccountPanel.tsx`), D78 (`UnitsCard.tsx`), and the Xero MJ "How this posts in Xero is still to be confirmed" (twice). S each (owner)
+
+## UI consistency debt
+
+- Shared components still to build: a Breadcrumb (Review and Invoices' hand crumbs), `TextAction` 13px and quiet sizes, an `OptionChip` small size, `IconButton` ARIA passthrough and 22 and 48 sizes, a pill-outline `Button`, a `TotalsBlock` (AA fees `FeeInvoiceDetail`). `shared/ui/`. M
+- The one-component guardrail's allow-list still holds 58 files and 90 styled raw buttons; each component above retires entries. `apps/oneComponentPerJob.test.ts`. M
+- Token drift: 65 inline `=== 1 ?` plurals not using `plural`, 13 `'EEE d MMM'` literals, off-scale font sizes (12.5 x307, 11.5 x79, 13.5 x48), no token for the white-alpha on-ink ladder (41 sites). M
+- Left by U7 for the owner: PickRow heights 56 and 60, DockSpacer's hard-coded 74/82/86, the stamps in DraftListDrawer, UpdateEmailComposer and `auditNarrative`, no `data-progress` on the phone ListRow. S to M (owner)
+- oxlint's 144 warnings: 122 `only-export-components` (helpers beside components) and 21 `exhaustive-deps` (`ModifierPickerSheet.tsx:74`, missing `claimFor` and `modifiers`, is worth a look). S to M
+- Tailwind supplies only Preflight and the `@theme` variables (no utility class is used): drop it for a small reset and a `:root` block, with a visual check. `theme/global.css`. M
+- The Gradient Lab still ships (`GRADIENT_LAB_ENABLED`, `theme/gradientLabGate.ts`); once the gradient is signed off, remove `shell/gradientLab/` and `visual/mobile-phase13.spec.ts`. S (owner)
+- The app switcher says "Demo: Billing Monitor & Xero" while the page says "Xero simulation". `shell/appConfig.ts`. S
+
+## Requirements Board
+
+- Plan tools fall back to built-in status lists when `board.config.json` or `status-recodes.json` is unreadable (SY-1), and an unreadable recodes file raises no board issue (SY-4). S to M
+- No page-level error boundary over the masthead and problem pill (SY-2). S
+- Mermaid fence extraction and the Diff splitter (`shared/proseDiff.ts`) don't use `markdownCode.ts` yet (SY-3, SY-5). S
+- Hardening: two git spawns run without `gitEnv` (SY-6), `capture --only` has no cycle guard (SY-7), `/API` spellings fall through to the SPA instead of a 404 (SY-8), cross-site navigations to Vite's `/__open-in-editor` are not refused. S
+- Write-model nits: layout PUT accepts unsafe card IDs (CO-2), screenshot removal sits outside the atomic delete (CO-3), unbounded rename detection (CO-4), no softer 409 when the value already equals disk (CO-1), CO-5 to CO-8. M
+- The kit ships this project's RFP citation examples in `SCHEMA.md` (UP-6). S
+- B14 code rows: no warning for an escaping base folder, unguarded facts in `resolve-source` and `new-artifact`, no tests-only tsconfig, the dead `steps.ts ?? []`, a third note rule in `phase-context.mjs`. S each
+- Settings accessibility: focus lost after Remove and Move, row buttons all named alike, swatch radios without arrow keys; unsaved Settings edits escape the leave prompt. S to M
+- `kit:export` has no upgrade mode for an adopted board. M
+
+## Tests and tooling
+
+- Run the full catalogue capture once the owner has approved Phase 44 and this cleanup: `node requirements-board/agent/skills/run-build-phase/tools/phase-check.mjs --capture all` from the repo root (about 30 to 35 min), then `--stop-servers`. The committed images are stale (backlogs from 40a, 43a, 43b, U7 and US-15.0.4 were never captured). M (owner)
+- The PWA has never been checked on a real handset, only the emulated iPhone 14 Pro: walk S1 T7, the Lattimer move end to end and the PWA-only paths (`aa-prototype/README.md`, "Testing on a real device"). M
+- US-15.0.4's full-scale recipe times out at the fixed 6 s `ACTION_TIMEOUT`. `requirements-board/scripts/capture.ts`. S
+- Flaky under load: `mastersPages.test.tsx` (Vitest timeouts) and `visual/booking-detail-layout.spec.ts`; board e2e `one-rule` R-101, `board-mapped` lane rename, `artifacts` reduced motion, `diff` live edits. Watch. S
+- Catalogue asset files still carry old shot names (`copy-card`, `add-card`, ...), and US-03.1.3 has no Admin List drawer image. S
+- `affected-shots` reads a comment or dead-code edit in `router.tsx` or `appStore.ts` as a route or store change, so the report goes broad: skip comment-only and deleted-declaration hunks. `aa-prototype/scripts/affected-shots.mjs`. S
+- `store/appStore.ts` carries about 320 lines of per-version `PERSIST_VERSION` notes (v1 to v75); git holds them, trim to the last few. S
+- Housekeeping: 37 Playwright specs and a dozen Vitest files are named by phase (`phase11.spec.ts`, `phase43Copy.test.ts`); `phase12`, `demo-actions` and `demo-actions-audit` specs overlap; the parity fixtures (`store/__parity__/`, `domain/seed/__fixtures__/`, 2.5 MB) could become one money golden. Rename or merge only when touching them. M
+- Root `package.json` `test:plan-state` is misnamed (it runs `req-changes.test.mjs`) and redundant with `verify:board`. S
+
+## Owner questions
+
+- Negative money prints "$-34.45" (invoice discount line) and "$-15.90" (BK0185 breakdown) through `formatMoney`'s default, while the remittance prints "-$365.70" (`sign: 'always'`). The default is a ruling (`docs/DECISIONS.md`); changing it touches every screen. Keep or switch? `domain/billing/money.ts`. S (owner)
+- "Create additional invoice" (office) and "Raise additional invoice" (anaesthetist) name one action by role: keep the two words or use one? `shared/procedureEventCopy.ts`. S (owner)
+- Admin's "Unit value" and the profile's "Rate per unit" name the same figure: pick one. S (owner)
+- `docs/demo-guide/04-presenter-cheat-sheet.md`'s "Open questions to raise" carries our recommendations where an OQ file had none: check they are ours to make. S (owner)
