@@ -60,13 +60,12 @@ describe('catch-up Phase 17b seed', () => {
     expect(Object.values(surgeons).filter((s) => s.hpiId === undefined).map((s) => s.id)).toEqual(BLANK_HPI)
   })
 
-  it('the three blank surgeons are named by no List, group or pairing', () => {
+  it('the three blank surgeons are named by no List, Contract or pairing', () => {
     const listed = new Set(Object.values(seed.schedule.lists).map((l) => l.surgeonId))
-    const grouped = new Set(Object.values(seed.masters.surgeonGroups).flatMap((g) => g.memberSurgeonIds))
     const paired = new Set(Object.values(seed.officePrivate.pairingPreferences).map((p) => p.surgeonId))
     const contracts = JSON.stringify(seed.masters.contracts)
     for (const id of BLANK_HPI) {
-      expect(listed.has(id) || grouped.has(id) || paired.has(id) || contracts.includes(id), id).toBe(false)
+      expect(listed.has(id) || paired.has(id) || contracts.includes(id), id).toBe(false)
     }
   })
 
@@ -108,8 +107,7 @@ describe('catch-up Phase 17b seed', () => {
     expect(seed.masters).not.toHaveProperty('surgeonRooms')
   })
 
-  it('keeps groups, pairings, tiers and every List\'s surgeon', () => {
-    expect(seed.masters.surgeonGroups).toEqual(baseline.surgeonGroups)
+  it('keeps pairings, tiers and every List\'s surgeon', () => {
     expect(seed.officePrivate).toEqual(baseline.officePrivate)
     // Recurring Lists skip public holidays (24 Nov 2026) and the hospitals' Christmas shutdowns, and the
     // horizon ends Wed 24 Mar 2027 (the baseline's ran three days further): only those Lists are no longer made.

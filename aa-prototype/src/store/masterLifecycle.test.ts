@@ -15,7 +15,6 @@ import { heldPricesForBooking, proceduresForBooking } from './selectors'
 import { bookingFee } from '../shared/capture/feeContext'
 import { SEED_LIST_IDS } from '../domain/seed'
 import type { AssignedList, Contract } from '../domain/types'
-import { createSurgeonGroup } from './surgeonActions'
 import { editAaModifier, reinstateMaster, retireFactsFor, retireMaster } from './masterLifecycleActions'
 import { addPublicHoliday, deletePublicHoliday, editPublicHoliday, editRvgTimeRule, listsFlaggedByPublicHoliday, PART_INTERVAL_FIXED } from './publicHolidayActions'
 
@@ -95,17 +94,6 @@ describe('retire and reinstate (catch-up Phase 42; US-13.4.1)', () => {
     expect(editParty(api, OFFICE_ACTOR, party.id, { kind: 'hospital', name: 'Rangiora (billing)', codePrefix: p.codePrefix, hospitalId: hospital.id }).ok).toBe(true)
     expect(editHospital(api, OFFICE_ACTOR, hospital.id, { name: 'Rangiora Hospital' }).ok).toBe(true)
     expect(api.getState().masters.parties[party.id]!.name).toBe('Rangiora (billing)')
-  })
-
-  it('a surgeon group retires only once empty', () => {
-    const api = store()
-    const surgeonId = Object.keys(api.getState().masters.surgeons)[0]!
-    const g = createSurgeonGroup(api, OFFICE_ACTOR, { name: 'Night team', memberSurgeonIds: [surgeonId] })
-    const id = g.ok ? g.value.id : ''
-    const out = retireMaster(api, OFFICE_ACTOR, 'surgeonGroup', id, 'Disbanded')
-    expect(!out.ok && out.message).toBe('1 surgeon is still in Night team. Take them out first.')
-    const empty = createSurgeonGroup(api, OFFICE_ACTOR, { name: 'Empty team', memberSurgeonIds: [] })
-    expect(code(retireMaster(api, OFFICE_ACTOR, 'surgeonGroup', empty.ok ? empty.value.id : '', 'Unused'))).toBe('ok')
   })
 
   it("AA's own modifiers edit and retire; the RVG table's rows are as printed", () => {

@@ -17,7 +17,6 @@ import type {
   SlotStatus,
   Surgeon,
   SurgeonContact,
-  SurgeonGroup,
 } from '../types'
 
 // ---------------------------------------------------------------------------
@@ -160,25 +159,6 @@ export const SURGEONS: readonly Surgeon[] = [
   { id: SURG.reid, name: 'Ms A. Reid', specialtyIds: [SPC.ophthalmology], practiceName: PRACTICE.merivale.name, personalContact: { name: 'Ms A. Reid', email: 'a.reid@surgeons.example', phone: '021 555 0478' }, officeContacts: [practiceInbox(PRACTICE.merivale)], hpiId: '47REIA', medicalRegistrationNumber: '77149' },
   { id: SURG.nand, name: 'Mr V. Nand', specialtyIds: [SPC.ent], practiceName: PRACTICE.fendalton.name, personalContact: { name: 'Mr V. Nand', email: 'v.nand@surgeons.example', phone: '021 555 0489' }, officeContacts: [practiceInbox(PRACTICE.fendalton)], hpiId: '48NANV', medicalRegistrationNumber: '78852' },
   { id: SURG.cameron, name: 'Ms H. Cameron', specialtyIds: [SPC.gynaecology], practiceName: PRACTICE.papanui.name, personalContact: { name: 'Ms H. Cameron', email: 'h.cameron@surgeons.example', phone: '021 555 0490' }, officeContacts: [practiceInbox(PRACTICE.papanui)], hpiId: '49CAMH', medicalRegistrationNumber: '79503' },
-] as const
-
-/**
- * Surgeon groups (US-13.4.1). Catch-up Phase 18's COS surgeon-group Party
- * links `SG-COS`'s members on its Contracts; a Party has no group link.
- */
-export const SURGEON_GROUPS: readonly SurgeonGroup[] = [
-  {
-    id: 'SG-COS',
-    name: 'Canterbury Orthopaedic Surgeons',
-    description: 'Orthopaedic group; holds an externally held ACC contract.',
-    memberSurgeonIds: [SURG.hale],
-  },
-  {
-    id: 'SG-EYE',
-    name: 'Christchurch Eye Surgeons',
-    description: 'The eye surgeons who operate at Christchurch Eye Surgery.',
-    memberSurgeonIds: [SURG.whitford, SURG.reid],
-  },
 ] as const
 
 // ---------------------------------------------------------------------------

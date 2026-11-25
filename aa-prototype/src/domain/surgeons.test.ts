@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { groupsForSurgeon, hpiCpnHolder, isPlausibleEmail, isPlausibleHpiCpn, NO_HPI_CPN, normaliseHpiCpn, surgeonHpiCpnRequired } from './surgeons'
-import { ANAESTHETISTS, SURGEONS, SURGEON_GROUPS } from './seed/cast'
+import { hpiCpnHolder, isPlausibleEmail, isPlausibleHpiCpn, NO_HPI_CPN, normaliseHpiCpn, surgeonHpiCpnRequired } from './surgeons'
+import { ANAESTHETISTS, SURGEONS } from './seed/cast'
 import type { Surgeon } from './types'
 
 const surgeons = Object.fromEntries(SURGEONS.map((s) => [s.id, s]))
@@ -43,13 +43,7 @@ describe('HPI CPN', () => {
   })
 })
 
-describe('groups and emails', () => {
-  it('lists a surgeon’s groups', () => {
-    const groups = Object.fromEntries(SURGEON_GROUPS.map((g) => [g.id, g]))
-    expect(groupsForSurgeon(groups, 'S-HALE').map((g) => g.id)).toEqual(['SG-COS'])
-    expect(groupsForSurgeon(groups, 'S-PATEL')).toEqual([])
-  })
-
+describe('emails', () => {
   it('checks emails loosely', () => {
     expect(isPlausibleEmail('bookings@stgeorges.example')).toBe(true)
     for (const bad of ['', 'bookings', 'a@b', 'a b@c.nz', '@c.nz']) expect(isPlausibleEmail(bad), bad).toBe(false)

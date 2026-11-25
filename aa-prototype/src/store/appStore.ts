@@ -497,8 +497,10 @@ export const PERSIST_KEY = 'aa-demo'
  *  shutdowns (`shutdown` closures) skip recurring Lists. Reseeds on load.
  *  v79 (lane/a): build plan Phase 52, an anaesthetist inactive from a last day: `Anaesthetist.active` deleted for
  *  `lastDayISO`, `inactiveReason` and `activeAgainISO` (`isActiveOn`); Dr Oscar Reeves, of the 71, left on 20 Nov 2026.
- *  Reseeds on load. */
-export const PERSIST_VERSION = 79
+ *  Reseeds on load.
+ *  v80 (lane/b): build plan Phase 55, the surgeon group record goes: `masters.surgeonGroups`, its seed and the
+ *  `surgeonGroup` counter (DM-08; a group that holds Contracts is a Party of kind surgeon group). Reseeds on load. */
+export const PERSIST_VERSION = 80
 
 /** The intake slice: seeded empty, the presenter imports or a trigger delivers (catch-up Phase 33). */
 export function emptyIntakeSlice(): IntakeSlice {
@@ -624,6 +626,9 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
  * record maps live one level down and are copied wholesale, so a record the
  * demo deleted is never resurrected. Exported for the regression test.
  */
+/** Masters keys removed from the model: dropped from any saved payload on load. */
+const RETIRED_MASTERS_KEYS: readonly string[] = ['surgeonGroups']
+
 export function backfillMerge(current: AppStore, persisted: unknown): AppStore {
   const p = isPlainObject(persisted) ? persisted : {}
   const merged: Record<string, unknown> = { ...current, ...p }
@@ -644,6 +649,13 @@ export function backfillMerge(current: AppStore, persisted: unknown): AppStore {
       ...appSettings,
       warningRules: { ...current.appSettings.warningRules, ...persistedRules },
     }
+  }
+  // A masters key the model no longer holds never comes back from a saved payload (build plan Phase 55, DM-08).
+  const masters = merged['masters']
+  if (isPlainObject(masters) && RETIRED_MASTERS_KEYS.some((k) => k in masters)) {
+    const kept: Record<string, unknown> = { ...masters }
+    for (const k of RETIRED_MASTERS_KEYS) delete kept[k]
+    merged['masters'] = kept
   }
   return merged as unknown as AppStore
 }

@@ -1,6 +1,8 @@
 /**
  * Surgeon master data (catch-up Phase 17; FT-13.6, US-13.6.2, US-13.4.1):
- * surgeons and surgeon groups. Office-only, one audited `mutate()` commit
+ * surgeons. Phase 55 (DM-08, OQ-148's default) removed the surgeon group
+ * record: a group that holds Contracts is a Party of kind surgeon group, its
+ * surgeons the ones linked on its Contracts. Office-only, one audited `mutate()` commit
  * each, plain-English refusals. No delete or deactivate yet (Phase 42).
  *
  * Catch-up Phase 17b (D74, D76; OQ-143's default): the system keeps no
@@ -18,7 +20,7 @@
  * an unknown one, is refused. The audit prints them by name.
  */
 
-import type { Surgeon, SurgeonContact, SurgeonGroup } from '../domain/types'
+import type { Surgeon, SurgeonContact } from '../domain/types'
 import {
   HPI_CPN_INVALID,
   hpiCpnHolder,
@@ -29,9 +31,9 @@ import {
 } from '../domain/surgeons'
 import { cleanContact, isBlankContact } from '../domain/surgeonContacts'
 import { cleanSpecialtyIds, specialtyNames } from '../domain/specialties'
-import { allocateId, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
+import { allocateId, mutate, ok, refuse, type Actor, type Outcome } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
-import { partyRenameFollowing, retiredRefusal } from './masterLifecycleActions'
+import { partyRenameFollowing } from './masterLifecycleActions'
 import { slicesOf, withSource, type Plan, type PlanSource } from './masterPlanners'
 
 /** The retire fields an edit carries over unchanged (catch-up Phase 42): only retire and reinstate change them. */
@@ -204,104 +206,6 @@ export function editSurgeon(api: AppStoreApi, actor: Actor, surgeonId: string, f
       masters: {
         ...s.masters,
         surgeons: { ...s.masters.surgeons, [surgeonId]: next },
-        ...(follow !== null ? { parties: { ...s.masters.parties, [follow.party.id]: follow.party } } : {}),
-      },
-    }),
-  )
-  return ok(undefined)
-}
-
-// ---------------------------------------------------------------------------
-// Surgeon groups
-// ---------------------------------------------------------------------------
-
-export interface SurgeonGroupFields {
-  name: string
-  description?: string
-  memberSurgeonIds: readonly string[]
-}
-
-function cleanGroupFields(state: AppState, fields: SurgeonGroupFields): Outcome<Omit<SurgeonGroup, 'id'>> {
-  const name = fields.name.trim()
-  if (name === '') return refuse('nameRequired', 'A group name is required.')
-  const members = [...new Set(fields.memberSurgeonIds)]
-  const unknown = members.find((id) => state.masters.surgeons[id] === undefined)
-  if (unknown !== undefined) return refuse('notFound', 'One of the chosen surgeons was not found.')
-  const description = fields.description?.trim() ?? ''
-  return ok({ name, memberSurgeonIds: members, ...(description !== '' ? { description } : {}) })
-}
-
-/** Add a surgeon group (members de-duplicated). Audited `surgeonGroup.create`. */
-export function createSurgeonGroup(api: AppStoreApi, actor: Actor, fields: SurgeonGroupFields): Outcome<{ id: string }> {
-  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can add a surgeon group.')
-  const cleaned = cleanGroupFields(api.getState(), fields)
-  if (!cleaned.ok) return cleaned
-  const retiredMember = retiredRefusal(api.getState().masters, { surgeonIds: cleaned.value.memberSurgeonIds })
-  if (retiredMember !== null) return retiredMember
-  const metas: MutationMeta[] = []
-  let id = ''
-  mutate(api, actor, metas, (s) => {
-    const alloc = allocateId(s.counters, 'surgeonGroup')
-    id = alloc.id
-    metas.push({ entityType: 'surgeonGroup', entityId: id, action: 'surgeonGroup.create', after: { ...cleaned.value }, stampBookingId: null })
-    return {
-      masters: { ...s.masters, surgeonGroups: { ...s.masters.surgeonGroups, [id]: { id, ...cleaned.value } } },
-      counters: alloc.counters,
-    }
-  })
-  return ok({ id })
-}
-
-/** Edit a surgeon group. Audited `surgeonGroup.update`. */
-export function editSurgeonGroup(api: AppStoreApi, actor: Actor, groupId: string, fields: SurgeonGroupFields): Outcome {
-  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can edit a surgeon group.')
-  const state = api.getState()
-  const existing = state.masters.surgeonGroups[groupId]
-  if (existing === undefined) return refuse('notFound', 'Group not found.')
-  const cleaned = cleanGroupFields(state, fields)
-  if (!cleaned.ok) return cleaned
-  const retiredMember = retiredRefusal(state.masters, { surgeonIds: cleaned.value.memberSurgeonIds }, { surgeonIds: existing.memberSurgeonIds })
-  if (retiredMember !== null) return retiredMember
-  const next: SurgeonGroup = { id: groupId, ...cleaned.value, ...retireFields(existing) }
-  // Only the fields that changed are audited (members compared as a set); no change writes nothing.
-  const before: Record<string, unknown> = {}
-  const after: Record<string, unknown> = {}
-  if (next.name !== existing.name) {
-    before.name = existing.name
-    after.name = next.name
-  }
-  if ((next.description ?? '') !== (existing.description ?? '')) {
-    before.description = existing.description ?? ''
-    after.description = next.description ?? ''
-  }
-  const sameMembers =
-    next.memberSurgeonIds.length === existing.memberSurgeonIds.length &&
-    next.memberSurgeonIds.every((id) => existing.memberSurgeonIds.includes(id))
-  if (!sameMembers) {
-    before.memberSurgeonIds = existing.memberSurgeonIds
-    after.memberSurgeonIds = next.memberSurgeonIds
-  }
-  if (Object.keys(after).length === 0) return ok(undefined)
-  // A rename carries a surgeon-group Party of the same name along (catch-up Phase 42).
-  const follow = partyRenameFollowing(state.masters, { kind: 'surgeonGroup' }, existing.name, next.name)
-  mutate(
-    api,
-    actor,
-    [
-      {
-        entityType: 'surgeonGroup',
-        entityId: groupId,
-        action: 'surgeonGroup.update',
-        before,
-        after,
-        stampBookingId: null,
-      },
-      ...(follow !== null ? [follow.meta] : []),
-    ],
-    (s) => ({
-      masters: {
-        ...s.masters,
-        surgeonGroups: { ...s.masters.surgeonGroups, [groupId]: next },
         ...(follow !== null ? { parties: { ...s.masters.parties, [follow.party.id]: follow.party } } : {}),
       },
     }),

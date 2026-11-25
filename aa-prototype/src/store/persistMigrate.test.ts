@@ -1488,3 +1488,35 @@ describe('build plan Phase 52 (v79): an anaesthetist inactive from a last day', 
     expect(souter.activeAgainISO).toBeNull()
   })
 })
+
+describe('build plan Phase 55 (v80): the surgeon group record removed (DM-08)', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  const OLD_GROUPS = {
+    'SG-COS': { id: 'SG-COS', name: 'Canterbury Orthopaedic Surgeons', memberSurgeonIds: ['S-HALE'] },
+    'SG-EYE': { id: 'SG-EYE', name: 'Christchurch Eye Surgeons', memberSurgeonIds: ['S-WHITFORD', 'S-REID'] },
+  }
+
+  it('discards a v79 store carrying masters.surgeonGroups and reseeds without it', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(80)
+    const fresh = freshAppState()
+    const counters = { ...fresh.counters, surgeonGroup: 3 }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters: { ...fresh.masters, surgeonGroups: OLD_GROUPS }, counters }, version: 79 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect('surgeonGroups' in s.masters).toBe(false)
+    expect('surgeonGroup' in s.counters).toBe(false)
+    expect(s.masters.parties['PY-COS']?.kind).toBe('surgeonGroup')
+  })
+
+  it('a current-version delta naming surgeonGroups does not bring the key back', () => {
+    const delta = { __delta: 1, top: { masters: { $sub: { surgeonGroups: { $records: OLD_GROUPS, $removed: [] } } } } }
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: delta, version: PERSIST_VERSION }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect('surgeonGroups' in s.masters).toBe(false)
+    expect(Object.keys(s.masters.surgeons).length).toBe(Object.keys(freshAppState().masters.surgeons).length)
+  })
+})

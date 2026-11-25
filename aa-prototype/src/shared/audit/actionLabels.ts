@@ -143,8 +143,6 @@ export const ACTION_LABELS: Record<string, string> = {
   'hospital.update': 'Hospital updated',
   'surgeon.create': 'Surgeon added',
   'surgeon.update': 'Surgeon updated',
-  'surgeonGroup.create': 'Surgeon group added',
-  'surgeonGroup.update': 'Surgeon group updated',
   // Office-private (catch-up Phase 17): only Admin histories read these.
   'pairing.add': `${PAIRING_LABELS.entry} added`,
   'pairing.end': `${PAIRING_LABELS.entry} ended`,
@@ -180,8 +178,6 @@ export const ACTION_LABELS: Record<string, string> = {
   'hospital.reinstate': 'Hospital reinstated',
   'surgeon.retire': 'Surgeon retired',
   'surgeon.reinstate': 'Surgeon reinstated',
-  'surgeonGroup.retire': 'Surgeon group retired',
-  'surgeonGroup.reinstate': 'Surgeon group reinstated',
   'modifier.retire': "AA's own modifier retired",
   'modifier.reinstate': "AA's own modifier reinstated",
   'modifier.update': 'Modifier changed',

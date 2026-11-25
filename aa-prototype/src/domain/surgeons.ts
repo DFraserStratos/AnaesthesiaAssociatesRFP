@@ -11,7 +11,7 @@
  * Phase 40a's.
  */
 
-import type { Anaesthetist, Surgeon, SurgeonGroup, SurgeonId } from './types'
+import type { Anaesthetist, Surgeon } from './types'
 
 /** Surname order for people named with a title and initials ("Ms A. Reid" sorts as "reid"). */
 export function compareBySurname(a: { name: string }, b: { name: string }): number {
@@ -20,13 +20,6 @@ export function compareBySurname(a: { name: string }, b: { name: string }): numb
     return (parts[parts.length - 1] ?? name).toLowerCase()
   }
   return key(a.name).localeCompare(key(b.name)) || a.name.localeCompare(b.name)
-}
-
-/** The groups a surgeon belongs to, by name. */
-export function groupsForSurgeon(groups: Readonly<Record<string, SurgeonGroup>>, surgeonId: SurgeonId): SurgeonGroup[] {
-  return Object.values(groups)
-    .filter((g) => g.memberSurgeonIds.includes(surgeonId))
-    .sort((a, b) => a.name.localeCompare(b.name))
 }
 
 /** A deliberately loose `something@something.tld` check, shared by surgeon contacts and hospitals. */

@@ -2335,7 +2335,7 @@ export function updateEmailRecipients(
 // inside a useMemo.
 
 type MastersOf<K extends keyof AppState['masters']> = { masters: Pick<AppState['masters'], K> }
-type MasterRow<K extends 'hospitals' | 'surgeons' | 'surgeonGroups' | 'modifiers'> = AppState['masters'][K][string]
+type MasterRow<K extends 'hospitals' | 'surgeons' | 'modifiers'> = AppState['masters'][K][string]
 
 /** Hospitals a picker offers (retirement only; AA rooms filters stay on top). */
 export function activeHospitals(state: MastersOf<'hospitals'>, keepId?: string | null): MasterRow<'hospitals'>[] {
@@ -2345,11 +2345,6 @@ export function activeHospitals(state: MastersOf<'hospitals'>, keepId?: string |
 /** Surgeons a picker offers. */
 export function activeSurgeons(state: MastersOf<'surgeons'>, keepId?: string | null): MasterRow<'surgeons'>[] {
   return activeOnly(state.masters.surgeons, keepId)
-}
-
-/** Surgeon groups a picker offers. */
-export function activeGroups(state: MastersOf<'surgeonGroups'>, keepId?: string | null): MasterRow<'surgeonGroups'>[] {
-  return activeOnly(state.masters.surgeonGroups, keepId)
 }
 
 /**

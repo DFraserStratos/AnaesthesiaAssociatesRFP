@@ -78,7 +78,7 @@ export const PLAIN_RVG_CONTRACT_BY_HOSPITAL: Readonly<Record<string, string>> = 
   [HOSP.cph]: CONTRACT.cphRvg,
 }
 
-/** Canterbury Orthopaedic Surgeons' members (`SG-COS`), copied onto its Contracts' links. */
+/** Canterbury Orthopaedic Surgeons' surgeons, linked on its Contracts (a group is a Party; DM-08). */
 const COS_SURGEONS = [SURG.hale]
 
 interface SeedContract {

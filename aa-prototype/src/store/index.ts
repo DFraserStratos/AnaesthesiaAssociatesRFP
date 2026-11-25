@@ -301,10 +301,7 @@ export { conflictLookups, type MutationResult } from './conflictReconcile'
 export {
   createSurgeon,
   editSurgeon,
-  createSurgeonGroup,
-  editSurgeonGroup,
   type SurgeonFields,
-  type SurgeonGroupFields,
 } from './surgeonActions'
 export { createParty, editParty, partyContractFacts, type PartyFields } from './partyActions'
 // Catch-up Phase 18a: AA's specialties and funding tags (Admin Master data).
@@ -766,7 +763,7 @@ export { stageMasterLoad, commitMasterLoad, discardMasterLoad, stagedLoadFor, ch
 export { LOADER_SPECS, specFor, surgeonNameNotes, OPEN_PRICE_LOAD_REFUSAL, type StoreLoaderSpec } from './masterLoadSpecs'
 export { stageGoLiveLoad, setGoLiveApproval, commitGoLiveLoad, discardGoLiveLoad, goLiveOutcomes, type GoLiveCommitResult } from './goLiveActions'
 export { applyPlan, type Plan, type PlanSource, type Planner } from './masterPlanners'
-export { activeHospitals, activeSurgeons, activeGroups, activeAaModifiers } from './selectors'
+export { activeHospitals, activeSurgeons, activeAaModifiers } from './selectors'
 
 // Catch-up Phase 43: scale and privacy.
 export { viewRawImportRow, rawViewsFor, rawRowRefusal, rawRowEligible, RAW_ROW_REASONS, RAW_ROW_NOT_ELIGIBLE, RAW_ROW_OFFICE_ONLY, type RawViews } from './rawRowActions'

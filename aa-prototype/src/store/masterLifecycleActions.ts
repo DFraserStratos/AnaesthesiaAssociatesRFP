@@ -1,6 +1,6 @@
 /**
- * Retire and reinstate (catch-up Phase 42; US-13.4.1): hospitals, surgeons,
- * surgeon groups and AA's own modifiers are retired with a stated reason when
+ * Retire and reinstate (catch-up Phase 42; US-13.4.1): hospitals, surgeons
+ * and AA's own modifiers are retired with a stated reason when
  * nothing upcoming depends on them, never deleted, and reinstated by the
  * office. Each is one audited `mutate()` commit (`<kind>.retire`,
  * `<kind>.reinstate`). The blockers are `retireBlockers`' sentences
@@ -22,31 +22,27 @@ import type { AppState, AppStoreApi } from './appStore'
 const OFFICE_ONLY: Record<RetireKind, string> = {
   hospital: 'Only the office can retire a hospital.',
   surgeon: 'Only the office can retire a surgeon.',
-  surgeonGroup: 'Only the office can retire a surgeon group.',
   aaModifier: "Only the office can retire AA's own modifiers.",
 }
 
 const NOT_FOUND: Record<RetireKind, string> = {
   hospital: 'Hospital not found.',
   surgeon: 'Surgeon not found.',
-  surgeonGroup: 'Group not found.',
   aaModifier: 'Modifier not found.',
 }
 
 /** The entity type and audit prefix of each kind (an AA modifier audits as `modifier`). */
-const ENTITY: Record<RetireKind, string> = { hospital: 'hospital', surgeon: 'surgeon', surgeonGroup: 'surgeonGroup', aaModifier: 'modifier' }
+const ENTITY: Record<RetireKind, string> = { hospital: 'hospital', surgeon: 'surgeon', aaModifier: 'modifier' }
 
 /** The audit action codes, written out so the label check can find them (an AA modifier audits as `modifier`). */
 const RETIRE_ACTION: Record<RetireKind, { action: string }> = {
   hospital: { action: 'hospital.retire' },
   surgeon: { action: 'surgeon.retire' },
-  surgeonGroup: { action: 'surgeonGroup.retire' },
   aaModifier: { action: 'modifier.retire' },
 }
 const REINSTATE_ACTION: Record<RetireKind, { action: string }> = {
   hospital: { action: 'hospital.reinstate' },
   surgeon: { action: 'surgeon.reinstate' },
-  surgeonGroup: { action: 'surgeonGroup.reinstate' },
   aaModifier: { action: 'modifier.reinstate' },
 }
 
@@ -59,8 +55,6 @@ function recordOf(masters: Masters, kind: RetireKind, id: string): Record_ | und
       return masters.hospitals[id]
     case 'surgeon':
       return masters.surgeons[id]
-    case 'surgeonGroup':
-      return masters.surgeonGroups[id]
     case 'aaModifier':
       return masters.modifiers[id]
   }
@@ -77,10 +71,6 @@ export function retireFactsFor(state: Pick<AppState, 'masters' | 'schedule' | 'c
   const name = nameOf(kind, record)
   const today = state.clock.todayISO
   if (kind === 'aaModifier') return { name }
-  if (kind === 'surgeonGroup') {
-    const members = (record as { memberSurgeonIds?: string[] }).memberSurgeonIds ?? []
-    return { name, members: members.length }
-  }
   const field = kind === 'hospital' ? 'hospitalId' : 'surgeonId'
   let upcomingLists = 0
   let upcomingDraftLists = 0
@@ -120,15 +110,13 @@ function write(masters: Masters, kind: RetireKind, id: string, next: Record_): M
       return { ...masters, hospitals: { ...masters.hospitals, [id]: next as Masters['hospitals'][string] } }
     case 'surgeon':
       return { ...masters, surgeons: { ...masters.surgeons, [id]: next as Masters['surgeons'][string] } }
-    case 'surgeonGroup':
-      return { ...masters, surgeonGroups: { ...masters.surgeonGroups, [id]: next as Masters['surgeonGroups'][string] } }
     case 'aaModifier':
       return { ...masters, modifiers: { ...masters.modifiers, [id]: next as Modifier } }
   }
 }
 
 /**
- * Retire a hospital, surgeon, group or AA modifier with a reason. Refused for
+ * Retire a hospital, surgeon or AA modifier with a reason. Refused for
  * any actor but the office, an unknown or already retired record, a blank
  * reason, an RVG-table modifier, and while anything upcoming depends on it
  * (`inUse`, the blockers' sentences joined). Audited `<kind>.retire`.
@@ -227,15 +215,15 @@ export function editAaModifier(api: AppStoreApi, actor: Actor, id: string, patch
 // ---------------------------------------------------------------------------
 
 /**
- * The Party a renamed hospital, surgeon or group carries along (US-13.4.1
+ * The Party a renamed hospital or surgeon carries along (US-13.4.1
  * "change once, reflected everywhere"): its linked Party (a hospital's by
- * `hospitalId`; a surgeon's or group's by kind) while the Party's short name
+ * `hospitalId`; a surgeon's by kind) while the Party's short name
  * still equals the old name. A Party the office renamed by hand is left alone.
  * Returns the renamed Party and its `party.update` meta, or null.
  */
 export function partyRenameFollowing(
   masters: Pick<Masters, 'parties'>,
-  link: { kind: 'hospital'; hospitalId: string } | { kind: 'surgeon' | 'surgeonGroup' },
+  link: { kind: 'hospital'; hospitalId: string } | { kind: 'surgeon' },
   oldName: string,
   newName: string,
 ): { party: Party; meta: MutationMeta } | null {

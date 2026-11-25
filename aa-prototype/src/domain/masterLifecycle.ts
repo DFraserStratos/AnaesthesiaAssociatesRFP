@@ -1,6 +1,6 @@
 /**
  * Retire, never delete, anything referenced by identity (catch-up Phase 42;
- * US-13.4.1, DM-38). Hospitals, surgeons, surgeon groups and AA's own
+ * US-13.4.1, DM-38). Hospitals, surgeons and AA's own
  * modifiers retire with a stated reason when nothing upcoming depends on
  * them, and come back with Reinstate. Pickers stop offering a retired record
  * (`activeOnly`), and every existing reference keeps resolving: display paths
@@ -41,7 +41,7 @@ export function retiredLabel(name: string, record: Retirable | undefined): strin
   return isRetired(record) ? `${name} (retired)` : name
 }
 
-export type RetireKind = 'hospital' | 'surgeon' | 'surgeonGroup' | 'aaModifier'
+export type RetireKind = 'hospital' | 'surgeon' | 'aaModifier'
 
 /** What depends on a record, gathered by the store. Every count is of things on or after the demo clock's today. */
 export interface RetireFacts {
@@ -56,8 +56,6 @@ export interface RetireFacts {
   partyActiveContracts?: { partyName: string; count: number }
   /** Active Contracts whose only link is the surgeon (AR-58 A39: a Contract held by a surgeon needs one). */
   soleLinkContracts?: number
-  /** Surgeons still in the group. */
-  members?: number
   /** 31's built-in AA rooms location. */
   builtIn?: boolean
 }
@@ -91,10 +89,6 @@ export function retireBlockers(kind: RetireKind, facts: RetireFacts): string[] {
   if ((facts.soleLinkContracts ?? 0) > 0) {
     const n = facts.soleLinkContracts!
     out.push(`${plural(n, 'Active Contract is', 'Active Contracts are')} linked only to ${facts.name}. Disable ${n === 1 ? 'it' : 'them'} or link another surgeon first.`)
-  }
-  if ((facts.members ?? 0) > 0) {
-    const n = facts.members!
-    out.push(`${plural(n, 'surgeon is', 'surgeons are')} still in ${facts.name}. Take them out first.`)
   }
   return out
 }

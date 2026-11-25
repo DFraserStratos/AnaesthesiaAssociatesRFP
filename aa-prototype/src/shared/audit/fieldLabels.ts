@@ -247,7 +247,6 @@ export const FIELD_LABELS: Record<string, string> = {
   personalContact: 'Personal contact',
   officeContacts: 'Office contacts',
   medicalRegistrationNumber: 'NZ medical registration number',
-  memberSurgeonIds: 'Members',
 
   // --- Pairing preferences and tiers (office only, catch-up Phase 17) ------
   raisedBy: 'Asked by',

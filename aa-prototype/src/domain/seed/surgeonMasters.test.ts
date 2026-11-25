@@ -12,7 +12,7 @@ import { pairingStatus, tierFor } from '../pairingPreferences'
 import { projectedListId, slotIdFor } from '../slots'
 
 const seed = buildSeed()
-const { surgeons, surgeonGroups, hospitals, anaesthetists } = seed.masters
+const { surgeons, hospitals, anaesthetists } = seed.masters
 const { pairingPreferences, priorityTiers } = seed.officePrivate
 const entries = Object.values(pairingPreferences)
 
@@ -29,9 +29,8 @@ describe('surgeon masters', () => {
     expect(new Set(all).size).toBe(all.length)
   })
 
-  it('every group member resolves; SG-COS holds Mr T. Hale', () => {
-    for (const g of Object.values(surgeonGroups)) for (const id of g.memberSurgeonIds) expect(surgeons[id], `${g.id} ${id}`).toBeDefined()
-    expect(surgeonGroups['SG-COS']?.memberSurgeonIds).toEqual([SURG.hale])
+  it('holds no surgeon group record; COS is an organisation and a Party (DM-08)', () => {
+    expect(seed.masters).not.toHaveProperty('surgeonGroups')
     expect(seed.masters.organisations['O-COS']).toBeDefined()
   })
 

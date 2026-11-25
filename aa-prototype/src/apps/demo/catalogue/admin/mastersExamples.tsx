@@ -46,16 +46,16 @@ export function ShowRetiredToggleExample() {
   )
 }
 
-/** RetireSection for the first seeded surgeon group: Retire (with a reason) or Reinstate, as at the foot of its edit sheet. */
+/** RetireSection for the first seeded surgeon: Retire (with a reason) or Reinstate, as on the surgeon page's Status card. */
 export function RetireSectionExample() {
-  const groupId = useAppStore((s) => Object.keys(s.masters.surgeonGroups).sort()[0])
-  const name = useAppStore((s) => (groupId !== undefined ? s.masters.surgeonGroups[groupId]?.name : undefined))
+  const surgeonId = useAppStore((s) => Object.keys(s.masters.surgeons).sort()[0])
+  const name = useAppStore((s) => (surgeonId !== undefined ? s.masters.surgeons[surgeonId]?.name : undefined))
   const [last, setLast] = useState('Nothing done yet.')
-  if (groupId === undefined) return <Missing what="surgeon group" />
+  if (surgeonId === undefined) return <Missing what="surgeon" />
   return (
     <div style={{ maxWidth: 520 }}>
       <div style={{ fontSize: 13, color: neutral.slate, marginBottom: 8 }}>{name}</div>
-      <RetireSection kind="surgeonGroup" id={groupId} actor={OFFICE_ACTOR} onDone={() => setLast('Done: the surgeon group changed in the demo store.')} />
+      <RetireSection kind="surgeon" id={surgeonId} actor={OFFICE_ACTOR} onDone={() => setLast('Done: the surgeon changed in the demo store.')} />
       <Echo>{last}</Echo>
     </div>
   )

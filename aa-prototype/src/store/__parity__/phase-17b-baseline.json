@@ -2023,25 +2023,6 @@
    "phone": "03 555 2702"
   }
  },
- "surgeonGroups": {
-  "SG-COS": {
-   "id": "SG-COS",
-   "name": "Canterbury Orthopaedic Surgeons",
-   "description": "Orthopaedic group; holds an externally held ACC contract.",
-   "memberSurgeonIds": [
-    "S-HALE"
-   ]
-  },
-  "SG-EYE": {
-   "id": "SG-EYE",
-   "name": "Christchurch Eye Surgeons",
-   "description": "The eye surgeons who operate at Christchurch Eye Surgery.",
-   "memberSurgeonIds": [
-    "S-WHITFORD",
-    "S-REID"
-   ]
-  }
- },
  "officePrivate": {
   "pairingPreferences": {
    "PP-001": {

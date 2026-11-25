@@ -42,7 +42,6 @@ export type AnaesthetistId = string
 export type InactiveReason = 'leftPractice' | 'longLeave' | 'other'
 export type HospitalId = string
 export type SurgeonId = string
-export type SurgeonGroupId = string
 export type PairingPreferenceId = string
 export type InsurerId = string
 export type OrganisationId = string
@@ -546,17 +545,6 @@ export interface SurgeonContact {
   name?: string
   email?: string
   phone?: string
-}
-
-/** A named group of surgeons (US-13.4.1), beside `organisations`; Phase 18's holders may link to it. */
-export interface SurgeonGroup {
-  id: SurgeonGroupId
-  name: string
-  description?: string
-  memberSurgeonIds: SurgeonId[]
-  /** Retired, never deleted (catch-up Phase 42; US-13.4.1). */
-  retiredAtISO?: IsoDate
-  retiredReason?: string
 }
 
 // ---------------------------------------------------------------------------

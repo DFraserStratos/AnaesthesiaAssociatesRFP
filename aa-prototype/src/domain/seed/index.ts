@@ -40,7 +40,6 @@ import type {
   Specialty,
   FundingTag,
   Surgeon,
-  SurgeonGroup,
 } from '../types'
 import { DEMO_TODAY, enumerateDatesISO, horizonFor } from '../clock'
 import { SEED_MODIFIERS } from './modifiers'
@@ -62,7 +61,6 @@ import {
   ORGANISATIONS,
   SURG,
   SURGEONS,
-  SURGEON_GROUPS,
 } from './cast'
 import { DIRECTORY_SURGEONS } from './specialistDirectory'
 import { buildOfficePrivate } from './officePrivate'
@@ -139,8 +137,6 @@ export const SEED = 20260721
 export interface SeedMasters {
   anaesthetists: Record<string, Anaesthetist>
   surgeons: Record<string, Surgeon>
-  /** Surgeon groups (catch-up Phase 17, US-13.4.1), beside `organisations`. */
-  surgeonGroups: Record<string, SurgeonGroup>
   hospitals: Record<string, Hospital>
   /** The Party master (catch-up Phase 18; US-04.1.5): everyone who holds Contracts. */
   parties: Record<string, Party>
@@ -650,7 +646,6 @@ function buildSeedInternal(): SeedBuild {
     masters: {
       anaesthetists: anaesthetistsRec,
       surgeons: surgeonsRec,
-      surgeonGroups: byId(SURGEON_GROUPS, (g) => g.id),
       hospitals: hospitalsRec,
       parties: byId(PARTIES, (p) => p.id),
       specialties: byId(SPECIALTIES, (x) => x.id),

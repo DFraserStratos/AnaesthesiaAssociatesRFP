@@ -93,9 +93,8 @@ const ID_FORMATS: Record<string, { prefix: string; pad: number }> = {
   fundingTag: { prefix: 'TGN', pad: 3 },
   // Runtime prefixes distinct from the seed's PL###/HH###/CP-… ids so an
   // allocation can never collide with a seeded master row (Phase 07).
-  // Catch-up Phase 17: distinct from the seed's S-, SG- and PP- ids.
+  // Catch-up Phase 17: distinct from the seed's S- and PP- ids.
   surgeon: { prefix: 'SN', pad: 3 },
-  surgeonGroup: { prefix: 'SGN', pad: 3 },
   pairingPreference: { prefix: 'PPN', pad: 3 },
   // Catch-up Phase 30 (DM-53): seeded rows are RCB###; RB is Phase 16's BCTI-history namespace.
   recurringBooking: { prefix: 'RCBN', pad: 3 },

@@ -11,7 +11,7 @@ import { OFFICE_ACTOR, SOUTER_ACTOR } from './demoActors'
 import { createHospital } from './mastersActions'
 import { addAaModifier, claimModifier } from './modifierActions'
 import { retireMaster } from './masterLifecycleActions'
-import { activeAaModifiers, activeGroups, activeHospitals, activeSurgeons, railMastersOf } from './selectors'
+import { activeAaModifiers, activeHospitals, activeSurgeons, railMastersOf } from './selectors'
 import { isContractCandidate, linkedOnlyToRetiredSurgeons } from '../domain/billing/contractRail'
 import { retiredLabel } from '../domain/masterLifecycle'
 
@@ -34,24 +34,17 @@ describe('picker selectors (catch-up Phase 42)', () => {
     expect(retiredLabel(h.name, h)).toBe('Rangiora Day Surgery (retired)')
   })
 
-  it('surgeons and groups filter on retirement the same way', () => {
+  it('surgeons filter on retirement the same way', () => {
     const api = createAppStore()
     const s = api.getState()
     const surgeonId = Object.keys(s.masters.surgeons)[0]!
-    const groupId = Object.keys(s.masters.surgeonGroups)[0]
     const retired = {
       masters: {
         surgeons: { ...s.masters.surgeons, [surgeonId]: { ...s.masters.surgeons[surgeonId]!, retiredAtISO: '2026-11-24' } },
-        surgeonGroups:
-          groupId !== undefined ? { ...s.masters.surgeonGroups, [groupId]: { ...s.masters.surgeonGroups[groupId]!, retiredAtISO: '2026-11-24' } } : s.masters.surgeonGroups,
       },
     }
     expect(ids(activeSurgeons(retired))).not.toContain(surgeonId)
     expect(ids(activeSurgeons(retired, surgeonId))).toContain(surgeonId)
-    if (groupId !== undefined) {
-      expect(ids(activeGroups(retired))).not.toContain(groupId)
-      expect(ids(activeGroups(retired, groupId))).toContain(groupId)
-    }
   })
 
   it('a retired AA modifier leaves the picker but stays listed, and resolving, on a Procedure that claimed it', () => {

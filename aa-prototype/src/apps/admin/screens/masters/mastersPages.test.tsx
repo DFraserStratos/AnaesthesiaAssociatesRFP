@@ -146,14 +146,14 @@ describe('the surgeon profile and the anaesthetist record', () => {
     useAppStore.setState(freshAppState())
   })
 
-  it("Ms Reid's profile: HPI CPN, practice and contacts, group, the not-preferred entry and the ended one", () => {
+  it("Ms Reid's profile: HPI CPN, practice and contacts, no Groups card, the not-preferred entry and the ended one", () => {
     renderAdmin(`/admin/people/surgeons/${SURG.reid}`)
     expect(screen.getByText("Unique index on the Health Provider Index. Not the patient's NHI.")).toBeInTheDocument()
     expect(screen.getByText('For information')).toBeInTheDocument()
     const contacts = document.querySelector('[data-shot="surgeon-contacts"]') as HTMLElement
     expect(within(contacts).getByText('bookings@merivaleeye.example')).toBeInTheDocument()
     expect(within(contacts).getByText('a.reid@surgeons.example')).toBeInTheDocument()
-    expect(screen.getByText('Christchurch Eye Surgeons')).toBeInTheDocument()
+    expect(document.querySelector('[data-shot="surgeon-groups"]')).toBeNull()
     const section = document.querySelector('[data-shot="pairing-section"]') as HTMLElement
     expect(within(section).getByText('Private to the office. Anaesthetists never see these.')).toBeInTheDocument()
     const notPreferred = section.querySelector('[data-pairing-group="NOT_PREFERRED"]') as HTMLElement

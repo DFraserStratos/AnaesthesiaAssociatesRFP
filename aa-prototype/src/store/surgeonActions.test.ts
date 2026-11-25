@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import type { Actor } from './mutate'
-import { contactAuditText, createSurgeon, createSurgeonGroup, editSurgeon, editSurgeonGroup, type SurgeonFields } from './surgeonActions'
+import { contactAuditText, createSurgeon, editSurgeon, type SurgeonFields } from './surgeonActions'
 import { addAnaesthetist, createHospital, editAnaesthetist, editHospital } from './mastersActions'
 import { ANAE, HOSP, SPC, SURG } from '../domain/seed'
 import type { Surgeon } from '../domain/types'
@@ -56,32 +56,6 @@ describe('surgeons', () => {
     const clash = editSurgeon(api, OFFICE, SURG.reid, { ...fieldsOf(reid), hpiId: '40HALT' })
     expect(clash.ok ? '' : clash.code).toBe('duplicateHpiCpn')
     expect(editSurgeon(api, SOUTER, SURG.reid, fieldsOf(reid)).ok).toBe(false)
-  })
-})
-
-describe('surgeon groups', () => {
-  it('adds and edits a group, de-duplicating members and refusing unknown ones', () => {
-    const api = createAppStore()
-    const added = createSurgeonGroup(api, OFFICE, { name: 'General surgeons', memberSurgeonIds: [SURG.patel, SURG.patel, SURG.doyle] })
-    expect(added.ok).toBe(true)
-    const id = added.ok ? added.value.id : ''
-    expect(id).toBe('SGN001')
-    expect(api.getState().masters.surgeonGroups[id]?.memberSurgeonIds).toEqual([SURG.patel, SURG.doyle])
-    expect(createSurgeonGroup(api, OFFICE, { name: 'X', memberSurgeonIds: ['S-NOPE'] }).ok).toBe(false)
-    expect(editSurgeonGroup(api, OFFICE, 'SG-EYE', { name: 'Eye surgeons', memberSurgeonIds: [SURG.reid] }).ok).toBe(true)
-    expect(api.getState().audit.at(-1)?.action).toBe('surgeonGroup.update')
-    expect(api.getState().masters.organisations['O-COS']).toBeDefined()
-  })
-
-  it('editSurgeonGroup audits only what changed (members as a set), and an unchanged save writes nothing', () => {
-    const api = createAppStore()
-    const g = api.getState().masters.surgeonGroups['SG-EYE']!
-    const before = api.getState().audit.length
-    const same = { name: g.name, description: g.description, memberSurgeonIds: [...g.memberSurgeonIds].reverse() }
-    expect(editSurgeonGroup(api, OFFICE, 'SG-EYE', same).ok).toBe(true)
-    expect(api.getState().audit.length).toBe(before)
-    expect(editSurgeonGroup(api, OFFICE, 'SG-EYE', { ...same, description: 'Eye surgeons at one hospital' }).ok).toBe(true)
-    expect(api.getState().audit.at(-1)?.after).toEqual({ description: 'Eye surgeons at one hospital' })
   })
 })
 

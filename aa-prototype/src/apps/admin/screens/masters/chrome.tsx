@@ -225,19 +225,17 @@ function useRetireRecord(kind: RetireKind, id: string): RetireRecord | undefined
         return s.masters.hospitals[id]
       case 'surgeon':
         return s.masters.surgeons[id]
-      case 'surgeonGroup':
-        return s.masters.surgeonGroups[id]
       case 'aaModifier':
         return s.masters.modifiers[id]
     }
   })
 }
 
-const NOUN: Record<RetireKind, string> = { hospital: 'hospital', surgeon: 'surgeon', surgeonGroup: 'group', aaModifier: 'modifier' }
+const NOUN: Record<RetireKind, string> = { hospital: 'hospital', surgeon: 'surgeon', aaModifier: 'modifier' }
 
 /**
- * Retire (with a required reason) or Reinstate a hospital, surgeon, surgeon
- * group or AA modifier, at the foot of its edit sheet. A refused retire lists
+ * Retire (with a required reason) or Reinstate a hospital, surgeon or AA
+ * modifier, at the foot of its edit sheet (a surgeon's, on its page's Status card). A refused retire lists
  * the store's blockers as a warning; AA rooms (built in) says it cannot be retired.
  * `onDone` runs after a retire or reinstate goes through.
  */

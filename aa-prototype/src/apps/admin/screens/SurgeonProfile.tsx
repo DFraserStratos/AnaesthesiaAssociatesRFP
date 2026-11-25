@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { neutral, radius } from '../../../theme/tokens'
-import { groupsForSurgeon, NO_HPI_CPN } from '../../../domain/surgeons'
+import { NO_HPI_CPN } from '../../../domain/surgeons'
 import { cleanContact, officeAddressFor } from '../../../domain/surgeonContacts'
 import type { SurgeonContact } from '../../../domain/types'
 import { useAppStore, type Actor } from '../../../store'
@@ -16,7 +16,7 @@ import { HPI_CPN_LABEL } from '../../../shared/format'
 
 /**
  * The surgeon profile (catch-up Phase 17; US-13.6.2, US-13.6.3, US-13.6.4):
- * one identified record, the groups, and the office's private pairing
+ * one identified record and the office's private pairing
  * preferences. Catch-up Phase 17b (US-13.6.5; D74, D76): no surgeons' rooms;
  * one "Practice and contacts" card holds the practice name, the personal
  * contact and each office contact, the one the office's emails go to first
@@ -26,14 +26,12 @@ import { HPI_CPN_LABEL } from '../../../shared/format'
 export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor: Actor }) {
   const surgeon = useAppStore((s) => s.masters.surgeons[surgeonId])
   const surgeons = useAppStore((s) => s.masters.surgeons)
-  const groups = useAppStore((s) => s.masters.surgeonGroups)
   const specialties = useAppStore((s) => s.masters.specialties)
   const [editing, setEditing] = useState(false)
   const [history, setHistory] = useState(false)
   const profileHistory = useProfileHistory('surgeon', surgeonId)
   if (surgeon === undefined) return null
 
-  const memberOf = groupsForSurgeon(groups, surgeon.id)
   const firstTo = officeAddressFor({ surgeons }, surgeon.id).to?.email.toLowerCase()
   const firstIndex = firstTo === undefined ? -1 : surgeon.officeContacts.findIndex((c) => cleanContact(c).email?.toLowerCase() === firstTo)
 
@@ -67,19 +65,6 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
           </DefList>
         </Card>
 
-        <Card style={PROFILE_CARD} title="Groups" shot="surgeon-groups">
-          {memberOf.length === 0 ? (
-            <div style={{ fontSize: 13, color: neutral.mist }}>Not in a surgeon group.</div>
-          ) : (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {memberOf.map((g) => (
-                <Pill key={g.id} size="lg" data-group={g.id}>
-                  {g.name}
-                </Pill>
-              ))}
-            </div>
-          )}
-        </Card>
       </div>
 
       <Card style={PROFILE_CARD} title="Practice and contacts" shot="surgeon-contacts">
