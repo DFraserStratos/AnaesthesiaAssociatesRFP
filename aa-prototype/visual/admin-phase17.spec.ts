@@ -39,6 +39,30 @@ test('phase 17 master data views', async ({ page }) => {
   await expect(page.locator('tr[data-anaesthetist="39560"] [data-tier="4"]')).toBeVisible()
 })
 
+test("phase 55 Mr Hale's page: the cards, no Groups card, the side panel's Contracts and next Lists", async ({ page }) => {
+  await page.goto('/admin/people/surgeons/S-HALE')
+  await page.waitForLoadState('networkidle')
+  for (const card of ['surgeon-name-card', 'surgeon-registration-card', 'surgeon-identifiers', 'surgeon-specialties', 'surgeon-contacts', 'surgeon-status-card']) {
+    await expect(page.locator(`[data-shot="${card}"]`)).toBeVisible()
+  }
+  await expect(page.locator('[data-shot="surgeon-groups"]')).toHaveCount(0)
+  const contracts = page.locator('[data-shot="surgeon-side-contracts"]')
+  await expect(contracts.locator('[data-contract]')).toHaveCount(3)
+  await expect(contracts.locator('[data-contract="CT-UNISPORTS"]')).toContainText('Unisports Ortho')
+  const lists = page.locator('[data-shot="surgeon-side-lists"]')
+  await expect(lists.locator('[data-list]').first()).toBeVisible()
+  await page.waitForTimeout(450)
+  await page.screenshot({ path: 'visual/shots/p55-01-hale-page.png', fullPage: true })
+
+  await page.getByRole('button', { name: 'Edit contacts' }).click()
+  await page.locator('[data-shot="surgeon-contacts"]').getByRole('textbox', { name: 'Office contact 1 phone' }).fill('03 555 0101')
+  await page.locator('[data-shot="surgeon-contacts-save"]').click()
+  await expect(page.locator('[data-shot="surgeon-contacts"]').getByText('03 555 0101')).toBeVisible()
+
+  await contracts.locator('[data-contract="CT-UNISPORTS"] a').click()
+  await expect(page).toHaveURL(/\/admin\/contracts\/CT-UNISPORTS/)
+})
+
 test('phase 17 surgeon profile and add sheet', async ({ page }) => {
   await page.goto('/admin/people/surgeons/S-REID')
   await page.waitForLoadState('networkidle')

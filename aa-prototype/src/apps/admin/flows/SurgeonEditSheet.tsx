@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Surgeon, SurgeonContact } from '../../../domain/types'
-import { createSurgeon, editSurgeon, useAppStore, type Actor } from '../../../store'
+import { useNavigate } from 'react-router-dom'
+import { createSurgeon, useAppStore, type Actor } from '../../../store'
 import { Button, Eyebrow, TextField, useSurface, FormError } from '../../../shared'
 import { AddRowButton } from '../../../shared/ui'
 import { OverlayHeader, SheetActions } from '../../../shared/surface'
@@ -8,12 +8,10 @@ import { ChipMultiSelect } from '../components/ChipMultiSelect'
 import { ContactFields, EMPTY_CONTACT, type ContactDraft } from '../components/ContactFields'
 import { specialtiesInOrder } from '../../../domain/specialties'
 import { neutral } from '../../../theme/tokens'
-import { RetireSection } from '../screens/masters/chrome'
 import { HPI_CPN_LABEL } from '../../../shared/format'
+import { surgeonProfilePath } from '../peoplePaths'
 
 interface Props {
-  /** Absent: add a surgeon. */
-  surgeon?: Surgeon
   actor: Actor
   onClose: () => void
 }
@@ -24,17 +22,13 @@ interface OfficeSet {
   draft: ContactDraft
 }
 
-function draftOf(c: SurgeonContact | undefined): ContactDraft {
-  return { name: c?.name ?? '', email: c?.email ?? '', phone: c?.phone ?? '' }
-}
-
 /** The store names a refused contact at the start of its sentence ("Office contact 2: ..."). */
 function contactError(error: string | null, label: string): string | null {
   return error !== null && error.startsWith(`${label}:`) ? error : null
 }
 
 /**
- * Add or edit a surgeon (catch-up Phase 17, US-13.6.2; 18a's specialties,
+ * Add a surgeon (catch-up Phase 17, US-13.6.2; 18a's specialties,
  * US-13.6.6). Catch-up Phase 17b (US-13.6.2, US-13.6.5; D74, D76): no rooms;
  * the practice name as text; the HPI CPN optional (admin staff fill it in,
  * unique when held, the store's rule); one personal contact and one or more
@@ -42,25 +36,24 @@ function contactError(error: string | null, label: string): string | null {
  * office contact" appends an empty set and focuses its Name; a minus on sets 2
  * and on removes that set whole and focuses the set above. The store drops an
  * all-blank set and refuses a malformed email by the contact's name, shown
- * under that contact.
+ * under that contact. Build plan Phase 55: create only; the surgeon's page edits one card at a time,
+ * and saving here opens the new surgeon's page.
  */
-export function SurgeonEditSheet({ surgeon, actor, onClose }: Props) {
+export function SurgeonEditSheet({ actor, onClose }: Props) {
+  const navigate = useNavigate()
   const { Overlay } = useSurface()
   const specialties = useAppStore((s) => s.masters.specialties)
-  const [name, setName] = useState(surgeon?.name ?? '')
-  const [practiceName, setPracticeName] = useState(surgeon?.practiceName ?? '')
-  const [specialtyIds, setSpecialtyIds] = useState<string[]>(surgeon?.specialtyIds ?? [])
-  const [hpiId, setHpiId] = useState(surgeon?.hpiId ?? '')
-  const [registration, setRegistration] = useState(surgeon?.medicalRegistrationNumber ?? '')
-  const [personal, setPersonal] = useState<ContactDraft>(draftOf(surgeon?.personalContact))
-  // Adding a surgeon: the personal contact's Name follows the surgeon's Name until it is typed in.
-  const [personalNameTouched, setPersonalNameTouched] = useState(surgeon !== undefined)
+  const [name, setName] = useState('')
+  const [practiceName, setPracticeName] = useState('')
+  const [specialtyIds, setSpecialtyIds] = useState<string[]>([])
+  const [hpiId, setHpiId] = useState('')
+  const [registration, setRegistration] = useState('')
+  const [personal, setPersonal] = useState<ContactDraft>(EMPTY_CONTACT)
+  // The personal contact's Name follows the surgeon's Name until it is typed in.
+  const [personalNameTouched, setPersonalNameTouched] = useState(false)
   const nextKey = useRef(0)
   const newSet = (draft: ContactDraft = EMPTY_CONTACT): OfficeSet => ({ key: nextKey.current++, draft })
-  const [office, setOffice] = useState<OfficeSet[]>(() => {
-    const held = surgeon?.officeContacts ?? []
-    return held.length === 0 ? [newSet()] : held.map((c) => newSet(draftOf(c)))
-  })
+  const [office, setOffice] = useState<OfficeSet[]>(() => [newSet()])
   const [error, setError] = useState<string | null>(null)
   const officeRef = useRef<HTMLDivElement>(null)
   const [focusSet, setFocusSet] = useState<number | null>(null)
@@ -95,9 +88,10 @@ export function SurgeonEditSheet({ surgeon, actor, onClose }: Props) {
       hpiId,
       medicalRegistrationNumber: registration,
     }
-    const outcome = surgeon === undefined ? createSurgeon(useAppStore, actor, fields) : editSurgeon(useAppStore, actor, surgeon.id, fields)
+    const outcome = createSurgeon(useAppStore, actor, fields)
     if (!outcome.ok) { setError(outcome.message); return }
     onClose()
+    navigate(surgeonProfilePath(outcome.value.id))
   }
 
   const personalError = contactError(error, 'Personal contact')
@@ -107,7 +101,7 @@ export function SurgeonEditSheet({ surgeon, actor, onClose }: Props) {
   return (
     <Overlay open onClose={onClose} size="wide">
       <div data-shot="surgeon-edit-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <OverlayHeader title={surgeon === undefined ? 'Add a surgeon' : 'Edit surgeon'} />
+        <OverlayHeader title="Add a surgeon" />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           <TextField label="Name" value={name} onChange={setName} placeholder="e.g. Ms A. Reid" />
           <div data-shot="surgeon-practice-field">
@@ -170,8 +164,7 @@ export function SurgeonEditSheet({ surgeon, actor, onClose }: Props) {
         </section>
 
         <FormError message={sheetError} />
-        <SheetActions primary={<Button variant="primary" block onClick={save}>{surgeon === undefined ? 'Add surgeon' : 'Save changes'}</Button>} />
-        {surgeon !== undefined && <RetireSection kind="surgeon" id={surgeon.id} actor={actor} onDone={onClose} />}
+        <SheetActions primary={<Button variant="primary" block onClick={save}>Add surgeon</Button>} />
       </div>
     </Overlay>
   )

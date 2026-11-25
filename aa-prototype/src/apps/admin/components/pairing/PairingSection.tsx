@@ -28,9 +28,14 @@ interface Props {
   /** The surgeon id or the anaesthetist's registration number. */
   subjectId: string
   actor: Actor
+  /**
+   * In a record page's side panel (build plan Phase 55): each kind shows its first `limit` entries and
+   * "See all N" shows the rest in place. Absent, every entry shows (today's look).
+   */
+  limit?: number
 }
 
-export function PairingSection({ perspective, subjectId, actor }: Props) {
+export function PairingSection({ perspective, subjectId, actor, limit }: Props) {
   const entries = usePairingEntries()
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const surgeons = useAppStore((s) => s.masters.surgeons)
@@ -65,13 +70,14 @@ export function PairingSection({ perspective, subjectId, actor }: Props) {
           <h2 id={titleId} style={{ margin: 0, fontSize: 17, lineHeight: '24px', fontWeight: 600 }}>{PAIRING_LABELS.section}</h2>
           <div style={{ fontSize: 12.5, color: neutral.mist, marginTop: 2 }}>{PAIRING_LABELS.privacyNote}</div>
         </div>
-        <Button variant="secondary" onClick={() => setAdding(true)}>{PAIRING_LABELS.add}</Button>
+        <Button variant="secondary" {...(limit !== undefined ? { size: 'compact' as const, style: { whiteSpace: 'nowrap', flex: 'none' } } : {})} onClick={() => setAdding(true)}>{PAIRING_LABELS.add}</Button>
       </div>
 
       {(['NOT_PREFERRED', 'PREFERRED'] as const).map((kind) => (
         <KindGroup
           key={kind}
           kind={kind}
+          {...(limit !== undefined ? { limit } : {})}
           entries={kind === 'NOT_PREFERRED' ? groups.notPreferred : groups.preferred}
           renderRow={(e) => (
             <ActiveRow key={e.id} entry={e} counterpart={counterpart(e)} sentence={sentenceOf(e)} onEnd={() => setEnding(e.id)} />
@@ -110,7 +116,9 @@ export function PairingSection({ perspective, subjectId, actor }: Props) {
   )
 }
 
-function KindGroup({ kind, entries, renderRow }: { kind: PairingKind; entries: PairingPreference[]; renderRow: (e: PairingPreference) => ReactNode }) {
+function KindGroup({ kind, entries, renderRow, limit }: { kind: PairingKind; entries: PairingPreference[]; renderRow: (e: PairingPreference) => ReactNode; limit?: number }) {
+  const [all, setAll] = useState(false)
+  const shown = limit === undefined || all ? entries : entries.slice(0, limit)
   return (
     <div data-pairing-group={kind} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: neutral.ink }}>
@@ -120,7 +128,10 @@ function KindGroup({ kind, entries, renderRow }: { kind: PairingKind; entries: P
       {entries.length === 0 ? (
         <div style={{ fontSize: 12.5, color: neutral.mist }}>{PAIRING_LABELS.emptyGroup}</div>
       ) : (
-        <div style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, overflow: 'hidden' }}>{entries.map(renderRow)}</div>
+        <div style={{ border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, overflow: 'hidden' }}>{shown.map(renderRow)}</div>
+      )}
+      {shown.length < entries.length && (
+        <TextAction size="sm" flush onClick={() => setAll(true)} shot="pairing-see-all" style={{ alignSelf: 'flex-start' }}>{`See all ${entries.length}`}</TextAction>
       )}
     </div>
   )

@@ -7,7 +7,7 @@
  * it and extend it by a prop that defaults to today's behaviour; none copies it.
  */
 
-import type { CSSProperties, ReactNode } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import { neutral } from '../../theme/tokens'
 import { Card } from './Card'
 import { CountBadge } from './CountBadge'
@@ -23,13 +23,16 @@ export interface RailRowProps extends DataProps {
   sub: ReactNode
   /** The first row has no rule above it. */
   first: boolean
+  /** Router state the title link carries (the Day view's `openListId`); none by default. */
+  linkState?: unknown
 }
 
 /** One row: the title as a link over its sub line, `data-*` passed through to the `li`. */
-export function RailRow({ to, title, sub, first, ...data }: RailRowProps) {
+export function RailRow({ to, title, sub, first, linkState, ...data }: RailRowProps) {
   return (
     <li {...data} style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '8px 0', borderTop: first ? 'none' : `1px solid ${neutral.line}`, fontSize: 13 }}>
-      <TextAction size="sm" flush to={to}>{title}</TextAction>
+      {/* A long title (a Contract's full name) wraps inside the panel rather than running past it. */}
+      <TextAction size="sm" flush to={to} {...(linkState !== undefined ? { linkState } : {})} style={{ whiteSpace: 'normal', textAlign: 'left' }}>{title}</TextAction>
       <span style={{ fontSize: 12, color: neutral.slate }}>{sub}</span>
     </li>
   )
@@ -42,6 +45,8 @@ export interface RailSectionRow {
   title: string
   sub: ReactNode
   data?: DataProps
+  /** Router state the row's link carries; none by default. */
+  linkState?: unknown
 }
 
 export interface RailSectionProps extends DataAttributes {
@@ -54,8 +59,11 @@ export interface RailSectionProps extends DataAttributes {
   limit?: number
   /** The line shown when there are no rows. */
   empty: ReactNode
-  /** Where See all opens: the whole list. */
-  allTo: string
+  /**
+   * Where See all opens: the whole list. Absent (no page lists them, Phase 55), See all shows every row
+   * in the section itself, and "Show fewer" folds it back.
+   */
+  allTo?: string
   /** A short note beside the title. */
   aside?: ReactNode
   /** The section's hook (`data-*` pass through to it); See all carries `${shot}-all`. */
@@ -64,7 +72,8 @@ export interface RailSectionProps extends DataAttributes {
 }
 
 export function RailSection({ title, countNoun, rows, limit = 5, empty, allTo, aside, shot, style, ...data }: RailSectionProps) {
-  const shown = rows.slice(0, limit)
+  const [all, setAll] = useState(false)
+  const shown = all ? rows : rows.slice(0, limit)
   return (
     <Card
       {...data}
@@ -78,12 +87,18 @@ export function RailSection({ title, countNoun, rows, limit = 5, empty, allTo, a
       ) : (
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' }}>
           {shown.map((r, i) => (
-            <RailRow key={r.key} first={i === 0} to={r.to} title={r.title} sub={r.sub} {...r.data} />
+            <RailRow key={r.key} first={i === 0} to={r.to} title={r.title} sub={r.sub} {...(r.linkState !== undefined ? { linkState: r.linkState } : {})} {...r.data} />
           ))}
         </ul>
       )}
-      {rows.length > shown.length && (
-        <TextAction size="sm" flush to={allTo} shot={`${shot}-all`}>{`See all ${rows.length}`}</TextAction>
+      {rows.length > shown.length &&
+        (allTo !== undefined ? (
+          <TextAction size="sm" flush to={allTo} shot={`${shot}-all`}>{`See all ${rows.length}`}</TextAction>
+        ) : (
+          <TextAction size="sm" flush onClick={() => setAll(true)} shot={`${shot}-all`}>{`See all ${rows.length}`}</TextAction>
+        ))}
+      {all && rows.length > limit && (
+        <TextAction size="sm" flush onClick={() => setAll(false)} shot={`${shot}-fewer`}>Show fewer</TextAction>
       )}
     </Card>
   )

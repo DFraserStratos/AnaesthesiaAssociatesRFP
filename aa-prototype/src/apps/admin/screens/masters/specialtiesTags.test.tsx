@@ -111,17 +111,17 @@ describe('Funding tags tab (US-13.4.5; moved to the Contracts section by build p
 })
 
 describe("a surgeon's specialties (US-13.6.6)", () => {
-  it('the profile shows one pill per specialty; the sheet refuses none, then saves two', () => {
+  it('the page shows one pill per specialty; the Specialties card refuses none, then saves two', () => {
     renderAdmin(`/admin/people/surgeons/${SURG.whitford}`)
     expect(within(shot('surgeon-specialties')).getByText('Ophthalmology')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
-    const sheet = () => shot('surgeon-edit-sheet')
+    fireEvent.click(screen.getByRole('button', { name: 'Edit specialties' }))
+    const sheet = () => shot('surgeon-specialties')
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Remove Ophthalmology' }))
-    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save changes' }))
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save' }))
     expect(within(sheet()).getByRole('alert')).toHaveTextContent('Choose at least one specialty.')
     fireEvent.change(within(sheet()).getByLabelText('Specialties'), { target: { value: SPC.ophthalmology } })
     fireEvent.change(within(sheet()).getByLabelText('Specialties'), { target: { value: SPC.plasticSurgery } })
-    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save changes' }))
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save' }))
     const pills = within(shot('surgeon-specialties'))
     expect(pills.getByText('Ophthalmology')).toBeInTheDocument()
     expect(pills.getByText('Plastic surgery')).toBeInTheDocument()

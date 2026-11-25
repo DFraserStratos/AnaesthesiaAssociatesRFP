@@ -5,7 +5,6 @@ import { pairingCounts } from '../../../../domain/pairingPreferences'
 import { NO_HPI_CPN } from '../../../../domain/surgeons'
 import { officeAddressFor } from '../../../../domain/surgeonContacts'
 import { isRetired } from '../../../../domain/masterLifecycle'
-import type { Surgeon } from '../../../../domain/types'
 import { useAppStore, type Actor } from '../../../../store'
 import { specialtiesInOrder, surgeonSpecialtyLabel } from '../../../../domain/specialties'
 import { ClickableRow } from '../../../../shared/table'
@@ -14,7 +13,7 @@ import { SurgeonEditSheet } from '../../flows/SurgeonEditSheet'
 import { NotPreferredPill, PreferredPill, usePairingEntries } from '../../components/pairing'
 import { PageBody, PageToolbar } from '../../components/AdminPage'
 import { Pager, pageOf, pageParam, pageWindow } from '../../components/Pager'
-import { ACTIONS_COLUMN, EditCell, MasterTable, RetiredPill, retiredRowStyle } from '../masters/chrome'
+import { MasterTable, RetiredPill, retiredRowStyle } from '../masters/chrome'
 import { rowCellStyle } from '../masters/tableStyles'
 import { SEEDED_SUBTITLE } from '../masters/masterViews'
 import { surgeonProfilePath } from '../../peoplePaths'
@@ -28,8 +27,8 @@ import { surgeonRows, type SurgeonStatusFilter } from './peopleLists'
  * "Find a person", US-13.6.2): AA's address book of surgeons, searched by name, practice name or HPI
  * CPN, filtered by specialty and by Active, Retired or All, in surname order, 50 a page. Each row
  * shows the surgeon's practice, the office contact the office's emails go to first
- * (`officeAddressFor`) and the HPI CPN or "No HPI CPN yet"; it opens the surgeon's page. Retire and
- * Reinstate sit in the edit sheet. There is no surgeon group list (D98): a group that holds Contracts
+ * (`officeAddressFor`) and the HPI CPN or "No HPI CPN yet"; it opens the surgeon's page, edited card
+ * by card (Phase 55); Add surgeon opens the create-only sheet. There is no surgeon group list (D98): a group that holds Contracts
  * is a Party.
  */
 
@@ -60,7 +59,7 @@ export function SurgeonsTab({ actor }: { actor: Actor }) {
   const specialties = useAppStore((s) => s.masters.specialties)
   const entries = usePairingEntries()
   const navigate = useNavigate()
-  const [sheet, setSheet] = useState<{ surgeon?: Surgeon } | null>(null)
+  const [adding, setAdding] = useState(false)
   const list = usePeopleListParams(DEFAULTS)
   const q = list.get('q')
   const status = parseStatus(list.get('status'))
@@ -77,11 +76,11 @@ export function SurgeonsTab({ actor }: { actor: Actor }) {
       shot="people-surgeons"
       sub={
         <>
-          <span>AA's address book of surgeons. Open a surgeon for their contacts, groups and pairing preferences.</span>{' '}
+          <span>AA's address book of surgeons. Open a surgeon for their contacts, pairing preferences, Contracts and next Lists.</span>{' '}
           <span data-seeded-line>{SEEDED_SUBTITLE}</span>
         </>
       }
-      actions={<Button variant="primary" size="desktop" onClick={() => setSheet({})}>Add surgeon</Button>}
+      actions={<Button variant="primary" size="desktop" onClick={() => setAdding(true)}>Add surgeon</Button>}
     >
       <PageToolbar
         end={
@@ -114,7 +113,7 @@ export function SurgeonsTab({ actor }: { actor: Actor }) {
           </EmptyState>
         ) : (
           <MasterTable
-            columns={['Name', 'Specialties', 'Practice', 'Office contact', HPI_CPN_LABEL, 'Pairings', ACTIONS_COLUMN]}
+            columns={['Name', 'Specialties', 'Practice', 'Office contact', HPI_CPN_LABEL, 'Pairings']}
             shot="masters-surgeons"
             label="Surgeons"
             {...(pages.pages > 1 ? { footer: <Pager total={rows.length} size={PEOPLE_PAGE_SIZE} page={pages.page} onPage={(p) => list.set({ page: String(p) })} lead="Surgeons" shot="people-pager" /> } : {})}
@@ -159,14 +158,13 @@ export function SurgeonsTab({ actor }: { actor: Actor }) {
                       {counts.NOT_PREFERRED === 0 && counts.PREFERRED === 0 && <span style={mist}>·</span>}
                     </div>
                   </td>
-                  <EditCell onClick={() => setSheet({ surgeon: s })} label={`Edit ${s.name}`} style={rowCellStyle} />
                 </ClickableRow>
               )
             })}
           </MasterTable>
         )}
       </PageBody>
-      {sheet !== null && <SurgeonEditSheet key={sheet.surgeon?.id ?? 'new'} surgeon={sheet.surgeon} actor={actor} onClose={() => setSheet(null)} />}
+      {adding && <SurgeonEditSheet actor={actor} onClose={() => setAdding(false)} />}
     </PeoplePage>
   )
 }

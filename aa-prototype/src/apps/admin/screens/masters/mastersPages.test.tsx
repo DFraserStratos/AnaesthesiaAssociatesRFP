@@ -320,8 +320,10 @@ describe('catch-up Phase 17b: no surgeons\' rooms, contacts on the surgeon, the 
     useAppStore.setState(freshAppState())
   })
 
-  const sheet = () => document.querySelector('[data-shot="surgeon-edit-sheet"]') as HTMLElement
+  // The surgeon page edits contacts on its Contacts card (build plan Phase 55: one card, one change).
+  const sheet = () => document.querySelector('[data-shot="surgeon-contacts"]') as HTMLElement
   const sets = () => Array.from(sheet().querySelectorAll('[data-office-contact]')) as HTMLElement[]
+  const editContacts = () => fireEvent.click(screen.getByRole('button', { name: 'Edit contacts' }))
   const nameIn = (set: HTMLElement) => within(set).getByLabelText(/ name$/)
 
   it('the Surgeons table shows Practice, Office contact and HPI CPN, and "No HPI CPN yet" for a blank one', () => {
@@ -332,7 +334,7 @@ describe('catch-up Phase 17b: no surgeons\' rooms, contacts on the surgeon, the 
     const wainwright = first.container.querySelector('tr[data-surgeon="S-WAINWRIGHT"]') as HTMLElement
     expect(wainwright.getAttribute('data-practice')).toBe('Upper GI Partners and Hillsborough Colorectal Specialists')
     expect(within(wainwright).getByText('info@uppergi.example')).toBeInTheDocument()
-    expect(within(first.container).getByText("AA's address book of surgeons. Open a surgeon for their contacts, groups and pairing preferences.")).toBeInTheDocument()
+    expect(within(first.container).getByText("AA's address book of surgeons. Open a surgeon for their contacts, pairing preferences, Contracts and next Lists.")).toBeInTheDocument()
     first.unmount()
     for (const [id, q] of [['S-WHAANGA', 'Whaanga'], ['S-OSEI', 'Osei'], ['S-SELWYN', 'Selwyn']] as const) {
       const view = renderAdmin(`/admin/people/surgeons?q=${q}`)
@@ -349,7 +351,7 @@ describe('catch-up Phase 17b: no surgeons\' rooms, contacts on the surgeon, the 
     const whaanga = state.masters.surgeons['S-WHAANGA']!
     useAppStore.setState({ masters: { ...state.masters, surgeons: { ...state.masters.surgeons, 'S-WHAANGA': { ...whaanga, officeContacts: [] } } } })
     renderAdmin('/admin/people/surgeons/S-WHAANGA')
-    fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
+    editContacts()
     expect(sets()).toHaveLength(1)
     expect(within(sheet()).queryByRole('button', { name: /Remove office contact/ })).toBeNull()
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Add office contact' }))
@@ -370,7 +372,7 @@ describe('catch-up Phase 17b: no surgeons\' rooms, contacts on the surgeon, the 
 
   it('minus on a middle set removes it whole and moves the set below up with its values; each input has its own name', () => {
     renderAdmin('/admin/people/surgeons/S-FORSYTHE')
-    fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
+    editContacts()
     expect(sets()).toHaveLength(3)
     expect(within(sheet()).getByRole('textbox', { name: 'Office contact 3 phone' })).toHaveValue('03 555 1037')
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Remove office contact 2' }))
@@ -379,45 +381,50 @@ describe('catch-up Phase 17b: no surgeons\' rooms, contacts on the surgeon, the 
     expect(within(sheet()).getByRole('textbox', { name: 'Office contact 2 name' })).toHaveValue('Burnside ENT Surgeons')
     expect(within(sheet()).getByRole('textbox', { name: 'Office contact 2 phone' })).toHaveValue('03 555 1037')
     expect(nameIn(sets()[0]!)).toHaveFocus()
-    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save changes' }))
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save' }))
     expect(useAppStore.getState().masters.surgeons['S-FORSYTHE']!.officeContacts.map((c) => c.name)).toEqual(['Maree', 'Burnside ENT Surgeons'])
   })
 
   it('an empty extra set is dropped on save; a bad email in office contact 2 is refused under it and nothing is saved', () => {
     renderAdmin('/admin/people/surgeons/S-DALGETY')
     const before = useAppStore.getState().masters.surgeons['S-DALGETY']!.officeContacts
-    fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
+    editContacts()
     fireEvent.change(within(sets()[1]!).getByLabelText('Email'), { target: { value: 'not an email' } })
-    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save changes' }))
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save' }))
     expect(within(sets()[1]!).getByRole('alert')).toHaveTextContent('Office contact 2: that email does not look right.')
     expect(useAppStore.getState().masters.surgeons['S-DALGETY']!.officeContacts).toEqual(before)
     fireEvent.change(within(sets()[1]!).getByLabelText('Email'), { target: { value: 'info@avonheadent.example' } })
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Add office contact' }))
-    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save changes' }))
+    const audited = useAppStore.getState().audit.length
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save' }))
     expect(useAppStore.getState().masters.surgeons['S-DALGETY']!.officeContacts).toEqual(before)
+    // Nothing changed once the empty set is dropped: Save closes the card and writes nothing.
+    expect(useAppStore.getState().audit.length).toBe(audited)
+    expect(document.querySelector('[data-shot="surgeon-contacts-save"]')).toBeNull()
   })
 
-  it('clearing an HPI CPN saves; the chip, Identifiers and History read it; a held one and an anaesthetist\'s are refused', () => {
+  it('clearing an HPI CPN saves; the chip, the HPI CPN card and History read it; a held one and an anaesthetist\'s are refused on the card', () => {
     renderAdmin(`/admin/people/surgeons/${SURG.reid}`)
-    fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
-    fireEvent.change(within(sheet()).getByLabelText('HPI CPN (optional)'), { target: { value: '42whij' } })
-    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save changes' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('That HPI CPN already belongs to Mr J. Whitford.')
-    fireEvent.change(within(sheet()).getByLabelText('HPI CPN (optional)'), { target: { value: '12shap' } })
-    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save changes' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('Dr Priya Sharma')
-    fireEvent.change(within(sheet()).getByLabelText('HPI CPN (optional)'), { target: { value: '' } })
-    fireEvent.click(within(sheet()).getByRole('button', { name: 'Save changes' }))
+    const card = () => document.querySelector('[data-shot="surgeon-identifiers"]') as HTMLElement
+    fireEvent.click(within(card()).getByRole('button', { name: 'Edit HPI CPN' }))
+    fireEvent.change(within(card()).getByLabelText('HPI CPN (optional)'), { target: { value: '42whij' } })
+    fireEvent.click(within(card()).getByRole('button', { name: 'Save' }))
+    expect(within(card()).getByRole('alert')).toHaveTextContent('That HPI CPN already belongs to Mr J. Whitford.')
+    fireEvent.change(within(card()).getByLabelText('HPI CPN (optional)'), { target: { value: '12shap' } })
+    fireEvent.click(within(card()).getByRole('button', { name: 'Save' }))
+    expect(within(card()).getByRole('alert')).toHaveTextContent('Dr Priya Sharma')
+    fireEvent.change(within(card()).getByLabelText('HPI CPN (optional)'), { target: { value: '' } })
+    fireEvent.click(within(card()).getByRole('button', { name: 'Save' }))
     expect(useAppStore.getState().masters.surgeons[SURG.reid]).not.toHaveProperty('hpiId')
     expect(useAppStore.getState().audit.at(-1)).toMatchObject({ action: 'surgeon.update', before: { hpiId: '47REIA' }, after: { hpiId: 'None' } })
     expect(within(document.querySelector('[data-shot="surgeon-hpi-chip"]') as HTMLElement).getByText('No HPI CPN yet')).toBeInTheDocument()
-    expect(within(document.querySelector('[data-shot="surgeon-identifiers"]') as HTMLElement).getByText('No HPI CPN yet')).toBeInTheDocument()
+    expect(within(card()).getByText('No HPI CPN yet')).toBeInTheDocument()
   })
 
   it("Mr Wainwright's profile: the practice name, the personal contact, an office contact per practice, the first marked; no room card, nothing provisional", () => {
     renderAdmin('/admin/people/surgeons/S-WAINWRIGHT')
+    expect(within(document.querySelector('[data-shot="surgeon-name-card"]') as HTMLElement).getByText('Upper GI Partners and Hillsborough Colorectal Specialists')).toBeInTheDocument()
     const card = document.querySelector('[data-shot="surgeon-contacts"]') as HTMLElement
-    expect(within(card).getByText('Upper GI Partners and Hillsborough Colorectal Specialists')).toBeInTheDocument()
     const office = Array.from(card.querySelectorAll('[data-office-contact]')) as HTMLElement[]
     expect(office.map((o) => o.getAttribute('data-office-contact'))).toEqual(['1', '2'])
     expect(within(office[0]!).getByText('info@uppergi.example')).toBeInTheDocument()

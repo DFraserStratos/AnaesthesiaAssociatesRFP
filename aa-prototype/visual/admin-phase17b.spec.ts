@@ -29,8 +29,8 @@ test('phase 17b the surgeons table: practice, office contact, HPI CPN, and no ro
 test("phase 17b Mr Wainwright's profile: practice and contacts, an office contact per practice", async ({ page }) => {
   await page.goto('/admin/people/surgeons/S-WAINWRIGHT')
   await page.waitForLoadState('networkidle')
+  await expect(page.locator('[data-shot="surgeon-name-card"]').getByText('Upper GI Partners and Hillsborough Colorectal Specialists')).toBeVisible()
   const card = page.locator('[data-shot="surgeon-contacts"]')
-  await expect(card.getByText('Upper GI Partners and Hillsborough Colorectal Specialists')).toBeVisible()
   await expect(card.locator('[data-office-contact]')).toHaveCount(2)
   await expect(card.locator('[data-office-contact="1"]').getByText('Office emails go here first')).toBeVisible()
   await expect(page.locator('[data-shot="surgeon-room-card"]')).toHaveCount(0)
@@ -38,11 +38,11 @@ test("phase 17b Mr Wainwright's profile: practice and contacts, an office contac
   await page.screenshot({ path: 'visual/shots/p17b-02-profile.png', fullPage: true })
 })
 
-test('phase 17b the edit sheet: plus adds an office contact set, minus removes an extra one', async ({ page }) => {
+test('phase 17b the Contacts card (Phase 55): plus adds an office contact set, minus removes an extra one', async ({ page }) => {
   await page.goto('/admin/people/surgeons/S-DALGETY')
   await page.waitForLoadState('networkidle')
-  await page.getByRole('button', { name: 'Edit details' }).click()
-  const sheet = page.locator('[data-shot="surgeon-edit-sheet"]')
+  await page.getByRole('button', { name: 'Edit contacts' }).click()
+  const sheet = page.locator('[data-shot="surgeon-contacts"]')
   await expect(sheet.locator('[data-office-contact]')).toHaveCount(2)
   await sheet.getByRole('button', { name: 'Add office contact' }).click()
   await expect(sheet.locator('[data-office-contact]')).toHaveCount(3)

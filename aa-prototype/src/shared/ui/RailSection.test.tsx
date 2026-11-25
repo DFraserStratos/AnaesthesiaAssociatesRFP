@@ -3,7 +3,7 @@
  * all with the whole count, the empty line, and the rows' hooks.
  */
 
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { RailSection, type RailSectionRow } from './RailSection'
@@ -33,6 +33,20 @@ describe('RailSection', () => {
   it('takes another row limit, and offers no See all when every row shows', () => {
     expect(renderSection(3, 3).container.querySelector('[data-shot="t-rail-all"]')).toBeNull()
     expect(renderSection(4, 2).container.querySelectorAll('li')).toHaveLength(2)
+  })
+
+  it('with no allTo, See all shows every row in the section and Show fewer folds it back (Phase 55)', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <RailSection title="Next Lists" rows={rows(7)} empty="None booked." shot="t-rail" />
+      </MemoryRouter>,
+    )
+    const all = container.querySelector('[data-shot="t-rail-all"]') as HTMLElement
+    expect(all.tagName).toBe('BUTTON')
+    fireEvent.click(all)
+    expect(container.querySelectorAll('li')).toHaveLength(7)
+    fireEvent.click(container.querySelector('[data-shot="t-rail-fewer"]') as HTMLElement)
+    expect(container.querySelectorAll('li')).toHaveLength(5)
   })
 
   it('says its empty line when there are no rows, with a count of 0', () => {

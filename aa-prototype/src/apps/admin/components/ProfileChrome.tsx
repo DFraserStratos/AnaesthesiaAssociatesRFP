@@ -101,12 +101,12 @@ export function IdChip({ label, value, empty, shot }: { label: string; value: st
 /** A profile card's style on the shared `Card`: it may shrink inside the page's card grid. */
 export const PROFILE_CARD: CSSProperties = { minWidth: 0 }
 
-/** The page's actions: the record's History, then Edit details. */
-export function HeaderActions({ onHistory, onEdit }: { onHistory: () => void; onEdit: () => void }) {
+/** The page's actions: the record's History, then Edit details (none on a page edited card by card). */
+export function HeaderActions({ onHistory, onEdit }: { onHistory: () => void; onEdit?: () => void }) {
   return (
     <div style={{ display: 'flex', gap: 8, flex: 'none' }}>
       <Button variant="secondary" onClick={onHistory}>History</Button>
-      <Button variant="secondary" onClick={onEdit}>Edit details</Button>
+      {onEdit !== undefined && <Button variant="secondary" onClick={onEdit}>Edit details</Button>}
     </div>
   )
 }

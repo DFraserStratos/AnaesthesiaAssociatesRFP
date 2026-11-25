@@ -57,11 +57,13 @@ export interface EditableCardProps extends DataAttributes {
   error: string | null
   /** The card's frame (a record page passes its profile card style). */
   style?: CSSProperties
+  /** Edit's accessible name; default "Edit <title in lower case>" (an acronym title passes its own, Phase 55). */
+  editLabel?: string
   children: ReactNode
 }
 
 /** A card with Edit in its heading where `editable`, its form and footer while in edit, its refusal under it. */
-export function EditableCard({ title, shot, editable, editing, onEdit, onCancel, onSave, error, style, children, ...data }: EditableCardProps) {
+export function EditableCard({ title, shot, editable, editing, onEdit, onCancel, onSave, error, style, editLabel, children, ...data }: EditableCardProps) {
   return (
     <Card
       {...data}
@@ -69,7 +71,7 @@ export function EditableCard({ title, shot, editable, editing, onEdit, onCancel,
       title={title}
       shot={shot}
       editing={editing}
-      {...(editable && !editing ? { action: <TextAction size="sm" flush onClick={onEdit} shot={`${shot}-edit`} label={`Edit ${typeof title === 'string' ? title.toLowerCase() : 'this card'}`}>Edit</TextAction> } : {})}
+      {...(editable && !editing ? { action: <TextAction size="sm" flush onClick={onEdit} shot={`${shot}-edit`} label={editLabel ?? `Edit ${typeof title === 'string' ? title.toLowerCase() : 'this card'}`}>Edit</TextAction> } : {})}
       {...(editing
         ? {
             footer: (
