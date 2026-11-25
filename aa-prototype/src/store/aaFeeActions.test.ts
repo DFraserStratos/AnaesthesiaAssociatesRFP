@@ -40,7 +40,7 @@ function store(): BoundAppStore {
 }
 
 function activeCount(api: BoundAppStore): number {
-  return Object.values(api.getState().masters.anaesthetists).filter((a) => a.active).length
+  return Object.values(api.getState().masters.anaesthetists).filter((a) => a.lastDayISO === null).length
 }
 
 /** A fee invoice's ACCREC id, read from its `aaFee` ledger pair (catch-up Phase 36). */

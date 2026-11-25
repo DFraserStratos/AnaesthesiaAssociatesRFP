@@ -65,6 +65,7 @@ import { deliveryCountsText } from '../domain/billing/invoicePresentation'
 import { listHospitalFor } from '../domain/listPairing'
 import { ANAESTHETISTS } from '../domain/seed'
 import { displayStatusKey, effectiveSlotTimes, slotIdFor, type EffectiveSlotTimes } from '../domain/slots'
+import { isActiveInMonth, isActiveOn } from '../domain/anaesthetistStatus'
 import { isOpenSlot, type SlotStatusRecords } from '../domain/slotStatus'
 import { compareBySurname } from '../domain/surgeons'
 import { activeOnly, isRetired } from '../domain/masterLifecycle'
@@ -198,7 +199,7 @@ export function closedEmptyColleagueSlots(
   const held = listIndexBySlot(state.schedule.lists)
   const out: { slot: Slot; name: string }[] = []
   for (const a of Object.values(state.masters.anaesthetists)) {
-    if (!a.active || a.registrationNumber === excludeAnaesthetistId) continue
+    if (!isActiveOn(a, dateISO) || a.registrationNumber === excludeAnaesthetistId) continue
     const slot = state.schedule.slots[slotIdFor(a.registrationNumber, dateISO, session)]
     if (slot === undefined || held.has(slot.id) || isOpenSlot(slot, undefined, state.masters.slotStatuses)) continue
     out.push({ slot, name: a.name })
@@ -1584,7 +1585,7 @@ export function aaFeeRunPreview(
       .map((f) => [f.anaesthetistId, f]),
   )
   return Object.values(state.masters.anaesthetists)
-    .filter((a) => a.active)
+    .filter((a) => isActiveInMonth(a, monthISO))
     .map((a): AaFeeRunPreviewRow => {
       const invoice = raised.get(a.registrationNumber)
       if (invoice !== undefined) {

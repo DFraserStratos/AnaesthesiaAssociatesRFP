@@ -119,7 +119,7 @@ import { SPC } from '../specialties'
 import { EYE_CODES, GENERAL_CODES, LEGACY_CODE_TO_RVG_GROUP, RVG_GROUP } from '../rvgGroups'
 import { seedText } from '../procedureText'
 import { finaliseSeedProcedureTexts } from '../procedureText'
-import { syntheticGstNumber } from '../cast'
+import { NO_LAST_DAY, syntheticGstNumber } from '../cast'
 import { FULL_SCALE } from './constants'
 import { drawFirstName, drawPerson, drawPool, FULL_SCALE_ANAESTHETISTS, FULL_SCALE_SURGEONS, poolFor, type DrawnName, type NamePool, type RosterAnaesthetist } from './names'
 
@@ -410,7 +410,11 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
       hpiId,
       bankAccount: { accountName: nameWithoutTitle(name), accountNumber: seedBankAccountNumber(registrationNumber) },
       startDateISO: row.startsISO ?? established,
-      active: true,
+      ...NO_LAST_DAY,
+      // Phase 52: the one colleague who has left (no RNG draw, so no id moves).
+      ...(row.last === FULL_SCALE.inactiveColleague.surname
+        ? { lastDayISO: FULL_SCALE.inactiveColleague.lastDayISO, inactiveReason: FULL_SCALE.inactiveColleague.reason }
+        : {}),
       gstNumber: syntheticGstNumber(registrationNumber),
     }
     anaesthetists[registrationNumber] = a
@@ -766,7 +770,7 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
   )
   const generated = generateCanvasForDates(
     {
-      anaesthetists: generatedAnaesthetistIds.map((id) => ({ id, startDateISO: anaesthetists[id]!.startDateISO, active: true })),
+      anaesthetists: generatedAnaesthetistIds.map((id) => ({ id, ...anaesthetists[id]! })),
       recurringBookings: generatedRecurring,
       leave,
       series: seriesEntries,

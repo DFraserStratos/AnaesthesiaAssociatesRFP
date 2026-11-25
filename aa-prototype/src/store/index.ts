@@ -500,6 +500,24 @@ export * from './paymentCycleActions'
 export * from './remittanceSelectors'
 export { stagePaymentWeek, stagePaymentWeekRefusal, stageBankMismatch, stageBankMismatchRefusal, PAYMENT_WEEK_CHOICES, PAYMENT_WEEK_COPY } from './paymentWeekDemo'
 export { runArchiveJob, eligibleArchiveContactIds, wireArchiveJob, ARCHIVE_SKIPPED_OUTAGE, type ArchiveJobResult } from './archiveActions'
+// Build plan Phase 52: make an anaesthetist inactive from a last day (US-12.1.6, DM-05 to DM-07).
+export {
+  makeAnaesthetistInactive,
+  clearLastDay,
+  makeAnaesthetistActive,
+  offerBackFor,
+  ownActiveContracts,
+  runInactiveContractsJob,
+  wireInactiveContracts,
+  signInRefusal,
+  inactiveSignInCandidate,
+  isActiveToday,
+  latestNoLongerActiveRefusal,
+  tryInactiveSignIn,
+  INACTIVE_CONTRACTS_ACTOR,
+  NO_LONGER_ACTIVE,
+  type ListsAfterLastDayDetails,
+} from './anaesthetistStatusActions'
 export {
   advanceClockMinutes,
   advanceClockDays,

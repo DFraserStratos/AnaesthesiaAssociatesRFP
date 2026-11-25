@@ -20,6 +20,7 @@ import { titledSurname } from '../domain/names'
 import { isOpenForBooking, SEED_STATUS, statusFor } from '../domain/slotStatus'
 import { slotIdFor } from '../domain/slots'
 import type { AssignedList } from '../domain/types'
+import { isActiveOn } from '../domain/anaesthetistStatus'
 import type { AppState, AppStoreApi } from './appStore'
 import { anaesthetistActor } from './demoActors'
 import { moveBookingToAnaesthetist, moveListToOffice, pushListToSlot, type BookingMoveResult, type OwnMoveResult } from './listMoveActions'
@@ -57,7 +58,8 @@ export function colleagueMoveCandidates(state: DemoState, fromISO?: string): Ass
     // A List with a conflict (a closure) is on the Conflicts screen a beat shows: never moved by a demo.
     if (list.conflicts.length > 0) continue
     // The demo acts as the List's owner: an inactive one cannot (the count then matches what runs).
-    if (state.masters.anaesthetists[list.anaesthetistId]?.active !== true) continue
+    const owner = state.masters.anaesthetists[list.anaesthetistId]
+    if (owner === undefined || !isActiveOn(owner, list.dateISO)) continue
     if (ownMoveRefusal(input, list.id, list.anaesthetistId, todayISO) !== null) continue
     out.push(list)
   }
@@ -249,7 +251,8 @@ export function makeAvailableRefusal(state: Pick<AppState, 'schedule' | 'masters
   if (slot === undefined) return 'Session not found'
   if (listInSlot(state, slotId) !== undefined) return 'This session holds a List'
   if (isOpenForBooking(statusFor(state.masters.slotStatuses, slot.status))) return 'Already available'
-  if (state.masters.anaesthetists[slot.anaesthetistId]?.active !== true) return 'This anaesthetist is not active'
+  const owner = state.masters.anaesthetists[slot.anaesthetistId]
+  if (owner === undefined || !isActiveOn(owner, slot.dateISO)) return 'This anaesthetist is not active'
   // Only a status the anaesthetist may set herself can she clear (the office set the others).
   if (statusFor(state.masters.slotStatuses, slot.status)?.anaesthetistCanSet !== true) return 'Set by the office: the office changes it'
   return null

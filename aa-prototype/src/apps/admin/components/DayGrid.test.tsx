@@ -18,7 +18,9 @@ function anaesthetist(id: string, name: string): Anaesthetist {
     bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' },
     hpiId: `HPI-${id}`,
     startDateISO: '2020-05-11',
-    active: true,
+    lastDayISO: null,
+    inactiveReason: null,
+    activeAgainISO: null,
   }
 }
 

@@ -21,7 +21,7 @@ describe('AA fee invoices screen (catch-up Phase 16)', () => {
 
   it('previews every active anaesthetist for the month and a run adds their invoices', () => {
     renderTab('invoices')
-    const active = Object.values(useAppStore.getState().masters.anaesthetists).filter((a) => a.active).length
+    const active = Object.values(useAppStore.getState().masters.anaesthetists).filter((a) => a.lastDayISO === null).length
     const preview = screen.getByTestId('aa-fee-preview')
     expect(within(preview).getAllByTestId(/^aa-fee-preview-/)).toHaveLength(active)
     expect(screen.getAllByTestId(/^aa-fee-row-/)).toHaveLength(2)

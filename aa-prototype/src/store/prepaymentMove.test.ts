@@ -50,7 +50,7 @@ const listOf = (bookingId: string) => api.getState().schedule.bookings[bookingId
 const anaesthetistOf = (bookingId: string) => api.getState().schedule.lists[listOf(bookingId)]!.anaesthetistId
 const colleagues = () =>
   Object.values(api.getState().masters.anaesthetists)
-    .filter((a) => a.active && a.registrationNumber !== SOUTER)
+    .filter((a) => a.lastDayISO === null && a.registrationNumber !== SOUTER)
     .map((a) => a.registrationNumber)
     .sort()
 

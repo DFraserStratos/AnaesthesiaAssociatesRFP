@@ -1463,3 +1463,28 @@ describe('catch-up Phase 43b (v75): support tickets', () => {
     expect(s.counters['supportTicket']).toBe(6)
   })
 })
+
+describe('build plan Phase 52 (v79): an anaesthetist inactive from a last day', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v78 store holding the old active flag and reseeds the last-day fields', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(79)
+    const fresh = freshAppState()
+    const anaesthetists = Object.fromEntries(
+      Object.entries(fresh.masters.anaesthetists).map(([id, a]) => {
+        const { lastDayISO: _l, inactiveReason: _r, activeAgainISO: _g, ...old } = a
+        return [id, { ...old, active: true }]
+      }),
+    )
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, masters: { ...fresh.masters, anaesthetists } }, version: 78 }))
+    const s = createAppStore({ persisted: true }).getState()
+    const souter = s.masters.anaesthetists['34821']!
+    expect('active' in souter).toBe(false)
+    expect(souter.lastDayISO).toBeNull()
+    expect(souter.activeAgainISO).toBeNull()
+  })
+})

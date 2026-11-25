@@ -16,6 +16,7 @@ U7 is archived in `docs/archive/prototype-build/PROGRESS.md` (large: grep it, ne
 | 49 | Replace a Contract from a date | DONE | 2026-11-25 | Replace from a date on a Contract's page copies it with any setting changed under a new AA code, moves only the ticked Procedures from the change date, and leaves the old one active with a Day-view to-do on that date or disables it now, all in one change set; a late disable lists from the change date and both histories show the replacement. |
 | 50 | The rate and priority tier card | DONE | 2026-11-25 | The rate per unit and the priority tier sit on one self-contained "Rate and tier" card on the anaesthetist record, edited with Edit, Save and Cancel (a tier click only moves a draft) and saved as one audited change; the edit sheet and Profile lose the rate, and the Anaesthetists list filters by tier. |
 | 51 | Waiting for an NHI as a tab on Intake | DONE | 2026-11-25 | Rows waiting for an NHI are Intake's Waiting for NHI tab beside Matching, moved from Patients unchanged with their count on the tab; `/admin/patients/waiting` redirects there; the rows count once, in Intake's badge, which drops when the NHI is added, and the Patients badge no longer counts them. |
+| 52 | Make an anaesthetist inactive from a last day | IN PROGRESS | 2026-11-25 | Session 1 (checkpoint): activity is one pure `isActiveOn` over a last day, every reader moved to it, the make-inactive, clear and make-active actions, the Contract rule on `dayAdvanced`, the sign-in refusal and Dr Reeves seeded inactive; `PERSIST_VERSION` 79. |
 
 Rows: `| <id> | <title> | DONE | <YYYY-MM-DD> | <one-sentence summary> |`, or `IN PROGRESS` at a
 checkpoint, in run order.
@@ -313,3 +314,7 @@ Run in Lane B, Wave 2 (`docs/build-plan/LANES.md`): the lighter gate, no review,
 - Names: `WaitingNhiTab`, `useWaitingNhiRows`, `AdminWaitingNhiTabRoute`, hook `intake-waiting-count`.
 
 **For the owner's review.** The no-List edge: Add NHI takes the row off the tab but Intake's count does not drop, because the row still needs a List and a decision on Matching; it is counted once there (the doc's "counted once as an ordinary Matching row"). The tab carries its count as Patients' did; Intake's other tabs carry none. `NHI_HUB_SCREEN` still reads "Add booking, and Admin · Patients" though the hub entry also shows on the tab. What the sweep must re-point (Demo guide, above).
+
+### Phase 52 · Make an anaesthetist inactive from a last day (2026-11-25)
+
+**Session 1 (2026-11-25).** Checkpoint: `Anaesthetist.active` deleted for `lastDayISO`, `inactiveReason`, `activeAgainISO`; one pure `isActiveOn` (`domain/anaesthetistStatus.ts`) read by every former reader on the work's date (AA fee run by month, receipt guard on existence only); `store/anaesthetistStatusActions.ts` (make inactive, clear, make active, the Contract rule on `dayAdvanced`, sign-in refusal); sign-in refused on mobile, PWA and web; Dr Oscar Reeves seeded inactive from 20 Nov; `PERSIST_VERSION` 78 to 79. The record's cards and sheets, the triggers and the specs follow in the same session.

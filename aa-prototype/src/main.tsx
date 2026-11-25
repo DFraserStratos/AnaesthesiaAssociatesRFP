@@ -3,7 +3,7 @@ import { wireDiagnostics } from './store/diagnostics'
 import { createRoot } from 'react-dom/client'
 import './theme/global.css'
 import App from './App.tsx'
-import { useAppStore, wireArchiveJob, wireBillingRun, wireIntegrationRetry, wireReconciliationPoll, wireXeroQueue } from './store'
+import { useAppStore, wireArchiveJob, wireBillingRun, wireInactiveContracts, wireIntegrationRetry, wireReconciliationPoll, wireXeroQueue } from './store'
 
 // The billing engine's one integration point (RFP): authorising a List emits
 // `listAuthorised`; the run consumes it (then hands its ledger pairs off to Xero).
@@ -17,6 +17,8 @@ wireBillingRun(useAppStore)
 // payment the poll catches can make a contact fully-paid before it is archived.
 wireReconciliationPoll(useAppStore)
 wireArchiveJob(useAppStore)
+// Build plan Phase 52: once the clock passes an anaesthetist's last day, the system disables their own Contracts (DM-06).
+wireInactiveContracts(useAppStore)
 // Catch-up Phase 37: the Xero sync queue works what is due on every demo-clock change (after the day's poll); no timers.
 wireXeroQueue(useAppStore)
 // Phase 11: auto-retry `retrying` integration messages on a short timer (the

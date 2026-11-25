@@ -6,7 +6,7 @@ import type { Anaesthetist } from '../../../domain/types'
 import { normaliseNzBankAccount } from '../../../domain/bankAccount'
 import { normaliseHpiCpn } from '../../../domain/surgeons'
 import { editAnaesthetist, useAppStore, type Actor } from '../../../store'
-import { Button, Segmented, TextField } from '../../../shared'
+import { Button, TextField } from '../../../shared'
 import { OverlayHeader, SheetActions } from '../../../shared/surface'
 import { useSurface } from '../../../shared'
 import { anaesthetistRecordPath } from '../mastersPaths'
@@ -25,14 +25,14 @@ interface Props {
 
 /**
  * Edit an anaesthetist's profile (office): contact, HPI CPN, bank details, GST
- * number, start date and active flag. The HPI CPN and the bank details are
+ * number and start date. The HPI CPN and the bank details are
  * mandatory (catch-up Phase 26; US-12.1.4): marked required,
  * checked inline, Save disabled until filled, and refused by the store in the
  * same words. The full bank number shows only here; everywhere else it is
  * masked. The store compares and audits only the fields that changed. The
- * start date and the active flag add or remove their sessions from today on,
- * and are refused while a removed session holds a List (catch-up Phase 28;
- * US-01.1.3, FT-01.1). The rate per unit and the tier are edited on the record
+ * start date adds or removes their sessions from today on, refused while a
+ * removed session holds a List (catch-up Phase 28; US-01.1.3). Making them
+ * inactive is the record's status card (build plan Phase 52). The rate per unit and the tier are edited on the record
  * page's Rate and tier card (build plan Phase 50), and pairings there too.
  */
 export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRecordPage = false }: Props) {
@@ -42,7 +42,6 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
   const [email, setEmail] = useState(anaesthetist.email)
   const [accountName, setAccountName] = useState(anaesthetist.bankAccount.accountName)
   const [accountNumber, setAccountNumber] = useState(anaesthetist.bankAccount.accountNumber)
-  const [active, setActive] = useState<'active' | 'inactive'>(anaesthetist.active ? 'active' : 'inactive')
   const [startDateISO, setStartDateISO] = useState(anaesthetist.startDateISO)
   const [gstNumber, setGstNumber] = useState(anaesthetist.gstNumber !== undefined ? formatGstNumber(anaesthetist.gstNumber) : '')
   const [error, setError] = useState<string | null>(null)
@@ -53,7 +52,6 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
       setEmail(anaesthetist.email)
       setAccountName(anaesthetist.bankAccount.accountName)
       setAccountNumber(anaesthetist.bankAccount.accountNumber)
-      setActive(anaesthetist.active ? 'active' : 'inactive')
       setHpiId(anaesthetist.hpiId)
       setStartDateISO(anaesthetist.startDateISO)
       setGstNumber(anaesthetist.gstNumber !== undefined ? formatGstNumber(anaesthetist.gstNumber) : '')
@@ -70,7 +68,6 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
     const outcome = editAnaesthetist(useAppStore, actor, anaesthetist.registrationNumber, {
       phone,
       email,
-      active: active === 'active',
       // Only a changed start date is sent (it may add or remove sessions).
       ...(startDateISO !== anaesthetist.startDateISO ? { startDateISO } : {}),
       // Only a changed HPI CPN is sent, so an unrelated save never re-checks it.
@@ -116,10 +113,6 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
           onChange={setStartDateISO}
           hint="Sessions are created from this date to the end of the schedule horizon."
         />
-        <Segmented label="Status" value={active} options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} onChange={setActive} />
-        {anaesthetist.active && active === 'inactive' && (
-          <div style={{ fontSize: 12.5, color: neutral.slate }}>Their sessions from today are removed.</div>
-        )}
         <FormError message={error} />
         <SheetActions
           primary={

@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { APP_CONFIG } from '../../shell/appConfig'
 import { neutral } from '../../theme/tokens'
-import { useToday, type Actor } from '../../store'
+import { signInRefusal, useAppStore, useToday, type Actor } from '../../store'
 import { SurfaceProvider } from '../../shared'
+import { EmptyState } from '../../shared/ui'
 import { MoveListPromptProvider } from '../../shared/flows/MoveListPrompt'
 import { SupportSidePanel } from '../../shared/support'
 import { WebNav, type WebTab } from './components'
@@ -44,6 +45,7 @@ export function WebApp() {
     [persona, anaesthetistId],
   )
   const todayISO = useToday()
+  const noLongerActive = useAppStore((s) => signInRefusal(s, anaesthetistId))
   const navigate = useNavigate()
   const { pathname } = useLocation()
   // The support panel (catch-up Phase 43b): Help in the top nav opens it over any screen.
@@ -67,9 +69,17 @@ export function WebApp() {
           onHelp={() => setHelpOpen(true)}
         />
         <div style={{ maxWidth: 1320, margin: '0 auto', padding: '28px 32px 48px' }}>
-          <MoveListPromptProvider actor={actor}>
-            <Outlet context={context} />
-          </MoveListPromptProvider>
+          {noLongerActive !== null ? (
+            // Phase 52 (DM-07): the web app has no sign-in, so an inactive persona sees this page in place of the screens.
+            <EmptyState variant="card" title="You are no longer active with AA" shot="web-no-longer-active" style={{ maxWidth: 560 }}>
+              Your last day has passed, so your Lists, Bookings and balances are no longer shown here. The AA office sends
+              remittances for earlier work by email. If this is wrong, contact the office.
+            </EmptyState>
+          ) : (
+            <MoveListPromptProvider actor={actor}>
+              <Outlet context={context} />
+            </MoveListPromptProvider>
+          )}
         </div>
       </div>
       <SupportSidePanel open={helpOpen} onClose={() => setHelpOpen(false)} actor={actor} app="web" />

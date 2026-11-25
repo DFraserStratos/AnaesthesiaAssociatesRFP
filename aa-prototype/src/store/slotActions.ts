@@ -28,7 +28,8 @@ import type {
 import { LIST_KINDS } from '../domain/types'
 import { originForNewList } from '../domain/lists/listOrigin'
 import { enumerateDatesISO, horizonDatesBetween, horizonFor } from '../domain/clock'
-import { effectiveSlotTimes, isWallTime, slotDatesFor, slotIdFor } from '../domain/slots'
+import { effectiveSlotTimes, isWallTime, slotIdFor } from '../domain/slots'
+import { isActiveOn, type ActivitySpan } from '../domain/anaesthetistStatus'
 import { statusFor } from '../domain/slotStatus'
 import { format, parseISO } from 'date-fns'
 import {
@@ -969,17 +970,18 @@ export function setHorizonMonths(api: AppStoreApi, actor: Actor, months: number)
 
 /**
  * The Slots (and projected Lists) one anaesthetist should gain or lose from
- * `fromISO` to the horizon end, given a start date and an active flag
- * (US-01.1.3, FT-01.1). Pure over the state passed in.
+ * `fromISO` to the horizon end, given their start date and last day: a Slot
+ * on every date `isActiveOn` (US-01.1.3, US-01.1.1, US-12.1.6). Pure over the
+ * state passed in.
  */
 export function anaesthetistCanvasDelta(
   state: Pick<AppState, 'masters' | 'schedule' | 'clock' | 'appSettings'>,
-  anaesthetist: { registrationNumber: string; startDateISO: string; active: boolean },
+  anaesthetist: ActivitySpan & { registrationNumber: string },
   fromISO: string,
 ): { add: GeneratedCanvas; removeSlotIds: string[]; listsInRemoved: List[]; toISO: string } {
   const toISO = scheduleHorizon(state).endISO
   const dates = fromISO <= toISO ? enumerateDatesISO(fromISO, toISO) : []
-  const want = new Set(anaesthetist.active ? slotDatesFor(anaesthetist.startDateISO, dates) : [])
+  const want = new Set(dates.filter((d) => isActiveOn(anaesthetist, d)))
   const existing = Object.values(state.schedule.slots).filter(
     (s) => s.anaesthetistId === anaesthetist.registrationNumber && s.dateISO >= fromISO,
   )
@@ -990,7 +992,14 @@ export function anaesthetistCanvasDelta(
   const add = generateCanvasForDates(
     {
       ...masters,
-      anaesthetists: [{ id: anaesthetist.registrationNumber, startDateISO: anaesthetist.startDateISO, active: anaesthetist.active }],
+      anaesthetists: [
+        {
+          id: anaesthetist.registrationNumber,
+          startDateISO: anaesthetist.startDateISO,
+          lastDayISO: anaesthetist.lastDayISO,
+          activeAgainISO: anaesthetist.activeAgainISO,
+        },
+      ],
     },
     missing,
   )

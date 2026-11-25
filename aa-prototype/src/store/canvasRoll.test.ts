@@ -227,7 +227,7 @@ describe('canvas generator scale (the RFP production scale)', () => {
       })),
     )
     const masters: CanvasMasters = {
-      anaesthetists: anaesthetistIds.map((id) => ({ id, startDateISO: '2020-05-11', active: true })),
+      anaesthetists: anaesthetistIds.map((id) => ({ id, startDateISO: '2020-05-11', lastDayISO: null, activeAgainISO: null })),
       recurringBookings,
       leave: [],
       series: [],

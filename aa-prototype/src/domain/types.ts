@@ -38,6 +38,8 @@ export type PatientId = string
 export type PayerId = string
 /** An anaesthetist's ID IS their registration number (RFP master; 2nd review #2). */
 export type AnaesthetistId = string
+/** Why an anaesthetist was made inactive (Phase 52; US-12.1.6). Labels in `domain/anaesthetistStatus.ts`. */
+export type InactiveReason = 'leftPractice' | 'longLeave' | 'other'
 export type HospitalId = string
 export type SurgeonId = string
 export type SurgeonGroupId = string
@@ -445,11 +447,19 @@ export interface Anaesthetist {
    */
   startDateISO: IsoDate
   /**
-   * Only an active anaesthetist has Slots (FT-01.1, US-01.1.1 "every active
-   * anaesthetist"): generation skips an inactive one, and switching one off
-   * removes their Slots from today on.
+   * The last day the anaesthetist works (Phase 52; US-12.1.6, DM-05, D103), or
+   * `null`. Activity is never stored: `isActiveOn` (`domain/anaesthetistStatus.ts`)
+   * derives it from this, `startDateISO` and `activeAgainISO`. Only an active
+   * anaesthetist has Slots (US-01.1.1).
    */
-  active: boolean
+  lastDayISO: IsoDate | null
+  /** Why they were made inactive (`INACTIVE_REASON_LABELS`), or `null`. */
+  inactiveReason: InactiveReason | null
+  /**
+   * The day they were made active again after a last day, or `null`. Setting a
+   * new last day clears it; the audit keeps earlier spells.
+   */
+  activeAgainISO: IsoDate | null
   /**
    * The anaesthetist's GST number (catch-up Phase 22; DM-62, US-08.4.5):
    * optional, held only on the Admin anaesthetist record (the profile shows

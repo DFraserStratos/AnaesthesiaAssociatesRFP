@@ -26,6 +26,7 @@ import { slotIdFor } from '../domain/slots'
 import { assignListToSlot, reassignList } from './slotActions'
 import { advanceClockDays } from './clockActions'
 import { rosterForDate } from './selectors'
+import { clearLastDay, makeAnaesthetistInactive } from './anaesthetistStatusActions'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = {
@@ -54,10 +55,10 @@ describe('editAnaesthetist', () => {
     const entry = api.getState().audit.at(-1)
     expect(entry?.action).toBe('anaesthetist.update')
     expect(entry?.entityId).toBe(ANAE.souter)
-    // Souter has Lists ahead, so switching her off is refused until they are reassigned (catch-up Phase 28).
-    const off = editAnaesthetist(api, OFFICE, ANAE.souter, { active: false })
-    expect(off.ok ? '' : off.code).toBe('listsAhead')
-    expect(api.getState().masters.anaesthetists[ANAE.souter]?.active).toBe(true)
+    // Souter has Lists ahead, so making her inactive from today is refused until they are reassigned (Phase 52).
+    const off = makeAnaesthetistInactive(api, OFFICE, ANAE.souter, '2026-11-24', 'leftPractice')
+    expect(off.ok ? '' : off.code).toBe('listsAfterLastDay')
+    expect(api.getState().masters.anaesthetists[ANAE.souter]?.lastDayISO).toBeNull()
   })
 
   it("re-prices an RVG fee that reads the anaesthetist's unit value", () => {
@@ -100,7 +101,6 @@ describe('editAnaesthetist: who edits what (catch-up Phase 26; US-12.1.1, US-12.
     ['email', { email: 'x@example.test' }],
     ['hpiId', { hpiId: '88ZZZZ' }],
     ['bankAccount', { bankAccount: BANK }],
-    ['active', { active: false }],
     ['startDateISO', { startDateISO: '2014-05-07' }],
     ['gstNumber', { gstNumber: '' }],
   ]
@@ -156,7 +156,7 @@ describe('editAnaesthetist: who edits what (catch-up Phase 26; US-12.1.1, US-12.
     const s = api.getState()
     const souter = s.masters.anaesthetists[ANAE.souter]!
     const auditLength = s.audit.length
-    expect(editAnaesthetist(api, OFFICE, ANAE.souter, { unitValue: 26.5, phone: souter.phone, hpiId: '10soum', bankAccount: { ...souter.bankAccount }, active: true }).ok).toBe(true)
+    expect(editAnaesthetist(api, OFFICE, ANAE.souter, { unitValue: 26.5, phone: souter.phone, hpiId: '10soum', bankAccount: { ...souter.bankAccount } }).ok).toBe(true)
     expect(editAnaesthetist(api, SOUTER, ANAE.souter, { unitValue: 26.5 }).ok).toBe(true)
     expect(api.getState().audit).toHaveLength(auditLength)
     expect(editAnaesthetist(api, OFFICE, ANAE.souter, { unitValue: 28, phone: souter.phone }).ok).toBe(true)
@@ -266,7 +266,7 @@ describe('addAnaesthetist (catch-up Phase 28: Slots from the start date, US-01.1
     expect(outcome.ok).toBe(true)
     if (!outcome.ok) return
     const state = api.getState()
-    expect(state.masters.anaesthetists['99001']).toMatchObject({ name: 'Dr New Person', startDateISO: todayISO, active: true })
+    expect(state.masters.anaesthetists['99001']).toMatchObject({ name: 'Dr New Person', startDateISO: todayISO, lastDayISO: null, activeAgainISO: null })
 
     const slots = theirSlots(api)
     const dates = enumerateDatesISO(todayISO, horizonFor(todayISO, 4).endISO)
@@ -278,7 +278,7 @@ describe('addAnaesthetist (catch-up Phase 28: Slots from the start date, US-01.1
     expect(Object.values(state.schedule.lists).some((l) => l.anaesthetistId === '99001')).toBe(false)
 
     const fresh = generateCanvasForDates(
-      { anaesthetists: [{ id: '99001', startDateISO: todayISO, active: true }], recurringBookings: Object.values(state.masters.recurringBookings), leave: SEED_LEAVE, series: [], statuses: state.masters.slotStatuses },
+      { anaesthetists: [{ id: '99001', startDateISO: todayISO, lastDayISO: null, activeAgainISO: null }], recurringBookings: Object.values(state.masters.recurringBookings), leave: SEED_LEAVE, series: [], statuses: state.masters.slotStatuses },
       dates,
     )
     const stored = new Map(slots.map((s) => [s.id, s]))
@@ -354,23 +354,23 @@ describe('editAnaesthetist: start date and active (catch-up Phase 28; US-01.1.3,
     expect(api.getState().schedule).toBe(before.schedule)
   })
 
-  it('switching inactive removes the Slots from today on (refused while a List stands); active again brings them back', () => {
+  it('a last day removes the Slots after it (refused while a List stands); clearing it brings them back', () => {
     const api = createAppStore()
     addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-11-24' })
     const slotId = slotIdFor('99002', '2026-11-25', 'PM')
     expect(assignListToSlot(api, OFFICE, slotId, { hospitalId: HOSP.stg, surgeonId: SURG.hale, kind: 'private' }).ok).toBe(true)
-    const refused = editAnaesthetist(api, OFFICE, '99002', { active: false })
-    expect(refused.ok ? '' : refused.code).toBe('listsAhead')
-    expect(refused.ok ? '' : refused.message).toBe('Dr Second Person has 1 List from today. Reassign it first.')
-    expect(api.getState().masters.anaesthetists['99002']?.active).toBe(true)
+    const refused = makeAnaesthetistInactive(api, OFFICE, '99002', '2026-11-24', 'leftPractice')
+    expect(refused.ok ? '' : refused.code).toBe('listsAfterLastDay')
+    expect(refused.ok ? '' : refused.message).toBe('Dr Person has 1 List after 24 Nov. Reassign it first.')
+    expect(api.getState().masters.anaesthetists['99002']?.lastDayISO).toBeNull()
 
     const listId = Object.values(api.getState().schedule.lists).find((l) => l.slotId === slotId)!.id
     expect(reassignList(api, OFFICE, listId, ANAE.souter).ok).toBe(true)
-    expect(editAnaesthetist(api, OFFICE, '99002', { active: false }).ok).toBe(true)
-    expect(slotsOf(api)).toHaveLength(0)
+    expect(makeAnaesthetistInactive(api, OFFICE, '99002', '2026-11-24', 'leftPractice').ok).toBe(true)
+    expect(slotsOf(api).map((s) => s.dateISO)).toEqual(['2026-11-24', '2026-11-24'])
     expect(rosterForDate(api.getState(), '2026-11-25').some((a) => a.registrationNumber === '99002')).toBe(false)
 
-    expect(editAnaesthetist(api, OFFICE, '99002', { active: true }).ok).toBe(true)
+    expect(clearLastDay(api, OFFICE, '99002').ok).toBe(true)
     expect(slotsOf(api).length).toBe(enumerateDatesISO('2026-11-24', '2027-03-24').length * 2)
   })
 
@@ -378,10 +378,10 @@ describe('editAnaesthetist: start date and active (catch-up Phase 28; US-01.1.3,
     const api = createAppStore()
     addAnaesthetist(api, OFFICE, { ...NEW, startDateISO: '2026-11-24' })
     advanceClockDays(api, 1)
-    expect(editAnaesthetist(api, OFFICE, '99002', { active: false }).ok).toBe(true)
+    expect(makeAnaesthetistInactive(api, OFFICE, '99002', '2026-11-25', 'longLeave').ok).toBe(true)
     advanceClockDays(api, 2)
-    // Only Tue 21, the day before today when the switch went off, keeps its two Slots.
-    expect(slotsOf(api).map((s) => s.dateISO)).toEqual(['2026-11-24', '2026-11-24'])
+    // Tue 24 and Wed 25, the last day, keep their Slots; nothing after it.
+    expect(slotsOf(api).map((s) => s.dateISO).sort()).toEqual(['2026-11-24', '2026-11-24', '2026-11-25', '2026-11-25'])
   })
 })
 

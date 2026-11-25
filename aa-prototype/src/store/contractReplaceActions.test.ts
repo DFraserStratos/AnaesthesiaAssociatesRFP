@@ -60,7 +60,7 @@ describe('Replace from a date (US-04.1.8)', () => {
     expect(rest).toEqual(oldRest)
     // No field on the Contract carries the link or the date (D94).
     expect(Object.keys(copy)).not.toContain('replaces')
-    expect(PERSIST_VERSION).toBe(78)
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(78)
   })
 
   it('Listed and ticked: lists the three from the date (not the earlier or locked one); only the ticked ones move', () => {

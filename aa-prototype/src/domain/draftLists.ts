@@ -14,6 +14,7 @@
 import type { Closure } from './holidays'
 import { addDays, differenceInMinutes, format, parseISO } from 'date-fns'
 import { activeOn, answeredKey } from './recurringBookingProjection'
+import { isActiveOn, type ActivitySpan } from './anaesthetistStatus'
 import { isClosed, isOpenForBooking, statusFor, type SlotStatusRecords } from './slotStatus'
 import { slotIdFor } from './slots'
 import { originForNewList } from './lists/listOrigin'
@@ -144,7 +145,7 @@ export interface DraftListAvailability {
  */
 export function draftListAvailability(input: {
   list: Pick<List, 'dateISO' | 'session'>
-  anaesthetists: readonly { registrationNumber: AnaesthetistId; active: boolean }[]
+  anaesthetists: readonly (ActivitySpan & { registrationNumber: AnaesthetistId })[]
   slots: Readonly<Record<string, Slot>>
   /** The id of the List in each Slot (assigned Lists only). */
   listIdBySlot: ReadonlyMap<string, string>
@@ -152,7 +153,7 @@ export function draftListAvailability(input: {
 }): DraftListAvailability {
   const out: DraftListAvailability = { free: [], notAvailable: [], occupied: [] }
   for (const a of input.anaesthetists) {
-    if (!a.active) continue
+    if (!isActiveOn(a, input.list.dateISO)) continue
     const slotId = slotIdFor(a.registrationNumber, input.list.dateISO, input.list.session)
     const slot = input.slots[slotId]
     if (slot === undefined) continue

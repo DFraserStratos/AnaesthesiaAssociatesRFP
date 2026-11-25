@@ -15,6 +15,8 @@
 import { ageInCompletedYears } from '../domain/billing/modifiers'
 import { validateNhi } from '../domain/nhi'
 import { nameWithoutTitle } from '../domain/names'
+import { shortDay as shortDayOf } from '../domain/dateText'
+import type { AnaesthetistStatus } from '../domain/anaesthetistStatus'
 import { normaliseHpiCpn } from '../domain/surgeons'
 import type { BookingSource, Hospital, List, ProcedureTextSource, Surgeon } from '../domain/types'
 
@@ -205,4 +207,14 @@ export const PROCEDURE_TEXT_SOURCE_LABELS: Record<ProcedureTextSource, string> =
   phone: 'Phone',
   anaesthetist: 'Anaesthetist',
   unrecorded: 'Source not recorded',
+}
+
+/**
+ * An anaesthetist's status as the record, its header and the Anaesthetists list
+ * show it (build plan Phase 52; US-12.1.6): "Active", "Inactive from Thu 31 Dec"
+ * while a last day is ahead, "Inactive" after it.
+ */
+export function anaesthetistStatusLabel(status: AnaesthetistStatus): string {
+  if (status.kind === 'leaving') return `Inactive from ${shortDayOf(status.lastDayISO)}`
+  return status.kind === 'inactive' ? 'Inactive' : 'Active'
 }

@@ -103,7 +103,8 @@ describe('loading full-scale data', () => {
     await loadInto(api)
     const before = Object.keys(api.getState().schedule.slots).length
     advanceClockDays(api, 1)
-    expect(Object.keys(api.getState().schedule.slots).length - before).toBe(170)
+    // 84 active of the 85: Dr Reeves left on 20 Nov (Phase 52), so the new day has no session of his.
+    expect(Object.keys(api.getState().schedule.slots).length - before).toBe(168)
   }, 120_000)
 
   it('a Booking created after the load gets an unused id and the same Contract candidates as at demo scale', async () => {

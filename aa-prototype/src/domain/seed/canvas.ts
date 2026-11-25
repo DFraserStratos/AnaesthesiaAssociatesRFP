@@ -6,7 +6,7 @@
  *
  * For every ACTIVE anaesthetist, on every date from their start date, it
  * writes an AM and a PM Slot, in the catalogue's order:
- *   1. an inactive anaesthetist, or a date before the start date, gets no Slot;
+ *   1. a date the anaesthetist is not active on (`isActiveOn`: before the start date, after a last day) gets no Slot;
  *   2. every other Slot is written FREE (EP-01: "each new Slot starts as free");
  *   3. the anaesthetist's calendar is painted onto the Slot's status and note:
  *      the seed's leave windows, then the active availability series
@@ -31,15 +31,14 @@
 
 import { parseISO } from 'date-fns'
 import type { List, RecurringBooking, SeedLeaveWindow, Session, Slot, SlotStatusKey } from '../types'
-import { projectedListId, slotDatesFor, slotIdFor } from '../slots'
+import { projectedListId, slotIdFor } from '../slots'
 import { defaultSlotStatusKey, isClosedKey, type SlotStatusRecords } from '../slotStatus'
 import { activeOn } from '../recurringBookingProjection'
+import { isActiveOn, type ActivitySpan } from '../anaesthetistStatus'
 import { originForNewList } from '../lists/listOrigin'
 
-export interface CanvasAnaesthetist {
+export interface CanvasAnaesthetist extends ActivitySpan {
   id: string
-  startDateISO: string
-  active: boolean
 }
 
 export interface CanvasMasters {
@@ -113,14 +112,12 @@ export function generateCanvasForDates(masters: CanvasMasters, datesISO: readonl
     if (!seriesBySlot.has(key)) seriesBySlot.set(key, row)
   }
   const defaultKey = defaultSlotStatusKey(masters.statuses)
-  const active = masters.anaesthetists.filter((a) => a.active)
-
   for (const dateISO of datesISO) {
     const dayOfWeek = parseISO(dateISO).getDay()
 
-    for (const anaesthetist of active) {
-      // 1. No Slot before the start date (US-01.1.3).
-      if (slotDatesFor(anaesthetist.startDateISO, [dateISO]).length === 0) continue
+    for (const anaesthetist of masters.anaesthetists) {
+      // 1. No Slot before the start date (US-01.1.3) or after a last day (US-12.1.6): `isActiveOn` on the date.
+      if (!isActiveOn(anaesthetist, dateISO)) continue
       for (const session of SESSIONS) {
         // 2. Every Slot starts at the default status (Free).
         const slot: Slot = {
@@ -181,14 +178,17 @@ export function generateCanvasForDates(masters: CanvasMasters, datesISO: readonl
   return { slots, lists, clashes }
 }
 
+type CanvasAnaesthetistRow = ActivitySpan & { registrationNumber: string }
+
 /** The generator's view of the anaesthetist master. */
 export function canvasAnaesthetists(
-  anaesthetists: Readonly<Record<string, { registrationNumber: string; startDateISO: string; active: boolean }>> | readonly { registrationNumber: string; startDateISO: string; active: boolean }[],
+  anaesthetists: Readonly<Record<string, CanvasAnaesthetistRow>> | readonly CanvasAnaesthetistRow[],
 ): CanvasAnaesthetist[] {
   const rows = Array.isArray(anaesthetists) ? anaesthetists : Object.values(anaesthetists)
-  return (rows as readonly { registrationNumber: string; startDateISO: string; active: boolean }[]).map((a) => ({
+  return (rows as readonly CanvasAnaesthetistRow[]).map((a) => ({
     id: a.registrationNumber,
     startDateISO: a.startDateISO,
-    active: a.active,
+    lastDayISO: a.lastDayISO,
+    activeAgainISO: a.activeAgainISO,
   }))
 }

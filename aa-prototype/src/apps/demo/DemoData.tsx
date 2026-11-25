@@ -7,6 +7,7 @@ import { StatusChip } from '../../shared'
 import { Button } from '../../shared/ui'
 import { SEED_MARKERS, type SeedMarker } from '../../domain/seed'
 import type { ListState } from '../../domain/types'
+import { isActiveOn } from '../../domain/anaesthetistStatus'
 import { UNASSIGNED } from '../../shared/scheduleTerms'
 import { formatCount, locationName } from '../../shared/format'
 import { FULL_SCALE } from '../../domain/seed/fullScale/constants'
@@ -162,12 +163,12 @@ export function DemoData() {
     [state, todayISO, masters.anaesthetists],
   )
 
-  // The canvas invariant: an AM and a PM session today for every active
-  // anaesthetist whose start date has come, and every List in one session.
+  // The canvas invariant: an AM and a PM session today for every anaesthetist
+  // active today (`isActiveOn`), and every List in one session.
   const twoPerDayOk = useMemo(() => {
     const byAnae = new Map<string, number>()
     for (const v of todaysViews) byAnae.set(v.slot.anaesthetistId, (byAnae.get(v.slot.anaesthetistId) ?? 0) + 1)
-    const expected = Object.values(masters.anaesthetists).filter((a) => a.active && a.startDateISO <= todayISO)
+    const expected = Object.values(masters.anaesthetists).filter((a) => isActiveOn(a, todayISO))
     // A Draft List takes no session (catch-up Phase 31); every other List sits in one.
     const assigned = Object.values(schedule.lists).filter((l) => l.state !== 'DRAFT')
     const everyListPlaced = assigned.every((l) => isBackdropList(l) || (l.slotId !== undefined && schedule.slots[l.slotId] !== undefined))

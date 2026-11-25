@@ -187,7 +187,6 @@ export interface AnaesthetistPatch {
   unitValue?: number
   phone?: string
   email?: string
-  active?: boolean
   /** The HPI CPN (mandatory, Phase 26): stored normalised, two digits then four letters, unique across practitioners (Phase 17). */
   hpiId?: string
   /** The bank details (mandatory, Phase 26; OQ-14): replaced whole, never cleared. */
@@ -239,13 +238,12 @@ const OFFICE_HELD_FIELD: Record<Exclude<keyof AnaesthetistPatch, 'unitValue'>, s
   email: 'Contact details are held by the AA office. Ask the office to change them.',
   hpiId: 'The HPI CPN is held by the AA office. Ask the office to change it.',
   bankAccount: 'Bank details are held by the AA office. Ask the office to change them.',
-  active: 'Only the AA office can make an anaesthetist active or inactive.',
   startDateISO: 'The start date is held by the AA office.',
   gstNumber: 'The GST number is held by the AA office.',
 }
 
 /** The fields a patch may carry; anything else is refused, whoever sends it. */
-const PATCH_KEYS: ReadonlySet<string> = new Set(['unitValue', 'phone', 'email', 'active', 'hpiId', 'bankAccount', 'startDateISO', 'gstNumber'])
+const PATCH_KEYS: ReadonlySet<string> = new Set(['unitValue', 'phone', 'email', 'hpiId', 'bankAccount', 'startDateISO', 'gstNumber'])
 
 /** A rate per unit rounded to the cent, or null when it is not a finite amount above zero after rounding. */
 function cleanUnitValue(value: number): number | null {
@@ -275,7 +273,7 @@ function sameFieldValue(key: keyof AnaesthetistPatch, existing: Anaesthetist, va
 
 /**
  * Edit an anaesthetist's profile: rate per unit, contact, HPI CPN, bank
- * details, active flag, start date, GST number. Audited
+ * details, start date, GST number. Audited
  * `anaesthetist.update`, before and after of the changed fields only, the
  * bank number masked in both; a patch that changes nothing is `ok` with no
  * entry.
@@ -289,12 +287,12 @@ function sameFieldValue(key: keyof AnaesthetistPatch, existing: Anaesthetist, va
  * A unit-value change re-prices only Procedures on Lists not yet authorised:
  * an AUTHORISED List keeps the rate locked in its pricing snapshot (Phase 25).
  *
- * Start date and active (catch-up Phase 28; US-01.1.3 "Once created, the Slots
- * can be edited freely"; FT-01.1 "every active anaesthetist") add or remove
- * the anaesthetist's Slots from the demo clock's today on, in the same commit
- * (`canvas.generate` or `canvas.trim`); nothing before today is touched and no
- * List is ever deleted: a change that would remove a Slot holding a List is
- * refused (`listsBeforeStart`, `listsAhead`).
+ * The start date (catch-up Phase 28; US-01.1.3 "Once created, the Slots can
+ * be edited freely") adds or removes the anaesthetist's Slots from the demo
+ * clock's today on, in the same commit (`canvas.generate` or `canvas.trim`);
+ * nothing before today is touched and no List is ever deleted: a change that
+ * would remove a Slot holding a List is refused (`listsBeforeStart`). Active
+ * and inactive are `store/anaesthetistStatusActions.ts` (Phase 52).
  */
 export function editAnaesthetist(
   api: AppStoreApi,
@@ -365,14 +363,13 @@ export function editAnaesthetist(
     },
   ]
 
-  // The canvas follows a start-date or active change, from today on.
-  const canvasChanged = next.startDateISO !== existing.startDateISO || next.active !== existing.active
+  // The canvas follows a start-date change, from today on.
+  const canvasChanged = next.startDateISO !== existing.startDateISO
   const todayISO = state.clock.todayISO
   const delta = canvasChanged ? anaesthetistCanvasDelta(state, next, todayISO) : null
   if (delta !== null && delta.listsInRemoved.length > 0) {
     const n = delta.listsInRemoved.length
     const who = `${existing.name} has ${n} ${n === 1 ? 'List' : 'Lists'}`
-    if (!next.active) return refuse('listsAhead', `${who} from today. Reassign ${n === 1 ? 'it' : 'them'} first.`)
     return refuse('listsBeforeStart', `${who} before that date. Reassign ${n === 1 ? 'it' : 'them'} first.`)
   }
   if (delta !== null && delta.add.slots.length > 0) {
@@ -477,7 +474,9 @@ export function planAnaesthetistCreate(
     hpiId,
     bankAccount: bank.value,
     startDateISO: fields.startDateISO,
-    active: true,
+    lastDayISO: null,
+    inactiveReason: null,
+    activeAgainISO: null,
     ...(gstNumber !== '' ? { gstNumber } : {}),
   }
   const { add: generated, toISO } = anaesthetistCanvasDelta(state, anaesthetist, fromISO)

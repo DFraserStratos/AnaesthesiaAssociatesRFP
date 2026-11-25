@@ -6,6 +6,7 @@
  */
 
 import type { Booking, ImportBatch, ImportRow, List, Patient, Procedure } from '../domain/types'
+import { isActiveOn } from '../domain/anaesthetistStatus'
 import {
   matchingQueue,
   suggestDecision,
@@ -95,7 +96,8 @@ function buildMatchingView(state: ViewState): MatchingView {
   const openSlots: MatchingSlot[] = []
   for (const slot of Object.values(schedule.slots)) {
     if (slotsWithList.has(slot.id)) continue
-    if (masters.anaesthetists[slot.anaesthetistId]?.active === false) continue
+    const owner = masters.anaesthetists[slot.anaesthetistId]
+    if (owner !== undefined && !isActiveOn(owner, slot.dateISO)) continue
     if (!isOpenSlot(slot, undefined, masters.slotStatuses)) continue
     openSlots.push({ id: slot.id, anaesthetistId: slot.anaesthetistId, dateISO: slot.dateISO, session: slot.session })
   }

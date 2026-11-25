@@ -152,7 +152,7 @@ describe('the canvas (catch-up Phase 28: Slots and Lists)', () => {
     }
     expect(slots.length).toBe(dates.length * ANAESTHETISTS.length * 2)
     for (const a of ANAESTHETISTS) {
-      expect(a.active).toBe(true)
+      expect(a.lastDayISO).toBeNull()
       // Every seeded start date precedes the horizon and the billing history.
       expect(a.startDateISO < horizon.startISO).toBe(true)
       for (const date of dates) expect(byKey.get(`${a.registrationNumber}|${date}`)).toBe(2)

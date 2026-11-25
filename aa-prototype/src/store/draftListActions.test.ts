@@ -200,9 +200,9 @@ describe('assignDraftList (US-01.6.3)', () => {
     expect(refused.ok ? '' : refused.message).toMatch(/already has a List that session\. Resolve it first\.$/)
     expect(code(assignDraftList(api, SOUTER_ACTOR, id, { anaesthetistId: ANAE.souter }))).toBe('officeOnly')
     expect(code(assignDraftList(api, FEED, id, { anaesthetistId: ANAE.souter }))).toBe('integrationForbidden')
-    // An inactive anaesthetist (set directly: deactivating one with Lists ahead is refused by its own action).
+    // An inactive anaesthetist (a last day set directly: making one inactive with Lists ahead is refused by its own action).
     const masters = api.getState().masters
-    api.setState({ masters: { ...masters, anaesthetists: { ...masters.anaesthetists, [ANAE.hughes]: { ...masters.anaesthetists[ANAE.hughes]!, active: false } } } })
+    api.setState({ masters: { ...masters, anaesthetists: { ...masters.anaesthetists, [ANAE.hughes]: { ...masters.anaesthetists[ANAE.hughes]!, lastDayISO: '2026-11-23' } } } })
     expect(code(assignDraftList(api, OFFICE, id, { anaesthetistId: ANAE.hughes }))).toBe('anaesthetistInactive')
     advanceClockDays(api, 3)
     const passed = assignDraftList(api, OFFICE, id, { anaesthetistId: ANAE.sharma })
@@ -279,7 +279,7 @@ describe('the availability view (US-01.6.3: everybody potentially available)', (
     expect(av.free.map((r) => r.anaesthetistId)).toEqual(expect.arrayContaining([ANAE.fitzgerald, ANAE.sharma, ANAE.delaney, ANAE.hughes, ANAE.strand]))
     expect(av.notAvailable.map((r) => r.anaesthetistId)).toEqual(expect.arrayContaining([ANAE.beaumont, ANAE.ngatai]))
     const total = av.free.length + av.notAvailable.length + av.occupied.length
-    expect(total).toBe(Object.values(api.getState().masters.anaesthetists).filter((a) => a.active).length)
+    expect(total).toBe(Object.values(api.getState().masters.anaesthetists).filter((a) => a.lastDayISO === null).length)
   })
 })
 

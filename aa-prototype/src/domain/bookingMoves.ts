@@ -27,6 +27,7 @@ import { matchesNameQuery, titledSurname } from './names'
 import { slotIdFor } from './slots'
 import { compareBySurname } from './surgeons'
 import type { AnaesthetistId, AssignedList, Booking, Slot } from './types'
+import { isActiveOn } from './anaesthetistStatus'
 
 /** The slices a single-Booking move reads: Phase 32's, plus the Bookings. */
 export interface BookingMoveInput extends ListMoveInput {
@@ -122,7 +123,7 @@ export function bookingMoveReceivers(input: BookingMoveInput, bookingId: string,
   if (input.occupied === undefined) for (const list of Object.values(input.lists)) if (list.slotId !== undefined) occupied.add(list.slotId)
   const out: BookingReceiver[] = []
   for (const colleague of Object.values(input.anaesthetists)) {
-    if (colleague.registrationNumber === moverId || !colleague.active) continue
+    if (colleague.registrationNumber === moverId || !isActiveOn(colleague, source.list.dateISO)) continue
     if (!matchesNameQuery(colleague.name, query)) continue
     out.push(receiverRow(input, source, colleague.registrationNumber, colleague.name, occupied))
   }
@@ -146,7 +147,7 @@ export type BookingPlacement =
 export function bookingPlacement(input: BookingMoveInput, bookingId: string, toAnaesthetistId: AnaesthetistId): BookingPlacement {
   const source = sourceOf(input, bookingId)
   const receiver = input.anaesthetists[toAnaesthetistId]
-  if (source === undefined || receiver === undefined || !receiver.active || toAnaesthetistId === source.list.anaesthetistId) {
+  if (source === undefined || receiver === undefined || !isActiveOn(receiver, source.list.dateISO) || toAnaesthetistId === source.list.anaesthetistId) {
     return { ok: false, code: 'notFound', message: 'Choose a colleague to move it to.' }
   }
   const row = receiverRow(input, source, toAnaesthetistId, receiver.name)

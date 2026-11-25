@@ -18,6 +18,7 @@
  */
 
 import type { AaFeeInvoice, AaFeeSettings, Anaesthetist, LedgerPair } from '../domain/types'
+import { isActiveInMonth } from '../domain/anaesthetistStatus'
 import { aaFeeMonthLabel, buildAaFeeInvoice, validateAaFeeSettings } from '../domain/billing/aaFee'
 import { BCTI_COUNT_RULE, bctisFor, type BctiRecord } from '../domain/billing/bcti'
 import { roundToCents, toCents } from '../domain/billing/money'
@@ -166,7 +167,7 @@ function pendingAnaesthetists(state: Pick<AppState, 'masters' | 'billing'>, mont
       .map((f) => f.anaesthetistId),
   )
   return Object.values(state.masters.anaesthetists)
-    .filter((a) => a.active && !invoiced.has(a.registrationNumber))
+    .filter((a) => isActiveInMonth(a, monthISO) && !invoiced.has(a.registrationNumber))
     .sort((a, b) => a.registrationNumber.localeCompare(b.registrationNumber))
 }
 

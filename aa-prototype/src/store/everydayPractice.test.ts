@@ -33,6 +33,18 @@ describe('the everyday practice', () => {
     expect(withSlots.size).toBe(85)
   })
 
+  it('has one inactive colleague (Phase 52): Dr Reeves left on 20 Nov, with no Slot or List after it and no own Contract', () => {
+    const inactive = Object.values(s.masters.anaesthetists).filter((a) => a.lastDayISO !== null)
+    expect(inactive.map((a) => [a.name, a.lastDayISO, a.inactiveReason])).toEqual([['Dr Oscar Reeves', '2026-11-20', 'leftPractice']])
+    const id = inactive[0]!.registrationNumber
+    expect(Object.values(s.schedule.slots).filter((x) => x.anaesthetistId === id && x.dateISO > '2026-11-20')).toEqual([])
+    expect(Object.values(s.schedule.lists).filter((l) => l.anaesthetistId === id && l.dateISO > '2026-11-20')).toEqual([])
+    expect(Object.values(s.schedule.lists).some((l) => l.anaesthetistId === id && l.dateISO <= '2026-11-20')).toBe(true)
+    expect(Object.values(s.masters.contracts).filter((c) => c.linkedAnaesthetistId === id)).toEqual([])
+    // Nobody in the scripted cast is inactive.
+    expect(Object.values(core.masters.anaesthetists).every((a) => a.lastDayISO === null)).toBe(true)
+  })
+
   it('keeps every record of the core seed exactly, and its audit as the trail\'s start', () => {
     const maps: [string, Record<string, unknown>, Record<string, unknown>][] = [
       ['anaesthetists', core.masters.anaesthetists, s.masters.anaesthetists],

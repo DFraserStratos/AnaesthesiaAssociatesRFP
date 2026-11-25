@@ -27,6 +27,7 @@ import { titledSurname } from './names'
 import { SEED_STATUS, isOpenSlot, type SlotStatusRecords } from './slotStatus'
 import { slotIdFor } from './slots'
 import type { Anaesthetist, AnaesthetistId, AssignedList, List, Slot, SlotStatusKey } from './types'
+import { isActiveOn } from './anaesthetistStatus'
 import { compareSessions } from './outOfHours'
 
 /** The slices a move reads. */
@@ -78,10 +79,10 @@ export function sessionNotOpenMessage(anaesthetist: Pick<Anaesthetist, 'name'> |
  */
 export function sessionNotOpenRefusal(
   input: Pick<ListMoveInput, 'anaesthetists' | 'slotStatuses'>,
-  slot: Pick<Slot, 'anaesthetistId' | 'status'>,
+  slot: Pick<Slot, 'anaesthetistId' | 'status' | 'dateISO'>,
 ): MoveRefusal | null {
   const anaesthetist = input.anaesthetists[slot.anaesthetistId]
-  if (anaesthetist !== undefined && anaesthetist.active !== true) {
+  if (anaesthetist !== undefined && !isActiveOn(anaesthetist, slot.dateISO)) {
     return { code: 'anaesthetistInactive', message: `${titledSurname(anaesthetist.name)} is not active.` }
   }
   if (!isOpenSlot(slot, undefined, input.slotStatuses)) return { code: 'sessionNotOpen', message: sessionNotOpenMessage(anaesthetist) }
@@ -119,7 +120,7 @@ export function receiveRefusal(
   const occupied = options.occupied ?? input.occupied ?? occupiedSlotIds(input.lists)
   if (occupied.has(to.id)) return { code: 'slotOccupied', message: 'That session already holds a List.' }
   const colleague = input.anaesthetists[to.anaesthetistId]
-  if (colleague?.active !== true) return { code: 'targetNotOpen', message: `${surnameLine(colleague)}'s session cannot take a List.` }
+  if (colleague === undefined || !isActiveOn(colleague, to.dateISO)) return { code: 'targetNotOpen', message: `${surnameLine(colleague)}'s session cannot take a List.` }
   if (!isOpenSlot(to, undefined, input.slotStatuses)) return { code: 'targetNotOpen', message: sessionNotOpenMessage(colleague) }
   return null
 }

@@ -1,16 +1,16 @@
-import { useMemo, type ComponentType, type ReactNode } from 'react'
+import { useEffect, useMemo, type ComponentType, type ReactNode } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { List as ListIcon, LayoutGrid, CircleDollarSign, MoreHorizontal } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { APP_CONFIG } from '../../shell/appConfig'
 import { neutral, accent } from '../../theme/tokens'
-import { type Actor } from '../../store'
+import { recordAnaesthetistSignIn, signInRefusal, useAppStore, type Actor } from '../../store'
 import { SurfaceProvider } from '../../shared'
 import { MoveListPromptProvider } from '../../shared/flows/MoveListPrompt'
 import { availabilityStackLocation, listsStackLocation, mobileTabForPath, MOBILE_TAB_PATH, type MobileTab } from './navigation'
 import type { MobileOutletContext } from './outlet'
 import { SignInScreen } from './screens/SignInScreen'
-import { useAnaesthetistSession, type SessionDefault } from '../../shared/session/anaesthetistSession'
+import { signOutSession, useAnaesthetistSession, type SessionDefault } from '../../shared/session/anaesthetistSession'
 
 interface TabDef {
   key: MobileTab
@@ -136,6 +136,14 @@ export function MobileApp({
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const { signedIn } = useAnaesthetistSession(sessionDefault)
+  // The stored-session gate (Phase 52; US-13.5.3, DM-07): once the clock passes the persona's last day, a
+  // signed-in handset is signed out, one audited row with the reason. Signed out, the effect does nothing more.
+  const noLongerActive = useAppStore((s) => signInRefusal(s, anaesthetistId))
+  useEffect(() => {
+    if (!signedIn || noLongerActive === null) return
+    recordAnaesthetistSignIn(useAppStore, 'signedOut', { anaesthetistId, reason: noLongerActive })
+    signOutSession()
+  }, [signedIn, noLongerActive, anaesthetistId])
 
   const context: MobileOutletContext = useMemo(
     () => ({

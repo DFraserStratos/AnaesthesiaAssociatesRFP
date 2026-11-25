@@ -39,7 +39,7 @@ const rb = (over: Partial<RecurringBooking> = {}): RecurringBooking => ({
 
 function canvas(recurringBookings: RecurringBooking[], over: Partial<CanvasMasters> = {}): { slots: Record<string, Slot>; lists: Record<string, List> } {
   const generated = generateCanvasForDates(
-    { anaesthetists: [{ id: 'A1', startDateISO: '2020-05-11', active: true }, { id: 'A2', startDateISO: '2020-05-11', active: true }], recurringBookings, leave: [], series: [], statuses, ...over },
+    { anaesthetists: [{ id: 'A1', startDateISO: '2020-05-11', lastDayISO: null, activeAgainISO: null }, { id: 'A2', startDateISO: '2020-05-11', lastDayISO: null, activeAgainISO: null }], recurringBookings, leave: [], series: [], statuses, ...over },
     enumerateDatesISO(FROM, TO),
   )
   return { slots: Object.fromEntries(generated.slots.map((s) => [s.id, s])), lists: Object.fromEntries(generated.lists.map((l) => [l.id, l])) }
@@ -205,7 +205,7 @@ describe('public holidays (24 Nov 2026): recurring Lists skip them', () => {
   const labourDay: PublicHoliday = { id: 'PH-T1', dateISO: '2027-03-01', name: 'Public holiday', kind: 'national', openHospitalIds: ['H-AAROOMS'] }
   const skipsDate = recurringSkipFor(holidays)
   const dates = enumerateDatesISO('2027-02-22', '2027-03-08')
-  const masters: CanvasMasters = { anaesthetists: [{ id: 'A1', startDateISO: '2020-05-06', active: true }], recurringBookings: [rb], leave: [], series: [], statuses, skipsDate }
+  const masters: CanvasMasters = { anaesthetists: [{ id: 'A1', startDateISO: '2020-05-06', lastDayISO: null, activeAgainISO: null }], recurringBookings: [rb], leave: [], series: [], statuses, skipsDate }
 
   it('the generator makes no List on a public holiday, but does on a hospital\'s own closure (flagged there)', () => {
     const generated = generateCanvasForDates(masters, dates)

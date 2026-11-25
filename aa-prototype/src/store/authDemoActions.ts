@@ -16,7 +16,7 @@
 
 import { ANAE } from '../domain/seed'
 import type { AppStoreApi } from './appStore'
-import { OFFICE_ACCOUNT_ID, OFFICE_ACTOR, SOUTER_ACTOR } from './demoActors'
+import { OFFICE_ACCOUNT_ID, OFFICE_ACTOR, SOUTER_ACTOR, anaesthetistActor } from './demoActors'
 import { mutate, ok, type Outcome } from './mutate'
 
 const PROVIDER = 'Identity provider (simulated)'
@@ -94,15 +94,28 @@ export type AnaesthetistSignInOutcome = 'signedIn' | 'refused' | 'signedOut'
  * domain slice moves and the Audit viewer shows every attempt logged. Never
  * holds a password. The sign-in session itself is per-device browser state
  * (`shared/session/anaesthetistSession.ts`), not `AppState`.
+ *
+ * Build plan Phase 52 (US-13.5.3, DM-07): the row may name another
+ * anaesthetist's account and carry a reason ("No longer active" after a last
+ * day, on a refusal or a sign-out by the stored-session gate). The defaults
+ * keep Dr Souter's rows exactly as before.
  */
-export function recordAnaesthetistSignIn(api: AppStoreApi, outcome: AnaesthetistSignInOutcome): Outcome<{ rows: number }> {
+export function recordAnaesthetistSignIn(
+  api: AppStoreApi,
+  outcome: AnaesthetistSignInOutcome,
+  options: { anaesthetistId?: string; reason?: string } = {},
+): Outcome<{ rows: number }> {
   const app = 'Mobile (PWA)'
+  const id = options.anaesthetistId ?? ANAE.souter
+  const actor = id === ANAE.souter ? SOUTER_ACTOR : (anaesthetistActor(api.getState(), id) ?? SOUTER_ACTOR)
+  const reason = options.reason !== undefined ? { reason: options.reason } : {}
   if (outcome === 'signedIn') {
-    mutate(api, SOUTER_ACTOR, { entityType: 'account', entityId: ANAE.souter, action: 'auth.signIn', after: { app, provider: PROVIDER } }, () => ({}))
+    mutate(api, actor, { entityType: 'account', entityId: id, action: 'auth.signIn', after: { app, provider: PROVIDER } }, () => ({}))
   } else if (outcome === 'refused') {
-    mutate(api, SOUTER_ACTOR, { entityType: 'account', entityId: ANAE.souter, action: 'auth.signInFailed', after: { app, provider: PROVIDER, reason: 'Unknown account' } }, () => ({}))
+    mutate(api, actor, { entityType: 'account', entityId: id, action: 'auth.signInFailed', after: { app, provider: PROVIDER, reason: options.reason ?? 'Unknown account' } }, () => ({}))
   } else {
-    mutate(api, SOUTER_ACTOR, { entityType: 'account', entityId: ANAE.souter, action: 'auth.signOut', after: { app, provider: PROVIDER } }, () => ({}))
+    // A reason leads, so the Audit viewer's Change column shows why the handset was signed out.
+    mutate(api, actor, { entityType: 'account', entityId: id, action: 'auth.signOut', after: { ...reason, app, provider: PROVIDER } }, () => ({}))
   }
   return ok({ rows: 1 })
 }

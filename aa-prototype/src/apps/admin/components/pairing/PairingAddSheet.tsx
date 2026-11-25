@@ -10,6 +10,7 @@
 import { useState } from 'react'
 import { PAIRING_LABELS, activeEntryOnSide, pairingSentence } from '../../../../domain/pairingPreferences'
 import { compareBySurname } from '../../../../domain/surgeons'
+import { isActiveOn } from '../../../../domain/anaesthetistStatus'
 import type { PairingKind, PairingSide } from '../../../../domain/types'
 import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
 import { activeSurgeons, useAppStore, type Actor } from '../../../../store'
@@ -32,6 +33,7 @@ export function PairingAddSheet({ perspective, subjectId, actor, onClose }: Prop
   const entries = usePairingEntries()
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const surgeons = useAppStore((s) => s.masters.surgeons)
+  const todayISO = useAppStore((s) => s.clock.todayISO)
   const ownSide: PairingSide = perspective === 'surgeon' ? 'SURGEON' : 'ANAESTHETIST'
   const otherSide: PairingSide = ownSide === 'SURGEON' ? 'ANAESTHETIST' : 'SURGEON'
   const [kind, setKind] = useState<PairingKind>('NOT_PREFERRED')
@@ -46,7 +48,7 @@ export function PairingAddSheet({ perspective, subjectId, actor, onClose }: Prop
 
   const counterparts = (
     perspective === 'surgeon'
-      ? Object.values(anaesthetists).filter((a) => a.active).map((a) => ({ id: a.registrationNumber, name: a.name }))
+      ? Object.values(anaesthetists).filter((a) => isActiveOn(a, todayISO)).map((a) => ({ id: a.registrationNumber, name: a.name }))
       : activeSurgeons({ masters: { surgeons } }).map((s) => ({ id: s.id, name: s.name }))
   )
     .sort(compareBySurname)

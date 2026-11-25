@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { Logo } from '../../../shared/Logo'
 import { DemoBadge } from '../../../shared/DemoBadge'
-import { Button, Card, Pill, TextField } from '../../../shared/ui'
+import { Button, Card, Notice, Pill, TextField } from '../../../shared/ui'
+import { stampText } from '../../../shared/format'
 import { ANAE } from '../../../domain/seed'
-import { recordAnaesthetistSignIn, useAppStore } from '../../../store'
+import { latestNoLongerActiveRefusal, recordAnaesthetistSignIn, signInRefusal, useAppStore } from '../../../store'
 import { SIGN_IN_PROVISIONAL, signInSession } from '../../../shared/session/anaesthetistSession'
 import { neutral, type as typeScale } from '../../../theme/tokens'
 
@@ -39,6 +40,8 @@ export function SignInScreen() {
   const [password, setPassword] = useState(DEMO_PASSWORD)
   const [emailError, setEmailError] = useState<EmailError>(null)
   const [passwordError, setPasswordError] = useState(false)
+  const audit = useAppStore((s) => s.audit)
+  const refused = useMemo(() => latestNoLongerActiveRefusal({ audit }), [audit])
 
   function submit(event: FormEvent) {
     event.preventDefault()
@@ -52,6 +55,15 @@ export function SignInScreen() {
     }
     if (noPassword) {
       setEmailError(null)
+      return
+    }
+    // Phase 52 (US-13.5.3, DM-07): an anaesthetist whose last day has passed is refused, with its own audited reason.
+    const state = useAppStore.getState()
+    const account = Object.values(state.masters.anaesthetists).find((a) => a.email.toLowerCase() === typed.toLowerCase())
+    const refusal = account === undefined ? null : signInRefusal(state, account.registrationNumber)
+    if (account !== undefined && refusal !== null) {
+      setEmailError(null)
+      recordAnaesthetistSignIn(useAppStore, 'refused', { anaesthetistId: account.registrationNumber, reason: refusal })
       return
     }
     if (typed.toLowerCase() !== demoEmail.toLowerCase()) {
@@ -97,6 +109,14 @@ export function SignInScreen() {
             Your Lists, Bookings and balances, on your phone.
           </p>
         </div>
+        {refused !== null && (
+          <Notice tone="warning" title="No longer active" live="status" shot="sign-in-no-longer-active">
+            {refused.who}&apos;s last day has passed, so they can no longer sign in. Ask the AA office if this is wrong.
+            <span style={{ display: 'block', marginTop: 4, fontSize: typeScale.small.size, color: neutral.slate }}>
+              Logged: Sign-in failed, {stampText(refused.atISO)}
+            </span>
+          </Notice>
+        )}
         <form onSubmit={submit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <TextField
             label="Email"

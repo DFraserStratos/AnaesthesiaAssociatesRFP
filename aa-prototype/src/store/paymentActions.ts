@@ -291,7 +291,8 @@ export function recordUnmatchedReceipt(api: AppStoreApi, input: UnmatchedReceipt
   if (receiptKeySeen(state, input.idempotencyKey)) return refuse('alreadyApplied', 'This payment is already recorded against an invoice.')
   if (input.anaesthetistId !== undefined) {
     const a = state.masters.anaesthetists[input.anaesthetistId]
-    if (a === undefined || a.active === false) return refuse('unknownAnaesthetist', 'The receipt names no active anaesthetist.')
+    // Existence only (Phase 52): a payment for work before an inactive anaesthetist's last day still lands.
+    if (a === undefined) return refuse('unknownAnaesthetist', 'The receipt names no known anaesthetist.')
   }
   let id = ''
   const metas: MutationMeta[] = []

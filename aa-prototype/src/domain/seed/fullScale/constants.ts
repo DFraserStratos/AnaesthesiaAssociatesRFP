@@ -80,6 +80,13 @@ export const FULL_SCALE = {
   prepaidShare: 0.001,
   /** Generated anaesthetists who keep a prepaid price list with the office. */
   prepaidPriceListAnaesthetists: 6,
+  /**
+   * The one inactive colleague (build plan Phase 52; US-12.1.6): a light-load
+   * colleague with no own Contracts and none of the scripted cast, who left the
+   * practice on this last day, so an inactive record, its history card and the
+   * sign-in refusal are demoable. The builder gives them no Slot or List after it.
+   */
+  inactiveColleague: { surname: 'Reeves', lastDayISO: '2026-11-20', reason: 'leftPractice' },
   /** Authorised Lists carrying a problem the processing monitor recognises (a few in a thousand). */
   monitorProblemShare: 0.0015,
   /**

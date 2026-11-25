@@ -155,7 +155,7 @@ describe('alertOffice (US-03.6.3)', () => {
     const api = store()
     const booking = firstBooking(api, LIST_MOVE_DEMO.movableListId)
     expect(alertOffice(api, SOUTER, { listId: LIST_MOVE_DEMO.movableListId, bookingId: booking.id, note: 'Check please' }).ok).toBe(true)
-    const to = Object.values(api.getState().schedule.slots).find((x) => x.dateISO === '2026-11-30' && x.session === 'PM' && x.anaesthetistId !== ANAE.souter && x.status === 'free' && !Object.values(api.getState().schedule.lists).some((l) => l.slotId === x.id) && api.getState().masters.anaesthetists[x.anaesthetistId]?.active === true)!
+    const to = Object.values(api.getState().schedule.slots).find((x) => x.dateISO === '2026-11-30' && x.session === 'PM' && x.anaesthetistId !== ANAE.souter && x.status === 'free' && !Object.values(api.getState().schedule.lists).some((l) => l.slotId === x.id) && api.getState().masters.anaesthetists[x.anaesthetistId]?.lastDayISO === null)!
     const moved = moveBookingToAnaesthetist(api, SOUTER, booking.id, to.anaesthetistId)
     expect(moved.ok).toBe(true)
     const nowOn = api.getState().schedule.bookings[booking.id]!.listId

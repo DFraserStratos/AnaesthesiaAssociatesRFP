@@ -494,8 +494,11 @@ export const PERSIST_KEY = 'aa-demo'
  *  v77: recurring Lists skip public holidays (`recurringSkipFor`): the cast's ten Labour Day and Anniversary Day Lists and
  *  the practice's go; the practice covers 90% of its later leave clashes. Reseeds on load.
  *  v78: the demo day moves 18 weeks to Tue 24 Nov 2026 (every seeded date with it), and the hospitals' Christmas
- *  shutdowns (`shutdown` closures) skip recurring Lists. Reseeds on load. */
-export const PERSIST_VERSION = 78
+ *  shutdowns (`shutdown` closures) skip recurring Lists. Reseeds on load.
+ *  v79 (lane/a): build plan Phase 52, an anaesthetist inactive from a last day: `Anaesthetist.active` deleted for
+ *  `lastDayISO`, `inactiveReason` and `activeAgainISO` (`isActiveOn`); Dr Oscar Reeves, of the 71, left on 20 Nov 2026.
+ *  Reseeds on load. */
+export const PERSIST_VERSION = 79
 
 /** The intake slice: seeded empty, the presenter imports or a trigger delivers (catch-up Phase 33). */
 export function emptyIntakeSlice(): IntakeSlice {

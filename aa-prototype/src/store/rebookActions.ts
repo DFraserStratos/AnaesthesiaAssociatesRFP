@@ -29,6 +29,7 @@
  */
 
 import type { AssignedList, Booking, Contract, Procedure, ProcedurePayer, Session } from '../domain/types'
+import { isActiveOn } from '../domain/anaesthetistStatus'
 import type { AppState, AppStoreApi } from './appStore'
 import { mutate, ok, refuse, withChangeSet, type Actor, type MutationMeta, type Outcome } from './mutate'
 import { addProcedure, createBooking } from './bookingActions'
@@ -188,7 +189,7 @@ export function rebookTargetsFor(state: Pick<AppState, 'schedule' | 'masters' | 
   }
   const rank = (l: AssignedList) => (l.dateISO === sourceDate ? 0 : 1)
   return anaesthetistsInRosterOrder(state)
-    .filter((a) => a.active && a.registrationNumber !== source?.anaesthetistId)
+    .filter((a) => isActiveOn(a, state.clock.todayISO) && a.registrationNumber !== source?.anaesthetistId)
     .map((a) => ({
       anaesthetistId: a.registrationNumber,
       name: a.name,

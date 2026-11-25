@@ -77,9 +77,9 @@ describe('generation: free Slots, then the calendar, then recurring bookings', (
   })
   const masters = (over: Partial<CanvasMasters> = {}): CanvasMasters => ({
     anaesthetists: [
-      { id: 'A1', startDateISO: '2020-05-11', active: true },
-      { id: 'A2', startDateISO: '2020-05-11', active: false },
-      { id: 'A3', startDateISO: '2026-12-09', active: true },
+      { id: 'A1', startDateISO: '2020-05-11', lastDayISO: null, activeAgainISO: null },
+      { id: 'A2', startDateISO: '2020-05-11', lastDayISO: '2020-05-10', activeAgainISO: null },
+      { id: 'A3', startDateISO: '2026-12-09', lastDayISO: null, activeAgainISO: null },
     ],
     recurringBookings: [recurring({}), recurring({ id: 'PLY', dayOfWeek: 6 })],
     leave: [],

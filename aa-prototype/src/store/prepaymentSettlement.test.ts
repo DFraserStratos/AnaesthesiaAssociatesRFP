@@ -223,7 +223,7 @@ describe('the transfer at authorisation (OQ-125 provisional)', () => {
 describe('a move changes nothing; the transfer pays whoever did the List', () => {
   function colleagueFor(listId: string) {
     const from = api.getState().schedule.lists[listId]!.anaesthetistId
-    return Object.values(api.getState().masters.anaesthetists).find((a) => a.active && a.registrationNumber !== from)!.registrationNumber
+    return Object.values(api.getState().masters.anaesthetists).find((a) => a.lastDayISO === null && a.registrationNumber !== from)!.registrationNumber
   }
 
   it('the office reassigns the List: the collect pair and the balance are untouched; the transfer pays the new anaesthetist', () => {
@@ -267,7 +267,7 @@ describe('a move changes nothing; the transfer pays whoever did the List', () =>
 
 describe("the anaesthetist's own moves change nothing here either", () => {
   const SOUTER_ME: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: '34821' }
-  const others = () => Object.values(api.getState().masters.anaesthetists).filter((a) => a.active && a.registrationNumber !== '34821').map((a) => a.registrationNumber)
+  const others = () => Object.values(api.getState().masters.anaesthetists).filter((a) => a.lastDayISO === null && a.registrationNumber !== '34821').map((a) => a.registrationNumber)
 
   it("Dr Souter moves her own List to a colleague (32): one list.ownerMove, no list.reassign; authorised, the transfer pays the colleague", () => {
     const [invoiceId] = approveAllPrepayments(api, RILEY)

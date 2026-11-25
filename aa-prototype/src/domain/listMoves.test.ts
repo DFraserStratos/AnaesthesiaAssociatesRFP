@@ -16,7 +16,9 @@ const DAY = '2026-11-26'
 const TODAY = '2026-11-24'
 
 function anaesthetist(id: string, name: string, active = true): Anaesthetist {
-  return { registrationNumber: id, name, phone: `021 ${id}`, email: `${id}@x.example`, unitValue: 25, hpiId: id, bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, startDateISO: '2010-05-07', active }
+  // Inactive: a last day long past (Phase 52; `isActiveOn`).
+  const status = { lastDayISO: active ? null : '2020-01-01', inactiveReason: null, activeAgainISO: null }
+  return { registrationNumber: id, name, phone: `021 ${id}`, email: `${id}@x.example`, unitValue: 25, hpiId: id, bankAccount: { accountName: 'Test Account', accountNumber: '99-0101-0099001-00' }, startDateISO: '2010-05-07', ...status }
 }
 
 function slot(anaesthetistId: string, session: Session = 'AM', status: string = SEED_STATUS.free, dateISO = DAY): Slot {

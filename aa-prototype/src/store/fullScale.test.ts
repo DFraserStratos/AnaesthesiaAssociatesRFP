@@ -569,6 +569,12 @@ describe('the practice: the 71 as people (names, working lives, the office\'s vi
         for (const s of Object.values(state.schedule.slots)) if (s.anaesthetistId === id) expect(s.dateISO >= start).toBe(true)
         continue
       }
+      // The one colleague who has left (Phase 52, Dr Reeves): nothing after the last day instead.
+      const lastDay = state.masters.anaesthetists[id]!.lastDayISO
+      if (lastDay !== null && lastDay < TODAY) {
+        expect(dates.every((d) => d <= lastDay), id).toBe(true)
+        continue
+      }
       expect(dates.some((d) => d >= TODAY && d <= addDaysISO(TODAY, 28)), id).toBe(true)
     }
   })

@@ -48,7 +48,9 @@ export function mkAnaesthetist(overrides: Partial<Anaesthetist> = {}): Anaesthet
     hpiId: '91ZBBB',
     bankAccount: { accountName: 'Melanie Souter', accountNumber: '99-0101-0030821-00' },
     startDateISO: '2015-05-11',
-    active: true,
+    lastDayISO: null,
+    inactiveReason: null,
+    activeAgainISO: null,
     ...overrides,
   }
 }

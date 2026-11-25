@@ -93,7 +93,7 @@ describe('draftListAvailability (US-01.6.3: everybody potentially available)', (
   const slots = Object.fromEntries(
     [slot('A1', 'free'), slot('A2', 'unavailable'), slot('A3', 'holiday'), slot('A4', 'free'), slot('A5', 'ST0001'), slot('A6', 'ST0002')].map((s) => [s.id, s]),
   )
-  const anaesthetists = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8'].map((id) => ({ registrationNumber: id, active: id !== 'A8' }))
+  const anaesthetists = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8'].map((id) => ({ registrationNumber: id, startDateISO: '2020-01-01', lastDayISO: id === 'A8' ? '2020-01-02' : null, activeAgainISO: null }))
   const out = draftListAvailability({
     list: draft(),
     anaesthetists,

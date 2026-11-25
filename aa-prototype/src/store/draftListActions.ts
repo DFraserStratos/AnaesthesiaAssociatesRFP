@@ -27,6 +27,7 @@ import { closureSourcesOf, closuresFor } from '../domain/holidays'
 import { isOpenSlot } from '../domain/slotStatus'
 import { sessionNotOpenRefusal } from '../domain/listMoves'
 import { LIST_KINDS, type DraftList, type ListKind, type ListOrigin, type RequestSource, type Session } from '../domain/types'
+import { isActiveOn } from '../domain/anaesthetistStatus'
 import { originForNewList } from '../domain/lists/listOrigin'
 import { isEmailShaped } from '../domain/billing/payer'
 import { drName } from './conflictReconcile'
@@ -206,7 +207,7 @@ function assignDraftListUnscoped(
   if (!isDraftList(list)) return refuse('notDraftList', isRemoved(list) ? 'This Draft List was removed.' : 'This List already has an anaesthetist.')
   const anaesthetist = state.masters.anaesthetists[input.anaesthetistId]
   if (anaesthetist === undefined) return refuse('anaesthetistNotFound', 'Anaesthetist not found.')
-  if (!anaesthetist.active) return refuse('anaesthetistInactive', `${drName(state.masters, anaesthetist.registrationNumber)} is not active.`)
+  if (!isActiveOn(anaesthetist, list.dateISO)) return refuse('anaesthetistInactive', `${drName(state.masters, anaesthetist.registrationNumber)} is not active.`)
   if (list.dateISO < state.clock.todayISO) return refuse('datePassed', "This Draft List's day has passed. Change its date or remove it.")
   const pairing = pairingRefusal(list, state.masters, undefined, list)
   if (pairing !== null) return pairing

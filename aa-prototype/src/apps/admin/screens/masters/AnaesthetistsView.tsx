@@ -5,7 +5,8 @@ import { maskBankAccount } from '../../../../domain/bankAccount'
 import { format, parseISO } from 'date-fns'
 import { Link, useNavigate } from 'react-router-dom'
 import { TIER_LABELS, TIER_VALUES, tierFor } from '../../../../domain/pairingPreferences'
-import { useAppStore, type Actor } from '../../../../store'
+import { useAppStore, useToday, type Actor } from '../../../../store'
+import { statusOn } from '../../../../domain/anaesthetistStatus'
 import { EditAnaesthetistSheet } from '../../flows/EditAnaesthetistSheet'
 import { AddAnaesthetistFlow } from '../../flows/AddAnaesthetistFlow'
 import { TierPill, usePriorityTiers } from '../../components/pairing'
@@ -15,7 +16,7 @@ import { PageToolbar } from '../../components/AdminPage'
 import { EditCell, MasterHeader, MasterTable, type MasterColumn } from './chrome'
 import { rowCellStyle } from './tableStyles'
 import { anaesthetistRecordPath } from '../../mastersPaths'
-import { formatCurrency, HPI_CPN_LABEL } from '../../../../shared/format'
+import { anaesthetistStatusLabel, formatCurrency, HPI_CPN_LABEL } from '../../../../shared/format'
 import { RATE_PER_UNIT } from '../../../../shared/profile/profileCopy'
 
 /**
@@ -49,6 +50,7 @@ const TIER_FILTER_OPTIONS = [{ value: 'all', label: 'All' }, ...TIER_VALUES.map(
 export function AnaesthetistsView({ actor }: { actor: Actor }) {
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const tiers = usePriorityTiers()
+  const todayISO = useToday()
   const navigate = useNavigate()
   const [editId, setEditId] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
@@ -113,7 +115,10 @@ export function AnaesthetistsView({ actor }: { actor: Actor }) {
               </td>
               <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>
                 <div className="mono">{format(parseISO(a.startDateISO), 'd MMM yyyy')}</div>
-                <div style={{ fontSize: 12, color: a.active ? neutral.slate : neutral.mist }}>{a.active ? 'Active' : 'Inactive'}</div>
+                {/* Phase 52: the status on the demo clock's today (`statusOn`): Active, Inactive from <day>, Inactive. */}
+                <div data-anaesthetist-status={statusOn(a, todayISO).kind} style={{ fontSize: 12, color: statusOn(a, todayISO).kind === 'inactive' ? neutral.mist : neutral.slate }}>
+                  {anaesthetistStatusLabel(statusOn(a, todayISO))}
+                </div>
               </td>
               <EditCell onClick={() => setEditId(a.registrationNumber)} style={rowCellStyle} />
             </ClickableRow>
