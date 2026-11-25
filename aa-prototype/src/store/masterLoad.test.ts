@@ -342,8 +342,8 @@ describe('what the samples load', () => {
     const api = createAppStore()
     const id = stage(api, 'surgeons')
     const rows = loadOf(api, id).rows
-    expect(rows.find((r) => r.cells[0] === 'Dr Aroha')!.notes).toEqual(['No surname: complete it in Master data.'])
-    expect(rows.find((r) => r.cells[0] === 'Jane Mercer')!.notes).toEqual(['No title: complete it in Master data.'])
+    expect(rows.find((r) => r.cells[0] === 'Dr Aroha')!.notes).toEqual(['No surname: complete it in People.'])
+    expect(rows.find((r) => r.cells[0] === 'Jane Mercer')!.notes).toEqual(['No title: complete it in People.'])
     expect(rows.find((r) => r.cells[0] === 'Dr Aroha')!.status).toBe('valid')
     expect(rows.find((r) => r.cells[0] === 'Jane Mercer')!.status).toBe('valid')
     expect(commitMasterLoad(api, SEED_LOAD_ACTOR, id).ok).toBe(true)

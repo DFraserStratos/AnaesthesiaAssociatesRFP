@@ -12,6 +12,7 @@ import { neutral } from '../../theme/tokens'
 import { Card } from './Card'
 import { CountBadge } from './CountBadge'
 import { TextAction } from './TextAction'
+import type { DataAttributes } from './Field'
 
 type DataProps = { [key: `data-${string}`]: string }
 
@@ -43,7 +44,7 @@ export interface RailSectionRow {
   data?: DataProps
 }
 
-export interface RailSectionProps {
+export interface RailSectionProps extends DataAttributes {
   title: string
   /** The hidden noun after the count, for a screen reader ("Procedures and Bookings"). */
   countNoun?: string
@@ -57,15 +58,16 @@ export interface RailSectionProps {
   allTo: string
   /** A short note beside the title. */
   aside?: ReactNode
-  /** The section's hook; See all carries `${shot}-all`. */
+  /** The section's hook (`data-*` pass through to it); See all carries `${shot}-all`. */
   shot: string
   style?: CSSProperties
 }
 
-export function RailSection({ title, countNoun, rows, limit = 5, empty, allTo, aside, shot, style }: RailSectionProps) {
+export function RailSection({ title, countNoun, rows, limit = 5, empty, allTo, aside, shot, style, ...data }: RailSectionProps) {
   const shown = rows.slice(0, limit)
   return (
     <Card
+      {...data}
       title={<>{title} <CountBadge count={rows.length} hideAtZero={false} mono {...(countNoun !== undefined ? { srNoun: countNoun } : {})} /></>}
       shot={shot}
       {...(aside !== undefined ? { aside } : {})}

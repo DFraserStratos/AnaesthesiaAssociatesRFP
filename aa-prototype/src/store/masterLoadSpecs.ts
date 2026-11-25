@@ -82,9 +82,9 @@ export function surgeonNameNotes(name: string): string[] {
   const t = name.trim()
   const notes: string[] = []
   const hasTitle = TITLE.test(t)
-  if (!hasTitle) notes.push('No title: complete it in Master data.')
+  if (!hasTitle) notes.push('No title: complete it in People.')
   const rest = t.replace(TITLE, '').trim()
-  if (rest.split(/\s+/).filter((w) => w !== '').length < 2) notes.push('No surname: complete it in Master data.')
+  if (rest.split(/\s+/).filter((w) => w !== '').length < 2) notes.push('No surname: complete it in People.')
   return notes
 }
 

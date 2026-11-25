@@ -6,8 +6,9 @@
  *
  * - Search is case-insensitive on the name and the other fields each list names;
  *   an HPI CPN or registration number matches with its spaces taken out.
- * - Anaesthetists: Active (default), Inactive or All by `isActiveOn` on the given
- *   day (Phase 52), and a tier; in surname order.
+ * - Anaesthetists: Active (default), Inactive or All by `statusOn` on the given
+ *   day (Phase 52: one starting later, or leaving, is still Active), and a tier;
+ *   in surname order.
  * - Surgeons: Active (default), Retired or All by `isRetired`, and a specialty; in
  *   surname order.
  * - Specialties: by name.
@@ -15,7 +16,7 @@
 
 import type { Anaesthetist, Surgeon } from '../../../../domain/types'
 import type { Specialty } from '../../../../domain/specialties'
-import { isActiveOn } from '../../../../domain/anaesthetistStatus'
+import { statusOn } from '../../../../domain/anaesthetistStatus'
 import { isRetired } from '../../../../domain/masterLifecycle'
 import { compareBySurname } from '../../../../domain/surgeons'
 import { surnameOf } from '../../../../shared/format'
@@ -54,7 +55,7 @@ export interface AnaesthetistListState {
   tier: TierFilter
 }
 
-/** Anaesthetists by name, registration number or HPI CPN; Active, Inactive or All on `todayISO`; a tier through `tierOf`; surname order. */
+/** Anaesthetists by name, registration number or HPI CPN; Active, Inactive or All by `statusOn` on `todayISO`; a tier through `tierOf`; surname order. */
 export function anaesthetistRows(
   all: readonly Anaesthetist[],
   { q, status, tier }: AnaesthetistListState,
@@ -62,7 +63,7 @@ export function anaesthetistRows(
   tierOf: (anaesthetistId: string) => number,
 ): Anaesthetist[] {
   return all
-    .filter((a) => status === ALL || (status === 'active') === isActiveOn(a, todayISO))
+    .filter((a) => status === ALL || (status === 'inactive') === (statusOn(a, todayISO).kind === 'inactive'))
     .filter((a) => tier === ALL || String(tierOf(a.registrationNumber)) === tier)
     .filter((a) => matches(q, [a.name], [a.registrationNumber, a.hpiId]))
     .sort((a, b) => surnameOf(a.name).localeCompare(surnameOf(b.name)) || a.name.localeCompare(b.name))

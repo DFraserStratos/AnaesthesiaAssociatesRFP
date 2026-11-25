@@ -16,8 +16,7 @@
 
 import { createContext, useContext, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Outlet, useLocation, useOutletContext } from 'react-router-dom'
-import { LineTabLink, LineTabs } from '../../../shared/ui'
-import { accent, fontFamily, neutral } from '../../../theme/tokens'
+import { CountBadge, LineTabLink, LineTabs } from '../../../shared/ui'
 import { AdminPage, type AdminPageMode } from '../components/AdminPage'
 import { useWaitingNhiRows } from '../intake/WaitingNhiTab'
 
@@ -80,13 +79,9 @@ export function IntakeScreen() {
         <LineTabs label="Intake" shot="intake-tabs">
           {INTAKE_TABS.map((t) => {
             const active = pathname.startsWith(t.path)
-            // Only Waiting for NHI carries a count: its rows, as the Patients tab showed it.
+            // Only Waiting for NHI carries a count: its rows, on the shared CountBadge as the Contracts and People tabs show theirs.
             const badge =
-              t.path === '/admin/intake/waiting' ? (
-                <span data-shot="intake-waiting-count" style={{ fontFamily: fontFamily.mono, fontSize: 12, fontWeight: 500, fontVariantNumeric: 'tabular-nums', color: active ? accent.base : neutral.slate }}>
-                  {waitingCount}
-                </span>
-              ) : undefined
+              t.path === '/admin/intake/waiting' ? <CountBadge count={waitingCount} hideAtZero={false} mono shot="intake-waiting-count" /> : undefined
             return (
               <LineTabLink key={t.path} to={t.path} active={active} {...(badge !== undefined ? { badge } : {})}>
                 {t.label}

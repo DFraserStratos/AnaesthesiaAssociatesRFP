@@ -115,8 +115,8 @@ test('Seed load: staged RVG groups, surgeons and Contracts loads', async ({ page
   // No surname: valid, with its note.
   const aroha = surgeons.locator('tr[data-load-row]').filter({ hasText: 'Dr Aroha' })
   await expect(aroha).toHaveAttribute('data-row-status', 'valid')
-  await expect(aroha).toContainText('No surname: complete it in Master data.')
-  await expect(surgeons.locator('tr[data-load-row]').filter({ hasText: 'Jane Mercer' })).toContainText('No title: complete it in Master data.')
+  await expect(aroha).toContainText('No surname: complete it in People.')
+  await expect(surgeons.locator('tr[data-load-row]').filter({ hasText: 'Jane Mercer' })).toContainText('No title: complete it in People.')
   await surgeons.scrollIntoViewIfNeeded()
   await page.screenshot({ path: 'visual/shots/p42-07-surgeons-staged.png', fullPage: true })
 

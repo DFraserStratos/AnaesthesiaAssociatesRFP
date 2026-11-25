@@ -77,7 +77,8 @@ test('admin phase 07 master data', async ({ page }) => {
   await page.getByRole('button', { name: 'Master data' }).click()
   await page.waitForTimeout(300)
   await expect(page.getByRole('heading', { name: 'Master data' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Anaesthetists' })).toBeVisible()
+  // Master data opens on Hospitals since build plan Phase 53; anaesthetists are in People.
+  await expect(page.getByRole('heading', { name: 'Hospitals & holidays' })).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a7-04-masters.png', fullPage: true })
 
   // The RVG groups (catch-up Phase 19): rows under their anatomy headings; three rows share T2 (the guide's two and AA's own).
@@ -86,7 +87,7 @@ test('admin phase 07 master data', async ({ page }) => {
   await expect(page.locator('[data-rvg-anatomy=Head]')).toBeVisible()
   await expect(page.locator('[data-shot=masters-rvg-groups] tr[data-rvg-group-code=T2]')).toHaveCount(3)
   await page.screenshot({ path: 'visual/shots/a7-04-masters-rvg-groups.png', fullPage: true })
-  await page.getByRole('button', { name: 'Anaesthetists' }).click()
+  await page.locator('nav[aria-label="Admin"]').getByRole('button', { name: 'People' }).click()
 
   // Edit an anaesthetist's unit value: on the record's Rate and tier card (build plan Phase 50), Edit then Save.
   await page.locator('tr[data-anaesthetist]').first().locator('.aa-table-entity-link').click()
@@ -100,8 +101,9 @@ test('admin phase 07 master data', async ({ page }) => {
 
   // Parties (catch-up Phase 18): a tab of the Contracts section since build plan Phase 48, grouped by kind;
   // Master data keeps no Parties or Insurers view and points across.
+  await page.goto('/admin/masters')
   await expect(page.locator('[data-masters-view="parties"]')).toHaveCount(0)
-  await expect(page.locator('[data-shot="masters-moved-note"]')).toContainText('now in Contracts')
+  await expect(page.locator('[data-shot="masters-moved-note"]')).toContainText('Funding tags are in Contracts')
   await page.goto('/admin/contracts/parties')
   const parties = page.locator('[data-shot="parties"]')
   await expect(parties.locator('tr[data-party="PY-NIB"]').getByText('Email')).toBeVisible()

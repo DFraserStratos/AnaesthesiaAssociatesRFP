@@ -61,6 +61,15 @@ describe('EditableCard and useCardEdit', () => {
     expect(hook('t-card-error')).toBeNull()
   })
 
+  it('passes data-* attributes through to the card', () => {
+    render(
+      <EditableCard title="Rate" shot="t-data" editable editing={false} onEdit={() => undefined} onCancel={() => undefined} onSave={() => undefined} error={null} data-tier="3">
+        <span>$41.00</span>
+      </EditableCard>,
+    )
+    expect(hook('t-data')?.getAttribute('data-tier')).toBe('3')
+  })
+
   it('a card that is not editable offers no Edit', () => {
     render(<NameCard commit={() => ({ ok: true })} editable={false} />)
     expect(hook('t-card-edit')).toBeNull()

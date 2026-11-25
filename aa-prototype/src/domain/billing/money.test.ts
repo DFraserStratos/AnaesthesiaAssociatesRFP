@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatMoney, parseAmount, parseAmountOrNaN, roundToCents } from './money'
+import { amountInputText, formatMoney, parseAmount, parseAmountOrNaN, roundToCents } from './money'
 import { parsePriceText } from './priceRanges'
 
 /** `formatCurrency` as it was before U1 (shared/format.ts), the pin formatMoney's defaults match on everything but the sign. */
@@ -108,5 +108,13 @@ describe('parseAmount', () => {
       }).map((p) => p.text)
     expect(changed('contractRail')).toEqual(['12.345', '.5', '5.', '1e3'])
     expect(changed('aaFees')).toEqual(['12.345', '-5', '.5', '5.', '1e3'])
+  })
+})
+
+describe('amountInputText', () => {
+  it('writes an amount as an amount field starts out holding, and parseAmount reads it back', () => {
+    expect(amountInputText(41.5)).toBe('41.50')
+    expect(amountInputText(1234)).toBe('1234.00')
+    expect(parseAmount(amountInputText(36.25))).toBe(36.25)
   })
 })

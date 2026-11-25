@@ -44,7 +44,7 @@ export {
 } from '../domain/dateText'
 
 /** NZ dollars: "$3,100.00", a negative "-$34.45" (`formatCurrency` is the name the screens already call). Typed money: `parseAmount`. */
-export { formatMoney, formatMoney as formatCurrency, parseAmount, parseAmountOrNaN } from '../domain/billing/money'
+export { amountInputText, formatMoney, formatMoney as formatCurrency, parseAmount, parseAmountOrNaN } from '../domain/billing/money'
 
 export type { MoneyFormat } from '../domain/billing/money'
 

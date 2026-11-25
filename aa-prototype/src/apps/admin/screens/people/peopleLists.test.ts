@@ -34,6 +34,14 @@ describe('anaesthetistRows', () => {
     expect(anaesthetistRows(left, { ...all, status: 'active' }, '2026-10-30', tierOf).map((a) => a.registrationNumber)).toContain(ANAE.ngata)
   })
 
+  it('one who starts later, or whose last day is ahead, is Active, never Inactive', () => {
+    const later = anaesthetists.map((a) => (a.registrationNumber === ANAE.chen ? { ...a, startDateISO: '2027-01-05' } : a.registrationNumber === ANAE.ngata ? { ...a, lastDayISO: '2026-12-31' } : a))
+    const active = anaesthetistRows(later, { ...all, status: 'active' }, TODAY, tierOf).map((a) => a.registrationNumber)
+    expect(active).toContain(ANAE.chen)
+    expect(active).toContain(ANAE.ngata)
+    expect(anaesthetistRows(later, { ...all, status: 'inactive' }, TODAY, tierOf)).toEqual([])
+  })
+
   it('filters by tier, and lists in surname order', () => {
     expect(anaesthetistRows(anaesthetists, { ...all, tier: '1' }, TODAY, tierOf).map((a) => a.registrationNumber)).toEqual([ANAE.souter])
     const surnames = anaesthetistRows(anaesthetists, all, TODAY, tierOf).map((a) => surnameOf(a.name))

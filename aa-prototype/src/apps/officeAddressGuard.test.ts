@@ -62,8 +62,9 @@ describe('one helper for the office\'s emails to a surgeon (catch-up Phase 17b)'
   })
 
   it('no file names a surgeons\' room, its contacts or 17a\'s helpers', () => {
+    // The old `?view=surgeonRooms` URL is redirected to People's Surgeons tab (build plan Phase 53): the one file that names it.
     const room = /\b(SurgeonRoom|RoomContact|roomIds|surgeonRooms|roomContacts|roomEmailForSurgeon|otherRoomsForSurgeon|surgeonsInRoom|roomsForSurgeon|mainRoomOf|roomRequired|NO_ROOM_EMAIL|ROOM_CONTACT_ROLE)\b/
-    const hits = sources.filter(([path, text]) => room.test(text) && path !== 'apps/admin/screens/masters/view.ts').map(([path]) => path)
+    const hits = sources.filter(([path, text]) => room.test(text) && path !== 'apps/admin/mastersRedirect.ts').map(([path]) => path)
     expect(hits).toEqual([])
   })
 })

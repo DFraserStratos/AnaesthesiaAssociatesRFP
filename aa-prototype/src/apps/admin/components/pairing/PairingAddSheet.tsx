@@ -10,7 +10,7 @@
 import { useState } from 'react'
 import { PAIRING_LABELS, activeEntryOnSide, pairingSentence } from '../../../../domain/pairingPreferences'
 import { compareBySurname } from '../../../../domain/surgeons'
-import { isActiveOn } from '../../../../domain/anaesthetistStatus'
+import { statusOn } from '../../../../domain/anaesthetistStatus'
 import type { PairingKind, PairingSide } from '../../../../domain/types'
 import { accent, neutral, radius, semantic } from '../../../../theme/tokens'
 import { activeSurgeons, useAppStore, type Actor } from '../../../../store'
@@ -48,7 +48,7 @@ export function PairingAddSheet({ perspective, subjectId, actor, onClose }: Prop
 
   const counterparts = (
     perspective === 'surgeon'
-      ? Object.values(anaesthetists).filter((a) => isActiveOn(a, todayISO)).map((a) => ({ id: a.registrationNumber, name: a.name }))
+      ? Object.values(anaesthetists).filter((a) => statusOn(a, todayISO).kind !== 'inactive').map((a) => ({ id: a.registrationNumber, name: a.name }))
       : activeSurgeons({ masters: { surgeons } }).map((s) => ({ id: s.id, name: s.name }))
   )
     .sort(compareBySurname)

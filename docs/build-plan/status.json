@@ -4,41 +4,39 @@
     "46",
     "47",
     "48",
-    "49"
+    "49",
+    "50",
+    "51",
+    "52",
+    "53"
   ],
   "in_progress": [],
   "next": {
     "phases": [
-      "50",
-      "51"
+      "54",
+      "55",
+      "57"
     ],
-    "note": "Wave 1 (46 to 49) is joined on master: the Contracts work is together, ready for the owner's test from TEST-45-49.md. Wave 2 starts now: Lane A builds 50, then 52, then 53 (the People section, which merges Lane B's 51 at its start); Lane B builds 51 beside it. Lane C waits for Wave 3 (57)."
+    "note": "Wave 2 (50 to 53) is joined: the rate and tier card, Waiting for NHI on Intake, making an anaesthetist inactive and the People section with the shared record pattern. Wave 3 starts now: Lane A builds the anaesthetist's page (54); Lane B the surgeon's page and the surgeon group cut (55), then the specialty's page (56); Lane C the Patients tab and the patient's page (57). The owner tests 50 to 57 once, after Wave 3's join."
   },
   "guidance": {
     "as_of": "2026-11-25",
-    "headline": "The Contracts work (45 to 49) is on master, ready to test from TEST-45-49.md. Start Wave 2 now: paste the Lane A prompt and the Lane B prompt.",
-    "headline_sub": "Walk <a href=\"TEST-45-49.md\">TEST-45-49.md</a> on 5173 when it suits you (the join ran the full gate and one review; Playwright carries the 48 failures from before 45, for the sweep). Wave 2 does not wait for it: Lane A builds the rate and tier card (50), making an anaesthetist inactive (52) and then the People section (53); Lane B builds Waiting for NHI on Intake (51) beside it. Fixes from your test land on master and reach the lanes at their next phase start. Wave 3 (54 to 57, all three lanes) follows 53; you test 50 to 57 once after it. Do not tear the lanes down.",
+    "headline": "Wave 2 (50 to 53) is joined: People is its own Admin section. Start Wave 3 now: paste the Lane A, Lane B and Lane C prompts.",
+    "headline_sub": "No owner test after Wave 2: you test 50 to 57 once, after Wave 3's join, from TEST-50-57.md. The join ran the full gate and one review (Playwright carries the 48 failures from before 45, for the sweep). 45 to 49 are still yours to walk from <a href=\"TEST-45-49.md\">TEST-45-49.md</a> when it suits you. Do not tear the lanes down.",
     "safe": {
-      "50": "Lane A's first Wave 2 phase: it needs only 45, on master.",
-      "51": "Lane B's Wave 2 phase: it needs nothing beyond what is on master."
+      "54": "Wave 3, Lane A: it needs 53, now joined.",
+      "55": "Wave 3, Lane B: it needs 53, now joined.",
+      "57": "Wave 3, Lane C: it needs 53, now joined."
     },
     "wait": {
-      "52": "Lane A, after 50 (49 is on master).",
-      "53": "Lane A, after 50 and 52; it merges Lane B's 51 at its start (blocked if 51 is not complete).",
-      "54": "Wave 3, Lane A: once 53 is on master.",
-      "55": "Wave 3, Lane B: once 53 is on master.",
-      "56": "Wave 3, Lane B, after 55.",
-      "57": "Wave 3, Lane C: once 53 is on master."
+      "56": "Wave 3, Lane B, after 55."
     },
-    "parallel": "Wave 2: Lane A 50, then 52, then 53; Lane B 51 beside it. Wave 3: Lane A 54, Lane B 55 then 56, Lane C 57. Paste each lane's prompt again whenever its session ends: the same prompt starts, resumes and joins, in every wave.",
+    "parallel": "Wave 3: Lane A 54, Lane B 55 then 56, Lane C 57, side by side. Paste each lane's prompt again whenever its session ends: the same prompt starts, resumes and joins. The last lane to finish joins Wave 3 and writes TEST-50-57.md.",
     "lanes": [
       {
         "name": "Lane A",
         "where": "`AnaesthesiaAssociatesRFP-laneA` worktree, branch `lane/a`, ports 5273/5274/5280",
         "queue": [
-          "50",
-          "52",
-          "53",
           "54"
         ],
         "prompt_file": "lanes/lane-a.prompt.md"
@@ -47,7 +45,6 @@
         "name": "Lane B",
         "where": "`AnaesthesiaAssociatesRFP-laneB` worktree, branch `lane/b`, ports 5373/5374/5380",
         "queue": [
-          "51",
           "55",
           "56"
         ],

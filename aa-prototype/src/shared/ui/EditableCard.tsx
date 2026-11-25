@@ -11,7 +11,7 @@
 import { useState, type CSSProperties, type ReactNode } from 'react'
 import { Button } from './Button'
 import { Card } from './Card'
-import { FormError } from './Field'
+import { FormError, type DataAttributes } from './Field'
 import { TextAction } from './TextAction'
 
 /** A card's save: the store action for the card's patch, reporting a refusal in the rule's words. */
@@ -45,9 +45,9 @@ export function useCardEdit<D, P>(from: () => D, commit: CardCommit<P>) {
   }
 }
 
-export interface EditableCardProps {
+export interface EditableCardProps extends DataAttributes {
   title: ReactNode
-  /** The card's hook; its Edit, Cancel, Save and refusal carry `${shot}-edit`, `-cancel`, `-save` and `-error`. */
+  /** The card's hook (`data-*` pass through to it); its Edit, Cancel, Save and refusal carry `${shot}-edit`, `-cancel`, `-save` and `-error`. */
   shot: string
   editable: boolean
   editing: boolean
@@ -61,9 +61,10 @@ export interface EditableCardProps {
 }
 
 /** A card with Edit in its heading where `editable`, its form and footer while in edit, its refusal under it. */
-export function EditableCard({ title, shot, editable, editing, onEdit, onCancel, onSave, error, style, children }: EditableCardProps) {
+export function EditableCard({ title, shot, editable, editing, onEdit, onCancel, onSave, error, style, children, ...data }: EditableCardProps) {
   return (
     <Card
+      {...data}
       {...(style !== undefined ? { style } : {})}
       title={title}
       shot={shot}

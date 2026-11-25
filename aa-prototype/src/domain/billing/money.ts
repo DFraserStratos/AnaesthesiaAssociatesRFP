@@ -43,6 +43,11 @@ export function formatMoney(amount: number, options: MoneyFormat = {}): string {
   return `${sign}$${shown}`
 }
 
+/** An amount as an amount field starts out holding ("41.5" → "41.50"): plain, no `$` or grouping; `parseAmount` reads it back. */
+export function amountInputText(amount: number): string {
+  return roundToCents(amount).toFixed(2)
+}
+
 /**
  * A dollar amount as a person types it ("$1,234.50", "1234.5", "3 100"), or
  * undefined when it is no amount: blank, not a plain number of zero or more,

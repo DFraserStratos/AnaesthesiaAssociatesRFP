@@ -754,7 +754,7 @@ const NHI_HUB_ROUTES = [
   '/admin/intake/waiting',
   '/admin/people/patients/:nhi',
 ] as const
-const NHI_HUB_SCREEN = 'Add booking, and Admin · Patients'
+const NHI_HUB_SCREEN = 'Add booking, and Admin · People · Patients'
 
 /** The photo demo adds a Booking, so it needs a List still open for new Bookings. */
 function photoCaptureDisabledReason(state: AppState, listId: string): string | null {
@@ -2043,7 +2043,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     label: 'Load sample spreadsheet',
     description:
       "Checks a sample spreadsheet as the developer's seed load: its valid rows wait on Seed load and its rejected rows show why. It stages and does not load: press Load on Seed load to load the valid rows.",
-    screen: 'Admin · Master data',
+    screen: 'Admin · Master data, Contracts and People',
     routes: [ADMIN_MASTERS, ADMIN_CONTRACTS, ADMIN_PARTIES, ADMIN_FUNDING_TAGS, ...ADMIN_PEOPLE_SEEDED_TABS],
     surfaces: ['bar'],
     when: (_state, ctx) => sampleSheetsFor(ctx).length > 0,

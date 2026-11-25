@@ -1,12 +1,11 @@
-import { useState } from 'react'
 import { neutral } from '../../../theme/tokens'
 import { parseAmount } from '../../../domain/billing/money'
 import { TIER_LABELS, TIER_VALUES, isPriorityTier } from '../../../domain/pairingPreferences'
 import { UNIT_VALUE_INVALID, editAnaesthetist, useAppStore, withChangeSet, type Actor } from '../../../store'
 import { selectPriorityTier, setPriorityTier } from '../../../store/officePrivate'
 import { RATE_LABEL, RATE_PER_UNIT } from '../../../shared/profile/profileCopy'
-import { formatCurrency } from '../../../shared/format'
-import { Button, Card, DefList, DefRow, FieldHint, FormError, Segmented, TextAction, TextField } from '../../../shared/ui'
+import { amountInputText, formatCurrency } from '../../../shared/format'
+import { DefList, DefRow, EditableCard, FieldHint, Segmented, TextField, useCardEdit, type CardCommit } from '../../../shared/ui'
 import { PROFILE_CARD } from './ProfileChrome'
 
 const TIER_OPTIONS = TIER_VALUES.map((t) => ({ value: String(t), label: TIER_LABELS[t] }))
@@ -24,11 +23,12 @@ interface Draft {
 
 /**
  * The anaesthetist's rate per unit and priority tier on one card (build plan Phase 50; US-01.3.6,
- * DM-09, D102; docs/explorations/people-section.html #tier). At rest it shows both, with Edit.
- * Editing holds a local draft: a click on a tier only moves the draft, never saves. Cancel drops
- * it. Save writes only what changed, the rate first and then the tier, inside one change set, so
- * one save is one audited change; a refused rate stops the save before the tier is written, and the
- * refusal shows on the card.
+ * DM-09, D102; docs/explorations/people-section.html #tier), on the shared `EditableCard` and
+ * `useCardEdit` (moved onto them at the Wave 2 join, build plan Phase 53's lift). At rest it shows
+ * both, with Edit. Editing holds a draft: a click on a tier only moves the draft, never saves. Cancel
+ * drops it. Save writes only what changed, the rate first and then the tier, inside one change set,
+ * so one save is one audited change; a refused rate stops the save before the tier is written, and
+ * the refusal shows on the card.
  *
  * Self-contained (`anaesthetistId`, `actor`): it reads the anaesthetist and the tier itself, so the
  * anaesthetist's page (Phase 54) places it as it is. Admin only: the tier lives in the office-private
@@ -37,35 +37,16 @@ interface Draft {
 export function RateTierCard({ anaesthetistId, actor }: { anaesthetistId: string; actor: Actor }) {
   const anaesthetist = useAppStore((s) => s.masters.anaesthetists[anaesthetistId])
   const tier = useAppStore((s) => selectPriorityTier(s, anaesthetistId))
-  const [draft, setDraft] = useState<Draft | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  if (anaesthetist === undefined) return null
 
-  function start() {
-    if (anaesthetist === undefined) return
-    setDraft({ rate: anaesthetist.unitValue.toFixed(2), tier: String(tier) })
-    setError(null)
-  }
-
-  function cancel() {
-    setDraft(null)
-    setError(null)
-  }
-
-  function save() {
-    if (draft === null || anaesthetist === undefined) return
+  const commit: CardCommit<Draft> = (draft) => {
+    if (anaesthetist === undefined) return { ok: true }
     const rate = parseAmount(draft.rate)
-    if (rate === undefined || rate <= 0) {
-      setError(UNIT_VALUE_INVALID)
-      return
-    }
+    if (rate === undefined || rate <= 0) return { ok: false, message: UNIT_VALUE_INVALID }
     const picked = Number(draft.tier)
     const newTier = isPriorityTier(picked) && picked !== tier ? picked : null
     const rateChanged = rate !== anaesthetist.unitValue
-    if (!rateChanged && newTier === null) {
-      cancel()
-      return
-    }
+    // Nothing changed: Save closes the card and writes nothing.
+    if (!rateChanged && newTier === null) return { ok: true }
     const refusal = withChangeSet(useAppStore, 'save', () => {
       if (rateChanged) {
         const outcome = editAnaesthetist(useAppStore, actor, anaesthetistId, { unitValue: rate })
@@ -77,31 +58,25 @@ export function RateTierCard({ anaesthetistId, actor }: { anaesthetistId: string
       }
       return null
     })
-    if (refusal !== null) {
-      setError(refusal)
-      return
-    }
-    cancel()
+    return refusal === null ? { ok: true } : { ok: false, message: refusal }
   }
 
-  const editing = draft !== null
+  const edit = useCardEdit<Draft, Draft>(() => ({ rate: amountInputText(anaesthetist?.unitValue ?? 0), tier: String(tier) }), commit)
+  if (anaesthetist === undefined) return null
+  const draft = edit.draft
+
   return (
-    <Card
+    <EditableCard
       style={PROFILE_CARD}
       title="Rate and tier"
       shot="rate-tier-card"
       data-tier={tier}
-      editing={editing}
-      {...(!editing
-        ? { action: <TextAction size="sm" flush onClick={start} shot="rate-tier-card-edit" label="Edit rate and tier">Edit</TextAction> }
-        : {
-            footer: (
-              <>
-                <Button variant="secondary" size="compact" onClick={cancel} shot="rate-tier-card-cancel">Cancel</Button>
-                <Button variant="primary" size="compact" onClick={save} shot="rate-tier-card-save">Save</Button>
-              </>
-            ),
-          })}
+      editable
+      editing={draft !== null}
+      onEdit={edit.start}
+      onCancel={edit.cancel}
+      onSave={() => draft !== null && edit.save(draft)}
+      error={edit.error}
     >
       {draft === null ? (
         <DefList gap={12} style={AT_REST_FACTS}>
@@ -115,18 +90,17 @@ export function RateTierCard({ anaesthetistId, actor }: { anaesthetistId: string
           <TextField
             label={RATE_LABEL}
             value={draft.rate}
-            onChange={(rate) => setDraft({ ...draft, rate })}
+            onChange={(rate) => edit.setDraft({ ...draft, rate })}
             mono
             inputMode="decimal"
             hint={RATE_HINT}
           />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <Segmented label="Priority tier" value={draft.tier} options={TIER_OPTIONS} onChange={(t) => setDraft({ ...draft, tier: t })} />
+            <Segmented label="Priority tier" value={draft.tier} options={TIER_OPTIONS} onChange={(t) => edit.setDraft({ ...draft, tier: t })} />
             <FieldHint>{TIER_HINT}</FieldHint>
           </div>
         </>
       )}
-      <FormError message={error} shot="rate-tier-card-error" />
-    </Card>
+    </EditableCard>
   )
 }
