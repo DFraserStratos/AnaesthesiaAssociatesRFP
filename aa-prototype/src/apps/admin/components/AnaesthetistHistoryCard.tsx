@@ -36,7 +36,7 @@ export function AnaesthetistHistoryCard({ anaesthetistId }: { anaesthetistId: st
   return (
     <Card
       style={PROFILE_WIDE_CARD}
-      title="History"
+      title="Past Lists"
       shot="anaesthetist-history"
       action={
         <TextAction size="sm" flush to={`/admin/ledger/anaesthetists/${anaesthetistId}`} shot="anaesthetist-ledger-link">

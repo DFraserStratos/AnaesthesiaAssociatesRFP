@@ -56,7 +56,21 @@ describe("the anaesthetist's page", () => {
     const order = [...container.querySelectorAll('[data-page-body] > div > section[data-shot]')].map((el) => el.getAttribute('data-shot'))
     expect(order).toEqual(['anaesthetist-identity', 'anaesthetist-contact', 'anaesthetist-bank', 'rate-tier-card', 'anaesthetist-status', 'anaesthetist-history'])
     expect(screen.queryByRole('button', { name: /Edit details/ })).toBeNull()
-    expect(screen.getByRole('button', { name: 'History' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'History' })).toBeNull()
+  })
+
+  it('shows History last in the side panel, opening the record and its pairings in the History sheet', () => {
+    renderPage(ANAE.souter)
+    const panel = card('anaesthetist-panel')
+    expect(panel.lastElementChild?.getAttribute('data-shot')).toBe('anaesthetist-record-history')
+    expect(card('anaesthetist-record-history')).toHaveTextContent('0 changes recorded')
+    expect(card('anaesthetist-history-open')).toBeNull()
+    edit('anaesthetist-contact')
+    fireEvent.change(within(card('anaesthetist-contact')).getByLabelText('Phone'), { target: { value: '021 555 0101' } })
+    save('anaesthetist-contact')
+    expect(card('anaesthetist-record-history')).toHaveTextContent('1 change recorded')
+    fireEvent.click(card('anaesthetist-history-open'))
+    expect(within(screen.getByRole('dialog')).getByText(`History · ${useAppStore.getState().masters.anaesthetists[ANAE.souter]!.name}`)).toBeInTheDocument()
   })
 
   it('Identity: the name and registration are read-only; only the HPI CPN is a field', () => {
@@ -219,6 +233,9 @@ describe("the anaesthetist's side panel", () => {
     expect(rows.map((li) => li.getAttribute('data-contract-id'))).toEqual([held.id, own.id])
     expect(rows[0]).toHaveTextContent(hospitalParty.name)
     expect(rows[1]).toHaveTextContent('Disabled')
+    // Their own Contract's sub line names its pricing, never the page's own anaesthetist again.
+    const name = useAppStore.getState().masters.anaesthetists[ANAE.beaumont]!.name
+    expect(rows[1]).not.toHaveTextContent(name)
     fireEvent.click(within(rows[0]!).getByRole('link'))
     expect(screen.getByTestId('where').textContent).toContain(`/admin/contracts/${held.id}`)
   })

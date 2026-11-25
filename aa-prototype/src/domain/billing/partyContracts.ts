@@ -65,11 +65,6 @@ export function contractCountsByHolder(contracts: Contracts): { active: Readonly
   return { active, held }
 }
 
-/** How many Active office Contracts there are in all (the Contracts tab's count). */
-export function activeOfficeContractCount(contracts: Contracts): number {
-  return Object.values(contracts).filter(countable).length
-}
-
 export interface PartyTagCount {
   /** A funding tag's id, or `none` (No tag). */
   tagId: FundingTagId | typeof NO_TAG

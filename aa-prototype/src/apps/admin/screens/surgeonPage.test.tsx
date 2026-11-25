@@ -45,14 +45,32 @@ describe("the surgeon's page: one card, one change", () => {
     useAppStore.setState(freshAppState())
   })
 
-  it('shows the five cards and the Status card; no Groups card and no all-fields edit', () => {
-    renderAdmin(`/admin/people/surgeons/${SURG.hale}`)
-    for (const card of ['surgeon-name-card', 'surgeon-registration-card', 'surgeon-identifiers', 'surgeon-specialties', 'surgeon-contacts', 'surgeon-status-card']) {
-      expect(shot(card), card).not.toBeNull()
-    }
+  it('stacks Identity, Specialties, Contacts and Status full width; no Groups card and no all-fields edit', () => {
+    const { container } = renderAdmin(`/admin/people/surgeons/${SURG.hale}`)
+    const order = [...container.querySelectorAll('[data-page-body] > div > section[data-shot]')].map((el) => el.getAttribute('data-shot'))
+    expect(order).toEqual(['surgeon-name-card', 'surgeon-specialties', 'surgeon-contacts', 'surgeon-status-card'])
+    // Identity holds the registration number and HPI CPN rows, with their hints.
+    expect(within(shot('surgeon-name-card')).getByText("Unique index on the Health Provider Index. Not the patient's NHI.")).toBeInTheDocument()
+    expect(shot('surgeon-name-card').contains(shot('surgeon-registration-card'))).toBe(true)
+    expect(shot('surgeon-name-card').contains(shot('surgeon-identifiers'))).toBe(true)
     expect(shot('surgeon-groups')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Edit details' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'History' })).toBeNull()
     expect(within(shot('surgeon-status-card')).getByText('Active')).toBeInTheDocument()
+  })
+
+  it('shows History in the side panel, opening the record and its pairings in the History sheet', () => {
+    renderAdmin(`/admin/people/surgeons/${SURG.hale}`)
+    const card = () => shot('surgeon-history')
+    // With nothing recorded there is nothing to open, as on a Party's page.
+    expect(card()).toHaveTextContent('0 changes recorded')
+    expect(within(card()).queryByRole('button', { name: 'See history' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Edit identity' }))
+    fireEvent.change(within(shot('surgeon-name-card')).getByLabelText('Practice (optional)'), { target: { value: 'Hale Surgical' } })
+    fireEvent.click(within(shot('surgeon-name-card')).getByRole('button', { name: 'Save' }))
+    expect(card()).toHaveTextContent('1 change recorded')
+    fireEvent.click(within(card()).getByRole('button', { name: 'See history' }))
+    expect(within(screen.getByRole('dialog')).getByText('History · Mr T. Hale')).toBeInTheDocument()
   })
 
   it("Contacts: changing an office contact's phone saves only the contacts, as one surgeon.update", () => {
@@ -78,9 +96,9 @@ describe("the surgeon's page: one card, one change", () => {
     fireEvent.change(within(shot('surgeon-specialties')).getByLabelText('Specialties'), { target: { value: 'SPC-PLASTIC' } })
     fireEvent.click(within(shot('surgeon-specialties')).getByRole('button', { name: 'Save' }))
     expect(Object.keys(audit().at(-1)!.after as object)).toEqual(['specialties'])
-    fireEvent.click(screen.getByRole('button', { name: 'Edit HPI CPN' }))
-    fireEvent.change(within(shot('surgeon-identifiers')).getByLabelText('HPI CPN (optional)'), { target: { value: '' } })
-    fireEvent.click(within(shot('surgeon-identifiers')).getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Edit identity' }))
+    fireEvent.change(within(shot('surgeon-name-card')).getByLabelText('HPI CPN (optional)'), { target: { value: '' } })
+    fireEvent.click(within(shot('surgeon-name-card')).getByRole('button', { name: 'Save' }))
     expect(audit().at(-1)).toMatchObject({ action: 'surgeon.update', after: { hpiId: 'None' } })
     expect(Object.keys(audit().at(-1)!.after as object)).toEqual(['hpiId'])
     expect(within(shot('surgeon-identifiers')).getByText('No HPI CPN yet')).toBeInTheDocument()
@@ -89,21 +107,21 @@ describe("the surgeon's page: one card, one change", () => {
   it("a duplicate HPI CPN is refused on its card in the rule's words, and writes nothing", () => {
     renderAdmin(`/admin/people/surgeons/${SURG.hale}`)
     const audited = audit().length
-    fireEvent.click(screen.getByRole('button', { name: 'Edit HPI CPN' }))
-    fireEvent.change(within(shot('surgeon-identifiers')).getByLabelText('HPI CPN (optional)'), { target: { value: '47REIA' } })
-    fireEvent.click(within(shot('surgeon-identifiers')).getByRole('button', { name: 'Save' }))
-    expect(within(shot('surgeon-identifiers')).getByRole('alert')).toHaveTextContent('That HPI CPN already belongs to Ms A. Reid.')
-    expect(within(shot('surgeon-identifiers')).getByLabelText('HPI CPN (optional)')).toBeInTheDocument()
-    fireEvent.change(within(shot('surgeon-identifiers')).getByLabelText('HPI CPN (optional)'), { target: { value: 'nope' } })
-    fireEvent.click(within(shot('surgeon-identifiers')).getByRole('button', { name: 'Save' }))
-    expect(within(shot('surgeon-identifiers')).getByRole('alert')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Edit identity' }))
+    fireEvent.change(within(shot('surgeon-name-card')).getByLabelText('HPI CPN (optional)'), { target: { value: '47REIA' } })
+    fireEvent.click(within(shot('surgeon-name-card')).getByRole('button', { name: 'Save' }))
+    expect(within(shot('surgeon-name-card')).getByRole('alert')).toHaveTextContent('That HPI CPN already belongs to Ms A. Reid.')
+    expect(within(shot('surgeon-name-card')).getByLabelText('HPI CPN (optional)')).toBeInTheDocument()
+    fireEvent.change(within(shot('surgeon-name-card')).getByLabelText('HPI CPN (optional)'), { target: { value: 'nope' } })
+    fireEvent.click(within(shot('surgeon-name-card')).getByRole('button', { name: 'Save' }))
+    expect(within(shot('surgeon-name-card')).getByRole('alert')).toBeInTheDocument()
     expect(audit().length).toBe(audited)
   })
 
   it('a blank name is refused on its card; Cancel writes nothing and restores the card', () => {
     renderAdmin(`/admin/people/surgeons/${SURG.hale}`)
     const audited = audit().length
-    fireEvent.click(screen.getByRole('button', { name: 'Edit name and practice' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Edit identity' }))
     fireEvent.change(within(shot('surgeon-name-card')).getByLabelText('Name'), { target: { value: ' ' } })
     fireEvent.click(within(shot('surgeon-name-card')).getByRole('button', { name: 'Save' }))
     expect(within(shot('surgeon-name-card')).getByRole('alert')).toHaveTextContent('A surgeon name is required.')
@@ -114,7 +132,7 @@ describe("the surgeon's page: one card, one change", () => {
 
   it('renaming Mr P. Doyle carries his surgeon Party, both entries in one change set', () => {
     renderAdmin(`/admin/people/surgeons/${SURG.doyle}`)
-    fireEvent.click(screen.getByRole('button', { name: 'Edit name and practice' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Edit identity' }))
     fireEvent.change(within(shot('surgeon-name-card')).getByLabelText('Name'), { target: { value: 'Mr Peter Doyle' } })
     fireEvent.click(within(shot('surgeon-name-card')).getByRole('button', { name: 'Save' }))
     expect(useAppStore.getState().masters.parties[PARTY.doyle]!.name).toBe('Mr Peter Doyle')

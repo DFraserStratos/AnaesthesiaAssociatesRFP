@@ -7,9 +7,9 @@ import type { Surgeon, SurgeonContact } from '../../../domain/types'
 import { editSurgeon, useAppStore, withChangeSet, type Actor, type SurgeonFields } from '../../../store'
 import { contractsLinkedToSurgeon, nextListsForSurgeon } from '../../../store/surgeonPageSelectors'
 import { specialtiesInOrder, surgeonSpecialtyLabel } from '../../../domain/specialties'
-import { HistorySheet } from '../../../shared/booking'
 import { PairingSection, useProfileHistory } from '../components/pairing'
-import { HeaderActions, IdChip, PROFILE_CARD, PROFILE_FACTS, PROFILE_GRID, ProfilePage } from '../components/ProfileChrome'
+import { IdChip, PROFILE_CARD, ProfilePage } from '../components/ProfileChrome'
+import { RecordHistoryCard } from '../components/RecordHistoryCard'
 import { PageBody } from '../components/AdminPage'
 import { ChipMultiSelect } from '../components/ChipMultiSelect'
 import { ContactFields, EMPTY_CONTACT, type ContactDraft } from '../components/ContactFields'
@@ -23,19 +23,19 @@ import { DRAFT_LIST } from '../../../shared/scheduleTerms'
 
 /**
  * The surgeon's page (build plan Phase 55; US-13.6.2, US-13.4.1 "One card, one change"; D99, D104,
- * D105), at `/admin/people/surgeons/:surgeonId`. Cards for name and practice, registration number,
- * HPI CPN, specialties and contacts, each edited and saved on its own through `editSurgeon` with
- * only that card's fields, so each save is one audited change (a surgeon Party that follows a
- * rename joins the same change set); a refusal shows on its card. A Status card holds Retire and
- * Reinstate. The side panel shows the surgeon's private pairings both ways, the Contracts linked to
- * them (each naming its holder) and their next Lists, a few each with See all. A surgeon belongs to
+ * D105), at `/admin/people/surgeons/:surgeonId`. On 53's record pattern, as the anaesthetist's page:
+ * full-width cards stacked in the main column, each a label and value list. Identity (name, practice,
+ * registration number, HPI CPN), Specialties and Contacts are each edited and saved on their own
+ * through `editSurgeon` with only that card's fields, so each save is one audited change (a surgeon
+ * Party that follows a rename joins the same change set); a refusal shows on its card. A Status card
+ * holds Retire and Reinstate. The side panel shows the surgeon's private pairings both ways, the
+ * Contracts linked to them (each naming its holder), their next Lists, a few each with See all, and
+ * the record's History (its changes and its pairings', in the shared History sheet). A surgeon belongs to
  * no group (DM-08): a group that holds Contracts is a Party whose surgeons are linked on its Contracts.
  */
 export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor: Actor }) {
   const surgeon = useAppStore((s) => s.masters.surgeons[surgeonId])
   const specialties = useAppStore((s) => s.masters.specialties)
-  const [history, setHistory] = useState(false)
-  const profileHistory = useProfileHistory('surgeon', surgeonId)
   if (surgeon === undefined) return null
 
   return (
@@ -45,19 +45,13 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
       name={surgeon.name}
       chip={<IdChip label={HPI_CPN_LABEL} value={surgeon.hpiId} empty={NO_HPI_CPN} shot="surgeon-hpi-chip" />}
       sub={[surgeonSpecialtyLabel({ specialties }, surgeon), surgeon.practiceName].filter((v) => v !== undefined && v !== '').join(' · ')}
-      action={<HeaderActions onHistory={() => setHistory(true)} />}
     >
       <PageBody rail={<SurgeonSidePanel surgeonId={surgeonId} actor={actor} />} railLabel="What this surgeon is on">
-        <div style={PROFILE_GRID}>
-          <NameCard surgeon={surgeon} actor={actor} />
-          <RegistrationCard surgeon={surgeon} actor={actor} />
-          <HpiCard surgeon={surgeon} actor={actor} />
-          <SpecialtiesCard surgeon={surgeon} actor={actor} />
-        </div>
+        <IdentityCard surgeon={surgeon} actor={actor} />
+        <SpecialtiesCard surgeon={surgeon} actor={actor} />
         <ContactsCard surgeon={surgeon} actor={actor} />
         <StatusCard surgeon={surgeon} actor={actor} />
       </PageBody>
-      <HistorySheet open={history} entityIds={profileHistory.ids} entityLabels={profileHistory.labels} title="Surgeon history" onClose={() => setHistory(false)} />
     </ProfilePage>
   )
 }
@@ -96,56 +90,46 @@ type CardProps = { surgeon: Surgeon; actor: Actor }
 
 const mist = (text: string) => <span style={{ color: neutral.mist }}>{text}</span>
 
-function NameCard({ surgeon, actor }: CardProps) {
-  const edit = useCardEdit(() => ({ name: surgeon.name, practiceName: surgeon.practiceName ?? '' }), useSurgeonCommit(surgeon.id, actor))
+/** A card's label and value rows: the label in a 150px slate column beside its value (contracts-section.html #record `.kv`), as on the anaesthetist's page. */
+const KV = { layout: 'inline', labelWidth: 150, labelTone: 'slate' } as const
+
+/** The cards' edit fields, side by side where the card is wide enough. */
+const FIELDS = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14, alignItems: 'start' } as const
+
+/**
+ * Name, practice, registration number and HPI CPN, edited together; `editSurgeon` audits only the
+ * fields that changed, so one save is still one change. The registration and HPI CPN rows keep the
+ * hooks of the cards they once were (`surgeon-registration-card`, `surgeon-identifiers`).
+ */
+function IdentityCard({ surgeon, actor }: CardProps) {
+  const edit = useCardEdit(
+    () => ({ name: surgeon.name, practiceName: surgeon.practiceName ?? '', medicalRegistrationNumber: surgeon.medicalRegistrationNumber ?? '', hpiId: surgeon.hpiId ?? '' }),
+    useSurgeonCommit(surgeon.id, actor),
+  )
   const draft = edit.draft
   return (
-    <EditableCard style={PROFILE_CARD} title="Name and practice" shot="surgeon-name-card" editable editing={draft !== null} onEdit={edit.start} onCancel={edit.cancel} onSave={() => draft !== null && edit.save(draft)} error={edit.error}>
+    <EditableCard style={PROFILE_CARD} title="Identity" shot="surgeon-name-card" editable editing={draft !== null} onEdit={edit.start} onCancel={edit.cancel} onSave={() => draft !== null && edit.save(draft)} error={edit.error}>
       {draft === null ? (
         <DefList gap={10}>
-          <DefRow layout="stacked" label="Name">{surgeon.name}</DefRow>
-          <DefRow layout="stacked" label="Practice" data-practice={surgeon.practiceName ?? ''}>{surgeon.practiceName ?? mist('Not recorded')}</DefRow>
+          <DefRow {...KV} label="Name">{surgeon.name}</DefRow>
+          <DefRow {...KV} label="Practice" data-practice={surgeon.practiceName ?? ''}>{surgeon.practiceName ?? mist('Not recorded')}</DefRow>
+          <DefRow {...KV} label="NZ medical registration number" mono={surgeon.medicalRegistrationNumber !== undefined} note="For information" shot="surgeon-registration-card">
+            {surgeon.medicalRegistrationNumber ?? mist('Not recorded')}
+          </DefRow>
+          <DefRow {...KV} label={HPI_CPN_LABEL} mono={surgeon.hpiId !== undefined} note="Unique index on the Health Provider Index. Not the patient's NHI." shot="surgeon-identifiers" data-hpi={surgeon.hpiId ?? ''}>
+            {surgeon.hpiId ?? mist(NO_HPI_CPN)}
+          </DefRow>
         </DefList>
       ) : (
-        <>
+        <div style={FIELDS}>
           <TextField label="Name" value={draft.name} onChange={(name) => edit.setDraft({ ...draft, name })} placeholder="e.g. Ms A. Reid" />
           <div data-shot="surgeon-practice-field">
             <TextField label="Practice (optional)" value={draft.practiceName} onChange={(practiceName) => edit.setDraft({ ...draft, practiceName })} hint="As the office knows it" />
           </div>
-        </>
-      )}
-    </EditableCard>
-  )
-}
-
-function RegistrationCard({ surgeon, actor }: CardProps) {
-  const edit = useCardEdit(() => ({ medicalRegistrationNumber: surgeon.medicalRegistrationNumber ?? '' }), useSurgeonCommit(surgeon.id, actor))
-  const draft = edit.draft
-  return (
-    <EditableCard style={PROFILE_CARD} title="Registration number" shot="surgeon-registration-card" editable editing={draft !== null} onEdit={edit.start} onCancel={edit.cancel} onSave={() => draft !== null && edit.save(draft)} error={edit.error}>
-      {draft === null ? (
-        <DefRow layout="stacked" label="NZ medical registration number" mono={surgeon.medicalRegistrationNumber !== undefined} note="For information">
-          {surgeon.medicalRegistrationNumber ?? mist('Not recorded')}
-        </DefRow>
-      ) : (
-        <TextField label="NZ medical registration number (optional)" value={draft.medicalRegistrationNumber} onChange={(v) => edit.setDraft({ medicalRegistrationNumber: v })} mono hint="For information" />
-      )}
-    </EditableCard>
-  )
-}
-
-function HpiCard({ surgeon, actor }: CardProps) {
-  const edit = useCardEdit(() => ({ hpiId: surgeon.hpiId ?? '' }), useSurgeonCommit(surgeon.id, actor))
-  const draft = edit.draft
-  return (
-    <EditableCard style={PROFILE_CARD} title={HPI_CPN_LABEL} editLabel={`Edit ${HPI_CPN_LABEL}`} shot="surgeon-identifiers" editable editing={draft !== null} onEdit={edit.start} onCancel={edit.cancel} onSave={() => draft !== null && edit.save(draft)} error={edit.error}>
-      {draft === null ? (
-        <DefRow layout="stacked" label={HPI_CPN_LABEL} mono={surgeon.hpiId !== undefined} note="Unique index on the Health Provider Index. Not the patient's NHI." data-hpi={surgeon.hpiId ?? ''}>
-          {surgeon.hpiId ?? mist(NO_HPI_CPN)}
-        </DefRow>
-      ) : (
-        <div data-shot="surgeon-hpi-field">
-          <TextField label={`${HPI_CPN_LABEL} (optional)`} value={draft.hpiId} onChange={(hpiId) => edit.setDraft({ hpiId })} mono placeholder="12ABCD" hint="Leave blank until known. No two practitioners share one." />
+          <TextField label="NZ medical registration number (optional)" value={draft.medicalRegistrationNumber} onChange={(v) => edit.setDraft({ ...draft, medicalRegistrationNumber: v })} mono hint="For information" />
+          <div data-shot="surgeon-hpi-field">
+            <TextField label={`${HPI_CPN_LABEL} (optional)`} value={draft.hpiId} onChange={(hpiId) => edit.setDraft({ ...draft, hpiId })} mono placeholder="12ABCD" hint="Leave blank until known. No two practitioners share one." />
+          </div>
         </div>
       )}
     </EditableCard>
@@ -160,12 +144,15 @@ function SpecialtiesCard({ surgeon, actor }: CardProps) {
     <EditableCard style={PROFILE_CARD} title="Specialties" shot="surgeon-specialties" editable editing={draft !== null} onEdit={edit.start} onCancel={edit.cancel} onSave={() => draft !== null && edit.save(draft)} error={edit.error}>
       {draft === null ? (
         <>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {surgeon.specialtyIds.filter((id) => specialties[id] !== undefined).map((id) => (
-              <Pill key={id}>{specialties[id]!.name}</Pill>
-            ))}
-          </div>
-          <div style={{ fontSize: 12, color: neutral.mist }}>From AA&apos;s specialties list. One or more, usually one.</div>
+          <DefList gap={10}>
+            <DefRow {...KV} label="Specialties" note="From AA's specialties list. One or more, usually one.">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {surgeon.specialtyIds.filter((id) => specialties[id] !== undefined).map((id) => (
+                  <Pill key={id}>{specialties[id]!.name}</Pill>
+                ))}
+              </div>
+            </DefRow>
+          </DefList>
         </>
       ) : (
         <ChipMultiSelect
@@ -232,12 +219,12 @@ function ContactsCard({ surgeon, actor }: CardProps) {
   return (
     <EditableCard style={PROFILE_CARD} title="Contacts" shot="surgeon-contacts" editable editing={draft !== null} onEdit={edit.start} onCancel={edit.cancel} onSave={() => draft !== null && edit.save(draft)} error={cardError}>
       {draft === null ? (
-        // The personal contact, then the office contacts across the card under it.
-        <DefList gap={14} style={PROFILE_FACTS}>
-          <DefRow layout="stacked" label="Personal contact" shot="surgeon-personal-contact-card">
+        // The personal contact, then the office contacts, each a label and value row.
+        <DefList gap={14}>
+          <DefRow {...KV} label="Personal contact" shot="surgeon-personal-contact-card">
             <ContactLines contact={surgeon.personalContact} />
           </DefRow>
-          <DefRow layout="stacked" label="Office contacts" shot="surgeon-office-contacts-card" style={{ gridColumn: '1 / -1' }}>
+          <DefRow {...KV} label="Office contacts" shot="surgeon-office-contacts-card">
             {surgeon.officeContacts.length === 0 ? (
               mist('None held')
             ) : (
@@ -333,6 +320,7 @@ function SurgeonSidePanel({ surgeonId, actor }: { surgeonId: string; actor: Acto
   const masters = useAppStore((s) => s.masters)
   const schedule = useAppStore((s) => s.schedule)
   const todayISO = useAppStore((s) => s.clock.todayISO)
+  const profileHistory = useProfileHistory('surgeon', surgeonId)
   const contracts = useMemo(() => contractsLinkedToSurgeon({ masters }, surgeonId), [masters, surgeonId])
   const lists = useMemo(() => nextListsForSurgeon({ schedule }, surgeonId, todayISO), [schedule, surgeonId, todayISO])
 
@@ -374,6 +362,7 @@ function SurgeonSidePanel({ surgeonId, actor }: { surgeonId: string; actor: Acto
         shot="surgeon-side-contracts"
       />
       <RailSection title="Next Lists" countNoun="upcoming Lists" rows={listRows} empty="No upcoming List." shot="surgeon-side-lists" />
+      <RecordHistoryCard entityIds={profileHistory.ids} entityLabels={profileHistory.labels} name={masters.surgeons[surgeonId]?.name ?? surgeonId} shot="surgeon-history" />
     </>
   )
 }

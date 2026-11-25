@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { buildSeed } from '../seed'
 import type { Contract } from '../types'
-import { contractSearch } from './contracts'
-import { groupContracts, type ContractGroupWords } from './contractGroups'
+import { activeContractCount, contractSearch } from './contracts'
+import { CONTRACT_GROUPINGS, groupContracts, groupCount, type ContractGroupWords } from './contractGroups'
 import { isOfficeContract } from './fallbacks'
 import {
-  activeOfficeContractCount,
   contractCountsByHolder,
   narrowContracts,
   NO_TAG,
@@ -87,7 +86,15 @@ describe('partyContractCounts (build plan Phase 48; US-04.1.5)', () => {
     const counts = partyContractCounts(contracts, fundingTags, 'PY-CES')
     expect(counts.total + counts.disabled).toBe(held.length)
     expect(contractCountsByHolder(contracts).active.get('PY-CES')).toBe(counts.total)
-    expect(activeOfficeContractCount(contracts)).toBe(Object.values(contracts).filter((c) => isOfficeContract(c) && c.status === 'active').length)
+  })
+
+  it('the Contracts tab\'s count is what the default catalogue lists (Active, no narrowing), system backstops included', () => {
+    const listed = contractSearch('', { contracts, parties, filters: { status: 'active' } })
+    expect(listed.some((c) => !isOfficeContract(c))).toBe(true)
+    for (const { value } of CONTRACT_GROUPINGS.options) {
+      const groups = groupContracts(listed, value, { parties, fundingTags, surgeons: state.masters.surgeons }, WORDS)
+      expect(groupCount(groups)).toBe(activeContractCount(contracts))
+    }
   })
 
   it('equals the rows the catalogue lists at every count\'s link, for every Party', () => {

@@ -155,7 +155,7 @@ export function SurgeonsTab({ actor }: { actor: Actor }) {
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                       {counts.NOT_PREFERRED > 0 && <NotPreferredPill count={counts.NOT_PREFERRED} />}
                       {counts.PREFERRED > 0 && <PreferredPill count={counts.PREFERRED} />}
-                      {counts.NOT_PREFERRED === 0 && counts.PREFERRED === 0 && <span style={mist}>·</span>}
+                      {counts.NOT_PREFERRED === 0 && counts.PREFERRED === 0 && <span style={mist}>None</span>}
                     </div>
                   </td>
                 </ClickableRow>

@@ -201,7 +201,7 @@ function ItsContractsCard({ partyId }: { partyId: string }) {
               return (
                 <tr key={row.tagId} data-party-tag={row.tagId}>
                   <Td><Pill size="sm" mono={row.tagId !== NO_TAG}>{label}</Pill></Td>
-                  <Td>{funder !== undefined ? funder.name : <span style={{ color: neutral.mist }}>·</span>}</Td>
+                  <Td>{funder !== undefined ? funder.name : <span style={{ color: neutral.mist }}>None</span>}</Td>
                   <Td align="right" mono>{row.count}</Td>
                   <Td align="right">
                     <TextAction size="sm" flush to={contractsCatalogueLink({ holderId: partyId, tagId: row.tagId })} label={`View the ${row.count} ${label} Contracts`}>View</TextAction>

@@ -217,7 +217,7 @@ describe('the surgeon profile and the anaesthetist record', () => {
     const preferred = document.querySelector('[data-pairing-group="PREFERRED"]') as HTMLElement
     fireEvent.click(within(preferred).getByRole('button', { name: /^End / }))
     fireEvent.click(screen.getByRole('button', { name: 'End pairing' }))
-    fireEvent.click(screen.getByRole('button', { name: 'History' }))
+    fireEvent.click(screen.getByRole('button', { name: 'See history' }))
     const dialog = screen.getByRole('dialog')
     expect(within(dialog).getByText('Priority tier changed')).toBeInTheDocument()
     expect(within(dialog).getByText('Pairing preference ended')).toBeInTheDocument()
@@ -406,8 +406,8 @@ describe('catch-up Phase 17b: no surgeons\' rooms, contacts on the surgeon, the 
 
   it('clearing an HPI CPN saves; the chip, the HPI CPN card and History read it; a held one and an anaesthetist\'s are refused on the card', () => {
     renderAdmin(`/admin/people/surgeons/${SURG.reid}`)
-    const card = () => document.querySelector('[data-shot="surgeon-identifiers"]') as HTMLElement
-    fireEvent.click(within(card()).getByRole('button', { name: 'Edit HPI CPN' }))
+    const card = () => document.querySelector('[data-shot="surgeon-name-card"]') as HTMLElement
+    fireEvent.click(within(card()).getByRole('button', { name: 'Edit identity' }))
     fireEvent.change(within(card()).getByLabelText('HPI CPN (optional)'), { target: { value: '42whij' } })
     fireEvent.click(within(card()).getByRole('button', { name: 'Save' }))
     expect(within(card()).getByRole('alert')).toHaveTextContent('That HPI CPN already belongs to Mr J. Whitford.')

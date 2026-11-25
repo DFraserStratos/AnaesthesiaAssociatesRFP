@@ -400,6 +400,15 @@ export function contractMatchesQuery(
 }
 
 /**
+ * How many Active Contracts there are in all, system backstops included: the Contracts tab's count,
+ * which is what the catalogue lists by default (Active, no search, no count link's narrowing). The
+ * Party, tag and hospital counts are of office Contracts only (`partyContracts.ts`).
+ */
+export function activeContractCount(contracts: Readonly<Record<string, Contract>>): number {
+  return Object.values(contracts).filter((c) => c.status === 'active').length
+}
+
+/**
  * The Contract list: the query and filters applied, No contract · RVG first,
  * then by holder (AA first, then the holder's name), each holder's open-price
  * fallbacks after its own Contracts, then AA code.

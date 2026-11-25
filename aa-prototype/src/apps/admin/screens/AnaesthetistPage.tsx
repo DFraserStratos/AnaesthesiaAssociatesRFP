@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { Anaesthetist } from '../../../domain/types'
 import { statusOn } from '../../../domain/anaesthetistStatus'
 import { linkedContractsOf, nextListsOf } from '../../../domain/anaesthetistPanel'
@@ -6,9 +6,9 @@ import { maskBankAccount, normaliseNzBankAccount } from '../../../domain/bankAcc
 import { formatGstNumber, normaliseGstNumber } from '../../../domain/billing/invoicePresentation'
 import { normaliseHpiCpn } from '../../../domain/surgeons'
 import { sessionText } from '../../../domain/outOfHours'
-import { HistorySheet } from '../../../shared/booking'
+import { pricingLabel } from '../../../shared/contracts'
 import { anaesthetistStatusLabel, HPI_CPN_LABEL, locationName, shortDay } from '../../../shared/format'
-import { Button, DefList, DefRow, EditableCard, Pill, RailSection, TextField, useCardEdit, type CardCommit, type RailSectionRow } from '../../../shared/ui'
+import { DefList, DefRow, EditableCard, Pill, RailSection, TextField, useCardEdit, type CardCommit, type RailSectionRow } from '../../../shared/ui'
 import {
   ANAESTHETIST_HPI_CPN_REQUIRED,
   BANK_ACCOUNT_REQUIRED,
@@ -22,6 +22,7 @@ import { PairingSection, useProfileHistory } from '../components/pairing'
 import { RateTierCard } from '../components/RateTierCard'
 import { AnaesthetistStatusCard } from '../components/AnaesthetistStatusCard'
 import { AnaesthetistHistoryCard } from '../components/AnaesthetistHistoryCard'
+import { RecordHistoryCard } from '../components/RecordHistoryCard'
 import { IdChip, PROFILE_CARD, ProfilePage } from '../components/ProfileChrome'
 import { PageBody } from '../components/AdminPage'
 import { BankAccountFields, HpiCpnField } from '../flows/anaesthetistFields'
@@ -45,13 +46,13 @@ import { peoplePath } from '../peoplePaths'
  * Each card's Save is `editAnaesthetist` with that card's changed fields only, so one audited
  * `anaesthetist.update`; a refusal shows on that card and nothing changes. The side panel: their
  * pairings (office only), the Contracts linked to them and their next Lists, three of each, See all
- * expanding the section in place. The tier and the pairings are seen only here, in Admin.
+ * expanding the section in place, then the record's History (its changes and its pairings', in the
+ * shared History sheet), as the Party and specialty pages show theirs. The tier and the pairings are
+ * seen only here, in Admin.
  */
 export function AnaesthetistPage({ anaesthetistId, actor }: { anaesthetistId: string; actor: Actor }) {
   const anaesthetist = useAppStore((s) => s.masters.anaesthetists[anaesthetistId])
   const todayISO = useToday()
-  const [history, setHistory] = useState(false)
-  const profileHistory = useProfileHistory('anaesthetist', anaesthetistId)
   if (anaesthetist === undefined) return null
 
   return (
@@ -61,7 +62,6 @@ export function AnaesthetistPage({ anaesthetistId, actor }: { anaesthetistId: st
       name={anaesthetist.name}
       chip={<IdChip label={HPI_CPN_LABEL} value={anaesthetist.hpiId} shot="anaesthetist-hpi-chip" />}
       sub={<>Registration <span className="mono">{anaesthetist.registrationNumber}</span> · <span data-shot="anaesthetist-status-sub">{anaesthetistStatusLabel(statusOn(anaesthetist, todayISO))}</span></>}
-      action={<Button variant="secondary" onClick={() => setHistory(true)} shot="anaesthetist-history-open">History</Button>}
     >
       <PageBody rail={<AnaesthetistPanel anaesthetist={anaesthetist} actor={actor} />} railLabel="About this anaesthetist">
         <IdentityCard anaesthetist={anaesthetist} actor={actor} />
@@ -71,7 +71,6 @@ export function AnaesthetistPage({ anaesthetistId, actor }: { anaesthetistId: st
         <AnaesthetistStatusCard anaesthetistId={anaesthetistId} actor={actor} editStartDate />
         <AnaesthetistHistoryCard anaesthetistId={anaesthetistId} />
       </PageBody>
-      <HistorySheet open={history} entityIds={profileHistory.ids} entityLabels={profileHistory.labels} title="Anaesthetist history" onClose={() => setHistory(false)} />
     </ProfilePage>
   )
 }
@@ -224,7 +223,7 @@ function BankCard({ anaesthetist: a, actor }: CardProps) {
 /** Rows shown in each side panel section before See all. */
 const PANEL_LIMIT = 3
 
-/** The side panel: pairings, the Contracts linked to them, their next Lists. */
+/** The side panel: pairings, the Contracts linked to them, their next Lists, then History. */
 function AnaesthetistPanel({ anaesthetist: a, actor }: CardProps) {
   const contracts = useAppStore((s) => s.masters.contracts)
   const parties = useAppStore((s) => s.masters.parties)
@@ -233,6 +232,7 @@ function AnaesthetistPanel({ anaesthetist: a, actor }: CardProps) {
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const todayISO = useToday()
   const id = a.registrationNumber
+  const profileHistory = useProfileHistory('anaesthetist', id)
 
   const contractRows: RailSectionRow[] = useMemo(
     () =>
@@ -240,15 +240,17 @@ function AnaesthetistPanel({ anaesthetist: a, actor }: CardProps) {
         key: c.id,
         to: contractPath(c.id),
         title: c.name,
+        // Its pricing, after the holder only where someone else holds it (a hospital's Contract), so the
+        // row never repeats the page's own anaesthetist.
         sub: (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            {parties[c.holderId]?.name ?? c.holderId}
+            {[parties[c.holderId]?.name ?? c.holderId].filter((holder) => holder !== a.name).concat(pricingLabel(c.pricing)).join(' · ')}
             {c.status === 'disabled' && <Pill size="sm">Disabled</Pill>}
           </span>
         ),
         data: { 'data-contract-id': c.id, 'data-contract-status': c.status },
       })),
-    [contracts, parties, id],
+    [contracts, parties, id, a.name],
   )
 
   const listRows: RailSectionRow[] = useMemo(
@@ -271,6 +273,7 @@ function AnaesthetistPanel({ anaesthetist: a, actor }: CardProps) {
       </div>
       <RailSection title="Contracts" countNoun="Contracts linked to them" rows={contractRows} limit={PANEL_LIMIT} empty="No Contract is linked to them." shot="panel-contracts" />
       <RailSection title="Next Lists" countNoun="Lists from today" rows={listRows} limit={PANEL_LIMIT} empty="No List from today on." shot="panel-lists" />
+      <RecordHistoryCard entityIds={profileHistory.ids} entityLabels={profileHistory.labels} name={a.name} shot="anaesthetist-record-history" openShot="anaesthetist-history-open" />
     </div>
   )
 }
