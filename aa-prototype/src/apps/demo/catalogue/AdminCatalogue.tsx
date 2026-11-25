@@ -155,6 +155,8 @@ import {
 import { LockBadge } from '../../../shared/booking/LockBadge'
 import { ANAE, SEED_MARKERS } from '../../../domain/seed'
 import { RateTierCard } from '../../admin/components/RateTierCard'
+import { AnaesthetistStatusCard } from '../../admin/components/AnaesthetistStatusCard'
+import { AnaesthetistHistoryCard } from '../../admin/components/AnaesthetistHistoryCard'
 import { ContractHistory } from '../../admin/flows/ContractHistory'
 import { stillOnContract, useAppStore, useToday } from '../../../store'
 import { ContractChangeNotice } from '../../admin/flows/ContractChangeNotice'
@@ -230,6 +232,12 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="RateTierCard" source="apps/admin/components/RateTierCard.tsx" usedIn={A} what="The anaesthetist's rate per unit and priority tier on one card (build plan Phase 50; US-01.3.6, DM-09; people-section.html #tier). At rest: the rate (mono) and the tier with a mist office only, and Edit. Editing (the Card's editing and footer): the rate field, the tier as a Segmented control that moves a local draft only (a click never saves) with its office-only hint, Cancel and Save. Save writes only what changed, the rate then the tier in one change set, so one save is one audited change; a refusal shows on the card. Self-contained: anaesthetistId and actor." shared="shared/ui/Card.tsx" note="Live on Dr Priya Sharma: press Edit for the editing state. Save writes to the demo store.">
           <RateTierCard anaesthetistId={ANAE.sharma} actor={OFFICE_ACTOR} />
+        </CatalogueRow>
+        <CatalogueRow name="AnaesthetistStatusCard / MakeInactiveSheet / MakeActiveSheet" source="apps/admin/components/AnaesthetistStatusCard.tsx" usedIn={A} what="Whether an anaesthetist is active (build plan Phase 52; US-12.1.6; people-section.html #inactive): Active since a day with Make inactive; Inactive from a last day with the reason and Clear last day; Inactive since the day after with Make active. Make inactive opens MakeInactiveSheet (ConfirmSheet: the last day, the Lists after it that refuse it, each opening its day, what happens after it, the reason). Make active opens MakeActiveSheet (ConfirmSheet: the Contracts the system disabled with them, each ticked with its price). Self-contained: anaesthetistId and actor." shared="shared/surface/ConfirmSheet.tsx" note="Live on Dr Priya Sharma: Make inactive opens the sheet with her Lists after today. Confirming writes to the demo store.">
+          <AnaesthetistStatusCard anaesthetistId={ANAE.sharma} actor={OFFICE_ACTOR} />
+        </CatalogueRow>
+        <CatalogueRow name="AnaesthetistHistoryCard" source="apps/admin/components/AnaesthetistHistoryCard.tsx" usedIn={A} what="An anaesthetist's past work, readable whatever their status (build plan Phase 52; US-12.1.6 History readable): the latest five past Lists in a dense table, See all expanding in place, and Invoices and payments to their ledger page." shared="shared/ui/Card.tsx" note="Live on Dr Priya Sharma.">
+          <AnaesthetistHistoryCard anaesthetistId={ANAE.sharma} />
         </CatalogueRow>
         <CatalogueRow name="ChangedSinceSubmittedPill" source="apps/admin/components/ChangedSinceSubmitted.tsx" usedIn={A} what="Flags a submitted List the anaesthetist has changed since submitting, with the count and time of the last change." shared="shared/ui/Pill.tsx" note="Driven by a local cue here: the seed has no changed submitted List.">
           <ChangedSinceSubmittedExample />

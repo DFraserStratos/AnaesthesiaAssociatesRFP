@@ -128,6 +128,14 @@ test('"slot" never appears on the screens this phase touched', async ({ page }) 
   await page.getByRole('button', { name: 'Edit times', exact: true }).click()
   await check('Edit times')
   await page.keyboard.press('Escape')
+  // Build plan Phase 52: the anaesthetist record's status card and its make-inactive sheet replace the edit sheet's toggle.
+  await page.goto('/admin/masters/anaesthetists/41267')
+  await page.waitForLoadState('networkidle')
+  await check('anaesthetist record')
+  await page.locator('[data-shot="anaesthetist-status"]').getByRole('button', { name: 'Make inactive' }).click()
+  await expect(page.locator('[data-shot="make-inactive-sheet"]')).toBeVisible()
+  await check('make-inactive sheet')
+  await page.keyboard.press('Escape')
   // The demo inspector (/demo/data) is exempt: it names the code collections (slots, lists) by design.
   for (const path of ['/admin/masters?view=scheduleSettings', '/admin/masters?view=anaesthetists', '/admin/audit', '/mobile/lists', '/mobile/availability', '/web', '/web/lists', '/web/availability']) {
     await page.goto(path)

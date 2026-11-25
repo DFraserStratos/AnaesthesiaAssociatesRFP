@@ -8,6 +8,9 @@ import { TableShell, Td, Th } from '../../../shared/table'
 import { FormError, Notice, SelectField, TextAction, TextField } from '../../../shared/ui'
 import { makeAnaesthetistInactive, ownActiveContracts, useAppStore, useToday, type Actor } from '../../../store'
 
+/** How many of the Lists after the day the refusal lists before "and N more". */
+const SHOWN = 10
+
 /**
  * Make an anaesthetist inactive (build plan Phase 52; US-12.1.6), over the
  * shared `ConfirmSheet` (docs/explorations/people-section.html #inactive: the
@@ -87,7 +90,7 @@ export function MakeInactiveSheet({ open, anaesthetistId, actor, onClose }: { op
               </tr>
             </thead>
             <tbody>
-              {held.map((l) => (
+              {held.slice(0, SHOWN).map((l) => (
                 <tr key={l.id} data-shot="make-inactive-list-row" data-list-id={l.id}>
                   <Td mono nowrap>{shortDay(l.dateISO)}</Td>
                   <Td>{`${locationName(l.hospitalId, masters.hospitals)} ${sessionText(l.session)}`}</Td>
@@ -99,6 +102,11 @@ export function MakeInactiveSheet({ open, anaesthetistId, actor, onClose }: { op
               ))}
             </tbody>
           </TableShell>
+          {held.length > SHOWN && (
+            <div style={{ marginTop: 6 }} data-shot="make-inactive-lists-more">
+              {`and ${held.length - SHOWN} more, to ${shortDay(held[held.length - 1]!.dateISO)}.`}
+            </div>
+          )}
         </Notice>
       )}
       {day !== null && held.length === 0 && (

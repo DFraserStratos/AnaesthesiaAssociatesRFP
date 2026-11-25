@@ -83,6 +83,19 @@ test('phase 26 admin: Master data columns and the record page Profile card', asy
   await expect(dialog.getByText('That bank account number does not look right.', { exact: false })).toBeVisible()
   await dialog.getByLabel('HPI CPN (required)').fill('')
   await expect(dialog.getByRole('button', { name: 'Save changes' })).toBeDisabled()
+  // Build plan Phase 52: the sheet has no Status control; the status card makes an anaesthetist inactive.
+  await expect(dialog.getByText('Status', { exact: true })).toHaveCount(0)
   await page.waitForTimeout(300)
   await page.screenshot({ path: 'visual/shots/p26-06-admin-edit.png', fullPage: true })
+  await page.keyboard.press('Escape')
+
+  const status = page.locator('[data-shot="anaesthetist-status"]')
+  await expect(status).toHaveAttribute('data-status', 'active')
+  await status.getByRole('button', { name: 'Make inactive' }).click()
+  const sheet = page.locator('[data-shot="make-inactive-sheet"]')
+  // Dr Souter holds Lists after today, so the sheet lists them and Make inactive waits.
+  await expect(sheet.locator('[data-shot="make-inactive-lists"]')).toContainText('Reassign them first.')
+  await expect(page.locator('[data-shot="make-inactive-confirm"]')).toBeDisabled()
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: 'visual/shots/p26-07-admin-make-inactive.png', fullPage: true })
 })

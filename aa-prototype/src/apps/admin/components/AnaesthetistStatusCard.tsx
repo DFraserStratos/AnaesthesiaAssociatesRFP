@@ -7,6 +7,9 @@ import { MakeActiveSheet } from '../flows/MakeActiveSheet'
 import { MakeInactiveSheet } from '../flows/MakeInactiveSheet'
 import { PROFILE_CARD } from './ProfileChrome'
 
+/** Two facts side by side, as the Rate and tier card beside it lays its own out. */
+const FACTS = { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' } as const
+
 /**
  * Whether an anaesthetist is active, and the office's one action for it (build
  * plan Phase 52; US-12.1.6). Self-contained on today's anaesthetist record (54
@@ -46,12 +49,12 @@ export function AnaesthetistStatusCard({ anaesthetistId, actor }: { anaesthetist
 
   return (
     <Card style={PROFILE_CARD} title="Status" shot="anaesthetist-status" data-status={status.kind} action={action}>
-      <DefList gap={12}>
-        <DefRow layout="stacked" label="Status">
-          <Pill tone={status.kind === 'active' ? 'success' : status.kind === 'leaving' ? 'warning' : 'neutral'} size="sm">
-            {anaesthetistStatusLabel(status)}
-          </Pill>
-        </DefRow>
+      <div>
+        <Pill tone={status.kind === 'active' ? 'success' : status.kind === 'leaving' ? 'warning' : 'neutral'} size="sm" shot="anaesthetist-status-pill">
+          {anaesthetistStatusLabel(status)}
+        </Pill>
+      </div>
+      <DefList gap={12} style={FACTS}>
         {status.kind === 'leaving' ? (
           <DefRow layout="stacked" label="Last day" mono>{plainDate(status.lastDayISO)}</DefRow>
         ) : (

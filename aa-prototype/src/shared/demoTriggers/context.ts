@@ -39,6 +39,8 @@ export interface DemoContextValues {
   'support.tab': 'helpLine' | 'productSupport'
   /** Any app · whose requests the open support panel lists: the persona's name, or '' for the office (every request). */
   'support.requester': string
+  /** Mobile and PWA · the sign-in screen is showing (build plan Phase 52's "try signing in after the last day"). */
+  'mobile.signIn': true
 }
 
 export type DemoContextKey = keyof DemoContextValues

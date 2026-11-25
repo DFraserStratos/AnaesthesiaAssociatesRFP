@@ -7,7 +7,8 @@ import type { ReactNode } from 'react'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { freshAppState, useAppStore, type Actor } from '../../../store'
+import { NO_LONGER_ACTIVE, freshAppState, makeAnaesthetistInactive, useAppStore, type Actor } from '../../../store'
+import { advanceClockDays } from '../../../store/clockActions'
 import { SurfaceProvider } from '../../../shared'
 import { ANAE } from '../../../domain/seed'
 import { clearAnaesthetistSession, isSignedIn, signOutSession, useSessionStore } from '../../../shared/session/anaesthetistSession'
@@ -121,6 +122,32 @@ describe('MobileApp sign-in gate', () => {
     const { container } = renderApp('signed-in')
     act(() => signOutSession())
     expect(container.querySelector('[data-shot="sign-in-screen"]')).not.toBeNull()
+  })
+
+  // Build plan Phase 52 (US-13.5.3, DM-07).
+  const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
+
+  /** Dr Souter with no List after `lastDayISO` (her later Lists dropped for the test), made inactive from it. */
+  function souterLeaves(lastDayISO: string) {
+    const s = useAppStore.getState()
+    const lists = Object.fromEntries(Object.entries(s.schedule.lists).filter(([, l]) => !(l.anaesthetistId === ANAE.souter && l.dateISO > lastDayISO)))
+    useAppStore.setState({ schedule: { ...s.schedule, lists } })
+    expect(makeAnaesthetistInactive(useAppStore, OFFICE, ANAE.souter, lastDayISO, 'leftPractice').ok).toBe(true)
+  }
+
+  it('after the last day a signed-in handset is signed out once, with the reason, and sign-in is refused', () => {
+    souterLeaves('2026-11-24')
+    const { container } = renderApp('signed-in')
+    expect(screen.getByTestId('screen')).toBeInTheDocument()
+    const before = accountRows().length
+    act(() => advanceClockDays(useAppStore, 1))
+    expect(container.querySelector('[data-shot="sign-in-screen"]')).not.toBeNull()
+    expect(accountRows().length).toBe(before + 1)
+    expect(accountRows().at(-1)).toMatchObject({ action: 'auth.signOut', after: { reason: NO_LONGER_ACTIVE } })
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    expect(accountRows().at(-1)).toMatchObject({ action: 'auth.signInFailed', after: { reason: NO_LONGER_ACTIVE } })
+    expect(container.querySelector('[data-shot="sign-in-no-longer-active"]')?.textContent).toContain('Dr Melanie Souter')
+    expect(screen.queryByTestId('screen')).toBeNull()
   })
 })
 

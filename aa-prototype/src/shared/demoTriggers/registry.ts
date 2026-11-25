@@ -191,6 +191,8 @@ import { sessionText } from '../../domain/outOfHours'
 import { isBookingPair } from '../../domain/billing/ledger'
 import { APP_CONFIG } from '../../shell/appConfig'
 import { recordAnaesthetistSignIn } from '../../store/authDemoActions'
+import { inactiveSignInCandidate, tryInactiveSignIn } from '../../store/anaesthetistStatusActions'
+import { dayAfterISO, statusOn } from '../../domain/anaesthetistStatus'
 import { isSignedIn, signOutSession } from '../session/anaesthetistSession'
 import { newerInvoiceDescription } from '../../domain/billing/procedureStack'
 import {
@@ -322,6 +324,7 @@ const MOBILE_LISTS = ['/mobile/lists', '/mobile/lists/:listId', '/mobile/lists/:
 const ADMIN_DAY = '/admin/day/:dateISO'
 const ADMIN_DRAFT_LISTS = '/admin/draft-lists'
 const ADMIN_MASTERS = '/admin/masters'
+const ANAESTHETIST_RECORD = '/admin/masters/anaesthetists/:anaesthetistId'
 /** The Contracts section (build plan Phase 45): the list and a Contract's page. `apps/admin/contractsPaths.ts` builds these in the app; this file stays out of `src/apps` (the PWA closure contains it). */
 const ADMIN_CONTRACTS = '/admin/contracts'
 const ADMIN_CONTRACT = '/admin/contracts/:contractId'
@@ -1950,6 +1953,50 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => ADMIN_CONTRACTS,
     indexHint: 'Replace a Contract from a later date first (Replace from a date on its page), leaving the old one active.',
+  },
+  // ── Admin · an anaesthetist's record: pass their last day (build plan Phase 52; US-12.1.6, DM-05, DM-06) ──
+  {
+    id: 'pass-last-day',
+    label: 'Demo: pass the last day',
+    description:
+      "Moves the demo clock to the day after this anaesthetist's last day, so their sessions end, the finder skips them and their own Contracts show Disabled. Reset puts the clock back.",
+    screen: "Admin · an anaesthetist's record",
+    routes: [ANAESTHETIST_RECORD],
+    surfaces: ['bar'],
+    disabledReason: (state, ctx) => {
+      const a = state.masters.anaesthetists[ctx.params['anaesthetistId'] ?? '']
+      return a !== undefined && statusOn(a, state.clock.todayISO).kind === 'leaving' ? null : 'No last day ahead: Make inactive first'
+    },
+    run: (api, ctx) => {
+      const a = api.getState().masters.anaesthetists[ctx.params['anaesthetistId'] ?? '']
+      const status = a === undefined ? null : statusOn(a, api.getState().clock.todayISO)
+      if (a === undefined || status === null || status.kind !== 'leaving') return { ok: false, message: 'No last day ahead' }
+      const next = dayAfterISO(status.lastDayISO)
+      moveClockToDate(api, next)
+      return { ok: true, message: `Clock now ${shortDay(next)}: ${drSurname(a.name)} is inactive. Their sessions after ${shortDay(status.lastDayISO)} are gone and their own Contracts are disabled.` }
+    },
+    indexPath: () => null,
+    indexEmptyReason: "Open an anaesthetist's record and make them inactive from a last day first.",
+  },
+  // ── Mobile and PWA · Sign in: an anaesthetist whose last day has passed (build plan Phase 52; US-13.5.3, DM-07) ──
+  {
+    id: 'try-sign-in-after-last-day',
+    label: 'Demo: try signing in after the last day',
+    description:
+      'Tries the sign-in of the anaesthetist whose last day passed most recently (never Dr Souter). It is refused as no longer active, and the refusal is an audited row.',
+    screen: 'Mobile · Sign in',
+    routes: ['/mobile', '/mobile/*'],
+    surfaces: ['bar', 'pwa'],
+    when: (_state, ctx) => ctx.published['mobile.signIn'] === true,
+    disabledReason: (state) => (inactiveSignInCandidate(state) === undefined ? "No anaesthetist's last day has passed" : null),
+    run: (api) => {
+      const tried = tryInactiveSignIn(api)
+      return tried.ok
+        ? { ok: true, message: `${tried.value.name} tried to sign in: refused, no longer active. The refusal is in the audit.` }
+        : { ok: false, message: tried.message }
+    },
+    indexPath: () => null,
+    indexEmptyReason: 'Shows on the sign-in screen: sign out on More first.',
   },
   // ── Admin · Master data, Recurring bookings: the nightly roll meets a blocked-out day (catch-up Phase 31) ──
   {

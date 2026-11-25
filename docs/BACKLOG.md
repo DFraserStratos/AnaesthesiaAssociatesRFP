@@ -103,6 +103,7 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 - Shortening the horizon keeps recurring-clash Draft Lists past the new edge (at 85, 17 when going from four months to three). `store/slotActions.ts` (`setHorizonMonths`). S
 - Record the owner's rule "recurring Lists skip public holidays" (24 Nov 2026, `docs/DECISIONS.md`) in the catalogue (US-01.3.2, US-01.5.2) with `/update-requirements`. S
 - Start-up builds the whole practice on every load: about 1 s on a laptop, about 3 s on a 4x-slowed CPU (dev server). Cache the built start, or build the 71's billing lazily. `store/appStore.ts` (`practiceAppState`). M
+- A long demo-clock jump at practice scale overflows browser storage: moving the clock four months (e.g. "Demo: pass the last day" on Dr Beaumont, whose Lists run to the horizon's end, so her last day must be its last) grows the saved `aa-demo` delta to about 5.2 MB, the write fails and saving latches off, so the session works until a reload brings back the state before the jump. Found in build plan Phase 52. `store/persistStorage.ts`, `store/persistDelta.ts`. M
 
 ## Prototype: provisional captions
 

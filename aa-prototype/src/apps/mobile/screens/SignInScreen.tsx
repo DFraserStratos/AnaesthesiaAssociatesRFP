@@ -3,6 +3,7 @@ import { Logo } from '../../../shared/Logo'
 import { DemoBadge } from '../../../shared/DemoBadge'
 import { Button, Card, Notice, Pill, TextField } from '../../../shared/ui'
 import { stampText } from '../../../shared/format'
+import { useDemoTriggerContext } from '../../../shared/demoTriggers/context'
 import { ANAE } from '../../../domain/seed'
 import { latestNoLongerActiveRefusal, recordAnaesthetistSignIn, signInRefusal, useAppStore } from '../../../store'
 import { SIGN_IN_PROVISIONAL, signInSession } from '../../../shared/session/anaesthetistSession'
@@ -40,6 +41,8 @@ export function SignInScreen() {
   const [password, setPassword] = useState(DEMO_PASSWORD)
   const [emailError, setEmailError] = useState<EmailError>(null)
   const [passwordError, setPasswordError] = useState(false)
+  // The "try signing in after the last day" trigger shows only while this screen does (Phase 52).
+  useDemoTriggerContext('mobile.signIn', true)
   const audit = useAppStore((s) => s.audit)
   const refused = useMemo(() => latestNoLongerActiveRefusal({ audit }), [audit])
 
