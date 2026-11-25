@@ -32,9 +32,8 @@ import { PROFILE_CARD } from '../../components/ProfileChrome'
 import { partyPath } from '../../contractsPaths'
 import { PriceRangesTable } from './PriceRangesTable'
 import { DefaultRvgCodeField } from './DefaultRvgCodeField'
-
-/** D23 (OQ-73, at Confirm): the one place on the page the reading is labelled. */
-export const PREPAID_BILLS_PAYER_HELPER = "A prepaid Contract always bills the payer, awaiting AA's confirmation."
+// D23's caption has one home, New contract's step 1 (Phase 46); "Who it bills" shows the same string.
+import { PREPAID_BILLS_PAYER_HELPER } from './new/NewContractPage'
 
 /** The fields a system Contract may change, read from the model's one list. */
 const SYSTEM_EDITABLE: ReadonlySet<string> = new Set(SYSTEM_CONTRACT_EDITABLE_FIELDS)
@@ -128,10 +127,11 @@ function EditableCard({
   )
 }
 
-export function ContractOverview({ contract, actor }: { contract: Contract; actor: Actor }) {
+/** `addRange` opens a fixed price's add-range row on arrival (Replace from a date's pointer, build plan Phase 49). */
+export function ContractOverview({ contract, actor, addRange = false }: { contract: Contract; actor: Actor; addRange?: boolean }) {
   return (
     <>
-      <PriceCard contract={contract} actor={actor} />
+      <PriceCard contract={contract} actor={actor} addRange={addRange} />
       <WhereCard contract={contract} actor={actor} />
       <WhoBillsCard contract={contract} actor={actor} />
       <CodesCard contract={contract} actor={actor} />
@@ -144,7 +144,7 @@ export function ContractOverview({ contract, actor }: { contract: Contract; acto
 // Price: the ranges table of a fixed price, or the rate or discount of an RVG Contract (undated)
 // ---------------------------------------------------------------------------
 
-function PriceCard({ contract, actor }: { contract: Contract; actor: Actor }) {
+function PriceCard({ contract, actor, addRange }: { contract: Contract; actor: Actor; addRange: boolean }) {
   const p = contract.pricing
   const system = contract.systemRole !== undefined
   const edit = useCardEdit(actor, contract.id, () => ({
@@ -152,7 +152,7 @@ function PriceCard({ contract, actor }: { contract: Contract; actor: Actor }) {
     discount: p.kind === 'rvgDiscount' ? String(p.discountPct) : '',
     override: (contract.anaesthetistMayOverridePrice ? 'yes' : 'no') as YesNo,
   }))
-  if (p.kind === 'fixed') return <PriceRangesTable contract={contract} actor={actor} />
+  if (p.kind === 'fixed') return <PriceRangesTable contract={contract} actor={actor} startAdding={addRange} />
   const rvg = isRvgKind(p.kind)
   const d = edit.draft
 
@@ -456,7 +456,11 @@ function FixedCard({ contract }: { contract: Contract }) {
         <DefRow {...KV} label="Pricing kind">{PRICING_KIND_LABEL[contract.pricing.kind]}</DefRow>
         <DefRow {...KV} label="Prepaid">{contract.prepaid ? 'Yes' : 'No'}</DefRow>
       </DefList>
-      <FieldHint>Set when the Contract was created.</FieldHint>
+      <FieldHint>
+        {contract.systemRole === undefined && contract.status === 'active'
+          ? 'Set when the Contract was created. To change one of these from a date, use Replace from a date.'
+          : 'Set when the Contract was created.'}
+      </FieldHint>
     </Card>
   )
 }

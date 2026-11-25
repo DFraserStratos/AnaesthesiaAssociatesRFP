@@ -116,6 +116,8 @@ describe('registry shape', () => {
       if (t.id === 'ask-colleague-make-available') published['adminPicker.listId'] = 'L-29104-2026-11-25-AM'
       // The backdated range shows on Merivale's Face lift page, its index path (catch-up Phase 24; a page since build plan Phase 45).
       if (t.id === 'demo-backdated-range') published['adminContracts.openContractId'] = 'CT-MER-FACELIFT'
+      // Reach the change date shows on the Contract list, which publishes its tab (build plan Phase 49).
+      if (t.id === 'contract-reach-change-date') published['adminContracts.tab'] = 'contracts'
       // The Hub's mode shows while Add a booking (or another lookup surface) is open (catch-up Phase 40a; the index hint says so).
       if (t.id === 'nhi-hub-mode') published['nhiHub.inUse'] = true
       // The support entries show while the support panel is open on their tab (catch-up Phase 43b; the index hints say so).
@@ -141,7 +143,7 @@ describe("the backdated range trigger (catch-up Phase 24)", () => {
   it("shows on the Contract list and on Merivale's Face lift page; disabled once the range is added", () => {
     const api = createAppStore()
     // Not on Master data any more (build plan Phase 45): the list and the pages are the Contracts section's.
-    expect(ids(api, '/admin/masters', 'bar', { 'adminMasters.view': 'parties' })).not.toContain('demo-backdated-range')
+    expect(ids(api, '/admin/masters', 'bar', { 'adminMasters.view': 'rvgGroups' })).not.toContain('demo-backdated-range')
     expect(ids(api, '/admin/contracts', 'bar', { 'adminContracts.tab': 'contracts' })).toContain('demo-backdated-range')
     expect(ids(api, '/admin/contracts/CT-MER-FACELIFT-1', 'bar', { 'adminContracts.openContractId': 'CT-MER-FACELIFT-1' })).not.toContain('demo-backdated-range')
     expect(ids(api, '/admin/contracts/CT-MER-FACELIFT', 'bar', { 'adminContracts.openContractId': 'CT-MER-FACELIFT' })).toContain('demo-backdated-range')

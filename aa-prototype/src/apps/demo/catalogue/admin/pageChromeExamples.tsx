@@ -46,8 +46,9 @@ export function TableKitExample() {
         </thead>
         <tbody>
           <GroupRow span={5}>This week</GroupRow>
-          {ROWS.map((r) => (
-            <ClickableRow key={r.id} onOpen={() => setLast(`Row click opened ${r.id}.`)} data-draft-list-row={r.id}>
+          <GroupRow span={5} level="sub">Sub-heading (level sub, Phase 47)</GroupRow>
+          {ROWS.map((r, i) => (
+            <ClickableRow key={r.id} selected={i === 0} onOpen={() => setLast(`Row click opened ${r.id}.`)} data-draft-list-row={r.id}>
               <Td>{r.day}</Td>
               <Td mono>
                 <RowOpenButton label={`Open ${DRAFT_LIST} ${r.day} ${r.session}, ${r.where}`} onOpen={() => setLast(`The handle opened ${r.id}.`)}>
@@ -134,6 +135,12 @@ export function CardExample() {
         <span style={{ fontSize: 13 }}>The warning tone.</span>
       </Card>
       <EditingCardExample />
+      <Card step={1} title="Holder and who it bills">
+        <span style={{ fontSize: 13, color: neutral.slate }}>step: the numbered chip before the heading (New contract, Phase 46).</span>
+      </Card>
+      <Card step={2} bare title="From">
+        <span style={{ fontSize: 13, color: neutral.slate }}>bare: a step straight on a sheet, no border or fill (Replace from a date, Phase 49).</span>
+      </Card>
     </div>
   )
 }

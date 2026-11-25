@@ -1,5 +1,5 @@
 import type { CSSProperties, MouseEvent, ReactNode } from 'react'
-import { neutral, semantic } from '../../theme/tokens'
+import { accent, neutral, semantic } from '../../theme/tokens'
 import type { DataAttributes } from '../ui/Field'
 import { RowAlignContext } from './cells'
 
@@ -17,7 +17,9 @@ export function isInteractiveRowTarget(target: EventTarget | null): boolean {
  * the tones. `today` tints its cells `neutral.bg` (the hover still shows over it); `quiet` sets the
  * text slate (a submitted List). Its cells centre vertically; `align="top"` keeps a multi-line
  * row's cells at the top, as the Draft Lists and AA fee rows always were. `tone="warning"` draws the
- * warning tint and on-tint text (Matching's changed fields, catch-up Phase 33). `data-*` attributes pass through.
+ * warning tint and on-tint text (Matching's changed fields, catch-up Phase 33). `selected` marks the row picked
+ * in a list that shows the pick beside it (the Funding tags tab, build plan Phase 48): the accent tint and
+ * `aria-selected`. `data-*` attributes pass through.
  */
 export function ClickableRow({
   onOpen,
@@ -25,6 +27,7 @@ export function ClickableRow({
   quiet = false,
   align = 'middle',
   tone,
+  selected = false,
   style,
   children,
   ...data
@@ -35,6 +38,8 @@ export function ClickableRow({
   align?: 'top' | 'middle'
   /** `warning` tints the row and its text (a changed field in Matching's differences table). */
   tone?: 'warning'
+  /** The picked row of a list whose pick shows beside it; off by default. */
+  selected?: boolean
   style?: CSSProperties
   children: ReactNode
 } & DataAttributes) {
@@ -43,6 +48,7 @@ export function ClickableRow({
     <RowAlignContext.Provider value={align}>
       <tr
         {...data}
+        {...(selected ? { 'aria-selected': true } : {})}
         className={classes === '' ? undefined : classes}
         onClick={
           onOpen !== undefined
@@ -51,7 +57,7 @@ export function ClickableRow({
               }
             : undefined
         }
-        style={{ ...(quiet ? { color: neutral.slate } : {}), ...(tone === 'warning' ? { background: semantic.warning.tint, color: semantic.warning.onTint } : {}), ...style }}
+        style={{ ...(quiet ? { color: neutral.slate } : {}), ...(tone === 'warning' ? { background: semantic.warning.tint, color: semantic.warning.onTint } : {}), ...(selected ? { background: accent.tint } : {}), ...style }}
       >
         {children}
       </tr>

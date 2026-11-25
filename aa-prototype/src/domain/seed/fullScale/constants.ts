@@ -101,7 +101,7 @@ export const FULL_SCALE = {
     newerPaidShare: 0.45,
   },
   /** The page sizes the screens use at scale. */
-  pageSizes: { day: 30, invoices: 50, audit: 100, ledger: 50, monitorGroups: 20, monitorListsPerGroup: 25, demoTables: 200 },
+  pageSizes: { day: 30, invoices: 50, audit: 100, ledger: 50, monitorGroups: 20, monitorListsPerGroup: 25, demoTables: 200, contracts: 50 },
   /** Generated invoice numbers: a reserved series that cannot collide with the live `AA-2026-` counter or the `AA-2026-H` backdrop. */
   invoiceNumberPrefix: 'AA-S-',
   /** Generated registration numbers: a reserved block the cast cannot collide with. */

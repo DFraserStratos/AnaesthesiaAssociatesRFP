@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { activeNotificationCount, type Actor, type NotificationTarget, type OpenWarningRow } from '../../../store'
 import { Card, CountBadge, LineTab, LineTabs } from '../../../shared/ui'
 import { InfoTip } from '../../../shared/help/InfoTip'
-import { ToDoList, toDoItems, useNoContractRows } from './WarningsToDo'
+import { ToDoList, toDoItems, useNoContractRows, useReplacedContractRows } from './WarningsToDo'
 import { ActiveCount, NotificationList, usePoolState } from './NotificationsCard'
 
 type Tab = 'todo' | 'notifications'
@@ -22,17 +22,21 @@ export function RailWorkCard({
   onOpenNotification,
   onSeeAllNotifications,
   onShowResolvedNotifications,
+  onOpenContract,
 }: {
   todoRows: readonly OpenWarningRow[]
   actor: Actor
   onOpenBooking: (dateISO: string, bookingId: string) => void
   onOpenConflicts?: () => void
+  /** Opens a replaced Contract's page from its to-do (build plan Phase 49). */
+  onOpenContract?: (contractId: string) => void
   onOpenNotification: (target: NotificationTarget) => void
   onSeeAllNotifications: () => void
   onShowResolvedNotifications?: () => void
 }) {
   const noContract = useNoContractRows()
-  const items = useMemo(() => toDoItems(todoRows, noContract), [todoRows, noContract])
+  const replaced = useReplacedContractRows()
+  const items = useMemo(() => toDoItems(todoRows, noContract, replaced), [todoRows, noContract, replaced])
   const pool = usePoolState()
   const notices = useMemo(() => activeNotificationCount(pool), [pool])
   const [tab, setTab] = useState<Tab>(() => (items.length === 0 && notices > 0 ? 'notifications' : 'todo'))
@@ -60,7 +64,13 @@ export function RailWorkCard({
         style={{ display: 'flex', flexDirection: 'column', gap: 10, outline: 'none' }}
       >
         {tab === 'todo' ? (
-          <ToDoList items={items} actor={actor} onOpenBooking={onOpenBooking} {...(onOpenConflicts !== undefined ? { onOpenConflicts } : {})} />
+          <ToDoList
+            items={items}
+            actor={actor}
+            onOpenBooking={onOpenBooking}
+            {...(onOpenConflicts !== undefined ? { onOpenConflicts } : {})}
+            {...(onOpenContract !== undefined ? { onOpenContract } : {})}
+          />
         ) : (
           // After a tick the row leaves; focus goes to the panel, not the page.
           <NotificationList

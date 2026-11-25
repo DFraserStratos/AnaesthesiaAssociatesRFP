@@ -4,6 +4,7 @@ import { SyntheticDataBadge } from '../../../shared/SyntheticDataBadge'
 import { Notice } from '../../../shared/ui'
 import { neutral } from '../../../theme/tokens'
 import { Pager } from '../../admin/components/Pager'
+import { GroupIndex } from '../../admin/components/GroupIndex'
 import { SCALE_GENERATING_LINE } from '../../../shared/scale/ScaleBanner'
 import { StubSetExample } from './stubExamples'
 import { DRAFT_LIST, DRAFT_LISTS, UNASSIGNED } from '../../../shared/scheduleTerms'
@@ -76,7 +77,8 @@ import {
   ClearConflictExample,
   CodePickerExample,
   ConflictCalloutExample,
-  ContractPanelExample,
+  NewContractPageExample,
+  NewContractRailExample,
   PriceRangesTableExample,
   DayGridExample,
   DayNavExample,
@@ -289,8 +291,11 @@ export function AdminCatalogue() {
         <CatalogueRow name="OptionChip" source="shared/ui/OptionChip.tsx" usedIn={AWM} what="A quick option chip (catch-up Phase 39): a teal-tint pill that fills or picks one answer in a form, beside the field it serves (the credit's reasons over its reason text); pressed is the teal border and tint with aria-pressed; size md 36 or lg 44 on the phone. Not FilterPills, the solid teal list filter." shared="shared/ui/OptionChip.tsx" note="The availability form's chips are this; the funder sheet's and the credit's choice of invoice use its radio role (aria-checked) inside a radiogroup.">
           <OptionChipExample />
         </CatalogueRow>
-        <CatalogueRow name="OptionRow" source="shared/ui/OptionRow.tsx" usedIn={A} what="One result in a short pick list under a search box (catch-up Phase 33's review, Matching's Match to another Booking): a full-width bordered button, words left and mono facts right; the current pick in the teal accent edge and tint, with aria-pressed. A table row that opens a record is ClickableRow instead." shared="shared/ui/OptionRow.tsx">
+        <CatalogueRow name="OptionRow" source="shared/ui/OptionRow.tsx" usedIn={A} what="One result in a short pick list under a search box (catch-up Phase 33's review, Matching's Match to another Booking): a full-width bordered button, words left and mono facts right; the current pick in the teal accent edge and tint, with aria-pressed. The nav variant (Phase 47) is an index pane's item: borderless, slate, teal on the accent tint with aria-current when picked, a mono count at the right (GroupIndex). A table row that opens a record is ClickableRow instead." shared="shared/ui/OptionRow.tsx">
           <OptionRowExample />
+        </CatalogueRow>
+        <CatalogueRow name="GroupIndex" source="apps/admin/components/GroupIndex.tsx" usedIn={A} what="An index of groups with their counts beside a grouped list (build plan Phase 47, the Contract catalogue; contracts-section.html #catalogue): All first, then each group as an OptionRow nav item, a mist caption where the section changes, an optional note under the list. Generic, for the Parties tab too." shared="shared/ui/OptionRow.tsx">
+          <GroupIndexExample />
         </CatalogueRow>
         <CatalogueRow name="Switch" source="shared/ui/Switch.tsx" usedIn={AWM} what="The one on/off switch (UI unification U4): a button with role=switch and aria-checked, so click and Space toggle it; sm is the 36 by 20 track, lg the 52 by 32 touch track, with a label and an optional description." shared="shared/ui/Switch.tsx" note="No product screen uses it yet: Phase 27 builds its approval-step toggle on it. The PWA panel's ToggleRow stays its own (a demo surface).">
           <SwitchExample />
@@ -411,7 +416,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="ConfirmSheet" source="shared/surface/ConfirmSheet.tsx" usedIn={AWM} what="The one sheet confirm: the surface's Overlay with an OverlayHeader and SheetActions. Focus opens on the safe button, and a double click runs the primary once. The body between header and footer is the caller's. Catch-up Phase 35 adds onCancel (the secondary's own action) and initialFocus: confirm opens on the primary where the primary is the safe choice (Leave without saving: Keep editing). Build plan Phase 45 adds confirmVariant (danger makes the primary the one red outline, for Disable a Contract; primary, the teal command, is the default) and size (wide passes the Overlay's wide dialog for a body that lists rows; default as before)." shared="shared/surface/ConfirmSheet.tsx" note="Used by ClearConflictSheet, SubmitListSheet, RemoveProcedureSheet, MakePrimarySheet (catch-up Phase 23), LeaveWithoutSavingDialog and a Contract page's Disable. Labels are the caller's.">
           <ConfirmSheetExample />
         </CatalogueRow>
-        <CatalogueRow name="MasterPanel / PanelGrid / PanelSection" source="apps/admin/components/MasterPanel.tsx" usedIn={A} what="The 600px record preset of SidePanel the Contract and Party editors open in: the h2 at 18/700 names the dialog, the footer is right-aligned with the primary last." shared="shared/surface/SidePanel.tsx" note="Since U2 one shell with the drawers (SidePanel); a sheet opened over it (the RVG code picker) closes first on Escape.">
+        <CatalogueRow name="MasterPanel / PanelGrid / PanelSection" source="apps/admin/components/MasterPanel.tsx" usedIn={A} what="The 600px record preset of SidePanel the New party panel opens in (create only, over the shared PartyFormFields; a Party is edited on its page since build plan Phase 48, and a new Contract is a page since Phase 46): the h2 at 18/700 names the dialog, the footer is right-aligned with the primary last." shared="shared/surface/SidePanel.tsx" note="Since U2 one shell with the drawers (SidePanel); a sheet opened over it closes first on Escape.">
           <MasterPanelExample />
         </CatalogueRow>
         <CatalogueRow name="RawRowSheet" source="apps/admin/matching/RawRowSheet.tsx" usedIn={A} what="The restricted raw hospital row (catch-up Phase 43; US-15.0.6): a record SidePanel over Matching's row panel that asks for a reason (FilterPills quick reasons or a TextField), then shows the masked columns on the table kit with the Notice that the masking policy is for AA to agree. Teal only on View raw row." shared="shared/surface/SidePanel.tsx" note="Each view writes an audit entry, so it is not mounted here.">
@@ -457,8 +462,11 @@ export function AdminCatalogue() {
         <CatalogueRow name="LetterPreview (ApprovePrepaymentDialog, PrepaymentReminderDialog)" source="shared/booking/PrepaymentLetterDialogs.tsx" usedIn={A} what="The prepayment letter as sent (catch-up Phase 41; US-06.3.6): plain text on a neutral paper box. It is the preview inside the two dialogs in the same file: Approve and send (the letter named, a select when several are active, Preview letter, the recipient, Approve and send), opened by PrepaymentApprovalStrip, and Send prepayment reminder (the invoice and amount still to pay, the letter, the recipient or the no-email refusal, Send reminder), opened from the PrepaymentPanel on Admin." shared="shared/booking/PrepaymentLetterDialogs.tsx" note="Shown with the Standard prepayment letter rendered against the fictional sample; the dialogs open from the strip row above and the Booking's panel.">
           <LetterPreviewExample />
         </CatalogueRow>
-        <CatalogueRow name="ContractPanel (ContractEditSheet)" source="apps/admin/flows/ContractEditSheet.tsx" usedIn={A} what="New contract in a MasterPanel, create only since build plan Phase 45 (a Contract is changed on its own page): two-column fields, SelectFields (holder, linked anaesthetist, funding tag, pricing kind), segmented choices, ChipMultiSelect for specialties and linked surgeons, FieldHint lines, the RVG code picker and a fixed price's first range. All shared field parts since UI unification U4. Catch-up Phase 25a: the Replaces section (a SelectField and a From date) with the ContractChangeNotice listing the Procedures still on the old one, before and after Create." shared="shared/surface/SidePanel.tsx" note="Create writes the Contract to the demo store. Phase 46 replaces it with the New contract page.">
-          <ContractPanelExample />
+        <CatalogueRow name="NewContractPage" source="apps/admin/screens/contracts/new/NewContractPage.tsx" usedIn={A} what="New contract (build plan Phase 46; US-04.1.2): a fluid AdminPage with the rail, filled in the order the rules depend on each other, four Cards with a numbered step: 1 the holder (a SelectField grouped by kind) and who it bills (Segmented, fixed to the payer for an AA- or anaesthetist-held or prepaid Contract); 2 pricing (RadioCards on useRovingRadio, a disabled card with its reason while prepaid, the rate, discount or first range, prepaid, the override on RVG kinds only); 3 where it is offered (ChipMultiSelect surgeons, linked anaesthetist, specialties, funding tag); 4 the name, holder reference, invoice description and default RVG code. Refusals from the store's guard in one FormError above the steps. The form and its rules are useContractDraft." shared="shared/ui/Card.tsx" note="Shown for Merivale. Create writes to the demo store and opens the new Contract's page." height={760}>
+          <NewContractPageExample />
+        </CatalogueRow>
+        <CatalogueRow name="WhereItWillShow / AlreadyHeld" source="apps/admin/screens/contracts/new/AlreadyHeld.tsx" usedIn={A} what="New contract's rail cards (build plan Phase 46): Where it will show is destinationHint over destinationOf, the one placement rule, then a sentence of who sees it; Already held lists the holder's Contracts with a similar name first (similarContracts, each with a Similar name pill, Disabled marked), then its other Active ones, five in all, with See all opening the list in a new tab. A hint, never a block." shared="shared/ui/Card.tsx" note="A Merivale draft named Face lift revision, so its Face lift shows as a similar name.">
+          <NewContractRailExample />
         </CatalogueRow>
         <CatalogueRow name="SlotStatusSheet" source="apps/admin/flows/SlotStatusSheet.tsx" usedIn={A} what="Adds or edits an availability status in an Overlay: an OverlayHeader title, name, colour swatches, flags (the shared Checkbox with a hint, UI unification U4) and a live preview validated as you type, and a SheetActions footer." shared="shared/surface/Dialog.tsx" note="Save adds the status to the demo store. Its preview block is the shared StatusBlock with the draft visual (UI unification U6).">
           <SlotStatusSheetExample />
@@ -527,7 +535,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="TickBadge" source="shared/ui/TickBadge.tsx" usedIn={AWM} what="The teal tick badge, optionally animated with the complete-tick draw." shared="shared/ui/TickBadge.tsx">
           <TickBadgeExample />
         </CatalogueRow>
-        <CatalogueRow name="ContractChangeNotice" source="apps/admin/flows/ContractChangeNotice.tsx" usedIn={A} what="The Contract panel's change warning (catch-up Phase 25a; US-04.1.2, US-04.2.15): the shared warning Notice with its sentence, then the Procedures it names on the shared TableShell (dense), each with Open to its Booking. One component for the dated change (a new Contract's Replaces and From), a disable, and the authorised Procedures a price range left at their old price. It only lists: nothing moves." shared="shared/ui/Notice.tsx" note="Shown with the Procedures dated on or after today still on Merivale's Face lift, read from the demo store.">
+        <CatalogueRow name="ContractChangeNotice" source="apps/admin/flows/ContractChangeNotice.tsx" usedIn={A} what="The Contract panel's change warning (catch-up Phase 25a; US-04.1.2, US-04.2.15): the shared warning Notice with its sentence, then the Procedures it names on the shared TableShell (dense), each with Open to its Booking. One component for a disable (the Contract page's confirm, from today or, after Replace from a date, from the change date) and the authorised Procedures a price range left at their old price. It only lists: nothing moves." shared="shared/ui/Notice.tsx" note="Shown with the Procedures dated on or after today still on Merivale's Face lift, read from the demo store.">
           <ContractChangeNoticeExample />
         </CatalogueRow>
         <CatalogueRow name="PrepaymentHonourLine" source="shared/flows/PrepaymentHonourLine.tsx" usedIn={AWM} what="The line on every move of a prepaid Booking (catch-up Phases 32a and 41; US-06.5.4): the prepayment keeps its agreed amount and whoever does the procedure claims it. The anaesthetist's sheets name the receiver (The prepaid amount stays as agreed, and moves to Dr X once the List is authorised.); the office's move and reassign flows say whoever the office assigns claims it. Nothing in the ledger changes." shared="shared/flows/PrepaymentHonourLine.tsx" note="Shown as the office and as the anaesthetist.">
@@ -568,7 +576,7 @@ export function AdminCatalogue() {
             <LoadResultPanelExample />
           </Wide>
         </CatalogueRow>
-        <CatalogueRow name="Table kit (TableShell · Th · Td · GroupRow · ClickableRow)" source="shared/table/" usedIn={AWM} what="The one table kit (UI unification U6, question 19): TableShell (white, line, radius 14, e1; a named focusable region only when it overflows; footer for a foot row such as the pager, kept below the rows; fit for an Admin fit page's list card), Th (scope col) on the Admin Review header, sortable with `sort` (aria-sort and a button, teal underline on the active column; the Billing monitor), Td with sunken dividers, GroupRow (th scope colgroup), and ClickableRow with one RowOpenButton as the keyboard handle. Density comfortable (web), compact (admin) or dense (audit and masters) keeps each table's row height." shared="shared/table/TableShell.tsx" note={`The ${DRAFT_LISTS} table is built this way: Tab to a session, Enter opens the ${DRAFT_LIST} drawer (bug 3). An inner button does only its own action.`}>
+        <CatalogueRow name="Table kit (TableShell · Th · Td · GroupRow · ClickableRow)" source="shared/table/" usedIn={AWM} what="The one table kit (UI unification U6, question 19): TableShell (white, line, radius 14, e1; a named focusable region only when it overflows; footer for a foot row such as the pager, kept below the rows; fit for an Admin fit page's list card), Th (scope col) on the Admin Review header, sortable with `sort` (aria-sort and a button, teal underline on the active column; the Billing monitor), Td with sunken dividers, GroupRow (th scope colgroup; level sub is the grouped Contract catalogue's smaller, indented sub-heading, Phase 47 from contracts-section.html #catalogue), and ClickableRow with one RowOpenButton as the keyboard handle (selected, Phase 48: the picked row of a list whose pick shows beside it, the accent tint and aria-selected, as the Funding tags tab's picked tag). Density comfortable (web), compact (admin) or dense (audit and masters) keeps each table's row height." shared="shared/table/TableShell.tsx" note={`The ${DRAFT_LISTS} table is built this way: Tab to a session, Enter opens the ${DRAFT_LIST} drawer (bug 3). An inner button does only its own action.`}>
           <TableKitExample />
         </CatalogueRow>
         <CatalogueRow name="ReviewQueue (clickable rows)" source="apps/admin/screens/ReviewQueue.tsx" usedIn={A} what="Submitted Lists to authorise, and since catch-up Phase 38b an Events tab (LineTabLink with its count) of events awaiting review, on the shared table kit (UI unification U6): TableShell (compact), Th, Td and ClickableRow, whose row click opens the List while the Review button stays the keyboard handle." shared="shared/table/ClickableRow.tsx" note="Rows never take focus; the Review button is the one handle per row. Open is stubbed." height={380}>
@@ -668,7 +676,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="PageHeader" source="shared/ui/PageHeader.tsx" usedIn={AW} what="A page's title row (U6): web 28/34, admin 24/30, or the 18/700 section title; an h1, a slate sub-line, right-aligned actions, a count inside the heading or an aside beside it, headingRef for focus return." shared="shared/ui/PageHeader.tsx">
           <PageHeaderExample />
         </CatalogueRow>
-        <CatalogueRow name="Card (card)" source="shared/ui/Card.tsx" usedIn={AWM} what="The shared Card (U6, question 20): padding card (16, flat, 14/600; the Admin rail, the profiles, the phone) or panel (20, e1, 17/600; the web panels), radius 14, its title an h2 naming the section; the warning tone. Build plan Phase 45: footer (right-aligned actions under a hairline, the Admin Review sheet footer's alignment) and editing (data-editing, the teal edge and halo, Editing in place of the heading's action), both off by default; a Contract page's cards are each saved on their own with them." shared="shared/ui/Card.tsx">
+        <CatalogueRow name="Card (card)" source="shared/ui/Card.tsx" usedIn={AWM} what="The shared Card (U6, question 20): padding card (16, flat, 14/600; the Admin rail, the profiles, the phone) or panel (20, e1, 17/600; the web panels), radius 14, its title an h2 naming the section; the warning tone. Build plan Phase 45: footer (right-aligned actions under a hairline, the Admin Review sheet footer's alignment) and editing (data-editing, the teal edge and halo, Editing in place of the heading's action), both off by default; a Contract page's cards are each saved on their own with them. Build plan Phase 46: step, a numbered chip (teal on the teal tint) in a 26px column before the heading and body, New contract's four steps (contracts-section.html #new)." shared="shared/ui/Card.tsx">
           <CardExample />
         </CatalogueRow>
         <CatalogueRow name="Eyebrow" source="shared/ui/Eyebrow.tsx" usedIn={AWM} what="The 11px caps tracked label (U6, question 23): 11/600/0.06em everywhere, tones mist, slate, warning and brand, a heading where it titles a section. FieldLabel is this component." shared="shared/ui/Eyebrow.tsx">
@@ -819,6 +827,29 @@ function DecisionCardsExample() {
         suggested="createBooking"
         onChange={setKind}
         detail={<span style={{ fontSize: 12.5 }}>{kind === 'reject' ? 'The reason field and quick reasons.' : 'The List picker.'}</span>}
+      />
+    </div>
+  )
+}
+
+/** GroupIndex: the Holder grouping's index, one group picked. */
+function GroupIndexExample() {
+  const [value, setValue] = useState('PY-STG')
+  return (
+    <div style={{ width: 200 }}>
+      <GroupIndex
+        label="Groups"
+        value={value}
+        onSelect={setValue}
+        allLabel="All Contracts"
+        allCount={343}
+        items={[
+          { key: 'PY-AA', label: 'Anaesthesia Associates', count: 3 },
+          { key: 'PY-CES', label: 'Christchurch Eye Surgery', count: 144, section: 'Hospitals' },
+          { key: 'PY-STG', label: "St George's", count: 31, section: 'Hospitals' },
+          { key: 'PY-NIB', label: 'nib', count: 2, section: 'Insurers' },
+        ]}
+        note="A Contract linked to two surgeons shows under both."
       />
     </div>
   )

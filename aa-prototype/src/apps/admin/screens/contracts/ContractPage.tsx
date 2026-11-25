@@ -12,25 +12,26 @@
  */
 
 import { useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { contractHistoryFor, contractDisabledOn } from '../../../../domain/billing/contractHistory'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { contractHistoryFor, contractDisabledOn, replacementOf, replacesFor } from '../../../../domain/billing/contractHistory'
 import { eventFeesForContract } from '../../../../domain/billing/contractEventFees'
 import { isOpenPriceFallback } from '../../../../domain/billing/fallbacks'
 import { formatRangePrice } from '../../../../domain/billing/priceRanges'
-import { shortDay } from '../../../../domain/dateText'
+import { plainDate, plural, shortDay } from '../../../../domain/dateText'
 import type { Contract } from '../../../../domain/types'
 import { PRICING_KIND_LABEL, STATUS_LABEL } from '../../../../shared/contracts'
 import { useDemoTriggerContext } from '../../../../shared/demoTriggers'
 import { ClickableRow, RowOpenButton, TableShell, Td, Th } from '../../../../shared/table'
-import { Card, CountBadge, EmptyState, FormError, LineTabLink, LineTabs, Notice, Pill, TextAction } from '../../../../shared/ui'
-import { onContract, useAppStore, useToday, type Actor, type LockedAgainst } from '../../../../store'
+import { Button, Card, CountBadge, EmptyState, FormError, LineTabLink, LineTabs, Notice, Pill, ResultLine, TextAction } from '../../../../shared/ui'
+import { onContract, replacedContractsToDisable, useAppStore, useToday, type Actor, type LockedAgainst } from '../../../../store'
 import type { StillOnRow } from '../../../../domain/billing/contractChanges'
 import { neutral } from '../../../../theme/tokens'
 import { PageBody } from '../../components/AdminPage'
 import { PROFILE_CARD, ProfilePage } from '../../components/ProfileChrome'
-import { contractPath, contractsPath, parseContractTab, type ContractTab } from '../../contractsPaths'
+import { catalogueReturnPath, contractPath, parseContractTab, type ContractTab } from '../../contractsPaths'
 import { ContractEventFees } from '../../flows/ContractEventFees'
 import { ContractHistory } from '../../flows/ContractHistory'
+import { ReplaceContractSheet, type ReplacedState } from '../../flows/ReplaceContractSheet'
 import { listShortLabel } from '../../util'
 import { ContractOverview } from './ContractCards'
 import { ContractDisable } from './ContractDisable'
@@ -56,8 +57,20 @@ export function ContractPage({ contractId, actor }: { contractId: string; actor:
   const masters = useAppStore((s) => s.masters)
   const billing = useAppStore((s) => s.billing)
   const [params] = useSearchParams()
+  const location = useLocation()
   const tab = parseContractTab(params.get('tab'))
   const [feeError, setFeeError] = useState<string | null>(null)
+  // Replace from a date (build plan Phase 49): the sheet, the Disable confirm the to-do notice opens, the result on arrival.
+  const [replacing, setReplacing] = useState(false)
+  const [disabling, setDisabling] = useState(false)
+  const [resultDismissed, setResultDismissed] = useState(false)
+  const navState: unknown = location.state
+  const addRange = params.get('add') === 'range'
+  const replaces = useMemo(() => replacesFor(audit, contractId), [audit, contractId])
+  const replacedBy = useMemo(() => replacementOf(audit, contractId), [audit, contractId])
+  const toDisable = useAppStore((s) => replacedContractsToDisable(s).some((r) => r.contractId === contractId))
+  const contractCode = (id: string) => masters.contracts[id]?.aaCode ?? id
+  const replacedResult = resultDismissed ? null : replacedResultLine(navState, contractCode)
   // The demo triggers that act on the Contract open (catch-up Phase 24's backdated range).
   useDemoTriggerContext('adminContracts.openContractId', contractId)
 
@@ -75,7 +88,7 @@ export function ContractPage({ contractId, actor }: { contractId: string; actor:
   return (
     <ProfilePage
       shot="contract-detail"
-      back={{ label: 'Contracts', to: contractsPath() }}
+      back={{ label: 'Contracts', to: catalogueReturnPath(location.state) }}
       name={contract.name}
       chip={
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -85,7 +98,20 @@ export function ContractPage({ contractId, actor }: { contractId: string; actor:
         </span>
       }
       sub={`Held by ${holder?.name ?? contract.holderId} · ${contract.billsTo === 'holder' ? 'bills its holder' : 'bills the payer'} · ${PRICING_KIND_LABEL[contract.pricing.kind]}`}
-      {...(system ? {} : { action: <ContractDisable contract={contract} actor={actor} /> })}
+      {...(system
+        ? {}
+        : {
+            action: (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                {contract.status === 'active' && (
+                  <Button variant="secondary" size="desktop" shot="contract-replace" onClick={() => setReplacing(true)}>
+                    Replace from a date
+                  </Button>
+                )}
+                <ContractDisable contract={contract} actor={actor} asking={disabling} onAskingChange={setDisabling} />
+              </div>
+            ),
+          })}
       tabs={
         <LineTabs label="Contract" shot="contract-tabs">
           {(Object.keys(TAB_LABEL) as ContractTab[]).map((t) => (
@@ -106,6 +132,37 @@ export function ContractPage({ contractId, actor }: { contractId: string; actor:
       {system && (
         <Notice tone="neutral" shot="contract-system-notice">{systemNotice(contract)}</Notice>
       )}
+      {replacedResult !== null && (
+        <ResultLine line={replacedResult} onDismiss={() => setResultDismissed(true)} shot="contract-replaced-result" />
+      )}
+      {replaces !== null && (
+        <Notice
+          tone="neutral"
+          shot="contract-replaces-line"
+          action={<TextAction size="sm" flush to={contractPath(replaces.replacesId)}>{`Open ${contractCode(replaces.replacesId)}`}</TextAction>}
+        >
+          {`Replaces ${contractCode(replaces.replacesId)} from ${plainDate(replaces.fromISO)}.`}
+        </Notice>
+      )}
+      {replacedBy !== null && contract.status === 'active' && (
+        toDisable ? (
+          <Notice
+            tone="warning"
+            shot="contract-replaced-todo"
+            action={<Button variant="secondary" size="compact" onClick={() => setDisabling(true)} shot="contract-replaced-disable">Disable</Button>}
+          >
+            {`Replaced by ${contractCode(replacedBy.contractId)} from ${plainDate(replacedBy.fromISO)}. Disable it so it is no longer offered.`}
+          </Notice>
+        ) : (
+          <Notice
+            tone="neutral"
+            shot="contract-replaced-line"
+            action={<TextAction size="sm" flush to={contractPath(replacedBy.contractId)}>{`Open ${contractCode(replacedBy.contractId)}`}</TextAction>}
+          >
+            {`Replaced by ${contractCode(replacedBy.contractId)} from ${plainDate(replacedBy.fromISO)}.`}
+          </Notice>
+        )
+      )}
       {contract.status === 'disabled' && (
         <Notice tone="neutral" shot="contract-disabled-note">
           {disabledDay !== null
@@ -116,9 +173,11 @@ export function ContractPage({ contractId, actor }: { contractId: string; actor:
 
       {tab === 'overview' && (
         <PageBody rail={<OnThisContractRail contractId={contractId} open={touches.open} authorised={touches.authorised} />} railLabel="On this Contract">
-          <ContractOverview contract={contract} actor={actor} />
+          {/* `?add=range` (Replace from a date's pointer) remounts the cards with the add-range row open. */}
+          <ContractOverview key={addRange ? 'add-range' : 'cards'} contract={contract} actor={actor} addRange={addRange} />
         </PageBody>
       )}
+      {!system && <ReplaceContractSheet contract={contract} actor={actor} open={replacing} onClose={() => setReplacing(false)} />}
       {tab === 'bookings' && <ContractBookings open={touches.open} authorised={touches.authorised} />}
       {tab === 'eventFees' && (
         <Card style={PROFILE_CARD} title="Event fees" shot="contract-event-fees-card">
@@ -139,6 +198,19 @@ export function ContractPage({ contractId, actor }: { contractId: string; actor:
       )}
     </ProfilePage>
   )
+}
+
+/**
+ * The result of Replace from a date, shown once on the new Contract's page (router state):
+ * "Replaced UNI-001. 2 Procedures moved. T. Walsh not moved: <why>. UNI-001 disabled."
+ */
+function replacedResultLine(navState: unknown, code: (id: string) => string): string | null {
+  if (typeof navState !== 'object' || navState === null || !('replaced' in navState)) return null
+  const r = (navState as ReplacedState).replaced
+  const parts = [`Replaced ${code(r.oldId)}.`, `${plural(r.moved, 'Procedure')} moved.`]
+  for (const x of r.refused) parts.push(`${x.patientName} not moved: ${x.message}`)
+  if (r.disabled) parts.push(`${code(r.oldId)} disabled.`)
+  return parts.join(' ')
 }
 
 /** A not-yet-authorised Procedure's place: "Mercy Hospital AM · Hale" (the List's short label). */

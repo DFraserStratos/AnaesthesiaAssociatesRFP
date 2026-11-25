@@ -162,7 +162,7 @@ import { SEED_STATUS, statusFor, statusLine } from '../../domain/slotStatus'
 import { formatMoney, roundToCents } from '../../domain/billing/money'
 import { keptPriceTitle } from '../../domain/billing/contractChanges'
 import { aaFeeFor, aaFeeMonthLabel } from '../../domain/billing/aaFee'
-import { drSurname, formatCount, formatCurrency, plural, shortDay } from '../format'
+import { drSurname, formatCount, formatCurrency, plainDate, plural, shortDay } from '../format'
 import { NHI_HUB_MODE_LABELS } from '../nhiHub/hub'
 import { NHI_HUB_MODES } from '../../domain/types'
 import { FULL_SCALE as FULL_SCALE_FIGURES } from '../../domain/seed/fullScale/constants'
@@ -225,6 +225,8 @@ import { newlyStagedSampleNames, stagedSampleKeys } from '../../store/warningSam
 import { NO_NHI_LIST, NO_NHI_NEW_PATIENT_NHI, NO_NHI_RETURNING_NHI } from '../../domain/intake/hospitalDownloads'
 import { advanceSupportTicket, approveCallOut, newestAwaitingCallOut, newestOpenTicket, raiseSupportTicket, ticketsFor } from '../../store/supportActions'
 import { advanceClockMinutes as moveClockMinutes, advanceClockToDate as moveClockToDate } from '../../store/clockActions'
+import { replacementsAhead } from '../../store/replacedContractSelectors'
+import type { ContractReplacement } from '../../domain/billing/contractHistory'
 import { officeActorOf, STRATOS_SUPPORT_ACTOR } from '../../store/demoActors'
 import { closesSupport, supportStampText, timeOfDayText } from '../../domain/support'
 import { STATUS_LABEL } from '../support/supportCopy'
@@ -323,6 +325,21 @@ const ADMIN_MASTERS = '/admin/masters'
 /** The Contracts section (build plan Phase 45): the list and a Contract's page. `apps/admin/contractsPaths.ts` builds these in the app; this file stays out of `src/apps` (the PWA closure contains it). */
 const ADMIN_CONTRACTS = '/admin/contracts'
 const ADMIN_CONTRACT = '/admin/contracts/:contractId'
+/** The section's Parties and Funding tags tabs (build plan Phase 48). */
+const ADMIN_PARTIES = '/admin/contracts/parties'
+const ADMIN_FUNDING_TAGS = '/admin/contracts/tags'
+
+/** The Contract whose page is open, if any (build plan Phase 49's "Reach the change date"). */
+function openContractOf(ctx: DemoTriggerCtx): string | undefined {
+  const id = ctx.published['adminContracts.openContractId']
+  return typeof id === 'string' ? id : undefined
+}
+
+/** "UNI-001 replaced by UNI-002 from 1 Jan 2027" */
+function changeDateLabel(state: AppState, r: ContractReplacement): string {
+  const code = (id: string) => state.masters.contracts[id]?.aaCode ?? id
+  return `${code(r.replacesId)} replaced by ${code(r.contractId)} from ${plainDate(r.fromISO)}`
+}
 const ADMIN_NOTIFICATIONS = '/admin/notifications'
 const MOBILE_AVAILABILITY = '/mobile/availability'
 /** A date route param, or undefined. */
@@ -371,7 +388,7 @@ function chosenSample(ctx: DemoTriggerCtx, choiceId: string | undefined): Sample
   return (choiceId !== undefined ? offered.find((s) => s.id === choiceId) : undefined) ?? offered[0]
 }
 
-const NO_SAMPLE_HERE = 'Open Seed load, or a Master data view loaded from a spreadsheet'
+const NO_SAMPLE_HERE = 'Open Seed load, a Master data view or a Contracts tab loaded from a spreadsheet'
 const SAMPLE_WAITING = 'A load is already waiting for this sheet; load or discard it first'
 const GO_LIVE_WAITING = 'A go-live load is already waiting; load or discard it first'
 
@@ -1908,6 +1925,32 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     indexPath: () => `${ADMIN_CONTRACTS}/${BACKDATED_RANGE_CONTRACT_ID}`,
     indexHint: "Merivale's Face lift: the new range shows as the top row of its price ranges, with the Procedures it priced and the kept-price warning.",
   },
+  // ── Admin · Contracts: reach a replacement's change date (build plan Phase 49; US-04.1.8, DM-03) ──
+  {
+    id: 'contract-reach-change-date',
+    label: 'Demo: reach the change date',
+    description:
+      "Moves the demo clock forward to a Contract replacement's change date, so the old Contract's \"Disable\" to-do shows in the Day view's To-do and on its page while it is still offered. On a Contract's page it takes that Contract's replacement; on the list, the soonest date still ahead. Reset puts the clock back.",
+    screen: 'Admin · Contracts',
+    routes: [ADMIN_CONTRACTS, ADMIN_CONTRACT],
+    surfaces: ['bar'],
+    when: (_state, ctx) => ctx.published['adminContracts.tab'] === 'contracts' || typeof ctx.published['adminContracts.openContractId'] === 'string',
+    choices: (state, ctx) => {
+      const ahead = replacementsAhead(state, openContractOf(ctx))
+      return ahead.length < 2 ? [] : ahead.map((r) => ({ id: r.contractId, label: changeDateLabel(state, r) }))
+    },
+    disabledReason: (state, ctx) => (replacementsAhead(state, openContractOf(ctx)).length === 0 ? 'No replacement date ahead' : null),
+    run: (api, ctx, choiceId) => {
+      const ahead = replacementsAhead(api.getState(), openContractOf(ctx))
+      const r = (choiceId !== undefined ? ahead.find((x) => x.contractId === choiceId) : undefined) ?? ahead[0]
+      if (r === undefined) return { ok: false, message: 'No replacement date ahead' }
+      const label = changeDateLabel(api.getState(), r)
+      moveClockToDate(api, r.fromISO)
+      return { ok: true, message: `Clock now ${shortDay(r.fromISO)}: ${label}. Its to-do shows in the Day view and on its page.` }
+    },
+    indexPath: () => ADMIN_CONTRACTS,
+    indexHint: 'Replace a Contract from a later date first (Replace from a date on its page), leaving the old one active.',
+  },
   // ── Admin · Master data, Recurring bookings: the nightly roll meets a blocked-out day (catch-up Phase 31) ──
   {
     id: 'stage-recurring-clash',
@@ -1951,7 +1994,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     description:
       "Checks a sample spreadsheet as the developer's seed load: its valid rows wait on Seed load and its rejected rows show why. It stages and does not load: press Load on Seed load to load the valid rows.",
     screen: 'Admin · Master data',
-    routes: [ADMIN_MASTERS, ADMIN_CONTRACTS],
+    routes: [ADMIN_MASTERS, ADMIN_CONTRACTS, ADMIN_PARTIES, ADMIN_FUNDING_TAGS],
     surfaces: ['bar'],
     when: (_state, ctx) => sampleSheetsFor(ctx).length > 0,
     choices: (_state, ctx) => sampleSheetsFor(ctx).map((s) => ({ id: s.id, label: s.fileName })),

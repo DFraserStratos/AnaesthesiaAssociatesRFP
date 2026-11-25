@@ -45,11 +45,12 @@ that need work are repeated here.
 
 ## Prototype: Admin Day, Review, Bookings and intake
 
+- US-13.4.1's People section (anaesthetists, surgeons, specialties and patients, each with a page; surgeon groups dropped) is not built: Master data still holds them. Being planned as Phases 50 onward (Lane C); run `/update-build-plan` if that plan is not committed. L
 - Catalogue wording for the new Admin Day rail (work card, readings): US-13.8.1 says the pool is a panel "beside the to-do list" (now a tab alongside it); drop US-01.6.2's "space reserved beside the day view" example (Draft Lists live in the grid band and their page). Run `/update-requirements`. S (owner)
 - Rename Notifications to Notices across the rail tab, side nav and page, as the rail ideas page proposed (`docs/explorations/admin-day-rail-ideas.html`). `apps/admin/components/RailWorkCard.tsx`, `SideNav.tsx`, `screens/NotificationsScreen.tsx`. S (owner)
 - The four Playwright specs updated for the new rail (`aa-prototype/visual/warnings.spec.ts`, `admin-phase06.spec.ts`, `admin-draft-lists.spec.ts`, `prepayment-phase27.spec.ts`) have not been run; check them at the next sweep. S
 - Build the stub guard: a List holding only a stub reads 0 of 0 with Mark list completed enabled, and authorises. S5 tells the guard as built. M
-- Build what S5 promises: a missing-NHI list with attach or merge, and a new Contract disabling (superseding) the old one. The guide already scripts them. M to L
+- Build what S5 promises: a missing-NHI list with attach or merge. The guide already scripts it. M
 - Mount `shared/flows/EditInvoiceDescriptionSheet.tsx`: an Edit action beside the invoice description on the admin Booking, so the office can edit it (D73's admin layer is otherwise reachable only through "Use it"). S
 - The matching panel cannot correct a row's surgeon, and the newer-text cue sits above the Booking detail instead of under the invoice description. `apps/admin/matching/`. M (owner)
 - Review shows both the "Not complete" pill and the "Not marked completed" flag for one fact. Decided: keep the pill, drop the flag. `domain/billing/reviewFlags.ts`. S
@@ -105,7 +106,7 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 
 ## Prototype: provisional captions
 
-- Captions tied to open questions, each removed or reworded when its question is answered (`appCopy.test.ts` `MUST_KEEP` pins them): D23 Contracts editor helper (`apps/admin/flows/ContractEditSheet.tsx`, and the who-it-bills card in `apps/admin/screens/contracts/ContractCards.tsx`), D68 (`shared/booking/PrepaymentMovedCard.tsx`), D70 (`InvoiceDocument.tsx`), D72 (`HoldingAccountPanel.tsx`), D78 (`UnitsCard.tsx`), and the Xero MJ "How this posts in Xero is still to be confirmed" (twice). S each (owner)
+- Captions tied to open questions, each removed or reworded when its question is answered (`appCopy.test.ts` `MUST_KEEP` pins them): D23 prepaid Bills caption (`apps/admin/screens/contracts/new/NewContractPage.tsx`, shown too on the who-it-bills card in `ContractCards.tsx`), D68 (`shared/booking/PrepaymentMovedCard.tsx`), D70 (`InvoiceDocument.tsx`), D72 (`HoldingAccountPanel.tsx`), D78 (`UnitsCard.tsx`), and the Xero MJ "How this posts in Xero is still to be confirmed" (twice). S each (owner)
 
 ## UI consistency debt
 
@@ -119,6 +120,7 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 - oxlint's 144 warnings: 122 `only-export-components` (helpers beside components) and 21 `exhaustive-deps` (`ModifierPickerSheet.tsx:74`, missing `claimFor` and `modifiers`, is worth a look). S to M
 - Tailwind supplies only Preflight and the `@theme` variables (no utility class is used): drop it for a small reset and a `:root` block, with a visual check. `theme/global.css`. M
 - Remove the Gradient Lab (the gradient is signed off): delete `shell/gradientLab/`, `GRADIENT_LAB_ENABLED` and `theme/gradientLabGate.ts`, and `visual/mobile-phase13.spec.ts`; the shipped look stays `AA_DEFAULT_GRADIENT`. Update CLAUDE.md's Design section. S
+- Contract page back link (build plan Phase 47): it returns to the catalogue as the row was opened (grouping, group, search, page) through router state, but switching the page's tab drops that state, so Back then opens the bare list. Carry `location.state` through `ContractPage`'s tab links if the owner wants it.
 - The app switcher says "Demo: Billing Monitor & Xero" while the page says "Xero simulation". `shell/appConfig.ts`. S
 
 ## Requirements Board

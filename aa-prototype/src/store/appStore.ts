@@ -24,6 +24,7 @@ import { bindCrossTabSync } from './crossTabSync'
 import { INITIAL_CLOCK, type DemoClockState } from '../domain/clock'
 import { buildSeed, buildSeedBillingSlice, SEED_AUTHORISED_INVOICED_BOOKING_IDS, SEED_PREPAID_BOOKING_ID, type SeedState } from '../domain/seed'
 import { INTEGRATION_FEEDS } from '../domain/integrations'
+import type { ContractGrouping } from '../domain/billing/contractGroups'
 import type {
   AaFeeInvoice,
   BillingException,
@@ -191,6 +192,12 @@ export interface ShellSlice {
    * means Kirsty W. The names live in `demoActors.ts`.
    */
   officeUser?: 'kirsty' | 'sam'
+  /**
+   * Each office user's last Contract catalogue grouping (build plan Phase 47; US-04.1.2): a bare
+   * `/admin/contracts` opens on it, and `?group=` wins over it. A view preference, not audited;
+   * optional, so a stored state without it loads with no `PERSIST_VERSION` bump. Reset clears it.
+   */
+  contractGrouping?: Partial<Record<'kirsty' | 'sam', ContractGrouping>>
 }
 
 export interface AppState extends SeedState {
@@ -210,6 +217,8 @@ export interface AppActions {
   nextSuggestionSeq: () => number
   /** Switch the named office user the Admin app acts as (catch-up Phase 35; a demo stand-in for sign-in). */
   setOfficeUser: (user: 'kirsty' | 'sam') => void
+  /** Remember an office user's Contract catalogue grouping (build plan Phase 47; not audited). */
+  setContractGrouping: (user: 'kirsty' | 'sam', by: ContractGrouping) => void
 }
 
 export type AppStore = AppState & AppActions
@@ -647,6 +656,8 @@ export function createAppStore(options: CreateAppStoreOptions = {}): BoundAppSto
     setCurrentApp: (app: AppId) =>
       set((state) => ({ shell: { ...state.shell, currentApp: app } })),
     setOfficeUser: (user: 'kirsty' | 'sam') => set((state) => ({ shell: { ...state.shell, officeUser: user } })),
+    setContractGrouping: (user: 'kirsty' | 'sam', by: ContractGrouping) =>
+      set((state) => (state.shell.contractGrouping?.[user] === by ? {} : { shell: { ...state.shell, contractGrouping: { ...state.shell.contractGrouping, [user]: by } } })),
     nextSuggestionSeq: () => {
       const next = (get().shell.suggestionSeq ?? 0) + 1
       set((state) => ({ shell: { ...state.shell, suggestionSeq: next } }))

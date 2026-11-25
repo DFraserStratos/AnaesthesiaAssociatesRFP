@@ -24,6 +24,11 @@ export type CardElevation = 'flat' | 'e1'
  * `editing` marks a card in edit: `data-editing`, the teal edge and halo (`accent.editingRing`) and a
  * quiet "Editing" label in the heading's action slot (docs/explorations/contracts-section.html
  * #updating). Both default off, so every other card keeps its look.
+ *
+ * Build plan Phase 46 (New contract, filled in rule order): `step` puts a numbered chip, teal on the
+ * teal tint, in a 26px column before the heading and the body (docs/explorations/contracts-section.html
+ * #new, `.formsec`). The chip is decoration (`aria-hidden`), so the heading keeps its own name; the
+ * card carries `data-card-step`. Default none.
  */
 export function Card({
   as: Tag = 'section',
@@ -39,6 +44,8 @@ export function Card({
   tone,
   footer,
   editing = false,
+  step,
+  bare = false,
   shot,
   style,
   children,
@@ -59,6 +66,13 @@ export function Card({
   footer?: ReactNode
   /** The card is in edit: the teal edge and halo, and "Editing" in place of the heading's action. */
   editing?: boolean
+  /** A numbered step: the chip before the heading and body (New contract's four steps). */
+  step?: number
+  /**
+   * No border, fill or padding: a section that sits straight on a sheet (Replace from a date's
+   * numbered steps, docs/explorations/contracts-section.html #updating; build plan Phase 49).
+   */
+  bare?: boolean
   shot?: string
   style?: CSSProperties
   children?: ReactNode
@@ -82,6 +96,7 @@ export function Card({
       {...data}
       data-shot={shot}
       {...(editing ? { 'data-editing': '' } : {})}
+      {...(step !== undefined ? { 'data-card-step': step } : {})}
       {...(title !== undefined ? { 'aria-labelledby': id } : {})}
       style={{
         background: tone === 'warning' ? semantic.warning.tint : neutral.surface,
@@ -92,45 +107,48 @@ export function Card({
         display: 'flex',
         flexDirection: 'column',
         gap: panel ? 14 : 10,
+        ...(bare ? { border: 'none', background: 'none', boxShadow: 'none', padding: 0 } : {}),
         ...style,
       }}
     >
-      {hasHead && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            justifyContent: 'space-between',
-            gap: 12,
-            ...(flush ? { padding: `${inset}px ${inset}px 0` } : {}),
-          }}
-        >
-          {title !== undefined ? (
-            <TitleWithAside aside={aside}>
-            <H
-              id={id}
-              ref={headingRef}
-              {...(headingRef !== undefined ? { tabIndex: -1 } : {})}
-              style={{
-                margin: 0,
-                fontSize: panel ? 17 : 14,
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                ...(headingRef !== undefined ? { outline: 'none' } : {}),
-              }}
-            >
-              {title}
-            </H>
-            </TitleWithAside>
-          ) : (
-            <span />
-          )}
-          {headAction}
-        </div>
-      )}
-      {children}
+      <StepColumn step={step} gap={panel ? 14 : 10}>
+        {hasHead && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: 12,
+              ...(flush ? { padding: `${inset}px ${inset}px 0` } : {}),
+            }}
+          >
+            {title !== undefined ? (
+              <TitleWithAside aside={aside}>
+              <H
+                id={id}
+                ref={headingRef}
+                {...(headingRef !== undefined ? { tabIndex: -1 } : {})}
+                style={{
+                  margin: 0,
+                  fontSize: panel ? 17 : 14,
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  ...(headingRef !== undefined ? { outline: 'none' } : {}),
+                }}
+              >
+                {title}
+              </H>
+              </TitleWithAside>
+            ) : (
+              <span />
+            )}
+            {headAction}
+          </div>
+        )}
+        {children}
+      </StepColumn>
       {footer !== undefined && (
         <div
           data-card-footer
@@ -148,6 +166,35 @@ export function Card({
         </div>
       )}
     </Tag>
+  )
+}
+
+/** With a `step`, the numbered chip in its own column beside the heading and body; otherwise the content as it is. */
+function StepColumn({ step, gap, children }: { step: number | undefined; gap: number; children: ReactNode }) {
+  if (step === undefined) return <>{children}</>
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '26px minmax(0, 1fr)', gap: 12, alignItems: 'start' }}>
+      <span
+        aria-hidden
+        data-card-step-chip
+        style={{
+          width: 26,
+          height: 26,
+          borderRadius: radius.pill,
+          background: accent.tint,
+          color: accent.base,
+          fontWeight: 700,
+          fontSize: 12.5,
+          display: 'grid',
+          placeItems: 'center',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {step}
+      </span>
+      {/* 3px down, so the heading's first line sits level with the chip (`.formsec h6`). */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap, minWidth: 0, paddingTop: 3 }}>{children}</div>
+    </div>
   )
 }
 

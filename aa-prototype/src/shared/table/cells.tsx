@@ -9,7 +9,7 @@
  */
 
 import { createContext, useContext, type CSSProperties, type ReactNode } from 'react'
-import { accent, neutral, type as typeScale } from '../../theme/tokens'
+import { accent, neutral, space, type as typeScale } from '../../theme/tokens'
 import type { DataAttributes } from '../ui/Field'
 
 export type TableDensity = 'comfortable' | 'compact' | 'dense'
@@ -164,21 +164,29 @@ export function Td({
   )
 }
 
-/** A heading row across the table ("Earlier, not yet authorised"), always `th scope="colgroup"`. */
-export function GroupRow({ span, children, style, ...data }: { span: number; children: ReactNode; style?: CSSProperties } & DataAttributes) {
+/**
+ * A heading row across the table ("Earlier, not yet authorised"), always `th scope="colgroup"`.
+ * `level="sub"` (build plan Phase 47) is the second-level heading under a group, as
+ * `docs/explorations/contracts-section.html` #catalogue draws it: the small size, indented one
+ * step, on the same `bg` band over a `sunken` rule. `group`, the default, is today's row.
+ */
+export function GroupRow({ span, level = 'group', children, style, ...data }: { span: number; level?: 'group' | 'sub'; children: ReactNode; style?: CSSProperties } & DataAttributes) {
   const density = useContext(TableDensityContext)
+  const sub = level === 'sub'
+  const [padY, padX] = (density === 'comfortable' ? '10px 20px' : PADDING[density]).split(' ')
   return (
-    <tr {...data} style={{ background: neutral.bg }}>
+    <tr {...data} {...(sub ? { 'data-group-level': 'sub' } : {})} style={{ background: neutral.bg }}>
       <th
         colSpan={span}
         scope="colgroup"
         style={{
           textAlign: 'left',
-          padding: density === 'comfortable' ? '10px 20px' : PADDING[density],
-          fontSize: 13,
+          padding: `${padY} ${padX}`,
+          fontSize: sub ? typeScale.small.size : 13,
           fontWeight: 600,
           color: neutral.slate,
-          borderBottom: `1px solid ${neutral.line}`,
+          borderBottom: `1px solid ${sub ? neutral.sunken : neutral.line}`,
+          ...(sub ? { paddingLeft: `calc(${padX} + ${space[4]}px)` } : {}),
           ...style,
         }}
       >

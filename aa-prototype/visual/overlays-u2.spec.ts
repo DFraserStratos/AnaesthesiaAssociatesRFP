@@ -5,7 +5,7 @@ import { test, expect, type Locator, type Page } from '@playwright/test'
  * with the RVG code picker open over a Contract being edited, one Escape used
  * to close both and lose the edit. Now it closes the picker only; the edit
  * stays. Since build plan Phase 45 the edit is the invoice-and-codes card on
- * the Contract's page; the create panel (New contract) keeps the same rule.
+ * the Contract's page; New contract, a page since Phase 46, keeps the same rule.
  * `visual/shots/u2-escape-after.png` sits beside
  * `docs/archive/ui-unification/shots/escape-bug-after.png`, which shows nothing open.
  */
@@ -58,21 +58,16 @@ test('U2 Escape bug: one Escape in the code picker closes the picker only, the i
   await expect(codes(page).getByLabel('Name', { exact: true })).toHaveValue('Edited before the picker')
 })
 
-test("U2 Escape bug: the demo catalogue's ContractPanel example (the create panel) keeps its panel too", async ({ page }) => {
-  await page.goto('/demo/catalogue/admin')
+test('U2 Escape bug: on the New contract page, one Escape closes the code picker only and the typed form stays', async ({ page }) => {
+  await page.goto('/admin/contracts/new')
   await page.waitForLoadState('networkidle')
-  const row = page.locator('[data-catalogue-row="ContractPanel (ContractEditSheet)"]')
-  await row.getByRole('button', { name: 'New Contract' }).click()
-  await expect(panel(page)).toBeVisible()
-  await expect(panel(page)).toContainText('New contract')
-  await editThenOpenPicker(page, panel(page))
+  const step4 = codes(page)
+  await editThenOpenPicker(page, step4)
   await page.keyboard.press('Escape')
   await expect(picker(page)).toHaveCount(0)
-  await expect(panel(page)).toBeVisible()
-  await expect(panel(page).getByLabel('Name', { exact: true })).toHaveValue('Edited before the picker')
-  // The next Escape closes the panel.
-  await page.keyboard.press('Escape')
-  await expect(panel(page)).toHaveCount(0)
+  await expect(page).toHaveURL(/\/admin\/contracts\/new$/)
+  await expect(step4.getByLabel('Name', { exact: true })).toHaveValue('Edited before the picker')
+  await expect(step4.getByRole('button', { name: 'Choose the default RVG code' })).toBeFocused()
 })
 
 test('U2 one Escape, one layer: the Admin Day List drawer, its History, then the drawer', async ({ page }) => {

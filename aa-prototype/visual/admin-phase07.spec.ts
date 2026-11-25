@@ -96,17 +96,19 @@ test('admin phase 07 master data', async ({ page }) => {
   await page.waitForTimeout(300)
   await expect(page.getByText('55.00').first()).toBeVisible()
 
-  // Parties (catch-up Phase 18): kinds, billing names and delivery; no Insurers tab.
-  await page.getByRole('button', { name: 'Parties', exact: true }).click()
+  // Parties (catch-up Phase 18): a tab of the Contracts section since build plan Phase 48, grouped by kind;
+  // Master data keeps no Parties or Insurers view and points across.
+  await expect(page.locator('[data-masters-view="parties"]')).toHaveCount(0)
+  await expect(page.locator('[data-shot="masters-moved-note"]')).toContainText('now in Contracts')
+  await page.goto('/admin/contracts/parties')
   const parties = page.locator('[data-shot="parties"]')
-  await expect(parties.locator('tr', { hasText: 'nib' }).getByText('Email')).toBeVisible()
-  await expect(parties.locator('tr', { hasText: 'ACC' }).first().getByText('Funder')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Insurers', exact: true })).toHaveCount(0)
+  await expect(parties.locator('tr[data-party="PY-NIB"]').getByText('Email')).toBeVisible()
+  await expect(parties.locator('tr[data-party-group="funder"]')).toContainText('Funders')
+  await expect(parties.locator('tr[data-party="PY-ACC"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a7-05a-parties.png', fullPage: true })
 
   // Contracts: No contract · RVG first, a search by AA code, and the editor.
-  // Master data's sub-nav entry reaches the Contracts section through the redirect (build plan Phase 45).
-  await page.locator('[data-masters-view="contracts"]').click()
+  await page.locator('[data-contracts-tab="contracts"]').click()
   await expect(page).toHaveURL(/\/admin\/contracts$/)
   const catalogue = page.locator('[data-shot="contract-catalogue"]')
   await expect(catalogue.locator('tr[data-contract]').first()).toContainText('AA-RVG')
@@ -114,17 +116,18 @@ test('admin phase 07 master data', async ({ page }) => {
   await expect(catalogue.locator('tr[data-contract]')).toHaveCount(1)
   await page.screenshot({ path: 'visual/shots/a7-05b-contract-search.png', fullPage: true })
   await page.getByLabel('Search by name, code or AA code').fill('')
+  // New contract is its own page (build plan Phase 46): a refusal from the guard shows in place.
   await page.getByRole('button', { name: 'New contract' }).click()
-  const panel = page.locator('[data-shot="contract-detail"]')
-  await expect(panel.getByText('Assigned on save')).toBeVisible()
-  await panel.getByLabel('Name', { exact: true }).fill('Prepaid RVG test')
-  await panel.locator('select').first().selectOption({ label: 'Christchurch Eye Surgery' })
-  await panel.locator('[data-shot="contract-settings"]').getByRole('button', { name: 'Yes', exact: true }).first().click()
-  await panel.getByRole('button', { name: 'Create contract' }).click()
-  await expect(panel.getByRole('alert')).toContainText('A prepaid Contract cannot be priced from RVG units')
-  await panel.getByRole('alert').scrollIntoViewIfNeeded()
+  await expect(page).toHaveURL(/\/admin\/contracts\/new$/)
+  const form = page.locator('[data-shot="contract-new-page"]')
+  await expect(form.locator('[data-shot="new-contract-on-save"]')).toContainText("assigned from the holder's prefix")
+  await form.locator('[data-shot="contract-links"] select').selectOption({ label: 'Christchurch Eye Surgery' })
+  await form.getByRole('button', { name: 'Create contract' }).click()
+  await expect(form.getByRole('alert')).toContainText('A Contract needs a name.')
+  await form.getByRole('alert').scrollIntoViewIfNeeded()
   await page.screenshot({ path: 'visual/shots/a7-05c-contract-refusal.png', fullPage: true })
-  await panel.getByRole('button', { name: 'Cancel' }).click()
+  await form.getByRole('button', { name: 'Cancel' }).click()
+  await expect(page).toHaveURL(/\/admin\/contracts$/)
   // Back to Master data from the Contracts section.
   await page.getByLabel('Admin').getByRole('button', { name: 'Master data' }).click()
 

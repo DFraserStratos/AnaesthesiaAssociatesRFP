@@ -17,7 +17,7 @@
   "guidance": {
     "as_of": "2026-11-25",
     "headline": "The Contracts work (45 to 49) is on master, ready to test from TEST-45-49.md. Start Wave 2 now: paste the Lane A prompt and the Lane B prompt.",
-    "headline_sub": "Lane A builds the rate and tier card (50), making an anaesthetist inactive (52) and then the People section (53); Lane B builds Waiting for NHI on Intake (51) beside it. Wave 2 does not wait for your Contracts test: fixes land on master and reach the lanes at their next phase start. Wave 3 (54 to 57, all three lanes) follows 53; you test 50 to 57 once after it, from TEST-50-57.md.",
+    "headline_sub": "Walk <a href=\"TEST-45-49.md\">TEST-45-49.md</a> on 5173 when it suits you (the join ran the full gate and one review; Playwright carries the 48 failures from before 45, for the sweep). Wave 2 does not wait for it: Lane A builds the rate and tier card (50), making an anaesthetist inactive (52) and then the People section (53); Lane B builds Waiting for NHI on Intake (51) beside it. Fixes from your test land on master and reach the lanes at their next phase start. Wave 3 (54 to 57, all three lanes) follows 53; you test 50 to 57 once after it. Do not tear the lanes down.",
     "safe": {
       "50": "Lane A's first Wave 2 phase: it needs only 45, on master.",
       "51": "Lane B's Wave 2 phase: it needs nothing beyond what is on master."

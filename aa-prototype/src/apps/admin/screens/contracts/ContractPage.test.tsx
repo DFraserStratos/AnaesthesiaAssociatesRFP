@@ -5,7 +5,7 @@
  * cases now run on the page's invoice-and-codes card).
  */
 
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { CONTRACT_REFUSAL_MESSAGES } from '../../../../domain/billing/contracts'
@@ -13,7 +13,7 @@ import { formatMoney } from '../../../../domain/billing/money'
 import { addDaysISO } from '../../../../domain/clock'
 import { onContract, stillOnContract, freshAppState, useAppStore, type Actor } from '../../../../store'
 import { SurfaceProvider } from '../../../../shared'
-import { AdminContractRoute, AdminContractsRoute, AdminMastersRoute } from '../../routes'
+import { AdminContractRoute, AdminContractsRoute, AdminMastersRoute, AdminNewContractRoute } from '../../routes'
 import { mastersRedirect } from '../../mastersRedirect'
 import { contractPath, contractsPath, newContractPath, partyPath } from '../../contractsPaths'
 
@@ -36,8 +36,8 @@ function renderAt(url: string) {
             <Route path="contracts">
               <Route element={<AdminContractsRoute />}>
                 <Route index element={null} />
-                <Route path="new" element={null} />
               </Route>
+              <Route path="new" element={<AdminNewContractRoute />} />
               <Route path=":contractId" element={<AdminContractRoute />} />
             </Route>
             <Route path="masters" element={<AdminMastersRoute />} />
@@ -65,11 +65,11 @@ afterEach(cleanup)
 describe('routes and the old Master data links (D92, D93)', () => {
   it('builds every section URL from one home, keyed by the Contract id', () => {
     expect(contractsPath()).toBe('/admin/contracts')
-    expect(contractsPath({ holder: 'PY-CES' })).toBe('/admin/contracts?holder=PY-CES')
+    expect(contractsPath({ holder: 'PY-CES' })).toBe('/admin/contracts?group=holder&in=PY-CES')
     expect(contractPath('CT-HNZ')).toBe('/admin/contracts/CT-HNZ')
     expect(contractPath('CT-HNZ', 'history')).toBe('/admin/contracts/CT-HNZ?tab=history')
     expect(newContractPath({ holder: 'PY-CES' })).toBe('/admin/contracts/new?holder=PY-CES')
-    expect(partyPath('PY-CES')).toBe('/admin/masters?view=parties&party=PY-CES')
+    expect(partyPath('PY-CES')).toBe('/admin/contracts/parties/PY-CES')
   })
 
   it('redirects the three old forms, and an unknown &contract= to the list', () => {
@@ -77,10 +77,10 @@ describe('routes and the old Master data links (D92, D93)', () => {
     const at = (q: string) => mastersRedirect(new URLSearchParams(q), masters)
     expect(at('view=contracts')).toBe('/admin/contracts')
     expect(at('view=contracts&contract=CT-MER-FACELIFT')).toBe('/admin/contracts/CT-MER-FACELIFT')
-    expect(at('view=contracts&holder=PY-CES')).toBe('/admin/contracts?holder=PY-CES')
+    expect(at('view=contracts&holder=PY-CES')).toBe('/admin/contracts?group=holder&in=PY-CES')
     expect(at('view=contracts&contract=CT-NOT-THERE')).toBe('/admin/contracts')
     expect(at('view=contracts&holder=PY-NOT-THERE')).toBe('/admin/contracts')
-    expect(at('view=parties')).toBeNull()
+    expect(at('view=hospitals')).toBeNull()
   })
 
   it('lands an old link on the page, and an unknown id falls back to the list', () => {
@@ -175,8 +175,8 @@ describe("a Contract's cards, each saved on its own (US-04.1.7, US-04.1.3)", () 
     const open = within(bills).getByRole('link', { name: 'Open the Party' })
     expect(open).toHaveAttribute('href', partyPath('PY-CES'))
     fireEvent.click(open)
-    // Master data's Parties view opens the Party's panel, then drops `&party=`.
-    expect(location.startsWith('/admin/masters?view=parties')).toBe(true)
+    // The Party's page in the Contracts section (Phase 48).
+    expect(location).toBe('/admin/contracts/parties/PY-CES')
   })
 
   it('Fixed settings: the holder, pricing kind and prepaid show and offer no Edit', () => {
@@ -295,25 +295,16 @@ describe('the default RVG code picker over the invoice-and-codes card (U2, bug 1
   })
 })
 
-describe('New contract, the create panel until 46', () => {
-  it('opens from the list with the holder carried, and closing returns to the list', () => {
+describe('New contract opens its own page (Phase 46)', () => {
+  it('opens from the list with the holder carried, and Cancel returns to the list for that holder', () => {
     renderAt('/admin/contracts?holder=PY-CES')
     fireEvent.click(screen.getByRole('button', { name: 'New contract' }))
     expect(location).toBe('/admin/contracts/new?holder=PY-CES')
-    const panel = card('contract-detail')
-    expect(within(panel).getByRole('heading', { name: 'New contract' })).toBeInTheDocument()
-    expect(within(panel).getByLabelText('Holder')).toHaveValue('PY-CES')
-    expect(within(panel).queryByRole('button', { name: 'Disable' })).toBeNull()
-    act(() => escape())
-    expect(location).toBe('/admin/contracts?holder=PY-CES')
-  })
-
-  it("keeps the list's search behind the panel", () => {
-    renderAt('/admin/contracts')
-    fireEvent.change(screen.getByLabelText('Search by name, code or AA code'), { target: { value: 'Face lift' } })
-    fireEvent.click(screen.getByRole('button', { name: 'New contract' }))
-    act(() => escape())
-    expect(location).toBe('/admin/contracts')
-    expect(screen.getByLabelText('Search by name, code or AA code')).toHaveValue('Face lift')
+    const page = card('contract-new-page')
+    expect(within(page).getByRole('heading', { level: 1, name: 'New contract' })).toBeInTheDocument()
+    expect(within(page).getByLabelText('Holder')).toHaveValue('PY-CES')
+    expect(within(page).queryByRole('button', { name: 'Disable' })).toBeNull()
+    fireEvent.click(within(page).getByRole('button', { name: 'Cancel' }))
+    expect(location).toBe('/admin/contracts?group=holder&in=PY-CES')
   })
 })

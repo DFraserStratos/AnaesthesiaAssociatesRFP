@@ -8,8 +8,9 @@
  *
  * A Contract is edited in place and never deleted (D77): it is disabled
  * instead (`contract.disable`, `contract.enable`). A setting that must change
- * from a date is a new Contract, the old one disabled (D79: no list of the
- * Procedures affected). No contract · RVG changes only its name and AA code
+ * from a date is a new Contract: Replace from a date
+ * (`store/contractReplaceActions.ts`, build plan Phase 49) copies it, moves
+ * the Procedures the office ticks and leaves or disables the old one. No contract · RVG changes only its name and AA code
  * and is never disabled. The AA code is stamped on create from the holder
  * Party's code prefix by `nextAaCode`.
  *
@@ -154,19 +155,58 @@ export interface ContractInput {
   aaCode?: string
 }
 
+/**
+ * What a create may carry beyond the Contract's own fields (build plan Phase 49;
+ * DM-01, D94): the Contract it replaces and the change date, which ride only
+ * the `contract.create` audit entry's `after.replaces`, never the Contract.
+ */
+export interface ContractCreateOptions {
+  replaces?: { contractId: string; fromISO: string }
+}
+
 /** Create a Contract, Active, with the next AA code for its holder. Audited `contract.create`. */
-export function createContract(api: AppStoreApi, actor: Actor, input: ContractInput): Outcome<{ contract: Contract }> {
-  const plan = planContractCreate(api.getState(), actor, input)
+export function createContract(api: AppStoreApi, actor: Actor, input: ContractInput, opts: ContractCreateOptions = {}): Outcome<{ contract: Contract }> {
+  const plan = planContractCreate(api.getState(), actor, input, undefined, opts)
   if (!plan.ok) return plan
   mutate(api, actor, plan.value.metas, () => plan.value.next)
   return ok({ contract: plan.value.contract })
 }
 
 /**
- * Plan a Contract's create with any open-price fallback it implies (the seed
- * load folds the same planner). Every Contract it makes is Active.
+ * Every setting of a Contract as a `ContractInput` (build plan Phase 49; US-04.1.8
+ * "Copied"): a fixed price's ranges as they stand, and no AA code, so a create
+ * from it takes the holder's next code. Pure.
  */
-export function planContractCreate(state: AppState, actor: Actor, input: ContractInput, source?: PlanSource): Outcome<Plan & { contract: Contract }> {
+export function contractInputOf(contract: Contract): ContractInput {
+  return {
+    name: contract.name,
+    holderId: contract.holderId,
+    billsTo: contract.billsTo,
+    pricing: contract.pricing.kind === 'fixed' ? { kind: 'fixed', ranges: contract.pricing.ranges.map((r) => ({ ...r })) } : { ...contract.pricing },
+    prepaid: contract.prepaid,
+    anaesthetistMayOverridePrice: contract.anaesthetistMayOverridePrice,
+    linkedSurgeonIds: [...contract.linkedSurgeonIds],
+    ...(contract.linkedAnaesthetistId !== undefined ? { linkedAnaesthetistId: contract.linkedAnaesthetistId } : {}),
+    ...(contract.holderReference !== undefined ? { holderReference: contract.holderReference } : {}),
+    invoiceDescription: contract.invoiceDescription ?? null,
+    defaultRvgGroupId: contract.defaultRvgGroupId ?? null,
+    specialtyIds: [...contract.specialtyIds],
+    ...(contract.fundingTagId !== undefined ? { fundingTagId: contract.fundingTagId } : {}),
+  }
+}
+
+/**
+ * Plan a Contract's create with any open-price fallback it implies (the seed
+ * load folds the same planner). Every Contract it makes is Active. A
+ * replacement's link and date (`opts.replaces`) go on the create entry only.
+ */
+export function planContractCreate(
+  state: AppState,
+  actor: Actor,
+  input: ContractInput,
+  source?: PlanSource,
+  opts: ContractCreateOptions = {},
+): Outcome<Plan & { contract: Contract }> {
   if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can create a Contract.')
   const holder = state.masters.parties[input.holderId]
   if (holder === undefined) return refuse('holderMissing', 'Choose the Party that holds this Contract.')
@@ -198,7 +238,9 @@ export function planContractCreate(state: AppState, actor: Actor, input: Contrac
   const alloc = allocateId(state.counters, 'contract')
   const contract: Contract = { ...draft, id: alloc.id }
   const { id: _id, ...after } = contract
-  const metas: MutationMeta[] = [{ entityType: 'contract', entityId: contract.id, action: 'contract.create', after: named(after, state), stampBookingId: null }]
+  const created = named(after, state)
+  if (opts.replaces !== undefined) created.replaces = { contractId: opts.replaces.contractId, fromISO: opts.replaces.fromISO }
+  const metas: MutationMeta[] = [{ entityType: 'contract', entityId: contract.id, action: 'contract.create', after: created, stampBookingId: null }]
   const kept = withFallbacks(state, { ...state.masters.contracts, [contract.id]: contract }, alloc.counters, metas)
   return ok({
     id: contract.id,

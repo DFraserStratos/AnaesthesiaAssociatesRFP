@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
-import { contractsPath } from '../../contractsPaths'
+import { useNavigate } from 'react-router-dom'
+import { contractsPath, fundingTagsPath, partiesPath } from '../../contractsPaths'
+import { mastersViewPath } from '../../mastersPaths'
 import { commitGoLiveLoad, discardGoLiveLoad, setGoLiveApproval, specFor, useAppStore, type Actor } from '../../../../store'
 import { SEED_LOAD_ACTOR } from '../../../../store/demoActors'
 import { Button, DemoBadge, FormError } from '../../../../shared'
@@ -12,21 +13,21 @@ import { normaliseOperationName } from '../../../../domain/masterLoad/solutionsP
 import type { GoLiveBatch, GoLiveCandidate, LoadEntity, MasterLoad } from '../../../../domain/masterLoad/types'
 import { elevation, neutral, radius } from '../../../../theme/tokens'
 import { LoadResultPanel } from './LoadResultPanel'
-import type { MastersView } from './view'
 
 /** How a count of each sheet's records reads in the result line, with the view it links to. */
-const SHEET_WORDS: Partial<Record<LoadEntity, { one: string; many: string; view: MastersView; link: string }>> = {
-  specialties: { one: 'specialty', many: 'specialties', view: 'specialties', link: 'Specialties' },
-  surgeons: { one: 'surgeon', many: 'surgeons', view: 'surgeons', link: 'Surgeons' },
-  anaesthetists: { one: 'anaesthetist', many: 'anaesthetists', view: 'anaesthetists', link: 'Anaesthetists' },
-  hospitals: { one: 'hospital', many: 'hospitals', view: 'hospitals', link: 'Hospitals' },
-  hospitalHolidays: { one: 'hospital holiday', many: 'hospital holidays', view: 'hospitals', link: 'Hospital holidays' },
-  rvgGroups: { one: 'RVG group', many: 'RVG groups', view: 'rvgGroups', link: 'RVG groups' },
-  modifiers: { one: 'modifier', many: 'modifiers', view: 'modifiers', link: 'Modifiers' },
-  parties: { one: 'Party', many: 'Parties', view: 'parties', link: 'Parties' },
-  fundingTags: { one: 'funding tag', many: 'funding tags', view: 'fundingTags', link: 'Funding tags' },
-  contracts: { one: 'Contract', many: 'Contracts', view: 'contracts', link: 'Contracts' },
-  publicHolidays: { one: 'public holiday', many: 'public holidays', view: 'publicHolidays', link: 'Public holidays' },
+const SHEET_WORDS: Partial<Record<LoadEntity, { one: string; many: string; to: string; link: string }>> = {
+  specialties: { one: 'specialty', many: 'specialties', to: mastersViewPath('specialties'), link: 'Specialties' },
+  surgeons: { one: 'surgeon', many: 'surgeons', to: mastersViewPath('surgeons'), link: 'Surgeons' },
+  anaesthetists: { one: 'anaesthetist', many: 'anaesthetists', to: mastersViewPath('anaesthetists'), link: 'Anaesthetists' },
+  hospitals: { one: 'hospital', many: 'hospitals', to: mastersViewPath('hospitals'), link: 'Hospitals' },
+  hospitalHolidays: { one: 'hospital holiday', many: 'hospital holidays', to: mastersViewPath('hospitals'), link: 'Hospital holidays' },
+  rvgGroups: { one: 'RVG group', many: 'RVG groups', to: mastersViewPath('rvgGroups'), link: 'RVG groups' },
+  modifiers: { one: 'modifier', many: 'modifiers', to: mastersViewPath('modifiers'), link: 'Modifiers' },
+  // Parties, Funding tags and Contracts are tabs of the Contracts section (build plan Phases 45 and 48).
+  parties: { one: 'Party', many: 'Parties', to: partiesPath(), link: 'Parties' },
+  fundingTags: { one: 'funding tag', many: 'funding tags', to: fundingTagsPath(), link: 'Funding tags' },
+  contracts: { one: 'Contract', many: 'Contracts', to: contractsPath(), link: 'Contracts' },
+  publicHolidays: { one: 'public holiday', many: 'public holidays', to: mastersViewPath('publicHolidays'), link: 'Public holidays' },
 }
 
 /** "A, B and C". */
@@ -120,7 +121,6 @@ function DecisionPill({ c }: { c: GoLiveCandidate }) {
  * computed from the store.
  */
 export function GoLiveLoadView({ actor }: { actor: Actor }) {
-  const [, setParams] = useSearchParams()
   const navigate = useNavigate()
   const batch = useAppStore((s) => s.masterLoads.goLive)
   const allLoads = useAppStore((s) => s.masterLoads.loads)
@@ -147,19 +147,6 @@ export function GoLiveLoadView({ actor }: { actor: Actor }) {
     return evaluateGoLive(batch.candidates, contractsLoad, inMaster)
   }, [batch, contractsLoad, contracts])
   const order = loads.map((l) => l.entity)
-
-  function go(view: MastersView) {
-    // The Contract list moved to its own section (build plan Phase 45): go there directly.
-    if (view === 'contracts') {
-      navigate(contractsPath())
-      return
-    }
-    setParams((prev) => {
-      const copy = new URLSearchParams(prev)
-      copy.set('view', view)
-      return copy
-    }, { replace: true })
-  }
 
   const header = (
     <>
@@ -234,7 +221,7 @@ export function GoLiveLoadView({ actor }: { actor: Actor }) {
           actions={
             <span style={{ display: 'inline-flex', gap: 12, flexWrap: 'wrap' }}>
               {linkViews.map((w) => (
-                <TextAction key={w.view} size="sm" flush onClick={() => go(w.view)}>{w.link}</TextAction>
+                <TextAction key={w.to} size="sm" flush onClick={() => navigate(w.to)}>{w.link}</TextAction>
               ))}
             </span>
           }

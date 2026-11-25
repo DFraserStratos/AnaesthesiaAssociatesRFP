@@ -33,6 +33,26 @@ describe('table kit', () => {
     expect(group).toHaveAttribute('colspan', '7')
   })
 
+  it('GroupRow level sub (Phase 47) is still a colgroup header across the span, smaller and indented; group is unchanged', () => {
+    render(
+      <TableShell label="T" density="dense">
+        <tbody>
+          <GroupRow span={5} data-g="a">Hospitals</GroupRow>
+          <GroupRow span={5} level="sub" data-g="b">St George&apos;s</GroupRow>
+        </tbody>
+      </TableShell>,
+    )
+    const group = screen.getByText('Hospitals')
+    expect(group).toHaveStyle({ fontSize: '13px', padding: '8px 10px', borderBottom: `1px solid ${neutral.line}` })
+    expect(group.closest('tr')).toHaveAttribute('data-g', 'a')
+    const sub = screen.getByText("St George's")
+    expect(sub.tagName).toBe('TH')
+    expect(sub).toHaveAttribute('scope', 'colgroup')
+    expect(sub).toHaveAttribute('colspan', '5')
+    expect(sub).toHaveStyle({ fontSize: '12.5px', paddingLeft: 'calc(10px + 16px)', borderBottom: `1px solid ${neutral.sunken}` })
+    expect(sub.closest('tr')).toHaveAttribute('data-g', 'b')
+  })
+
   it('density: comfortable 12px 20px (web), compact 10px 10px at 13, dense 8px 10px at 12.5; sunken dividers', () => {
     const { rerender } = render(
       <TableShell label="T"><tbody><tr><Td>cell</Td></tr></tbody></TableShell>,

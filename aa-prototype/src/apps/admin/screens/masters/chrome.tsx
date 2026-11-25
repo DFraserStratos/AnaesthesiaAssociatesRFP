@@ -25,6 +25,7 @@ import { reinstateMaster, retireMaster, stagedLoadFor, useAppStore, type Actor }
 import { masterViewEntry, SEEDED_SUBTITLE } from './masterViews'
 import { useAdminPageMode } from '../../components/AdminPage'
 import { parseMastersView, type MastersView } from './view'
+import type { LoadEntity } from '../../../../domain/masterLoad/types'
 
 // ---------------------------------------------------------------------------
 // Header
@@ -52,8 +53,15 @@ export interface MasterHeaderProps {
   add?: MasterAdd
   actions?: ReactNode
   view?: MastersView
+  /** The seed-load sheets this list is loaded from, given outright (a Contracts tab); else the view's own (`masterViews.ts`). */
+  seeded?: readonly LoadEntity[]
   section?: boolean
   shot?: string
+}
+
+/** A list's seeded sheets: those given, else its Master data view's. */
+function seededSheets(seeded: readonly LoadEntity[] | undefined, view: MastersView | undefined): readonly LoadEntity[] {
+  return seeded ?? (view !== undefined ? (masterViewEntry(view)?.seeded ?? []) : [])
 }
 
 export function MasterHeader(props: MasterHeaderProps) {
@@ -67,13 +75,13 @@ function RoutedMasterHeader(props: MasterHeaderProps) {
   return (
     <>
       <MasterHeaderRow {...props} view={view} />
-      {props.section !== true && <LoadResultBanner view={view} />}
+      {props.section !== true && <LoadResultBanner view={view} {...(props.seeded !== undefined ? { seeded: props.seeded } : {})} />}
     </>
   )
 }
 
-function MasterHeaderRow({ title, sub, count, add, actions, view, section = false, shot }: MasterHeaderProps) {
-  const seeded = !section && view !== undefined && (masterViewEntry(view)?.seeded?.length ?? 0) > 0
+function MasterHeaderRow({ title, sub, count, add, actions, view, seeded: given, section = false, shot }: MasterHeaderProps) {
+  const seeded = !section && seededSheets(given, view).length > 0
   const subtitle: ReactNode = seeded ? (
     sub !== undefined ? (
       <>
@@ -124,6 +132,7 @@ export function MasterTable({
   label = 'Master data',
   rightAlign,
   style,
+  footer,
 }: {
   columns: readonly MasterColumn[]
   children: ReactNode
@@ -132,10 +141,12 @@ export function MasterTable({
   /** Column indexes to right-align (a plain-string column's shorthand). */
   rightAlign?: readonly number[]
   style?: CSSProperties
+  /** The card's foot row (the pager), kept below the rows (`TableShell footer`). */
+  footer?: ReactNode
 }) {
   const fit = useAdminPageMode() === 'fit'
   return (
-    <TableShell density="dense" shot={shot} label={label} fit={fit} {...(style !== undefined ? { style } : {})}>
+    <TableShell density="dense" shot={shot} label={label} fit={fit} {...(style !== undefined ? { style } : {})} {...(footer !== undefined ? { footer } : {})}>
       <thead>
         <tr>
           {columns.map((c, i) => {
@@ -323,10 +334,10 @@ export function RetireSection({ kind, id, actor, onDone }: { kind: RetireKind; i
  * seed load for one of its sheets is staged ("Open Seed load"), and on every
  * view while the go-live load is staged ("Open"). The Go-live views show none.
  */
-export function LoadResultBanner({ view }: { view: MastersView }) {
-  // Navigates rather than setting `?view=`: the banner also shows on the Contracts section (build plan Phase 45).
+export function LoadResultBanner({ view, seeded: given }: { view?: MastersView; seeded?: readonly LoadEntity[] }) {
+  // Navigates by path rather than setting `?view=`: the banner also shows on the Contracts section's tabs (build plan Phases 45 and 48).
   const navigate = useNavigate()
-  const seeded = masterViewEntry(view)?.seeded ?? []
+  const seeded = seededSheets(given, view)
   const seedWaiting = useAppStore((s) => seeded.some((e) => stagedLoadFor(s, e) !== undefined))
   const goLiveWaiting = useAppStore((s) => s.masterLoads.goLive?.status === 'staged')
   if (view === 'seedLoad' || view === 'goLive') return null

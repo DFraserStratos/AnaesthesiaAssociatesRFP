@@ -4,6 +4,12 @@
  * `WarningRuleId` union and any new facts in `WarningFacts` (`types.ts`), its facts in the
  * store's `warningFactsFor`, its defaults (seeded into `appSettings` from this
  * list) and a sample in `store/warningSamples.ts`. No UI change.
+ *
+ * One rule here is not in `WARNING_RULES`: `replacedContractStillActive`
+ * (build plan Phase 49, DM-03). Its subject is a Contract, not a Booking, so
+ * the routine's facts do not fit it; it is derived the same way (pure, nothing
+ * stored, no Clear, never a blocker) and read by the store's
+ * `replacedContractsToDisable` for the Day view's To-do and the Contract page.
  */
 
 import type { WarningRule } from '../types'
@@ -37,3 +43,8 @@ export {
   PATIENT_BALANCE_OWES_SHORT,
   PATIENT_BALANCE_CREDIT_SHORT,
 } from './patientBalance'
+export {
+  replacedContractStillActive,
+  REPLACED_CONTRACT_STILL_ACTIVE_TEXT,
+  type ReplacedContractRow,
+} from './replacedContractStillActive'

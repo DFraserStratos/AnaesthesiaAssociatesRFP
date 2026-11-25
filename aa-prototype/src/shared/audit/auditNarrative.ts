@@ -313,6 +313,11 @@ export function formatAuditValue(key: string, value: unknown, names?: AuditNames
     if (key === 'pricing' && typeof value.kind === 'string' && Object.hasOwn(PRICING_KIND_LABEL, value.kind)) {
       return pricingLabel(value as unknown as ContractPricing)
     }
+    // The Contract a new one replaces, and from when (build plan Phase 49): "Unisports Ortho from 1 Jan 2027".
+    if (key === 'replaces' && typeof value.contractId === 'string' && typeof value.fromISO === 'string' && DATE_ONLY.test(value.fromISO)) {
+      const name = names?.contract?.(value.contractId) ?? 'another Contract'
+      return `${name} from ${format(parseISO(value.fromISO), 'd MMM yyyy')}`
+    }
     const shape = formatShape(value, names)
     if (shape !== null) return shape
     const parts = Object.entries(value)

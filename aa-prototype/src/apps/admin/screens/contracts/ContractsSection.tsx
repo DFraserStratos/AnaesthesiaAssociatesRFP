@@ -1,41 +1,49 @@
 /**
  * The Contracts section (build plan Phase 45; D92, US-04.1.7): its own entry in
  * the Admin side nav, between Ledger and Master data. A list page on the Admin
- * frame (`AdminPage fit`) under a route strip: Contracts is live here; Parties
- * and Funding tags still open their Master data views until Phase 48 moves
- * them. `/admin/contracts/new` shows the same list with the create panel open
- * (`ContractPanel` in create mode, the holder from `?holder=`) until Phase 46
- * gives New contract its own page.
+ * frame (`AdminPage fit`) under a route strip: Contracts, Parties and Funding
+ * tags (Phase 48, `contractsTabs.ts`). New contract opens its own page,
+ * `/admin/contracts/new`, keeping `?holder=` (Phase 46).
  */
 
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Button, LineTabLink, LineTabs } from '../../../../shared/ui'
+import { Button, CountBadge, LineTabLink, LineTabs } from '../../../../shared/ui'
 import { useDemoTriggerContext } from '../../../../shared/demoTriggers'
-import { useAppStore, type Actor } from '../../../../store'
-import { AdminPage, PageBody } from '../../components/AdminPage'
-import { ContractPanel } from '../../flows/ContractEditSheet'
-import { contractsPath, newContractPath } from '../../contractsPaths'
-import { mastersViewPath } from '../../mastersPaths'
+import { activeOfficeContractCount } from '../../../../domain/billing/partyContracts'
+import { useAppStore } from '../../../../store'
+import { AdminPage } from '../../components/AdminPage'
+import { newContractPath } from '../../contractsPaths'
 import { SEEDED_SUBTITLE } from '../masters/masterViews'
+import { CONTRACTS_TABS, type ContractsTab } from './contractsTabs'
 import { ContractsView } from './ContractsView'
 
-/** The section's tabs, in order. Parties and Funding tags link across to Master data until 48. */
-export function ContractsTabs({ active }: { active: 'contracts' }) {
+/**
+ * The section's tabs, in order, each with its count as the mock draws them (contracts-section.html
+ * #parties): Active office Contracts, Parties, funding tags. Showing a tab publishes its id under
+ * `adminContracts.tab`, which the demo triggers on the section read (the sample sheets, Phase 48).
+ */
+export function ContractsTabs({ active }: { active: ContractsTab }) {
+  useDemoTriggerContext('adminContracts.tab', active)
+  const contractCount = useAppStore((s) => activeOfficeContractCount(s.masters.contracts))
+  const partyCount = useAppStore((s) => Object.keys(s.masters.parties).length)
+  const tagCount = useAppStore((s) => Object.keys(s.masters.fundingTags).length)
+  const counts: Record<ContractsTab, number> = { contracts: contractCount, parties: partyCount, fundingTags: tagCount }
   return (
     <LineTabs label="Contracts" shot="contracts-tabs">
-      <LineTabLink to={contractsPath()} active={active === 'contracts'} data-contracts-tab="contracts">Contracts</LineTabLink>
-      <LineTabLink to={mastersViewPath('parties')} active={false} data-contracts-tab="parties">Parties</LineTabLink>
-      <LineTabLink to={mastersViewPath('fundingTags')} active={false} data-contracts-tab="fundingTags">Funding tags</LineTabLink>
+      {CONTRACTS_TABS.map((t) => (
+        <LineTabLink key={t.tab} to={t.path} active={active === t.tab} data-contracts-tab={t.tab} badge={<CountBadge count={counts[t.tab]} hideAtZero={false} mono />}>
+          {t.label}
+        </LineTabLink>
+      ))}
     </LineTabs>
   )
 }
 
-export function ContractsSection({ actor, creating = false }: { actor: Actor; creating?: boolean }) {
+export function ContractsSection() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  // The demo triggers on the Contract list (the backdated range, the sample sheets) key on the tab shown; 48 adds its tabs.
-  useDemoTriggerContext('adminContracts.tab', 'contracts')
-  const holderParam = params.get('holder') ?? ''
+  // The holder New contract starts with: the holder grouping's picked Party (Phase 47), or an old `?holder=`.
+  const holderParam = params.get('holder') ?? (params.get('group') === 'holder' ? (params.get('in') ?? '') : '')
   const holder = useAppStore((s) => (s.masters.parties[holderParam] !== undefined ? holderParam : ''))
 
   return (
@@ -51,17 +59,8 @@ export function ContractsSection({ actor, creating = false }: { actor: Actor; cr
       }
       tabs={<ContractsTabs active="contracts" />}
     >
-      <PageBody gap={12}>
-        <ContractsView />
-      </PageBody>
-      {creating && (
-        <ContractPanel
-          open
-          actor={actor}
-          {...(holder !== '' ? { initialHolderId: holder } : {})}
-          onClose={() => navigate(contractsPath(holder !== '' ? { holder } : {}))}
-        />
-      )}
+      {/* The catalogue holds its own toolbar and body, its index in the body's nav (Phase 47). */}
+      <ContractsView />
     </AdminPage>
   )
 }

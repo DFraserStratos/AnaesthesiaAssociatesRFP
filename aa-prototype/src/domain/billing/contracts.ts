@@ -205,6 +205,7 @@ export type ContractRefusalCode =
   | 'pricingKindFixed'
   | 'systemFixed'
   | 'systemNeverDisabled'
+  | 'systemNotReplaced'
   | 'specialtyUnknown'
   | 'fundingTagUnknown'
 
@@ -230,6 +231,8 @@ export const CONTRACT_REFUSAL_MESSAGES: Record<ContractRefusalCode, string> = {
   systemRoleNotChosen: 'Only the system makes the No contract Contracts (RVG and Fixed price).',
   systemFixed: 'Only the name and AA code of a system Contract can change.',
   systemNeverDisabled: 'A system Contract is always available and cannot be disabled.',
+  // Build plan Phase 49 (US-04.1.8): Replace from a date is never offered on one, and the store refuses it.
+  systemNotReplaced: 'A system Contract cannot be replaced.',
   specialtyUnknown: 'A specialty on this Contract is not on the list.',
   fundingTagUnknown: 'That funding tag is not on the list.',
 }
