@@ -1391,8 +1391,8 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
   waitingForNhi: {
     label: 'Intake rows waiting for an NHI',
     entityType: 'route',
-    entityId: '/admin/patients/waiting',
-    detail: "Admin Patients, Waiting for an NHI: intake rows held back until an NHI is added (33a's IRS001 at reset; import the No NHI sample for Aroha Ngata and Losa Tuilagi). Add NHI matches or creates the patient and books the row.",
+    entityId: '/admin/intake/waiting',
+    detail: "Admin Intake, Waiting for NHI: intake rows held back until an NHI is added (33a's IRS001 at reset; import the No NHI sample for Aroha Ngata and Losa Tuilagi). Add NHI matches or creates the patient and books the row.",
   },
 }
 

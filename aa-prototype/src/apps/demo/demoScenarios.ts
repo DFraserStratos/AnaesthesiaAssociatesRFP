@@ -229,7 +229,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       {
         beat: 'The office sets the Contract',
         label: 'Beat 3 · Admin Day',
-        does: 'Open her Booking from Needs an invoice destination and set its Contract on the step rail',
+        does: "On the To-do tab, Show all, then Set Contract on Sarah Mitchell's entry",
         path: adminDayPath,
       },
       {
@@ -447,21 +447,21 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       },
       {
         beat: 'NHI at entry',
-        label: 'Beat 2 · Admin Patients, Waiting for NHI',
+        label: 'Beat 2 · Admin Intake, Waiting for NHI',
         does: 'Demo actions → Receive list with a missing NHI; on an NHI lookup, Demo actions → Hub: Available / Slow / Unavailable',
         path: () => '/admin/intake/waiting',
       },
       { beat: 'No NHI in Xero, and the leak scan', label: 'Beat 3 · Data inspector', does: 'Demo actions → Scan for NHI leaks', path: () => '/demo/data' },
       {
         beat: "The lock and each Contract's history",
-        label: 'Beat 4 · Master data, Contracts',
+        label: 'Beat 4 · Admin Contracts, Health NZ agreed rate',
         does: 'Health NZ agreed rate, then its History',
         path: () => contractPath(CONTRACT.healthNz),
       },
       {
         beat: 'Authorise, then edit the rate per unit',
         label: 'Beat 5 · Admin Review, Mon 23 Nov AM',
-        does: "Authorise for billing, change Dr Souter's rate per unit on Master data, then Demo actions → Regenerate from locked data",
+        does: "Authorise for billing, change Dr Souter's rate per unit on her People page (Rate and tier), then Demo actions → Regenerate from locked data",
         path: (s) => reviewPath(s, SEED_LIST_IDS.souterMon20Am),
       },
     ],

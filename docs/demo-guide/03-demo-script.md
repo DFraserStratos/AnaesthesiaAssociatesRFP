@@ -1293,9 +1293,9 @@ Run it from a fresh Reset (or the S4 jump), so the main order's figures stay as 
 **Stage it:** Control Panel **S5 · Compliance tour → Jump → Confirm jump**. The jump resets the demo data and sets up two things. On Dr Souter's Tue 24 Nov PM List it builds David Chen's audit trail: an ASA III modifier claimed with its explanation, Kirsty W.'s save of his note and time as one change set, then the claim removed. It also authorises Dr Whitaker's Fri 20 Nov List, which raises five invoices, AA-2026-0002 to AA-2026-0006, Hemi Walker's first at $264.50. The jump shows five beat links:
 
 - Beat 1 · Admin Booking History, David Chen
-- Beat 2 · Admin Patients, Waiting for NHI
+- Beat 2 · Admin Intake, Waiting for NHI
 - Beat 3 · Data inspector
-- Beat 4 · Master data, Contracts
+- Beat 4 · Admin Contracts, Health NZ agreed rate
 - Beat 5 · Admin Review, Mon 23 Nov AM
 
 Each link only opens the screen, in the same tab. In Beat 1 open **History** yourself. Beat 2's link opens Intake's **Waiting for NHI** tab, and Beat 4's opens the Contract's own page in the **Contracts** section; the two links keep their older names. Come back to the Control Panel for the next link; the links stay there until the next reset, and each beat also gives its route. Reset alone (**Reset demo data → Confirm reset**) is enough for Beats 2, 3 and 5, but Beats 1 and 4 need the jump. On the handset, sign in on the PWA as Dr Souter and leave **Play the office** off on More. The handset keeps its own demo data, so the jump does not reach it.
@@ -1347,7 +1347,7 @@ Each link only opens the screen, in the same tab. In Beat 1 open **History** you
 ### Beat 2: NHI at entry
 
 - **Click:**
-  - **Beat 2 · Admin Patients, Waiting for NHI** (or **Intake → Waiting for NHI**). One row: Mere Tipene, a stub on Ms K. Patel's List, Tue 8 Dec PM.
+  - **Beat 2 · Admin Intake, Waiting for NHI** (or **Intake → Waiting for NHI**). One row: Mere Tipene, a stub on Ms K. Patel's List, Tue 8 Dec PM.
   - **Demo actions → Receive list with a missing NHI** → **Run**. It runs once per reset.
   - Point at Aroha Ngata (Urgent, 2 days to go) and Losa Tuilagi (6 days). **Email for the NHI** opens the office's mail client.
   - **Day view → Mon 30 Nov**, open Dr Souter's AM List (Forte Health, Mr C. Okafor): Losa Tuilagi stands at 10:30 as a stub.
@@ -1426,7 +1426,7 @@ Each link only opens the screen, in the same tab. In Beat 1 open **History** you
 ### Beat 4: The lock and each Contract's history
 
 - **Click:**
-  - **Beat 4 · Master data, Contracts** (or `/admin/contracts/CT-HNZ`). It opens Health NZ agreed rate, CPH-002, on its own page in the **Contracts** section.
+  - **Beat 4 · Admin Contracts, Health NZ agreed rate** (or `/admin/contracts/CT-HNZ`). It opens Health NZ agreed rate, CPH-002, on its own page in the **Contracts** section.
   - **History** tab: "No changes yet", and **Procedures locked against this Contract**.
   - **Overview** tab: **Edit** on the **Price** card, change **RATE ($ PER UNIT)** from 23 to 24, **Save**.
   - **History** again.
