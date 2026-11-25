@@ -745,7 +745,7 @@ const NHI_HUB_ROUTES = [
   ADMIN_DAY,
   ADMIN_DRAFT_LISTS,
   '/admin/patients',
-  '/admin/patients/waiting',
+  '/admin/intake/waiting',
   '/admin/patients/:nhi',
 ] as const
 const NHI_HUB_SCREEN = 'Add booking, and Admin · Patients'
@@ -2402,13 +2402,13 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     indexPath: () => null,
     indexEmptyReason: 'PWA only: the framed build plays the office in Admin, Intake (Add NHI).',
   },
-  // ── Admin · Patients · Waiting for NHI and Mobile · List (catch-up Phase 40) ──
+  // ── Admin · Intake · Waiting for NHI and Mobile · List (catch-up Phase 40; on Intake since Phase 51) ──
   {
     id: 'receive-no-nhi-list',
     label: 'Receive list with a missing NHI',
     description: `Imports a Forte Health sheet with two bookings sent without an NHI: ${NO_NHI_LIST.rows[0]!.patient.name} on Thu 26 Nov PM (urgent, a new patient) and ${NO_NHI_LIST.rows[1]!.patient.name} on Mon 30 Nov (a returning patient). Both wait here and on Matching; nothing is created until the office adds the NHI.`,
-    screen: 'Admin · Patients · Waiting for NHI',
-    routes: ['/admin/patients/waiting'],
+    screen: 'Admin · Intake · Waiting for NHI',
+    routes: ['/admin/intake/waiting'],
     surfaces: ['bar'],
     disabledReason: (state) => (Object.values(state.intake.batches).some((b) => b.sampleId === NO_NHI_LIST.id) ? 'Already received' : null),
     run: (api) => {
@@ -2419,7 +2419,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         message: `Forte Health sent two bookings with no NHI. They wait here and on Matching, and nothing is created yet. Add NHI ${NO_NHI_NEW_PATIENT_NHI} for ${NO_NHI_LIST.rows[0]!.patient.name} (a new patient) and ${NO_NHI_RETURNING_NHI} for ${NO_NHI_LIST.rows[1]!.patient.name} (an existing record).`,
       }
     },
-    indexPath: () => '/admin/patients/waiting',
+    indexPath: () => '/admin/intake/waiting',
   },
   {
     id: 'pwa-office-adds-nhi',

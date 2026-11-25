@@ -117,7 +117,7 @@ export function MatchingTable({
                       <Pill size="sm" tone="warning">No NHI</Pill>
                       {/* The office's chase list (catch-up Phase 40; US-11.1.5). */}
                       {row.status === 'open' && (
-                        <TextAction to="/admin/patients/waiting" size="sm" flush shot="matching-waiting-link" style={{ fontSize: 12 }}>
+                        <TextAction to="/admin/intake/waiting" size="sm" flush shot="matching-waiting-link" style={{ fontSize: 12 }}>
                           Waiting for NHI
                         </TextAction>
                       )}

@@ -1,13 +1,14 @@
 /**
  * Component catalogue examples for Admin · Patients (catch-up Phase 40), on
- * the live seed: Sarah Mitchell's record (CQY9304), the Waiting for NHI table
- * (33a's seeded row) and the Master data balance threshold.
+ * the live seed: Sarah Mitchell's record (CQY9304), Intake's Waiting for NHI
+ * table (33a's seeded row; on Intake since Phase 51) and the Master data balance threshold.
  */
 
 import { OFFICE_ACTOR } from '../../../../store'
 import { PatientsScreen } from '../../../admin/screens/patients/PatientsScreen'
 import { PatientRecord } from '../../../admin/screens/patients/PatientRecord'
 import { PatientBalanceThresholdView } from '../../../admin/screens/masters/PatientBalanceThresholdView'
+import { WaitingNhiTab } from '../../../admin/intake/WaitingNhiTab'
 
 const noop = () => undefined
 
@@ -16,7 +17,7 @@ export function PatientsSearchExample() {
 }
 
 export function WaitingNhiExample() {
-  return <PatientsScreen view="waiting" actor={OFFICE_ACTOR} onOpenList={noop} onOpenMatching={noop} />
+  return <WaitingNhiTab actor={OFFICE_ACTOR} onOpenList={noop} />
 }
 
 export function PatientRecordExample() {

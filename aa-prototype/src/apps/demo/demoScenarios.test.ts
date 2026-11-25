@@ -77,7 +77,7 @@ const ROUTE_PATTERNS = [
   '/admin/invoices',
   '/admin/invoices/:invoiceId',
   '/admin/patients',
-  '/admin/patients/waiting',
+  '/admin/intake/waiting',
   '/admin/patients/follow-up',
   '/admin/billing',
   '/admin/billing/aa-fees',

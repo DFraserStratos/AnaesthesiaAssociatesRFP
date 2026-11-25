@@ -157,7 +157,13 @@ export function matchingCounts(state: ViewState, view: MatchingView = matchingVi
   return matchingQueue(view, Object.values(state.intake.rows)).counts
 }
 
-/** Open rows: the side-nav badge (amber). */
+/**
+ * Intake's side-nav badge (amber): every open row, once. A row waiting for an NHI
+ * (Intake's Waiting for NHI tab) is open, so it counts here and nowhere else; adding
+ * its NHI drops the count when the row becomes a Booking (its stub resolved). A row
+ * with no List yet has no stub: it leaves the waiting tab and stays one open row on
+ * Matching, counted once, until the office decides it (Phase 51's no-List default).
+ */
 export function matchingAttentionCount(state: Pick<AppState, 'intake'>): number {
   return Object.values(state.intake.rows).filter((r) => r.status === 'open').length
 }

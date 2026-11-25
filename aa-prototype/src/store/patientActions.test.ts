@@ -317,11 +317,11 @@ describe('patient selectors', () => {
     expect(Math.round(view.balance.outstandingTotal * 100)).toBe(Math.round(sum * 100))
   })
 
-  it('the badge adds the waiting rows', () => {
+  it('the badge no longer counts the waiting rows: they are Intake\'s (Phase 51)', () => {
     const api = createAppStore()
     const base = patientAttentionCount(api.getState())
     importHospitalDownload(api, OFFICE, NO_NHI_LIST.id)
-    expect(patientAttentionCount(api.getState())).toBe(base + 2)
+    expect(patientAttentionCount(api.getState())).toBe(base)
     expect(waitingNhiRows(createAppStore().getState()).map((r) => r.rowId)).toEqual(['IRS001'])
   })
 })

@@ -20,6 +20,7 @@ import { IntakeScreen } from './screens/IntakeScreen'
 import { PdfListsTab } from './intake/PdfListsTab'
 import { DataQualityTab } from './intake/DataQualityTab'
 import { ValidatorsTab } from './intake/ValidatorsTab'
+import { WaitingNhiTab } from './intake/WaitingNhiTab'
 import { InvoicesScreen } from './screens/InvoicesScreen'
 import { AdminPage } from './components/AdminPage'
 import { CreditNoteDocument } from './screens/InvoiceDocument'
@@ -422,6 +423,12 @@ export function AdminAaFeeSettingsRoute() {
   return <AaFeesScreen actor={actor} tab="settings" />
 }
 
+/** The rows waiting for an NHI (US-11.1.5; D99) — `/admin/intake/waiting`, beside Matching. */
+export function AdminWaitingNhiTabRoute() {
+  const { actor, onOpenList } = useAdminOutlet()
+  return <WaitingNhiTab actor={actor} onOpenList={onOpenList} />
+}
+
 /** The rooms' PDF lists (catch-up Phase 34; FT-02.2, US-02.2.1) — `/admin/intake/pdfs`. */
 export function AdminPdfListsRoute() {
   const { actor } = useAdminOutlet()
@@ -599,9 +606,10 @@ function BeyondHorizon({ endISO, onGoToEnd }: { endISO: string; onGoToEnd: () =>
 }
 
 // ---------------------------------------------------------------------------
-// Patients (catch-up Phase 40): `/admin/patients`, `/admin/patients/waiting`,
-// `/admin/patients/follow-up` and the record `/admin/patients/:nhi`. The route
-// key is the NHI; an unknown NHI goes back to the search.
+// Patients (catch-up Phase 40): `/admin/patients`, `/admin/patients/follow-up`
+// and the record `/admin/patients/:nhi` (`/admin/patients/waiting` redirects to
+// Intake's Waiting for NHI tab, D100). The route key is the NHI; an unknown NHI
+// goes back to the search.
 // ---------------------------------------------------------------------------
 
 function usePatientRouteHandlers() {
@@ -622,7 +630,6 @@ function patientListRoute(view: PatientListView) {
 }
 
 export const AdminPatientsRoute = patientListRoute('search')
-export const AdminWaitingNhiRoute = patientListRoute('waiting')
 export const AdminPatientFollowUpRoute = patientListRoute('followUp')
 
 export function AdminPatientRecordRoute() {

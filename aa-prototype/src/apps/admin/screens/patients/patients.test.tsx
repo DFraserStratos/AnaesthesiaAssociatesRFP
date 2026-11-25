@@ -1,6 +1,7 @@
 /**
- * Catch-up Phase 40, session 2 (items 12 and 16): Admin · Patients. The
- * waiting row and the Add NHI sheet, Sarah Mitchell's and Heather Sinclair's
+ * Catch-up Phase 40, session 2 (items 12 and 16): Admin · Patients. (The
+ * waiting row and the Add NHI sheet moved to Intake in Phase 51:
+ * `intake/waitingNhiTab.test.tsx`.) Sarah Mitchell's and Heather Sinclair's
  * records, a second Resend, the threshold field and the record's edit form.
  */
 
@@ -8,8 +9,7 @@ import type { ReactNode } from 'react'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { advanceClockDays, freshAppState, importHospitalDownload, OFFICE_ACTOR, patientBalanceThresholdDays, patientRecordView, THRESHOLD_RANGE_MESSAGE, useAppStore, waitingNhiRows } from '../../../../store'
-import { NO_NHI_LIST, NO_NHI_RETURNING_NHI } from '../../../../domain/intake/hospitalDownloads'
+import { advanceClockDays, freshAppState, OFFICE_ACTOR, patientBalanceThresholdDays, patientRecordView, THRESHOLD_RANGE_MESSAGE, useAppStore } from '../../../../store'
 import { SurfaceProvider } from '../../../../shared/surface'
 import { PatientsScreen } from './PatientsScreen'
 import { PatientRecord } from './PatientRecord'
@@ -26,77 +26,8 @@ function inAdmin(node: ReactNode, path = '/admin/patients') {
   )
 }
 
-function receiveMissingNhiList() {
-  const res = importHospitalDownload(useAppStore, OFFICE_ACTOR, NO_NHI_LIST.id)
-  if (!res.ok) throw new Error(res.message)
-}
-
-function waitingRow(container: HTMLElement, name: string): HTMLElement {
-  const rows = [...container.querySelectorAll<HTMLElement>('[data-shot="waiting-nhi-row"]')]
-  const row = rows.find((r) => r.textContent?.includes(name))
-  if (row === undefined) throw new Error(`no waiting row for ${name}`)
-  return row
-}
-
 beforeEach(() => useAppStore.setState(freshAppState()))
 afterEach(() => cleanup())
-
-describe('Waiting for NHI', () => {
-  it('a row shows the address to chase, the Urgent pill on a close row, and Add NHI', () => {
-    receiveMissingNhiList()
-    const { container } = inAdmin(<PatientsScreen view="waiting" actor={OFFICE_ACTOR} onOpenList={noop} onOpenMatching={noop} />)
-    const rows = waitingNhiRows(useAppStore.getState())
-    const aroha = rows.find((r) => r.patientName === 'Aroha Ngata')!
-    const row = waitingRow(container, 'Aroha Ngata')
-    expect(row.getAttribute('data-urgent')).toBe('true')
-    expect(within(row).getByText('Urgent')).toBeInTheDocument()
-    expect(aroha.chase.to).not.toBe('')
-    expect(row.querySelector('[data-shot="waiting-nhi-chase"]')?.textContent).toContain(aroha.chase.to)
-    expect(within(row).getByRole('button', { name: 'Add NHI' })).toBeInTheDocument()
-    // Email for the NHI is a real mailto link.
-    expect(row.querySelector('a[data-shot="waiting-nhi-email"]')?.getAttribute('href')).toMatch(/^mailto:/)
-    const tuilagi = waitingRow(container, 'Losa Tuilagi')
-    expect(tuilagi.getAttribute('data-urgent')).toBe('false')
-    expect(within(tuilagi).queryByText('Urgent')).toBeNull()
-  })
-
-  it('Email for the NHI audits the request and the row reads Requested', () => {
-    receiveMissingNhiList()
-    const { container } = inAdmin(<PatientsScreen view="waiting" actor={OFFICE_ACTOR} onOpenList={noop} onOpenMatching={noop} />)
-    const row = waitingRow(container, 'Losa Tuilagi')
-    expect(row.textContent).toContain('Not yet')
-    fireEvent.click(row.querySelector('a[data-shot="waiting-nhi-email"]')!)
-    expect(useAppStore.getState().audit.at(-1)?.action).toBe('importRow.nhiRequested')
-    expect(waitingRow(container, 'Losa Tuilagi').textContent).not.toContain('Not yet')
-  })
-
-  it('the Add NHI sheet shows the existing record and adds the NHI through addNhiToWaitingRow', () => {
-    receiveMissingNhiList()
-    const { container } = inAdmin(<PatientsScreen view="waiting" actor={OFFICE_ACTOR} onOpenList={noop} onOpenMatching={noop} />)
-    const before = Object.keys(useAppStore.getState().masters.patients).length
-    fireEvent.click(within(waitingRow(container, 'Losa Tuilagi')).getByRole('button', { name: 'Add NHI' }))
-    const sheet = document.querySelector('[data-shot="add-nhi-sheet"]') as HTMLElement
-    expect(sheet).not.toBeNull()
-    const save = within(sheet).getByRole('button', { name: 'Add NHI' })
-    expect(save).toBeDisabled()
-    fireEvent.change(within(sheet).getByLabelText('NHI'), { target: { value: NO_NHI_RETURNING_NHI } })
-    expect(sheet.querySelector('[data-shot="add-nhi-preview"]')?.textContent).toMatch(/^Matches Losa Tuilagi, born 1 JUN 1992, \d+ earlier Bookings?\. The row uses this record; no second one is made\.$/)
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Add NHI' }))
-    expect(waitingNhiRows(useAppStore.getState()).some((r) => r.patientName === 'Losa Tuilagi')).toBe(false)
-    expect(Object.keys(useAppStore.getState().masters.patients).length).toBe(before)
-    expect(document.querySelector('[data-shot="add-nhi-done"]')?.textContent).toContain('Added. The Booking is on')
-  })
-
-  it('an invalid NHI shows its reason and keeps Add NHI disabled', () => {
-    receiveMissingNhiList()
-    const { container } = inAdmin(<PatientsScreen view="waiting" actor={OFFICE_ACTOR} onOpenList={noop} onOpenMatching={noop} />)
-    fireEvent.click(within(waitingRow(container, 'Aroha Ngata')).getByRole('button', { name: 'Add NHI' }))
-    const sheet = document.querySelector('[data-shot="add-nhi-sheet"]') as HTMLElement
-    fireEvent.change(within(sheet).getByLabelText('NHI'), { target: { value: 'ZAE0311' } })
-    expect(sheet.textContent).toContain('The check digit does not match.')
-    expect(within(sheet).getByRole('button', { name: 'Add NHI' })).toBeDisabled()
-  })
-})
 
 describe('the patient record', () => {
   it("Sarah Mitchell: Paid (Sharma) and Unpaid (Souter), billed to her $610.00 strong, and the Balance counts every payer", () => {
