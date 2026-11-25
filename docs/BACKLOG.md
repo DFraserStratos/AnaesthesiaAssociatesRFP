@@ -117,7 +117,6 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 - Start-up builds the whole practice on every load: about 1 s on a laptop, about 3 s on a 4x-slowed CPU (dev server). Cache the built start, or build the 71's billing lazily. `store/appStore.ts` (`practiceAppState`). M
 - A long demo-clock jump at practice scale overflows browser storage: moving the clock four months (e.g. "Demo: pass the last day" on Dr Beaumont, whose Lists run to the horizon's end, so her last day must be its last) grows the saved `aa-demo` delta to about 5.2 MB, the write fails and saving latches off, so the session works until a reload brings back the state before the jump. Found in build plan Phase 52. `store/persistStorage.ts`, `store/persistDelta.ts`. M
 - Make active's Contract offer-back can't be demoed or shot: every anaesthetist with an own Contract has Lists to the horizon's end, and Dr Reeves has none disabled. Seed a leaver-to-be with an own Contract and few Lists. `domain/seed/fullScale/`, `store/anaesthetistStatusActions.ts`. S
-- The Web app's "no longer active" page can't be shot: it shows only when Dr Souter is inactive, and she holds Lists to the horizon's end. `apps/web/WebApp.tsx`. S
 - Dr Sharma and Dr Tahana show the same masked bank account (99-0101-•••••67-00), likely a seed clash. `domain/seed/fullScale/`. S
 - People → Patients → Needs follow-up is empty on a fresh seed until S1's Create Booking; worth a seeded row if it is opened cold. S (owner)
 
