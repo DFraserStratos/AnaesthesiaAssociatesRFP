@@ -27,6 +27,7 @@ import { MasterData } from './screens/masters/MasterData'
 import { mastersRedirect } from './mastersRedirect'
 import { ContractsSection } from './screens/contracts/ContractsSection'
 import { ContractPage } from './screens/contracts/ContractPage'
+import { NewContractPage } from './screens/contracts/new/NewContractPage'
 import { SurgeonProfile } from './screens/SurgeonProfile'
 import { AnaesthetistRecord } from './screens/AnaesthetistRecord'
 import { ReviewQueue } from './screens/ReviewQueue'
@@ -452,11 +453,18 @@ export function AdminMastersRoute() {
 // unknown id falls back to the list).
 // ---------------------------------------------------------------------------
 
-/** The list, with the create panel open on `/admin/contracts/new`: one element for both, so the list is not remounted. */
+/** The list. New contract is its own page since build plan Phase 46. */
 export function AdminContractsRoute() {
+  return <ContractsSection />
+}
+
+/** New contract (build plan Phase 46): `?holder=` that names a Party fills the holder; anything else is ignored. */
+export function AdminNewContractRoute() {
   const { actor } = useAdminOutlet()
-  const { pathname } = useLocation()
-  return <ContractsSection actor={actor} creating={/\/contracts\/new\/?$/.test(pathname)} />
+  const [params] = useSearchParams()
+  const holderParam = params.get('holder') ?? ''
+  const holder = useAppStore((s) => (s.masters.parties[holderParam] !== undefined ? holderParam : ''))
+  return <NewContractPage key={holder} actor={actor} {...(holder !== '' ? { initialHolderId: holder } : {})} />
 }
 
 export function AdminContractRoute() {

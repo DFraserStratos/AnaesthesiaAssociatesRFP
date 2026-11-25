@@ -3,17 +3,15 @@
  * the Admin side nav, between Ledger and Master data. A list page on the Admin
  * frame (`AdminPage fit`) under a route strip: Contracts is live here; Parties
  * and Funding tags still open their Master data views until Phase 48 moves
- * them. `/admin/contracts/new` shows the same list with the create panel open
- * (`ContractPanel` in create mode, the holder from `?holder=`) until Phase 46
- * gives New contract its own page.
+ * them. New contract opens its own page, `/admin/contracts/new`, keeping
+ * `?holder=` (Phase 46).
  */
 
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Button, LineTabLink, LineTabs } from '../../../../shared/ui'
 import { useDemoTriggerContext } from '../../../../shared/demoTriggers'
-import { useAppStore, type Actor } from '../../../../store'
+import { useAppStore } from '../../../../store'
 import { AdminPage } from '../../components/AdminPage'
-import { ContractPanel } from '../../flows/ContractEditSheet'
 import { contractsPath, newContractPath } from '../../contractsPaths'
 import { mastersViewPath } from '../../mastersPaths'
 import { SEEDED_SUBTITLE } from '../masters/masterViews'
@@ -30,7 +28,7 @@ export function ContractsTabs({ active }: { active: 'contracts' }) {
   )
 }
 
-export function ContractsSection({ actor, creating = false }: { actor: Actor; creating?: boolean }) {
+export function ContractsSection() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   // The demo triggers on the Contract list (the backdated range, the sample sheets) key on the tab shown; 48 adds its tabs.
@@ -54,14 +52,6 @@ export function ContractsSection({ actor, creating = false }: { actor: Actor; cr
     >
       {/* The catalogue holds its own toolbar and body, its index in the body's nav (Phase 47). */}
       <ContractsView />
-      {creating && (
-        <ContractPanel
-          open
-          actor={actor}
-          {...(holder !== '' ? { initialHolderId: holder } : {})}
-          onClose={() => navigate(contractsPath(holder !== '' ? { holder } : {}))}
-        />
-      )}
     </AdminPage>
   )
 }

@@ -31,7 +31,11 @@ import { ConflictCallout, useConflictPreview } from '../../../admin/components/c
 import { BookingCount, DraftStateChip, UnassignedPill, WaitingTime } from '../../../admin/components/draftLists/DraftListParts'
 import { AnaesthetistCandidates, NotPreferredWarning, SurgeonPicker, useNotPreferredWarning, usePairingEntries, useSuggestionKey } from '../../../admin/components/pairing'
 import { DraftListCandidates } from '../../../admin/components/pairing/DraftListCandidates'
-import { ContractPanel } from '../../../admin/flows/ContractEditSheet'
+import { NewContractPage } from '../../../admin/screens/contracts/new/NewContractPage'
+import { WhereItWillShow } from '../../../admin/screens/contracts/new/WhereItWillShow'
+import { AlreadyHeld } from '../../../admin/screens/contracts/new/AlreadyHeld'
+import { useContractDraft } from '../../../admin/flows/contractDraft'
+import { PARTY } from '../../../../domain/seed/parties'
 import { PriceRangesTable } from '../../../admin/screens/contracts/PriceRangesTable'
 import { SlotStatusSheet } from '../../../admin/flows/SlotStatusSheet'
 import { ReviewScreen } from '../../../admin/screens/ReviewScreen'
@@ -236,13 +240,18 @@ export function PricingSheetExample() {
   )
 }
 
-/** Create only since build plan Phase 45: a Contract is changed on its own page. */
-export function ContractPanelExample() {
-  const [open, setOpen] = useState(false)
+/** New contract (build plan Phase 46) for Merivale: the four numbered steps on the shared Card's `step`. Create writes to the demo store and opens the new Contract's page. */
+export function NewContractPageExample() {
+  return <NewContractPage actor={OFFICE_ACTOR} initialHolderId={PARTY.merivale} />
+}
+
+/** The rail's two live cards for a Merivale draft named like one it holds. */
+export function NewContractRailExample() {
+  const { draft, rules } = useContractDraft({ holderId: PARTY.merivale, name: 'Face lift revision' })
   return (
-    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-      <Button variant="secondary" onClick={() => setOpen(true)}>New Contract</Button>
-      {open && <ContractPanel open actor={OFFICE_ACTOR} onClose={() => setOpen(false)} />}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, width: 412 }}>
+      <WhereItWillShow draft={draft} rules={rules} />
+      <AlreadyHeld holder={rules.holder} name={draft.name} />
     </div>
   )
 }

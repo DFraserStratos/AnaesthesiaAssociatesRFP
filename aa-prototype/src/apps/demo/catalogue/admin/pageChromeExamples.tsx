@@ -135,6 +135,9 @@ export function CardExample() {
         <span style={{ fontSize: 13 }}>The warning tone.</span>
       </Card>
       <EditingCardExample />
+      <Card step={1} title="Holder and who it bills">
+        <span style={{ fontSize: 13, color: neutral.slate }}>step: the numbered chip before the heading (New contract, Phase 46).</span>
+      </Card>
     </div>
   )
 }

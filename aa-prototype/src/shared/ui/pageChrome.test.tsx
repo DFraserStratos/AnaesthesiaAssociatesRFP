@@ -79,6 +79,23 @@ describe('Card', () => {
     expect(document.querySelector('[data-shot="plain"]')).not.toHaveAttribute('aria-labelledby')
     expect(screen.queryByRole('heading')).toBeNull()
   })
+
+  it('step: a numbered chip before the heading, which keeps its own name (Phase 46)', () => {
+    render(<Card title="Pricing" step={2} shot="stepped">body</Card>)
+    const card = document.querySelector('[data-shot="stepped"]')!
+    expect(card).toHaveAttribute('data-card-step', '2')
+    const chip = card.querySelector('[data-card-step-chip]')!
+    expect(chip).toHaveTextContent('2')
+    expect(chip).toHaveAttribute('aria-hidden')
+    expect(screen.getByRole('heading', { name: 'Pricing' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Pricing' })).toHaveTextContent('body')
+  })
+
+  it('no step by default: no chip', () => {
+    render(<Card title="Plain" shot="unstepped">x</Card>)
+    expect(document.querySelector('[data-shot="unstepped"] [data-card-step-chip]')).toBeNull()
+    expect(document.querySelector('[data-shot="unstepped"]')).not.toHaveAttribute('data-card-step')
+  })
 })
 
 describe('PageHeader', () => {

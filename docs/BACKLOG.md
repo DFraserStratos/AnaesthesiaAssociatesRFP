@@ -105,7 +105,7 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 
 ## Prototype: provisional captions
 
-- Captions tied to open questions, each removed or reworded when its question is answered (`appCopy.test.ts` `MUST_KEEP` pins them): D23 Contracts editor helper (`apps/admin/flows/ContractEditSheet.tsx`, and the who-it-bills card in `apps/admin/screens/contracts/ContractCards.tsx`), D68 (`shared/booking/PrepaymentMovedCard.tsx`), D70 (`InvoiceDocument.tsx`), D72 (`HoldingAccountPanel.tsx`), D78 (`UnitsCard.tsx`), and the Xero MJ "How this posts in Xero is still to be confirmed" (twice). S each (owner)
+- Captions tied to open questions, each removed or reworded when its question is answered (`appCopy.test.ts` `MUST_KEEP` pins them): D23 prepaid Bills caption (`apps/admin/screens/contracts/new/NewContractPage.tsx`, shown too on the who-it-bills card in `ContractCards.tsx`), D68 (`shared/booking/PrepaymentMovedCard.tsx`), D70 (`InvoiceDocument.tsx`), D72 (`HoldingAccountPanel.tsx`), D78 (`UnitsCard.tsx`), and the Xero MJ "How this posts in Xero is still to be confirmed" (twice). S each (owner)
 
 ## UI consistency debt
 

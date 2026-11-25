@@ -2,8 +2,8 @@ import { test, expect, type Page } from '@playwright/test'
 
 /**
  * Catch-up Phase 25a: the Contract change warnings and the Disabled Contract
- * flag. A new Contract replacing Merivale's Face lift from 1 Aug lists the
- * Procedures still on it (nothing moves); Disable's confirm lists them from today and
+ * flag. (The warning-only "Replaces" on a new Contract is gone since build plan
+ * Phase 46; Phase 49 brings Replace from a date.) Disable's confirm lists them from today and
  * Review of Dr Souter's Mon 10 Aug PM flags each, never blocking; the backdated
  * range warns that Judith Calloway's authorised Face lift kept its old price;
  * the seeded Disabled Contract's Booking on 21a's review-flags List reads
@@ -20,36 +20,6 @@ async function openContract(page: Page, id: string) {
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot=contract-detail]')).toBeVisible()
 }
-
-test('phase 25a a new Contract replacing the Face lift from a date lists the Procedures still on it', async ({ page }) => {
-  await page.goto('/admin/contracts')
-  await page.waitForLoadState('networkidle')
-  await page.getByRole('button', { name: 'New contract' }).click()
-  await expect(page).toHaveURL(/\/admin\/contracts\/new/)
-  const panel = page.locator('[data-shot=contract-detail]')
-  await expect(panel).toBeVisible()
-  // A hospital holder (no linked surgeon needed) that takes over the Face lift from 1 Aug.
-  await panel.locator('[data-shot=contract-links] select').first().selectOption({ label: "St George's" })
-  await panel.getByLabel('Name').fill('Face lift 2026')
-  const replaces = panel.locator('[data-shot=contract-replaces]')
-  await replaces.getByLabel('Replaces').selectOption(FACE_LIFT)
-  await replaces.getByLabel('From').fill('2026-12-05')
-  const warning = panel.locator('[data-shot=contract-still-on-warning]')
-  await expect(warning).toContainText('dated on or after Sat 5 Dec')
-  await expect(warning).toContainText('Nothing moves by itself')
-  const rows = warning.locator('[data-shot=contract-still-on-row]')
-  await expect(rows.first()).toBeVisible()
-  await expect(warning).toContainText('Sophie Matthews')
-  await expect(warning).not.toContainText('Judith Calloway')
-  await warning.scrollIntoViewIfNeeded()
-  await page.screenshot({ path: 'visual/shots/p25a-01-dated-change.png', fullPage: true })
-
-  // After Create the panel stays on the warning (before and after save); nothing moved.
-  await panel.getByRole('button', { name: 'Create contract' }).click()
-  await expect(panel.locator('[data-shot=contract-created]')).toContainText('Created Face lift 2026.')
-  await expect(warning).toContainText('Sophie Matthews')
-  await page.screenshot({ path: 'visual/shots/p25a-01b-dated-change-created.png', fullPage: true })
-})
 
 test('phase 25a Disable lists the Procedures still on the Face lift; Review flags them, never as a blocker; Make active clears them', async ({ page }) => {
   await openContract(page, FACE_LIFT)

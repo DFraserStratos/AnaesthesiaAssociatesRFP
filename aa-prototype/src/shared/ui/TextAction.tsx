@@ -13,6 +13,8 @@ interface TextActionProps extends DataAttributes {
   to?: string
   /** Router state carried by a `to` link. */
   linkState?: unknown
+  /** A `to` link that opens in a new tab, so a half-filled form behind it survives (build plan Phase 46). */
+  newTab?: boolean
   /** `sm` 12.5 in tables, `md` 14 in cards (default), `lg` 15 with a 44px target on the phone. */
   size?: TextActionSize
   /** No vertical padding: the action sits on the text line it shares (a table cell, a header row). */
@@ -48,6 +50,7 @@ export function TextAction({
   onClick,
   to,
   linkState,
+  newTab = false,
   size = 'md',
   flush = false,
   inline = false,
@@ -79,7 +82,7 @@ export function TextAction({
   }
   if (to !== undefined && !disabled) {
     return (
-      <Link to={to} state={linkState} className="aa-ctl" data-shot={shot} aria-label={label} title={title} onClick={onClick} style={{ textDecoration: 'none', ...look }} {...dataAttributesOf(rest)}>
+      <Link to={to} state={linkState} {...(newTab ? { target: '_blank', rel: 'noopener' } : {})} className="aa-ctl" data-shot={shot} aria-label={label} title={title} onClick={onClick} style={{ textDecoration: 'none', ...look }} {...dataAttributesOf(rest)}>
         {children}
       </Link>
     )
