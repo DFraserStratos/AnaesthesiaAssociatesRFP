@@ -22,7 +22,7 @@ import { ContractEventFees } from '../../admin/flows/ContractEventFees'
 import { CreditSheet } from '../../admin/flows/CreditSheet'
 import { CorrectInvoiceCard, CreditedBanner, CreditNoteDocument } from '../../admin/screens/InvoiceDocument'
 import { CreditTrails } from '../../admin/screens/LedgerScreen'
-import { CorrectionRetry } from '../../admin/screens/BillingMonitorScreen'
+import { CorrectionRetry } from '../../admin/screens/finances/CorrectionRetry'
 import { SEED_EVENT_ID, SEED_EVENT_PROCEDURE_ID } from '../../../domain/seed/procedureEvents'
 
 export function ProcedureEventsListExample({ as }: { as: 'office' | 'anaesthetist' }) {

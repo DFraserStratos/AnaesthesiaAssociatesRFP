@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test'
 import { runDemoAction } from './demoActions'
 
 /**
- * Phase 09 admin walkthrough — the billing monitor (trigger a failure, see
- * per-booking isolation, resolve & retry) and the prepayment warning on a
+ * Phase 09 admin walkthrough — the Billing tab (trigger a failure, see
+ * per-booking isolation, resolve & retry; build plan Phase 60's table) and the prepayment warning on a
  * booking (the warnings panel + the office's raise action; no gate, no override). A working
  * artifact for eyeballing plus light assertions.
  */
@@ -19,11 +19,15 @@ test('admin phase 09: billing monitor failure, resolve and retry (re-based on th
   // Pressed once, it reads Already triggered.
   await expect(page.locator('[data-shot="demo-action-billing-failure"]').getByText('Already triggered')).toBeVisible()
   await page.keyboard.press('Escape')
-  // The monitor pages its anaesthetist groups at 20 across the whole practice: filter to Dr Ropata's.
-  await page.locator('[data-shot="billing-monitor-filters"]').getByLabel('Anaesthetist').selectOption('39560')
+  // The Billing tab opens on Problems (build plan Phase 60): filter to Dr Ropata's all the same.
+  await page.locator('[data-shot="billing-filters"]').getByLabel('Anaesthetist', { exact: true }).selectOption('39560')
 
   // Losa Tuilagi's hand-off waits for Xero in the sync queue (catch-up Phase 37); Hemi Walker billed; the List is not failed.
-  await expect(page.locator('[data-shot="monitor-waiting-for-xero"]')).toHaveCount(1)
+  await expect(page.locator('tr[data-booking-id][data-problem="waitingForXero"]')).toHaveCount(1)
+  await expect(page.locator('tr[data-shot="billing-list-L-39560-2026-11-19-AM"]')).not.toContainText('Billing failed')
+  await page.locator('[data-shot="billing-show-all-L-39560-2026-11-19-AM"]').click()
+  await expect(page.locator('tr[data-booking-id]')).toHaveCount(2)
+  await expect(page.locator('tr[data-booking-id][data-problem]')).toHaveCount(1)
   await expect(page.getByRole('button', { name: 'Resolve & retry' })).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p9-02-monitor.png', fullPage: true })
 
@@ -38,8 +42,9 @@ test('admin phase 09: billing monitor failure, resolve and retry (re-based on th
   await expect(queue.getByText('Nothing is waiting for Xero.')).toBeVisible()
   await page.locator('[data-shot="finances-tabs"] [data-finances-tab="billing"]').click()
   await expect(page).toHaveURL(/\/admin\/finances\/billing/)
-  await page.locator('[data-shot="billing-monitor-filters"]').getByLabel('Anaesthetist').selectOption('39560')
-  await expect(page.locator('[data-shot="monitor-waiting-for-xero"]')).toHaveCount(0)
+  await page.locator('[data-shot="billing-filters"]').getByLabel('Anaesthetist', { exact: true }).selectOption('39560')
+  await expect(page.locator('tr[data-booking-id][data-problem="waitingForXero"]')).toHaveCount(0)
+  await expect(page.locator('[data-shot="billing-empty"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p9-03-retried.png', fullPage: true })
 })
 

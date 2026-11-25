@@ -30,6 +30,7 @@ import { clockISO, type Actor } from './mutate'
 import { payableRowsFor, invoicesForList, isListBilled, proceduresForBooking, submittedLists } from './selectors'
 import { ANAE, BP, HOSP, INS, ORG, PAT, SEED_LIST_IDS, SEED_MARKERS, CONTRACT } from '../domain/seed'
 import { roundToCents } from '../domain/billing/money'
+import { PAYER_NO_ADDRESS_CODE, PAYER_NO_ADDRESS_REASON } from '../domain/billing/billingStatus'
 import type { BookingLedgerPair, Invoice, InvoiceLine, Party } from '../domain/types'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -512,22 +513,79 @@ describe('invoice identity and delivery', () => {
     expect(listBilledAudit(api, MORRISON_LIST)?.after).toMatchObject({ sentCount: 0, toPostCount: 6, notSentCount: 0 })
   })
 
-  it("a Party with no email raises its invoices with no address, never failing the Booking", () => {
+  it('a Party with no email or post fails each of its Bookings whole: no invoice, no pair, audited, and the List still bills (D116)', () => {
     const api = store()
     patchParty(api, 'PY-STG', (p) => {
       const { email: _email, ...rest } = p
       return rest
     })
+    const pairsBefore = Object.keys(api.getState().billing.ledger).length
     const result = stageAndBill(api, MORRISON_LIST)
-    expect(result.exceptions).toEqual([])
-    const invoices = invoicesForList(api.getState(), MORRISON_LIST)
-    expect(invoices).toHaveLength(6)
-    for (const inv of invoices) {
-      expect(inv.delivery).toEqual({ method: 'email', status: 'noAddress' })
-      expect(pairStatusLabel(api.getState().billing.ledger[inv.caseReference]!)).toBe('invoiced')
-      expect(api.getState().audit.filter((a) => a.action === 'invoice.notSent' && a.entityId === inv.id)).toHaveLength(1)
+    expect(result.invoiceIds).toEqual([])
+    expect(result.exceptions).toHaveLength(6)
+    for (const e of result.exceptions) expect(e).toEqual({ bookingId: e.bookingId, code: PAYER_NO_ADDRESS_CODE, message: PAYER_NO_ADDRESS_REASON })
+    expect(invoicesForList(api.getState(), MORRISON_LIST)).toHaveLength(0)
+    expect(Object.keys(api.getState().billing.ledger)).toHaveLength(pairsBefore)
+    const stored = Object.values(api.getState().billing.exceptions).filter((x) => x.listId === MORRISON_LIST)
+    expect(stored.map((x) => x.bookingId).sort()).toEqual(result.exceptions.map((e) => e.bookingId).sort())
+    for (const x of stored) {
+      expect(x).toMatchObject({ code: PAYER_NO_ADDRESS_CODE, message: PAYER_NO_ADDRESS_REASON })
+      expect(x.resolvedAtISO).toBeUndefined()
+      expect(api.getState().audit.filter((a) => a.action === 'booking.billingException' && a.entityId === x.bookingId).at(-1)?.after).toMatchObject({ billingExceptionId: x.id, code: PAYER_NO_ADDRESS_CODE })
     }
-    expect(listBilledAudit(api, MORRISON_LIST)?.after).toMatchObject({ sentCount: 0, toPostCount: 0, notSentCount: 6 })
+    expect(api.getState().audit.some((a) => a.action === 'invoice.notSent')).toBe(false)
+    expect(isListBilled(api.getState().schedule.lists[MORRISON_LIST]!)).toBe(true)
+    expect(listBilledAudit(api, MORRISON_LIST)?.after).toMatchObject({ invoiceCount: 0, exceptionCount: 6, sentCount: 0, toPostCount: 0, notSentCount: 0 })
+  })
+
+  it("fix the payer, then a retry raises and emails the invoice to the payer's new address and resolves with its pair (D116)", () => {
+    const api = store()
+    patchParty(api, 'PY-STG', (p) => {
+      const { email: _email, ...rest } = p
+      return rest
+    })
+    stageAndBill(api, MORRISON_LIST)
+    const failed = Object.values(api.getState().billing.exceptions).find((x) => x.listId === MORRISON_LIST)!
+    // Still no address: the retry refuses and leaves the exception as it is.
+    expect(retryBillingException(api, OFFICE, failed.id)).toMatchObject({ ok: false, code: PAYER_NO_ADDRESS_CODE, message: PAYER_NO_ADDRESS_REASON })
+    expect(api.getState().billing.exceptions[failed.id]).toEqual(failed)
+    expect(invoicesForBooking(api, failed.bookingId)).toHaveLength(0)
+
+    patchParty(api, 'PY-STG', (p) => ({ ...p, email: 'payables@stgeorges.example' }))
+    advanceClockMinutes(api, 10)
+    const retried = retryBillingException(api, OFFICE, failed.id)
+    expect(retried.ok).toBe(true)
+    if (!retried.ok) return
+    const atISO = clockISO(api.getState().clock)
+    const invoices = invoicesForBooking(api, failed.bookingId)
+    expect(invoices).toHaveLength(1)
+    expect(invoices[0]!.delivery).toEqual({ method: 'email', status: 'sent', sends: [{ atISO, to: 'payables@stgeorges.example', by: 'Billing run' }] })
+    expect(retried.value.pairIds).toEqual([invoices[0]!.caseReference])
+    expect(api.getState().billing.exceptions[failed.id]).toMatchObject({ resolvedAtISO: atISO, resolvedPairIds: [invoices[0]!.caseReference] })
+  })
+
+  it("a multi-invoice Booking fails whole when one of its payers has no address: neither share raised; the List's other Bookings bill (D116)", () => {
+    const api = store()
+    const bookingId = marker('feeSplitBooking')
+    const listId = listOf(api, bookingId)
+    // nib holds one share, the patient the rest: only nib loses its email.
+    patchParty(api, 'PY-NIB', (p) => {
+      const { email: _email, ...rest } = p
+      return rest
+    })
+    const pairsOf = () => Object.values(api.getState().billing.ledger).filter((p) => p.kind !== 'aaFee' && p.bookingId === bookingId).length
+    const pairsBefore = pairsOf()
+    const result = stageAndBill(api, listId)
+    expect(result.exceptions.find((e) => e.bookingId === bookingId)).toEqual({ bookingId, code: PAYER_NO_ADDRESS_CODE, message: PAYER_NO_ADDRESS_REASON })
+    expect(invoicesForBooking(api, bookingId)).toHaveLength(0)
+    expect(pairsOf()).toBe(pairsBefore)
+    const others = Object.values(api.getState().schedule.bookings).filter((b) => b.listId === listId && b.id !== bookingId && b.cancellation === undefined)
+    expect(others.length).toBeGreaterThan(0)
+    for (const other of others) {
+      expect(result.exceptions.some((e) => e.bookingId === other.id)).toBe(false)
+      expect(invoicesForBooking(api, other.id).length).toBeGreaterThan(0)
+    }
+    expect(isListBilled(api.getState().schedule.lists[listId]!)).toBe(true)
   })
 
   it("another payer on the Procedure is emailed at the payer's address: Grace Park's Booking to Hana Park", () => {
@@ -577,13 +635,11 @@ describe('invoice identity and delivery', () => {
 
   it('resendInvoice recovers an invoice raised with no address, and one marked to post, once an address is typed', () => {
     const api = store()
-    patchParty(api, 'PY-STG', (p) => {
-      const { email: _email, ...rest } = p
-      return rest
-    })
     stageAndBill(api, MORRISON_LIST)
-    const [first, second] = invoicesForList(api.getState(), MORRISON_LIST)
-    expect(first!.delivery?.status).toBe('noAddress')
+    // `noAddress` invoices as the seeded history holds them (the run no longer raises one, D116).
+    const noAddress = (inv: Invoice): Invoice => ({ ...inv, delivery: { method: 'email', status: 'noAddress' } })
+    const [first, second] = invoicesForList(api.getState(), MORRISON_LIST).map(noAddress)
+    api.setState((s) => ({ billing: { ...s.billing, invoices: { ...s.billing.invoices, [first!.id]: first!, [second!.id]: second! } } }))
     // No address to resend to until one is typed.
     expect(resendInvoice(api, OFFICE, first!.id)).toMatchObject({ ok: false, code: 'noAddress' })
     expect(resendInvoice(api, OFFICE, first!.id, { to: 'accounts@stgeorges.example' }).ok).toBe(true)
@@ -593,7 +649,7 @@ describe('invoice identity and delivery', () => {
       sends: [{ atISO: clockISO(api.getState().clock), to: 'accounts@stgeorges.example', by: 'Kirsty W.' }],
     })
     expect(api.getState().audit.filter((a) => a.action === 'invoice.resend' && a.entityId === first!.id)[0]?.before).toEqual({ delivery: 'noAddress' })
-    // The others stay as raised.
+    // The others stay as they were.
     expect(api.getState().billing.invoices[second!.id]!.delivery?.status).toBe('noAddress')
 
     const post = store()

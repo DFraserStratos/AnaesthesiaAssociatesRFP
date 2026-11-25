@@ -2,21 +2,24 @@ import { expect, test, type Page } from '@playwright/test'
 import { runDemoAction } from './demoActions'
 
 /**
- * Catch-up Phase 37 (US-13.3.1): the Admin Billing monitor restyled as the
- * processing monitor. One group per anaesthetist in surname order; Lists
- * awaiting approval open in Review (no Authorise on the monitor); authorised
- * Lists expand to their pipeline; filters, Problems only and the sort live in
- * the URL, so a reload and the Review round trip keep the view. Build plan
- * Phase 58: the monitor is Finances · Billing; its summary tiles are gone and
- * the Xero sync queue sits on the Xero tab.
+ * The Billing tab (build plan Phase 60, version C; US-13.3.1, US-13.3.2): one
+ * table of Bookings under their List, grouped by anaesthetist in surname order,
+ * opening on Problems. A problem's reason sits under the patient's name and its
+ * fix beside it; Show all adds the rest of a List. The rail holds the Lists
+ * awaiting approval, which open in Review (nothing on the tab approves). The
+ * filter, search and anaesthetist live in the URL, so a reload and the Review
+ * round trip keep the view; the pager counts Lists, 20 to a page.
+ * (Earlier: catch-up Phase 37's processing monitor; Phase 58 made it Finances · Billing.)
  */
 
 const SOUTER = '34821'
 const ROPATA = '39560'
-const DELANEY = '27731'
-const SOUTER_MON_AM = 'L-34821-2026-11-23-AM'
+const SOUTER_MON16_AM = 'L-34821-2026-11-16-AM'
 const SOUTER_THU_PM = 'L-34821-2026-11-19-PM'
+const SOUTER_THU_PM_BOOKING = 'BK0188'
 const ROPATA_THU_AM = 'L-39560-2026-11-19-AM'
+const LOSA = 'BK0039'
+const HEMI = 'BK0040'
 
 /** A clean seed: the store persists to localStorage, so clear it and load again. */
 async function fresh(page: Page, path = '/admin/finances/billing'): Promise<void> {
@@ -27,79 +30,68 @@ async function fresh(page: Page, path = '/admin/finances/billing'): Promise<void
   await expect(page.getByRole('heading', { name: 'Finances', level: 1 })).toBeVisible()
 }
 
-const groups = (page: Page) => page.locator('section[data-shot^="billing-group-"]')
-const group = (page: Page, anaesthetistId: string) => page.locator(`section[data-shot="billing-group-${anaesthetistId}"]`)
-const pipeline = (page: Page, listId: string) => page.locator(`tbody[data-shot="billing-pipeline-${listId}"]`)
-const awaitingRow = (page: Page, listId: string) => page.locator(`tr[data-shot="billing-awaiting-${listId}"]`)
-const count = (page: Page) => page.locator('[data-shot="billing-monitor-count"]')
+const table = (page: Page) => page.locator('[data-shot="billing-table"]')
+const groups = (page: Page) => page.locator('tr[data-anaesthetist-id]')
+const group = (page: Page, anaesthetistId: string) => page.locator(`tr[data-shot="billing-group-${anaesthetistId}"]`)
+const lists = (page: Page) => page.locator('tr[data-list-id]')
+const list = (page: Page, listId: string) => page.locator(`tr[data-shot="billing-list-${listId}"]`)
+const rows = (page: Page) => page.locator('tr[data-booking-id]')
+const row = (page: Page, bookingId: string) => page.locator(`tr[data-shot="billing-row-${bookingId}"]`)
+const summary = (page: Page) => page.locator('[data-shot="billing-summary"]')
+const empty = (page: Page) => page.locator('[data-shot="billing-empty"]')
+const filterPill = (page: Page, name: string) => page.getByRole('group', { name: 'Which Bookings' }).getByRole('button', { name, exact: true })
+const anaesthetistSelect = (page: Page) => page.locator('[data-shot="billing-filters"]').getByLabel('Anaesthetist', { exact: true })
+const searchBox = (page: Page) => page.getByLabel('Search by patient, Booking, payer, hospital or anaesthetist')
+const awaiting = (page: Page) => page.locator('[data-shot="billing-awaiting"]')
 
-async function groupOrder(page: Page): Promise<string[]> {
-  return groups(page).evaluateAll((els) => els.map((e) => (e.getAttribute('data-shot') ?? '').replace('billing-group-', '')))
-}
-
-/** The Lists in one group's table, top to bottom (awaiting rows, then authorised pipelines). */
-async function listOrder(page: Page, anaesthetistId: string): Promise<string[]> {
-  return group(page, anaesthetistId)
-    .locator('[data-shot^="billing-awaiting-"], [data-shot^="billing-pipeline-"]')
-    .evaluateAll((els) => els.map((e) => e.getAttribute('data-list-id') ?? ''))
-}
-
-test('reset: one group per anaesthetist in surname order, the Lists awaiting approval, and no Authorise', async ({ page }) => {
+test('reset: opens on Problems, every List under All in surname order paged by List, the Lists awaiting approval, and no approve', async ({ page }) => {
   await fresh(page)
 
-  // Groups in surname order, paged at 20 across the whole practice.
-  await expect(groups(page)).toHaveCount(20)
-  await expect(page.locator('[data-shot="billing-monitor-pager"]')).toBeVisible()
-  const names = await groups(page).locator('h2').allTextContents()
+  // Problems by default, and nothing wrong at reset.
+  await expect(filterPill(page, 'Problems')).toHaveAttribute('aria-pressed', 'true')
+  await expect(empty(page)).toContainText('No billing problems.')
+  await expect(summary(page)).toHaveText('0 Lists with a problem, 0 anaesthetists')
+
+  // All: groups in surname order, 20 Lists to a page across the whole practice.
+  await page.locator('[data-shot="billing-empty-show-all"]').click()
+  await expect(page).toHaveURL(/show=all/)
+  await expect(table(page)).toBeVisible()
+  await expect(lists(page)).toHaveCount(20)
+  await expect(page.locator('[data-shot="billing-pager"]')).toBeVisible()
+  await expect(page.locator('[data-shot="billing-pager"]')).toContainText('Lists 1 to 20 of')
+  const names = await groups(page).locator('[data-group-row-layout] > span:first-child').allTextContents()
   const surnames = names.map((n) => n.split(' ').at(-1) ?? '')
   expect(surnames).toEqual([...surnames].sort((a, b) => a.localeCompare(b)))
 
-  // Every SUBMITTED List sits in its anaesthetist's group as Awaiting approval, with a teal Open in Review.
-  const filters = page.locator('[data-shot="billing-monitor-filters"]')
-  for (const listId of [SOUTER_MON_AM, 'L-34821-2026-11-23-PM', ROPATA_THU_AM, 'L-25490-2026-11-23-AM', 'L-27731-2026-11-20-AM', 'L-36208-2026-11-20-AM']) {
-    const anaesthetistId = listId.split('-')[1]!
-    await filters.getByLabel('Anaesthetist').selectOption(anaesthetistId)
-    const row = group(page, anaesthetistId).locator(`tr[data-shot="billing-awaiting-${listId}"]`)
-    await expect(row).toBeVisible()
-    await expect(row.getByText('Awaiting approval')).toBeVisible()
-    await expect(row.locator(`[data-shot="billing-open-in-review-${listId}"]`)).toHaveText('Open in Review')
-  }
-  // Teal, the one action colour (filled or teal-outlined), never crimson.
-  await filters.getByLabel('Anaesthetist').selectOption(SOUTER)
-  await expect(page.locator(`[data-shot="billing-open-in-review-${SOUTER_MON_AM}"]`)).toHaveCSS('border-color', 'rgb(13, 110, 99)')
+  // The rail: the first five Lists awaiting approval, each a link into Review, and See all.
+  const rail = awaiting(page)
+  await expect(rail).toBeVisible()
+  await expect(rail.locator(`li[data-shot="billing-awaiting-${SOUTER_MON16_AM}"] a`)).toBeVisible()
+  await expect(rail.locator('li[data-shot^="billing-awaiting-"]')).toHaveCount(5)
+  await expect(page.locator('[data-shot="billing-awaiting-all"]')).toHaveText(/See all \d+/)
 
-  // No Authorise anywhere on the monitor; the intro carries no RFP placement caveat.
-  await expect(page.getByRole('button', { name: /Authorise/ })).toHaveCount(0)
+  // No Authorise or approve anywhere on the tab.
+  await expect(page.getByRole('button', { name: /Authorise|Approve/ })).toHaveCount(0)
   await expect(page.locator('main, body').first()).not.toContainText('Phase 10 stub')
-  await expect(page.getByText('Lists awaiting approval open in Review, where they are authorised.')).toBeVisible()
 
-  // The seeded authorised List opens expanded at seed scale: stage strip and Booking rows; the chevron folds it.
-  const seeded = pipeline(page, SOUTER_THU_PM)
-  await expect(seeded).toBeVisible()
-  await expect(seeded.locator('ol[aria-label="Billing pipeline"]')).toBeVisible()
-  expect(await seeded.locator('tr[data-booking-id]').count()).toBeGreaterThan(0)
-  const chevron = seeded.getByRole('button', { name: / details$/ })
-  await chevron.click()
-  await expect(seeded.getByRole('button', { name: / details$/ })).toHaveAttribute('aria-expanded', 'false')
-  await expect(seeded.locator('ol[aria-label="Billing pipeline"]')).toHaveCount(0)
-  await expect(page).toHaveURL(new RegExp(`shut=${SOUTER_THU_PM}`))
-  await seeded.getByRole('button', { name: / details$/ }).click()
-  await expect(seeded.locator('ol[aria-label="Billing pipeline"]')).toBeVisible()
-
-  // Problems only with nothing wrong.
-  await page.locator('[data-shot="billing-monitor-filters"]').getByRole('button', { name: 'Problems only' }).click()
-  await expect(page.locator('[data-shot="billing-monitor-empty"]')).toHaveText('No problems. Every authorised list has billed, been sent and reached Xero.')
-  await expect(groups(page)).toHaveCount(0)
+  // The seeded authorised List: its heading and its Booking with the four steps as words.
+  await anaesthetistSelect(page).selectOption(SOUTER)
+  await expect(list(page, SOUTER_THU_PM)).toBeVisible()
+  await expect(list(page, SOUTER_THU_PM)).toContainText(/of \d+ sent/)
+  const booking = row(page, SOUTER_THU_PM_BOOKING)
+  await expect(booking).toBeVisible()
+  await expect(booking.locator('[data-step-state]')).toHaveCount(4)
   await page.screenshot({ path: 'visual/shots/p37-monitor-01-reset.png', fullPage: true })
 })
 
-test('Open in Review with a filter on: authorise there, Back to Billing keeps the filter; sort both ways; reload keeps the view', async ({ page }) => {
-  await fresh(page, `/admin/finances/billing?anaesthetist=${SOUTER}`)
+test('Awaiting approval opens Review with the filters on: authorise there, Back to Billing keeps them; reload keeps the view', async ({ page }) => {
+  await fresh(page, `/admin/finances/billing?show=all&anaesthetist=${SOUTER}`)
   await expect(groups(page)).toHaveCount(1)
   await expect(page.locator('[data-shot="billing-filter-anaesthetist"]')).toHaveValue(SOUTER)
+  await expect(lists(page)).toHaveCount(1)
 
-  await page.locator(`[data-shot="billing-open-in-review-${SOUTER_MON_AM}"]`).click()
-  await expect(page).toHaveURL(new RegExp(`/admin/review/${SOUTER_MON_AM}$`))
+  await awaiting(page).locator(`li[data-shot="billing-awaiting-${SOUTER_MON16_AM}"] a`).click()
+  await expect(page).toHaveURL(new RegExp(`/admin/review/${SOUTER_MON16_AM}$`))
   const back = page.locator('[data-shot="review-back-to-billing"]')
   await expect(back).toHaveText(/Billing/)
   await expect(back).not.toHaveText(/Billing monitor/)
@@ -111,16 +103,14 @@ test('Open in Review with a filter on: authorise there, Back to Billing keeps th
   await expect(page.locator('[data-shot="review-delivery-summary"]')).toHaveText(/invoices? raised\./)
 
   await back.click()
-  await expect(page).toHaveURL(new RegExp(`/admin/finances/billing\\?anaesthetist=${SOUTER}$`))
+  await expect(page).toHaveURL(new RegExp(`/admin/finances/billing\\?show=all&anaesthetist=${SOUTER}$`))
   await expect(page.locator('[data-shot="billing-filter-anaesthetist"]')).toHaveValue(SOUTER)
   await expect(groups(page)).toHaveCount(1)
-  await expect(awaitingRow(page, SOUTER_MON_AM)).toHaveCount(0)
-  const authorised = group(page, SOUTER).locator(`tbody[data-shot="billing-pipeline-${SOUTER_MON_AM}"]`)
-  await expect(authorised).toBeVisible()
-  await expect(authorised.getByRole('button', { name: / details$/ })).toHaveAttribute('aria-expanded', 'true')
-  await expect(authorised.locator('ol[aria-label="Billing pipeline"]')).toBeVisible()
-  expect(await authorised.locator('tr[data-booking-id]').count()).toBe(3)
-  await expect(page.getByRole('button', { name: /Authorise/ })).toHaveCount(0)
+  await expect(awaiting(page).locator(`li[data-shot="billing-awaiting-${SOUTER_MON16_AM}"]`)).toHaveCount(0)
+  await expect(list(page, SOUTER_MON16_AM)).toBeVisible()
+  await expect(lists(page)).toHaveCount(2)
+  expect(await page.locator(`tr[data-shot="billing-list-${SOUTER_MON16_AM}"] ~ tr[data-booking-id]`).count()).toBeGreaterThanOrEqual(2)
+  await expect(page.getByRole('button', { name: /Authorise|Approve/ })).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p37-monitor-02-back-from-review.png', fullPage: true })
 
   // Opened from the Review queue, Review shows its ordinary breadcrumb instead.
@@ -131,62 +121,47 @@ test('Open in Review with a filter on: authorise there, Back to Billing keeps th
   await expect(page.locator('[data-shot="review-back-to-billing"]')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Review queue', exact: true })).toBeVisible()
 
-  // Sort by Date · session both ways: Souter's two authorised Lists swap; aria-sort follows.
-  await page.goto(`/admin/finances/billing?anaesthetist=${SOUTER}`)
+  // Reload keeps the view: the filter, the anaesthetist and the Lists.
+  await page.goto(`/admin/finances/billing?show=all&anaesthetist=${SOUTER}`)
   await page.waitForLoadState('networkidle')
-  const souter = group(page, SOUTER)
-  const dateHead = souter.locator('th[aria-sort]').filter({ hasText: 'Date · session' })
-  await expect(dateHead).toHaveAttribute('aria-sort', 'none')
-  await dateHead.getByRole('button').click()
-  await expect(dateHead).toHaveAttribute('aria-sort', 'ascending')
-  await expect(page).toHaveURL(/sort=date-asc/)
-  let lists = await listOrder(page, SOUTER)
-  const authorisedOrder = (ids: string[]) => ids.filter((id) => id === SOUTER_THU_PM || id === SOUTER_MON_AM)
-  expect(authorisedOrder(lists)).toEqual([SOUTER_THU_PM, SOUTER_MON_AM])
-  await dateHead.getByRole('button').click()
-  await expect(dateHead).toHaveAttribute('aria-sort', 'descending')
-  await expect(page).toHaveURL(/sort=date-desc/)
-  lists = await listOrder(page, SOUTER)
-  expect(authorisedOrder(lists)).toEqual([SOUTER_MON_AM, SOUTER_THU_PM])
-  // Awaiting rows still lead the group.
-  expect(lists[0]).toMatch(/^L-34821-/)
-  expect(await souter.locator('tr[data-shot^="billing-awaiting-"]').count()).toBeGreaterThan(0)
-  await expect(souter.locator('th[aria-sort]').filter({ hasText: 'Hospital' })).toHaveAttribute('aria-sort', 'none')
-
-  // Reload keeps the view: the filter, the sort and the order.
   await page.reload()
   await page.waitForLoadState('networkidle')
+  await expect(filterPill(page, 'All')).toHaveAttribute('aria-pressed', 'true')
   await expect(page.locator('[data-shot="billing-filter-anaesthetist"]')).toHaveValue(SOUTER)
   await expect(groups(page)).toHaveCount(1)
-  await expect(group(page, SOUTER).locator('th[aria-sort]').filter({ hasText: 'Date · session' })).toHaveAttribute('aria-sort', 'descending')
-  expect(authorisedOrder(await listOrder(page, SOUTER))).toEqual([SOUTER_MON_AM, SOUTER_THU_PM])
+  await expect(lists(page)).toHaveCount(2)
   await page.screenshot({ path: 'visual/shots/p37-monitor-03-sorted.png', fullPage: true })
 })
 
-test('Trigger billing failure, then Problems only shows only Ropata\'s List, expanded; Retry now on Xero clears it', async ({ page }) => {
-  await fresh(page, '/admin/finances/billing?sort=date-asc')
-  // The Demo actions work with search params on the URL.
+test("Trigger billing failure: Problems shows only Losa's Booking under Ropata's List, its reason and the way to Xero; Show all adds Hemi; Retry now on Xero clears it", async ({ page }) => {
+  await fresh(page, '/admin/finances/billing')
+  // The Demo actions work with search params on the URL too.
   expect(await runDemoAction(page, 'billing-failure', { close: true })).toMatch(/waits for Xero in the sync queue/)
 
-  await page.locator('[data-shot="billing-monitor-filters"]').getByRole('button', { name: 'Problems only' }).click()
-  await expect(page).toHaveURL(/problems=1/)
-  await expect(page).toHaveURL(/sort=date-asc/)
-  await expect(page.locator('[data-shot="billing-monitor-filters"]').getByRole('button', { name: 'Problems only' })).toHaveAttribute('aria-pressed', 'true')
-
+  await expect(filterPill(page, 'Problems')).toHaveAttribute('aria-pressed', 'true')
+  await expect(summary(page)).toHaveText('1 List with a problem, 1 anaesthetist')
   await expect(groups(page)).toHaveCount(1)
-  await expect(group(page, ROPATA)).toBeVisible()
-  await expect(page.locator('tr[data-shot^="billing-awaiting-"]')).toHaveCount(0)
-  await expect(page.locator('tbody[data-shot^="billing-pipeline-"]')).toHaveCount(1)
-  const ropata = pipeline(page, ROPATA_THU_AM)
-  await expect(ropata).toHaveAttribute('data-problems', /waitingForXero/)
-  await expect(ropata.locator('ol[aria-label="Billing pipeline"]')).toBeVisible()
-  await expect(ropata.locator('[data-shot="monitor-waiting-for-xero"]')).toHaveCount(1)
-  await expect(ropata.getByText('Waiting for Xero').first()).toBeVisible()
-  await expect(count(page)).toHaveText('1 list')
+  await expect(group(page, ROPATA)).toContainText('1 with problems')
+  await expect(lists(page)).toHaveCount(1)
+  await expect(list(page, ROPATA_THU_AM)).toBeVisible()
+  await expect(rows(page)).toHaveCount(1)
+  const losa = row(page, LOSA)
+  await expect(losa).toHaveAttribute('data-problem', 'waitingForXero')
+  await expect(losa).toContainText('Losa Tuilagi')
+  await expect(losa.locator(`[data-shot="billing-reason-${LOSA}"]`)).not.toBeEmpty()
+  await expect(losa.getByText('Waiting for Xero').first()).toBeVisible()
+  await expect(losa.locator(`[data-shot="billing-open-xero-${LOSA}"]`)).toBeVisible()
+  // A hand-off still in the queue is not a failed run: no Retry, Fix the payer or Resolve & retry here.
+  await expect(losa.locator(`[data-shot="billing-retry-${LOSA}"]`)).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Resolve & retry' })).toHaveCount(0)
+
+  // Show all adds the List's other Booking.
+  await page.locator(`[data-shot="billing-show-all-${ROPATA_THU_AM}"]`).click()
+  await expect(rows(page)).toHaveCount(2)
+  await expect(row(page, HEMI)).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p37-monitor-04-problems-only.png', fullPage: true })
 
-  // Retry now on its queue row (Finances · Xero) hands it off; back on Billing the problem and the List leave the view.
+  // Retry now on its queue row (Finances · Xero) hands it off; back on Billing the problem leaves the view.
   await page.locator('[data-shot="finances-tabs"] [data-finances-tab="xero"]').click()
   await expect(page).toHaveURL(/\/admin\/finances\/xero/)
   const queue = page.locator('[data-shot="billing-xero-queue"]')
@@ -195,61 +170,101 @@ test('Trigger billing failure, then Problems only shows only Ropata\'s List, exp
   await expect(queue.getByText('Nothing is waiting for Xero.')).toBeVisible()
   await page.locator('[data-shot="finances-tabs"] [data-finances-tab="billing"]').click()
   await expect(page).toHaveURL(/\/admin\/finances\/billing/)
-  const problemsOnly = page.locator('[data-shot="billing-monitor-filters"]').getByRole('button', { name: 'Problems only' })
-  await expect(problemsOnly).toBeVisible()
-  if ((await problemsOnly.getAttribute('aria-pressed')) !== 'true') await problemsOnly.click()
-  await expect(page.locator('[data-shot="billing-monitor-empty"]')).toHaveText('No problems. Every authorised list has billed, been sent and reached Xero.')
+  await expect(filterPill(page, 'Problems')).toHaveAttribute('aria-pressed', 'true')
+  await expect(empty(page)).toContainText('No billing problems.')
+  await expect(page.locator('[data-shot="billing-xero-notice"]')).toHaveCount(0)
 })
 
-test('filters: one anaesthetist, a hospital, a date range, Clear filters, an unknown id, and reload', async ({ page }) => {
+test('Payer loses billing email: Fix the payer beside the failed Booking, then it bills', async ({ page }) => {
   await fresh(page)
-  const all = (await count(page).textContent()) ?? ''
-  const filters = page.locator('[data-shot="billing-monitor-filters"]')
+  // The trigger is registered at Wave 5's join; skip until it is in the Demo actions menu.
+  await page.locator('[data-shot="demo-actions"]').click()
+  const registered = (await page.locator('[data-shot="demo-action-payer-loses-billing-email"]').count()) > 0
+  await page.keyboard.press('Escape')
+  test.skip(!registered, 'the Payer loses billing email trigger is not registered yet')
+
+  expect(await runDemoAction(page, 'payer-loses-billing-email', { close: true })).toMatch(/Fix the payer, then Retry/)
+  await expect(rows(page)).toHaveCount(1)
+  const failed = rows(page).first()
+  const bookingId = (await failed.getAttribute('data-booking-id')) ?? ''
+  await expect(failed).toHaveAttribute('data-problem', 'billingException')
+  await expect(failed.locator(`[data-shot="billing-reason-${bookingId}"]`)).toContainText(/billing email or postal address/)
+  await expect(failed.locator(`[data-shot="billing-fix-payer-${bookingId}"]`)).toBeVisible()
+  await expect(failed.locator(`[data-shot="billing-retry-${bookingId}"]`)).toBeVisible()
+  await expect(failed.locator(`[data-shot="billing-mark-resolved-${bookingId}"]`)).toBeVisible()
+
+  // Retry alone still refuses, in place.
+  await failed.locator(`[data-shot="billing-retry-${bookingId}"]`).click()
+  await expect(page.locator(`[data-shot="billing-retry-error-${bookingId}"]`)).not.toBeEmpty()
+
+  // Fix the payer, Save and retry: it bills and leaves Problems.
+  await failed.locator(`[data-shot="billing-fix-payer-${bookingId}"]`).click()
+  const sheet = page.locator('[data-shot="billing-fix-payer-sheet"]')
+  await expect(sheet).toBeVisible()
+  await sheet.getByLabel('Billing email').fill('accounts@example.co.nz')
+  await sheet.locator('[data-shot="billing-fix-payer-save"]').click()
+  await expect(sheet).toHaveCount(0)
+  await expect(empty(page)).toContainText('No billing problems.')
+  await page.screenshot({ path: 'visual/shots/p60-billing-fix-payer.png', fullPage: true })
+})
+
+test('filters: the pills, one anaesthetist, a Booking id, two quick edits, page 1 on a change, nothing matching, and reload', async ({ page }) => {
+  await fresh(page, '/admin/finances/billing?show=all')
+
+  // A filter change returns to page 1.
+  await page.locator('[data-shot="billing-pager"]').getByRole('button', { name: 'Next page' }).click()
+  await expect(page.locator('[data-shot="billing-pager"]')).toHaveAttribute('data-page', '2')
+  await expect(page).toHaveURL(/page=2/)
+  await filterPill(page, 'In progress').click()
+  await expect(page).toHaveURL(/show=in-progress/)
+  await expect(page).not.toHaveURL(/page=/)
+  await expect(page.locator('[data-shot="billing-pager"]')).toHaveAttribute('data-page', '1')
+  await filterPill(page, 'Done').click()
+  await expect(page).toHaveURL(/show=done/)
+  await filterPill(page, 'All').click()
+  await expect(page).toHaveURL(/show=all/)
 
   // One anaesthetist.
-  await filters.getByLabel('Anaesthetist').selectOption(DELANEY)
-  await expect(page).toHaveURL(new RegExp(`anaesthetist=${DELANEY}`))
+  await anaesthetistSelect(page).selectOption(SOUTER)
+  await expect(page).toHaveURL(new RegExp(`anaesthetist=${SOUTER}`))
   await expect(groups(page)).toHaveCount(1)
-  await expect(group(page, DELANEY)).toBeVisible()
-  await expect(count(page)).toHaveText('1 list')
+  await expect(group(page, SOUTER)).toBeVisible()
+  await expect(lists(page)).toHaveCount(1)
 
   // Reload keeps it.
   await page.reload()
   await page.waitForLoadState('networkidle')
   await expect(groups(page)).toHaveCount(1)
-  await expect(filters.getByLabel('Anaesthetist')).toHaveValue(DELANEY)
+  await expect(anaesthetistSelect(page)).toHaveValue(SOUTER)
 
-  // Clear, then a hospital: only St George's Lists.
-  await page.locator('[data-shot="billing-filter-clear"]').click()
-  await expect(count(page)).toHaveText(all)
-  await filters.getByLabel('Hospital').selectOption('H-STG')
-  await expect(page).toHaveURL(/hospital=H-STG/)
-  const rows = page.locator('[data-shot^="billing-awaiting-"], [data-shot^="billing-pipeline-"]')
-  await expect(rows.first()).toBeVisible()
-  await expect.poll(async () => (await rows.allTextContents()).filter((t) => !t.includes("St George's")).length).toBe(0)
-  await expect(group(page, '45178')).toHaveCount(0) // Chen's Lists are at Christchurch Eye Surgery
+  // Back to everyone, then a Booking id narrows to its List and that Booking.
+  await anaesthetistSelect(page).selectOption('')
+  await expect(page).not.toHaveURL(/anaesthetist=/)
+  await searchBox(page).fill(SOUTER_THU_PM_BOOKING)
+  await expect(page).toHaveURL(new RegExp(`q=${SOUTER_THU_PM_BOOKING}`))
+  await expect(lists(page)).toHaveCount(1)
+  await expect(rows(page)).toHaveCount(1)
+  await expect(row(page, SOUTER_THU_PM_BOOKING)).toBeVisible()
 
-  // A date range on top: Fri 20 Nov only (the practice's St George's Lists that day).
-  // One field at a time: each writes the URL from the params of the last render, and the
-  // practice-scale monitor takes a moment to re-render, so wait for the count to move first.
-  const hospitalCount = (await count(page).textContent()) ?? ''
-  await page.locator('[data-shot="billing-filter-from"]').fill('2026-11-20')
-  await expect(page).toHaveURL(/from=2026-11-20/)
-  await expect(count(page)).not.toHaveText(hospitalCount)
-  await page.locator('[data-shot="billing-filter-to"]').fill('2026-11-20')
-  await expect(page).toHaveURL(/to=2026-11-20/)
-  await expect(page).toHaveURL(/from=2026-11-20/)
-  await expect(groups(page)).toHaveCount(14)
-  await expect(group(page, DELANEY)).toBeVisible()
-  await expect(count(page)).toHaveText('16 lists')
+  // Two quick edits both land.
+  await searchBox(page).fill('')
+  await searchBox(page).fill('Souter')
+  await anaesthetistSelect(page).selectOption(SOUTER)
+  await expect(page).toHaveURL(/q=Souter/)
+  await expect(page).toHaveURL(new RegExp(`anaesthetist=${SOUTER}`))
 
-  await page.locator('[data-shot="billing-filter-clear"]').click()
-  await expect(count(page)).toHaveText(all)
-  await expect(page).toHaveURL(/\/admin\/finances\/billing$/)
+  // Nothing matching: the empty state clears the search and the anaesthetist.
+  await searchBox(page).fill('zzzz nobody')
+  await expect(empty(page)).toContainText('No Lists match.')
+  await page.locator('[data-shot="billing-empty-clear"]').click()
+  await expect(page).not.toHaveURL(/q=/)
+  await expect(page).not.toHaveURL(/anaesthetist=/)
+  await expect(lists(page)).toHaveCount(20)
 
-  // An unknown id typed into the URL shows all.
-  await page.goto('/admin/finances/billing?anaesthetist=nobody&hospital=H-NOWHERE')
+  // An unknown id typed into the URL matches nothing; clearing shows every List again.
+  await page.goto('/admin/finances/billing?show=all&anaesthetist=nobody')
   await page.waitForLoadState('networkidle')
-  await expect(count(page)).toHaveText(all)
-  await expect(groups(page)).toHaveCount(20) // the first page of the practice's groups
+  await expect(empty(page)).toContainText('No Lists match.')
+  await page.locator('[data-shot="billing-empty-clear"]').click()
+  await expect(lists(page)).toHaveCount(20) // the first page of the practice's Lists
 })
