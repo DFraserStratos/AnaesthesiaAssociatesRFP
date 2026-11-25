@@ -10,7 +10,8 @@ test.beforeEach(async ({ context }) => {
 /**
  * Catch-up Phase 27: prepayment from a prepaid Contract. Admin: the rail's
  * Pre-payments card, Riley's panel awaiting approval (no amount field, no raise
- * button), the Invoices strip with its approval switch, Approve and send, a
+ * button), Invoices' Awaiting approval filter with the approval switch in the
+ * rail's card (build plan Phase 62), Approve and send, a
  * half payment from the Booking detail; two payers giving two strip rows; the
  * clock jump turning the warning strong. Mobile: Nair's panel and units row
  * (paid), read-only. PWA: the office stand-in approving Riley's.
@@ -48,11 +49,15 @@ test('admin: rail card, Riley awaiting approval, Approve and send, then part pai
   await expect(page.getByText(/deposit|estimate/i)).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p27-02-admin-riley-panel.png', fullPage: true })
 
-  // Approve on Invoices leads to the strip.
+  // Approve on Invoices leads to the Awaiting approval filter (build plan Phase 62): its table in the
+  // main column, the approval switch in the rail's card.
   await panel.locator('[data-shot="prepayment-approve-link"]').click()
   await expect(page).toHaveURL(/\/admin\/finances\/invoices\?view=approval$/)
+  await expect(page.locator('[data-shot="invoices-tabs"]')).toHaveAttribute('data-invoices-view', 'approval')
   const strip = page.locator('[data-shot="invoices-awaiting-approval"]')
-  await expect(strip.getByRole('switch', { name: 'Prepayment approval' })).toHaveAttribute('aria-checked', 'true')
+  const card = page.locator('[data-shot="prepayment-approval-card"]')
+  await expect(card).toContainText('Prepayments to approve')
+  await expect(card.getByRole('switch', { name: 'Prepayment approval' })).toHaveAttribute('aria-checked', 'true')
   const row = strip.locator(`[data-shot="awaiting-approval-row"][data-booking-id="${RILEY}"]`)
   await expect(row).toContainText('Annette Riley')
   await expect(row).toContainText('$1,200.00')
@@ -60,7 +65,8 @@ test('admin: rail card, Riley awaiting approval, Approve and send, then part pai
   await row.locator('[data-shot="approve-and-send"]').click()
   // Catch-up Phase 41: Approve and send opens the letter dialog; its own button sends.
   await page.locator('[data-shot="prepayment-letter-send"]').click()
-  await expect(strip.locator('[data-shot="approve-and-send-result"]')).toContainText('AA Holding account')
+  // The tab shows the result line at the top of its main column, not inside the table.
+  await expect(page.locator('[data-shot="approve-and-send-result"]')).toContainText('AA Holding account')
   await expect(row).toHaveCount(0)
 
   // Half a payment, from the Booking detail.
@@ -93,9 +99,12 @@ test('admin: switching approval off confirms, and the next prepaid Booking is se
   await page.goto('/admin/finances/invoices?view=approval')
   await page.waitForLoadState('networkidle')
   const strip = page.locator('[data-shot="invoices-awaiting-approval"]')
-  await strip.getByRole('switch', { name: 'Prepayment approval' }).click()
+  // The switch lives in the rail's card; the tab shows the line it reports.
+  const card = page.locator('[data-shot="prepayment-approval-card"]')
+  await card.getByRole('switch', { name: 'Prepayment approval' }).click()
   await page.locator('[data-shot="prepayment-approval-off-confirm"]').click()
-  await expect(strip.getByRole('switch', { name: 'Prepayment approval' })).toHaveAttribute('aria-checked', 'false')
+  await expect(card.getByRole('switch', { name: 'Prepayment approval' })).toHaveAttribute('aria-checked', 'false')
+  await expect(page.locator('[data-shot="approve-and-send-result"]')).toContainText('Prepayment approval is off.')
   // Riley's was ready, so it went now.
   await expect(strip.locator('[data-shot="awaiting-approval-row"]')).toHaveCount(0)
   await page.goto('/admin/day/2026-11-24')

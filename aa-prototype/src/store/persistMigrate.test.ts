@@ -1520,3 +1520,20 @@ describe('build plan Phase 55 (v80): the surgeon group record removed (DM-08)', 
     expect(Object.keys(s.masters.surgeons).length).toBe(Object.keys(freshAppState().masters.surgeons).length)
   })
 })
+
+describe('build plan Phase 62 (v81): the aged unpaid invoice', () => {
+  beforeEach(() => {
+    flushPersist()
+    localStorage.clear()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('discards a v80 store without the aged invoice and reseeds AA-2026-S2402', () => {
+    expect(PERSIST_VERSION).toBeGreaterThanOrEqual(81)
+    const fresh = freshAppState()
+    const { 'INV-S24-02': _aged, ...invoices } = fresh.billing.invoices
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, billing: { ...fresh.billing, invoices } }, version: 80 }))
+    const s = createAppStore({ persisted: true }).getState()
+    expect(s.billing.invoices['INV-S24-02']).toMatchObject({ invoiceNumber: 'AA-2026-S2402', raisedAtISO: '2026-10-15T09:00:00' })
+  })
+})

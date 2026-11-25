@@ -117,9 +117,13 @@ test('the office credits in full and rebills from a copy: rail, both modes, pend
   await page.locator('[data-shot="invoice-credited-banner"]').getByRole('link', { name: /^AA-2026-/ }).click()
   await expect(page.locator('[data-shot="invoice-rebill-of"]')).toContainText('Rebills AA-2026-')
 
-  // The Invoices table: the credit note row and the credited original.
-  await page.goto('/admin/finances/invoices')
+  // The Invoices table: the credit note row and the credited original. The original reads Paid and
+  // the tab opens on Unpaid, so look under All, pinned to the patient by the search: the credit note
+  // rides directly above the invoice it credits.
+  await page.goto('/admin/finances/invoices?show=all&q=Mitchell')
+  await expect(page.locator('[data-shot="invoices-tabs"]')).toHaveAttribute('data-invoices-view', 'all')
   await expect(page.locator('[data-shot="invoice-list-kind"][data-kind="creditNote"]')).toHaveCount(1)
+  await expect(page.locator('tr[data-credit-note-id] + tr [data-shot="invoice-list-standing"][data-standing="credited"]')).toHaveCount(1)
   await expect(page.locator('[data-shot="invoice-list-credits"]')).toContainText('Credits AA-2026-')
   await expect(page.locator('[data-shot="invoice-list-standing"][data-standing="credited"]')).toHaveCount(1)
   await expect(page.locator('[data-shot="invoice-list-rebills"]')).toHaveCount(1)

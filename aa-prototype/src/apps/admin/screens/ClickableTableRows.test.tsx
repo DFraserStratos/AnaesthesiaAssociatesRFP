@@ -9,8 +9,15 @@ import { InvoicesScreen } from './InvoicesScreen'
 import { MatchingScreen } from './MatchingScreen'
 import { ReviewQueue } from './ReviewQueue'
 import { invoicePath } from './finances/financePaths'
+import { allInvoiceRows, bookingDayLine, invoiceList } from './invoiceListRows'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
+
+/** The Invoices tab's first row as it opens: the oldest unpaid invoice. */
+function firstUnpaidRow() {
+  const state = useAppStore.getState()
+  return invoiceList(allInvoiceRows(state, state.clock.todayISO), { show: 'unpaid' })[0]!
+}
 
 function LocationProbe() {
   const location = useLocation()
@@ -42,9 +49,8 @@ describe('admin clickable table rows', () => {
   })
 
   it('opens an invoice on its own page when its row is clicked', () => {
-    const invoice = Object.values(useAppStore.getState().billing.invoices)
-      .filter((candidate) => !isBackdropInvoice(candidate))
-      .sort((a, b) => b.id.localeCompare(a.id))[0]!
+    // The tab opens on Unpaid, oldest first.
+    const invoice = firstUnpaidRow()
 
     render(
       <MemoryRouter initialEntries={['/admin/finances/invoices']}>
@@ -55,6 +61,7 @@ describe('admin clickable table rows', () => {
 
     const row = screen.getByTestId('invoice-list-table-shell').querySelector('tbody tr')
     expect(row).toHaveClass('aa-clickable-table-row')
+    expect(row).toHaveAttribute('data-invoice-id', invoice.id)
 
     fireEvent.click(row!)
     expect(screen.getByTestId('location-probe')).toHaveTextContent(invoicePath(invoice.id))
@@ -69,9 +76,7 @@ describe('admin clickable table rows', () => {
     )
 
     const row = screen.getByTestId('invoice-list-table-shell').querySelector('tbody tr')!
-    const invoice = Object.values(useAppStore.getState().billing.invoices)
-      .filter((candidate) => !isBackdropInvoice(candidate))
-      .sort((a, b) => b.id.localeCompare(a.id))[0]!
+    const invoice = firstUnpaidRow()
     const booking = useAppStore.getState().schedule.bookings[invoice.bookingId]!
     const list = useAppStore.getState().schedule.lists[booking.listId]!
     const patientLink = row.querySelectorAll('a')[0]!
@@ -83,7 +88,7 @@ describe('admin clickable table rows', () => {
     expect(screen.getByTestId('location-probe')).not.toHaveTextContent(invoicePath(invoice.id))
   })
 
-  it('renders the list as a compact neutral entity link', () => {
+  it("renders the Booking link as the row's only compact neutral entity link", () => {
     render(
       <MemoryRouter initialEntries={['/admin/finances/invoices']}>
         <InvoicesScreen actor={OFFICE} />
@@ -92,13 +97,15 @@ describe('admin clickable table rows', () => {
     )
 
     const row = screen.getByTestId('invoice-list-table-shell').querySelector('tbody tr')!
-    const invoiceId = row.getAttribute('data-invoice-id')!
-    const listLink = row.querySelectorAll('a')[1]!
-
-    expect(listLink).toHaveClass('aa-table-entity-link')
-    expect(listLink).not.toHaveAttribute('style')
-    fireEvent.click(listLink)
-    expect(screen.getByTestId('location-probe')).not.toHaveTextContent(invoicePath(invoiceId))
+    const invoice = firstUnpaidRow()
+    // The number is a button (the row's keyboard handle); the List column and its link are gone.
+    const links = row.querySelectorAll('a')
+    expect(links).toHaveLength(1)
+    const bookingLink = links[0]!
+    expect(bookingLink).toHaveClass('aa-table-entity-link')
+    expect(bookingLink).not.toHaveAttribute('style')
+    expect(bookingLink).toHaveAttribute('aria-label', `View booking for ${invoice.patientName}, ${bookingDayLine(invoice)}`)
+    expect(row.querySelector('button')).toHaveAccessibleName(`View invoice ${invoice.number}`)
   })
 
   it('returns an invoice-origin booking to that exact invoice', () => {

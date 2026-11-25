@@ -14,8 +14,15 @@ export const PHASE_40_REASON = "Dr Sharma's patient-billed history (the HS names
 // Heather Sinclair's credit (D24) adds the credit note, negative invoice, Xero credit notes and credit event: HSCRN, HSNEG, XCNHS, HSEV.
 const HS_ID = /^(L-HIST-HS-|HSBK|HSP|HSINV|HSIL|HSBC|XRHS|XPHS|PMTHS|RCTHS|DSBHS|LDHS|HS-PAY-|HSCRN|HSNEG|XCNHS|HSEV)/
 
+/**
+ * Build plan Phase 62's aged unpaid invoice (`seed/agedInvoiceBooking.ts`), appended after every record
+ * the same way and set aside with the `HS` history: its backdrop List, Booking and Procedure (the `HX`
+ * namespace) and the invoice, line and ledger pair the billing slice raises for it (AA-2026-S2402).
+ */
+const AGED_62_ID = /^(L-HIST-HX-|HXBK|HXP|(INV|IL|BC)-S24-02$)/
+
 export function isPhase40Id(id: string): boolean {
-  return HS_ID.test(id)
+  return HS_ID.test(id) || AGED_62_ID.test(id)
 }
 
 export function dropPhase40<T>(record: Readonly<Record<string, T>>, gone: (id: string, value: T) => boolean = (id) => isPhase40Id(id)): Record<string, T> {
