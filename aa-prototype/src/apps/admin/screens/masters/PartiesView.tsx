@@ -7,7 +7,8 @@
 
 import { isOfficeContract } from '../../../../domain/billing/fallbacks'
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { contractsPath } from '../../contractsPaths'
 import type { Party, PartyKind } from '../../../../domain/types'
 import { useAppStore, type Actor } from '../../../../store'
 import { DELIVERY_LABEL, PARTY_KIND_LABEL } from '../../../../shared/contracts'
@@ -27,6 +28,7 @@ export function PartiesView({ actor }: { actor: Actor }) {
   const parties = useAppStore((s) => s.masters.parties)
   const contracts = useAppStore((s) => s.masters.contracts)
   const [params, setParams] = useSearchParams()
+  const navigate = useNavigate()
   // `?party=<id>` opens that Party's panel (a loaded row's link from Seed load); the param is then dropped.
   const [panel, setPanel] = useState<{ party?: Party } | null>(() => {
     const p = parties[params.get('party') ?? '']
@@ -62,12 +64,7 @@ export function PartiesView({ actor }: { actor: Actor }) {
   }, [contracts])
 
   function showContracts(partyId: string) {
-    setParams((prev) => {
-      const copy = new URLSearchParams(prev)
-      copy.set('view', 'contracts')
-      copy.set('holder', partyId)
-      return copy
-    })
+    navigate(contractsPath({ holder: partyId }))
   }
 
   return (

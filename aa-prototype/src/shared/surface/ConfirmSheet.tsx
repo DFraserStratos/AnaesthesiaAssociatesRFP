@@ -43,10 +43,18 @@ export interface ConfirmSheetProps {
    * safe choice (catch-up Phase 35's "Leave without saving?": Keep editing).
    */
   initialFocus?: 'cancel' | 'confirm'
+  /**
+   * The primary's look: `primary` (default) the teal command; `danger` the one red outline, for a
+   * confirm that takes something away (build plan Phase 45's Disable a Contract; the Admin Review
+   * sheet footer with the Design Language's error outline).
+   */
+  confirmVariant?: 'primary' | 'danger'
+  /** The desktop dialog's width: `wide` for a body that lists rows (a Contract's Disable); the phone sheet ignores it. */
+  size?: 'default' | 'wide'
   children?: ReactNode
 }
 
-export function ConfirmSheet({ open, onClose, title, description, confirmLabel, onConfirm, cancelLabel, onCancel, confirmDisabled, shot, confirmShot, initialFocus = 'cancel', children }: ConfirmSheetProps) {
+export function ConfirmSheet({ open, onClose, title, description, confirmLabel, onConfirm, cancelLabel, onCancel, confirmDisabled, shot, confirmShot, initialFocus = 'cancel', confirmVariant = 'primary', size = 'default', children }: ConfirmSheetProps) {
   const { Overlay } = useSurface()
   const safeRef = useRef<HTMLButtonElement>(null)
   const primaryRef = useRef<HTMLButtonElement>(null)
@@ -67,13 +75,13 @@ export function ConfirmSheet({ open, onClose, title, description, confirmLabel, 
   }
 
   return (
-    <Overlay open={open} onClose={onClose} initialFocusRef={initialFocus === 'confirm' ? primaryRef : safeRef}>
+    <Overlay open={open} onClose={onClose} size={size} initialFocusRef={initialFocus === 'confirm' ? primaryRef : safeRef}>
       <div data-shot={shot} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <OverlayHeader title={title} description={description} />
         {children}
         <SheetActions
           primary={
-            <Button buttonRef={primaryRef} variant="primary" block onClick={confirm} disabled={confirmDisabled} shot={confirmShot}>
+            <Button buttonRef={primaryRef} variant={confirmVariant} block onClick={confirm} disabled={confirmDisabled} shot={confirmShot}>
               {confirmLabel}
             </Button>
           }

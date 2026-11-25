@@ -105,7 +105,9 @@ test('admin phase 07 master data', async ({ page }) => {
   await page.screenshot({ path: 'visual/shots/a7-05a-parties.png', fullPage: true })
 
   // Contracts: No contract · RVG first, a search by AA code, and the editor.
-  await page.getByRole('button', { name: 'Contracts', exact: true }).click()
+  // Master data's sub-nav entry reaches the Contracts section through the redirect (build plan Phase 45).
+  await page.locator('[data-masters-view="contracts"]').click()
+  await expect(page).toHaveURL(/\/admin\/contracts$/)
   const catalogue = page.locator('[data-shot="contract-catalogue"]')
   await expect(catalogue.locator('tr[data-contract]').first()).toContainText('AA-RVG')
   await page.getByLabel('Search by name, code or AA code').fill('COS-001')
@@ -123,6 +125,8 @@ test('admin phase 07 master data', async ({ page }) => {
   await panel.getByRole('alert').scrollIntoViewIfNeeded()
   await page.screenshot({ path: 'visual/shots/a7-05c-contract-refusal.png', fullPage: true })
   await panel.getByRole('button', { name: 'Cancel' }).click()
+  // Back to Master data from the Contracts section.
+  await page.getByLabel('Admin').getByRole('button', { name: 'Master data' }).click()
 
   // Hospitals: adding one adds its Party, and no Contract.
   await page.getByRole('button', { name: 'Hospitals & holidays' }).click()

@@ -9,7 +9,7 @@ import { Lock } from 'lucide-react'
 import { neutral } from '../../../../theme/tokens'
 import { ClickableRow, GroupRow, RowOpenButton, TableShell, Td, Th, type TableDensity } from '../../../../shared/table'
 import { DRAFT_LIST, DRAFT_LISTS, UNASSIGNED } from '../../../../shared/scheduleTerms'
-import { Button, Card, DefList, DefRow, Eyebrow, PageHeader, SelectField, visuallyHidden } from '../../../../shared/ui'
+import { Button, Card, DefList, DefRow, Eyebrow, PageHeader, SelectField, TextAction, TextField, visuallyHidden } from '../../../../shared/ui'
 import { AdminPage, PageBody, PageToolbar } from '../../../admin/components/AdminPage'
 import { Pager } from '../../../admin/components/Pager'
 
@@ -133,7 +133,38 @@ export function CardExample() {
       <Card title="Ledger" tone="warning">
         <span style={{ fontSize: 13 }}>The warning tone.</span>
       </Card>
+      <EditingCardExample />
     </div>
+  )
+}
+
+/** Build plan Phase 45: a card saved on its own (a Contract page's card), in edit with its footer. */
+function EditingCardExample() {
+  const [editing, setEditing] = useState(false)
+  const [saved, setSaved] = useState('Ophthalmology')
+  const [draft, setDraft] = useState(saved)
+  return (
+    <Card
+      title="Where it is offered"
+      editing={editing}
+      action={<TextAction size="sm" flush onClick={() => { setDraft(saved); setEditing(true) }}>Edit</TextAction>}
+      {...(editing
+        ? {
+            footer: (
+              <>
+                <Button variant="secondary" size="compact" onClick={() => setEditing(false)}>Cancel</Button>
+                <Button variant="primary" size="compact" onClick={() => { setSaved(draft); setEditing(false) }}>Save</Button>
+              </>
+            ),
+          }
+        : {})}
+    >
+      {editing ? (
+        <TextField label="Specialties" value={draft} onChange={setDraft} />
+      ) : (
+        <span style={{ fontSize: 13, color: neutral.slate }}>{`editing and footer: ${saved}. Edit puts the card in edit (teal edge, "Editing"), Save or Cancel under a hairline.`}</span>
+      )}
+    </Card>
   )
 }
 

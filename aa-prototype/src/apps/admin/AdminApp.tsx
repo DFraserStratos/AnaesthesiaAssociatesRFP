@@ -61,6 +61,7 @@ function sectionForPath(pathname: string): NavSection {
     case 'invoices':
     case 'billing':
     case 'ledger':
+    case 'contracts':
     case 'masters':
     case 'audit':
       return head
@@ -339,6 +340,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     patients: '/admin/patients',
     billing: '/admin/billing',
     ledger: '/admin/ledger',
+    contracts: '/admin/contracts',
     masters: '/admin/masters',
     audit: '/admin/audit',
   }

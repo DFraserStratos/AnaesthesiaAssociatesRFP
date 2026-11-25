@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import { addBackdatedRangeDemo, BACKDATED_RANGE, BACKDATED_RANGE_CONTRACT_ID } from './demoBackdatedRange'
 import { disableContract, enableContract } from './contractActions'
-import { keptPriceForRange, stillOnContract } from './contractChangeSelectors'
+import { disableFromISO, keptPriceForRange, onContract, stillOnContract } from './contractChangeSelectors'
 import { keptPriceOnContract } from '../domain/billing/contractChanges'
 import { rangesOf } from '../domain/billing/priceRanges'
 import type { AppState } from './appStore'
@@ -20,7 +20,7 @@ import { OFFICE_ACTOR } from './demoActors'
 import { MERIVALE_BOOKING_LIST_ID } from '../domain/seed/pricedItemBookings'
 
 const FACE_LIFT = BACKDATED_RANGE_CONTRACT_ID
-/** What the ranges section lists for a Contract: the domain list over every range (ContractPriceRanges). */
+/** What the ranges table lists for a Contract: the domain list over every range (PriceRangesTable, build plan Phase 45). */
 const keptOn = (s: AppState, id: string) => {
   const c = s.masters.contracts[id]
   return c === undefined || c.pricing.kind !== 'fixed' ? [] : keptPriceOnContract(s.billing.locks, id, rangesOf(c))
@@ -102,5 +102,22 @@ describe('the hospital reference is gone everywhere (work item 9; DM-68, D82)', 
     const text = JSON.stringify({ procedures: s.schedule.procedures, locks: s.billing.locks, invoices: s.billing.invoices, audit: s.audit })
     expect(text).not.toMatch(/billingReference|hospitalRef/)
     expect(Object.values(s.masters.contracts).some((c) => c.holderReference !== undefined)).toBe(true)
+  })
+})
+
+describe("a Contract page's reads (build plan Phase 45; US-04.1.7, DM-04)", () => {
+  it('Disable lists from today until Phase 49 widens it', () => {
+    const s = createAppStore().getState()
+    expect(disableFromISO(s, FACE_LIFT, s.clock.todayISO)).toBe(s.clock.todayISO)
+  })
+
+  it("On this Contract: every Procedure not yet authorised, then the authorised Bookings at their locked price", () => {
+    const s = createAppStore().getState()
+    const { open, authorised } = onContract(s, FACE_LIFT)
+    // The un-authorised Face lifts are all listed, whatever their date; Judith Calloway's AUTHORISED one is locked.
+    expect(open.length).toBe(stillOnContract(s, FACE_LIFT, '0001-01-01').length)
+    expect(open.length).toBeGreaterThan(0)
+    expect(authorised.length).toBeGreaterThan(0)
+    expect(authorised.every((r) => r.lockedPrice > 0)).toBe(true)
   })
 })

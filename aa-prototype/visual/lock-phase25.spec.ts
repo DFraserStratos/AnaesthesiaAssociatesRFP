@@ -60,11 +60,13 @@ test('the invoice prints from its recipe: the Locked record card, and Regenerate
 
 test("a Contract's History tab: its audited edits and the Procedures locked against it", async ({ page }) => {
   await authoriseS3Am(page)
-  await page.goto('/admin/masters?view=contracts')
+  await page.goto('/admin/contracts')
   await page.waitForLoadState('networkidle')
+  // Clicking the row opens the Contract's page.
   await page.locator('tr[data-contract="CT-FORTE-D1"] td').first().click()
-  await page.waitForTimeout(300)
+  await expect(page).toHaveURL(/\/admin\/contracts\/CT-FORTE-D1$/)
   await page.locator('[data-shot="contract-tab-history"]').click()
+  await expect(page).toHaveURL(/\?tab=history$/)
   const history = page.locator('[data-shot="contract-history"]')
   await expect(history).toBeVisible()
   await expect(history.locator('[data-shot="contract-locked-row"]').first()).toBeVisible()

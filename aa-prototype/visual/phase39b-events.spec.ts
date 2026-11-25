@@ -9,7 +9,7 @@ import { runDemoAction } from './demoActions'
  * review priced at the Contract's rate), authorises the List, and the
  * Procedure's invoice carries them as their own dated lines; then a pain
  * consult on the invoiced Booking takes the Contract fee and is its own
- * invoice in the next run. The Contract editor shows the Event fees.
+ * invoice in the next run. The Contract's page shows the Event fees.
  */
 
 /** The staged Booking, reached as the doc says: 38a's search for Bennett, the Wed 15 Jul result (the List's id is a runtime one). */
@@ -115,11 +115,13 @@ test('the phone: the two add buttons and the bottom sheet with the ACC presets',
   await expect(sheet).not.toContainText('OQ-12')
 })
 
-test("the Contract editor's Event fees on St George's ACC", async ({ page }) => {
-  await page.goto('/admin/masters?view=contracts')
+test("the Contract page's Event fees on St George's ACC", async ({ page }) => {
+  await page.goto('/admin/contracts')
   await page.waitForLoadState('networkidle')
   await page.locator('[data-shot=contract-search] input').fill('ACC elective')
-  await page.locator('tr[data-contract="CT-STG-ACC"]').locator('button:text-is("Edit")').click()
+  await page.locator('tr[data-contract="CT-STG-ACC"]').getByRole('button', { name: /^Open / }).click()
+  await expect(page).toHaveURL(/\/admin\/contracts\/CT-STG-ACC$/)
+  await page.locator('[data-shot=contract-tab-eventFees]').click()
   const fees = page.locator('[data-shot=contract-detail] [data-shot="contract-event-fees"]')
   await expect(fees).toContainText('STGACC-PAIN')
   await expect(fees).toContainText('$120.00')

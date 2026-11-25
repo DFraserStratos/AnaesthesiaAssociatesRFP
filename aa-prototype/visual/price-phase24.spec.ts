@@ -109,7 +109,7 @@ test('phase 24 admin: Review shows the typed price beside the computed one; Cont
   await expect(page.locator('[data-shot=review-fee-computed]').first()).toHaveText('Computed $265.50')
   await page.screenshot({ path: 'visual/shots/p24-05-review-fee.png', fullPage: true })
 
-  await page.goto('/admin/masters?view=contracts')
+  await page.goto('/admin/contracts')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('tr[data-contract="CT-NO-CONTRACT"] [data-shot=contract-override-pill]')).toHaveText('Anaesthetist can override the price')
   await expect(page.locator('tr[data-contract="CT-ARIA-HOURLY"] [data-shot=contract-override-pill]')).toHaveText('Price fixed for the anaesthetist')

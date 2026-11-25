@@ -1,11 +1,11 @@
 /**
- * Master data, Contracts (catch-up Phase 18; US-04.1.1, US-04.1.2, US-04.1.4,
- * US-04.2.1). One search over name, holder reference code and AA code, the
- * Active (default), Disabled or All filter and a holder Party filter (also
+ * The Contract list (catch-up Phase 18; US-04.1.1, US-04.1.2, US-04.1.4,
+ * US-04.2.1), moved from Master data to the Contracts section in build plan
+ * Phase 45 (D92). One search over name, holder reference code and AA code,
+ * the Active (default), Disabled or All filter and a holder Party filter (also
  * reached from a Party's "active" link as `?holder=`), results under holder
  * headings with No contract · RVG first. Office only (D42). Each row opens the
- * Contract editor; nothing is deleted. Hundreds of Contracts arrive with
- * Phase 19a, so the list is always searched, never browsed bare.
+ * Contract's page at its id; nothing is deleted. Phase 47 groups it.
  *
  * Catch-up Phase 18a: a filter by funding tag beside the holder filter; each
  * row shows its tag as a neutral pill and its specialties in mist; the system
@@ -15,26 +15,26 @@
 
 import { isOfficeContract } from '../../../../domain/billing/fallbacks'
 import { contractInvoicingSummary } from '../../../../domain/billing/invoicePresentation'
-import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useMemo, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { contractSearch, type ContractStatusFilter } from '../../../../domain/billing/contracts'
 import { formatRangeDate, formatRangePrice, rangeSummary, rangeSummaryText } from '../../../../domain/billing/priceRanges'
 import { formatCurrency } from '../../../../shared/format'
 import type { Contract } from '../../../../domain/types'
-import { useAppStore, useToday, type Actor } from '../../../../store'
+import { useAppStore, useToday } from '../../../../store'
 import { fundingTagsInOrder } from '../../../../domain/billing/fundingTags'
 import { specialtyNames } from '../../../../domain/specialties'
 import { FilterPills, NameSearchBox, SelectField } from '../../../../shared/ui'
 import { PageToolbar } from '../../components/AdminPage'
 import { BILLS_LABEL, OVERRIDE_PILL_LABEL, PARTY_KIND_LABEL, STATUS_LABEL, pricingLabel } from '../../../../shared/contracts'
 import { neutral } from '../../../../theme/tokens'
-import { ContractPanel } from '../../flows/ContractEditSheet'
 import { Pill } from '../../components/MasterPills'
 import { isRvgKind } from '../../../../domain/billing/contracts'
-import { ClickableRow, GroupRow } from '../../../../shared/table'
-import { EditCell, MasterHeader, MasterTable } from './chrome'
+import { ClickableRow, GroupRow, RowOpenButton } from '../../../../shared/table'
+import { LoadResultBanner, MasterTable } from '../masters/chrome'
 import { EmptyState, TextAction } from '../../../../shared/ui'
-import { rowCellStyle } from './tableStyles'
+import { rowCellStyle } from '../masters/tableStyles'
+import { contractPath } from '../../contractsPaths'
 
 /** Layout and Delivery are derived and read-only (catch-up Phase 22; US-04.2.8): nothing about invoicing is stored on a Contract. */
 /**
@@ -42,9 +42,10 @@ import { rowCellStyle } from './tableStyles'
  * status leads the tags, so the list fits a 1280 laptop beside the view list without scrolling
  * sideways.
  */
-const COLUMNS = ['AA code', 'Name', 'Invoicing', 'Pricing', 'Status · tags', '']
+const COLUMNS = ['AA code', 'Name', 'Invoicing', 'Pricing', 'Status · tags']
 
-export function ContractsView({ actor }: { actor: Actor }) {
+export function ContractsView() {
+  const navigate = useNavigate()
   const contracts = useAppStore((s) => s.masters.contracts)
   const parties = useAppStore((s) => s.masters.parties)
   const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
@@ -60,19 +61,6 @@ export function ContractsView({ actor }: { actor: Actor }) {
     const h = params.get('holder')
     return h !== null && !Object.values(contracts).some((c) => c.holderId === h && c.status === 'active' && isOfficeContract(c)) ? 'all' : 'active'
   })
-  // `?contract=<id>` opens that Contract's panel (a loaded row's link from Seed load); the param is then dropped.
-  const [panel, setPanel] = useState<{ id?: string } | null>(() => {
-    const id = params.get('contract')
-    return id !== null && contracts[id] !== undefined ? { id } : null
-  })
-  useEffect(() => {
-    if (params.get('contract') === null) return
-    setParams((prev) => {
-      const copy = new URLSearchParams(prev)
-      copy.delete('contract')
-      return copy
-    }, { replace: true })
-  }, [params, setParams])
   const holderParam = params.get('holder') ?? ''
   const holderId = parties[holderParam] !== undefined ? holderParam : ''
 
@@ -109,11 +97,7 @@ export function ContractsView({ actor }: { actor: Actor }) {
 
   return (
     <>
-      <MasterHeader
-        title="Contracts"
-        sub="Each arrangement is a Contract held by a Party, with its own AA code, who it bills and how it is priced. Contracts are disabled, never deleted: a fixed price changes from a date with a price range, any other dated change is a new Contract."
-        add={{ label: 'New contract', onClick: () => setPanel({}) }}
-      />
+      <LoadResultBanner view="contracts" />
 
       <PageToolbar
         end={
@@ -180,7 +164,7 @@ export function ContractsView({ actor }: { actor: Actor }) {
           Check the spelling, or search all Contracts, Disabled ones included.
         </EmptyState>
       ) : (
-        <MasterTable columns={COLUMNS} rightAlign={[5]} shot="contract-catalogue" label="Contracts">
+        <MasterTable columns={COLUMNS} shot="contract-catalogue" label="Contracts">
           {groups.map(([holder, list]) => {
             const party = parties[holder]
             return [
@@ -193,11 +177,11 @@ export function ContractsView({ actor }: { actor: Actor }) {
                   key={c.id}
                   data-contract={c.id}
                   data-system={c.systemRole !== undefined ? c.systemRole : undefined}
-                  onOpen={() => setPanel({ id: c.id })}
+                  onOpen={() => navigate(contractPath(c.id))}
                 >
                   <td className="mono" style={{ ...rowCellStyle, fontWeight: 600, whiteSpace: 'nowrap' }}>{c.aaCode}</td>
                   <td style={{ ...rowCellStyle, fontWeight: 500 }}>
-                    {c.name}
+                    <RowOpenButton label={`Open ${c.name}`} onOpen={() => navigate(contractPath(c.id))}>{c.name}</RowOpenButton>
                     {c.holderReference !== undefined && <span className="mono" style={{ color: neutral.mist, marginLeft: 8 }}>{c.holderReference}</span>}
                     {c.specialtyIds.length > 0 && (
                       <div style={{ fontSize: 12.5, color: neutral.mist, fontWeight: 400, marginTop: 2 }}>{specialtyNames({ specialties }, c.specialtyIds).join(', ')}</div>
@@ -221,7 +205,6 @@ export function ContractsView({ actor }: { actor: Actor }) {
                       )}
                     </span>
                   </td>
-                  <EditCell onClick={() => setPanel({ id: c.id })} label={`Edit ${c.name}`} style={rowCellStyle} />
                 </ClickableRow>
               )),
             ]
@@ -229,16 +212,6 @@ export function ContractsView({ actor }: { actor: Actor }) {
         </MasterTable>
       )}
 
-      {panel !== null && (
-        <ContractPanel
-          key={panel.id ?? 'new'}
-          open
-          actor={actor}
-          contract={panel.id !== undefined ? contracts[panel.id] : undefined}
-          {...(panel.id === undefined && holderId !== '' ? { initialHolderId: holderId } : {})}
-          onClose={() => setPanel(null)}
-        />
-      )}
     </>
   )
 }

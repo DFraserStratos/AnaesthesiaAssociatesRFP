@@ -30,7 +30,7 @@ import { AttentionDot } from '../../../../shared/warnings/AttentionDot'
 import { ChangedSinceSubmittedPill } from '../../../admin/components/ChangedSinceSubmitted'
 import { NotPreferredPill, PreferredPill, TierPill } from '../../../admin/components/pairing'
 import { DrawerLink, DrawerSection } from '../../../admin/components/drawerParts'
-import { HeaderActions, IdChip, ProfileHeader } from '../../../admin/components/ProfileChrome'
+import { HeaderActions, IdChip, PROFILE_CARD, ProfilePage } from '../../../admin/components/ProfileChrome'
 import { MasterPanel, PanelGrid, PanelSection } from '../../../admin/components/MasterPanel'
 import { SidePanel } from '../../../../shared/surface/SidePanel'
 import { ACTIONS_COLUMN, EditCell, MasterHeader, MasterTable } from '../../../admin/screens/masters/chrome'
@@ -270,6 +270,7 @@ export function SheetActionsExample() {
 
 export function ConfirmSheetExample() {
   const [open, setOpen] = useState(false)
+  const [dangerOpen, setDangerOpen] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   return (
     <div>
@@ -284,6 +285,21 @@ export function ConfirmSheetExample() {
         onConfirm={() => {
           setResult('Removed (locally)')
           setOpen(false)
+        }}
+      />
+      <Button variant="secondary" onClick={() => setDangerOpen(true)}>Open a danger confirm</Button>
+      <ConfirmSheet
+        open={dangerOpen}
+        onClose={() => setDangerOpen(false)}
+        title="Disable this example?"
+        description="confirmVariant danger: the primary is the one red outline; size wide: the wider dialog for a body that lists rows (a Contract's Disable, build plan Phase 45)."
+        confirmLabel="Disable"
+        confirmVariant="danger"
+        size="wide"
+        cancelLabel="Keep it active"
+        onConfirm={() => {
+          setResult('Disabled (locally)')
+          setDangerOpen(false)
         }}
       />
       <Echo>{result ?? 'Local only: nothing is saved to the store.'}</Echo>
@@ -652,18 +668,27 @@ export function ProfileChromeExample() {
   const [last, setLast] = useState('Nothing clicked yet.')
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <ProfileHeader
+      <ProfilePage
+        shot="catalogue-profile-page"
+        back={{ label: 'Component catalogue', to: '/demo/catalogue/admin' }}
         name="Dr Example Anaesthetist"
         chip={<IdChip label="Reg" value="12345" />}
         sub="Anaesthetist · since Jan 2020"
         action={<HeaderActions onHistory={() => setLast('History (stubbed).')} onEdit={() => setLast('Edit details (stubbed).')} />}
-      />
-      <Card title="Contact">
-        <DefList gap={12}>
-          <DefRow layout="stacked" label="Email">example@aa.co.nz</DefRow>
-          <DefRow layout="stacked" label="Mobile" mono note="Shown to the office only.">021 000 0000</DefRow>
-        </DefList>
-      </Card>
+        tabs={
+          <LineTabs label="Example record" kind="group">
+            <LineTab active onClick={() => setLast('Overview (stubbed).')}>Overview</LineTab>
+            <LineTab active={false} onClick={() => setLast('History tab (stubbed).')}>History</LineTab>
+          </LineTabs>
+        }
+      >
+        <Card title="Contact" style={PROFILE_CARD}>
+          <DefList gap={12}>
+            <DefRow layout="stacked" label="Email">example@aa.co.nz</DefRow>
+            <DefRow layout="stacked" label="Mobile" mono note="Shown to the office only.">021 000 0000</DefRow>
+          </DefList>
+        </Card>
+      </ProfilePage>
       <Echo>{last}</Echo>
     </div>
   )

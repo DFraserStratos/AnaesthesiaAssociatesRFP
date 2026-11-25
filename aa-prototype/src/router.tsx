@@ -41,6 +41,8 @@ import {
   AdminPaymentRunRoute,
   AdminRemittanceRoute,
   AdminMastersRoute,
+  AdminContractsRoute,
+  AdminContractRoute,
   AdminMatchingRoute,
   AdminSurgeonProfileRoute,
   AdminAnaesthetistRecordRoute,
@@ -164,6 +166,15 @@ const routeTree = (
             <Route path="ledger">
               <Route index element={<AdminLedgerRoute />} />
               <Route path="anaesthetists/:anaesthetistId" element={<AdminAnaesthetistLedgerRoute />} />
+            </Route>
+            {/* Contracts (build plan Phase 45; D92): the list, New contract and a Contract's page by its id. */}
+            <Route path="contracts">
+              {/* The list and New contract share one element, so the list keeps its search and filters behind the panel. */}
+              <Route element={<AdminContractsRoute />}>
+                <Route index element={null} />
+                <Route path="new" element={null} />
+              </Route>
+              <Route path=":contractId" element={<AdminContractRoute />} />
             </Route>
             <Route path="integrations" element={<AdminIntakeRedirect />} />
             <Route path="masters">

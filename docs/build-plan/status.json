@@ -1,20 +1,24 @@
 {
-  "done": [],
+  "done": [
+    "45"
+  ],
   "in_progress": [],
   "next": {
-    "phases": [],
-    "note": "No phase planned."
+    "phases": [
+      "46",
+      "47"
+    ],
+    "note": "Phase 45 is DONE and committed on master: the Contracts section, the Contract page, its cards, the price ranges table and the confirmed Disable. Next the two lanes start together, each in its own worktree: Lane A builds 46 then 49, Lane B builds 47 then 48 (docs/build-plan/LANES.md). Test 45 on 5173 first if you have not: the lanes build on it."
   },
   "guidance": {
     "as_of": "2026-11-25",
-    "headline": "Phase 45 runs first, alone, in the main folder. As soon as it is committed DONE, Phases 46 to 49 run in two lanes at once: paste the Lane A prompt into one session and the Lane B prompt into another. You test once, at the end.",
-    "headline_sub": "45 builds the Contracts section and the Contract page that every later phase builds on, so nothing runs beside it. No test after 45: once it is DONE and committed on master, Lane A builds 46 then 49 and Lane B builds 47 then 48, each in its own worktree (docs/build-plan/LANES.md), with a lighter gate per phase. The lane that finishes second joins them onto master, runs the full gate and one review over all four, and writes TEST-45-49.md: test 45 to 49 together on 5173 from that list.",
+    "headline": "Start Lane A and Lane B now. Phase 45 built the Contracts section and a page for every Contract.",
+    "headline_sub": "Phase 45 is done and committed on master, waiting for your test (its screenshots and demo guide wait for your sweep). Next, paste the Lane A prompt into one session and the Lane B prompt into another: Lane A builds 46 then 49, Lane B builds 47 then 48, each in its own worktree; the lane that finishes second joins them onto master.",
     "safe": {
-      "45": "Depends on nothing; it is the base for 46 to 49, so it runs alone in the main folder with its own kick-off prompt."
+      "46": "Lane A's first phase: it depends only on 45, which is DONE; 45 must be committed on master first (it is).",
+      "47": "Lane B's first phase: it depends only on 45, which is DONE; 45 must be committed on master first (it is)."
     },
     "wait": {
-      "46": "Lane A, after 45 is DONE on master.",
-      "47": "Lane B, after 45 is DONE on master.",
       "48": "Lane B, after 47 (in the same lane).",
       "49": "Lane A, after 46 (in the same lane)."
     },

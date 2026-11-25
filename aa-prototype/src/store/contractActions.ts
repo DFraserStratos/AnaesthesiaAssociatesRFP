@@ -253,7 +253,8 @@ function save(api: AppStoreApi, actor: Actor, contractId: string, apply: (prev: 
       counters: kept.counters,
       ...(procedures !== null ? { schedule: { ...s.schedule, procedures } } : {}),
     }
-  })
+    // A save (a Contract page's card, build plan Phase 45) is one change set with what it implied (DECISIONS "Audit").
+  }, audit.action === 'contract.update' ? { changeSet: 'save' } : undefined)
   return ok(undefined)
 }
 

@@ -21,6 +21,8 @@
  */
 
 import type { Contract } from './contracts'
+import type { Booking, List, Procedure } from '../types'
+import type { BookingLock } from './lock'
 import { addDaysISO } from '../clock'
 import { formatMoney, parseAmountOrNaN, roundToCents } from './money'
 import { plainDate } from '../dateText'
@@ -192,6 +194,11 @@ export function formatRangeDate(dateISO: string): string {
   return isCalendarDate(dateISO.slice(0, 10)) ? plainDate(dateISO) : dateISO
 }
 
+/** "3,200.00": a range's price in its edit field, read back by `parsePriceText`. */
+export function priceInputText(price: number): string {
+  return formatMoney(price).replace('$', '')
+}
+
 /** "$3,200.00": a range's price as all money prints (`formatMoney`, U1). */
 export function formatRangePrice(price: number): string {
   return formatMoney(price)
@@ -205,6 +212,25 @@ export function describeRange(range: PriceRange): string {
 /** "Face lift: price range from 1 Oct 2026, $3,200.00". */
 export function describePriceRange(contractName: string, range: PriceRange): string {
   return `${contractName}: price range from ${formatRangeDate(range.startISO)}, ${formatRangePrice(range.price)}`
+}
+
+/**
+ * The change of a range's price on the range before it, as a fraction (0.032 for +3.2%), or null
+ * for the oldest range ("First") and a range after a $0 price (no base to compare with). Pure;
+ * `rangeChangeText` words it.
+ */
+export function rangeChange(prev: PriceRange | undefined, next: PriceRange): number | null {
+  if (prev === undefined || prev.price === 0) return null
+  return (next.price - prev.price) / prev.price
+}
+
+/** "+3.2%", "-1.0%", "0.0%", or "First" on the oldest range. */
+export function rangeChangeText(prev: PriceRange | undefined, next: PriceRange): string {
+  if (prev === undefined) return 'First'
+  const change = rangeChange(prev, next)
+  if (change === null) return 'New'
+  const pct = Math.round(change * 1000) / 10
+  return `${pct > 0 ? '+' : ''}${pct.toFixed(1)}%`
 }
 
 /** "1 Jun 2026 to 30 Sep 2026", or "From 1 Oct 2026" for the last range. */
@@ -250,4 +276,63 @@ export function needsPriceMessage(contract: Pick<Contract, 'name' | 'pricing'>, 
   if (contract.pricing.kind === 'open') return `${NEEDS_PRICE_LABEL}: ${contract.name} has no price of its own.`
   const under = opts.named === true ? ` under ${contract.name}` : ''
   return `${NEEDS_PRICE_LABEL}: no price range in force on ${formatRangeDate(dateISO)}${under}.`
+}
+
+// ---------------------------------------------------------------------------
+// Procedures priced by each range (build plan Phase 45; US-04.2.15 "Table")
+// ---------------------------------------------------------------------------
+
+/** What `proceduresPerRange` reads: the schedule's Procedures, Bookings and Lists, and the locks. */
+export interface ProceduresPerRangeInput {
+  procedures: Readonly<Record<string, Pick<Procedure, 'id' | 'bookingId' | 'governingContractId' | 'enteredPrice'>>>
+  bookings: Readonly<Record<string, Pick<Booking, 'id' | 'listId' | 'cancellation'>>>
+  lists: Readonly<Record<string, Pick<List, 'dateISO' | 'state'>>>
+  locks: Readonly<Record<string, Pick<BookingLock, 'bookingId' | 'state' | 'pricingDateISO' | 'procedures' | 'settledByPrepayment'>>>
+  /** The not-yet-authorised Procedures whose price a raised prepayment holds (the price ladder's `prepaid` rung). */
+  prepaidHeld?: ReadonlySet<string>
+}
+
+/**
+ * How many Procedures each of a fixed price's ranges priced, by range start. A Procedure counts
+ * under a range when it is on the Contract, not cancelled, its procedure date (the List's; the
+ * lock's pricing date once authorised) falls in the range's span (its start to `rangeEnd`), and
+ * its price came from that range:
+ *
+ * - not yet authorised (its List is not AUTHORISED): it has no typed price (`enteredPrice`) and no
+ *   raised prepayment holds it (`prepaidHeld`), so it follows the range in force;
+ * - authorised: its Booking's lock snapshot was not typed, not settled by a prepayment, and the
+ *   range it was locked at starts on this range's start; its date is the lock's pricing date.
+ *
+ * A typed or prepaid price is held by something else, and an authorised price kept from an
+ * earlier range (a range added or corrected since) is not this range's: none is counted. An
+ * AUTHORISED List with no lock for the Booking counts nowhere. Pure.
+ */
+export function proceduresPerRange(contract: Contract, input: ProceduresPerRangeInput): Record<string, number> {
+  const ranges = rangesOf(contract)
+  const counts: Record<string, number> = Object.fromEntries(ranges.map((r) => [r.startISO, 0]))
+  if (ranges.length === 0) return counts
+  const spans = ranges.map((r, i) => ({ startISO: r.startISO, endISO: rangeEnd(ranges, i) }))
+  const spanOf = (dateISO: string) => spans.find((s) => s.startISO <= dateISO && (s.endISO === null || dateISO <= s.endISO))
+  const lockByBooking = new Map(Object.values(input.locks).map((l) => [l.bookingId, l]))
+  for (const p of Object.values(input.procedures)) {
+    if (p.governingContractId !== contract.id) continue
+    const booking = input.bookings[p.bookingId]
+    if (booking === undefined || booking.cancellation !== undefined) continue
+    const list = input.lists[booking.listId]
+    if (list === undefined) continue
+    if (list.state === 'AUTHORISED') {
+      const lock = lockByBooking.get(booking.id)
+      if (lock === undefined || lock.state !== 'locked' || lock.settledByPrepayment?.[p.id] !== undefined) continue
+      const snap = lock.procedures.find((s) => s.procedureId === p.id)
+      if (snap === undefined || snap.typed || snap.contract?.id !== contract.id) continue
+      const lockedStart = snap.contract.pricing.kind === 'fixed' ? snap.contract.pricing.ranges[0]?.startISO : undefined
+      const span = spanOf(lock.pricingDateISO.slice(0, 10))
+      if (span !== undefined && lockedStart === span.startISO) counts[span.startISO] = (counts[span.startISO] ?? 0) + 1
+      continue
+    }
+    if (p.enteredPrice !== undefined || input.prepaidHeld?.has(p.id) === true) continue
+    const span = spanOf(list.dateISO)
+    if (span !== undefined) counts[span.startISO] = (counts[span.startISO] ?? 0) + 1
+  }
+  return counts
 }

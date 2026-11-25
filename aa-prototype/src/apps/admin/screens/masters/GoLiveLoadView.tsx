@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { contractsPath } from '../../contractsPaths'
 import { commitGoLiveLoad, discardGoLiveLoad, setGoLiveApproval, specFor, useAppStore, type Actor } from '../../../../store'
 import { SEED_LOAD_ACTOR } from '../../../../store/demoActors'
 import { Button, DemoBadge, FormError } from '../../../../shared'
@@ -120,6 +121,7 @@ function DecisionPill({ c }: { c: GoLiveCandidate }) {
  */
 export function GoLiveLoadView({ actor }: { actor: Actor }) {
   const [, setParams] = useSearchParams()
+  const navigate = useNavigate()
   const batch = useAppStore((s) => s.masterLoads.goLive)
   const allLoads = useAppStore((s) => s.masterLoads.loads)
   const contracts = useAppStore((s) => s.masters.contracts)
@@ -147,6 +149,11 @@ export function GoLiveLoadView({ actor }: { actor: Actor }) {
   const order = loads.map((l) => l.entity)
 
   function go(view: MastersView) {
+    // The Contract list moved to its own section (build plan Phase 45): go there directly.
+    if (view === 'contracts') {
+      navigate(contractsPath())
+      return
+    }
     setParams((prev) => {
       const copy = new URLSearchParams(prev)
       copy.set('view', view)

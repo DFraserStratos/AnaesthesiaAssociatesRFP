@@ -378,9 +378,9 @@ const APP_SOURCES = {
   ...(import.meta.glob('./web/**/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>),
 }
 
-/** Office-only modules: the billing set-up, Change price and the Contract catalogue and editor. */
-const OFFICE_ONLY_MODULES = /(OfficeBillingSetup|EditBillingSetupSheet|PricingSheet|ContractsView|ContractEditSheet|apps\/admin\/)/
-const OFFICE_ONLY_NAMES = /\b(OfficeBillingSetup|EditBillingSetupSheet|PricingSheet|ContractsView|ContractEditSheet|OVERRIDE_PILL_LABEL)\b/
+/** Office-only modules: the billing set-up, Change price, the Contract catalogue and the Contract page (build plan Phase 45). */
+const OFFICE_ONLY_MODULES = /(OfficeBillingSetup|EditBillingSetupSheet|PricingSheet|ContractsView|ContractEditSheet|ContractPage|ContractCards|PriceRangesTable|ContractsSection|apps\/admin\/)/
+const OFFICE_ONLY_NAMES = /\b(OfficeBillingSetup|EditBillingSetupSheet|PricingSheet|ContractsView|ContractEditSheet|ContractPage|ContractCards|PriceRangesTable|ContractsSection|OVERRIDE_PILL_LABEL)\b/
 
 describe('anaesthetist simplicity: source scan', () => {
   const files = Object.keys(APP_SOURCES).filter((f) => !/\.test\.tsx?$/.test(f))

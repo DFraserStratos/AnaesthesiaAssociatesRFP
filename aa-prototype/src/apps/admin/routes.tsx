@@ -24,6 +24,9 @@ import { InvoicesScreen } from './screens/InvoicesScreen'
 import { AdminPage } from './components/AdminPage'
 import { CreditNoteDocument } from './screens/InvoiceDocument'
 import { MasterData } from './screens/masters/MasterData'
+import { mastersRedirect } from './mastersRedirect'
+import { ContractsSection } from './screens/contracts/ContractsSection'
+import { ContractPage } from './screens/contracts/ContractPage'
 import { SurgeonProfile } from './screens/SurgeonProfile'
 import { AnaesthetistRecord } from './screens/AnaesthetistRecord'
 import { ReviewQueue } from './screens/ReviewQueue'
@@ -434,7 +437,37 @@ export function AdminValidatorsRoute() {
 
 export function AdminMastersRoute() {
   const { actor } = useAdminOutlet()
+  const [params] = useSearchParams()
+  const masters = useAppStore((s) => s.masters)
+  // Old links to views that moved out of Master data (D93): a replace, so Back never bounces here.
+  const moved = mastersRedirect(params, masters)
+  if (moved !== null) return <Navigate to={moved} replace />
   return <MasterData actor={actor} />
+}
+
+// ---------------------------------------------------------------------------
+// Contracts (build plan Phase 45; D92) — `/admin/contracts` (the list),
+// `/admin/contracts/new` (the create panel over the list until 46; one element) and
+// `/admin/contracts/:contractId` (a Contract's page, keyed by its id; an
+// unknown id falls back to the list).
+// ---------------------------------------------------------------------------
+
+/** The list, with the create panel open on `/admin/contracts/new`: one element for both, so the list is not remounted. */
+export function AdminContractsRoute() {
+  const { actor } = useAdminOutlet()
+  const { pathname } = useLocation()
+  return <ContractsSection actor={actor} creating={/\/contracts\/new\/?$/.test(pathname)} />
+}
+
+export function AdminContractRoute() {
+  const { contractId = '' } = useParams()
+  const { actor } = useAdminOutlet()
+  const exists = useAppStore((s) => s.masters.contracts[contractId] !== undefined)
+  return (
+    <RequireEntity exists={exists}>
+      <ContractPage key={contractId} contractId={contractId} actor={actor} />
+    </RequireEntity>
+  )
 }
 
 // ---------------------------------------------------------------------------

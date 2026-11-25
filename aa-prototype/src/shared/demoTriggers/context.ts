@@ -25,8 +25,10 @@ export interface DemoContextValues {
   'adminMasters.view': string
   /** Admin · the List an open Assign or Reassign picker is placing (catch-up Phase 32b's colleague stand-in). */
   'adminPicker.listId': string
-  /** Admin · Master data: the Contract open in its detail (catch-up Phase 24's backdated range trigger). */
+  /** Admin · the Contract whose page is open (catch-up Phase 24's backdated range trigger; a page since build plan Phase 45). */
   'adminContracts.openContractId': string
+  /** Admin · Contracts: the section's tab on show (build plan Phase 45; 48 adds Parties and Funding tags). */
+  'adminContracts.tab': 'contracts' | 'parties' | 'fundingTags'
   /** Mobile · My calendar: the last day opened in the session panel, `<anaesthetistId>|<dateISO>`, while the calendar shows (catch-up Phase 32d's office stand-in). */
   'mobileCalendar.day': string
   /** Admin · Booking detail: the Booking whose draft holds unsaved changes (catch-up Phase 35's Switch office user waits on it). */

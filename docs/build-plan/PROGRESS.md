@@ -9,6 +9,7 @@ U7 is archived in `docs/archive/prototype-build/PROGRESS.md` (large: grep it, ne
 
 | # | Phase | Status | Session date | Notes |
 |---|-------|--------|--------------|-------|
+| 45 | The Contracts section and the Contract page | DONE | 2026-11-25 | Contracts is its own Admin section with the list moved there, every Contract has a page at its id with cards saved one at a time, a newest-first price ranges table, an "On this Contract" rail and a confirmed Disable, and old Master data links redirect. |
 
 Rows: `| <id> | <title> | DONE | <YYYY-MM-DD> | <one-sentence summary> |`, or `IN PROGRESS` at a
 checkpoint, in run order.
@@ -51,6 +52,9 @@ This section holds the rulings this plan's phases make, one line each, in this f
 it): `- **<YYYY-MM-DD> · Phase <id> (<n>): <title>** (<ids>; supersedes ...). <body>`. A phase also adds
 each lasting ruling to `docs/DECISIONS.md`.
 
+- **2026-11-25 · Phase 45 (1): The Contracts section and the Contract page** (D92, D93; US-04.1.7). Contracts is its own Admin section between Ledger and Master data; a Contract's page is `/admin/contracts/:contractId`, keyed by the id; every in-app link goes through `apps/admin/contractsPaths.ts`; `/admin/masters?view=contracts` (with `&contract=` or `&holder=`) redirects from `mastersRedirect` and stays after 49. See the Phase 45 entry.
+- **2026-11-25 · Phase 45 (2): One card, one change; Disable confirmed** (D96's 45 half; US-04.1.3, US-04.1.2, DM-04; OQ-144 at D90's default). Each Overview card saves only its own fields as one audited `contract.update` in one change set, refused on the card; Disable asks first over `stillOnContract` from `disableFromISO` (today), moves nothing, and Make active undoes it. DECISIONS "Buttons" amended: the confirm's primary is the second `danger` use.
+
 ## Discovered for later
 
 Known open work lives in `docs/BACKLOG.md`: a phase adds there what it discovers and leaves undone,
@@ -60,3 +64,36 @@ pick up by name.
 ## Phase entries
 
 Each entry is headed `### Phase <id> · <title> (<YYYY-MM-DD>)`, after the last one.
+
+### Phase 45 · The Contracts section and the Contract page (2026-11-25)
+
+**Drift check against 5f87781.** Nothing changed in substance (US-04.1.7, US-04.2.15, US-04.1.2, US-04.1.3, OQ-144; domain model unchanged). OQ-144 still open: built to D90's default (Disable acts at once after its confirm; no date on a Contract). Built in one session, through the checkpoint.
+
+**Built.**
+- Section and routes (D92): `apps/admin/contractsPaths.ts` (`contractsPath`, `contractPath`, `newContractPath`, `partyPath`, `ContractTab`, `parseContractTab`); router `contracts` block (list and `new` share `AdminContractsRoute`, `:contractId` under `RequireEntity`); side nav "Contracts" between Ledger and Master data. `mastersRedirect` (D93) in `AdminMastersRoute`.
+- List moved to `screens/contracts/` (`ContractsSection` on `AdminPage fit` with `ContractsTabs`: Parties and Funding tags link to Master data until 48; `ContractsView`, rows open the page). New contract still opens `ContractPanel`, now create only, over the list.
+- `ContractPage` on `ProfilePage` (new `tabs` prop): header with AA code, status, System pills and `ContractDisable`; tabs Overview, Bookings, Event fees, History (`?tab=`, counts); system and disabled notices; rail "On this Contract" (`onContract`: not-yet-authorised Procedures, then authorised Bookings at `LockedAgainst.lockedPrice`).
+- Overview cards (`ContractCards.tsx`): price (`PriceRangesTable`, or rate, discount or override), where it is offered, who it bills (holder Party's billing name and delivery read-only, "Open the Party"), invoice and codes (`DefaultRvgCodeField`), fixed when created. Each saves its own fields through `editContract`, which now groups a `contract.update` in one change set (`changeSet: 'save'`). System Contracts edit only `SYSTEM_CONTRACT_EDITABLE_FIELDS` (`systemPatch`).
+- Price ranges table: newest first, From, To, Price, Change (`rangeChange`, `rangeChangeText`), Procedures (`proceduresPerRange`, store `pricedPerRange`), In force and Future pills, ended ranges fold after three, add and correct as rows, kept-price notice kept. `ContractPriceRanges.tsx` deleted.
+- Disable: `ConfirmSheet` `confirmVariant` and `size`, `disableFromISO` (today), `StillOnNotice` moved to `screens/contracts/`. Shared `Card` `footer` and `editing` (token `accent.editingRing`).
+- Triggers: `demo-backdated-range` on `/admin/contracts` and the Face lift's page (screen "Admin · Contracts", label unchanged); sample sheets read `adminContracts.tab` first. S5 Beat 4 opens the Health NZ agreed rate. No seed change: PERSIST_VERSION unchanged.
+
+**Tests.** New `ContractPage.test.tsx` (replaces `ContractEditSheet.test.tsx`), `PriceRangesTable.test.tsx`; extended `priceRanges.test.ts`, `contractChangeSelectors.test.ts`; updated `specialtiesTags`, `demoTriggers`, `loadTriggers`, `demoScenarios`, `appCopy` (D23 `MUST_KEEP` row for `ContractCards.tsx`), `anaesthetistSimplicity`. Eight Playwright specs moved to the page (one checks the redirect); two stale seed counts fixed in them. Gate: typecheck, build, build-pwa, Vitest (420 files, 4,636 tests) and verify-board pass; shots 386 passed, 48 failed, all pre-existing on master and none in the Contract specs (listed in `docs/BACKLOG.md`; two specs this phase broke by adding the side-nav "Contracts" were fixed). verify-board needed `images: []` in `US-04.1.7.md` and `US-04.1.8.md` (format only).
+
+**Checked.** Checklist 12 of 12 pass (`.build-phase/45-checklist/`). Design pairs at 1440 and 1280 against `contracts-section.html` #record and #updating (`.build-phase/45-design/`): cards restacked full width with label-left rows as #record draws them; Disable confirm widened for its list.
+
+**Review.** Bugs, quality and plan lenses. Fixed: prepayment-held and no-lock Procedures counted in the Procedures column; two `?view=contracts` link builders left (Go-live, loaded rows); New contract reset the list's filters; Bookings count mixed Procedures and Bookings; a corrected row could fold away; the default RVG code field duplicated; a private rail row link; `toFixed` in the table; weak tests strengthened. Declined: the D23 caption in both files (the doc asks for it).
+
+**Catalogue screenshots.** None run (prompt override: the owner's sweep). Recipes reaching the panel or `?view=contracts`: US-04.1.1, US-04.1.2, US-04.1.3, US-04.1.4, US-04.2.1, US-04.2.2, US-04.2.8, US-04.2.11, US-04.2.14, US-04.2.15, US-04.2.16, US-04.2.17, US-04.2.18, US-05.2.8, US-05.5.1, US-03.7.1, US-13.4.1, FT-04.1; new US-04.1.7.
+
+**Demo guide.** Not touched (sweep): S5 Beat 4's "Master data, Contracts" wording and the trigger's screen label "Admin · Contracts".
+
+**Handoffs.**
+- 46: replace `ContractPanel` (create only, `flows/ContractEditSheet.tsx`) at `/admin/contracts/new` (`newContractPath`, `AdminContractsRoute`'s `creating`); reuse `Card` `footer`/`editing`, `ProfilePage` `tabs`, `DefaultRvgCodeField`, `PREPAID_BILLS_PAYER_HELPER` (pinned in both files until the panel goes).
+- 47: the list is `screens/contracts/ContractsView.tsx` under `ContractsSection`; `?holder=` is still a filter.
+- 48: `ContractsTabs` in `ContractsSection.tsx`, `mastersRedirect` (add the `parties` and `fundingTags` cases), `partyPath`, the `adminContracts.tab` demo context key (`'contracts' | 'parties' | 'fundingTags'`).
+- 49: the header action slot (`ContractPage` `action`, `ContractDisable`), `disableFromISO` in `store/contractChangeSelectors.ts`, `StillOnNotice` in `screens/contracts/`, `onContract`, the fixed card's FieldHint for the Replace pointer.
+
+**Deviations.** Committed with the shots check red on 48 pre-existing failures (above), so the lanes can start. Cards stack full width beside the rail (#record) rather than on `PROFILE_GRID`. `ConfirmSheet` also gained `size`. The list's header copy and its Edit column changed with the move. The trigger's index path is a literal in `registry.ts` (the PWA closure cannot import `contractsPaths.ts`). `US-04.1.7.md`'s `images:` set to `images: []` (format only) so verify-board round-trips it.
+
+**For the owner's review.** The 48 pre-existing Playwright failures on master (BACKLOG). Built defaults: "Procedures priced" (not yet authorised: no typed or prepaid price; authorised: locked at this range, not typed or prepaid); "On this Contract" counts every not-yet-authorised Procedure, past Lists awaiting review included; tab in `?tab=`; Change as % on the range before ("First" on the oldest); "Open the Party" and the Parties and Funding tags tabs go to Master data until 48; the confirm's primary is danger; several cards may be in edit at once; no unsaved-changes prompt. "Edit in panel" never shipped; create stays in the panel until 46. `accent.editingRing` comes from the exploration page, not the Design Language. Worth a look: the Face lift (`/admin/contracts/CT-MER-FACELIFT`), No contract · RVG, and Disable on Christchurch Eye Surgery RVG.

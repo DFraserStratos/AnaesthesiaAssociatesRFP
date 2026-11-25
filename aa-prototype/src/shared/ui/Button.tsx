@@ -13,7 +13,7 @@ interface ButtonProps extends DataAttributes {
    * `primary` the filled teal command; `secondary` the neutral outlined one; `outline` the
    * teal-outlined secondary the mockups draw (Admin Day's Today, Admin Review's Log phone note);
    * `pill` the compact tinted action on rows and chips; `danger` the one red outline, kept for
-   * "Cancel booking" only (README question 8).
+   * "Cancel booking" and the Disable a Contract confirm's primary (README question 8; DECISIONS "Buttons").
    */
   variant?: ButtonVariant
   /**

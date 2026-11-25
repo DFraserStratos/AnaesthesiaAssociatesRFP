@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { SPC, SURG, TAG } from '../../../../domain/seed'
 import { freshAppState, useAppStore, type Actor } from '../../../../store'
 import { SurfaceProvider } from '../../../../shared'
-import { AdminMastersRoute, AdminSurgeonProfileRoute } from '../../routes'
+import { AdminContractRoute, AdminContractsRoute, AdminMastersRoute, AdminSurgeonProfileRoute } from '../../routes'
 import { isOpenPriceFallback } from '../../../../domain/billing/fallbacks'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -25,6 +25,13 @@ function renderAdmin(path: string) {
             <Route path="masters">
               <Route index element={<AdminMastersRoute />} />
               <Route path="surgeons/:surgeonId" element={<AdminSurgeonProfileRoute />} />
+            </Route>
+            <Route path="contracts">
+              <Route element={<AdminContractsRoute />}>
+                <Route index element={null} />
+                <Route path="new" element={null} />
+              </Route>
+              <Route path=":contractId" element={<AdminContractRoute />} />
             </Route>
           </Route>
         </Routes>
@@ -124,53 +131,57 @@ describe("a surgeon's specialties (US-13.6.6)", () => {
   })
 })
 
-describe('the Contract editor and catalogue (US-04.2.16, US-04.2.17)', () => {
+describe("the Contract's page and the catalogue (US-04.2.16, US-04.2.17; a page since build plan Phase 45)", () => {
+  /** Open a Contract's page from its row in the list. */
   const openContract = (aaCode: string) => {
     const row = [...document.querySelectorAll('tr[data-contract]')].find((r) => r.querySelector('td')?.textContent === aaCode) as HTMLElement
-    fireEvent.click(within(row).getByRole('button', { name: /^Edit / }))
+    fireEvent.click(within(row).getByRole('button', { name: /^Open / }))
   }
+  const editWhere = () => fireEvent.click(within(shot('contract-where')).getByRole('button', { name: 'Edit where it is offered' }))
 
   it('SXAP shows its tag and the live hint; changing the tag moves the hint', () => {
-    renderAdmin('/admin/masters?view=contracts')
+    renderAdmin('/admin/contracts')
     openContract('SX-002')
-    const tag = shot('contract-funding-tag')
-    expect(within(tag).getByLabelText('Funding tag')).toHaveValue(TAG.sxap)
+    expect(within(shot('contract-funding-tag')).getByText('SXAP')).toBeInTheDocument()
     expect(shot('contract-placement')).toHaveTextContent('Offered under Southern Cross › SXAP')
-    fireEvent.change(within(tag).getByLabelText('Funding tag'), { target: { value: '' } })
+    editWhere()
+    const where = shot('contract-where')
+    expect(within(where).getByLabelText('Funding tag')).toHaveValue(TAG.sxap)
+    fireEvent.change(within(where).getByLabelText('Funding tag'), { target: { value: '' } })
     expect(shot('contract-placement')).toHaveTextContent('Offered under Special')
   })
 
   it("Doyle's bariatric shows General surgery and hints Patient; COS ACC hints Special", () => {
-    renderAdmin('/admin/masters?view=contracts')
+    renderAdmin('/admin/contracts')
     openContract('DOYLE-001')
-    expect(within(shot('contract-specialties')).getByText('General surgery')).toBeInTheDocument()
+    expect(shot('contract-specialties')).toHaveTextContent('General surgery')
     expect(shot('contract-placement')).toHaveTextContent('Offered under Patient')
   })
 
   it('tagging a hospital Contract with a new tag makes its Fixed price Contract at once', () => {
-    renderAdmin('/admin/masters?view=contracts')
+    renderAdmin('/admin/contracts')
     openContract('CES-001')
-    fireEvent.change(within(shot('contract-funding-tag')).getByLabelText('Funding tag'), { target: { value: TAG.sxap } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save contract' }))
+    editWhere()
+    fireEvent.change(within(shot('contract-where')).getByLabelText('Funding tag'), { target: { value: TAG.sxap } })
+    fireEvent.click(within(shot('contract-where')).getByRole('button', { name: 'Save' }))
     const fallbacks = Object.values(useAppStore.getState().masters.contracts).filter(isOpenPriceFallback).map((c) => c.name)
     expect(fallbacks).toContain('Christchurch Eye Surgery · SXAP · Fixed price')
-    expect(screen.getByText('Christchurch Eye Surgery · SXAP · Fixed price')).toBeInTheDocument()
   })
 
-  it('a system row carries the System pill; its editor keeps only name, AA code and invoice description live and offers no Disable', () => {
-    renderAdmin('/admin/masters?view=contracts')
+  it('a system row carries the System pill; its page edits only name, AA code and invoice description and offers no Disable', () => {
+    renderAdmin('/admin/contracts')
     const row = document.querySelector('tr[data-contract="CT-FIX-HOSPITAL-PY-STG-TAG-ACC"]') as HTMLElement
     expect(row.getAttribute('data-system')).toBe('openPriceFallback')
     expect(within(row).getByText('System')).toBeInTheDocument()
     openContract('STG-ACC-FIX')
     expect(shot('contract-system-notice')).toHaveTextContent('Only its name, AA code and invoice description can change.')
-    expect(document.querySelector('[data-shot="contract-specialties"]')).toBeNull()
+    expect(within(shot('contract-where')).queryByRole('button', { name: /^Edit/ })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Disable' })).toBeNull()
     expect(within(shot('contract-funding-tag')).queryByRole('combobox')).toBeNull()
   })
 
   it('a new Contract never offers an open-price kind', () => {
-    renderAdmin('/admin/masters?view=contracts')
+    renderAdmin('/admin/contracts')
     fireEvent.click(screen.getByRole('button', { name: 'New contract' }))
     const kinds = [...(screen.getByLabelText('Pricing kind') as HTMLSelectElement).options].map((o) => o.value)
     expect(kinds).not.toContain('open')

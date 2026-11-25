@@ -320,6 +320,9 @@ const MOBILE_LISTS = ['/mobile/lists', '/mobile/lists/:listId', '/mobile/lists/:
 const ADMIN_DAY = '/admin/day/:dateISO'
 const ADMIN_DRAFT_LISTS = '/admin/draft-lists'
 const ADMIN_MASTERS = '/admin/masters'
+/** The Contracts section (build plan Phase 45): the list and a Contract's page. `apps/admin/contractsPaths.ts` builds these in the app; this file stays out of `src/apps` (the PWA closure contains it). */
+const ADMIN_CONTRACTS = '/admin/contracts'
+const ADMIN_CONTRACT = '/admin/contracts/:contractId'
 const ADMIN_NOTIFICATIONS = '/admin/notifications'
 const MOBILE_AVAILABILITY = '/mobile/availability'
 /** A date route param, or undefined. */
@@ -352,9 +355,10 @@ export const SEEDED_SHEETS_BY_VIEW: Readonly<Record<string, readonly LoadEntity[
 /** The Seed load view's id (`?view=seedLoad`). */
 const SEED_LOAD_VIEW = 'seedLoad'
 
-/** The sample sheets on offer for the published Master data view: all of them on Seed load, else that view's own. */
+/** The sample sheets on offer for the published Contracts tab or Master data view: all of them on Seed load, else that view's own. */
 function sampleSheetsFor(ctx: DemoTriggerCtx): readonly SampleSheet[] {
-  const view = ctx.published['adminMasters.view']
+  // The Contracts section's tab first (build plan Phase 45): its tabs carry the Master data views' names.
+  const view = ctx.published['adminContracts.tab'] ?? ctx.published['adminMasters.view']
   if (view === SEED_LOAD_VIEW) return SAMPLE_SHEETS
   const entities = view !== undefined ? SEEDED_SHEETS_BY_VIEW[view] : undefined
   if (entities === undefined) return []
@@ -1880,29 +1884,29 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: (state) => `/admin/day/${state.clock.todayISO}`,
   },
-  // ── Admin · Master data, Contracts: a backdated range on Merivale's Face lift (catch-up Phase 24, US-05.2.8) ──
+  // ── Admin · Contracts: a backdated range on Merivale's Face lift (catch-up Phase 24, US-05.2.8; on the Contracts section since build plan Phase 45) ──
   {
     id: 'demo-backdated-range',
     label: 'Demo: add a backdated price range',
     description:
       "Adds a range from 4 Nov 2026 at $3,300.00 (a demo figure) to Merivale's Face lift, as the office. The unedited Face lift Bookings re-price; the one with a typed price and the AUTHORISED, invoiced one stay put.",
-    screen: 'Admin · Master data, Contracts',
-    routes: [ADMIN_MASTERS],
+    screen: 'Admin · Contracts',
+    routes: [ADMIN_CONTRACTS, ADMIN_CONTRACT],
     surfaces: ['bar'],
-    // On the Contracts view (the Contract detail panel is modal, so the bar is reached from the list) or with the Face lift open;
+    // On the Contract list, or on the Face lift's own page, where the new range shows as the table's top row;
     // once the range is added it stays listed, disabled, so its result line can be read.
-    when: (_state, ctx) => ctx.published['adminMasters.view'] === 'contracts' || ctx.published['adminContracts.openContractId'] === BACKDATED_RANGE_CONTRACT_ID,
+    when: (_state, ctx) => ctx.published['adminContracts.tab'] === 'contracts' || ctx.published['adminContracts.openContractId'] === BACKDATED_RANGE_CONTRACT_ID,
     disabledReason: (state) => (backdatedRangeAdded(state) ? 'Already added' : null),
     run: (api) => {
       const res = addBackdatedRangeDemo(api)
       if (!res.ok) return { ok: false, message: res.message }
-      // The kept-price count and names come from the same list the ranges section shows (catch-up Phase 25a, D79).
+      // The kept-price count and names come from the same list the ranges table shows (catch-up Phase 25a, D79).
       const kept = keptPriceForRange(api.getState(), BACKDATED_RANGE_CONTRACT_ID, BACKDATED_RANGE)
       const keptText = kept.length > 0 ? ` ${keptPriceTitle(kept.length)}: ${kept.map((r) => `${r.patientName}, ${formatMoney(r.lockedPrice)}`).join('; ')}.` : ''
       return { ok: true, message: `Added a range from 4 Nov 2026 at $3,300.00 to the Face lift. Unedited Face lift Bookings now price at $3,300.00; the typed and the invoiced ones are held.${keptText}` }
     },
-    indexPath: () => '/admin/masters?view=contracts',
-    indexHint: "Then open Merivale's Face lift (search \"Face lift\", then Edit) to see its ranges.",
+    indexPath: () => `${ADMIN_CONTRACTS}/${BACKDATED_RANGE_CONTRACT_ID}`,
+    indexHint: "Merivale's Face lift: the new range shows as the top row of its price ranges, with the Procedures it priced and the kept-price warning.",
   },
   // ── Admin · Master data, Recurring bookings: the nightly roll meets a blocked-out day (catch-up Phase 31) ──
   {
@@ -1947,7 +1951,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     description:
       "Checks a sample spreadsheet as the developer's seed load: its valid rows wait on Seed load and its rejected rows show why. It stages and does not load: press Load on Seed load to load the valid rows.",
     screen: 'Admin · Master data',
-    routes: [ADMIN_MASTERS],
+    routes: [ADMIN_MASTERS, ADMIN_CONTRACTS],
     surfaces: ['bar'],
     when: (_state, ctx) => sampleSheetsFor(ctx).length > 0,
     choices: (_state, ctx) => sampleSheetsFor(ctx).map((s) => ({ id: s.id, label: s.fileName })),

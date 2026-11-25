@@ -8,6 +8,9 @@ import {
   editRange,
   formatRangeDate,
   formatRangePrice,
+  proceduresPerRange,
+  rangeChange,
+  rangeChangeText,
   rangeEnd,
   rangeInForce,
   rangeSpanText,
@@ -15,6 +18,7 @@ import {
   rangeSummaryText,
   validatePriceRanges,
   type PriceRange,
+  type ProceduresPerRangeInput,
 } from './priceRanges'
 import { mkContract } from './fixtures'
 
@@ -144,5 +148,101 @@ describe('formatRangeDate (UI unification U1: plainDate behind it)', () => {
     expect(formatRangeDate('2027-02-04')).toBe('4 Feb 2027')
     expect(formatRangeDate('2026-02-30')).toBe('2026-02-30')
     expect(formatRangeDate('')).toBe('')
+  })
+})
+
+describe('rangeChange (build plan Phase 45: the Change column)', () => {
+  it('is the change on the range before, First on the oldest', () => {
+    const a = { startISO: '2026-06-01', price: 3100 }
+    const b = { startISO: '2026-10-01', price: 3200 }
+    expect(rangeChange(undefined, a)).toBeNull()
+    expect(rangeChange(a, b)).toBeCloseTo(0.032258, 5)
+    expect(rangeChangeText(undefined, a)).toBe('First')
+    expect(rangeChangeText(a, b)).toBe('+3.2%')
+    expect(rangeChangeText(b, a)).toBe('-3.1%')
+    expect(rangeChangeText(a, { ...b, price: 3100 })).toBe('0.0%')
+    expect(rangeChangeText({ startISO: '2026-01-01', price: 0 }, b)).toBe('New')
+  })
+})
+
+describe('proceduresPerRange (build plan Phase 45: the Procedures column)', () => {
+  const contract = fixedOf([
+    { startISO: '2026-06-01', price: 3100 },
+    { startISO: '2026-10-01', price: 3200 },
+  ])
+  const lockedAt = (procedureId: string, startISO: string, opts: { typed?: boolean } = {}) => ({
+    procedureId,
+    typed: opts.typed ?? false,
+    price: 0,
+    contract: { ...contract, pricing: { kind: 'fixed' as const, ranges: [{ startISO, price: 3100 }] } },
+  })
+  const lock = (bookingId: string, dateISO: string, startISO: string, opts: { typed?: boolean; prepaid?: boolean } = {}) => ({
+    bookingId,
+    state: 'locked' as const,
+    pricingDateISO: dateISO,
+    procedures: [lockedAt(`p-${bookingId}`, startISO, opts)] as never,
+    settledByPrepayment: (opts.prepaid === true ? { [`p-${bookingId}`]: { amount: 3100, prepaymentInvoiceId: 'INV-P' } } : {}) as never,
+  })
+  /** One Procedure per Booking: `p-<booking>` on `L-<booking>`, dated and in the List state given. */
+  function input(rows: { b: string; dateISO: string; state?: 'ACTIVE' | 'AUTHORISED'; entered?: number; cancelled?: boolean; contractId?: string }[]): ProceduresPerRangeInput {
+    const procedures: Record<string, { id: string; bookingId: string; governingContractId: string; enteredPrice?: number }> = {}
+    const bookings: Record<string, { id: string; listId: string; cancellation?: never }> = {}
+    const lists: Record<string, { dateISO: string; state: 'ACTIVE' | 'AUTHORISED' }> = {}
+    for (const r of rows) {
+      procedures[`p-${r.b}`] = { id: `p-${r.b}`, bookingId: r.b, governingContractId: r.contractId ?? contract.id, ...(r.entered !== undefined ? { enteredPrice: r.entered } : {}) }
+      bookings[r.b] = { id: r.b, listId: `L-${r.b}`, ...(r.cancelled === true ? { cancellation: {} as never } : {}) }
+      lists[`L-${r.b}`] = { dateISO: r.dateISO, state: r.state ?? 'ACTIVE' }
+    }
+    return { procedures, bookings, lists, locks: {} }
+  }
+
+  it("counts each span's edges, and nothing before the first start", () => {
+    const counts = proceduresPerRange(contract, input([
+      { b: 'may31', dateISO: '2026-05-31' },
+      { b: 'jun01', dateISO: '2026-06-01' },
+      { b: 'sep30', dateISO: '2026-09-30' },
+      { b: 'oct01', dateISO: '2026-10-01' },
+    ]))
+    // 31 May has no price; 1 Jun and 30 Sep are June's first and last days; 1 Oct is October's first.
+    expect(counts).toEqual({ '2026-06-01': 2, '2026-10-01': 1 })
+  })
+
+  it('leaves out a typed price, a cancelled Booking, a raised prepayment and another Contract', () => {
+    const i = input([
+      { b: 'typed', dateISO: '2026-10-05', entered: 1200 },
+      { b: 'cancelled', dateISO: '2026-10-05', cancelled: true },
+      { b: 'prepaid', dateISO: '2026-10-05' },
+      { b: 'other', dateISO: '2026-10-05', contractId: 'another' },
+      { b: 'plain', dateISO: '2026-10-05' },
+    ])
+    expect(proceduresPerRange(contract, { ...i, prepaidHeld: new Set(['p-prepaid']) })['2026-10-01']).toBe(1)
+  })
+
+  it('counts an authorised price under its own range only, and a kept, typed or prepaid one nowhere', () => {
+    const i = input([
+      { b: 'oct15', dateISO: '2026-10-15', state: 'AUTHORISED' },
+      { b: 'oct20', dateISO: '2026-10-20', state: 'AUTHORISED' },
+      { b: 'oct21', dateISO: '2026-10-21', state: 'AUTHORISED' },
+      { b: 'oct22', dateISO: '2026-10-22', state: 'AUTHORISED' },
+      { b: 'nolock', dateISO: '2026-10-23', state: 'AUTHORISED' },
+    ])
+    const counts = proceduresPerRange(contract, {
+      ...i,
+      locks: {
+        // Authorised at the October range: October's.
+        k1: lock('oct15', '2026-10-15', '2026-10-01'),
+        // Authorised at June's price before October's range was backdated: kept, so counted nowhere.
+        k2: lock('oct20', '2026-10-20', '2026-06-01'),
+        // A typed authorised price is the Procedure's own; a prepaid one is the prepayment's.
+        k3: lock('oct21', '2026-10-21', '2026-10-01', { typed: true }),
+        k4: lock('oct22', '2026-10-22', '2026-10-01', { prepaid: true }),
+        // 'nolock': an AUTHORISED List with no lock for the Booking counts nowhere.
+      },
+    })
+    expect(counts).toEqual({ '2026-06-01': 0, '2026-10-01': 1 })
+  })
+
+  it('is empty for a Contract with no ranges', () => {
+    expect(proceduresPerRange(mkContract(), input([{ b: 'x', dateISO: '2026-10-01' }]))).toEqual({})
   })
 })

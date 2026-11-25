@@ -14,7 +14,8 @@
  */
 
 import { useState, type CSSProperties, type ReactNode } from 'react'
-import { useInRouterContext, useSearchParams } from 'react-router-dom'
+import { useInRouterContext, useNavigate, useSearchParams } from 'react-router-dom'
+import { mastersViewPath } from '../../mastersPaths'
 import { neutral } from '../../../../theme/tokens'
 import { Td, TableShell, Th, type CellAlign } from '../../../../shared/table'
 import { Button, Eyebrow, FormError, Notice, PageHeader, Pill, Switch, TextAction as SharedTextAction, TextArea } from '../../../../shared/ui'
@@ -323,7 +324,8 @@ export function RetireSection({ kind, id, actor, onDone }: { kind: RetireKind; i
  * view while the go-live load is staged ("Open"). The Go-live views show none.
  */
 export function LoadResultBanner({ view }: { view: MastersView }) {
-  const [, setParams] = useSearchParams()
+  // Navigates rather than setting `?view=`: the banner also shows on the Contracts section (build plan Phase 45).
+  const navigate = useNavigate()
   const seeded = masterViewEntry(view)?.seeded ?? []
   const seedWaiting = useAppStore((s) => seeded.some((e) => stagedLoadFor(s, e) !== undefined))
   const goLiveWaiting = useAppStore((s) => s.masterLoads.goLive?.status === 'staged')
@@ -331,11 +333,7 @@ export function LoadResultBanner({ view }: { view: MastersView }) {
   if (!seedWaiting && !goLiveWaiting) return null
 
   function open(next: MastersView) {
-    setParams((prev) => {
-      const copy = new URLSearchParams(prev)
-      copy.set('view', next)
-      return copy
-    })
+    navigate(mastersViewPath(next))
   }
 
   return (

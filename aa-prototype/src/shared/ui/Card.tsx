@@ -1,5 +1,5 @@
 import { useId, type CSSProperties, type ReactNode, type Ref } from 'react'
-import { elevation as shadow, neutral, radius, semantic } from '../../theme/tokens'
+import { accent, elevation as shadow, neutral, radius, semantic } from '../../theme/tokens'
 import type { DataAttributes } from './Field'
 
 export type CardPadding = 'panel' | 'card'
@@ -18,6 +18,12 @@ export type CardElevation = 'flat' | 'e1'
  * heading's name); `aside` sits beside the heading outside it (a Sample pill), 10px away. `flush`
  * drops the padding for a full-bleed body (the heading keeps its inset). `tone="warning"` is the
  * warning tint with a warning edge. `shot` and `data-*` land on the `section`.
+ *
+ * Build plan Phase 45 (a Contract page's cards, each saved on its own): `footer` puts right-aligned
+ * actions under a hairline (Cancel then Save; the Admin Review sheet footer's alignment), and
+ * `editing` marks a card in edit: `data-editing`, the teal edge and halo (`accent.editingRing`) and a
+ * quiet "Editing" label in the heading's action slot (docs/explorations/contracts-section.html
+ * #updating). Both default off, so every other card keeps its look.
  */
 export function Card({
   as: Tag = 'section',
@@ -31,6 +37,8 @@ export function Card({
   padding = 'card',
   flush = false,
   tone,
+  footer,
+  editing = false,
   shot,
   style,
   children,
@@ -47,6 +55,10 @@ export function Card({
   padding?: CardPadding
   flush?: boolean
   tone?: 'warning'
+  /** Right-aligned actions under a hairline (a card saved on its own: Cancel, Save). */
+  footer?: ReactNode
+  /** The card is in edit: the teal edge and halo, and "Editing" in place of the heading's action. */
+  editing?: boolean
   shot?: string
   style?: CSSProperties
   children?: ReactNode
@@ -57,17 +69,25 @@ export function Card({
   const inset = panel ? 20 : 16
   const lifted = (elevation ?? (panel ? 'e1' : 'flat')) === 'e1'
   const H = titleLevel === 3 ? 'h3' : 'h2'
-  const hasHead = title !== undefined || action !== undefined
+  const headAction = editing ? (
+    <span data-card-editing-label style={{ fontSize: 12, fontWeight: 500, color: neutral.mist, flex: 'none' }}>Editing</span>
+  ) : (
+    action
+  )
+  const hasHead = title !== undefined || headAction !== undefined
+  const edge = editing ? accent.base : tone === 'warning' ? `${semantic.warning.solid}55` : neutral.line
+  const halo = [editing ? accent.editingRing : null, lifted ? shadow.e1 : null].filter((v) => v !== null).join(', ')
   return (
     <Tag
       {...data}
       data-shot={shot}
+      {...(editing ? { 'data-editing': '' } : {})}
       {...(title !== undefined ? { 'aria-labelledby': id } : {})}
       style={{
         background: tone === 'warning' ? semantic.warning.tint : neutral.surface,
-        border: `1px solid ${tone === 'warning' ? `${semantic.warning.solid}55` : neutral.line}`,
+        border: `1px solid ${edge}`,
         borderRadius: radius.card,
-        ...(lifted ? { boxShadow: shadow.e1 } : {}),
+        ...(halo !== '' ? { boxShadow: halo } : {}),
         padding: flush ? 0 : inset,
         display: 'flex',
         flexDirection: 'column',
@@ -107,10 +127,26 @@ export function Card({
           ) : (
             <span />
           )}
-          {action}
+          {headAction}
         </div>
       )}
       {children}
+      {footer !== undefined && (
+        <div
+          data-card-footer
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            gap: 10,
+            borderTop: `1px solid ${neutral.line}`,
+            paddingTop: 12,
+            ...(flush ? { padding: `12px ${inset}px ${inset}px` } : {}),
+          }}
+        >
+          {footer}
+        </div>
+      )}
     </Tag>
   )
 }

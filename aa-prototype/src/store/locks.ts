@@ -74,6 +74,8 @@ export interface LockedAgainst {
   invoiceIds: InvoiceId[]
   takenAtISO: string
   origin: BookingLock['origin']
+  /** The locked price of its Procedures on this Contract, ex GST (build plan Phase 45: the page's "On this Contract"). */
+  lockedPrice: number
 }
 
 /** The Bookings whose Procedures are locked against a Contract (the History tab), newest lock first. */
@@ -92,6 +94,7 @@ export function lockedAgainstContract(state: Pick<AppState, 'billing'>, contract
         .map((i) => i.id),
       takenAtISO: lock.takenAtISO,
       origin: lock.origin,
+      lockedPrice: roundToCents(lock.procedures.filter((s) => s.contract?.id === contractId).reduce((sum, s) => sum + s.price, 0)),
     })
   }
   return out.sort((a, b) => b.takenAtISO.localeCompare(a.takenAtISO) || a.bookingId.localeCompare(b.bookingId))

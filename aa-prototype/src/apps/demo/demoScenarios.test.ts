@@ -83,6 +83,8 @@ const ROUTE_PATTERNS = [
   '/admin/billing/aa-fees',
   '/admin/billing/aa-fees/settings',
   '/admin/ledger',
+  '/admin/contracts',
+  '/admin/contracts/:contractId',
   '/admin/masters',
   '/admin/audit',
   '/mobile/lists',
@@ -117,6 +119,7 @@ function pathProblems(state: AppState, path: string): string[] {
       : param === 'invoiceId' ? state.billing.invoices[value] !== undefined
       : param === 'accRecId' ? state.xero.accRecs[value] !== undefined
       : param === 'dateISO' ? /^\d{4}-\d{2}-\d{2}$/.test(value)
+      : param === 'contractId' ? state.masters.contracts[value] !== undefined
       : false
     if (!exists) problems.push(`${path}: ${param} ${value} is not in state (or not checked here)`)
   }

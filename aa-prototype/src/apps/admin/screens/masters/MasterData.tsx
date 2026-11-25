@@ -19,7 +19,6 @@ import { GoLiveLoadView } from './GoLiveLoadView'
 import { ScheduleSettingsView } from './ScheduleSettingsView'
 import { AvailabilityStatusesView } from './AvailabilityStatusesView'
 import { PartiesView } from './PartiesView'
-import { ContractsView } from './ContractsView'
 import { SpecialtiesView } from './SpecialtiesView'
 import { FundingTagsView } from './FundingTagsView'
 import { RvgGroupsView } from './RvgGroupsView'
@@ -89,7 +88,7 @@ export function MasterData({ actor }: MasterDataProps) {
     <AdminPage mode={masterViewMode(view)} title="Master data">
       <PageBody nav={nav} gap={12}>
         {view === 'anaesthetists' && <AnaesthetistsView actor={actor} />}
-        {view === 'contracts' && <ContractsView actor={actor} />}
+        {/* Contracts moved to its own section (build plan Phase 45): `AdminMastersRoute` redirects `?view=contracts`. */}
         {view === 'fundingTags' && <FundingTagsView actor={actor} />}
         {view === 'specialties' && <SpecialtiesView actor={actor} />}
         {view === 'parties' && <PartiesView actor={actor} />}

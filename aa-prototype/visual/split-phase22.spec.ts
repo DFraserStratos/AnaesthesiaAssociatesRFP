@@ -3,7 +3,7 @@ import { test, expect, type Page } from '@playwright/test'
 /**
  * Catch-up Phase 22: the Split (US-08.2.3), the split section of the Paid by
  * sheet since catch-up Phase 22a, the office's on the Admin Booking detail and
- * the anaesthetist's on the phone, and the Master data Contracts table's derived Layout and Delivery
+ * the anaesthetist's on the phone, and the Contract list's derived Layout and Delivery
  * columns (US-04.2.8). Prentice's Booking (BK0025, Souter Mon 20 PM) is seeded
  * split: nib $132.50, Alan Prentice the rest of $212.00.
  */
@@ -67,8 +67,8 @@ test('the office splits a fee on the Admin Booking detail', async ({ page }) => 
   await expect(summary).toContainText('Patient')
 })
 
-test('Master data Contracts: Layout and Delivery are derived, read-only columns', async ({ page }) => {
-  await page.goto('/admin/masters?view=contracts')
+test('the Contract list: Layout and Delivery are derived, read-only columns', async ({ page }) => {
+  await page.goto('/admin/contracts')
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(400)
   const table = page.locator('[data-shot="contract-catalogue"]').last()

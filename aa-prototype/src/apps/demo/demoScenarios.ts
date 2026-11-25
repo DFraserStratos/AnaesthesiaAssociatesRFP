@@ -30,7 +30,8 @@ import {
   type AppState,
   type AppStoreApi,
 } from '../../store'
-import { ANAE, SEED_LIST_IDS, SEED_MARKERS } from '../../domain/seed'
+import { ANAE, CONTRACT, SEED_LIST_IDS, SEED_MARKERS } from '../../domain/seed'
+import { contractPath } from '../admin/contractsPaths'
 import { projectedListId } from '../../domain/slots'
 import { rvgModifierByCode } from '../../domain/billing/modifiers'
 import { resetFramedDemo } from '../../shell/framedReset'
@@ -455,7 +456,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
         beat: "The lock and each Contract's history",
         label: 'Beat 4 · Master data, Contracts',
         does: 'Health NZ agreed rate, then its History',
-        path: () => '/admin/masters?view=contracts',
+        path: () => contractPath(CONTRACT.healthNz),
       },
       {
         beat: 'Authorise, then edit the rate per unit',

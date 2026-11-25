@@ -5,81 +5,50 @@
  * code; its holder Party (fixed after save) and whether it bills the holder or
  * the payer; the surgeons and anaesthetist it is offered for; prepaid and the
  * pricing kind (both fixed after save); and the anaesthetist's override on RVG
- * kinds. It is edited in place, disabled rather than deleted. Every rule and
- * refusal sentence is the store's (`contractRefusal`); the panel only shows
- * the settings a rule makes fixed as read-only.
+ * kinds. Every rule and refusal sentence is the store's (`contractRefusal`).
  *
  * Catch-up Phase 18a (US-04.2.16, US-04.2.17): the specialties it is offered
  * for (none means every specialty) and at most one funding tag, with a live
- * line saying where it will be offered (`destinationOf`). A system Contract
- * (No contract · RVG, or a Fixed price fallback the system makes) shows its
- * settings read-only with one reason; only the fields in
- * `SYSTEM_CONTRACT_EDITABLE_FIELDS` stay live, and it offers no Disable.
+ * line saying where it will be offered (`destinationOf`).
  *
  * Catch-up Phase 19a (US-04.2.18, US-04.2.15): "Invoice and codes" holds the
  * holder reference code, the invoice description and the default RVG code
- * (19's type-ahead; stores the group's hidden id, shows its code). A fixed
- * price shows its price ranges (`ContractPriceRanges`), changed straight
- * away through the store's audited range actions; a new fixed-price Contract
- * takes its first range with it.
+ * (19's type-ahead; stores the group's hidden id, shows its code). A new
+ * fixed-price Contract takes its first range with it.
  *
  * Catch-up Phase 25a (US-04.1.2, D79, D81): a new Contract can name the
  * Contract it replaces and the date it takes over from; the panel then warns
  * with the Procedures dated on or after that date still on the old one, before
  * and after the save. Nothing moves and nothing is stored: "Replaces" is
- * warning-only (a build choice). A Disabled Contract's note gives its disable
- * day (read from the audit) and lists the Procedures from that day still on it.
+ * warning-only (a build choice).
+ *
+ * Build plan Phase 45 (D92): create only. A Contract is read and changed on
+ * its own page (`screens/contracts/ContractPage.tsx`), one card at a time; the
+ * panel opens from `/admin/contracts/new` until Phase 46 replaces it.
  */
 
 import { useMemo, useState } from 'react'
 import type { Contract, ContractPricing, PricingKind } from '../../../domain/types'
-import { CHOOSABLE_PRICING_KINDS, CONTRACT_REFUSAL_MESSAGES, SYSTEM_CONTRACT_EDITABLE_FIELDS, billsPayerOnly, isRvgKind, takesLinks } from '../../../domain/billing/contracts'
-import { destinationHint, destinationOf, isOpenPriceFallback } from '../../../domain/billing/fallbacks'
+import { CHOOSABLE_PRICING_KINDS, CONTRACT_REFUSAL_MESSAGES, billsPayerOnly, isRvgKind, takesLinks } from '../../../domain/billing/contracts'
+import { destinationHint, destinationOf } from '../../../domain/billing/fallbacks'
 import { fundingTagsInOrder } from '../../../domain/billing/fundingTags'
-import { contractSpecialtyLabel, specialtiesInOrder } from '../../../domain/specialties'
+import { specialtiesInOrder } from '../../../domain/specialties'
 import { ChipMultiSelect } from '../components/ChipMultiSelect'
-import { CodePickerSheet } from '../../../shared/capture/CodePickerSheet'
-import { rvgGroupLabel } from '../../../domain/billing/rvgGroups'
-import { ContractPriceRanges } from './ContractPriceRanges'
-import { ContractEventFees } from './ContractEventFees'
 import { parsePriceText } from '../../../domain/billing/priceRanges'
-import {
-  activeSurgeons,
-  createContract,
-  disableContract,
-  editContract,
-  enableContract,
-  stillOnContract,
-  useAppStore,
-  useToday,
-  type Actor,
-} from '../../../store'
-import { Button, FieldLabel, FormError, Segmented, TextField } from '../../../shared'
-import { FieldHint, LineTab, LineTabs, Notice, ResultLine, SelectField, TextAction } from '../../../shared/ui'
-import { ContractHistory } from './ContractHistory'
-import { ContractChangeNotice, type ChangeNoticeRow } from './ContractChangeNotice'
-import { contractDisabledOn } from '../../../domain/billing/contractHistory'
-import { NOTHING_MOVES, stillOnTitle, type StillOnRow } from '../../../domain/billing/contractChanges'
+import { activeSurgeons, createContract, stillOnContract, useAppStore, type Actor } from '../../../store'
+import { Button, FormError, Segmented, TextField } from '../../../shared'
+import { DefRow, FieldHint, Notice, ResultLine, SelectField } from '../../../shared/ui'
 import { shortDay } from '../../../domain/dateText'
-import { listShortLabel } from '../util'
-import {
-  BILLS_LABEL,
-  PARTY_KIND_LABEL,
-  PRICING_KIND_LABEL,
-  STATUS_LABEL,
-} from '../../../shared/contracts'
+import { BILLS_LABEL, PARTY_KIND_LABEL, PRICING_KIND_LABEL } from '../../../shared/contracts'
 import { compareBySurname } from '../../../domain/surgeons'
-import { isRetired, retiredLabel } from '../../../domain/masterLifecycle'
-import { useDemoTriggerContextWhile } from '../../../shared/demoTriggers'
 import { neutral, radius } from '../../../theme/tokens'
 import { MasterPanel, PanelGrid, PanelSection } from '../components/MasterPanel'
-import { Pill } from '../components/MasterPills'
+import { StillOnNotice } from '../screens/contracts/StillOnNotice'
+import { DefaultRvgCodeField } from '../screens/contracts/DefaultRvgCodeField'
 
 interface Props {
   open: boolean
   actor: Actor
-  /** Present: edit; absent: create. */
-  contract?: Contract
   /** A new Contract's holder, when opened from a filtered list. */
   initialHolderId?: string
   onClose: () => void
@@ -90,58 +59,38 @@ type YesNo = 'yes' | 'no'
 /** D23 (OQ-73, at Confirm): the one place the reading is labelled. */
 const PREPAID_BILLS_PAYER_HELPER = "A prepaid Contract always bills the payer, awaiting AA's confirmation."
 
-export function ContractPanel({ open, actor, contract, initialHolderId, onClose }: Props) {
+export function ContractPanel({ open, actor, initialHolderId, onClose }: Props) {
   const masters = useAppStore((s) => s.masters)
-  const editing = contract !== undefined
-  const system = contract?.systemRole !== undefined
-  // The Contract open in its detail, for the demo triggers that act on it (catch-up Phase 24).
-  useDemoTriggerContextWhile('adminContracts.openContractId', contract?.id ?? '', open && editing)
 
-  // The panel mounts afresh for each Contract it opens, so its fields start from it.
-  const [aaCode, setAaCode] = useState(contract?.aaCode ?? '')
-  const [name, setName] = useState(contract?.name ?? '')
-  const [holderReference, setHolderReference] = useState(contract?.holderReference ?? '')
-  const [holderId, setHolderId] = useState(contract?.holderId ?? initialHolderId ?? '')
-  const [billsTo, setBillsTo] = useState<Contract['billsTo']>(contract?.billsTo ?? 'holder')
-  const [surgeonIds, setSurgeonIds] = useState<string[]>(contract?.linkedSurgeonIds ?? [])
-  const [anaesthetistId, setAnaesthetistId] = useState(contract?.linkedAnaesthetistId ?? '')
-  const [prepaid, setPrepaid] = useState<YesNo>(contract?.prepaid === true ? 'yes' : 'no')
-  const [kind, setKind] = useState<PricingKind>(contract?.pricing.kind ?? 'rvgAnaesthetistRate')
-  const [rate, setRate] = useState(contract?.pricing.kind === 'rvgContractRate' ? String(contract.pricing.unitRate) : '')
-  const [discount, setDiscount] = useState(contract?.pricing.kind === 'rvgDiscount' ? String(contract.pricing.discountPct) : '')
-  const [override, setOverride] = useState<YesNo>(contract?.anaesthetistMayOverridePrice === true ? 'yes' : 'no')
-  const [specialtyIds, setSpecialtyIds] = useState<string[]>(contract?.specialtyIds ?? [])
-  const [fundingTagId, setFundingTagId] = useState(contract?.fundingTagId ?? '')
-  const [invoiceDescription, setInvoiceDescription] = useState(contract?.invoiceDescription ?? '')
-  const [defaultRvgGroupId, setDefaultRvgGroupId] = useState<string | null>(contract?.defaultRvgGroupId ?? null)
-  const [pickerOpen, setPickerOpen] = useState(false)
+  const [name, setName] = useState('')
+  const [holderReference, setHolderReference] = useState('')
+  const [holderId, setHolderId] = useState(initialHolderId ?? '')
+  const [billsTo, setBillsTo] = useState<Contract['billsTo']>('holder')
+  const [surgeonIds, setSurgeonIds] = useState<string[]>([])
+  const [anaesthetistId, setAnaesthetistId] = useState('')
+  const [prepaid, setPrepaid] = useState<YesNo>('no')
+  const [kind, setKind] = useState<PricingKind>('rvgAnaesthetistRate')
+  const [rate, setRate] = useState('')
+  const [discount, setDiscount] = useState('')
+  const [override, setOverride] = useState<YesNo>('no')
+  const [specialtyIds, setSpecialtyIds] = useState<string[]>([])
+  const [fundingTagId, setFundingTagId] = useState('')
+  const [invoiceDescription, setInvoiceDescription] = useState('')
+  const [defaultRvgGroupId, setDefaultRvgGroupId] = useState<string | null>(null)
   // A new fixed-price Contract's first range (catch-up Phase 19a).
   const [firstStart, setFirstStart] = useState('')
   const [firstPrice, setFirstPrice] = useState('')
   const [error, setError] = useState<string | null>(null)
-  // The panel's two tabs (catch-up Phase 25): the Contract's details, and its History.
-  const [tab, setTab] = useState<'details' | 'history'>('details')
   // A dated change (catch-up Phase 25a): the Contract a new one replaces and the day it takes over. Warning-only.
   const [replacesId, setReplacesId] = useState('')
   const [replacesFrom, setReplacesFrom] = useState('')
   // The new Contract's name once created with "Replaces" set: the panel stays open on the warning.
   const [created, setCreated] = useState<string | null>(null)
-  // The live Contract, so the ranges table shows each range change at once.
-  const live = useAppStore((s) => (contract !== undefined ? s.masters.contracts[contract.id] : undefined)) ?? contract
-  const defaultGroup = defaultRvgGroupId !== null ? masters.rvgGroups[defaultRvgGroupId] : undefined
   const schedule = useAppStore((s) => s.schedule)
-  const audit = useAppStore((s) => s.audit)
-  const today = useToday()
-  // A Disabled Contract's day, from its audit (D81): the note and the disable warning read it.
-  const disabledDay = useMemo(() => (live !== undefined && live.status === 'disabled' ? contractDisabledOn(audit, live.id) : null), [audit, live])
   const replaced = replacesId !== '' ? masters.contracts[replacesId] : undefined
   const stillOnReplaced = useMemo(
     () => (replaced !== undefined && replacesFrom !== '' ? stillOnContract({ schedule, masters }, replaced.id, replacesFrom) : []),
     [replaced, replacesFrom, schedule, masters],
-  )
-  const stillOnDisabled = useMemo(
-    () => (live !== undefined && live.status === 'disabled' ? stillOnContract({ schedule, masters }, live.id, disabledDay ?? today) : []),
-    [live, disabledDay, today, schedule, masters],
   )
   // The Active Contracts a new one may replace: the chosen holder's first, then the rest (system Contracts never).
   const replaceable = useMemo(() => {
@@ -173,17 +122,8 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
     }
     return [...groups.entries()]
   }, [masters.parties])
-  // Active surgeons only, plus any retired surgeon the Contract already links, labelled (catch-up Phase 42).
-  const linkedIds = contract?.linkedSurgeonIds
-  const surgeons = useMemo(() => {
-    const keptRetired = (linkedIds ?? []).flatMap((id) => {
-      const s = masters.surgeons[id]
-      return s !== undefined && isRetired(s) ? [s] : []
-    })
-    return [...activeSurgeons({ masters: { surgeons: masters.surgeons } }), ...keptRetired]
-      .sort(compareBySurname)
-      .map((s) => ({ ...s, name: retiredLabel(s.name, s) }))
-  }, [masters.surgeons, linkedIds])
+  // Active surgeons only (catch-up Phase 42).
+  const surgeons = useMemo(() => [...activeSurgeons({ masters: { surgeons: masters.surgeons } })].sort(compareBySurname), [masters.surgeons])
   const anaesthetists = useMemo(
     () => Object.values(masters.anaesthetists).sort((a, b) => a.name.localeCompare(b.name)),
     [masters.anaesthetists],
@@ -196,8 +136,6 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
       case 'rvgDiscount':
         return { kind, discountPct: Number(discount) }
       case 'fixed':
-        // Ranges change only through the range actions once saved; a new one takes its first range.
-        if (live?.pricing.kind === 'fixed') return { kind: 'fixed', ranges: live.pricing.ranges }
         return {
           kind: 'fixed',
           ranges: firstStart === '' && firstPrice.trim() === '' ? [] : [{ startISO: firstStart, price: parsePriceText(firstPrice) }],
@@ -210,7 +148,7 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
   }
 
   function save() {
-    const settings = {
+    const outcome = createContract(useAppStore, actor, {
       name,
       billsTo: shownBillsTo,
       linkedSurgeonIds: showLinks ? surgeonIds : [],
@@ -219,36 +157,18 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
       specialtyIds,
       invoiceDescription,
       defaultRvgGroupId,
-    }
-    const outcome = editing
-      ? editContract(
-          useAppStore,
-          actor,
-          contract.id,
-          system
-            ? systemPatch({ name, aaCode, invoiceDescription })
-            : {
-                ...settings,
-                aaCode,
-                pricing: pricing(),
-                linkedAnaesthetistId: showLinks && anaesthetistId !== '' ? anaesthetistId : undefined,
-                fundingTagId: fundingTagId !== '' ? fundingTagId : undefined,
-              },
-        )
-      : createContract(useAppStore, actor, {
-          ...settings,
-          holderId,
-          pricing: pricing(),
-          prepaid: prepaid === 'yes',
-          ...(showLinks && anaesthetistId !== '' ? { linkedAnaesthetistId: anaesthetistId } : {}),
-          ...(fundingTagId !== '' ? { fundingTagId } : {}),
-        })
+      holderId,
+      pricing: pricing(),
+      prepaid: prepaid === 'yes',
+      ...(showLinks && anaesthetistId !== '' ? { linkedAnaesthetistId: anaesthetistId } : {}),
+      ...(fundingTagId !== '' ? { fundingTagId } : {}),
+    })
     if (!outcome.ok) {
       setError(outcome.message)
       return
     }
     // A dated change that leaves Procedures on the old Contract stays open on its warning (catch-up Phase 25a).
-    if (!editing && stillOnReplaced.length > 0) {
+    if (stillOnReplaced.length > 0) {
       setError(null)
       setCreated(name.trim())
       return
@@ -256,147 +176,56 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
     onClose()
   }
 
-  function toggleStatus() {
-    if (contract === undefined) return
-    const outcome = contract.status === 'active' ? disableContract(useAppStore, actor, contract.id) : enableContract(useAppStore, actor, contract.id)
-    setError(outcome.ok ? null : outcome.message)
-  }
-
-  const meta = editing ? (
-    <>
-      <span className="mono" style={{ fontWeight: 600, color: neutral.ink }}>{contract.aaCode}</span>
-      <Pill tone={contract.status === 'active' ? 'success' : 'neutral'}>{STATUS_LABEL[contract.status]}</Pill>
-      {system && <Pill>System</Pill>}
-      <span>{masters.parties[contract.holderId]?.name ?? contract.holderId}</span>
-    </>
-  ) : undefined
-
-  const fixedAfterSave = 'Set when the Contract is created.'
-
   return (
     <MasterPanel
       open={open}
       onClose={onClose}
-      title={editing ? contract.name : created ?? 'New contract'}
-      meta={meta}
+      title={created ?? 'New contract'}
       shot="contract-detail"
       footer={
-        tab === 'history' || created !== null ? (
+        created !== null ? (
           <Button variant="secondary" onClick={onClose}>Close</Button>
         ) : (
-        <>
-          {editing && !system && (
-            <div style={{ marginRight: 'auto' }}>
-              {contract.status === 'active' ? (
-                <Button variant="secondary" shot="contract-disable" onClick={toggleStatus}>
-                  Disable
-                </Button>
-              ) : (
-                <Button variant="secondary" onClick={toggleStatus}>Make active</Button>
-              )}
-            </div>
-          )}
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={save}>{editing ? 'Save contract' : 'Create contract'}</Button>
-        </>
+          <>
+            <Button variant="secondary" onClick={onClose}>Cancel</Button>
+            <Button variant="primary" onClick={save}>Create contract</Button>
+          </>
         )
       }
     >
-      {editing && (
-        <LineTabs label="Contract" kind="group" shot="contract-tabs">
-          <LineTab active={tab === 'details'} onClick={() => setTab('details')} shot="contract-tab-details">Details</LineTab>
-          <LineTab active={tab === 'history'} onClick={() => setTab('history')} shot="contract-tab-history">History</LineTab>
-        </LineTabs>
-      )}
-      {editing && tab === 'history' ? (
-        <ContractHistory contractId={contract.id} />
-      ) : created !== null && replaced !== undefined ? (
+      {created !== null && replaced !== undefined ? (
         <>
           <ResultLine line={`Created ${created}.`} shot="contract-created" />
           <StillOnNotice rows={stillOnReplaced} fromISO={replacesFrom} contractName={replaced.name} live />
         </>
       ) : (
       <>
-      {system && (
-        <Notice tone="neutral" shot="contract-system-notice">
-          {isOpenPriceFallback(contract)
-            ? 'Made by the system: one Fixed price Contract for each place an invoice can go, where a person types the amount on the Procedure. It is always available and never disabled. Only its name, AA code and invoice description can change.'
-            : "No contract · RVG is built in and always available. It is held by Anaesthesia Associates, bills the payer and prices at the anaesthetist's rate. Only its name, AA code and invoice description can change."}
-        </Notice>
-      )}
-      {editing && live?.status === 'disabled' && (
-        <Notice tone="neutral" shot="contract-disabled-note">
-          {disabledDay !== null
-            ? `Disabled on ${shortDay(disabledDay)}: hidden from the Contract list unless asked for. Procedures already on it keep it; one not yet authorised and dated on or after ${shortDay(disabledDay)} is flagged at review.`
-            : 'Disabled: hidden from the Contract list unless asked for. Procedures already on it keep it; one not yet authorised is flagged at review.'}
-        </Notice>
-      )}
-      {editing && live?.status === 'disabled' && stillOnDisabled.length > 0 && (
-        <StillOnNotice rows={stillOnDisabled} fromISO={disabledDay ?? today} contractName={live.name} />
-      )}
-
       <PanelSection title="Contract">
         <PanelGrid>
-          {editing ? (
-            <TextField label="AA code" value={aaCode} onChange={(v) => setAaCode(v.toUpperCase())} mono hint="AA's own unique code." />
-          ) : (
-            <ReadOnlyField label="AA code" mono>Assigned on save</ReadOnlyField>
-          )}
+          <DefRow layout="stacked" label="AA code" mono>Assigned on save</DefRow>
           <TextField label="Name" value={name} onChange={setName} />
         </PanelGrid>
       </PanelSection>
 
       <PanelSection title="Invoice and codes" shot="contract-codes">
         <PanelGrid>
-          {system && !SYSTEM_EDITABLE.has('holderReference') ? (
-            <ReadOnlyField label="Holder reference code" mono hint="Not set on a system Contract.">{holderReference !== '' ? holderReference : 'None'}</ReadOnlyField>
-          ) : (
-            <TextField label="Holder reference code" value={holderReference} onChange={setHolderReference} mono hint="The holder's own code for the item. Need not be unique." />
-          )}
-          {system ? (
-            <ReadOnlyField label="Default RVG code" hint="Not set on a system Contract.">None</ReadOnlyField>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
-              <FieldLabel>Default RVG code</FieldLabel>
-              <div
-                data-shot="contract-default-rvg"
-                style={{ minHeight: 48, boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px', borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.bg }}
-              >
-                <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: defaultGroup !== undefined ? neutral.ink : neutral.mist, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={defaultGroup !== undefined ? rvgGroupLabel(defaultGroup) : undefined}>
-                  {defaultGroup !== undefined ? (
-                    <>
-                      <span className="mono" style={{ fontWeight: 600 }}>{defaultGroup.code}</span>
-                      <span style={{ color: neutral.slate }}> · {defaultGroup.description}</span>
-                    </>
-                  ) : (
-                    'None'
-                  )}
-                </span>
-                <TextAction size="sm" flush onClick={() => setPickerOpen(true)} label="Choose the default RVG code">{defaultGroup !== undefined ? 'Change' : 'Choose'}</TextAction>
-                {defaultGroup !== undefined && <TextAction size="sm" flush onClick={() => setDefaultRvgGroupId(null)} label="Clear the default RVG code">Clear</TextAction>}
-              </div>
-              <FieldHint>Fills a Procedure's RVG code when it has none.</FieldHint>
-            </div>
-          )}
+          <TextField label="Holder reference code" value={holderReference} onChange={setHolderReference} mono hint="The holder's own code for the item. Need not be unique." />
+          <DefaultRvgCodeField value={defaultRvgGroupId} onChange={setDefaultRvgGroupId} />
         </PanelGrid>
         <TextField label="Invoice description" value={invoiceDescription} onChange={setInvoiceDescription} hint="The words the patient reads on the invoice, where filled in." />
       </PanelSection>
 
       <PanelSection title="Holder and who it bills" shot="contract-links">
-        {editing ? (
-          <ReadOnlyField label="Holder" hint="Fixed once the Contract is saved.">{holder?.name ?? holderId}</ReadOnlyField>
-        ) : (
-          <SelectField label="Holder" value={holderId} onChange={setHolderId}>
-            <option value="">Choose the Party that holds it</option>
-            {partyGroups.map(([group, list]) => (
-              <optgroup key={group} label={group}>
-                {list.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </optgroup>
-            ))}
-          </SelectField>
-        )}
+        <SelectField label="Holder" value={holderId} onChange={setHolderId}>
+          <option value="">Choose the Party that holds it</option>
+          {partyGroups.map(([group, list]) => (
+            <optgroup key={group} label={group}>
+              {list.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </optgroup>
+          ))}
+        </SelectField>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <Segmented
             label="Bills"
@@ -406,15 +235,15 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
               { value: 'payer', label: `${BILLS_LABEL.payer} on the Procedure` },
             ]}
             onChange={setBillsTo}
-            disabled={forcedPayer || system}
+            disabled={forcedPayer}
           />
           {prepaid === 'yes' ? (
             <FieldHint>{PREPAID_BILLS_PAYER_HELPER}</FieldHint>
-          ) : holderForcesPayer && !system ? (
+          ) : holderForcesPayer ? (
             <FieldHint>{CONTRACT_REFUSAL_MESSAGES.holderBillsPayer}</FieldHint>
           ) : null}
         </div>
-        {showLinks && !system && (
+        {showLinks && (
           <PanelGrid>
             <ChipMultiSelect label="Linked surgeons" options={surgeons} value={surgeonIds} onChange={setSurgeonIds} addLabel="Add a surgeon" />
             <SelectField label="Linked anaesthetist" value={anaesthetistId} onChange={setAnaesthetistId}>
@@ -430,35 +259,23 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
 
       <PanelSection title="Where it is offered">
         <PanelGrid>
-          {system ? (
-            <ReadOnlyField label="Specialties" hint="Set by the system: offered for every specialty.">
-              {contractSpecialtyLabel(masters, specialtyIds)}
-            </ReadOnlyField>
-          ) : (
-            <ChipMultiSelect
-              label="Specialties"
-              options={specialtiesInOrder(masters.specialties)}
-              value={specialtyIds}
-              onChange={setSpecialtyIds}
-              addLabel="Add a specialty"
-              empty="Every specialty"
-              hint="None means every specialty."
-              shot="contract-specialties"
-            />
-          )}
+          <ChipMultiSelect
+            label="Specialties"
+            options={specialtiesInOrder(masters.specialties)}
+            value={specialtyIds}
+            onChange={setSpecialtyIds}
+            addLabel="Add a specialty"
+            empty="Every specialty"
+            hint="None means every specialty."
+            shot="contract-specialties"
+          />
           <div data-shot="contract-funding-tag" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {system ? (
-              <ReadOnlyField label="Funding tag" hint="Set by the system for the place it serves.">
-                {fundingTagId !== '' ? <span className="mono">{masters.fundingTags[fundingTagId]?.code ?? fundingTagId}</span> : 'None'}
-              </ReadOnlyField>
-            ) : (
-              <SelectField label="Funding tag" value={fundingTagId} onChange={setFundingTagId}>
-                <option value="">None</option>
-                {fundingTagsInOrder(masters.fundingTags).map((t) => (
-                  <option key={t.id} value={t.id}>{t.code}</option>
-                ))}
-              </SelectField>
-            )}
+            <SelectField label="Funding tag" value={fundingTagId} onChange={setFundingTagId}>
+              <option value="">None</option>
+              {fundingTagsInOrder(masters.fundingTags).map((t) => (
+                <option key={t.id} value={t.id}>{t.code}</option>
+              ))}
+            </SelectField>
           </div>
         </PanelGrid>
         <div data-shot="contract-placement" aria-live="polite" style={{ fontSize: 13, color: neutral.ink, background: neutral.bg, border: `1px solid ${neutral.line}`, borderRadius: radius.ctl, padding: '8px 12px' }}>
@@ -468,137 +285,65 @@ export function ContractPanel({ open, actor, contract, initialHolderId, onClose 
 
       <PanelSection title="Pricing" shot="contract-settings">
         <PanelGrid>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <Segmented label="Prepaid" value={prepaid} options={[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]} onChange={setPrepaid} disabled={editing} />
-            {editing && <FieldHint>{fixedAfterSave}</FieldHint>}
-          </div>
-          <SelectField label="Pricing kind" value={kind} onChange={(v) => setKind(v as PricingKind)} disabled={editing} {...(editing ? { hint: fixedAfterSave } : {})}>
-            {(editing && kind === 'open' ? [...CHOOSABLE_PRICING_KINDS, 'open' as const] : CHOOSABLE_PRICING_KINDS).map((k) => (
+          <Segmented label="Prepaid" value={prepaid} options={[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]} onChange={setPrepaid} />
+          <SelectField label="Pricing kind" value={kind} onChange={(v) => setKind(v as PricingKind)}>
+            {CHOOSABLE_PRICING_KINDS.map((k) => (
               <option key={k} value={k}>{PRICING_KIND_LABEL[k]}</option>
             ))}
           </SelectField>
         </PanelGrid>
-        {kind === 'rvgContractRate' && !system && (
-          <TextField label="Rate ($ per unit)" value={rate} onChange={setRate} mono />
-        )}
-        {kind === 'rvgDiscount' && !system && <TextField label="Discount (%)" value={discount} onChange={setDiscount} mono />}
+        {kind === 'rvgContractRate' && <TextField label="Rate ($ per unit)" value={rate} onChange={setRate} mono />}
+        {kind === 'rvgDiscount' && <TextField label="Discount (%)" value={discount} onChange={setDiscount} mono />}
         {rvg && (
           <Segmented
             label="Anaesthetist may override the price"
             value={override}
             options={[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]}
             onChange={setOverride}
-            disabled={system}
           />
         )}
-        {kind === 'fixed' && !editing && (
+        {kind === 'fixed' && (
           <PanelGrid>
             <TextField label="First price from" type="date" value={firstStart} onChange={setFirstStart} mono hint="May be in the past." />
             <TextField label="Price (ex GST)" value={firstPrice} onChange={setFirstPrice} mono placeholder="0.00" />
           </PanelGrid>
         )}
-        {editing && live !== undefined && live.pricing.kind === 'fixed' && <ContractPriceRanges contract={live} actor={actor} onError={setError} />}
-        {/* Catch-up Phase 39b: the Contract's fixed fees for pre-op and post-op events, beside its pricing. */}
-        {editing && live !== undefined && !system && <ContractEventFees contract={live} actor={actor} onError={setError} />}
-
       </PanelSection>
 
-      {!editing && (
-        <PanelSection title="Replaces" shot="contract-replaces">
-          <PanelGrid>
-            <SelectField label="Replaces" value={replacesId} onChange={setReplacesId} hint="Optional. The Contract this one takes over from.">
-              <option value="">Nothing</option>
-              {replaceable.holder.length > 0 && (
-                <optgroup label={holder?.name ?? 'This holder'}>
-                  {replaceable.holder.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </optgroup>
-              )}
-              <optgroup label={replaceable.holder.length > 0 ? 'Other holders' : 'Contracts'}>
-                {replaceable.other.map((c) => (
-                  <option key={c.id} value={c.id}>{`${c.name} · ${masters.parties[c.holderId]?.name ?? c.holderId}`}</option>
+      <PanelSection title="Replaces" shot="contract-replaces">
+        <PanelGrid>
+          <SelectField label="Replaces" value={replacesId} onChange={setReplacesId} hint="Optional. The Contract this one takes over from.">
+            <option value="">Nothing</option>
+            {replaceable.holder.length > 0 && (
+              <optgroup label={holder?.name ?? 'This holder'}>
+                {replaceable.holder.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </optgroup>
-            </SelectField>
-            <TextField label="From" type="date" value={replacesFrom} onChange={setReplacesFrom} mono hint="The first procedure date it covers." />
-          </PanelGrid>
-          {replaced !== undefined && replacesFrom !== '' && (
-            stillOnReplaced.length > 0 ? (
-              <StillOnNotice rows={stillOnReplaced} fromISO={replacesFrom} contractName={replaced.name} live />
-            ) : (
-              <Notice tone="neutral" shot="contract-still-on-none">
-                {`No Procedure dated on or after ${shortDay(replacesFrom)} is still on ${replaced.name}.`}
-              </Notice>
-            )
-          )}
-          <FieldHint>Nothing moves by itself, and the old Contract stays as it is: disable it when it is no longer needed.</FieldHint>
-        </PanelSection>
-      )}
+            )}
+            <optgroup label={replaceable.holder.length > 0 ? 'Other holders' : 'Contracts'}>
+              {replaceable.other.map((c) => (
+                <option key={c.id} value={c.id}>{`${c.name} · ${masters.parties[c.holderId]?.name ?? c.holderId}`}</option>
+              ))}
+            </optgroup>
+          </SelectField>
+          <TextField label="From" type="date" value={replacesFrom} onChange={setReplacesFrom} mono hint="The first procedure date it covers." />
+        </PanelGrid>
+        {replaced !== undefined && replacesFrom !== '' && (
+          stillOnReplaced.length > 0 ? (
+            <StillOnNotice rows={stillOnReplaced} fromISO={replacesFrom} contractName={replaced.name} live />
+          ) : (
+            <Notice tone="neutral" shot="contract-still-on-none">
+              {`No Procedure dated on or after ${shortDay(replacesFrom)} is still on ${replaced.name}.`}
+            </Notice>
+          )
+        )}
+        <FieldHint>Nothing moves by itself, and the old Contract stays as it is: disable it when it is no longer needed.</FieldHint>
+      </PanelSection>
 
       <FormError message={error} />
       </>
       )}
-      <CodePickerSheet
-        open={pickerOpen}
-        {...(defaultRvgGroupId !== null ? { currentId: defaultRvgGroupId } : {})}
-        rvgGroups={masters.rvgGroups}
-        onPick={(id) => {
-          setDefaultRvgGroupId(id)
-          setPickerOpen(false)
-        }}
-        onClose={() => setPickerOpen(false)}
-      />
     </MasterPanel>
-  )
-}
-
-/** "2 Procedures dated on or after Sat 1 Aug are still on Face lift. Nothing moves by itself: open each to move it." (D79) */
-function StillOnNotice({ rows, fromISO, contractName, live = false }: { rows: readonly StillOnRow[]; fromISO: string; contractName: string; live?: boolean }) {
-  const lists = useAppStore((s) => s.schedule.lists)
-  const masters = useAppStore((s) => s.masters)
-  const noticeRows: ChangeNoticeRow[] = rows.map((r) => {
-    const list = lists[r.listId]
-    return {
-      key: r.procedureId,
-      bookingId: r.bookingId,
-      dateISO: r.dateISO,
-      patientName: r.patientName,
-      cells: [shortDay(r.dateISO), list !== undefined ? listShortLabel(list, masters) : r.listId, r.procedureText ?? ''],
-    }
-  })
-  return (
-    <ContractChangeNotice
-      title={stillOnTitle(rows.length, shortDay(fromISO), contractName)}
-      columns={[{ label: 'Date', mono: true }, { label: 'List' }, { label: 'Procedure' }]}
-      rows={noticeRows}
-      shot="contract-still-on-warning"
-      rowShot="contract-still-on-row"
-      live={live}
-    >
-      {NOTHING_MOVES}
-    </ContractChangeNotice>
-  )
-}
-
-/** The fields a system Contract may change, read from the model's one list. */
-const SYSTEM_EDITABLE: ReadonlySet<string> = new Set(SYSTEM_CONTRACT_EDITABLE_FIELDS)
-
-/** A system Contract's save: only the fields `SYSTEM_CONTRACT_EDITABLE_FIELDS` names. */
-function systemPatch(values: Partial<Record<(typeof SYSTEM_CONTRACT_EDITABLE_FIELDS)[number], string>>): Partial<Contract> {
-  const patch: Partial<Contract> = {}
-  for (const k of SYSTEM_CONTRACT_EDITABLE_FIELDS) if (values[k] !== undefined) patch[k] = values[k]
-  return patch
-}
-
-function ReadOnlyField({ label, children, hint, mono }: { label: string; children: React.ReactNode; hint?: string; mono?: boolean }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <FieldLabel>{label}</FieldLabel>
-      <div className={mono === true ? 'mono' : undefined} style={{ minHeight: 48, display: 'flex', alignItems: 'center', padding: '0 14px', borderRadius: radius.ctl, background: neutral.sunken, color: neutral.slate, fontSize: 15 }}>
-        {children}
-      </div>
-      {hint !== undefined && <FieldHint>{hint}</FieldHint>}
-    </div>
   )
 }

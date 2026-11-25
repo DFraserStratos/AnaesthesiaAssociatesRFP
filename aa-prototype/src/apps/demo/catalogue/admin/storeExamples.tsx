@@ -1,7 +1,7 @@
 import { DRAFT_LIST, DRAFT_LISTS } from '../../../../shared/scheduleTerms'
 import { useMemo, useState } from 'react'
 import { neutral } from '../../../../theme/tokens'
-import { Button, FormError } from '../../../../shared'
+import { Button } from '../../../../shared'
 import { Pill, SelectField } from '../../../../shared/ui'
 import { HistorySheet } from '../../../../shared/booking'
 import { PricingSheet } from '../../../../shared/flows'
@@ -32,7 +32,7 @@ import { BookingCount, DraftStateChip, UnassignedPill, WaitingTime } from '../..
 import { AnaesthetistCandidates, NotPreferredWarning, SurgeonPicker, useNotPreferredWarning, usePairingEntries, useSuggestionKey } from '../../../admin/components/pairing'
 import { DraftListCandidates } from '../../../admin/components/pairing/DraftListCandidates'
 import { ContractPanel } from '../../../admin/flows/ContractEditSheet'
-import { ContractPriceRanges } from '../../../admin/flows/ContractPriceRanges'
+import { PriceRangesTable } from '../../../admin/screens/contracts/PriceRangesTable'
 import { SlotStatusSheet } from '../../../admin/flows/SlotStatusSheet'
 import { ReviewScreen } from '../../../admin/screens/ReviewScreen'
 import { InvoiceDocument } from '../../../admin/screens/InvoiceDocument'
@@ -236,15 +236,13 @@ export function PricingSheetExample() {
   )
 }
 
+/** Create only since build plan Phase 45: a Contract is changed on its own page. */
 export function ContractPanelExample() {
-  const { fixedContractId } = useSeedIds()
-  const contract = useAppStore((s) => (fixedContractId !== undefined ? s.masters.contracts[fixedContractId] : undefined))
-  const [open, setOpen] = useState<'edit' | 'new' | null>(null)
+  const [open, setOpen] = useState(false)
   return (
     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-      <Button variant="secondary" disabled={contract === undefined} onClick={() => setOpen('edit')}>Edit a fixed-price Contract</Button>
-      <Button variant="secondary" onClick={() => setOpen('new')}>New Contract</Button>
-      {open !== null && <ContractPanel open actor={OFFICE_ACTOR} {...(open === 'edit' && contract !== undefined ? { contract } : {})} onClose={() => setOpen(null)} />}
+      <Button variant="secondary" onClick={() => setOpen(true)}>New Contract</Button>
+      {open && <ContractPanel open actor={OFFICE_ACTOR} onClose={() => setOpen(false)} />}
     </div>
   )
 }
@@ -380,18 +378,12 @@ export function DraftListCandidatesExample() {
   )
 }
 
-export function ContractPriceRangesExample() {
+/** A fixed price's ranges on its Contract page (build plan Phase 45): newest first, To, Change, Procedures, the fold. */
+export function PriceRangesTableExample() {
   const { fixedContractId } = useSeedIds()
   const contract = useAppStore((s) => (fixedContractId !== undefined ? s.masters.contracts[fixedContractId] : undefined))
-  const [error, setError] = useState<string | null>(null)
   if (contract === undefined) return <Missing what="fixed-price Contracts" />
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ fontSize: 13, fontWeight: 600 }}>{contract.name}</div>
-      <ContractPriceRanges contract={contract} actor={OFFICE_ACTOR} onError={setError} />
-      <FormError message={error} />
-    </div>
-  )
+  return <PriceRangesTable contract={contract} actor={OFFICE_ACTOR} />
 }
 
 // ---------------------------------------------------------------------------

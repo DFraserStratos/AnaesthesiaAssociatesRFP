@@ -114,7 +114,7 @@ describe('registry shape', () => {
       if (view !== null) published['adminMasters.view'] = view
       // The colleague stand-in shows while an Assign or Reassign picker is open (catch-up Phase 32b).
       if (t.id === 'ask-colleague-make-available') published['adminPicker.listId'] = 'L-29104-2026-11-25-AM'
-      // The backdated range shows while Merivale's Face lift is open in its detail (catch-up Phase 24; the index hint says so).
+      // The backdated range shows on Merivale's Face lift page, its index path (catch-up Phase 24; a page since build plan Phase 45).
       if (t.id === 'demo-backdated-range') published['adminContracts.openContractId'] = 'CT-MER-FACELIFT'
       // The Hub's mode shows while Add a booking (or another lookup surface) is open (catch-up Phase 40a; the index hint says so).
       if (t.id === 'nhi-hub-mode') published['nhiHub.inUse'] = true
@@ -138,16 +138,18 @@ describe('registry shape', () => {
 })
 
 describe("the backdated range trigger (catch-up Phase 24)", () => {
-  it("shows on the Contracts view and on Merivale's Face lift detail; disabled once the range is added", () => {
+  it("shows on the Contract list and on Merivale's Face lift page; disabled once the range is added", () => {
     const api = createAppStore()
+    // Not on Master data any more (build plan Phase 45): the list and the pages are the Contracts section's.
     expect(ids(api, '/admin/masters', 'bar', { 'adminMasters.view': 'parties' })).not.toContain('demo-backdated-range')
-    expect(ids(api, '/admin/masters', 'bar', { 'adminMasters.view': 'contracts' })).toContain('demo-backdated-range')
-    expect(ids(api, '/admin/masters', 'bar', { 'adminContracts.openContractId': 'CT-MER-FACELIFT-1' })).not.toContain('demo-backdated-range')
-    expect(ids(api, '/admin/masters', 'bar', { 'adminContracts.openContractId': 'CT-MER-FACELIFT' })).toContain('demo-backdated-range')
+    expect(ids(api, '/admin/contracts', 'bar', { 'adminContracts.tab': 'contracts' })).toContain('demo-backdated-range')
+    expect(ids(api, '/admin/contracts/CT-MER-FACELIFT-1', 'bar', { 'adminContracts.openContractId': 'CT-MER-FACELIFT-1' })).not.toContain('demo-backdated-range')
+    expect(ids(api, '/admin/contracts/CT-MER-FACELIFT', 'bar', { 'adminContracts.openContractId': 'CT-MER-FACELIFT' })).toContain('demo-backdated-range')
     const trigger = DEMO_TRIGGERS.find((t) => t.id === 'demo-backdated-range')!
-    const result = trigger.run(api, { pathname: '/admin/masters', params: {}, published: { 'adminContracts.openContractId': 'CT-MER-FACELIFT' } })
+    expect(trigger.indexPath(api.getState())).toBe('/admin/contracts/CT-MER-FACELIFT')
+    const result = trigger.run(api, { pathname: '/admin/contracts/CT-MER-FACELIFT', params: { contractId: 'CT-MER-FACELIFT' }, published: { 'adminContracts.openContractId': 'CT-MER-FACELIFT' } })
     expect(result.ok).toBe(true)
-    expect(trigger.disabledReason(api.getState(), { pathname: '/admin/masters', params: {}, published: {} })).toBe('Already added')
+    expect(trigger.disabledReason(api.getState(), { pathname: '/admin/contracts', params: {}, published: {} })).toBe('Already added')
   })
 })
 

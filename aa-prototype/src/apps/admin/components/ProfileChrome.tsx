@@ -5,7 +5,8 @@
  * name as the title, its identifier chip beside it and the page's actions; its
  * cards are the shared `Card` and its facts `DefRow layout="stacked"` since UI
  * unification U6. `PROFILE_GRID` lays the cards across the full width.
- * Phase 26 extends the anaesthetist record on it.
+ * Phase 26 extends the anaesthetist record on it. Build plan Phase 45 puts
+ * a Contract's page on it, with routed `tabs` under the title.
  */
 
 import type { CSSProperties, ReactNode } from 'react'
@@ -20,15 +21,18 @@ export function ProfilePage({
   chip,
   sub,
   action,
+  tabs,
   children,
 }: {
   shot: string
-  /** The Master data view the record belongs to: "Anaesthetists", "Surgeons". */
+  /** Where the record is listed, named for it: "Anaesthetists", "Surgeons", "Contracts". */
   back: { label: string; to: string }
   name: string
   chip?: ReactNode
   sub?: ReactNode
   action?: ReactNode
+  /** The record's own `LineTabs` (a Contract's Overview, Bookings, Event fees and History), under the title. */
+  tabs?: ReactNode
   children: ReactNode
 }) {
   return (
@@ -40,6 +44,7 @@ export function ProfilePage({
       {...(chip !== undefined ? { aside: chip } : {})}
       {...(sub !== undefined ? { sub } : {})}
       {...(action !== undefined ? { actions: action } : {})}
+      {...(tabs !== undefined ? { tabs } : {})}
     >
       {children}
     </AdminPage>

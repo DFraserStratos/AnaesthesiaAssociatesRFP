@@ -6,7 +6,7 @@ import { officePersona } from '../../../shell/appConfig'
 import { useAppStore } from '../../../store'
 import { DRAFT_LISTS } from '../../../shared/scheduleTerms'
 
-export type NavSection = 'day' | 'intake' | 'draftLists' | 'conflicts' | 'notifications' | 'review' | 'invoices' | 'patients' | 'billing' | 'ledger' | 'masters' | 'audit'
+export type NavSection = 'day' | 'intake' | 'draftLists' | 'conflicts' | 'notifications' | 'review' | 'invoices' | 'patients' | 'billing' | 'ledger' | 'contracts' | 'masters' | 'audit'
 
 interface NavItem {
   section: NavSection
@@ -83,6 +83,8 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, conflictBadge =
     { section: 'patients', label: 'Patients', badge: patientBadge, badgeTone: 'warn' },
     { section: 'billing', label: 'Billing monitor', badge: billingBadge, badgeTone: 'warn' },
     { section: 'ledger', label: 'Ledger', badge: ledgerBadge, badgeTone: 'warn' },
+    // Contracts (build plan Phase 45; D92): its own section, between Ledger and Master data.
+    { section: 'contracts', label: 'Contracts' },
     { section: 'masters', label: 'Master data' },
     { section: 'audit', label: 'Audit' },
   ]

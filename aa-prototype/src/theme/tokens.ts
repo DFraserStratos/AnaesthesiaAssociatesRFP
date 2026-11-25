@@ -43,6 +43,8 @@ export const accent = {
   tint: '#E1F0ED',
   /** Focus ring per Design Language §01. */
   focusRing: '0 0 0 3px rgba(13,110,99,0.30)',
+  /** A card in edit: the quieter teal halo (docs/explorations/contracts-section.html #updating `.editing`; build plan Phase 45). */
+  editingRing: '0 0 0 3px rgba(13,110,99,0.14)',
 } as const
 
 /** Semantic colours with solid / tint / on-tint triples (Design Language §01). */
