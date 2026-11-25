@@ -1011,6 +1011,7 @@ footer{color:var(--mist);font-size:12.5px;padding:36px 0 48px}
         <li><strong>Group the feed by List, show the source as a mark.</strong> A hospital file is a header over its Lists; a PDF is one List. Filters, not tabs, for Needs NHI, Rooms PDFs, each hospital, Decided.</li>
         <li><strong>Two tabs only: Arrivals and Sources.</strong> Waiting for NHI and PDF lists fold in; Data quality becomes a flag; Validators goes; both buttons go, replaced by the six demo actions.</li>
         <li><strong>"Matches exactly" confirmed in bulk.</strong> It changes nothing, so it is safe to clear in one click, and it is most of a hospital file on a quiet day.</li>
+        <li><strong>Build the stub guard with it.</strong> Today a List holding only a stub reads "0 of 0", offers Mark list completed and authorises. In the rebuild, a List whose only line is a stub reads "1 waiting at intake", never complete; Mark list completed and authorise wait until the stub is resolved or rejected, with that reason shown. A List with real Bookings and a stub keeps today's rule: counted apart, never blocking. <span style="color:#9FB0AA">(BACKLOG; FT-02.6; S5 already tells it as built.)</span></li>
       </ol>
       <p style="margin-top:14px">Next, if you agree: record the rulings below with <code style="color:#fff">/update-requirements</code>, then turn them into a phase (or a run of app changes) for the rebuild.</p>
     </div>
