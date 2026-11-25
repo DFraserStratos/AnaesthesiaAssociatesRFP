@@ -41,7 +41,7 @@ export function EditableCardExample() {
 
 const RAIL_ROWS = ['Mon 30 Nov · St George\'s PM', 'Tue 1 Dec · Southern Cross AM', 'Thu 3 Dec · Forte PM', 'Mon 7 Dec · St George\'s AM', 'Wed 9 Dec · Southern Cross PM', 'Fri 11 Dec · Forte AM', 'Mon 14 Dec · St George\'s PM', 'Wed 16 Dec · Forte AM']
 
-/** A side panel's section: five of eight rows with See all 8, and an empty one. */
+/** A side panel's section: five of eight rows with See all 8, an empty one, and three of eight expanding in place (Phase 54). */
 export function RailSectionExample() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 412 }}>
@@ -54,6 +54,14 @@ export function RailSectionExample() {
         shot="catalogue-rail-section"
       />
       <RailSection title="Contracts for him" rows={[]} empty="No Contract names him." allTo="/demo/catalogue/admin" shot="catalogue-rail-empty" />
+      <RailSection
+        title="Next Lists"
+        countNoun="Lists"
+        rows={RAIL_ROWS.map((r, i) => ({ key: String(i), to: '/demo/catalogue/admin', title: r, sub: 'Mr J. Whitford' }))}
+        limit={3}
+        empty="No Lists ahead."
+        shot="catalogue-rail-in-place"
+      />
     </div>
   )
 }

@@ -38,7 +38,7 @@ import { SpecialtiesTab } from './screens/people/SpecialtiesTab'
 import { anaesthetistRecordPath, surgeonProfilePath } from './peoplePaths'
 import { patientPath } from '../../shared/patients'
 import { SurgeonProfile } from './screens/SurgeonProfile'
-import { AnaesthetistRecord } from './screens/AnaesthetistRecord'
+import { AnaesthetistPage } from './screens/AnaesthetistPage'
 import { ReviewQueue } from './screens/ReviewQueue'
 import { ConflictsScreen } from './screens/ConflictsScreen'
 import { DraftListsScreen } from './screens/DraftListsScreen'
@@ -581,7 +581,7 @@ export function AdminAnaesthetistRecordRoute() {
   const exists = useAppStore((s) => s.masters.anaesthetists[anaesthetistId] !== undefined)
   return (
     <RequireEntity exists={exists}>
-      <AnaesthetistRecord key={anaesthetistId} anaesthetistId={anaesthetistId} actor={actor} />
+      <AnaesthetistPage key={anaesthetistId} anaesthetistId={anaesthetistId} actor={actor} />
     </RequireEntity>
   )
 }

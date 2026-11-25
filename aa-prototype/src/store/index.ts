@@ -284,6 +284,8 @@ export {
   applyRecurringBookingsToCanvas,
   BANK_ACCOUNT_INVALID,
   UNIT_VALUE_INVALID,
+  ANAESTHETIST_HPI_CPN_REQUIRED,
+  BANK_ACCOUNT_REQUIRED,
   type AnaesthetistPatch,
   type HospitalPatch,
   type NewAnaesthetistFields,

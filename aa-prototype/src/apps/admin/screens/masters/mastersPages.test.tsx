@@ -80,13 +80,11 @@ describe('Master data views', () => {
     expect(within(souter).getByText('Tier 1')).toBeInTheDocument()
   })
 
-  it('a row opens the record; its Edit link opens the sheet instead', () => {
+  it('a row opens the record, and has no Edit of its own (build plan Phase 54)', () => {
     renderAdmin('/admin/people/anaesthetists')
     const souter = document.querySelector(`tr[data-anaesthetist="${ANAE.souter}"]`) as HTMLElement
-    fireEvent.click(within(souter).getByRole('button', { name: 'Edit' }))
-    expect(location()).toBe('/admin/people/anaesthetists')
-    expect(screen.getByRole('link', { name: 'Open record' })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('link', { name: 'Open record' }))
+    expect(within(souter).queryByRole('button', { name: 'Edit' })).toBeNull()
+    fireEvent.click(within(souter).getByRole('link', { name: 'Dr Melanie Souter' }))
     expect(location()).toBe(`/admin/people/anaesthetists/${ANAE.souter}`)
 
     const sharma = renderAdmin('/admin/people/anaesthetists')
@@ -200,7 +198,8 @@ describe('the surgeon profile and the anaesthetist record', () => {
     fireEvent.click(within(preferred).getByRole('button', { name: /^End / }))
     fireEvent.change(screen.getByLabelText('Why it ended (optional)'), { target: { value: 'Rooms moved' } })
     fireEvent.click(screen.getByRole('button', { name: 'End pairing' }))
-    expect(screen.getByText('None recorded.')).toBeInTheDocument()
+    // The side panel shows only the groups that hold an active entry (build plan Phase 54).
+    expect(document.querySelector('[data-pairing-group="PREFERRED"]')).toBeNull()
     const ended = document.querySelector('[data-shot="pairing-ended"]') as HTMLElement
     expect(within(ended).getByText('Mr J. Whitford prefers to work with Dr Priya Sharma')).toBeInTheDocument()
     expect(within(ended).getByText(/Rooms moved/)).toBeInTheDocument()
@@ -225,13 +224,14 @@ describe('the surgeon profile and the anaesthetist record', () => {
     expect(within(dialog).getAllByText(/Mr J\. Whitford prefers to work with Dr Priya Sharma/).length).toBeGreaterThan(0)
   })
 
-  it('the rate and tier card sets the tier on Save, says it is office only, and Profile no longer lists the rate', () => {
+  it('the rate and tier card sets the tier on Save, says it is office only, and no other card lists the rate', () => {
     renderAdmin(`/admin/people/anaesthetists/${ANAE.sharma}`)
     expect(document.querySelector('[data-shot="tier-card"]')).toBeNull()
     const card = document.querySelector('[data-shot="rate-tier-card"]') as HTMLElement
     expect(within(card).getByText('· office only')).toBeInTheDocument()
-    const profile = document.querySelector('[data-shot="anaesthetist-details"]') as HTMLElement
-    expect(within(profile).queryByText('Rate per unit')).toBeNull()
+    for (const other of ['anaesthetist-identity', 'anaesthetist-contact', 'anaesthetist-bank']) {
+      expect(within(document.querySelector(`[data-shot="${other}"]`) as HTMLElement).queryByText(/Rate per unit/)).toBeNull()
+    }
     fireEvent.click(within(card).getByRole('button', { name: 'Edit rate and tier' }))
     expect(within(card).getByText('Orders suggestions when the office assigns or moves a List. Never shown to anaesthetists.')).toBeInTheDocument()
     // OQ-102 answered (D36): no provisional line (catch-up Phase 25a).
@@ -262,33 +262,34 @@ describe('the surgeon profile and the anaesthetist record', () => {
     expect(screen.getByText('No anaesthetists match.')).toBeInTheDocument()
   })
 
-  it('Edit details has no rate field, and saving leaves the rate as it was', () => {
+  it('the Contact card has no rate field, and saving it leaves the rate as it was (build plan Phase 54)', () => {
     renderAdmin(`/admin/people/anaesthetists/${ANAE.ropata}`)
     const before = useAppStore.getState().masters.anaesthetists[ANAE.ropata]!.unitValue
-    fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
-    const sheet = document.querySelector('[data-shot="edit-anaesthetist-sheet"]') as HTMLElement
-    expect(within(sheet).queryByLabelText(/Rate per unit/)).toBeNull()
-    fireEvent.change(within(sheet).getByLabelText('Phone'), { target: { value: '021 555 0101' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    const card = document.querySelector('[data-shot="anaesthetist-contact"]') as HTMLElement
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit contact' }))
+    expect(within(card).queryByLabelText(/Rate per unit/)).toBeNull()
+    fireEvent.change(within(card).getByLabelText('Phone'), { target: { value: '021 555 0101' } })
+    fireEvent.click(within(card).getByRole('button', { name: 'Save' }))
     const after = useAppStore.getState().masters.anaesthetists[ANAE.ropata]!
     expect(after.phone).toBe('021 555 0101')
     expect(after.unitValue).toBe(before)
     expect(useAppStore.getState().audit.at(-1)?.after).not.toHaveProperty('unitValue')
   })
 
-  it("Edit details edits the HPI CPN (normalised), and an unrelated save sends no HPI CPN", () => {
+  it('the Identity card edits the HPI CPN (normalised), and a save with no change sends no HPI CPN', () => {
     renderAdmin(`/admin/people/anaesthetists/${ANAE.ropata}`)
-    fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
-    expect(screen.queryByRole('link', { name: 'Open record' })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
-    expect(useAppStore.getState().audit.at(-1)?.after).not.toHaveProperty('hpiId')
+    const card = () => document.querySelector('[data-shot="anaesthetist-identity"]') as HTMLElement
+    const auditBefore = useAppStore.getState().audit.length
+    fireEvent.click(within(card()).getByRole('button', { name: 'Edit identity' }))
+    fireEvent.click(within(card()).getByRole('button', { name: 'Save' }))
+    expect(useAppStore.getState().audit.length).toBe(auditBefore)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
-    fireEvent.change(screen.getByLabelText('HPI CPN (required)'), { target: { value: '47reia' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('Ms A. Reid')
-    fireEvent.change(screen.getByLabelText('HPI CPN (required)'), { target: { value: '60ropx' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    fireEvent.click(within(card()).getByRole('button', { name: 'Edit identity' }))
+    fireEvent.change(within(card()).getByLabelText('HPI CPN (required)'), { target: { value: '47reia' } })
+    fireEvent.click(within(card()).getByRole('button', { name: 'Save' }))
+    expect(within(card()).getByRole('alert')).toHaveTextContent('Ms A. Reid')
+    fireEvent.change(within(card()).getByLabelText('HPI CPN (required)'), { target: { value: '60ropx' } })
+    fireEvent.click(within(card()).getByRole('button', { name: 'Save' }))
     expect(useAppStore.getState().masters.anaesthetists[ANAE.ropata]?.hpiId).toBe('60ROPX')
   })
 })

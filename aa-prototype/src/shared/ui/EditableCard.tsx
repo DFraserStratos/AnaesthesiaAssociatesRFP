@@ -57,11 +57,16 @@ export interface EditableCardProps extends DataAttributes {
   error: string | null
   /** The card's frame (a record page passes its profile card style). */
   style?: CSSProperties
+  /**
+   * Why Save is held back (build plan Phase 54: a mandatory field left blank), shown under the
+   * button in the rule's own words. Default none: Save is always enabled, as before.
+   */
+  saveDisabledReason?: string | null
   children: ReactNode
 }
 
 /** A card with Edit in its heading where `editable`, its form and footer while in edit, its refusal under it. */
-export function EditableCard({ title, shot, editable, editing, onEdit, onCancel, onSave, error, style, children, ...data }: EditableCardProps) {
+export function EditableCard({ title, shot, editable, editing, onEdit, onCancel, onSave, error, style, saveDisabledReason = null, children, ...data }: EditableCardProps) {
   return (
     <Card
       {...data}
@@ -75,7 +80,15 @@ export function EditableCard({ title, shot, editable, editing, onEdit, onCancel,
             footer: (
               <>
                 <Button variant="secondary" size="compact" onClick={onCancel} shot={`${shot}-cancel`}>Cancel</Button>
-                <Button variant="primary" size="compact" onClick={onSave} shot={`${shot}-save`}>Save</Button>
+                <Button
+                  variant="primary"
+                  size="compact"
+                  onClick={onSave}
+                  shot={`${shot}-save`}
+                  {...(saveDisabledReason !== null ? { disabled: true, disabledReason: saveDisabledReason } : {})}
+                >
+                  Save
+                </Button>
               </>
             ),
           }

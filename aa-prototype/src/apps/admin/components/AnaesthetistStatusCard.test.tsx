@@ -123,12 +123,15 @@ describe('the anaesthetist record (Phase 52)', () => {
     expect(useAppStore.getState().masters.contracts[RHINO]!.status).toBe('disabled')
   })
 
-  it('the edit sheet has no Status control', () => {
+  it('only the Status card sets the status: no all-fields editor, and no other card offers it (build plan Phase 54)', () => {
     renderAt(`/admin/people/anaesthetists/${BEAU}`)
-    fireEvent.click(screen.getByRole('button', { name: /Edit details/ }))
-    const sheet = document.querySelector('[data-shot="edit-anaesthetist-sheet"]') as HTMLElement
-    expect(within(sheet).queryByText('Status')).toBeNull()
-    expect(within(sheet).queryByText('Inactive')).toBeNull()
+    expect(screen.queryByRole('button', { name: /Edit details/ })).toBeNull()
+    for (const shot of ['anaesthetist-identity', 'anaesthetist-contact', 'anaesthetist-bank']) {
+      const card = document.querySelector(`[data-shot="${shot}"]`) as HTMLElement
+      fireEvent.click(within(card).getByRole('button', { name: /^Edit / }))
+      expect(within(card).queryByText('Status')).toBeNull()
+      expect(within(card).queryByText('Inactive')).toBeNull()
+    }
   })
 
   it('the Anaesthetists list reads Active, Inactive from a day, and Inactive', () => {

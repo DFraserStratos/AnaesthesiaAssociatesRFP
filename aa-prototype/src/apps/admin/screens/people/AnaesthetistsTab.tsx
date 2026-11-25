@@ -7,14 +7,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { TIER_LABELS, TIER_VALUES, tierFor } from '../../../../domain/pairingPreferences'
 import { useAppStore, useToday, type Actor } from '../../../../store'
 import { statusOn } from '../../../../domain/anaesthetistStatus'
-import { EditAnaesthetistSheet } from '../../flows/EditAnaesthetistSheet'
 import { AddAnaesthetistFlow } from '../../flows/AddAnaesthetistFlow'
 import { TierPill, usePriorityTiers } from '../../components/pairing'
 import { ClickableRow } from '../../../../shared/table'
 import { Button, EmptyState, FilterPills, NameSearchBox, TextAction } from '../../../../shared/ui'
 import { PageBody, PageToolbar } from '../../components/AdminPage'
 import { Pager, pageOf, pageParam, pageWindow } from '../../components/Pager'
-import { EditCell, MasterTable, type MasterColumn } from '../masters/chrome'
+import { MasterTable, type MasterColumn } from '../masters/chrome'
 import { rowCellStyle } from '../masters/tableStyles'
 import { SEEDED_SUBTITLE } from '../masters/masterViews'
 import { anaesthetistRecordPath } from '../../peoplePaths'
@@ -38,7 +37,6 @@ const COLUMNS: readonly MasterColumn[] = [
   'Bank account · GST',
   'Email · phone',
   'Start date',
-  '',
 ]
 
 const STATUS_OPTIONS: readonly { value: AnaesthetistStatusFilter; label: string }[] = [
@@ -60,15 +58,15 @@ function parseStatus(value: string): AnaesthetistStatusFilter {
  * People · Anaesthetists (build plan Phase 53, from Master data; catch-up Phases 17 and 26, build plan
  * Phases 50 and 52): searched by name, registration number or HPI CPN, Active, Inactive or All on the
  * demo clock's today (`isActiveOn`), filtered by tier (office only), in surname order, 50 a page. A
- * row opens the anaesthetist's page. The row's "Edit" link and "Add anaesthetist" keep their names:
- * the catalogue's capture recipes click them.
+ * row opens the anaesthetist's page, where each card is edited on its own (build plan Phase 54: the
+ * row's Edit and its all-fields sheet are gone). "Add anaesthetist" keeps its name: the catalogue's
+ * capture recipes click it.
  */
 export function AnaesthetistsTab({ actor }: { actor: Actor }) {
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const tiers = usePriorityTiers()
   const todayISO = useToday()
   const navigate = useNavigate()
-  const [editId, setEditId] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const list = usePeopleListParams(DEFAULTS)
   const q = list.get('q')
@@ -82,7 +80,6 @@ export function AnaesthetistsTab({ actor }: { actor: Actor }) {
   const shown = pageOf(rows, PEOPLE_PAGE_SIZE, pages.page)
   const tierLabel = TIER_FILTER_OPTIONS.find((o) => o.value === tier && o.value !== 'all')?.label
   const narrowed = q.trim() !== '' || status !== 'active' || tier !== 'all'
-  const editing = editId !== null ? anaesthetists[editId] : undefined
 
   return (
     <PeoplePage
@@ -125,7 +122,6 @@ export function AnaesthetistsTab({ actor }: { actor: Actor }) {
         ) : (
           <MasterTable
             columns={COLUMNS}
-            rightAlign={[7]}
             shot="masters-anaesthetists"
             label="Anaesthetists"
             {...(pages.pages > 1 ? { footer: <Pager total={rows.length} size={PEOPLE_PAGE_SIZE} page={pages.page} onPage={(p) => list.set({ page: String(p) })} lead="Anaesthetists" shot="people-pager" /> } : {})}
@@ -169,16 +165,12 @@ export function AnaesthetistsTab({ actor }: { actor: Actor }) {
                       {anaesthetistStatusLabel(st)}
                     </div>
                   </td>
-                  <EditCell onClick={() => setEditId(a.registrationNumber)} style={rowCellStyle} />
                 </ClickableRow>
               )
             })}
           </MasterTable>
         )}
       </PageBody>
-      {editing !== undefined && (
-        <EditAnaesthetistSheet open anaesthetist={editing} actor={actor} onClose={() => setEditId(null)} />
-      )}
       <AddAnaesthetistFlow open={adding} actor={actor} onClose={() => setAdding(false)} />
     </PeoplePage>
   )

@@ -3,8 +3,8 @@
  * all with the whole count, the empty line, and the rows' hooks.
  */
 
-import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { RailSection, type RailSectionRow } from './RailSection'
 
@@ -40,5 +40,39 @@ describe('RailSection', () => {
     expect(screen.getByText('None booked.')).toBeInTheDocument()
     expect(container.querySelector('li')).toBeNull()
     expect(container.querySelector('[data-shot="t-rail"]')?.textContent).toContain('0')
+  })
+
+  it('with no allTo, See all expands the section in place to every row, then Show fewer (Phase 54)', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <RailSection title="Next Lists" rows={rows(8)} limit={3} empty="None." shot="t-rail" />
+      </MemoryRouter>,
+    )
+    expect(container.querySelectorAll('li')).toHaveLength(3)
+    const all = container.querySelector('[data-shot="t-rail-all"]') as HTMLButtonElement
+    expect(all.tagName).toBe('BUTTON')
+    expect(all.textContent).toBe('See all 8')
+    fireEvent.click(all)
+    expect(container.querySelectorAll('li')).toHaveLength(8)
+    expect(container.querySelector('[data-shot="t-rail-all"]')).toBeNull()
+    fireEvent.click(container.querySelector('[data-shot="t-rail-fewer"]') as HTMLButtonElement)
+    expect(container.querySelectorAll('li')).toHaveLength(3)
+  })
+
+  it("carries a row's router state on its link (Phase 54)", () => {
+    function Where() {
+      const location = useLocation()
+      return <div data-testid="state">{JSON.stringify(location.state)}</div>
+    }
+    render(
+      <MemoryRouter initialEntries={['/x']}>
+        <Routes>
+          <Route path="/x" element={<RailSection title="Next Lists" rows={[{ key: 'a', to: '/day', title: 'Open it', sub: 'AM', state: { openListId: 'L1' } }]} empty="None." shot="t-rail" />} />
+          <Route path="/day" element={<Where />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    fireEvent.click(screen.getByRole('link', { name: 'Open it' }))
+    expect(screen.getByTestId('state').textContent).toBe('{"openListId":"L1"}')
   })
 })

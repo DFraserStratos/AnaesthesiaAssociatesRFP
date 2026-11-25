@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import { Button, TextField } from '../../../shared'
 import { INACTIVE_REASON_LABELS, statusOn } from '../../../domain/anaesthetistStatus'
 import { anaesthetistStatusLabel, plainDate } from '../../../shared/format'
 import { Card, DefList, DefRow, FieldHint, FormError, Pill, TextAction } from '../../../shared/ui'
-import { clearLastDay, useAppStore, useToday, type Actor } from '../../../store'
+import { clearLastDay, editAnaesthetist, useAppStore, useToday, type Actor } from '../../../store'
 import { MakeActiveSheet } from '../flows/MakeActiveSheet'
 import { MakeInactiveSheet } from '../flows/MakeInactiveSheet'
 import { PROFILE_CARD } from './ProfileChrome'
@@ -24,14 +25,35 @@ const FACTS = { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))
  *
  * Hooks: `anaesthetist-status` (`data-status`), `anaesthetist-make-inactive`,
  * `anaesthetist-clear-last-day`, `anaesthetist-make-active`, `anaesthetist-status-error`.
+ *
+ * Build plan Phase 54 (the anaesthetist's page): `editStartDate` (default off)
+ * shows the start date, read as "Active from" while it is the day they became
+ * active, with Change start date: a date field, Cancel and Save, saving
+ * `{ startDateISO }` alone (one audited change; the store's Slot rule refuses a
+ * date that removes a session holding a List, shown here). Hooks
+ * `anaesthetist-start-date`, `-change`, `-field`, `-cancel`, `-save`.
  */
-export function AnaesthetistStatusCard({ anaesthetistId, actor }: { anaesthetistId: string; actor: Actor }) {
+export function AnaesthetistStatusCard({ anaesthetistId, actor, editStartDate = false }: { anaesthetistId: string; actor: Actor; editStartDate?: boolean }) {
   const anaesthetist = useAppStore((s) => s.masters.anaesthetists[anaesthetistId])
   const todayISO = useToday()
   const [sheet, setSheet] = useState<'inactive' | 'active' | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [startDraft, setStartDraft] = useState<string | null>(null)
   if (anaesthetist === undefined) return null
   const status = statusOn(anaesthetist, todayISO)
+  // The start date, where it is shown: on the "Active from" row while it is the day they became active, else its own row.
+  const startOnActiveRow = editStartDate && status.kind === 'active' && status.sinceISO === anaesthetist.startDateISO
+
+  function saveStartDate() {
+    if (startDraft === null) return
+    const outcome = editAnaesthetist(useAppStore, actor, anaesthetistId, { startDateISO: startDraft })
+    if (!outcome.ok) {
+      setError(outcome.message)
+      return
+    }
+    setStartDraft(null)
+    setError(null)
+  }
 
   function clear() {
     const outcome = clearLastDay(useAppStore, actor, anaesthetistId)
@@ -58,9 +80,12 @@ export function AnaesthetistStatusCard({ anaesthetistId, actor }: { anaesthetist
         {status.kind === 'leaving' ? (
           <DefRow layout="stacked" label="Last day" mono>{plainDate(status.lastDayISO)}</DefRow>
         ) : (
-          <DefRow layout="stacked" label={status.kind === 'active' ? 'Active since' : 'Inactive since'} mono>
+          <DefRow layout="stacked" label={startOnActiveRow ? 'Active from' : status.kind === 'active' ? 'Active since' : 'Inactive since'} mono {...(startOnActiveRow ? { shot: 'anaesthetist-start-date' } : {})}>
             {plainDate(status.sinceISO)}
           </DefRow>
+        )}
+        {editStartDate && !startOnActiveRow && (
+          <DefRow layout="stacked" label="Start date" mono shot="anaesthetist-start-date">{plainDate(anaesthetist.startDateISO)}</DefRow>
         )}
         {status.kind !== 'active' && status.reason !== null && (
           <DefRow layout="stacked" label="Reason">{INACTIVE_REASON_LABELS[status.reason]}</DefRow>
@@ -69,6 +94,27 @@ export function AnaesthetistStatusCard({ anaesthetistId, actor }: { anaesthetist
       {status.kind === 'leaving' && (
         <FieldHint tone="slate">Until then nothing changes. After it they have no sessions and cannot sign in, and their own Contracts are disabled.</FieldHint>
       )}
+      {editStartDate &&
+        (startDraft === null ? (
+          <div>
+            <TextAction size="sm" flush onClick={() => { setStartDraft(anaesthetist.startDateISO); setError(null) }} shot="anaesthetist-start-date-change">Change start date</TextAction>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <TextField
+              label="Start date"
+              type="date"
+              value={startDraft}
+              onChange={setStartDraft}
+              hint="Sessions are created from this date to the end of the schedule horizon."
+              shot="anaesthetist-start-date-field"
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <Button variant="secondary" size="compact" onClick={() => { setStartDraft(null); setError(null) }} shot="anaesthetist-start-date-cancel">Cancel</Button>
+              <Button variant="primary" size="compact" onClick={saveStartDate} shot="anaesthetist-start-date-save">Save</Button>
+            </div>
+          </div>
+        ))}
       <FormError message={error} shot="anaesthetist-status-error" />
       {sheet === 'inactive' && <MakeInactiveSheet open anaesthetistId={anaesthetistId} actor={actor} onClose={() => setSheet(null)} />}
       {sheet === 'active' && <MakeActiveSheet open anaesthetistId={anaesthetistId} actor={actor} onClose={() => setSheet(null)} />}
