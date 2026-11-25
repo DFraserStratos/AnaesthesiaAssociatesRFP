@@ -668,6 +668,7 @@ Run in Lane A, Wave 5 (`docs/build-plan/LANES.md`; D113): quick checks only, no 
 - Rail: five oldest awaiting Lists, "See all N" to the Review queue; the Xero notice is amber.
 - Booking rows open the Booking on its Day (the monitor's rows opened nothing).
 - Wording now misleading, left as it was: the Review banner's "Add one and send it from the invoice".
+
 ### Phase 62 · The Invoices tab (2026-11-26)
 
 Run in Lane B, Wave 5 (`docs/build-plan/LANES.md`; D113): quick checks only, no review, screen-proof, checklist run or plan page; Wave 5's join reviews and gates 58 to 67 together. One session. Lane commit `62 complete:` on `lane/b`.
