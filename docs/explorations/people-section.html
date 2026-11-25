@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>People Section Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Tokens: the app's own (aa-prototype/src/theme/tokens.ts), so the mocks read as the app. */
+:root{
+  --ink:#172320;--slate:#58635F;--mist:#8A9490;--lineStrong:#C9D1CE;--line:#E2E7E5;--sunken:#EDF1EF;--bg:#F6F8F7;--surface:#FFFFFF;--grid:#F1F4F2;
+  --brand:#A91E3E;--brandDeep:#8C1533;--brandTint:#F7E7EC;--brandMuted:#D89AA9;
+  --teal:#0D6E63;--tealHover:#0A5A51;--tealTint:#E1F0ED;
+  --ok:#1E8E5A;--okTint:#E3F4EB;--okOn:#157A49;
+  --warn:#A16207;--warnTint:#F9F0DC;--warnOn:#7C4D08;
+  --err:#C2403C;--errTint:#FAE9E7;--errOn:#9C332F;
+  --e1:0 1px 2px rgba(23,35,32,.05),0 2px 6px rgba(23,35,32,.05);
+  --e2:0 2px 4px rgba(23,35,32,.06),0 8px 20px rgba(23,35,32,.09);
+  --e3:0 8px 16px rgba(23,35,32,.10),0 24px 56px rgba(23,35,32,.18);
+  --r-xs:6px;--r-sm:8px;--r-ctl:10px;--r-md:12px;--r-card:14px;--r-lg:16px;--r-panel:20px;
+  --shadow:0 1px 2px rgba(23,35,32,.06),0 4px 14px rgba(23,35,32,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:"Spline Sans Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+a{color:var(--teal)}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1560px;margin:0 auto;padding:0 32px}
+h1,h2,h3,h4,p{margin:0}
+h2{font-size:24px;line-height:30px;letter-spacing:-.005em;margin-bottom:6px}
+h3{font-size:19px;line-height:25px;margin-bottom:4px}
+.sub{color:var(--slate);margin:0 0 20px;max-width:74ch}
+section{padding:48px 0 8px}
+
+/* ===== hero ===== */
+header.top{background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{padding-top:40px;padding-bottom:36px}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:56px;align-items:start}
+.kicker{font-size:14px;color:var(--slate)}
+.hero h1{font-size:50px;line-height:1.06;letter-spacing:-.025em;margin:14px 0 18px;font-weight:800;max-width:17ch}
+.hero h1 span{display:block;color:var(--slate);font-weight:700}
+.lede{font-size:17px;color:var(--slate);max-width:62ch}
+.lede+.lede{margin-top:12px}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px;max-width:720px}
+.toc a{font-size:13px;font-weight:600;text-decoration:none;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:6px 11px;border-radius:999px}
+.toc a:hover{border-color:var(--teal);color:var(--teal)}
+.toc a .tn{color:var(--mist);margin-right:6px;font-variant-numeric:tabular-nums}
+.navpair{display:flex;gap:20px;align-items:flex-start}
+.navpair figure{margin:0}
+.navpair figcaption{font-size:13px;font-weight:600;color:var(--slate);margin:0 0 10px}
+.navpair .arrow{align-self:center;color:var(--mist);font-size:22px;padding-top:24px}
+
+/* ===== side nav, as SideNav.tsx draws it ===== */
+.mnav{background:var(--ink);display:flex;flex-direction:column;padding:20px 12px;gap:2px;width:216px;flex:none}
+.mnav .logo{display:flex;flex-direction:column;gap:5px;padding:0 8px 18px}
+.mnav .logo b{color:#fff;font-family:Georgia,"Times New Roman",serif;font-weight:400;font-size:15px;letter-spacing:.01em}
+.mnav .logo small{font-size:9px;font-weight:600;letter-spacing:.14em;color:var(--brandMuted);padding-left:2px}
+.mnav .it{display:flex;justify-content:space-between;align-items:center;color:rgba(255,255,255,.9);font-size:13.5px;font-weight:500;padding:9px 12px;border-radius:9px;white-space:nowrap}
+.mnav .it.on{background:rgba(255,255,255,.08);color:#fff;font-weight:600;box-shadow:inset 3px 0 0 var(--brand)}
+.mnav .it.new{outline:1.5px dashed rgba(216,154,169,.7);outline-offset:-1px}
+.mnav .it em{font-style:normal;font-size:11px;font-weight:700;background:var(--warn);color:#fff;border-radius:999px;padding:0 7px;line-height:18px}
+.mnav .it em.c{background:var(--brand)}
+.mnav .me{margin-top:auto;display:flex;align-items:center;gap:10px;padding:8px;color:#fff;font-size:13px;font-weight:600}
+.mnav .me i{width:30px;height:30px;border-radius:50%;background:var(--brandTint);color:var(--brand);font-style:normal;font-size:11px;font-weight:700;display:grid;place-items:center}
+.mnav .me span{display:block;font-size:11.5px;font-weight:400;color:rgba(255,255,255,.55)}
+.mnav.short{min-height:0;padding-bottom:14px}
+.subnav{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 10px;width:190px;font-size:13px}
+.subnav .g{font-size:11px;font-weight:700;color:var(--mist);padding:8px 8px 4px}
+.subnav .s{padding:5px 8px;border-radius:7px;color:var(--slate)}
+.subnav .s.on{background:var(--tealTint);color:var(--teal);font-weight:600}
+.nowstack{display:flex;gap:10px;align-items:flex-start}
+.clicks{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--warnOn);background:var(--warnTint);border-radius:999px;padding:2px 9px;margin-left:6px}
+.clicks.ok{color:var(--okOn);background:var(--okTint)}
+
+/* ===== why diagram ===== */
+.why{display:grid;grid-template-columns:1fr 340px 1fr;gap:0;align-items:center;background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:28px}
+.why .col{display:flex;flex-direction:column;gap:8px}
+.why .colh{font-size:14px;font-weight:700;margin-bottom:4px}
+.why .colh span{display:block;font-size:13px;font-weight:400;color:var(--slate)}
+.why .in,.why .out{background:var(--bg);border-radius:10px;padding:9px 12px;font-size:13.5px;position:relative}
+.why .in b,.why .out b{font-weight:600}
+.why .in small,.why .out small{display:block;color:var(--slate);font-size:12.5px;line-height:17px}
+.why .in{margin-right:28px}
+.why .in::after{content:"";position:absolute;right:-28px;top:50%;width:28px;border-top:1.5px solid var(--lineStrong)}
+.why .out{margin-left:28px}
+.why .out::before{content:"";position:absolute;left:-28px;top:50%;width:28px;border-top:1.5px solid var(--lineStrong)}
+.hub{background:var(--ink);color:#fff;border-radius:var(--r-panel);padding:22px;box-shadow:var(--e2);position:relative}
+.hub .code{display:inline-block;font-family:"Spline Sans Mono",monospace;font-size:12px;background:rgba(255,255,255,.1);border-radius:6px;padding:2px 8px}
+.hub h4{font-size:21px;line-height:26px;margin:10px 0 4px}
+.hub p{font-size:13px;color:#C8D2CE;line-height:19px}
+.hub dl{margin:14px 0 0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px}
+.hub dt{color:#9FB0AA}
+.hub dd{margin:0;font-weight:600}
+.hub .foot{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.12);font-size:12.5px;color:#C8D2CE}
+
+/* ===== tables in the explainer ===== */
+.invtable{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow);font-size:13.5px}
+.invtable th{text-align:left;font-size:12.5px;color:var(--mist);font-weight:700;padding:10px 14px;border-bottom:1px solid var(--line)}
+.invtable td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.invtable tr:last-child td{border-bottom:none}
+.invtable td:first-child{font-weight:600;width:230px}
+.invtable .gap td:first-child{color:var(--errOn)}
+.storyid{font-family:"Spline Sans Mono",monospace;font-size:11.5px;color:var(--mist);white-space:nowrap}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.twocol h3{font-size:16px;margin:0 0 10px}
+
+/* ===== idea blocks ===== */
+.idea{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);margin:0 0 32px;overflow:hidden}
+.idea-head{display:flex;align-items:flex-start;gap:16px;padding:24px 28px 0}
+.num{flex:none;min-width:30px;color:var(--mist);font-weight:700;font-size:19px;line-height:25px;font-variant-numeric:tabular-nums}
+.idea-head p{margin:4px 0 0;color:var(--slate);max-width:84ch}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.tag{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--slate);background:var(--bg)}
+.tag.fit{background:var(--okTint);color:var(--okOn);border-color:transparent}
+.tag.edit{background:var(--warnTint);color:var(--warnOn);border-color:transparent}
+.tag.rule{background:var(--errTint);color:var(--errOn);border-color:transparent}
+.tag.pick{background:var(--ink);color:#fff;border-color:transparent}
+.idea-body{display:flex;flex-direction:column;gap:22px;padding:22px 28px 28px}
+.notes{display:grid;grid-template-columns:1fr 1fr 1.15fr;column-gap:28px;align-items:start}
+.notes h4{font-size:14px;margin:0 0 6px}
+.notes ul{margin:0;padding-left:18px;font-size:14.5px}
+.notes li{margin:0 0 5px}
+.notes .req{font-size:14px;background:var(--bg);border-radius:var(--r-ctl);padding:12px 14px}
+.notes .req p{margin:0 0 6px}.notes .req p:last-child{margin:0}
+.mock-cap{font-size:13px;font-weight:600;color:var(--slate);margin:0 0 8px}
+.mockwrap{border:1px solid var(--line);border-radius:var(--r-card);overflow-x:auto;background:var(--bg)}
+.frame{display:flex;min-width:1440px;min-height:760px;font-size:13px}
+.page{flex:1;min-width:0;padding:22px 28px 28px;display:flex;flex-direction:column;gap:14px}
+.page.withrail{display:grid;grid-template-columns:minmax(0,1fr) 412px;gap:20px;align-items:start}
+.page.withrail>.head,.page.withrail>.tabsrow{grid-column:1/-1}
+.maincol,.railcol{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+/* ===== app parts, drawn at the app's sizes ===== */
+.head{display:flex;align-items:flex-start;gap:12px}
+.head .t{flex:1;min-width:0}
+.head .t b{display:block;font-size:24px;line-height:30px;font-weight:700;letter-spacing:-.01em}
+.head .t small{display:block;font-size:13px;color:var(--slate);margin-top:2px}
+.back{font-size:13px;font-weight:600;color:var(--teal);margin-bottom:6px;display:inline-block}
+.btn{height:36px;padding:0 14px;border-radius:var(--r-ctl);display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;white-space:nowrap;border:1px solid transparent}
+.btn.lg{height:44px;padding:0 18px;font-size:14px}
+.btn.pri{background:var(--teal);color:#fff}
+.btn.sec{background:var(--surface);border-color:var(--lineStrong);color:var(--ink)}
+.btn.ghost{color:var(--teal);padding:0 4px}
+.txt{font-size:12.5px;font-weight:700;color:var(--teal);white-space:nowrap}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.search{height:36px;flex:1 1 280px;max-width:420px;border:1px solid var(--line);background:var(--surface);border-radius:999px;display:flex;align-items:center;gap:8px;padding:0 14px;color:var(--mist);font-size:13px}
+.search svg{flex:none}
+.sel{height:36px;padding:0 12px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-ctl);display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--ink);white-space:nowrap}
+.sel::after{content:"";width:6px;height:6px;border-right:1.5px solid var(--slate);border-bottom:1.5px solid var(--slate);transform:rotate(45deg) translateY(-2px);margin-left:2px}
+.seg{display:inline-flex;background:var(--sunken);border-radius:9px;padding:3px;font-size:12.5px;font-weight:600}
+.seg span{text-align:center;padding:5px 12px;border-radius:7px;color:var(--slate)}
+.seg span.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(23,35,32,.2)}
+.count{font-size:12.5px;color:var(--slate)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tab{font-size:14px;font-weight:500;color:var(--slate);padding:6px 10px 9px;border-bottom:2px solid transparent;display:flex;gap:6px;align-items:center;white-space:nowrap;margin-bottom:-1px}
+.tab.on{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
+.cnt{font-family:"Spline Sans Mono",monospace;font-size:11px;font-weight:600;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--sunken);color:var(--slate);display:inline-grid;place-items:center}
+.cnt.w{background:var(--warnTint);color:var(--warnOn)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--sunken);color:var(--slate);white-space:nowrap;line-height:17px}
+.pill.ok{background:var(--okTint);color:var(--okOn)}
+.pill.warn{background:var(--warnTint);color:var(--warnOn)}
+.pill.err{background:var(--errTint);color:var(--errOn)}
+.pill.line{background:var(--surface);box-shadow:inset 0 0 0 1px var(--lineStrong);color:var(--ink)}
+.pill.code{font-family:"Spline Sans Mono",monospace;font-size:11px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--e1)}
+.card.pad{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.ch{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:14px}
+.ch .l{display:flex;align-items:center;gap:8px}
+.ch small{font-weight:500;font-size:12px;color:var(--mist)}
+.row{background:var(--bg);border-radius:var(--r-sm);padding:10px 12px;display:flex;flex-direction:column;gap:3px;position:relative}
+.row.edge{box-shadow:inset 3px 0 0 var(--warn)}
+.row.edge-e{box-shadow:inset 3px 0 0 var(--err)}
+.row.edge-t{box-shadow:inset 3px 0 0 var(--teal)}
+.row .t{font-weight:600;font-size:12.5px;line-height:17px}
+.row .s{font-size:11.5px;line-height:15px;color:var(--slate)}
+.row .acts{display:flex;gap:12px;margin-top:4px}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:9px 14px;font-size:13px}
+.kv dt{color:var(--slate)}
+.kv dd{margin:0;font-weight:500}
+.chipline{display:flex;gap:6px;flex-wrap:wrap}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl thead th{position:sticky;top:0;background:var(--bg);text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mist);padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--grid);vertical-align:top}
+.tbl td.r,.tbl th.r{text-align:right}
+.tbl tr.grp td{background:var(--surface);padding-top:14px;padding-bottom:8px;border-bottom:1px solid var(--sunken)}
+.tbl tr.grp b{font-size:13px;margin-right:8px}
+.tbl tr.grp .car{color:var(--mist);margin-right:6px;font-size:11px}
+.tbl tr.picked td{background:#F3F9F7}
+.tbl .nm{font-weight:500}
+.tbl .nm small{display:block;color:var(--mist);font-size:12px;font-weight:400;margin-top:1px}
+.tbl .dim{color:var(--mist)}
+.tbl tr.off td{color:var(--mist)}
+.next{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--warnOn);background:var(--warnTint);border-radius:999px;padding:1px 8px;margin-top:3px;white-space:nowrap}
+.box{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--lineStrong);display:inline-block;vertical-align:-3px;background:var(--surface)}
+.box.on{background:var(--teal);border-color:var(--teal);position:relative}
+.box.on::after{content:"";position:absolute;left:4.5px;top:1.5px;width:4px;height:8px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(45deg)}
+.tablecard{overflow:hidden}
+.tablefoot{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;font-size:12.5px;color:var(--slate);border-top:1px solid var(--line);background:var(--surface)}
+
+/* price timeline */
+.tl{position:relative;margin:30px 0 26px}
+.tl .track{display:flex;height:34px;border-radius:9px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.tl .seg1{flex:5;background:var(--sunken);display:flex;align-items:center;padding:0 12px;font-weight:600;color:var(--slate)}
+.tl .seg2{flex:2.2;background:var(--tealTint);display:flex;align-items:center;padding:0 12px;font-weight:700;color:var(--teal);box-shadow:inset 3px 0 0 var(--teal)}
+.tl .seg2 .open{margin-left:auto;font-size:11.5px;font-weight:500;color:var(--teal)}
+.tl .lab{position:absolute;top:-22px;font-size:11.5px;color:var(--slate);white-space:nowrap}
+.tl .today{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--brand)}
+.tl .today span{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:700;color:var(--brand);white-space:nowrap}
+.path{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px}
+.path span{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-weight:600}
+.path i{font-style:normal;color:var(--mist)}
+
+/* idea 2 */
+.holders{width:270px;flex:none;background:var(--surface);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:2px}
+.holders .hs{height:34px;border:1px solid var(--line);border-radius:999px;display:flex;align-items:center;padding:0 12px;color:var(--mist);font-size:12.5px;margin:0 4px 10px}
+.holders .g{font-size:11.5px;font-weight:700;color:var(--mist);padding:10px 10px 4px}
+.holders .h{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:8px;font-size:13px}
+.holders .h.on{background:var(--tealTint);color:var(--teal);font-weight:600}
+.holders .h .cnt{background:transparent}
+.holders .h.on .cnt{background:var(--surface);color:var(--teal)}
+.partystrip{display:flex;gap:28px;font-size:12.5px;color:var(--slate);flex-wrap:wrap}
+.partystrip b{display:block;color:var(--ink);font-size:13px;font-weight:600}
+.bulkbar{display:flex;align-items:center;gap:12px;background:var(--ink);color:#fff;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600}
+.bulkbar .btn.pri{margin-left:auto}
+.bulkbar .txt{color:#9FE3D6}
+.pop{position:absolute;right:28px;top:208px;width:430px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--e3);border:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:12px;z-index:2}
+.pop h5{font-size:16px;margin:0}
+.fld{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--ink)}
+.fld .in{height:38px;border:1px solid var(--lineStrong);border-radius:var(--r-ctl);display:flex;align-items:center;padding:0 12px;font-weight:500;background:var(--surface)}
+.fld .hint{font-weight:400;color:var(--slate);font-size:12px}
+.preview{background:var(--bg);border-radius:10px;padding:8px 12px;font-size:12.5px}
+.preview div{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line)}
+.preview div:last-child{border-bottom:none;color:var(--slate)}
+
+/* idea 3 */
+.tryl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);padding:12px 14px;box-shadow:var(--e1)}
+.tryl b{font-size:13.5px;margin-right:4px}
+.cols{display:grid;grid-template-columns:196px 172px minmax(0,1fr);gap:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--e1);overflow:hidden;min-height:470px}
+.cols .c{border-right:1px solid var(--line);display:flex;flex-direction:column}
+.cols .c:last-child{border-right:none}
+.cols .ct{display:flex;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);font-weight:700;font-size:13.5px;background:var(--bg)}
+.cols .ct i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;font-size:11.5px;display:grid;place-items:center;flex:none}
+.opt{all:unset;box-sizing:border-box;width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--grid);font-size:13px;cursor:pointer}
+.opt:hover{background:var(--bg)}
+.opt.on{background:var(--tealTint);color:var(--teal);font-weight:600;box-shadow:inset 3px 0 0 var(--teal)}
+.opt:focus-visible{outline:2px solid var(--teal);outline-offset:-2px}
+.opt small{display:block;font-weight:400;color:var(--slate);font-size:12px}
+.opt .sug{font-size:11px;font-weight:700;color:var(--okOn);background:var(--okTint);border-radius:999px;padding:0 7px}
+.clist{padding:4px 0}
+.clist .gh{font-size:11.5px;font-weight:700;color:var(--mist);padding:10px 14px 4px}
+.ci{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:baseline;padding:9px 14px;border-bottom:1px solid var(--grid)}
+.ci .mono{font-size:11px;color:var(--mist);display:block;margin-top:1px}
+.ci b{font-weight:600}
+.ci small{display:block;color:var(--slate);font-size:12px}
+.ci .price{font-family:"Spline Sans Mono",monospace;font-size:12.5px;white-space:nowrap}
+.ci.bs b{font-weight:500}
+.why-not .row .s b{color:var(--ink);font-weight:600}
+
+/* idea 4 */
+.desk{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:16px;align-items:start}
+.desk .col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.soon{display:flex;flex-direction:column}
+.soon .d{display:grid;grid-template-columns:62px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--grid)}
+.soon .d:last-child{border-bottom:none}
+.soon .day{background:var(--bg);border-radius:8px;text-align:center;padding:5px 0;line-height:1.1}
+.soon .day b{display:block;font-size:18px;font-family:"Spline Sans Mono",monospace}
+.soon .day small{font-size:11px;color:var(--slate);font-weight:600}
+.soon .what b{font-size:13px;font-weight:600;display:block}
+.soon .what span{font-size:12px;color:var(--slate)}
+.soon .what .mono{color:var(--ink)}
+.soon .what .chg{display:inline-flex;gap:6px;align-items:center;margin-top:3px;font-size:12.5px}
+.soon .what .chg s{color:var(--mist)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--e1)}
+.stat b{display:block;font-size:22px;font-family:"Spline Sans Mono",monospace;font-weight:600}
+.stat span{font-size:12.5px;color:var(--slate)}
+.stat.w{background:var(--warnTint);border-color:transparent}
+.stat.w b,.stat.w span{color:var(--warnOn)}
+.dimpage{position:relative}
+.dimpage .ghost{opacity:.35;filter:saturate(.6)}
+.scrim{position:absolute;inset:0;background:rgba(23,35,32,.32)}
+.sheet{position:absolute;top:0;right:0;bottom:0;width:600px;background:var(--surface);box-shadow:var(--e3);display:flex;flex-direction:column}
+.sheet .sh{padding:20px 24px 14px;border-bottom:1px solid var(--line)}
+.sheet .sh b{font-size:18px;line-height:24px;display:block}
+.sheet .sh small{font-size:13px;color:var(--slate)}
+.sheet .sb{padding:18px 24px;display:flex;flex-direction:column;gap:18px;flex:1;overflow:hidden}
+.sheet .sf{padding:14px 24px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+.step{display:grid;grid-template-columns:26px 1fr;gap:12px}
+.step>i{font-style:normal;width:26px;height:26px;border-radius:50%;background:var(--tealTint);color:var(--teal);font-weight:700;font-size:12.5px;display:grid;place-items:center}
+.step h6{font-size:14px;margin:3px 0 8px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cmp .fld .in.was{background:var(--bg);color:var(--slate)}
+.radio{display:flex;gap:10px;align-items:flex-start;font-size:13px;padding:8px 0}
+.radio i{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--lineStrong);flex:none;margin-top:1px;position:relative}
+.radio i.on{border-color:var(--teal)}
+.radio i.on::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--teal)}
+.radio small{display:block;color:var(--slate);font-size:12px}
+.notice{border-radius:10px;padding:10px 12px;font-size:12.5px;background:var(--bg);color:var(--slate)}
+.notice.w{background:var(--warnTint);color:var(--warnOn)}
+
+/* recommendation */
+.reco{background:var(--ink);color:#fff;border-radius:var(--r-lg);padding:30px;display:grid;grid-template-columns:1.15fr 1fr;gap:32px}
+.reco h2{color:#fff}
+.reco p,.reco li{color:#D7DEDB}
+.reco ol{padding-left:20px;margin:12px 0 0}
+.reco li{margin-bottom:10px}
+.reco strong{color:#fff}
+.reco .q{background:rgba(255,255,255,.06);border-radius:var(--r-card);padding:18px 20px}
+.reco .q h4{margin:0 0 10px;font-size:15px;color:#fff}
+.reco .q ul{padding-left:18px;margin:0}
+footer{color:var(--mist);font-size:12.5px;padding:36px 0 48px}
+
+@media (max-width:1180px){
+  .hero{grid-template-columns:1fr}
+  .why{grid-template-columns:1fr;gap:14px}
+  .why .in,.why .out{margin:0}
+  .why .in::after,.why .out::before{display:none}
+  .notes,.twocol,.reco{grid-template-columns:1fr}
+  .notes ul{margin-bottom:14px}
+}
+@media (max-width:640px){
+  .wrap{padding:0 16px}
+  .hero h1{font-size:34px}
+  .navpair{flex-direction:column}
+  .navpair .arrow{display:none}
+  .nowstack{flex-direction:column}
+  .invtable{display:block;overflow-x:auto}
+  .idea-head{padding:20px 16px 0}
+  .idea-body{padding:18px 16px 20px}
+}
+
+/* ===== People page additions ===== */
+.who{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.ent{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow);padding:16px 16px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.ent .n{font-family:"Spline Sans Mono",monospace;font-size:26px;font-weight:600;line-height:1}
+.ent h4{font-size:15px;margin:0}
+.ent p{font-size:13px;color:var(--slate);line-height:18px}
+.ent dl{margin:4px 0 0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:12.5px}
+.ent dt{color:var(--mist)}
+.ent dd{margin:0;font-weight:500;min-width:0;overflow-wrap:anywhere}
+.ent.dark{background:var(--ink);color:#fff}
+.ent.dark p,.ent.dark dt{color:#B9C5C1}
+.links{margin-top:16px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow);padding:16px 20px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;font-size:13.5px}
+.links b{display:block;font-size:13.5px;margin-bottom:3px}
+.links span{color:var(--slate)}
+.gp{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow);font-size:13.5px}
+.gp th{text-align:left;font-size:12.5px;color:var(--mist);font-weight:700;padding:10px 14px;border-bottom:1px solid var(--line)}
+.gp td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.gp tr:last-child td{border-bottom:none}
+.gp .y{color:var(--okOn);font-weight:600}
+.gp .n0{color:var(--mist)}
+.opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:16px}
+.opt3{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow);padding:16px 18px;font-size:13.5px;display:flex;flex-direction:column;gap:6px}
+.opt3 h4{font-size:14.5px;margin:0}
+.opt3 p{color:var(--slate)}
+.opt3.pick{box-shadow:inset 0 0 0 2px var(--teal),var(--shadow)}
+.ced{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:14px}
+.ced .txt{font-size:12.5px}
+.cardgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;align-items:start}
+.facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px 18px;font-size:13px}
+.facts div small{display:block;font-size:11.5px;font-weight:600;color:var(--mist);margin-bottom:2px}
+.idchip{display:inline-flex;align-items:baseline;gap:6px;padding:3px 10px;border-radius:999px;background:var(--sunken);border:1px solid var(--line);font-size:11px;font-weight:600;color:var(--mist)}
+.idchip b{font-family:"Spline Sans Mono",monospace;font-size:13px;color:var(--ink)}
+.rl{display:flex;flex-direction:column}
+.rl .r{display:flex;flex-direction:column;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.rl .r:first-child{border-top:none;padding-top:0}
+.rl .r a,.rl .r .a{color:var(--teal);font-weight:600;text-decoration:none}
+.rl .r span{font-size:12px;color:var(--slate)}
+.pair{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+.pair:first-child{border-top:none;padding-top:0}
+.pair .who2{flex:1;min-width:0}
+.pair .who2 b{font-weight:600;color:var(--teal)}
+.pair .who2 span{display:block;font-size:12px;color:var(--slate)}
+.tierseg{display:inline-flex;background:var(--sunken);border-radius:9px;padding:3px;font-size:12.5px;font-weight:600}
+.tierseg span{padding:5px 12px;border-radius:7px;color:var(--slate)}
+.tierseg span.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(23,35,32,.2)}
+.grow{display:flex;gap:16px;align-items:stretch;min-height:0}
+.idxpane{width:200px;flex:none;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--e1);padding:12px 8px;display:flex;flex-direction:column;gap:1px;font-size:13px}
+.idxpane .gb{padding:2px 6px 10px}
+.idxpane .gb .sel{width:100%;justify-content:space-between}
+.idxpane .h{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-radius:8px;color:var(--ink)}
+.idxpane .h.on{background:var(--tealTint);color:var(--teal);font-weight:600}
+.idxpane .h .cnt{background:transparent}
+.idxpane .h.on .cnt{background:var(--surface);color:var(--teal)}
+.idxpane .sep{height:1px;background:var(--line);margin:6px 8px}
+.fl1{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
+.tabs2{display:flex;gap:4px}
+.sublabel{font-size:11.5px;font-weight:700;color:var(--mist);letter-spacing:.04em;text-transform:uppercase;margin:4px 0 -4px}
+.unify{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow);font-size:13.5px}
+.unify th{text-align:left;font-size:12.5px;color:var(--mist);font-weight:700;padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+.unify td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.unify tr:last-child td{border-bottom:none}
+.unify td:first-child{font-weight:600;white-space:nowrap}
+.unify .st{font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 9px;white-space:nowrap;display:inline-block}
+.unify .st.ok{background:var(--okTint);color:var(--okOn)}
+.unify .st.mv{background:var(--warnTint);color:var(--warnOn)}
+.unify .st.nw{background:var(--tealTint);color:var(--teal)}
+.unify .st.no{background:var(--sunken);color:var(--slate)}
+.patterns{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.pat{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow);padding:16px 18px;font-size:13.5px}
+.pat h4{font-size:15px;margin:0 0 6px}
+.pat ul{margin:0;padding-left:17px;color:var(--slate)}
+.pat li{margin-bottom:3px}
+.pat code,.unify code,.gp code{font-family:"Spline Sans Mono",monospace;font-size:12px;background:var(--sunken);padding:1px 5px;border-radius:4px}
+.rtable{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow);font-size:13px;margin-top:16px}
+.rtable th{text-align:left;font-size:12.5px;color:var(--mist);font-weight:700;padding:9px 14px;border-bottom:1px solid var(--line)}
+.rtable td{padding:8px 14px;border-bottom:1px solid var(--line);font-family:"Spline Sans Mono",monospace;font-size:12.5px;overflow-wrap:anywhere}
+.rtable tr:last-child td{border-bottom:none}
+@media (max-width:1180px){
+  .who{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .links,.opts,.patterns{grid-template-columns:1fr}
+}
+.twocol>div,.notes>div{min-width:0}
+.head .t .idchip{vertical-align:5px}
+.head .t .idchip b{display:inline;font-size:13px;line-height:17px;letter-spacing:0;font-weight:600}
+.head .t .pill{font-size:11.5px;line-height:17px;letter-spacing:0}
+.facts div{min-width:0;overflow-wrap:anywhere}
+.invtable td,.notes li,.sub,.lede{overflow-wrap:anywhere}
+@media (max-width:640px){
+  .who{grid-template-columns:1fr}
+  .invtable td:first-child{width:auto;min-width:110px}
+  .invtable{display:table;table-layout:fixed}
+  .gp,.unify,.rtable{display:block;overflow-x:auto}
+  .unify td:first-child{white-space:normal}
+}
+
+/* ===== design page additions ===== */
+.decided{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px;margin-top:22px;max-width:980px}
+.decided div{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.decided i{flex:none;font-style:normal;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;margin-top:2px}
+.decided i.y{background:var(--okTint);color:var(--okOn)}
+.decided i.o{background:var(--warnTint);color:var(--warnOn)}
+.map2{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.tcard{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow);padding:14px 16px;display:flex;flex-direction:column;gap:6px;font-size:13px;min-width:0}
+.tcard b{font-size:14.5px}
+.tcard .route{font-family:"Spline Sans Mono",monospace;font-size:11.5px;color:var(--teal);overflow-wrap:anywhere}
+.tcard p{color:var(--slate)}
+.tcard .orig{font-size:11.5px;font-weight:700;color:var(--mist)}
+.tcard.land{box-shadow:inset 0 0 0 2px var(--teal),var(--shadow)}
+.leaves{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+.leaves>div{border-radius:var(--r-card);padding:12px 16px;font-size:13.5px}
+.leaves b{display:block;margin-bottom:3px}
+.leaves .out{background:var(--tealTint)}
+.leaves .stay{background:var(--sunken)}
+.leaves .mvq{background:var(--warnTint)}
+/* groups explainer */
+.gx{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.gxcard{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:20px 22px;display:flex;flex-direction:column;gap:10px;font-size:14px}
+.gxcard h4{font-size:17px;margin:0}
+.gxcard .kick{font-size:12px;font-weight:700;color:var(--mist);text-transform:uppercase;letter-spacing:.06em}
+.gxcard dl{margin:0;display:grid;grid-template-columns:130px 1fr;gap:6px 12px;font-size:13.5px}
+.gxcard dt{color:var(--slate)}
+.gxcard dd{margin:0}
+.gxcard .verdict{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:13.5px}
+.flow{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:22px;margin-top:16px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:stretch}
+.fbox{border-radius:12px;padding:12px 14px;font-size:13px;display:flex;flex-direction:column;gap:4px;position:relative}
+.fbox b{font-size:13.5px}
+.fbox small{color:var(--slate);font-size:12.5px;line-height:17px}
+.fbox.g{background:var(--sunken)}
+.fbox.p{background:var(--brandTint)}
+.fbox.c{background:var(--tealTint)}
+.fbox.l{background:var(--ink);color:#fff}
+.fbox.l small{color:#C8D2CE}
+.fbox .x{font-size:11px;font-weight:700;color:var(--errOn);background:var(--errTint);border-radius:999px;padding:1px 8px;align-self:flex-start;margin-top:4px}
+.fbox .ok{font-size:11px;font-weight:700;color:var(--okOn);background:var(--okTint);border-radius:999px;padding:1px 8px;align-self:flex-start;margin-top:4px}
+.story{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:20px 24px;font-size:14px;display:flex;flex-direction:column;gap:10px}
+.story h4{font-size:16px;margin:0}
+.story ul{margin:0;padding-left:18px}
+.story li{margin-bottom:5px}
+.story .eg{background:var(--bg);border-radius:10px;padding:10px 14px;font-size:13.5px}
+.steps4{counter-reset:s;display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.steps4 li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:10px;font-size:14px}
+.steps4 li::before{content:counter(s);width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center}
+.minis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
+.mini{display:flex;flex-direction:column;gap:8px;min-width:0}
+.mini .cap{font-size:13px;font-weight:600;color:var(--slate)}
+.card.editing{box-shadow:0 0 0 2px var(--teal),var(--e1)}
+.cfoot{display:flex;justify-content:flex-end;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+.navopts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.navopt{display:flex;gap:16px;align-items:flex-start;background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:18px}
+.navopt .mnav{border-radius:12px}
+.navopt .why2{font-size:13.5px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.navopt .why2 h4{font-size:15px;margin:0}
+.navopt .why2 p{color:var(--slate)}
+@media (max-width:1180px){
+  .map2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .leaves,.gx,.minis,.navopts,.decided{grid-template-columns:1fr}
+  .flow{grid-template-columns:1fr 1fr}
+}
+@media (max-width:640px){
+  .map2,.flow{grid-template-columns:1fr}
+  .navopt{flex-direction:column}
+  .gxcard dl{grid-template-columns:1fr}
+}
+
+/* ===== decide ===== */
+.dqcard{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);margin:0 0 18px;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);overflow:hidden}
+.dqmain{padding:20px 24px;display:flex;flex-direction:column;gap:12px}
+.dqh{display:flex;gap:12px;align-items:baseline}
+.dqh h3{margin:0}
+.dqabout{font-size:14px;color:var(--slate)}
+.dqopts{display:flex;flex-direction:column;gap:8px}
+.dqo{display:flex;gap:12px;align-items:flex-start;text-align:left;background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:10px 14px;font:inherit;color:inherit;cursor:pointer}
+.dqo:hover{border-color:var(--lineStrong)}
+.dqo.on{border-color:var(--teal);background:var(--tealTint)}
+.dqo b{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.dqo small{display:block;font-size:13px;color:var(--slate);margin-top:2px}
+.dqr{flex:none;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--lineStrong);margin-top:2px;background:var(--surface);position:relative}
+.dqo.on .dqr{border-color:var(--teal)}
+.dqo.on .dqr::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--teal)}
+.dqnote{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:var(--slate)}
+.dqnote textarea,#dqtext{font:inherit;font-size:13.5px;font-weight:400;color:var(--ink);border:1px solid var(--lineStrong);border-radius:var(--r-ctl);padding:8px 10px;resize:vertical;background:var(--surface)}
+.dqprev{background:var(--bg);border-left:1px solid var(--line);padding:20px 22px;display:flex;flex-direction:column;gap:10px;font-size:13px;min-width:0}
+.dqpl{font-size:12px;font-weight:700;color:var(--mist);text-transform:uppercase;letter-spacing:.05em}
+.dqpb{display:flex;flex-direction:column;gap:10px;min-width:0}
+.dqpb .card.pad{gap:10px}
+.mininav{background:var(--ink);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px;max-width:230px}
+.mininav span{color:rgba(255,255,255,.85);font-size:13px;padding:6px 10px;border-radius:8px}
+.mininav span.on{background:rgba(255,255,255,.08);color:#fff;font-weight:600;box-shadow:inset 3px 0 0 var(--brand);outline:1.5px dashed rgba(216,154,169,.7);outline-offset:-1px}
+.dqout{position:sticky;bottom:0;background:var(--surface);border-radius:var(--r-lg) var(--r-lg) 0 0;box-shadow:0 -6px 24px rgba(23,35,32,.10);padding:14px 20px 16px;display:flex;flex-direction:column;gap:10px;z-index:5}
+.dqbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.dqbar .btn{cursor:pointer}
+#dqtext{height:74px;font-family:"Spline Sans Mono",monospace;font-size:12px}
+@media (max-width:1180px){.dqcard{grid-template-columns:1fr}.dqprev{border-left:none;border-top:1px solid var(--line)}}
+@media (max-width:640px){.dqmain,.dqprev{padding:16px}#dqtext{height:60px}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="kicker">Admin Web App, People. Design page, third pass, 25 November 2026.</p>
+    <h1 style="font-size:44px;line-height:1.08;letter-spacing:-.025em;margin:14px 0 18px;font-weight:800;max-width:22ch">One People section for everyone the office keeps a record of.</h1>
+    <p class="lede">Third pass: your answers to the first ten choices are in, and surgeon groups are proposed for cutting. <b><a href="#decide">Decide</a></b> has the two choices left. Built from <a href="people-ideas.html">People screen ideas</a> and your first answers. This page is revised in place as you decide. Mocks are at the app's real sizes (216px nav, 28px inset, 412px rail) with seed people; anything illustrative says so under it.</p>
+    <div class="decided" aria-label="Decisions so far">
+      <div><i class="y">Decided</i><span><b>People</b> in the side nav where Patients was, with routed tabs.</span></div>
+      <div><i class="y">Decided</i><span><b>Patients</b> fold in as a tab: one list with a reason on each row; Waiting for NHI moves to Intake.</span></div>
+      <div><i class="y">Decided</i><span><b>Specialties</b> move to People. <b>Hospitals</b> stay in Master data.</span></div>
+      <div><i class="y">Decided</i><span><b>Tier</b> is edited in a card with the rate per unit.</span></div>
+      <div><i class="y">Decided</i><span><b>Records</b> start with a side panel (pairings, Contracts, next Lists), not tabs.</span></div>
+      <div><i class="y">Decided</i><span><b>Surgeons</b>: a specialty filter, no grouped list.</span></div>
+      <div><i class="y">Decided</i><span><b>Inactive</b> becomes a story: from a chosen last day, sign-in stops, her own Contracts are disabled.</span></div>
+      <div><i class="o">To confirm</i><span><b>Cut surgeon groups</b>: nothing uses them (<a href="#groups">the evidence</a>). Two small choices in <a href="#decide">Decide</a>.</span></div>
+    </div>
+    <nav class="toc" aria-label="On this page" style="max-width:none">
+      <a href="#decide"><b>Decide</b></a><a href="#map">The section</a><a href="#groups">Cutting surgeon groups</a><a href="#patients">Patients in People</a><a href="#tier">Tier</a><a href="#inactive">Making inactive</a><a href="#nav">Nav position</a><a href="#changes">What changes</a><a href="#questions">Settled and open</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="decide">
+  <h2>Decide</h2>
+  <p class="sub">Your first ten answers are in the page above. Two choices are left, each in plain words. Click an option to see what it would look like; my recommendation is marked. Add a note if you like, then press <b>Copy my answers</b> at the bottom and paste the result to me. Your picks stay in this browser if you reload.</p>
+  <div id="dq"></div>
+  <div class="dqout">
+    <div class="dqbar"><b>Your answers</b><span id="dqcount" class="count"></span><span class="btn pri" id="dqcopy" role="button" tabindex="0">Copy my answers</span><span class="btn sec" id="dqreset" role="button" tabindex="0">Clear</span><span id="dqmsg" class="count"></span></div>
+    <textarea id="dqtext" readonly aria-label="Your answers as text"></textarea>
+  </div>
+</section>
+
+<section id="map">
+  <h2>The section</h2>
+  <p class="sub">People sits where Patients was in the side nav, and takes over its amber badge (patients needing the office). Four routed tabs, each an <span class="mono">AdminPage fit</span> list with search, filter pills and the pager; every row opens a record page keyed by a fixed id.</p>
+  <div class="map2" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+    <div class="tcard"><b>Anaesthetists</b><span class="route">/admin/people/anaesthetists</span><p>85. Search, Active or Inactive, tier filter. A page per anaesthetist, keyed by registration number.</p><span class="orig">From Master data</span></div>
+    <div class="tcard"><b>Surgeons</b><span class="route">/admin/people/surgeons</span><p>165, 50 a page. Search, Active or Retired, a specialty filter. A page per surgeon by its id.</p><span class="orig">From Master data</span></div>
+    <div class="tcard"><b>Specialties</b><span class="route">/admin/people/specialties</span><p>12. A page per specialty with its surgeons and the Contracts for it.</p><span class="orig">From Master data</span></div>
+    <div class="tcard land"><b>Patients</b><span class="route">/admin/people/patients</span><p>Coming up, Needs follow-up, All. A page per patient by NHI.</p><span class="orig">From its own section</span></div>
+  </div>
+  <div class="leaves">
+    <div class="out"><b>Leave Master data</b>Anaesthetists, Surgeons, Specialties. Master data keeps a line pointing across.</div>
+    <div class="stay"><b>Stay in Master data</b>Hospitals &amp; holidays, Recurring bookings, Availability statuses, RVG groups, Modifiers, settings. "People and places" becomes "Places".</div>
+    <div class="mvq"><b>Goes</b>Surgeon groups (if you confirm), and the Patients side nav entry. Waiting for NHI moves to Intake, beside Matching.</div>
+  </div>
+</section>
+
+<section id="groups">
+  <h2>Cutting surgeon groups</h2>
+  <p class="sub">You're right that it's a hangover. I checked the app code, the seed, the tests, the catalogue and the RFP. <b>Nothing in the app reads a surgeon group except its own screens.</b> The idea that matters, a group that holds Contracts and is billed for them, is the <b>Party</b> of kind "surgeon group" (COS, Unisports, Aria, Merivale), and that stays.</p>
+
+  <div class="gx">
+    <div class="gxcard">
+      <span class="kick">Goes</span>
+      <h4>The surgeon group record</h4>
+      <dl><dt>What it is</dt><dd>A name, a description and a list of member surgeons, kept in Master data.</dd><dt>Seed</dt><dd>2: Canterbury Orthopaedic Surgeons (Mr Hale), Christchurch Eye Surgeons (Mr Whitford, Ms Reid).</dd><dt>Read by</dt><dd>Its own table and edit sheet, a "Groups" card on the surgeon's page, and Retire. Nothing else.</dd></dl>
+    </div>
+    <div class="gxcard">
+      <span class="kick">Stays</span>
+      <h4>The Party of kind "surgeon group"</h4>
+      <dl><dt>What it is</dt><dd>A holder of Contracts with a billing name and delivery. Its Contracts link surgeons one by one.</dd><dt>Seed</dt><dd>4: COS, Unisports Ortho, Aria Skin and Laser Clinic, Merivale Plastic Surgery.</dd><dt>Read by</dt><dd>Contracts, invoices, the step rail's Special path, the Contract list's holder grouping.</dd></dl>
+    </div>
+  </div>
+
+  <h3 style="margin-top:28px">The evidence</h3>
+  <table class="gp">
+    <thead><tr><th style="width:230px">Where I looked</th><th>What uses the group record</th></tr></thead>
+    <tbody>
+      <tr><td><b>Step rail, pricing, billing</b></td><td class="n0">Nothing. A Contract is offered because the surgeon is linked on it by name (US-04.2.1). The billing code's "surgeon group" is always the Party kind.</td></tr>
+      <tr><td><b>Pairings, assignment, tiers</b></td><td class="n0">Nothing. Pairings are one surgeon and one anaesthetist.</td></tr>
+      <tr><td><b>Go-live load</b></td><td class="n0">Not loaded: groups have no seed-load sheet. The loader's "surgeon group" is the Party kind.</td></tr>
+      <tr><td><b>Pickers</b></td><td class="n0">None. <span class="mono">activeGroups</span> is exported but nothing calls it.</td></tr>
+      <tr><td><b>App screens</b></td><td>Master data's Surgeon groups table and sheet; the "Groups" card on the surgeon's page; Retire and Reinstate; four audit labels.</td></tr>
+      <tr><td><b>One side effect</b></td><td>Renaming a group also renames a Party of the same kind with the exact same old name (<span class="mono">partyRenameFollowing</span>). Cutting groups removes the only reason for it.</td></tr>
+      <tr><td><b>The RFP</b></td><td class="n0">Its master tables are Hospital, List Status, Anaesthetist, Surgeon, Patient, Insurer, Contract. No surgeon groups. Groups appear only as Contract holders ("orthopaedic groups such as Canterbury Orthopaedic Surgeons").</td></tr>
+      <tr><td><b>The catalogue</b></td><td>One line: US-13.4.1's "surgeons and surgeon groups", with two screenshots. Every other mention (US-04.1.5, US-04.1.1, US-04.2.1, US-04.2.11, US-04.2.17, the domain model) is the Party kind.</td></tr>
+      <tr><td><b>Demo guide, capture</b></td><td>The Master data view list and one capture state (<span class="mono">surgeon-groups</span>). Left for your sweep, with redirects so old links still land.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:28px">What replaces it</h3>
+  <div class="flow" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+    <div class="fbox p"><b>Party COS (Contracts section, Phase 48)</b><small>Its page lists "Surgeons on its Contracts": Mr T. Hale. That is the membership that actually decides anything.</small></div>
+    <div class="fbox c"><b>Contract: ACC orthopaedic services</b><small>Linked surgeons: Mr T. Hale. A new COS surgeon is linked here, which is the one step that ever mattered.</small><span class="ok">Unchanged</span></div>
+    <div class="fbox g"><b>Mr Hale's page (People)</b><small>The side panel's "Contracts for him" shows both COS Contracts and Unisports Ortho, each naming its holder. No Groups card.</small></div>
+  </div>
+  <p class="sub" style="margin-top:14px">Christchurch Eye Surgeons simply goes: it holds nothing and decides nothing. If AA later want to record who practises together, the surgeon's practice name already says it (Mr Whitford and Ms Reid: Merivale Eye Rooms).</p>
+</section>
+
+<section id="patients">
+  <h2>Patients in People <span class="pill ok" style="vertical-align:5px">Decided</span></h2>
+  <p class="sub">Today Patients has three routed tabs: Search, Waiting for NHI and Follow-up. As a People tab there's no room for a second row of tabs, and the audit says page switches are tabs and filters are <span class="mono">FilterPills</span>. So: one Patients list with three filters, and Waiting for NHI moves to Intake, where its rows already come from.</p>
+  <div>
+    <p class="mock-cap">The Patients tab, "Needs follow-up": one list, the reason on each row, the row opens the record where the action is taken</p>
+    <div class="mockwrap"><div class="frame" style="min-height:560px">
+      <div class="mnav" data-nav="a" data-on="People"></div>
+      <div class="page">
+        <div class="head"><div class="t"><b>People</b><small>Anaesthetists, surgeons, specialties and patients.</small></div></div>
+        <div class="tabs"><span class="tab">Anaesthetists <span class="cnt">85</span></span><span class="tab">Surgeons <span class="cnt">165</span></span><span class="tab">Specialties <span class="cnt">12</span></span><span class="tab on">Patients <span class="cnt w">4</span></span></div>
+        <div class="toolbar">
+          <span class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Name, NHI or date of birth</span>
+          <span class="seg"><span>Coming up</span><span class="on">Needs follow-up 4</span><span>All</span></span>
+          <span class="count" style="margin-left:auto"><span class="mono">4</span> patients need the office</span>
+        </div>
+        <div class="card tablecard">
+          <table class="tbl">
+            <thead><tr><th>Name</th><th>NHI</th><th>Date of birth</th><th>Why</th><th>Next Booking</th><th class="r">Balance</th></tr></thead>
+            <tbody>
+              <tr><td class="nm">Margaret Ellison</td><td class="mono">ZAA0067</td><td class="mono">18 Jul 1954, 72</td><td><span class="pill err">Balance over 90 days</span></td><td>Thu 3 Dec · St George's</td><td class="r mono">$412.00</td></tr>
+              <tr><td class="nm">Susan Marsh</td><td class="mono">ZAD2210</td><td class="mono">15 Jun 1961, 65</td><td><span class="pill warn">Follow-up due today</span><small class="dim" style="display:block">Call about the October invoice</small></td><td class="dim">None booked</td><td class="r mono">$186.50</td></tr>
+              <tr><td class="nm">Wiremu Tane</td><td class="mono">ZBC1123</td><td class="mono">26 Dec 1979, 46</td><td><span class="pill warn">Details differ</span><small class="dim" style="display:block">Phone from the hospital list</small></td><td>Mon 30 Nov · Forte Health</td><td class="r mono">$0.00</td></tr>
+              <tr><td class="nm">David Chen</td><td class="mono">ZAE0310</td><td class="mono">5 Apr 1989, 37</td><td><span class="pill warn">Follow-up due Fri 27 Nov</span><small class="dim" style="display:block">Reminder letter sent</small></td><td>Tue 1 Dec · Southern Cross</td><td class="r mono">$95.00</td></tr>
+            </tbody>
+          </table>
+          <div class="tablefoot"><span>Showing 1 to 4 of 4</span><span></span></div>
+        </div>
+      </div>
+    </div></div>
+    <p class="dim" style="font-size:12.5px;margin-top:8px">Names, NHIs and birth dates are the seed's; the reasons, balances and Bookings are illustrative.</p>
+  </div>
+
+  <div style="margin-top:26px">
+    <p class="mock-cap">A patient's page on the same record pattern: NHI chip, tabs, Details in the rail with its own Edit</p>
+    <div class="mockwrap"><div class="frame">
+      <div class="mnav" data-nav="a" data-on="People"></div>
+      <div class="page withrail">
+        <div class="head"><div class="t"><span class="back">‹ Patients</span><b>Margaret Ellison &nbsp;<span class="idchip">NHI <b>ZAA0067</b></span></b><small>Born <span class="mono">18 Jul 1954</span>, 72</small></div><span class="btn sec">Refresh from NHI register</span></div>
+        <div class="tabsrow"><div class="tabs"><span class="tab on">Overview</span><span class="tab">Invoices <span class="cnt">3</span></span><span class="tab">Bookings <span class="cnt">4</span></span><span class="tab">Follow-up <span class="cnt">2</span></span><span class="tab">History</span></div></div>
+        <div class="maincol">
+          <div class="stats" style="grid-template-columns:repeat(3,1fr)"><div class="stat w"><b>$412.00</b><span>Owed, oldest 96 days</span></div><div class="stat"><b>$0.00</b><span>In credit</span></div><div class="stat"><b>3</b><span>Invoices open</span></div></div>
+          <div class="card pad"><div class="ch"><span class="l">Warnings <span class="cnt w">1</span></span></div><div class="row edge"><span class="t">Balance over 90 days: $412.00</span><span class="s">Shown on her Booking on Thu 3 Dec. Clear it with a note once followed up.</span><div class="acts"><span class="txt">Log a follow-up</span><span class="txt">Clear with a note</span></div></div></div>
+          <div class="card pad"><div class="ch"><span class="l">Next Booking</span></div><div class="rl"><div class="r"><span class="a">Thu 3 Dec · St George's AM</span><span>Mr T. Hale · Dr Tom Ngata</span></div></div></div>
+        </div>
+        <div class="railcol">
+          <div class="card pad"><div class="ced">Details <span class="txt">Edit</span></div>
+            <div class="facts" style="grid-template-columns:1fr"><div><small>Phone</small>03 555 3349</div><div><small>Email</small><span class="dim">Not supplied</span></div><div><small>Postal address</small><span class="dim">Not supplied</span></div><div><small>Ethnicity</small>NZ European <span class="mono dim">11111</span></div></div></div>
+          <div class="card pad"><div class="ch"><span class="l">Follow-up log <span class="cnt">2</span></span></div><div class="rl"><div class="r"><span class="a">Reminder letter sent</span><span>12 Nov · Kirsty W.</span></div><div class="r"><span class="a">Phoned, no answer</span><span>2 Nov · Kirsty W.</span></div></div><span class="txt">See all on the Follow-up tab</span></div>
+        </div>
+      </div>
+    </div></div>
+    <p class="dim" style="font-size:12.5px;margin-top:8px">Phone and ethnicity are the seed's; money, Bookings and the log are illustrative.</p>
+  </div>
+  <div class="notes" style="margin-top:22px">
+    <div><h4>What moves</h4><ul><li>Search and Follow-up become one list with <b>Coming up</b> (today's default), <b>Needs follow-up</b> and <b>All</b>.</li><li>Follow-up's three tables (balance warnings, follow-ups due, details to review) become one list with a Why column. Each action stays on the record.</li><li>Waiting for NHI moves to Intake as a tab beside matching.</li><li>The record's long page splits into tabs; Details moves to the rail.</li></ul></div>
+    <div><h4>Badges</h4><ul><li>People carries the amber count of patients needing the office: strong balance warnings, follow-ups due, details to review.</li><li>Intake's badge adds the rows waiting for an NHI, so the office still sees them in one place.</li><li>The Patients tab shows the same count.</li></ul></div>
+    <div class="req"><p><b>Catalogue:</b> US-11.3.1 (outstanding bills view) and US-11.3.3 (follow-up tools) describe the list and its filter; US-11.1.5's "office's view of those rows" is placed on Intake beside the unmatched queue (US-02.1.4). US-11.1.1 gains "a page per patient" in the record pattern. No rule changes.</p><p><b>Check with you:</b> the 50-match cap on patient search (BACKLOG) becomes the pager.</p></div>
+  </div>
+</section>
+
+<section id="tier">
+  <h2>Tier: edited in a card <span class="pill ok" style="vertical-align:5px">Decided</span></h2>
+  <p class="sub"><b>Decided: a card with Edit, shared with the rate per unit.</b> The tier is office-only, changes rarely (when a member becomes a director or shareholder), and quietly reorders who the office is offered for every List. Today a single click on the record page saves it at once, with no confirm, on a page the office mostly opens to read something else.</p>
+  <div class="minis">
+    <div class="mini"><span class="cap">Today: one click saves</span><div class="card pad"><div class="ch">Priority tier</div><span class="tierseg"><span>Tier 1</span><span class="on">Tier 2</span><span>Tier 3</span><span>Tier 4</span></span><span class="dim" style="font-size:12.5px">Only the office sees this. It orders the suggestions when you assign or move a List.</span></div></div>
+    <div class="mini"><span class="cap">Proposed, at rest</span><div class="card pad"><div class="ced">Rate and tier <span class="txt">Edit</span></div><div class="facts"><div><small>Rate per unit</small><span class="mono">$30.00</span></div><div><small>Priority tier</small>Tier 2 <span class="dim" style="font-size:12px">· office only</span></div></div></div></div>
+    <div class="mini"><span class="cap">Proposed, editing</span><div class="card pad editing"><div class="ced">Rate and tier</div><div class="fld">Rate per unit<span class="in mono">$30.00</span></div><div class="fld">Priority tier<span class="tierseg"><span>Tier 1</span><span class="on">Tier 2</span><span>Tier 3</span><span>Tier 4</span></span><span class="hint">Orders suggestions when the office assigns or moves a List. Never shown to anaesthetists.</span></div><div class="cfoot"><span class="btn sec">Cancel</span><span class="btn pri">Save</span></div></div></div>
+  </div>
+  <div class="notes" style="margin-top:20px">
+    <div><h4>Why the card</h4><ul><li>No accidental change: a stray click on a page you're reading can't reorder the practice.</li><li>One pattern: every fact on a record is edited the same way, as on a Contract.</li><li>Rate and tier sit together: the two settings the office sets about an anaesthetist's work.</li></ul></div>
+    <div><h4>What it costs</h4><ul><li>Two clicks more when the office does mean to change it.</li><li>The web app's own rate editor (the anaesthetist changes her rate) is unaffected.</li></ul></div>
+    <div class="req"><p><b>Catalogue:</b> US-01.3.6 says the tier is set on the anaesthetist's record; nothing about how. No change needed beyond the record story's "each card edited on its own". The Anaesthetists list gains a Tier filter, which US-01.3.6 already asks for.</p></div>
+  </div>
+</section>
+
+<section id="inactive">
+  <h2>Making an anaesthetist inactive <span class="pill ok" style="vertical-align:5px">Decided</span></h2>
+  <p class="sub">A new story under FT-12.1, as you noted. The app already has an Active switch that removes Slots from today and refuses while Lists remain; the story adds a chosen last day, stops sign-in, and disables her own Contracts.</p>
+  <div class="twocol">
+    <div class="story">
+      <h4>Story sketch: Make an anaesthetist inactive</h4>
+      <p>The office makes an anaesthetist inactive from their page, choosing their last day, when they leave the practice or stop taking Lists for a long time. Until that day nothing changes. After it they have no Slots, are not offered for any List, can't be picked in assignment, the availability finder or a Contract, can no longer sign in, and the Contracts held by their own Party and linked to them are disabled. Everything already recorded stays readable from their page: Lists, invoices, payments, Contracts and pairings.</p>
+      <ul>
+        <li><b>Lists first.</b> Refused while they hold a List after the last day; the dialog lists those Lists, each a link to reassign.</li>
+        <li><b>A reason</b> (left the practice, long leave, other), kept in the audit.</li>
+        <li><b>Shown.</b> "Inactive from 31 Dec" on their page until the day; after it, an Inactive pill, and hidden from the list unless Inactive or All is chosen.</li>
+        <li><b>Contracts.</b> On the last day each of their own Contracts is disabled, one audited change each, by the system.</li>
+        <li><b>Change of mind.</b> Before the day, the office can clear the last day. After it, "Make active" gives Slots from today and sign-in back.</li>
+      </ul>
+      <p class="eg">Example from the seed: Dr Sarah Beaumont leaves at the end of the year. The office sets her last day to Thu 31 Dec. Her one Contract, Rhinoplasty at <span class="mono">$1,350.00</span> (prepaid, held by her own Party), is disabled on 1 Jan. Her past invoices still show her as the anaesthetist.</p>
+    </div>
+    <div class="mini" style="gap:10px">
+      <span class="cap">The dialog, while Lists remain after the last day</span>
+      <div class="card pad" style="max-width:520px;box-shadow:var(--e3)">
+        <b style="font-size:17px">Make Dr Sarah Beaumont inactive?</b>
+        <div class="fld">Last day<span class="in">Thu 31 Dec 2026</span></div>
+        <div class="notice w">She has 2 Lists after 31 Dec. Reassign them first.</div>
+        <div class="rl"><div class="r"><span class="a">Mon 4 Jan · Southern Cross AM</span><span>Ms G. Lim</span></div><div class="r"><span class="a">Thu 7 Jan · Forte Health PM</span><span>Mr V. Nand</span></div></div>
+        <div class="fld">After 31 Dec<span class="hint" style="font-size:12.5px">Her sign-in stops. Her Contract Rhinoplasty is disabled.</span></div>
+        <div class="fld">Reason<span class="in">Left the practice</span></div>
+        <div class="cfoot"><span class="btn sec">Cancel</span><span class="btn pri" style="opacity:.45">Make inactive</span></div>
+      </div>
+      <span class="dim" style="font-size:12.5px">Lists are illustrative; the Contract is the seed's.</span>
+    </div>
+  </div>
+  <div class="notes" style="margin-top:20px">
+    <div><h4>Decided</h4><ul><li>From a chosen last day.</li><li>No sign-in afterwards.</li><li>Her own Contracts are disabled with her.</li></ul></div>
+    <div><h4>Words</h4><ul><li>"Inactive" for anaesthetists (they can come back from leave); "Retire" stays for surgeons, hospitals and AA's own modifiers.</li></ul></div>
+    <div class="req"><p><b>Catalogue:</b> a new story under FT-12.1, linked from US-01.1.1 ("every active anaesthetist"), US-13.5.3 (sign-in) and US-04.1.2 (disable). Domain model: define active and the last day. The one choice left (her Contracts if she comes back) is in Decide.</p></div>
+  </div>
+</section>
+
+<section id="nav">
+  <h2>Nav position <span class="pill ok" style="vertical-align:5px">Decided</span></h2>
+  <p class="sub">Where Patients was: People takes its place and its amber badge, among the daily work. The side nav keeps 13 entries.</p>
+  <div class="navopts" style="grid-template-columns:minmax(0,560px)">
+    <div class="navopt"><div class="mnav short" data-nav="a" data-on="People"></div><div class="why2"><h4>People after Invoices</h4><p>The badge counts patients needing the office: strong balance warnings, follow-ups due, details to review. Rows waiting for an NHI count on Intake instead.</p></div></div>
+  </div>
+</section>
+
+<section id="changes">
+  <h2>What changes</h2>
+  <p class="sub">For the plan route: the requirements update first, then phases numbered after 49.</p>
+  <table class="invtable"><tbody>
+    <tr><td>US-13.4.1 Reference tables</td><td>Anaesthetists, Surgeons and Specialties kept in People; surgeon groups gone; the rest stays in Master data.</td></tr>
+    <tr><td>US-13.6.2 Surgeon profile</td><td>A page per surgeon: cards edited one at a time; a side panel with the Contracts linked to him and his next Lists. No groups.</td></tr>
+    <tr><td>US-12.1.4 Anaesthetist identity</td><td>A page per anaesthetist on the same pattern; rate and tier in one card; side panel with pairings, her own Contracts and next Lists.</td></tr>
+    <tr><td>US-01.3.6 Priority tiers</td><td>Edited in the record's Rate and tier card; the Anaesthetists list filters by tier.</td></tr>
+    <tr><td>New: anaesthetist inactive</td><td>The story above, under FT-12.1.</td></tr>
+    <tr><td>US-13.4.4 Specialties</td><td>A page per specialty: its surgeons and the Contracts for it.</td></tr>
+    <tr><td>US-11.1.1, US-11.3.1, US-11.3.3</td><td>Patients as a People tab: Coming up, Needs follow-up (one list, a reason per row) and All; the patient's page on the shared record pattern.</td></tr>
+    <tr><td>US-11.1.5</td><td>Waiting for NHI is a tab on Intake, counted in Intake's badge.</td></tr>
+    <tr><td>Domain model</td><td>Surgeon group removed as a record (the Party kind stays); "active" and the last day defined.</td></tr>
+    <tr><td>App</td><td>Side nav entry, routes, redirects for <span class="mono">?view=</span>, the old profile routes and the Patients URLs; search and paging on every People list; the record pattern lifted out of the Contract page into the shared kit.</td></tr>
+    <tr><td>Sweep</td><td>Capture recipes and the demo guide for anaesthetists, surgeons, specialties, surgeon groups and patients are left for your sweep.</td></tr>
+  </tbody></table>
+</section>
+
+<section id="questions">
+  <div class="reco">
+    <div>
+      <h2>Settled</h2>
+      <ol>
+        <li><strong>A People section</strong> where Patients was, with tabs Anaesthetists, Surgeons, Specialties, Patients.</li>
+        <li><strong>Patients fold in</strong>: one list with Coming up, Needs follow-up (a reason on each row) and All; <strong>Waiting for NHI moves to Intake</strong>.</li>
+        <li><strong>Specialties move to People; Hospitals stay</strong> in Master data.</li>
+        <li><strong>Tier in a card</strong> with the rate per unit.</li>
+        <li><strong>Records start with a side panel</strong>, not tabs.</li>
+        <li><strong>Surgeons get a specialty filter</strong>, not a grouped list.</li>
+        <li><strong>Inactive</strong> is a new story: a chosen last day, sign-in stops, her own Contracts disabled.</li>
+        <li>Carried from Contracts: a page per record keyed by its fixed id; cards with their own Edit; list pages fit, records fluid; no desk pages, no bulk actions; old URLs redirect.</li>
+      </ol>
+    </div>
+    <div class="q">
+      <h4>Left to choose, in <a href="#decide" style="color:#9FE3D6">Decide</a></h4>
+      <ul>
+        <li><b>Cut surgeon groups</b> completely?</li>
+        <li><b>Coming back:</b> her disabled Contracts when she is made active again.</li>
+      </ul>
+      <h4 style="margin-top:16px">Then</h4>
+      <ul><li>Plan mode, <span class="mono">/update-requirements</span> with these decisions, commit, and a prompt for <span class="mono">/update-build-plan</span>.</li></ul>
+    </div>
+  </div>
+</section>
+
+<footer>Second pass on <a href="people-ideas.html">People screen ideas</a>. Built on the requirements catalogue (FT-13.6, FT-12.1, EP-11, US-13.4.1, US-04.1.5), the domain model, the catch-up build record and the layout audit. Names, NHIs, codes and rates come from the seed; Mr R. Fenwick and anything marked illustrative are made up for the mocks.</footer>
+</main>
+
+<script>
+/* The side nav, as SideNav.tsx draws it, with Patients folded into People. a: People where Patients was. b: People with the records. */
+(function(){
+  var A=[['Day view'],['Intake','4'],['Draft Lists','3'],['Conflicts'],['Notifications','4'],['Review queue','5','c'],['Invoices'],['People','4',null,true],['Billing monitor'],['Ledger'],['Contracts'],['Master data'],['Audit']];
+  var B=[['Day view'],['Intake','4'],['Draft Lists','3'],['Conflicts'],['Notifications','4'],['Review queue','5','c'],['Invoices'],['Billing monitor'],['Ledger'],['Contracts'],['People','4',null,true],['Master data'],['Audit']];
+  document.querySelectorAll('.mnav[data-nav]').forEach(function(el){
+    var items=el.getAttribute('data-nav')==='b'?B:A, on=el.getAttribute('data-on');
+    var h='<div class="logo"><b>Anaesthesia Associates</b><small>ADMIN</small></div>';
+    items.forEach(function(it){
+      h+='<div class="it'+(it[0]===on?' on':'')+(it[3]?' new':'')+'">'+it[0]+(it[1]?' <em'+(it[2]?' class="c"':'')+'>'+it[1]+'</em>':'')+'</div>';
+    });
+    if(!el.classList.contains('short')) h+='<div class="me"><i>KW</i><div>Kirsty W.<span>Office</span></div></div>';
+    el.innerHTML=h;
+  });
+})();
+</script>
+<script>
+/* Decide: the open questions, each with options, a live preview, a note, and a text export. */
+(function(){
+  function navList(order){
+    return '<div class="mininav">'+order.map(function(n){return '<span'+(n==='People'?' class="on"':'')+'>'+n+'</span>'}).join('')+'</div>';
+  }
+  var ROW=function(t,s){return '<div class="r"><span class="a">'+t+'</span><span>'+s+'</span></div>'};
+  var Q=[
+    {id:'cutGroups', title:'Cut surgeon groups completely',
+     about:'Nothing in the app reads a surgeon group except its own screens (<a href="#groups">the evidence</a>). The Party of kind "surgeon group" (COS, Unisports and the others) is a different record and stays either way.',
+     opts:[
+      {k:'cut', rec:true, label:'Yes, cut them', sum:'The record, its Master data view, the Groups card on a surgeon\'s page and the catalogue line go. Old links redirect to Surgeons.',
+       prev:'<div class="tabs"><span class="tab">Anaesthetists <span class="cnt">85</span></span><span class="tab on">Surgeons <span class="cnt">165</span></span><span class="tab">Specialties <span class="cnt">12</span></span><span class="tab">Patients <span class="cnt w">4</span></span></div><div class="card pad" style="margin-top:10px"><div class="ch">Mr T. Hale · Contracts for him</div><div class="rl">'+ROW('ACC orthopaedic services, COS','Held by Canterbury Orthopaedic Surgeons')+ROW('Unisports Ortho','Held by Unisports Ortho')+'</div></div>'},
+      {k:'keep', label:'Keep them as a label', sum:'A fifth People tab, Surgeon groups: name, description, members. Still decides nothing.',
+       prev:'<div class="tabs"><span class="tab">Anaesthetists</span><span class="tab">Surgeons</span><span class="tab on">Surgeon groups <span class="cnt">2</span></span><span class="tab">Specialties</span><span class="tab">Patients</span></div><div class="card pad" style="margin-top:10px"><div class="rl">'+ROW('Canterbury Orthopaedic Surgeons','Mr T. Hale')+ROW('Christchurch Eye Surgeons','Mr J. Whitford, Ms A. Reid')+'</div></div>'}
+     ]},
+    {id:'reactivate', title:'Her Contracts when she comes back',
+     about:'Her own Contracts are disabled after her last day. Say Dr Beaumont returns from a year away and the office makes her active again. What happens to her Rhinoplasty Contract?',
+     opts:[
+      {k:'offer', rec:true, label:'Offer to make them active again', sum:'"Make active" lists her disabled Contracts, ticked, with their prices, so the office can check each still holds.',
+       prev:'<div class="card pad" style="box-shadow:var(--e2)"><b>Make Dr Sarah Beaumont active?</b><span class="dim" style="font-size:12.5px">Her Slots start today and she can sign in again.</span><div style="display:flex;flex-direction:column;gap:6px;font-size:13px"><span><span class="box on"></span> Make Rhinoplasty active again <span class="mono dim">$1,350.00</span></span></div><div class="cfoot"><span class="btn sec">Cancel</span><span class="btn pri">Make active</span></div></div>'},
+      {k:'manual', label:'Leave them disabled', sum:'The office opens each Contract and makes it active by hand, if it still applies.',
+       prev:'<div class="card pad"><b>Make Dr Sarah Beaumont active?</b><div class="notice">Her own Contracts stay disabled. Make each active from its page if it still applies.</div><div class="cfoot"><span class="btn sec">Cancel</span><span class="btn pri">Make active</span></div></div>'}
+     ]}
+  ];
+  var KEY='people-section-decisions-v2', state={};
+  try{ state=JSON.parse(localStorage.getItem(KEY)||'{}')||{} }catch(e){ state={} }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)) }catch(e){} }
+  function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  var root=document.getElementById('dq');
+  root.innerHTML=Q.map(function(q,i){
+    return '<article class="dqcard" data-q="'+q.id+'"><div class="dqmain"><div class="dqh"><span class="num">'+(i+1)+'</span><h3>'+q.title+'</h3></div><p class="dqabout">'+q.about+'</p><div class="dqopts" role="radiogroup" aria-label="'+esc(q.title)+'">'+
+      q.opts.map(function(o){return '<button type="button" class="dqo" role="radio" aria-checked="false" data-k="'+o.k+'"><span class="dqr"></span><span><b>'+o.label+(o.rec?' <span class="pill ok">Recommended</span>':'')+'</b><small>'+o.sum+'</small></span></button>'}).join('')+
+      '</div><label class="dqnote">Note (optional)<textarea rows="2" data-note="'+q.id+'"></textarea></label></div><div class="dqprev"><span class="dqpl"></span><div class="dqpb"></div></div></article>';
+  }).join('');
+  function paint(qid, previewKey){
+    var q=Q.filter(function(x){return x.id===qid})[0], card=root.querySelector('[data-q="'+qid+'"]');
+    var chosen=(state[qid]||{}).k;
+    card.querySelectorAll('.dqo').forEach(function(b){var on=b.dataset.k===chosen; b.classList.toggle('on',on); b.setAttribute('aria-checked',on)});
+    var show=previewKey||chosen||q.opts.filter(function(o){return o.rec})[0]&&q.opts.filter(function(o){return o.rec})[0].k||q.opts[0].k;
+    var o=q.opts.filter(function(x){return x.k===show})[0];
+    card.querySelector('.dqpl').textContent='Preview: '+o.label+(show===chosen?' (your pick)':(o.rec&&!chosen?' (recommended)':''));
+    card.querySelector('.dqpb').innerHTML=o.prev;
+  }
+  function output(){
+    var n=0, lines=['People section: my answers (people-section.html)',''];
+    Q.forEach(function(q,i){
+      var s=state[q.id]||{}, o=q.opts.filter(function(x){return x.k===s.k})[0];
+      if(o) n++;
+      lines.push((i+1)+'. '+q.title+': '+(o?o.label+(o.rec?' (recommended)':''):'not chosen'));
+      if(s.note&&s.note.trim()) lines.push('   Note: '+s.note.trim().replace(/\n+/g,' '));
+    });
+    document.getElementById('dqtext').value=lines.join('\n');
+    document.getElementById('dqcount').textContent=n+' of '+Q.length+' chosen';
+  }
+  Q.forEach(function(q){
+    var card=root.querySelector('[data-q="'+q.id+'"]');
+    card.querySelectorAll('.dqo').forEach(function(b){
+      b.addEventListener('click',function(){ state[q.id]=Object.assign({},state[q.id],{k:b.dataset.k}); save(); paint(q.id); output(); });
+      b.addEventListener('mouseenter',function(){ paint(q.id,b.dataset.k) });
+      b.addEventListener('focus',function(){ paint(q.id,b.dataset.k) });
+    });
+    card.querySelector('.dqopts').addEventListener('mouseleave',function(){ paint(q.id) });
+    var ta=card.querySelector('textarea');
+    ta.value=(state[q.id]||{}).note||'';
+    ta.addEventListener('input',function(){ state[q.id]=Object.assign({},state[q.id],{note:ta.value}); save(); output(); });
+    paint(q.id);
+  });
+  output();
+  function act(el,fn){ el.addEventListener('click',fn); el.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){e.preventDefault();fn()} }) }
+  act(document.getElementById('dqcopy'),function(){
+    var t=document.getElementById('dqtext'), msg=document.getElementById('dqmsg');
+    function fallback(){ t.focus(); t.select(); try{ document.execCommand('copy'); msg.textContent='Copied' }catch(e){ msg.textContent='Selected: press Cmd+C' } }
+    if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t.value).then(function(){msg.textContent='Copied'},fallback) } else fallback();
+  });
+  act(document.getElementById('dqreset'),function(){ state={}; save(); root.querySelectorAll('textarea').forEach(function(t){t.value=''}); Q.forEach(function(q){paint(q.id)}); output(); document.getElementById('dqmsg').textContent=''; });
+})();
+</script>
+</body>
+</html>
