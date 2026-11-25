@@ -148,9 +148,9 @@ footer { color:var(--ink-3); font-size:13px; margin-top:48px; }
     <thead><tr><th scope="col" class="tk"><span class="sr">Track</span></th><th scope="col" class="dn">Done</th><th scope="col" class="now">Now</th><th scope="col" class="">2</th><th scope="col" class="">3</th><th scope="col" class="">4</th><th scope="col" class="">5</th></tr></thead>
     <tbody>
       <tr><th scope="row" class="tk">Contracts</th><td class="dn"><a class="chip s-done" href="#p-45" title="45 The Contracts section and the Contract page (Done)">45</a></td><td class="now"></td><td class=""></td><td class=""></td><td class=""></td><td class=""></td></tr>
-      <tr><th scope="row" class="tk">Lane A</th><td class="dn"><a class="chip s-done" href="#p-46" title="46 The New contract page (Done)">46</a><a class="chip s-done" href="#p-49" title="49 Replace a Contract from a date (Done)">49</a></td><td class="now"></td><td class=""></td><td class=""><a class="chip s-wait" href="#p-53" title="53 The People section and the shared record pattern (Wait)">53</a></td><td class=""><a class="chip s-wait" href="#p-54" title="54 The anaesthetist&#39;s page (Wait)">54</a></td><td class=""></td></tr>
-      <tr><th scope="row" class="tk">Lane B</th><td class="dn"><a class="chip s-done" href="#p-47" title="47 The grouped Contract catalogue (Done)">47</a><a class="chip s-done" href="#p-48" title="48 The Parties and Funding tags tabs (Done)">48</a></td><td class="now"></td><td class=""></td><td class=""></td><td class=""><a class="chip s-wait" href="#p-55" title="55 The surgeon&#39;s page, and surgeon groups cut (Wait)">55</a></td><td class=""><a class="chip s-wait" href="#p-56" title="56 The specialty&#39;s page (Wait)">56</a></td></tr>
-      <tr><th scope="row" class="tk">Lane C</th><td class="dn"></td><td class="now"><a class="chip s-safe" href="#p-50" title="50 The rate and priority tier card (Safe to start)">50</a><a class="chip s-safe" href="#p-51" title="51 Waiting for an NHI as a tab on Intake (Safe to start)">51</a></td><td class=""><a class="chip s-wait" href="#p-52" title="52 Make an anaesthetist inactive from a last day (Wait)">52</a></td><td class=""></td><td class=""><a class="chip s-wait" href="#p-57" title="57 The Patients tab and the patient&#39;s page (Wait)">57</a></td><td class=""></td></tr>
+      <tr><th scope="row" class="tk">Lane A</th><td class="dn"><a class="chip s-done" href="#p-46" title="46 The New contract page (Done)">46</a><a class="chip s-done" href="#p-49" title="49 Replace a Contract from a date (Done)">49</a></td><td class="now"><a class="chip s-safe" href="#p-50" title="50 The rate and priority tier card (Safe to start)">50</a></td><td class=""><a class="chip s-wait" href="#p-52" title="52 Make an anaesthetist inactive from a last day (Wait)">52</a></td><td class=""><a class="chip s-wait" href="#p-53" title="53 The People section and the shared record pattern (Wait)">53</a></td><td class=""><a class="chip s-wait" href="#p-54" title="54 The anaesthetist&#39;s page (Wait)">54</a></td><td class=""></td></tr>
+      <tr><th scope="row" class="tk">Lane B</th><td class="dn"><a class="chip s-done" href="#p-47" title="47 The grouped Contract catalogue (Done)">47</a><a class="chip s-done" href="#p-48" title="48 The Parties and Funding tags tabs (Done)">48</a></td><td class="now"><a class="chip s-safe" href="#p-51" title="51 Waiting for an NHI as a tab on Intake (Safe to start)">51</a></td><td class=""></td><td class=""></td><td class=""><a class="chip s-wait" href="#p-55" title="55 The surgeon&#39;s page, and surgeon groups cut (Wait)">55</a></td><td class=""><a class="chip s-wait" href="#p-56" title="56 The specialty&#39;s page (Wait)">56</a></td></tr>
+      <tr><th scope="row" class="tk">Lane C</th><td class="dn"></td><td class="now"></td><td class=""></td><td class=""></td><td class=""><a class="chip s-wait" href="#p-57" title="57 The Patients tab and the patient&#39;s page (Wait)">57</a></td><td class=""></td></tr>
     </tbody>
   </table>
 </div>
@@ -193,14 +193,14 @@ Then read docs/build-plan/LANES.md in your worktree, whole, and follow &quot;How
     <div class="card-top"><span class="num">50</span><h3>The rate and priority tier card</h3></div>
     <p class="what">The rate per unit and the priority tier on one self-contained card on today&#39;s anaesthetist record: Edit, choose, Save (Cancel leaves it), one audited change per save, never a single click.</p>
     <p class="why">Lane A&#39;s first Wave 2 phase: it needs only 45, on master.</p>
-    <p class="meta">1 session, Lane C track</p>
+    <p class="meta">1 session, Lane A track</p>
     <div class="acts"><button class="btn" type="button" data-copy="lane-1">Copy Lane A prompt</button><a class="lnk" href="phases/phase-50-rate-and-tier-card.md">Phase plan</a></div>
   </article>
   <article class="card">
     <div class="card-top"><span class="num">51</span><h3>Waiting for an NHI as a tab on Intake</h3></div>
     <p class="what">A Waiting for NHI tab on Intake beside Matching, with the view moved from Patients unchanged and the old /admin/patients/waiting link redirected.</p>
     <p class="why">Lane B&#39;s Wave 2 phase: it needs nothing beyond what is on master.</p>
-    <p class="meta">1 session, Lane C track</p>
+    <p class="meta">1 session, Lane B track</p>
     <div class="acts"><button class="btn" type="button" data-copy="lane-2">Copy Lane B prompt</button><a class="lnk" href="phases/phase-51-waiting-for-nhi-on-intake.md">Phase plan</a></div>
   </article></div>
   
@@ -348,7 +348,7 @@ Phase goal: Replace from a date as one action from a Contract&#39;s page: a shee
     <summary><span class="num">50</span><span class="t">The rate and priority tier card</span><span class="pill p-safe">Safe to start</span></summary>
     <div class="ph-body">
       <p>The rate per unit and the priority tier on one self-contained card on today&#39;s anaesthetist record: Edit, choose, Save (Cancel leaves it), one audited change per save, never a single click.</p>
-      <p class="meta">After 45. 1 session. Lane C track.</p>
+      <p class="meta">After 45. 1 session. Lane A track.</p>
       <p class="why">Lane A&#39;s first Wave 2 phase: it needs only 45, on master.</p>
       <div class="acts"><a class="lnk" href="phases/phase-50-rate-and-tier-card.md">Phase plan</a><button class="btn quiet" type="button" data-copy="prompt-50">Copy kick-off prompt</button></div>
       <details class="pr"><summary>Show the prompt</summary><pre id="prompt-50">Please run build plan Phase 50 (The rate and priority tier card) of the Anaesthesia Associates (AA) prototype.
@@ -373,7 +373,7 @@ Phase goal: the priority tier is edited in a card with the rate per unit, never 
     <summary><span class="num">51</span><span class="t">Waiting for an NHI as a tab on Intake</span><span class="pill p-safe">Safe to start</span></summary>
     <div class="ph-body">
       <p>A Waiting for NHI tab on Intake beside Matching, with the view moved from Patients unchanged and the old /admin/patients/waiting link redirected.</p>
-      <p class="meta">No dependencies. 1 session. Lane C track.</p>
+      <p class="meta">No dependencies. 1 session. Lane B track.</p>
       <p class="why">Lane B&#39;s Wave 2 phase: it needs nothing beyond what is on master.</p>
       <div class="acts"><a class="lnk" href="phases/phase-51-waiting-for-nhi-on-intake.md">Phase plan</a><button class="btn quiet" type="button" data-copy="prompt-51">Copy kick-off prompt</button></div>
       <details class="pr"><summary>Show the prompt</summary><pre id="prompt-51">Please run build plan Phase 51 (Waiting for an NHI as a tab on Intake) of the Anaesthesia Associates (AA) prototype.
@@ -398,7 +398,7 @@ Phase goal: rows waiting for an NHI become their own tab on Intake beside Matchi
     <summary><span class="num">52</span><span class="t">Make an anaesthetist inactive from a last day</span><span class="pill p-wait">Wait</span></summary>
     <div class="ph-body">
       <p>Make an anaesthetist inactive from a chosen last day with a reason, refused while they hold a List after it (those Lists shown), cleared before the day, each step audited.</p>
-      <p class="meta">After 49 and 50. 2 sessions. Lane C track. Questions: <a href="../../requirements-board/requirements/questions/OQ-147.md">OQ-147</a> (open), <a href="../../requirements-board/requirements/questions/OQ-83.md">OQ-83</a> (open), <a href="../../requirements-board/requirements/questions/OQ-144.md">OQ-144</a> (open).</p>
+      <p class="meta">After 49 and 50. 2 sessions. Lane A track. Questions: <a href="../../requirements-board/requirements/questions/OQ-147.md">OQ-147</a> (open), <a href="../../requirements-board/requirements/questions/OQ-83.md">OQ-83</a> (open), <a href="../../requirements-board/requirements/questions/OQ-144.md">OQ-144</a> (open).</p>
       <p class="why w">Lane A, after 50 (49 is on master).</p>
       <div class="acts"><a class="lnk" href="phases/phase-52-make-anaesthetist-inactive.md">Phase plan</a><button class="btn quiet" type="button" data-copy="prompt-52">Copy kick-off prompt</button></div>
       <details class="pr"><summary>Show the prompt</summary><pre id="prompt-52">Please run build plan Phase 52 (Make an anaesthetist inactive from a last day) of the Anaesthesia Associates (AA) prototype.
