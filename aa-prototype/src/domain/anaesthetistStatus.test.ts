@@ -5,7 +5,9 @@ import {
   isActiveDuring,
   isActiveInMonth,
   isActiveOn,
+  isInPracticeOn,
   listsAfterLastDay,
+  practiceAnaesthetistCount,
   ownContracts,
   statusOn,
   type ActivitySpan,
@@ -119,5 +121,23 @@ describe('own Contracts and the offer back (US-04.1.2 Inactive anaesthetist)', (
     expect(contractsToOfferBack(contracts, audit, 'B', '2027-01-31').map((c) => c.id)).toEqual(['Rhinoplasty'])
     // The office disabled it by hand after the rule did: the latest disable is the office's, so it is not offered.
     expect(contractsToOfferBack(contracts, [...audit, disable('Rhinoplasty', 'Kirsty W.', '2027-02-05T09:00:00')], 'B', '2027-01-31')).toEqual([])
+  })
+})
+
+describe('practiceAnaesthetistCount (the practice\'s anaesthetists, US-12.1.6)', () => {
+  const working = { ...span(), inactiveReason: null }
+  const leaving = { ...span({ lastDayISO: '2026-11-30' }), inactiveReason: 'leftPractice' as const }
+  const left = { ...span({ lastDayISO: '2026-11-20' }), inactiveReason: 'leftPractice' as const }
+  const joining = { ...span({ startDateISO: '2027-01-05' }), inactiveReason: null }
+  const back = { ...span({ lastDayISO: '2026-10-31', activeAgainISO: '2026-11-15' }), inactiveReason: 'longLeave' as const }
+
+  it('counts the working, the leaving, the joining and the returned; never one past their last day', () => {
+    expect([working, leaving, left, joining, back].map((a) => isInPracticeOn(a, '2026-11-24'))).toEqual([true, true, false, true, true])
+    expect(practiceAnaesthetistCount([working, leaving, left, joining, back], '2026-11-24')).toBe(4)
+  })
+
+  it('moves with the day: before the last day the leaver still counts', () => {
+    expect(practiceAnaesthetistCount([working, left], '2026-11-20')).toBe(2)
+    expect(practiceAnaesthetistCount([working, left], '2026-11-21')).toBe(1)
   })
 })

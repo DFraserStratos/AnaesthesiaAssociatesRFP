@@ -83,6 +83,25 @@ export function statusOn(a: ActivitySpan & Pick<Anaesthetist, 'inactiveReason'>,
 }
 
 /**
+ * On AA's books on `todayISO`: not inactive by `statusOn`, so working, leaving (a last day today or
+ * ahead) or joining (a start date ahead). The People list's Active filter and the practice's count.
+ */
+export function isInPracticeOn(a: ActivitySpan & Pick<Anaesthetist, 'inactiveReason'>, todayISO: IsoDate): boolean {
+  return statusOn(a, todayISO).kind !== 'inactive'
+}
+
+/**
+ * The practice's count of anaesthetists on `todayISO`: everyone on AA's books (`isInPracticeOn`).
+ * The one figure the app states as "N anaesthetists": the Day view header, the People tab's badge and
+ * the Anaesthetists list's Active line. Who works a given day is the roster, a different count.
+ */
+export function practiceAnaesthetistCount(all: Iterable<ActivitySpan & Pick<Anaesthetist, 'inactiveReason'>>, todayISO: IsoDate): number {
+  let n = 0
+  for (const a of all) if (isInPracticeOn(a, todayISO)) n++
+  return n
+}
+
+/**
  * The Lists that refuse a last day: every List assigned to the anaesthetist
  * dated after it, not removed, in date order. (A Draft List has no
  * anaesthetist, so it never holds one.)

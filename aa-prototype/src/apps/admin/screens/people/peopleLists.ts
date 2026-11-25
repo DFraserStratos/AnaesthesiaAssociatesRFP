@@ -16,7 +16,7 @@
 
 import type { Anaesthetist, Surgeon } from '../../../../domain/types'
 import type { Specialty } from '../../../../domain/specialties'
-import { statusOn } from '../../../../domain/anaesthetistStatus'
+import { isInPracticeOn } from '../../../../domain/anaesthetistStatus'
 import { isRetired } from '../../../../domain/masterLifecycle'
 import { compareBySurname } from '../../../../domain/surgeons'
 import { surnameOf } from '../../../../shared/format'
@@ -63,7 +63,7 @@ export function anaesthetistRows(
   tierOf: (anaesthetistId: string) => number,
 ): Anaesthetist[] {
   return all
-    .filter((a) => status === ALL || (status === 'inactive') === (statusOn(a, todayISO).kind === 'inactive'))
+    .filter((a) => status === ALL || (status === 'inactive') !== isInPracticeOn(a, todayISO))
     .filter((a) => tier === ALL || String(tierOf(a.registrationNumber)) === tier)
     .filter((a) => matches(q, [a.name], [a.registrationNumber, a.hpiId]))
     .sort((a, b) => surnameOf(a.name).localeCompare(surnameOf(b.name)) || a.name.localeCompare(b.name))

@@ -76,7 +76,6 @@ that need work are repeated here.
 - Stage recurring clash for Dr Souter's Mon AM booking picks Mon 29 Mar 2027 (Easter Monday), where recurring Lists skip, so no Draft List appears though the result promises one; the guide stages Tue AM instead. Skip holidays and shutdowns when staging. `shared/demoTriggers/registry.ts` (`stage-recurring-clash`). S
 - Stale Control Panel beat labels: S5 "Beat 2 · Admin Patients, Waiting for NHI", "Beat 4 · Master data, Contracts", Beat 5's "rate per unit on Master data", S1 Beat 3's "Open her Booking from Needs an invoice destination". `apps/demo/demoScenarios.ts`. S
 - Stale demo-action copy from before the date move: `hospital-description-arrives` hint says "Tue 21 PM"; the injected unmatched receipt's reference says "SOUTER JULY". `shared/demoTriggers/registry.ts`, `store/ledgerDemo.ts`. S
-- Three anaesthetist counts disagree: Day header 82 (83 on other days), People 84 active, practice 85. Confirm the counts or explain them. Day header, `apps/admin/screens/people/`. S (owner)
 - The Contracts tab badge reads 79 while the list says "147 Contracts active" (may count office Contracts only; check). `apps/admin/screens/contracts/`. S
 - Master data, Modifiers: the "AA's own" table is squeezed to its header at 1440x900 and a sticky `th` blocks clicks on its rows. `apps/admin/screens/masters/ModifiersView.tsx`. S
 - David Chen's history Booking `HBK03` falls on Mon 26 Oct 2026, Labour Day, after the date move. `domain/seed/history.ts`. S

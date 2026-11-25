@@ -9,7 +9,8 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { coreAppState, practiceAppState, type AppState } from './appStore'
 import { openWarnings } from './warnings'
 import { scanForNhiLeaks } from './privacyScan'
-import { previewApplyAllRecurringBookings } from './selectors'
+import { previewApplyAllRecurringBookings, rosterForDate } from './selectors'
+import { isInPracticeOn, practiceAnaesthetistCount } from '../domain/anaesthetistStatus'
 import { deltaOf } from './persistDelta'
 import { reconcileAllConflicts } from '../domain/conflicts'
 import { addDaysISO } from '../domain/clock'
@@ -29,8 +30,21 @@ describe('the everyday practice', () => {
   it('is AA\'s whole company: 85 anaesthetists, each with sessions over the horizon', () => {
     expect(Object.keys(s.masters.anaesthetists)).toHaveLength(85)
     const withSlots = new Set(Object.values(s.schedule.slots).map((x) => x.anaesthetistId))
-    // The two new starters join in September and October; everyone has sessions by the horizon's end.
+    // The two new starters join in January and February 2027; everyone has sessions by the horizon's end.
     expect(withSlots.size).toBe(85)
+  })
+
+  it('counts 84 anaesthetists on 24 Nov, 82 of them rostered: the leaver out, the two joiners in the count but without a session yet', () => {
+    const all = Object.values(s.masters.anaesthetists)
+    expect(practiceAnaesthetistCount(all, TODAY)).toBe(84)
+    const rostered = new Set(rosterForDate(s, TODAY).map((a) => a.registrationNumber))
+    expect(rostered.size).toBe(82)
+    const notRostered = all.filter((a) => !rostered.has(a.registrationNumber))
+    expect(notRostered.map((a) => [a.name, isInPracticeOn(a, TODAY)]).sort()).toEqual([
+      ['Dr Kavya Reddy', true],
+      ['Dr Minh Nguyen', true],
+      ['Dr Oscar Reeves', false],
+    ])
   })
 
   it('has one inactive colleague (Phase 52): Dr Reeves left on 20 Nov, with no Slot or List after it and no own Contract', () => {

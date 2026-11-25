@@ -12,7 +12,7 @@ import { useCallback, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CountBadge, LineTabLink, LineTabs } from '../../../../shared/ui'
 import { useDemoTriggerContext } from '../../../../shared/demoTriggers'
-import { statusOn } from '../../../../domain/anaesthetistStatus'
+import { practiceAnaesthetistCount } from '../../../../domain/anaesthetistStatus'
 import { isRetired } from '../../../../domain/masterLifecycle'
 import { useAppStore, useToday } from '../../../../store'
 import { AdminPage, type AdminPageMode } from '../../components/AdminPage'
@@ -20,15 +20,15 @@ import { LoadResultBanner } from '../masters/chrome'
 import { PEOPLE_TAB_SEEDED, PEOPLE_TABS, type PeopleTab } from './peopleTabs'
 
 /**
- * The section's tab strip, each list tab with its count as the mock's `#map` draws them: active
- * anaesthetists (not inactive on the demo clock's today, `statusOn`), active surgeons, specialties. Patients carries none: its
+ * The section's tab strip, each list tab with its count as the mock's `#map` draws them: the
+ * practice's anaesthetists (`practiceAnaesthetistCount`, on the demo clock's today), active surgeons, specialties. Patients carries none: its
  * count is the side nav's. Showing a tab publishes its id under `adminPeople.tab`, which the
  * sample-sheet trigger reads.
  */
 export function PeopleTabs({ active }: { active: PeopleTab }) {
   useDemoTriggerContext('adminPeople.tab', active)
   const todayISO = useToday()
-  const anaesthetistCount = useAppStore((s) => Object.values(s.masters.anaesthetists).filter((a) => statusOn(a, todayISO).kind !== 'inactive').length)
+  const anaesthetistCount = useAppStore((s) => practiceAnaesthetistCount(Object.values(s.masters.anaesthetists), todayISO))
   const surgeonCount = useAppStore((s) => Object.values(s.masters.surgeons).filter((x) => !isRetired(x)).length)
   const specialtyCount = useAppStore((s) => Object.keys(s.masters.specialties).length)
   const counts: Partial<Record<PeopleTab, number>> = { anaesthetists: anaesthetistCount, surgeons: surgeonCount, specialties: specialtyCount }
