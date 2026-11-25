@@ -9,14 +9,14 @@
  * it (the surgeon's rooms, or the hospital's when it replaced them), with when
  * and where it came from, three lines then "Show all". The Contract and the
  * RVG code live in the Billing and RVG code cards below it; the invoice
- * description shows on the invoice only. Compact density (Admin Review cells,
- * List drawer rows): the text, the Contract with its pricing basis and the RVG
- * code as single lines with an ellipsis, the full text in a `title`.
+ * description shows on the invoice only. Compact density (Admin Review's
+ * Procedure lines): the RVG code chip, the text, the RVG code's description and
+ * the Contract with its pricing basis, the full text in a `title`.
  */
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { fontFamily, neutral, radius, type as typeScale } from '../../theme/tokens'
-import type { ProcedureStackView, StackSurface } from '../../domain/billing/procedureStack'
+import type { PricingBasis, ProcedureStackView, StackSurface } from '../../domain/billing/procedureStack'
 import { PROCEDURE_TEXT_SOURCE_LABELS, receivedDay } from '../format'
 import { formatPricingBasis } from '../contracts/labels'
 import { Lock } from 'lucide-react'
@@ -24,6 +24,7 @@ import { LOCK_BADGE_TEXT } from '../../domain/billing/lock'
 import { Eyebrow } from '../ui/Eyebrow'
 import { TextAction } from '../ui/TextAction'
 import { InfoTip } from '../help/InfoTip'
+import { Pill } from '../ui/Pill'
 
 export interface ProcedureStackProps {
   view: ProcedureStackView
@@ -133,71 +134,90 @@ function receivedStamp(iso: string): string {
 // Compact density
 // ---------------------------------------------------------------------------
 
-function CompactStack({ view, surface, heading }: ProcedureStackProps) {
-  const line = (shot: string, label: string, full: string, value: ReactNode, muted = false) => (
-    <li
-      data-shot={shot}
-      title={full}
-      style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 12.5, lineHeight: '17px', color: muted ? neutral.mist : neutral.slate }}
-    >
-      <span style={VISUALLY_HIDDEN}>{label}: </span>
-      {value}
-    </li>
-  )
+/**
+ * Compact density: one Procedure line on Admin Review, in the List drawer's parts (Day view): the RVG
+ * code as the drawer's mono chip, the procedure text in ink as the line the eye lands on, the RVG
+ * code's description in full under it, then the Contract with its pricing basis in mist. A typed price
+ * is left to Review's Fee cell and flag, so it is said once. `badge` sits after the text (Review's
+ * Primary or Additional).
+ */
+function CompactStack({ view, surface, heading, badge }: ProcedureStackProps) {
   const text = view.procedureText
   const contract = view.contract
   const rvg = view.rvg
-  const basis = contract !== null ? formatPricingBasis(contract.basis, surface) : ''
+  // The basis without a typed price, and without repeating "RVG" after a Contract named "... RVG".
+  const fullBasis = contract !== null ? formatPricingBasis(withoutTyped(contract.basis), surface) : ''
+  const basis = contract !== null && /\bRVG$/.test(contract.name) && fullBasis.startsWith('RVG ') ? fullBasis.slice(4) : fullBasis
+  const rvgText = rvg === null ? null : typeof rvg === 'string' ? (rvg === 'forAnaesthetist' ? 'RVG code: for the anaesthetist' : 'RVG code to choose') : rvg.description
+  const rvgFull = rvg === null ? '' : typeof rvg === 'string' ? (rvg === 'forAnaesthetist' ? 'For the anaesthetist to fill in' : 'To choose') : `${rvg.code} ${rvg.description}`
+  const small = { fontSize: 12.5, lineHeight: '17px', color: neutral.slate } as const
   return (
-    <ol
+    <div
       data-shot="procedure-stack"
+      role="group"
       aria-label={heading ?? 'Procedure'}
-      style={{ listStyle: 'none', margin: 0, padding: '0 0 0 8px', borderLeft: `1.5px solid ${neutral.line}`, display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0, maxWidth: '100%' }}
+      style={{ display: 'grid', gridTemplateColumns: 'minmax(28px, max-content) minmax(0, 1fr)', columnGap: 10, rowGap: 1, minWidth: 0 }}
     >
-      {line(
-        'procedure-text',
-        'Procedure text',
-        text?.text ?? 'No description received',
-        text !== null ? (
-          <span style={{ fontFamily: MONO, fontSize: 12.5, color: neutral.ink }}>
-            <span aria-hidden>“</span>
-            {text.text}
-            <span aria-hidden>”</span>
-          </span>
-        ) : (
-          'No description received'
-        ),
-        text === null,
+      <span style={{ gridRow: '1 / span 4', paddingTop: 1 }}>
+        {rvg !== null && typeof rvg === 'object' && (
+          <Pill size="sm" mono shot="procedure-rvg-chip" title={rvgFull}>
+            {rvg.code}
+          </Pill>
+        )}
+      </span>
+      <div
+        data-shot="procedure-text"
+        title={text?.text ?? 'No description received'}
+        style={{
+          fontSize: 13.5,
+          lineHeight: '19px',
+          fontWeight: text !== null ? 500 : 400,
+          color: text !== null ? neutral.ink : neutral.mist,
+          overflowWrap: 'anywhere',
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+        }}
+      >
+        <span style={VISUALLY_HIDDEN}>Procedure text: </span>
+        {text?.text ?? 'No description received'}
+        {badge !== undefined && <span style={{ marginLeft: 8, whiteSpace: 'nowrap' }}>{badge}</span>}
+      </div>
+      {rvgText !== null && (
+        <div data-shot="procedure-rvg-code" title={rvgFull} style={{ ...small, ...(typeof rvg === 'string' ? { color: neutral.mist } : {}) }}>
+          <span style={VISUALLY_HIDDEN}>RVG code: </span>
+          {rvgText}
+        </div>
       )}
-      {line(
-        'procedure-contract',
-        'Contract',
-        contract !== null ? `${contract.name}, held by ${contract.holderName}, invoiced ${contract.invoiced?.name ?? 'not yet known'}, ${basis}${contract.locked === true ? `, ${LOCK_BADGE_TEXT.toLowerCase()}` : ''}` : 'Needs an invoice destination',
-        contract !== null ? (
+      <div
+        data-shot="procedure-contract"
+        title={contract !== null ? `${contract.name}, held by ${contract.holderName}, invoiced ${contract.invoiced?.name ?? 'not yet known'}, ${fullBasis}${contract.locked === true ? `, ${LOCK_BADGE_TEXT.toLowerCase()}` : ''}` : 'Needs an invoice destination'}
+        style={{ fontSize: 12, lineHeight: '16px', color: neutral.mist, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+      >
+        <span style={VISUALLY_HIDDEN}>Contract: </span>
+        {contract !== null ? (
           <>
             {/* Locked at authorise (catch-up Phase 25): the small mist lock glyph of Admin Review's locked rows. */}
             {contract.locked === true && <Lock data-shot="procedure-contract-locked" size={11} strokeWidth={2.25} color={neutral.mist} aria-label={LOCK_BADGE_TEXT} style={{ display: 'inline-block', marginRight: 4, verticalAlign: '-1px' }} />}
-            <span style={{ color: neutral.ink, fontWeight: 600 }}>{contract.name}</span> · {basis}
+            {contract.name}, {basis}
           </>
         ) : (
           'Needs an invoice destination'
-        ),
-        contract === null,
-      )}
-      {contract?.split !== undefined &&
-        line('procedure-split', 'Split', contract.split.text, <span style={{ color: contract.split.fits ? neutral.ink : undefined, fontWeight: 600 }}>{contract.split.text}</span>, false)}
-      {rvg !== null &&
-        line(
-          'procedure-rvg-code',
-          'RVG code',
-          typeof rvg === 'string' ? (rvg === 'forAnaesthetist' ? 'For the anaesthetist to fill in' : 'To choose') : `${rvg.code} ${rvg.description}`,
-          typeof rvg === 'string' ? (rvg === 'forAnaesthetist' ? 'RVG code: for the anaesthetist' : 'RVG code to choose') : (
-            <>
-              <span style={{ fontFamily: MONO, fontWeight: 600, color: neutral.ink }}>{rvg.code}</span> {rvg.description}
-            </>
-          ),
-          typeof rvg === 'string',
         )}
-    </ol>
+      </div>
+      {contract?.split !== undefined && (
+        <div data-shot="procedure-split" title={contract.split.text} style={{ ...small, color: contract.split.fits ? neutral.ink : neutral.slate, fontWeight: 600 }}>
+          {contract.split.text}
+        </div>
+      )}
+    </div>
   )
+}
+
+/** The basis without its typed price (Review says a typed price in its Fee cell and flag). */
+function withoutTyped(basis: PricingBasis): PricingBasis {
+  const rest = { ...basis }
+  delete rest.typed
+  return rest
 }

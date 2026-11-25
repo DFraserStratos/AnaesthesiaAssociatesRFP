@@ -5,7 +5,7 @@ import { runDeliverySummary } from '../../../domain/billing/invoicePresentation'
 import { useMemo, useState, type ReactNode } from 'react'
 import { ArrowLeft, ArrowRight, Check, Lock, Receipt } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
-import type { AssignedList, Booking, Procedure } from '../../../domain/types'
+import type { AssignedList, Booking, Contract, Procedure } from '../../../domain/types'
 import {
   activeAlertFor,
   approveContractChangesOnList,
@@ -50,10 +50,11 @@ import { ChangedSinceSubmittedPill, useChangedSinceSubmitted } from '../componen
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
-import { allocationNote, inDisplayOrder } from '../../../domain/billing/multiProcedure'
-import { FormError, Notice, Pill, ResultLine, StatTile, TickButton } from '../../../shared/ui'
+import { inDisplayOrder } from '../../../domain/billing/multiProcedure'
+import { unitPartsUnderRule, type FeeResult } from '../../../domain/billing/fee'
+import { FormError, Notice, Pill, ResultLine, StatTile, TickButton, visuallyHidden } from '../../../shared/ui'
 import { TextAction } from '../../../shared/ui/TextAction'
-import { ClearWarningButton } from '../../../shared/warnings'
+import { ClearWarningButton, strongestOpen, warningTone } from '../../../shared/warnings'
 import { withStubsInTimeOrder } from '../../../domain/intake/stubs'
 import { useListStubs } from '../../../store/stubSelectors'
 import { StubTableRow } from '../../../shared/stubs'
@@ -73,10 +74,29 @@ interface ReviewScreenProps {
   onOpenBooking?: (dateISO: string, bookingId: string) => void
 }
 
-const REVIEW_NOWRAP_HEADINGS = new Set(['Time', 'Times', 'B · T · M', 'Units', 'Fee'])
+const REVIEW_COLUMNS = ['Time', 'Patient', 'Procedure', 'Times', 'B · T · M', 'Units', 'Fee', 'Flags'] as const
+const REVIEW_NOWRAP_HEADINGS = new Set<string>(['Time', 'Times', 'B · T · M', 'Units', 'Fee'])
+// The figure columns hug their content (width 1) so the spare width goes to the Procedure lines.
+const REVIEW_COLUMN_WIDTHS: Readonly<Partial<Record<string, number | string>>> = { Time: 60, Patient: 240, Procedure: 'auto', Times: 1, 'B · T · M': 1, Units: 1, Fee: 1, Flags: 200 }
 
 /** The point-of-need tips on the table's headings (catch-up Phase 43a; US-15.0.1). */
-const REVIEW_HEADING_TIPS: Readonly<Record<string, HelpTopicId>> = { Procedures: 'review.contracts', Fee: 'review.price' }
+const REVIEW_HEADING_TIPS: Readonly<Record<string, HelpTopicId>> = { Procedure: 'review.contracts', Fee: 'review.price' }
+
+/** A Booking's rows read as one group: a `line` rule under the last. */
+const BOOKING_GROUP = { borderBottom: `1px solid ${neutral.line}` } as const
+/** The subtotal line under a multi-procedure Booking's Procedure lines. */
+const SUBTOTAL_CELL = { borderBottom: 'none', borderTop: `1px dashed ${neutral.line}`, paddingTop: 6, paddingBottom: 12 } as const
+
+/**
+ * What a Procedure's Paid by would read, so Review says it once when every Procedure reads the same:
+ * a split (its parties show in the stack), no Contract yet, billed to the holder, or the payer billed.
+ */
+function paidByKey(procedure: Procedure, contract: Contract | undefined, invoicedName: string | undefined, child: boolean): string {
+  if (procedure.split !== undefined) return 'split'
+  if (contract === undefined) return 'none'
+  if (!isPayerBilled(contract)) return `holder:${invoicedName ?? ''}`
+  return `payer:${JSON.stringify(procedure.payer)}:${child}`
+}
 
 /** A label with its tip beside it, outside any control. */
 function TipLabel({ topic, children }: { topic: HelpTopicId; children: ReactNode }) {
@@ -343,7 +363,7 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
 
       <FormError message={error} />
 
-      {/* Review table */}
+      {/* Review table: one tbody per Booking, one line per Procedure, so each Procedure's numbers sit on its own line. */}
       <TableShell
         testId="review-detail-table-shell"
         label={`${hospitalName} · ${sessionText(list.session)} list`}
@@ -353,130 +373,196 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
       >
           <thead>
             <tr>
-              {['Time', 'Patient', 'Billed to', 'Procedures', 'Times', 'B · T · M', 'Units', 'Fee', 'Flags'].map((h, i) => (
-                <Th key={h} align={i === 6 || i === 7 ? 'right' : 'left'} {...(REVIEW_NOWRAP_HEADINGS.has(h) ? { nowrap: true } : {})}>
+              {REVIEW_COLUMNS.map((h) => (
+                <Th
+                  key={h}
+                  align={h === 'Units' || h === 'Fee' ? 'right' : 'left'}
+                  {...(REVIEW_COLUMN_WIDTHS[h] !== undefined ? { width: REVIEW_COLUMN_WIDTHS[h] } : {})}
+                  {...(REVIEW_NOWRAP_HEADINGS.has(h) ? { nowrap: true } : {})}
+                >
                   {REVIEW_HEADING_TIPS[h] !== undefined ? <TipLabel topic={REVIEW_HEADING_TIPS[h]}>{h}</TipLabel> : h}
                 </Th>
               ))}
+              <Th width={1}>
+                <span style={visuallyHidden}>Actions</span>
+              </Th>
             </tr>
           </thead>
-          <tbody>
-            {withStubsInTimeOrder(rows, (r) => r.booking.scheduledTime, stubs).map((entry) => {
-              if (entry.kind === 'stub') return <StubTableRow key={entry.stub.id} stub={entry.stub} colSpan={9} trailing={<StubResolveLink stub={entry.stub} />} />
-              const { booking, primary, primaryView, primaryAllocation, totals, flags, changes, procs, procIds, billedText, entityIds, entityLabels, stackViews, alert, lockView } = entry.booking
-              const patient = masters.patients[booking.patientId]
-              const btm = primaryView?.fee.btm
+          {withStubsInTimeOrder(rows, (r) => r.booking.scheduledTime, stubs).map((entry) => {
+            if (entry.kind === 'stub') {
               return (
-                <tr key={booking.id}>
-                  <Td mono nowrap>{booking.scheduledTime ?? '·'}</Td>
-                  <Td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontWeight: 600, fontSize: 13.5 }}>{patient?.name ?? 'Unknown'}</span>
-                      <WarningTriangle warnings={warningsByBooking.get(booking.id) ?? []} size="sm" />
-                      {/* A marker, not an action: the row's teal History link opens what changed. */}
-                      {changedIds.has(booking.id) && (
-                        <span data-shot="review-late-edit" style={{ display: 'inline-flex' }}>
-                          <Pill
-                            variant="outline"
-                            tone="warning"
-                            size="lg"
-                            shot="review-changed-booking"
-                            title="Changed by the anaesthetist since the List was submitted. History shows what changed."
-                          >
-                            Changed
-                          </Pill>
-                        </span>
-                      )}
-                      {!booking.completed && booking.cancellation === undefined && (
-                        <Pill tone="warning" size="lg">Not complete</Pill>
-                      )}
-                    </div>
-                    <div className="mono" style={{ fontSize: 11.5, color: neutral.mist }}>{patient?.nhi ?? ''}</div>
-                    {alert !== undefined && <AlertLine alert={alert} onResolve={() => run(resolveNotification(useAppStore, actor, alert.id))} disabled={authorised} />}
-                    <OpenWarnings warnings={warningsByBooking.get(booking.id) ?? []} patientName={patient?.name ?? 'this Booking'} disabled={authorised} onClear={(w) => run(clearWarning(useAppStore, actor, w.bookingId, w.key))} />
-                  </Td>
-                  <Td style={{ maxWidth: 150 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{billedText}</div>
-                    <InsurerLine booking={booking} />
-                    {lockView !== undefined && lockView.state === 'locked' && (
-                      <div data-shot="review-locked-payee" style={{ fontSize: 11.5, color: neutral.slate, marginTop: 2 }}>
-                        Paid to {lockView.payeeName}
-                        {lockView.procedures.filter((p) => p.splitText !== 'Full').map((p) => (
-                          <div key={p.procedureId}>{p.splitText}</div>
-                        ))}
-                      </div>
-                    )}
-                  </Td>
-                  {/* Every Procedure's stack, compact (catch-up Phase 20a; US-07.2.2, US-03.1.9). */}
-                  <Td data-shot="review-procedures" style={{ minWidth: 240, maxWidth: 300 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {stackViews.map((view, i) => {
-                        const procedureId = procIds[i]!
-                        const change = changes[i]
-                        return (
-                          <div key={i} data-shot="review-procedure-stack" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            <ProcedureStack view={view} density="compact" surface="office" heading={stackViews.length > 1 ? `Procedure ${i + 1}` : 'Procedure'} />
-                            {/* Each Procedure's share under the multi-procedure rule, primary first (catch-up Phase 23). */}
-                            {stackViews.length > 1 && totals.views[procedureId] !== undefined && (
-                              <span data-shot="review-procedure-share" style={{ fontSize: 11.5, color: neutral.slate, fontVariantNumeric: 'tabular-nums' }}>
-                                {allocationNote(totals.views[procedureId]!.allocation)}
-                              </span>
-                            )}
-                            <ReviewPaidBy
-                              procedure={procs[i]!}
-                              child={(warningsByBooking.get(booking.id) ?? []).some((w) => w.ruleId === 'childPayer' && w.procedureId === procedureId && isOpen(w))}
-                              patientId={booking.patientId}
-                              invoicedName={view.contract?.invoiced?.name}
-                              onChange={onOpenBooking !== undefined && !authorised ? () => onOpenBooking(list.dateISO, booking.id) : undefined}
-                            />
-                            <ProcedureFlags
-                              flags={flags.filter((f) => f.procedureId === procedureId)}
-                              change={change}
-                              locked={authorised}
-                              patientName={patient?.name ?? 'this Booking'}
-                              onApprove={() => run(approveContractSelection(useAppStore, actor, { bookingId: booking.id, procedureId }))}
-                              {...(onOpenBooking !== undefined ? { onCorrect: () => onOpenBooking(list.dateISO, booking.id) } : {})}
-                            />
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </Td>
-                  <Td mono nowrap>{primary?.anaestheticStartISO !== undefined ? `${hhmm(primary.anaestheticStartISO)} to ${hhmm(primary.handoverISO)}` : '·'}</Td>
-                  <Td mono nowrap data-testid="review-btm-value" style={{ color: neutral.slate }}>{btm !== undefined ? `${btm.base.units} · ${btm.time.units} · ${btm.modifiers.units}` : '·'}
-                    {primaryAllocation !== undefined && primaryAllocation.splitAcross > 1 && (
-                      <div data-shot="review-modifier-split" style={{ fontSize: 11.5 }}>
-                        M {primaryAllocation.bookingModifierUnits} · split {primaryAllocation.splitShares.join(' · ')}
-                      </div>
-                    )}
-                  </Td>
-                  <Td mono nowrap align="right" style={{ fontWeight: 700 }}>{totals.units}</Td>
-                  <Td data-shot="review-fee" nowrap align="right" bold>
-                    <ReviewFeeCell totals={totals} />
-                  </Td>
-                  <Td style={{ minWidth: 150 }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
-                      {flags.filter((f) => f.procedureId === undefined).map((f, i) => (
-                        <FlagPill key={i} flag={f} />
-                      ))}
-                      {authorised && <Lock size={13} aria-hidden style={{ color: neutral.mist }} />}
-                      <TextAction size="sm" flush onClick={() => setHistory({ ids: entityIds, ...(entityLabels !== undefined ? { labels: entityLabels } : {}) })}>History</TextAction>
-                      {/* The Admin Booking, where the office edits the invoice description (catch-up Phase 20a). */}
-                      {onOpenBooking !== undefined && <TextAction size="sm" flush shot="review-open-booking" onClick={() => onOpenBooking(list.dateISO, booking.id)}>Open</TextAction>}
-                    </div>
-                  </Td>
-                </tr>
+                <tbody key={entry.stub.id} style={BOOKING_GROUP}>
+                  <StubTableRow stub={entry.stub} colSpan={REVIEW_COLUMNS.length + 1} trailing={<StubResolveLink stub={entry.stub} />} />
+                </tbody>
               )
-            })}
-            {/* Totals */}
+            }
+            const { booking, primaryAllocation, totals, flags, changes, procs, stackViews, entityIds, entityLabels, alert, lockView } = entry.booking
+            const patient = masters.patients[booking.patientId]
+            const patientName = patient?.name ?? 'this Booking'
+            const warnings = warningsByBooking.get(booking.id) ?? []
+            const strongest = strongestOpen(warnings)
+            const multi = procs.length > 1
+            // The Procedure lines, then (with more than one) the subtotal line that adds them up.
+            const span = procs.length + (multi ? 1 : 0)
+            const childOpen = (procedureId: string) => warnings.some((w) => w.ruleId === 'childPayer' && w.procedureId === procedureId && isOpen(w))
+            // Who pays, said once under the patient while every Procedure reads the same; on each line when they differ.
+            const payerKeys = procs.map((p, i) => paidByKey(p, p.governingContractId !== undefined ? masters.contracts[p.governingContractId] : undefined, stackViews[i]?.contract?.invoiced?.name, childOpen(p.id)))
+            const sharedPayer = new Set(payerKeys).size <= 1
+            const paidBy = (i: number) => (
+              <ReviewPaidBy
+                procedure={procs[i]!}
+                child={childOpen(procs[i]!.id)}
+                patientId={booking.patientId}
+                invoicedName={stackViews[i]?.contract?.invoiced?.name}
+                onChange={onOpenBooking !== undefined && !authorised ? () => onOpenBooking(list.dateISO, booking.id) : undefined}
+              />
+            )
+            const bookingFlags = flags.filter((f) => f.procedureId === undefined)
+            const groupCell = { borderBottom: 'none', paddingTop: 12, paddingBottom: 12 } as const
+            return (
+              <tbody key={booking.id} data-booking-id={booking.id} style={BOOKING_GROUP}>
+                {procs.map((procedure, i) => {
+                  const view = stackViews[i]!
+                  const fee = totals.views[procedure.id]?.fee
+                  const parts = fee !== undefined ? unitPartsUnderRule(fee.btm, fee.allocation) : undefined
+                  const lastLine = !multi
+                  const cell = { borderBottom: 'none', paddingTop: i === 0 ? 12 : 6, paddingBottom: lastLine ? 12 : 6 } as const
+                  return (
+                    <tr key={procedure.id}>
+                      {i === 0 && (
+                        <>
+                          <Td mono nowrap rowSpan={span} style={{ ...groupCell, color: neutral.slate, ...(strongest !== undefined ? { boxShadow: `inset 3px 0 0 ${warningTone(strongest).solid}` } : {}) }}>
+                            {booking.scheduledTime ?? '·'}
+                          </Td>
+                          <Td rowSpan={span} style={{ ...groupCell, borderRight: `1px solid ${neutral.sunken}` }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                              <span style={{ fontWeight: 600, fontSize: 13.5 }}>{patient?.name ?? 'Unknown'}</span>
+                              <WarningTriangle warnings={warnings} size="sm" />
+                              {/* A marker, not an action: the row's teal History link opens what changed. */}
+                              {changedIds.has(booking.id) && (
+                                <span data-shot="review-late-edit" style={{ display: 'inline-flex' }}>
+                                  <Pill
+                                    variant="outline"
+                                    tone="warning"
+                                    size="lg"
+                                    shot="review-changed-booking"
+                                    title="Changed by the anaesthetist since the List was submitted. History shows what changed."
+                                  >
+                                    Changed
+                                  </Pill>
+                                </span>
+                              )}
+                              {!booking.completed && booking.cancellation === undefined && (
+                                <Pill tone="warning" size="lg">Not complete</Pill>
+                              )}
+                            </div>
+                            <div className="mono" style={{ fontSize: 11.5, color: neutral.mist }}>{patient?.nhi ?? ''}</div>
+                            {sharedPayer && <div style={{ marginTop: 6 }}>{paidBy(0)}</div>}
+                            {!sharedPayer && <div style={{ marginTop: 6, fontSize: 12, color: neutral.slate }}>Payers differ, shown on each Procedure</div>}
+                            <InsurerLine booking={booking} />
+                            {lockView !== undefined && lockView.state === 'locked' && (
+                              <div data-shot="review-locked-payee" style={{ fontSize: 12, color: neutral.slate, marginTop: 6 }}>
+                                Paid to {lockView.payeeName}
+                                {lockView.procedures.filter((p) => p.splitText !== 'Full').map((p) => (
+                                  <div key={p.procedureId}>{p.splitText}</div>
+                                ))}
+                              </div>
+                            )}
+                            {alert !== undefined && <AlertLine alert={alert} onResolve={() => run(resolveNotification(useAppStore, actor, alert.id))} disabled={authorised} />}
+                            <OpenWarnings warnings={warnings} patientName={patientName} disabled={authorised} onClear={(w) => run(clearWarning(useAppStore, actor, w.bookingId, w.key))} />
+                          </Td>
+                        </>
+                      )}
+                      {/* The Procedure line (US-07.2.2, US-03.1.9): the List drawer's parts, with its role on a multi-procedure Booking (US-05.3.1). */}
+                      <Td style={{ ...cell, minWidth: 240 }}>
+                        <div data-shot="review-procedure-stack" data-procedure-id={procedure.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          <ProcedureStack
+                            view={view}
+                            density="compact"
+                            surface="office"
+                            heading={multi ? `Procedure ${i + 1}` : 'Procedure'}
+                            {...(multi && fee !== undefined
+                              ? { badge: <span data-shot="review-procedure-share" style={{ fontSize: 11.5, fontWeight: 600, color: neutral.mist }}>{fee.allocation.role === 'primary' ? 'Primary' : 'Additional'}</span> }
+                              : {})}
+                          />
+                          {!sharedPayer && <div style={{ paddingLeft: 38 }}>{paidBy(i)}</div>}
+                        </div>
+                      </Td>
+                      <Td mono nowrap style={cell}>
+                        {procedure.anaestheticStartISO !== undefined && procedure.handoverISO !== undefined ? `${hhmm(procedure.anaestheticStartISO)} to ${hhmm(procedure.handoverISO)}` : '·'}
+                      </Td>
+                      <Td mono nowrap data-testid="review-btm-value" style={{ ...cell, color: neutral.slate }}>
+                        {parts !== undefined ? `${parts.base} · ${parts.time} · ${parts.modifiers}` : '·'}
+                      </Td>
+                      <Td mono nowrap align="right" style={{ ...cell, fontWeight: multi ? 400 : 700 }}>
+                        {multi ? (fee?.billableUnits ?? '·') : totals.units}
+                      </Td>
+                      {multi ? (
+                        <Td nowrap align="right" style={cell}>
+                          <ProcedureFeeCell fee={fee} />
+                        </Td>
+                      ) : (
+                        <Td data-shot="review-fee" nowrap align="right" bold style={cell}>
+                          <ReviewFeeCell totals={totals} />
+                        </Td>
+                      )}
+                      <Td style={{ ...cell, minWidth: 170 }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 8px', alignItems: 'center' }}>
+                          {i === 0 && bookingFlags.map((f, k) => <FlagPill key={k} flag={f} />)}
+                          <ProcedureFlags
+                            flags={flags.filter((f) => f.procedureId === procedure.id)}
+                            change={changes[i]}
+                            locked={authorised}
+                            patientName={patientName}
+                            onApprove={() => run(approveContractSelection(useAppStore, actor, { bookingId: booking.id, procedureId: procedure.id }))}
+                            {...(onOpenBooking !== undefined ? { onCorrect: () => onOpenBooking(list.dateISO, booking.id) } : {})}
+                          />
+                          {i === 0 && authorised && <Lock size={13} aria-hidden style={{ color: neutral.mist }} />}
+                        </div>
+                      </Td>
+                      {i === 0 && (
+                        <Td nowrap rowSpan={span} style={groupCell}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
+                            <TextAction size="sm" flush onClick={() => setHistory({ ids: entityIds, ...(entityLabels !== undefined ? { labels: entityLabels } : {}) })}>History</TextAction>
+                            {/* The Admin Booking, where the office edits the invoice description (catch-up Phase 20a). */}
+                            {onOpenBooking !== undefined && <TextAction size="sm" flush shot="review-open-booking" onClick={() => onOpenBooking(list.dateISO, booking.id)}>Open</TextAction>}
+                          </div>
+                        </Td>
+                      )}
+                    </tr>
+                  )
+                })}
+                {/* The subtotal line: the Procedure lines added up, and the Booking's modifier split said once (catch-up Phase 23). */}
+                {multi && (
+                  <tr>
+                    <Td style={SUBTOTAL_CELL}>
+                      {primaryAllocation !== undefined && primaryAllocation.splitAcross > 1 ? (
+                        <span data-shot="review-modifier-split" style={{ fontSize: 12, color: neutral.slate }}>
+                          Modifiers {primaryAllocation.bookingModifierUnits}, split {primaryAllocation.splitShares.join(' · ')}
+                        </span>
+                      ) : null}
+                    </Td>
+                    <Td style={SUBTOTAL_CELL} />
+                    <Td style={SUBTOTAL_CELL} />
+                    <Td mono nowrap align="right" style={{ ...SUBTOTAL_CELL, fontWeight: 700 }}>{totals.units}</Td>
+                    <Td data-shot="review-fee" nowrap align="right" bold style={SUBTOTAL_CELL}>
+                      <ReviewFeeCell totals={totals} />
+                    </Td>
+                    <Td style={SUBTOTAL_CELL} />
+                  </tr>
+                )}
+              </tbody>
+            )
+          })}
+          {/* Totals */}
+          <tbody>
             <tr style={{ background: neutral.bg }}>
-              <Td />
-              <Td style={{ fontWeight: 700 }}>Totals</Td>
-              <Td colSpan={4} />
-              <Td />
-              <Td mono nowrap align="right" style={{ fontWeight: 700 }}>{listTotals.units}</Td>
-              <Td mono nowrap align="right" style={{ fontWeight: 700 }}>{listFeeText}</Td>
-              <Td data-shot="review-list-rate" style={{ color: neutral.mist, fontSize: 12 }}>{rateText}</Td>
+              <Td style={{ borderBottom: 'none' }} />
+              <Td style={{ fontWeight: 700, borderBottom: 'none' }}>Totals</Td>
+              <Td colSpan={3} data-shot="review-list-rate" style={{ color: neutral.mist, fontSize: 12, borderBottom: 'none' }}>{rateText}</Td>
+              <Td mono nowrap align="right" style={{ fontWeight: 700, borderBottom: 'none' }}>{listTotals.units}</Td>
+              <Td mono nowrap align="right" style={{ fontWeight: 700, borderBottom: 'none' }}>{listFeeText}</Td>
+              <Td colSpan={2} style={{ borderBottom: 'none' }} />
             </tr>
           </tbody>
       </TableShell>
@@ -679,7 +765,7 @@ function ReviewPaidBy({ procedure, patientId, invoicedName, child, onChange }: {
         )}
       </div>
       {payer.email !== undefined && payer.email.trim() !== '' ? (
-        <span data-shot="review-payer-delivery" style={{ overflowWrap: 'anywhere' }}>Email: {payer.email}</span>
+        <span data-shot="review-payer-delivery" style={{ overflowWrap: 'break-word' }}>Email: {payer.email}</span>
       ) : payer.postalAddress !== undefined ? (
         <span data-shot="review-payer-delivery">Post: {formatPostalAddress(payer.postalAddress)}</span>
       ) : null}
@@ -760,6 +846,26 @@ function ReviewFeeCell({ totals }: { totals: ReturnType<typeof bookingFee> }) {
         <Pill tone="neutral" size="sm" shot="review-no-charge">
           No charge
         </Pill>
+      )}
+    </div>
+  )
+}
+
+/**
+ * One Procedure's price on its own line of a multi-procedure Booking: the figure, "Computed" under a
+ * typed price, or "Needs a price". The Booking's own figure stays on its subtotal line.
+ */
+function ProcedureFeeCell({ fee }: { fee: FeeResult | undefined }) {
+  if (fee === undefined) return <>·</>
+  const price = fee.price
+  if (price.status !== 'priced') return <>{NEEDS_PRICE_LABEL}</>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+      <span className="mono">{formatCurrency(price.price)}</span>
+      {price.heldBy === 'typed' && price.computedTotal !== undefined && (
+        <span className="mono" style={{ fontSize: 11.5, color: neutral.mist }}>
+          Computed {formatCurrency(price.computedTotal)}
+        </span>
       )}
     </div>
   )

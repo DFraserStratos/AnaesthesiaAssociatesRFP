@@ -105,11 +105,12 @@ test('admin: the mixed bariatric Booking bills no base, labelled provisional (OQ
   await expect(split).toContainText('No base units billed (provisional, OQ-132)')
 })
 
-test('admin Review: the seeded List row reads M 7 · split 3 · 2 · 2', async ({ page }) => {
+test('admin Review: the seeded List row reads Modifiers 7, split 3 · 2 · 2', async ({ page }) => {
   await page.goto(`/admin/review/${SEEDED_LIST}`)
   await settle(page)
-  await expect(page.locator('[data-shot="review-modifier-split"]')).toHaveText('M 7 · split 3 · 2 · 2')
-  await expect(page.locator('[data-shot="review-procedure-share"]').first()).toHaveText('Primary · B + T + M 3 of 7')
+  await expect(page.locator('[data-shot="review-modifier-split"]')).toHaveText('Modifiers 7, split 3 · 2 · 2')
+  await expect(page.locator('[data-shot="review-procedure-share"]').first()).toHaveText('Primary')
+  await expect(page.getByTestId('review-btm-value').first()).toHaveText('6 · 6 · 3')
 })
 
 test('demo actions: load the 3-procedure Booking, then the hospital feed changes the primary', async ({ page }) => {

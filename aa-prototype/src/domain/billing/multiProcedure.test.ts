@@ -9,6 +9,7 @@ import {
   primaryOf,
   procedureRole,
 } from './multiProcedure'
+import { unitPartsUnderRule, unitsUnderRule, type BtmBreakdown } from './fee'
 
 type P = { id: string; isPrimary: boolean; kind?: 'rvg' | 'fixed' | 'open'; startISO?: string }
 const proc = (id: string, isPrimary = false, kind: P['kind'] = 'rvg', startISO?: string): P => ({ id, isPrimary, kind, ...(startISO !== undefined ? { startISO } : {}) })
@@ -151,5 +152,26 @@ describe('roles, participants and order', () => {
   it('refuses no primary and two primaries rather than guessing', () => {
     expect(primaryOf([proc('A'), proc('B')])).toEqual({ kind: 'noPrimary' })
     expect(primaryOf([proc('A', true), proc('B', true)])).toEqual({ kind: 'severalPrimaries', ids: ['A', 'B'] })
+  })
+})
+
+describe('each Procedure line\'s B · T · M (Admin Review)', () => {
+  const btm = (base: number, time: number, modifiers: number) =>
+    ({ base: { units: base }, time: { units: time }, modifiers: { units: modifiers } }) as unknown as BtmBreakdown
+
+  it('splits 3 RVG Procedures into parts that add up to the units under the rule', () => {
+    const procs = [proc('A', true), proc('B'), proc('C')]
+    const alloc = allocateBooking(procs, rvg, 7)
+    const parts = [unitPartsUnderRule(btm(6, 6, 7), alloc['A']!), unitPartsUnderRule(btm(5, 3, 2), alloc['B']!), unitPartsUnderRule(btm(4, 2, 2), alloc['C']!)]
+    expect(parts).toEqual([
+      { base: 6, time: 6, modifiers: 3 },
+      { base: 0, time: 3, modifiers: 2 },
+      { base: 0, time: 2, modifiers: 2 },
+    ])
+    expect(parts.map((p) => p.base + p.time + p.modifiers)).toEqual([
+      unitsUnderRule(btm(6, 6, 7), alloc['A']!),
+      unitsUnderRule(btm(5, 3, 2), alloc['B']!),
+      unitsUnderRule(btm(4, 2, 2), alloc['C']!),
+    ])
   })
 })

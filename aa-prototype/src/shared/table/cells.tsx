@@ -130,6 +130,7 @@ export function Td({
   clip,
   nowrap,
   colSpan,
+  rowSpan,
   style,
   ...data
 }: {
@@ -140,6 +141,8 @@ export function Td({
   clip?: boolean
   nowrap?: boolean
   colSpan?: number
+  /** A cell that spans a group's rows (Admin Review's patient cell beside its Procedure lines). */
+  rowSpan?: number
   style?: CSSProperties
 } & DataAttributes) {
   const density = useContext(TableDensityContext)
@@ -148,6 +151,7 @@ export function Td({
     <td
       {...data}
       colSpan={colSpan}
+      rowSpan={rowSpan}
       className={mono === true ? 'mono' : undefined}
       style={{
         ...densityCellStyle(density),

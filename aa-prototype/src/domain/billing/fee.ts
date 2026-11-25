@@ -166,9 +166,15 @@ export function resolveBtm(
  * for reference and the price stands.
  */
 export function unitsUnderRule(btm: BtmBreakdown, allocation: ProcedureAllocation): number {
+  const parts = unitPartsUnderRule(btm, allocation)
+  return parts.base + parts.time + parts.modifiers
+}
+
+/** The same units as base, time and modifier parts: the B · T · M a Procedure's own line shows on Admin Review. */
+export function unitPartsUnderRule(btm: BtmBreakdown, allocation: ProcedureAllocation): { base: number; time: number; modifiers: number } {
   // Base where `baseOn` puts it (`baseCharged`); a fixed or open price primary records its own for reference.
   const base = allocation.baseCharged || allocation.role === 'primary' ? btm.base.units : 0
-  return base + btm.time.units + allocation.modifierShare
+  return { base, time: btm.time.units, modifiers: allocation.modifierShare }
 }
 
 // ---------------------------------------------------------------------------
