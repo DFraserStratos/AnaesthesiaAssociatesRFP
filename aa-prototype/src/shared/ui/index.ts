@@ -39,6 +39,8 @@ export { useRovingRadio } from './useRovingRadio'
 // UI unification U6: page chrome.
 export { Eyebrow, type EyebrowTone } from './Eyebrow'
 export { Card, type CardPadding, type CardElevation } from './Card'
+export { EditableCard, useCardEdit, type CardCommit, type EditableCardProps } from './EditableCard'
+export { RailSection, RailRow, type RailSectionProps, type RailSectionRow, type RailRowProps } from './RailSection'
 export { PageHeader, type PageHeaderSize } from './PageHeader'
 export { StatTile, type StatTileVariant } from './StatTile'
 export { DefList, DefRow, type DefRowLayout } from './DefRow'

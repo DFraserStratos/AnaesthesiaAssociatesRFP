@@ -71,7 +71,7 @@ test('web Add a booking: validated as typed, looked up, the payer follows, a gua
 })
 
 test("Admin patient record: Fiona Gray's refresh from the NHI register", async ({ page }) => {
-  await open(page, '/admin/patients/ZAM1098')
+  await open(page, '/admin/people/patients/ZAM1098')
   await expect(page.locator('[data-shot=patient-register-stamp]')).toHaveText('Not refreshed yet')
   await expect(page.locator('[data-shot=patient-register-provisional]')).toHaveText('Provisional')
   await page.locator('[data-shot=patient-register-refresh-button]').click()

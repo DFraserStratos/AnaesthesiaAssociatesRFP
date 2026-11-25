@@ -9,7 +9,7 @@ import { test, expect } from '@playwright/test'
  */
 
 test('phase 18a specialties tab', async ({ page }) => {
-  await page.goto('/admin/masters?view=specialties')
+  await page.goto('/admin/people/specialties')
   await page.waitForLoadState('networkidle')
   const table = page.locator('[data-shot="masters-specialties"]')
   await expect(table.locator('tr[data-specialty]')).toHaveCount(12)
@@ -36,7 +36,7 @@ test('phase 18a specialties tab', async ({ page }) => {
 })
 
 test('phase 18a surgeon specialties: none refused, two saved', async ({ page }) => {
-  await page.goto('/admin/masters/surgeons/S-WHITFORD')
+  await page.goto('/admin/people/surgeons/S-WHITFORD')
   await page.waitForLoadState('networkidle')
   const pills = page.locator('[data-shot="surgeon-specialties"]')
   await expect(pills.getByText('Ophthalmology')).toBeVisible()
@@ -52,7 +52,7 @@ test('phase 18a surgeon specialties: none refused, two saved', async ({ page }) 
   await expect(pills.getByText('Plastic surgery')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/p18a-05-surgeon-two.png', fullPage: true })
 
-  await page.goto('/admin/masters?view=surgeons')
+  await page.goto('/admin/people/surgeons?q=Whitford')
   const row = page.locator('[data-shot="masters-surgeons"] tr[data-surgeon="S-WHITFORD"]')
   await expect(row).toContainText('Ophthalmology, Plastic surgery')
 })

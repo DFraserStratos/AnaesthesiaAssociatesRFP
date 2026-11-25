@@ -24,7 +24,7 @@ async function open(page: Page, path: string): Promise<void> {
 }
 
 test('search finds Sarah Mitchell; her record shows the strong balance and both invoice states, never the internal id', async ({ page }) => {
-  await open(page, '/admin/patients')
+  await open(page, '/admin/people/patients')
   await expect(page.locator('[data-shot="admin-patients"]')).toBeVisible()
   const search = page.getByLabel('Search patients')
 
@@ -39,7 +39,7 @@ test('search finds Sarah Mitchell; her record shows the strong balance and both 
   await page.screenshot({ path: 'visual/shots/admin-patients-search.png', fullPage: true })
   await row.getByRole('button', { name: /Open the record of Sarah Mitchell/ }).click()
 
-  await expect(page).toHaveURL(new RegExp(`/admin/patients/${MITCHELL}$`))
+  await expect(page).toHaveURL(new RegExp(`/admin/people/patients/${MITCHELL}$`))
   const record = page.locator('[data-shot="admin-patient-record"]')
   await expect(record).toBeVisible()
   await expect(page.locator('[data-shot="patient-record-nhi"]')).toContainText(MITCHELL)
@@ -96,13 +96,13 @@ test('Waiting for NHI: the missing-NHI list arrives, Add NHI JKL1188 matches Los
   await expect(rows).toHaveCount(before + 1)
 
   // One Losa Tuilagi record exists.
-  await open(page, '/admin/patients')
+  await open(page, '/admin/people/patients')
   await page.getByLabel('Search patients').fill('Losa Tuilagi')
   await expect(page.locator('[data-shot="patient-search-table"] [data-patient-nhi="JKL1188"]')).toHaveCount(1)
 })
 
 test('Follow-up: log a call and a reminder for today on the record, Done takes it off; Clear takes a balance warning off', async ({ page }) => {
-  await open(page, `/admin/patients/${MITCHELL}`)
+  await open(page, `/admin/people/patients/${MITCHELL}`)
   const log = page.locator('[data-shot="patient-follow-up-log"]')
   await expect(log).toBeVisible()
 
@@ -116,7 +116,7 @@ test('Follow-up: log a call and a reminder for today on the record, Done takes i
   await log.locator('[data-shot="patient-follow-up-save"]').click()
   await expect(log.locator('[data-kind="reminder"]').filter({ hasText: 'Check the Friday payment arrived' })).toBeVisible()
 
-  await open(page, '/admin/patients/follow-up')
+  await open(page, '/admin/people/patients?show=followUp')
   await expect(page.locator('[data-shot="admin-patient-follow-up"]')).toBeVisible()
   const due = page.locator('[data-shot="patient-follow-ups-due"]')
   await expect(due).toContainText('Check the Friday payment arrived')
@@ -135,7 +135,7 @@ test('Follow-up: log a call and a reminder for today on the record, Done takes i
   await expect(sheet.locator('[data-shot="add-nhi-done"]')).toBeVisible()
   await sheet.getByRole('button', { name: 'Done' }).click()
 
-  await open(page, '/admin/patients/follow-up')
+  await open(page, '/admin/people/patients?show=followUp')
   const warnings = page.locator('[data-shot="patient-follow-up-warnings"]')
   const losaWarning = warnings.locator('tr', { hasText: 'Losa Tuilagi' })
   await expect(losaWarning).toBeVisible()
@@ -146,7 +146,7 @@ test('Follow-up: log a call and a reminder for today on the record, Done takes i
 })
 
 test("Heather Sinclair's record reads in credit, with the Credited invoice", async ({ page }) => {
-  await open(page, `/admin/patients/${SINCLAIR}`)
+  await open(page, `/admin/people/patients/${SINCLAIR}`)
   await expect(page.locator('[data-shot="admin-patient-record"]')).toBeVisible()
   const own = page.locator('[data-shot="patient-balance"] [data-tile="billedToPatient"]')
   await expect(own).toContainText('In credit $260.00')

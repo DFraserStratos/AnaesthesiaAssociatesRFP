@@ -3,8 +3,9 @@
  * price on top, full width, then the cards in the order the office checks a
  * Contract (docs/explorations/contracts-section.html #record), stacked in
  * the main column beside the rail: where it is offered, who it bills, invoice
- * and codes, and what was fixed when it was created. Each card is edited and saved on its own (`Card editing` and its
- * footer): Save sends `editContract` only that card's fields, one audited
+ * and codes, and what was fixed when it was created. Each card is edited and saved on its own (the shared
+ * `EditableCard` and `useCardEdit`, lifted from here by build plan Phase 53, D104):
+ * Save sends `editContract` only that card's fields, one audited
  * `contract.update` in one change set, and a refusal shows on the card with
  * the rule's own words while nothing changes. Several cards may be in edit at
  * once, each saving alone. The settings fixed at creation and the holder
@@ -15,7 +16,7 @@
  * cards have no Edit.
  */
 
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo } from 'react'
 import type { Contract } from '../../../../domain/types'
 import { CONTRACT_REFUSAL_MESSAGES, SYSTEM_CONTRACT_EDITABLE_FIELDS, billsPayerOnly, isRvgKind, takesLinks } from '../../../../domain/billing/contracts'
 import { destinationHint, destinationOf } from '../../../../domain/billing/fallbacks'
@@ -24,7 +25,7 @@ import { compareBySurname } from '../../../../domain/surgeons'
 import { isRetired, retiredLabel } from '../../../../domain/masterLifecycle'
 import { contractSpecialtyLabel, specialtiesInOrder } from '../../../../domain/specialties'
 import { BILLS_LABEL, DELIVERY_LABEL, PRICING_KIND_LABEL, pricingLabel } from '../../../../shared/contracts'
-import { Button, Card, DefList, DefRow, FieldHint, FormError, Notice, Segmented, SelectField, TextAction, TextField } from '../../../../shared/ui'
+import { Card, DefList, DefRow, EditableCard, FieldHint, Notice, Segmented, SelectField, TextAction, TextField, useCardEdit, type CardCommit } from '../../../../shared/ui'
 import { activeSurgeons, editContract, useAppStore, type Actor, type ContractEditPatch } from '../../../../store'
 import { neutral } from '../../../../theme/tokens'
 import { ChipMultiSelect } from '../../components/ChipMultiSelect'
@@ -50,81 +51,9 @@ type YesNo = 'yes' | 'no'
 /** A card's label and value rows: the label in a 150px slate column beside its value (contracts-section.html #record `.kv`). */
 const KV = { layout: 'inline', labelWidth: 150, labelTone: 'slate' } as const
 
-/**
- * One card's edit: its draft (null while it reads), Edit, Cancel and Save. Save sends only the patch
- * the card builds; a refusal stays on the card and the draft stays open.
- */
-function useCardEdit<D>(actor: Actor, contractId: string, from: () => D) {
-  const [draft, setDraft] = useState<D | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  return {
-    draft,
-    setDraft: (next: D) => setDraft(next),
-    error,
-    start: () => {
-      setDraft(from())
-      setError(null)
-    },
-    cancel: () => {
-      setDraft(null)
-      setError(null)
-    },
-    save: (patch: ContractEditPatch) => {
-      const outcome = editContract(useAppStore, actor, contractId, patch)
-      if (!outcome.ok) {
-        setError(outcome.message)
-        return
-      }
-      setDraft(null)
-      setError(null)
-    },
-  }
-}
-
-/** A card of the Overview: Edit in its heading where `editable`, its form and footer while in edit, its refusal under it. */
-function EditableCard({
-  title,
-  shot,
-  editable,
-  editing,
-  onEdit,
-  onCancel,
-  onSave,
-  error,
-  children,
-}: {
-  title: ReactNode
-  shot: string
-  editable: boolean
-  editing: boolean
-  onEdit: () => void
-  onCancel: () => void
-  onSave: () => void
-  error: string | null
-  children: ReactNode
-}) {
-  return (
-    <Card
-      style={PROFILE_CARD}
-      title={title}
-      shot={shot}
-      editing={editing}
-      {...(editable && !editing ? { action: <TextAction size="sm" flush onClick={onEdit} shot={`${shot}-edit`} label={`Edit ${typeof title === 'string' ? title.toLowerCase() : 'this card'}`}>Edit</TextAction> } : {})}
-      {...(editing
-        ? {
-            footer: (
-              <>
-                <Button variant="secondary" size="compact" onClick={onCancel} shot={`${shot}-cancel`}>Cancel</Button>
-                <Button variant="primary" size="compact" onClick={onSave} shot={`${shot}-save`}>Save</Button>
-              </>
-            ),
-          }
-        : {})}
-    >
-      {children}
-      <FormError message={error} shot={`${shot}-error`} />
-    </Card>
-  )
+/** A card's save on this Contract (the shared `useCardEdit`'s commit, build plan Phase 53): `editContract` with only the card's fields. */
+function contractCommit(actor: Actor, contractId: string): CardCommit<ContractEditPatch> {
+  return (patch) => editContract(useAppStore, actor, contractId, patch)
 }
 
 /** `addRange` opens a fixed price's add-range row on arrival (Replace from a date's pointer, build plan Phase 49). */
@@ -147,11 +76,11 @@ export function ContractOverview({ contract, actor, addRange = false }: { contra
 function PriceCard({ contract, actor, addRange }: { contract: Contract; actor: Actor; addRange: boolean }) {
   const p = contract.pricing
   const system = contract.systemRole !== undefined
-  const edit = useCardEdit(actor, contract.id, () => ({
+  const edit = useCardEdit(() => ({
     rate: p.kind === 'rvgContractRate' ? String(p.unitRate) : '',
     discount: p.kind === 'rvgDiscount' ? String(p.discountPct) : '',
     override: (contract.anaesthetistMayOverridePrice ? 'yes' : 'no') as YesNo,
-  }))
+  }), contractCommit(actor, contract.id))
   if (p.kind === 'fixed') return <PriceRangesTable contract={contract} actor={actor} startAdding={addRange} />
   const rvg = isRvgKind(p.kind)
   const d = edit.draft
@@ -163,7 +92,7 @@ function PriceCard({ contract, actor, addRange }: { contract: Contract; actor: A
   }
 
   return (
-    <EditableCard title="Price" shot="contract-price" editable={rvg && !system} editing={d !== null} onEdit={edit.start} onCancel={edit.cancel} onSave={save} error={edit.error}>
+    <EditableCard style={PROFILE_CARD} title="Price" shot="contract-price" editable={rvg && !system} editing={d !== null} onEdit={edit.start} onCancel={edit.cancel} onSave={save} error={edit.error}>
       {d === null ? (
         <DefList gap={10}>
           <DefRow {...KV} label="Pricing">{pricingLabel(p)}</DefRow>
@@ -199,12 +128,12 @@ function WhereCard({ contract, actor }: { contract: Contract; actor: Actor }) {
   const system = contract.systemRole !== undefined
   const holder = masters.parties[contract.holderId]
   const showLinks = takesLinks(holder?.kind)
-  const edit = useCardEdit(actor, contract.id, () => ({
+  const edit = useCardEdit(() => ({
     surgeonIds: contract.linkedSurgeonIds,
     anaesthetistId: contract.linkedAnaesthetistId ?? '',
     specialtyIds: contract.specialtyIds,
     fundingTagId: contract.fundingTagId ?? '',
-  }))
+  }), contractCommit(actor, contract.id))
   const d = edit.draft
   // Where it will be offered, as the settings stand (the draft's tag while editing).
   const placement = destinationHint(
@@ -242,7 +171,7 @@ function WhereCard({ contract, actor }: { contract: Contract; actor: Actor }) {
   )
 
   return (
-    <EditableCard title="Where it is offered" shot="contract-where" editable={!system} editing={d !== null} onEdit={edit.start} onCancel={edit.cancel} onSave={save} error={edit.error}>
+    <EditableCard style={PROFILE_CARD} title="Where it is offered" shot="contract-where" editable={!system} editing={d !== null} onEdit={edit.start} onCancel={edit.cancel} onSave={save} error={edit.error}>
       {d === null ? (
         <DefList gap={10}>
           <DefRow {...KV} label="On the step rail">{placementLine}</DefRow>
@@ -317,7 +246,7 @@ function WhoBillsCard({ contract, actor }: { contract: Contract; actor: Actor })
   const holder = parties[contract.holderId]
   const holderForcesPayer = billsPayerOnly(holder?.kind, false)
   const forcedPayer = billsPayerOnly(holder?.kind, contract.prepaid)
-  const edit = useCardEdit(actor, contract.id, () => ({ billsTo: contract.billsTo }))
+  const edit = useCardEdit(() => ({ billsTo: contract.billsTo }), contractCommit(actor, contract.id))
   const d = edit.draft
   const heldCount = useMemo(() => Object.values(contracts).filter((c) => c.holderId === contract.holderId && c.systemRole === undefined).length, [contracts, contract.holderId])
   const delivery =
@@ -329,6 +258,7 @@ function WhoBillsCard({ contract, actor }: { contract: Contract; actor: Actor })
 
   return (
     <EditableCard
+      style={PROFILE_CARD}
       title="Who it bills"
       shot="contract-bills"
       editable={!system && !forcedPayer}
@@ -380,13 +310,13 @@ function WhoBillsCard({ contract, actor }: { contract: Contract; actor: Actor })
 function CodesCard({ contract, actor }: { contract: Contract; actor: Actor }) {
   const rvgGroups = useAppStore((s) => s.masters.rvgGroups)
   const system = contract.systemRole !== undefined
-  const edit = useCardEdit(actor, contract.id, () => ({
+  const edit = useCardEdit(() => ({
     name: contract.name,
     aaCode: contract.aaCode,
     holderReference: contract.holderReference ?? '',
     invoiceDescription: contract.invoiceDescription ?? '',
     defaultRvgGroupId: contract.defaultRvgGroupId ?? null,
-  }))
+  }), contractCommit(actor, contract.id))
   const d = edit.draft
   const savedGroup = contract.defaultRvgGroupId != null ? rvgGroups[contract.defaultRvgGroupId] : undefined
 
@@ -402,7 +332,7 @@ function CodesCard({ contract, actor }: { contract: Contract; actor: Actor }) {
   const readOnlyOnSystem = (field: string) => system && !SYSTEM_EDITABLE.has(field)
 
   return (
-    <EditableCard title="Invoice and codes" shot="contract-codes" editable editing={d !== null} onEdit={edit.start} onCancel={edit.cancel} onSave={save} error={edit.error}>
+    <EditableCard style={PROFILE_CARD} title="Invoice and codes" shot="contract-codes" editable editing={d !== null} onEdit={edit.start} onCancel={edit.cancel} onSave={save} error={edit.error}>
       {d === null ? (
         <DefList gap={10}>
           <DefRow {...KV} label="Name">{contract.name}</DefRow>

@@ -48,7 +48,7 @@ const STATUS_OPTIONS: readonly { value: AnaesthetistStatusFilter; label: string 
 ]
 
 /** The list's tier filter (build plan Phase 50; US-01.3.6): All, then Tier 1 to Tier 4. */
-const TIER_FILTER_OPTIONS = [{ value: 'all', label: 'All' }, ...TIER_VALUES.map((t) => ({ value: String(t), label: TIER_LABELS[t] }))]
+const TIER_FILTER_OPTIONS = [{ value: 'all', label: 'All tiers' }, ...TIER_VALUES.map((t) => ({ value: String(t), label: TIER_LABELS[t] }))]
 
 const DEFAULTS = { q: '', status: 'active', tier: 'all' } as const
 

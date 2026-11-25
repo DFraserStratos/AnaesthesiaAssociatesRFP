@@ -254,7 +254,7 @@ describe('the surgeon profile and the anaesthetist record', () => {
     for (const row of tier1) expect(within(row).getByText('Tier 1')).toBeInTheDocument()
     expect(document.querySelector(`tr[data-anaesthetist="${ANAE.souter}"]`)).not.toBeNull()
     expect(document.querySelector(`tr[data-anaesthetist="${ANAE.ropata}"]`)).toBeNull()
-    fireEvent.click(within(filter).getByRole('button', { name: 'All' }))
+    fireEvent.click(within(filter).getByRole('button', { name: 'All tiers' }))
     expect(document.querySelectorAll('tr[data-anaesthetist]').length).toBe(all)
     // Nobody in a tier: the empty line.
     useAppStore.setState((s) => ({ officePrivate: { ...s.officePrivate, priorityTiers: {} } }))

@@ -22,7 +22,7 @@ import type { Contract } from '../../../../domain/types'
 import { PRICING_KIND_LABEL, STATUS_LABEL } from '../../../../shared/contracts'
 import { useDemoTriggerContext } from '../../../../shared/demoTriggers'
 import { ClickableRow, RowOpenButton, TableShell, Td, Th } from '../../../../shared/table'
-import { Button, Card, CountBadge, EmptyState, FormError, LineTabLink, LineTabs, Notice, Pill, ResultLine, TextAction } from '../../../../shared/ui'
+import { Button, Card, CountBadge, EmptyState, FormError, LineTabLink, LineTabs, Notice, Pill, RailSection, ResultLine, TextAction, type RailSectionRow } from '../../../../shared/ui'
 import { onContract, replacedContractsToDisable, useAppStore, useToday, type Actor, type LockedAgainst } from '../../../../store'
 import type { StillOnRow } from '../../../../domain/billing/contractChanges'
 import { neutral } from '../../../../theme/tokens'
@@ -35,9 +35,6 @@ import { ReplaceContractSheet, type ReplacedState } from '../../flows/ReplaceCon
 import { listShortLabel } from '../../util'
 import { ContractOverview } from './ContractCards'
 import { ContractDisable } from './ContractDisable'
-
-/** How many Procedures the rail shows before "See all". */
-const RAIL_ROWS = 5
 
 const TAB_LABEL: Record<ContractTab, string> = { overview: 'Overview', bookings: 'Bookings', eventFees: 'Event fees', history: 'History' }
 
@@ -235,46 +232,30 @@ function bookingPath(dateISO: string, bookingId: string): string {
 function OnThisContractRail({ contractId, open, authorised }: { contractId: string; open: readonly StillOnRow[]; authorised: readonly LockedAgainst[] }) {
   const listLabel = useListLabel()
   const lists = useAppStore((s) => s.schedule.lists)
-  const total = open.length + authorised.length
-  const shownOpen = open.slice(0, RAIL_ROWS)
-  const shownLocked = authorised.slice(0, Math.max(0, RAIL_ROWS - shownOpen.length))
+  // The shared side panel section (build plan Phase 53, D104): the open Procedures first, then the authorised Bookings.
+  const rows: RailSectionRow[] = [
+    ...open.map((r) => ({ key: r.procedureId, to: bookingPath(r.dateISO, r.bookingId), title: `${r.patientName} · ${shortDay(r.dateISO)}`, sub: listLabel(r.listId), data: { 'data-on-contract': 'open' } })),
+    ...authorised.map((r) => {
+      const dateISO = lists[r.listId]?.dateISO ?? ''
+      return {
+        key: r.bookingId,
+        to: bookingPath(dateISO, r.bookingId),
+        title: `${r.patientName} · ${shortDay(dateISO)}`,
+        sub: <>Authorised · locked at <span className="mono">{formatRangePrice(r.lockedPrice)}</span></>,
+        data: { 'data-on-contract': 'authorised' },
+      }
+    }),
+  ]
   return (
-    <Card title={<>On this Contract <CountBadge count={total} hideAtZero={false} mono srNoun="Procedures and Bookings" /></>} shot="contract-on-this" aside={<span style={{ fontSize: 12, color: neutral.mist }}>not yet billed, then authorised</span>}>
-      {total === 0 ? (
-        <span style={{ fontSize: 13, color: neutral.mist }}>No Procedure is on it yet.</span>
-      ) : (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' }}>
-          {shownOpen.map((r, i) => (
-            <RailRow key={r.procedureId} first={i === 0} to={bookingPath(r.dateISO, r.bookingId)} title={`${r.patientName} · ${shortDay(r.dateISO)}`} sub={listLabel(r.listId)} data-on-contract="open" />
-          ))}
-          {shownLocked.map((r, i) => {
-            const dateISO = lists[r.listId]?.dateISO ?? ''
-            return (
-              <RailRow
-                key={r.bookingId}
-                first={shownOpen.length === 0 && i === 0}
-                to={bookingPath(dateISO, r.bookingId)}
-                title={`${r.patientName} · ${shortDay(dateISO)}`}
-                sub={<>Authorised · locked at <span className="mono">{formatRangePrice(r.lockedPrice)}</span></>}
-                data-on-contract="authorised"
-              />
-            )
-          })}
-        </ul>
-      )}
-      {total > shownOpen.length + shownLocked.length && (
-        <TextAction size="sm" flush to={contractPath(contractId, 'bookings')} shot="contract-on-this-all">{`See all ${total}`}</TextAction>
-      )}
-    </Card>
-  )
-}
-
-function RailRow({ to, title, sub, first, ...data }: { to: string; title: string; sub: React.ReactNode; first: boolean } & { [key: `data-${string}`]: string }) {
-  return (
-    <li {...data} style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '8px 0', borderTop: first ? 'none' : `1px solid ${neutral.line}`, fontSize: 13 }}>
-      <TextAction size="sm" flush to={to}>{title}</TextAction>
-      <span style={{ fontSize: 12, color: neutral.slate }}>{sub}</span>
-    </li>
+    <RailSection
+      title="On this Contract"
+      countNoun="Procedures and Bookings"
+      rows={rows}
+      empty="No Procedure is on it yet."
+      allTo={contractPath(contractId, 'bookings')}
+      aside={<span style={{ fontSize: 12, color: neutral.mist }}>not yet billed, then authorised</span>}
+      shot="contract-on-this"
+    />
   )
 }
 

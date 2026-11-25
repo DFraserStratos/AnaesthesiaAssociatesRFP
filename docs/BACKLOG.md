@@ -87,8 +87,8 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 
 - Ledger takes 3 to 4 s to open and about 1 s per page or scope change, while its Timings row reads about 1 s painted. `apps/admin/screens/LedgerScreen.tsx`. M
 - Patient search stops at 50 matches with no pager or "more" note ("Smith" shows 50), and Patients has no Timings row. `store/patientSelectors.ts` (`PATIENT_SEARCH_LIMIT`). S
-- Long admin lists with no paging or search: Draft Lists (150), Review queue (130), Recurring bookings (393), AA fees "Every fee invoice" (830), Masters → Anaesthetists (85) and Surgeons (165), the Billing monitor's payment-cycle table. M
-- Anaesthetist names sort three ways: by first name (Masters → Anaesthetists, the Conflicts filter, Recurring bookings, AA fees, web Availability and Who's free, mobile Availability), in roster order (the Recurring booking sheet, the Ledger select), by surname (Day view, Billing monitor, the move pickers). One rule, surname, everywhere. S
+- Long admin lists with no paging or search: Draft Lists (150), Review queue (130), Recurring bookings (393), AA fees "Every fee invoice" (830), the Billing monitor's payment-cycle table. M
+- Anaesthetist names sort three ways: by first name (the Conflicts filter, Recurring bookings, AA fees, web Availability and Who's free, mobile Availability), in roster order (the Recurring booking sheet, the Ledger select), by surname (Day view, Billing monitor, the move pickers). One rule, surname, everywhere. S
 - New Draft List's surgeon select has 166 options sorted by display string ("A. Kingsley" before "Dr A. Dacre"); the pairing and recurring sheets' 166-option selects have no type-ahead. `apps/admin/flows/DraftListSheet.tsx`. S
 - Admin Move booking lists every List that day (about 88) with no search, each with the same advisory line. S
 - Invoices and Audit dates show no year though they span 12 months; the Billing monitor reads "18014 lists" with no thousands separator. S

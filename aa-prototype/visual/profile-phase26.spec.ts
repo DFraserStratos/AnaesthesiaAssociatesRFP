@@ -58,7 +58,7 @@ test('phase 26 web profile: Billing saves; Contact, Identity and Bank are read-o
 })
 
 test('phase 26 admin: Master data columns and the record page Profile card', async ({ page }) => {
-  await page.goto('/admin/masters?view=anaesthetists')
+  await page.goto('/admin/people/anaesthetists?q=Souter')
   await page.waitForLoadState('networkidle')
   const table = page.locator('[data-shot="masters-anaesthetists"]')
   await expect(table.locator('th').nth(2)).toHaveText('Rate per unit')
@@ -69,7 +69,7 @@ test('phase 26 admin: Master data columns and the record page Profile card', asy
   await page.waitForTimeout(450)
   await page.screenshot({ path: 'visual/shots/p26-04-admin-masters.png', fullPage: true })
 
-  await page.goto('/admin/masters/anaesthetists/34821')
+  await page.goto('/admin/people/anaesthetists/34821')
   await page.waitForLoadState('networkidle')
   const card = page.locator('[data-shot="anaesthetist-details"]')
   await expect(card.getByRole('heading', { name: 'Profile' })).toBeVisible()

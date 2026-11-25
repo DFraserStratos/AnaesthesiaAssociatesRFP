@@ -23,7 +23,7 @@ async function openList(page: Page, dateISO: string, listId: string) {
 }
 
 test('phase 17 master data views', async ({ page }) => {
-  await page.goto('/admin/masters?view=surgeons')
+  await page.goto('/admin/people/surgeons?q=Reid')
   await page.waitForLoadState('networkidle')
   const surgeons = page.locator('[data-shot="masters-surgeons"]')
   await expect(surgeons.getByText('47REIA')).toBeVisible()
@@ -31,15 +31,16 @@ test('phase 17 master data views', async ({ page }) => {
   await page.waitForTimeout(450)
   await page.screenshot({ path: 'visual/shots/p17-01-surgeons.png', fullPage: true })
 
-  await page.getByRole('button', { name: 'Surgeon groups', exact: true }).click()
-  await expect(page.locator('[data-shot="masters-surgeon-groups"]').getByText('Canterbury Orthopaedic Surgeons')).toBeVisible()
+  // The Surgeon groups list went (build plan Phase 53, D98): no list, no tab.
+  await expect(page.getByRole('button', { name: 'Surgeon groups', exact: true })).toHaveCount(0)
+  await expect(page.locator('[data-shot="people-tabs"]')).not.toContainText('Surgeon groups')
 
-  await page.getByRole('button', { name: 'Anaesthetists', exact: true }).click()
+  await page.goto('/admin/people/anaesthetists?q=Ropata')
   await expect(page.locator('tr[data-anaesthetist="39560"] [data-tier="4"]')).toBeVisible()
 })
 
 test('phase 17 surgeon profile and add sheet', async ({ page }) => {
-  await page.goto('/admin/masters/surgeons/S-REID')
+  await page.goto('/admin/people/surgeons/S-REID')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot="surgeon-hpi-chip"]')).toContainText('47REIA')
   await expect(page.locator('[data-shot="surgeon-contacts"]').getByText('bookings@merivaleeye.example')).toBeVisible()
@@ -60,12 +61,12 @@ test('phase 17 surgeon profile and add sheet', async ({ page }) => {
   expect(await sharmaDisabled()).toBe(false)
 
   await page.keyboard.press('Escape')
-  await page.goto('/admin/masters/surgeons/S-NOPE')
-  await expect(page).toHaveURL(/\/admin\/masters$/)
+  await page.goto('/admin/people/surgeons/S-NOPE')
+  await expect(page).toHaveURL(/\/admin\/people\/surgeons$/)
 })
 
 test('phase 17 anaesthetist record', async ({ page }) => {
-  await page.goto('/admin/masters/anaesthetists/41267')
+  await page.goto('/admin/people/anaesthetists/41267')
   await page.waitForLoadState('networkidle')
   // OQ-102 answered (D36): no provisional line (catch-up Phase 25a).
   const card = page.locator('[data-shot="rate-tier-card"]')
@@ -85,13 +86,13 @@ test('phase 17 anaesthetist record', async ({ page }) => {
   await expect(card.locator('[data-shot="rate-tier-tier"]')).toContainText('Tier 3')
 
   // The Anaesthetists list filters by tier.
-  await page.goto('/admin/masters?view=anaesthetists')
+  await page.goto('/admin/people/anaesthetists?q=Sharma')
   const filter = page.locator('[data-shot="tier-filter-list"]').getByRole('group', { name: 'Filter by tier' })
   await filter.getByRole('button', { name: 'Tier 3' }).click()
   await expect(page.locator('tr[data-anaesthetist="41267"]')).toBeVisible()
   await filter.getByRole('button', { name: 'Tier 1' }).click()
   await expect(page.locator('tr[data-anaesthetist="41267"]')).toHaveCount(0)
-  await filter.getByRole('button', { name: 'All' }).click()
+  await filter.getByRole('button', { name: 'All tiers' }).click()
   await expect(page.locator('tr[data-anaesthetist="41267"]')).toBeVisible()
 })
 

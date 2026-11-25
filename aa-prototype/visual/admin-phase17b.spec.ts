@@ -7,21 +7,27 @@ import { test, expect } from '@playwright/test'
  */
 
 test('phase 17b the surgeons table: practice, office contact, HPI CPN, and no rooms view', async ({ page }) => {
+  // The old rooms view lands on People's Surgeons tab (build plan Phase 53, D100).
   await page.goto('/admin/masters?view=surgeonRooms')
   await page.waitForLoadState('networkidle')
-  await expect(page.getByRole('heading', { name: 'Surgeons', exact: true })).toBeVisible()
+  await expect(page).toHaveURL(/\/admin\/people\/surgeons$/)
+  await expect(page.locator('[data-people-tab="surgeons"]')).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('button', { name: "Surgeons' rooms", exact: true })).toHaveCount(0)
   const table = page.locator('[data-shot="masters-surgeons"]')
+  // The list pages at 50: find each surgeon by name.
+  const search = page.getByLabel('Search by name, practice or HPI CPN')
+  await search.fill('Wainwright')
   const wainwright = table.locator('tr[data-surgeon="S-WAINWRIGHT"]')
   await expect(wainwright).toHaveAttribute('data-practice', 'Upper GI Partners and Hillsborough Colorectal Specialists')
   await expect(wainwright.getByText('info@uppergi.example')).toBeVisible()
+  await search.fill('Whaanga')
   await expect(table.locator('tr[data-surgeon="S-WHAANGA"]').getByText('No HPI CPN yet')).toBeVisible()
   await page.waitForTimeout(450)
   await page.screenshot({ path: 'visual/shots/p17b-01-surgeons.png', fullPage: true })
 })
 
 test("phase 17b Mr Wainwright's profile: practice and contacts, an office contact per practice", async ({ page }) => {
-  await page.goto('/admin/masters/surgeons/S-WAINWRIGHT')
+  await page.goto('/admin/people/surgeons/S-WAINWRIGHT')
   await page.waitForLoadState('networkidle')
   const card = page.locator('[data-shot="surgeon-contacts"]')
   await expect(card.getByText('Upper GI Partners and Hillsborough Colorectal Specialists')).toBeVisible()
@@ -33,7 +39,7 @@ test("phase 17b Mr Wainwright's profile: practice and contacts, an office contac
 })
 
 test('phase 17b the edit sheet: plus adds an office contact set, minus removes an extra one', async ({ page }) => {
-  await page.goto('/admin/masters/surgeons/S-DALGETY')
+  await page.goto('/admin/people/surgeons/S-DALGETY')
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Edit details' }).click()
   const sheet = page.locator('[data-shot="surgeon-edit-sheet"]')
