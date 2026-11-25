@@ -72,7 +72,7 @@ The office makes an anaesthetist inactive from a chosen last day, with a reason,
 11. **Offer-back sheet** (new `apps/admin/flows/MakeActiveSheet.tsx`; hook `make-active-sheet`): "Make <name> active again from today", each Contract from `contractsToOfferBack` with a `Checkbox` ticked, its name and price as the Contract page formats it (each name a link to the Contract's page); "No Contracts were disabled with them" when none. Confirm calls item 3.
 12. **History card** (new file; hook `anaesthetist-history`): a few past Lists (date, hospital, surgeon) with See all expanding in place, and a link to their ledger page (`/admin/ledger/anaesthetists/:id`) for invoices and payments. Shown for every anaesthetist.
 13. **Edit sheet:** the Status segmented control and its "removed from today" notice go from `EditAnaesthetistSheet.tsx`.
-14. **Tests:** components (refusal lists the Lists; Clear; Make active ticks and enables), the record and list status; Playwright: move `visual/phase28.spec.ts` and `visual/profile-phase26.spec.ts` off the toggle onto the new actions; run the whole of `visual/`. Walk all of US-04.1.2's criteria at the close (D96) and record each.
+14. **Tests:** components (refusal lists the Lists; Clear; Make active ticks and enables), the record and list status; Playwright: move `visual/phase28.spec.ts` and `visual/profile-phase26.spec.ts` off the toggle onto the new actions; run the specs you changed (the join runs the whole of `visual/`). Walk all of US-04.1.2's criteria at the close (D96) and record each.
 15. **Build on the shared components (one component per job).** Cards, sheets and rows from `Card`, `ConfirmSheet`, `DefRow`, `Pill`, `TextAction`, `Checkbox`, `Notice`, `EmptyState`, the shared date field and `TableShell`; extend with a defaulted prop if one falls short, with its `/demo/catalogue/admin` row; no private copies. Copy: Booking, List, Contract; "Inactive" for anaesthetists (never "Retire"); no dashes.
 
 ## Demo triggers
@@ -104,7 +104,7 @@ Run these yourself in the running lane app and report pass or fail with evidence
 - [ ] Mobile and PWA Sign in: the trigger shows "No longer active" and its audit row; Dr Souter signs in as before; with Souter made inactive and the day passed, a signed-in handset is signed out and the web app shows its no-longer-active page; Reset restores.
 - [ ] The edit sheet has no Status control; the Anaesthetists list shows Active, Inactive from <day>, Inactive.
 - [ ] AA fee run for the month of a last day includes them; a payment receipt naming them after the day lands.
-- [ ] The lane gate and the whole of `visual/` green.
+- [ ] The lane gate (LANES.md: the quick checks and this phase's own specs) green; the full Vitest, builds and `visual/` suite run at the wave's join.
 
 ## Demo guide updates
 

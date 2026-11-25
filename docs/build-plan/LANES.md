@@ -185,8 +185,8 @@ The owner pastes the same lane prompt every time (in `lanes/`). The session then
 6. **Sync with the other lanes, at a phase start only.** For each other lane: if it has an
    `<id> complete:` commit of the current wave your branch does not hold, merge it
    (`git merge <that commit>`) and resolve by "Resolving conflicts". Then make
-   `node requirements-board/agent/skills/run-build-phase/tools/phase-check.mjs --only typecheck,build,build-pwa,vitest`
-   green before you start. Never merge another lane mid-phase, and never merge its work in progress.
+   `node requirements-board/agent/skills/run-build-phase/tools/phase-check.mjs --only typecheck`
+   green before you start (the merged work's own tests ran in its lane; the join runs everything). Never merge another lane mid-phase, and never merge its work in progress.
 7. **Build the phase.** Open its kick-off prompt (`docs/build-plan/phases/phase-<id>-*.prompt.md`) and
    follow it as if the owner had pasted it: load the run-build-phase skill and run all its stages,
    with the overrides below. Write `started` in your status file.
@@ -207,19 +207,24 @@ The owner pastes the same lane prompt every time (in `lanes/`). The session then
   the next starts is replaced by the two owner tests in "Waves". Build your next phase straight after
   the last one's `complete:` commit, in the same session if it has room or the next one. Put everything
   for the owner on the phase's "For the owner's review" list as usual.
-- **A lighter gate per phase; the heavy checks run once, at the join.** In the run-build-phase skill:
-  - Your gate, at a checkpoint and at the end, is
-    `node requirements-board/agent/skills/run-build-phase/tools/phase-check.mjs --only typecheck,build,build-pwa,vitest`
-    plus `npm run lint` in `aa-prototype/`, all green. Use `--changed` for the inner loop as usual.
-  - Skip the full gate (verify-board and all Playwright) in Stage 3 step 5, Stage 4 step 1 and Stage 5
-    step 5. Still update the Playwright specs your phase doc says to, and you may run just those
-    files (`npx playwright test <files>` in `aa-prototype/`, on your lane's ports). The join runs the
-    whole suite and fixes what is left.
+- **The quick checks per phase; every heavy check runs once, at the join** (owner, 25 Nov 2026: speed
+  first; this is a prototype). In the run-build-phase skill:
+  - Your gate, at a checkpoint and at the end, is the quick tier only:
+    `node requirements-board/agent/skills/run-build-phase/tools/phase-check.mjs --changed` (typecheck,
+    the Vitest tests related to your changes, the catalogue check) plus `npm run lint` in
+    `aa-prototype/`, all green.
+  - Never run the full Vitest suite, either build, verify-board or the whole Playwright suite in a lane
+    phase, whatever the phase doc's checklist or the skill says (Stage 3 step 5, Stage 4 step 1,
+    Stage 5 step 5). Update the Playwright specs your phase doc names and run just those files
+    (`npx playwright test <files>` in `aa-prototype/`, on your lane's ports). A test elsewhere that your
+    change breaks is the join's to find and fix: note any you suspect under "For the merge".
+  - The join runs the full gate once over the whole wave and fixes what is left.
   - Skip the Stage 5 review (steps 1, 4 and 5): the join reviews the wave's phases at once, with each
     phase doc's "Adversarial review" steer bullets.
-  - Keep Stage 4 steps 2 and 3: one quick look at each changed screen against its design, and the
-    phase's manual checklist run yourself in the running app on your ports. Fix what doesn't work.
-    Polish beyond "it works and matches the design" waits for the owner's test.
+  - Keep Stage 4 steps 2 and 3, briefly: one quick look at each changed screen against its design, and
+    the phase's main flows clicked through yourself in the running app on your ports (its checklist
+    items about tests and suites are the join's). Fix what doesn't work. Polish beyond "it works and
+    matches the design" waits for the owner's test.
 - **Ports:** your lane's own. Ignore any port lock in the skill or a phase doc: there is none between
   lanes. Never stop a server you didn't start. Run
   `node requirements-board/agent/skills/run-build-phase/tools/phase-check.mjs --stop-servers` at the

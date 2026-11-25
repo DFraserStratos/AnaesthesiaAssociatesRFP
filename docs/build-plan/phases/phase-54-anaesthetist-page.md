@@ -89,7 +89,7 @@ Run these yourself in the running app and report pass or fail with evidence.
 - [ ] Side panel: pairings add and end work at the panel's width; the Contracts card lists a Contract held by a hospital that is linked to them and opens its Contract page; an anaesthetist with eight upcoming Lists shows three and See all reaches all eight, each opening the List in the Day view.
 - [ ] The tier appears nowhere outside Admin (the anaesthetist's mobile, PWA and web apps); the page fits at 1280 and 1440 with no horizontal scroll.
 - [ ] The Anaesthetists list has no row Edit; Add anaesthetist still opens its sheet and saves.
-- [ ] `build`, `build:pwa`, `vitest` and the whole of `visual/` green (the lane's lighter gate as LANES.md says).
+- [ ] The lane gate (LANES.md: the quick checks and this phase's own specs) green; the full Vitest, builds and `visual/` suite run at the wave's join.
 
 ## Demo guide updates
 
