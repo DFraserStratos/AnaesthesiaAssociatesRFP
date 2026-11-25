@@ -160,6 +160,17 @@ describe('office privacy: the PWA closure', () => {
   })
 })
 
+describe("office privacy: the anaesthetist's page (build plan Phase 54)", () => {
+  it('is imported only inside the Admin app, so its tier and pairings never reach an anaesthetist surface', () => {
+    const importers = [...MODULES.keys()].filter((p) => {
+      if (/\.test\.tsx?$/.test(p)) return false
+      return specifiersOf(MODULES.get(p) ?? '').some((spec) => spec.startsWith('.') && resolve(p, spec)?.endsWith('apps/admin/screens/AnaesthetistPage.tsx'))
+    })
+    expect(importers.length).toBeGreaterThan(0)
+    expect(importers.filter((p) => !p.includes('/apps/admin/'))).toEqual([])
+  })
+})
+
 // ---------------------------------------------------------------------------
 // 3. Histories the anaesthetist apps open
 // ---------------------------------------------------------------------------

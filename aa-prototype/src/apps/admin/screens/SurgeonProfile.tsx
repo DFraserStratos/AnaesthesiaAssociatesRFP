@@ -327,9 +327,6 @@ function ContactLines({ contact }: { contact: SurgeonContact }) {
 // The side panel
 // ---------------------------------------------------------------------------
 
-/** How many pairings of each kind the panel shows before See all. */
-const PANEL_PAIRINGS = 3
-
 function SurgeonSidePanel({ surgeonId, actor }: { surgeonId: string; actor: Actor }) {
   const masters = useAppStore((s) => s.masters)
   const schedule = useAppStore((s) => s.schedule)
@@ -355,7 +352,7 @@ function SurgeonSidePanel({ surgeonId, actor }: { surgeonId: string; actor: Acto
     return {
       key: l.id,
       to: `/admin/day/${l.dateISO}`,
-      linkState: { openListId: l.id },
+      state: { openListId: l.id },
       title: `${shortDay(l.dateISO)} · ${l.session}`,
       sub: `${masters.hospitals[l.hospitalId]?.name ?? l.hospitalId} · ${anaesthetist !== undefined ? drSurname(anaesthetist.name) : 'Draft List, no anaesthetist'}`,
       data: { 'data-list': l.id },
@@ -364,7 +361,7 @@ function SurgeonSidePanel({ surgeonId, actor }: { surgeonId: string; actor: Acto
 
   return (
     <>
-      <PairingSection perspective="surgeon" subjectId={surgeonId} actor={actor} limit={PANEL_PAIRINGS} />
+      <PairingSection perspective="surgeon" subjectId={surgeonId} actor={actor} layout="panel" />
       <RailSection
         title="Contracts"
         countNoun="Contracts linked to this surgeon"

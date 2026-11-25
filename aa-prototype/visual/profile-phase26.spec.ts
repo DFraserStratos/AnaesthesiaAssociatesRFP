@@ -57,7 +57,7 @@ test('phase 26 web profile: Billing saves; Contact, Identity and Bank are read-o
   await expect(save).toBeDisabled()
 })
 
-test('phase 26 admin: Master data columns and the record page Profile card', async ({ page }) => {
+test('phase 26 admin: the Anaesthetists columns and the page\'s Bank and GST card', async ({ page }) => {
   await page.goto('/admin/people/anaesthetists?q=Souter')
   await page.waitForLoadState('networkidle')
   const table = page.locator('[data-shot="masters-anaesthetists"]')
@@ -71,23 +71,28 @@ test('phase 26 admin: Master data columns and the record page Profile card', asy
 
   await page.goto('/admin/people/anaesthetists/34821')
   await page.waitForLoadState('networkidle')
-  const card = page.locator('[data-shot="anaesthetist-details"]')
-  await expect(card.getByRole('heading', { name: 'Profile' })).toBeVisible()
-  await expect(card).toContainText('99-0101-•••••21-00')
+  // Build plan Phase 54: the anaesthetist's page; each card is edited and saved on its own.
+  const bank = page.locator('[data-shot="anaesthetist-bank"]').first()
+  await expect(bank.getByRole('heading', { name: 'Bank and GST' })).toBeVisible()
+  await expect(bank).toContainText('99-0101-•••••21-00')
   await page.waitForTimeout(450)
   await page.screenshot({ path: 'visual/shots/p26-05-admin-record.png', fullPage: true })
 
-  await page.getByRole('button', { name: 'Edit details' }).click()
-  const dialog = page.getByRole('dialog')
-  await dialog.getByLabel('Bank account number (required)').fill('12-34')
-  await expect(dialog.getByText('That bank account number does not look right.', { exact: false })).toBeVisible()
-  await dialog.getByLabel('HPI CPN (required)').fill('')
-  await expect(dialog.getByRole('button', { name: 'Save changes' })).toBeDisabled()
-  // Build plan Phase 52: the sheet has no Status control; the status card makes an anaesthetist inactive.
-  await expect(dialog.getByText('Status', { exact: true })).toHaveCount(0)
+  await bank.getByRole('button', { name: 'Edit bank and gst' }).click()
+  await bank.getByLabel('Bank account number (required)').fill('12-34')
+  await expect(bank.getByText('That bank account number does not look right.', { exact: false })).toBeVisible()
+  await bank.getByLabel('Bank account name (required)').fill('')
+  await expect(bank.getByRole('button', { name: 'Save' })).toBeDisabled()
+  const identity = page.locator('[data-shot="anaesthetist-identity"]')
+  await identity.getByRole('button', { name: 'Edit identity' }).click()
+  await identity.getByLabel('HPI CPN (required)').fill('')
+  await expect(identity.getByRole('button', { name: 'Save' })).toBeDisabled()
+  // Build plan Phase 52: no card but Status makes an anaesthetist inactive.
+  await expect(bank.getByText('Status', { exact: true })).toHaveCount(0)
   await page.waitForTimeout(300)
   await page.screenshot({ path: 'visual/shots/p26-06-admin-edit.png', fullPage: true })
-  await page.keyboard.press('Escape')
+  await bank.getByRole('button', { name: 'Cancel' }).click()
+  await identity.getByRole('button', { name: 'Cancel' }).click()
 
   const status = page.locator('[data-shot="anaesthetist-status"]')
   await expect(status).toHaveAttribute('data-status', 'active')

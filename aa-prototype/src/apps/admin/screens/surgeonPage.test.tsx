@@ -169,8 +169,10 @@ describe("the surgeon's page: the side panel", () => {
   it('the example: a few of each kind, and See all shows every one', () => {
     useAppStore.setState(withSurgeonSidePanel(freshAppState()))
     renderAdmin(`/admin/people/surgeons/${FIXTURE_SURGEON}`)
-    const pairings = shot('pairing-section')
-    expect(pairings.querySelectorAll('[data-pairing]')).toHaveLength(4)
+    const pairings = () => shot('pairing-section')
+    expect(pairings().querySelectorAll('[data-pairing]')).toHaveLength(3)
+    fireEvent.click(within(pairings()).getByRole('button', { name: 'See all 4' }))
+    expect(pairings().querySelectorAll('[data-pairing]')).toHaveLength(4)
 
     const contracts = shot('surgeon-side-contracts')
     expect(contracts.querySelectorAll('[data-contract]')).toHaveLength(2)
