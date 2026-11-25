@@ -323,6 +323,9 @@ const ADMIN_MASTERS = '/admin/masters'
 /** The Contracts section (build plan Phase 45): the list and a Contract's page. `apps/admin/contractsPaths.ts` builds these in the app; this file stays out of `src/apps` (the PWA closure contains it). */
 const ADMIN_CONTRACTS = '/admin/contracts'
 const ADMIN_CONTRACT = '/admin/contracts/:contractId'
+/** The section's Parties and Funding tags tabs (build plan Phase 48). */
+const ADMIN_PARTIES = '/admin/contracts/parties'
+const ADMIN_FUNDING_TAGS = '/admin/contracts/tags'
 const ADMIN_NOTIFICATIONS = '/admin/notifications'
 const MOBILE_AVAILABILITY = '/mobile/availability'
 /** A date route param, or undefined. */
@@ -371,7 +374,7 @@ function chosenSample(ctx: DemoTriggerCtx, choiceId: string | undefined): Sample
   return (choiceId !== undefined ? offered.find((s) => s.id === choiceId) : undefined) ?? offered[0]
 }
 
-const NO_SAMPLE_HERE = 'Open Seed load, or a Master data view loaded from a spreadsheet'
+const NO_SAMPLE_HERE = 'Open Seed load, a Master data view or a Contracts tab loaded from a spreadsheet'
 const SAMPLE_WAITING = 'A load is already waiting for this sheet; load or discard it first'
 const GO_LIVE_WAITING = 'A go-live load is already waiting; load or discard it first'
 
@@ -1951,7 +1954,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     description:
       "Checks a sample spreadsheet as the developer's seed load: its valid rows wait on Seed load and its rejected rows show why. It stages and does not load: press Load on Seed load to load the valid rows.",
     screen: 'Admin · Master data',
-    routes: [ADMIN_MASTERS, ADMIN_CONTRACTS],
+    routes: [ADMIN_MASTERS, ADMIN_CONTRACTS, ADMIN_PARTIES, ADMIN_FUNDING_TAGS],
     surfaces: ['bar'],
     when: (_state, ctx) => sampleSheetsFor(ctx).length > 0,
     choices: (_state, ctx) => sampleSheetsFor(ctx).map((s) => ({ id: s.id, label: s.fileName })),

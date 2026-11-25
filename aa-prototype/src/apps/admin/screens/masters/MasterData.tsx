@@ -18,9 +18,9 @@ import { SeedLoadView } from './SeedLoadView'
 import { GoLiveLoadView } from './GoLiveLoadView'
 import { ScheduleSettingsView } from './ScheduleSettingsView'
 import { AvailabilityStatusesView } from './AvailabilityStatusesView'
-import { PartiesView } from './PartiesView'
 import { SpecialtiesView } from './SpecialtiesView'
-import { FundingTagsView } from './FundingTagsView'
+import { TextAction } from '../../../../shared/ui'
+import { contractsPath } from '../../contractsPaths'
 import { RvgGroupsView } from './RvgGroupsView'
 import { ModifiersView } from './ModifiersView'
 import { EmailTemplatesView } from './EmailTemplatesView'
@@ -85,13 +85,20 @@ export function MasterData({ actor }: MasterDataProps) {
   )
 
   return (
-    <AdminPage mode={masterViewMode(view)} title="Master data">
+    <AdminPage
+      mode={masterViewMode(view)}
+      title="Master data"
+      sub={
+        <span data-shot="masters-moved-note">
+          Contracts, Parties and Funding tags are now in{' '}
+          <TextAction size="sm" flush to={contractsPath()}>Contracts</TextAction>.
+        </span>
+      }
+    >
       <PageBody nav={nav} gap={12}>
         {view === 'anaesthetists' && <AnaesthetistsView actor={actor} />}
-        {/* Contracts moved to its own section (build plan Phase 45): `AdminMastersRoute` redirects `?view=contracts`. */}
-        {view === 'fundingTags' && <FundingTagsView actor={actor} />}
+        {/* Contracts, Parties and Funding tags are tabs of the Contracts section (build plan Phases 45 and 48): `AdminMastersRoute` redirects their old views. */}
         {view === 'specialties' && <SpecialtiesView actor={actor} />}
-        {view === 'parties' && <PartiesView actor={actor} />}
         {view === 'recurringBookings' && <RecurringBookingsMaster actor={actor} />}
         {view === 'hospitals' && <HospitalsView actor={actor} />}
         {view === 'surgeons' && <SurgeonsView actor={actor} />}

@@ -47,8 +47,8 @@ export function TableKitExample() {
         <tbody>
           <GroupRow span={5}>This week</GroupRow>
           <GroupRow span={5} level="sub">Sub-heading (level sub, Phase 47)</GroupRow>
-          {ROWS.map((r) => (
-            <ClickableRow key={r.id} onOpen={() => setLast(`Row click opened ${r.id}.`)} data-draft-list-row={r.id}>
+          {ROWS.map((r, i) => (
+            <ClickableRow key={r.id} selected={i === 0} onOpen={() => setLast(`Row click opened ${r.id}.`)} data-draft-list-row={r.id}>
               <Td>{r.day}</Td>
               <Td mono>
                 <RowOpenButton label={`Open ${DRAFT_LIST} ${r.day} ${r.session}, ${r.where}`} onOpen={() => setLast(`The handle opened ${r.id}.`)}>

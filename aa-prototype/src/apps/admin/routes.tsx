@@ -28,6 +28,9 @@ import { mastersRedirect } from './mastersRedirect'
 import { ContractsSection } from './screens/contracts/ContractsSection'
 import { ContractPage } from './screens/contracts/ContractPage'
 import { NewContractPage } from './screens/contracts/new/NewContractPage'
+import { PartiesTab } from './screens/contracts/PartiesTab'
+import { PartyPage } from './screens/contracts/PartyPage'
+import { FundingTagsTab } from './screens/contracts/FundingTagsTab'
 import { SurgeonProfile } from './screens/SurgeonProfile'
 import { AnaesthetistRecord } from './screens/AnaesthetistRecord'
 import { ReviewQueue } from './screens/ReviewQueue'
@@ -465,6 +468,30 @@ export function AdminNewContractRoute() {
   const holderParam = params.get('holder') ?? ''
   const holder = useAppStore((s) => (s.masters.parties[holderParam] !== undefined ? holderParam : ''))
   return <NewContractPage key={holder} actor={actor} {...(holder !== '' ? { initialHolderId: holder } : {})} />
+}
+
+/** The Parties tab (build plan Phase 48). */
+export function AdminPartiesRoute() {
+  const { actor } = useAdminOutlet()
+  return <PartiesTab actor={actor} />
+}
+
+/** A Party's page (build plan Phase 48); an unknown id falls back to the Parties tab. */
+export function AdminPartyRoute() {
+  const { partyId = '' } = useParams()
+  const { actor } = useAdminOutlet()
+  const exists = useAppStore((s) => s.masters.parties[partyId] !== undefined)
+  return (
+    <RequireEntity exists={exists}>
+      <PartyPage key={partyId} partyId={partyId} actor={actor} />
+    </RequireEntity>
+  )
+}
+
+/** The Funding tags tab (build plan Phase 48). */
+export function AdminFundingTagsRoute() {
+  const { actor } = useAdminOutlet()
+  return <FundingTagsTab actor={actor} />
 }
 
 export function AdminContractRoute() {

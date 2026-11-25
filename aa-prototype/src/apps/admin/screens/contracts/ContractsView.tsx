@@ -25,6 +25,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { contractSearch, type ContractStatusFilter } from '../../../../domain/billing/contracts'
 import { CONTRACT_GROUPINGS, groupContracts, groupCount, parseContractGrouping, type ContractGroup, type ContractGrouping } from '../../../../domain/billing/contractGroups'
+import { narrowContracts, NO_TAG, type CatalogueNarrowing } from '../../../../domain/billing/partyContracts'
 import { formatRangeDate, formatRangePrice, rangeSummary, rangeSummaryText } from '../../../../domain/billing/priceRanges'
 import { FULL_SCALE } from '../../../../domain/seed/fullScale/constants'
 import { formatCount, formatCurrency } from '../../../../shared/format'
@@ -44,6 +45,7 @@ import { LoadResultBanner, MasterTable } from '../masters/chrome'
 import { EmptyState, TextAction } from '../../../../shared/ui'
 import { rowCellStyle } from '../masters/tableStyles'
 import { contractPath } from '../../contractsPaths'
+import { CONTRACTS_TAB_SEEDED } from './contractsTabs'
 
 /**
  * Invoicing holds who it bills, the invoice layout and the delivery, one over the other, and the
@@ -110,15 +112,29 @@ export function ContractsView() {
   const picked = allGroups.find((g) => g.key === inParam)
   const pickedKey = picked?.key ?? ''
 
-  // Active by default; arriving on a group that holds only Disabled Contracts opens on All.
-  const [status, setStatus] = useState<ContractStatusFilter>(() => (onlyDisabled(picked) ? 'all' : 'active'))
+  // A count's link narrows the list (Phase 48, `contractsCatalogueLink`): the office's own Contracts, one tag or none.
+  const tagParam = params.get('tag')
+  const narrowing = useMemo<CatalogueNarrowing>(
+    () => ({ own: params.get('own') === '1', ...(tagParam !== null && tagParam !== '' ? { tag: tagParam } : {}) }),
+    [params, tagParam],
+  )
+  const narrowed = narrowing.own || narrowing.tag !== undefined
+
+  // Active by default; a link's `?status=` (a Party's Disabled count) sets it once, and arriving on a
+  // group that holds only Disabled Contracts opens on All.
+  const [status, setStatus] = useState<ContractStatusFilter>(() => {
+    const asked = params.get('status')
+    if (asked === 'disabled' || asked === 'all') return asked
+    return onlyDisabled(picked) ? 'all' : 'active'
+  })
 
   useEffect(() => {
-    if (params.get('q') === null) return
+    if (params.get('q') === null && params.get('status') === null) return
     setParams(
       (prev) => {
         const copy = new URLSearchParams(prev)
         copy.delete('q')
+        copy.delete('status')
         return copy
       },
       { replace: true },
@@ -161,12 +177,29 @@ export function ContractsView() {
     )
   }
 
+  /** Drop a count link's narrowing (its tag and the system backstops left out), keeping the grouping and group. */
+  function clearNarrowing() {
+    setParams(
+      (prev) => {
+        const copy = new URLSearchParams(prev)
+        copy.delete('tag')
+        copy.delete('own')
+        copy.delete('page')
+        return copy
+      },
+      { replace: true },
+    )
+  }
+
   function pickGrouping(by: ContractGrouping) {
     setContractGrouping(officeUser, by)
     setView({ group: by, in: '' })
   }
 
-  const results = useMemo(() => contractSearch(query, { contracts, parties, rvgGroups, filters: { status } }), [query, contracts, parties, rvgGroups, status])
+  const results = useMemo(
+    () => narrowContracts(contractSearch(query, { contracts, parties, rvgGroups, filters: { status } }), narrowing),
+    [query, contracts, parties, rvgGroups, status, narrowing],
+  )
   const groups = useMemo(() => groupContracts(results, grouping, masters, CONTRACT_GROUP_WORDS), [results, grouping, masters])
   const allCount = useMemo(() => groupCount(groups), [groups])
   const shownGroups = useMemo(() => (pickedKey === '' ? groups : groups.filter((g) => g.key === pickedKey)), [groups, pickedKey])
@@ -192,7 +225,7 @@ export function ContractsView() {
 
   return (
     <>
-      <LoadResultBanner view="contracts" />
+      <LoadResultBanner seeded={CONTRACTS_TAB_SEEDED.contracts} />
 
       <PageToolbar
         end={
@@ -200,7 +233,16 @@ export function ContractsView() {
             <span className="mono">{formatCount(shownCount)}</span> {shownCount === 1 ? 'Contract' : 'Contracts'}
             {status === 'active' ? ' active' : status === 'disabled' ? ' disabled' : ''}
             {picked !== undefined ? ` in ${picked.label}` : ''}
+            {narrowing.tag !== undefined ? (narrowing.tag === NO_TAG ? ' with no tag' : <> tagged <span className="mono">{fundingTags[narrowing.tag]?.code ?? narrowing.tag}</span></>) : ''}
             {query.trim() !== '' ? ` matching "${query.trim()}"` : ''}. Grouped by {groupingLabel.toLowerCase()}.
+            {narrowed && (
+              <>
+                {' '}
+                <TextAction size="sm" flush shot="contract-narrowing-clear" label="Show every Contract, system ones and every tag included" onClick={() => clearNarrowing()}>
+                  Show all
+                </TextAction>
+              </>
+            )}
           </span>
         }
       >

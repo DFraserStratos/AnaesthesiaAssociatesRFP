@@ -96,17 +96,19 @@ test('admin phase 07 master data', async ({ page }) => {
   await page.waitForTimeout(300)
   await expect(page.getByText('55.00').first()).toBeVisible()
 
-  // Parties (catch-up Phase 18): kinds, billing names and delivery; no Insurers tab.
-  await page.getByRole('button', { name: 'Parties', exact: true }).click()
+  // Parties (catch-up Phase 18): a tab of the Contracts section since build plan Phase 48, grouped by kind;
+  // Master data keeps no Parties or Insurers view and points across.
+  await expect(page.locator('[data-masters-view="parties"]')).toHaveCount(0)
+  await expect(page.locator('[data-shot="masters-moved-note"]')).toContainText('now in Contracts')
+  await page.goto('/admin/contracts/parties')
   const parties = page.locator('[data-shot="parties"]')
-  await expect(parties.locator('tr', { hasText: 'nib' }).getByText('Email')).toBeVisible()
-  await expect(parties.locator('tr', { hasText: 'ACC' }).first().getByText('Funder')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Insurers', exact: true })).toHaveCount(0)
+  await expect(parties.locator('tr[data-party="PY-NIB"]').getByText('Email')).toBeVisible()
+  await expect(parties.locator('tr[data-party-group="funder"]')).toContainText('Funders')
+  await expect(parties.locator('tr[data-party="PY-ACC"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a7-05a-parties.png', fullPage: true })
 
   // Contracts: No contract · RVG first, a search by AA code, and the editor.
-  // Master data's sub-nav entry reaches the Contracts section through the redirect (build plan Phase 45).
-  await page.locator('[data-masters-view="contracts"]').click()
+  await page.locator('[data-contracts-tab="contracts"]').click()
   await expect(page).toHaveURL(/\/admin\/contracts$/)
   const catalogue = page.locator('[data-shot="contract-catalogue"]')
   await expect(catalogue.locator('tr[data-contract]').first()).toContainText('AA-RVG')

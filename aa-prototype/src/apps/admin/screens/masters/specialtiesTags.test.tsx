@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { SPC, SURG, TAG } from '../../../../domain/seed'
 import { freshAppState, useAppStore, type Actor } from '../../../../store'
 import { SurfaceProvider } from '../../../../shared'
-import { AdminContractRoute, AdminContractsRoute, AdminMastersRoute, AdminNewContractRoute, AdminSurgeonProfileRoute } from '../../routes'
+import { AdminContractRoute, AdminContractsRoute, AdminMastersRoute, AdminNewContractRoute, AdminSurgeonProfileRoute, AdminPartiesRoute, AdminPartyRoute, AdminFundingTagsRoute } from '../../routes'
 import { isOpenPriceFallback } from '../../../../domain/billing/fallbacks'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -31,6 +31,11 @@ function renderAdmin(path: string) {
                 <Route index element={null} />
               </Route>
               <Route path="new" element={<AdminNewContractRoute />} />
+              <Route path="parties">
+                <Route index element={<AdminPartiesRoute />} />
+                <Route path=":partyId" element={<AdminPartyRoute />} />
+              </Route>
+              <Route path="tags" element={<AdminFundingTagsRoute />} />
               <Route path=":contractId" element={<AdminContractRoute />} />
             </Route>
           </Route>
@@ -75,11 +80,11 @@ describe('Specialties view (US-13.4.4)', () => {
   })
 })
 
-describe('Funding tags view (US-13.4.5)', () => {
+describe('Funding tags tab (US-13.4.5; moved to the Contracts section by build plan Phase 48)', () => {
   const codes = () => [...shot('masters-funding-tags').querySelectorAll('tr[data-tag] td:first-child')].map((td) => td.textContent)
 
   it('lists SXAP, HNZ, ACC with funders in order, moves HNZ up and back', () => {
-    renderAdmin('/admin/masters?view=fundingTags')
+    renderAdmin('/admin/contracts/tags')
     expect(codes()).toEqual(['SXAP', 'HNZ', 'ACC'])
     expect(within(shot('masters-funding-tags')).getByText('Southern Cross Health Society')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Move HNZ up' }))
@@ -89,7 +94,7 @@ describe('Funding tags view (US-13.4.5)', () => {
   })
 
   it('adds a tag, edits its funder, removes it; refuses removing SXAP', () => {
-    renderAdmin('/admin/masters?view=fundingTags')
+    renderAdmin('/admin/contracts/tags')
     fireEvent.click(screen.getByRole('button', { name: 'Add funding tag' }))
     const sheet = () => shot('funding-tag-sheet')
     fireEvent.change(within(sheet()).getByLabelText('Code'), { target: { value: 'nzdf' } })

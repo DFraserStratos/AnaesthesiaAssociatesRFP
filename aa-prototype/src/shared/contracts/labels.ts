@@ -32,6 +32,19 @@ export const PARTY_KIND_PLURAL: Record<PartyKind, string> = {
   anaesthetist: 'Anaesthetists',
 }
 
+/**
+ * The Parties tab's groups, in order (build plan Phase 48; contracts-section.html #parties):
+ * surgeons and anaesthetists share one heading so the tab is not one long list of anaesthetists.
+ */
+export const PARTY_LIST_GROUPS: readonly { key: string; label: string; kinds: readonly PartyKind[] }[] = [
+  { key: 'aa', label: 'Anaesthesia Associates', kinds: ['aa'] },
+  { key: 'hospital', label: 'Hospitals', kinds: ['hospital'] },
+  { key: 'insurer', label: 'Insurers', kinds: ['insurer'] },
+  { key: 'funder', label: 'Funders', kinds: ['funder'] },
+  { key: 'surgeonGroup', label: 'Surgeon groups', kinds: ['surgeonGroup'] },
+  { key: 'people', label: 'Surgeons and anaesthetists', kinds: ['surgeon', 'anaesthetist'] },
+]
+
 export const DELIVERY_LABEL: Record<DeliveryMethod, string> = {
   email: 'Email',
   post: 'Post',

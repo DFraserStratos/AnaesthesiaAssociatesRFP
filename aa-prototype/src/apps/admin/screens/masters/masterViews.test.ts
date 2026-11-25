@@ -1,6 +1,7 @@
 /**
- * The Master data registry (catch-up Phase 42, work item 11; US-13.4.1 "in one
- * place"): every row of US-13.4.1's list maps to a view that can add and edit,
+ * The Master data registry (catch-up Phase 42, work item 11; US-13.4.1): every
+ * row of US-13.4.1's list maps to a Master data view, or (build plan Phase 48)
+ * a tab of the Contracts section, that can add and edit,
  * every seed-load sheet is named by a view's `seeded`, views that retire say
  * so, and no office view carries a load action (the load is the developer's
  * step, on the demo-badged Go-live views).
@@ -9,18 +10,17 @@
 import { describe, expect, it } from 'vitest'
 import { LOAD_ORDER } from '../../../../domain/masterLoad/types'
 import { MASTER_VIEWS, masterViewEntry, SEEDED_SUBTITLE } from './masterViews'
+import { CONTRACTS_TABS } from '../contracts/contractsTabs'
 import type { MastersView } from './view'
 
-const SOURCES = import.meta.glob(['./*.tsx'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+const SOURCES = import.meta.glob(['./*.tsx', '../contracts/PartiesTab.tsx', '../contracts/FundingTagsTab.tsx', '../contracts/PartyPage.tsx'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
 
-/** US-13.4.1's list, each with the words its registry row uses. */
+/** US-13.4.1's Master data list, each with the words its registry row uses. */
 const CATALOGUE_ROWS: readonly { row: string; match: RegExp }[] = [
   { row: 'hospitals with contact email', match: /^hospitals, each with a contact email/ },
   { row: 'surgeons', match: /^surgeons$/ },
   { row: 'surgeon groups', match: /^surgeon groups$/ },
-  { row: 'Parties, insurers and funders among them', match: /^Parties, insurers and funders among them$/ },
   { row: 'specialties', match: /^specialties$/ },
-  { row: 'funding tags', match: /^funding tags$/ },
   { row: 'anaesthetists', match: /^anaesthetists$/ },
   { row: 'availability statuses', match: /availability statuses$/i },
   { row: 'recurring bookings', match: /^recurring bookings$/ },
@@ -28,7 +28,13 @@ const CATALOGUE_ROWS: readonly { row: string; match: RegExp }[] = [
   { row: 'hospital calendars', match: /hospital's own holiday calendar/ },
   { row: 'RVG codes and groups', match: /^RVG codes and groups$/ },
   { row: 'modifier codes', match: /^modifier codes$/ },
+]
+
+/** US-13.4.1's Contracts section list: each a tab of the section (build plan Phase 48). */
+const SECTION_ROWS: readonly { row: string; match: RegExp }[] = [
   { row: 'Contracts, with their price ranges', match: /^Contracts, with their price ranges$/ },
+  { row: 'Parties, insurers and funders among them', match: /^Parties, insurers and funders among them$/ },
+  { row: 'funding tags', match: /^funding tags$/ },
 ]
 
 /** The views whose sheets carry `RetireSection` or whose tables carry `ShowRetiredToggle`. */
@@ -48,8 +54,21 @@ describe('the Master data registry', () => {
     expect(views.some((v) => v.add && v.edit)).toBe(true)
   })
 
-  it('every load sheet is named by at least one view', () => {
-    const seeded = new Set(MASTER_VIEWS.flatMap((v) => v.seeded ?? []))
+  it.each(SECTION_ROWS)('$row maps to a Contracts section tab that adds and edits, and to no Master data view', ({ match }) => {
+    const tabs = CONTRACTS_TABS.filter((t) => t.catalogueRows.some((r) => match.test(r)))
+    expect(tabs).toHaveLength(1)
+    expect(tabs[0]!.add && tabs[0]!.edit).toBe(true)
+    expect(MASTER_VIEWS.some((v) => v.catalogueRows.some((r) => match.test(r)))).toBe(false)
+  })
+
+  it('Master data keeps no Contracts, Parties or Funding tags view, and Billing keeps RVG groups and Modifiers', () => {
+    const ids: readonly string[] = MASTER_VIEWS.map((v) => v.view)
+    for (const gone of ['contracts', 'parties', 'fundingTags', 'insurers', 'organisations']) expect(ids).not.toContain(gone)
+    expect(MASTER_VIEWS.filter((v) => v.group === 'Billing').map((v) => v.view)).toEqual(['rvgGroups', 'modifiers'])
+  })
+
+  it('every load sheet is named by at least one view or Contracts tab', () => {
+    const seeded = new Set([...MASTER_VIEWS.flatMap((v) => v.seeded ?? []), ...CONTRACTS_TABS.flatMap((t) => t.seeded)])
     for (const entity of LOAD_ORDER) expect(seeded.has(entity), entity).toBe(true)
   })
 
@@ -58,7 +77,7 @@ describe('the Master data registry', () => {
       expect(SOURCES[file], file).toMatch(/ShowRetiredToggle/)
       for (const view of views) expect(masterViewEntry(view).retire, view).toBe(true)
     }
-    for (const view of ['hospitals', 'surgeons', 'surgeonGroups', 'modifiers', 'rvgGroups', 'availability-statuses', 'recurringBookings', 'contracts'] as const) {
+    for (const view of ['hospitals', 'surgeons', 'surgeonGroups', 'modifiers', 'rvgGroups', 'availability-statuses', 'recurringBookings'] as const) {
       expect(masterViewEntry(view).retire, view).toBe(true)
     }
   })
@@ -75,7 +94,7 @@ describe('the Master data registry', () => {
   })
 
   it('no office view renders a load action', () => {
-    const office = Object.entries(SOURCES).filter(([file]) => !LOAD_VIEW_FILES.includes(file) && (/View(s)?\.tsx$/.test(file) || file === './chrome.tsx' || file === './MasterData.tsx'))
+    const office = Object.entries(SOURCES).filter(([file]) => !LOAD_VIEW_FILES.includes(file) && (/(View(s)?|Tab|Page)\.tsx$/.test(file) || file === './chrome.tsx' || file === './MasterData.tsx'))
     expect(office.length).toBeGreaterThan(10)
     for (const [file, source] of office) {
       for (const action of LOAD_ACTIONS) expect(source.includes(action), `${file} names ${action}`).toBe(false)
