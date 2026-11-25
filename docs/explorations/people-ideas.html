@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>People Screen Ideas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Tokens: the app's own (aa-prototype/src/theme/tokens.ts), so the mocks read as the app. */
+:root{
+  --ink:#172320;--slate:#58635F;--mist:#8A9490;--lineStrong:#C9D1CE;--line:#E2E7E5;--sunken:#EDF1EF;--bg:#F6F8F7;--surface:#FFFFFF;--grid:#F1F4F2;
+  --brand:#A91E3E;--brandDeep:#8C1533;--brandTint:#F7E7EC;--brandMuted:#D89AA9;
+  --teal:#0D6E63;--tealHover:#0A5A51;--tealTint:#E1F0ED;
+  --ok:#1E8E5A;--okTint:#E3F4EB;--okOn:#157A49;
+  --warn:#A16207;--warnTint:#F9F0DC;--warnOn:#7C4D08;
+  --err:#C2403C;--errTint:#FAE9E7;--errOn:#9C332F;
+  --e1:0 1px 2px rgba(23,35,32,.05),0 2px 6px rgba(23,35,32,.05);
+  --e2:0 2px 4px rgba(23,35,32,.06),0 8px 20px rgba(23,35,32,.09);
+  --e3:0 8px 16px rgba(23,35,32,.10),0 24px 56px rgba(23,35,32,.18);
+  --r-xs:6px;--r-sm:8px;--r-ctl:10px;--r-md:12px;--r-card:14px;--r-lg:16px;--r-panel:20px;
+  --shadow:0 1px 2px rgba(23,35,32,.06),0 4px 14px rgba(23,35,32,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:"Spline Sans Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+a{color:var(--teal)}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1560px;margin:0 auto;padding:0 32px}
+h1,h2,h3,h4,p{margin:0}
+h2{font-size:24px;line-height:30px;letter-spacing:-.005em;margin-bottom:6px}
+h3{font-size:19px;line-height:25px;margin-bottom:4px}
+.sub{color:var(--slate);margin:0 0 20px;max-width:74ch}
+section{padding:48px 0 8px}
+
+/* ===== hero ===== */
+header.top{background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{padding-top:40px;padding-bottom:36px}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:56px;align-items:start}
+.kicker{font-size:14px;color:var(--slate)}
+.hero h1{font-size:50px;line-height:1.06;letter-spacing:-.025em;margin:14px 0 18px;font-weight:800;max-width:17ch}
+.hero h1 span{display:block;color:var(--slate);font-weight:700}
+.lede{font-size:17px;color:var(--slate);max-width:62ch}
+.lede+.lede{margin-top:12px}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px;max-width:720px}
+.toc a{font-size:13px;font-weight:600;text-decoration:none;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:6px 11px;border-radius:999px}
+.toc a:hover{border-color:var(--teal);color:var(--teal)}
+.toc a .tn{color:var(--mist);margin-right:6px;font-variant-numeric:tabular-nums}
+.navpair{display:flex;gap:20px;align-items:flex-start}
+.navpair figure{margin:0}
+.navpair figcaption{font-size:13px;font-weight:600;color:var(--slate);margin:0 0 10px}
+.navpair .arrow{align-self:center;color:var(--mist);font-size:22px;padding-top:24px}
+
+/* ===== side nav, as SideNav.tsx draws it ===== */
+.mnav{background:var(--ink);display:flex;flex-direction:column;padding:20px 12px;gap:2px;width:216px;flex:none}
+.mnav .logo{display:flex;flex-direction:column;gap:5px;padding:0 8px 18px}
+.mnav .logo b{color:#fff;font-family:Georgia,"Times New Roman",serif;font-weight:400;font-size:15px;letter-spacing:.01em}
+.mnav .logo small{font-size:9px;font-weight:600;letter-spacing:.14em;color:var(--brandMuted);padding-left:2px}
+.mnav .it{display:flex;justify-content:space-between;align-items:center;color:rgba(255,255,255,.9);font-size:13.5px;font-weight:500;padding:9px 12px;border-radius:9px;white-space:nowrap}
+.mnav .it.on{background:rgba(255,255,255,.08);color:#fff;font-weight:600;box-shadow:inset 3px 0 0 var(--brand)}
+.mnav .it.new{outline:1.5px dashed rgba(216,154,169,.7);outline-offset:-1px}
+.mnav .it em{font-style:normal;font-size:11px;font-weight:700;background:var(--warn);color:#fff;border-radius:999px;padding:0 7px;line-height:18px}
+.mnav .it em.c{background:var(--brand)}
+.mnav .me{margin-top:auto;display:flex;align-items:center;gap:10px;padding:8px;color:#fff;font-size:13px;font-weight:600}
+.mnav .me i{width:30px;height:30px;border-radius:50%;background:var(--brandTint);color:var(--brand);font-style:normal;font-size:11px;font-weight:700;display:grid;place-items:center}
+.mnav .me span{display:block;font-size:11.5px;font-weight:400;color:rgba(255,255,255,.55)}
+.mnav.short{min-height:0;padding-bottom:14px}
+.subnav{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 10px;width:190px;font-size:13px}
+.subnav .g{font-size:11px;font-weight:700;color:var(--mist);padding:8px 8px 4px}
+.subnav .s{padding:5px 8px;border-radius:7px;color:var(--slate)}
+.subnav .s.on{background:var(--tealTint);color:var(--teal);font-weight:600}
+.nowstack{display:flex;gap:10px;align-items:flex-start}
+.clicks{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--warnOn);background:var(--warnTint);border-radius:999px;padding:2px 9px;margin-left:6px}
+.clicks.ok{color:var(--okOn);background:var(--okTint)}
+
+/* ===== why diagram ===== */
+.why{display:grid;grid-template-columns:1fr 340px 1fr;gap:0;align-items:center;background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:28px}
+.why .col{display:flex;flex-direction:column;gap:8px}
+.why .colh{font-size:14px;font-weight:700;margin-bottom:4px}
+.why .colh span{display:block;font-size:13px;font-weight:400;color:var(--slate)}
+.why .in,.why .out{background:var(--bg);border-radius:10px;padding:9px 12px;font-size:13.5px;position:relative}
+.why .in b,.why .out b{font-weight:600}
+.why .in small,.why .out small{display:block;color:var(--slate);font-size:12.5px;line-height:17px}
+.why .in{margin-right:28px}
+.why .in::after{content:"";position:absolute;right:-28px;top:50%;width:28px;border-top:1.5px solid var(--lineStrong)}
+.why .out{margin-left:28px}
+.why .out::before{content:"";position:absolute;left:-28px;top:50%;width:28px;border-top:1.5px solid var(--lineStrong)}
+.hub{background:var(--ink);color:#fff;border-radius:var(--r-panel);padding:22px;box-shadow:var(--e2);position:relative}
+.hub .code{display:inline-block;font-family:"Spline Sans Mono",monospace;font-size:12px;background:rgba(255,255,255,.1);border-radius:6px;padding:2px 8px}
+.hub h4{font-size:21px;line-height:26px;margin:10px 0 4px}
+.hub p{font-size:13px;color:#C8D2CE;line-height:19px}
+.hub dl{margin:14px 0 0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px}
+.hub dt{color:#9FB0AA}
+.hub dd{margin:0;font-weight:600}
+.hub .foot{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.12);font-size:12.5px;color:#C8D2CE}
+
+/* ===== tables in the explainer ===== */
+.invtable{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow);font-size:13.5px}
+.invtable th{text-align:left;font-size:12.5px;color:var(--mist);font-weight:700;padding:10px 14px;border-bottom:1px solid var(--line)}
+.invtable td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.invtable tr:last-child td{border-bottom:none}
+.invtable td:first-child{font-weight:600;width:230px}
+.invtable .gap td:first-child{color:var(--errOn)}
+.storyid{font-family:"Spline Sans Mono",monospace;font-size:11.5px;color:var(--mist);white-space:nowrap}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.twocol h3{font-size:16px;margin:0 0 10px}
+
+/* ===== idea blocks ===== */
+.idea{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);margin:0 0 32px;overflow:hidden}
+.idea-head{display:flex;align-items:flex-start;gap:16px;padding:24px 28px 0}
+.num{flex:none;min-width:30px;color:var(--mist);font-weight:700;font-size:19px;line-height:25px;font-variant-numeric:tabular-nums}
+.idea-head p{margin:4px 0 0;color:var(--slate);max-width:84ch}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.tag{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--slate);background:var(--bg)}
+.tag.fit{background:var(--okTint);color:var(--okOn);border-color:transparent}
+.tag.edit{background:var(--warnTint);color:var(--warnOn);border-color:transparent}
+.tag.rule{background:var(--errTint);color:var(--errOn);border-color:transparent}
+.tag.pick{background:var(--ink);color:#fff;border-color:transparent}
+.idea-body{display:flex;flex-direction:column;gap:22px;padding:22px 28px 28px}
+.notes{display:grid;grid-template-columns:1fr 1fr 1.15fr;column-gap:28px;align-items:start}
+.notes h4{font-size:14px;margin:0 0 6px}
+.notes ul{margin:0;padding-left:18px;font-size:14.5px}
+.notes li{margin:0 0 5px}
+.notes .req{font-size:14px;background:var(--bg);border-radius:var(--r-ctl);padding:12px 14px}
+.notes .req p{margin:0 0 6px}.notes .req p:last-child{margin:0}
+.mock-cap{font-size:13px;font-weight:600;color:var(--slate);margin:0 0 8px}
+.mockwrap{border:1px solid var(--line);border-radius:var(--r-card);overflow-x:auto;background:var(--bg)}
+.frame{display:flex;min-width:1440px;min-height:760px;font-size:13px}
+.page{flex:1;min-width:0;padding:22px 28px 28px;display:flex;flex-direction:column;gap:14px}
+.page.withrail{display:grid;grid-template-columns:minmax(0,1fr) 412px;gap:20px;align-items:start}
+.page.withrail>.head,.page.withrail>.tabsrow{grid-column:1/-1}
+.maincol,.railcol{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+/* ===== app parts, drawn at the app's sizes ===== */
+.head{display:flex;align-items:flex-start;gap:12px}
+.head .t{flex:1;min-width:0}
+.head .t b{display:block;font-size:24px;line-height:30px;font-weight:700;letter-spacing:-.01em}
+.head .t small{display:block;font-size:13px;color:var(--slate);margin-top:2px}
+.back{font-size:13px;font-weight:600;color:var(--teal);margin-bottom:6px;display:inline-block}
+.btn{height:36px;padding:0 14px;border-radius:var(--r-ctl);display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;white-space:nowrap;border:1px solid transparent}
+.btn.lg{height:44px;padding:0 18px;font-size:14px}
+.btn.pri{background:var(--teal);color:#fff}
+.btn.sec{background:var(--surface);border-color:var(--lineStrong);color:var(--ink)}
+.btn.ghost{color:var(--teal);padding:0 4px}
+.txt{font-size:12.5px;font-weight:700;color:var(--teal);white-space:nowrap}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.search{height:36px;flex:1 1 280px;max-width:420px;border:1px solid var(--line);background:var(--surface);border-radius:999px;display:flex;align-items:center;gap:8px;padding:0 14px;color:var(--mist);font-size:13px}
+.search svg{flex:none}
+.sel{height:36px;padding:0 12px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-ctl);display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--ink);white-space:nowrap}
+.sel::after{content:"";width:6px;height:6px;border-right:1.5px solid var(--slate);border-bottom:1.5px solid var(--slate);transform:rotate(45deg) translateY(-2px);margin-left:2px}
+.seg{display:inline-flex;background:var(--sunken);border-radius:9px;padding:3px;font-size:12.5px;font-weight:600}
+.seg span{text-align:center;padding:5px 12px;border-radius:7px;color:var(--slate)}
+.seg span.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(23,35,32,.2)}
+.count{font-size:12.5px;color:var(--slate)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tab{font-size:14px;font-weight:500;color:var(--slate);padding:6px 10px 9px;border-bottom:2px solid transparent;display:flex;gap:6px;align-items:center;white-space:nowrap;margin-bottom:-1px}
+.tab.on{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
+.cnt{font-family:"Spline Sans Mono",monospace;font-size:11px;font-weight:600;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--sunken);color:var(--slate);display:inline-grid;place-items:center}
+.cnt.w{background:var(--warnTint);color:var(--warnOn)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--sunken);color:var(--slate);white-space:nowrap;line-height:17px}
+.pill.ok{background:var(--okTint);color:var(--okOn)}
+.pill.warn{background:var(--warnTint);color:var(--warnOn)}
+.pill.err{background:var(--errTint);color:var(--errOn)}
+.pill.line{background:var(--surface);box-shadow:inset 0 0 0 1px var(--lineStrong);color:var(--ink)}
+.pill.code{font-family:"Spline Sans Mono",monospace;font-size:11px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--e1)}
+.card.pad{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.ch{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:14px}
+.ch .l{display:flex;align-items:center;gap:8px}
+.ch small{font-weight:500;font-size:12px;color:var(--mist)}
+.row{background:var(--bg);border-radius:var(--r-sm);padding:10px 12px;display:flex;flex-direction:column;gap:3px;position:relative}
+.row.edge{box-shadow:inset 3px 0 0 var(--warn)}
+.row.edge-e{box-shadow:inset 3px 0 0 var(--err)}
+.row.edge-t{box-shadow:inset 3px 0 0 var(--teal)}
+.row .t{font-weight:600;font-size:12.5px;line-height:17px}
+.row .s{font-size:11.5px;line-height:15px;color:var(--slate)}
+.row .acts{display:flex;gap:12px;margin-top:4px}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:9px 14px;font-size:13px}
+.kv dt{color:var(--slate)}
+.kv dd{margin:0;font-weight:500}
+.chipline{display:flex;gap:6px;flex-wrap:wrap}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl thead th{position:sticky;top:0;background:var(--bg);text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mist);padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--grid);vertical-align:top}
+.tbl td.r,.tbl th.r{text-align:right}
+.tbl tr.grp td{background:var(--surface);padding-top:14px;padding-bottom:8px;border-bottom:1px solid var(--sunken)}
+.tbl tr.grp b{font-size:13px;margin-right:8px}
+.tbl tr.grp .car{color:var(--mist);margin-right:6px;font-size:11px}
+.tbl tr.picked td{background:#F3F9F7}
+.tbl .nm{font-weight:500}
+.tbl .nm small{display:block;color:var(--mist);font-size:12px;font-weight:400;margin-top:1px}
+.tbl .dim{color:var(--mist)}
+.tbl tr.off td{color:var(--mist)}
+.next{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--warnOn);background:var(--warnTint);border-radius:999px;padding:1px 8px;margin-top:3px;white-space:nowrap}
+.box{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--lineStrong);display:inline-block;vertical-align:-3px;background:var(--surface)}
+.box.on{background:var(--teal);border-color:var(--teal);position:relative}
+.box.on::after{content:"";position:absolute;left:4.5px;top:1.5px;width:4px;height:8px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(45deg)}
+.tablecard{overflow:hidden}
+.tablefoot{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;font-size:12.5px;color:var(--slate);border-top:1px solid var(--line);background:var(--surface)}
+
+/* price timeline */
+.tl{position:relative;margin:30px 0 26px}
+.tl .track{display:flex;height:34px;border-radius:9px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.tl .seg1{flex:5;background:var(--sunken);display:flex;align-items:center;padding:0 12px;font-weight:600;color:var(--slate)}
+.tl .seg2{flex:2.2;background:var(--tealTint);display:flex;align-items:center;padding:0 12px;font-weight:700;color:var(--teal);box-shadow:inset 3px 0 0 var(--teal)}
+.tl .seg2 .open{margin-left:auto;font-size:11.5px;font-weight:500;color:var(--teal)}
+.tl .lab{position:absolute;top:-22px;font-size:11.5px;color:var(--slate);white-space:nowrap}
+.tl .today{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--brand)}
+.tl .today span{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:700;color:var(--brand);white-space:nowrap}
+.path{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px}
+.path span{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-weight:600}
+.path i{font-style:normal;color:var(--mist)}
+
+/* idea 2 */
+.holders{width:270px;flex:none;background:var(--surface);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:2px}
+.holders .hs{height:34px;border:1px solid var(--line);border-radius:999px;display:flex;align-items:center;padding:0 12px;color:var(--mist);font-size:12.5px;margin:0 4px 10px}
+.holders .g{font-size:11.5px;font-weight:700;color:var(--mist);padding:10px 10px 4px}
+.holders .h{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:8px;font-size:13px}
+.holders .h.on{background:var(--tealTint);color:var(--teal);font-weight:600}
+.holders .h .cnt{background:transparent}
+.holders .h.on .cnt{background:var(--surface);color:var(--teal)}
+.partystrip{display:flex;gap:28px;font-size:12.5px;color:var(--slate);flex-wrap:wrap}
+.partystrip b{display:block;color:var(--ink);font-size:13px;font-weight:600}
+.bulkbar{display:flex;align-items:center;gap:12px;background:var(--ink);color:#fff;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600}
+.bulkbar .btn.pri{margin-left:auto}
+.bulkbar .txt{color:#9FE3D6}
+.pop{position:absolute;right:28px;top:208px;width:430px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--e3);border:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:12px;z-index:2}
+.pop h5{font-size:16px;margin:0}
+.fld{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--ink)}
+.fld .in{height:38px;border:1px solid var(--lineStrong);border-radius:var(--r-ctl);display:flex;align-items:center;padding:0 12px;font-weight:500;background:var(--surface)}
+.fld .hint{font-weight:400;color:var(--slate);font-size:12px}
+.preview{background:var(--bg);border-radius:10px;padding:8px 12px;font-size:12.5px}
+.preview div{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line)}
+.preview div:last-child{border-bottom:none;color:var(--slate)}
+
+/* idea 3 */
+.tryl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);padding:12px 14px;box-shadow:var(--e1)}
+.tryl b{font-size:13.5px;margin-right:4px}
+.cols{display:grid;grid-template-columns:196px 172px minmax(0,1fr);gap:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--e1);overflow:hidden;min-height:470px}
+.cols .c{border-right:1px solid var(--line);display:flex;flex-direction:column}
+.cols .c:last-child{border-right:none}
+.cols .ct{display:flex;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);font-weight:700;font-size:13.5px;background:var(--bg)}
+.cols .ct i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;font-size:11.5px;display:grid;place-items:center;flex:none}
+.opt{all:unset;box-sizing:border-box;width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--grid);font-size:13px;cursor:pointer}
+.opt:hover{background:var(--bg)}
+.opt.on{background:var(--tealTint);color:var(--teal);font-weight:600;box-shadow:inset 3px 0 0 var(--teal)}
+.opt:focus-visible{outline:2px solid var(--teal);outline-offset:-2px}
+.opt small{display:block;font-weight:400;color:var(--slate);font-size:12px}
+.opt .sug{font-size:11px;font-weight:700;color:var(--okOn);background:var(--okTint);border-radius:999px;padding:0 7px}
+.clist{padding:4px 0}
+.clist .gh{font-size:11.5px;font-weight:700;color:var(--mist);padding:10px 14px 4px}
+.ci{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:baseline;padding:9px 14px;border-bottom:1px solid var(--grid)}
+.ci .mono{font-size:11px;color:var(--mist);display:block;margin-top:1px}
+.ci b{font-weight:600}
+.ci small{display:block;color:var(--slate);font-size:12px}
+.ci .price{font-family:"Spline Sans Mono",monospace;font-size:12.5px;white-space:nowrap}
+.ci.bs b{font-weight:500}
+.why-not .row .s b{color:var(--ink);font-weight:600}
+
+/* idea 4 */
+.desk{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:16px;align-items:start}
+.desk .col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.soon{display:flex;flex-direction:column}
+.soon .d{display:grid;grid-template-columns:62px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--grid)}
+.soon .d:last-child{border-bottom:none}
+.soon .day{background:var(--bg);border-radius:8px;text-align:center;padding:5px 0;line-height:1.1}
+.soon .day b{display:block;font-size:18px;font-family:"Spline Sans Mono",monospace}
+.soon .day small{font-size:11px;color:var(--slate);font-weight:600}
+.soon .what b{font-size:13px;font-weight:600;display:block}
+.soon .what span{font-size:12px;color:var(--slate)}
+.soon .what .mono{color:var(--ink)}
+.soon .what .chg{display:inline-flex;gap:6px;align-items:center;margin-top:3px;font-size:12.5px}
+.soon .what .chg s{color:var(--mist)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--e1)}
+.stat b{display:block;font-size:22px;font-family:"Spline Sans Mono",monospace;font-weight:600}
+.stat span{font-size:12.5px;color:var(--slate)}
+.stat.w{background:var(--warnTint);border-color:transparent}
+.stat.w b,.stat.w span{color:var(--warnOn)}
+.dimpage{position:relative}
+.dimpage .ghost{opacity:.35;filter:saturate(.6)}
+.scrim{position:absolute;inset:0;background:rgba(23,35,32,.32)}
+.sheet{position:absolute;top:0;right:0;bottom:0;width:600px;background:var(--surface);box-shadow:var(--e3);display:flex;flex-direction:column}
+.sheet .sh{padding:20px 24px 14px;border-bottom:1px solid var(--line)}
+.sheet .sh b{font-size:18px;line-height:24px;display:block}
+.sheet .sh small{font-size:13px;color:var(--slate)}
+.sheet .sb{padding:18px 24px;display:flex;flex-direction:column;gap:18px;flex:1;overflow:hidden}
+.sheet .sf{padding:14px 24px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+.step{display:grid;grid-template-columns:26px 1fr;gap:12px}
+.step>i{font-style:normal;width:26px;height:26px;border-radius:50%;background:var(--tealTint);color:var(--teal);font-weight:700;font-size:12.5px;display:grid;place-items:center}
+.step h6{font-size:14px;margin:3px 0 8px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cmp .fld .in.was{background:var(--bg);color:var(--slate)}
+.radio{display:flex;gap:10px;align-items:flex-start;font-size:13px;padding:8px 0}
+.radio i{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--lineStrong);flex:none;margin-top:1px;position:relative}
+.radio i.on{border-color:var(--teal)}
+.radio i.on::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--teal)}
+.radio small{display:block;color:var(--slate);font-size:12px}
+.notice{border-radius:10px;padding:10px 12px;font-size:12.5px;background:var(--bg);color:var(--slate)}
+.notice.w{background:var(--warnTint);color:var(--warnOn)}
+
+/* recommendation */
+.reco{background:var(--ink);color:#fff;border-radius:var(--r-lg);padding:30px;display:grid;grid-template-columns:1.15fr 1fr;gap:32px}
+.reco h2{color:#fff}
+.reco p,.reco li{color:#D7DEDB}
+.reco ol{padding-left:20px;margin:12px 0 0}
+.reco li{margin-bottom:10px}
+.reco strong{color:#fff}
+.reco .q{background:rgba(255,255,255,.06);border-radius:var(--r-card);padding:18px 20px}
+.reco .q h4{margin:0 0 10px;font-size:15px;color:#fff}
+.reco .q ul{padding-left:18px;margin:0}
+footer{color:var(--mist);font-size:12.5px;padding:36px 0 48px}
+
+@media (max-width:1180px){
+  .hero{grid-template-columns:1fr}
+  .why{grid-template-columns:1fr;gap:14px}
+  .why .in,.why .out{margin:0}
+  .why .in::after,.why .out::before{display:none}
+  .notes,.twocol,.reco{grid-template-columns:1fr}
+  .notes ul{margin-bottom:14px}
+}
+@media (max-width:640px){
+  .wrap{padding:0 16px}
+  .hero h1{font-size:34px}
+  .navpair{flex-direction:column}
+  .navpair .arrow{display:none}
+  .nowstack{flex-direction:column}
+  .invtable{display:block;overflow-x:auto}
+  .idea-head{padding:20px 16px 0}
+  .idea-body{padding:18px 16px 20px}
+}
+
+/* ===== People page additions ===== */
+.who{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.ent{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow);padding:16px 16px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.ent .n{font-family:"Spline Sans Mono",monospace;font-size:26px;font-weight:600;line-height:1}
+.ent h4{font-size:15px;margin:0}
+.ent p{font-size:13px;color:var(--slate);line-height:18px}
+.ent dl{margin:4px 0 0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:12.5px}
+.ent dt{color:var(--mist)}
+.ent dd{margin:0;font-weight:500;min-width:0;overflow-wrap:anywhere}
+.ent.dark{background:var(--ink);color:#fff}
+.ent.dark p,.ent.dark dt{color:#B9C5C1}
+.links{margin-top:16px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow);padding:16px 20px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;font-size:13.5px}
+.links b{display:block;font-size:13.5px;margin-bottom:3px}
+.links span{color:var(--slate)}
+.gp{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow);font-size:13.5px}
+.gp th{text-align:left;font-size:12.5px;color:var(--mist);font-weight:700;padding:10px 14px;border-bottom:1px solid var(--line)}
+.gp td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.gp tr:last-child td{border-bottom:none}
+.gp .y{color:var(--okOn);font-weight:600}
+.gp .n0{color:var(--mist)}
+.opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:16px}
+.opt3{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow);padding:16px 18px;font-size:13.5px;display:flex;flex-direction:column;gap:6px}
+.opt3 h4{font-size:14.5px;margin:0}
+.opt3 p{color:var(--slate)}
+.opt3.pick{box-shadow:inset 0 0 0 2px var(--teal),var(--shadow)}
+.ced{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:14px}
+.ced .txt{font-size:12.5px}
+.cardgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;align-items:start}
+.facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px 18px;font-size:13px}
+.facts div small{display:block;font-size:11.5px;font-weight:600;color:var(--mist);margin-bottom:2px}
+.idchip{display:inline-flex;align-items:baseline;gap:6px;padding:3px 10px;border-radius:999px;background:var(--sunken);border:1px solid var(--line);font-size:11px;font-weight:600;color:var(--mist)}
+.idchip b{font-family:"Spline Sans Mono",monospace;font-size:13px;color:var(--ink)}
+.rl{display:flex;flex-direction:column}
+.rl .r{display:flex;flex-direction:column;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.rl .r:first-child{border-top:none;padding-top:0}
+.rl .r a,.rl .r .a{color:var(--teal);font-weight:600;text-decoration:none}
+.rl .r span{font-size:12px;color:var(--slate)}
+.pair{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+.pair:first-child{border-top:none;padding-top:0}
+.pair .who2{flex:1;min-width:0}
+.pair .who2 b{font-weight:600;color:var(--teal)}
+.pair .who2 span{display:block;font-size:12px;color:var(--slate)}
+.tierseg{display:inline-flex;background:var(--sunken);border-radius:9px;padding:3px;font-size:12.5px;font-weight:600}
+.tierseg span{padding:5px 12px;border-radius:7px;color:var(--slate)}
+.tierseg span.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(23,35,32,.2)}
+.grow{display:flex;gap:16px;align-items:stretch;min-height:0}
+.idxpane{width:200px;flex:none;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--e1);padding:12px 8px;display:flex;flex-direction:column;gap:1px;font-size:13px}
+.idxpane .gb{padding:2px 6px 10px}
+.idxpane .gb .sel{width:100%;justify-content:space-between}
+.idxpane .h{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-radius:8px;color:var(--ink)}
+.idxpane .h.on{background:var(--tealTint);color:var(--teal);font-weight:600}
+.idxpane .h .cnt{background:transparent}
+.idxpane .h.on .cnt{background:var(--surface);color:var(--teal)}
+.idxpane .sep{height:1px;background:var(--line);margin:6px 8px}
+.fl1{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
+.tabs2{display:flex;gap:4px}
+.sublabel{font-size:11.5px;font-weight:700;color:var(--mist);letter-spacing:.04em;text-transform:uppercase;margin:4px 0 -4px}
+.unify{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow);font-size:13.5px}
+.unify th{text-align:left;font-size:12.5px;color:var(--mist);font-weight:700;padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+.unify td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.unify tr:last-child td{border-bottom:none}
+.unify td:first-child{font-weight:600;white-space:nowrap}
+.unify .st{font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 9px;white-space:nowrap;display:inline-block}
+.unify .st.ok{background:var(--okTint);color:var(--okOn)}
+.unify .st.mv{background:var(--warnTint);color:var(--warnOn)}
+.unify .st.nw{background:var(--tealTint);color:var(--teal)}
+.unify .st.no{background:var(--sunken);color:var(--slate)}
+.patterns{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.pat{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow);padding:16px 18px;font-size:13.5px}
+.pat h4{font-size:15px;margin:0 0 6px}
+.pat ul{margin:0;padding-left:17px;color:var(--slate)}
+.pat li{margin-bottom:3px}
+.pat code,.unify code,.gp code{font-family:"Spline Sans Mono",monospace;font-size:12px;background:var(--sunken);padding:1px 5px;border-radius:4px}
+.rtable{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow);font-size:13px;margin-top:16px}
+.rtable th{text-align:left;font-size:12.5px;color:var(--mist);font-weight:700;padding:9px 14px;border-bottom:1px solid var(--line)}
+.rtable td{padding:8px 14px;border-bottom:1px solid var(--line);font-family:"Spline Sans Mono",monospace;font-size:12.5px;overflow-wrap:anywhere}
+.rtable tr:last-child td{border-bottom:none}
+@media (max-width:1180px){
+  .who{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .links,.opts,.patterns{grid-template-columns:1fr}
+}
+.twocol>div,.notes>div{min-width:0}
+.head .t .idchip{vertical-align:5px}
+.head .t .idchip b{display:inline;font-size:13px;line-height:17px;letter-spacing:0;font-weight:600}
+.head .t .pill{font-size:11.5px;line-height:17px;letter-spacing:0}
+.facts div{min-width:0;overflow-wrap:anywhere}
+.invtable td,.notes li,.sub,.lede{overflow-wrap:anywhere}
+@media (max-width:640px){
+  .who{grid-template-columns:1fr}
+  .invtable td:first-child{width:auto;min-width:110px}
+  .invtable{display:table;table-layout:fixed}
+  .gp,.unify,.rtable{display:block;overflow-x:auto}
+  .unify td:first-child{white-space:normal}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <p class="kicker">Admin Web App, People. Brainstorm for the office, 25 November 2026.</p>
+        <p class="kicker" style="margin-top:8px"><b>Second pass:</b> <a href="people-section.html">People section design</a>, with your first decisions.</p>
+        <h1>85 anaesthetists, 165 surgeons. <span>They live in a sub-nav under Master data.</span></h1>
+        <p class="lede">The office keeps records about five kinds of thing that are people or groups of people: anaesthetists, surgeons, surgeon groups, the specialties surgeons practise, and patients. Patients have a section of their own (catch-up Phase 40). The other four are views in Master data's "People and places" group, beside Hospitals. Only anaesthetists and surgeons open into a page, and neither page shows what the person is on.</p>
+        <p class="lede">Below: who the office keeps records of and how they connect, what is there today, four ways to give people a section of their own, one domain question underneath (surgeon groups and Parties), how the whole Admin app could share one frame, and what I would do.</p>
+        <nav class="toc" aria-label="On this page">
+          <a href="#who">Who the office keeps</a>
+          <a href="#now">What's there now</a>
+          <a href="#i1"><span class="tn">1</span>People section</a>
+          <a href="#i2"><span class="tn">2</span>Grouped directory</a>
+          <a href="#i3"><span class="tn">3</span>Patients inside People</a>
+          <a href="#i4"><span class="tn">4</span>Records with tabs</a>
+          <a href="#groups">Groups and Parties</a>
+          <a href="#frame">One frame</a>
+          <a href="#reco">What I'd do</a>
+        </nav>
+      </div>
+      <div class="navpair" aria-label="Side nav, now and proposed">
+        <figure>
+          <figcaption>Now <span class="clicks">2 clicks, no search</span></figcaption>
+          <div class="nowstack">
+            <div class="mnav short" data-nav="now" data-on="Master data"></div>
+            <div class="subnav" aria-label="Master data sub-nav">
+              <div class="g">People and places</div><div class="s on">Anaesthetists</div><div class="s">Hospitals &amp; holidays</div><div class="s">Surgeons</div><div class="s">Specialties</div><div class="s">Surgeon groups</div>
+              <div class="g">Schedule</div><div class="s">Recurring bookings</div><div class="s">…</div>
+              <div class="g">Billing</div><div class="s">RVG groups</div><div class="s">Modifiers</div>
+            </div>
+          </div>
+        </figure>
+        <div class="arrow" aria-hidden="true">→</div>
+        <figure>
+          <figcaption>Proposed <span class="clicks ok">1 click</span></figcaption>
+          <div class="mnav short" data-nav="people" data-on="People"></div>
+        </figure>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="who">
+  <h2>Who the office keeps a record of</h2>
+  <p class="sub">Counts are the everyday practice data (<span class="mono">freshAppState()</span>): the scripted cast plus the full-scale colleagues and AA's specialist directory. The key is what a page's URL would be keyed by; each is fixed, never an editable code.</p>
+  <div class="who">
+    <div class="ent">
+      <span class="n">85</span><h4>Anaesthetists</h4>
+      <p>AA's members. The office holds the record; the anaesthetist sees their own profile on web and mobile.</p>
+      <dl><dt>Key</dt><dd class="mono">34821</dd><dt>Means</dt><dd>Registration number, read-only once added</dd><dt>Holds</dt><dd>Rate per unit, HPI CPN, bank, GST, start date, active, tier (office only)</dd></dl>
+    </div>
+    <div class="ent">
+      <span class="n">165</span><h4>Surgeons</h4>
+      <p>AA's address book of surgeons: people only, no rooms (OQ-126). 10 cast, 131 from the specialist directory, 24 generated.</p>
+      <dl><dt>Key</dt><dd class="mono">S-HALE</dd><dt>Means</dt><dd>Internal id; the HPI CPN is optional, so it can't be the key</dd><dt>Holds</dt><dd>Specialties, practice, contacts, HPI CPN, registration</dd></dl>
+    </div>
+    <div class="ent">
+      <span class="n">2</span><h4>Surgeon groups</h4>
+      <p>Surgeons who work as a group. A name, a description and members. No story of their own; one line in US-13.4.1.</p>
+      <dl><dt>Key</dt><dd class="mono">SG-EYE</dd><dt>Holds</dt><dd>Name, description, members</dd><dt>Not joined</dt><dd>to the 4 surgeon group Parties (below)</dd></dl>
+    </div>
+    <div class="ent">
+      <span class="n">12</span><h4>Specialties</h4>
+      <p>AA's broad list, no subspecialties. A surgeon has one or more; a Contract has none (meaning every one) or several.</p>
+      <dl><dt>Key</dt><dd class="mono">SPC-OPHTH</dd><dt>Holds</dt><dd>A name</dd><dt>Decides</dt><dd>Which Contracts the step rail offers for a surgeon</dd></dl>
+    </div>
+    <div class="ent dark">
+      <span class="n">NHI</span><h4>Patients</h4>
+      <p>One record per NHI, built from Bookings, not added by hand. A work area as much as a record: Waiting for NHI, Follow-up, balance warnings.</p>
+      <dl><dt>Key</dt><dd class="mono">ZAE0310</dd><dt>Means</dt><dd>The NHI; the internal id is never shown</dd><dt>Section</dt><dd>Its own, with an amber badge</dd></dl>
+    </div>
+  </div>
+  <div class="links">
+    <div><b>Pairings join anaesthetists and surgeons</b><span>17 private preferences (Preferred or Not preferred), each one surgeon and one anaesthetist, saying which side asked. Office only. Shown on both records. Example: Mr J. Whitford asks for Dr Sharma on long eye lists.</span></div>
+    <div><b>Contracts point at people</b><span>A Contract links surgeons, at most one anaesthetist, and specialties. Mr T. Hale is linked on three: COS ACC orthopaedic services, COS ACC fixed fees (held by the Canterbury Orthopaedic Surgeons Party) and Unisports Ortho.</span></div>
+    <div><b>Some people are also Parties</b><span>A Party holds Contracts. Mr P. Doyle's Party points at his surgeon record. Dr Souter's and Dr Beaumont's Parties (their own price lists) point at nothing. Group Parties never point at a group.</span></div>
+  </div>
+</section>
+
+<section id="now">
+  <h2>What the office has today</h2>
+  <p class="sub">Built in catch-up phases 17, 17b, 18a, 26, 40 and 42 (<span class="mono">AnaesthetistsView</span>, <span class="mono">SurgeonsView</span>, <span class="mono">SpecialtiesView</span>, <span class="mono">SurgeonProfile</span>, <span class="mono">AnaesthetistRecord</span>, <span class="mono">PatientRecord</span>). The pieces work. They are hard to reach, can't be searched, and the records stop at the person's own details.</p>
+  <div class="twocol">
+    <div>
+      <h3>Works today</h3>
+      <table class="invtable"><tbody>
+        <tr><td>Anaesthetists list</td><td>Eight columns that fit a 1280 laptop (two facts per cell), Tier pill, row opens the record, Edit opens the sheet, Add creates their sessions from the start date.</td></tr>
+        <tr><td>Anaesthetist record</td><td><span class="mono">/admin/masters/anaesthetists/:reg</span>. Tier (saves on click), a Profile card, Pairings, History. One "Edit details" sheet.</td></tr>
+        <tr><td>Surgeons list</td><td>Specialties, practice, the office contact emails go to first, HPI CPN or "No HPI CPN yet", pairing counts, Show retired.</td></tr>
+        <tr><td>Surgeon profile</td><td><span class="mono">/admin/masters/surgeons/:id</span>. Specialties, Identifiers, Groups, Practice and contacts, Pairings, History. One wide edit sheet.</td></tr>
+        <tr><td>Groups, specialties</td><td>Plain tables with edit sheets. Specialties shows "Held by N surgeons, N Contracts" and refuses to remove one in use.</td></tr>
+        <tr><td>Patients</td><td>Its own section: routed tabs Search, Waiting for NHI, Follow-up. The record at <span class="mono">/admin/patients/:nhi</span> has a rail and a Details card with its own Edit.</td></tr>
+        <tr><td>Audit</td><td>Every change goes through <span class="mono">mutate()</span>: tier, pairing add and end, each master's create, update, retire.</td></tr>
+      </tbody></table>
+    </div>
+    <div>
+      <h3>Missing</h3>
+      <table class="invtable"><tbody>
+        <tr class="gap"><td>Search and paging</td><td>Anaesthetists (85) and Surgeons (165) render every row with no search box, filter or pager (BACKLOG). Anaesthetists sort by "Dr" then first name.</td></tr>
+        <tr class="gap"><td>A place in the nav</td><td>Two clicks and a sub-nav; the nav lights "Master data" on a person's page.</td></tr>
+        <tr class="gap"><td>Who or what they touch</td><td>Neither record shows the person's Lists, the Contracts linked to them or offered by their specialty, or (for a surgeon) the Parties that bill for them.</td></tr>
+        <tr class="gap"><td>Groups and specialties</td><td>No page. A group's row doesn't open; group pills on a surgeon don't link. A specialty can't show its surgeons or Contracts.</td></tr>
+        <tr class="gap"><td>Edit per card</td><td>One sheet edits everything at once, so one change is one audited change of many fields. Contracts now edit a card at a time.</td></tr>
+        <tr class="gap"><td>Groups vs Parties</td><td>2 surgeon groups, 4 surgeon group Parties, joined only when the names match (a rename carries across). See <a href="#groups">below</a>.</td></tr>
+        <tr class="gap"><td>One look</td><td>Patient record: NHI as a large Pill, no tabs, rail on the left of its own grid. Surgeon and anaesthetist: IdChip, no rail. Contract: Pills, tabs and rail.</td></tr>
+        <tr class="gap"><td>Catalogue gap</td><td>No story says what "active" means for an anaesthetist or how one leaves; the code has an Active switch.</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+</section>
+
+<section id="ideas">
+  <h2>Four ideas</h2>
+  <p class="sub">Each moves the four people masters out of Master data. They differ in what the office lands on, whether Patients joins, and how deep a record goes. Mocks are drawn at the app's real sizes (216px nav, 28px inset, 412px rail) with seed data; scroll them sideways on a small screen.</p>
+
+  <!-- ============ IDEA 1 ============ -->
+  <article class="idea" id="i1">
+    <div class="idea-head">
+      <span class="num">1</span>
+      <div>
+        <h3>People section: list and record</h3>
+        <p>The plain promotion, the same shape as Contracts. A <b>People</b> entry after Contracts, with routed tabs Anaesthetists, Surgeons, Surgeon groups and Specialties. Each tab is an <span class="mono">AdminPage fit</span> list with one search box, filter pills and the pager in the card footer. Every row opens a record page keyed by its fixed id. Groups and specialties get pages for the first time. Records keep today's content on cards, each card with its own Edit, plus a rail answering "who or what does this touch".</p>
+        <div class="tags"><span class="tag fit">Closest to Contracts</span><span class="tag">Medium build</span><span class="tag edit">Rewrites 4 stories, adds 2</span></div>
+      </div>
+    </div>
+    <div class="idea-body">
+      <div>
+        <p class="mock-cap">The Surgeons tab: one search, Active or Retired, a specialty filter, 50 a page</p>
+        <div class="mockwrap"><div class="frame" style="min-height:660px">
+          <div class="mnav" data-nav="people" data-on="People"></div>
+          <div class="page">
+            <div class="head"><div class="t"><b>People <span class="cnt" style="vertical-align:4px">165</span></b><small>Anaesthetists, the surgeons AA works with, their groups and specialties.</small></div><span class="btn lg pri">Add surgeon</span></div>
+            <div class="tabs"><span class="tab">Anaesthetists <span class="cnt">85</span></span><span class="tab on">Surgeons <span class="cnt">165</span></span><span class="tab">Surgeon groups <span class="cnt">2</span></span><span class="tab">Specialties <span class="cnt">12</span></span></div>
+            <div class="toolbar">
+              <span class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Name, practice or HPI CPN</span>
+              <span class="seg"><span class="on">Active</span><span>Retired</span><span>All</span></span>
+              <span class="sel">All specialties</span>
+              <span class="count" style="margin-left:auto"><span class="mono">162</span> surgeons active</span>
+            </div>
+            <div class="card tablecard">
+              <table class="tbl">
+                <thead><tr><th>Name</th><th>Specialties</th><th>Practice</th><th>Office contact</th><th>HPI CPN</th><th>Pairings</th></tr></thead>
+                <tbody>
+                  <tr><td class="nm">Ms H. Cameron</td><td>Gynaecology</td><td>Papanui Specialist Rooms</td><td>Papanui Specialist Rooms<small class="dim mono" style="display:block">reception@papanuispecialists.example</small></td><td class="mono">49CAMH</td><td><span class="pill ok">1 preferred</span></td></tr>
+                  <tr><td class="nm">Mr P. Doyle</td><td>General surgery</td><td>Avonside Surgical Rooms</td><td>Avonside Surgical Rooms<small class="dim mono" style="display:block">admin@avonsidesurgical.example</small></td><td class="mono">45DOYP</td><td class="dim">·</td></tr>
+                  <tr class="picked"><td class="nm">Mr T. Hale</td><td>Orthopaedics</td><td>Riccarton Orthopaedic Rooms</td><td>Riccarton Orthopaedic Rooms<small class="dim mono" style="display:block">reception@riccartonortho.example</small></td><td class="mono">40HALT</td><td class="dim">·</td></tr>
+                  <tr><td class="nm">Ms G. Lim</td><td>Plastic surgery</td><td>Fendalton Specialist Rooms</td><td>Fendalton Specialist Rooms<small class="dim mono" style="display:block">rooms@fendaltonspecialists.example</small></td><td class="mono">44LIMG</td><td><span class="pill err">1 not preferred</span></td></tr>
+                  <tr><td class="nm">Mr V. Nand</td><td>ENT</td><td>Fendalton Specialist Rooms</td><td>Fendalton Specialist Rooms<small class="dim mono" style="display:block">rooms@fendaltonspecialists.example</small></td><td class="mono">48NANV</td><td class="dim">·</td></tr>
+                  <tr><td class="nm">Ms A. Reid</td><td>Ophthalmology</td><td>Merivale Eye Rooms</td><td>Merivale Eye Rooms<small class="dim mono" style="display:block">bookings@merivaleeye.example</small></td><td class="mono">47REIA</td><td><span class="pill err">1 not preferred</span></td></tr>
+                  <tr><td class="nm">Mr J. Whitford</td><td>Ophthalmology</td><td>Merivale Eye Rooms</td><td>Merivale Eye Rooms<small class="dim mono" style="display:block">bookings@merivaleeye.example</small></td><td class="mono">42WHIJ</td><td><span class="pill ok">1 preferred</span></td></tr>
+                </tbody>
+              </table>
+              <div class="tablefoot"><span>Showing 1 to 50 of 162</span><span><span class="txt">‹ Previous</span> &nbsp; <span class="mono">1</span> of <span class="mono">4</span> &nbsp; <span class="txt">Next ›</span></span></div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+      <div>
+        <p class="mock-cap">A surgeon's page: cards with their own Edit, and the rail says what he is on</p>
+        <div class="mockwrap"><div class="frame">
+          <div class="mnav" data-nav="people" data-on="People"></div>
+          <div class="page withrail">
+            <div class="head"><div class="t"><span class="back">‹ Surgeons</span><b>Mr T. Hale &nbsp;<span class="idchip">HPI CPN <b>40HALT</b></span></b><small>Orthopaedics · Riccarton Orthopaedic Rooms</small></div><span class="btn sec">History</span><span class="btn sec">Retire</span></div>
+            <div class="maincol">
+              <div class="cardgrid">
+                <div class="card pad"><div class="ced">Specialties <span class="txt">Edit</span></div><div class="chipline"><span class="pill">Orthopaedics</span></div><span class="dim" style="font-size:12px">Decides which Contracts the step rail offers for his Lists.</span></div>
+                <div class="card pad"><div class="ced">Identifiers <span class="txt">Edit</span></div><div class="facts"><div><small>HPI CPN</small><span class="mono">40HALT</span></div><div><small>NZ medical registration</small><span class="mono">70412</span></div></div></div>
+              </div>
+              <div class="card pad"><div class="ced">Practice and contacts <span class="txt">Edit</span></div>
+                <div class="facts"><div><small>Practice</small>Riccarton Orthopaedic Rooms</div><div><small>Personal contact</small>Mr T. Hale<br><span class="mono">t.hale@surgeons.example</span><br>021 555 0401</div><div><small>Office contact</small>Riccarton Orthopaedic Rooms<br><span class="mono">reception@riccartonortho.example</span><br>03 555 0141 <span class="pill ok">Emails go here first</span></div></div>
+              </div>
+              <div class="card pad"><div class="ced">Pairings <span class="txt">Record a pairing</span></div><span class="dim">No pairing preferences. Only the office sees these.</span></div>
+            </div>
+            <div class="railcol">
+              <div class="card pad"><div class="ch"><span class="l">Groups <span class="cnt">1</span></span></div>
+                <div class="rl"><div class="r"><span class="a">Canterbury Orthopaedic Surgeons</span><span>1 member · holds 2 Contracts as a Party</span></div></div></div>
+              <div class="card pad"><div class="ch"><span class="l">Contracts for him <span class="cnt">3</span></span><small>linked by name</small></div>
+                <div class="rl">
+                  <div class="r"><span class="a">ACC orthopaedic services, COS</span><span>Held by Canterbury Orthopaedic Surgeons · RVG at <span class="mono">$24.00</span></span></div>
+                  <div class="r"><span class="a">COS ACC fixed fees</span><span>Held by Canterbury Orthopaedic Surgeons · from 5 Dec</span></div>
+                  <div class="r"><span class="a">Unisports Ortho</span><span>Held by Unisports Ortho · RVG at <span class="mono">$93.47</span></span></div>
+                </div>
+                <span class="dim" style="font-size:12px">Plus every Contract with no specialty or Orthopaedics.</span></div>
+              <div class="card pad"><div class="ch"><span class="l">Next Lists <span class="cnt">4</span></span><small>next 14 days</small></div>
+                <div class="rl">
+                  <div class="r"><span class="a">Thu 3 Dec · St George's AM</span><span>Dr Tom Ngata</span></div>
+                  <div class="r"><span class="a">Mon 7 Dec · Southern Cross PM</span><span>Dr Melanie Souter</span></div>
+                </div><span class="txt">See all 4</span></div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+      <div class="notes">
+        <div><h4>What it fixes</h4><ul><li>One click to any person; the nav lights People.</li><li>Search and paging on the two long lists (closes the BACKLOG item for them).</li><li>Groups and specialties become pages: a specialty lists its surgeons and its Contracts.</li><li>A record answers "what is this person on?"</li><li>Edit per card: one audited change per card, as on a Contract.</li></ul></div>
+        <div><h4>What it costs</h4><ul><li>Four list views move onto the Contracts list shape; two new record pages (group, specialty).</li><li>Both record pages swap their one sheet for <span class="mono">EditableCard</span>s.</li><li>A redirect for each old <span class="mono">?view=</span> and the two profile routes.</li><li>Hospitals stays alone in "People and places", which becomes "Places".</li></ul></div>
+        <div class="req"><p><b>Catalogue:</b> US-13.4.1 moves four rows to People (as it did for Contracts). US-13.6.2 and US-12.1.4 say each surgeon and anaesthetist has a page, cards edited one at a time, and a "what they're on" rail. Two new stories: a surgeon group's page, a specialty's page. US-13.6.3/4 unchanged (pairings already show on both records).</p><p><b>Design:</b> reuses <span class="mono">ProfilePage</span>, <span class="mono">LineTabs</span>, <span class="mono">PageToolbar</span>, <span class="mono">TableShell fit</span>, <span class="mono">Pager</span>. No new pattern.</p></div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ============ IDEA 2 ============ -->
+  <article class="idea" id="i2">
+    <div class="idea-head">
+      <span class="num">2</span>
+      <div>
+        <h3>Grouped directory with an index pane</h3>
+        <p>Two tabs only: Anaesthetists and Surgeons. Groups and specialties stop being tabs and become <b>groupings</b> of the surgeon list, using the index pane Phase 47 builds for Contracts. Group the surgeons by specialty, practice or surgeon group; group the anaesthetists by tier or by Active and Inactive. The index heading opens that specialty's or group's page, where it is renamed or its members changed. 165 surgeons become twelve short lists.</p>
+        <div class="tags"><span class="tag fit">Reuses Phase 47's index pane</span><span class="tag">Medium build</span><span class="tag edit">Groups and specialties lose their own list</span></div>
+      </div>
+    </div>
+    <div class="idea-body">
+      <div>
+        <p class="mock-cap">Surgeons grouped by specialty, Ophthalmology picked</p>
+        <div class="mockwrap"><div class="frame" style="min-height:600px">
+          <div class="mnav" data-nav="people" data-on="People"></div>
+          <div class="page">
+            <div class="head"><div class="t"><b>People</b><small>Anaesthetists and the surgeons AA works with.</small></div><span class="btn lg pri">Add surgeon</span></div>
+            <div class="tabs"><span class="tab">Anaesthetists <span class="cnt">85</span></span><span class="tab on">Surgeons <span class="cnt">165</span></span></div>
+            <div class="toolbar"><span class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search every surgeon</span><span class="seg"><span class="on">Active</span><span>Retired</span><span>All</span></span><span class="count" style="margin-left:auto">Ophthalmology · <span class="mono">14</span> surgeons</span></div>
+            <div class="grow">
+              <div class="idxpane">
+                <div class="gb"><span class="sel">Group by specialty</span></div>
+                <div class="h">All surgeons <span class="cnt">165</span></div>
+                <div class="sep"></div>
+                <div class="h">Cardiothoracic surgery <span class="cnt">6</span></div>
+                <div class="h">ENT <span class="cnt">11</span></div>
+                <div class="h">General surgery <span class="cnt">38</span></div>
+                <div class="h">Gynaecology <span class="cnt">17</span></div>
+                <div class="h on">Ophthalmology <span class="cnt">14</span></div>
+                <div class="h">Orthopaedics <span class="cnt">29</span></div>
+                <div class="h">Plastic surgery <span class="cnt">12</span></div>
+                <div class="h">Urology <span class="cnt">9</span></div>
+                <div class="h">…</div>
+                <div class="sep"></div>
+                <div class="h dim" style="font-size:12px">Specialty, Practice, Surgeon group</div>
+              </div>
+              <div class="fl1">
+                <div class="card pad" style="flex-direction:row;align-items:center;gap:16px;padding:12px 16px"><div style="flex:1"><b>Ophthalmology</b> <span class="dim" style="font-size:12.5px">· 14 surgeons · offered on every Contract with no specialty, plus 3 for Ophthalmology</span></div><span class="txt">Open specialty ›</span></div>
+                <div class="card tablecard">
+                  <table class="tbl">
+                    <thead><tr><th>Name</th><th>Practice</th><th>Groups</th><th>HPI CPN</th><th>Pairings</th></tr></thead>
+                    <tbody>
+                      <tr><td class="nm">Ms A. Reid</td><td>Merivale Eye Rooms</td><td>Christchurch Eye Surgeons</td><td class="mono">47REIA</td><td><span class="pill err">1 not preferred</span></td></tr>
+                      <tr><td class="nm">Mr J. Whitford</td><td>Merivale Eye Rooms</td><td>Christchurch Eye Surgeons</td><td class="mono">42WHIJ</td><td><span class="pill ok">1 preferred</span></td></tr>
+                      <tr><td class="nm dim">12 more from the directory</td><td></td><td></td><td></td><td></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div></div>
+        <p class="dim" style="font-size:12.5px;margin-top:8px">Counts per specialty are illustrative; the seed's directory decides them.</p>
+      </div>
+      <div class="notes">
+        <div><h4>What it fixes</h4><ul><li>The long list reads as short ones; a new office person finds "the eye surgeons" at once.</li><li>A surgeon group or specialty is seen with its members, which is what it's for.</li><li>One index pane component for Contracts, Parties and People.</li></ul></div>
+        <div><h4>What it costs</h4><ul><li>Waits on Phase 47's index pane.</li><li>Groups and specialties are only reached through a grouping, so adding one is a button on the index, less obvious than a tab.</li><li>A surgeon in two specialties shows in both groups (as Contracts do under two holders' tags).</li></ul></div>
+        <div class="req"><p><b>Catalogue:</b> as idea 1, plus a story for the grouped surgeon list. OQ-126's notes say "no search by specialty": grouping is browsing, not search, but it brushes against that answer. Worth a line in the note.</p></div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ============ IDEA 3 ============ -->
+  <article class="idea" id="i3">
+    <div class="idea-head">
+      <span class="num">3</span>
+      <div>
+        <h3>Patients inside People</h3>
+        <p>One entry for everyone the office keeps a record of. People's tabs become Anaesthetists, Surgeons, Surgeon groups, Specialties and <b>Patients</b>; the Patients side nav entry goes. Patients' own three views (Search, Waiting for NHI, Follow-up) then need somewhere to live: either a second row of tabs, or Waiting for NHI moves to Intake and Follow-up to the Ledger.</p>
+        <div class="tags"><span class="tag">Large build</span><span class="tag rule">Moves work queues</span><span class="tag edit">Loses the Patients badge</span></div>
+      </div>
+    </div>
+    <div class="idea-body">
+      <div>
+        <p class="mock-cap">Patients as a fifth tab, its own views as a second row</p>
+        <div class="mockwrap"><div class="frame" style="min-height:420px">
+          <div class="mnav" data-nav="nopatients" data-on="People"></div>
+          <div class="page">
+            <div class="head"><div class="t"><b>People</b><small>Everyone the office keeps a record of.</small></div></div>
+            <div class="tabs"><span class="tab">Anaesthetists <span class="cnt">85</span></span><span class="tab">Surgeons <span class="cnt">165</span></span><span class="tab">Surgeon groups <span class="cnt">2</span></span><span class="tab">Specialties <span class="cnt">12</span></span><span class="tab on">Patients <span class="cnt w">2</span></span></div>
+            <div class="toolbar"><span class="seg"><span class="on">Search</span><span>Waiting for NHI <b class="mono">1</b></span><span>Follow-up <b class="mono">1</b></span></span><span class="search">Name, NHI or date of birth</span></div>
+            <div class="card tablecard"><table class="tbl"><thead><tr><th>Name</th><th>NHI</th><th>Date of birth</th><th>Next Booking</th><th class="r">Balance</th></tr></thead><tbody><tr><td class="nm">Margaret Ellison</td><td class="mono">ZAA0067</td><td class="mono">18 Jul 1954, 72</td><td>Thu 3 Dec · St George's</td><td class="r mono">$0.00</td></tr></tbody></table></div>
+          </div>
+        </div></div>
+        <p class="dim" style="font-size:12.5px;margin-top:8px">Margaret Ellison and her NHI are the seed's; her next Booking is illustrative.</p>
+      </div>
+      <div class="notes">
+        <div><h4>What it fixes</h4><ul><li>The side nav stays at 13 entries with People added.</li><li>"Every person has a page here" is one sentence.</li></ul></div>
+        <div><h4>What it costs</h4><ul><li>Patients isn't master data. Nobody adds a patient by hand; records come from Bookings. Its tabs are daily work queues with a badge.</li><li>Two rows of navigation, or the work queues scatter to Intake and Ledger.</li><li>The demo guide's S-scripts and capture recipes go to Patients a lot; more redirects.</li><li>The audit's rule: a segmented control is for a mode inside one view, not a page switch.</li></ul></div>
+        <div class="req"><p><b>Catalogue:</b> EP-11's stories are written as their own area (US-11.1.1, US-11.1.5, US-11.3.x). Moving them changes where, not what, but US-11.1.5's "one visible place" for the chase list would need rewording. I wouldn't do this.</p></div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ============ IDEA 4 ============ -->
+  <article class="idea" id="i4">
+    <div class="idea-head">
+      <span class="num">4</span>
+      <div>
+        <h3>Records with tabs</h3>
+        <p>Goes deeper on the record rather than the list. An anaesthetist's or surgeon's page gets routed tabs like a Contract's: <b>Overview</b> (the cards, the rail), <b>Lists</b> (every List they are on, past and coming, as a table that pages), <b>Contracts</b> (those linked to them; for a surgeon, those offered by specialty too), <b>Pairings</b> and <b>History</b>. The rail on Overview shows five of each with "See all". Works with idea 1 or idea 2.</p>
+        <div class="tags"><span class="tag fit">Same tabs as a Contract</span><span class="tag">Medium build</span><span class="tag edit">New "Lists" and "Contracts" views</span></div>
+      </div>
+    </div>
+    <div class="idea-body">
+      <div>
+        <p class="mock-cap">Dr Priya Sharma's page, Overview tab</p>
+        <div class="mockwrap"><div class="frame">
+          <div class="mnav" data-nav="people" data-on="People"></div>
+          <div class="page withrail">
+            <div class="head"><div class="t"><span class="back">‹ Anaesthetists</span><b>Dr Priya Sharma &nbsp;<span class="idchip">HPI CPN <b>12SHAP</b></span> <span class="pill ok" style="vertical-align:3px">Active</span></b><small>Registration <span class="mono">41267</span> · with AA since 7 Nov 2016</small></div><span class="btn sec">Make inactive</span></div>
+            <div class="tabsrow"><div class="tabs"><span class="tab on">Overview</span><span class="tab">Lists <span class="cnt">22</span></span><span class="tab">Contracts <span class="cnt">0</span></span><span class="tab">Pairings <span class="cnt">2</span></span><span class="tab">History <span class="cnt">6</span></span></div></div>
+            <div class="maincol">
+              <div class="cardgrid">
+                <div class="card pad"><div class="ced">Rate and tier <span class="txt">Edit</span></div><div class="facts"><div><small>Rate per unit</small><span class="mono">$30.00</span></div><div><small>Priority tier</small>Tier 2 <span class="dim" style="font-size:12px">· office only</span></div></div></div>
+                <div class="card pad"><div class="ced">Contact <span class="txt">Edit</span></div><div class="facts"><div><small>Email</small><span class="mono">p.sharma@aa-associates.example</span></div><div><small>Phone</small>021 555 0342</div></div></div>
+                <div class="card pad"><div class="ced">Identifiers <span class="txt">Edit</span></div><div class="facts"><div><small>Registration</small><span class="mono">41267</span> <span class="dim" style="font-size:12px">fixed</span></div><div><small>HPI CPN</small><span class="mono">12SHAP</span></div></div></div>
+                <div class="card pad"><div class="ced">Bank and GST <span class="txt">Edit</span></div><div class="facts"><div><small>Bank account</small><span class="mono">•• •••• •••••12 ••</span></div><div><small>GST number</small><span class="dim">Not held</span></div></div></div>
+              </div>
+            </div>
+            <div class="railcol">
+              <div class="card pad"><div class="ch"><span class="l">Pairings <span class="cnt">2</span></span><small>office only</small></div>
+                <div class="pair"><span class="pill ok">Preferred</span><div class="who2"><b>Mr J. Whitford</b><span>Surgeon asked · "Asks for Dr Sharma on long eye lists"</span></div></div>
+                <div class="pair"><span class="pill err">Not preferred</span><div class="who2"><b>Ms A. Reid</b><span>Surgeon asked · "Surgeon's preference"</span></div></div>
+                <span class="txt">Record a pairing</span></div>
+              <div class="card pad"><div class="ch"><span class="l">Next Lists</span><small>next 14 days</small></div>
+                <div class="rl"><div class="r"><span class="a">Thu 26 Nov · Christchurch Eye Surgery AM</span><span>Mr J. Whitford</span></div><div class="r"><span class="a">Fri 27 Nov · St George's PM</span><span>Ms K. Patel</span></div></div><span class="txt">See all on the Lists tab</span></div>
+            </div>
+          </div>
+        </div></div>
+        <p class="dim" style="font-size:12.5px;margin-top:8px">Lists and counts in the rail are illustrative; the pairings, rate, tier and identifiers are the seed's.</p>
+      </div>
+      <div class="notes">
+        <div><h4>What it fixes</h4><ul><li>"What is Dr Sharma doing next week" without the Day view.</li><li>Contracts tab: an anaesthetist's own price list (Dr Souter's, Dr Beaumont's) is visible from her page.</li><li>Tier stops saving on a click; it is edited like any other card.</li><li>Pairings move to the rail on both records, the side they're read from.</li></ul></div>
+        <div><h4>What it costs</h4><ul><li>Two new selectors: Lists by person, Contracts by person (the second exists for Contracts already, in reverse).</li><li>The Lists tab overlaps the web app's own calendar for the anaesthetist; it's the office's read-only copy.</li><li>"Make inactive" needs the missing story first.</li></ul></div>
+        <div class="req"><p><b>Catalogue:</b> US-13.6.2 and US-12.1.4 gain "the Lists they're on and the Contracts linked to them". US-01.3.6 keeps the tier on the record, edited as a card. A new story for an anaesthetist going inactive (what happens to their Lists and Slots). Domain model: a Party for an anaesthetist points at her record, as a surgeon's does.</p></div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<section id="groups">
+  <h2>One question underneath: surgeon groups and Parties</h2>
+  <p class="sub">Two different records share a name. A <b>surgeon group</b> is master data: who works together. A <b>surgeon group Party</b> is a billing record: who holds Contracts and gets their invoices. Today nothing joins them; a rename carries across only when the names match. In the seed:</p>
+  <table class="gp">
+    <thead><tr><th>Name</th><th>Surgeon group (members)</th><th>Party (holds Contracts)</th><th>What that means</th></tr></thead>
+    <tbody>
+      <tr><td><b>Canterbury Orthopaedic Surgeons</b></td><td class="y">SG-COS · Mr T. Hale</td><td class="y">COS · 2 Contracts, bills the group</td><td>Both exist. The Contracts link Mr Hale by name, not through the group.</td></tr>
+      <tr><td><b>Christchurch Eye Surgeons</b></td><td class="y">SG-EYE · Mr Whitford, Ms Reid</td><td class="n0">none</td><td>A group that holds nothing. Fine.</td></tr>
+      <tr><td><b>Unisports Ortho</b></td><td class="n0">none</td><td class="y">UNI · 1 Contract, by post</td><td>A Party with no members. Mr Hale is linked on its Contract.</td></tr>
+      <tr><td><b>Aria Skin and Laser Clinic</b></td><td class="n0">none</td><td class="y">ARIA · 1 Contract</td><td>Links Ms Lim and Mr Okafor, but no group says they work together.</td></tr>
+      <tr><td><b>Merivale Plastic Surgery</b></td><td class="n0">none</td><td class="y">MER · set fees</td><td>Same.</td></tr>
+    </tbody>
+  </table>
+  <div class="opts">
+    <div class="opt3"><h4>a. Keep them apart</h4><p>As now. The group page links "Holds Contracts as" to a Party chosen by hand, at most one. Membership stays on the group; Contracts still link surgeons by name.</p><p><b>Cost:</b> one optional field. Matches the domain model's reading.</p></div>
+    <div class="opt3 pick"><h4>b. A group may be a Party</h4><p>A surgeon group points at its Party (or none), as a hospital Party points at its hospital. The group page shows the Party's Contracts; the Party page shows the members. New Contracts for the Party offer its members first.</p><p><b>Cost:</b> one link and two rails. Replaces the name-matching rename.</p></div>
+    <div class="opt3"><h4>c. One record</h4><p>Fold groups into Parties: a surgeon group Party gains members, and the Master data group goes. </p><p><b>Cost:</b> a group that holds nothing (Christchurch Eye Surgeons) becomes a Party that bills nobody. Muddles the address book with billing.</p></div>
+  </div>
+</section>
+
+<section id="frame">
+  <h2>One frame for the whole Admin app</h2>
+  <p class="sub">The page frame already exists (<span class="mono">AdminPage</span> fit, fluid and document; the 412 rail; one toolbar row). What is missing is one <b>record</b> pattern and one <b>list</b> pattern that every section builds from, so a Contract, a Party, a surgeon and a patient read the same. Four patterns cover the app:</p>
+  <div class="patterns">
+    <div class="pat"><h4>List page</h4><ul><li><code>AdminPage fit</code>, count beside the title, one primary "New …" / "Add …"</li><li>Routed <code>LineTabs</code> for sibling lists</li><li>One <code>PageToolbar</code>: search, <code>FilterPills</code>, selects, the count at the right</li><li>Optional index pane (<code>GroupIndex</code>, Phase 47)</li><li><code>TableShell fit</code>, rows open the record, <code>Pager</code> in the footer</li><li>No Edit cell, no checkboxes</li></ul></div>
+    <div class="pat"><h4>Record page</h4><ul><li><code>RecordPage</code> (today's <code>ProfilePage</code>, renamed): back link, name, identifier chip, status pill, one or two header actions</li><li>Routed tabs: Overview first, History last</li><li>Overview: <code>EditableCard</code>s in the profile grid, each its own audited save</li><li>Rail: "who or what this touches", five rows and "See all" into a tab</li><li>URL keyed by the fixed id</li></ul></div>
+    <div class="pat"><h4>New page</h4><ul><li>A full page at <code>…/new</code>, fluid with a rail</li><li>Fields in the order their rules depend on</li><li>The rail previews where it lands</li><li>On create, replace the URL with the record's</li></ul></div>
+    <div class="pat"><h4>Work queue and document</h4><ul><li>Work queues (Review, Intake, Draft Lists, Patients' Waiting for NHI) are list pages with a nav badge; their rows open the thing to act on</li><li>Invoices, credit notes, remittances stay <code>document</code></li><li>Day view and the dashboards stay their own</li></ul></div>
+  </div>
+  <table class="unify">
+    <thead><tr><th>Screen</th><th>Today</th><th>Moves to</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Contract</td><td>ProfilePage, tabs, rail, EditableCard (Phase 45)</td><td>The record pattern's first user</td><td><span class="st ok">In build 45 to 47</span></td></tr>
+      <tr><td>Party</td><td>Master data side panel</td><td>Record page with rail (Phase 48)</td><td><span class="st ok">Planned 48</span></td></tr>
+      <tr><td>Anaesthetist</td><td>ProfilePage, one sheet, tier saves on click, no rail</td><td>Record page: cards, rail, tabs if idea 4</td><td><span class="st mv">Moves</span></td></tr>
+      <tr><td>Surgeon</td><td>ProfilePage, one wide sheet, no rail</td><td>Record page: cards, rail</td><td><span class="st mv">Moves</span></td></tr>
+      <tr><td>Surgeon group</td><td>Table row, sheet</td><td>Record page: members, the Party it is (option b)</td><td><span class="st nw">New</span></td></tr>
+      <tr><td>Specialty</td><td>Table row, small sheet</td><td>Record page: surgeons, Contracts</td><td><span class="st nw">New</span></td></tr>
+      <tr><td>Patient</td><td>AdminPage fluid, own grid, NHI Pill, Details card with its own Edit</td><td>Record page: NHI chip, tabs Overview, Invoices, Bookings, Follow-up; Details in the rail</td><td><span class="st mv">Moves, stays in Patients</span></td></tr>
+      <tr><td>Hospital</td><td>Card list with calendar mode in Master data</td><td>Could become list and record later; not in this work</td><td><span class="st no">Later</span></td></tr>
+      <tr><td>Master data views left</td><td>Sub-nav and MasterTable</td><td>List page parts (toolbar, pager) where long: Recurring bookings (393)</td><td><span class="st no">Later</span></td></tr>
+      <tr><td>Booking detail, Day, Review</td><td>Their own layouts</td><td>Unchanged</td><td><span class="st no">Stays</span></td></tr>
+    </tbody>
+  </table>
+  <p class="sub" style="margin-top:16px">Shared pieces this means lifting out of screen files into the shared kit, each with a catalogue row: <span class="mono">EditableCard</span> and <span class="mono">useCardEdit</span> (from <span class="mono">ContractCards.tsx</span>), the rail list with "See all" (<span class="mono">RailRow</span> in <span class="mono">ContractPage.tsx</span>), <span class="mono">IdChip</span> as a <span class="mono">Pill</span> variant (the patient's NHI and the HPI CPN look the same), and <span class="mono">RecordPage</span>.</p>
+  <h3 style="margin-top:28px">Old URLs that keep working</h3>
+  <table class="rtable">
+    <thead><tr><th>Old</th><th>New</th></tr></thead>
+    <tbody>
+      <tr><td>/admin/masters?view=anaesthetists</td><td>/admin/people/anaesthetists</td></tr>
+      <tr><td>/admin/masters?view=surgeons</td><td>/admin/people/surgeons</td></tr>
+      <tr><td>/admin/masters?view=surgeonGroups</td><td>/admin/people/groups</td></tr>
+      <tr><td>/admin/masters?view=specialties</td><td>/admin/people/specialties</td></tr>
+      <tr><td>/admin/masters/anaesthetists/34821</td><td>/admin/people/anaesthetists/34821</td></tr>
+      <tr><td>/admin/masters/surgeons/S-HALE</td><td>/admin/people/surgeons/S-HALE</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="reco">
+  <div class="reco">
+    <div>
+      <h2>What I'd do</h2>
+      <p>Start with <strong>idea 1</strong>: it is the Contracts move again and needs only the stories rewritten. Keep <strong>Patients where it is</strong>, and move its record onto the shared record pattern. Then add in this order:</p>
+      <ol>
+        <li><strong>People with four tabs</strong>, search and paging on Anaesthetists and Surgeons, a page for every anaesthetist, surgeon, group and specialty, cards edited one at a time, and old URLs redirected.</li>
+        <li><strong>The rail</strong> on the anaesthetist and surgeon pages: pairings, groups, Contracts linked, next Lists. This is the "who does this touch" part.</li>
+        <li><strong>Option b for groups</strong>: a surgeon group may point at its Party. Small, and it ends the rename-by-name matching.</li>
+        <li><strong>Lists and Contracts tabs</strong> from idea 4, once the rail shows they're wanted.</li>
+        <li><strong>Grouping the surgeon list</strong> from idea 2, once Phase 47's index pane exists. Start with "by specialty".</li>
+        <li><strong>One record pattern</strong>: lift <span class="mono">EditableCard</span>, the rail list and <span class="mono">RecordPage</span> into the shared kit as the first People phase, then move the Patient record onto it.</li>
+      </ol>
+    </div>
+    <div class="q">
+      <h4>Questions for you before the design page</h4>
+      <ul>
+        <li>Patients: stay a separate section (my pick), or a fifth People tab?</li>
+        <li>Specialties: a People tab, or stay in Master data with surgeons linking to it? The Contracts note left them in Master data.</li>
+        <li>Hospitals: stays in Master data on its own ("Places"), or moves with People?</li>
+        <li>Groups and Parties: keep apart (a), may be a Party (b), or one record (c)?</li>
+        <li>Tier: keep the one-click control, or edit it in a card like the rest?</li>
+        <li>An anaesthetist leaving: a "Make inactive" action, and a story to say what it does to their Lists?</li>
+        <li>Nav order: People after Contracts, or next to Patients?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>Drawn from the requirements catalogue (FT-13.6, US-13.6.2 to US-13.6.6, US-12.1.1, US-12.1.4, US-01.3.6, US-13.4.1, US-13.4.4, EP-11, OQ-126, OQ-143), the domain model, the catch-up build record (phases 17, 17b, 18a, 26, 40, 42, 43), <span class="mono">docs/BACKLOG.md</span>, <span class="mono">docs/admin-layout-audit.md</span> and the Contracts design (<span class="mono">contracts-section.html</span>). Names, codes and rates come from the seed.</footer>
+</main>
+
+<script>
+/* The side nav, as SideNav.tsx draws it. data-nav: now (today), people (People added), nopatients (idea 3). */
+(function(){
+  var BASE=[['Day view'],['Intake','3'],['Draft Lists','3'],['Conflicts'],['Notifications','4'],['Review queue','5','c'],['Invoices'],['Patients','2'],['Billing monitor'],['Ledger'],['Contracts'],['People',null,null,'new'],['Master data'],['Audit']];
+  document.querySelectorAll('.mnav[data-nav]').forEach(function(el){
+    var kind=el.getAttribute('data-nav'), on=el.getAttribute('data-on');
+    var h='<div class="logo"><b>Anaesthesia Associates</b><small>ADMIN</small></div>';
+    BASE.forEach(function(it){
+      if(kind==='now'&&it[0]==='People') return;
+      if(kind==='nopatients'&&it[0]==='Patients') return;
+      var cls='it'+(it[0]===on?' on':'')+(it[3]&&kind!=='now'?' new':'');
+      h+='<div class="'+cls+'">'+it[0]+(it[1]?' <em'+(it[2]?' class="c"':'')+'>'+it[1]+'</em>':'')+'</div>';
+    });
+    if(!el.classList.contains('short')) h+='<div class="me"><i>KW</i><div>Kirsty W.<span>Office</span></div></div>';
+    el.innerHTML=h;
+  });
+})();
+</script>
+</body>
+</html>
