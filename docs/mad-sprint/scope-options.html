@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MAD Sprint Scope</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wdth,wght@0,75..100,400..700;1,75..100,400..700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F3F6F7; --sheet:#FFFFFF; --ink:#16252E; --ink-2:#4A5A63; --ink-3:#7D8B92;
+  --rule:#D3DCE0; --rule-2:#E6ECEE;
+  --in:#17725A; --in-soft:#CFE7DE; --trim:#7FB8A4;
+  --stretch:#B9801A; --stretch-soft:#F3E3C2;
+  --next:#3E5F78; --next-soft:#DCE6ED;
+  --seed:#8A979E; --out:#E4EAEC;
+  --line:#B4372F; --focus:#1A5FB4;
+  --r-s:3px; --r-m:8px;
+  --gap-sec:56px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#111A1F; --sheet:#18232A; --ink:#E7EEF1; --ink-2:#A9B7BE; --ink-3:#7C8B93;
+    --rule:#2D3B43; --rule-2:#223038;
+    --in:#3FB78F; --in-soft:#1E4337; --trim:#2F7A63;
+    --stretch:#E0A73E; --stretch-soft:#4A3A1A;
+    --next:#86AACB; --next-soft:#25384A;
+    --seed:#6D7C84; --out:#243139; --line:#E26A5F; --focus:#7FB0F0;
+  }
+  :root:not([data-theme="light"]) .stage.in,:root:not([data-theme="light"]) .stage.trim,:root:not([data-theme="light"]) .cell.in,:root:not([data-theme="light"]) .cell.trim{color:#0E1A16}
+  :root:not([data-theme="light"]) .stage.in p,:root:not([data-theme="light"]) .stage.in .no,:root:not([data-theme="light"]) .stage.trim p,:root:not([data-theme="light"]) .stage.trim .no{color:#163329}
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Instrument Sans",system-ui,sans-serif;font-size:16px;line-height:1.5;font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{font-weight:650;letter-spacing:-.01em}
+
+/* Layout: one container, sections own their vertical rhythm */
+.wrap{max-width:1180px;margin-left:auto;margin-right:auto;padding-left:24px;padding-right:24px}
+@media (max-width:640px){.wrap{padding-left:16px;padding-right:16px}}
+.sec{padding-top:var(--gap-sec);padding-bottom:var(--gap-sec);border-top:1px solid var(--rule)}
+.sec-head{max-width:68ch;margin-bottom:24px}
+.sec-head h2{font-size:26px;font-stretch:85%}
+.sec-head p{color:var(--ink-2);margin-top:6px}
+@media (max-width:640px){:root{--gap-sec:40px}}
+
+/* Masthead */
+.top{padding-top:48px;padding-bottom:40px}
+.kicker{color:var(--ink-2);font-size:15px}
+h1{font-size:clamp(36px,6vw,64px);line-height:1.02;font-stretch:78%;font-weight:700;margin:10px 0 18px;max-width:16ch;letter-spacing:-.02em}
+.lede{max-width:64ch;color:var(--ink-2);font-size:18px}
+.facts{display:flex;flex-wrap:wrap;gap:24px 48px;margin-top:28px;padding-top:20px;border-top:1px solid var(--rule)}
+.fact b{display:block;font-size:30px;font-stretch:75%;font-weight:700;line-height:1.05}
+.fact span{color:var(--ink-2);font-size:14px}
+
+/* AA in brief: the flow */
+.flow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;counter-reset:st}
+.stage{position:relative;padding:14px 12px 14px;border-radius:var(--r-m);background:var(--sheet);border:1px solid var(--rule);min-height:128px;
+  transition:background-color .35s ease,border-color .35s ease,color .35s ease}
+.stage .no{font-size:13px;color:var(--ink-3);font-weight:600}
+.stage h3{font-size:16px;margin:4px 0 4px;line-height:1.2}
+.stage p{font-size:13px;line-height:1.35;color:var(--ink-2)}
+.stage .tag{position:absolute;left:12px;bottom:10px;font-size:12px;font-weight:600}
+.stage.in{background:var(--in);border-color:var(--in);color:#fff}
+.stage.in p,.stage.in .no{color:color-mix(in srgb,#fff 82%,transparent)}
+.stage.trim{background:var(--trim);border-color:var(--trim);color:#fff}
+.stage.trim p,.stage.trim .no{color:color-mix(in srgb,#fff 85%,transparent)}
+.stage.stretch{background:var(--stretch-soft);border:2px solid var(--stretch)}
+.stage.next{background:var(--next-soft);border-color:var(--next);border-style:dashed}
+.stage.seed{background:transparent;border-style:dotted;border-color:var(--seed)}
+.stage.out{background:var(--paper);color:var(--ink-3)}
+.stage.out p{color:var(--ink-3)}
+@media (max-width:960px){.flow{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:560px){.flow{grid-template-columns:repeat(2,minmax(0,1fr))}.stage{min-height:0}}
+.terms{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px 32px;margin-top:28px}
+.terms div{font-size:15px;color:var(--ink-2)}
+.terms b{display:block;color:var(--ink);font-weight:600}
+@media (max-width:860px){.terms{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.terms{grid-template-columns:minmax(0,1fr)}}
+
+/* Option picker */
+.picker{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(6px);
+  border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding-top:12px;padding-bottom:12px}
+.picker .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.picker .lbl{font-size:14px;color:var(--ink-2);margin-right:4px}
+@media (max-width:760px){.picker .row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.picker .lbl{display:none}}
+.opt{flex:0 0 auto;display:flex;align-items:center;gap:7px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);
+  border-radius:999px;padding:5px 12px 5px 5px;font:inherit;font-size:14px;cursor:pointer}
+.opt .n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--rule-2);font-weight:700;font-size:13px}
+.opt[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.opt[aria-pressed="true"] .n{background:var(--in);color:#fff}
+.opt .rec{font-size:12px;color:var(--in);font-weight:600}
+.opt[aria-pressed="true"] .rec{color:var(--in-soft)}
+
+/* Option detail */
+.detail{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:40px}
+@media (max-width:900px){.detail{grid-template-columns:minmax(0,1fr);gap:28px}}
+.dtitle{font-size:clamp(28px,4vw,40px);font-stretch:80%;font-weight:700;line-height:1.05;letter-spacing:-.015em}
+.dpitch{font-size:18px;color:var(--ink-2);margin-top:10px;max-width:54ch}
+.dstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:24px;padding:16px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.dstats b{display:block;font-size:28px;font-stretch:75%;line-height:1.05}
+.dstats span{font-size:13px;color:var(--ink-2)}
+.block + .block{margin-top:22px}
+.block h3{font-size:16px;margin-bottom:8px}
+.block ul{margin:0;padding-left:18px}
+.block li{margin:4px 0}
+.builds li::marker{color:var(--in)}
+.risks li::marker{color:var(--line)}
+.held{border-radius:var(--r-m);padding:14px 16px;background:var(--next-soft);border:1px dashed var(--next)}
+.stretchbox{border-radius:var(--r-m);padding:14px 16px;background:var(--stretch-soft);border:2px solid var(--stretch)}
+.flowmini{margin-top:20px}
+details.more{margin-top:22px;border-top:1px solid var(--rule);padding-top:12px}
+details.more summary{cursor:pointer;color:var(--ink-2);font-size:14px}
+ul.feats{list-style:none;margin:10px 0 0;padding:0}
+ul.feats li{padding:6px 0;border-bottom:1px solid var(--rule-2);display:grid;grid-template-columns:60px minmax(0,1fr) auto;gap:10px;font-size:14px}
+ul.feats .id{color:var(--ink-3)} ul.feats .c{color:var(--ink-2);white-space:nowrap}
+ul.feats .k{font-size:12px;color:var(--ink-3)}
+
+/* Effort chart */
+.effort{display:grid;gap:10px}
+.erow2{display:grid;grid-template-columns:240px minmax(0,1fr) 84px;gap:12px;align-items:center;background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.erow2 .nm{font-size:15px;font-weight:600}
+.track{position:relative;height:34px;border-radius:var(--r-s);background:repeating-linear-gradient(90deg,var(--rule-2) 0 1px,transparent 1px calc(100%/8))}
+.cap{position:absolute;top:-6px;bottom:-6px;border-left:2px solid var(--line)}
+.seg{position:absolute;top:6px;height:22px;display:flex;border-radius:2px;overflow:hidden}
+.seg i{display:block;height:100%}
+.seg .p{background:var(--ink-3)} .seg .d{background:var(--in)} .seg .u{background:var(--next)} .seg .x{background:var(--stretch)}
+.range{position:absolute;top:16px;height:2px;background:var(--ink)}
+.range::before,.range::after{content:"";position:absolute;top:-5px;width:2px;height:12px;background:var(--ink)}
+.range::after{right:0}
+.erow2 .val{font-size:15px;font-weight:600;text-align:right}
+.erow2[aria-pressed="true"] .track{outline:2px solid var(--ink);outline-offset:3px}
+.axis{display:grid;grid-template-columns:240px minmax(0,1fr) 84px;gap:12px;font-size:12px;color:var(--ink-3);margin-top:6px}
+.axis .ticks{position:relative;height:18px}
+.axis .ticks span{position:absolute;transform:translateX(-50%)}
+.axis .ticks .capl{color:var(--line);font-weight:600;white-space:nowrap}
+@media (max-width:760px){.erow2,.axis{grid-template-columns:minmax(0,1fr) 64px}.erow2 .nm{grid-column:1/-1}.axis>span:first-child{display:none}}
+.legend{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:18px;font-size:14px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.sw{width:22px;height:14px;border-radius:2px;display:inline-block;flex:0 0 auto}
+.note{margin-top:16px;font-size:14px;color:var(--ink-2);max-width:76ch}
+
+/* Table */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:var(--r-m);background:var(--sheet)}
+table{border-collapse:collapse;width:100%;min-width:780px;font-size:14px}
+th,td{padding:12px 14px;text-align:left;vertical-align:middle;border-bottom:1px solid var(--rule-2)}
+thead th{font-weight:600;color:var(--ink-2);font-size:13px;vertical-align:bottom}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:color-mix(in srgb,var(--in-soft) 35%,transparent)}
+tbody tr[aria-selected="true"]{background:color-mix(in srgb,var(--in-soft) 60%,transparent)}
+tbody tr:last-child td{border-bottom:0}
+.num{text-align:right} td.num{font-weight:600}
+.optname{font-weight:600}
+.dots{display:inline-flex;gap:3px}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--rule)}
+.dots i.on{background:var(--ink)}
+.dots.risk i.on{background:var(--line)}
+
+/* Full map (collapsed) */
+details.mapbox summary{cursor:pointer;font-size:16px;font-weight:600}
+details.mapbox summary span{font-weight:400;color:var(--ink-2)}
+.map{display:grid;gap:5px;margin-top:20px}
+.erow{display:grid;grid-template-columns:230px minmax(0,1fr);gap:12px}
+.elabel{font-size:14px;line-height:1.25;padding:6px 0;color:var(--ink-2);display:flex;justify-content:space-between;gap:8px}
+.elabel b{color:var(--ink);font-weight:600} .elabel i{font-style:normal;color:var(--ink-3)}
+.cells{display:flex;gap:3px;min-height:44px}
+.cell{flex-basis:0;min-width:10px;border-radius:var(--r-s);background:var(--out);color:var(--ink-3);font-size:12px;line-height:1.2;padding:5px 6px;overflow:hidden;
+  transition:background-color .35s ease,color .35s ease}
+.cell .ct{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cell.in{background:var(--in);color:#fff}
+.cell.trim{background:var(--trim);color:#fff}
+.cell.stretch{background:var(--stretch-soft);color:var(--ink);box-shadow:inset 0 0 0 2px var(--stretch)}
+.cell.next{background:var(--next-soft);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--next)}
+.cell.seed{background:transparent;color:var(--ink-2);box-shadow:inset 0 0 0 1.5px var(--seed)}
+.cell.nfr{box-shadow:inset 0 0 0 2px var(--in)}
+.cell:hover,.cell:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+@media (max-width:760px){.erow{grid-template-columns:minmax(0,1fr);gap:3px}.cell .ct{display:none}.cells{min-height:30px}}
+.tip{position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--paper);font-size:13px;padding:8px 10px;border-radius:var(--r-m);max-width:280px;opacity:0;transition:opacity .12s}
+.tip b{display:block;font-weight:600}
+
+/* Recommendation */
+.rec-block{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:36px;align-items:start}
+@media (max-width:860px){.rec-block{grid-template-columns:minmax(0,1fr)}}
+.rec-say{font-size:clamp(22px,2.8vw,30px);line-height:1.2;font-stretch:85%;font-weight:600;max-width:24ch}
+.phase{display:grid;gap:8px}
+.phase div{display:grid;grid-template-columns:100px minmax(0,1fr);gap:12px;padding:12px 14px;border-radius:var(--r-m);background:var(--sheet);border:1px solid var(--rule);font-size:15px}
+.phase .k{display:flex;align-items:center;gap:8px;color:var(--ink-2);font-size:14px}
+.rec-why{margin-top:28px;max-width:66ch}
+.rec-why p + p{margin-top:10px}
+footer{padding-top:28px;padding-bottom:60px;color:var(--ink-3);font-size:13px;border-top:1px solid var(--rule)}
+footer p{max-width:80ch} footer p + p{margin-top:6px}
+.flowmini{grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.flowmini .stage{min-height:0;padding:10px 8px}
+.flowmini .stage p{display:none}
+.flowmini .stage h3{font-size:14px}
+.flowmini .stage .tag{position:static;display:block;margin-top:6px;font-size:11px;line-height:1.2}
+@media (max-width:560px){.flowmini{grid-template-columns:repeat(4,minmax(0,1fr))}}
+#detail-sec{scroll-margin-top:64px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="wrap top">
+  <p class="kicker">MAD Development Sprint V2, scope proposal for kickoff</p>
+  <h1>Which slice of AA do both teams build?</h1>
+  <p class="lede">The sprint needs one piece of the Anaesthesia Associates system that two teams can each design, build, test and release in four days. The full system is far too big for that. This page compares six possible pieces so the panel can pick one.</p>
+  <div class="facts">
+    <div class="fact"><b>2 teams</b><span>of three developers each</span></div>
+    <div class="fact"><b>4 days</b><span>per team, in two blocks of two</span></div>
+    <div class="fact"><b>254</b><span>user stories in the full system</span></div>
+    <div class="fact"><b>40 to 70</b><span>stories in each option</span></div>
+  </div>
+</header>
+
+<section class="wrap sec" id="aa">
+  <div class="sec-head">
+    <h2>AA in two minutes</h2>
+    <p>Anaesthesia Associates (AA) runs booking and billing for about 85 independent anaesthetists in Christchurch. Every piece of work follows the same path, from a theatre session being scheduled to the anaesthetist being paid. Each option below builds part of this path.</p>
+  </div>
+  <div class="flow" id="flow-intro"></div>
+  <div class="terms">
+    <div><b>List</b>One anaesthetist's theatre session at a hospital on a given day.</div>
+    <div><b>Booking</b>One patient's operation on a List.</div>
+    <div><b>Procedure</b>A piece of work within a Booking. Procedures are what get billed.</div>
+    <div><b>Contract</b>An agreed price arrangement with a hospital, insurer, surgeon or AA. Choosing the right one is the hardest set of rules in the system.</div>
+    <div><b>RVG units</b>A standard New Zealand scale that turns an anaesthetic into units, and units into a fee.</div>
+    <div><b>Xero</b>The accounting system that holds AA's invoices and payments.</div>
+  </div>
+</section>
+
+<nav class="picker" aria-label="Scope options"><div class="wrap row" id="picker"></div></nav>
+
+<section class="wrap sec" id="detail-sec" style="border-top:0">
+  <div class="detail" id="detail"></div>
+</section>
+
+<section class="wrap sec">
+  <div class="sec-head">
+    <h2>How much work each option is</h2>
+    <p>Estimated days for one team of three working with AI tools, to the production standard in the brief. The red line is the four sprint days.</p>
+  </div>
+  <div class="effort" id="effort"></div>
+  <div class="axis" id="axis"></div>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--ink-3)"></i>Setup: Azure, pipelines, login, database</span>
+    <span><i class="sw" style="background:var(--in)"></i>Business rules and their tests</span>
+    <span><i class="sw" style="background:var(--next)"></i>Screens</span>
+    <span><i class="sw" style="background:var(--stretch)"></i>Connections to other systems</span>
+  </div>
+  <p class="note">These are judgement estimates for discussion, sized from the number of testable rules in each option. The whisker shows the likely range. Most options run past four days on purpose, so each team has to decide what to cut and record why.</p>
+</section>
+
+<section class="wrap sec">
+  <div class="sec-head">
+    <h2>Side by side</h2>
+    <p>Ratings are out of five. Select a row to see that option.</p>
+  </div>
+  <div class="tablewrap"><table id="tbl">
+    <thead><tr>
+      <th>Option</th><th class="num">Stories</th><th class="num">Days</th>
+      <th>Business rules</th><th>Easy to judge</th><th>Screen work</th><th>Integration risk</th><th class="num">Not yet agreed</th>
+    </tr></thead>
+    <tbody></tbody>
+  </table></div>
+  <p class="note">Not yet agreed counts stories the client still has to sign off. They will be frozen for the sprint, but they are likely to raise more questions for the subject-matter expert.</p>
+</section>
+
+<section class="wrap sec">
+  <div class="sec-head"><h2>Recommendation</h2></div>
+  <div class="rec-block">
+    <p class="rec-say">Build option 1, add List approval if there is time, and keep invoicing back for the outside developer.</p>
+    <div class="phase">
+      <div><span class="k"><i class="sw" style="background:var(--in)"></i>Build</span><span><b>Booking to price</b>, 68 stories. The day view, entering a Booking, recording Procedures, Contracts and the fee calculation.</span></div>
+      <div><span class="k"><i class="sw" style="background:var(--stretch-soft);box-shadow:inset 0 0 0 2px var(--stretch)"></i>If time</span><span><b>List approval</b>, 8 stories. A List moves from active to submitted to authorised.</span></div>
+      <div><span class="k"><i class="sw" style="background:var(--next-soft);box-shadow:inset 0 0 0 1px var(--next)"></i>Hold back</span><span><b>Invoicing</b>, 14 stories. The outside developer builds it by following each team's playbook.</span></div>
+    </div>
+  </div>
+  <div class="rec-why">
+    <p>Option 1 holds the rules that make AA hard, so it tests whether a team can check code it mostly did not write. Its tests can be worked pricing examples with one right answer, which keeps the panel's scoring on evidence.</p>
+    <p>If the panel wants to see the whole journey end to end, option 2 is the step up, as long as Contracts are limited to the common cases. Otherwise both teams are likely to spend the sprint inside the pricing rules.</p>
+  </div>
+</section>
+
+<section class="wrap sec">
+  <details class="mapbox">
+    <summary>Every feature in the requirements catalogue <span>(for checking the detail)</span></summary>
+    <p class="note">One row per epic. Block width follows the number of stories. The highlighted blocks are the option selected above; hover a block for its name and counts.</p>
+    <div class="map" id="map"></div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--in)"></i>Built</span>
+      <span><i class="sw" style="background:var(--trim)"></i>Built, common cases only</span>
+      <span><i class="sw" style="background:var(--stretch-soft);box-shadow:inset 0 0 0 2px var(--stretch)"></i>If time</span>
+      <span><i class="sw" style="background:var(--next-soft);box-shadow:inset 0 0 0 1.5px var(--next)"></i>Held back</span>
+      <span><i class="sw" style="box-shadow:inset 0 0 0 1.5px var(--seed)"></i>Loaded as test data</span>
+    </div>
+  </details>
+</section>
+
+<footer class="wrap">
+  <p>Counts come from the AA requirements catalogue as of 24 November 2026, live stories only. The catalogue will be frozen when the sprint starts.</p>
+  <p>Effort figures are estimates for discussion at kickoff, not commitments.</p>
+</footer>
+
+<div class="tip" id="tip" role="tooltip"></div>
+
+<script>
+const EPICS = [{"id":"EP-01","t":"Schedule canvas, Slots and Lists","f":[{"id":"01.1","t":"Rolling canvas generation","n":6,"ac":12},{"id":"01.2","t":"Slot availability status","n":3,"ac":5},{"id":"01.3","t":"List assignment","n":5,"ac":12},{"id":"01.4","t":"List reassignment and locum search","n":6,"ac":17},{"id":"01.5","t":"Hospital holiday calendar and conflicts","n":5,"ac":12},{"id":"01.6","t":"Draft Lists","n":4,"ac":15}]},{"id":"EP-02","t":"Booking intake and change handling","f":[{"id":"02.1","t":"Hospital booking download and matching screen","n":4,"ac":3},{"id":"02.2","t":"Surgeon PDF list ingest","n":3,"ac":3},{"id":"02.3","t":"Manual booking entry by admin","n":5,"ac":10},{"id":"02.4","t":"Anaesthetist ad hoc booking","n":2,"ac":1},{"id":"02.5","t":"Change types and audit","n":8,"ac":16},{"id":"02.6","t":"Stubs on a List","n":3,"ac":4}]},{"id":"EP-03","t":"Booking and Procedure capture (anaesthetist)","f":[{"id":"03.1","t":"View schedule, Lists and Bookings","n":9,"ac":14},{"id":"03.2","t":"Booking structure: primary and additional procedures","n":3,"ac":0},{"id":"03.3","t":"Record clinical billing data per Procedure","n":6,"ac":22},{"id":"03.4","t":"Contract on the Procedure","n":1,"ac":5},{"id":"03.5","t":"Anaesthetist adjustment","n":2,"ac":5},{"id":"03.6","t":"Booking completeness validation","n":3,"ac":2},{"id":"03.7","t":"Events on a Procedure","n":4,"ac":15}]},{"id":"EP-04","t":"Contracts","f":[{"id":"04.1","t":"Contract catalogue","n":6,"ac":20},{"id":"04.2","t":"Contract definition","n":9,"ac":41},{"id":"04.3","t":"Contract selection on a Procedure","n":11,"ac":46},{"id":"04.4","t":"Default Contracts for hospitals, insurers and procedures","n":0,"ac":0}]},{"id":"EP-05","t":"RVG master data and fee calculation rules","f":[{"id":"05.1","t":"RVG groups and modifiers","n":4,"ac":7},{"id":"05.2","t":"Unit and fee calculation","n":6,"ac":17},{"id":"05.3","t":"Multi-procedure rule (supersedes RFP split-billing rule)","n":2,"ac":3},{"id":"05.4","t":"Changes to a Procedure's price","n":3,"ac":5},{"id":"05.5","t":"ACC","n":2,"ac":0}]},{"id":"EP-06","t":"Prepayment","f":[{"id":"06.1","t":"Prepaid procedure settings on the anaesthetist profile","n":0,"ac":0},{"id":"06.2","t":"Prepayment trigger and amount","n":3,"ac":10},{"id":"06.3","t":"Prepayment invoicing and tracking","n":6,"ac":16},{"id":"06.4","t":"Settlement after the procedure","n":0,"ac":0},{"id":"06.5","t":"Trust account and cancellation refunds","n":5,"ac":20}]},{"id":"EP-07","t":"List approval workflow","f":[{"id":"07.1","t":"ACTIVE","n":1,"ac":1},{"id":"07.2","t":"SUBMITTED","n":3,"ac":6},{"id":"07.3","t":"AUTHORISED","n":2,"ac":0},{"id":"07.4","t":"List visibility in the anaesthetist app","n":2,"ac":6}]},{"id":"EP-08","t":"Billing/Invoice Engine and internal ledger","f":[{"id":"08.1","t":"Trigger and inputs","n":1,"ac":1},{"id":"08.2","t":"Invoice grouping","n":3,"ac":11},{"id":"08.3","t":"Internal ledger","n":5,"ac":0},{"id":"08.4","t":"Invoice generation and despatch","n":6,"ac":10},{"id":"08.5","t":"Processing status and failures","n":2,"ac":1},{"id":"08.6","t":"Billing after AUTHORISED","n":6,"ac":24}]},{"id":"EP-09","t":"Xero integration","f":[{"id":"09.1","t":"Invoice pair creation","n":3,"ac":1},{"id":"09.2","t":"Payment detection","n":4,"ac":0},{"id":"09.3","t":"Contact management and archiving","n":3,"ac":1},{"id":"09.4","t":"Xero organisation configuration","n":2,"ac":0}]},{"id":"EP-10","t":"Payments, disbursement and AA fees","f":[{"id":"10.1","t":"Single payment destination","n":2,"ac":0},{"id":"10.2","t":"Releasing payables","n":6,"ac":5},{"id":"10.3","t":"AA fee invoicing","n":3,"ac":3}]},{"id":"EP-11","t":"Patients and billable parties","f":[{"id":"11.1","t":"Patient record","n":4,"ac":10},{"id":"11.2","t":"Who is billed: holder or the Procedure's payer","n":5,"ac":25},{"id":"11.3","t":"Patient outstanding balances and alerts","n":3,"ac":7},{"id":"11.4","t":"Insurers","n":0,"ac":0}]},{"id":"EP-12","t":"Anaesthetist profile and reporting","f":[{"id":"12.1","t":"Profile settings","n":2,"ac":2},{"id":"12.2","t":"Reporting for anaesthetists","n":3,"ac":1}]},{"id":"EP-13","t":"Admin oversight and master data","f":[{"id":"13.1","t":"Schedule dashboard","n":2,"ac":0},{"id":"13.2","t":"Ledger balance tools","n":3,"ac":4},{"id":"13.3","t":"Billing flow monitoring","n":2,"ac":0},{"id":"13.4","t":"Master data management","n":5,"ac":9},{"id":"13.5","t":"Roles, permissions and audit","n":3,"ac":1},{"id":"13.6","t":"Surgeons","n":5,"ac":18},{"id":"13.7","t":"Warnings and the to-do list","n":4,"ac":8},{"id":"13.8","t":"Shared notification pool","n":3,"ac":9}]},{"id":"EP-14","t":"Health systems integration","f":[{"id":"14.1","t":"HL7 v2 inbound","n":1,"ac":0},{"id":"14.2","t":"FHIR R4","n":1,"ac":0},{"id":"14.3","t":"Near real time","n":1,"ac":0},{"id":"14.4","t":"NZ identity standards","n":1,"ac":0},{"id":"14.5","t":"Reliability and monitoring","n":1,"ac":0},{"id":"14.6","t":"Further hospital feeds and automatic matching","n":3,"ac":1}]},{"id":"EP-15","t":"Non-functional requirements","f":[{"id":"15","t":"Non-functional requirements","n":9,"ac":8}]}];
+
+const STAGES = [
+  {k:"sched", t:"Schedule", d:"Theatre sessions (Lists) are set up and anaesthetists assigned."},
+  {k:"book",  t:"Book",     d:"Patients' operations are booked onto Lists."},
+  {k:"rec",   t:"Record",   d:"After surgery, each Procedure's billing details are recorded."},
+  {k:"price", t:"Price",    d:"The right Contract is chosen and the fee worked out."},
+  {k:"appr",  t:"Approve",  d:"The anaesthetist submits the List and AA authorises it."},
+  {k:"inv",   t:"Invoice",  d:"Invoices go to patients, insurers and hospitals."},
+  {k:"pay",   t:"Get paid", d:"Payments arrive through Xero and the anaesthetist is paid."}
+];
+const TAG = {in:"Built", trim:"Common cases", stretch:"If time", next:"Held back", seed:"Test data", out:""};
+
+const OPTIONS = [
+ { n:1, name:"Booking to price", rec:true,
+   pitch:"Staff set up a day of theatre Lists, enter a Booking, record what was done, and the system works out the fee from the right Contract.",
+   stages:{sched:"in",book:"in",rec:"in",price:"in",appr:"stretch",inv:"next"},
+   stories:68, proposed:2, effort:{p:1,d:3,u:1.5,x:0,lo:5,hi:7},
+   r:{depth:5,judge:5,ui:3,risk:1},
+   builds:["A day view of theatre Lists, with anaesthetists assigned","Entering a Booking by hand","Recording each Procedure's billing details","Setting up Contracts and choosing the right one for a Procedure","The fee calculation, including the rules for several Procedures in one Booking"],
+   strengths:["It holds the rules that make AA hard: which Contract applies and how the fee is worked out.","It is easy to judge, because each test is a worked example with one right price."],
+   risks:["Setting up Contracts is a large piece on its own; teams must choose which kinds to build first.","It is bigger than four days, by design."],
+   stretch:"List approval: a List moves from active to submitted to authorised.",
+   held:"Invoicing: turning priced work into invoices and ledger entries. It uses exactly what the teams built.",
+   f:{in:"01.2 01.3 01.6 02.3 03.2 03.3 03.4 04.1 04.2 04.3 04.4 05.1 05.2 05.3 05.4", stretch:"07.1 07.2 07.3 07.4", next:"08.2 08.3 08.4", seed:"01.1 11.1 13.6"} },
+ { n:2, name:"Day to invoice",
+   pitch:"A thinner version of option 1 that carries on through approval to a real invoice.",
+   stages:{sched:"in",book:"in",rec:"in",price:"trim",appr:"in",inv:"in",pay:"next"},
+   stories:70, proposed:7, effort:{p:1,d:2.25,u:1.5,x:1.25,lo:5,hi:7},
+   r:{depth:4,judge:4,ui:3,risk:2},
+   builds:["The day view and assigning anaesthetists","Entering a Booking and recording Procedures","Pricing for the common cases only, with Contracts loaded as test data","Approving a List","Producing invoices and ledger entries"],
+   strengths:["It shows the whole journey, ending in an invoice.","Approval is a clear set of states that is easy to test."],
+   risks:["It is wide and shallow: four days may not get any part to production standard.","Contracts are loaded, not built, so the hardest rules are skipped."],
+   held:"Sending invoices to Xero and spotting payments, against a simulated Xero.",
+   f:{in:"01.2 01.3 02.3 03.2 03.3 03.4 05.1 07.1 07.2 07.3 08.2 08.3 08.4", trim:"04.1 04.3 05.2", next:"09.1 09.2", seed:"01.1 04.2 11.1 13.6"} },
+ { n:3, name:"Contracts and pricing engine", chip:"Pricing engine",
+   pitch:"Only the pricing engine: Contracts and the fee rules, with Bookings loaded as test data and a simple screen to price them.",
+   stages:{book:"seed",rec:"seed",price:"in"},
+   stories:42, proposed:1, effort:{p:1,d:3,u:.5,x:0,lo:3.5,hi:5},
+   r:{depth:5,judge:5,ui:1,risk:1},
+   builds:["Setting up Contracts: who they apply to, prices and the dates they run","Choosing the right Contract for a Procedure","Units and fee calculation","The rules for several Procedures in one Booking","Recording changes to a price"],
+   strengths:["Dense rules and very few screens make it the most direct test of checking AI-written code.","It is the easiest to score: inputs in, expected price out."],
+   risks:["There is little to show as a product, so design and release are thin.","Teams may finish early, which tells us less."],
+   held:"Accident (ACC) pricing and prepayment amounts, both built on top of the engine.",
+   f:{in:"03.4 04.1 04.2 04.3 04.4 05.1 05.2 05.3 05.4", next:"05.5 06.2", seed:"03.2 03.3 01.3"} },
+ { n:4, name:"Admin Day operations", chip:"Admin Day",
+   pitch:"The scheduling side: building the calendar of theatre Lists, assigning anaesthetists, and tracking every change to a Booking.",
+   stages:{sched:"in",book:"in"},
+   stories:51, proposed:7, effort:{p:1,d:1.75,u:2,x:0,lo:4,hi:5.5},
+   r:{depth:3,judge:3,ui:5,risk:1},
+   builds:["A rolling calendar of theatre sessions","Assigning and reassigning anaesthetists, and finding a cover","Hospital holidays and clashes","Entering Bookings by hand and logging every change","Warnings and a to-do list for staff"],
+   strengths:["It is the screen AA staff work in all day, so there is plenty of real design.","The rules for clashes, holidays and change history are clear."],
+   risks:["It has no pricing, the hardest and most valuable part of AA.","It has the most screen work, which the brief tries to avoid."],
+   held:"Importing Bookings from surgeons' PDF lists or hospital downloads.",
+   f:{in:"01.1 01.2 01.3 01.4 01.5 01.6 02.3 02.5 02.6 13.1 13.7", next:"02.1 02.2", seed:"11.1 13.6 13.4"} },
+ { n:5, name:"The anaesthetist's day", chip:"Anaesthetist's day",
+   pitch:"The same core seen by the anaesthetist: view their Lists, record what they did, pick a Contract, see the price and submit.",
+   stages:{sched:"seed",book:"in",rec:"in",price:"in",appr:"trim"},
+   stories:52, proposed:5, effort:{p:1,d:2.25,u:1.5,x:.25,lo:4,hi:5.5},
+   r:{depth:4,judge:4,ui:3,risk:1},
+   builds:["The anaesthetist's view of their Lists and Bookings","Adding a Booking on the day","Recording Procedures and events such as a cancellation","Choosing a Contract and seeing the price straight away","Checking a List is complete and submitting it"],
+   strengths:["It keeps Contract choice and pricing.","The completeness checks and events are clear, testable rules."],
+   risks:["There is no admin day view.","A web screen stands in for the mobile app.","Contracts must be loaded carefully as test data."],
+   held:"AA staff approving the Lists that anaesthetists submit.",
+   f:{in:"02.4 03.1 03.2 03.3 03.4 03.5 03.6 03.7 04.3 05.2 05.3 07.2", next:"07.3 07.4", seed:"01.3 04.1 04.2 05.1"} },
+ { n:6, name:"The money side", chip:"Money side",
+   pitch:"Everything after the work is priced: invoices, AA's internal ledger, prepayments, Xero and paying the anaesthetists.",
+   stages:{appr:"seed",inv:"in",pay:"in"},
+   stories:53, proposed:16, effort:{p:1,d:2.25,u:.75,x:1.25,lo:4.5,hi:6},
+   r:{depth:4,judge:4,ui:2,risk:4},
+   builds:["Invoices and AA's internal ledger","Prepayment for some procedures, including refunds","Sending invoices to a simulated Xero and spotting payments","Paying anaesthetists and charging AA's fee"],
+   strengths:["It handles real money and a trust account, a strong test of whether we would stand behind the code.","Xero is a real system boundary, so duplicate and failed calls have to be handled."],
+   risks:["It builds neither the day view nor Contracts.","About a third of its stories are not yet agreed, so expect more open questions.","A convincing simulated Xero is a project in itself."],
+   held:"Patient balances and overdue alerts.",
+   f:{in:"06.2 06.3 06.4 06.5 08.1 08.2 08.3 08.4 08.5 08.6 09.1 09.2 10.2 10.3", next:"11.3", seed:"03.3 04.3 05.2 07.3"} }
+];
+
+const S = s => new Set((s||"").split(/\s+/).filter(Boolean));
+OPTIONS.forEach(o => { o.sets = {in:S(o.f.in), trim:S(o.f.trim), stretch:S(o.f.stretch), next:S(o.f.next), seed:S(o.f.seed)}; });
+const FEAT = {}; EPICS.forEach(e => e.f.forEach(f => FEAT[f.id] = f));
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let cur = 1;
+try { const h = parseInt(location.hash.slice(1)); if (h >= 1 && h <= 6) cur = h; } catch(e) {}
+
+function flowHTML(o){
+  return STAGES.map((s,i) => { const st = o ? (o.stages[s.k] || "out") : ""; return `<div class="stage ${st}"><span class="no">${i+1}</span><h3>${s.t}</h3><p>${s.d}</p>${o && TAG[st] ? `<span class="tag">${TAG[st]}</span>` : ""}</div>`; }).join('');
+}
+$('flow-intro').innerHTML = flowHTML(null);
+
+$('picker').insertAdjacentHTML('beforeend', OPTIONS.map(o =>
+  `<button class="opt" type="button" data-o="${o.n}" aria-pressed="false"><span class="n">${o.n}</span>${esc(o.chip||o.name)}${o.rec?'<span class="rec">Recommended</span>':''}</button>`).join(''));
+$('picker').addEventListener('click', e => { const b = e.target.closest('.opt'); if (b) select(+b.dataset.o); });
+
+/* effort */
+const MAX = 8, pct = d => (d/MAX*100)+'%';
+$('effort').innerHTML = OPTIONS.map(o => { const e = o.effort, tot = e.p+e.d+e.u+e.x;
+  const segs = [['p',e.p],['d',e.d],['u',e.u],['x',e.x]].filter(s=>s[1]>0).map(s=>`<i class="${s[0]}" style="width:${s[1]/tot*100}%"></i>`).join('');
+  return `<button class="erow2" type="button" data-o="${o.n}" aria-pressed="false" aria-label="Option ${o.n}, ${esc(o.name)}: about ${tot} days, likely ${e.lo} to ${e.hi}">
+    <span class="nm">${o.n}. ${esc(o.name)}</span>
+    <span class="track"><span class="seg" style="left:0;width:${pct(tot)}">${segs}</span><span class="range" style="left:${pct(e.lo)};width:${pct(e.hi-e.lo)}"></span><span class="cap" style="left:${pct(4)}"></span></span>
+    <span class="val">${e.lo} to ${e.hi}</span></button>`; }).join('');
+$('axis').innerHTML = `<span></span><span class="ticks">${[0,1,2,3,5,6,7,8].map(t=>`<span style="left:${pct(t)}">${t}</span>`).join('')}<span class="capl" style="left:${pct(4)}">4 days</span></span><span></span>`;
+$('effort').addEventListener('click', e => { const b = e.target.closest('.erow2'); if (b) select(+b.dataset.o, true); });
+
+/* table */
+const dots = (n, cls='') => `<span class="dots ${cls}" role="img" aria-label="${n} of 5">${[1,2,3,4,5].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</span>`;
+$('tbl').querySelector('tbody').innerHTML = OPTIONS.map(o => `<tr data-o="${o.n}" tabindex="0" aria-selected="false">
+  <td class="optname">${o.n}. ${esc(o.name)}</td><td class="num">${o.stories}</td><td class="num">${o.effort.lo} to ${o.effort.hi}</td>
+  <td>${dots(o.r.depth)}</td><td>${dots(o.r.judge)}</td><td>${dots(o.r.ui)}</td><td>${dots(o.r.risk,'risk')}</td><td class="num">${o.proposed}</td></tr>`).join('');
+$('tbl').addEventListener('click', e => { const r = e.target.closest('tr[data-o]'); if (r) select(+r.dataset.o, true); });
+$('tbl').addEventListener('keydown', e => { const r = e.target.closest('tr[data-o]'); if (r && (e.key==='Enter'||e.key===' ')) { e.preventDefault(); select(+r.dataset.o, true); } });
+
+/* full map */
+$('map').innerHTML = EPICS.map(e => `<div class="erow"><div class="elabel"><b>${esc(e.t)}</b><i>${e.f.reduce((a,f)=>a+f.n,0)}</i></div><div class="cells">${
+  e.f.map(f => `<div class="cell" tabindex="0" data-f="${f.id}" style="flex-grow:${Math.max(f.n,.6)}"><span class="ct">${esc(f.t)}</span></div>`).join('')}</div></div>`).join('');
+function stateOf(o, id){ if (id === '15') return 'nfr'; for (const k of ['in','trim','stretch','next','seed']) if (o.sets[k].has(id)) return k; return 'out'; }
+const tip = $('tip');
+document.querySelectorAll('.cell').forEach(c => {
+  const show = () => { const f = FEAT[c.dataset.f], st = stateOf(OPTIONS[cur-1], f.id);
+    tip.innerHTML = `<b>${esc(f.t)}</b>${f.n} ${f.n===1?'story':'stories'}${st==='out'?'':', '+({nfr:'applies to every option',...TAG}[st]||'').toLowerCase()}`;
+    const r = c.getBoundingClientRect(); let y = r.bottom + 8; if (y + 70 > innerHeight) y = r.top - 60;
+    tip.style.left = Math.max(8, Math.min(r.left, innerWidth - 290))+'px'; tip.style.top = y+'px'; tip.style.opacity = 1; };
+  c.addEventListener('mouseenter', show); c.addEventListener('focus', show);
+  c.addEventListener('mouseleave', () => tip.style.opacity = 0); c.addEventListener('blur', () => tip.style.opacity = 0);
+});
+
+/* detail */
+function featRows(o){
+  const rows = []; const lbl = {in:'', trim:'common cases', stretch:'if time', next:'held back'};
+  for (const k of ['in','trim','stretch','next']) [...o.sets[k]].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})).forEach(id => { const f = FEAT[id];
+    rows.push(`<li><span class="id">FT-${id}</span><span>${esc(f.t)}${lbl[k]?` <span class="k">${lbl[k]}</span>`:''}</span><span class="c">${f.n} ${f.n===1?'story':'stories'}</span></li>`); });
+  return rows.join('');
+}
+function renderDetail(o){
+  const e = o.effort;
+  $('detail').innerHTML = `
+   <div>
+     <h2 class="dtitle">${o.n}. ${esc(o.name)}</h2>
+     <p class="dpitch">${esc(o.pitch)}</p>
+     <div class="dstats">
+       <div><b>${o.stories}</b><span>user stories</span></div>
+       <div><b>${e.lo} to ${e.hi}</b><span>days for a team of three</span></div>
+       <div><b>${o.proposed}</b><span>stories not yet agreed</span></div>
+     </div>
+     <div class="flow live flowmini">${flowHTML(o)}</div>
+   </div>
+   <div>
+     <div class="block"><h3>What the teams build</h3><ul class="builds">${o.builds.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+     <div class="block"><h3>Why it works</h3><ul>${o.strengths.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+     <div class="block"><h3>Risks</h3><ul class="risks">${o.risks.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+     ${o.stretch?`<div class="block"><h3>If there is time</h3><div class="stretchbox">${esc(o.stretch)}</div></div>`:''}
+     <div class="block"><h3>Held back for the repeatability test</h3><div class="held">${esc(o.held)}</div></div>
+     <details class="more"><summary>Catalogue features in this option</summary><ul class="feats">${featRows(o)}</ul></details>
+   </div>`;
+}
+
+function select(n, scroll){
+  cur = n; const o = OPTIONS[n-1];
+  document.querySelectorAll('.opt').forEach(b => b.setAttribute('aria-pressed', +b.dataset.o===n));
+  document.querySelectorAll('.erow2').forEach(b => b.setAttribute('aria-pressed', +b.dataset.o===n));
+  document.querySelectorAll('#tbl tbody tr').forEach(r => r.setAttribute('aria-selected', +r.dataset.o===n));
+  document.querySelectorAll('.cell').forEach(c => c.className = 'cell ' + stateOf(o, c.dataset.f));
+  renderDetail(o);
+  try { history.replaceState(null,'','#'+n); } catch(e) {}
+  if (scroll) $('detail-sec').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
+}
+select(cur);
+</script>
+</body>
+</html>
