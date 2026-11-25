@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review Table Ideas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Tokens: the app's own (aa-prototype/src/theme/tokens.ts), so the mocks read as the app. */
+:root{
+  --ink:#172320;--slate:#58635F;--mist:#8A9490;--lineStrong:#C9D1CE;--line:#E2E7E5;--sunken:#EDF1EF;--bg:#F6F8F7;--surface:#FFFFFF;--grid:#F1F4F2;
+  --brand:#A91E3E;
+  --teal:#0D6E63;--tealHover:#0A5A51;--tealTint:#E1F0ED;
+  --ok:#1E8E5A;--okTint:#E3F4EB;
+  --warn:#A16207;--warnTint:#F9F0DC;--warnOn:#7C4D08;
+  --err:#C2403C;--errTint:#FAE9E7;--errOn:#9C332F;
+  --e1:0 1px 2px rgba(23,35,32,.05),0 2px 6px rgba(23,35,32,.05);
+  --r-sm:8px;--r-ctl:10px;--r-card:14px;
+  --mono:"Spline Sans Mono",ui-monospace,monospace;
+  --pin:#3B4A9E;--pinTint:#E8EBF7;
+}
+*{box-sizing:border-box}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+a{color:var(--teal)}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:4px}
+h1,h2,h3,p{margin:0}
+.wrap{max-width:1760px;margin:0 auto;padding:0 32px}
+@media (max-width:640px){.wrap{padding:0 16px}}
+
+/* ===== page chrome ===== */
+header.top{background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{padding-top:40px;padding-bottom:32px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:56px;align-items:end}
+@media (max-width:980px){header.top .wrap{grid-template-columns:1fr;gap:24px}}
+.kicker{font-size:14px;color:var(--slate)}
+h1{font-size:44px;line-height:1.08;letter-spacing:-.022em;font-weight:800;margin:12px 0 16px;max-width:18ch}
+@media (max-width:640px){h1{font-size:32px}}
+.lede{font-size:17px;color:var(--slate);max-width:62ch}
+.verdict{border-left:3px solid var(--teal);padding:4px 0 4px 18px;font-size:15px;color:var(--ink);max-width:60ch}
+.verdict strong{font-weight:700}
+.verdict p+p{margin-top:8px;color:var(--slate)}
+section{padding:44px 0 4px}
+h2{font-size:24px;line-height:30px;letter-spacing:-.005em;margin-bottom:6px}
+h3{font-size:17px;line-height:23px;margin-bottom:4px}
+.sub{color:var(--slate);margin:0 0 20px;max-width:76ch}
+
+/* ===== the compare stage ===== */
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--e1);overflow:hidden}
+.stagebar{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--surface)}
+.seg{display:inline-flex;background:var(--sunken);border-radius:12px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{font:inherit;font-size:14px;font-weight:600;border:0;background:transparent;color:var(--slate);padding:7px 14px;border-radius:9px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(23,35,32,.08),0 1px 4px rgba(23,35,32,.06)}
+.seg button .rec{font-size:11px;font-weight:700;color:var(--teal);margin-left:6px}
+.toggle{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--slate);cursor:pointer;user-select:none}
+.toggle input{width:16px;height:16px;accent-color:var(--teal);margin:0}
+.stagebar .spacer{flex:1}
+.stagebody{padding:22px;background:var(--bg)}
+@media (max-width:640px){.stagebody{padding:12px}}
+.notes{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);gap:0;border-top:1px solid var(--line)}
+.notes > div{padding:18px 22px}
+.notes > div + div{border-left:1px solid var(--line)}
+@media (max-width:980px){.notes{grid-template-columns:1fr}.notes > div + div{border-left:0;border-top:1px solid var(--line)}}
+.notes h3{font-size:15px;margin-bottom:8px}
+.notes ul{margin:0;padding-left:18px;color:var(--slate);font-size:14px}
+.notes li+li{margin-top:5px}
+.notes p{font-size:14px;color:var(--slate)}
+.notes .what{color:var(--ink)}
+
+/* ===== mock app chrome (the Review screen) ===== */
+.mockhead{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px}
+.mockhead .back{font-size:13px;font-weight:600;color:var(--teal)}
+.mockhead .title{font-size:20px;font-weight:700;letter-spacing:-.005em;margin-top:2px}
+.mockhead .meta{font-size:12px;color:var(--slate)}
+.scroller{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--e1);position:relative}
+table.t{border-collapse:collapse;width:100%;font-size:13px}
+table.t th{font-size:11px;line-height:14px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mist);text-align:left;padding:10px 10px;background:var(--bg);border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:bottom}
+table.t td{padding:10px 10px;border-bottom:1px solid var(--sunken);vertical-align:top;color:var(--ink)}
+table.t .r{text-align:right}
+table.t .nw{white-space:nowrap}
+table.t .m{font-family:var(--mono);font-variant-numeric:tabular-nums}
+table.t tr.tot td{background:var(--bg);font-weight:700;border-bottom:0}
+.nm{font-weight:600;font-size:13.5px}
+.nhi{font-family:var(--mono);font-size:11.5px;color:var(--mist)}
+.s12{font-size:12px;color:var(--slate)}
+.s125{font-size:12.5px;color:var(--slate)}
+.mist{color:var(--mist)}
+.act{color:var(--teal);font-weight:600;font-size:12.5px;cursor:pointer;background:none;border:0;padding:0;font-family:inherit}
+.acts{display:inline-flex;gap:12px}
+.pill{display:inline-flex;align-items:center;border-radius:999px;font-size:11px;line-height:16px;font-weight:600;padding:0 7px;white-space:nowrap;background:var(--sunken);color:var(--slate)}
+.pill.lg{padding:4px 10px}
+.pill.warn{background:var(--warnTint);color:var(--warnOn)}
+.pill.outwarn{background:transparent;box-shadow:inset 0 0 0 1px #E3C78F;color:var(--warnOn)}
+.pill.code{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink);background:var(--sunken);padding:1px 7px}
+.pill.code.todo{font-family:inherit;color:var(--warnOn);background:var(--warnTint)}
+.tri{display:inline-block;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid var(--warn);vertical-align:-1px}
+
+/* Current: the compact ProcedureStack, as it renders today */
+.cur-proc{display:flex;flex-direction:column;gap:8px}
+.cur-stack{list-style:none;margin:0;padding:0 0 0 8px;border-left:1.5px solid var(--line);display:flex;flex-direction:column;gap:1px;max-width:300px}
+.cur-stack li{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px;line-height:17px;color:var(--slate)}
+.cur-stack .txt{font-family:var(--mono);color:var(--ink)}
+.cur-stack b{color:var(--ink);font-weight:600}
+.cur-stack .code{font-family:var(--mono);font-weight:600;color:var(--ink)}
+
+/* Option A: the tidied cell */
+.a-proc{display:flex;flex-direction:column}
+.a-one{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;padding:8px 0}
+.a-one + .a-one{border-top:1px dashed var(--line)}
+.a-one:first-child{padding-top:0}
+.a-one:last-child{padding-bottom:0}
+.a-one .pill.code{grid-row:1;margin-top:1px;align-self:start;justify-self:start}
+.a-txt{font-size:13.5px;font-weight:500;line-height:19px}
+.a-share{font-size:11.5px;font-weight:600;color:var(--mist);margin-left:8px;white-space:nowrap}
+.a-desc{grid-column:2;font-size:12.5px;line-height:17px;color:var(--slate);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.a-con{grid-column:2;font-size:12px;line-height:16px;color:var(--mist)}
+
+/* Option B: procedure lines */
+table.b tbody.bk{border-bottom:1px solid var(--line)}
+table.b tbody.bk:last-of-type{border-bottom:0}
+table.b tbody.bk td{border-bottom:0;padding-top:6px;padding-bottom:6px}
+table.b tbody.bk tr:first-child td{padding-top:12px}
+table.b tbody.bk tr:last-child td{padding-bottom:12px}
+table.b tbody.bk:hover td{background:#FBFCFB}
+table.b td.lead{border-right:1px solid var(--sunken)}
+.b-proc{display:grid;grid-template-columns:auto minmax(0,1fr);gap:1px 10px}
+.b-proc .pill.code{margin-top:2px;justify-self:start;align-self:start}
+.b-txt{font-size:13.5px;font-weight:500;line-height:19px}
+.b-role{font-size:11.5px;font-weight:600;color:var(--mist);margin-left:8px}
+.b-desc{grid-column:2;font-size:12.5px;line-height:17px;color:var(--slate)}
+.b-con{grid-column:2;font-size:12px;line-height:16px;color:var(--mist)}
+.b-con.warnline{color:var(--warnOn);font-weight:600}
+.b-who{margin-top:6px;font-size:12px;color:var(--slate);line-height:17px}
+.b-who .row{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+.zero{color:var(--lineStrong)}
+tr.sub td{padding-top:4px!important}
+tr.sub td.subcell{border-top:1px dashed var(--line)}
+.flagcell{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.flagcell .pill{white-space:normal}
+
+/* Option C: day-drawer rows that open */
+table.c tr.row{cursor:pointer}
+table.c tr.row:hover td{background:#FBFCFB}
+table.c tr.row.open td{border-bottom:0}
+table.c tr.detail td{padding:0 10px 14px 68px;background:var(--surface)}
+.c-line{display:block;font-size:12.5px;line-height:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:520px}
+.chev{display:inline-block;width:8px;height:8px;border-right:1.75px solid var(--slate);border-bottom:1.75px solid var(--slate);transform:rotate(45deg);margin-top:4px;transition:transform 160ms}
+tr.open .chev{transform:rotate(225deg);margin-top:8px}
+.c-panel{border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--bg);padding:10px 12px}
+.c-panel table{border-collapse:collapse;width:100%;font-size:13px}
+.c-panel td{padding:6px 8px;vertical-align:top;border-bottom:1px solid var(--line)}
+.c-panel tr:last-child td{border-bottom:0}
+.flagcount{display:inline-flex;align-items:center;gap:6px}
+
+/* Annotation pins on Current */
+.pinmark{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--pin);color:#fff;font-size:11px;font-weight:700;font-family:"Schibsted Grotesk",sans-serif;letter-spacing:0;text-transform:none;vertical-align:middle;margin-left:6px;box-shadow:0 0 0 3px var(--pinTint);flex:none}
+.hidepins .pinmark{display:none}
+.phantom{background:repeating-linear-gradient(135deg,transparent 0 6px,rgba(59,74,158,.07) 6px 12px)}
+.findings{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:1100px){.findings{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.findings{grid-template-columns:1fr}}
+.findings li{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);padding:14px 16px;display:grid;grid-template-columns:auto 1fr;gap:4px 10px}
+.findings li .pinmark{margin:1px 0 0}
+.findings h3{font-size:15px;margin:0}
+.findings p{grid-column:2;font-size:14px;color:var(--slate)}
+.findings code{font-family:var(--mono);font-size:12.5px;background:var(--sunken);padding:0 4px;border-radius:4px;color:var(--ink)}
+
+/* ===== anatomy ===== */
+.anat{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:980px){.anat{grid-template-columns:1fr}}
+.anat .lbl{font-size:13px;font-weight:600;color:var(--slate);margin-bottom:8px}
+.drawer{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-ctl);overflow:hidden}
+.drawer .sum{font-size:12px;font-weight:500;padding:7px 10px;background:var(--bg);border-bottom:1px solid var(--line)}
+.drow{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:0 10px;padding:8px 10px;border-bottom:1px solid var(--sunken);font-size:12.5px}
+.drow .t{font-family:var(--mono);color:var(--slate);font-size:12.5px}
+.drow .n{font-size:13.5px;font-weight:600;line-height:19px}
+.drow .p{color:var(--slate);line-height:17px}
+.drow .c{color:var(--mist);line-height:17px}
+.drow .rt{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.dot{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--mist)}
+.dot::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--teal)}
+.spec{border-collapse:collapse;width:100%;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden}
+.spec th{text-align:left;font-size:13px;font-weight:600;color:var(--slate);padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--line)}
+.spec td{padding:10px 14px;border-bottom:1px solid var(--sunken);vertical-align:top}
+.spec tr:last-child td{border-bottom:0}
+.spec td:first-child{font-weight:600;white-space:nowrap}
+.spec .bad{color:var(--errOn)}
+.spec .same{color:var(--slate)}
+.specwrap{overflow-x:auto;border-radius:var(--r-card)}
+
+/* ===== recommendation ===== */
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media (max-width:980px){.cols{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);padding:18px 20px}
+.card ol,.card ul{margin:8px 0 0;padding-left:20px;color:var(--slate);font-size:14px}
+.card li+li{margin-top:6px}
+.card li strong{color:var(--ink);font-weight:600}
+.card code{font-family:var(--mono);font-size:12.5px;background:var(--sunken);padding:0 4px;border-radius:4px;color:var(--ink)}
+footer{padding:40px 0 56px;color:var(--mist);font-size:13px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div>
+      <div class="kicker">Admin Web App · Review queue · List detail</div>
+      <h1>Making the Review table easy to check</h1>
+      <p class="lede">The Review table is where the office checks a List before authorising it, so it should be quick to scan. Today it isn't. One part is a plain bug and the rest is about how the Procedures cell is laid out. Below: what's wrong, three ways to fix it, all shown with the same Forte Health AM list, and how to make the row match the Day view's bookings list.</p>
+    </div>
+    <div class="verdict">
+      <p><strong>Recommendation: option B, procedure lines.</strong> Each Procedure gets its own line across the table, with its own code, units and fee, so the units add up where you can see them. The payer and Change appear once per Booking, not once per Procedure.</p>
+      <p>Fix the blank corner first in any case: the Totals row has one cell too many. It's a one-line fix.</p>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section id="compare" aria-labelledby="compare-h">
+    <h2 id="compare-h">Today and three options, on the same List</h2>
+    <p class="sub">Switch between them. The data is the List in your screenshot (Dr Souter, Forte Health, Mon 16 Nov AM). Turn on the harder Booking to see how each option copes with mixed payers, a Contract change and a Procedure still needing a price.</p>
+
+    <div class="stage">
+      <div class="stagebar">
+        <div class="seg" role="group" aria-label="Which table">
+          <button type="button" data-view="current" aria-pressed="true">Today</button>
+          <button type="button" data-view="a" aria-pressed="false">A · Tidy the cell</button>
+          <button type="button" data-view="b" aria-pressed="false">B · Procedure lines<span class="rec">Recommended</span></button>
+          <button type="button" data-view="c" aria-pressed="false">C · Rows that open</button>
+        </div>
+        <span class="spacer"></span>
+        <label class="toggle" id="pinsToggle"><input type="checkbox" id="pins" checked> Mark the problems</label>
+        <label class="toggle"><input type="checkbox" id="hard"> Add a harder Booking</label>
+      </div>
+      <div class="stagebody" id="stagebody">
+        <div class="mockhead">
+          <div>
+            <div class="back">‹ Review queue</div>
+            <div class="title">Forte Health · AM list</div>
+            <div class="meta">Dr Melanie Souter · Mr C. Okafor · General surgery · Mon 16 Nov · 07:30 to 12:30</div>
+          </div>
+        </div>
+        <div class="scroller" id="mock" role="region" aria-label="Review table mock" tabindex="0"></div>
+      </div>
+      <div class="notes" id="notes" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section id="findings" aria-labelledby="findings-h">
+    <h2 id="findings-h">What's wrong today</h2>
+    <p class="sub">The letters match the marks on the Today table above.</p>
+    <ul class="findings">
+      <li><span class="pinmark">A</span><h3>A phantom column</h3><p>The Totals row has ten cells for nine headings (an extra empty <code>&lt;Td /&gt;</code> after the <code>colSpan={4}</code>). The table grows a tenth column with no heading, which is the blank white corner. It also moves the totals one column right: 31 sits under Fee and $636.00 under Flags.</p></li>
+      <li><span class="pinmark">B</span><h3>Everything looks the same</h3><p>Each Procedure is six lines at 12 to 12.5px in grey, and the surgeon's text is in quoted monospace, which reads like code. Nothing stands out, so you have to read every line.</p></li>
+      <li><span class="pinmark">C</span><h3>The same thing three times</h3><p>"Patient pays · Change · Email" repeats for every Procedure, and Billed to already says Graeme Tullett. "RVG" is in the Contract line twice. The $0.00 typed price is shown three times: on the Contract line, as a pill and in the Fee cell.</p></li>
+      <li><span class="pinmark">D</span><h3>The useful part gets cut off</h3><p>The Procedures column stops at 300px, so the RVG description, which is how you check the code, is cut off with an ellipsis. Meanwhile Times and B · T · M take up width with one short line each.</p></li>
+      <li><span class="pinmark">E</span><h3>Units are split across the row</h3><p>"Primary · B + T + M 3 of 7" is in the Procedures cell, "6 · 6 · 7 / M 7 · split 3 · 2 · 2" in B · T · M and 24 in Units. You can't see that the umbilical hernia earned 5 units without doing the sums yourself.</p></li>
+      <li><span class="pinmark">F</span><h3>Actions in the Flags column</h3><p>History and Open sit in the Flags column, so every row looks flagged at a glance. Flags tied to one Procedure sit inside the Procedures cell instead, away from the column named for them.</p></li>
+    </ul>
+  </section>
+
+  <section id="anatomy" aria-labelledby="anatomy-h">
+    <h2 id="anatomy-h">One way to show a Booking on both screens</h2>
+    <p class="sub">The Day view's bookings list already does this well: time, patient, procedure, Contract, code chip, from strongest to quietest. The Review table should use the same parts, styled the same way, and add only the columns it needs for checking (times, units, fee, flags).</p>
+    <div class="anat">
+      <div>
+        <div class="lbl">Day view · List drawer (today)</div>
+        <div class="drawer">
+          <div class="sum">4 on this List, 13:06 to 17:10</div>
+          <div class="drow"><span class="t">13:06</span><span><div class="n">Esther Mete</div><div class="p">Skin flap repair, complex</div><div class="c">nib RVG</div></span><span class="rt"><span class="pill code">T1</span><span class="dot">In progress</span></span></div>
+          <div class="drow" style="border-bottom:0"><span class="t">15:58</span><span><div class="n">Matthew MacDonald</div><div class="p">Cystoscopy</div><div class="c">Health NZ agreed rate</div></span><span class="rt"><span class="pill code">P1</span><span class="dot">In progress</span></span></div>
+        </div>
+      </div>
+      <div class="specwrap">
+        <table class="spec">
+          <thead><tr><th>Part</th><th>Day drawer</th><th>Review today</th><th>Proposed for Review</th></tr></thead>
+          <tbody>
+            <tr><td>Time</td><td>Mono 12.5, slate</td><td class="same">Mono 13, ink</td><td>Mono 12.5, slate</td></tr>
+            <tr><td>Patient</td><td>13.5 / 600, ink</td><td class="same">13.5 / 600, ink</td><td>Same, NHI below in mono mist</td></tr>
+            <tr><td>Procedure text</td><td>Sans 12.5, slate</td><td class="bad">Mono 12.5 in quotes, ink</td><td>Sans 13.5 / 500, ink: the line your eye lands on</td></tr>
+            <tr><td>Code</td><td>Mono chip, right-hand side</td><td class="bad">Bold mono inline, mid-line</td><td>Same chip, at the start of the Procedure line</td></tr>
+            <tr><td>RVG description</td><td>Tooltip on the chip</td><td class="bad">One line, cut off</td><td>Sans 12.5, slate, wraps to two lines</td></tr>
+            <tr><td>Contract</td><td>Sans 12.5, mist</td><td class="same">Name in ink 600, basis in slate</td><td>Sans 12, mist, one line, basis once</td></tr>
+            <tr><td>Payer</td><td>Not shown</td><td class="bad">Once per Procedure</td><td>Once per Booking, under the patient; per Procedure only when they differ</td></tr>
+            <tr><td>Warning</td><td>Left bar, text replaces Contract line</td><td class="same">Triangle and pills</td><td>Same left bar and triangle; flag pills in Flags, on the line they belong to</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="recommend" aria-labelledby="rec-h">
+    <h2 id="rec-h">Recommendation</h2>
+    <p class="sub">Option B, in this order. Step 1 stands alone and could go in today.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>What changes</h3>
+        <ol>
+          <li><strong>Remove the extra Totals cell.</strong> The totals line up under Units and Fee, and the blank corner goes.</li>
+          <li><strong>One table row per Procedure.</strong> Each Booking is its own <code>&lt;tbody&gt;</code>, with Time and the patient cell spanning its rows, so a light rule groups the Booking and hover lights it up as one.</li>
+          <li><strong>A Procedure line in the Day view's style:</strong> code chip, the procedure text in 13.5 / 500 ink, the RVG description in full underneath, then the Contract in mist.</li>
+          <li><strong>Numbers per Procedure:</strong> its own times, B · T · M, units and fee. A dashed subtotal row adds them up and names the modifier split once ("Modifiers 7, split 3 · 2 · 2").</li>
+          <li><strong>Payer once:</strong> "Patient pays" with the email and Change goes under the patient. It moves onto the Procedure line only when the Procedures' payers differ. The Billed to column goes.</li>
+          <li><strong>Flags on the line they belong to,</strong> with Approve and Correct next to the pill. History and Open get their own last column. A typed price shows once in Fee and once as a flag.</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3>Why B over A and C</h3>
+        <ul>
+          <li><strong>A</strong> is the cheapest and reads better, but leaves the units maths split across three columns. With three Procedures the cell is still a tall block next to empty space.</li>
+          <li><strong>C</strong> matches the Day drawer most closely, but Review is for checking: hiding the Contract and units behind a click means opening every row on a 30-Booking List. It suits a summary page better than a checking page.</li>
+          <li><strong>B</strong> keeps everything on screen, puts each Procedure's numbers on one line, and is no taller than today because the repeated payer lines go.</li>
+        </ul>
+        <h3 style="margin-top:16px">Where it lives in the code</h3>
+        <ul>
+          <li><code>ReviewScreen.tsx</code>: the row becomes a <code>&lt;tbody&gt;</code> per Booking, the Totals row loses a cell, and the Billed to and flag placement changes.</li>
+          <li><code>ProcedureStack</code> compact density, or a new <code>line</code> density, so the List drawer rows and Review share one Procedure line rather than each keeping its own.</li>
+          <li>Per-Procedure units and fee already come from <code>bookingFee</code> (<code>totals.views[id].allocation</code> and <code>.fee</code>). Nothing new in billing.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>Explorations · Review table · 26 Nov 2026. The Times and units for the Umbilical and Inguinal Procedures, and the harder Booking, are illustrative: the screenshot doesn't show them. They add up to the real 24 units and $636.00.</footer>
+</main>
+
+<script>
+const RATE = 26.5;
+const money = (n) => '$' + n.toFixed(2);
+
+const RVG_RATE = "RVG at the anaesthetist's rate";
+const A2_DESC = 'Simple but invasive procedures, e.g. hernias (open and laparoscopic), diagnostic laparoscopy';
+
+const BASE = [
+  {
+    id: 'tullett', time: '08:30', name: 'Graeme Tullett', nhi: 'ZBD1005', billed: 'Graeme Tullett',
+    payer: { line: 'Patient pays', delivery: 'Email: graeme.tullett166@example.net' }, samePayer: true,
+    times: '08:30 to 10:00', btm: '6 · 6 · 7', split: 'M 7 · split 3 · 2 · 2', splitWords: 'Modifiers 7, split 3 · 2 · 2', units: 24, fee: 636,
+    procs: [
+      { text: 'Laparoscopic cholecystectomy', code: 'A3', desc: 'Moderate procedures, e.g. incisional hernia repair, laparoscopic cholecystectomy', contract: 'No contract · RVG', basis: RVG_RATE, role: 'Primary', alloc: 'Primary · B + T + M 3 of 7', times: '08:30 to 10:00', b: 6, t: 6, m: 3, units: 15, flags: [] },
+      { text: 'Umbilical hernia repair, same anaesthetic', code: 'A2', desc: 'Umbilical hernia repair', contract: 'No contract · RVG', basis: RVG_RATE, role: 'Additional', alloc: 'Additional · T + M 2 of 7', times: '09:10 to 09:40', b: 0, t: 3, m: 2, units: 5, flags: [] },
+      { text: 'Inguinal hernia repair, same anaesthetic', code: 'A2', desc: A2_DESC, contract: 'No contract · RVG', basis: RVG_RATE, role: 'Additional', alloc: 'Additional · T + M 2 of 7', times: '09:40 to 10:00', b: 0, t: 2, m: 2, units: 4, flags: [] },
+    ],
+  },
+  {
+    id: 'kingi', hard: true, time: '10:15', name: 'Mere Kingi', nhi: 'ZCK4471', billed: 'Mixed', changed: true, warn: true,
+    insurer: 'Insurer: Southern Cross', noApproval: true, samePayer: false,
+    times: '10:15 to 11:10', btm: '4 · 3 · 0', units: 7, fee: null, splitWords: 'No modifiers',
+    procs: [
+      { text: 'Excision of lipoma, back', code: 'A2', desc: A2_DESC, contract: 'Forte Health RVG', basis: 'RVG', role: 'Primary', alloc: 'Primary · B + T', times: '10:15 to 10:55', b: 4, t: 3, m: 0, units: 7, fee: 185.5,
+        payerLine: 'Paid by Forte Health', flags: [{ tone: 'warn', text: 'Changed by Dr Souter: was No contract · RVG', approve: true }] },
+      { text: 'Skin lesion excision, scalp', code: null, desc: null, contract: null, role: 'Additional', alloc: 'Additional', times: '10:55 to 11:10', b: null, t: null, m: null, units: null, fee: null,
+        payerLine: 'Payer: not billed yet', flags: [{ tone: 'warn', text: 'Needs an invoice destination' }, { tone: 'warn', text: 'Needs a price' }] },
+    ],
+  },
+  {
+    id: 'paewai', time: '11:30', name: 'Ihaia Paewai', nhi: 'ZBL1003', billed: 'Ihaia Paewai',
+    payer: { line: 'Patient pays', delivery: 'Email: ihaia.paewai171@example.net' }, samePayer: true,
+    times: '11:35 to 12:20', btm: '4 · 3 · 0', units: 7, fee: 0, computed: 185.5, noCharge: true,
+    procs: [
+      { text: 'Scar revision, forearm', code: 'T1', desc: 'Skin flap repair, complex', contract: 'No contract · RVG', basis: RVG_RATE, typed: 'Price typed $0.00', role: 'Primary', alloc: null, times: '11:35 to 12:20', b: 4, t: 3, m: 0, units: 7, fee: 0,
+        flags: [{ tone: 'neutral', text: 'Price typed: $0.00 (computed $185.50)' }] },
+    ],
+  },
+];
+// Per-Procedure fees for the Tullett booking.
+BASE[0].procs.forEach((p) => { p.fee = p.units * RATE; });
+
+const state = { view: 'current', hard: false, pins: true, open: new Set(['kingi']) };
+const rows = () => BASE.filter((b) => state.hard || !b.hard);
+const pin = (l) => `<span class="pinmark" aria-label="Problem ${l}">${l}</span>`;
+const pill = (text, cls = '') => `<span class="pill ${cls}">${text}</span>`;
+const flagPill = (f, lg = true) => pill(f.text, (f.tone === 'warn' ? 'warn' : '') + (lg ? ' lg' : ''));
+const tri = (b) => (b.warn ? ' <span class="tri" aria-label="Open warning"></span>' : '');
+const changedPill = (b) => (b.changed ? ' ' + pill('Changed', 'outwarn lg') : '');
+const totals = () => {
+  const r = rows();
+  const units = r.reduce((s, b) => s + b.units, 0);
+  const fee = r.reduce((s, b) => s + (b.fee ?? b.procs.reduce((x, p) => x + (p.fee ?? 0), 0)), 0);
+  const needs = r.some((b) => b.procs.some((p) => p.fee === null));
+  return { units, fee, needs };
+};
+const feeCell = (b) => {
+  if (b.fee === null) return `<span>Needs a price</span>`;
+  let h = `<span class="m">${money(b.fee)}</span>`;
+  if (b.computed !== undefined) h += `<div class="m mist" style="font-size:11.5px;font-weight:400">Computed ${money(b.computed)}</div>`;
+  if (b.noCharge) h += `<div style="margin-top:3px">${pill('No charge')}</div>`;
+  return h;
+};
+
+/* ---------- Today ---------- */
+function renderCurrent() {
+  const r = rows();
+  let firstProcPinned = false, payerPinned = false, descPinned = false, btmPinned = false, actPinned = false;
+  const body = r.map((b) => {
+    const procs = b.procs.map((p, i) => {
+      const multi = b.procs.length > 1;
+      const desc = p.code ? `<li><span class="code">${p.code}</span> ${p.desc}</li>` : `<li class="mist">RVG code to choose</li>`;
+      const descPin = !descPinned && p.desc && p.desc.length > 50 ? ((descPinned = true), pin('D')) : '';
+      const contract = p.contract ? `<li><b>${p.contract}</b> · ${p.basis}${p.typed ? ' · ' + p.typed : ''}</li>` : `<li class="mist">Needs an invoice destination</li>`;
+      let payer = '';
+      if (b.samePayer) {
+        const pp = !payerPinned && i === 1 ? ((payerPinned = true), pin('C')) : '';
+        payer = `<div class="s12"><div>${b.payer.line} <button class="act" style="font-size:12px">Change</button>${pp}</div><div>${b.payer.delivery}</div></div>`;
+      } else {
+        payer = `<div class="s12">${p.payerLine}</div>`;
+      }
+      const flags = p.flags.length ? `<div class="flagcell">${p.flags.map((f) => flagPill(f) + (f.approve ? ' <button class="act">Approve</button> <button class="act">Correct</button>' : '')).join('')}</div>` : '';
+      return `<div style="display:flex;flex-direction:column;gap:6px">
+        <ul class="cur-stack" style="position:relative">
+          <li><span class="txt">“${p.text}”</span></li>${contract}${desc}
+        </ul>${descPin ? `<div style="margin:-4px 0 0 8px">${descPin}</div>` : ''}
+        ${multi && p.alloc ? `<span class="s12 m" style="font-family:inherit">${p.alloc}</span>` : ''}
+        ${payer}${flags}
+      </div>`;
+    }).join('');
+    const bp = !btmPinned && b.split ? ((btmPinned = true), pin('E')) : '';
+    const ap = !actPinned ? ((actPinned = true), pin('F')) : '';
+    return `<tr>
+      <td class="m nw">${b.time}</td>
+      <td><div class="nm">${b.name}${tri(b)}${changedPill(b)}</div><div class="nhi">${b.nhi}</div></td>
+      <td style="max-width:150px"><div style="font-weight:600">${b.billed}</div>${b.insurer ? `<div class="s12" style="margin-top:6px">${b.insurer} ${b.noApproval ? pill('No approval number') : ''}</div>` : ''}</td>
+      <td style="min-width:240px;max-width:300px"><div class="cur-proc">${procs}</div></td>
+      <td class="m nw">${b.times}</td>
+      <td class="m nw" style="color:var(--slate)">${b.btm}${b.split ? `<div style="font-size:11.5px">${b.split}</div>` : ''}${bp}</td>
+      <td class="m nw r" style="font-weight:700">${b.units}</td>
+      <td class="nw r" style="font-weight:700">${feeCell(b)}</td>
+      <td style="min-width:150px"><div class="flagcell"><span class="acts"><button class="act">History</button><button class="act">Open</button></span>${ap}</div></td>
+    </tr>`;
+  }).join('');
+  const t = totals();
+  return `<table class="t" style="min-width:1120px">
+    <thead><tr><th>Time</th><th>Patient</th><th>Billed to</th><th>Procedures ${pin('B')}</th><th>Times</th><th>B · T · M</th><th class="r">Units</th><th class="r">Fee</th><th>Flags</th></tr></thead>
+    <tbody>${body}
+      <tr class="tot"><td></td><td>Totals</td><td colspan="4"></td><td></td><td class="m r">${t.units}</td><td class="m r">${money(t.fee)}</td><td class="phantom" style="font-weight:400;font-size:12px;color:var(--mist);white-space:nowrap">@ $26.50/unit (list rate) ${pin('A')}</td></tr>
+    </tbody></table>`;
+}
+
+/* ---------- A: tidy the cell ---------- */
+function renderA() {
+  const body = rows().map((b) => {
+    const procs = b.procs.map((p) => {
+      const share = p.units !== null && b.procs.length > 1 ? `${p.role} · ${p.units} units` : p.units === null ? p.role : '';
+      const con = p.contract
+        ? `${p.contract}, ${p.basis === 'RVG' ? 'RVG' : 'at the anaesthetist’s rate'}${b.samePayer ? '' : ' · ' + p.payerLine}`
+        : `<span style="color:var(--warnOn);font-weight:600">Needs an invoice destination</span> · ${p.payerLine}`;
+      return `<div class="a-one">
+        ${p.code ? `<span class="pill code">${p.code}</span>` : `<span class="pill code todo">Code</span>`}
+        <span class="a-txt">${p.text}${share ? `<span class="a-share">${share}</span>` : ''}</span>
+        ${p.desc ? `<span class="a-desc">${p.desc}</span>` : `<span class="a-desc">RVG code to choose</span>`}
+        <span class="a-con">${con}</span>
+      </div>`;
+    }).join('');
+    const flags = b.procs.flatMap((p) => p.flags);
+    const who = b.samePayer
+      ? `<div style="font-weight:600">${b.payer.line.replace('Patient pays', b.billed)}</div><div class="s12">${b.payer.delivery.replace('Email: ', '')}</div><div><button class="act" style="font-size:12px">Change payer</button></div>`
+      : `<div style="font-weight:600">${b.billed}</div>${b.insurer ? `<div class="s12" style="margin-top:4px">${b.insurer} ${b.noApproval ? pill('No approval number') : ''}</div>` : ''}`;
+    return `<tr>
+      <td class="m nw" style="color:var(--slate)">${b.time}</td>
+      <td><div class="nm">${b.name}${tri(b)}${changedPill(b)}</div><div class="nhi">${b.nhi}</div></td>
+      <td>${who}</td>
+      <td><div class="a-proc">${procs}</div></td>
+      <td class="m nw">${b.times}</td>
+      <td class="m nw" style="color:var(--slate)">${b.btm}${b.split ? `<div style="font-size:11.5px">${b.split}</div>` : ''}</td>
+      <td class="m nw r" style="font-weight:700">${b.units}</td>
+      <td class="nw r" style="font-weight:700">${feeCell(b)}</td>
+      <td style="min-width:170px"><div class="flagcell">${flags.map((f) => flagPill(f) + (f.approve ? ' <button class="act">Approve</button> <button class="act">Correct</button>' : '')).join('')}</div></td>
+      <td class="nw"><span class="acts"><button class="act">History</button><button class="act">Open</button></span></td>
+    </tr>`;
+  }).join('');
+  const t = totals();
+  return `<table class="t" style="min-width:1180px">
+    <colgroup><col style="width:62px"><col style="width:160px"><col style="width:220px"><col><col style="width:120px"><col style="width:110px"><col style="width:56px"><col style="width:96px"><col style="width:180px"><col style="width:96px"></colgroup>
+    <thead><tr><th>Time</th><th>Patient</th><th>Billed to</th><th>Procedures</th><th>Times</th><th>B · T · M</th><th class="r">Units</th><th class="r">Fee</th><th>Flags</th><th><span style="position:absolute;left:-9999px">Actions</span></th></tr></thead>
+    <tbody>${body}
+      <tr class="tot"><td></td><td>Totals</td><td colspan="4" style="font-weight:400;font-size:12px;color:var(--mist)">@ $26.50/unit (list rate)</td><td class="m r">${t.units}</td><td class="m r">${money(t.fee)}</td><td colspan="2" style="font-weight:400;font-size:12px;color:var(--mist)">${t.needs ? '1 Procedure needs a price' : ''}</td></tr>
+    </tbody></table>`;
+}
+
+/* ---------- B: procedure lines ---------- */
+function procLineB(p, b) {
+  const con = p.contract
+    ? `<span class="b-con">${p.contract}, ${p.basis === 'RVG' ? 'RVG' : 'at the anaesthetist’s rate'}${b.samePayer ? '' : ' · ' + p.payerLine}</span>`
+    : `<span class="b-con warnline">No Contract yet <span style="font-weight:400;color:var(--mist)">· ${p.payerLine}</span></span>`;
+  return `<div class="b-proc">
+    ${p.code ? `<span class="pill code">${p.code}</span>` : `<span class="pill code todo">Code</span>`}
+    <span class="b-txt">${p.text}${b.procs.length > 1 ? `<span class="b-role">${p.role}</span>` : ''}</span>
+    <span class="b-desc">${p.desc ?? 'RVG code to choose'}</span>
+    ${con}
+  </div>`;
+}
+const num = (v) => (v === null ? '<span class="zero">·</span>' : v === 0 ? '<span class="zero">0</span>' : v);
+const btmOf = (p) => (p.b === null ? '<span class="zero">·</span>' : `${num(p.b)} · ${num(p.t)} · ${num(p.m)}`);
+function renderB() {
+  const groups = rows().map((b) => {
+    const n = b.procs.length;
+    const multi = n > 1;
+    const span = n + (multi ? 1 : 0);
+    const who = b.samePayer
+      ? `<div class="b-who"><div class="row"><span>${b.payer.line}</span><button class="act" style="font-size:12px">Change</button></div><div>${b.payer.delivery}</div></div>`
+      : `<div class="b-who"><div>Payers differ, shown on each Procedure</div></div>`;
+    const ins = b.insurer ? `<div class="b-who">${b.insurer} ${b.noApproval ? pill('No approval number') : ''}</div>` : '';
+    const lines = b.procs.map((p, i) => {
+      const lead = i === 0
+        ? `<td class="m nw" rowspan="${span}" style="color:var(--slate);${b.warn ? 'box-shadow:inset 3px 0 0 var(--warn);' : ''}">${b.time}</td>
+           <td class="lead" rowspan="${span}"><div class="nm">${b.name}${tri(b)}${changedPill(b)}</div><div class="nhi">${b.nhi}</div>${who}${ins}</td>`
+        : '';
+      const bold = multi ? '' : 'font-weight:700;';
+      const feeV = p.fee === null ? '<span style="font-weight:600">Needs a price</span>' : `<span class="m">${money(p.fee)}</span>`;
+      const extra = !multi ? (b.computed !== undefined ? `<div class="m mist" style="font-size:11.5px;font-weight:400">Computed ${money(b.computed)}</div>` : '') + (b.noCharge ? `<div style="margin-top:3px">${pill('No charge')}</div>` : '') : '';
+      const actions = i === 0 ? `<td class="nw" rowspan="${span}"><span class="acts"><button class="act">History</button><button class="act">Open</button></span></td>` : '';
+      return `<tr>${lead}
+        <td>${procLineB(p, b)}</td>
+        <td class="m nw">${p.times}</td>
+        <td class="m nw" style="color:var(--slate)">${btmOf(p)}</td>
+        <td class="m nw r" style="${bold}">${num(p.units)}</td>
+        <td class="nw r" style="${bold}">${feeV}${extra}</td>
+        <td><div class="flagcell">${p.flags.map((f) => flagPill(f) + (f.approve ? ' <button class="act">Approve</button><button class="act">Correct</button>' : '')).join('')}</div></td>
+        ${actions}</tr>`;
+    }).join('');
+    const sub = multi
+      ? `<tr class="sub"><td class="subcell s12">${b.splitWords}</td><td class="subcell"></td><td class="subcell"></td>
+           <td class="subcell m r" style="font-weight:700">${b.units}</td>
+           <td class="subcell r" style="font-weight:700">${b.fee === null ? 'Needs a price' : `<span class="m">${money(b.fee)}</span>`}</td><td class="subcell"></td></tr>`
+      : '';
+    return `<tbody class="bk">${lines}${sub}</tbody>`;
+  }).join('');
+  const t = totals();
+  return `<table class="t b" style="min-width:1180px">
+    <colgroup><col style="width:62px"><col style="width:250px"><col><col style="width:128px"><col style="width:104px"><col style="width:60px"><col style="width:100px"><col style="width:200px"><col style="width:100px"></colgroup>
+    <thead><tr><th>Time</th><th>Patient · payer</th><th>Procedure</th><th>Times</th><th>B · T · M</th><th class="r">Units</th><th class="r">Fee</th><th>Flags</th><th><span style="position:absolute;left:-9999px">Actions</span></th></tr></thead>
+    ${groups}
+    <tbody><tr class="tot"><td></td><td>Totals</td><td colspan="3" style="font-weight:400;font-size:12px;color:var(--mist)">@ $26.50/unit (list rate)</td><td class="m r">${t.units}</td><td class="m r">${money(t.fee)}</td><td colspan="2" style="font-weight:400;font-size:12px;color:var(--mist)">${t.needs ? '1 Procedure needs a price' : ''}</td></tr></tbody>
+  </table>`;
+}
+
+/* ---------- C: day-drawer rows that open ---------- */
+function renderC() {
+  const body = rows().map((b) => {
+    const flags = b.procs.flatMap((p) => p.flags);
+    const warnN = flags.filter((f) => f.tone === 'warn').length;
+    const open = state.open.has(b.id);
+    const codes = b.procs.map((p) => p.code).filter(Boolean).join(' ');
+    const contractLine = b.warn
+      ? `<span class="c-line" style="color:var(--warnOn);font-weight:600">Contract changed by Dr Souter · 1 Procedure needs a price</span>`
+      : `<span class="c-line mist">${[...new Set(b.procs.map((p) => p.contract))].join(', ')} · ${b.samePayer ? b.payer.line : ''}</span>`;
+    const row = `<tr class="row${open ? ' open' : ''}" data-id="${b.id}" tabindex="0" aria-expanded="${open}">
+      <td class="m nw" style="color:var(--slate);${b.warn ? 'box-shadow:inset 3px 0 0 var(--warn);' : ''}">${b.time}</td>
+      <td style="max-width:0;width:44%"><div class="nm">${b.name}${tri(b)}${changedPill(b)}</div>
+        <span class="c-line" style="color:var(--slate)">${b.procs.map((p) => p.text).join(', ')}</span>${contractLine}</td>
+      <td class="r nw">${codes ? `<span class="pill code">${codes}</span>` : ''}</td>
+      <td class="m nw">${b.times}</td>
+      <td class="m nw r" style="font-weight:700">${b.units}</td>
+      <td class="nw r" style="font-weight:700">${feeCell(b)}</td>
+      <td class="nw">${flags.length ? `<span class="flagcount">${pill(flags.length + (flags.length === 1 ? ' flag' : ' flags'), warnN ? 'warn lg' : 'lg')}</span>` : ''}</td>
+      <td class="nw r"><span class="chev" aria-hidden="true"></span></td>
+    </tr>`;
+    const detail = open
+      ? `<tr class="detail"><td colspan="8"><div class="c-panel"><table>${b.procs.map((p) => `<tr>
+          <td>${procLineB(p, b)}</td>
+          <td class="m nw" style="width:120px">${p.times}</td>
+          <td class="m nw" style="width:96px;color:var(--slate)">${btmOf(p)}</td>
+          <td class="m nw r" style="width:50px">${num(p.units)}</td>
+          <td class="nw r" style="width:100px">${p.fee === null ? 'Needs a price' : `<span class="m">${money(p.fee)}</span>`}</td>
+          <td style="width:250px"><div class="flagcell">${p.flags.map((f) => flagPill(f, false) + (f.approve ? ' <button class="act">Approve</button><button class="act">Correct</button>' : '')).join('')}</div></td></tr>`).join('')}
+          </table><div class="s12" style="margin-top:8px;display:flex;gap:16px;flex-wrap:wrap">${b.samePayer ? `<span>${b.payer.line} · ${b.payer.delivery}</span><button class="act" style="font-size:12px">Change</button>` : `<span>${b.insurer ?? ''}</span>`}<span style="flex:1"></span><span class="acts"><button class="act">History</button><button class="act">Open</button></span></div></div></td></tr>`
+      : '';
+    return row + detail;
+  }).join('');
+  const t = totals();
+  return `<table class="t c" style="min-width:1000px">
+    <thead><tr><th>Time</th><th>Booking</th><th class="r">Code</th><th>Times</th><th class="r">Units</th><th class="r">Fee</th><th>Flags</th><th><span style="position:absolute;left:-9999px">Open</span></th></tr></thead>
+    <tbody>${body}
+      <tr class="tot"><td></td><td>Totals <span style="font-weight:400;font-size:12px;color:var(--mist);margin-left:8px">@ $26.50/unit (list rate)</span></td><td></td><td></td><td class="m r">${t.units}</td><td class="m r">${money(t.fee)}</td><td colspan="2"></td></tr>
+    </tbody></table>`;
+}
+
+const NOTES = {
+  current: {
+    what: 'The Review table as it is today, with the six problems marked. The hatched cell at the bottom right is the tenth column that shouldn’t be there; it stretches the table and leaves the header without a cell above it.',
+    good: ['Every fact the office needs is on screen.', 'Procedure flags sit with their Procedure.'],
+    cost: ['Hard to scan: six grey lines per Procedure, repeated.', 'Totals sit one column to the right.', 'Not the same parts as the Day view’s bookings list.'],
+  },
+  a: {
+    what: 'Same columns. The extra Totals cell goes, and the cell uses the Day view’s parts: code chip, procedure text in ink, RVG description in full, Contract in mist. The payer moves into Billed to, once. Flags go in Flags; History and Open get their own column.',
+    good: ['Small change, mostly styling in the compact ProcedureStack.', 'Clearly easier to read.', 'Each Procedure shows its share as plain words ("Additional · 5 units").'],
+    cost: ['Units maths still split between three columns.', 'Three Procedures still make one tall cell next to empty space.', 'Procedure flags are separated from their Procedure.'],
+  },
+  b: {
+    what: 'Each Procedure is its own line across the table, with its own times, B · T · M, units, fee and flags. The patient and payer cell spans the Booking’s lines. A dashed subtotal adds the lines up and names the modifier split once.',
+    good: ['The sums are visible: 15 + 5 + 4 = 24, $397.50 + $132.50 + $106.00 = $636.00.', 'Flags sit on the exact Procedure they’re about, in the Flags column.', 'Payer once; no taller than today.', 'The Procedure line matches the Day drawer’s parts.'],
+    cost: ['Most work of the three: the row becomes a tbody per Booking.', 'Single-Procedure Bookings look the same as A; the gain is for multi-Procedure ones.'],
+  },
+  c: {
+    what: 'The Day drawer’s row, widened: time, patient, procedures, Contract line, code chip, then units, fee and a flag count. Click a row to see its Procedure lines (the same lines as B). Rows with a warning start open.',
+    good: ['The closest match to the Day view.', 'A clean List is very short to read.'],
+    cost: ['Checking means opening rows; on a 30-Booking List that’s many clicks.', 'Hides the Contract and units, which is what the office is checking.', 'A collapsed row can hide a neutral flag like a typed price.'],
+  },
+};
+
+function render() {
+  const mock = document.getElementById('mock');
+  const fn = { current: renderCurrent, a: renderA, b: renderB, c: renderC }[state.view];
+  mock.innerHTML = fn();
+  mock.classList.toggle('hidepins', !state.pins || state.view !== 'current');
+  document.getElementById('pinsToggle').style.visibility = state.view === 'current' ? 'visible' : 'hidden';
+  const n = NOTES[state.view];
+  document.getElementById('notes').innerHTML =
+    `<div><h3>What it is</h3><p class="what">${n.what}</p></div>
+     <div><h3>Good</h3><ul>${n.good.map((x) => `<li>${x}</li>`).join('')}</ul></div>
+     <div><h3>Costs</h3><ul>${n.cost.map((x) => `<li>${x}</li>`).join('')}</ul></div>`;
+  document.querySelectorAll('.seg button').forEach((btn) => btn.setAttribute('aria-pressed', String(btn.dataset.view === state.view)));
+}
+
+document.querySelectorAll('.seg button').forEach((btn) => btn.addEventListener('click', () => { state.view = btn.dataset.view; render(); }));
+document.getElementById('hard').addEventListener('change', (e) => { state.hard = e.target.checked; render(); });
+document.getElementById('pins').addEventListener('change', (e) => { state.pins = e.target.checked; render(); });
+const toggleRow = (tr) => { const id = tr.dataset.id; state.open.has(id) ? state.open.delete(id) : state.open.add(id); render(); };
+document.getElementById('mock').addEventListener('click', (e) => { const tr = e.target.closest('tr.row'); if (tr && !e.target.closest('button')) toggleRow(tr); });
+document.getElementById('mock').addEventListener('keydown', (e) => { const tr = e.target.closest('tr.row'); if (tr && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); toggleRow(tr); } });
+render();
+</script>
+</body>
+</html>
