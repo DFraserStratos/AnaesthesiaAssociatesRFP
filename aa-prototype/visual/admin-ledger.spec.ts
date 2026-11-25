@@ -6,7 +6,9 @@ import { runDemoAction } from './demoActions'
  * whole ledger in balance from a reset; the "Inject unmatched receipt" demo
  * action (naming Dr Souter) takes it and her ledger out by $120.00 and badges
  * the nav's Finances entry (build plan Phase 58: the Ledger is a Finances
- * tab); "Allocate to invoice" clears it, back in balance at both scopes.
+ * tab); "Allocate" in the rail's Receipts to place clears it (Phase 64: the
+ * one sentence, four tiles and the Anaesthetists list), back in balance on the
+ * tab and on her account.
  */
 
 const SOUTER = '34821'
@@ -24,14 +26,15 @@ test('admin ledger: in balance, an unmatched receipt takes it out, allocating br
   await expect(page.getByRole('heading', { name: 'Finances', exact: true, level: 1 })).toBeVisible()
   await expect(page.locator('[data-shot="finances-tabs"] [data-finances-tab="ledger"]')).toBeVisible()
 
-  // A reset: the whole ledger is in balance and no anaesthetist is out.
+  // A reset (build plan Phase 64): the sentence says the books are square, four tiles, nothing to place.
   const balance = page.locator('[data-shot="ledger-balance"]')
   await expect(balance).toHaveAttribute('data-in-balance', 'true')
-  await expect(balance).toContainText('In balance · receipts held equal payables due')
-  await expect(balance).toContainText('= $0.00')
-  await expect(page.locator('[data-shot="ledger-anaesthetists-out-of-balance"]')).toHaveText("Every anaesthetist's ledger is in balance.")
+  await expect(balance).toContainText('The books are square')
+  await expect(page.locator('[data-shot="ledger-tiles"] [data-ledger-tile]')).toHaveCount(4)
+  await expect(page.locator('[data-ledger-tile="receipts-to-place"]')).toContainText('$0.00')
+  await expect(page.locator('[data-shot="ledger-summary"]')).toContainText('every one square')
   await expect(page.locator('[data-shot="nav-badge-finances"]')).toHaveCount(0)
-  await expect(page.locator('[data-shot="ledger-unmatched"]')).toHaveCount(0)
+  await expect(page.locator('[data-shot="ledger-unmatched"] [data-unmatched-id]')).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/ledger-01-in-balance.png', fullPage: true })
 
   // A $120.00 bank deposit naming Dr Souter matches no invoice.
@@ -42,33 +45,37 @@ test('admin ledger: in balance, an unmatched receipt takes it out, allocating br
   await page.keyboard.press('Escape')
 
   await expect(balance).toHaveAttribute('data-in-balance', 'false')
-  await expect(balance).toContainText('Out of balance by $120.00')
-  await expect(balance.locator('[data-check="unmatchedReceiptHeld"]')).toContainText('Bank deposit · SOUTER JULY, $120.00')
+  await expect(balance).toContainText('The books are out by $120.00')
+  await expect(balance).toContainText('1 receipt that matches no invoice')
+  await expect(page.locator('[data-check="unmatchedReceiptHeld"]')).toContainText('SOUTER JULY, $120.00')
+  await expect(page.locator('[data-ledger-tile="receipts-to-place"]')).toContainText('$120.00')
   await expect(page.locator('[data-shot="nav-badge-finances"]')).toHaveText('1')
-  const outList = page.locator('[data-shot="ledger-anaesthetists-out-of-balance"]')
-  const souterRow = outList.locator(`[data-anaesthetist-id="${SOUTER}"]`)
-  await expect(outList.locator('[data-anaesthetist-id]')).toHaveCount(1)
+  // 85 anaesthetists page at 50: find her by name.
+  await page.locator('[data-shot="ledger-search"] input, input[data-shot="ledger-search"]').first().fill('Souter')
+  const list = page.locator('[data-shot="ledger-anaesthetists"]')
+  const souterRow = list.locator(`[data-anaesthetist-id="${SOUTER}"]`)
   await expect(souterRow).toContainText('Dr Souter')
-  await expect(souterRow).toContainText('$120.00')
-  await expect(souterRow).toContainText('Receipt with no matching invoice')
+  await expect(souterRow).toContainText('Out by $120.00')
+  await expect(page.locator('[data-shot="ledger-summary"]')).toContainText('1 out of balance')
   const held = page.locator('[data-shot="ledger-unmatched"]')
-  await expect(held).toContainText('Held')
+  await expect(held.locator('[data-unmatched-id]')).toHaveCount(1)
   await page.screenshot({ path: 'visual/shots/ledger-02-out-of-balance.png', fullPage: true })
 
-  // Her scope says the same, in words.
-  await souterRow.getByRole('button', { name: 'Open' }).click()
+  // Her account says the same, in words.
+  await souterRow.click()
   await expect(page).toHaveURL(new RegExp(`/admin/finances/ledger/anaesthetists/${SOUTER}$`))
-  await expect(balance).toContainText("Dr Souter's ledger is out of balance by $120.00")
-  // Who owes whom, in words. (Read from the tiles row: the two cards' own hooks do not reach the DOM, see Phase 36's checklist.)
-  const tiles = page.locator('[data-shot="ledger-tiles"]')
-  await expect(tiles).toHaveAttribute('data-shot-scope', 'anaesthetist')
-  await expect(tiles).toContainText('AA owes Dr Souter')
-  await expect(tiles).toContainText('Dr Souter owes AA')
+  // Build plan Phase 65: the account page's status pill and its out-of-balance notice.
+  await expect(page.locator('[data-shot="ledger-account-status"]')).toHaveAttribute('data-in-balance', 'false')
+  await expect(balance).toHaveAttribute('data-in-balance', 'false')
+  await expect(balance).toContainText("Dr Souter's account is out by $120.00")
+  // Who owes whom: the two money cards.
+  await expect(page.locator('[data-shot="ledger-aa-owes"]')).toContainText('AA owes them')
+  await expect(page.locator('[data-shot="ledger-owes-aa"]')).toContainText('They owe AA')
   await page.screenshot({ path: 'visual/shots/ledger-03-souter-out.png', fullPage: true })
 
   // Back to the whole ledger; allocate the held receipt to an invoice it covers.
   await page.goBack()
-  await expect(page).toHaveURL(/\/admin\/finances\/ledger$/)
+  await expect(page).toHaveURL(/\/admin\/finances\/ledger(\?q=Souter)?$/)
   await held.locator('[data-shot="ledger-allocate"]').click()
   const dialog = page.locator('[data-shot="ledger-allocate-dialog"]')
   await expect(dialog).toBeVisible()
@@ -82,18 +89,21 @@ test('admin ledger: in balance, an unmatched receipt takes it out, allocating br
   await expect(dialog).toHaveCount(0)
 
   await expect(balance).toHaveAttribute('data-in-balance', 'true')
-  await expect(balance).toContainText('In balance · receipts held equal payables due')
-  await expect(outList).toHaveText("Every anaesthetist's ledger is in balance.")
+  await expect(balance).toContainText('The books are square')
+  await expect(souterRow).toContainText('Square')
   await expect(page.locator('[data-shot="nav-badge-finances"]')).toHaveCount(0)
-  await expect(held).toContainText('Allocated to')
+  // A placed receipt leaves the rail (D106).
+  await expect(held.locator('[data-unmatched-id]')).toHaveCount(0)
   expect(pairId).not.toBeNull()
   await page.screenshot({ path: 'visual/shots/ledger-05-allocated.png', fullPage: true })
 
-  // Her scope is back in balance too.
+  // Her account is back in balance too: the pill says Square and the notice is gone.
   await page.goto(`/admin/finances/ledger/anaesthetists/${SOUTER}`)
   await page.waitForLoadState('networkidle')
-  await expect(balance).toHaveAttribute('data-in-balance', 'true')
-  await expect(balance).toContainText("Dr Souter's ledger is in balance")
+  const status = page.locator('[data-shot="ledger-account-status"]')
+  await expect(status).toHaveAttribute('data-in-balance', 'true')
+  await expect(status).toContainText('Square')
+  await expect(balance).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/ledger-06-souter-in-balance.png', fullPage: true })
 
   expect(consoleErrors, `console errors: ${consoleErrors.join(' | ')}`).toEqual([])

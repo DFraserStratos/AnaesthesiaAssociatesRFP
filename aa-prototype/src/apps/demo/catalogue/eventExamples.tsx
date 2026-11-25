@@ -21,7 +21,8 @@ import { AddBillingEventSheet, AddPrePostOpEventSheet } from '../../../shared/bo
 import { ContractEventFees } from '../../admin/flows/ContractEventFees'
 import { CreditSheet } from '../../admin/flows/CreditSheet'
 import { CorrectInvoiceCard, CreditedBanner, CreditNoteDocument } from '../../admin/screens/InvoiceDocument'
-import { CreditTrails } from '../../admin/screens/LedgerScreen'
+import { AccountCreditTrails } from '../../admin/screens/finances/AccountCreditTrails'
+import { ADMIN_RIGHT_RAIL_WIDTH } from '../../admin/layout'
 import { CorrectionRetry } from '../../admin/screens/finances/CorrectionRetry'
 import { SEED_EVENT_ID, SEED_EVENT_PROCEDURE_ID } from '../../../domain/seed/procedureEvents'
 
@@ -204,11 +205,15 @@ export function CorrectInvoiceCardExample() {
   )
 }
 
-/** Dr Souter's credits on the Ledger: empty until a credit is issued (the CreditNoteDocument row's Issue a credit). */
+/** Dr Souter's credit trails on her account page rail: empty until a credit is issued (the CreditNoteDocument row's Issue a credit). */
 export function CreditTrailsExample() {
   const issued = useAppStore((s) => creditNoteForInvoice(s, SEED_CREDIT_INVOICE_ID) !== undefined)
   if (!issued) return <span style={{ fontSize: 13 }}>Issue a credit on the CreditNoteDocument row to see Dr Souter&apos;s trail.</span>
-  return <CreditTrails anaesthetistId={SOUTER_ACTOR.anaesthetistId!} surname="Dr Souter" />
+  return (
+    <div style={{ width: ADMIN_RIGHT_RAIL_WIDTH }}>
+      <AccountCreditTrails anaesthetistId={SOUTER_ACTOR.anaesthetistId!} />
+    </div>
+  )
 }
 
 /** Resolve and retry on AA-2026-H03's Booking: it shows only while that Booking's Xero correction has failed and waits in the sync queue. */

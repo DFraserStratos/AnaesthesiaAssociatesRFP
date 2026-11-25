@@ -32,7 +32,6 @@ that need work are repeated here.
 - After S3/S4's payment run the saved state is about 4.8 MB and the next save fails with QuotaExceededError ("persistence paused"), so a reload loses later beats; the guide tells the presenter not to reload. `store/persistStorage.ts`, `store/persistDelta.ts`. M
 - Run payables in Xero pays about 1,600 BCTIs in one synchronous step at practice scale and freezes the page for 12 to 35 s; capture recipes give the click 45 s and `admin-phase39a` 90 s. Make it asynchronous or faster. `apps/admin/screens/BillingMonitorScreen.tsx` (`PaymentCyclePanel`, `runInXero`), `domain/billing/payablesRun.ts`. M
 - The payment-run toast and schedule print "1617 BCTIs" with no thousands separator. Payment-run message in `store/`. S
-- Ledger table overflows at 1440 wide (Mirrored and "Contact archived in Xero" cut off) and the page scrolls as a whole instead of fitting. `apps/admin/screens/LedgerScreen.tsx`. S
 
 ## Prototype: prepayments and patients
 
@@ -91,7 +90,7 @@ that need work are repeated here.
 Found walking the three apps with all 85 loaded; nothing errors, these are screens at size. Counts are from
 the full-scale data; the everyday data shows the same screens with its own (smaller) billing history.
 
-- Ledger takes 3 to 4 s to open and about 1 s per page or scope change, while its Timings row reads about 1 s painted. `apps/admin/screens/LedgerScreen.tsx`. M
+- The Ledger tab's Invoice pairs (11 columns, 1,080 px) and AA Holding account (8 columns, 880 px) tables scroll sideways inside their cards at 1280 and 1440, so Amount to Xero (pairs) and Amount (Holding) start out of view; the page itself no longer scrolls (Phase 64). Narrow the columns or drop one. `apps/admin/screens/finances/LedgerLists.tsx`, `apps/admin/components/HoldingAccountPanel.tsx`. S
 - Patients has no Timings row. S
 - Long admin lists with no paging or search: Draft Lists (150), Review queue (130), Recurring bookings (393), AA fees "Every fee invoice" (830), the Billing monitor's payment-cycle table. M
 - Anaesthetist names sort three ways: by first name (the Conflicts filter, Recurring bookings, AA fees, web Availability and Who's free, mobile Availability), in roster order (the Recurring booking sheet, the Ledger select), by surname (Day view, Billing monitor, the move pickers). One rule, surname, everywhere. S
@@ -123,7 +122,7 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 ## UI consistency debt
 
 - Admin page frame follow-ups (`apps/admin/components/AdminPage.tsx`, `docs/admin-layout-audit.md`): the Day view keeps its own frame (its rail stays 412 at 1280, so the grid is 580 there). M
-- Older layout bugs seen in the frame work: on one anaesthetist's Ledger at 1280, $11,350.50 spills out of its tile; on Review detail at 1920 the table stops short of its card (the totals row has one cell too many). S
+- Older layout bugs seen in the frame work: on Review detail at 1920 the table stops short of its card (the totals row has one cell too many). S
 - Shared components still to build: `TextAction` 13px and quiet sizes, an `OptionChip` small size, `IconButton` ARIA passthrough and 22 and 48 sizes, a pill-outline `Button`, a `TotalsBlock` (AA fees `FeeInvoiceDetail`). `shared/ui/`. M
 - The one-component guardrail's allow-list still holds 58 files and 90 styled raw buttons; each component above retires entries. `apps/oneComponentPerJob.test.ts`. M
 - Token drift: 65 inline `=== 1 ?` plurals not using `plural`, 13 `'EEE d MMM'` literals, off-scale font sizes (12.5 x307, 11.5 x79, 13.5 x48), no token for the white-alpha on-ink ladder (41 sites). M
