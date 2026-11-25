@@ -1,35 +1,45 @@
 {
   "done": [
-    "45"
+    "45",
+    "46",
+    "47",
+    "48",
+    "49"
   ],
   "in_progress": [],
   "next": {
     "phases": [
-      "46",
-      "47"
+      "50",
+      "51"
     ],
-    "note": "Phase 45 is DONE and committed on master: the Contracts section, the Contract page, its cards, the price ranges table and the confirmed Disable. The two lanes start now, together, each in its own worktree: Lane A builds 46 then 49, Lane B builds 47 then 48 (docs/build-plan/LANES.md). 45 is tested with 46 to 49 at the end, from TEST-45-49.md. Master's Playwright suite carries 48 failures from before 45 (docs/BACKLOG.md): a lane's gate should not read them as its own."
+    "note": "Wave 1 (46 to 49) is joined on master: the Contracts work is together, ready for the owner's test from TEST-45-49.md. Wave 2 starts now: Lane A builds 50, then 52, then 53 (the People section, which merges Lane B's 51 at its start); Lane B builds 51 beside it. Lane C waits for Wave 3 (57)."
   },
   "guidance": {
     "as_of": "2026-11-25",
-    "headline": "Start Lane A and Lane B now: paste the Lane A prompt into one session and the Lane B prompt into another. Phase 45 built the Contracts section and a page for every Contract.",
-    "headline_sub": "Phase 45 is DONE and committed on master; no test after it (LANES.md). Lane A builds 46 then 49 and Lane B builds 47 then 48, each in its own worktree with a lighter gate per phase. The lane that finishes second joins them onto master, runs the full gate and one review over all four, and writes TEST-45-49.md: test 45 to 49 together on 5173 from that list.",
+    "headline": "The Contracts work (45 to 49) is on master, ready to test from TEST-45-49.md. Start Wave 2 now: paste the Lane A prompt and the Lane B prompt.",
+    "headline_sub": "Lane A builds the rate and tier card (50), making an anaesthetist inactive (52) and then the People section (53); Lane B builds Waiting for NHI on Intake (51) beside it. Wave 2 does not wait for your Contracts test: fixes land on master and reach the lanes at their next phase start. Wave 3 (54 to 57, all three lanes) follows 53; you test 50 to 57 once after it, from TEST-50-57.md.",
     "safe": {
-      "46": "Lane A's first phase: it depends only on 45, which is DONE; 45 must be committed on master first (it is).",
-      "47": "Lane B's first phase: it depends only on 45, which is DONE; 45 must be committed on master first (it is)."
+      "50": "Lane A's first Wave 2 phase: it needs only 45, on master.",
+      "51": "Lane B's Wave 2 phase: it needs nothing beyond what is on master."
     },
     "wait": {
-      "48": "Lane B, after 47 (in the same lane).",
-      "49": "Lane A, after 46 (in the same lane)."
+      "52": "Lane A, after 50 (49 is on master).",
+      "53": "Lane A, after 50 and 52; it merges Lane B's 51 at its start (blocked if 51 is not complete).",
+      "54": "Wave 3, Lane A: once 53 is on master.",
+      "55": "Wave 3, Lane B: once 53 is on master.",
+      "56": "Wave 3, Lane B, after 55.",
+      "57": "Wave 3, Lane C: once 53 is on master."
     },
-    "parallel": "Wave 1 of the lanes: Lane A 46 then 49, Lane B 47 then 48. Neither lane needs the other's work; they meet only in the Contract list screen, the Contracts route block and shared barrels, as LANES.md's ownership table says. Paste each lane's prompt again whenever its session ends: the same prompt starts, resumes and joins.",
+    "parallel": "Wave 2: Lane A 50, then 52, then 53; Lane B 51 beside it. Wave 3: Lane A 54, Lane B 55 then 56, Lane C 57. Paste each lane's prompt again whenever its session ends: the same prompt starts, resumes and joins, in every wave.",
     "lanes": [
       {
         "name": "Lane A",
         "where": "`AnaesthesiaAssociatesRFP-laneA` worktree, branch `lane/a`, ports 5273/5274/5280",
         "queue": [
-          "46",
-          "49"
+          "50",
+          "52",
+          "53",
+          "54"
         ],
         "prompt_file": "lanes/lane-a.prompt.md"
       },
@@ -37,10 +47,19 @@
         "name": "Lane B",
         "where": "`AnaesthesiaAssociatesRFP-laneB` worktree, branch `lane/b`, ports 5373/5374/5380",
         "queue": [
-          "47",
-          "48"
+          "51",
+          "55",
+          "56"
         ],
         "prompt_file": "lanes/lane-b.prompt.md"
+      },
+      {
+        "name": "Lane C",
+        "where": "`AnaesthesiaAssociatesRFP-laneC` worktree, branch `lane/c`, ports 5473/5474/5480",
+        "queue": [
+          "57"
+        ],
+        "prompt_file": "lanes/lane-c.prompt.md"
       }
     ]
   }

@@ -1,27 +1,27 @@
 {
  "generated": "2026-11-25",
- "catalogue_commit": "5f87781b1df9364ea9462c031b1b8b6ce68424a7",
+ "catalogue_commit": "67cba2ce0b3da7a08add0105b5805a384908adfe",
  "seeded": "64b3dff7aef0a2a290e6f6a50f42a28d3874c540",
  "method": "Per-epic Sonnet reviewers against six prototype maps, each review re-checked by an adversarial Sonnet verifier; plus a verified data-model delta and a verified reverse check.",
  "counts": {
-  "Contradicts": 1,
-  "Partial": 7,
+  "Contradicts": 8,
+  "Partial": 13,
   "Missing": 0,
   "OutOfScope": 0,
   "Matches": 3,
-  "Grouping": 1
+  "Grouping": 3
  },
- "in_scope": 12,
+ "in_scope": 27,
  "themes": [],
  "epics": [
   {
    "id": "EP-01",
    "title": "Schedule canvas, Slots and Lists",
    "status": "Agreed (4)",
-   "observations": "",
+   "observations": "EP-01 has only two items in scope here, and both gaps come from the 25 Nov People section update (Donald people section #7, #10, #11), not from Contracts phases 46 to 49. US-01.1.1's gap is really US-12.1.6. The canvas generator (domain/seed/canvas.ts) and anaesthetistCanvasDelta (store/slotActions.ts) already take an active flag. They need a last-day input and an active-from input instead of the trim-from-today in editAnaesthetist (store/mastersActions.ts), plus clock-driven trimming of Slots after a passed last day. US-01.3.6 is a card-edit pattern change (Edit, choose, Save, Cancel on one card shared with the rate per unit, audited per save) plus a tier filter on the People Anaesthetists list. It can be done standalone in AnaesthetistRecord.tsx and AnaesthetistsView.tsx, or after the shared record pattern is lifted out of the Contract page. The ordering, shuffle, pickers' filter and privacy logic are done and tested. No new demo trigger is needed. Demo beats that edit a tier by one click, or make an anaesthetist inactive immediately, would gain Edit and Save steps and a last-day choice.",
    "counts": {
-    "Contradicts": 0,
-    "Partial": 0,
+    "Contradicts": 1,
+    "Partial": 1,
     "Missing": 0,
     "OutOfScope": 0,
     "Matches": 0,
@@ -32,10 +32,10 @@
    "id": "EP-02",
    "title": "Booking intake and change handling",
    "status": "Verify (3)",
-   "observations": "",
+   "observations": "Only US-02.1.4 was graded, and the verification upholds the reviewer. The core behaviour (stubs, waitingForNhi assessment, Unmatched filter, no Booking created) is built; the one gap is the Waiting for an NHI tab on Intake, the same work as US-11.1.5. Build it once, in Lane C or the People work, not twice. Touch points: IntakeScreen.tsx (INTAKE_TABS and a new tab screen), router.tsx (new /admin/intake/waiting route plus a redirect from /admin/patients/waiting), the MatchingTable link, the receive-no-nhi-list trigger's screen, routes and indexPath, and the Patients badge (patientAttentionCount should drop waitingNhiRows). Of these, router.tsx and SideNav badge logic overlap the Contracts files, so keep those edits small or sequence them. The Patients nav entry moves into the People section, so the waiting view should move to Intake before or together with that move. Demo-guide references (03-demo-script.md lines ~27, ~105, ~215) change paths only; the sweep handles them.",
    "counts": {
     "Contradicts": 0,
-    "Partial": 0,
+    "Partial": 1,
     "Missing": 0,
     "OutOfScope": 0,
     "Matches": 0,
@@ -60,7 +60,7 @@
    "id": "EP-04",
    "title": "Contracts",
    "status": "Verify (3)",
-   "observations": "Structural: EP-04's shell is the main gap. Contracts, Parties and Funding tags are three Billing views inside Master data (masterViews.ts, ?view=contracts|parties|fundingTags) opening side panels. The catalogue now wants a Contracts section of the Admin app with its own nav entry, a page per Contract with separately saved cards, a New contract page, a grouped catalogue with an index, Parties and Funding tags as tabs, a Party page, and a Replace-from-a-date action (phases 45 to 49). The step rail (US-04.3.8), backstops (US-04.3.9) and funding-tag placement (US-04.2.17) already match, and their open questions (OQ-145, OQ-146) are consistent with current behaviour. Verification changed one detail: the price range table already shows each range's end inside its 'In force' cell (rangeSpanText), so only a To column, Change column, Procedures-priced count, newest-first order and the fold after three are missing. Domain support is largely in place: partyRefusal, billingDetailsRefusal, fundingTagRefusal, contractRefusal (incl. holderBillingDetails), nextAaCode, rangeInForce, rangeSpanText, proceduresStillOnContract (skips authorised Lists), contractDisabledOn, destinationOf, the contractDisabled review flag, and audit actions for Party, Contract, price range, specialty, funding tag and RVG group. New work: a stored replace link and date (Contract has no date field, so likely an audited entry or a new field with a PERSIST_VERSION bump), a replaceContract store action that copies the Contract, moves ticked Procedures with audit, and either leaves the old Contract active or disables it; a to-do or warning rule on the change date (nothing under domain/warnings/rules; WarningsToDo is the Day view surface); a late-disable listing from the stored change date (reuse proceduresStillOnContract); a disable-confirm step that lists Procedures from today; a similar-name hint; per-card save with one audit entry each (editContract today writes one whole-Contract contract.update); a Procedures-on-the-Contract list (upcoming and authorised at locked price; lockedAgainstContract covers only the authorised half); a read-only Party billing block; per-range Procedures-priced counts and the fold; Party counts by funding tag; grouping facets (holder, kind of holder, tag, surgeon incl. two-surgeon Contracts under both, destination, pricing kind) with an index. Demo triggers: the existing advanceClockToDate store action (clockActions.ts, used by the prepayment trigger) makes the 'reach the change date' button cheap; the demo-backdated-range trigger's `when` (registry.ts:1894, reads adminMasters.view and adminContracts.openContractId) must follow the new section, and the old ?view=contracts|parties|fundingTags URLs need redirects (parseMastersView in screens/masters/view.ts). Demo guide: S1 to S5 do not use the Contracts master (S1 Beat 3 and the phone beat use the unchanged shared rail), but docs/demo-guide/03-demo-script.md:113 links ?view=contracts&holder=PY-COS and demoGuideSync.test.ts must stay green; the catalogue screenshots show the retired dated model and are left to the owner's /sweep. All ten items are status Verify (3) and the late-disable rule, the to-do on the date and future-dated disable (OQ-144) are not yet discussed with AA.",
+   "observations": "US-04.1.2 is split across phases: 45 (Disable confirmed, built), 46 (New contract page, order, similar-name hint, deletes the Replaces section), 47 (grouping, index, facets; closes the story). The remaining gap, the inactive anaesthetist Contract cascade and offer-back, is covered by none of 46 to 49. It depends on US-12.1.6 (anaesthetist last day and inactive state) and so belongs with the People work (Lane C domain and store half). It reuses disableContract and enableContract with a system actor, and adds a Contract-restore sheet on the anaesthetist record. The sheet can wait until Contracts files settle. OQ-144 (future-dated disable) is unresolved; the story says a Contract has no dates, so disableFromISO stays 'today', and any answer allowing a future-dated disable would contradict the No dates criterion. Shared files (ContractsView, ContractEditSheet, screens/contracts) are Lane A/B territory. The recipes using contract-holder-filter and contract-tag-filter change in Phase 47 and are left to the owner's sweep.",
    "counts": {
     "Contradicts": 0,
     "Partial": 6,
@@ -158,38 +158,38 @@
    "id": "EP-11",
    "title": "Patients and billable parties",
    "status": "Verify (3)",
-   "observations": "",
+   "observations": "EP-11 is largely built and the gaps are structural, all from the 25 Nov People-section decision (note AR-70). I confirmed each reviewer finding against the code and found no false Matches; the one correction is the shared-note evidence in US-11.3.3.\n\n(1) Waiting for NHI moves to a tab on Intake (US-11.1.4 and US-11.1.5). The change is IntakeScreen.tsx INTAKE_TABS, a new Intake route entry, a redirect from /admin/patients/waiting, and WaitingNhiView moving out of patients/. It does not need the People section, so it fits a People lane in Wave 1. It touches shared files: router.tsx (one route) and AdminApp.tsx (the badge). Flag those against the Contracts lanes.\n\n(2) The Patients badge double-counts waiting rows today (patientAttentionCount adds waitingNhiRows, and the Intake badge matchingAttentionCount already counts every open row). Remove them from the patient count in the same change.\n\n(3) Needs follow-up (US-11.3.3) and the list filters, paging and defaults (US-11.3.1) are one piece of work. patientSearch needs Coming up (default), Needs follow-up and All filters with paging. Needs follow-up needs a one-row-per-patient selector with reasons, a People badge counting distinct patients (strong and mild warnings alike, no waiting rows), and the Clear/Done actions moved onto the patient's page. The selector and domain part could run in the People lane before the section move, but the screen work lands on the Patients screen that moves. Doing both together after the move is simpler.\n\n(4) The section move (US-11.1.1, US-11.3.1): the People nav entry, routes and redirects for /admin/patients/*, and the Patients tab of People. PatientRecord's content is already the intended pattern (NHI pill beside the name, Details rail with own audited Edit, Details differ card, invoices, alerts and follow-up log), so adopting the shared record page lifted from the Contract page is a refactor. It depends on that lift and on router.tsx, SideNav.tsx, AdminApp.tsx, apps/admin/routes.tsx and masterViews.ts, so it waits for Wave 1 to join.\n\n(5) Already matching: dedupe and dedupe-never-overwrites with held details, mandatory NHI, stubs on Lists in all three apps, one-address chase, Urgent marking within 3 days, follow-up log kinds with audited resend, shared notes (addSharedNote, all three apps), and invoices across anaesthetists with status and balance.\n\nDemo guide impact (left to the owner's sweep): S2 patient beat paths (/admin/patients/CQY9304), the Waiting for NHI beats ('Patients → Waiting for NHI', Receive list counts) and the NHI register refresh beat ('Patients → Search') change their paths and labels. Cross-epic links: US-13.4.1 (People section), US-02.6.1 (stubs), US-02.1.4 (unmatched rows), US-13.6.5 (surgeon office contacts), US-11.3.2 (balance warning).",
    "counts": {
-    "Contradicts": 0,
-    "Partial": 0,
+    "Contradicts": 3,
+    "Partial": 2,
     "Missing": 0,
     "OutOfScope": 0,
     "Matches": 0,
-    "Grouping": 0
+    "Grouping": 1
    }
   },
   {
    "id": "EP-12",
    "title": "Anaesthetist profile and reporting",
    "status": "Proposed (1)",
-   "observations": "",
+   "observations": "All three gradings are upheld after re-opening the code. FT-12.1 is a pure Grouping. US-12.1.4 and US-12.1.6 both Contradict, because two older readings are implemented: the tier saves on click, and active is an immediate boolean that trims Slots from today. Each is large (size L) on its own.\n\nLane placement. The domain, store and sign-in half of US-12.1.6 fits Lane C in Wave 1, because it touches none of the Contracts-owned files. That half covers:\n- a last-day date and reason on the Anaesthetist type;\n- audited make-inactive, clear and make-active actions;\n- Slots trimmed only after the last day;\n- sign-in checked against the master record;\n- own-Party Contracts disabled and offered back.\nThe new Anaesthetist fields need a PERSIST_VERSION bump and a seed review. Moving the tier into a card with the rate is also Lane C-safe as store and domain work. The per-card Edit/Save, the side panel and the People move itself need the record pattern lifted out of ContractCards.tsx and ProfileChrome.tsx, plus router/SideNav/masters redirect changes, so they wait for Wave 1 to join.\n\nInteractions to coordinate:\n- Disabling and re-enabling an anaesthetist's Contracts uses disableContract and enableContract from Phase 45. Phase 49 (Replace a Contract from a date) also changes Contract status, and the Contract identity there is linkedAnaesthetistId plus the holder Party.\n- The shared anaesthetistSession.ts is in the PWA closure and must stay pure (pwaPurity.test.ts). Reading active from the master record therefore needs a small injected check or a store-side hook, not an import from the store.\n- OQ-147 and OQ-83 are open, so departed-anaesthetist remittance access stays narrated.\n- The Anaesthetists list also needs search, tier filter and paging, which are absent today.\n\nDemo guide: S1 to S5 do not use make-inactive or the tier control, so the impact is additive (a new beat on the demo clock). The Dr Sharma record path in the guide changes with the People move, which is for the sweep.",
    "counts": {
-    "Contradicts": 0,
+    "Contradicts": 2,
     "Partial": 0,
     "Missing": 0,
     "OutOfScope": 0,
     "Matches": 0,
-    "Grouping": 0
+    "Grouping": 1
    }
   },
   {
    "id": "EP-13",
    "title": "Admin oversight and master data",
    "status": "Agreed (4)",
-   "observations": "Both items are the Master data side of Donald's 25 Nov Contracts-section decision. Closing them is mostly moving the Contracts, Parties and Funding tags views out of Master data into a new Contracts section (phases 45 and 48 of the brief), plus a Contracts-under-a-tag panel on the Funding tags tab, grouped by hospital with counts. Dependencies: US-04.1.7, US-04.1.8 and US-04.1.2 own the new section, Contract page, New contract page, grouped catalogue and Replace from a date. Structural touch points: the masterViews.ts registry and masterViews.test.ts catalogue-row mapping, redirects for old ?view=contracts, ?view=parties and ?view=fundingTags links, the Party 'active' link (?view=contracts&holder=), the demo-trigger contexts adminMasters.view and adminContracts.openContractId, the Seed load and Go-live entity sheets (contracts, priceRanges, parties, fundingTags), and the Admin SideNav and AdminApp sectionForPath. Funding tag behaviour (order, funder, audited changes, Suggested path via the rail) works today and must be preserved. No new demo trigger is needed; the existing demo-backdated-range trigger on Contracts should follow the move. The demo guide and screenshots (US-13.4.1 images admin-master-data-contracts*, -parties and -funding-tags; US-13.4.5 images) change path with the move, but they are left to the owner's /sweep and not edited per phase. I did not read the demo script, so I do not name the beats.",
+   "observations": "Structural: the People section (nav entry, routes and redirects for /admin/masters?view=anaesthetists|surgeons|specialties|surgeonGroups, the old profile routes and /admin/patients/*) and a shared record-page pattern lifted from the Contract page (EditableCard and useCardEdit in ContractCards.tsx) are the shared foundation for US-13.4.1, 13.4.4 and 13.6.2, so build them once. Surgeon-group removal touches the SurgeonGroup type, seed groups, the retire lifecycle (masterLifecycle), store/mutate and appStore, the Master data registry and sub-nav, catalogue examples (mastersExamples), audit labels and tests, plus a PERSIST_VERSION bump; the Party of kind surgeonGroup stays. The anaesthetist record and the surgeon page both edit through one sheet, so the per-card edit pattern applies to both, not just surgeons. Closed by Phases 46 to 49 (not on master): only Parties and Funding tags as real Contracts tabs (48); none of the People items. US-13.5.3 depends on US-12.1.6 (last day, active, sign-in refusal) and the open OQ-83 and OQ-147; the mobile sign-in is hard-wired to Dr Souter, so a demo path (a Last day field and a 'Try signing in on a date' control) is needed to show the inactive rule. US-13.6.2's side panel needs Contract links and List queries by surgeon, and the Surgeons list needs the shared Pager plus a search box and specialty and Active/Retired filters. OQ-143 (HPI CPN becoming required) and OQ-148 (whether AA keeps any surgeon-grouping record) are unresolved: the prototype already allows a blank HPI CPN, and the written no-group position is the requirement. Demo-guide impact (left to the owner's sweep): docs/demo-guide/03-demo-script.md line 111 lists Surgeons, Specialties and Surgeon groups as Master data views, and the S1 beat starts at the mobile sign-in, which must keep the Dr Souter demo account working.",
    "counts": {
-    "Contradicts": 1,
-    "Partial": 1,
+    "Contradicts": 2,
+    "Partial": 3,
     "Missing": 0,
     "OutOfScope": 0,
     "Matches": 0,
@@ -227,6 +227,119 @@
  ],
  "items": [
   {
+   "id": "US-01.1.1",
+   "verdict": "Partial",
+   "summary": "The AM and PM Slot per active anaesthetist per day, starting Free, with calendar and recurring bookings painted on top and no generated OOH Slot, is built; Donald's 25 Nov note (no Slots after a last day, Slots again from the day made active) is only approximated by an immediate trim or regenerate from today.",
+   "requirement_says": "The Scheduling Engine writes an AM and a PM Slot, free, for every active anaesthetist for every day across the rolling horizon even with nothing booked, then paints the anaesthetist's calendar and recurring bookings on top; the third OOH Slot is office-opened only; an anaesthetist made inactive has no Slots after their last day and Slots again from the day made active (US-12.1.6).",
+   "prototype_does": "domain/seed/canvas.ts generates AM+PM for active anaesthetists only, all Free, paints leave and series, then recurring bookings, with clashes becoming Draft Lists. The same path serves seed, clock roll-forward, new anaesthetist, reactivation and horizon extension. OOH is never generated. The Active/Inactive toggle in EditAnaesthetistSheet calls editAnaesthetist, which uses anaesthetistCanvasDelta from state.clock.todayISO. Inactive removes Slots from today and is refused if Lists exist from today; reactivation regenerates from today. There is no last-day date, reason, clearable or scheduled inactivity, and no date-driven trimming.",
+   "missing_or_wrong": [
+    "No 'last day': Slots are removed from today the moment Inactive is saved, rather than kept until a chosen last day",
+    "The refusal ('N Lists from today. Reassign them first.') is keyed to today, not to Lists after the last day, and the office is not shown which Lists to reassign",
+    "No way to clear a future last day, and no reason captured (US-12.1.6)",
+    "Reactivation always regenerates from today, not from a chosen 'active again' date",
+    "Inactive status is not date-driven, so rolling the demo clock past a last day would not trim Slots"
+   ],
+   "evidence": [
+    "aa-prototype/src/domain/seed/canvas.ts:116 (active filter), :122-137 (AM/PM, default Free), :140-175 (leave, series, recurring painted, clash handling)",
+    "aa-prototype/src/store/slotActions.ts:970-1001 (anaesthetistCanvasDelta: active flag, removes Slots from fromISO)",
+    "aa-prototype/src/store/mastersActions.ts:369-410 (canvas follows active from todayISO; 'listsAhead' refusal; canvas.trim and canvas.generate audit)",
+    "aa-prototype/src/apps/admin/flows/EditAnaesthetistSheet.tsx:128-130 (Active/Inactive Segmented, 'Their sessions from today are removed.')",
+    "searched: lastDay|inactiveFrom in aa-prototype/src -> only unrelated AdminApp date ref and a mobile calendar state"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "domain",
+    "store",
+    "admin",
+    "seed"
+   ],
+   "size": "M",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-opened canvas.ts, slotActions.ts, mastersActions.ts and EditAnaesthetistSheet.tsx and confirmed the reviewer's evidence and its absence searches. Partial, not Contradicts: removing Slots from today is a degenerate case of 'no Slots after the last day', so nothing implemented is wrong, only the last-day and reactivation-date behaviour is missing. The gap is really US-12.1.6, which is where the work should be planned, and it can run as a Lane C style phase because it touches only domain, store and EditAnaesthetistSheet files. Size M is reasonable once the last-day and active-from inputs and the clock-driven trim are included.",
+   "epic": "EP-01",
+   "title": "Two Slots per anaesthetist per day",
+   "type": "story",
+   "status": "Agreed (4)",
+   "open_questions": [],
+   "file": "stories/US-01.1.1.md"
+  },
+  {
+   "id": "US-01.3.6",
+   "verdict": "Contradicts",
+   "summary": "Tiers 1 to 4 (default 4), office-only privacy, tier then seeded-shuffle ordering and a 'Filter by tier' control on the finder and Draft List pickers are built. But the tier saves on a single click on its own card, which the story now forbids, and the Anaesthetists list in People has no tier filter.",
+   "requirement_says": "The tier sits with the rate per unit on one card on the anaesthetist's page, changed by Edit, choose, Save (Cancel leaves it; each save is a separate audited change; a single click never saves). Available anaesthetists are ordered by tier then shuffled within a tier. Admin can filter both the available anaesthetists and the Anaesthetists list by tier. The default is Tier 4, and anaesthetists never see tiers or get tier-ordered colleagues.",
+   "prototype_does": "AnaesthetistRecord.tsx has a separate 'Priority tier' card whose SlidingSegmentedControl onSelect calls changeTier, which calls setPriorityTier at once (audited, default 4 stored by absence). The rate per unit sits in the separate Profile card, edited via the EditAnaesthetistSheet. The candidate pickers (AnaesthetistCandidates, DraftListCandidates) order by tier, then pairing, then a seeded shuffle, with a Filter by tier control. Web and mobile anaesthetist views are name-ordered with no tiers. AnaesthetistsView has a Tier pill column but no filter.",
+   "missing_or_wrong": [
+    "WRONG: the tier is saved by a single click (SlidingSegmentedControl onSelect -> setPriorityTier); the requirement is Edit, choose, Save, Cancel",
+    "WRONG: the tier is its own card, not on one card with the rate per unit",
+    "MISSING: a tier filter on the Anaesthetists list in People (only a Tier pill column exists)",
+    "MINOR: the shared Edit/Save/Cancel card pattern used by the rest of the page does not exist yet; it arrives with the People section record pattern lifted out of the Contract page"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/AnaesthetistRecord.tsx:31-37 (changeTier saves immediately), :54-59 (separate 'Priority tier' card), :61-70 (rate per unit in the Profile card)",
+    "aa-prototype/src/store/officePrivate.ts:132-156 (setPriorityTier, audit)",
+    "aa-prototype/src/domain/pairingPreferences.ts:69-90, :284-300 (tier order, shuffle keyed on requestKey, tierFilter)",
+    "aa-prototype/src/apps/admin/components/pairing/AnaesthetistCandidates.tsx and DraftListCandidates.tsx (Filter by tier)",
+    "aa-prototype/src/apps/admin/screens/masters/AnaesthetistsView.tsx:30, :77 (Tier column pill only, no filter control)",
+    "searched: tierFilter|Filter by tier -> only the pairing pickers, not AnaesthetistsView"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin"
+   ],
+   "size": "M",
+   "confidence": "high",
+   "verify_outcome": "corrected",
+   "original_verdict": "Contradicts",
+   "verify_note": "Re-opened AnaesthetistRecord.tsx, AnaesthetistsView.tsx and EditAnaesthetistSheet.tsx and upheld the Contradicts verdict and all four gaps. Only the size changed, from S to M. The requirement puts the tier and the rate per unit on one card changed by Edit, choose, Save, so the Profile card's rate editing (now in a sheet) also has to move into that card, with the tier and rate saved as separate audited changes. This is more than a one-hour tweak, and it overlaps the People record pattern. It stays in admin screen files that Contracts phases 45 to 49 do not touch, so it is still a Lane C candidate.",
+   "epic": "EP-01",
+   "title": "Anaesthetist priority tiers for assignment",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-01.3.6.md"
+  },
+  {
+   "id": "US-02.1.4",
+   "verdict": "Partial",
+   "summary": "Unmatched queue, no-NHI waiting (no Booking created) and the stub on the List all work per both acceptance criteria; the one gap is that rows waiting for an NHI are not shown on Intake as their own tab beside the unmatched rows (the view lives at /admin/patients/waiting under Patients), which the 25 Nov people-section decision (#9) now requires.",
+   "requirement_says": "Unmatched rows stay in a queue for manual intervention. An incoming booking with no NHI waits at intake (no Booking created), shown on Intake beside the unmatched rows as a row waiting for an NHI, with a stub standing in its place on its List (seen by anaesthetist and office) until the office adds the NHI. Nothing is silently dropped.",
+   "prototype_does": "Intake > Matching has Open / Unmatched / Decided filters; the Unmatched filter includes no-NHI rows (store/matchingSelectors.ts importRowViews, ~135-150, 'rows waiting for an NHI included'). A no-NHI row is assessed waitingForNhi with queue 'unmatched' and creates no Booking (domain/intake/matching.ts:~525-535); placeStubsForRows (store/stubSettle.ts:~31-65) puts a stub on its List, drawn in the admin List table, web List detail and mobile List detail (ListDetailScreen.tsx:125); adding the NHI resolves it into a Booking. The dedicated Waiting for NHI view (chase address, urgency, Add NHI) is only at /admin/patients/waiting under the Patients nav item. Matching rows link across to it (MatchingTable.tsx:120). INTAKE_TABS (IntakeScreen.tsx:21-26) has only Matching, PDF lists, Data quality, Validators. Intake's badge (matchingAttentionCount, all open rows) already includes waiting rows; the Patients badge also counts them (patientAttentionCount adds waitingNhiRows).",
+   "missing_or_wrong": [
+    "Waiting for an NHI is not a tab on Intake (INTAKE_TABS has no such tab); the view exists only at /admin/patients/waiting, so waiting rows are not 'on Intake beside the unmatched rows' as now written. The tab itself is specified mainly by US-11.1.5 and is the same build.",
+    "MatchingTable's 'Waiting for NHI' TextAction (to /admin/patients/waiting, line 120) and the receive-no-nhi-list demo trigger (screen 'Admin · Patients · Waiting for NHI', routes and indexPath /admin/patients/waiting, registry.ts:~2364-2380) point at the Patients path and must repoint to the Intake tab.",
+    "patientAttentionCount still adds waitingNhiRows, so the Patients badge double counts rows that become an Intake tab; it should drop them (Intake's count already includes them)."
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/IntakeScreen.tsx:21-26 (INTAKE_TABS, no waiting tab)",
+    "aa-prototype/src/apps/admin/matching/MatchingTable.tsx:120 (link to /admin/patients/waiting)",
+    "aa-prototype/src/store/matchingSelectors.ts:~135-150 (importRowViews), ~155 (matchingAttentionCount)",
+    "aa-prototype/src/store/patientSelectors.ts:345-390 (waitingNhiRows, patientAttentionCount)",
+    "aa-prototype/src/domain/intake/matching.ts:~525-535 (waitingForNhi, queue 'unmatched')",
+    "aa-prototype/src/store/stubSettle.ts:~31-65",
+    "aa-prototype/src/apps/mobile/screens/ListDetailScreen.tsx:125",
+    "aa-prototype/src/shared/demoTriggers/registry.ts:2364-2380"
+   ],
+   "demo_trigger": "Existing: 'Receive list with a missing NHI' (receive-no-nhi-list) and 'Office adds the NHI' (pwa-office-adds-nhi). Repoint receive-no-nhi-list's screen, routes and indexPath to the Intake waiting tab.",
+   "surfaces": [
+    "admin",
+    "demo-guide"
+   ],
+   "size": "S",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-read US-02.1.4 and US-11.1.5 and re-opened IntakeScreen.tsx (no waiting tab), MatchingTable.tsx:120 (link to /admin/patients/waiting), matchingSelectors.ts (Unmatched filter includes waiting rows), matching.ts (no-NHI row waits, no Booking), stubSettle.ts (stubs placed), the stub renderers, patientSelectors.ts (double count) and the trigger registry. All the reviewer's points hold. Both of US-02.1.4's own acceptance criteria (No NHI; Stub on the List) are met. Only the description's 'shown on Intake beside the unmatched rows' is unmet, so Partial is right (nothing implemented is wrong). Small extra: waitingNhiRows excludes hospital cancellations with no NHI, which stay on Matching for Reject; US-11.1.5 should be checked against this when the tab is built.",
+   "epic": "EP-02",
+   "title": "Unmatched queue",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-02.1.4.md"
+  },
+  {
    "id": "FT-04.1",
    "verdict": "Grouping",
    "summary": "Feature body only introduces the Contract catalogue section (Parties, Contracts, a page each, audited) and defers every rule to its stories; the structural gaps are graded under US-04.1.2, .5, .7 and .8.",
@@ -255,36 +368,42 @@
   {
    "id": "US-04.1.2",
    "verdict": "Partial",
-   "summary": "Create, edit in place, Active/Disabled, search, status filter, fixed holder/prepaid/pricing kind, no dates and the late disabled-Procedure flag all exist, but the list cannot be grouped or indexed, a new Contract is a side panel rather than an ordered page with a similar-name hint, and Disable has no confirm step listing Procedures from today.",
-   "requirement_says": "In the Contracts section the office creates Contracts on their own page in dependency order with a similar-name hint, edits them, and disables only after a confirm that lists Procedures dated from today; the list is searched, filtered by status and grouped by holder, kind of holder, funding tag, surgeon (under both), invoice destination or pricing kind, with an index of group counts.",
-   "prototype_does": "ContractsView lists Contracts under holder headings with a search box (name, holder reference, AA code, RVG code), Active/Disabled/All pills and Holder and Funding tag selects. 'New contract' and row click open a side ContractPanel. Disable runs at once. After a disable the panel shows the disable day (from the audit) and lists Procedures from that day. Review flags a not-yet-authorised Procedure dated on or after the disable day. Holder, prepaid and pricing kind are read-only after save, and a Contract has no dates.",
+   "summary": "Active/Disabled lifecycle, confirmed Disable, no dates, Disabled review flag and fixed-after-creation rules match; the grouped list with index, the New contract page (order and similar-name hint) and the inactive-anaesthetist Contract cascade are missing.",
+   "requirement_says": "Admins create, edit and disable Contracts in the Contracts section. The list is searched (name, holder ref, AA code), shows Active by default (Disabled/all on request), is groupable six ways (holder, kind of holder, funding tag, surgeon with a two-surgeon Contract under both, where the invoice goes, pricing kind) with a group index. A new Contract is a page in a set order (holder and who it bills, pricing, where offered, then name/codes/invoice wording) with a similar-name hint. Disable is confirmed and lists Procedures from today; nothing moves; the Contract has no dates; holder, prepaid and pricing kind are fixed; an anaesthetist made inactive has their own Contracts disabled after their last day and offered back ticked on reactivation.",
+   "prototype_does": "Contracts section at /admin/contracts with search (name, holder ref, AA code, default RVG), Active (default)/Disabled/All pills, a Holder select and a Funding tag select, rows under holder headings only; a row opens the Contract page. New contract is a create-only side panel (ContractPanel) whose sections run Contract (name), Invoice and codes, Holder and who it bills, Where it is offered, Pricing, then a warning-only 'Replaces' section; no similar-name hint. Who it bills is forced to payer for AA or anaesthetist holders and prepaid. Disable opens a ConfirmSheet listing Procedures still on it from today; nothing moves; Make active is immediate. Disabled Contracts leave the step rail (contractRail.ts:112). Contract has status only, no dates. contractDisabled review flag uses the disable day from audit, never a block. holderFixed, prepaidFixed and pricingKindFixed refusals exist. An anaesthetist's active flag only affects sessions/canvas (mastersActions.ts:369-375); no Contract cascade, no last day field.",
    "missing_or_wrong": [
-    "No group-by control (holder, kind of holder, funding tag incl. No tag, surgeon incl. a two-surgeon Contract under both, invoice destination, pricing kind) and no index of groups with counts; the list is hard-wired to holder headings",
-    "Contracts is not its own Admin section; it is still Master data > Billing view",
-    "New Contract is a side panel, not a page: no ordered flow (holder and who it bills, then pricing, then where offered, then name/codes/invoice wording) and no similar-name list of the holder's existing Contracts (grep 'similar' in ContractEditSheet.tsx, ContractsView.tsx, domain/billing/contracts.ts finds nothing); the only preview is the one-line 'Offered under' hint",
-    "Disable has no confirmation step and does not list Procedures dated from today before confirming; toggleStatus disables immediately and lists afterwards",
-    "The legacy warning-only 'Replaces' picker on create takes the place of the dated-change action (US-04.1.8), and the header copy still says 'any other dated change is a new Contract'",
-    "Filter lacks kind-of-holder, surgeon, destination and pricing-kind facets (only holder and funding tag)"
+    "No Group-by control: only holder headings. No grouping by kind of holder, funding tag, surgeon (two-surgeon Contract under both), where the invoice goes or pricing kind, and no group index with counts (Grouped and Two surgeons criteria unmet; Phase 47)",
+    "Only Holder and Funding tag filters; no surgeon, destination or pricing-kind facets (Phase 47)",
+    "New Contract is a side panel, not its own page, and has no rail showing where it will appear in step-rail terms beyond a one-line placement hint, and no similar-name hint listing the holder's like-named Contracts (Similar name criterion unmet; Phase 46)",
+    "Field order differs from the story: the panel starts with name, codes and invoice wording, then holder and who it bills, then Where it is offered BEFORE Pricing; the story says holder and who it bills, then pricing, then where offered, then name, codes and invoice wording (New contract order; the forced-payer rule itself works; Phase 46)",
+    "The create panel still carries the older warning-only 'Replaces' section, which stores nothing (Phase 46 deletes it; replacement is US-04.1.8 in Phase 49)",
+    "Inactive anaesthetist: nothing disables their own Party Contracts linked to them once their last day passes, the anaesthetist has no last day, and reactivating offers nothing back ticked with prices (Inactive anaesthetist criterion unmet; not in Phases 46 to 49; belongs to the new People work and US-12.1.6)"
    ],
    "evidence": [
-    "aa-prototype/src/apps/admin/screens/masters/ContractsView.tsx:98-102 (groups by holderId only), :88-96 (filters status, holder, tag only), :124 (sub copy)",
-    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx:259-263 (toggleStatus disables at once), :136-144 (stillOnDisabled from audit day), :327-336 (disabled note)",
-    "aa-prototype/src/domain/billing/reviewFlags.ts:142-148 (contractDisabled flag: day <= list date, not AUTHORISED; satisfies the Disabled flag criterion)",
-    "aa-prototype/src/domain/billing/contracts.ts:264 (contractRefusal fixes holder, prepaid, pricing kind; satisfies Fixed after creation)",
-    "aa-prototype/src/store/contractActions.ts:158,274,320",
-    "searched: similar|groupBy|group by in ContractsView.tsx, ContractEditSheet.tsx, contracts.ts, contractChanges.ts -> none"
+    "aa-prototype/src/apps/admin/screens/contracts/ContractsView.tsx:57-108,150-170 (holder headings via groups map on holderId; status pills, holder and tag filters only)",
+    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx:206-330 (section order Contract, Invoice and codes, Holder and who it bills, Where it is offered, Pricing, Replaces; no similar logic)",
+    "searched: similar|lastDay|last day|offerBack|restore in apps/admin, store, domain -> no Contract-related hit",
+    "aa-prototype/src/store/contractActions.ts:321-327 (disableContract, enableContract set status only)",
+    "aa-prototype/src/apps/admin/screens/contracts/ContractDisable.tsx:19-70 (ConfirmSheet with StillOnNotice from disableFromISO, today)",
+    "aa-prototype/src/domain/billing/contractRail.ts:112 (Disabled Contract not offered on the rail)",
+    "aa-prototype/src/domain/billing/contracts.ts:146-148,270 (billsPayerOnly; system Contract never disabled)",
+    "aa-prototype/src/store/mastersActions.ts:248,368-375 (anaesthetist active flag affects canvas/lists only; no Contract call; disableContract callers are only ContractDisable)",
+    "aa-prototype/src/domain/types.ts:441-452 (anaesthetist active flag, no last day)",
+    "docs/build-plan/phases/phase-46-new-contract-page.md:19,58-67 and phase-47-grouped-contract-catalogue.md:4,96 (close the page, order, similar name and grouping gaps)"
    ],
-   "demo_trigger": "",
+   "demo_trigger": "Inactive-anaesthetist cascade: on the Admin anaesthetist record (People section once built), a 'Make last day passed' control that sets their last day to today and disables the Contracts held by their own Party and linked to them, so the Contracts list then shows them under Disabled; making them active again opens an offer-back sheet with each Contract ticked and showing its price, and Confirm makes them Active.",
    "surfaces": [
     "admin",
     "domain",
+    "store",
+    "seed",
     "demo-guide"
    ],
    "size": "L",
    "confidence": "high",
    "verify_outcome": "upheld",
    "original_verdict": "Partial",
-   "verify_note": "Re-opened ContractsView and ContractEditSheet: confirmed no grouping, no similar-name hint, no disable confirm. Confirmed these acceptance criteria already hold: Active filter, No dates, Fixed after creation and Disabled flag (contractDisabled rule). No behaviour is wrong against the text, so Partial rather than Contradicts. Added the stale header copy point.",
+   "verify_note": "Re-opened the story, OQ-144, ContractsView, ContractEditSheet, ContractDisable, contractActions, contractRail, mastersActions and the phase 46/47 docs. Partial stands: nothing implemented contradicts the text (Disable confirm, no dates, flag, fixed rules, rail hiding all verified). Added a missed point: the New contract form order (name/codes first, Where offered before Pricing) does not follow the story's order, though Phase 46 fixes it. Confirmed no Contract cascade on anaesthetist inactive and no last day field. OQ-144 does not change the grade.",
    "epic": "EP-04",
    "title": "Create, edit and disable Contracts",
    "type": "story",
@@ -585,42 +704,424 @@
    "file": "stories/US-04.3.9.md"
   },
   {
-   "id": "US-13.4.1",
-   "verdict": "Contradicts",
-   "summary": "Every master is maintained and audited as listed, but Contracts, Parties and Funding tags are still Master data views (group Billing), where the story now puts them on their own tabs of a separate Contracts section.",
-   "requirement_says": "Reference data is kept in two places. Master data holds hospitals, surgeons and groups, anaesthetists, availability statuses, recurring bookings, the public and hospital holiday calendars, RVG codes and groups, modifier codes and specialties. A Contracts section holds Contracts (with price ranges), Parties and funding tags, each on its own tab. Billing exception: Contract changes are audited edits, fixed prices change by price range, and Procedures keep their stored pricing so issued invoices never change.",
-   "prototype_does": "Master data (/admin/masters?view=) has a grouped sub-nav registry of 20 views. Contracts, Parties and Funding tags are three views under its Billing group, and masterViews.test.ts maps the catalogue rows for Contracts, Parties and funding tags to them. There is no Contracts nav item, section or route. Contract edits are audited (contract.update, price-range audits) and locked prices protect issued invoices, so the Billing exception behaves correctly. Every other listed master can be added or edited, and retired where it applies.",
+   "id": "FT-11.1",
+   "verdict": "Grouping",
+   "summary": "Feature body only states the one-record-per-NHI theme and that the page sits among the People section; the rules and acceptance criteria are in US-11.1.1, 11.1.4 and 11.1.5.",
+   "requirement_says": "Each patient has exactly one record keyed by NHI, with a page of their own that the office finds among the people it keeps records about.",
+   "prototype_does": "One record per NHI and a page per patient at /admin/patients/:nhi, reached from a separate Patients nav section, not a People section.",
+   "missing_or_wrong": [],
+   "evidence": [
+    "aa-prototype/src/store/intake.ts:79-141",
+    "aa-prototype/src/apps/admin/screens/patients/PatientRecord.tsx:48-85",
+    "aa-prototype/src/apps/admin/components/SideNav.tsx:83"
+   ],
+   "demo_trigger": "",
+   "surfaces": [],
+   "size": "None",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Grouping",
+   "verify_note": "Re-read FT-11.1: two sentences, no acceptance criteria, no rule beyond what US-11.1.1 states in full. Placement under People is graded on the stories.",
+   "epic": "EP-11",
+   "title": "Patient record",
+   "type": "feature",
+   "status": "Agreed (4)",
+   "open_questions": [],
+   "file": "stories/FT-11.1.md"
+  },
+  {
+   "id": "US-11.1.1",
+   "verdict": "Partial",
+   "summary": "Dedupe on NHI, NHI beside the name with no internal id, Details side panel with own audited Edit, and held differing details all work; the page is reached from the separate Patients section, not a Patients tab of People, and the shared record-page pattern it should follow does not exist yet.",
+   "requirement_says": "One record per NHI matched on NHI even when name or address changed. The patient page is opened from the Patients tab and keyed by NHI. The NHI sits beside the name and no internal id shows. Details are in a side panel with their own Edit, saved as one audited change. The main column holds invoices, alerts and the follow-up log. Differing incoming details are held, never written over the record, and the office keeps the record or uses the new details.",
+   "prototype_does": "upsertPatient matches on the normalised NHI and holds differences as pendingDetails. PatientRecord shows an 'NHI <nhi>' pill beside the name in the AdminPage aside slot and uses no internal id for display. The rail has a Details differ card (keep/use incoming, audited resolvePatientDetails) and a Details card (Edit via audited editPatient, 'patient.update'). The main column holds balance tiles, warnings, invoices, bookings and the follow-up log. Back link reads 'Patients' to /admin/patients.",
    "missing_or_wrong": [
-    "Contracts, Parties and Funding tags sit in Master data, contradicting the two-places split.",
-    "No Contracts section: no /admin/contracts route, no side-nav item, no tabs. masterViews.ts still lists parties, fundingTags and contracts in group Billing with their catalogueRows, and masterViews.test.ts maps those rows to Master data.",
-    "Old ?view=contracts, ?view=parties and ?view=fundingTags links would need redirecting. The same goes for the Party 'active' link (?view=contracts&holder=), the demo-trigger contexts adminMasters.view and adminContracts.openContractId, and the Seed load and Go-live entity sheets that present contracts, priceRanges, parties and fundingTags as Master data.",
-    "Master data would keep the Billing group only for RVG groups and Modifiers once the three views move out.",
-    "The title still says reference tables. That is an owner decision recorded in the story Notes, not a prototype gap."
+    "The page is not opened from a Patients tab of a People section. Patients is its own side-nav section (SideNav 'patients', /admin/patients) and the back link says 'Patients'.",
+    "The 'same pattern as every other record's page' is not a shared component yet: PatientRecord is its own AdminPage composition (aside pill, rail), because the shared record pattern lifted from the Contract page does not exist. Its content is already the intended shape, so this is a refactor, not new behaviour.",
+    "Routes and redirects for /admin/patients/:nhi will need to move under People (the section-move wave)."
    ],
    "evidence": [
-    "aa-prototype/src/apps/admin/screens/masters/masterViews.ts:41-43 (parties, fundingTags, contracts under group Billing in MASTER_VIEWS)",
-    "aa-prototype/src/apps/admin/screens/masters/masterViews.ts:14 (MASTER_VIEW_GROUPS includes Billing)",
-    "searched: contracts in aa-prototype/src/router.tsx and apps/admin/components/SideNav.tsx: no Contracts route or nav item (router only imports admin routes; masters view carries contracts)",
-    "docs/build-plan/analysis/prototype-map-admin.md:3 and :121 (no Contracts section, route or tabs exist)",
-    "aa-prototype/src/apps/admin/screens/masters/FundingTagsView.tsx:1-30 (Funding tags as a Master data view)"
+    "aa-prototype/src/store/intake.ts:79-141 (dedupe on NHI, pendingDetails)",
+    "aa-prototype/src/store/intake.ts:159-200 (resolvePatientDetails, 'patient.detailsResolved')",
+    "aa-prototype/src/store/intake.ts:214-280 (editPatient, 'patient.update')",
+    "aa-prototype/src/apps/admin/screens/patients/PatientRecord.tsx:48-85, 413-445",
+    "aa-prototype/src/apps/admin/components/SideNav.tsx:83"
    ],
    "demo_trigger": "",
    "surfaces": [
     "admin",
-    "shell",
+    "demo-guide"
+   ],
+   "size": "S",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-opened PatientRecord, intake.ts and SideNav. Behaviour and acceptance criteria 1, 3 and 4 hold, and criterion 2 holds in substance (NHI pill beside the name, no internal id). Only the Patients-tab entry point and the shared record pattern are missing. The reviewer's 'bespoke layout' point is slightly overstated because the content and slots already match the intended pattern, and I softened it. Partial stays, since nothing implemented is wrong and the move is a later wave.",
+   "epic": "EP-11",
+   "title": "Patient record keyed on NHI",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-11.1.1.md"
+  },
+  {
+   "id": "US-11.1.4",
+   "verdict": "Partial",
+   "summary": "Mandatory NHI, no Booking or patient from a no-NHI row, stub on the List, and Add NHI then match are all built; only the placement differs: the waiting rows are a Patients tab, not a tab on Intake beside the unmatched rows.",
+   "requirement_says": "Every patient has an NHI and a Booking cannot be saved without one. An incoming booking with no NHI waits at intake, shown with the rows waiting for an NHI beside the unmatched rows. No Booking or patient is created and a stub stands in its place on its List. Adding the NHI matches it into a Booking.",
+   "prototype_does": "Booking save, patient create and patient edit refuse a blank NHI. No-NHI rows are assessed waitingForNhi, stay open and visible in Intake > Matching with the reason 'Waiting for an NHI', create no Booking or patient, and stand as stubs on Lists. addNhiToWaitingRow resolves the stub (matched or new record, Booking made). The dedicated waiting list is Patients > Waiting for NHI at /admin/patients/waiting.",
+   "missing_or_wrong": [
+    "The rows waiting for an NHI are not shown on Intake as their own tab beside the unmatched rows. INTAKE_TABS is Matching, PDF lists, Data quality and Validators, and the dedicated view sits under Patients. They do also appear inside the Matching queue with a 'Waiting for an NHI' reason, so the gap is the missing tab, not missing visibility."
+   ],
+   "evidence": [
+    "aa-prototype/src/store/bookingSaveActions.ts:52,360",
+    "aa-prototype/src/domain/intake/matching.ts:532,597-600",
+    "aa-prototype/src/store/patientActions.ts:137-168 (addNhiToWaitingRow)",
+    "aa-prototype/src/apps/admin/matching/RowPanel.tsx:169-175,350,514",
+    "aa-prototype/src/apps/admin/screens/IntakeScreen.tsx:28-33",
+    "aa-prototype/src/apps/admin/screens/patients/PatientsScreen.tsx:41-45"
+   ],
+   "demo_trigger": "Existing: the Receive list / Forte Health demo control on Waiting for NHI (adds two no-NHI rows). It moves with the view to the new Intake tab.",
+   "surfaces": [
+    "admin",
+    "demo-guide"
+   ],
+   "size": "S",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-checked the matching queue, patientActions and IntakeScreen. All four acceptance criteria hold behaviourally. The waiting rows are also visible on Matching, which the reviewer mentioned, so Partial rather than Contradicts is right. Placement is the only gap, and it overlaps US-11.1.5's fix (one change).",
+   "epic": "EP-11",
+   "title": "Patient without NHI",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-11.1.4.md"
+  },
+  {
+   "id": "US-11.1.5",
+   "verdict": "Contradicts",
+   "summary": "All row behaviour exists (patient as received, one address to chase, Urgent when close, Add NHI matches the single record, stub on the List), but the view is Patients > Waiting for NHI instead of an Intake tab, and the Patients badge counts the waiting rows that the Intake badge already counts.",
+   "requirement_says": "Rows waiting for an NHI show on their own tab on Intake beside the unmatched rows, and Intake's attention count includes them and drops when the NHI is added. Each row shows the patient as received, the List or date, and one address to chase (the List's sender, else the surgeon's first office contact, with others offered to switch to). Close rows are marked urgent. Adding the NHI matches the row to the single record and it leaves the view. A stub stands on the List.",
+   "prototype_does": "WaitingNhiView at /admin/patients/waiting lists open rows with no NHI (waitingNhiRows) with patient as received, List, stub chip, one address (officeAddressFor: List sender first, else the surgeon's office contacts; others offered), days to go with an Urgent pill within 3 days, last requested, an audited mailto request, and AddNhiSheet -> addNhiToWaitingRow. The Intake badge is matchingAttentionCount (all open rows, which includes waiting rows). The Patients badge (patientAttentionCount) adds waitingNhiRows again.",
+   "missing_or_wrong": [
+    "No Waiting for NHI tab on Intake (INTAKE_TABS lacks it). The view and its tab count live under Patients.",
+    "Waiting rows are counted in both the Intake badge (all open rows) and the Patients badge (waiting + warnings + reminders + pending details). Once the view moves, the patient count must stop including them.",
+    "The old /admin/patients/waiting route needs a redirect to the Intake tab, and WaitingNhiView's caption and tab copy need re-pointing.",
+    "Minor edge: with no stub standing (a row with no List yet), addNhiToWaitingRow only corrects the row and leaves a decision on Matching ('Choose a decision for this row'), so the row does not become a Booking and the Intake count does not drop until it is decided. The acceptance criterion assumes the row is matched when the NHI is added."
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/IntakeScreen.tsx:28-33",
+    "aa-prototype/src/apps/admin/screens/patients/WaitingNhiView.tsx:1-80",
+    "aa-prototype/src/apps/admin/screens/patients/PatientsScreen.tsx:41-45,95",
+    "aa-prototype/src/store/patientSelectors.ts:324-358,383-390",
+    "aa-prototype/src/store/patientActions.ts:137-168,205-241",
+    "aa-prototype/src/domain/surgeonContacts.ts:66-89",
+    "aa-prototype/src/domain/patients/waitingNhi.ts:10-16",
+    "aa-prototype/src/store/matchingSelectors.ts:161-163",
+    "aa-prototype/src/apps/admin/AdminApp.tsx:221-225"
+   ],
+   "demo_trigger": "Existing: Receive list (Forte Health, two no-NHI bookings) and Add NHI, moved to the new Intake tab. For urgency, the existing demo clock control (advance to within 3 days of the row's date).",
+   "surfaces": [
+    "admin",
+    "store",
     "demo-guide"
    ],
    "size": "M",
    "confidence": "high",
    "verify_outcome": "upheld",
    "original_verdict": "Contradicts",
-   "verify_note": "Re-read the story, the 25 Nov change log, masterViews.ts and FundingTagsView.tsx. The registry still places the three views in Master data (Billing group), and no Contracts route or nav item exists. Contradicts rather than Partial holds, since the implemented placement is the old reading the catalogue has changed. Billing exception re-checked: audited edits and locked prices present. Corrected the registry line refs and added shell to surfaces (side nav and route live in the shell/app frame, plus demo-trigger context names). Raised confidence to high. The move itself is M, and the new Contract page, grouped catalogue and Replace are owned by US-04.1.7, US-04.1.8 and US-04.1.2.",
+   "verify_note": "Re-opened IntakeScreen, AdminApp badge wiring, waitingNhiRows and patientAttentionCount. Confirmed the view lives under Patients and the double count. Contradicts holds because the prototype puts the view in the place the story now rules out and miscounts it. Added the no-stub edge case in addNhiToWaitingRow. Parallel-lane note: this touches IntakeScreen.tsx, a new Intake route in router.tsx and the badge in AdminApp.tsx, so the shared-file touch has to be coordinated with Contracts lanes A and B.",
+   "epic": "EP-11",
+   "title": "Intake rows waiting for an NHI",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-11.1.5.md"
+  },
+  {
+   "id": "US-11.3.1",
+   "verdict": "Contradicts",
+   "summary": "Name, NHI and DOB search and per-patient invoices across every anaesthetist (paid, part paid, unpaid, balance) work, but the list is the older Search view, whose empty default mixes upcoming and needing-follow-up patients and which caps at 50 with no paging. There is no Coming up, Needs follow-up or All filter, and it is a top-level section, not a tab of People.",
+   "requirement_says": "On the Patients tab of People, a searchable, paged list with three filters: Coming up (the default, patients with a Booking coming up), Needs follow-up (every patient needing the office, with the reason per row) and All. A row opens the patient's page with all invoices across every anaesthetist, each paid, part paid or unpaid, with the balance.",
+   "prototype_does": "patientSearch: an empty query lists patients with a Booking within 14 days, then anyone with a balance warning or pending details (sliced to PATIENT_SEARCH_LIMIT 50). A typed query searches name, NHI or DOB (also capped at 50). The table shows name, NHI, DOB, next Booking, balance and warning. A row opens PatientRecord, whose Invoices card lists invoices across every payer with status pills, plus balance tiles. Patients is a top-level nav item with Search / Waiting for NHI / Follow-up tabs.",
+   "missing_or_wrong": [
+    "No Coming up / Needs follow-up / All filters. The default list silently mixes upcoming patients with those needing follow-up, so it is not 'patients with a Booking coming up'.",
+    "No All list and no paging: results are sliced to 50 and there is no pager.",
+    "Not a tab of the People section; the nav entry and its badge (patientAttentionCount) are separate from People.",
+    "The Needs follow-up filter with a reason per row does not exist on the list; follow-up is a separate tab of three tables (see US-11.3.3)."
+   ],
+   "evidence": [
+    "aa-prototype/src/store/patientSelectors.ts:94-96,129-172",
+    "aa-prototype/src/apps/admin/screens/patients/PatientsScreen.tsx:60-117,125-186",
+    "aa-prototype/src/apps/admin/screens/patients/PatientRecord.tsx:88-130",
+    "aa-prototype/src/apps/admin/components/SideNav.tsx:83"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin",
+    "store",
+    "demo-guide"
+   ],
+   "size": "M",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Contradicts",
+   "verify_note": "Re-read patientSearch: the empty-query default really does append warning/pending-details patients after the upcoming ones, which contradicts 'Coming up' as the default. The 50-row slice is confirmed and no paging exists. Invoices across anaesthetists and search both hold. Contradicts is justified by the wrong default list, not just the missing pieces. Size M assumes the shared list and paging pattern and the Needs follow-up rework from US-11.3.3 are built together, and the move under People is the later-wave part.",
+   "epic": "EP-11",
+   "title": "Patient outstanding bills view",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-11.3.1.md"
+  },
+  {
+   "id": "US-11.3.3",
+   "verdict": "Contradicts",
+   "summary": "The follow-up log (call, note, reminder with due date, audited resends with invoice number) and the shared note on a List or Booking are built, but Needs follow-up is three separate sections where a patient can appear more than once, actions are taken on the list rows, and the nav count is not the number of patients on the list.",
+   "requirement_says": "The follow-up log on the patient's page records call, note, reminder and resend with who, when and invoice. Needs follow-up is one list of every patient needing the office for a balance warning, a follow-up due or differing details, one row per patient with its reason. The row opens the patient's page, where the action is taken. The patient leaves when nothing is left and the People entry's count drops. Anyone can write a shared note on a List or Booking.",
+   "prototype_does": "logPatientFollowUp (office only, audited) handles kinds call, note, reminder and resend (resendInvoiceFromRecord logs 'Resent <number> to <address>'), and FollowUpLogCard is the composer. addSharedNote (shared/notes SharedNotes, used by web, mobile and admin) lets the office and the anaesthetist write a note on a List or Booking with author and time. FollowUpView on /admin/patients/follow-up has three tables (Balance warnings, one row per warning/Booking; Follow-ups due; Details to review). Clear warning and Done are inline on the rows. Items leave when resolved (derived). The Patients badge is waiting rows + strong balance warnings + due reminders + pending details.",
+   "missing_or_wrong": [
+    "Not one list with one row per patient and a reason: a patient with two reasons appears in two sections, and one with several warnings appears once per warning.",
+    "Actions (Clear warning, mark reminder Done) are taken directly on the list rows. The story says the row opens the patient's page, where the action is taken.",
+    "The badge is not 'the number of patients on Needs follow-up': it counts waiting-for-NHI rows (not patients), counts only strong warnings (mild credit warnings are listed but not counted), and counts each warning, reminder and details item rather than distinct patients.",
+    "Follow-up lives on /admin/patients/follow-up as a tab, not as a Needs follow-up filter on the Patients tab of People, and the count belongs on the People entry."
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/patients/PatientsScreen.tsx:188-336",
+    "aa-prototype/src/store/patientSelectors.ts:48-73,383-390",
+    "aa-prototype/src/store/patientActions.ts:354-456",
+    "aa-prototype/src/apps/admin/screens/patients/PatientRecord.tsx:525-600",
+    "aa-prototype/src/shared/notes/SharedNotes.tsx:34-50",
+    "aa-prototype/src/shared/booking/BookingDetailBody.tsx:762-764"
+   ],
+   "demo_trigger": "Existing: the S2 patient balance beat (open patient record, Resend, Log call, Clear). A due reminder can be staged with the existing demo clock control.",
+   "surfaces": [
+    "admin",
+    "store",
+    "demo-guide"
+   ],
+   "size": "M",
+   "confidence": "high",
+   "verify_outcome": "corrected",
+   "original_verdict": "Contradicts",
+   "verify_note": "Verdict and gaps upheld after re-reading FollowUpView and patientAttentionCount. Corrected the evidence: the reviewer cited logListNote (lifecycle.ts:438), which is office-only. The 'anyone can write a shared note' rule is actually met by addSharedNote / SharedNotes (shared/notes), so the shared-note criterion holds. Also added that the badge counts items, not distinct patients.",
+   "epic": "EP-11",
+   "title": "Follow-up tools",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-11.3.3.md"
+  },
+  {
+   "id": "FT-12.1",
+   "verdict": "Grouping",
+   "summary": "The feature body only lists the settings held per anaesthetist and says the office keeps them on the anaesthetist's page; its rules and acceptance criteria sit in the child stories.",
+   "requirement_says": "Lists the settings held against each anaesthetist (rate per unit, registration number and HPI CPN, contact, bank account, pairings) and that the office keeps them on each anaesthetist's Admin page from joining to leaving. No rules or acceptance criteria of its own.",
+   "prototype_does": "The Admin anaesthetist record holds all of these settings. They are graded under US-12.1.4 and US-12.1.6.",
+   "missing_or_wrong": [],
+   "evidence": [
+    "requirements-board/requirements/stories/FT-12.1.md (body: two paragraphs, no rules or acceptance criteria)",
+    "aa-prototype/src/apps/admin/screens/AnaesthetistRecord.tsx:36-86"
+   ],
+   "demo_trigger": "",
+   "surfaces": [],
+   "size": "None",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Grouping",
+   "verify_note": "Re-read FT-12.1.md. It states no acceptance criteria and no behavioural rule of its own, only which settings exist and where the office keeps them, so Grouping holds.",
+   "epic": "EP-12",
+   "title": "Profile settings",
+   "type": "feature",
+   "status": "Proposed (1)",
+   "open_questions": [],
+   "file": "stories/FT-12.1.md"
+  },
+  {
+   "id": "US-12.1.4",
+   "verdict": "Contradicts",
+   "summary": "Identity, contact and bank details exist, and HPI CPN and bank details are mandatory. The tier saves on click on its own card, one editor sheet covers every field, and there is no side panel, no People section and no list search, filter or paging. These contradict the per-card Edit/Save, rate-and-tier-together and side-panel requirements.",
+   "requirement_says": "Each anaesthetist has a People-section page keyed by registration number, with cards for name/registration/HPI CPN, contact, bank, and rate plus tier together. Each card is edited and saved on its own as one audited change, and the tier is seen and set only by the office. A side panel shows pairings, linked Contracts and the next Lists (a few, with see all), and the page offers make-inactive. The Anaesthetists list is searched, filtered (by tier among others) and paged. HPI CPN and bank details are mandatory.",
+   "prototype_does": "AnaesthetistRecord sits under Master data, with a back link to the Anaesthetists master view. Its header has an HPI CPN chip and an 'Edit details' action. A separate Priority tier card uses a SlidingSegmentedControl whose onSelect calls setPriorityTier immediately, with its own audit entry. One Profile card (rate, status, phone, email, HPI CPN, masked bank) is edited through the single EditAnaesthetistSheet, which saves every changed field as one anaesthetist.update. Below are the office-private pairing preferences. HPI CPN uniqueness and presence, and bank details, are enforced in editAnaesthetist. AnaesthetistsView is a plain sorted table with a Tier column, no search, no filter and no pager.",
+   "missing_or_wrong": [
+    "WRONG: the tier saves immediately on a click (changeTier -> setPriorityTier), but the criterion says picking a tier without Save changes nothing, and the tier is edited with the rate on one Edit/Save card.",
+    "WRONG: rate per unit and tier sit on different cards written by different actions and audit entries (anaesthetist.update vs anaesthetist.tierSet), where the requirement puts them on one card as one audited change.",
+    "WRONG: there is no per-card Edit/Save. One EditAnaesthetistSheet edits rate, phone, email, HPI CPN, bank, GST, start date and status together, so 'one card at a time, one audited change per card' is not met. The per-card pattern exists only on the Contract page (ContractCards.tsx).",
+    "Missing: separate cards for name/registration/HPI CPN, contact and bank. Today there is one Profile card, with the HPI CPN also in the header chip.",
+    "Missing: the side panel. The page shows no pairings-plus-Contracts-plus-next-Lists panel and no 'see all'. Pairings are a section below the cards, and nothing on the page shows linked Contracts (Contract.linkedAnaesthetistId) or Lists.",
+    "Missing: the page is in Master data (/admin/masters/anaesthetists/:id, back to the Anaesthetists master view), not a People section. This waits for the later wave.",
+    "Missing: a make-inactive action on the page (US-12.1.6). Status is a segmented control inside the edit sheet.",
+    "Missing: Anaesthetists list search, filter (tier and others) and paging. The view renders every row.",
+    "Matches already: HPI CPN and bank details mandatory, bank details held in the system and masked on the page, the tier shown only in Admin, and audited changed fields."
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/AnaesthetistRecord.tsx:36-86 (tier card with immediate save; one Profile card; back link to masters view; no side panel)",
+    "aa-prototype/src/store/mastersActions.ts:299-420 (editAnaesthetist: one anaesthetist.update for all changed fields; HPI/bank checks)",
+    "aa-prototype/src/store/officePrivate.ts:134 (setPriorityTier, anaesthetist.tierSet)",
+    "aa-prototype/src/apps/admin/flows/EditAnaesthetistSheet.tsx (single editor)",
+    "aa-prototype/src/apps/admin/screens/masters/AnaesthetistsView.tsx (no search, filter or Pager; Tier column)",
+    "aa-prototype/src/apps/admin/components/ContractCards.tsx (EditableCard/useCardEdit, the pattern to lift)",
+    "aa-prototype/src/domain/billing/contracts.ts (linkedAnaesthetistId, for the side panel)",
+    "docs/build-plan/analysis/domain-model-delta.md DM-09"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin",
+    "store",
+    "domain",
+    "demo-guide"
+   ],
+   "size": "L",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Contradicts",
+   "verify_note": "Re-opened AnaesthetistRecord.tsx, AnaesthetistsView.tsx, EditAnaesthetistSheet.tsx and editAnaesthetist. I confirmed the tier saves on click through its own audit action and sits on a different card from the rate. I also confirmed there is one all-fields editor, no side panel or linked Contracts/Lists, and no list search, filter or pager. Contradicts is right, not Partial, because the immediate-save tier is implemented behaviour the criteria now say is wrong. I found no extra gaps. The History sheet is an audit view, not a Lists panel.",
+   "epic": "EP-12",
+   "title": "Anaesthetist identity, contact and bank details",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-12.1.4.md"
+  },
+  {
+   "id": "US-12.1.6",
+   "verdict": "Contradicts",
+   "summary": "Active/Inactive is an immediate boolean in the edit sheet that trims Slots from today. There is no last day, reason, dedicated action, clear-in-time, sign-in effect, Contract disabling or make-active offer. The refusal is also keyed to Lists from today, not after a chosen last day.",
+   "requirement_says": "From the anaesthetist's page the office makes them inactive by choosing a last day and a reason. Until that day nothing changes. After it they have no Slots, are not offered or picked (assignment, availability finder), cannot sign in, and their own-Party Contracts linked to them are disabled. History stays readable. It is refused while they hold a List after the last day (those Lists are shown). The last day can be cleared before it arrives. After the last day they can be made active again (Slots from that date, sign-in restored, disabled Contracts offered ticked with price and re-activated). Make inactive, clear and make active are each audited.",
+   "prototype_does": "Anaesthetist.active is a boolean with no date or reason field (searched lastDay|inactiveFrom|inactiveReason|inactiveSince in src, no domain hits). EditAnaesthetistSheet has a Status Active/Inactive segmented control, and editAnaesthetist on an active change immediately removes Slots from today (canvas.trim) or regenerates them (canvas.generate). It refuses with listsAhead ('N Lists from today. Reassign them first.') when any List is from today onward. Inactive anaesthetists are skipped in the roster, finder, draft-list candidates, move targets and the pairing add sheet. disableContract and enableContract exist but are not linked to the anaesthetist. The anaesthetist app sign-in is a per-browser localStorage flag (shared/session/anaesthetistSession.ts) that never consults masters.anaesthetists[].active. The record page shows only profile, tier and pairings, with no Lists, Bookings, invoices or payments (only the audit History sheet).",
+   "missing_or_wrong": [
+    "WRONG: inactivity takes effect immediately (Slots trimmed from today). The requirement keeps Slots, offering and sign-in until a chosen last day.",
+    "WRONG: the refusal is 'Lists from today'. The requirement refuses only for Lists after the chosen last day and shows the office those Lists.",
+    "Missing: last-day date and reason fields, and a dedicated Make inactive action on the page. Today it is a Status toggle in the edit sheet with no reason.",
+    "Missing: clearing the last day before it arrives.",
+    "Missing: sign-in refused after the last day (anaesthetistSession is a browser flag with no link to the master record).",
+    "Missing: disabling the anaesthetist's own Contracts (own Party, linkedAnaesthetistId) on the last day, so they are not offered on Lists.",
+    "Missing: make active again from a date, with an offer of the disabled Contracts each ticked and showing its price, re-enabling the ticked ones.",
+    "Missing: separate audited entries for make inactive, clear last day and make active. Today it is one anaesthetist.update field change plus canvas.trim/generate.",
+    "Missing: history readable on an inactive anaesthetist's page (past Lists, Bookings, invoices, payments). The page shows none of them.",
+    "Missing: any time-driven effect (the demo clock crossing a last day does nothing, as there is no date). OQ-147 (a departed anaesthetist's remittance access) is open, so that part is narrated only.",
+    "Matches in part: inactive anaesthetists are excluded from assignment, the finder and Draft List candidates, and no List is ever deleted."
+   ],
+   "evidence": [
+    "aa-prototype/src/domain/types.ts:447-452 (active: boolean, no date or reason)",
+    "aa-prototype/src/store/mastersActions.ts:299-420 (active change -> canvas delta; listsAhead refusal)",
+    "aa-prototype/src/apps/admin/flows/EditAnaesthetistSheet.tsx:46,81,128-129 (Status Active/Inactive segmented control)",
+    "aa-prototype/src/apps/admin/screens/AnaesthetistRecord.tsx (status text only; no history panels)",
+    "aa-prototype/src/shared/session/anaesthetistSession.ts:1-60 (browser flag, no link to active)",
+    "aa-prototype/src/store/contractActions.ts:321-327 (disableContract/enableContract not driven by the anaesthetist)",
+    "aa-prototype/src/domain/billing/contracts.ts (linkedAnaesthetistId, status)",
+    "aa-prototype/src/domain/draftLists.ts:155, store/selectors.ts:201, store/matchingSelectors.ts:98, store/draftListActions.ts:209 (inactive skipped in offers)",
+    "searched: lastDay|inactiveFrom|inactiveReason|inactiveSince in aa-prototype/src -> no domain hits"
+   ],
+   "demo_trigger": "Use the existing Control Panel Clock & reset (advanceClockToDate). Make Dr X inactive with a last day 7 days out, advance the clock past it, and watch her Slots disappear, her Contracts show Disabled and the finder skip her. Add a presenter control on the mobile sign-in screen, 'Sign in as this anaesthetist', that is refused once the last day has passed, so the sign-in effect is visible. Optionally add a demo-sheet note on the Remittances screen for OQ-147 showing the 'sent by email from the office' reading.",
+   "surfaces": [
+    "admin",
+    "mobile",
+    "pwa",
+    "domain",
+    "store",
+    "seed",
+    "simulator",
+    "demo-guide"
+   ],
+   "size": "L",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Contradicts",
+   "verify_note": "Re-checked editAnaesthetist, the edit sheet, the session store and the record page. active is a plain boolean applied immediately with the canvas trim, which differs from the dated-lifecycle reading, so Contradicts is right. Sign-in is not tied to the master record. The reviewer's Missing points hold, and no lastDay or reason field exists anywhere. I added nothing material and dropped nothing.",
+   "epic": "EP-12",
+   "title": "Make an anaesthetist inactive",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [
+    "OQ-147"
+   ],
+   "file": "stories/US-12.1.6.md"
+  },
+  {
+   "id": "US-13.4.1",
+   "verdict": "Contradicts",
+   "summary": "Master data, the Contracts section and per-card editing on the Contract page exist, but the prototype still keeps a Surgeon groups list that the story now says must not exist, plus no People section and no search, filter or paging on the people lists.",
+   "requirement_says": "Reference data lives in three places: Master data (hospitals, holidays, statuses, recurring bookings, RVG, modifiers), Contracts (Contracts, Parties, funding tags) and People (anaesthetists, surgeons, specialties, patients). There is no surgeon group record. The Surgeons list is searchable, filterable by specialty and paged. Each person, specialty and patient has a page edited one card at a time, each save its own audit entry.",
+   "prototype_does": "Master data still holds anaesthetists, hospitals, surgeons, specialties and a Surgeon groups view in the 'People and places' sub-nav. Contracts is its own nav section (Phase 45); its Parties and Funding tags are still Master data views. Patients is a separate side-nav entry with its own routes. The Surgeons list is a plain table with only a Show retired toggle. The surgeon page and the anaesthetist record each edit through one sheet (EditAnaesthetistSheet, SurgeonEditSheet), not card by card; only the Contract page edits per card. Specialties have a table and sheet but no page.",
+   "missing_or_wrong": [
+    "WRONG: a Surgeon groups list still exists (SurgeonGroupsView, SurgeonGroupSheet, SurgeonGroup type, seeded groups, retire/reinstate, Groups card on the surgeon profile), against 'there is no surgeon group list to keep' (the Party of kind surgeonGroup stays)",
+    "No People section: anaesthetists, surgeons and specialties sit under Master data; patients under a separate Patients nav entry",
+    "Surgeons list has no search by name, practice or HPI CPN, no specialty or Active/Retired filter (only Show retired), no paging; Anaesthetists list and Master data lists likewise have no search or paging",
+    "One card, one change is met only on the Contract page; the surgeon page and the anaesthetist record save every field in one sheet and one audit entry; no specialty page exists; the patient record is not card-edited",
+    "Parties and Funding tags are still Master data views (the Contracts tabs link across; closed by Phase 48, not on master)",
+    "Master data registry still lists a Contracts entry that only redirects (stale)"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/masters/masterViews.ts:37-39 (surgeons, specialties, surgeonGroups under People and places), :46 (stale contracts entry)",
+    "aa-prototype/src/apps/admin/screens/masters/SurgeonsView.tsx:41-77 (no search, filter or paging), :112-157 (SurgeonGroupsView)",
+    "aa-prototype/src/apps/admin/screens/SurgeonProfile.tsx:46,64-78 (Groups card via groupsForSurgeon)",
+    "aa-prototype/src/apps/admin/flows/SurgeonEditSheet.tsx:99-111 (one save with every field)",
+    "aa-prototype/src/apps/admin/screens/AnaesthetistRecord.tsx:25,51,77 (one EditAnaesthetistSheet, no per-card edit)",
+    "aa-prototype/src/apps/admin/screens/masters/SpecialtiesView.tsx:22-80 (no page)",
+    "docs/build-plan/analysis/prototype-map-admin.md:36,50,132 (Patients nav entry; Parties/Funding tags link to Master data until 48)",
+    "searched: 'surgeonGroups' across src -> ~30 files still reference it; People section / peopleNav in src/apps/admin -> none"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin",
+    "domain",
+    "store",
+    "seed",
+    "demo-guide"
+   ],
+   "size": "XL",
+   "confidence": "high",
+   "verify_outcome": "corrected",
+   "original_verdict": "Partial",
+   "verify_note": "Re-opened masterViews.ts, SurgeonsView.tsx, SurgeonProfile.tsx, SurgeonEditSheet.tsx, AnaesthetistRecord.tsx and SpecialtiesView.tsx; all the reviewer's evidence holds. Changed Partial to Contradicts: the 'No surgeon group record' acceptance criterion now says no such list exists, and the prototype implements exactly that list (and a Groups card), which is wrong behaviour rather than merely absent behaviour. Added that the anaesthetist record also edits through one sheet, so one-card-one-change holds only on the Contract page.",
    "epic": "EP-13",
    "title": "Maintain reference tables",
    "type": "story",
    "status": "Verify (3)",
-   "open_questions": [],
+   "open_questions": [
+    "OQ-148"
+   ],
    "file": "stories/US-13.4.1.md"
+  },
+  {
+   "id": "US-13.4.4",
+   "verdict": "Partial",
+   "summary": "The list behaviour (broad names, audited add/rename/remove, remove refused while held, a rename reaching holders by id) is right, but it lives in Master data and there is no per-specialty page listing its surgeons and Contracts.",
+   "requirement_says": "Specialties are a tab in the People section; broad names only; every change audited; a rename reaches every surgeon and Contract; each specialty has its own page listing its surgeons and Contracts where it is renamed or removed; it starts with the nine named specialties.",
+   "prototype_does": "Master data Specialties view: a table with Specialty, a 'Held by' count (N surgeons, N Contracts), History, Rename and Remove as row actions, and a small sheet for Add and Rename. Create, rename and remove are audited store actions; removal is refused while held; specialties are referenced by id so a rename reaches holders. The seed holds twelve (the nine plus Neurosurgery, Vascular surgery, Oral and maxillofacial surgery, a documented deliberate addition).",
+   "missing_or_wrong": [
+    "No People section home: the list is under Master data",
+    "No specialty page or route: the actual surgeons and Contracts holding a specialty are not listed (only counts), so the 'Specialty page' acceptance criterion fails",
+    "Rename and Remove are table-row actions with a sheet, not on a page",
+    "Minor: the seed starts with twelve specialties, not the nine the story says (seed comment explains the extras; AA's spreadsheet will replace the list); a presenter can leave or trim them"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/masters/SpecialtiesView.tsx:22-80 (table, counts only, sheet)",
+    "aa-prototype/src/apps/admin/screens/masters/masterViews.ts:38",
+    "aa-prototype/src/domain/seed/specialties.ts:6-12,27-42 (twelve incl. three extras)",
+    "aa-prototype/src/store/specialtyTagActions.test.ts:29-39 (audit rows)",
+    "searched: specialtyPath|specialtyPage|SpecialtyRecord|SpecialtyPage in src/apps/admin -> none"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin",
+    "store",
+    "seed",
+    "demo-guide"
+   ],
+   "size": "M",
+   "confidence": "medium",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-read SpecialtiesView.tsx and the seed. No wrong behaviour beyond placement and the three extra seeded names, which are documented as deliberate and minor, so Partial stands (not Contradicts). Rename-reaches-holders and broad-only criteria are met. Size M is fair: a new page route with two lists plus the section move; the move itself is shared with US-13.4.1.",
+   "epic": "EP-13",
+   "title": "Specialties",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-13.4.4.md"
   },
   {
    "id": "US-13.4.5",
@@ -657,6 +1158,95 @@
    "status": "Verify (3)",
    "open_questions": [],
    "file": "stories/US-13.4.5.md"
+  },
+  {
+   "id": "US-13.5.3",
+   "verdict": "Partial",
+   "summary": "The simulated account sign-in exists and is audited, but the inactive rule (refused after the last day, allowed on it, restored on reactivation) is not implemented and there is no last day or demo path.",
+   "requirement_says": "Anaesthetists sign in to the PWA with an account login. One made inactive with a last day can sign in up to and including that day and not after; made active again they can sign in again (last day 30 Nov: refused 1 Dec, succeeds 30 Nov).",
+   "prototype_does": "Mobile SignInScreen is hard-wired to the demo account (Dr Souter): email prefilled, any non-empty password signs in, another email is refused with 'No account with that email', and each attempt is audited (auth.signIn / auth.signInFailed). It is marked Provisional (OQ-83). The Anaesthetist type has an active boolean and startDateISO but no last day; sign-in never reads it.",
+   "missing_or_wrong": [
+    "No last day on Anaesthetist; deactivation takes effect from today, not on a chosen last day",
+    "Sign-in does not consult active or the demo clock; the only refusal reason is 'Unknown account'",
+    "No way to demo it: sign-in is fixed to Dr Souter with no persona, switch or Control Panel path to an inactive anaesthetist; reactivation cannot be shown either",
+    "Mostly closed by the US-12.1.6 work (last day, domain, store, canvas) plus a sign-in check; no web-app sign-in exists either"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/mobile/screens/SignInScreen.tsx:21-26,41-65 (demo account only)",
+    "aa-prototype/src/store/authDemoActions.ts:90-111 (recordAnaesthetistSignIn; reason 'Unknown account' only)",
+    "aa-prototype/src/domain/types.ts:446-452 (startDateISO, active; no last day)",
+    "searched: lastDay|last day|lastDate|inactive across src (non-test) -> only canvas/list-move uses of active; none in sign-in or auth paths"
+   ],
+   "demo_trigger": "Admin anaesthetist edit sheet gets a 'Last day' beside Active. On the mobile Sign in screen, a Demo sheet button 'Try signing in on a date' (choices: the last day, the day after) sets the demo clock for the attempt and shows success, or the refusal 'Your account is no longer active', with the audit row; reactivating in Admin restores it.",
+   "surfaces": [
+    "mobile",
+    "admin",
+    "domain",
+    "store",
+    "simulator",
+    "seed",
+    "demo-guide"
+   ],
+   "size": "M",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-read SignInScreen.tsx and recordAnaesthetistSignIn, and grepped for last-day and inactive handling across src; nothing consults active at sign-in. The account-login criterion is met, so Partial stands (nothing implemented is wrong, the inactive rule is only absent). Demo trigger proposal is reasonable; size M assumes the last day is added here, it would shrink to S if US-12.1.6 lands first.",
+   "epic": "EP-13",
+   "title": "Sign in to the anaesthetist app",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [
+    "OQ-147",
+    "OQ-83"
+   ],
+   "file": "stories/US-13.5.3.md"
+  },
+  {
+   "id": "US-13.6.2",
+   "verdict": "Contradicts",
+   "summary": "A surgeon page and list exist with unique optional HPI CPN, practice text and contacts, but the profile still has a Groups card (a surgeon now belongs to no group), saves all fields in one sheet instead of card by card, has no side panel of Contracts and next Lists, and the list has no search, filter or paging.",
+   "requirement_says": "Each surgeon has a People-section page keyed by a never-changing ID, with cards for name and practice, registration number, HPI CPN (optional, unique), specialties and contacts, each edited and saved alone as one audited change. A side panel shows private pairings both ways, linked Contracts and next Lists (a few each, see all). The Surgeons list is searchable by name, practice or HPI CPN, filterable by specialty and Active/Retired, and paged. A surgeon belongs to no group.",
+   "prototype_does": "SurgeonProfile at /admin/masters/surgeons/:surgeonId with cards Specialties, Identifiers (HPI CPN, NZ registration), Groups, and Practice and contacts, plus PairingSection and History. One Edit button opens a single SurgeonEditSheet saving every field together. A blank HPI CPN reads 'No HPI CPN yet'; a duplicate is refused. The list under Master data shows name, specialties, practice, office contact, HPI CPN and pairing counts, with a Show retired toggle only.",
+   "missing_or_wrong": [
+    "WRONG: the Groups card and surgeon group membership remain on the profile (groupsForSurgeon, 'Not in a surgeon group'), against 'a surgeon belongs to no group'",
+    "WRONG for the acceptance criterion: Edit is one sheet for the whole record, so one save changes several fields in one audit entry; 'One card at a time' is not met",
+    "No side panel of linked Contracts or next Lists with see-all (only the pairing section, laid out as a section not a side panel)",
+    "Surgeons list: no search by name, practice or HPI CPN, no specialty filter, no Active/Retired filter (only Show retired), no paging",
+    "Lives under /admin/masters/surgeons/:id and Master data, not People",
+    "No separate name card (name only in the page header)",
+    "Met: practice as editable text, contacts with name/email/phone, blank HPI CPN saves, unique HPI CPN refused, registration number shown"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/SurgeonProfile.tsx:46,64-78 (Groups card), :100-131 (no Contracts or Lists panel)",
+    "aa-prototype/src/apps/admin/flows/SurgeonEditSheet.tsx:99-111 (single save of all fields)",
+    "aa-prototype/src/apps/admin/screens/masters/SurgeonsView.tsx:41-77 (no search, filter, paging)",
+    "aa-prototype/src/store/surgeonActions.ts:90-97 (blank allowed, duplicateHpiCpn refusal)",
+    "aa-prototype/src/apps/admin/mastersPaths.ts (surgeonProfilePath under masters)",
+    "searched: Contracts or next Lists panel on SurgeonProfile (contractsForSurgeon|nextLists) -> none"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin",
+    "domain",
+    "store",
+    "seed",
+    "demo-guide"
+   ],
+   "size": "L",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Contradicts",
+   "verify_note": "Opened SurgeonProfile.tsx, SurgeonEditSheet.tsx and SurgeonsView.tsx and confirmed every point; the Groups card is real implemented behaviour that the story now rules out, so Contradicts is correct over Partial. Also noted that the pairing section is not a side panel. OQ-143 (HPI CPN may become required) does not change the grade: blank is allowed today and the story says so.",
+   "epic": "EP-13",
+   "title": "Surgeon profile",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [
+    "OQ-143",
+    "OQ-148"
+   ],
+   "file": "stories/US-13.6.2.md"
   }
  ],
  "summary_md": "",
@@ -665,99 +1255,263 @@
    "id": "DM-01",
    "kind": "NewRelationship",
    "title": "A Contract remembers which Contract it replaces, and from when",
-   "catalogue_says": "US-04.1.8: the late disable lists the Procedures dated from the date of the change, and an old Contract left Active gets a to-do on that date, so the change date must be known after the action. US-04.1.2 'No dates': a Contract has no start, end or review date of its own (domain-model.md: 'None of these settings is dated'). OQ-144 (open) asks whether a Contract may get a date. US-04.1.3: a replacement is audited. domain-model.md does not mention the link, so US-04.1.8 is the only authority.",
-   "prototype_has": "The link exists only as two useState values in the New contract panel (replacesId, replacesFrom), used to show a warn-only list once and then lost. Contract has no replaces or replaced-by field, createContract takes no replaces input, and the contract.create audit entry does not name the old Contract. Nothing records afterwards that a Contract was replaced or from what day.",
+   "catalogue_says": "US-04.1.8: the late disable lists the Procedures dated from the change date; the old Contract gets a to-do on that date. US-04.1.2: a Contract has no start, end or review date. US-04.1.3: a replacement is audited.",
+   "prototype_has": "The link is two useState values in the New contract panel (replacesId, replacesFrom), used for a one-off warning list and then lost. Contract has no replaces field, createContract takes no replaces input, and the contract.create audit entry does not name the old Contract. Phase 46 removes the picker; Phase 49 builds the link.",
    "catalogue_refs": [
-    "requirements-board/requirements/stories/US-04.1.8.md",
-    "requirements-board/requirements/stories/US-04.1.2.md",
-    "requirements-board/requirements/stories/US-04.1.3.md",
-    "requirements-board/requirements/questions/OQ-144.md"
+    "US-04.1.8",
+    "US-04.1.2",
+    "US-04.1.3",
+    "OQ-144"
    ],
    "prototype_refs": [
-    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx:125",
+    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx:85",
     "aa-prototype/src/domain/billing/contracts.ts:67",
     "aa-prototype/src/store/contractActions.ts:158",
+    "aa-prototype/src/store/contractActions.ts:201",
     "aa-prototype/src/domain/billing/contractHistory.ts:68"
    ],
-   "impact": "DM-02, DM-03 and DM-04 all need the change date after the fact, so this must precede them. Home: the audit route fits the 'no dates' rule and OQ-144 best (the new Contract's contract.create entry carries replaces {contractId, fromISO} in its after; no Contract field, no PERSIST_VERSION bump from 78). The date must be an explicit payload field because it is the office's chosen date, not the save time that disabledDaysByContract reads from the entry timestamp. The alternative, a replacedBy {contractId, fromISO} field on the old Contract, is a date on the Contract, needs a bump and a seed scenario. One derived read, 'the Contract this one replaced and from which day' (and the reverse), feeds the other three deltas.",
+   "impact": "Must precede DM-02, DM-03 and DM-04 (replaced case). The change date must be stored after the fact, but a date field on the Contract would break the no-dates rule and OQ-144, so the audit route fits: the new Contract's contract.create entry carries replaces {contractId, fromISO} in its after (Phase 49's D94). One derived read each way feeds DM-02, DM-03 and DM-04. No PERSIST_VERSION bump. Phase 49, Lane A.",
    "size": "M",
-   "verify_outcome": "corrected",
-   "verify_note": "Relationship and need upheld. Corrected the home: the audit route is not 'the way disabledDaysByContract reads the day' (that reads the entry timestamp; the change date is user-entered, so it needs a payload field), and a Contract field would put a date on the Contract against 'No dates' while OQ-144 is open. Noted domain-model.md has no statement of the link."
+   "verify_outcome": "upheld",
+   "verify_note": "Catalogue text and prototype refs re-read and confirmed (lines 85, 158, 169, 201 match)."
   },
   {
    "id": "DM-02",
    "kind": "NewLifecycle",
    "title": "Replace a Contract from a date, as one action",
-   "catalogue_says": "US-04.1.8 (new): one action creates a new Contract copied from the old with any setting changed (the settings fixed at creation included), lists the Procedures dated on or after the date still on the old Contract, moves only the ones the office ticks (each an audited Procedure change, authorised Lists locked and not listed), then leaves the old Contract Active with a to-do or disables it at once. A non-fixed replacement is offered from the day it is saved; a system Contract cannot be replaced. US-04.1.2 and US-04.1.3 point to it; a fixed price changing from a date is a price range, not a replacement (US-04.2.15). US-04.1.7 lists a Contract's event fees on its page.",
-   "prototype_has": "Two separate acts: the office creates a new Contract by hand, optionally naming the one it replaces and a date, and the panel shows a read-only list of Procedures still on the old one. Nothing copies the old Contract, nothing moves Procedures from the panel (each move is a separate setProcedureContract on its own Booking, which has no planner and calls mutate() itself with side effects: clears typed price and rail answers, may re-open a completed Booking, may settle a prepayment), and the old Contract is neither left with a to-do nor disabled as part of it. The list already excludes authorised Lists and cancelled Bookings but not removed Draft Lists (proceduresStillOnContract). A Contract's event fees are separate records (masters.contractEventFees) that planContractCreate does not copy.",
+   "catalogue_says": "US-04.1.8: one action copies the Contract with any setting changed under a new AA code, moves the ticked Procedures dated on or after the change date, and leaves the old Contract Active (to-do) or disables it; authorised Lists are locked and left out.",
+   "prototype_has": "Two separate acts: create a new Contract by hand, optionally naming a replaced one and a date, then a read-only list of Procedures still on the old one. Nothing copies the old Contract, moves a Procedure from the panel, or leaves or disables the old one as part of the act. setProcedureContract has no planner and runs its own mutate with side effects.",
    "catalogue_refs": [
-    "requirements-board/requirements/stories/US-04.1.8.md",
-    "requirements-board/requirements/stories/US-04.1.2.md",
-    "requirements-board/requirements/stories/US-04.1.3.md",
-    "requirements-board/requirements/stories/US-04.2.15.md",
-    "requirements-board/requirements/stories/US-07.3.1.md",
-    "requirements-board/requirements/stories/US-04.1.7.md"
+    "US-04.1.8",
+    "US-04.1.2",
+    "US-04.1.3",
+    "US-04.2.15",
+    "US-07.3.1"
    ],
    "prototype_refs": [
-    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx:138",
+    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx:90",
     "aa-prototype/src/domain/billing/contractChanges.ts:43",
     "aa-prototype/src/store/contractChangeSelectors.ts:14",
     "aa-prototype/src/store/contractSelectionActions.ts:99",
-    "aa-prototype/src/store/contractActions.ts:169",
-    "aa-prototype/src/store/contractEventFeeActions.ts"
+    "aa-prototype/src/store/contractSelectionActions.ts:52",
+    "aa-prototype/src/store/contractActions.ts:169"
    ],
-   "impact": "New office-only store action: create the copy (planContractCreate is the create half, runs contractRefusal, new AA code, DM-01 link), move exactly the ticked Procedures through the existing Contract change path, then leave or disable the old Contract (move first, then disable). Open points for the phase: setProcedureContract is not plan-shaped, so 'one action' is a sequence of per-Procedure commits or a refactor to a planner; per-row refusal outcomes are needed (contractPickRefusal can refuse when the copy changes holder, links or specialties, and removed Draft Lists are listed but unmovable); whether the copy carries event fees is not stated; a system Contract is refused. Depends on DM-01; carries the New contract page's replace entry and supersedes the warn-only list on create.",
+   "impact": "Needs DM-01. New office-only store action in one change set: create from the copy (planContractCreate + contractRefusal), move the ticked Procedures one audited change each, then leave or disable the old Contract (move first, then disable). Open points for the phase: moves are per-Procedure commits unless setProcedureContract is refactored; per-row refusal; whether event fees copy; a system Contract cannot be replaced. Phase 49, Lane A.",
    "size": "L",
-   "verify_outcome": "corrected",
-   "verify_note": "Upheld as a new lifecycle. Added what the author missed: setProcedureContract has no planner and carries side effects, the removed-Draft-List gap in the still-on list, and event fees as separate records not covered by the copy. Corrected line refs (ContractEditSheet 138, planContractCreate 169)."
+   "verify_outcome": "upheld",
+   "verify_note": "Refs re-checked against master; Phase 49 doc covers it."
   },
   {
    "id": "DM-03",
    "kind": "NewEntity",
    "title": "A Contract still Active after its replacement date is a to-do item",
-   "catalogue_says": "US-04.1.8: when the old Contract is left Active, on the change date a to-do reminds the office to disable it, and the old Contract stays offered until it does. FT-13.7 and US-13.7.2: the dashboard to-do list. OQ-144 (open): the to-do stands in until a Contract can be disabled from a future date.",
-   "prototype_has": "The to-do list has two row kinds, both keyed to a Booking: open warnings and Bookings with no Contract (ToDoItem). Warning carries a bookingId and WarningFacts is one Booking, so no rule can take a Contract as subject. No to-do row concerns a Contract and none depends on a date passing. The noContract rows show only on the Admin Day rail's work card, which opens rows through onOpenBooking only.",
+   "catalogue_says": "US-04.1.8: on the change date a to-do reminds the office to disable the old Contract. FT-13.7 and US-13.7.2: the dashboard to-do list.",
+   "prototype_has": "The to-do list has two row kinds, both keyed to a Booking (open warnings, Bookings with no Contract). Warnings take one Booking as subject (Warning carries a bookingId); no row concerns a Contract and none depends on a date passing.",
    "catalogue_refs": [
-    "requirements-board/requirements/stories/US-04.1.8.md",
-    "requirements-board/requirements/stories/FT-13.7.md",
-    "requirements-board/requirements/stories/US-13.7.2.md",
-    "requirements-board/requirements/questions/OQ-144.md"
+    "US-04.1.8",
+    "FT-13.7",
+    "US-13.7.2"
    ],
    "prototype_refs": [
     "aa-prototype/src/apps/admin/components/WarningsToDo.tsx:26",
     "aa-prototype/src/apps/admin/components/WarningsToDo.tsx:36",
     "aa-prototype/src/domain/warnings/types.ts:114",
-    "aa-prototype/src/apps/admin/components/RailWorkCard.tsx:12"
+    "aa-prototype/src/apps/admin/components/RailWorkCard.tsx:28"
    ],
-   "impact": "A third ToDoItem kind with a Contract subject, derived (not stored) from the DM-01 link once the demo clock reaches the change date while the old Contract is still Active, leaving the list when the office disables it. Follows the noContract row's pattern (a work list, no Clear) on the rail's work card, not the warning routine or its clearance store. toDoItems ordering needs a rule for a row with no session; the rail card needs a way to open a Contract (the row opens the old Contract's page); whether a re-enabled old Contract brings the row back is unstated. No persisted state. Needs DM-01.",
+   "impact": "Needs DM-01. A third ToDoItem kind whose subject is a Contract, derived (not stored) from the replacement link when the date is reached and the old Contract is still Active; follows the noContract row pattern (no Clear). Needs an ordering rule for a row with no session and a way for the rail card to open a Contract. Whether a re-enabled Contract brings the row back is unstated (a derived row would). Phase 49's D94 words the to-do as a rule in domain/warnings/rules/, but a Warning is Booking-keyed, so the phase must either widen the finding's subject to a Contract or use the derived ToDoItem kind. Phase 49, Lane A.",
    "size": "M",
-   "verify_outcome": "upheld",
-   "verify_note": "Catalogue statement and prototype gap confirmed in code. Added the rail card's navigation limit, the re-enable edge and the line refs; nothing about the delta changed."
+   "verify_outcome": "corrected",
+   "verify_note": "Added the D94 tension: the phase doc calls it a warning rule, while the Warning type (types.ts:114) is keyed to a Booking."
   },
   {
    "id": "DM-04",
    "kind": "ChangedLifecycle",
-   "title": "Disabling is confirmed and lists the Procedures first",
-   "catalogue_says": "US-04.1.2 'Disable confirmed': the office confirms a disable and is shown the Procedures dated from today still on the Contract. US-04.1.8: a late disable of a replaced Contract lists the Procedures from the change date, not only from that day on; 'Old one disabled' disables as it is replaced. The review flag for a Procedure dated on or after the disable day (US-07.2.2) is unchanged.",
-   "prototype_has": "Disable is one click that sets status disabled at once (toggleStatus, disableContract). The Procedures still on it are listed only afterwards, on the disabled Contract's panel, from the disable day (stillOnContract with disabledDay or today). No confirmation step and no list before the change.",
+   "title": "Disabling is confirmed and lists the Procedures first (replaced case remains)",
+   "catalogue_says": "US-04.1.2 criterion 'Disable confirmed': Disable asks first and lists the Procedures still on the Contract. US-04.1.8 'Late disable': a replaced Contract disabled after the change date lists from the change date.",
+   "prototype_has": "Built on master in Phase 45: ContractDisable opens a danger ConfirmSheet that lists the Procedures from disableFromISO before anything changes. disableFromISO returns today. Not built: listing from an earlier replacement change date, and the disable-as-replaced path.",
    "catalogue_refs": [
-    "requirements-board/requirements/stories/US-04.1.2.md",
-    "requirements-board/requirements/stories/US-04.1.8.md",
-    "requirements-board/requirements/stories/US-07.2.2.md"
+    "US-04.1.2",
+    "US-04.1.8",
+    "US-07.2.2",
+    "OQ-144"
    ],
    "prototype_refs": [
-    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx:259",
-    "aa-prototype/src/store/contractActions.ts:320",
-    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx:142",
-    "aa-prototype/src/domain/billing/contractHistory.ts:68"
+    "aa-prototype/src/apps/admin/screens/contracts/ContractDisable.tsx:25",
+    "aa-prototype/src/apps/admin/screens/contracts/StillOnNotice.tsx:17",
+    "aa-prototype/src/store/contractChangeSelectors.ts:48",
+    "aa-prototype/src/store/contractActions.ts:321"
    ],
-   "impact": "The list moves ahead of the change, from today by default, and from the DM-01 change date when the Contract was replaced and is disabled after that date. No store invariant changes (a Procedure on a Disabled Contract keeps it; the review flag still keys on the audit's disable day, so a Procedure dated between the change date and the disable day is listed but not flagged, as the criterion expects), so the confirm step is the existing read proceduresStillOnContract with a different fromISO, plus the 'disable as it is replaced' path DM-02 calls. The post-disable listing can go. Shares the list component and fromISO choice with DM-02. Needs DM-01 only for the replaced case.",
+   "impact": "Narrowed since the earlier run. Only disableFromISO widens once DM-01's read exists (Phase 49 item 8); no store invariant changes. The confirm list is the same read the replace action shows (DM-02). Needs DM-01 for the replaced case only.",
    "size": "S",
    "verify_outcome": "upheld",
-   "verify_note": "Confirmed: disable is one click with the list shown only afterwards. Added that the flag/list difference for the late disable is intended by the criterion, and the shared list with DM-02."
+   "verify_note": "disableFromISO at contractChangeSelectors.ts:48 still returns today; confirm sheet is on master."
+  },
+  {
+   "id": "DM-05",
+   "kind": "ChangedLifecycle",
+   "title": "An anaesthetist has a last day, from which they are inactive",
+   "catalogue_says": "US-12.1.6 (new) and the domain model rule: the office sets a last day with a reason; refused while the anaesthetist holds a List after it; until then nothing changes; after it no Slots and not offered or picked for any List (assignment or availability finder); the day can be cleared before it comes; made active again gives Slots from that day; each action audited. US-01.1.1 links 'active'.",
+   "prototype_has": "A single boolean Anaesthetist.active flipped by the editor's Status control, acting at once: Slots removed from today, refused while Lists exist from today. No last day, no reason, no future date, no clearing; audited only as an ordinary update. The flag is read as 'usable now' in about fifteen to twenty places (slot picker, AA fee preview, list and booking moves, draft assignment, canvas generator, clock roll, pairing picker, matching open-slot read, rebook candidates, list-move demo, demo invariant), and the unmatched-receipt check refuses a payment naming an inactive anaesthetist. Recurring bookings read Slot existence, not the flag. startDateISO already exists, so active-from-start-date needs no change. No seeded anaesthetist is inactive.",
+   "catalogue_refs": [
+    "US-12.1.6",
+    "US-01.1.1",
+    "US-12.1.4",
+    "FT-12.1",
+    "OQ-147"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/domain/types.ts:452",
+    "aa-prototype/src/apps/admin/flows/EditAnaesthetistSheet.tsx:46",
+    "aa-prototype/src/store/mastersActions.ts:368",
+    "aa-prototype/src/store/mastersActions.ts:375",
+    "aa-prototype/src/store/slotActions.ts:972",
+    "aa-prototype/src/store/selectors.ts:201",
+    "aa-prototype/src/store/selectors.ts:1587",
+    "aa-prototype/src/domain/listMoves.ts:85",
+    "aa-prototype/src/domain/bookingMoves.ts:149",
+    "aa-prototype/src/store/draftListActions.ts:209",
+    "aa-prototype/src/domain/seed/canvas.ts:116",
+    "aa-prototype/src/domain/recurringBookingProjection.ts:233",
+    "aa-prototype/src/store/paymentActions.ts:294",
+    "aa-prototype/src/store/matchingSelectors.ts:98"
+   ],
+   "impact": "Must precede DM-06 and DM-07. Add last day and reason to the anaesthetist; activity becomes a function of a date, so every reader moves to one pure isActiveOn(anaesthetist, dateISO). Canvas generation, roll-forward and anaesthetistCanvasDelta take the last day as an end; the guard becomes 'a List after the last day' and returns those Lists; three audited actions (set, clear, make active again). A stored mirror flag would need a dayAdvanced hook; a derived one needs none. Open: the AA fee run for the month someone leaves keys on the flag; a payment received after the last day for earlier work would be refused by paymentActions.ts:294 and must not be (key it on existence or the work's date); a demo needs an inactive anaesthetist or a trigger. Touches no Contracts-lane file (editor and record are EditAnaesthetistSheet and AnaesthetistRecord); a seeded inactive anaesthetist bumps PERSIST_VERSION (second to join renumbers). Lane C candidate in Wave 1.",
+   "size": "L",
+   "verify_outcome": "corrected",
+   "verify_note": "Catalogue and core claim upheld. Corrected the reader list (recurring bookings do not read the flag), added readers, and added the payment-receipt guard conflict with 'everything recorded before stays'."
+  },
+  {
+   "id": "DM-06",
+   "kind": "NewRelationship",
+   "title": "An inactive anaesthetist's own Contracts are disabled, and offered back",
+   "catalogue_says": "US-04.1.2 criterion 'Inactive anaesthetist' and US-12.1.6: once the last day has passed the Contracts held by the anaesthetist's own Party and linked to them are Disabled; made active again, they are offered back to the office ticked and showing their price, and the ticked ones become Active.",
+   "prototype_has": "Nothing connects an anaesthetist's status to a Contract's. disableContract and enableContract exist and are audited. The seed has the story's example (Beaumont Rhinoplasty, held by PARTY.beaumont, linked to her). A Party of kind anaesthetist has no link to the anaesthetist record (matched by name only; Party has hospitalId but no anaesthetistId), so 'own Party' has no stored meaning.",
+   "catalogue_refs": [
+    "US-12.1.6",
+    "US-04.1.2",
+    "FT-12.1"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/store/contractActions.ts:321",
+    "aa-prototype/src/store/contractActions.ts:326",
+    "aa-prototype/src/domain/seed/pricedItems.ts:186",
+    "aa-prototype/src/domain/seed/parties.ts:71",
+    "aa-prototype/src/domain/billing/contracts.ts:102",
+    "aa-prototype/src/domain/billing/contractHistory.ts:68"
+   ],
+   "impact": "Needs DM-05. A rule, not a new record: on the last day passing, disable Contracts whose holder is an anaesthetist-kind Party and whose linkedAnaesthetistId is the person (system, audited, via the existing planner); on reactivation show them ticked and enable the confirmed ones. Phase choices: find 'own Party' by derivation (no new field, matches the domain model) or a stored Party.anaesthetistId (bump, backfill; addAnaesthetist creates no Party); offer back all disabled or only those disabled by inactivity (the audit can tell); when the disable happens (a dayAdvanced subscriber vs at set time). The date stays on the anaesthetist, so no-dates and OQ-144 are untouched. Use a new store file calling the existing actions; do not edit contractActions.ts or contractHistory.ts while Lane A holds them.",
+   "size": "M",
+   "verify_outcome": "upheld",
+   "verify_note": "Party shape (parties.ts:44-75) has no anaesthetistId; seed example confirmed."
+  },
+  {
+   "id": "DM-07",
+   "kind": "RuleChange",
+   "title": "No sign-in after the last day",
+   "catalogue_says": "US-13.5.3 criterion 'Inactive': sign-in succeeds on the last day and is refused the day after; an anaesthetist made active again can sign in again. OQ-147 (open) asks how a departed anaesthetist sees later remittances.",
+   "prototype_has": "Sign-in is a per-device browser session ({signedIn, account} in localStorage) that imports nothing from the store; the one demo account is Dr Souter's and any other email is refused and audited. Nothing consults the anaesthetist's status, and a stored session survives reloads and clock changes.",
+   "catalogue_refs": [
+    "US-13.5.3",
+    "US-12.1.6",
+    "OQ-147"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/shared/session/anaesthetistSession.ts:1",
+    "aa-prototype/src/apps/mobile/screens/SignInScreen.tsx:37",
+    "aa-prototype/src/apps/mobile/MobileApp.tsx:138",
+    "aa-prototype/src/store/authDemoActions.ts:88"
+   ],
+   "impact": "Needs DM-05. Apply 'the account's anaesthetist is active today' at the sign-in attempt (refused with its own reason in the auth.signInFailed audit) and at the gate that keeps a stored session so a signed-in handset is signed out once the clock passes the last day. The session store stays pure. The rule shows in the demo only if Dr Souter is the one made inactive or the demo account becomes selectable. No stored state. Built to the default of OQ-147 (sign-in stops entirely).",
+   "size": "S",
+   "verify_outcome": "upheld",
+   "verify_note": "Session file and sign-in screen re-read; no status check exists."
+  },
+  {
+   "id": "DM-08",
+   "kind": "RemovedEntity",
+   "title": "The surgeon group record is removed; the Party of kind surgeon group stays",
+   "catalogue_says": "US-13.4.1 criterion 'No surgeon group record' and US-13.6.2: there is no surgeon group list to keep; a surgeon belongs to no group; a group that holds Contracts is a Party and its surgeons are those linked on its Contracts. Domain model: a surgeon group exists only as a Party. OQ-148 (open) asks whether AA needs any list of who practises together.",
+   "prototype_has": "A SurgeonGroup master (name, description, memberSurgeonIds, retired fields) in masters.surgeonGroups with two seeded groups; create, edit and retire actions; a retire kind, id prefix SGN, activeGroups selector and groupsForSurgeon; a Master data view and sheet; a Groups card on the surgeon profile; audit labels. Nothing in billing, the step rail, pairings or rules reads the members (checked by grep: only screens, groupsForSurgeon and the retire plumbing). A group rename carries the same-named Party along by name (partyRenameFollowing). The surgeon-group Parties and the Parties loader kind are the Party kind and stay.",
+   "catalogue_refs": [
+    "US-13.4.1",
+    "US-13.6.2",
+    "US-04.1.5",
+    "OQ-148"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/domain/types.ts:542",
+    "aa-prototype/src/domain/seed/index.ts:143",
+    "aa-prototype/src/domain/seed/cast.ts:162",
+    "aa-prototype/src/store/surgeonActions.ts:218",
+    "aa-prototype/src/store/masterLifecycleActions.ts:238",
+    "aa-prototype/src/domain/masterLifecycle.ts:44",
+    "aa-prototype/src/store/mutate.ts:98",
+    "aa-prototype/src/store/selectors.ts:2350",
+    "aa-prototype/src/domain/surgeons.ts:26",
+    "aa-prototype/src/apps/admin/screens/masters/SurgeonsView.tsx:110",
+    "aa-prototype/src/apps/admin/flows/SurgeonGroupSheet.tsx:14",
+    "aa-prototype/src/apps/admin/screens/SurgeonProfile.tsx:29",
+    "aa-prototype/src/apps/admin/screens/masters/masterViews.ts:39",
+    "aa-prototype/src/apps/admin/screens/masters/view.ts:16",
+    "aa-prototype/src/domain/seed/parties.ts:64"
+   ],
+   "impact": "Independent of the other deltas, but one unit: the type cannot go while a screen reads it, and the screens sit on masterViews.ts, view.ts and MasterData.tsx which Phase 48 edits, so it runs after the Contracts lanes join (the later wave with the section move). Remove the type, the masters slice and seed, the three actions and the retire/rename plumbing, the Master data view and catalogue rows, the Groups card, audit labels, and the tests and parity baselines naming them. Requires a PERSIST_VERSION bump (persisted state carries the slice). Party and Contracts held by a surgeon-group Party are untouched.",
+   "size": "M",
+   "verify_outcome": "upheld",
+   "verify_note": "Grep for memberSurgeonIds and groupsForSurgeon confirms no billing or rule reader."
+  },
+  {
+   "id": "DM-09",
+   "kind": "ChangedRelationship",
+   "title": "The rate and the priority tier are one card and one audited change",
+   "catalogue_says": "US-12.1.4: the rate per unit and the priority tier sit on one card; each save is one audited change. US-01.3.6: the tier is changed with Edit then Save (Cancel leaves it), never by a single click.",
+   "prototype_has": "Two records written by two actions: Anaesthetist.unitValue via editAnaesthetist (one anaesthetist.update) and the tier as a row of officePrivate.priorityTiers via setPriorityTier (its own anaesthetist.tierSet). The record page shows the tier as a sliding control that saves on every click, apart from the Profile card holding the rate.",
+   "catalogue_refs": [
+    "US-12.1.4",
+    "US-01.3.6"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/store/mastersActions.ts:299",
+    "aa-prototype/src/store/officePrivate.ts:134",
+    "aa-prototype/src/apps/admin/screens/AnaesthetistRecord.tsx:54",
+    "aa-prototype/src/store/mutate.ts:290"
+   ],
+   "impact": "No new data. A card saving both would write two commits and two audit entries unless joined; withChangeSet already makes several entries one change set, matching the codebase's 'a save is one change set'. The tier stays in the office-private slice. Changing only one writes only that one; the click-to-save control becomes Edit, Save and Cancel. Touches AnaesthetistRecord.tsx and EditAnaesthetistSheet.tsx, neither a Contracts-lane file; the later page rebuild uses ProfileChrome. Lane C candidate (the tier in a card).",
+   "size": "S",
+   "verify_outcome": "upheld",
+   "verify_note": "Confirmed the tier saves on each click (AnaesthetistRecord.tsx) and setPriorityTier is its own audited mutate."
+  },
+  {
+   "id": "DM-10",
+   "kind": "NewEntity",
+   "title": "A patient needing the office is one row with its reasons",
+   "catalogue_says": "US-11.3.3: Needs follow-up is one list of every patient needing the office (a balance warning, a follow-up due, details that differ), the reason on each row, a patient with several reasons appearing once; its count is the People attention count. US-11.1.5: rows waiting for an NHI are shown on Intake and counted in Intake's attention count.",
+   "prototype_has": "The follow-up view is three separate tables (balance warnings, follow-ups due, details to review) plus a Waiting NHI tab, and the nav count sums four lists. The count is of rows, not patients: a patient with two reasons counts twice, and so does one with two open balance warnings (one per Booking) or two due reminders (openBalanceWarnings and followUpsDue are per warning and per reminder; only patientsWithPendingDetails is per patient). Waiting NHI rows are already open intake rows (derived), which Intake's attention count already includes, so they are counted in both badges today.",
+   "catalogue_refs": [
+    "US-11.3.3",
+    "US-11.3.1",
+    "US-11.1.5",
+    "US-11.1.4",
+    "US-02.1.4",
+    "US-13.4.1"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/store/patientSelectors.ts:383",
+    "aa-prototype/src/store/patientSelectors.ts:345",
+    "aa-prototype/src/store/patientSelectors.ts:48",
+    "aa-prototype/src/store/patientSelectors.ts:63",
+    "aa-prototype/src/store/matchingSelectors.ts:161",
+    "aa-prototype/src/apps/admin/screens/patients/PatientsScreen.tsx:185",
+    "aa-prototype/src/apps/admin/AdminApp.tsx:221",
+    "aa-prototype/src/apps/admin/screens/IntakeScreen.tsx:22"
+   ],
+   "impact": "A derived read patientsNeedingOffice(state): one row per patient with its set of reasons and the count of those patients, replacing the three-table split and four-way sum (grouping balance warnings and reminders by patient); waiting NHI rows leave the patient count and stay in Intake's. No stored change. The Needs follow-up filter and People badge (AdminApp.tsx) belong to the section-move wave. The new Intake tab for waiting rows is a Lane C candidate, but Intake's tabs are routes (routes.tsx, router.tsx), so it adds one route in files the Contracts lanes edit: keep it to one added entry and expect a small merge at the join.",
+   "size": "S",
+   "verify_outcome": "corrected",
+   "verify_note": "Count is by row (per warning, per reminder), so even a single reason can repeat; the new read must group by patient. The rest upheld."
   }
  ],
- "deltaSummary": "All four deltas survived; none dropped and none added. I updated /Users/d.fraser/Development/Stratos Dev/AnaesthesiaAssociatesRFP/docs/build-plan/analysis/domain-model-delta.md to match.\n\nDM-01 is corrected. The relationship and the need are real. The home needed fixing, because the change date is chosen by the office. The existing `disabledDaysByContract` reads the audit entry's timestamp, which is the save time, so the replacement's audit entry needs an explicit `replaces {contractId, fromISO}` field. A `fromISO` field on the Contract would be a date on the Contract. That sits against US-04.1.2 \"No dates\" and the open OQ-144. So the audit route is recommended, with no persist bump and no seed change needed. `domain-model.md` does not describe the link, so US-04.1.8 is its only authority.\n\nDM-02 is corrected. I added three points the author missed:\n- `setProcedureContract` has no planner. It calls `mutate()` itself and has side effects: it clears the typed price and rail answers, can re-open a completed Booking, and can settle a prepayment. \"One action\" is therefore a run of per-Procedure commits, or a refactor into a planner.\n- The still-on list does not exclude removed Draft Lists, but those Procedures cannot be moved.\n- Event fees are separate records (`masters.contractEventFees`) that the create planner does not copy. The stories leave open whether the copy carries them.\n\nI also corrected two line refs and noted that the old Contract must be moved from first, then disabled.\n\nDM-03 and DM-04 are upheld, with notes added. For DM-03, the rail's work card opens rows only as Bookings and needs a way to open a Contract. Whether a re-enabled old Contract brings the to-do back is unstated. For DM-04, the late-disable list and the review flag differ on purpose, as the criterion expects, and the list is shared with DM-02.\n\nI also re-checked the author's \"no delta\" list. The Contract page, grouped list, Parties and Funding tags tabs, and price-range table are screens over data that already exists. The holder-fixed rule is already enforced in the prototype.",
+ "deltaSummary": "Ten deltas verified and none refuted or dropped. All catalogue claims were re-read at 67cba2ce and are in scope, none retired and none in Future Work. Upheld: DM-01, DM-02, DM-04, DM-06, DM-07, DM-08 and DM-09. Corrected: DM-03, DM-05 and DM-10. In DM-03, Phase 49's D94 calls the to-do a warning rule, but a Warning is keyed to a Booking, so the phase must either widen the finding's subject to a Contract or use the derived ToDoItem kind. In DM-05, recurring bookings read Slot existence rather than the active flag, and more flag readers exist: matching open-slot, rebook candidates, list-move demo. The start date already exists. paymentActions.ts:294 refuses a receipt naming an inactive anaesthetist, which conflicts with \"everything recorded before stays\". In DM-10, the follow-up and attention counts are by row (per warning, per reminder), so even a single reason can repeat. Nothing was added: People-page keys, side panels, filters, patient pending details and the waiting-NHI move need no model change. domain-model-delta.md is updated with the corrections and an adversarial-verification note.",
  "reverseFindings": [],
  "reverseSummary": "",
  "excluded": [

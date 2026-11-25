@@ -1,5 +1,5 @@
 {
- "commit": "5f87781b1df9364ea9462c031b1b8b6ce68424a7",
+ "commit": "67cba2ce0b3da7a08add0105b5805a384908adfe",
  "phases": [
   {
    "num": "45",
@@ -12,8 +12,7 @@
    "est_sessions": "2 sessions",
    "covers": [
     "US-04.1.7",
-    "US-04.2.15",
-    "DM-04"
+    "US-04.2.15"
    ],
    "demo_triggers": [
     "Admin · Contracts list and Merivale's Face lift page: re-point the existing 'Demo: add a backdated price range' (demo-backdated-range, registry.ts). Its routes and `when` move from Master data (adminMasters.view === 'contracts', adminContracts.openContractId) to /admin/contracts and the Face lift's /admin/contracts/:contractId. On a page, not a modal, it runs from the Face lift itself, and the new range shows as the table's top row with its Procedures-priced count and the kept-price warning. Its screen label follows the move, and demoGuideSync.test.ts stays green",
@@ -88,9 +87,7 @@
     "45"
    ],
    "est_sessions": "1 session",
-   "covers": [
-    "US-04.1.2"
-   ],
+   "covers": [],
    "demo_triggers": [
     "None: the grouping, the index and the URL are normal use",
     "PWA: none (Admin only)"
@@ -129,7 +126,6 @@
    "est_sessions": "1 session",
    "covers": [
     "US-04.1.5",
-    "US-13.4.1",
     "US-13.4.5"
    ],
    "demo_triggers": [
@@ -171,10 +167,7 @@
    "est_sessions": "1 to 2 sessions",
    "covers": [
     "US-04.1.8",
-    "US-04.1.3",
-    "DM-01",
-    "DM-02",
-    "DM-03"
+    "US-04.1.3"
    ],
    "demo_triggers": [
     "Admin · Contracts list and a replaced Contract's page: 'Demo: reach the change date' (new, harness bar only), shown while a replacement's change date is still ahead. It moves the demo clock to that date with the existing advanceClockToDate action (shared/demoClockShortcuts.ts, as the prepayment trigger does). The 'Disable <old Contract>' to-do then appears in the Day view To-do and on the old Contract's page while it is still offered. The button is disabled once the date is reached, and the Control Panel's reset puts the clock back",
@@ -200,10 +193,339 @@
     "(9) Shared-components work item was missing: added as item 10; adversarial review already flags private copies",
     "(10) Prompt carries commit-when-green, no-screenshots Override"
    ]
+  },
+  {
+   "num": "50",
+   "slug": "rate-and-tier-card",
+   "title": "The rate and priority tier card",
+   "track": "Lane C",
+   "goal": "The priority tier is edited in a card with the rate per unit, never by a single click (US-01.3.6, DM-09; D101, D102). Runs in Lane C of Wave 1, first in its queue, beside Lanes A and B. A new self-contained card component (for example apps/admin/components/RateTierCard.tsx) goes on today's anaesthetist record (AnaesthetistRecord.tsx, still at /admin/masters/anaesthetists/:anaesthetistId). It replaces the 'Priority tier' card, whose SlidingSegmentedControl saves on every click, and takes the rate per unit out of the Profile card. At rest it shows the rate and 'Tier N · office only'. Edit puts it in the editing state of 45's shared Card (its editing and footer props): the rate field and the tier choice, with Cancel and Save. Cancel leaves both. Save writes only what changed, and when both changed the two writes run in one change set (withChangeSet over editAnaesthetist's unitValue patch and setPriorityTier), so one save is one audited change; a refusal shows on the card. The tier stays in the office-private slice and never reaches the anaesthetist apps. EditAnaesthetistSheet drops its rate field, so the rate has one editor in Admin. The Anaesthetists list (screens/masters/AnaesthetistsView.tsx) gains a tier filter (FilterPills: All, Tier 1 to Tier 4) beside its Tier column. 54 places the card unchanged on the anaesthetist's page, and 53 keeps the list filter when the list moves to People. Layout: docs/explorations/people-section.html #tier.",
+   "delivers": "The rate per unit and the priority tier on one self-contained card on today's anaesthetist record: Edit, choose, Save (Cancel leaves it), one audited change per save, never a single click. The rate leaves the edit sheet, and the Anaesthetists list filters by tier. Covers US-01.3.6, DM-09",
+   "depends_on": [
+    "45"
+   ],
+   "est_sessions": "1 session",
+   "covers": [
+    "US-01.3.6",
+    "DM-09"
+   ],
+   "demo_triggers": [
+    "None: the card's Edit, Save and Cancel and the list's tier filter are normal use (one audit row per save)",
+    "PWA: none (Admin only; the tier is office-only)"
+   ],
+   "blocked_by_oqs": [],
+   "risks": "Lane C, Wave 1 (D101): never edit ContractCards.tsx, ProfileChrome.tsx, masterViews.ts, view.ts, MasterData.tsx, chrome.tsx or any other file the Contracts phases change. Build the card on shared Card's editing and footer props (45), not on a copy of ContractCards' private EditableCard, which 53 lifts later. Keep it self-contained (it reads the anaesthetist and the tier by id and takes the actor) so 54 can place it as is. Check how withChangeSet records the two audit entries (anaesthetist.update and anaesthetist.tierSet), that the History sheet shows one save as one change, and that changing only one field writes only that one. The anaesthetist's own rate editing in the web app (OFFICE_HELD_FIELD) must not regress, and apps/officePrivacy.test.ts keeps the tier out of the anaesthetist apps. The candidate pickers' tier ordering, seeded shuffle and 'Filter by tier' already match: leave them. The list filter lives in AnaesthetistsView.tsx only; its state is in the URL or local, logged. Playwright specs that click the tier control (profile-phase26 and any other) move to Edit, choose, Save. No seed change, no PERSIST_VERSION bump.",
+   "file": "phases/phase-50-rate-and-tier-card.md",
+   "prompt_file": "phases/phase-50-rate-and-tier-card.prompt.md",
+   "goal_short": "The priority tier is edited with the rate per unit in one self-contained \"Rate and tier\" card on today's anaesthetist record (Edit, choose, Save or Cancel, on 45's Card editing and footer props), saved as one audited change through withChangeSet over editAnaesthetist and setPriorityTier (D102), never by a single click. The click-to-save tier card and the Profile card's rate go, the edit sheet loses its rate field, and the Anaesthetists list gains a tier filter. Finishes US-01.3.6 and DM-09, in Lane C, Wave 1, inside D101's file boundary.",
+   "checks": [
+    "Click a tier in the card's edit state: nothing is audited until Save; Cancel restores both values; one save of both fields shows as one change in History, and a bad rate shows a refusal on the card with the tier left unwritten.",
+    "The record's Profile card and EditAnaesthetistSheet no longer show the rate, the anaesthetist's own rate editing in the web and mobile apps still works, and no tier appears in either anaesthetist app.",
+    "The Anaesthetists list's tier filter (All, Tier 1 to 4) narrows rows by tier, and the finder and Draft List pickers still order and filter by tier.",
+    "No D101 file (router, routes, ProfileChrome, chrome, masterViews, view, MasterData and the rest) is edited; build, build:pwa, vitest and all of visual/ are green."
+   ]
+  },
+  {
+   "num": "51",
+   "slug": "waiting-for-nhi-on-intake",
+   "title": "Waiting for an NHI as a tab on Intake",
+   "track": "Lane C",
+   "goal": "Rows waiting for an NHI move from Patients to their own tab on Intake, beside Matching (US-11.1.5, US-11.1.4, US-02.1.4; D100, D101). Runs in Lane C of Wave 1, after 50. INTAKE_TABS (IntakeScreen.tsx) gains 'Waiting for NHI' at /admin/intake/waiting. WaitingNhiView moves from screens/patients/ to screens/intake/ (with AddNhiSheet if nothing else uses it), its behaviour unchanged: the patient as received, the List or date, one address to chase with the others offered, Urgent within three days, the audited request, Add NHI matching the single record, and the stub on the List. The Patients section loses its Waiting for NHI tab (PATIENT_LIST_PATHS and its tab strip) and keeps Search and Follow-up until 53. Routes, D101's one narrow exception: one route added in router.tsx's Intake block, /admin/patients/waiting turned into a Navigate redirect to /admin/intake/waiting in its Patients block, and one route component appended to apps/admin/routes.tsx, nothing near the Contracts block. The counts change in the domain selectors, never in AdminApp.tsx or SideNav.tsx: patientAttentionCount (store/patientSelectors.ts) stops adding waitingNhiRows, and matchingAttentionCount (store/matchingSelectors.ts) keeps counting them and drops when the NHI is added, including for a row with no List yet (today addNhiToWaitingRow leaves that row open on Matching with a decision to choose). MatchingTable's 'Waiting for NHI' link, the receive-no-nhi-list trigger and NHI_HUB_ROUTES re-point to the Intake tab. Layout: docs/explorations/people-section.html #patients (Waiting for NHI moves to Intake beside Matching) and Intake's own tab strip.",
+   "delivers": "A Waiting for NHI tab on Intake beside Matching, with the view moved from Patients unchanged and the old /admin/patients/waiting link redirected. The rows count once, in Intake's attention count, which drops when the NHI is added; the Patients count stops counting them. Covers US-11.1.5, US-11.1.4, US-02.1.4",
+   "depends_on": [],
+   "est_sessions": "1 session",
+   "covers": [
+    "US-11.1.5",
+    "US-11.1.4",
+    "US-02.1.4"
+   ],
+   "demo_triggers": [
+    "Admin · Intake · Waiting for NHI: re-point the existing 'Receive list with a missing NHI' (receive-no-nhi-list, registry.ts) from /admin/patients/waiting to /admin/intake/waiting (its screen label, routes and indexPath), and the NHI lookup hub's route list (NHI_HUB_ROUTES) likewise; demoGuideSync.test.ts stays green (fix only the guide line it names)",
+    "PWA: 'Office adds the NHI' (pwa-office-adds-nhi) is unchanged: it runs the same store action",
+    "Product, no trigger: Add NHI on the tab, and Intake's count dropping by one"
+   ],
+   "blocked_by_oqs": [],
+   "risks": "Lane C, Wave 1, with D101's one narrow exception: in router.tsx add the Intake route and turn the Patients waiting route into a redirect, and append one route component to routes.tsx; nothing else in either file, and expect a small mechanical merge at the join. AdminApp.tsx and SideNav.tsx are not touched: both badges already read the two selectors. Re-pointing receive-no-nhi-list edits an existing entry in registry.ts, which the other lanes add to: change only that entry's lines and NHI_HUB_ROUTES. The no-List edge: decide and log what Add NHI does with a row that has no List yet, so the tab and Intake's count agree with US-11.1.5 (the row leaves the view and the count drops). waitingNhiRows leaves out hospital cancellations with no NHI, which stay on Matching for Reject: keep that. A selector test proves a waiting row counts once (in Intake's count, not the Patients count). patients.test.tsx and nhiRegister40a.test.tsx move their waiting parts. Playwright: admin-patients.spec.ts and nhi-lookup.spec.ts follow the new path. The demo guide's 'Patients → Waiting for NHI' beats are for the sweep (the redirect keeps them loading). No seed change, no PERSIST_VERSION bump.",
+   "file": "phases/phase-51-waiting-for-nhi-on-intake.md",
+   "prompt_file": "phases/phase-51-waiting-for-nhi-on-intake.prompt.md",
+   "goal_short": "Rows waiting for an NHI become their own tab on Intake beside Matching, at /admin/intake/waiting. WaitingNhiView moves from Patients to Intake unchanged in behaviour. The old /admin/patients/waiting path redirects, and Patients keeps Search and Follow-up. Intake's attention count includes the rows and drops when the NHI is added, the no-List edge included. The Patients count stops counting them. Matching's link, the receive-no-nhi-list trigger and NHI_HUB_ROUTES point at the tab. Covers US-11.1.5, US-11.1.4 and US-02.1.4 (D99 to D101). It runs in Lane C, Wave 1, after 50.",
+   "checks": [
+    "Doc and prompt follow the Phase 47 and 48 house style: the Runs in line for Lane C Wave 1, and the lane paragraph after the opening line of the prompt, naming docs/build-plan/lanes/lane-c.prompt.md (that file does not exist yet).",
+    "D101's boundary is explicit: only the three named edits in router.tsx and routes.tsx, a narrow registry.ts edit, and no change to AdminApp.tsx or SideNav.tsx.",
+    "The counts live only in patientAttentionCount and matchingAttentionCount. The no-List edge is a built default, with a test that proves it for both a row with a stub and a row with no List.",
+    "Work items name the real files (the tab move, the route, PatientsScreen, the registry entries, the demoScenarios path, the Playwright specs, the catalogue row). The prompt carries the required Override line word for word and no absolute paths."
+   ]
+  },
+  {
+   "num": "52",
+   "slug": "make-anaesthetist-inactive",
+   "title": "Make an anaesthetist inactive from a last day",
+   "track": "Lane C",
+   "goal": "An anaesthetist is made inactive from a chosen last day, with a reason, and can be made active again (US-12.1.6, US-13.5.3, US-01.1.1, US-04.1.2's Inactive anaesthetist criterion, DM-05, DM-06, DM-07; D101, D103, D97). Runs last in Lane C of Wave 1, after 50 and 51, merging Lane A's 49 at its start. Domain: the Anaesthetist gains a last day and a reason, and activity becomes a function of a date through one pure isActiveOn(anaesthetist, dateISO), active from the start date and inactive after the last day. Every reader of today's active flag moves to it: the canvas generator and roll-forward, anaesthetistCanvasDelta, the slot and Draft List assignment pickers, the availability finder, List and Booking moves, the pairing picker, the matching open-slot read, rebook candidates, the AA fee preview and run, the list-move demo and the demo invariant. The payment-receipt guard (store/paymentActions.ts) stops refusing a payment for work done before the last day. Store: a new store/anaesthetistStatusActions.ts with three office-only audited actions: make inactive (refused while they hold a List after the last day, returning those Lists), clear the last day (before it comes; nothing changes) and make active again (after it; Slots from that day). The canvas has no Slots after the last day, and Lists are never deleted. When the demo clock passes a last day (the dayAdvanced event, as the archive job subscribes), the Contracts held by the anaesthetist's own Party and linked to them are disabled by the system, one audited change each, through the existing disableContract. Making them active again offers those Contracts back, each ticked with its price, and enables the ticked ones through enableContract. Nothing in store/contractActions.ts, domain/billing/contracts.ts, contractHistory.ts or screens/contracts/ is edited. Sign-in (US-13.5.3, DM-07): allowed on the last day and refused after it, with its own audited reason, in the mobile app and the PWA (SignInScreen and the stored-session gate in MobileApp.tsx, so a signed-in handset is signed out once the clock passes the day; anaesthetistSession.ts stays pure). The web app, which has no sign-in, shows a 'no longer active' page for an inactive persona. UI, as self-contained components on today's anaesthetist record (AnaesthetistRecord.tsx), which 54 places on the anaesthetist's page: a status card (active since the start date, 'Inactive from <day>' with the reason and Clear, or Inactive with Make active), a make-inactive sheet (last day, reason, and the refusal listing the Lists after the day, each a link), an offer-back sheet (the disabled Contracts, ticked, with prices), and a history card keeping their past Lists, Bookings, invoices and payments readable (a few past Lists with See all, and their ledger page for invoices and payments). The edit sheet's immediate Active or Inactive toggle goes, and the Anaesthetists list's status column reads isActiveOn today. Layout: docs/explorations/people-section.html #inactive.",
+   "delivers": "Make an anaesthetist inactive from a chosen last day with a reason, refused while they hold a List after it (those Lists shown), cleared before the day, each step audited. After the day: no Slots, not offered or picked, no sign-in (mobile, PWA and web), and their own Contracts disabled by the system. Made active again: Slots and sign-in back from that day, the disabled Contracts offered back ticked with prices. The status card, the sheets and a history card sit on today's anaesthetist record, and the edit sheet's Active toggle goes. Covers US-12.1.6, US-13.5.3, US-01.1.1, US-04.1.2 (its Inactive anaesthetist criterion, finishing the story, D96), DM-05, DM-06, DM-07",
+   "depends_on": [
+    "49",
+    "50"
+   ],
+   "est_sessions": "2 sessions",
+   "covers": [
+    "US-12.1.6",
+    "US-13.5.3",
+    "US-01.1.1",
+    "US-04.1.2",
+    "DM-05",
+    "DM-06",
+    "DM-07"
+   ],
+   "demo_triggers": [
+    "Admin · an anaesthetist's record: 'Demo: pass the last day' (new, harness bar only), shown while the anaesthetist has a last day ahead. It moves the demo clock to the day after with the existing advanceClockToDate (shared/demoClockShortcuts.ts), so their Slots end, the finder skips them and their own Contracts show Disabled; disabled once the day has passed. The Control Panel's reset puts the clock back",
+    "Mobile Sign in (harness bar) and PWA Sign in (PWA sheet): 'Demo: try signing in after the last day' (new), which tries the sign-in of an anaesthetist whose last day has passed and shows the refusal with its audit row, without making the demo account (Dr Souter) inactive; how it picks the anaesthetist is the phase's choice, logged",
+    "Product, no trigger: Make inactive (and its refusal listing the Lists after the day), Clear the last day, Make active again with the offer-back sheet"
+   ],
+   "blocked_by_oqs": [
+    "OQ-147",
+    "OQ-83",
+    "OQ-144"
+   ],
+   "risks": "The largest Wave 1 phase: two sessions. Session 1: domain and store (isActiveOn and every reader, the three actions and the refusal, the canvas end and roll-forward, the dayAdvanced Contract disable and the offer-back read, the receipt guard, the sign-in check) with tests, and the PERSIST_VERSION bump. Session 2: the status card, the two sheets and the history card on the record, the edit sheet's toggle removed, the list's status column, the demo triggers and the Playwright specs. It depends on 49: at its start it merges Lane A's '49 complete:' commit, because 49 changes how a Contract is disabled (disableFromISO, the derived 'replaced Contract still active' to-do, which a Contract re-enabled on return brings back); if 49 is not complete, Lane C stops as blocked. Lane C rules (D101): build from new files (store/anaesthetistStatusActions.ts, a pure planner in domain/, the components) that call disableContract and enableContract. 'Own Party' is derived (D103: holder an anaesthetist-kind Party, linkedAnaesthetistId the person; no stored Party.anaesthetistId), and only Contracts the rule disabled are offered back (the system's contract.disable entries after the last day; a Contract the office disabled by hand stays out). The last day is today or later; Slots after it go when it is set and come back if it is cleared, so nobody can be given a List after the last day: record the reading. The stored active flag is replaced by the derived read, or kept as 'not made inactive' with the reason logged; the shape change bumps PERSIST_VERSION (Lanes A and B expect none; at the join the higher wins, LANES.md). The story's example is Dr Beaumont (her Rhinoplasty Contract, $1,350.00, prepaid, held by her own Party, already seeded); seeding a last day for anyone is optional and goes on the owner's review list. Grep 'active' across src before calling the reader list complete; the AA fee run for the month someone leaves must key on the work's date. Sign-in: anaesthetistSession.ts stays pure (pwaPurity.test.ts), so the check is injected from the app or a store-side hook; S1 starts at the mobile sign-in, which must keep working for Dr Souter. OQ-147 at its default (D97): sign-in stops entirely and nothing is built for later remittances. OQ-83 as built. OQ-144 has no effect (the date is the anaesthetist's). US-04.1.2 is finished here (D96): walk all its criteria at the close. Playwright specs that toggle Active in the edit sheet (phase28, profile-phase26) move to the new actions. For the sweep: a make-inactive beat on the demo clock.",
+   "file": "phases/phase-52-make-anaesthetist-inactive.md",
+   "prompt_file": "phases/phase-52-make-anaesthetist-inactive.prompt.md",
+   "goal_short": "Make an anaesthetist inactive from a last day",
+   "checks": [
+    "1 covers/diffs: US-12.1.6, US-13.5.3, US-01.1.1, US-04.1.2 and DM-05 to DM-07 all reached the doc (last day, reason, refusal listing Lists, clear, make active with ticked offer-back and prices, sign-in refused after the day, no Slots); nothing superseded survives (Active toggle removed)",
+    "2 D103, D101, D96 built as answered; OQ-147, OQ-83 and OQ-144 built to their defaults, each on the owner's review list",
+    "3 Every file named exists (grep); new files are marked new",
+    "4 Scope matches the outline entry, 2 sessions, depends on 49 and 50, Lane C Wave 1 'Runs in' line in the phase-48 pattern",
+    "5 Drift-check baseline is 67cba2c",
+    "6 Prompt is slim and doc-first, with the Lane C paragraph, the commit-when-green and no-screenshots Override, the rules to hold and the goal; no absolute paths and no frontend-design bullet",
+    "7 Triggers are screen-contextual (harness bar plus PWA sheet), both ids on NOT_SCRIPTED; the sweep's guide beats were named only generally, so I added the specific guide and master-demo-guide.html sections",
+    "8 Design pages named per screen (people-section.html #inactive, Admin Review, Mobile App, Web Dashboard)",
+    "9 Work item 15 lacked the 'Build on the shared components' label; fixed. The review steer already names a private copy as a finding",
+    "10 Override block present"
+   ]
+  },
+  {
+   "num": "53",
+   "slug": "people-section",
+   "title": "The People section and the shared record pattern",
+   "track": "Lane A",
+   "goal": "Anaesthetists, surgeons, specialties and patients become one People section of the Admin app (US-13.4.1; D99, D100, D104, D105; OQ-148 at its default, D98). Runs alone in Lane A as Wave 2, once Wave 1 (46 to 52) is joined on master. SideNav.tsx: a People entry where Patients was, carrying its attention count (patientAttentionCount, as 51 left it), with AdminApp's sectionForPath; Patients leaves the nav. Routed tabs on AdminPage fit in a LineTabs strip: Anaesthetists (/admin/people/anaesthetists, where the section opens), Surgeons (/admin/people/surgeons), Specialties (/admin/people/specialties) and Patients (/admin/people/patients). The record routes move under them, each rendering today's screen with its back link to its tab until Wave 3 rebuilds it: /admin/people/anaesthetists/:anaesthetistId (the registration number; AnaesthetistRecord with 50's and 52's cards), /admin/people/surgeons/:surgeonId (SurgeonProfile) and /admin/people/patients/:nhi (PatientRecord). Redirects, kept after the sweep (D100): /admin/masters?view=anaesthetists, surgeons and specialties to their tabs and ?view=surgeonGroups to Surgeons (mastersRedirect.ts), the old profile routes /admin/masters/anaesthetists/:id and /admin/masters/surgeons/:id, and /admin/patients, /admin/patients/follow-up and /admin/patients/:nhi (51 already redirected /admin/patients/waiting). In-app links (mastersPaths.ts, the Day view, pairings, review, invoices, the patient links) go to the new routes directly. Master data: the four views leave masterViews.ts, view.ts and MasterData.tsx; 'People and places' becomes 'Places' (hospitals); a one-line pointer says Anaesthetists, Surgeons and Specialties are in People; the Surgeon groups view and its sheet go (the record behind them goes in 55). Every People list is searched, filtered and paged with the shared FilterPills, search box and Pager: Anaesthetists (name, registration or HPI CPN; Active by default, Inactive or All, read through 52's isActiveOn; 50's tier filter), Surgeons (name, practice or HPI CPN; a specialty filter; Active or Retired, replacing Show retired), Specialties (name). The Patients tab hosts today's patient list and follow-up view as they are until 57. The shared record pattern is lifted out of the Contract page: the editable card and its useCardEdit hook (ContractCards.tsx) and a record side panel (short sections with See all) become shared components with /demo/catalogue rows, and the Contract page is re-pointed onto them with no change in behaviour. Layout: docs/explorations/people-section.html #map and #nav, and #groups for the cut.",
+   "delivers": "A People entry in the Admin side nav where Patients was, with its attention count, and four routed tabs (Anaesthetists, Surgeons, Specialties, Patients), each list searched, filtered and paged. Every record route moves under People; the old Master data, profile and Patients links redirect. Master data keeps Places with a pointer across, and the Surgeon groups list goes. The Contract page's cards edited one at a time and a side panel are lifted into shared components the People pages build on. Covers US-13.4.1",
+   "depends_on": [
+    "46",
+    "47",
+    "48",
+    "49",
+    "50",
+    "51",
+    "52"
+   ],
+   "est_sessions": "2 sessions",
+   "covers": [
+    "US-13.4.1"
+   ],
+   "demo_triggers": [
+    "Admin · People tabs: the anaesthetists, surgeons and specialties sample-sheet triggers (SEEDED_SHEETS_BY_VIEW, keyed on adminMasters.view) follow their lists to the People tabs, published as a People tab key the way 45 published adminContracts.tab",
+    "Admin · People · Patients and a patient's page: the NHI lookup hub's routes (NHI_HUB_ROUTES) and any trigger on /admin/patients or /admin/patients/:nhi re-point to /admin/people/patients; 52's 'Demo: pass the last day' and any trigger on the old anaesthetist or surgeon profile routes follow them; demoGuideSync.test.ts stays green",
+    "PWA: none (Admin only)"
+   ],
+   "blocked_by_oqs": [
+    "OQ-148"
+   ],
+   "risks": "Wave 2, alone in Lane A after Wave 1 is joined: it touches router.tsx, SideNav.tsx, AdminApp.tsx, routes.tsx, masterViews.ts, view.ts, MasterData.tsx, chrome.tsx, mastersRedirect.ts and mastersPaths.ts, so nothing else runs while it does. Two sessions. Session 1: the nav entry, the People route block, the tabs hosting the moved lists, the record routes, every redirect and in-app link, Master data's Places and pointer, and the Surgeon groups view removed. Session 2: search, filters and the pager on each list (closing BACKLOG's 'Masters → Anaesthetists (85) and Surgeons (165)' clause), the record pattern lifted with catalogue rows and the Contract page re-pointed, and the Playwright specs. The lift must not change the Contract page: ContractPage.test.tsx and the Contract specs are the check. The lifted card takes a save callback, not editContract, so People pages save through their own actions. US-13.4.1 split (D105): this phase builds Three places, No surgeon group record (the list) and Find a person; the Surgeons list's search, specialty and Active or Retired filters are built here, not in 55, because Find a person is this unit's own criterion; One card, one change is US-13.6.2's One card at a time, built in 55, which also removes the SurgeonGroup record (DM-08). masterViews.test.ts's mapping becomes US-13.4.1's three places (48 leaves it at two), and Seed load and Go-live load copy that names Master data for the anaesthetists, surgeons and specialties sheets names People. The tier filter and column stay Admin-only (officePrivacy.test.ts). The Patients tab gets no new filters (57); its follow-up view sits behind a temporary Search or Follow-up switch, logged. Playwright specs on the moved paths (admin-patients, admin-phase17, admin-phase17b, admin-phase18a, admin-layout, nhi-lookup, phase28, profile-phase26) move to the new routes. Capture recipes, ATLAS and the guide's Master data and Patients paths wait for the sweep (the redirects keep them loading). No seed change, no PERSIST_VERSION bump.",
+   "file": "phases/phase-53-people-section.md",
+   "prompt_file": "phases/phase-53-people-section.prompt.md",
+   "goal_short": "The People section and the shared record pattern",
+   "checks": [
+    "(1) All brief changes present: People nav entry, four tabs, record routes, D100 redirects, Master data to Places with pointer, Surgeon groups view removed, filters and paging, lift of EditableCard and rail section; nothing retired survives (the group record stays for 55 by D98).",
+    "(2) D99, D100, D104, D105 built as decided; OQ-148 at its default (no list), logged on the review list.",
+    "(3) Named files and functions grep-verified (surgeonProfilePath, mastersViewPath, ShowRetiredToggle, SEEDED_SHEETS_BY_VIEW, NHI_HUB_ROUTES, Pager at admin/components, SelectField in shared/ui/Field.tsx, surgeonRooms in view.ts); isActiveOn is 52's and new files are marked new.",
+    "(4) Scope matches the outline entry.",
+    "(5) Drift-check baseline is 67cba2c.",
+    "(6) Prompt is slim and doc-first, with the Lane A opener, no absolute paths and no generic steps.",
+    "(7) Demo triggers are screen-contextual, PWA none, and the guide lines for the sweep are named.",
+    "(8) Design pages named per screen (people-section.html #map, #nav, #groups; contracts-section.html #record; Admin Review); the prompt has no frontend-design bullet.",
+    "(9) Work item 12 lacked the 'Build on the shared components' wording and component list; fixed. The review steer lacked 'a new private copy is a finding'; fixed.",
+    "(10) The prompt carries the commit-when-green and no-screenshots Override."
+   ]
+  },
+  {
+   "num": "54",
+   "slug": "anaesthetist-page",
+   "title": "The anaesthetist's page",
+   "track": "Lane A",
+   "goal": "Each anaesthetist gets a page in People in the shared record pattern (US-12.1.4; D99, D104), at /admin/people/anaesthetists/:anaesthetistId (the registration number, which never changes), on ProfilePage fluid with the 412px rail as the side panel. Runs in Lane A of Wave 3, beside Lanes B and C, once 53 is on master. The cards, each edited and saved on its own through 53's shared editable card, each save one audited change (editAnaesthetist with that card's fields only) and refused on the card: name, registration number (read-only) and HPI CPN (mandatory, unique); contact details (phone, email); bank account (mandatory) and GST number; the rate per unit and priority tier (50's card); and status (52's card, with Make inactive). The side panel (53's) shows their preferred and not-preferred pairings (PairingSection's content, office-private), the Contracts linked to them (Contract.linkedAnaesthetistId, each opening its Contract page) and their next Lists (each opening the List), a few of each with See all. 52's history card stays reachable from the page. The all-fields editor (EditAnaesthetistSheet) is deleted; Add anaesthetist keeps its flow. The tier is seen and set only in Admin. Layout: docs/explorations/people-section.html #map and #tier, with the Contract page's record pattern (contracts-section.html #record).",
+   "delivers": "A page per anaesthetist in People keyed by registration number: identity, contact, bank, rate and tier, and status cards, each edited and saved on its own as one audited change; a side panel of pairings, linked Contracts and next Lists with See all; Make inactive on the page. The all-fields edit sheet goes. Covers US-12.1.4",
+   "depends_on": [
+    "50",
+    "52",
+    "53"
+   ],
+   "est_sessions": "1 session",
+   "covers": [
+    "US-12.1.4"
+   ],
+   "demo_triggers": [
+    "Admin · the anaesthetist's page: 52's 'Demo: pass the last day' shows here (its route already re-pointed by 53)",
+    "Product, no trigger: a card's Edit, Save and Cancel (one audit row each); the side panel's See all",
+    "PWA: none (Admin only)"
+   ],
+   "blocked_by_oqs": [],
+   "risks": "Wave 3, Lane A, beside 55 and 56 (Lane B) and 57 (Lane C). Own files: the anaesthetist's page, its cards and its side-panel selectors; leave the People route block (swap only this page's element), 53's shared components (extend with a prop, never rewrite) and the lists to their owners. One card at a time: editAnaesthetist must audit only the card's fields, and its refusals (HPI CPN and bank mandatory, HPI CPN unique) show on the right card. Where the start date sits (the status card) and whether the name is editable are decided and logged. Next Lists and linked Contracts are pure selectors with tests (the story's eight upcoming Lists: a few shown, See all lists eight); a Contract linked to the anaesthetist but held by a hospital still shows. The pairing add and remove must keep working at the panel's narrower width. Deleting EditAnaesthetistSheet touches its tests, its /demo/catalogue rows and any spec that opens it (phase28, profile-phase26). 50's and 52's components are placed as they are. Never show the tier outside Admin (officePrivacy.test.ts). No seed change, no PERSIST_VERSION bump.",
+   "file": "phases/phase-54-anaesthetist-page.md",
+   "prompt_file": "phases/phase-54-anaesthetist-page.prompt.md",
+   "goal_short": "The anaesthetist's page in People: cards saved one at a time, side panel, EditAnaesthetistSheet deleted (US-12.1.4)",
+   "checks": [
+    "(1) Brief reached the doc: US-12.1.4 joined, per-card Edit/Save with one audited change, rate-and-tier card placed, side panel with See all, Make inactive via 52, sheet deleted. Nothing retired survives.",
+    "(2) D99, D102 to D105 built as answered; no open questions; the name-read-only and start-date placement are logged as built defaults on the owner's review list.",
+    "(3) Names grep-checked. Wrong: formatGstNumber lives in domain/billing/invoicePresentation.ts, not shared/format.ts; the specs that open the sheet are admin-phase17b and admin-phase18a (plus profile-phase26), not admin-phase17; HistorySheet is shared/booking/HistorySheet.tsx; usePairingEntries is in useOfficePairings.ts. All fixed. Marked-new files (anaesthetistPanel.ts, AnaesthetistPage.tsx) are labelled new; 50/52/53 items are named as built there.",
+    "(4) Scope fits the outline: one session, covers US-12.1.4, depends 50/52/53, Lane A Wave 3.",
+    "(5) Drift baseline is 67cba2c.",
+    "(6) Prompt is slim and doc-first, with the opening line, the Lane A paragraph, the Override, the holds and the Phase goal; it restates no generic step and has no absolute paths.",
+    "(7) Demo trigger is 52's, screen-contextual, with no PWA equivalent (Admin only); the doc leaves the guide and ATLAS to the sweep and says what to list for it.",
+    "(8) Design references named: people-section.html #map and #tier, contracts-section.html #record, the layout audit and the Design Language. The prompt has no frontend-design bullet.",
+    "(9) Work item 7 is 'Build on the shared components'; the review steer names private copies as a finding.",
+    "(10) The prompt carries the commit-when-green, no-screenshots Override."
+   ]
+  },
+  {
+   "num": "55",
+   "slug": "surgeon-page-and-groups-cut",
+   "title": "The surgeon's page, and surgeon groups cut",
+   "track": "Lane B",
+   "goal": "Each surgeon gets a page in People in the shared record pattern (US-13.6.2; D99, D104), and the surgeon group record is removed from the domain, the store and the seed (DM-08; OQ-148 at its default, D98). Runs first in Lane B of Wave 3 (then 56), once 53 is on master. The page, at /admin/people/surgeons/:surgeonId (the surgeon's id, which never changes), on ProfilePage fluid: cards for name and practice, registration number, HPI CPN (optional and unique; blank reads 'No HPI CPN yet'), specialties, and contacts (the office contacts, with the first-address pill), each edited and saved on its own as one audited change (editSurgeon with that card's fields) and refused on the card. The side panel shows the surgeon's private pairings both ways, the Contracts linked to them (linkedSurgeonIds, each naming its holder and opening its Contract page) and their next Lists, a few each with See all. The Groups card goes. The cut: the SurgeonGroup type, masters.surgeonGroups and its two seeded groups, createSurgeonGroup and editSurgeonGroup with their retire and rename plumbing (masterLifecycle, partyRenameFollowing), groupsForSurgeon and activeGroups, SurgeonGroupSheet, the audit labels, the catalogue rows, and the tests and parity baselines naming them, with a migration dropping the slice and a PERSIST_VERSION bump. The Party of kind surgeon group and every Contract it holds are untouched. SurgeonEditSheet keeps only New surgeon (logged). Layout: docs/explorations/people-section.html #groups and #map.",
+   "delivers": "A page per surgeon in People: name and practice, registration, HPI CPN, specialties and contacts cards, each saved on its own as one audited change; a side panel of pairings both ways, linked Contracts and next Lists with See all; no Groups card. The surgeon group record, its actions, seed and screens removed, with a PERSIST_VERSION bump; the surgeon-group Party stays. Covers US-13.6.2, DM-08",
+   "depends_on": [
+    "53"
+   ],
+   "est_sessions": "1 to 2 sessions",
+   "covers": [
+    "US-13.6.2",
+    "DM-08"
+   ],
+   "demo_triggers": [
+    "Product, no trigger: a card's Edit, Save and Cancel; the side panel's Contracts (Mr Hale's COS and Unisports Ortho Contracts, each naming its holder)",
+    "PWA: none (Admin only)"
+   ],
+   "blocked_by_oqs": [
+    "OQ-148",
+    "OQ-143"
+   ],
+   "risks": "Wave 3, Lane B. The only Wave 3 phase expected to bump PERSIST_VERSION: if another lane bumps too, the join sets one past the higher (LANES.md). The cut runs through shared plumbing (domain/types.ts, store/mutate.ts, the appStore migration, masterLifecycle's retire kinds, the SGN id prefix, audit labels, seed/index.ts and cast.ts, selectors.ts): grep memberSurgeonIds, SurgeonGroup, surgeonGroups and groupsForSurgeon to zero outside the migration. Nothing in billing, the step rail, pairings or rules reads a group (DM-08's check); if a reader appears, stop. 53 already removed the Master data view and redirects ?view=surgeonGroups. The surgeon-group Parties (COS, Unisports, Aria, Merivale) and their Contracts must not change: the Contracts tests and specs are the check. US-13.6.2's One card at a time is also US-13.4.1's One card, one change (D105): verify both at the close. OQ-143 as built (blank HPI CPN allowed, duplicates refused). Next Lists and linked Contracts are pure selectors with tests. The Surgeons list's search, filters and pager are 53's: do not rebuild them. Swap only this page's element in the People route block. Tests and Playwright specs that name groups or open SurgeonEditSheet for an edit (admin-phase17, admin-phase17b) move. For the sweep: the surgeon-groups capture state and the guide's Surgeon groups line.",
+   "file": "phases/phase-55-surgeon-page-and-groups-cut.md",
+   "prompt_file": "phases/phase-55-surgeon-page-and-groups-cut.prompt.md",
+   "goal_short": "Surgeon's page in People, surgeon group record cut",
+   "checks": [
+    "1 ok: US-13.6.2 (cards, side panel, no Groups, one card at a time, find a surgeon left to 53) and DM-08 reach the doc; nothing retired survives",
+    "2 ok: D98/D99/D104/D105 as answered; OQ-148 and OQ-143 built to their defaults",
+    "3 ok: named files, functions and hooks exist (grep); new files marked new; 47's ?group=surgeon&in= is the generic URL",
+    "4 ok: scope matches the outline; Lane B, Wave 3, first, Runs in line in phase-48's pattern",
+    "5 ok: drift baseline 67cba2c",
+    "6 ok: prompt slim and doc-first; opening paragraph, Override, rules, goal",
+    "7 ok: demo triggers product-only, PWA none, sweep list names guide lines",
+    "8 fixed: design references now name Admin Review, Admin Day and Design Language for the screen; prompt has no frontend-design bullet",
+    "9 fixed: work item 9 retitled 'Build on the shared components'; review steer now says a new private copy is a finding",
+    "10 ok: commit-when-green, no-screenshots Override present"
+   ]
+  },
+  {
+   "num": "56",
+   "slug": "specialty-page",
+   "title": "The specialty's page",
+   "track": "Lane B",
+   "goal": "Each specialty gets a page in People (US-13.4.4; D99, D104) at /admin/people/specialties/:specialtyId, reached from 53's Specialties tab. Runs in Lane B of Wave 3, after 55. The page lists the surgeons who hold the specialty (each opening the surgeon's page) and the Contracts for it (each opening its Contract page, system Contracts left out), with counts. The name is a card edited and saved on its own (renameSpecialty, audited, reaching every surgeon and Contract by id). Remove stays refused while the specialty is held, now on the page with its holders listed. The list's row actions (Rename, Remove) give way to the page; Add stays on the list. Broad names only, as today. Layout: docs/explorations/people-section.html #map (Specialties).",
+   "delivers": "A page per specialty in People listing its surgeons and its Contracts with counts, where it is renamed (one audited change, reaching every holder) or removed (refused while held). Covers US-13.4.4",
+   "depends_on": [
+    "53",
+    "55"
+   ],
+   "est_sessions": "1 session",
+   "covers": [
+    "US-13.4.4"
+   ],
+   "demo_triggers": [
+    "Product, no trigger: open Orthopaedics and follow a surgeon or a Contract; Remove refused while held",
+    "PWA: none (Admin only)"
+   ],
+   "blocked_by_oqs": [],
+   "risks": "Wave 3, Lane B, after 55: its rows open 55's surgeon page, and following it keeps one lane on the surgeon and specialty selectors. Its page route is the only new route in the People block in Wave 3: add it, never reorder. The seed holds twelve specialties against the story's nine (Neurosurgery, Vascular surgery and Oral and maxillofacial surgery were added on purpose, and AA's spreadsheet will replace the list): keep them, note it, no seed change. Removing a held specialty stays refused (the change log adds no rule). The holders are pure selectors with tests; at practice scale (165 surgeons, about 343 Contracts) derive once per render. specialtiesTags.test.tsx moves with the row actions. No PERSIST_VERSION bump.",
+   "file": "phases/phase-56-specialty-page.md",
+   "prompt_file": "phases/phase-56-specialty-page.prompt.md",
+   "goal_short": "Specialty page in People listing surgeons and Contracts, rename as card, Remove refused while held, list loses row actions",
+   "checks": [
+    "1 pass: US-13.4.4 change (specialty page, move to People, Specialty page criterion) all reached the doc; nothing retired survives",
+    "2 pass: D99, D100, D104, D105 built as answered; no open questions; defaults listed for owner review",
+    "3 pass: named files and functions exist (specialties.ts, specialtyActions.ts, isOfficeContract, contractPath, HistorySheet, RequireEntity, ConfirmSheet, ClickableRow, TableShell, ProfilePage, specs, design pages); new ones (specialtyHolders, specialtyPath, SpecialtyPage.tsx, 53/55 items) marked as new or from 53/55",
+    "4 pass: scope matches outline (Lane B, Wave 3, after 53 and 55, 1 session, no PERSIST_VERSION bump)",
+    "5 pass: drift-check baseline 67cba2c",
+    "6 pass: prompt is slim and doc-first, no generic steps or absolute paths",
+    "7 pass: demo triggers are product-only with PWA none; guide lines and recipes the sweep must re-point are listed for the progress entry",
+    "8 pass: design pages named (people-section.html #map, contracts-section.html #parties, admin-layout-audit, Design Language, Admin Review); no frontend-design bullet in the prompt",
+    "9 pass: 'Build on the shared components' work item present; review steer flags private copies",
+    "10 pass: prompt carries the commit-when-green, no-screenshots Override"
+   ]
+  },
+  {
+   "num": "57",
+   "slug": "patients-tab-and-patient-page",
+   "title": "The Patients tab and the patient's page",
+   "track": "Lane C",
+   "goal": "The Patients tab of People becomes one list with three filters, and the patient's page moves onto the shared record pattern (US-11.3.1, US-11.3.3, US-11.1.1, DM-10; D99, D100, D104, D105). Runs in Lane C of Wave 3, beside Lanes A and B, once 53 is on master. The list is searched by name, NHI or date of birth and paged (the shared Pager replaces PATIENT_SEARCH_LIMIT's cap of 50), with three filters: Coming up (the default: patients with a Booking coming up), Needs follow-up and All. Needs follow-up is one row per patient with its reasons on it (a balance warning, a follow-up due, details that differ), from a new pure derived read, patientsNeedingOffice; a patient with several reasons appears once. A row opens the patient's page, where the action is taken: Clear warning and Done leave the list rows. The People entry's attention count and the filter's count are the number of patients on Needs follow-up (patientAttentionCount re-based on the new read; the waiting rows stay with Intake, as 51 left them). The follow-up view's three tables are retired, and /admin/patients/follow-up redirects to the filter. The patient's page, at /admin/people/patients/:nhi, follows the record pattern: the NHI beside the name and no internal id; the details in the side panel with their own Edit, saved as one audited change; differing incoming details held for review (keep, or use the new ones); the main column holds the invoices across every anaesthetist (paid, part paid or unpaid, with the balance), the alerts with their actions, and the follow-up log. Layout: docs/explorations/people-section.html #patients.",
+   "delivers": "The Patients tab with Coming up (default), Needs follow-up (one row per patient, the reason on each) and All, searched and paged, its count the People entry's attention count; follow-up actions taken on the patient's page; the patient's page on the shared record pattern with the details in the side panel. Covers US-11.3.1, US-11.3.3, US-11.1.1, DM-10",
+   "depends_on": [
+    "51",
+    "53"
+   ],
+   "est_sessions": "1 to 2 sessions",
+   "covers": [
+    "US-11.3.1",
+    "US-11.3.3",
+    "US-11.1.1",
+    "DM-10"
+   ],
+   "demo_triggers": [
+    "Admin · People · Patients: the S2 patient balance beat runs from the Needs follow-up filter into the patient's page (Resend, Log call and Clear there); a due reminder is staged with the existing demo clock control, as today",
+    "Admin · the patient's page: the NHI lookup hub's entries (NHI_HUB_ROUTES, re-pointed by 53) still show there",
+    "PWA: none (Admin only)"
+   ],
+   "blocked_by_oqs": [],
+   "risks": "Wave 3, Lane C; up to two sessions (session 1: patientsNeedingOffice, the filters, paging and the count; session 2: the page in the record pattern and the actions moved onto it). DM-10: group balance warnings and reminders by patient (today they count per warning and per reminder); decide and log whether mild credit warnings count (default: the list and the count agree, so every patient listed counts). The count is a selector change only: AdminApp.tsx and SideNav.tsx carry it from 53. Coming up uses the existing upcoming window (PATIENT_SEARCH_UPCOMING_DAYS) and no longer appends follow-up patients; whether a typed search narrows the chosen filter or searches All is decided and logged. The design page draws tabs on the patient's page, but US-11.1.1 puts the details in a side panel and the invoices, alerts and log in the main column: the catalogue wins. Swap only this tab's and page's elements in the People route block. 51's Waiting for NHI tab stays on Intake. Closes BACKLOG's 'Patient search stops at 50 matches' line. Tests: patients.test.tsx and the selector tests; Playwright admin-patients.spec.ts. For the sweep: the S2 patient beat's path and the guide's 'Patients → Search' and Follow-up lines. No seed change unless an acceptance example needs one (then bump PERSIST_VERSION).",
+   "file": "phases/phase-57-patients-tab-and-patient-page.md",
+   "prompt_file": "phases/phase-57-patients-tab-and-patient-page.prompt.md",
+   "goal_short": "The Patients tab (Coming up, Needs follow-up, All, paged) and the patient's page on the shared record pattern",
+   "checks": [
+    "1 pass: all brief changes (filters, one row per patient with reasons, count re-based, actions on the page, three tables retired, redirect, NHI beside name, details in side panel, differing details held) are in the doc; nothing retired survives",
+    "2 pass: D99, D100, D104, D105 built as answered; no open questions; defaults listed under Before you start 4 and on the owner's review list",
+    "3 pass: every named selector, action, file, component and spec exists (grep); new ones (patientsNeedingOffice, patientList, PatientFormFields, reasonText) marked new",
+    "4 pass: scope matches the outline entry",
+    "5 pass: drift baseline is 67cba2c",
+    "6 pass: prompt is slim, doc-first, no absolute paths or generic steps",
+    "7 pass: demo triggers screen-contextual with the PWA line 'none'; guide and sweep items named",
+    "8 pass: design page and screen (people-section.html #patients, Admin Review) named; prompt has no frontend-design bullet",
+    "9 fixed: the 'Build on the shared components' work item was missing; added as item 11; adversarial steer already flags private copies",
+    "10 pass: prompt has the commit-when-green, no-screenshots Override"
+   ]
   }
  ],
- "parked": [],
- "sequencing_rules": "One track, Contracts, run in order 45, 46, 47, 48, 49 in the main folder on master. Each phase starts once the one before is DONE, committed and tested by the owner. 45 first: it makes the section, its routes, the redirects (D93) and the Contract page. It also adds the shared Card editing/footer variant (reused by 46's and 48's pages and 49's sheet) and the ConfirmSheet danger variant over stillOnContract (reused by 49's late disable). Until 46, New contract still opens the old ContractEditSheet in create mode; its edit path is gone. 46 after 45: the new page lands on 45's Contract page, and 46 deletes ContractEditSheet with its warning-only Replaces picker. From then until 49, a dated change is a new Contract made by hand, and stillOnContract and proceduresStillOnContract stay. 47 after 45: it groups 45's moved list and maps ?holder= to the holder grouping. 48 after 47: each Party's per-tag counts open the catalogue through 47's ?group=/?in= URL, and the tags tab's hospital grouping reuses groupContracts; 48 removes the last three Master data views. 49 last, after 45 and 46: Replace sits in 45's Contract page header, shares 45's still-on-Contract list (the late disable reads it from the change date) and reuses 46's rule-order form sections. No PERSIST_VERSION bump is expected. 49 bumps it only if DM-01 takes a stored field or the seed gains a replacement, and any phase that seeds an acceptance criterion's example bumps it. The redirects stay after 49. Phases update the Playwright specs in aa-prototype/visual/ they break, never the capture recipes, ATLAS or the demo guide, and never run the capture: the owner's sweep re-points those.",
+ "parked": [
+  {
+   "id": "DM-01",
+   "reason": "Phase 49's work, in progress in Lane A: a Contract remembers which Contract it replaces and from when (D94: on the new Contract's contract.create audit entry). Unchanged at 67cba2c. 49 counts as built so its doc stays frozen and cannot hold a re-graded gap, and no other phase builds it; 49's doc covers it and the Wave 1 join's full gate and review check it. Re-grade as Matches at the next update."
+  },
+  {
+   "id": "DM-02",
+   "reason": "Phase 49's work, in progress in Lane A: Replace a Contract from a date as one action (replaceContract). Unchanged at 67cba2c. 49 counts as built so its doc stays frozen and cannot hold a re-graded gap, and no other phase builds it; 49's doc covers it and the Wave 1 join checks it. Re-grade as Matches at the next update."
+  },
+  {
+   "id": "DM-03",
+   "reason": "Phase 49's work, in progress in Lane A: a Contract still Active after its replacement's date is a To-do (the verifier's note: a Warning is Booking-keyed, so 49 widens it or derives a ToDoItem). 49 counts as built so its doc stays frozen and cannot hold a re-graded gap, and no other phase builds it; 49's doc covers it and the Wave 1 join checks it. Re-grade as Matches at the next update."
+  },
+  {
+   "id": "DM-04",
+   "reason": "Narrowed at 67cba2c: the confirmed Disable listing the Procedures is built on master (45); only the replaced case, listing from the change date (disableFromISO), remains, and Phase 49 builds it as US-04.1.8's Late disable, in progress in Lane A. Both 45 and 49 count as built, and no other phase builds it; the Wave 1 join checks it. Re-grade as Matches at the next update."
+  }
+ ],
+ "sequencing_rules": "45 ran first, alone, in the main folder on master. Every phase after it runs in a build lane, in its own git worktree, wave by wave; LANES.md holds the lanes, the ownership tables, the sync, the joins and the conflict rules, and overrides a phase's kick-off prompt, the run-build-phase skill and CLAUDE.md for a lane session. A phase starts only when every phase in its depends_on is DONE on its branch. Wave 1, once 45 is DONE: Lane A 46 then 49, Lane B 47 then 48; the second to finish joins them onto master when the full gate is green and writes TEST-45-49.md, before any People phase starts (owner). Wave 2, once 46 to 49 are on master: Lane A 50, then 52, then 53; Lane B 51 beside it; 53 merges 51 at its start (blocked if 51 is not complete), owns every shared shell file (router, side nav, AdminApp, routes, the Master data registry, the redirects), moves the screens 50 to 52 change and lifts the record pattern, leaving the Contract page's behaviour unchanged; Lane A joins Wave 2. Wave 3, once 53 is on master: Lane A 54, Lane B 55 then 56, Lane C 57; the last to finish joins them, writes TEST-50-57.md and the lanes are torn down. The owner tests twice and never between phases or waves: 45 to 49 after Wave 1's join, 50 to 57 after Wave 3's join; Wave 2 does not wait for the test of 45 to 49, whose fixes land on master and reach the lanes through git merge master at each phase start. Inside the lanes each phase runs the lighter gate and skips its own review; each join runs the full gate and one review. Contracts order inside Wave 1: 46 and 47 after 45; 48 after 47 (it reads 47's ?group=/?in= URL and reuses groupContracts, removes the last three Master data views, and builds US-13.4.1's Contracts-section half as its doc says while the unit is 53's); 49 after 45 and 46. 47's doc still says it finishes US-04.1.2; 52 now does (D96). 50 first (a self-contained card on today's anaesthetist record, on 45's Card editing and footer props); 52 after 50 (it builds on 50's card in the same file) and 49 (on master), calling disableContract and enableContract from new files; 51 changes the counts in the selectors, never AdminApp or SideNav. Wave 3: 54 reuses 50's and 52's cards and 53's pattern; 55 cuts surgeon groups and rebuilds the surgeon's page; 56 follows 55 in Lane B because its rows open the surgeon's page; 57 builds on 51's counts and 53's tab. Each adds or swaps only its own routes in the People block, never reorders it, and extends 53's shared components with a prop, never rewriting them. PERSIST_VERSION: 45 to 51 expect no bump (49 only if DM-01 takes a stored field or the seed gains a replacement); 52 bumps it (the anaesthetist's last day) and 55 bumps it (the surgeon group slice removed); a join that meets two bumps sets one past the higher; any phase that seeds an acceptance criterion's example bumps it. The redirects (D93, D100) stay. Phases update the Playwright specs in aa-prototype/visual/ they break, never the capture recipes, ATLAS or the demo guide, and never run the capture: the owner's sweep re-points those.",
  "milestones": [
   {
    "after": "45",
@@ -220,6 +542,18 @@
   {
    "after": "49",
    "can_show": "Replace a Contract from a date in one action: copied at the new rate, the ticked Procedures moved, the old one left active with a to-do on the date or disabled now, and a late disable listing from the change date. S5's 'a new Contract supersedes the old one' works as the guide scripts it, and the owner's sweep brings the guide's wording in step."
+  },
+  {
+   "after": "52",
+   "can_show": "The tier edited with the rate in one card (Edit, choose, Save), and the Anaesthetists list filtered by tier. Waiting for NHI as its own tab on Intake, counted once. Make Dr Beaumont inactive from a last day: refused while she holds a List after it; after the day she has no Slots, is not offered and cannot sign in, and her Rhinoplasty Contract is disabled; made active again, it is offered back ticked at $1,350.00."
+  },
+  {
+   "after": "53",
+   "can_show": "One People section where Patients was: anaesthetists, surgeons, specialties and patients as tabs, each list searched, filtered and paged, and every old link still lands. The Surgeon groups list is gone, and Master data keeps the places."
+  },
+  {
+   "after": "57",
+   "can_show": "With 54 to 57 joined: a page for every anaesthetist, surgeon, specialty and patient, its cards saved one at a time, with a side panel of pairings, Contracts and next Lists. Surgeon groups are gone from the model. The Patients tab shows Coming up, Needs follow-up (one row per patient, the reason on it) and All, and the action is taken on the patient's page."
   }
  ]
 }
