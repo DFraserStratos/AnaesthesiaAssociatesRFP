@@ -88,13 +88,15 @@ test('admin phase 07 master data', async ({ page }) => {
   await page.screenshot({ path: 'visual/shots/a7-04-masters-rvg-groups.png', fullPage: true })
   await page.getByRole('button', { name: 'Anaesthetists' }).click()
 
-  // Edit an anaesthetist's unit value.
-  await page.getByRole('button', { name: 'Edit' }).first().click()
-  await page.waitForTimeout(200)
-  await page.getByLabel('Rate per unit ($)').fill('55')
-  await page.getByRole('button', { name: 'Save changes' }).click()
-  await page.waitForTimeout(300)
-  await expect(page.getByText('55.00').first()).toBeVisible()
+  // Edit an anaesthetist's unit value: on the record's Rate and tier card (build plan Phase 50), Edit then Save.
+  await page.locator('tr[data-anaesthetist]').first().locator('.aa-table-entity-link').click()
+  const rateTier = page.locator('[data-shot="rate-tier-card"]')
+  await rateTier.getByRole('button', { name: 'Edit rate and tier' }).click()
+  await rateTier.getByLabel('Rate per unit ($)').fill('55')
+  await rateTier.getByRole('button', { name: 'Save' }).click()
+  await expect(rateTier.locator('[data-shot="rate-tier-rate"]')).toContainText('$55.00')
+  await page.goto('/admin/masters?view=anaesthetists')
+  await expect(page.getByText('$55.00').first()).toBeVisible()
 
   // Parties (catch-up Phase 18): a tab of the Contracts section since build plan Phase 48, grouped by kind;
   // Master data keeps no Parties or Insurers view and points across.

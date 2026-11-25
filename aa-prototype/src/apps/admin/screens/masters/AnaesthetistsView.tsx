@@ -4,12 +4,14 @@ import { formatGstNumber } from '../../../../domain/billing/invoicePresentation'
 import { maskBankAccount } from '../../../../domain/bankAccount'
 import { format, parseISO } from 'date-fns'
 import { Link, useNavigate } from 'react-router-dom'
-import { tierFor } from '../../../../domain/pairingPreferences'
+import { TIER_LABELS, TIER_VALUES, tierFor } from '../../../../domain/pairingPreferences'
 import { useAppStore, type Actor } from '../../../../store'
 import { EditAnaesthetistSheet } from '../../flows/EditAnaesthetistSheet'
 import { AddAnaesthetistFlow } from '../../flows/AddAnaesthetistFlow'
 import { TierPill, usePriorityTiers } from '../../components/pairing'
 import { ClickableRow } from '../../../../shared/table'
+import { EmptyState, FilterPills } from '../../../../shared/ui'
+import { PageToolbar } from '../../components/AdminPage'
 import { EditCell, MasterHeader, MasterTable, type MasterColumn } from './chrome'
 import { rowCellStyle } from './tableStyles'
 import { anaesthetistRecordPath } from '../../mastersPaths'
@@ -34,11 +36,15 @@ const COLUMNS: readonly MasterColumn[] = [
   '',
 ]
 
+/** The list's tier filter (build plan Phase 50; US-01.3.6): All, then Tier 1 to Tier 4. */
+const TIER_FILTER_OPTIONS = [{ value: 'all', label: 'All' }, ...TIER_VALUES.map((t) => ({ value: String(t), label: TIER_LABELS[t] }))]
+
 /**
  * Anaesthetists (catch-up Phase 17 adds the Tier column and the row that opens
  * the record; Phase 26 the HPI CPN, the masked bank account and the email, and
  * drops the GST period). Rate per unit stays the third column: recipes highlight it. The row's "Edit" link and "Add anaesthetist" keep their names:
- * the catalogue's capture recipes click them.
+ * the catalogue's capture recipes click them. Build plan Phase 50 adds the tier filter above the
+ * table (local state, not in the URL; `data-shot="tier-filter-list"`).
  */
 export function AnaesthetistsView({ actor }: { actor: Actor }) {
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
@@ -46,55 +52,74 @@ export function AnaesthetistsView({ actor }: { actor: Actor }) {
   const navigate = useNavigate()
   const [editId, setEditId] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
-  const rows = Object.values(anaesthetists).sort((a, b) => a.name.localeCompare(b.name))
+  const [tierFilter, setTierFilter] = useState('all')
+  const rows = Object.values(anaesthetists)
+    .filter((a) => tierFilter === 'all' || String(tierFor(tiers, a.registrationNumber)) === tierFilter)
+    .sort((a, b) => a.name.localeCompare(b.name))
+  const tierLabel = TIER_FILTER_OPTIONS.find((o) => o.value === tierFilter && o.value !== 'all')?.label
   const editing = editId !== null ? anaesthetists[editId] : undefined
 
   return (
     <>
       <MasterHeader
         title="Anaesthetists"
-        sub="Open an anaesthetist for their record, tier and pairing preferences. Adding one creates their sessions from their start date."
+        sub="Open an anaesthetist for their record, rate, tier and pairing preferences. Adding one creates their sessions from their start date."
         add={{ label: 'Add anaesthetist', onClick: () => setAdding(true) }}
       />
-      <MasterTable columns={COLUMNS} rightAlign={[7]} shot="masters-anaesthetists" label="Anaesthetists">
-        {rows.map((a) => (
-          <ClickableRow
-            key={a.registrationNumber}
-            data-anaesthetist={a.registrationNumber}
-            onOpen={() => navigate(anaesthetistRecordPath(a.registrationNumber))}
-          >
-            <td style={rowCellStyle}>
-              <Link className="aa-table-entity-link" to={anaesthetistRecordPath(a.registrationNumber)}>
-                <span className="aa-table-entity-link-title">{a.name}</span>
-              </Link>
-            </td>
-            {/* The registration number over the HPI CPN. */}
-            <td className="mono" style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>
-              <div>{a.registrationNumber}</div>
-              <div style={{ fontSize: 12, color: neutral.slate }}>{a.hpiId}</div>
-            </td>
-            <td className="mono" style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>{formatCurrency(a.unitValue)}</td>
-            <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}><TierPill tier={tierFor(tiers, a.registrationNumber)} /></td>
-            {/* The bank account over the GST number: one column, so the table fits a laptop without scrolling sideways. */}
-            <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>
-              <div data-shot="anaesthetist-bank" className="mono">{maskBankAccount(a.bankAccount.accountNumber)}</div>
-              <div data-shot="anaesthetist-gst-number" className={a.gstNumber !== undefined ? 'mono' : undefined} style={{ fontSize: 12, color: a.gstNumber !== undefined ? neutral.slate : neutral.mist }}>
-                {a.gstNumber !== undefined ? formatGstNumber(a.gstNumber) : 'Not held'}
-              </div>
-            </td>
-            {/* Email over phone: the column that takes the spare width. */}
-            <td style={rowCellStyle}>
-              <div style={{ overflowWrap: 'anywhere' }}>{a.email}</div>
-              <div style={{ fontSize: 12, color: neutral.slate, whiteSpace: 'nowrap' }}>{a.phone}</div>
-            </td>
-            <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>
-              <div className="mono">{format(parseISO(a.startDateISO), 'd MMM yyyy')}</div>
-              <div style={{ fontSize: 12, color: a.active ? neutral.slate : neutral.mist }}>{a.active ? 'Active' : 'Inactive'}</div>
-            </td>
-            <EditCell onClick={() => setEditId(a.registrationNumber)} style={rowCellStyle} />
-          </ClickableRow>
-        ))}
-      </MasterTable>
+      <PageToolbar
+        shot="tier-filter-list"
+        end={
+          <span>
+            <span className="mono">{rows.length}</span> {rows.length === 1 ? 'anaesthetist' : 'anaesthetists'}
+            {tierLabel !== undefined ? ` in ${tierLabel}` : ''}
+          </span>
+        }
+      >
+        <FilterPills ariaLabel="Filter by tier" value={tierFilter} options={TIER_FILTER_OPTIONS} onSelect={setTierFilter} />
+      </PageToolbar>
+      {rows.length === 0 ? (
+        <EmptyState variant="card" shot="masters-anaesthetists">No anaesthetists in this tier.</EmptyState>
+      ) : (
+        <MasterTable columns={COLUMNS} rightAlign={[7]} shot="masters-anaesthetists" label="Anaesthetists">
+          {rows.map((a) => (
+            <ClickableRow
+              key={a.registrationNumber}
+              data-anaesthetist={a.registrationNumber}
+              onOpen={() => navigate(anaesthetistRecordPath(a.registrationNumber))}
+            >
+              <td style={rowCellStyle}>
+                <Link className="aa-table-entity-link" to={anaesthetistRecordPath(a.registrationNumber)}>
+                  <span className="aa-table-entity-link-title">{a.name}</span>
+                </Link>
+              </td>
+              {/* The registration number over the HPI CPN. */}
+              <td className="mono" style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>
+                <div>{a.registrationNumber}</div>
+                <div style={{ fontSize: 12, color: neutral.slate }}>{a.hpiId}</div>
+              </td>
+              <td className="mono" style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>{formatCurrency(a.unitValue)}</td>
+              <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}><TierPill tier={tierFor(tiers, a.registrationNumber)} /></td>
+              {/* The bank account over the GST number: one column, so the table fits a laptop without scrolling sideways. */}
+              <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>
+                <div data-shot="anaesthetist-bank" className="mono">{maskBankAccount(a.bankAccount.accountNumber)}</div>
+                <div data-shot="anaesthetist-gst-number" className={a.gstNumber !== undefined ? 'mono' : undefined} style={{ fontSize: 12, color: a.gstNumber !== undefined ? neutral.slate : neutral.mist }}>
+                  {a.gstNumber !== undefined ? formatGstNumber(a.gstNumber) : 'Not held'}
+                </div>
+              </td>
+              {/* Email over phone: the column that takes the spare width. */}
+              <td style={rowCellStyle}>
+                <div style={{ overflowWrap: 'anywhere' }}>{a.email}</div>
+                <div style={{ fontSize: 12, color: neutral.slate, whiteSpace: 'nowrap' }}>{a.phone}</div>
+              </td>
+              <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>
+                <div className="mono">{format(parseISO(a.startDateISO), 'd MMM yyyy')}</div>
+                <div style={{ fontSize: 12, color: a.active ? neutral.slate : neutral.mist }}>{a.active ? 'Active' : 'Inactive'}</div>
+              </td>
+              <EditCell onClick={() => setEditId(a.registrationNumber)} style={rowCellStyle} />
+            </ClickableRow>
+          ))}
+        </MasterTable>
+      )}
       {editing !== undefined && (
         <EditAnaesthetistSheet open anaesthetist={editing} actor={actor} onClose={() => setEditId(null)} />
       )}

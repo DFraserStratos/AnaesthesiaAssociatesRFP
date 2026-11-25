@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
 import { formatGstNumber, normaliseGstNumber } from '../../../domain/billing/invoicePresentation'
-import { parseAmount } from '../../../domain/billing/money'
 import { Link } from 'react-router-dom'
 import { neutral } from '../../../theme/tokens'
 import type { Anaesthetist } from '../../../domain/types'
 import { normaliseNzBankAccount } from '../../../domain/bankAccount'
 import { normaliseHpiCpn } from '../../../domain/surgeons'
-import { UNIT_VALUE_INVALID, editAnaesthetist, useAppStore, type Actor } from '../../../store'
-import { Button, RATE_LABEL, Segmented, TextField } from '../../../shared'
+import { editAnaesthetist, useAppStore, type Actor } from '../../../store'
+import { Button, Segmented, TextField } from '../../../shared'
 import { OverlayHeader, SheetActions } from '../../../shared/surface'
 import { useSurface } from '../../../shared'
 import { anaesthetistRecordPath } from '../mastersPaths'
@@ -25,20 +24,20 @@ interface Props {
 }
 
 /**
- * Edit an anaesthetist's profile (office): rate per unit, contact, HPI CPN,
- * bank details, GST number, start date and active flag. The HPI CPN and the
- * bank details are mandatory (catch-up Phase 26; US-12.1.4): marked required,
+ * Edit an anaesthetist's profile (office): contact, HPI CPN, bank details, GST
+ * number, start date and active flag. The HPI CPN and the bank details are
+ * mandatory (catch-up Phase 26; US-12.1.4): marked required,
  * checked inline, Save disabled until filled, and refused by the store in the
  * same words. The full bank number shows only here; everywhere else it is
  * masked. The store compares and audits only the fields that changed. The
  * start date and the active flag add or remove their sessions from today on,
  * and are refused while a removed session holds a List (catch-up Phase 28;
- * US-01.1.3, FT-01.1). Pairings and the tier live on the record page.
+ * US-01.1.3, FT-01.1). The rate per unit and the tier are edited on the record
+ * page's Rate and tier card (build plan Phase 50), and pairings there too.
  */
 export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRecordPage = false }: Props) {
   const { Overlay } = useSurface()
   const [hpiId, setHpiId] = useState(anaesthetist.hpiId)
-  const [unitValue, setUnitValue] = useState(anaesthetist.unitValue.toFixed(2))
   const [phone, setPhone] = useState(anaesthetist.phone)
   const [email, setEmail] = useState(anaesthetist.email)
   const [accountName, setAccountName] = useState(anaesthetist.bankAccount.accountName)
@@ -50,7 +49,6 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
 
   useEffect(() => {
     if (open) {
-      setUnitValue(anaesthetist.unitValue.toFixed(2))
       setPhone(anaesthetist.phone)
       setEmail(anaesthetist.email)
       setAccountName(anaesthetist.bankAccount.accountName)
@@ -66,16 +64,10 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
   const filled = mandatoryFilled(hpiId, accountName, accountNumber)
 
   function save() {
-    const uv = parseAmount(unitValue)
-    if (uv === undefined || uv <= 0) {
-      setError(UNIT_VALUE_INVALID)
-      return
-    }
     const bankChanged =
       accountName.trim() !== anaesthetist.bankAccount.accountName ||
       (normaliseNzBankAccount(accountNumber) ?? accountNumber.trim()) !== anaesthetist.bankAccount.accountNumber
     const outcome = editAnaesthetist(useAppStore, actor, anaesthetist.registrationNumber, {
-      unitValue: uv,
       phone,
       email,
       active: active === 'active',
@@ -110,7 +102,6 @@ export function EditAnaesthetistSheet({ open, anaesthetist, actor, onClose, onRe
           }
         />
         <div className="mono" style={{ fontSize: 12, color: neutral.mist }}>Registration {anaesthetist.registrationNumber}</div>
-        <TextField label={RATE_LABEL} value={unitValue} onChange={setUnitValue} mono inputMode="decimal" hint="The dollar value per RVG unit. The anaesthetist can change it too." />
         <TextField label="Phone" value={phone} onChange={setPhone} type="tel" />
         <TextField label="Email" value={email} onChange={setEmail} type="email" />
         <HpiCpnField value={hpiId} onChange={setHpiId} />

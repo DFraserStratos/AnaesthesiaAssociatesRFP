@@ -2,7 +2,8 @@
  * Master data views, the surgeon profile and the Admin anaesthetist record
  * (catch-up Phase 17, work items 10 to 13): the `?view=` param, the Tier
  * column, the rows that open a page, the pairing section on both profiles,
- * the add sheet's same-side rule, ending, the tier control, the masters
+ * the add sheet's same-side rule, ending, the rate and tier card (build plan
+ * Phase 50) and the list's tier filter, the masters
  * sheets and the cross-links.
  */
 
@@ -212,8 +213,10 @@ describe('the surgeon profile and the anaesthetist record', () => {
 
   it('the record History merges the record and its pairings, each pairing row labelled by its sentence', () => {
     renderAdmin(`/admin/masters/anaesthetists/${ANAE.sharma}`)
-    const card = document.querySelector('[data-shot="tier-card"]') as HTMLElement
+    const card = document.querySelector('[data-shot="rate-tier-card"]') as HTMLElement
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit rate and tier' }))
     fireEvent.click(within(card).getByRole('button', { name: 'Tier 1' }))
+    fireEvent.click(within(card).getByRole('button', { name: 'Save' }))
     const preferred = document.querySelector('[data-pairing-group="PREFERRED"]') as HTMLElement
     fireEvent.click(within(preferred).getByRole('button', { name: /^End / }))
     fireEvent.click(screen.getByRole('button', { name: 'End pairing' }))
@@ -224,15 +227,55 @@ describe('the surgeon profile and the anaesthetist record', () => {
     expect(within(dialog).getAllByText(/Mr J\. Whitford prefers to work with Dr Priya Sharma/).length).toBeGreaterThan(0)
   })
 
-  it('the tier card sets the tier, says it is office only and provisional', () => {
+  it('the rate and tier card sets the tier on Save, says it is office only, and Profile no longer lists the rate', () => {
     renderAdmin(`/admin/masters/anaesthetists/${ANAE.sharma}`)
-    const card = document.querySelector('[data-shot="tier-card"]') as HTMLElement
-    expect(within(card).getByText('Only the office sees this. It orders the suggestions when you assign or move a List.')).toBeInTheDocument()
+    expect(document.querySelector('[data-shot="tier-card"]')).toBeNull()
+    const card = document.querySelector('[data-shot="rate-tier-card"]') as HTMLElement
+    expect(within(card).getByText('· office only')).toBeInTheDocument()
+    const profile = document.querySelector('[data-shot="anaesthetist-details"]') as HTMLElement
+    expect(within(profile).queryByText('Rate per unit')).toBeNull()
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit rate and tier' }))
+    expect(within(card).getByText('Orders suggestions when the office assigns or moves a List. Never shown to anaesthetists.')).toBeInTheDocument()
     // OQ-102 answered (D36): no provisional line (catch-up Phase 25a).
     expect(within(card).queryByText('Tier names are provisional.')).toBeNull()
     fireEvent.click(within(card).getByRole('button', { name: 'Tier 1' }))
+    expect(selectPriorityTier(useAppStore.getState(), ANAE.sharma)).not.toBe(1)
+    fireEvent.click(within(card).getByRole('button', { name: 'Save' }))
     expect(selectPriorityTier(useAppStore.getState(), ANAE.sharma)).toBe(1)
     expect(useAppStore.getState().audit.at(-1)?.action).toBe('anaesthetist.tierSet')
+  })
+
+  it('the list filters by tier: a tier narrows the rows, All restores them, an empty tier says so', () => {
+    renderAdmin('/admin/masters')
+    const all = document.querySelectorAll('tr[data-anaesthetist]').length
+    const filter = screen.getByRole('group', { name: 'Filter by tier' })
+    fireEvent.click(within(filter).getByRole('button', { name: 'Tier 1' }))
+    const tier1 = [...document.querySelectorAll<HTMLElement>('tr[data-anaesthetist]')]
+    expect(tier1.length).toBeGreaterThan(0)
+    expect(tier1.length).toBeLessThan(all)
+    for (const row of tier1) expect(within(row).getByText('Tier 1')).toBeInTheDocument()
+    expect(document.querySelector(`tr[data-anaesthetist="${ANAE.souter}"]`)).not.toBeNull()
+    expect(document.querySelector(`tr[data-anaesthetist="${ANAE.ropata}"]`)).toBeNull()
+    fireEvent.click(within(filter).getByRole('button', { name: 'All' }))
+    expect(document.querySelectorAll('tr[data-anaesthetist]').length).toBe(all)
+    // Nobody in a tier: the empty line.
+    useAppStore.setState((s) => ({ officePrivate: { ...s.officePrivate, priorityTiers: {} } }))
+    fireEvent.click(within(filter).getByRole('button', { name: 'Tier 2' }))
+    expect(screen.getByText('No anaesthetists in this tier.')).toBeInTheDocument()
+  })
+
+  it('Edit details has no rate field, and saving leaves the rate as it was', () => {
+    renderAdmin(`/admin/masters/anaesthetists/${ANAE.ropata}`)
+    const before = useAppStore.getState().masters.anaesthetists[ANAE.ropata]!.unitValue
+    fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
+    const sheet = document.querySelector('[data-shot="edit-anaesthetist-sheet"]') as HTMLElement
+    expect(within(sheet).queryByLabelText(/Rate per unit/)).toBeNull()
+    fireEvent.change(within(sheet).getByLabelText('Phone'), { target: { value: '021 555 0101' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    const after = useAppStore.getState().masters.anaesthetists[ANAE.ropata]!
+    expect(after.phone).toBe('021 555 0101')
+    expect(after.unitValue).toBe(before)
+    expect(useAppStore.getState().audit.at(-1)?.after).not.toHaveProperty('unitValue')
   })
 
   it("Edit details edits the HPI CPN (normalised), and an unrelated save sends no HPI CPN", () => {

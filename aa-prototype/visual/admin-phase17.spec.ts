@@ -68,11 +68,31 @@ test('phase 17 anaesthetist record', async ({ page }) => {
   await page.goto('/admin/masters/anaesthetists/41267')
   await page.waitForLoadState('networkidle')
   // OQ-102 answered (D36): no provisional line (catch-up Phase 25a).
-  await expect(page.locator('[data-shot="tier-card"]').getByText('Tier names are provisional.')).toHaveCount(0)
+  const card = page.locator('[data-shot="rate-tier-card"]')
+  await expect(card.getByText('Tier names are provisional.')).toHaveCount(0)
   await expect(page.locator('[data-pairing-group="NOT_PREFERRED"]').getByRole('link', { name: 'Ms A. Reid' })).toBeVisible()
   await expect(page.locator('[data-pairing-group="PREFERRED"]').getByRole('link', { name: 'Mr J. Whitford' })).toBeVisible()
   await page.waitForTimeout(450)
   await page.screenshot({ path: 'visual/shots/p17-05-sharma-record.png', fullPage: true })
+
+  // Build plan Phase 50: the tier is edited on the Rate and tier card, never by a single click.
+  await expect(card).toContainText('office only')
+  await card.getByRole('button', { name: 'Edit rate and tier' }).click()
+  await card.getByRole('button', { name: 'Tier 3' }).click()
+  await expect(card).toHaveAttribute('data-editing', '')
+  await card.getByRole('button', { name: 'Save' }).click()
+  await expect(card).toHaveAttribute('data-tier', '3')
+  await expect(card.locator('[data-shot="rate-tier-tier"]')).toContainText('Tier 3')
+
+  // The Anaesthetists list filters by tier.
+  await page.goto('/admin/masters?view=anaesthetists')
+  const filter = page.locator('[data-shot="tier-filter-list"]').getByRole('group', { name: 'Filter by tier' })
+  await filter.getByRole('button', { name: 'Tier 3' }).click()
+  await expect(page.locator('tr[data-anaesthetist="41267"]')).toBeVisible()
+  await filter.getByRole('button', { name: 'Tier 1' }).click()
+  await expect(page.locator('tr[data-anaesthetist="41267"]')).toHaveCount(0)
+  await filter.getByRole('button', { name: 'All' }).click()
+  await expect(page.locator('tr[data-anaesthetist="41267"]')).toBeVisible()
 })
 
 test('phase 17 edit list warning', async ({ page }) => {
