@@ -37,7 +37,7 @@ describe('Reconciliation card (catch-up Phase 37; US-13.2.4)', () => {
     expect(card()).toHaveTextContent('off by $120.00')
     const item = () => card().querySelector('[data-shot="reconciliation-item"]') as HTMLElement
     expect(item()).toHaveTextContent('0 days')
-    expect(item()).toHaveAttribute('href', '/admin/ledger')
+    expect(item()).toHaveAttribute('href', '/admin/finances/ledger')
     act(() => {
       advanceClockDays(useAppStore, 1)
     })

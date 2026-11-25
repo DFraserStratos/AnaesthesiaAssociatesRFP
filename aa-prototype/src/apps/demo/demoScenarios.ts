@@ -32,6 +32,7 @@ import {
 } from '../../store'
 import { ANAE, CONTRACT, SEED_LIST_IDS, SEED_MARKERS } from '../../domain/seed'
 import { contractPath } from '../admin/contractsPaths'
+import { financePath, invoicePath as financeInvoicePath } from '../admin/screens/finances/financePaths'
 import { projectedListId } from '../../domain/slots'
 import { rvgModifierByCode } from '../../domain/billing/modifiers'
 import { resetFramedDemo } from '../../shell/framedReset'
@@ -139,7 +140,7 @@ function standardInvoicesFor(state: AppState, bookingId: string | undefined): In
 }
 
 function invoicePath(invoice: Invoice | undefined): string | null {
-  return invoice === undefined ? null : `/admin/invoices/${invoice.id}`
+  return invoice === undefined ? null : financeInvoicePath(invoice.id)
 }
 
 /** The Xero ACCREC of the fee-split Booking's insurer share (nib), once authorise has handed it off. */
@@ -351,25 +352,25 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
         beat: 'Payment, ledger and disbursement',
         label: 'Beat 4 · Billing monitor',
         does: 'The payment in from Xero and the payout, by anaesthetist',
-        path: () => '/admin/billing',
+        path: () => financePath('payments'),
       },
       {
         beat: 'The weekly payment run',
         label: 'Beat 5 · Billing monitor',
         does: 'Demo actions → Stage a payment week, approve its BCTIs, then the remittance advice',
-        path: () => '/admin/billing',
+        path: () => financePath('payments'),
       },
       {
         beat: "AA's monthly fee run",
         label: 'Beat 6 · AA fee invoices',
         does: 'Demo actions → Seed a month of BCTIs, then Run monthly fee invoices',
-        path: () => '/admin/billing/aa-fees',
+        path: () => financePath('aa-fees'),
       },
       {
         beat: 'The ledger balances',
         label: 'Beat 7 · Admin Ledger',
         does: 'Demo actions → Inject unmatched receipt, then Allocate to invoice',
-        path: () => '/admin/ledger',
+        path: () => financePath('ledger'),
       },
     ],
   },
@@ -418,7 +419,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
         beat: 'Billing failure and retry',
         label: 'Beat 6 · Billing monitor',
         does: 'Demo actions → Trigger billing failure, then Retry now on its queue row',
-        path: () => '/admin/billing',
+        path: () => financePath('billing'),
       },
       {
         beat: 'The credit note and credit and rebill',

@@ -6,7 +6,7 @@ import { officePersona } from '../../../shell/appConfig'
 import { useAppStore } from '../../../store'
 import { DRAFT_LISTS } from '../../../shared/scheduleTerms'
 
-export type NavSection = 'day' | 'intake' | 'draftLists' | 'conflicts' | 'notifications' | 'review' | 'invoices' | 'people' | 'billing' | 'ledger' | 'contracts' | 'masters' | 'audit'
+export type NavSection = 'day' | 'intake' | 'draftLists' | 'conflicts' | 'notifications' | 'review' | 'finances' | 'people' | 'contracts' | 'masters' | 'audit'
 
 interface NavItem {
   section: NavSection
@@ -19,8 +19,8 @@ interface NavItem {
 interface SideNavProps {
   active: NavSection
   reviewBadge: number
-  /** Billing-monitor exceptions count (Phase 09) — amber, distinct from the crimson review badge. */
-  billingBadge?: number
+  /** Finances (build plan Phase 58; D109): billing problems plus failed ledger checks, one number from `financeCounts.ts`'s `financeBadge`: amber, never crimson. */
+  financesBadge?: number
   /** Open conflicts from today to the horizon (catch-up Phase 30; US-01.5.4) — amber. */
   conflictBadge?: number
   /** Waiting Draft Lists (catch-up Phase 31; US-01.6.2 "one visible place") — amber, an attention count. */
@@ -29,8 +29,6 @@ interface SideNavProps {
   notificationBadge?: number
   /** Open rows on Intake's matching screen (catch-up Phases 33 and 34; US-02.1.4) — amber, an attention count. */
   intakeBadge?: number
-  /** The ledger's checks, a held receipt among them (catch-up Phase 36; US-13.2.1) — amber, an attention count. */
-  ledgerBadge?: number
   /** Patients needing the office (catch-up Phase 40; `patientAttentionCount`), on People where Patients was (build plan Phase 53): amber, an attention count. */
   peopleBadge?: number
   onNavigate: (section: NavSection) => void
@@ -66,7 +64,7 @@ function navItemStyle(active: boolean): CSSProperties {
  * (Decisions log 2026-07-21). The Review-queue badge derives from the SUBMITTED
  * list count (2026-07-23 decision) rather than a hardcoded figure.
  */
-export function SideNav({ active, reviewBadge, billingBadge = 0, conflictBadge = 0, draftListBadge = 0, notificationBadge = 0, intakeBadge = 0, ledgerBadge = 0, peopleBadge = 0, onNavigate, onHelp, stickyHeight }: SideNavProps) {
+export function SideNav({ active, reviewBadge, financesBadge = 0, conflictBadge = 0, draftListBadge = 0, notificationBadge = 0, intakeBadge = 0, peopleBadge = 0, onNavigate, onHelp, stickyHeight }: SideNavProps) {
   const officeUser = useAppStore((s) => s.shell.officeUser)
   const items: NavItem[] = [
     { section: 'day', label: 'Day view' },
@@ -78,12 +76,11 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, conflictBadge =
     // The shared notification pool: its active notices (catch-up Phase 32b, D58; a resolved notice leaves the count).
     { section: 'notifications', label: 'Notifications', badge: notificationBadge, badgeTone: 'warn' },
     { section: 'review', label: 'Review queue', badge: reviewBadge },
-    { section: 'invoices', label: 'Invoices' },
+    // Finances (build plan Phase 58; D107, D109): Invoices, the Billing monitor and the Ledger in one section, with one amber badge.
+    { section: 'finances', label: 'Finances', badge: financesBadge, badgeTone: 'warn' },
     // People (build plan Phase 53; D99): where Patients was, with its count; anaesthetists, surgeons, specialties and patients.
     { section: 'people', label: 'People', badge: peopleBadge, badgeTone: 'warn' },
-    { section: 'billing', label: 'Billing monitor', badge: billingBadge, badgeTone: 'warn' },
-    { section: 'ledger', label: 'Ledger', badge: ledgerBadge, badgeTone: 'warn' },
-    // Contracts (build plan Phase 45; D92): its own section, between Ledger and Master data.
+    // Contracts (build plan Phase 45; D92): its own section, before Master data.
     { section: 'contracts', label: 'Contracts' },
     { section: 'masters', label: 'Master data' },
     { section: 'audit', label: 'Audit' },

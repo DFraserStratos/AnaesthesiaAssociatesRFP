@@ -4,7 +4,6 @@ import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from '
 import { neutral, radius, elevation } from '../../theme/tokens'
 import { TextAction } from '../../shared/ui'
 import { RequireEntity } from '../../shell/RequireEntity'
-import { PaymentRunScreen, RemittanceAdviceScreen } from './screens/PaymentRunScreen'
 import { isISODate } from '../../shell/routeParams'
 import { listInSlot, patientByNhi, useAppStore, useToday, type NotificationTarget } from '../../store'
 import { DayNav } from './components/DayNav'
@@ -13,19 +12,14 @@ import { DayGrid } from './components/DayGrid'
 import { RightRail } from './components/RightRail'
 import { AdminBookingDetail } from './screens/AdminBookingDetail'
 import { AuditViewer } from './screens/AuditViewer'
-import { BillingMonitorScreen } from './screens/BillingMonitorScreen'
-import { LedgerScreen } from './screens/LedgerScreen'
-import { AaFeesScreen } from './screens/AaFeesScreen'
 import { IntakeScreen } from './screens/IntakeScreen'
 import { PdfListsTab } from './intake/PdfListsTab'
 import { DataQualityTab } from './intake/DataQualityTab'
 import { ValidatorsTab } from './intake/ValidatorsTab'
 import { WaitingNhiTab } from './intake/WaitingNhiTab'
-import { InvoicesScreen } from './screens/InvoicesScreen'
-import { AdminPage } from './components/AdminPage'
-import { CreditNoteDocument } from './screens/InvoiceDocument'
 import { MasterData } from './screens/masters/MasterData'
 import { mastersRedirect } from './mastersRedirect'
+import { awaitingApprovalPath, creditNotePath, financePath, financePathFromLegacy, invoicePath } from './screens/finances/financePaths'
 import { ContractsSection } from './screens/contracts/ContractsSection'
 import { ContractPage } from './screens/contracts/ContractPage'
 import { NewContractPage } from './screens/contracts/new/NewContractPage'
@@ -175,7 +169,7 @@ export function AdminDayRoute() {
           actor={ctx.actor}
           onOpenBooking={(d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`)}
           onOpenConflicts={() => navigate('/admin/conflicts')}
-          onOpenInvoices={() => navigate('/admin/invoices?view=approval')}
+          onOpenInvoices={() => navigate(awaitingApprovalPath())}
           onOpenNotification={(target) => openNotificationTarget(target, ctx, (d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`))}
           onSeeAllNotifications={() => navigate('/admin/notifications')}
           onShowResolvedNotifications={() => navigate('/admin/notifications?resolved=1')}
@@ -216,7 +210,7 @@ export function AdminBookingDetailRoute() {
           navigate(
             returnInvoice === undefined
               ? `/admin/day/${dateISO}`
-              : `/admin/invoices/${returnInvoice.id}`,
+              : invoicePath(returnInvoice.id),
           )
         }
         backLabel={
@@ -225,9 +219,9 @@ export function AdminBookingDetailRoute() {
             : `Invoice ${returnInvoice.invoiceNumber}`
         }
         officeLinks={{
-          onOpenInvoices: () => navigate('/admin/invoices?view=approval'),
-          onOpenInvoice: (invoiceId) => navigate(`/admin/invoices/${invoiceId}`),
-          onOpenCreditNote: (creditNoteId) => navigate(`/admin/credit-notes/${creditNoteId}`),
+          onOpenInvoices: () => navigate(awaitingApprovalPath()),
+          onOpenInvoice: (invoiceId) => navigate(invoicePath(invoiceId)),
+          onOpenCreditNote: (creditNoteId) => navigate(creditNotePath(creditNoteId)),
         }}
       />
     </RequireEntity>
@@ -245,12 +239,12 @@ export function AdminReviewQueueRoute() {
     <ReviewQueue
       actor={actor}
       onOpen={(listId) => navigate(`/admin/review/${listId}`)}
-      onViewInvoices={() => navigate('/admin/invoices')}
+      onViewInvoices={() => navigate(financePath('invoices'))}
     />
   )
 }
 
-/** Router state "Open in Review" passes from the Billing monitor: where to return, with its search. */
+/** Router state "Open in Review" passes from Finances' Billing tab: where to return, with its search. */
 export interface BillingMonitorReturnState {
   from: 'billing'
   search: string
@@ -267,7 +261,7 @@ export function AdminReviewRoute() {
   const { actor } = useAdminOutlet()
   const navigate = useNavigate()
   const exists = useAppStore((s) => s.schedule.lists[listId] !== undefined)
-  // Opened from the Billing monitor's "Open in Review" (catch-up Phase 37): back returns there with its filters.
+  // Opened from Billing's "Open in Review" (catch-up Phase 37): back returns to the Billing tab with its filters.
   const from = billingMonitorReturn(useLocation().state)
 
   return (
@@ -276,9 +270,9 @@ export function AdminReviewRoute() {
         listId={listId}
         actor={actor}
         backToBillingMonitor={from !== null}
-        onBack={() => navigate(from !== null ? `/admin/billing${from.search}` : '/admin/review')}
+        onBack={() => navigate(from !== null ? financePath('billing') + from.search : '/admin/review')}
         onOpen={(next) => navigate(`/admin/review/${next}`)}
-        onViewInvoices={() => navigate('/admin/invoices')}
+        onViewInvoices={() => navigate(financePath('invoices'))}
         onOpenBooking={(dateISO, bookingId) => navigate(`/admin/day/${dateISO}/bookings/${bookingId}`)}
       />
     </RequireEntity>
@@ -286,46 +280,15 @@ export function AdminReviewRoute() {
 }
 
 // ---------------------------------------------------------------------------
-// Invoices — `/admin/invoices`, `/admin/invoices/:invoiceId`
+// Finances (build plan Phase 58; D107, D108): the tabs and records render from
+// their own files in `screens/finances/`, mounted directly by `router.tsx`. The
+// old Invoices, credit note, Billing monitor, payment run and Ledger addresses
+// redirect here, with replace, keeping the query and router state.
 // ---------------------------------------------------------------------------
 
-export function AdminInvoicesRoute() {
-  const { invoiceId } = useParams()
-  const { actor } = useAdminOutlet()
-  const navigate = useNavigate()
-  const exists = useAppStore((s) => invoiceId === undefined || s.billing.invoices[invoiceId] !== undefined)
-
-  return (
-    <RequireEntity exists={exists}>
-      <InvoicesScreen
-        actor={actor}
-        selectedInvoiceId={invoiceId ?? null}
-        onSelect={(next) => navigate(next === null ? '/admin/invoices' : `/admin/invoices/${next}`)}
-      />
-    </RequireEntity>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// A credit note: `/admin/credit-notes/:creditNoteId` (catch-up Phase 39). It
-// sits under Invoices: the side nav keeps Invoices active, and its trail leads
-// back there. An unknown id is a 404, as an unknown invoice is.
-// ---------------------------------------------------------------------------
-
-export function AdminCreditNoteRoute() {
-  const { creditNoteId } = useParams()
-  const navigate = useNavigate()
-  const creditNote = useAppStore((s) => (creditNoteId !== undefined ? s.billing.creditNotes[creditNoteId] : undefined))
-
-  return (
-    <RequireEntity exists={creditNote !== undefined}>
-      {creditNote !== undefined && (
-        <AdminPage mode="document" testId="credit-note-detail-screen" back={{ label: 'Invoices', onClick: () => navigate('/admin/invoices') }}>
-          <CreditNoteDocument key={creditNote.id} creditNoteId={creditNote.id} />
-        </AdminPage>
-      )}
-    </RequireEntity>
-  )
+export function FinanceLegacyRedirect() {
+  const { pathname, search, state } = useLocation()
+  return <Navigate to={financePathFromLegacy(pathname, search)} replace state={state} />
 }
 
 // ---------------------------------------------------------------------------
@@ -396,37 +359,6 @@ export function AdminNotificationsRoute() {
   const ctx = useAdminOutlet()
   const navigate = useNavigate()
   return <NotificationsScreen actor={ctx.actor} onOpen={(target) => openNotificationTarget(target, ctx, (d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`))} />
-}
-
-export function AdminBillingPage() {
-  const { actor } = useAdminOutlet()
-  return <BillingMonitorScreen actor={actor} />
-}
-
-/** The internal ledger, whole (catch-up Phase 36; US-13.2.1). */
-export function AdminLedgerRoute() {
-  const { actor } = useAdminOutlet()
-  return <LedgerScreen actor={actor} />
-}
-
-/** One anaesthetist's ledger; an unknown anaesthetist goes back to the whole ledger. */
-export function AdminAnaesthetistLedgerRoute() {
-  const { actor } = useAdminOutlet()
-  const { anaesthetistId = '' } = useParams()
-  const known = useAppStore((s) => s.masters.anaesthetists[anaesthetistId] !== undefined)
-  if (!known) return <Navigate to="/admin/ledger" replace />
-  return <LedgerScreen actor={actor} anaesthetistId={anaesthetistId} />
-}
-
-/** AA's monthly fee: the fee invoices and the fee settings (catch-up Phase 16). */
-export function AdminAaFeesRoute() {
-  const { actor } = useAdminOutlet()
-  return <AaFeesScreen actor={actor} tab="invoices" />
-}
-
-export function AdminAaFeeSettingsRoute() {
-  const { actor } = useAdminOutlet()
-  return <AaFeesScreen actor={actor} tab="settings" />
 }
 
 /** The rows waiting for an NHI (US-11.1.5; D99) — `/admin/intake/waiting`, beside Matching. */
@@ -600,35 +532,6 @@ export function AdminAnaesthetistRecordRoute() {
 
 export function AdminAuditRoute() {
   return <AuditViewer />
-}
-
-// ---------------------------------------------------------------------------
-// A payment run and its remittance advices (catch-up Phase 39a): under the
-// Billing monitor in the side nav. An unknown run, or an anaesthetist not paid
-// in it, is a 404.
-// ---------------------------------------------------------------------------
-
-export function AdminPaymentRunRoute() {
-  const { runId = '' } = useParams()
-  const exists = useAppStore((s) => s.billing.payablesRuns[runId] !== undefined)
-  return (
-    <RequireEntity exists={exists}>
-      <PaymentRunScreen key={runId} runId={runId} />
-    </RequireEntity>
-  )
-}
-
-export function AdminRemittanceRoute() {
-  const { runId = '', anaesthetistId = '' } = useParams()
-  const exists = useAppStore((s) => {
-    const run = s.billing.payablesRuns[runId]
-    return run !== undefined && run.status !== 'superseded' && run.approvedAtISO !== undefined && run.byAnaesthetist.some((t) => t.anaesthetistId === anaesthetistId)
-  })
-  return (
-    <RequireEntity exists={exists}>
-      <RemittanceAdviceScreen key={`${runId}:${anaesthetistId}`} runId={runId} anaesthetistId={anaesthetistId} />
-    </RequireEntity>
-  )
 }
 
 /** The Day view's state for a date past the schedule horizon (catch-up Phase 28; FT-01.1). */

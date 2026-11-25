@@ -33,7 +33,7 @@ async function stagePostOp(page: Page): Promise<string> {
   return invoiceId!
 }
 
-/** Approve the oldest credit in Review's Events tab, then run the next billing run from the Billing monitor. */
+/** Approve the oldest credit in Review's Events tab, then run the next billing run from Finances · Billing. */
 async function approveAndRun(page: Page): Promise<void> {
   await page.goto('/admin/review?tab=events')
   const row = page.locator('[data-shot="admin-events-queue"] tr', { has: page.locator('[data-shot="review-credit-row"]') }).first()
@@ -42,7 +42,7 @@ async function approveAndRun(page: Page): Promise<void> {
   await expect(review.locator('[data-shot="event-review-credit"]')).toBeVisible()
   await review.locator('[data-shot="event-review-approve"]').click()
   await page.keyboard.press('Escape')
-  await page.goto('/admin/billing')
+  await page.goto('/admin/finances/billing')
   expect(await runDemoAction(page, 'run-next-billing-run', { close: true })).toContain('credit note')
 }
 
@@ -50,7 +50,7 @@ test('the office credits in full and rebills from a copy: rail, both modes, pend
   // Heavy at practice scale: under the full parallel run it can pass 30s (it passes alone).
   test.setTimeout(90_000)
   const invoiceId = await stagePostOp(page)
-  await page.goto(`/admin/invoices/${invoiceId}`)
+  await page.goto(`/admin/finances/invoices/${invoiceId}`)
 
   // The Correct this invoice rail card.
   const correct = page.locator('[data-shot="invoice-correct"]')
@@ -97,7 +97,7 @@ test('the office credits in full and rebills from a copy: rail, both modes, pend
   await approveAndRun(page)
 
   // The credited original, its banner and the credit note document with its negative invoice card.
-  await page.goto(`/admin/invoices/${invoiceId}`)
+  await page.goto(`/admin/finances/invoices/${invoiceId}`)
   await expect(page.locator('[data-shot="invoice-standing"]')).toHaveText('Credited')
   const banner = page.locator('[data-shot="invoice-credited-banner"]')
   await expect(banner).toContainText('Credited in full by CN-2026-')
@@ -113,12 +113,12 @@ test('the office credits in full and rebills from a copy: rail, both modes, pend
   await page.screenshot({ path: 'visual/shots/p39-06-credit-note-document.png', fullPage: true })
 
   // The rebill names what it rebills.
-  await page.goto(`/admin/invoices/${invoiceId}`)
+  await page.goto(`/admin/finances/invoices/${invoiceId}`)
   await page.locator('[data-shot="invoice-credited-banner"]').getByRole('link', { name: /^AA-2026-/ }).click()
   await expect(page.locator('[data-shot="invoice-rebill-of"]')).toContainText('Rebills AA-2026-')
 
   // The Invoices table: the credit note row and the credited original.
-  await page.goto('/admin/invoices')
+  await page.goto('/admin/finances/invoices')
   await expect(page.locator('[data-shot="invoice-list-kind"][data-kind="creditNote"]')).toHaveCount(1)
   await expect(page.locator('[data-shot="invoice-list-credits"]')).toContainText('Credits AA-2026-')
   await expect(page.locator('[data-shot="invoice-list-standing"][data-standing="credited"]')).toHaveCount(1)
@@ -126,7 +126,7 @@ test('the office credits in full and rebills from a copy: rail, both modes, pend
   await page.getByTestId('invoice-list-table-shell').screenshot({ path: 'visual/shots/p39-07-invoices-table.png' })
 
   // The ledger: the two credit terms, in balance.
-  await page.goto('/admin/ledger')
+  await page.goto('/admin/finances/ledger')
   await expect(page.locator('[data-shot="ledger-credit-tiles"]')).toContainText('Credits held for payers')
   await expect(page.locator('[data-shot="ledger-credit-tiles"]')).toContainText('Negative invoices to net')
   await expect(page.locator('[data-shot="ledger-balance"]')).toHaveAttribute('data-in-balance', 'true')
@@ -148,7 +148,7 @@ test('the office credits in full and rebills from a copy: rail, both modes, pend
 })
 
 test('the combined split: Left to allocate at a mismatch and at $0.00, then a component names its part', async ({ page }) => {
-  await page.goto('/admin/invoices')
+  await page.goto('/admin/finances/invoices')
   await page.waitForLoadState('networkidle')
   expect(await runDemoAction(page, 'stage-combined-procedure')).toContain('Staged: a billed Merivale combination')
   await page.getByRole('link', { name: /^Open AA-2026-\d{4}$/ }).click()

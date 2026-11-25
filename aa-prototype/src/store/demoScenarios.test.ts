@@ -286,7 +286,7 @@ describe('S4 · exceptions', () => {
     if (!out.ok) throw new Error(out.message)
     expect(approveProcedureEvent(api, OFFICE, out.value.eventId).ok).toBe(true)
     expect(runEventInvoicing(api, OFFICE, { eventIds: [out.value.eventId] }).ok).toBe(true)
-    expect(DEMO_TRIGGERS.find((t) => t.id === 'billing-failure')!.run(api, ctx('/admin/billing')).ok).toBe(true)
+    expect(DEMO_TRIGGERS.find((t) => t.id === 'billing-failure')!.run(api, ctx('/admin/finances/billing')).ok).toBe(true)
     unwire()
     const s = api.getState()
     const byNumber = (n: string) => Object.values(s.billing.invoices).find((i) => i.invoiceNumber === n)
@@ -311,7 +311,7 @@ describe('S4 · exceptions', () => {
       expect(pos.checks).toEqual([])
     }
     const approve = (eventId: string) => expect(approveProcedureEvent(api, OFFICE, eventId).ok).toBe(true)
-    const nextRun = () => trigger('run-next-billing-run').run(api, ctx('/admin/billing'))
+    const nextRun = () => trigger('run-next-billing-run').run(api, ctx('/admin/finances/billing'))
 
     // Stage post-op, and 38b's additional invoice on Sarah Mitchell.
     expect(trigger('stage-post-op').run(api, ctx(`/admin/review/${POST_OP_ORIGINAL_LIST_ID}`, { listId: POST_OP_ORIGINAL_LIST_ID })).ok).toBe(true)
@@ -337,7 +337,7 @@ describe('S4 · exceptions', () => {
     inBalance()
 
     // The paid-out variant: the rebill paid in full and paid out, then credited: its negative invoice nets.
-    const payout = trigger('stage-refund-after-payout').run(api, ctx('/admin/billing'))
+    const payout = trigger('stage-refund-after-payout').run(api, ctx('/admin/finances/invoices'))
     expect(payout).toMatchObject({ ok: true, message: "Paid in full, approved for payment and paid out to Dr Sharma in Xero. Credit it to see the negative invoice. Once credited, the negative invoice is netted in Dr Sharma's next payment run." })
     const paidOutCredit = submitCredit(api, OFFICE, { invoiceId: rebilled.id, reason: 'Paid twice', cause: 'correction', replacements: [] })
     if (!paidOutCredit.ok) throw new Error(paidOutCredit.message)
@@ -348,7 +348,7 @@ describe('S4 · exceptions', () => {
     inBalance()
 
     // The split: the staged Merivale combination in three parts that add up to the credit.
-    const staged = trigger('stage-combined-procedure').run(api, ctx('/admin/invoices'))
+    const staged = trigger('stage-combined-procedure').run(api, ctx('/admin/finances/invoices'))
     expect(staged.ok).toBe(true)
     const combined = api.getState().billing.invoices[staged.link!.to.split('/').pop()!]!
     const combinedProcedure = combined.procedureIds![0]!

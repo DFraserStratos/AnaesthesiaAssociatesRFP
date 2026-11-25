@@ -1,5 +1,5 @@
 /**
- * The Billing monitor's Xero panels (catch-up Phase 37; EP-09): the sync queue
+ * Finances · Xero's panels (catch-up Phase 37; EP-09; build plan Phase 58): the sync queue
  * (rows, Retry now, empty state, alert banner) and the changes made directly in
  * Xero with the Resolve side panel (note required, provisional, no money moved).
  */

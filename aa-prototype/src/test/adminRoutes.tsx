@@ -1,8 +1,9 @@
 /**
  * Test helpers: the Admin route blocks for the People section and Master data
- * (build plan Phase 53), as `router.tsx` declares them, so a test harness
- * rendering Admin routes under a `MemoryRouter` meets the same tabs, record
- * pages and redirects. Call them inside a `<Route path="/admin">`.
+ * (build plan Phase 53) and the Finances section (build plan Phase 58), as
+ * `router.tsx` declares them, so a test harness rendering Admin routes under a
+ * `MemoryRouter` meets the same tabs, record pages and redirects. Call them
+ * inside a `<Route path="/admin">`.
  */
 
 import { Navigate, Route } from 'react-router-dom'
@@ -17,8 +18,20 @@ import {
   AdminPersonRedirect,
   AdminSurgeonProfileRoute,
   AdminSpecialtyPageRoute,
+  FinanceLegacyRedirect,
 } from '../apps/admin/routes'
 import { peoplePath } from '../apps/admin/peoplePaths'
+import { AaFeesTab } from '../apps/admin/screens/finances/AaFeesTab'
+import { AnaesthetistAccountPage } from '../apps/admin/screens/finances/AnaesthetistAccountPage'
+import { BillingTab } from '../apps/admin/screens/finances/BillingTab'
+import { CreditNotePage } from '../apps/admin/screens/finances/CreditNotePage'
+import { InvoicePage } from '../apps/admin/screens/finances/InvoicePage'
+import { InvoicesTab } from '../apps/admin/screens/finances/InvoicesTab'
+import { LedgerTab } from '../apps/admin/screens/finances/LedgerTab'
+import { PaymentRunPage } from '../apps/admin/screens/finances/PaymentRunPage'
+import { PaymentsTab } from '../apps/admin/screens/finances/PaymentsTab'
+import { RemittancePage } from '../apps/admin/screens/finances/RemittancePage'
+import { XeroTab } from '../apps/admin/screens/finances/XeroTab'
 
 /** `/admin/people/...`: the four tabs and the record pages under them. */
 export function peopleRoutes() {
@@ -60,4 +73,38 @@ export function mastersAndLegacyRoutes() {
       <Route path=":nhi" element={<AdminPersonRedirect kind="patient" />} />
     </Route>,
   ]
+}
+
+/** `/admin/finances/...`: the six tabs and the record pages under them. */
+export function financesRoutes() {
+  return (
+    <Route path="finances">
+      <Route index element={<Navigate to="billing" replace />} />
+      <Route path="billing" element={<BillingTab />} />
+      <Route path="invoices">
+        <Route index element={<InvoicesTab />} />
+        <Route path="credit-notes/:creditNoteId" element={<CreditNotePage />} />
+        <Route path=":invoiceId" element={<InvoicePage />} />
+      </Route>
+      <Route path="payments">
+        <Route index element={<PaymentsTab />} />
+        <Route path=":runId" element={<PaymentRunPage />} />
+        <Route path=":runId/remittance/:anaesthetistId" element={<RemittancePage />} />
+      </Route>
+      <Route path="ledger">
+        <Route index element={<LedgerTab />} />
+        <Route path="anaesthetists/:anaesthetistId" element={<AnaesthetistAccountPage />} />
+      </Route>
+      <Route path="xero" element={<XeroTab />} />
+      <Route path="aa-fees">
+        <Route index element={<AaFeesTab view="invoices" />} />
+        <Route path="settings" element={<AaFeesTab view="settings" />} />
+      </Route>
+    </Route>
+  )
+}
+
+/** The old Invoices, credit note, Billing monitor and Ledger addresses, redirecting into Finances. */
+export function financeLegacyRoutes() {
+  return ['invoices', 'credit-notes', 'billing', 'ledger'].map((head) => <Route key={head} path={`${head}/*`} element={<FinanceLegacyRedirect />} />)
 }

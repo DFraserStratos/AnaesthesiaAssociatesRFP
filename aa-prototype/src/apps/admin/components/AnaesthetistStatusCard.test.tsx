@@ -100,7 +100,7 @@ describe('the anaesthetist record (Phase 52)', () => {
     expect(document.querySelector('[data-shot="anaesthetist-status-sub"]')?.textContent).toBe('Inactive')
     // History readable while inactive.
     expect(document.querySelectorAll('[data-shot="anaesthetist-history-row"]').length).toBeGreaterThan(0)
-    expect(document.querySelector('[data-shot="anaesthetist-ledger-link"]')?.getAttribute('href')).toBe(`/admin/ledger/anaesthetists/${BEAU}`)
+    expect(document.querySelector('[data-shot="anaesthetist-ledger-link"]')?.getAttribute('href')).toBe(`/admin/finances/ledger/anaesthetists/${BEAU}`)
 
     fireEvent.click(within(statusCard()).getByRole('button', { name: 'Make active' }))
     const row = document.querySelector(`[data-shot="make-active-contract"][data-contract-id="${RHINO}"]`) as HTMLInputElement

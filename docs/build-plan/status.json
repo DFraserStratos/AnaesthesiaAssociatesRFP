@@ -12,41 +12,43 @@
     "54",
     "55",
     "56",
-    "57"
+    "57",
+    "58",
+    "59"
   ],
   "in_progress": [],
   "next": {
     "phases": [
-      "58",
-      "59"
+      "60",
+      "62",
+      "64"
     ],
-    "note": "The Finances section (58 to 67) is planned in two waves of lanes. Wave 4: Lane A builds the section shell (58), Lane B the read models (59). Wave 5, once both are on master: Lane A Billing then Xero (60, 61); Lane B Invoices, the invoice and credit note pages, then AA fees (62, 63, 67); Lane C Ledger, the anaesthetist account page, then Payments (64, 65, 66). Phases finish on the quick checks only; the full gate, the review and TEST-58-67.md run once, at Wave 5's join (D113)."
+    "note": "Wave 4 is on master: the Finances section shell (58) and its read models (59). Wave 5 builds the six tabs and the record pages in three lanes side by side: Lane A Billing then Xero (60, 61); Lane B Invoices, the invoice and credit note pages, then AA fees (62, 63, 67); Lane C Ledger, the anaesthetist account page, then Payments (64, 65, 66). Phases finish on the quick checks only; the full gate, the review and TEST-58-67.md run once, at Wave 5's join (D113)."
   },
   "guidance": {
     "as_of": "2026-11-26",
-    "headline": "The Finances section (58 to 67) is planned. Start Wave 4: paste Lane A's prompt first (it sets the lanes up), then Lane B's.",
-    "headline_sub": "Wave 4 is the shell (58, Lane A) beside the read models (59, Lane B); Wave 5 builds the six tabs and the record pages in three lanes. Phases finish on the quick checks only; the one full gate, review and owner test sheet (TEST-58-67.md) come at Wave 5's join (D113). 45 to 57 are still yours to walk from <a href=\"TEST-45-49.md\">TEST-45-49.md</a> and <a href=\"TEST-50-57.md\">TEST-50-57.md</a>.",
+    "headline": "Start Wave 5: paste all three lane prompts. Wave 4 is on master: Finances is one Admin section with six routed tabs, and the billing and invoice read models are built.",
+    "headline_sub": "58 (the Finances shell: one nav entry and amber badge, six tabs opening on Billing, records under their tabs, every old link redirecting, today's panels moved unchanged) and 59 (the billing status and invoice state read models) were joined on wave/4 on the quick checks only. Wave 5 rebuilds each tab in three lanes; the one full gate, review and owner test sheet (TEST-58-67.md) come at its join (D113). 45 to 57 are still yours to walk from <a href=\"TEST-45-49.md\">TEST-45-49.md</a> and <a href=\"TEST-50-57.md\">TEST-50-57.md</a>.",
     "safe": {
-      "58": "Wave 4, Lane A: needs nothing; its session sets the lanes up.",
-      "59": "Wave 4, Lane B: needs nothing; pure domain beside 58."
+      "60": "Wave 5, Lane A: 58 and 59 are on master.",
+      "62": "Wave 5, Lane B: 58 and 59 are on master.",
+      "64": "Wave 5, Lane C: 58 is on master."
     },
     "wait": {
-      "60": "Wave 5, Lane A: after 58 and 59 are on master.",
       "61": "Wave 5, Lane A, after 60.",
-      "62": "Wave 5, Lane B: after 58 and 59 are on master.",
       "63": "Wave 5, Lane B, after 62.",
-      "64": "Wave 5, Lane C: after 58 is on master (with Wave 4).",
       "65": "Wave 5, Lane C, after 64.",
       "66": "Wave 5, Lane C, after 65.",
       "67": "Wave 5, Lane B, after 63."
     },
-    "parallel": "Wave 4: Lane A 58 and Lane B 59 side by side; the last to finish joins (quick checks only). Wave 5: Lanes A, B and C side by side; the last to finish joins with the full gate and writes TEST-58-67.md. Paste each lane's prompt again whenever its session ends.",
+    "parallel": "Wave 5: Lanes A, B and C side by side; the last to finish joins with the full gate and writes TEST-58-67.md. Paste each lane's prompt again whenever its session ends.",
     "lanes": [
       {
         "name": "Lane A",
         "where": "`AnaesthesiaAssociatesRFP-laneA` worktree, branch `lane/a`, ports 5273/5274/5280",
         "queue": [
-          "58"
+          "60",
+          "61"
         ],
         "prompt_file": "lanes/lane-a.prompt.md"
       },
@@ -54,9 +56,21 @@
         "name": "Lane B",
         "where": "`AnaesthesiaAssociatesRFP-laneB` worktree, branch `lane/b`, ports 5373/5374/5380",
         "queue": [
-          "59"
+          "62",
+          "63",
+          "67"
         ],
         "prompt_file": "lanes/lane-b.prompt.md"
+      },
+      {
+        "name": "Lane C",
+        "where": "`AnaesthesiaAssociatesRFP-laneC` worktree, branch `lane/c`, ports 5473/5474/5480",
+        "queue": [
+          "64",
+          "65",
+          "66"
+        ],
+        "prompt_file": "lanes/lane-c.prompt.md"
       }
     ]
   }

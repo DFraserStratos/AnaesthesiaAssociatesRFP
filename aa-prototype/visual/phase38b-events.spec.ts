@@ -82,12 +82,17 @@ test('the office creates, reviews and runs an additional invoice; it links both 
   await expect(review).toContainText('Approved. Invoiced in the next billing run.')
   await page.keyboard.press('Escape')
 
-  await page.goto('/admin/billing')
+  // Build plan Phase 58: the events awaiting the run sit on Finances · Payments; the run itself is Billing's trigger.
+  await page.goto('/admin/finances/payments')
   await expect(page.locator('[data-shot="events-awaiting-run"]')).toContainText('Sarah Mitchell')
+  await page.locator('[data-shot="finances-tabs"] [data-finances-tab="billing"]').click()
+  await expect(page).toHaveURL(/\/admin\/finances\/billing/)
   expect(await runDemoAction(page, 'run-next-billing-run', { close: true })).toMatch(/^Billing run done: 1 additional invoice raised \(AA-2026-\d{4}\)\.$/)
+  await page.locator('[data-shot="finances-tabs"] [data-finances-tab="payments"]').click()
+  await expect(page).toHaveURL(/\/admin\/finances\/payments/)
   await expect(page.locator('[data-shot="events-awaiting-run"]')).toHaveCount(0)
 
-  await page.goto('/admin/invoices')
+  await page.goto('/admin/finances/invoices')
   const additional = page.locator('[data-shot="invoice-list-kind"][data-kind="additional"]')
   await expect(additional).toHaveCount(1)
   await expect(page.locator('[data-shot="invoice-list-additional-to"]')).toContainText('Additional to AA-2026-')

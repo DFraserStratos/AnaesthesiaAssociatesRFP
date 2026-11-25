@@ -30,7 +30,7 @@ function renderInvoices() {
   return render(
     <MemoryRouter>
       <SurfaceProvider variant="web">
-        <InvoicesScreen actor={OFFICE} selectedInvoiceId={null} onSelect={() => {}} />
+        <InvoicesScreen actor={OFFICE} />
       </SurfaceProvider>
     </MemoryRouter>,
   )

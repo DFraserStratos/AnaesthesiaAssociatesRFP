@@ -112,10 +112,11 @@ test('authorise raises and sends invoices; contract-holder document, Resend and 
   await expect(page.locator('[data-shot="review-delivery-summary"]')).toHaveText(/^6 invoices raised\. \d+ emailed, \d+ to post\./)
   await page.screenshot({ path: 'visual/shots/a8-01-authorised-banner.png', fullPage: true })
 
-  // Jump to the Invoices section.
+  // Jump to Finances · Invoices (build plan Phase 58).
   await page.getByRole('button', { name: 'View invoices' }).click()
   await page.waitForTimeout(300)
-  await expect(page.getByRole('heading', { name: 'Invoices' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Finances', level: 1 })).toBeVisible()
+  await expect(page).toHaveURL(/\/admin\/finances\/invoices/)
   // Recently billed left Invoices (it repeated the table's top rows); the Review queue keeps it.
   await expect(page.locator('[data-shot="invoices-tabs"]')).toBeVisible()
   await expect(page.getByText(/AA-2026-\d{4}/).first()).toBeVisible()
@@ -144,7 +145,7 @@ test('authorise raises and sends invoices; contract-holder document, Resend and 
   await expect(page.getByTestId('admin-list-drawer')).toBeVisible()
   await expect(page.getByTestId('admin-list-drawer')).toContainText("St George's")
   await page.goBack()
-  await expect(page).toHaveURL(/\/admin\/invoices$/)
+  await expect(page).toHaveURL(/\/admin\/finances\/invoices$/)
 
   // Open a document: contract-holder layout.
   await page.getByRole('button', { name: /^View invoice / }).first().click()
@@ -329,9 +330,9 @@ test('the authorised design-day list leaves the mobile main view (catch-up Phase
 })
 
 test('invoice rail shows a hand-off waiting for Xero', async ({ page }) => {
-  // Arm the real one-shot fault from the Billing monitor's Demo actions, then
+  // Arm the real one-shot fault from Finances · Xero's Demo actions, then
   // authorise through the normal office flow.
-  await page.goto('/admin/billing')
+  await page.goto('/admin/finances/xero')
   await page.waitForLoadState('networkidle')
   await runDemoAction(page, 'arm-handoff-fault')
   await expect(page.locator('[data-shot="demo-action-arm-handoff-fault"]').getByText('Armed', { exact: true })).toBeVisible()
@@ -349,7 +350,7 @@ test('invoice rail shows a hand-off waiting for Xero', async ({ page }) => {
   // write is coalesced (see the helper's docblock).
   const failedInvoiceId = await persistedInvoiceIdWhere(page, 'handoff failed')
 
-  await page.goto(`/admin/invoices/${failedInvoiceId}`)
+  await page.goto(`/admin/finances/invoices/${failedInvoiceId}`)
   await page.waitForLoadState('networkidle')
   const status = page.getByTestId('xero-handoff-status')
   // Catch-up Phase 37: the fault is one failed attempt waiting in the Xero sync queue, retried by it.
@@ -394,11 +395,14 @@ test('exemplar staging via the guard console: patient layout and the fee split',
   await runGuard('Submit list', /2026-11-23 PM · Dr Melanie Souter/)
   await runGuard('Authorise list', /2026-11-23 PM · Dr Melanie Souter/)
 
-  // Into the admin Invoices section.
+  // Into Finances · Invoices: the nav's Finances entry opens on Billing, then the Invoices tab.
   await page.goto('/admin')
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(400)
-  await page.getByRole('button', { name: 'Invoices' }).first().click()
+  await page.getByRole('button', { name: /^Finances/ }).first().click()
+  await expect(page).toHaveURL(/\/admin\/finances\/billing/)
+  await page.locator('[data-shot="finances-tabs"] [data-finances-tab="invoices"]').click()
+  await expect(page).toHaveURL(/\/admin\/finances\/invoices$/)
   await page.waitForTimeout(300)
 
   // Both shares are emailed by the run (nib's Party delivers by email; no portal, D55).
@@ -430,7 +434,7 @@ test('exemplar staging via the guard console: patient layout and the fee split',
   await page.screenshot({ path: 'visual/shots/a8-07-patient-doc.png', fullPage: true })
 
   // nib's share: holder layout, emailed to nib, the split note linking Alan's share.
-  await page.getByTestId('invoice-detail-screen').getByRole('button', { name: 'Invoices', exact: true }).click()
+  await page.getByTestId('invoice-detail-screen').getByRole('link', { name: 'Invoices', exact: true }).click()
   const nibRow = page
     .getByTestId('invoice-list-table-shell')
     .locator('tbody tr')

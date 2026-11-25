@@ -59,6 +59,7 @@ import { withStubsInTimeOrder } from '../../../domain/intake/stubs'
 import { useListStubs } from '../../../store/stubSelectors'
 import { StubTableRow } from '../../../shared/stubs'
 import { StubResolveLink } from '../components/StubResolveLink'
+import { financePath } from './finances/financePaths'
 
 interface ReviewScreenProps {
   listId: string
@@ -284,7 +285,7 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
       mode="fluid"
       actionsAlign="start"
       testId="review-detail-screen"
-      back={backToBillingMonitor ? { label: 'Billing monitor', onClick: onBack, shot: 'review-back-to-billing' } : { label: 'Review queue', onClick: onBack }}
+      back={backToBillingMonitor ? { label: 'Billing', onClick: onBack, shot: 'review-back-to-billing' } : { label: 'Review queue', onClick: onBack }}
       title={<>{hospitalName} · {sessionText(list.session)} list</>}
       sub={
         <>
@@ -341,7 +342,7 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
       )}
       {/* An invoice raised with no address (catch-up Phase 22): the office adds one and sends it. */}
       {authorised && noAddressCount > 0 && (
-        <Notice tone="warning" shot="review-no-address" action={<Link to="/admin/billing" style={{ color: accent.base, fontWeight: 600, whiteSpace: 'nowrap' }}>Open Billing monitor</Link>}>
+        <Notice tone="warning" shot="review-no-address" action={<Link to={financePath('billing')} style={{ color: accent.base, fontWeight: 600, whiteSpace: 'nowrap' }}>Open Billing</Link>}>
           {noAddressCount === 1 ? 'One invoice has no invoice address. Add one and send it from the invoice.' : `${noAddressCount} invoices have no invoice address. Add one and send each from its invoice.`}
         </Notice>
       )}

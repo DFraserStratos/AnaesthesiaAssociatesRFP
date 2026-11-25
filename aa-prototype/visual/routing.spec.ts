@@ -177,11 +177,11 @@ test('admin: review queue → review screen is a URL; refresh holds it, Back ret
 })
 
 test('admin: an invoice document is a URL that survives a refresh', async ({ page }) => {
-  await page.goto('/admin/invoices')
+  await page.goto('/admin/finances/invoices')
   await page.waitForLoadState('networkidle')
 
   await page.getByRole('button', { name: /^View invoice / }).first().click()
-  await expect(page).toHaveURL(/\/admin\/invoices\/[^/]+$/)
+  await expect(page).toHaveURL(/\/admin\/finances\/invoices\/[^/]+$/)
   const invoiceURL = page.url()
 
   await page.reload()
@@ -309,8 +309,12 @@ test('stale ids redirect to their parent instead of blanking', async ({ page }) 
   await expect(page).toHaveURL(/\/admin\/review$/)
   await expect(page.getByRole('heading', { name: 'Review queue' })).toBeVisible()
 
+  await page.goto('/admin/finances/invoices/NOPE')
+  await expect(page).toHaveURL(/\/admin\/finances\/invoices$/)
+
+  // An old invoice address with a stale id redirects, then falls back to the Invoices tab.
   await page.goto('/admin/invoices/NOPE')
-  await expect(page).toHaveURL(/\/admin\/invoices$/)
+  await expect(page).toHaveURL(/\/admin\/finances\/invoices$/)
 
   await page.goto('/admin/day/not-a-date')
   await expect(page).toHaveURL(/\/admin\/day\/2026-11-24$/)
@@ -345,6 +349,45 @@ test('legacy /cards/ bookmarks redirect, replacing history, to the same Booking'
   // A legacy link to a Booking that no longer exists bounces like any stale id.
   await page.goto(`/web/lists/${list}/cards/C9999`)
   await expect(page).toHaveURL(new RegExp(`/web/lists/${list}$`))
+})
+
+// ---------------------------------------------------------------------------
+// Legacy finance URLs (build plan Phase 58, D108)
+// ---------------------------------------------------------------------------
+
+test('old Invoices, Billing monitor, credit note, payment run and Ledger URLs redirect to Finances, replacing history and keeping the query', async ({ page }) => {
+  test.setTimeout(90_000)
+  // The seeded Week 47 run, read from the Payments tab.
+  await page.goto('/admin/finances/payments')
+  await page.waitForLoadState('networkidle')
+  const runId = await page.locator('[data-shot="payables-runs"] tbody tr[data-run-id]').first().getAttribute('data-run-id')
+  expect(runId).not.toBeNull()
+
+  const cases = [
+    { from: '/admin/invoices', to: '/admin/finances/invoices' },
+    { from: '/admin/invoices?view=approval', to: '/admin/finances/invoices?view=approval' },
+    { from: '/admin/invoices/PPINV01', to: '/admin/finances/invoices/PPINV01' },
+    { from: '/admin/credit-notes/NOPE', to: '/admin/finances/invoices' }, // a stale id falls back to the tab
+    { from: '/admin/billing', to: '/admin/finances/billing' },
+    { from: '/admin/billing?problems=1&sort=date-asc', to: '/admin/finances/billing?problems=1&sort=date-asc' },
+    { from: '/admin/billing/aa-fees', to: '/admin/finances/aa-fees' },
+    { from: '/admin/billing/aa-fees/settings', to: '/admin/finances/aa-fees/settings' },
+    { from: `/admin/billing/payment-runs/${runId}`, to: `/admin/finances/payments/${runId}` },
+    { from: `/admin/billing/payment-runs/${runId}/remittance/34821`, to: `/admin/finances/payments/${runId}/remittance/34821` },
+    { from: '/admin/ledger', to: '/admin/finances/ledger' },
+    { from: '/admin/ledger?pair=P-STALE', to: '/admin/finances/ledger?pair=P-STALE' },
+    { from: '/admin/ledger/anaesthetists/34821', to: '/admin/finances/ledger/anaesthetists/34821' },
+  ]
+  for (const { from, to } of cases) {
+    await page.goto('/admin/review')
+    await page.waitForLoadState('networkidle')
+    await page.goto(from)
+    await page.waitForLoadState('networkidle')
+    await expect(page, `${from} lands on ${to}`).toHaveURL(new RegExp(`${to.replace(/[/.?]/g, '\\$&')}$`))
+    // `replace`: Back skips the old URL rather than bouncing into it again.
+    await page.goBack()
+    await expect(page, `Back from ${to}`).toHaveURL(/\/admin\/review$/)
+  }
 })
 
 // ---------------------------------------------------------------------------

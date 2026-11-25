@@ -9,10 +9,10 @@ import { runDemoAction } from './demoActions'
  */
 
 test('admin phase 09: billing monitor failure, resolve and retry (re-based on the Xero hand-off, catch-up Phase 25)', async ({ page }) => {
-  // Trigger the seeded billing failure from the Billing monitor's Demo actions menu.
-  await page.goto('/admin/billing')
+  // Trigger the seeded billing failure from Finances · Billing's Demo actions menu (build plan Phase 58).
+  await page.goto('/admin/finances/billing')
   await page.waitForLoadState('networkidle')
-  await expect(page.getByRole('heading', { name: 'Billing monitor' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Finances', level: 1 })).toBeVisible()
   const message = await runDemoAction(page, 'billing-failure')
   expect(message).toMatch(/waits for Xero in the sync queue/)
   await page.screenshot({ path: 'visual/shots/p9-01-trigger.png', fullPage: true })
@@ -23,17 +23,22 @@ test('admin phase 09: billing monitor failure, resolve and retry (re-based on th
   await page.locator('[data-shot="billing-monitor-filters"]').getByLabel('Anaesthetist').selectOption('39560')
 
   // Losa Tuilagi's hand-off waits for Xero in the sync queue (catch-up Phase 37); Hemi Walker billed; the List is not failed.
-  const queue = page.locator('[data-shot="billing-xero-queue"]')
-  await expect(queue.getByRole('button', { name: 'Retry now' })).toHaveCount(1)
   await expect(page.locator('[data-shot="monitor-waiting-for-xero"]')).toHaveCount(1)
   await expect(page.getByRole('button', { name: 'Resolve & retry' })).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p9-02-monitor.png', fullPage: true })
 
-  // Retry now hands it off once; no Contract is edited.
+  // Retry now, on the Xero tab's sync queue, hands it off once; no Contract is edited.
+  await page.locator('[data-shot="finances-tabs"] [data-finances-tab="xero"]').click()
+  await expect(page).toHaveURL(/\/admin\/finances\/xero/)
+  const queue = page.locator('[data-shot="billing-xero-queue"]')
+  await expect(queue.getByRole('button', { name: 'Retry now' })).toHaveCount(1)
   await queue.getByRole('button', { name: 'Retry now' }).click()
   await page.waitForTimeout(400)
   await expect(queue.getByRole('button', { name: 'Retry now' })).toHaveCount(0)
   await expect(queue.getByText('Nothing is waiting for Xero.')).toBeVisible()
+  await page.locator('[data-shot="finances-tabs"] [data-finances-tab="billing"]').click()
+  await expect(page).toHaveURL(/\/admin\/finances\/billing/)
+  await page.locator('[data-shot="billing-monitor-filters"]').getByLabel('Anaesthetist').selectOption('39560')
   await expect(page.locator('[data-shot="monitor-waiting-for-xero"]')).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p9-03-retried.png', fullPage: true })
 })

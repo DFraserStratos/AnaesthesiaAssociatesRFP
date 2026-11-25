@@ -1,5 +1,5 @@
 /**
- * The Billing monitor's Xero panels (catch-up Phase 37; EP-09, US-09.2.4,
+ * The Finances Xero tab's panels (catch-up Phase 37; EP-09, US-09.2.4,
  * FT-10.2, RV-40): the connection line, the Xero sync queue, the changes made
  * directly in Xero (with the Resolve side panel). The payables run moved to
  * the payment cycle panel (`PaymentCyclePanel`, catch-up Phase 39a). Proposed
@@ -16,6 +16,7 @@ import { Td, Th, TableShell } from '../../../shared/table'
 import { formatCurrency, hhmm, shortDay } from '../../../shared/format'
 import { today } from '../../../domain/clock'
 import { neutral, radius, semantic } from '../../../theme/tokens'
+import { invoicePath } from '../screens/finances/financePaths'
 import {
   DIVERGENCE_OUTCOMES,
   openXeroDivergences,
@@ -224,7 +225,7 @@ export function XeroDivergencePanel({ actor, anaesthetistId }: { actor: Actor; a
             return (
               <tr key={d.id} data-divergence-id={d.id} data-divergence-kind={d.kind}>
                 <Td mono>
-                  <Link to={`/admin/invoices/${d.invoiceId}`} style={{ color: neutral.ink }}>{invoices[d.invoiceId]?.invoiceNumber ?? d.invoiceId}</Link>
+                  <Link to={invoicePath(d.invoiceId)} style={{ color: neutral.ink }}>{invoices[d.invoiceId]?.invoiceNumber ?? d.invoiceId}</Link>
                 </Td>
                 <Td>{payerOf(d)}</Td>
                 <Td><Pill tone="error">{xeroShowsText(d)}</Pill></Td>

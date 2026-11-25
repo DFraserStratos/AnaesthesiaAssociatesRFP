@@ -7,6 +7,7 @@ import { contractHistoryFor, replacesFor } from '../../../domain/billing/contrac
 import { plainDate, stampText } from '../../../domain/dateText'
 import { HistoryTimeline } from '../../../shared/booking'
 import { EmptyState } from '../../../shared/ui'
+import { invoicePath } from '../screens/finances/financePaths'
 
 /**
  * A Contract's History tab (catch-up Phase 25; US-04.1.3): every audited
@@ -68,7 +69,7 @@ export function ContractHistory({ contractId }: { contractId: string }) {
                   <span style={{ fontSize: 12, color: neutral.slate }}>{row.origin === 'migrated' ? 'Migrated history' : `Locked ${stampText(row.takenAtISO)}`}</span>
                   <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: 10 }}>
                     {row.invoiceIds.map((id) => (
-                      <Link key={id} to={`/admin/invoices/${id}`} className="mono" style={{ color: accent.base, fontSize: 12 }}>
+                      <Link key={id} to={invoicePath(id)} className="mono" style={{ color: accent.base, fontSize: 12 }}>
                         {billing.invoices[id]?.invoiceNumber ?? id}
                       </Link>
                     ))}

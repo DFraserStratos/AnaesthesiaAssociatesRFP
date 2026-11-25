@@ -6,7 +6,7 @@ import { runDemoAction } from './demoActions'
  * real-browser click-through of the scenario jumps and their beat links
  * (catch-up Phase 44) and the procedure-day jump, then
  * the PDF arrival (Admin Intake, PDF lists) and job run
- * (Billing monitor) from the harness bar's Demo actions, asserting the console
+ * (Finances · Xero) from the harness bar's Demo actions, asserting the console
  * stays clean across the interaction.
  */
 
@@ -62,8 +62,8 @@ test('control panel: scenario jump, procedure-day jump, PDF ingest and jobs run 
   await page.locator('[data-shot="pdf-send"]').click()
   await expect(page.getByText(/Sent to matching: 3 rows/)).toBeVisible()
 
-  // Automated jobs: run the reconciliation poll from the Billing monitor.
-  await page.goto('/admin/billing')
+  // Automated jobs: run the reconciliation poll from Finances · Xero.
+  await page.goto('/admin/finances/xero')
   await page.waitForLoadState('networkidle')
   expect(await runDemoAction(page, 'run-reconciliation-poll')).toMatch(/Reconciliation poll/)
 

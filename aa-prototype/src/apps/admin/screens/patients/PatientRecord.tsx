@@ -50,6 +50,7 @@ import { AdminPage, PageBody } from '../../components/AdminPage'
 import { patientsBackPath, usePatientSlices } from './PatientsScreen'
 import { balanceText, DetailChoiceTable, detailsFromText, InvoiceStatusPill, reasonText } from './patientParts'
 import { RegisterRefreshPanel, RegisterRefreshRow } from './RegisterRefresh'
+import { creditNotePath, invoicePath } from '../finances/financePaths'
 
 const NOT_SUPPLIED = <span style={{ color: neutral.mist }}>Not supplied</span>
 
@@ -335,7 +336,7 @@ function InvoicesCard({
               return (
                 <Fragment key={r.invoiceId}>
                   <tr data-invoice-id={r.invoiceId} data-invoice-number={r.invoiceNumber} data-counts={r.countsTowardBalance ? 'true' : 'false'}>
-                    <Td mono nowrap><TextAction to={`/admin/invoices/${r.invoiceId}`} size="sm" flush style={{ fontSize: 'inherit', fontFamily: 'inherit' }}>{r.invoiceNumber}</TextAction></Td>
+                    <Td mono nowrap><TextAction to={invoicePath(r.invoiceId)} size="sm" flush style={{ fontSize: 'inherit', fontFamily: 'inherit' }}>{r.invoiceNumber}</TextAction></Td>
                     <Td nowrap>{r.anaesthetist ?? <span style={{ color: neutral.mist }}>AA Holding</span>}</Td>
                     <Td mono nowrap>
                       {r.bookingDateISO !== undefined && onOpenBooking !== undefined ? (
@@ -361,7 +362,7 @@ function InvoicesCard({
                             {credit !== undefined && (
                               <>
                                 {' · '}
-                                <TextAction to={`/admin/credit-notes/${credit.id}`} size="sm" flush style={{ fontSize: 'inherit' }}>{credit.creditNoteNumber}</TextAction>
+                                <TextAction to={creditNotePath(credit.id)} size="sm" flush style={{ fontSize: 'inherit' }}>{credit.creditNoteNumber}</TextAction>
                               </>
                             )}
                           </span>

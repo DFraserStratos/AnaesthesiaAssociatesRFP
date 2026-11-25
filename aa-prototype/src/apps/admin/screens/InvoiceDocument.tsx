@@ -51,6 +51,7 @@ import { transferOfPair } from '../../../domain/billing/ledger'
 import { handoffQueuedFor, openDivergenceFor, pairForInvoice } from '../../../store/ledgerSelectors'
 import { toCents } from '../../../domain/billing/money'
 import { DOCUMENT_DESK_STYLE, DOCUMENT_PAPER_STYLE, DOCUMENT_RAIL_STYLE } from '../components/documentDesk'
+import { billingListPath, creditNotePath, financePath, invoicePath, ledgerPairPath } from './finances/financePaths'
 
 interface InvoiceDocumentProps {
   invoiceId: string
@@ -162,24 +163,24 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
             {/* A split's component (US-08.6.4): "Additional invoice · part 2 of 3 · replaces AA-2026-0007 · {Procedure}". */}
             {rebillOrigin !== undefined && splitPart !== undefined && (
               <div data-shot="invoice-split-part" data-part={splitPart.part} data-of={splitPart.of} style={{ marginTop: 6, fontSize: 12.5, color: neutral.slate }}>
-                <Link to={`/admin/invoices/${rebillOrigin.id}`} style={{ color: neutral.slate }}>
+                <Link to={invoicePath(rebillOrigin.id)} style={{ color: neutral.slate }}>
                   {CREDIT_LABELS.splitPart(splitPart.part, splitPart.of, rebillOrigin.invoiceNumber, additionalProcedure)}
                 </Link>
                 {rebillCreditNote !== undefined && (
                   <>
                     {' '}
-                    <Link to={`/admin/credit-notes/${rebillCreditNote.id}`} style={{ color: neutral.slate }}>{CREDIT_LABELS.creditedByParen(rebillCreditNote.creditNoteNumber)}</Link>
+                    <Link to={creditNotePath(rebillCreditNote.id)} style={{ color: neutral.slate }}>{CREDIT_LABELS.creditedByParen(rebillCreditNote.creditNoteNumber)}</Link>
                   </>
                 )}
               </div>
             )}
             {rebillOrigin !== undefined && splitPart === undefined && (
               <div data-shot="invoice-rebill-of" style={{ marginTop: 6, fontSize: 12.5, color: neutral.slate }}>
-                <Link to={`/admin/invoices/${rebillOrigin.id}`} style={{ color: neutral.slate }}>{CREDIT_LABELS.rebills(rebillOrigin.invoiceNumber)}</Link>
+                <Link to={invoicePath(rebillOrigin.id)} style={{ color: neutral.slate }}>{CREDIT_LABELS.rebills(rebillOrigin.invoiceNumber)}</Link>
                 {rebillCreditNote !== undefined && (
                   <>
                     {' '}
-                    <Link to={`/admin/credit-notes/${rebillCreditNote.id}`} style={{ color: neutral.slate }}>{CREDIT_LABELS.creditedByParen(rebillCreditNote.creditNoteNumber)}</Link>
+                    <Link to={creditNotePath(rebillCreditNote.id)} style={{ color: neutral.slate }}>{CREDIT_LABELS.creditedByParen(rebillCreditNote.creditNoteNumber)}</Link>
                   </>
                 )}
               </div>
@@ -193,7 +194,7 @@ export function InvoiceDocument({ invoiceId, actor }: InvoiceDocumentProps) {
             )}
             {original !== undefined && (
               <div data-shot="invoice-additional-of" style={{ marginTop: 6, fontSize: 12.5, color: neutral.slate }}>
-                <Link to={`/admin/invoices/${original.id}`} style={{ color: neutral.slate }}>
+                <Link to={invoicePath(original.id)} style={{ color: neutral.slate }}>
                   {eventLead !== undefined
                     ? PRE_POST_OP_COPY.relatesTo(eventLead, original.invoiceNumber, additionalProcedure)
                     : ADDITIONAL_INVOICE_COPY.relatesTo(original.invoiceNumber, additionalProcedure)}
@@ -426,7 +427,7 @@ function InvoiceInfoRail({
           <div data-shot="invoice-related" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ fontSize: 12, color: neutral.slate }}>The other shares of this split fee.</div>
             {siblings.map((s) => (
-              <Link key={s.invoice.id} to={`/admin/invoices/${s.invoice.id}`} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12.5, color: neutral.ink, textDecoration: 'none' }}>
+              <Link key={s.invoice.id} to={invoicePath(s.invoice.id)} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12.5, color: neutral.ink, textDecoration: 'none' }}>
                 <span>
                   <span className="mono" style={{ fontWeight: 600, color: accent.base }}>{s.invoice.invoiceNumber}</span> {s.name}
                 </span>
@@ -471,8 +472,8 @@ function InvoiceInfoRail({
           {flag !== undefined && billingCase !== undefined && (
             <div data-shot="invoice-xero-flag" style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12.5, lineHeight: '18px', color: semantic.error.onTint }}>
               <span>{`${xeroFlagText(flag.kind, flag.xeroShows.total, undefined, flag.leg)}. ${flag.kind === 'paidAfterCredit' ? XERO_FLAG_COPY.ledgerIgnoresPayment : XERO_FLAG_COPY.ledgerKeepsIssued}`}</span>
-              <TextAction size="sm" flush shot="invoice-open-billing-monitor" onClick={() => navigate(`/admin/billing?list=${billingCase.listId}`)}>
-                Resolve in the Billing monitor
+              <TextAction size="sm" flush shot="invoice-open-billing-monitor" onClick={() => navigate(billingListPath(billingCase.listId))}>
+                Resolve in Billing
               </TextAction>
             </div>
           )}
@@ -504,7 +505,7 @@ function InvoiceInfoRail({
             </div>
           )}
           {billingCase !== undefined && (
-            <TextAction size="sm" flush shot="invoice-open-ledger" onClick={() => navigate(`/admin/ledger?pair=${billingCase.id}`)}>
+            <TextAction size="sm" flush shot="invoice-open-ledger" onClick={() => navigate(ledgerPairPath(billingCase.id))}>
               Open in the ledger
             </TextAction>
           )}
@@ -862,7 +863,7 @@ export function CreditedBanner({ creditNote, replacements }: { creditNote: Credi
   return (
     <div data-shot="invoice-credited-banner" data-credit-note-id={creditNote.id} style={{ fontSize: 13, lineHeight: '19px', color: neutral.ink, borderLeft: `3px solid ${neutral.lineStrong}`, padding: '2px 0 2px 12px' }}>
       {`${CREDIT_LABELS.creditedInFullBy} `}
-      <DocLink to={`/admin/credit-notes/${creditNote.id}`}>{creditNote.creditNoteNumber}</DocLink>
+      <DocLink to={creditNotePath(creditNote.id)}>{creditNote.creditNoteNumber}</DocLink>
       {` ${CREDIT_LABELS.on} ${dayWithYear(creditNote.issuedAtISO.slice(0, 10))}`}
       {replacements.length > 0 && (
         <>
@@ -870,7 +871,7 @@ export function CreditedBanner({ creditNote, replacements }: { creditNote: Credi
           {replacements.map((r, i) => (
             <span key={r.id}>
               {i > 0 ? ', ' : ''}
-              <DocLink to={`/admin/invoices/${r.id}`}>{r.invoiceNumber}</DocLink>
+              <DocLink to={invoicePath(r.id)}>{r.invoiceNumber}</DocLink>
             </span>
           ))}
         </>
@@ -982,7 +983,7 @@ export function CreditNoteDocument({ creditNoteId }: { creditNoteId: string }) {
         <DocMasthead supplier={supplier} heading={CREDIT_LABELS.documentHeading} number={cn.creditNoteNumber}>
           {original !== undefined && (
             <div data-shot="credit-note-credits" style={{ marginTop: 6, fontSize: 12.5, color: neutral.slate }}>
-              <DocLink to={`/admin/invoices/${original.id}`}>{CREDIT_LABELS.creditsInFull(original.invoiceNumber)}</DocLink>
+              <DocLink to={invoicePath(original.id)}>{CREDIT_LABELS.creditsInFull(original.invoiceNumber)}</DocLink>
             </div>
           )}
         </DocMasthead>
@@ -1038,7 +1039,7 @@ export function CreditNoteDocument({ creditNoteId }: { creditNoteId: string }) {
           <div data-shot="credit-note-new-invoices" style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5 }}>
             {replacements.length === 0 && <span style={{ color: neutral.slate }}>{CREDIT_LABELS.newInvoicesNoneDoc}</span>}
             {replacements.map((r) => (
-              <Link key={r.id} to={`/admin/invoices/${r.id}`} data-invoice-id={r.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, color: neutral.ink, textDecoration: 'none' }}>
+              <Link key={r.id} to={invoicePath(r.id)} data-invoice-id={r.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, color: neutral.ink, textDecoration: 'none' }}>
                 <span className="mono" style={{ fontWeight: 600, color: accent.base }}>{r.invoiceNumber}</span>
                 <span className="mono">{formatMoney(r.total)}</span>
               </Link>
@@ -1051,7 +1052,7 @@ export function CreditNoteDocument({ creditNoteId }: { creditNoteId: string }) {
             {cn.xeroFailure !== undefined ? (
               <>
                 <span style={{ color: semantic.warning.onTint, fontWeight: 600 }}>{CREDIT_LABELS.xeroFailed}</span>
-                <TextAction size="sm" flush shot="credit-note-open-billing-monitor" onClick={() => navigate(list !== undefined ? `/admin/billing?list=${list.id}` : '/admin/billing')}>
+                <TextAction size="sm" flush shot="credit-note-open-billing-monitor" onClick={() => navigate(list !== undefined ? billingListPath(list.id) : financePath('billing'))}>
                   {CREDIT_LABELS.openBillingMonitor}
                 </TextAction>
               </>
@@ -1102,7 +1103,7 @@ function AdditionalInvoicesCard({ invoice, actor, credited = false }: { invoice:
       <RailCard title={ADDITIONAL_INVOICE_COPY.additionalInvoicesCard}>
         <div data-shot="invoice-additional-links" style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5 }}>
           <span style={{ color: neutral.slate }}>{ADDITIONAL_INVOICE_COPY.additionalTo(original.invoiceNumber)}</span>
-          <Link to={`/admin/invoices/${original.id}`} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, color: neutral.ink, textDecoration: 'none' }}>
+          <Link to={invoicePath(original.id)} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, color: neutral.ink, textDecoration: 'none' }}>
             <span className="mono" style={{ fontWeight: 600, color: accent.base }}>{original.invoiceNumber}</span>
             <span className="mono">{formatMoney(original.total)}</span>
           </Link>
@@ -1123,7 +1124,7 @@ function AdditionalInvoicesCard({ invoice, actor, credited = false }: { invoice:
           const pair = pairForInvoice(state, a.id)
           const paid = pair?.receivable.paidInAtISO !== undefined
           return (
-            <Link key={a.id} to={`/admin/invoices/${a.id}`} data-invoice-id={a.id} style={{ display: 'flex', flexDirection: 'column', gap: 2, color: neutral.ink, textDecoration: 'none' }}>
+            <Link key={a.id} to={invoicePath(a.id)} data-invoice-id={a.id} style={{ display: 'flex', flexDirection: 'column', gap: 2, color: neutral.ink, textDecoration: 'none' }}>
               <span style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                 <span className="mono" style={{ fontWeight: 600, color: accent.base }}>{a.invoiceNumber}</span>
                 <span className="mono">{formatMoney(a.total)}</span>

@@ -4,7 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { fontFamily, neutral } from '../../../theme/tokens'
 import type { CreditNote, Invoice } from '../../../domain/types'
 import { invoiceDeliveryLabel, layoutShortLabel } from '../../../domain/billing'
-import { CountBadge, EmptyState, LineTabLink, LineTabs, NameSearchBox, Pill, TextAction } from '../../../shared/ui'
+import { CountBadge, EmptyState, FilterPills, NameSearchBox, Pill, TextAction } from '../../../shared/ui'
 import { FULL_SCALE } from '../../../domain/seed/fullScale/constants'
 import { Pager, pageOf } from '../components/Pager'
 import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
@@ -14,9 +14,10 @@ import { invoiceAddresseeName, invoiceStanding, isBackdropCreditNote, isBackdrop
 import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, PRE_POST_OP_COPY } from '../../../shared/procedureEventCopy'
 import { dayMicroCap, drSurname, formatCount, formatCurrency, plural, pluralWord, shortDay, stampText } from '../../../shared/format'
 import { listShortLabel, listSourceLabels } from '../util'
-import { InvoiceDocument } from './InvoiceDocument'
 import { PrepaymentApprovalStrip } from '../components/PrepaymentApprovalStrip'
-import { AdminPage, PageBody, PageToolbar } from '../components/AdminPage'
+import { PageBody, PageToolbar } from '../components/AdminPage'
+import { FinancesPage } from './finances/FinancesSection'
+import { creditNotePath, financePath, invoicePath } from './finances/financePaths'
 
 /** The Kind column's words (catch-up Phase 38b). A credit note's row reads `CREDIT_LABELS.kind` (catch-up Phase 39): it is its own record, never an invoice kind. */
 const INVOICE_KIND_LABEL: Record<Invoice['kind'], string> = {
@@ -27,21 +28,18 @@ const INVOICE_KIND_LABEL: Record<Invoice['kind'], string> = {
 
 interface InvoicesScreenProps {
   actor: Actor
-  selectedInvoiceId: string | null
-  onSelect: (invoiceId: string | null) => void
 }
 
 
 /**
- * The invoices raised by the billing run (Phase 08; B6). A `fit` Admin page with two tabs in the
- * URL: All invoices (`/admin/invoices`), the table of every invoice with how the run delivered it
- * (emailed, to post, or no address), the search in the toolbar and the pager in the card's foot; and
- * Awaiting approval (`?view=approval`), the prepayment invoices waiting on an admin with the
- * Prepayment approval switch. An invoice opens as a `document` page (the paper and its rail) inline
- * rather than in a dialog, because the print stylesheet isolates the `.aa-invoice-doc` node and a
- * fixed-position Dialog ancestor would break `position: absolute` print isolation.
+ * The invoices raised by the billing run (Phase 08; B6): Finances' Invoices tab (build plan Phase
+ * 58). A switch in the toolbar picks the view, kept in the URL: All invoices, a `fit` page with the
+ * table of every invoice with how the run delivered it (emailed, to post, or no address), the search
+ * in the toolbar and the pager in the card's foot; and Awaiting approval (`?view=approval`), the
+ * prepayment invoices waiting on an admin with the Prepayment approval switch. An invoice opens on
+ * its own page under the tab (`InvoicePage`), as does a credit note (`CreditNotePage`).
  */
-export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesScreenProps) {
+export function InvoicesScreen({ actor }: InvoicesScreenProps) {
   const billing = useAppStore((s) => s.billing)
   const originalOf = (invoice: Invoice) => originalInvoiceFor({ billing }, invoice.id)
   const schedule = useAppStore((s) => s.schedule)
@@ -83,7 +81,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
         listDateISO={list?.dateISO}
         listSource={list !== undefined ? listSourceLabels(list, masters) : undefined}
         addressee={invoiceAddresseeName({ masters, schedule, billing }, cn)}
-        onOpen={() => navigate(`/admin/credit-notes/${cn.id}`)}
+        onOpen={() => navigate(creditNotePath(cn.id))}
       />
     )
   }
@@ -135,61 +133,79 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
   // Prepayment invoices waiting on an admin (catch-up Phase 27, US-06.3.1): the "Awaiting approval" tab's count.
   const awaitingCount = usePendingPrepayments().length
   // The tab is in the URL (`?view=approval`), so a refresh or a link lands on it.
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const view: 'all' | 'approval' = params.get('view') === 'approval' ? 'approval' : 'all'
+  const chooseView = (next: 'all' | 'approval') =>
+    setParams(
+      (prev) => {
+        const out = new URLSearchParams(prev)
+        if (next === 'approval') out.set('view', 'approval')
+        else out.delete('view')
+        return out
+      },
+      { replace: true },
+    )
 
   // Billing-run exceptions not yet resolved (catch-up Phase 36; the Phase 09 monitor's seam).
   const failedCases = useMemo(() => openBillingExceptions({ billing }), [billing])
 
-  if (selectedInvoiceId !== null && billing.invoices[selectedInvoiceId] !== undefined) {
-    return (
-      <AdminPage mode="document" testId="invoice-detail-screen" back={{ label: 'Invoices', onClick: () => onSelect(null) }}>
-        <InvoiceDocument key={selectedInvoiceId} invoiceId={selectedInvoiceId} actor={actor} />
-      </AdminPage>
-    )
-  }
-
-  const tabs = (
-    <LineTabs label="Invoices views" shot="invoices-tabs">
-      <LineTabLink to="/admin/invoices" active={view === 'all'} data-view="all">All invoices</LineTabLink>
-      <LineTabLink to="/admin/invoices?view=approval" active={view === 'approval'} data-view="approval" badge={<CountBadge count={awaitingCount} srNoun="to approve" />}>
-        Awaiting approval
-      </LineTabLink>
-    </LineTabs>
+  // The view switch: each option keeps its `data-view` on its label.
+  const viewSwitch = (
+    <div data-shot="invoices-tabs" data-invoices-view={view}>
+      <FilterPills
+        ariaLabel="Invoices views"
+        value={view}
+        options={[
+          { value: 'all', label: <span data-view="all">All invoices</span> },
+          {
+            value: 'approval',
+            label: (
+              <span data-view="approval">
+                Awaiting approval <CountBadge count={awaitingCount} srNoun="to approve" />
+              </span>
+            ),
+          },
+        ]}
+        onSelect={chooseView}
+      />
+    </div>
   )
-  const title = 'Invoices'
   const sub = "Raised when a list is authorised: one per billable party per Booking, or per share of a split fee, then emailed or marked to post as the party's delivery says."
 
   if (view === 'approval') {
     return (
-      <AdminPage mode="fluid" testId="invoice-list-screen" data-view="approval" title={title} sub={sub} tabs={tabs}>
+      <FinancesPage tab="invoices" mode="fluid" testId="invoice-list-screen" data-view="approval" sub={sub}>
+        <PageToolbar>{viewSwitch}</PageToolbar>
         <PageBody>
           {/* Prepayment invoices waiting on an admin, with the approval switch (catch-up Phase 27, US-06.3.1). */}
           <PrepaymentApprovalStrip actor={actor} />
         </PageBody>
-      </AdminPage>
+      </FinancesPage>
     )
   }
 
   return (
-    <AdminPage mode="fit" testId="invoice-list-screen" data-view="all" title={title} sub={sub} tabs={tabs}>
-      {invoices.length > 0 && (
-        <PageToolbar
-          end={
+    <FinancesPage tab="invoices" mode="fit" testId="invoice-list-screen" data-view="all" sub={sub}>
+      <PageToolbar
+        end={
+          invoices.length > 0 ? (
             <>
-              {/* Billing exceptions are resolved through the monitor workflow. */}
+              {/* Billing exceptions are resolved on the Billing tab. */}
               {failedCases.length > 0 && (
                 <span data-shot="invoices-billing-exceptions" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                   <Pill tone="warning" size="sm" title={failedCases.slice(0, 5).map((c) => `${c.bookingId} · ${c.message}`).join('\n')}>
                     {`${plural(failedCases.length, 'booking')} raised a billing exception`}
                   </Pill>
-                  <TextAction size="sm" flush onClick={() => navigate('/admin/billing')}>Open Billing monitor</TextAction>
+                  <TextAction size="sm" flush onClick={() => navigate(financePath('billing'))}>Open Billing</TextAction>
                 </span>
               )}
               <span className="mono" data-shot="invoices-count">{`${formatCount(matching.length)} ${pluralWord(matching.length, 'invoice')}`}</span>
             </>
-          }
-        >
+          ) : undefined
+        }
+      >
+        {viewSwitch}
+        {invoices.length > 0 && (
           <NameSearchBox
             size="pill"
             label="Find by invoice number or payer"
@@ -201,8 +217,8 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
             shot="invoices-search"
             width={300}
           />
-        </PageToolbar>
-      )}
+        )}
+      </PageToolbar>
 
       <PageBody>
       {invoices.length === 0 ? (
@@ -243,7 +259,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                 return (
                   <Fragment key={invoice.id}>
                   {(creditNotesByOriginal.get(invoice.id) ?? []).map(creditRow)}
-                  <ClickableRow onOpen={() => onSelect(invoice.id)} data-invoice-id={invoice.id}>
+                  <ClickableRow onOpen={() => navigate(invoicePath(invoice.id))} data-invoice-id={invoice.id}>
                   <Td mono bold>
                     <NumberLine number={invoice.invoiceNumber} kind={invoice.kind} />
                     {/* An additional invoice names its original (catch-up Phase 38b). */}
@@ -312,7 +328,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
                   <DeliveryCell pill={<DeliveryPill invoice={invoice} />} raisedISO={invoice.raisedAtISO} />
                   <Td nowrap>
                     {/* The row's keyboard handle, named in full (U6, U09); the row click stays for the mouse. */}
-                    <TextAction size="sm" flush label={`View invoice ${invoice.invoiceNumber}`} onClick={() => onSelect(invoice.id)}>
+                    <TextAction size="sm" flush label={`View invoice ${invoice.invoiceNumber}`} onClick={() => navigate(invoicePath(invoice.id))}>
                       View →
                     </TextAction>
                   </Td>
@@ -324,7 +340,7 @@ export function InvoicesScreen({ actor, selectedInvoiceId, onSelect }: InvoicesS
         </TableShell>
       )}
       </PageBody>
-    </AdminPage>
+    </FinancesPage>
   )
 }
 

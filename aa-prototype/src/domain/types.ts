@@ -2071,6 +2071,12 @@ export interface BillingException {
   atISO: IsoDateTime
   resolvedAtISO?: IsoDateTime
   resolvedPairIds?: string[]
+  /**
+   * Mark resolved (US-13.3.2, D116): who resolved the failure by hand, and why. A failure resolved by
+   * hand has `resolvedAtISO` and no `resolvedPairIds`; a successful retry sets `resolvedPairIds`.
+   */
+  resolvedBy?: string
+  resolvedNote?: string
 }
 
 // ---------------------------------------------------------------------------

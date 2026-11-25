@@ -22,14 +22,18 @@ describe('DemoActionsMenu', () => {
     expect(container.innerHTML).toBe('')
   })
 
-  it('lists the Billing monitor entries, runs one, and closes on Escape', () => {
-    renderAt('/admin/billing')
-    const pill = screen.getByRole('button', { name: /Demo actions for this screen, 10/ })
+  it("lists Finances · Xero's entries, runs one, and closes on Escape", () => {
+    renderAt('/admin/finances/xero')
+    const pill = screen.getByRole('button', { name: /Demo actions for this screen, 5/ })
     fireEvent.click(pill)
     const dialog = screen.getByRole('dialog')
     expect(dialog).toBeInTheDocument()
-    for (const label of ['Trigger billing failure', 'Arm handoff failure', 'Simulate Xero outage', 'Restore Xero', 'Run reconciliation poll', 'Run archive job', 'Run the next billing run', 'Stage refund after payout', 'Stage a payment week', 'Stage a bank mismatch']) {
+    for (const label of ['Arm handoff failure', 'Simulate Xero outage', 'Restore Xero', 'Run reconciliation poll', 'Run archive job']) {
       expect(screen.getByText(label)).toBeInTheDocument()
+    }
+    // The Billing and Payments entries live on their own tabs now (Phase 58; D111).
+    for (const label of ['Trigger billing failure', 'Run the next billing run', 'Stage a payment week']) {
+      expect(screen.queryByText(label)).not.toBeInTheDocument()
     }
     const row = document.querySelector('[data-shot="demo-action-arm-handoff-fault"]')
     const run = row?.querySelector('button')

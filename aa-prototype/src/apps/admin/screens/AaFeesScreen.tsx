@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { addMonths, format, parseISO } from 'date-fns'
 import { Plus, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import type { AaFeeFixedItem, AaFeeSettings } from '../../../domain/types'
 import { aaFeeFixedTotal, aaFeeFor, aaFeeMonthLabel, validateAaFeeSettings } from '../../../domain/billing/aaFee'
@@ -19,9 +20,11 @@ import { useDemoTriggerContext } from '../../../shared/demoTriggers'
 import { drSurname, formatCurrency, parseAmountOrNaN, plainDate, plural } from '../../../shared/format'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
 import { Pill } from '../../../shared/ui/Pill'
-import { Button, Card, DisclosureButton, Eyebrow, FormError, IconButton, LineTabLink, LineTabs, TextField, visuallyHidden } from '../../../shared/ui'
+import { Button, Card, DisclosureButton, Eyebrow, FilterPills, FormError, IconButton, TextField, visuallyHidden } from '../../../shared/ui'
 import { ResultLine } from '../../../shared/ui/ResultLine'
-import { AdminPage } from '../components/AdminPage'
+import { PageToolbar } from '../components/AdminPage'
+import { FinancesPage } from './finances/FinancesSection'
+import { aaFeeSettingsPath, financePath } from './finances/financePaths'
 import { ADMIN_FORM_WIDTH, ADMIN_PROSE_WIDTH } from '../layout'
 
 export type AaFeesTab = 'invoices' | 'settings'
@@ -38,24 +41,33 @@ function dateLabel(iso: string | undefined): string {
 /**
  * AA's monthly fee (catch-up Phase 16; FT-10.3, US-10.3.1 to US-10.3.3): the
  * monthly fee invoice run and every fee invoice paid or unpaid, and the fee
- * settings (fixed items plus a charge per BCTI, ex GST). Two sub-tabs, each a
- * URL under the Billing section.
+ * settings (fixed items plus a charge per BCTI, ex GST). Finances' AA fees tab
+ * (build plan Phase 58): a switch in its toolbar between the two, each a URL
+ * under the tab.
  */
 export function AaFeesScreen({ actor, tab }: { actor: Actor; tab: AaFeesTab }) {
+  const navigate = useNavigate()
   return (
-    <AdminPage
+    <FinancesPage
+      tab="aa-fees"
       mode="fluid"
-      title="AA fee invoices"
       sub="AA invoices each anaesthetist its fee monthly: fixed charges plus a charge per buyer-created tax invoice (BCTI) paid. A separate invoice, never deducted from a payment."
-      tabs={
-        <LineTabs label="AA fees">
-          <LineTabLink active={tab === 'invoices'} to="/admin/billing/aa-fees">Fee invoices</LineTabLink>
-          <LineTabLink active={tab === 'settings'} to="/admin/billing/aa-fees/settings">Fee settings</LineTabLink>
-        </LineTabs>
-      }
     >
+      <PageToolbar>
+        <div data-aa-fees-view={tab}>
+          <FilterPills
+            ariaLabel="AA fees"
+            value={tab}
+            options={[
+              { value: 'invoices', label: 'Fee invoices' },
+              { value: 'settings', label: 'Fee settings' },
+            ]}
+            onSelect={(next) => navigate(next === 'invoices' ? financePath('aa-fees') : aaFeeSettingsPath())}
+          />
+        </div>
+      </PageToolbar>
       {tab === 'invoices' ? <FeeInvoicesTab actor={actor} /> : <FeeSettingsTab actor={actor} />}
-    </AdminPage>
+    </FinancesPage>
   )
 }
 

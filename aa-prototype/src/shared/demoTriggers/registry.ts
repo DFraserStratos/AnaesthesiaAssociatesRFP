@@ -184,7 +184,7 @@ import {
   stageRefundAfterPayout,
   stagedCombined,
 } from '../../store/creditDemo'
-import type { DemoTrigger, DemoTriggerChoice, DemoTriggerCtx, DemoTriggerResult } from './types'
+import type { DemoTrigger, DemoTriggerCtx, DemoTriggerResult } from './types'
 import { injectUnmatchedReceipt, injectUnmatchedRefusal, officeRunsWeeksCycle, officeRunsWeeksCycleRefusal, UNMATCHED_RECEIPT_DEMO } from '../../store/ledgerDemo'
 import { PAYMENT_WEEK_CHOICES, stageBankMismatch, stageBankMismatchRefusal, stagePaymentWeek, stagePaymentWeekRefusal } from '../../store/paymentWeekDemo'
 import { sessionText } from '../../domain/outOfHours'
@@ -296,25 +296,41 @@ function nextNationalHoliday(state: AppState): { dateISO: string; name: string }
   )
 }
 
-const BILLING_MONITOR = ['/admin/billing'] as const
-/** The Billing monitor's index heading (the Control Panel adds its Run payables note under it). */
-export const BILLING_MONITOR_SCREEN = 'Admin · Billing monitor'
+/**
+ * The Finances section (build plan Phase 58; D107, D111): its six tabs and the invoice page,
+ * literal here because `src/shared/` never imports `apps/admin/screens/finances/financePaths.ts`.
+ * `/admin/finances` redirects to Billing, so Billing's own address is enough.
+ */
+const FINANCES_BILLING = '/admin/finances/billing'
+const FINANCES_INVOICES = '/admin/finances/invoices'
+const FINANCES_INVOICE = '/admin/finances/invoices/:invoiceId'
+const FINANCES_PAYMENTS = '/admin/finances/payments'
+/** Ledger, whole and one anaesthetist's account. */
+const FINANCES_LEDGER = ['/admin/finances/ledger', '/admin/finances/ledger/anaesthetists/:anaesthetistId'] as const
+const FINANCES_XERO = '/admin/finances/xero'
+const FINANCES_AA_FEES = '/admin/finances/aa-fees'
+/** An invoice's page, as `financePaths.invoicePath` builds it. */
+function financeInvoicePath(invoiceId: string): string {
+  return `${FINANCES_INVOICES}/${encodeURIComponent(invoiceId)}`
+}
+/** The Finances headings in the Control Panel index, one per screen. */
+export const FINANCES_BILLING_SCREEN = 'Admin · Finances · Billing'
+export const FINANCES_INVOICES_SCREEN = 'Admin · Finances · Invoices'
+/** Payments' heading (the Control Panel adds its Run payables note under it). */
+export const FINANCES_PAYMENTS_SCREEN = 'Admin · Finances · Payments'
+export const FINANCES_LEDGER_SCREEN = 'Admin · Finances · Ledger'
+export const FINANCES_XERO_SCREEN = 'Admin · Finances · Xero'
+export const FINANCES_AA_FEES_SCREEN = 'Admin · Finances · AA fees'
+export const FINANCES_INVOICE_SCREEN = 'Admin · Finances · Invoice'
 const XERO_SIM = ['/demo/xero', '/demo/xero/invoices', '/demo/xero/invoices/:accRecId', '/demo/xero/bank'] as const
 /** The Xero simulator's Bank reconciliation tab (catch-up Phase 37; US-10.2.4). */
 const XERO_BANK = '/demo/xero/bank'
-/** The Admin Ledger, whole and one anaesthetist (catch-up Phase 36). */
-const LEDGER = ['/admin/ledger', '/admin/ledger/anaesthetists/:anaesthetistId'] as const
-
-function onLedger(ctx: DemoTriggerCtx): boolean {
-  return ctx.pathname.startsWith('/admin/ledger')
-}
-const INVOICE_PAGES = ['/admin/invoices/:invoiceId', '/demo/xero/invoices/:accRecId'] as const
+const INVOICE_PAGES = [FINANCES_INVOICE, '/demo/xero/invoices/:accRecId'] as const
 /** Admin Intake's tabs (catch-up Phase 34): Matching and the rooms' PDF lists. */
 const ADMIN_MATCHING = '/admin/intake/matching'
 const ADMIN_PDF_LISTS = '/admin/intake/pdfs'
 /** The Admin Intake index heading (catch-up Phase 34). */
 const ADMIN_INTAKE_SCREEN = 'Admin · Intake'
-const AA_FEE_INVOICES = '/admin/billing/aa-fees'
 const XERO_PAIR = '/demo/xero/invoices/:accRecId'
 /** Future scope: HL7 and FHIR (catch-up Phase 34): the simulator, its message log and feed mapping. */
 const FUTURE_SCOPE_ROUTES = ['/demo/integrations', '/demo/integrations/log', '/demo/integrations/mapping'] as const
@@ -475,20 +491,11 @@ function accRecIdOnScreen(state: AppState, ctx: DemoTriggerCtx): string | undefi
   return Object.values(state.xero.accRecs).find((r) => r.invoiceId === invoiceId)?.id
 }
 
-/** The payment entries' screens: an invoice, the Xero pair, the Admin Booking detail for its prepayment (catch-up Phase 27) and the Ledger (catch-up Phase 36). */
-const PAYMENT_PAGES = [...INVOICE_PAGES, '/admin/day/:dateISO/bookings/:bookingId', ...LEDGER] as const
+/** The payment entries' screens: an invoice, the Xero pair and the Admin Booking detail for its prepayment (catch-up Phase 27). */
+const PAYMENT_PAGES = [...INVOICE_PAGES, '/admin/day/:dateISO/bookings/:bookingId'] as const
 
-/** On the Ledger: the open Booking receivables that have a Xero ACCREC (number, payer, balance). */
-function ledgerPaymentChoices(state: AppState): DemoTriggerChoice[] {
-  return openAccRecs(state).map((c) => ({ id: c.accRecId, label: `${c.invoiceNumber} · ${c.counterpartyLabel} · ${formatCurrency(c.remaining)}` }))
-}
-
-/** The ACCREC a payment entry acts on: the invoice on screen, the chosen (else first) prepayment ACCREC on a Booking, or the Ledger's chosen receivable. */
+/** The ACCREC a payment entry acts on: the invoice on screen, or the chosen (else first) prepayment ACCREC on a Booking. */
 function paymentTargetOnScreen(state: AppState, ctx: DemoTriggerCtx, choiceId?: string): string | undefined {
-  if (onLedger(ctx)) {
-    const choices = ledgerPaymentChoices(state)
-    return choices.find((c) => c.id === choiceId)?.id ?? choices[0]?.id
-  }
   const bookingId = ctx.params['bookingId']
   if (bookingId === undefined) return accRecIdOnScreen(state, ctx)
   const choices = prepaymentAccRecChoices(state, bookingId)
@@ -699,7 +706,7 @@ function messageReplayDisabledReason(state: AppState): string | null {
 /** Where the payment entries' "Open screen" goes: the first open invoice, if any. */
 function firstOpenInvoicePath(state: AppState): string | null {
   const first = openAccRecs(state)[0]
-  return first === undefined ? null : `/admin/invoices/${first.invoiceId}`
+  return first === undefined ? null : financeInvoicePath(first.invoiceId)
 }
 
 /** The same open invoice's Xero pair, for the entries that show only there (catch-up Phase 44's audit). */
@@ -843,14 +850,14 @@ function officeContractPicks(state: AppState, bookingId: string): { procedureId:
 }
 
 export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
-  // ── Admin · Billing monitor ───────────────────────────────────────────
+  // ── Admin · Finances · Billing (build plan Phase 58; D111) ────────────
   {
     id: 'billing-failure',
     label: 'Trigger billing failure',
     description:
       "Arms the Xero hand-off to fault for Losa Tuilagi's Booking alone and authorises Dr Ropata's Thu 19 Nov List. Each Booking bills from its locked record: hers waits for Xero in the sync queue, Hemi Walker's bills and hands off, and the List is not failed. Retry now (or the clock) hands hers off once. No Contract changes.",
-    screen: BILLING_MONITOR_SCREEN,
-    routes: BILLING_MONITOR,
+    screen: FINANCES_BILLING_SCREEN,
+    routes: [FINANCES_BILLING],
     surfaces: ['bar'],
     when: (state) => state.schedule.lists[SEED_LIST_IDS.billingFailure] !== undefined,
     disabledReason: (state) => {
@@ -864,38 +871,37 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return {
         ok: staged.ok,
         message: staged.ok
-          ? "Done. In the billing monitor Losa Tuilagi's invoice waits for Xero in the sync queue while Hemi Walker's billed. Use Retry now on its queue row, or move the clock on."
+          ? "Done. On Finances · Xero Losa Tuilagi's invoice waits for Xero in the sync queue while Hemi Walker's billed. Use Retry now on its queue row, or move the clock on."
           : staged.message === BILLING_FAILURE_ALREADY
             ? 'Already triggered.'
             : `Refused: ${staged.message}`,
       }
     },
-    indexPath: () => '/admin/billing',
+    indexPath: () => FINANCES_BILLING,
   },
+  // ── Admin · Finances · Xero, beside the Xero simulator (catch-up Phase 37; EP-09; build plan Phase 58) ──
   {
     id: 'arm-handoff-fault',
     label: 'Arm handoff failure',
     description:
       'The next Xero call fails once. The queue retries it automatically after a short backoff; advance the clock to see it land.',
-    screen: BILLING_MONITOR_SCREEN,
-    // Also on the Ledger (catch-up Phase 36): the next authorise still makes every pair, marked "Not yet in Xero".
-    routes: [...BILLING_MONITOR, ...LEDGER],
+    screen: FINANCES_XERO_SCREEN,
+    routes: [FINANCES_XERO],
     surfaces: ['bar'],
     disabledReason: (state) => (state.settings.failNextHandoff === true ? 'Armed' : null),
     run: (api) => {
       armHandoffFault(api, OFFICE_ACTOR)
       return { ok: true, message: 'Armed. The next Xero hand-off fails once and waits in the sync queue, which retries it after its backoff.' }
     },
-    indexPath: () => '/admin/billing',
+    indexPath: () => FINANCES_XERO,
   },
-  // ── Xero outage (catch-up Phase 37; EP-09): the Billing monitor and every Xero tab ──
   {
     id: 'xero-outage-start',
     label: 'Simulate Xero outage',
     description:
       "Xero's API stops answering the Billing Engine. New hand-offs, payment syncs, disbursement syncs and the poll wait in the Xero sync queue and retry with increasing gaps. Authorising a List still works and bills.",
-    screen: BILLING_MONITOR_SCREEN,
-    routes: [...BILLING_MONITOR, ...XERO_SIM],
+    screen: FINANCES_XERO_SCREEN,
+    routes: [FINANCES_XERO, ...XERO_SIM],
     surfaces: ['bar'],
     disabledReason: (state) => (xeroAvailable(state) ? null : 'Xero is already unavailable'),
     run: (api) => {
@@ -904,14 +910,14 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         ? { ok: true, message: "Xero is unavailable to the Billing Engine. Authorise a List: its hand-offs wait in the Xero sync queue, and every clock change retries what is due." }
         : { ok: false, message: out.message }
     },
-    indexPath: () => '/admin/billing',
+    indexPath: () => FINANCES_XERO,
   },
   {
     id: 'xero-outage-restore',
     label: 'Restore Xero',
     description: 'Xero answers again. The queue drains at once, in order, with no duplicate pair, contact, receipt or disbursement.',
-    screen: BILLING_MONITOR_SCREEN,
-    routes: [...BILLING_MONITOR, ...XERO_SIM],
+    screen: FINANCES_XERO_SCREEN,
+    routes: [FINANCES_XERO, ...XERO_SIM],
     surfaces: ['bar'],
     disabledReason: (state) => (xeroAvailable(state) ? 'Xero is connected' : null),
     run: (api) => {
@@ -920,17 +926,17 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         ? { ok: true, message: out.value.sent > 0 ? `Xero is back. The queue sent ${plural(out.value.sent, 'waiting call')} in order.` : 'Xero is back. Nothing was waiting.' }
         : { ok: false, message: out.message }
     },
-    indexPath: () => '/admin/billing',
+    indexPath: () => FINANCES_XERO,
   },
-  // ── Admin · Ledger (catch-up Phase 36; US-13.2.1, US-08.3.4) ────────────
+  // ── Admin · Finances · Ledger (catch-up Phase 36; US-13.2.1, US-08.3.4) ──
   {
     id: 'inject-unmatched-receipt',
     label: 'Inject unmatched receipt',
     description:
       'A bank-feed notification arrives for $120.00 that matches no invoice number. The ledger goes out of balance by $120.00; naming Dr Souter puts her on the out-of-balance list. The office clears it with Allocate to invoice or Mark refunded.',
-    screen: 'Admin · Ledger',
+    screen: FINANCES_LEDGER_SCREEN,
     // Also on the Admin Day dashboard, whose Reconciliation card it puts out of balance (catch-up Phase 37; US-13.2.4).
-    routes: [...LEDGER, ADMIN_DAY],
+    routes: [...FINANCES_LEDGER, ADMIN_DAY],
     surfaces: ['bar'],
     choices: () => [
       { id: UNMATCHED_RECEIPT_DEMO.namesSouter.id, label: UNMATCHED_RECEIPT_DEMO.namesSouter.label },
@@ -942,31 +948,30 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const out = injectUnmatchedReceipt(api, choiceId)
       return out.ok ? { ok: true, message: out.value.message } : { ok: false, message: out.message }
     },
-    indexPath: () => '/admin/ledger',
+    indexPath: () => FINANCES_LEDGER[0],
   },
   {
     id: 'run-reconciliation-poll',
     label: 'Run reconciliation poll',
     description:
       'Runs the daily safety net now, without advancing the clock: payments and bill payments a webhook missed, and invoices voided or edited directly in Xero. During an outage it waits in the queue. Also in the Xero simulation.',
-    screen: BILLING_MONITOR_SCREEN,
-    routes: [...BILLING_MONITOR, ...XERO_SIM],
+    screen: FINANCES_XERO_SCREEN,
+    routes: [FINANCES_XERO, ...XERO_SIM],
     surfaces: ['bar'],
     disabledReason: () => null,
     run: (api) => {
       const r = runReconciliationPoll(api)
       return { ok: true, message: pollMessage(r) }
     },
-    indexPath: () => '/admin/billing',
+    indexPath: () => FINANCES_XERO,
   },
   {
     id: 'run-archive-job',
     label: 'Run archive job',
     description:
       'Runs the nightly Xero contact-archive job now, without advancing the clock. Also in the Xero simulation.',
-    screen: BILLING_MONITOR_SCREEN,
-    // Also on the Ledger (catch-up Phase 36): an archived payer's pairs stay listed with their money.
-    routes: [...BILLING_MONITOR, ...XERO_SIM, ...LEDGER],
+    screen: FINANCES_XERO_SCREEN,
+    routes: [FINANCES_XERO, ...XERO_SIM],
     surfaces: ['bar'],
     disabledReason: () => null,
     run: (api) => {
@@ -980,7 +985,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
             : 'Archive job ran: no contacts past the inactivity window yet.',
       }
     },
-    indexPath: () => '/admin/billing',
+    indexPath: () => FINANCES_XERO,
   },
 
   // ── Admin · Audit ─────────────────────────────────────────────────────
@@ -1083,14 +1088,14 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`,
   },
-  // ── Admin · Billing monitor and Review: the next billing run for events (catch-up Phase 38b) ──
+  // ── Admin · Finances · Billing and Review: the next billing run for events (catch-up Phase 38b) ──
   {
     id: 'run-next-billing-run',
     label: 'Run the next billing run',
     description:
       'Invoices every approved additional invoice: each becomes its own invoice with its own number, ledger pair and Xero pair, linked to the original. Stands in for the scheduled run of the real system.',
-    screen: BILLING_MONITOR_SCREEN,
-    routes: [...BILLING_MONITOR, '/admin/review'],
+    screen: FINANCES_BILLING_SCREEN,
+    routes: [FINANCES_BILLING, '/admin/review'],
     surfaces: ['bar'],
     disabledReason: (state) => nextRunRefusal(state),
     run: (api) => {
@@ -1101,16 +1106,16 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const numbers = [...out.value.creditNoteNumbers, ...out.value.numbers].join(', ')
       return { ok: true, message: `Billing run done: ${CREDIT_COPY.runResult(out.value.creditNoteNumbers.length, out.value.numbers.length)} (${numbers}).${skipped}` }
     },
-    indexPath: () => '/admin/billing',
+    indexPath: () => FINANCES_BILLING,
   },
-  // ── Admin · Invoices: a billed Merivale combination to split (catch-up Phase 39) ──
+  // ── Admin · Finances · Invoices: a billed Merivale combination to split (catch-up Phase 39) ──
   {
     id: 'stage-combined-procedure',
     label: 'Stage combined procedure',
     description:
       "Books, completes, authorises and bills a post-paid Merivale combination (Facelift plus 2 add ons) on Dr Delaney's Fri 13 Nov PM List, billed to the patient, so its invoice can be credited and split into additional invoices that add up to it.",
-    screen: 'Admin · Invoices',
-    routes: ['/admin/invoices'],
+    screen: FINANCES_INVOICES_SCREEN,
+    routes: [FINANCES_INVOICES],
     surfaces: ['bar'],
     disabledReason: (state) => stageCombinedRefusal(state),
     run: (api) => {
@@ -1119,22 +1124,22 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return {
         ok: true,
         message: CREDIT_DEMO_COPY.combinedStaged,
-        link: { to: `/admin/invoices/${out.value.invoiceId}`, label: CREDIT_DEMO_COPY.openInvoice(out.value.invoiceNumber) },
+        link: { to: financeInvoicePath(out.value.invoiceId), label: CREDIT_DEMO_COPY.openInvoice(out.value.invoiceNumber) },
       }
     },
     indexPath: (state) => {
       const invoice = stagedCombined(state)?.invoice
-      return invoice !== undefined ? `/admin/invoices/${invoice.id}` : '/admin/invoices'
+      return invoice !== undefined ? financeInvoicePath(invoice.id) : FINANCES_INVOICES
     },
   },
-  // ── Admin · Billing monitor: the weekly payment cycle's staging (catch-up Phase 39a) ──
+  // ── Admin · Finances · Payments: the weekly payment cycle's staging (catch-up Phase 39a) ──
   {
     id: 'stage-payment-week',
     label: 'Stage a payment week',
     description:
       "Nineteen of Dr Sharma's invoices, each paid through the ordinary payment webhook, so 19 BCTIs are released into this week's run. The second choice also credits an earlier invoice already paid out to her, leaving a negative invoice to net in the run.",
-    screen: BILLING_MONITOR_SCREEN,
-    routes: [...BILLING_MONITOR],
+    screen: FINANCES_PAYMENTS_SCREEN,
+    routes: [FINANCES_PAYMENTS],
     surfaces: ['bar'],
     choices: () => PAYMENT_WEEK_CHOICES.map((c) => ({ id: c.id, label: c.label })),
     defaultChoice: () => 'bctis',
@@ -1143,48 +1148,42 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const out = stagePaymentWeek(api, DEMO_TRIGGER_ACTOR, choiceId)
       return out.ok ? { ok: true, message: out.value.message } : { ok: false, message: out.message }
     },
-    indexPath: () => '/admin/billing',
+    indexPath: () => FINANCES_PAYMENTS,
   },
   {
     id: 'stage-bank-mismatch',
     label: 'Stage a bank mismatch',
     description: "Removes one receipt from the simulated bank download (the newest that released a payable in this week's run), so closing the week raises a \"Receipt not on the bank download\" anomaly.",
-    screen: BILLING_MONITOR_SCREEN,
-    routes: [...BILLING_MONITOR],
+    screen: FINANCES_PAYMENTS_SCREEN,
+    routes: [FINANCES_PAYMENTS],
     surfaces: ['bar'],
     disabledReason: (state) => stageBankMismatchRefusal(state),
     run: (api) => {
       const out = stageBankMismatch(api, DEMO_TRIGGER_ACTOR)
       return out.ok ? { ok: true, message: out.value.message } : { ok: false, message: out.message }
     },
-    indexPath: () => '/admin/billing',
+    indexPath: () => FINANCES_PAYMENTS,
   },
-  // ── Admin · Billing monitor and Invoice: paid in full and paid out, before a credit (catch-up Phase 39) ──
+  // ── Admin · Finances · Invoice: paid in full and paid out, before a credit (catch-up Phase 39) ──
   {
     id: 'stage-refund-after-payout',
     label: 'Stage refund after payout',
     description:
-      "Records a payment in full on the invoice (on the Billing monitor, Sarah Mitchell's once Stage post-op scenario has run) and pays the anaesthetist out through Xero's payables run, so a following credit raises a negative invoice with an amount to net in their next payment run.",
-    screen: BILLING_MONITOR_SCREEN,
-    // It shows on the invoice too: the Control Panel lists it under Admin · Invoice as well.
-    alsoScreens: ['Admin · Invoice'],
-    routes: [...BILLING_MONITOR, '/admin/invoices/:invoiceId'],
+      "Records a payment in full on the invoice on screen and pays the anaesthetist out through Xero's payables run, so a following credit raises a negative invoice with an amount to net in their next payment run.",
+    screen: FINANCES_INVOICE_SCREEN,
+    routes: [FINANCES_INVOICE],
     surfaces: ['bar'],
     disabledReason: (state, ctx) => refundAfterPayoutRefusal(state, ctx.params['invoiceId']),
     run: (api, ctx) => {
       const out = stageRefundAfterPayout(api, ctx.params['invoiceId'])
-      if (!out.ok) return { ok: false, message: out.message }
-      return {
-        ok: true,
-        message: CREDIT_DEMO_COPY.paidOut(out.value.payee),
-        // On the Billing monitor, the invoice it paid (on the invoice itself, the page is already there).
-        ...(ctx.params['invoiceId'] === undefined ? { link: { to: `/admin/invoices/${out.value.invoiceId}`, label: CREDIT_DEMO_COPY.openInvoice(out.value.invoiceNumber) } } : {}),
-      }
+      return out.ok ? { ok: true, message: CREDIT_DEMO_COPY.paidOut(out.value.payee) } : { ok: false, message: out.message }
     },
+    // Sarah Mitchell's invoice once Stage post-op scenario has run, else the first open invoice.
     indexPath: (state) => {
       const id = refundAfterPayoutTarget(state, undefined)
-      return id !== undefined ? `/admin/invoices/${id}` : '/admin/billing'
+      return id !== undefined ? financeInvoicePath(id) : firstOpenInvoicePath(state)
     },
+    indexEmptyReason: 'No open invoice yet: authorise a List first',
   },
 
   // ── Admin · Intake, PDF lists (catch-up Phase 34) ────────────────────
@@ -1225,8 +1224,8 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     label: 'Regenerate from locked data',
     description:
       "Rebuilds the invoice on screen from its Booking's locked record (the pricing snapshot taken at authorise) and compares it with the invoice as stored: identical, with its line count and total, or the differences. Read-only. Try it after a Contract edit, a Disable, a backdated price range, an RVG group edit, a unit-value edit, or a patient address or payer email change. An additional invoice regenerates from its event's lines.",
-    screen: 'Admin · Invoice',
-    routes: ['/admin/invoices/:invoiceId'],
+    screen: FINANCES_INVOICE_SCREEN,
+    routes: [FINANCES_INVOICE],
     surfaces: ['bar'],
     disabledReason: (state, ctx) => {
       const invoiceId = ctx.params['invoiceId']
@@ -1247,14 +1246,14 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     label: 'Payment received · full',
     description:
       'Simulates a Xero payment webhook for the remaining balance of the invoice on screen. Its paired ACCPAY is authorised for exactly the amount received. Also on the Xero simulation pair.',
-    screen: 'Admin · Invoice and Booking detail',
+    screen: FINANCES_INVOICE_SCREEN,
     routes: PAYMENT_PAGES,
     surfaces: ['bar'],
     // A fee payment is "Record fee payment", never a procedure webhook.
     when: (state, ctx) => !isFeePairOnScreen(state, ctx),
     // On the Admin Booking detail (catch-up Phase 27): that Booking's sent prepayment invoices.
-    choices: (state, ctx) => (onLedger(ctx) ? ledgerPaymentChoices(state) : ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : []),
-    disabledReason: (state, ctx, choiceId) => (onLedger(ctx) && ledgerPaymentChoices(state).length === 0 ? 'No open invoice in Xero' : paymentReasonOnScreen(state, ctx, choiceId)),
+    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : []),
+    disabledReason: (state, ctx, choiceId) => paymentReasonOnScreen(state, ctx, choiceId),
     run: (api, ctx, choiceId) => sendPaymentWebhook(api, paymentTargetOnScreen(api.getState(), ctx, choiceId), 'full'),
     indexPath: firstOpenInvoicePath,
     indexEmptyReason: 'No open invoice yet: authorise a List first',
@@ -1264,14 +1263,14 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     label: 'Payment received · half',
     description:
       'Simulates a Xero payment webhook for half the remaining balance of the invoice on screen (a part payment). Its paired ACCPAY is authorised for exactly the amount received. Also on the Xero simulation pair.',
-    screen: 'Admin · Invoice and Booking detail',
+    screen: FINANCES_INVOICE_SCREEN,
     routes: PAYMENT_PAGES,
     surfaces: ['bar'],
     // A fee payment is "Record fee payment", never a procedure webhook.
     when: (state, ctx) => !isFeePairOnScreen(state, ctx),
     // On the Admin Booking detail (catch-up Phase 27): that Booking's sent prepayment invoices.
-    choices: (state, ctx) => (onLedger(ctx) ? ledgerPaymentChoices(state) : ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : []),
-    disabledReason: (state, ctx, choiceId) => (onLedger(ctx) && ledgerPaymentChoices(state).length === 0 ? 'No open invoice in Xero' : paymentReasonOnScreen(state, ctx, choiceId)),
+    choices: (state, ctx) => (ctx.params['bookingId'] !== undefined ? prepaymentAccRecChoices(state, ctx.params['bookingId']) : []),
+    disabledReason: (state, ctx, choiceId) => paymentReasonOnScreen(state, ctx, choiceId),
     run: (api, ctx, choiceId) => sendPaymentWebhook(api, paymentTargetOnScreen(api.getState(), ctx, choiceId), 'partial'),
     indexPath: firstOpenInvoicePath,
     indexEmptyReason: 'No open invoice yet: authorise a List first',
@@ -1281,7 +1280,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     label: 'Replay last payment event',
     description:
       'Re-sends the last payment webhook with the same key, to show it is ignored (idempotent by key, no double effect).',
-    screen: 'Admin · Invoice and Booking detail',
+    screen: FINANCES_INVOICE_SCREEN,
     routes: PAYMENT_PAGES,
     surfaces: ['bar'],
     // A fee payment is "Record fee payment", never a procedure webhook.
@@ -1301,14 +1300,14 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     indexEmptyReason: 'No open invoice yet: authorise a List first',
   },
 
-  // ── Admin · AA fee invoices (catch-up Phase 16) ───────────────────────
+  // ── Admin · Finances · AA fees (catch-up Phase 16) ────────────────────
   {
     id: 'run-scheduled-fee-run',
     label: 'Run scheduled month-end fee run',
     description:
       'Stands in for the month-end job: raises AA\'s fee invoice to every active anaesthetist not yet invoiced for the month in the picker, as the scheduled system run.',
-    screen: 'Admin · AA fee invoices',
-    routes: [AA_FEE_INVOICES],
+    screen: FINANCES_AA_FEES_SCREEN,
+    routes: [FINANCES_AA_FEES],
     surfaces: ['bar'],
     disabledReason: (state, ctx) => aaFeeRunDisabledReason(state, feeMonthOnScreen(state, ctx)),
     run: (api, ctx) => {
@@ -1323,14 +1322,14 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
             : `The scheduled run raised ${plural(res.value.raisedCount, 'AA fee invoice')} for ${aaFeeMonthLabel(monthISO)}, ${formatCurrency(res.value.total)} incl GST.`,
       }
     },
-    indexPath: () => AA_FEE_INVOICES,
+    indexPath: () => FINANCES_AA_FEES,
   },
   {
     id: 'seed-month-of-bctis',
     label: 'Seed a month of BCTIs',
     description: `Tops Dr Rutherford up to ${BCTI_SEED_TARGET} BCTIs paid in ${aaFeeMonthLabel(BCTI_SEED_MONTH)} (paid and disbursed procedure invoices on 1 to 9 November), so the next fee run shows the worked example.`,
-    screen: 'Admin · AA fee invoices',
-    routes: [AA_FEE_INVOICES],
+    screen: FINANCES_AA_FEES_SCREEN,
+    routes: [FINANCES_AA_FEES],
     surfaces: ['bar'],
     when: (state) => state.masters.anaesthetists[ANAE.rutherford] !== undefined,
     disabledReason: (state) => seedBctisDisabledReason(state, ANAE.rutherford),
@@ -1343,7 +1342,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
         message: `Added ${res.value.added} paid BCTIs: Dr Rutherford now has ${BCTI_SEED_TARGET} paid in ${aaFeeMonthLabel(BCTI_SEED_MONTH)}. At the current settings his fee is ${formatCurrency(fee.subtotal)} before GST. Run monthly fee invoices to raise it.`,
       }
     },
-    indexPath: () => AA_FEE_INVOICES,
+    indexPath: () => FINANCES_AA_FEES,
   },
 
   // ── Xero simulation · an AA fee pair (catch-up Phase 16) ──────────────
@@ -1397,7 +1396,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     run: (api, ctx) => {
       const out = voidAccRecInXero(api, XERO_STAFF_ACTOR, ctx.params['accRecId'] ?? '')
       return out.ok
-        ? { ok: true, message: `${out.value.invoiceNumber} is voided in Xero. The engine does not know yet: run the reconciliation poll (or Next day) and it is flagged on the Billing monitor.` }
+        ? { ok: true, message: `${out.value.invoiceNumber} is voided in Xero. The engine does not know yet: run the reconciliation poll (or Next day) and it is flagged on Finances · Xero.` }
         : { ok: false, message: out.message }
     },
     indexPath: firstOpenXeroPairPath,
@@ -2706,8 +2705,8 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     label: 'Load full-scale data',
     description:
       `Replaces the demo data with the whole practice, built in this browser from the same seed: ${FULL_SCALE_FIGURES.anaesthetists} anaesthetists, their sessions across the scheduling horizon and about ${formatCount(FULL_SCALE_FIGURES.targetInvoicesPerYear)} invoices from the last ${FULL_SCALE_FIGURES.historyMonths} months. Held in memory only: saving pauses, and Reset or a reload returns to the demo data.`,
-    screen: 'Admin · Day view and Invoices',
-    routes: ['/admin/day/:dateISO', '/admin/invoices', '/admin/invoices/:invoiceId'],
+    screen: FINANCES_INVOICES_SCREEN,
+    routes: [FINANCES_INVOICES, FINANCES_INVOICE, ADMIN_DAY],
     surfaces: ['bar'],
     confirm: 'Replaces the current demo data. Reset returns to it.',
     disabledReason: () => loadFullScaleRefusal(),
@@ -2715,7 +2714,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const res = loadFullScaleData(api, { report: (message) => reportDiagnostic('error', message) })
       return res.ok ? { ok: true, message: 'Generating full-scale data. Timings appear in the banner.' } : { ok: false, message: res.message }
     },
-    indexPath: (state) => `/admin/day/${state.clock.todayISO}`,
+    indexPath: () => FINANCES_INVOICES,
   },
   {
     id: 'scan-nhi-leaks',

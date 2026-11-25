@@ -8,10 +8,11 @@ import { DemoSurface } from './DemoSurface'
 import { DEMO_SCENARIOS, type DemoScenario, type DemoScenarioId, type ScenarioStageResult } from './demoScenarios'
 import { onDomainReset, useAppStore, useClockTimeLabel, useToday } from '../../store'
 import { demoClockShortcuts } from '../../shared/demoClockShortcuts'
-import { BILLING_MONITOR_SCREEN, DEMO_TRIGGERS, DemoTriggerBadge, groupTriggersByScreen } from '../../shared/demoTriggers'
+import { DEMO_TRIGGERS, DemoTriggerBadge, FINANCES_PAYMENTS_SCREEN, groupTriggersByScreen } from '../../shared/demoTriggers'
 import { DemoBadge } from '../../shared'
-import { Button, Notice } from '../../shared/ui'
+import { Button, Notice, TextAction } from '../../shared/ui'
 import { resetFramedDemo } from '../../shell/framedReset'
+import { financePath } from '../admin/screens/finances/financePaths'
 import { neutral, accent, radius, elevation } from '../../theme/tokens'
 
 function ControlCard({ icon: Icon, title, eyebrow, children, shot }: {
@@ -377,9 +378,13 @@ function DemoActionsIndex() {
                 </div>
               )
             })}
-            {g.screen === BILLING_MONITOR_SCREEN && (
+            {g.screen === FINANCES_PAYMENTS_SCREEN && (
               <div style={{ fontSize: 12.5, color: neutral.slate }}>
-                <strong style={{ fontWeight: 600 }}>Run payables in Xero:</strong> the Billing monitor's button, badged Simulated Xero: Xero pays the bills and the Billing Engine records each payment it reports (not a demo action).
+                <strong style={{ fontWeight: 600 }}>Run payables in Xero:</strong> the{' '}
+                <TextAction inline size="sm" to={financePath('payments')} shot="control-run-payables-payments">
+                  Payments tab
+                </TextAction>
+                's button, badged Simulated Xero: Xero pays the bills and the Billing Engine records each payment it reports (not a demo action).
               </div>
             )}
           </div>

@@ -13,6 +13,7 @@ import { neutral } from '../../../theme/tokens'
 import { cycleLabel } from '../../../domain/billing/paymentCycle'
 import { PAYMENT_CYCLE_COPY, runsForAnaesthetist, stillToNetFor, useAppStore } from '../../../store'
 import { RUN_STATUS } from './PaymentCyclePanel'
+import { paymentRunPath, remittancePath } from '../screens/finances/financePaths'
 
 /** The open negative invoices' total for one anaesthetist, with the caption (renders nothing when there is none). */
 export function StillToNetNotice({ anaesthetistId, surname }: { anaesthetistId: string; surname: string }) {
@@ -57,7 +58,7 @@ export function LedgerPaymentRuns({ anaesthetistId }: { anaesthetistId: string }
                 <tr key={r.id} data-run-id={r.id}>
                   <Td mono>{cycleLabel(r)}</Td>
                   <Td mono>
-                    <Link to={`/admin/billing/payment-runs/${r.id}`} style={{ color: neutral.ink }}>{r.id}</Link>
+                    <Link to={paymentRunPath(r.id)} style={{ color: neutral.ink }}>{r.id}</Link>
                   </Td>
                   <Td mono align="right">{t.bctiCount}</Td>
                   <Td mono align="right">{t.netted > 0 ? formatCurrency(-t.netted) : formatCurrency(0)}</Td>
@@ -70,7 +71,7 @@ export function LedgerPaymentRuns({ anaesthetistId }: { anaesthetistId: string }
                   </Td>
                   <Td>
                     {r.approvedAtISO !== undefined ? (
-                      <Link to={`/admin/billing/payment-runs/${r.id}/remittance/${anaesthetistId}`} style={{ color: neutral.ink }}>Open</Link>
+                      <Link to={remittancePath(r.id, anaesthetistId)} style={{ color: neutral.ink }}>Open</Link>
                     ) : (
                       <span style={{ color: neutral.slate }}>After approval</span>
                     )}
