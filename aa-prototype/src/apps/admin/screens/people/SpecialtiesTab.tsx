@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { neutral } from '../../../../theme/tokens'
-import { specialtyUsage, type Specialty } from '../../../../domain/specialties'
-import { createSpecialty, removeSpecialty, renameSpecialty, useAppStore, type Actor } from '../../../../store'
+import { specialtyUsage } from '../../../../domain/specialties'
+import { createSpecialty, useAppStore, type Actor } from '../../../../store'
 import { Button, FormError, TextField, useSurface } from '../../../../shared'
 import { OverlayHeader, SheetActions } from '../../../../shared/surface'
-import { HistorySheet } from '../../../../shared/booking'
 import { EmptyState, NameSearchBox, TextAction } from '../../../../shared/ui'
+import { ClickableRow } from '../../../../shared/table'
+import { specialtyPath } from '../../peoplePaths'
 import { PageBody, PageToolbar } from '../../components/AdminPage'
 import { Pager, pageOf, pageParam, pageWindow } from '../../components/Pager'
 import { MasterTable } from '../masters/chrome'
@@ -21,27 +23,21 @@ const DEFAULTS = { q: '' } as const
 /**
  * People · Specialties (build plan Phase 53, from Master data; catch-up Phase 18a; US-13.4.4): AA's
  * list of broad surgical specialties, with no subspecialties, searched by name and paged. Surgeons
- * hold one or more, and a Contract holds none (every specialty) or some. The office adds, renames and
- * removes them here, each audited; a rename reaches every holder, and a specialty anyone holds cannot
- * be removed (the store's sentence is shown).
+ * hold one or more, and a Contract holds none (every specialty) or some. The office adds them here
+ * (each audited, landing on the new specialty's page); a row opens the specialty's page (Phase 56),
+ * where it is renamed (reaching every holder) or removed (refused while anyone holds it).
  */
 export function SpecialtiesTab({ actor }: { actor: Actor }) {
   const specialties = useAppStore((s) => s.masters.specialties)
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const contracts = useAppStore((s) => s.masters.contracts)
-  const [sheet, setSheet] = useState<{ specialty?: Specialty } | null>(null)
-  const [history, setHistory] = useState<Specialty | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate()
+  const [adding, setAdding] = useState(false)
   const list = usePeopleListParams(DEFAULTS)
   const q = list.get('q')
   const rows = useMemo(() => specialtyRows(Object.values(specialties), { q }), [specialties, q])
   const pages = pageWindow(rows.length, PEOPLE_PAGE_SIZE, pageParam(list.get('page')))
   const shown = pageOf(rows, PEOPLE_PAGE_SIZE, pages.page)
-
-  function remove(s: Specialty) {
-    const outcome = removeSpecialty(useAppStore, actor, s.id)
-    setError(outcome.ok ? null : outcome.message)
-  }
 
   return (
     <PeoplePage
@@ -53,7 +49,7 @@ export function SpecialtiesTab({ actor }: { actor: Actor }) {
           <span data-seeded-line>{SEEDED_SUBTITLE}</span>
         </>
       }
-      actions={<Button variant="primary" size="desktop" onClick={() => { setError(null); setSheet({}) }}>Add specialty</Button>}
+      actions={<Button variant="primary" size="desktop" onClick={() => setAdding(true)}>Add specialty</Button>}
     >
       <PageToolbar
         end={
@@ -65,7 +61,6 @@ export function SpecialtiesTab({ actor }: { actor: Actor }) {
       >
         <NameSearchBox size="pill" width={260} value={q} onChange={(next) => list.set({ q: next })} label="Search specialties by name" placeholder="Specialty" shot="people-search" />
       </PageToolbar>
-      <FormError message={error} />
       <PageBody>
       {rows.length === 0 ? (
         <EmptyState variant="card" shot="masters-specialties" title="No specialties match." action={<TextAction size="sm" flush onClick={() => list.set({ q: '' })}>Show every specialty</TextAction>}>
@@ -73,8 +68,7 @@ export function SpecialtiesTab({ actor }: { actor: Actor }) {
         </EmptyState>
       ) : (
       <MasterTable
-        columns={['Specialty', 'Held by', '']}
-        rightAlign={[2]}
+        columns={['Specialty', 'Held by']}
         shot="masters-specialties"
         label="Specialties"
         {...(pages.pages > 1 ? { footer: <Pager total={rows.length} size={PEOPLE_PAGE_SIZE} page={pages.page} onPage={(p) => list.set({ page: String(p) })} lead="Specialties" shot="people-pager" /> } : {})}
@@ -82,62 +76,53 @@ export function SpecialtiesTab({ actor }: { actor: Actor }) {
         {shown.map((s) => {
           const usage = specialtyUsage({ surgeons, contracts }, s.id)
           return (
-            <tr key={s.id} data-specialty={s.id}>
-              <td style={{ ...cellStyle, fontWeight: 600 }}>{s.name}</td>
+            <ClickableRow key={s.id} data-specialty={s.id} onOpen={() => navigate(specialtyPath(s.id))}>
+              <td style={{ ...cellStyle, fontWeight: 600 }}>
+                <TextAction size="sm" flush to={specialtyPath(s.id)}>{s.name}</TextAction>
+              </td>
               <td style={{ ...cellStyle, color: neutral.mist }}>
                 {usage.surgeons} {usage.surgeons === 1 ? 'surgeon' : 'surgeons'}, {usage.contracts} {usage.contracts === 1 ? 'Contract' : 'Contracts'}
               </td>
-              <td style={{ ...cellStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
-                <span style={{ display: 'inline-flex', gap: 12 }}>
-                  <TextAction size="sm" flush onClick={() => setHistory(s)} label={`History of ${s.name}`}>History</TextAction>
-                  <TextAction size="sm" flush onClick={() => { setError(null); setSheet({ specialty: s }) }} label={`Rename ${s.name}`}>Rename</TextAction>
-                  <TextAction size="sm" flush onClick={() => remove(s)} label={`Remove ${s.name}`}>Remove</TextAction>
-                </span>
-              </td>
-            </tr>
+            </ClickableRow>
           )
         })}
       </MasterTable>
       )}
       </PageBody>
-      {sheet !== null && <SpecialtySheet key={sheet.specialty?.id ?? 'new'} specialty={sheet.specialty} actor={actor} onClose={() => setSheet(null)} />}
-      <HistorySheet
-        open={history !== null}
-        entityIds={history !== null ? [history.id] : []}
-        title="Specialty history"
-        onClose={() => setHistory(null)}
-      />
+      {adding && <SpecialtySheet actor={actor} onClose={() => setAdding(false)} onAdded={(id) => navigate(specialtyPath(id))} />}
     </PeoplePage>
   )
 }
 
-function SpecialtySheet({ specialty, actor, onClose }: { specialty?: Specialty; actor: Actor; onClose: () => void }) {
+/** Add a specialty (create only since Phase 56: renaming is the page's Name card); saving opens its page. */
+function SpecialtySheet({ actor, onClose, onAdded }: { actor: Actor; onClose: () => void; onAdded: (id: string) => void }) {
   const { Overlay } = useSurface()
-  const [name, setName] = useState(specialty?.name ?? '')
+  const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   function save() {
-    const outcome = specialty === undefined ? createSpecialty(useAppStore, actor, name) : renameSpecialty(useAppStore, actor, specialty.id, name)
+    const outcome = createSpecialty(useAppStore, actor, name)
     if (!outcome.ok) {
       setError(outcome.message)
       return
     }
     onClose()
+    onAdded(outcome.value.id)
   }
 
   return (
     <Overlay open onClose={onClose}>
       <div data-shot="specialty-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <OverlayHeader title={specialty === undefined ? 'Add a specialty' : `Rename ${specialty.name}`} />
+        <OverlayHeader title="Add a specialty" />
         <TextField
           label="Name"
           value={name}
           onChange={setName}
           placeholder="e.g. Paediatric surgery"
-          hint={specialty === undefined ? 'One broad name, with no subspecialty.' : 'Every surgeon and Contract holding it shows the new name.'}
+          hint="One broad name, with no subspecialty."
         />
         <FormError message={error} />
-        <SheetActions primary={<Button variant="primary" block onClick={save}>{specialty === undefined ? 'Add specialty' : 'Save name'}</Button>} />
+        <SheetActions primary={<Button variant="primary" block onClick={save}>Add specialty</Button>} />
       </div>
     </Overlay>
   )

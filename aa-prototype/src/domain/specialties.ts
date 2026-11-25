@@ -16,6 +16,8 @@
  */
 
 import type { Contract } from './billing/contracts'
+import { isOfficeContract } from './billing/fallbacks'
+import { compareBySurname } from './surgeons'
 import type { Surgeon } from './types'
 
 /** Seeded `SPC-<NAME>`; allocated at runtime `SPN001`. */
@@ -77,6 +79,64 @@ export function specialtyUsage(
   let contracts = 0
   for (const s of Object.values(masters.surgeons)) if (s.specialtyIds.includes(id)) surgeons++
   for (const c of Object.values(masters.contracts)) if (c.specialtyIds.includes(id)) contracts++
+  return { surgeons, contracts }
+}
+
+/** A surgeon who holds a specialty, as the specialty's page lists them. */
+export interface SpecialtySurgeonHolder {
+  surgeon: Surgeon
+  /** Their other specialties, in their order, by name ("" when this is their only one). */
+  alsoHolds: string
+  retired: boolean
+}
+
+/** A Contract that carries a specialty, as the specialty's page lists it. */
+export interface SpecialtyContractHolder {
+  contract: Contract
+  /** The holder Party's short name (its id when missing). */
+  holderName: string
+  /** The funding tag's code, when it carries one. */
+  fundingTagCode?: string
+  disabled: boolean
+}
+
+/**
+ * Who holds a specialty, listed (build plan Phase 56; US-13.4.4 Specialty page): every surgeon whose
+ * specialties include it, by surname, Retired ones too; and every office Contract carrying it, by
+ * name, Disabled ones too. A Contract with no specialties (offered for every specialty) and a system
+ * Contract (which holds none) are never listed. So both lengths equal `specialtyUsage`, the counts
+ * Remove's refusal reads.
+ */
+export function specialtyHolders(
+  masters: {
+    specialties: Readonly<Record<SpecialtyId, Specialty>>
+    surgeons: Readonly<Record<string, Surgeon>>
+    contracts: Readonly<Record<string, Contract>>
+    parties: Readonly<Record<string, { name: string }>>
+    fundingTags: Readonly<Record<string, { code: string }>>
+  },
+  id: SpecialtyId,
+): { surgeons: SpecialtySurgeonHolder[]; contracts: SpecialtyContractHolder[] } {
+  const surgeons = Object.values(masters.surgeons)
+    .filter((s) => s.specialtyIds.includes(id))
+    .sort(compareBySurname)
+    .map((surgeon) => ({
+      surgeon,
+      alsoHolds: specialtyNames(masters, surgeon.specialtyIds.filter((x) => x !== id)).join(', '),
+      retired: surgeon.retiredAtISO !== undefined,
+    }))
+  const contracts = Object.values(masters.contracts)
+    .filter((c) => isOfficeContract(c) && c.specialtyIds.includes(id))
+    .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
+    .map((contract) => {
+      const code = contract.fundingTagId !== undefined ? masters.fundingTags[contract.fundingTagId]?.code : undefined
+      return {
+        contract,
+        holderName: masters.parties[contract.holderId]?.name ?? contract.holderId,
+        ...(code !== undefined ? { fundingTagCode: code } : {}),
+        disabled: contract.status === 'disabled',
+      }
+    })
   return { surgeons, contracts }
 }
 

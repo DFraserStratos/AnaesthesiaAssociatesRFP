@@ -3,6 +3,7 @@ import {
   cleanSpecialtyIds,
   contractFitsSpecialties,
   specialtiesInOrder,
+  specialtyHolders,
   specialtyNameRefusal,
   specialtyUsage,
   specialtyUsageText,
@@ -10,6 +11,10 @@ import {
   withSpecialties,
   type Specialty,
 } from './specialties'
+import { buildSeed } from './seed'
+import { isOfficeContract } from './billing/fallbacks'
+import type { Contract } from './billing/contracts'
+import type { Surgeon } from './types'
 
 const LIST: Record<string, Specialty> = {
   ophth: { id: 'ophth', name: 'Ophthalmology' },
@@ -86,5 +91,64 @@ describe('specialty usage and names', () => {
     expect(cleanSpecialtyIds([], LIST)).toMatchObject({ ok: false, code: 'specialtyRequired', message: 'Choose at least one specialty.' })
     expect(cleanSpecialtyIds(undefined, LIST)).toMatchObject({ ok: false, code: 'specialtyRequired' })
     expect(cleanSpecialtyIds(['nope'], LIST)).toMatchObject({ ok: false, code: 'specialtyUnknown' })
+  })
+})
+
+describe('who holds a specialty, listed (Phase 56; US-13.4.4 Specialty page)', () => {
+  const seed = buildSeed().masters
+  const template = Object.values(seed.contracts).find((c) => isOfficeContract(c))!
+  const surgeon = (id: string, name: string, specialtyIds: string[], retired = false): Surgeon => ({
+    id,
+    name,
+    specialtyIds,
+    personalContact: {},
+    officeContacts: [],
+    ...(retired ? { retiredAtISO: '2026-11-01' } : {}),
+  })
+  const contract = (id: string, name: string, specialtyIds: string[], extra: Partial<Contract> = {}): Contract => ({ ...template, id, name, specialtyIds, ...extra })
+
+  it('the example: Ophthalmology held by three surgeons and two Contracts lists exactly those, Retired and Disabled marked', () => {
+    const masters = {
+      specialties: LIST,
+      parties: seed.parties,
+      fundingTags: seed.fundingTags,
+      surgeons: {
+        a: surgeon('a', 'Ms A. Reid', ['ophth']),
+        b: surgeon('b', 'Mr J. Whitford', ['ophth', 'plastic']),
+        c: surgeon('c', 'Dr B. Adams', ['ophth'], true),
+        d: surgeon('d', 'Mr C. Okafor', ['gen']),
+      },
+      contracts: {
+        x: contract('x', 'Eye list', ['ophth']),
+        y: contract('y', 'Cataracts', ['ophth', 'gen'], { status: 'disabled' }),
+        z: contract('z', 'Every specialty', []),
+        s: contract('s', 'System RVG', ['ophth'], { systemRole: 'rvgFallback' }),
+      },
+    }
+    const held = specialtyHolders(masters, 'ophth')
+    expect(held.surgeons.map((h) => [h.surgeon.id, h.alsoHolds, h.retired])).toEqual([
+      ['c', '', true],
+      ['a', '', false],
+      ['b', 'Plastic surgery', false],
+    ])
+    expect(held.contracts.map((h) => [h.contract.id, h.disabled])).toEqual([
+      ['y', true],
+      ['x', false],
+    ])
+    expect(held.contracts[0]!.holderName).toBe(seed.parties[template.holderId]!.name)
+  })
+
+  it('for every seeded specialty both lists are as long as specialtyUsage', () => {
+    for (const id of Object.keys(seed.specialties)) {
+      const held = specialtyHolders(seed, id)
+      expect({ surgeons: held.surgeons.length, contracts: held.contracts.length }, id).toEqual(specialtyUsage(seed, id))
+    }
+  })
+
+  it('a Contract with no specialty and a system Contract are in no list', () => {
+    const listed = new Set(Object.keys(seed.specialties).flatMap((id) => specialtyHolders(seed, id).contracts.map((h) => h.contract.id)))
+    for (const c of Object.values(seed.contracts)) {
+      if (c.specialtyIds.length === 0 || !isOfficeContract(c)) expect(listed.has(c.id), c.id).toBe(false)
+    }
   })
 })

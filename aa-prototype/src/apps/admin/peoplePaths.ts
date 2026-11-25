@@ -24,3 +24,8 @@ export function anaesthetistRecordPath(anaesthetistId: string): string {
 export function surgeonProfilePath(surgeonId: string): string {
   return `${PEOPLE_BASE}/surgeons/${encodeURIComponent(surgeonId)}`
 }
+
+/** A specialty's page (build plan Phase 56), keyed by the specialty's id. */
+export function specialtyPath(specialtyId: string): string {
+  return `${PEOPLE_BASE}/specialties/${encodeURIComponent(specialtyId)}`
+}

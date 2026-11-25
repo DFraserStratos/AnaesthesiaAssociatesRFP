@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 /**
  * Catch-up Phase 18a: specialties, funding tags and the open-price fallbacks.
- * The Specialties tab (add, rename, a held one refusing removal), a surgeon
+ * The Specialties tab and a specialty's page (add, rename, a held one refusing removal), a surgeon
  * save refused with no specialty then saved with two, the Funding tags tab,
  * and tagging a hospital's first Contract on its page making its Fixed price
  * Contract in the catalogue. Admin only: nothing here has a mobile, web or PWA shot.
@@ -21,18 +21,23 @@ test('phase 18a specialties tab', async ({ page }) => {
   await sheet.getByLabel('Name').fill('Paediatric surgery')
   await page.screenshot({ path: 'visual/shots/p18a-02-specialty-add.png', fullPage: true })
   await sheet.getByRole('button', { name: 'Add specialty' }).click()
-  await expect(table.locator('tr', { hasText: 'Paediatric surgery' })).toBeVisible()
-
-  await page.getByRole('button', { name: 'Rename Paediatric surgery' }).click()
-  await sheet.getByLabel('Name').fill('Paediatric and neonatal surgery')
-  await sheet.getByRole('button', { name: 'Save name' }).click()
-  await expect(table.getByText('Paediatric and neonatal surgery')).toBeVisible()
-
-  await page.getByRole('button', { name: 'Remove Ophthalmology' }).click()
-  await expect(page.getByRole('alert')).toContainText('Ophthalmology is held by 23 surgeons and 12 Contracts, so it cannot be removed.')
-  await page.screenshot({ path: 'visual/shots/p18a-03-specialty-held.png', fullPage: true })
+  // Build plan Phase 56: Add lands on the new specialty's page; rename and Remove live there.
+  const name = page.locator('[data-shot="specialty-name"]')
+  await expect(name.getByText('Paediatric surgery')).toBeVisible()
+  await name.getByRole('button', { name: 'Edit name' }).click()
+  await name.getByLabel('Name').fill('Paediatric and neonatal surgery')
+  await name.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(name.getByText('Paediatric and neonatal surgery')).toBeVisible()
   await page.getByRole('button', { name: 'Remove Paediatric and neonatal surgery' }).click()
+  await page.locator('[data-shot="specialty-remove-confirm"]').getByRole('button', { name: 'Remove specialty' }).click()
   await expect(table.locator('tr[data-specialty]')).toHaveCount(12)
+
+  await table.locator('tr', { hasText: 'Ophthalmology' }).getByRole('link').click()
+  await expect(page.locator('[data-shot="specialty-surgeons"] tr[data-surgeon]')).toHaveCount(23)
+  await expect(page.locator('[data-shot="specialty-contracts"] tr[data-contract]')).toHaveCount(12)
+  await page.getByRole('button', { name: 'Remove Ophthalmology' }).click()
+  await expect(page.locator('[data-shot="specialty-rail"]').getByRole('alert')).toContainText('Ophthalmology is held by 23 surgeons and 12 Contracts, so it cannot be removed.')
+  await page.screenshot({ path: 'visual/shots/p18a-03-specialty-held.png', fullPage: true })
 })
 
 test('phase 18a surgeon specialties: none refused, two saved', async ({ page }) => {

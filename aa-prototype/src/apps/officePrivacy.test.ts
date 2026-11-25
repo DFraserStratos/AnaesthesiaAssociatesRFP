@@ -75,6 +75,7 @@ const ALLOWED: readonly { label: string; test: (p: string) => boolean }[] = [
   { label: 'the office write paths (acknowledgement)', test: (p) => p === 'store/lifecycle.ts' || p === 'store/mastersActions.ts' || p === 'store/slotActions.ts' || p === 'store/draftListActions.ts' },
   { label: 'the audit labels', test: (p) => p.startsWith('shared/audit/') },
   { label: 'tests', test: (p) => /\.test\.tsx?$/.test(p) },
+  { label: 'test helpers (src/test/, imported by tests only)', test: (p) => p.startsWith('test/') },
   { label: 'the Admin app', test: (p) => p.startsWith('apps/admin/') },
 ]
 

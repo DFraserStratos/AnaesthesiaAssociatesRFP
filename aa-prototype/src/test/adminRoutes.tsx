@@ -16,6 +16,7 @@ import {
   AdminPeopleSurgeonsRoute,
   AdminPersonRedirect,
   AdminSurgeonProfileRoute,
+  AdminSpecialtyPageRoute,
 } from '../apps/admin/routes'
 import { peoplePath } from '../apps/admin/peoplePaths'
 
@@ -34,6 +35,7 @@ export function peopleRoutes() {
       </Route>
       <Route path="specialties">
         <Route index element={<AdminPeopleSpecialtiesRoute />} />
+        <Route path=":specialtyId" element={<AdminSpecialtyPageRoute />} />
       </Route>
       <Route path="patients">
         <Route index element={<AdminPeoplePatientsRoute />} />

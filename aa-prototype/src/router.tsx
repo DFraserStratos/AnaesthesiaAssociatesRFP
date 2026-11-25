@@ -50,6 +50,7 @@ import {
   AdminFundingTagsRoute,
   AdminMatchingRoute,
   AdminSurgeonProfileRoute,
+  AdminSpecialtyPageRoute,
   AdminAnaesthetistRecordRoute,
   AdminReviewQueueRoute,
   AdminConflictsRoute,
@@ -170,7 +171,7 @@ const routeTree = (
               </Route>
               <Route path="specialties">
                 <Route index element={<AdminPeopleSpecialtiesRoute />} />
-                {/* Phase 56 adds the specialty's page here: `:specialtyId`. */}
+                <Route path=":specialtyId" element={<AdminSpecialtyPageRoute />} />
               </Route>
               <Route path="patients">
                 <Route index element={<AdminPeoplePatientsRoute />} />

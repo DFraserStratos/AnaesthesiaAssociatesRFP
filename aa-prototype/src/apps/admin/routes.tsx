@@ -35,6 +35,7 @@ import { FundingTagsTab } from './screens/contracts/FundingTagsTab'
 import { AnaesthetistsTab } from './screens/people/AnaesthetistsTab'
 import { SurgeonsTab } from './screens/people/SurgeonsTab'
 import { SpecialtiesTab } from './screens/people/SpecialtiesTab'
+import { SpecialtyPage } from './screens/people/SpecialtyPage'
 import { anaesthetistRecordPath, surgeonProfilePath } from './peoplePaths'
 import { patientPath } from '../../shared/patients'
 import { SurgeonProfile } from './screens/SurgeonProfile'
@@ -538,6 +539,18 @@ export function AdminPeopleSurgeonsRoute() {
 export function AdminPeopleSpecialtiesRoute() {
   const { actor } = useAdminOutlet()
   return <SpecialtiesTab actor={actor} />
+}
+
+/** A specialty's page (build plan Phase 56): an unknown or removed id lands on the Specialties tab. */
+export function AdminSpecialtyPageRoute() {
+  const { specialtyId = '' } = useParams()
+  const { actor } = useAdminOutlet()
+  const exists = useAppStore((s) => s.masters.specialties[specialtyId] !== undefined)
+  return (
+    <RequireEntity exists={exists}>
+      <SpecialtyPage key={specialtyId} specialtyId={specialtyId} actor={actor} />
+    </RequireEntity>
+  )
 }
 
 /** People · Patients (build plan Phase 57): one list with Coming up, Needs follow-up and All. */
