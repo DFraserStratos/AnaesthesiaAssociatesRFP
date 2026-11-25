@@ -113,7 +113,8 @@ test('netting: 19 BCTIs and a credit after payout; the run detail, schedule, rem
   await expect(page.locator('[data-shot="payment-week"]')).toContainText('Paid out in Week 48')
 
   await page.goto('/admin/finances/ledger/anaesthetists/41267')
-  await expect(page.locator('[data-shot="ledger-payment-runs"]')).toContainText('Week 48')
+  // A rail row per run, its title the week (build plan Phase 65); newest first, so Week 48 is among the first three.
+  await expect(page.locator('[data-shot="ledger-payment-runs"] li[data-run-id] a', { hasText: 'Week 48' }).first()).toBeVisible()
   await expect(page.locator('[data-shot="ledger-still-to-net"]')).toHaveCount(0)
 })
 
