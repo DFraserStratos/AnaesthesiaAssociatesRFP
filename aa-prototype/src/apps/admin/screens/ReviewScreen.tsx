@@ -318,13 +318,6 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
               <Receipt size={15} strokeWidth={2.2} aria-hidden /> View invoices
             </Button>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-            <StatusChip status={list.kind} />
-            {submitAt !== undefined && !authorised && (
-              <Pill tone="warning" size="lg">Submitted {hhmm(submitAt)}</Pill>
-            )}
-            {changed !== null && <ChangedSinceSubmittedPill cue={changed} />}
-          </div>
         </div>
       }
     >
@@ -353,12 +346,21 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
         </Notice>
       )}
 
-      {/* Summary strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-        <StatTile variant="outlined" label="Bookings" value={String(rows.length)} />
-        <StatTile variant="outlined" label="Total units" value={String(listTotals.units)} />
-        <StatTile variant="outlined" label="Total fee" value={listFeeText} />
-        <StatTile variant="outlined" label={<TipLabel topic="review.flags">Flags</TipLabel>} value={String(allFlags.length)} {...(allFlags.length > 0 ? { tone: 'warning' as const } : {})} sub="to check before authorising" />
+      {/* Summary strip, with the List's status pills top-aligned at its right (rather than a row of their own under the header actions). */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+          <StatTile variant="outlined" label="Bookings" value={String(rows.length)} />
+          <StatTile variant="outlined" label="Total units" value={String(listTotals.units)} />
+          <StatTile variant="outlined" label="Total fee" value={listFeeText} />
+          <StatTile variant="outlined" label={<TipLabel topic="review.flags">Flags</TipLabel>} value={String(allFlags.length)} {...(allFlags.length > 0 ? { tone: 'warning' as const } : {})} sub="to check before authorising" />
+        </div>
+        <div data-testid="review-status-pills" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 8, flex: 'none' }}>
+          <StatusChip status={list.kind} />
+          {submitAt !== undefined && !authorised && (
+            <Pill tone="warning" size="lg">Submitted {hhmm(submitAt)}</Pill>
+          )}
+          {changed !== null && <ChangedSinceSubmittedPill cue={changed} />}
+        </div>
       </div>
 
       <FormError message={error} />
