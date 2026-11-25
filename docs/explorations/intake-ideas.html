@@ -517,7 +517,7 @@ footer{color:var(--mist);font-size:12.5px;padding:36px 0 48px}
     <div class="ins"><i>3</i><b>Confidence comes from showing the why</b><p>No story defines confidence. Rather than a score, show each match key ticked, what will change, what stays, and where it lands. "Nothing changes until you apply" stays true.</p></div>
     <div class="ins"><i>4</i><b>Waiting for an NHI is a state, not a place</b><p>It is an arrival that cannot finish yet. It belongs in the same feed with a filter, and the hospital's day-before list resolving it should be a visible, satisfying moment.</p></div>
     <div class="ins"><i>5</i><b>Arrivals should just arrive</b><p>No import or upload button. A mailbox reader and the hospital feeds bring things in; a quiet strip says each source is healthy. Demo actions stand in for the outside world.</p></div>
-    <div class="ins"><i>6</i><b>Not every PDF reads cleanly</b><p>5 of the 19 real room PDFs are image scans with no text. Fields the reader is unsure of must be marked, and an unreadable PDF must land in the feed, not vanish.</p></div>
+    <div class="ins"><i>6</i><b>Every value read from a PDF shows how sure it is</b><p>Assuming a reader like Azure Document Intelligence (as Stratos uses), the 5 scanned room PDFs of 19 are read by OCR too, and every value comes back with a confidence and its place on the page. Unsure values are marked to check and light up on the page; a PDF that cannot be made into a List still lands in the feed.</p></div>
   </div>
 </section>
 
@@ -568,7 +568,7 @@ footer{color:var(--mist);font-size:12.5px;padding:36px 0 48px}
     <tbody>
       <tr><td>Matching</td><td>Table of single hospital and rooms rows, Open / Unmatched / Decided, decided in a modal drawer.</td><td class="storyid">US-02.1.2 · 02.1.3 · 02.1.4</td><td><span class="verdict v-keep">Becomes the screen</span> The feed and workbench. Grouped by List, decided in a docked panel so the queue stays visible.</td></tr>
       <tr><td>Waiting for NHI</td><td>The no-NHI subset of Unmatched, with chase address, days to go, Email and Add NHI.</td><td class="storyid">US-11.1.5 · FT-02.6</td><td><span class="verdict v-fold">Folds in</span> A "Needs NHI" filter on the feed and a chase card in the workbench. One Add NHI path (the Hub lookup). Story wording "its own tab" changes.</td></tr>
-      <tr><td>PDF lists</td><td>Inbox of uploaded PDFs; review swaps the tab; then "Send to matching".</td><td class="storyid">US-02.2.1 · 02.2.4</td><td><span class="verdict v-fold">Folds in</span> A PDF is just another arrival. Its review (facsimile beside extracted rows) is the workbench, and accepting it places the List. No separate send step.</td></tr>
+      <tr><td>PDF lists</td><td>Inbox of uploaded PDFs; review swaps the tab; then "Send to matching".</td><td class="storyid">US-02.2.1 · 02.2.4</td><td><span class="verdict v-fold">Folds in</span> A PDF is just another arrival. Its review (the PDF beside the values read from it, each with how sure the reader is) is the workbench, and accepting it places the List. No separate send step.</td></tr>
       <tr><td>Data quality</td><td>Patients whose ethnicity code was quarantined after booking. Usually empty.</td><td class="storyid">none (US-11.1.1 says ethnicity is never required)</td><td><span class="verdict v-fold">Folds in</span> An unrecognised code shows as a flag on the arrival and the patient's page. No tab.</td></tr>
       <tr><td>Validators</td><td>Two static check boxes for NHI and ethnicity formats.</td><td class="storyid">none (US-11.1.2 is about the check, not a screen)</td><td><span class="verdict v-go">Goes</span> The NHI field already validates as you type. The explanation moves to Help.</td></tr>
       <tr><td>Import hospital file</td><td>Header button with five sample files.</td><td class="storyid">implied by US-02.1.1, OQ-109</td><td><span class="verdict v-go">Goes</span> Feeds arrive on their own. Demo actions play the hospitals and rooms.</td></tr>
@@ -634,7 +634,7 @@ footer{color:var(--mist);font-size:12.5px;padding:36px 0 48px}
                 <div class="fi solo"><span class="src hos">SX</span><div><div class="t">Mr Ruane · Thu 26 Nov AM</div><div class="s">FHIR · Appointment cancelled · Ann Hollis</div></div><div class="r"><span class="kind can">Cancellation</span><span class="mono">08:05</span></div></div>
                 <div class="fi solo"><span class="src pdf">PDF</span><div><div class="t">Ms Tait · Tue 15 Dec PM</div><div class="s">tait.rooms@… · 5 patients · names Dr Kaur</div></div><div class="r"><span class="kind new">New List</span><span class="mono">07:42</span></div></div>
                 <div class="fi solo"><span class="src pdf">PDF</span><div><div class="t">Mr Bell · Fri 4 Dec AM · re-sent</div><div class="s">1 time change · 1 missing, confirm removal</div></div><div class="r"><span class="kind upd">Update</span><span class="mono">07:15</span></div></div>
-                <div class="fi solo"><span class="src pdf">PDF</span><div><div class="t">Scan.pdf · reception@eyesurgery…</div><div class="s">A scanned page with no text. Open to type it in.</div></div><div class="r"><span class="kind read">Can't read</span><span class="mono">06:58</span></div></div>
+                <div class="fi solo"><span class="src pdf">PDF</span><div><div class="t">Scan.pdf · reception@eyesurgery…</div><div class="s">Read from a scan · 4 patients · 3 values to check</div></div><div class="r"><span class="kind nhi">3 to check</span><span class="mono">06:58</span></div></div>
                 <div class="grp">Waiting<span class="ln"></span></div>
                 <div class="fi solo"><span class="src hos">SX</span><div><div class="t">Mere Tipene · Tue 8 Dec PM</div><div class="s">Stub on Dr Souter's List · chase Avonside rooms</div></div><div class="r"><span class="kind nhi">Needs NHI</span><span class="mono">14 days</span></div></div>
                 <div class="ffoot"><span>14 applied today · 0 dropped</span><span class="txt">Decided</span></div>
@@ -693,7 +693,7 @@ footer{color:var(--mist);font-size:12.5px;padding:36px 0 48px}
       </div>
 
       <div>
-        <p class="mock-cap">B · A new List from the rooms' PDF: the page beside what was read, and where to place it</p>
+        <p class="mock-cap">B · A new List from the rooms' PDF: the page beside what was read, and where to place it. Assumes a reader like Azure Document Intelligence, which returns each value with a confidence and where on the page it came from; the development team decides the service.</p>
         <div class="mockwrap"><div class="frame">
           <div class="mnav" data-on="Intake"></div>
           <div class="page">
@@ -712,7 +712,7 @@ footer{color:var(--mist);font-size:12.5px;padding:36px 0 48px}
                 <div class="grp">Today<span class="ln"></span></div>
                 <div class="fi solo on"><span class="src pdf">PDF</span><div><div class="t">Ms Tait · Tue 15 Dec PM</div><div class="s">tait.rooms@… · 5 patients · names Dr Kaur</div></div><div class="r"><span class="kind new">New List</span><span class="mono">07:42</span></div></div>
                 <div class="fi solo"><span class="src pdf">PDF</span><div><div class="t">Mr Bell · Fri 4 Dec AM · re-sent</div><div class="s">1 time change · 1 missing, confirm removal</div></div><div class="r"><span class="kind upd">Update</span><span class="mono">07:15</span></div></div>
-                <div class="fi solo"><span class="src pdf">PDF</span><div><div class="t">Scan.pdf · reception@eyesurgery…</div><div class="s">A scanned page with no text. Open to type it in.</div></div><div class="r"><span class="kind read">Can't read</span><span class="mono">06:58</span></div></div>
+                <div class="fi solo"><span class="src pdf">PDF</span><div><div class="t">Scan.pdf · reception@eyesurgery…</div><div class="s">Read from a scan · 4 patients · 3 values to check</div></div><div class="r"><span class="kind nhi">3 to check</span><span class="mono">06:58</span></div></div>
                 <div class="grp">Yesterday<span class="ln"></span></div>
                 <div class="fi solo done"><span class="src pdf">PDF</span><div><div class="t">Mr Okafor · Wed 9 Dec AM</div><div class="s">Placed in Dr Rutherford's AM · Kirsty W.</div></div><div class="r"><span class="kind same">Applied</span><span class="mono">16:20</span></div></div>
                 <div class="ffoot"><span>Rooms mailbox · lists@aa.example</span><span class="txt">Add a PDF by hand</span></div>
@@ -728,7 +728,7 @@ footer{color:var(--mist);font-size:12.5px;padding:36px 0 48px}
                 </div>
                 <div class="pdfsplit">
                   <div>
-                    <div class="paperbar"><span>Tait list 15 Dec PM.pdf · page 1 of 1</span><span><span class="pill ok">Text layer · read cleanly</span></span></div>
+                    <div class="paperbar"><span>Tait list 15 Dec PM.pdf · page 1 of 1</span><span><span class="pill ok">Read · 29 values · 1 to check</span></span></div>
                     <div class="paper">
                       <div class="ph"><div><b>MERIVALE SURGICAL</b><br>Theatre list</div><div style="text-align:right"><span class="hl">Ms R. Tait</span><br><span class="hl">Southern Cross</span> · <span class="hl">Tue 15/12/2026</span> <span class="hl">13:00</span><br>Anaesthetist: <span class="hl">Dr Kaur</span></div></div>
                       <table>
@@ -748,7 +748,7 @@ footer{color:var(--mist);font-size:12.5px;padding:36px 0 48px}
                         <thead><tr><th style="width:28px"></th><th>Time</th><th>Patient</th><th>NHI</th><th>Procedure as sent</th><th></th></tr></thead>
                         <tbody>
                           <tr><td><span class="box on"></span></td><td class="mono">13:00</td><td class="nm"><b>Kerry Walsh</b><small>4 May 1970</small></td><td class="mono">ZWK8021</td><td>Lap chole</td><td><span class="kind new">New</span></td></tr>
-                          <tr class="rowchg"><td><span class="box on"></span></td><td class="mono">14:00</td><td class="nm"><b>Rawiri Tuhoe</b><small>17 Nov 1982</small></td><td class="mono"><span class="lowc">ZTR44I9</span><span class="prov" style="color:var(--warnOn)">Read as "l", fails the check · we read I</span></td><td>Inguinal hernia R</td><td><span class="kind upd">Check</span></td></tr>
+                          <tr class="rowchg"><td><span class="box on"></span></td><td class="mono">14:00</td><td class="nm"><b>Rawiri Tuhoe</b><small>17 Nov 1982</small></td><td class="mono"><span class="lowc">ZTR44I9</span><span class="prov" style="color:var(--warnOn)">Read as "l" (61% sure), fails the check · we read I</span></td><td>Inguinal hernia R</td><td><span class="kind upd">Check</span></td></tr>
                           <tr><td><span class="box on"></span></td><td class="mono">15:00</td><td class="nm"><b>Lily Morgan</b><small>22 Feb 1999</small></td><td class="mono" style="color:var(--warnOn)">none</td><td>Excision lipoma back</td><td><span class="kind nhi">Stub</span></td></tr>
                           <tr><td><span class="box on"></span></td><td class="mono">15:45</td><td class="nm"><b>David Chen</b><small>8 Aug 1965</small></td><td class="mono">ZCD1180</td><td>Umbilical hernia</td><td><span class="kind new">New</span></td></tr>
                           <tr><td><span class="box on"></span></td><td class="mono">16:30</td><td class="nm"><b>Andrea Fox</b><small>30 Jun 1954</small></td><td class="mono">ZFA7770</td><td>Lap chole</td><td><span class="kind new">New</span></td></tr>
@@ -952,7 +952,7 @@ footer{color:var(--mist);font-size:12.5px;padding:36px 0 48px}
         <div class="srcs">
           <div class="card sg"><div class="sgh"><span class="src hos">SG</span><div><b>St George's</b><small>HL7 v2.3.1 · SIU S12 to S15</small></div></div><span class="st"><i></i>Receiving · last message 06:10</span><div class="nums"><div><b>23</b>today</div><div><b>6</b>Lists</div><div><b>0</b>failed</div></div><div class="spark" data-v="2,1,0,0,0,9,23,4,1,0,0,0,0,1"></div></div>
           <div class="card sg"><div class="sgh"><span class="src hos">SX</span><div><b>Southern Cross</b><small>FHIR R4 · Appointment, Patient</small></div></div><span class="st"><i class="w"></i>Receiving · 1 message held</span><div class="nums"><div><b>18</b>today</div><div><b>5</b>Lists</div><div><b>1</b>held</div></div><div class="spark" data-v="0,0,0,1,0,6,14,3,1,1,0,0,0,0"></div></div>
-          <div class="card sg"><div class="sgh"><span class="src pdf">PDF</span><div><b>Rooms mailbox</b><small>lists@aa.example · read every 5 min</small></div></div><span class="st"><i></i>Reading · last PDF 07:42</span><div class="nums"><div><b>7</b>today</div><div><b>6</b>read</div><div><b>1</b>scan</div></div><div class="spark" data-v="0,0,0,0,0,1,2,3,0,1,0,0,0,0"></div></div>
+          <div class="card sg"><div class="sgh"><span class="src pdf">PDF</span><div><b>Rooms mailbox</b><small>lists@aa.example · PDFs read as they arrive</small></div></div><span class="st"><i></i>Reading · last PDF 07:42</span><div class="nums"><div><b>7</b>today</div><div><b>7</b>read</div><div><b>1</b>from a scan</div></div><div class="spark" data-v="0,0,0,0,0,1,2,3,0,1,0,0,0,0"></div></div>
           <div class="card sg"><div class="sgh"><span class="src pdf" style="color:var(--mist)">FH</span><div><b>Forte Health</b><small>Not connected</small></div></div><span class="st"><i class="off"></i>Lists come by PDF to the mailbox</span><div class="notice">Burwood, Christchurch Eye, Southern Endo and McMurray join the same Arrivals feed when connected.</div></div>
         </div>
         <div class="card" style="overflow:hidden">
@@ -961,7 +961,7 @@ footer{color:var(--mist);font-size:12.5px;padding:36px 0 48px}
             <tbody>
               <tr><td class="mono">08:05</td><td>Southern Cross</td><td class="mono">Appointment/88213 · status cancelled</td><td>Cancellation · Mr Ruane, Thu 26 Nov AM</td><td><span class="pill warn">Waiting on you</span></td></tr>
               <tr><td class="mono">07:42</td><td>Rooms mailbox</td><td>Tait list 15 Dec PM.pdf · tait.rooms@…</td><td>New List · 5 patients</td><td><span class="pill warn">Waiting on you</span></td></tr>
-              <tr><td class="mono">06:58</td><td>Rooms mailbox</td><td>Scan.pdf · reception@eyesurgery…</td><td>Image only, no text to read</td><td><span class="pill err">Type it in</span></td></tr>
+              <tr><td class="mono">06:58</td><td>Rooms mailbox</td><td>Scan.pdf · reception@eyesurgery…</td><td>Read from a scan · New List · 3 values to check</td><td><span class="pill warn">Waiting on you</span></td></tr>
               <tr><td class="mono">06:10</td><td>St George's</td><td class="mono">SIU^S12 ×9 · SIU^S14 ×12 · SIU^S15 ×2</td><td>6 Lists for Wed 25 Nov</td><td><span class="pill warn">3 waiting</span> <span class="pill ok">3 match exactly</span></td></tr>
               <tr><td class="mono">05:52</td><td>Southern Cross</td><td class="mono">Appointment/88190 · no Patient reference</td><td>Held: cannot tell who the patient is</td><td><span class="pill err">Held</span> <span class="txt">View raw</span></td></tr>
             </tbody>
@@ -978,7 +978,7 @@ footer{color:var(--mist);font-size:12.5px;padding:36px 0 48px}
     <div class="da"><span class="n">2</span><div><b>Rooms re-send the List</b><p>Same List, a time change, one patient added, one gone. Appears as Update, with the missing Booking to confirm as a removal.</p></div></div>
     <div class="da"><span class="n">3</span><div><b>St George's sends tomorrow's Lists</b><p>The day-before HL7 batch: Mr Okafor's List with fuller wording, an approval number, a time shift and the stub's NHI; plus Lists that match exactly.</p></div></div>
     <div class="da"><span class="n">4</span><div><b>Southern Cross cancels a Booking</b><p>A single FHIR Appointment cancelled. Shows as Cancellation; applying keeps the Booking visible, marked cancelled.</p></div></div>
-    <div class="da"><span class="n">5</span><div><b>A scanned PDF arrives</b><p>An image-only PDF the reader cannot read. Shows as "Can't read"; opening it lets the office type the rows beside the page.</p></div></div>
+    <div class="da"><span class="n">5</span><div><b>A scanned PDF arrives</b><p>An image-only PDF, read by OCR. Its unsure values are marked to check, and each lights up where it sits on the page.</p></div></div>
     <div class="da"><span class="n">6</span><div><b>A feed message fails</b><p>A Southern Cross message with no patient. Held on Sources with its raw view behind the restricted role, never dropped.</p></div></div>
   </div>
 </section>
@@ -1011,6 +1011,7 @@ footer{color:var(--mist);font-size:12.5px;padding:36px 0 48px}
         <li><strong>Group the feed by List, show the source as a mark.</strong> A hospital file is a header over its Lists; a PDF is one List. Filters, not tabs, for Needs NHI, Rooms PDFs, each hospital, Decided.</li>
         <li><strong>Two tabs only: Arrivals and Sources.</strong> Waiting for NHI and PDF lists fold in; Data quality becomes a flag; Validators goes; both buttons go, replaced by the six demo actions.</li>
         <li><strong>"Matches exactly" confirmed in bulk.</strong> It changes nothing, so it is safe to clear in one click, and it is most of a hospital file on a quiet day.</li>
+        <li><strong>Build the stub guard with it.</strong> Today a List holding only a stub reads "0 of 0", offers Mark list completed and authorises. In the rebuild, a List whose only line is a stub reads "1 waiting at intake", never complete; Mark list completed and authorise wait until the stub is resolved or rejected, with that reason shown. A List with real Bookings and a stub keeps today's rule: counted apart, never blocking. <span style="color:#9FB0AA">(BACKLOG; FT-02.6; S5 already tells it as built.)</span></li>
       </ol>
       <p style="margin-top:14px">Next, if you agree: record the rulings below with <code style="color:#fff">/update-requirements</code>, then turn them into a phase (or a run of app changes) for the rebuild.</p>
     </div>
