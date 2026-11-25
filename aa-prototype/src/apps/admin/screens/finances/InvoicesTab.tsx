@@ -1,4 +1,4 @@
-/** Finances' Invoices tab (build plan Phase 58; D107): today's invoice list, with its view switch. */
+/** Finances' Invoices tab (D107): the one invoice list, its filters (Awaiting approval among them) and its rail. */
 
 import { useAdminOutlet } from '../../outlet'
 import { InvoicesScreen } from '../InvoicesScreen'

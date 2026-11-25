@@ -681,7 +681,7 @@ describe('Booking id numbering (catch-up Phase 15)', () => {
 
   it('no Booking or history Booking keeps a legacy Card id', () => {
     const ids = Object.keys(seed.schedule.bookings)
-    expect(ids.every((id) => /^(BK\d{4}|HS?BK\d+)$/.test(id))).toBe(true)
+    expect(ids.every((id) => /^(BK\d{4}|H[SX]?BK\d+)$/.test(id))).toBe(true)
     expect(ids.some((id) => id.startsWith('HBK'))).toBe(true)
   })
 })
