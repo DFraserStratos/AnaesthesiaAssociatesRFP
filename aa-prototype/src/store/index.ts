@@ -509,7 +509,6 @@ export {
   runInactiveContractsJob,
   wireInactiveContracts,
   signInRefusal,
-  inactiveSignInCandidate,
   isActiveToday,
   latestNoLongerActiveRefusal,
   tryInactiveSignIn,

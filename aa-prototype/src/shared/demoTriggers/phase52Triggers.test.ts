@@ -5,8 +5,9 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type AppStoreApi } from '../../store/appStore'
 import { OFFICE_ACTOR } from '../../store/demoActors'
-import { makeAnaesthetistInactive, NO_LONGER_ACTIVE } from '../../store/anaesthetistStatusActions'
+import { latestNoLongerActiveRefusal, makeAnaesthetistInactive, NO_LONGER_ACTIVE, signInRefusal } from '../../store/anaesthetistStatusActions'
 import { ANAE } from '../../domain/seed'
+import { resetDemo } from '../../store/clockActions'
 import { DEMO_TRIGGERS } from './registry'
 import { demoTriggersFor } from './match'
 import type { DemoContextValues } from './context'
@@ -53,15 +54,26 @@ describe('try-sign-in-after-last-day', () => {
     expect(ids('bar', {})).not.toContain(trySignIn.id)
   })
 
-  it('is disabled until a last day has passed; then writes one refused row for that anaesthetist, never Dr Souter', () => {
+  it('stages Dr Souter past a last day (audited) and writes one refused row naming her; a second press only refuses again', () => {
     const api = createAppStore()
     const c = { pathname: '/mobile/lists', params: {}, published: signIn }
-    expect(trySignIn.disabledReason(api.getState(), c)).not.toBeNull()
-    beaumontLeaves(api)
-    expect(pass.run(api, recordCtx).ok).toBe(true)
+    const today = api.getState().clock.todayISO
     expect(trySignIn.disabledReason(api.getState(), c)).toBeNull()
+    expect(signInRefusal(api.getState(), ANAE.souter)).toBeNull()
     expect(trySignIn.run(api, c).ok).toBe(true)
-    expect(api.getState().audit.at(-1)).toMatchObject({ entityType: 'account', entityId: BEAU, action: 'auth.signInFailed', after: { reason: NO_LONGER_ACTIVE } })
-    expect(api.getState().masters.anaesthetists[ANAE.souter]!.lastDayISO).toBeNull()
+    const souter = api.getState().masters.anaesthetists[ANAE.souter]!
+    expect(souter.lastDayISO! < today).toBe(true)
+    expect(api.getState().clock.todayISO).toBe(today)
+    expect(signInRefusal(api.getState(), ANAE.souter)).toBe(NO_LONGER_ACTIVE)
+    const audit = api.getState().audit
+    expect(audit.at(-2)).toMatchObject({ entityType: 'anaesthetist', entityId: ANAE.souter, action: 'anaesthetist.makeInactive' })
+    expect(audit.at(-1)).toMatchObject({ entityType: 'account', entityId: ANAE.souter, who: 'Dr Melanie Souter', action: 'auth.signInFailed', after: { reason: NO_LONGER_ACTIVE } })
+    expect(latestNoLongerActiveRefusal(api.getState())?.anaesthetistId).toBe(ANAE.souter)
+    const rows = audit.length
+    expect(trySignIn.run(api, c).ok).toBe(true)
+    expect(api.getState().audit.length).toBe(rows + 1)
+    expect(api.getState().audit.at(-1)).toMatchObject({ entityId: ANAE.souter, action: 'auth.signInFailed' })
+    resetDemo(api)
+    expect(signInRefusal(api.getState(), ANAE.souter)).toBeNull()
   })
 })

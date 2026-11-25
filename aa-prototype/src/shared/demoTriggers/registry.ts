@@ -191,7 +191,7 @@ import { sessionText } from '../../domain/outOfHours'
 import { isBookingPair } from '../../domain/billing/ledger'
 import { APP_CONFIG } from '../../shell/appConfig'
 import { recordAnaesthetistSignIn } from '../../store/authDemoActions'
-import { inactiveSignInCandidate, tryInactiveSignIn } from '../../store/anaesthetistStatusActions'
+import { tryInactiveSignIn } from '../../store/anaesthetistStatusActions'
 import { dayAfterISO, statusOn } from '../../domain/anaesthetistStatus'
 import { isSignedIn, signOutSession } from '../session/anaesthetistSession'
 import { newerInvoiceDescription } from '../../domain/billing/procedureStack'
@@ -1986,16 +1986,16 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'try-sign-in-after-last-day',
     label: 'Demo: try signing in after the last day',
     description:
-      'Tries the sign-in of the anaesthetist whose last day passed most recently (never Dr Souter). It is refused as no longer active, and the refusal is an audited row.',
+      "Dr Souter's last day is set to yesterday (a simulated stand-in for the office's Make inactive), then her sign-in is tried. It is refused as no longer active, and the refusal is an audited row. Reset demo restores her.",
     screen: 'Mobile · Sign in',
     routes: ['/mobile', '/mobile/*'],
     surfaces: ['bar', 'pwa'],
     when: (_state, ctx) => ctx.published['mobile.signIn'] === true,
-    disabledReason: (state) => (inactiveSignInCandidate(state) === undefined ? "No anaesthetist's last day has passed" : null),
+    disabledReason: (state) => (state.masters.anaesthetists[ANAE.souter] === undefined ? 'Dr Souter is not in the data' : null),
     run: (api) => {
       const tried = tryInactiveSignIn(api)
       return tried.ok
-        ? { ok: true, message: `${tried.value.name} tried to sign in: refused, no longer active. The refusal is in the audit.` }
+        ? { ok: true, message: `${tried.value.name} tried to sign in: refused, no longer active. The refusal is in the audit; Reset demo restores her.` }
         : { ok: false, message: tried.message }
     },
     indexPath: () => null,

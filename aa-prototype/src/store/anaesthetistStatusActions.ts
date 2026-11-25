@@ -13,7 +13,7 @@
  * The rule itself lives in `domain/anaesthetistStatus.ts` (`isActiveOn`).
  * Contracts change only through `disableContract` and `enableContract`.
  */
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, subDays } from 'date-fns'
 import {
   INACTIVE_CONTRACTS_RULE_WHO,
   INACTIVE_REASON_LABELS,
@@ -33,6 +33,7 @@ import { onAppEvent } from './events'
 import { mutate, ok, refuse, withChangeSet, type Actor, type MutationMeta, type Outcome } from './mutate'
 import { anaesthetistCanvasDelta, applyGenerated } from './slotActions'
 import { recordAnaesthetistSignIn } from './authDemoActions'
+import { DEMO_OFFICE_ACTOR } from './demoActors'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -305,17 +306,6 @@ export function signInRefusal(state: Pick<AppState, 'masters' | 'clock'>, anaest
 }
 
 /**
- * Who the "try signing in after the last day" trigger tries: the anaesthetist
- * whose last day passed most recently, never Dr Souter (the demo account).
- */
-export function inactiveSignInCandidate(state: Pick<AppState, 'masters' | 'clock'>): Anaesthetist | undefined {
-  const todayISO = state.clock.todayISO
-  return Object.values(state.masters.anaesthetists)
-    .filter((a) => a.registrationNumber !== ANAE.souter && statusOn(a, todayISO).kind === 'inactive')
-    .sort((x, y) => (y.lastDayISO ?? '').localeCompare(x.lastDayISO ?? '') || x.registrationNumber.localeCompare(y.registrationNumber))[0]
-}
-
-/**
  * The sign-in screen's refusal: the newest `account` row, when it is a sign-in
  * refused as no longer active (a later sign-in or sign-out hides it).
  */
@@ -330,15 +320,38 @@ export function latestNoLongerActiveRefusal(state: Pick<AppState, 'audit'>): { a
 }
 
 /**
- * The "Demo: try signing in after the last day" trigger: the sign-in of
- * `inactiveSignInCandidate`, refused and audited as no longer active. Writes
- * nothing to anyone's record; never Dr Souter.
+ * The "Demo: try signing in after the last day" trigger. The handset only ever
+ * signs in as Dr Souter (the mobile persona), so the demo is about her: a
+ * simulated stand-in stages her last day as yesterday (one audited
+ * `anaesthetist.makeInactive` as `DEMO_OFFICE_ACTOR`, her record only: the
+ * office's Make inactive would refuse while she holds Lists ahead), then
+ * records her sign-in refused as no longer active. Already past a last day,
+ * it only records the refusal. Reset demo restores her.
  */
-export function tryInactiveSignIn(api: AppStoreApi): Outcome<{ name: string }> {
-  const who = inactiveSignInCandidate(api.getState())
-  if (who === undefined) return refuse('noneInactive', "No anaesthetist's last day has passed.")
-  recordAnaesthetistSignIn(api, 'refused', { anaesthetistId: who.registrationNumber, reason: NO_LONGER_ACTIVE })
-  return ok({ name: who.name })
+export function tryInactiveSignIn(api: AppStoreApi): Outcome<{ name: string; staged: boolean }> {
+  const state = api.getState()
+  const souter = state.masters.anaesthetists[ANAE.souter]
+  if (souter === undefined) return refuse('notFound', 'Dr Souter is not in the data.')
+  const staged = signInRefusal(state, ANAE.souter) === null
+  if (staged) {
+    const lastDayISO = format(subDays(parseISO(state.clock.todayISO), 1), 'yyyy-MM-dd')
+    const next: Anaesthetist = { ...souter, lastDayISO, inactiveReason: 'other', activeAgainISO: null }
+    mutate(
+      api,
+      DEMO_OFFICE_ACTOR,
+      {
+        entityType: 'anaesthetist',
+        entityId: ANAE.souter,
+        action: 'anaesthetist.makeInactive',
+        before: { lastDayISO: souter.lastDayISO ?? '' },
+        after: { lastDayISO, reason: INACTIVE_REASON_LABELS.other },
+        stampBookingId: null,
+      },
+      (s) => ({ masters: { ...s.masters, anaesthetists: { ...s.masters.anaesthetists, [ANAE.souter]: next } } }),
+    )
+  }
+  recordAnaesthetistSignIn(api, 'refused', { anaesthetistId: ANAE.souter, reason: NO_LONGER_ACTIVE })
+  return ok({ name: souter.name, staged })
 }
 
 /** True when the anaesthetist works on the demo clock's today. */

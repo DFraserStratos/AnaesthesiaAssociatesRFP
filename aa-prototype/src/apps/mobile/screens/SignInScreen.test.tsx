@@ -7,7 +7,7 @@ import type { ReactNode } from 'react'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { NO_LONGER_ACTIVE, freshAppState, makeAnaesthetistInactive, useAppStore, type Actor } from '../../../store'
+import { NO_LONGER_ACTIVE, freshAppState, makeAnaesthetistInactive, tryInactiveSignIn, useAppStore, type Actor } from '../../../store'
 import { advanceClockDays } from '../../../store/clockActions'
 import { SurfaceProvider } from '../../../shared'
 import { ANAE } from '../../../domain/seed'
@@ -148,6 +148,22 @@ describe('MobileApp sign-in gate', () => {
     expect(accountRows().at(-1)).toMatchObject({ action: 'auth.signInFailed', after: { reason: NO_LONGER_ACTIVE } })
     expect(container.querySelector('[data-shot="sign-in-no-longer-active"]')?.textContent).toContain('Dr Melanie Souter')
     expect(screen.queryByTestId('screen')).toBeNull()
+  })
+
+  it('the "try signing in after the last day" demo action refuses Dr Souter: notice, email field and audit row all name her', () => {
+    const { container } = renderApp('signed-out')
+    const email = () => (container.querySelector('[data-shot="sign-in-email"] input, input[type="email"]') as HTMLInputElement).value
+    fireEvent.change(container.querySelector('input[type="email"]')!, { target: { value: 'someone@else.example' } })
+    act(() => {
+      expect(tryInactiveSignIn(useAppStore).ok).toBe(true)
+    })
+    const souter = useAppStore.getState().masters.anaesthetists[ANAE.souter]!
+    expect(container.querySelector('[data-shot="sign-in-no-longer-active"]')?.textContent).toContain('Dr Melanie Souter')
+    expect(email()).toBe(souter.email)
+    expect(accountRows().at(-1)).toMatchObject({ entityId: ANAE.souter, who: 'Dr Melanie Souter', action: 'auth.signInFailed', after: { reason: NO_LONGER_ACTIVE } })
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    expect(screen.queryByTestId('screen')).toBeNull()
+    expect(accountRows().at(-1)).toMatchObject({ entityId: ANAE.souter, action: 'auth.signInFailed', after: { reason: NO_LONGER_ACTIVE } })
   })
 })
 

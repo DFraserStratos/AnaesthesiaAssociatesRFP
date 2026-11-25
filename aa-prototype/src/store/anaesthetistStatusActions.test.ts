@@ -4,7 +4,6 @@ import {
   INACTIVE_CONTRACTS_ACTOR,
   NO_LONGER_ACTIVE,
   clearLastDay,
-  inactiveSignInCandidate,
   makeAnaesthetistActive,
   makeAnaesthetistInactive,
   offerBackFor,
@@ -187,7 +186,6 @@ describe('sign-in (US-13.5.3, DM-07)', () => {
     expect(signInRefusal(api.getState(), BEAU)).toBeNull()
     advanceClockToDate(api, dayAfterISO(last))
     expect(signInRefusal(api.getState(), BEAU)).toBe(NO_LONGER_ACTIVE)
-    expect(inactiveSignInCandidate(api.getState())?.registrationNumber).toBe(BEAU)
     expect(makeAnaesthetistActive(api, OFFICE_ACTOR, BEAU).ok).toBe(true)
     expect(signInRefusal(api.getState(), BEAU)).toBeNull()
   })

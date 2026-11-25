@@ -45,6 +45,17 @@ export function SignInScreen() {
   useDemoTriggerContext('mobile.signIn', true)
   const audit = useAppStore((s) => s.audit)
   const refused = useMemo(() => latestNoLongerActiveRefusal({ audit }), [audit])
+  // A new refusal fills the form with the refused account's email, so the notice and the field name the same person.
+  const refusedEmail = useAppStore((s) => (refused === null ? null : (s.masters.anaesthetists[refused.anaesthetistId]?.email ?? null)))
+  const refusedAt = refused?.atISO ?? null
+  const [seenRefusal, setSeenRefusal] = useState(refusedAt)
+  if (refusedAt !== seenRefusal) {
+    setSeenRefusal(refusedAt)
+    if (refusedEmail !== null) {
+      setEmail(refusedEmail)
+      setEmailError(null)
+    }
+  }
 
   function submit(event: FormEvent) {
     event.preventDefault()
