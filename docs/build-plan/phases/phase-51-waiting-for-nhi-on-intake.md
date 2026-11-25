@@ -90,7 +90,7 @@ Run these yourself in the running app and report pass or fail with evidence.
 - [ ] A hospital cancellation with no NHI is not on the tab and still shows on Matching for Reject.
 - [ ] Matching's "Waiting for NHI" link opens the tab; `/admin/patients/waiting` redirects to it and Back does not loop; Patients shows only Search and Follow-up.
 - [ ] An NHI lookup's hub entry shows on the tab and on the Patients screens still left.
-- [ ] `build`, `build:pwa`, `vitest` and the whole of `visual/` green (the lane's lighter gate first; the full gate after the join).
+- [ ] The lane gate (LANES.md: the quick checks and this phase's own specs) green; the full Vitest, builds and `visual/` suite run at the wave's join.
 
 ## Demo guide updates
 

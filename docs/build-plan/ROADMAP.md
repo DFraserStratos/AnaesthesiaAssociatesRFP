@@ -144,7 +144,7 @@ touch planned phases.
   `TEST-45-49.md`. 50 to 57 once after Wave 3's join, from `TEST-50-57.md` (Wave 2's join is not
   tested on its own). Wave 2 starts at Wave 1's join without waiting for the owner's test of 45 to 49:
   a fix from that test lands on `master` and reaches the lanes through their `git merge master` at
-  each phase start. Inside the lanes each phase runs the lighter gate and skips its own review; each
+  each phase start. Inside the lanes each phase runs only the quick checks and its own specs, and skips its own review; each
   join runs the full gate and one review over its wave.
 - **Run order.** 45; Wave 1 (46 and 47 side by side; then 49 and 48); join; Wave 2 (50 and 51 side by
   side; then 52; then 53); join; Wave 3 (54, 55 and 57 side by side; then 56); join.
