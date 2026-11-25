@@ -49,11 +49,14 @@ test('phase 47 Funding tag SXAP lists only SXAP Contracts under their holders, t
 })
 
 test('phase 47 Aria Skin and Laser Clinic shows under Ms Lim and under Mr Okafor', async ({ page }) => {
+  // Heavy at practice scale: under the full parallel run it can pass 30s (it passes alone).
+  test.setTimeout(90_000)
   await open(page, '/admin/contracts?group=surgeon')
   await expect(index(page)).toContainText('A Contract linked to two surgeons shows under both.')
   for (const name of [/Lim/, /Okafor/]) {
     await index(page).getByRole('button', { name }).first().click()
-    await expect(page.locator('tr[data-contract="CT-ARIA-HOURLY"]')).toBeVisible()
+    // While the index switches surgeon the previous group's row can still be on screen too.
+    await expect(page.locator('tr[data-contract="CT-ARIA-HOURLY"]').first()).toBeVisible()
   }
   await page.screenshot({ path: 'visual/shots/p47-04-surgeon.png' })
 })

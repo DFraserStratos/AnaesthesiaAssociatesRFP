@@ -11,7 +11,7 @@
       "states": [
         {
           "state": "closed",
-          "caption": "BCTIs not yet approved are not in the payment run: Week 30 is closed, its BCTIs wait for approval and Run payables in Xero has nothing scheduled to pay",
+          "caption": "BCTIs not yet approved are not in the payment run: Week 48 is closed, its BCTIs wait for approval and Run payables in Xero has nothing scheduled to pay",
           "steps": [
             {
               "wait": "[data-shot=payment-cycle]"
@@ -36,7 +36,7 @@
         },
         {
           "state": "approved",
-          "caption": "Approved: Week 30's run shows Approved, and the payment schedule can go to the accountant",
+          "caption": "Approved: Week 48's run shows Approved, and the payment schedule can go to the accountant",
           "steps": [
             {
               "wait": "[data-shot=payment-cycle]"
@@ -67,7 +67,7 @@
         },
         {
           "state": "paid",
-          "caption": "Once approved and the schedule sent, the run is paid in Xero: Week 30 shows Paid",
+          "caption": "Once approved and the schedule sent, the run is paid in Xero: Week 48 shows Paid",
           "steps": [
             {
               "wait": "[data-shot=payment-cycle]"
@@ -95,10 +95,10 @@
               "click": "[data-shot=payment-cycle-send]"
             },
             {
-              "wait": 400
+              "wait": 2500
             },
             {
-              "click": "[data-shot=billing-run-payables-in-xero]"
+              "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
             },
             {
               "wait": "[data-shot=billing-payables-result]"

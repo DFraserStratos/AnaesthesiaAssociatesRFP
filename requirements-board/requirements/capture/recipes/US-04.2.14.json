@@ -1,17 +1,17 @@
 {
   "id": "US-04.2.14",
   "status": "partial",
-  "absentReason": "The shots show Dr Souter's price list on Master data. The step rail offers it only on her Lists under Patient › Prepaid (US-04.3.8), and the prepaid amount is shot on US-06.2.2.",
+  "absentReason": "The shots show Dr Souter's price list in the Contracts section. The step rail offers it only on her Lists under Patient › Prepaid (US-04.3.8), and the prepaid amount is shot on US-06.2.2.",
   "shots": [
     {
       "name": "price-list",
       "app": "admin",
       "caption": "An anaesthetist's price list: one prepaid Contract per item, kept by the office",
-      "start": "/admin/masters?view=contracts&holder=PY-SOUTER",
+      "start": "/admin/contracts?group=holder&in=PY-SOUTER",
       "states": [
         {
           "state": "list",
-          "caption": "Dr Souter's price list by the holder filter, each Contract prepaid",
+          "caption": "Dr Souter's price list, grouped by holder, each Contract prepaid",
           "steps": [
             {
               "wait": 400
@@ -26,13 +26,13 @@
           "caption": "Rhinoplasty: a price change is a new price range",
           "steps": [
             {
-              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-SOUTER-RHINO\"] >> button:text-is(\"Edit\")"
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-SOUTER-RHINO\"]"
             },
             {
-              "wait": 500
+              "wait": "[data-shot=contract-price-ranges]"
             },
             {
-              "scroll": "[data-shot=contract-price-ranges]"
+              "wait": 400
             }
           ],
           "highlight": [
@@ -44,32 +44,40 @@
           "caption": "A prepaid Contract's price must be above zero",
           "steps": [
             {
-              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-SOUTER-RHINO\"] >> button:text-is(\"Edit\")"
+              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-SOUTER-RHINO\"]"
             },
             {
-              "wait": 500
+              "wait": "[data-shot=contract-price-ranges]"
             },
             {
-              "fill": "[data-shot=contract-price-ranges] input[aria-label=\"New range start\"]",
-              "value": "2026-12-01"
+              "wait": 400
             },
             {
-              "fill": "[data-shot=contract-price-ranges] input[aria-label=\"New range price (ex GST)\"]",
+              "click": "[data-shot=price-range-add-open] button"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=price-range-add] input[type=date]",
+              "value": "2027-04-06"
+            },
+            {
+              "fill": "[data-shot=price-range-add] input[inputmode=decimal]",
               "value": "0"
             },
             {
-              "click": "[data-shot=contract-price-ranges] >> role=button[name=\"Add price range\"]"
+              "click": "[data-shot=price-range-add-save]"
             },
             {
               "wait": 500
             },
             {
-              "scroll": "[data-shot=contract-detail] [role=alert]"
+              "wait": "[data-shot=price-range-error]"
             }
           ],
           "highlight": [
-            "[data-shot=contract-price-ranges]",
-            "[data-shot=contract-detail] [role=alert]"
+            "[data-shot=contract-price-ranges]"
           ]
         }
       ]

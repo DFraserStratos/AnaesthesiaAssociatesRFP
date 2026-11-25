@@ -7,7 +7,7 @@
       "name": "webhook-replay",
       "app": "simulator",
       "caption": "Payment webhook replayed with the same key",
-      "start": "/demo/xero/invoices/XR0001",
+      "start": "/demo/xero/invoices/XR2569",
       "states": [
         {
           "state": "first",
@@ -47,7 +47,7 @@
       ],
       "setup": [
         {
-          "goto": "/admin/invoices"
+          "goto": "/admin/invoices?view=approval"
         },
         {
           "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
@@ -73,7 +73,7 @@
       "start": "/admin/billing",
       "setup": [
         {
-          "goto": "/admin/invoices"
+          "goto": "/admin/invoices?view=approval"
         },
         {
           "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
@@ -91,7 +91,7 @@
           "wait": 800
         },
         {
-          "goto": "/demo/xero/invoices/XR0001"
+          "goto": "/demo/xero/invoices/XR2569"
         },
         {
           "trigger": "xero-outage-start"

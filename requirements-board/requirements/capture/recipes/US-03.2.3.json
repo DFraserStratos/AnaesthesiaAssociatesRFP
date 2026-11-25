@@ -7,7 +7,7 @@
       "name": "add-procedure",
       "app": "web",
       "caption": "Add another procedure to a Booking",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/web/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "before",
@@ -71,7 +71,7 @@
       "name": "add-procedure",
       "app": "mobile",
       "caption": "Add another procedure to a Booking",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "before",

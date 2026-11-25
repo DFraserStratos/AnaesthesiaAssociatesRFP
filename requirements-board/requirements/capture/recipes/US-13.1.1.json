@@ -7,13 +7,13 @@
       "name": "day-view",
       "app": "admin",
       "caption": "One-day view of every anaesthetist's Lists, Draft Lists and booking counts",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "state": "day",
           "steps": [],
           "highlight": [
-            "button[data-slot-id=\"S-39560-2026-07-21-AM\"]"
+            "button[data-slot-id=\"S-39560-2026-11-24-AM\"]"
           ],
           "caption": "One-day view: Lists with hospital, surgeon and count; a Public session shows its note and no List detail"
         },
@@ -22,7 +22,7 @@
           "caption": "Drill into a List to see its session and Bookings",
           "steps": [
             {
-              "click": "[data-list-id=\"L-34821-2026-07-21-PM\"]"
+              "click": "[data-list-id=\"L-34821-2026-11-24-PM\"]"
             },
             {
               "wait": 600

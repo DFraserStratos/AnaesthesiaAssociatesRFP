@@ -7,7 +7,7 @@
       "name": "status-without-bookings",
       "app": "admin",
       "caption": "Unavailable and holiday sessions with no bookings",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "steps": [],
@@ -36,13 +36,13 @@
       "name": "list-in-place",
       "app": "admin",
       "caption": "A List shows in place of the session's status",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24?rows=all",
       "setup": [
         {
-          "goto": "/admin/day/2026-07-21"
+          "goto": "/admin/day/2026-11-24?rows=all"
         },
         {
-          "click": "button[data-slot-id=\"S-47733-2026-07-21-PM\"]"
+          "click": "button[data-slot-id=\"S-47733-2026-11-24-PM\"]"
         },
         {
           "wait": 400
@@ -76,7 +76,7 @@
             }
           ],
           "highlight": [
-            "button[data-slot-id=\"S-47733-2026-07-21-PM\"]"
+            "button[data-slot-id=\"S-47733-2026-11-24-PM\"]"
           ]
         }
       ]
@@ -88,10 +88,10 @@
       "start": "/web/lists",
       "setup": [
         {
-          "goto": "/admin/day/2026-07-22"
+          "goto": "/admin/day/2026-11-25"
         },
         {
-          "click": "button[data-slot-id=\"S-34821-2026-07-22-PM\"]"
+          "click": "button[data-slot-id=\"S-34821-2026-11-25-PM\"]"
         },
         {
           "wait": 400
@@ -125,7 +125,7 @@
             }
           ],
           "highlight": [
-            "tr[data-slot-id=\"S-34821-2026-07-22-PM\"]"
+            "tr[data-slot-id=\"S-34821-2026-11-25-PM\"]"
           ]
         }
       ]
@@ -149,7 +149,7 @@
             }
           ],
           "highlight": [
-            "[data-slot-id=\"S-34821-2026-07-22-PM\"]"
+            "[data-slot-id=\"S-34821-2026-11-25-PM\"]"
           ]
         }
       ]

@@ -7,7 +7,7 @@
       "name": "contract-rate",
       "app": "web",
       "caption": "Units x the Contract's rate, never changed on a Procedure",
-      "start": "/web/lists/L-34821-2026-07-27-AM/bookings/BK0037",
+      "start": "/web/lists/L-34821-2026-11-30-AM/bookings/BK0037",
       "states": [
         {
           "caption": "Aria's Booking: the units at the Contract's $26.50, read-only",
@@ -29,7 +29,7 @@
       "name": "contract-rate",
       "app": "mobile",
       "caption": "Units x the Contract's rate, never changed on a Procedure",
-      "start": "/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0037",
+      "start": "/mobile/lists/L-34821-2026-11-30-AM/bookings/BK0037",
       "states": [
         {
           "caption": "Aria's Booking: the units at the Contract's $26.50, read-only",
@@ -55,7 +55,7 @@
       "name": "contract-rate",
       "app": "admin",
       "caption": "Units x the Contract's rate, never changed on a Procedure",
-      "start": "/admin/day/2026-07-15/bookings/BK0029",
+      "start": "/admin/day/2026-11-18/bookings/BK0029",
       "states": [
         {
           "caption": "Fitzgerald's Aria Booking: 22 units x $26.50 = $583.00, whatever her own rate per unit",

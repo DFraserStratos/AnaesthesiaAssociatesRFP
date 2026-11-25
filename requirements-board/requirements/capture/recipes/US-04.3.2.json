@@ -7,7 +7,7 @@
       "name": "contract-picker",
       "app": "admin",
       "caption": "Only the Contracts that fit this List",
-      "start": "/admin/day/2026-07-22/bookings/BK0046",
+      "start": "/admin/day/2026-11-25/bookings/BK0046",
       "states": [
         {
           "state": "hospital",
@@ -32,7 +32,7 @@
           "caption": "Only the Contracts that fit this List: Ms Lim's Lists offer the Merivale items linked to her and Mr Wolfenden",
           "steps": [
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0034"
+              "goto": "/admin/day/2026-11-27/bookings/BK0034"
             },
             {
               "wait": 800
@@ -88,7 +88,7 @@
       "name": "contract-picker",
       "app": "web",
       "caption": "The anaesthetist sees the same Contracts",
-      "start": "/web/lists/L-34821-2026-08-10-PM/bookings/BK0163",
+      "start": "/web/lists/L-34821-2026-12-14-PM/bookings/BK0163",
       "states": [
         {
           "steps": [
@@ -123,7 +123,7 @@
       "name": "contract-picker",
       "app": "mobile",
       "caption": "The anaesthetist sees the same Contracts",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "steps": [

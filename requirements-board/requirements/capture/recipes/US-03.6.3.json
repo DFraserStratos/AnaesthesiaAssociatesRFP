@@ -7,7 +7,7 @@
       "name": "alert-office",
       "app": "web",
       "caption": "Alert the office with a note; it stays until someone ticks it",
-      "start": "/web/lists/L-34821-2026-07-22-AM/bookings/BK0046",
+      "start": "/web/lists/L-34821-2026-11-25-AM/bookings/BK0046",
       "states": [
         {
           "state": "action",
@@ -83,7 +83,7 @@
       "name": "alert-office",
       "app": "mobile",
       "caption": "Alert the office with a note; it stays until someone ticks it",
-      "start": "/mobile/lists/L-34821-2026-07-22-AM/bookings/BK0046",
+      "start": "/mobile/lists/L-34821-2026-11-25-AM/bookings/BK0046",
       "states": [
         {
           "state": "action",
@@ -159,7 +159,7 @@
       "name": "alert-office",
       "app": "admin",
       "caption": "Alert the office with a note; it stays until someone ticks it",
-      "start": "/web/lists/L-34821-2026-07-22-AM/bookings/BK0046",
+      "start": "/web/lists/L-34821-2026-11-25-AM/bookings/BK0046",
       "states": [
         {
           "state": "notice",

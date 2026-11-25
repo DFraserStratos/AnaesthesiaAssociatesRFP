@@ -7,7 +7,7 @@
       "name": "booking-total",
       "app": "admin",
       "caption": "The Booking page totals its Procedures, shows each price and its events, and lets the office change any price from there",
-      "start": "/admin/day/2026-06-22/bookings/HBK03",
+      "start": "/admin/day/2026-10-26/bookings/HBK03",
       "states": [
         {
           "steps": [
@@ -28,7 +28,7 @@
       "name": "booking-total-change-price",
       "app": "admin",
       "caption": "Change price opens the office's price change from the Booking page; the total follows it",
-      "start": "/admin/day/2026-07-20/bookings/BK0022",
+      "start": "/admin/day/2026-11-23/bookings/BK0022",
       "states": [
         {
           "steps": [

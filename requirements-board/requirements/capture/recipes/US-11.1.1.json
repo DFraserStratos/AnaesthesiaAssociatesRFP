@@ -6,8 +6,8 @@
     {
       "name": "patient-record",
       "app": "admin",
-      "caption": "Patient record keyed on the NHI, with the details and ethnicity",
-      "start": "/admin/patients/CQY9304",
+      "caption": "The patient's page in the People section, keyed on the NHI, with the details and ethnicity",
+      "start": "/admin/people/patients/CQY9304",
       "states": [
         {
           "steps": [
@@ -24,23 +24,23 @@
     {
       "name": "edit-patient",
       "app": "admin",
-      "caption": "Edit patient details, with the ethnicity field",
-      "start": "/admin/patients/CQY9304",
+      "caption": "Edit the Details card in place, with the ethnicity field",
+      "start": "/admin/people/patients/CQY9304",
       "states": [
         {
           "steps": [
             {
-              "click": "[data-shot=patient-details] >> text=\"Edit\""
+              "click": "[data-shot=patient-details-edit]"
             },
             {
-              "wait": "[role=dialog]"
+              "wait": "[data-shot=patient-details-save]"
             },
             {
               "wait": 400
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[data-shot=patient-details]"
           ]
         }
       ]
@@ -49,7 +49,7 @@
       "name": "details-differ",
       "app": "admin",
       "caption": "Some details differ: a returning patient with a new phone number waits for the office to keep the record or use the new one",
-      "start": "/web/lists/L-34821-2026-07-21-PM",
+      "start": "/web/lists/L-34821-2026-11-24-PM",
       "states": [
         {
           "steps": [
@@ -84,7 +84,7 @@
               "wait": 600
             },
             {
-              "goto": "/admin/patients/CQY9304"
+              "goto": "/admin/people/patients/CQY9304"
             },
             {
               "wait": "[data-shot=patient-details-differ]"
@@ -103,7 +103,7 @@
       "name": "not-supplied",
       "app": "admin",
       "caption": "A record with no phone or ethnicity supplied: nothing on it is marked required",
-      "start": "/admin/patients/waiting",
+      "start": "/admin/intake/waiting",
       "states": [
         {
           "steps": [
@@ -133,7 +133,7 @@
               "wait": "[data-shot=add-nhi-done]"
             },
             {
-              "goto": "/admin/patients/ZQA3019"
+              "goto": "/admin/people/patients/ZQA3019"
             },
             {
               "wait": "[data-shot=patient-details]"
@@ -152,7 +152,7 @@
       "name": "dedupe-nhi",
       "app": "web",
       "caption": "Returning patient matched on NHI",
-      "start": "/web/lists/L-34821-2026-07-21-PM",
+      "start": "/web/lists/L-34821-2026-11-24-PM",
       "states": [
         {
           "state": "lookup",
@@ -220,7 +220,7 @@
       "name": "dedupe-nhi",
       "app": "mobile",
       "caption": "Returning patient matched on NHI",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM",
       "states": [
         {
           "state": "lookup",

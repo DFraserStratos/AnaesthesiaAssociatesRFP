@@ -7,7 +7,7 @@
       "name": "email-invoice",
       "app": "admin",
       "caption": "The billing run sends each invoice once per payer, by its party's delivery: emailed to the invoice email, or marked to post",
-      "start": "/admin/review/L-34821-2026-07-20-PM",
+      "start": "/admin/review/L-34821-2026-11-23-PM",
       "setup": [
         {
           "scenario": "S3"
@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -100,7 +100,7 @@
           "caption": "A payer with only a postal address: the invoice is marked To post with a print view; posting is provisional (OQ-122)",
           "steps": [
             {
-              "goto": "/admin/review/L-45178-2026-07-17-AM"
+              "goto": "/admin/review/L-45178-2026-11-20-AM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -136,7 +136,7 @@
           "caption": "No invoice address for the payer: the office types an email and sends the invoice",
           "steps": [
             {
-              "goto": "/admin/review/L-45178-2026-07-17-AM"
+              "goto": "/admin/review/L-45178-2026-11-20-AM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"

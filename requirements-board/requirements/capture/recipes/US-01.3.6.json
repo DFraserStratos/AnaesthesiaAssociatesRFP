@@ -6,17 +6,40 @@
     {
       "name": "tier-record",
       "app": "admin",
-      "caption": "The priority tier on the anaesthetist's record, seen only by the office",
-      "start": "/admin/masters/anaesthetists/41267",
+      "caption": "The priority tier on the anaesthetist's Rate and tier card, seen only by the office",
+      "start": "/admin/people/anaesthetists/41267",
       "states": [
         {
           "steps": [
+            {
+              "wait": "[data-shot=rate-tier-card]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=rate-tier-card]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tier-list",
+      "app": "admin",
+      "caption": "The People section's Anaesthetists list, filtered by tier",
+      "start": "/admin/people/anaesthetists",
+      "states": [
+        {
+          "state": "tier-1",
+          "caption": "The Anaesthetists list filtered to Tier 1, office only",
+          "steps": [
+            {
+              "click": "[data-shot=tier-filter-list] >> role=button[name=\"Tier 1\"]"
+            },
             {
               "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=tier-card]"
+            "[data-shot=tier-filter-list]"
           ]
         }
       ]
@@ -25,13 +48,13 @@
       "name": "tier-order",
       "app": "admin",
       "caption": "Cover suggestions ordered by tier, then preferred pairing, shuffled within that, seen only by the office",
-      "start": "/admin/day/2026-07-22",
+      "start": "/admin/day/2026-11-25",
       "states": [
         {
           "state": "order",
           "steps": [
             {
-              "click": "[data-list-id=\"L-34821-2026-07-22-AM\"]"
+              "click": "[data-list-id=\"L-34821-2026-11-25-AM\"]"
             },
             {
               "wait": 400
@@ -52,7 +75,7 @@
           "caption": "The same picker filtered to Tier 1",
           "steps": [
             {
-              "click": "[data-list-id=\"L-34821-2026-07-22-AM\"]"
+              "click": "[data-list-id=\"L-34821-2026-11-25-AM\"]"
             },
             {
               "wait": 400
@@ -81,7 +104,7 @@
       "name": "finder-tiers",
       "app": "admin",
       "caption": "Find available on the Day view: free anaesthetists by tier, shuffled within a tier, office only",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "steps": [

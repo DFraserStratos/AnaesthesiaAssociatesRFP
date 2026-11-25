@@ -7,7 +7,7 @@
       "name": "contract-before",
       "app": "admin",
       "caption": "Before authorise, the price follows its Contract",
-      "start": "/admin/day/2026-07-20/bookings/BK0023",
+      "start": "/admin/day/2026-11-23/bookings/BK0023",
       "states": [
         {
           "steps": [
@@ -25,7 +25,7 @@
       "name": "locked-contract",
       "app": "admin",
       "caption": "Authorised: the Contract's settings, the range in force and the price are locked onto each Procedure",
-      "start": "/admin/day/2026-07-20/bookings/BK0023",
+      "start": "/admin/day/2026-11-23/bookings/BK0023",
       "setup": [
         {
           "scenario": "S3"
@@ -34,7 +34,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -66,7 +66,7 @@
       "name": "needs-price",
       "app": "admin",
       "caption": "A Procedure that still needs a price blocks authorise: Review names it and Authorise for billing stays off",
-      "start": "/admin/review/L-45178-2026-07-14-AM",
+      "start": "/admin/review/L-45178-2026-11-17-AM",
       "states": [
         {
           "steps": [

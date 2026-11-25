@@ -7,19 +7,19 @@
       "name": "move-confirm",
       "app": "admin",
       "caption": "Moved prepaid Booking: the agreed amount stands, nothing changes in the ledger, and the office may tell the patient",
-      "start": "/admin/day/2026-07-24",
+      "start": "/admin/day/2026-11-27",
       "states": [
         {
           "caption": "The office moves Priya Nair's prepaid Booking to another List: the prepayment keeps its agreed amount, and whoever the office assigns claims it",
           "steps": [
             {
-              "click": "button[data-list-id=\"L-34821-2026-07-24-PM\"]"
+              "click": "button[data-list-id=\"L-34821-2026-11-27-PM\"]"
             },
             {
               "wait": 600
             },
             {
-              "click": "[data-testid=admin-list-drawer] >> text=\"Priya Nair\" >> xpath=ancestor::div[.//button[normalize-space()='Move']][1] >> role=button[name=\"Move\"]"
+              "click": "[data-testid=admin-list-drawer] >> role=button[name=\"Move Priya Nair's Booking to another List\"]"
             },
             {
               "wait": "[data-shot=move-booking-honour]"
@@ -38,10 +38,10 @@
       "name": "prepayment-moved",
       "app": "admin",
       "caption": "Moved prepaid Booking: the agreed amount stands, nothing changes in the ledger, and the office may tell the patient",
-      "start": "/admin/day/2026-07-24/bookings/BK0034",
+      "start": "/admin/day/2026-11-27/bookings/BK0034",
       "setup": [
         {
-          "goto": "/admin/invoices"
+          "goto": "/admin/invoices?view=approval"
         },
         {
           "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
@@ -68,7 +68,7 @@
           "caption": "Annette Riley's Booking moved to a colleague: the prepayment keeps its agreed amount and the invoice is unchanged",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-07-24-AM/bookings/BK0034"
+              "goto": "/web/lists/L-34821-2026-11-27-AM/bookings/BK0034"
             },
             {
               "scroll": "[data-shot=\"move-booking-action\"]"
@@ -95,7 +95,7 @@
               "wait": "[data-shot=\"move-booking-done\"]"
             },
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0034"
+              "goto": "/admin/day/2026-11-27/bookings/BK0034"
             },
             {
               "wait": "[data-shot=prepayment-moved]"
@@ -110,7 +110,7 @@
           "caption": "Optional: the office may email the patient that the anaesthetist changed and nothing else does; the wording is provisional",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-07-24-AM/bookings/BK0034"
+              "goto": "/web/lists/L-34821-2026-11-27-AM/bookings/BK0034"
             },
             {
               "scroll": "[data-shot=\"move-booking-action\"]"
@@ -137,7 +137,7 @@
               "wait": "[data-shot=\"move-booking-done\"]"
             },
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0034"
+              "goto": "/admin/day/2026-11-27/bookings/BK0034"
             },
             {
               "wait": "[data-shot=prepayment-moved]"
@@ -161,7 +161,7 @@
           "caption": "Patient emailed: the Booking says when it went and to whom; the prepayment is unchanged",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-07-24-AM/bookings/BK0034"
+              "goto": "/web/lists/L-34821-2026-11-27-AM/bookings/BK0034"
             },
             {
               "scroll": "[data-shot=\"move-booking-action\"]"
@@ -188,7 +188,7 @@
               "wait": "[data-shot=\"move-booking-done\"]"
             },
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0034"
+              "goto": "/admin/day/2026-11-27/bookings/BK0034"
             },
             {
               "wait": "[data-shot=prepayment-moved]"
@@ -219,7 +219,7 @@
       "name": "move-sheet",
       "app": "web",
       "caption": "Moved prepaid Booking: the agreed amount stands, nothing changes in the ledger, and the office may tell the patient",
-      "start": "/web/lists/L-34821-2026-07-24-PM/bookings/BK0038",
+      "start": "/web/lists/L-34821-2026-11-27-PM/bookings/BK0038",
       "states": [
         {
           "caption": "Dr Souter moves Priya Nair's prepaid Booking to a colleague: the prepaid amount stays as agreed and moves to them once the List is authorised",
@@ -253,7 +253,7 @@
       "name": "move-sheet",
       "app": "mobile",
       "caption": "Moved prepaid Booking: the agreed amount stands, nothing changes in the ledger, and the office may tell the patient",
-      "start": "/mobile/lists/L-34821-2026-07-24-PM/bookings/BK0038",
+      "start": "/mobile/lists/L-34821-2026-11-27-PM/bookings/BK0038",
       "states": [
         {
           "caption": "Dr Souter moves Priya Nair's prepaid Booking to a colleague: the prepaid amount stays as agreed and moves to them once the List is authorised, on the phone",

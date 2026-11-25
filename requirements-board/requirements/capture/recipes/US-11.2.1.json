@@ -7,7 +7,7 @@
       "name": "default-payer",
       "app": "admin",
       "caption": "Under No contract · RVG the Procedure's payer is billed: the patient, as its Paid by line and Billing card say",
-      "start": "/admin/day/2026-07-21/bookings/BK0008",
+      "start": "/admin/day/2026-11-24/bookings/BK0008",
       "states": [
         {
           "steps": [
@@ -29,7 +29,7 @@
       "name": "surgeon-fixed-price",
       "app": "admin",
       "caption": "A surgeon's fixed price bills the payer: Mr Doyle's bariatric price list invoices the patient, Gareth Mills",
-      "start": "/admin/review/L-43015-2026-07-14-AM",
+      "start": "/admin/review/L-43015-2026-11-17-AM",
       "states": [
         {
           "steps": [
@@ -47,7 +47,7 @@
       "name": "insured-claims-back",
       "app": "admin",
       "caption": "An insured patient who claims the money back is invoiced under No contract · RVG like any patient",
-      "start": "/admin/review/L-29104-2026-07-16-AM",
+      "start": "/admin/review/L-29104-2026-11-19-AM",
       "states": [
         {
           "steps": [

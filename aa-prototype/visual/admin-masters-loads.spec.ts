@@ -34,7 +34,7 @@ async function stageSample(page: Page, entity: string, fileName: string) {
   return panel
 }
 
-test('Public holidays: the master calendar, and Labour Day on the hospital calendar', async ({ page }) => {
+test('Public holidays: the master calendar, and Christmas Day on the hospital calendar', async ({ page }) => {
   await fresh(page, `${MASTERS}?view=publicHolidays`)
   const view = page.locator('[data-shot="masters-public-holidays"]')
   await expect(view.getByRole('heading', { name: 'Public holidays', exact: true })).toBeVisible()
@@ -49,12 +49,13 @@ test('Public holidays: the master calendar, and Labour Day on the hospital calen
   await page.getByRole('button', { name: 'Calendar', exact: true }).click()
   const calendar = page.locator('[data-shot="hospital-calendar"]')
   await calendar.getByLabel('Hospital').selectOption({ label: "St George's" })
-  for (let i = 0; i < 3; i++) await calendar.getByRole('button', { name: 'Next month' }).click()
-  await expect(calendar).toContainText('February 2027')
-  const labour = calendar.locator('button[data-calendar-day="2026-10-26"]')
-  await expect(labour).toContainText('Labour Day')
-  await expect(labour).toContainText('Public holiday')
-  await expect(labour).toHaveAttribute('aria-label', /Labour Day \(public holiday\)/)
+  // The calendar opens on the demo month (Nov 2026), so Labour Day (26 Oct) is behind it: the next is Christmas.
+  await calendar.getByRole('button', { name: 'Next month' }).click()
+  await expect(calendar).toContainText('December 2026')
+  const christmas = calendar.locator('button[data-calendar-day="2026-12-25"]')
+  await expect(christmas).toContainText('Christmas Day')
+  await expect(christmas).toContainText('Public holiday')
+  await expect(christmas).toHaveAttribute('aria-label', /Christmas Day \(public holiday\)/)
   await page.screenshot({ path: 'visual/shots/p42-02-hospital-calendar-labour-day.png', fullPage: true })
   await cleanCopy(page, 'Hospital calendar')
 })

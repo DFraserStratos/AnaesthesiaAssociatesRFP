@@ -16,7 +16,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=\"conflicts-table\"] section >> nth=0"
+            "[data-shot=conflicts-table] tr[data-conflict-date=\"2026-11-25\"]", "[data-conflict-row*=\"2026-11-25\"]"
           ]
         }
       ]
@@ -30,7 +30,7 @@
         {
           "steps": [
             {
-              "click": "tr[data-conflict-row=\"L-25490-2026-07-22-PM\"] >> role=button[name=/^Clear conflict/]"
+              "click": "tr[data-conflict-row=\"L-25490-2026-11-25-PM\"] >> role=button[name=/^Clear conflict/]"
             },
             {
               "wait": 400
@@ -55,7 +55,7 @@
         {
           "steps": [
             {
-              "click": "tr[data-conflict-row=\"L-25490-2026-07-22-PM\"] >> role=button[name=/^Reassign,/]"
+              "click": "tr[data-conflict-row=\"L-25490-2026-11-25-PM\"] >> role=button[name=/^Reassign,/]"
             },
             {
               "wait": 400
@@ -83,21 +83,21 @@
       "name": "simulate-sickness",
       "app": "admin",
       "caption": "A sickness phoned in never becomes a conflict: the office returns the List as a Draft List, with its Bookings",
-      "start": "/admin/day/2026-07-22",
+      "start": "/admin/day/2026-11-25",
       "states": [
         {
           "steps": [
             {
               "trigger": "simulate-sickness",
-              "choice": "L-41267-2026-07-22-PM|office"
+              "choice": "L-41267-2026-11-25-PM|office"
             },
             {
-              "wait": "[data-draft-block=\"L-41267-2026-07-22-PM\"]"
+              "wait": "[data-draft-block=\"L-41267-2026-11-25-PM\"]"
             }
           ],
           "highlight": [
-            "[data-draft-block=\"L-41267-2026-07-22-PM\"]",
-            "button[data-slot-id=\"S-41267-2026-07-22-PM\"]"
+            "[data-draft-block=\"L-41267-2026-11-25-PM\"]",
+            "button[data-slot-id=\"S-41267-2026-11-25-PM\"]"
           ]
         }
       ]

@@ -6,28 +6,43 @@
     {
       "name": "surgeons-table",
       "app": "admin",
-      "caption": "The practice, office contact, specialties, HPI CPN and pairing counts each surgeon holds; Mr N. Wainwright works from two practices, and Dr P. Whaanga shows No HPI CPN yet",
-      "start": "/admin/masters?view=surgeons",
+      "caption": "The People section's Surgeons list: the practice, office contact, specialties, HPI CPN and pairing counts each surgeon holds",
+      "start": "/admin/people/surgeons?q=Wainwright",
       "states": [
         {
+          "state": "two-practices",
+          "caption": "Mr N. Wainwright's two practices and his office contact, found by name",
           "steps": [
             {
               "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=masters-surgeons] tr[data-surgeon=S-WAINWRIGHT]",
-            "[data-shot=masters-surgeons] tr[data-surgeon=S-WHAANGA]"
+            "[data-shot=masters-surgeons] tr[data-surgeon=S-WAINWRIGHT]"
+          ]
+        },
+        {
+          "state": "no-hpi",
+          "caption": "Dr P. Whaanga's blank HPI CPN reads No HPI CPN yet",
+          "steps": [
+            {
+              "goto": "/admin/people/surgeons?q=Whaanga"
+            },
+            {
+              "wait": 400
+            }
           ],
-          "caption": "Surgeons table: Mr N. Wainwright's two practices and office contact, and Dr P. Whaanga's blank HPI CPN reading No HPI CPN yet"
+          "highlight": [
+            "[data-shot=masters-surgeons] tr[data-surgeon=S-WHAANGA]"
+          ]
         }
       ]
     },
     {
       "name": "surgeon-profile",
       "app": "admin",
-      "caption": "One identified record per surgeon, with the HPI CPN admin staff fill in, and private pairings only the office sees",
-      "start": "/admin/masters/surgeons/S-REID",
+      "caption": "One identified record per surgeon, on their page in the People section, with the HPI CPN admin staff fill in, and private pairings only the office sees",
+      "start": "/admin/people/surgeons/S-REID",
       "states": [
         {
           "state": "profile",
@@ -37,22 +52,24 @@
             }
           ],
           "highlight": [
-            "[data-shot=surgeon-specialties]",
-            "[data-shot=surgeon-hpi-chip]",
+            "[data-shot=surgeon-name-card]",
             "[data-shot=surgeon-identifiers]",
-            "[data-shot=surgeon-contacts]",
-            "[data-shot=surgeon-groups]"
+            "[data-shot=surgeon-specialties]",
+            "[data-shot=surgeon-contacts]"
           ]
         },
         {
           "state": "edit",
-          "caption": "Editing a surgeon: the practice and HPI CPN are optional; specialties are required",
+          "caption": "Editing a surgeon's page card by card: the practice and HPI CPN are optional",
           "steps": [
             {
-              "goto": "/admin/masters/surgeons/S-WAINWRIGHT"
+              "goto": "/admin/people/surgeons/S-WAINWRIGHT"
             },
             {
-              "click": "role=button[name=\"Edit details\"]"
+              "click": "[data-shot=surgeon-name-card-edit]"
+            },
+            {
+              "click": "[data-shot=surgeon-identifiers-edit]"
             },
             {
               "wait": "[data-shot=surgeon-practice-field]"

@@ -37,7 +37,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -101,7 +101,7 @@
       "name": "prepay-pair",
       "app": "admin",
       "caption": "A prepayment's pair in the ledger: its payable goes to the AA Holding account",
-      "start": "/admin/ledger",
+      "start": "/admin/ledger?pair=BC0001",
       "states": [
         {
           "steps": [
@@ -122,7 +122,7 @@
       "start": "/admin/ledger",
       "setup": [
         {
-          "goto": "/web/lists/L-34821-2026-07-24-PM"
+          "goto": "/web/lists/L-34821-2026-11-27-PM"
         },
         {
           "click": "text=\"Priya Nair\" >> nth=0"
@@ -168,7 +168,7 @@
           "wait": 1500
         },
         {
-          "goto": "/web/lists/L-34821-2026-07-24-PM"
+          "goto": "/web/lists/L-34821-2026-11-27-PM"
         },
         {
           "click": "text=\"Mark list completed\" >> nth=0"
@@ -180,7 +180,7 @@
           "wait": 1500
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-24-PM"
+          "goto": "/admin/review/L-34821-2026-11-27-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"

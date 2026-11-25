@@ -16,10 +16,9 @@
       "name": "draft-lists-day",
       "app": "admin",
       "caption": "Every Draft List is flagged Unassigned, soonest first, with how long it has waited",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
-        { "state": "band", "steps": [{ "wait": 400 }], "highlight": ["[data-shot=daygrid-draft-band]"], "caption": "The day's Draft Lists sit in a band above the grid" },
-        { "state": "rail", "steps": [{ "wait": 400 }], "highlight": ["[data-shot=admin-draft-lists-rail]"], "caption": "The Draft Lists card on the day's right rail" }
+        { "state": "band", "steps": [{ "wait": 400 }], "highlight": ["[data-shot=daygrid-draft-band]"], "caption": "The day's Draft Lists sit in a band above the grid" }
       ]
     }
   ]

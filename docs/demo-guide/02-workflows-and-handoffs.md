@@ -70,14 +70,14 @@ There is no send-back state. The office corrects a submitted List itself, after 
 ### Trigger
 
 - The schedule horizon (**Master data → Schedule settings**, four months) rolls forward each day, or the office changes it.
-- An anaesthetist is added with a start date, or switched active or inactive.
+- An anaesthetist is added with a start date, or made inactive from a last day (and active again).
 - An anaesthetist changes their calendar, or a recurring booking, hospital holiday or public holiday changes.
 
 ### Steps
 
-1. Every active anaesthetist has an AM and a PM session for each day from their start date to the end of the horizon. Every new session starts Free.
+1. Every active anaesthetist has an AM and a PM session for each day from their start date to the end of the horizon, or to their last day when the office has made them inactive from one. Every new session starts Free.
 2. The anaesthetist's calendar goes on first: days off weeks ahead, repeating days off, and one occurrence changed or deleted. The calendar sets the session's status directly. Seeded public sessions are Public with the note CPH, and Public closes a session as Unavailable does.
-3. Recurring bookings (each surgeon's standing arrangement of hospital, anaesthetist, day and session) go on next. Each one places an empty List in its free sessions ahead. A recurring booking that lands on a session the anaesthetist has closed becomes a Draft List for the office.
+3. Recurring bookings (each surgeon's standing arrangement of hospital, anaesthetist, day and session) go on next. Each one places an empty List in its free sessions ahead. A recurring booking that lands on a session the anaesthetist has closed becomes a Draft List for the office. Recurring Lists skip public holidays and the hospital's own closures, its Christmas shutdown among them.
 4. A change to a recurring booking reaches the canvas through **Apply to canvas now**, from tomorrow to the end of the horizon. Empty Lists are added or updated; a List with Bookings or office edits is left as it is. When nothing differs the page reads "The canvas already matches every recurring booking."
 5. A session shows the same thing in every app and every finder: its List when it has one, otherwise its status.
 6. A closed hospital puts every List there that day on **Conflicts**. The List stays where it is until the clash goes or the office clears it. Unavailability is never a conflict: Workflow 3 covers it.
@@ -88,9 +88,9 @@ The office gets a schedule already laid out, and works on the exceptions: Draft 
 
 ### Master data the office keeps
 
-- Surgeons: one or more specialties, the practice name as plain text, one personal contact and one or more office contacts (practice manager, PA or shared inbox: name, email, phone). Admin staff fill in the HPI CPN. A surgeon can be saved without one and reads "No HPI CPN yet" (OQ-143).
-- Surgeon groups, hospitals and their holidays, public holidays, AA's specialties and its funding tags (SXAP, HNZ, ACC, in the order they are offered).
-- Priority tiers (Tier 1 to Tier 4) on each anaesthetist, and pairing preferences (Preferred, Not preferred) on the surgeon and the anaesthetist. Both are private to the office. Anaesthetists never see them, and an anaesthetist handing on her own List gets no pairing warning.
+- Surgeons (in **People**, each with their own page, edited one card at a time): one or more specialties, the practice name as plain text, one personal contact and one or more office contacts (practice manager, PA or shared inbox: name, email, phone). Admin staff fill in the HPI CPN. A surgeon can be saved without one and reads "No HPI CPN yet" (OQ-143).
+- Hospitals and their holidays, each private hospital's Christmas shutdown among them, and public holidays (in **Master data**); AA's specialties (in **People**, each with a page listing the surgeons and Contracts that hold it); the Parties and the funding tags (SXAP, HNZ, ACC, in the order they are offered) in **Contracts**. There is no surgeon group record: a group is a Party whose surgeons are linked on its Contracts.
+- Priority tiers (Tier 1 to Tier 4) on each anaesthetist (the **Rate and tier** card on her page in **People**), and pairing preferences (Preferred, Not preferred) on the surgeon and the anaesthetist. Both are private to the office. Anaesthetists never see them, and an anaesthetist handing on her own List gets no pairing warning.
 - Email templates, one for each kind of change (Change of anaesthetist, Cancellation, Correction of an error, Booking change), and the prepayment letters.
 
 Each List keeps where it came from. The update email and any request for a missing NHI go to that List's sender, otherwise to the surgeon's first office contact with an email, with the others offered. The personal contact is never the default.
@@ -101,7 +101,7 @@ AA starts clean. Before go-live a developer loads AA's controlled spreadsheets o
 
 ### Demo point
 
-Open **Admin → Day view** and show the AM and PM rhythm across 14 anaesthetists, the Draft Lists band, and Dr Ropata's "Public / CPH" morning. Then run S2 Beat 3: a recurring booking on a closed session becomes a Draft List.
+Open **Admin → Day view** and show the AM and PM rhythm across the whole practice ("82 anaesthetists · 85 sessions · 44 free · 0 submitted · 1 Draft List" on Tue 24 Nov), the Draft Lists band, and Dr Ropata's "Public / CPH" morning. Then run S2 Beat 3: a recurring booking on a closed session becomes a Draft List.
 
 ## Workflow 1: booking intake by import and matching
 
@@ -122,18 +122,18 @@ Open **Admin → Day view** and show the AM and PM rhythm across 14 anaesthetist
 2. The screen suggests what to do with each row: create a Booking on a List, apply changes to an existing Booking, cancel one, or create a List in a session (or a Draft List) for a row with no List. The office applies, creates or rejects each one.
 3. A row's NHI finds the patient's existing record, so a returning patient keeps one record. A patient who owes AA raises the balance warning when the Booking is created.
 4. The procedure text stays exactly as received. The rooms may send "RTK" and the hospital "right total knee": the hospital's text replaces the rooms' text once the office applies its row, and the rooms' wording stays in the Booking's History. The invoice description starts as the text received; where a Contract has its own invoice description, the invoice prints that instead.
-5. The office sets where the invoice goes and the Contract (Workflow 4's step rail), on the matching screen or later from the **Needs an invoice destination** list on the Day view.
+5. The office sets where the invoice goes and the Contract (Workflow 4's step rail), on the matching screen or later from the Day view's **To-do**, where each Booking that needs an invoice destination has **Set Contract**.
 6. A later row for a Booking already matched waits as a modification. The office ticks the fields to apply (time, procedure text, note) and approves it. A Booking moved to another day arrives as a cancellation plus a new Booking. A row for a submitted List can still be applied; a row for an authorised List cannot.
 7. The matching screen shows only the fields needed to match. The rest of what the hospital sent is held under restricted access: the office sees it masked with **View raw row**, giving a reason each time, and every view is audited with the reason and no values ("Raw row viewed"). Anyone else is refused ("Raw row view refused").
 8. Every List records where it came from (a rooms' PDF with its sender, the hospital's list, by hand, or a recurring booking) and keeps it after assignment.
 
 ### A row with no NHI
 
-- An NHI is mandatory, so a row without one never becomes a Booking. It waits on Matching and on **Admin → Patients → Waiting for NHI**.
+- An NHI is mandatory, so a row without one never becomes a Booking. It waits on Matching and on **Admin → Intake → Waiting for NHI**.
 - Meanwhile a stub stands on its List: a dashed row reading "Waiting at intake: no NHI · The office is resolving this", with the time, name and wording as received. The List counts it apart ("1 waiting at intake"), and it never blocks submit or authorise. In Admin it carries **Resolve on Matching**.
 - The office uses **Email for the NHI** to ask the List's sender, then **Add NHI**. The Booking takes the stub's place. Rejecting the row removes the stub.
 - How a stub reads is our reading, to confirm with AA.
-- Seeded: Mere Tipene on Dr Souter's Tue 4 Aug PM List.
+- Seeded: Mere Tipene on Dr Souter's Tue 8 Dec PM List.
 
 ### The rooms' PDF lists
 
@@ -169,7 +169,7 @@ A hospital, surgeon, patient or anaesthetist reports a change, or a Draft List n
 
 ### Steps
 
-1. Kirsty opens **Admin → Day view**. The header counts anaesthetists, sessions, free sessions, submitted Lists and Draft Lists. Each List block shows its booking count, and the right rail holds the **To-do** list, **Pre-payments**, **Needs an invoice destination**, **Draft Lists** and **Notifications**.
+1. Kirsty opens **Admin → Day view**. The header counts anaesthetists, sessions, free sessions, submitted Lists and Draft Lists. Each List block shows its booking count. The grid shows as many rows as fit, in pages, or as one scrolling list (the switch in its corner). The right rail holds the **Books square** and **Pre-payments** tiles, then one work card with two tabs: **To-do** (warnings, Conflicts and the Bookings that need an invoice destination, each with **Set Contract**) and **Notifications**.
 2. Draft Lists wait in a band at the top of the day and on **Draft Lists**, soonest first. They come from a recurring clash, a List returned by an anaesthetist, a request with no anaesthetist yet (phone, email or rooms' PDF), or a row on Matching.
 3. She assigns a Draft List with **Assign**. The picker lists who is free that session by priority tier, then preferred pairings first within a tier. A Not preferred pairing sits apart in its own group: picking it shows the surgeon's reason and **Assign anyway**, and going ahead is noted in the history. Anaesthetists who are unavailable or already have a List show below, read only. **Find available** gives the same view for any session.
 4. To move one patient, she moves the Booking to another List (**Move**). The dialog shows an advisory when the hospital or surgeon differs and never blocks. The Booking keeps its Contract and any typed price; if the new List does not offer that Contract, the Booking says so and Review flags it.
@@ -271,7 +271,7 @@ A "Suggested" mark follows the insurer or funder on the Booking and never hides 
 - Who can use Make primary: the anaesthetist on her own List until it is authorised (after **Amend** on a completed Booking), the office on `ACTIVE` and `SUBMITTED` Lists, a hospital feed on an `ACTIVE` List only.
 - The multi-procedure rule, one rule for the whole system: base units on the primary only; time units on every Procedure from its own times; modifiers recorded once, on the primary. At 4 modifier units or fewer they all stay on the primary. Above 4 they split equally across the RVG-priced Procedures, the remainder to the primary (7 over 3 gives 3, 2 and 2), whichever Contracts they are on.
 - A fixed or open price keeps its own price and takes no share. On a mixed Booking whose primary has a fixed price, no base units bill (provisional, OQ-132).
-- Seeded: Graeme Tullett on Dr Souter's Mon 13 Jul AM List (three Procedures, 7 modifier units, split 3, 2 and 2) and Brian Holt on her Mon 20 Jul AM List (two Procedures, one invoice).
+- Seeded: Graeme Tullett on Dr Souter's Mon 16 Nov AM List (three Procedures, 7 modifier units, split 3, 2 and 2) and Brian Holt on her Mon 23 Nov AM List (two Procedures, one invoice).
 
 ### Handoff
 
@@ -279,7 +279,7 @@ When every active Booking is complete, the List can be submitted.
 
 ### Demo point
 
-Capture Sarah Mitchell live in S1 Beat 6. For the price rules, open Dr Souter's Mon 27 Jul AM List: Tama Rewiri on No contract · RVG has a price field; Natalie Brennan on Forte Health RVG less 10% reads "Set by Forte Health RVG less 10%". On her Mon 10 Aug PM List, Miriam Holloway's fixed price ($3,400.00) asks for no times, and Graham Pulley on No contract · Fixed price reads **Needs a price** until an amount is saved.
+Capture Sarah Mitchell live in S1 Beat 6. For the price rules, open Dr Souter's Mon 30 Nov AM List: Tama Rewiri on No contract · RVG has a price field; Natalie Brennan on Forte Health RVG less 10% reads "Set by Forte Health RVG less 10%". On her Mon 14 Dec PM List, Miriam Holloway's fixed price ($3,400.00) asks for no times, and Graham Pulley on No contract · Fixed price reads **Needs a price** until an amount is saved.
 
 ## Workflow 5: submit the whole List, then office review
 
@@ -425,7 +425,7 @@ Month end. In the demo, **Run monthly fee invoices** on **Admin → Billing moni
 
 ### Demo point
 
-S3 Beat 6: **Demo actions → Seed a month of BCTIs**, then **Run monthly fee invoices**. Dr Rutherford's July invoice reads $500.00 + $5.00 x 40 = $700.00 before GST, $805.00 with it.
+S3 Beat 6: **Demo actions → Seed a month of BCTIs**, then **Run monthly fee invoices**. Dr Rutherford's November invoice reads $500.00 + $5.00 x 40 = $700.00 before GST, $805.00 with it.
 
 ## Workflow 8: exceptions and compliance
 
@@ -469,7 +469,8 @@ S3 Beat 6: **Demo actions → Seed a month of BCTIs**, then **Run monthly fee in
 - Each profile holds the rate per unit (the dollar value of one RVG unit), phone, email, registration number, HPI CPN and bank account.
 - The anaesthetist sees it on the phone's **More** screen and on the web **Profile** page. She edits only her own rate per unit (**Change** on the phone, the field and **Save changes** on the web). The new rate applies to Bookings on Lists not yet authorised; authorised Lists keep their locked rate.
 - Contact details, the HPI CPN and the bank details are held by the office and read only for her. The bank number is always masked (Dr Souter's 99-0101-•••••21-00).
-- The office keeps every profile on the Admin anaesthetist record (**Master data → Anaesthetists**, open a row, **Edit details**), with the GST number in the table. The HPI CPN and bank details are required. Every change is audited, with the bank number masked in the audit too.
+- The office keeps every profile on the anaesthetist's page (**People → Anaesthetists**, open a row), one card at a time: Identity, Contact, Bank and GST, Rate and tier, and Status, each with its own **Edit**. The list shows the bank account and GST number. The HPI CPN and bank details are required. Every change is audited, with the bank number masked in the audit too.
+- **Make inactive** on the Status card takes a last day and a reason. After that day her sessions end, the finders skip her, her own Contracts are disabled and her sign-in is refused as no longer active, an audited row. **Make active** brings her back and offers back the Contracts the system disabled with her, each ticked.
 - The payment itself is made in Xero, never from the app.
 
 ### Events: pre-op, post-op and billing events
@@ -512,9 +513,10 @@ S3 Beat 6: **Demo actions → Seed a month of BCTIs**, then **Run monthly fee in
 ### Patients
 
 - An NHI is required for every Booking, checked in both the current and the new format as it is typed.
-- The patient record (**Admin → Patients**) holds what the patient owes under each anaesthetist, what other payers owe, their invoices and Bookings, and a follow-up log (call, note, reminder), with **Resend** on an unpaid invoice and **Clear** on the balance warning. The anaesthetist sees only that the patient owes AA.
+- The patient's page (**Admin → People → Patients**, open a patient) holds what the patient owes under each anaesthetist, what other payers owe, their invoices and Bookings, and a follow-up log (call, note, reminder), with **Resend** on an unpaid invoice and **Clear** on the balance warning. The anaesthetist sees only that the patient owes AA.
 - The office refreshes a patient from the NHI register on demand (**Refresh from NHI register**, marked Provisional): each field that differs is **Keep** or **Use register**, the change reaches the patient's Bookings, the record reads "Last refreshed", and the refresh is audited. Nothing goes to Xero.
-- On **Patients → Waiting for NHI**, the **Add NHI** sheet looks up a valid NHI and shows the register's name and date of birth, with a mild line if they differ from the row's. It never blocks the add.
+- The **Patients** tab lists **Coming up** (a Booking in the next 14 days), **Needs follow-up** (patients the office has to act on: a balance warning, a follow-up due, details that differ from the register) and **All**, and finds a patient by name, NHI or date of birth.
+- On **Intake → Waiting for NHI**, the **Add NHI** sheet looks up a valid NHI and shows the register's name and date of birth, with a mild line if they differ from the row's. It never blocks the add.
 
 ### Compliance
 
@@ -533,7 +535,7 @@ S3 Beat 6: **Demo actions → Seed a month of BCTIs**, then **Run monthly fee in
 
 ## Workflow readiness
 
-Every workflow above is built and runs in the prototype. The phase ids are from the build record (archived in `docs/archive/prototype-build/PROGRESS.md`): 00 to 13 are the original build, the rest the requirements catch-up.
+Every workflow above is built and runs in the prototype. The phase ids are from the build record (archived in `docs/archive/prototype-build/PROGRESS.md`): 00 to 13 are the original build, the rest the requirements catch-up, and 45 to 57 the build plan that followed it (`docs/build-plan/PROGRESS.md`).
 
 | Workflow | Built | Phases |
 |---|---|---|
@@ -585,6 +587,14 @@ Every workflow above is built and runs in the prototype. The phase ids are from 
 | Full-scale data and the privacy checks | Yes | 43 |
 | Sign-in, simple anaesthetist screens and point-of-need help | Yes | 43a |
 | The help line and product support | Yes | 43b |
+| The Contracts section: the grouped catalogue, each Contract's page and New contract | Yes | 45, 46, 47 |
+| Parties and Funding tags as tabs of Contracts, and each Party's page | Yes | 48 |
+| Replace a Contract from a date | Yes | 49 |
+| The rate and priority tier card | Yes | 50 |
+| Waiting for an NHI as a tab on Intake | Yes | 51 |
+| Make an anaesthetist inactive from a last day, and active again | Yes | 52 |
+| The People section: the anaesthetist's, surgeon's and specialty's pages; no surgeon group record | Yes | 53, 54, 55, 56 |
+| The Patients tab and the patient's page | Yes | 57 |
 | Demo actions on each screen, the Control Panel and the scenario jumps | Yes | 12, 14 |
 | One set of shared components across the three apps | Yes | U1 to U7 |
 | The mobile app's atmospheric gradient | Yes | 13 |

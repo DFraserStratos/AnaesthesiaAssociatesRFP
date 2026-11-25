@@ -7,10 +7,10 @@
       "name": "left-off",
       "app": "admin",
       "caption": "Prepaid Procedures are left off the final invoice; nothing is deducted",
-      "start": "/admin/invoices/INV0002",
+      "start": "/admin/invoices/INV2570",
       "setup": [
         {
-          "goto": "/web/lists/L-34821-2026-07-24-PM"
+          "goto": "/web/lists/L-34821-2026-11-27-PM"
         },
         {
           "click": "text=\"Priya Nair\" >> nth=0"
@@ -56,7 +56,7 @@
           "wait": 1500
         },
         {
-          "goto": "/web/lists/L-34821-2026-07-24-PM"
+          "goto": "/web/lists/L-34821-2026-11-27-PM"
         },
         {
           "click": "text=\"Mark list completed\" >> nth=0"
@@ -68,7 +68,7 @@
           "wait": 1500
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-24-PM"
+          "goto": "/admin/review/L-34821-2026-11-27-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -98,7 +98,7 @@
           "caption": "Prepaid, left off the final invoice (AA-2026-0001)",
           "steps": [
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0038"
+              "goto": "/admin/day/2026-11-27/bookings/BK0038"
             },
             {
               "wait": "[data-shot=booking-prepaid-left-off]"

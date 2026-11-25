@@ -7,7 +7,7 @@
       "name": "reassign",
       "app": "admin",
       "caption": "Reassign a List with its bookings",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24?rows=all",
       "states": [
         {
           "state": "pick",
@@ -56,36 +56,6 @@
             "[role=dialog]:not([data-testid=admin-list-drawer])"
           ],
           "caption": "The List moves with its Bookings and history; the vacated session returns to Free unless marked otherwise"
-        },
-        {
-          "state": "done",
-          "steps": [
-            {
-              "click": "[data-day-grid-row=\"34821\"] button >> nth=0"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "role=button[name=\"Reassign list\"]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[role=dialog]:not([data-testid=admin-list-drawer]) >> text=\"Hughes, Rawiri\""
-            },
-            {
-              "wait": 300
-            },
-            {
-              "click": "role=button[name=\"Confirm reassignment\"]"
-            }
-          ],
-          "highlight": [
-            "[data-testid=list-reassignment-overlay]"
-          ],
-          "caption": "List reassigned to Hughes, Rawiri"
         },
         {
           "state": "after",

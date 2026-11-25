@@ -7,14 +7,14 @@
       "name": "contract-change",
       "app": "admin",
       "caption": "A Contract changed off prepaid after sending is settled as a cancellation, then billed under the new Contract",
-      "start": "/admin/day/2026-07-24/bookings/BK0038",
+      "start": "/admin/day/2026-11-27/bookings/BK0038",
       "states": [
         {
           "state": "confirmation",
           "caption": "Sent, not paid: the office moves Annette Riley's procedure off her prepaid Contract, and the line says the invoice is credited and the procedure billed after it under the new Contract",
           "steps": [
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/invoices?view=approval"
             },
             {
               "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
@@ -35,7 +35,7 @@
               "wait": 400
             },
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0034"
+              "goto": "/admin/day/2026-11-27/bookings/BK0034"
             },
             {
               "wait": "[data-shot=booking-prepayment]"

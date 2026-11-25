@@ -47,6 +47,8 @@ async function approveAndRun(page: Page): Promise<void> {
 }
 
 test('the office credits in full and rebills from a copy: rail, both modes, pending, issued, Xero and the audit', async ({ page }) => {
+  // Heavy at practice scale: under the full parallel run it can pass 30s (it passes alone).
+  test.setTimeout(90_000)
   const invoiceId = await stagePostOp(page)
   await page.goto(`/admin/invoices/${invoiceId}`)
 

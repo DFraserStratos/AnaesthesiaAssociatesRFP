@@ -7,7 +7,7 @@
       "name": "move-booking",
       "app": "web",
       "caption": "Move a single Booking to a colleague who is free that session, found by typing a name or from the list; it becomes a new List for them, never added to an existing one",
-      "start": "/web/lists/L-34821-2026-07-22-AM/bookings/BK0046",
+      "start": "/web/lists/L-34821-2026-11-25-AM/bookings/BK0046",
       "states": [
         {
           "state": "action",
@@ -132,7 +132,7 @@
       "name": "move-booking",
       "app": "mobile",
       "caption": "Move a single Booking to a colleague who is free that session, found by typing a name or from the list; it becomes a new List for them, never added to an existing one",
-      "start": "/mobile/lists/L-34821-2026-07-22-AM/bookings/BK0046",
+      "start": "/mobile/lists/L-34821-2026-11-25-AM/bookings/BK0046",
       "states": [
         {
           "state": "action",
@@ -257,7 +257,7 @@
       "name": "move-booking",
       "app": "admin",
       "caption": "Move a single Booking to a colleague who is free that session, found by typing a name or from the list; it becomes a new List for them, never added to an existing one",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "state": "after",
@@ -267,17 +267,20 @@
               "trigger": "colleague-hands-booking-to-souter"
             },
             {
-              "goto": "/admin/day/2026-07-22"
+              "goto": "/admin/day/2026-11-25"
             },
             {
-              "wait": "[data-slot-id=\"S-34821-2026-07-22-PM\"][data-list-id]"
+              "wait": "[data-slot-id=\"S-34821-2026-11-25-PM\"][data-list-id]"
+            },
+            {
+              "click": "[data-shot=admin-work-tab-notifications]"
             },
             {
               "wait": 400
             }
           ],
           "highlight": [
-            "[data-slot-id=\"S-34821-2026-07-22-PM\"]",
+            "[data-slot-id=\"S-34821-2026-11-25-PM\"]",
             "[data-shot=\"admin-notifications-rail\"]"
           ]
         }

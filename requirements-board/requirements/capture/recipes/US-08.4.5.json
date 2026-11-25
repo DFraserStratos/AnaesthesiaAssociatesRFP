@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -48,7 +48,7 @@
       "name": "supplier",
       "app": "admin",
       "caption": "The anaesthetist is the supplier: their name and GST number head the invoice",
-      "start": "/admin/review/L-34821-2026-07-20-AM",
+      "start": "/admin/review/L-34821-2026-11-23-AM",
       "states": [
         {
           "state": "held",
@@ -88,23 +88,26 @@
           "caption": "With no GST number on the anaesthetist's record, the invoice reads GST number not held",
           "steps": [
             {
-              "goto": "/admin/masters?view=anaesthetists"
+              "goto": "/admin/people/anaesthetists/34821"
             },
             {
               "wait": 400
             },
             {
-              "click": "[data-shot=masters-anaesthetists] tr[data-anaesthetist=\"34821\"] >> button:text-is(\"Edit\")"
+              "click": "[data-shot=anaesthetist-bank-edit]"
             },
             {
-              "wait": 500
+              "wait": 300
             },
             {
               "fill": "[data-shot=anaesthetist-gst-number-field] input",
               "value": ""
             },
             {
-              "click": "[role=dialog] >> role=button[name=\"Save changes\"]"
+              "click": "[data-shot=anaesthetist-bank-save]"
+            },
+            {
+              "wait": 600
             },
             {
               "wait": 600
@@ -113,7 +116,7 @@
               "wait": 400
             },
             {
-              "goto": "/admin/review/L-34821-2026-07-20-AM"
+              "goto": "/admin/review/L-34821-2026-11-23-AM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -150,7 +153,7 @@
       "name": "gst-number",
       "app": "admin",
       "caption": "Each anaesthetist's GST number, held on their record and printed on every invoice in their name",
-      "start": "/admin/masters?view=anaesthetists",
+      "start": "/admin/people/anaesthetists",
       "states": [
         {
           "state": "column",
@@ -166,13 +169,19 @@
         },
         {
           "state": "edit",
-          "caption": "Edit an anaesthetist: GST number (optional); blank prints GST number not held",
+          "caption": "Editing the Bank and GST card on Dr Souter's record: GST number (optional); blank prints GST number not held",
           "steps": [
             {
-              "click": "[data-shot=masters-anaesthetists] tr[data-anaesthetist=\"34821\"] >> button:text-is(\"Edit\")"
+              "goto": "/admin/people/anaesthetists/34821"
             },
             {
-              "wait": 500
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=anaesthetist-bank-edit]"
+            },
+            {
+              "wait": 400
             }
           ],
           "highlight": [

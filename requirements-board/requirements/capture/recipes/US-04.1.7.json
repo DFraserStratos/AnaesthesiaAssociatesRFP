@@ -1,0 +1,76 @@
+{
+  "id": "US-04.1.7",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "contract-page",
+      "app": "admin",
+      "caption": "A page for each Contract: its price, where it is offered, who it bills and its codes, each on its own card, and the Bookings on it beside them",
+      "start": "/admin/contracts/CT-FORTE-D1",
+      "states": [
+        {
+          "state": "overview",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": []
+        },
+        {
+          "state": "fixed",
+          "caption": "Further down: the invoice wording and codes, and what was fixed when it was created",
+          "steps": [
+            {
+              "scroll": "[data-shot=contract-fixed]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-codes]",
+            "[data-shot=contract-fixed]"
+          ]
+        },
+        {
+          "state": "bookings",
+          "caption": "The Bookings tab: every Procedure on the Contract, those authorised at their locked price",
+          "steps": [
+            {
+              "click": "[data-shot=contract-tab-bookings]"
+            },
+            {
+              "wait": "[data-shot=contract-bookings]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-tab-bookings]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fixed-price-page",
+      "app": "admin",
+      "caption": "A fixed price Contract's page: its price ranges on the Price card, newest first",
+      "start": "/admin/contracts/CT-MER-FACELIFT",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-price-ranges]"
+          ]
+        }
+      ]
+    }
+  ]
+}

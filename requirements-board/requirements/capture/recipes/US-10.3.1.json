@@ -6,7 +6,7 @@
     {
       "name": "fee-run",
       "app": "admin",
-      "caption": "One run raises every anaesthetist's fee invoice for the month: Dr Rutherford, 40 paid BCTIs, $700.00 plus GST",
+      "caption": "One run raises every anaesthetist's fee invoice for the month: Dr Donaldson, 40 paid BCTIs, $700.00 plus GST",
       "start": "/admin/billing/aa-fees",
       "setup": [
         {
@@ -27,7 +27,7 @@
           "state": "preview",
           "steps": [],
           "highlight": [
-            "[data-testid=aa-fee-preview-29104]"
+            "[data-testid=aa-fee-preview-60062]"
           ]
         },
         {
@@ -41,7 +41,7 @@
             }
           ],
           "highlight": [
-            "[data-testid=aa-fee-preview-29104]",
+            "[data-testid=aa-fee-preview-60062]",
             "[data-shot=aa-fee-run-result]"
           ]
         }

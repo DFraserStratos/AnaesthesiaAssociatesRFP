@@ -188,7 +188,7 @@
       "name": "unmatched-queue",
       "app": "admin",
       "caption": "A row with no NHI, or that matches nothing, waits in the unmatched queue until the office decides",
-      "start": "/admin/day/2026-07-28",
+      "start": "/admin/day/2026-12-01",
       "setup": [
         {
           "goto": "/admin/intake/matching"
@@ -221,10 +221,10 @@
       "states": [
         {
           "state": "stub",
-          "caption": "While Tama Henare's row waits for an NHI, a stub stands in its place on Dr Souter's Tue 28 Jul PM List",
+          "caption": "While Tama Henare's row waits for an NHI, a stub stands in its place on Dr Souter's Tue 1 Dec PM List",
           "steps": [
             {
-              "click": "button[data-list-id=\"L-34821-2026-07-28-PM\"]"
+              "click": "button[data-list-id=\"L-34821-2026-12-01-PM\"]"
             },
             {
               "wait": "[data-testid=admin-list-drawer]"

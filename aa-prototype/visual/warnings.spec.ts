@@ -34,6 +34,8 @@ test('admin: To-do card, outline down to the Booking, Clear, sample triggers', a
 
   const todo = page.locator('[data-shot="admin-warnings-todo"]')
   await expect(todo).toBeVisible()
+  // The whole practice's To-do runs past the card's first rows: Riley's prepayment sits behind Show all.
+  await todo.getByRole('button', { name: /^Show all/ }).click()
   await expect(todo).toContainText('awaiting approval on Invoices')
   await expect(todo).toContainText('Annette Riley')
   await expect(todo).not.toContainText('Provisional')
@@ -69,23 +71,27 @@ test('admin: To-do card, outline down to the Booking, Clear, sample triggers', a
   // Samples on the demo day fill the list; clearing them empties it again.
   await page.goto('/admin/day/2026-11-24')
   await page.waitForLoadState('networkidle')
+  // Warning rows only: the card also lists Bookings that need a Contract.
+  const warningRows = todo.locator('li[data-warning-key]')
   const raised = await runDemoAction(page, 'raise-sample-warnings', { close: true })
   // Four rules since catch-up Phase 21: each target carries the prepayment and the base-units sample;
   // the child payer sample stages on Grace Park's Booking (Fri 24) and the approval sample on a NIB
   // Booking. With the payer review List's two seeded warnings the card shows its first six rows.
   expect(raised).toContain('6 rules registered')
-  await expect(todo.locator('li')).toHaveCount(6)
+  await expect(warningRows).toHaveCount(6)
   await expect(page.locator('[data-shot="daygrid-block-warnings"]')).toHaveCount(2)
   await page.screenshot({ path: 'visual/shots/w15a-03-samples.png', fullPage: true })
   await runDemoAction(page, 'clear-sample-warnings', { close: true })
   // The payer review List's seeded child payer and approval warnings stay.
-  await expect(todo.locator('li')).toHaveCount(2)
+  await expect(warningRows).toHaveCount(2)
 })
 
 test('admin: the Booking detail shows the warning first, awaiting approval, with no raise button (catch-up Phase 27)', async ({ page }) => {
   await page.goto('/admin/day/2026-11-27')
   await page.waitForLoadState('networkidle')
-  await page.locator('[data-shot="admin-warnings-todo"]').getByRole('button', { name: "Open Annette Riley's Booking" }).click()
+  const todo = page.locator('[data-shot="admin-warnings-todo"]')
+  await todo.getByRole('button', { name: /^Show all/ }).click()
+  await todo.getByRole('button', { name: "Open Annette Riley's Booking" }).click()
   const panel = page.locator('[data-shot="booking-warnings"]')
   await expect(panel).toBeVisible()
   await expect(panel.locator('[data-shot="booking-prepayment"]')).toContainText('awaiting approval')

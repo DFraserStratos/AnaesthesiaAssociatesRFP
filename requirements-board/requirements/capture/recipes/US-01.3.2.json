@@ -223,7 +223,7 @@
             }
           ],
           "highlight": [
-            "[data-draft-list-row]:has-text(\"Thu 23 Jul\")"
+            "[data-draft-list-row]:has-text(\"Thu 26 Nov\")"
           ],
           "caption": "The Draft Lists row: Recurring booking, Dr Beaumont unavailable"
         }

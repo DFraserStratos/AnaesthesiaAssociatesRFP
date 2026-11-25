@@ -7,7 +7,7 @@
       "name": "prepaid-price",
       "app": "web",
       "caption": "A prepaid Procedure is priced at the prepaid amount and left off the final invoice",
-      "start": "/web/lists/L-34821-2026-07-24-PM/bookings/BK0038",
+      "start": "/web/lists/L-34821-2026-11-27-PM/bookings/BK0038",
       "states": [
         {
           "steps": [
@@ -25,14 +25,14 @@
       "name": "by-hand",
       "app": "admin",
       "caption": "After a prepaid procedure nothing further is invoiced or credited automatically",
-      "start": "/admin/day/2026-07-24/bookings/BK0038",
+      "start": "/admin/day/2026-11-27/bookings/BK0038",
       "states": [
         {
           "state": "settlement",
           "caption": "Once the List is authorised the prepaid amount is the price, the recorded BTM is for reference only, the amount moves from the AA Holding account to Dr Souter, and nothing is invoiced or credited automatically",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Priya Nair\" >> nth=0"
@@ -78,7 +78,7 @@
               "wait": 1500
             },
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Mark list completed\" >> nth=0"
@@ -90,7 +90,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-07-24-PM"
+              "goto": "/admin/review/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -105,7 +105,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0038"
+              "goto": "/admin/day/2026-11-27/bookings/BK0038"
             },
             {
               "wait": "[data-shot=prepaid-settlement]"
@@ -147,7 +147,7 @@
           "caption": "The procedure took four hours: authorising bills nothing more, and the recorded BTM is shown for reference only",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Priya Nair\" >> nth=0"
@@ -193,7 +193,7 @@
               "wait": 1500
             },
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Mark list completed\" >> nth=0"
@@ -205,7 +205,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-07-24-PM"
+              "goto": "/admin/review/L-34821-2026-11-27-PM"
             },
             {
               "wait": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -229,7 +229,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0038"
+              "goto": "/admin/day/2026-11-27/bookings/BK0038"
             },
             {
               "wait": "[data-shot=prepaid-settlement-btm]"
@@ -248,7 +248,7 @@
           "caption": "Differences raised by hand: a credit for the whole prepayment invoice, then a fresh additional invoice",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Priya Nair\" >> nth=0"
@@ -294,7 +294,7 @@
               "wait": 1500
             },
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Mark list completed\" >> nth=0"
@@ -306,7 +306,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-07-24-PM"
+              "goto": "/admin/review/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -321,7 +321,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0038"
+              "goto": "/admin/day/2026-11-27/bookings/BK0038"
             },
             {
               "wait": "[data-shot=prepaid-settlement]"
@@ -369,7 +369,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0038"
+              "goto": "/admin/day/2026-11-27/bookings/BK0038"
             },
             {
               "wait": "[data-shot=prepaid-settlement-credit]"
@@ -425,7 +425,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0038"
+              "goto": "/admin/day/2026-11-27/bookings/BK0038"
             },
             {
               "wait": "[data-shot=prepaid-settlement-additional]"
@@ -444,13 +444,13 @@
       "name": "whole-credit",
       "app": "web",
       "caption": "Differences raised by hand: a credit for the whole prepayment invoice, then a fresh additional invoice",
-      "start": "/web/lists/L-34821-2026-07-24-PM/bookings/BK0038",
+      "start": "/web/lists/L-34821-2026-11-27-PM/bookings/BK0038",
       "states": [
         {
           "caption": "Dr Souter credits the whole prepayment invoice by hand: there is no amount to enter, and anything still owed is raised as an additional invoice",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Priya Nair\" >> nth=0"
@@ -496,7 +496,7 @@
               "wait": 1500
             },
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Mark list completed\" >> nth=0"
@@ -508,7 +508,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-07-24-PM"
+              "goto": "/admin/review/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -523,7 +523,7 @@
               "wait": 800
             },
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM/bookings/BK0038"
+              "goto": "/web/lists/L-34821-2026-11-27-PM/bookings/BK0038"
             },
             {
               "wait": "[data-shot=prepaid-settlement]"

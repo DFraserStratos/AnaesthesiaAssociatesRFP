@@ -28,7 +28,7 @@
               "wait": "[data-shot=web-lookback-search] tr[data-booking-id]"
             },
             {
-              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -61,7 +61,7 @@
               "wait": "[data-shot=web-lookback-search] tr[data-booking-id]"
             },
             {
-              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -103,7 +103,7 @@
               "wait": "[data-shot=web-lookback-search] tr[data-booking-id]"
             },
             {
-              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -142,7 +142,7 @@
               "wait": "[data-shot=web-lookback-search] tr[data-booking-id]"
             },
             {
-              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -182,7 +182,7 @@
               "wait": "[data-shot=web-lookback-search] tr[data-booking-id]"
             },
             {
-              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -215,13 +215,13 @@
         },
         {
           "state": "not-on-list",
-          "caption": "An event is on no List: Thu 16 Jul, the ward review's date, shows nothing of it",
+          "caption": "An event is on no List: Thu 19 Nov, the ward review's date, shows nothing of it",
           "steps": [
             {
               "wait": "[data-shot=web-lookback-search] tr[data-booking-id]"
             },
             {
-              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -248,7 +248,7 @@
               "wait": "[data-shot=procedure-event-row][data-kind=postOp]"
             },
             {
-              "goto": "/web/lists?day=2026-07-16"
+              "goto": "/web/lists?day=2026-11-19"
             },
             {
               "wait": "[data-shot=web-lookback-day]"
@@ -285,7 +285,7 @@
               "wait": "[data-shot=mobile-lookback-search] button[data-booking-id]"
             },
             {
-              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -318,7 +318,7 @@
               "wait": "[data-shot=mobile-lookback-search] button[data-booking-id]"
             },
             {
-              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -360,7 +360,7 @@
               "wait": "[data-shot=mobile-lookback-search] button[data-booking-id]"
             },
             {
-              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -399,7 +399,7 @@
               "wait": "[data-shot=mobile-lookback-search] button[data-booking-id]"
             },
             {
-              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -439,7 +439,7 @@
               "wait": "[data-shot=mobile-lookback-search] button[data-booking-id]"
             },
             {
-              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -472,13 +472,13 @@
         },
         {
           "state": "not-on-list",
-          "caption": "An event is on no List: Thu 16 Jul, the ward review's date, shows nothing of it, on the phone",
+          "caption": "An event is on no List: Thu 19 Nov, the ward review's date, shows nothing of it, on the phone",
           "steps": [
             {
               "wait": "[data-shot=mobile-lookback-search] button[data-booking-id]"
             },
             {
-              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -505,7 +505,7 @@
               "wait": "[data-aa-mobile-product] [data-shot=procedure-event-row][data-kind=postOp]"
             },
             {
-              "goto": "/mobile/lists?day=2026-07-16"
+              "goto": "/mobile/lists?day=2026-11-19"
             },
             {
               "wait": "[data-aa-mobile-product] [data-shot=mobile-lookback-day]"
@@ -532,20 +532,20 @@
           "wait": 800
         }
       ],
-      "start": "/admin/day/2026-07-15",
+      "start": "/admin/day/2026-11-18",
       "states": [
         {
           "state": "button",
           "caption": "The two add buttons under the Procedure's events on the Admin Booking detail",
           "steps": [
             {
-              "click": "button[data-slot-id=\"S-34821-2026-07-15-PM\"]"
+              "click": "button[data-slot-id=\"S-34821-2026-11-18-PM\"]"
             },
             {
               "wait": "[data-testid=admin-list-drawer]"
             },
             {
-              "click": "[data-testid=admin-list-drawer] >> role=button[name=/^Open$/]"
+              "click": "[data-testid=admin-list-drawer] >> role=button[name=/^Open Booking for/] >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -563,13 +563,13 @@
           "caption": "The office adds a post-op ward review for the anaesthetist",
           "steps": [
             {
-              "click": "button[data-slot-id=\"S-34821-2026-07-15-PM\"]"
+              "click": "button[data-slot-id=\"S-34821-2026-11-18-PM\"]"
             },
             {
               "wait": "[data-testid=admin-list-drawer]"
             },
             {
-              "click": "[data-testid=admin-list-drawer] >> role=button[name=/^Open$/]"
+              "click": "[data-testid=admin-list-drawer] >> role=button[name=/^Open Booking for/] >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -600,32 +600,19 @@
       "name": "contract-event-fees",
       "app": "admin",
       "caption": "Event fees on a Contract: St George's ACC prices a pain consult at a fixed $120.00, STGACC-PAIN, in place of its time",
-      "start": "/admin/masters?view=contracts",
+      "start": "/admin/contracts/CT-STG-ACC?tab=eventFees",
       "states": [
         {
           "steps": [
             {
-              "fill": "[data-shot=contract-search] input",
-              "value": "ACC elective"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "tr[data-contract=\"CT-STG-ACC\"] >> button:text-is(\"Edit\")"
-            },
-            {
-              "wait": "[data-shot=contract-detail] [data-shot=contract-event-fees]"
-            },
-            {
-              "scroll": "[data-shot=contract-detail] [data-shot=contract-event-fees]"
+              "wait": "[data-shot=contract-event-fees]"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=contract-detail] [data-shot=contract-event-fees]"
+            "[data-shot=contract-event-fees-card]"
           ]
         }
       ]

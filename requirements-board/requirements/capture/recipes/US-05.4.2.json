@@ -7,7 +7,7 @@
       "name": "price-override",
       "app": "admin",
       "caption": "Any price, no reason, until AUTHORISED; a raised prepaid price is read-only",
-      "start": "/admin/day/2026-08-10/bookings/BK0176",
+      "start": "/admin/day/2026-12-14/bookings/BK0176",
       "states": [
         {
           "state": "entry",
@@ -73,7 +73,7 @@
           "caption": "A prepaid price on a raised prepayment invoice is read-only, with the credit or additional invoice sentence",
           "steps": [
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0038"
+              "goto": "/admin/day/2026-11-27/bookings/BK0038"
             },
             {
               "wait": 900

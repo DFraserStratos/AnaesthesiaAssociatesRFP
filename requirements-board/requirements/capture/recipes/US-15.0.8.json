@@ -7,7 +7,7 @@
       "name": "help-line",
       "app": "admin",
       "caption": "Anyone using the apps can reach Stratos' support line: phone, hours, response times and a request form that logs a tracked ticket (simulated)",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "setup": [
         { "goto": "/demo/control" },
         { "wait": 400 },

@@ -7,7 +7,7 @@
       "name": "procedure-stack",
       "app": "web",
       "caption": "The procedure as the latest source sent it, above the Billing card with its Contract and the RVG code",
-      "start": "/web/lists/L-34821-2026-08-04-AM/bookings/BK0164",
+      "start": "/web/lists/L-34821-2026-12-08-AM/bookings/BK0164",
       "states": [
         {
           "steps": [
@@ -26,7 +26,7 @@
       "name": "procedure-stack",
       "app": "web",
       "caption": "The procedure as the latest source sent it, above the Billing card with its Contract and the RVG code",
-      "start": "/web/lists/L-34821-2026-07-28-PM/bookings/BK0166",
+      "start": "/web/lists/L-34821-2026-12-01-PM/bookings/BK0166",
       "states": [
         {
           "state": "not-matched",
@@ -47,7 +47,7 @@
       "name": "procedure-stack",
       "app": "mobile",
       "caption": "The procedure as the latest source sent it, above the Billing card with its Contract and the RVG code",
-      "start": "/mobile/lists/L-34821-2026-08-04-AM/bookings/BK0164",
+      "start": "/mobile/lists/L-34821-2026-12-08-AM/bookings/BK0164",
       "states": [
         {
           "steps": [
@@ -69,7 +69,7 @@
       "name": "procedure-stack",
       "app": "mobile",
       "caption": "The procedure as the latest source sent it, above the Billing card with its Contract and the RVG code",
-      "start": "/mobile/lists/L-34821-2026-07-28-PM/bookings/BK0166",
+      "start": "/mobile/lists/L-34821-2026-12-01-PM/bookings/BK0166",
       "states": [
         {
           "state": "not-matched",
@@ -93,7 +93,7 @@
       "name": "procedure-stack",
       "app": "admin",
       "caption": "The procedure as the latest source sent it, above the Billing card with its Contract and the RVG code",
-      "start": "/admin/day/2026-08-04/bookings/BK0164",
+      "start": "/admin/day/2026-12-08/bookings/BK0164",
       "states": [
         {
           "steps": [
@@ -112,7 +112,7 @@
       "name": "procedure-stack",
       "app": "admin",
       "caption": "The procedure as the latest source sent it, above the Billing card with its Contract and the RVG code",
-      "start": "/admin/day/2026-08-04/bookings/BK0043",
+      "start": "/admin/day/2026-12-08/bookings/BK0043",
       "states": [
         {
           "state": "office-hand-off",
@@ -132,7 +132,7 @@
       "name": "review-stack",
       "app": "admin",
       "caption": "Office review shows the text and Contract for every Procedure",
-      "start": "/admin/review/L-34821-2026-07-20-AM",
+      "start": "/admin/review/L-34821-2026-11-23-AM",
       "states": [
         {
           "steps": [

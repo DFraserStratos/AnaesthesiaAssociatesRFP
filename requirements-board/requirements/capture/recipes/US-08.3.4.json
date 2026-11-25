@@ -7,7 +7,7 @@
       "name": "money-in-out",
       "app": "admin",
       "caption": "Money in and money out per Booking, after the week's payment run is paid in Xero: paid in and disbursed, each dated",
-      "start": "/admin/billing?list=L-34821-2026-07-20-AM",
+      "start": "/admin/billing?list=L-34821-2026-11-23-AM",
       "setup": [
         {
           "scenario": "S3"
@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -65,10 +65,10 @@
               "click": "[data-shot=payment-cycle-send]"
             },
             {
-              "wait": 400
+              "wait": 2500
             },
             {
-              "click": "[data-shot=billing-run-payables-in-xero]"
+              "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
             },
             {
               "wait": "[data-shot=billing-payables-result]"
@@ -78,7 +78,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-34821-2026-07-20-AM]"
+            "[data-shot=billing-pipeline-L-34821-2026-11-23-AM]"
           ]
         }
       ]

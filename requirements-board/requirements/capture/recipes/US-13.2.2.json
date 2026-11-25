@@ -7,7 +7,7 @@
       "name": "patient-balance",
       "app": "admin",
       "caption": "A patient's balance, whoever pays, split into Billed to the patient and Other payers",
-      "start": "/admin/patients/CQY9304",
+      "start": "/admin/people/patients/CQY9304",
       "states": [
         {
           "state": "balance",
@@ -29,7 +29,7 @@
           "caption": "A patient in credit: Heather Sinclair is In credit $260.00",
           "steps": [
             {
-              "goto": "/admin/patients/ZAN2219"
+              "goto": "/admin/people/patients/ZAN2219"
             },
             {
               "wait": "[data-shot=patient-balance]"

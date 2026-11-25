@@ -2,21 +2,21 @@
 
 Written by `npm run capture` (the board's scripts/capture.ts); a run limited to some IDs updates their rows and keeps other failures. Do not edit by hand.
 
-Scope: every story plus every feature with no stories (302 items, 302 stories). Features with stories are captured only when they have an overview screen.
+Scope: every story plus every feature with no stories (305 items, 305 stories). Features with stories are captured only when they have an overview screen.
 
 | | Items | Stories |
 |---|---:|---:|
-| Captured | 233 | 211 |
+| Captured | 237 | 215 |
 | Partial | 24 | 24 |
 | Absent from the app | 70 | 66 |
-| Failed recipe | 1 | 1 |
+| Failed recipe | 0 | 0 |
 | No recipe | 0 | 0 |
 
-1042 screenshots. Items per app: admin 204, web 96, mobile 96, simulator 33.
+1080 screenshots. Items per app: admin 207, web 96, mobile 97, simulator 33.
 
-## Failed recipes (1)
+## Failed recipes (0)
 
-- **US-03.6.1** Mark a Booking complete · mobile-mark-complete-fixed-price: highlight: the element is outside the visible screen
+None.
 
 ## Absent from the app (70)
 
@@ -95,12 +95,12 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 
 - **US-01.4.1** Reassign a List with its bookings · Reassignment moves the List (same id, Bookings and history) into a colleague's free session, and the vacated session returns to Free unless marked otherwise. The hospital is told with Draft update email (US-02.3.3).
 - **US-03.1.10** Booking total on the office's Booking page · Built as our reading of a Proposed story: the total counts every invoice-ticked event, an event on an invoice of its own included, ex GST with GST beside.
-- **US-04.1.1** Typical Contract arrangements · The shot shows the settings every Contract shares on Master data. Funding tags (US-04.2.17), price ranges (US-04.2.15) and where the invoice goes on the step rail (US-04.3.8) are shot on their own stories.
-- **US-04.1.4** AA identifier for every Contract · The shots show the AA code on Master data. Typing it on the step rail finds the Contract too (US-04.3.8).
-- **US-04.2.1** Holder, who is billed, and where a Contract is offered · The shot shows the holder, who is billed and the linked surgeons on Master data. The narrowing on the step rail is shot on US-04.3.2, specialties on US-04.2.16.
-- **US-04.2.11** Combinations as Contracts · The shot shows the combinations on Master data. A fee extra billed as an event is shot on US-03.7.2, an additional invoice on US-08.6.3.
-- **US-04.2.14** Anaesthetist's own price list Contracts · The shots show Dr Souter's price list on Master data. The step rail offers it only on her Lists under Patient › Prepaid (US-04.3.8), and the prepaid amount is shot on US-06.2.2.
-- **US-04.2.18** Holder reference code, invoice description and default RVG code · The shots show the three settings and the search on Master data. The step rail's search is shot on US-04.3.2, the default RVG code filling a Procedure on US-03.3.1, and the printed holder reference code on US-04.2.8.
+- **US-04.1.1** Typical Contract arrangements · The shots show the settings every Contract shares, on a Contract's page and on New contract. Funding tags (US-04.2.17), price ranges (US-04.2.15) and where the invoice goes on the step rail (US-04.3.8) are shot on their own stories.
+- **US-04.1.4** AA identifier for every Contract · The shots show the AA code in the Contracts section. Typing it on the step rail finds the Contract too (US-04.3.8).
+- **US-04.2.1** Holder, who is billed, and where a Contract is offered · The shot shows the holder, who is billed and the linked surgeons on the Contract's page. The narrowing on the step rail is shot on US-04.3.2, specialties on US-04.2.16.
+- **US-04.2.11** Combinations as Contracts · The shot shows the combinations in the Contracts section. A fee extra billed as an event is shot on US-03.7.2, an additional invoice on US-08.6.3.
+- **US-04.2.14** Anaesthetist's own price list Contracts · The shots show Dr Souter's price list in the Contracts section. The step rail offers it only on her Lists under Patient › Prepaid (US-04.3.8), and the prepaid amount is shot on US-06.2.2.
+- **US-04.2.18** Holder reference code, invoice description and default RVG code · The shots show the three settings on the Contract's page and the search in the Contracts section. The step rail's search is shot on US-04.3.2, the default RVG code filling a Procedure on US-03.3.1, and the printed holder reference code on US-04.2.8.
 - **US-04.3.3** No contract · RVG · The shots show No contract · RVG on the step rail. Its price at the anaesthetist's rate per unit and billing the Procedure's payer are shot on US-05.2.1 and US-11.2.1.
 - **US-05.2.5** Fixed fee schedule pricing · The shots show the fixed and the open price. An additional invoice and a credit note raised by hand are shot on US-08.6.3 and US-08.6.5.
 - **US-06.2.1** Detect prepayment requirement · The shots show the prepayment warning on the anaesthetist's List. A Procedure on a prepaid Contract flagged on the office's Booking is shot on US-06.2.2 and US-06.3.2.
@@ -122,7 +122,7 @@ Scope: every story plus every feature with no stories (302 items, 302 stories). 
 
 None.
 
-## Captured (233)
+## Captured (237)
 
 - **FT-01.6** Draft Lists · admin
 - **FT-02.2** Surgeon PDF list ingest · admin
@@ -210,6 +210,7 @@ None.
 - **US-03.4.1** Anaesthetist can change the Contract · web, mobile
 - **US-03.5.1** Apply an anaesthetist adjustment · web, mobile
 - **US-03.5.2** BTM still recorded in full · web, mobile, admin
+- **US-03.6.1** Mark a Booking complete · web, mobile
 - **US-03.6.2** Incomplete Bookings listed · web, mobile
 - **US-03.6.3** Ask the office to check a Booking or List · web, mobile, admin
 - **US-03.7.1** Add a pre-op or post-op event to a Procedure · web, mobile, admin
@@ -218,6 +219,8 @@ None.
 - **US-04.1.2** Create, edit and disable Contracts · admin
 - **US-04.1.3** Contract audit · admin
 - **US-04.1.5** Parties · admin
+- **US-04.1.7** A page for each Contract · admin
+- **US-04.1.8** Replace a Contract from a date · admin
 - **US-04.2.2** Pricing kinds · admin
 - **US-04.2.8** Invoice presentation and delivery · admin
 - **US-04.2.15** Price ranges on a fixed price · admin
@@ -322,6 +325,7 @@ None.
 - **US-11.4.3** Insurance and approval number on the Booking · admin, mobile
 - **US-12.1.1** Dollar value per unit · admin, mobile, web
 - **US-12.1.4** Anaesthetist identity, contact and bank details · admin, mobile, web
+- **US-12.1.6** Make an anaesthetist inactive · admin, mobile
 - **US-12.2.1** Outstanding balances list · web, mobile
 - **US-12.2.2** GST report · web, mobile
 - **US-12.2.3** Dashboard · web
@@ -353,7 +357,7 @@ None.
 - **US-14.4.1** NHI lookup via Digital Services Hub · web, mobile, admin
 - **US-15.0.2** Mobile-first for anaesthetists · mobile, web
 - **US-15.0.3** Enter once · web, admin
-- **US-15.0.6** Privacy and data minimisation · simulator, admin, web, mobile
+- **US-15.0.6** Privacy and data minimisation · simulator, admin
 - **US-15.0.7** Changes show without signing out · admin, web, mobile
 - **US-15.0.8** Help line for app users · admin, web, mobile
 - **US-15.0.9** Product support for AA · admin

@@ -7,7 +7,7 @@
       "name": "age-applied",
       "app": "web",
       "caption": "A1 is applied from the patient's age and can be removed",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/web/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "applied",
@@ -51,7 +51,7 @@
       "name": "age-applied",
       "app": "mobile",
       "caption": "A1 is applied from the patient's age and can be removed",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "applied",

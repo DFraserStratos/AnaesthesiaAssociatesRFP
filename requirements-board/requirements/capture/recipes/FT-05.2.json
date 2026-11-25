@@ -7,7 +7,7 @@
       "name": "booking-total-lines",
       "app": "admin",
       "caption": "Each Procedure priced by its Contract's kind",
-      "start": "/admin/day/2026-07-27/bookings/BK0185",
+      "start": "/admin/day/2026-11-30/bookings/BK0185",
       "states": [
         {
           "state": "discount",
@@ -29,7 +29,7 @@
           "caption": "A fixed price: the range in force, no units charged",
           "steps": [
             {
-              "goto": "/admin/day/2026-08-10/bookings/BK0176"
+              "goto": "/admin/day/2026-12-14/bookings/BK0176"
             },
             {
               "wait": 900

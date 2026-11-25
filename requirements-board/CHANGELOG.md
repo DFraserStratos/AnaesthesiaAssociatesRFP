@@ -2,6 +2,10 @@
 
 Bump `version` in `package.json` and add an entry here before each kit export.
 
+## 1.29.1 · 2026-11-26
+
+- **A click step can wait longer.** A capture recipe's `click` step takes an optional `timeout` in milliseconds (default 6000), for a button the app is slow to finish (a payables run at practice scale).
+
 ## 1.29.0 · 2026-11-25
 
 - **Share a read-only snapshot.** New `npm run snapshot -- --out "<folder>"` writes the board as static files to host for people outside the team (GitHub Pages, Cloudflare Pages, any web server, best behind a sign-in): the board built in a new snapshot mode (`vite build --mode snapshot`, relative paths), the catalogue as `catalogue.json` (taken from disk, with the commit, whether it had uncommitted changes, the board version and the date), every screenshot, every artifact file under its ID with its extension, and host files (`.nojekyll`, Cloudflare `_headers`). It refuses the board's folder, one inside it or holding it, and any folder with files that no earlier snapshot made; a failed run leaves an earlier snapshot as it was.

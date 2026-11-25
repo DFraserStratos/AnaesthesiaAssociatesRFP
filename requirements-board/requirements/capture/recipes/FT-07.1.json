@@ -29,7 +29,7 @@
               "wait": 500
             },
             {
-              "click": "[data-shot=draft-list-available] [data-available=\"43015\"] >> role=button[name=/Assign/]"
+              "click": "[data-shot=draft-list-available] [data-available=\"27731\"] >> role=button[name=/Assign/]"
             },
             {
               "wait": 500
@@ -50,7 +50,7 @@
           "highlight": [
             "[data-testid=admin-list-drawer] > header"
           ],
-          "caption": "The same List once Dr Fitzgerald is assigned: ACTIVE"
+          "caption": "The same List once Dr Delaney is assigned: ACTIVE"
         }
       ]
     }

@@ -7,7 +7,7 @@
       "name": "todo-list",
       "app": "admin",
       "caption": "Warnings on the dashboard to-do list",
-      "start": "/admin/day/2026-07-24",
+      "start": "/admin/day/2026-11-27",
       "states": [
         {
           "state": "open",
@@ -26,6 +26,9 @@
           "caption": "A cleared warning leaves the to-do list",
           "steps": [
             {
+              "click": "[data-shot=admin-warnings-todo] >> role=button[name=/^Show all/]"
+            },
+            {
               "click": "[data-shot=admin-warnings-todo] >> role=button[name=\"Clear (optional) warning for Annette Riley\"]"
             },
             {
@@ -42,7 +45,7 @@
       "name": "todo-samples",
       "app": "admin",
       "caption": "Several warnings on the to-do list, soonest first",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "steps": [

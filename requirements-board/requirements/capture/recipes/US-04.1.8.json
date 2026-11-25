@@ -1,0 +1,240 @@
+{
+  "id": "US-04.1.8",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "replace-sheet",
+      "app": "admin",
+      "caption": "Replace from a date: a new Contract copied from the old one, with what changes, from when",
+      "start": "/admin/contracts/CT-HNZ",
+      "states": [
+        {
+          "state": "what-changes",
+          "caption": "Replacing Health NZ agreed rate: the new Contract's rate, $25.00 a unit, from the change date, today by default",
+          "steps": [
+            {
+              "click": "[data-shot=contract-replace]"
+            },
+            {
+              "wait": "[data-shot=contract-replace-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-shot=contract-replace-sheet] input[data-shot=contract-replace-new-price]",
+              "value": "25"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-replace-what]",
+            "[data-shot=contract-replace-from]"
+          ]
+        },
+        {
+          "state": "procedures",
+          "caption": "The Procedures from Tue 24 Nov still on CPH-002, each ticked to move; authorised Lists are locked and not listed",
+          "steps": [
+            {
+              "click": "[data-shot=contract-replace]"
+            },
+            {
+              "wait": "[data-shot=contract-replace-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-shot=contract-replace-sheet] input[data-shot=contract-replace-new-price]",
+              "value": "25"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "scroll": "[data-shot=contract-replace-rows]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-replace-rows]"
+          ]
+        },
+        {
+          "state": "old-contract",
+          "caption": "The old Contract: left active with a to-do on the change date, or disabled now",
+          "steps": [
+            {
+              "click": "[data-shot=contract-replace]"
+            },
+            {
+              "wait": "[data-shot=contract-replace-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-shot=contract-replace-sheet] input[data-shot=contract-replace-new-price]",
+              "value": "25"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "scroll": "[data-shot=contract-replace-old]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-replace-old]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "replaced",
+      "app": "admin",
+      "caption": "After the replacement",
+      "start": "/admin/contracts/CT-HNZ",
+      "states": [
+        {
+          "state": "new-contract",
+          "caption": "Created: CPH-003 replaces CPH-002 from 24 Nov 2026, and the ticked Procedures moved to it",
+          "steps": [
+            {
+              "click": "[data-shot=contract-replace]"
+            },
+            {
+              "wait": "[data-shot=contract-replace-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-shot=contract-replace-sheet] input[data-shot=contract-replace-new-price]",
+              "value": "25"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-replace-save]"
+            },
+            {
+              "wait": "[data-shot=contract-replaced-result]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-replaced-result]",
+            "[data-shot=contract-replaces-line]"
+          ]
+        },
+        {
+          "state": "old-todo",
+          "caption": "The old Contract left active: its page says what replaced it and offers Disable",
+          "steps": [
+            {
+              "click": "[data-shot=contract-replace]"
+            },
+            {
+              "wait": "[data-shot=contract-replace-sheet]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[data-shot=contract-replace-sheet] input[data-shot=contract-replace-new-price]",
+              "value": "25"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=contract-replace-save]"
+            },
+            {
+              "wait": "[data-shot=contract-replaced-result]"
+            },
+            {
+              "goto": "/admin/contracts/CT-HNZ"
+            },
+            {
+              "wait": "[data-shot=contract-replaced-todo]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-replaced-todo]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "day-todo",
+      "app": "admin",
+      "caption": "On the change date, the Day view's To-do reminds the office to disable the replaced Contract",
+      "start": "/admin/day/2026-11-24",
+      "setup": [
+        {
+          "goto": "/admin/contracts/CT-HNZ"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "click": "[data-shot=contract-replace]"
+        },
+        {
+          "wait": "[data-shot=contract-replace-sheet]"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "fill": "[data-shot=contract-replace-sheet] input[data-shot=contract-replace-new-price]",
+          "value": "25"
+        },
+        {
+          "wait": 300
+        },
+        {
+          "click": "[data-shot=contract-replace-save]"
+        },
+        {
+          "wait": "[data-shot=contract-replaced-result]"
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=todo-replaced-contract]"
+            },
+            {
+              "scroll": "[data-shot=todo-replaced-contract]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=todo-replaced-contract]"
+          ]
+        }
+      ]
+    }
+  ]
+}

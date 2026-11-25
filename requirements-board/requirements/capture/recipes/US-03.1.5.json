@@ -7,7 +7,7 @@
       "name": "nhi-shown",
       "app": "web",
       "caption": "The patient's NHI shown to the anaesthetist, on the List row and on the Booking",
-      "start": "/web/lists/L-34821-2026-07-27-AM",
+      "start": "/web/lists/L-34821-2026-11-30-AM",
       "states": [
         {
           "state": "list",
@@ -26,7 +26,7 @@
           "caption": "The NHI on the Booking",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-07-27-AM/bookings/BK0186"
+              "goto": "/web/lists/L-34821-2026-11-30-AM/bookings/BK0186"
             },
             {
               "wait": 500
@@ -42,7 +42,7 @@
       "name": "nhi-shown",
       "app": "mobile",
       "caption": "The patient's NHI shown to the anaesthetist, on the List row and on the Booking",
-      "start": "/mobile/lists/L-34821-2026-07-27-AM",
+      "start": "/mobile/lists/L-34821-2026-11-30-AM",
       "states": [
         {
           "state": "list",
@@ -61,7 +61,7 @@
           "caption": "The NHI on the Booking",
           "steps": [
             {
-              "goto": "/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0186"
+              "goto": "/mobile/lists/L-34821-2026-11-30-AM/bookings/BK0186"
             },
             {
               "wait": 500

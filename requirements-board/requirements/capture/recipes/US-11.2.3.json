@@ -7,7 +7,7 @@
       "name": "payer-contact-required",
       "app": "admin",
       "caption": "A billed payer needs an email or a postal address",
-      "start": "/admin/day/2026-07-17/bookings/BK0171",
+      "start": "/admin/day/2026-11-20/bookings/BK0171",
       "states": [
         {
           "state": "flagged",
@@ -90,7 +90,7 @@
       "name": "review-payer-contact",
       "app": "admin",
       "caption": "Office review flags a billed payer with neither, on that Procedure's row, never a block",
-      "start": "/admin/review/L-45178-2026-07-17-AM",
+      "start": "/admin/review/L-45178-2026-11-20-AM",
       "states": [
         {
           "steps": [
@@ -108,7 +108,7 @@
       "name": "payer-contact-required",
       "app": "mobile",
       "caption": "A billed payer needs an email or a postal address",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0008",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0008",
       "states": [
         {
           "state": "flagged",

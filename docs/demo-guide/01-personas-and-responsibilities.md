@@ -204,8 +204,9 @@ bookings by phone, email and PDF, hospital changes, cancellations and short-noti
 
 1. Read **Day view**: one row per anaesthetist, AM and PM (and an out-of-hours session where one is
    open), each showing its List or its availability. Draft Lists wait in their own band at the top.
-   The right rail holds **To-do**, **Pre-payments**, **Needs an invoice destination**, **Draft Lists**
-   and **Notifications**.
+   The grid shows its rows in pages, or as one scrolling list. The right rail holds the **Books
+   square** and **Pre-payments** tiles, then one work card with two tabs: **To-do** (warnings,
+   Conflicts and the Bookings that need an invoice destination) and **Notifications**.
 2. Work **Intake**: **Import hospital file**, then on **Matching** create, apply or reject each row.
    Nothing reaches the schedule until the office decides, and the procedure text keeps the hospital's
    wording. On **PDF lists**, open each rooms' PDF with the address it came from, correct a row beside
@@ -245,11 +246,14 @@ bookings by phone, email and PDF, hospital changes, cancellations and short-noti
     drawer after a cover change, or the notice of an anaesthetist's move. She ticks the saved changes
     to report, the template from **Master data → Email templates** fills the wording, and the email
     opens in her own mail client. The system does not send it.
-14. Keep master data by hand after the one-off go-live load: anaesthetists (profile, rate per unit, HPI
-    CPN and bank details, which every anaesthetist record needs), hospitals and holidays, surgeons,
-    specialties, surgeon groups, recurring bookings, availability statuses, public holidays, Parties,
-    funding tags, Contracts and their price ranges, RVG groups and modifiers, email templates and
-    prepayment letters. Every change is audited.
+14. Keep master data by hand after the one-off go-live load. In **People**: anaesthetists (identity,
+    contact, bank and GST, rate per unit and priority tier, each a card on her page; the HPI CPN and
+    bank details are required), with **Make inactive** from a last day and **Make active**;
+    surgeons, each with a page edited one card at a time; specialties; and patients. In
+    **Contracts**: Contracts and their price ranges, **Replace from a date**, Parties and funding
+    tags. In **Master data**: hospitals and holidays, recurring bookings, availability statuses,
+    public holidays, schedule settings, RVG groups and modifiers, email templates, prepayment
+    letters and the patient balance warning. Every change is audited.
 
 Surgeon contacts: contacts sit on the surgeon, one personal contact and one or more office contacts
 (name, email, phone), with the practice name as plain text. The office enters them and the surgeon's
@@ -272,7 +276,8 @@ public-holiday call-out waits for AA's approval). Whether AA needs cover from 8:
   `AUTHORISED` (or a prepayment invoice is raised).
 - Nobody edits a Booking after `AUTHORISED`.
 - Assigns Draft Lists, reassigns a List or a Booking, and keeps tiers and preferred pairings.
-- Holds each anaesthetist's profile, bank details and HPI CPN, and can change any anaesthetist's unit
+- Holds each anaesthetist's profile, bank details and HPI CPN, makes an anaesthetist inactive from a
+  last day, and can change any anaesthetist's unit
   value.
 
 ### Pain points
@@ -368,12 +373,12 @@ In a small office this is Kirsty again.
   wait for approval); **Data quality** and **Validators** to check what arrived and test an NHI.
 - Approve an update to a matched Booking field by field. A Booking moved to another day arrives as a
   cancellation and a new row.
-- Chase rows on **Patients → Waiting for NHI**: email the List's sender (else the surgeon's first
+- Chase rows on **Intake → Waiting for NHI**: email the List's sender (else the surgeon's first
   office contact) and add the NHI when it comes. A stub holds the place on the List meanwhile.
-- Refresh a patient from the NHI register (**Refresh from NHI register** on the patient record, Keep
+- Refresh a patient from the NHI register (**Refresh from NHI register** on the patient's page, Keep
   or Use register for each field that differs, audited).
-- Follow up patients who owe AA from the patient record: its follow-up log, **Resend** and **Log
-  call**.
+- Follow up patients who owe AA from **People → Patients → Needs follow-up**, then the patient's
+  page: its follow-up log, **Resend** and **Log call**.
 
 ### Future scope
 
@@ -439,7 +444,7 @@ There is no patient, hospital or surgeon portal.
 |---|---|---|
 | Anaesthetist Mobile App | Dr Melanie Souter | The day itself: Lists, Bookings, capture, submit, moves, calendar, balances |
 | Anaesthetist Web App | Dr Melanie Souter | The weeks ahead, the same List and Booking work, availability, accounts |
-| Admin Web App | Kirsty W. (and Sam T. for the audit beat) | Day view, intake, Contracts, Draft Lists, review and authorise, billing, ledger, master data, audit |
+| Admin Web App | Kirsty W. (and Sam T. for the audit beat) | Day view, intake, Draft Lists, review and authorise, billing, ledger, People, Contracts, master data, audit |
 | Demo surfaces | The presenter | Control Panel, Demo actions, Demo sheet, Xero simulation, Future scope surface. Never proposed as product screens |
 
 ## Where the requirements live

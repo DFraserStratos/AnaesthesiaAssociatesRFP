@@ -7,7 +7,7 @@
       "name": "tomorrow",
       "app": "admin",
       "caption": "Tomorrow's Lists in the day view, reviewed with no tracked state",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "steps": [

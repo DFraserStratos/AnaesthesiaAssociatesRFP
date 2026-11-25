@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -31,7 +31,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-PM"
+          "goto": "/admin/review/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -65,7 +65,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -80,7 +80,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-PM"
+          "goto": "/admin/review/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -112,7 +112,7 @@
       "name": "two-payers",
       "app": "admin",
       "caption": "Joyce Halvorsen's two Procedures each name Erik Halvorsen as payer, typed twice, so they are two payers",
-      "start": "/admin/day/2026-07-17/bookings/BK0183",
+      "start": "/admin/day/2026-11-20/bookings/BK0183",
       "states": [
         {
           "steps": [
@@ -142,7 +142,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-45178-2026-07-17-AM"
+          "goto": "/admin/review/L-45178-2026-11-20-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"

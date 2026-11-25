@@ -6,8 +6,8 @@
     {
       "name": "waiting-for-nhi",
       "app": "admin",
-      "caption": "Intake rows waiting for an NHI, each a stub on its List, with the address to chase",
-      "start": "/admin/patients/waiting",
+      "caption": "Intake's Waiting for NHI tab: rows received without an NHI, each a stub on its List, with the address to chase",
+      "start": "/admin/intake/waiting",
       "states": [
         {
           "state": "list",
@@ -108,7 +108,7 @@
       "name": "waiting-for-nhi",
       "app": "web",
       "caption": "The stub for a row waiting for its NHI, beside the List's progress",
-      "start": "/web/lists/L-34821-2026-08-04-PM",
+      "start": "/web/lists/L-34821-2026-12-08-PM",
       "states": [
         {
           "state": "stub",
@@ -132,7 +132,7 @@
       "name": "waiting-for-nhi",
       "app": "mobile",
       "caption": "The stub for a row waiting for its NHI, beside the List's progress",
-      "start": "/mobile/lists/L-34821-2026-08-04-PM",
+      "start": "/mobile/lists/L-34821-2026-12-08-PM",
       "states": [
         {
           "state": "stub",

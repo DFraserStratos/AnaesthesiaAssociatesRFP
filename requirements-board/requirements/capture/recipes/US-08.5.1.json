@@ -7,7 +7,7 @@
       "name": "processing-status",
       "app": "admin",
       "caption": "Billing monitor, processing succeeded for the List and each Booking",
-      "start": "/admin/billing?list=L-34821-2026-07-20-AM",
+      "start": "/admin/billing?list=L-34821-2026-11-23-AM",
       "setup": [
         {
           "scenario": "S3"
@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -31,7 +31,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-PM"
+          "goto": "/admin/review/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -51,7 +51,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-34821-2026-07-20-AM]"
+            "[data-shot=billing-pipeline-L-34821-2026-11-23-AM]"
           ]
         }
       ]
@@ -60,7 +60,7 @@
       "name": "failure-reason",
       "app": "admin",
       "caption": "A Booking waiting for Xero, with the reason and its next try, while the rest of the List bills",
-      "start": "/admin/billing?list=L-39560-2026-07-16-AM",
+      "start": "/admin/billing?list=L-39560-2026-11-19-AM",
       "setup": [
         {
           "goto": "/admin/billing"
@@ -80,7 +80,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-39560-2026-07-16-AM] tr[data-booking-id=BK0039]"
+            "[data-shot=billing-pipeline-L-39560-2026-11-19-AM] tr[data-booking-id=BK0039]"
           ]
         }
       ]

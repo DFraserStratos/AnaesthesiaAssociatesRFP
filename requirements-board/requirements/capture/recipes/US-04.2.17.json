@@ -7,33 +7,31 @@
       "name": "funding-tag",
       "app": "admin",
       "caption": "A Contract carries at most one funding tag, which places it under its hospital",
-      "start": "/admin/masters?view=contracts",
+      "start": "/admin/contracts/CT-SXAP",
       "states": [
         {
           "state": "editor",
+          "caption": "Southern Cross's SXAP Contract: its funding tag places it under Southern Cross › SXAP on the step rail",
           "steps": [
             {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-SXAP\"] >> button:text-is(\"Edit\")"
-            },
-            {
-              "wait": 500
-            },
-            {
-              "scroll": "[data-shot=contract-funding-tag]"
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=contract-funding-tag]",
-            "[data-shot=contract-placement]"
+            "[data-shot=contract-where] [data-shot=contract-funding-tag]",
+            "[data-shot=contract-where] [data-shot=contract-placement]"
           ]
         },
         {
           "state": "fallbacks",
           "caption": "One system-made Fixed price Contract for every invoice destination",
           "steps": [
+            {
+              "goto": "/admin/contracts"
+            },
+            {
+              "wait": 500
+            },
             {
               "fill": "[data-shot=contract-search] input",
               "value": "Fixed price"

@@ -28,7 +28,8 @@ const RUTHERFORD_WED22_AM = 'L-29104-2026-11-25-AM'
 const MORRISON_WED22_PM = 'L-25490-2026-11-25-PM'
 
 test('Wed 25 Day grid: conflicted Lists in the amber colour, the legend and the Conflict filter', async ({ page }) => {
-  await fresh(page, '/admin/day/2026-11-25')
+  // The whole practice pages the grid; one scrolling list (?rows=all) puts every row on the page.
+  await fresh(page, '/admin/day/2026-11-25?rows=all')
   const conflicted = page.locator('button[data-conflict="true"]')
   // Closures only since catch-up Phase 32b (D59): Rutherford's sickness returned his List.
   await expect(conflicted).toHaveCount(4)
@@ -54,7 +55,7 @@ test('Wed 25 Day grid: conflicted Lists in the amber colour, the legend and the 
 })
 
 test('Clear from the drawer, Show cleared and Flag again', async ({ page }) => {
-  await fresh(page, '/admin/day/2026-11-25')
+  await fresh(page, '/admin/day/2026-11-25?rows=all')
   await page.locator(`button[data-list-id="${MORRISON_WED22_PM}"]`).click()
   const drawer = page.getByTestId('admin-list-drawer')
   await drawer.getByRole('button', { name: 'Clear conflict' }).click()
@@ -76,10 +77,11 @@ test('Clear from the drawer, Show cleared and Flag again', async ({ page }) => {
 test('Conflicts screen: closures only, grouped by day, filters in the URL; Simulate sickness never adds a row; reassign from a row', async ({ page }) => {
   await fresh(page, '/admin/conflicts')
   await expect(page.getByRole('heading', { name: 'Conflicts', exact: true })).toBeVisible()
-  // 14 Lists plus Dr Beaumont's two Draft Lists at the Southern Cross closure (catch-up Phase 31); no sickness (32b);
-  // three bookless public Lists at a closed Christchurch Public are Public sessions since catch-up Phase 32d.
-  await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('16')
-  for (const d of ['2026-11-25', '2026-10-26', '2026-11-13']) await expect(page.locator(`tr[data-conflict-date="${d}"]`)).toBeVisible()
+  // From today on: the Wed 25 Southern Cross closure flags four Lists and Dr Beaumont's two Draft Lists
+  // (catch-up Phase 31); no sickness (32b). Labour Day and Canterbury Anniversary Day are behind the demo day.
+  await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('6')
+  await expect(page.locator('tr[data-conflict-row]')).toHaveCount(6)
+  await expect(page.locator('tr[data-conflict-date="2026-11-25"]')).toBeVisible()
   await expect(page.getByText('Anaesthetist unavailable')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Hospital closed' })).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p30-04-conflicts.png', fullPage: true })
@@ -93,7 +95,7 @@ test('Conflicts screen: closures only, grouped by day, filters in the URL; Simul
   await page.goto('/admin/conflicts')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('tr[data-conflict-date="2026-11-24"]')).toHaveCount(0)
-  await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('16')
+  await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('6')
   await page.screenshot({ path: 'visual/shots/p30-05-simulated-sickness.png', fullPage: true })
 
   // Reassign Morrison's Wed 22 PM: the closure goes with the List, so it stays flagged.
@@ -137,11 +139,13 @@ test('Hospitals & holidays: the calendar, and moving and deleting a closure clea
   await expect(sheet).toContainText(/Holiday updated\. \d+ Lists? flagged, 6 flags cleared\./)
   await sheet.getByRole('button', { name: 'Done' }).click()
 
+  // The calendar (the demo month): the closure moved to Thu 26 and flags its Lists there; Wed 25 is open again.
   await page.getByRole('button', { name: 'Calendar', exact: true }).click()
   await page.getByLabel('Hospital').selectOption({ label: 'Southern Cross' })
-  for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'Next month' }).click()
-  await expect(page.locator('button[data-calendar-day="2026-10-26"]')).toContainText('Labour Day')
-  await expect(page.locator('button[data-calendar-day="2026-10-26"]')).toContainText('flagged')
+  await expect(page.locator('button[data-calendar-day="2026-11-26"]')).toContainText('Theatre maintenance closure')
+  await expect(page.locator('button[data-calendar-day="2026-11-26"]')).toContainText('flagged')
+  await expect(page.locator('button[data-calendar-day="2026-11-25"]')).toHaveAttribute('aria-label', /: open,/)
+  await expect(page.locator('button[data-calendar-day="2026-11-25"]')).not.toContainText('flagged')
   await page.screenshot({ path: 'visual/shots/p30-09-hospital-calendar.png', fullPage: true })
   await cleanCopy(page, 'Hospitals')
 })

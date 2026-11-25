@@ -199,7 +199,7 @@ test('admin: a booking opened from the day drawer is a URL under its day', async
   // NOT in the URL), then a booking from it → a routed screen under the day.
   await page.locator('[data-list-id="L-34821-2026-11-24-AM"]').click() // Souter's St George's AM (the band and rail card also name St George's since catch-up Phase 31)
   await expect(page.getByRole('button', { name: 'Edit list' })).toBeVisible()
-  await page.getByRole('button', { name: 'Open', exact: true }).first().click()
+  await page.getByTestId('admin-list-drawer').getByRole('button', { name: /^Open Booking for / }).first().click()
   await expect(page).toHaveURL(/\/admin\/day\/2026-11-24\/bookings\/[^/]+$/)
   const bookingURL = page.url()
 

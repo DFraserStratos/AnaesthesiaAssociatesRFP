@@ -6,35 +6,25 @@
     {
       "name": "pricing-basis",
       "app": "admin",
-      "caption": "Each Contract has one of five pricing kinds; the override only on RVG kinds",
-      "start": "/admin/masters?view=contracts",
+      "caption": "Each Contract has one of five pricing kinds; may change the price only on RVG kinds",
+      "start": "/admin/contracts",
       "states": [
         {
           "state": "anaesthetist-rate",
-          "caption": "RVG at the anaesthetist's rate: the units at her own rate per unit; this one lets her override the price",
+          "caption": "RVG at the anaesthetist's rate: the units at her own rate per unit; this one lets her change the price",
           "steps": [
             {
-              "fill": "[data-shot=contract-search] input",
-              "value": "St George's RVG"
-            },
-            {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-STG-D1\"] >> button:text-is(\"Edit\")"
+              "goto": "/admin/contracts/CT-STG-D1"
             },
             {
               "wait": "[data-shot=contract-detail]"
             },
             {
               "wait": 400
-            },
-            {
-              "scroll": "[data-shot=contract-settings]"
             }
           ],
           "highlight": [
-            "[data-shot=contract-settings]"
+            "[data-shot=contract-price]"
           ]
         },
         {
@@ -42,27 +32,17 @@
           "caption": "RVG at the Contract's rate: Aria's units at $26.50 a unit, the price fixed for the anaesthetist",
           "steps": [
             {
-              "fill": "[data-shot=contract-search] input",
-              "value": "Aria Skin and Laser Clinic"
-            },
-            {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-ARIA-HOURLY\"] >> button:text-is(\"Edit\")"
+              "goto": "/admin/contracts/CT-ARIA-HOURLY"
             },
             {
               "wait": "[data-shot=contract-detail]"
             },
             {
               "wait": 400
-            },
-            {
-              "scroll": "[data-shot=contract-settings]"
             }
           ],
           "highlight": [
-            "[data-shot=contract-settings]"
+            "[data-shot=contract-price]"
           ]
         },
         {
@@ -70,55 +50,34 @@
           "caption": "RVG less the Contract's discount: Forte Health at standard RVG less 10%",
           "steps": [
             {
-              "fill": "[data-shot=contract-search] input",
-              "value": "Forte Health RVG less 10%"
-            },
-            {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-FORTE-DISC\"] >> button:text-is(\"Edit\")"
+              "goto": "/admin/contracts/CT-FORTE-DISC"
             },
             {
               "wait": "[data-shot=contract-detail]"
             },
             {
               "wait": 400
-            },
-            {
-              "scroll": "[data-shot=contract-settings]"
             }
           ],
           "highlight": [
-            "[data-shot=contract-settings]"
+            "[data-shot=contract-price]"
           ]
         },
         {
           "state": "fixed-price",
-          "caption": "Fixed price: the price of the range in force on the procedure date, no override setting",
+          "caption": "Fixed price: the price of the range in force on the procedure date, no setting to change it",
           "steps": [
             {
-              "fill": "[data-shot=contract-search] input",
-              "value": "Gastric bypass"
-            },
-            {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-DOYLE-BAR\"] >> button:text-is(\"Edit\")"
+              "goto": "/admin/contracts/CT-DOYLE-BAR"
             },
             {
               "wait": "[data-shot=contract-detail]"
             },
             {
               "wait": 400
-            },
-            {
-              "scroll": "[data-shot=contract-price-ranges]"
             }
           ],
           "highlight": [
-            "[data-shot=contract-settings]",
             "[data-shot=contract-price-ranges]"
           ]
         },
@@ -127,32 +86,22 @@
           "caption": "Open price: no figure on the Contract, the price typed on the Procedure",
           "steps": [
             {
-              "fill": "[data-shot=contract-search] input",
-              "value": "No contract · Fixed price"
-            },
-            {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=contract-catalogue] tr[data-system=openPriceFallback]:has-text(\"No contract\") >> button:text-is(\"Edit\")"
+              "click": "[data-shot=contract-catalogue] tr[data-system=openPriceFallback]:has-text(\"AA-FIX\")"
             },
             {
               "wait": "[data-shot=contract-detail]"
             },
             {
               "wait": 400
-            },
-            {
-              "scroll": "[data-shot=contract-settings]"
             }
           ],
           "highlight": [
-            "[data-shot=contract-settings]"
+            "[data-shot=contract-price]"
           ]
         },
         {
           "state": "override",
-          "caption": "The Contracts list shows on each RVG Contract whether the anaesthetist can override the price; none on a fixed or open price",
+          "caption": "The Contract list shows on each RVG Contract whether the anaesthetist can change the price; none on a fixed or open price",
           "steps": [
             {
               "fill": "[data-shot=contract-search] input",

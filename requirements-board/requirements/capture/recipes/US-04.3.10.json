@@ -7,7 +7,7 @@
       "name": "suggested-path",
       "app": "admin",
       "caption": "The Booking's funder marks one path Suggested and never narrows the choice",
-      "start": "/admin/day/2026-07-23/bookings/BK0175",
+      "start": "/admin/day/2026-11-26/bookings/BK0175",
       "states": [
         {
           "state": "tag",
@@ -26,7 +26,7 @@
           "caption": "NIB with a nib Contract on the List suggests Special › NIB",
           "steps": [
             {
-              "goto": "/admin/day/2026-07-17/bookings/BK0173"
+              "goto": "/admin/day/2026-11-20/bookings/BK0173"
             },
             {
               "wait": 300
@@ -53,7 +53,7 @@
           "caption": "With no funder, Patient › Standard is suggested",
           "steps": [
             {
-              "goto": "/admin/day/2026-07-27/bookings/BK0035"
+              "goto": "/admin/day/2026-11-30/bookings/BK0035"
             },
             {
               "wait": 300

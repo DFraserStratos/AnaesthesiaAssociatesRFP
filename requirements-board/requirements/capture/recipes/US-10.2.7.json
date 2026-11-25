@@ -11,7 +11,7 @@
       "states": [
         {
           "state": "open",
-          "caption": "Each accounting week is named by its ISO week number: Week 30, with the planned Friday close, Monday checks and Tuesday payment schedule",
+          "caption": "Each accounting week is named by its ISO week number: Week 48, with the planned Friday close, Monday checks and Tuesday payment schedule",
           "steps": [
             {
               "wait": "[data-shot=payment-cycle]"
@@ -136,7 +136,7 @@
           "click": "[data-shot=payment-cycle-send]"
         },
         {
-          "wait": 400
+          "wait": 2500
         }
       ],
       "states": [
@@ -187,10 +187,10 @@
           "click": "[data-shot=payment-cycle-send]"
         },
         {
-          "wait": 400
+          "wait": 2500
         },
         {
-          "click": "[data-shot=billing-run-payables-in-xero]"
+          "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
         },
         {
           "wait": "[data-shot=billing-payables-result]"

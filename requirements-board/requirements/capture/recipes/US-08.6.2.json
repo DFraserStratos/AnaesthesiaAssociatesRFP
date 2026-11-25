@@ -10,7 +10,7 @@
       "start": "/admin/invoices",
       "setup": [
         {
-          "goto": "/admin/review/L-41267-2026-07-14-AM"
+          "goto": "/admin/review/L-41267-2026-11-17-AM"
         },
         {
           "trigger": "stage-post-op"
@@ -320,7 +320,7 @@
       "start": "/admin/invoices",
       "setup": [
         {
-          "goto": "/admin/review/L-41267-2026-07-14-AM"
+          "goto": "/admin/review/L-41267-2026-11-17-AM"
         },
         {
           "trigger": "stage-post-op"
@@ -453,7 +453,7 @@
       "start": "/admin/invoices",
       "setup": [
         {
-          "goto": "/admin/review/L-41267-2026-07-14-AM"
+          "goto": "/admin/review/L-41267-2026-11-17-AM"
         },
         {
           "trigger": "stage-post-op"

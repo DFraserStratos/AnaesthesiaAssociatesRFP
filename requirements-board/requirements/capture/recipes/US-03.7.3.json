@@ -7,7 +7,7 @@
       "name": "procedure-events",
       "app": "admin",
       "caption": "A Procedure lists all its events in both apps; here an additional invoice the anaesthetist raised, awaiting review",
-      "start": "/admin/day/2026-06-22/bookings/HBK03",
+      "start": "/admin/day/2026-10-26/bookings/HBK03",
       "states": [
         {
           "steps": [
@@ -55,7 +55,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/day/2026-06-22/bookings/HBK03"
+              "goto": "/admin/day/2026-10-26/bookings/HBK03"
             },
             {
               "wait": "[data-shot=procedure-event-invoice]"
@@ -121,7 +121,7 @@
               "wait": "[data-shot=web-lookback-search] tr[data-booking-id]"
             },
             {
-              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -192,16 +192,16 @@
               "wait": 600
             },
             {
-              "goto": "/admin/day/2026-07-15"
+              "goto": "/admin/day/2026-11-18"
             },
             {
-              "click": "button[data-slot-id=\"S-34821-2026-07-15-PM\"]"
+              "click": "button[data-slot-id=\"S-34821-2026-11-18-PM\"]"
             },
             {
               "wait": "[data-testid=admin-list-drawer]"
             },
             {
-              "click": "[data-testid=admin-list-drawer] >> role=button[name=/^Open$/]"
+              "click": "[data-testid=admin-list-drawer] >> role=button[name=/^Open Booking for/]"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -256,7 +256,7 @@
               "wait": "[data-shot=web-lookback-search] tr[data-booking-id]"
             },
             {
-              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -376,7 +376,7 @@
               "wait": "[data-shot=mobile-lookback-search] button[data-booking-id]"
             },
             {
-              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"

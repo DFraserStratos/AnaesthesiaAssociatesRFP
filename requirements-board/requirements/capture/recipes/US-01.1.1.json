@@ -7,7 +7,7 @@
       "name": "day-grid",
       "app": "admin",
       "caption": "Every anaesthetist has an AM and a PM session, booked or not",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "steps": [],
@@ -19,10 +19,43 @@
       "name": "free-by-default",
       "app": "admin",
       "caption": "New sessions start free; recurring bookings are painted on",
-      "start": "/admin/day/2026-09-07",
+      "start": "/admin/day/2027-01-11",
       "states": [
         {
           "steps": [],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "inactive-no-sessions",
+      "app": "admin",
+      "caption": "An inactive anaesthetist's sessions end at their last day",
+      "start": "/admin/day/2026-11-20?rows=all",
+      "states": [
+        {
+          "state": "last-day",
+          "caption": "Fri 20 Nov, Dr Reeves's last day: his row and sessions are still on the Day view",
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-day-grid-row=\"60070\"]"
+          ]
+        },
+        {
+          "state": "after",
+          "caption": "Mon 23 Nov, after his last day: inactive, he has no sessions and no row",
+          "steps": [
+            {
+              "goto": "/admin/day/2026-11-23?rows=all"
+            },
+            {
+              "wait": 400
+            }
+          ],
           "highlight": []
         }
       ]

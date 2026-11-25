@@ -7,18 +7,21 @@
       "name": "notification-pool",
       "app": "admin",
       "caption": "One shared pool of active notices for the admin team, with a count, newest first, separate from the to-do list",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "state": "card",
-          "caption": "Admin Day: the Notifications card with the count of active notices and a tick on each",
+          "caption": "Admin Day: the work card's Notifications tab with the count of active notices and a tick on each",
           "steps": [
             {
               "trigger": "colleague-moves-list-to-office",
               "choice": "one"
             },
             {
-              "scroll": "[data-shot=\"admin-notifications-rail\"]"
+              "click": "[data-shot=admin-work-tab-notifications]"
+            },
+            {
+              "wait": "[data-shot=\"admin-notifications-rail\"]"
             }
           ],
           "highlight": [
@@ -47,7 +50,7 @@
         },
         {
           "state": "page-2",
-          "caption": "Older: the second page",
+          "caption": "The second page, from the pager under the table",
           "steps": [
             {
               "goto": "/admin/notifications"
@@ -57,7 +60,7 @@
               "choice": "busy"
             },
             {
-              "click": "button:has-text(\"Older\")"
+              "click": "[data-shot=admin-notifications-pager] >> role=button[name=\"Next page\"]"
             },
             {
               "wait": "[data-shot=\"admin-notifications-table\"]"

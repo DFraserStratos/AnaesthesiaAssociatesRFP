@@ -30,11 +30,12 @@
               "choice": "souter"
             },
             {
-              "wait": "[data-shot=dashboard-reconciliation] [data-shot=reconciliation-item]"
+              "wait": "[data-shot=rail-reconciliation-detail] [data-shot=reconciliation-item]"
             }
           ],
           "highlight": [
-            "[data-shot=dashboard-reconciliation]"
+            "[data-shot=dashboard-reconciliation]",
+            "[data-shot=rail-reconciliation-detail]"
           ]
         }
       ]

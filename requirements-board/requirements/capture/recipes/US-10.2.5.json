@@ -38,10 +38,10 @@
           "click": "[data-shot=payment-cycle-send]"
         },
         {
-          "wait": 400
+          "wait": 2500
         },
         {
-          "click": "[data-shot=billing-run-payables-in-xero]"
+          "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
         },
         {
           "wait": "[data-shot=billing-payables-result]"
@@ -99,10 +99,10 @@
           "click": "[data-shot=payment-cycle-send]"
         },
         {
-          "wait": 400
+          "wait": 2500
         },
         {
-          "click": "[data-shot=billing-run-payables-in-xero]"
+          "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
         },
         {
           "wait": "[data-shot=billing-payables-result]"
@@ -145,7 +145,7 @@
     {
       "name": "web-remittance-sheet",
       "app": "web",
-      "caption": "Dr Souter's Week 29 remittance advice, read only: the BCTIs the run paid and what was paid to her",
+      "caption": "Dr Souter's Week 47 remittance advice, read only: the BCTIs the run paid and what was paid to her",
       "start": "/web/accounts/remittances",
       "states": [
         {

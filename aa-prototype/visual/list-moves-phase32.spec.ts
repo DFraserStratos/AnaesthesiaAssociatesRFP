@@ -17,6 +17,11 @@ async function fresh(page: Page, path: string): Promise<void> {
   await page.waitForLoadState('networkidle')
 }
 
+/** Admin Day's work card opens on To-do while it has rows; the shared pool is its Notifications tab. */
+async function notificationsTab(page: Page): Promise<void> {
+  await page.locator('[data-shot="admin-work-tab-notifications"]').click()
+}
+
 const FORBIDDEN = /\bslots?\b|swap|blacklist|whitelist|not preferred|preferred|tier|warning|[–—]/i
 
 async function clean(page: Page, scope: string, where: string) {
@@ -62,6 +67,7 @@ test('web: hand a List on to a colleague with no warning, then the office sees i
   // Admin Day on that date: the notification on the rail, the drawer line.
   await page.goto('/admin/day/2026-11-30')
   await page.waitForLoadState('networkidle')
+  await notificationsTab(page)
   const card = page.locator('[data-shot="admin-notifications-rail"]')
   await expect(card).toContainText("Dr Souter moved Mon 30 Nov PM (St George's, Ms G. Lim) to Dr Ropata")
   await page.screenshot({ path: 'visual/shots/p32-04-admin-rail.png', fullPage: true })
@@ -161,6 +167,7 @@ test('mobile: the move sheet from Find cover', async ({ page }) => {
 
 test('admin: a colleague returns a List, then a busy morning pages the pool', async ({ page }) => {
   await fresh(page, '/admin/day/2026-11-24')
+  await notificationsTab(page)
   await expect(page.locator('[data-shot="admin-notifications-rail"]')).toContainText('Nothing waiting')
   const one = await runDemoAction(page, 'colleague-moves-list-to-office', { choice: 'one', close: true })
   expect(one).toMatch(/returned .+ to the office\. It is now a Draft List\./)

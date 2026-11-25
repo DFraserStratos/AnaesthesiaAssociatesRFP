@@ -7,7 +7,7 @@
       "name": "rvg-picker",
       "app": "web",
       "caption": "RVG code picker",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/web/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "closed",
@@ -60,7 +60,7 @@
       "name": "rvg-picker",
       "app": "mobile",
       "caption": "RVG code picker",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "closed",
@@ -125,7 +125,7 @@
       "name": "ranged-base-units",
       "app": "web",
       "caption": "Base units on a ranged RVG group",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/web/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "start",
@@ -206,7 +206,7 @@
       "name": "ranged-base-units",
       "app": "mobile",
       "caption": "Base units on a ranged RVG group",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "start",
@@ -299,7 +299,7 @@
       "name": "contract-code",
       "app": "web",
       "caption": "Required on RVG Contracts, filled from the Contract's default",
-      "start": "/web/lists/L-34821-2026-07-24-AM/bookings/BK0034",
+      "start": "/web/lists/L-34821-2026-11-27-AM/bookings/BK0034",
       "states": [
         {
           "state": "optional",
@@ -329,7 +329,7 @@
           "state": "default-filled",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-08-10-PM/bookings/BK0163"
+              "goto": "/web/lists/L-34821-2026-12-14-PM/bookings/BK0163"
             },
             {
               "wait": 800
@@ -352,7 +352,7 @@
       "name": "contract-code",
       "app": "mobile",
       "caption": "Required on RVG Contracts, filled from the Contract's default",
-      "start": "/mobile/lists/L-34821-2026-07-24-AM/bookings/BK0034",
+      "start": "/mobile/lists/L-34821-2026-11-27-AM/bookings/BK0034",
       "states": [
         {
           "state": "optional",
@@ -379,7 +379,7 @@
           "state": "default-filled",
           "steps": [
             {
-              "goto": "/mobile/lists/L-34821-2026-08-10-PM/bookings/BK0163"
+              "goto": "/mobile/lists/L-34821-2026-12-14-PM/bookings/BK0163"
             },
             {
               "wait": 800

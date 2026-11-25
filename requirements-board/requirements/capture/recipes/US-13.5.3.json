@@ -12,9 +12,15 @@
         {
           "state": "sign-in",
           "steps": [
-            { "click": "[data-shot=more-sign-out]" },
-            { "wait": "[data-shot=sign-in-screen]" },
-            { "wait": 400 }
+            {
+              "click": "[data-shot=more-sign-out]"
+            },
+            {
+              "wait": "[data-shot=sign-in-screen]"
+            },
+            {
+              "wait": 400
+            }
           ],
           "highlight": [
             "[data-shot=sign-in-screen] > div:has([data-shot=sign-in-submit])",
@@ -24,15 +30,50 @@
         {
           "state": "signed-in",
           "steps": [
-            { "click": "[data-shot=more-sign-out]" },
-            { "wait": "[data-shot=sign-in-screen]" },
-            { "click": "[data-shot=sign-in-submit]" },
-            { "wait": "[data-shot=more-account]" },
-            { "wait": 400 },
-            { "goto": "/mobile/lists" },
-            { "wait": 400 }
+            {
+              "click": "[data-shot=more-sign-out]"
+            },
+            {
+              "wait": "[data-shot=sign-in-screen]"
+            },
+            {
+              "click": "[data-shot=sign-in-submit]"
+            },
+            {
+              "wait": "[data-shot=more-account]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "goto": "/mobile/lists"
+            },
+            {
+              "wait": 400
+            }
           ],
           "highlight": []
+        },
+        {
+          "state": "no-longer-active",
+          "caption": "Refused once the anaesthetist's last day has passed: Dr Reeves can no longer sign in, and the refusal is logged",
+          "steps": [
+            {
+              "click": "[data-shot=more-sign-out]"
+            },
+            {
+              "wait": "[data-shot=sign-in-screen]"
+            },
+            {
+              "trigger": "try-sign-in-after-last-day"
+            },
+            {
+              "wait": "[data-shot=sign-in-no-longer-active]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=sign-in-no-longer-active]"
+          ]
         }
       ]
     },
@@ -44,10 +85,16 @@
       "states": [
         {
           "steps": [
-            { "scroll": "[data-shot=more-account]" },
-            { "wait": 300 }
+            {
+              "scroll": "[data-shot=more-account]"
+            },
+            {
+              "wait": 300
+            }
           ],
-          "highlight": ["[data-shot=more-account]"]
+          "highlight": [
+            "[data-shot=more-account]"
+          ]
         }
       ]
     }

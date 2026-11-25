@@ -105,7 +105,7 @@ AR-58 (the contract model proposal, `requirements-board/requirements/artifacts/A
 
 ## Prototype readiness snapshot
 
-Snapshot date: **24 November 2026**. Every catch-up phase is built, and everything in S1 to S5 runs in
+Snapshot date: **25 November 2026**. Every catch-up phase and every build-plan phase (the Contracts and People sections) is built, and everything in S1 to S5 runs in
 the app. Settled rules show on screen as rules, with no label. The few readings still open with AA
 carry the label the run sheet quotes, listed under "How to read the readiness" in the
 [demo script](03-demo-script.md). The phase behind each area is in the readiness table of
@@ -116,8 +116,8 @@ carry the label the run sheet quotes, listed under "How to read the readiness" i
 | Sign-in on the handset (provisional, OQ-83), Lists, Bookings, capture, submit, search | S1 |
 | Intake: hospital file import, Matching, the rooms' PDF lists, stubs, each List's sender | S1 |
 | The step rail, No contract · RVG and No contract · Fixed price, the descriptions | S1 |
-| Day view, sessions and Public sessions, out-of-hours sessions, help line and product support | S2 |
-| Warnings and the to-do list, Draft Lists with tiers and pairings, sickness, Conflicts | S2 |
+| Day view (in pages or one scrolling list, its rail one work card with To-do and Notifications), sessions and Public sessions, out-of-hours sessions, help line and product support | S2 |
+| Warnings and the to-do list, Draft Lists with tiers and pairings, sickness, Conflicts (hospital closures and Christmas shutdowns) | S2 |
 | An anaesthetist's own move of a List or a single Booking, the notification pool, the update email | S2 |
 | Review and authorise, the pricing snapshot, one invoice per payer, the Split, the five pricing kinds | S2, S3 |
 | Xero pairs, payment by webhook, the weekly payment run (proposed, OQ-47), remittances, GST report | S3 |
@@ -126,7 +126,9 @@ carry the label the run sheet quotes, listed under "How to read the readiness" i
 | Events, additional invoices, billing failure and retry, credit note and credit and rebill | S4 |
 | Audit trail and change sets, NHI at entry, no NHI in Xero, the lock, each Contract's history | S5 |
 | The rate per unit read at authorise and kept in the lock, the go-live load | S5 |
-| Full-scale data (85 anaesthetists, four months, a year of invoices) | S2 aside |
+| The Contracts section: the grouped catalogue, each Contract's page, New contract, Parties and Funding tags, Replace from a date | S3 aside, S5 |
+| The People section: the anaesthetist's, surgeon's, specialty's and patient's pages, the Rate and tier card, making an anaesthetist inactive from a last day | S1 aside, S5 |
+| AA's whole practice as the everyday data (85 anaesthetists, four months); a full year of invoices on demand | Every scenario; S2 aside |
 | Automatic hospital feeds over HL7 and FHIR | Future scope, on its own badged demo surface |
 
 Demo-only surfaces stay labelled. The Control Panel, the **Demo actions** menu in the harness bar, the
@@ -141,8 +143,8 @@ Follow one recognisable business object instead of touring screens:
 
 > Dr Melanie Souter's operating Lists, at Southern Cross, St George's and Forte Health.
 
-Her Tue 28 Jul AM List at St George's takes S1's imported Booking, Sarah Mitchell, for live capture on
-the phone. Her two Mon 20 Jul Lists wait on Review for S3. Her Fri 24 Jul Lists carry the prepaid
+Her Tue 1 Dec AM List at St George's takes S1's imported Booking, Sarah Mitchell, for live capture on
+the phone. Her two Mon 23 Nov Lists wait on Review for S3. Her Fri 27 Nov Lists carry the prepaid
 Bookings for S4.
 
 ```text
@@ -158,7 +160,7 @@ Hospital file imported and matched        S1
 
 S4 then takes the hard cases (prepayment, events, a billing failure, credit and rebill) and S5 the
 compliance questions. Each scenario starts from a Reset or its own jump on the Control Panel. The
-[demo script](03-demo-script.md) has the run orders: the full run is 50 to 59 minutes, the short run 30
+[demo script](03-demo-script.md) has the run orders: the full run is 53 to 61 minutes, the short run 30
 to 40.
 
 ## Where each topic lives in the catalogue

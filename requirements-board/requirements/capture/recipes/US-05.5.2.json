@@ -26,7 +26,7 @@
               "wait": "[data-shot=web-lookback-search] tr[data-booking-id]"
             },
             {
-              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -85,7 +85,7 @@
               "wait": "[data-shot=mobile-lookback-search] button[data-booking-id]"
             },
             {
-              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=mobile-lookback-search] button[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -148,7 +148,7 @@
               "wait": "[data-shot=web-lookback-search] tr[data-booking-id]"
             },
             {
-              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"15 Jul\") >> nth=0"
+              "click": "[data-shot=web-lookback-search] tr[data-booking-id]:has-text(\"18 Nov\") >> nth=0"
             },
             {
               "wait": "[data-shot=procedure-events]"
@@ -205,7 +205,7 @@
               "goto": "/admin/review"
             },
             {
-              "click": "role=button[name=/^Review .*Souter.*Wed 15 Jul$/]"
+              "click": "role=button[name=/^Review .*Souter.*Wed 18 Nov$/]"
             },
             {
               "wait": "role=button[name=\"Authorise for billing\"]"

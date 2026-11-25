@@ -71,7 +71,8 @@ test('mobile: My calendar, Add days off for a week, a fortnightly Friday PM seri
   await sheet.getByRole('button', { name: 'Done', exact: true }).click()
   await expect(calendar.locator('[data-shot="mobile-availability-series"]')).toContainText('Unavailable, Friday PM, every 2 weeks, no end date')
 
-  // One instance: Fri 28 Aug.
+  // One instance: Fri 1 Jan (Fri 18 Dec was already On holiday), in the next month.
+  await calendar.getByRole('button', { name: 'Next month' }).click()
   await calendar.locator(`button[data-date="2027-01-01"]`).click()
   await expect(sheet.getByRole('button', { name: 'Change this one' })).toBeVisible()
   await expect(sheet.getByRole('button', { name: 'Delete this one' })).toBeVisible()

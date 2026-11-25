@@ -11,16 +11,16 @@
       "states": [
         {
           "state": "prompt",
-          "caption": "Unavailable on her Thu 23 PM session, which holds a List: Return to the office or Hand on to a colleague",
+          "caption": "Unavailable on her Thu 26 Nov PM session, which holds a List: Return to the office or Hand on to a colleague",
           "steps": [
             {
-              "click": "button[data-date=\"2026-07-23\"]"
+              "click": "button[data-date=\"2026-11-26\"]"
             },
             {
               "click": "[data-shot=\"availability-change\"]"
             },
             {
-              "click": "[data-shot=\"mobile-availability-sheet\"] [data-slot-id=\"S-34821-2026-07-23-PM\"] >> role=button[name=\"Change\"]"
+              "click": "[data-shot=\"mobile-availability-sheet\"] [data-slot-id=\"S-34821-2026-11-26-PM\"] >> role=button[name=\"Change\"]"
             },
             {
               "click": "[data-shot=\"mobile-availability-sheet\"] [data-status-choice=\"unavailable\"]"
@@ -41,13 +41,13 @@
           "caption": "Then what her session becomes: the status she is setting, or Free",
           "steps": [
             {
-              "click": "button[data-date=\"2026-07-23\"]"
+              "click": "button[data-date=\"2026-11-26\"]"
             },
             {
               "click": "[data-shot=\"availability-change\"]"
             },
             {
-              "click": "[data-shot=\"mobile-availability-sheet\"] [data-slot-id=\"S-34821-2026-07-23-PM\"] >> role=button[name=\"Change\"]"
+              "click": "[data-shot=\"mobile-availability-sheet\"] [data-slot-id=\"S-34821-2026-11-26-PM\"] >> role=button[name=\"Change\"]"
             },
             {
               "click": "[data-shot=\"mobile-availability-sheet\"] [data-status-choice=\"unavailable\"]"
@@ -77,13 +77,13 @@
           "caption": "Returned to the office first, then the session saved as Unavailable",
           "steps": [
             {
-              "click": "button[data-date=\"2026-07-23\"]"
+              "click": "button[data-date=\"2026-11-26\"]"
             },
             {
               "click": "[data-shot=\"availability-change\"]"
             },
             {
-              "click": "[data-shot=\"mobile-availability-sheet\"] [data-slot-id=\"S-34821-2026-07-23-PM\"] >> role=button[name=\"Change\"]"
+              "click": "[data-shot=\"mobile-availability-sheet\"] [data-slot-id=\"S-34821-2026-11-26-PM\"] >> role=button[name=\"Change\"]"
             },
             {
               "click": "[data-shot=\"mobile-availability-sheet\"] [data-status-choice=\"unavailable\"]"
@@ -117,14 +117,14 @@
       "name": "unavailable-prompt",
       "app": "web",
       "caption": "Marking a booked session not available asks whether its List returns to the office or goes to a colleague",
-      "start": "/web/availability/mine?date=2026-07-23",
+      "start": "/web/availability/mine?date=2026-11-26",
       "states": [
         {
           "state": "prompt",
           "caption": "My availability: Unavailable on a session holding a List asks where the List goes",
           "steps": [
             {
-              "click": "[data-shot=\"web-availability-rail\"] [data-slot-id=\"S-34821-2026-07-23-PM\"] >> role=button[name=\"Change\"]"
+              "click": "[data-shot=\"web-availability-rail\"] [data-slot-id=\"S-34821-2026-11-26-PM\"] >> role=button[name=\"Change\"]"
             },
             {
               "click": "[data-shot=\"web-availability-rail\"] [data-status-choice=\"unavailable\"]"
@@ -145,7 +145,7 @@
           "caption": "Then what her session becomes: the status she is setting, or Free",
           "steps": [
             {
-              "click": "[data-shot=\"web-availability-rail\"] [data-slot-id=\"S-34821-2026-07-23-PM\"] >> role=button[name=\"Change\"]"
+              "click": "[data-shot=\"web-availability-rail\"] [data-slot-id=\"S-34821-2026-11-26-PM\"] >> role=button[name=\"Change\"]"
             },
             {
               "click": "[data-shot=\"web-availability-rail\"] [data-status-choice=\"unavailable\"]"
@@ -175,7 +175,7 @@
           "caption": "Returned to the office first, then the session saved as Unavailable",
           "steps": [
             {
-              "click": "[data-shot=\"web-availability-rail\"] [data-slot-id=\"S-34821-2026-07-23-PM\"] >> role=button[name=\"Change\"]"
+              "click": "[data-shot=\"web-availability-rail\"] [data-slot-id=\"S-34821-2026-11-26-PM\"] >> role=button[name=\"Change\"]"
             },
             {
               "click": "[data-shot=\"web-availability-rail\"] [data-status-choice=\"unavailable\"]"
@@ -209,13 +209,13 @@
       "name": "unavailable-prompt",
       "app": "admin",
       "caption": "The returned List waits for the office with its hospital, surgeon and Bookings",
-      "start": "/admin/day/2026-07-23",
+      "start": "/admin/day/2026-11-26",
       "setup": [
         {
-          "goto": "/web/availability/mine?date=2026-07-23"
+          "goto": "/web/availability/mine?date=2026-11-26"
         },
         {
-          "click": "[data-shot=\"web-availability-rail\"] [data-slot-id=\"S-34821-2026-07-23-PM\"] >> role=button[name=\"Change\"]"
+          "click": "[data-shot=\"web-availability-rail\"] [data-slot-id=\"S-34821-2026-11-26-PM\"] >> role=button[name=\"Change\"]"
         },
         {
           "click": "[data-shot=\"web-availability-rail\"] [data-status-choice=\"unavailable\"]"
@@ -239,7 +239,7 @@
           "wait": "[data-shot=\"availability-result\"]"
         },
         {
-          "goto": "/admin/day/2026-07-23"
+          "goto": "/admin/day/2026-11-26"
         }
       ],
       "states": [
@@ -260,10 +260,10 @@
           "caption": "The office too: marking a booked session Unavailable asks where its List goes, there and then",
           "steps": [
             {
-              "goto": "/admin/day/2026-07-22"
+              "goto": "/admin/day/2026-11-25"
             },
             {
-              "click": "button[data-list-id=\"L-41267-2026-07-22-PM\"]"
+              "click": "button[data-list-id=\"L-41267-2026-11-25-PM\"]"
             },
             {
               "wait": 400
@@ -293,10 +293,10 @@
           "caption": "The office chooses what the session becomes, with no conflict left behind",
           "steps": [
             {
-              "goto": "/admin/day/2026-07-22"
+              "goto": "/admin/day/2026-11-25"
             },
             {
-              "click": "button[data-list-id=\"L-41267-2026-07-22-PM\"]"
+              "click": "button[data-list-id=\"L-41267-2026-11-25-PM\"]"
             },
             {
               "wait": 400

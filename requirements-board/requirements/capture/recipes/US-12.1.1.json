@@ -6,31 +6,34 @@
     {
       "name": "unit-value",
       "app": "admin",
-      "caption": "Anaesthetists in Master data with their rate per unit",
-      "start": "/admin/masters",
+      "caption": "Anaesthetists in the People section with their rate per unit",
+      "start": "/admin/people/anaesthetists",
       "states": [
         {
           "state": "list",
-          "caption": "Anaesthetists in Master data with their dollar value per unit",
+          "caption": "Anaesthetists in the People section with their dollar value per unit",
           "steps": [],
           "highlight": [
-            "table th:nth-child(3)",
-            "table td:nth-child(3)"
+            "[data-shot=masters-anaesthetists] th:nth-child(3)",
+            "[data-shot=masters-anaesthetists] td:nth-child(3)"
           ]
         },
         {
           "state": "edit",
-          "caption": "Editing an anaesthetist's rate per unit",
+          "caption": "Editing Dr Souter's rate per unit on her record's Rate and tier card",
           "steps": [
             {
-              "click": "tr:has-text(\"Souter\") >> text=\"Edit\""
+              "goto": "/admin/people/anaesthetists/34821"
             },
             {
-              "wait": 500
+              "click": "[data-shot=rate-tier-card-edit]"
+            },
+            {
+              "wait": 400
             }
           ],
           "highlight": [
-            "[role=dialog] label:has-text(\"Rate per unit\")"
+            "[data-shot=rate-tier-card]"
           ]
         }
       ]

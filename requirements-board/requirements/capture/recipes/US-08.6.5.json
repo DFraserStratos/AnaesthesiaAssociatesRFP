@@ -7,10 +7,10 @@
       "name": "credit-note-option",
       "app": "admin",
       "caption": "The credit note option sits beside Create additional invoice on an invoiced Procedure",
-      "start": "/admin/day/2026-07-14/bookings/BK0032",
+      "start": "/admin/day/2026-11-17/bookings/BK0032",
       "setup": [
         {
-          "goto": "/admin/review/L-41267-2026-07-14-AM"
+          "goto": "/admin/review/L-41267-2026-11-17-AM"
         },
         {
           "trigger": "stage-post-op"
@@ -323,13 +323,13 @@
       "name": "prepaid-credit-note",
       "app": "web",
       "caption": "A prepayment invoice is credited in full by hand, never in part; anything still owed is a fresh additional invoice",
-      "start": "/web/lists/L-34821-2026-07-24-PM/bookings/BK0038",
+      "start": "/web/lists/L-34821-2026-11-27-PM/bookings/BK0038",
       "states": [
         {
           "caption": "On her own prepaid Procedure, Dr Souter's credit note credits the whole prepayment invoice; a credit note is not a refund",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Priya Nair\" >> nth=0"
@@ -375,7 +375,7 @@
               "wait": 1500
             },
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Mark list completed\" >> nth=0"
@@ -387,7 +387,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-07-24-PM"
+              "goto": "/admin/review/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -402,7 +402,7 @@
               "wait": 800
             },
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM/bookings/BK0038"
+              "goto": "/web/lists/L-34821-2026-11-27-PM/bookings/BK0038"
             },
             {
               "wait": "[data-shot=prepaid-settlement]"

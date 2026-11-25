@@ -7,7 +7,7 @@
       "name": "add-card",
       "app": "web",
       "caption": "Add a Booking to my List",
-      "start": "/web/lists/L-34821-2026-07-21-PM",
+      "start": "/web/lists/L-34821-2026-11-24-PM",
       "states": [
         {
           "state": "manual",
@@ -55,7 +55,7 @@
       "name": "add-card",
       "app": "mobile",
       "caption": "Add a Booking to my List",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM",
       "states": [
         {
           "state": "manual",

@@ -37,7 +37,7 @@ test('admin phase 06 walkthrough', async ({ page }) => {
   await page.screenshot({ path: 'visual/shots/a-03-drawer.png', fullPage: true })
 
   // Open a booking as the office → the billing-setup section.
-  await page.getByRole('button', { name: 'Open', exact: true }).first().click()
+  await page.getByTestId('admin-list-drawer').getByRole('button', { name: /^Open Booking for / }).first().click()
   await page.waitForTimeout(300)
   await expect(page.getByText(/Office billing setup/).first()).toBeVisible()
   await page.screenshot({ path: 'visual/shots/a-04-booking.png', fullPage: true })
@@ -102,13 +102,13 @@ test('admin mini calendar supports keyboard date navigation', async ({ page }) =
   await expect(nextMonthDay).toHaveCSS('border-color', 'rgb(169, 30, 62)')
 
   await page.keyboard.press('PageUp')
-  await expect(calendar.getByRole('button', { name: 'Thursday 5 November 2026', exact: true })).toBeFocused()
+  await expect(calendar.getByRole('button', { name: 'Friday 6 November 2026', exact: true })).toBeFocused()
   await page.keyboard.press('Shift+PageDown')
-  const nextYearDay = calendar.getByRole('button', { name: 'Friday 5 November 2027', exact: true })
+  const nextYearDay = calendar.getByRole('button', { name: 'Saturday 6 November 2027', exact: true })
   await expect(nextYearDay).toBeFocused()
   await page.keyboard.press('Space')
-  await expect(page).toHaveURL(/\/admin\/day\/2027-11-05$/)
-  await expect(page.getByRole('heading', { name: /Friday 5 November 2027/ })).toBeVisible()
+  await expect(page).toHaveURL(/\/admin\/day\/2027-11-06$/)
+  await expect(page.getByRole('heading', { name: /Saturday 6 November 2027/ })).toBeVisible()
 })
 
 test('admin phase 06 list reassignment', async ({ page }) => {
@@ -153,7 +153,7 @@ test('admin phase 06 office edits a SUBMITTED booking', async ({ page }) => {
   await page.getByText(/Mr S\. Tan/).first().click()
   await page.waitForTimeout(300)
   await expect(page.getByText(/Mon 23 Nov .* SUBMITTED/)).toBeVisible()
-  await page.getByRole('button', { name: 'Open', exact: true }).first().click()
+  await page.getByTestId('admin-list-drawer').getByRole('button', { name: /^Open Booking for / }).first().click()
   await page.waitForTimeout(300)
   // The office can cancel a booking on a SUBMITTED list (checklist item 7); it was
   // ACTIVE-only before the fix. Since catch-up Phase 38a the anaesthetist can too, on her own List.
@@ -229,11 +229,18 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   // Stored exactly as told, with Phone, and it starts the invoice description ("As entered").
   const readSaved = () => page.evaluate(() => {
     // The store's own key (catch-up Phase 43a added other aa-* keys: the sign-in session).
+    // It saves a delta against the seed (store/persistDelta.ts): the new Booking,
+    // its procedure and the looked-up patient are among the changed records.
     const key = 'aa-demo'
-    const st = JSON.parse(localStorage.getItem(key)!).state
-    const p = Object.values(st.schedule.procedures as Record<string, { procedureText: { text: string; source: string } | null; invoiceDescription: { origin: string } | null; bookingId: string }>).find(
-      (x) => st.masters.patients[st.schedule.bookings[x.bookingId].patientId]?.name === 'Demo Patient',
-    )
+    type Change = { $sub?: Record<string, { $records?: Record<string, unknown> }> }
+    const raw = localStorage.getItem(key)
+    if (raw === null) return null
+    const top = (JSON.parse(raw).state?.top ?? {}) as Record<string, Change>
+    const records = <T,>(slice: string, map: string) => (top[slice]?.$sub?.[map]?.$records ?? {}) as Record<string, T>
+    const procedures = records<{ procedureText: { text: string; source: string } | null; invoiceDescription: { origin: string } | null; bookingId: string }>('schedule', 'procedures')
+    const bookings = records<{ patientId: string }>('schedule', 'bookings')
+    const patients = records<{ name: string }>('masters', 'patients')
+    const p = Object.values(procedures).find((x) => patients[bookings[x.bookingId]?.patientId ?? '']?.name === 'Demo Patient')
     return p !== undefined ? { text: p.procedureText?.text, source: p.procedureText?.source, origin: p.invoiceDescription?.origin } : null
   })
   // The store persists on a short debounce.

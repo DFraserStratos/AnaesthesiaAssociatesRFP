@@ -7,7 +7,7 @@
       "name": "insurer-approval",
       "app": "admin",
       "caption": "Insurer or funder and approval number on the Booking; a missing number is the only insurance warning, for an insurer only",
-      "start": "/admin/day/2026-07-17/bookings/BK0173",
+      "start": "/admin/day/2026-11-20/bookings/BK0173",
       "states": [
         {
           "state": "missing",
@@ -47,7 +47,7 @@
       "name": "funder-no-warning",
       "app": "admin",
       "caption": "Health NZ is a funder, not an insurer: no warning without a number",
-      "start": "/admin/day/2026-07-17/bookings/BK0174",
+      "start": "/admin/day/2026-11-20/bookings/BK0174",
       "states": [
         {
           "steps": [
@@ -68,7 +68,7 @@
       "name": "approval-on-the-day",
       "app": "mobile",
       "caption": "The anaesthetist sees the number and may change it on the day",
-      "start": "/mobile/lists/L-34821-2026-07-21-AM/bookings/BK0003",
+      "start": "/mobile/lists/L-34821-2026-11-24-AM/bookings/BK0003",
       "states": [
         {
           "state": "warning",

@@ -7,7 +7,7 @@
       "name": "make-primary",
       "app": "web",
       "caption": "Anyone with edit rights can set the primary Procedure, and it is shown first",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/web/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "before",
@@ -93,7 +93,7 @@
       "name": "make-primary",
       "app": "mobile",
       "caption": "Anyone with edit rights can set the primary Procedure, and it is shown first",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "before",
@@ -179,7 +179,7 @@
       "name": "make-primary",
       "app": "admin",
       "caption": "Anyone with edit rights can set the primary Procedure, and it is shown first",
-      "start": "/admin/day/2026-07-13/bookings/BK0184",
+      "start": "/admin/day/2026-11-16/bookings/BK0184",
       "states": [
         {
           "state": "before",

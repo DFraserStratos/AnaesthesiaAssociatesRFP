@@ -115,8 +115,8 @@ test('3 · Simulate sickness on a List with Bookings: the result says where the 
   await page.screenshot({ path: 'visual/shots/p32b-08-simulate-sickness.png', fullPage: true })
   await page.goto('/admin/conflicts')
   await page.waitForLoadState('networkidle')
-  // 16 since catch-up Phase 32d (three bookless public Lists at a closed Christchurch Public are Public sessions).
-  await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('16')
+  // The six closure flags from the demo day on (the Wed 25 Southern Cross closure); sickness adds none.
+  await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('6')
 })
 
 test('4 · Assign Draft List and Reassign: an unavailable colleague shows but cannot be picked; Ask Dr X frees the row; Preferred first within a tier', async ({ page }) => {
@@ -195,8 +195,12 @@ test('5 · Web and mobile as Dr Souter: mark a booked session unavailable, hand 
 test('6 · Notifications: count, tick hides for every admin (reload), Show resolved with who and when; the tick is the To-do Clear shape', async ({ page }) => {
   await fresh(page, '/admin/day/2026-11-24')
   await runDemoAction(page, 'colleague-moves-list-to-office', { choice: 'one', close: true })
+  // The pool is the work card's Notifications tab; its count is the tab's badge.
+  const tab = page.locator('[data-shot="admin-work-tab-notifications"]')
+  await tab.click()
   const card = page.locator('[data-shot="admin-notifications-rail"]')
-  await expect(card.locator('[data-shot="admin-notifications-count"]')).toHaveText(/^1/)
+  const count = tab.locator('[data-shot="admin-notifications-count"]')
+  await expect(count).toHaveText(/^1/)
   await card.scrollIntoViewIfNeeded()
   await card.screenshot({ path: 'visual/shots/p32b-14-rail-active.png' })
   const tick = card.locator('[data-shot="notification-tick"]')
@@ -208,12 +212,13 @@ test('6 · Notifications: count, tick hides for every admin (reload), Show resol
   }
   await tick.focus()
   await page.keyboard.press('Enter')
-  await expect(card.locator('[data-shot="admin-notifications-count"]')).toHaveText(/^0/)
+  await expect(count).toHaveText(/^0/)
   await expect(card.locator('[data-notification-row]')).toHaveCount(0)
   await card.screenshot({ path: 'visual/shots/p32b-15-rail-resolved.png' })
   // Another admin (a reload) sees it gone too: the pool has no per-user state.
   await page.reload()
   await page.waitForLoadState('networkidle')
+  await tab.click()
   await expect(page.locator('[data-shot="admin-notifications-rail"] [data-notification-row]')).toHaveCount(0)
   await page.goto('/admin/notifications?resolved=1')
   await page.waitForLoadState('networkidle')

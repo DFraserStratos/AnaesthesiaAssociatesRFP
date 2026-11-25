@@ -75,7 +75,7 @@
       "name": "add-nhi",
       "app": "admin",
       "caption": "The office adds the NHI at intake and the Booking takes the stub's place (our reading)",
-      "start": "/admin/day/2026-08-04",
+      "start": "/admin/day/2026-12-08",
       "setup": [
         {
           "goto": "/admin/intake/matching"
@@ -112,7 +112,7 @@
           "caption": "The List drawer: Mere Tipene's Booking where the stub stood, and no stub left (our reading)",
           "steps": [
             {
-              "click": "button[data-list-id=\"L-34821-2026-08-04-PM\"]"
+              "click": "button[data-list-id=\"L-34821-2026-12-08-PM\"]"
             },
             {
               "wait": "[data-testid=admin-list-drawer]"
@@ -131,7 +131,7 @@
       "name": "add-nhi",
       "app": "mobile",
       "caption": "The office adds the NHI at intake and the Booking takes the stub's place (our reading)",
-      "start": "/mobile/lists/L-34821-2026-08-04-PM",
+      "start": "/mobile/lists/L-34821-2026-12-08-PM",
       "states": [
         {
           "state": "stub",

@@ -7,7 +7,7 @@
       "name": "stub-marked",
       "app": "mobile",
       "caption": "The stub is clearly marked for the anaesthetist and the office as a booking the office must resolve",
-      "start": "/mobile/lists/L-34821-2026-08-04-PM",
+      "start": "/mobile/lists/L-34821-2026-12-08-PM",
       "states": [
         {
           "state": "list",
@@ -48,7 +48,7 @@
       "name": "stub-marked",
       "app": "web",
       "caption": "The stub is clearly marked for the anaesthetist and the office as a booking the office must resolve",
-      "start": "/web/lists/L-34821-2026-08-04-PM",
+      "start": "/web/lists/L-34821-2026-12-08-PM",
       "states": [
         {
           "state": "list",
@@ -89,7 +89,7 @@
       "name": "stub-marked",
       "app": "admin",
       "caption": "The stub is clearly marked for the anaesthetist and the office as a booking the office must resolve",
-      "start": "/admin/day/2026-08-04",
+      "start": "/admin/day/2026-12-08",
       "states": [
         {
           "state": "grid",
@@ -103,7 +103,7 @@
             }
           ],
           "highlight": [
-            "button[data-list-id=\"L-34821-2026-08-04-PM\"]"
+            "button[data-list-id=\"L-34821-2026-12-08-PM\"]"
           ]
         },
         {
@@ -111,7 +111,7 @@
           "caption": "In the List drawer, the stub among the Bookings with Resolve on Matching",
           "steps": [
             {
-              "click": "button[data-list-id=\"L-34821-2026-08-04-PM\"]"
+              "click": "button[data-list-id=\"L-34821-2026-12-08-PM\"]"
             },
             {
               "wait": "[data-testid=admin-list-drawer]"
@@ -130,7 +130,7 @@
       "name": "stub-review",
       "app": "admin",
       "caption": "The stub is clearly marked for the anaesthetist and the office as a booking the office must resolve",
-      "start": "/admin/review/L-34821-2026-08-04-PM",
+      "start": "/admin/review/L-34821-2026-12-08-PM",
       "states": [
         {
           "state": "row",

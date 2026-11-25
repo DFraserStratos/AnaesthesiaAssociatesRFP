@@ -7,7 +7,7 @@
       "name": "entered-by-anaesthetist",
       "app": "web",
       "caption": "Anaesthetist stamps the finish time on a Booking",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/web/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "steps": [
@@ -28,10 +28,10 @@
       "name": "seen-by-office",
       "app": "admin",
       "caption": "The same finish time, current in the office's view of the Booking",
-      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "start": "/admin/day/2026-11-24/bookings/BK0009",
       "setup": [
         {
-          "goto": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009"
+          "goto": "/web/lists/L-34821-2026-11-24-PM/bookings/BK0009"
         },
         {
           "click": "text=\"Finish now\""
@@ -53,7 +53,7 @@
       "name": "billing-exception",
       "app": "admin",
       "caption": "Billing is the one exception: once authorised, a Booking keeps the rate it was locked with",
-      "start": "/admin/day/2026-07-20/bookings/BK0023",
+      "start": "/admin/day/2026-11-23/bookings/BK0023",
       "setup": [
         {
           "scenario": "S3"
@@ -62,7 +62,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -80,23 +80,23 @@
           "wait": 400
         },
         {
-          "goto": "/admin/masters"
+          "goto": "/admin/people/anaesthetists/34821"
         },
         {
           "wait": 600
         },
         {
-          "click": "[data-shot=masters-anaesthetists] tr:has-text(\"Souter\") >> text=\"Edit\""
+          "click": "[data-shot=rate-tier-card-edit]"
         },
         {
-          "wait": 500
+          "wait": 300
         },
         {
-          "fill": "[role=dialog] >> role=textbox[name=\"Rate per unit ($)\"]",
+          "fill": "[data-shot=rate-tier-card] >> role=textbox[name=\"Rate per unit ($)\"]",
           "value": "28.00"
         },
         {
-          "click": "[role=dialog] >> role=button[name=\"Save changes\"]"
+          "click": "[data-shot=rate-tier-card-save]"
         },
         {
           "wait": 500
@@ -123,7 +123,7 @@
               "wait": 400
             },
             {
-              "goto": "/admin/day/2026-07-27/bookings/BK0186"
+              "goto": "/admin/day/2026-11-30/bookings/BK0186"
             },
             {
               "wait": 900

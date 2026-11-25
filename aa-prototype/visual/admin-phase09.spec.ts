@@ -19,6 +19,8 @@ test('admin phase 09: billing monitor failure, resolve and retry (re-based on th
   // Pressed once, it reads Already triggered.
   await expect(page.locator('[data-shot="demo-action-billing-failure"]').getByText('Already triggered')).toBeVisible()
   await page.keyboard.press('Escape')
+  // The monitor pages its anaesthetist groups at 20 across the whole practice: filter to Dr Ropata's.
+  await page.locator('[data-shot="billing-monitor-filters"]').getByLabel('Anaesthetist').selectOption('39560')
 
   // Losa Tuilagi's hand-off waits for Xero in the sync queue (catch-up Phase 37); Hemi Walker billed; the List is not failed.
   const queue = page.locator('[data-shot="billing-xero-queue"]')
@@ -53,7 +55,7 @@ test('admin phase 09: prepayment warning on a booking (never a block)', async ({
   // Open Souter's AM list (Forte / Ms G. Lim) and its booking: the warning banner.
   await page.getByText('Ms G. Lim', { exact: false }).first().click()
   await page.waitForTimeout(300)
-  await page.getByRole('button', { name: 'Open', exact: true }).first().click()
+  await page.getByTestId('admin-list-drawer').getByRole('button', { name: /^Open Booking for / }).first().click()
   await page.waitForTimeout(300)
   await expect(page.locator('[data-shot="booking-warnings"]')).toBeVisible()
   await expect(page.getByText('Prepayment of $1,200.00 from Annette Riley is awaiting approval on Invoices and has not been sent.')).toBeVisible()

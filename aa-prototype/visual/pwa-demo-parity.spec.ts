@@ -141,8 +141,8 @@ const SCREENS: readonly ScreenRow[] = [
       await expect(load.getByRole('status')).toContainText('3 procedures, 7 modifier units')
       await page.keyboard.press('Escape')
       await expect(load).toBeHidden()
-      // The staged Booking takes the next Booking id after the seed's last (BK0191, as in `pwa-device.spec.ts`).
-      await page.goto('/mobile/lists/L-34821-2026-11-25-AM/bookings/BK0191')
+      // The staged Booking takes the next Booking id after the whole practice's last (BK5101, as in `pwa-device.spec.ts`).
+      await page.goto('/mobile/lists/L-34821-2026-11-25-AM/bookings/BK5101')
       await settle(page)
       await expect(page.locator('[data-shot="procedure-primary-pill"]').first()).toBeVisible()
     },

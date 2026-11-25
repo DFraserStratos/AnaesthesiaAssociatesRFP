@@ -26,7 +26,7 @@
           "caption": "Authorising the List transfers the prepayment to Dr Melanie Souter, who did it: the balance falls to $0.00",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Priya Nair\" >> nth=0"
@@ -72,7 +72,7 @@
               "wait": 1500
             },
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Mark list completed\" >> nth=0"
@@ -84,7 +84,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-07-24-PM"
+              "goto": "/admin/review/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -137,7 +137,7 @@
           "caption": "Transferred at authorise and paid in the weekly payment run in Xero: Paid to you",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Priya Nair\" >> nth=0"
@@ -183,7 +183,7 @@
               "wait": 1500
             },
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Mark list completed\" >> nth=0"
@@ -195,7 +195,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-07-24-PM"
+              "goto": "/admin/review/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -228,10 +228,10 @@
               "click": "[data-shot=payment-cycle-send]"
             },
             {
-              "wait": 400
+              "wait": 2500
             },
             {
-              "click": "[data-shot=billing-run-payables-in-xero]"
+              "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
             },
             {
               "wait": "[data-shot=billing-payables-result]"
@@ -256,7 +256,7 @@
       "name": "prepayment-held",
       "app": "mobile",
       "caption": "On the phone, the prepaid Booking says AA holds the prepayment until the List is authorised",
-      "start": "/mobile/lists/L-34821-2026-07-24-PM/bookings/BK0038",
+      "start": "/mobile/lists/L-34821-2026-11-27-PM/bookings/BK0038",
       "states": [
         {
           "steps": [

@@ -7,7 +7,7 @@
       "name": "roles",
       "app": "admin",
       "caption": "Roles in this prototype, view and edit rights by role",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "steps": [
@@ -42,7 +42,7 @@
             },
             {
               "select": "[data-shot=data-guard-console] select >> nth=2",
-              "value": "L-34821-2026-07-20-AM"
+              "value": "L-34821-2026-11-23-AM"
             },
             {
               "wait": 300

@@ -49,7 +49,7 @@ test('AA fee: settings, seeded BCTIs, the monthly run, the fee pair and the web 
   await expect(rutherford).toContainText('$700.00')
   await page.screenshot({ path: 'visual/shots/p16-02-aa-fee-preview.png', fullPage: true })
   await screen.getByRole('button', { name: 'Run monthly fee invoices' }).click()
-  await expect(screen.getByRole('status')).toContainText('Raised 14 fee invoices for November 2026')
+  await expect(screen.getByRole('status')).toContainText('Raised 83 fee invoices for November 2026')
   await expect(screen.getByRole('button', { name: 'Run monthly fee invoices' })).toBeDisabled()
   await expect(screen).toContainText('Every active anaesthetist already has a fee invoice for November 2026.')
   const rutherfordRow = page.locator('tr', { hasText: 'Dr Rutherford' }).filter({ hasText: 'November 2026' })

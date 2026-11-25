@@ -1,0 +1,202 @@
+{
+  "id": "US-12.1.6",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "make-inactive",
+      "app": "admin",
+      "caption": "Make inactive on the anaesthetist's page",
+      "start": "/admin/people/anaesthetists/31902",
+      "states": [
+        {
+          "state": "active",
+          "caption": "Dr Beaumont's Status card: active, with Make inactive",
+          "steps": [
+            {
+              "wait": "[data-shot=anaesthetist-status]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=anaesthetist-status]"
+          ]
+        },
+        {
+          "state": "refused",
+          "caption": "Refused while she holds Lists after the last day: the office sees them, to reassign first",
+          "steps": [
+            {
+              "click": "[data-shot=anaesthetist-make-inactive]"
+            },
+            {
+              "wait": "[data-shot=make-inactive-sheet]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=make-inactive-sheet]"
+          ]
+        },
+        {
+          "state": "last-day",
+          "caption": "A last day with no List after it, and a reason: until then nothing changes",
+          "steps": [
+            {
+              "click": "[data-shot=anaesthetist-make-inactive]"
+            },
+            {
+              "wait": "[data-shot=make-inactive-sheet]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=make-inactive-sheet] input[type=date]",
+              "value": "2027-03-24"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=make-inactive-sheet]"
+          ]
+        },
+        {
+          "state": "leaving",
+          "caption": "Made inactive from a last day of Wed 24 Mar 2027, with the reason: until then nothing changes, and Clear last day undoes it",
+          "steps": [
+            {
+              "click": "[data-shot=anaesthetist-make-inactive]"
+            },
+            {
+              "wait": "[data-shot=make-inactive-sheet]"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "fill": "[data-shot=make-inactive-sheet] input[type=date]",
+              "value": "2027-03-24"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "[data-shot=make-inactive-confirm]"
+            },
+            {
+              "wait": 600
+            }
+          ],
+          "highlight": [
+            "[data-shot=anaesthetist-status]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "inactive",
+      "app": "admin",
+      "caption": "An anaesthetist whose last day has passed",
+      "start": "/admin/people/anaesthetists/60070",
+      "states": [
+        {
+          "state": "status",
+          "caption": "Dr Reeves's last day, Fri 20 Nov, has passed: inactive since 21 Nov, with Make active",
+          "steps": [
+            {
+              "wait": "[data-shot=anaesthetist-status]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=anaesthetist-status]"
+          ]
+        },
+        {
+          "state": "history",
+          "caption": "His Lists stay readable from his page",
+          "steps": [
+            {
+              "scroll": "[data-shot=anaesthetist-history]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=anaesthetist-history]"
+          ]
+        },
+        {
+          "state": "make-active",
+          "caption": "Make active again from today: the Contracts disabled with them are offered back (none for Dr Reeves)",
+          "steps": [
+            {
+              "click": "[data-shot=anaesthetist-make-active]"
+            },
+            {
+              "wait": "[data-shot=make-active-sheet]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "inactive-list",
+      "app": "admin",
+      "caption": "The Anaesthetists list's Inactive filter",
+      "start": "/admin/people/anaesthetists",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=people-anaesthetists] >> role=button[name=\"Inactive\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=masters-anaesthetists] tr[data-anaesthetist=\"60070\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sign-in-refused",
+      "app": "mobile",
+      "caption": "After the last day the anaesthetist can no longer sign in",
+      "start": "/mobile/more",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=more-sign-out]"
+            },
+            {
+              "wait": "[data-shot=sign-in-screen]"
+            },
+            {
+              "trigger": "try-sign-in-after-last-day"
+            },
+            {
+              "wait": "[data-shot=sign-in-no-longer-active]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=sign-in-no-longer-active]"
+          ]
+        }
+      ]
+    }
+  ]
+}

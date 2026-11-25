@@ -1,13 +1,13 @@
 {
   "id": "US-04.2.11",
   "status": "partial",
-  "absentReason": "The shot shows the combinations on Master data. A fee extra billed as an event is shot on US-03.7.2, an additional invoice on US-08.6.3.",
+  "absentReason": "The shot shows the combinations in the Contracts section. A fee extra billed as an event is shot on US-03.7.2, an additional invoice on US-08.6.3.",
   "shots": [
     {
       "name": "combination-contracts",
       "app": "admin",
       "caption": "A combination is a Contract of its own, found by its RVG code",
-      "start": "/admin/masters?view=contracts",
+      "start": "/admin/contracts",
       "states": [
         {
           "steps": [

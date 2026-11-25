@@ -25,7 +25,7 @@
       "states": [
         {
           "state": "previous-month",
-          "caption": "June 2026 chosen in the month picker: the payments AA passed to you in June, their GST and the month total",
+          "caption": "October 2026 chosen in the month picker: the payments AA passed to you in June, their GST and the month total",
           "steps": [
             {
               "select": "select[data-shot=web-gst-month-picker]",

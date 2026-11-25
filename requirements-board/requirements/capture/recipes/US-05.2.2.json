@@ -7,7 +7,7 @@
       "name": "time-units",
       "app": "web",
       "caption": "The anaesthetist enters start and finish; the units follow the time tiers, held as data",
-      "start": "/web/lists/L-34821-2026-07-21-AM/bookings/BK0001",
+      "start": "/web/lists/L-34821-2026-11-24-AM/bookings/BK0001",
       "states": [
         {
           "steps": [],
@@ -22,7 +22,7 @@
       "name": "time-units",
       "app": "mobile",
       "caption": "The anaesthetist enters start and finish; the units follow the time tiers, held as data",
-      "start": "/mobile/lists/L-34821-2026-07-21-AM/bookings/BK0001",
+      "start": "/mobile/lists/L-34821-2026-11-24-AM/bookings/BK0001",
       "states": [
         {
           "steps": [],

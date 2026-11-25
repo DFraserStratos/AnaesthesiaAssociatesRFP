@@ -37,7 +37,13 @@ test('web: Move to a colleague, find by name, a blocked colleague, tell the offi
   const sheet = page.locator('[data-shot="move-booking-sheet"]')
   await expect(sheet).toContainText('Free this session')
   const free = sheet.locator('[data-shot="move-booking-receiver"]')
-  await expect(free).toHaveText([/Dr Mark Delaney/, /Dr Kate Morrison/, /Dr Tom Ngata/, /Dr Hannah Ropata/, /Dr Priya Sharma/, /Dr Ben Whitaker/])
+  // The whole practice: 27 colleagues free that session, in surname order, the scripted cast among them.
+  await expect(free).toHaveCount(27)
+  await expect(free.first()).toContainText('Dr Olivia Bryant')
+  await expect(free.last()).toContainText('Dr David Wilson')
+  for (const name of ['Dr Mark Delaney', 'Dr Kate Morrison', 'Dr Tom Ngata', 'Dr Hannah Ropata', 'Dr Priya Sharma', 'Dr Ben Whitaker']) {
+    await expect(free.filter({ hasText: name })).toHaveCount(1)
+  }
   await expect(sheet.locator('[data-shot="move-booking-blocked"]')).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p32a-02-web-free.png' })
 
@@ -85,11 +91,14 @@ test('web: Move to a colleague, find by name, a blocked colleague, tell the offi
   await expect(done).not.toContainText('The office has been told.')
 
   // The office's side: a new ACTIVE List on Dr Whitaker's row, the drawer line, and one pool row.
-  await page.goto('/admin/day/2026-11-25')
+  // The whole practice pages the grid; one scrolling list (?rows=all) puts his row on the page.
+  await page.goto('/admin/day/2026-11-25?rows=all')
   await page.waitForLoadState('networkidle')
   const whitaker = page.locator('[data-slot-id="S-36208-2026-11-25-AM"]')
   await expect(whitaker).toHaveAttribute('data-list-id', /^LG\d{4}$/)
   await expect(whitaker).toContainText('Christchurch Eye Surgery')
+  // The work card opens on To-do; the pool is its Notifications tab.
+  await page.locator('[data-shot="admin-work-tab-notifications"]').click()
   await expect(page.locator('[data-shot="admin-notifications-rail"]')).toContainText('Dr Souter moved a Booking')
   await expect(page.locator('[data-shot="admin-notifications-rail"] [data-notification-row]')).toHaveCount(1)
   await whitaker.click()
@@ -142,6 +151,7 @@ test('Admin Day: Colleague hands a Booking to Dr Souter puts a new List on her r
   await fresh(page, '/admin/day/2026-11-24')
   const message = await runDemoAction(page, 'colleague-hands-booking-to-souter', { close: true })
   expect(message).toBe('Dr Hughes moved a Booking (Wed 25 Nov PM, Christchurch Eye Surgery) to Dr Souter. A new List was created.')
+  await page.locator('[data-shot="admin-work-tab-notifications"]').click()
   await expect(page.locator('[data-shot="admin-notifications-rail"]')).toContainText('Dr Hughes moved a Booking')
   await page.goto('/admin/day/2026-11-25')
   await page.waitForLoadState('networkidle')

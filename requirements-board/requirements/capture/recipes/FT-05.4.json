@@ -7,7 +7,7 @@
       "name": "price-history",
       "app": "admin",
       "caption": "Every change audited; the last change stands",
-      "start": "/admin/day/2026-07-14/bookings/BK0179",
+      "start": "/admin/day/2026-11-17/bookings/BK0179",
       "states": [
         {
           "caption": "The office changes the typed price again: History holds both entries, no reason",

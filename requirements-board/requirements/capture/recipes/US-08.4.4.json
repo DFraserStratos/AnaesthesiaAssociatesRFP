@@ -42,7 +42,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -60,23 +60,23 @@
           "wait": 400
         },
         {
-          "goto": "/admin/masters"
+          "goto": "/admin/people/anaesthetists/34821"
         },
         {
           "wait": 600
         },
         {
-          "click": "[data-shot=masters-anaesthetists] tr:has-text(\"Souter\") >> text=\"Edit\""
+          "click": "[data-shot=rate-tier-card-edit]"
         },
         {
-          "wait": 500
+          "wait": 300
         },
         {
-          "fill": "[role=dialog] >> role=textbox[name=\"Rate per unit ($)\"]",
+          "fill": "[data-shot=rate-tier-card] >> role=textbox[name=\"Rate per unit ($)\"]",
           "value": "28.00"
         },
         {
-          "click": "[role=dialog] >> role=button[name=\"Save changes\"]"
+          "click": "[data-shot=rate-tier-card-save]"
         },
         {
           "wait": 500

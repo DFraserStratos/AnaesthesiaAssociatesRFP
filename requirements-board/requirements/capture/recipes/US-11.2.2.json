@@ -7,7 +7,7 @@
       "name": "guardian-payer",
       "app": "admin",
       "caption": "Hana Park, Grace Park's mother, is the payer on each of her two Procedures, on the Paid by line",
-      "start": "/admin/day/2026-07-24/bookings/BK0033",
+      "start": "/admin/day/2026-11-27/bookings/BK0033",
       "states": [
         {
           "state": "set",
@@ -73,7 +73,7 @@
       "name": "not-billed",
       "app": "admin",
       "caption": "With no Contract yet the Paid by line reads \"Payer: not billed yet\", with no Change button",
-      "start": "/admin/day/2026-07-27/bookings/BK0035",
+      "start": "/admin/day/2026-11-30/bookings/BK0035",
       "states": [
         {
           "steps": [
@@ -94,7 +94,7 @@
       "name": "booking-payer",
       "app": "web",
       "caption": "The anaesthetist changes a Procedure's payer in the Paid by sheet: the patient by default, or someone else who pays",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0008",
+      "start": "/web/lists/L-34821-2026-11-24-PM/bookings/BK0008",
       "states": [
         {
           "steps": [
@@ -124,7 +124,7 @@
       "name": "booking-payer",
       "app": "mobile",
       "caption": "On the phone the Paid by line opens a bottom sheet, the payer prefilled from the patient record",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0008",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0008",
       "states": [
         {
           "steps": [

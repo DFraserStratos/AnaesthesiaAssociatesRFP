@@ -7,7 +7,7 @@
       "name": "history",
       "app": "admin",
       "caption": "Every change to a Booking shows when, who made it and what changed, including the text a hospital list replaced",
-      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "start": "/admin/day/2026-11-24/bookings/BK0009",
       "states": [
         {
           "state": "button",
@@ -95,7 +95,7 @@
       "name": "from-hospital",
       "app": "admin",
       "caption": "A change from the hospital's list names the list it came from and shows the procedure text it replaced",
-      "start": "/admin/day/2026-08-04/bookings/BK0043",
+      "start": "/admin/day/2026-12-08/bookings/BK0043",
       "setup": [
         {
           "goto": "/admin/intake/matching"

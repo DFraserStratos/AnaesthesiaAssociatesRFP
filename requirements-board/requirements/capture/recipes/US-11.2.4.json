@@ -7,7 +7,7 @@
       "name": "todo-child-warning",
       "app": "admin",
       "caption": "A child as the payer is a mild warning on the to-do list, one row per Booking, never a block",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "state": "raised",
@@ -42,7 +42,7 @@
       "name": "booking-child-warning",
       "app": "admin",
       "caption": "Ella Moana, 15, is the payer: the warning shows first on the Booking, with \"Under 18\" on the Paid by line",
-      "start": "/admin/day/2026-07-17/bookings/BK0170",
+      "start": "/admin/day/2026-11-20/bookings/BK0170",
       "states": [
         {
           "steps": [
@@ -61,7 +61,7 @@
       "name": "booking-child-warning",
       "app": "web",
       "caption": "The anaesthetist sees the same mild warning when the patient paying is under 18",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0008",
+      "start": "/web/lists/L-34821-2026-11-24-PM/bookings/BK0008",
       "states": [
         {
           "steps": [
@@ -92,7 +92,7 @@
       "name": "booking-child-warning",
       "app": "mobile",
       "caption": "On the phone the warning shows at the top of the Booking on opening",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0008",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0008",
       "states": [
         {
           "steps": [
@@ -126,7 +126,7 @@
       "name": "guardian-payer-no-warning",
       "app": "admin",
       "caption": "No warning when a parent is the payer: Hana Park pays both of Grace Park's Procedures",
-      "start": "/admin/day/2026-07-24/bookings/BK0033",
+      "start": "/admin/day/2026-11-27/bookings/BK0033",
       "states": [
         {
           "steps": [
@@ -147,7 +147,7 @@
       "name": "child-two-procedures",
       "app": "admin",
       "caption": "A child as the payer on both of Grace Park's Procedures: \"Under 18\" on each Paid by line, one warning for the Booking",
-      "start": "/admin/day/2026-07-24/bookings/BK0033",
+      "start": "/admin/day/2026-11-27/bookings/BK0033",
       "states": [
         {
           "state": "paid-by",
@@ -178,7 +178,7 @@
               "wait": 400
             },
             {
-              "goto": "/admin/day/2026-07-24"
+              "goto": "/admin/day/2026-11-27"
             },
             {
               "wait": 500

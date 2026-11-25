@@ -122,6 +122,8 @@ test("S1 Beat 1: Sarah Mitchell's strong balance warning previews, lands on the 
   await page.goto('/admin/day/2026-11-24')
   await page.waitForLoadState('networkidle')
   const todo = page.locator('[data-shot="admin-warnings-todo"]')
+  // The practice's To-do runs past the card's first rows.
+  await todo.getByRole('button', { name: /^Show all/ }).click()
   const todoRow = todo.locator('li', { hasText: 'Sarah Mitchell' }).filter({ hasText: '$610.00' })
   await expect(todoRow).toHaveCount(1)
   await expect(todoRow).toContainText('98 days')

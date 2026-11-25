@@ -7,7 +7,7 @@
       "name": "nhi-lookup",
       "app": "web",
       "caption": "NHI lookup through the Digital Services Hub when adding a Booking",
-      "start": "/web/lists/L-34821-2026-07-21-PM",
+      "start": "/web/lists/L-34821-2026-11-24-PM",
       "states": [
         {
           "state": "invalid",
@@ -152,7 +152,7 @@
       "name": "nhi-lookup",
       "app": "mobile",
       "caption": "NHI lookup in the Add a booking sheet: Ana Fifita found on the NHI register by her new format NHI, looked up on behalf of Dr Melanie Souter (HPI CPN 10SOUM)",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM",
       "states": [
         {
           "steps": [
@@ -183,7 +183,7 @@
       "name": "register-refresh",
       "app": "admin",
       "caption": "Refresh a patient's details from the NHI register",
-      "start": "/admin/patients/ZAM1098",
+      "start": "/admin/people/patients/ZAM1098",
       "states": [
         {
           "state": "differences",
@@ -202,7 +202,7 @@
         },
         {
           "state": "applied",
-          "caption": "Use register for the name, then Apply: the record reads Fiona Tamihana, keeps its own address, and reads Last refreshed 21 Jul 2026, 08:00",
+          "caption": "Use register for the name, then Apply: the record reads Fiona Tamihana, keeps its own address, and reads Last refreshed 24 Nov 2026, 08:00",
           "steps": [
             {
               "click": "[data-shot=patient-register-refresh-button]"

@@ -111,19 +111,19 @@ The plain words below follow the contract model (AR-58) and its ERD (AR-61), as 
 
 ### Parties, specialties and funding tags
 
-- Every Contract is held by a Party. Parties live in **Master data → Parties**, each with its billing name and how its invoices are delivered (email or post).
+- Every Contract is held by a Party. Parties live on **Contracts → Parties**, each with its own page: its billing name, how its invoices are delivered (email or post) and the Contracts it holds. A surgeon group is a Party whose surgeons are linked on its Contracts; there is no separate group record.
 - A Contract carries none or more specialties (none means every specialty) and at most one funding tag: SXAP, HNZ or ACC. Together with who it bills, the tag decides where the step rail offers it.
 - ACC is a funding tag. St George's Contract "ACC elective services via St George's" carries it.
-- The office keeps the specialties and funding tags in Master data. Every change is audited.
+- The office keeps the specialties in **People → Specialties** (each with a page listing the surgeons and Contracts that hold it) and the funding tags on **Contracts → Funding tags**. Every change is audited.
 
 ### One Contract per priced item
 
 - Each priced item is its own Contract, with AA's own code (for example `MER-001`), an invoice description and an optional default RVG code.
 - A combination such as Merivale's Facelift plus 1 add on is its own Contract. Fee extras (a GA add-on fee, per 15 minutes over 120, per area) are billing events.
 - A fixed price has price ranges. The range in force on the procedure date gives the price. A new range can start in the past: everything not yet authorised, prepaid or priced by hand re-prices at once. An authorised Booking keeps its price.
-- Every other change is an edit in place, audited with the values before and after. A change that must start on a date is a new Contract, and the office disables the old one. Nothing is deleted.
+- Every other change is an edit in place on the Contract's page, audited with the values before and after. A change that must start on a date is **Replace from a date**: one step makes the new Contract from the change date, moves the ticked Procedures from that date onto it, and either disables the old one now or leaves it active with a to-do on the change date to disable it. Nothing is deleted.
 - **No contract · RVG** and one Fixed price Contract for every place an invoice can go are made by the system and marked System. They are always there.
-- On **Master data → Contracts**, find a Contract by typing its name, its code, a word of its invoice description or its default RVG code.
+- On **Contracts**, find a Contract by typing its name, its code, a word of its invoice description or its default RVG code, and group the catalogue by kind, holder, funding tag, surgeon, where the invoice goes or pricing. **New contract** is its own page.
 
 ### The step rail
 
@@ -210,15 +210,15 @@ The office sets the Contract when it sets up the Booking, in three steps:
 
 ## The notification pool and the to-do list
 
-- Admin Day's right rail holds the **To-do** list and, beside it, **Notifications**: one pool the whole office shares.
+- Admin Day's right rail holds one work card with two tabs: **To-do** and **Notifications**, one pool the whole office shares.
 - Every move by an anaesthetist posts a notice. So does **Alert the office**, with her note.
 - A notice is active or resolved. When anyone ticks it resolved, it goes for everyone. **Show resolved** brings it back with who and when. Nothing expires.
 - Nothing in the pool needs approving. The cover-change email is drafted from the notice.
 
 ## Preferences and tiers, admin only
 
-- A surgeon can prefer, or prefer not, to work with an anaesthetist. The office sees it on both records.
-- Priority tiers order who the office's pickers offer: tier, then preferred pairing. Not preferred sits apart with a warning, and the office can still go ahead.
+- A surgeon can prefer, or prefer not, to work with an anaesthetist. The office sees it on both pages in **People**.
+- Priority tiers (the **Rate and tier** card on the anaesthetist's page; the Anaesthetists list filters by tier) order who the office's pickers offer: tier, then preferred pairing. Not preferred sits apart with a warning, and the office can still go ahead.
 - Anaesthetists never see tiers, pairings or Draft Lists. Their own moves show colleagues by availability alone.
 - Seeded: Ms A. Reid prefers not to work with Dr Sharma; Mr J. Whitford prefers Dr Sharma.
 
@@ -309,13 +309,16 @@ Receipts held = payables due + the AA Holding account + credits held for payers 
 
 ### Admin Web
 
-- **Day view**: every session and List, the To-do list, Pre-payments, Needs an invoice destination, Draft Lists and Notifications.
+- **Day view**: every session and List, in pages or one scrolling list, with the Books square and Pre-payments tiles and one work card for the To-do list (the Bookings needing an invoice destination among it) and Notifications.
 - **Intake**: hospital files and the rooms' PDF lists, every row waiting for the office on **Matching**.
-- **Draft Lists**, **Conflicts** (hospital closures only), **Notifications**, **Review queue**, **Invoices**, **Billing monitor**, **Ledger**, **Patients**, **Audit**.
+- **Intake** also holds **Waiting for NHI**.
+- **Draft Lists**, **Conflicts** (hospital closures only), **Notifications**, **Review queue**, **Invoices**, **Billing monitor**, **Ledger**, **Audit**.
+- **People**: anaesthetists, surgeons, specialties and patients, each with a page edited one card at a time. An anaesthetist is made inactive from a last day there.
+- **Contracts**: the catalogue, each Contract's page, **New contract**, **Replace from a date**, **Parties** and **Funding tags**.
 - The Admin Booking saves on purpose: each **Save changes** is one change set with a name, and History can show the Booking as it stood at any save.
 - **Draft update email** on demand, opened in the office's mail client. The system never sends it.
 - **Open out-of-hours session** on an anaesthetist's Day row opens an evening session after PM.
-- **Master data**: people and places, schedule, billing and settings, every change audited.
+- **Master data**: places, schedule, billing and settings, every change audited.
 - **Help** at the foot of the side nav: **Help line** and **Product support**.
 
 ## Strong phrases to use
@@ -361,7 +364,7 @@ Receipts held = payables due + the AA Holding account + credits held for payers 
 - **Switch office user** stands in for two office users signing in as themselves.
 - The Xero simulation and the Control Panel are badged demo surfaces. The Billing monitor is product UI; only its triggers are badged. **Run payables in Xero** carries a **Simulated Xero** badge: it stands in for the accountant paying the schedule.
 - **Seed load** and **Go-live load** stand in for a developer's one-off load of AA's controlled spreadsheets.
-- **Load full-scale data** builds 85 anaesthetists in memory, for timing only. **Reset** returns to the demo data.
+- The everyday data is already AA's whole practice, 85 anaesthetists. **Load full-scale data** adds a full year of invoices in memory, for timing only. **Reset** returns to the demo data.
 - The Digital Services Hub is simulated: **Demo actions → Hub: Available / Slow / Unavailable** shows the fallback.
 - **Help** carries a **Simulated** badge: how Stratos' support works is the real service's.
 - The sign-in screen stands in for the real one, with a **Provisional** pill (OQ-83).
@@ -394,6 +397,8 @@ Each is built with a default, labelled on screen where the app shows it. Raise t
 | OQ-141 | Support cover from 8:00am | Both channels open at 8:30am | Ask whether AA needs 8:00am cover, on which channel, and whether it is extra. |
 | OQ-142 | Approval number and ACC claim number on the holder's invoice | Neither is printed; there is no ACC claim number field | Add them only if a holder asks. |
 | OQ-143 | Surgeons without an HPI CPN or a full name | A surgeon saves and books without an HPI CPN ("No HPI CPN yet") | Warn, never refuse. |
+
+Also open, with the default built and nothing on screen: OQ-144 (disabling a Contract from a future date; Replace from a date leaves the old one active with a to-do on the change date), OQ-145 (a hospital's untagged Contracts sit under Special on the step rail), OQ-146 (which No contract backstops each hospital and funding tag gets), OQ-147 (how an anaesthetist who has left sees later remittances; today sign-in stops after the last day) and OQ-148 (whether AA needs any record of surgeons who practise together; today a group is only a Party).
 
 ### For AA's accountant: the BCTI granularity
 
@@ -491,7 +496,7 @@ No. Point at the **Synthetic data only** badge. The hospital files and PDF lists
 
 ### "Can it handle 85 anaesthetists and 28,000 invoices a year?"
 
-Show it: **Admin → Day view → Demo actions → Load full-scale data → Confirm**. It builds 85 anaesthetists, 21,080 sessions and 28,279 invoices in the browser. The banner's **Timings** shows each screen's render time. These are timings on one laptop, with no server; formal performance testing is a Testing-milestone task. **Reset** returns to the demo data.
+Show it: **Admin → Day view → Demo actions → Load full-scale data → Confirm**. The everyday data is already the whole practice of 85 anaesthetists; the load adds a year of invoices: 85 anaesthetists, 20,092 sessions and 28,361 invoices in the browser. The banner's **Timings** shows each screen's render time. These are timings on one laptop, with no server; formal performance testing is a Testing-milestone task. **Reset** returns to the demo data.
 
 ### "How will people who are not comfortable with new systems cope?"
 
@@ -499,7 +504,7 @@ One clear action on each screen, and each procedure shown the same way in every 
 
 ### "How do anaesthetists sign in?"
 
-With an account on the phone app. The screen is a stand-in, marked Provisional: how they sign in is still to be decided (OQ-83). Every sign-in, refusal and sign-out is in the audit.
+With an account on the phone app. The screen is a stand-in, marked Provisional: how they sign in is still to be decided (OQ-83). Every sign-in, refusal and sign-out is in the audit. After the last day the office sets, an anaesthetist's sign-in is refused as no longer active.
 
 ### "What if something is not working?"
 

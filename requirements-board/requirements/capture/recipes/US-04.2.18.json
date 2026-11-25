@@ -1,28 +1,18 @@
 {
   "id": "US-04.2.18",
   "status": "partial",
-  "absentReason": "The shots show the three settings and the search on Master data. The step rail's search is shot on US-04.3.2, the default RVG code filling a Procedure on US-03.3.1, and the printed holder reference code on US-04.2.8.",
+  "absentReason": "The shots show the three settings on the Contract's page and the search in the Contracts section. The step rail's search is shot on US-04.3.2, the default RVG code filling a Procedure on US-03.3.1, and the printed holder reference code on US-04.2.8.",
   "shots": [
     {
       "name": "contract-codes",
       "app": "admin",
       "caption": "The holder's code, the invoice wording and a default RVG code on each Contract",
-      "start": "/admin/masters?view=contracts",
+      "start": "/admin/contracts/CT-CES-SXAP-CATIOL",
       "states": [
         {
           "steps": [
             {
-              "fill": "[data-shot=contract-search] input",
-              "value": "Cataract IOL"
-            },
-            {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-CES-SXAP-CATIOL\"] >> button:text-is(\"Edit\")"
-            },
-            {
-              "wait": 500
+              "wait": 400
             },
             {
               "scroll": "[data-shot=contract-codes]"
@@ -38,10 +28,13 @@
       "name": "search-cat",
       "app": "admin",
       "caption": "Typing CAT finds the cataract items by name and by the holder's code HNZCATall",
-      "start": "/admin/masters?view=contracts",
+      "start": "/admin/contracts",
       "states": [
         {
           "steps": [
+            {
+              "click": "[data-shot=contract-status-filter] >> role=button[name=\"All\"]"
+            },
             {
               "fill": "[data-shot=contract-search] input",
               "value": "CAT"

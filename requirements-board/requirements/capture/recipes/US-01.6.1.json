@@ -28,7 +28,7 @@
             },
             {
               "fill": "[data-shot=draft-list-date]",
-              "value": "2026-07-23"
+              "value": "2026-11-26"
             },
             {
               "wait": 300
@@ -58,7 +58,7 @@
             },
             {
               "fill": "[data-shot=draft-list-date]",
-              "value": "2026-07-23"
+              "value": "2026-11-26"
             },
             {
               "click": "[data-shot=admin-new-draft-list] >> role=button[name=/^Save Draft List/]"

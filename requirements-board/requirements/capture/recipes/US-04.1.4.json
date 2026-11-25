@@ -1,13 +1,13 @@
 {
   "id": "US-04.1.4",
   "status": "partial",
-  "absentReason": "The shots show the AA code on Master data. Typing it on the step rail finds the Contract too (US-04.3.8).",
+  "absentReason": "The shots show the AA code in the Contracts section. Typing it on the step rail finds the Contract too (US-04.3.8).",
   "shots": [
     {
       "name": "aa-code",
       "app": "admin",
       "caption": "Every Contract has AA's own unique code, searchable with its name",
-      "start": "/admin/masters?view=contracts",
+      "start": "/admin/contracts",
       "states": [
         {
           "steps": [
@@ -25,7 +25,7 @@
       "name": "search",
       "app": "admin",
       "caption": "Finding a Contract by typing its AA code",
-      "start": "/admin/masters?view=contracts",
+      "start": "/admin/contracts",
       "states": [
         {
           "steps": [
@@ -40,6 +40,24 @@
           "highlight": [
             "[data-shot=contract-search]",
             "[data-shot=contract-catalogue] tr[data-contract]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "page-code",
+      "app": "admin",
+      "caption": "The AA code beside the Contract's name on its page",
+      "start": "/admin/contracts/CT-UNISPORTS",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-aa-code]"
           ]
         }
       ]

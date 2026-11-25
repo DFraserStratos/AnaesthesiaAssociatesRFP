@@ -32,6 +32,11 @@ that need work are repeated here.
 - Payment runs list shows when a run was approved, not by whom (the run detail does). `apps/admin/screens/PaymentRunScreen.tsx`. S
 - Web Remittances' paid-on dates differ from Admin Payment runs for seeded weeks 12 and 13. S
 - nib's AA-2026-0005 Locked record reads "Billed to Alan Prentice". S
+- After S3/S4's payment run the saved state is about 4.8 MB and the next save fails with QuotaExceededError ("persistence paused"), so a reload loses later beats; the guide tells the presenter not to reload. `store/persistStorage.ts`, `store/persistDelta.ts`. M
+- Run payables in Xero pays about 1,600 BCTIs in one synchronous step at practice scale and freezes the page for 12 to 35 s; capture recipes give the click 45 s and `admin-phase39a` 90 s. Make it asynchronous or faster. `apps/admin/screens/BillingMonitorScreen.tsx` (`PaymentCyclePanel`, `runInXero`), `domain/billing/payablesRun.ts`. M
+- The payment-run toast and schedule print "1617 BCTIs" with no thousands separator. Payment-run message in `store/`. S
+- Billing monitor: `update()` builds the next URL from the last render's params, so two quick filter edits (From then To) at practice scale can drop the first. `apps/admin/screens/BillingMonitorScreen.tsx`. S
+- Ledger table overflows at 1440 wide (Mirrored and "Contact archived in Xero" cut off) and the page scrolls as a whole instead of fitting. `apps/admin/screens/LedgerScreen.tsx`. S
 
 ## Prototype: prepayments and patients
 
@@ -48,7 +53,6 @@ that need work are repeated here.
 - US-13.4.1's People section (anaesthetists, surgeons, specialties and patients, each with a page; surgeon groups dropped) is not built: Master data still holds them. Being planned as Phases 50 onward (Lane C); run `/update-build-plan` if that plan is not committed. L
 - Catalogue wording for the new Admin Day rail (work card, readings): US-13.8.1 says the pool is a panel "beside the to-do list" (now a tab alongside it); drop US-01.6.2's "space reserved beside the day view" example (Draft Lists live in the grid band and their page). Run `/update-requirements`. S (owner)
 - Rename Notifications to Notices across the rail tab, side nav and page, as the rail ideas page proposed (`docs/explorations/admin-day-rail-ideas.html`). `apps/admin/components/RailWorkCard.tsx`, `SideNav.tsx`, `screens/NotificationsScreen.tsx`. S (owner)
-- The four Playwright specs updated for the new rail (`aa-prototype/visual/warnings.spec.ts`, `admin-phase06.spec.ts`, `admin-draft-lists.spec.ts`, `prepayment-phase27.spec.ts`) have not been run; check them at the next sweep. S
 - Build the stub guard: a List holding only a stub reads 0 of 0 with Mark list completed enabled, and authorises. S5 tells the guard as built. M
 - Build what S5 promises: a missing-NHI list with attach or merge. The guide already scripts it. M
 - Mount `shared/flows/EditInvoiceDescriptionSheet.tsx`: an Edit action beside the invoice description on the admin Booking, so the office can edit it (D73's admin layer is otherwise reachable only through "Use it"). S
@@ -69,6 +73,13 @@ that need work are repeated here.
 - A new List made by a moved Booking reads "Origin From a recurring booking". S
 - S2 seed: Souter's "Public hospital, Thursday AM" series sits over a Private List with 8 Bookings on Thu 23 and Thu 30 Jul (a Public session holds none, D86). `domain/seed/`; bump `PERSIST_VERSION`. S
 - Demo stand-ins: "A hospital update for this Booking" writes the RVG group's description as the hospital's wording (Wiremu Tane), and "A new hospital booking" on Tue 28 Jul PM adds a patient at 10:30, before the session. `shared/demoTriggers/registry.ts`. S
+- Stage recurring clash for Dr Souter's Mon AM booking picks Mon 29 Mar 2027 (Easter Monday), where recurring Lists skip, so no Draft List appears though the result promises one; the guide stages Tue AM instead. Skip holidays and shutdowns when staging. `shared/demoTriggers/registry.ts` (`stage-recurring-clash`). S
+- Stale Control Panel beat labels: S5 "Beat 2 · Admin Patients, Waiting for NHI", "Beat 4 · Master data, Contracts", Beat 5's "rate per unit on Master data", S1 Beat 3's "Open her Booking from Needs an invoice destination". `apps/demo/demoScenarios.ts`. S
+- Stale demo-action copy from before the date move: `hospital-description-arrives` hint says "Tue 21 PM"; the injected unmatched receipt's reference says "SOUTER JULY". `shared/demoTriggers/registry.ts`, `store/ledgerDemo.ts`. S
+- Three anaesthetist counts disagree: Day header 82 (83 on other days), People 84 active, practice 85. Confirm the counts or explain them. Day header, `apps/admin/screens/people/`. S (owner)
+- The Contracts tab badge reads 79 while the list says "147 Contracts active" (may count office Contracts only; check). `apps/admin/screens/contracts/`. S
+- Master data, Modifiers: the "AA's own" table is squeezed to its header at 1440x900 and a sticky `th` blocks clicks on its rows. `apps/admin/screens/masters/ModifiersView.tsx`. S
+- David Chen's history Booking `HBK03` falls on Mon 26 Oct 2026, Labour Day, after the date move. `domain/seed/history.ts`. S
 
 ## Prototype: anaesthetist apps (mobile, PWA, web)
 
@@ -106,6 +117,11 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 - Record the owner's rule "recurring Lists skip public holidays" (24 Nov 2026, `docs/DECISIONS.md`) in the catalogue (US-01.3.2, US-01.5.2) with `/update-requirements`. S
 - Start-up builds the whole practice on every load: about 1 s on a laptop, about 3 s on a 4x-slowed CPU (dev server). Cache the built start, or build the 71's billing lazily. `store/appStore.ts` (`practiceAppState`). M
 - A long demo-clock jump at practice scale overflows browser storage: moving the clock four months (e.g. "Demo: pass the last day" on Dr Beaumont, whose Lists run to the horizon's end, so her last day must be its last) grows the saved `aa-demo` delta to about 5.2 MB, the write fails and saving latches off, so the session works until a reload brings back the state before the jump. Found in build plan Phase 52. `store/persistStorage.ts`, `store/persistDelta.ts`. M
+- Make active's Contract offer-back can't be demoed or shot: every anaesthetist with an own Contract has Lists to the horizon's end, and Dr Reeves has none disabled. Seed a leaver-to-be with an own Contract and few Lists. `domain/seed/fullScale/`, `store/anaesthetistStatusActions.ts`. S
+- The handset's "try signing in after the last day" demo action refuses Dr Oscar Reeves while the sign-in form still shows Dr Souter's email (US-13.5.3 / US-12.1.6 `mobile-sign-in-refused`); fill the form with the refused anaesthetist's email. `shared/demoTriggers/registry.ts`, `apps/mobile/` sign-in. S
+- The Web app's "no longer active" page can't be shot: it shows only when Dr Souter is inactive, and she holds Lists to the horizon's end. `apps/web/WebApp.tsx`. S
+- Dr Sharma and Dr Tahana show the same masked bank account (99-0101-•••••67-00), likely a seed clash. `domain/seed/fullScale/`. S
+- People → Patients → Needs follow-up is empty on a fresh seed until S1's Create Booking; worth a seeded row if it is opened cold. S (owner)
 
 ## Prototype: provisional captions
 
@@ -115,7 +131,6 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 
 - Admin page frame follow-ups (`apps/admin/components/AdminPage.tsx`, `docs/admin-layout-audit.md`): the Day view keeps its own frame (its rail stays 412 at 1280, so the grid is 580 there); Billing monitor is about 15,600px long (collapse its anaesthetist groups by default). M
 - Older layout bugs seen in the frame work: on one anaesthetist's Ledger at 1280, $11,350.50 spills out of its tile; on Review detail at 1920 the table stops short of its card (the totals row has one cell too many). S
-- 48 Playwright tests fail on master (found at build plan Phase 45's gate, 25 Nov 2026; none in the Contract specs), all from changes before it: the twelve stale-seed ones (`admin-phase08` 92, 321, 359; `billing-monitor` 46, 199; `conflicts-phase30` 30, 56, 76, 129; `list-moves-phase32` 27, 162; e.g. "MON 20 JUL", the Conflicts badge 16); eight that click the List drawer's "Open" link, now a `RowOpenButton` in `ListBookingsTable` (ae97f329: `admin-phase06` 11, 145; `admin-phase09` 39; `booking-calculation-display` 104; `booking-detail-layout` 27, 38; `routing` 194; `shell-clock` 3); `admin-phase06` 164 reads `schedule.procedures` from the persisted `aa-demo` state, which holds a delta since 95ab4d72; `pwa-device` 226 (font check); and the rest stale seed figures since the demo day moved to Tue 24 Nov and the practice became the everyday data (`pwa-demo-parity` 219, `pwa-device` 358, 426, `aa-fee` 9, `admin-draft-lists` 26, `admin-masters-loads` 37, `admin-matching` 104, `admin-phase06` 69, `admin-phase09` 11, `admin-phase39a` 34, 52, 73, `availability-phase29` 24, `booking-moves-phase32a` 28, 141, `demo-actions-audit` 169, `intake-pdf-lists` 20, `modifiers-phase19b` 164, `multi-procedure-phase23` 115, `out-of-hours-phase32c` 243, `phase28` 88, `unavailability-phase32b` 111, 195, `warnings` 31, 85, `xero-resilience` 58, 123). Full list in `.build-phase/logs/shots.log` of that run. Bring them in step at the next sweep. M
 - Shared components still to build: `TextAction` 13px and quiet sizes, an `OptionChip` small size, `IconButton` ARIA passthrough and 22 and 48 sizes, a pill-outline `Button`, a `TotalsBlock` (AA fees `FeeInvoiceDetail`). `shared/ui/`. M
 - The one-component guardrail's allow-list still holds 58 files and 90 styled raw buttons; each component above retires entries. `apps/oneComponentPerJob.test.ts`. M
 - Token drift: 65 inline `=== 1 ?` plurals not using `plural`, 13 `'EEE d MMM'` literals, off-scale font sizes (12.5 x307, 11.5 x79, 13.5 x48), no token for the white-alpha on-ink ladder (41 sites). M
@@ -140,9 +155,7 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 
 ## Tests and tooling
 
-- Two capture recipes fail (full capture of 2026-11-24): FT-01.6 `admin-draft-list-origins` (the Origin header highlight `th:nth-child(7)` matched nothing; on a loaded machine the page also timed out), and US-03.6.1 mobile `mark-complete-complete` / `mark-complete-fixed-price` (the `mobile-booking-commit` highlight is off screen even after a `scroll` step). `requirements-board/requirements/capture/recipes/`. S
 - The PWA has never been checked on a real handset, only the emulated iPhone 14 Pro: walk S1 T7, the Lattimer move end to end and the PWA-only paths (`aa-prototype/README.md`, "Testing on a real device"). M
-- US-15.0.4's full-scale recipe times out at the fixed 6 s `ACTION_TIMEOUT`. `requirements-board/scripts/capture.ts`. S
 - Flaky under load: `mastersPages.test.tsx` (Vitest timeouts) and `visual/booking-detail-layout.spec.ts`; board e2e `one-rule` R-101, `board-mapped` lane rename, `artifacts` reduced motion, `diff` live edits. Watch. S
 - Catalogue asset files still carry old shot names (`copy-card`, `add-card`, ...), and US-03.1.3 has no Admin List drawer image. S
 - `affected-shots` reads a comment or dead-code edit in `router.tsx` or `appStore.ts` as a route or store change, so the report goes broad: skip comment-only and deleted-declaration hunks. `aa-prototype/scripts/affected-shots.mjs`. S
@@ -152,4 +165,5 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 - Christmas shutdown follow-ups: the Add holiday sheet can't mark a closure as a shutdown (`HospitalHoliday.shutdown`, seed only); Hospitals & holidays lists one chip per shutdown day (group into a range); the Day view and anaesthetist calendars don't say a hospital is closed, its Lists are just absent. S
 - After the move to Tue 24 Nov: code comments still name the July design dates, and S2's optional availability opening includes Dr Souter's Fri 1 Jan PM (New Year's Day). S
 - A no-change Save on the patient page's Details card still writes a `patient.update` with equal before and after (`editPatient` in `store/intake.ts` always mutates, as the old sheet did); the other People cards write nothing when nothing changed. Found at the Wave 3 join review.
-- Under the full Playwright run one heavy spec times out at random (`admin-phase39` 49, `contract-catalogue-p47` 51 at the Wave 3 join); each passes alone. Worth a longer timeout or fewer workers at the next sweep.
+- `visual/unavailability-phase32b.spec.ts` test 6 compares the notification tick with the To-do Clear button only if `[data-shot="admin-todo"]` exists; that hook is gone, so the check is silently skipped. Switch to the To-do tab first. S
+- Under heavy machine load some Playwright `page.goto` calls still time out at random; the full run is green on a quiet machine. S

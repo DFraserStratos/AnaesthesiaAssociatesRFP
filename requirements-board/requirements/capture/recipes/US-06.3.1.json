@@ -7,7 +7,7 @@
       "name": "approve-and-send",
       "app": "admin",
       "caption": "One prepayment invoice per payer, generated when an admin approves it (a step AA can switch off), its payable to the AA Holding account",
-      "start": "/admin/invoices",
+      "start": "/admin/invoices?view=approval",
       "states": [
         {
           "state": "awaiting-approval",
@@ -60,14 +60,14 @@
               "wait": 400
             },
             {
-              "goto": "/admin/day/2026-07-21"
+              "goto": "/admin/day/2026-11-24"
             },
             {
               "trigger": "add-prepaid-booking",
               "choice": "one-payer"
             },
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/invoices?view=approval"
             },
             {
               "wait": "[data-shot=prepayment-approval-switch]"
@@ -83,14 +83,14 @@
           "caption": "Two payers on one Booking: one invoice per payer, and the other payer still awaits approval",
           "steps": [
             {
-              "goto": "/admin/day/2026-07-21"
+              "goto": "/admin/day/2026-11-24"
             },
             {
               "trigger": "add-prepaid-booking",
               "choice": "two-payers"
             },
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/invoices?view=approval"
             },
             {
               "wait": "[data-shot=awaiting-approval-row]:has-text(\"Fiona Gray\")"

@@ -249,14 +249,15 @@ test('the fonts are self-hosted and actually load', async ({ page }) => {
   // system font, so pair it with the FontFace set: each family must have a
   // face that really reached `loaded`. (The latin-ext subsets stay `unloaded`
   // by design; nothing on screen needs them.)
-  expect(await page.evaluate(() => document.fonts.check('16px "Schibsted Grotesk"'))).toBe(true)
-  expect(await page.evaluate(() => document.fonts.check('16px "Spline Sans Mono"'))).toBe(true)
+  // Polled: on the dev server the stylesheet (and so the faces) can land after
+  // `networkidle`, so a one-shot read races the first render.
+  await expect
+    .poll(() => page.evaluate(() => [document.fonts.check('16px "Schibsted Grotesk"'), document.fonts.check('16px "Spline Sans Mono"')]))
+    .toEqual([true, true])
 
-  const loaded = await page.evaluate(() =>
-    [...document.fonts].filter((face) => face.status === 'loaded').map((face) => face.family),
-  )
-  expect(loaded).toContain('Schibsted Grotesk')
-  expect(loaded).toContain('Spline Sans Mono')
+  await expect
+    .poll(() => page.evaluate(() => [...new Set([...document.fonts].filter((face) => face.status === 'loaded').map((face) => face.family))].sort()))
+    .toEqual(['Schibsted Grotesk', 'Spline Sans Mono'])
 })
 
 test('the office stand-in assigns a List to the next free session, from the Lists Demo sheet (catch-up Phase 28)', async ({ page }) => {
@@ -361,11 +362,13 @@ test('a colleague moves a Booking to me; the acceptance beat; then I move one of
   await page.goto('/mobile/lists')
   await page.waitForLoadState('networkidle')
 
-  // The stand-in, with its choices: Dr Hughes's Wed 22 PM Booking only (her Fri 31 AM is not available yet).
+  // The stand-in, with its choices: Dr Hughes's Wed 25 PM Booking first, then the practice's other
+  // colleagues' Bookings that fit her free sessions (her Fri 4 Dec AM is not available yet).
   await page.locator('[data-shot="pwa-demo-actions"]').click()
   const row = page.locator('[data-shot="pwa-demo-action-colleague-moves-booking-to-me"]')
   await expect(row).toBeVisible()
-  await expect(row.getByRole('radio')).toHaveText(['Dr Hughes · Wed 25 Nov PM · Christchurch Eye Surgery'])
+  await expect(row.getByRole('radio').first()).toHaveText('Dr Hughes · Wed 25 Nov PM · Christchurch Eye Surgery')
+  await expect(row.getByRole('radio', { name: /Fri 4 Dec AM/ })).toHaveCount(0)
   await row.scrollIntoViewIfNeeded()
   await page.screenshot({ path: 'visual/shots/pwa-14-booking-stand-in.png' })
   await row.getByRole('button', { name: 'Run' }).click()
@@ -400,7 +403,9 @@ test('a colleague moves a Booking to me; the acceptance beat; then I move one of
   await page.goto('/mobile/lists')
   await page.waitForLoadState('networkidle')
   await page.locator('[data-shot="pwa-demo-actions"]').click()
-  await expect(row.getByRole('radio')).toHaveText(['Dr Beaumont · Fri 4 Dec AM · Christchurch Eye Surgery'])
+  const beaumont = row.getByRole('radio', { name: 'Dr Beaumont · Fri 4 Dec AM · Christchurch Eye Surgery' })
+  await expect(beaumont).toHaveCount(1)
+  await beaumont.check()
   await row.getByRole('button', { name: 'Run' }).click()
   await expect(row.getByRole('status')).toContainText('Fri 4 Dec AM')
   await page.screenshot({ path: 'visual/shots/pwa-16-acceptance.png' })
@@ -437,8 +442,8 @@ test('the 3-procedure Booking loads from the Demo sheet, and the hospital feed c
   await expect(load.getByRole('status')).toContainText('3 procedures, 7 modifier units, split 3 · 2 · 2')
   await page.keyboard.press('Escape')
 
-  // The staged Booking takes the next Booking id after the seed's last (BK0190 since catch-up Phase 25a).
-  await page.goto('/mobile/lists/L-34821-2026-11-25-AM/bookings/BK0191')
+  // The staged Booking takes the next Booking id after the whole practice's last (BK5101).
+  await page.goto('/mobile/lists/L-34821-2026-11-25-AM/bookings/BK5101')
   await page.waitForLoadState('networkidle')
   await settleSlide(page)
   await expect(page.locator('[data-testid="procedure-header"]').first().locator('[data-shot="procedure-primary-pill"]')).toHaveText('Primary')

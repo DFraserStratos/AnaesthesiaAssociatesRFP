@@ -7,7 +7,7 @@
       "name": "procedure-text",
       "app": "web",
       "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
-      "start": "/web/lists/L-34821-2026-08-04-AM/bookings/BK0043",
+      "start": "/web/lists/L-34821-2026-12-08-AM/bookings/BK0043",
       "states": [
         {
           "state": "rooms",
@@ -27,7 +27,7 @@
       "name": "procedure-text",
       "app": "web",
       "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
-      "start": "/web/lists/L-34821-2026-08-04-AM/bookings/BK0043",
+      "start": "/web/lists/L-34821-2026-12-08-AM/bookings/BK0043",
       "setup": [
         {
           "goto": "/admin/intake/matching"
@@ -94,7 +94,7 @@
       "name": "procedure-text",
       "app": "mobile",
       "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
-      "start": "/mobile/lists/L-34821-2026-08-04-AM/bookings/BK0043",
+      "start": "/mobile/lists/L-34821-2026-12-08-AM/bookings/BK0043",
       "states": [
         {
           "state": "rooms",
@@ -139,7 +139,7 @@
       "name": "procedure-text",
       "app": "admin",
       "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
-      "start": "/admin/day/2026-08-04/bookings/BK0043",
+      "start": "/admin/day/2026-12-08/bookings/BK0043",
       "states": [
         {
           "state": "rooms",
@@ -159,7 +159,7 @@
       "name": "procedure-text",
       "app": "admin",
       "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
-      "start": "/admin/day/2026-08-04/bookings/BK0043",
+      "start": "/admin/day/2026-12-08/bookings/BK0043",
       "setup": [
         {
           "goto": "/admin/intake/matching"
@@ -276,7 +276,7 @@
       "name": "procedure-text-history",
       "app": "web",
       "caption": "The rooms' original stays in the Booking's history",
-      "start": "/web/lists/L-34821-2026-08-04-AM/bookings/BK0164",
+      "start": "/web/lists/L-34821-2026-12-08-AM/bookings/BK0164",
       "states": [
         {
           "steps": [
@@ -297,7 +297,7 @@
       "name": "procedure-text-history",
       "app": "mobile",
       "caption": "The rooms' original stays in the Booking's history",
-      "start": "/mobile/lists/L-34821-2026-08-04-AM/bookings/BK0164",
+      "start": "/mobile/lists/L-34821-2026-12-08-AM/bookings/BK0164",
       "states": [
         {
           "steps": [
@@ -318,7 +318,7 @@
       "name": "procedure-text-history",
       "app": "admin",
       "caption": "After the office applies the hospital row, WLE MM stays in the Booking's change history",
-      "start": "/admin/day/2026-08-04/bookings/BK0043",
+      "start": "/admin/day/2026-12-08/bookings/BK0043",
       "setup": [
         {
           "goto": "/admin/intake/matching"

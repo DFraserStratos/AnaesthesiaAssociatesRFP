@@ -7,7 +7,7 @@
       "name": "add-anaesthetist",
       "app": "admin",
       "caption": "Add an anaesthetist",
-      "start": "/admin/masters?view=anaesthetists",
+      "start": "/admin/people/anaesthetists",
       "states": [
         {
           "state": "form",
@@ -40,7 +40,7 @@
             },
             {
               "fill": "[data-shot=admin-add-anaesthetist-start] input",
-              "value": "2026-08-03"
+              "value": "2026-12-07"
             }
           ],
           "highlight": [
@@ -79,7 +79,7 @@
             },
             {
               "fill": "[data-shot=admin-add-anaesthetist-start] input",
-              "value": "2026-08-03"
+              "value": "2026-12-07"
             },
             {
               "click": "[role=dialog] >> role=button[name=\"Add anaesthetist\"]"
@@ -91,7 +91,7 @@
           "highlight": [
             "[role=dialog]"
           ],
-          "caption": "Added: forward sessions created from 3 Aug"
+          "caption": "Added: forward sessions created from 7 Dec"
         },
         {
           "state": "listed",
@@ -124,7 +124,7 @@
             },
             {
               "fill": "[data-shot=admin-add-anaesthetist-start] input",
-              "value": "2026-08-03"
+              "value": "2026-12-07"
             },
             {
               "click": "[role=dialog] >> role=button[name=\"Add anaesthetist\"]"
@@ -137,12 +137,19 @@
             },
             {
               "wait": 500
+            },
+            {
+              "fill": "[data-shot=people-search] input",
+              "value": "Kerr"
+            },
+            {
+              "wait": 400
             }
           ],
           "highlight": [
-            "tr:has-text(\"Nadia Kerr\")"
+            "[data-shot=masters-anaesthetists] tr:has-text(\"Nadia Kerr\")"
           ],
-          "caption": "The new anaesthetist in master data, with their start date"
+          "caption": "The new anaesthetist in the People section's Anaesthetists list, with their start date"
         }
       ]
     },
@@ -150,10 +157,10 @@
       "name": "day-grid",
       "app": "admin",
       "caption": "From the start date the new anaesthetist has a row of free sessions",
-      "start": "/admin/day/2026-08-03",
+      "start": "/admin/day/2026-12-07?rows=all",
       "setup": [
         {
-          "goto": "/admin/masters?view=anaesthetists"
+          "goto": "/admin/people/anaesthetists"
         },
         {
           "wait": 400
@@ -186,7 +193,7 @@
         },
         {
           "fill": "[data-shot=admin-add-anaesthetist-start] input",
-          "value": "2026-08-03"
+          "value": "2026-12-07"
         },
         {
           "click": "[role=dialog] >> role=button[name=\"Add anaesthetist\"]"
@@ -212,20 +219,20 @@
           "highlight": [
             "[data-day-grid-row=\"41552\"]"
           ],
-          "caption": "Mon 3 Aug, the start date: a row of free sessions"
+          "caption": "Mon 7 Dec, the start date: a row of free sessions"
         },
         {
           "state": "day-before",
           "steps": [
             {
-              "goto": "/admin/day/2026-07-31"
+              "goto": "/admin/day/2026-12-04?rows=all"
             },
             {
               "wait": 400
             }
           ],
           "highlight": [],
-          "caption": "Fri 31 Jul, before the start date: no row"
+          "caption": "Fri 4 Dec, before the start date: no row"
         }
       ]
     }

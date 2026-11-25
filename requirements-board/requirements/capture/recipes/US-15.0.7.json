@@ -7,7 +7,7 @@
       "name": "office-changes-time",
       "app": "admin",
       "caption": "The office moves Margaret Ellison's Booking from 16:00 to 16:30 and saves it",
-      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "start": "/admin/day/2026-11-24/bookings/BK0009",
       "states": [
         {
           "steps": [
@@ -29,9 +29,9 @@
       "name": "list-shows-new-time",
       "app": "web",
       "caption": "Dr Souter's List shows the office's new time, 16:30, with no sign-out",
-      "start": "/web/lists/L-34821-2026-07-21-PM",
+      "start": "/web/lists/L-34821-2026-11-24-PM",
       "setup": [
-        { "goto": "/admin/day/2026-07-21/bookings/BK0009" },
+        { "goto": "/admin/day/2026-11-24/bookings/BK0009" },
         { "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]" },
         { "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]" },
         { "click": "[data-shot=booking-patient] >> role=button[name=\"5 minutes later\"]" },
@@ -53,7 +53,7 @@
       "name": "list-shows-new-time",
       "app": "mobile",
       "caption": "On the phone, the office's saved change shows without signing out",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "office-saved",

@@ -6,8 +6,8 @@
     {
       "name": "surgeon-profile",
       "app": "admin",
-      "caption": "Each surgeon holds one or more specialties, a practice name and their contacts on a profile page",
-      "start": "/admin/masters/surgeons/S-WAINWRIGHT",
+      "caption": "Each surgeon holds one or more specialties, a practice name and their contacts on their page in the People section",
+      "start": "/admin/people/surgeons/S-WAINWRIGHT",
       "states": [
         {
           "steps": [

@@ -26,7 +26,7 @@
       "states": [
         {
           "state": "month",
-          "caption": "My calendar: every session Free by default, the seeded leave on Sat 25 and Sun 26 Jul, Lists in place of the status",
+          "caption": "My calendar: every session Free by default, the seeded leave on Sat 28 and Sun 29 Nov, Lists in place of the status",
           "steps": [
             {
               "wait": 400
@@ -84,10 +84,10 @@
       "start": "/web/availability",
       "setup": [
         {
-          "goto": "/admin/day/2026-07-21"
+          "goto": "/admin/day/2026-11-24?rows=all"
         },
         {
-          "click": "button[data-slot-id=\"S-47733-2026-07-21-PM\"]"
+          "click": "button[data-slot-id=\"S-47733-2026-11-24-PM\"]"
         },
         {
           "wait": 400
@@ -121,7 +121,7 @@
             }
           ],
           "highlight": [
-            "button[data-slot-id=\"S-47733-2026-07-21-PM\"]"
+            "button[data-slot-id=\"S-47733-2026-11-24-PM\"]"
           ]
         }
       ]
@@ -130,7 +130,7 @@
       "name": "my-availability",
       "app": "web",
       "caption": "The same on the web: a range of days selected, the form in the rail",
-      "start": "/web/availability/mine?date=2026-08-17",
+      "start": "/web/availability/mine?date=2026-12-21",
       "states": [
         {
           "steps": [
@@ -142,7 +142,7 @@
             },
             {
               "fill": "[data-shot=web-availability-rail] input[type=date] >> nth=1",
-              "value": "2026-08-21"
+              "value": "2026-12-25"
             },
             {
               "wait": 300
@@ -158,10 +158,10 @@
       "name": "day-grid-change",
       "app": "admin",
       "caption": "The office's Day view shows the change at once",
-      "start": "/admin/day/2026-08-14",
+      "start": "/admin/day/2026-12-18",
       "setup": [
         {
-          "goto": "/web/availability/mine?date=2026-08-14"
+          "goto": "/web/availability/mine?date=2026-12-18"
         },
         {
           "wait": 400
@@ -190,7 +190,7 @@
             }
           ],
           "highlight": [
-            "button[data-slot-id=\"S-34821-2026-08-14-AM\"]"
+            "button[data-slot-id=\"S-34821-2026-12-18-AM\"]"
           ],
           "state": "holiday"
         },
@@ -199,14 +199,14 @@
           "caption": "A session set to Public with the note CPH: Public hospital, no List",
           "steps": [
             {
-              "goto": "/admin/day/2026-07-21"
+              "goto": "/admin/day/2026-11-24"
             },
             {
               "wait": 500
             }
           ],
           "highlight": [
-            "button[data-slot-id=\"S-39560-2026-07-21-AM\"]"
+            "button[data-slot-id=\"S-39560-2026-11-24-AM\"]"
           ]
         }
       ]

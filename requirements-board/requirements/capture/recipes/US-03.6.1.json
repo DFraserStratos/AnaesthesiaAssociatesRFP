@@ -7,7 +7,7 @@
       "name": "mark-complete",
       "app": "web",
       "caption": "Mark a booking complete",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/web/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "blocked",
@@ -57,7 +57,7 @@
           "caption": "A fixed price passes with no times, code or modifiers, back on its List",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-08-10-PM/bookings/BK0176"
+              "goto": "/web/lists/L-34821-2026-12-14-PM/bookings/BK0176"
             },
             {
               "wait": 800
@@ -78,7 +78,7 @@
           "caption": "Mark complete refused on a fixed price with no amount: Needs a price",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-08-10-PM/bookings/BK0177"
+              "goto": "/web/lists/L-34821-2026-12-14-PM/bookings/BK0177"
             },
             {
               "wait": 800
@@ -107,7 +107,7 @@
       "name": "mark-complete",
       "app": "mobile",
       "caption": "Mark a booking complete",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "blocked",
@@ -144,23 +144,23 @@
               "click": "role=button[name=\"Mark complete\"]"
             },
             {
-              "wait": "[data-testid=mobile-booking-commit] >> text=\"Amend\""
+              "wait": "[data-testid=slide-list] button:has-text(\"Margaret Ellison\")"
             },
             {
-              "wait": 2000
+              "wait": 1800
             }
           ],
           "highlight": [
-            "[data-testid=mobile-booking-commit]"
+            "[data-testid=slide-list] button:has-text(\"Margaret Ellison\")"
           ],
-          "caption": "Booking marked complete once the finish time is in and the modifiers step is answered"
+          "caption": "Booking marked complete once the finish time is in and the modifiers step is answered, back on its List"
         },
         {
           "state": "fixed-price",
-          "caption": "A fixed price passes with no times, code or modifiers",
+          "caption": "A fixed price passes with no times, code or modifiers, back on its List",
           "steps": [
             {
-              "goto": "/mobile/lists/L-34821-2026-08-10-PM/bookings/BK0176"
+              "goto": "/mobile/lists/L-34821-2026-12-14-PM/bookings/BK0176"
             },
             {
               "wait": 800
@@ -169,14 +169,14 @@
               "click": "role=button[name=\"Mark complete\"]"
             },
             {
-              "wait": "[data-testid=mobile-booking-commit] >> text=\"Amend\""
+              "wait": "[data-testid=slide-list] button:has-text(\"Miriam Holloway\")"
             },
             {
-              "wait": 2000
+              "wait": 1800
             }
           ],
           "highlight": [
-            "[data-testid=mobile-booking-commit]"
+            "[data-testid=slide-list] button:has-text(\"Miriam Holloway\")"
           ]
         }
       ]

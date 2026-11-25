@@ -104,7 +104,7 @@
               "wait": "[data-shot=matching-banner]"
             },
             {
-              "goto": "/admin/day/2026-07-21"
+              "goto": "/admin/day/2026-11-24"
             },
             {
               "wait": "[data-shot=admin-warnings-todo]"
@@ -122,10 +122,10 @@
           "caption": "Phone advice for Heather Sinclair: a mild yellow preview, because she is in credit",
           "steps": [
             {
-              "goto": "/admin/day/2026-07-21"
+              "goto": "/admin/day/2026-11-24"
             },
             {
-              "click": "button[data-slot-id=\"S-43015-2026-07-21-PM\"]"
+              "click": "button[data-slot-id=\"S-43015-2026-11-24-PM\"]"
             },
             {
               "wait": 400
@@ -218,7 +218,7 @@
           "wait": "[data-shot=matching-banner]"
         }
       ],
-      "start": "/web/lists/L-34821-2026-07-28-AM",
+      "start": "/web/lists/L-34821-2026-12-01-AM",
       "states": [
         {
           "state": "anaesthetist",
@@ -241,7 +241,7 @@
       "name": "balance-warning",
       "app": "mobile",
       "caption": "The strong alert on the anaesthetist's List, with no amount",
-      "start": "/mobile/lists/L-34821-2026-07-28-AM",
+      "start": "/mobile/lists/L-34821-2026-12-01-AM",
       "states": [
         {
           "state": "anaesthetist",
@@ -252,7 +252,7 @@
             },
             {
               "trigger": "matching-office-matches-row",
-              "choice": "St George's file, Tue 28 Jul AM (S1)"
+              "choice": "St George's file, Tue 1 Dec AM (S1)"
             },
             {
               "wait": "[data-shot=balance-alert-chip]"

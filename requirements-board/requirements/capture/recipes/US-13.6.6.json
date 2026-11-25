@@ -6,8 +6,8 @@
     {
       "name": "surgeon-specialties",
       "app": "admin",
-      "caption": "A surgeon's specialties on their profile",
-      "start": "/admin/masters/surgeons/S-WHITFORD",
+      "caption": "A surgeon's specialties on their page",
+      "start": "/admin/people/surgeons/S-WHITFORD",
       "states": [
         {
           "state": "profile",
@@ -25,23 +25,23 @@
           "caption": "A surgeon holds one or more specialties; a save with none is refused",
           "steps": [
             {
-              "click": "role=button[name=\"Edit details\"]"
+              "click": "[data-shot=surgeon-specialties-edit]"
             },
             {
-              "wait": 500
+              "wait": 400
             },
             {
-              "click": "[data-shot=surgeon-edit-sheet] >> role=button[name=\"Remove Ophthalmology\"]"
+              "click": "[data-shot=surgeon-specialties] >> role=button[name=\"Remove Ophthalmology\"]"
             },
             {
-              "click": "[data-shot=surgeon-edit-sheet] >> role=button[name=\"Save changes\"]"
+              "click": "[data-shot=surgeon-specialties-save]"
             },
             {
-              "wait": "[data-shot=surgeon-edit-sheet] >> role=alert"
+              "wait": "[data-shot=surgeon-specialties] >> role=alert"
             }
           ],
           "highlight": [
-            "[role=dialog]"
+            "[data-shot=surgeon-specialties]"
           ]
         },
         {
@@ -49,10 +49,10 @@
           "caption": "A surgeon can hold more than one specialty",
           "steps": [
             {
-              "click": "role=button[name=\"Edit details\"]"
+              "click": "[data-shot=surgeon-specialties-edit]"
             },
             {
-              "wait": 500
+              "wait": 400
             },
             {
               "select": "[data-shot=surgeon-specialties-field] select",
@@ -63,7 +63,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=surgeon-specialties-field]"
+            "[data-shot=surgeon-specialties]"
           ]
         }
       ]

@@ -7,7 +7,7 @@
       "name": "card-failure",
       "app": "admin",
       "caption": "One Booking is held back while the rest of the List bills",
-      "start": "/admin/billing?list=L-39560-2026-07-16-AM",
+      "start": "/admin/billing?list=L-39560-2026-11-19-AM",
       "setup": [
         {
           "goto": "/admin/billing"
@@ -29,7 +29,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-39560-2026-07-16-AM]"
+            "[data-shot=billing-pipeline-L-39560-2026-11-19-AM]"
           ]
         },
         {
@@ -44,7 +44,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-39560-2026-07-16-AM]"
+            "[data-shot=billing-pipeline-L-39560-2026-11-19-AM]"
           ]
         }
       ]

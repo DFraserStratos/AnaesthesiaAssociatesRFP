@@ -7,7 +7,7 @@
       "name": "out-of-hours",
       "app": "admin",
       "caption": "The office opens an out-of-hours session after PM and puts any List in it, a new one or a Draft List for the evening; it shows after PM on the anaesthetist's day",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "state": "sheet",
@@ -77,7 +77,7 @@
       "caption": "On the web Lists table the out-of-hours List follows the PM List",
       "start": "/web/lists",
       "setup": [
-        { "goto": "/admin/day/2026-07-21" },
+        { "goto": "/admin/day/2026-11-24" },
         { "hover": "[data-day-grid-row=\"34821\"] .aa-row-gutter" },
         { "click": "[data-day-grid-row=\"34821\"] [data-shot=out-of-hours-open]" },
         { "wait": "[data-shot=out-of-hours-open-sheet]" },

@@ -62,7 +62,7 @@
               "wait": 500
             },
             {
-              "click": "[data-draft-list-row=\"LD-RCB022-2026-07-24-AM\"] >> role=button[name=/^Assign/]"
+              "click": "[data-draft-list-row=\"LD-RCB022-2026-11-27-AM\"] >> role=button[name=/^Assign/]"
             },
             {
               "wait": 500
@@ -127,7 +127,7 @@
               "wait": 500
             },
             {
-              "click": "[data-shot=draft-list-available] [data-available=\"43015\"] >> role=button[name=/Assign/]"
+              "click": "[data-shot=draft-list-available] [data-available=\"27731\"] >> role=button[name=/Assign/]"
             },
             {
               "wait": 500
@@ -146,9 +146,9 @@
             }
           ],
           "highlight": [
-            "button[data-slot-id=\"S-43015-2026-07-21-PM\"]"
+            "button[data-slot-id=\"S-27731-2026-11-24-PM\"]"
           ],
-          "caption": "The List now sits in Dr Fitzgerald's row, and its drawer reads ACTIVE"
+          "caption": "The List now sits in Dr Delaney's row, and its drawer reads ACTIVE"
         }
       ]
     }

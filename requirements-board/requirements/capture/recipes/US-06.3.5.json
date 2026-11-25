@@ -7,7 +7,7 @@
       "name": "recheck-on-change",
       "app": "admin",
       "caption": "Prepayment re-checked when the Contract changes",
-      "start": "/admin/day/2026-07-24/bookings/BK0034",
+      "start": "/admin/day/2026-11-27/bookings/BK0034",
       "states": [
         {
           "state": "before",
@@ -52,10 +52,10 @@
       "name": "recheck-moved",
       "app": "admin",
       "caption": "A move changes nothing: the sent prepayment and her Contract stay as they were",
-      "start": "/admin/day/2026-07-24/bookings/BK0034",
+      "start": "/admin/day/2026-11-27/bookings/BK0034",
       "setup": [
         {
-          "goto": "/admin/invoices"
+          "goto": "/admin/invoices?view=approval"
         },
         {
           "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
@@ -78,7 +78,7 @@
           "state": "moved",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-07-24-AM/bookings/BK0034"
+              "goto": "/web/lists/L-34821-2026-11-27-AM/bookings/BK0034"
             },
             {
               "scroll": "[data-shot=\"move-booking-action\"]"
@@ -105,7 +105,7 @@
               "wait": "[data-shot=\"move-booking-done\"]"
             },
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0034"
+              "goto": "/admin/day/2026-11-27/bookings/BK0034"
             },
             {
               "wait": "[data-shot=booking-prepayment]"

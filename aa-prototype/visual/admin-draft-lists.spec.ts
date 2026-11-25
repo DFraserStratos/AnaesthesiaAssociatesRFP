@@ -25,10 +25,10 @@ async function cleanCopy(page: Page, where: string) {
 
 test('Draft Lists: soonest first, the band and rail card, and assigning St George\'s to Dr Fitzgerald makes it ACTIVE', async ({ page }) => {
   await fresh(page, '/admin/draft-lists')
-  // Ten since catch-up Phase 32d (sixteen at 32b): the six recurring clashes the public rows raised went with the public List kind.
-  await expect(page.locator('[data-shot="nav-badge-draftLists"]')).toHaveText('10')
+  // 47 across the whole practice (the scripted ten plus the colleagues' recurring and returned Lists).
+  await expect(page.locator('[data-shot="nav-badge-draftLists"]')).toHaveText('47')
   const rows = page.locator('tr[data-draft-list-row]')
-  await expect(rows).toHaveCount(10)
+  await expect(rows).toHaveCount(47)
   await expect(rows.first()).toHaveAttribute('data-draft-list-row', 'LD-001')
   await expect(page.locator('tr[data-draft-list-row="LD-003"]')).toContainText('3 d 22 h')
   await page.screenshot({ path: 'visual/shots/p31-01-draft-lists.png', fullPage: true })
@@ -47,8 +47,9 @@ test('Draft Lists: soonest first, the band and rail card, and assigning St Georg
   const drawer = page.locator('[data-shot="admin-draft-list-drawer"]')
   await expect(drawer).toContainText('DRAFT')
   await expect(drawer).toContainText('Unassigned')
-  await expect(drawer.locator('[data-shot="draft-list-available"]')).toContainText('Fitzgerald, Emma')
-  await drawer.locator('[data-available="43015"]').getByRole('button', { name: 'Assign' }).click()
+  // The drawer offers the first few free colleagues; Dr Fitzgerald is in See everyone's picker.
+  await drawer.locator('[data-shot="draft-list-available"]').getByRole('button', { name: /^See everyone/ }).click()
+  await page.locator('button[data-candidate="43015"]').click()
   await page.getByRole('button', { name: 'Assign Draft List' }).click()
   await expect(page.getByText('Draft List assigned')).toBeVisible()
   // The drawer becomes the session drawer, with the List ACTIVE in her PM.

@@ -7,31 +7,44 @@
       "name": "anaesthetist-record",
       "app": "admin",
       "caption": "Anaesthetist identity, contact and bank details; one HPI CPN",
-      "start": "/admin/masters",
+      "start": "/admin/people/anaesthetists/34821",
       "states": [
         {
-          "state": "edit",
-          "caption": "Editing an anaesthetist's contact, HPI CPN and bank details (both required)",
+          "state": "record",
+          "caption": "Dr Souter's record: Identity with her one HPI CPN, Contact, and Bank and GST with the account masked",
           "steps": [
             {
-              "click": "[data-shot=masters-anaesthetists] tr[data-anaesthetist=\"34821\"] >> button:text-is(\"Edit\")"
-            },
-            {
-              "wait": 500
-            },
-            {
-              "scroll": "[data-shot=anaesthetist-bank-fields]"
+              "wait": "[data-shot=anaesthetist-record]"
             }
           ],
           "highlight": [
-            "[data-shot=edit-anaesthetist-sheet] div:has(> label:has-text(\"HPI CPN (required)\"))",
-            "[data-shot=edit-anaesthetist-sheet] [data-shot=anaesthetist-bank-fields]"
+            "[data-shot=anaesthetist-identity]",
+            "[data-shot=anaesthetist-contact]",
+            "[data-shot=anaesthetist-bank]"
+          ]
+        },
+        {
+          "state": "edit",
+          "caption": "Editing the Bank and GST card: the bank account is required",
+          "steps": [
+            {
+              "click": "[data-shot=anaesthetist-bank-edit]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=anaesthetist-bank]"
           ]
         },
         {
           "state": "add",
           "caption": "Adding an anaesthetist with registration number, contact, mandatory HPI CPN and bank account",
           "steps": [
+            {
+              "goto": "/admin/people/anaesthetists"
+            },
             {
               "click": "role=button[name=\"Add anaesthetist\"]"
             },
@@ -45,21 +58,6 @@
           "highlight": [
             "[data-shot=add-anaesthetist-sheet] div:has(> label:has-text(\"HPI CPN (required)\"))",
             "[data-shot=add-anaesthetist-sheet] [data-shot=anaesthetist-bank-fields]"
-          ]
-        },
-        {
-          "state": "record",
-          "caption": "The Profile card on the anaesthetist's record: contact, HPI CPN and the bank account, masked",
-          "steps": [
-            {
-              "goto": "/admin/masters/anaesthetists/34821"
-            },
-            {
-              "wait": "[data-shot=anaesthetist-record]"
-            }
-          ],
-          "highlight": [
-            "[data-shot=anaesthetist-details]"
           ]
         }
       ]

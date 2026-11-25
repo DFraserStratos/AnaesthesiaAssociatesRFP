@@ -7,10 +7,10 @@
       "name": "additional-invoice-button",
       "app": "admin",
       "caption": "Create additional invoice sits on the Procedure's Contract row, beside Split",
-      "start": "/admin/day/2026-07-14/bookings/BK0032",
+      "start": "/admin/day/2026-11-17/bookings/BK0032",
       "setup": [
         {
-          "goto": "/admin/review/L-41267-2026-07-14-AM"
+          "goto": "/admin/review/L-41267-2026-11-17-AM"
         },
         {
           "trigger": "stage-post-op"
@@ -39,10 +39,10 @@
       "name": "review-step",
       "app": "admin",
       "caption": "The standard review step: the Events tab, then the event's review sheet, before the next billing run",
-      "start": "/admin/day/2026-07-14/bookings/BK0032",
+      "start": "/admin/day/2026-11-17/bookings/BK0032",
       "setup": [
         {
-          "goto": "/admin/review/L-41267-2026-07-14-AM"
+          "goto": "/admin/review/L-41267-2026-11-17-AM"
         },
         {
           "trigger": "stage-post-op"
@@ -62,7 +62,7 @@
             },
             {
               "fill": "input[data-shot=line-description]",
-              "value": "Post-op ward review, Wed 15 Jul, 15 min"
+              "value": "Post-op ward review, Wed 18 Nov, 15 min"
             },
             {
               "fill": "input[data-shot=line-amount]",
@@ -100,10 +100,10 @@
       "name": "own-invoice",
       "app": "admin",
       "caption": "An additional invoice is always its own document with its own number, linked both ways with the original",
-      "start": "/admin/day/2026-07-14/bookings/BK0032",
+      "start": "/admin/day/2026-11-17/bookings/BK0032",
       "setup": [
         {
-          "goto": "/admin/review/L-41267-2026-07-14-AM"
+          "goto": "/admin/review/L-41267-2026-11-17-AM"
         },
         {
           "trigger": "stage-post-op"
@@ -125,7 +125,7 @@
             },
             {
               "fill": "input[data-shot=line-description]",
-              "value": "Post-op ward review, Wed 15 Jul, 15 min"
+              "value": "Post-op ward review, Wed 18 Nov, 15 min"
             },
             {
               "fill": "input[data-shot=line-amount]",
@@ -168,7 +168,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/day/2026-07-14/bookings/BK0032"
+              "goto": "/admin/day/2026-11-17/bookings/BK0032"
             },
             {
               "wait": "[data-shot=procedure-event-invoice]"
@@ -196,7 +196,7 @@
             },
             {
               "fill": "input[data-shot=line-description]",
-              "value": "Post-op ward review, Wed 15 Jul, 15 min"
+              "value": "Post-op ward review, Wed 18 Nov, 15 min"
             },
             {
               "fill": "input[data-shot=line-amount]",
@@ -239,7 +239,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/day/2026-07-14/bookings/BK0032"
+              "goto": "/admin/day/2026-11-17/bookings/BK0032"
             },
             {
               "wait": "[data-shot=procedure-event-invoice]"
@@ -267,10 +267,10 @@
       "name": "any-party",
       "app": "admin",
       "caption": "Any billable party: the same-as tick cleared and another party picked",
-      "start": "/admin/day/2026-07-14/bookings/BK0032",
+      "start": "/admin/day/2026-11-17/bookings/BK0032",
       "setup": [
         {
-          "goto": "/admin/review/L-41267-2026-07-14-AM"
+          "goto": "/admin/review/L-41267-2026-11-17-AM"
         },
         {
           "trigger": "stage-post-op"
@@ -290,7 +290,7 @@
             },
             {
               "fill": "input[data-shot=line-description]",
-              "value": "Post-op ward review, Wed 15 Jul, 15 min"
+              "value": "Post-op ward review, Wed 18 Nov, 15 min"
             },
             {
               "fill": "input[data-shot=line-amount]",

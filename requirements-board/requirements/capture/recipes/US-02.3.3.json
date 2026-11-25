@@ -7,7 +7,7 @@
       "name": "pick-changes",
       "app": "admin",
       "caption": "Draft update email: the office picks saved changes from the Booking's history and drafts the email to send by hand",
-      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "start": "/admin/day/2026-11-24/bookings/BK0009",
       "states": [
         {
           "steps": [
@@ -65,7 +65,7 @@
       "name": "email-preview",
       "app": "admin",
       "caption": "The preview: To the surgeon's office, the subject, the template's wording and the picked changes; it opens in the office's own mail client, and the system does not send it",
-      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "start": "/admin/day/2026-11-24/bookings/BK0009",
       "states": [
         {
           "steps": [

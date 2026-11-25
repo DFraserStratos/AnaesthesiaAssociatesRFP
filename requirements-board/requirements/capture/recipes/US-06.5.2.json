@@ -7,7 +7,7 @@
       "name": "cancel-prepayment",
       "app": "admin",
       "caption": "Cancelling credits an unpaid prepayment or refunds a paid one from the AA Holding account, automatically",
-      "start": "/admin/day/2026-07-24/bookings/BK0038",
+      "start": "/admin/day/2026-11-27/bookings/BK0038",
       "states": [
         {
           "state": "paid",
@@ -35,7 +35,7 @@
           "caption": "Sent but not paid: the cancel sheet says the prepayment invoice is credited in full, so the patient is not chased",
           "steps": [
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/invoices?view=approval"
             },
             {
               "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
@@ -56,7 +56,7 @@
               "wait": 400
             },
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0034"
+              "goto": "/admin/day/2026-11-27/bookings/BK0034"
             },
             {
               "wait": "[data-shot=booking-prepayment]"
@@ -114,7 +114,7 @@
           "caption": "A payment that arrives after the credit note is refunded to the payer at once",
           "steps": [
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/invoices?view=approval"
             },
             {
               "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
@@ -135,7 +135,7 @@
               "wait": 400
             },
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0034"
+              "goto": "/admin/day/2026-11-27/bookings/BK0034"
             },
             {
               "wait": "[data-shot=booking-prepayment]"
@@ -225,7 +225,7 @@
       "name": "xero-refund",
       "app": "simulator",
       "caption": "The refund is paid in Xero, recorded against the prepayment invoice's credit note",
-      "start": "/admin/day/2026-07-24/bookings/BK0038",
+      "start": "/admin/day/2026-11-27/bookings/BK0038",
       "states": [
         {
           "steps": [
@@ -274,7 +274,7 @@
       "name": "cancel-note",
       "app": "web",
       "caption": "The anaesthetist cancelling a prepaid Booking reads what happens to the prepayment",
-      "start": "/web/lists/L-34821-2026-07-24-PM/bookings/BK0038",
+      "start": "/web/lists/L-34821-2026-11-27-PM/bookings/BK0038",
       "states": [
         {
           "caption": "Dr Souter cancels Priya Nair's Booking: the prepayment is refunded in full from the AA Holding account, automatically",
@@ -302,7 +302,7 @@
       "name": "cancel-note",
       "app": "mobile",
       "caption": "The anaesthetist cancelling a prepaid Booking reads what happens to the prepayment, on the phone",
-      "start": "/mobile/lists/L-34821-2026-07-24-PM/bookings/BK0038",
+      "start": "/mobile/lists/L-34821-2026-11-27-PM/bookings/BK0038",
       "states": [
         {
           "caption": "On the phone: cancelling refunds the prepayment in full from the AA Holding account and credits the invoice",

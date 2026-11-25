@@ -7,25 +7,19 @@
       "name": "contract-specialties",
       "app": "admin",
       "caption": "A Contract carries none or more specialties; none means every specialty",
-      "start": "/admin/masters?view=contracts",
+      "start": "/admin/contracts/CT-DOYLE-BAR",
       "states": [
         {
           "steps": [
             {
-              "wait": 300
+              "wait": 400
             },
             {
-              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-DOYLE-BAR\"] >> button:text-is(\"Edit\")"
-            },
-            {
-              "wait": 500
-            },
-            {
-              "scroll": "[data-shot=contract-specialties]"
+              "scroll": "[data-shot=contract-where]"
             }
           ],
           "highlight": [
-            "[data-shot=contract-specialties]"
+            "[data-shot=contract-where] [data-shot=contract-specialties]"
           ]
         }
       ]

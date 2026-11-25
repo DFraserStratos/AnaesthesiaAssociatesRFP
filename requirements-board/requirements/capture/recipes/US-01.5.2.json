@@ -7,7 +7,7 @@
       "name": "holiday-conflict",
       "app": "admin",
       "caption": "Booked List flagged against a hospital closure",
-      "start": "/admin/day/2026-07-22",
+      "start": "/admin/day/2026-11-25?rows=all",
       "states": [
         {
           "state": "grid",
@@ -18,7 +18,7 @@
             }
           ],
           "highlight": [
-            "button[data-conflict=\"true\"][data-list-id=\"L-25490-2026-07-22-PM\"]"
+            "button[data-conflict=\"true\"][data-list-id=\"L-25490-2026-11-25-PM\"]"
           ]
         },
         {
@@ -26,7 +26,7 @@
           "caption": "The flag explains the conflict with the hospital closure",
           "steps": [
             {
-              "click": "button[data-list-id=\"L-25490-2026-07-22-PM\"]"
+              "click": "button[data-list-id=\"L-25490-2026-11-25-PM\"]"
             },
             {
               "wait": 400
@@ -42,7 +42,7 @@
       "name": "unavailable-draft",
       "app": "admin",
       "caption": "Unavailability is never a conflict: a sick anaesthetist's session reads Unavailable and the List waits for the office as a Draft List",
-      "start": "/admin/day/2026-07-22",
+      "start": "/admin/day/2026-11-25",
       "states": [
         {
           "steps": [
@@ -51,8 +51,8 @@
             }
           ],
           "highlight": [
-            "button[data-slot-id=\"S-29104-2026-07-22-AM\"]",
-            "[data-draft-block=\"L-29104-2026-07-22-AM\"]"
+            "button[data-slot-id=\"S-29104-2026-11-25-AM\"]",
+            "[data-draft-block=\"L-29104-2026-11-25-AM\"]"
           ]
         }
       ]
@@ -61,12 +61,12 @@
       "name": "phone-advice-warning",
       "app": "admin",
       "caption": "A Booking at a closed hospital is accepted, and the List flagged as a conflict",
-      "start": "/admin/day/2026-07-22",
+      "start": "/admin/day/2026-11-25",
       "states": [
         {
           "steps": [
             {
-              "click": "button[data-slot-id=\"S-41267-2026-07-22-AM\"]"
+              "click": "button[data-slot-id=\"S-41267-2026-11-25-AM\"]"
             },
             {
               "wait": 400

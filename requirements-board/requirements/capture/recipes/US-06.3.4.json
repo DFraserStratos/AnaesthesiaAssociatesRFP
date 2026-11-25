@@ -7,14 +7,14 @@
       "name": "recheck-after-payment",
       "app": "admin",
       "caption": "Pre-payment status re-checked after the receipt",
-      "start": "/admin/day/2026-07-24",
+      "start": "/admin/day/2026-11-27",
       "states": [
         {
           "state": "part-paid",
           "caption": "Half the pre-payment received, still outstanding",
           "steps": [
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/invoices?view=approval"
             },
             {
               "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
@@ -35,7 +35,7 @@
               "wait": 400
             },
             {
-              "goto": "/demo/xero/invoices/XR0001"
+              "goto": "/demo/xero/invoices/XR2569"
             },
             {
               "wait": 400
@@ -47,7 +47,7 @@
               "wait": 400
             },
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0034"
+              "goto": "/admin/day/2026-11-27/bookings/BK0034"
             },
             {
               "wait": "[data-shot=booking-prepayment]"
@@ -62,7 +62,7 @@
           "caption": "Pre-payment paid in full, received and the warning cleared",
           "steps": [
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/invoices?view=approval"
             },
             {
               "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
@@ -83,7 +83,7 @@
               "wait": 400
             },
             {
-              "goto": "/demo/xero/invoices/XR0001"
+              "goto": "/demo/xero/invoices/XR2569"
             },
             {
               "wait": 400
@@ -95,7 +95,7 @@
               "wait": 400
             },
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0034"
+              "goto": "/admin/day/2026-11-27/bookings/BK0034"
             },
             {
               "wait": "[data-shot=booking-prepayment]"

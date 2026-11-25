@@ -122,8 +122,8 @@ test('demo actions: load the 3-procedure Booking, then the hospital feed changes
   await expect(page.locator('[data-shot="demo-action-load-multi-procedure-booking"]')).toContainText('Already loaded')
   await page.keyboard.press('Escape')
 
-  // The staged Booking (the next id after the seed's last, BK0190 since catch-up Phase 25a) on Dr Souter's Wed 22 Jul AM List.
-  await page.goto('/web/lists/L-34821-2026-11-25-AM/bookings/BK0191')
+  // The staged Booking takes the next Booking id after the whole practice's last (BK5101) on Dr Souter's Wed 25 Nov AM List.
+  await page.goto('/web/lists/L-34821-2026-11-25-AM/bookings/BK5101')
   await settle(page)
   const first = page.locator('[data-shot="procedure-stack"]').first()
   await expect(first).toContainText('Laparoscopic cholecystectomy')

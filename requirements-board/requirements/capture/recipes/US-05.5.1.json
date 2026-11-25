@@ -7,7 +7,7 @@
       "name": "acc-contract",
       "app": "admin",
       "caption": "ACC procedure billed under an ACC Contract",
-      "start": "/admin/day/2026-07-09/bookings/BK0031",
+      "start": "/admin/day/2026-11-12/bookings/BK0031",
       "states": [
         {
           "steps": [],
@@ -21,25 +21,16 @@
       "name": "acc-tag",
       "app": "admin",
       "caption": "ACC is a funding tag on a holder's Contract, priced from RVG units",
-      "start": "/admin/masters?view=contracts",
+      "start": "/admin/contracts/CT-STG-ACC",
       "states": [
         {
           "steps": [
             {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-STG-ACC\"] >> button:text-is(\"Edit\")"
-            },
-            {
-              "wait": 500
-            },
-            {
-              "scroll": "[data-shot=contract-funding-tag]"
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=contract-funding-tag]"
+            "[data-shot=contract-where] [data-shot=contract-funding-tag]"
           ]
         }
       ]

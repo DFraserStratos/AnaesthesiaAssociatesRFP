@@ -1,70 +1,74 @@
 {
   "id": "US-04.1.1",
   "status": "partial",
-  "absentReason": "The shot shows the settings every Contract shares on Master data. Funding tags (US-04.2.17), price ranges (US-04.2.15) and where the invoice goes on the step rail (US-04.3.8) are shot on their own stories.",
+  "absentReason": "The shots show the settings every Contract shares, on a Contract's page and on New contract. Funding tags (US-04.2.17), price ranges (US-04.2.15) and where the invoice goes on the step rail (US-04.3.8) are shot on their own stories.",
   "shots": [
     {
       "name": "contract-settings",
       "app": "admin",
-      "caption": "Every arrangement is a Contract with the same settings: who it bills, its pricing kind, prepaid, and whether the anaesthetist may override",
-      "start": "/admin/masters?view=contracts",
+      "caption": "Every arrangement is a Contract with the same settings: who it bills, its pricing kind, prepaid, and whether the anaesthetist may change the price",
+      "start": "/admin/contracts/CT-UNISPORTS",
       "states": [
         {
           "state": "settings",
+          "caption": "Unisports Ortho's page: RVG at its own $93.47 a unit, billing its holder, on the same cards as every Contract",
           "steps": [
             {
-              "fill": "[data-shot=contract-search] input",
-              "value": "Unisports"
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-price]",
+            "[data-shot=contract-bills]"
+          ]
+        },
+        {
+          "state": "fixed",
+          "caption": "What was fixed when it was created: its holder, pricing kind and prepaid setting",
+          "steps": [
+            {
+              "scroll": "[data-shot=contract-fixed]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-fixed]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "new-contract-prepaid",
+      "app": "admin",
+      "caption": "A prepaid Contract is a fixed price billed to the payer",
+      "start": "/admin/contracts/new?holder=PY-CES",
+      "states": [
+        {
+          "state": "prepaid-refusal",
+          "caption": "Prepaid Yes closes the RVG kinds and bills the payer; created with no price range, it is refused in the rule's own words",
+          "steps": [
+            {
+              "click": "role=group[name=\"Prepaid\"] >> role=button[name=\"Yes\"]"
             },
             {
               "wait": 300
             },
             {
-              "click": "[data-shot=contract-catalogue] tr[data-contract]:has-text(\"Unisports\") >> button:text-is(\"Edit\")"
-            },
-            {
-              "wait": 500
-            }
-          ],
-          "highlight": [
-            "[data-shot=contract-settings]",
-            "[data-shot=contract-links] div:has(> div:text-is(\"Bills\"))"
-          ]
-        },
-        {
-          "state": "prepaid-refusal",
-          "caption": "A prepaid Contract priced from RVG units is refused with the store's sentence",
-          "steps": [
-            {
-              "click": "role=button[name=\"New contract\"]"
-            },
-            {
-              "wait": 500
-            },
-            {
-              "fill": "[data-shot=contract-detail] >> role=textbox[name=\"Name\"]",
+              "fill": "[data-shot=contract-new-page] >> role=textbox[name=\"Name\"]",
               "value": "Cataract prepay"
             },
             {
-              "select": "[data-shot=contract-links] select",
-              "value": "PY-CES"
+              "click": "[data-shot=contract-create]"
             },
             {
-              "click": "[data-shot=contract-settings] >> role=button[name=\"Yes\"] >> nth=0"
-            },
-            {
-              "click": "role=button[name=\"Create contract\"]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "scroll": "[data-shot=contract-detail] [role=alert]"
+              "wait": 500
             }
           ],
           "highlight": [
-            "[data-shot=contract-settings]",
-            "[data-shot=contract-detail] [role=alert]"
+            "[data-shot=contract-new-error]",
+            "[data-shot=contract-pricing-kinds]"
           ]
         }
       ]

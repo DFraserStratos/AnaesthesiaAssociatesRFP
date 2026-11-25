@@ -15,11 +15,23 @@ async function monitor(page: Page): Promise<void> {
   await page.waitForLoadState('networkidle')
 }
 
+/**
+ * Each step waits for the panel to show it done before the next: at practice scale
+ * the monitor re-renders slowly, and a click on the next step's stale render is lost.
+ */
+async function approveAndSend(page: Page): Promise<void> {
+  const panel = page.locator('[data-shot="payment-cycle"]')
+  await page.locator('[data-shot="payment-cycle-approve"]').click()
+  await expect(panel).toContainText(/Approved \w{3} \d+ \w{3}/)
+  await page.locator('[data-shot="payment-cycle-send"]').click()
+  await expect(panel).toContainText(/Sent \w{3} \d+ \w{3}/)
+}
+
 async function payWeek(page: Page): Promise<string> {
   await page.locator('[data-shot="payment-cycle-close"]').click()
-  await page.locator('[data-shot="payment-cycle-approve"]').click()
-  await page.locator('[data-shot="payment-cycle-send"]').click()
-  await page.locator('[data-shot="billing-run-payables-in-xero"]').click()
+  await expect(page.locator('[data-shot="payment-cycle"]')).toContainText(/Closed \w{3} \d+ \w{3}/)
+  await approveAndSend(page)
+  await page.locator('[data-shot="billing-run-payables-in-xero"]').click({ timeout: 90_000 })
   await expect(page.locator('[data-shot="billing-payables-result"]')).toContainText('Week 48 paid in Xero')
   const runId = await page.locator('[data-shot="payables-runs"] tbody tr').first().getAttribute('data-run-id')
   expect(runId).not.toBeNull()
@@ -27,11 +39,14 @@ async function payWeek(page: Page): Promise<string> {
 }
 
 test.beforeEach(async ({ page }) => {
+  // Run payables in Xero pays the whole practice's week (about 1,600 BCTIs) in one synchronous
+  // step: about 16 s on a quiet machine, more under the full parallel run.
+  test.setTimeout(120_000)
   await page.goto('/')
   await page.evaluate(() => localStorage.clear())
 })
 
-test('the payment cycle opens on Week 48 with nothing waiting and Week 47 paid and seeded', async ({ page }) => {
+test('the payment cycle opens on Week 48 with the practice waiting and Week 47 paid and seeded', async ({ page }) => {
   await monitor(page)
   const panel = page.locator('[data-shot="payment-cycle"]')
   await expect(panel).toContainText('Payment cycle · Week 48 · 23 Nov to 29 Nov 2026')
@@ -39,8 +54,9 @@ test('the payment cycle opens on Week 48 with nothing waiting and Week 47 paid a
   await expect(panel).toContainText('Planned Monday 30 Nov')
   await expect(panel).toContainText('Planned Tuesday 1 Dec')
   await expect(panel).not.toContainText(/provisional/i)
-  await expect(page.locator('[data-shot="payables-run-draft"]')).toContainText("Nothing is waiting for this week's run.")
-  await expect(page.locator('[data-shot="payment-cycle-close"]')).toBeDisabled()
+  // The whole practice's released BCTIs already wait for this week's run, so the week can be closed.
+  await expect(page.locator('[data-shot="payables-run-draft"]')).toContainText("Waiting for this week's run")
+  await expect(page.locator('[data-shot="payment-cycle-close"]')).toBeEnabled()
   const first = page.locator('[data-shot="payables-runs"] tbody tr').first()
   await expect(first).toContainText('Week 47')
   await expect(first).toContainText('Paid')
@@ -61,10 +77,9 @@ test('an anomaly held out rolls into Week 49; approve, send and run pay the rest
   await page.locator('[data-shot="payment-cycle-hold-anomaly"]').first().click()
   await expect(page.locator('[data-shot="payment-cycle-held"]')).toContainText('Rolls into Week 49')
   await page.locator('[data-shot="payment-cycle"]').screenshot({ path: 'visual/shots/a39a-03-held.png' })
-  await page.locator('[data-shot="payment-cycle-approve"]').click()
-  await page.locator('[data-shot="payment-cycle-send"]').click()
-  await page.locator('[data-shot="billing-run-payables-in-xero"]').click()
-  await expect(page.locator('[data-shot="billing-payables-result"]')).toContainText('Week 48 paid in Xero: 18 BCTIs')
+  await approveAndSend(page)
+  await page.locator('[data-shot="billing-run-payables-in-xero"]').click({ timeout: 90_000 })
+  await expect(page.locator('[data-shot="billing-payables-result"]')).toContainText('Week 48 paid in Xero: 1615 BCTIs') // the practice's 1,597 and Dr Sharma's 19, less the one held
   await expect(page.locator('[data-shot="payment-cycle"]')).toContainText('Payment cycle · Week 49')
   await expect(page.locator('[data-shot="payment-cycle-rolled"]')).toContainText('Rolled from Week 48')
   await page.locator('[data-shot="payment-cycle"]').screenshot({ path: 'visual/shots/a39a-04-paid.png' })

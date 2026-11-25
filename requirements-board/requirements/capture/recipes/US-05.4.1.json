@@ -7,7 +7,7 @@
       "name": "adjustment",
       "app": "web",
       "caption": "A typed price where allowed; the computed price kept and seen at review",
-      "start": "/web/lists/L-34821-2026-07-27-AM/bookings/BK0186",
+      "start": "/web/lists/L-34821-2026-11-30-AM/bookings/BK0186",
       "states": [
         {
           "state": "entry",
@@ -71,7 +71,7 @@
       "name": "adjustment",
       "app": "mobile",
       "caption": "A typed price where allowed; the computed price kept and seen at review",
-      "start": "/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0186",
+      "start": "/mobile/lists/L-34821-2026-11-30-AM/bookings/BK0186",
       "states": [
         {
           "state": "entry",
@@ -143,7 +143,7 @@
       "name": "review",
       "app": "admin",
       "caption": "At review a typed price shows the computed price beside the Price typed flag",
-      "start": "/admin/review/L-45178-2026-07-14-AM",
+      "start": "/admin/review/L-45178-2026-11-17-AM",
       "states": [
         {
           "steps": [

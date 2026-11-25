@@ -51,12 +51,14 @@ async function persistedInvoiceIdWhere(
         found = await page.evaluate(() => {
           const raw = localStorage.getItem('aa-demo')
           if (raw === null) return null
+          // A delta against the seed (store/persistDelta.ts): new ledger pairs and queue items are its records.
           const persisted = JSON.parse(raw) as {
-            state?: { billing?: { ledger?: Record<string, PersistedLedgerPair>; xeroQueue?: Record<string, PersistedQueueItem> } }
+            state?: { top?: { billing?: { $sub?: { ledger?: { $records?: Record<string, PersistedLedgerPair> }; xeroQueue?: { $records?: Record<string, PersistedQueueItem> } } } } }
           }
-          const queued = Object.values(persisted.state?.billing?.xeroQueue ?? {}).find((q) => q.kind === 'handoff' && q.status !== 'sent')
+          const billing = persisted.state?.top?.billing?.$sub
+          const queued = Object.values(billing?.xeroQueue?.$records ?? {}).find((q) => q.kind === 'handoff' && q.status !== 'sent')
           const pairId = queued?.target?.pairId
-          const hit = pairId !== undefined ? persisted.state?.billing?.ledger?.[pairId] : undefined
+          const hit = pairId !== undefined ? billing?.ledger?.$records?.[pairId] : undefined
           return hit?.invoiceId ?? null
         })
         return found
@@ -76,11 +78,12 @@ async function waitForPersistedCaseOfOpenInvoice(page: Page): Promise<void> {
         page.evaluate(() => {
           const raw = localStorage.getItem('aa-demo')
           if (raw === null) return false
+          // A delta against the seed (store/persistDelta.ts): new ledger pairs are its records.
           const persisted = JSON.parse(raw) as {
-            state?: { billing?: { ledger?: Record<string, PersistedLedgerPair> } }
+            state?: { top?: { billing?: { $sub?: { ledger?: { $records?: Record<string, PersistedLedgerPair> } } } } }
           }
           const invoiceId = window.location.pathname.split('/').at(-1)
-          return Object.values(persisted.state?.billing?.ledger ?? {}).some(
+          return Object.values(persisted.state?.top?.billing?.$sub?.ledger?.$records ?? {}).some(
             (candidate) => candidate.invoiceId === invoiceId,
           )
         }),
@@ -224,19 +227,26 @@ test('authorise raises and sends invoices; contract-holder document, Resend and 
   await page.evaluate(() => {
     const raw = localStorage.getItem('aa-demo')
     if (raw === null) throw new Error('Persisted demo state is missing')
+    // A delta against the seed (store/persistDelta.ts): the new ledger pair is one of its records.
     const persisted = JSON.parse(raw) as {
       state: {
-        billing: {
-          ledger: Record<string, {
-            invoiceId?: string
-            receivable?: { xeroAccRecId?: string }
-            payable?: { xeroAccPayId?: string }
-          }>
+        top: {
+          billing: {
+            $sub: {
+              ledger: {
+                $records: Record<string, {
+                  invoiceId?: string
+                  receivable?: { xeroAccRecId?: string }
+                  payable?: { xeroAccPayId?: string }
+                }>
+              }
+            }
+          }
         }
       }
     }
     const invoiceId = window.location.pathname.split('/').at(-1)
-    const pair = Object.values(persisted.state.billing.ledger).find((candidate) => candidate.invoiceId === invoiceId)
+    const pair = Object.values(persisted.state.top.billing.$sub.ledger.$records).find((candidate) => candidate.invoiceId === invoiceId)
     if (pair === undefined) throw new Error('Current invoice ledger pair is missing')
     if (pair.receivable !== undefined) delete pair.receivable.xeroAccRecId
     if (pair.payable !== undefined) delete pair.payable.xeroAccPayId
@@ -402,7 +412,7 @@ test('exemplar staging via the guard console: patient layout and the fee split',
     /St George's · PM.*Ms G\. Lim/,
     /St George's · PM.*Ms G\. Lim/,
   ])
-  await expect(alanRows.locator('td:nth-child(5)')).toHaveText(['MON 20 JUL', 'MON 20 JUL'])
+  await expect(alanRows.locator('td:nth-child(5)')).toHaveText(['MON 23 NOV', 'MON 23 NOV'])
   expect((await alanRows.locator('td:nth-child(6)').allTextContents()).map((t) => t.replace(/(Patient|Holder) layout$/, '').replace(/Split$/, '').trim()).sort()).toEqual(['Alan Prentice', 'nib'])
   await expect(alanRows.locator('[data-shot="invoice-list-split"]')).toHaveCount(2)
   await expect(alanRows.locator('[data-shot="invoice-list-delivery"]')).toHaveText([/^Emailed \d{2}:\d{2}$/, /^Emailed \d{2}:\d{2}$/])

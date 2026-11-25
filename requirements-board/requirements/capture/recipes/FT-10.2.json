@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -72,7 +72,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -121,10 +121,10 @@
               "click": "[data-shot=payment-cycle-send]"
             },
             {
-              "wait": 400
+              "wait": 2500
             },
             {
-              "click": "[data-shot=billing-run-payables-in-xero]"
+              "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
             },
             {
               "wait": "[data-shot=billing-payables-result]"

@@ -7,7 +7,7 @@
       "name": "awaiting-approval-strip",
       "app": "admin",
       "caption": "The one invoice before AUTHORISED: a prepayment, generated on approval",
-      "start": "/admin/invoices",
+      "start": "/admin/invoices?view=approval",
       "states": [
         {
           "steps": [

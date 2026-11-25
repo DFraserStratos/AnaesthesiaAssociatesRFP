@@ -7,11 +7,11 @@
       "name": "rebook",
       "app": "admin",
       "caption": "Rebooked after a cancellation, with a fresh prepayment at the new anaesthetist's own price",
-      "start": "/admin/day/2026-07-24/bookings/BK0038",
+      "start": "/admin/day/2026-11-27/bookings/BK0038",
       "states": [
         {
           "state": "dialog",
-          "caption": "Rebook with another anaesthetist: Dr Beaumont's Tue 4 Aug PM List, and a new prepayment at her own price, $1,350.00",
+          "caption": "Rebook with another anaesthetist: Dr Beaumont's Tue 8 Dec PM List, and a new prepayment at her own price, $1,350.00",
           "steps": [
             {
               "wait": "[data-shot=booking-prepayment]"
@@ -55,7 +55,7 @@
               "wait": 300
             },
             {
-              "click": "[data-shot=rebook-list][data-list-id=\"L-31902-2026-08-04-PM\"]"
+              "click": "[data-shot=rebook-list][data-list-id=\"L-31902-2026-12-08-PM\"]"
             },
             {
               "wait": "[data-shot=rebook-price][data-kind=prepaid]"
@@ -114,7 +114,7 @@
               "wait": 300
             },
             {
-              "click": "[data-shot=rebook-list][data-list-id=\"L-31902-2026-08-04-PM\"]"
+              "click": "[data-shot=rebook-list][data-list-id=\"L-31902-2026-12-08-PM\"]"
             },
             {
               "wait": "[data-shot=rebook-price][data-kind=prepaid]"

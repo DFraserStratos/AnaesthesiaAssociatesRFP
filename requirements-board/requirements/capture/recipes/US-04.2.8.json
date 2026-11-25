@@ -7,7 +7,7 @@
       "name": "contracts-table",
       "app": "admin",
       "caption": "No per-Contract invoicing settings: the layout follows whether the Contract bills its holder, delivery is set on the Party (email or post), every price is held GST exclusive and the holder reference code is printed",
-      "start": "/admin/masters?view=contracts",
+      "start": "/admin/contracts",
       "states": [
         {
           "caption": "Contracts with their Layout and Delivery: nib RVG bills its holder by Email, No contract · RVG bills the payer by the payer's email or post",
@@ -40,7 +40,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -55,7 +55,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-PM"
+          "goto": "/admin/review/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"

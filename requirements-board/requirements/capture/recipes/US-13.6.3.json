@@ -6,8 +6,8 @@
     {
       "name": "pairings-surgeon",
       "app": "admin",
-      "caption": "A private record, either way round, on both profiles; it informs the office and never blocks",
-      "start": "/admin/masters/surgeons/S-REID",
+      "caption": "A private record, either way round, on both pages; it informs the office and never blocks",
+      "start": "/admin/people/surgeons/S-REID",
       "states": [
         {
           "state": "active",
@@ -62,8 +62,8 @@
     {
       "name": "pairings-anaesthetist",
       "app": "admin",
-      "caption": "The same entry from Dr Sharma's side, on her Admin record",
-      "start": "/admin/masters/anaesthetists/41267",
+      "caption": "The same entry from Dr Sharma's side, on her page in the People section",
+      "start": "/admin/people/anaesthetists/41267",
       "states": [
         {
           "steps": [
@@ -84,12 +84,12 @@
       "name": "reassign-apart",
       "app": "admin",
       "caption": "Reassigning Ms Reid's List: Dr Sharma is grouped apart, still selectable",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "steps": [
             {
-              "click": "[data-list-id=\"L-45178-2026-07-21-PM\"]"
+              "click": "[data-list-id=\"L-45178-2026-11-24-PM\"]"
             },
             {
               "wait": 400

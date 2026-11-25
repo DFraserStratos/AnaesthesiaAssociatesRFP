@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -67,7 +67,7 @@
           "click": "[data-shot=payment-cycle-send]"
         },
         {
-          "wait": 600
+          "wait": 2500
         },
         {
           "goto": "/demo/xero/invoices"
@@ -177,7 +177,7 @@
           "caption": "Released, waiting for this week's payment run: the prepayment transferred to Dr Souter, $1,380.00, before the office closes the week",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Priya Nair\" >> nth=0"
@@ -223,7 +223,7 @@
               "wait": 1500
             },
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Mark list completed\" >> nth=0"
@@ -235,7 +235,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-07-24-PM"
+              "goto": "/admin/review/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -265,7 +265,7 @@
           "caption": "After the office closes the week, approves its BCTIs and sends the payment schedule, Run payables in Xero: Xero pays the bill and the Billing Engine records the disbursement from the bill-paid webhook",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Priya Nair\" >> nth=0"
@@ -311,7 +311,7 @@
               "wait": 1500
             },
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Mark list completed\" >> nth=0"
@@ -323,7 +323,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-07-24-PM"
+              "goto": "/admin/review/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -359,10 +359,10 @@
               "click": "[data-shot=payment-cycle-send]"
             },
             {
-              "wait": 400
+              "wait": 2500
             },
             {
-              "click": "[data-shot=billing-run-payables-in-xero]"
+              "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
             },
             {
               "wait": "[data-shot=billing-payables-result]"

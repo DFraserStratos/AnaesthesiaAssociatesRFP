@@ -7,10 +7,10 @@
       "name": "resolve-retry",
       "app": "admin",
       "caption": "Retry an item that failed: a Xero hand-off waiting in the sync queue",
-      "start": "/admin/billing",
+      "start": "/admin/billing?anaesthetist=39560",
       "setup": [
         {
-          "goto": "/admin/billing"
+          "goto": "/admin/billing?anaesthetist=39560"
         },
         {
           "trigger": "billing-failure"
@@ -44,7 +44,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-39560-2026-07-16-AM]"
+            "[data-shot=billing-pipeline-L-39560-2026-11-19-AM]"
           ]
         }
       ]

@@ -22,10 +22,10 @@
       "name": "prepaid-amount",
       "app": "admin",
       "caption": "The prepaid amount is the Procedure's price on its prepaid Contract, with no amount field to change",
-      "start": "/admin/day/2026-07-24/bookings/BK0034",
+      "start": "/admin/day/2026-11-27/bookings/BK0034",
       "setup": [
         {
-          "goto": "/admin/invoices"
+          "goto": "/admin/invoices?view=approval"
         },
         {
           "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"

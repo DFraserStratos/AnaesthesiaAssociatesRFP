@@ -7,7 +7,7 @@
       "name": "procedure-contract",
       "app": "web",
       "caption": "The Contract on each Procedure, in its Billing card under the procedure text as received: where the invoice goes, the Contract, the price and who pays",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/web/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "before",
@@ -26,7 +26,7 @@
       "name": "procedure-contract",
       "app": "mobile",
       "caption": "The Contract on each Procedure, in its Billing card under the procedure text as received: where the invoice goes, the Contract, the price and who pays",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "before",
@@ -48,7 +48,7 @@
       "name": "procedure-contract",
       "app": "web",
       "caption": "The Contract on each Procedure, in its Billing card under the procedure text as received: where the invoice goes, the Contract, the price and who pays",
-      "start": "/web/lists/L-34821-2026-07-20-AM/bookings/BK0023",
+      "start": "/web/lists/L-34821-2026-11-23-AM/bookings/BK0023",
       "states": [
         {
           "state": "after",

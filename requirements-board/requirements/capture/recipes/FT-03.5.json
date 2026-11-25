@@ -7,7 +7,7 @@
       "name": "price-card",
       "app": "mobile",
       "caption": "A setting on each RVG Contract decides",
-      "start": "/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0186",
+      "start": "/mobile/lists/L-34821-2026-11-30-AM/bookings/BK0186",
       "states": [
         {
           "state": "override",
@@ -33,7 +33,7 @@
           "caption": "Aria's Contract does not: the figures read-only",
           "steps": [
             {
-              "goto": "/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0037"
+              "goto": "/mobile/lists/L-34821-2026-11-30-AM/bookings/BK0037"
             },
             {
               "wait": 900

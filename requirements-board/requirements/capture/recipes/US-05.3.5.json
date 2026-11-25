@@ -7,7 +7,7 @@
       "name": "per-procedure",
       "app": "admin",
       "caption": "The Booking's fee broken down by Procedure, on the office view",
-      "start": "/admin/day/2026-07-20/bookings/BK0022",
+      "start": "/admin/day/2026-11-23/bookings/BK0022",
       "states": [
         {
           "steps": [

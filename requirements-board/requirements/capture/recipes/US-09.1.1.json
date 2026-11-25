@@ -59,10 +59,10 @@
         },
         {
           "state": "transferred",
-          "caption": "After the List is authorised, the transfer journal MJ-0001 is referenced too",
+          "caption": "After the List is authorised, the transfer journal MJ-0003 is referenced too",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Priya Nair\" >> nth=0"
@@ -108,7 +108,7 @@
               "wait": 1500
             },
             {
-              "goto": "/web/lists/L-34821-2026-07-24-PM"
+              "goto": "/web/lists/L-34821-2026-11-27-PM"
             },
             {
               "click": "text=\"Mark list completed\" >> nth=0"
@@ -120,7 +120,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-07-24-PM"
+              "goto": "/admin/review/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -195,7 +195,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-25490-2026-07-20-AM"
+          "goto": "/admin/review/L-25490-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"

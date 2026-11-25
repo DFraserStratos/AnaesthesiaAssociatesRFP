@@ -7,7 +7,7 @@
       "name": "total-strip",
       "app": "mobile",
       "caption": "The price, quietly, as the anaesthetist records",
-      "start": "/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0186",
+      "start": "/mobile/lists/L-34821-2026-11-30-AM/bookings/BK0186",
       "states": [
         {
           "state": "before",
@@ -60,7 +60,7 @@
           "caption": "On a fixed price the strip shows the fixed price",
           "steps": [
             {
-              "goto": "/mobile/lists/L-34821-2026-07-24-AM/bookings/BK0034"
+              "goto": "/mobile/lists/L-34821-2026-11-27-AM/bookings/BK0034"
             },
             {
               "wait": 900
@@ -76,7 +76,7 @@
       "name": "price-card",
       "app": "mobile",
       "caption": "The price, quietly, as the anaesthetist records",
-      "start": "/mobile/lists/L-34821-2026-07-27-AM/bookings/BK0186",
+      "start": "/mobile/lists/L-34821-2026-11-30-AM/bookings/BK0186",
       "states": [
         {
           "state": "before",
@@ -146,7 +146,7 @@
           "caption": "On a fixed price: Fixed price $1,200.00",
           "steps": [
             {
-              "goto": "/mobile/lists/L-34821-2026-07-24-AM/bookings/BK0034"
+              "goto": "/mobile/lists/L-34821-2026-11-27-AM/bookings/BK0034"
             },
             {
               "wait": 900
@@ -172,7 +172,7 @@
       "name": "booking-total",
       "app": "web",
       "caption": "The price, quietly, as the anaesthetist records",
-      "start": "/web/lists/L-34821-2026-07-27-AM/bookings/BK0186",
+      "start": "/web/lists/L-34821-2026-11-30-AM/bookings/BK0186",
       "states": [
         {
           "state": "before",

@@ -30,6 +30,14 @@ async function xeroPairs(page: Page): Promise<{ number: string; href: string }[]
   )
 }
 
+/** How many ACCRECs the Xero simulator holds: past its 200-row safety cap, its "Showing 200 of N" line says. */
+async function xeroPairCount(page: Page): Promise<number> {
+  const listed = await xeroPairs(page)
+  const cap = page.locator('[data-shot="xero-table-cap"]').first()
+  if ((await cap.count()) === 0) return listed.length
+  return Number(((await cap.textContent()) ?? '').replace(/^.* of /, '').replace(/\D/g, ''))
+}
+
 /** Authorise a List on Review (the usual confirm); returns how many invoices the run raised. */
 async function authorise(page: Page, listId: string): Promise<number> {
   await page.goto(`/admin/review/${listId}`)
@@ -42,8 +50,9 @@ async function authorise(page: Page, listId: string): Promise<number> {
   return Number(((await summary.textContent()) ?? '').match(/^(\d+)/)?.[1])
 }
 
+/** The monitor filtered to Dr Souter: its groups page at 20 across the whole practice, and hers is not on page 1. */
 async function openMonitor(page: Page): Promise<void> {
-  await page.goto('/admin/billing')
+  await page.goto('/admin/billing?anaesthetist=34821')
   await page.waitForLoadState('networkidle')
   await expect(page.getByRole('heading', { name: 'Billing monitor', level: 1 })).toBeVisible()
 }
@@ -63,7 +72,7 @@ test('outage: authorising still bills, the hand-offs queue and back off with the
   await expect(page.locator('[data-shot="billing-xero-queue"]').getByText('Nothing is waiting for Xero.')).toBeVisible()
   await expect(page.locator('[data-shot="billing-xero-divergence"]')).toHaveCount(0)
 
-  const before = await xeroPairs(page)
+  const before = await xeroPairCount(page)
 
   // Simulate Xero outage from the Billing monitor.
   await openMonitor(page)
@@ -88,9 +97,9 @@ test('outage: authorising still bills, the hand-offs queue and back off with the
   await page.screenshot({ path: 'visual/shots/p37-xero-01-queue.png', fullPage: true })
 
   // The Xero simulator: the outage banner, and no new pair.
-  const during = await xeroPairs(page)
+  const during = await xeroPairCount(page)
   await expect(page.locator('[data-shot="xero-outage-banner"]')).toBeVisible()
-  expect(during.length).toBe(before.length)
+  expect(during).toBe(before)
 
   // Clock +15 min: each row has been retried, so attempts rise (and the next try moves out by the backoff).
   await openMonitor(page)
@@ -106,10 +115,10 @@ test('outage: authorising still bills, the hand-offs queue and back off with the
   await expect(page.locator(`tbody[data-shot="billing-pipeline-${SOUTER_MON_AM}"]`)).toHaveAttribute('data-problems', '')
 
   // Exactly one Xero pair per invoice.
-  const after = await xeroPairs(page)
+  const after = await xeroPairCount(page)
   await expect(page.locator('[data-shot="xero-outage-banner"]')).toHaveCount(0)
-  expect(after.length).toBe(before.length + invoices)
-  const numbers = after.map((p) => p.number)
+  expect(after).toBe(before + invoices)
+  const numbers = (await xeroPairs(page)).map((p) => p.number)
   expect(new Set(numbers).size).toBe(numbers.length)
 
   // Restoring again changes nothing.
@@ -117,7 +126,7 @@ test('outage: authorising still bills, the hand-offs queue and back off with the
   await expect(page.locator('[data-shot="demo-action-xero-outage-restore"]').getByRole('button', { name: 'Run' })).toBeDisabled()
   await expect(page.locator('[data-shot="demo-action-xero-outage-restore"]')).toContainText('Xero is connected')
   await page.keyboard.press('Escape')
-  expect((await xeroPairs(page)).length).toBe(after.length)
+  expect(await xeroPairCount(page)).toBe(after)
 })
 
 test('changes made in Xero: a void and an amended total, flagged at the reconciliation poll', async ({ page }) => {

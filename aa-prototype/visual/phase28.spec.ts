@@ -89,16 +89,16 @@ test('Schedule settings: the horizon shortens to 3 months with a preview and con
   await fresh(page, '/admin/masters?view=scheduleSettings')
   const settings = page.locator('[data-shot="admin-schedule-settings"]')
   await expect(settings).toContainText('4 months')
-  await expect(settings).toContainText('Sat 27 Mar 2027')
+  await expect(settings).toContainText('Wed 24 Mar 2027')
   await expect(settings).toContainText('Sessions with their own times keep them.')
   await page.screenshot({ path: 'visual/shots/p28-07-schedule-settings.png' })
 
   await settings.getByRole('button', { name: 'Edit horizon' }).click()
   const sheet = page.locator('[data-shot="admin-horizon-months"]')
   await sheet.getByLabel('Months ahead').fill('3')
-  await expect(sheet.locator('[data-shot="horizon-preview"]')).toContainText('Removes 31 days after Wed 24 Feb 2027')
+  await expect(sheet.locator('[data-shot="horizon-preview"]')).toContainText('Removes 28 days after Wed 24 Feb 2027')
   await sheet.getByRole('button', { name: 'Save horizon' }).click()
-  await sheet.getByRole('button', { name: 'Confirm and remove 31 days' }).click()
+  await sheet.getByRole('button', { name: 'Confirm and remove 28 days' }).click()
   await expect(settings).toContainText('3 months')
 
   await page.goto('/admin/day/2027-03-13')
@@ -110,12 +110,14 @@ test('Schedule settings: the horizon shortens to 3 months with a preview and con
   await page.goto('/admin/masters?view=scheduleSettings')
   await settings.getByRole('button', { name: 'Edit horizon' }).click()
   await sheet.getByLabel('Months ahead').fill('4')
-  await expect(sheet.locator('[data-shot="horizon-preview"]')).toContainText('Adds 31 days, to Sat 27 Mar 2027.')
+  await expect(sheet.locator('[data-shot="horizon-preview"]')).toContainText('Adds 28 days, to Wed 24 Mar 2027.')
   await sheet.getByRole('button', { name: 'Save horizon' }).click()
   await expect(settings).toContainText('4 months')
 })
 
 test('"slot" never appears on the screens this phase touched', async ({ page }) => {
+  // Eleven full loads of the whole practice: past the 30 s default under a parallel run.
+  test.setTimeout(90_000)
   await fresh(page, '/admin/day/2026-11-24')
   const SLOT = /\bslots?\b/i
   const check = async (where: string) => {

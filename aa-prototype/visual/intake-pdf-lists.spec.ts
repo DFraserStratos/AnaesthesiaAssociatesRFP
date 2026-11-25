@@ -78,7 +78,8 @@ test('upload with a sender, correct, send, create the List with its origin, then
     await page.locator('[data-shot="matching-apply"]').click()
     await expect(page.locator('[data-shot="matching-banner"]')).toBeVisible()
   }
-  await page.goto('/admin/day/2026-12-09/bookings/BK0191')
+  // The first new Booking takes the next id after the whole practice's last.
+  await page.goto('/admin/day/2026-12-09/bookings/BK5101')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot="booking-list-origin"]')).toContainText("From a rooms' PDF")
   await expect(page.locator('[data-shot="booking-list-origin"]')).toContainText('leanne.pa@avonsidesurgical.example')

@@ -7,7 +7,7 @@
       "name": "procedure-contract",
       "app": "admin",
       "caption": "Every Procedure carries exactly one Contract",
-      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "start": "/admin/day/2026-11-24/bookings/BK0009",
       "states": [
         {
           "state": "contract",
@@ -22,7 +22,7 @@
           "state": "refused",
           "steps": [
             {
-              "goto": "/admin/day/2026-07-27/bookings/BK0035"
+              "goto": "/admin/day/2026-11-30/bookings/BK0035"
             },
             {
               "wait": 800

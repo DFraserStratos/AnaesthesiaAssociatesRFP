@@ -7,14 +7,14 @@
       "name": "nhi-required",
       "app": "admin",
       "caption": "A Booking cannot be saved without an NHI; an incoming row without one waits at intake",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "state": "form",
           "caption": "Phone advice with the NHI blank: Save stays disabled and says why",
           "steps": [
             {
-              "click": "button[data-slot-id=\"S-43015-2026-07-21-PM\"]"
+              "click": "button[data-slot-id=\"S-43015-2026-11-24-PM\"]"
             },
             {
               "wait": 400
@@ -54,8 +54,8 @@
             }
           ],
           "highlight": [
-            "[data-shot=manual-nhi]",
-            "[data-shot=manual-save]"
+            "[data-shot=manual-save]",
+            ":text-is(\"An NHI is needed to save a Booking.\") >> nth=-1"
           ]
         },
         {
@@ -63,7 +63,7 @@
           "caption": "A row received without an NHI waits on Matching; nothing is created until the office adds it",
           "steps": [
             {
-              "goto": "/admin/patients/waiting"
+              "goto": "/admin/intake/waiting"
             },
             {
               "trigger": "receive-no-nhi-list"

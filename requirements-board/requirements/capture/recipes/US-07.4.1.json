@@ -21,7 +21,7 @@
             }
           ],
           "highlight": [
-            "[data-testid=slide-home] [data-list-id=\"L-34821-2026-07-20-PM\"]"
+            "[data-testid=slide-home] [data-list-id=\"L-34821-2026-11-23-PM\"]"
           ]
         },
         {
@@ -29,7 +29,7 @@
           "caption": "Once the office authorises it, the List is gone from Done",
           "steps": [
             {
-              "goto": "/mobile/lists/L-34821-2026-07-20-PM"
+              "goto": "/mobile/lists/L-34821-2026-11-23-PM"
             },
             {
               "wait": 800
@@ -57,7 +57,7 @@
           "caption": "Search still finds it by patient name, marked Invoiced",
           "steps": [
             {
-              "goto": "/mobile/lists/L-34821-2026-07-20-PM"
+              "goto": "/mobile/lists/L-34821-2026-11-23-PM"
             },
             {
               "wait": 800
@@ -80,7 +80,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=mobile-lookback-search] button:has-text(\"Mon 20 Jul\")"
+            "[data-shot=mobile-lookback-search] button:has-text(\"Mon 23 Nov\")"
           ]
         }
       ]
@@ -95,7 +95,7 @@
           "state": "submitted",
           "steps": [],
           "highlight": [
-            "[data-shot=web-main-view-earlier] tr[data-list-id^=\"L-34821-2026-07-20\"]"
+            "[data-shot=web-main-view-earlier] tr[data-list-id^=\"L-34821-2026-11-23\"]"
           ]
         }
       ]
@@ -107,7 +107,7 @@
       "start": "/web/lists",
       "setup": [
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -125,7 +125,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-PM"
+          "goto": "/admin/review/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -152,7 +152,7 @@
           "caption": "Still there by date: Monday's Lists, invoiced",
           "steps": [
             {
-              "goto": "/web/lists?day=2026-07-20"
+              "goto": "/web/lists?day=2026-11-23"
             },
             {
               "wait": 700
@@ -171,7 +171,7 @@
       "start": "/web/accounts/outstanding",
       "setup": [
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -189,7 +189,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-PM"
+          "goto": "/admin/review/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -208,7 +208,7 @@
         {
           "steps": [],
           "highlight": [
-            "[data-shot=web-accounts-outstanding] tr[data-testid^=outstanding-row-]:has-text(\"21 Jul 2026\")"
+            "[data-shot=web-accounts-outstanding] tr[data-testid^=outstanding-row-]:has-text(\"24 Nov 2026\")"
           ]
         }
       ]

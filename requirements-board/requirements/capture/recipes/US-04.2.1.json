@@ -1,32 +1,23 @@
 {
   "id": "US-04.2.1",
   "status": "partial",
-  "absentReason": "The shot shows the holder, who is billed and the linked surgeons on Master data. The narrowing on the step rail is shot on US-04.3.2, specialties on US-04.2.16.",
+  "absentReason": "The shot shows the holder, who is billed and the linked surgeons on the Contract's page. The narrowing on the step rail is shot on US-04.3.2, specialties on US-04.2.16.",
   "shots": [
     {
       "name": "contract-holder",
       "app": "admin",
       "caption": "A Contract names its holder Party, whether it bills the holder or the payer, and the surgeons it is offered for",
-      "start": "/admin/masters?view=contracts",
+      "start": "/admin/contracts/CT-COS-ACC",
       "states": [
         {
           "steps": [
             {
-              "fill": "[data-shot=contract-search] input",
-              "value": "COS-001"
-            },
-            {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=contract-catalogue] tr[data-contract]:has-text(\"ACC orthopaedic services\") >> button:text-is(\"Edit\")"
-            },
-            {
-              "wait": 500
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=contract-links]"
+            "[data-shot=contract-where]",
+            "[data-shot=contract-bills]"
           ]
         }
       ]

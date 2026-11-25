@@ -7,7 +7,7 @@
       "name": "modifiers",
       "app": "web",
       "caption": "Modifiers are itemised, each claim with its explanation",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/web/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "applied",
@@ -99,7 +99,7 @@
           "caption": "A fixed price has no modifiers step: no times, units or modifiers, the RVG code for reference only",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-08-10-PM/bookings/BK0176"
+              "goto": "/web/lists/L-34821-2026-12-14-PM/bookings/BK0176"
             },
             {
               "wait": 800
@@ -121,7 +121,7 @@
       "name": "modifiers",
       "app": "mobile",
       "caption": "Modifiers are itemised, each claim with its explanation",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "applied",
@@ -210,7 +210,7 @@
           "caption": "A fixed price has no modifiers step: no times, units or modifiers",
           "steps": [
             {
-              "goto": "/mobile/lists/L-34821-2026-08-10-PM/bookings/BK0176"
+              "goto": "/mobile/lists/L-34821-2026-12-14-PM/bookings/BK0176"
             },
             {
               "wait": 900

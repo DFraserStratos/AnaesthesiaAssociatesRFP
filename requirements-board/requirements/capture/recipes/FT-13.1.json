@@ -7,7 +7,7 @@
       "name": "day-view",
       "app": "admin",
       "caption": "Schedule dashboard, the one-day view",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "steps": [],

@@ -6,14 +6,11 @@
     {
       "name": "contracts",
       "app": "admin",
-      "caption": "Contract catalogue in master data",
-      "start": "/admin/masters",
+      "caption": "The Contracts section: every active Contract, grouped by kind of holder, with its invoicing, pricing and tags",
+      "start": "/admin/contracts",
       "states": [
         {
           "steps": [
-            {
-              "click": "[data-masters-view=contracts]"
-            },
             {
               "wait": 300
             }

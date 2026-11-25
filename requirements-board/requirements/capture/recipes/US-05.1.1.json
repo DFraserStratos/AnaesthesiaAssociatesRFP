@@ -41,7 +41,7 @@
       "name": "type-ahead",
       "app": "web",
       "caption": "Typing H1 lists every H1 row",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/web/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "steps": [
@@ -69,7 +69,7 @@
       "name": "type-ahead",
       "app": "mobile",
       "caption": "Typing H1 lists every H1 row",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "steps": [

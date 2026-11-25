@@ -7,7 +7,7 @@
       "name": "fixed-price-amount",
       "app": "admin",
       "caption": "An amount from outside any price list: No contract · Fixed price, typed above zero, becomes the prepaid amount",
-      "start": "/admin/day/2026-07-24/bookings/BK0034",
+      "start": "/admin/day/2026-11-27/bookings/BK0034",
       "states": [
         {
           "state": "typed",
@@ -76,7 +76,7 @@
               "wait": "[data-shot=booking-saved-strip]"
             },
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/invoices?view=approval"
             },
             {
               "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
@@ -126,7 +126,7 @@
               "wait": "[data-shot=booking-saved-strip]"
             },
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/invoices?view=approval"
             },
             {
               "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"

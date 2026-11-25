@@ -7,7 +7,7 @@
       "name": "web-booking",
       "app": "web",
       "caption": "The anaesthetist sees the prepaid amount, read-only, on the Booking and when recording units",
-      "start": "/web/lists/L-34821-2026-07-24-PM/bookings/BK0038",
+      "start": "/web/lists/L-34821-2026-11-27-PM/bookings/BK0038",
       "states": [
         {
           "state": "booking",
@@ -39,7 +39,7 @@
       "name": "mobile-booking",
       "app": "mobile",
       "caption": "The anaesthetist sees the prepaid amount, read-only, on the Booking and when recording units",
-      "start": "/mobile/lists/L-34821-2026-07-24-PM",
+      "start": "/mobile/lists/L-34821-2026-11-27-PM",
       "states": [
         {
           "state": "booking",

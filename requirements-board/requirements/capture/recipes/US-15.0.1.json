@@ -7,7 +7,7 @@
       "name": "card-capture",
       "app": "mobile",
       "caption": "Booking capture: the descriptions, the Contract, the price and its calculation, nothing the office handles",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "stack-kept",
@@ -34,7 +34,7 @@
       "name": "day-view",
       "app": "admin",
       "caption": "Office day view, the main operational screen",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "state": "day",
@@ -57,7 +57,7 @@
       "name": "review-tip",
       "app": "admin",
       "caption": "Help at the point of need",
-      "start": "/admin/review/L-34821-2026-07-13-AM",
+      "start": "/admin/review/L-34821-2026-11-16-AM",
       "states": [
         {
           "steps": [
@@ -73,7 +73,7 @@
       "name": "info-tip-capture-price",
       "app": "web",
       "caption": "Help at the point of need",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/web/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "steps": [

@@ -7,12 +7,12 @@
       "name": "edit-list-warning",
       "app": "admin",
       "caption": "A not-preferred pairing is grouped apart and warns the office, it never blocks",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "steps": [
             {
-              "click": "[data-list-id=\"L-41267-2026-07-21-AM\"]"
+              "click": "[data-list-id=\"L-41267-2026-11-24-AM\"]"
             },
             {
               "wait": 400
@@ -42,12 +42,12 @@
       "name": "reassign-warning",
       "app": "admin",
       "caption": "Choosing Dr Sharma for Ms Reid's List: the warning and \"Confirm reassignment anyway\"",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "steps": [
             {
-              "click": "[data-list-id=\"L-45178-2026-07-21-PM\"]"
+              "click": "[data-list-id=\"L-45178-2026-11-24-PM\"]"
             },
             {
               "wait": 400
@@ -75,12 +75,12 @@
       "name": "assign-list-warning",
       "app": "admin",
       "caption": "Assign List: a not-preferred surgeon is grouped apart and warns, \"Assign anyway\"",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "steps": [
             {
-              "click": "button[data-slot-id=\"S-41267-2026-07-21-PM\"]"
+              "click": "button[data-slot-id=\"S-41267-2026-11-24-PM\"]"
             },
             {
               "wait": 400
@@ -114,7 +114,7 @@
       "name": "finder-not-preferred",
       "app": "admin",
       "caption": "Find available: with Ms Reid chosen, Dr Sharma sits apart and opens Assign List with the warning",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "steps": [

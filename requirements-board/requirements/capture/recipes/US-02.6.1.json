@@ -7,7 +7,7 @@
       "name": "stub-on-list",
       "app": "mobile",
       "caption": "An incoming booking with no NHI waits at intake; a stub, not a Booking, stands in its place on its List",
-      "start": "/mobile/lists/L-34821-2026-08-04-PM",
+      "start": "/mobile/lists/L-34821-2026-12-08-PM",
       "states": [
         {
           "steps": [
@@ -29,7 +29,7 @@
       "name": "stub-on-list",
       "app": "web",
       "caption": "An incoming booking with no NHI waits at intake; a stub, not a Booking, stands in its place on its List",
-      "start": "/web/lists/L-34821-2026-08-04-PM",
+      "start": "/web/lists/L-34821-2026-12-08-PM",
       "states": [
         {
           "steps": [
@@ -50,8 +50,8 @@
     {
       "name": "stub-placed",
       "app": "admin",
-      "caption": "Importing the Southern Cross file places a stub for Tama Henare, who has no NHI, on Dr Souter's Tue 28 Jul PM List after its two Bookings",
-      "start": "/admin/day/2026-07-28",
+      "caption": "Importing the Southern Cross file places a stub for Tama Henare, who has no NHI, on Dr Souter's Tue 1 Dec PM List after its two Bookings",
+      "start": "/admin/day/2026-12-01",
       "setup": [
         {
           "goto": "/admin/intake/matching"
@@ -85,7 +85,7 @@
         {
           "steps": [
             {
-              "click": "button[data-list-id=\"L-34821-2026-07-28-PM\"]"
+              "click": "button[data-list-id=\"L-34821-2026-12-01-PM\"]"
             },
             {
               "wait": "[data-testid=admin-list-drawer]"

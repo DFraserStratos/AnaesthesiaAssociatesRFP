@@ -7,7 +7,7 @@
       "name": "billing-setup",
       "app": "admin",
       "caption": "The office sets the Contract at setup",
-      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "start": "/admin/day/2026-11-24/bookings/BK0009",
       "states": [
         {
           "state": "summary",
@@ -38,7 +38,7 @@
       "name": "rvg-handoff",
       "app": "admin",
       "caption": "The office sets the Contract at setup",
-      "start": "/admin/day/2026-07-23/bookings/BK0060",
+      "start": "/admin/day/2026-11-26/bookings/BK0060",
       "states": [
         {
           "steps": [
@@ -60,12 +60,12 @@
       "name": "setup",
       "app": "admin",
       "caption": "The office sets the Contract at setup",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "steps": [
             {
-              "click": "button[data-slot-id=\"S-41267-2026-07-21-PM\"]"
+              "click": "button[data-slot-id=\"S-41267-2026-11-24-PM\"]"
             },
             {
               "wait": 600
@@ -113,15 +113,15 @@
     {
       "name": "needs-destination",
       "app": "admin",
-      "caption": "Bookings without one wait on Needs an invoice destination",
-      "start": "/admin/day/2026-07-21",
+      "caption": "Bookings without an invoice destination wait in the office's To-do",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "steps": [],
           "highlight": [
-            "[data-shot=admin-needs-invoice-destination]"
+            "[data-shot=needs-destination-row] >> nth=0"
           ],
-          "caption": "Bookings without one wait on Needs an invoice destination"
+          "caption": "Bookings without one wait in the Day rail's To-do, marked No Contract"
         }
       ]
     },
@@ -129,7 +129,7 @@
       "name": "rvg-to-fill",
       "app": "web",
       "caption": "The anaesthetist fills in the RVG code",
-      "start": "/web/lists/L-34821-2026-07-23-PM/bookings/BK0060",
+      "start": "/web/lists/L-34821-2026-11-26-PM/bookings/BK0060",
       "states": [
         {
           "steps": [
@@ -152,7 +152,7 @@
       "name": "rvg-to-fill",
       "app": "mobile",
       "caption": "The anaesthetist fills in the RVG code",
-      "start": "/mobile/lists/L-34821-2026-07-23-PM/bookings/BK0060",
+      "start": "/mobile/lists/L-34821-2026-11-26-PM/bookings/BK0060",
       "states": [
         {
           "steps": [

@@ -7,7 +7,7 @@
       "name": "edit-operation",
       "app": "web",
       "caption": "Change the Contract until the office authorises the list",
-      "start": "/web/lists/L-34821-2026-07-20-AM/bookings/BK0023",
+      "start": "/web/lists/L-34821-2026-11-23-AM/bookings/BK0023",
       "states": [
         {
           "state": "rail",
@@ -51,7 +51,7 @@
       "name": "edit-operation",
       "app": "mobile",
       "caption": "Change the Contract until the office authorises the list",
-      "start": "/mobile/lists/L-34821-2026-07-20-AM/bookings/BK0023",
+      "start": "/mobile/lists/L-34821-2026-11-23-AM/bookings/BK0023",
       "states": [
         {
           "state": "rail",
@@ -107,7 +107,7 @@
       "name": "prepaid",
       "app": "web",
       "caption": "Only the office moves a Procedure onto or off prepaid",
-      "start": "/web/lists/L-34821-2026-07-24-AM/bookings/BK0034",
+      "start": "/web/lists/L-34821-2026-11-27-AM/bookings/BK0034",
       "states": [
         {
           "steps": [],
@@ -122,7 +122,7 @@
       "name": "prepaid",
       "app": "mobile",
       "caption": "Only the office moves a Procedure onto or off prepaid",
-      "start": "/mobile/lists/L-34821-2026-07-24-AM/bookings/BK0034",
+      "start": "/mobile/lists/L-34821-2026-11-27-AM/bookings/BK0034",
       "states": [
         {
           "steps": [],

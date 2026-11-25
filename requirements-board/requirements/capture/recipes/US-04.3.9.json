@@ -7,7 +7,7 @@
       "name": "other-price",
       "app": "admin",
       "caption": "Every destination has No contract · RVG and No contract · Fixed price",
-      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "start": "/admin/day/2026-11-24/bookings/BK0009",
       "states": [
         {
           "state": "off",
@@ -69,7 +69,7 @@
       "name": "other-price",
       "app": "mobile",
       "caption": "The anaesthetist types an amount on No contract · Fixed price",
-      "start": "/mobile/lists/L-34821-2026-07-23-PM/bookings/BK0060",
+      "start": "/mobile/lists/L-34821-2026-11-26-PM/bookings/BK0060",
       "states": [
         {
           "steps": [

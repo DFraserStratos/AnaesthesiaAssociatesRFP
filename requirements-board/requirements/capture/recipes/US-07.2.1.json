@@ -28,7 +28,7 @@
       "name": "edit-submitted",
       "app": "mobile",
       "caption": "The anaesthetist can still change a submitted List",
-      "start": "/mobile/lists/L-34821-2026-07-20-AM/bookings/BK0022",
+      "start": "/mobile/lists/L-34821-2026-11-23-AM/bookings/BK0022",
       "states": [
         {
           "steps": [
@@ -71,7 +71,7 @@
       "name": "edit-submitted",
       "app": "web",
       "caption": "The anaesthetist can still change a submitted List",
-      "start": "/web/lists/L-34821-2026-07-20-AM/bookings/BK0022",
+      "start": "/web/lists/L-34821-2026-11-23-AM/bookings/BK0022",
       "states": [
         {
           "steps": [

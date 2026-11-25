@@ -7,7 +7,7 @@
       "name": "doer-rule",
       "app": "web",
       "caption": "Whoever submits a List did its procedures: a Booking a colleague does moves to a new List of theirs and its payable follows; a prepaid Booking's payable stays the AA Holding account, the new anaesthetist claims the prepaid amount and nothing is recalculated",
-      "start": "/web/lists/L-34821-2026-07-21-AM",
+      "start": "/web/lists/L-34821-2026-11-24-AM",
       "states": [
         {
           "state": "submit",
@@ -33,7 +33,7 @@
       "name": "doer-rule",
       "app": "web",
       "caption": "Whoever submits a List did its procedures: a Booking a colleague does moves to a new List of theirs and its payable follows; a prepaid Booking's payable stays the AA Holding account, the new anaesthetist claims the prepaid amount and nothing is recalculated",
-      "start": "/web/lists/L-34821-2026-07-24-PM/bookings/BK0038",
+      "start": "/web/lists/L-34821-2026-11-27-PM/bookings/BK0038",
       "states": [
         {
           "state": "prepaid",
@@ -68,7 +68,7 @@
       "name": "doer-rule",
       "app": "mobile",
       "caption": "Whoever submits a List did its procedures: a Booking a colleague does moves to a new List of theirs and its payable follows; a prepaid Booking's payable stays the AA Holding account, the new anaesthetist claims the prepaid amount and nothing is recalculated",
-      "start": "/mobile/lists/L-34821-2026-07-21-AM",
+      "start": "/mobile/lists/L-34821-2026-11-24-AM",
       "states": [
         {
           "state": "submit",
@@ -94,10 +94,10 @@
       "name": "doer-rule",
       "app": "admin",
       "caption": "Whoever submits a List did its procedures: a Booking a colleague does moves to a new List of theirs and its payable follows; a prepaid Booking's payable stays the AA Holding account, the new anaesthetist claims the prepaid amount and nothing is recalculated",
-      "start": "/admin/day/2026-07-22",
+      "start": "/admin/day/2026-11-25?rows=all",
       "setup": [
         {
-          "goto": "/web/lists/L-34821-2026-07-22-AM/bookings/BK0046"
+          "goto": "/web/lists/L-34821-2026-11-25-AM/bookings/BK0046"
         },
         {
           "scroll": "[data-shot=\"move-booking-action\"]"
@@ -134,7 +134,7 @@
           "caption": "The receiving List holds the moved Booking; the colleague who does it is the List's anaesthetist, so the payable follows",
           "steps": [
             {
-              "click": "[data-slot-id=\"S-36208-2026-07-22-AM\"]"
+              "click": "[data-slot-id=\"S-36208-2026-11-25-AM\"]"
             },
             {
               "wait": "[data-shot=\"drawer-booking-moved-here\"]"

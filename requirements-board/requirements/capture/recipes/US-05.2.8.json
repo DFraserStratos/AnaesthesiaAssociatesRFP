@@ -7,7 +7,7 @@
       "name": "follows",
       "app": "admin",
       "caption": "An unedited price follows its Contract; a typed price, a prepayment or AUTHORISED holds it",
-      "start": "/admin/day/2026-08-10/bookings/BK0163",
+      "start": "/admin/day/2026-12-14/bookings/BK0163",
       "states": [
         {
           "state": "before",
@@ -26,10 +26,10 @@
         },
         {
           "state": "after",
-          "caption": "A range from 1 Jul 2026 added to the Contract: the same Booking now prices at $3,300.00",
+          "caption": "A range from 4 Nov 2026 added to the Contract: the same Booking now prices at $3,300.00",
           "steps": [
             {
-              "goto": "/admin/masters?view=contracts"
+              "goto": "/admin/contracts/CT-MER-FACELIFT"
             },
             {
               "wait": 800
@@ -41,7 +41,7 @@
               "wait": 400
             },
             {
-              "goto": "/admin/day/2026-08-10/bookings/BK0163"
+              "goto": "/admin/day/2026-12-14/bookings/BK0163"
             },
             {
               "wait": 900
@@ -63,14 +63,14 @@
       "name": "held",
       "app": "admin",
       "caption": "An unedited price follows its Contract; a typed price, a prepayment or AUTHORISED holds it",
-      "start": "/admin/masters?view=contracts",
+      "start": "/admin/contracts/CT-MER-FACELIFT",
       "states": [
         {
           "state": "typed",
           "caption": "After the new range, the office's typed $2,950.00 is held",
           "steps": [
             {
-              "goto": "/admin/masters?view=contracts"
+              "goto": "/admin/contracts/CT-MER-FACELIFT"
             },
             {
               "wait": 800
@@ -82,7 +82,7 @@
               "wait": 400
             },
             {
-              "goto": "/admin/day/2026-08-10/bookings/BK0187"
+              "goto": "/admin/day/2026-12-14/bookings/BK0187"
             },
             {
               "wait": 900
@@ -103,7 +103,7 @@
           "caption": "After the new range, the AUTHORISED Booking stays at its invoiced $3,100.00",
           "steps": [
             {
-              "goto": "/admin/masters?view=contracts"
+              "goto": "/admin/contracts/CT-MER-FACELIFT"
             },
             {
               "wait": 800
@@ -115,7 +115,7 @@
               "wait": 400
             },
             {
-              "goto": "/admin/day/2026-07-16/bookings/BK0188"
+              "goto": "/admin/day/2026-11-19/bookings/BK0188"
             },
             {
               "wait": 900
@@ -136,7 +136,7 @@
           "caption": "After the new range, a prepaid price stays at the amount prepaid",
           "steps": [
             {
-              "goto": "/admin/masters?view=contracts"
+              "goto": "/admin/contracts/CT-MER-FACELIFT"
             },
             {
               "wait": 800
@@ -148,7 +148,7 @@
               "wait": 400
             },
             {
-              "goto": "/admin/day/2026-07-24/bookings/BK0038"
+              "goto": "/admin/day/2026-11-27/bookings/BK0038"
             },
             {
               "wait": 900
@@ -170,7 +170,7 @@
       "name": "needs-price",
       "app": "web",
       "caption": "An open price with no amount reads Needs a price until one is typed",
-      "start": "/web/lists/L-34821-2026-08-10-PM/bookings/BK0177",
+      "start": "/web/lists/L-34821-2026-12-14-PM/bookings/BK0177",
       "states": [
         {
           "steps": [

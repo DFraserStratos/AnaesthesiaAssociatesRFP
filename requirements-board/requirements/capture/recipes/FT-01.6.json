@@ -11,7 +11,7 @@
       "states": [
         {
           "steps": [{ "wait": 500 }],
-          "highlight": ["[data-shot=draft-lists-table] th:nth-child(7)", "[data-draft-list-row] td:nth-child(7)"]
+          "highlight": ["[data-shot=draft-lists-table] th:text-is(\"Origin\")", "[data-draft-list-row]:nth-child(-n+6) td:nth-child(6)"]
         }
       ]
     }

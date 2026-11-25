@@ -6,23 +6,92 @@
     {
       "name": "specialties",
       "app": "admin",
-      "caption": "AA's list of broad specialties, kept by the office",
-      "start": "/admin/masters?view=specialties",
+      "caption": "AA's list of broad specialties in the People section, kept by the office",
+      "start": "/admin/people/specialties",
       "states": [
         {
           "state": "table",
-          "steps": [{ "wait": 400 }],
-          "highlight": ["[data-shot=masters-specialties]"]
+          "steps": [
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=masters-specialties]"
+          ]
         },
         {
           "state": "add",
           "caption": "Adding a specialty: one broad name, with no subspecialty",
           "steps": [
-            { "click": "role=button[name=\"Add specialty\"]" },
-            { "wait": 500 },
-            { "fill": "[data-shot=specialty-sheet] input", "value": "Paediatric surgery" }
+            {
+              "click": "role=button[name=\"Add specialty\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "fill": "[data-shot=specialty-sheet] input",
+              "value": "Paediatric surgery"
+            }
           ],
-          "highlight": ["[role=dialog]"]
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "specialty-page",
+      "app": "admin",
+      "caption": "A specialty's page: its name, the surgeons and Contracts that hold it",
+      "start": "/admin/people/specialties/SPC-PLASTIC",
+      "states": [
+        {
+          "state": "page",
+          "caption": "Plastic surgery held by 13 surgeons and 11 Contracts",
+          "steps": [
+            {
+              "wait": "[data-shot=specialty-page]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": []
+        },
+        {
+          "state": "rename",
+          "caption": "Renaming a specialty on its Name card",
+          "steps": [
+            {
+              "click": "[data-shot=specialty-name-edit]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=specialty-name]"
+          ]
+        },
+        {
+          "state": "remove-refused",
+          "caption": "A specialty anyone holds cannot be removed; rename it instead",
+          "steps": [
+            {
+              "click": "[data-shot=specialty-remove]"
+            },
+            {
+              "wait": "[data-shot=specialty-remove-error]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=specialty-remove-card]"
+          ]
         }
       ]
     }

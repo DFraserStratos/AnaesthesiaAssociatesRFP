@@ -7,7 +7,7 @@
       "name": "preferred-profile",
       "app": "admin",
       "caption": "The office sees who works well together as well as who does not",
-      "start": "/admin/masters/anaesthetists/41267",
+      "start": "/admin/people/anaesthetists/41267",
       "states": [
         {
           "steps": [
@@ -29,12 +29,12 @@
       "name": "preferred-picker",
       "app": "admin",
       "caption": "Assigning Mr Whitford's returned List: Dr Sharma, Preferred, comes first within her tier",
-      "start": "/admin/day/2026-07-22",
+      "start": "/admin/day/2026-11-25",
       "states": [
         {
           "steps": [
             {
-              "click": "[data-draft-block=\"L-29104-2026-07-22-AM\"]"
+              "click": "[data-draft-block=\"L-29104-2026-11-25-AM\"]"
             },
             {
               "wait": 400

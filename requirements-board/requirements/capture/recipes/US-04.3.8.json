@@ -7,7 +7,7 @@
       "name": "step-rail",
       "app": "admin",
       "caption": "Where the invoice goes, then the Contract",
-      "start": "/admin/day/2026-07-22/bookings/BK0046",
+      "start": "/admin/day/2026-11-25/bookings/BK0046",
       "states": [
         {
           "state": "destination",
@@ -47,7 +47,7 @@
           "caption": "Where the invoice goes, then the Contract: a hospital with one funding tag fills it in (Only option)",
           "steps": [
             {
-              "goto": "/admin/day/2026-07-21/bookings/BK0009"
+              "goto": "/admin/day/2026-11-24/bookings/BK0009"
             },
             {
               "wait": 800
@@ -99,7 +99,7 @@
       "name": "step-rail",
       "app": "mobile",
       "caption": "The anaesthetist picks up the office's answers",
-      "start": "/mobile/lists/L-34821-2026-07-23-PM/bookings/BK0060",
+      "start": "/mobile/lists/L-34821-2026-11-26-PM/bookings/BK0060",
       "states": [
         {
           "state": "picked-up",
@@ -122,7 +122,7 @@
       "name": "step-rail",
       "app": "web",
       "caption": "The anaesthetist picks up the office's answers",
-      "start": "/web/lists/L-34821-2026-07-23-PM/bookings/BK0060",
+      "start": "/web/lists/L-34821-2026-11-26-PM/bookings/BK0060",
       "states": [
         {
           "state": "picked-up",

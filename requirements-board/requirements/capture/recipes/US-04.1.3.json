@@ -7,7 +7,7 @@
       "name": "history",
       "app": "admin",
       "caption": "Every change to a Contract is kept with its values before and after; nothing is deleted",
-      "start": "/admin/masters?view=contracts",
+      "start": "/admin/contracts/CT-FORTE-D1?tab=history",
       "setup": [
         {
           "scenario": "S3"
@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -31,26 +31,23 @@
           "wait": 800
         },
         {
-          "wait": 400
-        },
-        {
-          "goto": "/admin/masters?view=contracts"
+          "goto": "/admin/contracts/CT-FORTE-D1"
         },
         {
           "wait": 800
         },
         {
-          "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-FORTE-D1\"] >> td >> nth=0"
+          "click": "[data-shot=contract-codes-edit]"
         },
         {
-          "wait": 500
+          "wait": 300
         },
         {
-          "fill": "[data-shot=contract-detail] >> role=textbox[name=\"Invoice description\"]",
+          "fill": "[data-shot=contract-codes] >> role=textbox[name=\"Invoice description\"]",
           "value": "Anaesthesia services at Forte Health"
         },
         {
-          "click": "[data-shot=contract-detail] >> role=button[name=\"Save contract\"]"
+          "click": "[data-shot=contract-codes-save]"
         },
         {
           "wait": 500
@@ -58,21 +55,15 @@
       ],
       "states": [
         {
+          "caption": "Forte Health RVG's History: the office's edit to its invoice description, with who, when and the value before and after",
           "steps": [
             {
-              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-FORTE-D1\"] >> td >> nth=0"
-            },
-            {
-              "wait": 500
-            },
-            {
-              "click": "[data-shot=contract-tab-history]"
+              "wait": "[data-shot=contract-history]"
             },
             {
               "wait": 400
             }
           ],
-          "caption": "Forte Health RVG's History: the office's edit to its invoice description, with who, when and the value before and after",
           "highlight": [
             "[data-shot=contract-history] > div:first-child"
           ]
@@ -82,8 +73,8 @@
     {
       "name": "locked-against",
       "app": "admin",
-      "caption": "The Procedures locked against the Contract, with their invoices, which a later change to it leaves as raised",
-      "start": "/admin/masters?view=contracts",
+      "caption": "The Procedures locked against the Contract, with their invoices, which a later change to it leaves as raised: Dr Souter's three just authorised, AA-2026-0002 to 0004",
+      "start": "/admin/contracts/CT-FORTE-D1?tab=history",
       "setup": [
         {
           "scenario": "S3"
@@ -92,7 +83,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -107,26 +98,23 @@
           "wait": 800
         },
         {
-          "wait": 400
-        },
-        {
-          "goto": "/admin/masters?view=contracts"
+          "goto": "/admin/contracts/CT-FORTE-D1"
         },
         {
           "wait": 800
         },
         {
-          "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-FORTE-D1\"] >> td >> nth=0"
+          "click": "[data-shot=contract-codes-edit]"
         },
         {
-          "wait": 500
+          "wait": 300
         },
         {
-          "fill": "[data-shot=contract-detail] >> role=textbox[name=\"Invoice description\"]",
+          "fill": "[data-shot=contract-codes] >> role=textbox[name=\"Invoice description\"]",
           "value": "Anaesthesia services at Forte Health"
         },
         {
-          "click": "[data-shot=contract-detail] >> role=button[name=\"Save contract\"]"
+          "click": "[data-shot=contract-codes-save]"
         },
         {
           "wait": 500
@@ -136,26 +124,42 @@
         {
           "steps": [
             {
-              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-FORTE-D1\"] >> td >> nth=0"
-            },
-            {
-              "wait": 500
-            },
-            {
-              "click": "[data-shot=contract-tab-history]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "scroll": "[data-shot=contract-locked-against]"
+              "wait": "[data-shot=contract-locked-against]"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=contract-locked-against]"
+            "[data-shot=contract-locked-row]:has-text(\"BK0022\")",
+            "[data-shot=contract-locked-row]:has-text(\"BK0024\")"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "card-edit",
+      "app": "admin",
+      "caption": "Each card of a Contract's page is saved on its own, one audited change",
+      "start": "/admin/contracts/CT-FORTE-D1",
+      "states": [
+        {
+          "steps": [
+            {
+              "scroll": "[data-shot=contract-codes]"
+            },
+            {
+              "click": "[data-shot=contract-codes-edit]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "scroll": "[data-shot=contract-codes-save]"
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-codes]"
           ]
         }
       ]

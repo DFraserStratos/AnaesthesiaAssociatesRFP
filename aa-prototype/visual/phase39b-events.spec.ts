@@ -36,6 +36,8 @@ async function authorise(page: Page) {
 }
 
 test('events through review onto the Procedure invoice, then an own invoice in the next run', async ({ page }) => {
+  // A long flow across three apps and a billing run: past the 30 s default under a parallel run.
+  test.setTimeout(90_000)
   await page.goto('/web/lists')
   await page.waitForLoadState('networkidle')
   expect(await runDemoAction(page, 'stage-post-op', { close: true })).toContain('Staged')

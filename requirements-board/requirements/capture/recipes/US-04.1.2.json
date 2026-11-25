@@ -6,19 +6,52 @@
     {
       "name": "contracts",
       "app": "admin",
-      "caption": "Contracts filtered by status and holder; Active by default",
-      "start": "/admin/masters?view=contracts",
+      "caption": "The Contract list: searched by name, code or AA code, Active by default, grouped",
+      "start": "/admin/contracts",
       "states": [
         {
           "state": "active",
+          "caption": "Active Contracts by default, grouped by kind of holder, with the status and grouping controls",
           "steps": [
             {
               "wait": 300
             }
           ],
           "highlight": [
+            "[data-shot=contract-search]",
             "[data-shot=contract-status-filter]",
-            "[data-shot=contract-holder-filter]"
+            "[data-shot=contract-group-by]"
+          ]
+        },
+        {
+          "state": "by-tag",
+          "caption": "Grouped by funding tag, SXAP picked: its Contracts under their holder, Christchurch Eye Surgery first",
+          "steps": [
+            {
+              "goto": "/admin/contracts?group=tag&in=TAG-SXAP"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-group-index] [data-group-key=\"TAG-SXAP\"]",
+            "[data-shot=contract-catalogue] tr[data-contract-group=\"TAG-SXAP\"]"
+          ]
+        },
+        {
+          "state": "by-surgeon",
+          "caption": "Grouped by surgeon, Ms G. Lim picked: Aria Skin and Laser Clinic's Contract links two surgeons, so it shows under her and under Mr C. Okafor",
+          "steps": [
+            {
+              "goto": "/admin/contracts?group=surgeon&in=S-LIM"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=contract-catalogue] tr[data-contract=\"CT-ARIA-HOURLY\"]"
           ]
         },
         {
@@ -26,30 +59,28 @@
           "caption": "A Disabled Contract shows only when asked for, under Disabled",
           "steps": [
             {
-              "fill": "[data-shot=contract-search] input",
-              "value": "Health NZ"
+              "goto": "/admin/contracts/CT-HNZ"
             },
             {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=contract-catalogue] tr[data-contract]:has-text(\"Health NZ\") >> button:text-is(\"Edit\")"
-            },
-            {
-              "wait": 500
+              "wait": 600
             },
             {
               "click": "[data-shot=contract-disable]"
             },
             {
-              "wait": 300
+              "wait": "[data-shot=contract-disable-confirm]"
             },
             {
-              "click": "[data-shot=contract-detail] >> role=button[name=\"Cancel\"]"
+              "click": "[data-shot=contract-disable-confirm]"
             },
             {
-              "fill": "[data-shot=contract-search] input",
-              "value": ""
+              "wait": 500
+            },
+            {
+              "goto": "/admin/contracts"
+            },
+            {
+              "wait": 600
             },
             {
               "click": "[data-shot=contract-status-filter] >> role=button[name=\"Disabled\"]"
@@ -68,68 +99,60 @@
     {
       "name": "edit-contract",
       "app": "admin",
-      "caption": "A Contract is edited in place and disabled, never deleted",
-      "start": "/admin/masters?view=contracts",
+      "caption": "A Contract's page: each card edited on its own, Disable in the header, never Delete",
+      "start": "/admin/contracts/CT-HNZ",
       "states": [
         {
           "steps": [
             {
-              "fill": "[data-shot=contract-search] input",
-              "value": "Health NZ"
-            },
-            {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=contract-catalogue] tr[data-contract]:has-text(\"Health NZ\") >> button:text-is(\"Edit\")"
-            },
-            {
-              "wait": 500
+              "wait": 400
             }
           ],
           "highlight": [
             "[data-shot=contract-disable]",
-            "[data-shot=contract-detail] >> role=button[name=\"Save contract\"]"
+            "[data-shot=contract-price-edit]"
           ]
         }
       ]
     },
     {
-      "name": "dated-change",
+      "name": "new-contract",
       "app": "admin",
-      "caption": "A new Contract for a dated change lists the Procedures still on the old one",
-      "start": "/admin/masters?view=contracts",
+      "caption": "New contract is its own page, in rule order: the holder and who it bills, pricing, where it is offered, then the name and codes",
+      "start": "/admin/contracts/new",
       "states": [
         {
+          "state": "empty",
           "steps": [
             {
-              "click": "role=button[name=\"New contract\"]"
+              "wait": 400
+            }
+          ],
+          "highlight": []
+        },
+        {
+          "state": "similar",
+          "caption": "Merivale Plastic Surgery picked and Face lift revision typed: Already held lists its three Contracts and marks Face lift as a similar name",
+          "steps": [
+            {
+              "goto": "/admin/contracts/new?holder=PY-MER"
             },
             {
               "wait": 500
             },
             {
-              "select": "[data-shot=contract-links] select >> nth=0",
-              "value": "Merivale Plastic Surgery"
-            },
-            {
-              "select": "[data-shot=contract-replaces] select",
-              "value": "CT-MER-FACELIFT"
-            },
-            {
-              "fill": "[data-shot=contract-replaces] input[type=date]",
-              "value": "2026-08-01"
+              "fill": "[data-shot=contract-new-page] >> role=textbox[name=\"Name\"]",
+              "value": "Face lift revision"
             },
             {
               "wait": 400
             },
             {
-              "scroll": "[data-shot=contract-still-on-warning]"
+              "scroll": "[data-shot=new-contract-held]"
             }
           ],
           "highlight": [
-            "[data-shot=contract-replaces]",
-            "[data-shot=contract-still-on-warning]"
+            "[data-shot=new-contract-held]"
           ]
         }
       ]
@@ -138,36 +161,22 @@
       "name": "disable-warning",
       "app": "admin",
       "caption": "Disabling lists the Procedures still on it; nothing moves",
-      "start": "/admin/masters?view=contracts",
+      "start": "/admin/contracts/CT-MER-FACELIFT",
       "states": [
         {
           "steps": [
             {
-              "fill": "[data-shot=contract-search] input",
-              "value": "Face lift"
-            },
-            {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-MER-FACELIFT\"] >> button:text-is(\"Edit\")"
-            },
-            {
-              "wait": 500
-            },
-            {
               "click": "[data-shot=contract-disable]"
             },
             {
-              "wait": 500
+              "wait": "[data-shot=contract-disable-sheet]"
             },
             {
-              "scroll": "[data-shot=contract-still-on-warning]"
+              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=contract-disabled-note]",
-            "[data-shot=contract-still-on-warning]"
+            "[data-shot=contract-disable-sheet]"
           ]
         }
       ]

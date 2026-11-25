@@ -42,7 +42,7 @@
             },
             {
               "fill": "[data-shot=mobile-availability-sheet] input[type=date] >> nth=0",
-              "value": "2026-08-14"
+              "value": "2026-12-18"
             },
             {
               "wait": 300
@@ -73,7 +73,7 @@
             },
             {
               "fill": "[data-shot=mobile-availability-sheet] input[type=date] >> nth=0",
-              "value": "2026-08-14"
+              "value": "2026-12-18"
             },
             {
               "click": "[data-shot=mobile-availability-sheet] >> role=button[name=\"Save\"]"
@@ -94,7 +94,7 @@
               "wait": 300
             },
             {
-              "click": "button[data-date=\"2026-08-28\"]"
+              "click": "button[data-date=\"2026-12-18\"]"
             },
             {
               "wait": 500
@@ -110,7 +110,7 @@
       "name": "my-availability",
       "app": "web",
       "caption": "The web calendar with the anaesthetist's repeating days off",
-      "start": "/web/availability/mine?date=2026-08-14",
+      "start": "/web/availability/mine?date=2026-12-18",
       "states": [
         {
           "steps": [

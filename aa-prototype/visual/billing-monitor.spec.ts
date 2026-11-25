@@ -46,26 +46,28 @@ async function listOrder(page: Page, anaesthetistId: string): Promise<string[]> 
 test('reset: one group per anaesthetist in surname order, the Lists awaiting approval, and no Authorise', async ({ page }) => {
   await fresh(page)
 
-  // Groups in surname order (Chen, Delaney, Morrison, Ropata, Souter, Whitaker at seed).
-  const order = await groupOrder(page)
-  expect(order).toEqual(['45178', DELANEY, '25490', ROPATA, SOUTER, '36208'])
+  // Groups in surname order, paged at 20 across the whole practice.
+  await expect(groups(page)).toHaveCount(20)
+  await expect(page.locator('[data-shot="billing-monitor-pager"]')).toBeVisible()
   const names = await groups(page).locator('h2').allTextContents()
   const surnames = names.map((n) => n.split(' ').at(-1) ?? '')
   expect(surnames).toEqual([...surnames].sort((a, b) => a.localeCompare(b)))
 
   // Every SUBMITTED List sits in its anaesthetist's group as Awaiting approval, with a teal Open in Review.
-  const awaiting = page.locator('tr[data-shot^="billing-awaiting-"]')
-  const awaitingCount = await awaiting.count()
+  // The tile counts every group, not the page.
+  const awaitingCount = Number(((await tileValue(page, 'awaiting').textContent()) ?? '').replace(/\D/g, ''))
   expect(awaitingCount).toBeGreaterThanOrEqual(6)
-  await expect(tileValue(page, 'awaiting')).toContainText(String(awaitingCount))
+  const filters = page.locator('[data-shot="billing-monitor-filters"]')
   for (const listId of [SOUTER_MON_AM, 'L-34821-2026-11-23-PM', ROPATA_THU_AM, 'L-25490-2026-11-23-AM', 'L-27731-2026-11-20-AM', 'L-36208-2026-11-20-AM']) {
     const anaesthetistId = listId.split('-')[1]!
+    await filters.getByLabel('Anaesthetist').selectOption(anaesthetistId)
     const row = group(page, anaesthetistId).locator(`tr[data-shot="billing-awaiting-${listId}"]`)
     await expect(row).toBeVisible()
     await expect(row.getByText('Awaiting approval')).toBeVisible()
     await expect(row.locator(`[data-shot="billing-open-in-review-${listId}"]`)).toHaveText('Open in Review')
   }
   // Teal, the one action colour (filled or teal-outlined), never crimson.
+  await filters.getByLabel('Anaesthetist').selectOption(SOUTER)
   await expect(page.locator(`[data-shot="billing-open-in-review-${SOUTER_MON_AM}"]`)).toHaveCSS('border-color', 'rgb(13, 110, 99)')
 
   // No Authorise anywhere on the monitor; the intro carries no RFP placement caveat.
@@ -220,19 +222,23 @@ test('filters: one anaesthetist, a hospital, a date range, Clear filters, an unk
   await filters.getByLabel('Hospital').selectOption('H-STG')
   await expect(page).toHaveURL(/hospital=H-STG/)
   const rows = page.locator('[data-shot^="billing-awaiting-"], [data-shot^="billing-pipeline-"]')
-  const n = await rows.count()
-  expect(n).toBeGreaterThan(0)
-  for (let i = 0; i < n; i++) await expect(rows.nth(i)).toContainText("St George's")
+  await expect(rows.first()).toBeVisible()
+  await expect.poll(async () => (await rows.allTextContents()).filter((t) => !t.includes("St George's")).length).toBe(0)
   await expect(group(page, '45178')).toHaveCount(0) // Chen's Lists are at Christchurch Eye Surgery
 
-  // A date range on top: Fri 17 Jul only.
+  // A date range on top: Fri 20 Nov only (the practice's St George's Lists that day).
+  // One field at a time: each writes the URL from the params of the last render, and the
+  // practice-scale monitor takes a moment to re-render, so wait for the count to move first.
+  const hospitalCount = (await count(page).textContent()) ?? ''
   await page.locator('[data-shot="billing-filter-from"]').fill('2026-11-20')
-  await page.locator('[data-shot="billing-filter-to"]').fill('2026-11-20')
   await expect(page).toHaveURL(/from=2026-11-20/)
+  await expect(count(page)).not.toHaveText(hospitalCount)
+  await page.locator('[data-shot="billing-filter-to"]').fill('2026-11-20')
   await expect(page).toHaveURL(/to=2026-11-20/)
-  await expect(groups(page)).toHaveCount(1)
+  await expect(page).toHaveURL(/from=2026-11-20/)
+  await expect(groups(page)).toHaveCount(14)
   await expect(group(page, DELANEY)).toBeVisible()
-  await expect(count(page)).toHaveText('1 list')
+  await expect(count(page)).toHaveText('16 lists')
 
   await page.locator('[data-shot="billing-filter-clear"]').click()
   await expect(count(page)).toHaveText(all)
@@ -242,5 +248,5 @@ test('filters: one anaesthetist, a hospital, a date range, Clear filters, an unk
   await page.goto('/admin/billing?anaesthetist=nobody&hospital=H-NOWHERE')
   await page.waitForLoadState('networkidle')
   await expect(count(page)).toHaveText(all)
-  await expect(groups(page)).toHaveCount(6)
+  await expect(groups(page)).toHaveCount(20) // the first page of the practice's groups
 })

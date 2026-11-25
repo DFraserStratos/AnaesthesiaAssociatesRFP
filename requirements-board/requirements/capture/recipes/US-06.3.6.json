@@ -48,7 +48,7 @@
       "name": "letter-picker",
       "app": "admin",
       "caption": "The prepayment letter, from one standard template, states the prepaid amount as the price",
-      "start": "/admin/invoices",
+      "start": "/admin/invoices?view=approval",
       "states": [
         {
           "state": "preview",
@@ -118,10 +118,10 @@
       "name": "reminder",
       "app": "admin",
       "caption": "The office sends a prepayment reminder from the standard reminder template",
-      "start": "/admin/day/2026-07-24/bookings/BK0034",
+      "start": "/admin/day/2026-11-27/bookings/BK0034",
       "setup": [
         {
-          "goto": "/admin/invoices"
+          "goto": "/admin/invoices?view=approval"
         },
         {
           "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
@@ -240,7 +240,7 @@
       "name": "office-sends",
       "app": "mobile",
       "caption": "On the phone, the anaesthetist reads that the AA office sends the prepayment letter and its reminders",
-      "start": "/mobile/lists/L-34821-2026-07-24-AM/bookings/BK0034",
+      "start": "/mobile/lists/L-34821-2026-11-27-AM/bookings/BK0034",
       "states": [
         {
           "state": "reminded",

@@ -7,7 +7,7 @@
       "name": "price-override",
       "app": "admin",
       "caption": "Change price on a submitted Booking, no reason asked",
-      "start": "/admin/day/2026-07-20/bookings/BK0010",
+      "start": "/admin/day/2026-11-23/bookings/BK0010",
       "states": [
         {
           "state": "override",
@@ -74,7 +74,7 @@
       "name": "phone-note",
       "app": "admin",
       "caption": "Log a phone note, issues are resolved by a call from the office",
-      "start": "/admin/review/L-25490-2026-07-20-AM",
+      "start": "/admin/review/L-25490-2026-11-23-AM",
       "states": [
         {
           "steps": [
@@ -95,10 +95,10 @@
       "name": "changed-since-submitted",
       "app": "admin",
       "caption": "Review shows the anaesthetist changed the List after submitting it; the last change stands",
-      "start": "/admin/review/L-34821-2026-07-20-PM",
+      "start": "/admin/review/L-34821-2026-11-23-PM",
       "setup": [
         {
-          "goto": "/mobile/lists/L-34821-2026-07-20-PM/bookings/BK0025"
+          "goto": "/mobile/lists/L-34821-2026-11-23-PM/bookings/BK0025"
         },
         {
           "wait": 800

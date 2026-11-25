@@ -11,51 +11,74 @@
       "states": [
         {
           "state": "sub-nav",
-          "caption": "Master data, every master in one place: a sub-nav grouped People and places, Schedule, Billing, Settings and Go-live, each view with the same header and its Add action",
+          "caption": "Master data, the places, schedule, billing and settings masters in one place: a sub-nav grouped Places, Schedule, Billing, Settings and Go-live, each view with the same header and its Add action",
           "steps": [],
-          "highlight": ["nav[aria-label=\"Master data\"]"]
+          "highlight": [
+            "nav[aria-label=\"Master data\"]"
+          ]
         },
         {
           "state": "anaesthetists",
-          "caption": "Master data, anaesthetists with their rate per unit, priority tier, HPI CPN, masked bank account and active flag, editable",
-          "steps": [],
+          "caption": "The People section, anaesthetists with their rate per unit, priority tier, HPI CPN, masked bank account and status, each opening their page",
+          "steps": [
+            {
+              "goto": "/admin/people/anaesthetists"
+            },
+            {
+              "wait": 400
+            }
+          ],
           "highlight": []
         },
         {
           "state": "contracts",
-          "caption": "Master data, Contracts, one per priced item, grouped by the Party that holds them",
+          "caption": "The Contracts section, one Contract per priced item, grouped by the Party that holds them",
           "steps": [
-            { "click": "[data-masters-view=contracts]" },
-            { "wait": 500 }
+            {
+              "goto": "/admin/contracts"
+            },
+            {
+              "wait": 500
+            }
           ],
           "highlight": []
         },
         {
           "state": "contracts-edit",
-          "caption": "A Contract is edited in place: it opens to its details, and every saved change is audited in its History",
+          "caption": "A Contract has its own page, edited card by card, and every saved change is audited in its History",
           "steps": [
-            { "click": "[data-masters-view=contracts]" },
-            { "wait": 500 },
-            { "click": "[data-shot=contract-catalogue] tr[data-contract=\"CT-FORTE-D1\"] >> td >> nth=0" },
-            { "wait": "[data-shot=contract-detail]" }
+            {
+              "goto": "/admin/contracts/CT-FORTE-D1"
+            },
+            {
+              "wait": 500
+            }
           ],
-          "highlight": ["[data-shot=contract-detail]"]
+          "highlight": []
         },
         {
           "state": "parties",
-          "caption": "Master data, Parties with their kind, billing name and delivery, insurers and funders among them",
+          "caption": "The Contracts section's Parties tab, with their kind, billing name and delivery, insurers and funders among them",
           "steps": [
-            { "click": "[data-masters-view=parties]" },
-            { "wait": 500 }
+            {
+              "goto": "/admin/contracts/parties"
+            },
+            {
+              "wait": 500
+            }
           ],
           "highlight": []
         },
         {
           "state": "funding-tags",
-          "caption": "Master data, funding tags, added, edited, ordered and removed",
+          "caption": "The Contracts section's Funding tags tab: tags added, edited, ordered and removed",
           "steps": [
-            { "click": "[data-masters-view=fundingTags]" },
-            { "wait": 500 }
+            {
+              "goto": "/admin/contracts/tags"
+            },
+            {
+              "wait": 500
+            }
           ],
           "highlight": []
         },
@@ -63,8 +86,12 @@
           "state": "permanent-lists",
           "caption": "Master data, recurring bookings",
           "steps": [
-            { "click": "[data-masters-view=\"recurringBookings\"]" },
-            { "wait": 500 }
+            {
+              "click": "[data-masters-view=\"recurringBookings\"]"
+            },
+            {
+              "wait": 500
+            }
           ],
           "highlight": []
         },
@@ -72,8 +99,12 @@
           "state": "public-holidays",
           "caption": "Master data, the public holiday calendar: one master list of the public holidays that close the hospitals, each with the hospitals open that day",
           "steps": [
-            { "click": "[data-masters-view=publicHolidays]" },
-            { "wait": "[data-shot=masters-public-holidays]" }
+            {
+              "click": "[data-masters-view=publicHolidays]"
+            },
+            {
+              "wait": "[data-shot=masters-public-holidays]"
+            }
           ],
           "highlight": []
         },
@@ -81,95 +112,174 @@
           "state": "hospitals-holidays",
           "caption": "Master data, hospitals with their contact email, the public holidays they open on and their own holiday calendars",
           "steps": [
-            { "click": "[data-masters-view=hospitals]" },
-            { "wait": "[data-shot=masters-hospitals]" }
+            {
+              "click": "[data-masters-view=hospitals]"
+            },
+            {
+              "wait": "[data-shot=masters-hospitals]"
+            }
           ],
-          "highlight": ["[data-hospital=H-AAROOMS] [data-public-holiday-line]"]
+          "highlight": [
+            "[data-hospital=H-AAROOMS] [data-public-holiday-line]"
+          ]
         },
         {
           "state": "hospital-calendar",
-          "caption": "A hospital's calendar: Labour Day closes it as a master public holiday, shown here read-only beside its own closures",
+          "caption": "A hospital's calendar: Christmas Day closes it as a master public holiday, shown here read-only beside its own closures",
           "steps": [
-            { "click": "[data-masters-view=hospitals]" },
-            { "wait": 400 },
-            { "click": "[data-shot=hospitals-mode] >> role=button[name=\"Calendar\"]" },
-            { "wait": "[data-shot=hospital-calendar]" },
-            { "select": "[data-shot=hospital-calendar] select[aria-label=\"Hospital\"]", "value": "H-STG" },
-            { "click": "[data-shot=hospital-calendar] >> role=button[name=\"Next month\"]" },
-            { "click": "[data-shot=hospital-calendar] >> role=button[name=\"Next month\"]" },
-            { "click": "[data-shot=hospital-calendar] >> role=button[name=\"Next month\"]" },
-            { "wait": "button[data-calendar-day=\"2026-10-26\"] [data-public-holiday]" }
+            {
+              "click": "[data-masters-view=hospitals]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "[data-shot=hospitals-mode] >> role=button[name=\"Calendar\"]"
+            },
+            {
+              "wait": "[data-shot=hospital-calendar]"
+            },
+            {
+              "select": "[data-shot=hospital-calendar] select[aria-label=\"Hospital\"]",
+              "value": "H-STG"
+            },
+            {
+              "click": "[data-shot=hospital-calendar] >> role=button[name=\"Next month\"]"
+            },
+            {
+              "wait": "button[data-calendar-day=\"2026-12-25\"] [data-public-holiday]"
+            }
           ],
-          "highlight": ["button[data-calendar-day=\"2026-10-26\"]"]
+          "highlight": [
+            "button[data-calendar-day=\"2026-12-25\"]"
+          ]
         },
         {
           "state": "retire-blocked",
           "caption": "Retire with a reason at the foot of the edit sheet: St George's cannot be retired while upcoming Lists depend on it",
           "steps": [
-            { "click": "[data-masters-view=hospitals]" },
-            { "wait": "[data-shot=masters-hospitals]" },
-            { "click": "role=button[name=\"Edit St George's\"]" },
-            { "wait": "[data-shot=edit-hospital-sheet]" },
-            { "fill": "[data-shot=retire-section] textarea", "value": "Closing for a rebuild" },
-            { "click": "[data-shot=retire-section] >> role=button[name=\"Retire hospital\"]" },
-            { "wait": "[data-shot=retire-blockers]" }
+            {
+              "click": "[data-masters-view=hospitals]"
+            },
+            {
+              "wait": "[data-shot=masters-hospitals]"
+            },
+            {
+              "click": "role=button[name=\"Edit St George's\"]"
+            },
+            {
+              "wait": "[data-shot=edit-hospital-sheet]"
+            },
+            {
+              "fill": "[data-shot=retire-section] textarea",
+              "value": "Closing for a rebuild"
+            },
+            {
+              "click": "[data-shot=retire-section] >> role=button[name=\"Retire hospital\"]"
+            },
+            {
+              "wait": "[data-shot=retire-blockers]"
+            }
           ],
-          "highlight": ["[data-shot=retire-section]"]
+          "highlight": [
+            "[data-shot=retire-section]"
+          ]
         },
         {
           "state": "surgeons",
-          "caption": "Master data, surgeons with their specialties, practice, office contact, HPI CPN and pairing counts, editable",
+          "caption": "The People section, surgeons with their specialties, practice, office contact, HPI CPN and pairing counts, each opening their page",
           "steps": [
-            { "click": "[data-masters-view=surgeons]" },
-            { "wait": 500 }
+            {
+              "goto": "/admin/people/surgeons"
+            },
+            {
+              "wait": 500
+            }
           ],
           "highlight": []
         },
         {
           "state": "specialties",
-          "caption": "Master data, specialties and the surgeons who hold them",
+          "caption": "The People section, specialties and the surgeons who hold them",
           "steps": [
-            { "click": "[data-masters-view=specialties]" },
-            { "wait": 500 }
-          ],
-          "highlight": []
-        },
-        {
-          "state": "surgeon-groups",
-          "caption": "Master data, surgeon groups and their members",
-          "steps": [
-            { "click": "[data-masters-view=surgeonGroups]" },
-            { "wait": 500 }
+            {
+              "goto": "/admin/people/specialties"
+            },
+            {
+              "wait": 500
+            }
           ],
           "highlight": []
         },
         {
           "state": "retired",
-          "caption": "Retired records stay out of the way: a surgeon group retired with its reason shows, in mist with a Retired pill, only when Show retired is on",
+          "caption": "Retired records stay out of the way: a hospital retired with its reason shows, in mist with a Retired pill, only when Show retired is on",
           "steps": [
-            { "click": "[data-masters-view=surgeonGroups]" },
-            { "wait": "[data-shot=masters-surgeon-groups]" },
-            { "click": "role=button[name=\"Add group\"]" },
-            { "wait": "[data-shot=surgeon-group-sheet]" },
-            { "fill": "[data-shot=surgeon-group-sheet] input[placeholder=\"e.g. Canterbury Orthopaedic Surgeons\"]", "value": "Southern Spine Surgeons" },
-            { "click": "[data-shot=surgeon-group-sheet] >> role=button[name=\"Add group\"]" },
-            { "wait": "[data-shot=masters-surgeon-groups] tr >> text=Southern Spine Surgeons" },
-            { "click": "role=button[name=\"Edit Southern Spine Surgeons\"]" },
-            { "wait": "[data-shot=surgeon-group-sheet] [data-shot=retire-section]" },
-            { "fill": "[data-shot=retire-section] textarea", "value": "Group disbanded" },
-            { "click": "[data-shot=retire-section] >> role=button[name=\"Retire group\"]" },
-            { "wait": 500 },
-            { "click": "[data-shot=\"show-retired\"] [role=switch]" },
-            { "wait": "[data-shot=masters-surgeon-groups] tr[data-retired=\"true\"]" }
+            {
+              "click": "[data-masters-view=hospitals]"
+            },
+            {
+              "wait": "[data-shot=masters-hospitals]"
+            },
+            {
+              "click": "role=button[name=\"Add hospital\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "fill": "[role=dialog] >> role=textbox[name=\"Hospital name\"]",
+              "value": "Riccarton Day Surgery"
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Add hospital\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[role=dialog] >> role=button[name=\"Done\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Edit Riccarton Day Surgery\"]"
+            },
+            {
+              "wait": "[data-shot=edit-hospital-sheet] [data-shot=retire-section]"
+            },
+            {
+              "fill": "[data-shot=retire-section] textarea",
+              "value": "Closed in March"
+            },
+            {
+              "click": "[data-shot=retire-section] >> role=button[name=\"Retire hospital\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "click": "[data-shot=show-retired] >> role=switch"
+            },
+            {
+              "wait": "[data-shot=masters-hospitals] [data-retired=\"true\"]"
+            }
           ],
-          "highlight": ["[data-shot=\"show-retired\"]", "[data-shot=masters-surgeon-groups] tr[data-retired=\"true\"]"]
+          "highlight": [
+            "[data-shot=masters-hospitals] [data-retired=\"true\"]"
+          ]
         },
         {
           "state": "rvg-codes",
           "caption": "Master data, RVG groups with their base units, under the RVG time rule",
           "steps": [
-            { "click": "[data-masters-view=rvgGroups]" },
-            { "wait": 500 }
+            {
+              "click": "[data-masters-view=rvgGroups]"
+            },
+            {
+              "wait": 500
+            }
           ],
           "highlight": []
         },
@@ -177,54 +287,121 @@
           "state": "rvg-time-rule",
           "caption": "The RVG time rule edited as data: its tiers, the part interval that always rounds up, and a preview",
           "steps": [
-            { "click": "[data-masters-view=rvgGroups]" },
-            { "wait": "[data-shot=rvg-time-rule-edit]" },
-            { "click": "[data-shot=rvg-time-rule-edit]" },
-            { "wait": "[data-shot=rvg-time-rule-sheet]" }
+            {
+              "click": "[data-masters-view=rvgGroups]"
+            },
+            {
+              "wait": "[data-shot=rvg-time-rule-edit]"
+            },
+            {
+              "click": "[data-shot=rvg-time-rule-edit]"
+            },
+            {
+              "wait": "[data-shot=rvg-time-rule-sheet]"
+            }
           ],
-          "highlight": ["[data-shot=rvg-time-rule-sheet]"]
+          "highlight": [
+            "[data-shot=rvg-time-rule-sheet]"
+          ]
         },
         {
           "state": "modifier-codes",
           "caption": "Master data, modifiers: the RVG rows as printed and never edited, and AA's own, each with Edit",
           "steps": [
-            { "click": "[data-masters-view=modifiers]" },
-            { "wait": 500 },
-            { "click": "role=button[name=\"Add AA modifier\"]" },
-            { "wait": "[data-shot=add-aa-modifier]" },
-            { "fill": "[data-shot=add-aa-modifier] input[placeholder=\"e.g. AAX1\"]", "value": "AAX1" },
-            { "fill": "[data-shot=add-aa-modifier] input[placeholder=\"e.g. 1\"]", "value": "1" },
-            { "fill": "[data-shot=add-aa-modifier] input[placeholder=\"What the modifier is for\"]", "value": "Prolonged prone positioning" },
-            { "click": "[data-shot=add-aa-modifier] >> role=button[name=\"Add modifier\"]" },
-            { "wait": "[data-shot=masters-modifiers-aa] tr[data-modifier-code=AAX1]" },
-            { "scroll": "[data-shot=masters-modifiers-aa]" }
+            {
+              "click": "[data-masters-view=modifiers]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "role=button[name=\"Add AA modifier\"]"
+            },
+            {
+              "wait": "[data-shot=add-aa-modifier]"
+            },
+            {
+              "fill": "[data-shot=add-aa-modifier] input[placeholder=\"e.g. AAX1\"]",
+              "value": "AAX1"
+            },
+            {
+              "fill": "[data-shot=add-aa-modifier] input[placeholder=\"e.g. 1\"]",
+              "value": "1"
+            },
+            {
+              "fill": "[data-shot=add-aa-modifier] input[placeholder=\"What the modifier is for\"]",
+              "value": "Prolonged prone positioning"
+            },
+            {
+              "click": "[data-shot=add-aa-modifier] >> role=button[name=\"Add modifier\"]"
+            },
+            {
+              "wait": "[data-shot=masters-modifiers-aa] tr[data-modifier-code=AAX1]"
+            },
+            {
+              "scroll": "[data-shot=masters-modifiers-aa]"
+            }
           ],
-          "highlight": ["[data-shot=masters-modifiers-aa]"]
+          "highlight": [
+            "[data-shot=masters-modifiers-aa]"
+          ]
         },
         {
           "state": "modifier-edit",
           "caption": "One of AA's own modifiers edited: its factor and units, with Retire at the foot",
           "steps": [
-            { "click": "[data-masters-view=modifiers]" },
-            { "wait": 500 },
-            { "click": "role=button[name=\"Add AA modifier\"]" },
-            { "wait": "[data-shot=add-aa-modifier]" },
-            { "fill": "[data-shot=add-aa-modifier] input[placeholder=\"e.g. AAX1\"]", "value": "AAX1" },
-            { "fill": "[data-shot=add-aa-modifier] input[placeholder=\"e.g. 1\"]", "value": "1" },
-            { "fill": "[data-shot=add-aa-modifier] input[placeholder=\"What the modifier is for\"]", "value": "Prolonged prone positioning" },
-            { "click": "[data-shot=add-aa-modifier] >> role=button[name=\"Add modifier\"]" },
-            { "wait": "[data-shot=masters-modifiers-aa] tr[data-modifier-code=AAX1]" },
-            { "click": "role=button[name=\"Edit AAX1\"]" },
-            { "wait": "[data-shot=edit-aa-modifier]" }
+            {
+              "click": "[data-masters-view=modifiers]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "role=button[name=\"Add AA modifier\"]"
+            },
+            {
+              "wait": "[data-shot=add-aa-modifier]"
+            },
+            {
+              "fill": "[data-shot=add-aa-modifier] input[placeholder=\"e.g. AAX1\"]",
+              "value": "AAX1"
+            },
+            {
+              "fill": "[data-shot=add-aa-modifier] input[placeholder=\"e.g. 1\"]",
+              "value": "1"
+            },
+            {
+              "fill": "[data-shot=add-aa-modifier] input[placeholder=\"What the modifier is for\"]",
+              "value": "Prolonged prone positioning"
+            },
+            {
+              "click": "[data-shot=add-aa-modifier] >> role=button[name=\"Add modifier\"]"
+            },
+            {
+              "wait": "[data-shot=masters-modifiers-aa] tr[data-modifier-code=AAX1]"
+            },
+            {
+              "press": "Enter",
+              "on": "role=button[name=\"Edit AAX1\"]"
+            },
+            {
+              "wait": "[data-shot=edit-aa-modifier]"
+            }
           ],
-          "highlight": ["[data-shot=edit-aa-modifier]"]
+          "highlight": [
+            "[data-shot=edit-aa-modifier]"
+          ]
         },
         {
           "state": "availability-statuses",
           "caption": "Master data, availability statuses, editable",
           "steps": [
-            { "click": "[data-masters-view=availability-statuses]" },
-            { "wait": 500 }
+            {
+              "click": "[data-masters-view=availability-statuses]"
+            },
+            {
+              "wait": 500
+            }
           ],
           "highlight": []
         }

@@ -171,8 +171,9 @@ test('completion backstop: a claim with no explanation stops Mark complete and i
     .toBe(true)
   await page.evaluate(() => {
     const raw = window.localStorage.getItem('aa-demo')!
-    const persisted = JSON.parse(raw) as { state: { schedule: { procedures: Record<string, Record<string, unknown>> } } }
-    const p = persisted.state.schedule.procedures.P0009!
+    // The store saves a delta against the seed (store/persistDelta.ts); the claim put P0009 in it.
+    const persisted = JSON.parse(raw) as { state: { top: { schedule: { $sub: { procedures: { $records: Record<string, Record<string, unknown>> } } } } } }
+    const p = persisted.state.top.schedule.$sub.procedures.$records.P0009!
     p.handoverISO = '2026-11-24T17:20:00'
     p.modifierClaims = [{ modifierId: 'MOD-RVG-AS3', explanation: '' }]
     window.localStorage.setItem('aa-demo', JSON.stringify(persisted))

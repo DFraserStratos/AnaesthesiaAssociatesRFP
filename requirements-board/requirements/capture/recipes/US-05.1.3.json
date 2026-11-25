@@ -25,7 +25,7 @@
       "name": "code-picker",
       "app": "web",
       "caption": "Each row carries its anatomy heading",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/web/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "steps": [
@@ -46,7 +46,7 @@
       "name": "code-picker",
       "app": "mobile",
       "caption": "Each row carries its anatomy heading",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "steps": [

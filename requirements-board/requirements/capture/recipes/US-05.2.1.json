@@ -6,14 +6,14 @@
     {
       "name": "unit-values",
       "app": "admin",
-      "caption": "Each anaesthetist's own rate per unit",
-      "start": "/admin/masters",
+      "caption": "Each anaesthetist's own rate per unit, on People's Anaesthetists list",
+      "start": "/admin/people/anaesthetists",
       "states": [
         {
           "steps": [],
           "highlight": [
-            "table th:nth-child(3)",
-            "table td:nth-child(3)"
+            "[data-shot=people-anaesthetists] th:text-is(\"Rate per unit\")",
+            "[data-shot=people-anaesthetists] tbody tr:nth-child(-n+10) td:nth-child(3)"
           ]
         }
       ]
@@ -22,7 +22,7 @@
       "name": "card-fee",
       "app": "admin",
       "caption": "The fee on the office's view of the Booking, at the anaesthetist's rate per unit",
-      "start": "/admin/day/2026-07-21/bookings/BK0001",
+      "start": "/admin/day/2026-11-24/bookings/BK0001",
       "states": [
         {
           "steps": [
@@ -43,7 +43,7 @@
       "name": "contract-rate",
       "app": "admin",
       "caption": "A Contract's own rate: the Booking priced at the Contract's agreed $24 per unit instead of Dr Rutherford's $32",
-      "start": "/admin/day/2026-07-09/bookings/BK0031",
+      "start": "/admin/day/2026-11-12/bookings/BK0031",
       "states": [
         {
           "steps": [],

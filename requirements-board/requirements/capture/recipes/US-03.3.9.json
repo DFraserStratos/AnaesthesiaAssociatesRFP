@@ -7,7 +7,7 @@
       "name": "rvg-detail",
       "app": "web",
       "caption": "What the anaesthetist records follows the Contract's pricing kind",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/web/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "rvg-kind",
@@ -30,7 +30,7 @@
           "caption": "A fixed price asks for no times or modifiers; the RVG code is optional, for reference",
           "steps": [
             {
-              "goto": "/web/lists/L-34821-2026-08-10-PM/bookings/BK0176"
+              "goto": "/web/lists/L-34821-2026-12-14-PM/bookings/BK0176"
             },
             {
               "wait": 800
@@ -61,7 +61,7 @@
       "name": "rvg-detail",
       "app": "mobile",
       "caption": "What the anaesthetist records follows the Contract's pricing kind",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "rvg-kind",
@@ -84,7 +84,7 @@
           "caption": "A fixed price asks for no times or modifiers; the RVG code is optional, for reference",
           "steps": [
             {
-              "goto": "/mobile/lists/L-34821-2026-08-10-PM/bookings/BK0176"
+              "goto": "/mobile/lists/L-34821-2026-12-14-PM/bookings/BK0176"
             },
             {
               "wait": 800
@@ -112,7 +112,7 @@
       "name": "rvg-detail",
       "app": "admin",
       "caption": "What the anaesthetist records follows the Contract's pricing kind",
-      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "start": "/admin/day/2026-11-24/bookings/BK0009",
       "states": [
         {
           "state": "rvg-kind",
@@ -135,7 +135,7 @@
           "caption": "On a fixed price the office sees no times or modifiers; the RVG code is optional, for reference",
           "steps": [
             {
-              "goto": "/admin/day/2026-08-10/bookings/BK0176"
+              "goto": "/admin/day/2026-12-14/bookings/BK0176"
             },
             {
               "wait": 800

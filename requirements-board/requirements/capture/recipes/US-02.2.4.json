@@ -7,14 +7,14 @@
       "name": "list-origin",
       "app": "admin",
       "caption": "Each List records where it came from, and the address a rooms' PDF arrived from",
-      "start": "/admin/day/2026-08-11",
+      "start": "/admin/day/2026-12-15?rows=all",
       "states": [
         {
           "state": "pdf",
           "caption": "A List from a rooms' PDF: sent from the PA's address, and replies go back to it",
           "steps": [
             {
-              "click": "button[data-list-id=\"L-46822-2026-08-11-AM\"]"
+              "click": "button[data-list-id=\"L-46822-2026-12-15-AM\"]"
             },
             {
               "wait": "[data-testid=admin-list-drawer]"
@@ -32,10 +32,10 @@
           "caption": "A List entered by hand records that, and holds no sender address",
           "steps": [
             {
-              "goto": "/admin/day/2026-07-24"
+              "goto": "/admin/day/2026-11-27?rows=all"
             },
             {
-              "click": "button[data-list-id=\"L-34821-2026-07-24-AM\"]"
+              "click": "button[data-list-id=\"L-34821-2026-11-27-AM\"]"
             },
             {
               "wait": "[data-testid=admin-list-drawer]"
@@ -53,10 +53,10 @@
           "caption": "A List from the hospital's list records that hospital, and holds no sender address",
           "steps": [
             {
-              "goto": "/admin/day/2026-08-03"
+              "goto": "/admin/day/2026-12-07?rows=all"
             },
             {
-              "click": "button[data-list-id=\"L-41267-2026-08-03-PM\"]"
+              "click": "button[data-list-id=\"L-41267-2026-12-07-PM\"]"
             },
             {
               "wait": "[data-testid=admin-list-drawer]"
@@ -75,7 +75,7 @@
       "name": "booking-origin",
       "app": "admin",
       "caption": "A Booking shows where its List came from",
-      "start": "/admin/day/2026-07-24/bookings/BK0034",
+      "start": "/admin/day/2026-11-27/bookings/BK0034",
       "states": [
         {
           "steps": [

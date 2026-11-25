@@ -7,7 +7,7 @@
       "name": "payment-webhook",
       "app": "simulator",
       "caption": "Xero payment webhook: the ACCREC paid and its ACCPAY authorised",
-      "start": "/demo/xero/invoices/XR0001",
+      "start": "/demo/xero/invoices/XR2569",
       "states": [
         {
           "state": "ready",
@@ -56,7 +56,7 @@
       ],
       "setup": [
         {
-          "goto": "/admin/invoices"
+          "goto": "/admin/invoices?view=approval"
         },
         {
           "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"

@@ -7,7 +7,7 @@
       "name": "warning-text",
       "app": "admin",
       "caption": "One routine raises each warning, with its text, kind and strength",
-      "start": "/admin/day/2026-07-24/bookings/BK0034",
+      "start": "/admin/day/2026-11-27/bookings/BK0034",
       "states": [
         {
           "steps": [

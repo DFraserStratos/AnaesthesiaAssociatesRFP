@@ -7,7 +7,7 @@
       "name": "fixed-price",
       "app": "admin",
       "caption": "The range in force is the price: Gastric bypass at Fixed price $2,800.00, no times asked",
-      "start": "/admin/day/2026-07-14/bookings/BK0028",
+      "start": "/admin/day/2026-11-17/bookings/BK0028",
       "states": [
         {
           "steps": [
@@ -28,7 +28,7 @@
       "name": "fixed-price",
       "app": "mobile",
       "caption": "Her own price list's fixed price, read-only: Fixed price $1,200.00",
-      "start": "/mobile/lists/L-34821-2026-07-24-AM/bookings/BK0034",
+      "start": "/mobile/lists/L-34821-2026-11-27-AM/bookings/BK0034",
       "states": [
         {
           "steps": [
@@ -53,7 +53,7 @@
       "name": "open-price",
       "app": "web",
       "caption": "The range in force is the price; an open price is typed",
-      "start": "/web/lists/L-34821-2026-08-10-PM/bookings/BK0177",
+      "start": "/web/lists/L-34821-2026-12-14-PM/bookings/BK0177",
       "states": [
         {
           "state": "needs-price",

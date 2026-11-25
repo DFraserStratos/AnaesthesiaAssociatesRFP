@@ -7,7 +7,7 @@
       "name": "card-history",
       "app": "admin",
       "caption": "Booking history, every change with who, when and the field movements, including the Contract; a save shows as one grouped row",
-      "start": "/admin/day/2026-07-21/bookings/BK0008",
+      "start": "/admin/day/2026-11-24/bookings/BK0008",
       "states": [
         {
           "steps": [

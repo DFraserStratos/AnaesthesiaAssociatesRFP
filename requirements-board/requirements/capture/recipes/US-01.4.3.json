@@ -7,7 +7,7 @@
       "name": "move-list",
       "app": "web",
       "caption": "Move your own List to the office or into a colleague's free session, with no acceptance and no confirmation",
-      "start": "/web/availability?date=2026-07-27",
+      "start": "/web/availability?date=2026-11-30",
       "states": [
         {
           "state": "sheet",
@@ -64,7 +64,7 @@
           "caption": "Move from her own List on Find cover: back to the office or to a colleague",
           "steps": [
             {
-              "click": "button[data-date=\"2026-07-23\"]"
+              "click": "button[data-date=\"2026-11-26\"]"
             },
             {
               "click": "[data-shot=\"availability-move-am\"]"
@@ -82,7 +82,7 @@
           "caption": "Return to the office: she chooses what her session becomes, Free by default",
           "steps": [
             {
-              "click": "button[data-date=\"2026-07-23\"]"
+              "click": "button[data-date=\"2026-11-26\"]"
             },
             {
               "click": "[data-shot=\"availability-move-am\"]"

@@ -7,7 +7,7 @@
       "name": "prepaid-contract",
       "app": "admin",
       "caption": "A prepaid Contract, or an amount typed on No contract · Fixed price, starts prepayment, billed to the Procedure's payer",
-      "start": "/admin/day/2026-07-24/bookings/BK0034",
+      "start": "/admin/day/2026-11-27/bookings/BK0034",
       "states": [
         {
           "state": "panel",

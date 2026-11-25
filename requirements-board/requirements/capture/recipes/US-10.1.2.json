@@ -7,7 +7,7 @@
       "name": "two-states",
       "app": "admin",
       "caption": "Paid into AA and disbursed to the anaesthetist tracked separately",
-      "start": "/admin/billing?list=L-34821-2026-07-20-AM",
+      "start": "/admin/billing?list=L-34821-2026-11-23-AM",
       "setup": [
         {
           "scenario": "S3"
@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -56,7 +56,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-34821-2026-07-20-AM] tr[data-booking-id=BK0022]"
+            "[data-shot=billing-pipeline-L-34821-2026-11-23-AM] tr[data-booking-id=BK0022]"
           ]
         },
         {
@@ -79,10 +79,10 @@
               "click": "[data-shot=payment-cycle-send]"
             },
             {
-              "wait": 400
+              "wait": 2500
             },
             {
-              "click": "[data-shot=billing-run-payables-in-xero]"
+              "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
             },
             {
               "wait": "[data-shot=billing-payables-result]"
@@ -92,7 +92,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-34821-2026-07-20-AM] tr[data-booking-id=BK0022]"
+            "[data-shot=billing-pipeline-L-34821-2026-11-23-AM] tr[data-booking-id=BK0022]"
           ]
         }
       ]
@@ -110,7 +110,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"

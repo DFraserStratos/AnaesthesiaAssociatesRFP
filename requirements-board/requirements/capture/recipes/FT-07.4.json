@@ -10,7 +10,7 @@
       "start": "/web/lists?q=Prentice",
       "setup": [
         {
-          "goto": "/admin/review/L-34821-2026-07-20-PM"
+          "goto": "/admin/review/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -32,7 +32,7 @@
               "wait": 600
             },
             {
-              "goto": "/web/lists/L-34821-2026-07-20-PM"
+              "goto": "/web/lists/L-34821-2026-11-23-PM"
             },
             {
               "wait": 900

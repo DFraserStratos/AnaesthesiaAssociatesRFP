@@ -7,7 +7,7 @@
       "name": "availability-finder",
       "app": "admin",
       "caption": "Free sessions across every anaesthetist; a session holding a List is never offered as free",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "steps": [],
@@ -18,14 +18,14 @@
     {
       "name": "availability-finder-assigned",
       "app": "admin",
-      "caption": "After Assign List on Dr Strand's Tue 21 PM, Free shows only the open sessions",
-      "start": "/admin/day/2026-07-21",
+      "caption": "After Assign List on Dr Strand's Tue 24 Nov PM, Free shows only the open sessions",
+      "start": "/admin/day/2026-11-24?rows=all",
       "setup": [
         {
-          "goto": "/admin/day/2026-07-21"
+          "goto": "/admin/day/2026-11-24?rows=all"
         },
         {
-          "click": "button[data-slot-id=\"S-47733-2026-07-21-PM\"]"
+          "click": "button[data-slot-id=\"S-47733-2026-11-24-PM\"]"
         },
         {
           "wait": 400
@@ -90,7 +90,7 @@
       "name": "office-finder",
       "app": "admin",
       "caption": "The office sees who is free by priority tier, with not-preferred pairings apart",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "state": "tiers",
@@ -178,10 +178,10 @@
       "start": "/web/availability",
       "setup": [
         {
-          "goto": "/admin/day/2026-07-21"
+          "goto": "/admin/day/2026-11-24?rows=all"
         },
         {
-          "click": "button[data-slot-id=\"S-47733-2026-07-21-PM\"]"
+          "click": "button[data-slot-id=\"S-47733-2026-11-24-PM\"]"
         },
         {
           "wait": 400

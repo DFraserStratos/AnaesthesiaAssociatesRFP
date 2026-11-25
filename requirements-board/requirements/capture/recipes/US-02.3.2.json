@@ -7,7 +7,7 @@
       "name": "save-bar",
       "app": "admin",
       "caption": "Edits wait as unsaved changes: the bar lists the changed fields, with Discard and Save changes",
-      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "start": "/admin/day/2026-11-24/bookings/BK0009",
       "states": [
         {
           "steps": [
@@ -44,7 +44,7 @@
       "name": "leave-guard",
       "app": "admin",
       "caption": "Leaving with unsaved changes asks first: Keep editing, or Discard and leave",
-      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "start": "/admin/day/2026-11-24/bookings/BK0009",
       "states": [
         {
           "steps": [
@@ -87,7 +87,7 @@
       "name": "saved-history",
       "app": "admin",
       "caption": "Save changes records the edits as one change set: History shows it as one save, and View as at shows the Booking as it was",
-      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "start": "/admin/day/2026-11-24/bookings/BK0009",
       "states": [
         {
           "steps": [

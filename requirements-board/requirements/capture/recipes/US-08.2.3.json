@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -31,7 +31,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-PM"
+          "goto": "/admin/review/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -65,7 +65,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -80,7 +80,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-PM"
+          "goto": "/admin/review/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -122,7 +122,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-AM"
+          "goto": "/admin/review/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -137,7 +137,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-07-20-PM"
+          "goto": "/admin/review/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -170,7 +170,7 @@
       "name": "split-button",
       "app": "admin",
       "caption": "Pressing Split on the Paid by line opens the sheet's split section: each share typed in $ or %, no setting on the Contract",
-      "start": "/admin/day/2026-07-20/bookings/BK0025",
+      "start": "/admin/day/2026-11-23/bookings/BK0025",
       "states": [
         {
           "state": "row",
@@ -233,7 +233,7 @@
       "name": "split-button",
       "app": "web",
       "caption": "The anaesthetist splits a fee on her own Booking: a Split button on the Procedure",
-      "start": "/web/lists/L-34821-2026-07-21-AM/bookings/BK0002",
+      "start": "/web/lists/L-34821-2026-11-24-AM/bookings/BK0002",
       "states": [
         {
           "state": "row",
@@ -274,7 +274,7 @@
       "name": "split-button",
       "app": "mobile",
       "caption": "The anaesthetist splits a fee on her own Booking: a Split button on the Procedure",
-      "start": "/mobile/lists/L-34821-2026-07-21-AM/bookings/BK0002",
+      "start": "/mobile/lists/L-34821-2026-11-24-AM/bookings/BK0002",
       "states": [
         {
           "state": "row",
@@ -315,7 +315,7 @@
       "name": "another-person",
       "app": "admin",
       "caption": "A share of the fee can go to another person, typed in the split section",
-      "start": "/admin/day/2026-07-20/bookings/BK0025",
+      "start": "/admin/day/2026-11-23/bookings/BK0025",
       "states": [
         {
           "state": "picker",

@@ -6,12 +6,12 @@
     {
       "name": "surgeon-contacts",
       "app": "admin",
-      "caption": "The surgeon's office contacts shown on their profile, with the practice and personal contact",
-      "start": "/admin/masters/surgeons/S-DALGETY",
+      "caption": "The surgeon's office contacts on their page, with the practice and personal contact",
+      "start": "/admin/people/surgeons/S-DALGETY",
       "states": [
         {
           "state": "profile",
-          "caption": "Office contacts on Dr H. Dalgety's profile: Bev first, with a name and email, then the Avonhead ENT inbox",
+          "caption": "Office contacts on Dr H. Dalgety's page: Bev first, with a name and email, then the Avonhead ENT inbox",
           "steps": [
             {
               "wait": 400
@@ -23,13 +23,13 @@
         },
         {
           "state": "add",
-          "caption": "The office adds another office contact on the surgeon's edit sheet with the plus button",
+          "caption": "The office adds another office contact on the Contacts card with the plus button",
           "steps": [
             {
-              "click": "role=button[name=\"Edit details\"]"
+              "click": "[data-shot=surgeon-contacts-edit]"
             },
             {
-              "wait": "[data-shot=surgeon-edit-sheet]"
+              "wait": "[data-shot=surgeon-office-contacts]"
             },
             {
               "click": "[data-shot=office-contact-add] >> role=button"
@@ -50,8 +50,8 @@
     {
       "name": "two-practices",
       "app": "admin",
-      "caption": "A surgeon who works from two practices holds an office contact for each, on Mr N. Wainwright's profile",
-      "start": "/admin/masters/surgeons/S-WAINWRIGHT",
+      "caption": "A surgeon who works from two practices holds an office contact for each, on Mr N. Wainwright's page",
+      "start": "/admin/people/surgeons/S-WAINWRIGHT",
       "states": [
         {
           "steps": [

@@ -72,7 +72,7 @@ const WORKERS = 4
 // ── Recipe types ─────────────────────────────────────────────────────────────
 
 type BuiltInStep =
-  | { click: string; force?: boolean }
+  | { click: string; force?: boolean; timeout?: number }
   | { dblclick: string }
   | { fill: string; value: string }
   | { press: string; on?: string }
@@ -332,7 +332,7 @@ async function runStep(page: Page, step: Step, i: number, app: ScreenshotApp & C
     await page.goto(s.goto)
     await settle(page, 200)
   } else if ('click' in s) {
-    await (await mustFind(page, s.click, what)).click({ force: s.force })
+    await (await mustFind(page, s.click, what)).click({ force: s.force, timeout: s.timeout })
   } else if ('dblclick' in s) {
     await (await mustFind(page, s.dblclick, what)).dblclick()
   } else if ('fill' in s) {

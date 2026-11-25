@@ -35,7 +35,7 @@
             },
             {
               "fill": "[role=dialog] input[type=date]",
-              "value": "2026-07-28"
+              "value": "2026-12-01"
             },
             {
               "fill": "input[placeholder=\"e.g. Planned maintenance closure\"]",
@@ -67,19 +67,13 @@
               "click": "role=button[name=\"Next month\"]"
             },
             {
-              "click": "role=button[name=\"Next month\"]"
-            },
-            {
-              "click": "role=button[name=\"Next month\"]"
-            },
-            {
-              "wait": "button[data-calendar-day=\"2026-10-26\"] [data-public-holiday]"
+              "wait": "button[data-calendar-day=\"2026-12-25\"] [data-public-holiday]"
             }
           ],
           "highlight": [
-            "button[data-calendar-day=\"2026-10-26\"] [data-public-holiday]"
+            "button[data-calendar-day=\"2026-12-25\"] [data-public-holiday]"
           ],
-          "caption": "Each hospital keeps its own closure calendar; Labour Day shows on it read-only, from the master public holidays"
+          "caption": "Each hospital keeps its own closure calendar, here Southern Cross with its Christmas shutdown; Christmas Day shows on it read-only, from the master public holidays"
         },
         {
           "state": "edit",

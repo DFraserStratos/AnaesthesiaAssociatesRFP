@@ -7,14 +7,14 @@
       "name": "phone-advice-booking",
       "app": "admin",
       "caption": "Office creates a Booking from a phone call",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24?rows=all",
       "states": [
         {
           "state": "free-list",
           "caption": "A free session offers Book (phone advice)",
           "steps": [
             {
-              "click": "button[data-slot-id=\"S-43015-2026-07-21-PM\"]"
+              "click": "button[data-slot-id=\"S-43015-2026-11-24-PM\"]"
             },
             {
               "wait": 600
@@ -29,7 +29,7 @@
           "caption": "Phone-advice booking assigns the List for the session, then adds the patient's Booking",
           "steps": [
             {
-              "click": "button[data-slot-id=\"S-43015-2026-07-21-PM\"]"
+              "click": "button[data-slot-id=\"S-43015-2026-11-24-PM\"]"
             },
             {
               "wait": 600
@@ -51,7 +51,7 @@
       "name": "amend-booking",
       "app": "admin",
       "caption": "Office amends a Booking's patient details",
-      "start": "/admin/day/2026-07-21/bookings/BK0009",
+      "start": "/admin/day/2026-11-24/bookings/BK0009",
       "states": [
         {
           "state": "edit-patient",
@@ -115,14 +115,14 @@
       "name": "add-booking-booked-list",
       "app": "admin",
       "caption": "The office creates a Booking on any List, with the procedure as it was told, or amends any field until the List is authorised, and each change is recorded against them",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "state": "drawer",
           "caption": "An ACTIVE List that already has Bookings offers Add Booking",
           "steps": [
             {
-              "click": "button[data-list-id=\"L-34821-2026-07-21-PM\"]"
+              "click": "button[data-list-id=\"L-34821-2026-11-24-PM\"]"
             },
             {
               "wait": "[data-shot=list-add-booking]"
@@ -140,7 +140,7 @@
           "caption": "The procedure description as the rooms told it, kept exactly as typed, and how it was told",
           "steps": [
             {
-              "click": "button[data-list-id=\"L-34821-2026-07-21-PM\"]"
+              "click": "button[data-list-id=\"L-34821-2026-11-24-PM\"]"
             },
             {
               "wait": "[data-shot=list-add-booking]"

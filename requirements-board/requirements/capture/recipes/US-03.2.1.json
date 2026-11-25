@@ -7,7 +7,7 @@
       "name": "primary-and-additional",
       "app": "web",
       "caption": "One Procedure is the primary, shown first",
-      "start": "/web/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/web/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "primary",
@@ -63,7 +63,7 @@
       "name": "primary-and-additional",
       "app": "mobile",
       "caption": "One Procedure is the primary, shown first",
-      "start": "/mobile/lists/L-34821-2026-07-21-PM/bookings/BK0009",
+      "start": "/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009",
       "states": [
         {
           "state": "primary",

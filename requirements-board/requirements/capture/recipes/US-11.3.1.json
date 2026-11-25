@@ -7,7 +7,7 @@
       "name": "patient-invoices",
       "app": "admin",
       "caption": "A patient's invoices across every anaesthetist, each Paid, Part paid or Unpaid, with the balance",
-      "start": "/admin/patients/CQY9304",
+      "start": "/admin/people/patients/CQY9304",
       "states": [
         {
           "steps": [

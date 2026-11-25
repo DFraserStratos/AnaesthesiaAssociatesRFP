@@ -7,7 +7,7 @@
       "name": "list-pairing",
       "app": "admin",
       "caption": "Every List has exactly one hospital and one surgeon",
-      "start": "/admin/day/2026-07-21",
+      "start": "/admin/day/2026-11-24",
       "states": [
         {
           "state": "drawer",
@@ -54,8 +54,8 @@
             }
           ],
           "highlight": [
-            "[data-list-id=\"L-34821-2026-07-21-AM\"]",
-            "[data-list-id=\"L-34821-2026-07-21-PM\"]"
+            "[data-list-id=\"L-34821-2026-11-24-AM\"]",
+            "[data-list-id=\"L-34821-2026-11-24-PM\"]"
           ],
           "caption": "AM and PM can differ: Dr Souter's morning is St George's with Mr Hale, her afternoon Southern Cross with Ms Patel"
         },

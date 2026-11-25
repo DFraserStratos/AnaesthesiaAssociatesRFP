@@ -57,10 +57,10 @@
       "name": "additional-invoice",
       "app": "admin",
       "caption": "A late charge on a locked, invoiced Booking becomes an additional invoice",
-      "start": "/admin/day/2026-07-14/bookings/BK0032",
+      "start": "/admin/day/2026-11-17/bookings/BK0032",
       "setup": [
         {
-          "goto": "/admin/review/L-41267-2026-07-14-AM"
+          "goto": "/admin/review/L-41267-2026-11-17-AM"
         },
         {
           "trigger": "stage-post-op"
@@ -97,7 +97,7 @@
             },
             {
               "fill": "input[data-shot=line-description]",
-              "value": "Post-op ward review, Wed 15 Jul, 15 min"
+              "value": "Post-op ward review, Wed 18 Nov, 15 min"
             },
             {
               "fill": "input[data-shot=line-amount]",
@@ -123,7 +123,7 @@
             },
             {
               "fill": "input[data-shot=line-description]",
-              "value": "Post-op ward review, Wed 15 Jul, 15 min"
+              "value": "Post-op ward review, Wed 18 Nov, 15 min"
             },
             {
               "fill": "input[data-shot=line-amount]",
@@ -166,7 +166,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/day/2026-07-14/bookings/BK0032"
+              "goto": "/admin/day/2026-11-17/bookings/BK0032"
             },
             {
               "wait": "[data-shot=procedure-event-invoice]"

@@ -42,6 +42,10 @@ const LANDS: readonly string[] = [
   'stage-longer-prepaid-procedure', 'prepayment-late-payment', 'prepayment-contract-changed',
   // Admin · Patients
   'receive-no-nhi-list',
+  // Admin · Contracts (build plan Phase 49)
+  'contract-reach-change-date',
+  // Admin · Invoices and the Xero pair: the practice seed already holds open invoices (no List to authorise first)
+  'regenerate-invoice', 'payment-full', 'payment-half', 'payment-replay', 'xero-amend-invoice', 'xero-void-invoice', 'xero-pay-bill',
   // Mobile (framed phone) and Web, List and Booking detail
   'photo-capture-future', 'load-multi-procedure-booking', 'web-payment-full', 'web-payment-half',
   // Future scope and the Demo data inspector
@@ -86,17 +90,8 @@ async function openProductSupport(page: Page): Promise<void> {
   await expect(page.locator('[data-shot="support-panel"]')).toHaveAttribute('data-tab', 'productSupport')
 }
 
-const INVOICE_FIRST = 'No open invoice until a List is authorised (index path null at seed, catch-up Phase 39): authorise Dr Souter\'s Mon 23 Nov AM List first.'
-
 /** Rows whose `when` (or empty index path) needs a state the screen alone does not give; each is driven to it. */
 const DRIVEN: Readonly<Record<string, Drive>> = {
-  'regenerate-invoice': { why: INVOICE_FIRST, before: authoriseAList },
-  'payment-full': { why: INVOICE_FIRST, before: authoriseAList },
-  'payment-half': { why: INVOICE_FIRST, before: authoriseAList },
-  'payment-replay': { why: INVOICE_FIRST, before: authoriseAList },
-  'xero-amend-invoice': { why: INVOICE_FIRST, before: authoriseAList },
-  'xero-void-invoice': { why: INVOICE_FIRST, before: authoriseAList },
-  'xero-pay-bill': { why: INVOICE_FIRST, before: authoriseAList },
   'feed-changes-primary': {
     why: 'Shows only on a Booking with two or more Procedures (catch-up Phase 23); its index path is null until the 3-procedure Booking is loaded.',
     before: loadThreeProcedureBooking,
@@ -121,8 +116,11 @@ const DRIVEN: Readonly<Record<string, Drive>> = {
   'support-approve-call-out': { why: 'Shows only on the support panel\'s Product support tab (catch-up Phase 43b).', after: openProductSupport },
 }
 
-/** Rows that cannot be driven to a showing state here, each with its reason. None today. */
-const SKIP: Readonly<Record<string, string>> = {}
+/** Rows that cannot be driven to a showing state here, each with its reason. */
+const SKIP: Readonly<Record<string, string>> = {
+  'pass-last-day': "No Open screen (no index path): it shows on an anaesthetist's record once a last day is set (build plan Phase 52).",
+  'try-sign-in-after-last-day': 'No Open screen (no index path): it shows on the sign-in screen after signing out, once a last day has passed (build plan Phase 52).',
+}
 
 /**
  * Known app-side failures, reported to the owner rather than fixed here. Each runs as
