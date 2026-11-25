@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finances Decisions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#172320;--slate:#58635F;--mist:#8A9490;--lineStrong:#C9D1CE;--line:#E2E7E5;--sunken:#EDF1EF;--bg:#F6F8F7;--surface:#FFFFFF;
+  --brand:#A91E3E;--brandTint:#F7E7EC;--brandMuted:#D89AA9;
+  --teal:#0D6E63;--tealTint:#E1F0ED;
+  --okTint:#E3F4EB;--okOn:#157A49;--warn:#A16207;--warnTint:#F9F0DC;--warnOn:#7C4D08;--errTint:#FAE9E7;--errOn:#9C332F;
+  --shadow:0 1px 2px rgba(23,35,32,.06),0 4px 14px rgba(23,35,32,.06);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:"Spline Sans Mono",ui-monospace,monospace}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+h1,h2,h3,p{margin:0}
+header{background:var(--surface);border-bottom:1px solid var(--line)}
+header .wrap{padding:36px 28px 30px}
+.kicker{font-size:14px;color:var(--slate)}
+h1{font-size:38px;line-height:1.1;letter-spacing:-.02em;font-weight:800;margin:10px 0 12px}
+.lede{font-size:16.5px;color:var(--slate);max-width:70ch}
+.lede+.lede{margin-top:10px}
+.settled{margin-top:16px;background:var(--okTint);color:var(--okOn);border-radius:10px;padding:10px 14px;font-size:14px;max-width:80ch}
+.settled b{color:var(--ink)}
+main{padding:28px 0 140px;display:flex;flex-direction:column;gap:24px}
+.q{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:24px 26px;display:flex;flex-direction:column;gap:16px}
+.qhead{display:flex;gap:14px;align-items:flex-start}
+.qn{flex:none;width:32px;height:32px;border-radius:50%;background:var(--ink);color:#fff;font-weight:700;display:grid;place-items:center;font-size:15px}
+.qhead h2{font-size:20px;line-height:26px}
+.qhead p{color:var(--slate);margin-top:4px;max-width:78ch}
+.qhead .done{margin-left:auto;flex:none;font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;background:var(--sunken);color:var(--mist)}
+.q.answered .qhead .done{background:var(--okTint);color:var(--okOn)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.opt{position:relative;display:flex;flex-direction:column;gap:10px;border:1.5px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;background:var(--surface);transition:border-color .15s,box-shadow .15s}
+.opt:hover{border-color:var(--lineStrong)}
+.opt input[type=radio]{position:absolute;opacity:0;pointer-events:none}
+.opt:has(input:checked){border-color:var(--teal);box-shadow:inset 0 0 0 1px var(--teal);background:#FBFEFD}
+.opt:has(input:focus-visible){outline:3px solid rgba(13,110,99,.35);outline-offset:2px}
+.otop{display:flex;align-items:center;gap:10px}
+.radio{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--lineStrong);flex:none;display:grid;place-items:center}
+.opt:has(input:checked) .radio{border-color:var(--teal)}
+.opt:has(input:checked) .radio::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--teal)}
+.otop b{font-size:15.5px}
+.rec{font-size:11px;font-weight:700;background:var(--ink);color:#fff;border-radius:999px;padding:2px 8px;margin-left:auto;white-space:nowrap}
+.opt p{font-size:14px;color:var(--slate)}
+.note{display:flex;flex-direction:column;gap:6px}
+.note label{font-size:12.5px;font-weight:600;color:var(--slate)}
+.note textarea{font:inherit;font-size:14px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px;resize:vertical;background:var(--bg)}
+.note textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,110,99,.18);background:var(--surface)}
+.other input[type=text]{font:inherit;font-size:14px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;width:100%}
+
+/* little pictures */
+.pic{background:var(--bg);border-radius:10px;padding:12px;font-size:12px;min-height:96px;display:flex;flex-direction:column;gap:8px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tab{padding:4px 8px 6px;color:var(--slate);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;gap:5px;align-items:center;white-space:nowrap}
+.tab.on{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
+.tab.new{color:var(--teal)}
+.cnt{font-family:"Spline Sans Mono",monospace;font-size:10px;font-weight:600;min-width:16px;height:16px;padding:0 5px;border-radius:999px;background:var(--sunken);color:var(--slate);display:inline-grid;place-items:center}
+.rows{display:flex;flex-direction:column;gap:4px}
+.row{height:12px;border-radius:4px;background:var(--surface);border:1px solid var(--line)}
+.row.s{width:70%}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px}
+.tile i{display:block;font-style:normal;font-size:9px;color:var(--mist);text-transform:uppercase;letter-spacing:.05em}
+.tile b{font-family:"Spline Sans Mono",monospace;font-size:12px}
+.flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-weight:600}
+.box.hl{border-color:var(--teal);color:var(--teal);background:var(--tealTint)}
+.box.x{border-style:dashed;color:var(--mist);font-weight:500}
+.arr{color:var(--mist)}
+.btnmini{display:inline-block;background:var(--teal);color:#fff;border-radius:6px;padding:2px 8px;font-weight:600;font-size:11px}
+.lk{color:var(--teal);font-weight:600}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mini{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:5px}
+.mini .t{font-weight:700;font-size:12.5px}
+.seg{display:inline-flex;background:var(--sunken);border-radius:7px;padding:2px;gap:2px}
+.seg span{padding:2px 8px;border-radius:5px;color:var(--slate);font-weight:600}
+.seg span.on{background:var(--surface);color:var(--ink)}
+.nav{background:var(--ink);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:2px;width:150px}
+.nav div{color:rgba(255,255,255,.85);padding:4px 8px;border-radius:6px;display:flex;justify-content:space-between;font-size:12px}
+.nav div.on{background:rgba(255,255,255,.1);color:#fff;font-weight:600;box-shadow:inset 3px 0 0 var(--brand)}
+.nav em{font-style:normal;font-size:10px;font-weight:700;background:var(--brand);color:#fff;border-radius:999px;padding:0 6px}
+.nav em.a{background:var(--warn)}
+.picrow{display:flex;gap:12px;align-items:flex-start}
+.cap{font-size:11.5px;color:var(--slate)}
+
+/* answer dock */
+.dock{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+.dock .wrap{display:flex;align-items:center;gap:16px;padding:14px 28px}
+.prog{font-size:14px;color:var(--slate)}
+.prog b{color:var(--ink)}
+.bar{flex:1;max-width:260px;height:6px;border-radius:3px;background:var(--sunken);overflow:hidden}
+.bar span{display:block;height:100%;background:var(--teal);width:0;transition:width .2s}
+.copy{margin-left:auto;font:inherit;font-weight:600;font-size:14px;height:44px;padding:0 20px;border-radius:12px;border:0;background:var(--teal);color:#fff;cursor:pointer}
+.copy:focus-visible{outline:3px solid rgba(13,110,99,.35);outline-offset:2px}
+.copied{font-size:13.5px;color:var(--okOn);font-weight:600}
+.preview{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:20px 24px}
+.preview h2{font-size:18px;margin-bottom:8px}
+.preview pre{white-space:pre-wrap;font-family:"Spline Sans Mono",monospace;font-size:12.5px;background:var(--bg);border-radius:10px;padding:14px;margin:0;color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="kicker">Finances section · decisions before the requirements are written · 26 Nov 2026</div>
+    <h1>Seven quick decisions</h1>
+    <p class="lede">The Finances section replaces three menu items (Invoices, Billing monitor and Ledger) with one. Before I write it into the requirements, I need your call on a few choices. Each question below says what it's about in plain words and shows a small picture of each option.</p>
+    <p class="lede">Pick one option per question (my suggestion is marked "Claude's suggestion"), add a note if you like, then press <b>Copy my answers</b> at the bottom and paste them into the chat.</p>
+    <p class="settled"><b>Already settled:</b> the Billing tab's table is version C, with Bookings listed under a heading for each List (26 Nov).</p>
+  </div>
+</header>
+
+<main class="wrap" id="qs"></main>
+
+<div class="dock" role="region" aria-label="Your answers">
+  <div class="wrap">
+    <span class="prog" id="prog"><b>0 of 7</b> answered</span>
+    <span class="bar" aria-hidden="true"><span id="barfill"></span></span>
+    <span class="copied" id="copied" role="status" aria-live="polite"></span>
+    <button class="copy" id="copy" type="button">Copy my answers</button>
+  </div>
+</div>
+
+<script>
+const Q = [
+  {
+    id: 'tabs', title: 'How many tabs should Finances have?',
+    about: 'A tab is a page inside the section, like Contracts, Parties and Funding tags inside Contracts. Fewer tabs means less to learn; more tabs means each one has a clearer name.',
+    opts: [
+      { v: 'Four tabs: Billing, Invoices, Payments, Ledger', rec: true, text: 'Xero problems show inside Billing. AA fee invoices show inside Invoices, and the monthly AA fee run sits beside the weekly payment run in Payments.',
+        pic: `<div class="tabs"><span class="tab on">Billing <span class="cnt">3</span></span><span class="tab">Invoices</span><span class="tab">Payments</span><span class="tab">Ledger</span></div><div class="rows"><div class="row"></div><div class="row"></div><div class="row s"></div></div>` },
+      { v: 'Six tabs: add Xero and AA fees as their own tabs', text: 'Clearer names, but the Xero and AA fees tabs would be empty most days.',
+        pic: `<div class="tabs"><span class="tab on">Billing</span><span class="tab">Invoices</span><span class="tab">Payments</span><span class="tab">Ledger</span><span class="tab new">Xero</span><span class="tab new">AA fees</span></div><div class="rows"><div class="row"></div><div class="row s"></div></div>` },
+    ],
+  },
+  {
+    id: 'overview', title: 'Should Finances open on a summary page?',
+    about: 'An "Overview" tab would show a few big numbers (problems, unpaid, this week\'s payments, are the books square) before you go into a tab. The Day view already shows whether the books are square.',
+    opts: [
+      { v: 'No summary: open straight on the Billing tab', rec: true, text: 'The menu badge and the tab numbers already say where attention is needed, and nothing is shown twice.',
+        pic: `<div class="tabs"><span class="tab on">Billing</span><span class="tab">Invoices</span><span class="tab">Payments</span><span class="tab">Ledger</span></div><div class="rows"><div class="row"></div><div class="row"></div><div class="row s"></div></div>` },
+      { v: 'Add an Overview tab first, with four headline numbers', text: 'Nice in a demo, but it repeats what the Day view shows, and it\'s one more screen to keep right.',
+        pic: `<div class="tabs"><span class="tab on new">Overview</span><span class="tab">Billing</span><span class="tab">Invoices</span><span class="tab">Payments</span><span class="tab">Ledger</span></div><div class="tiles"><div class="tile"><i>Problems</i><b>3</b></div><div class="tile"><i>Unpaid</i><b>$281k</b></div><div class="tile"><i>This week</i><b>$181k</b></div><div class="tile"><i>Books</i><b>Square</b></div></div>` },
+    ],
+  },
+  {
+    id: 'approval', title: 'Where are Lists approved?',
+    about: 'Today, Lists waiting for approval appear in both the Review queue and the Billing monitor. One requirement (US-13.3.1) even says the Billing monitor is "where Lists are approved". Approving happens in the Review queue either way; the question is whether Billing should show those Lists too.',
+    opts: [
+      { v: 'Review queue only; Billing just links to it', rec: true, text: 'Billing shows a short "Awaiting approval" list whose rows open the Review queue. One place to approve. I\'d reword US-13.3.1 to match.',
+        pic: `<div class="flow"><span class="box">Billing</span><span class="arr">shows 3 waiting →</span><span class="box hl">Review queue</span><span class="arr">→</span><span class="btnmini">Approve</span></div><div class="cap">Approving happens in one place only.</div>` },
+      { v: 'Billing can approve too', text: 'Saves a click for the office, but there are then two places to approve the same List, and they can drift apart.',
+        pic: `<div class="flow"><span class="box">Billing</span><span class="btnmini">Approve</span></div><div class="flow"><span class="box">Review queue</span><span class="btnmini">Approve</span></div><div class="cap">Two places do the same job.</div>` },
+    ],
+  },
+  {
+    id: 'account', title: 'How do you look at one anaesthetist\'s money?',
+    about: 'Today the Ledger has a switch at the top, "Whole ledger" or "One anaesthetist", plus a dropdown to choose who. The Contracts and People pages instead list things, and you click a row to open that record on its own page with a back link.',
+    opts: [
+      { v: 'Their own page: click an anaesthetist in the Ledger to open their account', rec: true, text: 'Works like opening a Contract, a Party or a person: a back link to the Ledger, cards for what AA owes them and what they owe AA, their payment runs, and History last.',
+        pic: `<div class="split"><div class="mini"><span class="t">Ledger</span><span class="lk">Dr Souter ›</span><span class="lk">Dr Sharma ›</span><span class="lk">Dr Ropata ›</span></div><div class="mini"><span class="lk">‹ Ledger</span><span class="t">Dr Melanie Souter</span><div class="rows"><div class="row"></div><div class="row s"></div></div></div></div>` },
+      { v: 'Keep the switch at the top of the Ledger', text: 'Fewer pages, but it\'s the only screen that would work differently from Contracts and People.',
+        pic: `<div class="seg"><span>Whole ledger</span><span class="on">One anaesthetist</span></div><div class="mini"><span class="t">Dr Melanie Souter ▾</span><div class="rows"><div class="row"></div><div class="row s"></div></div></div>` },
+    ],
+  },
+  {
+    id: 'tabcounts', title: 'What should the number on each tab mean?',
+    about: 'We just fixed the Contracts tab so its number matches the list underneath it (147 and 147). The same rule could apply here, or the tab numbers could count only things that need doing.',
+    opts: [
+      { v: 'The number counts what the tab lists when you open it', rec: true, text: 'Billing 3 (it opens on problems), Invoices 340 (it opens on unpaid), Payments 47 (runs), Ledger 84 (anaesthetists). The same rule as Contracts and People.',
+        pic: `<div class="tabs"><span class="tab on">Billing <span class="cnt">3</span></span><span class="tab">Invoices <span class="cnt">340</span></span><span class="tab">Payments <span class="cnt">47</span></span><span class="tab">Ledger <span class="cnt">84</span></span></div><div class="cap">Each number matches the list under it.</div>` },
+      { v: 'The number counts only what needs doing', text: 'Billing 3 problems, Invoices 4 to approve, Ledger 1 receipt to place, Payments none. More useful at a glance, but it breaks the rule we just set for Contracts.',
+        pic: `<div class="tabs"><span class="tab on">Billing <span class="cnt">3</span></span><span class="tab">Invoices <span class="cnt">4</span></span><span class="tab">Payments</span><span class="tab">Ledger <span class="cnt">1</span></span></div><div class="cap">Numbers only where action is needed.</div>` },
+    ],
+  },
+  {
+    id: 'badge', title: 'What should the badge on the Finances menu item count?',
+    about: 'Today there are two badges in the side menu: a red one on Billing monitor (billing problems) and an amber one on Ledger (ledger checks that failed). With one menu item, there\'s room for one badge.',
+    opts: [
+      { v: 'One badge for both: billing problems plus ledger checks', rec: true, text: 'Red if a billing problem is open, amber if it\'s only a ledger check, as the two badges work today. Nothing that needs attention goes unbadged.',
+        pic: `<div class="picrow"><div class="nav"><div>Review queue <em>10</em></div><div class="on">Finances <em>4</em></div><div>People</div></div><div class="cap" style="padding-top:20px">3 billing problems<br>+ 1 ledger check</div></div>` },
+      { v: 'Billing problems only', text: 'Simpler, but a receipt that matches no invoice would no longer show a badge anywhere.',
+        pic: `<div class="picrow"><div class="nav"><div>Review queue <em>10</em></div><div class="on">Finances <em>3</em></div><div>People</div></div><div class="cap" style="padding-top:20px">3 billing problems<br>(ledger check not counted)</div></div>` },
+    ],
+  },
+  {
+    id: 'name', title: 'What should the menu item be called?',
+    about: 'The name sits in the side menu and at the top of every page in the section.',
+    opts: [
+      { v: 'Finances', rec: true, text: 'Covers money in, money out and the books.',
+        pic: `<div class="nav"><div>Review queue</div><div class="on">Finances</div><div>People</div></div>` },
+      { v: 'Billing', text: 'Shorter, and the word AA and the RFP use most. The first tab would then be renamed "Lists".',
+        pic: `<div class="nav"><div>Review queue</div><div class="on">Billing</div><div>People</div></div>` },
+      { v: 'Something else', other: true, text: 'Type the name you\'d like:',
+        pic: `<div class="nav"><div>Review queue</div><div class="on">…</div><div>People</div></div>` },
+    ],
+  },
+]
+
+const KEY = 'aa-finances-decisions-v1'
+let saved = {}
+try { saved = JSON.parse(localStorage.getItem(KEY) || '{}') } catch (e) { saved = {} }
+function persist() { try { localStorage.setItem(KEY, JSON.stringify(saved)) } catch (e) {} }
+
+const root = document.getElementById('qs')
+Q.forEach((q, i) => {
+  const sec = document.createElement('section')
+  sec.className = 'q'; sec.id = 'q-' + q.id
+  sec.setAttribute('aria-labelledby', 'h-' + q.id)
+  sec.innerHTML = `
+    <div class="qhead"><span class="qn">${i + 1}</span><div><h2 id="h-${q.id}">${q.title}</h2><p>${q.about}</p></div><span class="done">Not answered</span></div>
+    <div class="opts" role="radiogroup" aria-labelledby="h-${q.id}">
+      ${q.opts.map((o, j) => `
+        <label class="opt">
+          <input type="radio" name="${q.id}" value="${j}">
+          <div class="otop"><span class="radio" aria-hidden="true"></span><b>${o.v}</b>${o.rec ? '<span class="rec">Claude&rsquo;s suggestion</span>' : ''}</div>
+          <div class="pic" aria-hidden="true">${o.pic}</div>
+          <p>${o.text}</p>
+          ${o.other ? `<span class="other"><input type="text" data-other="${q.id}" aria-label="Your name for the menu item" placeholder="e.g. Money"></span>` : ''}
+        </label>`).join('')}
+    </div>
+    <div class="note"><label for="n-${q.id}">Note (optional)</label><textarea id="n-${q.id}" data-note="${q.id}" rows="1" placeholder="Anything to add or change"></textarea></div>`
+  root.appendChild(sec)
+})
+const extra = document.createElement('section')
+extra.className = 'q'
+extra.innerHTML = `<div class="qhead"><span class="qn">+</span><div><h2 id="h-extra">Anything else?</h2><p>Anything about the Finances mock you'd like changed, added or dropped before the requirements are written.</p></div></div>
+  <div class="note"><label for="n-extra">Your notes</label><textarea id="n-extra" data-note="extra" rows="3" placeholder="Optional"></textarea></div>`
+root.appendChild(extra)
+const prev = document.createElement('section')
+prev.className = 'preview'
+prev.innerHTML = '<h2>What will be copied</h2><pre id="out"></pre>'
+root.appendChild(prev)
+
+// restore
+Object.entries(saved).forEach(([k, v]) => {
+  if (k.startsWith('note:')) { const t = document.querySelector(`[data-note="${k.slice(5)}"]`); if (t) t.value = v }
+  else if (k.startsWith('other:')) { const t = document.querySelector(`[data-other="${k.slice(6)}"]`); if (t) t.value = v }
+  else { const r = document.querySelector(`input[name="${k}"][value="${v}"]`); if (r) r.checked = true }
+})
+
+function summary() {
+  const lines = ['My answers on the Finances decisions:', '']
+  Q.forEach((q, i) => {
+    const r = document.querySelector(`input[name="${q.id}"]:checked`)
+    let ans = 'Not answered'
+    if (r) {
+      const o = q.opts[+r.value]
+      ans = o.other ? `Something else: ${(document.querySelector(`[data-other="${q.id}"]`).value || '(no name typed)').trim()}` : o.v
+      if (o.rec) ans += " (Claude's suggestion)"
+    }
+    lines.push(`${i + 1}. ${q.title}`)
+    lines.push(`   ${ans}`)
+    const n = document.querySelector(`[data-note="${q.id}"]`).value.trim()
+    if (n) lines.push(`   Note: ${n}`)
+  })
+  const ex = document.querySelector('[data-note="extra"]').value.trim()
+  if (ex) { lines.push(''); lines.push('Anything else: ' + ex) }
+  return lines.join('\n')
+}
+function update() {
+  let n = 0
+  Q.forEach((q) => {
+    const on = !!document.querySelector(`input[name="${q.id}"]:checked`)
+    if (on) n++
+    const sec = document.getElementById('q-' + q.id)
+    sec.classList.toggle('answered', on)
+    sec.querySelector('.done').textContent = on ? 'Answered' : 'Not answered'
+  })
+  document.getElementById('prog').innerHTML = `<b>${n} of ${Q.length}</b> answered`
+  document.getElementById('barfill').style.width = (n / Q.length * 100) + '%'
+  document.getElementById('out').textContent = summary()
+}
+document.addEventListener('change', (e) => {
+  const t = e.target
+  if (t.type === 'radio') saved[t.name] = t.value
+  persist(); update()
+})
+document.addEventListener('input', (e) => {
+  const t = e.target
+  if (t.dataset.note) saved['note:' + t.dataset.note] = t.value
+  if (t.dataset.other) {
+    saved['other:' + t.dataset.other] = t.value
+    const r = t.closest('.opt').querySelector('input[type=radio]'); r.checked = true; saved[r.name] = r.value
+  }
+  persist(); update()
+})
+document.getElementById('copy').addEventListener('click', async () => {
+  const text = summary(); const msg = document.getElementById('copied')
+  try { await navigator.clipboard.writeText(text); msg.textContent = 'Copied. Paste it into the chat.' }
+  catch (e) {
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select()
+    try { document.execCommand('copy'); msg.textContent = 'Copied. Paste it into the chat.' } catch (e2) { msg.textContent = 'Copy failed: select the text in "What will be copied" instead.' }
+    ta.remove()
+  }
+  setTimeout(() => { msg.textContent = '' }, 4000)
+})
+update()
+</script>
+</body>
+</html>

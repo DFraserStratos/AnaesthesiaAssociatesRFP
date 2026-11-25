@@ -1,0 +1,992 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finances Section Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Tokens: the app's own (aa-prototype/src/theme/tokens.ts), so the mocks read as the app.
+   Every part of the mock below is drawn as an existing shared component draws it; see "Built from the shared kit". */
+:root{
+  --ink:#172320;--slate:#58635F;--mist:#8A9490;--lineStrong:#C9D1CE;--line:#E2E7E5;--sunken:#EDF1EF;--bg:#F6F8F7;--surface:#FFFFFF;--grid:#F1F4F2;
+  --brand:#A91E3E;--brandTint:#F7E7EC;--brandMuted:#D89AA9;
+  --teal:#0D6E63;--tealTint:#E1F0ED;
+  --ok:#1E8E5A;--okTint:#E3F4EB;--okOn:#157A49;
+  --warn:#A16207;--warnTint:#F9F0DC;--warnOn:#7C4D08;
+  --err:#C2403C;--errTint:#FAE9E7;--errOn:#9C332F;
+  --e1:0 1px 2px rgba(23,35,32,.05),0 2px 6px rgba(23,35,32,.05);
+  --e2:0 2px 4px rgba(23,35,32,.06),0 8px 20px rgba(23,35,32,.09);
+  --shadow:0 1px 2px rgba(23,35,32,.06),0 4px 14px rgba(23,35,32,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:"Spline Sans Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+a{color:var(--teal)}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1880px;margin:0 auto;padding:0 32px}
+h1,h2,h3,h4,p{margin:0}
+h2{font-size:24px;line-height:30px;letter-spacing:-.005em;margin-bottom:6px}
+.sub{color:var(--slate);margin:0 0 20px;max-width:84ch}
+section{padding:48px 0 8px}
+
+/* hero */
+header.top{background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{padding-top:40px;padding-bottom:36px}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:56px;align-items:start}
+.kicker{font-size:14px;color:var(--slate)}
+.hero h1{font-size:48px;line-height:1.06;letter-spacing:-.025em;margin:14px 0 18px;font-weight:800;max-width:18ch}
+.hero h1 span{display:block;color:var(--slate);font-weight:700}
+.lede{font-size:17px;color:var(--slate);max-width:66ch}
+.lede+.lede{margin-top:12px}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px;max-width:780px}
+.toc a{font-size:13px;font-weight:600;text-decoration:none;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:6px 11px;border-radius:999px}
+.toc a:hover{border-color:var(--teal);color:var(--teal)}
+.toc a .tn{color:var(--mist);margin-right:6px}
+.navpair{display:flex;gap:20px;align-items:flex-start}
+.navpair figure{margin:0}
+.navpair figcaption{font-size:13px;font-weight:600;color:var(--slate);margin:0 0 10px}
+.navpair .arrow{align-self:center;color:var(--mist);font-size:22px;padding-top:24px}
+.revnote{background:var(--okTint);color:var(--okOn);border-radius:10px;padding:10px 14px;font-size:14px;margin-top:18px;max-width:84ch}
+.revnote b{color:var(--ink)}
+
+/* side nav, as SideNav.tsx draws it */
+.mnav{background:var(--ink);display:flex;flex-direction:column;padding:20px 12px;gap:2px;width:216px;flex:none}
+.mnav .logo{display:flex;flex-direction:column;gap:5px;padding:0 8px 18px}
+.mnav .logo b{color:#fff;font-family:Georgia,"Times New Roman",serif;font-weight:400;font-size:15px;letter-spacing:.01em}
+.mnav .logo small{font-size:9px;font-weight:600;letter-spacing:.14em;color:var(--brandMuted);padding-left:2px}
+.mnav .it{display:flex;justify-content:space-between;align-items:center;color:rgba(255,255,255,.9);font-size:13.5px;font-weight:500;padding:9px 12px;border-radius:9px;white-space:nowrap}
+.mnav .it.on{background:rgba(255,255,255,.08);color:#fff;font-weight:600;box-shadow:inset 3px 0 0 var(--brand)}
+.mnav .it.new{outline:1.5px dashed rgba(216,154,169,.7);outline-offset:-1px}
+.mnav .it.gone{color:rgba(255,255,255,.4);text-decoration:line-through}
+.mnav .it em{font-style:normal;font-size:11px;font-weight:700;background:var(--warn);color:#fff;border-radius:999px;padding:0 7px;line-height:18px}
+.mnav .it em.c{background:var(--brand)}
+.mnav .me{margin-top:auto;display:flex;align-items:center;gap:10px;padding:8px;color:#fff;font-size:13px;font-weight:600}
+.mnav .me i{width:30px;height:30px;border-radius:50%;background:var(--brandTint);color:var(--brand);font-style:normal;font-size:11px;font-weight:700;display:grid;place-items:center}
+.mnav .me span{display:block;font-size:11.5px;font-weight:400;color:rgba(255,255,255,.55)}
+
+/* explainer */
+.invtable{width:100%;border-collapse:collapse;background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);font-size:13.5px}
+.invtable th{text-align:left;font-size:12.5px;color:var(--mist);font-weight:700;padding:10px 14px;border-bottom:1px solid var(--line)}
+.invtable td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.invtable tr:last-child td{border-bottom:none}
+.invtable td:first-child{font-weight:600;width:260px}
+.invtable td.to{font-weight:600;color:var(--teal)}
+.invtable td.to.out{color:var(--slate)}
+.invtable code{font-family:"Spline Sans Mono",monospace;font-size:12.5px;background:var(--bg);border-radius:5px;padding:1px 6px}
+.storyid{font-family:"Spline Sans Mono",monospace;font-size:11.5px;color:var(--mist);white-space:nowrap}
+.decide{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.dcard{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:20px 22px;display:flex;flex-direction:column;gap:8px}
+.dcard .q{font-size:12px;font-weight:700;color:var(--mist);letter-spacing:.04em;text-transform:uppercase}
+.dcard h4{font-size:16.5px;line-height:22px}
+.dcard p{font-size:14px;color:var(--slate)}
+.dcard .alt{font-size:13px;background:var(--bg);border-radius:10px;padding:9px 12px;color:var(--slate)}
+.dcard .alt b{color:var(--ink)}
+.jobs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.job{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:18px 20px}
+.job .when{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 9px;margin-bottom:8px;background:var(--sunken);color:var(--slate)}
+.job h4{font-size:15.5px;margin-bottom:6px}
+.job ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--slate)}
+.job li{margin-bottom:4px}
+.job .tabto{margin-top:10px;font-size:12.5px;font-weight:700;color:var(--teal)}
+.callout{background:var(--warnTint);color:var(--warnOn);border-radius:10px;padding:12px 16px;font-size:14px;margin:14px 0 0;max-width:120ch}
+.callout b{color:var(--ink)}
+
+/* ====== the mock: shared components as they draw ====== */
+.mockwrap{border:1px solid var(--line);border-radius:14px;overflow-x:auto;background:var(--bg);box-shadow:var(--shadow)}
+.addr{display:flex;align-items:center;gap:10px;background:var(--surface);border-bottom:1px solid var(--line);padding:8px 14px;font-size:12.5px;color:var(--slate);min-width:1660px}
+.addr i{width:10px;height:10px;border-radius:50%;background:var(--line);display:inline-block}
+.addr .url{flex:1;background:var(--bg);border-radius:8px;padding:4px 12px;font-family:"Spline Sans Mono",monospace;font-size:12px;color:var(--ink)}
+.frame{display:flex;min-width:1660px;min-height:860px;font-size:13px}
+/* AdminPage */
+.page{flex:1;min-width:0;padding:24px 28px 28px;display:flex;flex-direction:column;gap:16px}
+.ptitle{display:flex;align-items:flex-start;gap:16px}
+.ptitle .t{flex:1;min-width:0}
+.ptitle h3{font-size:24px;line-height:30px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.ptitle small{display:block;font-size:13.5px;color:var(--slate);margin-top:4px;max-width:86ch}
+/* PageBody: main + rail */
+.pbody{display:flex;gap:16px;align-items:flex-start;min-width:0}
+.pbody .main{flex:1;min-width:0;display:flex;flex-direction:column;gap:16px}
+.pbody .rail{width:380px;flex:none;display:flex;flex-direction:column;gap:14px}
+.back{font-size:14px;font-weight:600;color:var(--teal);display:inline-flex;gap:6px;align-items:center}
+/* Button */
+.btn{height:36px;padding:0 14px;border-radius:10px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;white-space:nowrap;border:1px solid transparent;font-family:inherit}
+.btn.lg{height:44px;padding:0 18px;font-size:14px;border-radius:12px}
+.btn.pri{background:var(--teal);color:#fff}
+.btn.sec{background:var(--surface);border-color:var(--lineStrong);color:var(--ink)}
+/* TextAction */
+.txt{font-size:12.5px;font-weight:700;color:var(--teal);white-space:nowrap}
+.txt.md{font-size:14px}
+/* PageToolbar, NameSearchBox, FilterPills, SelectField compact */
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;min-height:36px}
+.toolbar .end{margin-left:auto;font-size:12.5px;color:var(--slate)}
+.search{height:36px;flex:0 1 330px;border:1px solid var(--line);background:var(--surface);border-radius:999px;display:flex;align-items:center;gap:8px;padding:0 14px;color:var(--mist);font-size:13px}
+.fpills{display:inline-flex;gap:8px}
+.fp{height:36px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--surface);display:inline-flex;align-items:center;font-size:13px;font-weight:600;color:var(--slate)}
+.fp.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.sel{height:36px;padding:0 12px;border:1px solid var(--line);background:var(--surface);border-radius:10px;display:inline-flex;align-items:center;gap:10px;font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap}
+.sel::after{content:"";width:6px;height:6px;border-right:1.5px solid var(--slate);border-bottom:1.5px solid var(--slate);transform:rotate(45deg) translateY(-2px)}
+/* SlidingSegmentedControl surface sm */
+.seg{display:inline-flex;background:var(--sunken);border-radius:10px;padding:3px;font-size:12.5px;font-weight:600;height:36px;align-items:stretch}
+.seg span{display:flex;align-items:center;padding:0 12px;border-radius:8px;color:var(--slate)}
+.seg span.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(23,35,32,.2)}
+/* LineTabs + CountBadge */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tab{all:unset;box-sizing:border-box;font-size:15px;font-weight:500;color:var(--slate);padding:8px 14px 11px;border-bottom:2px solid transparent;display:flex;gap:8px;align-items:center;white-space:nowrap;margin-bottom:-1px;cursor:pointer}
+.tab:hover{color:var(--ink)}
+.tab.on{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
+.tab:focus-visible{outline:2px solid var(--teal);outline-offset:-2px;border-radius:6px}
+.cnt{font-family:"Spline Sans Mono",monospace;font-size:11px;font-weight:600;min-width:18px;height:18px;padding:0 6px;border-radius:999px;background:var(--sunken);color:var(--slate);display:inline-grid;place-items:center}
+/* Pill: neutral, success, warning, error */
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--sunken);color:var(--slate);white-space:nowrap;line-height:17px}
+.pill.ok{background:var(--okTint);color:var(--okOn)}
+.pill.warn{background:var(--warnTint);color:var(--warnOn)}
+.pill.err{background:var(--errTint);color:var(--errOn)}
+.pill.code{font-family:"Spline Sans Mono",monospace;font-size:11.5px}
+.pill.lg{padding:4px 10px;font-size:11px}
+/* Card (padding card), RailSection, DefList, Notice, StatTile outlined */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.card.pad{padding:16px;display:flex;flex-direction:column;gap:10px}
+.card.panel{padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--e1)}
+.ch{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:600;font-size:14px}
+.card.panel .ch{font-size:17px}
+.ch .l{display:flex;align-items:center;gap:8px}
+.ch small{font-weight:400;font-size:12.5px;color:var(--mist)}
+.ctext{font-size:12.5px;color:var(--slate)}
+.rrow{display:flex;flex-direction:column;gap:2px;padding:9px 0;border-bottom:1px solid var(--line)}
+.rrow:last-of-type{border-bottom:none}
+.rrow .t{font-weight:600;color:var(--teal);font-size:13.5px}
+.rrow .s{font-size:12.5px;color:var(--slate)}
+.rrow .two{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.seeall{font-size:13.5px;font-weight:600;color:var(--teal);text-align:center;padding-top:4px}
+.kv{display:grid;grid-template-columns:120px 1fr;gap:8px 14px;font-size:13px}
+.kv dt{color:var(--slate)}
+.kv dd{margin:0}
+.kv dd.m{font-family:"Spline Sans Mono",monospace}
+.notice{display:flex;align-items:flex-start;gap:10px;border-radius:10px;padding:10px 12px;font-size:13px}
+.notice.err{background:var(--errTint);color:var(--errOn)}
+.notice.warn{background:var(--warnTint);color:var(--warnOn)}
+.notice.ok{background:var(--okTint);color:var(--okOn)}
+.notice b{color:var(--ink)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 12px;min-width:0}
+.tile.warn{background:var(--warnTint);border-color:transparent}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mist)}
+.tile .v{font-family:"Spline Sans Mono",monospace;font-size:17px;font-weight:600;margin:4px 0 2px}
+.tile .s{font-size:12px;color:var(--slate)}
+.switchrow{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px}
+.switch{width:36px;height:20px;border-radius:999px;background:var(--teal);position:relative;flex:none}
+.switch::after{content:"";position:absolute;right:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff}
+/* StepRail compact */
+.srail{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.srail .st{border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.srail .st i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600;color:var(--mist);box-shadow:inset 0 0 0 1.5px var(--lineStrong);margin-bottom:4px}
+.srail .st b{font-size:13px;font-weight:600}
+.srail .st span{font-size:13px;color:var(--mist)}
+.srail .st.now{background:var(--tealTint);box-shadow:inset 0 0 0 1.5px var(--teal)}
+.srail .st.now i{color:var(--teal);box-shadow:inset 0 0 0 1.5px var(--teal)}
+.srail .st.now b{color:var(--teal)}
+.srail .st.done i{background:var(--ok);color:#fff;box-shadow:none}
+/* TableShell compact, GroupRow, ClickableRow, DisclosureButton */
+.tshell{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--e1);overflow:hidden}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl thead th{background:var(--bg);text-align:left;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mist);padding:10px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:10px 10px;border-bottom:1px solid var(--sunken);vertical-align:middle}
+.tbl td.r,.tbl th.r{text-align:right}
+.tbl td.m{font-family:"Spline Sans Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl td.dim,.tbl .dim{color:var(--mist)}
+.tbl td.slate{color:var(--slate)}
+.tbl td.wtext{color:var(--warnOn);font-weight:600;white-space:nowrap}
+.tbl td.oktext{color:var(--okOn)}
+.tbl th.grp{background:var(--surface);text-align:left;padding:14px 10px 8px;border-bottom:1px solid var(--sunken);font-size:14px;font-weight:600;color:var(--ink);letter-spacing:0;text-transform:none}
+.tbl th.grp .gsum{font-family:"Spline Sans Mono",monospace;font-size:12.5px;font-weight:400;color:var(--slate);margin-left:10px}
+.tbl th.grp .gsum b{color:var(--warnOn);font-weight:600}
+.tbl .chev{width:30px;color:var(--slate);text-align:center}
+.tbl a.lk{color:var(--teal);font-weight:600;text-decoration:none}
+.tbl tr.open td{background:var(--surface)}
+.tbl tr.open td.m b{font-weight:600}
+.tbl tr.child td{background:var(--bg);border-bottom:1px solid var(--line)}
+.tbl tr.child.last td{border-bottom:1px solid var(--sunken)}
+.tbl td.bk{padding-left:22px}
+.tbl td.bk .who{display:block;font-weight:500;color:var(--ink)}
+.tbl td.bk .id{font-family:"Spline Sans Mono",monospace;font-size:11.5px;color:var(--mist);margin-left:6px;font-weight:400}
+.tbl td.bk .why{display:block;font-size:12px;color:var(--slate);margin-top:1px}
+.tbl td.bk .why.w{color:var(--warnOn)}
+.tbl td.bk .why.e{color:var(--errOn)}
+.tbl td.bk.more{padding-top:8px;padding-bottom:8px}
+.tfoot{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;font-size:13px;color:var(--slate);border-top:1px solid var(--line);background:var(--surface)}
+.pager{display:flex;gap:8px;align-items:center}
+.pager span{width:34px;height:34px;border:1px solid var(--line);border-radius:10px;display:grid;place-items:center;color:var(--slate)}
+.pager b{font-family:"Spline Sans Mono",monospace;color:var(--teal);padding:0 8px}
+.panelx{display:none}
+.panelx.on{display:flex;flex-direction:column;gap:16px}
+.ann{font-size:13px;color:var(--slate);background:var(--surface);border:1px dashed var(--lineStrong);border-radius:10px;padding:10px 14px;margin-top:14px;max-width:150ch}
+.ann b{color:var(--ink)}
+/* invoice paper (stays custom, as today) */
+.paper{background:var(--surface);border:1px solid var(--line);border-radius:6px;box-shadow:var(--e2);padding:28px 32px;font-size:12.5px;width:430px;flex:none}
+.paper .ph{display:flex;justify-content:space-between;margin-bottom:22px}
+.paper .lines{width:100%;border-collapse:collapse;margin-top:16px}
+.paper .lines td,.paper .lines th{padding:7px 0;border-bottom:1px solid var(--grid);text-align:left}
+.paper .lines th{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mist)}
+.paper .lines .r{text-align:right}
+
+/* records */
+.records{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.rec-cap{font-size:14px;font-weight:700;margin:0 0 4px}
+.rec-sub{font-size:13px;color:var(--slate);margin:0 0 10px}
+.rpage{background:var(--bg);padding:20px 22px;display:flex;flex-direction:column;gap:14px;font-size:12.5px;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);height:100%}
+.rgrid{display:flex;gap:14px;align-items:flex-start}
+.rgrid .main{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+.rgrid .rail{width:240px;flex:none;display:flex;flex-direction:column;gap:12px}
+
+/* ===== Billing table versions ===== */
+.versions{display:flex;flex-direction:column;gap:28px}
+.ver{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:22px 24px;display:flex;flex-direction:column;gap:14px}
+.ver-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:28px;align-items:start}
+.ver-head h3{font-size:18px;line-height:24px;display:flex;gap:10px;align-items:center}
+.ver-head h3 .tag{font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 9px;background:var(--sunken);color:var(--slate)}
+.ver-head h3 .tag.pick{background:var(--ink);color:#fff}
+.ver-head p{font-size:14px;color:var(--slate);margin-top:4px}
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:13.5px}
+.pc h4{font-size:13px;margin-bottom:4px}
+.pc ul{margin:0;padding-left:18px;color:var(--slate)}
+.pc li{margin-bottom:3px}
+.vframe{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:16px;overflow-x:auto}
+.vframe .tshell{min-width:1280px}
+/* B: a List spans its Bookings */
+table.vb tbody.ls{border-bottom:1px solid var(--line)}
+table.vb tbody.ls:last-of-type{border-bottom:0}
+table.vb tbody.ls td{border-bottom:0;padding-top:6px;padding-bottom:6px}
+table.vb tbody.ls tr:first-child td{padding-top:12px}
+table.vb tbody.ls tr:last-child td{padding-bottom:12px}
+table.vb tbody.ls:hover td{background:#FBFCFB}
+table.vb td.lead{border-right:1px solid var(--sunken);width:230px}
+table.vb td.lead .h{font-weight:600;font-size:13.5px;display:block}
+table.vb td.lead .ln{display:block;font-size:12px;color:var(--slate);margin-top:4px}
+table.vb td.lead .pill{margin-top:6px}
+table.vb td.when{width:118px;color:var(--slate)}
+table.vb td.when.w{box-shadow:inset 3px 0 0 var(--warn)}
+table.vb td.when.e{box-shadow:inset 3px 0 0 var(--err)}
+table.vb tr.sub td.subcell{border-top:1px dashed var(--line);padding-top:8px!important}
+table.vb tr.sub td.subcell.b{font-weight:700}
+.vb-bk .who{font-weight:500;font-size:13.5px}
+.vb-bk .id{font-family:"Spline Sans Mono",monospace;font-size:11.5px;color:var(--mist);margin-left:6px}
+.vb-bk .why{display:block;font-size:12.5px;color:var(--slate);margin-top:1px}
+.vb-bk .why.w{color:var(--warnOn)}
+.vb-bk .why.e{color:var(--errOn)}
+/* C: Bookings under List headings */
+.tbl th.lsub{background:var(--surface);text-align:left;padding:10px 10px 8px 22px;border-bottom:1px solid var(--sunken);font-size:13px;font-weight:600;color:var(--ink);letter-spacing:0;text-transform:none}
+.tbl th.lsub .bits{display:inline-flex;gap:10px;align-items:center;margin-left:10px;font-weight:400;color:var(--slate);font-size:12.5px}
+.tbl th.lsub .bits .m{font-family:"Spline Sans Mono",monospace}
+.tbl th.lsub .right{float:right}
+.tbl th.lsub.w{box-shadow:inset 3px 0 0 var(--warn)}
+.tbl th.lsub.e{box-shadow:inset 3px 0 0 var(--err)}
+.tbl td.ci{padding-left:22px}
+
+.cost{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.cost b.big{display:block;font-family:"Spline Sans Mono",monospace;font-size:26px;margin:2px 0}
+footer{padding:48px 0 64px;color:var(--mist);font-size:13px}
+@media (max-width:1100px){.decide,.jobs,.cost,.records{grid-template-columns:1fr}.hero{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap hero">
+    <div>
+      <div class="kicker">Admin app · design exploration · 26 Nov 2026 · second draft</div>
+      <h1>One Finances section<span>for Billing, Invoices, Payments, the Ledger, Xero and AA fees</span></h1>
+      <p class="lede">Today the office's money work is spread over three menu items. The Billing monitor is one page about 15,600px long that does six jobs. Invoices has no paid or unpaid state. The Ledger opens with ten tiles before its table. AA fees and payment runs have no menu item at all.</p>
+      <p class="lede">This is one <b>Finances</b> item with six routed tabs, on the same frame as Contracts and People: the title, the tabs, one toolbar, the list, and a right-hand column for anything that sits beside the list. The tabs follow the office's jobs as the catalogue describes them, not the current screens.</p>
+      <p class="revnote"><b>Second draft: nothing new, only the shared kit.</b> The first draft invented a progress bar, a red edge on problem rows, filter pills with counts, an amber filter pill, a blue "info" pill, pill-shaped steps, and notices and tiles stacked above the tables. All of those are gone. Every part is now an existing shared component, drawn as it draws today, and the <a href="#kit">table near the end</a> names each one and where the app already uses it.</p>
+      <nav class="toc" aria-label="On this page">
+        <a href="#decide"><span class="tn">1</span>Decided</a>
+        <a href="#jobs"><span class="tn">2</span>The office's jobs</a>
+        <a href="#mock"><span class="tn">3</span>The section (click the tabs)</a>
+        <a href="#billing-table"><span class="tn">4</span>The Billing table, three ways</a>
+        <a href="#records"><span class="tn">5</span>Record pages</a>
+        <a href="#kit"><span class="tn">6</span>Built from the shared kit</a>
+        <a href="#moves"><span class="tn">7</span>Where everything goes</a>
+        <a href="#open"><span class="tn">8</span>Open questions</a>
+        <a href="#cost"><span class="tn">9</span>What it costs</a>
+      </nav>
+    </div>
+    <div class="navpair">
+      <figure>
+        <figcaption>Side nav today</figcaption>
+        <div class="mnav">
+          <div class="logo"><b>Anaesthesia | Associates</b><small>ADMIN</small></div>
+          <div class="it">Day view</div>
+          <div class="it">Intake <em>1</em></div>
+          <div class="it">Draft Lists <em>47</em></div>
+          <div class="it">Conflicts <em>6</em></div>
+          <div class="it">Notifications</div>
+          <div class="it">Review queue <em class="c">10</em></div>
+          <div class="it gone">Invoices</div>
+          <div class="it">People</div>
+          <div class="it gone">Billing monitor <em class="c">3</em></div>
+          <div class="it gone">Ledger <em>1</em></div>
+          <div class="it">Contracts</div>
+          <div class="it">Master data</div>
+          <div class="it">Audit</div>
+        </div>
+      </figure>
+      <div class="arrow">→</div>
+      <figure>
+        <figcaption>With Finances</figcaption>
+        <div class="mnav">
+          <div class="logo"><b>Anaesthesia | Associates</b><small>ADMIN</small></div>
+          <div class="it">Day view</div>
+          <div class="it">Intake <em>1</em></div>
+          <div class="it">Draft Lists <em>47</em></div>
+          <div class="it">Conflicts <em>6</em></div>
+          <div class="it">Notifications</div>
+          <div class="it">Review queue <em class="c">10</em></div>
+          <div class="it on new">Finances <em class="c">7</em></div>
+          <div class="it">People</div>
+          <div class="it">Contracts</div>
+          <div class="it">Master data</div>
+          <div class="it">Audit</div>
+        </div>
+      </figure>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="decide">
+  <h2>Decided, 26 Nov</h2>
+  <p class="sub">Your answers on the decisions page (<span class="mono">finances-decisions.html</span>). Everything below is drawn to them.</p>
+  <table class="invtable">
+    <thead><tr><th>Question</th><th>Decision</th></tr></thead>
+    <tbody>
+      <tr><td>The tabs</td><td><b>Six:</b> Billing, Invoices, Payments, Ledger, Xero, AA fees.</td></tr>
+      <tr><td>A summary page</td><td><b>None.</b> Finances opens on Billing; the books' status stays on the Day view.</td></tr>
+      <tr><td>Where Lists are approved</td><td><b>The Review queue only.</b> Billing lists the Lists awaiting approval and links to Review. US-13.3.1 is reworded to match. Note: a more unified Lists page may come later.</td></tr>
+      <tr><td>One anaesthetist's money</td><td><b>Their own account page,</b> opened from the Ledger's list of anaesthetists.</td></tr>
+      <tr><td>The tab numbers</td><td><b>Only what needs doing:</b> Billing 3 problem Lists, Invoices 4 prepayments to approve, Ledger 1 receipt to place, Xero 3 items to act on; Payments and AA fees show none until something is due. This is Finances' own rule: the Contracts and People tabs keep counting what they list.</td></tr>
+      <tr><td>The menu badge</td><td><b>One badge:</b> billing problems (Billing and Xero) plus ledger checks, crimson while a billing problem is open, amber otherwise.</td></tr>
+      <tr><td>The name</td><td><b>Finances.</b></td></tr>
+      <tr><td>The Billing table</td><td><b>Version C:</b> Bookings under a heading for each List.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="jobs">
+  <h2>The office's jobs, from the catalogue</h2>
+  <p class="sub">Two agents read every live story under EP-08, EP-09, EP-10, EP-06, FT-11.3, FT-13.2 and FT-13.3, the open questions that cite them, and the rulings up to 25 Nov. Grouped by how often the office does them, the jobs fall into four groups; Xero and AA fees then became tabs of their own (decided 26 Nov).</p>
+  <div class="jobs">
+    <div class="job">
+      <span class="when">Daily · watch and fix</span>
+      <h4>Billing</h4>
+      <ul>
+        <li>See each authorised List go invoiced, sent, into Xero, paid in and disbursed <span class="storyid">US-13.3.1</span></li>
+        <li>Find the Booking that failed, see why, fix it and retry; billing fails per Booking, never per List <span class="storyid">FT-08.5 · US-08.5.1–2 · US-13.3.2</span></li>
+        <li>Catch Xero hand-offs that fail and invoices changed directly in Xero <span class="storyid">US-09.2.4</span> → Xero tab</li>
+        
+      </ul>
+      <div class="tabto">→ Billing tab</div>
+    </div>
+    <div class="job">
+      <span class="when">Daily · find and send</span>
+      <h4>Invoices</h4>
+      <ul>
+        <li>Find an invoice by number, its payable's "-P" number, case reference, patient, anaesthetist or payer <span class="storyid">US-08.4.3 · US-09.1.1</span></li>
+        <li>See its payable, its Xero state, its credit notes and any replacement or additional invoices <span class="storyid">US-08.3.1 · US-08.6.2–3</span></li>
+        <li>Approve and send about 20 prepayment invoices a week; track Unpaid, Part paid and Paid; send reminders <span class="storyid">US-06.3.1 · 06.3.2 · 06.3.6</span></li>
+      </ul>
+      <div class="tabto">→ Invoices tab</div>
+    </div>
+    <div class="job">
+      <span class="when">Weekly and monthly · run</span>
+      <h4>Payments</h4>
+      <ul>
+        <li>The week's payment cycle, named by week number: close, check, approve BCTIs, send the schedule <span class="storyid">US-10.2.5–7</span></li>
+        <li>Remittance advice per anaesthetist, with negative invoices netted <span class="storyid">US-10.2.5</span></li>
+        <li>The monthly AA fee run, previewed then run, and its settings <span class="storyid">US-10.3.1 · 10.3.3</span> → AA fees tab</li>
+      </ul>
+      <div class="tabto">→ Payments tab</div>
+    </div>
+    <div class="job">
+      <span class="when">Exceptions · balance</span>
+      <h4>Ledger</h4>
+      <ul>
+        <li>The whole ledger and one anaesthetist's account, with the AA Holding account as a creditor beside them <span class="storyid">US-13.2.1 · US-08.3.4–5</span></li>
+        <li>Place a receipt that matches no invoice, or mark it refunded</li>
+        <li>See who is out of balance and what moved through the Holding account <span class="storyid">US-06.5.1–2 · OQ-125</span></li>
+      </ul>
+      <div class="tabto">→ Ledger tab</div>
+    </div>
+  </div>
+  <p class="callout"><b>Not in Finances, on purpose:</b> credit notes and additional invoices start from the Procedure or the invoice (US-08.6.3, 08.6.5, FT-03.7). A patient's balance and follow-up live in People › Patients (25 Nov). The books' status is on the Day view (US-13.2.4). Approving Lists stays in the Review queue. Finances links to each of these rather than copying it.</p>
+</section>
+
+<section id="mock">
+  <h2>The section</h2>
+  <p class="sub">Click the tabs. Each is drawn at the app's sizes from today's components, with seed-like data (demo day Tue 24 Nov 2026, Week 48). The dashed note under the mock says what changed from today's screen and which components it uses.</p>
+
+  <div class="mockwrap">
+    <div class="addr"><i></i><i></i><i></i><span class="url" id="url">/admin/finances/billing</span></div>
+    <div class="frame">
+      <div class="mnav">
+        <div class="logo"><b>Anaesthesia | Associates</b><small>ADMIN</small></div>
+        <div class="it">Day view</div>
+        <div class="it">Intake <em>1</em></div>
+        <div class="it">Draft Lists <em>47</em></div>
+        <div class="it">Conflicts <em>6</em></div>
+        <div class="it">Notifications</div>
+        <div class="it">Review queue <em class="c">10</em></div>
+        <div class="it on">Finances <em class="c">7</em></div>
+        <div class="it">People</div>
+        <div class="it">Contracts</div>
+        <div class="it">Master data</div>
+        <div class="it">Audit</div>
+        <div class="me"><i>KW</i><div>Kirsty W.<span>Office</span></div></div>
+      </div>
+
+      <div class="page">
+        <div class="ptitle">
+          <div class="t">
+            <h3>Finances</h3>
+            <small id="lede">Every authorised List from invoice to disbursement, by anaesthetist. Problems first: fix the Booking and retry.</small>
+          </div>
+          <span id="headact"></span>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Finances">
+          <button class="tab on" role="tab" aria-selected="true" data-tab="billing">Billing <span class="cnt">3</span></button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="invoices">Invoices <span class="cnt">4</span></button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="payments">Payments</button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="ledger">Ledger <span class="cnt">1</span></button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="xero">Xero <span class="cnt">3</span></button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="aafees">AA fees</button>
+        </div>
+
+        <!-- ============ BILLING (fit) ============ -->
+        <div class="panelx on" id="p-billing" role="tabpanel">
+          <div class="toolbar">
+            <div class="search">⌕&nbsp; Patient, invoice, hospital or anaesthetist</div>
+            <span class="fpills"><span class="fp on">Problems</span><span class="fp">In progress</span><span class="fp">Done</span><span class="fp">All</span></span>
+            <span class="sel">All anaesthetists</span>
+            <span class="sel">Group by: Anaesthetist</span>
+            <span class="end">3 Lists with a problem, 2 anaesthetists</span>
+          </div>
+          <div class="pbody">
+            <div class="main">
+              <div class="tshell">
+                <table class="tbl">
+  <thead><tr><th>Booking</th><th>Status</th><th class="r">Invoices</th><th>Sent</th><th>Xero</th><th>Paid in</th><th>Disbursed</th><th></th></tr></thead>
+  <tbody>
+    <tr><th class="grp" colspan="8">Dr Hannah Ropata<span class="gsum">1 authorised · <b>1 with problems</b></span></th></tr>
+    <tr><th class="lsub w" colspan="8"><span class="mono">Thu 19 Nov · AM</span><span class="bits">St George's <span class="pill warn">Needs attention</span> <span class="m">2 of 2 sent · 1 of 2 in Xero · 0 of 2 paid in</span></span><span class="right bits"><span class="m">Run Tue 24 Nov 08:00</span><span class="txt">Show all 2</span></span></th></tr>
+    <tr><td class="ci vb-bk"><span class="who">Losa Tuilagi</span><span class="id">BK0039</span><span class="why w">Attempt 1 · the Xero sync queue tries again at 08:02</span></td><td><span class="pill warn">Waiting for Xero</span></td><td class="r m">1</td><td>Emailed</td><td class="wtext">Waiting</td><td class="dim">Not yet</td><td class="dim">Not yet</td><td class="r"><span class="txt">Retry now</span></td></tr>
+    <tr><th class="grp" colspan="8">Dr Melanie Souter<span class="gsum">2 authorised · <b>2 with problems</b></span></th></tr>
+    <tr><th class="lsub e" colspan="8"><span class="mono">Mon 23 Nov · AM</span><span class="bits">Southern Cross <span class="pill err">Billing failed</span> <span class="m">5 of 6 sent · 5 of 6 in Xero · 0 of 6 paid in</span></span><span class="right bits"><span class="m">Run Tue 24 Nov 08:00</span><span class="txt">Show all 6</span></span></th></tr>
+    <tr><td class="ci vb-bk"><span class="who">Tane Wiremu</span><span class="id">BK0051</span><span class="why e">Not invoiced: the payer has no billing email or postal address</span></td><td><span class="pill err">Billing failed</span></td><td class="r m">0</td><td class="dim">Not yet</td><td class="dim">Not yet</td><td class="dim">Not yet</td><td class="dim">Not yet</td><td class="r"><span class="txt">Fix the payer</span>&nbsp;&nbsp;<span class="txt">Retry</span></td></tr>
+    <tr><th class="lsub w" colspan="8"><span class="mono">Tue 17 Nov · AM</span><span class="bits">Forte Health <span class="pill warn">Needs attention</span> <span class="m">5 of 5 sent · 5 of 5 in Xero · 3 of 5 paid in</span></span><span class="right bits"><span class="m">Run Wed 18 Nov 08:00</span><span class="txt">Show all 5</span></span></th></tr>
+    <tr><td class="ci vb-bk"><span class="who">Ruth Kim</span><span class="id">BK0022</span><span class="why w">Changed directly in Xero: Xero shows $1,180.00, the engine holds $1,240.00</span></td><td><span class="pill warn">Changed in Xero</span></td><td class="r m">1</td><td>Emailed</td><td class="wtext">Flagged</td><td class="oktext">Paid in</td><td class="oktext">Disbursed</td><td class="r"><span class="txt">Resolve</span></td></tr>
+  </tbody>
+</table>
+                <div class="tfoot"><span>Showing 3 of 3 Lists with a problem</span><span class="pager"><span>‹</span><b>1 of 1</b><span>›</span></span></div>
+              </div>
+            </div>
+            <div class="rail">
+              <div class="card pad">
+                <div class="ch"><span class="l">Xero</span><span class="txt">Open the Xero tab</span></div>
+                <div class="notice err"><span><b>Hand-offs are failing.</b> 2 invoices waiting since 10:14.</span></div>
+              </div>
+              <div class="card pad">
+                <div class="ch"><span class="l">Awaiting approval <span class="cnt">3</span></span></div>
+                <div class="rrow"><span class="t">Dr Priya Sharma · Mon 23 Nov · PM</span><span class="s">Southern Cross · 5 Bookings · submitted Mon 17:20</span></div>
+                <div class="rrow"><span class="t">Dr James Thompson · Mon 23 Nov · AM</span><span class="s">St George's · 4 Bookings · submitted Mon 13:05</span></div>
+                <div class="rrow"><span class="t">Dr Alex Campbell · Fri 20 Nov · AM</span><span class="s">Forte Health · 6 Bookings · submitted Fri 15:48</span></div>
+                <div class="seeall">Open the Review queue</div>
+              </div>
+            </div>
+          </div>
+          <div class="ann"><b>Version C, chosen 26 Nov</b> (<a href="#billing-table">A and B are further down</a>). <b>Changed from today:</b> the per-anaesthetist cards become one table. The rows are Bookings; each List is a second-level heading carrying its date, hospital, status, counts and run, with "Show all" for its Bookings that billed. Under Problems only the Bookings that need something show, each with its reason under the patient's name and its fix on the right. The stage pills go, because the columns show each stage. The awaiting Lists sit in the right column, with a one-line Xero notice that opens the Xero tab while hand-offs are failing. <b>Built from:</b> <span class="mono">AdminPage fit</span>, <span class="mono">PageToolbar</span>, <span class="mono">NameSearchBox</span>, <span class="mono">FilterPills</span>, <span class="mono">SelectField</span>, <span class="mono">TableShell fit</span>, <span class="mono">GroupRow</span> and <span class="mono">GroupRow level="sub"</span>, <span class="mono">Td</span>, <span class="mono">Pill</span>, <span class="mono">TextAction</span>, and a <span class="mono">PageBody</span> rail of <span class="mono">Card</span>, <span class="mono">Notice</span>, <span class="mono">DefList</span> and <span class="mono">RailSection</span>.</div>
+        </div>
+
+        <!-- ============ INVOICES (fit) ============ -->
+        <div class="panelx" id="p-invoices" role="tabpanel">
+          <div class="toolbar">
+            <div class="search">⌕&nbsp; Number, -P number, case reference, patient, payer</div>
+            <span class="fpills"><span class="fp on">Unpaid</span><span class="fp">Part paid</span><span class="fp">Paid</span><span class="fp">Awaiting approval</span><span class="fp">All</span></span>
+            <span class="sel">All kinds</span>
+            <span class="sel">All anaesthetists</span>
+            <span class="end">340 unpaid · $281,446.20 owing · 4 to approve</span>
+          </div>
+          <div class="pbody">
+            <div class="main">
+              <div class="tshell">
+                <table class="tbl">
+                  <thead><tr><th>Number</th><th>Kind</th><th>Payer</th><th>Patient · Booking</th><th>Anaesthetist</th><th>Raised</th><th class="r">Total</th><th class="r">Owing</th><th>State</th><th>Delivery</th></tr></thead>
+                  <tbody>
+                    <tr><td class="m"><a class="lk">AA-2026-H07</a></td><td>Invoice</td><td>St George's</td><td>Sarah Mitchell<br><span class="dim">Tue 18 Aug · AM</span></td><td>Dr Melanie Souter</td><td class="m">18 Aug 2026</td><td class="r m">$610.00</td><td class="r m">$610.00</td><td><span class="pill warn">Unpaid · 98 days</span></td><td>Emailed</td></tr>
+                    <tr><td class="m"><a class="lk">AA-2026-K112</a></td><td>Invoice</td><td>Southern Cross</td><td>Peter Hall<br><span class="dim">Mon 16 Nov · PM</span></td><td>Dr Priya Sharma</td><td class="m">17 Nov 2026</td><td class="r m">$1,482.40</td><td class="r m">$741.20</td><td><span class="pill">Part paid</span></td><td>Emailed</td></tr>
+                    <tr><td class="m"><a class="lk">AA-S-002071</a></td><td>Prepayment</td><td>Aroha Ngata</td><td>Aroha Ngata<br><span class="dim">Thu 3 Dec · AM</span></td><td>Dr Melanie Souter</td><td class="m">20 Nov 2026</td><td class="r m">$2,350.00</td><td class="r m">$2,350.00</td><td><span class="pill warn">Unpaid · due 1 Dec</span></td><td>Emailed</td></tr>
+                    <tr><td class="m"><a class="lk">AA-2026-K131</a></td><td>Invoice</td><td>ACC</td><td>Mere Walsh<br><span class="dim">Tue 24 Nov · AM</span></td><td>Dr Alex Campbell</td><td class="m">24 Nov 2026</td><td class="r m">$884.60</td><td class="r m">$884.60</td><td><span class="pill">Unpaid</span></td><td>To post</td></tr>
+                    <tr><td class="m"><a class="lk">AA-2026-K120</a></td><td>Invoice</td><td>Southern Cross</td><td>Tane Wiremu<br><span class="dim">Wed 18 Nov · AM</span></td><td>Dr Hannah Ropata</td><td class="m">19 Nov 2026</td><td class="r m">$1,240.00</td><td class="r m">$1,240.00</td><td><span class="pill">Unpaid</span></td><td>Emailed</td></tr>
+                  </tbody>
+                </table>
+                <div class="tfoot"><span>Showing 1 to 50 of 340</span><span class="pager"><span>«</span><span>‹</span><b>1 of 7</b><span>›</span><span>»</span></span></div>
+              </div>
+            </div>
+            <div class="rail">
+              <div class="card pad">
+                <div class="ch"><span class="l">Prepayments to approve <span class="cnt">4</span></span><span class="txt">Show them</span></div>
+                <div class="ctext">Each is approved and sent on its own, from the list or the invoice. About 20 a week.</div>
+                <div class="switchrow"><span>Approve before sending</span><span class="switch" aria-hidden="true"></span></div>
+              </div>
+              <div class="card pad">
+                <div class="ch"><span class="l">Unpaid by age</span></div>
+                <dl class="kv"><dt>Under 30 days</dt><dd class="m">212 · $168,210.40</dd><dt>30 to 60 days</dt><dd class="m">86 · $71,904.20</dd><dt>Over 60 days</dt><dd class="m">42 · $41,331.60</dd></dl>
+                <div class="ctext">A patient's own balance and follow-up are on their page in People.</div>
+              </div>
+            </div>
+          </div>
+          <div class="ann"><b>Changed from today:</b> the list gains a State (Unpaid, Part paid, Paid, from US-06.3.2), the amount owing and a Kind column, so AA-S prepayments read for what they are. AA fee invoices, which bill the anaesthetists themselves, stay on the AA fees tab. <b>Awaiting approval</b> is one more filter pill on the same list (rows get Approve and send) instead of a second view that repeated its title in a card, and the approval switch sits in the right column. <b>Built from:</b> <span class="mono">AdminPage fit</span>, <span class="mono">PageToolbar</span>, <span class="mono">NameSearchBox</span>, <span class="mono">FilterPills</span>, <span class="mono">SelectField</span>, <span class="mono">TableShell fit</span>, <span class="mono">ClickableRow</span>, <span class="mono">Pill</span>, and a rail of <span class="mono">Card</span>, <span class="mono">Switch</span> and <span class="mono">DefList</span>.</div>
+        </div>
+
+        <!-- ============ PAYMENTS (fluid) ============ -->
+        <div class="panelx" id="p-payments" role="tabpanel">
+          <div class="pbody">
+            <div class="main">
+              <div class="card panel">
+                <div class="ch"><span class="l">Payment cycle · <span class="mono">Week 48</span> <small class="mono">23 Nov to 29 Nov 2026</small></span></div>
+                <div class="srail">
+                  <div class="st now"><i>1</i><b>Close the week</b><span>Planned Friday 27 Nov</span></div>
+                  <div class="st"><i>2</i><b>Monday checks</b><span>Planned Monday 30 Nov</span></div>
+                  <div class="st"><i>3</i><b>Approve BCTIs</b><span>After the checks</span></div>
+                  <div class="st"><i>4</i><b>Send payment schedule</b><span>Planned Tuesday 1 Dec</span></div>
+                </div>
+                <div class="ch"><span class="l">Waiting for this week's run</span><span class="btn pri lg">Close the week</span></div>
+                <div class="tshell" style="box-shadow:none">
+                  <table class="tbl">
+                    <thead><tr><th class="chev"></th><th>Anaesthetist</th><th class="r">BCTIs</th><th class="r">Positives</th><th class="r">Negatives netted</th><th class="r">Net</th><th>Paid to</th></tr></thead>
+                    <tbody>
+                      <tr><td class="chev">›</td><td>Dr Sharma</td><td class="r m">19</td><td class="r m">$10,837.86</td><td class="r m">$0.00</td><td class="r m"><b>$10,837.86</b></td><td class="m">99-0101-·····67-00</td></tr>
+                      <tr><td class="chev">›</td><td>Dr Thompson</td><td class="r m">22</td><td class="r m">$9,142.18</td><td class="r m">$0.00</td><td class="r m"><b>$9,142.18</b></td><td class="m">99-0101-·····01-00</td></tr>
+                      <tr><td class="chev">›</td><td>Dr Campbell</td><td class="r m">30</td><td class="r m">$11,694.80</td><td class="r m">-$610.00</td><td class="r m"><b>$11,084.80</b></td><td class="m">99-0101-·····02-00</td></tr>
+                    </tbody>
+                  </table>
+                  <div class="tfoot"><span>Showing 1 to 3 of 71 · net $181,116.60</span><span class="pager"><span>‹</span><b>1 of 24</b><span>›</span></span></div>
+                </div>
+              </div>
+              <div class="card panel">
+                <div class="ch"><span class="l">Payment runs <span class="cnt">47</span></span></div>
+                <div class="tshell" style="box-shadow:none">
+                  <table class="tbl">
+                    <thead><tr><th>Run</th><th>Dates</th><th class="r">Anaesthetists</th><th class="r">BCTIs</th><th class="r">Negatives netted</th><th class="r">Paid out</th><th>Status</th><th>Paid on</th></tr></thead>
+                    <tbody>
+                      <tr><td class="m"><a class="lk">Week 47</a></td><td class="m">16 Nov to 22 Nov</td><td class="r m">69</td><td class="r m">398</td><td class="r m">-$1,220.00</td><td class="r m">$176,402.10</td><td><span class="pill ok">Paid</span></td><td class="m">Tue 24 Nov</td></tr>
+                      <tr><td class="m"><a class="lk">Week 46</a></td><td class="m">9 Nov to 15 Nov</td><td class="r m">72</td><td class="r m">421</td><td class="r m">$0.00</td><td class="r m">$189,930.45</td><td><span class="pill ok">Paid</span></td><td class="m">Tue 17 Nov</td></tr>
+                      <tr><td class="m"><a class="lk">Week 45</a></td><td class="m">2 Nov to 8 Nov</td><td class="r m">70</td><td class="r m">405</td><td class="r m">-$610.00</td><td class="r m">$171,288.00</td><td><span class="pill ok">Paid</span></td><td class="m">Tue 10 Nov</td></tr>
+                    </tbody>
+                  </table>
+                  <div class="tfoot"><span>Showing 1 to 3 of 47</span><span class="pager"><span>‹</span><b>1 of 16</b><span>›</span></span></div>
+                </div>
+              </div>
+            </div>
+            <div class="rail">
+              <div class="card pad">
+                <div class="ch"><span class="l">Events awaiting the run <span class="cnt">2</span></span></div>
+                <div class="rrow"><span class="t">Dr Wong · Wed 25 Nov</span><span class="s">After-hours call-in · $240.00</span></div>
+                <div class="rrow"><span class="t">Dr Karaka · Mon 23 Nov</span><span class="s">Cancellation fee · $180.00</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="ann"><b>Changed from today:</b> the payment cycle, its runs table and the events awaiting the run come off the bottom of the Billing monitor unchanged: the same <span class="mono">StepRail compact</span>, table and Close the week. The events awaiting the run sit in the right column. Runs open the existing payment run page. <b>OQ-47 is open:</b> the steps and days are US-10.2.7's today. <b>Built from:</b> <span class="mono">AdminPage fluid</span>, <span class="mono">Card</span> (panel and card), <span class="mono">StepRail</span>, <span class="mono">Button</span>, <span class="mono">TableShell</span> with <span class="mono">DisclosureButton</span>, <span class="mono">Pill</span>, <span class="mono">RailSection</span>, <span class="mono">TextAction</span>. No tab number: nothing on Payments needs doing until a step is due, and then the step itself is the call to action.</div>
+        </div>
+
+        <!-- ============ LEDGER (fit) ============ -->
+        <div class="panelx" id="p-ledger" role="tabpanel">
+          <div class="toolbar">
+            <span class="seg"><span class="on">Anaesthetists</span><span>Invoice pairs</span><span>AA Holding account</span></span>
+            <div class="search">⌕&nbsp; Anaesthetist</div>
+            <span class="fpills"><span class="fp on">All</span><span class="fp">Out of balance</span></span>
+            <span class="end">84 anaesthetists, every one square</span>
+          </div>
+          <div class="pbody">
+            <div class="main">
+              <div class="tshell">
+                <table class="tbl">
+                  <thead><tr><th>Anaesthetist</th><th class="r">Billed for them</th><th class="r">Paid into AA</th><th class="r">Disbursed</th><th class="r">AA owes them</th><th class="r">They owe AA</th><th>Last run</th><th>Balance</th></tr></thead>
+                  <tbody>
+                    <tr><td><a class="lk">Dr Melanie Souter</a></td><td class="r m">$148,220.00</td><td class="r m">$121,000.00</td><td class="r m">$118,640.00</td><td class="r m">$2,360.00</td><td class="r m">$580.75</td><td class="m">Week 47</td><td><span class="pill ok">Square</span></td></tr>
+                    <tr><td><a class="lk">Dr Priya Sharma</a></td><td class="r m">$131,904.50</td><td class="r m">$109,212.10</td><td class="r m">$107,470.90</td><td class="r m">$1,741.20</td><td class="r m">$0.00</td><td class="m">Week 47</td><td><span class="pill ok">Square</span></td></tr>
+                    <tr><td><a class="lk">Dr Hannah Ropata</a></td><td class="r m">$96,480.00</td><td class="r m">$80,020.00</td><td class="r m">$80,020.00</td><td class="r m">$0.00</td><td class="r m">$0.00</td><td class="m">Week 46</td><td><span class="pill ok">Square</span></td></tr>
+                    <tr><td><a class="lk">Dr James Thompson</a></td><td class="r m">$88,312.25</td><td class="r m">$70,115.00</td><td class="r m">$69,505.00</td><td class="r m">$610.00</td><td class="r m">$580.75</td><td class="m">Week 47</td><td><span class="pill ok">Square</span></td></tr>
+                    <tr><td><a class="lk">Dr Alex Campbell</a></td><td class="r m">$84,118.60</td><td class="r m">$68,302.00</td><td class="r m">$67,692.00</td><td class="r m">$610.00</td><td class="r m">$0.00</td><td class="m">Week 47</td><td><span class="pill ok">Square</span></td></tr>
+                  </tbody>
+                </table>
+                <div class="tfoot"><span>Showing 1 to 50 of 84</span><span class="pager"><span>‹</span><b>1 of 2</b><span>›</span></span></div>
+              </div>
+            </div>
+            <div class="rail">
+              <div class="card pad">
+                <div class="ch"><span class="l">The books</span><span class="txt">See the checks</span></div>
+                <div class="notice warn"><span><b>Out of balance by $1,640.00.</b> One receipt matches no invoice; every account is square. Checked 09:00.</span></div>
+                <div class="tiles">
+                  <div class="tile"><div class="eyebrow">Owed to AA</div><div class="v">$662,062.67</div><div class="s">340 unpaid invoices</div></div>
+                  <div class="tile"><div class="eyebrow">Owed to anaesthetists</div><div class="v">$181,116.60</div><div class="s">Week 48's run</div></div>
+                  <div class="tile"><div class="eyebrow">AA Holding account</div><div class="v">$1,380.00</div><div class="s">1 prepaid Booking</div></div>
+                  <div class="tile warn"><div class="eyebrow">Receipts to place</div><div class="v">$1,640.00</div><div class="s">1 receipt</div></div>
+                </div>
+              </div>
+              <div class="card pad">
+                <div class="ch"><span class="l">Receipts to place <span class="cnt">1</span></span></div>
+                <div class="rrow"><div class="two"><span class="t">Southern Cross · $1,640.00</span><span class="txt">Allocate</span></div><span class="s">Received Mon 23 Nov · ref SX-88412 · <span class="txt" style="font-size:12.5px">Mark refunded</span></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="ann"><b>Changed from today:</b> the table is the page. Ten tiles become four <span class="mono">StatTile</span>s in the right column, with no two showing the same figure, and the two-line equation becomes one sentence in a <span class="mono">Notice</span>, with the checks behind "See the checks". A <span class="mono">SlidingSegmentedControl</span> (the 36px toolbar size) picks what the table lists: anaesthetists, invoice pairs (today's Pairs table) or the AA Holding account (moved from the Billing monitor). Receipts to place keep Allocate and Mark refunded, in the right column. An anaesthetist row opens their account. <b>Built from:</b> <span class="mono">AdminPage fit</span>, <span class="mono">PageToolbar</span>, <span class="mono">SlidingSegmentedControl</span>, <span class="mono">NameSearchBox</span>, <span class="mono">FilterPills</span>, <span class="mono">TableShell fit</span>, <span class="mono">Pill</span>, and a rail of <span class="mono">Card</span>, <span class="mono">Notice</span>, <span class="mono">StatTile outlined</span>, <span class="mono">RailSection</span>.</div>
+        </div>
+        <!-- ============ XERO (fit) ============ -->
+        <div class="panelx" id="p-xero" role="tabpanel">
+          <div class="toolbar">
+            <div class="search">⌕&nbsp; Invoice, payer or anaesthetist</div>
+            <span class="fpills"><span class="fp on">Needs action</span><span class="fp">Waiting</span><span class="fp">Sent after waiting</span><span class="fp">All</span></span>
+            <span class="sel">All anaesthetists</span>
+            <span class="end">3 need action: 2 hand-offs failing, 1 changed in Xero</span>
+          </div>
+          <div class="pbody">
+            <div class="main">
+              <div class="tshell">
+                <table class="tbl">
+                  <thead><tr><th>What</th><th>Anaesthetist</th><th>Problem</th><th class="r">Attempts</th><th>Next try</th><th>Last error</th><th>Status</th><th></th></tr></thead>
+                  <tbody>
+                    <tr><th class="grp" colspan="8">Hand-offs failing<span class="gsum">2</span></th></tr>
+                    <tr><td><a class="lk m">AA-2026-K151</a><br><span class="dim">Losa Tuilagi · St George's</span></td><td>Dr Hannah Ropata</td><td>Invoice pair not in Xero</td><td class="r m">3</td><td class="m">10:30</td><td class="slate">Xero didn't answer (timeout)</td><td><span class="pill err">Alert raised</span></td><td class="r"><span class="txt">Retry now</span></td></tr>
+                    <tr><td><a class="lk m">AA-2026-K152</a><br><span class="dim">Hemi Walker · St George's</span></td><td>Dr Hannah Ropata</td><td>Invoice pair not in Xero</td><td class="r m">3</td><td class="m">10:30</td><td class="slate">Xero didn't answer (timeout)</td><td><span class="pill err">Alert raised</span></td><td class="r"><span class="txt">Retry now</span></td></tr>
+                    <tr><th class="grp" colspan="8">Changed directly in Xero<span class="gsum">1</span></th></tr>
+                    <tr><td><a class="lk m">AA-2026-K140</a><br><span class="dim">Ruth Kim · Forte Health</span></td><td>Dr Melanie Souter</td><td>Xero shows $1,180.00, the engine holds $1,240.00</td><td class="r dim">None</td><td class="dim">None</td><td class="slate">Found Tue 09:00</td><td><span class="pill warn">Flagged</span></td><td class="r"><span class="txt">Resolve</span></td></tr>
+                  </tbody>
+                </table>
+                <div class="tfoot"><span>Showing 3 of 3 that need action</span><span class="pager"><span>‹</span><b>1 of 1</b><span>›</span></span></div>
+              </div>
+            </div>
+            <div class="rail">
+              <div class="card pad">
+                <div class="ch"><span class="l">Connection</span></div>
+                <div class="notice err"><span><b>Hand-offs are failing.</b> Since 10:14; the queue retries every 15 minutes.</span></div>
+                <dl class="kv"><dt>Organisation</dt><dd>Anaesthesia Associates Ltd</dd><dt>Last good</dt><dd class="m">Tue 10:12</dd><dt>Waiting</dt><dd class="m">2</dd><dt>Sent after waiting</dt><dd class="m">14 today</dd><dt>Last payment check</dt><dd class="m">Tue 09:00</dd></dl>
+              </div>
+              <div class="card pad">
+                <div class="ch"><span class="l">What happens here</span></div>
+                <div class="ctext">Invoices and their payables go to Xero; payments come back from it. Bank matching and paying stay in Xero. A hand-off that fails is retried on its own; an alert is raised after three tries.</div>
+              </div>
+            </div>
+          </div>
+          <div class="ann"><b>New tab (decided 26 Nov):</b> the Xero sync queue and "Changed directly in Xero" come off the Billing monitor into one table grouped by kind of problem, opening on <b>Needs action</b>. Retry now and the Resolve side panel are today's. The connection and the last payment check sit in the right column. A Billing row whose Booking is stuck at Xero still shows there; this tab is about the connection and the items in it. <b>Built from:</b> <span class="mono">AdminPage fit</span>, <span class="mono">PageToolbar</span>, <span class="mono">NameSearchBox</span>, <span class="mono">FilterPills</span>, <span class="mono">SelectField</span>, <span class="mono">TableShell fit</span>, <span class="mono">GroupRow</span>, <span class="mono">Pill</span>, <span class="mono">TextAction</span>, <span class="mono">SidePanel</span> (Resolve), and a rail of <span class="mono">Card</span>, <span class="mono">Notice</span>, <span class="mono">DefList</span>.</div>
+        </div>
+
+        <!-- ============ AA FEES (fit) ============ -->
+        <div class="panelx" id="p-aafees" role="tabpanel">
+          <div class="toolbar">
+            <div class="search">⌕&nbsp; Anaesthetist or invoice number</div>
+            <span class="fpills"><span class="fp on">Unpaid</span><span class="fp">Paid</span><span class="fp">All</span></span>
+            <span class="sel">October 2026</span>
+            <span class="end">1 unpaid · $580.75 owed to AA</span>
+          </div>
+          <div class="pbody">
+            <div class="main">
+              <div class="tshell">
+                <table class="tbl">
+                  <thead><tr><th>Number</th><th>Anaesthetist</th><th>Month</th><th class="r">Lists</th><th class="r">Fee</th><th class="r">GST</th><th class="r">Total</th><th>State</th><th>Raised</th></tr></thead>
+                  <tbody>
+                    <tr><td class="m"><a class="lk">AA-F-2026-10-14</a></td><td>Dr James Thompson</td><td>October 2026</td><td class="r m">9</td><td class="r m">$505.00</td><td class="r m">$75.75</td><td class="r m">$580.75</td><td><span class="pill warn">Unpaid</span></td><td class="m">31 Oct 2026</td></tr>
+                  </tbody>
+                </table>
+                <div class="tfoot"><span>Showing 1 of 1 unpaid</span><span class="pager"><span>‹</span><b>1 of 1</b><span>›</span></span></div>
+              </div>
+            </div>
+            <div class="rail">
+              <div class="card pad">
+                <div class="ch"><span class="l">November's run</span><span class="txt">Fee settings</span></div>
+                <dl class="kv"><dt>Runs on</dt><dd>Mon 30 Nov</dd><dt>Anaesthetists</dt><dd class="m">84</dd><dt>Last run</dt><dd>October · 84 invoices</dd></dl>
+                <span class="btn sec">Preview November's run</span>
+              </div>
+              <div class="card pad">
+                <div class="ch"><span class="l">Earlier runs <span class="cnt">10</span></span></div>
+                <div class="rrow"><span class="t">October 2026</span><span class="s">84 invoices · $71,904.00 · 1 unpaid</span></div>
+                <div class="rrow"><span class="t">September 2026</span><span class="s">82 invoices · $69,210.50 · all paid</span></div>
+                <div class="seeall">See all 10</div>
+              </div>
+            </div>
+          </div>
+          <div class="ann"><b>New tab (decided 26 Nov):</b> today's AA fees screen (<span class="mono">/admin/billing/aa-fees</span>, reached only by link) becomes a tab. It lists the fee invoices AA raises on the anaesthetists, opening on Unpaid, with the month's run, its preview and Fee settings in the right column. No tab number: a fee invoice the anaesthetist hasn't paid yet isn't office work. <b>OQ-60 and OQ-112</b> (what's counted, and month end or the 20th) set "Runs on" and the preview. <b>Built from:</b> <span class="mono">AdminPage fit</span>, <span class="mono">PageToolbar</span>, <span class="mono">NameSearchBox</span>, <span class="mono">FilterPills</span>, <span class="mono">SelectField</span>, <span class="mono">TableShell fit</span>, <span class="mono">Pill</span>, <span class="mono">Button</span>, and a rail of <span class="mono">Card</span>, <span class="mono">DefList</span>, <span class="mono">RailSection</span>.</div>
+        </div>
+      
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="billing-table">
+  <h2>The Billing table, three ways</h2>
+  <p class="sub">Settled on C (26 Nov), to tweak as the build goes. All three show the same three problem Lists under the Problems filter, from the same shared parts. B borrows the Review table's new pattern: each List is its own group, with its date and List cells spanning its Booking rows, a dashed total row, and the Day drawer's 3px warning edge on the date.</p>
+  <div class="versions">
+    <div class="ver">
+      <div class="ver-head">
+        <div><h3>A · List rows that unfold</h3><p>A row per List, closed by default. Opening it adds its Bookings as indented rows under the same columns.</p></div>
+        <div class="pc"><div><h4>Good</h4><ul><li>Closest to today: the List row is unchanged</li><li>Short when everything is closed</li></ul></div><div><h4>Less good</h4><ul><li>The Booking that failed is a click away</li><li>List and Booking rows mix in one column, so the eye has to tell them apart by indent alone</li></ul></div></div>
+      </div>
+      <div class="vframe"><div class="tshell"><table class="tbl">
+                  <thead><tr><th class="chev"></th><th>List · Booking</th><th>Hospital</th><th>Status</th><th class="r">Invoices</th><th>Sent</th><th>Xero</th><th>Paid in</th><th>Disbursed</th><th>Run ↓</th><th></th></tr></thead>
+                  <tbody>
+                    <tr><th class="grp" colspan="11">Dr Hannah Ropata<span class="gsum">1 authorised · <b>1 with problems</b></span></th></tr>
+                    <tr class="open"><td class="chev">⌄</td><td class="m"><b>Thu 19 Nov · AM</b></td><td>St George's</td><td><span class="pill warn">Needs attention</span></td><td class="r m">2</td><td class="m">2 of 2</td><td class="wtext">Waiting for Xero</td><td class="m dim">0 of 2</td><td class="m dim">0 of 2</td><td class="m slate">Tue 24 Nov 08:00</td><td></td></tr>
+                    <tr class="child"><td></td><td class="bk" colspan="2"><span class="who">Losa Tuilagi <span class="id">BK0039</span></span><span class="why w">Attempt 1 · the Xero sync queue tries again at 08:02</span></td><td><span class="pill warn">Waiting for Xero</span></td><td class="r m">1</td><td>Emailed</td><td class="wtext">Waiting</td><td class="dim">Not yet</td><td class="dim">Not yet</td><td></td><td class="r"><span class="txt">Retry now</span></td></tr>
+                    <tr class="child last"><td></td><td class="bk" colspan="2"><span class="who">Hemi Walker <span class="id">BK0040</span></span><span class="why">1 invoice raised and handed off</span></td><td><span class="pill ok">Handed off</span></td><td class="r m">1</td><td>Emailed</td><td class="oktext">In Xero</td><td class="dim">Not yet</td><td class="dim">Not yet</td><td></td><td></td></tr>
+                    <tr><th class="grp" colspan="11">Dr Melanie Souter<span class="gsum">2 authorised · <b>2 with problems</b></span></th></tr>
+                    <tr class="open"><td class="chev">⌄</td><td class="m"><b>Mon 23 Nov · AM</b></td><td>Southern Cross</td><td><span class="pill err">Billing failed</span></td><td class="r m">5</td><td class="m">5 of 6</td><td class="m">5 of 6</td><td class="m dim">0 of 6</td><td class="m dim">0 of 6</td><td class="m slate">Tue 24 Nov 08:00</td><td></td></tr>
+                    <tr class="child"><td></td><td class="bk" colspan="2"><span class="who">Tane Wiremu <span class="id">BK0051</span></span><span class="why e">Not invoiced: the payer has no billing email or postal address</span></td><td><span class="pill err">Billing failed</span></td><td class="r m">0</td><td class="dim">Not yet</td><td class="dim">Not yet</td><td class="dim">Not yet</td><td class="dim">Not yet</td><td></td><td class="r"><span class="txt">Fix the payer</span>&nbsp;&nbsp;<span class="txt">Retry</span></td></tr>
+                    <tr class="child last"><td></td><td class="bk more" colspan="10"><span class="txt">Show the 5 Bookings that billed</span></td></tr>
+                    <tr><td class="chev">›</td><td class="m"><b>Tue 17 Nov · AM</b></td><td>Forte Health</td><td><span class="pill warn">Needs attention</span></td><td class="r m">5</td><td class="m">5 of 5</td><td class="wtext">Flagged</td><td class="m oktext">3 of 5</td><td class="m oktext">3 of 5</td><td class="m slate">Wed 18 Nov 08:00</td><td></td></tr>
+                  </tbody>
+                </table><div class="tfoot"><span>Showing 3 of 3 Lists with a problem</span><span class="pager"><span>‹</span><b>1 of 1</b><span>›</span></span></div></div></div>
+    </div>
+    <div class="ver">
+      <div class="ver-head">
+        <div><h3>B · A List spans its Bookings</h3><p>Each List is a group: its date and a List cell (hospital, status, Bookings, run) span the rows beside it, and each problem Booking is a row. A dashed total row gives the List's own counts in the same columns, with "Show the 5 that billed" for the rest.</p></div>
+        <div class="pc"><div><h4>Good</h4><ul><li>The same shape as the Review table, so the office learns one pattern</li><li>The Booking that needs fixing, its reason and its fix are on screen with no click</li><li>List facts are said once, Booking facts once each, and the totals line up under their columns</li><li>The date's warning edge matches the Day drawer</li></ul></div><div><h4>Less good</h4><ul><li>Taller per List than A</li><li>Under All, a List with nothing wrong is just its total row (still one line)</li></ul></div></div>
+      </div>
+      <div class="vframe"><div class="tshell"><table class="tbl vb">
+  <thead><tr><th colspan="2">List</th><th>Booking</th><th>Status</th><th class="r">Invoices</th><th>Sent</th><th>Xero</th><th>Paid in</th><th>Disbursed</th><th></th></tr></thead>
+  <tbody><tr><th class="grp" colspan="10">Dr Hannah Ropata<span class="gsum">1 authorised · <b>1 with problems</b></span></th></tr></tbody>
+  <tbody class="ls">
+    <tr><td class="m when w" rowspan="2">Thu 19 Nov<br>AM</td><td class="lead" rowspan="2"><span class="h">St George's</span><span class="pill warn">Needs attention</span><span class="ln">2 Bookings · run Tue 24 Nov 08:00</span></td>
+      <td class="vb-bk"><span class="who">Losa Tuilagi</span><span class="id">BK0039</span><span class="why w">Attempt 1 · the Xero sync queue tries again at 08:02</span></td><td><span class="pill warn">Waiting for Xero</span></td><td class="r m">1</td><td>Emailed</td><td class="wtext">Waiting</td><td class="dim">Not yet</td><td class="dim">Not yet</td><td class="r"><span class="txt">Retry now</span></td></tr>
+    <tr class="sub"><td class="subcell"><span class="txt">Show the 1 Booking that billed</span></td><td class="subcell"></td><td class="subcell r m b">2</td><td class="subcell m b">2 of 2</td><td class="subcell m b">1 of 2</td><td class="subcell m b">0 of 2</td><td class="subcell m b">0 of 2</td><td class="subcell"></td></tr>
+  </tbody>
+  <tbody><tr><th class="grp" colspan="10">Dr Melanie Souter<span class="gsum">2 authorised · <b>2 with problems</b></span></th></tr></tbody>
+  <tbody class="ls">
+    <tr><td class="m when e" rowspan="2">Mon 23 Nov<br>AM</td><td class="lead" rowspan="2"><span class="h">Southern Cross</span><span class="pill err">Billing failed</span><span class="ln">6 Bookings · run Tue 24 Nov 08:00</span></td>
+      <td class="vb-bk"><span class="who">Tane Wiremu</span><span class="id">BK0051</span><span class="why e">Not invoiced: the payer has no billing email or postal address</span></td><td><span class="pill err">Billing failed</span></td><td class="r m">0</td><td class="dim">Not yet</td><td class="dim">Not yet</td><td class="dim">Not yet</td><td class="dim">Not yet</td><td class="r"><span class="txt">Fix the payer</span>&nbsp;&nbsp;<span class="txt">Retry</span></td></tr>
+    <tr class="sub"><td class="subcell"><span class="txt">Show the 5 Bookings that billed</span></td><td class="subcell"></td><td class="subcell r m b">5</td><td class="subcell m b">5 of 6</td><td class="subcell m b">5 of 6</td><td class="subcell m b">0 of 6</td><td class="subcell m b">0 of 6</td><td class="subcell"></td></tr>
+  </tbody>
+  <tbody class="ls">
+    <tr><td class="m when w" rowspan="2">Tue 17 Nov<br>AM</td><td class="lead" rowspan="2"><span class="h">Forte Health</span><span class="pill warn">Needs attention</span><span class="ln">5 Bookings · run Wed 18 Nov 08:00</span></td>
+      <td class="vb-bk"><span class="who">Ruth Kim</span><span class="id">BK0022</span><span class="why w">Changed directly in Xero: Xero shows $1,180.00, the engine holds $1,240.00</span></td><td><span class="pill warn">Changed in Xero</span></td><td class="r m">1</td><td>Emailed</td><td class="wtext">Flagged</td><td class="oktext">Paid in</td><td class="oktext">Disbursed</td><td class="r"><span class="txt">Resolve</span></td></tr>
+    <tr class="sub"><td class="subcell"><span class="txt">Show the 4 Bookings that billed</span></td><td class="subcell"></td><td class="subcell r m b">5</td><td class="subcell m b">5 of 5</td><td class="subcell m b">5 of 5</td><td class="subcell m b">3 of 5</td><td class="subcell m b">3 of 5</td><td class="subcell"></td></tr>
+  </tbody>
+</table><div class="tfoot"><span>Showing 3 of 3 Lists with a problem</span><span class="pager"><span>‹</span><b>1 of 1</b><span>›</span></span></div></div></div>
+    </div>
+    <div class="ver">
+      <div class="ver-head">
+        <div><h3>C · Bookings under List headings <span class="tag pick">Chosen · in the mock above</span></h3><p>Rows are Bookings only. Each List is a second-level heading (the Contracts catalogue's sub-group) carrying its date, hospital, status and counts as a sentence.</p></div>
+        <div class="pc"><div><h4>Good</h4><ul><li>The flattest: one kind of row</li><li>Uses <span class="mono">GroupRow level="sub"</span> exactly as Contracts does</li></ul></div><div><h4>Less good</h4><ul><li>The List's counts are words in a heading, so they don't line up under Sent, Xero or Paid in</li><li>Three heading levels (anaesthetist, List, column header) before the first row</li></ul></div></div>
+      </div>
+      <div class="vframe"><div class="tshell"><table class="tbl">
+  <thead><tr><th>Booking</th><th>Status</th><th class="r">Invoices</th><th>Sent</th><th>Xero</th><th>Paid in</th><th>Disbursed</th><th></th></tr></thead>
+  <tbody>
+    <tr><th class="grp" colspan="8">Dr Hannah Ropata<span class="gsum">1 authorised · <b>1 with problems</b></span></th></tr>
+    <tr><th class="lsub w" colspan="8"><span class="mono">Thu 19 Nov · AM</span><span class="bits">St George's <span class="pill warn">Needs attention</span> <span class="m">2 of 2 sent · 1 of 2 in Xero · 0 of 2 paid in</span></span><span class="right bits"><span class="m">Run Tue 24 Nov 08:00</span><span class="txt">Show all 2</span></span></th></tr>
+    <tr><td class="ci vb-bk"><span class="who">Losa Tuilagi</span><span class="id">BK0039</span><span class="why w">Attempt 1 · the Xero sync queue tries again at 08:02</span></td><td><span class="pill warn">Waiting for Xero</span></td><td class="r m">1</td><td>Emailed</td><td class="wtext">Waiting</td><td class="dim">Not yet</td><td class="dim">Not yet</td><td class="r"><span class="txt">Retry now</span></td></tr>
+    <tr><th class="grp" colspan="8">Dr Melanie Souter<span class="gsum">2 authorised · <b>2 with problems</b></span></th></tr>
+    <tr><th class="lsub e" colspan="8"><span class="mono">Mon 23 Nov · AM</span><span class="bits">Southern Cross <span class="pill err">Billing failed</span> <span class="m">5 of 6 sent · 5 of 6 in Xero · 0 of 6 paid in</span></span><span class="right bits"><span class="m">Run Tue 24 Nov 08:00</span><span class="txt">Show all 6</span></span></th></tr>
+    <tr><td class="ci vb-bk"><span class="who">Tane Wiremu</span><span class="id">BK0051</span><span class="why e">Not invoiced: the payer has no billing email or postal address</span></td><td><span class="pill err">Billing failed</span></td><td class="r m">0</td><td class="dim">Not yet</td><td class="dim">Not yet</td><td class="dim">Not yet</td><td class="dim">Not yet</td><td class="r"><span class="txt">Fix the payer</span>&nbsp;&nbsp;<span class="txt">Retry</span></td></tr>
+    <tr><th class="lsub w" colspan="8"><span class="mono">Tue 17 Nov · AM</span><span class="bits">Forte Health <span class="pill warn">Needs attention</span> <span class="m">5 of 5 sent · 5 of 5 in Xero · 3 of 5 paid in</span></span><span class="right bits"><span class="m">Run Wed 18 Nov 08:00</span><span class="txt">Show all 5</span></span></th></tr>
+    <tr><td class="ci vb-bk"><span class="who">Ruth Kim</span><span class="id">BK0022</span><span class="why w">Changed directly in Xero: Xero shows $1,180.00, the engine holds $1,240.00</span></td><td><span class="pill warn">Changed in Xero</span></td><td class="r m">1</td><td>Emailed</td><td class="wtext">Flagged</td><td class="oktext">Paid in</td><td class="oktext">Disbursed</td><td class="r"><span class="txt">Resolve</span></td></tr>
+  </tbody>
+</table><div class="tfoot"><span>Showing 3 of 3 Lists with a problem</span><span class="pager"><span>‹</span><b>1 of 1</b><span>›</span></span></div></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="records">
+  <h2>Record pages</h2>
+  <p class="sub">A row opens its record on the pattern the Contract, Party and person pages share: back link, name with an ID chip and status, a one-line summary, cards in the main column, a right column of <span class="mono">RailSection</span>s, and History last.</p>
+  <div class="records">
+    <div>
+      <p class="rec-cap">Invoice · <span class="mono">/admin/finances/invoices/:id</span></p>
+      <p class="rec-sub">The paper stays at print width (<span class="mono">AdminPage document</span>). The rail's seven private cards become shared <span class="mono">Card</span>s, with History last.</p>
+      <div class="rpage">
+        <span class="back">‹ Invoices</span>
+        <div class="ptitle"><div class="t"><h3 style="font-size:20px">AA-2026-H07 <span class="pill code">-P AA-2026-H07-P</span> <span class="pill warn">Unpaid · 98 days</span></h3><small>St George's · Sarah Mitchell · Tue 18 Aug · Dr Melanie Souter</small></div></div>
+        <div class="rgrid">
+          <div class="paper" style="width:300px;padding:20px">
+            <div class="ph"><div><b style="font-size:14px">Tax invoice</b><br><span class="mono">AA-2026-H07</span></div><div style="text-align:right">St George's Hospital</div></div>
+            <div>Sarah Mitchell · NHI CQY9304<br>Tue 18 Aug 2026 · Dr Melanie Souter</div>
+            <table class="lines"><tbody><tr><td>Anaesthesia, RVG</td><td class="r mono">$610.00</td></tr><tr><td><b>Total incl. GST</b></td><td class="r mono"><b>$610.00</b></td></tr></tbody></table>
+          </div>
+          <div class="rail">
+            <div class="card pad"><div class="ch">Delivery</div><div class="ctext">Emailed 18 Aug · reminder 17 Sep</div><span class="txt">Resend</span></div>
+            <div class="card pad"><div class="ch">Ledger</div><dl class="kv" style="grid-template-columns:70px 1fr"><dt>Owing</dt><dd class="m">$610.00</dd><dt>In Xero</dt><dd>Mirrored</dd></dl></div>
+            <div class="card pad"><div class="ch">Correct this invoice</div><span class="txt">Credit note</span><span class="txt">Credit in full and rebill</span></div>
+            <div class="card pad"><div class="ch">History</div><div class="ctext">3 changes recorded</div><span class="txt">See history</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <p class="rec-cap">Anaesthetist's account · <span class="mono">/admin/finances/ledger/anaesthetists/:id</span></p>
+      <p class="rec-sub">Replaces the Ledger's "One anaesthetist" switch. Their People page has everything that isn't money.</p>
+      <div class="rpage">
+        <span class="back">‹ Ledger</span>
+        <div class="ptitle"><div class="t"><h3 style="font-size:20px">Dr Melanie Souter <span class="pill ok">Square</span></h3><small>AA owes $2,360.00 in Week 48's run · owes AA $580.75 in October fees</small></div><span class="txt md">Open in People</span></div>
+        <div class="rgrid">
+          <div class="main">
+            <div class="tiles"><div class="tile"><div class="eyebrow">AA owes them</div><div class="v" style="font-size:17px">$2,360.00</div><div class="s">next run Tue 1 Dec</div></div><div class="tile"><div class="eyebrow">They owe AA</div><div class="v" style="font-size:17px">$580.75</div><div class="s">AA-F-2026-10-03</div></div></div>
+            <div class="tshell"><table class="tbl"><thead><tr><th>Invoice pair</th><th class="r">Billed</th><th class="r">Paid in</th><th class="r">Disbursed</th></tr></thead><tbody><tr><td class="m"><a class="lk">AA-2026-K140</a></td><td class="r m">$1,240.00</td><td class="r m">$1,240.00</td><td class="r m dim">Week 48</td></tr><tr><td class="m"><a class="lk">AA-2026-H07</a></td><td class="r m">$610.00</td><td class="r m dim">$0.00</td><td class="r m dim">$0.00</td></tr></tbody></table></div>
+          </div>
+          <div class="rail">
+            <div class="card pad"><div class="ch"><span class="l">Payment runs <span class="cnt">47</span></span></div><div class="rrow"><span class="t">Week 47 · $2,840.00</span><span class="s">Paid Tue 24 Nov</span></div><div class="rrow"><span class="t">Week 46 · $3,105.50</span><span class="s">Paid Tue 17 Nov</span></div><div class="seeall">See all 47</div></div>
+            <div class="card pad"><div class="ch"><span class="l">Credit trails <span class="cnt">1</span></span></div><div class="rrow"><span class="t">CN-2026-024</span><span class="s">Negative invoice netted, Week 45</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <p class="rec-cap">Payment run · <span class="mono">/admin/finances/payments/:runId</span></p>
+      <p class="rec-sub">Today's payment run page, moved under Payments, with its remittance page under it.</p>
+      <div class="rpage">
+        <span class="back">‹ Payments</span>
+        <div class="ptitle"><div class="t"><h3 style="font-size:20px">Week 47 <span class="pill ok">Paid</span></h3><small>16 Nov to 22 Nov · paid Tue 24 Nov · 69 anaesthetists · $176,402.10</small></div><span class="btn sec">Download schedule</span></div>
+        <div class="srail">
+          <div class="st done"><i>✓</i><b>Close the week</b><span>Fri 20 Nov</span></div>
+          <div class="st done"><i>✓</i><b>Monday checks</b><span>Mon 23 Nov</span></div>
+          <div class="st done"><i>✓</i><b>Approve BCTIs</b><span>Mon 23 Nov</span></div>
+          <div class="st done"><i>✓</i><b>Send payment schedule</b><span>Tue 24 Nov</span></div>
+        </div>
+        <div class="tshell"><table class="tbl"><thead><tr><th>Anaesthetist</th><th class="r">BCTIs</th><th class="r">Netted</th><th class="r">Paid</th><th></th></tr></thead><tbody><tr><td>Dr Souter</td><td class="r m">7</td><td class="r m">$0.00</td><td class="r m">$2,840.00</td><td class="r"><span class="txt">Remittance</span></td></tr><tr><td>Dr Sharma</td><td class="r m">6</td><td class="r m">-$610.00</td><td class="r m">$2,214.30</td><td class="r"><span class="txt">Remittance</span></td></tr></tbody></table></div>
+      </div>
+    </div>
+    <div>
+      <p class="rec-cap">Credit note · <span class="mono">/admin/finances/invoices/credit-notes/:id</span></p>
+      <p class="rec-sub">Moves from the top-level <span class="mono">/admin/credit-notes</span> to sit under Invoices, where the nav already marks it.</p>
+      <div class="rpage">
+        <span class="back">‹ Invoices</span>
+        <div class="ptitle"><div class="t"><h3 style="font-size:20px">CN-2026-031 <span class="pill">Credited in full</span></h3><small>Credits AA-2026-K098 · Southern Cross · Peter Hall · Dr Priya Sharma</small></div></div>
+        <div class="rgrid">
+          <div class="paper" style="width:300px;padding:20px"><b style="font-size:14px">Credit note</b><br><span class="mono">CN-2026-031</span><table class="lines"><tbody><tr><td>Credit for AA-2026-K098 in full</td><td class="r mono">-$1,482.40</td></tr></tbody></table></div>
+          <div class="rail"><div class="card pad"><div class="ch">Its negative invoice</div><div class="ctext">Netted in Week 47's run</div></div><div class="card pad"><div class="ch">Replaced by</div><span class="txt">AA-2026-K112</span></div><div class="card pad"><div class="ch">History</div><div class="ctext">1 change recorded</div><span class="txt">See history</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="kit">
+  <h2>Built from the shared kit</h2>
+  <p class="sub">Every part of the mock is a component that exists today, from <span class="mono">src/shared/</span> or the Admin page frame, and each is already used on a page you know. No new component and no new variant is needed. Two things are new arrangements of existing parts, and they're listed last.</p>
+  <table class="invtable">
+    <thead><tr><th>Part of the mock</th><th>Component</th><th>Already used on</th></tr></thead>
+    <tbody>
+      <tr><td>Page title, tabs, toolbar, body and right column</td><td><code>AdminPage</code> (fit, fluid, document), <code>PageToolbar</code>, <code>PageBody</code> rail</td><td>Contracts, People, Review queue (its "Recently billed" rail)</td></tr>
+      <tr><td>Tab strip with counts</td><td><code>LineTabs</code>, <code>LineTabLink</code>, <code>CountBadge</code></td><td>Contracts, People</td></tr>
+      <tr><td>Search box</td><td><code>NameSearchBox</code> pill size</td><td>Contracts, People, Invoices</td></tr>
+      <tr><td>Problems / In progress / Done / All, Unpaid / Part paid / Paid / Awaiting approval / All</td><td><code>FilterPills</code> md, no counts</td><td>Contracts (Active, Disabled, All), Surgeons (Active, Retired, All)</td></tr>
+      <tr><td>Anaesthetist, Kind and Group by selects</td><td><code>SelectField</code> compact</td><td>Contracts (Group by), Surgeons (All specialties)</td></tr>
+      <tr><td>Anaesthetists / Invoice pairs / AA Holding account</td><td><code>SlidingSegmentedControl</code> surface, sm</td><td>Ledger today ("Whole ledger / One anaesthetist")</td></tr>
+      <tr><td>Tables, group headings, pager</td><td><code>TableShell</code> (fit, footer), <code>Th</code>, <code>Td</code>, <code>GroupRow</code>, the admin <code>Pager</code></td><td>Contracts catalogue (grouped by kind)</td></tr>
+      <tr><td>A row that opens, a row that unfolds</td><td><code>ClickableRow</code>, <code>RowOpenButton</code>, <code>DisclosureButton</code></td><td>Every list; Billing monitor and payment cycle rows</td></tr>
+      <tr><td>Status words: Needs attention, Waiting for Xero, Paid, Square</td><td><code>Pill</code> neutral, success, warning, error</td><td>Everywhere; the stage pills are today's <code>StageChip</code> on <code>Pill</code></td></tr>
+      <tr><td>The four payment steps</td><td><code>StepRail</code> compact</td><td>The payment cycle today</td></tr>
+      <tr><td>Right-column cards and their lists</td><td><code>Card</code> (card padding), <code>RailSection</code>, <code>RailRow</code>, <code>DefList</code>, <code>TextAction</code></td><td>Contract, Party, anaesthetist and surgeon pages</td></tr>
+      <tr><td>Xero failing, books out of balance</td><td><code>Notice</code> error, warning</td><td>Ledger today, Contract page</td></tr>
+      <tr><td>The four ledger figures</td><td><code>StatTile</code> outlined, <code>tone="warning"</code></td><td>Ledger today, patient page</td></tr>
+      <tr><td>Approve before sending</td><td><code>Switch</code> sm</td><td>Invoices' approval view today (Phase 27)</td></tr>
+      <tr><td>Primary and secondary buttons</td><td><code>Button</code> desktop, compact</td><td>Everywhere</td></tr>
+      <tr><td>Invoice and credit note paper</td><td>The invoice document (stays custom, per the rule)</td><td>Invoice page today</td></tr>
+      <tr><td><b>New arrangement:</b> one grouped table for the Billing monitor</td><td><code>GroupRow</code> per anaesthetist in one <code>TableShell</code>, instead of a <code>Card</code> and table each</td><td>The Contracts catalogue already groups this way</td></tr>
+      <tr><td><b>New arrangement:</b> a List as a second-level heading over its Bookings</td><td><code>GroupRow level="sub"</code> carrying the List's date, hospital, a <code>Pill</code>, its counts and "Show all"</td><td>Contracts catalogue (Phase 47) uses the sub-level heading; today it holds a name, not counts</td></tr>
+      <tr><td><b>New arrangement:</b> StatTiles in a right column, two by two</td><td><code>StatTile</code> inside a rail <code>Card</code></td><td>Tiles run in a row today; two by two is only a grid change</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="moves">
+  <h2>Where everything on today's three screens goes</h2>
+  <p class="sub">Every panel, view and action has a home, and nothing is dropped. All the actions keep their store calls; only their place changes.</p>
+  <table class="invtable">
+    <thead><tr><th>Today</th><th>What it is</th><th>Goes to</th></tr></thead>
+    <tbody>
+      <tr><td>Billing monitor · per-anaesthetist cards and tables</td><td>The pipeline per List, Retry, Resolve and retry</td><td class="to">Billing: one table, a group heading per anaesthetist</td></tr>
+      <tr><td>Billing monitor · Awaiting approval rows</td><td>Repeat the Review queue</td><td class="to">Billing's right column: a short list that opens Review</td></tr>
+      <tr><td>Billing monitor · Xero sync queue</td><td>Retry now, Sent after waiting</td><td class="to">Xero tab</td></tr>
+      <tr><td>Billing monitor · Changed directly in Xero</td><td>Resolve side panel</td><td class="to">Xero tab, same side panel</td></tr>
+      <tr><td>Billing monitor · Payment cycle and runs table</td><td>Close, checks, approve BCTIs, send schedule, Run payables</td><td class="to">Payments, unchanged</td></tr>
+      <tr><td>Billing monitor · Events awaiting the run</td><td>Event fees not yet in a run</td><td class="to">Payments' right column</td></tr>
+      <tr><td>Billing monitor · AA fee strip</td><td>A hand-styled teaser</td><td class="to">AA fees tab</td></tr>
+      <tr><td>Billing monitor · AA Holding account</td><td>Read-only entries, OQ-125</td><td class="to">Ledger: the third choice of the segmented control</td></tr>
+      <tr><td>Billing monitor · four tiles</td><td>List counts mixed with a currency</td><td class="to out">Dropped: the filter pills and the result count say the same</td></tr>
+      <tr><td>AA fees screen and its settings tab</td><td>Monthly run, invoices, settings</td><td class="to">AA fees tab (invoices, run, settings)</td></tr>
+      <tr><td>Payment run and remittance pages</td><td>Record pages</td><td class="to">Payments › Week N › remittance</td></tr>
+      <tr><td>Invoices · All invoices</td><td>Search and 9 columns, credit notes nested</td><td class="to">Invoices: plus State, Owing, Kind and filters</td></tr>
+      <tr><td>Invoices · Awaiting approval view</td><td>Prepayment approval strip</td><td class="to">Invoices: a filter pill, with the switch in the right column</td></tr>
+      <tr><td>Invoice document and its rail</td><td>Paper and seven private rail cards</td><td class="to">Invoices › invoice: the paper and shared Cards</td></tr>
+      <tr><td>Credit note page</td><td>Record</td><td class="to">Invoices › credit note</td></tr>
+      <tr><td>Ledger · balance notice, equation, ten tiles</td><td>Two pairs of tiles show the same value</td><td class="to">Ledger's right column: one Notice, four StatTiles</td></tr>
+      <tr><td>Ledger · Pairs table</td><td>11 columns, Open or All</td><td class="to">Ledger: the "Invoice pairs" choice</td></tr>
+      <tr><td>Ledger · Receipts with no matching invoice</td><td>Allocate, Mark refunded</td><td class="to">Ledger's right column</td></tr>
+      <tr><td>Ledger · One anaesthetist</td><td>AA owes, owes AA, runs, credit trails</td><td class="to">Ledger › the anaesthetist's account page</td></tr>
+      <tr><td>Patient balances and follow-up</td><td>Already in People › Patients</td><td class="to out">Stays in People</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="open">
+  <h2>Open questions this touches</h2>
+  <p class="sub">None of them blocks the layout, but each changes a label or a step.</p>
+  <table class="invtable">
+    <thead><tr><th>Question</th><th>What it changes</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td><span class="storyid">OQ-47</span> payment day and the week</td><td>US-10.2.7 has a Friday close, Tuesday payment and problems held over. Greg proposed Monday to Sunday, Thursday payment, nothing carried forward, and no run unless the books balance. The StepRail's steps and days follow whichever wins.</td><td>Payments</td></tr>
+      <tr><td><span class="storyid">OQ-29</span> the BCTI's name and how many there are</td><td>IRD has renamed it; "Approve BCTIs" and the BCTIs column take the new name.</td><td>Payments</td></tr>
+      <tr><td><span class="storyid">OQ-60 · OQ-112</span> AA fee basis and date</td><td>Month end or the 20th, and what's counted, set the AA fee card's "Next run" and preview.</td><td>Payments</td></tr>
+      <tr><td><span class="storyid">OQ-125</span> the AA Holding account</td><td>Still provisional; the Ledger's Holding account view keeps today's provisional pill.</td><td>Ledger</td></tr>
+      <tr><td><span class="storyid">OQ-114 · OQ-122</span> delivery beyond email and post</td><td>The Delivery column and the invoice's Delivery card would add nib's portal.</td><td>Invoices</td></tr>
+      <tr><td>Who sends invoices, our system or Xero (10 Nov #5)</td><td>If Xero sends them, the "Sent" column becomes a Xero state.</td><td>Billing, Invoices</td></tr>
+      <tr><td>US-13.3.1's wording</td><td>It says the monitor is where Lists are approved. Pointing it at the Review queue is a <span class="mono">/update-requirements</span> change before the build.</td><td>Catalogue</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="cost">
+  <h2>What it costs to build</h2>
+  <p class="sub">The same path as Contracts (Phases 45 to 49) and People (50 to 57): a requirements change, then a build plan in phases. The panels already read the store themselves, so most of the work is moving them, not rewriting them, and no shared component changes.</p>
+  <div class="cost">
+    <div class="job"><span class="when">Routes</span><b class="big">6 + 4</b><p style="font-size:13.5px;color:var(--slate)">Six tab routes and four record routes under <span class="mono">/admin/finances</span>. Every old <span class="mono">/admin/invoices</span>, <span class="mono">/billing</span>, <span class="mono">/ledger</span> and <span class="mono">/credit-notes</span> URL redirects with replace, as People's did.</p></div>
+    <div class="job"><span class="when">Demo triggers</span><b class="big">~17</b><p style="font-size:13.5px;color:var(--slate)">10 bound to the Billing monitor screen, about 7 that name invoice routes, and 3 offered on both the monitor and the Ledger. Each gets one screen, and the <span class="mono">demoGuideSync</span> test stays green.</p></div>
+    <div class="job"><span class="when">Your sweep</span><b class="big">~76</b><p style="font-size:13.5px;color:var(--slate)">Capture recipes to re-point (32 Billing, 38 Invoices, 6 Ledger). "Billing monitor" appears 48 times in the master demo guide, and S3 Beats 6 and 7 are built on these screens.</p></div>
+    <div class="job"><span class="when">Kept</span><b class="big">~60</b><p style="font-size:13.5px;color:var(--slate)"><span class="mono">data-shot</span> hooks carried to the same elements, so recipes only need new URLs. Each tab renders only its own part, which should help the Billing monitor's 12 to 35 s Run payables and the Ledger's 3 to 4 s open.</p></div>
+  </div>
+</section>
+
+</main>
+<footer class="wrap">Exploration only, nothing built. Sources: the three screens' code and sweep screenshots (commit f46e82dd), the shared kit's README (<span class="mono">src/shared/ui/README.md</span>), the catalogue's EP-06, 08, 09, 10, FT-11.3, 13.2 and 13.3 stories and open questions, and notes up to 25 Nov 2026.</footer>
+
+<script>
+const TABS = {
+  billing: { url: '/admin/finances/billing', lede: 'Every authorised List from invoice to disbursement, by anaesthetist. Problems first: fix the Booking and retry.', act: '' },
+  invoices: { url: '/admin/finances/invoices', lede: 'Every invoice, prepayment, credit note and AA fee invoice AA has raised, and what is still owed on each.', act: '' },
+  payments: { url: '/admin/finances/payments', lede: 'Money out to the anaesthetists: this week\'s payment cycle and every run before it.', act: '' },
+  ledger: { url: '/admin/finances/ledger', lede: 'What AA holds, owes and is owed, for the whole practice and each anaesthetist.', act: '' },
+  xero: { url: '/admin/finances/xero', lede: "The link to AA's Xero: hand-offs waiting or failing, and invoices changed directly in Xero.", act: '' },
+  aafees: { url: '/admin/finances/aa-fees', lede: "AA's monthly fee invoices to the anaesthetists, and the next run.", act: '' },
+};
+const tabs = document.querySelectorAll('.tab');
+function show(id) {
+  tabs.forEach(t => { const on = t.dataset.tab === id; t.classList.toggle('on', on); t.setAttribute('aria-selected', on) });
+  document.querySelectorAll('.panelx').forEach(p => p.classList.toggle('on', p.id === 'p-' + id));
+  document.getElementById('url').textContent = TABS[id].url;
+  document.getElementById('lede').textContent = TABS[id].lede;
+  document.getElementById('headact').innerHTML = TABS[id].act;
+}
+tabs.forEach(t => t.addEventListener('click', () => show(t.dataset.tab)));
+document.querySelector('[role=tablist]').addEventListener('keydown', e => {
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+  const ids = Object.keys(TABS); const cur = ids.indexOf(document.querySelector('.tab.on').dataset.tab);
+  const next = ids[(cur + (e.key === 'ArrowRight' ? 1 : ids.length - 1)) % ids.length];
+  show(next); document.querySelector('.tab[data-tab="' + next + '"]').focus();
+});
+</script>
+</body>
+</html>
