@@ -8,12 +8,12 @@
       "46",
       "47"
     ],
-    "note": "Phase 45 is DONE and committed on master: the Contracts section, the Contract page, its cards, the price ranges table and the confirmed Disable. Next the two lanes start together, each in its own worktree: Lane A builds 46 then 49, Lane B builds 47 then 48 (docs/build-plan/LANES.md). Test 45 on 5173 first if you have not: the lanes build on it."
+    "note": "Phase 45 is DONE and committed on master: the Contracts section, the Contract page, its cards, the price ranges table and the confirmed Disable. The two lanes start now, together, each in its own worktree: Lane A builds 46 then 49, Lane B builds 47 then 48 (docs/build-plan/LANES.md). 45 is tested with 46 to 49 at the end, from TEST-45-49.md. Master's Playwright suite carries 48 failures from before 45 (docs/BACKLOG.md): a lane's gate should not read them as its own."
   },
   "guidance": {
     "as_of": "2026-11-25",
-    "headline": "Start Lane A and Lane B now. Phase 45 built the Contracts section and a page for every Contract.",
-    "headline_sub": "Phase 45 is done and committed on master, waiting for your test (its screenshots and demo guide wait for your sweep). Next, paste the Lane A prompt into one session and the Lane B prompt into another: Lane A builds 46 then 49, Lane B builds 47 then 48, each in its own worktree; the lane that finishes second joins them onto master.",
+    "headline": "Start Lane A and Lane B now: paste the Lane A prompt into one session and the Lane B prompt into another. Phase 45 built the Contracts section and a page for every Contract.",
+    "headline_sub": "Phase 45 is DONE and committed on master; no test after it (LANES.md). Lane A builds 46 then 49 and Lane B builds 47 then 48, each in its own worktree with a lighter gate per phase. The lane that finishes second joins them onto master, runs the full gate and one review over all four, and writes TEST-45-49.md: test 45 to 49 together on 5173 from that list.",
     "safe": {
       "46": "Lane A's first phase: it depends only on 45, which is DONE; 45 must be committed on master first (it is).",
       "47": "Lane B's first phase: it depends only on 45, which is DONE; 45 must be committed on master first (it is)."
