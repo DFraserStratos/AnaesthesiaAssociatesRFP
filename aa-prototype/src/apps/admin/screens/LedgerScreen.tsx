@@ -1,64 +1,48 @@
 /**
- * The Admin Ledger (catch-up Phase 36; US-13.2.1, US-08.3.4, US-08.3.5,
- * FT-08.3). The Billing Engine's own ledger, AA's system of record, at its
- * two scopes: the whole ledger (receivables outstanding, receipts held,
- * payables due, the AA Holding account and disbursed, with the balance
- * indicator, the anaesthetists out of balance and any receipt that matched no
- * invoice) and one anaesthetist (the same view scoped, with who owes whom said
- * in words). Every figure comes from `store/ledgerSelectors.ts`; the maths is
- * `domain/billing/ledger.ts`. No mockup draws a ledger: it extends the Admin
- * Review tile row and table and the Admin Day nav. URL-driven, so Back works.
+ * One anaesthetist's ledger (catch-up Phase 36; US-13.2.1, US-08.3.4, US-08.3.5,
+ * FT-08.3): the account under the Finances section's Ledger tab, with who owes
+ * whom said in words, their payment runs, credit trails and pairs. Every figure
+ * comes from `store/ledgerSelectors.ts`; the maths is `domain/billing/ledger.ts`.
  *
- * Build plan Phase 58 (D107, D110): the whole ledger is the Finances section's
- * Ledger tab (`below` takes the AA Holding account, under the tables); one
- * anaesthetist's ledger is their account, a record under Ledger with a Back link.
+ * Build plan Phase 64 (D107, D114): the whole ledger left this file for the
+ * Ledger tab (`finances/LedgerTab.tsx`, `LedgerRail.tsx`, `LedgerLists.tsx`, and
+ * the receipt dialogs in `LedgerReceiptDialogs.tsx`). What stays is the
+ * one-anaesthetist view for the account route, with a Back link to the Ledger in
+ * place of the Whole / One switch and the picker, until Phase 65 rebuilds the
+ * page on the record pattern.
  */
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useMemo, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { CircleCheck } from 'lucide-react'
 import { neutral } from '../../../theme/tokens'
-import type { Actor } from '../../../store'
 import {
-  allocateUnmatchedReceipt,
-  allocationRefusal,
   anaesthetistLedgerPosition,
-  anaesthetistsInRosterOrder,
-  anaesthetistsOutOfBalanceOf,
-  ledgerPositionOf,
-  counterpartyName,
   ledgerRows,
   ledgerRowTotals,
-  markUnmatchedRefunded,
   negativeInvoicesFor,
   negativeOpenAmount,
-  PAYMENT_CYCLE_COPY,
   paymentWeekFor,
   paymentWeeksForPair,
-  receivableOutstanding,
   replacementsOf,
   unmatchedReceiptRows,
   useAppStore,
   type LedgerRow,
 } from '../../../store'
 import { isBookingPair, isCreditedPair, type LedgerCheck } from '../../../domain/billing/ledger'
-import { Avatar } from '../../../shared/Avatar'
 import { ClickableRow, TableShell, Td, Th } from '../../../shared/table'
-import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
-import { Button, Card, EmptyState, FilterPills, FormError, Notice, OptionRow, PageHeader, Pill, SelectField, SlidingSegmentedControl, StatTile, TextAction, TextArea } from '../../../shared/ui'
-import { dateTimeMicroCap, drSurname, formatCurrency, plural } from '../../../shared/format'
+import { Card, EmptyState, FilterPills, Notice, PageHeader, Pill, StatTile, TextAction } from '../../../shared/ui'
+import { drSurname, formatCurrency, plural } from '../../../shared/format'
 import { CREDIT_LABELS } from '../../../shared/procedureEventCopy'
 import type { LedgerPair, NegativeInvoice, UnmatchedReceipt } from '../../../domain/types'
 import { FULL_SCALE } from '../../../domain/seed/fullScale/constants'
 import { Pager, pageOf } from '../components/Pager'
 import { LedgerPaymentRuns, StillToNetNotice } from '../components/LedgerPaymentRuns'
 import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
-import { AdminPage, PageToolbar } from '../components/AdminPage'
-import { FinancesPage } from './finances/FinancesSection'
-import { anaesthetistAccountPath, creditNotePath, financePath, invoicePath } from './finances/financePaths'
+import { AdminPage } from '../components/AdminPage'
+import { creditNotePath, financePath, invoicePath } from './finances/financePaths'
 import { ADMIN_PROSE_WIDTH } from '../layout'
 
-type Scope = 'whole' | 'one'
 type RowFilter = 'open' | 'all'
 
 const CHECK_TEXT: Record<LedgerCheck['code'], string> = {
@@ -77,48 +61,31 @@ const KIND_TEXT: Record<LedgerRow['kind'], string> = {
   aaFee: 'AA fee',
 }
 
-export function LedgerScreen({ actor, anaesthetistId, below }: { actor: Actor; anaesthetistId?: string; below?: ReactNode }) {
+export function LedgerScreen({ anaesthetistId }: { anaesthetistId: string }) {
   const navigate = useNavigate()
-  const [params] = useSearchParams()
-  const highlightId = params.get('pair')
   const billing = useAppStore((s) => s.billing)
   const weeksOfRow = (id: string): string => [...new Set(paymentWeeksForPair({ billing }, id).map((w) => w.week).filter((w): w is string => w !== undefined))].join(', ')
   const masters = useAppStore((s) => s.masters)
   const schedule = useAppStore((s) => s.schedule)
   const xero = useAppStore((s) => s.xero)
-  // Opened from an invoice (`?pair=`): show every row, so a paid-out pair is still there to highlight.
-  const [filter, setFilter] = useState<RowFilter>(highlightId !== null ? 'all' : 'open')
-  const [allocating, setAllocating] = useState<UnmatchedReceipt | null>(null)
-  const [refunding, setRefunding] = useState<UnmatchedReceipt | null>(null)
-
-  const scope: Scope = anaesthetistId !== undefined ? 'one' : 'whole'
-  const roster = useMemo(() => anaesthetistsInRosterOrder({ masters }), [masters])
-  const whole = useMemo(() => ledgerPositionOf({ billing }), [billing])
-  const one = useMemo(() => (anaesthetistId !== undefined ? anaesthetistLedgerPosition({ billing }, anaesthetistId) : undefined), [billing, anaesthetistId])
-  const outOfBalance = useMemo(() => anaesthetistsOutOfBalanceOf({ billing, masters }), [billing, masters])
+  const [filter, setFilter] = useState<RowFilter>('open')
+  const one = useMemo(() => anaesthetistLedgerPosition({ billing }, anaesthetistId), [billing, anaesthetistId])
   const unmatched = useMemo(() => unmatchedReceiptRows({ billing }), [billing])
   const rows = useMemo(
-    () => ledgerRows({ billing, masters, schedule, xero }, { ...(anaesthetistId !== undefined ? { anaesthetistId } : {}), openOnly: filter === 'open' }).filter(
+    () => ledgerRows({ billing, masters, schedule, xero }, { anaesthetistId, openOnly: filter === 'open' }).filter(
         // A credited pair is closed: nothing is outstanding on it (catch-up Phase 39), so Open leaves it out.
         (row) => filter !== 'open' || billing.ledger[row.id] === undefined || !isCreditedPair(billing.ledger[row.id]!),
       ),
     [billing, masters, schedule, xero, anaesthetistId, filter],
   )
-  const surname = anaesthetistId !== undefined ? drSurname(masters.anaesthetists[anaesthetistId]?.name ?? anaesthetistId) : ''
-  const firstOther = roster[0]?.registrationNumber
+  const surname = drSurname(masters.anaesthetists[anaesthetistId]?.name ?? anaesthetistId)
 
   // The footer totals the pairs; a transfer moves money already counted on its prepayment pair, so it is left out.
   const totals = useMemo(() => ledgerRowTotals(rows), [rows])
-  // The pairs page at 50 at full scale (catch-up Phase 43); `?pair=` lands on the page that holds it. Totals count every row.
   const pageSize = FULL_SCALE.pageSizes.ledger
-  // Null until the presenter pages: then `?pair=` decides the page (it lands on the highlighted row); after that, paging is explicit (review fix).
-  const [page, setPage] = useState<number | null>(null)
-  const highlightIndex = highlightId !== null ? rows.findIndex((r) => r.id === highlightId) : -1
-  const shownPage = page ?? (highlightIndex >= 0 ? Math.floor(highlightIndex / pageSize) + 1 : 1)
-  const pageRows = useMemo(() => pageOf(rows, pageSize, shownPage), [rows, pageSize, shownPage])
-  // Another anaesthetist's ledger starts on its first page.
-  useEffect(() => setPage(null), [anaesthetistId])
-  useScreenTiming('ledger', [rows, shownPage])
+  const [page, setPage] = useState(1)
+  const pageRows = useMemo(() => pageOf(rows, pageSize, page), [rows, pageSize, page])
+  useScreenTiming('ledger', [rows, page])
 
   function openRow(row: LedgerRow) {
     if (row.kind === 'aaFee') navigate(financePath('aa-fees'))
@@ -131,216 +98,49 @@ export function LedgerScreen({ actor, anaesthetistId, below }: { actor: Actor; a
     </span>
   )
 
-  const body = (
-    <>
-      <PageToolbar>
-        <SlidingSegmentedControl
-          ariaLabel="Scope"
-          size="sm"
-          layout="wrap"
-          value={scope}
-          options={[
-            { value: 'whole', label: 'Whole ledger' },
-            { value: 'one', label: 'One anaesthetist' },
-          ]}
-          onSelect={(next) => {
-            if (next === 'whole') navigate(financePath('ledger'))
-            else if (anaesthetistId === undefined && firstOther !== undefined) navigate(anaesthetistAccountPath(outOfBalance[0]?.anaesthetistId ?? firstOther))
-          }}
-        />
-        {scope === 'one' && (
-          <SelectField label="Anaesthetist" hideLabel size="compact" fill="surface" value={anaesthetistId ?? ''} onChange={(id) => navigate(anaesthetistAccountPath(id))} shot="ledger-anaesthetist-select">
-            {roster.map((a) => (
-              <option key={a.registrationNumber} value={a.registrationNumber}>
-                {drSurname(a.name)}
-              </option>
-            ))}
-          </SelectField>
-        )}
-      </PageToolbar>
+  // One anaesthetist's account is a record under Ledger: Back to the Ledger, no tab strip.
+  return (
+    <AdminPage mode="fluid" title="Ledger" sub={sub} back={{ label: 'Ledger', to: financePath('ledger'), shot: 'ledger-back' }}>
+      <BalanceIndicator
+        inBalance={one.inBalance}
+        headline={one.inBalance ? `${surname}'s ledger is in balance` : `${surname}'s ledger is out of balance by ${formatCurrency(one.imbalance)}`}
+        equation={`Collected ${formatCurrency(one.collected)} and held receipts ${formatCurrency(one.unmatchedHeld)} less paid out ${formatCurrency(one.paidOut)} and due now ${formatCurrency(one.dueNow)} = ${formatCurrency(one.imbalance)}`}
+        checks={one.checks}
+        unmatched={unmatched}
+        rows={billing.ledger}
+      />
 
-      {scope === 'whole' ? (
-        <BalanceIndicator
-          inBalance={whole.inBalance}
-          headline={whole.inBalance ? 'In balance · receipts held equal payables due' : `Out of balance by ${formatCurrency(whole.imbalance)}`}
-          // The equation as the ledger states it (catch-up Phase 39 adds the two credit terms; neither is an imbalance).
-          equation={`Receipts held ${formatCurrency(whole.receiptsHeld)} less payables due ${formatCurrency(whole.payablesDue)}, the AA Holding account ${formatCurrency(whole.holdingBalance)} and credits held for payers ${formatCurrency(whole.creditsHeldForPayers)}, plus negative invoices to net ${formatCurrency(whole.recoveryDueFromAnaesthetists)} = ${formatCurrency(whole.imbalance)}`}
-          checks={whole.checks}
-          unmatched={unmatched}
-          rows={billing.ledger}
-        />
-      ) : (
-        one !== undefined && (
-          <BalanceIndicator
-            inBalance={one.inBalance}
-            headline={one.inBalance ? `${surname}'s ledger is in balance` : `${surname}'s ledger is out of balance by ${formatCurrency(one.imbalance)}`}
-            equation={`Collected ${formatCurrency(one.collected)} and held receipts ${formatCurrency(one.unmatchedHeld)} less paid out ${formatCurrency(one.paidOut)} and due now ${formatCurrency(one.dueNow)} = ${formatCurrency(one.imbalance)}`}
-            checks={one.checks}
-            unmatched={unmatched}
-            rows={billing.ledger}
+      <div data-shot="ledger-tiles" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 1fr) minmax(0, 2fr)', gap: 12 }} data-shot-scope="anaesthetist">
+        <Card title={`AA owes ${surname}`} shot="ledger-aa-owes">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
+            <StatTile variant="quiet" label="Due now" value={formatCurrency(one.dueNow)} sub="AA holds it, ready to pay out" />
+            <StatTile variant="quiet" label="Awaiting collection" value={formatCurrency(one.awaitingCollection)} sub="Billed, not yet paid by the payer" />
+            <StatTile variant="quiet" label="Total" value={formatCurrency(one.owedToThem)} />
+          </div>
+        </Card>
+        <Card title={`${surname} owes AA`} shot="ledger-owes-aa">
+          <StatTile
+            variant="quiet"
+            label="Unpaid AA fees"
+            value={formatCurrency(one.theyOweAa)}
+            sub={<TextAction size="sm" flush onClick={() => navigate(financePath('aa-fees'))}>Monthly fee invoices</TextAction>}
           />
-        )
-      )}
-
-      {scope === 'whole' ? (
-        <div data-shot="ledger-tiles" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-            <StatTile variant="outlined" label="Receivables outstanding" value={formatCurrency(whole.receivablesOutstanding)} sub="Owed by billable parties" />
-            <StatTile variant="outlined" label="Receipts held" value={formatCurrency(whole.receiptsHeld)} sub="Money AA holds for anaesthetists" />
-            <StatTile
-              variant="outlined"
-              label="Payables due"
-              value={formatCurrency(whole.payablesDue)}
-              sub={whole.payablesDue > 0 ? <TextAction size="sm" flush onClick={() => navigate(financePath('payments'))}>Paid in this week's payment run on Payments</TextAction> : 'No payables due'}
-            />
-            <StatTile variant="outlined" label="Disbursed" value={formatCurrency(whole.disbursed)} sub="Paid out to anaesthetists" />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-            <StatTile variant="outlined" label="Awaiting collection" value={formatCurrency(whole.awaitingCollection)} sub="Billed, not yet paid by the payer" />
-            <StatTile
-              variant="outlined"
-              label="AA Holding account"
-              value={formatCurrency(whole.holdingBalance)}
-              sub={<TextAction size="sm" flush onClick={() => document.querySelector('[data-shot="billing-prepay-holding"]')?.scrollIntoView({ block: 'start' })}>Pre-payments for procedures not yet done</TextAction>}
-            />
-            <StatTile
-              variant="outlined"
-              label="AA fees outstanding"
-              value={formatCurrency(whole.aaFees.outstanding)}
-              sub={<TextAction size="sm" flush onClick={() => navigate(financePath('aa-fees'))}>Unpaid monthly fee invoices</TextAction>}
-            />
-            <StatTile variant="outlined" label="Not yet in Xero" value={String(whole.notInXero)} sub={whole.notInXero === 1 ? 'pair waiting for its mirror' : 'pairs waiting for their mirror'} />
-          </div>
-          {/* The credit terms (catch-up Phase 39; US-08.6.5, OQ-42): what payers paid on credited invoices, and what was paid out on them to net. */}
-          <div data-shot="ledger-credit-tiles" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-            <StatTile variant="outlined" label={CREDIT_LABELS.creditsHeldForPayers} value={formatCurrency(whole.creditsHeldForPayers)} sub={CREDIT_LABELS.creditsHeldSub} />
-            <StatTile variant="outlined" label={CREDIT_LABELS.negativeToNet} value={formatCurrency(whole.recoveryDueFromAnaesthetists)} sub={CREDIT_LABELS.negativeToNetSub} />
-          </div>
-          {whole.recoveryDueFromAnaesthetists > 0 && (
-            <div data-shot="ledger-still-to-net" style={{ fontSize: 12.5, color: neutral.slate }}>{PAYMENT_CYCLE_COPY.stillToNetCaption}</div>
-          )}
+        </Card>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, alignContent: 'start' }}>
+          <StatTile variant="outlined" label="Collected for them" value={formatCurrency(one.collected)} />
+          <StatTile variant="outlined" label="Paid out to them" value={formatCurrency(one.paidOut)} />
         </div>
-      ) : (
-        one !== undefined && (
-          <div data-shot="ledger-tiles" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 1fr) minmax(0, 2fr)', gap: 12 }} data-shot-scope="anaesthetist">
-            <Card title={`AA owes ${surname}`} shot="ledger-aa-owes">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
-                <StatTile variant="quiet" label="Due now" value={formatCurrency(one.dueNow)} sub="AA holds it, ready to pay out" />
-                <StatTile variant="quiet" label="Awaiting collection" value={formatCurrency(one.awaitingCollection)} sub="Billed, not yet paid by the payer" />
-                <StatTile variant="quiet" label="Total" value={formatCurrency(one.owedToThem)} />
-              </div>
-            </Card>
-            <Card title={`${surname} owes AA`} shot="ledger-owes-aa">
-              <StatTile
-                variant="quiet"
-                label="Unpaid AA fees"
-                value={formatCurrency(one.theyOweAa)}
-                sub={<TextAction size="sm" flush onClick={() => navigate(financePath('aa-fees'))}>Monthly fee invoices</TextAction>}
-              />
-            </Card>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, alignContent: 'start' }}>
-              <StatTile variant="outlined" label="Collected for them" value={formatCurrency(one.collected)} />
-              <StatTile variant="outlined" label="Paid out to them" value={formatCurrency(one.paidOut)} />
-            </div>
-          </div>
-        )
-      )}
+      </div>
 
-      {scope === 'whole' && (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <PageHeader size="section" level={2} title="Anaesthetists out of balance" />
-          {outOfBalance.length === 0 ? (
-            <EmptyState variant="card" shot="ledger-anaesthetists-out-of-balance">Every anaesthetist's ledger is in balance.</EmptyState>
-          ) : (
-            <TableShell label="Anaesthetists out of balance" shot="ledger-anaesthetists-out-of-balance">
-              <thead>
-                <tr>
-                  <Th>Anaesthetist</Th>
-                  <Th align="right">Out by</Th>
-                  <Th>Why</Th>
-                  <Th align="right"> </Th>
-                </tr>
-              </thead>
-              <tbody>
-                {outOfBalance.map((row) => (
-                  <ClickableRow key={row.anaesthetistId} onOpen={() => navigate(anaesthetistAccountPath(row.anaesthetistId))} data-anaesthetist-id={row.anaesthetistId}>
-                    <Td>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-                        <Avatar name={masters.anaesthetists[row.anaesthetistId]?.name ?? row.name} size={28} />
-                        <span style={{ fontWeight: 600 }}>{row.name}</span>
-                      </span>
-                    </Td>
-                    <Td align="right" mono bold>{formatCurrency(row.imbalance)}</Td>
-                    <Td>{row.checks.map((c) => `${CHECK_TEXT[c.code]}, ${formatCurrency(c.amount)}`).join('; ')}</Td>
-                    <Td align="right">
-                      <TextAction size="sm" flush onClick={() => navigate(anaesthetistAccountPath(row.anaesthetistId))}>Open</TextAction>
-                    </Td>
-                  </ClickableRow>
-                ))}
-              </tbody>
-            </TableShell>
-          )}
-        </section>
-      )}
-
-      {scope === 'whole' && unmatched.length > 0 && (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <PageHeader size="section" level={2} title="Receipts with no matching invoice" />
-          <TableShell label="Receipts with no matching invoice" shot="ledger-unmatched">
-            <thead>
-              <tr>
-                <Th>Received</Th>
-                <Th>Reference</Th>
-                <Th>Named anaesthetist</Th>
-                <Th align="right">Amount</Th>
-                <Th>Status</Th>
-                <Th align="right"> </Th>
-              </tr>
-            </thead>
-            <tbody>
-              {unmatched.map((u) => (
-                <tr key={u.id} data-unmatched-id={u.id} style={{ borderTop: `1px solid ${neutral.line}` }}>
-                  <Td nowrap>{dateTimeMicroCap(u.atISO)}</Td>
-                  <Td mono>{u.reference}</Td>
-                  <Td>{u.anaesthetistId !== undefined ? drSurname(masters.anaesthetists[u.anaesthetistId]?.name ?? u.anaesthetistId) : 'None'}</Td>
-                  <Td align="right" mono>{formatCurrency(u.amount)}</Td>
-                  <Td>
-                    {u.status === 'held' ? (
-                      <Pill tone="warning" size="sm">Held</Pill>
-                    ) : u.status === 'allocated' ? (
-                      <Pill tone="success" size="sm">Allocated to {billing.ledger[u.allocatedToPairId ?? '']?.receivable.number ?? 'an invoice'}</Pill>
-                    ) : (
-                      <Pill tone="neutral" size="sm" title={u.note}>Refunded{u.note !== undefined ? `: ${u.note}` : ''}</Pill>
-                    )}
-                  </Td>
-                  <Td align="right" nowrap>
-                    {u.status === 'held' && (
-                      <span style={{ display: 'inline-flex', gap: 14 }}>
-                        <TextAction size="sm" flush onClick={() => setAllocating(u)} shot="ledger-allocate">Allocate to invoice</TextAction>
-                        <TextAction size="sm" flush onClick={() => setRefunding(u)} shot="ledger-refund">Mark refunded</TextAction>
-                      </span>
-                    )}
-                  </Td>
-                </tr>
-              ))}
-            </tbody>
-          </TableShell>
-        </section>
-      )}
-
-      {scope === 'one' && anaesthetistId !== undefined && (
-        <>
-          <StillToNetNotice anaesthetistId={anaesthetistId} surname={surname} />
-          <LedgerPaymentRuns anaesthetistId={anaesthetistId} />
-          <CreditTrails anaesthetistId={anaesthetistId} surname={surname} />
-        </>
-      )}
+      <StillToNetNotice anaesthetistId={anaesthetistId} surname={surname} />
+      <LedgerPaymentRuns anaesthetistId={anaesthetistId} />
+      <CreditTrails anaesthetistId={anaesthetistId} surname={surname} />
 
       <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <PageHeader
           size="section"
           level={2}
-          title={scope === 'whole' ? 'Pairs' : `${surname}'s pairs`}
+          title={`${surname}'s pairs`}
           actions={
             <FilterPills
               ariaLabel="Which pairs"
@@ -367,7 +167,6 @@ export function LedgerScreen({ actor, anaesthetistId, below }: { actor: Actor; a
                 <Th>Kind</Th>
                 <Th>Patient</Th>
                 <Th>Payer</Th>
-                {scope === 'whole' && <Th>Payee</Th>}
                 <Th align="right">Amount</Th>
                 <Th align="right">Received</Th>
                 <Th align="right">Released</Th>
@@ -377,14 +176,7 @@ export function LedgerScreen({ actor, anaesthetistId, below }: { actor: Actor; a
             </thead>
             <tbody>
               {pageRows.map((row) => (
-                <ClickableRow
-                  key={row.id}
-                  onOpen={() => openRow(row)}
-                  today={highlightId === row.id}
-                  {...(highlightId === row.id ? { 'data-highlighted': 'true' } : {})}
-                  data-pair-id={row.id}
-                  data-pair-kind={row.kind}
-                >
+                <ClickableRow key={row.id} onOpen={() => openRow(row)} data-pair-id={row.id} data-pair-kind={row.kind}>
                   <Td mono nowrap>{row.receivableNumber ?? 'None'}</Td>
                   <Td mono nowrap>{row.payableNumber ?? 'None'}</Td>
                   <Td nowrap>
@@ -399,9 +191,6 @@ export function LedgerScreen({ actor, anaesthetistId, below }: { actor: Actor; a
                   </Td>
                   <Td clip style={{ maxWidth: 130 }}>{row.patientName ?? ''}</Td>
                   <Td clip style={{ maxWidth: 150 }}>{row.payerName ?? ''}</Td>
-                  {scope === 'whole' && (
-                    <Td nowrap>{row.payeeIsHolding ? 'AA Holding account' : row.payeeAnaesthetistId !== undefined ? drSurname(masters.anaesthetists[row.payeeAnaesthetistId]?.name ?? row.payeeAnaesthetistId) : row.kind === 'aaFee' ? 'AA' : 'None'}</Td>
-                  )}
                   <Td align="right" mono>{formatCurrency(row.amount)}</Td>
                   <Td align="right" mono>{formatCurrency(row.received)}</Td>
                   <Td align="right" mono>{formatCurrency(row.released)}</Td>
@@ -417,7 +206,7 @@ export function LedgerScreen({ actor, anaesthetistId, below }: { actor: Actor; a
                 </ClickableRow>
               ))}
               <tr style={{ borderTop: `1px solid ${neutral.line}` }}>
-                <Td bold colSpan={scope === 'whole' ? 6 : 5}>
+                <Td bold colSpan={5}>
                   {plural(rows.length, 'row')}
                   {rows.some((r) => r.kind === 'transfer') && <span style={{ fontWeight: 400, color: neutral.mist }}> · totals leave out transfers</span>}
                 </Td>
@@ -430,34 +219,14 @@ export function LedgerScreen({ actor, anaesthetistId, below }: { actor: Actor; a
             </tbody>
           </TableShell>
         )}
-        {rows.length > pageSize && <Pager total={rows.length} size={pageSize} page={shownPage} onPage={setPage} shot="ledger-pager" />}
+        {rows.length > pageSize && <Pager total={rows.length} size={pageSize} page={page} onPage={setPage} shot="ledger-pager" />}
       </section>
 
       <div data-shot="ledger-footnotes" style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11.5, color: neutral.mist, maxWidth: ADMIN_PROSE_WIDTH }}>
-        <span>Receipts held is the money AA holds for anaesthetists, including pre-payments received, which sit in the AA Holding account until the List is authorised.</span>
         <span>One payable per invoice, for the same amount.</span>
         <span>At full practice volume this table pages.</span>
       </div>
-
-      {below}
-
-      <AllocateDialog key={`allocate-${allocating?.id ?? 'none'}`} receipt={allocating} actor={actor} onClose={() => setAllocating(null)} />
-      <RefundDialog key={`refund-${refunding?.id ?? 'none'}`} receipt={refunding} actor={actor} onClose={() => setRefunding(null)} />
-    </>
-  )
-
-  // One anaesthetist's account is a record under Ledger: Back to the Ledger, no tab strip.
-  if (anaesthetistId !== undefined) {
-    return (
-      <AdminPage mode="fluid" title="Ledger" sub={sub} back={{ label: 'Ledger', to: financePath('ledger') }}>
-        {body}
-      </AdminPage>
-    )
-  }
-  return (
-    <FinancesPage tab="ledger" mode="fluid" sub={sub}>
-      {body}
-    </FinancesPage>
+    </AdminPage>
   )
 }
 
@@ -503,104 +272,6 @@ function BalanceIndicator({
         </ul>
       )}
     </Notice>
-  )
-}
-
-function AllocateDialog({ receipt, actor, onClose }: { receipt: UnmatchedReceipt | null; actor: Actor; onClose: () => void }) {
-  const { Overlay } = useSurface()
-  const billing = useAppStore((s) => s.billing)
-  const masters = useAppStore((s) => s.masters)
-  const [error, setError] = useState<string | null>(null)
-  const options = useMemo(() => {
-    if (receipt === null) return []
-    const open = Object.values(billing.ledger).filter((p) => isBookingPair(p) && allocationRefusal({ billing }, receipt.id, p.id) === null)
-    // The named anaesthetist's receivables first, when the receipt names one.
-    return open
-      .map((p) => {
-        const pair = p as Extract<typeof p, { kind: 'procedure' | 'prePayment' }>
-        return { pair, named: receipt.anaesthetistId !== undefined && pair.anaesthetistId === receipt.anaesthetistId }
-      })
-      .sort((a, b) => Number(b.named) - Number(a.named) || a.pair.receivable.number.localeCompare(b.pair.receivable.number))
-  }, [billing, receipt])
-
-  function allocate(pairId: string) {
-    if (receipt === null) return
-    const out = allocateUnmatchedReceipt(useAppStore, actor, receipt.id, pairId)
-    if (!out.ok) {
-      setError(out.message)
-      return
-    }
-    setError(null)
-    onClose()
-  }
-
-  return (
-    <Overlay open={receipt !== null} onClose={onClose}>
-      <div data-shot="ledger-allocate-dialog" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <OverlayHeader title="Allocate to invoice" description={receipt !== null ? `${formatCurrency(receipt.amount)} received ${dateTimeMicroCap(receipt.atISO)}, reference ${receipt.reference}. Choose the invoice it pays; only invoices whose balance covers it are listed.` : undefined} />
-        {options.length === 0 ? (
-          <EmptyState variant="inline">No open invoice has a balance that covers this receipt. Mark it refunded instead.</EmptyState>
-        ) : (
-          <div role="list" aria-label="Invoices this receipt can pay" style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 360, overflowY: 'auto' }}>
-            {options.map(({ pair, named }) => (
-              <div key={pair.id} role="listitem">
-                {/* The named anaesthetist's invoices come first, marked "Named" (the receipt's reference names them). */}
-                <OptionRow
-                  onClick={() => allocate(pair.id)}
-                  data-allocate-pair={pair.id}
-                  trailing={
-                    <span className="mono">
-                      {named && <span style={{ fontFamily: 'inherit', marginRight: 8 }}>Named</span>}
-                      {formatCurrency(receivableOutstanding(pair))}
-                    </span>
-                  }
-                >
-                  <span className="mono">{pair.receivable.number}</span>
-                  {' · '}
-                  {billing.invoices[pair.invoiceId]?.billedTo?.name ?? (pair.receivable.counterparty.kind === 'anaesthetist' ? '' : counterpartyName({ masters }, pair.receivable.counterparty, pair.bookingId))}
-                  {' · '}
-                  <span style={{ color: neutral.slate }}>{pair.anaesthetistId !== undefined ? drSurname(masters.anaesthetists[pair.anaesthetistId]?.name ?? '') : 'AA Holding account'}</span>
-                </OptionRow>
-              </div>
-            ))}
-          </div>
-        )}
-        <FormError message={error} />
-        <SheetActions primary={<Button variant="secondary" size="desktop" onClick={onClose}>Cancel</Button>} />
-      </div>
-    </Overlay>
-  )
-}
-
-function RefundDialog({ receipt, actor, onClose }: { receipt: UnmatchedReceipt | null; actor: Actor; onClose: () => void }) {
-  const { Overlay } = useSurface()
-  const [note, setNote] = useState('')
-  const [error, setError] = useState<string | null>(null)
-
-  function refund() {
-    if (receipt === null) return
-    const out = markUnmatchedRefunded(useAppStore, actor, receipt.id, note)
-    if (!out.ok) {
-      setError(out.message)
-      return
-    }
-    setNote('')
-    setError(null)
-    onClose()
-  }
-
-  return (
-    <Overlay open={receipt !== null} onClose={onClose}>
-      <div data-shot="ledger-refund-dialog" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <OverlayHeader title="Mark refunded" description={receipt !== null ? `${formatCurrency(receipt.amount)}, reference ${receipt.reference}. Say how the money went back.` : undefined} />
-        <TextArea label="Note" value={note} onChange={setNote} />
-        <FormError message={error} />
-        <SheetActions
-          secondary={<Button variant="secondary" size="desktop" onClick={onClose}>Cancel</Button>}
-          primary={<Button variant="primary" size="desktop" block onClick={refund} shot="ledger-refund-confirm">Mark refunded</Button>}
-        />
-      </div>
-    </Overlay>
   )
 }
 

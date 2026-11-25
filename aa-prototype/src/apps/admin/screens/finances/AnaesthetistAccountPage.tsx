@@ -2,14 +2,12 @@
 
 import { Navigate, useParams } from 'react-router-dom'
 import { useAppStore } from '../../../../store'
-import { useAdminOutlet } from '../../outlet'
 import { LedgerScreen } from '../LedgerScreen'
 import { financePath } from './financePaths'
 
 export function AnaesthetistAccountPage() {
-  const { actor } = useAdminOutlet()
   const { anaesthetistId = '' } = useParams()
   const known = useAppStore((s) => s.masters.anaesthetists[anaesthetistId] !== undefined)
   if (!known) return <Navigate to={financePath('ledger')} replace />
-  return <LedgerScreen actor={actor} anaesthetistId={anaesthetistId} />
+  return <LedgerScreen anaesthetistId={anaesthetistId} />
 }

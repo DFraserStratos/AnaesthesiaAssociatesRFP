@@ -28,11 +28,12 @@ function issueCredit() {
   if (!run.ok) throw new Error(run.message)
 }
 
-function renderLedger(anaesthetistId?: string) {
+/** One anaesthetist's account (build plan Phase 64: the whole ledger is the Ledger tab, `finances/LedgerTab.test.tsx`). */
+function renderLedger(anaesthetistId: string) {
   return render(
     <MemoryRouter>
       <SurfaceProvider variant="web">
-        <LedgerScreen actor={OFFICE} {...(anaesthetistId !== undefined ? { anaesthetistId } : {})} />
+        <LedgerScreen anaesthetistId={anaesthetistId} />
       </SurfaceProvider>
     </MemoryRouter>,
   )
@@ -42,21 +43,15 @@ beforeEach(() => useAppStore.setState(freshAppState()))
 afterEach(() => cleanup())
 
 describe('the ledger after a credit', () => {
-  it('the whole view shows Credits held for payers and Negative invoices to net, with the equation extended, still in balance', () => {
+  it("one anaesthetist's account stays in balance after the credit", () => {
     issueCredit()
-    const { container } = renderLedger()
-    const tiles = container.querySelector('[data-shot="ledger-credit-tiles"]')!
-    expect(tiles.textContent).toContain(CREDIT_LABELS.creditsHeldForPayers)
-    expect(tiles.textContent).toContain(CREDIT_LABELS.negativeToNet)
-    const balance = container.querySelector('[data-shot="ledger-balance"]')!
-    expect(balance.getAttribute('data-in-balance')).toBe('true')
-    expect(balance.textContent).toContain('credits held for payers')
-    expect(balance.textContent).toContain('plus negative invoices to net')
+    const { container } = renderLedger(SOUTER_ACTOR.anaesthetistId!)
+    expect(container.querySelector('[data-shot="ledger-balance"]')!.getAttribute('data-in-balance')).toBe('true')
   })
 
   it("one anaesthetist's view lists the trail in order: debit, credit, contra, new debit", () => {
     issueCredit()
-    const { container } = renderLedger(SOUTER_ACTOR.anaesthetistId)
+    const { container } = renderLedger(SOUTER_ACTOR.anaesthetistId!)
     const rows = [...container.querySelectorAll('[data-shot="ledger-credit-trail"] tbody tr')]
     expect(rows.map((r) => r.getAttribute('data-trail-kind'))).toEqual(['debit', 'credit', 'contra', 'newDebit'])
     expect(rows[0]!.textContent).toContain('AA-2026-H03')
@@ -66,7 +61,7 @@ describe('the ledger after a credit', () => {
   })
 
   it('shows no credit trail for an anaesthetist with no credits', () => {
-    const { container } = renderLedger(SOUTER_ACTOR.anaesthetistId)
+    const { container } = renderLedger(SOUTER_ACTOR.anaesthetistId!)
     expect(container.querySelector('[data-shot="ledger-credit-trail"]')).toBeNull()
   })
 })
