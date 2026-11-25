@@ -1,69 +1,84 @@
 /**
- * The patient record (catch-up Phase 40, item 12; US-11.1.1, US-11.3.1,
- * US-11.3.2, US-11.3.3, US-13.2.2): `/admin/people/patients/:nhi` (build plan Phase 53). The NHI is the
- * key and the identifier; the internal id is never shown.
+ * The patient's page (catch-up Phase 40; build plan Phases 53 and 57; US-11.1.1, US-11.3.1,
+ * US-11.3.2, US-11.3.3, US-13.2.2): `/admin/people/patients/:nhi`, on the record pattern every People
+ * page shares (D104). The NHI is the key and sits beside the name; the internal id is never shown.
  *
- * A `fluid` record: a main column (the three balance tiles in the Admin Review
- * anatomy, the By payer line, 15a's warnings, the Invoices, the Bookings and
- * the Follow-up log) beside the page rail, which reads as the patient's file:
- * Details differ and Details. Back goes to Patients. Everything reads `patientRecordView`, which reads 36's
- * ledger, never `state.xero`.
+ * A `fluid` record with the side panel: the main column holds the balance tiles, the Needs the office
+ * card (the patient's reasons from `patientsNeedingOffice`, each with its action in place: Clear with a
+ * note, Done on a due reminder, Keep or Use on details that differ), the Invoices across every
+ * anaesthetist and the Follow-up log. The side panel holds Details, edited in place as one audited
+ * `patient.update` (`EditableCard` with the form `EditPatientSheet` shares), and the Bookings, a few
+ * with See all. No tabs (US-11.1.1 and D104 win over the design page's). Back returns to the list the
+ * office came from. Everything reads `patientRecordView`, which reads 36's ledger, never `state.xero`.
  */
 
 import { Fragment, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   clearBalanceWarningWithNote,
   completeFollowUp,
   creditNoteForInvoice,
+  editPatient,
   logPatientFollowUp,
   openBalanceWarnings,
   patientByNhi,
+  patientNeedReasons,
   patientRecordView,
   resendInvoiceFromRecord,
   resolvePatientDetails,
   useAppStore,
   type Actor,
   type FollowUpKind,
+  type PatientBookingRow,
   type PatientInvoiceRow,
+  type PatientNeedReason,
   type PatientRecordView,
 } from '../../../../store'
-import type { PatientDetailField, PatientFollowUp } from '../../../../domain/types'
-import { Button, Card, DefList, DefRow, EmptyState, FormError, Pill, ResultLine, SelectField, StatTile, TextAction, TextArea, TextField } from '../../../../shared/ui'
+import type { Patient, PatientDetailField, PatientFollowUp } from '../../../../domain/types'
+import { Button, Card, DefList, DefRow, EditableCard, EmptyState, FormError, Pill, RailSection, ResultLine, SelectField, StatTile, TextAction, TextArea, TextField, useCardEdit, type RailSectionRow } from '../../../../shared/ui'
 import { Segmented } from '../../../../shared/ui'
 import { TableShell, Td, Th } from '../../../../shared/table'
-import { useBookingWarnings, WarningsPanel, WarningTriangle, ClearWarningButton, StrengthPill } from '../../../../shared/warnings'
+import { useBookingWarnings, WarningsPanel, ClearWarningButton, StrengthPill } from '../../../../shared/warnings'
 import type { Warning } from '../../../../domain/warnings'
-import { EditPatientSheet } from '../../../../shared/flows'
+import { PatientFormFields, patientDraftBlocked, patientDraftOf, patientPatchOf, type PatientDraft } from '../../../../shared/flows'
 import { formatDob, formatMoney, plainDate, plural, shortDay, stampText } from '../../../../shared/format'
 import { formatPostalAddress } from '../../../../domain/billing/payer'
 import { sessionText } from '../../../../domain/outOfHours'
 import { neutral } from '../../../../theme/tokens'
 import { UNASSIGNED } from '../../../../shared/scheduleTerms'
 import { AdminPage, PageBody } from '../../components/AdminPage'
-import { peoplePath } from '../../peoplePaths'
-import { usePatientSlices } from './PatientsScreen'
-import { balanceText, DetailChoiceTable, detailsFromText, InvoiceStatusPill } from './patientParts'
+import { patientsBackPath, usePatientSlices } from './PatientsScreen'
+import { balanceText, DetailChoiceTable, detailsFromText, InvoiceStatusPill, reasonText } from './patientParts'
 import { RegisterRefreshPanel, RegisterRefreshRow } from './RegisterRefresh'
 
 const NOT_SUPPLIED = <span style={{ color: neutral.mist }}>Not supplied</span>
 
+/** How many Bookings the side panel shows before See all. */
+const RAIL_BOOKINGS = 3
+
 export function PatientRecord({ nhi, actor, onOpenBooking }: { nhi: string; actor: Actor; onOpenBooking?: (dateISO: string, bookingId: string) => void }) {
   const slices = usePatientSlices()
   const view = useMemo(() => patientRecordView(slices, nhi), [slices, nhi])
+  const reasons = useMemo(() => patientNeedReasons(slices, nhi), [slices, nhi])
   // The record itself, for the actions that take it (never shown).
   const patient = useAppStore((s) => patientByNhi(s, nhi))
   const navigate = useNavigate()
+  const location = useLocation()
   const openBooking = onOpenBooking ?? ((dateISO: string, bookingId: string) => navigate(`/admin/day/${dateISO}/bookings/${bookingId}`))
   const composerRef = useRef<HTMLTextAreaElement | null>(null)
   const [linkInvoice, setLinkInvoice] = useState<string>('')
 
   if (view === undefined || patient === undefined) return null
 
+  const logFollowUp = (invoiceId?: string) => {
+    if (invoiceId !== undefined) setLinkInvoice(invoiceId)
+    composerRef.current?.focus()
+  }
+
   const rail = (
     <>
-      {view.pendingDetails !== undefined && view.pendingDetails.differences.length > 0 && <DetailsDifferCard view={view} patientId={patient.hiddenInternalId} actor={actor} />}
       <DetailsCard view={view} patient={patient} actor={actor} />
+      <BookingsSection view={view} />
     </>
   )
 
@@ -72,7 +87,7 @@ export function PatientRecord({ nhi, actor, onOpenBooking }: { nhi: string; acto
       mode="fluid"
       shot="admin-patient-record"
       data-patient-nhi={view.patient.nhi}
-      back={{ label: 'Patients', to: peoplePath('patients') }}
+      back={{ label: 'Patients', to: patientsBackPath(location.state) }}
       title={view.patient.name}
       aside={
         <Pill size="lg" mono shot="patient-record-nhi" ariaLabel={`NHI ${view.patient.nhi}`}>
@@ -88,17 +103,8 @@ export function PatientRecord({ nhi, actor, onOpenBooking }: { nhi: string; acto
     >
       <PageBody gap={18} rail={rail} railLabel="Patient details">
         <BalanceTiles view={view} patientId={patient.hiddenInternalId} />
-        <RecordWarnings view={view} actor={actor} />
-        <InvoicesCard
-          view={view}
-          actor={actor}
-          onLogFollowUp={(invoiceId) => {
-            setLinkInvoice(invoiceId)
-            composerRef.current?.focus()
-          }}
-          onOpenBooking={openBooking}
-        />
-        <BookingsCard view={view} onOpenBooking={openBooking} />
+        {reasons.length > 0 && <NeedsOfficeCard view={view} patient={patient} reasons={reasons} actor={actor} onLogFollowUp={() => logFollowUp()} />}
+        <InvoicesCard view={view} actor={actor} onLogFollowUp={logFollowUp} onOpenBooking={openBooking} />
         <FollowUpLogCard view={view} actor={actor} linkInvoice={linkInvoice} onLinkInvoice={setLinkInvoice} composerRef={composerRef} />
       </PageBody>
     </AdminPage>
@@ -153,13 +159,71 @@ function BalanceTiles({ view, patientId }: { view: PatientRecordView; patientId:
 }
 
 // ---------------------------------------------------------------------------
-// Open balance warnings on upcoming Bookings (15a's WarningsPanel)
+// Needs the office (build plan Phase 57; US-11.3.3, DM-10)
 // ---------------------------------------------------------------------------
 
-function RecordWarnings({ view, actor }: { view: PatientRecordView; actor: Actor }) {
+/**
+ * The patient's reasons to need the office, from the same read as the Needs follow-up list and the
+ * People badge, each with its action in place. Resolving the last one takes the patient off the list
+ * and drops the badge by one, with no extra code: they read the same selector.
+ */
+function NeedsOfficeCard({ view, patient, reasons, actor, onLogFollowUp }: { view: PatientRecordView; patient: Patient; reasons: readonly PatientNeedReason[]; actor: Actor; onLogFollowUp: () => void }) {
+  const today = useAppStore((s) => s.clock.todayISO)
+  return (
+    <Card title="Needs the office" padding="panel" tone="warning" shot="patient-needs-office" data-reasons={reasons.map((r) => r.kind).join(' ')}>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {reasons.map((reason, i) => {
+          const t = reasonText(reason, today)
+          return (
+            <div key={reason.kind} data-reason={reason.kind} style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: i === 0 ? '0 0 14px' : '14px 0', borderTop: i === 0 ? 'none' : `1px solid ${neutral.line}` }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 600, color: neutral.ink }}>
+                    {t.title}
+                    {reason.kind === 'balance' && <StrengthPill strength={reason.strength} size="sm" />}
+                  </span>
+                  <span style={{ fontSize: 12.5, color: neutral.slate }}>{t.detail}</span>
+                </span>
+                <span style={{ display: 'inline-flex', gap: 14, alignItems: 'center' }}>
+                  {reason.kind !== 'detailsDiffer' && <TextAction size="sm" flush onClick={onLogFollowUp} shot="patient-needs-log">Log a follow-up</TextAction>}
+                  {reason.kind === 'followUpDue' && <DueDone followUpId={reason.followUpId} text={reason.text} actor={actor} />}
+                </span>
+              </div>
+              {reason.kind === 'balance' && <RecordWarnings patientId={patient.hiddenInternalId} actor={actor} />}
+              {reason.kind === 'detailsDiffer' && view.pendingDetails !== undefined && <DetailsDiffer view={view} patientId={patient.hiddenInternalId} actor={actor} />}
+            </div>
+          )
+        })}
+      </div>
+    </Card>
+  )
+}
+
+function DueDone({ followUpId, text, actor }: { followUpId: string; text: string; actor: Actor }) {
+  const [error, setError] = useState<string | null>(null)
+  return (
+    <>
+      <Button
+        variant="secondary"
+        size="compact"
+        shot="patient-needs-done"
+        ariaLabel={`Mark done: ${text}`}
+        onClick={() => {
+          const res = completeFollowUp(useAppStore, actor, followUpId)
+          setError(res.ok ? null : res.message)
+        }}
+      >
+        Done
+      </Button>
+      <FormError message={error} variant="inline" />
+    </>
+  )
+}
+
+/** The open balance warnings on the patient's Bookings (15a's WarningsPanel), each with Clear and a note. */
+function RecordWarnings({ patientId, actor }: { patientId: string; actor: Actor }) {
   const slices = usePatientSlices()
-  const upcomingIds = useMemo(() => new Set(view.upcoming.map((b) => b.bookingId)), [view.upcoming])
-  const bookingIds = useMemo(() => [...new Set(openBalanceWarnings(slices).filter((r) => upcomingIds.has(r.bookingId)).map((r) => r.bookingId))], [slices, upcomingIds])
+  const bookingIds = useMemo(() => [...new Set(openBalanceWarnings(slices).filter((r) => r.patientId === patientId).map((r) => r.bookingId))], [slices, patientId])
   if (bookingIds.length === 0) return null
   return (
     <div data-shot="patient-warnings" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -354,72 +418,16 @@ function SendHistory({ row }: { row: PatientInvoiceRow }) {
   )
 }
 
-// ---------------------------------------------------------------------------
-// Bookings
-// ---------------------------------------------------------------------------
-
-function BookingRowTriangle({ bookingId }: { bookingId: string }) {
-  const warnings = useBookingWarnings(bookingId)
-  return <WarningTriangle warnings={warnings} size="sm" />
-}
-
-function BookingsCard({ view, onOpenBooking }: { view: PatientRecordView; onOpenBooking: ((dateISO: string, bookingId: string) => void) | undefined }) {
-  const all = [...view.upcoming.map((b) => ({ b, upcoming: true })), ...view.past.map((b) => ({ b, upcoming: false }))]
-  return (
-    <Card title="Bookings" padding="panel" shot="patient-bookings">
-      {all.length === 0 ? (
-        <EmptyState variant="inline">No Bookings for this patient.</EmptyState>
-      ) : (
-        <TableShell label="Bookings" density="compact" minWidth={760} nested>
-          <thead>
-            <tr>
-              <Th>When</Th>
-              <Th>List</Th>
-              <Th>Hospital</Th>
-              <Th>Anaesthetist</Th>
-              <Th />
-            </tr>
-          </thead>
-          <tbody>
-            {all.map(({ b, upcoming }) => (
-              <tr key={b.bookingId} data-booking-id={b.bookingId} data-upcoming={upcoming ? 'true' : 'false'} style={upcoming ? undefined : { color: neutral.slate }}>
-                <Td nowrap>
-                  {onOpenBooking !== undefined ? (
-                    <TextAction size="sm" flush onClick={() => onOpenBooking(b.dateISO, b.bookingId)}>{shortDay(b.dateISO)}</TextAction>
-                  ) : (
-                    shortDay(b.dateISO)
-                  )}
-                  {upcoming && <span style={{ marginLeft: 6 }}><Pill size="sm" tone="neutral">Upcoming</Pill></span>}
-                </Td>
-                <Td nowrap>
-                  {sessionText(b.session)}
-                  {b.scheduledTime !== undefined && <span className="mono" style={{ color: neutral.slate }}> {b.scheduledTime}</span>}
-                </Td>
-                <Td>{b.hospital}</Td>
-                <Td>{b.anaesthetist ?? <span style={{ color: neutral.mist }}>{UNASSIGNED}</span>}</Td>
-                <Td align="right"><BookingRowTriangle bookingId={b.bookingId} /></Td>
-              </tr>
-            ))}
-          </tbody>
-        </TableShell>
-      )}
-    </Card>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Details differ, Details
-// ---------------------------------------------------------------------------
-
-function DetailsDifferCard({ view, patientId, actor }: { view: PatientRecordView; patientId: string; actor: Actor }) {
+/** Details received that differ from the record: Keep or Use each, then Apply (`resolvePatientDetails`). */
+function DetailsDiffer({ view, patientId, actor }: { view: PatientRecordView; patientId: string; actor: Actor }) {
   const pending = view.pendingDetails!
   const [choices, setChoices] = useState<Partial<Record<PatientDetailField, 'keep' | 'useIncoming'>>>({})
   const [error, setError] = useState<string | null>(null)
   const from = detailsFromText(pending)
   return (
-    <Card title="Details differ" padding="card" tone="warning" shot="patient-details-differ">
+    <div data-shot="patient-details-differ" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <span style={{ fontSize: 12.5 }}>
-        From {from}, {stampText(pending.receivedAtISO)}. Keep the record's value or use the incoming one, then apply.
+        From {from}, {stampText(pending.receivedAtISO)}. The record is unchanged: keep its value or use the incoming one, then apply.
       </span>
       <DetailChoiceTable
         rows={pending.differences}
@@ -446,14 +454,22 @@ function DetailsDifferCard({ view, patientId, actor }: { view: PatientRecordView
           Apply
         </Button>
       </div>
-    </Card>
+    </div>
   )
 }
 
-function DetailsCard({ view, patient, actor }: { view: PatientRecordView; patient: Parameters<typeof EditPatientSheet>[0]['patient']; actor: Actor }) {
-  const [editing, setEditing] = useState(false)
+// ---------------------------------------------------------------------------
+// The side panel: Details (edited in place) and Bookings
+// ---------------------------------------------------------------------------
+
+function DetailsCard({ view, patient, actor }: { view: PatientRecordView; patient: Patient; actor: Actor }) {
   const [refreshing, setRefreshing] = useState(false)
   const [refreshed, setRefreshed] = useState<string | null>(null)
+  const rights = { nhi: false, ethnicity: actor.role === 'office' }
+  const edit = useCardEdit<PatientDraft, PatientDraft>(
+    () => patientDraftOf(patient),
+    (draft) => editPatient(useAppStore, actor, patient.hiddenInternalId, patientPatchOf(draft, patient, rights)),
+  )
   const p = view.patient
   const ethnicity =
     p.ethnicityCode !== undefined ? (
@@ -465,54 +481,89 @@ function DetailsCard({ view, patient, actor }: { view: PatientRecordView; patien
     ) : (
       NOT_SUPPLIED
     )
+  const draft = edit.draft
   return (
-    <Card
+    <EditableCard
       title="Details"
-      padding="card"
       shot="patient-details"
-      action={<TextAction size="sm" flush onClick={() => setEditing(true)} label="Edit patient details">Edit</TextAction>}
+      editable
+      editing={draft !== null}
+      onEdit={edit.start}
+      onCancel={edit.cancel}
+      onSave={() => {
+        if (draft !== null && !patientDraftBlocked(draft, patient, rights)) edit.save(draft)
+      }}
+      error={edit.error}
     >
-      <DefList gap={8}>
-        <DefRow label="Name" labelWidth={104}>{p.name}</DefRow>
-        <DefRow label="Date of birth" labelWidth={104} mono={p.dobISO !== ''}>{p.dobISO === '' ? NOT_SUPPLIED : formatDob(p.dobISO)}</DefRow>
-        <DefRow label="Phone" labelWidth={104}>{p.phone ?? NOT_SUPPLIED}</DefRow>
-        <DefRow label="Email" labelWidth={104}>{p.email ?? NOT_SUPPLIED}</DefRow>
-        <DefRow label="Address" labelWidth={104}>{p.postalAddress !== undefined ? formatPostalAddress(p.postalAddress) : NOT_SUPPLIED}</DefRow>
-        <DefRow label="Ethnicity" labelWidth={104} shot="patient-ethnicity">{ethnicity}</DefRow>
-        {view.source !== undefined && (
-          <DefRow label="Details from" labelWidth={104}>
-            {view.source.who}, <span className="mono">{stampText(view.source.atISO)}</span>
-          </DefRow>
-        )}
-        {/* Catch-up Phase 40a: refresh from the NHI register (hidden without an NHI, which the required NHI makes rare). */}
-        {patient.nhi.trim() !== '' && (
-          <RegisterRefreshRow
-            {...(patient.registerRefreshedAtISO !== undefined ? { lastRefreshedAtISO: patient.registerRefreshedAtISO } : {})}
-            open={refreshing}
-            onRefresh={() => {
-              setRefreshed(null)
-              setRefreshing(true)
-            }}
-          />
-        )}
-      </DefList>
-      {refreshing && (
-        <RegisterRefreshPanel
-          patientId={patient.hiddenInternalId}
-          nhi={patient.nhi}
-          patientName={patient.name}
-          actor={actor}
-          onClose={() => setRefreshing(false)}
-          onDone={(line) => {
-            setRefreshing(false)
-            setRefreshed(line)
-          }}
-        />
+      {draft !== null ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <PatientFormFields draft={draft} onChange={edit.setDraft} rights={rights} />
+        </div>
+      ) : (
+        <>
+          <DefList gap={8}>
+            <DefRow label="Name" labelWidth={104}>{p.name}</DefRow>
+            <DefRow label="Date of birth" labelWidth={104} mono={p.dobISO !== ''}>{p.dobISO === '' ? NOT_SUPPLIED : formatDob(p.dobISO)}</DefRow>
+            <DefRow label="Phone" labelWidth={104}>{p.phone ?? NOT_SUPPLIED}</DefRow>
+            <DefRow label="Email" labelWidth={104}>{p.email ?? NOT_SUPPLIED}</DefRow>
+            <DefRow label="Address" labelWidth={104}>{p.postalAddress !== undefined ? formatPostalAddress(p.postalAddress) : NOT_SUPPLIED}</DefRow>
+            <DefRow label="Ethnicity" labelWidth={104} shot="patient-ethnicity">{ethnicity}</DefRow>
+            {view.source !== undefined && (
+              <DefRow label="Details from" labelWidth={104}>
+                {view.source.who}, <span className="mono">{stampText(view.source.atISO)}</span>
+              </DefRow>
+            )}
+            {/* Catch-up Phase 40a: refresh from the NHI register (hidden without an NHI, which the required NHI makes rare). */}
+            {patient.nhi.trim() !== '' && (
+              <RegisterRefreshRow
+                {...(patient.registerRefreshedAtISO !== undefined ? { lastRefreshedAtISO: patient.registerRefreshedAtISO } : {})}
+                open={refreshing}
+                onRefresh={() => {
+                  setRefreshed(null)
+                  setRefreshing(true)
+                }}
+              />
+            )}
+          </DefList>
+          {refreshing && (
+            <RegisterRefreshPanel
+              patientId={patient.hiddenInternalId}
+              nhi={patient.nhi}
+              patientName={patient.name}
+              actor={actor}
+              onClose={() => setRefreshing(false)}
+              onDone={(line) => {
+                setRefreshing(false)
+                setRefreshed(line)
+              }}
+            />
+          )}
+          <ResultLine line={refreshed} onDismiss={() => setRefreshed(null)} shot="patient-register-done" />
+        </>
       )}
-      <ResultLine line={refreshed} onDismiss={() => setRefreshed(null)} shot="patient-register-done" />
-      <EditPatientSheet open={editing} patient={patient} actor={actor} onClose={() => setEditing(false)} />
-    </Card>
+    </EditableCard>
   )
+}
+
+function bookingRow(b: PatientBookingRow, upcoming: boolean): RailSectionRow {
+  return {
+    key: b.bookingId,
+    to: `/admin/day/${b.dateISO}/bookings/${b.bookingId}`,
+    title: `${shortDay(b.dateISO)} · ${sessionText(b.session)}${b.scheduledTime !== undefined ? ` ${b.scheduledTime}` : ''}`,
+    sub: (
+      <>
+        {b.hospital} · {b.anaesthetist ?? UNASSIGNED}
+        {!upcoming && ' · Past'}
+      </>
+    ),
+    data: { 'data-booking-id': b.bookingId, 'data-upcoming': upcoming ? 'true' : 'false' },
+  }
+}
+
+/** The patient's Bookings: the next few, See all for the rest, past ones included (most recent first). */
+function BookingsSection({ view }: { view: PatientRecordView }) {
+  const rows = [...view.upcoming.map((b) => bookingRow(b, true)), ...view.past.map((b) => bookingRow(b, false))]
+  return <RailSection title="Bookings" countNoun="Bookings" rows={rows} limit={RAIL_BOOKINGS} expandable empty="No Bookings for this patient." shot="patient-bookings" />
 }
 
 // ---------------------------------------------------------------------------

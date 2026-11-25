@@ -9,9 +9,9 @@
 import { Pill, SelectField } from '../../../../shared/ui'
 import { TableShell, Td, Th } from '../../../../shared/table'
 import { neutral } from '../../../../theme/tokens'
-import { formatMoney } from '../../../../shared/format'
+import { formatMoney, shortDay } from '../../../../shared/format'
 import { toCents } from '../../../../domain/billing/money'
-import type { PatientInvoiceRow } from '../../../../store'
+import type { PatientInvoiceRow, PatientNeedReason } from '../../../../store'
 import type { PatientPendingDetails } from '../../../../domain/types'
 
 /** Where held details came from, following who entered them: "the hospital", "the surgeon", "the office" or the anaesthetist by name. */
@@ -32,6 +32,36 @@ export function detailsFromText(pending: Pick<PatientPendingDetails, 'source' | 
 export function balanceText(amount: number): string {
   if (toCents(amount) < 0) return `In credit ${formatMoney(-amount)}`
   return formatMoney(amount)
+}
+
+/**
+ * A reason a patient needs the office, in the office's words (build plan Phase 57; US-11.3.3): a
+ * title ("Balance over 90 days", "Follow-up due today", "Details differ") and a second line. The one
+ * home of these words: the Needs follow-up row and the patient's Needs the office card read it.
+ */
+export function reasonText(reason: PatientNeedReason, todayISO: string): { title: string; detail: string } {
+  switch (reason.kind) {
+    case 'balance': {
+      const title = reason.strength === 'strong' ? `Balance over ${reason.thresholdDays} days` : toCents(reason.net) < 0 ? 'In credit' : 'Balance owing'
+      const detail =
+        toCents(reason.net) < 0
+          ? `${balanceText(reason.net)} held for the patient`
+          : reason.owingCount > 0
+            ? `${formatMoney(reason.net)} owing, oldest ${reason.oldestAgeDays} days`
+            : formatMoney(reason.net)
+      return { title, detail }
+    }
+    case 'followUpDue': {
+      const title = reason.dueDateISO === todayISO ? 'Follow-up due today' : `Follow-up due ${shortDay(reason.dueDateISO)}`
+      const more = reason.more > 0 ? `, and ${reason.more} more` : ''
+      return { title, detail: `${reason.text}${reason.invoiceNumber !== undefined ? ` · ${reason.invoiceNumber}` : ''}${more}` }
+    }
+    case 'detailsDiffer': {
+      const fields = reason.fields.map((f, i) => (i === 0 ? DETAIL_FIELD_LABELS[f] : DETAIL_FIELD_LABELS[f].toLowerCase()))
+      const named = fields.length <= 1 ? (fields[0] ?? 'Details') : `${fields.slice(0, -1).join(', ')} and ${fields[fields.length - 1]}`
+      return { title: 'Details differ', detail: `${named} from ${detailsFromText(reason)}` }
+    }
+  }
 }
 
 export const INVOICE_STATUS_LABELS: Record<PatientInvoiceRow['status'], string> = {

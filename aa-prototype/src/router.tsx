@@ -181,7 +181,7 @@ const routeTree = (
             <Route path="patients">
               <Route index element={<Navigate to={peoplePath('patients')} replace />} />
               <Route path="waiting" element={<Navigate to="/admin/intake/waiting" replace />} />
-              <Route path="follow-up" element={<Navigate to={peoplePath('patients', { show: 'followUp' })} replace />} />
+              <Route path="follow-up" element={<Navigate to={peoplePath('patients', { filter: 'follow-up' })} replace />} />
               <Route path=":nhi" element={<AdminPersonRedirect kind="patient" />} />
             </Route>
             {/* A credit note's document (catch-up Phase 39), under Invoices in the side nav. */}

@@ -7,9 +7,10 @@ import { runDemoAction } from './demoActions'
  * her) and the invoice table with Paid and Unpaid rows, and never the internal
  * patient id. Waiting for NHI (on Intake since Phase 51) takes the "Receive list with a missing NHI"
  * demo action; Add NHI JKL1188 on Losa Tuilagi's row matches her record (no
- * second one is made) and the row leaves the view. The Follow-up view lists
- * the reminder logged on the record (Done takes it off) and the balance
- * warning the Add NHI raised (Clear takes it off). Heather Sinclair's record
+ * second one is made) and the row leaves the view. Needs follow-up (build plan
+ * Phase 57) lists the patient with the reminder logged on her page, once, and
+ * Done on the page takes her off; the balance warning the Add NHI raised is
+ * cleared on Losa's page and she leaves the list. Heather Sinclair's record
  * reads in credit with the Credited invoice. Master data's Patient balance
  * warning refuses 0, saves 20 and restores 90. Each test starts from a fresh
  * browser context, so from the seed. Shots land in `visual/shots/`.
@@ -24,7 +25,7 @@ async function open(page: Page, path: string): Promise<void> {
 }
 
 test('search finds Sarah Mitchell; her record shows the strong balance and both invoice states, never the internal id', async ({ page }) => {
-  await open(page, '/admin/people/patients')
+  await open(page, '/admin/people/patients?filter=all')
   await expect(page.locator('[data-shot="admin-patients"]')).toBeVisible()
   const search = page.getByLabel('Search patients')
 
@@ -37,7 +38,7 @@ test('search finds Sarah Mitchell; her record shows the strong balance and both 
   await search.fill(MITCHELL)
   await expect(row).toBeVisible()
   await page.screenshot({ path: 'visual/shots/admin-patients-search.png', fullPage: true })
-  await row.getByRole('button', { name: /Open the record of Sarah Mitchell/ }).click()
+  await row.getByRole('button', { name: /Open the page of Sarah Mitchell/ }).click()
 
   await expect(page).toHaveURL(new RegExp(`/admin/people/patients/${MITCHELL}$`))
   const record = page.locator('[data-shot="admin-patient-record"]')
@@ -96,12 +97,12 @@ test('Waiting for NHI: the missing-NHI list arrives, Add NHI JKL1188 matches Los
   await expect(rows).toHaveCount(before + 1)
 
   // One Losa Tuilagi record exists.
-  await open(page, '/admin/people/patients')
+  await open(page, '/admin/people/patients?filter=all')
   await page.getByLabel('Search patients').fill('Losa Tuilagi')
   await expect(page.locator('[data-shot="patient-search-table"] [data-patient-nhi="JKL1188"]')).toHaveCount(1)
 })
 
-test('Follow-up: log a call and a reminder for today on the record, Done takes it off; Clear takes a balance warning off', async ({ page }) => {
+test('Needs follow-up: a reminder for today puts Sarah on the list once; Done on her page takes her off; Clear on the page takes a balance warning off', async ({ page }) => {
   await open(page, `/admin/people/patients/${MITCHELL}`)
   const log = page.locator('[data-shot="patient-follow-up-log"]')
   await expect(log).toBeVisible()
@@ -116,14 +117,27 @@ test('Follow-up: log a call and a reminder for today on the record, Done takes i
   await log.locator('[data-shot="patient-follow-up-save"]').click()
   await expect(log.locator('[data-kind="reminder"]').filter({ hasText: 'Check the Friday payment arrived' })).toBeVisible()
 
-  await open(page, '/admin/people/patients?show=followUp')
-  await expect(page.locator('[data-shot="admin-patient-follow-up"]')).toBeVisible()
-  const due = page.locator('[data-shot="patient-follow-ups-due"]')
-  await expect(due).toContainText('Check the Friday payment arrived')
-  await expect(due).toContainText('Sarah Mitchell')
+  // The old Follow-up link lands on the filter (D100).
+  await open(page, '/admin/patients/follow-up')
+  await expect(page).toHaveURL(/\/admin\/people\/patients\?filter=follow-up$/)
+  await expect(page.locator('[data-shot="patients-needs-office"]')).toBeVisible()
+  const sarah = page.locator(`[data-shot="patient-search-table"] tr[data-patient-nhi="${MITCHELL}"]`)
+  await expect(sarah).toHaveCount(1)
+  await expect(sarah).toHaveAttribute('data-reasons', /followUpDue/)
+  await expect(sarah).toContainText('Follow-up due today')
+  await expect(sarah.getByRole('button', { name: /Clear|Done/ })).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/admin-patient-follow-up.png', fullPage: true })
-  await due.getByRole('button', { name: 'Mark done: Check the Friday payment arrived' }).click()
-  await expect(page.locator('[data-shot="patient-follow-up-due-empty"]')).toBeVisible()
+  await sarah.locator('td').first().click()
+
+  await expect(page).toHaveURL(new RegExp(`/admin/people/patients/${MITCHELL}$`))
+  const needs = page.locator('[data-shot="patient-needs-office"]')
+  await expect(needs).toContainText('Follow-up due today')
+  await needs.getByRole('button', { name: 'Mark done: Check the Friday payment arrived' }).click()
+  await expect(needs).toHaveCount(0)
+  // Back returns to the filter she was opened from; she has left it.
+  await page.getByRole('link', { name: /Patients/ }).first().click()
+  await expect(page).toHaveURL(/filter=follow-up/)
+  await expect(page.locator(`tr[data-patient-nhi="${MITCHELL}"]`)).toHaveCount(0)
 
   // A balance warning to clear: Add NHI on Losa Tuilagi's waiting row puts her Booking on the List with a mild one.
   await open(page, '/admin/intake/waiting')
@@ -135,14 +149,17 @@ test('Follow-up: log a call and a reminder for today on the record, Done takes i
   await expect(sheet.locator('[data-shot="add-nhi-done"]')).toBeVisible()
   await sheet.getByRole('button', { name: 'Done' }).click()
 
-  await open(page, '/admin/people/patients?show=followUp')
-  const warnings = page.locator('[data-shot="patient-follow-up-warnings"]')
-  const losaWarning = warnings.locator('tr', { hasText: 'Losa Tuilagi' })
-  await expect(losaWarning).toBeVisible()
-  await expect(losaWarning.locator('[data-strength="mild"]')).toBeVisible()
-  await expect(losaWarning).toContainText('$380.00')
-  await losaWarning.getByRole('button', { name: 'Clear (optional) the balance warning for Losa Tuilagi' }).click()
-  await expect(page.locator('[data-shot="patient-follow-up-warnings"] tr', { hasText: 'Losa Tuilagi' })).toHaveCount(0)
+  await open(page, '/admin/people/patients?filter=follow-up')
+  const losa = page.locator('tr[data-patient-nhi="JKL1188"]')
+  await expect(losa).toHaveCount(1)
+  await expect(losa.locator('[data-reason="balance"]')).toBeVisible()
+  await losa.locator('td').first().click()
+  const card = page.locator('[data-shot="patient-needs-office"]')
+  await expect(card.locator('[data-strength="mild"]').first()).toBeVisible()
+  await card.getByRole('button', { name: /^Clear/ }).first().click()
+  await expect(card).toHaveCount(0)
+  await open(page, '/admin/people/patients?filter=follow-up')
+  await expect(page.locator('tr[data-patient-nhi="JKL1188"]')).toHaveCount(0)
 })
 
 test("Heather Sinclair's record reads in credit, with the Credited invoice", async ({ page }) => {

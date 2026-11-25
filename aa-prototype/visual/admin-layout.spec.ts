@@ -25,7 +25,7 @@ const PAGES = [
   '/admin/invoices',
   '/admin/people/patients',
   '/admin/intake/waiting',
-  '/admin/people/patients?show=followUp',
+  '/admin/people/patients?filter=follow-up',
   '/admin/people/anaesthetists',
   '/admin/people/surgeons',
   '/admin/people/specialties',
