@@ -50,6 +50,7 @@ that need work are repeated here.
 
 ## Prototype: Admin Day, Review, Bookings and intake
 
+- Redraw AR-21 (Booking/List update process) for the Intake decisions of 26 Nov (Notes 2026-11-26 · Donald intake front door #17): feeds and the rooms' mailbox arrive on their own, rooms' PDFs are first release, changes are accepted until the List is authorised (not "submitted"). `svg-diagram` skill. S to M
 - US-13.4.1's People section (anaesthetists, surgeons, specialties and patients, each with a page; surgeon groups dropped) is not built: Master data still holds them. Being planned as Phases 50 onward (Lane C); run `/update-build-plan` if that plan is not committed. L
 - Catalogue wording for the new Admin Day rail (work card, readings): US-13.8.1 says the pool is a panel "beside the to-do list" (now a tab alongside it); drop US-01.6.2's "space reserved beside the day view" example (Draft Lists live in the grid band and their page). Run `/update-requirements`. S (owner)
 - Rename Notifications to Notices across the rail tab, side nav and page, as the rail ideas page proposed (`docs/explorations/admin-day-rail-ideas.html`). `apps/admin/components/RailWorkCard.tsx`, `SideNav.tsx`, `screens/NotificationsScreen.tsx`. S (owner)
