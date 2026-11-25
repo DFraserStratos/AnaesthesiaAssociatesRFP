@@ -1,17 +1,17 @@
 {
- "generated": "2026-11-25",
- "catalogue_commit": "67cba2ce0b3da7a08add0105b5805a384908adfe",
+ "generated": "2026-11-26",
+ "catalogue_commit": "f885f67c44ed2e0a94c9181e407ed4c58f6faf3a",
  "seeded": "64b3dff7aef0a2a290e6f6a50f42a28d3874c540",
  "method": "Per-epic Sonnet reviewers against six prototype maps, each review re-checked by an adversarial Sonnet verifier; plus a verified data-model delta and a verified reverse check.",
  "counts": {
-  "Contradicts": 8,
-  "Partial": 13,
-  "Missing": 0,
+  "Contradicts": 11,
+  "Partial": 20,
+  "Missing": 1,
   "OutOfScope": 0,
-  "Matches": 3,
+  "Matches": 4,
   "Grouping": 3
  },
- "in_scope": 27,
+ "in_scope": 39,
  "themes": [],
  "epics": [
   {
@@ -88,10 +88,10 @@
    "id": "EP-06",
    "title": "Prepayment",
    "status": "Verify (3)",
-   "observations": "",
+   "observations": "Only US-06.3.1 was graded. Its behaviour is complete in the code (catch-up Phases 22, 27, 27a and 41). The remaining difference is structural and comes from the 26 Nov Finances-section requirements: Admin Invoices becomes the Invoices tab of a Finances section, and Awaiting approval becomes one of its filters (US-13.3.3, US-08.4.7). That should be built under those stories. This story then needs only entry links re-pointed (routes.tsx:178 and :228, notification and demo-trigger routes) and demo-guide wording. OQ-120 (naming the anaesthetist) and OQ-73 are open but state no requirement the prototype breaks: PREPAYMENT_NAMES_ANAESTHETIST = true is one constant, flagged provisional in the demo guide. OQ-140 (payer per Procedure) is already followed. Demo guide S4 Beat 1 (Invoices, Awaiting approval, switch) and the Day-view rail text 'awaiting approval on Invoices' will change when the section lands. The six US-06.3.1 screenshots will go stale, which is a sweep matter, not per-change work.",
    "counts": {
     "Contradicts": 0,
-    "Partial": 0,
+    "Partial": 1,
     "Missing": 0,
     "OutOfScope": 0,
     "Matches": 0,
@@ -116,9 +116,9 @@
    "id": "EP-08",
    "title": "Billing/Invoice Engine and internal ledger",
    "status": "Agreed (4)",
-   "observations": "",
+   "observations": "US-08.4.7 depends on the Finances section (US-13.3.3), which exists only as requirements and an exploration. The Invoices screen is still a standalone nav section with its own /admin/invoices routes, so moving it into a Finances tab and renaming routes is a structural change shared with the other Finances stories (Payments, AA fees, Billing, Ledger tabs). Amount received and still owed already live in the ledger (receivables, receipts, receivableOutstanding); the list needs a selector joining them to each invoice and credit note, an age from the demo clock (DEMO_TODAY 2026-11-24), a state filter (Unpaid default) and a broader search (payable number, case reference, patient, anaesthetist). Changing the default to Unpaid affects any demo beat that lands on Invoices to find a paid invoice, and InvoicesSearch.test.tsx and demoGuideSync may need updating. AA fee invoices are already excluded, matching the story. Awaiting approval is currently a tab and the story wants it as a filter beside the state filters. Status is Verify (3) and the notes say the change has not yet been seen by AA, so the grading is against the text as written.",
    "counts": {
-    "Contradicts": 0,
+    "Contradicts": 1,
     "Partial": 0,
     "Missing": 0,
     "OutOfScope": 0,
@@ -144,13 +144,13 @@
    "id": "EP-10",
    "title": "Payments, disbursement and AA fees",
    "status": "Agreed (4)",
-   "observations": "",
+   "observations": "All four gradings upheld after re-opening the catalogue files and code. The substance of EP-10's four in-scope stories is built: US-10.2.4 as the Xero simulator's bank reconciliation (fully matches), US-10.2.7 as the Payment cycle panel plus run and remittance pages, US-10.3.1 and US-10.3.3 as the AA fees screen with a Fee settings sub-tab. The gaps since the 64b3dff7 baseline are structural, driven by the 26 Nov Finances section (US-13.3.3): grep finds no Finances anywhere in aa-prototype/src, no /admin/finances route, and SideNav.tsx:81-85 still has separate Invoices, Billing monitor and Ledger entries. So 10.2.7 (Payments tab, run pages under it, back link), 10.3.1 (AA fees tab) and 10.3.3 (settings beside invoices and run) all depend on building the Finances shell first, with old /admin/billing/* addresses still opening. The one content-level gap is US-10.3.1's 'opens on unpaid' criterion: selectors.ts:1639-1654 sorts newest-first with no unpaid-first ordering. The 'no number when nothing is due' rule for Payments and AA fees belongs to US-13.3.3, not these stories. Open questions OQ-149 (where an unplaceable receipt is parked; not graded as a gap), OQ-60, OQ-112 and OQ-47 mean the prototype's provisional readings (fee at month end, BCTI counted once when paid, separate invoice, weekly Friday/Monday/Tuesday days) are only as settled as those questions. Demo-guide impact: docs/demo-guide/03-demo-script.md routes and the S3 beats that say 'Admin > Billing monitor', 'Payment cycle panel', 'Open AA fee invoices > Fee settings' (and the S4 hold-out beat) would change navigation wording and screenshots only; no scripted values (week names, totals, remittance content) change. Demo triggers keyed to the /admin/billing and /admin/billing/aa-fees routes in registry.ts would need their route lists updated when the tabs move. Existing triggers (stage-payment-week, stage-bank-mismatch, run-scheduled-fee-run, seed-month-of-bctis, record-fee-payment, xero-bulk-remittance) already cover every automatic or external behaviour in this epic's in-scope stories.",
    "counts": {
     "Contradicts": 0,
-    "Partial": 0,
+    "Partial": 3,
     "Missing": 0,
     "OutOfScope": 0,
-    "Matches": 0,
+    "Matches": 1,
     "Grouping": 0
    }
   },
@@ -186,11 +186,11 @@
    "id": "EP-13",
    "title": "Admin oversight and master data",
    "status": "Agreed (4)",
-   "observations": "Structural: the People section (nav entry, routes and redirects for /admin/masters?view=anaesthetists|surgeons|specialties|surgeonGroups, the old profile routes and /admin/patients/*) and a shared record-page pattern lifted from the Contract page (EditableCard and useCardEdit in ContractCards.tsx) are the shared foundation for US-13.4.1, 13.4.4 and 13.6.2, so build them once. Surgeon-group removal touches the SurgeonGroup type, seed groups, the retire lifecycle (masterLifecycle), store/mutate and appStore, the Master data registry and sub-nav, catalogue examples (mastersExamples), audit labels and tests, plus a PERSIST_VERSION bump; the Party of kind surgeonGroup stays. The anaesthetist record and the surgeon page both edit through one sheet, so the per-card edit pattern applies to both, not just surgeons. Closed by Phases 46 to 49 (not on master): only Parties and Funding tags as real Contracts tabs (48); none of the People items. US-13.5.3 depends on US-12.1.6 (last day, active, sign-in refusal) and the open OQ-83 and OQ-147; the mobile sign-in is hard-wired to Dr Souter, so a demo path (a Last day field and a 'Try signing in on a date' control) is needed to show the inactive rule. US-13.6.2's side panel needs Contract links and List queries by surgeon, and the Surgeons list needs the shared Pager plus a search box and specialty and Active/Retired filters. OQ-143 (HPI CPN becoming required) and OQ-148 (whether AA keeps any surgeon-grouping record) are unresolved: the prototype already allows a blank HPI CPN, and the written no-group position is the requirement. Demo-guide impact (left to the owner's sweep): docs/demo-guide/03-demo-script.md line 111 lists Surgeons, Specialties and Surgeon groups as Master data views, and the S1 beat starts at the mobile sign-in, which must keep the Dr Souter demo account working.",
+   "observations": "All six items graded on code re-read. The prototype has every underlying screen (Billing monitor, Invoices, Ledger, payment cycle, AA fees, Xero queue and divergence panels, reconciliation status) but no Finances container: grep for 'finances' in aa-prototype/src finds nothing, and the side nav has Invoices, Billing monitor and Ledger as three items. The work is structural. First, a Finances section with six routed tabs (Billing, Invoices, Payments, Ledger, Xero, AA fees), tab counts and one warning badge, keeping the old /admin/invoices, /admin/billing and /admin/ledger addresses resolving. Second, the monolithic BillingMonitorScreen must be split: the Xero queue and divergence panels go to Xero, PaymentCyclePanel and the payment-run pages to Payments, AaFeePanel and AaFeesScreen to AA fees, and HoldingAccountPanel to the Ledger list. Third, the Billing tab gets rebuilt as the Problems-first option C table (List heading with Bookings as rows) with Problems/In progress/Done/All filters, search and a fix-the-payer action, which needs a new failure path (payer with no billing email) in the domain, store and seed. Fourth, the Ledger loses the Whole ledger / One anaesthetist switch and gains the four-figure header, a three-way list and per-anaesthetist rows that open account pages. Two items are Contradicts (US-13.2.1 and, corrected from Partial, US-13.3.1) because the prototype implements designs the catalogue now says were considered and not kept. OQ-149 (where an unplaceable receipt is placed) is open and touches the Ledger place/refund actions, the receipts-to-place figure and the reconciliation unresolved items, so build those provisionally. US-13.2.4 is Proposed and waits on the posting design (clearing account, sub-ledger against control account), which the code header says is deliberately not modelled. Demo triggers: billing-failure and arm-handoff-fault (screen BILLING_MONITOR_SCREEN), xero-outage and inject-unmatched-receipt (screen 'Admin · Ledger') are keyed by screen and must be re-pointed at the new tab routes; add 'Payer loses billing email' for the fix-the-payer beat, and optionally 'Leave money in clearing account' on the Day screen if the extra reconciliation checks are built. Demo-guide impact (docs/demo-guide/03-demo-script.md): S3 Money end to end (Billing monitor, AA fee invoices and Ledger beats, plus the direct-URL table) and S4 Exceptions (Holding account card, billing failure, Xero outage, changed-in-Xero, refund after payout, payment week) change navigation and wording; the Ledger beat changes most. The demoGuideSync test, capture recipes and ATLAS belong to the owner's sweep, not this work. Read-only; no files modified.",
    "counts": {
-    "Contradicts": 2,
-    "Partial": 3,
-    "Missing": 0,
+    "Contradicts": 4,
+    "Partial": 6,
+    "Missing": 1,
     "OutOfScope": 0,
     "Matches": 0,
     "Grouping": 0
@@ -704,6 +704,244 @@
    "file": "stories/US-04.3.9.md"
   },
   {
+   "id": "US-06.3.1",
+   "verdict": "Partial",
+   "summary": "All eight acceptance criteria are built and demonstrable; the only real gap is placement, since the story now puts approval under Awaiting approval on the Finances section's Invoices tab and the prototype has no Finances section.",
+   "requirement_says": "An admin approves each prepayment invoice under Awaiting approval on the Finances section's Invoices tab, and the system generates and sends it with the prepayment letter. One invoice per payer, for the Procedures' price when raised, addressed to the payer. A switch beside that list turns approval off. The pair is a receivable from the payer and a payable to the AA Holding account. The payer is locked once their own invoice is raised, while a payer whose own invoice is not yet raised can still be changed. A List submit never invoices it again.",
+   "prototype_does": "Admin Invoices screen has an 'Awaiting approval' tab (?view=approval) holding PrepaymentApprovalStrip: the 'Prepayment approval' Switch and a row per Booking and payer with Approve and send. approvePrepayment (office only) calls generatePrepaymentInvoice, the single place the invoice (kind prePayment, send true, letter rendered), the ledger pair (payee HOLDING_PAYEE) and the Xero ACCREC plus draft ACCPAY to the AA Holding account are made. Groups are per payer via refKey, and each line is the Procedure's price when raised, which becomes its prepaid amount. Nothing is generated until approved. With approval off, autoSendPrepayments sends ready groups at once, on switching off and after each action that can make a group ready. payerLockedByPrepayment is per payer, read from issued invoice lines, and enforced in payerActions, bookingSaveActions and PaidBySheet. billingRun leaves prepaid Procedures off the final invoice (settledByPrepayment), so a List submit does not invoice them again.",
+   "missing_or_wrong": [
+    "No Finances section: approval sits on the top-level Invoices nav item (/admin/invoices), not on an Invoices tab inside a Finances section (US-13.3.3, built under its own story). InvoicesScreen.tsx tabs are only 'All invoices' and 'Awaiting approval'.",
+    "Awaiting approval is a separate tab on the Invoices screen, not one of the filters on a list (US-08.4.7, built under its own story). The switch does sit beside the approval list, as required.",
+    "Entry links need re-pointing once the section exists: routes.tsx:178 and :228 navigate to /admin/invoices?view=approval (right-rail Pre-payments tile and to-do), and the demo guide S4 Beat 1 click path changes.",
+    "Dropped from the reviewer's list: OQ-120 (naming the anaesthetist) is open and the story states no rule on it, so the prototype's provisional default (PREPAYMENT_NAMES_ANAESTHETIST = true) is a watch item, not a gap. OQ-73 and OQ-140 are already followed."
+   ],
+   "evidence": [
+    "aa-prototype/src/store/prepaymentActions.ts:50 (generatePrepaymentInvoice, the one place the pair is made)",
+    "aa-prototype/src/store/prepaymentActions.ts:99 (approvePrepayment, office only, per payerKey)",
+    "aa-prototype/src/store/prepaymentActions.ts:131 (autoSendPrepayments)",
+    "aa-prototype/src/store/prepaymentActions.ts:160 (setPrepaymentApprovalRequired, audited)",
+    "aa-prototype/src/domain/billing/prepayment.ts:195 (prepaymentGroupsFor, one group per payer via refKey)",
+    "aa-prototype/src/domain/billing/prepayment.ts:323 (prepaymentInvoiceDraftFor, line per Procedure at its prepaid amount)",
+    "aa-prototype/src/domain/billing/prepayment.ts:45 (PREPAYMENT_NAMES_ANAESTHETIST = true, OQ-120)",
+    "aa-prototype/src/store/invoiceMaterialise.ts:149 (HOLDING_PAYEE for kind prePayment)",
+    "aa-prototype/src/store/selectors.ts:1273 (payerLockedByPrepayment, per payer)",
+    "aa-prototype/src/store/payerActions.ts:199 and bookingSaveActions.ts:378,386 (lock enforced)",
+    "aa-prototype/src/store/billingRun.ts:183 (prepaid Procedures left off the final invoice)",
+    "aa-prototype/src/apps/admin/screens/InvoicesScreen.tsx:139-168 (view=approval tab)",
+    "aa-prototype/src/apps/admin/components/PrepaymentApprovalStrip.tsx:69 (Switch)",
+    "aa-prototype/src/apps/admin/routes.tsx:178,228 (links to /admin/invoices?view=approval)",
+    "searched: Finances in aa-prototype/src (case-insensitive) -> none"
+   ],
+   "demo_trigger": "Existing: 'Add prepaid Booking' (ADMIN_DAY and ADMIN_BOOKING) stages a prepaid Booking; the Prepayment approval switch and Approve and send are live controls; 'Move to 2 days before procedure' covers timing. Nothing new needed.",
+   "surfaces": [
+    "admin",
+    "demo-guide"
+   ],
+   "size": "S",
+   "confidence": "medium",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-opened the story, US-08.4.7 and US-13.3.3, and the code: all eight acceptance criteria hold (approve and send, amount and payer, one per payer, per-payer lock enforced in three places, waits for approval, approval off auto-send, AA Holding pair, no re-invoice at submit). Partial stands because the story text now names the Finances Invoices tab, which does not exist. I dropped OQ-120 as a gap point because the story states no rule on it, and trimmed surfaces to admin and demo-guide (shell and the Anaesthetist column review are not needed). Size S is for this story's re-pointing only; the Finances build belongs to US-13.3.3 and US-08.4.7.",
+   "epic": "EP-06",
+   "title": "Raise the prepayment invoice",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [
+    "OQ-120",
+    "OQ-73"
+   ],
+   "file": "stories/US-06.3.1.md"
+  },
+  {
+   "id": "US-08.4.7",
+   "verdict": "Contradicts",
+   "summary": "The Invoices screen is a standalone side-nav section that opens on All invoices and searches only invoice or credit-note number and addressee; it has no still-owed, Unpaid/Part paid/Paid state, age, state filter, or search by payable number, case reference, patient or anaesthetist.",
+   "requirement_says": "On the Finances section's Invoices tab, one searchable list of every invoice, prepayment invoice and credit note (search by invoice number, payable number, case reference, patient, payer, anaesthetist). Rows show kind, payer, patient and Booking, anaesthetist, date raised, total, still owed, state (Unpaid / Part paid / Paid, with age of unpaid) and delivery. Opens filtered to Unpaid; Awaiting approval is a filter beside the approval switch; each invoice and credit note has its own page under Invoices; AA fee invoices are excluded.",
+   "prototype_does": "/admin/invoices is its own side-nav section; no Finances section or route exists. Two LineTabs: All invoices (default, unfiltered) and Awaiting approval (?view=approval, PrepaymentApprovalStrip with the approval switch and count badge). The table lists invoices (kind as a pill beside the number for Prepayment/Additional/credit note), with credit notes as rows above the invoice credited. Columns: Number, Patient / booking, Anaesthetist, List, List date, Counterparty, Total, Delivery (+ Raised date). Search 'Find by invoice number or payer' matches only invoice or credit-note number and addressee name. Invoices open at /admin/invoices/:id and credit notes at /admin/credit-notes/:id. AA fee invoices are on /admin/billing/aa-fees and not in the list. Seeded backdrop history is excluded.",
+   "missing_or_wrong": [
+    "WRONG: the screen opens on All invoices, not Unpaid; there is no Unpaid / Part paid / Paid / All state filter",
+    "MISSING: no 'still owed' amount and no Unpaid / Part paid / Paid state on any row, and no age of an unpaid invoice (InvoicesScreen.tsx has no reference to paid, owed or receipts; the ledger holds receipts and receivableOutstanding but this screen does not read them)",
+    "MISSING: search by payable number (e.g. AA-2026-0002-P), case reference, patient name and anaesthetist name (search is number plus addressee only)",
+    "WRONG (minor): kind is a pill beside the number rather than its own Kind column; date raised is a sub-line inside the Delivery cell, not its own column; no distinct state column",
+    "STRUCTURAL: not a tab of the Finances section (no /admin/finances route or nav item; Invoices is its own nav section); depends on US-13.3.3",
+    "PARTIAL: Awaiting approval is a sibling tab, not a filter alongside the state filters; the approval switch and approve-and-send are present",
+    "PARTIAL: invoices and credit notes each have their own page, but under /admin/invoices and /admin/credit-notes, not both under the Invoices tab path"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/InvoicesScreen.tsx:104-109 (search by number and addressee only)",
+    "aa-prototype/src/apps/admin/screens/InvoicesScreen.tsx:139 (view defaults to 'all')",
+    "aa-prototype/src/apps/admin/screens/InvoicesScreen.tsx:152-158 (tabs All invoices / Awaiting approval)",
+    "aa-prototype/src/apps/admin/screens/InvoicesScreen.tsx:332 (INVOICE_COLUMNS: no owed, state or age column)",
+    "aa-prototype/src/apps/admin/screens/InvoicesScreen.tsx:163-171 (approval view with PrepaymentApprovalStrip)",
+    "aa-prototype/src/apps/admin/screens/InvoicesScreen.tsx:91-95 (backdrop invoices excluded)",
+    "aa-prototype/src/apps/admin/screens/InvoicesScreen.tsx:343-353 (kind pill beside the number)",
+    "aa-prototype/src/store/ledgerSelectors.ts:206 (receivableOutstanding) and :335-355 (LedgerRow.payableNumber)",
+    "searched: grep owed|paid|outstanding|receiv in InvoicesScreen.tsx -> none; grep /admin/finances in src -> none"
+   ],
+   "demo_trigger": "Existing triggers cover the money states: payment-full, payment-half and payment-replay on the Invoices screen give Paid and Part paid rows; inject-unmatched-receipt is on Ledger. A seeded unpaid invoice about 40 days old (or a demo-clock advance) is needed to show age; no new button, but a seed or clock case is required.",
+   "surfaces": [
+    "admin",
+    "domain",
+    "store",
+    "seed",
+    "demo-guide"
+   ],
+   "size": "M",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Contradicts",
+   "verify_note": "Re-opened the story and InvoicesScreen.tsx. Confirmed: default view 'all', search covers number and addressee only, INVOICE_COLUMNS has no owed or state, and the file never mentions paid, owed or receipts. No Finances route exists. Contradicts holds because the implemented default (All, not Unpaid) and the missing Unpaid-first behaviour differ from the current text. Added a note that the date raised and kind not being their own columns is minor. Size M is reasonable given the Finances shell is a separate story; the list work here is a selector joining ledger receipts, a state filter, age and wider search.",
+   "epic": "EP-08",
+   "title": "Find any invoice",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-08.4.7.md"
+  },
+  {
+   "id": "US-10.2.4",
+   "verdict": "Matches",
+   "summary": "Bulk remittance is matched in the Xero simulator's bank reconciliation by a simulated remittance add-on; unmatched lines are left for office staff in Xero; the engine learns payments only through the normal payment webhook. OQ-149 is explicitly unsettled in the story, so no gap.",
+   "requirement_says": "Bulk hospital payments covering several invoices are matched by Xero's bank reconciliation and remittance add-on, not by the Billing/Invoice Engine; anything the add-on cannot match is left as an unmatched item in Xero for office staff. Where an unplaceable receipt is parked is not settled (OQ-149).",
+   "prototype_does": "Demo Xero 'Bank reconciliation' tab lists each bulk remittance with lines marked 'Matched by the remittance add-on' (by InvoiceNumber), a callout 'Matched in Xero, not by the Billing Engine', and an 'Unmatched items · for office staff, handled in Xero' section. Office staff pick an invoice and 'Match in Xero', which pays it in Xero and reaches the engine through deliverPaymentWebhook. The engine never matches a remittance. Demo trigger 'Simulate bulk hospital remittance' brings in St George's remittance with one mistyped-number line (AA-2026-H40, $980).",
+   "missing_or_wrong": [],
+   "evidence": [
+    "aa-prototype/src/apps/demo/DemoXero.tsx:976-1060 (BankReconciliation: callout, unmatched section 'handled in Xero')",
+    "aa-prototype/src/apps/demo/DemoXero.tsx:1103-1180 (UnmatchedLineRow, 'Match in Xero', webhook result text)",
+    "aa-prototype/src/store/xeroSimActions.ts:379-445 (receiveBulkRemittance: add-on matches on InvoiceNumber in Xero only, then deliverPaymentWebhook per matched line; unmatched line never reaches the engine)",
+    "aa-prototype/src/store/xeroSimActions.ts:455-470 (bankLineMatchRefusal, matchBankLineInXero)",
+    "aa-prototype/src/shared/demoTriggers/registry.ts:1447-1466 (xero-bulk-remittance trigger, routes /demo/xero/invoices and the bank tab)"
+   ],
+   "demo_trigger": "Existing: 'Simulate bulk hospital remittance' in Demo actions on the Xero simulation, then open Bank reconciliation.",
+   "surfaces": [],
+   "size": "None",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Matches",
+   "verify_note": "Re-opened DemoXero.tsx bank reconciliation, receiveBulkRemittance and the registry trigger. Both acceptance statements (matched in Xero not by the engine; unmatched left in Xero for office staff) are shown and demoable. The reference-less line behaviour (add-on lists every unreconciled transaction of that amount) comes from the Technical discussion, not the story rules or criteria, so it is not a gap; the story has no acceptance criteria. Parking of an unplaceable receipt is OQ-149, deliberately unsettled. Status Proposed, but nothing contradicts it. Raised confidence to high.",
+   "epic": "EP-10",
+   "title": "Bulk remittance stays in Xero",
+   "type": "story",
+   "status": "Proposed (1)",
+   "open_questions": [
+    "OQ-149"
+   ],
+   "file": "stories/US-10.2.4.md"
+  },
+  {
+   "id": "US-10.2.7",
+   "verdict": "Partial",
+   "summary": "The weekly ISO-week cycle, Friday close and bank reconciliation, Monday anomalies held out and rolled to the next week, Tuesday payment schedule, week on payments, per-run pages with remittance advices and an earlier-runs list are all built, but on the Billing monitor and /admin/billing/payment-runs, not on a Payments tab of a Finances section (none exists).",
+   "requirement_says": "Payments run on a weekly ISO-week cycle (Friday close and bank reconciliation, Monday sort-out, Tuesday schedule to the accountant, anomalies rolled to the next cycle). The office runs it from the Payments tab of the Finances section (steps, what is waiting, Close the week and after, events awaiting the run, every earlier run); each run has its own page under the Payments tab with each anaesthetist's remittance advice. Criteria: week number, anomaly rolled over, run page.",
+   "prototype_does": "PaymentCyclePanel (a card on the Billing monitor) shows 'Payment cycle · Week N', the steps, what is waiting, anomalies with fix or 'Hold out of this run' (rolled into next week with a 'Rolled from Week N' pill), 'Run payables in Xero', and RunsList of earlier runs; the events-awaiting-run notice is on the Billing monitor too. A payment shows its week ('Paid out in Week N' on the invoice document; Ledger rows). A run opens at /admin/billing/payment-runs/:runId with the run, week number, ledger at close, totals by anaesthetist and a 'Remittance advice' link each (after approval) to /payment-runs/:runId/remittance/:anaesthetistId. All three acceptance criteria are behaviourally met. The side nav has separate Invoices, Billing monitor and Ledger entries; there is no /admin/finances route or Payments tab.",
+   "missing_or_wrong": [
+    "No Finances section or Payments tab: the cycle, events awaiting the run and earlier runs sit on the Billing monitor (/admin/billing), not on a Payments tab with its own address (depends on US-13.3.3).",
+    "The run page's back link reads 'Billing monitor' and goes to /admin/billing; it should return to the Payments tab, and the run and remittance addresses should sit under Payments (old /admin/billing/payment-runs/* addresses must still open, per US-13.3.3).",
+    "Not in the 10.2.7 text itself (it is US-13.3.3's rule): the Payments tab shows no number when nothing is due; the cycle has no tab count today."
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/components/PaymentCyclePanel.tsx:101-232 (steps, close, approve, send, run in Xero, RunsList at :223), :290 and :307 ('Rolled from' pills), :370 and :408 ('Hold out of this run')",
+    "aa-prototype/src/apps/admin/screens/BillingMonitorScreen.tsx:810 (events-awaiting-run notice on the Billing monitor)",
+    "aa-prototype/src/apps/admin/screens/PaymentRunScreen.tsx:46-52 (back link 'Billing monitor' to /admin/billing), :75-103 (totals and Remittance advice links)",
+    "aa-prototype/src/router.tsx:190-196 (billing/aa-fees and billing/payment-runs routes under billing)",
+    "aa-prototype/src/apps/admin/screens/InvoiceDocument.tsx:494 ('Paid out in Week N') and LedgerScreen.tsx:406",
+    "aa-prototype/src/apps/admin/components/SideNav.tsx:81-85 (Invoices, Billing monitor, Ledger separate; no Finances)",
+    "searched: finances in aa-prototype/src (ts, tsx) -> none"
+   ],
+   "demo_trigger": "Existing: 'Stage a payment week' (stage-payment-week), 'Stage a bank mismatch' (stage-bank-mismatch), Close the week, 'Hold out of this run' and 'Run payables in Xero' on the Billing monitor; after the move they appear on the Payments tab (their route lists in registry.ts need updating). No new trigger needed.",
+   "surfaces": [
+    "admin",
+    "shell",
+    "demo-guide"
+   ],
+   "size": "M",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-opened PaymentRunScreen, PaymentCyclePanel, router, SideNav and a grep for finances. Confirmed the three acceptance criteria are behaviourally met and the only gap is placement under a Finances Payments tab. Dropped nothing but reclassified the 'no number until due' point: it is US-13.3.3's rule, not 10.2.7's, so it is listed as a note only. Not Contradicts: nothing implemented is wrong, the Finances section simply does not exist yet. Size M is mainly the shared shell (US-13.3.3); moving the panel, re-addressing run pages and the back link is S once the shell exists.",
+   "epic": "EP-10",
+   "title": "Weekly payment cycle",
+   "type": "story",
+   "status": "Proposed (1)",
+   "open_questions": [],
+   "file": "stories/US-10.2.7.md"
+  },
+  {
+   "id": "US-10.3.1",
+   "verdict": "Partial",
+   "summary": "The monthly run, preview and fee total ($500 fixed + $5 x 40 = $700) are built, and fee invoices are kept off the Invoices screen and tracked as aaFee ledger pairs; but there is no AA fees tab of a Finances section and the fee invoice list is newest-first, not unpaid-first.",
+   "requirement_says": "An admin raises every anaesthetist's AA fee invoice for the month in one run from the AA fees tab of the Finances section, which lists fee invoices opening on the unpaid ones with the month's run and preview beside them; AA fee invoices are not on the Invoices tab. Criteria: $700 fee total, preview raises nothing, opens on unpaid first.",
+   "prototype_does": "AaFeesScreen (/admin/billing/aa-fees, 'Fee invoices' sub-tab) has a month stepper, a preview table per anaesthetist (BCTIs paid, fixed, per-BCTI, fee ex GST, Invoiced or 'Not yet'; nothing is raised until 'Run monthly fee invoices') and, below, 'Every fee invoice' with Paid/Unpaid pills and expandable detail. Each raised invoice is an aaFee ledger pair with no payable. aaFee.test.ts reproduces $700 (and $805 with GST). The list is sorted newest month first (allAaFeeInvoices), mixing paid and unpaid. Fee invoices are not on InvoicesScreen. Provisional note cites OQ-29/OQ-60.",
+   "missing_or_wrong": [
+    "Not an 'AA fees' tab of a Finances section (no Finances section): it sits at /admin/billing/aa-fees, reached from the Billing monitor, with no own side-nav tab.",
+    "'Opens on unpaid' criterion not met: allAaFeeInvoices sorts by month descending then raised date, with no unpaid-first ordering or default unpaid filter.",
+    "Layout: the run and preview sit above the list on the 'Fee invoices' sub-tab rather than the list leading with the run and preview beside it."
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/AaFeesScreen.tsx:46-62 (AdminPage title and two sub-tabs), :64-175 (month stepper, preview table, run button), :188-250 (FeeInvoiceList, 'Every fee invoice')",
+    "aa-prototype/src/store/selectors.ts:1639-1654 (newestFirst, allAaFeeInvoices)",
+    "aa-prototype/src/domain/billing/aaFee.test.ts:15-21 ($700 example)",
+    "aa-prototype/src/domain/billing/ledger.ts:166 (newAaFeePair)",
+    "aa-prototype/src/router.tsx:192-193 (billing/aa-fees routes)",
+    "searched: aaFee|aa-fee|aaFees in apps/admin/screens/InvoicesScreen.tsx -> none"
+   ],
+   "demo_trigger": "Existing: 'Seed a month of BCTIs' (seed-month-of-bctis) and 'Run scheduled month-end fee run' (run-scheduled-fee-run) on the AA fees screen, and 'Record fee payment' (record-fee-payment) on a fee pair in the Xero simulation to make some fee invoices paid.",
+   "surfaces": [
+    "admin",
+    "shell",
+    "demo-guide"
+   ],
+   "size": "S",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-read AaFeesScreen and the selectors. Preview-before-run and $700 criteria are met; the unpaid-first criterion is plainly not (newest-first sort, no unpaid grouping). Not Contradicts: the sort is an absence of the required ordering, not a rule that conflicts, and fee invoices are correctly separate from Invoices. Corrected the demo_trigger to the real trigger ids and names from the registry map (the reviewer cited only a button and 'record fee payment'). Size S is for the unpaid-first sort plus layout; tab placement is covered by US-13.3.3.",
+   "epic": "EP-10",
+   "title": "Generate AA fee invoices",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [
+    "OQ-112",
+    "OQ-60"
+   ],
+   "file": "stories/US-10.3.1.md"
+  },
+  {
+   "id": "US-10.3.3",
+   "verdict": "Partial",
+   "summary": "Fee settings (several fixed items plus a per-BCTI charge, stored in appSettings, applied from the next run) are built and meet both acceptance criteria, but sit on a separate 'Fee settings' sub-tab under Billing, not on the AA fees tab of a Finances section beside the invoices and the run.",
+   "requirement_says": "Admins maintain the fixed monthly fee items (several allowed) and the per-invoice charge on the AA fees tab of the Finances section, beside the fee invoices and the month's run. The run uses these settings so a rate change needs no code change. Criteria: fee total = fixed items plus rate times BCTIs; a new rate applies at the next run.",
+   "prototype_does": "FeeSettingsTab (/admin/billing/aa-fees/settings) lets an admin add, edit and remove fixed items and edit the charge per BCTI paid (ex GST), with a live worked example, validation and save via saveAaFeeSettings; changes apply from the next monthly run and raised invoices keep their own settings. The run reads appSettings.aaFee through aaFeeFor, not code. aaFee.test.ts covers the sum and a changed rate ($740). Seed sample: $350 + $150 fixed plus $5 per BCTI.",
+   "missing_or_wrong": [
+    "Placement: settings are a second sub-tab ('Fee settings', its own URL) of the Billing-section AA fees screen, not on the same AA fees tab beside the fee invoices and the run, and not within a Finances section.",
+    "Whether fixed items vary by anaesthetist is open (OQ-60); the prototype keeps one practice-wide schedule, consistent with the story text, so not a gap."
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/AaFeesScreen.tsx:51-59 (LineTabs Fee invoices / Fee settings), :321-447 (FeeSettingsTab)",
+    "aa-prototype/src/domain/billing/aaFee.ts (aaFeeFor, validateAaFeeSettings) and aaFee.test.ts:15-27",
+    "aa-prototype/src/domain/seed/aaFee.ts:25-31 (SAMPLE_AA_FEE_SETTINGS)",
+    "aa-prototype/src/router.tsx:193 (aa-fees/settings route)"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin",
+    "demo-guide"
+   ],
+   "size": "S",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-checked the settings tab, the pure fee function and its tests: both acceptance criteria are satisfied. The only gap is the 26 Nov placement (settings beside the invoices and the run on one AA fees tab). Not Matches, because the requirement text now states the placement as a rule; not Contradicts. Size S: fold the settings into the AA fees tab (a card or drawer) once the tab exists.",
+   "epic": "EP-10",
+   "title": "AA fee settings",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [
+    "OQ-60"
+   ],
+   "file": "stories/US-10.3.3.md"
+  },
+  {
    "id": "FT-11.1",
    "verdict": "Grouping",
    "summary": "Feature body only states the one-record-per-NHI theme and that the page sits among the People section; the rules and acceptance criteria are in US-11.1.1, 11.1.4 and 11.1.5.",
@@ -1038,6 +1276,245 @@
     "OQ-147"
    ],
    "file": "stories/US-12.1.6.md"
+  },
+  {
+   "id": "FT-13.3",
+   "verdict": "Partial",
+   "summary": "The billing-flow monitoring content exists (List-to-Xero stages, per-Booking failures, Xero queue) but lives on a stand-alone Billing monitor screen, not in a Finances section; the relocation itself is carried by US-13.3.3.",
+   "requirement_says": "Admins monitor billing from List through the Billing Engine to Xero, seeing what completed and failed and stepping in, in the Admin App's Finances section where the office keeps all its money work.",
+   "prototype_does": "A separate 'Billing monitor' side-nav item (/admin/billing) shows Lists by anaesthetist with stage chips, per-Booking failure messages with Retry, the Xero sync queue and Xero divergences. No Finances section, route or nav entry exists.",
+   "missing_or_wrong": [
+    "No Finances section: monitoring sits in a stand-alone Billing monitor nav item, not the Billing and Xero tabs of Finances",
+    "Billing monitor still carries the payment cycle, AA fee and AA Holding account panels that the Finances design moves to other tabs"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/components/SideNav.tsx:81-85 (Invoices, Billing monitor, Ledger as separate items; no Finances)",
+    "aa-prototype/src/router.tsx:155-200 (invoices, billing, ledger routes; no finances route)",
+    "aa-prototype/src/apps/admin/screens/BillingMonitorScreen.tsx:186-290 (tiles, Xero panels, payment cycle, AA fee and Holding panels, groups)",
+    "searched: finances (case-insensitive) in aa-prototype/src -> no hits"
+   ],
+   "demo_trigger": "Existing triggers cover it: 'Trigger billing failure' and 'Arm handoff failure' (screen BILLING_MONITOR_SCREEN, registry.ts:848-880) and 'Simulate Xero outage'. Re-point their screen keys at the Finances Billing and Xero tabs.",
+   "surfaces": [
+    "admin",
+    "shell",
+    "demo-guide"
+   ],
+   "size": "S",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-opened SideNav, router, BillingMonitorScreen and grep for 'finances': confirmed no Finances container. Partial (not Grouping) because the feature states its own rule (monitor List to Xero, in Finances); the monitoring itself is present. Status is Agreed (4), so checked the Finances wording is the only gap; size S is right because the content work is in the stories.",
+   "epic": "EP-13",
+   "title": "Billing flow monitoring",
+   "type": "feature",
+   "status": "Agreed (4)",
+   "open_questions": [],
+   "file": "stories/FT-13.3.md"
+  },
+  {
+   "id": "US-13.2.1",
+   "verdict": "Contradicts",
+   "summary": "A rich Ledger screen exists, but it keeps the Whole ledger / One anaesthetist switch that the catalogue explicitly considered and did not keep, and lacks the four-figure set, the three-way list and the per-anaesthetist account row columns.",
+   "requirement_says": "On a Ledger tab, one sentence says whether the books are square and names what is wrong, with four figures (owed to AA, owed to anaesthetists, AA Holding account, receipts to place). The list beneath switches between anaesthetists, invoice pairs and Holding account entries. Each anaesthetist row shows billed, paid into AA, disbursed, AA owes and they owe AA and opens that anaesthetist's own account page, with a way back. A receipt matching no invoice is placed or marked refunded.",
+   "prototype_does": "/admin/ledger has a 'Whole ledger / One anaesthetist' SlidingSegmentedControl plus an anaesthetist select. Whole scope: a BalanceIndicator (headline 'In balance · receipts held equal payables due' or 'Out of balance by $X', plus an equation line and checks) and about ten StatTiles (receivables outstanding, receipts held, payables due, disbursed, awaiting collection, AA Holding account, AA fees outstanding, not yet in Xero, credits held, negative to net). Then 'Anaesthetists out of balance' (out by, why, Open; empty state when none), 'Receipts with no matching invoice' (Allocate to invoice / Mark refunded) and a pairs table. /admin/ledger/anaesthetists/:id is the same screen scoped to one, with 'AA owes X' / 'X owes AA' cards, payment runs and credit trails.",
+   "missing_or_wrong": [
+    "WRONG: the Whole ledger / One anaesthetist scope switch and the top anaesthetist picker remain; the catalogue says keeping the switch was considered and not kept, in favour of rows that open each anaesthetist's own page",
+    "WRONG: the four named figures are not shown as such; 'Receipts to place' is absent (the 'Receipts held' tile means money AA holds for anaesthetists), 'owed to AA' and 'owed to the anaesthetists' are not labelled so, and ten tiles replace four",
+    "No list selector (anaesthetists / invoice pairs / AA Holding account entries); the anaesthetists list shows only those out of balance, not every anaesthetist; pairs are a separate always-on table",
+    "Anaesthetist rows lack billed, paid into AA, disbursed, AA owes them and they owe AA columns (only out-by and why)",
+    "AA Holding account entries are listed on the Billing monitor (HoldingAccountPanel); on the Ledger the tile only links to /admin/billing",
+    "The sentence is a headline plus a monospace equation rather than a plain 'the books are square / not square' naming what is wrong; the anaesthetist page leads back to the Ledger only via the scope switch",
+    "Not a tab of a Finances section",
+    "OQ-149 (open): whether a receipt is placed in the system and pushed to Xero, handled only in Xero, or both; the current allocate/refund is in-system only, so build provisionally"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/LedgerScreen.tsx:134-155 (scope switch and anaesthetist select)",
+    "aa-prototype/src/apps/admin/screens/LedgerScreen.tsx:158-214 (BalanceIndicator, tiles)",
+    "aa-prototype/src/apps/admin/screens/LedgerScreen.tsx:215-250 (anaesthetists out of balance: Out by, Why, Open)",
+    "aa-prototype/src/apps/admin/screens/LedgerScreen.tsx:252-300 (unmatched receipts, allocate/refund)",
+    "aa-prototype/src/apps/admin/components/HoldingAccountPanel.tsx (on the Billing monitor, BillingMonitorScreen.tsx:~233)",
+    "aa-prototype/src/router.tsx:198-210"
+   ],
+   "demo_trigger": "Existing 'Inject unmatched receipt' (screen 'Admin · Ledger', registry.ts:927) covers the receipt-to-place beat; keep it and re-point to the Ledger tab.",
+   "surfaces": [
+    "admin",
+    "store",
+    "demo-guide"
+   ],
+   "size": "L",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Contradicts",
+   "verify_note": "Re-read LedgerScreen.tsx lines 100-330 and the story's Notes: the switch the prototype still has is the exact thing the catalogue says was not kept, so Contradicts (not Partial) is right. Raised confidence to high. Checked the receipt place/refund actions exist and satisfy the 'Receipt to place' criterion in spirit (OQ-149 only affects the Xero side).",
+   "epic": "EP-13",
+   "title": "Ledger balance views",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [
+    "OQ-149"
+   ],
+   "file": "stories/US-13.2.1.md"
+  },
+  {
+   "id": "US-13.2.4",
+   "verdict": "Partial",
+   "summary": "A derived 'Books square / Out of balance' status with unresolved items (amount, age) exists on the Admin Day dashboard, but it checks only the ledger, ledger against Xero and Xero bank lines; the clearing-account (should read zero) and sub-ledger against control-account checks are deliberately not modelled. Story is Proposed (1); OQ-149 open.",
+   "requirement_says": "The admin dashboard shows one status saying whether the books are square, checking accounts that should read zero, each sub-ledger against its control account, the internal ledger against Xero and unmatched Xero bank lines. Out of balance, it names the account and the difference, and lists each unresolved item (such as an unplaced receipt) with its amount and how long it has been outstanding.",
+   "prototype_does": "The RailReadings rail on the Admin Day view shows a 'Books square' / 'Out of balance' tile opening ReconciliationDetail. Out of balance, it lists the failing checks ('Ledger', 'Ledger against Xero', 'Xero bank lines') each off by $X, then unresolved items oldest first with amount and age, each linking to where it is handled. Derived on every read by reconciliationStatusOf, never stored. A 'Proposed' caption is shown, which fits the story's status.",
+   "missing_or_wrong": [
+    "No clearing-account (should-read-zero) check; the selector's own header says it is not modelled pending the posting design",
+    "No sub-ledger against control-account checks",
+    "The failing check is named by a generic label ('Ledger', 'Ledger against Xero') rather than a named account",
+    "Unresolved-item links point at /admin/ledger and /admin/billing?problems=1, which move to Finances tabs (addresses must keep resolving)",
+    "Unplaced-receipt item depends on OQ-149 (where a receipt is placed)"
+   ],
+   "evidence": [
+    "aa-prototype/src/store/reconciliationSelectors.ts:1-20 (not modelled: clearing account, sub-ledger vs control, bank feed)",
+    "aa-prototype/src/store/reconciliationSelectors.ts:99-103 (RECONCILIATION_CHECKS has three rows)",
+    "aa-prototype/src/apps/admin/components/RailReadings.tsx:20-68",
+    "aa-prototype/src/apps/admin/components/ReconciliationCard.tsx:58-120",
+    "aa-prototype/src/shared/demoTriggers/registry.ts:927-933"
+   ],
+   "demo_trigger": "Existing 'Inject unmatched receipt' (Admin Ledger) puts the status out of balance. If the extra checks are added, add a trigger on the Admin Day screen such as 'Leave money in clearing account' that makes a check fail with a visible difference and named account.",
+   "surfaces": [
+    "domain",
+    "store",
+    "admin",
+    "simulator",
+    "demo-guide"
+   ],
+   "size": "M",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-read reconciliationSelectors.ts and the card: nothing implemented contradicts the story, only the two check families are missing, so Partial. Dropped the reviewer's 'Proposed caption still rendered' point as a defect: the story is still Proposed (1), so the caption is accurate. Because the story is Proposed and the posting design is unsettled, the extra checks are provisional. Size M kept.",
+   "epic": "EP-13",
+   "title": "Reconciliation status at a glance",
+   "type": "story",
+   "status": "Proposed (1)",
+   "open_questions": [
+    "OQ-149"
+   ],
+   "file": "stories/US-13.2.4.md"
+  },
+  {
+   "id": "US-13.3.1",
+   "verdict": "Contradicts",
+   "summary": "The prototype's per-anaesthetist Billing monitor implements the 'Lists that unfold into their Bookings' layout the catalogue considered and did not build, and opens on All lists rather than Problems; it also lacks the filter set, search and fix-the-payer action.",
+   "requirement_says": "On the Billing tab, AUTHORISED Lists are grouped by anaesthetist; each List is a heading (date, session, hospital, status, counts sent, in Xero, paid in, billing run) with its Bookings as rows beneath (status, invoices, sent, in Xero, paid in, disbursed). A failure's reason shows under the patient's name with its fix beside it (retry, fix the payer, resolve by hand). The tab opens on Problems showing only each List's problem Bookings, with a way to show the rest. Filters: Problems, In progress, Done, All, plus search and an anaesthetist filter. Lists awaiting approval are a short list linking to Review; the tab never approves.",
+   "prototype_does": "/admin/billing groups Lists by anaesthetist (collapsible) with awaiting-approval rows (open Review with state from:'billing') above authorised List rows inside each group. Authorised rows are sortable and expand into a stage-chip pipeline plus a Bookings table (Booking, Patient, Status, Detail, Action). Failures show their message in Detail with a Retry button (and Resolve and retry for a failed Xero correction). Filters are anaesthetist, hospital, from/to dates and an 'All lists / Problems only' pill plus the 'With problems' tile. It opens on All lists; no approve action; no search.",
+   "missing_or_wrong": [
+    "WRONG: opens on All lists, not Problems; Problems only hides whole Lists rather than showing just each List's failed Bookings with a 'show the rest' control",
+    "WRONG: Bookings sit inside an expandable stage-chip pipeline (the 'Lists that unfold' layout the notes say was considered and not built), not as rows under each List heading (option C)",
+    "No In progress or Done filters (only All lists / Problems only); no search over Lists and Bookings",
+    "No 'fix the payer' action beside a failed Booking (only Retry); no 'resolve by hand'; the payer-has-no-billing-email failure path does not exist (searched: fix the payer|billing email|fixPayer|markResolved in src -> none)",
+    "Booking rows lack separate sent, in Xero, paid in and disbursed columns; the List heading lacks the counts sent, in Xero, paid in",
+    "Awaiting-approval Lists are mixed into each anaesthetist group rather than a short separate list",
+    "Page also carries the Xero queue, payment cycle, AA fee and Holding panels, and is not a tab of Finances"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/BillingMonitorScreen.tsx:186-300 (tiles, filters, All/Problems pill, panels, groups)",
+    "aa-prototype/src/apps/admin/screens/BillingMonitorScreen.tsx:352-470 (AnaesthetistGroup: awaiting first, then authorised)",
+    "aa-prototype/src/apps/admin/screens/BillingMonitorScreen.tsx:578-640 (PipelineDetail: stage strip, Bookings table, Retry only)",
+    "aa-prototype/src/apps/admin/screens/BillingMonitorScreen.tsx:161-163 (openInReview)",
+    "aa-prototype/src/store/billingRun.ts:234 (retryBillingException)"
+   ],
+   "demo_trigger": "Add 'Payer loses billing email' on the Billing tab: stages a failed Booking whose payer has no billing email so the fix-the-payer then retry path leaves Problems. Existing 'Trigger billing failure' covers the generic failure.",
+   "surfaces": [
+    "admin",
+    "store",
+    "seed",
+    "demo-guide"
+   ],
+   "size": "L",
+   "confidence": "high",
+   "verify_outcome": "corrected",
+   "original_verdict": "Partial",
+   "verify_note": "Regraded Partial to Contradicts. The implemented screen opens on All lists (the story says Problems) and unfolds each List into its Bookings, which the story's Notes list under 'Considered and not built'; by the rubric any wrong implemented behaviour outranks Partial. All the reviewer's missing points re-checked and kept (no search, no fix-payer, no In progress/Done); demo_trigger filled in since the reviewer left it blank but proposed one for US-13.3.2. Size L kept.",
+   "epic": "EP-13",
+   "title": "Billing status of each List and Booking",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-13.3.1.md"
+  },
+  {
+   "id": "US-13.3.2",
+   "verdict": "Partial",
+   "summary": "The Xero sync queue (attempts, next try, last error, Retry now), the changed-in-Xero panel with per-item resolve, and Booking-level retry exist, and a stuck hand-off shows in both the queue and the List's Booking row, but on one Billing monitor page rather than separate Xero and Billing tabs, and there is no fix-the-payer or mark-resolved action.",
+   "requirement_says": "An admin resolves a failed Booking beside it on the Billing tab (retry, fix the payer, or mark resolved). Hand-offs to Xero that wait or fail are on the Xero tab with attempts, next try, last error and Retry now. Invoices changed directly in Xero (daily poll) are listed there and resolved one by one. The Xero tab opens on what needs action. A Booking stuck at Xero shows on both the Xero tab and the Billing tab.",
+   "prototype_does": "XeroQueuePanel on the Billing monitor lists queued hand-offs with attempts, next try, last error and a 'Retry now' button (retryXeroItemNow), with an alert after repeated attempts. XeroDivergencePanel ('Changed directly in Xero') lists voided or edited invoices and opens a Resolve dialog. The expanded List's Booking row shows 'Waiting for Xero · attempt n · next try', so a stuck Booking appears twice on the one page. A failed billing row gets only Retry.",
+   "missing_or_wrong": [
+    "No Xero tab: the panels sit on the Billing monitor, and nothing opens on 'what needs action'",
+    "No 'fix the payer' action from the Booking row, so the no-billing-email scenario (fix payer, retry, leaves Problems) cannot be demonstrated",
+    "No 'mark resolved' by hand for a failed Booking",
+    "Stuck-at-Xero 'shows twice' is satisfied only as two panels on one page, and the Billing-side row appears only after expanding a List"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/components/XeroPanels.tsx:75-140 (queue, Retry now at :136)",
+    "aa-prototype/src/apps/admin/components/XeroPanels.tsx:205-292 (changed directly in Xero, Resolve)",
+    "aa-prototype/src/apps/admin/screens/BillingMonitorScreen.tsx:628-633 (Retry and CorrectionRetry only)",
+    "aa-prototype/src/apps/admin/screens/BillingMonitorScreen.tsx:651-662 (waitingForXero detail)",
+    "aa-prototype/src/shared/demoTriggers/registry.ts:846-880 (billing-failure, arm-handoff-fault)"
+   ],
+   "demo_trigger": "Existing 'Trigger billing failure', 'Arm handoff failure', 'Simulate Xero outage', the Xero simulator's 'Void this invoice in Xero' / 'Edit this invoice's total in Xero' and Next day cover it. Add 'Payer loses billing email' on the Billing tab to stage the fix-the-payer path.",
+   "surfaces": [
+    "admin",
+    "store",
+    "domain",
+    "simulator",
+    "demo-guide"
+   ],
+   "size": "M",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-opened XeroPanels and the Booking row code: Retry now, attempts, next try, last error, divergence resolve all exist and nothing implemented contradicts the story (the tab split is absence, not conflicting behaviour), so Partial holds. Grep for fix the payer / billing email / markResolved found nothing, confirming the gap.",
+   "epic": "EP-13",
+   "title": "Manual intervention",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-13.3.2.md"
+  },
+  {
+   "id": "US-13.3.3",
+   "verdict": "Missing",
+   "summary": "There is no Finances section: the side nav has separate Invoices, Billing monitor and Ledger items, with no tabbed container, tab counts or single warning badge.",
+   "requirement_says": "One Finances side-nav entry with six routed tabs (Billing, Invoices, Payments, Ledger, Xero, AA fees), opening on Billing, each tab at its own address. Tab numbers count what needs doing (Invoices: prepayment invoices awaiting approval; Ledger: failed checks; Xero: alerts and divergences; Payments and AA fees none until due). One warning badge on Finances sums billing problems and failed ledger checks. Records (invoice, credit note, payment run and remittance advice, anaesthetist account) open on pages under their tab with a way back. Earlier addresses still resolve.",
+   "prototype_does": "Nothing of the container. SideNav lists Invoices (no badge), Billing monitor (billingAttentionCount, warn) and Ledger (ledgerAttentionCount, warn) separately. Routes /admin/invoices, /admin/billing (aa-fees and payment-runs beneath it) and /admin/ledger exist; the payment cycle is a panel on the Billing monitor and AA fees a sub-screen. Record pages exist for invoice, credit note, payment run, remittance advice and the anaesthetist ledger, but not under Finances tabs.",
+   "missing_or_wrong": [
+    "No Finances nav entry, no /admin/finances routes, no tab strip, no opens-on-Billing default",
+    "No Payments tab (payment cycle is a Billing monitor panel), no standalone Xero tab, no AA fees tab inside the section",
+    "No tab counts: Invoices should count prepayment invoices awaiting approval, Ledger failed checks, Xero alerts and divergences; Payments and AA fees show nothing until due",
+    "No single Finances badge (billing problems plus failed ledger checks, warning tone); today two separate amber badges",
+    "Record pages are not nested under Finances tabs (credit notes map to Invoices via sectionForPath; an unknown payment run redirects to Billing)",
+    "Earlier addresses (/admin/invoices, /admin/billing, /admin/ledger) must keep resolving to the same content after the move"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/components/SideNav.tsx:72-89",
+    "aa-prototype/src/router.tsx:155-210",
+    "aa-prototype/src/apps/admin/AdminApp.tsx:50-72 (sectionForPath: no finances)",
+    "aa-prototype/src/apps/admin/AdminApp.tsx:283,363-364 (billing and ledger badges)",
+    "searched: finances (case-insensitive) in aa-prototype/src -> no hits"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin",
+    "shell",
+    "demo-guide"
+   ],
+   "size": "L",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Missing",
+   "verify_note": "Tried to argue Partial (record pages, back links and two attention badges already exist), but those are building blocks of other stories; the story's own subject, the section with six routed tabs, counts and one badge, has no representation, so Missing holds. Size L is right: it needs a tab shell, the monolithic Billing monitor split into Billing, Xero, Payments and AA fees, and re-pointed routes, badges and trigger screen keys.",
+   "epic": "EP-13",
+   "title": "The Finances section",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-13.3.3.md"
   },
   {
    "id": "US-13.4.1",

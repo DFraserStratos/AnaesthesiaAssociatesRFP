@@ -1,8 +1,8 @@
 # Build plan · Gap analysis
 
-Catalogue snapshot `67cba2c` · generated 2026-11-25 · 27 in-scope items (76 retired or Future Work excluded)
+Catalogue snapshot `f885f67` · generated 2026-11-26 · 39 in-scope items (76 retired or Future Work excluded)
 
-The plan was seeded empty at `64b3dff`, with no gap analysis: the prototype was taken as matching the catalogue then. Only items changed since are graded here; 287 in-scope items not graded since are left out.
+The plan was seeded empty at `64b3dff`, with no gap analysis: the prototype was taken as matching the catalogue then. Only items changed since are graded here; 277 in-scope items not graded since are left out.
 
 **Method.** Per-epic Sonnet reviewers against six prototype maps, each review re-checked by an adversarial Sonnet verifier; plus a verified data-model delta and a verified reverse check. Supporting analysis: [prototype maps](analysis/), [data-model delta](analysis/domain-model-delta.md), [reverse check](analysis/reverse-check.md). Machine-readable data: [gaps.json](gaps.json). The development plan built from this is in [ROADMAP.md](ROADMAP.md) and [index.html](index.html).
 
@@ -17,23 +17,27 @@ The plan was seeded empty at `64b3dff`, with no gap analysis: the prototype was 
 | [EP-03 · Booking and Procedure capture (anaesthetist)](#ep-03) |  |  |  |  |  |  | 0 |
 | [EP-04 · Contracts](#ep-04) |  | 6 |  |  | 3 | 1 | 10 |
 | [EP-05 · RVG master data and fee calculation rules](#ep-05) |  |  |  |  |  |  | 0 |
-| [EP-06 · Prepayment](#ep-06) |  |  |  |  |  |  | 0 |
+| [EP-06 · Prepayment](#ep-06) |  | 1 |  |  |  |  | 1 |
 | [EP-07 · List approval workflow](#ep-07) |  |  |  |  |  |  | 0 |
-| [EP-08 · Billing/Invoice Engine and internal ledger](#ep-08) |  |  |  |  |  |  | 0 |
+| [EP-08 · Billing/Invoice Engine and internal ledger](#ep-08) | 1 |  |  |  |  |  | 1 |
 | [EP-09 · Xero integration](#ep-09) |  |  |  |  |  |  | 0 |
-| [EP-10 · Payments, disbursement and AA fees](#ep-10) |  |  |  |  |  |  | 0 |
+| [EP-10 · Payments, disbursement and AA fees](#ep-10) |  | 3 |  |  | 1 |  | 4 |
 | [EP-11 · Patients and billable parties](#ep-11) | 3 | 2 |  |  |  | 1 | 6 |
 | [EP-12 · Anaesthetist profile and reporting](#ep-12) | 2 |  |  |  |  | 1 | 3 |
-| [EP-13 · Admin oversight and master data](#ep-13) | 2 | 3 |  |  |  |  | 5 |
+| [EP-13 · Admin oversight and master data](#ep-13) | 4 | 6 | 1 |  |  |  | 11 |
 | [EP-14 · Health systems integration](#ep-14) |  |  |  |  |  |  | 0 |
 | [EP-15 · Non-functional requirements](#ep-15) |  |  |  |  |  |  | 0 |
-| **Total** | **8** | **13** | **0** | **0** | **3** | **3** | **27** |
+| **Total** | **11** | **20** | **1** | **0** | **4** | **3** | **39** |
 
-Verification: 4 of 27 gradings were corrected by the adversarial verifier (see [Verification log](#verification-log)).
+Verification: 5 of 39 gradings were corrected by the adversarial verifier (see [Verification log](#verification-log)).
 
 ## Not represented in the prototype
 
 Every in-scope requirement graded Missing, by epic.
+
+**EP-13 · Admin oversight and master data**
+
+- [US-13.3.3](../../requirements-board/requirements/stories/US-13.3.3.md) The Finances section · Verify (3) · L. There is no Finances section: the side nav has separate Invoices, Billing monitor and Ledger items, with no tabbed container, tab counts or single warning badge.
 
 ## Structural changes (data model)
 
@@ -126,7 +130,15 @@ Details for every gap: [epics/EP-04.md](epics/EP-04.md).
 
 ### EP-06 · Prepayment
 
-[EP-06](../../requirements-board/requirements/stories/EP-06.md) · epic status Verify (3) · 
+[EP-06](../../requirements-board/requirements/stories/EP-06.md) · epic status Verify (3) · 1 Partial
+
+> Only US-06.3.1 was graded. Its behaviour is complete in the code (catch-up Phases 22, 27, 27a and 41). The remaining difference is structural and comes from the 26 Nov Finances-section requirements: Admin Invoices becomes the Invoices tab of a Finances section, and Awaiting approval becomes one of its filters (US-13.3.3, US-08.4.7). That should be built under those stories. This story then needs only entry links re-pointed (routes.tsx:178 and :228, notification and demo-trigger routes) and demo-guide wording. OQ-120 (naming the anaesthetist) and OQ-73 are open but state no requirement the prototype breaks: PREPAYMENT_NAMES_ANAESTHETIST = true is one constant, flagged provisional in the demo guide. OQ-140 (payer per Procedure) is already followed. Demo guide S4 Beat 1 (Invoices, Awaiting approval, switch) and the Day-view rail text 'awaiting approval on Invoices' will change when the section lands. The six US-06.3.1 screenshots will go stale, which is a sweep matter, not per-change work.
+
+| Item | Status | Verdict | Gap | Size |
+|---|---|---|---|---|
+| [US-06.3.1](../../requirements-board/requirements/stories/US-06.3.1.md) [Raise the prepayment invoice](epics/EP-06.md#us-06.3.1) | Verify (3), [OQ-120](../../requirements-board/requirements/questions/OQ-120.md), [OQ-73](../../requirements-board/requirements/questions/OQ-73.md) | Partial | All eight acceptance criteria are built and demonstrable; the only real gap is placement, since the story now puts approval under Awaiting approval on the Finances section's Invoices tab and the prototype has no Finances section. | S |
+
+Details for every gap: [epics/EP-06.md](epics/EP-06.md).
 
 <a id="ep-07"></a>
 
@@ -138,7 +150,15 @@ Details for every gap: [epics/EP-04.md](epics/EP-04.md).
 
 ### EP-08 · Billing/Invoice Engine and internal ledger
 
-[EP-08](../../requirements-board/requirements/stories/EP-08.md) · epic status Agreed (4) · 
+[EP-08](../../requirements-board/requirements/stories/EP-08.md) · epic status Agreed (4) · 1 Contradicts
+
+> US-08.4.7 depends on the Finances section (US-13.3.3), which exists only as requirements and an exploration. The Invoices screen is still a standalone nav section with its own /admin/invoices routes, so moving it into a Finances tab and renaming routes is a structural change shared with the other Finances stories (Payments, AA fees, Billing, Ledger tabs). Amount received and still owed already live in the ledger (receivables, receipts, receivableOutstanding); the list needs a selector joining them to each invoice and credit note, an age from the demo clock (DEMO_TODAY 2026-11-24), a state filter (Unpaid default) and a broader search (payable number, case reference, patient, anaesthetist). Changing the default to Unpaid affects any demo beat that lands on Invoices to find a paid invoice, and InvoicesSearch.test.tsx and demoGuideSync may need updating. AA fee invoices are already excluded, matching the story. Awaiting approval is currently a tab and the story wants it as a filter beside the state filters. Status is Verify (3) and the notes say the change has not yet been seen by AA, so the grading is against the text as written.
+
+| Item | Status | Verdict | Gap | Size |
+|---|---|---|---|---|
+| [US-08.4.7](../../requirements-board/requirements/stories/US-08.4.7.md) [Find any invoice](epics/EP-08.md#us-08.4.7) | Verify (3) | Contradicts | The Invoices screen is a standalone side-nav section that opens on All invoices and searches only invoice or credit-note number and addressee; it has no still-owed, Unpaid/Part paid/Paid state, age, state filter, or search by payable number, case reference, patient or anaesthetist. | M |
+
+Details for every gap: [epics/EP-08.md](epics/EP-08.md).
 
 <a id="ep-09"></a>
 
@@ -150,7 +170,19 @@ Details for every gap: [epics/EP-04.md](epics/EP-04.md).
 
 ### EP-10 · Payments, disbursement and AA fees
 
-[EP-10](../../requirements-board/requirements/stories/EP-10.md) · epic status Agreed (4) · 
+[EP-10](../../requirements-board/requirements/stories/EP-10.md) · epic status Agreed (4) · 3 Partial, 1 Matches
+
+> All four gradings upheld after re-opening the catalogue files and code. The substance of EP-10's four in-scope stories is built: US-10.2.4 as the Xero simulator's bank reconciliation (fully matches), US-10.2.7 as the Payment cycle panel plus run and remittance pages, US-10.3.1 and US-10.3.3 as the AA fees screen with a Fee settings sub-tab. The gaps since the 64b3dff7 baseline are structural, driven by the 26 Nov Finances section (US-13.3.3): grep finds no Finances anywhere in aa-prototype/src, no /admin/finances route, and SideNav.tsx:81-85 still has separate Invoices, Billing monitor and Ledger entries. So 10.2.7 (Payments tab, run pages under it, back link), 10.3.1 (AA fees tab) and 10.3.3 (settings beside invoices and run) all depend on building the Finances shell first, with old /admin/billing/* addresses still opening. The one content-level gap is US-10.3.1's 'opens on unpaid' criterion: selectors.ts:1639-1654 sorts newest-first with no unpaid-first ordering. The 'no number when nothing is due' rule for Payments and AA fees belongs to US-13.3.3, not these stories. Open questions OQ-149 (where an unplaceable receipt is parked; not graded as a gap), OQ-60, OQ-112 and OQ-47 mean the prototype's provisional readings (fee at month end, BCTI counted once when paid, separate invoice, weekly Friday/Monday/Tuesday days) are only as settled as those questions. Demo-guide impact: docs/demo-guide/03-demo-script.md routes and the S3 beats that say 'Admin > Billing monitor', 'Payment cycle panel', 'Open AA fee invoices > Fee settings' (and the S4 hold-out beat) would change navigation wording and screenshots only; no scripted values (week names, totals, remittance content) change. Demo triggers keyed to the /admin/billing and /admin/billing/aa-fees routes in registry.ts would need their route lists updated when the tabs move. Existing triggers (stage-payment-week, stage-bank-mismatch, run-scheduled-fee-run, seed-month-of-bctis, record-fee-payment, xero-bulk-remittance) already cover every automatic or external behaviour in this epic's in-scope stories.
+
+| Item | Status | Verdict | Gap | Size |
+|---|---|---|---|---|
+| [US-10.2.7](../../requirements-board/requirements/stories/US-10.2.7.md) [Weekly payment cycle](epics/EP-10.md#us-10.2.7) | Proposed (1) | Partial | The weekly ISO-week cycle, Friday close and bank reconciliation, Monday anomalies held out and rolled to the next week, Tuesday payment schedule, week on payments, per-run pages with remittance advices and an earlier-runs list are all built, but on the Billing monitor and /admin/billing/payment-runs, not on a Payments tab of a Finances section (none exists). | M |
+| [US-10.3.1](../../requirements-board/requirements/stories/US-10.3.1.md) [Generate AA fee invoices](epics/EP-10.md#us-10.3.1) | Verify (3), [OQ-112](../../requirements-board/requirements/questions/OQ-112.md), [OQ-60](../../requirements-board/requirements/questions/OQ-60.md) | Partial | The monthly run, preview and fee total ($500 fixed + $5 x 40 = $700) are built, and fee invoices are kept off the Invoices screen and tracked as aaFee ledger pairs; but there is no AA fees tab of a Finances section and the fee invoice list is newest-first, not unpaid-first. | S |
+| [US-10.3.3](../../requirements-board/requirements/stories/US-10.3.3.md) [AA fee settings](epics/EP-10.md#us-10.3.3) | Verify (3), [OQ-60](../../requirements-board/requirements/questions/OQ-60.md) | Partial | Fee settings (several fixed items plus a per-BCTI charge, stored in appSettings, applied from the next run) are built and meet both acceptance criteria, but sit on a separate 'Fee settings' sub-tab under Billing, not on the AA fees tab of a Finances section beside the invoices and the run. | S |
+
+Details for every gap: [epics/EP-10.md](epics/EP-10.md).
+
+**Matches (1):** [US-10.2.4](../../requirements-board/requirements/stories/US-10.2.4.md) Bulk remittance stays in Xero
 
 <a id="ep-11"></a>
 
@@ -193,17 +225,23 @@ Details for every gap: [epics/EP-12.md](epics/EP-12.md).
 
 ### EP-13 · Admin oversight and master data
 
-[EP-13](../../requirements-board/requirements/stories/EP-13.md) · epic status Agreed (4) · 2 Contradicts, 3 Partial
+[EP-13](../../requirements-board/requirements/stories/EP-13.md) · epic status Agreed (4) · 4 Contradicts, 6 Partial, 1 Missing
 
-> Structural: the People section (nav entry, routes and redirects for /admin/masters?view=anaesthetists\|surgeons\|specialties\|surgeonGroups, the old profile routes and /admin/patients/*) and a shared record-page pattern lifted from the Contract page (EditableCard and useCardEdit in ContractCards.tsx) are the shared foundation for US-13.4.1, 13.4.4 and 13.6.2, so build them once. Surgeon-group removal touches the SurgeonGroup type, seed groups, the retire lifecycle (masterLifecycle), store/mutate and appStore, the Master data registry and sub-nav, catalogue examples (mastersExamples), audit labels and tests, plus a PERSIST_VERSION bump; the Party of kind surgeonGroup stays. The anaesthetist record and the surgeon page both edit through one sheet, so the per-card edit pattern applies to both, not just surgeons. Closed by Phases 46 to 49 (not on master): only Parties and Funding tags as real Contracts tabs (48); none of the People items. US-13.5.3 depends on US-12.1.6 (last day, active, sign-in refusal) and the open OQ-83 and OQ-147; the mobile sign-in is hard-wired to Dr Souter, so a demo path (a Last day field and a 'Try signing in on a date' control) is needed to show the inactive rule. US-13.6.2's side panel needs Contract links and List queries by surgeon, and the Surgeons list needs the shared Pager plus a search box and specialty and Active/Retired filters. OQ-143 (HPI CPN becoming required) and OQ-148 (whether AA keeps any surgeon-grouping record) are unresolved: the prototype already allows a blank HPI CPN, and the written no-group position is the requirement. Demo-guide impact (left to the owner's sweep): docs/demo-guide/03-demo-script.md line 111 lists Surgeons, Specialties and Surgeon groups as Master data views, and the S1 beat starts at the mobile sign-in, which must keep the Dr Souter demo account working.
+> All six items graded on code re-read. The prototype has every underlying screen (Billing monitor, Invoices, Ledger, payment cycle, AA fees, Xero queue and divergence panels, reconciliation status) but no Finances container: grep for 'finances' in aa-prototype/src finds nothing, and the side nav has Invoices, Billing monitor and Ledger as three items. The work is structural. First, a Finances section with six routed tabs (Billing, Invoices, Payments, Ledger, Xero, AA fees), tab counts and one warning badge, keeping the old /admin/invoices, /admin/billing and /admin/ledger addresses resolving. Second, the monolithic BillingMonitorScreen must be split: the Xero queue and divergence panels go to Xero, PaymentCyclePanel and the payment-run pages to Payments, AaFeePanel and AaFeesScreen to AA fees, and HoldingAccountPanel to the Ledger list. Third, the Billing tab gets rebuilt as the Problems-first option C table (List heading with Bookings as rows) with Problems/In progress/Done/All filters, search and a fix-the-payer action, which needs a new failure path (payer with no billing email) in the domain, store and seed. Fourth, the Ledger loses the Whole ledger / One anaesthetist switch and gains the four-figure header, a three-way list and per-anaesthetist rows that open account pages. Two items are Contradicts (US-13.2.1 and, corrected from Partial, US-13.3.1) because the prototype implements designs the catalogue now says were considered and not kept. OQ-149 (where an unplaceable receipt is placed) is open and touches the Ledger place/refund actions, the receipts-to-place figure and the reconciliation unresolved items, so build those provisionally. US-13.2.4 is Proposed and waits on the posting design (clearing account, sub-ledger against control account), which the code header says is deliberately not modelled. Demo triggers: billing-failure and arm-handoff-fault (screen BILLING_MONITOR_SCREEN), xero-outage and inject-unmatched-receipt (screen 'Admin · Ledger') are keyed by screen and must be re-pointed at the new tab routes; add 'Payer loses billing email' for the fix-the-payer beat, and optionally 'Leave money in clearing account' on the Day screen if the extra reconciliation checks are built. Demo-guide impact (docs/demo-guide/03-demo-script.md): S3 Money end to end (Billing monitor, AA fee invoices and Ledger beats, plus the direct-URL table) and S4 Exceptions (Holding account card, billing failure, Xero outage, changed-in-Xero, refund after payout, payment week) change navigation and wording; the Ledger beat changes most. The demoGuideSync test, capture recipes and ATLAS belong to the owner's sweep, not this work. Read-only; no files modified.
 
 | Item | Status | Verdict | Gap | Size |
 |---|---|---|---|---|
 | [US-13.4.1](../../requirements-board/requirements/stories/US-13.4.1.md) [Maintain reference tables](epics/EP-13.md#us-13.4.1) | Verify (3), [OQ-148](../../requirements-board/requirements/questions/OQ-148.md) | Contradicts | Master data, the Contracts section and per-card editing on the Contract page exist, but the prototype still keeps a Surgeon groups list that the story now says must not exist, plus no People section and no search, filter or paging on the people lists. | XL |
+| [US-13.2.1](../../requirements-board/requirements/stories/US-13.2.1.md) [Ledger balance views](epics/EP-13.md#us-13.2.1) | Verify (3), [OQ-149](../../requirements-board/requirements/questions/OQ-149.md) | Contradicts | A rich Ledger screen exists, but it keeps the Whole ledger / One anaesthetist switch that the catalogue explicitly considered and did not keep, and lacks the four-figure set, the three-way list and the per-anaesthetist account row columns. | L |
+| [US-13.3.1](../../requirements-board/requirements/stories/US-13.3.1.md) [Billing status of each List and Booking](epics/EP-13.md#us-13.3.1) | Verify (3) | Contradicts | The prototype's per-anaesthetist Billing monitor implements the 'Lists that unfold into their Bookings' layout the catalogue considered and did not build, and opens on All lists rather than Problems; it also lacks the filter set, search and fix-the-payer action. | L |
 | [US-13.6.2](../../requirements-board/requirements/stories/US-13.6.2.md) [Surgeon profile](epics/EP-13.md#us-13.6.2) | Verify (3), [OQ-143](../../requirements-board/requirements/questions/OQ-143.md), [OQ-148](../../requirements-board/requirements/questions/OQ-148.md) | Contradicts | A surgeon page and list exist with unique optional HPI CPN, practice text and contacts, but the profile still has a Groups card (a surgeon now belongs to no group), saves all fields in one sheet instead of card by card, has no side panel of Contracts and next Lists, and the list has no search, filter or paging. | L |
+| [US-13.2.4](../../requirements-board/requirements/stories/US-13.2.4.md) [Reconciliation status at a glance](epics/EP-13.md#us-13.2.4) | Proposed (1), [OQ-149](../../requirements-board/requirements/questions/OQ-149.md) | Partial | A derived 'Books square / Out of balance' status with unresolved items (amount, age) exists on the Admin Day dashboard, but it checks only the ledger, ledger against Xero and Xero bank lines; the clearing-account (should read zero) and sub-ledger against control-account checks are deliberately not modelled. Story is Proposed (1); OQ-149 open. | M |
+| [US-13.3.2](../../requirements-board/requirements/stories/US-13.3.2.md) [Manual intervention](epics/EP-13.md#us-13.3.2) | Verify (3) | Partial | The Xero sync queue (attempts, next try, last error, Retry now), the changed-in-Xero panel with per-item resolve, and Booking-level retry exist, and a stuck hand-off shows in both the queue and the List's Booking row, but on one Billing monitor page rather than separate Xero and Billing tabs, and there is no fix-the-payer or mark-resolved action. | M |
 | [US-13.4.4](../../requirements-board/requirements/stories/US-13.4.4.md) [Specialties](epics/EP-13.md#us-13.4.4) | Verify (3) | Partial | The list behaviour (broad names, audited add/rename/remove, remove refused while held, a rename reaching holders by id) is right, but it lives in Master data and there is no per-specialty page listing its surgeons and Contracts. | M |
 | [US-13.5.3](../../requirements-board/requirements/stories/US-13.5.3.md) [Sign in to the anaesthetist app](epics/EP-13.md#us-13.5.3) | Verify (3), [OQ-147](../../requirements-board/requirements/questions/OQ-147.md), [OQ-83](../../requirements-board/requirements/questions/OQ-83.md) | Partial | The simulated account sign-in exists and is audited, but the inactive rule (refused after the last day, allowed on it, restored on reactivation) is not implemented and there is no last day or demo path. | M |
+| [FT-13.3](../../requirements-board/requirements/stories/FT-13.3.md) [Billing flow monitoring](epics/EP-13.md#ft-13.3) | Agreed (4) | Partial | The billing-flow monitoring content exists (List-to-Xero stages, per-Booking failures, Xero queue) but lives on a stand-alone Billing monitor screen, not in a Finances section; the relocation itself is carried by US-13.3.3. | S |
 | [US-13.4.5](../../requirements-board/requirements/stories/US-13.4.5.md) [Funding tags](epics/EP-13.md#us-13.4.5) | Verify (3) | Partial | The funding tag list (code, funder Party, step-rail order, audited add, edit and remove, Suggested path from the funder) works as required, but it lives in Master data rather than a Contracts-section tab, and picking a tag shows no Contracts grouped by hospital with counts (only one total per tag). | S |
+| [US-13.3.3](../../requirements-board/requirements/stories/US-13.3.3.md) [The Finances section](epics/EP-13.md#us-13.3.3) | Verify (3) | Missing | There is no Finances section: the side nav has separate Invoices, Billing monitor and Ledger items, with no tabbed container, tab counts or single warning badge. | L |
 
 Details for every gap: [epics/EP-13.md](epics/EP-13.md).
 
@@ -229,11 +267,12 @@ Retired items, stories in the Future Work lane and features whose live stories a
 
 ## Verification log
 
-Each epic's gradings were re-checked from scratch by a separate verifier told to refute them. 4 corrections:
+Each epic's gradings were re-checked from scratch by a separate verifier told to refute them. 5 corrections:
 
 | Item | From | To | Why |
 |---|---|---|---|
 | [US-01.3.6](../../requirements-board/requirements/stories/US-01.3.6.md) | Contradicts | Contradicts | Re-opened AnaesthetistRecord.tsx, AnaesthetistsView.tsx and EditAnaesthetistSheet.tsx and upheld the Contradicts verdict and all four gaps. Only the size changed, from S to M. The requirement puts the tier and the rate per unit on one card changed by Edit, choose, Save, so the Profile card's rate editing (now in a sheet) also has to move into that card, with the tier and rate saved as separate audited changes. This is more than a one-hour tweak, and it overlaps the People record pattern. It stays in admin screen files that Contracts phases 45 to 49 do not touch, so it is still a Lane C candidate. |
 | [US-04.2.15](../../requirements-board/requirements/stories/US-04.2.15.md) | Partial | Partial | Corrected one point: the reviewer said the end is not shown, but ContractPriceRanges.tsx:174 renders rangeSpanText in the In force column, so the implied end is visible (only a distinct To column is missing). Verdict stays Partial: the other columns, newest-first order and folding are missing. Not Contradicts, since nothing implemented is wrong. |
 | [US-11.3.3](../../requirements-board/requirements/stories/US-11.3.3.md) | Contradicts | Contradicts | Verdict and gaps upheld after re-reading FollowUpView and patientAttentionCount. Corrected the evidence: the reviewer cited logListNote (lifecycle.ts:438), which is office-only. The 'anyone can write a shared note' rule is actually met by addSharedNote / SharedNotes (shared/notes), so the shared-note criterion holds. Also added that the badge counts items, not distinct patients. |
+| [US-13.3.1](../../requirements-board/requirements/stories/US-13.3.1.md) | Partial | Contradicts | Regraded Partial to Contradicts. The implemented screen opens on All lists (the story says Problems) and unfolds each List into its Bookings, which the story's Notes list under 'Considered and not built'; by the rubric any wrong implemented behaviour outranks Partial. All the reviewer's missing points re-checked and kept (no search, no fix-payer, no In progress/Done); demo_trigger filled in since the reviewer left it blank but proposed one for US-13.3.2. Size L kept. |
 | [US-13.4.1](../../requirements-board/requirements/stories/US-13.4.1.md) | Partial | Contradicts | Re-opened masterViews.ts, SurgeonsView.tsx, SurgeonProfile.tsx, SurgeonEditSheet.tsx, AnaesthetistRecord.tsx and SpecialtiesView.tsx; all the reviewer's evidence holds. Changed Partial to Contradicts: the 'No surgeon group record' acceptance criterion now says no such list exists, and the prototype implements exactly that list (and a Groups card), which is wrong behaviour rather than merely absent behaviour. Added that the anaesthetist record also edits through one sheet, so one-card-one-change holds only on the Contract page. |

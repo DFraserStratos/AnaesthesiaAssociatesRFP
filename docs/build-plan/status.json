@@ -16,15 +16,48 @@
   ],
   "in_progress": [],
   "next": {
-    "phases": [],
-    "note": "Wave 3 (54 to 57) is joined on wave/3: the anaesthetist's, surgeon's, specialty's and patient's pages, the Patients tab, and the surgeon group record removed. Every phase in the plan is built. Test 50 to 57 on 5173 from TEST-50-57.md, then tear the build lanes down from a main-folder session."
+    "phases": [
+      "58",
+      "59"
+    ],
+    "note": "The Finances section (58 to 67) is planned in two waves of lanes. Wave 4: Lane A builds the section shell (58), Lane B the read models (59). Wave 5, once both are on master: Lane A Billing then Xero (60, 61); Lane B Invoices, the invoice and credit note pages, then AA fees (62, 63, 67); Lane C Ledger, the anaesthetist account page, then Payments (64, 65, 66). Phases finish on the quick checks only; the full gate, the review and TEST-58-67.md run once, at Wave 5's join (D113)."
   },
   "guidance": {
-    "as_of": "2026-11-25",
-    "headline": "Wave 3 (54 to 57) is joined: every People page is built. Test 50 to 57 now, then tear the lanes down.",
-    "headline_sub": "50 to 57 are ready to test on 5173 from <a href=\"TEST-50-57.md\">TEST-50-57.md</a>. The join ran the full gate and one review (Playwright carries the 48 failures from before 45, for the sweep, and one load flake). Once master holds wave/3, paste into a main-folder session: \"Tear down the build lanes as docs/build-plan/LANES.md's Tear down section says.\" 45 to 49 are still yours to walk from <a href=\"TEST-45-49.md\">TEST-45-49.md</a>.",
-    "safe": {},
-    "wait": {},
-    "parallel": ""
+    "as_of": "2026-11-26",
+    "headline": "The Finances section (58 to 67) is planned. Start Wave 4: paste Lane A's prompt first (it sets the lanes up), then Lane B's.",
+    "headline_sub": "Wave 4 is the shell (58, Lane A) beside the read models (59, Lane B); Wave 5 builds the six tabs and the record pages in three lanes. Phases finish on the quick checks only; the one full gate, review and owner test sheet (TEST-58-67.md) come at Wave 5's join (D113). 45 to 57 are still yours to walk from <a href=\"TEST-45-49.md\">TEST-45-49.md</a> and <a href=\"TEST-50-57.md\">TEST-50-57.md</a>.",
+    "safe": {
+      "58": "Wave 4, Lane A: needs nothing; its session sets the lanes up.",
+      "59": "Wave 4, Lane B: needs nothing; pure domain beside 58."
+    },
+    "wait": {
+      "60": "Wave 5, Lane A: after 58 and 59 are on master.",
+      "61": "Wave 5, Lane A, after 60.",
+      "62": "Wave 5, Lane B: after 58 and 59 are on master.",
+      "63": "Wave 5, Lane B, after 62.",
+      "64": "Wave 5, Lane C: after 58 is on master (with Wave 4).",
+      "65": "Wave 5, Lane C, after 64.",
+      "66": "Wave 5, Lane C, after 65.",
+      "67": "Wave 5, Lane B, after 63."
+    },
+    "parallel": "Wave 4: Lane A 58 and Lane B 59 side by side; the last to finish joins (quick checks only). Wave 5: Lanes A, B and C side by side; the last to finish joins with the full gate and writes TEST-58-67.md. Paste each lane's prompt again whenever its session ends.",
+    "lanes": [
+      {
+        "name": "Lane A",
+        "where": "`AnaesthesiaAssociatesRFP-laneA` worktree, branch `lane/a`, ports 5273/5274/5280",
+        "queue": [
+          "58"
+        ],
+        "prompt_file": "lanes/lane-a.prompt.md"
+      },
+      {
+        "name": "Lane B",
+        "where": "`AnaesthesiaAssociatesRFP-laneB` worktree, branch `lane/b`, ports 5373/5374/5380",
+        "queue": [
+          "59"
+        ],
+        "prompt_file": "lanes/lane-b.prompt.md"
+      }
+    ]
   }
 }
