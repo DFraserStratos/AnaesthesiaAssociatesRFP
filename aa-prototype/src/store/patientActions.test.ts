@@ -19,7 +19,7 @@ import {
   requestNhiFromOffice,
   setPatientBalanceThreshold,
 } from './patientActions'
-import { patientRecordView, patientSearch, waitingNhiRows, patientAttentionCount, openBalanceWarnings } from './patientSelectors'
+import { patientRecordView, patientList, waitingNhiRows, patientAttentionCount, openBalanceWarnings } from './patientSelectors'
 import { proceduresForBooking } from './selectors'
 import { balanceAlertForBooking } from '../shared/patients/balanceAlert'
 import { advanceClockDays } from './clockActions'
@@ -300,11 +300,12 @@ describe('patient selectors', () => {
   it('search by name, normalised NHI and DOB; no internal id in the rows', () => {
     const api = createAppStore()
     const s = api.getState()
-    expect(patientSearch(s, 'mitchell').map((r) => r.nhi)).toContain('CQY9304')
-    expect(patientSearch(s, 'cqy 9304').map((r) => r.name)).toEqual(['Sarah Mitchell'])
-    expect(patientSearch(s, '16/08/1988').map((r) => r.name)).toContain('Sarah Mitchell')
-    expect(patientSearch(s, '1988-08-16').map((r) => r.name)).toContain('Sarah Mitchell')
-    expect(JSON.stringify(patientSearch(s, 'mitchell'))).not.toContain('PT0005')
+    const all = (q: string) => patientList(s, 'all', q).rows
+    expect(all('mitchell').map((r) => r.nhi)).toContain('CQY9304')
+    expect(all('cqy 9304').map((r) => r.name)).toEqual(['Sarah Mitchell'])
+    expect(all('16/08/1988').map((r) => r.name)).toContain('Sarah Mitchell')
+    expect(all('1988-08-16').map((r) => r.name)).toContain('Sarah Mitchell')
+    expect(JSON.stringify(all('mitchell'))).not.toContain('PT0005')
   })
 
   it('Sarah Mitchell\'s record: two anaesthetists, billed to her $610.00 strong, and her patient-centric balance', () => {

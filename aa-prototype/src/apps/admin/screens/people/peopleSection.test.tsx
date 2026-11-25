@@ -52,7 +52,7 @@ describe('old links redirect to People and stay (D100)', () => {
     [`/admin/masters/anaesthetists/${ANAE.sharma}`, `/admin/people/anaesthetists/${ANAE.sharma}`],
     [`/admin/masters/surgeons/${SURG.reid}`, `/admin/people/surgeons/${SURG.reid}`],
     ['/admin/patients', '/admin/people/patients'],
-    ['/admin/patients/follow-up', '/admin/people/patients?show=followUp'],
+    ['/admin/patients/follow-up', '/admin/people/patients?filter=follow-up'],
     ['/admin/patients/CQY9304', '/admin/people/patients/CQY9304'],
     ['/admin/patients/waiting', '/admin/intake/waiting'],
     ['/admin/people', '/admin/people/anaesthetists'],
@@ -203,14 +203,14 @@ describe('Specialties and Patients', () => {
     expect([...document.querySelectorAll('tr[data-specialty]')].map((r) => r.textContent)).toEqual([expect.stringContaining('Ophthalmology')])
   })
 
-  it("Patients' switch shows Needs follow-up in the URL, and a row opens the patient's page", () => {
-    const router = mountAt('/admin/people/patients')
+  it("Patients' filter shows Needs follow-up in the URL, and a row opens the patient's page", () => {
+    const router = mountAt('/admin/people/patients?filter=all')
     fireEvent.change(screen.getByLabelText('Search patients'), { target: { value: 'CQY9304' } })
     fireEvent.click(document.querySelector('tr[data-patient-nhi="CQY9304"] td') as HTMLElement)
     expect(here(router)).toBe('/admin/people/patients/CQY9304')
     const followUp = mountAt('/admin/people/patients')
     fireEvent.click(within(screen.getAllByRole('group', { name: 'Show' }).at(-1)!).getByRole('button', { name: /^Needs follow-up/ }))
-    expect(here(followUp)).toBe('/admin/people/patients?show=followUp')
-    expect(document.querySelector('[data-shot="admin-patient-follow-up"]')).not.toBeNull()
+    expect(here(followUp)).toBe('/admin/people/patients?filter=follow-up')
+    expect(document.querySelector('[data-shot="patients-needs-office"]')).not.toBeNull()
   })
 })

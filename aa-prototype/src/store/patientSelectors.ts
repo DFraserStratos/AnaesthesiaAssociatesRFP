@@ -88,24 +88,59 @@ function bookingsByPatient(bookings: Readonly<Record<string, Booking>>): Map<str
 }
 
 // ---------------------------------------------------------------------------
-// Search
+// The Patients list (build plan Phase 57; US-11.3.1, US-11.3.3, DM-10)
 // ---------------------------------------------------------------------------
 
-export const PATIENT_SEARCH_LIMIT = 50
-/** An empty search lists the patients booked within this many days. */
+/** Coming up lists the patients with a Booking within this many days. */
 export const PATIENT_SEARCH_UPCOMING_DAYS = 14
 
-export interface PatientSearchRow {
+/** The Patients tab's filters: Coming up (the default), Needs follow-up and All. */
+export type PatientListFilter = 'comingUp' | 'followUp' | 'all'
+
+/** Why a patient needs the office (DM-10): one reason of each kind at most, per patient. */
+export type PatientNeedReason =
+  | {
+      kind: 'balance'
+      /** The strongest open balance warning on the patient's Bookings. */
+      strength: WarningStrength
+      /** Billed to the patient, owing less credit held (negative reads "in credit"). */
+      net: number
+      owingCount: number
+      oldestAgeDays: number
+      /** The strong warning's age threshold, for its words. */
+      thresholdDays: number
+    }
+  | {
+      kind: 'followUpDue'
+      /** The oldest due reminder. */
+      followUpId: string
+      dueDateISO: IsoDate
+      text: string
+      invoiceNumber?: string
+      /** Further due reminders for the patient. */
+      more: number
+    }
+  | {
+      kind: 'detailsDiffer'
+      fields: PatientPendingDetails['differences'][number]['field'][]
+      source: PatientPendingDetails['source']
+      by?: string
+    }
+
+export interface PatientListRow {
   nhi: string
   name: string
   dobISO: IsoDate
   age?: number
   nextBooking?: { bookingId: string; listId: string; dateISO: IsoDate; session: Session }
-  /** Signed, net of credit held (US-13.2.2); negative reads "in credit". */
-  balance: number
   /** The strongest open balance warning, if any. */
   warning?: WarningStrength
+  /** Why the patient needs the office, most pressing first; empty when nothing does. */
+  reasons: PatientNeedReason[]
 }
+
+/** A row of Needs follow-up: never without a reason. */
+export type PatientNeedRow = PatientListRow & { reasons: [PatientNeedReason, ...PatientNeedReason[]] }
 
 const DOB_ISO = /^\d{4}-\d{2}-\d{2}$/
 const DOB_NZ = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
@@ -118,57 +153,192 @@ function dobQuery(raw: string): string | undefined {
   return `${m[3]}-${m[2]!.padStart(2, '0')}-${m[1]!.padStart(2, '0')}`
 }
 
-/**
- * Find patients by name (any word), NHI (normalised: "zaa 0067" finds
- * ZAA0067) or date of birth (`YYYY-MM-DD` or `DD/MM/YYYY`). Name and NHI
- * reuse 38a's `patientMatches`; only the DOB is added here. At most 50 rows,
- * by name. An empty query lists the patients with a Booking in the next 14
- * days, then everyone with an open item (a balance warning or details to
- * review).
- */
-export function patientSearch(state: PatientSelectorState, query: string): PatientSearchRow[] {
-  const today = state.clock.todayISO
-  const byPatient = bookingsByPatient(state.schedule.bookings)
-  const warnings = openBalanceByPatient(state)
-  const nextOf = (patientId: string): PatientSearchRow['nextBooking'] => {
-    let best: PatientSearchRow['nextBooking']
-    for (const b of byPatient.get(patientId) ?? []) {
-      const list = state.schedule.lists[b.listId]
-      if (list === undefined || list.dateISO < today) continue
-      if (best === undefined || list.dateISO < best.dateISO) best = { bookingId: b.id, listId: list.id, dateISO: list.dateISO, session: list.session }
-    }
-    return best
-  }
-  const rowOf = (p: Patient): PatientSearchRow => {
-    const next = nextOf(p.hiddenInternalId)
-    const age = ageInCompletedYears(p.dobISO, today)
-    const warning = warnings.get(p.hiddenInternalId)
-    return {
-      nhi: p.nhi,
-      name: p.name,
-      dobISO: p.dobISO,
-      ...(age !== undefined ? { age } : {}),
-      ...(next !== undefined ? { nextBooking: next } : {}),
-      balance: patientCentricBalance(patientBalanceRows(state, p.hiddenInternalId), p.hiddenInternalId).outstandingTotal,
-      ...(warning !== undefined ? { warning } : {}),
-    }
-  }
-  const byName = (a: Patient, b: Patient) => a.name.localeCompare(b.name) || a.nhi.localeCompare(b.nhi)
-  const patients = Object.values(state.masters.patients)
+const SESSION_ORDER: Record<Session, number> = { AM: 0, PM: 1, OOH: 2 }
 
-  if (query.trim() === '') {
-    const upcoming = patients.filter((p) => {
-      const next = nextOf(p.hiddenInternalId)
-      return next !== undefined && daysBetween(today, next.dateISO) <= PATIENT_SEARCH_UPCOMING_DAYS
-    })
-    const seen = new Set(upcoming.map((p) => p.hiddenInternalId))
-    const open = patients.filter((p) => !seen.has(p.hiddenInternalId) && (warnings.has(p.hiddenInternalId) || p.pendingDetails !== undefined))
-    return [...upcoming.sort(byName), ...open.sort(byName)].slice(0, PATIENT_SEARCH_LIMIT).map(rowOf)
+/** Each patient's next Booking (today or later), from one pass over the Bookings. */
+function nextBookingByPatient(state: Pick<AppState, 'schedule' | 'clock'>): Map<string, NonNullable<PatientListRow['nextBooking']>> {
+  const today = state.clock.todayISO
+  const out = new Map<string, NonNullable<PatientListRow['nextBooking']>>()
+  for (const b of Object.values(state.schedule.bookings)) {
+    if (b.cancellation !== undefined) continue
+    const list = state.schedule.lists[b.listId]
+    if (list === undefined || list.dateISO < today) continue
+    const best = out.get(b.patientId)
+    if (best === undefined || list.dateISO < best.dateISO || (list.dateISO === best.dateISO && SESSION_ORDER[list.session] < SESSION_ORDER[best.session])) {
+      out.set(b.patientId, { bookingId: b.id, listId: list.id, dateISO: list.dateISO, session: list.session })
+    }
   }
-  const dob = dobQuery(query)
-  const parsed = parseBookingQuery(query)
-  const hits = patients.filter((p) => (dob !== undefined ? p.dobISO === dob : patientMatches(parsed, p)))
-  return hits.sort(byName).slice(0, PATIENT_SEARCH_LIMIT).map(rowOf)
+  return out
+}
+
+/** Every patient's reasons to need the office, keyed by the internal id (never shown). */
+function reasonsByPatient(state: PatientSelectorState): Map<string, PatientNeedReason[]> {
+  const today = state.clock.todayISO
+  const out = new Map<string, PatientNeedReason[]>()
+  const push = (patientId: string, reason: PatientNeedReason) => {
+    const list = out.get(patientId)
+    if (list === undefined) out.set(patientId, [reason])
+    else list.push(reason)
+  }
+  // A balance warning: every open one counts, mild included (an amount owing or a credit, US-11.3.3); one reason per patient, the strongest.
+  const thresholdDays = patientBalanceThresholdDays(state)
+  for (const [patientId, strength] of openBalanceByPatient(state)) {
+    const summary = patientBalanceSummary(patientBalanceRows(state, patientId), { patientId, todayISO: today })
+    push(patientId, {
+      kind: 'balance',
+      strength,
+      net: (toCents(summary.owingTotal) - toCents(summary.creditTotal)) / 100,
+      owingCount: summary.owing.length,
+      oldestAgeDays: summary.oldestAgeDays,
+      thresholdDays,
+    })
+  }
+  // A follow-up due on its date or after: one reason per patient, the oldest, with how many more.
+  const due = new Map<string, PatientFollowUp[]>()
+  for (const f of followUpsDue(state)) {
+    const list = due.get(f.patientId)
+    if (list === undefined) due.set(f.patientId, [f])
+    else list.push(f)
+  }
+  for (const [patientId, reminders] of due) {
+    const oldest = reminders[0]!
+    const invoiceNumber = oldest.invoiceId !== undefined ? state.billing.invoices[oldest.invoiceId]?.invoiceNumber : undefined
+    push(patientId, {
+      kind: 'followUpDue',
+      followUpId: oldest.id,
+      dueDateISO: oldest.dueDateISO!,
+      text: oldest.text,
+      ...(invoiceNumber !== undefined ? { invoiceNumber } : {}),
+      more: reminders.length - 1,
+    })
+  }
+  // Details received that differ from the record: one reason naming the fields.
+  for (const p of patientsWithPendingDetails(state)) {
+    const pending = p.pendingDetails!
+    push(p.hiddenInternalId, {
+      kind: 'detailsDiffer',
+      fields: pending.differences.map((d) => d.field),
+      source: pending.source,
+      ...(pending.by !== undefined ? { by: pending.by } : {}),
+    })
+  }
+  return out
+}
+
+/** How pressing a patient's reasons are: a strong balance warning, then a follow-up due, then details that differ, then the rest. */
+function pressRank(reasons: readonly PatientNeedReason[]): number {
+  if (reasons.some((r) => r.kind === 'balance' && r.strength === 'strong')) return 0
+  if (reasons.some((r) => r.kind === 'followUpDue')) return 1
+  if (reasons.some((r) => r.kind === 'detailsDiffer')) return 2
+  return 3
+}
+
+function rankOfReason(r: PatientNeedReason): number {
+  if (r.kind === 'balance') return r.strength === 'strong' ? 0 : 3
+  return r.kind === 'followUpDue' ? 1 : 2
+}
+
+function oldestDue(reasons: readonly PatientNeedReason[]): string {
+  const r = reasons.find((x) => x.kind === 'followUpDue')
+  return r !== undefined && r.kind === 'followUpDue' ? r.dueDateISO : '9999-12-31'
+}
+
+interface ListContext {
+  next: Map<string, NonNullable<PatientListRow['nextBooking']>>
+  warnings: Map<string, WarningStrength>
+  reasons: Map<string, PatientNeedReason[]>
+}
+
+function listContext(state: PatientSelectorState): ListContext {
+  return { next: nextBookingByPatient(state), warnings: openBalanceByPatient(state), reasons: reasonsByPatient(state) }
+}
+
+function listRowOf(p: Patient, ctx: ListContext, today: IsoDate): PatientListRow {
+  const next = ctx.next.get(p.hiddenInternalId)
+  const age = ageInCompletedYears(p.dobISO, today)
+  const warning = ctx.warnings.get(p.hiddenInternalId)
+  const reasons = [...(ctx.reasons.get(p.hiddenInternalId) ?? [])].sort((a, b) => rankOfReason(a) - rankOfReason(b))
+  return {
+    nhi: p.nhi,
+    name: p.name,
+    dobISO: p.dobISO,
+    ...(age !== undefined ? { age } : {}),
+    ...(next !== undefined ? { nextBooking: next } : {}),
+    ...(warning !== undefined ? { warning } : {}),
+    reasons,
+  }
+}
+
+const byName = (a: PatientListRow, b: PatientListRow) => a.name.localeCompare(b.name) || a.nhi.localeCompare(b.nhi)
+
+/** Most pressing first (a strong balance warning, the oldest follow-up due, details that differ, the rest), ties by name. */
+function byPressing(a: PatientListRow, b: PatientListRow): number {
+  return pressRank(a.reasons) - pressRank(b.reasons) || oldestDue(a.reasons).localeCompare(oldestDue(b.reasons)) || byName(a, b)
+}
+
+function needRows(state: PatientSelectorState, ctx: ListContext): PatientNeedRow[] {
+  const today = state.clock.todayISO
+  const out: PatientNeedRow[] = []
+  for (const patientId of ctx.reasons.keys()) {
+    const p = state.masters.patients[patientId]
+    if (p === undefined) continue
+    out.push(listRowOf(p, ctx, today) as PatientNeedRow)
+  }
+  return out.sort(byPressing)
+}
+
+/**
+ * Every patient needing the office (DM-10; US-11.3.3), one row per patient with its reasons: an open
+ * balance warning (mild or strong, the strongest), a reminder due today or earlier (the oldest, with
+ * how many more) and details received that differ from the record. Most pressing first. Derived,
+ * never stored: a patient leaves the moment their last reason is resolved. Rows waiting for an NHI
+ * have no patient record and are Intake's (US-11.1.5). The Needs follow-up rows, its count, the
+ * People badge (`patientAttentionCount`) and the patient's page all read this.
+ */
+export function patientsNeedingOffice(state: PatientSelectorState): PatientNeedRow[] {
+  return needRows(state, listContext(state))
+}
+
+/** One patient's reasons to need the office (the page's Needs the office card): `patientsNeedingOffice`'s, for that patient. */
+export function patientNeedReasons(state: PatientSelectorState, nhi: string): PatientNeedReason[] {
+  return patientsNeedingOffice(state).find((r) => r.nhi === nhi)?.reasons ?? []
+}
+
+/**
+ * The Patients tab's list (US-11.3.1): one filter (Coming up, a Booking within 14 days, by the next
+ * Booking's date then name; Needs follow-up, `patientsNeedingOffice`'s order; All, by name), narrowed
+ * by a search on name (any word), NHI (normalised: "zaa 0067" finds ZAA0067) or date of birth
+ * (`YYYY-MM-DD` or `DD/MM/YYYY`). Every match, uncapped: the screen pages it. `allCount` is how many
+ * patients the search finds under All, for the "Search all patients" hint. A row's balance is read
+ * for the rows shown (`patientListBalance`).
+ */
+export function patientList(state: PatientSelectorState, filter: PatientListFilter, query: string): { rows: PatientListRow[]; allCount: number } {
+  const today = state.clock.todayISO
+  const ctx = listContext(state)
+  const q = query.trim()
+  const dob = q === '' ? undefined : dobQuery(q)
+  const parsed = q === '' ? undefined : parseBookingQuery(q)
+  const matches = (p: Pick<Patient, 'name' | 'nhi' | 'dobISO'>) => q === '' || (dob !== undefined ? p.dobISO === dob : patientMatches(parsed!, p))
+  const patients = Object.values(state.masters.patients)
+  const allCount = q === '' ? patients.length : patients.filter(matches).length
+
+  if (filter === 'followUp') return { rows: needRows(state, ctx).filter(matches), allCount }
+  if (filter === 'all') return { rows: patients.filter(matches).map((p) => listRowOf(p, ctx, today)).sort(byName), allCount }
+  const rows = patients
+    .filter((p) => {
+      const next = ctx.next.get(p.hiddenInternalId)
+      return next !== undefined && daysBetween(today, next.dateISO) <= PATIENT_SEARCH_UPCOMING_DAYS && matches(p)
+    })
+    .map((p) => listRowOf(p, ctx, today))
+    .sort((a, b) => a.nextBooking!.dateISO.localeCompare(b.nextBooking!.dateISO) || SESSION_ORDER[a.nextBooking!.session] - SESSION_ORDER[b.nextBooking!.session] || byName(a, b))
+  return { rows, allCount }
+}
+
+/** A list row's balance: signed, net of credit held (US-13.2.2); negative reads "in credit". */
+export function patientListBalance(state: PatientSelectorState, nhi: string): number {
+  const p = patientByNhi(state, nhi)
+  if (p === undefined) return 0
+  return patientCentricBalance(patientBalanceRows(state, p.hiddenInternalId), p.hiddenInternalId).outstandingTotal
 }
 
 // ---------------------------------------------------------------------------
@@ -380,14 +550,11 @@ export function waitingNhiRows(state: Pick<AppState, 'intake' | 'masters' | 'sch
 }
 
 /**
- * The Patients nav badge: open strong balance warnings, due reminders and details to review.
- * Rows waiting for an NHI are not counted here: they are Intake's, counted once in
- * `matchingAttentionCount` (US-11.1.5).
+ * The People nav badge (build plan Phase 57; US-11.3.3, DM-10): the number of patients on Needs
+ * follow-up, `patientsNeedingOffice(state).length`, so the badge, the filter's figure and the list
+ * always agree. A patient with several reasons counts once. Rows waiting for an NHI are not counted
+ * here: they are Intake's, counted once in `matchingAttentionCount` (US-11.1.5).
  */
 export function patientAttentionCount(state: PatientSelectorState): number {
-  return (
-    openBalanceWarnings(state).filter((r) => r.warning.strength === 'strong').length +
-    followUpsDue(state).length +
-    patientsWithPendingDetails(state).length
-  )
+  return patientsNeedingOffice(state).length
 }

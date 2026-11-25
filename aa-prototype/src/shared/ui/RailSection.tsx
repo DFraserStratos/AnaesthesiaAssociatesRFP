@@ -7,7 +7,7 @@
  * it and extend it by a prop that defaults to today's behaviour; none copies it.
  */
 
-import type { CSSProperties, ReactNode } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import { neutral } from '../../theme/tokens'
 import { Card } from './Card'
 import { CountBadge } from './CountBadge'
@@ -55,7 +55,13 @@ export interface RailSectionProps extends DataAttributes {
   /** The line shown when there are no rows. */
   empty: ReactNode
   /** Where See all opens: the whole list. */
-  allTo: string
+  allTo?: string
+  /**
+   * See all shows the rest in place (and Show fewer folds them back) instead of opening `allTo`, for a
+   * section whose whole list has no page of its own (the patient's Bookings, build plan Phase 57).
+   * Default off.
+   */
+  expandable?: boolean
   /** A short note beside the title. */
   aside?: ReactNode
   /** The section's hook (`data-*` pass through to it); See all carries `${shot}-all`. */
@@ -63,8 +69,9 @@ export interface RailSectionProps extends DataAttributes {
   style?: CSSProperties
 }
 
-export function RailSection({ title, countNoun, rows, limit = 5, empty, allTo, aside, shot, style, ...data }: RailSectionProps) {
-  const shown = rows.slice(0, limit)
+export function RailSection({ title, countNoun, rows, limit = 5, empty, allTo, expandable = false, aside, shot, style, ...data }: RailSectionProps) {
+  const [expanded, setExpanded] = useState(false)
+  const shown = expandable && expanded ? rows : rows.slice(0, limit)
   return (
     <Card
       {...data}
@@ -82,8 +89,13 @@ export function RailSection({ title, countNoun, rows, limit = 5, empty, allTo, a
           ))}
         </ul>
       )}
-      {rows.length > shown.length && (
+      {rows.length > shown.length && !expandable && allTo !== undefined && (
         <TextAction size="sm" flush to={allTo} shot={`${shot}-all`}>{`See all ${rows.length}`}</TextAction>
+      )}
+      {expandable && rows.length > limit && (
+        <TextAction size="sm" flush onClick={() => setExpanded((e) => !e)} ariaExpanded={expanded} shot={`${shot}-all`}>
+          {expanded ? 'Show fewer' : `See all ${rows.length}`}
+        </TextAction>
       )}
     </Card>
   )

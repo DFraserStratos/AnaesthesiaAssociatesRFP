@@ -540,10 +540,9 @@ export function AdminPeopleSpecialtiesRoute() {
   return <SpecialtiesTab actor={actor} />
 }
 
-/** Today's patient Search and Follow-up (`?show=followUp`) until Phase 57 rebuilds the tab. */
+/** People · Patients (build plan Phase 57): one list with Coming up, Needs follow-up and All. */
 export function AdminPeoplePatientsRoute() {
-  const { actor } = useAdminOutlet()
-  return <PatientsScreen actor={actor} />
+  return <PatientsScreen />
 }
 
 /**

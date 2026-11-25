@@ -15,6 +15,7 @@ export { MoveListPromptProvider, useMoveListPrompt, type MoveListPromptApi } fro
 export { MovedToYouPanel, movedToYouLine, movedToYouByLine } from './MovedToYouPanel'
 export { useMoveInput, useMoveTargets, sessionKey, useMovableSessions, useIsMovable, useMovableLists, useMovedToMe, useMovedToMeNotice, useBookingsMovedToMe, useBookingMovedToMeNotice, useBookingMoveEntries, useOwnBookingInView, type MovableSession } from './useListMoves'
 export { EditPatientSheet } from './EditPatientSheet'
+export { PatientFormFields, patientDraftOf, patientPatchOf, patientDraftBlocked, type PatientDraft, type PatientFormRights } from './PatientFormFields'
 export { PaidBySheet, PAYER_CONTACT_ASK, CHILD_PAYER_HINT } from './PaidBySheet'
 export { FunderSheet } from './FunderSheet'
 export { PostalAddressFields, addressDraftOf, EMPTY_ADDRESS, type PostalAddressDraft } from './PostalAddressFields'

@@ -6,10 +6,10 @@
  */
 
 import type { ReactNode } from 'react'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { MemoryRouter, Route, Routes, useParams } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { advanceClockDays, freshAppState, OFFICE_ACTOR, patientBalanceThresholdDays, patientRecordView, THRESHOLD_RANGE_MESSAGE, useAppStore } from '../../../../store'
+import { advanceClockDays, createBooking, freshAppState, logPatientFollowUp, patientAttentionCount, upsertPatient, OFFICE_ACTOR, patientBalanceThresholdDays, patientRecordView, THRESHOLD_RANGE_MESSAGE, useAppStore } from '../../../../store'
 import { SurfaceProvider } from '../../../../shared/surface'
 import { PatientsScreen } from './PatientsScreen'
 import { PatientRecord } from './PatientRecord'
@@ -85,8 +85,8 @@ describe('the patient record', () => {
 
   it('the record form shows no required marker on demographics or ethnicity', () => {
     const { container } = inAdmin(<PatientRecord nhi="CQY9304" actor={OFFICE_ACTOR} />, '/admin/people/patients/CQY9304')
-    fireEvent.click(within(container.querySelector('[data-shot="patient-details"]') as HTMLElement).getByRole('button', { name: 'Edit patient details' }))
-    const dialog = screen.getByRole('dialog')
+    fireEvent.click(within(container.querySelector('[data-shot="patient-details"]') as HTMLElement).getByRole('button', { name: 'Edit details' }))
+    const dialog = container.querySelector('[data-shot="patient-details"]') as HTMLElement
     expect(within(dialog).getByLabelText('Ethnicity code')).toBeInTheDocument()
     for (const input of dialog.querySelectorAll('input, select, textarea')) {
       expect(input.hasAttribute('required')).toBe(false)
@@ -108,15 +108,12 @@ describe('the patient record: review fixes', () => {
     const { container } = inAdmin(<PatientRecord nhi="CQY9304" actor={OFFICE_ACTOR} />, '/admin/people/patients/CQY9304')
     const details = container.querySelector('[data-shot="patient-details"]') as HTMLElement
     expect(details.textContent).toContain('Not supplied')
-    fireEvent.click(within(details).getByRole('button', { name: 'Edit patient details' }))
-    const dialog = screen.getByRole('dialog')
-    fireEvent.change(within(dialog).getByLabelText('Phone'), { target: { value: '021 777 1234' } })
-    const save = within(dialog).getAllByRole('button').find((b) => /Save|Apply/.test(b.textContent ?? ''))!
-    expect(save).not.toBeDisabled()
-    fireEvent.click(save)
+    fireEvent.click(within(details).getByRole('button', { name: 'Edit details' }))
+    fireEvent.change(within(details).getByLabelText('Phone'), { target: { value: '021 777 1234' } })
+    fireEvent.click(within(details).getByRole('button', { name: 'Save' }))
     expect(Object.values(useAppStore.getState().masters.patients).find((p) => p.nhi === 'CQY9304')!.phone).toBe('021 777 1234')
     cleanup()
-    const search = inAdmin(<PatientsScreen actor={OFFICE_ACTOR} />)
+    const search = inAdmin(<PatientsScreen />, '/admin/people/patients?filter=all')
     fireEvent.change(screen.getByLabelText('Search patients'), { target: { value: 'mitchell' } })
     expect(search.container.querySelector('[data-patient-nhi="CQY9304"]')?.textContent).toContain('Not supplied')
   })
@@ -140,6 +137,126 @@ describe('the patient record: review fixes', () => {
     fireEvent.click(within(log).getByRole('button', { name: 'Set reminder' }))
     expect(log.textContent).not.toContain('Pick today or a later day')
     expect(Object.values(useAppStore.getState().patientCare.followUps).map((f) => f.dueDateISO)).toEqual([useAppStore.getState().clock.todayISO])
+  })
+})
+
+/** Sarah Mitchell booked on Dr Souter's Forte List: her strong balance warning shows (build plan Phase 57). */
+function bookMitchell() {
+  const made = createBooking(useAppStore, OFFICE_ACTOR, 'L-34821-2026-11-30-AM', { patient: { nhi: 'CQY9304', name: 'Sarah Mitchell', dobISO: '1988-08-16' }, sourceText: { text: 'Knee arthroscopy', source: 'phone' } })
+  if (!made.ok) throw new Error(made.message)
+}
+
+function inPeople(path: string) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <SurfaceProvider variant="web">
+        <Routes>
+          <Route path="/admin/people/patients" element={<PatientsScreen />} />
+          <Route path="/admin/people/patients/:nhi" element={<PatientRecordAt />} />
+        </Routes>
+      </SurfaceProvider>
+    </MemoryRouter>,
+  )
+}
+
+function PatientRecordAt() {
+  const { nhi = '' } = useParams()
+  return <PatientRecord nhi={nhi} actor={OFFICE_ACTOR} />
+}
+
+const filterButton = (name: RegExp) => within(screen.getByRole('group', { name: 'Show' })).getByRole('button', { name })
+
+describe('the Patients tab (build plan Phase 57)', () => {
+  it('opens on Coming up; the filter and the search live in the URL', () => {
+    const { container } = inPeople('/admin/people/patients')
+    expect(filterButton(/^Coming up/)).toHaveAttribute('aria-pressed', 'true')
+    expect(container.querySelector('[data-patients-filter="comingUp"]')).not.toBeNull()
+    fireEvent.click(filterButton(/^All/))
+    expect(container.querySelector('[data-patients-filter="all"]')).not.toBeNull()
+    expect(container.querySelectorAll('tr[data-patient-nhi]').length).toBe(50)
+    expect(container.querySelector('[data-shot="people-pager"]')).not.toBeNull()
+  })
+
+  it('a search with no match on Coming up offers Search all patients, which finds her', () => {
+    const { container } = inPeople('/admin/people/patients?filter=coming-up')
+    fireEvent.change(screen.getByLabelText('Search patients'), { target: { value: 'zzz-nobody' } })
+    expect(container.querySelector('[data-shot="patients-search-all"]')).toBeNull()
+    fireEvent.change(screen.getByLabelText('Search patients'), { target: { value: 'cqy 9304' } })
+    if (container.querySelector('tr[data-patient-nhi="CQY9304"]') === null) {
+      fireEvent.click(screen.getByRole('button', { name: 'Search all patients' }))
+    }
+    expect(container.querySelector('tr[data-patient-nhi="CQY9304"]')).not.toBeNull()
+  })
+
+  it('Needs follow-up: one row per patient with its reasons, no action on the row, and the row opens the page', () => {
+    bookMitchell()
+    const { container } = inPeople('/admin/people/patients?filter=follow-up')
+    const row = container.querySelector('tr[data-patient-nhi="CQY9304"]') as HTMLElement
+    expect(row.getAttribute('data-reasons')).toBe('balance')
+    expect(row.textContent).toContain('Balance over')
+    expect(within(row).queryByRole('button', { name: /Clear|Done/ })).toBeNull()
+    expect(container.querySelectorAll('tr[data-patient-nhi="CQY9304"]')).toHaveLength(1)
+    expect(filterButton(/^Needs follow-up/).textContent).toContain(String(patientAttentionCount(useAppStore.getState())))
+    fireEvent.click(row.querySelector('td') as HTMLElement)
+    expect(container.querySelector('[data-shot="admin-patient-record"]')).not.toBeNull()
+    expect(container.querySelector('[data-shot="patient-needs-office"]')).not.toBeNull()
+  })
+})
+
+describe("the patient's page (build plan Phase 57)", () => {
+  it('the NHI beside the name, no internal id, no tabs; Bookings in the side panel', () => {
+    const { container } = inPeople('/admin/people/patients/CQY9304')
+    expect(container.querySelector('[data-shot="patient-record-nhi"]')?.textContent).toBe('NHI CQY9304')
+    expect(container.textContent).not.toMatch(/PT0\d/)
+    expect(screen.queryByRole('tablist')).toBeNull()
+    const rail = screen.getByLabelText('Patient details')
+    expect(rail.querySelector('[data-shot="patient-details"]')).not.toBeNull()
+    expect(rail.querySelector('[data-shot="patient-bookings"]')).not.toBeNull()
+  })
+
+  it('Details saves in place as one patient.update; Cancel writes nothing', () => {
+    const { container } = inPeople('/admin/people/patients/CQY9304')
+    const details = container.querySelector('[data-shot="patient-details"]') as HTMLElement
+    const before = useAppStore.getState().audit.length
+    fireEvent.click(within(details).getByRole('button', { name: 'Edit details' }))
+    fireEvent.change(within(details).getByLabelText('Phone'), { target: { value: '021 000 1111' } })
+    fireEvent.click(within(details).getByRole('button', { name: 'Cancel' }))
+    expect(useAppStore.getState().audit.length).toBe(before)
+    fireEvent.click(within(details).getByRole('button', { name: 'Edit details' }))
+    fireEvent.change(within(details).getByLabelText('Phone'), { target: { value: '021 000 2222' } })
+    fireEvent.click(within(details).getByRole('button', { name: 'Save' }))
+    const added = useAppStore.getState().audit.slice(before)
+    expect(added.map((e) => e.action)).toEqual(['patient.update'])
+    expect(details.textContent).toContain('021 000 2222')
+  })
+
+  it('Clear on the page takes the patient off Needs follow-up, and Done on a due reminder does too', () => {
+    bookMitchell()
+    const before = patientAttentionCount(useAppStore.getState())
+    const { container } = inPeople('/admin/people/patients/CQY9304')
+    const card = container.querySelector('[data-shot="patient-needs-office"]') as HTMLElement
+    fireEvent.click(within(card).getAllByRole('button', { name: /^Clear/ })[0]!)
+    expect(container.querySelector('[data-shot="patient-needs-office"]')).toBeNull()
+    expect(patientAttentionCount(useAppStore.getState())).toBe(before - 1)
+    act(() => { expect(logPatientFollowUp(useAppStore, OFFICE_ACTOR, { nhi: 'CQY9304', kind: 'reminder', text: 'Ring Sarah', dueDateISO: useAppStore.getState().clock.todayISO }).ok).toBe(true) })
+    const again = container.querySelector('[data-shot="patient-needs-office"]') as HTMLElement
+    expect(again.getAttribute('data-reasons')).toBe('followUpDue')
+    expect(again.textContent).toContain('Follow-up due today')
+    fireEvent.click(within(again).getByRole('button', { name: 'Mark done: Ring Sarah' }))
+    expect(container.querySelector('[data-shot="patient-needs-office"]')).toBeNull()
+    expect(patientAttentionCount(useAppStore.getState())).toBe(before - 1)
+  })
+
+  it('details that differ: the record is unchanged, Use applies the new phone and clears the reason', () => {
+    const p = Object.values(useAppStore.getState().masters.patients).find((x) => x.nhi === 'CQY9304')!
+    expect(upsertPatient(useAppStore, OFFICE_ACTOR, { nhi: p.nhi, name: p.name, dobISO: p.dobISO, phone: '027 555 0101', detailsSource: 'hospital' }).ok).toBe(true)
+    expect(useAppStore.getState().masters.patients[p.hiddenInternalId]!.phone).toBe(p.phone)
+    const { container } = inPeople('/admin/people/patients/CQY9304')
+    const differ = container.querySelector('[data-shot="patient-details-differ"]') as HTMLElement
+    fireEvent.change(within(differ).getByLabelText(/Phone: keep or use incoming/), { target: { value: 'use' } })
+    fireEvent.click(within(differ).getByRole('button', { name: 'Apply' }))
+    expect(useAppStore.getState().masters.patients[p.hiddenInternalId]!.phone).toBe('027 555 0101')
+    expect(container.querySelector('[data-shot="patient-details-differ"]')).toBeNull()
   })
 })
 
