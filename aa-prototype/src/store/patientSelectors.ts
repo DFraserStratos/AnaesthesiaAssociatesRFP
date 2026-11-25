@@ -379,10 +379,13 @@ export function waitingNhiRows(state: Pick<AppState, 'intake' | 'masters' | 'sch
   return out.sort((a, b) => a.dateISO.localeCompare(b.dateISO) || (a.scheduledTime ?? '99:99').localeCompare(b.scheduledTime ?? '99:99') || a.rowId.localeCompare(b.rowId))
 }
 
-/** The Patients nav badge: waiting rows, open strong balance warnings, due reminders and details to review. */
+/**
+ * The Patients nav badge: open strong balance warnings, due reminders and details to review.
+ * Rows waiting for an NHI are not counted here: they are Intake's, counted once in
+ * `matchingAttentionCount` (US-11.1.5).
+ */
 export function patientAttentionCount(state: PatientSelectorState): number {
   return (
-    waitingNhiRows(state).length +
     openBalanceWarnings(state).filter((r) => r.warning.strength === 'strong').length +
     followUpsDue(state).length +
     patientsWithPendingDetails(state).length

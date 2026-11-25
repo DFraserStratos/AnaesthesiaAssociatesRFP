@@ -36,8 +36,8 @@ describe('Receive list with a missing NHI (catch-up Phase 40)', () => {
   it('shows on Waiting for NHI, imports the two NHI-less rows creating nothing, names the NHIs, then reads Already received', () => {
     const api = createAppStore()
     const t = byId('receive-no-nhi-list')
-    expect(demoTriggersFor(api.getState(), '/admin/patients/waiting', 'bar').map((m) => m.trigger.id)).toContain('receive-no-nhi-list')
-    const c = ctx('/admin/patients/waiting')
+    expect(demoTriggersFor(api.getState(), '/admin/intake/waiting', 'bar').map((m) => m.trigger.id)).toContain('receive-no-nhi-list')
+    const c = ctx('/admin/intake/waiting')
     expect(t.disabledReason(api.getState(), c)).toBeNull()
     const bookings = Object.keys(api.getState().schedule.bookings).length
     const patients = Object.keys(api.getState().masters.patients).length

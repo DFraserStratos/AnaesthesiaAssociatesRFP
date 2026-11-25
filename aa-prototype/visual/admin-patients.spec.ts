@@ -5,7 +5,7 @@ import { runDemoAction } from './demoActions'
  * Catch-up Phase 40: Admin, Patients. Search finds Sarah Mitchell by name and
  * NHI; her record shows the three balance tiles ($610.00 strong, billed to
  * her) and the invoice table with Paid and Unpaid rows, and never the internal
- * patient id. Waiting for NHI takes the "Receive list with a missing NHI"
+ * patient id. Waiting for NHI (on Intake since Phase 51) takes the "Receive list with a missing NHI"
  * demo action; Add NHI JKL1188 on Losa Tuilagi's row matches her record (no
  * second one is made) and the row leaves the view. The Follow-up view lists
  * the reminder logged on the record (Done takes it off) and the balance
@@ -63,7 +63,7 @@ test('search finds Sarah Mitchell; her record shows the strong balance and both 
 })
 
 test('Waiting for NHI: the missing-NHI list arrives, Add NHI JKL1188 matches Losa Tuilagi and her row leaves', async ({ page }) => {
-  await open(page, '/admin/patients/waiting')
+  await open(page, '/admin/intake/waiting')
   await expect(page.locator('[data-shot="admin-waiting-nhi"]')).toBeVisible()
   const rows = page.locator('[data-shot="waiting-nhi-row"]')
   const before = await rows.count()
@@ -126,7 +126,7 @@ test('Follow-up: log a call and a reminder for today on the record, Done takes i
   await expect(page.locator('[data-shot="patient-follow-up-due-empty"]')).toBeVisible()
 
   // A balance warning to clear: Add NHI on Losa Tuilagi's waiting row puts her Booking on the List with a mild one.
-  await open(page, '/admin/patients/waiting')
+  await open(page, '/admin/intake/waiting')
   await runDemoAction(page, 'receive-no-nhi-list', { close: true })
   await page.locator('[data-shot="waiting-nhi-row"]', { hasText: 'Losa Tuilagi' }).locator('[data-shot="waiting-nhi-add"]').click()
   const sheet = page.locator('[data-shot="add-nhi-sheet"]')

@@ -24,7 +24,7 @@ const PAGES = [
   '/admin/review',
   '/admin/invoices',
   '/admin/patients',
-  '/admin/patients/waiting',
+  '/admin/intake/waiting',
   '/admin/patients/follow-up',
   '/admin/billing',
   '/admin/billing/aa-fees',

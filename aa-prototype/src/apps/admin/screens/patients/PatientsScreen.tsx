@@ -1,8 +1,8 @@
 /**
  * Admin · Patients (catch-up Phase 40, item 12; US-11.1.1, US-11.1.5,
- * US-11.3.2, US-11.3.3): the three list views on routed tabs, each with its
- * count: Search, Waiting for NHI and Follow-up. Search and Waiting for NHI are
- * `fit` list pages; Follow-up is `fluid`, because its three sections are
+ * US-11.3.2, US-11.3.3): the list views on routed tabs, each with its count:
+ * Search and Follow-up (Waiting for NHI is a tab on Intake, D99). Search is a
+ * `fit` list page; Follow-up is `fluid`, because its three sections are
  * tables of different shapes (money on the warnings, a reminder's text, a
  * received set of details), not groups of one list. The NHI is the
  * identifier everywhere; the internal patient id is never shown. Every figure
@@ -22,7 +22,6 @@ import {
   patientSearch,
   patientsWithPendingDetails,
   useAppStore,
-  waitingNhiRows,
   type Actor,
 } from '../../../../store'
 import { EmptyState, FormError, LineTabLink, LineTabs, NameSearchBox, PageHeader, TextAction } from '../../../../shared/ui'
@@ -35,19 +34,16 @@ import { accent, fontFamily, neutral } from '../../../../theme/tokens'
 import { AdminPage, PageBody, PageToolbar } from '../../components/AdminPage'
 import { ADMIN_PROSE_WIDTH } from '../../layout'
 import { balanceText, detailsFromText } from './patientParts'
-import { WaitingNhiView } from './WaitingNhiView'
 
-export type PatientListView = 'search' | 'waiting' | 'followUp'
+export type PatientListView = 'search' | 'followUp'
 
 export const PATIENT_LIST_PATHS: Record<PatientListView, string> = {
   search: '/admin/patients',
-  waiting: '/admin/patients/waiting',
   followUp: '/admin/patients/follow-up',
 }
 
 const SHOTS: Record<PatientListView, string> = {
   search: 'admin-patients',
-  waiting: 'admin-waiting-nhi',
   followUp: 'admin-patient-follow-up',
 }
 
@@ -71,25 +67,23 @@ export { usePatientSlices }
 export function PatientsScreen({
   view,
   actor,
-  onOpenList,
-  onOpenMatching,
 }: {
   view: PatientListView
   actor: Actor
-  onOpenList: (listId: string) => void
-  onOpenMatching: (rowId: string) => void
+  /** Unused since Waiting for NHI moved to Intake (51); kept so the route handlers stand until 53. */
+  onOpenList?: (listId: string) => void
+  onOpenMatching?: (rowId: string) => void
 }) {
   const slices = usePatientSlices()
   const [query, setQuery] = useState('')
   const searchRows = useMemo(() => patientSearch(slices, query), [slices, query])
-  const waiting = useMemo(() => waitingNhiRows(slices), [slices])
   const warnings = useMemo(() => openBalanceWarnings(slices), [slices])
   const due = useMemo(() => followUpsDue(slices), [slices])
   const pending = useMemo(() => patientsWithPendingDetails(slices), [slices])
   const followUpCount = warnings.length + due.length + pending.length
 
-  const counts: Record<PatientListView, number> = { search: searchRows.length, waiting: waiting.length, followUp: followUpCount }
-  const labels: Record<PatientListView, string> = { search: 'Search', waiting: 'Waiting for NHI', followUp: 'Follow-up' }
+  const counts: Record<PatientListView, number> = { search: searchRows.length, followUp: followUpCount }
+  const labels: Record<PatientListView, string> = { search: 'Search', followUp: 'Follow-up' }
 
   return (
     <AdminPage
@@ -99,7 +93,7 @@ export function PatientsScreen({
       sub="Find a patient by name, NHI or date of birth. The NHI is the patient's identifier."
       tabs={
         <LineTabs label="Patients view" shot="patients-tabs">
-          {(['search', 'waiting', 'followUp'] as const).map((v) => {
+          {(['search', 'followUp'] as const).map((v) => {
             const active = v === view
             return (
               <LineTabLink
@@ -117,7 +111,6 @@ export function PatientsScreen({
       }
     >
       {view === 'search' && <SearchView query={query} onQuery={setQuery} rows={searchRows} />}
-      {view === 'waiting' && <WaitingNhiView rows={waiting} actor={actor} onOpenList={onOpenList} onOpenMatching={onOpenMatching} />}
       {view === 'followUp' && <FollowUpView actor={actor} />}
     </AdminPage>
   )

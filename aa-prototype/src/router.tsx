@@ -36,6 +36,7 @@ import {
   AdminPdfListsRoute,
   AdminDataQualityRoute,
   AdminValidatorsRoute,
+  AdminWaitingNhiTabRoute,
   AdminInvoicesRoute,
   AdminCreditNoteRoute,
   AdminPaymentRunRoute,
@@ -56,7 +57,6 @@ import {
   AdminNotificationsRoute,
   AdminReviewRoute,
   AdminPatientsRoute,
-  AdminWaitingNhiRoute,
   AdminPatientFollowUpRoute,
   AdminPatientRecordRoute,
 } from './apps/admin/routes'
@@ -130,10 +130,11 @@ const routeTree = (
               <Route path="bookings/:bookingId" element={<AdminBookingDetailRoute />} />
               <Route path="cards/:cardId" element={<LegacyBookingRedirect />} />
             </Route>
-            {/* Admin Intake (catch-up Phase 34): matching, the rooms' PDF lists, data quality and the validators. */}
+            {/* Admin Intake (catch-up Phase 34): matching, the rows waiting for an NHI, the rooms' PDF lists, data quality and the validators. */}
             <Route path="intake" element={<AdminIntakeRoute />}>
               <Route index element={<Navigate to="matching" replace />} />
               <Route path="matching" element={<AdminMatchingRoute />} />
+              <Route path="waiting" element={<AdminWaitingNhiTabRoute />} />
               <Route path="pdfs" element={<AdminPdfListsRoute />} />
               <Route path="quality" element={<AdminDataQualityRoute />} />
               <Route path="validators" element={<AdminValidatorsRoute />} />
@@ -150,10 +151,10 @@ const routeTree = (
               <Route index element={<AdminInvoicesRoute />} />
               <Route path=":invoiceId" element={<AdminInvoicesRoute />} />
             </Route>
-            {/* Patients (catch-up Phase 40): the three list views and the record, keyed by NHI. */}
+            {/* Patients (catch-up Phase 40): Search, Follow-up and the record, keyed by NHI; Waiting for NHI is on Intake (D100). */}
             <Route path="patients">
               <Route index element={<AdminPatientsRoute />} />
-              <Route path="waiting" element={<AdminWaitingNhiRoute />} />
+              <Route path="waiting" element={<Navigate to="/admin/intake/waiting" replace />} />
               <Route path="follow-up" element={<AdminPatientFollowUpRoute />} />
               <Route path=":nhi" element={<AdminPatientRecordRoute />} />
             </Route>

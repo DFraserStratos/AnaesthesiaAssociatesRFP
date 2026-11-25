@@ -449,7 +449,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
         beat: 'NHI at entry',
         label: 'Beat 2 · Admin Patients, Waiting for NHI',
         does: 'Demo actions → Receive list with a missing NHI; on an NHI lookup, Demo actions → Hub: Available / Slow / Unavailable',
-        path: () => '/admin/patients/waiting',
+        path: () => '/admin/intake/waiting',
       },
       { beat: 'No NHI in Xero, and the leak scan', label: 'Beat 3 · Data inspector', does: 'Demo actions → Scan for NHI leaks', path: () => '/demo/data' },
       {

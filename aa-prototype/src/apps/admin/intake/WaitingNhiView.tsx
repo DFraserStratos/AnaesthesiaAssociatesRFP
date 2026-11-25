@@ -10,14 +10,14 @@
  */
 
 import { useMemo, useState } from 'react'
-import { nhiRequestEmailFor, requestNhiFromOffice, useAppStore, type Actor, type WaitingNhiRow } from '../../../../store'
-import { Button, EmptyState, FormError, Pill, SelectField, TextAction } from '../../../../shared/ui'
-import { TableShell, Td, Th } from '../../../../shared/table'
-import { formatDob, plural, shortDay, stampText } from '../../../../shared/format'
-import { sessionText } from '../../../../domain/outOfHours'
-import { neutral } from '../../../../theme/tokens'
-import { StubMarker } from '../../../../shared/stubs'
-import { PageBody, PageToolbar } from '../../components/AdminPage'
+import { nhiRequestEmailFor, requestNhiFromOffice, useAppStore, type Actor, type WaitingNhiRow } from '../../../store'
+import { Button, EmptyState, FormError, Pill, SelectField, TextAction } from '../../../shared/ui'
+import { TableShell, Td, Th } from '../../../shared/table'
+import { formatDob, plural, shortDay, stampText } from '../../../shared/format'
+import { sessionText } from '../../../domain/outOfHours'
+import { neutral } from '../../../theme/tokens'
+import { StubMarker } from '../../../shared/stubs'
+import { PageBody, PageToolbar } from '../components/AdminPage'
 import { AddNhiSheet } from './AddNhiSheet'
 
 export const WAITING_NHI_CAPTION =
@@ -43,7 +43,8 @@ export function WaitingNhiView({
       <PageToolbar end={<span className="mono">{plural(rows.length, 'row')}</span>}>
         <span style={{ fontSize: 13, color: neutral.slate }}>{WAITING_NHI_CAPTION}</span>
       </PageToolbar>
-      <PageBody>
+      {/* The page shot Patients carried (`admin-waiting-nhi`), kept on the tab's body since the move to Intake. */}
+      <PageBody shot="admin-waiting-nhi">
       <FormError message={error} />
       {rows.length === 0 ? (
         <EmptyState variant="card" shot="waiting-nhi-empty">No intake rows are waiting for an NHI.</EmptyState>

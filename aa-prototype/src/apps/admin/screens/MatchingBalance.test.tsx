@@ -56,7 +56,7 @@ describe('the balance warning on Matching (catch-up Phase 40)', () => {
     const { container } = renderScreen()
     const links = container.querySelectorAll('[data-shot="matching-waiting-link"]')
     expect(links).toHaveLength(2)
-    expect(links[0]).toHaveAttribute('href', '/admin/patients/waiting')
+    expect(links[0]).toHaveAttribute('href', '/admin/intake/waiting')
     expect(links[0]!.parentElement).toHaveTextContent('No NHI')
   })
 })

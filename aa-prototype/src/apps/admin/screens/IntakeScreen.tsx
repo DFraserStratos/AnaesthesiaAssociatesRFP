@@ -1,12 +1,13 @@
 /**
  * Admin Intake (catch-up Phase 34; FT-02.1, FT-02.2, EP-14): one home for
- * everything that arrives from outside. Matching (33's screen), the rooms' PDF
- * lists, data quality and the NHI validators sit on URL-routed tabs
+ * everything that arrives from outside. Matching (33's screen), the rows
+ * waiting for an NHI (beside Matching, with their count; US-11.1.5), the rooms'
+ * PDF lists, data quality and the NHI validators sit on URL-routed tabs
  * (`/admin/intake/<tab>`), all product UI and unbadged. The HL7 and FHIR
  * tooling is not here: it is Future scope, on `/demo/integrations`.
  *
  * Intake is the one `AdminPage` around its tabs. The mode follows the tab:
- * Matching and PDF lists are `fit` list pages, Data quality and Validators
+ * Matching, Waiting for NHI and PDF lists are `fit` list pages, Data quality and Validators
  * `fluid`. A tab names the page's primary action and can ask for `fluid`
  * while it shows a record (a PDF list under review) through
  * `useIntakePage`. The tab pages render in this screen's `<Outlet>`, which
@@ -16,10 +17,13 @@
 import { createContext, useContext, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Outlet, useLocation, useOutletContext } from 'react-router-dom'
 import { LineTabLink, LineTabs } from '../../../shared/ui'
+import { accent, fontFamily, neutral } from '../../../theme/tokens'
 import { AdminPage, type AdminPageMode } from '../components/AdminPage'
+import { useWaitingNhiRows } from '../intake/WaitingNhiTab'
 
 export const INTAKE_TABS = [
   { path: '/admin/intake/matching', label: 'Matching', mode: 'fit' },
+  { path: '/admin/intake/waiting', label: 'Waiting for NHI', mode: 'fit' },
   { path: '/admin/intake/pdfs', label: 'PDF lists', mode: 'fit' },
   { path: '/admin/intake/quality', label: 'Data quality', mode: 'fluid' },
   { path: '/admin/intake/validators', label: 'Validators', mode: 'fluid' },
@@ -63,6 +67,7 @@ export function IntakeScreen() {
   const [fluid, setFluid] = useState(false)
   const slots = useMemo<IntakePageSlots>(() => ({ setActions: (a) => setActions(() => a), setFluid }), [])
   const tab = INTAKE_TABS.find((t) => pathname.startsWith(t.path))
+  const waitingCount = useWaitingNhiRows().length
   const mode: AdminPageMode = fluid ? 'fluid' : (tab?.mode ?? 'fluid')
   return (
     <AdminPage
@@ -73,11 +78,21 @@ export function IntakeScreen() {
       {...(actions !== undefined ? { actions } : {})}
       tabs={
         <LineTabs label="Intake" shot="intake-tabs">
-          {INTAKE_TABS.map((t) => (
-            <LineTabLink key={t.path} to={t.path} active={pathname.startsWith(t.path)}>
-              {t.label}
-            </LineTabLink>
-          ))}
+          {INTAKE_TABS.map((t) => {
+            const active = pathname.startsWith(t.path)
+            // Only Waiting for NHI carries a count: its rows, as the Patients tab showed it.
+            const badge =
+              t.path === '/admin/intake/waiting' ? (
+                <span data-shot="intake-waiting-count" style={{ fontFamily: fontFamily.mono, fontSize: 12, fontWeight: 500, fontVariantNumeric: 'tabular-nums', color: active ? accent.base : neutral.slate }}>
+                  {waitingCount}
+                </span>
+              ) : undefined
+            return (
+              <LineTabLink key={t.path} to={t.path} active={active} {...(badge !== undefined ? { badge } : {})}>
+                {t.label}
+              </LineTabLink>
+            )
+          })}
         </LineTabs>
       }
     >
