@@ -34,6 +34,8 @@ const NOT_SCRIPTED: Readonly<Record<string, string>> = {
   'office-assigns-next-free': 'Handset stand-in for Assign List in Admin; the parity matrix (item 12) covers it.',
   'office-assigns-draft-list': 'Handset stand-in for Assign on Draft Lists; the parity matrix (item 12) covers it.',
   'availability-office-sets-public': "Handset stand-in for Change status in Admin Day's drawer; the parity matrix (item 12) covers it.",
+  // Build plan Phase 49: the guide's S5 beat is brought in step at the owner's sweep.
+  'contract-reach-change-date': 'Scripted at the owner\'s sweep',
 }
 
 describe('extractGuidePresses', () => {

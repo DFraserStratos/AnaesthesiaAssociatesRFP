@@ -6,10 +6,11 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { freshAppState, needsInvoiceDestinationBookings, OFFICE_ACTOR, openWarnings, useAppStore } from '../../../store'
+import { freshAppState, needsInvoiceDestinationBookings, OFFICE_ACTOR, openWarnings, replaceContract, useAppStore } from '../../../store'
 import { SEED_MARKERS } from '../../../domain/seed'
+import { CONTRACT } from '../../../domain/seed/contracts'
 import { RailWorkCard } from './RailWorkCard'
-import { toDoItems } from './WarningsToDo'
+import { toDoItemDate, toDoItems } from './WarningsToDo'
 
 const NO_CONTRACT = SEED_MARKERS['needsInvoiceDestinationBooking']!.entityId
 
@@ -57,7 +58,35 @@ describe('RailWorkCard', () => {
   it('orders warnings and no-Contract rows by date, then session', () => {
     const state = useAppStore.getState()
     const items = toDoItems(openWarnings(state), needsInvoiceDestinationBookings(state))
-    const keys = items.map((i) => i.row.dateISO)
+    const keys = items.map(toDoItemDate)
     expect(keys).toEqual([...keys].sort())
+  })
+
+  it('a replaced Contract has no session: it comes first on its date (build plan Phase 49)', () => {
+    const state = useAppStore.getState()
+    const noContract = needsInvoiceDestinationBookings(state)
+    const day = noContract[0]!.dateISO
+    const replaced = { contractId: 'CT-OLD', contractName: 'Old', aaCode: 'OLD-001', replacementId: 'CT-NEW', replacementName: 'New', replacementCode: 'OLD-002', fromISO: day }
+    const items = toDoItems(openWarnings(state), noContract, [replaced])
+    const onDay = items.filter((i) => toDoItemDate(i) === day)
+    expect(onDay[0]!.kind).toBe('replacedContract')
+  })
+
+  it('the replaced-Contract to-do shows "Disable" and Open Contract opens its page', () => {
+    const onOpenContract = vi.fn()
+    const replace = replaceContract(useAppStore, OFFICE_ACTOR, CONTRACT.unisports, { patch: {}, fromISO: useAppStore.getState().clock.todayISO, moveProcedureIds: [], disableNow: false })
+    expect(replace.ok).toBe(true)
+    render(
+      <MemoryRouter>
+        <RailWorkCard todoRows={openWarnings(useAppStore.getState())} actor={OFFICE_ACTOR} onOpenBooking={vi.fn()} onOpenNotification={vi.fn()} onSeeAllNotifications={vi.fn()} onOpenContract={onOpenContract} />
+      </MemoryRouter>,
+    )
+    const row = document.querySelector('[data-shot="todo-replaced-contract"]')!
+    expect(row).not.toBeNull()
+    expect(row.getAttribute('data-contract-id')).toBe(CONTRACT.unisports)
+    expect(row.textContent).toContain('Disable Unisports Ortho (UNI-001)')
+    expect(row.textContent).toContain('Replaced by UNI-002 from')
+    fireEvent.click(within(row as HTMLElement).getByRole('button', { name: 'Open Unisports Ortho (UNI-001)' }))
+    expect(onOpenContract).toHaveBeenCalledWith(CONTRACT.unisports)
   })
 })

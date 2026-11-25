@@ -24,6 +24,7 @@ import {
   type PricingKind,
 } from '../../../domain/billing/contracts'
 import type { Party, PartyId } from '../../../domain/billing/parties'
+import type { Contract } from '../../../domain/types'
 import { parsePriceText } from '../../../domain/billing/priceRanges'
 import { PARTY_KIND_LABEL } from '../../../shared/contracts'
 import { useAppStore, type ContractInput } from '../../../store'
@@ -188,6 +189,34 @@ export function holderGroups(parties: Parties): [string, { id: string; name: str
     groups.set(label, [...(groups.get(label) ?? []), { id: p.id, name: p.name }])
   }
   return [...groups.entries()]
+}
+
+/**
+ * A Contract's settings as a draft (build plan Phase 49): Replace from a date
+ * starts the form from the old Contract. A fixed price's ranges are not draft
+ * fields: the replacement copies them as they stand (`contractInputOf`), so the
+ * first-range fields stay empty.
+ */
+export function draftOf(contract: Contract): ContractDraft {
+  return {
+    holderId: contract.holderId,
+    billsTo: contract.billsTo,
+    prepaid: contract.prepaid,
+    kind: contract.pricing.kind,
+    rate: contract.pricing.kind === 'rvgContractRate' ? String(contract.pricing.unitRate) : '',
+    discount: contract.pricing.kind === 'rvgDiscount' ? String(contract.pricing.discountPct) : '',
+    firstStart: '',
+    firstPrice: '',
+    override: contract.anaesthetistMayOverridePrice,
+    surgeonIds: [...contract.linkedSurgeonIds],
+    anaesthetistId: contract.linkedAnaesthetistId ?? '',
+    specialtyIds: [...contract.specialtyIds],
+    fundingTagId: contract.fundingTagId ?? '',
+    name: contract.name,
+    holderReference: contract.holderReference ?? '',
+    invoiceDescription: contract.invoiceDescription ?? '',
+    defaultRvgGroupId: contract.defaultRvgGroupId ?? null,
+  }
 }
 
 /** The form's state over the store's Parties: the fields, a setter that re-checks, the rules and the input. */

@@ -24,6 +24,8 @@ Paths are relative to `aa-prototype/src/` unless they start with `docs/` or `aa-
 - **Conflicts are derived, reconciled inside `mutate()`.** A `ListConflict` stores a cause and references, never a message; `describeConflict` words it from current records, so a rename updates every line. Never stamp conflicts from an action. `store/conflictReconcile.ts`, `domain/conflicts.ts`.
 - **Warnings are derived by one pure routine; only clearances are stored.** A clearance lives outside the Booking (`schedule.warningClearances`), so clearing never touches a locked Booking. `domain/warnings/routine.ts`.
 - **One diagnostics log.** `reportDiagnostic` is the only console writer, NHIs redacted. Don't add `console.*` calls. `store/diagnostics.ts`.
+- **A replacement's link and date live in the audit, not on the Contract.** Replace from a date writes `replaces: { contractId, fromISO }` into the new Contract's `contract.create` entry only; `contractReplacements`, `replacementOf` and `replacesFor` read it back both ways, and the late disable reads `fromISO`, never the entry's timestamp. A Contract keeps "No dates" (US-04.1.2, D94, OQ-144 open); no `PERSIST_VERSION` bump. `domain/billing/contractHistory.ts`, `store/contractReplaceActions.ts`.
+- **The replaced-Contract to-do is a Contract-subject rule outside `WARNING_RULES`.** `replacedContractStillActive` is pure, derived each read, stores nothing (not even a clearance), has no Clear and never blocks; it shows in the Day rail's To-do and on the old Contract's page and goes once either Contract is disabled (D94, DM-03). `domain/warnings/rules/replacedContractStillActive.ts`, `store/replacedContractSelectors.ts`.
 
 ## Seed and determinism
 

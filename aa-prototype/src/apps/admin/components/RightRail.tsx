@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { contractPath } from '../contractsPaths'
 import { addMonths, format, parseISO, startOfMonth } from 'date-fns'
 import { brand, neutral, radius, semantic } from '../../../theme/tokens'
 import type { DayNote } from '../../../domain/types'
@@ -41,6 +43,8 @@ interface RightRailProps {
  * their own pages; the day's Draft Lists also sit in the band above the grid.
  */
 export function RightRail(props: RightRailProps) {
+  // A replaced Contract's to-do opens its page (build plan Phase 49).
+  const navigate = useNavigate()
   return (
     <div data-testid="admin-right-rail" style={{ width: ADMIN_RIGHT_RAIL_WIDTH - props.shellScrollbarWidth, flex: 'none', display: 'flex', flexDirection: 'column', gap: 14 }}>
       <MiniCalendar monthDateISO={props.monthDateISO} selectedDateISO={props.selectedDateISO} todayISO={props.todayISO} onNavigateDate={props.onNavigateDate} />
@@ -53,6 +57,7 @@ export function RightRail(props: RightRailProps) {
         onOpenNotification={props.onOpenNotification ?? (() => undefined)}
         onSeeAllNotifications={props.onSeeAllNotifications ?? (() => undefined)}
         {...(props.onShowResolvedNotifications !== undefined ? { onShowResolvedNotifications: props.onShowResolvedNotifications } : {})}
+        onOpenContract={(contractId) => navigate(contractPath(contractId))}
       />
       <DayNotes notes={props.notes} onAddNote={props.onAddNote} />
     </div>

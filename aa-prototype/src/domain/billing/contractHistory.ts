@@ -7,7 +7,10 @@
  * Each row carries who, when and the values before and after as written. The
  * audit is append-only, so nothing is ever removed; a Disabled Contract keeps
  * every row. The Procedures locked against it are the store's
- * (`lockedAgainstContract`, read from `billing.locks`).
+ * (`lockedAgainstContract`, read from `billing.locks`). A replacement from a
+ * date (build plan Phase 49) shows both ways: on the new Contract its create
+ * entry names the Contract it replaces, and the old one's history carries that
+ * entry too.
  */
 
 import type { AuditEntry } from '../types'
@@ -50,11 +53,94 @@ function sequenceOf(id: string): number {
   return m === null ? 0 : Number(m[1])
 }
 
-/** A Contract's audited changes, newest first (the History tab's rows). */
+/**
+ * A Contract's audited changes, newest first (the History tab's rows), with the
+ * create entry of any Contract that replaces it (build plan Phase 49; US-04.1.3
+ * "a Contract's history shows every change made to it"), cut to that
+ * Contract's code, name and `replaces` (`replacedByEntries`). That row keeps
+ * the new Contract's `entityId`, so a reader can tell it apart.
+ */
 export function contractHistoryFor(audit: readonly AuditEntry[], contractId: string): AuditEntry[] {
-  return audit
-    .filter((a) => a.entityType === 'contract' && a.entityId === contractId && CONTRACT_HISTORY_ACTIONS.has(a.action))
-    .sort((a, b) => b.atISO.localeCompare(a.atISO) || sequenceOf(b.id) - sequenceOf(a.id))
+  return [
+    ...audit.filter((a) => a.entityType === 'contract' && a.entityId === contractId && CONTRACT_HISTORY_ACTIONS.has(a.action)),
+    ...replacedByEntries(audit, contractId),
+  ].sort((a, b) => b.atISO.localeCompare(a.atISO) || sequenceOf(b.id) - sequenceOf(a.id))
+}
+
+// ---------------------------------------------------------------------------
+// Replacements (build plan Phase 49; US-04.1.8, DM-01, D94)
+// ---------------------------------------------------------------------------
+
+/**
+ * One Contract replacing another from a date. The link and the date live only
+ * in the new Contract's `contract.create` audit entry (`after.replaces:
+ * { contractId, fromISO }`), never on the Contract (US-04.1.2 "No dates"), so
+ * they are read back from the audit both ways. `fromISO` is the change date the
+ * office chose, never the entry's timestamp: a replacement saved on 20 Dec from
+ * 1 Jan is dated 1 Jan.
+ */
+export interface ContractReplacement {
+  /** The new Contract. */
+  contractId: string
+  /** The Contract it replaces. */
+  replacesId: string
+  /** The change date (`YYYY-MM-DD`). */
+  fromISO: string
+  /** When the replacement was saved. */
+  atISO: string
+  /** The create entry's id (the tiebreak under the pinned demo clock). */
+  entryId: string
+}
+
+const DAY = /^\d{4}-\d{2}-\d{2}$/
+
+/** The `replaces` a `contract.create` entry's `after` carries, when it is a well-formed one. */
+export function replacesOfEntry(entry: Pick<AuditEntry, 'action' | 'after'>): { contractId: string; fromISO: string } | null {
+  if (entry.action !== 'contract.create' || !isRecord(entry.after)) return null
+  const r = entry.after.replaces
+  if (!isRecord(r) || typeof r.contractId !== 'string' || typeof r.fromISO !== 'string' || !DAY.test(r.fromISO)) return null
+  return { contractId: r.contractId, fromISO: r.fromISO }
+}
+
+/** Every replacement in the audit, oldest saved first. */
+export function contractReplacements(audit: readonly AuditEntry[]): ContractReplacement[] {
+  const out: ContractReplacement[] = []
+  for (const a of audit) {
+    if (a.entityType !== 'contract') continue
+    const r = replacesOfEntry(a)
+    if (r === null) continue
+    out.push({ contractId: a.entityId, replacesId: r.contractId, fromISO: r.fromISO, atISO: a.atISO, entryId: a.id })
+  }
+  return out.sort((a, b) => a.atISO.localeCompare(b.atISO) || sequenceOf(a.entryId) - sequenceOf(b.entryId))
+}
+
+/** The newest replacement of a Contract (the one saved last), or null. */
+export function replacementOf(audit: readonly AuditEntry[], oldId: string): ContractReplacement | null {
+  const mine = contractReplacements(audit).filter((r) => r.replacesId === oldId)
+  return mine[mine.length - 1] ?? null
+}
+
+/** The Contract and date a Contract replaces, or null when it replaces none. */
+export function replacesFor(audit: readonly AuditEntry[], newId: string): ContractReplacement | null {
+  return contractReplacements(audit).find((r) => r.contractId === newId) ?? null
+}
+
+/** The fields an old Contract's history shows of the create entry that replaced it. */
+const REPLACED_BY_FIELDS = ['aaCode', 'name', 'replaces'] as const
+
+/** The create entries of the Contracts that replace `oldId`, cut to the new Contract's code, name and `replaces`. */
+export function replacedByEntries(audit: readonly AuditEntry[], oldId: string): AuditEntry[] {
+  const out: AuditEntry[] = []
+  for (const a of audit) {
+    if (a.entityType !== 'contract' || a.entityId === oldId) continue
+    const r = replacesOfEntry(a)
+    if (r === null || r.contractId !== oldId || !isRecord(a.after)) continue
+    const source = a.after
+    const after: Record<string, unknown> = {}
+    for (const k of REPLACED_BY_FIELDS) if (k in source) after[k] = source[k]
+    out.push({ ...a, after })
+  }
+  return out
 }
 
 /**

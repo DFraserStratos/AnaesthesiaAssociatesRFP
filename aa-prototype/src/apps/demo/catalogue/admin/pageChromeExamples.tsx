@@ -137,6 +137,9 @@ export function CardExample() {
       <Card step={1} title="Holder and who it bills">
         <span style={{ fontSize: 13, color: neutral.slate }}>step: the numbered chip before the heading (New contract, Phase 46).</span>
       </Card>
+      <Card step={2} bare title="From">
+        <span style={{ fontSize: 13, color: neutral.slate }}>bare: a step straight on a sheet, no border or fill (Replace from a date, Phase 49).</span>
+      </Card>
     </div>
   )
 }

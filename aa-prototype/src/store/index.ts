@@ -335,6 +335,20 @@ export {
   type ContractInput,
   type ContractEditPatch,
 } from './contractActions'
+// Build plan Phase 49: Replace a Contract from a date (US-04.1.8, DM-01 to DM-03).
+export { contractInputOf, type ContractCreateOptions } from './contractActions'
+export {
+  replaceContract,
+  planReplaceRows,
+  NOT_LISTED_MESSAGE,
+  type ReplacePatch,
+  type ReplaceRequest,
+  type ReplaceRowOutcome,
+  type ReplaceResult,
+  type ReplacePreview,
+  type ReplacePreviewRow,
+} from './contractReplaceActions'
+export { replacedContractsToDisable, replacementsAhead } from './replacedContractSelectors'
 export {
   runBillingForList,
   retryBillingException,

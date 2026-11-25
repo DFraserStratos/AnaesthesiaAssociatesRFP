@@ -63,7 +63,8 @@ export function foldRows<T extends { state: 'inForce' | 'future' | 'ended' }>(ro
 
 type Draft = { startISO: string; price: string }
 
-export function PriceRangesTable({ contract, actor }: { contract: Contract; actor: Actor }) {
+/** `startAdding` opens the add-range row on mount (Replace from a date's "add a price range instead", build plan Phase 49). */
+export function PriceRangesTable({ contract, actor, startAdding = false }: { contract: Contract; actor: Actor; startAdding?: boolean }) {
   const today = useToday()
   const ranges = rangesOf(contract)
   const locks = useAppStore((s) => s.billing.locks)
@@ -78,7 +79,7 @@ export function PriceRangesTable({ contract, actor }: { contract: Contract; acto
   const endedCount = rows.filter((r) => r.state === 'ended').length
   const sorted = [...ranges].sort((a, b) => a.startISO.localeCompare(b.startISO))
   // One row in edit at a time: the new range (`adding`), or a range being corrected (its start).
-  const [adding, setAdding] = useState<Draft | null>(null)
+  const [adding, setAdding] = useState<Draft | null>(() => (startAdding ? { startISO: '', price: '' } : null))
   const [correcting, setCorrecting] = useState<{ startISO: string; draft: Draft } | null>(null)
   const [error, setError] = useState<{ row: string; message: string } | null>(null)
   const last = ranges.length <= 1

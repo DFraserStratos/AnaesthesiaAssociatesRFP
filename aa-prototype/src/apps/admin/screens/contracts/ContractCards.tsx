@@ -127,10 +127,11 @@ function EditableCard({
   )
 }
 
-export function ContractOverview({ contract, actor }: { contract: Contract; actor: Actor }) {
+/** `addRange` opens a fixed price's add-range row on arrival (Replace from a date's pointer, build plan Phase 49). */
+export function ContractOverview({ contract, actor, addRange = false }: { contract: Contract; actor: Actor; addRange?: boolean }) {
   return (
     <>
-      <PriceCard contract={contract} actor={actor} />
+      <PriceCard contract={contract} actor={actor} addRange={addRange} />
       <WhereCard contract={contract} actor={actor} />
       <WhoBillsCard contract={contract} actor={actor} />
       <CodesCard contract={contract} actor={actor} />
@@ -143,7 +144,7 @@ export function ContractOverview({ contract, actor }: { contract: Contract; acto
 // Price: the ranges table of a fixed price, or the rate or discount of an RVG Contract (undated)
 // ---------------------------------------------------------------------------
 
-function PriceCard({ contract, actor }: { contract: Contract; actor: Actor }) {
+function PriceCard({ contract, actor, addRange }: { contract: Contract; actor: Actor; addRange: boolean }) {
   const p = contract.pricing
   const system = contract.systemRole !== undefined
   const edit = useCardEdit(actor, contract.id, () => ({
@@ -151,7 +152,7 @@ function PriceCard({ contract, actor }: { contract: Contract; actor: Actor }) {
     discount: p.kind === 'rvgDiscount' ? String(p.discountPct) : '',
     override: (contract.anaesthetistMayOverridePrice ? 'yes' : 'no') as YesNo,
   }))
-  if (p.kind === 'fixed') return <PriceRangesTable contract={contract} actor={actor} />
+  if (p.kind === 'fixed') return <PriceRangesTable contract={contract} actor={actor} startAdding={addRange} />
   const rvg = isRvgKind(p.kind)
   const d = edit.draft
 
@@ -455,7 +456,11 @@ function FixedCard({ contract }: { contract: Contract }) {
         <DefRow {...KV} label="Pricing kind">{PRICING_KIND_LABEL[contract.pricing.kind]}</DefRow>
         <DefRow {...KV} label="Prepaid">{contract.prepaid ? 'Yes' : 'No'}</DefRow>
       </DefList>
-      <FieldHint>Set when the Contract was created.</FieldHint>
+      <FieldHint>
+        {contract.systemRole === undefined && contract.status === 'active'
+          ? 'Set when the Contract was created. To change one of these from a date, use Replace from a date.'
+          : 'Set when the Contract was created.'}
+      </FieldHint>
     </Card>
   )
 }

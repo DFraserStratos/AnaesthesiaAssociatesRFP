@@ -1,6 +1,8 @@
 import { InfoTip } from '../../../shared/help/InfoTip'
 import { useMemo, useState, type ReactNode } from 'react'
-import { clearWarning, needsInvoiceDestinationBookings, openConflictCount, useAppStore, type Actor, type NeedsInvoiceDestinationRow, type OpenWarningRow } from '../../../store'
+import { clearWarning, needsInvoiceDestinationBookings, openConflictCount, replacedContractsToDisable, useAppStore, type Actor, type NeedsInvoiceDestinationRow, type OpenWarningRow } from '../../../store'
+import type { ReplacedContractRow } from '../../../domain/warnings/rules'
+import { plainDate } from '../../../domain/dateText'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
 import { CountBadge } from '../../../shared/ui/CountBadge'
 import { Pill } from '../../../shared/ui/Pill'
@@ -22,8 +24,15 @@ const TODO_ROW_SHOTS: Partial<Record<string, string>> = {
   approvalNumberMissing: 'todo-approval-warning',
 }
 
-/** The rows the to-do list shows: open warnings, plus (on the rail's work card) Bookings with no Contract yet. */
-export type ToDoItem = { kind: 'warning'; row: OpenWarningRow } | { kind: 'noContract'; row: NeedsInvoiceDestinationRow }
+/**
+ * The rows the to-do list shows: open warnings, plus (on the rail's work card) Bookings with no
+ * Contract yet and replaced Contracts still active on or after their change date (build plan
+ * Phase 49, DM-03).
+ */
+export type ToDoItem =
+  | { kind: 'warning'; row: OpenWarningRow }
+  | { kind: 'noContract'; row: NeedsInvoiceDestinationRow }
+  | { kind: 'replacedContract'; row: ReplacedContractRow }
 
 /** Bookings with no Contract yet (US-04.3.4), soonest first: a work list, so no Clear. */
 export function useNoContractRows(): NeedsInvoiceDestinationRow[] {
@@ -32,11 +41,42 @@ export function useNoContractRows(): NeedsInvoiceDestinationRow[] {
   return useMemo(() => needsInvoiceDestinationBookings({ masters, schedule }), [masters, schedule])
 }
 
-/** Warnings and no-Contract rows in one order: by date, then session; a warning before a work row on the same session. */
-export function toDoItems(warnings: readonly OpenWarningRow[], noContract: readonly NeedsInvoiceDestinationRow[] = []): ToDoItem[] {
-  const items: ToDoItem[] = [...warnings.map((row) => ({ kind: 'warning' as const, row })), ...noContract.map((row) => ({ kind: 'noContract' as const, row }))]
+/** The old Contracts to disable (DM-03): derived, so no Clear; each goes once the office disables it. */
+export function useReplacedContractRows(): ReplacedContractRow[] {
+  const masters = useAppStore((s) => s.masters)
+  const audit = useAppStore((s) => s.audit)
+  const clock = useAppStore((s) => s.clock)
+  return useMemo(() => replacedContractsToDisable({ masters, audit, clock }), [masters, audit, clock])
+}
+
+/** A to-do's date: a replaced Contract's change date, else its Booking's day. */
+export function toDoItemDate(item: ToDoItem): string {
+  return item.kind === 'replacedContract' ? item.row.fromISO : item.row.dateISO
+}
+
+const KIND_ORDER: Record<ToDoItem['kind'], number> = { replacedContract: 0, warning: 1, noContract: 2 }
+
+/**
+ * Every to-do in one order: by date; on a date, a replaced Contract (which has no session) first;
+ * then by session, a warning before a work row on the same session.
+ */
+export function toDoItems(
+  warnings: readonly OpenWarningRow[],
+  noContract: readonly NeedsInvoiceDestinationRow[] = [],
+  replaced: readonly ReplacedContractRow[] = [],
+): ToDoItem[] {
+  const items: ToDoItem[] = [
+    ...warnings.map((row) => ({ kind: 'warning' as const, row })),
+    ...noContract.map((row) => ({ kind: 'noContract' as const, row })),
+    ...replaced.map((row) => ({ kind: 'replacedContract' as const, row })),
+  ]
   // A stable sort keeps each source's own order inside a session.
-  return items.sort((a, b) => a.row.dateISO.localeCompare(b.row.dateISO) || compareSessions(a.row.session, b.row.session) || (a.kind === b.kind ? 0 : a.kind === 'warning' ? -1 : 1))
+  return items.sort((a, b) => {
+    const byDate = toDoItemDate(a).localeCompare(toDoItemDate(b))
+    if (byDate !== 0) return byDate
+    if (a.kind === 'replacedContract' || b.kind === 'replacedContract') return KIND_ORDER[a.kind] - KIND_ORDER[b.kind]
+    return compareSessions(a.row.session, b.row.session) || KIND_ORDER[a.kind] - KIND_ORDER[b.kind]
+  })
 }
 
 /**
@@ -83,11 +123,14 @@ export function ToDoList({
   actor,
   onOpenBooking,
   onOpenConflicts,
+  onOpenContract,
 }: {
   items: readonly ToDoItem[]
   actor: Actor
   onOpenBooking: (dateISO: string, bookingId: string) => void
   onOpenConflicts?: () => void
+  /** Opens a Contract's page (a replaced Contract's to-do, build plan Phase 49). */
+  onOpenContract?: (contractId: string) => void
 }) {
   const masters = useAppStore((s) => s.masters)
   // One summary line for conflicts (catch-up Phase 30): a link to the Conflicts
@@ -117,6 +160,25 @@ export function ToDoList({
       {shown.length > 0 && (
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {shown.map((item) => {
+            if (item.kind === 'replacedContract') {
+              const r = item.row
+              return (
+                <ToDoRow key={`rc:${r.contractId}`} edge={null} shot="todo-replaced-contract" data-contract-id={r.contractId}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, lineHeight: '17px', fontWeight: 600, color: neutral.ink }}>
+                    <Pill tone="neutral" variant="outline" size="sm">Contract</Pill>
+                    {`Disable ${r.contractName} (${r.aaCode})`}
+                  </span>
+                  <span style={{ fontSize: 11, lineHeight: '15px', color: neutral.slate }}>{`Replaced by ${r.replacementCode} from ${plainDate(r.fromISO)}`}</span>
+                  {onOpenContract !== undefined && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+                      <TextAction size="sm" flush label={`Open ${r.contractName} (${r.aaCode})`} onClick={() => onOpenContract(r.contractId)} style={{ minHeight: 30 }} shot="todo-replaced-contract-open">
+                        Open Contract
+                      </TextAction>
+                    </span>
+                  )}
+                </ToDoRow>
+              )
+            }
             if (item.kind === 'noContract') {
               const r = item.row
               const hospital = r.hospitalId !== undefined ? masters.hospitals[r.hospitalId]?.name ?? r.hospitalId : undefined

@@ -49,7 +49,7 @@ that need work are repeated here.
 - Rename Notifications to Notices across the rail tab, side nav and page, as the rail ideas page proposed (`docs/explorations/admin-day-rail-ideas.html`). `apps/admin/components/RailWorkCard.tsx`, `SideNav.tsx`, `screens/NotificationsScreen.tsx`. S (owner)
 - The four Playwright specs updated for the new rail (`aa-prototype/visual/warnings.spec.ts`, `admin-phase06.spec.ts`, `admin-draft-lists.spec.ts`, `prepayment-phase27.spec.ts`) have not been run; check them at the next sweep. S
 - Build the stub guard: a List holding only a stub reads 0 of 0 with Mark list completed enabled, and authorises. S5 tells the guard as built. M
-- Build what S5 promises: a missing-NHI list with attach or merge, and a new Contract disabling (superseding) the old one. The guide already scripts them. M to L
+- Build what S5 promises: a missing-NHI list with attach or merge. The guide already scripts it. M
 - Mount `shared/flows/EditInvoiceDescriptionSheet.tsx`: an Edit action beside the invoice description on the admin Booking, so the office can edit it (D73's admin layer is otherwise reachable only through "Use it"). S
 - The matching panel cannot correct a row's surgeon, and the newer-text cue sits above the Booking detail instead of under the invoice description. `apps/admin/matching/`. M (owner)
 - Review shows both the "Not complete" pill and the "Not marked completed" flag for one fact. Decided: keep the pill, drop the flag. `domain/billing/reviewFlags.ts`. S

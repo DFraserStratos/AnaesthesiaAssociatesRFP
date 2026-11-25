@@ -116,6 +116,8 @@ describe('registry shape', () => {
       if (t.id === 'ask-colleague-make-available') published['adminPicker.listId'] = 'L-29104-2026-11-25-AM'
       // The backdated range shows on Merivale's Face lift page, its index path (catch-up Phase 24; a page since build plan Phase 45).
       if (t.id === 'demo-backdated-range') published['adminContracts.openContractId'] = 'CT-MER-FACELIFT'
+      // Reach the change date shows on the Contract list, which publishes its tab (build plan Phase 49).
+      if (t.id === 'contract-reach-change-date') published['adminContracts.tab'] = 'contracts'
       // The Hub's mode shows while Add a booking (or another lookup surface) is open (catch-up Phase 40a; the index hint says so).
       if (t.id === 'nhi-hub-mode') published['nhiHub.inUse'] = true
       // The support entries show while the support panel is open on their tab (catch-up Phase 43b; the index hints say so).

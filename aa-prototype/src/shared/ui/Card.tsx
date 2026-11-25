@@ -45,6 +45,7 @@ export function Card({
   footer,
   editing = false,
   step,
+  bare = false,
   shot,
   style,
   children,
@@ -67,6 +68,11 @@ export function Card({
   editing?: boolean
   /** A numbered step: the chip before the heading and body (New contract's four steps). */
   step?: number
+  /**
+   * No border, fill or padding: a section that sits straight on a sheet (Replace from a date's
+   * numbered steps, docs/explorations/contracts-section.html #updating; build plan Phase 49).
+   */
+  bare?: boolean
   shot?: string
   style?: CSSProperties
   children?: ReactNode
@@ -101,6 +107,7 @@ export function Card({
         display: 'flex',
         flexDirection: 'column',
         gap: panel ? 14 : 10,
+        ...(bare ? { border: 'none', background: 'none', boxShadow: 'none', padding: 0 } : {}),
         ...style,
       }}
     >

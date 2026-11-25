@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 import { Lock } from 'lucide-react'
 import { accent, neutral, radius } from '../../../theme/tokens'
 import { lockedAgainstContract, useAppStore } from '../../../store'
-import { contractHistoryFor } from '../../../domain/billing/contractHistory'
-import { stampText } from '../../../domain/dateText'
+import { contractHistoryFor, replacesFor } from '../../../domain/billing/contractHistory'
+import { plainDate, stampText } from '../../../domain/dateText'
 import { HistoryTimeline } from '../../../shared/booking'
 import { EmptyState } from '../../../shared/ui'
 
@@ -21,7 +21,18 @@ export function ContractHistory({ contractId }: { contractId: string }) {
   const audit = useAppStore((s) => s.audit)
   const billing = useAppStore((s) => s.billing)
   const lists = useAppStore((s) => s.schedule.lists)
+  const contracts = useAppStore((s) => s.masters.contracts)
   const rows = useMemo(() => contractHistoryFor(audit, contractId), [audit, contractId])
+  // A Contract that replaces this one shows its create here (build plan Phase 49): "Replaced by UNI-002 from 1 Jan 2027".
+  const entityLabels = useMemo(() => {
+    const out: Record<string, string> = {}
+    for (const r of rows) {
+      if (r.entityId === contractId) continue
+      const replaced = replacesFor(audit, r.entityId)
+      if (replaced !== null) out[r.entityId] = `Replaced by ${contracts[r.entityId]?.aaCode ?? r.entityId} from ${plainDate(replaced.fromISO)}`
+    }
+    return out
+  }, [rows, audit, contractId, contracts])
   const locked = useMemo(() => lockedAgainstContract({ billing }, contractId), [billing, contractId])
 
   return (
@@ -29,7 +40,7 @@ export function ContractHistory({ contractId }: { contractId: string }) {
       {rows.length === 0 ? (
         <EmptyState title="No changes yet" shot="contract-history-empty">Every change to this Contract is kept here, with its values before and after.</EmptyState>
       ) : (
-        <HistoryTimeline entries={rows} subject="contract" />
+        <HistoryTimeline entries={rows} subject="contract" entityLabels={entityLabels} />
       )}
 
       <section data-shot="contract-locked-against" aria-label="Procedures locked against this Contract" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

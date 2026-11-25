@@ -9,6 +9,7 @@ import type { AppState } from './appStore'
 import type { Contract, ContractId, PriceRange } from '../domain/types'
 import { authorisedKeptPrice, proceduresStillOnContract, type KeptPriceRow, type StillOnRow } from '../domain/billing/contractChanges'
 import { proceduresPerRange, rangesOf } from '../domain/billing/priceRanges'
+import { replacementOf } from '../domain/billing/contractHistory'
 import { prepaymentRaisedFor } from './selectors'
 import { lockedAgainstContract, type LockedAgainst } from './locks'
 
@@ -42,11 +43,14 @@ export function onContract(state: Pick<AppState, 'schedule' | 'masters' | 'billi
 
 /**
  * The day a Disable's confirm lists the Procedures still on the Contract from (build plan Phase 45;
- * DM-04): today, since a Disable acts at once (D90, OQ-144 open). Phase 49 widens it to a
- * replacement's change date for a late disable. The one place that date is chosen.
+ * DM-04): today, since a Disable acts at once (D90, OQ-144 open). A late disable (Phase 49;
+ * US-04.1.8 "Late disable", D94): a Contract replaced from a date already past lists from that
+ * change date, read from the replacement's `contract.create` entry (`replaces.fromISO`), never the
+ * entry's timestamp. The one place that date is chosen.
  */
-export function disableFromISO(_state: Pick<AppState, 'masters'>, _contractId: ContractId, todayISO: string): string {
-  return todayISO
+export function disableFromISO(state: Pick<AppState, 'audit'>, contractId: ContractId, todayISO: string): string {
+  const replaced = replacementOf(state.audit, contractId)
+  return replaced !== null && replaced.fromISO < todayISO ? replaced.fromISO : todayISO
 }
 
 /**

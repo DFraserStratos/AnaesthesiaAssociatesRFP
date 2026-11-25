@@ -121,12 +121,54 @@ export function NewContractPage({ actor, initialHolderId }: { actor: Actor; init
 }
 
 type Draft = ReturnType<typeof useContractDraft>
-type StepProps = Pick<Draft, 'draft' | 'set' | 'rules'>
+export type StepProps = Pick<Draft, 'draft' | 'set' | 'rules'>
+
+/*
+ * The four sections' fields, without their card (build plan Phase 49): New
+ * contract wraps each in a numbered `Card step`; Replace from a date shows all
+ * four inside its "What changes" step, filled from the old Contract.
+ */
 
 /** Step 1: the holder decides who it may bill and whether it takes links. */
-function HolderStep({ draft, set, rules, holderGroups }: StepProps & Pick<Draft, 'holderGroups'>) {
+function HolderStep(props: StepProps & Pick<Draft, 'holderGroups'>) {
   return (
     <Card step={1} title="Holder and who it bills" shot="contract-links">
+      <HolderFields {...props} />
+    </Card>
+  )
+}
+
+/** Step 2: the kind, its price, prepaid and the override (which exists only on RVG kinds). */
+function PricingStep(props: StepProps) {
+  return (
+    <Card step={2} title="Pricing" shot="contract-settings">
+      <PricingFields {...props} />
+    </Card>
+  )
+}
+
+/** Step 3: the linked surgeons or anaesthetist (never on a hospital's), the specialties and the funding tag. */
+function WhereStep(props: StepProps) {
+  return (
+    <Card step={3} title="Where it is offered" shot="contract-where-offered">
+      <WhereFields {...props} />
+    </Card>
+  )
+}
+
+/** Step 4: the name and the wording; the AA code is assigned on save. */
+function NameStep(props: { draft: ContractDraft; set: Draft['set'] }) {
+  return (
+    <Card step={4} title="Name, codes and invoice wording" shot="contract-codes">
+      <NameFields {...props} />
+    </Card>
+  )
+}
+
+/** The holder and Bills fields. */
+export function HolderFields({ draft, set, rules, holderGroups }: StepProps & Pick<Draft, 'holderGroups'>) {
+  return (
+    <>
       <PanelGrid>
         <SelectField label="Holder" value={draft.holderId} onChange={(holderId) => set({ holderId })} hint="Fixed once created.">
           <option value="">Choose the Party that holds it</option>
@@ -158,12 +200,15 @@ function HolderStep({ draft, set, rules, holderGroups }: StepProps & Pick<Draft,
           ) : null}
         </div>
       </PanelGrid>
-    </Card>
+    </>
   )
 }
 
-/** Step 2: the kind, its price, prepaid and the override (which exists only on RVG kinds). */
-function PricingStep({ draft, set, rules }: StepProps) {
+/**
+ * The pricing kind, its price, prepaid and the override. `priceElsewhere` (Replace from a date): the
+ * caller shows the price itself, beside the old one, so only the kind, prepaid and override show here.
+ */
+export function PricingFields({ draft, set, rules, priceElsewhere = false }: StepProps & { priceElsewhere?: boolean }) {
   const values = rules.kinds.map((k) => k.kind)
   const { groupProps, itemProps } = useRovingRadio<PricingKind>({
     values,
@@ -172,7 +217,7 @@ function PricingStep({ draft, set, rules }: StepProps) {
     isDisabled: (kind) => rules.kinds.find((k) => k.kind === kind)?.disabledReason !== undefined,
   })
   return (
-    <Card step={2} title="Pricing" shot="contract-settings">
+    <>
       <div {...groupProps} aria-label="Pricing kind" data-shot="contract-pricing-kinds" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
         {rules.kinds.map((k, i) => (
           <RadioCard
@@ -188,9 +233,9 @@ function PricingStep({ draft, set, rules }: StepProps) {
         ))}
       </div>
       <PanelGrid>
-        {draft.kind === 'rvgContractRate' && <TextField label="Rate ($ per unit)" value={draft.rate} onChange={(rate) => set({ rate })} mono inputMode="decimal" />}
-        {draft.kind === 'rvgDiscount' && <TextField label="Discount (%)" value={draft.discount} onChange={(discount) => set({ discount })} mono inputMode="decimal" />}
-        {draft.kind === 'fixed' && (
+        {!priceElsewhere && draft.kind === 'rvgContractRate' && <TextField label="Rate ($ per unit)" value={draft.rate} onChange={(rate) => set({ rate })} mono inputMode="decimal" />}
+        {!priceElsewhere && draft.kind === 'rvgDiscount' && <TextField label="Discount (%)" value={draft.discount} onChange={(discount) => set({ discount })} mono inputMode="decimal" />}
+        {!priceElsewhere && draft.kind === 'fixed' && (
           <>
             <TextField label="First price from" type="date" value={draft.firstStart} onChange={(firstStart) => set({ firstStart })} mono hint="May be in the past." />
             <TextField label="Price (ex GST)" value={draft.firstPrice} onChange={(firstPrice) => set({ firstPrice })} mono placeholder="0.00" inputMode="decimal" />
@@ -207,18 +252,18 @@ function PricingStep({ draft, set, rules }: StepProps) {
           <TextField label="Anaesthetist may change the price" value="Not on a fixed price" onChange={() => {}} disabled shot="contract-override-fixed" />
         )}
       </PanelGrid>
-    </Card>
+    </>
   )
 }
 
-/** Step 3: the linked surgeons or anaesthetist (never on a hospital's), the specialties and the funding tag. */
-function WhereStep({ draft, set, rules }: StepProps) {
+/** The linked surgeons or anaesthetist (never on a hospital's), the specialties and the funding tag. */
+export function WhereFields({ draft, set, rules }: StepProps) {
   const masters = useAppStore((s) => s.masters)
   // Active surgeons only (catch-up Phase 42).
   const surgeons = [...activeSurgeons({ masters: { surgeons: masters.surgeons } })].sort(compareBySurname)
   const anaesthetists = Object.values(masters.anaesthetists).sort((a, b) => a.name.localeCompare(b.name))
   return (
-    <Card step={3} title="Where it is offered" shot="contract-where-offered">
+    <>
       {rules.showLinks ? (
         <PanelGrid>
           <ChipMultiSelect label="Linked surgeons" options={surgeons} value={draft.surgeonIds} onChange={(surgeonIds) => set({ surgeonIds })} addLabel="Add a surgeon" />
@@ -252,20 +297,18 @@ function WhereStep({ draft, set, rules }: StepProps) {
           </SelectField>
         </div>
       </PanelGrid>
-    </Card>
+    </>
   )
 }
 
-/** Step 4: the name and the wording; the AA code is assigned on save. */
-function NameStep({ draft, set }: { draft: ContractDraft; set: Draft['set'] }) {
+/** The name, codes and invoice wording; the AA code is assigned on save. */
+export function NameFields({ draft, set }: { draft: ContractDraft; set: Draft['set'] }) {
   return (
-    <Card step={4} title="Name, codes and invoice wording" shot="contract-codes">
-      <PanelGrid>
+    <PanelGrid>
         <TextField label="Name" value={draft.name} onChange={(name) => set({ name })} hint="What the step rail shows." shot="contract-name" />
         <TextField label="Holder reference" value={draft.holderReference} onChange={(holderReference) => set({ holderReference })} mono placeholder="Optional" hint="The holder's own code for the item. Need not be unique." />
         <TextField label="Invoice description" value={draft.invoiceDescription} onChange={(invoiceDescription) => set({ invoiceDescription })} hint="The words the patient reads on the invoice, where filled in." />
         <DefaultRvgCodeField value={draft.defaultRvgGroupId} onChange={(defaultRvgGroupId) => set({ defaultRvgGroupId })} />
-      </PanelGrid>
-    </Card>
+    </PanelGrid>
   )
 }
