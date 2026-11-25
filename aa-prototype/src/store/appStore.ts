@@ -617,6 +617,9 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
+/** Masters keys removed from the model: dropped from any saved payload on load. */
+const RETIRED_MASTERS_KEYS: readonly string[] = ['surgeonGroups']
+
 /**
  * Rehydration merge for the persisted store: start from the fresh `current`
  * state, overlay the `persisted` state, and for every object-valued top-level
@@ -626,9 +629,6 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
  * record maps live one level down and are copied wholesale, so a record the
  * demo deleted is never resurrected. Exported for the regression test.
  */
-/** Masters keys removed from the model: dropped from any saved payload on load. */
-const RETIRED_MASTERS_KEYS: readonly string[] = ['surgeonGroups']
-
 export function backfillMerge(current: AppStore, persisted: unknown): AppStore {
   const p = isPlainObject(persisted) ? persisted : {}
   const merged: Record<string, unknown> = { ...current, ...p }
