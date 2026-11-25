@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { contractPath, contractsPath, fundingTagsPath, partiesPath, partyPath } from '../../contractsPaths'
 import { mastersViewPath } from '../../mastersPaths'
+import { anaesthetistRecordPath, peoplePath, surgeonProfilePath } from '../../peoplePaths'
 import { useNavigate } from 'react-router-dom'
 import { commitMasterLoad, discardMasterLoad, specFor, useAppStore } from '../../../../store'
 import { SEED_LOAD_ACTOR } from '../../../../store/demoActors'
@@ -14,13 +15,13 @@ import { neutral } from '../../../../theme/tokens'
 
 /**
  * The list that keeps each sheet's records (a row's link after a load): its Master data view, or
- * its Contracts section tab for Contracts, price ranges, Parties and funding tags (build plan
- * Phases 45 and 48).
+ * its Contracts section tab for Contracts, price ranges, Parties and funding tags (build plan Phases 45
+ * and 48), or its People tab for specialties, surgeons and anaesthetists (Phase 53).
  */
 const LIST_OF: Record<LoadEntity, string> = {
-  specialties: mastersViewPath('specialties'),
-  surgeons: mastersViewPath('surgeons'),
-  anaesthetists: mastersViewPath('anaesthetists'),
+  specialties: peoplePath('specialties'),
+  surgeons: peoplePath('surgeons'),
+  anaesthetists: peoplePath('anaesthetists'),
   hospitals: mastersViewPath('hospitals'),
   hospitalHolidays: mastersViewPath('hospitals'),
   publicHolidays: mastersViewPath('publicHolidays'),
@@ -41,8 +42,8 @@ function fileNameOf(load: MasterLoad): string {
 
 /** Where a loaded record opens: the surgeon profile, the anaesthetist record, a Party's page, a Contract's page, otherwise its list. */
 function recordPath(entity: LoadEntity, recordId: string | undefined): string {
-  if (entity === 'surgeons' && recordId !== undefined) return `/admin/masters/surgeons/${recordId}`
-  if (entity === 'anaesthetists' && recordId !== undefined) return `/admin/masters/anaesthetists/${recordId}`
+  if (entity === 'surgeons' && recordId !== undefined) return surgeonProfilePath(recordId)
+  if (entity === 'anaesthetists' && recordId !== undefined) return anaesthetistRecordPath(recordId)
   if (entity === 'parties' && recordId !== undefined) return partyPath(recordId)
   if (entity === 'fundingTags' && recordId !== undefined) return fundingTagsPath(recordId)
   // Contracts and their price ranges open in the Contracts section (build plan Phase 45): a range's id is `<ContractId>@<start>`.

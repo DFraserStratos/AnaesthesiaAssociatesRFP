@@ -11,7 +11,7 @@ import { PairingSection, useProfileHistory } from '../components/pairing'
 import { HeaderActions, IdChip, PROFILE_CARD, PROFILE_FACTS, PROFILE_GRID, ProfilePage } from '../components/ProfileChrome'
 import { Card, DefList, DefRow } from '../../../shared/ui'
 import { SurgeonEditSheet } from '../flows/SurgeonEditSheet'
-import { mastersViewPath } from '../mastersPaths'
+import { peoplePath } from '../peoplePaths'
 import { HPI_CPN_LABEL } from '../../../shared/format'
 
 /**
@@ -21,7 +21,7 @@ import { HPI_CPN_LABEL } from '../../../shared/format'
  * one "Practice and contacts" card holds the practice name, the personal
  * contact and each office contact, the one the office's emails go to first
  * marked (`officeAddressFor`); a surgeon with no HPI CPN reads "No HPI CPN
- * yet". `/admin/masters/surgeons/:surgeonId`.
+ * yet". `/admin/people/surgeons/:surgeonId`.
  */
 export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor: Actor }) {
   const surgeon = useAppStore((s) => s.masters.surgeons[surgeonId])
@@ -40,7 +40,7 @@ export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor:
   return (
     <ProfilePage
       shot="surgeon-profile"
-      back={{ label: 'Surgeons', to: mastersViewPath('surgeons') }}
+      back={{ label: 'Surgeons', to: peoplePath('surgeons') }}
       name={surgeon.name}
       chip={<IdChip label={HPI_CPN_LABEL} value={surgeon.hpiId} empty={NO_HPI_CPN} shot="surgeon-hpi-chip" />}
       sub={[surgeonSpecialtyLabel({ specialties }, surgeon), surgeon.practiceName].filter((v) => v !== undefined && v !== '').join(' · ')}

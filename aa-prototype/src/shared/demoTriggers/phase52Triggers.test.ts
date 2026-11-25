@@ -14,7 +14,7 @@ import type { DemoContextValues } from './context'
 const pass = DEMO_TRIGGERS.find((t) => t.id === 'pass-last-day')!
 const trySignIn = DEMO_TRIGGERS.find((t) => t.id === 'try-sign-in-after-last-day')!
 const BEAU = ANAE.beaumont
-const record = `/admin/masters/anaesthetists/${BEAU}`
+const record = `/admin/people/anaesthetists/${BEAU}`
 const recordCtx = { pathname: record, params: { anaesthetistId: BEAU }, published: {} }
 
 function beaumontLeaves(api: AppStoreApi): string {

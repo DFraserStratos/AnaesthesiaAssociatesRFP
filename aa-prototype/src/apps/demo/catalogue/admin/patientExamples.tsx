@@ -13,7 +13,7 @@ import { WaitingNhiTab } from '../../../admin/intake/WaitingNhiTab'
 const noop = () => undefined
 
 export function PatientsSearchExample() {
-  return <PatientsScreen view="search" actor={OFFICE_ACTOR} onOpenList={noop} onOpenMatching={noop} />
+  return <PatientsScreen actor={OFFICE_ACTOR} />
 }
 
 export function WaitingNhiExample() {

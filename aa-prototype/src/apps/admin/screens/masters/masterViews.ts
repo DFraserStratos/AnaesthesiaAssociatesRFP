@@ -11,9 +11,9 @@
 import type { LoadEntity } from '../../../../domain/masterLoad/types'
 import type { MastersView } from './view'
 
-export type MasterViewGroup = 'People and places' | 'Schedule' | 'Billing' | 'Settings' | 'Go-live'
+export type MasterViewGroup = 'Places' | 'Schedule' | 'Billing' | 'Settings' | 'Go-live'
 
-export const MASTER_VIEW_GROUPS: readonly MasterViewGroup[] = ['People and places', 'Schedule', 'Billing', 'Settings', 'Go-live']
+export const MASTER_VIEW_GROUPS: readonly MasterViewGroup[] = ['Places', 'Schedule', 'Billing', 'Settings', 'Go-live']
 
 export interface MasterViewEntry {
   view: MastersView
@@ -32,11 +32,7 @@ export interface MasterViewEntry {
 }
 
 export const MASTER_VIEWS: readonly MasterViewEntry[] = [
-  { view: 'anaesthetists', label: 'Anaesthetists', group: 'People and places', catalogueRows: ['anaesthetists'], add: true, edit: true, retire: false, remove: false, seeded: ['anaesthetists'] },
-  { view: 'hospitals', label: 'Hospitals & holidays', group: 'People and places', catalogueRows: ['hospitals, each with a contact email for booking updates', "each hospital's own holiday calendar"], add: true, edit: true, retire: true, remove: true, seeded: ['hospitals', 'hospitalHolidays'] },
-  { view: 'surgeons', label: 'Surgeons', group: 'People and places', catalogueRows: ['surgeons'], add: true, edit: true, retire: true, remove: false, seeded: ['surgeons'] },
-  { view: 'specialties', label: 'Specialties', group: 'People and places', catalogueRows: ['specialties'], add: true, edit: true, retire: false, remove: true, seeded: ['specialties'] },
-  { view: 'surgeonGroups', label: 'Surgeon groups', group: 'People and places', catalogueRows: ['surgeon groups'], add: true, edit: true, retire: true, remove: false },
+  { view: 'hospitals', label: 'Hospitals & holidays', group: 'Places', catalogueRows: ['hospitals, each with a contact email for booking updates', "each hospital's own holiday calendar"], add: true, edit: true, retire: true, remove: true, seeded: ['hospitals', 'hospitalHolidays'] },
   { view: 'recurringBookings', label: 'Recurring bookings', group: 'Schedule', catalogueRows: ['recurring bookings'], add: true, edit: true, retire: true, remove: false },
   { view: 'availability-statuses', label: 'Availability statuses', group: 'Schedule', catalogueRows: ['Slot availability statuses'], add: true, edit: true, retire: true, remove: false },
   { view: 'publicHolidays', label: 'Public holidays', group: 'Schedule', catalogueRows: ['the master (public holiday) calendar'], add: true, edit: true, retire: false, remove: true, seeded: ['publicHolidays'] },

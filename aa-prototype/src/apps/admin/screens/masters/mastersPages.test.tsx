@@ -16,7 +16,7 @@ import { activePairings } from '../../../../domain/pairingPreferences'
 import { freshAppState, useAppStore, type Actor } from '../../../../store'
 import { selectPriorityTier } from '../../../../store/officePrivate'
 import { SurfaceProvider } from '../../../../shared'
-import { AdminAnaesthetistRecordRoute, AdminMastersRoute, AdminSurgeonProfileRoute } from '../../routes'
+import { mastersAndLegacyRoutes, peopleRoutes } from '../../../../test/adminRoutes'
 import { SlotDrawer } from '../../components/SlotDrawer'
 import { parseMastersView } from './view'
 import { projectedListId } from '../../../../domain/slots'
@@ -34,11 +34,8 @@ function renderAdmin(path: string) {
       <SurfaceProvider variant="web">
         <Routes>
           <Route path="/admin" element={<Outlet context={{ actor: OFFICE, todayISO: '2026-11-24' }} />}>
-            <Route path="masters">
-              <Route index element={<AdminMastersRoute />} />
-              <Route path="surgeons/:surgeonId" element={<AdminSurgeonProfileRoute />} />
-              <Route path="anaesthetists/:anaesthetistId" element={<AdminAnaesthetistRecordRoute />} />
-            </Route>
+            {peopleRoutes()}
+            {mastersAndLegacyRoutes()}
           </Route>
         </Routes>
         <LocationProbe />
@@ -54,28 +51,29 @@ describe('Master data views', () => {
     useAppStore.setState(freshAppState())
   })
 
-  it('reads the view from ?view=, falling back to Anaesthetists', () => {
-    expect(parseMastersView('surgeons')).toBe('surgeons')
-    // Catch-up Phase 17b: the surgeons' rooms view is gone; its old URL opens Surgeons.
-    expect(parseMastersView('surgeonRooms')).toBe('surgeons')
-    expect(parseMastersView('nope')).toBe('anaesthetists')
-    expect(parseMastersView(null)).toBe('anaesthetists')
+  it('reads the view from ?view=, falling back to Hospitals (the People views redirect first)', () => {
+    expect(parseMastersView('publicHolidays')).toBe('publicHolidays')
+    expect(parseMastersView('surgeons')).toBe('hospitals')
+    expect(parseMastersView('nope')).toBe('hospitals')
+    expect(parseMastersView(null)).toBe('hospitals')
   })
 
-  it('opens the view the URL names and writes the tab clicked back to it', () => {
-    renderAdmin('/admin/masters?view=surgeons')
-    expect(screen.getByRole('heading', { name: 'Surgeons' })).toBeInTheDocument()
+  it('the Surgeons tab lists the surgeons, and no Surgeon groups list or tab remains', () => {
+    renderAdmin('/admin/people/surgeons?q=Reid')
+    expect(screen.getByRole('link', { name: /^Surgeons/ })).toHaveAttribute('aria-current', 'page')
     const reid = document.querySelector(`tr[data-surgeon="${SURG.reid}"]`) as HTMLElement
     expect(within(reid).getByText('47REIA')).toBeInTheDocument()
     expect(within(reid).getByText('1 Not preferred')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Surgeon groups' }))
-    expect(location()).toBe('/admin/masters?view=surgeonGroups')
+    expect(screen.queryByRole('button', { name: 'Surgeon groups' })).toBeNull()
+    expect(screen.queryByRole('link', { name: /Surgeon groups/ })).toBeNull()
     expect(screen.queryByRole('button', { name: "Surgeons' rooms" })).toBeNull()
   })
 
-  it('an unknown view shows Anaesthetists with the Tier column; no entry reads Tier 4', () => {
+  it('an unknown Master data view opens Hospitals; the Anaesthetists tab has the Tier column, and no entry reads Tier 4', () => {
     renderAdmin('/admin/masters?view=bogus')
-    expect(screen.getByRole('heading', { name: 'Anaesthetists' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Hospitals & holidays' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Places' })).toBeInTheDocument()
+    renderAdmin('/admin/people/anaesthetists')
     const ropata = document.querySelector(`tr[data-anaesthetist="${ANAE.ropata}"]`) as HTMLElement
     expect(within(ropata).getByText('Tier 4')).toBeInTheDocument()
     const souter = document.querySelector(`tr[data-anaesthetist="${ANAE.souter}"]`) as HTMLElement
@@ -83,33 +81,33 @@ describe('Master data views', () => {
   })
 
   it('a row opens the record; its Edit link opens the sheet instead', () => {
-    renderAdmin('/admin/masters')
+    renderAdmin('/admin/people/anaesthetists')
     const souter = document.querySelector(`tr[data-anaesthetist="${ANAE.souter}"]`) as HTMLElement
     fireEvent.click(within(souter).getByRole('button', { name: 'Edit' }))
-    expect(location()).toBe('/admin/masters')
+    expect(location()).toBe('/admin/people/anaesthetists')
     expect(screen.getByRole('link', { name: 'Open record' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('link', { name: 'Open record' }))
-    expect(location()).toBe(`/admin/masters/anaesthetists/${ANAE.souter}`)
+    expect(location()).toBe(`/admin/people/anaesthetists/${ANAE.souter}`)
 
-    const sharma = renderAdmin('/admin/masters')
+    const sharma = renderAdmin('/admin/people/anaesthetists')
     const row = sharma.container.querySelector(`tr[data-anaesthetist="${ANAE.sharma}"] td`) as HTMLElement
     fireEvent.click(row)
-    expect(within(sharma.container).getByTestId('location').textContent).toBe(`/admin/masters/anaesthetists/${ANAE.sharma}`)
+    expect(within(sharma.container).getByTestId('location').textContent).toBe(`/admin/people/anaesthetists/${ANAE.sharma}`)
   })
 
-  it('a surgeon row opens the profile, and an unknown id falls back to Master data', () => {
-    renderAdmin('/admin/masters?view=surgeons')
+  it('a surgeon row opens the profile', () => {
+    renderAdmin('/admin/people/surgeons?q=Whitford')
     fireEvent.click(document.querySelector(`tr[data-surgeon="${SURG.whitford}"] td:nth-child(2)`) as HTMLElement)
-    expect(location()).toBe(`/admin/masters/surgeons/${SURG.whitford}`)
+    expect(location()).toBe(`/admin/people/surgeons/${SURG.whitford}`)
   })
 
-  it('an unknown surgeon id redirects to /admin/masters', () => {
-    renderAdmin('/admin/masters/surgeons/S-NOPE')
-    expect(location()).toBe('/admin/masters')
+  it('an unknown surgeon id falls back to the Surgeons tab', () => {
+    renderAdmin('/admin/people/surgeons/S-NOPE')
+    expect(location()).toBe('/admin/people/surgeons')
   })
 
   it('adds a surgeon with a lower-case HPI CPN (stored upper-case) and refuses one Dr Sharma holds', () => {
-    renderAdmin('/admin/masters?view=surgeons')
+    renderAdmin('/admin/people/surgeons')
     fireEvent.click(screen.getByRole('button', { name: 'Add surgeon' }))
     const sheet = () => document.querySelector('[data-shot="surgeon-edit-sheet"]') as HTMLElement
     fireEvent.change(within(sheet()).getAllByLabelText('Name')[0]!, { target: { value: 'Ms R. Tester' } })
@@ -149,7 +147,7 @@ describe('the surgeon profile and the anaesthetist record', () => {
   })
 
   it("Ms Reid's profile: HPI CPN, practice and contacts, group, the not-preferred entry and the ended one", () => {
-    renderAdmin(`/admin/masters/surgeons/${SURG.reid}`)
+    renderAdmin(`/admin/people/surgeons/${SURG.reid}`)
     expect(screen.getByText("Unique index on the Health Provider Index. Not the patient's NHI.")).toBeInTheDocument()
     expect(screen.getByText('For information')).toBeInTheDocument()
     const contacts = document.querySelector('[data-shot="surgeon-contacts"]') as HTMLElement
@@ -169,7 +167,7 @@ describe('the surgeon profile and the anaesthetist record', () => {
   })
 
   it('the add sheet disables Dr Sharma for "Ms A. Reid asked" only; adding the other side shows on both profiles', () => {
-    const view = renderAdmin(`/admin/masters/surgeons/${SURG.reid}`)
+    const view = renderAdmin(`/admin/people/surgeons/${SURG.reid}`)
     fireEvent.click(screen.getByRole('button', { name: 'Add pairing' }))
     const select = document.querySelector('select[data-shot="pairing-counterpart"]') as HTMLSelectElement
     const sharmaOption = () => select.querySelector(`option[value="${ANAE.sharma}"]`) as HTMLOptionElement
@@ -190,14 +188,14 @@ describe('the surgeon profile and the anaesthetist record', () => {
     expect(useAppStore.getState().audit.at(-1)?.action).toBe('pairing.add')
     view.unmount()
 
-    renderAdmin(`/admin/masters/anaesthetists/${ANAE.sharma}`)
+    renderAdmin(`/admin/people/anaesthetists/${ANAE.sharma}`)
     const notPreferred = document.querySelector('[data-pairing-group="NOT_PREFERRED"]') as HTMLElement
     expect(within(notPreferred).getByText('Dr Priya Sharma prefers not to work with Ms A. Reid')).toBeInTheDocument()
     expect(within(notPreferred).getByText('Ms A. Reid prefers not to work with Dr Priya Sharma')).toBeInTheDocument()
   })
 
   it('ending an entry keeps it, under Ended entries, with its reason; the sheet is audited', () => {
-    renderAdmin(`/admin/masters/anaesthetists/${ANAE.sharma}`)
+    renderAdmin(`/admin/people/anaesthetists/${ANAE.sharma}`)
     const preferred = document.querySelector('[data-pairing-group="PREFERRED"]') as HTMLElement
     fireEvent.click(within(preferred).getByRole('button', { name: /^End / }))
     fireEvent.change(screen.getByLabelText('Why it ended (optional)'), { target: { value: 'Rooms moved' } })
@@ -212,7 +210,7 @@ describe('the surgeon profile and the anaesthetist record', () => {
   })
 
   it('the record History merges the record and its pairings, each pairing row labelled by its sentence', () => {
-    renderAdmin(`/admin/masters/anaesthetists/${ANAE.sharma}`)
+    renderAdmin(`/admin/people/anaesthetists/${ANAE.sharma}`)
     const card = document.querySelector('[data-shot="rate-tier-card"]') as HTMLElement
     fireEvent.click(within(card).getByRole('button', { name: 'Edit rate and tier' }))
     fireEvent.click(within(card).getByRole('button', { name: 'Tier 1' }))
@@ -228,7 +226,7 @@ describe('the surgeon profile and the anaesthetist record', () => {
   })
 
   it('the rate and tier card sets the tier on Save, says it is office only, and Profile no longer lists the rate', () => {
-    renderAdmin(`/admin/masters/anaesthetists/${ANAE.sharma}`)
+    renderAdmin(`/admin/people/anaesthetists/${ANAE.sharma}`)
     expect(document.querySelector('[data-shot="tier-card"]')).toBeNull()
     const card = document.querySelector('[data-shot="rate-tier-card"]') as HTMLElement
     expect(within(card).getByText('· office only')).toBeInTheDocument()
@@ -246,7 +244,7 @@ describe('the surgeon profile and the anaesthetist record', () => {
   })
 
   it('the list filters by tier: a tier narrows the rows, All restores them, an empty tier says so', () => {
-    renderAdmin('/admin/masters')
+    renderAdmin('/admin/people/anaesthetists')
     const all = document.querySelectorAll('tr[data-anaesthetist]').length
     const filter = screen.getByRole('group', { name: 'Filter by tier' })
     fireEvent.click(within(filter).getByRole('button', { name: 'Tier 1' }))
@@ -261,11 +259,11 @@ describe('the surgeon profile and the anaesthetist record', () => {
     // Nobody in a tier: the empty line.
     useAppStore.setState((s) => ({ officePrivate: { ...s.officePrivate, priorityTiers: {} } }))
     fireEvent.click(within(filter).getByRole('button', { name: 'Tier 2' }))
-    expect(screen.getByText('No anaesthetists in this tier.')).toBeInTheDocument()
+    expect(screen.getByText('No anaesthetists match.')).toBeInTheDocument()
   })
 
   it('Edit details has no rate field, and saving leaves the rate as it was', () => {
-    renderAdmin(`/admin/masters/anaesthetists/${ANAE.ropata}`)
+    renderAdmin(`/admin/people/anaesthetists/${ANAE.ropata}`)
     const before = useAppStore.getState().masters.anaesthetists[ANAE.ropata]!.unitValue
     fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
     const sheet = document.querySelector('[data-shot="edit-anaesthetist-sheet"]') as HTMLElement
@@ -279,7 +277,7 @@ describe('the surgeon profile and the anaesthetist record', () => {
   })
 
   it("Edit details edits the HPI CPN (normalised), and an unrelated save sends no HPI CPN", () => {
-    renderAdmin(`/admin/masters/anaesthetists/${ANAE.ropata}`)
+    renderAdmin(`/admin/people/anaesthetists/${ANAE.ropata}`)
     fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
     expect(screen.queryByRole('link', { name: 'Open record' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
@@ -313,7 +311,7 @@ describe('cross-links', () => {
     )
     fireEvent.click(screen.getByRole('link', { name: 'Ms A. Reid' }))
     expect(onClose).toHaveBeenCalled()
-    expect(location()).toBe(`/admin/masters/surgeons/${SURG.reid}`)
+    expect(location()).toBe(`/admin/people/surgeons/${SURG.reid}`)
   })
 })
 
@@ -327,18 +325,22 @@ describe('catch-up Phase 17b: no surgeons\' rooms, contacts on the surgeon, the 
   const nameIn = (set: HTMLElement) => within(set).getByLabelText(/ name$/)
 
   it('the Surgeons table shows Practice, Office contact and HPI CPN, and "No HPI CPN yet" for a blank one', () => {
-    renderAdmin('/admin/masters?view=surgeons')
-    const table = document.querySelector('[data-shot="masters-surgeons"]') as HTMLElement
+    // The list pages at 50 (build plan Phase 53): find each surgeon by name, as the office would.
+    const first = renderAdmin('/admin/people/surgeons?q=Wainwright')
+    const table = first.container.querySelector('[data-shot="masters-surgeons"]') as HTMLElement
     for (const head of ['Practice', 'Office contact', 'HPI CPN']) expect(within(table).getByRole('columnheader', { name: head })).toBeInTheDocument()
-    const wainwright = document.querySelector('tr[data-surgeon="S-WAINWRIGHT"]') as HTMLElement
+    const wainwright = first.container.querySelector('tr[data-surgeon="S-WAINWRIGHT"]') as HTMLElement
     expect(wainwright.getAttribute('data-practice')).toBe('Upper GI Partners and Hillsborough Colorectal Specialists')
     expect(within(wainwright).getByText('info@uppergi.example')).toBeInTheDocument()
-    for (const id of ['S-WHAANGA', 'S-OSEI', 'S-SELWYN']) {
-      const row = document.querySelector(`tr[data-surgeon="${id}"]`) as HTMLElement
+    expect(within(first.container).getByText("AA's address book of surgeons. Open a surgeon for their contacts, groups and pairing preferences.")).toBeInTheDocument()
+    first.unmount()
+    for (const [id, q] of [['S-WHAANGA', 'Whaanga'], ['S-OSEI', 'Osei'], ['S-SELWYN', 'Selwyn']] as const) {
+      const view = renderAdmin(`/admin/people/surgeons?q=${q}`)
+      const row = view.container.querySelector(`tr[data-surgeon="${id}"]`) as HTMLElement
       expect(row.getAttribute('data-hpi'), id).toBe('')
       expect(within(row).getByText('No HPI CPN yet')).toBeInTheDocument()
+      view.unmount()
     }
-    expect(screen.getByText("AA's address book of surgeons. Open a surgeon for their contacts, groups and pairing preferences.")).toBeInTheDocument()
   })
 
   it('a surgeon with no office contact gets one empty set with no minus; plus adds sets and focuses each new Name; minus removes a set whole', () => {
@@ -346,7 +348,7 @@ describe('catch-up Phase 17b: no surgeons\' rooms, contacts on the surgeon, the 
     const state = useAppStore.getState()
     const whaanga = state.masters.surgeons['S-WHAANGA']!
     useAppStore.setState({ masters: { ...state.masters, surgeons: { ...state.masters.surgeons, 'S-WHAANGA': { ...whaanga, officeContacts: [] } } } })
-    renderAdmin('/admin/masters/surgeons/S-WHAANGA')
+    renderAdmin('/admin/people/surgeons/S-WHAANGA')
     fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
     expect(sets()).toHaveLength(1)
     expect(within(sheet()).queryByRole('button', { name: /Remove office contact/ })).toBeNull()
@@ -367,7 +369,7 @@ describe('catch-up Phase 17b: no surgeons\' rooms, contacts on the surgeon, the 
   })
 
   it('minus on a middle set removes it whole and moves the set below up with its values; each input has its own name', () => {
-    renderAdmin('/admin/masters/surgeons/S-FORSYTHE')
+    renderAdmin('/admin/people/surgeons/S-FORSYTHE')
     fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
     expect(sets()).toHaveLength(3)
     expect(within(sheet()).getByRole('textbox', { name: 'Office contact 3 phone' })).toHaveValue('03 555 1037')
@@ -382,7 +384,7 @@ describe('catch-up Phase 17b: no surgeons\' rooms, contacts on the surgeon, the 
   })
 
   it('an empty extra set is dropped on save; a bad email in office contact 2 is refused under it and nothing is saved', () => {
-    renderAdmin('/admin/masters/surgeons/S-DALGETY')
+    renderAdmin('/admin/people/surgeons/S-DALGETY')
     const before = useAppStore.getState().masters.surgeons['S-DALGETY']!.officeContacts
     fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
     fireEvent.change(within(sets()[1]!).getByLabelText('Email'), { target: { value: 'not an email' } })
@@ -396,7 +398,7 @@ describe('catch-up Phase 17b: no surgeons\' rooms, contacts on the surgeon, the 
   })
 
   it('clearing an HPI CPN saves; the chip, Identifiers and History read it; a held one and an anaesthetist\'s are refused', () => {
-    renderAdmin(`/admin/masters/surgeons/${SURG.reid}`)
+    renderAdmin(`/admin/people/surgeons/${SURG.reid}`)
     fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
     fireEvent.change(within(sheet()).getByLabelText('HPI CPN (optional)'), { target: { value: '42whij' } })
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Save changes' }))
@@ -413,7 +415,7 @@ describe('catch-up Phase 17b: no surgeons\' rooms, contacts on the surgeon, the 
   })
 
   it("Mr Wainwright's profile: the practice name, the personal contact, an office contact per practice, the first marked; no room card, nothing provisional", () => {
-    renderAdmin('/admin/masters/surgeons/S-WAINWRIGHT')
+    renderAdmin('/admin/people/surgeons/S-WAINWRIGHT')
     const card = document.querySelector('[data-shot="surgeon-contacts"]') as HTMLElement
     expect(within(card).getByText('Upper GI Partners and Hillsborough Colorectal Specialists')).toBeInTheDocument()
     const office = Array.from(card.querySelectorAll('[data-office-contact]')) as HTMLElement[]

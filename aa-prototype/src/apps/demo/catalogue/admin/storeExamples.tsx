@@ -59,7 +59,7 @@ export function SideNavExample() {
   const [active, setActive] = useState<NavSection>('day')
   return (
     <div style={{ display: 'flex', height: 560 }}>
-      <SideNav active={active} reviewBadge={5} billingBadge={2} conflictBadge={19} draftListBadge={4} notificationBadge={1} patientBadge={3} onNavigate={setActive} />
+      <SideNav active={active} reviewBadge={5} billingBadge={2} conflictBadge={19} draftListBadge={4} notificationBadge={1} peopleBadge={3} onNavigate={setActive} />
       <div style={{ padding: 14, fontSize: 13, color: neutral.slate }}>
         Section: <strong>{active}</strong>
         <div style={{ marginTop: 6, color: neutral.mist }}>Badge counts are fixed for the example. "Roles in this prototype" opens the real dialog.</div>

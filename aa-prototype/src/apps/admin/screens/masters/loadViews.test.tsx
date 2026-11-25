@@ -15,6 +15,7 @@ import { SEEDED_SHEETS_BY_VIEW } from '../../../../shared/demoTriggers/registry'
 import { AdminMastersRoute } from '../../routes'
 import { MASTER_VIEWS } from './masterViews'
 import { CONTRACTS_TABS } from '../contracts/contractsTabs'
+import { PEOPLE_TABS } from '../people/peopleTabs'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
@@ -41,11 +42,13 @@ beforeEach(() => {
 })
 
 describe('the sample trigger follows masterViews.ts', () => {
-  it("restates every view's and Contracts tab's seeded sheets exactly", () => {
+  it("restates every view's, Contracts tab's and People tab's seeded sheets exactly", () => {
     const fromViews = Object.fromEntries(MASTER_VIEWS.filter((v) => v.seeded !== undefined).map((v) => [v.view, [...v.seeded!]]))
     // The Contracts section's tabs publish their id under `adminContracts.tab` (build plan Phases 45 and 48).
     const fromTabs = Object.fromEntries(CONTRACTS_TABS.map((t) => [t.tab, [...t.seeded]]))
-    expect(SEEDED_SHEETS_BY_VIEW).toEqual({ ...fromViews, ...fromTabs })
+    // The People section's seeded tabs publish theirs under `adminPeople.tab` (Phase 53); Patients loads no sheet.
+    const fromPeople = Object.fromEntries(PEOPLE_TABS.filter((t) => t.seeded.length > 0).map((t) => [t.tab, [...t.seeded]]))
+    expect(SEEDED_SHEETS_BY_VIEW).toEqual({ ...fromViews, ...fromTabs, ...fromPeople })
   })
 })
 

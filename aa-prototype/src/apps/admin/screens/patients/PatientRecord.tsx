@@ -1,6 +1,6 @@
 /**
  * The patient record (catch-up Phase 40, item 12; US-11.1.1, US-11.3.1,
- * US-11.3.2, US-11.3.3, US-13.2.2): `/admin/patients/:nhi`. The NHI is the
+ * US-11.3.2, US-11.3.3, US-13.2.2): `/admin/people/patients/:nhi` (build plan Phase 53). The NHI is the
  * key and the identifier; the internal id is never shown.
  *
  * A `fluid` record: a main column (the three balance tiles in the Admin Review
@@ -41,6 +41,7 @@ import { sessionText } from '../../../../domain/outOfHours'
 import { neutral } from '../../../../theme/tokens'
 import { UNASSIGNED } from '../../../../shared/scheduleTerms'
 import { AdminPage, PageBody } from '../../components/AdminPage'
+import { peoplePath } from '../../peoplePaths'
 import { usePatientSlices } from './PatientsScreen'
 import { balanceText, DetailChoiceTable, detailsFromText, InvoiceStatusPill } from './patientParts'
 import { RegisterRefreshPanel, RegisterRefreshRow } from './RegisterRefresh'
@@ -71,7 +72,7 @@ export function PatientRecord({ nhi, actor, onOpenBooking }: { nhi: string; acto
       mode="fluid"
       shot="admin-patient-record"
       data-patient-nhi={view.patient.nhi}
-      back={{ label: 'Patients', to: '/admin/patients' }}
+      back={{ label: 'Patients', to: peoplePath('patients') }}
       title={view.patient.name}
       aside={
         <Pill size="lg" mono shot="patient-record-nhi" ariaLabel={`NHI ${view.patient.nhi}`}>

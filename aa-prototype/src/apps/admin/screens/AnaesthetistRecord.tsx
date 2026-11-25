@@ -11,7 +11,7 @@ import { HeaderActions, IdChip, PROFILE_FACTS, PROFILE_GRID, PROFILE_WIDE_CARD, 
 import { Card, DefList, DefRow } from '../../../shared/ui'
 import { EditAnaesthetistSheet } from '../flows/EditAnaesthetistSheet'
 import { maskBankAccount } from '../../../domain/bankAccount'
-import { mastersViewPath } from '../mastersPaths'
+import { peoplePath } from '../peoplePaths'
 
 /**
  * The Admin anaesthetist record (catch-up Phase 17; US-12.1.4 Admin side,
@@ -24,7 +24,7 @@ import { mastersViewPath } from '../mastersPaths'
  * Build plan Phase 52: `AnaesthetistStatusCard` (active, a last day ahead, or
  * inactive, with Make inactive, Clear last day and Make active) beside it, and
  * `AnaesthetistHistoryCard` (past Lists, the ledger link) under the Profile.
- * `/admin/masters/anaesthetists/:anaesthetistId`.
+ * `/admin/people/anaesthetists/:anaesthetistId`.
  */
 export function AnaesthetistRecord({ anaesthetistId, actor }: { anaesthetistId: string; actor: Actor }) {
   const anaesthetist = useAppStore((s) => s.masters.anaesthetists[anaesthetistId])
@@ -37,7 +37,7 @@ export function AnaesthetistRecord({ anaesthetistId, actor }: { anaesthetistId: 
   return (
     <ProfilePage
       shot="anaesthetist-record"
-      back={{ label: 'Anaesthetists', to: mastersViewPath('anaesthetists') }}
+      back={{ label: 'Anaesthetists', to: peoplePath('anaesthetists') }}
       name={anaesthetist.name}
       chip={<IdChip label={HPI_CPN_LABEL} value={anaesthetist.hpiId} shot="anaesthetist-hpi-chip" />}
       sub={<>Registration <span className="mono">{anaesthetist.registrationNumber}</span> · <span data-shot="anaesthetist-status-sub">{anaesthetistStatusLabel(statusOn(anaesthetist, todayISO))}</span></>}

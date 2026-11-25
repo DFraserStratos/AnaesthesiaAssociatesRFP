@@ -16,9 +16,8 @@ import { PatientRecord } from './PatientRecord'
 import { balanceText } from './patientParts'
 import { PatientBalanceThresholdView } from '../masters/PatientBalanceThresholdView'
 
-const noop = () => undefined
 
-function inAdmin(node: ReactNode, path = '/admin/patients') {
+function inAdmin(node: ReactNode, path = '/admin/people/patients') {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <SurfaceProvider variant="web">{node}</SurfaceProvider>
@@ -31,7 +30,7 @@ afterEach(() => cleanup())
 
 describe('the patient record', () => {
   it("Sarah Mitchell: Paid (Sharma) and Unpaid (Souter), billed to her $610.00 strong, and the Balance counts every payer", () => {
-    const { container } = inAdmin(<PatientRecord nhi="CQY9304" actor={OFFICE_ACTOR} />, '/admin/patients/CQY9304')
+    const { container } = inAdmin(<PatientRecord nhi="CQY9304" actor={OFFICE_ACTOR} />, '/admin/people/patients/CQY9304')
     const table = container.querySelector('[data-shot="patient-invoices"]') as HTMLElement
     const rows = [...table.querySelectorAll<HTMLElement>('tbody tr[data-invoice-id]')]
     expect(rows.some((r) => r.textContent?.includes('Sharma') && r.querySelector('[data-invoice-status="paid"]') !== null)).toBe(true)
@@ -51,7 +50,7 @@ describe('the patient record', () => {
 
   it('Heather Sinclair: In credit $260.00, the Credited pill and the mild pill', () => {
     const sinclair = Object.values(useAppStore.getState().masters.patients).find((p) => p.name === 'Heather Sinclair')!
-    const { container } = inAdmin(<PatientRecord nhi={sinclair.nhi} actor={OFFICE_ACTOR} />, `/admin/patients/${sinclair.nhi}`)
+    const { container } = inAdmin(<PatientRecord nhi={sinclair.nhi} actor={OFFICE_ACTOR} />, `/admin/people/patients/${sinclair.nhi}`)
     const tiles = container.querySelector('[data-shot="patient-balance"]') as HTMLElement
     expect(tiles.querySelector('[data-tile="balance"]')?.textContent).toContain('In credit $260.00')
     expect(tiles.querySelector('[data-strength="mild"]')?.textContent).toBe('Mild')
@@ -59,7 +58,7 @@ describe('the patient record', () => {
   })
 
   it('a second Resend appends to the send history and logs both resends', () => {
-    const { container } = inAdmin(<PatientRecord nhi="CQY9304" actor={OFFICE_ACTOR} />, '/admin/patients/CQY9304')
+    const { container } = inAdmin(<PatientRecord nhi="CQY9304" actor={OFFICE_ACTOR} />, '/admin/people/patients/CQY9304')
     const view = patientRecordView(useAppStore.getState(), 'CQY9304')!
     const own = view.invoices.find((i) => i.countsTowardBalance && i.status === 'unpaid')!
     const resend = () => fireEvent.click(screen.getByRole('button', { name: `Resend ${own.invoiceNumber}` }))
@@ -72,7 +71,7 @@ describe('the patient record', () => {
   })
 
   it('logs a call and sets a reminder for today, which can be ticked done', () => {
-    const { container } = inAdmin(<PatientRecord nhi="CQY9304" actor={OFFICE_ACTOR} />, '/admin/patients/CQY9304')
+    const { container } = inAdmin(<PatientRecord nhi="CQY9304" actor={OFFICE_ACTOR} />, '/admin/people/patients/CQY9304')
     const log = container.querySelector('[data-shot="patient-follow-up-log"]') as HTMLElement
     fireEvent.change(within(log).getByLabelText('What was said'), { target: { value: 'Left a voicemail' } })
     fireEvent.click(within(log).getByRole('button', { name: 'Log call' }))
@@ -85,7 +84,7 @@ describe('the patient record', () => {
   })
 
   it('the record form shows no required marker on demographics or ethnicity', () => {
-    const { container } = inAdmin(<PatientRecord nhi="CQY9304" actor={OFFICE_ACTOR} />, '/admin/patients/CQY9304')
+    const { container } = inAdmin(<PatientRecord nhi="CQY9304" actor={OFFICE_ACTOR} />, '/admin/people/patients/CQY9304')
     fireEvent.click(within(container.querySelector('[data-shot="patient-details"]') as HTMLElement).getByRole('button', { name: 'Edit patient details' }))
     const dialog = screen.getByRole('dialog')
     expect(within(dialog).getByLabelText('Ethnicity code')).toBeInTheDocument()
@@ -106,7 +105,7 @@ describe('the patient record: review fixes', () => {
       const id = Object.values(st.masters.patients).find((p) => p.nhi === 'CQY9304')!.hiddenInternalId
       return { masters: { ...st.masters, patients: { ...st.masters.patients, [id]: { ...st.masters.patients[id]!, dobISO: '' } } } }
     })
-    const { container } = inAdmin(<PatientRecord nhi="CQY9304" actor={OFFICE_ACTOR} />, '/admin/patients/CQY9304')
+    const { container } = inAdmin(<PatientRecord nhi="CQY9304" actor={OFFICE_ACTOR} />, '/admin/people/patients/CQY9304')
     const details = container.querySelector('[data-shot="patient-details"]') as HTMLElement
     expect(details.textContent).toContain('Not supplied')
     fireEvent.click(within(details).getByRole('button', { name: 'Edit patient details' }))
@@ -117,14 +116,14 @@ describe('the patient record: review fixes', () => {
     fireEvent.click(save)
     expect(Object.values(useAppStore.getState().masters.patients).find((p) => p.nhi === 'CQY9304')!.phone).toBe('021 777 1234')
     cleanup()
-    const search = inAdmin(<PatientsScreen view="search" actor={OFFICE_ACTOR} onOpenList={noop} onOpenMatching={noop} />)
+    const search = inAdmin(<PatientsScreen actor={OFFICE_ACTOR} />)
     fireEvent.change(screen.getByLabelText('Search patients'), { target: { value: 'mitchell' } })
     expect(search.container.querySelector('[data-patient-nhi="CQY9304"]')?.textContent).toContain('Not supplied')
   })
 
   it('the Invoices table says Billed to, and offers Resend only on a sent invoice that is not credited', () => {
     const sinclair = Object.values(useAppStore.getState().masters.patients).find((p) => p.name === 'Heather Sinclair')!
-    const { container } = inAdmin(<PatientRecord nhi={sinclair.nhi} actor={OFFICE_ACTOR} />, `/admin/patients/${sinclair.nhi}`)
+    const { container } = inAdmin(<PatientRecord nhi={sinclair.nhi} actor={OFFICE_ACTOR} />, `/admin/people/patients/${sinclair.nhi}`)
     const table = container.querySelector('[data-shot="patient-invoices"]') as HTMLElement
     expect(within(table).getByRole('columnheader', { name: 'Billed to' })).toBeInTheDocument()
     expect(table.textContent).not.toContain('Billable party')
@@ -133,7 +132,7 @@ describe('the patient record: review fixes', () => {
   })
 
   it('a reminder saved after the demo clock moves on takes the new today', () => {
-    const { container } = inAdmin(<PatientRecord nhi="CQY9304" actor={OFFICE_ACTOR} />, '/admin/patients/CQY9304')
+    const { container } = inAdmin(<PatientRecord nhi="CQY9304" actor={OFFICE_ACTOR} />, '/admin/people/patients/CQY9304')
     advanceClockDays(useAppStore, 1)
     const log = container.querySelector('[data-shot="patient-follow-up-log"]') as HTMLElement
     fireEvent.click(within(log).getByRole('button', { name: 'Reminder' }))

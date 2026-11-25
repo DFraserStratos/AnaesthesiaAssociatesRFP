@@ -6,7 +6,7 @@ import { officePersona } from '../../../shell/appConfig'
 import { useAppStore } from '../../../store'
 import { DRAFT_LISTS } from '../../../shared/scheduleTerms'
 
-export type NavSection = 'day' | 'intake' | 'draftLists' | 'conflicts' | 'notifications' | 'review' | 'invoices' | 'patients' | 'billing' | 'ledger' | 'contracts' | 'masters' | 'audit'
+export type NavSection = 'day' | 'intake' | 'draftLists' | 'conflicts' | 'notifications' | 'review' | 'invoices' | 'people' | 'billing' | 'ledger' | 'contracts' | 'masters' | 'audit'
 
 interface NavItem {
   section: NavSection
@@ -31,8 +31,8 @@ interface SideNavProps {
   intakeBadge?: number
   /** The ledger's checks, a held receipt among them (catch-up Phase 36; US-13.2.1) — amber, an attention count. */
   ledgerBadge?: number
-  /** Patients needing the office (catch-up Phase 40; `patientAttentionCount`): amber, an attention count. */
-  patientBadge?: number
+  /** Patients needing the office (catch-up Phase 40; `patientAttentionCount`), on People where Patients was (build plan Phase 53): amber, an attention count. */
+  peopleBadge?: number
   onNavigate: (section: NavSection) => void
   /** The scroll box's height: the nav's contents stay this tall and in view while a long page scrolls. */
   stickyHeight?: number
@@ -66,7 +66,7 @@ function navItemStyle(active: boolean): CSSProperties {
  * (Decisions log 2026-07-21). The Review-queue badge derives from the SUBMITTED
  * list count (2026-07-23 decision) rather than a hardcoded figure.
  */
-export function SideNav({ active, reviewBadge, billingBadge = 0, conflictBadge = 0, draftListBadge = 0, notificationBadge = 0, intakeBadge = 0, ledgerBadge = 0, patientBadge = 0, onNavigate, onHelp, stickyHeight }: SideNavProps) {
+export function SideNav({ active, reviewBadge, billingBadge = 0, conflictBadge = 0, draftListBadge = 0, notificationBadge = 0, intakeBadge = 0, ledgerBadge = 0, peopleBadge = 0, onNavigate, onHelp, stickyHeight }: SideNavProps) {
   const officeUser = useAppStore((s) => s.shell.officeUser)
   const items: NavItem[] = [
     { section: 'day', label: 'Day view' },
@@ -79,8 +79,8 @@ export function SideNav({ active, reviewBadge, billingBadge = 0, conflictBadge =
     { section: 'notifications', label: 'Notifications', badge: notificationBadge, badgeTone: 'warn' },
     { section: 'review', label: 'Review queue', badge: reviewBadge },
     { section: 'invoices', label: 'Invoices' },
-    // Patients (catch-up Phase 40): search, rows waiting for an NHI, follow-up and the record.
-    { section: 'patients', label: 'Patients', badge: patientBadge, badgeTone: 'warn' },
+    // People (build plan Phase 53; D99): where Patients was, with its count; anaesthetists, surgeons, specialties and patients.
+    { section: 'people', label: 'People', badge: peopleBadge, badgeTone: 'warn' },
     { section: 'billing', label: 'Billing monitor', badge: billingBadge, badgeTone: 'warn' },
     { section: 'ledger', label: 'Ledger', badge: ledgerBadge, badgeTone: 'warn' },
     // Contracts (build plan Phase 45; D92): its own section, between Ledger and Master data.

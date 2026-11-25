@@ -52,7 +52,8 @@ function sectionForPath(pathname: string): NavSection {
   if (head === 'draft-lists') return 'draftLists'
   if (head === 'notifications') return 'notifications'
   if (head === 'intake') return 'intake'
-  if (head === 'patients') return 'patients'
+  // People (build plan Phase 53), and the old Patients links that redirect into it.
+  if (head === 'people' || head === 'patients') return 'people'
   // A credit note's document sits under Invoices (catch-up Phase 39).
   if (head === 'credit-notes') return 'invoices'
   switch (head) {
@@ -337,7 +338,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     notifications: '/admin/notifications',
     review: '/admin/review',
     invoices: '/admin/invoices',
-    patients: '/admin/patients',
+    people: '/admin/people',
     billing: '/admin/billing',
     ledger: '/admin/ledger',
     contracts: '/admin/contracts',
@@ -358,7 +359,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         draftListBadge={draftListBadge}
         notificationBadge={notificationBadge}
         intakeBadge={intakeBadge}
-        patientBadge={patientBadge}
+        peopleBadge={patientBadge}
         onNavigate={(next) => navigate(SECTION_PATH[next])}
       />
 

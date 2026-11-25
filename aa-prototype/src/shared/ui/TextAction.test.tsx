@@ -45,9 +45,9 @@ describe('TextAction', () => {
   })
 
   it('with `to` renders a router link in the same teal look (Phase 40)', () => {
-    render(<MemoryRouter><TextAction to="/admin/patients/CQY9304" size="sm" flush shot="t-link">Open record</TextAction></MemoryRouter>)
+    render(<MemoryRouter><TextAction to="/admin/people/patients/CQY9304" size="sm" flush shot="t-link">Open record</TextAction></MemoryRouter>)
     const a = screen.getByRole('link', { name: 'Open record' })
-    expect(a).toHaveAttribute('href', '/admin/patients/CQY9304')
+    expect(a).toHaveAttribute('href', '/admin/people/patients/CQY9304')
     expect(a).toHaveAttribute('data-shot', 't-link')
     expect(a).toHaveStyle({ color: accent.base, fontWeight: '600', fontSize: '12.5px' })
   })

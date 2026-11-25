@@ -20,7 +20,7 @@ import {
   type Actor,
 } from '../../../store'
 import { advanceClockToDate } from '../../../store/clockActions'
-import { AdminAnaesthetistRecordRoute, AdminMastersRoute } from '../routes'
+import { peopleRoutes } from '../../../test/adminRoutes'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const BEAU = ANAE.beaumont
@@ -32,10 +32,7 @@ function renderAt(path: string) {
       <SurfaceProvider variant="web">
         <Routes>
           <Route path="/admin" element={<Outlet context={{ actor: OFFICE, todayISO: useAppStore.getState().clock.todayISO }} />}>
-            <Route path="masters">
-              <Route index element={<AdminMastersRoute />} />
-              <Route path="anaesthetists/:anaesthetistId" element={<AdminAnaesthetistRecordRoute />} />
-            </Route>
+            {peopleRoutes()}
           </Route>
         </Routes>
       </SurfaceProvider>
@@ -59,7 +56,7 @@ describe('the anaesthetist record (Phase 52)', () => {
   })
 
   it('Refused while holding Lists: the sheet lists the Lists after today, each opening its day, and Make inactive waits', () => {
-    renderAt(`/admin/masters/anaesthetists/${BEAU}`)
+    renderAt(`/admin/people/anaesthetists/${BEAU}`)
     expect(statusCard().dataset['status']).toBe('active')
     fireEvent.click(within(statusCard()).getByRole('button', { name: 'Make inactive' }))
     const sheet = document.querySelector('[data-shot="make-inactive-sheet"]') as HTMLElement
@@ -75,7 +72,7 @@ describe('the anaesthetist record (Phase 52)', () => {
 
   it('Last day chosen then Cleared in time: the card reads Inactive from the day, Clear puts it back, each audited', () => {
     const last = freeLastDay()
-    renderAt(`/admin/masters/anaesthetists/${BEAU}`)
+    renderAt(`/admin/people/anaesthetists/${BEAU}`)
     fireEvent.click(within(statusCard()).getByRole('button', { name: 'Make inactive' }))
     const sheet = document.querySelector('[data-shot="make-inactive-sheet"]') as HTMLElement
     fireEvent.change(within(sheet).getByLabelText('Last day'), { target: { value: last } })
@@ -98,7 +95,7 @@ describe('the anaesthetist record (Phase 52)', () => {
     advanceClockToDate(useAppStore, dayAfterISO(last))
     runInactiveContractsJob(useAppStore)
     expect(useAppStore.getState().masters.contracts[RHINO]!.status).toBe('disabled')
-    renderAt(`/admin/masters/anaesthetists/${BEAU}`)
+    renderAt(`/admin/people/anaesthetists/${BEAU}`)
     expect(statusCard().dataset['status']).toBe('inactive')
     expect(document.querySelector('[data-shot="anaesthetist-status-sub"]')?.textContent).toBe('Inactive')
     // History readable while inactive.
@@ -119,7 +116,7 @@ describe('the anaesthetist record (Phase 52)', () => {
     makeAnaesthetistInactive(useAppStore, OFFICE, BEAU, last, 'leftPractice')
     advanceClockToDate(useAppStore, dayAfterISO(last))
     runInactiveContractsJob(useAppStore)
-    renderAt(`/admin/masters/anaesthetists/${BEAU}`)
+    renderAt(`/admin/people/anaesthetists/${BEAU}`)
     fireEvent.click(within(statusCard()).getByRole('button', { name: 'Make active' }))
     fireEvent.click(document.querySelector(`[data-shot="make-active-contract"][data-contract-id="${RHINO}"]`) as HTMLElement)
     fireEvent.click(document.querySelector('[data-shot="make-active-confirm"]') as HTMLElement)
@@ -127,7 +124,7 @@ describe('the anaesthetist record (Phase 52)', () => {
   })
 
   it('the edit sheet has no Status control', () => {
-    renderAt(`/admin/masters/anaesthetists/${BEAU}`)
+    renderAt(`/admin/people/anaesthetists/${BEAU}`)
     fireEvent.click(screen.getByRole('button', { name: /Edit details/ }))
     const sheet = document.querySelector('[data-shot="edit-anaesthetist-sheet"]') as HTMLElement
     expect(within(sheet).queryByText('Status')).toBeNull()
@@ -137,7 +134,7 @@ describe('the anaesthetist record (Phase 52)', () => {
   it('the Anaesthetists list reads Active, Inactive from a day, and Inactive', () => {
     const last = freeLastDay()
     makeAnaesthetistInactive(useAppStore, OFFICE, BEAU, last, 'leftPractice')
-    renderAt('/admin/masters?view=anaesthetists')
+    renderAt('/admin/people/anaesthetists?status=all')
     const kinds = [...document.querySelectorAll<HTMLElement>('[data-anaesthetist-status]')].map((el) => el.dataset['anaesthetistStatus'])
     expect(kinds.filter((k) => k === 'leaving')).toHaveLength(1)
     expect(screen.getByText(/^Inactive from /)).toBeTruthy()

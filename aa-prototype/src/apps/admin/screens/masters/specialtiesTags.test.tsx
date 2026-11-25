@@ -11,7 +11,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { SPC, SURG, TAG } from '../../../../domain/seed'
 import { freshAppState, useAppStore, type Actor } from '../../../../store'
 import { SurfaceProvider } from '../../../../shared'
-import { AdminContractRoute, AdminContractsRoute, AdminMastersRoute, AdminNewContractRoute, AdminSurgeonProfileRoute, AdminPartiesRoute, AdminPartyRoute, AdminFundingTagsRoute } from '../../routes'
+import { AdminContractRoute, AdminContractsRoute, AdminNewContractRoute, AdminPartiesRoute, AdminPartyRoute, AdminFundingTagsRoute } from '../../routes'
+import { mastersAndLegacyRoutes, peopleRoutes } from '../../../../test/adminRoutes'
 import { isOpenPriceFallback } from '../../../../domain/billing/fallbacks'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -22,10 +23,8 @@ function renderAdmin(path: string) {
       <SurfaceProvider variant="web">
         <Routes>
           <Route path="/admin" element={<Outlet context={{ actor: OFFICE, todayISO: '2026-11-24' }} />}>
-            <Route path="masters">
-              <Route index element={<AdminMastersRoute />} />
-              <Route path="surgeons/:surgeonId" element={<AdminSurgeonProfileRoute />} />
-            </Route>
+            {peopleRoutes()}
+            {mastersAndLegacyRoutes()}
             <Route path="contracts">
               <Route element={<AdminContractsRoute />}>
                 <Route index element={null} />
@@ -53,7 +52,7 @@ beforeEach(() => {
 
 describe('Specialties view (US-13.4.4)', () => {
   it('lists the twelve with holder counts; adds, renames and removes one', () => {
-    renderAdmin('/admin/masters?view=specialties')
+    renderAdmin('/admin/people/specialties')
     const table = shot('masters-specialties')
     expect(table.querySelectorAll('tr[data-specialty]').length).toBe(12)
     expect(within(table.querySelector(`tr[data-specialty="${SPC.ophthalmology}"]`) as HTMLElement).getByText('20 surgeons, 8 Contracts')).toBeInTheDocument()
@@ -70,7 +69,7 @@ describe('Specialties view (US-13.4.4)', () => {
   })
 
   it('refuses a held specialty plainly, and a duplicate name in the sheet', () => {
-    renderAdmin('/admin/masters?view=specialties')
+    renderAdmin('/admin/people/specialties')
     fireEvent.click(screen.getByRole('button', { name: 'Remove Ophthalmology' }))
     expect(screen.getByRole('alert')).toHaveTextContent('Ophthalmology is held by 20 surgeons and 8 Contracts, so it cannot be removed.')
     fireEvent.click(screen.getByRole('button', { name: 'Add specialty' }))
@@ -113,7 +112,7 @@ describe('Funding tags tab (US-13.4.5; moved to the Contracts section by build p
 
 describe("a surgeon's specialties (US-13.6.6)", () => {
   it('the profile shows one pill per specialty; the sheet refuses none, then saves two', () => {
-    renderAdmin(`/admin/masters/surgeons/${SURG.whitford}`)
+    renderAdmin(`/admin/people/surgeons/${SURG.whitford}`)
     expect(within(shot('surgeon-specialties')).getByText('Ophthalmology')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Edit details' }))
     const sheet = () => shot('surgeon-edit-sheet')
@@ -130,7 +129,7 @@ describe("a surgeon's specialties (US-13.6.6)", () => {
   })
 
   it('the Surgeons table shows the mapped name (Lim: Plastic surgery)', () => {
-    renderAdmin('/admin/masters?view=surgeons')
+    renderAdmin('/admin/people/surgeons?q=Lim')
     const row = document.querySelector(`tr[data-surgeon="${SURG.lim}"]`) as HTMLElement
     expect(within(row).getByText('Plastic surgery')).toBeInTheDocument()
   })

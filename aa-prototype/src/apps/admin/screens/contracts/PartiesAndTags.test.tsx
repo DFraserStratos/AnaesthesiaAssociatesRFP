@@ -93,7 +93,7 @@ describe('old Master data links (D93)', () => {
     const billing = document.querySelector('[data-masters-group="Billing"]') as HTMLElement
     expect([...billing.querySelectorAll('[data-masters-view]')].map((b) => b.getAttribute('data-masters-view'))).toEqual(['rvgGroups', 'modifiers'])
     const note = card('masters-moved-note')
-    expect(note).toHaveTextContent('Contracts, Parties and Funding tags are now in Contracts.')
+    expect(note).toHaveTextContent('Contracts, Parties and Funding tags are in Contracts. Anaesthetists, surgeons and specialties are in People.')
     expect(within(note).getByRole('link', { name: 'Contracts' })).toHaveAttribute('href', '/admin/contracts')
   })
 })

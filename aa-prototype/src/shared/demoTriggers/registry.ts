@@ -324,7 +324,10 @@ const MOBILE_LISTS = ['/mobile/lists', '/mobile/lists/:listId', '/mobile/lists/:
 const ADMIN_DAY = '/admin/day/:dateISO'
 const ADMIN_DRAFT_LISTS = '/admin/draft-lists'
 const ADMIN_MASTERS = '/admin/masters'
-const ANAESTHETIST_RECORD = '/admin/masters/anaesthetists/:anaesthetistId'
+/** The People section (build plan Phase 53): `apps/admin/peoplePaths.ts` builds these in the app. */
+const ANAESTHETIST_RECORD = '/admin/people/anaesthetists/:anaesthetistId'
+/** The People tabs loaded from a spreadsheet: the sample-sheet trigger shows on them. */
+const ADMIN_PEOPLE_SEEDED_TABS = ['/admin/people/anaesthetists', '/admin/people/surgeons', '/admin/people/specialties'] as const
 /** The Contracts section (build plan Phase 45): the list and a Contract's page. `apps/admin/contractsPaths.ts` builds these in the app; this file stays out of `src/apps` (the PWA closure contains it). */
 const ADMIN_CONTRACTS = '/admin/contracts'
 const ADMIN_CONTRACT = '/admin/contracts/:contractId'
@@ -377,8 +380,8 @@ const SEED_LOAD_VIEW = 'seedLoad'
 
 /** The sample sheets on offer for the published Contracts tab or Master data view: all of them on Seed load, else that view's own. */
 function sampleSheetsFor(ctx: DemoTriggerCtx): readonly SampleSheet[] {
-  // The Contracts section's tab first (build plan Phase 45): its tabs carry the Master data views' names.
-  const view = ctx.published['adminContracts.tab'] ?? ctx.published['adminMasters.view']
+  // The Contracts section's tab first (build plan Phase 45), then People's (Phase 53): their tabs carry the Master data views' names.
+  const view = ctx.published['adminContracts.tab'] ?? ctx.published['adminPeople.tab'] ?? ctx.published['adminMasters.view']
   if (view === SEED_LOAD_VIEW) return SAMPLE_SHEETS
   const entities = view !== undefined ? SEEDED_SHEETS_BY_VIEW[view] : undefined
   if (entities === undefined) return []
@@ -391,7 +394,7 @@ function chosenSample(ctx: DemoTriggerCtx, choiceId: string | undefined): Sample
   return (choiceId !== undefined ? offered.find((s) => s.id === choiceId) : undefined) ?? offered[0]
 }
 
-const NO_SAMPLE_HERE = 'Open Seed load, a Master data view or a Contracts tab loaded from a spreadsheet'
+const NO_SAMPLE_HERE = 'Open Seed load, a Master data view, or a Contracts or People tab loaded from a spreadsheet'
 const SAMPLE_WAITING = 'A load is already waiting for this sheet; load or discard it first'
 const GO_LIVE_WAITING = 'A go-live load is already waiting; load or discard it first'
 
@@ -747,9 +750,9 @@ const NHI_HUB_ROUTES = [
   '/web/lists/:listId',
   ADMIN_DAY,
   ADMIN_DRAFT_LISTS,
-  '/admin/patients',
+  '/admin/people/patients',
   '/admin/intake/waiting',
-  '/admin/patients/:nhi',
+  '/admin/people/patients/:nhi',
 ] as const
 const NHI_HUB_SCREEN = 'Add booking, and Admin · Patients'
 
@@ -2041,7 +2044,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     description:
       "Checks a sample spreadsheet as the developer's seed load: its valid rows wait on Seed load and its rejected rows show why. It stages and does not load: press Load on Seed load to load the valid rows.",
     screen: 'Admin · Master data',
-    routes: [ADMIN_MASTERS, ADMIN_CONTRACTS, ADMIN_PARTIES, ADMIN_FUNDING_TAGS],
+    routes: [ADMIN_MASTERS, ADMIN_CONTRACTS, ADMIN_PARTIES, ADMIN_FUNDING_TAGS, ...ADMIN_PEOPLE_SEEDED_TABS],
     surfaces: ['bar'],
     when: (_state, ctx) => sampleSheetsFor(ctx).length > 0,
     choices: (_state, ctx) => sampleSheetsFor(ctx).map((s) => ({ id: s.id, label: s.fileName })),

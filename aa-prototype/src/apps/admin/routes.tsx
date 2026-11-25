@@ -32,6 +32,11 @@ import { NewContractPage } from './screens/contracts/new/NewContractPage'
 import { PartiesTab } from './screens/contracts/PartiesTab'
 import { PartyPage } from './screens/contracts/PartyPage'
 import { FundingTagsTab } from './screens/contracts/FundingTagsTab'
+import { AnaesthetistsTab } from './screens/people/AnaesthetistsTab'
+import { SurgeonsTab } from './screens/people/SurgeonsTab'
+import { SpecialtiesTab } from './screens/people/SpecialtiesTab'
+import { anaesthetistRecordPath, surgeonProfilePath } from './peoplePaths'
+import { patientPath } from '../../shared/patients'
 import { SurgeonProfile } from './screens/SurgeonProfile'
 import { AnaesthetistRecord } from './screens/AnaesthetistRecord'
 import { ReviewQueue } from './screens/ReviewQueue'
@@ -40,7 +45,7 @@ import { DraftListsScreen } from './screens/DraftListsScreen'
 import { NotificationsScreen } from './screens/NotificationsScreen'
 import { MatchingScreen } from './screens/MatchingScreen'
 import { ReviewScreen } from './screens/ReviewScreen'
-import { PatientsScreen, type PatientListView } from './screens/patients/PatientsScreen'
+import { PatientsScreen } from './screens/patients/PatientsScreen'
 import { PatientRecord } from './screens/patients/PatientRecord'
 import { useAdminOutlet, type AdminOutletContext } from './outlet'
 import { dayWithYear } from '../../shared/format'
@@ -513,10 +518,51 @@ export function AdminContractRoute() {
 }
 
 // ---------------------------------------------------------------------------
-// Master data pages — `/admin/masters/surgeons/:surgeonId`,
-// `/admin/masters/anaesthetists/:anaesthetistId` (catch-up Phase 17). An
-// unknown id falls back to `/admin/masters`.
+// People (build plan Phase 53; D99) — `/admin/people/<tab>`: Anaesthetists,
+// Surgeons, Specialties and Patients, each a routed tab, and the record pages
+// under their tabs: `/admin/people/anaesthetists/:anaesthetistId`,
+// `/admin/people/surgeons/:surgeonId` and `/admin/people/patients/:nhi`. An
+// unknown id falls back to its tab.
 // ---------------------------------------------------------------------------
+
+export function AdminPeopleAnaesthetistsRoute() {
+  const { actor } = useAdminOutlet()
+  return <AnaesthetistsTab actor={actor} />
+}
+
+export function AdminPeopleSurgeonsRoute() {
+  const { actor } = useAdminOutlet()
+  return <SurgeonsTab actor={actor} />
+}
+
+export function AdminPeopleSpecialtiesRoute() {
+  const { actor } = useAdminOutlet()
+  return <SpecialtiesTab actor={actor} />
+}
+
+/** Today's patient Search and Follow-up (`?show=followUp`) until Phase 57 rebuilds the tab. */
+export function AdminPeoplePatientsRoute() {
+  const { actor } = useAdminOutlet()
+  return <PatientsScreen actor={actor} />
+}
+
+/**
+ * The old profile and patient links (D100): `/admin/masters/anaesthetists/:id`,
+ * `/admin/masters/surgeons/:id` and `/admin/patients/:nhi` land on the record's
+ * page under People, a replace so Back never bounces here. An unknown id then
+ * falls back to its tab.
+ */
+export function AdminPersonRedirect({ kind }: { kind: 'anaesthetist' | 'surgeon' | 'patient' }) {
+  const params = useParams()
+  const { state } = useLocation()
+  const to =
+    kind === 'anaesthetist'
+      ? anaesthetistRecordPath(params['anaesthetistId'] ?? '')
+      : kind === 'surgeon'
+        ? surgeonProfilePath(params['surgeonId'] ?? '')
+        : patientPath(params['nhi'] ?? '')
+  return <Navigate to={to} replace state={state} />
+}
 
 export function AdminSurgeonProfileRoute() {
   const { surgeonId = '' } = useParams()
@@ -606,31 +652,10 @@ function BeyondHorizon({ endISO, onGoToEnd }: { endISO: string; onGoToEnd: () =>
 }
 
 // ---------------------------------------------------------------------------
-// Patients (catch-up Phase 40): `/admin/patients`, `/admin/patients/follow-up`
-// and the record `/admin/patients/:nhi` (`/admin/patients/waiting` redirects to
-// Intake's Waiting for NHI tab, D100). The route key is the NHI; an unknown NHI
-// goes back to the search.
+// A patient's page (catch-up Phase 40; under People since build plan Phase 53):
+// `/admin/people/patients/:nhi`. The route key is the NHI; an unknown NHI goes
+// back to the Patients tab. The old `/admin/patients` links redirect (D100).
 // ---------------------------------------------------------------------------
-
-function usePatientRouteHandlers() {
-  const { onOpenList } = useAdminOutlet()
-  const navigate = useNavigate()
-  return {
-    onOpenList,
-    onOpenMatching: (rowId: string) => navigate('/admin/intake/matching', { state: { selectRowId: rowId } }),
-  }
-}
-
-function patientListRoute(view: PatientListView) {
-  return function AdminPatientListRoute() {
-    const { actor } = useAdminOutlet()
-    const handlers = usePatientRouteHandlers()
-    return <PatientsScreen view={view} actor={actor} {...handlers} />
-  }
-}
-
-export const AdminPatientsRoute = patientListRoute('search')
-export const AdminPatientFollowUpRoute = patientListRoute('followUp')
 
 export function AdminPatientRecordRoute() {
   const { nhi = '' } = useParams()

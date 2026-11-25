@@ -3,9 +3,7 @@ import { useDemoTriggerContext } from '../../../../shared/demoTriggers'
 import { accent, neutral, radius } from '../../../../theme/tokens'
 import { useAppStore, type Actor } from '../../../../store'
 import { AttentionDot } from '../../../../shared/warnings/AttentionDot'
-import { AnaesthetistsView } from './AnaesthetistsView'
 import { HospitalsView } from './HospitalsView'
-import { SurgeonGroupsView, SurgeonsView } from './SurgeonsView'
 import {
   RecurringBookingsMaster,
   XeroArchivingView,
@@ -18,9 +16,9 @@ import { SeedLoadView } from './SeedLoadView'
 import { GoLiveLoadView } from './GoLiveLoadView'
 import { ScheduleSettingsView } from './ScheduleSettingsView'
 import { AvailabilityStatusesView } from './AvailabilityStatusesView'
-import { SpecialtiesView } from './SpecialtiesView'
 import { TextAction } from '../../../../shared/ui'
 import { contractsPath } from '../../contractsPaths'
+import { peoplePath } from '../../peoplePaths'
 import { RvgGroupsView } from './RvgGroupsView'
 import { ModifiersView } from './ModifiersView'
 import { EmailTemplatesView } from './EmailTemplatesView'
@@ -90,19 +88,17 @@ export function MasterData({ actor }: MasterDataProps) {
       title="Master data"
       sub={
         <span data-shot="masters-moved-note">
-          Contracts, Parties and Funding tags are now in{' '}
-          <TextAction size="sm" flush to={contractsPath()}>Contracts</TextAction>.
+          Contracts, Parties and Funding tags are in{' '}
+          <TextAction size="sm" flush to={contractsPath()}>Contracts</TextAction>. Anaesthetists, surgeons and specialties are in{' '}
+          <TextAction size="sm" flush to={peoplePath('anaesthetists')}>People</TextAction>.
         </span>
       }
     >
       <PageBody nav={nav} gap={12}>
-        {view === 'anaesthetists' && <AnaesthetistsView actor={actor} />}
-        {/* Contracts, Parties and Funding tags are tabs of the Contracts section (build plan Phases 45 and 48): `AdminMastersRoute` redirects their old views. */}
-        {view === 'specialties' && <SpecialtiesView actor={actor} />}
+        {/* Contracts, Parties and Funding tags are tabs of the Contracts section (build plan Phases 45 and 48), and
+            Anaesthetists, Surgeons and Specialties of People (Phase 53): `AdminMastersRoute` redirects their old views. */}
         {view === 'recurringBookings' && <RecurringBookingsMaster actor={actor} />}
         {view === 'hospitals' && <HospitalsView actor={actor} />}
-        {view === 'surgeons' && <SurgeonsView actor={actor} />}
-        {view === 'surgeonGroups' && <SurgeonGroupsView actor={actor} />}
         {view === 'rvgGroups' && <RvgGroupsView actor={actor} />}
         {view === 'modifiers' && <ModifiersView actor={actor} />}
         {view === 'scheduleSettings' && <ScheduleSettingsView actor={actor} />}

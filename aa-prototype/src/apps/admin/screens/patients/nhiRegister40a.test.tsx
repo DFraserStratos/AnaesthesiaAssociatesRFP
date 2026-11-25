@@ -16,7 +16,7 @@ const noop = () => undefined
 
 function inAdmin(node: ReactNode) {
   return render(
-    <MemoryRouter initialEntries={['/admin/patients']}>
+    <MemoryRouter initialEntries={['/admin/people/patients']}>
       <SurfaceProvider variant="web">{node}</SurfaceProvider>
     </MemoryRouter>,
   )

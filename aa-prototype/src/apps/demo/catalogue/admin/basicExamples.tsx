@@ -723,7 +723,7 @@ export function MasterHeaderExample() {
   const [last, setLast] = useState('Nothing clicked yet.')
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <MasterHeader title="Specialties" sub="The specialties a surgeon and a Contract name." view="specialties" add={{ label: 'Add specialty', onClick: () => setLast('Add specialty (stubbed).') }} />
+      <MasterHeader title="Public holidays" sub="The public holidays every List and session falls on." view="publicHolidays" add={{ label: 'Add holiday', onClick: () => setLast('Add holiday (stubbed).') }} />
       <MasterHeader
         title="Price ranges"
         sub="A section header: no seeded line and no waiting-load banner."

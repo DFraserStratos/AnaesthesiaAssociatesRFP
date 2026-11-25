@@ -7,9 +7,9 @@ import { BackLink } from './BackLink'
 /** UI unification U5 (U21): one back link, a real link where a route exists. */
 describe('BackLink', () => {
   it('renders a link when given a route', () => {
-    render(<MemoryRouter><BackLink to="/admin/masters?view=surgeons">Surgeons</BackLink></MemoryRouter>)
+    render(<MemoryRouter><BackLink to="/admin/people/surgeons">Surgeons</BackLink></MemoryRouter>)
     const link = screen.getByRole('link', { name: 'Surgeons' })
-    expect(link).toHaveAttribute('href', '/admin/masters?view=surgeons')
+    expect(link).toHaveAttribute('href', '/admin/people/surgeons')
     expect(link).toHaveStyle({ color: accent.base, fontSize: '14px', fontWeight: '600' })
   })
 

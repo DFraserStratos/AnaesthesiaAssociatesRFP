@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { contractsPath, fundingTagsPath, partiesPath } from '../../contractsPaths'
 import { mastersViewPath } from '../../mastersPaths'
+import { peoplePath } from '../../peoplePaths'
 import { commitGoLiveLoad, discardGoLiveLoad, setGoLiveApproval, specFor, useAppStore, type Actor } from '../../../../store'
 import { SEED_LOAD_ACTOR } from '../../../../store/demoActors'
 import { Button, DemoBadge, FormError } from '../../../../shared'
@@ -16,14 +17,14 @@ import { LoadResultPanel } from './LoadResultPanel'
 
 /** How a count of each sheet's records reads in the result line, with the view it links to. */
 const SHEET_WORDS: Partial<Record<LoadEntity, { one: string; many: string; to: string; link: string }>> = {
-  specialties: { one: 'specialty', many: 'specialties', to: mastersViewPath('specialties'), link: 'Specialties' },
-  surgeons: { one: 'surgeon', many: 'surgeons', to: mastersViewPath('surgeons'), link: 'Surgeons' },
-  anaesthetists: { one: 'anaesthetist', many: 'anaesthetists', to: mastersViewPath('anaesthetists'), link: 'Anaesthetists' },
+  specialties: { one: 'specialty', many: 'specialties', to: peoplePath('specialties'), link: 'Specialties' },
+  surgeons: { one: 'surgeon', many: 'surgeons', to: peoplePath('surgeons'), link: 'Surgeons' },
+  anaesthetists: { one: 'anaesthetist', many: 'anaesthetists', to: peoplePath('anaesthetists'), link: 'Anaesthetists' },
   hospitals: { one: 'hospital', many: 'hospitals', to: mastersViewPath('hospitals'), link: 'Hospitals' },
   hospitalHolidays: { one: 'hospital holiday', many: 'hospital holidays', to: mastersViewPath('hospitals'), link: 'Hospital holidays' },
   rvgGroups: { one: 'RVG group', many: 'RVG groups', to: mastersViewPath('rvgGroups'), link: 'RVG groups' },
   modifiers: { one: 'modifier', many: 'modifiers', to: mastersViewPath('modifiers'), link: 'Modifiers' },
-  // Parties, Funding tags and Contracts are tabs of the Contracts section (build plan Phases 45 and 48).
+  // Parties, Funding tags and Contracts are tabs of the Contracts section (build plan Phases 45 and 48); specialties, surgeons and anaesthetists of People (Phase 53).
   parties: { one: 'Party', many: 'Parties', to: partiesPath(), link: 'Parties' },
   fundingTags: { one: 'funding tag', many: 'funding tags', to: fundingTagsPath(), link: 'Funding tags' },
   contracts: { one: 'Contract', many: 'Contracts', to: contractsPath(), link: 'Contracts' },

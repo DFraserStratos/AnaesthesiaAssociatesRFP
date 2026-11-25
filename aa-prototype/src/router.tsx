@@ -56,10 +56,14 @@ import {
   AdminDraftListsRoute,
   AdminNotificationsRoute,
   AdminReviewRoute,
-  AdminPatientsRoute,
-  AdminPatientFollowUpRoute,
   AdminPatientRecordRoute,
+  AdminPeopleAnaesthetistsRoute,
+  AdminPeopleSurgeonsRoute,
+  AdminPeopleSpecialtiesRoute,
+  AdminPeoplePatientsRoute,
+  AdminPersonRedirect,
 } from './apps/admin/routes'
+import { peoplePath } from './apps/admin/peoplePaths'
 import { DemoControlPanel } from './apps/demo/DemoControlPanel'
 import { DemoXero } from './apps/demo/DemoXero'
 import { DemoIntegrations } from './apps/demo/DemoIntegrations'
@@ -91,9 +95,9 @@ function RootRedirect() {
  *
  * `:listId` / `:bookingId` / `:invoiceId` are nested one segment deep under the
  * collection they belong to so `RequireEntity`'s route-relative `..` fallback
- * lands on that collection. The Master data pages (`surgeons/:surgeonId`,
- * `anaesthetists/:anaesthetistId`) are each ONE child route of `masters`, so
- * an unknown id falls back to `/admin/masters`.
+ * lands on that collection. The People record pages (`anaesthetists/:anaesthetistId`,
+ * `surgeons/:surgeonId`, `patients/:nhi`) are each nested under their tab, so an
+ * unknown id falls back to that tab (build plan Phase 53).
  */
 const routeTree = (
         <Route element={<AppShell />}>
@@ -151,12 +155,34 @@ const routeTree = (
               <Route index element={<AdminInvoicesRoute />} />
               <Route path=":invoiceId" element={<AdminInvoicesRoute />} />
             </Route>
-            {/* Patients (catch-up Phase 40): Search, Follow-up and the record, keyed by NHI; Waiting for NHI is on Intake (D100). */}
+            {/* People (build plan Phase 53; D99): four routed tabs, each record nested under its tab so an
+                unknown id falls back to the tab. Fixed order: Wave 3 (54 to 57) only adds or swaps its own
+                routes here, never reorders the block. */}
+            <Route path="people">
+              <Route index element={<Navigate to="anaesthetists" replace />} />
+              <Route path="anaesthetists">
+                <Route index element={<AdminPeopleAnaesthetistsRoute />} />
+                <Route path=":anaesthetistId" element={<AdminAnaesthetistRecordRoute />} />
+              </Route>
+              <Route path="surgeons">
+                <Route index element={<AdminPeopleSurgeonsRoute />} />
+                <Route path=":surgeonId" element={<AdminSurgeonProfileRoute />} />
+              </Route>
+              <Route path="specialties">
+                <Route index element={<AdminPeopleSpecialtiesRoute />} />
+                {/* Phase 56 adds the specialty's page here: `:specialtyId`. */}
+              </Route>
+              <Route path="patients">
+                <Route index element={<AdminPeoplePatientsRoute />} />
+                <Route path=":nhi" element={<AdminPatientRecordRoute />} />
+              </Route>
+            </Route>
+            {/* The old Patients links (catch-up Phase 40) redirect and stay (D100): Waiting for NHI to Intake (51), the rest to People. Static segments rank above `:nhi`. */}
             <Route path="patients">
-              <Route index element={<AdminPatientsRoute />} />
+              <Route index element={<Navigate to={peoplePath('patients')} replace />} />
               <Route path="waiting" element={<Navigate to="/admin/intake/waiting" replace />} />
-              <Route path="follow-up" element={<AdminPatientFollowUpRoute />} />
-              <Route path=":nhi" element={<AdminPatientRecordRoute />} />
+              <Route path="follow-up" element={<Navigate to={peoplePath('patients', { show: 'followUp' })} replace />} />
+              <Route path=":nhi" element={<AdminPersonRedirect kind="patient" />} />
             </Route>
             {/* A credit note's document (catch-up Phase 39), under Invoices in the side nav. */}
             <Route path="credit-notes/:creditNoteId" element={<AdminCreditNoteRoute />} />
@@ -190,8 +216,9 @@ const routeTree = (
             <Route path="integrations" element={<AdminIntakeRedirect />} />
             <Route path="masters">
               <Route index element={<AdminMastersRoute />} />
-              <Route path="surgeons/:surgeonId" element={<AdminSurgeonProfileRoute />} />
-              <Route path="anaesthetists/:anaesthetistId" element={<AdminAnaesthetistRecordRoute />} />
+              {/* The old profile pages (catch-up Phase 17) moved to People (build plan Phase 53): they redirect and stay (D100). */}
+              <Route path="surgeons/:surgeonId" element={<AdminPersonRedirect kind="surgeon" />} />
+              <Route path="anaesthetists/:anaesthetistId" element={<AdminPersonRedirect kind="anaesthetist" />} />
             </Route>
             <Route path="audit" element={<AdminAuditRoute />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />

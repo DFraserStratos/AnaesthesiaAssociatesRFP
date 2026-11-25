@@ -10,8 +10,8 @@
  * 36's ledger, never `state.xero`.
  */
 
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useMemo, useState, type ReactNode } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   clearBalanceWarningWithNote,
   completeFollowUp,
@@ -24,22 +24,25 @@ import {
   useAppStore,
   type Actor,
 } from '../../../../store'
-import { EmptyState, FormError, LineTabLink, LineTabs, NameSearchBox, PageHeader, TextAction } from '../../../../shared/ui'
+import { EmptyState, FilterPills, FormError, NameSearchBox, PageHeader, TextAction } from '../../../../shared/ui'
 import { ClickableRow, RowOpenButton, TableShell, Td, Th } from '../../../../shared/table'
 import { ClearWarningButton, StrengthPill } from '../../../../shared/warnings'
 import { patientPath } from '../../../../shared/patients'
 import { formatDob, plural, shortDay, stampText } from '../../../../shared/format'
 import { sessionText } from '../../../../domain/outOfHours'
-import { accent, fontFamily, neutral } from '../../../../theme/tokens'
-import { AdminPage, PageBody, PageToolbar } from '../../components/AdminPage'
+import { neutral } from '../../../../theme/tokens'
+import { PageBody, PageToolbar } from '../../components/AdminPage'
+import { peoplePath } from '../../peoplePaths'
+import { PeoplePage } from '../people/PeopleSection'
 import { ADMIN_PROSE_WIDTH } from '../../layout'
 import { balanceText, detailsFromText } from './patientParts'
 
 export type PatientListView = 'search' | 'followUp'
 
+/** The two views' paths on the People section's Patients tab (build plan Phase 53). */
 export const PATIENT_LIST_PATHS: Record<PatientListView, string> = {
-  search: '/admin/patients',
-  followUp: '/admin/patients/follow-up',
+  search: peoplePath('patients'),
+  followUp: peoplePath('patients', { show: 'followUp' }),
 }
 
 const SHOTS: Record<PatientListView, string> = {
@@ -64,16 +67,19 @@ function usePatientSlices() {
 }
 export { usePatientSlices }
 
-export function PatientsScreen({
-  view,
-  actor,
-}: {
-  view: PatientListView
-  actor: Actor
-  /** Unused since Waiting for NHI moved to Intake (51); kept so the route handlers stand until 53. */
-  onOpenList?: (listId: string) => void
-  onOpenMatching?: (rowId: string) => void
-}) {
+/** The view `?show=` names: Needs follow-up, else Search. */
+export function parsePatientListView(show: string | null): PatientListView {
+  return show === 'followUp' ? 'followUp' : 'search'
+}
+
+/**
+ * People · Patients (build plan Phase 53): today's Search and Follow-up views under the People
+ * title and tabs, behind a temporary switch (`?show=followUp`, a replace) until Phase 57 gives the
+ * tab its filters. Search fits the window; Follow-up stays fluid.
+ */
+export function PatientsScreen({ actor }: { actor: Actor }) {
+  const [params, setParams] = useSearchParams()
+  const view = parsePatientListView(params.get('show'))
   const slices = usePatientSlices()
   const [query, setQuery] = useState('')
   const searchRows = useMemo(() => patientSearch(slices, query), [slices, query])
@@ -82,37 +88,44 @@ export function PatientsScreen({
   const pending = useMemo(() => patientsWithPendingDetails(slices), [slices])
   const followUpCount = warnings.length + due.length + pending.length
 
-  const counts: Record<PatientListView, number> = { search: searchRows.length, followUp: followUpCount }
-  const labels: Record<PatientListView, string> = { search: 'Search', followUp: 'Follow-up' }
+  function show(next: PatientListView) {
+    setParams((prev) => {
+      const copy = new URLSearchParams(prev)
+      if (next === 'followUp') copy.set('show', 'followUp')
+      else copy.delete('show')
+      return copy
+    }, { replace: true })
+  }
+
+  const switcher = (
+    <div data-shot="patients-tabs" data-patients-view={view}>
+      <FilterPills
+        ariaLabel="Show"
+        value={view}
+        options={[
+          { value: 'search', label: 'Search' },
+          { value: 'followUp', label: `Needs follow-up · ${followUpCount}` },
+        ]}
+        onSelect={(v) => show(parsePatientListView(v))}
+      />
+    </div>
+  )
 
   return (
-    <AdminPage
+    <PeoplePage
+      tab="patients"
       mode={view === 'followUp' ? 'fluid' : 'fit'}
       shot={SHOTS[view]}
-      title="Patients"
       sub="Find a patient by name, NHI or date of birth. The NHI is the patient's identifier."
-      tabs={
-        <LineTabs label="Patients view" shot="patients-tabs">
-          {(['search', 'followUp'] as const).map((v) => {
-            const active = v === view
-            return (
-              <LineTabLink
-                key={v}
-                to={PATIENT_LIST_PATHS[v]}
-                active={active}
-                data-patients-view={v}
-                badge={<span style={{ fontFamily: fontFamily.mono, fontSize: 12, fontWeight: 500, fontVariantNumeric: 'tabular-nums', color: active ? accent.base : neutral.slate }}>{counts[v]}</span>}
-              >
-                {labels[v]}
-              </LineTabLink>
-            )
-          })}
-        </LineTabs>
-      }
     >
-      {view === 'search' && <SearchView query={query} onQuery={setQuery} rows={searchRows} />}
-      {view === 'followUp' && <FollowUpView actor={actor} />}
-    </AdminPage>
+      {view === 'search' && <SearchView query={query} onQuery={setQuery} rows={searchRows} switcher={switcher} />}
+      {view === 'followUp' && (
+        <>
+          <PageToolbar>{switcher}</PageToolbar>
+          <FollowUpView actor={actor} />
+        </>
+      )}
+    </PeoplePage>
   )
 }
 
@@ -120,7 +133,7 @@ export function PatientsScreen({
 // Search
 // ---------------------------------------------------------------------------
 
-function SearchView({ query, onQuery, rows }: { query: string; onQuery: (q: string) => void; rows: ReturnType<typeof patientSearch> }) {
+function SearchView({ query, onQuery, rows, switcher }: { query: string; onQuery: (q: string) => void; rows: ReturnType<typeof patientSearch>; switcher: ReactNode }) {
   const navigate = useNavigate()
   return (
     <>
@@ -133,6 +146,7 @@ function SearchView({ query, onQuery, rows }: { query: string; onQuery: (q: stri
           )
         }
       >
+        {switcher}
         <NameSearchBox label="Search patients" placeholder="Name, NHI or date of birth" value={query} onChange={onQuery} size="pill" width={420} shot="patient-search-box" />
       </PageToolbar>
       <PageBody>

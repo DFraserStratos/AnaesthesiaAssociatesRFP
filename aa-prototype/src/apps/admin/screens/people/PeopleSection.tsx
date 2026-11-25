@@ -1,0 +1,105 @@
+/**
+ * The People section (build plan Phase 53; D99, US-13.4.1): one Admin side-nav
+ * entry where Patients was, with four routed tabs (Anaesthetists, Surgeons,
+ * Specialties, Patients; `peopleTabs.ts`). Every tab is an `AdminPage` titled
+ * People with the tab strip under it; a list tab fits the window, its table
+ * scrolling inside its card with the pager in the card's footer. Each list
+ * keeps its state in the URL (`q`, `status`, `tier`, `specialty`, `page`), a
+ * replace so Back is not a filter change.
+ */
+
+import { useCallback, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { CountBadge, LineTabLink, LineTabs } from '../../../../shared/ui'
+import { useDemoTriggerContext } from '../../../../shared/demoTriggers'
+import { isActiveOn } from '../../../../domain/anaesthetistStatus'
+import { isRetired } from '../../../../domain/masterLifecycle'
+import { useAppStore, useToday } from '../../../../store'
+import { AdminPage, type AdminPageMode } from '../../components/AdminPage'
+import { LoadResultBanner } from '../masters/chrome'
+import { PEOPLE_TAB_SEEDED, PEOPLE_TABS, type PeopleTab } from './peopleTabs'
+
+/**
+ * The section's tab strip, each list tab with its count as the mock's `#map` draws them: active
+ * anaesthetists (on the demo clock's today), active surgeons, specialties. Patients carries none: its
+ * count is the side nav's. Showing a tab publishes its id under `adminPeople.tab`, which the
+ * sample-sheet trigger reads.
+ */
+export function PeopleTabs({ active }: { active: PeopleTab }) {
+  useDemoTriggerContext('adminPeople.tab', active)
+  const todayISO = useToday()
+  const anaesthetistCount = useAppStore((s) => Object.values(s.masters.anaesthetists).filter((a) => isActiveOn(a, todayISO)).length)
+  const surgeonCount = useAppStore((s) => Object.values(s.masters.surgeons).filter((x) => !isRetired(x)).length)
+  const specialtyCount = useAppStore((s) => Object.keys(s.masters.specialties).length)
+  const counts: Partial<Record<PeopleTab, number>> = { anaesthetists: anaesthetistCount, surgeons: surgeonCount, specialties: specialtyCount }
+  return (
+    <LineTabs label="People" shot="people-tabs">
+      {PEOPLE_TABS.map((t) => {
+        const count = counts[t.tab]
+        return (
+          <LineTabLink
+            key={t.tab}
+            to={t.path}
+            active={active === t.tab}
+            data-people-tab={t.tab}
+            {...(count !== undefined ? { badge: <CountBadge count={count} hideAtZero={false} mono /> } : {})}
+          >
+            {t.label}
+          </LineTabLink>
+        )
+      })}
+    </LineTabs>
+  )
+}
+
+/**
+ * One People tab's page: the People title, the tab's one sentence (ending with the seeded line on a
+ * tab loaded at go-live), its primary Add action, the tab strip and, on a seeded tab, the
+ * waiting-load banner. A list tab fits the window; Patients' Needs follow-up is fluid.
+ */
+export function PeoplePage({ tab, sub, actions, mode = 'fit', shot, children }: { tab: PeopleTab; sub: ReactNode; actions?: ReactNode; mode?: AdminPageMode; shot?: string; children: ReactNode }) {
+  const seeded = PEOPLE_TAB_SEEDED[tab]
+  return (
+    <AdminPage
+      mode={mode}
+      title="People"
+      sub={sub}
+      {...(actions !== undefined ? { actions } : {})}
+      tabs={<PeopleTabs active={tab} />}
+      {...(shot !== undefined ? { shot } : {})}
+      data-people-page={tab}
+    >
+      {seeded.length > 0 && <LoadResultBanner seeded={seeded} />}
+      {children}
+    </AdminPage>
+  )
+}
+
+/**
+ * A People list's state in the URL: read a param (with its default when absent) and set some at
+ * once. Every change replaces the history entry, a value equal to its default leaves the URL, and any
+ * change but the page's own goes back to page 1.
+ */
+export function usePeopleListParams<K extends string>(defaults: Readonly<Record<K, string>>) {
+  const [params, setParams] = useSearchParams()
+  const get = useCallback((key: K | 'page'): string => params.get(key) ?? (key === 'page' ? '' : defaults[key as K]), [params, defaults])
+  const set = useCallback(
+    (patch: Partial<Record<K | 'page', string>>) => {
+      setParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          for (const [key, value] of Object.entries(patch) as [K | 'page', string][]) {
+            const fallback = key === 'page' ? '1' : defaults[key as K]
+            if (value === fallback || value === '') next.delete(key)
+            else next.set(key, value)
+          }
+          if (!('page' in patch)) next.delete('page')
+          return next
+        },
+        { replace: true },
+      )
+    },
+    [setParams, defaults],
+  )
+  return { get, set }
+}

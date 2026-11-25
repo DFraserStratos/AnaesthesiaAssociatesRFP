@@ -1,29 +1,42 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { neutral } from '../../../../theme/tokens'
-import { specialtiesInOrder, specialtyUsage, type Specialty } from '../../../../domain/specialties'
+import { specialtyUsage, type Specialty } from '../../../../domain/specialties'
 import { createSpecialty, removeSpecialty, renameSpecialty, useAppStore, type Actor } from '../../../../store'
 import { Button, FormError, TextField, useSurface } from '../../../../shared'
 import { OverlayHeader, SheetActions } from '../../../../shared/surface'
 import { HistorySheet } from '../../../../shared/booking'
-import { MasterHeader, MasterTable } from './chrome'
-import { TextAction } from '../../../../shared/ui'
-import { cellStyle } from './tableStyles'
+import { EmptyState, NameSearchBox, TextAction } from '../../../../shared/ui'
+import { PageBody, PageToolbar } from '../../components/AdminPage'
+import { Pager, pageOf, pageParam, pageWindow } from '../../components/Pager'
+import { MasterTable } from '../masters/chrome'
+import { cellStyle } from '../masters/tableStyles'
+import { SEEDED_SUBTITLE } from '../masters/masterViews'
+import { formatCount } from '../../../../shared/format'
+import { PeoplePage, usePeopleListParams } from './PeopleSection'
+import { PEOPLE_PAGE_SIZE } from './peopleTabs'
+import { specialtyRows } from './peopleLists'
+
+const DEFAULTS = { q: '' } as const
 
 /**
- * Master data, Specialties (catch-up Phase 18a; US-13.4.4): AA's list of broad
- * surgical specialties, with no subspecialties. Surgeons hold one or more, and
- * a Contract holds none (every specialty) or some. The office adds, renames
- * and removes them here, each audited; a rename reaches every holder, and a
- * specialty anyone holds cannot be removed (the store's sentence is shown).
+ * People · Specialties (build plan Phase 53, from Master data; catch-up Phase 18a; US-13.4.4): AA's
+ * list of broad surgical specialties, with no subspecialties, searched by name and paged. Surgeons
+ * hold one or more, and a Contract holds none (every specialty) or some. The office adds, renames and
+ * removes them here, each audited; a rename reaches every holder, and a specialty anyone holds cannot
+ * be removed (the store's sentence is shown).
  */
-export function SpecialtiesView({ actor }: { actor: Actor }) {
+export function SpecialtiesTab({ actor }: { actor: Actor }) {
   const specialties = useAppStore((s) => s.masters.specialties)
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const contracts = useAppStore((s) => s.masters.contracts)
   const [sheet, setSheet] = useState<{ specialty?: Specialty } | null>(null)
   const [history, setHistory] = useState<Specialty | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const rows = specialtiesInOrder(specialties)
+  const list = usePeopleListParams(DEFAULTS)
+  const q = list.get('q')
+  const rows = useMemo(() => specialtyRows(Object.values(specialties), { q }), [specialties, q])
+  const pages = pageWindow(rows.length, PEOPLE_PAGE_SIZE, pageParam(list.get('page')))
+  const shown = pageOf(rows, PEOPLE_PAGE_SIZE, pages.page)
 
   function remove(s: Specialty) {
     const outcome = removeSpecialty(useAppStore, actor, s.id)
@@ -31,15 +44,42 @@ export function SpecialtiesView({ actor }: { actor: Actor }) {
   }
 
   return (
-    <>
-      <MasterHeader
-        title="Specialties"
-        sub="AA's broad surgical specialties, with no subspecialties: General surgery, not Upper GI. Every surgeon holds one or more. A Contract with none is offered for every specialty."
-        add={{ label: 'Add specialty', onClick: () => { setError(null); setSheet({}) } }}
-      />
+    <PeoplePage
+      tab="specialties"
+      shot="people-specialties"
+      sub={
+        <>
+          <span>AA's broad surgical specialties, with no subspecialties: General surgery, not Upper GI. Every surgeon holds one or more. A Contract with none is offered for every specialty.</span>{' '}
+          <span data-seeded-line>{SEEDED_SUBTITLE}</span>
+        </>
+      }
+      actions={<Button variant="primary" size="desktop" onClick={() => { setError(null); setSheet({}) }}>Add specialty</Button>}
+    >
+      <PageToolbar
+        end={
+          <span data-shot="people-result-count">
+            <span className="mono">{formatCount(rows.length)}</span> {rows.length === 1 ? 'specialty' : 'specialties'}
+            {q.trim() !== '' ? ` matching "${q.trim()}"` : ''}
+          </span>
+        }
+      >
+        <NameSearchBox size="pill" width={260} value={q} onChange={(next) => list.set({ q: next })} label="Search specialties by name" placeholder="Specialty" shot="people-search" />
+      </PageToolbar>
       <FormError message={error} />
-      <MasterTable columns={['Specialty', 'Held by', '']} rightAlign={[2]} shot="masters-specialties">
-        {rows.map((s) => {
+      <PageBody>
+      {rows.length === 0 ? (
+        <EmptyState variant="card" shot="masters-specialties" title="No specialties match." action={<TextAction size="sm" flush onClick={() => list.set({ q: '' })}>Show every specialty</TextAction>}>
+          Check the spelling.
+        </EmptyState>
+      ) : (
+      <MasterTable
+        columns={['Specialty', 'Held by', '']}
+        rightAlign={[2]}
+        shot="masters-specialties"
+        label="Specialties"
+        {...(pages.pages > 1 ? { footer: <Pager total={rows.length} size={PEOPLE_PAGE_SIZE} page={pages.page} onPage={(p) => list.set({ page: String(p) })} lead="Specialties" shot="people-pager" /> } : {})}
+      >
+        {shown.map((s) => {
           const usage = specialtyUsage({ surgeons, contracts }, s.id)
           return (
             <tr key={s.id} data-specialty={s.id}>
@@ -58,6 +98,8 @@ export function SpecialtiesView({ actor }: { actor: Actor }) {
           )
         })}
       </MasterTable>
+      )}
+      </PageBody>
       {sheet !== null && <SpecialtySheet key={sheet.specialty?.id ?? 'new'} specialty={sheet.specialty} actor={actor} onClose={() => setSheet(null)} />}
       <HistorySheet
         open={history !== null}
@@ -65,7 +107,7 @@ export function SpecialtiesView({ actor }: { actor: Actor }) {
         title="Specialty history"
         onClose={() => setHistory(null)}
       />
-    </>
+    </PeoplePage>
   )
 }
 

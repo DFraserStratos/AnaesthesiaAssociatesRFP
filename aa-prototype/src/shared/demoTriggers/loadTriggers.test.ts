@@ -18,15 +18,29 @@ const ctx = (published: Partial<DemoContextValues> = {}): DemoTriggerCtx => ({ p
 describe('Load sample spreadsheet (catch-up Phase 42)', () => {
   const entry = byId('load-sample-spreadsheet')
 
-  it('is bar only on Master data and the Contract list, shown on Seed load and on a seeded view, never on an unseeded one', () => {
+  it('is bar only on Master data, the Contracts tabs and the People tabs, shown on Seed load and on a seeded view, never on an unseeded one', () => {
     const api = createAppStore()
     expect(entry.surfaces).toEqual(['bar'])
-    expect(entry.routes).toEqual(['/admin/masters', '/admin/contracts', '/admin/contracts/parties', '/admin/contracts/tags'])
+    expect(entry.routes).toEqual([
+      '/admin/masters',
+      '/admin/contracts',
+      '/admin/contracts/parties',
+      '/admin/contracts/tags',
+      '/admin/people/anaesthetists',
+      '/admin/people/surgeons',
+      '/admin/people/specialties',
+    ])
     expect(entry.indexPath(api.getState())).toBe('/admin/masters?view=seedLoad')
     const on = (view: string) => demoTriggersFor(api.getState(), '/admin/masters', 'bar', { 'adminMasters.view': view }).map((m) => m.trigger.id)
     expect(on('seedLoad')).toContain('load-sample-spreadsheet')
     expect(on('hospitals')).toContain('load-sample-spreadsheet')
-    expect(on('surgeonGroups')).not.toContain('load-sample-spreadsheet')
+    expect(on('recurringBookings')).not.toContain('load-sample-spreadsheet')
+    // The People tabs (build plan Phase 53): each seeded tab offers its own sheet; Patients is not on the routes.
+    for (const [tab, file] of [['anaesthetists', 'anaesthetists.csv'], ['surgeons', 'surgeons.csv'], ['specialties', 'specialties.csv']] as const) {
+      expect(demoTriggersFor(api.getState(), `/admin/people/${tab}`, 'bar', { 'adminPeople.tab': tab }).map((m) => m.trigger.id)).toContain('load-sample-spreadsheet')
+      expect(entry.choices!(api.getState(), ctx({ 'adminPeople.tab': tab })).map((c) => c.label)).toEqual([file])
+    }
+    expect(demoTriggersFor(api.getState(), '/admin/people/patients', 'bar', { 'adminPeople.tab': 'patients' }).map((m) => m.trigger.id)).not.toContain('load-sample-spreadsheet')
     expect(on('goLive')).not.toContain('load-sample-spreadsheet')
     expect(demoTriggersFor(api.getState(), '/admin/masters', 'pwa', { 'adminMasters.view': 'seedLoad' }).map((m) => m.trigger.id)).not.toContain('load-sample-spreadsheet')
     // The Contract list moved to its own section (build plan Phase 45): its tab offers the contracts sheets.
@@ -75,7 +89,7 @@ describe('Go-live data load (catch-up Phase 42)', () => {
     const api = createAppStore()
     expect(entry.surfaces).toEqual(['bar'])
     expect(entry.indexPath(api.getState())).toBe('/admin/masters?view=goLive')
-    for (const view of ['anaesthetists', 'surgeonGroups', 'goLive']) {
+    for (const view of ['hospitals', 'recurringBookings', 'goLive']) {
       expect(demoTriggersFor(api.getState(), '/admin/masters', 'bar', { 'adminMasters.view': view }).map((m) => m.trigger.id)).toContain('go-live-data-load')
     }
   })

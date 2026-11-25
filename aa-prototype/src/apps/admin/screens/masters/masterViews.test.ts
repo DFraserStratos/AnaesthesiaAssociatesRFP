@@ -1,27 +1,25 @@
 /**
- * The Master data registry (catch-up Phase 42, work item 11; US-13.4.1): every
- * row of US-13.4.1's list maps to a Master data view, or (build plan Phase 48)
- * a tab of the Contracts section, that can add and edit,
- * every seed-load sheet is named by a view's `seeded`, views that retire say
- * so, and no office view carries a load action (the load is the developer's
- * step, on the demo-badged Go-live views).
+ * The reference data's registries (catch-up Phase 42, work item 11; US-13.4.1
+ * "Three places"): every row of US-13.4.1's lists maps to a Master data view, a
+ * tab of the Contracts section (build plan Phase 48) or a tab of the People
+ * section (Phase 53), each that can edit; no surgeon group list remains (D98);
+ * every seed-load sheet is named by a view's or tab's `seeded`, views that
+ * retire say so, and no office view carries a load action (the load is the
+ * developer's step, on the demo-badged Go-live views).
  */
 
 import { describe, expect, it } from 'vitest'
 import { LOAD_ORDER } from '../../../../domain/masterLoad/types'
 import { MASTER_VIEWS, masterViewEntry, SEEDED_SUBTITLE } from './masterViews'
 import { CONTRACTS_TABS } from '../contracts/contractsTabs'
+import { PEOPLE_TABS } from '../people/peopleTabs'
 import type { MastersView } from './view'
 
-const SOURCES = import.meta.glob(['./*.tsx', '../contracts/PartiesTab.tsx', '../contracts/FundingTagsTab.tsx', '../contracts/PartyPage.tsx'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+const SOURCES = import.meta.glob(['./*.tsx', '../contracts/PartiesTab.tsx', '../contracts/FundingTagsTab.tsx', '../contracts/PartyPage.tsx', '../people/*Tab.tsx'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>
 
 /** US-13.4.1's Master data list, each with the words its registry row uses. */
 const CATALOGUE_ROWS: readonly { row: string; match: RegExp }[] = [
   { row: 'hospitals with contact email', match: /^hospitals, each with a contact email/ },
-  { row: 'surgeons', match: /^surgeons$/ },
-  { row: 'surgeon groups', match: /^surgeon groups$/ },
-  { row: 'specialties', match: /^specialties$/ },
-  { row: 'anaesthetists', match: /^anaesthetists$/ },
   { row: 'availability statuses', match: /availability statuses$/i },
   { row: 'recurring bookings', match: /^recurring bookings$/ },
   { row: 'the master public-holiday calendar', match: /master \(public holiday\) calendar/ },
@@ -37,10 +35,17 @@ const SECTION_ROWS: readonly { row: string; match: RegExp }[] = [
   { row: 'funding tags', match: /^funding tags$/ },
 ]
 
+/** US-13.4.1's People section list: each a tab of the section (build plan Phase 53). */
+const PEOPLE_ROWS: readonly { row: string; match: RegExp }[] = [
+  { row: 'anaesthetists', match: /^anaesthetists$/ },
+  { row: 'surgeons', match: /^surgeons$/ },
+  { row: 'specialties', match: /^specialties$/ },
+  { row: 'patients', match: /^patients, whose records come from Bookings$/ },
+]
+
 /** The views whose sheets carry `RetireSection` or whose tables carry `ShowRetiredToggle`. */
 const RETIRE_VIEWS: Record<string, readonly MastersView[]> = {
   './HospitalsView.tsx': ['hospitals'],
-  './SurgeonsView.tsx': ['surgeons', 'surgeonGroups'],
   './ModifiersView.tsx': ['modifiers'],
 }
 
@@ -61,15 +66,35 @@ describe('the Master data registry', () => {
     expect(MASTER_VIEWS.some((v) => v.catalogueRows.some((r) => match.test(r)))).toBe(false)
   })
 
-  it('Master data keeps no Contracts, Parties or Funding tags view, and Billing keeps RVG groups and Modifiers', () => {
+  it.each(PEOPLE_ROWS)('$row maps to a People tab that edits, and to no Master data view or Contracts tab', ({ match }) => {
+    const tabs = PEOPLE_TABS.filter((t) => t.catalogueRows.some((r) => match.test(r)))
+    expect(tabs).toHaveLength(1)
+    expect(tabs[0]!.edit).toBe(true)
+    expect(MASTER_VIEWS.some((v) => v.catalogueRows.some((r) => match.test(r)))).toBe(false)
+    expect(CONTRACTS_TABS.some((t) => t.catalogueRows.some((r) => match.test(r)))).toBe(false)
+  })
+
+  it('anaesthetists, surgeons and specialties are added on their People tabs; patients come from Bookings', () => {
+    expect(PEOPLE_TABS.map((t) => [t.tab, t.add])).toEqual([['anaesthetists', true], ['surgeons', true], ['specialties', true], ['patients', false]])
+  })
+
+  it('Master data keeps no Contracts, Parties, Funding tags or People view, nor a surgeon group list, and Billing keeps RVG groups and Modifiers', () => {
     const ids: readonly string[] = MASTER_VIEWS.map((v) => v.view)
-    for (const gone of ['contracts', 'parties', 'fundingTags', 'insurers', 'organisations']) expect(ids).not.toContain(gone)
+    for (const gone of ['contracts', 'parties', 'fundingTags', 'insurers', 'organisations', 'anaesthetists', 'surgeons', 'specialties', 'surgeonGroups']) expect(ids).not.toContain(gone)
+    expect(MASTER_VIEWS.some((v) => v.catalogueRows.some((r) => /surgeon groups?/i.test(r)))).toBe(false)
+    expect(MASTER_VIEWS.filter((v) => v.group === 'Places').map((v) => v.view)).toEqual(['hospitals'])
     expect(MASTER_VIEWS.filter((v) => v.group === 'Billing').map((v) => v.view)).toEqual(['rvgGroups', 'modifiers'])
   })
 
-  it('every load sheet is named by at least one view or Contracts tab', () => {
-    const seeded = new Set([...MASTER_VIEWS.flatMap((v) => v.seeded ?? []), ...CONTRACTS_TABS.flatMap((t) => t.seeded)])
+  it('every load sheet is named by at least one view, Contracts tab or People tab', () => {
+    const seeded = new Set([...MASTER_VIEWS.flatMap((v) => v.seeded ?? []), ...CONTRACTS_TABS.flatMap((t) => t.seeded), ...PEOPLE_TABS.flatMap((t) => t.seeded)])
     for (const entity of LOAD_ORDER) expect(seeded.has(entity), entity).toBe(true)
+  })
+
+  it('the Surgeons tab filters Active, Retired or All instead of Show retired', () => {
+    const source = SOURCES['../people/SurgeonsTab.tsx']!
+    expect(source).toMatch(/label: 'Retired'/)
+    expect(source).not.toMatch(/ShowRetiredToggle/)
   })
 
   it('views that retire declare it', () => {
@@ -77,7 +102,7 @@ describe('the Master data registry', () => {
       expect(SOURCES[file], file).toMatch(/ShowRetiredToggle/)
       for (const view of views) expect(masterViewEntry(view).retire, view).toBe(true)
     }
-    for (const view of ['hospitals', 'surgeons', 'surgeonGroups', 'modifiers', 'rvgGroups', 'availability-statuses', 'recurringBookings'] as const) {
+    for (const view of ['hospitals', 'modifiers', 'rvgGroups', 'availability-statuses', 'recurringBookings'] as const) {
       expect(masterViewEntry(view).retire, view).toBe(true)
     }
   })
