@@ -9,14 +9,11 @@ import { MASTER_VIEWS } from './masterViews'
 
 export type MastersView =
   | 'anaesthetists'
-  | 'contracts'
   | 'recurringBookings'
   | 'hospitals'
   | 'surgeons'
   | 'surgeonGroups'
-  | 'parties'
   | 'specialties'
-  | 'fundingTags'
   | 'rvgGroups'
   | 'modifiers'
   | 'scheduleSettings'
@@ -34,12 +31,14 @@ export const MASTERS_NAV: readonly { view: MastersView; label: string }[] = MAST
 
 export const DEFAULT_MASTERS_VIEW: MastersView = 'anaesthetists'
 
-/** The view a `?view=` value names; a missing or unknown value falls back to Anaesthetists. */
+/**
+ * The view a `?view=` value names; a missing or unknown value falls back to Anaesthetists.
+ * Contracts, Parties (and the old Insurers and Organisations) and Funding tags left Master data
+ * for the Contracts section (build plan Phases 45 and 48): `mastersRedirect` sends those first.
+ */
 export function parseMastersView(param: string | null): MastersView {
   // The pre-Phase 29 view id still opens the same page.
   if (param === 'listStatuses') return 'availability-statuses'
-  // The Insurer master and the holder organisations folded into Parties (catch-up Phase 18).
-  if (param === 'insurers' || param === 'organisations') return 'parties'
   // The flat RVG code table became the RVG groups (catch-up Phase 19).
   if (param === 'rvgCodes') return 'rvgGroups'
   // The demo Modifier codes table became Modifiers (catch-up Phase 19b).

@@ -21,7 +21,7 @@ describe('Load sample spreadsheet (catch-up Phase 42)', () => {
   it('is bar only on Master data and the Contract list, shown on Seed load and on a seeded view, never on an unseeded one', () => {
     const api = createAppStore()
     expect(entry.surfaces).toEqual(['bar'])
-    expect(entry.routes).toEqual(['/admin/masters', '/admin/contracts'])
+    expect(entry.routes).toEqual(['/admin/masters', '/admin/contracts', '/admin/contracts/parties', '/admin/contracts/tags'])
     expect(entry.indexPath(api.getState())).toBe('/admin/masters?view=seedLoad')
     const on = (view: string) => demoTriggersFor(api.getState(), '/admin/masters', 'bar', { 'adminMasters.view': view }).map((m) => m.trigger.id)
     expect(on('seedLoad')).toContain('load-sample-spreadsheet')
@@ -32,6 +32,10 @@ describe('Load sample spreadsheet (catch-up Phase 42)', () => {
     // The Contract list moved to its own section (build plan Phase 45): its tab offers the contracts sheets.
     expect(demoTriggersFor(api.getState(), '/admin/contracts', 'bar', { 'adminContracts.tab': 'contracts' }).map((m) => m.trigger.id)).toContain('load-sample-spreadsheet')
     expect(entry.choices!(api.getState(), ctx({ 'adminContracts.tab': 'contracts' })).map((c) => c.label)).toEqual(['contracts.csv', 'price-ranges.csv'])
+    // Parties and Funding tags are tabs of the section too (build plan Phase 48): each offers its own sheet.
+    expect(demoTriggersFor(api.getState(), '/admin/contracts/parties', 'bar', { 'adminContracts.tab': 'parties' }).map((m) => m.trigger.id)).toContain('load-sample-spreadsheet')
+    expect(entry.choices!(api.getState(), ctx({ 'adminContracts.tab': 'parties' })).map((c) => c.label)).toEqual(['parties.csv'])
+    expect(entry.choices!(api.getState(), ctx({ 'adminContracts.tab': 'fundingTags' })).map((c) => c.label)).toEqual(['funding-tags.csv'])
   })
 
   it('offers every sample on Seed load and a view its own sheets, by file name', () => {

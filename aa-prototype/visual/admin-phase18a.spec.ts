@@ -58,7 +58,9 @@ test('phase 18a surgeon specialties: none refused, two saved', async ({ page }) 
 })
 
 test('phase 18a funding tags and the Fixed price fallbacks', async ({ page }) => {
+  // A tab of the Contracts section since build plan Phase 48; the old link redirects there.
   await page.goto('/admin/masters?view=fundingTags')
+  await expect(page).toHaveURL(/\/admin\/contracts\/tags$/)
   await page.waitForLoadState('networkidle')
   const tags = page.locator('[data-shot="masters-funding-tags"]')
   await expect(tags.locator('tr[data-tag] td:first-child')).toHaveText(['SXAP', 'HNZ', 'ACC'])

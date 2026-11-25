@@ -119,6 +119,7 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 - oxlint's 144 warnings: 122 `only-export-components` (helpers beside components) and 21 `exhaustive-deps` (`ModifierPickerSheet.tsx:74`, missing `claimFor` and `modifiers`, is worth a look). S to M
 - Tailwind supplies only Preflight and the `@theme` variables (no utility class is used): drop it for a small reset and a `:root` block, with a visual check. `theme/global.css`. M
 - Remove the Gradient Lab (the gradient is signed off): delete `shell/gradientLab/`, `GRADIENT_LAB_ENABLED` and `theme/gradientLabGate.ts`, and `visual/mobile-phase13.spec.ts`; the shipped look stays `AA_DEFAULT_GRADIENT`. Update CLAUDE.md's Design section. S
+- Contract page back link (build plan Phase 47): it returns to the catalogue as the row was opened (grouping, group, search, page) through router state, but switching the page's tab drops that state, so Back then opens the bare list. Carry `location.state` through `ContractPage`'s tab links if the owner wants it.
 - The app switcher says "Demo: Billing Monitor & Xero" while the page says "Xero simulation". `shell/appConfig.ts`. S
 
 ## Requirements Board

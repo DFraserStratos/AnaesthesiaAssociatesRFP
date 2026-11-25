@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { contractPath, contractsPath, partyPath } from '../../contractsPaths'
+import { contractPath, contractsPath, fundingTagsPath, partiesPath, partyPath } from '../../contractsPaths'
+import { mastersViewPath } from '../../mastersPaths'
 import { useNavigate } from 'react-router-dom'
 import { commitMasterLoad, discardMasterLoad, specFor, useAppStore } from '../../../../store'
 import { SEED_LOAD_ACTOR } from '../../../../store/demoActors'
@@ -10,22 +11,25 @@ import { plainDate, plural, pluralWord } from '../../../../shared/format'
 import { SAMPLE_SHEETS } from '../../../../domain/masterLoad/samples'
 import type { LoadEntity, MasterLoad } from '../../../../domain/masterLoad/types'
 import { neutral } from '../../../../theme/tokens'
-import type { MastersView } from './view'
 
-/** The Master data view that keeps each sheet's records (a row's link after a load). */
-const VIEW_OF: Record<LoadEntity, MastersView> = {
-  specialties: 'specialties',
-  surgeons: 'surgeons',
-  anaesthetists: 'anaesthetists',
-  hospitals: 'hospitals',
-  hospitalHolidays: 'hospitals',
-  publicHolidays: 'publicHolidays',
-  rvgGroups: 'rvgGroups',
-  modifiers: 'modifiers',
-  parties: 'parties',
-  fundingTags: 'fundingTags',
-  contracts: 'contracts',
-  priceRanges: 'contracts',
+/**
+ * The list that keeps each sheet's records (a row's link after a load): its Master data view, or
+ * its Contracts section tab for Contracts, price ranges, Parties and funding tags (build plan
+ * Phases 45 and 48).
+ */
+const LIST_OF: Record<LoadEntity, string> = {
+  specialties: mastersViewPath('specialties'),
+  surgeons: mastersViewPath('surgeons'),
+  anaesthetists: mastersViewPath('anaesthetists'),
+  hospitals: mastersViewPath('hospitals'),
+  hospitalHolidays: mastersViewPath('hospitals'),
+  publicHolidays: mastersViewPath('publicHolidays'),
+  rvgGroups: mastersViewPath('rvgGroups'),
+  modifiers: mastersViewPath('modifiers'),
+  parties: partiesPath(),
+  fundingTags: fundingTagsPath(),
+  contracts: contractsPath(),
+  priceRanges: contractsPath(),
 }
 
 /** The file a load was checked from: the file chosen, or the sample sheet's file name. */
@@ -35,14 +39,15 @@ function fileNameOf(load: MasterLoad): string {
   return SAMPLE_SHEETS.find((s) => s.id === id)?.fileName ?? id
 }
 
-/** Where a loaded record opens: the surgeon profile, the anaesthetist record, a Party's panel, a Contract's page, otherwise its view. */
+/** Where a loaded record opens: the surgeon profile, the anaesthetist record, a Party's page, a Contract's page, otherwise its list. */
 function recordPath(entity: LoadEntity, recordId: string | undefined): string {
   if (entity === 'surgeons' && recordId !== undefined) return `/admin/masters/surgeons/${recordId}`
   if (entity === 'anaesthetists' && recordId !== undefined) return `/admin/masters/anaesthetists/${recordId}`
   if (entity === 'parties' && recordId !== undefined) return partyPath(recordId)
+  if (entity === 'fundingTags' && recordId !== undefined) return fundingTagsPath(recordId)
   // Contracts and their price ranges open in the Contracts section (build plan Phase 45): a range's id is `<ContractId>@<start>`.
-  if (entity === 'contracts' || entity === 'priceRanges') return recordId !== undefined ? contractPath(recordId.split('@')[0]!) : contractsPath()
-  return `/admin/masters?view=${VIEW_OF[entity]}`
+  if ((entity === 'contracts' || entity === 'priceRanges') && recordId !== undefined) return contractPath(recordId.split('@')[0]!)
+  return LIST_OF[entity]
 }
 
 type Filter = 'all' | 'rejected'

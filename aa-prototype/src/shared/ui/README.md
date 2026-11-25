@@ -40,7 +40,7 @@ drops a hook: check `git diff` for removed `data-` lines.
 
 Settled in U6 (question 19). One kit in `src/shared/table/`: `TableShell` renders the white, `line`, radius 14,
 e1 scroller and the `<table>` (`nested` is Phase 37's flat `radius.ctl` table); `Th` (`scope="col"`, `align`,
-`width`, `nowrap`), `Td` (`align`, `mono`, `bold`, `clip`, `nowrap`), `GroupRow` (always `th scope="colgroup"`).
+`width`, `nowrap`), `Td` (`align`, `mono`, `bold`, `clip`, `nowrap`), `GroupRow` (always `th scope="colgroup"`; `level="sub"` the indented second-level heading, Phase 47).
 The header is the Admin Review mockup's on every table: 11/600/0.06em mist caps on the `neutral.bg` band over a
 `line` rule; body rows are divided by `sunken`. The `density` is the shell's: `comfortable` (12px 20px, web),
 `compact` (10px 10px at 13, admin) or `dense` (8px 10px at 12.5, the audit and master tables), so admin rows keep

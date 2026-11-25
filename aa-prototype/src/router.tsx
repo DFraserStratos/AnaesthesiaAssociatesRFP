@@ -44,6 +44,9 @@ import {
   AdminContractsRoute,
   AdminContractRoute,
   AdminNewContractRoute,
+  AdminPartiesRoute,
+  AdminPartyRoute,
+  AdminFundingTagsRoute,
   AdminMatchingRoute,
   AdminSurgeonProfileRoute,
   AdminAnaesthetistRecordRoute,
@@ -175,6 +178,12 @@ const routeTree = (
               </Route>
               {/* New contract is its own page (build plan Phase 46), declared before `:contractId`. */}
               <Route path="new" element={<AdminNewContractRoute />} />
+              {/* The Parties and Funding tags tabs and a Party's page (build plan Phase 48): static segments rank above `:contractId`. */}
+              <Route path="parties">
+                <Route index element={<AdminPartiesRoute />} />
+                <Route path=":partyId" element={<AdminPartyRoute />} />
+              </Route>
+              <Route path="tags" element={<AdminFundingTagsRoute />} />
               <Route path=":contractId" element={<AdminContractRoute />} />
             </Route>
             <Route path="integrations" element={<AdminIntakeRedirect />} />

@@ -28,7 +28,7 @@ import type { StillOnRow } from '../../../../domain/billing/contractChanges'
 import { neutral } from '../../../../theme/tokens'
 import { PageBody } from '../../components/AdminPage'
 import { PROFILE_CARD, ProfilePage } from '../../components/ProfileChrome'
-import { contractPath, contractsPath, parseContractTab, type ContractTab } from '../../contractsPaths'
+import { catalogueReturnPath, contractPath, parseContractTab, type ContractTab } from '../../contractsPaths'
 import { ContractEventFees } from '../../flows/ContractEventFees'
 import { ContractHistory } from '../../flows/ContractHistory'
 import { ReplaceContractSheet, type ReplacedState } from '../../flows/ReplaceContractSheet'
@@ -57,13 +57,14 @@ export function ContractPage({ contractId, actor }: { contractId: string; actor:
   const masters = useAppStore((s) => s.masters)
   const billing = useAppStore((s) => s.billing)
   const [params] = useSearchParams()
+  const location = useLocation()
   const tab = parseContractTab(params.get('tab'))
   const [feeError, setFeeError] = useState<string | null>(null)
   // Replace from a date (build plan Phase 49): the sheet, the Disable confirm the to-do notice opens, the result on arrival.
   const [replacing, setReplacing] = useState(false)
   const [disabling, setDisabling] = useState(false)
   const [resultDismissed, setResultDismissed] = useState(false)
-  const { state: navState } = useLocation()
+  const navState: unknown = location.state
   const addRange = params.get('add') === 'range'
   const replaces = useMemo(() => replacesFor(audit, contractId), [audit, contractId])
   const replacedBy = useMemo(() => replacementOf(audit, contractId), [audit, contractId])
@@ -87,7 +88,7 @@ export function ContractPage({ contractId, actor }: { contractId: string; actor:
   return (
     <ProfilePage
       shot="contract-detail"
-      back={{ label: 'Contracts', to: contractsPath() }}
+      back={{ label: 'Contracts', to: catalogueReturnPath(location.state) }}
       name={contract.name}
       chip={
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>

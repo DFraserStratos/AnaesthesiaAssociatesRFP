@@ -22,9 +22,22 @@ function query(params: Record<string, string | undefined>): string {
   return s === '' ? '' : `?${s}`
 }
 
-/** The Contract list, optionally filtered to one holder Party (47 maps it to the holder grouping). */
-export function contractsPath(opts: { holder?: string } = {}): string {
-  return `/admin/contracts${query({ holder: opts.holder })}`
+/**
+ * The Contract catalogue (Phase 47), optionally grouped (`?group=`) and on one group (`?in=`, an id
+ * of that grouping). `holder` is one Party's Contracts: the holder grouping on that Party.
+ */
+export function contractsPath(opts: { group?: string; in?: string; holder?: string } = {}): string {
+  if (opts.holder !== undefined && opts.holder !== '') return `/admin/contracts${query({ group: 'holder', in: opts.holder })}`
+  return `/admin/contracts${query({ group: opts.group, in: opts.in })}`
+}
+
+/**
+ * Where a Contract page's back link goes (Phase 47): the catalogue as the row was opened from it
+ * (its grouping, group, search and page, passed as router state `{ from }`), else the bare list.
+ */
+export function catalogueReturnPath(state: unknown): string {
+  const from = typeof state === 'object' && state !== null ? (state as { from?: unknown }).from : undefined
+  return typeof from === 'string' && from.startsWith('/admin/contracts') ? from : contractsPath()
 }
 
 /** A Contract's page, on a tab. */
@@ -38,9 +51,34 @@ export function newContractPath(opts: { holder?: string } = {}): string {
 }
 
 /**
- * A Party's details, where its billing name and delivery are changed: Master
- * data's Parties view with that Party open, until 48 gives it a page.
+ * The catalogue at a count's Contracts (build plan Phase 48): the one link every Party, tag and
+ * hospital count opens, so the figure and the rows listed agree (`partyContracts.ts`). It keeps
+ * the office's own Contracts (`own=1`: no system backstops), on the holder grouping at that holder
+ * narrowed by a tag (`tag=<id>`, `tag=none` for No tag), or on the tag grouping at that tag when no
+ * holder is named; `status=disabled` opens it on the Disabled ones.
  */
+export function contractsCatalogueLink(opts: { holderId?: string; tagId?: string; status?: 'disabled' }): string {
+  const holder = opts.holderId !== undefined && opts.holderId !== ''
+  return `/admin/contracts${query({
+    group: holder ? 'holder' : opts.tagId !== undefined ? 'tag' : undefined,
+    in: holder ? opts.holderId : opts.tagId,
+    tag: holder ? opts.tagId : undefined,
+    own: '1',
+    status: opts.status,
+  })}`
+}
+
+/** The Parties tab (Phase 48). */
+export function partiesPath(): string {
+  return '/admin/contracts/parties'
+}
+
+/** A Party's page (Phase 48), where its details are changed and its Contracts counted by tag. */
 export function partyPath(partyId: string): string {
-  return `/admin/masters?view=parties&party=${encodeURIComponent(partyId)}`
+  return `/admin/contracts/parties/${encodeURIComponent(partyId)}`
+}
+
+/** The Funding tags tab (Phase 48), optionally with a tag picked. */
+export function fundingTagsPath(tagId?: string): string {
+  return `/admin/contracts/tags${query({ tag: tagId })}`
 }

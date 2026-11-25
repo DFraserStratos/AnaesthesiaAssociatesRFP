@@ -490,4 +490,8 @@ function resetDomainStateOnly(api: AppStoreApi): void {
   const { shell: _shell, ...domain } = freshAppState()
   void _shell
   installDomainState(api, domain)
+  // Reset forgets each office user's last Contract grouping (build plan Phase 47).
+  const { contractGrouping: _grouping, ...shell } = api.getState().shell
+  void _grouping
+  api.setState({ shell })
 }

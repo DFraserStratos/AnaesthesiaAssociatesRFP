@@ -143,7 +143,7 @@ describe("the backdated range trigger (catch-up Phase 24)", () => {
   it("shows on the Contract list and on Merivale's Face lift page; disabled once the range is added", () => {
     const api = createAppStore()
     // Not on Master data any more (build plan Phase 45): the list and the pages are the Contracts section's.
-    expect(ids(api, '/admin/masters', 'bar', { 'adminMasters.view': 'parties' })).not.toContain('demo-backdated-range')
+    expect(ids(api, '/admin/masters', 'bar', { 'adminMasters.view': 'rvgGroups' })).not.toContain('demo-backdated-range')
     expect(ids(api, '/admin/contracts', 'bar', { 'adminContracts.tab': 'contracts' })).toContain('demo-backdated-range')
     expect(ids(api, '/admin/contracts/CT-MER-FACELIFT-1', 'bar', { 'adminContracts.openContractId': 'CT-MER-FACELIFT-1' })).not.toContain('demo-backdated-range')
     expect(ids(api, '/admin/contracts/CT-MER-FACELIFT', 'bar', { 'adminContracts.openContractId': 'CT-MER-FACELIFT' })).toContain('demo-backdated-range')
