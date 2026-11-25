@@ -27,6 +27,10 @@ app does; the catalogue is the truth about what it should do.
   or work the owner asked to isolate) merges into `master` as soon as it is finished and the full
   gate is green, without waiting to be tested; the owner tests it on `master`. Then remove the
   worktree and branch.
+- **Phases 46 to 49 run in two build lanes** (owner, 25 Nov 2026): after Phase 45 is DONE on `master`,
+  Lane A (46, 49) and Lane B (47, 48) each build in their own worktree and are joined onto `master` when
+  green. `docs/build-plan/LANES.md` overrides this file for a lane session; its prompts are in
+  `docs/build-plan/lanes/`. Outside a lane, work stays in the main checkout.
 - **Screenshots and the demo guide are caught up in a sweep, not per change.** A version of the demo
   guide (`docs/demo-guide/`, incl. `master-demo-guide.html`) and the catalogue screenshots goes to AA
   for testing and approvals; the owner brings both in step when they choose with `/sweep`

@@ -5,5 +5,39 @@
     "phases": [],
     "note": "No phase planned."
   },
-  "guidance": {}
+  "guidance": {
+    "as_of": "2026-11-25",
+    "headline": "Phase 45 runs first, alone, in the main folder. Then Phases 46 to 49 run in two lanes at once: paste the Lane A prompt into one session and the Lane B prompt into another.",
+    "headline_sub": "45 builds the Contracts section and the Contract page that every later phase builds on, so nothing runs beside it. Once 45 is DONE and committed on master, Lane A builds 46 then 49 and Lane B builds 47 then 48, each in its own worktree (docs/build-plan/LANES.md). The lane that finishes second joins them onto master; then test all four together on 5173.",
+    "safe": {
+      "45": "Depends on nothing; it is the base for 46 to 49, so it runs alone in the main folder with its own kick-off prompt."
+    },
+    "wait": {
+      "46": "Lane A, after 45 is DONE on master.",
+      "47": "Lane B, after 45 is DONE on master.",
+      "48": "Lane B, after 47 (in the same lane).",
+      "49": "Lane A, after 46 (in the same lane)."
+    },
+    "parallel": "Wave 1 of the lanes: Lane A 46 then 49, Lane B 47 then 48. Neither lane needs the other's work; they meet only in the Contract list screen, the Contracts route block and shared barrels, as LANES.md's ownership table says. Paste each lane's prompt again whenever its session ends: the same prompt starts, resumes and joins.",
+    "lanes": [
+      {
+        "name": "Lane A",
+        "where": "`AnaesthesiaAssociatesRFP-laneA` worktree, branch `lane/a`, ports 5273/5274/5280",
+        "queue": [
+          "46",
+          "49"
+        ],
+        "prompt_file": "lanes/lane-a.prompt.md"
+      },
+      {
+        "name": "Lane B",
+        "where": "`AnaesthesiaAssociatesRFP-laneB` worktree, branch `lane/b`, ports 5373/5374/5380",
+        "queue": [
+          "47",
+          "48"
+        ],
+        "prompt_file": "lanes/lane-b.prompt.md"
+      }
+    ]
+  }
 }

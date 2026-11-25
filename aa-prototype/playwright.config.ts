@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
+import './laneEnv.ts'
 import { demoReadyStorageState } from './visual/storage/demoReady'
 
 /**

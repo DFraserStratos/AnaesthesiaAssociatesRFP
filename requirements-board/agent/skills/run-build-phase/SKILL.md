@@ -101,8 +101,9 @@ root (`git rev-parse --show-toplevel`; folder names contain spaces, so quote eve
   `PLAN/index.html` by `node P/build-index.mjs`. Run order: `PLAN/ROADMAP.md` "Sequencing rules", the
   "**Run order.**" bullet. In `headline_sub` say the phase is committed and waiting for the owner's
   test and capture approval (not "not yet committed").
-- **Tracks:** one, the plan's numbered phases. No lanes, no worktrees ("Phases in a worktree" does not
-  apply).
+- **Tracks:** one, the plan's numbered phases. Phases run in the main folder, except where
+  `PLAN/LANES.md` puts them in a build lane (Phases 46 to 49): a lane session follows `LANES.md`, which
+  overrides this skill's commit, port, owner-review and plan-page steps.
 
 ## Ground rules
 

@@ -32,5 +32,6 @@ tmp/
 # Discovery meeting recordings (large media, kept local)
 /docs/discovery-reference/Recordings/
 
-# A worktree's own ports (BOARD_PORT and friends), read by requirements-board/server/laneEnv.ts
+# A worktree's own ports (AA_PROTO_PORT, AA_PWA_PORT, BOARD_PORT), read by aa-prototype/laneEnv.ts,
+# requirements-board/server/laneEnv.ts and phase-check.mjs (docs/build-plan/LANES.md)
 .lane.env

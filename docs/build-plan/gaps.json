@@ -1,24 +1,1164 @@
 {
- "generated": "2026-11-24",
- "catalogue_commit": "64b3dff7aef0a2a290e6f6a50f42a28d3874c540",
+ "generated": "2026-11-25",
+ "catalogue_commit": "5f87781b1df9364ea9462c031b1b8b6ce68424a7",
  "seeded": "64b3dff7aef0a2a290e6f6a50f42a28d3874c540",
- "method": "Seeded empty at 64b3dff with plan-init.mjs: no gap analysis was run, and the prototype was taken as matching the catalogue then. Plan updates grade only the items changed since.",
+ "method": "Per-epic Sonnet reviewers against six prototype maps, each review re-checked by an adversarial Sonnet verifier; plus a verified data-model delta and a verified reverse check.",
  "counts": {
-  "Contradicts": 0,
-  "Partial": 0,
+  "Contradicts": 1,
+  "Partial": 7,
   "Missing": 0,
   "OutOfScope": 0,
-  "Matches": 0,
-  "Grouping": 0
+  "Matches": 3,
+  "Grouping": 1
  },
- "in_scope": 0,
+ "in_scope": 12,
  "themes": [],
- "epics": [],
- "items": [],
+ "epics": [
+  {
+   "id": "EP-01",
+   "title": "Schedule canvas, Slots and Lists",
+   "status": "Agreed (4)",
+   "observations": "",
+   "counts": {
+    "Contradicts": 0,
+    "Partial": 0,
+    "Missing": 0,
+    "OutOfScope": 0,
+    "Matches": 0,
+    "Grouping": 0
+   }
+  },
+  {
+   "id": "EP-02",
+   "title": "Booking intake and change handling",
+   "status": "Verify (3)",
+   "observations": "",
+   "counts": {
+    "Contradicts": 0,
+    "Partial": 0,
+    "Missing": 0,
+    "OutOfScope": 0,
+    "Matches": 0,
+    "Grouping": 0
+   }
+  },
+  {
+   "id": "EP-03",
+   "title": "Booking and Procedure capture (anaesthetist)",
+   "status": "Agreed (4)",
+   "observations": "",
+   "counts": {
+    "Contradicts": 0,
+    "Partial": 0,
+    "Missing": 0,
+    "OutOfScope": 0,
+    "Matches": 0,
+    "Grouping": 0
+   }
+  },
+  {
+   "id": "EP-04",
+   "title": "Contracts",
+   "status": "Verify (3)",
+   "observations": "Structural: EP-04's shell is the main gap. Contracts, Parties and Funding tags are three Billing views inside Master data (masterViews.ts, ?view=contracts|parties|fundingTags) opening side panels. The catalogue now wants a Contracts section of the Admin app with its own nav entry, a page per Contract with separately saved cards, a New contract page, a grouped catalogue with an index, Parties and Funding tags as tabs, a Party page, and a Replace-from-a-date action (phases 45 to 49). The step rail (US-04.3.8), backstops (US-04.3.9) and funding-tag placement (US-04.2.17) already match, and their open questions (OQ-145, OQ-146) are consistent with current behaviour. Verification changed one detail: the price range table already shows each range's end inside its 'In force' cell (rangeSpanText), so only a To column, Change column, Procedures-priced count, newest-first order and the fold after three are missing. Domain support is largely in place: partyRefusal, billingDetailsRefusal, fundingTagRefusal, contractRefusal (incl. holderBillingDetails), nextAaCode, rangeInForce, rangeSpanText, proceduresStillOnContract (skips authorised Lists), contractDisabledOn, destinationOf, the contractDisabled review flag, and audit actions for Party, Contract, price range, specialty, funding tag and RVG group. New work: a stored replace link and date (Contract has no date field, so likely an audited entry or a new field with a PERSIST_VERSION bump), a replaceContract store action that copies the Contract, moves ticked Procedures with audit, and either leaves the old Contract active or disables it; a to-do or warning rule on the change date (nothing under domain/warnings/rules; WarningsToDo is the Day view surface); a late-disable listing from the stored change date (reuse proceduresStillOnContract); a disable-confirm step that lists Procedures from today; a similar-name hint; per-card save with one audit entry each (editContract today writes one whole-Contract contract.update); a Procedures-on-the-Contract list (upcoming and authorised at locked price; lockedAgainstContract covers only the authorised half); a read-only Party billing block; per-range Procedures-priced counts and the fold; Party counts by funding tag; grouping facets (holder, kind of holder, tag, surgeon incl. two-surgeon Contracts under both, destination, pricing kind) with an index. Demo triggers: the existing advanceClockToDate store action (clockActions.ts, used by the prepayment trigger) makes the 'reach the change date' button cheap; the demo-backdated-range trigger's `when` (registry.ts:1894, reads adminMasters.view and adminContracts.openContractId) must follow the new section, and the old ?view=contracts|parties|fundingTags URLs need redirects (parseMastersView in screens/masters/view.ts). Demo guide: S1 to S5 do not use the Contracts master (S1 Beat 3 and the phone beat use the unchanged shared rail), but docs/demo-guide/03-demo-script.md:113 links ?view=contracts&holder=PY-COS and demoGuideSync.test.ts must stay green; the catalogue screenshots show the retired dated model and are left to the owner's /sweep. All ten items are status Verify (3) and the late-disable rule, the to-do on the date and future-dated disable (OQ-144) are not yet discussed with AA.",
+   "counts": {
+    "Contradicts": 0,
+    "Partial": 6,
+    "Missing": 0,
+    "OutOfScope": 0,
+    "Matches": 3,
+    "Grouping": 1
+   }
+  },
+  {
+   "id": "EP-05",
+   "title": "RVG master data and fee calculation rules",
+   "status": "Agreed (4)",
+   "observations": "",
+   "counts": {
+    "Contradicts": 0,
+    "Partial": 0,
+    "Missing": 0,
+    "OutOfScope": 0,
+    "Matches": 0,
+    "Grouping": 0
+   }
+  },
+  {
+   "id": "EP-06",
+   "title": "Prepayment",
+   "status": "Verify (3)",
+   "observations": "",
+   "counts": {
+    "Contradicts": 0,
+    "Partial": 0,
+    "Missing": 0,
+    "OutOfScope": 0,
+    "Matches": 0,
+    "Grouping": 0
+   }
+  },
+  {
+   "id": "EP-07",
+   "title": "List approval workflow",
+   "status": "Agreed (4)",
+   "observations": "",
+   "counts": {
+    "Contradicts": 0,
+    "Partial": 0,
+    "Missing": 0,
+    "OutOfScope": 0,
+    "Matches": 0,
+    "Grouping": 0
+   }
+  },
+  {
+   "id": "EP-08",
+   "title": "Billing/Invoice Engine and internal ledger",
+   "status": "Agreed (4)",
+   "observations": "",
+   "counts": {
+    "Contradicts": 0,
+    "Partial": 0,
+    "Missing": 0,
+    "OutOfScope": 0,
+    "Matches": 0,
+    "Grouping": 0
+   }
+  },
+  {
+   "id": "EP-09",
+   "title": "Xero integration",
+   "status": "Proposed (1)",
+   "observations": "",
+   "counts": {
+    "Contradicts": 0,
+    "Partial": 0,
+    "Missing": 0,
+    "OutOfScope": 0,
+    "Matches": 0,
+    "Grouping": 0
+   }
+  },
+  {
+   "id": "EP-10",
+   "title": "Payments, disbursement and AA fees",
+   "status": "Agreed (4)",
+   "observations": "",
+   "counts": {
+    "Contradicts": 0,
+    "Partial": 0,
+    "Missing": 0,
+    "OutOfScope": 0,
+    "Matches": 0,
+    "Grouping": 0
+   }
+  },
+  {
+   "id": "EP-11",
+   "title": "Patients and billable parties",
+   "status": "Verify (3)",
+   "observations": "",
+   "counts": {
+    "Contradicts": 0,
+    "Partial": 0,
+    "Missing": 0,
+    "OutOfScope": 0,
+    "Matches": 0,
+    "Grouping": 0
+   }
+  },
+  {
+   "id": "EP-12",
+   "title": "Anaesthetist profile and reporting",
+   "status": "Proposed (1)",
+   "observations": "",
+   "counts": {
+    "Contradicts": 0,
+    "Partial": 0,
+    "Missing": 0,
+    "OutOfScope": 0,
+    "Matches": 0,
+    "Grouping": 0
+   }
+  },
+  {
+   "id": "EP-13",
+   "title": "Admin oversight and master data",
+   "status": "Agreed (4)",
+   "observations": "Both items are the Master data side of Donald's 25 Nov Contracts-section decision. Closing them is mostly moving the Contracts, Parties and Funding tags views out of Master data into a new Contracts section (phases 45 and 48 of the brief), plus a Contracts-under-a-tag panel on the Funding tags tab, grouped by hospital with counts. Dependencies: US-04.1.7, US-04.1.8 and US-04.1.2 own the new section, Contract page, New contract page, grouped catalogue and Replace from a date. Structural touch points: the masterViews.ts registry and masterViews.test.ts catalogue-row mapping, redirects for old ?view=contracts, ?view=parties and ?view=fundingTags links, the Party 'active' link (?view=contracts&holder=), the demo-trigger contexts adminMasters.view and adminContracts.openContractId, the Seed load and Go-live entity sheets (contracts, priceRanges, parties, fundingTags), and the Admin SideNav and AdminApp sectionForPath. Funding tag behaviour (order, funder, audited changes, Suggested path via the rail) works today and must be preserved. No new demo trigger is needed; the existing demo-backdated-range trigger on Contracts should follow the move. The demo guide and screenshots (US-13.4.1 images admin-master-data-contracts*, -parties and -funding-tags; US-13.4.5 images) change path with the move, but they are left to the owner's /sweep and not edited per phase. I did not read the demo script, so I do not name the beats.",
+   "counts": {
+    "Contradicts": 1,
+    "Partial": 1,
+    "Missing": 0,
+    "OutOfScope": 0,
+    "Matches": 0,
+    "Grouping": 0
+   }
+  },
+  {
+   "id": "EP-14",
+   "title": "Health systems integration",
+   "status": "Proposed (1)",
+   "observations": "",
+   "counts": {
+    "Contradicts": 0,
+    "Partial": 0,
+    "Missing": 0,
+    "OutOfScope": 0,
+    "Matches": 0,
+    "Grouping": 0
+   }
+  },
+  {
+   "id": "EP-15",
+   "title": "Non-functional requirements",
+   "status": "Proposed (1)",
+   "observations": "",
+   "counts": {
+    "Contradicts": 0,
+    "Partial": 0,
+    "Missing": 0,
+    "OutOfScope": 0,
+    "Matches": 0,
+    "Grouping": 0
+   }
+  }
+ ],
+ "items": [
+  {
+   "id": "FT-04.1",
+   "verdict": "Grouping",
+   "summary": "Feature body only introduces the Contract catalogue section (Parties, Contracts, a page each, audited) and defers every rule to its stories; the structural gaps are graded under US-04.1.2, .5, .7 and .8.",
+   "requirement_says": "The office keeps the Contract catalogue in its own Admin section: Parties plus every Contract with a page of its own, created, edited in place and disabled, all audited.",
+   "prototype_does": "Contracts, Parties and Funding tags are three Billing views of Master data (?view=contracts|parties|fundingTags) opening side panels; there is no Contracts nav entry or Contract page. Create, edit, disable and audit all exist.",
+   "missing_or_wrong": [],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/masters/masterViews.ts:30-52 (contracts, parties, fundingTags are Billing views)",
+    "aa-prototype/src/router.tsx:169 (only a `masters` route, no contracts route)",
+    "aa-prototype/src/apps/admin/components/SideNav.tsx (no Contracts entry)"
+   ],
+   "demo_trigger": "",
+   "surfaces": [],
+   "size": "None",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Grouping",
+   "verify_note": "The body states no acceptance criteria and no rule beyond what its stories carry (structure, audit and disable are story-level). Confirmed the section structure is absent in router.tsx/SideNav, but that is graded in the stories. Emptied missing_or_wrong, since a Grouping item carries no gaps of its own.",
+   "epic": "EP-04",
+   "title": "Contract catalogue",
+   "type": "feature",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/FT-04.1.md"
+  },
+  {
+   "id": "US-04.1.2",
+   "verdict": "Partial",
+   "summary": "Create, edit in place, Active/Disabled, search, status filter, fixed holder/prepaid/pricing kind, no dates and the late disabled-Procedure flag all exist, but the list cannot be grouped or indexed, a new Contract is a side panel rather than an ordered page with a similar-name hint, and Disable has no confirm step listing Procedures from today.",
+   "requirement_says": "In the Contracts section the office creates Contracts on their own page in dependency order with a similar-name hint, edits them, and disables only after a confirm that lists Procedures dated from today; the list is searched, filtered by status and grouped by holder, kind of holder, funding tag, surgeon (under both), invoice destination or pricing kind, with an index of group counts.",
+   "prototype_does": "ContractsView lists Contracts under holder headings with a search box (name, holder reference, AA code, RVG code), Active/Disabled/All pills and Holder and Funding tag selects. 'New contract' and row click open a side ContractPanel. Disable runs at once. After a disable the panel shows the disable day (from the audit) and lists Procedures from that day. Review flags a not-yet-authorised Procedure dated on or after the disable day. Holder, prepaid and pricing kind are read-only after save, and a Contract has no dates.",
+   "missing_or_wrong": [
+    "No group-by control (holder, kind of holder, funding tag incl. No tag, surgeon incl. a two-surgeon Contract under both, invoice destination, pricing kind) and no index of groups with counts; the list is hard-wired to holder headings",
+    "Contracts is not its own Admin section; it is still Master data > Billing view",
+    "New Contract is a side panel, not a page: no ordered flow (holder and who it bills, then pricing, then where offered, then name/codes/invoice wording) and no similar-name list of the holder's existing Contracts (grep 'similar' in ContractEditSheet.tsx, ContractsView.tsx, domain/billing/contracts.ts finds nothing); the only preview is the one-line 'Offered under' hint",
+    "Disable has no confirmation step and does not list Procedures dated from today before confirming; toggleStatus disables immediately and lists afterwards",
+    "The legacy warning-only 'Replaces' picker on create takes the place of the dated-change action (US-04.1.8), and the header copy still says 'any other dated change is a new Contract'",
+    "Filter lacks kind-of-holder, surgeon, destination and pricing-kind facets (only holder and funding tag)"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/masters/ContractsView.tsx:98-102 (groups by holderId only), :88-96 (filters status, holder, tag only), :124 (sub copy)",
+    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx:259-263 (toggleStatus disables at once), :136-144 (stillOnDisabled from audit day), :327-336 (disabled note)",
+    "aa-prototype/src/domain/billing/reviewFlags.ts:142-148 (contractDisabled flag: day <= list date, not AUTHORISED; satisfies the Disabled flag criterion)",
+    "aa-prototype/src/domain/billing/contracts.ts:264 (contractRefusal fixes holder, prepaid, pricing kind; satisfies Fixed after creation)",
+    "aa-prototype/src/store/contractActions.ts:158,274,320",
+    "searched: similar|groupBy|group by in ContractsView.tsx, ContractEditSheet.tsx, contracts.ts, contractChanges.ts -> none"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin",
+    "domain",
+    "demo-guide"
+   ],
+   "size": "L",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-opened ContractsView and ContractEditSheet: confirmed no grouping, no similar-name hint, no disable confirm. Confirmed these acceptance criteria already hold: Active filter, No dates, Fixed after creation and Disabled flag (contractDisabled rule). No behaviour is wrong against the text, so Partial rather than Contradicts. Added the stale header copy point.",
+   "epic": "EP-04",
+   "title": "Create, edit and disable Contracts",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [
+    "OQ-144"
+   ],
+   "file": "stories/US-04.1.2.md"
+  },
+  {
+   "id": "US-04.1.3",
+   "verdict": "Partial",
+   "summary": "Audit with before and after already covers Party, Contract (create, update, disable, enable), price ranges, specialties, funding tags and RVG groups, never deleted, with a per-Contract history and locked Procedures; missing are card-by-card audited saves and the audit of a Replace from a date, both tied to US-04.1.7 and US-04.1.8.",
+   "requirement_says": "Every create, edit and disable of a Party, Contract, price range, specialty, funding tag and RVG group is audited with before and after; each saved card of a Contract's page is one audited change; the Contract's history shows every change; replacing from a date audits the new Contract, each moved Procedure and the old Contract's disable.",
+   "prototype_does": "mutate() writes party.create/update, contract.create/update/disable/enable/fallbackCreate, contract.priceRange.add/update/delete, specialty.*, fundingTag.* and rvgGroup.create/update/retire/restore, each with before/after. ContractHistory shows a Contract's entries newest first plus the Procedures locked against it. Nothing is deleted.",
+   "missing_or_wrong": [
+    "A Contract save is one whole-Contract `contract.update` entry from the panel; there are no cards, so no per-card audited change",
+    "No audit for replacing a Contract from a date: no replace action, so no entry for the new Contract, each moved Procedure or the disable-as-replaced; CONTRACT_HISTORY_ACTIONS has no replace action",
+    "History is a tab of a side panel, not a card on a Contract page"
+   ],
+   "evidence": [
+    "aa-prototype/src/store/contractActions.ts:201,241,310,321,326,419-467",
+    "aa-prototype/src/store/partyActions.ts:93,130",
+    "aa-prototype/src/store/rvgGroupActions.ts:61,87,122 (rvgGroup audit exists)",
+    "aa-prototype/src/domain/billing/contractHistory.ts:16 (eight actions, no replace)",
+    "aa-prototype/src/apps/admin/flows/ContractHistory.tsx"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin",
+    "store",
+    "domain"
+   ],
+   "size": "S",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Confirmed the audit actions in code, and added that RVG group audit also exists (not previously cited). The two gaps are real and depend on US-04.1.7 and US-04.1.8, so the incremental size stays S.",
+   "epic": "EP-04",
+   "title": "Contract audit",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-04.1.3.md"
+  },
+  {
+   "id": "US-04.1.5",
+   "verdict": "Partial",
+   "summary": "The Party master, its rules (billing name and delivery once billed, email or post contact, hospital link, one AA) and a list including Contract-less Parties exist, but Parties are a Master data view with a side panel, rows are sorted not grouped by kind, and there is no per-funding-tag Contract count or link into the Contract list.",
+   "requirement_says": "Parties sit on their own tab of the Contracts section, grouped by kind (including Parties holding no Contracts); each Party has a page edited in place showing its Contracts counted by funding tag, each count opening the Contract list at those Contracts.",
+   "prototype_does": "PartiesView is a flat table sorted by kind order then name (Name, Kind pill, Billing name, Delivery, one 'N active' link to ?view=contracts&holder=, History, Edit); every Party shows, including those with no Contracts ('None'); PartyPanel is a side panel; partyRefusal enforces the billing rules.",
+   "missing_or_wrong": [
+    "Not a tab of a Contracts section (Master data > Billing view)",
+    "No kind group headings (only sorted, kind shown as a pill)",
+    "No Party page route; edit is a side panel",
+    "No Contracts-by-funding-tag counts (e.g. 56 SXAP, 62 HNZ, 26 ACC) and no link opening the Contract list at holder plus tag; the Contract list deep link carries ?holder= only",
+    "Contract-less Parties are listed (that part holds), but the 'None' cell has no group context"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/masters/PartiesView.tsx:42-48 (sort by KIND_ORDER), :49-59 (counts: active and held only), :71-81 (single active link)",
+    "aa-prototype/src/apps/admin/flows/PartyPanel.tsx:127,159 (side panel sections)",
+    "aa-prototype/src/domain/billing/parties.ts:141,180 (partyRefusal, billingDetailsRefusal)",
+    "aa-prototype/src/apps/admin/screens/masters/ContractsView.tsx:60-63 (?holder= only)"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin",
+    "demo-guide"
+   ],
+   "size": "M",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-read PartiesView: every Party is listed (so the 'insurer with no Contracts still listed' half of the Grouped-by-kind criterion holds) but there is no grouping and no tag counts. Dropped nothing else; clarified that last point.",
+   "epic": "EP-04",
+   "title": "Parties",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [
+    "OQ-114"
+   ],
+   "file": "stories/US-04.1.5.md"
+  },
+  {
+   "id": "US-04.1.7",
+   "verdict": "Partial",
+   "summary": "All the content of a Contract (price ranges, where offered, who it bills, names and codes, fixed settings, event fees, history, system-Contract limits) exists, but in one side panel with a single Save, with no page or route, no separately saved cards, no read-only Party billing block and no list of the Procedures on the Contract.",
+   "requirement_says": "Each Contract has its own page of cards (price, where offered, who it bills incl. the holder Party's billing name and delivery, name and codes, fixed at creation), each edited and saved on its own as one audited change with refusals shown in place; the page lists upcoming and authorised Procedures on it, event fees and history; a system Contract has the same page limited to name, AA code and invoice description with no Disable or Replace.",
+   "prototype_does": "ContractPanel (a MasterPanel side panel opened from the list or ?contract=, which is then dropped) with Details and History tabs and sections Contract, Invoice and codes, Holder and who it bills, Where it is offered and Pricing (ranges, event fees). One Save writes the whole Contract via editContract; refusals show as a form-level error; holder, pricing kind and prepaid are read-only after save; a system Contract edits only name, AA code, invoice description and has no Disable.",
+   "missing_or_wrong": [
+    "No /admin/contracts/:id page or deep link; the panel is dropped from the URL after open",
+    "No per-card edit, save and cancel, so no one-card-one-audit behaviour (the One card at a time criterion fails)",
+    "No read-only block of the holder Party's billing name and delivery with a link to change it on the Party (searched billingName|deliveryMethod in ContractEditSheet.tsx -> none)",
+    "No list of Procedures on the Contract: upcoming not-yet-billed ones and authorised ones at the locked price; the History tab shows only Bookings locked against it (authorised half, partly)",
+    "Refusal reasons appear in a form-level error, not on the card; the reason text itself exists (holderBillingDetails)",
+    "Replace is not offered (and so not blocked for system Contracts), pending US-04.1.8"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx:93 (ContractPanel), :212 (save), :259 (toggleStatus)",
+    "aa-prototype/src/apps/admin/flows/ContractHistory.tsx:17,25,35 (locked-against only; its own comment says it is not a list of Procedures)",
+    "aa-prototype/src/store/locks.ts:80 (lockedAgainstContract)",
+    "aa-prototype/src/domain/billing/contracts.ts:224,326 (holderBillingDetails refusal reused)",
+    "aa-prototype/src/apps/admin/flows/ContractEventFees.tsx",
+    "aa-prototype/src/router.tsx:169 (no Contract route)"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin",
+    "store",
+    "domain",
+    "demo-guide"
+   ],
+   "size": "L",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-opened the panel, history and locks code: confirmed no Procedures list, no Party billing read-out, no card saves. Fixed-settings and System-contract criteria already hold. The domain refusal for a holder without billing details exists, so the Refused in place criterion needs only a card UI, not new rules.",
+   "epic": "EP-04",
+   "title": "A page for each Contract",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-04.1.7.md"
+  },
+  {
+   "id": "US-04.1.8",
+   "verdict": "Partial",
+   "summary": "Only a warning-only 'Replaces' picker exists on create (it lists Procedures dated on or after a From date; nothing is stored, copied or moved); the one-action replace with ticking, leave-active-with-to-do or disable-now, late-disable listing from the change date and the not-a-fixed-price message is not built.",
+   "requirement_says": "Replacing a Contract from a date creates a copy with changed settings (fixed-at-creation ones included), lists on-or-after-date Procedures still on the old Contract (not those on an authorised List), moves only the ticked ones as audited Procedure changes, then leaves the old Contract active with a to-do on that date or disables it now; a later disable lists Procedures from the change date; a non-fixed-price replacement is offered from the save day and the action says so; a system Contract cannot be replaced.",
+   "prototype_does": "On create only, an optional Replaces select and From date feed proceduresStillOnContract to show a warning table with Open links ('Nothing moves by itself'); nothing is stored, no copy is made, nothing moves. A disabled Contract lists Procedures from its audit disable day (or today), not from a change date.",
+   "missing_or_wrong": [
+    "No Replace action on an existing Contract; no copy-with-changes (new AA code, every other setting carried, holder, pricing kind and prepaid changeable)",
+    "No tick-to-move Procedures and no audited per-Procedure move from the action (a move is manual per Booking)",
+    "No leave-active option with a to-do on the date (no rule in domain/warnings/rules, no store field) and no disable-now option",
+    "The change date is stored nowhere, so a late disable cannot list Procedures from it (stillOnDisabled uses the audit disable day, which for a disable on 8 Jan would miss a 5 Jan Procedure)",
+    "No 'offered from today, not from 1 January' message for a rate or discount replacement",
+    "Replace is not blocked for system Contracts (no action exists)",
+    "Locked-left-out is only partly met: proceduresStillOnContract skips AUTHORISED Lists, which is correct, but nothing uses it for a move"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx:136-144 (stillOnReplaced, stillOnDisabled from audit day), ~507-540 (Replaces section, create only)",
+    "aa-prototype/src/domain/billing/contractChanges.ts:43-60 (proceduresStillOnContract skips cancelled, AUTHORISED, earlier-dated), :143 (NOTHING_MOVES)",
+    "aa-prototype/src/domain/billing/contractHistory.ts:81 (contractDisabledOn)",
+    "aa-prototype/src/domain/warnings/rules/ (no contract-disable reminder rule)",
+    "aa-prototype/src/store/clockActions.ts (advanceClockToDate exists, imported at shared/demoTriggers/registry.ts:227)",
+    "searched: replacedBy|replaceContract|replacedFrom|effectiveFrom in src -> none relevant"
+   ],
+   "demo_trigger": "Reuse the existing clock-advance store action (advanceClockToDate, as used by the prepayment trigger) in a new 'Demo: reach the change date' button on the Contracts section, shown only when a Contract has a pending replacement: it moves the demo clock to the change date so the 'Disable [old Contract]' to-do appears in the Day view To-do and on the Contract page while the old Contract is still offered until disabled.",
+   "surfaces": [
+    "admin",
+    "store",
+    "domain",
+    "seed",
+    "simulator",
+    "demo-guide"
+   ],
+   "size": "L",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Searched for any stored replace link or replace action: none. Confirmed the late-disable gap against code (disabledDay from the audit). Confirmed a clock-advance action already exists, so the trigger is cheap. Partial rather than Missing because the Procedures-on-or-after-date listing and its AUTHORISED exclusion exist as domain code.",
+   "epic": "EP-04",
+   "title": "Replace a Contract from a date",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [
+    "OQ-144"
+   ],
+   "file": "stories/US-04.1.8.md"
+  },
+  {
+   "id": "US-04.2.15",
+   "verdict": "Partial",
+   "summary": "Range semantics are right (unique starts, past starts allowed, implied end, never the last, range in force prices, backdated re-pricing, kept-price warning with list), but the table is the old layout: oldest first, no separate To or Change column, no count of Procedures priced, no folding of ended ranges after three.",
+   "requirement_says": "On the Contract page the price ranges show as a table, newest first: from, to, price, change on the range before, how many Procedures the range priced; current and future ranges always shown, ended ones folded after three; add or correct as a row; warn and list authorised Procedures that kept their old price; never list re-priced ones.",
+   "prototype_does": "ContractPriceRanges table with columns Start, Price (ex GST), In force and row actions. The In force cell shows rangeSpanText, so a range's end ('1 Jun 2026 to 30 Sep 2026', or 'From 1 Oct 2026' for the last) is shown, with an 'In force today' pill. Ranges are in ascending start order; add, edit and delete in place; kept-price notice lists authorised Procedures from billing.locks.",
+   "missing_or_wrong": [
+    "Order is oldest first (sortRanges is ascending), not newest first",
+    "No separate 'To' column: the end is shown only inside the 'In force' cell as span text (the To worked out criterion is met in substance, not in layout)",
+    "No 'Change' column against the previous range",
+    "No 'Procedures priced' count per range",
+    "Ended ranges never fold (no fold after three, no 'show earlier')",
+    "Lives in the side panel; becomes a card on the Contract page"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/flows/ContractPriceRanges.tsx:112-119 (columns), :174 (rangeSpanText in the In force cell), :36-38 (rangesOf, kept)",
+    "aa-prototype/src/domain/billing/priceRanges.ts:30-43 (sortRanges ascending), :211-217 (rangeSpanText), :50 (rangeInForce)",
+    "aa-prototype/src/domain/billing/contractChanges.ts:84,126 (authorisedKeptPrice, keptPriceOnContract)",
+    "aa-prototype/src/shared/demoTriggers/registry.ts:1885-1895 (demo-backdated-range)"
+   ],
+   "demo_trigger": "Existing: 'Demo: add a backdated price range' (Admin · Master data, Contracts); its `when` (registry.ts:1894, reads adminMasters.view and adminContracts.openContractId) must be re-pointed at the new Contracts section and Contract page.",
+   "surfaces": [
+    "admin",
+    "domain",
+    "demo-guide"
+   ],
+   "size": "M",
+   "confidence": "high",
+   "verify_outcome": "corrected",
+   "original_verdict": "Partial",
+   "verify_note": "Corrected one point: the reviewer said the end is not shown, but ContractPriceRanges.tsx:174 renders rangeSpanText in the In force column, so the implied end is visible (only a distinct To column is missing). Verdict stays Partial: the other columns, newest-first order and folding are missing. Not Contradicts, since nothing implemented is wrong.",
+   "epic": "EP-04",
+   "title": "Price ranges on a fixed price",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-04.2.15.md"
+  },
+  {
+   "id": "US-04.2.17",
+   "verdict": "Matches",
+   "summary": "A Contract carries at most one funding tag from AA's list and destinationOf places it as the story says (hospital-held, hospital-billed with a tag under the hospital at its tag; untagged or any other holder under Special; bills-payer under Patient), with a live 'Offered under' hint.",
+   "requirement_says": "One optional funding tag per Contract; with who it bills it decides the step-rail place: hospital-held and hospital-billed under the hospital at its tag, otherwise Special, bills-payer under Patient whatever the tag.",
+   "prototype_does": "Funding tag select in Where it is offered with destinationHint; destinationOf derives patient, hospital or special; the seed has CES SXAP items and STG untagged under Special; tags are in AA's order; a Funding tags view lists them.",
+   "missing_or_wrong": [],
+   "evidence": [
+    "aa-prototype/src/domain/billing/fallbacks.ts:39-47 (destinationOf: payer first, then hospital with tag, else special), :63-73 (destinationHint)",
+    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx (Where it is offered: one funding tag, hint)",
+    "aa-prototype/src/domain/billing/fundingTags.ts",
+    "aa-prototype/src/domain/seed/contracts.ts:112,122 (STG untagged RVG, STG ACC tagged)"
+   ],
+   "demo_trigger": "",
+   "surfaces": [],
+   "size": "None",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Matches",
+   "verify_note": "Re-read destinationOf against all three acceptance criteria (Under the hospital, Untagged, Billed directly): each holds, and a tag on a non-hospital or payer-billed Contract is ignored as the story says. OQ-145 (untagged under the hospital) is open and the text as written is met.",
+   "epic": "EP-04",
+   "title": "Funding tag on a Contract",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [
+    "OQ-145"
+   ],
+   "file": "stories/US-04.2.17.md"
+  },
+  {
+   "id": "US-04.3.8",
+   "verdict": "Matches",
+   "summary": "The step rail (Where does the invoice go, narrow, then Contract) follows the story: derived destination, auto-fill of a single answer, Standard first and Prepaid shown but unselectable for the anaesthetist, hospital offered by tags regardless of specialty, 'Needs an invoice destination' wording, and one shared rail for office and anaesthetist.",
+   "requirement_says": "The office picks where the invoice goes, narrows, then picks the Contract from those on the List; the anaesthetist sees and can finish the same rail at the same point, bar Prepaid ('Set by the office'); destination derived from the Contract, never stored; 'Needs an invoice destination' wording.",
+   "prototype_does": "Pure contractRailFor builds the three steps with counts per destination; hospital tags are auto-filled when single; the patient's Payment type is always asked with Standard first and Prepaid selectable only for the office when it holds Contracts (anaesthetist sees 'Set by the office'); no RVG Contract under Prepaid; hospital tags come from hospitalTagsFor whatever the specialty filter leaves; answers are kept on the Procedure until a Contract is chosen; the shared ContractRail serves admin, web and mobile; 'Needs an invoice destination' appears on List rows, the office list and the review flag.",
+   "missing_or_wrong": [],
+   "evidence": [
+    "aa-prototype/src/domain/billing/contractRail.ts:300-312 (hospitalTagsFor), :351-460 (contractRailFor: Standard first, Prepaid 'Set by the office' selectable:false, autoFilled via step())",
+    "aa-prototype/src/domain/billing/contractRail.ts:~270-285 (grouped: no RVG kind under Prepaid, anaesthetist gets no prepaid rows)",
+    "aa-prototype/src/shared/booking/BillingCard.tsx:101 (NEEDS_INVOICE_DESTINATION)",
+    "aa-prototype/src/shared/booking/ProcedureStack.tsx:175,183",
+    "aa-prototype/src/domain/billing/reviewFlags.ts:150-153",
+    "aa-prototype/src/domain/types.ts:1046 (railAnswers)",
+    "searched: 'Needs a contract' in src -> none"
+   ],
+   "demo_trigger": "",
+   "surfaces": [],
+   "size": "None",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Matches",
+   "verify_note": "Checked each acceptance criterion against contractRailFor and the copy: Needs an invoice destination, Derived destination, Fills itself in, No RVG when prepaid, Payment type always asked, Prepaid stays with the office all hold. Mirrored and Picked up rely on the shared rail with an actor flag, consistent with the code. One stale doc comment ('reached only through Other price') exists but behaviour matches. OQ-145 open; graded as written.",
+   "epic": "EP-04",
+   "title": "Where the invoice goes, then the Contract",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [
+    "OQ-145"
+   ],
+   "file": "stories/US-04.3.8.md"
+  },
+  {
+   "id": "US-04.3.9",
+   "verdict": "Matches",
+   "summary": "Each destination gets a system-made RVG and Fixed price backstop (hospital tag, Special holder; Patient ones from the start), listed under a 'No contract' heading as 'No contract · RVG' and 'No contract · Fixed price', never disabled, editable only in name, AA code and invoice description, with the amount typed by the anaesthetist only on the patient Fixed price one.",
+   "requirement_says": "Two backstops per destination made and kept by the system, offered first under a 'No contract' heading at step 3; the RVG one asks for the code, the Fixed price one for the amount; never disabled or deleted, minimal edits, the office types any amount, the anaesthetist only on No contract · Fixed price under the patient.",
+   "prototype_does": "ensureFallbacks creates one openPriceFallback per implied destination (the two Patient ones always) and an rvgFallback for each hospital tag and Special holder (Patient › Standard uses noContractRvg, none under Prepaid); railBackstops renders them under NO_CONTRACT_HEADING with the shared labels; contractRefusal blocks disable and other edits of system Contracts; mayTypeEnteredPrice enforces who may type an amount.",
+   "missing_or_wrong": [],
+   "evidence": [
+    "aa-prototype/src/domain/billing/fallbacks.ts:149-176 (openPriceFallback, rvgFallback: no specialties, no links, active), :210-222 (findRvgFallback), :237-283 (ensureFallbacks)",
+    "aa-prototype/src/shared/contracts/railText.ts:9-24 (heading, labels), :26-29 (railBackstops)",
+    "aa-prototype/src/shared/contracts/railParts.tsx:176 (NoContractGroup)",
+    "aa-prototype/src/domain/billing/contractRail.ts:178-186 (mayTypeEnteredPrice)",
+    "aa-prototype/src/domain/billing/contracts.ts:264-271 (systemNeverDisabled, systemFixed)"
+   ],
+   "demo_trigger": "",
+   "surfaces": [],
+   "size": "None",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Matches",
+   "verify_note": "Re-read ensureFallbacks and the rail: two per destination, Listed first, RVG and Fixed price backstop, Anaesthetist and Kept criteria all hold; Prepaid · Fixed price is held by AA and bills the payer as specified. OQ-146 open; behaviour matches the text.",
+   "epic": "EP-04",
+   "title": "The No contract backstops, RVG and Fixed price",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [
+    "OQ-146"
+   ],
+   "file": "stories/US-04.3.9.md"
+  },
+  {
+   "id": "US-13.4.1",
+   "verdict": "Contradicts",
+   "summary": "Every master is maintained and audited as listed, but Contracts, Parties and Funding tags are still Master data views (group Billing), where the story now puts them on their own tabs of a separate Contracts section.",
+   "requirement_says": "Reference data is kept in two places. Master data holds hospitals, surgeons and groups, anaesthetists, availability statuses, recurring bookings, the public and hospital holiday calendars, RVG codes and groups, modifier codes and specialties. A Contracts section holds Contracts (with price ranges), Parties and funding tags, each on its own tab. Billing exception: Contract changes are audited edits, fixed prices change by price range, and Procedures keep their stored pricing so issued invoices never change.",
+   "prototype_does": "Master data (/admin/masters?view=) has a grouped sub-nav registry of 20 views. Contracts, Parties and Funding tags are three views under its Billing group, and masterViews.test.ts maps the catalogue rows for Contracts, Parties and funding tags to them. There is no Contracts nav item, section or route. Contract edits are audited (contract.update, price-range audits) and locked prices protect issued invoices, so the Billing exception behaves correctly. Every other listed master can be added or edited, and retired where it applies.",
+   "missing_or_wrong": [
+    "Contracts, Parties and Funding tags sit in Master data, contradicting the two-places split.",
+    "No Contracts section: no /admin/contracts route, no side-nav item, no tabs. masterViews.ts still lists parties, fundingTags and contracts in group Billing with their catalogueRows, and masterViews.test.ts maps those rows to Master data.",
+    "Old ?view=contracts, ?view=parties and ?view=fundingTags links would need redirecting. The same goes for the Party 'active' link (?view=contracts&holder=), the demo-trigger contexts adminMasters.view and adminContracts.openContractId, and the Seed load and Go-live entity sheets that present contracts, priceRanges, parties and fundingTags as Master data.",
+    "Master data would keep the Billing group only for RVG groups and Modifiers once the three views move out.",
+    "The title still says reference tables. That is an owner decision recorded in the story Notes, not a prototype gap."
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/masters/masterViews.ts:41-43 (parties, fundingTags, contracts under group Billing in MASTER_VIEWS)",
+    "aa-prototype/src/apps/admin/screens/masters/masterViews.ts:14 (MASTER_VIEW_GROUPS includes Billing)",
+    "searched: contracts in aa-prototype/src/router.tsx and apps/admin/components/SideNav.tsx: no Contracts route or nav item (router only imports admin routes; masters view carries contracts)",
+    "docs/build-plan/analysis/prototype-map-admin.md:3 and :121 (no Contracts section, route or tabs exist)",
+    "aa-prototype/src/apps/admin/screens/masters/FundingTagsView.tsx:1-30 (Funding tags as a Master data view)"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin",
+    "shell",
+    "demo-guide"
+   ],
+   "size": "M",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Contradicts",
+   "verify_note": "Re-read the story, the 25 Nov change log, masterViews.ts and FundingTagsView.tsx. The registry still places the three views in Master data (Billing group), and no Contracts route or nav item exists. Contradicts rather than Partial holds, since the implemented placement is the old reading the catalogue has changed. Billing exception re-checked: audited edits and locked prices present. Corrected the registry line refs and added shell to surfaces (side nav and route live in the shell/app frame, plus demo-trigger context names). Raised confidence to high. The move itself is M, and the new Contract page, grouped catalogue and Replace are owned by US-04.1.7, US-04.1.8 and US-04.1.2.",
+   "epic": "EP-13",
+   "title": "Maintain reference tables",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-13.4.1.md"
+  },
+  {
+   "id": "US-13.4.5",
+   "verdict": "Partial",
+   "summary": "The funding tag list (code, funder Party, step-rail order, audited add, edit and remove, Suggested path from the funder) works as required, but it lives in Master data rather than a Contracts-section tab, and picking a tag shows no Contracts grouped by hospital with counts (only one total per tag).",
+   "requirement_says": "Admins keep AA's ordered list of funding tags (SXAP, HNZ, ACC) in step-rail order. A Contract may carry one, and every change is audited. A tag may name its funder, which lets the Booking's funder suggest a path. The list is its own tab of the Contracts section with each tag's funder, and picking a tag shows the Contracts carrying it grouped by hospital with their count. ACs: Order, Contracts under a tag (each hospital with its SXAP count), Funder named (path marked Suggested).",
+   "prototype_does": "FundingTagsView (Master data, Billing group) lists Tag, Funder (or 'No funder named') and Contracts (one total count per tag) with Up/Down reorder, History, Edit and Remove (refused while any Contract carries the tag). The add/edit sheet has Code and a Funder select grouped by Party kind. Order drives the step rail (fundingTagsInOrder). Funder naming feeds the rail's Suggested marker (shared/contracts/railParts.tsx, domain/billing/contractRail.ts funderPartyId). Changes go through mutate() and are audited, with a History sheet.",
+   "missing_or_wrong": [
+    "Not on its own tab of a Contracts section. The section does not exist, and the view is still Master data's fundingTags.",
+    "No pick-a-tag interaction: selecting SXAP does not show its Contracts grouped by hospital with each hospital's count (AC Contracts under a tag). Only a total count column exists (FundingTagsView.tsx:41, fundingTagUsage).",
+    "The count does not link into the Contracts list, and that list has a Funding tag select but no hospital grouping or per-tag hospital summary (ContractsView groups by holder only).",
+    "Status Verify: Donald's 25 Nov decision is not yet discussed with AA (a note, not a prototype gap)."
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/masters/FundingTagsView.tsx:41-61 (columns Tag, Funder, total Contracts count; Up, Down, History, Edit, Remove; no selection state or per-hospital breakdown)",
+    "aa-prototype/src/apps/admin/screens/masters/FundingTagsView.tsx:35 (sub copy: tags show in this order when choosing a Contract)",
+    "aa-prototype/src/apps/admin/screens/masters/masterViews.ts:42 (fundingTags under Billing group)",
+    "aa-prototype/src/domain/billing/contractRail.ts (funderPartyId) and aa-prototype/src/shared/contracts/railParts.tsx (funder-based Suggested)",
+    "aa-prototype/src/apps/admin/screens/masters/ContractsView.tsx:56,94,151 (Funding tag filter only, results grouped by holder)"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin",
+    "demo-guide"
+   ],
+   "size": "S",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-opened FundingTagsView.tsx, masterViews.ts and ContractsView.tsx. Confirmed the tag list, funder, order, audit and Suggested path rules are implemented, and that the only per-tag figure is a single total, so the Contracts under a tag AC is not met. Kept Partial rather than Contradicts: the tag's placement is the same structural move graded under US-13.4.1 and is a missing section, not a differing rule, so counting it twice would overstate. Size S covers the tag-picked hospital-grouped panel and the count link, with the tab itself landing in the Contracts section build (phases 45 and 48).",
+   "epic": "EP-13",
+   "title": "Funding tags",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-13.4.5.md"
+  }
+ ],
  "summary_md": "",
- "dataModelDeltas": [],
- "deltaSummary": "",
+ "dataModelDeltas": [
+  {
+   "id": "DM-01",
+   "kind": "NewRelationship",
+   "title": "A Contract remembers which Contract it replaces, and from when",
+   "catalogue_says": "US-04.1.8: the late disable lists the Procedures dated from the date of the change, and an old Contract left Active gets a to-do on that date, so the change date must be known after the action. US-04.1.2 'No dates': a Contract has no start, end or review date of its own (domain-model.md: 'None of these settings is dated'). OQ-144 (open) asks whether a Contract may get a date. US-04.1.3: a replacement is audited. domain-model.md does not mention the link, so US-04.1.8 is the only authority.",
+   "prototype_has": "The link exists only as two useState values in the New contract panel (replacesId, replacesFrom), used to show a warn-only list once and then lost. Contract has no replaces or replaced-by field, createContract takes no replaces input, and the contract.create audit entry does not name the old Contract. Nothing records afterwards that a Contract was replaced or from what day.",
+   "catalogue_refs": [
+    "requirements-board/requirements/stories/US-04.1.8.md",
+    "requirements-board/requirements/stories/US-04.1.2.md",
+    "requirements-board/requirements/stories/US-04.1.3.md",
+    "requirements-board/requirements/questions/OQ-144.md"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx:125",
+    "aa-prototype/src/domain/billing/contracts.ts:67",
+    "aa-prototype/src/store/contractActions.ts:158",
+    "aa-prototype/src/domain/billing/contractHistory.ts:68"
+   ],
+   "impact": "DM-02, DM-03 and DM-04 all need the change date after the fact, so this must precede them. Home: the audit route fits the 'no dates' rule and OQ-144 best (the new Contract's contract.create entry carries replaces {contractId, fromISO} in its after; no Contract field, no PERSIST_VERSION bump from 78). The date must be an explicit payload field because it is the office's chosen date, not the save time that disabledDaysByContract reads from the entry timestamp. The alternative, a replacedBy {contractId, fromISO} field on the old Contract, is a date on the Contract, needs a bump and a seed scenario. One derived read, 'the Contract this one replaced and from which day' (and the reverse), feeds the other three deltas.",
+   "size": "M",
+   "verify_outcome": "corrected",
+   "verify_note": "Relationship and need upheld. Corrected the home: the audit route is not 'the way disabledDaysByContract reads the day' (that reads the entry timestamp; the change date is user-entered, so it needs a payload field), and a Contract field would put a date on the Contract against 'No dates' while OQ-144 is open. Noted domain-model.md has no statement of the link."
+  },
+  {
+   "id": "DM-02",
+   "kind": "NewLifecycle",
+   "title": "Replace a Contract from a date, as one action",
+   "catalogue_says": "US-04.1.8 (new): one action creates a new Contract copied from the old with any setting changed (the settings fixed at creation included), lists the Procedures dated on or after the date still on the old Contract, moves only the ones the office ticks (each an audited Procedure change, authorised Lists locked and not listed), then leaves the old Contract Active with a to-do or disables it at once. A non-fixed replacement is offered from the day it is saved; a system Contract cannot be replaced. US-04.1.2 and US-04.1.3 point to it; a fixed price changing from a date is a price range, not a replacement (US-04.2.15). US-04.1.7 lists a Contract's event fees on its page.",
+   "prototype_has": "Two separate acts: the office creates a new Contract by hand, optionally naming the one it replaces and a date, and the panel shows a read-only list of Procedures still on the old one. Nothing copies the old Contract, nothing moves Procedures from the panel (each move is a separate setProcedureContract on its own Booking, which has no planner and calls mutate() itself with side effects: clears typed price and rail answers, may re-open a completed Booking, may settle a prepayment), and the old Contract is neither left with a to-do nor disabled as part of it. The list already excludes authorised Lists and cancelled Bookings but not removed Draft Lists (proceduresStillOnContract). A Contract's event fees are separate records (masters.contractEventFees) that planContractCreate does not copy.",
+   "catalogue_refs": [
+    "requirements-board/requirements/stories/US-04.1.8.md",
+    "requirements-board/requirements/stories/US-04.1.2.md",
+    "requirements-board/requirements/stories/US-04.1.3.md",
+    "requirements-board/requirements/stories/US-04.2.15.md",
+    "requirements-board/requirements/stories/US-07.3.1.md",
+    "requirements-board/requirements/stories/US-04.1.7.md"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx:138",
+    "aa-prototype/src/domain/billing/contractChanges.ts:43",
+    "aa-prototype/src/store/contractChangeSelectors.ts:14",
+    "aa-prototype/src/store/contractSelectionActions.ts:99",
+    "aa-prototype/src/store/contractActions.ts:169",
+    "aa-prototype/src/store/contractEventFeeActions.ts"
+   ],
+   "impact": "New office-only store action: create the copy (planContractCreate is the create half, runs contractRefusal, new AA code, DM-01 link), move exactly the ticked Procedures through the existing Contract change path, then leave or disable the old Contract (move first, then disable). Open points for the phase: setProcedureContract is not plan-shaped, so 'one action' is a sequence of per-Procedure commits or a refactor to a planner; per-row refusal outcomes are needed (contractPickRefusal can refuse when the copy changes holder, links or specialties, and removed Draft Lists are listed but unmovable); whether the copy carries event fees is not stated; a system Contract is refused. Depends on DM-01; carries the New contract page's replace entry and supersedes the warn-only list on create.",
+   "size": "L",
+   "verify_outcome": "corrected",
+   "verify_note": "Upheld as a new lifecycle. Added what the author missed: setProcedureContract has no planner and carries side effects, the removed-Draft-List gap in the still-on list, and event fees as separate records not covered by the copy. Corrected line refs (ContractEditSheet 138, planContractCreate 169)."
+  },
+  {
+   "id": "DM-03",
+   "kind": "NewEntity",
+   "title": "A Contract still Active after its replacement date is a to-do item",
+   "catalogue_says": "US-04.1.8: when the old Contract is left Active, on the change date a to-do reminds the office to disable it, and the old Contract stays offered until it does. FT-13.7 and US-13.7.2: the dashboard to-do list. OQ-144 (open): the to-do stands in until a Contract can be disabled from a future date.",
+   "prototype_has": "The to-do list has two row kinds, both keyed to a Booking: open warnings and Bookings with no Contract (ToDoItem). Warning carries a bookingId and WarningFacts is one Booking, so no rule can take a Contract as subject. No to-do row concerns a Contract and none depends on a date passing. The noContract rows show only on the Admin Day rail's work card, which opens rows through onOpenBooking only.",
+   "catalogue_refs": [
+    "requirements-board/requirements/stories/US-04.1.8.md",
+    "requirements-board/requirements/stories/FT-13.7.md",
+    "requirements-board/requirements/stories/US-13.7.2.md",
+    "requirements-board/requirements/questions/OQ-144.md"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/apps/admin/components/WarningsToDo.tsx:26",
+    "aa-prototype/src/apps/admin/components/WarningsToDo.tsx:36",
+    "aa-prototype/src/domain/warnings/types.ts:114",
+    "aa-prototype/src/apps/admin/components/RailWorkCard.tsx:12"
+   ],
+   "impact": "A third ToDoItem kind with a Contract subject, derived (not stored) from the DM-01 link once the demo clock reaches the change date while the old Contract is still Active, leaving the list when the office disables it. Follows the noContract row's pattern (a work list, no Clear) on the rail's work card, not the warning routine or its clearance store. toDoItems ordering needs a rule for a row with no session; the rail card needs a way to open a Contract (the row opens the old Contract's page); whether a re-enabled old Contract brings the row back is unstated. No persisted state. Needs DM-01.",
+   "size": "M",
+   "verify_outcome": "upheld",
+   "verify_note": "Catalogue statement and prototype gap confirmed in code. Added the rail card's navigation limit, the re-enable edge and the line refs; nothing about the delta changed."
+  },
+  {
+   "id": "DM-04",
+   "kind": "ChangedLifecycle",
+   "title": "Disabling is confirmed and lists the Procedures first",
+   "catalogue_says": "US-04.1.2 'Disable confirmed': the office confirms a disable and is shown the Procedures dated from today still on the Contract. US-04.1.8: a late disable of a replaced Contract lists the Procedures from the change date, not only from that day on; 'Old one disabled' disables as it is replaced. The review flag for a Procedure dated on or after the disable day (US-07.2.2) is unchanged.",
+   "prototype_has": "Disable is one click that sets status disabled at once (toggleStatus, disableContract). The Procedures still on it are listed only afterwards, on the disabled Contract's panel, from the disable day (stillOnContract with disabledDay or today). No confirmation step and no list before the change.",
+   "catalogue_refs": [
+    "requirements-board/requirements/stories/US-04.1.2.md",
+    "requirements-board/requirements/stories/US-04.1.8.md",
+    "requirements-board/requirements/stories/US-07.2.2.md"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx:259",
+    "aa-prototype/src/store/contractActions.ts:320",
+    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx:142",
+    "aa-prototype/src/domain/billing/contractHistory.ts:68"
+   ],
+   "impact": "The list moves ahead of the change, from today by default, and from the DM-01 change date when the Contract was replaced and is disabled after that date. No store invariant changes (a Procedure on a Disabled Contract keeps it; the review flag still keys on the audit's disable day, so a Procedure dated between the change date and the disable day is listed but not flagged, as the criterion expects), so the confirm step is the existing read proceduresStillOnContract with a different fromISO, plus the 'disable as it is replaced' path DM-02 calls. The post-disable listing can go. Shares the list component and fromISO choice with DM-02. Needs DM-01 only for the replaced case.",
+   "size": "S",
+   "verify_outcome": "upheld",
+   "verify_note": "Confirmed: disable is one click with the list shown only afterwards. Added that the flag/list difference for the late disable is intended by the criterion, and the shared list with DM-02."
+  }
+ ],
+ "deltaSummary": "All four deltas survived; none dropped and none added. I updated /Users/d.fraser/Development/Stratos Dev/AnaesthesiaAssociatesRFP/docs/build-plan/analysis/domain-model-delta.md to match.\n\nDM-01 is corrected. The relationship and the need are real. The home needed fixing, because the change date is chosen by the office. The existing `disabledDaysByContract` reads the audit entry's timestamp, which is the save time, so the replacement's audit entry needs an explicit `replaces {contractId, fromISO}` field. A `fromISO` field on the Contract would be a date on the Contract. That sits against US-04.1.2 \"No dates\" and the open OQ-144. So the audit route is recommended, with no persist bump and no seed change needed. `domain-model.md` does not describe the link, so US-04.1.8 is its only authority.\n\nDM-02 is corrected. I added three points the author missed:\n- `setProcedureContract` has no planner. It calls `mutate()` itself and has side effects: it clears the typed price and rail answers, can re-open a completed Booking, and can settle a prepayment. \"One action\" is therefore a run of per-Procedure commits, or a refactor into a planner.\n- The still-on list does not exclude removed Draft Lists, but those Procedures cannot be moved.\n- Event fees are separate records (`masters.contractEventFees`) that the create planner does not copy. The stories leave open whether the copy carries them.\n\nI also corrected two line refs and noted that the old Contract must be moved from first, then disabled.\n\nDM-03 and DM-04 are upheld, with notes added. For DM-03, the rail's work card opens rows only as Bookings and needs a way to open a Contract. Whether a re-enabled old Contract brings the to-do back is unstated. For DM-04, the late-disable list and the review flag differ on purpose, as the criterion expects, and the list is shared with DM-02.\n\nI also re-checked the author's \"no delta\" list. The Contract page, grouped list, Parties and Funding tags tabs, and price-range table are screens over data that already exists. The holder-fixed rule is already enforced in the prototype.",
  "reverseFindings": [],
  "reverseSummary": "",
- "excluded": []
+ "excluded": [
+  {
+   "id": "FT-04.4",
+   "title": "Default Contracts for hospitals, insurers and procedures",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "FT-06.1",
+   "title": "Prepaid procedure settings on the anaesthetist profile",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "FT-06.4",
+   "title": "Settlement after the procedure",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "FT-11.4",
+   "title": "Insurers",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "FT-14.1",
+   "title": "HL7 v2 inbound",
+   "status": "Proposed (1)"
+  },
+  {
+   "id": "FT-14.2",
+   "title": "FHIR R4",
+   "status": "Proposed (1)"
+  },
+  {
+   "id": "FT-14.3",
+   "title": "Near real time",
+   "status": "Proposed (1)"
+  },
+  {
+   "id": "FT-14.5",
+   "title": "Reliability and monitoring",
+   "status": "Proposed (1)"
+  },
+  {
+   "id": "FT-14.6",
+   "title": "Further hospital feeds and automatic matching",
+   "status": "Proposed (1)"
+  },
+  {
+   "id": "US-01.3.4",
+   "title": "AM and PM can differ",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-02.1.5",
+   "title": "Automatic sync from St George's and Southern Cross",
+   "status": "Proposed (1)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-02.2.2",
+   "title": "Edit then ingest",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-02.2.3",
+   "title": "Detect Bookings removed from a re-sent List",
+   "status": "Verify (3)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-02.3.5",
+   "title": "Send booking change emails automatically",
+   "status": "Proposed (1)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-02.4.2",
+   "title": "Photo capture of the physical card",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-02.4.3",
+   "title": "Copy a Booking",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-02.4.4",
+   "title": "Add a Booking from a photo of the booking card",
+   "status": "Proposed (1)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-02.5.1",
+   "title": "Apply a modification",
+   "status": "Agreed (4)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-02.5.2",
+   "title": "Reschedule to another day arrives as cancel and new Booking",
+   "status": "Agreed (4)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-02.5.3",
+   "title": "Record a cancellation",
+   "status": "Agreed (4)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-02.5.4",
+   "title": "Inbound changes accepted until the List is authorised",
+   "status": "Agreed (4)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-02.5.6",
+   "title": "Concurrent edits",
+   "status": "Proposed (1)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-03.1.3",
+   "title": "Attachments",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-03.3.2",
+   "title": "Override a ranged base code",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-03.3.5",
+   "title": "Itemise modifiers",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-03.3.6",
+   "title": "Other billing lines",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-03.3.7",
+   "title": "Rate x time capture",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-03.5.3",
+   "title": "Adjustment reason",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-04.1.6",
+   "title": "Stage Contract changes for review, then submit",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-04.2.10",
+   "title": "Contract prices effective from a date",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-04.2.12",
+   "title": "Payment setting: full payment or split",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-04.2.13",
+   "title": "Export and re-import Contracts",
+   "status": "Verify (3)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-04.2.3",
+   "title": "Base unit override",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-04.2.4",
+   "title": "Contract lines",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-04.2.5",
+   "title": "Multi-procedure rule per Contract",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-04.2.6",
+   "title": "Adjustment and override permissions",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-04.2.7",
+   "title": "Required booking inputs",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-04.2.9",
+   "title": "Organisational and individual Contracts",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-04.3.6",
+   "title": "Hospital data sets the Contract",
+   "status": "Proposed (1)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-04.3.7",
+   "title": "Confirm a price with the hospital",
+   "status": "Verify (3)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-04.4.1",
+   "title": "Mandatory default Contract",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-04.4.2",
+   "title": "Default RVG Contract for every procedure",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-05.1.2",
+   "title": "Add AA codes",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-05.1.6",
+   "title": "Procedure master mapped to RVG codes",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-05.2.3",
+   "title": "Conditional positioning modifier",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-05.2.4",
+   "title": "Contract rate or discount",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-05.3.2",
+   "title": "Time units on every Procedure",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-05.3.3",
+   "title": "Modifier split above four units",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-05.3.4",
+   "title": "Contract-specific second-procedure rules",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-06.1.1",
+   "title": "Tick procedures or groups",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-06.1.2",
+   "title": "Admin can maintain on behalf",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-06.2.3",
+   "title": "Prepayment is an estimate",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-06.2.4",
+   "title": "Calculate the prepayment estimate",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-06.2.5",
+   "title": "Estimated duration from the surgeon's rooms",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-06.3.3",
+   "title": "Alert on unpaid prepayment",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-06.4.2",
+   "title": "No automatic credit when prepaid exceeds final",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-07.1.2",
+   "title": "Cannot submit an incomplete List",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-08.1.2",
+   "title": "Contract already resolved",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-09.1.2",
+   "title": "InvoiceNumber and Reference",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-09.3.2",
+   "title": "NHI never sent to Xero",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-10.2.2",
+   "title": "Partial payment releases exactly that amount",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-11.1.3",
+   "title": "Deduplicate on NHI",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-11.4.1",
+   "title": "Insurer master data",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-11.4.2",
+   "title": "Insured patient who forwards the invoice",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-12.1.2",
+   "title": "GST period",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-12.1.3",
+   "title": "Prepaid procedures",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-12.1.5",
+   "title": "Bank details for disbursement",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-13.2.3",
+   "title": "Per-anaesthetist balance",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-13.6.1",
+   "title": "Surgeons' rooms master record",
+   "status": "Retired (6)"
+  },
+  {
+   "id": "US-13.7.4",
+   "title": "Warning and check-step settings",
+   "status": "Proposed (1)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-14.1.1",
+   "title": "Parse SIU messages",
+   "status": "Proposed (1)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-14.2.1",
+   "title": "Internal booking model",
+   "status": "Proposed (1)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-14.3.1",
+   "title": "Real-time processing",
+   "status": "Proposed (1)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-14.5.1",
+   "title": "Integration failure visibility",
+   "status": "Proposed (1)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-14.6.1",
+   "title": "Feeds from the other Christchurch providers",
+   "status": "Proposed (1)",
+   "swimlane": "Future Work"
+  },
+  {
+   "id": "US-14.6.2",
+   "title": "Automatic matching and updates",
+   "status": "Proposed (1)",
+   "swimlane": "Future Work"
+  }
+ ]
 }

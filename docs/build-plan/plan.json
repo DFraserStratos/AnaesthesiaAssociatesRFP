@@ -1,7 +1,225 @@
 {
- "commit": "64b3dff7aef0a2a290e6f6a50f42a28d3874c540",
- "phases": [],
+ "commit": "5f87781b1df9364ea9462c031b1b8b6ce68424a7",
+ "phases": [
+  {
+   "num": "45",
+   "slug": "contracts-section-and-contract-page",
+   "title": "The Contracts section and the Contract page",
+   "track": "Contracts",
+   "goal": "Contracts leaves Master data for its own section of the Admin app, and every Contract gets a page of its own (D92). Routes: an /admin/contracts route block with the index list, /admin/contracts/:contractId (keyed by the Contract id, never the AA code, because the AA code is editable) and /admin/contracts/new, which still opens the old ContractEditSheet in create mode until 46. A Contracts side-nav entry goes between Ledger and Master data (SideNav.tsx, AdminApp sectionForPath). /admin/masters?view=contracts, with &contract=<id> or &holder=<PartyId>, redirects to the new routes (D93), so the capture recipes, the demo guide and Playwright keep loading until the owner's sweep; in-app links go to the routes directly. The list moves to apps/admin/screens/contracts on AdminPage fit with a LineTabs strip. Contracts is live there; Parties and Funding tags link to their Master data views until 48. The list keeps today's holder headings, search and status filter until 47 groups it. The Contract page sits on ProfilePage fluid with the 412px rail. Its header shows name, AA code and status, with Disable or Make active. Its tabs are Overview, Bookings, Event fees and History. The Overview cards are each edited and saved on their own through a new shared Card editing/footer variant, as one editContract patch and one audited change (US-04.1.3, per card), refused on the card with the rule's reason. The cards are: price (the price ranges table, or the rate or discount); where it is offered; who it bills, with the holder Party's billing name and delivery read-only and a link to change them on the Party; names and codes; and what was fixed at creation (holder, pricing kind, prepaid), read-only. The price ranges become a table (US-04.2.15), newest first, with From, To worked out, Price, Change on the range before, and Procedures priced from a new pure, tested proceduresPerRange. The current and future ranges always show; ended ranges fold after three behind 'Show earlier'; a range is added or corrected as a row. The rail, 'On this Contract', lists the upcoming not-yet-billed Procedures and the authorised ones at their locked price. Disable asks first (DM-04, US-04.1.2 Disable confirmed): a ConfirmSheet danger variant lists stillOnContract from today, and nothing moves; Make active undoes it. System Contracts (No contract · RVG and the backstops) have the same page, with only name, AA code and invoice description editable and no Disable. The side panel's edit path and its after-the-disable listing are retired; create keeps the panel until 46. Layout: docs/explorations/contracts-section.html #map, #catalogue (the list frame), #record and #updating.",
+   "delivers": "A Contracts entry in the Admin side nav between Ledger and Master data, with the Contract list moved there and the old Master data links redirected. A page per Contract at its id: cards edited and saved one at a time, each one audited change, refused in place; the holder Party's billing details read-only; the price ranges as a newest-first table with To, Change and Procedures priced, ended ranges folded after three; the Procedures on it, its event fees and its history; Disable confirmed, listing the Procedures from today; system Contracts limited. The edit side panel is retired, though create keeps it until 46",
+   "depends_on": [],
+   "est_sessions": "2 sessions",
+   "covers": [
+    "US-04.1.7",
+    "US-04.2.15",
+    "DM-04"
+   ],
+   "demo_triggers": [
+    "Admin · Contracts list and Merivale's Face lift page: re-point the existing 'Demo: add a backdated price range' (demo-backdated-range, registry.ts). Its routes and `when` move from Master data (adminMasters.view === 'contracts', adminContracts.openContractId) to /admin/contracts and the Face lift's /admin/contracts/:contractId. On a page, not a modal, it runs from the Face lift itself, and the new range shows as the table's top row with its Procedures-priced count and the kept-price warning. Its screen label follows the move, and demoGuideSync.test.ts stays green",
+    "Admin · Contracts list: the contracts and priceRanges spreadsheet sample-sheet triggers (SEEDED_SHEETS_BY_VIEW, keyed on adminMasters.view) follow the list to the new route",
+    "Product, no trigger: a card's Edit, Save and Cancel (one audit row each); Disable's confirm listing the Procedures from today, then Make active; a system Contract's page with only name, AA code and invoice description editable",
+    "PWA: none (Admin only)"
+   ],
+   "blocked_by_oqs": [
+    "OQ-144"
+   ],
+   "risks": "The largest phase, at two sessions. Session 1: the section, routes, redirects and side nav, the list moved, and the page shell with read-only cards, tabs and rail. Session 2: the Card editing variant and per-card saves, the price ranges table with proceduresPerRange and the fold, the Disable dialog, retiring the panel's edit path, and the Playwright specs. The Contract id goes in the URL, not the AA code (D92 overrides #record). The new shared variants (Card editing/footer, ConfirmSheet danger) default to today's look, match a docs/design pattern and update their /demo/catalogue rows. ProfilePage lives in apps/admin/components/ProfileChrome.tsx; the catalogue's ProfileChrome row still previews ProfileHeader (a BACKLOG clause this may close). editContract already audits a partial patch as one contract.update, so if a card sends only its own fields, one save is one audited change with no store change. Refusals (contractRefusal, holderBillingDetails) show on the card. proceduresPerRange is pure and tested: define 'priced' (Procedures on the Contract dated in the range's span whose price came from the range, not a typed or locked one) and log it. The rail and the Bookings tab read stillOnContract and lockedAgainstContract. appCopy.test.ts MUST_KEEP pins the D23 caption 'A prepaid Contract always bills the payer, awaiting AA's confirmation.' to ContractEditSheet.tsx: the who-it-bills card shows it too, with its own pin, and the sheet keeps it for create until 46. In-app links that open the panel (review flags, Billing cards, Audit rows, the Parties 'N active' link) go to the route directly. The redirect keeps &contract= and &holder=, and the holder filter stays until 47. Playwright specs that drive the panel (contracts-phase19a, price-phase24, lock-phase25, contract-warnings-phase25a, split-phase22, phase39b-events, overlays-u2, admin-phase18a) move to the page in this phase. Capture recipes that click into the panel break until the sweep: list them under 'For the sweep'. No seed change and no PERSIST_VERSION bump.",
+   "file": "phases/phase-45-contracts-section-and-contract-page.md",
+   "prompt_file": "phases/phase-45-contracts-section-and-contract-page.prompt.md",
+   "goal_short": "Review of Phase 45 (Contracts section and Contract page) doc and prompt",
+   "checks": [
+    "1 pass: brief changes (US-04.1.7, US-04.2.15, DM-04, US-04.1.2 Disable confirmed, US-04.1.3 per-card half) all reached the doc; no retired content survives",
+    "2 pass: D90/OQ-144 built to its default (no future-dated disable), D92/D93/D95/D96 built as decided",
+    "3 pass: named files, functions and specs exist by grep; new items (contractsPaths.ts, proceduresPerRange, rangeChange, disableFromISO, lockedPrice, adminContracts.tab) are marked new",
+    "4 pass: scope matches the outline entry; 49's wider list from the change date is kept out",
+    "5 pass: drift baseline is 5f87781",
+    "6 pass: prompt is slim and doc-first with Override, five rules and Phase goal; no absolute paths or generic steps",
+    "7 fixed: demo triggers are screen-contextual (bar, PWA none); sweep notes now name master-demo-guide.html with the S5 page",
+    "8 pass: design page sections #map, #catalogue, #record, #updating named per screen; no frontend-design bullet in prompt",
+    "9 pass: Work item 13 builds on shared components; review steer flags private copies",
+    "10 pass: prompt carries the commit-when-green, no-screenshots Override"
+   ]
+  },
+  {
+   "num": "46",
+   "slug": "new-contract-page",
+   "title": "The New contract page",
+   "track": "Lane A",
+   "goal": "A new Contract is entered on its own page. This builds US-04.1.2's New contract order and Similar name criteria; the story's unit sits on 47 (D96). The page is /admin/contracts/new, with ?holder=<PartyId> prefilled from a Party or the holder grouping. It is filled in the order its rules depend on:\n1. Holder and who it bills. A Contract held by an anaesthetist or AA, or a prepaid one, is fixed to the payer before pricing is chosen (billsPayerOnly, takesLinks).\n2. Pricing: the pricing kind, the rate or the first price range, prepaid, and whether the anaesthetist may change the price (pricingKindFixed, prepaidFixed).\n3. Where it is offered: linked surgeons or anaesthetist, specialties and funding tag.\n4. Name, AA code (nextAaCode), holder reference, invoice description and default RVG code.\nA rail shows two things live. 'Where it will show' on the step rail reads destinationOf (D91). 'Already held' lists the holder's existing Contracts with a similar name, from a new pure, tested similar-name helper, as a hint and never a block. Create runs the existing planContractCreate (contractRefusal) and lands on the new Contract's page (45). ContractEditSheet is deleted, together with its warning-only 'Replaces' picker on create (US-04.1.8 replaces it in 49) and its /demo/catalogue rows. The D23 caption pin moves to the new page. Layout: docs/explorations/contracts-section.html #new.",
+   "delivers": "New contract as a full page in rule order (holder and who it bills, pricing, where it is offered, name and codes), with a live 'Where it will show' and the holder's similarly named Contracts shown as a hint, never a block. Saving lands on the new Contract's page. ContractEditSheet and its warning-only Replaces picker are deleted",
+   "depends_on": [
+    "45"
+   ],
+   "est_sessions": "1 session",
+   "covers": [],
+   "demo_triggers": [
+    "None: New contract is normal use (start a Contract for a holder that already holds a similarly named one, and watch 'Already held' and 'Where it will show' update)",
+    "PWA: none (Admin only)"
+   ],
+   "blocked_by_oqs": [
+    "OQ-145"
+   ],
+   "risks": "No unit of its own: US-04.1.2's sits on 47 (D96). Take US-04.1.2's New contract paragraph and its New contract order and Similar name criteria (plan-state --diff US-04.1.2) as this phase's acceptance, and have its drift check read US-04.1.2. Deleting ContractEditSheet touches appCopy.test.ts (move the D23 MUST_KEEP pin to the page's file), apps/anaesthetistSimplicity.test.tsx, and the /demo/catalogue AdminCatalogue.tsx and admin/storeExamples.tsx rows, all in this session. The Replaces picker's selector path goes only where nothing else reads it: stillOnContract and proceduresStillOnContract stay for 45 and 49. From 46 to 49 a dated change has no in-app helper; this goes on the owner's review list. The similar-name helper is pure in domain/billing and tested with the criterion's 'Abdominoplasty, simple' against 'Abdominoplasty with liposuction'. The example need not be seeded (no seed change, no PERSIST_VERSION bump). Fields that depend on earlier ones (who it bills, prepaid, links) re-check through the existing rules when the holder or pricing kind changes. It is a page, not a SidePanel (#new), built from 45's Card variant and the shared fields.",
+   "file": "phases/phase-46-new-contract-page.md",
+   "prompt_file": "phases/phase-46-new-contract-page.prompt.md",
+   "goal_short": "The New contract page",
+   "checks": [
+    "1 pass: brief has no covers or catalogue changes; owner brief items (RadioCard, SelectField, ChipMultiSelect, TextField mono, destinationOf+destinationHint, similar-name helper, createContract, ContractEditSheet deletion, ContractPanel and MasterPanel rows) all in doc; Replaces picker removed, stillOnContract kept",
+    "2 pass: OQ-73 (D23) built as answered, OQ-145 at default (D91)",
+    "3 pass: grep found every named function, constant, refusal key and file; new files (contractSimilarity.ts, contractDraft.ts, NewContractPage) marked new; BACKLOG line cited by text",
+    "4 pass: scope matches outline entry for 46; D92 id route, D93 redirects, D95, D96 respected",
+    "5 pass: drift baseline is 5f87781",
+    "6 pass: prompt is slim, loads run-build-phase, has Override, rules and Phase goal, no absolute paths or generic steps",
+    "7 pass: no demo triggers (normal use), PWA none; demo guide and master-demo-guide unchanged, sweep notes listed",
+    "8 pass: design page sections #new, #map, #record plus admin-layout-audit named; prompt has no frontend-design bullet",
+    "9 FIXED: no explicit 'Build on the shared components' work item; added as Work item 9 (adversarial review already says a private copy is a finding)",
+    "10 pass: prompt carries the commit-when-green, no-screenshots Override"
+   ]
+  },
+  {
+   "num": "47",
+   "slug": "grouped-contract-catalogue",
+   "title": "The grouped Contract catalogue",
+   "track": "Lane B",
+   "goal": "The Contract list becomes the grouped catalogue, finishing US-04.1.2 (its unit; D96): the Grouped and Two surgeons criteria, the search, and the Active, Disabled or all filter. A new pure, tested groupContracts in domain/billing groups the Contracts six ways:\n- holder\n- kind of holder (AA, hospitals, insurers, funders, surgeon groups, surgeons, anaesthetists)\n- funding tag, with No tag\n- surgeon, where a Contract linked to two surgeons shows under both\n- where the invoice goes (destinationOf, D91)\n- pricing kind\nThe catalogue has two panes on AdminPage fit. The index pane lists the groups with their counts. The other pane lists the chosen group's Contracts under sub-headings (a new GroupRow sub-heading variant in shared/table/cells.tsx), searched by name, holder reference or AA code. The grouping and the picked group live in the URL (?group=, ?in=), and the last grouping is remembered per office user. The holder filter becomes the holder grouping: ?holder=<PartyId>, and D93's redirected &holder=, open ?group=holder&in=<PartyId>. The default grouping is Kind, as contracts-section.html #map draws it (/admin/contracts?group=kind); it goes on the owner's review list. Layout: docs/explorations/contracts-section.html #catalogue and #map.",
+   "delivers": "The Contract catalogue grouped by holder, kind of holder, funding tag, surgeon, where the invoice goes or pricing kind, with an index of groups and counts beside the list. The grouping lives in the URL and is remembered per office user, and the holder filter is folded into the holder grouping",
+   "depends_on": [
+    "45"
+   ],
+   "est_sessions": "1 session",
+   "covers": [
+    "US-04.1.2"
+   ],
+   "demo_triggers": [
+    "None: the grouping, the index and the URL are normal use",
+    "PWA: none (Admin only)"
+   ],
+   "blocked_by_oqs": [
+    "OQ-145"
+   ],
+   "risks": "US-04.1.2 is split (D96): its Disable confirmed criterion is built in 45, and New contract order and Similar name in 46. This phase verifies the whole story at its close. groupContracts is pure and tested. A two-surgeon Contract counts in both surgeon groups, so the index shows counts per group, not a sum. Decide and log where system Contracts sit in each grouping (default: a 'No contract' group first, as the step rail heads them). The destination grouping reads destinationOf, so a hospital's untagged Contracts sit under Special (D91). The remembered grouping belongs to the signed-in office user, not one global value. Choose its home (a store preference, or a per-viewer browser-storage convenience wrapped in try/catch), log it, and keep it deterministic under Vitest. The GroupRow sub-heading variant defaults to today's look and updates its /demo/catalogue row. The toolbar (search, status, grouping) should fit one row at 1280 (a clause of BACKLOG's Admin page frame line). At practice scale (about 343 Contracts), derive the groups once per render. Playwright specs that used ?holder= follow the new URL. No seed change.",
+   "file": "phases/phase-47-grouped-contract-catalogue.md",
+   "prompt_file": "phases/phase-47-grouped-contract-catalogue.prompt.md",
+   "goal_short": "The grouped Contract catalogue",
+   "checks": [
+    "(1) Brief changes all reached the doc: six groupings, the index, the search, the Active, Disabled or All filter, the two-surgeon Contract under both, the holder filter folded into the holder grouping, the remembered grouping, and D96. The Disabled flag criterion was missing from the item 11 walk and is now there. Nothing retired or superseded survives, and the Replaces picker is left to 46.",
+    "(2) OQ-145 (D91) is built to its default, with Special for a hospital's untagged Contract, and logged on the owner's review list. OQ-144 is noted as having no effect. D92 (Contract id in the URL) and D93 (the ?holder= redirect) are built as decided.",
+    "(3) The files and functions the doc names exist: destinationOf, fundingTagsInOrder, contractSearch, Pager, pageOf, pageParam, the specs, ADMIN_SUBNAV_WIDTH, setOfficeUser, officeActorOf, and the BACKLOG clause 'the Contracts toolbar wraps to two rows at 1280'. groupContracts, GroupIndex, PARTY_KIND_PLURAL, shell.contractGrouping and the pageSizes.contracts key are marked new. Spec line 86 holds the ?holder= goto.",
+    "(4) Scope matches the outline entry, and 48 is the only consumer left for later.",
+    "(5) The drift-check baseline is 5f87781.",
+    "(6) The prompt is slim and doc-first. It loads run-build-phase and keeps the opening line, the Override, a few hold-above-all rules and the Phase goal. It has no absolute path and no generic steps.",
+    "(7) Demo triggers are 'None, PWA none' and the Demo guide section says none; this is acceptable because the grouping is normal use.",
+    "(8) The design page docs/explorations/contracts-section.html (#catalogue, #map, #record) is named with Admin Review and Design Language. The prompt has no frontend-design bullet.",
+    "(9) The shared-components work item was titled 'Shared components and the catalogue'. It is now 'Build on the shared components', and it also bars raw styled buttons and inputs. The adversarial steer now says a new private copy of a shared component is a finding.",
+    "(10) The prompt carries the commit-when-green, no-screenshots Override."
+   ]
+  },
+  {
+   "num": "48",
+   "slug": "parties-and-funding-tags-tabs",
+   "title": "The Parties and Funding tags tabs",
+   "track": "Lane B",
+   "goal": "Parties and Funding tags leave Master data for their own tabs of the Contracts section (US-13.4.1, US-04.1.5, US-13.4.5): /admin/contracts/parties and /admin/contracts/tags, in 45's tab strip. The three Master data views (parties, fundingTags, contracts) leave masterViews.ts, whose Billing group keeps RVG groups and Modifiers, and masterViews.test.ts's catalogue-row mapping changes with them. ?view=parties and ?view=fundingTags redirect (D93). Master data shows a one-line pointer: Contracts, Parties and Funding tags are now in Contracts. The Parties tab is grouped by kind (47's GroupRow sub-heading), Parties with no Contracts included. Each Party gets a page at /admin/contracts/parties/:partyId on ProfilePage fluid. The page holds its details, edited in place (45's Card editing variant over the existing Party rules and audit), and its Contracts counted by funding tag, No tag included. Each count opens the catalogue at that holder and tag (47's URL). The Funding tags tab keeps the ordered list (Up and Down), each tag's funder, and its audited add, edit and remove. Picking a tag shows its Contracts grouped by hospital with each hospital's count (groupContracts), each opening the catalogue. Layout: docs/explorations/contracts-section.html #parties, #tagstab and #map.",
+   "delivers": "Parties and Funding tags as tabs of the Contracts section. Parties are grouped by kind, Contract-less ones included, and each Party has a page with its Contracts counted by funding tag. Each tag's Contracts are grouped by hospital with counts. The three views leave Master data, with redirects and a pointer line",
+   "depends_on": [
+    "45",
+    "47"
+   ],
+   "est_sessions": "1 session",
+   "covers": [
+    "US-04.1.5",
+    "US-13.4.1",
+    "US-13.4.5"
+   ],
+   "demo_triggers": [
+    "Admin · Parties and Funding tags tabs: the parties and fundingTags spreadsheet sample-sheet triggers (SEEDED_SHEETS_BY_VIEW, keyed on adminMasters.view) re-point to the new tabs",
+    "Product, no trigger: a Party page's per-tag counts opening the catalogue; picking a tag to see its Contracts by hospital",
+    "PWA: none (Admin only)"
+   ],
+   "blocked_by_oqs": [
+    "OQ-114"
+   ],
+   "risks": "The per-tag count opens the catalogue at holder plus tag through 47's URL. Pick one URL shape (the holder grouping narrowed by tag, or the tag grouping narrowed by holder) and log it. Removing the three views touches masterViews.ts, masterViews.test.ts, and MasterData.tsx's published adminMasters.view, and the parties and fundingTags sample-sheet triggers re-point. Seed load and Go-live load stay in Master data's Go-live group and still load the contracts, priceRanges, parties and fundingTags sheets. Where their copy says Master data for those sheets, it names the Contracts section. The Party edit SidePanel gives way to the Party page for editing; whether New party keeps a panel or gets a page is decided and logged. Funding tag behaviour (order, funder, audited changes, Suggested path) must not regress. OQ-114: delivery stays email or post. Playwright specs on ?view=parties and ?view=fundingTags (admin-phase18a and others) move; recipes and ATLAS wait for the sweep. No seed change.",
+   "file": "phases/phase-48-parties-and-funding-tags-tabs.md",
+   "prompt_file": "phases/phase-48-parties-and-funding-tags-tabs.prompt.md",
+   "goal_short": "Review Phase 48 doc and prompt (Parties and Funding tags tabs)",
+   "checks": [
+    "1 pass: all three covers, Parties by kind, per-tag counts, tags by hospital, and the Master data move with pointer reached the doc; nothing retired survives",
+    "2 pass: D92, D93 and D95 built as decided; OQ-114 at its default; the doc sets the open URL-shape question to a built default",
+    "3 pass: existing files, components and functions grep-confirmed (masters views, PartyPanel, editParty, partyContractFacts, destinationOf, isOfficeContract, fundingTagUsage, SEEDED_SHEETS_BY_VIEW, Segmented in Field.tsx, specs); new ones (partyContracts.ts, PartyPage, PartyFormFields, tabs) marked new",
+    "4 pass: scope fits the outline entry for Phase 48",
+    "5 pass: drift baseline is 5f87781",
+    "6 fixed: prompt had a redundant 'Also read' block repeating the doc's Before you start reads; removed. Otherwise slim and doc-first, no absolute paths, no generic steps",
+    "7 pass: triggers re-point on the harness bar, PWA none; the doc names no demo guide edits and lists the lines for the sweep",
+    "8 pass: contracts-section.html with #parties, #tagstab and #map named as the design reference; no frontend-design bullet in the prompt",
+    "9 pass: item 12 'Build on the shared components' present and the review steer covers private copies",
+    "10 pass: commit-when-green and no-screenshots Override present"
+   ]
+  },
+  {
+   "num": "49",
+   "slug": "replace-contract-from-a-date",
+   "title": "Replace a Contract from a date",
+   "track": "Lane A",
+   "goal": "Replace a Contract from a date, in one action (US-04.1.8, DM-01, DM-02, DM-03). This also builds US-04.1.3's replacement audit, finishing that story (D96). 'Replace from a date' in the Contract page header (45) opens a SidePanel record sheet with:\n- the change date\n- the new Contract, copied from the old one with any setting changed, the settings fixed at creation included (46's rule-order sections), and a new AA code\n- the Procedures dated on or after the date still on the old Contract (proceduresStillOnContract; authorised Lists left out), each ticked or not, with a per-row outcome where a move is refused\n- leave the old one Active, with a to-do on the date, or disable it now\nA store action, replaceContract, applies it in one change set: the create, then the ticked moves (one audited Procedure change each), then the disable where chosen, audited as US-04.1.3 says. DM-01: the link and the date ride the new Contract's contract.create audit entry (replaces {contractId, fromISO}), read back both ways (D94). DM-03: a warning rule, a To-do and never a blocker: 'a replaced Contract is still active on or after its replacement's date'. It shows in the Day view To-do, opening the old Contract's page, and on that page, and goes once the old Contract is disabled. The late disable: disabling a replaced Contract after its change date lists the Procedures from that date (45's dialog, given the date from DM-01). A replacement not priced as a fixed price says it is offered from today, not from the date; both are offered until the old one is disabled (OQ-144, D90). A fixed price changing from a date points to adding a price range, and a system Contract offers no Replace. The list header's 'any other dated change is a new Contract' copy names Replace. BACKLOG's 'Build what S5 promises' loses its Contract half. Layout: docs/explorations/contracts-section.html #updating and #record (the header).",
+   "delivers": "Replace from a date as one action: a copy with any setting changed and a new AA code; the Procedures from the date listed, locked ones left out and only the ticked ones moved; the old Contract left active with a to-do on the date, or disabled now. Every step is audited in one change set. A late disable lists the Procedures from the change date. A 'Demo: reach the change date' button",
+   "depends_on": [
+    "45",
+    "46"
+   ],
+   "est_sessions": "1 to 2 sessions",
+   "covers": [
+    "US-04.1.8",
+    "US-04.1.3",
+    "DM-01",
+    "DM-02",
+    "DM-03"
+   ],
+   "demo_triggers": [
+    "Admin · Contracts list and a replaced Contract's page: 'Demo: reach the change date' (new, harness bar only), shown while a replacement's change date is still ahead. It moves the demo clock to that date with the existing advanceClockToDate action (shared/demoClockShortcuts.ts, as the prepayment trigger does). The 'Disable <old Contract>' to-do then appears in the Day view To-do and on the old Contract's page while it is still offered. The button is disabled once the date is reached, and the Control Panel's reset puts the clock back",
+    "Product, no trigger: Replace from a date on a rate Contract (copy at the new rate, tick Procedures, leave active or disable now); a late disable listing from the change date",
+    "PWA: none (Admin only)"
+   ],
+   "blocked_by_oqs": [
+    "OQ-144"
+   ],
+   "risks": "The only new domain action; the delta sizes DM-02 at L, so one session, two at most. setProcedureContract (store/contractSelectionActions.ts) has no planner and has side effects: it clears the typed price and rail answers, can re-open a completed Booking, and can settle a prepayment after its commit. Either refactor it into a planner so replaceContract commits once, or sequence per-Procedure commits after the create. Either way, move first, then disable. Each move passes contractPickRefusal: the copy may change holder, links or specialties, and proceduresStillOnContract does not leave out removed Draft Lists, so show a per-row outcome. DM-01's home follows D94 (the audit entry). A stored field would mean a PERSIST_VERSION bump and a date on the Contract, against 'No dates'. Record the choice. Event fees are separate records (masters.contractEventFees) that planContractCreate does not copy. Default: the copy carries them ('every other setting'), on the owner's review list. The warning rule's subject is a Contract, but WarningFacts is one Booking. Either extend the rule mechanism for a Contract subject, or derive the To-do row from a pure rule in domain/warnings/rules (the noContract row's pattern); it is never a blocker. WarningsToDo's ordering needs a rule for a row with no session, and RailWorkCard needs a way to open a Contract. A re-enabled old Contract brings the to-do back (it is derived). System Contracts are guarded as systemNeverDisabled guards them. BACKLOG's 'Build what S5 promises' names two things: delete its Contract half and keep the missing-NHI list as its own line, since nothing here builds it. By default nothing is seeded (the presenter replaces live). 'Reach the change date' moves the global demo clock.",
+   "file": "phases/phase-49-replace-contract-from-a-date.md",
+   "prompt_file": "phases/phase-49-replace-contract-from-a-date.prompt.md",
+   "goal_short": "Replace a Contract from a date",
+   "checks": [
+    "(1) Brief changes all reached the doc (US-04.1.8 criteria incl. late disable from change date, US-04.1.3 audit, DM-01/02/03, backlog line by text); nothing from the removed Replaces picker survives",
+    "(2) OQ-144 built to its default (D90); D94/D92/D96 built as decided; stops stated",
+    "(3) Named files and functions exist (grep) or are marked new",
+    "(4) Scope fits outline (1 to 2 sessions, depends on 45 and 46)",
+    "(5) Drift baseline is 5f87781",
+    "(6) Prompt slim and doc-first, no generic steps or absolute paths",
+    "(7) Trigger contract-reach-change-date is screen-contextual (bar), PWA none; guide S5 beat and master-demo-guide.html section now named (fixed)",
+    "(8) Design page contracts-section.html #updating and #record plus Admin Day named; no frontend-design bullet in prompt",
+    "(9) Shared-components work item was missing: added as item 10; adversarial review already flags private copies",
+    "(10) Prompt carries commit-when-green, no-screenshots Override"
+   ]
+  }
+ ],
  "parked": [],
- "sequencing_rules": "",
- "milestones": []
+ "sequencing_rules": "One track, Contracts, run in order 45, 46, 47, 48, 49 in the main folder on master. Each phase starts once the one before is DONE, committed and tested by the owner. 45 first: it makes the section, its routes, the redirects (D93) and the Contract page. It also adds the shared Card editing/footer variant (reused by 46's and 48's pages and 49's sheet) and the ConfirmSheet danger variant over stillOnContract (reused by 49's late disable). Until 46, New contract still opens the old ContractEditSheet in create mode; its edit path is gone. 46 after 45: the new page lands on 45's Contract page, and 46 deletes ContractEditSheet with its warning-only Replaces picker. From then until 49, a dated change is a new Contract made by hand, and stillOnContract and proceduresStillOnContract stay. 47 after 45: it groups 45's moved list and maps ?holder= to the holder grouping. 48 after 47: each Party's per-tag counts open the catalogue through 47's ?group=/?in= URL, and the tags tab's hospital grouping reuses groupContracts; 48 removes the last three Master data views. 49 last, after 45 and 46: Replace sits in 45's Contract page header, shares 45's still-on-Contract list (the late disable reads it from the change date) and reuses 46's rule-order form sections. No PERSIST_VERSION bump is expected. 49 bumps it only if DM-01 takes a stored field or the seed gains a replacement, and any phase that seeds an acceptance criterion's example bumps it. The redirects stay after 49. Phases update the Playwright specs in aa-prototype/visual/ they break, never the capture recipes, ATLAS or the demo guide, and never run the capture: the owner's sweep re-points those.",
+ "milestones": [
+  {
+   "after": "45",
+   "can_show": "Contracts as its own Admin section. Open any Contract on its own linkable page and change it one card at a time, one audit entry each. Read ten years of price ranges as a table with the Procedures each priced. See who a Contract touches, and disable it only after confirming the Procedures still on it."
+  },
+  {
+   "after": "47",
+   "can_show": "The catalogue grouped six ways with an index of groups and counts: every SXAP Contract across hospitals, or what one surgeon's Lists can be priced at. New Contracts are entered on their own page in rule order, with a live step-rail preview and a similar-name hint."
+  },
+  {
+   "after": "48",
+   "can_show": "The whole Contracts section: the Contracts, Parties and Funding tags tabs, a page per Party with its Contracts counted by tag, and each tag's Contracts by hospital. Master data keeps the rest of the reference data and points across."
+  },
+  {
+   "after": "49",
+   "can_show": "Replace a Contract from a date in one action: copied at the new rate, the ticked Procedures moved, the old one left active with a to-do on the date or disabled now, and a late disable listing from the change date. S5's 'a new Contract supersedes the old one' works as the guide scripts it, and the owner's sweep brings the guide's wording in step."
+  }
+ ]
 }
