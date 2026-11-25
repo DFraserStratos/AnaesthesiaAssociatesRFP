@@ -36,7 +36,6 @@ that need work are repeated here.
 - Run payables in Xero pays about 1,600 BCTIs in one synchronous step at practice scale and freezes the page for 12 to 35 s; capture recipes give the click 45 s and `admin-phase39a` 90 s. Make it asynchronous or faster. `apps/admin/screens/BillingMonitorScreen.tsx` (`PaymentCyclePanel`, `runInXero`), `domain/billing/payablesRun.ts`. M
 - The payment-run toast and schedule print "1617 BCTIs" with no thousands separator. Payment-run message in `store/`. S
 - Billing monitor: `update()` builds the next URL from the last render's params, so two quick filter edits (From then To) at practice scale can drop the first. `apps/admin/screens/BillingMonitorScreen.tsx`. S
-- Ledger table overflows at 1440 wide (Mirrored and "Contact archived in Xero" cut off) and the page scrolls as a whole instead of fitting. `apps/admin/screens/LedgerScreen.tsx`. S
 
 ## Prototype: prepayments and patients
 
@@ -95,7 +94,7 @@ that need work are repeated here.
 Found walking the three apps with all 85 loaded; nothing errors, these are screens at size. Counts are from
 the full-scale data; the everyday data shows the same screens with its own (smaller) billing history.
 
-- Ledger takes 3 to 4 s to open and about 1 s per page or scope change, while its Timings row reads about 1 s painted. `apps/admin/screens/LedgerScreen.tsx`. M
+- The Ledger tab's Invoice pairs (11 columns, 1,080 px) and AA Holding account (8 columns, 880 px) tables scroll sideways inside their cards at 1280 and 1440, so Amount to Xero (pairs) and Amount (Holding) start out of view; the page itself no longer scrolls (Phase 64). Narrow the columns or drop one. `apps/admin/screens/finances/LedgerLists.tsx`, `apps/admin/components/HoldingAccountPanel.tsx`. S
 - Patients has no Timings row. S
 - Long admin lists with no paging or search: Draft Lists (150), Review queue (130), Recurring bookings (393), AA fees "Every fee invoice" (830), the Billing monitor's payment-cycle table. M
 - Anaesthetist names sort three ways: by first name (the Conflicts filter, Recurring bookings, AA fees, web Availability and Who's free, mobile Availability), in roster order (the Recurring booking sheet, the Ledger select), by surname (Day view, Billing monitor, the move pickers). One rule, surname, everywhere. S

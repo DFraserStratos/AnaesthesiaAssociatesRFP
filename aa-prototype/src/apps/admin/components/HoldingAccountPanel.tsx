@@ -6,6 +6,7 @@ import type { HoldingEntry } from '../../../domain/billing/prepayHolding'
 import { Card } from '../../../shared/ui/Card'
 import { EmptyState } from '../../../shared/ui/EmptyState'
 import { Pill } from '../../../shared/ui/Pill'
+import { PageHeader } from '../../../shared/ui/PageHeader'
 import { TableShell, Td, Th } from '../../../shared/table'
 import { dayMicroCap, formatCurrency, plural } from '../../../shared/format'
 import { LEAVES_ONLY_BY_SYSTEM, RELEASE_TRIGGER_CAPTION } from '../../../domain/billing/prepayHolding'
@@ -24,33 +25,36 @@ import { invoicePath } from '../screens/finances/financePaths'
  * credit reversing the account's payable (by hand, a cancellation or a
  * Contract change) and a refund the system paid the payer out of it, each with
  * its credit number and why. The patient by name, never the NHI.
+ *
+ * `bare` (build plan Phase 64): the Ledger tab's AA Holding account view, the
+ * same content without the outer card: the title and balance as a section
+ * header, the entries the fit main column's list card, scrolling inside it.
  */
-export function HoldingAccountPanel() {
+export function HoldingAccountPanel({ bare = false }: { bare?: boolean } = {}) {
   const account = useHoldingAccount()
   const creditNotes = useAppStore((s) => s.billing.creditNotes)
-  return (
-    <Card
-      shot="billing-prepay-holding"
-      title="AA Holding account"
-      action={
-        <span className="mono" data-holding-balance={account.balance} style={{ fontSize: 20, fontWeight: 700, color: neutral.ink, fontVariantNumeric: 'tabular-nums' }}>
-          {formatCurrency(account.balance)}
-        </span>
-      }
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontSize: 12.5, color: neutral.slate }}>
-        <span>
-          {account.bookingsCovered > 0 ? `Held for ${plural(account.bookingsCovered, 'prepaid Booking')}. ` : ''}
-          {LEAVES_ONLY_BY_SYSTEM}.
-        </span>
-        <Pill tone="warning" title="The release trigger is still to confirm with AA (OQ-125)">
-          {RELEASE_TRIGGER_CAPTION} · to confirm with AA (OQ-125)
-        </Pill>
-      </div>
+  const balance = (
+    <span className="mono" data-holding-balance={account.balance} style={{ fontSize: 20, fontWeight: 700, color: neutral.ink, fontVariantNumeric: 'tabular-nums' }}>
+      {formatCurrency(account.balance)}
+    </span>
+  )
+  const caption = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontSize: 12.5, color: neutral.slate, ...(bare ? { flex: 'none' } : {}) }}>
+      <span>
+        {account.bookingsCovered > 0 ? `Held for ${plural(account.bookingsCovered, 'prepaid Booking')}. ` : ''}
+        {LEAVES_ONLY_BY_SYSTEM}.
+      </span>
+      <Pill tone="warning" title="The release trigger is still to confirm with AA (OQ-125)">
+        {RELEASE_TRIGGER_CAPTION} · to confirm with AA (OQ-125)
+      </Pill>
+    </div>
+  )
+  const entries = (
+    <>
       {account.rows.length === 0 ? (
-        <EmptyState>Nothing held</EmptyState>
+        <EmptyState {...(bare ? { variant: 'card' as const } : {})}>Nothing held</EmptyState>
       ) : (
-        <TableShell label="AA Holding account entries" nested minWidth={880} density="compact">
+        <TableShell label="AA Holding account entries" {...(bare ? { fit: true } : { nested: true })} minWidth={880} density="compact">
           <thead>
             <tr>
               <Th>Date</Th>
@@ -95,6 +99,22 @@ export function HoldingAccountPanel() {
           </tbody>
         </TableShell>
       )}
+    </>
+  )
+
+  if (bare) {
+    return (
+      <section data-shot="billing-prepay-holding" data-holding-bare="true" style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '0 1 auto', minHeight: 0 }}>
+        <PageHeader size="section" level={2} title="AA Holding account" actions={balance} style={{ flex: 'none', alignItems: 'center' }} />
+        {caption}
+        {entries}
+      </section>
+    )
+  }
+  return (
+    <Card shot="billing-prepay-holding" title="AA Holding account" action={balance}>
+      {caption}
+      {entries}
     </Card>
   )
 }

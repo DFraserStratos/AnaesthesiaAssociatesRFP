@@ -780,3 +780,4 @@ export { patientBalanceRows } from './patientLedger'
 export { patientByNhi } from './patientLookup'
 // Catch-up Phase 43b: support tickets, the help line's and product support's.
 export { raiseSupportTicket, advanceSupportTicket, approveCallOut, ticketsFor, newestOpenTicket, newestAwaitingCallOut, type RaiseSupportTicketInput, type TicketScope } from './supportActions'
+export { anaesthetistLedgerRowsOf, receiptsToPlaceOf, ledgerSentenceOf, ledgerSentenceFor, type AnaesthetistLedgerRowView } from './ledgerListSelectors'

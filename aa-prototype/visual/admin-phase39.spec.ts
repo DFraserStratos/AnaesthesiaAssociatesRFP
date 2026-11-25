@@ -125,11 +125,10 @@ test('the office credits in full and rebills from a copy: rail, both modes, pend
   await expect(page.locator('[data-shot="invoice-list-rebills"]')).toHaveCount(1)
   await page.getByTestId('invoice-list-table-shell').screenshot({ path: 'visual/shots/p39-07-invoices-table.png' })
 
-  // The ledger: the two credit terms, in balance.
+  // The ledger stays square after the credit (build plan Phase 64: the credit tiles left the tab for its one sentence and four figures).
   await page.goto('/admin/finances/ledger')
-  await expect(page.locator('[data-shot="ledger-credit-tiles"]')).toContainText('Credits held for payers')
-  await expect(page.locator('[data-shot="ledger-credit-tiles"]')).toContainText('Negative invoices to net')
   await expect(page.locator('[data-shot="ledger-balance"]')).toHaveAttribute('data-in-balance', 'true')
+  await expect(page.locator('[data-shot="ledger-balance"]')).toContainText('The books are square')
   await page.screenshot({ path: 'visual/shots/p39-08-ledger.png', fullPage: true })
 
   // The Xero pair with its credit note.
