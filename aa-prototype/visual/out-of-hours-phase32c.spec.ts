@@ -266,7 +266,7 @@ test('6 · Review authorises it and the billing run bills it; the audit shows th
   if (await confirm.isVisible()) await confirm.click().catch(() => undefined)
   await page.waitForTimeout(800)
   // Filtered to Dr Souter: the whole practice's groups run long past the first screen.
-  await page.goto(`/admin/billing?anaesthetist=${SOUTER}`)
+  await page.goto(`/admin/finances/billing?anaesthetist=${SOUTER}`)
   await page.waitForLoadState('networkidle')
   // The restyled monitor (catch-up Phase 37): the List sits in its anaesthetist's group as an authorised, expanded pipeline.
   await expect(page.locator('tbody[data-shot^="billing-pipeline-"]').filter({ hasText: 'Out-of-hours' })).toHaveCount(1)

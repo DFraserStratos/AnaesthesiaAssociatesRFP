@@ -8,6 +8,10 @@
  * in words). Every figure comes from `store/ledgerSelectors.ts`; the maths is
  * `domain/billing/ledger.ts`. No mockup draws a ledger: it extends the Admin
  * Review tile row and table and the Admin Day nav. URL-driven, so Back works.
+ *
+ * Build plan Phase 58 (D107, D110): the whole ledger is the Finances section's
+ * Ledger tab (`below` takes the AA Holding account, under the tables); one
+ * anaesthetist's ledger is their account, a record under Ledger with a Back link.
  */
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
@@ -50,6 +54,8 @@ import { Pager, pageOf } from '../components/Pager'
 import { LedgerPaymentRuns, StillToNetNotice } from '../components/LedgerPaymentRuns'
 import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
 import { AdminPage, PageToolbar } from '../components/AdminPage'
+import { FinancesPage } from './finances/FinancesSection'
+import { anaesthetistAccountPath, creditNotePath, financePath, invoicePath } from './finances/financePaths'
 import { ADMIN_PROSE_WIDTH } from '../layout'
 
 type Scope = 'whole' | 'one'
@@ -71,7 +77,7 @@ const KIND_TEXT: Record<LedgerRow['kind'], string> = {
   aaFee: 'AA fee',
 }
 
-export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthetistId?: string }) {
+export function LedgerScreen({ actor, anaesthetistId, below }: { actor: Actor; anaesthetistId?: string; below?: ReactNode }) {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const highlightId = params.get('pair')
@@ -115,20 +121,18 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
   useScreenTiming('ledger', [rows, shownPage])
 
   function openRow(row: LedgerRow) {
-    if (row.kind === 'aaFee') navigate('/admin/billing/aa-fees')
-    else if (row.invoiceId !== undefined) navigate(`/admin/invoices/${row.invoiceId}`)
+    if (row.kind === 'aaFee') navigate(financePath('aa-fees'))
+    else if (row.invoiceId !== undefined) navigate(invoicePath(row.invoiceId))
   }
 
-  return (
-    <AdminPage
-      mode="fluid"
-      title="Ledger"
-      sub={
-        <span data-shot="ledger-system-of-record">
-          The Billing Engine's ledger is AA's system of record: each invoice is a receivable from the billable party and a linked payable to the anaesthetist. Xero mirrors it.
-        </span>
-      }
-    >
+  const sub = (
+    <span data-shot="ledger-system-of-record">
+      The Billing Engine's ledger is AA's system of record: each invoice is a receivable from the billable party and a linked payable to the anaesthetist. Xero mirrors it.
+    </span>
+  )
+
+  const body = (
+    <>
       <PageToolbar>
         <SlidingSegmentedControl
           ariaLabel="Scope"
@@ -140,12 +144,12 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
             { value: 'one', label: 'One anaesthetist' },
           ]}
           onSelect={(next) => {
-            if (next === 'whole') navigate('/admin/ledger')
-            else if (anaesthetistId === undefined && firstOther !== undefined) navigate(`/admin/ledger/anaesthetists/${outOfBalance[0]?.anaesthetistId ?? firstOther}`)
+            if (next === 'whole') navigate(financePath('ledger'))
+            else if (anaesthetistId === undefined && firstOther !== undefined) navigate(anaesthetistAccountPath(outOfBalance[0]?.anaesthetistId ?? firstOther))
           }}
         />
         {scope === 'one' && (
-          <SelectField label="Anaesthetist" hideLabel size="compact" fill="surface" value={anaesthetistId ?? ''} onChange={(id) => navigate(`/admin/ledger/anaesthetists/${id}`)} shot="ledger-anaesthetist-select">
+          <SelectField label="Anaesthetist" hideLabel size="compact" fill="surface" value={anaesthetistId ?? ''} onChange={(id) => navigate(anaesthetistAccountPath(id))} shot="ledger-anaesthetist-select">
             {roster.map((a) => (
               <option key={a.registrationNumber} value={a.registrationNumber}>
                 {drSurname(a.name)}
@@ -187,7 +191,7 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
               variant="outlined"
               label="Payables due"
               value={formatCurrency(whole.payablesDue)}
-              sub={whole.payablesDue > 0 ? <TextAction size="sm" flush onClick={() => navigate('/admin/billing')}>Paid in this week's payment run on the Billing monitor</TextAction> : 'No payables due'}
+              sub={whole.payablesDue > 0 ? <TextAction size="sm" flush onClick={() => navigate(financePath('payments'))}>Paid in this week's payment run on Payments</TextAction> : 'No payables due'}
             />
             <StatTile variant="outlined" label="Disbursed" value={formatCurrency(whole.disbursed)} sub="Paid out to anaesthetists" />
           </div>
@@ -197,13 +201,13 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
               variant="outlined"
               label="AA Holding account"
               value={formatCurrency(whole.holdingBalance)}
-              sub={<TextAction size="sm" flush onClick={() => navigate('/admin/billing')}>Pre-payments for procedures not yet done</TextAction>}
+              sub={<TextAction size="sm" flush onClick={() => document.querySelector('[data-shot="billing-prepay-holding"]')?.scrollIntoView({ block: 'start' })}>Pre-payments for procedures not yet done</TextAction>}
             />
             <StatTile
               variant="outlined"
               label="AA fees outstanding"
               value={formatCurrency(whole.aaFees.outstanding)}
-              sub={<TextAction size="sm" flush onClick={() => navigate('/admin/billing/aa-fees')}>Unpaid monthly fee invoices</TextAction>}
+              sub={<TextAction size="sm" flush onClick={() => navigate(financePath('aa-fees'))}>Unpaid monthly fee invoices</TextAction>}
             />
             <StatTile variant="outlined" label="Not yet in Xero" value={String(whole.notInXero)} sub={whole.notInXero === 1 ? 'pair waiting for its mirror' : 'pairs waiting for their mirror'} />
           </div>
@@ -231,7 +235,7 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
                 variant="quiet"
                 label="Unpaid AA fees"
                 value={formatCurrency(one.theyOweAa)}
-                sub={<TextAction size="sm" flush onClick={() => navigate('/admin/billing/aa-fees')}>Monthly fee invoices</TextAction>}
+                sub={<TextAction size="sm" flush onClick={() => navigate(financePath('aa-fees'))}>Monthly fee invoices</TextAction>}
               />
             </Card>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, alignContent: 'start' }}>
@@ -259,7 +263,7 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
               </thead>
               <tbody>
                 {outOfBalance.map((row) => (
-                  <ClickableRow key={row.anaesthetistId} onOpen={() => navigate(`/admin/ledger/anaesthetists/${row.anaesthetistId}`)} data-anaesthetist-id={row.anaesthetistId}>
+                  <ClickableRow key={row.anaesthetistId} onOpen={() => navigate(anaesthetistAccountPath(row.anaesthetistId))} data-anaesthetist-id={row.anaesthetistId}>
                     <Td>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
                         <Avatar name={masters.anaesthetists[row.anaesthetistId]?.name ?? row.name} size={28} />
@@ -269,7 +273,7 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
                     <Td align="right" mono bold>{formatCurrency(row.imbalance)}</Td>
                     <Td>{row.checks.map((c) => `${CHECK_TEXT[c.code]}, ${formatCurrency(c.amount)}`).join('; ')}</Td>
                     <Td align="right">
-                      <TextAction size="sm" flush onClick={() => navigate(`/admin/ledger/anaesthetists/${row.anaesthetistId}`)}>Open</TextAction>
+                      <TextAction size="sm" flush onClick={() => navigate(anaesthetistAccountPath(row.anaesthetistId))}>Open</TextAction>
                     </Td>
                   </ClickableRow>
                 ))}
@@ -435,9 +439,25 @@ export function LedgerScreen({ actor, anaesthetistId }: { actor: Actor; anaesthe
         <span>At full practice volume this table pages.</span>
       </div>
 
+      {below}
+
       <AllocateDialog key={`allocate-${allocating?.id ?? 'none'}`} receipt={allocating} actor={actor} onClose={() => setAllocating(null)} />
       <RefundDialog key={`refund-${refunding?.id ?? 'none'}`} receipt={refunding} actor={actor} onClose={() => setRefunding(null)} />
-    </AdminPage>
+    </>
+  )
+
+  // One anaesthetist's account is a record under Ledger: Back to the Ledger, no tab strip.
+  if (anaesthetistId !== undefined) {
+    return (
+      <AdminPage mode="fluid" title="Ledger" sub={sub} back={{ label: 'Ledger', to: financePath('ledger') }}>
+        {body}
+      </AdminPage>
+    )
+  }
+  return (
+    <FinancesPage tab="ledger" mode="fluid" sub={sub}>
+      {body}
+    </FinancesPage>
   )
 }
 
@@ -465,7 +485,7 @@ function BalanceIndicator({
     }
     const pair = rows[c.targetId]
     const invoiceId = pair !== undefined && isBookingPair(pair) ? pair.invoiceId : undefined
-    return { text: `${CHECK_TEXT[c.code]}: ${pair?.receivable.number ?? c.targetId}, ${formatCurrency(c.amount)}`, ...(invoiceId !== undefined ? { open: () => navigate(`/admin/invoices/${invoiceId}`) } : {}) }
+    return { text: `${CHECK_TEXT[c.code]}: ${pair?.receivable.number ?? c.targetId}, ${formatCurrency(c.amount)}`, ...(invoiceId !== undefined ? { open: () => navigate(invoicePath(invoiceId)) } : {}) }
   }
   return (
     <Notice tone={inBalance ? 'success' : 'error'} title={headline} {...(inBalance ? { icon: <CircleCheck size={16} aria-hidden /> } : {})} live="status" shot="ledger-balance" data-in-balance={inBalance ? 'true' : 'false'}>
@@ -616,16 +636,16 @@ export function CreditTrails({ anaesthetistId, surname }: { anaesthetistId: stri
     const original = billing.invoices[n.originalInvoiceId]
     const cn = billing.creditNotes[n.creditNoteId]
     const out: { step: string; record: ReactNode; amount: string; note?: string; kind: string }[] = []
-    if (original !== undefined) out.push({ kind: 'debit', step: CREDIT_LABELS.trailDebit, record: number(original.invoiceNumber, `/admin/invoices/${original.id}`), amount: formatCurrency(original.total) })
-    if (cn !== undefined) out.push({ kind: 'credit', step: CREDIT_LABELS.trailCredit, record: number(cn.creditNoteNumber, `/admin/credit-notes/${cn.id}`), amount: formatCurrency(-cn.total) })
+    if (original !== undefined) out.push({ kind: 'debit', step: CREDIT_LABELS.trailDebit, record: number(original.invoiceNumber, invoicePath(original.id)), amount: formatCurrency(original.total) })
+    if (cn !== undefined) out.push({ kind: 'credit', step: CREDIT_LABELS.trailCredit, record: number(cn.creditNoteNumber, creditNotePath(cn.id)), amount: formatCurrency(-cn.total) })
     out.push({
       kind: 'contra',
       step: CREDIT_LABELS.trailContra,
-      record: number(n.number, cn !== undefined ? `/admin/credit-notes/${cn.id}` : undefined),
+      record: number(n.number, cn !== undefined ? creditNotePath(cn.id) : undefined),
       amount: formatCurrency(-n.amount),
       note: nettingNote(n),
     })
-    for (const r of replacementsOf({ billing }, n.originalInvoiceId)) out.push({ kind: 'newDebit', step: CREDIT_LABELS.trailNewDebit, record: number(r.invoiceNumber, `/admin/invoices/${r.id}`), amount: formatCurrency(r.total) })
+    for (const r of replacementsOf({ billing }, n.originalInvoiceId)) out.push({ kind: 'newDebit', step: CREDIT_LABELS.trailNewDebit, record: number(r.invoiceNumber, invoicePath(r.id)), amount: formatCurrency(r.total) })
     return out
   }
   return (

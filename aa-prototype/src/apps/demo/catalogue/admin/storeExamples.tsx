@@ -59,7 +59,7 @@ export function SideNavExample() {
   const [active, setActive] = useState<NavSection>('day')
   return (
     <div style={{ display: 'flex', height: 560 }}>
-      <SideNav active={active} reviewBadge={5} billingBadge={2} conflictBadge={19} draftListBadge={4} notificationBadge={1} peopleBadge={3} onNavigate={setActive} />
+      <SideNav active={active} reviewBadge={5} financesBadge={2} conflictBadge={19} draftListBadge={4} notificationBadge={1} peopleBadge={3} onNavigate={setActive} />
       <div style={{ padding: 14, fontSize: 13, color: neutral.slate }}>
         Section: <strong>{active}</strong>
         <div style={{ marginTop: 6, color: neutral.mist }}>Badge counts are fixed for the example. "Roles in this prototype" opens the real dialog.</div>
@@ -441,7 +441,7 @@ export function ReconciliationCardExample() {
   )
 }
 
-/** The Billing monitor's Xero panels on the live seed (catch-up Phase 37): connection, sync queue, changes made in Xero (only when flagged). */
+/** The Xero tab's panels on the live seed (catch-up Phase 37): connection, sync queue, changes made in Xero (only when flagged). */
 export function XeroPanelsExample() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -452,17 +452,17 @@ export function XeroPanelsExample() {
   )
 }
 
-/** The Billing monitor's payment cycle panel on the live seed (catch-up Phase 39a): Week 30 open, nothing waiting, the seeded runs below. */
+/** The Payments tab's payment cycle panel on the live seed (catch-up Phase 39a): Week 30 open, nothing waiting, the seeded runs below. */
 export function PaymentCyclePanelExample() {
   return <PaymentCyclePanel actor={OFFICE_ACTOR} />
 }
 
-/** The Billing monitor's AA Holding account card on the live seed (catch-up Phase 27a): Nair's prepayment held. Read-only. */
+/** The Ledger tab's AA Holding account card on the live seed (catch-up Phase 27a): Nair's prepayment held. Read-only. */
 export function HoldingAccountPanelExample() {
   return <HoldingAccountPanel />
 }
 
-/** The Invoices screen's Awaiting approval strip with its approval switch, on the live seed (catch-up Phase 27). Approve and send writes to the demo store. */
+/** The Invoices tab's Awaiting approval strip with its approval switch, on the live seed (catch-up Phase 27). Approve and send writes to the demo store. */
 export function PrepaymentApprovalStripExample() {
   return <PrepaymentApprovalStrip actor={OFFICE_ACTOR} />
 }
@@ -537,7 +537,7 @@ export function PipelineStepperExample() {
   const stages = live !== undefined ? live.stages : sample
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div style={{ fontSize: 12.5, color: neutral.slate }}>{live !== undefined ? `${live.anaesthetistName} · live from the billing monitor` : 'No List has been billed yet: sample stages (authorise a List to see live ones).'}</div>
+      <div style={{ fontSize: 12.5, color: neutral.slate }}>{live !== undefined ? `${live.anaesthetistName} · live from Billing` : 'No List has been billed yet: sample stages (authorise a List to see live ones).'}</div>
       <ol aria-label="Billing pipeline" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', listStyle: 'none', margin: 0, padding: 0 }}>
         {stages.map((stage, i) => (
           <li key={stage.key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

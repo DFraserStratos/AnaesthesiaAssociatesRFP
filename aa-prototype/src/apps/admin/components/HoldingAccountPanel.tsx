@@ -9,9 +9,10 @@ import { Pill } from '../../../shared/ui/Pill'
 import { TableShell, Td, Th } from '../../../shared/table'
 import { dayMicroCap, formatCurrency, plural } from '../../../shared/format'
 import { LEAVES_ONLY_BY_SYSTEM, RELEASE_TRIGGER_CAPTION } from '../../../domain/billing/prepayHolding'
+import { invoicePath } from '../screens/finances/financePaths'
 
 /**
- * The AA Holding account on the Billing monitor (catch-up Phase 27a; US-06.5.1,
+ * The AA Holding account on the Finances Ledger tab (catch-up Phase 27a; US-06.5.1,
  * FT-06.5): the payables creditor every prepayment credits, kept like an
  * anaesthetist's account and never paid itself. Its balance (the prepayments
  * received for procedures not yet done), the prepaid Bookings it covers and
@@ -76,7 +77,7 @@ export function HoldingAccountPanel() {
                   )}
                 </Td>
                 <Td mono>
-                  <Link to={`/admin/invoices/${row.invoiceId}`} style={{ color: accent.base, textDecoration: 'none' }}>
+                  <Link to={invoicePath(row.invoiceId)} style={{ color: accent.base, textDecoration: 'none' }}>
                     {row.invoiceNumber}
                   </Link>
                 </Td>

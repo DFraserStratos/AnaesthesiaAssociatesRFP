@@ -82,7 +82,7 @@ describe('AdminPage', () => {
     const setFits = vi.fn()
     const { unmount } = render(
       <AdminFrameContext.Provider value={setFits}>
-        <AdminPage mode="fluid" title="Billing monitor">
+        <AdminPage mode="fluid" title="Finances">
           <p>Dashboard</p>
         </AdminPage>
       </AdminFrameContext.Provider>,

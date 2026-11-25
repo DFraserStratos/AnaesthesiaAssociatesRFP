@@ -5,8 +5,6 @@ import { neutral } from '../../theme/tokens'
 import { SurfaceProvider } from '../../shared'
 import {
   addDayNote,
-  billingAttentionCount,
-  ledgerAttentionCount,
   isOpenSlotView,
   matchingAttentionCount,
   patientAttentionCount,
@@ -44,6 +42,8 @@ import { practiceAnaesthetistCount } from '../../domain/anaesthetistStatus'
 import { OpenOutOfHoursSheet } from './flows/OpenOutOfHoursSheet'
 import { CreditSheet } from './flows/CreditSheet'
 import { CreditSheetSlot } from '../../shared/booking/CreditSheetSlot'
+import { financeBadge } from './screens/finances/financeCounts'
+import { FINANCES_BASE } from './screens/finances/financePaths'
 
 /** The office persona actor, built once (Decisions log 2026-07-21). */
 
@@ -55,14 +55,11 @@ function sectionForPath(pathname: string): NavSection {
   if (head === 'intake') return 'intake'
   // People (build plan Phase 53), and the old Patients links that redirect into it.
   if (head === 'people' || head === 'patients') return 'people'
-  // A credit note's document sits under Invoices (catch-up Phase 39).
-  if (head === 'credit-notes') return 'invoices'
+  // Finances (build plan Phase 58; D107), and the old Invoices, credit note, Billing monitor and Ledger links that redirect into it.
+  if (head === 'finances' || head === 'invoices' || head === 'credit-notes' || head === 'billing' || head === 'ledger') return 'finances'
   switch (head) {
     case 'conflicts':
     case 'review':
-    case 'invoices':
-    case 'billing':
-    case 'ledger':
     case 'contracts':
     case 'masters':
     case 'audit':
@@ -88,7 +85,7 @@ export function AdminApp() {
  * The Admin Web App's LAYOUT: the dark side nav with its badge counts, the
  * day-scoped derivations every day-view child needs, and the session drawer. The
  * screens are router sub-routes (`/admin/day/:dateISO`, `/admin/review/:listId`,
- * `/admin/invoices/:invoiceId` …) so a refresh, the back button and a shared URL
+ * `/admin/finances/invoices/:invoiceId` …) so a refresh, the back button and a shared URL
  * all land on the same screen (Decisions log 2026-07-27). `?sort=az` carries the
  * day grid's row order — a view preference, not a navigation step.
  */
@@ -271,16 +268,14 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     [reviewLists, masters, bookingsRecord],
   )
 
-  // Billing exceptions across the pipeline (the billing-monitor nav badge):
-  // billing-run failures + Xero handoff faults (Phase 10).
-  const exceptionCount = useMemo(() => billingAttentionCount({ billing }), [billing])
+  // The Finances badge (build plan Phase 58; D109): billing problems plus failed ledger checks, one
+  // function in `financeCounts.ts` that reads only what it sums (never the monitor view).
+  const financesBadge = useMemo(() => financeBadge({ billing }), [billing])
   // The named office user the app acts as (catch-up Phase 35; Switch office user, a demo stand-in for sign-in).
   const officeUser = useAppStore((s) => s.shell.officeUser)
   const officeActor = useMemo(() => officeActorOf({ officeUser }), [officeUser])
   // The support panel (catch-up Phase 43b): Help at the foot of the side nav, Help line and Product support.
   const [helpOpen, setHelpOpen] = useState(false)
-  // The ledger's checks, a held unmatched receipt among them (catch-up Phase 36): the amber Ledger badge.
-  const ledgerCount = useMemo(() => ledgerAttentionCount({ billing }), [billing])
   // Live conflicts from today to the horizon (catch-up Phase 30): the amber Conflicts badge.
   const conflictCount = useMemo(() => openConflictCount({ schedule, masters, clock, appSettings }), [schedule, masters, clock, appSettings])
 
@@ -344,10 +339,8 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     conflicts: '/admin/conflicts',
     notifications: '/admin/notifications',
     review: '/admin/review',
-    invoices: '/admin/invoices',
+    finances: FINANCES_BASE,
     people: '/admin/people',
-    billing: '/admin/billing',
-    ledger: '/admin/ledger',
     contracts: '/admin/contracts',
     masters: '/admin/masters',
     audit: '/admin/audit',
@@ -360,8 +353,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         onHelp={() => setHelpOpen(true)}
         active={sectionForPath(pathname)}
         reviewBadge={reviewLists.length + eventsAwaiting}
-        billingBadge={exceptionCount}
-        ledgerBadge={ledgerCount}
+        financesBadge={financesBadge}
         conflictBadge={conflictCount}
         draftListBadge={draftListBadge}
         notificationBadge={notificationBadge}

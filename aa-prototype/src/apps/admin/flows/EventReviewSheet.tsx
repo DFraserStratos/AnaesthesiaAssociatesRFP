@@ -28,6 +28,7 @@ import { parseAmount } from '../../../domain/billing/money'
 import { FreeFormTotals } from '../../../shared/booking/AdditionalInvoiceForm'
 import { CreditMoneyState } from '../../../shared/booking/CreditForm'
 import { SidePanel } from '../../../shared/surface/SidePanel'
+import { invoicePath } from '../screens/finances/financePaths'
 
 interface EventReviewSheetProps {
   eventId: string | null
@@ -132,7 +133,7 @@ export function EventReviewSheet({ eventId, actor, onClose }: EventReviewSheetPr
         </DefRow>
         <DefRow labelTone="slate" label="Original invoice">
           {original !== undefined ? (
-            <Link to={`/admin/invoices/${original.id}`} className="mono" style={{ color: 'inherit' }}>{original.invoiceNumber}</Link>
+            <Link to={invoicePath(original.id)} className="mono" style={{ color: 'inherit' }}>{original.invoiceNumber}</Link>
           ) : (
             'None'
           )}

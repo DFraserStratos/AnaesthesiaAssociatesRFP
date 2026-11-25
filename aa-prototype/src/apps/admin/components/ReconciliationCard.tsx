@@ -5,14 +5,15 @@ import type { ReconciliationStatus, UnresolvedItemSource } from '../../../domain
 import { neutral, radius, semantic } from '../../../theme/tokens'
 import { Card, Notice, TextAction } from '../../../shared/ui'
 import { formatMoney, plural } from '../../../shared/format'
+import { financePath } from '../screens/finances/financePaths'
 
 const VISIBLE_ITEMS = 5
 
 /** Where each kind of unresolved item is handled. */
 const HANDLED_AT: Record<UnresolvedItemSource, { to: string; label: string }> = {
-  unmatchedReceipt: { to: '/admin/ledger', label: 'Ledger · unmatched receipts' },
-  xeroQueue: { to: '/admin/billing?problems=1', label: 'Billing monitor · problems' },
-  xeroDivergence: { to: '/admin/billing?problems=1', label: 'Billing monitor · problems' },
+  unmatchedReceipt: { to: financePath('ledger'), label: 'Ledger · unmatched receipts' },
+  xeroQueue: { to: financePath('xero'), label: 'Xero · sync queue' },
+  xeroDivergence: { to: financePath('xero'), label: 'Xero · changed directly in Xero' },
   bankLine: { to: '/demo/xero/bank', label: 'Xero · bank reconciliation' },
 }
 

@@ -2,16 +2,17 @@ import { expect, test, type Page } from '@playwright/test'
 import { runDemoAction } from './demoActions'
 
 /**
- * Catch-up Phase 39a: the weekly payment cycle on the Billing monitor (open,
+ * Catch-up Phase 39a: the weekly payment cycle on Finances · Payments (open,
  * closed with an anomaly, a held line, approved and paid), a run's record with
  * its payment schedule, a remittance advice with a netted negative invoice,
  * the anaesthetist ledger's still-to-net caption, the invoice's "Paid out in
  * Week 30", and web Accounts' Remittances. Shots land in `visual/shots/`
- * (gitignored).
+ * (gitignored). Build plan Phase 58 moved the cycle from the Billing monitor to
+ * the Payments tab, and Stage refund after payout to the invoice's page only.
  */
 
 async function monitor(page: Page): Promise<void> {
-  await page.goto('/admin/billing')
+  await page.goto('/admin/finances/payments')
   await page.waitForLoadState('networkidle')
 }
 
@@ -91,7 +92,7 @@ test('netting: 19 BCTIs and a credit after payout; the run detail, schedule, rem
   await expect(page.locator('[data-shot="payables-run-draft"]')).toContainText('-$365.70')
   const runId = await payWeek(page)
 
-  await page.goto(`/admin/billing/payment-runs/${runId}`)
+  await page.goto(`/admin/finances/payments/${runId}`)
   await expect(page.locator('[data-shot="payables-run-detail"]')).toContainText('Paid')
   const schedule = page.locator('[data-shot="payment-schedule"]')
   await expect(schedule).toContainText('PAYMENT SCHEDULE · Week 48')
@@ -99,7 +100,7 @@ test('netting: 19 BCTIs and a credit after payout; the run detail, schedule, rem
   await schedule.scrollIntoViewIfNeeded()
   await page.screenshot({ path: 'visual/shots/a39a-05-run-detail.png' })
 
-  await page.goto(`/admin/billing/payment-runs/${runId}/remittance/41267`)
+  await page.goto(`/admin/finances/payments/${runId}/remittance/41267`)
   const advice = page.locator('[data-shot="remittance-advice"]')
   await expect(advice).toContainText('REMITTANCE ADVICE')
   await expect(advice).toContainText('Week 48, 2026')
@@ -108,10 +109,10 @@ test('netting: 19 BCTIs and a credit after payout; the run detail, schedule, rem
   await expect(advice.locator('[data-shot="remittance-still-to-net"]')).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/a39a-06-remittance.png' })
 
-  await page.goto('/admin/invoices/PPINV01')
+  await page.goto('/admin/finances/invoices/PPINV01')
   await expect(page.locator('[data-shot="payment-week"]')).toContainText('Paid out in Week 48')
 
-  await page.goto('/admin/ledger/anaesthetists/41267')
+  await page.goto('/admin/finances/ledger/anaesthetists/41267')
   await expect(page.locator('[data-shot="ledger-payment-runs"]')).toContainText('Week 48')
   await expect(page.locator('[data-shot="ledger-still-to-net"]')).toHaveCount(0)
 })
@@ -120,9 +121,16 @@ test('Stage refund after payout pays out through a one-bill staged run the offic
   await page.goto('/admin/review/L-41267-2026-11-17-AM')
   await page.waitForLoadState('networkidle')
   await runDemoAction(page, 'stage-post-op', { close: true })
-  await monitor(page)
+  // The entry lives on the invoice's page: the Control Panel's Open screen lands on Sarah Mitchell's invoice.
+  await page.waitForTimeout(400)
+  await page.goto('/demo/control')
+  await page.waitForLoadState('networkidle')
+  await page.locator('[data-shot="index-stage-refund-after-payout"]').first().getByRole('button', { name: /Open screen/ }).click()
+  await expect(page).toHaveURL(/\/admin\/finances\/invoices\/[^/]+$/)
+  await page.waitForLoadState('networkidle')
   expect(await runDemoAction(page, 'stage-refund-after-payout', { close: true })).toContain('approved for payment and paid out to Dr Sharma')
-  // A staged one-bill run, paid.
+  // A staged one-bill run, paid, on Payments.
+  await monitor(page)
   await expect(page.locator('[data-shot="payables-runs"] tbody tr').first()).toContainText('Staged')
 })
 

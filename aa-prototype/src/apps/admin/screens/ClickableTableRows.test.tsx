@@ -8,6 +8,7 @@ import { AdminBookingDetailRoute } from '../routes'
 import { InvoicesScreen } from './InvoicesScreen'
 import { MatchingScreen } from './MatchingScreen'
 import { ReviewQueue } from './ReviewQueue'
+import { invoicePath } from './finances/financePaths'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
@@ -40,15 +41,15 @@ describe('admin clickable table rows', () => {
     expect(onOpen).toHaveBeenCalledOnce()
   })
 
-  it('opens an invoice when its row is clicked', () => {
-    const onSelect = vi.fn()
+  it('opens an invoice on its own page when its row is clicked', () => {
     const invoice = Object.values(useAppStore.getState().billing.invoices)
       .filter((candidate) => !isBackdropInvoice(candidate))
       .sort((a, b) => b.id.localeCompare(a.id))[0]!
 
     render(
-      <MemoryRouter>
-        <InvoicesScreen actor={OFFICE} selectedInvoiceId={null} onSelect={onSelect} />
+      <MemoryRouter initialEntries={['/admin/finances/invoices']}>
+        <InvoicesScreen actor={OFFICE} />
+        <LocationProbe />
       </MemoryRouter>,
     )
 
@@ -56,14 +57,13 @@ describe('admin clickable table rows', () => {
     expect(row).toHaveClass('aa-clickable-table-row')
 
     fireEvent.click(row!)
-    expect(onSelect).toHaveBeenCalledWith(invoice.id)
+    expect(screen.getByTestId('location-probe')).toHaveTextContent(invoicePath(invoice.id))
   })
 
   it('links the patient and booking to the underlying booking without opening the invoice row', () => {
-    const onSelect = vi.fn()
     render(
-      <MemoryRouter>
-        <InvoicesScreen actor={OFFICE} selectedInvoiceId={null} onSelect={onSelect} />
+      <MemoryRouter initialEntries={['/admin/finances/invoices']}>
+        <InvoicesScreen actor={OFFICE} />
         <LocationProbe />
       </MemoryRouter>,
     )
@@ -80,24 +80,25 @@ describe('admin clickable table rows', () => {
 
     expect(screen.getByTestId('location-probe')).toHaveTextContent(`/admin/day/${list.dateISO}/bookings/${booking.id}`)
     expect(screen.getByTestId('location-probe')).toHaveAttribute('data-from-invoice-id', invoice.id)
-    expect(onSelect).not.toHaveBeenCalled()
+    expect(screen.getByTestId('location-probe')).not.toHaveTextContent(invoicePath(invoice.id))
   })
 
   it('renders the list as a compact neutral entity link', () => {
-    const onSelect = vi.fn()
     render(
-      <MemoryRouter>
-        <InvoicesScreen actor={OFFICE} selectedInvoiceId={null} onSelect={onSelect} />
+      <MemoryRouter initialEntries={['/admin/finances/invoices']}>
+        <InvoicesScreen actor={OFFICE} />
+        <LocationProbe />
       </MemoryRouter>,
     )
 
     const row = screen.getByTestId('invoice-list-table-shell').querySelector('tbody tr')!
+    const invoiceId = row.getAttribute('data-invoice-id')!
     const listLink = row.querySelectorAll('a')[1]!
 
     expect(listLink).toHaveClass('aa-table-entity-link')
     expect(listLink).not.toHaveAttribute('style')
     fireEvent.click(listLink)
-    expect(onSelect).not.toHaveBeenCalled()
+    expect(screen.getByTestId('location-probe')).not.toHaveTextContent(invoicePath(invoiceId))
   })
 
   it('returns an invoice-origin booking to that exact invoice', () => {
@@ -120,7 +121,7 @@ describe('admin clickable table rows', () => {
               element={<Outlet context={{ actor: OFFICE, todayISO: '2026-11-24' }} />}
             >
               <Route path="day/:dateISO/bookings/:bookingId" element={<AdminBookingDetailRoute />} />
-              <Route path="invoices/:invoiceId" element={<div>Returned to invoice</div>} />
+              <Route path="finances/invoices/:invoiceId" element={<div>Returned to invoice</div>} />
             </Route>
           </Routes>
         </SurfaceProvider>

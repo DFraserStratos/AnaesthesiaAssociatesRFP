@@ -37,7 +37,7 @@ export const EVENT_LABELS = {
   eventsTab: 'Events',
   /** The Events tab's page subtitle (the Lists tab keeps the queue's own). */
   eventsTabSub: (n: number) => `Pre-op, post-op and billing events, additional invoices and credits awaiting review before the next billing run. ${n} in the queue.`,
-  /** The Billing monitor panel. */
+  /** The Payments tab's panel. */
   awaitingRunTitle: 'Waiting for the next billing run',
   /** The review sheet. */
   approveNote: 'Approved events are invoiced in the next billing run.',
@@ -259,8 +259,8 @@ export const CREDIT_LABELS = {
   xeroCard: 'Xero',
   xeroWaiting: 'Waiting for Xero',
   xeroAccPayVoided: 'Draft ACCPAY voided',
-  xeroFailed: 'Xero correction failed · retry in Billing monitor',
-  openBillingMonitor: 'Open the Billing monitor',
+  xeroFailed: 'Xero correction failed · retry in Billing',
+  openBillingMonitor: 'Open Billing',
   /** The Invoices screen. */
   kind: 'Credit note',
   credits: (number: string) => `Credits ${number}`,
@@ -298,7 +298,7 @@ export const CREDIT_LABELS = {
   trailNewDebit: 'New debit',
   netsNextRun: 'Nets in the next payment run',
   offsetDone: 'Offset against the unpaid payable',
-  /** The Billing monitor (work item 13). */
+  /** The Billing tab (work item 13). */
   correctionFailed: 'Xero correction failed',
   correctionAttempt: (n: number) => `attempt ${n}`,
   nextTry: 'next try',
@@ -539,7 +539,7 @@ export const PRE_POST_OP_COPY = {
   eventFor: (lead: string, procedure: string) => `${lead} · ${procedure}`,
   /** "+2 event lines" under an invoice number. */
   eventLines: (n: number) => `+${n} event ${n === 1 ? 'line' : 'lines'}`,
-  /** "+1 event invoice" on a Billing monitor row. */
+  /** "+1 event invoice" on a Billing tab row. */
   eventInvoices: (n: number) => `+${n} event ${n === 1 ? 'invoice' : 'invoices'}`,
   /** The Contract editor's section. */
   eventFeesTitle: 'Event fees',

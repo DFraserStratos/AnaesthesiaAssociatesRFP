@@ -24,13 +24,13 @@ import { runDemoAction } from './demoActions'
 
 /** Rows whose Open screen, from the seed, lands on a screen that lists the entry. */
 const LANDS: readonly string[] = [
-  // Admin · Billing monitor
+  // Admin · Finances · Billing, Xero and Payments, and the invoice's page (Stage refund after payout)
   'billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll',
   'run-archive-job', 'run-next-billing-run', 'stage-payment-week', 'stage-bank-mismatch', 'stage-refund-after-payout',
-  // Admin · Ledger, Audit, Booking detail, Review, Invoices, Intake
+  // Admin · Finances · Ledger, Audit, Booking detail, Review, Finances · Invoices, Intake
   'inject-unmatched-receipt', 'simulate-sign-in', 'hospital-description-arrives', 'stage-post-op', 'stage-combined-procedure',
   'pdf-list-resend', 'matching-receive-theatre-list', 'matching-send-update', 'matching-raw-row-other-role',
-  // Admin · AA fee invoices and the Xero simulation
+  // Admin · Finances · AA fees and the Xero simulation
   'run-scheduled-fee-run', 'seed-month-of-bctis', 'record-fee-payment', 'xero-bulk-remittance',
   // Admin · Day view, Draft Lists, Conflicts
   'simulate-sickness', 'colleague-moves-list-to-office', 'colleague-hands-booking-to-souter', 'simulate-incoming-request',

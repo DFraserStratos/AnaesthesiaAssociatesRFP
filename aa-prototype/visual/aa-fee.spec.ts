@@ -4,7 +4,9 @@ import { runDemoAction } from './demoActions'
 /**
  * AA's monthly fee (catch-up Phase 16): settings, seeding a month of BCTIs, the
  * monthly run, the fee pair in the Xero simulation, Record fee payment and the
- * web AA fees tab.
+ * web AA fees tab. Build plan Phase 58: AA fees is a Finances tab, its Fee
+ * invoices · Fee settings switch a pair of FilterPills; the Billing monitor's
+ * compact AA fee strip is gone.
  */
 test('AA fee: settings, seeded BCTIs, the monthly run, the fee pair and the web tab', async ({ page }) => {
   test.setTimeout(90_000)
@@ -15,7 +17,7 @@ test('AA fee: settings, seeded BCTIs, the monthly run, the fee pair and the web 
   page.on('pageerror', (error) => consoleErrors.push(error.message))
 
   // Fee settings: the labelled sample schedule, ex GST, with the worked example.
-  await page.goto('/admin/billing/aa-fees/settings')
+  await page.goto('/admin/finances/aa-fees/settings')
   const settings = page.locator('[data-shot=admin-aa-fee-settings]')
   await expect(settings).toBeVisible()
   await expect(settings.getByTestId('aa-fee-sample')).toHaveText('Sample schedule')
@@ -34,8 +36,9 @@ test('AA fee: settings, seeded BCTIs, the monthly run, the fee pair and the web 
   await expect(settings.getByTestId('aa-fee-example')).toContainText('= $700.00')
 
   // Fee invoices: Dr Souter's seeded history and the July preview.
-  await page.getByRole('link', { name: 'Fee invoices' }).click()
-  await expect(page).toHaveURL(/\/admin\/billing\/aa-fees$/)
+  await page.getByRole('button', { name: 'Fee invoices', exact: true }).click()
+  await expect(page).toHaveURL(/\/admin\/finances\/aa-fees$/)
+  await expect(page.getByRole('button', { name: 'Fee invoices', exact: true })).toHaveAttribute('aria-pressed', 'true')
   const screen = page.locator('[data-shot=admin-aa-fee-invoices]')
   await expect(screen.getByTestId('aa-fee-month')).toHaveText('November 2026')
   await expect(page.getByTestId('aa-fee-row-AA-FEE-2026-H01')).toContainText('Paid')
@@ -59,10 +62,6 @@ test('AA fee: settings, seeded BCTIs, the monthly run, the fee pair and the web 
   await rutherfordRow.getByRole('button', { name: /Show .* details/ }).click()
   await expect(page.locator('[data-testid^=aa-fee-detail-]')).toContainText('Counted BCTIs (40)')
   await page.screenshot({ path: 'visual/shots/p16-03-aa-fee-run.png', fullPage: true })
-
-  // The Billing monitor's compact panel.
-  await page.goto('/admin/billing')
-  await expect(page.locator('[data-shot=billing-aa-fee-invoices]')).toContainText('Latest month invoiced: November 2026')
 
   // The Xero simulation: fee pairs listed with an AA fee chip; the H02 pair.
   await page.goto('/demo/xero/invoices')

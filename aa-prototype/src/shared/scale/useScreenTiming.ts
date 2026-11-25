@@ -16,7 +16,7 @@ export const TIMED_SCREENS = [
   { key: 'review', label: 'Review queue' },
   { key: 'invoices', label: 'Invoices' },
   { key: 'audit', label: 'Audit' },
-  { key: 'monitor', label: 'Billing monitor' },
+  { key: 'monitor', label: 'Billing' },
   { key: 'ledger', label: 'Ledger' },
 ] as const
 

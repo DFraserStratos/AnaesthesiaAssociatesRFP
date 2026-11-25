@@ -89,8 +89,8 @@ describe('the credited original', () => {
     const banner = container.querySelector('[data-shot="invoice-credited-banner"]') as HTMLElement
     expect(banner.textContent).toMatch(new RegExp(`^Credited in full by ${cn.creditNoteNumber} on .+ · rebilled as AA-2026-\\d{4}$`))
     const links = within(banner).getAllByRole('link')
-    expect(links[0]).toHaveAttribute('href', `/admin/credit-notes/${cn.id}`)
-    expect(links[1]).toHaveAttribute('href', `/admin/invoices/${cn.replacementInvoiceIds[0]}`)
+    expect(links[0]).toHaveAttribute('href', `/admin/finances/invoices/credit-notes/${cn.id}`)
+    expect(links[1]).toHaveAttribute('href', `/admin/finances/invoices/${cn.replacementInvoiceIds[0]}`)
     const accRecId = pairForInvoice(useAppStore.getState(), ORIGINAL)!.receivable.xeroAccRecId
     expect(paymentDisabledReason(useAppStore.getState(), accRecId)).toBe('Invoice credited')
   })
@@ -135,7 +135,7 @@ describe('the events list and the Invoices screen', () => {
   it('lists the credit note as its own row, and the replacement says what it rebills', () => {
     issue(1)
     const cn = creditNoteForInvoice(useAppStore.getState(), ORIGINAL)!
-    const { container } = inAdmin(<InvoicesScreen actor={OFFICE} selectedInvoiceId={null} onSelect={() => undefined} />)
+    const { container } = inAdmin(<InvoicesScreen actor={OFFICE} />)
     const cnRow = container.querySelector(`tr[data-credit-note-id="${cn.id}"]`)!
     expect(cnRow.querySelector('[data-shot="invoice-list-kind"]')?.textContent).toBe('Credit note')
     expect(cnRow.textContent).toContain('Credits AA-2026-H03')

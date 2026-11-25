@@ -13,7 +13,7 @@ import { scaleMode } from '../store/scaleMode'
 describe('the confirm step', () => {
   it('Load full-scale data needs a second click; Cancel disarms it', () => {
     const { container } = render(
-      <MemoryRouter initialEntries={['/admin/invoices']}>
+      <MemoryRouter initialEntries={['/admin/finances/invoices']}>
         <DemoActionsMenu />
       </MemoryRouter>,
     )

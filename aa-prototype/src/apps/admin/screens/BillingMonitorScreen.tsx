@@ -2,18 +2,15 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useBookingWarnings, WarningTriangle } from '../../../shared/warnings'
 import { isOpen } from '../../../domain/warnings'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { aaFeeMonthLabel } from '../../../domain/billing/aaFee'
 import { needAddressText } from '../../../domain/billing/invoicePresentation'
-import { accent, neutral, radius, semantic } from '../../../theme/tokens'
+import { accent, neutral, semantic } from '../../../theme/tokens'
 import type { Actor, AppState } from '../../../store'
 import { isPricedKind } from '../../../store'
 import { invoicesByBooking } from '../../../store/indexes'
 import {
   billingMonitorView,
   handoffPairsForBooking,
-  allAaFeeInvoices,
   monitorOptionsFromSearch,
-  payablesDue,
   prepaidLeftOffText,
   retryBillingException,
   retryXeroItemNow,
@@ -34,19 +31,15 @@ import { dayMicroCap, formatCount, formatCurrency, hhmm, plural, shortDay } from
 import { FULL_SCALE } from '../../../domain/seed/fullScale/constants'
 import { Pager, pageOf, pageParam } from '../components/Pager'
 import { useScreenTiming } from '../../../shared/scale/useScreenTiming'
-import { Button, Card, CountBadge, DisclosureButton, TickGlyph, EmptyState, FilterDateInput, FilterPills, FormError, Notice, Pill, SelectField, StatTile, TextAction, visuallyHidden, type PillTone } from '../../../shared/ui'
+import { Button, Card, DisclosureButton, TickGlyph, EmptyState, FilterDateInput, FilterPills, FormError, Pill, SelectField, TextAction, visuallyHidden, type PillTone } from '../../../shared/ui'
 import { ClickableRow, Td, Th, TableShell } from '../../../shared/table'
 import { sessionText } from '../../../domain/outOfHours'
-import { HoldingAccountPanel } from '../components/HoldingAccountPanel'
-import { approvedEventsAwaitingRun } from '../../../store/procedureEventActions'
-import { freeFormSubtotal } from '../../../domain/billing/additionalInvoice'
-import { creditDetailOf, eventLines } from '../../../domain/billing/procedureEvent'
-import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, EVENT_KIND_LABEL, EVENT_LABELS, PRE_POST_OP_COPY, kindRowText, XERO_FLAG_COPY, XERO_FLAG_LABEL, XERO_FLAG_PAYOUT_LABEL, xeroFlagText } from '../../../shared/procedureEventCopy'
+import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, PRE_POST_OP_COPY, XERO_FLAG_COPY, XERO_FLAG_LABEL, XERO_FLAG_PAYOUT_LABEL, xeroFlagText } from '../../../shared/procedureEventCopy'
 import { correctionQueuedFor } from '../../../store/ledgerSelectors'
 import type { Invoice, XeroQueueItem } from '../../../domain/types'
-import { XeroConnectionLine, XeroDivergencePanel, XeroQueuePanel } from '../components/XeroPanels'
-import { PaymentCyclePanel } from '../components/PaymentCyclePanel'
-import { AdminPage, PageBody, PageToolbar } from '../components/AdminPage'
+import { PageBody, PageToolbar } from '../components/AdminPage'
+import { FinancesPage } from './finances/FinancesSection'
+import { invoicePath } from './finances/financePaths'
 
 interface BillingMonitorScreenProps {
   actor: Actor
@@ -70,7 +63,10 @@ const COLUMNS = 11
 
 /**
  * The billing-flow monitor, restyled as the processing monitor (Phase 09;
- * catch-up Phase 37, US-13.3.1). Grouped by anaesthetist: each group lists the
+ * catch-up Phase 37, US-13.3.1), now the Finances section's Billing tab (build
+ * plan Phase 58; D107, D110): its Xero panels moved to the Xero tab, the
+ * payment cycle and the events awaiting the run to Payments, the AA Holding
+ * account to Ledger, and its summary tiles and AA fee strip went. Grouped by anaesthetist: each group lists the
  * anaesthetist's Lists awaiting approval (they open in Review, where approval
  * stays) and their authorised Lists, sortable, each expanding to its pipeline
  * (List authorised, billing run, invoices, emailed, Xero) and per-Booking rows.
@@ -97,7 +93,6 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
 
   const options = useMemo(() => monitorOptionsFromSearch(params), [params])
   const view = useMemo(() => billingMonitorView({ schedule, billing, masters, audit }, options), [schedule, billing, masters, audit, options])
-  const payablesDueTotal = useMemo(() => payablesDue({ billing }, view.applied.anaesthetistId !== undefined ? { anaesthetistId: view.applied.anaesthetistId } : {}).total, [billing, view.applied.anaesthetistId])
   const opened = idsOf(params, PARAM.open)
   const shut = idsOf(params, PARAM.shut)
   const folded = idsOf(params, PARAM.fold)
@@ -175,8 +170,8 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
   }
 
   // The anaesthetist groups page at 20 (catch-up Phase 43; US-13.3.1, US-15.0.4), after every filter,
-  // the sort and Problems only; the tiles above count everything kept, never the page. `?list=`
-  // lands on the page that holds its List.
+  // the sort and Problems only; the count in the toolbar counts everything kept, never the page.
+  // `?list=` lands on the page that holds its List.
   const groupPageSize = FULL_SCALE.pageSizes.monitorGroups
   const listGroupIndex = options.listId !== undefined ? view.groups.findIndex((g) => g.authorised.some((r) => r.listId === options.listId) || g.awaiting.some((a) => a.list.id === options.listId)) : -1
   const groupPage = listGroupIndex >= 0 ? Math.floor(listGroupIndex / groupPageSize) + 1 : pageParam(params.get(PARAM.page))
@@ -186,36 +181,9 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
   useScreenTiming('monitor', [view, groupPage])
 
   const nothingAtAll = view.anaesthetistOptions.length === 0
-  const panelAnaesthetist = view.applied.anaesthetistId
 
   return (
-    <AdminPage mode="fluid" title="Billing monitor" sub={BILLING_MONITOR_INTRO}>
-      <XeroConnectionLine />
-
-      {/* Summary tiles: Admin Review's tile anatomy. "With problems" turns its filter on; "Payables due" goes to the payables panel. */}
-      <div data-shot="billing-monitor-tiles" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-        <StatTile variant="outlined" label="Awaiting approval" value={formatCount(view.totals.awaiting)} shot="billing-tile-awaiting" />
-        <StatTile variant="outlined" label="Authorised" value={formatCount(view.totals.authorised)} shot="billing-tile-authorised" />
-        <StatTile
-          variant="outlined"
-          label="With problems"
-          value={formatCount(view.totals.withProblems)}
-          {...(view.totals.withProblems > 0 ? { tone: 'warning' as const } : {})}
-          sub="Show problems only"
-          pressed={view.applied.problemsOnly}
-          onClick={() => update({ [PARAM.problems]: view.applied.problemsOnly ? null : '1' })}
-          shot="billing-tile-problems"
-        />
-        <StatTile
-          variant="outlined"
-          label="Payables due"
-          value={formatCurrency(payablesDueTotal)}
-          sub="Go to the payment cycle"
-          onClick={() => document.querySelector('[data-shot="payment-cycle"]')?.scrollIntoView({ block: 'start' })}
-          shot="billing-tile-payables"
-        />
-      </div>
-
+    <FinancesPage tab="billing" mode="fluid" sub={BILLING_MONITOR_INTRO}>
       <PageToolbar
         shot="billing-monitor-filters"
         end={
@@ -255,17 +223,6 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
       </PageToolbar>
 
       <PageBody>
-      {/* The Xero panels (catch-up Phase 37): the sync queue and changes made in Xero, which the anaesthetist filter narrows; then the weekly payment cycle (catch-up Phase 39a). */}
-      <XeroQueuePanel actor={actor} {...(panelAnaesthetist !== undefined ? { anaesthetistId: panelAnaesthetist } : {})} />
-      <XeroDivergencePanel actor={actor} {...(panelAnaesthetist !== undefined ? { anaesthetistId: panelAnaesthetist } : {})} />
-      <PaymentCyclePanel actor={actor} />
-
-      <EventsAwaitingRunPanel />
-
-      <AaFeePanel />
-
-      <HoldingAccountPanel />
-
       <FormError message={error} />
 
       {nothingAtAll ? (
@@ -306,7 +263,7 @@ export function BillingMonitorScreen({ actor }: BillingMonitorScreenProps) {
         </>
       )}
       </PageBody>
-    </AdminPage>
+    </FinancesPage>
   )
 }
 
@@ -591,7 +548,7 @@ function PipelineDetail({ row, onRetry, actor }: { row: MonitorAuthorisedRow; on
       {row.noAddressCount > 0 && row.firstNoAddressInvoiceId !== undefined && (
         <div data-shot="monitor-no-address" style={{ fontSize: 12.5, color: semantic.warning.onTint }}>
           {`${row.noAddressCount === 1 ? '1 invoice' : `${row.noAddressCount} invoices`} ${needAddressText(row.noAddressCount).replace(/^\d+ /, '')}.`}{' '}
-          <Link to={`/admin/invoices/${row.firstNoAddressInvoiceId}`} style={{ color: accent.base, fontWeight: 600 }}>
+          <Link to={invoicePath(row.firstNoAddressInvoiceId)} style={{ color: accent.base, fontWeight: 600 }}>
             Add an address and send
           </Link>
         </div>
@@ -793,70 +750,6 @@ function BookingStatusPill({ row }: { row: MonitorBookingRow }) {
     <Pill tone={it.tone} size="sm">
       {it.label}
     </Pill>
-  )
-}
-
-/**
- * Approved events waiting for the next billing run (catch-up Phase 38b), so an
- * approved event is never invisible between its review and its run. Shown only
- * while one waits; each links to its Booking. The run itself is the demo
- * action "Run the next billing run" (the real system's run is scheduled).
- */
-function EventsAwaitingRunPanel() {
-  const state = useAppStore((s) => s)
-  const waiting = approvedEventsAwaitingRun(state)
-  if (waiting.length === 0) return null
-  return (
-    <Notice tone="neutral" icon={false} shot="events-awaiting-run" title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>{EVENT_LABELS.awaitingRunTitle} <CountBadge count={waiting.length} mono srNoun="waiting" /></span>}>
-      <span style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {waiting.map((e) => {
-        const booking = state.schedule.bookings[e.bookingId]
-        const list = booking !== undefined ? state.schedule.lists[booking.listId] : undefined
-        const patient = booking !== undefined ? state.masters.patients[booking.patientId] : undefined
-        // A credit (catch-up Phase 39) names the invoice it credits and its total, never $0.
-        const creditDetail = creditDetailOf(e)
-        const credited = creditDetail !== undefined ? state.billing.invoices[creditDetail.originalInvoiceId] : undefined
-        return (
-          <div key={e.id} data-event-id={e.id} data-kind={e.kind} style={{ display: 'flex', alignItems: 'baseline', gap: 12, fontSize: 13 }}>
-            {list !== undefined ? (
-              <Link to={`/admin/day/${list.dateISO}/bookings/${e.bookingId}`} style={{ color: neutral.ink, fontWeight: 600 }}>{patient?.name ?? e.bookingId}</Link>
-            ) : (
-              <span style={{ fontWeight: 600 }}>{patient?.name ?? e.bookingId}</span>
-            )}
-            <span style={{ color: neutral.slate }}>{credited !== undefined ? CREDIT_LABELS.creditsInFull(credited.invoiceNumber) : EVENT_KIND_LABEL[e.kind]}</span>
-            <span className="mono" style={{ marginLeft: 'auto', color: neutral.ink }}>{credited !== undefined ? formatCurrency(credited.subtotal) : PRE_POST_OP_COPY.amount(kindRowText(state, e)?.amount ?? freeFormSubtotal(eventLines(e)))} <span style={{ color: neutral.slate }}>{EVENT_LABELS.exGst}</span></span>
-          </div>
-        )
-      })}
-      </span>
-    </Notice>
-  )
-}
-
-/** AA's monthly fee invoices at a glance (catch-up Phase 16): separate from the payables above. */
-function AaFeePanel() {
-  const billing = useAppStore((s) => s.billing)
-  const invoices = useMemo(() => allAaFeeInvoices({ billing }), [billing])
-  const latestMonth = invoices[0]?.monthISO
-  const unpaid = invoices.filter((f) => f.status === 'unpaid')
-  const unpaidTotal = unpaid.reduce((sum, f) => sum + f.total, 0)
-  return (
-    <div data-shot="billing-aa-fee-invoices" style={{ background: neutral.surface, border: `1px solid ${neutral.line}`, borderRadius: radius.card, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-      <div style={{ flex: 1, minWidth: 240 }}>
-        <div style={{ fontSize: 14, fontWeight: 700 }}>AA fee invoices</div>
-        <div style={{ fontSize: 12.5, color: neutral.slate, marginTop: 2 }}>
-          {latestMonth === undefined
-            ? 'No fee invoices yet.'
-            : `Latest month invoiced: ${aaFeeMonthLabel(latestMonth)} · ${unpaid.length} unpaid · ${formatCurrency(unpaidTotal)} incl GST owed to AA.`}
-        </div>
-      </div>
-      <Link
-        to="/admin/billing/aa-fees"
-        style={{ minHeight: 38, display: 'inline-flex', alignItems: 'center', padding: '0 14px', borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, background: neutral.surface, color: neutral.ink, fontSize: 13.5, fontWeight: 600, textDecoration: 'none' }}
-      >
-        Open AA fee invoices
-      </Link>
-    </div>
   )
 }
 

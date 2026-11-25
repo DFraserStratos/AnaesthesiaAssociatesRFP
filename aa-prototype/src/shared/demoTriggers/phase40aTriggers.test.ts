@@ -24,7 +24,7 @@ describe('nhi-hub-mode (catch-up Phase 40a)', () => {
     for (const path of [`/web/lists/${SEED_LIST_IDS.souterPm21}`, '/admin/day/2026-11-24', '/admin/draft-lists', '/admin/people/patients/ZAM1098', '/admin/intake/waiting']) {
       expect(demoTriggersFor(state, path, 'bar', inUse).some((m) => m.trigger.id === 'nhi-hub-mode'), path).toBe(true)
     }
-    expect(demoTriggersFor(state, '/admin/billing', 'bar', inUse).some((m) => m.trigger.id === 'nhi-hub-mode')).toBe(false)
+    expect(demoTriggersFor(state, '/admin/finances/billing', 'bar', inUse).some((m) => m.trigger.id === 'nhi-hub-mode')).toBe(false)
   })
 
   it('offers the three modes, disables the current one, and sets the mode', () => {

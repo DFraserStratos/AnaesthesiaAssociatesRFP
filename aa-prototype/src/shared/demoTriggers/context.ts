@@ -31,6 +31,8 @@ export interface DemoContextValues {
   'adminContracts.tab': 'contracts' | 'parties' | 'fundingTags'
   /** Admin · People: the section's tab on show (build plan Phase 53); the sample-sheet trigger reads it. */
   'adminPeople.tab': 'anaesthetists' | 'surgeons' | 'specialties' | 'patients'
+  /** Admin · Finances: the section's tab on show (build plan Phase 58; D107). */
+  'adminFinances.tab': 'billing' | 'invoices' | 'payments' | 'ledger' | 'xero' | 'aa-fees'
   /** Mobile · My calendar: the last day opened in the session panel, `<anaesthetistId>|<dateISO>`, while the calendar shows (catch-up Phase 32d's office stand-in). */
   'mobileCalendar.day': string
   /** Admin · Booking detail: the Booking whose draft holds unsaved changes (catch-up Phase 35's Switch office user waits on it). */

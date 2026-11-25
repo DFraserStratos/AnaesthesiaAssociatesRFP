@@ -5,6 +5,7 @@ import { TableShell, Td, Th } from '../../../shared/table'
 import { Card, EmptyState, TextAction } from '../../../shared/ui'
 import { useAppStore, useToday } from '../../../store'
 import { PROFILE_WIDE_CARD } from './ProfileChrome'
+import { anaesthetistAccountPath } from '../screens/finances/financePaths'
 
 /** How many past Lists show before See all. */
 const FEW = 5
@@ -39,7 +40,7 @@ export function AnaesthetistHistoryCard({ anaesthetistId }: { anaesthetistId: st
       title="Past Lists"
       shot="anaesthetist-history"
       action={
-        <TextAction size="sm" flush to={`/admin/ledger/anaesthetists/${anaesthetistId}`} shot="anaesthetist-ledger-link">
+        <TextAction size="sm" flush to={anaesthetistAccountPath(anaesthetistId)} shot="anaesthetist-ledger-link">
           Invoices and payments
         </TextAction>
       }

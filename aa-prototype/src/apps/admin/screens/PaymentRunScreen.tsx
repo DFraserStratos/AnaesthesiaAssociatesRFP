@@ -1,12 +1,12 @@
 /**
  * A payment run's record (catch-up Phase 39a; US-10.2.7, US-10.2.6,
- * US-10.2.5): `/admin/billing/payment-runs/:runId`. The run's week and steps
+ * US-10.2.5): `/admin/finances/payments/:runId`, under Finances' Payments tab. The run's week and steps
  * (who and when), the ledger at close, the anomalies and how each was
  * resolved, the held lines with the week they rolled into, the
  * per-anaesthetist totals with each remittance advice, the exclusions, and
  * the payment schedule the office sent the accountant (printable). And one
  * anaesthetist's remittance advice:
- * `/admin/billing/payment-runs/:runId/remittance/:anaesthetistId`.
+ * `/admin/finances/payments/:runId/remittance/:anaesthetistId`.
  */
 
 import { Link, useNavigate } from 'react-router-dom'
@@ -20,6 +20,7 @@ import { RemittanceAdviceDocument } from '../../../shared/billing/RemittanceAdvi
 import { RUN_STATUS, stampOf } from '../components/PaymentCyclePanel'
 import { AdminPage } from '../components/AdminPage'
 import { ADMIN_PROSE_WIDTH } from '../layout'
+import { financePath, paymentRunPath, remittancePath } from './finances/financePaths'
 import { DOCUMENT_DESK_STYLE, DOCUMENT_PAPER_STYLE, DOCUMENT_RAIL_STYLE } from '../components/documentDesk'
 
 const EXCLUSION_LABEL = { heldInHoldingAccount: 'Held in the AA Holding account (never paid by a run)' } as const
@@ -43,7 +44,7 @@ export function PaymentRunScreen({ runId }: { runId: string }) {
     <AdminPage
       mode="fluid"
       testId="payment-run-screen"
-      back={{ label: 'Billing monitor', onClick: () => navigate('/admin/billing') }}
+      back={{ label: 'Payments', onClick: () => navigate(financePath('payments')) }}
       title={`Payment run · ${cycleLabel(run)}`}
       sub={`${cycleRangeLabel(run)} · ${run.kind === 'staged' ? 'A one-line staged run (demo payout)' : 'The weekly payment cycle'}`}
     >
@@ -58,7 +59,7 @@ export function PaymentRunScreen({ runId }: { runId: string }) {
           <DefRow label="Paid" labelWidth={170} mono>{step(run.paidAtISO, undefined)}</DefRow>
           {run.supersededBy !== undefined && (
             <DefRow label="Superseded by">
-              <Link to={`/admin/billing/payment-runs/${run.supersededBy}`} className="mono" style={{ color: neutral.ink }}>{run.supersededBy}</Link>
+              <Link to={paymentRunPath(run.supersededBy)} className="mono" style={{ color: neutral.ink }}>{run.supersededBy}</Link>
             </DefRow>
           )}
         </DefList>
@@ -100,7 +101,7 @@ export function PaymentRunScreen({ runId }: { runId: string }) {
                   <Td mono align="right">{t.remainingToNet > 0 ? formatCurrency(-t.remainingToNet) : ''}</Td>
                   <Td>
                     {run.approvedAtISO !== undefined ? (
-                      <Link to={`/admin/billing/payment-runs/${run.id}/remittance/${t.anaesthetistId}`} data-shot="payables-run-remittance-link" style={{ color: neutral.ink }}>Remittance advice</Link>
+                      <Link to={remittancePath(run.id, t.anaesthetistId)} data-shot="payables-run-remittance-link" style={{ color: neutral.ink }}>Remittance advice</Link>
                     ) : (
                       <span style={{ color: neutral.slate }}>After approval</span>
                     )}
@@ -132,7 +133,7 @@ export function PaymentRunScreen({ runId }: { runId: string }) {
               {rolledInto !== undefined ? (
                 <>
                   {`Rolled into ${cycleLabel(rolledInto)} · `}
-                  <Link to={`/admin/billing/payment-runs/${rolledInto.id}`} className="mono" style={{ color: neutral.ink }}>{rolledInto.id}</Link>
+                  <Link to={paymentRunPath(rolledInto.id)} className="mono" style={{ color: neutral.ink }}>{rolledInto.id}</Link>
                 </>
               ) : (
                 'Rolls into next week'
@@ -229,7 +230,7 @@ export function RemittanceAdviceScreen({ runId, anaesthetistId }: { runId: strin
     <AdminPage
       mode="document"
       testId="remittance-advice-screen"
-      back={{ label: `Payment run · ${run !== undefined ? cycleLabel(run) : runId}`, onClick: () => navigate(`/admin/billing/payment-runs/${runId}`) }}
+      back={{ label: `Payment run · ${run !== undefined ? cycleLabel(run) : runId}`, onClick: () => navigate(paymentRunPath(runId)) }}
     >
       <div style={DOCUMENT_DESK_STYLE}>
         <div className="aa-invoice-doc aa-print-report" style={DOCUMENT_PAPER_STYLE}>
@@ -238,7 +239,7 @@ export function RemittanceAdviceScreen({ runId, anaesthetistId }: { runId: strin
         <aside aria-label="Remittance advice information" style={DOCUMENT_RAIL_STYLE}>
           <Card title="Remittance advice" titleLevel={3}>
             <Button variant="outline" size="compact" onClick={() => window.print()} shot="remittance-print">Print</Button>
-            <Link to={`/admin/billing/payment-runs/${runId}`} style={{ fontSize: 12.5, color: neutral.ink }}>{`Open ${advice.week}'s run`}</Link>
+            <Link to={paymentRunPath(runId)} style={{ fontSize: 12.5, color: neutral.ink }}>{`Open ${advice.week}'s run`}</Link>
           </Card>
           <Card title="Xero" titleLevel={3} shot="remittance-xero">
             <span className="mono" style={{ fontSize: 12.5 }}>{advice.batchPaymentId !== undefined ? `Batch payment ${advice.batchPaymentId} · ${formatCurrency(advice.net)}` : advice.net > 0 ? 'Batch payment awaiting Xero' : 'No batch payment: the negatives absorbed the run'}</span>

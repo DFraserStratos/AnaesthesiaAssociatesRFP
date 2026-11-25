@@ -7,7 +7,7 @@ import { runDemoAction } from './demoActions'
  * in the URL (a part payment on the invoice page moves that invoice's money).
  */
 
-test('demo actions: one on the Review queue, eleven on the Day view, ten on the Billing monitor', async ({ page }) => {
+test('demo actions: one on the Review queue, eleven on the Day view, two on Finances · Billing, five on Xero, two on Payments', async ({ page }) => {
   // The Review queue holds "Run the next billing run" (catch-up Phase 38b).
   await page.goto('/admin/review')
   await page.waitForLoadState('networkidle')
@@ -22,26 +22,47 @@ test('demo actions: one on the Review queue, eleven on the Day view, ten on the 
   await expect(page.locator('[data-shot="demo-action-inject-unmatched-receipt"]')).toBeVisible()
   await page.keyboard.press('Escape')
 
-  // The Billing monitor keeps its entries with its filters in the URL (catch-up Phase 37), plus Stage refund after payout (catch-up Phase 39) and Stage a payment week and Stage a bank mismatch (catch-up Phase 39a).
-  await page.goto('/admin/billing?anaesthetist=34821&problems=1&sort=date-asc')
+  // Build plan Phase 58 re-homed the Billing monitor's ten entries across the Finances tabs (D111).
+  // Finances · Billing keeps its entries with its filters in the URL (catch-up Phase 37).
+  await page.goto('/admin/finances/billing?anaesthetist=34821&problems=1&sort=date-asc')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 10')
+  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 2')
 
-  await page.goto('/admin/billing')
+  await page.goto('/admin/finances/billing')
   await page.waitForLoadState('networkidle')
   const pill = page.locator('[data-shot="demo-actions"]')
-  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 10')
+  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 2')
   await pill.focus()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('dialog')).toBeVisible()
-  for (const id of ['billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job', 'run-next-billing-run', 'stage-payment-week', 'stage-bank-mismatch']) {
+  for (const id of ['billing-failure', 'run-next-billing-run']) {
     await expect(page.locator(`[data-shot="demo-action-${id}"]`)).toBeVisible()
   }
-  // The screen's own "Run payables in Xero" panel (badged Simulated Xero, not a registry entry) is untouched.
-  await expect(page.locator('[data-shot="billing-payables-run"]')).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(pill).toBeFocused()
+
+  // Finances · Xero: the hand-off fault, the outage pair and the two jobs.
+  await page.goto('/admin/finances/xero')
+  await page.waitForLoadState('networkidle')
+  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 5')
+  await pill.click()
+  for (const id of ['arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job']) {
+    await expect(page.locator(`[data-shot="demo-action-${id}"]`)).toBeVisible()
+  }
+  await page.keyboard.press('Escape')
+
+  // Finances · Payments: the payment week and the bank mismatch (catch-up Phase 39a).
+  await page.goto('/admin/finances/payments')
+  await page.waitForLoadState('networkidle')
+  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 2')
+  await pill.click()
+  for (const id of ['stage-payment-week', 'stage-bank-mismatch']) {
+    await expect(page.locator(`[data-shot="demo-action-${id}"]`)).toBeVisible()
+  }
+  await page.keyboard.press('Escape')
+  // The screen's own "Run payables in Xero" panel (badged Simulated Xero, not a registry entry) is untouched.
+  await expect(page.locator('[data-shot="billing-payables-run"]')).toBeVisible()
 })
 
 test('demo actions: a half payment from an invoice page moves that invoice\'s money chip', async ({ page }) => {
@@ -56,7 +77,7 @@ test('demo actions: a half payment from an invoice page moves that invoice\'s mo
   await page.goto('/demo/control')
   await page.waitForLoadState('networkidle')
   await page.locator('[data-shot="index-payment-half"]').getByRole('button', { name: /Open screen/ }).click()
-  await expect(page).toHaveURL(/\/admin\/invoices\//)
+  await expect(page).toHaveURL(/\/admin\/finances\/invoices\//)
 
   const chips = page.locator('[data-shot="invoice-money-states"]')
   await expect(chips).toBeVisible()

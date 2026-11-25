@@ -26,7 +26,7 @@ const ROLES: RoleEntry[] = [
   },
   {
     role: 'OfficeAdmin (Kirsty W. · Office)',
-    view: 'The whole day across every anaesthetist; every Booking, the master data, the audit trail and the billing monitor.',
+    view: 'The whole day across every anaesthetist; every Booking, the master data, the audit trail and Finances.',
     edit: 'Edits Bookings on ACTIVE and SUBMITTED Lists, corrects billing setup, reassigns, authorises for billing, and manages master data, including each anaesthetist profile with its bank details and HPI CPN. Cannot edit an AUTHORISED List (locked).',
   },
   {

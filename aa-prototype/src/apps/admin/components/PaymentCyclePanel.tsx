@@ -1,5 +1,5 @@
 /**
- * The Billing monitor's payment cycle panel (catch-up Phase 39a; US-10.2.7,
+ * The Finances Payments tab's payment cycle panel (catch-up Phase 39a; US-10.2.7,
  * US-10.2.6, US-10.2.5): the week's four steps on a compact step rail, what
  * is waiting for this week's run, the check day's anomalies and holds, the
  * approval, the schedule to the accountant and "Run payables in Xero" (the
@@ -17,6 +17,7 @@ import { DemoBadge } from '../../../shared/DemoBadge'
 import { StepRail, type RailStep } from '../../../shared/contracts/railParts'
 import { drSurname, formatCurrency, plural, shortDay, stampText } from '../../../shared/format'
 import { neutral, radius } from '../../../theme/tokens'
+import { financePath, paymentRunPath } from '../screens/finances/financePaths'
 import { cycleFor, cycleLabel, cycleOfId, cycleRangeLabel, nextCycleId, plannedDayLabel, weekdayName, type PaymentCycle } from '../../../domain/billing/paymentCycle'
 import type { CycleAnomaly, PayablesRun, PayablesRunLine, PayablesRunStatus, RunAnaesthetistTotal } from '../../../domain/types'
 import {
@@ -223,7 +224,7 @@ export function PaymentCyclePanel({ actor }: { actor: Actor }) {
       <RunsList />
 
       <div>
-        <TextAction size="sm" flush shot="billing-open-ledger" onClick={() => navigate('/admin/ledger')}>Open the ledger</TextAction>
+        <TextAction size="sm" flush shot="billing-open-ledger" onClick={() => navigate(financePath('ledger'))}>Open the ledger</TextAction>
       </div>
       <ResultLine line={message} onDismiss={() => setMessage(null)} shot="billing-payables-result" />
       <FormError message={error} />
@@ -444,7 +445,7 @@ function RunsList() {
               <tr key={r.id} data-run-id={r.id} data-run-status={r.status}>
                 <Td mono>{cycleLabel(r)}</Td>
                 <Td mono>
-                  <Link to={`/admin/billing/payment-runs/${r.id}`} style={{ color: neutral.ink }}>{r.id}</Link>
+                  <Link to={paymentRunPath(r.id)} style={{ color: neutral.ink }}>{r.id}</Link>
                 </Td>
                 <Td mono>{`${stampOf(r.closedAtISO)} · ${r.closedBy.who}`}</Td>
                 <Td mono>{r.approvedAtISO !== undefined ? stampOf(r.approvedAtISO) : ''}</Td>

@@ -128,7 +128,7 @@ test('phase 24 admin: authorising the no-charge List raises a $0.00 "No charge" 
   await page.getByRole('button', { name: 'Authorise for billing' }).last().click()
   await page.waitForTimeout(400)
   await expect(page.getByText('List authorised · locked for billing')).toBeVisible()
-  await page.goto('/admin/invoices')
+  await page.goto('/admin/finances/invoices')
   await page.waitForLoadState('networkidle')
   await page.getByText('Ihaia Paewai').first().click()
   await page.waitForTimeout(400)

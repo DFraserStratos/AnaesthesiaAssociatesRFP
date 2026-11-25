@@ -23,11 +23,6 @@ import {
 } from './apps/mobile/routes'
 import {
   AdminAuditRoute,
-  AdminBillingPage,
-  AdminLedgerRoute,
-  AdminAnaesthetistLedgerRoute,
-  AdminAaFeesRoute,
-  AdminAaFeeSettingsRoute,
   AdminBookingDetailRoute,
   AdminDayRoute,
   AdminIndexRedirect,
@@ -37,10 +32,6 @@ import {
   AdminDataQualityRoute,
   AdminValidatorsRoute,
   AdminWaitingNhiTabRoute,
-  AdminInvoicesRoute,
-  AdminCreditNoteRoute,
-  AdminPaymentRunRoute,
-  AdminRemittanceRoute,
   AdminMastersRoute,
   AdminContractsRoute,
   AdminContractRoute,
@@ -63,7 +54,19 @@ import {
   AdminPeopleSpecialtiesRoute,
   AdminPeoplePatientsRoute,
   AdminPersonRedirect,
+  FinanceLegacyRedirect,
 } from './apps/admin/routes'
+import { BillingTab } from './apps/admin/screens/finances/BillingTab'
+import { InvoicesTab } from './apps/admin/screens/finances/InvoicesTab'
+import { PaymentsTab } from './apps/admin/screens/finances/PaymentsTab'
+import { LedgerTab } from './apps/admin/screens/finances/LedgerTab'
+import { XeroTab } from './apps/admin/screens/finances/XeroTab'
+import { AaFeesTab } from './apps/admin/screens/finances/AaFeesTab'
+import { InvoicePage } from './apps/admin/screens/finances/InvoicePage'
+import { CreditNotePage } from './apps/admin/screens/finances/CreditNotePage'
+import { PaymentRunPage } from './apps/admin/screens/finances/PaymentRunPage'
+import { RemittancePage } from './apps/admin/screens/finances/RemittancePage'
+import { AnaesthetistAccountPage } from './apps/admin/screens/finances/AnaesthetistAccountPage'
 import { peoplePath } from './apps/admin/peoplePaths'
 import { DemoControlPanel } from './apps/demo/DemoControlPanel'
 import { DemoXero } from './apps/demo/DemoXero'
@@ -152,10 +155,38 @@ const routeTree = (
               <Route index element={<AdminReviewQueueRoute />} />
               <Route path=":listId" element={<AdminReviewRoute />} />
             </Route>
-            <Route path="invoices">
-              <Route index element={<AdminInvoicesRoute />} />
-              <Route path=":invoiceId" element={<AdminInvoicesRoute />} />
+            {/* Finances (build plan Phase 58; D107): six routed tabs opening on Billing, each record nested under its
+                tab so an unknown id falls back to the tab. Each element is its own file in `screens/finances/`.
+                Fixed order: Wave 5 (60 to 67) edits none of this block. */}
+            <Route path="finances">
+              <Route index element={<Navigate to="billing" replace />} />
+              <Route path="billing" element={<BillingTab />} />
+              <Route path="invoices">
+                <Route index element={<InvoicesTab />} />
+                <Route path="credit-notes/:creditNoteId" element={<CreditNotePage />} />
+                <Route path=":invoiceId" element={<InvoicePage />} />
+              </Route>
+              <Route path="payments">
+                <Route index element={<PaymentsTab />} />
+                <Route path=":runId" element={<PaymentRunPage />} />
+                <Route path=":runId/remittance/:anaesthetistId" element={<RemittancePage />} />
+              </Route>
+              <Route path="ledger">
+                <Route index element={<LedgerTab />} />
+                <Route path="anaesthetists/:anaesthetistId" element={<AnaesthetistAccountPage />} />
+              </Route>
+              <Route path="xero" element={<XeroTab />} />
+              <Route path="aa-fees">
+                <Route index element={<AaFeesTab view="invoices" />} />
+                <Route path="settings" element={<AaFeesTab view="settings" />} />
+              </Route>
             </Route>
+            {/* The old Invoices, credit note, Billing monitor (AA fees, payment runs) and Ledger links redirect and stay (D108):
+                with replace, keeping the query, to their Finances homes (`financePathFromLegacy`). */}
+            <Route path="invoices/*" element={<FinanceLegacyRedirect />} />
+            <Route path="credit-notes/*" element={<FinanceLegacyRedirect />} />
+            <Route path="billing/*" element={<FinanceLegacyRedirect />} />
+            <Route path="ledger/*" element={<FinanceLegacyRedirect />} />
             {/* People (build plan Phase 53; D99): four routed tabs, each record nested under its tab so an
                 unknown id falls back to the tab. Fixed order: Wave 3 (54 to 57) only adds or swaps its own
                 routes here, never reorders the block. */}
@@ -184,20 +215,6 @@ const routeTree = (
               <Route path="waiting" element={<Navigate to="/admin/intake/waiting" replace />} />
               <Route path="follow-up" element={<Navigate to={peoplePath('patients', { filter: 'follow-up' })} replace />} />
               <Route path=":nhi" element={<AdminPersonRedirect kind="patient" />} />
-            </Route>
-            {/* A credit note's document (catch-up Phase 39), under Invoices in the side nav. */}
-            <Route path="credit-notes/:creditNoteId" element={<AdminCreditNoteRoute />} />
-            <Route path="billing">
-              <Route index element={<AdminBillingPage />} />
-              <Route path="aa-fees" element={<AdminAaFeesRoute />} />
-              <Route path="aa-fees/settings" element={<AdminAaFeeSettingsRoute />} />
-              {/* A payment run and its remittance advices (catch-up Phase 39a). */}
-              <Route path="payment-runs/:runId" element={<AdminPaymentRunRoute />} />
-              <Route path="payment-runs/:runId/remittance/:anaesthetistId" element={<AdminRemittanceRoute />} />
-            </Route>
-            <Route path="ledger">
-              <Route index element={<AdminLedgerRoute />} />
-              <Route path="anaesthetists/:anaesthetistId" element={<AdminAnaesthetistLedgerRoute />} />
             </Route>
             {/* Contracts (build plan Phase 45; D92): the list, New contract and a Contract's page by its id. */}
             <Route path="contracts">

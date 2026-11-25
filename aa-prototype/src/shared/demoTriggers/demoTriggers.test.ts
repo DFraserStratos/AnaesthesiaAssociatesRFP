@@ -26,7 +26,7 @@ import { alertOffice } from '../../store/officeAlertActions'
 import { ANAE, SEED_LIST_IDS, SEED_MARKERS, SEED_PREPAID_BOOKING_ID, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
 import { deliverPaymentWebhook } from '../../store/paymentActions'
 import { stagedSouterBooking } from '../../store/eventDemo'
-import { BILLING_MONITOR_SCREEN, DEMO_TRIGGERS, POST_OP_ORIGINAL_LIST_ID } from './registry'
+import { DEMO_TRIGGERS, FINANCES_BILLING_SCREEN, FINANCES_INVOICE_SCREEN, POST_OP_ORIGINAL_LIST_ID } from './registry'
 import { projectedListId } from '../../domain/slots'
 import { demoTriggersFor, groupTriggersByScreen, initialChoice } from './match'
 import { useDemoTriggerMemory } from './memory'
@@ -71,7 +71,7 @@ describe('registry shape', () => {
     }
   })
 
-  it('registers no Run payables on the bar (the Billing monitor has its own badged "Run payables in Xero" button)', () => {
+  it('registers no Run payables on the bar (Finances · Payments has its own badged "Run payables in Xero" button)', () => {
     expect(DEMO_TRIGGERS.some((t) => t.surfaces.includes('bar') && /run payables/i.test(t.label))).toBe(false)
   })
 
@@ -160,17 +160,23 @@ const PINNED_XERO_INVOICES = ['xero-outage-start', 'xero-outage-restore', 'run-r
 const PINNED_XERO_BANK = PINNED_XERO_INVOICES
 
 describe('route scoping', () => {
-  it('the Billing monitor shows exactly its ten entries (catch-up Phase 37 adds the outage pair, 38b the next billing run, 39 the refund after payout, 39a the payment week and the bank mismatch); routes match the path, so search params never change them', () => {
+  it("the Finances tabs each show exactly their own entries (build plan Phase 58; D111): the Billing monitor's ten split across Billing, Xero, Payments and the invoice page; routes match the path, so search params never change them", () => {
     const api = createAppStore()
-    const ten = ['billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job', 'run-next-billing-run', 'stage-refund-after-payout', 'stage-payment-week', 'stage-bank-mismatch']
-    expect([...ids(api, '/admin/billing')].sort()).toEqual([...ten].sort())
+    expect(ids(api, '/admin/finances/billing')).toEqual(['billing-failure', 'run-next-billing-run'])
+    expect(ids(api, '/admin/finances/xero')).toEqual(['arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job'])
+    expect(ids(api, '/admin/finances/payments')).toEqual(['stage-payment-week', 'stage-bank-mismatch'])
+    expect(ids(api, '/admin/finances/ledger')).toEqual(['inject-unmatched-receipt'])
+    expect(ids(api, '/admin/finances/invoices')).toEqual(['stage-combined-procedure', 'load-full-scale'])
+    expect(ids(api, '/admin/finances/aa-fees')).toEqual(['run-scheduled-fee-run', 'seed-month-of-bctis'])
+    // The old addresses only redirect: no entry binds to them.
+    for (const old of ['/admin/billing', '/admin/invoices', '/admin/invoices/INV0001', '/admin/credit-notes/CN0001', '/admin/ledger', '/admin/billing/aa-fees']) expect(ids(api, old), old).toEqual([])
   })
 
   it('"Stage a payment week" and "Stage a bank mismatch": choices, disabled states and results (catch-up Phase 39a)', () => {
     const api = createAppStore()
     const week = byId('stage-payment-week')
     const mismatch = byId('stage-bank-mismatch')
-    const ctx = ctxFor('/admin/billing')
+    const ctx = ctxFor('/admin/finances/payments')
     expect(week.choices!(api.getState(), ctx).map((c) => c.label)).toEqual(['19 BCTIs', '19 BCTIs and a credit after payout'])
     expect(mismatch.disabledReason(api.getState(), ctx)).toBe('Nothing received this week')
     const out = week.run(api, ctx, 'bctis')
@@ -197,7 +203,7 @@ describe('route scoping', () => {
     const api = createAppStore()
     const start = DEMO_TRIGGERS.find((t) => t.id === 'xero-outage-start')!
     const restore = DEMO_TRIGGERS.find((t) => t.id === 'xero-outage-restore')!
-    const ctx = ctxFor('/admin/billing')
+    const ctx = ctxFor('/admin/finances/xero')
     expect(start.disabledReason(api.getState(), ctx)).toBeNull()
     expect(restore.disabledReason(api.getState(), ctx)).toBe('Xero is connected')
     expect(start.run(api, ctx).ok).toBe(true)
@@ -368,7 +374,7 @@ describe('re-homed bodies match the Control Panel', () => {
     const api = createAppStore()
     wireBillingRun(api)
     const t = byId('billing-failure')
-    const ctx = ctxFor('/admin/billing')
+    const ctx = ctxFor('/admin/finances/billing')
     expect(t.disabledReason(api.getState(), ctx)).toBeNull()
     // The seed's own Contract entries (catch-up Phase 25a's seeded disable) are there before the trigger runs.
     const contractEntries = (s: ReturnType<typeof api.getState>) => s.audit.filter((a) => a.action.startsWith('contract.')).length
@@ -395,9 +401,9 @@ describe('re-homed bodies match the Control Panel', () => {
   it('arm handoff fault arms once and reads Armed', () => {
     const api = createAppStore()
     const t = byId('arm-handoff-fault')
-    t.run(api, ctxFor('/admin/billing'))
+    t.run(api, ctxFor('/admin/finances/xero'))
     expect(api.getState().settings.failNextHandoff).toBe(true)
-    expect(t.disabledReason(api.getState(), ctxFor('/admin/billing'))).toBe('Armed')
+    expect(t.disabledReason(api.getState(), ctxFor('/admin/finances/xero'))).toBe('Armed')
   })
 
   it("stage post-op authorises and bills the Sharma List (38b) and stages Dr Souter's submitted ACL reconstruction (39b), no event, then reads Already staged", () => {
@@ -430,14 +436,14 @@ describe('re-homed bodies match the Control Panel', () => {
     expect(ids(api, '/web/lists', 'bar')).toContain('stage-post-op')
   })
 
-  it('Run the next billing run is on the Billing monitor and Review only, disabled until an event is approved, then raises its invoice once (catch-up Phase 38b)', () => {
+  it('Run the next billing run is on Finances · Billing and Review only, disabled until an event is approved, then raises its invoice once (catch-up Phase 38b)', () => {
     const api = createAppStore()
     const t = byId('run-next-billing-run')
     expect(t.surfaces).toEqual(['bar'])
     expect(ids(api, '/admin/review')).toContain('run-next-billing-run')
-    expect(ids(api, '/admin/billing')).toContain('run-next-billing-run')
-    expect(ids(api, '/admin/invoices')).not.toContain('run-next-billing-run')
-    const ctx = ctxFor('/admin/billing')
+    expect(ids(api, '/admin/finances/billing')).toContain('run-next-billing-run')
+    expect(ids(api, '/admin/finances/invoices')).not.toContain('run-next-billing-run')
+    const ctx = ctxFor('/admin/finances/billing')
     expect(t.disabledReason(api.getState(), ctx)).toBe('No approved events are waiting for the billing run.')
     expect(approveProcedureEvent(api, OFFICE_ACTOR, 'EV0001').ok).toBe(true)
     expect(t.disabledReason(api.getState(), ctx)).toBeNull()
@@ -485,7 +491,7 @@ describe('re-homed bodies match the Control Panel', () => {
     const open = openAccRecs(api.getState())[0]
     expect(open).toBeDefined()
     if (open === undefined) return
-    const ctx = ctxFor(`/admin/invoices/${open.invoiceId}`, { invoiceId: open.invoiceId })
+    const ctx = ctxFor(`/admin/finances/invoices/${open.invoiceId}`, { invoiceId: open.invoiceId })
     expect(byId('payment-replay').disabledReason(api.getState(), ctx)).not.toBeNull()
 
     const half = byId('payment-half').run(api, ctx)
@@ -508,9 +514,9 @@ describe('re-homed bodies match the Control Panel', () => {
 
   it('payment entries refuse an invoice not yet handed off, and a replay after a reset', () => {
     const api = createAppStore()
-    expect(byId('payment-full').disabledReason(api.getState(), ctxFor('/admin/invoices/NOPE', { invoiceId: 'NOPE' }))).toBe('Not handed off to Xero')
+    expect(byId('payment-full').disabledReason(api.getState(), ctxFor('/admin/finances/invoices/NOPE', { invoiceId: 'NOPE' }))).toBe('Not handed off to Xero')
     useDemoTriggerMemory.setState({ lastWebhook: { accRecId: 'GONE', key: 'WEBHOOK-GONE-1', amount: 10 } })
-    const res = byId('payment-replay').run(api, ctxFor('/admin/invoices/NOPE', { invoiceId: 'NOPE' }))
+    const res = byId('payment-replay').run(api, ctxFor('/admin/finances/invoices/NOPE', { invoiceId: 'NOPE' }))
     expect(res.ok).toBe(false)
     expect(res.message).toMatch(/reset/)
   })
@@ -522,7 +528,7 @@ describe('re-homed bodies match the Control Panel', () => {
       authoriseList(api, OFFICE_ACTOR, SEED_LIST_IDS.souterMon20Am)
       const open = openAccRecs(api.getState())[0]
       if (open === undefined) throw new Error('no open invoice')
-      return { open, ctx: ctxFor(`/admin/invoices/${open.invoiceId}`, { invoiceId: open.invoiceId }) }
+      return { open, ctx: ctxFor(`/admin/finances/invoices/${open.invoiceId}`, { invoiceId: open.invoiceId }) }
     }
     const first = stage()
     byId('payment-half').run(api, first.ctx)
@@ -537,8 +543,8 @@ describe('re-homed bodies match the Control Panel', () => {
 
   it('poll and archive return their counts', () => {
     const api = createAppStore()
-    expect(byId('run-reconciliation-poll').run(api, ctxFor('/admin/billing')).message).toMatch(/^Reconciliation poll/)
-    expect(byId('run-archive-job').run(api, ctxFor('/admin/billing')).message).toMatch(/^Archive job/)
+    expect(byId('run-reconciliation-poll').run(api, ctxFor('/admin/finances/xero')).message).toMatch(/^Reconciliation poll/)
+    expect(byId('run-archive-job').run(api, ctxFor('/admin/finances/xero')).message).toMatch(/^Archive job/)
   })
 
   it('fire then replay dedupes', () => {
@@ -759,7 +765,7 @@ describe('sample warnings (catch-up Phase 15a)', () => {
     for (const surface of ['bar', 'pwa'] as const) {
       expect(ids(api, mobile, surface)).toEqual(expect.arrayContaining(['raise-sample-warnings', 'clear-sample-warnings']))
     }
-    for (const path of ['/admin/review', '/admin/billing', '/mobile/lists', `/mobile/lists/${SEED_LIST_IDS.rutherfordAm21}`, '/web/dashboard']) {
+    for (const path of ['/admin/review', '/admin/finances/billing', '/mobile/lists', `/mobile/lists/${SEED_LIST_IDS.rutherfordAm21}`, '/web/dashboard']) {
       expect(ids(api, path, 'bar')).not.toContain('raise-sample-warnings')
     }
   })
@@ -882,13 +888,13 @@ describe('Photo capture (Future scope) (catch-up Phase 15b)', () => {
 })
 
 describe('AA fee entries (catch-up Phase 16)', () => {
-  const FEE = '/admin/billing/aa-fees'
+  const FEE = '/admin/finances/aa-fees'
 
   it('show only on their screens, bar only', () => {
     const api = createAppStore()
     expect(ids(api, FEE)).toEqual(['run-scheduled-fee-run', 'seed-month-of-bctis'])
     expect(ids(api, `${FEE}/settings`)).toEqual([])
-    expect(ids(api, '/admin/billing')).not.toContain('run-scheduled-fee-run')
+    expect(ids(api, '/admin/finances/billing')).not.toContain('run-scheduled-fee-run')
     for (const id of ['run-scheduled-fee-run', 'seed-month-of-bctis', 'record-fee-payment']) {
       expect(byId(id).surfaces).toEqual(['bar'])
     }
@@ -965,19 +971,19 @@ describe('Regenerate from locked data (catch-up Phase 25)', () => {
     expect(authoriseList(api, { who: 'Kirsty W.', role: 'office', source: 'office' }, SEED_LIST_IDS.souterMon20Am).ok).toBe(true)
     const t = byId('regenerate-invoice')
     const s3 = Object.values(api.getState().billing.invoices).find((i) => i.kind === 'standard' && api.getState().schedule.bookings[i.bookingId]?.listId === SEED_LIST_IDS.souterMon20Am)!
-    expect(ids(api, `/admin/invoices/${s3.id}`)).toContain('regenerate-invoice')
-    expect(ids(api, '/admin/billing')).not.toContain('regenerate-invoice')
-    expect(ids(api, '/admin/invoices')).not.toContain('regenerate-invoice')
-    const ctx = ctxFor(`/admin/invoices/${s3.id}`, { invoiceId: s3.id })
+    expect(ids(api, `/admin/finances/invoices/${s3.id}`)).toContain('regenerate-invoice')
+    expect(ids(api, '/admin/finances/billing')).not.toContain('regenerate-invoice')
+    expect(ids(api, '/admin/finances/invoices')).not.toContain('regenerate-invoice')
+    const ctx = ctxFor(`/admin/finances/invoices/${s3.id}`, { invoiceId: s3.id })
     expect(t.disabledReason(api.getState(), ctx)).toBeNull()
     const res = t.run(api, ctx)
     expect(res.ok).toBe(true)
     expect(res.message).toMatch(/^Regenerated from locked data: identical/)
     expect(useDemoTriggerMemory.getState().regenerated[s3.id]?.ok).toBe(true)
     const prepayment = Object.values(api.getState().billing.invoices).find((i) => i.kind === 'prePayment')!
-    expect(t.disabledReason(api.getState(), ctxFor(`/admin/invoices/${prepayment.id}`, { invoiceId: prepayment.id }))).toBe('Raised at setup, before the lock')
+    expect(t.disabledReason(api.getState(), ctxFor(`/admin/finances/invoices/${prepayment.id}`, { invoiceId: prepayment.id }))).toBe('Raised at setup, before the lock')
     const fee = Object.keys(api.getState().billing.aaFeeInvoices)[0]!
-    expect(t.disabledReason(api.getState(), ctxFor(`/admin/invoices/${fee}`, { invoiceId: fee }))).toBe('Not priced from a Procedure')
+    expect(t.disabledReason(api.getState(), ctxFor(`/admin/finances/invoices/${fee}`, { invoiceId: fee }))).toBe('Not priced from a Procedure')
   })
 })
 
@@ -993,7 +999,7 @@ describe('prepayment entries (catch-up Phase 27)', () => {
     const mobile = `/mobile/lists/${rileyList(api)}/bookings/${RILEY}`
     expect(ids(api, mobile, 'pwa')).toEqual(expect.arrayContaining(['prepayment-two-days-before', 'pwa-office-approves-prepayment', 'pwa-payment-full', 'pwa-payment-half']))
     expect(ids(api, mobile, 'bar')).not.toContain('pwa-office-approves-prepayment')
-    expect(ids(api, '/admin/invoices')).not.toContain('add-prepaid-booking')
+    expect(ids(api, '/admin/finances/invoices')).not.toContain('add-prepaid-booking')
   })
 
   it('give their disabled reasons', () => {
@@ -1056,18 +1062,21 @@ describe('Office sets this session to Public (catch-up Phase 32d; PWA parity)', 
 })
 
 describe('the Ledger triggers (catch-up Phase 36)', () => {
-  it('Inject unmatched receipt shows only on the Ledger, both scopes', () => {
+  it('Inject unmatched receipt shows only on the Ledger, both scopes, and the Ledger offers no payment or Xero entries (build plan Phase 58; D111)', () => {
     const api = createAppStore()
-    expect(ids(api, '/admin/ledger')).toContain('inject-unmatched-receipt')
-    expect(ids(api, '/admin/ledger/anaesthetists/34821')).toContain('inject-unmatched-receipt')
-    expect(ids(api, '/admin/billing')).not.toContain('inject-unmatched-receipt')
-    expect(ids(api, '/admin/ledger')).toEqual(expect.arrayContaining(['payment-full', 'payment-half', 'arm-handoff-fault', 'run-archive-job']))
+    expect(ids(api, '/admin/finances/ledger')).toContain('inject-unmatched-receipt')
+    expect(ids(api, '/admin/finances/ledger/anaesthetists/34821')).toContain('inject-unmatched-receipt')
+    expect(ids(api, '/admin/finances/billing')).not.toContain('inject-unmatched-receipt')
+    for (const id of ['payment-full', 'payment-half', 'arm-handoff-fault', 'run-archive-job']) {
+      expect(ids(api, '/admin/finances/ledger'), id).not.toContain(id)
+      expect(ids(api, '/admin/finances/ledger/anaesthetists/34821'), id).not.toContain(id)
+    }
   })
 
   it('names Dr Souter by default: one held receipt attributed to her; a second press is disabled until it is cleared', () => {
     const api = createAppStore()
     const t = byId('inject-unmatched-receipt')
-    const ctx = ctxFor('/admin/ledger')
+    const ctx = ctxFor('/admin/finances/ledger')
     expect(initialChoice(t, api.getState(), ctx)).toBe('souter')
     expect(t.disabledReason(api.getState(), ctx)).toBeNull()
     expect(t.run(api, ctx, 'souter').ok).toBe(true)
@@ -1078,12 +1087,12 @@ describe('the Ledger triggers (catch-up Phase 36)', () => {
 
   it('"Names no one" holds an unattributed receipt', () => {
     const api = createAppStore()
-    expect(byId('inject-unmatched-receipt').run(api, ctxFor('/admin/ledger'), 'none').ok).toBe(true)
+    expect(byId('inject-unmatched-receipt').run(api, ctxFor('/admin/finances/ledger'), 'none').ok).toBe(true)
     const [u] = Object.values(api.getState().billing.unmatchedReceipts)
     expect([u?.reference, u?.anaesthetistId]).toEqual(['Bank deposit · JULY', undefined])
   })
 
-  it('a payment on the Ledger lands in the ledger first, then Xero, on the chosen open receivable', () => {
+  it("a payment on an invoice page lands in the ledger first, then Xero, on that invoice's receivable (no choices there)", () => {
     const api = createAppStore()
     const unwire = wireBillingRun(api)
     try {
@@ -1092,11 +1101,11 @@ describe('the Ledger triggers (catch-up Phase 36)', () => {
       unwire()
     }
     const t = byId('payment-half')
-    const ctx = ctxFor('/admin/ledger')
-    const choices = t.choices!(api.getState(), ctx)
-    expect(choices.length).toBe(openAccRecs(api.getState()).length)
-    const accRecId = choices[0]!.id
-    expect(t.run(api, ctx, accRecId).ok).toBe(true)
+    const open = openAccRecs(api.getState())[0]!
+    const accRecId = open.accRecId
+    const ctx = ctxFor(`/admin/finances/invoices/${open.invoiceId}`, { invoiceId: open.invoiceId })
+    expect(t.choices!(api.getState(), ctx)).toEqual([])
+    expect(t.run(api, ctx).ok).toBe(true)
     const pair = Object.values(api.getState().billing.ledger).find((p) => p.receivable.xeroAccRecId === accRecId)!
     expect(pair.receivable.receivedAmount).toBe(api.getState().xero.accRecs[accRecId]!.amountReceived)
   })
@@ -1162,14 +1171,15 @@ describe('the web money screens\' payment entries (catch-up Phase 38)', () => {
 describe('Phase 43 entries (scale and privacy)', () => {
   const byId = (id: string) => DEMO_TRIGGERS.find((t) => t.id === id)!
 
-  it('Load full-scale data sits on the Day view and Invoices, bar only, with a confirm line', () => {
+  it('Load full-scale data sits on Finances · Invoices and the Day view, bar only, with a confirm line', () => {
     const api = createAppStore()
     expect(ids(api, '/admin/day/2026-11-24')).toContain('load-full-scale')
-    expect(ids(api, '/admin/invoices')).toContain('load-full-scale')
-    expect(ids(api, '/admin/billing')).not.toContain('load-full-scale')
+    expect(ids(api, '/admin/finances/invoices')).toContain('load-full-scale')
+    expect(ids(api, '/admin/finances/billing')).not.toContain('load-full-scale')
+    expect(byId('load-full-scale').indexPath(api.getState())).toBe('/admin/finances/invoices')
     expect(ids(api, '/mobile/lists', 'pwa')).not.toContain('load-full-scale')
     expect(byId('load-full-scale').confirm).toBe('Replaces the current demo data. Reset returns to it.')
-    expect(byId('load-full-scale').disabledReason(api.getState(), ctxFor('/admin/invoices'))).toBeNull()
+    expect(byId('load-full-scale').disabledReason(api.getState(), ctxFor('/admin/finances/invoices'))).toBeNull()
   })
 
   it('Scan for NHI leaks sits on the Data inspector, offers a planted choice, and stores its report', () => {
@@ -1213,11 +1223,12 @@ describe('credit entries (catch-up Phase 39 session 2)', () => {
     expect(byId('stage-combined-procedure').surfaces).toEqual(['bar'])
     expect(byId('stage-refund-after-payout').surfaces).toEqual(['bar'])
     expect(byId('office-reviews-credit')).toMatchObject({ surfaces: ['pwa'], badge: 'office-stand-in' })
-    expect(ids(api, '/admin/invoices')).toContain('stage-combined-procedure')
-    expect(ids(api, '/admin/invoices/INV0001')).not.toContain('stage-combined-procedure')
-    expect(ids(api, '/admin/billing')).toEqual(expect.arrayContaining(['stage-refund-after-payout', 'run-next-billing-run']))
-    expect(ids(api, '/admin/invoices/INV0001')).toContain('stage-refund-after-payout')
-    expect(ids(api, '/admin/invoices')).not.toContain('stage-refund-after-payout')
+    expect(ids(api, '/admin/finances/invoices')).toContain('stage-combined-procedure')
+    expect(ids(api, '/admin/finances/invoices/INV0001')).not.toContain('stage-combined-procedure')
+    expect(ids(api, '/admin/finances/billing')).toContain('run-next-billing-run')
+    expect(ids(api, '/admin/finances/billing')).not.toContain('stage-refund-after-payout')
+    expect(ids(api, '/admin/finances/invoices/INV0001')).toContain('stage-refund-after-payout')
+    expect(ids(api, '/admin/finances/invoices')).not.toContain('stage-refund-after-payout')
     expect(ids(api, MOBILE_HBK03, 'pwa')).toEqual(expect.arrayContaining(['office-reviews-credit', 'office-reviews-additional-invoice']))
     expect(ids(api, MOBILE_HBK03, 'bar')).not.toContain('office-reviews-credit')
     for (const id of ['stage-combined-procedure', 'stage-refund-after-payout']) {
@@ -1225,11 +1236,12 @@ describe('credit entries (catch-up Phase 39 session 2)', () => {
     }
   })
 
-  it('"Stage refund after payout" is listed in the Control Panel index under the Billing monitor and Admin · Invoice, the groups in registry order (Phase 39 review)', () => {
+  it('"Stage refund after payout" is listed in the Control Panel index under Admin · Finances · Invoice alone, the groups in registry order (Phase 39 review; build plan Phase 58)', () => {
     const groups = groupTriggersByScreen(DEMO_TRIGGERS)
     const under = (screen: string) => groups.find((g) => g.screen === screen)?.entries.map((t) => t.id) ?? []
-    expect(under(BILLING_MONITOR_SCREEN)).toContain('stage-refund-after-payout')
-    expect(under('Admin · Invoice')).toEqual(expect.arrayContaining(['regenerate-invoice', 'stage-refund-after-payout']))
+    expect(under(FINANCES_BILLING_SCREEN)).not.toContain('stage-refund-after-payout')
+    expect(under(FINANCES_INVOICE_SCREEN)).toEqual(expect.arrayContaining(['regenerate-invoice', 'payment-full', 'payment-half', 'payment-replay', 'stage-refund-after-payout']))
+    expect(groups.filter((g) => g.entries.some((t) => t.id === 'stage-refund-after-payout')).map((g) => g.screen)).toEqual([FINANCES_INVOICE_SCREEN])
     // Every entry under its own screen, in registry order: the groups keep the order a plain grouping by `screen` gives.
     const plain: string[] = []
     for (const t of DEMO_TRIGGERS) if (!plain.includes(t.screen)) plain.push(t.screen)
@@ -1241,7 +1253,7 @@ describe('credit entries (catch-up Phase 39 session 2)', () => {
     const api = createAppStore()
     const unwire = wireBillingRun(api)
     const t = byId('stage-combined-procedure')
-    const ctx = ctxFor('/admin/invoices')
+    const ctx = ctxFor('/admin/finances/invoices')
     expect(t.disabledReason(api.getState(), ctx)).toBeNull()
     const out = t.run(api, ctx)
     unwire()
@@ -1250,7 +1262,7 @@ describe('credit entries (catch-up Phase 39 session 2)', () => {
     expect(out.link?.label).toMatch(/^Open AA-2026-\d{4}$/)
     const invoiceId = out.link!.to.split('/').pop()!
     expect(api.getState().billing.invoices[invoiceId]).toMatchObject({ kind: 'standard', total: 4255 })
-    expect(t.indexPath(api.getState())).toBe(`/admin/invoices/${invoiceId}`)
+    expect(t.indexPath(api.getState())).toBe(`/admin/finances/invoices/${invoiceId}`)
     expect(t.disabledReason(api.getState(), ctx)).toBe('Already staged')
   })
 
@@ -1258,19 +1270,21 @@ describe('credit entries (catch-up Phase 39 session 2)', () => {
     const api = createAppStore()
     const unwire = wireBillingRun(api)
     const t = byId('stage-refund-after-payout')
-    const monitor = ctxFor('/admin/billing')
-    expect(t.disabledReason(api.getState(), monitor)).toBe('Stage post-op scenario first')
-    expect(t.disabledReason(api.getState(), ctxFor('/admin/invoices/INV0001', { invoiceId: 'INV0001' }))).toBe('AA fee and prepayment invoices are not credited here')
+    expect(t.disabledReason(api.getState(), ctxFor('/admin/finances/invoices/INV0001', { invoiceId: 'INV0001' }))).toBe('AA fee and prepayment invoices are not credited here')
     runPostOp(api)
-    expect(t.disabledReason(api.getState(), monitor)).toBeNull()
-    const out = t.run(api, monitor)
+    // Its Open screen link is Sarah Mitchell's invoice once Stage post-op scenario has run.
+    const indexPath = t.indexPath(api.getState())!
+    const invoiceId = indexPath.split('/').pop()!
+    expect(indexPath).toBe(`/admin/finances/invoices/${invoiceId}`)
+    const onInvoice = ctxFor(indexPath, { invoiceId })
+    expect(t.disabledReason(api.getState(), onInvoice)).toBeNull()
+    const out = t.run(api, onInvoice)
     unwire()
     expect(out).toMatchObject({ ok: true, message: "Paid in full, approved for payment and paid out to Dr Sharma in Xero. Credit it to see the negative invoice. Once credited, the negative invoice is netted in Dr Sharma's next payment run." })
     // The payout went through a one-line staged run the office approved (no back door).
     expect(Object.values(api.getState().billing.payablesRuns).filter((r) => r.kind === 'staged')).toEqual([expect.objectContaining({ status: 'paid', cycleId: '2026-W48' })])
-    const invoiceId = out.link!.to.split('/').pop()!
-    expect(t.disabledReason(api.getState(), monitor)).toBe('Already paid out')
-    expect(t.disabledReason(api.getState(), ctxFor(`/admin/invoices/${invoiceId}`, { invoiceId }))).toBe('Already paid out')
+    expect(out.link).toBeUndefined()
+    expect(t.disabledReason(api.getState(), onInvoice)).toBe('Already paid out')
   })
 
   it('"Stage refund after payout" reads "Credit waiting for review" then "Invoice credited"; the payment entries read "Invoice credited" and the PWA choices drop the credited ACCREC', () => {
@@ -1279,11 +1293,11 @@ describe('credit entries (catch-up Phase 39 session 2)', () => {
     runPostOp(api)
     const t = byId('stage-refund-after-payout')
     const original = Object.values(api.getState().billing.invoices).find((i) => i.kind === 'standard' && i.bookingId === api.getState().schedule.bookings[Object.values(api.getState().schedule.bookings).find((b) => b.listId === POST_OP_ORIGINAL_LIST_ID)!.id]!.id)!
-    const ctx = ctxFor(`/admin/invoices/${original.id}`, { invoiceId: original.id })
+    const ctx = ctxFor(`/admin/finances/invoices/${original.id}`, { invoiceId: original.id })
     const { creditEventId } = credit(api, OFFICE_ACTOR, original.id)
     expect(t.disabledReason(api.getState(), ctx)).toBe('Credit waiting for review')
     expect(approveProcedureEvent(api, OFFICE_ACTOR, creditEventId).ok).toBe(true)
-    const runOut = byId('run-next-billing-run').run(api, ctxFor('/admin/billing'))
+    const runOut = byId('run-next-billing-run').run(api, ctxFor('/admin/finances/billing'))
     expect(runOut.message).toMatch(/^Billing run done: 1 credit note raised \(CN-2026-0001\)\.$/)
     unwire()
     expect(t.disabledReason(api.getState(), ctx)).toBe('Invoice credited')
@@ -1298,7 +1312,7 @@ describe('credit entries (catch-up Phase 39 session 2)', () => {
     const unwire = wireBillingRun(api)
     const { creditEventId } = credit(api, OFFICE_ACTOR, 'HINV03', [{ occurredOnISO: '2026-11-24', party: { sameAs: true }, lines: [{ description: 'Shorter case', quantity: 1, unitAmount: 400 }] }])
     expect(approveProcedureEvent(api, OFFICE_ACTOR, creditEventId).ok).toBe(true)
-    const out = byId('run-next-billing-run').run(api, ctxFor('/admin/billing'))
+    const out = byId('run-next-billing-run').run(api, ctxFor('/admin/finances/billing'))
     unwire()
     expect(out.message).toMatch(/^Billing run done: 1 credit note and 1 additional invoice raised \(CN-2026-0001, AA-2026-\d{4}\)\.$/)
   })
@@ -1335,7 +1349,7 @@ describe('Stage longer prepaid procedure (catch-up Phase 41; US-06.4.1)', () => 
     const t = byId('stage-longer-prepaid-procedure')
     expect(t.surfaces).toEqual(['bar'])
     expect(ids(api, `/admin/review/${LIST}`)).toContain('stage-longer-prepaid-procedure')
-    expect(ids(api, '/admin/invoices')).not.toContain('stage-longer-prepaid-procedure')
+    expect(ids(api, '/admin/finances/invoices')).not.toContain('stage-longer-prepaid-procedure')
     expect(t.disabledReason(api.getState(), at())).toBe(LONGER_PREPAID_COPY.submitFirst)
     submitNairList(api)
     expect(t.disabledReason(api.getState(), at())).toBeNull()
@@ -1383,7 +1397,7 @@ describe('Prepayment settled automatically (catch-up Phase 41 session 2; US-06.5
     const admin = adminCtx(api, RILEY).pathname
     expect(ids(api, admin)).toEqual(expect.arrayContaining(['prepayment-late-payment', 'prepayment-contract-changed']))
     expect(ids(api, admin, 'pwa')).not.toContain('prepayment-late-payment')
-    expect(ids(api, '/admin/invoices')).not.toContain('prepayment-contract-changed')
+    expect(ids(api, '/admin/finances/invoices')).not.toContain('prepayment-contract-changed')
     const mobile = mobileCtx(api, RILEY).pathname
     expect(byId('pwa-office-sends-prepayment-reminder').surfaces).toEqual(['pwa'])
     expect(byId('pwa-office-sends-prepayment-reminder').badge).toBe('office-stand-in')

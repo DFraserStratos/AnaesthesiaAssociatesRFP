@@ -77,7 +77,7 @@ test('events through review onto the Procedure invoice, then an own invoice in t
 
   // Authorise: the run bundles both onto the Procedure's invoice as their own dated lines.
   await authorise(page)
-  await page.goto('/admin/invoices')
+  await page.goto('/admin/finances/invoices')
   await expect(page.locator('[data-shot="invoice-list-event-lines"]')).toContainText('+2 event lines')
   await page.locator('[data-shot="invoice-list-event-lines"]').first().click()
   const lines = page.locator('[data-shot="invoice-event-lines"]')
@@ -95,9 +95,9 @@ test('events through review onto the Procedure invoice, then an own invoice in t
   await queue.locator('tr[data-kind="postOp"]', { hasText: 'Pain consult' }).click()
   await page.locator('[data-shot="event-review-approve"]').click()
   await page.keyboard.press('Escape')
-  await page.goto('/admin/billing')
+  await page.goto('/admin/finances/billing')
   expect(await runDemoAction(page, 'run-next-billing-run', { close: true })).toMatch(/AA-2026-\d{4}/)
-  await page.goto('/admin/invoices')
+  await page.goto('/admin/finances/invoices')
   await page.locator('[data-shot="invoice-list-kind"][data-kind="additional"]').first().click()
   await expect(page.locator('[data-shot="invoice-additional-of"]')).toContainText('Post-op event · relates to AA-2026-')
 })
