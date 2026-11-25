@@ -65,12 +65,6 @@ export interface RailSectionProps extends DataAttributes {
   empty: ReactNode
   /** Where See all opens: the whole list. Without it, See all expands the section in place (Phase 54). */
   allTo?: string
-  /**
-   * See all shows the rest in place (and Show fewer folds them back) even where `allTo` is given, for a
-   * section whose whole list has no page of its own (the patient's Bookings, build plan Phase 57).
-   * Default off; a section with no `allTo` expands in place anyway.
-   */
-  expandable?: boolean
   /** A short note beside the title. */
   aside?: ReactNode
   /** The section's hook (`data-*` pass through to it); See all carries `${shot}-all`. */
@@ -78,9 +72,9 @@ export interface RailSectionProps extends DataAttributes {
   style?: CSSProperties
 }
 
-export function RailSection({ title, countNoun, rows, limit = 5, empty, allTo, expandable = false, aside, shot, style, ...data }: RailSectionProps) {
+export function RailSection({ title, countNoun, rows, limit = 5, empty, allTo, aside, shot, style, ...data }: RailSectionProps) {
   const [expanded, setExpanded] = useState(false)
-  const inPlace = expandable || allTo === undefined
+  const inPlace = allTo === undefined
   const shown = inPlace && expanded ? rows : rows.slice(0, limit)
   return (
     <Card

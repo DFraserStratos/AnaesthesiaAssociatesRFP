@@ -26,9 +26,9 @@ function query(params: Record<string, string | undefined>): string {
  * The Contract catalogue (Phase 47), optionally grouped (`?group=`) and on one group (`?in=`, an id
  * of that grouping). `holder` is one Party's Contracts: the holder grouping on that Party.
  */
-export function contractsPath(opts: { group?: string; in?: string; holder?: string } = {}): string {
-  if (opts.holder !== undefined && opts.holder !== '') return `/admin/contracts${query({ group: 'holder', in: opts.holder })}`
-  return `/admin/contracts${query({ group: opts.group, in: opts.in })}`
+export function contractsPath(opts: { group?: string; in?: string; holder?: string; status?: 'all' } = {}): string {
+  if (opts.holder !== undefined && opts.holder !== '') return `/admin/contracts${query({ group: 'holder', in: opts.holder, status: opts.status })}`
+  return `/admin/contracts${query({ group: opts.group, in: opts.in, status: opts.status })}`
 }
 
 /**

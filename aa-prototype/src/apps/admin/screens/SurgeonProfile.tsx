@@ -18,6 +18,8 @@ import { RetireSection } from './masters/chrome'
 import { peoplePath } from '../peoplePaths'
 import { contractPath, contractsPath } from '../contractsPaths'
 import { drSurname, HPI_CPN_LABEL, shortDay } from '../../../shared/format'
+import { sessionText } from '../../../domain/outOfHours'
+import { DRAFT_LIST } from '../../../shared/scheduleTerms'
 
 /**
  * The surgeon's page (build plan Phase 55; US-13.6.2, US-13.4.1 "One card, one change"; D99, D104,
@@ -353,21 +355,22 @@ function SurgeonSidePanel({ surgeonId, actor }: { surgeonId: string; actor: Acto
       key: l.id,
       to: `/admin/day/${l.dateISO}`,
       state: { openListId: l.id },
-      title: `${shortDay(l.dateISO)} · ${l.session}`,
-      sub: `${masters.hospitals[l.hospitalId]?.name ?? l.hospitalId} · ${anaesthetist !== undefined ? drSurname(anaesthetist.name) : 'Draft List, no anaesthetist'}`,
+      title: `${shortDay(l.dateISO)} · ${sessionText(l.session)}`,
+      sub: `${masters.hospitals[l.hospitalId]?.name ?? l.hospitalId} · ${anaesthetist !== undefined ? drSurname(anaesthetist.name) : `${DRAFT_LIST}, no anaesthetist`}`,
       data: { 'data-list': l.id },
     }
   })
 
   return (
     <>
-      <PairingSection perspective="surgeon" subjectId={surgeonId} actor={actor} layout="panel" />
+      <PairingSection perspective="surgeon" subjectId={surgeonId} actor={actor} />
       <RailSection
         title="Contracts"
         countNoun="Contracts linked to this surgeon"
         rows={contractRows}
         empty="No Contract links this surgeon."
-        allTo={contractsPath({ group: 'surgeon', in: surgeonId })}
+        // Disabled ones are in the count, so See all opens the catalogue on every status when any is Disabled.
+        allTo={contractsPath({ group: 'surgeon', in: surgeonId, ...(contracts.some((r) => r.contract.status !== 'active') ? { status: 'all' as const } : {}) })}
         shot="surgeon-side-contracts"
       />
       <RailSection title="Next Lists" countNoun="upcoming Lists" rows={listRows} empty="No upcoming List." shot="surgeon-side-lists" />

@@ -4,9 +4,9 @@
  * group and every Contract it holds stay exactly as they were.
  */
 import { describe, expect, it } from 'vitest'
-import { buildSeed } from './index'
-import type { RetireKind } from '../masterLifecycle'
-import { createAppStore } from '../../store/appStore'
+import { buildSeed } from '../domain/seed'
+import type { RetireKind } from '../domain/masterLifecycle'
+import { createAppStore } from './appStore'
 
 /** Every retire kind, spelled out: adding a kind back fails the typecheck here. */
 const RETIRE_KINDS: Record<RetireKind, true> = { hospital: true, surgeon: true, aaModifier: true }

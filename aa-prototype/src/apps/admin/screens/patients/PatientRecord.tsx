@@ -55,6 +55,8 @@ const NOT_SUPPLIED = <span style={{ color: neutral.mist }}>Not supplied</span>
 
 /** How many Bookings the side panel shows before See all. */
 const RAIL_BOOKINGS = 3
+/** Why Details' Save is held back: a blank name, or an NHI or Ethnicity code marked under its field. */
+const DETAILS_BLOCKED = 'A patient needs a name, and any field marked above fixed, before Save.'
 
 export function PatientRecord({ nhi, actor, onOpenBooking }: { nhi: string; actor: Actor; onOpenBooking?: (dateISO: string, bookingId: string) => void }) {
   const slices = usePatientSlices()
@@ -493,6 +495,7 @@ function DetailsCard({ view, patient, actor }: { view: PatientRecordView; patien
       onSave={() => {
         if (draft !== null && !patientDraftBlocked(draft, patient, rights)) edit.save(draft)
       }}
+      saveDisabledReason={draft !== null && patientDraftBlocked(draft, patient, rights) ? DETAILS_BLOCKED : null}
       error={edit.error}
     >
       {draft !== null ? (
@@ -563,7 +566,7 @@ function bookingRow(b: PatientBookingRow, upcoming: boolean): RailSectionRow {
 /** The patient's Bookings: the next few, See all for the rest, past ones included (most recent first). */
 function BookingsSection({ view }: { view: PatientRecordView }) {
   const rows = [...view.upcoming.map((b) => bookingRow(b, true)), ...view.past.map((b) => bookingRow(b, false))]
-  return <RailSection title="Bookings" countNoun="Bookings" rows={rows} limit={RAIL_BOOKINGS} expandable empty="No Bookings for this patient." shot="patient-bookings" />
+  return <RailSection title="Bookings" countNoun="Bookings" rows={rows} limit={RAIL_BOOKINGS} empty="No Bookings for this patient." shot="patient-bookings" />
 }
 
 // ---------------------------------------------------------------------------

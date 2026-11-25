@@ -27,7 +27,3 @@ export function nextListsOf(lists: Readonly<Record<string, List>>, anaesthetistI
     .sort((a, b) => a.dateISO.localeCompare(b.dateISO) || SESSION_ORDER[a.session] - SESSION_ORDER[b.session] || a.id.localeCompare(b.id))
 }
 
-/** The first `limit` rows to show, and how many there are in all. */
-export function firstOf<T>(rows: readonly T[], limit: number): { shown: T[]; total: number } {
-  return { shown: rows.slice(0, Math.max(0, limit)), total: rows.length }
-}

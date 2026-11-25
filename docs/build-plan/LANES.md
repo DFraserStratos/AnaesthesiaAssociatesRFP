@@ -65,7 +65,7 @@ branch holds a commit whose subject starts `<id> complete:`. A wave **starts** w
 holds on `master` (and so, after step 2 below, on your branch). A wave is **on `master`** when every
 phase in it is DONE in `master`'s `docs/build-plan/PROGRESS.md`.
 
-### Current wave: Wave 3 (Wave 2 joined 2026-11-25 on wave/2; Wave 1 at 449fea69)
+### Current wave: none (Wave 3 joined 2026-11-25 on wave/3; Wave 2 on wave/2; Wave 1 at 449fea69)
 
 | Wave | Starts when | Lane A | Lane B | Lane C | Joined on | Owner test after it |
 |---|---|---|---|---|---|---|

@@ -1,6 +1,6 @@
 /**
  * The anaesthetist page's side panel rows (build plan Phase 54; US-12.1.4 "Side panel"): eight
- * upcoming Lists give three shown and a total of eight; past and Draft Lists never show, today's
+ * upcoming Lists all come back, in order; past and Draft Lists never show, today's
  * does; another anaesthetist's rows never show; a Contract linked to them but held by a hospital
  * still shows, and a Disabled one comes after the Active ones.
  */
@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Contract } from './billing/contracts'
 import type { List, Session } from './types'
-import { firstOf, linkedContractsOf, nextListsOf } from './anaesthetistPanel'
+import { linkedContractsOf, nextListsOf } from './anaesthetistPanel'
 
 const ME = '41267'
 const OTHER = '31902'
@@ -34,12 +34,9 @@ describe('nextListsOf', () => {
     list('THEIRS', '2026-11-25', 'AM', OTHER),
   ])
 
-  it('gives the eight upcoming Lists, three shown of eight', () => {
+  it('gives the eight upcoming Lists in order', () => {
     const rows = nextListsOf(lists, ME, TODAY)
     expect(rows.map((l) => l.id)).toEqual(['L0', 'L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7'])
-    const { shown, total } = firstOf(rows, 3)
-    expect(shown.map((l) => l.id)).toEqual(['L0', 'L1', 'L2'])
-    expect(total).toBe(8)
   })
 
   it("includes today's List and never a past, Draft or another anaesthetist's List", () => {

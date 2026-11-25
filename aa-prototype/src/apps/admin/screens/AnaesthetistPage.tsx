@@ -267,7 +267,7 @@ function AnaesthetistPanel({ anaesthetist: a, actor }: CardProps) {
   return (
     <div data-shot="anaesthetist-panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div data-shot="panel-pairings">
-        <PairingSection perspective="anaesthetist" subjectId={id} actor={actor} layout="panel" />
+        <PairingSection perspective="anaesthetist" subjectId={id} actor={actor} />
       </div>
       <RailSection title="Contracts" countNoun="Contracts linked to them" rows={contractRows} limit={PANEL_LIMIT} empty="No Contract is linked to them." shot="panel-contracts" />
       <RailSection title="Next Lists" countNoun="Lists from today" rows={listRows} limit={PANEL_LIMIT} empty="No List from today on." shot="panel-lists" />
