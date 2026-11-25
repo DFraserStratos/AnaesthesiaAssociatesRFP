@@ -91,6 +91,7 @@ import { MULTI_PROCEDURE_LIST_DATE, seedMultiProcedureBooking } from './multiPro
 import { seedCompletionBookings, type CompletionBookingKey } from './completionBookings'
 import { REVIEW_FLAGS_LIST_ID, seedReviewFlagBookings, type ReviewFlagBookingKey } from './reviewFlagBookings'
 import { seedDisabledContractBooking } from './disabledContractBooking'
+import { AGED_INVOICE_BOOKING_ID, seedAgedInvoiceBooking } from './agedInvoiceBooking'
 import { RANGE_AUTHORISED_BILLED_ISO, RANGE_AUTHORISED_LIST_ID, seedPricingBookings, type PricingBookingKey } from './pricingBookings'
 import { applySeedListOrigins } from './listOrigins'
 import { SEED_EMAIL_TEMPLATES, SEED_EMAIL_TEMPLATE_NEXT } from './emailTemplates'
@@ -560,6 +561,11 @@ function buildSeedInternal(): SeedBuild {
   const disabledContractBooking = seedDisabledContractBooking(pricingBookings.next)
   for (const b of disabledContractBooking.bookings) bookingsRec[b.id] = b
   for (const p of disabledContractBooking.procedures) proceduresRec[p.id] = p
+  // Phase 62: the aged unpaid invoice's Booking (Dr Ngata, Wed 14 Oct, billed Thu 15 Oct), after every other record.
+  const agedInvoice = seedAgedInvoiceBooking()
+  lists[agedInvoice.list.id] = agedInvoice.list
+  for (const b of agedInvoice.bookings) bookingsRec[b.id] = b
+  for (const p of agedInvoice.procedures) proceduresRec[p.id] = p
   // Its Thu 16 Jul PM List is AUTHORISED and billed (the seed's billing slice raises the Face lift's invoice).
   const rangeList = lists[RANGE_AUTHORISED_LIST_ID]
   if (rangeList !== undefined && rangeList.state !== 'DRAFT') lists[RANGE_AUTHORISED_LIST_ID] = { ...rangeList, state: 'AUTHORISED', billedAtISO: RANGE_AUTHORISED_BILLED_ISO }
@@ -1400,5 +1406,5 @@ export const SEED_MARKERS: Readonly<Record<string, SeedMarker>> = {
 export const PRICING_BOOKING_IDS: readonly string[] = Object.values(SEED_BUILD.pricing).sort()
 /** Catch-up Phase 25a's Booking on the Disabled Contract (seed/disabledContractBooking.ts). */
 export const DISABLED_CONTRACT_BOOKING_IDS: readonly string[] = [SEED_BUILD.disabledContract.disabledContractBooking]
-/** The seeded AUTHORISED Booking the billing slice invoices (catch-up Phase 24's range beat). */
-export const SEED_AUTHORISED_INVOICED_BOOKING_IDS: readonly string[] = [SEED_BUILD.pricing.rangeAuthorisedBooking]
+/** The seeded AUTHORISED Bookings the billing slice invoices: catch-up Phase 24's range beat, then Phase 62's aged unpaid invoice. */
+export const SEED_AUTHORISED_INVOICED_BOOKING_IDS: readonly string[] = [SEED_BUILD.pricing.rangeAuthorisedBooking, AGED_INVOICE_BOOKING_ID]

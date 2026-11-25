@@ -135,9 +135,12 @@ describe('the events list and the Invoices screen', () => {
   it('lists the credit note as its own row, and the replacement says what it rebills', () => {
     issue(1)
     const cn = creditNoteForInvoice(useAppStore.getState(), ORIGINAL)!
-    const { container } = inAdmin(<InvoicesScreen actor={OFFICE} />)
+    // The original is seeded history the list leaves out, so its credit note lists under All only, at the top.
+    const { container } = inAdmin(<InvoicesScreen actor={OFFICE} />, '/admin/finances/invoices?show=all')
     const cnRow = container.querySelector(`tr[data-credit-note-id="${cn.id}"]`)!
+    expect(container.querySelector('tbody tr')).toBe(cnRow)
     expect(cnRow.querySelector('[data-shot="invoice-list-kind"]')?.textContent).toBe('Credit note')
+    expect(cnRow.querySelector('[data-shot="invoice-list-kind"]')).toHaveAttribute('data-kind', 'creditNote')
     expect(cnRow.textContent).toContain('Credits AA-2026-H03')
     const rebill = container.querySelector(`tr[data-invoice-id="${cn.replacementInvoiceIds[0]}"]`)!
     expect(rebill.querySelector('[data-shot="invoice-list-rebills"]')?.textContent).toBe('Rebills AA-2026-H03')

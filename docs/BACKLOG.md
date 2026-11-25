@@ -22,9 +22,7 @@ that need work are repeated here.
 - The AA Holding card's rows do not sum to its balance (Refunded positive beside negative Credited and Transferred), and a credited row is dated at the credit while a later payment grows it. `apps/admin/components/HoldingAccountPanel.tsx`. S
 - The remittance advice lists the transfer PXT0001 under "BCTIs paid (1 BCTI)". S
 - Two events for one party approved together raise two invoices in one run; the rule says the same party's invoice where it can. `store/procedureEventActions.ts`. M
-- AA-2026-0007's row (Chen's event invoice) reads "Booking time not set". `apps/admin/screens/InvoicesScreen.tsx`. S
 - Data inspector totals disagree (54 invoices, 56 ledger pairs, 55 in Xero; "4 sessions" beside "894 lists"), and `entityCounts` has no credit-note count. `store/selectors.ts`, `apps/demo/DemoData.tsx`. S
-- Invoices pager counts invoices only (their credit notes ride along); at full scale it reads a few dozen fewer than the banner's invoice count (backdrop left out). `apps/admin/screens/InvoicesScreen.tsx`. S
 - During a Xero outage the system-actor `xero.queued` entry joins the office's change set: `mutate()` scopes change sets by store, not actor. `store/mutate.ts`. S
 - `paymentDisabledReason` and `openAccRecs` read the whole ledger once per render rather than once per screen. S
 - At reset the Reconciliation card reads "Books square" while the Ledger shows a pair not yet in Xero (AA-2026-S2401). Decided: the card counts pairs pending to Xero as not square ("1 pair not yet in Xero"); also count Xero-only items once polled. Admin Day. S
@@ -101,7 +99,7 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 - The mobile sign-out gate for an anaesthetist past their last day (`apps/mobile/MobileApp.tsx`) writes two "Signed out · No longer active" audit rows in dev, where StrictMode runs the effect twice; guard it with a ref. S
 - New Draft List's surgeon select has 166 options sorted by display string ("A. Kingsley" before "Dr A. Dacre"); the pairing and recurring sheets' 166-option selects have no type-ahead. `apps/admin/flows/DraftListSheet.tsx`. S
 - Admin Move booking lists every List that day (about 88) with no search, each with the same advisory line. S
-- Invoices and Audit dates show no year though they span 12 months. S
+- Audit dates show no year though they span 12 months. S
 - Web Dashboard "Who's free · next 5 days" lists every free colleague with no cap. `apps/web/screens/DashboardScreen.tsx`. S
 - Web Availability draws all 85 rows: Dr Souter's own row is not pinned and reads "Dr Melanie Soute…", and the AM/PM header does not stick. `apps/web/screens/AvailabilityGrid.tsx`. S
 - Mobile Availability: 82 colleague cards with no search; a tile's subtitle repeats the hospital ("St George's · St George's · Mr D. Gri…"). `apps/mobile/screens/AvailabilityScreen.tsx`. S
