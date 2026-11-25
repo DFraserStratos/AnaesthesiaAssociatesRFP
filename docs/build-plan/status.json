@@ -7,8 +7,8 @@
   },
   "guidance": {
     "as_of": "2026-11-25",
-    "headline": "Phase 45 runs first, alone, in the main folder. Then Phases 46 to 49 run in two lanes at once: paste the Lane A prompt into one session and the Lane B prompt into another.",
-    "headline_sub": "45 builds the Contracts section and the Contract page that every later phase builds on, so nothing runs beside it. Once 45 is DONE and committed on master, Lane A builds 46 then 49 and Lane B builds 47 then 48, each in its own worktree (docs/build-plan/LANES.md). The lane that finishes second joins them onto master; then test all four together on 5173.",
+    "headline": "Phase 45 runs first, alone, in the main folder. As soon as it is committed DONE, Phases 46 to 49 run in two lanes at once: paste the Lane A prompt into one session and the Lane B prompt into another. You test once, at the end.",
+    "headline_sub": "45 builds the Contracts section and the Contract page that every later phase builds on, so nothing runs beside it. No test after 45: once it is DONE and committed on master, Lane A builds 46 then 49 and Lane B builds 47 then 48, each in its own worktree (docs/build-plan/LANES.md), with a lighter gate per phase. The lane that finishes second joins them onto master, runs the full gate and one review over all four, and writes TEST-45-49.md: test 45 to 49 together on 5173 from that list.",
     "safe": {
       "45": "Depends on nothing; it is the base for 46 to 49, so it runs alone in the main folder with its own kick-off prompt."
     },

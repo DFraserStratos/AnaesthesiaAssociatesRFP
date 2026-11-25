@@ -79,13 +79,17 @@ them. One older open question touches a planned phase.
 
 - **Every phase** runs as one ordinary session (two at most) in the main folder on `master`, except
   where [LANES.md](LANES.md) puts it in a build lane. A phase starts only when every phase in its
-  `depends_on` is DONE and committed, and (outside a lane) the owner has tested the phase before it.
+  `depends_on` is DONE and committed, and the owner has tested the phase before it, except for 45 to
+  49 (below).
 - **Build lanes for 46 to 49** (owner, 2026-11-25). 45 runs first, alone, in the main folder with its
   own kick-off prompt. Once 45 is DONE and committed, Phases 46 to 49 run as Wave 1 of two lanes, each
   in its own git worktree: **Lane A** builds 46 then 49 ([prompt](lanes/lane-a.prompt.md)), **Lane B**
   builds 47 then 48 ([prompt](lanes/lane-b.prompt.md)). The lane that finishes second joins them onto
-  `master` as soon as the full gate is green; the owner then tests all four together, and the lanes are
-  torn down. [LANES.md](LANES.md) holds the ownership table, the sync, the join and the conflict rules,
+  `master` as soon as the full gate is green. **The owner tests once, at the end:** no test after 45 or
+  between lane phases; after the join, the owner tests 45 to 49 together on `master` from
+  `TEST-45-49.md`, which the join writes, and the lanes are torn down. Inside the lanes each phase
+  runs a lighter gate (typecheck, builds, Vitest, lint, its own checklist) and skips its own review;
+  the join runs the full gate and one review over all four. [LANES.md](LANES.md) holds the ownership table, the sync, the join and the conflict rules,
   and overrides a phase's kick-off prompt, the run-build-phase skill and CLAUDE.md for a lane session.
   A session on `master` never runs 46 to 49 from their own prompts. 45's own Stage 7 keeps
   `status.json` `guidance.lanes`.
@@ -168,7 +172,8 @@ what to build.
 - **Stop and ask only when it is very needed:** a drift-check stop the phase doc names, a blocker no
   documented default resolves, or an action that is destructive or hard to undo.
 - **Then the owner tests.** The phase commits when green and hands over: what changed, where to try
-  it and the "For the owner's review" list. The owner tests the phase.
+  it and the "For the owner's review" list. The owner tests the phase. For 45 to 49 the owner tests
+  once, after the lanes' join, from `TEST-45-49.md` ([LANES.md](LANES.md)).
 
 ### Front-end design
 

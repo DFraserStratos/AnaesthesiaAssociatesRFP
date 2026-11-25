@@ -11,7 +11,7 @@ No DM or RV row covers it ([domain-model-delta](../analysis/domain-model-delta.m
 
 **Estimated:** 1 session: the pure helper and its tests, the draft rules, the page, then the deletions and test moves.
 
-**Runs in:** Lane A of the build lanes (first in its queue, after 45 is DONE on master): built in the `AnaesthesiaAssociatesRFP-laneA` worktree, committed on `lane/a` with a `46 complete:` commit, and joined onto `master` with the rest of 46 to 49. [LANES.md](../LANES.md) overrides this doc's and the skill's commit, port, owner-review and plan-page steps for a lane session.
+**Runs in:** Lane A of the build lanes (first in its queue, after 45 is DONE on master): built in the `AnaesthesiaAssociatesRFP-laneA` worktree, committed on `lane/a` with a `46 complete:` commit, and joined onto `master` with the rest of 46 to 49. [LANES.md](../LANES.md) overrides this doc's and the skill's commit, port, gate, review, owner-review and plan-page steps for a lane session (a lighter gate per phase; the full gate, one review and the owner's test come after the join).
 
 
 ## Goal

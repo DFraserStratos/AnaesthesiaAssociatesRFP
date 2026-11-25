@@ -4,8 +4,10 @@ The owner's decision of 25 November 2026: once **Phase 45** (the Contracts secti
 page) is built and committed on `master` as an ordinary session in the main folder, Phases 46 to 49 are
 built by **two sessions at once**, each in its own git worktree (a **lane**), working through a queue
 of two phases (one **wave**). When both lanes finish, the session that finishes second joins them,
-checks the joined code and fast-forwards `master`. The owner then tests all four phases together on
-`master`, and the lanes are torn down. The owner runs the lanes from two Claude accounts (`claude` and
+checks the joined code and fast-forwards `master`. The owner then tests 45 to 49 once, together, on
+`master`, from the test list the join writes, and the lanes are torn down. There is no owner test
+between phases: not after 45, and not between the phases in a lane. This is a prototype: each phase
+must work, not be production ready. The owner runs the lanes from two Claude accounts (`claude` and
 `claude2`), so the sessions never talk to each other through Claude: everything they share goes
 through git and a folder in the shared git directory, described below.
 
@@ -137,9 +139,22 @@ The owner pastes the same lane prompt every time (in `lanes/`). The session then
   - Never push. Never amend, rebase or reset a commit the other lane or the owner made. Never delete a
     branch or a worktree.
 - **No owner test between phases.** The ROADMAP rule that the owner tests each phase before the next
-  starts is replaced, for 46 to 49, by one owner test of all four on `master` after the join. Build
+  starts is replaced, for 45 to 49, by one owner test of all five on `master` after the join. Build
   your next phase straight after the last one's `complete:` commit, in the same session if it has room
   or the next one. Put everything for the owner on the phase's "For the owner's review" list as usual.
+- **A lighter gate per phase; the heavy checks run once, at the join.** In the run-build-phase skill:
+  - Your gate, at a checkpoint and at the end, is
+    `node requirements-board/agent/skills/run-build-phase/tools/phase-check.mjs --only typecheck,build,build-pwa,vitest`
+    plus `npm run lint` in `aa-prototype/`, all green. Use `--changed` for the inner loop as usual.
+  - Skip the full gate (verify-board and all Playwright) in Stage 3 step 5, Stage 4 step 1 and Stage 5
+    step 5. Still update the Playwright specs your phase doc says to, and you may run just those
+    files (`npx playwright test <files>` in `aa-prototype/`, on your lane's ports). The join runs the
+    whole suite and fixes what is left.
+  - Skip the Stage 5 review (steps 1, 4 and 5): the join reviews all four phases at once, with each
+    phase doc's "Adversarial review" steer bullets.
+  - Keep Stage 4 steps 2 and 3: one quick look at each changed screen against its design, and the
+    phase's manual checklist run yourself in the running app on your ports. Fix what doesn't work.
+    Polish beyond "it works and matches the design" waits for the owner's test.
 - **Ports:** your lane's own. Ignore any port lock in the skill or a phase doc: there is none between
   lanes. Never stop a server you didn't start. Run
   `node requirements-board/agent/skills/run-build-phase/tools/phase-check.mjs --stop-servers` at the
@@ -195,7 +210,9 @@ When your last phase in the wave is complete:
 5. **Check the joined code.**
    - The full gate, all green:
      `node requirements-board/agent/skills/run-build-phase/tools/phase-check.mjs` (typecheck, both
-     builds, all of Vitest, verify-board, all Playwright) and `npm run lint` in `aa-prototype/`.
+     builds, all of Vitest, verify-board, all Playwright) and `npm run lint` in `aa-prototype/`. This
+     is the first full gate since 45: the lanes ran a lighter one, so fix any failure from any of the
+     four phases here, then re-run the gate.
    - Seed pins, fingerprints and count tests are re-measured on the joined code, never added up.
    - No hook was lost: `git diff master...wave/1 -- aa-prototype | grep '^-.*data-'`, and account for
      every line.
@@ -214,18 +231,29 @@ When your last phase in the wave is complete:
        `?view=parties` (and `&party=<id>`) and `?view=fundingTags`. Master data shows its "now in
        Contracts" line.
      - The demo triggers both lanes registered or re-pointed show on their screens only.
-   - One adversarial reviewer (Opus) on the join alone. Steer it at: one lane's work lost in a
-     conflict, a part built twice, a hook dropped, a route or tab lost from the Contracts block,
-     `PERSIST_VERSION` or a seed pin wrong on the joined code, a private copy of a shared component.
+   - **The review, once for all four phases** (the lanes skipped theirs). Three Opus subagents
+     (`model: opus`), read-only, over `git diff master...wave/1`, one per lens: bugs and correctness
+     (guards, lifecycle, audit, determinism, the late disable, the move of ticked Procedures),
+     plan adherence (every work item and checklist item of 46 to 49 delivered), and the join (one
+     lane's work lost in a conflict, a part built twice, a hook dropped, a route or tab lost from the
+     Contracts block, `PERSIST_VERSION` or a seed pin wrong, a private copy of a shared component).
+     Give each the four phase docs' "Adversarial review" steer bullets. Ask for findings that would
+     stop something working or break a rule in CLAUDE.md, not polish. Verify each finding yourself,
+     fix the confirmed ones, and re-run the full gate.
 6. **Write it up.**
    - In `docs/build-plan/PROGRESS.md`, under the wave's last entry, add a short `Wave 1 joined` note:
      the date, each conflict and how it was resolved, the re-measured Vitest and Playwright counts,
      and anything for the owner.
+   - **Write the owner's test list**, `docs/build-plan/TEST-45-49.md`: one walk through the app on
+     5173 that covers 45 to 49 in about 15 numbered steps, each with where to click, the seed record
+     to use and what should happen. Draw it from the five phases' manual checklists and the join's
+     checks; leave out what a test already proves. End it with "Decisions to look at": the five
+     phases' "For the owner's review" lists merged into one short list, one line each.
    - Mark the wave finished in this file: "Current wave: none (Wave 1 joined <date>)".
    - Update the plan page: in `docs/build-plan/status.json`, every phase from 46 to 49 DONE in `done`,
      `in_progress` empty, `next` the next phase in `plan.json` if any, `guidance.lanes` removed,
-     `guidance.safe`, `wait` and `parallel` cleared of 46 to 49, and a `headline` saying the four are on
-     `master` for the owner's test. Then
+     `guidance.safe`, `wait` and `parallel` cleared of 46 to 49, and a `headline` saying 45 to 49 are
+     on `master` for the owner's test, with `headline_sub` linking `TEST-45-49.md`. Then
      `node requirements-board/agent/skills/update-build-plan/tools/build-index.mjs` from the worktree
      root, which must print no warnings.
    - Commit with the subject `Wave 1 joined: ...`.
@@ -243,9 +271,9 @@ When your last phase in the wave is complete:
      to wave/1 as docs/build-plan/LANES.md's join step 7 says (merging master into wave/1 first if it
      moved), then tear the lanes down as its Tear down section says."
 8. Write `joined` in both status files and append a `notes.md` entry. Tell the owner: `master` now
-   holds Phases 46 to 49 (not pushed), ready to test on 5173; and to tear the lanes down, paste into a
-   main-folder session: "Tear down the Contracts lanes as docs/build-plan/LANES.md's Tear down section
-   says."
+   holds Phases 46 to 49 (not pushed), ready to test 45 to 49 on 5173 from
+   `docs/build-plan/TEST-45-49.md`; and to tear the lanes down, paste into a main-folder session:
+   "Tear down the Contracts lanes as docs/build-plan/LANES.md's Tear down section says."
 
 ### Resolving conflicts
 

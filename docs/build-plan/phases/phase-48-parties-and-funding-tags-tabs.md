@@ -11,7 +11,7 @@ No DM or RV row changes: a Party and a funding tag are the records they were ([d
 **Depends on:** 45 (the Contracts section: its tab strip and routes, the redirect helper, the Card editing and footer variant, ProfilePage fluid with the rail) and 47 (the grouped catalogue: `groupContracts`, `GroupRow` sub-headings, the `?group=` and `?in=` URL).
 **Estimated:** 1 session.
 
-**Runs in:** Lane B of the build lanes (after 47, in the same lane): built in the `AnaesthesiaAssociatesRFP-laneB` worktree, committed on `lane/b` with a `48 complete:` commit, and joined onto `master` with the rest of 46 to 49. [LANES.md](../LANES.md) overrides this doc's and the skill's commit, port, owner-review and plan-page steps for a lane session.
+**Runs in:** Lane B of the build lanes (after 47, in the same lane): built in the `AnaesthesiaAssociatesRFP-laneB` worktree, committed on `lane/b` with a `48 complete:` commit, and joined onto `master` with the rest of 46 to 49. [LANES.md](../LANES.md) overrides this doc's and the skill's commit, port, gate, review, owner-review and plan-page steps for a lane session (a lighter gate per phase; the full gate, one review and the owner's test come after the join).
 
 
 ## Goal
