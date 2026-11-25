@@ -5,7 +5,7 @@
  * cases now run on the page's invoice-and-codes card).
  */
 
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { CONTRACT_REFUSAL_MESSAGES } from '../../../../domain/billing/contracts'
@@ -13,7 +13,7 @@ import { formatMoney } from '../../../../domain/billing/money'
 import { addDaysISO } from '../../../../domain/clock'
 import { onContract, stillOnContract, freshAppState, useAppStore, type Actor } from '../../../../store'
 import { SurfaceProvider } from '../../../../shared'
-import { AdminContractRoute, AdminContractsRoute, AdminMastersRoute } from '../../routes'
+import { AdminContractRoute, AdminContractsRoute, AdminMastersRoute, AdminNewContractRoute } from '../../routes'
 import { mastersRedirect } from '../../mastersRedirect'
 import { contractPath, contractsPath, newContractPath, partyPath } from '../../contractsPaths'
 
@@ -36,8 +36,8 @@ function renderAt(url: string) {
             <Route path="contracts">
               <Route element={<AdminContractsRoute />}>
                 <Route index element={null} />
-                <Route path="new" element={null} />
               </Route>
+              <Route path="new" element={<AdminNewContractRoute />} />
               <Route path=":contractId" element={<AdminContractRoute />} />
             </Route>
             <Route path="masters" element={<AdminMastersRoute />} />
@@ -295,25 +295,16 @@ describe('the default RVG code picker over the invoice-and-codes card (U2, bug 1
   })
 })
 
-describe('New contract, the create panel until 46', () => {
-  it('opens from the list with the holder carried, and closing returns to the list', () => {
+describe('New contract opens its own page (Phase 46)', () => {
+  it('opens from the list with the holder carried, and Cancel returns to the list for that holder', () => {
     renderAt('/admin/contracts?holder=PY-CES')
     fireEvent.click(screen.getByRole('button', { name: 'New contract' }))
     expect(location).toBe('/admin/contracts/new?holder=PY-CES')
-    const panel = card('contract-detail')
-    expect(within(panel).getByRole('heading', { name: 'New contract' })).toBeInTheDocument()
-    expect(within(panel).getByLabelText('Holder')).toHaveValue('PY-CES')
-    expect(within(panel).queryByRole('button', { name: 'Disable' })).toBeNull()
-    act(() => escape())
+    const page = card('contract-new-page')
+    expect(within(page).getByRole('heading', { level: 1, name: 'New contract' })).toBeInTheDocument()
+    expect(within(page).getByLabelText('Holder')).toHaveValue('PY-CES')
+    expect(within(page).queryByRole('button', { name: 'Disable' })).toBeNull()
+    fireEvent.click(within(page).getByRole('button', { name: 'Cancel' }))
     expect(location).toBe('/admin/contracts?holder=PY-CES')
-  })
-
-  it("keeps the list's search behind the panel", () => {
-    renderAt('/admin/contracts')
-    fireEvent.change(screen.getByLabelText('Search by name, code or AA code'), { target: { value: 'Face lift' } })
-    fireEvent.click(screen.getByRole('button', { name: 'New contract' }))
-    act(() => escape())
-    expect(location).toBe('/admin/contracts')
-    expect(screen.getByLabelText('Search by name, code or AA code')).toHaveValue('Face lift')
   })
 })

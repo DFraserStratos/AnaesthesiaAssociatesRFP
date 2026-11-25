@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { SPC, SURG, TAG } from '../../../../domain/seed'
 import { freshAppState, useAppStore, type Actor } from '../../../../store'
 import { SurfaceProvider } from '../../../../shared'
-import { AdminContractRoute, AdminContractsRoute, AdminMastersRoute, AdminSurgeonProfileRoute } from '../../routes'
+import { AdminContractRoute, AdminContractsRoute, AdminMastersRoute, AdminNewContractRoute, AdminSurgeonProfileRoute } from '../../routes'
 import { isOpenPriceFallback } from '../../../../domain/billing/fallbacks'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -29,8 +29,8 @@ function renderAdmin(path: string) {
             <Route path="contracts">
               <Route element={<AdminContractsRoute />}>
                 <Route index element={null} />
-                <Route path="new" element={null} />
               </Route>
+              <Route path="new" element={<AdminNewContractRoute />} />
               <Route path=":contractId" element={<AdminContractRoute />} />
             </Route>
           </Route>
@@ -183,7 +183,8 @@ describe("the Contract's page and the catalogue (US-04.2.16, US-04.2.17; a page 
   it('a new Contract never offers an open-price kind', () => {
     renderAdmin('/admin/contracts')
     fireEvent.click(screen.getByRole('button', { name: 'New contract' }))
-    const kinds = [...(screen.getByLabelText('Pricing kind') as HTMLSelectElement).options].map((o) => o.value)
+    const kinds = within(screen.getByRole('radiogroup', { name: 'Pricing kind' })).getAllByRole('radio').map((r) => r.getAttribute('data-pricing-kind'))
+    expect(kinds).toEqual(['rvgAnaesthetistRate', 'rvgContractRate', 'rvgDiscount', 'fixed'])
     expect(kinds).not.toContain('open')
   })
 

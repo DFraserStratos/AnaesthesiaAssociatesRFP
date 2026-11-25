@@ -32,9 +32,8 @@ import { PROFILE_CARD } from '../../components/ProfileChrome'
 import { partyPath } from '../../contractsPaths'
 import { PriceRangesTable } from './PriceRangesTable'
 import { DefaultRvgCodeField } from './DefaultRvgCodeField'
-
-/** D23 (OQ-73, at Confirm): the one place on the page the reading is labelled. */
-export const PREPAID_BILLS_PAYER_HELPER = "A prepaid Contract always bills the payer, awaiting AA's confirmation."
+// D23's caption has one home, New contract's step 1 (Phase 46); "Who it bills" shows the same string.
+import { PREPAID_BILLS_PAYER_HELPER } from './new/NewContractPage'
 
 /** The fields a system Contract may change, read from the model's one list. */
 const SYSTEM_EDITABLE: ReadonlySet<string> = new Set(SYSTEM_CONTRACT_EDITABLE_FIELDS)

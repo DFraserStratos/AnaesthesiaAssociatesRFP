@@ -294,10 +294,8 @@ const MUST_KEEP: readonly MustKeep[] = [
   // D78: base units on a mixed Booking whose primary has a fixed price (23).
   { file: 'shared/capture/UnitsCard.tsx', text: 'No base units billed on a fixed price (provisional, OQ-132)', item: 'OQ-132, D78', phase: '23' },
   { file: 'shared/booking/BookingDetailBody.tsx', text: 'No base units billed (provisional, OQ-132)', item: 'OQ-132, D78', phase: '23' },
-  // D23 at Confirm: labelled once, awaiting confirmation (27).
-  { file: 'apps/admin/flows/ContractEditSheet.tsx', text: "A prepaid Contract always bills the payer, awaiting AA's confirmation.", item: 'OQ-73, D23', phase: '27' },
-  // The same caption on a Contract page's who-it-bills card (build plan Phase 45); the panel's row stays until 46.
-  { file: 'apps/admin/screens/contracts/ContractCards.tsx', text: "A prepaid Contract always bills the payer, awaiting AA's confirmation.", item: 'OQ-73, D23', phase: '45' },
+  // D23 at Confirm: labelled once, awaiting confirmation (27); one home, New contract's step 1 (build plan Phase 46), which the Contract page's card imports.
+  { file: 'apps/admin/screens/contracts/new/NewContractPage.tsx', text: "A prepaid Contract always bills the payer, awaiting AA's confirmation.", item: 'OQ-73, D23', phase: '46' },
   // The NHI mod-11 flag (US-11.1.2).
   { file: 'apps/admin/intake/ValidatorsTab.tsx', text: 'The requirement labels the current algorithm “Modulus 24”', item: 'US-11.1.2', phase: '11, 34, 44' },
   { file: 'apps/admin/intake/ValidatorsTab.tsx', text: 'the label is flagged for AA to confirm', item: 'US-11.1.2', phase: '44' },
