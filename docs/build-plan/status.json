@@ -1,47 +1,22 @@
 {
   "done": [
-    "45"
+    "45",
+    "46",
+    "47",
+    "48",
+    "49"
   ],
   "in_progress": [],
   "next": {
-    "phases": [
-      "46",
-      "47"
-    ],
-    "note": "Phase 45 is DONE and committed on master: the Contracts section, the Contract page, its cards, the price ranges table and the confirmed Disable. The two lanes start now, together, each in its own worktree: Lane A builds 46 then 49, Lane B builds 47 then 48 (docs/build-plan/LANES.md). 45 is tested with 46 to 49 at the end, from TEST-45-49.md. Master's Playwright suite carries 48 failures from before 45 (docs/BACKLOG.md): a lane's gate should not read them as its own."
+    "phases": [],
+    "note": "Phases 45 to 49 are built and on master (not pushed): the Contracts section, New contract, the grouped catalogue, Parties and Funding tags, and Replace from a date. Test them together on 5173 from TEST-45-49.md. No later phase is in the plan yet; the People section (US-13.4.1) is next once its plan update is committed."
   },
   "guidance": {
     "as_of": "2026-11-25",
-    "headline": "Start Lane A and Lane B now: paste the Lane A prompt into one session and the Lane B prompt into another. Phase 45 built the Contracts section and a page for every Contract.",
-    "headline_sub": "Phase 45 is DONE and committed on master; no test after it (LANES.md). Lane A builds 46 then 49 and Lane B builds 47 then 48, each in its own worktree with a lighter gate per phase. The lane that finishes second joins them onto master, runs the full gate and one review over all four, and writes TEST-45-49.md: test 45 to 49 together on 5173 from that list.",
-    "safe": {
-      "46": "Lane A's first phase: it depends only on 45, which is DONE; 45 must be committed on master first (it is).",
-      "47": "Lane B's first phase: it depends only on 45, which is DONE; 45 must be committed on master first (it is)."
-    },
-    "wait": {
-      "48": "Lane B, after 47 (in the same lane).",
-      "49": "Lane A, after 46 (in the same lane)."
-    },
-    "parallel": "Wave 1 of the lanes: Lane A 46 then 49, Lane B 47 then 48. Neither lane needs the other's work; they meet only in the Contract list screen, the Contracts route block and shared barrels, as LANES.md's ownership table says. Paste each lane's prompt again whenever its session ends: the same prompt starts, resumes and joins.",
-    "lanes": [
-      {
-        "name": "Lane A",
-        "where": "`AnaesthesiaAssociatesRFP-laneA` worktree, branch `lane/a`, ports 5273/5274/5280",
-        "queue": [
-          "46",
-          "49"
-        ],
-        "prompt_file": "lanes/lane-a.prompt.md"
-      },
-      {
-        "name": "Lane B",
-        "where": "`AnaesthesiaAssociatesRFP-laneB` worktree, branch `lane/b`, ports 5373/5374/5380",
-        "queue": [
-          "47",
-          "48"
-        ],
-        "prompt_file": "lanes/lane-b.prompt.md"
-      }
-    ]
+    "headline": "Test 45 to 49 now, on 5173, from TEST-45-49.md. The two lanes are joined onto master: the Contracts section is built end to end.",
+    "headline_sub": "Phases 46 to 49 were built in two lanes and joined on master with one review and the full gate (Playwright carries the 48 failures from before 45, for the sweep). Walk <a href=\"TEST-45-49.md\">TEST-45-49.md</a>, then tear the lanes down from a main-folder session.",
+    "safe": {},
+    "wait": {},
+    "parallel": ""
   }
 }

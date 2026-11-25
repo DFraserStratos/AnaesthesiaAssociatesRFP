@@ -49,7 +49,11 @@ the main folder and ignores this file.
 Each lane runs its queue in order, one phase at a time. A phase is **complete on a lane** when the lane
 branch holds a commit whose subject starts `<id> complete:`.
 
-### Current wave: Wave 1 (the only one)
+### Current wave: none (Wave 1 joined 2026-11-25)
+
+Wave 1, below, is kept as the record of how it ran.
+
+### Wave 1 (the only one)
 
 **It starts when Phase 45 is DONE on `master`:** its row in `docs/build-plan/PROGRESS.md` reads DONE
 and its work is committed. A checkpoint after 45's first session is not enough.

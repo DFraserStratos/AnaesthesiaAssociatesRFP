@@ -57,7 +57,13 @@ export function newContractPath(opts: { holder?: string } = {}): string {
  * narrowed by a tag (`tag=<id>`, `tag=none` for No tag), or on the tag grouping at that tag when no
  * holder is named; `status=disabled` opens it on the Disabled ones.
  */
-export function contractsCatalogueLink(opts: { holderId?: string; tagId?: string; status?: 'disabled' }): string {
+export function contractsCatalogueLink(opts: { holderId?: string; tagId?: string; status?: 'disabled'; underHospitalId?: string }): string {
+  // A tag's hospital row (the Funding tags tab) counts by where the invoice goes, so its link opens the
+  // "Invoice goes to" grouping at that hospital, narrowed by the tag: a hospital-held Contract that bills
+  // the payer is neither counted nor listed there (the wave 1 join's review).
+  if (opts.underHospitalId !== undefined && opts.underHospitalId !== '') {
+    return `/admin/contracts${query({ group: 'destination', in: `hospital:${opts.underHospitalId}`, tag: opts.tagId, own: '1' })}`
+  }
   const holder = opts.holderId !== undefined && opts.holderId !== ''
   return `/admin/contracts${query({
     group: holder ? 'holder' : opts.tagId !== undefined ? 'tag' : undefined,

@@ -208,6 +208,8 @@ describe('the Funding tags tab (US-13.4.5)', () => {
     expect(rows.map((r) => r.getAttribute('data-hospital'))).toEqual(['PY-CES', 'PY-SX', 'none'])
     expect(within(rows[0] as HTMLElement).getByText('Christchurch Eye Surgery › SXAP')).toBeInTheDocument()
     fireEvent.click(within(rows[0] as HTMLElement).getByRole('link', { name: /View the 6 SXAP Contracts/ }))
+    // The row counts by where the invoice goes, so it opens that grouping (the wave 1 join's review).
+    expect(location).toBe('/admin/contracts?group=destination&in=hospital%3APY-CES&tag=TAG-SXAP&own=1')
     expect(catalogueRows()).toBe(6)
   })
 

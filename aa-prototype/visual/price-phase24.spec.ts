@@ -112,8 +112,11 @@ test('phase 24 admin: Review shows the typed price beside the computed one; Cont
   await page.goto('/admin/contracts')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('tr[data-contract="CT-NO-CONTRACT"] [data-shot=contract-override-pill]')).toHaveText('Anaesthetist can override the price')
-  await expect(page.locator('tr[data-contract="CT-ARIA-HOURLY"] [data-shot=contract-override-pill]')).toHaveText('Price fixed for the anaesthetist')
   await expect(page.locator('tr[data-contract="CT-MER-FACELIFT"] [data-shot=contract-override-pill]')).toHaveCount(0)
+  // The catalogue pages at 50 since Phase 47: Aria's Contract is read in its holder's group.
+  await page.goto('/admin/contracts?group=holder&in=PY-ARIA')
+  await page.waitForLoadState('networkidle')
+  await expect(page.locator('tr[data-contract="CT-ARIA-HOURLY"] [data-shot=contract-override-pill]')).toHaveText('Price fixed for the anaesthetist')
 })
 
 test('phase 24 admin: authorising the no-charge List raises a $0.00 "No charge" invoice', async ({ page }) => {

@@ -141,7 +141,7 @@ function TagContracts({ tag }: { tag: FundingTag }) {
                   <Td align="right" mono>{h.count}</Td>
                   <Td>{`${name} › ${tag.code}`}</Td>
                   <Td align="right">
-                    <TextAction size="sm" flush to={contractsCatalogueLink({ holderId: h.partyId, tagId: tag.id })} label={`View the ${h.count} ${tag.code} Contracts ${name} holds`}>View Contracts</TextAction>
+                    <TextAction size="sm" flush to={contractsCatalogueLink({ underHospitalId: h.partyId, tagId: tag.id })} label={`View the ${h.count} ${tag.code} Contracts ${name} holds`}>View Contracts</TextAction>
                   </Td>
                 </tr>
               )

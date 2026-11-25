@@ -20,7 +20,7 @@
  */
 
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { formatRangePrice, rangesOf, sortRanges } from '../../../domain/billing/priceRanges'
 import { plainDate, shortDay } from '../../../domain/dateText'
 import type { Contract } from '../../../domain/types'
@@ -66,6 +66,9 @@ export function ReplaceContractSheet({ contract, actor, open, onClose }: { contr
 
 function ReplaceContractForm({ contract, actor, onClose }: { contract: Contract; actor: Actor; onClose: () => void }) {
   const navigate = useNavigate()
+  // The page's own router state (the catalogue's grouping, for Back) carries on to where the sheet lands.
+  const { state: pageState } = useLocation()
+  const carried = typeof pageState === 'object' && pageState !== null ? (pageState as Record<string, unknown>) : {}
   const today = useToday()
   const state = useAppStore((s) => s)
   const lists = useAppStore((s) => s.schedule.lists)
@@ -109,7 +112,7 @@ function ReplaceContractForm({ contract, actor, onClose }: { contract: Contract;
       setError(outcome.message)
       return
     }
-    navigate(contractPath(outcome.value.contract.id), { state: resultState(outcome.value) })
+    navigate(contractPath(outcome.value.contract.id), { state: { ...carried, ...resultState(outcome.value) } })
   }
 
   function resultState(result: ReplaceResult): ReplacedState {
@@ -126,7 +129,7 @@ function ReplaceContractForm({ contract, actor, onClose }: { contract: Contract;
 
   function addRangeInstead() {
     onClose()
-    navigate(`${contractPath(contract.id)}?add=range`, { replace: true })
+    navigate(`${contractPath(contract.id)}?add=range`, { replace: true, state: pageState })
   }
 
   const allTicked = movable.length > 0 && ticked.length === movable.length
