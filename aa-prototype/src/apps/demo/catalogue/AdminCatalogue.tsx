@@ -4,6 +4,7 @@ import { SyntheticDataBadge } from '../../../shared/SyntheticDataBadge'
 import { Notice } from '../../../shared/ui'
 import { neutral } from '../../../theme/tokens'
 import { Pager } from '../../admin/components/Pager'
+import { GroupIndex } from '../../admin/components/GroupIndex'
 import { SCALE_GENERATING_LINE } from '../../../shared/scale/ScaleBanner'
 import { StubSetExample } from './stubExamples'
 import { DRAFT_LIST, DRAFT_LISTS, UNASSIGNED } from '../../../shared/scheduleTerms'
@@ -289,8 +290,11 @@ export function AdminCatalogue() {
         <CatalogueRow name="OptionChip" source="shared/ui/OptionChip.tsx" usedIn={AWM} what="A quick option chip (catch-up Phase 39): a teal-tint pill that fills or picks one answer in a form, beside the field it serves (the credit's reasons over its reason text); pressed is the teal border and tint with aria-pressed; size md 36 or lg 44 on the phone. Not FilterPills, the solid teal list filter." shared="shared/ui/OptionChip.tsx" note="The availability form's chips are this; the funder sheet's and the credit's choice of invoice use its radio role (aria-checked) inside a radiogroup.">
           <OptionChipExample />
         </CatalogueRow>
-        <CatalogueRow name="OptionRow" source="shared/ui/OptionRow.tsx" usedIn={A} what="One result in a short pick list under a search box (catch-up Phase 33's review, Matching's Match to another Booking): a full-width bordered button, words left and mono facts right; the current pick in the teal accent edge and tint, with aria-pressed. A table row that opens a record is ClickableRow instead." shared="shared/ui/OptionRow.tsx">
+        <CatalogueRow name="OptionRow" source="shared/ui/OptionRow.tsx" usedIn={A} what="One result in a short pick list under a search box (catch-up Phase 33's review, Matching's Match to another Booking): a full-width bordered button, words left and mono facts right; the current pick in the teal accent edge and tint, with aria-pressed. The nav variant (Phase 47) is an index pane's item: borderless, slate, teal on the accent tint with aria-current when picked, a mono count at the right (GroupIndex). A table row that opens a record is ClickableRow instead." shared="shared/ui/OptionRow.tsx">
           <OptionRowExample />
+        </CatalogueRow>
+        <CatalogueRow name="GroupIndex" source="apps/admin/components/GroupIndex.tsx" usedIn={A} what="An index of groups with their counts beside a grouped list (build plan Phase 47, the Contract catalogue; contracts-section.html #catalogue): All first, then each group as an OptionRow nav item, a mist caption where the section changes, an optional note under the list. Generic, for the Parties tab too." shared="shared/ui/OptionRow.tsx">
+          <GroupIndexExample />
         </CatalogueRow>
         <CatalogueRow name="Switch" source="shared/ui/Switch.tsx" usedIn={AWM} what="The one on/off switch (UI unification U4): a button with role=switch and aria-checked, so click and Space toggle it; sm is the 36 by 20 track, lg the 52 by 32 touch track, with a label and an optional description." shared="shared/ui/Switch.tsx" note="No product screen uses it yet: Phase 27 builds its approval-step toggle on it. The PWA panel's ToggleRow stays its own (a demo surface).">
           <SwitchExample />
@@ -568,7 +572,7 @@ export function AdminCatalogue() {
             <LoadResultPanelExample />
           </Wide>
         </CatalogueRow>
-        <CatalogueRow name="Table kit (TableShell · Th · Td · GroupRow · ClickableRow)" source="shared/table/" usedIn={AWM} what="The one table kit (UI unification U6, question 19): TableShell (white, line, radius 14, e1; a named focusable region only when it overflows; footer for a foot row such as the pager, kept below the rows; fit for an Admin fit page's list card), Th (scope col) on the Admin Review header, sortable with `sort` (aria-sort and a button, teal underline on the active column; the Billing monitor), Td with sunken dividers, GroupRow (th scope colgroup), and ClickableRow with one RowOpenButton as the keyboard handle. Density comfortable (web), compact (admin) or dense (audit and masters) keeps each table's row height." shared="shared/table/TableShell.tsx" note={`The ${DRAFT_LISTS} table is built this way: Tab to a session, Enter opens the ${DRAFT_LIST} drawer (bug 3). An inner button does only its own action.`}>
+        <CatalogueRow name="Table kit (TableShell · Th · Td · GroupRow · ClickableRow)" source="shared/table/" usedIn={AWM} what="The one table kit (UI unification U6, question 19): TableShell (white, line, radius 14, e1; a named focusable region only when it overflows; footer for a foot row such as the pager, kept below the rows; fit for an Admin fit page's list card), Th (scope col) on the Admin Review header, sortable with `sort` (aria-sort and a button, teal underline on the active column; the Billing monitor), Td with sunken dividers, GroupRow (th scope colgroup; level sub is the grouped Contract catalogue's smaller, indented sub-heading, Phase 47 from contracts-section.html #catalogue), and ClickableRow with one RowOpenButton as the keyboard handle. Density comfortable (web), compact (admin) or dense (audit and masters) keeps each table's row height." shared="shared/table/TableShell.tsx" note={`The ${DRAFT_LISTS} table is built this way: Tab to a session, Enter opens the ${DRAFT_LIST} drawer (bug 3). An inner button does only its own action.`}>
           <TableKitExample />
         </CatalogueRow>
         <CatalogueRow name="ReviewQueue (clickable rows)" source="apps/admin/screens/ReviewQueue.tsx" usedIn={A} what="Submitted Lists to authorise, and since catch-up Phase 38b an Events tab (LineTabLink with its count) of events awaiting review, on the shared table kit (UI unification U6): TableShell (compact), Th, Td and ClickableRow, whose row click opens the List while the Review button stays the keyboard handle." shared="shared/table/ClickableRow.tsx" note="Rows never take focus; the Review button is the one handle per row. Open is stubbed." height={380}>
@@ -819,6 +823,29 @@ function DecisionCardsExample() {
         suggested="createBooking"
         onChange={setKind}
         detail={<span style={{ fontSize: 12.5 }}>{kind === 'reject' ? 'The reason field and quick reasons.' : 'The List picker.'}</span>}
+      />
+    </div>
+  )
+}
+
+/** GroupIndex: the Holder grouping's index, one group picked. */
+function GroupIndexExample() {
+  const [value, setValue] = useState('PY-STG')
+  return (
+    <div style={{ width: 200 }}>
+      <GroupIndex
+        label="Groups"
+        value={value}
+        onSelect={setValue}
+        allLabel="All Contracts"
+        allCount={343}
+        items={[
+          { key: 'PY-AA', label: 'Anaesthesia Associates', count: 3 },
+          { key: 'PY-CES', label: 'Christchurch Eye Surgery', count: 144, section: 'Hospitals' },
+          { key: 'PY-STG', label: "St George's", count: 31, section: 'Hospitals' },
+          { key: 'PY-NIB', label: 'nib', count: 2, section: 'Insurers' },
+        ]}
+        note="A Contract linked to two surgeons shows under both."
       />
     </div>
   )

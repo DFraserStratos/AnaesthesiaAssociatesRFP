@@ -5,7 +5,7 @@
  * treatment.
  */
 
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { SPC, SURG, TAG } from '../../../../domain/seed'
@@ -134,6 +134,8 @@ describe("a surgeon's specialties (US-13.6.6)", () => {
 describe("the Contract's page and the catalogue (US-04.2.16, US-04.2.17; a page since build plan Phase 45)", () => {
   /** Open a Contract's page from its row in the list. */
   const openContract = (aaCode: string) => {
+    // The catalogue pages at 50 (Phase 47): search for the code so its row is on the page.
+    fireEvent.change(screen.getByLabelText('Search by name, code or AA code'), { target: { value: aaCode } })
     const row = [...document.querySelectorAll('tr[data-contract]')].find((r) => r.querySelector('td')?.textContent === aaCode) as HTMLElement
     fireEvent.click(within(row).getByRole('button', { name: /^Open / }))
   }
@@ -187,11 +189,18 @@ describe("the Contract's page and the catalogue (US-04.2.16, US-04.2.17; a page 
     expect(kinds).not.toContain('open')
   })
 
-  it('filters by funding tag beside the holder filter, the system Fixed price and RVG backstop Contracts included', () => {
-    renderAdmin('/admin/masters?view=contracts')
-    fireEvent.change(within(shot('contract-tag-filter')).getByLabelText('Funding tag'), { target: { value: TAG.acc } })
-    expect(shot('contract-result-count')).toHaveTextContent('tagged ACC')
+  it('groups by funding tag (Phase 47): ACC lists the ACC Contracts under their holders, the system Fixed price and RVG backstop Contracts included', () => {
+    renderAdmin('/admin/contracts')
+    fireEvent.change(within(shot('contract-group-by')).getByLabelText('Group by'), { target: { value: 'tag' } })
+    fireEvent.click(within(shot('contract-group-index')).getByRole('button', { name: /^ACC/ }))
+    expect(shot('contract-result-count')).toHaveTextContent('in ACC')
+    expect(shot('contract-result-count')).toHaveTextContent('Grouped by funding tag.')
     const codes = [...document.querySelectorAll('tr[data-contract] td:first-child')].map((td) => td.textContent).sort()
     expect(codes).toEqual(['CES-009', 'CES-ACC-FIX', 'CES-ACC-RVG', 'COS-001', 'COS-002', 'STG-002', 'STG-ACC-FIX', 'STG-ACC-RVG'])
+    // The same view from its URL.
+    cleanup()
+    renderAdmin(`/admin/contracts?group=tag&in=${TAG.acc}`)
+    expect(shot('contract-result-count')).toHaveTextContent('in ACC')
+    expect(document.querySelectorAll('tr[data-contract]')).toHaveLength(8)
   })
 })

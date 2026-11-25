@@ -12,7 +12,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Button, LineTabLink, LineTabs } from '../../../../shared/ui'
 import { useDemoTriggerContext } from '../../../../shared/demoTriggers'
 import { useAppStore, type Actor } from '../../../../store'
-import { AdminPage, PageBody } from '../../components/AdminPage'
+import { AdminPage } from '../../components/AdminPage'
 import { ContractPanel } from '../../flows/ContractEditSheet'
 import { contractsPath, newContractPath } from '../../contractsPaths'
 import { mastersViewPath } from '../../mastersPaths'
@@ -35,7 +35,8 @@ export function ContractsSection({ actor, creating = false }: { actor: Actor; cr
   const [params] = useSearchParams()
   // The demo triggers on the Contract list (the backdated range, the sample sheets) key on the tab shown; 48 adds its tabs.
   useDemoTriggerContext('adminContracts.tab', 'contracts')
-  const holderParam = params.get('holder') ?? ''
+  // The holder New contract starts with: the holder grouping's picked Party (Phase 47), or an old `?holder=`.
+  const holderParam = params.get('holder') ?? (params.get('group') === 'holder' ? (params.get('in') ?? '') : '')
   const holder = useAppStore((s) => (s.masters.parties[holderParam] !== undefined ? holderParam : ''))
 
   return (
@@ -51,9 +52,8 @@ export function ContractsSection({ actor, creating = false }: { actor: Actor; cr
       }
       tabs={<ContractsTabs active="contracts" />}
     >
-      <PageBody gap={12}>
-        <ContractsView />
-      </PageBody>
+      {/* The catalogue holds its own toolbar and body, its index in the body's nav (Phase 47). */}
+      <ContractsView />
       {creating && (
         <ContractPanel
           open

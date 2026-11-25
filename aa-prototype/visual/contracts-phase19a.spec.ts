@@ -115,7 +115,7 @@ test('phase 19a range refusals: a duplicate start, the last range, a prepaid zer
 })
 
 test("phase 19a Dr Souter's price list, and the Contracts search by CAT, AP0126 and H3", async ({ page }) => {
-  await page.goto('/admin/contracts?holder=PY-SOUTER')
+  await page.goto('/admin/contracts?group=holder&in=PY-SOUTER')
   await page.waitForLoadState('networkidle')
   const rows = page.locator('[data-shot=contract-catalogue] tr[data-contract]')
   // Catch-up Phase 20 added Nair's item (SOUTER-004, Rhinoplasty, cosmetic component).

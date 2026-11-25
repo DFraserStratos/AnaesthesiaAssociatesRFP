@@ -65,7 +65,7 @@ afterEach(cleanup)
 describe('routes and the old Master data links (D92, D93)', () => {
   it('builds every section URL from one home, keyed by the Contract id', () => {
     expect(contractsPath()).toBe('/admin/contracts')
-    expect(contractsPath({ holder: 'PY-CES' })).toBe('/admin/contracts?holder=PY-CES')
+    expect(contractsPath({ holder: 'PY-CES' })).toBe('/admin/contracts?group=holder&in=PY-CES')
     expect(contractPath('CT-HNZ')).toBe('/admin/contracts/CT-HNZ')
     expect(contractPath('CT-HNZ', 'history')).toBe('/admin/contracts/CT-HNZ?tab=history')
     expect(newContractPath({ holder: 'PY-CES' })).toBe('/admin/contracts/new?holder=PY-CES')
@@ -77,7 +77,7 @@ describe('routes and the old Master data links (D92, D93)', () => {
     const at = (q: string) => mastersRedirect(new URLSearchParams(q), masters)
     expect(at('view=contracts')).toBe('/admin/contracts')
     expect(at('view=contracts&contract=CT-MER-FACELIFT')).toBe('/admin/contracts/CT-MER-FACELIFT')
-    expect(at('view=contracts&holder=PY-CES')).toBe('/admin/contracts?holder=PY-CES')
+    expect(at('view=contracts&holder=PY-CES')).toBe('/admin/contracts?group=holder&in=PY-CES')
     expect(at('view=contracts&contract=CT-NOT-THERE')).toBe('/admin/contracts')
     expect(at('view=contracts&holder=PY-NOT-THERE')).toBe('/admin/contracts')
     expect(at('view=parties')).toBeNull()
@@ -305,7 +305,7 @@ describe('New contract, the create panel until 46', () => {
     expect(within(panel).getByLabelText('Holder')).toHaveValue('PY-CES')
     expect(within(panel).queryByRole('button', { name: 'Disable' })).toBeNull()
     act(() => escape())
-    expect(location).toBe('/admin/contracts?holder=PY-CES')
+    expect(location).toBe('/admin/contracts?group=holder&in=PY-CES')
   })
 
   it("keeps the list's search behind the panel", () => {

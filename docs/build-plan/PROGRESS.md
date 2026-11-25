@@ -10,6 +10,7 @@ U7 is archived in `docs/archive/prototype-build/PROGRESS.md` (large: grep it, ne
 | # | Phase | Status | Session date | Notes |
 |---|-------|--------|--------------|-------|
 | 45 | The Contracts section and the Contract page | DONE | 2026-11-25 | Contracts is its own Admin section with the list moved there, every Contract has a page at its id with cards saved one at a time, a newest-first price ranges table, an "On this Contract" rail and a confirmed Disable, and old Master data links redirect. |
+| 47 | The grouped Contract catalogue | DONE | 2026-11-25 | The Contract list is a grouped catalogue: six groupings from a pure `groupContracts`, an index of groups with counts beside it, search, Active, Disabled or All, the grouping and group in the URL, the grouping remembered per office user, and the holder filter folded into the holder grouping. |
 
 Rows: `| <id> | <title> | DONE | <YYYY-MM-DD> | <one-sentence summary> |`, or `IN PROGRESS` at a
 checkpoint, in run order.
@@ -54,6 +55,8 @@ each lasting ruling to `docs/DECISIONS.md`.
 
 - **2026-11-25 · Phase 45 (1): The Contracts section and the Contract page** (D92, D93; US-04.1.7). Contracts is its own Admin section between Ledger and Master data; a Contract's page is `/admin/contracts/:contractId`, keyed by the id; every in-app link goes through `apps/admin/contractsPaths.ts`; `/admin/masters?view=contracts` (with `&contract=` or `&holder=`) redirects from `mastersRedirect` and stays after 49. See the Phase 45 entry.
 - **2026-11-25 · Phase 45 (2): One card, one change; Disable confirmed** (D96's 45 half; US-04.1.3, US-04.1.2, DM-04; OQ-144 at D90's default). Each Overview card saves only its own fields as one audited `contract.update` in one change set, refused on the card; Disable asks first over `stillOnContract` from `disableFromISO` (today), moves nothing, and Make active undoes it. DECISIONS "Buttons" amended: the confirm's primary is the second `danger` use.
+- **2026-11-25 · Phase 47 (1): The grouped Contract catalogue** (D96's 47 part, finishing US-04.1.2; D91 at its default). The Contract list groups six ways through `groupContracts` (`domain/billing/contractGroups.ts`), the one place that says where a Contract sits; "Invoice goes to" reads only `destinationOf`, so a hospital's untagged Contract is under Special until OQ-145 is answered. A two-surgeon Contract is under both; "All Contracts" counts distinct Contracts. `?group=` and `?in=` (ids) carry the view; `?holder=` becomes `?group=holder&in=<PartyId>`. See the Phase 47 entry.
+- **2026-11-25 · Phase 47 (2): System Contracts and the remembered grouping** (US-04.1.2). System Contracts group by their own settings, with no separate "No contract" group: AA's head Kind and Holder, Patient heads "Invoice goes to", they are "Not linked to a surgeon" and open-priced. Each office user's last grouping is `shell.contractGrouping` (persisted shell slice, unaudited, optional so no `PERSIST_VERSION` bump), cleared by Reset; the URL wins over it.
 
 ## Discovered for later
 
@@ -97,3 +100,36 @@ Each entry is headed `### Phase <id> · <title> (<YYYY-MM-DD>)`, after the last 
 **Deviations.** Committed with the shots check red on 48 pre-existing failures (above), so the lanes can start. Cards stack full width beside the rail (#record) rather than on `PROFILE_GRID`. `ConfirmSheet` also gained `size`. The list's header copy and its Edit column changed with the move. The trigger's index path is a literal in `registry.ts` (the PWA closure cannot import `contractsPaths.ts`). `US-04.1.7.md`'s `images:` set to `images: []` (format only) so verify-board round-trips it.
 
 **For the owner's review.** The 48 pre-existing Playwright failures on master (BACKLOG). Built defaults: "Procedures priced" (not yet authorised: no typed or prepaid price; authorised: locked at this range, not typed or prepaid); "On this Contract" counts every not-yet-authorised Procedure, past Lists awaiting review included; tab in `?tab=`; Change as % on the range before ("First" on the oldest); "Open the Party" and the Parties and Funding tags tabs go to Master data until 48; the confirm's primary is danger; several cards may be in edit at once; no unsaved-changes prompt. "Edit in panel" never shipped; create stays in the panel until 46. `accent.editingRing` comes from the exploration page, not the Design Language. Worth a look at the end-of-lanes test (TEST-45-49.md): the Face lift (`/admin/contracts/CT-MER-FACELIFT`), No contract · RVG, and Disable on Christchurch Eye Surgery RVG.
+
+### Phase 47 · The grouped Contract catalogue (2026-11-25)
+
+Lane B (LANES.md): committed on `lane/b`; the lighter lane gate; no review, capture or plan page (the join does them).
+
+**Drift check against 5f87781.** Nothing changed (US-04.1.2, OQ-145, OQ-144; domain model unchanged). OQ-145 still open: built to D91's default. 45 DONE; it shipped `screens/contracts/ContractsView.tsx` under `ContractsSection`, `contractsPaths.ts` and `mastersRedirect`.
+
+**Built.**
+- `domain/billing/contractGroups.ts`: `ContractGrouping`, `CONTRACT_GROUPINGS` (labels, default `kind`), `parseContractGrouping`, `groupContracts(list, by, { parties, fundingTags, surgeons }, words)`, `groupCount`, `NO_GROUP_KEY`, `PARTY_KIND_ORDER`, `PRICING_KIND_ORDER`. Pure; the words come in as `CONTRACT_GROUP_WORDS` (`shared/contracts/labels.ts`, beside the new `PARTY_KIND_PLURAL`), so the domain holds no copy of a label or of `surnameOf`.
+- `GroupRow` `level="sub"` (small size, indented `space[4]`, `sunken` rule; `data-group-level="sub"`); the default is unchanged.
+- `apps/admin/components/GroupIndex.tsx` (generic: `label`, `items`, `value`, `allLabel`, `allCount`, `onSelect`, `note`, `shot`, `data-*`), built on a new shared `OptionRow` `variant="nav"` (borderless, teal on the accent tint, `aria-current`, mono count) so no raw styled button is added.
+- The catalogue (`ContractsView.tsx`): toolbar of search (260), status pills, a compact "Group by" `SelectField` (`contract-group-by`; six pills did not fit one row at 1280) and the count line ("N Contracts active in X matching "q". Grouped by kind."); `PageBody nav` holds the index (`contract-group-index`); `MasterTable` (new `footer` prop) pages at `FULL_SCALE.pageSizes.contracts` (50) with `contract-pager`. All groups under `GroupRow` headings, or a picked group under `level="sub"` sub-headings; headings repeat at a page break with their full counts. Rows keep every hook (`data-contract`, `data-system`, `data-contract-holder` on holder headings, the pills); new `data-contract-group`, `data-contract-sub`.
+- URL: `?group=`, `?in=` (ids), `?page=`; `?holder=` on the list route is rewritten to `?group=holder&in=<PartyId>` (unknown Party: dropped). `contractsPath({ holder })` now writes the holder grouping, so `mastersRedirect` and the Parties view's link go there directly; `contractsPath({ group, in })` added. A group holding only Disabled Contracts opens on All.
+- Back: rows navigate with router state `{ from }` (the list URL plus `?q=` for the search); `ContractPage`'s back link reads `catalogueReturnPath(location.state)`. The search stays list state (it survives New contract's panel, as 45 fixed) and is seeded from `?q=` once.
+- Memory: `shell.contractGrouping` (per `kirsty`/`sam`), `setContractGrouping`, written on Group by, read on a bare URL, cleared in `resetDomainStateOnly`. PERSIST_VERSION 78 unchanged. `ContractsSection` renders the view directly (it owns its toolbar and body) and takes New contract's holder from `?group=holder&in=` too.
+
+**Tests.** New `contractGroups.test.ts` (16), `GroupIndex.test.tsx` (2), `contractGrouping.test.ts` (2), `ContractCatalogue.test.tsx` (9), a `GroupRow level` case in `tableKit.test.tsx`; `ContractPage.test.tsx` (holder URLs) and `specialtiesTags.test.tsx` (tag grouping replaces the tag filter; rows found by search under paging) updated. Playwright: new `visual/contract-catalogue-p47.spec.ts` (5), `contracts-phase19a.spec.ts` on `?group=holder&in=PY-SOUTER`; both green (11). Lane gate green: typecheck, build, build-pwa, Vitest (424 files, 4,666 tests) and lint. `contractGroups.test.ts` uses `buildSeed()` and its own words so `domainPurity.test.ts` holds.
+
+**Checked.** Checklist 13 of 13 pass (`.build-phase/47-checklist/`; the harness Sam switch by the store and screen tests). Design pairs at 1440 and 1280 against `contracts-section.html` #catalogue (`.build-phase/47-design/`): matches; fixed a clipped search placeholder (240 to 260) and set tag codes in mono in headings. The index sits in `PageBody nav` beside the card rather than inside it, and the count line sits in the toolbar, as the phase doc says.
+
+**Review.** Skipped in the lane (LANES.md); the join reviews 46 to 49 together.
+
+**Catalogue screenshots.** None run. For the sweep: recipes and ATLAS entries using `contract-holder-filter`, `contract-tag-filter` or `?view=contracts&holder=` (US-04.1.2 and others); US-04.1.2 has grouped states worth a shot (Funding tag › SXAP; Surgeon with Aria under both).
+
+**Demo guide.** Not touched (sweep).
+
+**Handoffs.**
+- 48: `groupContracts`, `CONTRACT_GROUP_WORDS`, `GroupIndex` (`apps/admin/components/GroupIndex.tsx`) and `OptionRow variant="nav"`; a Party's per-tag counts link with `contractsPath({ group: 'holder', in: partyId })` (or `{ holder: partyId }`) and `contractsPath({ group: 'tag', in: tagId })`; the tag tab's hospital grouping can call `groupContracts(list, 'holder', ...)`.
+- 46 and 49 (join): `ContractsSection` now renders `<ContractsView />` without a `PageBody`; New contract's holder comes from `?holder=` or `?group=holder&in=`. `ContractPage`'s back link line reads `catalogueReturnPath(location.state)` (one line and a `useLocation`).
+
+**Deviations.** Group by is a select, not pills (one row at 1280). The search is not in the URL except as the back link's `?q=`. Back after switching tabs on a Contract page falls back to the bare list (tab links drop router state). The BACKLOG clause "the Contracts toolbar wraps to two rows at 1280" was not in `docs/BACKLOG.md` (already gone); nothing deleted. 45's header sub-line no longer mentions dated changes; left to 49 (LANES.md).
+
+**For the owner's review.** Kind as the default grouping; system Contracts in AA's group (no "No contract" group); a hospital's untagged Contracts under Special (OQ-145); the memory in `shell.contractGrouping`, cleared by Reset; status not in the URL; page size 50; Group by as a select; the Holder and Funding tag selects removed; Back returning to the same grouping, group, search and page (not after a tab switch). Worth a look: `/admin/contracts?group=tag&in=TAG-SXAP`, `?group=surgeon`, `?group=destination`.

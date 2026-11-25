@@ -124,6 +124,7 @@ export function MasterTable({
   label = 'Master data',
   rightAlign,
   style,
+  footer,
 }: {
   columns: readonly MasterColumn[]
   children: ReactNode
@@ -132,10 +133,12 @@ export function MasterTable({
   /** Column indexes to right-align (a plain-string column's shorthand). */
   rightAlign?: readonly number[]
   style?: CSSProperties
+  /** The card's foot row (the pager), kept below the rows (`TableShell footer`). */
+  footer?: ReactNode
 }) {
   const fit = useAdminPageMode() === 'fit'
   return (
-    <TableShell density="dense" shot={shot} label={label} fit={fit} {...(style !== undefined ? { style } : {})}>
+    <TableShell density="dense" shot={shot} label={label} fit={fit} {...(style !== undefined ? { style } : {})} {...(footer !== undefined ? { footer } : {})}>
       <thead>
         <tr>
           {columns.map((c, i) => {

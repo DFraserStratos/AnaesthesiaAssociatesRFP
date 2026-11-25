@@ -8,6 +8,8 @@ import { NO_PRICE_YET, prepaymentStatusWords } from '../booking/prepaymentText'
 import type { BillsTo, Contract, ContractPricing, ContractStatus, DeliveryMethod, PartyKind, PricingKind } from '../../domain/types'
 import type { PricingBasis, StackSurface } from '../../domain/billing/procedureStack'
 import { formatMoney } from '../../domain/billing/money'
+import type { ContractGroupWords } from '../../domain/billing/contractGroups'
+import { surnameOf } from '../format'
 
 export const PARTY_KIND_LABEL: Record<PartyKind, string> = {
   aa: 'Anaesthesia Associates',
@@ -17,6 +19,17 @@ export const PARTY_KIND_LABEL: Record<PartyKind, string> = {
   surgeon: 'Surgeon',
   surgeonGroup: 'Surgeon group',
   anaesthetist: 'Anaesthetist',
+}
+
+/** The kinds as plural headings (build plan Phase 47's Kind grouping and the Holder index's sections); AA reads as its name. */
+export const PARTY_KIND_PLURAL: Record<PartyKind, string> = {
+  aa: 'Anaesthesia Associates',
+  hospital: 'Hospitals',
+  insurer: 'Insurers',
+  funder: 'Funders',
+  surgeon: 'Surgeons',
+  surgeonGroup: 'Surgeon groups',
+  anaesthetist: 'Anaesthetists',
 }
 
 export const DELIVERY_LABEL: Record<DeliveryMethod, string> = {
@@ -107,3 +120,15 @@ function formatKindBasis(basis: PricingBasis, surface: StackSurface): string {
   }
 }
 
+/** The words the grouped Contract catalogue names its groups with (build plan Phase 47; `groupContracts`). */
+export const CONTRACT_GROUP_WORDS: ContractGroupWords = {
+  kindPlural: PARTY_KIND_PLURAL,
+  pricingKind: PRICING_KIND_LABEL,
+  surname: surnameOf,
+  noTag: 'No tag',
+  noSurgeon: 'Not linked to a surgeon',
+  patient: 'Patient',
+  special: 'Special',
+  standard: 'Standard',
+  prepaid: 'Prepaid',
+}

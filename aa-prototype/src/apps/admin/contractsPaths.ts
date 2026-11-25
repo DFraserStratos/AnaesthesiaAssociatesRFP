@@ -22,9 +22,22 @@ function query(params: Record<string, string | undefined>): string {
   return s === '' ? '' : `?${s}`
 }
 
-/** The Contract list, optionally filtered to one holder Party (47 maps it to the holder grouping). */
-export function contractsPath(opts: { holder?: string } = {}): string {
-  return `/admin/contracts${query({ holder: opts.holder })}`
+/**
+ * The Contract catalogue (Phase 47), optionally grouped (`?group=`) and on one group (`?in=`, an id
+ * of that grouping). `holder` is one Party's Contracts: the holder grouping on that Party.
+ */
+export function contractsPath(opts: { group?: string; in?: string; holder?: string } = {}): string {
+  if (opts.holder !== undefined && opts.holder !== '') return `/admin/contracts${query({ group: 'holder', in: opts.holder })}`
+  return `/admin/contracts${query({ group: opts.group, in: opts.in })}`
+}
+
+/**
+ * Where a Contract page's back link goes (Phase 47): the catalogue as the row was opened from it
+ * (its grouping, group, search and page, passed as router state `{ from }`), else the bare list.
+ */
+export function catalogueReturnPath(state: unknown): string {
+  const from = typeof state === 'object' && state !== null ? (state as { from?: unknown }).from : undefined
+  return typeof from === 'string' && from.startsWith('/admin/contracts') ? from : contractsPath()
 }
 
 /** A Contract's page, on a tab. */

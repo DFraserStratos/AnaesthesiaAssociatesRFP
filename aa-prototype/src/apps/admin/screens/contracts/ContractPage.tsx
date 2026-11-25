@@ -12,7 +12,7 @@
  */
 
 import { useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { contractHistoryFor, contractDisabledOn } from '../../../../domain/billing/contractHistory'
 import { eventFeesForContract } from '../../../../domain/billing/contractEventFees'
 import { isOpenPriceFallback } from '../../../../domain/billing/fallbacks'
@@ -28,7 +28,7 @@ import type { StillOnRow } from '../../../../domain/billing/contractChanges'
 import { neutral } from '../../../../theme/tokens'
 import { PageBody } from '../../components/AdminPage'
 import { PROFILE_CARD, ProfilePage } from '../../components/ProfileChrome'
-import { contractPath, contractsPath, parseContractTab, type ContractTab } from '../../contractsPaths'
+import { catalogueReturnPath, contractPath, parseContractTab, type ContractTab } from '../../contractsPaths'
 import { ContractEventFees } from '../../flows/ContractEventFees'
 import { ContractHistory } from '../../flows/ContractHistory'
 import { listShortLabel } from '../../util'
@@ -56,6 +56,7 @@ export function ContractPage({ contractId, actor }: { contractId: string; actor:
   const masters = useAppStore((s) => s.masters)
   const billing = useAppStore((s) => s.billing)
   const [params] = useSearchParams()
+  const location = useLocation()
   const tab = parseContractTab(params.get('tab'))
   const [feeError, setFeeError] = useState<string | null>(null)
   // The demo triggers that act on the Contract open (catch-up Phase 24's backdated range).
@@ -75,7 +76,7 @@ export function ContractPage({ contractId, actor }: { contractId: string; actor:
   return (
     <ProfilePage
       shot="contract-detail"
-      back={{ label: 'Contracts', to: contractsPath() }}
+      back={{ label: 'Contracts', to: catalogueReturnPath(location.state) }}
       name={contract.name}
       chip={
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
