@@ -132,6 +132,8 @@ export function ArrivalPage({ actor }: { actor: Actor }) {
       mode="fit"
       title={arrivalTitleText(arrival, hospitalName)}
       sub={sub}
+      // One line at any desktop width: wrapping made the page jump as Previous and Next stepped through arrivals.
+      subStyle={{ maxWidth: 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
       actions={nav}
       back={{ label: 'Arrivals', to: back, shot: 'intake-arrival-back' }}
       shot="intake-arrival-page"

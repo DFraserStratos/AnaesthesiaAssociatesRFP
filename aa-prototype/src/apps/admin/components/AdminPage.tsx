@@ -42,6 +42,8 @@ export interface AdminPageProps extends DataAttributes {
   title?: ReactNode
   /** One sentence, at most two lines: `PageHeader` caps it at the prose width. */
   sub?: ReactNode
+  /** The sub-line's own style (a one-line summary that should run the page's width rather than the prose measure). */
+  subStyle?: CSSProperties
   /** The page's one primary action (a `Button size="desktop"`), right of the title. */
   actions?: ReactNode
   /** `start` lines the actions up with the title's top (a record whose header runs to several lines); default `end`, the sub-line's foot. */
@@ -61,7 +63,7 @@ export interface AdminPageProps extends DataAttributes {
   style?: CSSProperties
 }
 
-export function AdminPage({ mode, title, sub, actions, actionsAlign = 'end', count, aside, headingRef, back, tabs, children, shot, testId, style, ...data }: AdminPageProps) {
+export function AdminPage({ mode, title, sub, subStyle, actions, actionsAlign = 'end', count, aside, headingRef, back, tabs, children, shot, testId, style, ...data }: AdminPageProps) {
   const setFits = useContext(AdminFrameContext)
   const fits = mode === 'fit'
   useLayoutEffect(() => {
@@ -99,6 +101,7 @@ export function AdminPage({ mode, title, sub, actions, actionsAlign = 'end', cou
                 size="admin"
                 title={title}
                 {...(sub !== undefined ? { sub } : {})}
+                {...(subStyle !== undefined ? { subStyle } : {})}
                 {...(actions !== undefined ? { actions } : {})}
                 {...(count !== undefined ? { count } : {})}
                 {...(aside !== undefined ? { aside } : {})}
