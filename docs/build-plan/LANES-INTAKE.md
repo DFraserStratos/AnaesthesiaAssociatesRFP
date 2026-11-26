@@ -116,7 +116,7 @@ owner "Paste Lane D's prompt first: it sets the Intake lanes up."
 Each lane runs its queue in order, one phase at a time. A phase is **complete on a lane** when the lane
 branch holds a commit whose subject starts `<id> complete:`.
 
-### Current wave: Wave 6
+### Current wave: none (Wave 7 joined 2026-11-26)
 
 | Wave | Starts when | Lane D | Lane E | Lane F | Lane G | Joined on | Checks at the join | Owner test after it |
 |---|---|---|---|---|---|---|---|---|

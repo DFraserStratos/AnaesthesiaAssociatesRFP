@@ -22,61 +22,25 @@
     "64",
     "65",
     "66",
-    "67"
+    "67",
+    "68",
+    "69",
+    "70",
+    "71",
+    "72"
   ],
   "in_progress": [],
   "next": {
     "phases": [],
-    "note": "Every phase of the plan (45 to 67) is built and on master. The Finances section (58 to 67) is waiting for the owner's one test from TEST-58-67.md; then the owner's /sweep re-points the screenshots and the demo guide. New phases come from /update-build-plan (the Intake requirements committed on master are not yet phases)."
+    "note": "Every phase of the plan (45 to 72) is built and on master. The Intake rebuild (68 to 72) and the Finances section (58 to 67) wait for the owner's tests from TEST-68-72.md and TEST-58-67.md; then the owner's /sweep re-points the screenshots and the demo guide. New phases come from /update-build-plan."
   },
   "guidance": {
     "as_of": "2026-11-26",
-    "headline": "Test the Finances section from TEST-58-67.md: Wave 5 is joined and on master. The Intake rebuild runs in its own Lanes D to G; paste Lane D's prompt to start 68.",
-    "headline_sub": "58 to 67 were built in three lanes and joined with the one full gate and a three-lens review (D113). Walk them once from <a href=\"TEST-58-67.md\">TEST-58-67.md</a> on 5173; its last section lists the decisions to look at. Then run /sweep for the screenshots and the demo guide. 45 to 57 are still yours to walk from <a href=\"TEST-45-49.md\">TEST-45-49.md</a> and <a href=\"TEST-50-57.md\">TEST-50-57.md</a>. The Intake rebuild (68 to 72, <a href=\"LANES-INTAKE.md\">LANES-INTAKE.md</a>): 68, the groundwork, runs alone on lane/d; Lanes E, F and G wait for it, then 69 to 72 build side by side; the Intake join writes TEST-68-72.md.",
-    "safe": {
-      "68": "Intake Wave 6, Lane D: starts now on lane/d (LANES-INTAKE.md). Paste Lane D's prompt."
-    },
-    "wait": {
-      "69": "Intake Wave 7, Lane D, after 68 on lane/d.",
-      "70": "Intake Wave 7, Lane E, once 68 is complete on lane/d.",
-      "71": "Intake Wave 7, Lane F, once 68 is complete on lane/d.",
-      "72": "Intake Wave 7, Lane G, once 68 is complete on lane/d."
-    },
-    "parallel": "Intake: Lane D builds 68 now (Wave 6); Lanes E, F and G may be pasted at once and wait until 68 is on lane/d, then 69 to 72 run side by side (Wave 7). Paste each lane's prompt again whenever its session ends.",
-    "lanes": [
-      {
-        "name": "Lane D",
-        "where": "`AnaesthesiaAssociatesRFP-laneD` worktree, branch `lane/d`, ports 5573/5574/5580 (Intake, LANES-INTAKE.md)",
-        "queue": [
-          "68",
-          "69"
-        ],
-        "prompt_file": "lanes/lane-d.prompt.md"
-      },
-      {
-        "name": "Lane E",
-        "where": "`AnaesthesiaAssociatesRFP-laneE` worktree, branch `lane/e`, ports 5673/5674/5680 (Intake, LANES-INTAKE.md)",
-        "queue": [
-          "70"
-        ],
-        "prompt_file": "lanes/lane-e.prompt.md"
-      },
-      {
-        "name": "Lane F",
-        "where": "`AnaesthesiaAssociatesRFP-laneF` worktree, branch `lane/f`, ports 5773/5774/5780 (Intake, LANES-INTAKE.md)",
-        "queue": [
-          "71"
-        ],
-        "prompt_file": "lanes/lane-f.prompt.md"
-      },
-      {
-        "name": "Lane G",
-        "where": "`AnaesthesiaAssociatesRFP-laneG` worktree, branch `lane/g`, ports 5873/5874/5880 (Intake, LANES-INTAKE.md)",
-        "queue": [
-          "72"
-        ],
-        "prompt_file": "lanes/lane-g.prompt.md"
-      }
-    ]
+    "headline": "Test the Intake rebuild from TEST-68-72.md: Wave 7 is joined and on master. Finances (58 to 67) is still yours to walk from TEST-58-67.md.",
+    "headline_sub": "68 to 72 were built in Lanes D to G and joined with the one full gate and a three-lens review (D122). Walk them once from <a href=\"TEST-68-72.md\">TEST-68-72.md</a> on 5173; its last section lists the decisions to look at. Then run /sweep for the screenshots and the demo guide. 45 to 67 are still yours to walk from <a href=\"TEST-45-49.md\">TEST-45-49.md</a>, <a href=\"TEST-50-57.md\">TEST-50-57.md</a> and <a href=\"TEST-58-67.md\">TEST-58-67.md</a>.",
+    "safe": {},
+    "wait": {},
+    "parallel": "Nothing to run: every phase is built. Test 68 to 72 from TEST-68-72.md and 58 to 67 from TEST-58-67.md, then /sweep.",
+    "lanes": []
   }
 }
