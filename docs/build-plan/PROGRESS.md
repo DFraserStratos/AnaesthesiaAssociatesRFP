@@ -29,6 +29,7 @@ U7 is archived in `docs/archive/prototype-build/PROGRESS.md` (large: grep it, ne
 | 63 | The invoice and credit note pages | DONE | 2026-11-26 | An invoice and a credit note each open on a record page under Invoices: Back to the tab at the filter the office came from, the number with its payable's ID chip and its state (Unpaid with its age, Part paid, Paid) or credit standing, a summary line, the paper unchanged, and a rail of shared Cards, RailSections and DefLists (Delivery, Ledger, Correct this invoice first; History last); the credit note page adds what it credits, its negative invoice, Replaced by, Delivery, Xero and History. |
 | 64 | The Ledger tab | DONE | 2026-11-26 | The Ledger tab says in one sentence, read from the Day view's reconciliation status, whether the books are square and what is wrong, shows four figures and the receipts to place (Allocate, Mark refunded) in a rail card, and lists the anaesthetists (five money columns from one pass over the pairs), the invoice pairs or the AA Holding account through a segmented control, its state in the URL; it opens in about 1.5 s at practice scale, list and page changes under 0.1 s. |
 | 65 | The anaesthetist's account page | DONE | 2026-11-26 | Each anaesthetist's money has its own record page under Ledger: Back to the Ledger, a Square or Out by pill, one line of who owes whom, Open in People, the AA owes them and They owe AA cards, their invoice pairs (billed, paid in, disbursed with the week), and a rail of payment runs and credit trails; the one-anaesthetist `LedgerScreen` is gone. |
+| 67 | The AA fees tab | DONE | 2026-11-26 | The AA fees tab lists AA's fee invoices to the anaesthetists, opening on Unpaid oldest month first, with search, Unpaid, Paid and All, a month select and paging, rows that still unfold to their lines and BCTIs, and a rail holding the month's run (Runs on month end, Preview, Run monthly fee invoices), the fee settings (summary, then Change; `/aa-fees/settings` opens them) and Earlier runs. |
 
 Rows: `| <id> | <title> | DONE | <YYYY-MM-DD> | <one-sentence summary> |`, or `IN PROGRESS` at a
 checkpoint, in run order.
@@ -98,6 +99,7 @@ each lasting ruling to `docs/DECISIONS.md`.
 - **2026-11-26 · Phase 60 (1): A payer with nowhere to be sent to fails the Booking, not the invoice** (D116; US-13.3.1, US-13.3.2, US-08.5.2). The List run and a retry read the payer fresh (`withLiveDelivery`, `deliveryGapFor` in `store/invoiceMaterialise.ts`) and fail the Booking whole with 59's `payerNoAddress`, raising no invoice, pair or hand-off; the office fixes the payer from its row and retries (`store/billingFix.ts`), and a failure resolved by hand carries `resolvedBy` and `resolvedNote` with no pair ids. The run still sends to the details locked at authorise (US-08.4.4); a retry sends to the fresh ones. Invoices already stamped `noAddress` read as before. Also in `docs/DECISIONS.md`. See the Phase 60 entry.
 - **2026-11-26 · Phase 62 (1): Awaiting approval is a filter of the Invoices tab** (US-06.3.1, US-08.4.7; D107). Prepayments awaiting approval list under the Invoices tab's Awaiting approval filter (Approve and send on each row; they leave the filter when sent), not a separate view; the Prepayment approval switch sits beside the list in the rail's Prepayments to approve card. 58's `?view=approval` link opens the filter. Also in `docs/DECISIONS.md`. See the Phase 62 entry.
 - **2026-11-26 · Phase 63 (1): Invoice and credit note pages on the record pattern** (US-13.3.3; D107, D114, D115). The paper stays custom and alone prints; the header (number, payable chip, state or standing, summary line) and the rail are the shared record pattern, the rail all shared Cards, RailSections and DefLists, History last on both pages. Back returns to the Invoices tab at the filter the office came from (router state `invoicesList`). Also in `docs/DECISIONS.md`. See the Phase 63 entry.
+- **2026-11-26 · Phase 67 (1): The fee settings sit on the AA fees tab** (US-10.3.1, US-10.3.3; D107). The AA fees tab holds the fee invoices, the month's run with its preview, the fee settings (a summary with Change, in the rail) and Earlier runs; there is no Fee settings sub-tab, and `/aa-fees/settings` opens the tab with the settings open. The month select drives both the list and the run card. Also in `docs/DECISIONS.md`. See the Phase 67 entry.
 
 ## Discovered for later
 
@@ -824,3 +826,45 @@ Run in Lane C, Wave 5 (`docs/build-plan/LANES.md`; D112, D113): quick checks onl
 **For the sweep.** US-13.2.1's one-anaesthetist Ledger recipe (now the account page) and US-08.3.5's if it shows that view; ATLAS rows on `/admin/finances/ledger/anaesthetists/:id` and the retired hooks above; guide lines naming the "Whole ledger / One anaesthetist" switch or Souter's one-anaesthetist ledger.
 
 **For the owner's review.** See all on payment runs expands in place (no Payments filter yet). Credit trails as one row per credit note with its netting note. Pairs columns as the mock (Kind, Patient, Payer, Released and Xero left for the Ledger tab and Xero tab). No direct remittance column: a run row opens the run, one click from her remittance. Still to net as a Notice above the cards. Worth a look: `/admin/finances/ledger/anaesthetists/41267` at 1280 and 1440, before and after Inject unmatched receipt.
+
+### Phase 67 · The AA fees tab (2026-11-26)
+
+Run in Lane B, Wave 5 (`docs/build-plan/LANES.md`; D113): quick checks only, no review, screen-proof, checklist run or plan page; Wave 5's join reviews and gates 58 to 67 together. One session (after 62 and 63). Lane commit `67 complete:` on `lane/b`; Lane C's `65 complete:` (cbf0a302) and Lane A's `60 complete:` (97853b80) merged at its start (PROGRESS.md, BACKLOG.md and `catalogue/eventExamples.tsx` conflicts: both sides kept; each lane's fixed BACKLOG lines removed; the catalogue takes 65's `AccountCreditTrails` and 60's `finances/CorrectionRetry`).
+
+**Drift check against f885f67.** Nothing changed (US-10.3.1, US-10.3.3, OQ-60, OQ-112; domain model unchanged). D107, D108, D110, D114, D115 built as answered; OQ-60 and OQ-112 as built (month end). 58 DONE on `master`. Used 58's `AaFeesTab({ view })`, `FinancesPage`, `financePath`; `allAaFeeInvoices`, `aaFeeRunPreview`, `aaFeeRunDisabledReason`, `saveAaFeeSettings`, unchanged.
+
+**Built.**
+- `apps/admin/screens/aaFeeRows.ts` (pure): `aaFeeRows(invoices, { show, month, q }, nameOf)` returns the ordered rows (Unpaid oldest month first, Paid newest first, All unpaid then paid), the whole book's `unpaidCount` and `owed`, and the `months` (invoices, total, unpaid); `parseAaFeeShow`, `parseAaFeeMonth`, `AA_FEE_SHOWS`, `AA_FEE_SHOW_LABEL`. `allAaFeeInvoices`' newest-first order stays (the web fee list reads it).
+- `AaFeesScreen.tsx` rebuilt (`AaFeesScreen({ actor, settingsOpen? })`; the `AaFeesTab` type, the sub-tabs and the month stepper gone): toolbar (search, Unpaid, Paid, All, month select, "N unpaid · $X owed to AA"); the table (Number, Anaesthetist, Month, BCTIs, Fee, GST, Total, State, Raised) unfolding to `FeeInvoiceDetail`, paged 50; the preview replaces the table while open (surname order, a `Notice` that nothing is raised until the run, Run repeated); the rail's run card (Runs on the month's last day, anaesthetists, still to invoice, last run, Preview, Run), the fee settings card (summary, Change opens today's form; Save via `saveAaFeeSettings`), Earlier runs (a row sets the month). URL state with replace: `q`, `show`, `month`, `page`. `aaFees.month` published as before, from the card month.
+- `AaFeesTab.tsx` passes `settingsOpen={view === 'settings'}`: `/aa-fees/settings` opens the form and scrolls it into view; Cancel or Save goes back to `/admin/finances/aa-fees` with the query.
+- No seed change; `PERSIST_VERSION` stays 81.
+
+**Tests.** New `aaFeeRows.test.ts` (22). `AaFeesScreen.test.tsx` re-expressed against the tab (19: the six old cases plus search, the pager, Earlier runs, the preview's Back, Cancel, and `/aa-fees/settings` opening the form in view and leaving to the tab). Playwright `aa-fee.spec.ts` updated, not run; `admin-layout.spec.ts` needed no change. Quick checks green and lint clean.
+
+**Checked.** Skipped in the lane (D113).
+
+**Review.** Skipped in the lane (D113).
+
+**Handoffs.**
+- The join: hooks gone `data-aa-fees-view` and the Previous and Next month buttons; `aa-fee-month` is now the month select; `admin-aa-fee-invoices` is on the table's container. New: `aa-fee-search`, `aa-fee-filter` (`data-aa-fee-show`), `aa-fee-totals`, `aa-fee-pager`, `aa-fee-state`, `aa-fee-show-all`, `aa-fee-run-card` (`data-month`), `aa-fee-preview-open`, `aa-fee-preview-back`, `aa-fee-preview-shell`, `aa-fee-settings-change`, `-cancel`, `-save`, `aa-fee-earlier-runs` (`-all`, `-fewer`, rows `data-month`, `data-selected`).
+
+**Deviations.**
+- The month select lists every month from January 2026 to the demo month (and any month holding fee invoices), not only months with invoices, so a missed month can still be chosen, previewed and run.
+- The paid state reads "Paid 9 Oct 2026" (money dates carry the year).
+- The settings card is a `Card` with its `editing` and `footer` props, not `EditableCard` (its fixed Edit button and save hook do not carry the dynamic items). Save closes the form on success.
+- The run card's "the real run is made at month end" line went: Runs on says it. The run's result line shows while the card is on the month it ran.
+
+**For the merge.** No route, path, count or trigger change: 58's `AaFeesTab({ view })` reads the settings route. The tab shows no number (none in `financeCounts.ts`).
+
+**For the sweep.** The AA fees recipes (sub-tabs gone, settings in the rail, the preview behind Preview, the stepper gone), guide lines naming the Fee settings tab or the month stepper, and ATLAS rows on `/admin/billing/aa-fees*`.
+
+**For the owner's review.**
+- URL state: `q`, `show` (Unpaid default), `month`, `page`, with replace.
+- Order: Unpaid oldest month first then by number; Paid newest month first; All unpaid first.
+- Search finds the invoice number and the anaesthetist's name.
+- The month select drives the list and the run card; All months shows the demo month's run.
+- Runs on is the month's last day (OQ-112); Last run is the latest month holding fee invoices.
+- The preview replaces the list while open; anaesthetists by surname; running returns to Unpaid.
+- Settings: summary at rest, Change for the form; `/aa-fees/settings` opens it in view.
+- Earlier runs: five months, then See all in place; a row sets the month filter.
+- Columns: BCTIs, not the mock's "Lists". The tab shows no number.
