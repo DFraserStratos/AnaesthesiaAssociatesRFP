@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 /**
  * Phase 11 smoke — the integration surfaces render and their core interactions
  * work end to end in the real app (no crashes): the simulator translates and
- * applies a message, and the admin monitor's tabs + validators respond.
+ * applies a message, and Admin Intake's two tabs (Arrivals and Sources) respond.
  */
 
 test('integration simulator replays a message and shows the schedule effect', async ({ page }) => {
@@ -64,34 +64,30 @@ test('Future scope: HL7 and FHIR has the simulator, the message log and the feed
   await page.screenshot({ path: 'visual/shots/phase11-future-scope.png', fullPage: true })
 })
 
-test('Admin Intake holds Matching, PDF lists, Data quality and Validators, unbadged; the old routes redirect (catch-up Phase 34)', async ({ page }) => {
+test('Admin Intake holds Arrivals and Sources, unbadged; the old routes redirect (build plan Phase 68; was catch-up Phase 34)', async ({ page }) => {
   await page.goto('/admin')
   await page.waitForLoadState('networkidle')
   const nav = page.getByRole('navigation', { name: 'Admin' })
   await expect(nav.getByRole('button', { name: 'Integrations' })).toHaveCount(0)
   await expect(nav.getByRole('button', { name: 'Matching', exact: true })).toHaveCount(0)
   await nav.getByRole('button', { name: /^Intake/ }).click()
-  await expect(page).toHaveURL(/\/admin\/intake\/matching$/)
+  await expect(page).toHaveURL(/\/admin\/intake$/)
   await expect(page.getByRole('heading', { name: 'Intake', exact: true })).toBeVisible()
-  await expect(page.locator('[data-shot="admin-intake"]').getByText('Future scope', { exact: true })).toHaveCount(0)
+  await expect(page.locator('[data-shot="intake-section"]').getByText('Future scope', { exact: true })).toHaveCount(0)
 
-  // PDF lists opens a facsimile and its rows as read.
-  await page.getByRole('link', { name: 'PDF lists' }).click()
-  await expect(page).toHaveURL(/\/admin\/intake\/pdfs$/)
-  await page.locator('[data-shot="pdf-inbox"] tbody tr').first().click()
-  await expect(page.locator('[data-shot="pdf-send"]')).toBeVisible()
-  await page.getByRole('button', { name: 'Back to PDF lists' }).click()
-
-  // Validators give a verdict.
-  await page.getByRole('link', { name: 'Validators' }).click()
-  await page.getByPlaceholder(/ZAA0067/).fill('ZAA0067')
-  await expect(page.getByText('Valid NHI')).toBeVisible()
-  await page.getByPlaceholder('e.g. 21111').fill('99999')
-  await expect(page.getByText("Outside this demo's curated subset")).toBeVisible()
+  // Sources is the second tab, inbound only.
+  await page.locator('[data-shot="intake-tabs"]').getByRole('link', { name: 'Sources' }).click()
+  await expect(page).toHaveURL(/\/admin\/intake\/sources$/)
+  await expect(page.locator('[data-shot="intake-sources-strip"]')).toContainText('Inbound only')
+  await page.locator('[data-shot="intake-tabs"]').getByRole('link', { name: /^Arrivals/ }).click()
+  await expect(page).toHaveURL(/\/admin\/intake$/)
+  await expect(page.locator('[data-shot="intake-feed"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/phase11-monitor.png', fullPage: true })
+  // Phase 68: the PDF lists tab's facsimile moved to 70 (the New List bench); re-added there.
+  // Phase 68: the Validators tab moved to 72 (Validators in Help); re-added there.
 
-  for (const old of ['/admin/integrations', '/admin/matching']) {
+  for (const old of ['/admin/integrations', '/admin/matching', '/admin/intake/quality', '/admin/intake/validators']) {
     await page.goto(old)
-    await expect(page).toHaveURL(/\/admin\/intake\/matching$/)
+    await expect(page).toHaveURL(/\/admin\/intake$/)
   }
 })

@@ -10,7 +10,9 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
 import type { Actor } from './mutate'
 import { createBooking } from './bookingActions'
-import { decideImportRow, importHospitalDownload } from './matchingActions'
+import { decideImportRow } from './matchingActions'
+import { receiveMailboxPdf } from './intakeIngest'
+import { receiveSample, stageNoNhiList } from '../test/intakeSamples'
 import { editPatient, upsertPatient } from './intake'
 import { logPatientFollowUp, nhiRequestAddressFor, patientBalancePreview, resendInvoiceFromRecord } from './patientActions'
 import { pdfRowIssues } from '../domain/intake/pdfLists'
@@ -23,7 +25,7 @@ import { DEMO_TRIGGER_ACTOR } from './demoActors'
 import { assessImportRow } from './matchingSelectors'
 import { ANAE, PAT } from '../domain/seed'
 import { validNhiOf, effectiveIncoming } from '../domain/intake/matching'
-import { HOSPITAL_DOWNLOAD_SAMPLES } from '../domain/intake/hospitalDownloads'
+import { FORTE_ROOMS_PDF, SAMPLE_STG, SAMPLE_STG_UPDATE, SAMPLE_SX } from '../domain/intake/hospitalDownloads'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
@@ -100,7 +102,10 @@ describe('bugs 5 and 6: editPatient outside a Booking and the NHI correction', (
 describe('bug 7: a real match keeps the stamp a sample made', () => {
   it('after the match the stamp is no longer the sample\'s, so Clear sample warnings leaves it', () => {
     const api = createAppStore()
-    for (const sample of HOSPITAL_DOWNLOAD_SAMPLES) importHospitalDownload(api, OFFICE, sample.id)
+    // Every sample arriving by its source (Phase 68): the two connected hospitals' files, Forte Health's List by PDF, and its sheet with no NHIs.
+    for (const sample of [SAMPLE_STG, SAMPLE_STG_UPDATE, SAMPLE_SX]) receiveSample(api, sample)
+    receiveMailboxPdf(api, FORTE_ROOMS_PDF)
+    stageNoNhiList(api)
     const st = api.getState()
     const found = Object.values(st.intake.rows)
       .map((r) => ({ r, a: assessImportRow(st, r.id), f: effectiveIncoming(r) }))

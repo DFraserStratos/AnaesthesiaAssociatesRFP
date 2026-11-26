@@ -250,6 +250,11 @@ export const ACTION_LABELS: Record<string, string> = {
   'pdfList.correct': 'PDF list row corrected',
   'pdfList.send': 'PDF list sent to matching',
   'list.senderChanged': 'List sender changed',
+  // Intake's front door (build plan Phase 68): arrivals made by their source.
+  'pdfList.receive': 'PDF received in the mailbox',
+  'pdfList.addByHand': 'PDF added by hand',
+  'importBatch.held': 'Hospital message held',
+  'importBatch.unreadable': 'Unreadable PDF received',
 
   // --- Xero simulation & money movement -----------------------------------
   'xero.pairCreated': 'Xero invoice pair created',

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Info, Play, Radio, RotateCcw, RotateCw } from 'lucide-react'
-import { useDemoTriggerContext } from '../../shared/demoTriggers'
 import { FutureScopeChrome } from './futureScope/FutureScopeChrome'
 import { assessImportRow, matchingView, processMessage, useAppStore } from '../../store'
 import { resetFramedDemo } from '../../shell/framedReset'
@@ -52,9 +51,6 @@ export function DemoIntegrations() {
   const feed = feeds[feedId]
   const library = useMemo(() => CANNED_MESSAGES.filter((m) => m.feedId === feedId), [feedId])
   const selected = cannedMessage(selectedId ?? '') ?? library[0]
-  // Publish the EFFECTIVE selection (the feed's first message until one is
-  // clicked) so the Demo actions menu's "Fire hospital message" preselects it.
-  useDemoTriggerContext('integrationsSim.selectedMessageId', selected?.id ?? '')
 
   const souter = anaesthetists[ANAE.souter]
   const practitioner = useMemo(

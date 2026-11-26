@@ -5,17 +5,15 @@ import { onDomainReset } from '../../store/mutate'
 
 /**
  * Per-trigger memory that "Replay" needs (catch-up Phase 14). Shared across
- * screens, so a message fired on Mobile Lists can be replayed from Admin
- * Integrations. Not persisted: a reload forgets it, and a replay against an
- * entity a reset removed refuses with a readable message.
+ * screens, so a payment webhook sent on one screen can be replayed from another.
+ * Not persisted: a reload forgets it, and a replay against an entity a reset
+ * removed refuses with a readable message.
  *
  * It also carries the UI-only request behind "Photo capture (Future scope)"
  * (catch-up Phase 15b): the trigger asks, `MobileListsRoute` opens the Add a
  * booking sheet on the photo prong and clears it. No domain state, no audit.
  */
 export interface DemoTriggerMemory {
-  /** The last hospital message fired. */
-  lastMessageId: string | null
   /** The last payment webhook sent, replayed with the same key. */
   lastWebhook: { accRecId: string; key: string; amount: number } | null
   /** Webhook key counter, the `<n>` in `WEBHOOK-<accRecId>-<n>`. */
@@ -33,7 +31,6 @@ export interface DemoTriggerMemory {
   /** The last NHI leak scan (catch-up Phase 43): the Data Inspector's Privacy checks panel reads it. */
   nhiScan: LeakScanReport | null
   rememberNhiScan: (report: LeakScanReport | null) => void
-  rememberMessage: (id: string) => void
   rememberWebhook: (webhook: { accRecId: string; key: string; amount: number }, n: number) => void
   requestPhotoCapture: (listId: string) => void
   clearPhotoCaptureRequest: () => void
@@ -41,7 +38,6 @@ export interface DemoTriggerMemory {
 
 /** A UI-only store of its own, written only through its actions. */
 export const useDemoTriggerMemory = create<DemoTriggerMemory>((set) => ({
-  lastMessageId: null,
   lastWebhook: null,
   webhookCounter: 0,
   photoCaptureRequest: null,
@@ -50,7 +46,6 @@ export const useDemoTriggerMemory = create<DemoTriggerMemory>((set) => ({
   nhiScan: null,
   rememberNhiScan: (report) => set({ nhiScan: report }),
   rememberRegenerate: (invoiceId, result) => set((m) => ({ regenerated: { ...m.regenerated, [invoiceId]: result } })),
-  rememberMessage: (id) => set({ lastMessageId: id }),
   rememberWebhook: (webhook, n) => set({ lastWebhook: webhook, webhookCounter: n }),
   requestPhotoCapture: (listId) =>
     set((m) => ({ photoCaptureRequest: { listId, n: m.photoCaptureCounter + 1 }, photoCaptureCounter: m.photoCaptureCounter + 1 })),

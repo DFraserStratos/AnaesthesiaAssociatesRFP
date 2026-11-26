@@ -15,7 +15,7 @@ import { AdminPageExample, CardExample, DefRowExample, EyebrowExample, PageHeade
 import { ReviewQueue } from '../../admin/screens/ReviewQueue'
 import { AuditViewer } from '../../admin/screens/AuditViewer'
 import { RowField } from '../../admin/components/RowField'
-import { PdfListsTab } from '../../admin/intake/PdfListsTab'
+import { PdfListReview } from '../../admin/intake/PdfListReview'
 import { ListOriginRow } from '../../admin/components/ListOriginRow'
 import { SEED_ORIGIN_LISTS } from '../../../domain/seed/listOrigins'
 import { DiffTable } from '../../admin/matching/DiffTable'
@@ -567,9 +567,9 @@ export function AdminCatalogue() {
 
       {/* ------------------------------------------------------------------ */}
       <FamilySection id="tables">
-        <CatalogueRow name="PdfListsTab and PdfListReview (PDF lists)" source="apps/admin/intake/PdfListsTab.tsx" usedIn={A} what="The rooms' PDF lists (catch-up Phase 34): an inbox on the shared table kit (sender, surgeon, hospital, received, suggested List, a Re-sent Pill and a status Pill), Upload PDF list (PdfUploadDialog: the surface's Overlay with OverlayHeader, RadioCards badged Sample files, a Sent from TextField and SheetActions), and the review beside the facsimile: compact TextFields per row, each correction listed under its row, Send to matching (Button) and a ResultLine." shared="shared/table/TableShell.tsx" note="Uploading, correcting and sending write to the demo store." height={460}>
+        <CatalogueRow name="PdfListReview (a rooms' PDF list)" source="apps/admin/intake/PdfListReview.tsx" usedIn={A} what="A rooms' PDF list under review (catch-up Phase 34): the list beside its facsimile, compact TextFields per row, each correction listed under its row, Send to matching (Button) and a ResultLine. Intake's old PDF lists tab (its inbox and Upload PDF list) is gone; Arrivals' Rooms PDFs filter lists them now." shared="shared/ui/Field.tsx" note="Shown on the seed's received PDF list. Correcting and sending write to the demo store. PdfUploadDialog has no screen until the new list bench reuses or retires it." height={460}>
           <Wide minWidth={1000}>
-            <PdfListsTab actor={OFFICE_ACTOR} />
+            <PdfListReviewExample />
           </Wide>
         </CatalogueRow>
         <CatalogueRow name="Pager" source="apps/admin/components/Pager.tsx" usedIn={A} what="The one admin pager (catch-up Phase 43; US-15.0.4): the range in mono, first, previous, the teal page count, next and last. Shown only past one page: the Day view (30 anaesthetists), Invoices (50), Audit (100), the Ledger (50), the Billing tab's groups (20) and each group's Lists (25)." shared="shared/ui/IconButton.tsx">
@@ -581,7 +581,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="PatientsScreen (Coming up · Needs follow-up · All)" source="apps/admin/screens/patients/PatientsScreen.tsx" usedIn={A} what="People · Patients (catch-up Phase 40; build plan Phases 53 and 57; US-11.3.1, US-11.3.3, DM-10): one list searched by name, NHI or date of birth and paged by the admin Pager (50 a page, no cap), with the filters Coming up (the default, a Booking in the next 14 days, nearest first), Needs follow-up (one row per patient with its reasons in the Why column, from patientsNeedingOffice; its figure is the People badge) and All. The filter, search and page are in the URL (?filter=follow-up). A row opens the patient's page; no row carries an action. A search with no match in the chosen filter offers Search all patients." shared="shared/table/TableShell.tsx" note="On PeoplePage, PageToolbar, NameSearchBox, FilterPills (the count in the label), TableShell fit with the Pager in its footer, ClickableRow, RowOpenButton, StrengthPill and EmptyState. Hooks: admin-patients, patients-filter (data-patients-filter), patients-needs-office, tr[data-patient-nhi] with data-reasons on Needs follow-up. The internal id is never shown.">
           <PatientsSearchExample />
         </CatalogueRow>
-        <CatalogueRow name="WaitingNhiView / WaitingNhiRowView / AddNhiSheet" source="apps/admin/intake/WaitingNhiView.tsx · WaitingNhiTab.tsx · AddNhiSheet.tsx" usedIn={A} what="Intake's Waiting for NHI tab (catch-up Phase 40, on Intake since Phase 51; US-11.1.5): each intake row with the patient as received, its List, 33a's stub chip, the one address to chase (the others offered), the days to go with an Urgent pill and when the office asked. Email for the NHI is a real mailto link, audited on click; Add NHI opens the desktop dialog with the live NHI check, the existing-record preview and the differences." shared="shared/table/TableShell.tsx" note="On the shared TableShell, Pill, Button (href), SelectField, TextField, Notice, OverlayHeader and SheetActions. The seed holds one waiting row (33a's); the Demo actions' Receive list with a missing NHI adds two.">
+        <CatalogueRow name="WaitingNhiView / WaitingNhiRowView / AddNhiSheet" source="apps/admin/intake/WaitingNhiView.tsx · AddNhiSheet.tsx" usedIn={A} what="The Waiting for NHI table (catch-up Phase 40; US-11.1.5; Intake's old tab is gone, Arrivals' Needs NHI filter lists these rows now): each intake row with the patient as received, its List, 33a's stub chip, the one address to chase (the others offered), the days to go with an Urgent pill and when the office asked. Email for the NHI is a real mailto link, audited on click; Add NHI opens the desktop dialog with the live NHI check, the existing-record preview and the differences." shared="shared/table/TableShell.tsx" note="On the shared TableShell, Pill, Button (href), SelectField, TextField, Notice, OverlayHeader and SheetActions. The seed holds one waiting row (33a's); the Demo actions' Receive list with a missing NHI adds two.">
           <WaitingNhiExample />
         </CatalogueRow>
         <CatalogueRow name="DetailChoiceTable" source="apps/admin/screens/patients/patientParts.tsx" usedIn={A} what="The one details comparison table (catch-up Phase 40's Details differ, made shared in Phase 40a): Detail, the record's value, the other source's and, with a choice, Keep or Use per row (default Keep); an enrichment reads Will be added. Details differ (Use incoming), Add NHI's read-only preview and Refresh from the NHI register (Use register) all use it." shared="shared/table/TableShell.tsx" note="On the shared TableShell (nested, dense) and SelectField (compact, surface). Replaced the Add NHI sheet's private copy.">
@@ -931,6 +931,13 @@ function DiffTableExample() {
       />
     </div>
   )
+}
+
+/** The seed's first rooms' PDF list, under review. */
+function PdfListReviewExample() {
+  const list = useAppStore((s) => Object.values(s.intake.pdfLists).sort((a, b) => a.id.localeCompare(b.id))[0])
+  if (list === undefined) return <StageHint>No PDF list in the store.</StageHint>
+  return <PdfListReview list={list} actor={OFFICE_ACTOR} onBack={() => undefined} />
 }
 
 /** The seeded rooms' PDF List and the hospital's List, as the drawer shows them (catch-up Phase 34). */

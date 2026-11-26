@@ -9,8 +9,7 @@ import type { Actor } from './mutate'
 import { clearBalanceWarningWithNote, completeFollowUp, logPatientFollowUp } from './patientActions'
 import { upsertPatient, resolvePatientDetails } from './intake'
 import { openBalanceWarnings, patientAttentionCount, patientList, patientsNeedingOffice, PATIENT_SEARCH_UPCOMING_DAYS } from './patientSelectors'
-import { importHospitalDownload } from './matchingActions'
-import { NO_NHI_LIST } from '../domain/intake/hospitalDownloads'
+import { stageNoNhiList } from '../test/intakeSamples'
 import { addDaysISO } from '../domain/clock'
 import { daysBetween } from '../domain/dateDays'
 
@@ -110,7 +109,7 @@ describe('patientsNeedingOffice', () => {
   it('counts no row waiting for an NHI', () => {
     const api = createAppStore()
     const before = patientAttentionCount(api.getState())
-    importHospitalDownload(api, OFFICE, NO_NHI_LIST.id)
+    stageNoNhiList(api)
     expect(patientAttentionCount(api.getState())).toBe(before)
   })
 })

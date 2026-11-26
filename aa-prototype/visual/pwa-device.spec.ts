@@ -466,8 +466,8 @@ test('the hospital file is imported and my booking matched, from the Lists Demo 
   const row = page.locator('[data-shot="pwa-demo-action-matching-office-matches-row"]')
   await expect(row).toBeVisible()
   await expect(row).toContainText('Hospital file imported and my booking matched')
-  // "Fire hospital message" is on the Future-scope surface only: never on a handset.
-  await expect(page.locator('[data-shot="pwa-demo-action-fire-hospital-message"]')).toHaveCount(0)
+  // The hospital's own arrivals are on Admin, Intake only (build plan Phase 68): never on a handset.
+  await expect(page.locator('[data-shot="pwa-demo-action-intake-stg-day-before"]')).toHaveCount(0)
   await row.getByRole('button', { name: 'Run' }).click()
   await expect(row.getByRole('status')).toContainText("The office imported St George's file and matched it. Sarah Mitchell is now on your Tue 1 Dec AM List")
   await page.screenshot({ path: 'visual/shots/pwa-24-office-matches-row.png' })

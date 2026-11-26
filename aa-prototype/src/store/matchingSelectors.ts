@@ -7,6 +7,7 @@
 
 import type { Booking, ImportBatch, ImportRow, List, Patient, Procedure } from '../domain/types'
 import { isActiveOn } from '../domain/anaesthetistStatus'
+import { arrivingListKey, rowWaitsForNhi } from '../domain/intake/arrivals'
 import {
   matchingQueue,
   suggestDecision,
@@ -160,14 +161,24 @@ export function matchingCounts(state: ViewState, view: MatchingView = matchingVi
 }
 
 /**
- * Intake's side-nav badge (amber): every open row, once. A row waiting for an NHI
- * (Intake's Waiting for NHI tab) is open, so it counts here and nowhere else; adding
- * its NHI drops the count when the row becomes a Booking (its stub resolved). A row
- * with no List yet has no stub: it leaves the waiting tab and stays one open row on
- * Matching, counted once, until the office decides it (Phase 51's no-List default).
+ * Intake's side-nav badge (amber), D125's unit (build plan Phase 68), from the intake slice alone (`AdminApp.tsx`
+ * is frozen): each arriving List with an undecided row that is not waiting for an NHI, once (Lists that match
+ * exactly included, since a person confirms them); each unreadable PDF and held message, once, until the office
+ * dismisses it; and each row waiting for an NHI, once, dropping by one when its NHI is added (US-11.1.5). A waiting
+ * row counts here and never on Patients.
  */
 export function matchingAttentionCount(state: Pick<AppState, 'intake'>): number {
-  return Object.values(state.intake.rows).filter((r) => r.status === 'open').length
+  let count = 0
+  const lists = new Set<string>()
+  for (const row of Object.values(state.intake.rows)) {
+    if (row.status !== 'open') continue
+    if (rowWaitsForNhi(row)) count += 1
+    else lists.add(arrivingListKey(row.batchId, row.incoming))
+  }
+  for (const batch of Object.values(state.intake.batches)) {
+    if (batch.rowIds.length === 0 && (batch.unreadableReason !== undefined || batch.heldReason !== undefined) && batch.dismissed === undefined) count += 1
+  }
+  return count + lists.size
 }
 
 /**

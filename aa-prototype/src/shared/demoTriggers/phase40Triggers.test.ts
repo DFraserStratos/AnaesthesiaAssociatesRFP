@@ -1,5 +1,6 @@
 /**
- * Catch-up Phase 40's demo triggers: "Receive list with a missing NHI", the
+ * Catch-up Phase 40's demo triggers: "Receive list with a missing NHI" (since
+ * build plan Phase 68 the label of Intake's "Rooms email a List"), the
  * patient balance sample in 15a's "Raise sample warnings", the PWA's "Office
  * adds the NHI", and 15a's "Office clears this warning" never listing the
  * balance warning on the phone.
@@ -13,7 +14,8 @@ import { bookingsForList } from '../../store/selectors'
 import { stubsOnList } from '../../domain/intake/stubs'
 import { validateNhi } from '../../domain/nhi'
 import { buildSeed, SEED_LIST_IDS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
-import { NO_NHI_LIST, NO_NHI_NEW_PATIENT_NHI, NO_NHI_RETURNING_NHI } from '../../domain/intake/hospitalDownloads'
+import { OKAFOR_STORY } from '../../domain/intake/hospitalDownloads'
+import { hospitalFeedRefusal } from '../../store/intakeIngest'
 import { clearSamplesOn, WARNING_SAMPLES } from '../../store/warningSamples'
 import { addNhiStandInRefusal, LIST_NOT_ACTIVE, NO_FIXTURE_ROWS_LEFT, NO_NHI_FIXTURES } from '../../store/officeStandIn'
 import { clearWarning } from '../../store/warnings'
@@ -32,21 +34,21 @@ const ctx = (pathname: string, params: Record<string, string> = {}): DemoTrigger
 const MULTI = SEED_WARNING_SAMPLE_BOOKINGS.multiWarning
 const [, PM_TARGET] = SEED_WARNING_SAMPLE_BOOKINGS.targets
 
-describe('Receive list with a missing NHI (catch-up Phase 40)', () => {
-  it('shows on Waiting for NHI, imports the two NHI-less rows creating nothing, names the NHIs, then reads Already received', () => {
+describe('Receive list with a missing NHI (catch-up Phase 40; Intake\'s "Rooms email a List" since Phase 68)', () => {
+  it('shows on Arrivals, receives the List with a patient sent without an NHI, creating nothing, then reads Already received', () => {
     const api = createAppStore()
-    const t = byId('receive-no-nhi-list')
-    expect(demoTriggersFor(api.getState(), '/admin/intake/waiting', 'bar').map((m) => m.trigger.id)).toContain('receive-no-nhi-list')
-    const c = ctx('/admin/intake/waiting')
+    const t = byId('intake-rooms-email-list')
+    expect(t.label).toBe('Receive list with a missing NHI')
+    expect(demoTriggersFor(api.getState(), '/admin/intake', 'bar').map((m) => m.trigger.id)).toContain('intake-rooms-email-list')
+    const c = ctx('/admin/intake')
     expect(t.disabledReason(api.getState(), c)).toBeNull()
     const bookings = Object.keys(api.getState().schedule.bookings).length
     const patients = Object.keys(api.getState().masters.patients).length
     const res = t.run(api, c)
     expect(res.ok).toBe(true)
-    expect(res.message).toContain(NO_NHI_NEW_PATIENT_NHI)
-    expect(res.message).toContain(NO_NHI_RETURNING_NHI)
-    const batch = Object.values(api.getState().intake.batches).find((b) => b.sampleId === NO_NHI_LIST.id)
-    expect(batch?.rowIds).toHaveLength(2)
+    const batch = Object.values(api.getState().intake.batches).find((b) => b.sampleId === OKAFOR_STORY.roomsList.id)
+    expect(batch?.rowIds).toHaveLength(4)
+    expect(batch!.rowIds.map((id) => api.getState().intake.rows[id]!).filter((r) => r.incoming.patient.nhi === undefined).map((r) => r.incoming.patient.name)).toEqual(['Sione Faleolo'])
     expect(Object.keys(api.getState().schedule.bookings)).toHaveLength(bookings)
     expect(Object.keys(api.getState().masters.patients)).toHaveLength(patients)
     expect(t.disabledReason(api.getState(), c)).toBe('Already received')
@@ -167,6 +169,26 @@ describe('Office adds the NHI (PWA stand-in, catch-up Phase 40)', () => {
     expect(res.ok, res.message).toBe(true)
     expect(res.message).toContain(stub.asReceived.patientName)
     expect(Object.values(api.getState().intake.rows).some((r) => NO_NHI_FIXTURES.some((f) => f.name === r.incoming.patient.name))).toBe(false)
+  })
+
+  it("on a List at a hospital that is not connected, the booking arrives by the rooms' PDF (Phase 68), the List's Bookings printed beside it so none reads as missing", () => {
+    const api = createAppStore()
+    const s0 = api.getState()
+    const list = Object.values(s0.schedule.lists)
+      .filter((l) => l.state === 'ACTIVE' && hospitalFeedRefusal(s0, l.hospitalId) !== null && stubsOnList(s0.intake.stubs, l.id).length === 0 && bookingsForList(s0, l.id).length > 0 && addNhiStandInRefusal(s0, l.id) === null)
+      .sort((a, b) => a.id.localeCompare(b.id))[0]
+    expect(list).toBeDefined()
+    const before = bookingsForList(s0, list!.id).length
+    const res = byId('pwa-office-adds-nhi').run(api, ctx(`/mobile/lists/${list!.id}`, { listId: list!.id }))
+    expect(res.ok, res.message).toBe(true)
+    const state = api.getState()
+    expect(bookingsForList(state, list!.id)).toHaveLength(before + 1)
+    const row = Object.values(state.intake.rows).find((r) => r.incoming.patient.name === NO_NHI_FIXTURES[0].name)!
+    expect(row.status).toBe('applied')
+    const batch = state.intake.batches[row.batchId]!
+    expect(batch.arrivalSource.kind).toBe('mailbox')
+    expect(Object.values(state.intake.rows).filter((r) => r.batchId === batch.id && r.removalOfBookingId !== undefined)).toEqual([])
+    expect(state.audit.find((e) => e.action === 'importBatch.create' && e.entityId === batch.id)?.role).not.toBe('office')
   })
 
   it('refuses a List that is not ACTIVE', () => {

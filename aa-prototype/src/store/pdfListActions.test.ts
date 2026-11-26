@@ -23,8 +23,19 @@ const WHITFORD_LIST = 'L-47733-2026-12-16-PM'
 /** Dr Rutherford's Wed 5 Aug AM: the session Mr Okafor's list suggests, which holds no List. */
 const OKAFOR_SLOT = 'S-29104-2026-12-09-AM'
 
+/**
+ * The legacy two-step path these tests pin (upload, correct, send). Phase 68 seeds Mr Okafor's PDF as a mailbox
+ * arrival, sent at once with its rows staged (D125); here it is put back as received, its rows not yet staged.
+ */
 function fresh(): AppStoreApi {
-  return createAppStore()
+  const api = createAppStore()
+  const s = api.getState()
+  const staged = new Set<string>(SEED_PDF_LIST.rowIds)
+  const batches = Object.fromEntries(Object.entries(s.intake.batches).filter(([id]) => id !== SEED_PDF_LIST.batchId))
+  const rows = Object.fromEntries(Object.entries(s.intake.rows).filter(([id]) => !staged.has(id)))
+  const { batchId: _batchId, sentAtISO: _sentAt, sentBy: _sentBy, ...received } = s.intake.pdfLists[OKAFOR]!
+  api.setState({ intake: { ...s.intake, batches, rows, pdfLists: { ...s.intake.pdfLists, [OKAFOR]: { ...received, status: 'received' } } } })
+  return api
 }
 
 function rowsOfBatch(api: AppStoreApi, batchId: string | undefined): string[] {
@@ -57,7 +68,8 @@ describe('the seeded inbox', () => {
   it('holds Mr Okafor\'s list as received, with its sender, touching no List', () => {
     const s = freshAppState()
     const list = s.intake.pdfLists[OKAFOR]!
-    expect(list.status).toBe('received')
+    // Arrived in the mailbox and read at once (Phase 68, D125): no received-then-sent step.
+    expect(list).toMatchObject({ status: 'sent', batchId: SEED_PDF_LIST.batchId })
     expect(list.senderEmail).toBe('leanne.pa@avonsidesurgical.example')
     expect(list.surgeonId).toBe(SURG.okafor)
     expect(list.rows.map((r) => r.asRead.procedureText)).toEqual(['R inguinal hernia mesh', 'lap chole +/- IOC', 'gastro/colon'])
@@ -166,7 +178,7 @@ describe('deciding rooms rows: the List and its origin (US-02.2.4)', () => {
     expect(to.others.map((o) => o.email)).toEqual(['admin@avonsidesurgical.example'])
   })
 
-  it('a re-sent list skips unchanged rows, brings the changed time as a modification and the new patient as a new row; applying a row takes the newer sender into History', () => {
+  it('a re-sent list stages its unchanged rows to confirm, brings the changed time as a modification and the new patient as a new row; applying a row takes the newer sender into History', () => {
     const api = fresh()
     const first = sendOkafor(api)
     const listId = decideOkafor(api, first.batchId)
@@ -179,10 +191,13 @@ describe('deciding rooms rows: the List and its origin (US-02.2.4)', () => {
     const before = api.getState().schedule.bookings
     const sent = sendPdfListToMatching(api, OFFICE_ACTOR, re.value.pdfListId)
     if (!sent.ok) throw new Error(sent.message)
-    expect(sent.value).toMatchObject({ staged: 2, unchanged: 2 })
+    // Every row is staged, the unchanged ones included (Phase 68; DM-21): they wait for a person's confirm.
+    expect(sent.value).toMatchObject({ staged: 4, unchanged: 0 })
     // Nothing applied until decided.
     expect(api.getState().schedule.bookings).toBe(before)
-    const [changed, added] = rowsOfBatch(api, sent.value.batchId).map((id) => assessImportRow(api.getState(), id)!)
+    const assessed = rowsOfBatch(api, sent.value.batchId).map((id) => assessImportRow(api.getState(), id)!)
+    expect(assessed.map((a) => a.changeType)).toEqual(['noChange', 'modification', 'noChange', 'new'])
+    const [, changed, , added] = assessed
     expect(changed!.changeType).toBe('modification')
     expect(changed!.diffs.map((d) => d.key)).toEqual(['time'])
     expect(added!.changeType).toBe('new')

@@ -32,7 +32,7 @@ import { closeOutOfHoursSession, openOutOfHoursSession } from './outOfHoursActio
 import type { AssignedList, ImportRow } from '../domain/types'
 import { stubsOnList } from '../domain/intake/stubs'
 import { NO_NHI_LIST, NO_NHI_NEW_PATIENT_NHI, NO_NHI_RETURNING_NHI } from '../domain/intake/hospitalDownloads'
-import { stageImportRows } from './matchingActions'
+import { receiveRowsForList } from './intakeIngest'
 import { addNhiToWaitingRow, type AddNhiResult } from './patientActions'
 import { fixtureNhiForRow } from './stubDemo'
 
@@ -331,12 +331,14 @@ export function addNhiStandInRefusal(state: AppState, listId: string | undefined
 }
 
 /**
- * The office stand-in on the PWA: the hospital sends a booking for this List
- * with no NHI (the next unused fixture, staged through 33's `stageImportRows`,
- * which makes no Booking; 33a's stub stands on the List), then the office adds
- * the fixture's NHI as `OFFICE_SIMULATION_ACTOR` through `addNhiToWaitingRow`
- * (33a's resolve), so the Booking takes the stub's place. An open waiting row
- * already on the List is used instead of a new fixture.
+ * The office stand-in on the PWA: a booking for this List arrives with no NHI
+ * (the next unused fixture) by the List's hospital's own source, through the
+ * ingest (build plan Phase 68; `receiveRowsForList`): a connected hospital's
+ * feed sends it, else the surgeon's rooms email the List as a PDF. Staging makes
+ * no Booking; 33a's stub stands on the List. Then the office adds the fixture's
+ * NHI as `OFFICE_SIMULATION_ACTOR` through `addNhiToWaitingRow` (33a's resolve),
+ * so the Booking takes the stub's place. An open waiting row already on the List
+ * is used instead of a new fixture.
  */
 export function addNhiAsSimulatedOffice(api: AppStoreApi, listId: string): Outcome<{ patient: string; result: AddNhiResult }> {
   const state = api.getState()
@@ -347,7 +349,7 @@ export function addNhiAsSimulatedOffice(api: AppStoreApi, listId: string): Outco
   if (target === undefined) {
     const list = state.schedule.lists[listId] as AssignedList
     const fixture = nextNoNhiFixture(state)!
-    const staged = stageImportRows(api, OFFICE_SIMULATION_ACTOR, 'manualSheet', list.hospitalId, 'Hospital booking sent with no NHI', [
+    const sent = receiveRowsForList(api, listId, [
       {
         hospitalId: list.hospitalId,
         dateISO: list.dateISO,
@@ -358,9 +360,9 @@ export function addNhiAsSimulatedOffice(api: AppStoreApi, listId: string): Outco
         procedure: { text: fixture.wording },
         hospitalStatus: 'booked',
       },
-    ])
-    if (!staged.ok) return staged
-    const rowId = staged.value.rowIds[0]
+    ], { label: 'Hospital booking sent with no NHI', sampleId: `STAND-IN-NO-NHI-${fixture.nhi}` })
+    if (!sent.ok) return sent
+    const rowId = sent.value.rowIds[0]
     if (rowId === undefined) return refuse('officeStandIn', NO_FIXTURE_ROWS_LEFT)
     target = { rowId, nhi: fixture.nhi }
     patient = fixture.name

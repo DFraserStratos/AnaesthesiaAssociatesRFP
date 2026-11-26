@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { freshAppState, type AppState } from './appStore'
-import { SEED_STUB } from '../domain/seed/intakeSeed'
+import { SEED_PDF_LIST, SEED_STUB } from '../domain/seed/intakeSeed'
 import {
   arrivalByKey,
   arrivalFeed,
@@ -24,9 +24,10 @@ describe('intake selectors over the seed', () => {
     const state = freshAppState()
     expect(arrivalItemsOf(state)).toBe(arrivalItemsOf(state))
     const feed = arrivalFeed(state, { kind: 'toDecide' }, '')
-    expect(feed.map((g) => [g.kind, g.items.map((i) => i.key)])).toEqual([['waiting', [NHI_KEY]]])
+    // The seeded rooms' PDF is a New List above it (Phase 68's seed); the seeded decided arrival is under Decided.
+    expect(feed.map((g) => [g.kind, g.items.map((i) => i.key)])).toEqual([['single', [`${SEED_PDF_LIST.batchId}~2026-12-09~AM~H-FORTE~43OKAC`]], ['waiting', [NHI_KEY]]])
     expect(arrivalByKey(state, NHI_KEY)).toMatchObject({ kind: 'needsNhi', title: expect.stringContaining(SEED_STUB.patientName) })
-    expect(arrivalFeedCounts(state)).toMatchObject({ toDecide: 1, needsNhi: 1, roomsPdfs: 0, decided: 0 })
+    expect(arrivalFeedCounts(state)).toMatchObject({ toDecide: 2, needsNhi: 1, roomsPdfs: 1, decided: 1 })
     expect(arrivalKeyForRow(state, SEED_STUB.rowId)).toBe(NHI_KEY)
     expect(arrivalRows(state, NHI_KEY)).toMatchObject([{ rowId: SEED_STUB.rowId, change: 'waiting', flags: ['needsNhi'] }])
     expect(arrivalKeyForRow(state, 'nope')).toBeUndefined()
@@ -36,7 +37,7 @@ describe('intake selectors over the seed', () => {
   it('once the NHI is added the row is decided under its List, and the counts move', () => {
     const state = withNhi(freshAppState())
     const counts = arrivalFeedCounts(state)
-    expect(counts).toMatchObject({ toDecide: 1, needsNhi: 0, decided: 0 })
+    expect(counts).toMatchObject({ toDecide: 2, needsNhi: 0, decided: 1 })
     const key = arrivalKeyForRow(state, SEED_STUB.rowId)!
     expect(key.startsWith(`${SEED_STUB.batchId}~`)).toBe(true)
     expect(arrivalByKey(state, key)).toMatchObject({ source: { kind: 'hospital' }, counts: { open: 1, waitingNhi: 0, added: 1 } })

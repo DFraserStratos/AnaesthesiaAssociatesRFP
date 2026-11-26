@@ -3,19 +3,31 @@
  * 40 and 40a): the waiting row, the Add NHI sheet and its register check.
  */
 
-import type { ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { act, cleanup, fireEvent, render, within } from '@testing-library/react'
 import { createMemoryRouter, createRoutesFromElements, MemoryRouter, Outlet, Route, RouterProvider } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { freshAppState, importHospitalDownload, OFFICE_ACTOR, useAppStore, waitingNhiRows } from '../../../store'
-import { NO_NHI_LIST, NO_NHI_RETURNING_NHI } from '../../../domain/intake/hospitalDownloads'
+import { freshAppState, OFFICE_ACTOR, useAppStore, waitingNhiRows } from '../../../store'
+import { stageNoNhiList } from '../../../test/intakeSamples'
+import { NO_NHI_RETURNING_NHI } from '../../../domain/intake/hospitalDownloads'
 import { SurfaceProvider } from '../../../shared/surface'
 import { HUB_TIMING } from '../../../shared/nhiHub'
-import { WaitingNhiTab } from './WaitingNhiTab'
+import { WaitingNhiView } from './WaitingNhiView'
 import { REGISTER_DIFFERS_LINE } from './AddNhiSheet'
 import { intakeRoutes, mastersAndLegacyRoutes } from '../../../test/adminRoutes'
 
 const noop = () => undefined
+
+/** The waiting rows from the live store, on the view Intake's old Waiting for NHI tab rendered (the tab is gone; 72 folds the view into Needs NHI). */
+function WaitingNhi() {
+  const intake = useAppStore((s) => s.intake)
+  const masters = useAppStore((s) => s.masters)
+  const schedule = useAppStore((s) => s.schedule)
+  const clock = useAppStore((s) => s.clock)
+  const audit = useAppStore((s) => s.audit)
+  const rows = useMemo(() => waitingNhiRows({ intake, masters, schedule, clock, audit }), [intake, masters, schedule, clock, audit])
+  return <WaitingNhiView rows={rows} actor={OFFICE_ACTOR} onOpenList={noop} onOpenMatching={noop} />
+}
 
 function inAdmin(node: ReactNode, path = '/admin/intake/waiting') {
   return render(
@@ -26,8 +38,7 @@ function inAdmin(node: ReactNode, path = '/admin/intake/waiting') {
 }
 
 function receiveMissingNhiList() {
-  const res = importHospitalDownload(useAppStore, OFFICE_ACTOR, NO_NHI_LIST.id)
-  if (!res.ok) throw new Error(res.message)
+  stageNoNhiList(useAppStore)
 }
 
 function waitingRow(container: HTMLElement, name: string): HTMLElement {
@@ -39,7 +50,7 @@ function waitingRow(container: HTMLElement, name: string): HTMLElement {
 
 function openAddNhi(name: string): HTMLElement {
   receiveMissingNhiList()
-  const { container } = inAdmin(<WaitingNhiTab actor={OFFICE_ACTOR} onOpenList={noop} />)
+  const { container } = inAdmin(<WaitingNhi />)
   fireEvent.click(within(waitingRow(container, name)).getByRole('button', { name: 'Add NHI' }))
   return document.querySelector('[data-shot="add-nhi-sheet"]') as HTMLElement
 }
@@ -55,7 +66,7 @@ afterEach(() => cleanup())
 describe('Waiting for NHI', () => {
   it('a row shows the address to chase, the Urgent pill on a close row, and Add NHI', () => {
     receiveMissingNhiList()
-    const { container } = inAdmin(<WaitingNhiTab actor={OFFICE_ACTOR} onOpenList={noop} />)
+    const { container } = inAdmin(<WaitingNhi />)
     const rows = waitingNhiRows(useAppStore.getState())
     const aroha = rows.find((r) => r.patientName === 'Aroha Ngata')!
     const row = waitingRow(container, 'Aroha Ngata')
@@ -73,7 +84,7 @@ describe('Waiting for NHI', () => {
 
   it('Email for the NHI audits the request and the row reads Requested', () => {
     receiveMissingNhiList()
-    const { container } = inAdmin(<WaitingNhiTab actor={OFFICE_ACTOR} onOpenList={noop} />)
+    const { container } = inAdmin(<WaitingNhi />)
     const row = waitingRow(container, 'Losa Tuilagi')
     expect(row.textContent).toContain('Not yet')
     fireEvent.click(row.querySelector('a[data-shot="waiting-nhi-email"]')!)
@@ -83,7 +94,7 @@ describe('Waiting for NHI', () => {
 
   it('the Add NHI sheet shows the existing record and adds the NHI through addNhiToWaitingRow', () => {
     receiveMissingNhiList()
-    const { container } = inAdmin(<WaitingNhiTab actor={OFFICE_ACTOR} onOpenList={noop} />)
+    const { container } = inAdmin(<WaitingNhi />)
     const before = Object.keys(useAppStore.getState().masters.patients).length
     fireEvent.click(within(waitingRow(container, 'Losa Tuilagi')).getByRole('button', { name: 'Add NHI' }))
     const sheet = document.querySelector('[data-shot="add-nhi-sheet"]') as HTMLElement
@@ -100,7 +111,7 @@ describe('Waiting for NHI', () => {
 
   it('an invalid NHI shows its reason and keeps Add NHI disabled', () => {
     receiveMissingNhiList()
-    const { container } = inAdmin(<WaitingNhiTab actor={OFFICE_ACTOR} onOpenList={noop} />)
+    const { container } = inAdmin(<WaitingNhi />)
     fireEvent.click(within(waitingRow(container, 'Aroha Ngata')).getByRole('button', { name: 'Add NHI' }))
     const sheet = document.querySelector('[data-shot="add-nhi-sheet"]') as HTMLElement
     fireEvent.change(within(sheet).getByLabelText('NHI'), { target: { value: 'ZAE0311' } })
