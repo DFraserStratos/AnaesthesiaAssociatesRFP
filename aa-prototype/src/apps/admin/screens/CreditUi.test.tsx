@@ -114,7 +114,7 @@ describe('the credit note document', () => {
     expect(doc.textContent).toContain('Wrong amount')
     expect(doc.textContent).toContain('Total credited')
     expect(doc.textContent).not.toMatch(/NHI/)
-    expect(container.querySelector('[data-shot="negative-invoice-card"]')?.textContent).toMatch(new RegExp(`^${cn.creditNoteNumber}-P to Dr Souter · \\$520\\.50 · offset against the unpaid payable$`))
+    expect(container.querySelector('[data-shot="negative-invoice-card"]')?.textContent).toMatch(new RegExp(`^${cn.creditNoteNumber}-P to Dr Souter · \\$520\\.50 · Offset against the unpaid payable$`))
     expect(container.querySelector('[data-shot="credit-note-new-invoices"]')?.querySelectorAll('a')).toHaveLength(1)
     expect(container.querySelector('[data-shot="delivery-caption"]')?.textContent).toBe('Xero does not send credit notes; the engine sends it.')
   })
@@ -135,9 +135,12 @@ describe('the events list and the Invoices screen', () => {
   it('lists the credit note as its own row, and the replacement says what it rebills', () => {
     issue(1)
     const cn = creditNoteForInvoice(useAppStore.getState(), ORIGINAL)!
-    const { container } = inAdmin(<InvoicesScreen actor={OFFICE} />)
+    // The original is seeded history the list leaves out, so its credit note lists under All only, at the top.
+    const { container } = inAdmin(<InvoicesScreen actor={OFFICE} />, '/admin/finances/invoices?show=all')
     const cnRow = container.querySelector(`tr[data-credit-note-id="${cn.id}"]`)!
+    expect(container.querySelector('tbody tr')).toBe(cnRow)
     expect(cnRow.querySelector('[data-shot="invoice-list-kind"]')?.textContent).toBe('Credit note')
+    expect(cnRow.querySelector('[data-shot="invoice-list-kind"]')).toHaveAttribute('data-kind', 'creditNote')
     expect(cnRow.textContent).toContain('Credits AA-2026-H03')
     const rebill = container.querySelector(`tr[data-invoice-id="${cn.replacementInvoiceIds[0]}"]`)!
     expect(rebill.querySelector('[data-shot="invoice-list-rebills"]')?.textContent).toBe('Rebills AA-2026-H03')

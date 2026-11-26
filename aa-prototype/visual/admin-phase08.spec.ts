@@ -118,37 +118,45 @@ test('authorise raises and sends invoices; contract-holder document, Resend and 
   await expect(page.getByRole('heading', { name: 'Finances', level: 1 })).toBeVisible()
   await expect(page).toHaveURL(/\/admin\/finances\/invoices/)
   // Recently billed left Invoices (it repeated the table's top rows); the Review queue keeps it.
+  // The tab opens on Unpaid, oldest first (build plan Phase 62), with no key in the URL.
+  await expect(page).toHaveURL(/\/admin\/finances\/invoices$/)
   await expect(page.locator('[data-shot="invoices-tabs"]')).toBeVisible()
-  await expect(page.getByText(/AA-2026-\d{4}/).first()).toBeVisible()
-  await expect(page.getByTestId('invoice-list-table-shell').getByRole('columnheader', { name: 'Patient / booking' })).toBeVisible()
-  await expect(page.getByTestId('invoice-list-table-shell').getByRole('columnheader', { name: 'Anaesthetist' })).toBeVisible()
-  await expect(page.getByTestId('invoice-list-table-shell').getByRole('columnheader', { name: 'List', exact: true })).toBeVisible()
-  await expect(page.getByTestId('invoice-list-table-shell').getByRole('columnheader', { name: 'List date' })).toBeVisible()
+  await expect(page.locator('[data-shot="invoices-tabs"]')).toHaveAttribute('data-invoices-view', 'unpaid')
+  const invoiceTable = page.getByTestId('invoice-list-table-shell')
+  for (const name of ['Number', 'Kind', 'Payer', 'Patient · Booking', 'Anaesthetist', 'Raised', 'Total', 'Owing', 'State', 'Delivery']) {
+    await expect(invoiceTable.getByRole('columnheader', { name, exact: true })).toBeVisible()
+  }
+  await expect(invoiceTable.getByRole('columnheader', { name: 'List', exact: true })).toHaveCount(0)
+  await expect(invoiceTable.getByRole('columnheader', { name: 'List date' })).toHaveCount(0)
   const invoiceWidth = await page.getByTestId('invoice-list-screen').evaluate((element) => element.getBoundingClientRect().width)
   expect(invoiceWidth).toBeGreaterThan(1080)
   await page.screenshot({ path: 'visual/shots/a8-02-invoices-table.png', fullPage: true })
 
-  // The source List is a real link. Since the Patient / booking cell became a link
-  // too, both cells share ONE compact neutral chrome (`.aa-table-entity-link`:
-  // inline-flex row + chevron, no underline, colour inherited from the cell)
-  // rather than the List cell alone wearing a status-tinted pill — so this
-  // asserts that shared treatment, not the retired tint. The link lands on the
-  // List date and opens the existing transient drawer.
-  const firstInvoiceRow = page.getByTestId('invoice-list-table-shell').locator('tbody tr').first()
+  // Today's invoices are the newest unpaid, so on the last page: the search pins Dr Morrison's run.
+  await page.getByLabel('Search invoices').fill('Morrison')
+  await expect(page).toHaveURL(/\/admin\/finances\/invoices\?q=Morrison$/)
+  const morrisonRows = invoiceTable.locator('tbody tr').filter({ hasText: 'Dr Morrison' })
+  await expect(morrisonRows.first()).toBeVisible()
+  await expect(morrisonRows.first()).toContainText(/AA-2026-\d{4}/)
+
+  // The Patient · Booking cell is the row's one entity link: the compact neutral chrome
+  // (`.aa-table-entity-link`: inline-flex row + chevron, no underline, colour inherited
+  // from the cell). It opens the Booking, which offers the way back to this invoice.
+  const firstInvoiceRow = morrisonRows.first()
   await expect(firstInvoiceRow.locator('td').first()).toHaveCSS('vertical-align', 'middle')
-  const sourceListLink = firstInvoiceRow.getByRole('link', { name: /in day view$/ })
-  await expect(sourceListLink).toHaveAttribute('href', '/admin/day/2026-11-23')
-  await expect(sourceListLink).toHaveCSS('display', 'inline-flex')
-  await expect(sourceListLink).toHaveCSS('text-decoration-line', 'none')
-  await sourceListLink.click()
-  await expect(page).toHaveURL(/\/admin\/day\/2026-11-23$/)
-  await expect(page.getByTestId('admin-list-drawer')).toBeVisible()
-  await expect(page.getByTestId('admin-list-drawer')).toContainText("St George's")
+  await expect(firstInvoiceRow.getByRole('link')).toHaveCount(1)
+  const bookingLink = firstInvoiceRow.getByRole('link', { name: /^View booking for .+, Mon 23 Nov · (AM|PM)$/ })
+  await expect(bookingLink).toHaveAttribute('href', /^\/admin\/day\/2026-11-23\/bookings\/[^/]+$/)
+  await expect(bookingLink).toHaveCSS('display', 'inline-flex')
+  await expect(bookingLink).toHaveCSS('text-decoration-line', 'none')
+  await bookingLink.click()
+  await expect(page).toHaveURL(/\/admin\/day\/2026-11-23\/bookings\/[^/]+$/)
+  await expect(page.getByRole('button', { name: /^Invoice AA-2026-\d{4}$/ }).first()).toBeVisible()
   await page.goBack()
-  await expect(page).toHaveURL(/\/admin\/finances\/invoices$/)
+  await expect(page).toHaveURL(/\/admin\/finances\/invoices\?q=Morrison$/)
 
   // Open a document: contract-holder layout.
-  await page.getByRole('button', { name: /^View invoice / }).first().click()
+  await morrisonRows.filter({ hasText: 'Holder layout' }).first().getByRole('button', { name: /^View invoice / }).click()
   await page.waitForTimeout(300)
   await expect(page.getByText('TAX INVOICE')).toBeVisible()
   await expect(page.getByText('Attn: Accounts')).toBeVisible()
@@ -196,8 +204,9 @@ test('authorise raises and sends invoices; contract-holder document, Resend and 
   const emailBox = await page.getByRole('button', { name: 'Resend' }).boundingBox()
   const printBox = await page.getByRole('button', { name: 'Print' }).boundingBox()
   if (emailBox === null || printBox === null) throw new Error('Invoice action buttons are missing')
-  expect(emailBox.height).toBeCloseTo(40, 0)
-  expect(printBox.height).toBeCloseTo(40, 0)
+  // The shared Button's compact size (36, Admin Day's mockup) since the rail moved to shared parts (build plan Phase 63).
+  expect(emailBox.height).toBeCloseTo(36, 0)
+  expect(printBox.height).toBeCloseTo(36, 0)
   expect(emailBox.y).toBeCloseTo(printBox.y, 0)
   expect(emailBox.width).toBeGreaterThan(printBox.width)
 
@@ -405,27 +414,32 @@ test('exemplar staging via the guard console: patient layout and the fee split',
   await expect(page).toHaveURL(/\/admin\/finances\/invoices$/)
   await page.waitForTimeout(300)
 
+  // Today's invoices are the newest unpaid, so on the tab's last page: the search pins Dr Souter's.
+  const invoiceTable = page.getByTestId('invoice-list-table-shell')
+  await page.getByLabel('Search invoices').fill('Souter')
+  await expect(page).toHaveURL(/\/admin\/finances\/invoices\?q=Souter$/)
+
   // Both shares are emailed by the run (nib's Party delivers by email; no portal, D55).
   await expect(page.getByText('Upload portal')).toHaveCount(0)
-  const alanRows = page.getByTestId('invoice-list-table-shell').locator('tbody tr').filter({ hasText: 'Alan Prentice' })
+  const alanRows = invoiceTable.locator('tbody tr').filter({ hasText: 'Alan Prentice' })
   await expect(alanRows).toHaveCount(2)
-  // A standard invoice carries no kind pill (only a credit note, prepayment or additional invoice does).
-  await expect(alanRows.locator('[data-shot="invoice-list-kind"]')).toHaveCount(0)
-  await expect(alanRows.locator('td:nth-child(3)')).toHaveText(['Dr Souter', 'Dr Souter'])
-  await expect(alanRows.locator('td:nth-child(4)')).toHaveText([
-    /St George's · PM.*Ms G\. Lim/,
-    /St George's · PM.*Ms G\. Lim/,
-  ])
-  await expect(alanRows.locator('td:nth-child(5)')).toHaveText(['MON 23 NOV', 'MON 23 NOV'])
-  expect((await alanRows.locator('td:nth-child(6)').allTextContents()).map((t) => t.replace(/(Patient|Holder) layout$/, '').replace(/Split$/, '').trim()).sort()).toEqual(['Alan Prentice', 'nib'])
+  // Every row names its kind: these are standard invoices.
+  await expect(alanRows.locator('[data-shot="invoice-list-kind"][data-kind="standard"]')).toHaveText(['Invoice', 'Invoice'])
+  // Columns: Number, Kind, Payer, Patient · Booking, Anaesthetist, Raised, Total, Owing, State, Delivery.
+  expect((await alanRows.locator('td:nth-child(3)').allTextContents()).map((t) => t.replace(/(Patient|Holder) layout$/, '').replace(/Split$/, '').trim()).sort()).toEqual(['Alan Prentice', 'nib'])
+  await expect(alanRows.locator('td:nth-child(4)')).toHaveText([/^Alan Prentice\s*Mon 23 Nov · PM$/, /^Alan Prentice\s*Mon 23 Nov · PM$/])
+  await expect(alanRows.locator('td:nth-child(5)')).toHaveText(['Dr Souter', 'Dr Souter'])
+  await expect(alanRows.locator('td:nth-child(6)')).toHaveText([/^\d{1,2} [A-Z][a-z]{2} 2026$/, /^\d{1,2} [A-Z][a-z]{2} 2026$/])
+  await expect(alanRows.locator('[data-shot="invoice-list-state"]')).toHaveText([/^Unpaid/, /^Unpaid/])
   await expect(alanRows.locator('[data-shot="invoice-list-split"]')).toHaveCount(2)
   await expect(alanRows.locator('[data-shot="invoice-list-delivery"]')).toHaveText([/^Emailed \d{2}:\d{2}$/, /^Emailed \d{2}:\d{2}$/])
   await page.screenshot({ path: 'visual/shots/a8-06-invoices-mixed.png', fullPage: true })
 
   // Open the patient-layout invoice: the AIA claim is No contract · RVG billed
   // to the patient, so the note is payment on receipt (catch-up Phase 20; the
-  // insured-reimbursement wording went with the payment category).
-  const patientRow = page.locator('tr', { hasText: 'Patient' }).filter({ hasText: 'AA-2026' }).first()
+  // insured-reimbursement wording went with the payment category). Oldest first,
+  // so the run's newest patient-layout invoice is the last.
+  const patientRow = invoiceTable.locator('tbody tr').filter({ hasText: 'Patient layout' }).filter({ hasText: 'AA-2026' }).last()
   await patientRow.getByRole('button', { name: /^View invoice / }).click()
   await page.waitForTimeout(300)
   await expect(page.getByText('TAX INVOICE')).toBeVisible()
@@ -434,9 +448,11 @@ test('exemplar staging via the guard console: patient layout and the fee split',
   await page.screenshot({ path: 'visual/shots/a8-07-patient-doc.png', fullPage: true })
 
   // nib's share: holder layout, emailed to nib, the split note linking Alan's share.
-  await page.getByTestId('invoice-detail-screen').getByRole('link', { name: 'Invoices', exact: true }).click()
-  const nibRow = page
-    .getByTestId('invoice-list-table-shell')
+  // Back returns to the tab at the filter the office came from (build plan Phase 63): Dr Souter's search.
+  await page.getByTestId('invoice-detail-screen').locator('[data-shot="invoice-back"]').click()
+  await expect(page).toHaveURL(/\/admin\/finances\/invoices\?q=Souter$/)
+  await expect(page.getByLabel('Search invoices')).toHaveValue('Souter')
+  const nibRow = invoiceTable
     .locator('tbody tr')
     .filter({ hasText: 'Alan Prentice' })
     .filter({ hasText: 'nib' })
@@ -455,6 +471,6 @@ test('exemplar staging via the guard console: patient layout and the fee split',
   await expect(page.locator('.aa-invoice-doc')).toContainText('$152.38')
   const insurerPrintBox = await insurerRail.getByRole('button', { name: 'Print' }).boundingBox()
   if (insurerPrintBox === null) throw new Error('Insurer Print action is missing')
-  expect(insurerPrintBox.height).toBeCloseTo(40, 0)
+  expect(insurerPrintBox.height).toBeCloseTo(36, 0) // the shared compact Button (Phase 63)
   await page.screenshot({ path: 'visual/shots/a8-10-insurer-doc.png', fullPage: true })
 })

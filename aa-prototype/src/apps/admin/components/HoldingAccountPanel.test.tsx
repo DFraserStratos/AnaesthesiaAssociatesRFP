@@ -45,4 +45,21 @@ describe('HoldingAccountPanel: credited and refunded rows', () => {
     expect(card.textContent).not.toContain(patient.nhi!)
     expect(card.querySelector('[data-holding-balance]')!.getAttribute('data-holding-balance')).toBe('0')
   })
+
+  it('bare (the Ledger tab view) keeps every hook without the outer card', () => {
+    render(
+      <MemoryRouter>
+        <HoldingAccountPanel bare />
+      </MemoryRouter>,
+    )
+    const panel = document.querySelector('[data-shot="billing-prepay-holding"]')!
+    expect(panel.getAttribute('data-holding-bare')).toBe('true')
+    expect(panel).toHaveTextContent('AA Holding account')
+    expect(panel).toHaveTextContent('to confirm with AA (OQ-125)')
+    expect(panel).toHaveTextContent('Held for 1 prepaid Booking')
+    expect(panel.querySelector('[data-holding-balance]')!.getAttribute('data-holding-balance')).toBe('1380')
+    const entry = panel.querySelector(`[data-shot="holding-entry"][data-booking-id="${SEED_PREPAID_BOOKING_ID}"]`)!
+    expect(entry).not.toBeNull()
+    expect(entry.getAttribute('data-entry-kind')).toBe('received')
+  })
 })

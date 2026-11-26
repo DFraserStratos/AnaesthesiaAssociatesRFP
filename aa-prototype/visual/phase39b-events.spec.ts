@@ -77,7 +77,8 @@ test('events through review onto the Procedure invoice, then an own invoice in t
 
   // Authorise: the run bundles both onto the Procedure's invoice as their own dated lines.
   await authorise(page)
-  await page.goto('/admin/finances/invoices')
+  // The tab opens on Unpaid, oldest first (build plan Phase 62): today's invoice is on its last page, so the search pins the patient's.
+  await page.goto('/admin/finances/invoices?q=Bennett')
   await expect(page.locator('[data-shot="invoice-list-event-lines"]')).toContainText('+2 event lines')
   await page.locator('[data-shot="invoice-list-event-lines"]').first().click()
   const lines = page.locator('[data-shot="invoice-event-lines"]')
@@ -97,7 +98,7 @@ test('events through review onto the Procedure invoice, then an own invoice in t
   await page.keyboard.press('Escape')
   await page.goto('/admin/finances/billing')
   expect(await runDemoAction(page, 'run-next-billing-run', { close: true })).toMatch(/AA-2026-\d{4}/)
-  await page.goto('/admin/finances/invoices')
+  await page.goto('/admin/finances/invoices?q=Bennett')
   await page.locator('[data-shot="invoice-list-kind"][data-kind="additional"]').first().click()
   await expect(page.locator('[data-shot="invoice-additional-of"]')).toContainText('Post-op event · relates to AA-2026-')
 })

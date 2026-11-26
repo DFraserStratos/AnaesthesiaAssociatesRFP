@@ -2,13 +2,13 @@ import { DRAFT_LIST, DRAFT_LISTS } from '../../../../shared/scheduleTerms'
 import { useMemo, useState } from 'react'
 import { neutral } from '../../../../theme/tokens'
 import { Button } from '../../../../shared'
-import { Pill, SelectField } from '../../../../shared/ui'
+import { SelectField } from '../../../../shared/ui'
 import { HistorySheet } from '../../../../shared/booking'
 import { PricingSheet } from '../../../../shared/flows'
 import { SEED_MARKERS } from '../../../../domain/seed'
 import { CodePickerSheet } from '../../../../shared/capture/CodePickerSheet'
 import type { DayNote } from '../../../../domain/types'
-import { billingMonitor, OFFICE_ACTOR, useAppStore } from '../../../../store'
+import { OFFICE_ACTOR, useAppStore } from '../../../../store'
 import { SideNav, type NavSection } from '../../../admin/components/SideNav'
 import { DayNav, type SortMode } from '../../../admin/components/DayNav'
 import { DayGrid } from '../../../admin/components/DayGrid'
@@ -40,7 +40,7 @@ import { PriceRangesTable } from '../../../admin/screens/contracts/PriceRangesTa
 import { SlotStatusSheet } from '../../../admin/flows/SlotStatusSheet'
 import { ReviewScreen } from '../../../admin/screens/ReviewScreen'
 import { InvoiceDocument } from '../../../admin/screens/InvoiceDocument'
-import { STAGE_TONE, useAdminDay, useSeedIds } from './adminData'
+import { useAdminDay, useSeedIds } from './adminData'
 import { Echo, Wide } from './basicExamples'
 import { UpdateEmailComposer, usePickableChanges } from '../../../admin/flows/UpdateEmailComposer'
 import { BookingUpdateEmailButton } from '../../../admin/flows/UpdateEmailActions'
@@ -517,39 +517,6 @@ export function ReviewScreenExample() {
       <Echo>{last === '' ? `Reviewing ${submittedListId}` : last}</Echo>
       <ReviewScreen listId={submittedListId} actor={OFFICE_ACTOR} onBack={() => setLast('Back (stubbed).')} onOpen={(id) => setLast(`Open ${id} (stubbed).`)} onViewInvoices={() => setLast('View invoices (stubbed).')} />
     </Wide>
-  )
-}
-
-/** The billing monitor's per-List pipeline (`PipelineDetail` / `StageChip`, not exported): shared Pills in an `ol`, fed by the real `billingMonitor` selector. */
-export function PipelineStepperExample() {
-  const schedule = useAppStore((s) => s.schedule)
-  const billing = useAppStore((s) => s.billing)
-  const masters = useAppStore((s) => s.masters)
-  const rows = useMemo(() => billingMonitor({ schedule, billing, masters }), [schedule, billing, masters])
-  const sample: { key: string; label: string; state: keyof typeof STAGE_TONE; detail: string }[] = [
-    { key: 'authorised', label: 'Authorised', state: 'done', detail: 'Authorised by the office' },
-    { key: 'run', label: 'Billing run', state: 'done', detail: 'Run complete' },
-    { key: 'invoices', label: '3 invoices', state: 'partial', detail: '1 failed' },
-    { key: 'emailed', label: 'Emailed', state: 'pending', detail: 'Waiting' },
-    { key: 'xero', label: 'Xero', state: 'pending', detail: 'Waiting' },
-  ]
-  const live = rows[0]
-  const stages = live !== undefined ? live.stages : sample
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div style={{ fontSize: 12.5, color: neutral.slate }}>{live !== undefined ? `${live.anaesthetistName} · live from Billing` : 'No List has been billed yet: sample stages (authorise a List to see live ones).'}</div>
-      <ol aria-label="Billing pipeline" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', listStyle: 'none', margin: 0, padding: 0 }}>
-        {stages.map((stage, i) => (
-          <li key={stage.key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Pill tone={STAGE_TONE[stage.state]} size="sm" title={stage.detail}>
-              {stage.label}
-            </Pill>
-            {i < stages.length - 1 && <span aria-hidden style={{ color: neutral.lineStrong, fontSize: 13 }}>→</span>}
-          </li>
-        ))}
-      </ol>
-      <Echo>{stages.map((st) => `${st.label}: ${st.detail}`).join(' · ')}</Echo>
-    </div>
   )
 }
 

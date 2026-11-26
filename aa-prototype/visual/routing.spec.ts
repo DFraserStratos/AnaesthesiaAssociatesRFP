@@ -362,11 +362,16 @@ test('old Invoices, Billing monitor, credit note, payment run and Ledger URLs re
   await page.waitForLoadState('networkidle')
   const runId = await page.locator('[data-shot="payables-runs"] tbody tr[data-run-id]').first().getAttribute('data-run-id')
   expect(runId).not.toBeNull()
+  // A seeded invoice, read from the Invoices tab (a record page with an unknown id falls back to the tab).
+  await page.goto('/admin/finances/invoices')
+  await page.waitForLoadState('networkidle')
+  const invoiceId = await page.locator('tbody tr[data-invoice-id]').first().getAttribute('data-invoice-id')
+  expect(invoiceId).not.toBeNull()
 
   const cases = [
     { from: '/admin/invoices', to: '/admin/finances/invoices' },
     { from: '/admin/invoices?view=approval', to: '/admin/finances/invoices?view=approval' },
-    { from: '/admin/invoices/PPINV01', to: '/admin/finances/invoices/PPINV01' },
+    { from: `/admin/invoices/${invoiceId}`, to: `/admin/finances/invoices/${invoiceId}` },
     { from: '/admin/credit-notes/NOPE', to: '/admin/finances/invoices' }, // a stale id falls back to the tab
     { from: '/admin/billing', to: '/admin/finances/billing' },
     { from: '/admin/billing?problems=1&sort=date-asc', to: '/admin/finances/billing?problems=1&sort=date-asc' },

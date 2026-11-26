@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Printer, Mail, Clock, Send } from 'lucide-react'
-import { accent, fontFamily, neutral, radius, semantic } from '../../../theme/tokens'
+import { accent, fontFamily, neutral, radius, semantic, type as typeScale } from '../../../theme/tokens'
 import type { Actor } from '../../../store'
 import {
   additionalInvoicesFor,
@@ -20,6 +20,7 @@ import {
   splitPartOf,
   paymentWeeksForPair,
   useAppStore,
+  useToday,
 } from '../../../store'
 import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, CREDIT_MESSAGES, EVENT_KIND_LABEL, EVENT_LABELS, PRE_POST_OP_COPY, eventLineLead, XERO_FLAG_COPY, XERO_FLAG_LABEL, XERO_FLAG_PAYOUT_LABEL, raisedByText, xeroFlagText } from '../../../shared/procedureEventCopy'
@@ -41,7 +42,7 @@ import { AgentBlock, DocLetter, DocLinesTable, DocMasthead, DocMeta, DocTotals, 
 import { reminderStampText } from '../../../shared/booking/prepaymentText'
 import { dateTimeMicroCap, drSurname, formatCurrency } from '../../../shared/format'
 import { dayWithYear, hhmm } from '../../../domain/dateText'
-import { DefList, DefRow, FormError, Notice, Pill, TextAction, TextField } from '../../../shared/ui'
+import { Card, DefList, DefRow, FormError, Notice, Pill, RailRow, RailSection, TextAction, TextField } from '../../../shared/ui'
 import { lockStampText, lockViewFor, MIGRATED_LOCK_TEXT, partyKeyOf } from '../../../domain/billing/lock'
 import { BILLS_LABEL, pricingLabel } from '../../../shared/contracts'
 import { regenerateSummary, type RegenerateResult } from '../../../store/locks'
@@ -52,6 +53,9 @@ import { handoffQueuedFor, openDivergenceFor, pairForInvoice } from '../../../st
 import { toCents } from '../../../domain/billing/money'
 import { DOCUMENT_DESK_STYLE, DOCUMENT_PAPER_STYLE, DOCUMENT_RAIL_STYLE } from '../components/documentDesk'
 import { billingListPath, creditNotePath, financePath, invoicePath, ledgerPairPath } from './finances/financePaths'
+import { RecordHistoryCard } from '../components/RecordHistoryCard'
+import { invoiceRowFor } from './invoiceListRows'
+import { negativeNettingNote } from './finances/AccountCreditTrails'
 
 interface InvoiceDocumentProps {
   invoiceId: string
@@ -398,49 +402,40 @@ function InvoiceInfoRail({
   })
   // The weeks this invoice's payable was paid out in (catch-up Phase 39a): its own payable, or a transferred prepayment's.
   const billing = useAppStore((s) => s.billing)
+  const schedule = useAppStore((s) => s.schedule)
+  const masters = useAppStore((s) => s.masters)
+  const todayISO = useToday()
   const payoutWeeks = useMemo(() => {
     if (billingCase === undefined) return []
     const transfer = collect ? transferOfPair(billing.transfers, billingCase.id) : undefined
     return paymentWeeksForPair({ billing }, transfer?.id ?? billingCase.id)
   }, [billing, billingCase, collect])
+  // What is still owed on it (59's model, the read the Invoices tab and the page's state use).
+  const owing = useMemo(() => invoiceRowFor({ billing, schedule, masters }, invoice.id, todayISO)?.owing, [billing, schedule, masters, invoice.id, todayISO])
+  // History (build plan Phase 63): the invoice, its ledger pair and, once credited, its credit note, the credit's own
+  // entries (audited on its event id) and its negative invoice. Resend stamps the invoice; a credit stamps the rest.
+  const creditNote = useMemo(() => creditNoteForInvoice({ billing }, invoice.id), [billing, invoice.id])
+  const negative = creditNote?.negativeInvoiceId !== undefined ? billing.negativeInvoices[creditNote.negativeInvoiceId] : undefined
+  const historyIds = [invoice.id, ...(billingCase !== undefined ? [billingCase.id] : []), ...(creditNote !== undefined ? [creditNote.id, creditNote.creditEventId] : []), ...(negative !== undefined ? [negative.id] : [])]
+  const historyLabels: Record<string, string> = {
+    [invoice.id]: invoice.invoiceNumber,
+    ...(billingCase !== undefined ? { [billingCase.id]: 'Ledger pair' } : {}),
+    ...(creditNote !== undefined ? { [creditNote.id]: creditNote.creditNoteNumber, [creditNote.creditEventId]: creditNote.creditNoteNumber } : {}),
+    ...(negative !== undefined ? { [negative.id]: negative.number } : {}),
+  }
 
+  // The mock's three first (Delivery, Ledger, Correct this invoice), then the cards only some invoices have, then History.
   return (
-    <aside
-      data-testid="invoice-info-rail"
-      aria-label="Invoice information and actions"
-      style={DOCUMENT_RAIL_STYLE}
-    >
-      <RailCard title="Delivery">
+    <aside data-testid="invoice-info-rail" aria-label="Invoice information and actions" style={DOCUMENT_RAIL_STYLE}>
+      <Card title="Delivery">
         <DeliveryState delivery={invoice.delivery} onSend={onSend} {...(credited ? { sendDisabledReason: CREDIT_MESSAGES.alreadyCredited } : {})} />
         <FormError message={error} />
         <LetterLines invoice={invoice} />
-      </RailCard>
-
-      <LockedRecordCard invoice={invoice} />
-
-      <AdditionalInvoicesCard invoice={invoice} actor={actor} credited={credited} />
-
-      <CorrectInvoiceCard invoice={invoice} actor={actor} />
-
-      {siblings.length > 0 && (
-        <RailCard title="Related invoices">
-          <div data-shot="invoice-related" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: 12, color: neutral.slate }}>The other shares of this split fee.</div>
-            {siblings.map((s) => (
-              <Link key={s.invoice.id} to={invoicePath(s.invoice.id)} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12.5, color: neutral.ink, textDecoration: 'none' }}>
-                <span>
-                  <span className="mono" style={{ fontWeight: 600, color: accent.base }}>{s.invoice.invoiceNumber}</span> {s.name}
-                </span>
-                <span className="mono">{formatMoney(s.invoice.total)}</span>
-              </Link>
-            ))}
-          </div>
-        </RailCard>
-      )}
+      </Card>
 
       {/* The invoice's ledger pair (catch-up Phase 36; US-08.3.1): both numbers, each with its Xero id or
           "Not yet in Xero". The pair stands whether or not Xero has it. */}
-      <RailCard title="Ledger" warning={handoffFailed}>
+      <Card title="Ledger" {...(handoffFailed ? { tone: 'warning' as const } : {})}>
         <div data-shot="invoice-ledger-card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div
             data-testid="xero-handoff-status"
@@ -452,7 +447,7 @@ function InvoiceInfoRail({
             }}
           >
             <Clock size={15} aria-hidden style={{ marginTop: 1, flex: 'none' }} />
-            <span style={{ fontSize: 12.5, lineHeight: '18px', fontWeight: 600 }}>
+            <span style={{ fontSize: typeScale.small.size, lineHeight: `${typeScale.small.line}px`, fontWeight: 600 }}>
               {flag !== undefined
                 ? `${flag.kind === 'paidAfterCredit' && flag.leg === 'payable' ? XERO_FLAG_PAYOUT_LABEL : XERO_FLAG_LABEL[flag.kind]} · ${XERO_FLAG_COPY.flagged}`
                 : queued !== undefined
@@ -463,14 +458,14 @@ function InvoiceInfoRail({
             </span>
           </div>
           {queued !== undefined && (
-            <div data-shot="invoice-waiting-for-xero" style={{ fontSize: 12.5, lineHeight: '18px', color: semantic.warning.onTint }}>
+            <div data-shot="invoice-waiting-for-xero" style={{ ...RAIL_TEXT, color: semantic.warning.onTint }}>
               {`The invoice and its ledger pair stand. Attempt ${queued.attempts} · next try `}
               <span className="mono">{hhmm(queued.nextAttemptAtISO)}</span>
               {'; the Xero sync queue retries it.'}
             </div>
           )}
           {flag !== undefined && billingCase !== undefined && (
-            <div data-shot="invoice-xero-flag" style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12.5, lineHeight: '18px', color: semantic.error.onTint }}>
+            <div data-shot="invoice-xero-flag" style={{ ...RAIL_TEXT, display: 'flex', flexDirection: 'column', gap: 4, color: semantic.error.onTint }}>
               <span>{`${xeroFlagText(flag.kind, flag.xeroShows.total, undefined, flag.leg)}. ${flag.kind === 'paidAfterCredit' ? XERO_FLAG_COPY.ledgerIgnoresPayment : XERO_FLAG_COPY.ledgerKeepsIssued}`}</span>
               <TextAction size="sm" flush shot="invoice-open-billing-monitor" onClick={() => navigate(billingListPath(billingCase.listId))}>
                 Resolve in Billing
@@ -478,18 +473,23 @@ function InvoiceInfoRail({
             </div>
           )}
           {billingCase !== undefined && (
-            <dl style={{ display: 'flex', flexDirection: 'column', gap: 10, margin: 0 }}>
+            <DefList gap={6}>
+              {owing !== undefined && (
+                <DefRow label="Owing" labelWidth={RAIL_LABEL_WIDTH} mono shot="invoice-ledger-owing" valueStyle={RAIL_VALUE}>
+                  {formatMoney(owing)}
+                </DefRow>
+              )}
               <XeroReference label="Receivable" value={billingCase.receivable.number} testId="ledger-receivable-number" />
               {accRecId !== undefined ? <XeroReference label="Xero ACCREC" value={accRecId} testId="xero-accrec-reference" /> : null}
               <XeroReference label="Payable" value={billingCase.payable?.number ?? (invoice.noCharge === true ? 'None (no charge)' : 'None')} testId="ledger-payable-number" />
               {accPayId !== undefined ? <XeroReference label="Xero ACCPAY" value={accPayId} testId="xero-accpay-reference" /> : null}
               {collect && <XeroReference label="Payee" value={HOLDING_ACCOUNT.name} testId="xero-accpay-payee" />}
               {journalNumber !== undefined && <XeroReference label="Transfer journal" value={journalNumber} testId="xero-transfer-journal-reference" />}
-            </dl>
+            </DefList>
           )}
           {/* The week each payment went out in (catch-up Phase 39a; US-10.2.7): cash, and any negative netted against it. */}
           {payoutWeeks.length > 0 && (
-            <div data-shot="payment-week" style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12.5, lineHeight: '18px' }}>
+            <div data-shot="payment-week" style={{ ...RAIL_TEXT, display: 'flex', flexDirection: 'column', gap: 4 }}>
               {payoutWeeks.map((w) => (
                 <span key={w.runId} data-run-id={w.runId}>
                   {`Paid out in ${w.week ?? 'a payment run'} · `}
@@ -510,7 +510,36 @@ function InvoiceInfoRail({
             </TextAction>
           )}
         </div>
-      </RailCard>
+      </Card>
+
+      <CorrectInvoiceCard invoice={invoice} actor={actor} />
+
+      <LockedRecordCard invoice={invoice} />
+
+      <AdditionalInvoicesCard invoice={invoice} actor={actor} credited={credited} />
+
+      {siblings.length > 0 && (
+        <RailSection
+          title="Related invoices"
+          countNoun="other shares of this split fee"
+          shot="invoice-related"
+          empty={null}
+          rows={siblings.map((s) => ({
+            key: s.invoice.id,
+            to: invoicePath(s.invoice.id),
+            title: s.invoice.invoiceNumber,
+            sub: (
+              <>
+                {`Other share of this split fee · ${s.name} · `}
+                <span className="mono">{formatMoney(s.invoice.total)}</span>
+              </>
+            ),
+            data: { 'data-invoice-id': s.invoice.id },
+          }))}
+        />
+      )}
+
+      <RecordHistoryCard entityIds={historyIds} entityLabels={historyLabels} name={invoice.invoiceNumber} shot="invoice-history" />
     </aside>
   )
 }
@@ -545,7 +574,7 @@ function DeliveryState({
   const captionLine = caption !== undefined ? <span data-shot="delivery-caption" style={{ fontSize: 12, lineHeight: '17px', color: neutral.slate }}>{caption}</span> : null
   const offLine = sendOff ? <span data-shot="invoice-send-disabled" role="note" style={{ fontSize: 12, lineHeight: '17px', color: neutral.slate }}>{sendDisabledReason}</span> : null
   const print = (
-    <Button variant="secondary" onClick={() => window.print()} style={compactPrintButtonStyle}>
+    <Button variant="secondary" onClick={() => window.print()} size="compact" style={PRINT_BESIDE}>
       <Printer size={15} aria-hidden /> Print
     </Button>
   )
@@ -553,7 +582,7 @@ function DeliveryState({
     <div data-testid="invoice-send-email" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <TextField label={fieldLabel} value={to} onChange={setTo} type="email" placeholder="accounts@example.com" />
       <div style={{ display: 'flex', gap: 8 }}>
-        <Button variant="pill" onClick={sendTyped} disabled={sendOff || to.trim() === ''} style={compactEmailButtonStyle}>
+        <Button variant="pill" onClick={sendTyped} disabled={sendOff || to.trim() === ''} size="compact" style={SEND_BESIDE}>
           <Send size={15} aria-hidden /> Send
         </Button>
         {print}
@@ -563,7 +592,7 @@ function DeliveryState({
   )
 
   const fullPrint = (
-    <Button variant="secondary" onClick={() => window.print()} style={compactFullButtonStyle}>
+    <Button variant="secondary" size="compact" block onClick={() => window.print()}>
       <Printer size={15} aria-hidden /> Print
     </Button>
   )
@@ -596,7 +625,7 @@ function DeliveryState({
         )}
         {onSend !== undefined ? (
           <div data-testid="invoice-action-row" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-            <Button variant="pill" onClick={() => onSend()} disabled={sendOff} style={compactEmailButtonStyle}>
+            <Button variant="pill" onClick={() => onSend()} disabled={sendOff} size="compact" style={SEND_BESIDE}>
               <Send size={15} aria-hidden /> Resend
             </Button>
             {print}
@@ -665,7 +694,7 @@ function LockedRecordCard({ invoice }: { invoice: Invoice }) {
   const view = lockViewFor(lock)
   const mine = view.procedures.filter((p) => invoice.procedureIds === undefined || invoice.procedureIds.includes(p.procedureId))
   return (
-    <RailCard title="Locked record">
+    <Card title="Locked record">
       <div data-shot="invoice-locked-record" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {view.origin === 'migrated' && <span style={{ fontSize: 12.5, color: neutral.slate }}>{MIGRATED_LOCK_TEXT}</span>}
         {mine.map((p) => (
@@ -703,7 +732,7 @@ function LockedRecordCard({ invoice }: { invoice: Invoice }) {
         <span style={{ fontSize: 12, color: neutral.slate }}>{lockStampText(view)}</span>
         {regenerated !== undefined && <RegenerateNotice result={regenerated} />}
       </div>
-    </RailCard>
+    </Card>
   )
 }
 
@@ -753,41 +782,31 @@ function LetterLines({ invoice }: { invoice: Invoice }) {
   )
 }
 
-function RailCard({
-  title,
-  warning = false,
-  children,
-}: {
-  title: string
-  warning?: boolean
-  children: ReactNode
-}) {
-  return (
-    <section
-      style={{
-        ...railCardStyle,
-        ...(warning
-          ? {
-              background: semantic.warning.tint,
-              borderColor: `${semantic.warning.solid}55`,
-            }
-          : {}),
-      }}
-    >
-      <h2 style={{ margin: 0, fontSize: 13, lineHeight: '18px', fontWeight: 700 }}>{title}</h2>
-      {children}
-    </section>
-  )
-}
+/** The Ledger card's label column: wide enough for "Transfer journal" on one line. */
+const RAIL_LABEL_WIDTH = 104
 
+/** A rail value: the data face at the rail's small size, wrapping a long identifier. */
+const RAIL_VALUE: CSSProperties = { fontSize: typeScale.small.size, lineHeight: `${typeScale.small.line}px`, overflowWrap: 'anywhere' }
+
+/** A rail line of text (a waiting line, a flag, a payout week). */
+const RAIL_TEXT: CSSProperties = { fontSize: typeScale.small.size, lineHeight: `${typeScale.small.line}px` }
+
+/** Print beside Send or Resend: its own width; the send action takes the rest. */
+const PRINT_BESIDE: CSSProperties = { flex: '0 0 auto' }
+const SEND_BESIDE: CSSProperties = { flex: '1 1 auto', minWidth: 0 }
+
+/** A list of `RailRow`s inside a rail card, as `RailSection` lays its own out. */
+const RAIL_LIST: CSSProperties = { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' }
+
+/** The credit note's card of the invoices that replace the one it credits (docs/explorations/finances-section.html #records). */
+const REPLACED_BY = 'Replaced by'
+
+/** One of the Ledger card's numbers: a ledger number or a Xero identifier, its test id on the value itself. */
 function XeroReference({ label, value, testId }: { label: string; value: string; testId: string }) {
   return (
-    <div>
-      <dt style={railMetaLabel}>{label}</dt>
-      <dd data-testid={testId} className="mono" style={{ margin: '3px 0 0', fontSize: 12, lineHeight: '17px', color: neutral.ink, overflowWrap: 'anywhere' }}>
-        {value}
-      </dd>
-    </div>
+    <DefRow label={label} labelWidth={RAIL_LABEL_WIDTH} mono valueStyle={RAIL_VALUE}>
+      <span data-testid={testId}>{value}</span>
+    </DefRow>
   )
 }
 
@@ -798,51 +817,6 @@ function MoneyStatePill({ on, label }: { on: boolean; label: string }) {
       {label}
     </Pill>
   )
-}
-
-const railCardStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 12,
-  padding: 16,
-  background: neutral.surface,
-  border: `1px solid ${neutral.line}`,
-  borderRadius: radius.card,
-}
-
-const compactButtonStyle: CSSProperties = {
-  minHeight: 40,
-  height: 40,
-  padding: '0 12px',
-  borderRadius: radius.ctl,
-  fontSize: 13,
-  lineHeight: '16px',
-  whiteSpace: 'nowrap',
-}
-
-const compactEmailButtonStyle: CSSProperties = {
-  ...compactButtonStyle,
-  flex: '1 1 auto',
-  minWidth: 0,
-}
-
-const compactPrintButtonStyle: CSSProperties = {
-  ...compactButtonStyle,
-  flex: '0 0 84px',
-}
-
-const compactFullButtonStyle: CSSProperties = {
-  ...compactButtonStyle,
-  width: '100%',
-}
-
-const railMetaLabel: CSSProperties = {
-  fontSize: 10,
-  lineHeight: '14px',
-  fontWeight: 700,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: neutral.mist,
 }
 
 /** A linked document number, in the teal of every other invoice link (the rail's, the New invoices card's). */
@@ -899,15 +873,15 @@ export function CorrectInvoiceCard({ invoice, actor }: { invoice: Invoice; actor
   const [open, setOpen] = useState<CreditFormMode | null>(null)
   if (invoice.kind === 'prePayment') {
     return (
-      <RailCard title={CREDIT_LABELS.correctCard}>
+      <Card title={CREDIT_LABELS.correctCard}>
         <span data-shot="invoice-correct-refusal" style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.slate }}>{refusal ?? CREDIT_LABELS.correctCaption}</span>
-      </RailCard>
+      </Card>
     )
   }
   const disabled = refusal !== null
   const splits = invoice.kind === 'standard' && procedureId !== undefined
   return (
-    <RailCard title={CREDIT_LABELS.correctCard}>
+    <Card title={CREDIT_LABELS.correctCard}>
       <div data-shot="invoice-correct" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <span style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.slate }}>{CREDIT_LABELS.correctCaption}</span>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
@@ -937,7 +911,7 @@ export function CorrectInvoiceCard({ invoice, actor }: { invoice: Invoice; actor
         </div>
       </div>
       <CreditSheet open={open !== null} invoiceId={invoice.id} {...(procedureId !== undefined ? { procedureId } : {})} actor={actor} mode={open ?? 'credit'} onClose={() => setOpen(null)} />
-    </RailCard>
+    </Card>
   )
 }
 
@@ -1018,37 +992,46 @@ export function CreditNoteDocument({ creditNoteId }: { creditNoteId: string }) {
         </div>
       </div>
 
+      {/* The credit note's rail (build plan Phase 63): its negative invoice and what replaced the original first, then
+          Delivery and Xero as before, then History. */}
       <aside data-testid="credit-note-info-rail" aria-label="Credit note information" style={DOCUMENT_RAIL_STYLE}>
-        <RailCard title="Delivery">
-          <DeliveryState delivery={cn.delivery} caption={CREDIT_LABELS.deliveryCaption} />
-        </RailCard>
-
         {negative !== undefined && (
-          <RailCard title={CREDIT_LABELS.negativeInvoiceCard}>
-            <div data-shot="negative-invoice-card" data-status={negative.status} style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.ink }}>
+          <Card title={CREDIT_LABELS.negativeInvoiceCard}>
+            <div data-shot="negative-invoice-card" data-status={negative.status} style={{ ...RAIL_TEXT, color: neutral.ink }}>
               <span className="mono" style={{ fontWeight: 600 }}>{negative.number}</span>
               {` to ${negativeTo} · `}
               <span className="mono">{formatMoney(negative.amount)}</span>
               {' · '}
-              {negative.status === 'toNet' ? CREDIT_LABELS.negativeNets(formatMoney(negative.recoveryDue)) : CREDIT_LABELS.negativeOffset}
+              {negativeNettingNote(billing, negative)}
             </div>
-          </RailCard>
+          </Card>
         )}
 
-        <RailCard title={CREDIT_LABELS.newInvoices}>
-          <div data-shot="credit-note-new-invoices" style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5 }}>
-            {replacements.length === 0 && <span style={{ color: neutral.slate }}>{CREDIT_LABELS.newInvoicesNoneDoc}</span>}
-            {replacements.map((r) => (
-              <Link key={r.id} to={invoicePath(r.id)} data-invoice-id={r.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, color: neutral.ink, textDecoration: 'none' }}>
-                <span className="mono" style={{ fontWeight: 600, color: accent.base }}>{r.invoiceNumber}</span>
+        <RailSection
+          title={REPLACED_BY}
+          countNoun="new invoices"
+          shot="credit-note-new-invoices"
+          empty={CREDIT_LABELS.newInvoicesNoneDoc}
+          rows={replacements.map((r) => ({
+            key: r.id,
+            to: invoicePath(r.id),
+            title: r.invoiceNumber,
+            sub: (
+              <>
+                {`${CREDIT_LABELS.newInvoice} · `}
                 <span className="mono">{formatMoney(r.total)}</span>
-              </Link>
-            ))}
-          </div>
-        </RailCard>
+              </>
+            ),
+            data: { 'data-invoice-id': r.id },
+          }))}
+        />
 
-        <RailCard title={CREDIT_LABELS.xeroCard} warning={cn.xeroFailure !== undefined}>
-          <div data-shot="credit-note-xero" style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5, lineHeight: '18px' }}>
+        <Card title="Delivery">
+          <DeliveryState delivery={cn.delivery} caption={CREDIT_LABELS.deliveryCaption} />
+        </Card>
+
+        <Card title={CREDIT_LABELS.xeroCard} {...(cn.xeroFailure !== undefined ? { tone: 'warning' as const } : {})}>
+          <div data-shot="credit-note-xero" style={{ ...RAIL_TEXT, display: 'flex', flexDirection: 'column', gap: 8 }}>
             {cn.xeroFailure !== undefined ? (
               <>
                 <span style={{ color: semantic.warning.onTint, fontWeight: 600 }}>{CREDIT_LABELS.xeroFailed}</span>
@@ -1066,7 +1049,14 @@ export function CreditNoteDocument({ creditNoteId }: { creditNoteId: string }) {
               </>
             )}
           </div>
-        </RailCard>
+        </Card>
+
+        <RecordHistoryCard
+          entityIds={[cn.id, cn.creditEventId, ...(negative !== undefined ? [negative.id] : [])]}
+          entityLabels={{ [cn.id]: cn.creditNoteNumber, [cn.creditEventId]: cn.creditNoteNumber, ...(negative !== undefined ? { [negative.id]: negative.number } : {}) }}
+          name={cn.creditNoteNumber}
+          shot="credit-note-history"
+        />
       </aside>
     </div>
   )
@@ -1100,16 +1090,25 @@ function AdditionalInvoicesCard({ invoice, actor, credited = false }: { invoice:
     const event = eventForInvoice(state, invoice.id)
     if (original === undefined) return null
     return (
-      <RailCard title={ADDITIONAL_INVOICE_COPY.additionalInvoicesCard}>
-        <div data-shot="invoice-additional-links" style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5 }}>
+      <Card title={ADDITIONAL_INVOICE_COPY.additionalInvoicesCard}>
+        <div data-shot="invoice-additional-links" style={{ ...RAIL_TEXT, display: 'flex', flexDirection: 'column', gap: 6 }}>
           <span style={{ color: neutral.slate }}>{ADDITIONAL_INVOICE_COPY.additionalTo(original.invoiceNumber)}</span>
-          <Link to={invoicePath(original.id)} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, color: neutral.ink, textDecoration: 'none' }}>
-            <span className="mono" style={{ fontWeight: 600, color: accent.base }}>{original.invoiceNumber}</span>
-            <span className="mono">{formatMoney(original.total)}</span>
-          </Link>
-          {event !== undefined && <span style={{ color: neutral.slate }}>{raisedByText(event.addedBy)}</span>}
+          <ul style={RAIL_LIST}>
+            <RailRow
+              first
+              to={invoicePath(original.id)}
+              title={original.invoiceNumber}
+              data-invoice-id={original.id}
+              sub={
+                <>
+                  <span className="mono">{formatMoney(original.total)}</span>
+                  {event !== undefined ? ` · ${raisedByText(event.addedBy)}` : ''}
+                </>
+              }
+            />
+          </ul>
         </div>
-      </RailCard>
+      </Card>
     )
   }
   const additional = additionalInvoicesFor(state, invoice.id)
@@ -1117,26 +1116,33 @@ function AdditionalInvoicesCard({ invoice, actor, credited = false }: { invoice:
   const raisable = procedureIds.filter((id) => raiseRefusal(state, { role: 'office' }, id) === null)
   if (additional.length === 0 && raisable.length === 0) return null
   return (
-    <RailCard title={ADDITIONAL_INVOICE_COPY.additionalInvoicesCard}>
-      <div data-shot="invoice-additional-links" style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5 }}>
-        {additional.map((a) => {
-          const ev = eventForInvoice(state, a.id)
-          const pair = pairForInvoice(state, a.id)
-          const paid = pair?.receivable.paidInAtISO !== undefined
-          return (
-            <Link key={a.id} to={invoicePath(a.id)} data-invoice-id={a.id} style={{ display: 'flex', flexDirection: 'column', gap: 2, color: neutral.ink, textDecoration: 'none' }}>
-              <span style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                <span className="mono" style={{ fontWeight: 600, color: accent.base }}>{a.invoiceNumber}</span>
-                <span className="mono">{formatMoney(a.total)}</span>
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', color: neutral.slate }}>
-                <Pill size="sm" tone={paid ? 'success' : 'neutral'}>{paid ? 'Paid' : 'Unpaid'}</Pill>
-                {ev !== undefined && ev.kind !== 'additionalInvoice' ? `${EVENT_KIND_LABEL[ev.kind]} · ` : ''}
-                {ev !== undefined ? raisedByText(ev.addedBy) : ''}
-              </span>
-            </Link>
-          )
-        })}
+    <Card title={ADDITIONAL_INVOICE_COPY.additionalInvoicesCard}>
+      <div data-shot="invoice-additional-links" style={{ ...RAIL_TEXT, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {additional.length > 0 && (
+          <ul style={RAIL_LIST}>
+            {additional.map((a, i) => {
+              const ev = eventForInvoice(state, a.id)
+              const pair = pairForInvoice(state, a.id)
+              const paid = pair?.receivable.paidInAtISO !== undefined
+              return (
+                <RailRow
+                  key={a.id}
+                  first={i === 0}
+                  to={invoicePath(a.id)}
+                  title={a.invoiceNumber}
+                  data-invoice-id={a.id}
+                  sub={
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <Pill size="sm" tone={paid ? 'success' : 'neutral'}>{paid ? 'Paid' : 'Unpaid'}</Pill>
+                      <span className="mono">{formatMoney(a.total)}</span>
+                      {ev !== undefined && <span>{`${ev.kind !== 'additionalInvoice' ? `${EVENT_KIND_LABEL[ev.kind]} · ` : ''}${raisedByText(ev.addedBy)}`}</span>}
+                    </span>
+                  }
+                />
+              )
+            })}
+          </ul>
+        )}
         {/* A credited invoice takes nothing more: its additional invoices go on the invoice that replaced it. */}
         {raisable.map((id, i) => (
           <TextAction
@@ -1153,7 +1159,7 @@ function AdditionalInvoicesCard({ invoice, actor, credited = false }: { invoice:
         ))}
         {open !== null && <AdditionalInvoiceSheet open procedureId={open} actor={actor} onClose={() => setOpen(null)} />}
       </div>
-    </RailCard>
+    </Card>
   )
 }
 

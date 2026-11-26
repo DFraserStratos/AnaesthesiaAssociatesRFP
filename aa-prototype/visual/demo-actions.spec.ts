@@ -7,7 +7,7 @@ import { runDemoAction } from './demoActions'
  * in the URL (a part payment on the invoice page moves that invoice's money).
  */
 
-test('demo actions: one on the Review queue, eleven on the Day view, two on Finances · Billing, five on Xero, two on Payments', async ({ page }) => {
+test('demo actions: one on the Review queue, eleven on the Day view, three on Finances · Billing, five on Xero, three on Payments', async ({ page }) => {
   // The Review queue holds "Run the next billing run" (catch-up Phase 38b).
   await page.goto('/admin/review')
   await page.waitForLoadState('networkidle')
@@ -26,16 +26,16 @@ test('demo actions: one on the Review queue, eleven on the Day view, two on Fina
   // Finances · Billing keeps its entries with its filters in the URL (catch-up Phase 37).
   await page.goto('/admin/finances/billing?anaesthetist=34821&problems=1&sort=date-asc')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 2')
+  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 3')
 
   await page.goto('/admin/finances/billing')
   await page.waitForLoadState('networkidle')
   const pill = page.locator('[data-shot="demo-actions"]')
-  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 2')
+  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 3')
   await pill.focus()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('dialog')).toBeVisible()
-  for (const id of ['billing-failure', 'run-next-billing-run']) {
+  for (const id of ['billing-failure', 'run-next-billing-run', 'payer-loses-billing-email']) {
     await expect(page.locator(`[data-shot="demo-action-${id}"]`)).toBeVisible()
   }
   await page.keyboard.press('Escape')
@@ -52,12 +52,12 @@ test('demo actions: one on the Review queue, eleven on the Day view, two on Fina
   }
   await page.keyboard.press('Escape')
 
-  // Finances · Payments: the payment week and the bank mismatch (catch-up Phase 39a).
+  // Finances · Payments: the payment week and the bank mismatch (catch-up Phase 39a), and the billing run its waiting events go out in.
   await page.goto('/admin/finances/payments')
   await page.waitForLoadState('networkidle')
-  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 2')
+  await expect(pill).toHaveAccessibleName('Demo actions for this screen, 3')
   await pill.click()
-  for (const id of ['stage-payment-week', 'stage-bank-mismatch']) {
+  for (const id of ['run-next-billing-run', 'stage-payment-week', 'stage-bank-mismatch']) {
     await expect(page.locator(`[data-shot="demo-action-${id}"]`)).toBeVisible()
   }
   await page.keyboard.press('Escape')

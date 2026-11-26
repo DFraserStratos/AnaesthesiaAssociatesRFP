@@ -70,7 +70,7 @@ export const APP_CONFIG: Record<AppId, AppConfig> = {
   },
   'demo-xero': {
     id: 'demo-xero',
-    label: 'Demo: Billing Monitor & Xero',
+    label: 'Demo: Xero',
     path: '/demo/xero',
     persona: PERSONAS.kirsty,
     group: 'demo',

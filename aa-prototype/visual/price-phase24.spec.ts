@@ -128,11 +128,11 @@ test('phase 24 admin: authorising the no-charge List raises a $0.00 "No charge" 
   await page.getByRole('button', { name: 'Authorise for billing' }).last().click()
   await page.waitForTimeout(400)
   await expect(page.getByText('List authorised · locked for billing')).toBeVisible()
-  await page.goto('/admin/finances/invoices')
+  // A $0 invoice reads Paid, so it is under All, not the tab's default Unpaid (build plan Phase 59);
+  // its row opens the invoice's page (Phase 63).
+  await page.goto('/admin/finances/invoices?show=all&q=Ihaia%20Paewai')
   await page.waitForLoadState('networkidle')
-  await page.getByText('Ihaia Paewai').first().click()
-  await page.waitForTimeout(400)
-  await page.getByRole('button', { name: /^Invoice AA-2026-/ }).first().click()
+  await page.locator('tbody tr[data-invoice-id]').filter({ hasText: 'Ihaia Paewai' }).filter({ hasText: '$0.00' }).last().getByRole('button', { name: /^View invoice / }).click()
   await page.waitForTimeout(400)
   await expect(page.locator('[data-shot=invoice-no-charge]')).toHaveText('No charge')
   await page.screenshot({ path: 'visual/shots/p24-06-no-charge-invoice.png', fullPage: true })

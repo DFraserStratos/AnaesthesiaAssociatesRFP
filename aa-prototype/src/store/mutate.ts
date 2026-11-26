@@ -413,10 +413,13 @@ export function transaction<T>(api: AppStoreApi, run: () => Outcome<T>): Outcome
 }
 
 /**
- * Copy the real store's state into a Booking draft's private store (catch-up
- * Phase 35): a wholesale replace by reference, not an audited mutation,
- * because nothing is written to the real store. The draft keeps its own
- * functions. Lives here because mutate.ts is the one permitted raw writer.
+ * Copy one store's state into another by reference, keeping the target's own
+ * functions. Two uses: a Booking draft's private store takes the real state
+ * (catch-up Phase 35; nothing is written to the real store), and Run payables
+ * in Xero commits its working copy to the real store in one write (build plan
+ * Phase 66), each step on the copy already an audited `mutate()`, so the
+ * commit adds no audit entry of its own. Lives here because mutate.ts is the
+ * one permitted raw writer.
  */
 export function copyStateIntoDraft(draft: AppStoreApi, source: AppState): void {
   const out: Record<string, unknown> = {}

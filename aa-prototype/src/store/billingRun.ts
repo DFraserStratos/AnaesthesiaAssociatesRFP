@@ -5,12 +5,14 @@
  * whole List as a unit. Since catch-up Phase 25 it prices ONLY from each
  * Booking's pricing snapshot written at authorise (`billing.locks`,
  * `invoiceDraftsFromLock`; US-08.1.1, RV-11): no Contract, range, route or
- * payer is resolved here and nothing reads `state.masters`. A Booking with no
- * lock, or a rejected one, fails as a whole and is held back while the rest of
+ * payer is resolved here and nothing reads `state.masters` but the payer's
+ * contact details (D116, below). A Booking with no lock, or a rejected one, fails as a whole and is held back while the rest of
  * the List bills (OQ-05); the List never fails. Each invoice's ledger pair is
  * made with it, its payable to the locked payee (catch-up Phase 36); a failed
- * Booking is a `BillingException`, never a pair. Then `List.billedAtISO` is
- * stamped.
+ * Booking is a `BillingException`, never a pair. A payer with no billing
+ * email or postal address, read fresh from the masters at the run (the one
+ * read it makes), fails the Booking whole too (D116): nothing of it is raised,
+ * however many invoices it has. Then `List.billedAtISO` is stamped.
  *
  * `billedAtISO` = COMPLETION OF THE LIST'S BILLING RUN (§11 labelled reading;
  * 3rd review #12): it is what removes the List from the anaesthetist's views.
@@ -31,7 +33,8 @@
 
 import type { BillingException, BookingId, InvoiceDelivery, InvoiceId, ProcedureEvent } from '../domain/types'
 import { emailProblem } from '../domain/billing/payer'
-import { materialiseInvoices } from './invoiceMaterialise'
+import { deliveryGapFor, materialiseInvoices, withLiveDelivery } from './invoiceMaterialise'
+import { PAYER_NO_ADDRESS_CODE, PAYER_NO_ADDRESS_REASON } from '../domain/billing/billingStatus'
 import { invoiceDraftsFromLock, LOCK_MISSING_MESSAGE, type BookingBuildResult } from '../domain/billing/lock'
 import {
   allocateId,
@@ -60,6 +63,25 @@ function withEventBundle(state: AppState, bookingId: BookingId, result: BookingB
   const bundle = planEventBundle(state, bookingId, result.invoices, bookingEvents)
   if (bundle.bundled.length === 0 && bundle.backToReview.length === 0) return { bookingId, result }
   return { bookingId, result: { kind: 'invoices', invoices: bundle.drafts }, bundle }
+}
+
+/**
+ * D116: each draft's payer read fresh; one with nowhere to be sent to fails the
+ * Booking whole, its events left approved and unstamped like any other failure.
+ * `send` says which details the invoices go out with when nothing is missing:
+ * the List run keeps the lock's (no master edit moves an invoice, US-08.4.4),
+ * taking the fresh ones only where the lock had none; a retry sends to the
+ * fresh ones, so a payer fixed from the Billing tab is what it reaches.
+ */
+function withPayerChecked(state: Pick<AppState, 'schedule' | 'masters'>, patientId: string, built: { bookingId: BookingId; result: BookingBuildResult; bundle?: EventBundlePlan }, send: 'locked' | 'live'): { bookingId: BookingId; result: BookingBuildResult; bundle?: EventBundlePlan } {
+  if (built.result.kind !== 'invoices') return built
+  const locked = built.result.invoices
+  const live = withLiveDelivery(state, patientId, locked)
+  if (deliveryGapFor(live) !== undefined) {
+    return { bookingId: built.bookingId, result: { kind: 'exception', procedureId: '', code: PAYER_NO_ADDRESS_CODE, message: PAYER_NO_ADDRESS_REASON } }
+  }
+  const drafts = send === 'live' ? live : locked.map((d, i) => (d.delivery === undefined || d.delivery.method === 'none' ? live[i]! : d))
+  return { ...built, result: { kind: 'invoices', invoices: drafts } }
 }
 
 const BILLING_RUN_ACTOR: Actor = { who: 'Billing run', role: 'system', source: 'system' }
@@ -102,7 +124,7 @@ export function runBillingForList(api: AppStoreApi, listId: string): Outcome<Bil
   const eventsByBooking = new Map<string, ProcedureEvent[]>()
   for (const e of Object.values(state.schedule.procedureEvents)) eventsByBooking.set(e.bookingId, [...(eventsByBooking.get(e.bookingId) ?? []), e])
   const built: { bookingId: BookingId; result: BookingBuildResult; bundle?: EventBundlePlan }[] = bookings.map((booking) =>
-    withEventBundle(state, booking.id, buildFromLock(state, booking.id), eventsByBooking.get(booking.id) ?? []),
+    withPayerChecked(state, booking.patientId, withEventBundle(state, booking.id, buildFromLock(state, booking.id), eventsByBooking.get(booking.id) ?? []), 'locked'),
   )
 
   const invoiceIds: InvoiceId[] = []
@@ -229,7 +251,9 @@ const BILLING_RETRY_ACTOR: Actor = { who: 'Billing run (retry)', role: 'system',
  * with their ledger pairs in one mutate, stamps the exception resolved with
  * the pairs it made, and audits `billing.exceptionResolved`. Idempotent: a
  * resolved exception refuses `alreadyResolved`; a rebuild that still fails
- * leaves it untouched. Office only. Never touches the List's other invoices.
+ * leaves it untouched. The payer is read fresh (D116): one still with no billing
+ * email or postal address refuses `payerNoAddress`; a fixed one is what the
+ * invoice is sent to. Office only. Never touches the List's other invoices.
  */
 export function retryBillingException(api: AppStoreApi, actor: Actor, exceptionId: string): Outcome<BillingRunResult & { pairIds: string[] }> {
   const state = api.getState()
@@ -244,8 +268,8 @@ export function retryBillingException(api: AppStoreApi, actor: Actor, exceptionI
   const bookingId = exception.bookingId
   if (state.schedule.bookings[bookingId] === undefined) return refuse('notFound', 'The billing exception has no Booking.')
 
-  const { result, bundle } = withEventBundle(state, bookingId, buildFromLock(state, bookingId))
-  // Still failing: leave the exception as it is.
+  const { result, bundle } = withPayerChecked(state, state.schedule.bookings[bookingId]!.patientId, withEventBundle(state, bookingId, buildFromLock(state, bookingId)), 'live')
+  // Still failing (the payer still has nowhere to be sent to, among others): leave the exception as it is.
   if (result.kind === 'exception') return refuse(result.code, result.message)
   const payee = state.billing.locks[bookingId]!.payee
 

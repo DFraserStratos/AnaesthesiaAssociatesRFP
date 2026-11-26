@@ -23,7 +23,9 @@ const ALLOWED: Record<string, string> = {
   './admin/screens/masters/ReferenceViews.tsx': 'Xero contact archiving (a Xero administration view, not a money view)',
   '../shared/demoTriggers/registry.ts': "the demo triggers pick ACCRECs through openAccRecs (Phase 14's demo-surface exemption)",
   './admin/screens/InvoiceDocument.tsx': "the Ledger card's Xero identifiers beside the ledger's numbers (no money figure)",
-  './admin/screens/LedgerScreen.tsx': "the Xero column's 'Contact archived in Xero' note beside ledger data (no money figure)",
+  './admin/screens/finances/LedgerLists.tsx': "the Ledger tab's Invoice pairs, moved from LedgerScreen (build plan Phase 64): the same Xero column note (no money figure)",
+  './admin/screens/finances/AccountPairs.tsx': "the account page's invoice pairs, moved from LedgerScreen (build plan Phase 65): hands the Xero slice to ledgerRows for its archived-contact flag (no money figure)",
+  './admin/screens/PaymentRunScreen.tsx': "the remittance advice's Xero batch payment and credit allocation, read through remittanceAdviceFor as before (build plan Phase 66 narrowed its whole-store read to slices)",
   './admin/components/ReconciliationCard.tsx': 'the reconciliation status compares the ledger against the Xero mirror and its bank lines (US-13.2.4, catch-up Phase 37); it is a check of agreement, not a money view',
   './admin/components/PaymentCyclePanel.tsx': "Run payables in Xero (badged Simulated Xero) needs which scheduled run still has bills Xero has not been sent (catch-up Phase 39a); every figure the panel shows is the ledger's",
 }

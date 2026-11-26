@@ -4,9 +4,10 @@ import { runDemoAction } from './demoActions'
 /**
  * AA's monthly fee (catch-up Phase 16): settings, seeding a month of BCTIs, the
  * monthly run, the fee pair in the Xero simulation, Record fee payment and the
- * web AA fees tab. Build plan Phase 58: AA fees is a Finances tab, its Fee
- * invoices · Fee settings switch a pair of FilterPills; the Billing monitor's
- * compact AA fee strip is gone.
+ * web AA fees tab. Build plan Phase 67: one AA fees tab, opening on Unpaid,
+ * with the run card (its month from the month select), the preview opened from
+ * the run card in the table's place, and the fee settings card (its form behind
+ * Change, or open at the settings address).
  */
 test('AA fee: settings, seeded BCTIs, the monthly run, the fee pair and the web tab', async ({ page }) => {
   test.setTimeout(90_000)
@@ -16,10 +17,11 @@ test('AA fee: settings, seeded BCTIs, the monthly run, the fee pair and the web 
   })
   page.on('pageerror', (error) => consoleErrors.push(error.message))
 
-  // Fee settings: the labelled sample schedule, ex GST, with the worked example.
-  await page.goto('/admin/finances/aa-fees/settings')
+  // Fee settings: the settings address opens the card's form, with the labelled sample schedule, ex GST, and the worked example.
+  await page.goto('/admin/finances/aa-fees/settings?show=all&q=Souter')
   const settings = page.locator('[data-shot=admin-aa-fee-settings]')
   await expect(settings).toBeVisible()
+  await expect(settings).toHaveAttribute('data-editing', '')
   await expect(settings.getByTestId('aa-fee-sample')).toHaveText('Sample schedule')
   await expect(settings).toContainText('Amounts exclude GST')
   await expect(settings.getByTestId('aa-fee-example')).toContainText('$500.00 + $5.00 x 40 = $700.00')
@@ -35,27 +37,47 @@ test('AA fee: settings, seeded BCTIs, the monthly run, the fee pair and the web 
   await settings.getByRole('button', { name: 'Remove Software licence' }).click()
   await expect(settings.getByTestId('aa-fee-example')).toContainText('= $700.00')
 
-  // Fee invoices: Dr Souter's seeded history and the July preview.
-  await page.getByRole('button', { name: 'Fee invoices', exact: true }).click()
-  await expect(page).toHaveURL(/\/admin\/finances\/aa-fees$/)
-  await expect(page.getByRole('button', { name: 'Fee invoices', exact: true })).toHaveAttribute('aria-pressed', 'true')
-  const screen = page.locator('[data-shot=admin-aa-fee-invoices]')
-  await expect(screen.getByTestId('aa-fee-month')).toHaveText('November 2026')
+  // Cancel closes the form and leaves the settings address, keeping the list's query.
+  await page.locator('[data-shot=aa-fee-settings-cancel]').click()
+  await expect(page).toHaveURL(/\/admin\/finances\/aa-fees\?show=all&q=Souter$/)
+  await expect(settings.getByTestId('aa-fee-example')).toHaveCount(0)
+  await expect(page.locator('[data-shot=aa-fee-settings-change]')).toBeVisible()
+
+  // Fee invoices: Dr Souter's seeded history (All, searched), and the run card on the demo month.
+  const filter = page.locator('[data-shot=aa-fee-filter]')
+  await expect(filter).toHaveAttribute('data-aa-fee-show', 'all')
   await expect(page.getByTestId('aa-fee-row-AA-FEE-2026-H01')).toContainText('Paid')
   await expect(page.getByTestId('aa-fee-row-AA-FEE-2026-H02')).toContainText('Unpaid')
-  await expect(screen.getByTestId('aa-fee-count-rule')).toContainText("Provisional: being confirmed with AA's accountant (OQ-29, OQ-60).")
+  const runCard = page.locator('[data-shot=aa-fee-run-card]')
+  const month = page.locator('[data-shot=aa-fee-month]')
+  await expect(runCard).toHaveAttribute('data-month', '2026-11')
+  await expect(month).toHaveValue('')
+  await expect(runCard.getByTestId('aa-fee-count-rule')).toContainText("Provisional: being confirmed with AA's accountant (OQ-29, OQ-60).")
 
-  // Seed a month of BCTIs, then run: Dr Rutherford's $700.00 before GST, $805.00 with GST.
+  // Unpaid, where the tab opens, leaves the paid H01 out.
+  await filter.getByRole('button', { name: 'Unpaid' }).click()
+  await expect(page).toHaveURL(/\/admin\/finances\/aa-fees\?q=Souter$/)
+  await expect(page.getByTestId('aa-fee-row-AA-FEE-2026-H02')).toBeVisible()
+  await expect(page.getByTestId('aa-fee-row-AA-FEE-2026-H01')).toHaveCount(0)
+
+  // Seed a month of BCTIs, then preview and run November: Dr Rutherford's $700.00 before GST, $805.00 with GST.
   expect(await runDemoAction(page, 'seed-month-of-bctis', { close: true })).toMatch(/now has 40 paid in November 2026/)
+  await month.selectOption('2026-11')
+  await expect(page).toHaveURL(/month=2026-11/)
+  await expect(runCard).toHaveAttribute('data-month', '2026-11')
+  await page.locator('[data-shot=aa-fee-preview-open]').click()
   const rutherford = page.getByTestId('aa-fee-preview-29104')
   await expect(rutherford).toContainText('40')
   await expect(rutherford).toContainText('$700.00')
   await page.screenshot({ path: 'visual/shots/p16-02-aa-fee-preview.png', fullPage: true })
-  await screen.getByRole('button', { name: 'Run monthly fee invoices' }).click()
-  await expect(screen.getByRole('status')).toContainText('Raised 83 fee invoices for November 2026')
-  await expect(screen.getByRole('button', { name: 'Run monthly fee invoices' })).toBeDisabled()
-  await expect(screen).toContainText('Every active anaesthetist already has a fee invoice for November 2026.')
-  const rutherfordRow = page.locator('tr', { hasText: 'Dr Rutherford' }).filter({ hasText: 'November 2026' })
+  await runCard.getByRole('button', { name: 'Run monthly fee invoices' }).click()
+  await expect(page.locator('[data-shot=aa-fee-run-result]')).toContainText('Raised 83 fee invoices for November 2026')
+  await expect(page.getByTestId('aa-fee-preview')).toHaveCount(0)
+  await expect(runCard.getByRole('button', { name: 'Run monthly fee invoices' })).toBeDisabled()
+  await expect(runCard).toContainText('Every active anaesthetist already has a fee invoice for November 2026.')
+  await page.locator('[data-shot=aa-fee-search]').getByRole('searchbox').fill('Rutherford')
+  const rutherfordRow = page.locator('[data-testid^=aa-fee-row-]', { hasText: 'Dr Rutherford' }).filter({ hasText: 'November 2026' })
+  await expect(rutherfordRow).toHaveCount(1)
   await expect(rutherfordRow).toContainText('$700.00')
   await expect(rutherfordRow).toContainText('$105.00')
   await expect(rutherfordRow).toContainText('$805.00')

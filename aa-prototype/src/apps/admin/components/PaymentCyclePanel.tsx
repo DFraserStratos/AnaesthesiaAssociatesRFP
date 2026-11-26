@@ -1,24 +1,24 @@
 /**
- * The Finances Payments tab's payment cycle panel (catch-up Phase 39a; US-10.2.7,
- * US-10.2.6, US-10.2.5): the week's four steps on a compact step rail, what
- * is waiting for this week's run, the check day's anomalies and holds, the
- * approval, the schedule to the accountant and "Run payables in Xero" (the
- * accountant paying the schedule in Xero, badged Simulated Xero), then the
- * runs so far. Replaces 37's payables panel. Proposed product UI: only the
- * Xero step is badged. The demo clock never gates a step: each shows its
- * planned day from the setting and, once done, the actual stamp.
+ * The Finances Payments tab's payment cycle card (catch-up Phase 39a, build plan Phase 66; US-10.2.7,
+ * US-10.2.6, US-10.2.5): the week's four steps on a compact step rail (`paymentCycleSteps`, shared
+ * with a run's own page), what is waiting for this week's run (paged at 20 anaesthetists), the check
+ * day's anomalies and holds, the approval, the schedule to the accountant and "Run payables in Xero"
+ * (the accountant paying the schedule in Xero, badged Simulated Xero). The runs so far are the tab's
+ * own `PaymentRunsTable`; the ledger is the next tab along. Proposed product UI: only the Xero step is
+ * badged. The demo clock never gates a step: each shows its planned day from the setting and, once
+ * done, the actual stamp.
  */
 
 import { Fragment, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
 import { Button, Card, DisclosureButton, EmptyState, FormError, Notice, Pill, ResultLine, TextAction, TextField, type PillTone } from '../../../shared/ui'
 import { Td, Th, TableShell } from '../../../shared/table'
 import { DemoBadge } from '../../../shared/DemoBadge'
-import { StepRail, type RailStep } from '../../../shared/contracts/railParts'
+import { StepRail } from '../../../shared/contracts/railParts'
 import { drSurname, formatCurrency, plural, shortDay, stampText } from '../../../shared/format'
 import { neutral, radius } from '../../../theme/tokens'
-import { financePath, paymentRunPath } from '../screens/finances/financePaths'
-import { cycleFor, cycleLabel, cycleOfId, cycleRangeLabel, nextCycleId, plannedDayLabel, weekdayName, type PaymentCycle } from '../../../domain/billing/paymentCycle'
+import { Pager, pageOf } from './Pager'
+import { paymentCycleSteps } from './paymentCycleSteps'
+import { cycleLabel, cycleOfId, cycleRangeLabel, nextCycleId, type PaymentCycle } from '../../../domain/billing/paymentCycle'
 import type { CycleAnomaly, PayablesRun, PayablesRunLine, PayablesRunStatus, RunAnaesthetistTotal } from '../../../domain/types'
 import {
   ANOMALY_LABEL,
@@ -33,7 +33,6 @@ import {
   recloseWeek,
   releaseHold,
   runPayables,
-  runsNewestFirst,
   runStaleness,
   sendPaymentSchedule,
   useAppStore,
@@ -41,6 +40,9 @@ import {
   destinationMaskedFor,
   type Actor,
 } from '../../../store'
+
+/** Anaesthetists per page of the waiting and approved totals. */
+const PAGE_SIZE = 20
 
 /** A run's status as a pill (Closed and Approved neutral, Scheduled and Paying warning, Paid success, Superseded neutral). */
 export const RUN_STATUS: Record<PayablesRunStatus, { label: string; tone: PillTone }> = {
@@ -74,7 +76,6 @@ function useNames() {
 }
 
 export function PaymentCyclePanel({ actor }: { actor: Actor }) {
-  const navigate = useNavigate()
   const state = useCycleState()
   const name = useNames()
   const [message, setMessage] = useState<string | null>(null)
@@ -99,29 +100,7 @@ export function PaymentCyclePanel({ actor }: { actor: Actor }) {
   const openAnomalies = run?.anomalies.filter((a) => a.status === 'open') ?? []
   const approveRefusal = run === undefined || run.status !== 'closed' ? null : openAnomalies.length > 0 ? PAYMENT_CYCLE_COPY.anomaliesOpen : stale
 
-  const steps: RailStep[] = [
-    { n: 1, label: 'Close the week', done: run !== undefined, current: run === undefined, auto: false, ...(run !== undefined ? { value: `Closed ${shortDay(run.closedAtISO.slice(0, 10))} · planned ${shortDay(cycle.closeDateISO)}` } : {}), pendingValue: `Planned ${plannedDayLabel(cycle.closeDateISO)}` },
-    {
-      n: 2,
-      label: `${weekdayName(settings.checkWeekday)} checks`,
-      // The checks are done once no anomaly is open; approval is then the current step.
-      done: run !== undefined && (run.status !== 'closed' || openAnomalies.length === 0),
-      current: run?.status === 'closed' && openAnomalies.length > 0,
-      auto: false,
-      ...(run !== undefined && (run.status !== 'closed' || openAnomalies.length === 0) ? { value: run.anomalies.length === 0 ? 'No anomalies' : `${plural(run.anomalies.length, 'anomaly', 'anomalies')} sorted` } : {}),
-      pendingValue: `Planned ${plannedDayLabel(cycle.checkDateISO)}`,
-    },
-    { n: 3, label: 'Approve BCTIs', done: run?.approvedAtISO !== undefined, current: run?.status === 'closed' && openAnomalies.length === 0, auto: false, ...(run?.approvedAtISO !== undefined ? { value: `Approved ${shortDay(run.approvedAtISO.slice(0, 10))}` } : {}), pendingValue: 'After the checks' },
-    {
-      n: 4,
-      label: 'Send payment schedule',
-      done: run?.scheduledAtISO !== undefined,
-      current: run?.status === 'approved',
-      auto: false,
-      ...(run?.scheduledAtISO !== undefined ? { value: `Sent ${shortDay(run.scheduledAtISO.slice(0, 10))} · planned ${shortDay(cycle.scheduleDateISO)}` } : {}),
-      pendingValue: `Planned ${plannedDayLabel(cycle.scheduleDateISO)}`,
-    },
-  ]
+  const steps = paymentCycleSteps({ run, cycle, settings })
 
   function runInXero() {
     const target = nextRunToPay(useAppStore.getState())
@@ -144,6 +123,7 @@ export function PaymentCyclePanel({ actor }: { actor: Actor }) {
 
   return (
     <Card
+      padding="panel"
       shot="payment-cycle"
       title={
         <span>
@@ -158,20 +138,24 @@ export function PaymentCyclePanel({ actor }: { actor: Actor }) {
       <StepRail steps={steps} orientation="compact" label={`${cycleLabel(cycle)} payment cycle`} shotPrefix="payment-cycle-step" />
 
       {run === undefined && draft !== undefined && (
-        <section data-shot="payables-run-draft" style={{ display: 'flex', flexDirection: 'column', gap: 10 }} aria-label="Waiting for this week's run">
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 650 }}>Waiting for this week's run</h3>
-            {/* With nothing waiting the empty state below says why, so the disabled button carries no second copy of it. */}
+        <Card
+          bare
+          titleLevel={3}
+          title="Waiting for this week's run"
+          shot="payables-run-draft"
+          action={
+            // With nothing waiting the empty state below says why, so the disabled button carries no second copy of it.
             <Button variant="primary" size="compact" onClick={() => act(closeWeek(useAppStore, actor), `${cycleLabel(cycle)} closed. Sort out anything odd, then approve its BCTIs.`)} disabled={closeRefusal !== null} shot="payment-cycle-close">
               Close the week
             </Button>
-          </div>
+          }
+        >
           {draft.lines.length === 0 ? (
             <EmptyState variant="inline">{PAYMENT_CYCLE_COPY.nothingToClose}</EmptyState>
           ) : (
             <TotalsTable totals={draft.byAnaesthetist} lines={draft.lines} name={name} destination={(id) => destinationMaskedFor(state, id)} previousLabel={(runId) => (state.billing.payablesRuns[runId] !== undefined ? cycleLabel(state.billing.payablesRuns[runId]!) : runId)} />
           )}
-        </section>
+        </Card>
       )}
 
       {run !== undefined && run.status === 'closed' && (
@@ -221,11 +205,6 @@ export function PaymentCyclePanel({ actor }: { actor: Actor }) {
         </span>
       </div>
 
-      <RunsList />
-
-      <div>
-        <TextAction size="sm" flush shot="billing-open-ledger" onClick={() => navigate(financePath('ledger'))}>Open the ledger</TextAction>
-      </div>
       <ResultLine line={message} onDismiss={() => setMessage(null)} shot="billing-payables-result" />
       <FormError message={error} />
     </Card>
@@ -251,12 +230,21 @@ function TotalsTable({
   renderLineAction?: (line: PayablesRunLine) => React.ReactNode
 }) {
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set())
+  // The page belongs to the rows it was picked on: when a step changes the rows (a hold, a close), it is page 1 again.
+  const [paged, setPaged] = useState<{ totals: readonly RunAnaesthetistTotal[]; page: number }>({ totals, page: 1 })
+  const page = paged.totals === totals ? paged.page : 1
+  const pageTotals = useMemo(() => pageOf(totals, PAGE_SIZE, page), [totals, page])
   const anyStill = totals.some((t) => t.remainingToNet > 0)
   const cols = 6 + (anyStill ? 1 : 0)
   if (totals.length === 0) return <EmptyState variant="inline">Every line is held out of this run.</EmptyState>
   return (
     <div data-shot={shot}>
-      <TableShell label="Payables in this week's run" density="compact" nested>
+      <TableShell
+        label="Payables in this week's run"
+        density="compact"
+        nested
+        {...(totals.length > PAGE_SIZE ? { footer: <Pager total={totals.length} size={PAGE_SIZE} page={page} onPage={(p) => setPaged({ totals, page: p })} nested shot="payment-cycle-pager" /> } : {})}
+      >
         <thead>
           <tr>
             <Th>Anaesthetist</Th>
@@ -269,7 +257,7 @@ function TotalsTable({
           </tr>
         </thead>
         <tbody>
-          {totals.map((t) => {
+          {pageTotals.map((t) => {
             const isOpen = open.has(t.anaesthetistId)
             const mine = lines.filter((l) => l.anaesthetistId === t.anaesthetistId && l.heldOut === undefined)
             const rolled = mine.find((l) => l.rolledFromRunId !== undefined)
@@ -329,8 +317,7 @@ function ChecksSection({ run, actor, name, nextWeek, onResult }: { run: Payables
   const held = run.lines.filter((l) => l.heldOut !== undefined)
   const billOf = (pairId: string) => run.lines.find((l) => l.pairId === pairId)?.billNumber ?? pairId
   return (
-    <section data-shot="payment-cycle-anomalies" aria-label="Checks before payment" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <h3 style={{ margin: 0, fontSize: 15, fontWeight: 650 }}>Checks before payment</h3>
+    <Card bare titleLevel={3} title="Checks before payment" shot="payment-cycle-anomalies">
       {run.anomalies.length === 0 ? (
         <div style={{ fontSize: 13, color: neutral.slate }}>The week reconciled to the bank download with nothing to sort out.</div>
       ) : (
@@ -386,7 +373,7 @@ function ChecksSection({ run, actor, name, nextWeek, onResult }: { run: Payables
           ))}
         </div>
       )}
-    </section>
+    </Card>
   )
 }
 
@@ -411,58 +398,5 @@ function AnomalyRow({ anomaly, name, bills, onHold, onFix }: { anomaly: CycleAno
         </span>
       )}
     </li>
-  )
-}
-
-/** This week's run and staged runs, then the previous weeks', newest first, each opening its detail. */
-function RunsList() {
-  const billing = useAppStore((s) => s.billing)
-  const clockToday = useAppStore((s) => s.clock.todayISO)
-  const settings = useAppStore((s) => paymentCycleSettingsOf(s))
-  const runs = useMemo(() => runsNewestFirst({ billing }), [billing])
-  const thisWeek = cycleFor(clockToday, settings).cycleId
-  if (runs.length === 0) return null
-  const ordered = [...runs.filter((r) => r.cycleId >= thisWeek), ...runs.filter((r) => r.cycleId < thisWeek)]
-  return (
-    <section data-shot="payables-runs" aria-label="Payment runs" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <h3 style={{ margin: 0, fontSize: 15, fontWeight: 650 }}>Payment runs</h3>
-      <TableShell label="Payment runs" density="compact" nested>
-        <thead>
-          <tr>
-            <Th>Week</Th>
-            <Th>Run</Th>
-            <Th>Closed</Th>
-            <Th>Approved</Th>
-            <Th>Scheduled</Th>
-            <Th align="right">Net</Th>
-            <Th>Status</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {ordered.map((r) => {
-            const net = r.byAnaesthetist.reduce((n, t) => n + Math.round(t.net * 100), 0) / 100
-            return (
-              <tr key={r.id} data-run-id={r.id} data-run-status={r.status}>
-                <Td mono>{cycleLabel(r)}</Td>
-                <Td mono>
-                  <Link to={paymentRunPath(r.id)} style={{ color: neutral.ink }}>{r.id}</Link>
-                </Td>
-                <Td mono>{`${stampOf(r.closedAtISO)} · ${r.closedBy.who}`}</Td>
-                <Td mono>{r.approvedAtISO !== undefined ? stampOf(r.approvedAtISO) : ''}</Td>
-                <Td mono>{r.scheduledAtISO !== undefined ? stampOf(r.scheduledAtISO) : ''}</Td>
-                <Td mono align="right">{formatCurrency(net)}</Td>
-                <Td>
-                  <span style={{ display: 'inline-flex', gap: 6 }}>
-                    <Pill tone={RUN_STATUS[r.status].tone} size="sm">{RUN_STATUS[r.status].label}</Pill>
-                    {r.seeded === true && <Pill size="sm" variant="outline">Seeded</Pill>}
-                    {r.kind === 'staged' && <Pill size="sm" variant="outline">Staged</Pill>}
-                  </span>
-                </Td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </TableShell>
-    </section>
   )
 }

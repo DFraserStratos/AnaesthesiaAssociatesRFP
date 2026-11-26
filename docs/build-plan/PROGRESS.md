@@ -24,6 +24,14 @@ U7 is archived in `docs/archive/prototype-build/PROGRESS.md` (large: grep it, ne
 | 57 | The Patients tab and the patient's page | DONE | 2026-11-25 | The Patients tab is one list, searched and paged with no cap, with Coming up (the default), Needs follow-up (one row per patient with its reasons, from the pure `patientsNeedingOffice` that also gives the People badge) and All; no row carries an action; `/admin/patients/follow-up` lands on the filter; the patient's page is on the record pattern, with Needs the office and its actions in the main column and Details edited in place and Bookings in the side panel. |
 | 58 | The Finances section shell | DONE | 2026-11-26 | One Finances entry with one amber badge replaces Invoices, the Billing monitor and the Ledger in the Admin side nav, over six routed tabs opening on Billing with numbers only where something needs doing, the records under their tabs and every old link redirecting; today's panels moved unchanged into their tabs (the tiles and AA fee strip dropped) and every demo trigger re-homed to one Finances screen. |
 | 59 | The Finances read models | DONE | 2026-11-26 | Two pure, tested read models in `domain/billing/` for the Billing and Invoices tabs: `billingStatus.ts` (each authorised List's and Booking's stage, steps, problem reason and fix with the new `payerNoAddress` code, Problems, In progress or Done, grouping, search, counts and the Xero items tied to their Lists) and `invoiceState.ts` (each invoice's, prepayment's and credit note's kind, owing, state, age and search keys, and the five filters); `BillingException` gains optional `resolvedBy` and `resolvedNote`. |
+| 60 | The Billing tab | DONE | 2026-11-26 | The Billing tab is the mock's version C over 59's model: one table grouped by anaesthetist, each List a `GroupRow level="sub"` heading with its counts and run, opening on Problems with Show all, filters, search, an anaesthetist select and a pager by List; Retry, Fix the payer and Mark resolved beside a failed Booking; Awaiting approval in the rail opens the Review queue; a payer with nowhere to be sent to now fails the Booking whole (D116); the Billing count and the badge's billing part re-based on problem Lists (D109); the "Payer loses billing email" trigger body written for the join. |
+| 61 | The Xero tab | DONE | 2026-11-26 | The Xero tab opens on Needs action: one grouped table of hand-offs failing, hand-offs waiting and invoices changed directly in Xero, each with Retry now or Resolve (today's side panel), with search, filter pills, an anaesthetist filter, a pager at 50 and a rail of the Connection card and "What happens here"; a Booking stuck at Xero shows here and under its List on Billing, counted once; finishes US-13.3.2 with 60. |
+| 62 | The Invoices tab | DONE | 2026-11-26 | The Invoices tab lists every invoice, prepayment invoice and credit note AA raises on a payer (no AA fee invoices) over 59's model, opening on Unpaid oldest first, searched by number, -P number, case reference, patient, payer and anaesthetist, with Kind, Payer, Patient · Booking, Raised (with the year), Owing and State (Unpaid with its age) columns, the Unpaid, Part paid, Paid, Awaiting approval and All filters, Kind and anaesthetist selects, and a rail holding the prepayment approval switch and Unpaid by age; one seeded invoice is 40 days unpaid. |
+| 63 | The invoice and credit note pages | DONE | 2026-11-26 | An invoice and a credit note each open on a record page under Invoices: Back to the tab at the filter the office came from, the number with its payable's ID chip and its state (Unpaid with its age, Part paid, Paid) or credit standing, a summary line, the paper unchanged, and a rail of shared Cards, RailSections and DefLists (Delivery, Ledger, Correct this invoice first; History last); the credit note page adds what it credits, its negative invoice, Replaced by, Delivery, Xero and History. |
+| 64 | The Ledger tab | DONE | 2026-11-26 | The Ledger tab says in one sentence, read from the Day view's reconciliation status, whether the books are square and what is wrong, shows four figures and the receipts to place (Allocate, Mark refunded) in a rail card, and lists the anaesthetists (five money columns from one pass over the pairs), the invoice pairs or the AA Holding account through a segmented control, its state in the URL; it opens in about 1.5 s at practice scale, list and page changes under 0.1 s. |
+| 65 | The anaesthetist's account page | DONE | 2026-11-26 | Each anaesthetist's money has its own record page under Ledger: Back to the Ledger, a Square or Out by pill, one line of who owes whom, Open in People, the AA owes them and They owe AA cards, their invoice pairs (billed, paid in, disbursed with the week), and a rail of payment runs and credit trails; the one-anaesthetist `LedgerScreen` is gone. |
+| 66 | The Payments tab and the payment run pages | DONE | 2026-11-26 | The Payments tab holds the weekly cycle card (its four steps from one shared step builder, the waiting table paged at 20), the payment runs as a paged table of week, dates, anaesthetists, BCTIs, netted, paid out, status and paid on, and the events awaiting the run in the rail; each run has its own record page (header, steps, totals with Remittance links, checks, schedule, a rail with the run, the ledger at close and History), and Run payables in Xero commits once instead of 1,598 times (19.5 s to 2.0 s at practice scale). |
+| 67 | The AA fees tab | DONE | 2026-11-26 | The AA fees tab lists AA's fee invoices to the anaesthetists, opening on Unpaid oldest month first, with search, Unpaid, Paid and All, a month select and paging, rows that still unfold to their lines and BCTIs, and a rail holding the month's run (Runs on month end, Preview, Run monthly fee invoices), the fee settings (summary, then Change; `/aa-fees/settings` opens them) and Earlier runs. |
 
 Rows: `| <id> | <title> | DONE | <YYYY-MM-DD> | <one-sentence summary> |`, or `IN PROGRESS` at a
 checkpoint, in run order.
@@ -90,6 +98,10 @@ each lasting ruling to `docs/DECISIONS.md`.
 - **2026-11-25 · Phase 57 (1): Every open balance warning puts a patient on Needs follow-up** (US-11.3.3, US-11.3.2, DM-10). Mild warnings (a credit, an unpaid invoice under the threshold) are listed and counted as strong ones are; one balance reason per patient, the strongest; the list, its figure and the People badge are all `patientsNeedingOffice`, so they always agree. See the Phase 57 entry.
 - **2026-11-25 · Phase 57 (2): A patient's alerts live in the main column** (US-11.1.1, US-11.3.3; D104). The page opens with a Needs the office card holding each reason with its action (Clear with a note, Done, Keep or Use incoming); the side panel holds Details (edited in place) and the Bookings; no tabs. See the Phase 57 entry.
 - **2026-11-26 · Phase 58 (1): Finances is its own Admin section** (D107 to D111; US-13.3.3, FT-13.3). One Finances entry after Review queue with one amber badge (`financeBadge` in `financeCounts.ts`: billing problems plus failed ledger checks) replaces Invoices, the Billing monitor and the Ledger; six routed tabs open on Billing, each counting only what needs doing (Payments and AA fees never show a number); records nest under their tab; every in-app link goes through `financePaths.ts`; every old finance URL redirects with replace, keeping its query, and stays. Also in `docs/DECISIONS.md`. See the Phase 58 entry.
+- **2026-11-26 · Phase 60 (1): A payer with nowhere to be sent to fails the Booking, not the invoice** (D116; US-13.3.1, US-13.3.2, US-08.5.2). The List run and a retry read the payer fresh (`withLiveDelivery`, `deliveryGapFor` in `store/invoiceMaterialise.ts`) and fail the Booking whole with 59's `payerNoAddress`, raising no invoice, pair or hand-off; the office fixes the payer from its row and retries (`store/billingFix.ts`), and a failure resolved by hand carries `resolvedBy` and `resolvedNote` with no pair ids. The run still sends to the details locked at authorise (US-08.4.4); a retry sends to the fresh ones. Invoices already stamped `noAddress` read as before. Also in `docs/DECISIONS.md`. See the Phase 60 entry.
+- **2026-11-26 · Phase 62 (1): Awaiting approval is a filter of the Invoices tab** (US-06.3.1, US-08.4.7; D107). Prepayments awaiting approval list under the Invoices tab's Awaiting approval filter (Approve and send on each row; they leave the filter when sent), not a separate view; the Prepayment approval switch sits beside the list in the rail's Prepayments to approve card. 58's `?view=approval` link opens the filter. Also in `docs/DECISIONS.md`. See the Phase 62 entry.
+- **2026-11-26 · Phase 63 (1): Invoice and credit note pages on the record pattern** (US-13.3.3; D107, D114, D115). The paper stays custom and alone prints; the header (number, payable chip, state or standing, summary line) and the rail are the shared record pattern, the rail all shared Cards, RailSections and DefLists, History last on both pages. Back returns to the Invoices tab at the filter the office came from (router state `invoicesList`). Also in `docs/DECISIONS.md`. See the Phase 63 entry.
+- **2026-11-26 · Phase 67 (1): The fee settings sit on the AA fees tab** (US-10.3.1, US-10.3.3; D107). The AA fees tab holds the fee invoices, the month's run with its preview, the fee settings (a summary with Change, in the rail) and Earlier runs; there is no Fee settings sub-tab, and `/aa-fees/settings` opens the tab with the settings open. The month select drives both the list and the run card. Also in `docs/DECISIONS.md`. See the Phase 67 entry.
 
 ## Discovered for later
 
@@ -614,3 +626,337 @@ Run in Lane B, Wave 4 (`docs/build-plan/LANES.md`; D113): quick checks only, no 
 **For the owner's review.** Done = sent, in Xero, paid in and disbursed, or resolved by hand; a $0 no-charge invoice needs no disbursement; a hand-resolved Booking lets its List read Complete. In progress = everything else with no problem, an unbilled Booking included. Problems = an open exception, any open Xero queue item on the Booking's pairs (not only hand-offs and journals), or an open divergence. A cancelled Booking is Done and left out of the counts. The List keeps the monitor's four labels (the mock's "Billing failed" pill is 60's to show from the problem kinds). Invoices: Invoice (standard and additional), Prepayment, Credit note; a credited invoice owes $0 and reads Paid with `credited`; a credit note's state follows its invoice; Unpaid lists part-paid rows too (as the mock's Unpaid view and "340 unpaid" do); search is case-insensitive substring. The fixes: `payerNoAddress` and `noCounterparty` give Fix the payer, every other code Retry with its own message.
 
 **Wave 4 joined (2026-11-26, Lane A on `wave/4`).** Took in Lane A's 58 (99920dfc) and Lane B's 59 (ccc1e8cd); `master` had not moved since fa5feada. One conflict, `PROGRESS.md` (both status rows and both entries kept, in phase order); no code conflict (59 added new files under `domain/billing/` and two optional `BillingException` fields; 58 touched neither). Checks (quick only, D113): typecheck green; `npx vitest run --changed master` 335 files, 3,730 tests green; lint clean of errors. In the running app on 5273, `/admin/finances` lands on Billing with six tabs (Invoices showing 1), 11 nav entries, and `/admin/billing?problems=1` redirects to `/admin/finances/billing?problems=1`. No full gate, review or owner test: Wave 5's join runs them for 58 to 67.
+
+### Phase 60 · The Billing tab (2026-11-26)
+
+Run in Lane A, Wave 5 (`docs/build-plan/LANES.md`; D113): quick checks only, no review, screen-proof, checklist run or plan page. One session, straight through the checkpoint; built by eight parallel subagents (D112). Lane commit `60 complete:` on `lane/a`.
+
+**Drift check against f885f67.** Nothing changed (US-13.3.1, US-13.3.2, US-13.3.3, US-08.5.2; domain model unchanged). 58 and 59 DONE on `master`. D107, D109, D111 to D115 built as answered; D116 at its default.
+
+**Built.**
+- D116 in one place: `store/invoiceMaterialise.ts` `withLiveDelivery(s, patientId, drafts)` and `deliveryGapFor(drafts)`; `store/billingRun.ts` runs both, in the List run and in `retryBillingException`, through one helper. A Booking any of whose invoices has nowhere to go fails whole with 59's `PAYER_NO_ADDRESS_CODE` and reason (imported), with no invoice, pair, hand-off or event stamp; a retry with the gap still there refuses with the same code. The run sends to the details locked at authorise; a retry to the fresh ones (Deviations). Every `noAddress` reader kept.
+- `store/billingFix.ts` (barrel): `retryBillingFailure` (retry plus the Xero hand-off the monitor did in the UI), `markBillingExceptionResolved` (office only, note required, writes `resolvedAtISO`, `resolvedBy`, `resolvedNote`, no pair ids; `billing.exceptionResolvedByHand`), `payerFixTarget` (party, patient or typed payer, from the lock and the live delivery), `fixBookingPayer` (`editParty`, `editPatient` without `viaBookingId`, or a contact-only write of a typed payer, `procedure.payerContact`, refused `payerLocked` under a prepayment; then the retry). Labels for both codes and `demo.payerContactCleared`.
+- `GroupRow` gains `counts`, `aside` and `tone` (additive: without them the DOM is today's), with its catalogue example and Table kit text.
+- `screens/finances/billingTabState.ts`: `billingParamsFrom`, `billingTabView` (59's grouping, then search over anaesthetist, hospital, patient, Booking id, invoice numbers and payer; Show all; paging 20 by List), `summaryLine`, `BILLING_PAGE_SIZE`.
+- `BillingTab.tsx`, `BillingTable.tsx`, `BillingRail.tsx`, `BillingFixSheets.tsx`, `CorrectionRetry.tsx` (moved): version C, URL `q`, `show`, `anaesthetist`, `page` through functional replace; Retry, Fix the payer (Save and retry) and Mark resolved beside a failed Booking; Xero problems keep `CorrectionRetry` and link to the Xero tab; rail of the Xero notice (only while a hand-off is alerted) and Awaiting approval. `BillingMonitorScreen.tsx` deleted, with the catalogue's pipeline row and example.
+- `financeCounts.ts`: `billingStatusInput`, `billingStatusesFor` (memoised on schedule, billing, masters), `billingTabCount` = problem Lists, `badgeBillingPart` = D109's unit. `billingAttentionCount` kept for its Xero tests.
+- `shared/demoTriggers/payerLosesBillingEmail.ts`: the trigger body for the join (below: target, disabled reason, descriptor), over `store/demoPayerContact.ts` (`clearPayerContact`, `billListAsSimulatedOffice`, `stagePayerContactLoss`; `demo.payerContactCleared`). No seed change; `PERSIST_VERSION` stays 80.
+
+**Tests.** New: `billingFix.test.ts` (6), `billingTabState.test.ts` (20), `BillingTab.test.tsx` (8), `BillingTabPaging.test.tsx` (3), `payerLosesBillingEmail.test.ts` (4); `billingRun.test.ts`'s no-address cases rewritten (4); `financeCounts.test.ts` (13, re-based); `tableKit.test.tsx` (+2); `payerActions.test.ts` one assertion (BK0171 now fails). Replaced `BillingMonitorScreen.test.tsx` and `BillingMonitorPaging.test.tsx`. Quick checks green: `phase-check --changed` (typecheck; related Vitest 335 files, 3,835 tests; verify-board) and lint.
+
+**Checked.** Skipped in the lane (D113). **Review.** Skipped in the lane (D113).
+
+**Handoffs.**
+- 61: a Booking stuck at Xero is a problem under its List (59's `waitingForXero`, `xeroAlert`, divergences); its row offers `CorrectionRetry` and "Open the Xero tab" (`financePath('xero')`). `retryBillingFailure` is the one retry with hand-off.
+- 63: `resendInvoice` unchanged; a run no longer raises `noAddress` invoices, so the Delivery card's no-address state is seeded history only.
+- Join: `billingStatusesFor` is the one billing model build; the badge reads it.
+
+**Deviations.**
+- The List run checks the payer fresh but sends to the locked details; sending live broke `lock.test.ts`'s immunity fixture (US-08.4.4). A retry sends live, so a fixed payer is reached.
+- A typed payer is fixed by a contact-only write in `billingFix.ts`: `setProcedurePayer` refuses on an authorised List.
+- `AdminApp.tsx` one line: the badge now passes `{ billing, schedule, masters }` (the typecheck and the Admin app failed without it; no other lane edits that file).
+- The rail's link reads "See all N" (`RailSection`'s fixed text), not "Open the Review queue", and shows only past five rows.
+- The trigger targets BK0070 on Dr Hughes's Mon 23 Nov AM List at Christchurch Public (the seed has no BK0051 Southern Cross List), submitting and authorising that ACTIVE List, since authorising bills at once and the seed has no authorised, unbilled List.
+
+**For the merge.**
+- Register the trigger in `registry.ts`: `id 'payer-loses-billing-email'`, label "Payer loses billing email", `screen: FINANCES_BILLING_SCREEN`, `routes: [FINANCES_BILLING]`, `surfaces: ['bar']`, `disabledReason: (s) => payerLosesBillingEmailDisabledReason(s) ?? null`, `run: (api) => stagePayerLosesBillingEmail(api)`, `indexPath: () => FINANCES_BILLING`; add it to `demoGuideSync.test.ts`'s `NOT_SCRIPTED` ("Until the sweep scripts it.") and to `demoTriggers.test.ts:165`'s Billing list.
+- Shared files touched (additions): `store/index.ts`, `shared/audit/actionLabels.ts`, `AdminCatalogue.tsx` (Table kit text, CorrectionRetry source, pipeline row removed), `admin/pageChromeExamples.tsx`, `admin/storeExamples.tsx`, `admin/adminData.ts`, `eventExamples.tsx`; `AdminApp.tsx` (one line); `domain/billing/invoicePresentation.ts` (one comment line).
+- `billingMonitorView` has no production reader left (its test and the barrel only); `billingMonitor()` is read by the catalogue's store examples and `__parity__/phase36Capture.ts`.
+- Playwright re-pointed, not run; may break: `billing-monitor.spec.ts` (reset's five rail rows and surname order; the Review round trip now on `L-34821-2026-11-16-AM`; the exact summary "1 List with a problem, 1 anaesthetist"; the payer trigger test skips until registered; Done with nothing done) and `admin-phase09.spec.ts` (`billing-empty` reads "No Lists match." while an anaesthetist is chosen).
+
+**For the sweep.** The 32 Billing recipes (the expansions and stage chips are the table; Problems opens), the guide's S3 Beats 6 and 7, every guide line naming the "Billing monitor", stage chips or Lists that unfold, US-13.3.1's and US-13.3.2's recipes (the fix beside the Booking), a recipe for the new trigger, and D116's seeded effect: one Booking, BK0171 (Kevin Doherty, the payer review List `L-45178-2026-11-20-AM`), now fails when that List is authorised.
+
+**For the owner's review.**
+- D116 and its limits: the run fails the Booking whole; events, additional, prepayment and credit-note invoices unchanged; old `noAddress` invoices read as before. Seeded effect: BK0171 only (no authorised, unbilled List in the seed; none of 48 billed Bookings, or 2,464 at practice scale, would have failed).
+- The run sends to the details locked at authorise, a retry to the fresh ones (switching the run means regenerating the US-08.4.4 parity fixture).
+- Fix the payer: a sheet from the row editing the billed party's billing email and postal address (Party, patient or typed payer), Save and retry in one click; a payer locked by a prepayment, or none found, offers Mark resolved only. A patient's address left blank keeps the one held.
+- Mark resolved needs a one-line note; the Booking reads Done, but its List stays In progress while other Bookings are.
+- A waiting hand-off with no alert already makes its List a problem List, so the Billing number and badge count it before the Xero tab does.
+- Page size 20 Lists; URL `q`, `show`, `anaesthetist`, `page`; an unknown anaesthetist shows "No Lists match.".
+- Rail: five oldest awaiting Lists, "See all N" to the Review queue; the Xero notice is amber.
+- Booking rows open the Booking on its Day (the monitor's rows opened nothing).
+- Wording now misleading, left as it was: the Review banner's "Add one and send it from the invoice".
+
+### Phase 61 · The Xero tab (2026-11-26)
+
+Run in Lane A, Wave 5 (`docs/build-plan/LANES.md`; D113): quick checks only, no review, screen-proof, checklist run or plan page. One session, after 60 in the same session; three parallel builders (D112). At its start Lane A merged `master` and the `complete:` commits of 62 (`cbc51b32`) and 65 (`cbf0a302`, holding 64); conflicts only in `PROGRESS.md`, `BACKLOG.md` (each lane's deletions both applied) and the catalogue's `eventExamples.tsx` imports (both new homes). Lane commit `61 complete:` on `lane/a`.
+
+**Drift check against f885f67.** Nothing changed (US-13.3.2, US-13.3.3, US-09.2.2). 58 DONE, 60 complete on `lane/a`. D107, D109, D110, D114, D115 built as answered; Before you start 4 at its defaults.
+
+**Built.**
+- `screens/finances/xeroTabRows.ts` (pure): `xeroParamsFrom`, `xeroTabRows(state, params, todayISO, { pageSize })` (groups failing, waiting, changed in Xero, in that order; the sent rows; counts; `countLine`; a `facts` map of each row's anaesthetist and payer; paging 50 by row), `xeroCountLine`, `GROUP_TITLES`, `XERO_PAGE_SIZE`. Search covers invoice, payable and credit-note numbers, payer and anaesthetist; the anaesthetist filter reads the pair, then the payable, then the List.
+- `components/XeroPanels.tsx`: `XeroTableHead`, `XERO_TABLE_SPAN`, `XeroQueueRows`, `XeroDivergenceRows` (owns the Resolve panel), `ResolveDivergencePanel` (exported, unchanged), `XeroSentTable`, `XeroConnectionCard`, `XeroWhatHappensCard`; the three old panels keep their names and props and render through the fragments. One problem-wording map by queue kind; the payer's name under the number, never an NHI or internal id; invoice links through `invoicePath`. Store calls and every `billing-xero-*`, `data-queue-*`, `data-divergence-*` hook kept.
+- `screens/finances/XeroTab.tsx`: toolbar (search, Needs action, Waiting, Sent after waiting, All, anaesthetist, the count line), one fit table with all three groups mounted in order, the pager, the folded Sent toggle, the empty states and the rail. URL `q`, `show`, `anaesthetist`, `page` through functional replace. Nothing under `domain/` or `store/`; `PERSIST_VERSION` unchanged.
+
+**Tests.** New `xeroTabRows.test.ts` (17) and `XeroTab.test.tsx` (7: the order; Retry now takes the row off and 59's model reads the Booking in Xero; the same alerted Booking is a problem under its List; Resolve with a note; filters, search, anaesthetist, Sent). `XeroPanels.test.tsx` rewritten (4, through the tab, plus the three panels standalone). Quick checks green: `phase-check --changed` (typecheck; related Vitest 16 files, 189 tests; verify-board) and lint; after the sync, the finances tabs, catalogue and audit tests re-run green (14 files, 182 tests).
+
+**Checked.** Skipped in the lane (D113). **Review.** Skipped in the lane (D113). Work item 6 (read only): the Xero count is alerted hand-offs plus open divergences, and the badge counts a stuck Booking once with its List: both right, no merge note.
+
+**Handoffs.**
+- The join: US-13.3.2's four criteria are walked across 60 and 61 (`XeroTab.test.tsx` proves the two showings and Retry now).
+
+**For the merge.**
+- `xeroTabRows.ts` and its test are new files outside LANES.md's Lane A row (add them there).
+- `registry.ts`: the "Trigger billing failure" message still says "in the billing monitor ... its queue row"; it should name the Billing and Xero tabs.
+- Playwright re-pointed, not run: `xero-resilience.spec.ts` (reads `xero-table`, the Attempts column by heading, the Connection card's notice and its `data-xero-fact="waiting"` row, "Xero shows $…, the engine holds $…"), `admin-phase09.spec.ts` and `billing-monitor.spec.ts` (`xero-table` rows, `xero-empty` after the retry). The tab no longer shows the `billing-xero-queue` and `billing-xero-divergence` cards (only the catalogue does); `billing-xero-connection` is now the rail card's Notice.
+
+**For the sweep.** The recipes `US-13.3.2.json`, `US-09.2.2.json`, `US-09.2.3.json`, `US-09.1.1.json` and `US-08.5.2.json` (their `billing-xero-*` steps, now on the Xero tab; the old queue and changed-in-Xero screenshots); ATLAS rows for the Xero queue and divergence hooks, plus `xero-table`, `xero-count-line`, `xero-empty`, `billing-xero-connection-card`, `billing-xero-what-happens`; the guide lines naming the "Xero sync queue" and "Changed directly in Xero" on the Billing monitor (`01-personas-and-responsibilities.md` near 353 and 417, `02-workflows-and-handoffs.md` near 393 to 396 and 510, `03-demo-script.md` near 1198 to 1203, `04-presenter-cheat-sheet.md` near 237), and S3's beats that retry a hand-off.
+
+**For the owner's review.**
+- Opens on Needs action, which includes waiting hand-offs; the tab's number counts only alerts and changes in Xero (D109), so the count line and the number differ while a hand-off only waits.
+- Sent after waiting folded below the table, open and paged on its own pill.
+- Problem wording per queue kind (hand-off "Invoice pair not in Xero"; payment sync, disbursement, transfer journal, correction, netting and the daily payment check each their own line); the payer's name under the number.
+- Connection card: Last good, Waiting, Sent after waiting today, Last payment check; Organisation dropped (the store holds no Xero organisation name). While alerts are raised, both the card's notice and the table's alert notice show.
+- "What happens here" says an alert comes after 5 tries (`XERO_ALERT_AFTER_ATTEMPTS`), not the mock's 3.
+- A changed-in-Xero row shows a warning "Flagged" pill; the Resolve panel's own header pill is unchanged.
+- Retry results show at the end of their group (so they outlive the row); when the last row on the tab sends, the empty state replaces the table and the result line with it.
+- Search, URL state and page size 50 as Before you start 4.
+
+### Phase 62 · The Invoices tab (2026-11-26)
+
+Run in Lane B, Wave 5 (`docs/build-plan/LANES.md`; D113): quick checks only, no review, screen-proof, checklist run or plan page; Wave 5's join reviews and gates 58 to 67 together. One session. Lane commit `62 complete:` on `lane/b`.
+
+**Drift check against f885f67.** Nothing changed (US-08.4.7, US-06.3.1, OQ-114, OQ-120, OQ-122; domain model unchanged). D107, D108, D110, D112 to D115 built as answered; OQ-114, OQ-120 and OQ-122 as built. 58 and 59 DONE on `master`; no other lane had a Wave 5 `complete:` at the start. Used 58's `InvoicesTab`, `FinancesPage`, `invoicePath`, `creditNotePath`, `awaitingApprovalPath` (`?view=approval`), and 59's `invoiceRows`, `filterInvoiceRows`, `invoiceCounts`, `invoiceCountLine`.
+
+**Built.**
+- `apps/admin/screens/invoiceListRows.ts` (pure, over 59): `allInvoiceRows(state, todayISO)` (every row, derived once per state; backdrop out, AA fee invoices never in), `invoiceList(rows, { show, kind, anaesthetistId, q })` (the ordered rows, paged after by the screen), `invoiceListSummary(rows)` (`counts`, `ageBands`), `invoiceStateLabel(row)`, `bookingDayLine(row)`, `parseInvoiceShow(show, view)`, `parseInvoiceKind`, `pendingRowId`, `INVOICE_SHOWS`, `INVOICE_SHOW_LABEL`, `INVOICE_KINDS`, `INVOICE_KIND_LABEL`, `UNPAID_WARNING_DAYS`.
+- `InvoicesScreen.tsx` rebuilt: one `fit` page for every filter; toolbar (search, the five `FilterPills`, Kind and anaesthetist `SelectField`s, "N unpaid · $X owing · N to approve"); columns Number (a "View invoice N" `TextAction` over today's sublines), Kind, Payer (Split, layout), Patient · Booking (the Booking link, "Tue 18 Aug · AM"), Anaesthetist, Raised (with the year), Total, Owing, State, Delivery; the admin `Pager` over rows; the result and error lines at the top of the main column. URL state with replace: `q`, `show`, `kind`, `anaesthetist`, `page`. List, List date and the View column gone, as is the toolbar's billing-exception pill (the Billing tab has it).
+- `PrepaymentApprovalStrip.tsx` split: `PrepaymentApprovalList` (the filter's table and Approve and send), `PrepaymentApprovalSwitchCard` (the rail's Prepayments to approve card: Show them, the Switch and its off-confirm), `PrepaymentApprovalStrip` (both stacked, the catalogue example). Behaviour and audit unchanged. The rail's second card is Unpaid by age (`DefList`).
+- Seed: `domain/seed/agedInvoiceBooking.ts` adds a backdrop List `L-HIST-HX-01` (Dr Ngata, Wed 14 Oct AM, St George's), Booking `HXBK01` (Tessa Henare, PT0066, pinned), Procedure `HXP01`, invoiced as `INV-S24-02` (AA-2026-S2402, St George's, $289.80, raised 15 Oct: "Unpaid · 40 days") with pair `BC-S24-02`; no Xero records, as INV-S24-01. `PERSIST_VERSION` 80 to 81.
+- 59's `financeReadModels.scale.test.ts` moved from `domain/billing/` to `store/` (it imports the store, which `domainPurity.test.ts` forbids in `domain/`).
+
+**Tests.** New: `invoiceListRows.test.ts` (31), `store/agedInvoiceSeed.test.ts`, a v81 case in `persistMigrate.test.ts`. Re-expressed: `InvoicesSearch.test.tsx` (7: opens on Unpaid, `?view=approval`, the pills, the credit note riding and the loose one under All only), `InvoicesAuditPaging.test.tsx` (4: the pager over rows, a credit note counted), `PrepaymentApprovalStrip.test.tsx` (6: list and switch card), `ClickableTableRows.test.tsx` (first row the oldest unpaid; the List link check now the Booking link), `CreditUi.test.tsx` (at `?show=all`). Re-measured for the seed: `phase40Declared.ts` (the parity baselines set the `HX`/`S24-02` records aside), `seed.test.ts` (id pattern), `lookback.test.ts` (31 backdrop Lists), `prepaymentFollowupParity.test.ts` (receivables 12,630.50 to 12,920.30, Dr Ngata's position). Playwright updated, not run: `admin-phase08`, `admin-phase39`, `prepayment-phase27`, `phase38b-events`, `phase39b-events`. Quick checks green (`phase-check --changed`) and lint clean.
+
+**Checked.** Skipped in the lane (D113).
+
+**Review.** Skipped in the lane (D113).
+
+**Handoffs.**
+- 63 (the invoice and credit note pages): a row opens `invoicePath(id)` or `creditNotePath(id)` (58's); the list's row model is 59's `InvoiceRow` through `allInvoiceRows`; `invoiceStateLabel` gives an invoice's State words and tone, `bookingDayLine` the Booking's day line, if the page wants them. Approving from the invoice's page is not built (an unapproved prepayment has no invoice yet).
+- 67 (AA fees): AA fee invoices never enter this list (`invoiceListRows.test.ts` pins it).
+- The join: `PrepaymentApprovalSwitchCard` and `PrepaymentApprovalList` are new exports of `components/PrepaymentApprovalStrip.tsx`; `invoiceListRows.ts` and its test are new files outside LANES.md's Lane B list.
+
+**Deviations.** The doc's smallest seed change needed a new backdrop List (the core seed has no live List before 10 Nov, the canvas horizon); the Booking's generated audit entries move audit ids after mid-October by 6 (`counters.audit` 1237 to 1243), though no booking, invoice or ledger id moves. Kind reads "Invoice" for an additional invoice (its "Additional to" line says the rest); `invoice-list-kind` now sits on every row's Kind cell with today's `data-kind` values.
+
+**For the merge.** No route, link, trigger or count change: `?view=approval` is read as the filter. `PERSIST_VERSION` is 81 (in `notes.md`). The five Playwright specs above changed only their Invoices steps; at practice scale a freshly raised invoice is on Unpaid's last page (oldest first), so each now searches for its rows (`?q=`): watch admin-phase08's Booking back button and its "Holder layout" row. Hooks gone: `invoices-billing-exceptions`; new: `invoices-kind`, `invoices-anaesthetist`, `invoice-list-state`, `invoices-unpaid-by-age` (`data-band`), `prepayment-approval-card`, `prepayments-show-them`. `invoices-awaiting-approval` is now the filter's table only; the Switch is in the card.
+
+**For the sweep.** The Invoices recipes (the Awaiting approval tab is a filter; the columns changed; the Switch is in the rail), S4 Beat 1's click path (Invoices, Awaiting approval), guide lines naming the Invoices nav item, the Awaiting approval tab or the Pre-payments rail link, and ATLAS rows on `/admin/invoices*`.
+
+**For the owner's review.**
+- URL state: `q`, `show` (Unpaid default), `kind`, `anaesthetist`, `page`, with replace; `?view=approval` opens Awaiting approval.
+- Order: Unpaid and Part paid oldest first; Paid and All owing first oldest first, then paid newest first. A fresh invoice is at the end of Unpaid at practice scale: search finds it.
+- State words: "Unpaid · N days" from a day old ("Unpaid" on its day), amber from 30 days; "Part paid" neutral; "Paid" green. No due date on prepayments.
+- Credit notes ride above their invoice under every filter and count as rows; a credited invoice reads Paid, so its credit note shows under Paid and All; one whose invoice is seeded history lists in All only, at the top.
+- Awaiting approval: today's columns and Approve and send, under the anaesthetist filter and search, Kind hidden; pending prepayments list there only (not under All). No approve from an invoice page.
+- Rail: Prepayments to approve (count, Show them, the Switch) and Unpaid by age (under 30, 30 to 60, over 60; count and owing), both over the whole book, whatever the filters. The anaesthetist filter sits beside the mock's Kind select.
+- The 40-day example is AA-2026-S2402 (St George's, Tessa Henare); see Deviations for its audit-id shift.
+- OQ-114 (email or post), OQ-120 (the row names the anaesthetist) and OQ-122 (no address reads as today) as built.
+- Copy: the Switch now reads "On · each prepayment invoice waits under Awaiting approval".
+
+### Phase 64 · The Ledger tab (2026-11-26)
+
+Run in Lane C, Wave 5 (`docs/build-plan/LANES.md`; D112, D113): quick checks only, no review, screen-proof, checklist run or plan page; Wave 5's join reviews and gates 58 to 67 together. One session, built by parallel subagents (the pure reads, the rail, the lists) joined in `LedgerTab.tsx`. Lane commit `64 complete:` on `lane/c`.
+
+**Drift check against f885f67.** Nothing changed in substance (US-13.2.1, OQ-149, OQ-125; domain model unchanged). D106, D107, D110, D114, D115 built as answered; OQ-149 at D106's default (place or refund in the system only), OQ-125's provisional pill kept. 58 DONE on `master`; no other lane had a Wave 5 `complete:` to sync. Names used from 58: `financePath`, `anaesthetistAccountPath`, `ledgerPairPath`, `FinancesPage`, `useAdminOutlet`; `financeCounts.ts` untouched.
+
+**Built.**
+- Pure reads, `domain/billing/ledgerLists.ts`: `anaesthetistLedgerRows(pairs, transfers, unmatched, anaesthetistIds)` in one pass (billed, paidIntoAa, disbursed, aaOwesThem, theyOweAa, inBalance, imbalance, checks; equal to `anaesthetistPosition` per anaesthetist), `receiptsToPlace(unmatched)` (held receipts, total, count) and `ledgerSentence(status, figures)` (tone, square, title, detail, parts), which reads only the Day view's `ReconciliationStatus` and the figures passed in. Billed = the payables on their procedure pairs and the transfers in for their Lists, net of credits; AA fee pairs left out.
+- Selectors, `store/ledgerListSelectors.ts`: `anaesthetistLedgerRowsOf` (every anaesthetist, surname order, memoised on the ledger's inputs), `receiptsToPlaceOf`, `ledgerSentenceOf` and `ledgerSentenceFor(status, state)` (the tab passes the Day view's `useReconciliationStatus`, so the tab, the Day view's card and the badge read one status). Barrel lines in `domain/billing/index.ts` and `store/index.ts`.
+- `screens/finances/LedgerTab.tsx`: fit page; toolbar with the `SlidingSegmentedControl` (Anaesthetists, Invoice pairs, AA Holding account), on Anaesthetists a `NameSearchBox` pill, All / Out of balance `FilterPills` and the end summary ("85 anaesthetists, every one square"), on Invoice pairs Open / All. URL state (replace): `list`, `q`, `balance`, `pairs`, `page`; `?pair=` opens Invoice pairs on All. `useScreenTiming('ledger')` stays on the tab.
+- `LedgerRail.tsx`: "The books" `Card` with the `Notice` (`ledger-balance`, `data-in-balance`) and "See the checks" (`li[data-check]`, open while the books are out until toggled), four outlined `StatTile`s (`ledger-tiles`, `data-ledger-tile`: Owed to AA, Owed to anaesthetists, AA Holding account, Receipts to place), then the `RailSection` "Receipts to place" (`ledger-unmatched`, `data-unmatched-id`, Allocate `ledger-allocate`, Mark refunded `ledger-refund`). `LedgerReceiptDialogs.tsx` holds `AllocateDialog` and `RefundDialog`, moved unchanged.
+- `LedgerLists.tsx`: `AnaesthetistsLedgerList` (`ledger-anaesthetists`, `data-anaesthetist-id`, `Pager` `ledger-anaesthetists-pager`), `PairsLedgerList` (today's pairs table moved, payment weeks computed once per shown row), `HoldingLedgerList` (`HoldingAccountPanel bare`: the panel's content without its `Card`, every hook kept).
+- `LedgerScreen.tsx` keeps only the one-anaesthetist view for the account route, its switch and picker replaced by the record's Back link to the Ledger (`ledger-back`); its props are now `{ anaesthetistId }`. No seed change; `PERSIST_VERSION` stays 80.
+- Measured at practice scale (85 anaesthetists, 2,582 pairs) on 5473: the tab opens in about 1.5 s warm (painted 116 ms by its Timings sample), list switches and page changes 35 to 110 ms; the old screen took 3 to 4 s and about 1 s a change. No horizontal page scroll at 1280 or 1440; the four tiles whole at both. Two BACKLOG lines closed, one added (below).
+
+**Tests.** New: `ledgerLists.test.ts` (13: parity with `anaesthetistPosition` on fixtures, the seed and all 85 at practice scale; billed on a credited pair and a transferred prepayment; the sentence for every item kind), `ledgerListSelectors.test.ts` (11: the out-of-balance set equals `anaesthetistsOutOfBalanceOf` at both scales; the sentence square, with an injected receipt, a Xero item only; receipts to place after Allocate and Mark refunded), `LedgerTab.test.tsx` (7). Re-expressed: `LedgerCredit.test.tsx` (the account view only), `HoldingAccountPanel.test.tsx` (+1 for `bare`), `moneyViewPurity.test.ts` (allow-list entry for `LedgerLists.tsx`: the pairs table's Xero column moved with it). Specs updated, not run: `admin-ledger.spec.ts`, `admin-phase39.spec.ts`. Quick checks green; lint clean.
+
+**Checked.** Skipped in the lane (D113), except work item 5's measure (above; screenshots in `.build-phase/64-measure/`).
+
+**Review.** Skipped in the lane (D113).
+
+**Handoffs.**
+- 65: rebuild `screens/finances/AnaesthetistAccountPage.tsx` on the record pattern from `LedgerScreen.tsx`'s one-anaesthetist view (then retire it; `CreditTrails` is still exported from there for the catalogue's `eventExamples.tsx`). Reuse `anaesthetistLedgerRowsOf` for the account's billed, paid into AA, disbursed, AA owes them and they owe AA, and `LedgerReceiptDialogs` if the page places receipts. The account's Back link hook is `ledger-back`.
+- 66: nothing from this phase.
+
+**Deviations.**
+- Tiles two by two only where the rail is wide enough (`repeat(auto-fit, minmax(180px, 1fr))`): at 1280 the 332 px rail cannot hold $662,062.67 twice across, so the four stack in one column (whole, the rail scrolls); at 1440 they sit two by two. No `StatTile` change (D115).
+- The Anaesthetists table shows the name without an avatar (as the mock's table), so all seven columns fit the card.
+- Removed hooks, with the elements the doc takes off the tab: `ledger-credit-tiles`, `ledger-still-to-net` (whole ledger), `ledger-anaesthetists-out-of-balance` (the Out of balance filter replaces it), `ledger-anaesthetist-select` (the picker). New: `ledger-books`, `ledger-see-checks`, `ledger-checks`, `data-ledger-tile`, `ledger-summary`, `ledger-search`, `ledger-anaesthetists`, `ledger-anaesthetists-pager`, `ledger-back`, `data-ledger-list`, `data-holding-bare`.
+
+**For the merge.**
+- No change needed in 58's files (`financePaths.ts`, `financeCounts.ts`, routes, registry); the Ledger count and the badge are unchanged and agree with the sentence.
+- Lane C files outside `screens/finances/`: `domain/billing/ledgerLists.ts` (+test), `store/ledgerListSelectors.ts` (+test), one line each in `domain/billing/index.ts` and `store/index.ts`, `components/HoldingAccountPanel.tsx` (+test), `screens/LedgerScreen.tsx`, `LedgerCredit.test.tsx`, `apps/moneyViewPurity.test.ts` (one allow-list line).
+- Specs to watch at the join: `admin-ledger.spec.ts` (rewritten for the sentence, tiles, rail and list; searches "Souter" since she is on page 2 at practice scale), `admin-phase39.spec.ts` (the credit tiles' asserts replaced by the sentence), `admin-phase39a.spec.ts` (expects no `ledger-still-to-net` on the account: still true).
+- `domain/domainPurity.test.ts` fails on 59's `financeReadModels.scale.test.ts` importing the store (from Wave 4, not this phase).
+
+**For the sweep.** The six Ledger recipes (US-13.2.1's four: whole ledger, anaesthetist scope, imbalance, out-of-balance list; and the other two), the ATLAS `/admin/finances/ledger` row (the sentence, `ledger-tiles`, the list control, the Anaesthetists list, `ledger-unmatched` now in the rail, no Scope control, headline or credit tiles) and the trigger row; the guide's Ledger rows and Beat 7 "Admin Ledger" in `03-demo-script.md`, and the cheat sheet's "The ledger balances".
+
+**For the owner's review.** Receipts to place as D106 (in the system only; a held receipt is a failed check, so it is in the sentence, the badge and the figure); placed and refunded receipts leave the rail (the history rows are gone from the tab). The OQ-125 pill on the Holding list. The sentence reads the Day view's status: square only when it is; otherwise "The books are out by $X" (or "are not square" when only Xero items are open) and one line per kind (receipts that match no invoice, pairs, credits, transfers or payments not yet in Xero, changes made in Xero, bank lines), plus "Every account is square" or how many are out; warning tone, error only when the ledger is out with no held receipt to explain it. The four figures: Owed to AA = receivables outstanding; Owed to anaesthetists = payables due now; AA Holding account = its balance; Receipts to place = held receipts, warning above zero. Row columns: billed (payables on their procedure pairs and transfers in, net of credits), paid into AA (collected), disbursed (paid out), AA owes them (due now plus awaiting collection), they owe AA (unpaid AA fees); Balance pill Square or Out by $X; the mock's Last run column left out. List state in the URL; page size 50; surname order, largest imbalance first under Out of balance. Worth a look: `/admin/finances/ledger` at 1280 and 1440, with Inject unmatched receipt.
+
+### Phase 63 · The invoice and credit note pages (2026-11-26)
+
+Run in Lane B, Wave 5 (`docs/build-plan/LANES.md`; D113): quick checks only, no review, screen-proof, checklist run or plan page; Wave 5's join reviews and gates 58 to 67 together. One session (after 62). Lane commit `63 complete:` on `lane/b`; Lane C's `64 complete:` (cb5df3d7) and `master` (27e25401) merged at its start (PROGRESS.md conflict only, both kept).
+
+**Drift check against f885f67.** Nothing changed (US-13.3.3, FT-13.3, US-08.4.2, US-08.6.2, OQ-114, OQ-122; domain model unchanged). D107, D110, D114, D115 built as answered; OQ-114 and OQ-122 as built (Delivery reads as today). 58 DONE on `master`, 62 complete on `lane/b`. Used 58's `InvoicePage`, `CreditNotePage` (route targets, unchanged signatures), `financePath`, `invoicePath`, `creditNotePath`, `billingListPath`, `ledgerPairPath`; 62's `invoiceStateLabel`, `bookingDayLine`.
+
+**Built.**
+- `screens/finances/InvoicePage.tsx`: `InvoicesRecordPage` (the frame both records share: `AdminPage document`, Back "Invoices" to the router state `invoicesList` (`INVOICES_LIST_STATE_KEY`) when it is the tab's path, else the tab), and the invoice header: number, `IdChip` "Payable" (`invoice-payable-chip`), the state `Pill` (`invoice-header-state`, `data-state`) or the standing (`invoice-header-standing`, `data-standing`), summary line (`invoice-summary`: payer, patient's name, Booking day, Dr Surname; never the NHI). `InvoicesScreen` hands `invoicesList` when it opens a record.
+- `invoiceListRows.ts` gains `invoiceRowFor(state, invoiceId, todayISO)`: 59's model over one invoice, so the header and the tab read one rule.
+- `InvoiceDocument.tsx`: the rail on shared `Card` (`tone="warning"` where it was flagged), `RailSection`, `RailRow`, `DefList`, `Button`, `TextAction`; order Delivery, Ledger (new Owing row, `invoice-ledger-owing`), Correct this invoice, Locked record, Additional invoices, Related invoices, then `RecordHistoryCard` (`invoice-history`: the invoice, its pair, and once credited its credit note, negative invoice and credit event). `RailCard`, `railCardStyle`, `railMetaLabel` and the compact button styles deleted. Six card kinds before, seven with History; every store call unchanged.
+- `screens/finances/CreditNotePage.tsx`: number, "Credited in full" (`credit-note-status`), sub "Credits <original> · payer · patient · Dr Surname" (`credit-note-original-link` opens the invoice, carrying Back's filter); rail Negative invoice, Replaced by (`credit-note-new-invoices`, was "New invoices"), Delivery, Xero, History (`credit-note-history`). The paper untouched.
+- No seed change; `PERSIST_VERSION` stays 81.
+
+**Tests.** New `screens/finances/InvoicePage.test.tsx` (15: header, state and Paid, no NHI, rail order, Resend and its refusal in place, no address, credited standing and disabled Resend, Back and its filter, the credit note page and its links); `invoiceListRows.test.ts` +1 (`invoiceRowFor`). `InvoiceDocumentLock.test.tsx` and `CreditUi.test.tsx` pass unchanged. Playwright: `admin-phase08` uses `invoice-back`; the other four specs read hooks that did not move (checked, not run). Quick checks green and lint clean.
+
+**Checked.** Skipped in the lane (D113).
+
+**Review.** Skipped in the lane (D113).
+
+**Handoffs.**
+- 67 and the join: `InvoicesRecordPage` is the frame for any record under Invoices; `INVOICES_LIST_STATE_KEY` is how a list hands Back its filter.
+- Hooks moved: `invoice-related` and `credit-note-new-invoices` now on the whole card; an Additional invoices row's `data-invoice-id` on its `li`. New: `invoice-back`, `invoice-payable-chip`, `invoice-header-state`, `invoice-header-standing`, `invoice-summary`, `invoice-ledger-owing`, `invoice-history`, `credit-note-back`, `credit-note-status`, `credit-note-summary`, `credit-note-original-link`, `credit-note-history`. None lost.
+
+**For the merge.** No route, path, count or trigger change; 58's routes render the same exports. `resendInvoice` from the barrel; `store/billingRun.ts` not edited.
+
+**For the sweep.** Recipes whose targets sit in the invoice or credit note rail (`US-08.4.2`, `US-08.6.2`, `US-08.6.6`, `US-08.3.1`, `US-13.5.2`, `US-11.3.3`); ATLAS's `/admin/invoices/:invoiceId` and credit note rows (rail cards, the Related invoices caption, "New invoices" now "Replaced by", old URLs), now under Finances; the guide's invoice and credit note beats naming the rail's cards or the old URLs.
+
+**For the owner's review.**
+- Delivery reads as today (Emailed with send history, To post with its pill, "No invoice address", the credited invoice's disabled Resend).
+- Rail order as the mock: Delivery, Ledger, Correct this invoice, then Locked record, Additional invoices, Related invoices where they apply, History last. Seven card kinds against the brief's seven (History is the new one).
+- A credited or credit-pending invoice shows its standing in the header in place of the money state.
+- Back returns to the Invoices tab at the filter the office came from; opened from elsewhere, to the tab as it opens.
+- The credit note page keeps Delivery and Xero beside the mock's three; "New invoices" is now "Replaced by".
+- No seeded invoice or credit note reads `noAddress` in the core seed; the test sets one.
+
+### Phase 65 · The anaesthetist's account page (2026-11-26)
+
+Run in Lane C, Wave 5 (`docs/build-plan/LANES.md`; D112, D113): quick checks only, no review, screen-proof, checklist run or plan page; Wave 5's join reviews and gates 58 to 67 together. One session; parallel subagents built the pairs card, the rail and the tests, joined in the page file. Lane commit `65 complete:` on `lane/c`.
+
+**Drift check against f885f67.** Nothing changed (US-13.2.1, US-08.3.5, OQ-149). D107, D114, D115 built as answered; OQ-149 at D106's default (64's). 58 and 64 DONE on their branches; no other lane had a Wave 5 `complete:` to sync. Names used: `anaesthetistAccountPath`, `financePath`, `invoicePath`, `creditNotePath`, `paymentRunPath` (58); `anaesthetistLedgerRowsOf`, `LedgerRail`'s `CHECK_TEXT` (now exported) (64).
+
+**Built.**
+- `screens/finances/AnaesthetistAccountPage.tsx` (same export, 58's route): `ProfilePage` with Back "Ledger", the name, a Square / Out by $X `Pill` (`ledger-account-status`, `data-in-balance`), the line "AA owes $X in Week N's run · owes AA $Y in <month> fees" (`ledger-account-summary`; nil reads "nothing"), Open in People (`ledger-account-open-people`, `anaesthetistRecordPath`). Out of balance adds a warning `Notice` (`ledger-balance`, `li[data-check]`) naming the failed checks, with See the Ledger (`ledger-account-see-ledger`) when a receipt is held. Unknown id still falls back to the Ledger tab.
+- Cards (`ledger-tiles`): AA owes them (`ledger-aa-owes`: Due now, Awaiting collection, Total, Collected, Paid out; the next run's day and week beside the title; tiles wrap with `auto-fit`, so no figure spills) and They owe AA (`ledger-owes-aa`: the unpaid fee invoice's number to the AA fees tab, or "Nothing owing"). `StillToNetNotice` above when non-zero. Every figure is `anaesthetistLedgerPosition`.
+- `screens/finances/AccountPairs.tsx`: a `Card` "Invoice pairs" (`ledger-pairs-card`) with Open / All, a dense nested `TableShell` (`ledger-pairs`): Invoice pair (receivable and payable numbers, credited pill), Billed, Paid in, Disbursed with its week; totals row; `Pager` at 50; `?pair=` lands on and highlights its row.
+- Rail: `components/LedgerPaymentRuns.tsx` rebuilt as a `RailSection` (`ledger-payment-runs`, three rows "Week N · net" over status and date, See all in place; imports only `RUN_STATUS` from `PaymentCyclePanel`); new `screens/finances/AccountCreditTrails.tsx` (`ledger-credit-trail`, one row per negative invoice: credit note number to its page, the netting note; hidden when none).
+- `screens/LedgerScreen.tsx` deleted (the switch's last remnant; its `CreditTrails` export replaced by `AccountCreditTrails` in the catalogue). Catalogue rows for both rail sections updated. BACKLOG's "$11,350.50 spills out of its tile" clause deleted. No seed change; `PERSIST_VERSION` stays 80.
+
+**Tests.** New `AnaesthetistAccountPage.test.tsx` (7: cards' figures, pairs, runs, credit trail after a credit, back link; injected receipt flips the pill and the Notice names the check; See all 13; unknown id; Open in People; page and 64's row agree). `LedgerCredit.test.tsx` re-expressed on the page (the four-step trail order, AA-2026-H03 and the `-P` row asserts dropped with the table). `moneyViewPurity.test.ts`: `LedgerScreen.tsx` entry out, `AccountPairs.tsx` in (it hands the Xero slice to `ledgerRows`). Specs edited, not run: `admin-ledger.spec.ts` (Souter's account steps), `admin-phase39a.spec.ts` (Week 48 in a rail row). Quick checks green; lint clean.
+
+**Checked.** Skipped in the lane (D113).
+
+**Review.** Skipped in the lane (D113).
+
+**Handoffs.**
+- 66: `LedgerPaymentRuns` reads `RUN_STATUS` only; a run row opens `paymentRunPath`. If the Payments tab gains an anaesthetist filter, the rail's See all can take `allTo` there.
+
+**Deviations.**
+- The pill reads "Out by $X" (as 64's list row) rather than "Out of balance".
+- Credit trail rows open the credit note's page; the original, the negative invoice's own number and the replacement invoice are on that page (63), not in the rail.
+
+**For the merge.**
+- No change in 58's files. `LedgerScreen.tsx` deleted (a file LANES.md does not list for 65); `LedgerRail.tsx` exports `CHECK_TEXT`.
+- Removed hooks: `data-shot-scope="anaesthetist"`, the trail table's `data-trail-kind` rows, `ledger-system-of-record`, `ledger-footnotes`, the runs table's remittance links. New: `ledger-account`, `ledger-account-status`, `ledger-account-summary`, `ledger-account-open-people`, `ledger-account-see-ledger`, `ledger-pairs-card`, `ledger-owes-aa-invoice`, `ledger-payment-runs-all`, `ledger-credit-trail-all`.
+- A Payments-tab link narrowed to one anaesthetist, for the runs' See all, if 66 offers one.
+- Specs to watch: `admin-ledger.spec.ts`, `admin-phase39a.spec.ts`.
+
+**For the sweep.** US-13.2.1's one-anaesthetist Ledger recipe (now the account page) and US-08.3.5's if it shows that view; ATLAS rows on `/admin/finances/ledger/anaesthetists/:id` and the retired hooks above; guide lines naming the "Whole ledger / One anaesthetist" switch or Souter's one-anaesthetist ledger.
+
+**For the owner's review.** See all on payment runs expands in place (no Payments filter yet). Credit trails as one row per credit note with its netting note. Pairs columns as the mock (Kind, Patient, Payer, Released and Xero left for the Ledger tab and Xero tab). No direct remittance column: a run row opens the run, one click from her remittance. Still to net as a Notice above the cards. Worth a look: `/admin/finances/ledger/anaesthetists/41267` at 1280 and 1440, before and after Inject unmatched receipt.
+
+### Phase 66 · The Payments tab and the payment run pages (2026-11-26)
+
+Run in Lane C, Wave 5 (`docs/build-plan/LANES.md`; D113): quick checks only, no review, screen-proof or checklist run. Synced Lane B's `62 complete:` (cbc51b32) at the start (PROGRESS.md conflict only, both sides kept).
+
+**Drift check against f885f67.** Nothing changed (US-10.2.7, US-10.2.6, US-13.3.3, OQ-47, OQ-29). D107, D114, D115 built; OQ-47 and OQ-29 as written (steps, days, "BCTI" untouched). Used 58's names: `PaymentsTab`, `PaymentRunPage`, `RemittancePage`, `financePath`, `paymentRunPath`, `remittancePath`.
+
+**Built.**
+- `components/paymentCycleSteps.ts` (pure): `paymentCycleSteps({ run, cycle, settings })`, the four `RailStep`s moved unchanged from the panel; the cycle card and the run page both call it.
+- `PaymentCyclePanel.tsx`: same name, `actor` prop, `RUN_STATUS`, `stampOf`, store calls, hooks and copy; the runs table and "Open the ledger" left it; its two sections are bare `Card`s (`titleLevel` 3) inside the cycle card; `TotalsTable` takes the admin `Pager` at 20 (expansions keyed by anaesthetist, page back to 1 when the rows change; hook `payment-cycle-pager`).
+- New `screens/finances/PaymentRunsTable.tsx` (`PaymentRunsTable`): a "Payment runs" `Card` with `CountBadge`, dense `TableShell`, `ClickableRow`s to `paymentRunPath`, the mock's eight columns, this week and staged first then newest, `Pager` at 20 (`payables-runs-pager`); `payables-runs`, `data-run-id`, `data-run-status` kept.
+- New `screens/finances/EventsAwaitingRun.tsx` (`EventsAwaitingRun`, `useEventsAwaitingRun`, `EVENTS_AWAITING_RUN_TITLE`): a `RailSection` in the tab's `PageBody` rail, rows to the Booking, narrow selectors; `PaymentsTab.tsx` passes the rail only while one waits. `EventsAwaitingRunPanel` is gone (no importer).
+- `PaymentRunScreen.tsx`: `ProfilePage` with back Payments, the week, `IdChip` Run and the status pills, the summary line, Download schedule (the existing Print, hook `payment-schedule-print` moved onto it, shown once approved), the `StepRail` compact; main column Totals by anaesthetist (Remittance `TextAction`s, `Pager` at 20), Checks before payment, Payment schedule; rail The run, Ledger at close, Kept out of every run, History (`RecordHistoryCard` on the run id). Slice selectors, not the whole store. `RemittanceAdviceScreen` unchanged but for its links (`paymentRunPath`, `TextAction`).
+- Run payables (`store/xeroSimActions.ts`, `payRunInXero`): measured at practice scale (1,597 bills, 69 anaesthetists): the store call 2.26 s, almost all 1,598 separate commits of `recordDisbursement`; with the persist delta per commit 19.5 s. The webhook recordings now run, each still audited and in the same order, on a working copy of the store and reach the live store in one `copyStateIntoDraft`: 2.0 s with saving. Same bills, audit rows and paid status.
+- No seed change; `PERSIST_VERSION` stays 81 (62's).
+
+**Tests.** New `PaymentsTab.test.tsx` (6), `PaymentRunScreen.test.tsx` (2), `store/payablesRunParity.test.ts` (3: staged week with a netting, an outage, a missed webhook; snapshots recorded on the old code). `moneyViewPurity.test.ts` allow-lists `PaymentRunScreen.tsx` (the remittance advice's Xero batch payment, read as before). Quick checks green (`phase-check --changed`: typecheck, vitest, verify-board; lint).
+
+**Checked.** Skipped in the lane (D113).
+
+**Review.** Skipped in the lane (D113).
+
+**Handoffs.**
+- 65 / the join: `LedgerPaymentRuns` still imports `RUN_STATUS`; runs open `paymentRunPath`.
+- The join: `EventsAwaitingRun` and `PaymentRunsTable` are the tab's new parts; `paymentCycleSteps` is the one step builder.
+
+**Deviations.**
+- The waiting table's range line has no "net $X" (the `Pager` has no suffix and no variant was added).
+- The rail title is written out ("Events awaiting the run"): `EVENT_LABELS.awaitingRunTitle` reads "Waiting for the next billing run". An event with no List links to the Payments tab (`RailRow` needs a `to`).
+- `data-testid="payment-run-screen"` sits on the run page's inner wrapper (`ProfilePage` takes no testId).
+- The freeze fix commits through `copyStateIntoDraft` (built for Booking drafts) rather than a named helper in `mutate.ts`, which is not this lane's file.
+
+**For the merge.**
+- New files: `components/paymentCycleSteps.ts`, `screens/finances/PaymentRunsTable.tsx`, `EventsAwaitingRun.tsx`, the three tests. `store/xeroSimActions.ts` changed (the freeze fix, LANES.md's list); `payablesActions.ts` and `payablesRun.ts` untouched.
+- `registry.ts`: add the Payments route to `run-next-billing-run`'s `routes` (the events awaiting the run now show on the Payments tab).
+- A Payments tab narrowed to one anaesthetist would let 65's runs See all link there (not built).
+- `financeCounts.ts`: the Payments tab has no count, as built by 58; nothing wrong.
+- Retired hook `billing-open-ledger`; new `payment-cycle-pager`, `payables-runs-pager`, `payment-run-page`, `payables-run-id`, `payables-run-status`, `payables-run-summary`, `payables-run-step-1` to `-4`, `payables-run-totals-pager`, `payables-run-history`, `payables-run-history-open`. `payables-run-detail` is now the rail's Run card (no status pill; the pill is `payables-run-status`).
+- Specs: `admin-phase39a.spec.ts` needs no step change (its run-detail screenshot changes); `phase38b-events` and `routing` read kept hooks. None run.
+
+**For the sweep.** US-10.2.7's five payment-week recipes (open cycle, anomaly, held, schedule, payment week) now on the Payments tab and the run page; US-10.2.6's remittance recipe; S3's payment beat (Finances, Payments); ATLAS rows for the run and remittance routes and the run page's new layout (line 467); the retired `billing-open-ledger`; every guide line naming the Billing monitor for the payment cycle or Run payables.
+
+**For the owner's review.**
+- Runs table columns as the mock (Run ID, Closed, Approved and Scheduled left for the run page); every table paged at 20; Download schedule is the Print (Save as PDF); "Open the ledger" dropped; the events rail rows as today's; History on the run page.
+- Run payables: 19.5 s to 2.0 s at practice scale by committing the recordings once; about 2 s remains in `disbursementDetection.ts` (BACKLOG).
+- The cycle card's section headings are bare Card titles (14/600 instead of 15/650); the runs table's Run link is teal (`TextAction`).
+
+### Phase 67 · The AA fees tab (2026-11-26)
+
+Run in Lane B, Wave 5 (`docs/build-plan/LANES.md`; D113): quick checks only, no review, screen-proof, checklist run or plan page; Wave 5's join reviews and gates 58 to 67 together. One session (after 62 and 63). Lane commit `67 complete:` on `lane/b`; Lane C's `65 complete:` (cbf0a302) and Lane A's `60 complete:` (97853b80) merged at its start (PROGRESS.md, BACKLOG.md and `catalogue/eventExamples.tsx` conflicts: both sides kept; each lane's fixed BACKLOG lines removed; the catalogue takes 65's `AccountCreditTrails` and 60's `finances/CorrectionRetry`).
+
+**Drift check against f885f67.** Nothing changed (US-10.3.1, US-10.3.3, OQ-60, OQ-112; domain model unchanged). D107, D108, D110, D114, D115 built as answered; OQ-60 and OQ-112 as built (month end). 58 DONE on `master`. Used 58's `AaFeesTab({ view })`, `FinancesPage`, `financePath`; `allAaFeeInvoices`, `aaFeeRunPreview`, `aaFeeRunDisabledReason`, `saveAaFeeSettings`, unchanged.
+
+**Built.**
+- `apps/admin/screens/aaFeeRows.ts` (pure): `aaFeeRows(invoices, { show, month, q }, nameOf)` returns the ordered rows (Unpaid oldest month first, Paid newest first, All unpaid then paid), the whole book's `unpaidCount` and `owed`, and the `months` (invoices, total, unpaid); `parseAaFeeShow`, `parseAaFeeMonth`, `AA_FEE_SHOWS`, `AA_FEE_SHOW_LABEL`. `allAaFeeInvoices`' newest-first order stays (the web fee list reads it).
+- `AaFeesScreen.tsx` rebuilt (`AaFeesScreen({ actor, settingsOpen? })`; the `AaFeesTab` type, the sub-tabs and the month stepper gone): toolbar (search, Unpaid, Paid, All, month select, "N unpaid · $X owed to AA"); the table (Number, Anaesthetist, Month, BCTIs, Fee, GST, Total, State, Raised) unfolding to `FeeInvoiceDetail`, paged 50; the preview replaces the table while open (surname order, a `Notice` that nothing is raised until the run, Run repeated); the rail's run card (Runs on the month's last day, anaesthetists, still to invoice, last run, Preview, Run), the fee settings card (summary, Change opens today's form; Save via `saveAaFeeSettings`), Earlier runs (a row sets the month). URL state with replace: `q`, `show`, `month`, `page`. `aaFees.month` published as before, from the card month.
+- `AaFeesTab.tsx` passes `settingsOpen={view === 'settings'}`: `/aa-fees/settings` opens the form and scrolls it into view; Cancel or Save goes back to `/admin/finances/aa-fees` with the query.
+- No seed change; `PERSIST_VERSION` stays 81.
+
+**Tests.** New `aaFeeRows.test.ts` (22). `AaFeesScreen.test.tsx` re-expressed against the tab (19: the six old cases plus search, the pager, Earlier runs, the preview's Back, Cancel, and `/aa-fees/settings` opening the form in view and leaving to the tab). Playwright `aa-fee.spec.ts` updated, not run; `admin-layout.spec.ts` needed no change. Quick checks green and lint clean.
+
+**Checked.** Skipped in the lane (D113).
+
+**Review.** Skipped in the lane (D113).
+
+**Handoffs.**
+- The join: hooks gone `data-aa-fees-view` and the Previous and Next month buttons; `aa-fee-month` is now the month select; `admin-aa-fee-invoices` is on the table's container. New: `aa-fee-search`, `aa-fee-filter` (`data-aa-fee-show`), `aa-fee-totals`, `aa-fee-pager`, `aa-fee-state`, `aa-fee-show-all`, `aa-fee-run-card` (`data-month`), `aa-fee-preview-open`, `aa-fee-preview-back`, `aa-fee-preview-shell`, `aa-fee-settings-change`, `-cancel`, `-save`, `aa-fee-earlier-runs` (`-all`, `-fewer`, rows `data-month`, `data-selected`).
+
+**Deviations.**
+- The month select lists every month from January 2026 to the demo month (and any month holding fee invoices), not only months with invoices, so a missed month can still be chosen, previewed and run.
+- The paid state reads "Paid 9 Oct 2026" (money dates carry the year).
+- The settings card is a `Card` with its `editing` and `footer` props, not `EditableCard` (its fixed Edit button and save hook do not carry the dynamic items). Save closes the form on success.
+- The run card's "the real run is made at month end" line went: Runs on says it. The run's result line shows while the card is on the month it ran.
+
+**For the merge.** No route, path, count or trigger change: 58's `AaFeesTab({ view })` reads the settings route. The tab shows no number (none in `financeCounts.ts`).
+
+**For the sweep.** The AA fees recipes (sub-tabs gone, settings in the rail, the preview behind Preview, the stepper gone), guide lines naming the Fee settings tab or the month stepper, and ATLAS rows on `/admin/billing/aa-fees*`.
+
+**For the owner's review.**
+- URL state: `q`, `show` (Unpaid default), `month`, `page`, with replace.
+- Order: Unpaid oldest month first then by number; Paid newest month first; All unpaid first.
+- Search finds the invoice number and the anaesthetist's name.
+- The month select drives the list and the run card; All months shows the demo month's run.
+- Runs on is the month's last day (OQ-112); Last run is the latest month holding fee invoices.
+- The preview replaces the list while open; anaesthetists by surname; running returns to Unpaid.
+- Settings: summary at rest, Change for the form; `/aa-fees/settings` opens it in view.
+- Earlier runs: five months, then See all in place; a row sets the month filter.
+- Columns: BCTIs, not the mock's "Lists". The tab shows no number.
+
+**Wave 5 joined (2026-11-26, Lane B on `wave/5`).** Took in Lane A's 60 (97853b80) and 61 (ea8a517c), Lane B's 62 (cbc51b32), 63 (521f6026) and 67 (1614c7f0), and Lane C's 64 (cb5df3d7), 65 (cbf0a302) and 66 (6fabc098); then `master` (the Intake requirements and gap analysis, cd74d260; clean).
+- **Conflicts.** `PROGRESS.md` at every lane merge (status rows, decisions and entries all kept, in phase order); `BACKLOG.md` (each lane had deleted the lines it fixed: every deletion kept); `catalogue/eventExamples.tsx` (65's `AccountCreditTrails` with 60's `finances/CorrectionRetry`). No code lost: every line the eight Wave 5 phase commits added is in HEAD or was replaced later in its own lane.
+- **Made at the join.** Registered 60's "Payer loses billing email" trigger on Billing (`demoGuideSync` `NOT_SCRIPTED`, `demoTriggers.test.ts`'s Billing list); Run the next billing run also on Payments, where its events wait (66's note); Billing's screen timing restored (`useScreenTiming('monitor')` in `BillingTab.tsx`); the app switcher's "Demo: Billing Monitor & Xero" now "Demo: Xero"; the credit note page's negative invoice reads its netting as the account page does (`negativeNettingNote`, exported from `AccountCreditTrails.tsx`: a netted one read "offset" before); `copyStateIntoDraft`'s comment names Run payables' one-write commit; US-08.4.7 gains the `images: []` line the board's round trip writes (verify-board).
+- **Review** (three Opus lenses: bugs and correctness, plan adherence, the joins). Confirmed and fixed: the trigger, the Payments route, the timing, the label, the credit note's netting. To the owner (TEST-58-67.md "Decisions to look at"): Phase 60's Booking rows dropped the prepaid-left-off, additional and event invoice counts and the patient-balance warning; Fix the payer edits an authorised List's Procedures without the lifecycle guard (audited); Run payables commits a working copy in one write. To BACKLOG: the Ledger tab's URL updates, the "Out by" pill's two colours, the anaesthetist selects' two name forms. Declined: a Payments tab filtered by anaesthetist (nothing asks for it).
+- **Hooks.** Every removed `data-*` hook is accounted for: moved with its element or named as removed in its phase's entry or `notes.md`, except Phase 60's, listed here: `billing-monitor-filters`, `-pager`, `-empty`, `-count` (now `billing-filters`, `billing-pager`, `billing-empty`, `billing-summary`), `billing-pipeline-<id>` (now `billing-list-<id>`, with `data-problem` on each Booking row in place of the List's `data-problems`), the From, To, hospital and clear filters, the group expand, pager, show-all and open-in-review hooks, `billing-patient-balance` and the `monitor-*` row lines. The capture recipes and ATLAS that read them are the sweep's.
+- **Playwright** re-pointed at the join (stale specs, no app bug): `admin-phase08` (the rail's buttons are the shared compact 36px; Back keeps the search), `lock-phase25`, `out-of-hours-phase32c`, `price-phase24` (a $0 invoice reads Paid: `?show=all`), `routing` (a real invoice id, not `PPINV01`, which exists only after the payment-week staging), `xero-resilience` (the List's problems from its Booking rows).
+- **Checks.** The full gate, green on the joined code: typecheck, both builds, verify-board, Vitest 475 files and 5,230 tests, Playwright 464 passed; lint clean of errors. The first run failed 8 Playwright tests (the stale specs above) and verify-board (US-08.4.7); the second, after the join's trigger, failed 1 Vitest and 4 Playwright tests on the new trigger's counts and the netting line's capital (re-pointed), then `--failed` was green. The running-app walk of LANES' list is the Playwright suite's routing, demo-action, Billing, Xero, Ledger, Payments, Invoices and AA fee specs; the owner walks it from TEST-58-67.md.
+- **BACKLOG lines the split was meant to help.** Billing's 15,600 px page: gone (60 pages it by List). The Ledger's 3 to 4 s open: gone (64). Run payables' freeze: now about 2 s at practice scale, from 12 to 35 s (66; the line stays for what is left).

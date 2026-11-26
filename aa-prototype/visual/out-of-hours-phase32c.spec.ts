@@ -265,11 +265,12 @@ test('6 · Review authorises it and the billing run bills it; the audit shows th
   const confirm = page.getByRole('button', { name: /Authorise/ }).last()
   if (await confirm.isVisible()) await confirm.click().catch(() => undefined)
   await page.waitForTimeout(800)
-  // Filtered to Dr Souter: the whole practice's groups run long past the first screen.
-  await page.goto(`/admin/finances/billing?anaesthetist=${SOUTER}`)
+  // Landed on the List (Billing opens on Problems; `?list=` shows it whole, on its page; build plan Phase 60):
+  // its heading row sits in Dr Souter's group, named for its out-of-hours session.
+  await page.goto(`/admin/finances/billing?anaesthetist=${SOUTER}&list=${id}`)
   await page.waitForLoadState('networkidle')
-  // The restyled monitor (catch-up Phase 37): the List sits in its anaesthetist's group as an authorised, expanded pipeline.
-  await expect(page.locator('tbody[data-shot^="billing-pipeline-"]').filter({ hasText: 'Out-of-hours' })).toHaveCount(1)
+  await expect(page.locator(`tr[data-shot="billing-list-${id}"]`)).toHaveCount(1)
+  await expect(page.locator(`tr[data-shot="billing-list-${id}"]`)).toContainText('Out-of-hours')
   await page.screenshot({ path: 'visual/shots/p32c-16-billing.png', fullPage: true })
   await page.goto('/admin/audit')
   await page.waitForLoadState('networkidle')

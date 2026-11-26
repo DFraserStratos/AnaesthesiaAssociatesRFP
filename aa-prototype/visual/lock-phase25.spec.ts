@@ -43,9 +43,11 @@ test('the locked Booking shows the badge and a read-only office setup from the l
 
 test('the invoice prints from its recipe: the Locked record card, and Regenerate says identical', async ({ page }) => {
   await authoriseS3Am(page)
-  await page.goto('/admin/finances/invoices')
+  // The tab opens on Unpaid, oldest first, across the practice (build plan Phase 62): find the new
+  // invoice by Dr Souter's name and the List's day; the newest of hers is the last.
+  await page.goto('/admin/finances/invoices?q=Souter')
   await page.waitForLoadState('networkidle')
-  await page.getByRole('button', { name: /^View invoice / }).first().click()
+  await page.locator('tbody tr[data-invoice-id]').filter({ hasText: 'Mon 23 Nov · AM' }).last().getByRole('button', { name: /^View invoice / }).click()
   await page.waitForTimeout(300)
   const card = page.locator('[data-shot="invoice-locked-record"]')
   await expect(card).toBeVisible()

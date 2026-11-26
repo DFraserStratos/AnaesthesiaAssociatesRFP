@@ -20,23 +20,20 @@ that need work are repeated here.
 - INVOICED PRICE counts an unreviewed additional invoice ($237.00); Sarah Mitchell after credit and rebill reads Events $7.00 and Invoiced $214.00 (verify first). `domain/billing/bookingTotal.ts`. S
 - A credit still waiting for review already shows the Booking total as $0.00. `domain/billing/bookingTotal.ts`. S
 - The AA Holding card's rows do not sum to its balance (Refunded positive beside negative Credited and Transferred), and a credited row is dated at the credit while a later payment grows it. `apps/admin/components/HoldingAccountPanel.tsx`. S
-- Billing monitor: the $0 no-charge invoice reads "Paid in · Not disbursed" and its List "Disbursed 0 of 2". S
 - The remittance advice lists the transfer PXT0001 under "BCTIs paid (1 BCTI)". S
 - Two events for one party approved together raise two invoices in one run; the rule says the same party's invoice where it can. `store/procedureEventActions.ts`. M
-- AA-2026-0007's row (Chen's event invoice) reads "Booking time not set". `apps/admin/screens/InvoicesScreen.tsx`. S
 - Data inspector totals disagree (54 invoices, 56 ledger pairs, 55 in Xero; "4 sessions" beside "894 lists"), and `entityCounts` has no credit-note count. `store/selectors.ts`, `apps/demo/DemoData.tsx`. S
-- Invoices pager counts invoices only (their credit notes ride along); at full scale it reads a few dozen fewer than the banner's invoice count (backdrop left out). `apps/admin/screens/InvoicesScreen.tsx`. S
 - During a Xero outage the system-actor `xero.queued` entry joins the office's change set: `mutate()` scopes change sets by store, not actor. `store/mutate.ts`. S
 - `paymentDisabledReason` and `openAccRecs` read the whole ledger once per render rather than once per screen. S
 - At reset the Reconciliation card reads "Books square" while the Ledger shows a pair not yet in Xero (AA-2026-S2401). Decided: the card counts pairs pending to Xero as not square ("1 pair not yet in Xero"); also count Xero-only items once polled. Admin Day. S
-- Payment runs list shows when a run was approved, not by whom (the run detail does). `apps/admin/screens/PaymentRunScreen.tsx`. S
 - Web Remittances' paid-on dates differ from Admin Payment runs for seeded weeks 12 and 13. S
 - nib's AA-2026-0005 Locked record reads "Billed to Alan Prentice". S
 - After S3/S4's payment run the saved state is about 4.8 MB and the next save fails with QuotaExceededError ("persistence paused"), so a reload loses later beats; the guide tells the presenter not to reload. `store/persistStorage.ts`, `store/persistDelta.ts`. M
-- Run payables in Xero pays about 1,600 BCTIs in one synchronous step at practice scale and freezes the page for 12 to 35 s; capture recipes give the click 45 s and `admin-phase39a` 90 s. Make it asynchronous or faster. `apps/admin/screens/BillingMonitorScreen.tsx` (`PaymentCyclePanel`, `runInXero`), `domain/billing/payablesRun.ts`. M
+- Run payables in Xero still takes about 2 s at practice scale (1,597 bills; was 12 to 35 s: Phase 66 made the webhook recordings one commit instead of 1,598, measured 19.5 s to 2.0 s with saving). What is left is per-recording work in `store/disbursementDetection.ts`: `legFor` scans the ledger (could use `pairsByAccPayIndex`) and `completeRunsIn` re-checks every line on each recording. Capture recipes give the click 45 s and `admin-phase39a` 90 s; both could come down. S
 - The payment-run toast and schedule print "1617 BCTIs" with no thousands separator. Payment-run message in `store/`. S
-- Billing monitor: `update()` builds the next URL from the last render's params, so two quick filter edits (From then To) at practice scale can drop the first. `apps/admin/screens/BillingMonitorScreen.tsx`. S
-- Ledger table overflows at 1440 wide (Mirrored and "Contact archived in Xero" cut off) and the page scrolls as a whole instead of fitting. `apps/admin/screens/LedgerScreen.tsx`. S
+- Ledger tab: `LedgerTab.tsx` builds the next URL from the last render's params (the bug 60 closed for Billing), so two quick filter edits at practice scale can drop the first. `apps/admin/screens/finances/LedgerTab.tsx`. S
+- The same "Out by $X" pill is red on the Ledger list (`LedgerLists.tsx`) and amber on the anaesthetist's account page (`AnaesthetistAccountPage.tsx`); pick one. S
+- The Finances anaesthetist selects name people two ways: Dr Surname on Invoices, the full name on Billing and Xero. S
 
 ## Prototype: prepayments and patients
 
@@ -95,15 +92,15 @@ that need work are repeated here.
 Found walking the three apps with all 85 loaded; nothing errors, these are screens at size. Counts are from
 the full-scale data; the everyday data shows the same screens with its own (smaller) billing history.
 
-- Ledger takes 3 to 4 s to open and about 1 s per page or scope change, while its Timings row reads about 1 s painted. `apps/admin/screens/LedgerScreen.tsx`. M
+- The Ledger tab's Invoice pairs (11 columns, 1,080 px) and AA Holding account (8 columns, 880 px) tables scroll sideways inside their cards at 1280 and 1440, so Amount to Xero (pairs) and Amount (Holding) start out of view; the page itself no longer scrolls (Phase 64). Narrow the columns or drop one. `apps/admin/screens/finances/LedgerLists.tsx`, `apps/admin/components/HoldingAccountPanel.tsx`. S
 - Patients has no Timings row. S
-- Long admin lists with no paging or search: Draft Lists (150), Review queue (130), Recurring bookings (393), AA fees "Every fee invoice" (830), the Billing monitor's payment-cycle table. M
-- Anaesthetist names sort three ways: by first name (the Conflicts filter, Recurring bookings, AA fees, web Availability and Who's free, mobile Availability), in roster order (the Recurring booking sheet, the Ledger select), by surname (Day view, Billing monitor, the move pickers). One rule, surname, everywhere. S
+- Long admin lists with no paging or search: Draft Lists (150), Review queue (130), Recurring bookings (393). M
+- Anaesthetist names sort three ways: by first name (the Conflicts filter, Recurring bookings, web Availability and Who's free, mobile Availability), in roster order (the Recurring booking sheet, the Ledger select), by surname (Day view, Billing monitor, the move pickers). One rule, surname, everywhere. S
 - Make active (`store/anaesthetistStatusActions.ts`, `makeAnaesthetistActive`) writes the anaesthetist active and their sessions before the offered-back `enableContract`s; a refused enable would leave a partial change (the ids are checked first, so not reachable today). Check every enable before writing. S
 - The mobile sign-out gate for an anaesthetist past their last day (`apps/mobile/MobileApp.tsx`) writes two "Signed out · No longer active" audit rows in dev, where StrictMode runs the effect twice; guard it with a ref. S
 - New Draft List's surgeon select has 166 options sorted by display string ("A. Kingsley" before "Dr A. Dacre"); the pairing and recurring sheets' 166-option selects have no type-ahead. `apps/admin/flows/DraftListSheet.tsx`. S
 - Admin Move booking lists every List that day (about 88) with no search, each with the same advisory line. S
-- Invoices and Audit dates show no year though they span 12 months; the Billing monitor reads "18014 lists" with no thousands separator. S
+- Audit dates show no year though they span 12 months. S
 - Web Dashboard "Who's free · next 5 days" lists every free colleague with no cap. `apps/web/screens/DashboardScreen.tsx`. S
 - Web Availability draws all 85 rows: Dr Souter's own row is not pinned and reads "Dr Melanie Soute…", and the AM/PM header does not stick. `apps/web/screens/AvailabilityGrid.tsx`. S
 - Mobile Availability: 82 colleague cards with no search; a tile's subtitle repeats the hospital ("St George's · St George's · Mr D. Gri…"). `apps/mobile/screens/AvailabilityScreen.tsx`. S
@@ -126,8 +123,8 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 
 ## UI consistency debt
 
-- Admin page frame follow-ups (`apps/admin/components/AdminPage.tsx`, `docs/admin-layout-audit.md`): the Day view keeps its own frame (its rail stays 412 at 1280, so the grid is 580 there); Billing monitor is about 15,600px long (collapse its anaesthetist groups by default). M
-- Older layout bugs seen in the frame work: on one anaesthetist's Ledger at 1280, $11,350.50 spills out of its tile; on Review detail at 1920 the table stops short of its card (the totals row has one cell too many). S
+- Admin page frame follow-ups (`apps/admin/components/AdminPage.tsx`, `docs/admin-layout-audit.md`): the Day view keeps its own frame (its rail stays 412 at 1280, so the grid is 580 there). M
+- Older layout bugs seen in the frame work: on Review detail at 1920 the table stops short of its card (the totals row has one cell too many). S
 - Shared components still to build: `TextAction` 13px and quiet sizes, an `OptionChip` small size, `IconButton` ARIA passthrough and 22 and 48 sizes, a pill-outline `Button`, a `TotalsBlock` (AA fees `FeeInvoiceDetail`). `shared/ui/`. M
 - The one-component guardrail's allow-list still holds 58 files and 90 styled raw buttons; each component above retires entries. `apps/oneComponentPerJob.test.ts`. M
 - Token drift: 65 inline `=== 1 ?` plurals not using `plural`, 13 `'EEE d MMM'` literals, off-scale font sizes (12.5 x307, 11.5 x79, 13.5 x48), no token for the white-alpha on-ink ladder (41 sites). M

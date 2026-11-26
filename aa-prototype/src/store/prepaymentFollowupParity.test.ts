@@ -27,8 +27,17 @@ const captured = capturePhase41()
  * receivables outstanding, and adds Dr Sharma's own position; nothing
  * prepaid moves.
  */
-const JOIN_POSITION = { ...BASELINE.position, received: 29400, receivablesOutstanding: 12630.5 }
-const JOIN_ANAESTHETISTS = { ...BASELINE.anaesthetists, '41267': { owedToThem: 1280, collected: 800, paidOut: 540, imbalance: 0 } }
+/**
+ * Build plan Phase 62 (declared move): the aged unpaid invoice AA-2026-S2402 ($289.80, St George's, raised
+ * Thu 15 Oct; `seed/agedInvoiceBooking.ts`) adds $289.80 to receivables outstanding (12630.5 + 289.8) and
+ * Dr Ngata's (38455) own position, owed and not collected; nothing prepaid moves.
+ */
+const JOIN_POSITION = { ...BASELINE.position, received: 29400, receivablesOutstanding: 12920.3 }
+const JOIN_ANAESTHETISTS = {
+  ...BASELINE.anaesthetists,
+  '41267': { owedToThem: 1280, collected: 800, paidOut: 540, imbalance: 0 },
+  '38455': { owedToThem: 289.8, collected: 0, paidOut: 0, imbalance: 0 },
+}
 
 describe('Phase 41 parity: what must not move', () => {
   it("every seeded Booking's prepayment status", () => {

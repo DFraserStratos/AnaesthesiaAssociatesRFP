@@ -26,7 +26,7 @@ import { runDemoAction } from './demoActions'
 const LANDS: readonly string[] = [
   // Admin · Finances · Billing, Xero and Payments, and the invoice's page (Stage refund after payout)
   'billing-failure', 'arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll',
-  'run-archive-job', 'run-next-billing-run', 'stage-payment-week', 'stage-bank-mismatch', 'stage-refund-after-payout',
+  'run-archive-job', 'run-next-billing-run', 'payer-loses-billing-email', 'stage-payment-week', 'stage-bank-mismatch', 'stage-refund-after-payout',
   // Admin · Finances · Ledger, Audit, Booking detail, Review, Finances · Invoices, Intake
   'inject-unmatched-receipt', 'simulate-sign-in', 'hospital-description-arrives', 'stage-post-op', 'stage-combined-procedure',
   'pdf-list-resend', 'matching-receive-theatre-list', 'matching-send-update', 'matching-raw-row-other-role',

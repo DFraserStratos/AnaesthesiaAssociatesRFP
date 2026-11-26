@@ -92,7 +92,8 @@ test('the office creates, reviews and runs an additional invoice; it links both 
   await expect(page).toHaveURL(/\/admin\/finances\/payments/)
   await expect(page.locator('[data-shot="events-awaiting-run"]')).toHaveCount(0)
 
-  await page.goto('/admin/finances/invoices')
+  // The tab opens on Unpaid, oldest first (build plan Phase 62): today's invoice is on its last page, so the search pins the patient's.
+  await page.goto('/admin/finances/invoices?q=Mitchell')
   const additional = page.locator('[data-shot="invoice-list-kind"][data-kind="additional"]')
   await expect(additional).toHaveCount(1)
   await expect(page.locator('[data-shot="invoice-list-additional-to"]')).toContainText('Additional to AA-2026-')

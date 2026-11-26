@@ -356,6 +356,16 @@ export {
   type BillingRunResult,
   type BillingRunException,
 } from './billingRun'
+// The Billing tab's fixes for a failed Booking (Phase 60; D116): Retry, Fix the payer, Mark resolved.
+export {
+  retryBillingFailure,
+  markBillingExceptionResolved,
+  payerFixTarget,
+  fixBookingPayer,
+  type PayerFixTarget,
+  type PayerFixInput,
+  type BillingRetryValue,
+} from './billingFix'
 export { handoffPair, handoffPairsForBooking, handoffListPairs, type HandoffResult } from './xeroHandoff'
 export { createXeroPair } from './xeroHandoff'
 // The internal ledger (catch-up Phase 36): its reads and the office's actions on unmatched receipts.
@@ -579,6 +589,8 @@ export {
 } from './selectors'
 export * from './locks'
 export { stageBillingFailure, BILLING_FAILURE_ALREADY } from './demoStaging'
+// Build plan Phase 60: "Payer loses billing email", the demo trigger's writes.
+export { clearPayerContact, billListAsSimulatedOffice, stagePayerContactLoss, PAYER_CONTACT_CLEARED_ACTION, type PayerContactHolder, type PayerContactLossTarget } from './demoPayerContact'
 // Catch-up Phase 33: the matching screen (intake rows, the office's decision, its selectors).
 // `stageImportRows` is the one place rows enter; it stays internal to the store.
 export {
@@ -780,3 +792,4 @@ export { patientBalanceRows } from './patientLedger'
 export { patientByNhi } from './patientLookup'
 // Catch-up Phase 43b: support tickets, the help line's and product support's.
 export { raiseSupportTicket, advanceSupportTicket, approveCallOut, ticketsFor, newestOpenTicket, newestAwaitingCallOut, type RaiseSupportTicketInput, type TicketScope } from './supportActions'
+export { anaesthetistLedgerRowsOf, receiptsToPlaceOf, ledgerSentenceOf, ledgerSentenceFor, type AnaesthetistLedgerRowView } from './ledgerListSelectors'

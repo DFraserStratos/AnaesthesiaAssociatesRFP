@@ -499,8 +499,10 @@ export const PERSIST_KEY = 'aa-demo'
  *  `lastDayISO`, `inactiveReason` and `activeAgainISO` (`isActiveOn`); Dr Oscar Reeves, of the 71, left on 20 Nov 2026.
  *  Reseeds on load.
  *  v80 (lane/b): build plan Phase 55, the surgeon group record goes: `masters.surgeonGroups`, its seed and the
- *  `surgeonGroup` counter (DM-08; a group that holds Contracts is a Party of kind surgeon group). Reseeds on load. */
-export const PERSIST_VERSION = 80
+ *  `surgeonGroup` counter (DM-08; a group that holds Contracts is a Party of kind surgeon group). Reseeds on load.
+ *  v81 (lane/b): build plan Phase 62, the aged unpaid invoice: Dr Ngata's Wed 14 Oct AM List, its Booking and
+ *  AA-2026-S2402 (raised Thu 15 Oct, 40 days unpaid on the demo day; `seed/agedInvoiceBooking.ts`). Reseeds on load. */
+export const PERSIST_VERSION = 81
 
 /** The intake slice: seeded empty, the presenter imports or a trigger delivers (catch-up Phase 33). */
 export function emptyIntakeSlice(): IntakeSlice {

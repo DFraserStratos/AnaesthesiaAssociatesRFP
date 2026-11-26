@@ -22,6 +22,7 @@ import { payerOfferFor } from '../domain/billing/procedurePayer'
 import { approvePrepayment } from './prepaymentActions'
 import { approveAllPrepayments } from '../test/approvePrepayments'
 import { nextTestNhi } from './testNhi'
+import { PAYER_NO_ADDRESS_CODE } from '../domain/billing/billingStatus'
 
 const marker = (key: string) => SEED_MARKERS[key]!.entityId
 const invoicesForBooking = (s: AppState, bookingId: string) =>
@@ -139,16 +140,18 @@ describe('the child payer warning (US-11.2.4, D4)', () => {
 })
 
 describe('the billing run on the payer review List', () => {
-  it('bills the family trust by post with its billedTo snapshot, the missing-contact patient, and the child', () => {
+  it('bills the family trust by post with its billedTo snapshot and the child; the missing-contact patient fails (D116)', () => {
     const api = createAppStore()
     expect(authoriseList(api, OFFICE_ACTOR, SEED_LIST_IDS.payerReview).ok).toBe(true)
-    expect(runBillingForList(api, SEED_LIST_IDS.payerReview).ok).toBe(true)
+    const run = runBillingForList(api, SEED_LIST_IDS.payerReview)
+    expect(run.ok).toBe(true)
     const [trust] = invoicesForBooking(api.getState(), TRUST)
     expect(trust!.counterparty).toEqual({ kind: 'payer', id: 'BP0003' })
     expect(trust!.layout).toBe('patient')
     expect(trust!.billedTo).toEqual({ name: 'Whitcombe Family Trust', postalAddress: { line1: 'PO Box 13245', city: 'Christchurch', postcode: '8141' } })
-    const [missing] = invoicesForBooking(api.getState(), CONTACT_MISSING)
-    expect(missing!.billedTo).toEqual({ name: 'Kevin Doherty' })
+    // Kevin Doherty has no billing email or postal address: his Booking fails whole, no invoice (D116).
+    expect(invoicesForBooking(api.getState(), CONTACT_MISSING)).toEqual([])
+    expect(run.ok && run.value.exceptions.find((e) => e.bookingId === CONTACT_MISSING)).toMatchObject({ code: PAYER_NO_ADDRESS_CODE })
     expect(invoicesForBooking(api.getState(), CHILD)[0]!.counterparty).toEqual({ kind: 'patient', id: PAT_REVIEW.childPayer })
   })
 })

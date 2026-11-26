@@ -6,14 +6,14 @@
  * left out, and one pass of each model holds a loose wall-clock bound.
  */
 import { beforeAll, describe, expect, it } from 'vitest'
-import { freshAppState, type AppState } from '../../store/appStore'
-import { bookingsByList, pairByInvoice, pairsByBooking } from '../../store/indexes'
-import { invoiceAddresseeName, isBackdropCreditNote, isBackdropInvoice } from '../../store/selectors'
-import { pendingPrepayments } from '../../store/prepaymentSelectors'
-import { isBackdropList } from '../conflicts'
-import { buildFullScaleDataset, type FullScaleDataset } from '../seed/fullScale'
-import { listBillingStatuses, problemListCount, xeroItemsOnLists, type BillingStatusInput, type ListBillingStatus } from './billingStatus'
-import { invoiceRows, type InvoiceRow, type InvoiceStateInput } from './invoiceState'
+import { freshAppState, type AppState } from './appStore'
+import { bookingsByList, pairByInvoice, pairsByBooking } from './indexes'
+import { invoiceAddresseeName, isBackdropCreditNote, isBackdropInvoice } from './selectors'
+import { pendingPrepayments } from './prepaymentSelectors'
+import { isBackdropList } from '../domain/conflicts'
+import { buildFullScaleDataset, type FullScaleDataset } from '../domain/seed/fullScale'
+import { listBillingStatuses, problemListCount, xeroItemsOnLists, type BillingStatusInput, type ListBillingStatus } from '../domain/billing/billingStatus'
+import { invoiceRows, type InvoiceRow, type InvoiceStateInput } from '../domain/billing/invoiceState'
 
 const TODAY = '2026-11-24'
 let pristine: AppState

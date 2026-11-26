@@ -9,7 +9,7 @@ import { Lock } from 'lucide-react'
 import { neutral } from '../../../../theme/tokens'
 import { ClickableRow, GroupRow, RowOpenButton, TableShell, Td, Th, type TableDensity } from '../../../../shared/table'
 import { DRAFT_LIST, DRAFT_LISTS, UNASSIGNED } from '../../../../shared/scheduleTerms'
-import { Button, Card, DefList, DefRow, Eyebrow, PageHeader, SelectField, TextAction, TextField, visuallyHidden } from '../../../../shared/ui'
+import { Button, Card, DefList, DefRow, Eyebrow, PageHeader, Pill, SelectField, TextAction, TextField, visuallyHidden } from '../../../../shared/ui'
 import { AdminPage, PageBody, PageToolbar } from '../../../admin/components/AdminPage'
 import { Pager } from '../../../admin/components/Pager'
 
@@ -47,6 +47,22 @@ export function TableKitExample() {
         <tbody>
           <GroupRow span={5}>This week</GroupRow>
           <GroupRow span={5} level="sub">Sub-heading (level sub, Phase 47)</GroupRow>
+          <GroupRow
+            span={5}
+            level="sub"
+            tone="error"
+            counts="5 of 6 sent · 5 of 6 in Xero · 0 of 6 paid in"
+            aside={
+              <>
+                <span className="mono">Run Tue 24 Nov 08:00</span>
+                <TextAction size="sm" flush onClick={() => setLast('Show all 6 on the List heading.')}>Show all 6</TextAction>
+              </>
+            }
+          >
+            <span className="mono">Mon 23 Nov · AM</span>
+            <span>Southern Cross</span>
+            <Pill tone="error">Billing failed</Pill>
+          </GroupRow>
           {ROWS.map((r, i) => (
             <ClickableRow key={r.id} selected={i === 0} onOpen={() => setLast(`Row click opened ${r.id}.`)} data-draft-list-row={r.id}>
               <Td>{r.day}</Td>

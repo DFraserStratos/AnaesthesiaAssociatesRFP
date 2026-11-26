@@ -109,7 +109,7 @@ test('the office credits in full and rebills from a copy: rail, both modes, pend
   await expect(doc).toContainText('CREDIT NOTE')
   await expect(doc).toContainText('Total credited')
   await expect(page.locator('[data-shot="negative-invoice-card"]')).toContainText('-P')
-  await expect(page.locator('[data-shot="negative-invoice-card"]')).toContainText('offset against the unpaid payable')
+  await expect(page.locator('[data-shot="negative-invoice-card"]')).toContainText('Offset against the unpaid payable')
   await page.screenshot({ path: 'visual/shots/p39-06-credit-note-document.png', fullPage: true })
 
   // The rebill names what it rebills.
@@ -117,19 +117,22 @@ test('the office credits in full and rebills from a copy: rail, both modes, pend
   await page.locator('[data-shot="invoice-credited-banner"]').getByRole('link', { name: /^AA-2026-/ }).click()
   await expect(page.locator('[data-shot="invoice-rebill-of"]')).toContainText('Rebills AA-2026-')
 
-  // The Invoices table: the credit note row and the credited original.
-  await page.goto('/admin/finances/invoices')
+  // The Invoices table: the credit note row and the credited original. The original reads Paid and
+  // the tab opens on Unpaid, so look under All, pinned to the patient by the search: the credit note
+  // rides directly above the invoice it credits.
+  await page.goto('/admin/finances/invoices?show=all&q=Mitchell')
+  await expect(page.locator('[data-shot="invoices-tabs"]')).toHaveAttribute('data-invoices-view', 'all')
   await expect(page.locator('[data-shot="invoice-list-kind"][data-kind="creditNote"]')).toHaveCount(1)
+  await expect(page.locator('tr[data-credit-note-id] + tr [data-shot="invoice-list-standing"][data-standing="credited"]')).toHaveCount(1)
   await expect(page.locator('[data-shot="invoice-list-credits"]')).toContainText('Credits AA-2026-')
   await expect(page.locator('[data-shot="invoice-list-standing"][data-standing="credited"]')).toHaveCount(1)
   await expect(page.locator('[data-shot="invoice-list-rebills"]')).toHaveCount(1)
   await page.getByTestId('invoice-list-table-shell').screenshot({ path: 'visual/shots/p39-07-invoices-table.png' })
 
-  // The ledger: the two credit terms, in balance.
+  // The ledger stays square after the credit (build plan Phase 64: the credit tiles left the tab for its one sentence and four figures).
   await page.goto('/admin/finances/ledger')
-  await expect(page.locator('[data-shot="ledger-credit-tiles"]')).toContainText('Credits held for payers')
-  await expect(page.locator('[data-shot="ledger-credit-tiles"]')).toContainText('Negative invoices to net')
   await expect(page.locator('[data-shot="ledger-balance"]')).toHaveAttribute('data-in-balance', 'true')
+  await expect(page.locator('[data-shot="ledger-balance"]')).toContainText('The books are square')
   await page.screenshot({ path: 'visual/shots/p39-08-ledger.png', fullPage: true })
 
   // The Xero pair with its credit note.
