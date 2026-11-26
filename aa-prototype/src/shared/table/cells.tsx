@@ -121,7 +121,11 @@ export function Th({
   )
 }
 
-/** A body cell: `mono` for figures and codes, `bold` 600, `clip` an ellipsis, `nowrap` on one line. */
+/**
+ * A body cell: `mono` for figures and codes, `bold` 600, `clip` an ellipsis, `nowrap` on one line. `struck`
+ * (build plan Phase 69) draws the cell's words struck through in slate, a Booking a re-sent List would remove
+ * (`docs/explorations/intake-ideas.html` #reco); without it the cell is today's.
+ */
 export function Td({
   children,
   align,
@@ -129,6 +133,7 @@ export function Td({
   bold,
   clip,
   nowrap,
+  struck,
   colSpan,
   rowSpan,
   style,
@@ -140,6 +145,8 @@ export function Td({
   bold?: boolean
   clip?: boolean
   nowrap?: boolean
+  /** The words struck through in slate (a removal to confirm). */
+  struck?: boolean
   colSpan?: number
   /** A cell that spans a group's rows (Admin Review's patient cell beside its Procedure lines). */
   rowSpan?: number
@@ -160,8 +167,10 @@ export function Td({
         ...(bold === true ? { fontWeight: 600 } : {}),
         ...(nowrap === true ? { whiteSpace: 'nowrap' } : nowrap === false ? { whiteSpace: 'normal' } : {}),
         ...(clip === true ? { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } : {}),
+        ...(struck === true ? { textDecoration: 'line-through', color: neutral.slate } : {}),
         ...style,
       }}
+      {...(struck === true ? { 'data-struck': '' } : {})}
     >
       {children}
     </td>

@@ -18,10 +18,7 @@ import { RowField } from '../../admin/components/RowField'
 import { PdfListReview } from '../../admin/intake/PdfListReview'
 import { ListOriginRow } from '../../admin/components/ListOriginRow'
 import { SEED_ORIGIN_LISTS } from '../../../domain/seed/listOrigins'
-import { DiffTable } from '../../admin/matching/DiffTable'
-import { DecisionCards, type DecisionKind } from '../../admin/matching/DecisionCards'
-import type { IncomingFieldKey } from '../../../domain/types'
-import type { FieldDiff } from '../../../domain/intake'
+import { ListDiffTableExample, SlotCardExample, UpdateHeaderExample } from './admin/intakeUpdateExamples'
 import { DefList, Disclosure, DisclosureButton, OptionRow, Pill, RadioCard, useRovingRadio } from '../../../shared/ui'
 import { useMemo, useState } from 'react'
 import { HospitalsView } from '../../admin/screens/masters/HospitalsView'
@@ -300,9 +297,6 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="RadioCard" source="shared/ui/RadioCard.tsx" usedIn={A} what="One option of a radio group drawn as a card (catch-up Phase 33's review): the radio dot, a title with an optional pill or count beside it, slate lines, and the checked card's own controls under it. Checked is the teal accent (an accent border doubled by a 1px inset ring, the rail tiles' edge) on white; a disabled card sits on the bg fill with its reason. Keyboard from useRovingRadio; Space, Enter or a click selects. Matching's import dialog and decision cards use it." shared="shared/ui/RadioCard.tsx">
           <RadioCardExample />
-        </CatalogueRow>
-        <CatalogueRow name="DecisionCards (Matching)" source="apps/admin/matching/DecisionCards.tsx" usedIn={A} what={`The Matching row panel's decision: RadioCards for Match and apply, Create a Booking, Create a List, Create a ${DRAFT_LIST} and Reject, the suggested one marked with the Contract rail's Suggested pill, a disabled card showing why, and the chosen card opening its own controls.`} shared="shared/ui/RadioCard.tsx" note="Static options here; nothing writes to the demo data.">
-          <DecisionCardsExample />
         </CatalogueRow>
         <CatalogueRow name="OptionChip" source="shared/ui/OptionChip.tsx" usedIn={AWM} what="A quick option chip (catch-up Phase 39): a teal-tint pill that fills or picks one answer in a form, beside the field it serves (the credit's reasons over its reason text); pressed is the teal border and tint with aria-pressed; size md 36 or lg 44 on the phone. Not FilterPills, the solid teal list filter." shared="shared/ui/OptionChip.tsx" note="The availability form's chips are this; the funder sheet's and the credit's choice of invoice use its radio role (aria-checked) inside a radiogroup.">
           <OptionChipExample />
@@ -598,7 +592,7 @@ export function AdminCatalogue() {
             <LoadResultPanelExample />
           </Wide>
         </CatalogueRow>
-        <CatalogueRow name="Table kit (TableShell · Th · Td · GroupRow · ClickableRow)" source="shared/table/" usedIn={AWM} what="The one table kit (UI unification U6, question 19): TableShell (white, line, radius 14, e1; a named focusable region only when it overflows; footer for a foot row such as the pager, kept below the rows; fit for an Admin fit page's list card), Th (scope col) on the Admin Review header, sortable with `sort` (aria-sort and a button, teal underline on the active column; the Billing tab), Td with sunken dividers, GroupRow (th scope colgroup; level sub is the grouped Contract catalogue's smaller, indented sub-heading, Phase 47 from contracts-section.html #catalogue; counts, aside and tone carry a List's heading on the Billing tab (finances-section.html #billing-table version C): the leading cluster, a mono counts sentence and a trailing aside in one wrapping row, with a warning or error stripe), and ClickableRow with one RowOpenButton as the keyboard handle (selected, Phase 48: the picked row of a list whose pick shows beside it, the accent tint and aria-selected, as the Funding tags tab's picked tag). Density comfortable (web), compact (admin) or dense (audit and masters) keeps each table's row height." shared="shared/table/TableShell.tsx" note={`The ${DRAFT_LISTS} table is built this way: Tab to a session, Enter opens the ${DRAFT_LIST} drawer (bug 3). An inner button does only its own action.`}>
+        <CatalogueRow name="Table kit (TableShell · Th · Td · GroupRow · ClickableRow)" source="shared/table/" usedIn={AWM} what="The one table kit (UI unification U6, question 19): TableShell (white, line, radius 14, e1; a named focusable region only when it overflows; footer for a foot row such as the pager, kept below the rows; fit for an Admin fit page's list card), Th (scope col) on the Admin Review header, sortable with `sort` (aria-sort and a button, teal underline on the active column; the Billing tab), Td with sunken dividers (struck, Phase 69: the words struck through in slate, a Booking a re-sent List would remove, from intake-ideas.html #reco), GroupRow (th scope colgroup; level sub is the grouped Contract catalogue's smaller, indented sub-heading, Phase 47 from contracts-section.html #catalogue; counts, aside and tone carry a List's heading on the Billing tab (finances-section.html #billing-table version C): the leading cluster, a mono counts sentence and a trailing aside in one wrapping row, with a warning or error stripe), and ClickableRow with one RowOpenButton as the keyboard handle (selected, Phase 48: the picked row of a list whose pick shows beside it, the accent tint and aria-selected, as the Funding tags tab's picked tag). Density comfortable (web), compact (admin) or dense (audit and masters) keeps each table's row height." shared="shared/table/TableShell.tsx" note={`The ${DRAFT_LISTS} table is built this way: Tab to a session, Enter opens the ${DRAFT_LIST} drawer (bug 3). An inner button does only its own action.`}>
           <TableKitExample />
         </CatalogueRow>
         <CatalogueRow name="ReviewQueue (clickable rows)" source="apps/admin/screens/ReviewQueue.tsx" usedIn={A} what="Submitted Lists to authorise, and since catch-up Phase 38b an Events tab (LineTabLink with its count) of events awaiting review, on the shared table kit (UI unification U6): TableShell (compact), Th, Td and ClickableRow, whose row click opens the List while the Review button stays the keyboard handle." shared="shared/table/ClickableRow.tsx" note="Rows never take focus; the Review button is the one handle per row. Open is stubbed." height={380}>
@@ -626,8 +620,14 @@ export function AdminCatalogue() {
             <AuditViewer />
           </Wide>
         </CatalogueRow>
-        <CatalogueRow name="DiffTable (Matching)" source="apps/admin/matching/DiffTable.tsx" usedIn={A} what="Matching's differences between a Booking and the hospital's row: Field, On the Booking now, From the hospital, on the shared table kit (nested, dense). Every row is a changed field in the warning tone (ClickableRow tone=warning); a field the office may apply carries its tick, named by the field; an NHI is shown but never applied." shared="shared/table/TableShell.tsx">
-          <DiffTableExample />
+        <CatalogueRow name="ListDiffTable (Intake update)" source="apps/admin/screens/intake/workbench/update/ListDiffTable.tsx" usedIn={A} what="An update to a List AA holds, one row per Booking (build plan Phase 69; US-02.1.3, US-02.2.3): a tick per Booking (ticked by default; unticked is left out), Time, Patient, NHI, Procedure, Insurer and approval, and a Change pill (Time, N fields, Added, Removal, Stub to Booking, Same). The current value struck beside the new; a removal struck through (Td struck) with its tick confirming it; a stub row reading NHI arrives, stub becomes a Booking; a row that cannot apply shows why with its tick off." shared="shared/table/TableShell.tsx" note="Static rows here; the bench's footer (the count, Reject and Apply) sits in the table's foot.">
+          <ListDiffTableExample />
+        </CatalogueRow>
+        <CatalogueRow name="MatchBasisStrip and VersionTrack (Intake update)" source="apps/admin/screens/intake/workbench/update/MatchBasisStrip.tsx" usedIn={A} what="Why an arriving List matched the List AA holds (US-02.1.3, DM-12), never a score: Surgeon, Hospital, Day and session, each ticked or crossed with what AA holds, and Patients (how many found, by NHI and by name and date of birth to a stub); under it This List so far, each version with its source mark and day, the waiting one marked now." shared="shared/ui/Card.tsx" note="On the seed's St George's update; VersionTrack is update/VersionTrack.tsx.">
+          <UpdateHeaderExample />
+        </CatalogueRow>
+        <CatalogueRow name="SlotCard (Intake update)" source="apps/admin/screens/intake/workbench/update/SlotCard.tsx" usedIn={A} what="Where an arriving List lands: the anaesthetist, day and session, hospital, surgeon and Bookings, the List's state in words, and Day view to open it there. The update and cancellation benches show it beside their table." shared="shared/ui/Card.tsx">
+          <SlotCardExample />
         </CatalogueRow>
         <CatalogueRow name="PriceRangesTable" source="apps/admin/screens/contracts/PriceRangesTable.tsx" usedIn={A} what="A fixed price's ranges on its Contract page (build plan Phase 45; US-04.2.15): newest first, with From, To worked out (Onwards on the last), Price ex GST, the Change on the range before (First on the oldest) and the Procedures each range priced; In force and Future pills. Ended ranges fold after three behind Show earlier. A range is added as a row (Add a price range, the card in edit with its footer) or corrected in its row (Save, Cancel, Remove, never the last); refusals show on the row. Under it the ContractChangeNotice lists each authorised Procedure that kept its old range price." shared="shared/table/TableShell.tsx" note="On the shared Card (editing and footer), TableShell (dense), Th, Td, Pill, TextAction, AddRowButton and the compact TextField. Writes go to the demo store.">
           <PriceRangesTableExample />
@@ -843,26 +843,6 @@ function RadioCardExample() {
   )
 }
 
-/** DecisionCards: Create a Booking suggested, Create a List disabled, Reject with its reason. */
-function DecisionCardsExample() {
-  const [kind, setKind] = useState<DecisionKind | undefined>('createBooking')
-  return (
-    <div style={{ maxWidth: 440 }}>
-      <DecisionCards
-        options={[
-          { kind: 'createBooking', title: 'Create a Booking on a List', description: 'Add the Booking to a List at this hospital that day.' },
-          { kind: 'createList', title: 'Create a List in a session', description: 'A new List holding this Booking.', disabledReason: 'No anaesthetist is free on Tue 1 Dec AM.' },
-          { kind: 'reject', title: 'Reject', description: 'Nothing is created or changed. The reason is kept with the row.' },
-        ]}
-        value={kind}
-        suggested="createBooking"
-        onChange={setKind}
-        detail={<span style={{ fontSize: 12.5 }}>{kind === 'reject' ? 'The reason field and quick reasons.' : 'The List picker.'}</span>}
-      />
-    </div>
-  )
-}
-
 /** GroupIndex: the Holder grouping's index, one group picked. */
 function GroupIndexExample() {
   const [value, setValue] = useState('PY-STG')
@@ -901,34 +881,6 @@ function OptionRowExample() {
           </OptionRow>
         </div>
       ))}
-    </div>
-  )
-}
-
-/** DiffTable: a time and a note to apply, the wording replaced, an NHI shown but never applied. */
-function DiffTableExample() {
-  const diffs: FieldDiff[] = [
-    { key: 'time', label: 'Time', current: '08:30', incoming: '09:15', effect: 'sets' },
-    { key: 'procedureText', label: 'Procedure', current: 'WLE L breast', incoming: 'WLE MM L breast', effect: 'replaces' },
-    { key: 'note', label: 'Note', current: null, incoming: 'Latex allergy', effect: 'appends' },
-    { key: 'nhi', label: 'NHI', current: 'ZAB1234', incoming: 'ZAB1243', effect: 'flagged' },
-  ]
-  const [unticked, setUnticked] = useState<ReadonlySet<IncomingFieldKey>>(new Set())
-  return (
-    <div style={{ maxWidth: 440 }}>
-      <DiffTable
-        diffs={diffs}
-        tickable={(d) => d.effect !== 'flagged'}
-        unticked={unticked}
-        onToggle={(key) =>
-          setUnticked((cur) => {
-            const next = new Set(cur)
-            if (next.has(key)) next.delete(key)
-            else next.add(key)
-            return next
-          })
-        }
-      />
     </div>
   )
 }

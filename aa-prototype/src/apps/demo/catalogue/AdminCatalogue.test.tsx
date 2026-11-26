@@ -30,7 +30,7 @@ describe('AdminCatalogue', () => {
   it('renders the rows, grouped by component family', () => {
     const { container } = renderPage()
     expect(screen.getByRole('heading', { level: 1, name: 'Admin Web App · UI components' })).toBeInTheDocument()
-    for (const name of ['Button', 'SlotDrawer', 'DayGrid', 'CodePickerSheet', 'SuccessOverlay', 'InvoiceDocument', 'MiniCalendar (RightRail)', 'AuditViewer', 'SidePanel', 'PopoverPanel', 'OverlayHeader', 'SheetActions', 'ConfirmSheet', 'RowField', 'RadioCard', 'DecisionCards (Matching)', 'OptionRow', 'DiffTable (Matching)', 'AdminPage / PageToolbar / PageBody']) {
+    for (const name of ['Button', 'SlotDrawer', 'DayGrid', 'CodePickerSheet', 'SuccessOverlay', 'InvoiceDocument', 'MiniCalendar (RightRail)', 'AuditViewer', 'SidePanel', 'PopoverPanel', 'OverlayHeader', 'SheetActions', 'ConfirmSheet', 'RowField', 'RadioCard', 'OptionRow', 'ListDiffTable (Intake update)', 'SlotCard (Intake update)', 'AdminPage / PageToolbar / PageBody']) {
       expect(container.querySelector(`[data-catalogue-row="${name}"]`)).not.toBeNull()
     }
     const rows = container.querySelectorAll('[data-catalogue-row]')

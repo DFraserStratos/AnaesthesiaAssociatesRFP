@@ -53,7 +53,6 @@ that need work are repeated here.
 - Build the stub guard: a List holding only a stub reads 0 of 0 with Mark list completed enabled, and authorises. S5 tells the guard as built. M
 - Build what S5 promises: a missing-NHI list with attach or merge. The guide already scripts it. M
 - Mount `shared/flows/EditInvoiceDescriptionSheet.tsx`: an Edit action beside the invoice description on the admin Booking, so the office can edit it (D73's admin layer is otherwise reachable only through "Use it"). S
-- The matching panel cannot correct a row's surgeon, and the newer-text cue sits above the Booking detail instead of under the invoice description. `apps/admin/matching/`. M (owner)
 - Review shows both the "Not complete" pill and the "Not marked completed" flag for one fact. Decided: keep the pill, drop the flag. `domain/billing/reviewFlags.ts`. S
 - Review counts disagree: the badge says 10 while the queue says "9 in the queue"; Chen Fri 17 shows "1 flag open" beside two triangles; Fri 24 PM still reads "FLAGS 1" after authorise. S
 - Review's authorised stamp shows the List date, not the authorise date ("FRI 24 JUL, 08:00"). S

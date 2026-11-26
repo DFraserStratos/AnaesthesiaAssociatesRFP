@@ -11,7 +11,7 @@ Paths are relative to `aa-prototype/src/` unless they start with `docs/` or `aa-
 ## Store, audit and persistence
 
 - **Only `mutate.ts` writes domain state.** One commit appends the audit entries and stamps `lastModifiedBy/At`. Why: the audit trail is the product's answer on traceability. The `storeDiscipline` test in `store/mutate.test.ts` fails on `.setState(` anywhere but `mutate.ts` and `clockActions.ts` (clock only).
-- **Audit is append-only; a save is one change set.** A save, create, cancel, move, reassignment or applied hospital row groups its entries under one `CS` id (`mutate`'s `changeSet` option or `withChangeSet`). History screens read change sets above view-only coalescing. `store/mutate.ts`, `domain/changeSets.ts`, `shared/audit/`.
+- **Audit is append-only; a save is one change set.** A save, create, cancel, move, reassignment or applied List (its rows decided together, D118) groups its entries under one `CS` id (`mutate`'s `changeSet` option or `withChangeSet`). History screens read change sets above view-only coalescing. `store/mutate.ts`, `domain/changeSets.ts`, `shared/audit/`.
 - **Every audit action code has a label.** A source-scanning test fails if a new code is emitted unlabelled. `shared/audit/actionLabels.ts`, `fieldLabels.ts`.
 - **IDs are deterministic, never UUIDs.** Seed ids are structured (`L-<reg>-<date>-<session>`, `S-<reg>-<date>-<session>` for sessions); runtime ids come from per-entity counters through `allocateId`; runtime Lists are `LG####`. A List id is never parsed for its date or owner. `store/mutate.ts`.
 - **Denormalised List fields.** A List's `anaesthetistId`, `dateISO` and `session` copy its Slot's and are written only by the actions that set `slotId`; the seed invariant test checks them.

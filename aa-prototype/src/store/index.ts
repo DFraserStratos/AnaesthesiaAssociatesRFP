@@ -671,6 +671,24 @@ export {
   type IntakeViewState,
 } from './intakeSelectors'
 export { decideArrivingLists, type DecideResult, type ListDecision, type ListPlacement, type RowDecision } from './intakeDecide'
+// Build plan Phase 69: an update to a List AA holds, or a hospital's cancellation, decided a whole List at a time.
+export {
+  BOOKING_CANCELLED_MESSAGE,
+  CHOOSE_STUB_MESSAGE,
+  NOT_AN_UPDATE_MESSAGE,
+  NOT_A_CANCELLATION_MESSAGE,
+  NO_TARGET_MESSAGE,
+  REJECT_REASON_REQUIRED_MESSAGE,
+  STUB_NOT_RESOLVED_MESSAGE,
+  UNKNOWN_ARRIVAL_MESSAGE,
+  WAITS_FOR_NHI_MESSAGE,
+  applyArrivingList,
+  applyBlockers,
+  decideCancellation,
+  rejectArrivingList,
+  stubCandidates,
+  type RowChoice,
+} from './intakeApply'
 // Catch-up Phase 33a: stubs on a List (never Bookings) and the office's one resolve path.
 export { resolveStub, type ResolveStubInput, type ResolveStubResult } from './stubActions'
 export { resolvedStubForRow, standingStubCount, standingStubCountsByList, stubForRow, stubsForList, useListStubs, useStubCountsByList } from './stubSelectors'
