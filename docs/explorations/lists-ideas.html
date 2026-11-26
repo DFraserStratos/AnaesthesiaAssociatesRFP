@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lists Section Ideas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Tokens: the app's own (aa-prototype/src/theme/tokens.ts), so the mocks read as the app. */
+:root{
+  --ink:#172320;--slate:#58635F;--mist:#8A9490;--lineStrong:#C9D1CE;--line:#E2E7E5;--sunken:#EDF1EF;--bg:#F6F8F7;--surface:#FFFFFF;--grid:#F1F4F2;
+  --brand:#A91E3E;--brandMuted:#D89AA9;
+  --teal:#0D6E63;--tealTint:#E1F0ED;
+  --ok:#1E8E5A;--okTint:#E3F4EB;--okOn:#157A49;
+  --warn:#A16207;--warnTint:#F9F0DC;--warnOn:#7C4D08;
+  --err:#C2403C;--errTint:#FAE9E7;--errOn:#9C332F;
+  --e1:0 1px 2px rgba(23,35,32,.05),0 2px 6px rgba(23,35,32,.05);
+  --e2:0 2px 4px rgba(23,35,32,.06),0 8px 20px rgba(23,35,32,.09);
+  --e3:0 8px 16px rgba(23,35,32,.10),0 24px 56px rgba(23,35,32,.18);
+  --barH:64px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,p{margin:0}
+a{color:var(--teal)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(13,110,99,.30);border-radius:8px}
+
+/* ---------- the fixed switcher ---------- */
+.bar{position:fixed;top:0;left:0;right:0;height:var(--barH);z-index:20;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:20px;padding:0 20px}
+.bar .ttl{font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.bar .ttl small{display:block;font-weight:500;font-size:12px;color:var(--slate);letter-spacing:0}
+.opts{display:flex;gap:4px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;align-self:stretch;align-items:stretch}
+.opts::-webkit-scrollbar{display:none}
+.opt{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:2.5px solid transparent;color:var(--slate);white-space:nowrap;font-size:13.5px;font-weight:600}
+.opt svg{flex:none;color:var(--mist)}
+.opt b{color:inherit;font-weight:700}
+.opt:hover{color:var(--ink)}
+.opt[aria-selected="true"]{color:var(--ink);border-color:var(--teal)}
+.opt[aria-selected="true"] svg{color:var(--teal)}
+.opt:focus-visible{box-shadow:inset 0 0 0 2px rgba(13,110,99,.35);border-radius:6px}
+.opt .rec{font-size:10.5px;font-weight:700;color:var(--okOn);background:var(--okTint);border-radius:999px;padding:0 7px;line-height:17px}
+.keys{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mist);white-space:nowrap}
+.kbd{font-family:"Spline Sans Mono",monospace;font-size:11px;border:1px solid var(--lineStrong);border-bottom-width:2px;border-radius:5px;padding:0 5px;color:var(--slate);background:#fff}
+.step{all:unset;cursor:pointer;width:30px;height:30px;border:1px solid var(--lineStrong);border-radius:8px;display:grid;place-items:center;color:var(--ink)}
+.step:hover{border-color:var(--teal);color:var(--teal)}
+@media (max-width:1640px){.keys .hint{display:none}}
+
+/* ---------- one view at a time ---------- */
+main{padding-top:var(--barH)}
+.view{display:none;height:calc(100vh - var(--barH));min-height:560px}
+.view.on{display:grid;grid-template-rows:auto minmax(0,1fr)}
+.vhead{display:flex;align-items:flex-end;gap:24px;padding:18px 24px 14px}
+.vhead h2{font-size:24px;line-height:30px;letter-spacing:-.015em}
+.vhead h2 .l{color:var(--mist);font-weight:600;margin-right:10px}
+.vhead p{color:var(--slate);font-size:14.5px;max-width:78ch;margin-top:3px}
+.vhead .grow{flex:1;min-width:0}
+.subs{display:flex;gap:4px;background:var(--sunken);border-radius:10px;padding:3px;flex:none}
+.subs button{all:unset;cursor:pointer;font-size:13px;font-weight:600;color:var(--slate);padding:6px 12px;border-radius:8px;white-space:nowrap}
+.subs button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--e1)}
+.subs button:focus-visible{box-shadow:0 0 0 2px rgba(13,110,99,.35)}
+.vbody{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;padding:0 24px 20px;min-height:0}
+.stage{min-width:0;min-height:0;position:relative}
+.fwrap{position:relative;border-radius:12px;overflow:hidden;box-shadow:var(--e3);border:1px solid var(--line);background:var(--bg)}
+.frame{position:absolute;top:0;left:0;width:1440px;height:860px;transform-origin:0 0;display:none;grid-template-columns:200px minmax(0,1fr);overflow:hidden;font-size:13px;line-height:1.4;background:var(--bg)}
+.frame.on{display:grid}
+.why{overflow-y:auto;min-height:0;display:flex;flex-direction:column;gap:14px;padding-right:2px}
+.why section{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 18px}
+.why h3{font-size:14px;margin-bottom:6px}
+.why ul{margin:0;padding-left:18px;font-size:13.5px}
+.why li{margin-bottom:5px}
+.why li::marker{color:var(--mist)}
+.why p{font-size:13.5px;color:var(--slate)}
+.why .for h3{color:var(--okOn)}
+.why .against h3{color:var(--errOn)}
+.why .size{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.why .size b{font-size:14px}
+.meter{display:inline-flex;gap:3px}
+.meter i{width:14px;height:6px;border-radius:3px;background:var(--line)}
+.meter i.f{background:var(--teal)}
+@media (max-width:1000px){
+  .view.on{height:auto;display:block}
+  .vhead{flex-direction:column;align-items:flex-start}
+  .vbody{grid-template-columns:1fr}
+  .why{overflow:visible}
+}
+@media (max-width:640px){.vhead,.vbody{padding-left:16px;padding-right:16px}.bar{padding:0 12px;gap:12px}.bar .ttl small{display:none}}
+
+/* ---------- text views (start, decide) ---------- */
+.doc{overflow-y:auto;grid-row:1 / -1}
+.doc .in{max-width:1180px;margin:0 auto;padding:36px 24px 64px}
+.doc h1{font-size:40px;line-height:1.08;letter-spacing:-.025em;font-weight:800;max-width:20ch}
+.doc .lede{font-size:17px;color:var(--slate);max-width:66ch;margin-top:14px}
+.doc h2{font-size:22px;letter-spacing:-.01em;margin:40px 0 14px}
+.find{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:900px){.find{grid-template-columns:1fr}}
+.fc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.fc h3{font-size:15px;margin-bottom:6px}
+.fc p{font-size:14px;color:var(--slate)}
+.fc p+p{margin-top:8px}
+.navcmp{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:900px){.navcmp{grid-template-columns:1fr}}
+.mininav{background:var(--ink);color:#B9C4C0;border-radius:12px;padding:14px 10px;width:210px;font-size:13px}
+.mininav h4{color:#fff;font-size:12.5px;font-weight:600;margin:0 8px 10px}
+.mininav div{padding:6px 8px;border-radius:7px;display:flex;justify-content:space-between}
+.mininav .gone{color:#6E7C77;text-decoration:line-through}
+.mininav .new{background:rgba(255,255,255,.08);color:#fff;box-shadow:inset 3px 0 0 var(--brand)}
+.mininav .ct{background:var(--warn);color:#fff;border-radius:999px;font-size:10.5px;font-weight:700;padding:0 7px;line-height:18px}
+.mininav .ct.r{background:var(--err)}
+.jobs{width:100%;border-collapse:collapse;background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--e1);font-size:14px}
+.jobs th,.jobs td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.jobs th{font-size:12.5px;color:var(--slate);font-weight:600;background:var(--bg)}
+.jobs td:first-child{font-weight:600}
+.jobs .tl{display:flex;gap:2px;width:220px}
+.jobs .tl i{flex:1;height:8px;border-radius:3px;background:var(--line)}
+.jobs .tl i.f{background:var(--teal)}
+.jobs .tll{display:flex;justify-content:space-between;width:220px;font-size:11px;color:var(--mist)}
+.opts-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+@media (max-width:1100px){.opts-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ol{all:unset;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.ol:hover{border-color:var(--teal)}
+.ol svg{color:var(--teal)}
+.ol b{font-size:14.5px}
+.ol span{font-size:13px;color:var(--slate)}
+.gate{margin-top:28px;background:var(--warnTint);color:var(--warnOn);border-radius:12px;padding:12px 16px;font-size:14px;max-width:80ch}
+.gate b{color:var(--warnOn)}
+
+/* decide */
+.q{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin-bottom:14px}
+.q h3{font-size:16px}
+.q > p{font-size:14px;color:var(--slate);margin-top:4px;max-width:80ch}
+.ch{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.ch label{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:14px}
+.ch label:hover{border-color:var(--lineStrong)}
+.ch input{accent-color:var(--teal);margin-top:4px}
+.ch label:has(input:checked){border-color:var(--teal);background:var(--tealTint)}
+.ch small{display:block;color:var(--slate);font-size:13px}
+.ch .r{font-size:11px;font-weight:700;color:var(--okOn);background:var(--okTint);border-radius:999px;padding:0 7px;line-height:17px;margin-left:6px;vertical-align:1px}
+.q textarea{width:100%;margin-top:10px;min-height:56px;border:1px solid var(--lineStrong);border-radius:10px;padding:9px 12px;font:inherit;font-size:14px;resize:vertical}
+.q textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,110,99,.2)}
+.copy{display:flex;align-items:center;gap:14px;margin-top:8px}
+.cbtn{all:unset;cursor:pointer;background:var(--teal);color:#fff;font-weight:600;border-radius:10px;padding:10px 18px;font-size:14px}
+.cbtn:focus-visible{box-shadow:0 0 0 3px rgba(13,110,99,.35)}
+.copied{font-size:13.5px;color:var(--okOn)}
+.reco{background:var(--surface);border-radius:16px;box-shadow:var(--e2);padding:22px 26px;border-left:4px solid var(--teal);margin-bottom:22px}
+.reco h3{font-size:19px;margin-bottom:6px}
+.reco p{max-width:84ch}
+.reco p+p{margin-top:8px}
+
+/* ---------- inside the mocks ---------- */
+.side{background:var(--ink);color:#B9C4C0;padding:20px 12px;display:flex;flex-direction:column;gap:2px}
+.side .wm{font-family:Georgia,serif;color:#fff;font-size:14px;margin:0 10px 4px}
+.side .ad{color:var(--brandMuted);font-size:10px;letter-spacing:.08em;margin:0 10px 22px;font-weight:600}
+.side a{padding:8px 10px;border-radius:8px;font-size:13px;display:flex;justify-content:space-between;align-items:center;text-decoration:none;color:inherit}
+.side a.on{background:rgba(255,255,255,.07);color:#fff;box-shadow:inset 3px 0 0 var(--brand)}
+.side .ct{background:var(--warn);color:#fff;border-radius:999px;font-size:10.5px;font-weight:700;padding:0 7px;line-height:18px}
+.side .ct.r{background:var(--err)}
+.mainc{display:flex;flex-direction:column;gap:14px;min-width:0;min-height:0;padding:22px 28px 22px}
+.phd{display:flex;align-items:flex-end;gap:24px}
+.phd .t{flex:1;min-width:0}
+.phd h1{font-size:24px;letter-spacing:-.015em;line-height:30px}
+.phd h1 .pl{margin-left:8px;vertical-align:4px}
+.psub{color:var(--slate);font-size:13.5px;margin-top:2px}
+.back{color:var(--teal);font-weight:600;font-size:13px;margin-bottom:6px;display:flex;gap:6px;align-items:center}
+.ltabs{display:flex;gap:24px;border-bottom:1px solid var(--line);flex:none}
+.ltabs span{font-size:14px;font-weight:600;color:var(--slate);padding:0 0 10px;border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;align-items:center;gap:7px}
+.ltabs span.on{color:var(--ink);border-color:var(--teal)}
+.ltabs .n{font-size:11px;font-weight:700;color:var(--warnOn);background:var(--warnTint);border-radius:999px;padding:0 7px;line-height:18px;font-variant-numeric:tabular-nums}
+.ltabs .n.e{color:var(--errOn);background:var(--errTint)}
+.tool{display:flex;gap:10px;align-items:center;flex:none}
+.tool .end{margin-left:auto;font-size:12.5px;color:var(--slate);white-space:nowrap}
+.srch{height:34px;border:1px solid var(--lineStrong);border-radius:999px;padding:0 14px;display:flex;align-items:center;gap:8px;color:var(--mist);background:#fff;font-size:13px;width:260px}
+.sel{height:34px;border:1px solid var(--lineStrong);border-radius:10px;padding:0 30px 0 12px;display:flex;align-items:center;gap:6px;position:relative;background:#fff;font-weight:500;white-space:nowrap;font-size:13px;color:var(--ink)}
+.sel::after{content:"";position:absolute;right:12px;top:50%;width:6px;height:6px;border-right:1.6px solid var(--slate);border-bottom:1.6px solid var(--slate);transform:translateY(-70%) rotate(45deg)}
+.fpills{display:flex;gap:6px}
+.fp{height:32px;border:1px solid var(--lineStrong);border-radius:999px;padding:0 13px;display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--slate);background:#fff;white-space:nowrap}
+.fp.on{background:var(--tealTint);border-color:var(--teal);color:var(--teal)}
+.fp .c{font-family:"Spline Sans Mono",monospace;font-size:11.5px;font-weight:500;color:var(--mist)}
+.fp.on .c{color:var(--teal)}
+.btn{background:var(--teal);color:#fff;font-weight:600;border-radius:10px;padding:9px 16px;font-size:13.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
+.btn2{background:#fff;color:var(--ink);border:1px solid var(--lineStrong);font-weight:600;border-radius:10px;padding:8px 14px;font-size:13.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.ta{color:var(--teal);font-weight:600;font-size:12.5px;white-space:nowrap}
+.ta + .ta{margin-left:14px}
+.tcard{flex:1;min-height:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--e1);display:flex;flex-direction:column;overflow:hidden}
+.tcard .tb{flex:1;min-height:0;overflow:hidden}
+.tfoot{border-top:1px solid var(--line);padding:10px 16px;font-size:12.5px;color:var(--slate);display:flex;align-items:center;gap:10px}
+.tfoot .pg{margin-left:auto;display:flex;gap:4px}
+.tfoot .pg span{min-width:28px;height:28px;border:1px solid var(--lineStrong);border-radius:8px;display:grid;place-items:center;color:var(--ink);font-size:12.5px;padding:0 6px}
+.tfoot .pg span.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.it{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.it th{font-size:12px;color:var(--slate);font-weight:600;text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--surface);white-space:nowrap}
+.it th.so{color:var(--teal)}
+.it td{padding:9px 12px;border-bottom:1px solid var(--grid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+.it td.r,.it th.r{text-align:right}
+.it .b{font-weight:600}
+.it .s{color:var(--slate)}
+.it .m{font-family:"Spline Sans Mono",monospace;font-size:12px;font-variant-numeric:tabular-nums;color:var(--slate)}
+.it tr.g td{background:var(--bg);font-size:12.5px;font-weight:700;color:var(--ink);padding:7px 12px;border-bottom:1px solid var(--line)}
+.it tr.g td span{color:var(--mist);font-weight:600;margin-left:8px}
+.it tr.g td em{font-style:normal;color:var(--errOn);font-weight:600;margin-left:8px}
+.it tr.hov td{background:#FAFCFB}
+.it tr.dim td{color:var(--mist)}
+.pl{display:inline-block;font-size:11.5px;font-weight:600;border-radius:999px;padding:0 8px;line-height:20px;white-space:nowrap;vertical-align:middle}
+.pl + .pl{margin-left:4px}
+.pl.w{background:var(--warnTint);color:var(--warnOn)}
+.pl.e{background:var(--errTint);color:var(--errOn)}
+.pl.o{background:var(--okTint);color:var(--okOn)}
+.pl.t{background:var(--tealTint);color:var(--teal)}
+.pl.n{background:var(--sunken);color:var(--slate)}
+.pl.d{background:#fff;color:var(--slate);box-shadow:inset 0 0 0 1px var(--lineStrong);border:0}
+.prog{display:inline-flex;align-items:center;gap:8px}
+.prog i{display:inline-block;width:54px;height:6px;border-radius:3px;background:var(--line);position:relative;overflow:hidden}
+.prog i b{position:absolute;left:0;top:0;bottom:0;background:var(--teal);border-radius:3px}
+.body2{flex:1;min-height:0;display:grid;gap:16px}
+.rcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--e1);padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.rcard h4{font-size:13.5px}
+.rcard .dl{display:grid;grid-template-columns:110px 1fr;gap:6px 10px;font-size:12.5px}
+.rcard .dl span{color:var(--slate)}
+.rcard .hi{font-size:12.5px;display:flex;gap:8px}
+.rcard .hi span{color:var(--mist);font-family:"Spline Sans Mono",monospace;font-size:11.5px;width:74px;flex:none}
+.note{background:var(--warnTint);color:var(--warnOn);border-radius:10px;padding:8px 12px;font-size:12.5px;line-height:1.45}
+.daylist{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--e1);overflow:hidden;display:flex;flex-direction:column}
+.daylist .dh{padding:12px 14px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--slate);display:flex;justify-content:space-between}
+.dayrow{padding:10px 14px;border-bottom:1px solid var(--grid);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center}
+.dayrow .d{font-weight:600;font-size:13.5px}
+.dayrow .d small{color:var(--mist);font-weight:500;margin-left:6px;font-size:12px}
+.dayrow .c{font-family:"Spline Sans Mono",monospace;font-size:12px;color:var(--slate)}
+.dayrow .dots{grid-column:1 / -1;display:flex;gap:6px;font-size:11.5px;color:var(--slate)}
+.dayrow .dots i{display:inline-flex;align-items:center;gap:4px;font-style:normal}
+.dayrow .dots i::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--x)}
+.dayrow.on{background:var(--tealTint);box-shadow:inset 3px 0 0 var(--teal)}
+.dayrow.sp{background:var(--bg)}
+.dsec{font-size:12px;font-weight:700;color:var(--slate);padding:12px 16px 6px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.dsec span{color:var(--mist);font-weight:600}
+.ready{padding:12px 16px;font-size:12.5px;color:var(--slate);display:flex;align-items:center;gap:8px;border-top:1px solid var(--line)}
+.ready::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ok)}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="ttl">Lists section<small>Ideas, 27 November 2026</small></div>
+  <nav class="opts" role="tablist" aria-label="Ideas" id="opts"></nav>
+  <div class="keys"><span class="hint"><span class="kbd">←</span> <span class="kbd">→</span> or <span class="kbd">1</span> to <span class="kbd">7</span> to switch</span>
+    <button class="step" id="prev" aria-label="Previous idea">‹</button><button class="step" id="next" aria-label="Next idea">›</button></div>
+</header>
+
+<main id="views">
+
+<!-- ================= START ================= -->
+<section class="view" id="v-start" data-name="Start" role="tabpanel">
+  <div class="doc"><div class="in">
+    <h1>One place for the work Lists still need</h1>
+    <p class="lede">Draft Lists, Conflicts and the Review queue are three nav entries, three badges and three slightly different pages. People, Contracts and Finances each pulled scattered pages into one section with tabs. This page draws five ways of doing the same for Lists, on this morning's seeded data (demo day Tuesday 24 November), so you can compare them a screen at a time.</p>
+    <p class="gate"><b>Nothing here gets built until Intake's rebuild is finished.</b> Intake's uncommitted work touches the same nav and routes this would.</p>
+
+    <h2>What the research found</h2>
+    <div class="find">
+      <div class="fc"><h3>You've asked for it twice</h3><p>The Finances note: "I might make a more unified lists page in the future." The Contracts-to-set note: draft Lists, conflicts, the review queue, and maybe Lists without Contracts. The catalogue records it as an idea, not a decision.</p></div>
+      <div class="fc"><h3>Two kinds of work, one office</h3><p>Draft Lists, conflicts and Contracts to set are done before the day. Authorising is done after it, once the anaesthetist submits. The same office role does all of it, and every row is a List.</p></div>
+      <div class="fc"><h3>The pages are uneven</h3><p>Draft Lists (47) and the Review queue (10) have no search, filters or paging. Conflicts is down to hospital closures only, about six rows: too thin for a nav entry of its own.</p></div>
+      <div class="fc"><h3>Review is half billing</h3><p>The Review queue's Lists tab is the List's last step. Its Events tab approves credits and pre-op events, which aren't Lists at all and sit better beside Payments' "Events awaiting the run".</p></div>
+      <div class="fc"><h3>Intake isn't in the way</h3><p>Intake ends once an arrival is placed or applied. It can make a Draft List, but four of the five ways a Draft List starts have nothing to do with Intake, and conflicts never touch it.</p></div>
+      <div class="fc"><h3>The Day view keeps its part</h3><p>US-01.6.2 wants Draft Lists in the day view as well as on their own page. The band and drawers stay either way; this section is the all-dates view.</p></div>
+    </div>
+
+    <h2>When each job happens</h2>
+    <table class="jobs">
+      <thead><tr><th>Job</th><th>Today's home</th><th>When</th><th>Grain</th></tr></thead>
+      <tbody>
+        <tr><td>Give a Draft List an anaesthetist</td><td>Draft Lists page, Day band</td><td><div class="tl"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></div><div class="tll"><span>weeks ahead</span><span>the day</span><span>after</span></div></td><td>List</td></tr>
+        <tr><td>Clear a hospital closure</td><td>Conflicts page</td><td><div class="tl"><i class="f"></i><i class="f"></i><i></i><i></i><i></i></div></td><td>List × cause</td></tr>
+        <tr><td>Set Contracts on a List</td><td>Day rail, Contracts tab</td><td><div class="tl"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i></div></td><td>List</td></tr>
+        <tr><td>Authorise for billing</td><td>Review queue, Lists tab</td><td><div class="tl"><i></i><i></i><i></i><i class="f"></i><i class="f"></i></div></td><td>List</td></tr>
+        <tr><td>Approve a procedure event</td><td>Review queue, Events tab</td><td><div class="tl"><i></i><i></i><i></i><i class="f"></i><i class="f"></i></div></td><td>Event, not a List</td></tr>
+      </tbody>
+    </table>
+
+    <h2>The nav, today and with a Lists section</h2>
+    <div class="navcmp">
+      <div class="mininav"><h4>Today, 11 entries</h4><div>Day view</div><div>Intake <span class="ct">18</span></div><div>Draft Lists <span class="ct">47</span></div><div>Conflicts <span class="ct">6</span></div><div>Notifications</div><div>Review queue <span class="ct r">10</span></div><div>Finances <span class="ct">3</span></div><div>People</div><div>Contracts</div><div>Master data</div><div>Audit</div></div>
+      <div class="mininav"><h4>With Lists, 9 entries</h4><div>Day view</div><div>Intake <span class="ct">18</span></div><div class="new">Lists <span class="ct">74</span></div><div class="gone">Draft Lists</div><div class="gone">Conflicts</div><div>Notifications</div><div class="gone">Review queue</div><div>Finances <span class="ct">3</span></div><div>People</div><div>Contracts</div><div>Master data</div><div>Audit</div></div>
+      <div class="fc" style="align-self:stretch"><h3>The badge is the hard part</h3><p>Added up, the four queues come to 75. A Draft List at a closed hospital counts once, so 74. A number that size stops meaning "act now".</p><p>Finances counts only what needs doing and hides a tab's count at zero. People and Contracts count what each tab lists. The Decide page asks which rule Lists follows.</p></div>
+    </div>
+
+    <h2>The five ideas</h2>
+    <div class="opts-list" id="olist"></div>
+  </div></div>
+</section>
+
+<!-- ================= A ================= -->
+<section class="view" id="v-a" data-name="A" role="tabpanel">
+  <div class="vhead"><div class="grow"><h2><span class="l">A</span>Four tabs, one per job</h2>
+    <p>The Finances pattern applied to Lists: one nav entry, a routed tab for each kind of work, each with its own table and filters. Review's Events move to Finances.</p></div>
+    <div class="subs" data-for="a"><button aria-pressed="true" data-f="a1">Draft Lists</button><button data-f="a2">Conflicts</button><button data-f="a3">Contracts to set</button><button data-f="a4">To authorise</button></div></div>
+  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="a1"></div><div class="frame" id="a2"></div><div class="frame" id="a3"></div><div class="frame" id="a4"></div></div></div>
+    <aside class="why">
+      <section class="for"><h3>For</h3><ul>
+        <li>Works exactly like People, Contracts and Finances: nothing new to learn.</li>
+        <li>Each tab keeps the columns and actions its job needs (a Draft List's origin, a List's Contract progress, when it was submitted).</li>
+        <li>Each old page becomes one tab, so old links redirect cleanly.</li>
+        <li>A List's review page nests under To authorise, with Back to the queue.</li>
+      </ul></section>
+      <section class="against"><h3>Against</h3><ul>
+        <li>A Draft List at a closed hospital shows on two tabs.</li>
+        <li>Work before the day and sign-off after it sit side by side.</li>
+        <li>The section badge is large unless it counts only part of the work.</li>
+      </ul></section>
+      <section><h3>What moves</h3><ul>
+        <li>Draft Lists, Conflicts and Review queue become one nav entry.</li>
+        <li>Contracts to set gets a tab here and stays on the Day rail.</li>
+        <li>Review's Events tab joins Finances › Payments.</li>
+        <li>Draft Lists and To authorise gain search, filters and paging.</li>
+      </ul></section>
+      <section class="size"><b>Build size</b><span class="meter"><i class="f"></i><i class="f"></i><i></i><i></i><i></i></span></section>
+    </aside></div>
+</section>
+
+<!-- ================= B ================= -->
+<section class="view" id="v-b" data-name="B" role="tabpanel">
+  <div class="vhead"><div class="grow"><h2><span class="l">B</span>One worklist</h2>
+    <p>Every List that needs something, once, soonest first, with what it needs in its own column. Filter pills stand in for tabs. A List with two problems is one row.</p></div></div>
+  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="b1"></div></div></div>
+    <aside class="why">
+      <section class="for"><h3>For</h3><ul>
+        <li>Each List shows once with everything it needs, so the overlap goes away and the badge is an honest count of Lists.</li>
+        <li>Soonest first is the order the office works in.</li>
+        <li>The pills give each job its own view without a tab strip.</li>
+      </ul></section>
+      <section class="against"><h3>Against</h3><ul>
+        <li>The action changes row by row (Assign, Reassign, Set Contracts, Review).</li>
+        <li>Shared columns mean each job loses some detail: no origin, no submitted time, no Contract progress.</li>
+        <li>Lists to authorise are mostly in the past, so they crowd the top of a soonest-first list.</li>
+        <li>Breaks from the three sections' tab pattern.</li>
+      </ul></section>
+      <section><h3>What moves</h3><ul>
+        <li>The same three nav entries become one.</li>
+        <li>A new read model merges four sources into one row per List.</li>
+      </ul></section>
+      <section class="size"><b>Build size</b><span class="meter"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></span></section>
+    </aside></div>
+</section>
+
+<!-- ================= C ================= -->
+<section class="view" id="v-c" data-name="C" role="tabpanel">
+  <div class="vhead"><div class="grow"><h2><span class="l">C</span>Day by day</h2>
+    <p>Pick a day on the left and see what its Lists still need before it's ready. Lists waiting to be authorised sit above the days as their own entry.</p></div></div>
+  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="c1"></div></div></div>
+    <aside class="why">
+      <section class="for"><h3>For</h3><ul>
+        <li>Matches how the office works: tomorrow first, then the rest of the week.</li>
+        <li>Each day says when it's ready ("38 other Lists are ready"), which none of the other ideas can.</li>
+        <li>Hands off to the Day view for that date in one click.</li>
+      </ul></section>
+      <section class="against"><h3>Against</h3><ul>
+        <li>A second day-shaped screen beside the Day view. The Finances Overview was turned down for repeating the Day view.</li>
+        <li>Hard to see every Draft List across three weeks at once.</li>
+        <li>Authorising doesn't belong to a day, so it becomes a special first entry.</li>
+      </ul></section>
+      <section><h3>What moves</h3><ul>
+        <li>The three nav entries become one, with no tabs.</li>
+        <li>A new two-pane layout the app has nowhere else.</li>
+      </ul></section>
+      <section class="size"><b>Build size</b><span class="meter"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></span></section>
+    </aside></div>
+</section>
+
+<!-- ================= D ================= -->
+<section class="view" id="v-d" data-name="D" role="tabpanel">
+  <div class="vhead"><div class="grow"><h2><span class="l">D</span>Every List, with a page each</h2>
+    <p>Lists become records like Contracts and people: a searchable register of every List, the work queues as tabs over it, and a page for each List.</p></div>
+    <div class="subs" data-for="d"><button aria-pressed="true" data-f="d1">All Lists</button><button data-f="d2">A List's page</button></div></div>
+  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="d1"></div><div class="frame" id="d2"></div></div></div>
+    <aside class="why">
+      <section class="for"><h3>For</h3><ul>
+        <li>Every List gets a link that audit, invoices, Intake and notifications can point to.</li>
+        <li>Find any List by anaesthetist, surgeon, hospital or date, past or future.</li>
+        <li>The work queues are just tabs over the same register, so one table pattern serves all of them.</li>
+      </ul></section>
+      <section class="against"><h3>Against</h3><ul>
+        <li>A List page competes with the Day view's drawer: two places to edit a List unless the drawer goes.</li>
+        <li>Most of the register is Lists that need nothing.</li>
+        <li>No requirement asks for a List register; it's new scope.</li>
+      </ul></section>
+      <section><h3>What moves</h3><ul>
+        <li>A List page at its own address, with History in the rail.</li>
+        <li>The Review page becomes the List page's view of a submitted List.</li>
+      </ul></section>
+      <section class="size"><b>Build size</b><span class="meter"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></span></section>
+    </aside></div>
+</section>
+
+<!-- ================= E ================= -->
+<section class="view" id="v-e" data-name="E" role="tabpanel">
+  <div class="vhead"><div class="grow"><h2><span class="l">E</span>Split by when</h2>
+    <p>Lists holds the work before the day: Draft Lists, Conflicts, Contracts to set. Authorising moves into Finances as an Approvals tab, beside billing.</p></div>
+    <div class="subs" data-for="e"><button aria-pressed="true" data-f="e1">Lists</button><button data-f="e2">Finances › Approvals</button></div></div>
+  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="e1"></div><div class="frame" id="e2"></div></div></div>
+    <aside class="why">
+      <section class="for"><h3>For</h3><ul>
+        <li>Each job sits beside its neighbours: scheduling in Lists, approvals beside billing.</li>
+        <li>The Lists badge counts only work before the day.</li>
+        <li>Finances already shows Lists awaiting approval and events awaiting the run.</li>
+      </ul></section>
+      <section class="against"><h3>Against</h3><ul>
+        <li>Reverses the 26 November ruling that Lists are approved in the Review queue (US-13.3.1).</li>
+        <li>Finances' badge counts only problems today; routine approvals would change that.</li>
+        <li>Finances grows to seven tabs.</li>
+      </ul></section>
+      <section><h3>What moves</h3><ul>
+        <li>Three nav entries become one, and the Review queue disappears into Finances.</li>
+        <li>Approvals uses filter pills for Lists and Events, not a second row of tabs.</li>
+      </ul></section>
+      <section class="size"><b>Build size</b><span class="meter"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></span></section>
+    </aside></div>
+</section>
+
+<!-- ================= DECIDE ================= -->
+<section class="view" id="v-decide" data-name="Decide" role="tabpanel">
+  <div class="doc"><div class="in" style="max-width:920px">
+    <h1 style="margin-bottom:22px">Decide</h1>
+    <div class="reco">
+      <h3>My pick: A, with two borrowings</h3>
+      <p>Four tabs, one per job, built on the same shell as Finances. It's the smallest change, it matches the three sections you already have, and each job keeps the columns it needs. Review's Events move to Finances › Payments, so the section is only about Lists.</p>
+      <p>From C, borrow the day group rows, so every tab reads tomorrow first. From B, borrow one rule for the badge: count each List once, and only what needs doing.</p>
+    </div>
+    <div id="qs"></div>
+    <div class="copy"><button class="cbtn" id="copy">Copy my answers</button><span class="copied" id="copied" aria-live="polite"></span></div>
+  </div></div>
+</section>
+
+</main>
+
+<script>
+(() => {
+  /* ===================== shared mock pieces ===================== */
+  const S = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
+  const NAV_LISTS = [['Day view'], ['Intake', 18], ['Lists', 74], ['Notifications'], ['Finances', 3], ['People'], ['Contracts'], ['Master data'], ['Audit']];
+  const side = (on = 'Lists', items = NAV_LISTS) => `<nav class="side"><div class="wm">Anaesthesia | Associates</div><div class="ad">ADMIN</div>${
+    items.map(([n, c, r]) => `<a class="${n === on ? 'on' : ''}">${n}${c ? ` <span class="ct${r ? ' r' : ''}">${c}</span>` : ''}</a>`).join('')}</nav>`;
+  const frame = (id, html, nav) => { document.getElementById(id).innerHTML = (nav ?? side()) + `<div class="mainc">${html}</div>`; };
+  const hdr = (title, sub, actions = '', back = '') => `<div class="phd"><div class="t">${back ? `<div class="back">‹ ${back}</div>` : ''}<h1>${title}</h1>${sub ? `<p class="psub">${sub}</p>` : ''}</div>${actions}</div>`;
+  const tabs = (list, on) => `<div class="ltabs">${list.map(([l, n, e]) => `<span class="${l === on ? 'on' : ''}">${l}${n ? ` <i class="n${e ? ' e' : ''}" style="font-style:normal">${n}</i>` : ''}</span>`).join('')}</div>`;
+  const srch = (p) => `<div class="srch">${S}<span>${p}</span></div>`;
+  const sel = (v) => `<div class="sel">${v}</div>`;
+  const fps = (list) => `<div class="fpills">${list.map(([l, c, on]) => `<span class="fp${on ? ' on' : ''}">${l}${c !== undefined ? ` <span class="c">${c}</span>` : ''}</span>`).join('')}</div>`;
+  const tool = (left, end = '') => `<div class="tool">${left}${end ? `<span class="end">${end}</span>` : ''}</div>`;
+  const table = (cols, rows, foot = '') => `<div class="tcard"><div class="tb"><table class="it"><colgroup>${cols.map((c) => `<col style="width:${c[1]}">`).join('')}</colgroup><thead><tr>${cols.map((c) => `<th class="${c[2] ?? ''}">${c[0]}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>${foot ? `<div class="tfoot">${foot}</div>` : ''}</div>`;
+  const g = (label, count = '', extra = '', span = 9) => `<tr class="g"><td colspan="${span}">${label}${count !== '' ? `<span>${count}</span>` : ''}${extra}</td></tr>`;
+  const pager = (txt, pages = 2) => `<span>${txt}</span><span class="pg"><span>‹</span>${Array.from({ length: pages }, (_, i) => `<span class="${i === 0 ? 'on' : ''}">${i + 1}</span>`).join('')}<span>›</span></span>`;
+  const prog = (a, b) => `<span class="prog"><i><b style="width:${(a / b) * 100}%"></b></i><span class="m" style="color:var(--ink)">${a} of ${b}</span></span>`;
+
+  const LIST_TABS = (on) => tabs([['Draft Lists', 47], ['Conflicts', 6], ['Contracts to set', 12], ['To authorise', 10]], on);
+  const LISTS_SUB = {
+    'Draft Lists': 'Lists with no anaesthetist yet, soonest first. Assign each one for its session.',
+    Conflicts: 'Lists at a hospital that is closed that day. Bookings stay; reassign the List or clear the flag.',
+    'Contracts to set': 'Lists with Procedures still needing a Contract. Past Lists first: they hold up submission.',
+    'To authorise': 'Lists the anaesthetist has submitted, waiting for the office to check and authorise for billing.',
+  };
+
+  /* ===================== data (demo day Tue 24 Nov) ===================== */
+  const DRAFT = [
+    ['Today, Tue 24 Nov', [
+      ['PM', "St George's", 'Mr S. Tan', 0, '1 d', 'Request', "St George's booking office needs an anaesthetist"],
+    ]],
+    ['Wed 25 Nov', [
+      ['AM', 'Southern Cross', 'Mr T. Hale', 4, '8 h', 'Recurring · Dr Beaumont unavailable', ''],
+      ['PM', 'Forte Health', 'Mr V. Nand', 2, '2 d', 'Request', "Fits Dr Souter's free afternoon"],
+      ['PM', 'Christchurch Public', 'Ms H. Cameron', 3, '2 h', 'Returned · Dr Hughes unwell', 'Called in at 06:10'],
+    ]],
+    ['Thu 26 Nov', [
+      ['AM', 'Christchurch Eye Surgery', 'Ms A. Reid', 0, '4 d', 'Request', 'Not preferred with Dr Sharma'],
+      ['PM', "St George's", 'Ms K. Patel', 3, '8 h', 'Recurring · Dr Ngata unavailable', ''],
+      ['PM', 'Southern Cross', 'Mr C. Okafor', 5, '1 h', 'Hospital row', 'Placed from Intake at 07:58'],
+    ]],
+    ['Fri 27 Nov', [
+      ['AM', 'Forte Health', 'Ms G. Lim', 2, '8 h', 'Recurring · Dr Chen unavailable', ''],
+      ['PM', 'Southern Cross', 'Mr P. Doyle', 1, '3 h', 'Moved to the office · Dr Strand', 'Dr Strand away from 26 Nov'],
+    ]],
+    ['Mon 30 Nov', [
+      ['AM', 'Christchurch Eye Surgery', 'Mr J. Whitford', 6, '8 h', 'Recurring · Dr Delaney unavailable', ''],
+      ['PM', "St George's", 'Mr P. Doyle', 2, '1 d', 'Request', ''],
+    ]],
+    ['Fri 4 Dec', [
+      ['PM', 'Forte Health', 'Mr V. Nand', 1, '5 d', 'Request', '', 'closed'],
+    ]],
+  ];
+  const CONFLICTS = [
+    ['Fri 4 Dec', 'Forte Health closed · theatre refit', [
+      ['AM', 'Dr Alistair Chen', 'Forte Health', 'Mr P. Doyle', 3],
+      ['PM', 'Dr Hannah Ropata', 'Forte Health', 'Ms H. Cameron', 2],
+      ['PM', 'Draft List', 'Forte Health', 'Mr V. Nand', 1, 'draft'],
+    ]],
+    ['Thu 10 Dec', 'Christchurch Eye Surgery closed · staff training', [
+      ['AM', 'Dr Priya Sharma', 'Christchurch Eye Surgery', 'Ms A. Reid', 6],
+    ]],
+    ['Mon 28 Dec', 'Public holiday · Boxing Day observed', [
+      ['AM', 'Dr Kate Morrison', 'Southern Cross', 'Mr T. Hale', 4],
+      ['PM', 'Dr Ben Whitaker', "St George's", 'Ms K. Patel', 2],
+    ]],
+  ];
+  const CONTRACTS = [
+    ['Past, holding up submission', [
+      ['Mon 23 Nov', 'Dr Mark Delaney', 'Mr J. Whitford · Christchurch Eye Surgery', 4, 6, 'Cannot submit until set'],
+      ['Fri 20 Nov', 'Dr Emma Fitzgerald', 'Ms G. Lim · Forte Health', 3, 4, 'Cannot submit until set'],
+    ]],
+    ['Coming up', [
+      ['Wed 25 Nov', 'Dr Melanie Souter', 'Mr C. Okafor · Southern Cross', 0, 3, 'Prepaid: letter not sent'],
+      ['Wed 25 Nov', 'Dr James Rutherford', "Mr T. Hale · St George's", 2, 5, ''],
+      ['Thu 26 Nov', 'Dr Tom Ngata', 'Ms K. Patel · Christchurch Public', 1, 2, ''],
+      ['Thu 26 Nov', 'Dr Sarah Beaumont', "Ms H. Cameron · St George's", 3, 4, ''],
+      ['Fri 27 Nov', 'Dr Rawiri Hughes', 'Mr P. Doyle · Southern Cross', 0, 2, ''],
+      ['Mon 30 Nov', 'Dr Kate Morrison', 'Mr V. Nand · Forte Health', 4, 6, ''],
+      ['Tue 1 Dec', 'Dr Ben Whitaker', 'Ms A. Reid · Christchurch Eye Surgery', 5, 6, ''],
+      ['Wed 2 Dec', 'Dr Hannah Ropata', 'Mr S. Tan · Forte Health', 2, 3, ''],
+    ]],
+  ];
+  const AUTH = [
+    ['Dr Kate Morrison', 'Mr T. Hale · Southern Cross', 'Fri 20 Nov', 5, 'Sat 09:12', '3 d', '<span class="pl w">1 review flag</span>'],
+    ['Dr James Rutherford', "Ms K. Patel · St George's", 'Fri 20 Nov', 4, 'Mon 18:40', '1 d', ''],
+    ['Dr Priya Sharma', 'Ms A. Reid · Christchurch Eye Surgery', 'Mon 23 Nov', 8, 'Mon 17:05', '1 d', '<span class="pl w">Changed since submitted</span>'],
+    ['Dr Melanie Souter', 'Mr C. Okafor · Forte Health', 'Mon 23 Nov', 6, 'Mon 19:22', '1 d', '<span class="pl e">1 needs a price</span>'],
+    ['Dr Tom Ngata', 'Christchurch Public acute', 'Mon 23 Nov', 5, 'Today 07:30', '1 h', ''],
+    ['Dr Alistair Chen', 'Mr P. Doyle · Southern Cross', 'Mon 23 Nov', 3, 'Today 07:44', '1 h', ''],
+    ['Dr Hannah Ropata', "Ms H. Cameron · St George's", 'Mon 23 Nov', 2, 'Today 08:02', '1 h', ''],
+    ['Dr Sarah Beaumont', 'Mr V. Nand · Forte Health', 'Mon 23 Nov', 4, 'Today 08:15', '1 h', ''],
+    ['Dr Emma Fitzgerald', 'Ms G. Lim · Forte Health', 'Mon 23 Nov', 3, 'Today 08:20', '1 h', '<span class="pl w">2 Contract changes</span>'],
+    ['Dr Ben Whitaker', 'Mr J. Whitford · Christchurch Eye Surgery', 'Mon 23 Nov', 7, 'Today 08:31', '1 h', ''],
+  ];
+
+  /* ===================== tab bodies (A, reused by D and E) ===================== */
+  const draftBody = () => {
+    let rows = '';
+    DRAFT.forEach(([day, ls]) => {
+      rows += g(day, `${ls.length}`, '', 8);
+      ls.forEach(([s, h, sur, b, w, o, n, f]) => {
+        rows += `<tr><td class="b">${s}</td><td><span class="b">${h}</span> <span class="s">· ${sur}</span>${f ? ' <span class="pl e">Hospital closed</span>' : ''}</td><td class="r m">${b}</td><td class="r m">${w}</td><td class="s">${o}</td><td class="s">${n}</td><td class="r"><span class="ta">Assign</span></td></tr>`;
+      });
+    });
+    return tool(`${srch('Surgeon or hospital')}${sel('From today')}${sel('Any hospital')}${sel('Any origin')}`, '47 Draft Lists') +
+      table([['Session', '80px'], ['Hospital · Surgeon', '30%'], ['Bookings', '86px', 'r'], ['Waiting', '82px', 'r'], ['Why it has no anaesthetist', '27%'], ['Note', '21%'], ['', '80px']], rows, pager('1 to 25 of 47'));
+  };
+  const conflictsBody = () => {
+    let rows = '';
+    CONFLICTS.forEach(([day, why, ls]) => {
+      rows += g(day, `${ls.length}`, ` <span style="color:var(--errOn);margin-left:10px">${why}</span>`, 7);
+      ls.forEach(([s, a, h, sur, b, d]) => {
+        rows += `<tr><td class="b">${s}</td><td>${d ? '<span class="pl d">Draft List</span>' : `<span class="b">${a}</span>`}</td><td class="s">${h}</td><td class="s">${sur}</td><td class="r m">${b}</td><td class="r">${d ? '<span class="ta">Assign</span>' : '<span class="ta">Reassign</span>'}<span class="ta">Clear</span><span class="ta">Open</span></td></tr>`;
+      });
+    });
+    return tool(`${sel('From today')}${sel('Any hospital')}${sel('Any anaesthetist')}<span class="fp">Show cleared</span>`, '6 Lists at a closed hospital') +
+      table([['Session', '90px'], ['Anaesthetist', '22%'], ['Hospital', '22%'], ['Surgeon', '18%'], ['Bookings', '96px', 'r'], ['', '230px']], rows, '<span>Closures come from Master data › Hospital holidays. A Draft List at a closed hospital shows here and on Draft Lists.</span>');
+  };
+  const contractsBody = () => {
+    let rows = '';
+    CONTRACTS.forEach(([grp, ls]) => {
+      rows += g(grp, `${ls.length}`, '', 6);
+      ls.forEach(([d, a, l, x, y, w]) => {
+        rows += `<tr><td class="b">${d}</td><td><span class="b">${a}</span> <span class="s">· ${l}</span></td><td>${prog(x, y)}</td><td class="r m">${y - x}</td><td>${w ? `<span class="pl ${w.startsWith('Cannot') ? 'e' : 'w'}">${w}</span>` : ''}</td><td class="r"><span class="ta">Set Contracts</span></td></tr>`;
+      });
+    });
+    return tool(`${srch('Anaesthetist, surgeon or hospital')}${sel('Any date')}${sel('Any hospital')}`, '12 Lists, 23 Procedures') +
+      table([['List date', '110px'], ['Anaesthetist · List', '40%'], ['Contracts set', '150px'], ['To set', '76px', 'r'], ['', '24%'], ['', '120px']], rows, pager('1 to 10 of 12'));
+  };
+  const authBody = (withRail = true) => {
+    const rows = AUTH.map(([a, l, d, b, sub, w, n]) => `<tr><td><span class="b">${a}</span> <span class="s">· ${l}</span></td><td class="b">${d}</td><td class="r m">${b}</td><td class="m">${sub}</td><td class="r m">${w}</td><td>${n}</td><td class="r"><span class="ta">Review</span></td></tr>`).join('');
+    const t = table([['Anaesthetist · List', '30%'], ['List date', '12%'], ['Bookings', '9%', 'r'], ['Submitted', '13%', 'so'], ['Waiting', '8%', 'r'], ['Needs a look', '19%'], ['', '9%']], rows, pager('10 Lists', 1));
+    if (!withRail) return tool(`${srch('Anaesthetist, surgeon or hospital')}${sel('Any List date')}<span class="fp">Needs a look <span class="c">4</span></span>`, 'Oldest submitted first') + t;
+    return tool(`${srch('Anaesthetist, surgeon or hospital')}${sel('Any List date')}<span class="fp">Needs a look <span class="c">4</span></span>`, 'Oldest submitted first') +
+      `<div class="body2" style="grid-template-columns:minmax(0,1fr) 250px">${t}<div style="display:flex;flex-direction:column;gap:14px">
+        <div class="rcard"><h4>Recently authorised</h4>${[['Today 08:05', 'Dr Delaney · Mr Whitford'], ['Mon, 16:40', 'Dr Chen · Ms Lim'], ['Mon, 15:12', 'Dr Morrison · Mr Hale'], ['Mon, 11:30', 'Dr Ngata · acute']].map(([t2, n]) => `<div class="hi"><span>${t2}</span>${n}</div>`).join('')}<span class="ta">See in Finances › Billing</span></div>
+        <div class="rcard"><h4>Events to approve</h4><p style="font-size:12.5px;color:var(--slate)">Credits and pre-op events now sit in Finances › Payments, beside the events awaiting the run.</p><span class="ta">4 in Payments</span></div></div></div>`;
+  };
+
+  /* ===================== A ===================== */
+  const newBtn = '<span class="btn">New Draft List</span>';
+  frame('a1', hdr('Lists', LISTS_SUB['Draft Lists'], newBtn) + LIST_TABS('Draft Lists') + draftBody());
+  frame('a2', hdr('Lists', LISTS_SUB.Conflicts, newBtn) + LIST_TABS('Conflicts') + conflictsBody());
+  frame('a3', hdr('Lists', LISTS_SUB['Contracts to set'], newBtn) + LIST_TABS('Contracts to set') + contractsBody());
+  frame('a4', hdr('Lists', LISTS_SUB['To authorise'], newBtn) + LIST_TABS('To authorise') + authBody());
+
+  /* ===================== B ===================== */
+  const NEED = { draft: '<span class="pl d">No anaesthetist</span>', closed: '<span class="pl e">Hospital closed</span>', ctr: (n) => `<span class="pl w">${n} Contract${n > 1 ? 's' : ''} to set</span>`, auth: '<span class="pl t">Ready to authorise</span>', flag: (t) => `<span class="pl w">${t}</span>` };
+  const B = [
+    ['Submitted, waiting for the office', '10', [
+      ['Fri 20 Nov', 'AM', 'Dr Kate Morrison', 'Southern Cross · Mr T. Hale', NEED.auth + NEED.flag('1 review flag'), 'Review', '3 d'],
+      ['Fri 20 Nov', 'PM', 'Dr James Rutherford', "St George's · Ms K. Patel", NEED.auth, 'Review', '1 d'],
+      ['Mon 23 Nov', 'AM', 'Dr Priya Sharma', 'Christchurch Eye Surgery · Ms A. Reid', NEED.auth + NEED.flag('Changed since submitted'), 'Review', '1 d'],
+      ['', '', '', '<span class="ta" style="margin-left:0">7 more submitted Lists</span>', '', '', ''],
+    ]],
+    ['Past, not yet submitted', '2', [
+      ['Mon 23 Nov', 'AM', 'Dr Mark Delaney', 'Christchurch Eye Surgery · Mr J. Whitford', NEED.ctr(2), 'Set Contracts', ''],
+      ['Fri 20 Nov', 'PM', 'Dr Emma Fitzgerald', 'Forte Health · Ms G. Lim', NEED.ctr(1), 'Set Contracts', ''],
+    ]],
+    ['Today, Tue 24 Nov', '1', [
+      ['', 'PM', '', "St George's · Mr S. Tan", NEED.draft, 'Assign', '1 d'],
+    ]],
+    ['Wed 25 Nov', '5', [
+      ['', 'AM', '', 'Southern Cross · Mr T. Hale', NEED.draft, 'Assign', '8 h'],
+      ['', 'AM', 'Dr Melanie Souter', 'Southern Cross · Mr C. Okafor', NEED.ctr(3) + NEED.flag('Prepaid'), 'Set Contracts', ''],
+      ['', 'PM', '', 'Forte Health · Mr V. Nand', NEED.draft, 'Assign', '2 d'],
+      ['', 'PM', '', 'Christchurch Public · Ms H. Cameron', NEED.draft, 'Assign', '2 h'],
+      ['', 'PM', 'Dr James Rutherford', "St George's · Mr T. Hale", NEED.ctr(3), 'Set Contracts', ''],
+    ]],
+    ['Thu 26 Nov', '5', [
+      ['', 'AM', '', 'Christchurch Eye Surgery · Ms A. Reid', NEED.draft, 'Assign', '4 d'],
+      ['', 'PM', '', "St George's · Ms K. Patel", NEED.draft, 'Assign', '8 h'],
+      ['', 'PM', '', 'Southern Cross · Mr C. Okafor', NEED.draft, 'Assign', '1 h'],
+    ]],
+    ['Fri 4 Dec', '3', [
+      ['', 'AM', 'Dr Alistair Chen', 'Forte Health · Mr P. Doyle', NEED.closed, 'Reassign', ''],
+      ['', 'PM', '', 'Forte Health · Mr V. Nand', NEED.draft + NEED.closed, 'Assign', '5 d'],
+    ]],
+  ];
+  let brows = '';
+  B.forEach(([grp, n, ls]) => {
+    brows += g(grp, n, '', 7);
+    ls.forEach(([d, s, a, l, need, act, w]) => {
+      brows += `<tr><td class="b">${d || s}${d && s ? ` <span class="s" style="font-weight:500">${s}</span>` : ''}</td><td>${a ? `<span class="b">${a}</span>` : (l.includes('more') ? '' : '<span class="s">No anaesthetist</span>')}</td><td class="s">${l}</td><td>${need}</td><td class="r m">${w}</td><td class="r">${act ? `<span class="ta">${act}</span>` : ''}</td></tr>`;
+    });
+  });
+  frame('b1', hdr('Lists', 'Every List that still needs something, soonest first. Each List shows once, with everything it needs.', newBtn) +
+    tool(fps([['All', 74, true], ['No anaesthetist', 47], ['Hospital closed', 6], ['Contracts to set', 12], ['Ready to authorise', 10]]) + `<span style="margin-left:6px"></span>${srch('Anaesthetist, surgeon or hospital')}`, '') +
+    table([['When', '128px'], ['Anaesthetist', '18%'], ['Hospital · Surgeon', '29%'], ['Needs', '30%'], ['Waiting', '80px', 'r'], ['', '120px']], brows, pager('1 to 25 of 74', 3)));
+
+  /* ===================== C ===================== */
+  const D = [
+    ['Waiting to authorise', '', 10, [['--teal', '10 submitted']], 'sp'],
+    ['Past, not submitted', '', 2, [['--warn', '2 Contracts']], 'sp'],
+    ['Today', 'Tue 24', 1, [['--slate', '1 no anaesthetist']]],
+    ['Tomorrow', 'Wed 25', 6, [['--slate', '3 no anaesthetist'], ['--warn', '3 Contracts']], 'on'],
+    ['Thursday', 'Thu 26', 5, [['--slate', '3 no anaesthetist'], ['--warn', '2 Contracts']]],
+    ['Friday', 'Fri 27', 3, [['--slate', '2 no anaesthetist'], ['--warn', '1 Contract']]],
+    ['Monday', 'Mon 30', 3, [['--slate', '2 no anaesthetist'], ['--warn', '1 Contract']]],
+    ['Tuesday', 'Tue 1 Dec', 1, [['--warn', '1 Contract']]],
+    ['Wednesday', 'Wed 2 Dec', 4, [['--slate', '3 no anaesthetist'], ['--warn', '1 Contract']]],
+    ['Friday', 'Fri 4 Dec', 3, [['--err', '3 hospital closed'], ['--slate', '1 no anaesthetist']]],
+    ['Later', 'to 31 Jan', 39, [['--slate', '33 no anaesthetist'], ['--err', '3 closed']]],
+  ];
+  const dayRail = `<div class="daylist"><div class="dh"><span>Next 10 weeks</span><span class="ta">Pick a date</span></div>${D.map(([a, b, n, dots, cls]) => `<div class="dayrow ${cls ?? ''}"><span class="d">${a}${b ? `<small>${b}</small>` : ''}</span><span class="c">${n}</span><span class="dots">${dots.map(([c, t]) => `<i style="--x:var(${c})">${t}</i>`).join('')}</span></div>`).join('')}</div>`;
+  const csec = (label, n, rows, cols) => `<div class="dsec">${label}<span>${n}</span></div><table class="it"><colgroup>${cols.map((w) => `<col style="width:${w}">`).join('')}</colgroup><tbody>${rows}</tbody></table>`;
+  const cDay = `<div class="tcard"><div class="phd" style="padding:16px 18px 14px;border-bottom:1px solid var(--line)"><div class="t"><h1 style="font-size:20px">Wednesday 25 November</h1><p class="psub">Tomorrow. 6 of its 44 Lists still need something.</p></div><span class="btn2">Open in Day view</span></div><div class="tb">
+    ${csec('No anaesthetist', 3, [
+      ['AM', 'Southern Cross · Mr T. Hale', 4, 'Recurring · Dr Beaumont unavailable', '8 h'],
+      ['PM', 'Forte Health · Mr V. Nand', 2, 'Request', '2 d'],
+      ['PM', 'Christchurch Public · Ms H. Cameron', 3, 'Returned · Dr Hughes unwell', '2 h'],
+    ].map(([s, l, b, o, w]) => `<tr><td class="b">${s}</td><td class="b">${l}</td><td class="r m">${b} Bookings</td><td class="s">${o}</td><td class="r m">${w}</td><td class="r"><span class="ta">Assign</span></td></tr>`).join(''), ['70px', '34%', '110px', '30%', '70px', '90px'])}
+    ${csec('Contracts to set', 3, [
+      ['AM', 'Dr Melanie Souter', 'Southern Cross · Mr C. Okafor', 0, 3, '<span class="pl w">Prepaid: letter not sent</span>'],
+      ['PM', 'Dr James Rutherford', "St George's · Mr T. Hale", 2, 5, ''],
+      ['PM', 'Dr Rawiri Hughes', 'Forte Health · Ms G. Lim', 1, 2, ''],
+    ].map(([s, a, l, x, y, p]) => `<tr><td class="b">${s}</td><td><span class="b">${a}</span> <span class="s">· ${l}</span></td><td>${prog(x, y)}</td><td>${p}</td><td class="r"><span class="ta">Set Contracts</span></td></tr>`).join(''), ['70px', '44%', '150px', '22%', '120px'])}
+    ${csec('Hospital closed', 0, '<tr><td class="s" style="padding:10px 16px">None on this day.</td></tr>', ['100%'])}
+  </div><div class="ready">38 other Lists on Wednesday are ready: assigned, Contracts set, hospitals open.</div></div>`;
+  frame('c1', hdr('Lists', 'What each day still needs before it\'s ready, soonest first. Submitted Lists wait at the top.', newBtn) +
+    `<div class="body2" style="grid-template-columns:300px minmax(0,1fr)">${dayRail}${cDay}</div>`);
+
+  /* ===================== D ===================== */
+  const ST = { d: '<span class="pl d">Draft</span>', a: '<span class="pl t">Active</span>', s: '<span class="pl w">Submitted</span>', au: '<span class="pl o">Authorised</span>' };
+  const REG = [
+    ['Wed 25 Nov', '44', [
+      ['AM', 'Dr James Rutherford', 'Southern Cross · Mr T. Hale', 5, ST.a, NEED.ctr(3)],
+      ['AM', '', 'Southern Cross · Mr T. Hale', 4, ST.d, NEED.draft],
+      ['AM', 'Dr Melanie Souter', 'Southern Cross · Mr C. Okafor', 3, ST.a, NEED.ctr(3)],
+      ['AM', 'Dr Kate Morrison', "St George's · Ms K. Patel", 6, ST.a, ''],
+      ['AM', 'Dr Tom Ngata', 'Christchurch Public · acute', 4, ST.a, ''],
+      ['AM', 'Dr Priya Sharma', 'Christchurch Eye Surgery · Ms A. Reid', 9, ST.a, ''],
+      ['PM', 'Dr Sarah Beaumont', 'Forte Health · Ms G. Lim', 3, ST.a, ''],
+      ['PM', '', 'Forte Health · Mr V. Nand', 2, ST.d, NEED.draft],
+      ['PM', '', 'Christchurch Public · Ms H. Cameron', 3, ST.d, NEED.draft],
+      ['PM', 'Dr Alistair Chen', 'Southern Cross · Mr P. Doyle', 2, ST.a, ''],
+    ]],
+    ['Tue 24 Nov, today', '41', [
+      ['AM', 'Dr Mark Delaney', 'Christchurch Eye Surgery · Mr J. Whitford', 7, ST.a, ''],
+      ['AM', 'Dr Emma Fitzgerald', 'Forte Health · Mr V. Nand', 4, ST.a, ''],
+      ['PM', '', "St George's · Mr S. Tan", 0, ST.d, NEED.draft],
+    ]],
+    ['Mon 23 Nov', '43', [
+      ['AM', 'Dr Priya Sharma', 'Christchurch Eye Surgery · Ms A. Reid', 8, ST.s, NEED.auth],
+      ['AM', 'Dr Mark Delaney', 'Christchurch Eye Surgery · Mr J. Whitford', 6, ST.a, NEED.ctr(2)],
+      ['PM', 'Dr Ben Whitaker', 'Southern Cross · Mr T. Hale', 5, ST.au, ''],
+    ]],
+  ];
+  let drows = '';
+  REG.forEach(([day, n, ls]) => {
+    drows += g(day, `${n} Lists`, '', 7);
+    ls.forEach(([s, a, l, b, st, need]) => {
+      drows += `<tr><td class="b">${s}</td><td>${a ? `<span class="b">${a}</span>` : '<span class="s">No anaesthetist</span>'}</td><td class="s">${l}</td><td class="r m">${b}</td><td>${st}</td><td>${need}</td></tr>`;
+    });
+  });
+  const D_TABS = (on) => tabs([['All Lists'], ['Draft Lists', 47], ['Conflicts', 6], ['Contracts to set', 12], ['To authorise', 10]], on);
+  frame('d1', hdr('Lists', 'Every List, past and future. The other tabs are the ones that still need something.', newBtn) + D_TABS('All Lists') +
+    tool(`${srch('Anaesthetist, surgeon, hospital or patient')}${sel('This week')}${sel('Any state')}${sel('Any hospital')}`, '212 Lists this week') +
+    table([['Session', '90px'], ['Anaesthetist', '20%'], ['Hospital · Surgeon', '32%'], ['Bookings', '90px', 'r'], ['State', '110px'], ['Needs', '22%']], drows, pager('1 to 50 of 212', 5)));
+
+  const bk = [
+    ['08:00', 'Margaret Ellis', 'R total knee replacement', 'Southern Cross Health Society', 'ok'],
+    ['09:45', 'David Kerr', 'L knee arthroscopy', 'Choose a Contract', 'set'],
+    ['10:30', 'Aroha Tipene', 'R shoulder arthroscopy', 'ACC', 'ok'],
+    ['11:30', 'Peter Lund', 'L total hip replacement', 'Choose a Contract', 'set'],
+    ['13:00', 'Grace Wu', 'R carpal tunnel release', 'Choose a Contract', 'set'],
+  ];
+  const bkRows = bk.map(([t, p, pr, c, s]) => `<tr><td class="m" style="color:var(--ink)">${t}</td><td class="b">${p}</td><td>${pr}</td><td>${s === 'set' ? `<span class="ta">${c}</span>` : c}</td><td>${s === 'set' ? '<span class="pl w">Contract to set</span>' : '<span class="pl n">Not started</span>'}</td></tr>`).join('');
+  frame('d2', hdr('Southern Cross, Mr T. Hale <span class="pl t" style="font-size:12px">Active</span>', 'Wednesday 25 November, AM · Dr James Rutherford · 5 Bookings', '<span class="btn2">Open in Day view</span><span class="btn2">Reassign</span><span class="btn">Set Contracts</span>', 'Contracts to set') +
+    `<div class="body2" style="grid-template-columns:minmax(0,1fr) 320px">
+      <div style="display:flex;flex-direction:column;gap:14px;min-height:0">
+        <div class="note"><b>3 of 5 Procedures still need a Contract.</b> Dr Rutherford can't submit this List until they're set.</div>
+        ${table([['Time', '80px'], ['Patient', '22%'], ['Procedure', '30%'], ['Contract', '26%'], ['', '150px']], bkRows)}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="rcard"><h4>This List</h4><div class="dl"><span>Anaesthetist</span><b>Dr James Rutherford</b><span>Session</span>Wed 25 Nov, AM<span>Hospital</span>Southern Cross<span>Surgeon</span>Mr T. Hale<span>Came from</span>Recurring booking, every Wednesday<span>Address</span><span class="m">/admin/lists/L-25-0412</span></div></div>
+        <div class="rcard"><h4>Shared notes</h4><p style="font-size:12.5px">Theatre 3. Mr Hale's rooms will send the final order on Tuesday.</p></div>
+        <div class="rcard"><h4>History</h4>${[['Mon 09:10', 'Booking added: Grace Wu'], ['Fri 14:22', 'Contract set: Margaret Ellis'], ['Thu 08:00', 'List made from the recurring booking']].map(([t, n]) => `<div class="hi"><span>${t}</span>${n}</div>`).join('')}<span class="ta">See all</span></div>
+      </div></div>`);
+
+  /* ===================== E ===================== */
+  const NAV_E = [['Day view'], ['Intake', 18], ['Lists', 64], ['Notifications'], ['Finances', 17], ['People'], ['Contracts'], ['Master data'], ['Audit']];
+  frame('e1', hdr('Lists', LISTS_SUB.Conflicts, newBtn) + tabs([['Draft Lists', 47], ['Conflicts', 6], ['Contracts to set', 12]], 'Conflicts') + conflictsBody(), side('Lists', NAV_E));
+  const evRows = [
+    ['<span class="pl n">Credit</span>', 'Dr Kate Morrison', 'Ruth Malone · R phaco + IOL', 'Fri 20 Nov', 'nib', '−$412.00'],
+    ['<span class="pl n">Pre-op</span>', 'Dr Priya Sharma', 'John Petrie · consult', 'Thu 19 Nov', 'Patient', '$180.00'],
+  ];
+  const approvals = AUTH.slice(0, 7).map(([a, l, d, b, sub, w, n]) => `<tr><td><span class="pl t">List</span></td><td><span class="b">${a}</span> <span class="s">· ${l}</span></td><td class="b">${d}</td><td class="r m">${b} Bookings</td><td class="r m">${w}</td><td>${n}</td><td class="r"><span class="ta">Review</span></td></tr>`).join('') +
+    evRows.map(([k, a, p, d, to, amt]) => `<tr><td>${k}</td><td><span class="b">${a}</span> <span class="s">· ${p}</span></td><td class="b">${d}</td><td class="r m">${amt}</td><td class="r m">2 d</td><td class="s">Billed to ${to}</td><td class="r"><span class="ta">Review</span></td></tr>`).join('');
+  frame('e2', hdr('Finances', 'Submitted Lists and procedure events waiting for the office to approve them for billing.') +
+    tabs([['Billing', 3], ['Approvals', 14], ['Invoices'], ['Payments'], ['Ledger', 2], ['Xero'], ['AA fees']], 'Approvals') +
+    tool(fps([['All', 14, true], ['Lists', 10], ['Events', 4]]) + `<span style="margin-left:6px"></span>${srch('Anaesthetist, patient or payer')}`, 'Oldest first') +
+    table([['Kind', '90px'], ['Anaesthetist · List or patient', '36%'], ['Date', '104px'], ['Size', '120px', 'r'], ['Waiting', '80px', 'r'], ['Needs a look', '19%'], ['', '80px']], approvals, pager('1 to 9 of 14', 2)), side('Finances', NAV_E));
+
+  /* ===================== the switcher ===================== */
+  const GLYPH = {
+    start: '<rect x="3" y="4" width="22" height="3" rx="1.5" fill="currentColor"/><rect x="3" y="10" width="16" height="2" rx="1" fill="currentColor" opacity=".5"/><rect x="3" y="15" width="19" height="2" rx="1" fill="currentColor" opacity=".5"/>',
+    a: '<rect x="2" y="3" width="5" height="2" rx="1" fill="currentColor"/><rect x="9" y="3" width="5" height="2" rx="1" fill="currentColor" opacity=".45"/><rect x="16" y="3" width="5" height="2" rx="1" fill="currentColor" opacity=".45"/><rect x="2" y="8" width="24" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>',
+    b: '<rect x="2" y="2" width="24" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="5" y="6" width="9" height="2" rx="1" fill="currentColor" opacity=".45"/><rect x="17" y="5.5" width="6" height="3" rx="1.5" fill="currentColor"/><rect x="5" y="12" width="9" height="2" rx="1" fill="currentColor" opacity=".45"/><rect x="17" y="11.5" width="6" height="3" rx="1.5" fill="currentColor"/>',
+    c: '<rect x="2" y="2" width="8" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="4" y="6" width="4" height="2" rx="1" fill="currentColor"/><rect x="12" y="2" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>',
+    d: '<rect x="2" y="2" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5 7h8M5 11h8M5 15h8" stroke="currentColor" stroke-width="1.5" opacity=".45"/><rect x="18" y="4" width="8" height="12" rx="1.5" fill="currentColor"/>',
+    e: '<rect x="2" y="3" width="11" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="15" y="3" width="11" height="14" rx="2" fill="currentColor" opacity=".9"/>',
+    decide: '<path d="M4 10.5l5 5L24 4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
+  };
+  const VIEWS = [
+    ['start', 'Start', ''], ['a', 'Four tabs', 'A', true], ['b', 'One worklist', 'B'], ['c', 'Day by day', 'C'], ['d', 'Every List', 'D'], ['e', 'Split by when', 'E'], ['decide', 'Decide', ''],
+  ];
+  const svg = (k, w = 28, h = 20) => `<svg width="${w}" height="${h}" viewBox="0 0 28 20" aria-hidden="true">${GLYPH[k]}</svg>`;
+  const opts = document.getElementById('opts');
+  opts.innerHTML = VIEWS.map(([k, n, l, rec]) => `<button class="opt" role="tab" id="t-${k}" aria-controls="v-${k}" data-k="${k}">${svg(k)}${l ? `<b>${l}</b>` : ''}${n}${rec ? '<span class="rec">My pick</span>' : ''}</button>`).join('');
+  const PITCH = { a: 'A tab per job, like Finances.', b: 'Every List that needs something, once.', c: 'Pick a day, clear what it needs.', d: 'A register of every List, and a page each.', e: 'Scheduling in Lists, approvals in Finances.' };
+  document.getElementById('olist').innerHTML = VIEWS.filter(([, , l]) => l).map(([k, n, l]) => `<button class="ol" data-go="${k}">${svg(k, 42, 30)}<b>${l} · ${n}</b><span>${PITCH[k]}</span></button>`).join('');
+
+  const keys = VIEWS.map(([k]) => k);
+  let cur = 'start';
+  const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* storage off */ } } };
+
+  const fit = () => {
+    const v = document.getElementById(`v-${cur}`); if (!v) return;
+    v.querySelectorAll('.stage').forEach((st) => {
+      const w = st.querySelector('.fwrap'); if (!w) return;
+      const narrow = window.innerWidth <= 1000;
+      const s = narrow ? st.clientWidth / 1440 : Math.min(st.clientWidth / 1440, st.clientHeight / 860);
+      w.style.width = `${1440 * s}px`; w.style.height = `${860 * s}px`;
+      w.querySelectorAll('.frame').forEach((f) => { f.style.transform = `scale(${s})`; });
+    });
+  };
+  const show = (k, push = true) => {
+    if (!keys.includes(k)) k = 'start';
+    cur = k;
+    document.querySelectorAll('.view').forEach((v) => v.classList.toggle('on', v.id === `v-${k}`));
+    document.querySelectorAll('.opt').forEach((b) => { const on = b.dataset.k === k; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; if (on) b.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
+    if (push) history.replaceState(null, '', `#${k}`);
+    const doc = document.querySelector(`#v-${k} .doc`); if (doc) doc.scrollTop = 0;
+    requestAnimationFrame(fit);
+  };
+  opts.addEventListener('click', (e) => { const b = e.target.closest('.opt'); if (b) show(b.dataset.k); });
+  document.getElementById('olist').addEventListener('click', (e) => { const b = e.target.closest('[data-go]'); if (b) show(b.dataset.go); });
+  const step = (d) => show(keys[(keys.indexOf(cur) + d + keys.length) % keys.length]);
+  document.getElementById('prev').addEventListener('click', () => step(-1));
+  document.getElementById('next').addEventListener('click', () => step(1));
+  document.querySelectorAll('.subs').forEach((sw) => sw.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    sw.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x === b));
+    const stage = sw.closest('.view').querySelector('.fwrap');
+    stage.querySelectorAll('.frame').forEach((f) => f.classList.toggle('on', f.id === b.dataset.f));
+  }));
+  document.addEventListener('keydown', (e) => {
+    if (e.target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'ArrowRight') { step(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { step(-1); e.preventDefault(); }
+    else if (/^[1-7]$/.test(e.key)) show(keys[Number(e.key) - 1]);
+    else if (e.key === '[' || e.key === ']') {
+      const sw = document.querySelector(`#v-${cur} .subs`); if (!sw) return;
+      const bs = [...sw.querySelectorAll('button')]; const i = bs.findIndex((b) => b.getAttribute('aria-pressed') === 'true');
+      bs[(i + (e.key === ']' ? 1 : -1) + bs.length) % bs.length].click();
+    }
+  });
+  window.addEventListener('resize', fit);
+  window.addEventListener('hashchange', () => show(location.hash.slice(1), false));
+
+  /* ===================== decide ===================== */
+  const QS = [
+    ['shape', 'Which shape?', 'The section as a whole. Pick one, and say in the note what to borrow from the others.', [
+      ['A', 'A · Four tabs, one per job', 'Like Finances. Each job keeps its own table.', true],
+      ['B', 'B · One worklist', 'Each List once, with every need in a column.'],
+      ['C', 'C · Day by day', 'Pick a day, clear what it needs.'],
+      ['D', 'D · Every List, with a page each', 'A register and a List page. The biggest change.'],
+      ['E', 'E · Split by when', 'Approvals move into Finances.'],
+    ]],
+    ['review', 'Where does authorising go?', 'The Review queue holds submitted Lists (a List job) and procedure events (a billing job).', [
+      ['tab', 'Lists join the section as To authorise; Events move to Finances › Payments', 'The section stays about Lists, and the 26 Nov ruling (Lists approved in one place) holds.', true],
+      ['stay', 'Leave the Review queue as it is', 'Lists holds only Draft Lists, Conflicts and Contracts to set.'],
+      ['fin', 'Both move into Finances as Approvals', 'Idea E. Reverses the 26 Nov ruling.'],
+    ]],
+    ['contracts', 'Where do Lists waiting for Contracts live?', 'Today they sit only on the Day rail\'s Contracts tab (US-04.3.12).', [
+      ['both', 'A tab in Lists, and keep the Day rail tab', 'All dates in the section, the day\'s own on the Day view, like Draft Lists.', true],
+      ['lists', 'Lists only; the Day rail goes back to To-do and Notifications', ''],
+      ['day', 'Day rail only', 'Lists holds three tabs, not four.'],
+    ]],
+    ['counts', 'What do the numbers count?', 'Finances counts what needs doing and hides zeros. People and Contracts count what each tab lists.', [
+      ['needs', 'What needs doing, a List counted once in the nav badge, zeros hidden', 'Finances\' rule. A Draft List at a closed hospital is 1 in the badge, and shows on both tabs.', true],
+      ['lists', 'What each tab lists, shown at zero', 'People\'s and Contracts\' rule.'],
+      ['urgent', 'Nav badge counts only the next 7 days and anything overdue', 'A smaller badge that means "act now". The tabs still count everything.'],
+    ]],
+    ['word', 'What is a "conflict"?', 'It means a hospital closure (US-01.5.2), but assignment also calls a not-preferred pairing a conflict (US-01.3.5).', [
+      ['keep', 'Keep "Conflicts" for closures; call pairings "Not preferred" everywhere', '', true],
+      ['rename', 'Rename the tab "Hospital closed"', 'Says exactly what the rows are.'],
+    ]],
+    ['shell', 'Build a shared section shell first?', 'People, Contracts and Finances each wrote their own tab strip, page wrapper and URL-state hook. A fourth section would be a fourth copy.', [
+      ['yes', 'Yes: one SectionTabs, SectionPage and list-params hook, the three sections moved onto it, then Lists', 'A small first phase that makes Lists faster and the four sections identical.', true],
+      ['no', 'No: Lists follows the Finances files by copying', ''],
+    ]],
+  ];
+  const saved = (() => { try { return JSON.parse(store.get('lists-ideas-answers') ?? '{}'); } catch { return {}; } })();
+  document.getElementById('qs').innerHTML = QS.map(([id, h, p, choices], i) => `<div class="q"><h3>${i + 1}. ${h}</h3><p>${p}</p><div class="ch">${
+    choices.map(([v, l, s, r]) => `<label><input type="radio" name="${id}" value="${v}" ${saved[id] === v ? 'checked' : ''}><span>${l}${r ? '<span class="r">My pick</span>' : ''}${s ? `<small>${s}</small>` : ''}</span></label>`).join('')
+  }</div><textarea name="${id}-note" placeholder="Anything to add">${saved[`${id}-note`] ?? ''}</textarea></div>`).join('');
+  const qs = document.getElementById('qs');
+  const save = () => {
+    const out = {};
+    qs.querySelectorAll('input:checked').forEach((i) => { out[i.name] = i.value; });
+    qs.querySelectorAll('textarea').forEach((t) => { if (t.value.trim()) out[t.name] = t.value; });
+    store.set('lists-ideas-answers', JSON.stringify(out));
+  };
+  qs.addEventListener('change', save); qs.addEventListener('input', save);
+  document.getElementById('copy').addEventListener('click', async () => {
+    const lines = ['# Lists section: my answers', ''];
+    QS.forEach(([id, h, , choices], i) => {
+      const v = qs.querySelector(`input[name="${id}"]:checked`)?.value;
+      const c = choices.find(([x]) => x === v);
+      const note = qs.querySelector(`textarea[name="${id}-note"]`).value.trim();
+      lines.push(`${i + 1}. **${h}** ${c ? c[1] : '(not answered)'}`);
+      if (note) lines.push(`   Note: ${note}`);
+    });
+    const text = lines.join('\n');
+    const msg = document.getElementById('copied');
+    try { await navigator.clipboard.writeText(text); msg.textContent = 'Copied. Paste it into the chat.'; }
+    catch { msg.textContent = 'Copy is blocked here; select the answers and copy by hand.'; }
+  });
+
+  show(location.hash.slice(1) || 'start', false);
+  document.fonts?.ready.then(fit);
+})();
+</script>
+</body>
+</html>
