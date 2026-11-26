@@ -24,6 +24,7 @@ export type HelpTopicId =
   | 'day.statuses'
   | 'day.draftLists'
   | 'day.todo'
+  | 'day.contracts'
   | 'review.flags'
   | 'review.contracts'
   | 'review.price'
@@ -111,8 +112,16 @@ export const HELP_TOPICS: Readonly<Record<HelpTopicId, HelpTopic>> = {
   'day.todo': {
     title: 'To-do',
     body: [
-      'Warnings that need action land here, with Bookings that have no Contract yet. None of them blocks anything. Open one, and Clear a warning once it is dealt with.',
+      'Warnings that need action land here. None of them blocks anything. Open one, and Clear a warning once it is dealt with.',
+      'Procedures still waiting for a Contract are on the Contracts tab, one row per List.',
       'Notices that need no action, such as a List an anaesthetist moved, sit on the Notifications tab until someone ticks them.',
+    ],
+  },
+  'day.contracts': {
+    title: 'Contracts',
+    body: [
+      'Lists whose Procedures still need a Contract, with how many are set. Set what you know, especially prepaid; the anaesthetist can choose the rest on the Booking.',
+      'A List whose day has passed comes first and is marked: it cannot be submitted until every Procedure has a Contract.',
     ],
   },
   'review.flags': {

@@ -1,12 +1,13 @@
 /**
- * The Admin Day rail's work card: To-do holds open warnings and Bookings with no Contract yet in one
- * date order; Notifications is its own tab, never mixed into To-do (FT-13.7); each tab shows its count.
+ * The Admin Day rail's work card: To-do holds open warnings only; Contracts holds the Lists still
+ * needing Contracts, one row per List (US-04.3.12); Notifications is its own tab, never mixed into
+ * To-do (FT-13.7); each tab shows its count.
  */
 
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { freshAppState, needsInvoiceDestinationBookings, OFFICE_ACTOR, openWarnings, replaceContract, useAppStore } from '../../../store'
+import { freshAppState, listsNeedingContracts, needsInvoiceDestinationBookings, OFFICE_ACTOR, openWarnings, replaceContract, useAppStore } from '../../../store'
 import { SEED_MARKERS } from '../../../domain/seed'
 import { CONTRACT } from '../../../domain/seed/contracts'
 import { RailWorkCard } from './RailWorkCard'
@@ -14,11 +15,11 @@ import { toDoItemDate, toDoItems } from './WarningsToDo'
 
 const NO_CONTRACT = SEED_MARKERS['needsInvoiceDestinationBooking']!.entityId
 
-function Harness({ onOpenBooking = vi.fn() }: { onOpenBooking?: (d: string, b: string) => void }) {
+function Harness({ onOpenBooking = vi.fn(), onOpenList = vi.fn() }: { onOpenBooking?: (d: string, b: string) => void; onOpenList?: (listId: string) => void }) {
   const state = useAppStore()
   return (
     <MemoryRouter>
-      <RailWorkCard todoRows={openWarnings(state)} actor={OFFICE_ACTOR} onOpenBooking={onOpenBooking} onOpenNotification={vi.fn()} onSeeAllNotifications={vi.fn()} />
+      <RailWorkCard todoRows={openWarnings(state)} actor={OFFICE_ACTOR} onOpenBooking={onOpenBooking} onOpenList={onOpenList} onOpenNotification={vi.fn()} onSeeAllNotifications={vi.fn()} />
     </MemoryRouter>
   )
 }
@@ -28,22 +29,37 @@ beforeEach(() => {
 })
 
 describe('RailWorkCard', () => {
-  it('To-do counts warnings and no-Contract Bookings together, and Set Contract opens the Booking', () => {
-    const onOpenBooking = vi.fn()
-    render(<Harness onOpenBooking={onOpenBooking} />)
+  it('To-do holds warnings only: no Booking with no Contract is a to-do (US-13.7.2)', () => {
+    render(<Harness />)
     const state = useAppStore.getState()
-    const expected = openWarnings(state).length + needsInvoiceDestinationBookings(state).length
+    expect(needsInvoiceDestinationBookings(state).length).toBeGreaterThan(0)
     const todoTab = screen.getByRole('button', { name: /^To-do/ })
     expect(todoTab).toHaveAttribute('aria-pressed', 'true')
-    expect(todoTab).toHaveTextContent(String(expected))
+    expect(todoTab).toHaveTextContent(String(openWarnings(state).length))
     const panel = screen.getByRole('region', { name: 'To-do' })
-    const row = panel.querySelector<HTMLElement>(`[data-shot="needs-destination-row"][data-booking-id="${NO_CONTRACT}"]`)
-    // Six rows show at first; expand if the seeded Booking sits further down.
-    if (row === null) fireEvent.click(within(panel).getByRole('button', { name: /Show all/ }))
-    const shown = panel.querySelector<HTMLElement>(`[data-shot="needs-destination-row"][data-booking-id="${NO_CONTRACT}"]`)!
-    expect(shown).toHaveTextContent('No Contract')
-    fireEvent.click(within(shown).getByRole('button', { name: /Set the Contract/ }))
-    expect(onOpenBooking).toHaveBeenCalledWith(expect.any(String), NO_CONTRACT)
+    expect(panel.querySelector('[data-shot="contracts-to-set-row"]')).toBeNull()
+    expect(panel.textContent).not.toContain('No Contract')
+  })
+
+  it('Contracts holds one row per List with how many are set; Set Contracts and Open List open them (US-04.3.12)', () => {
+    const onOpenBooking = vi.fn()
+    const onOpenList = vi.fn()
+    render(<Harness onOpenBooking={onOpenBooking} onOpenList={onOpenList} />)
+    const state = useAppStore.getState()
+    const lists = listsNeedingContracts(state)
+    const seeded = lists.find((l) => l.toSet.some((p) => p.bookingId === NO_CONTRACT))!
+    expect(seeded).toBeDefined()
+    const tab = screen.getByRole('button', { name: /^Contracts/ })
+    expect(tab).toHaveTextContent(String(lists.length))
+    fireEvent.click(tab)
+    const panel = screen.getByRole('region', { name: 'Contracts' })
+    if (panel.querySelector(`[data-list-id="${seeded.listId}"]`) === null) fireEvent.click(within(panel).getByRole('button', { name: /Show all/ }))
+    const row = panel.querySelector<HTMLElement>(`[data-shot="contracts-to-set-row"][data-list-id="${seeded.listId}"]`)!
+    expect(row).toHaveTextContent(`${seeded.set} of ${seeded.total} set`)
+    fireEvent.click(within(row).getByRole('button', { name: /^Set the Contract/ }))
+    expect(onOpenBooking).toHaveBeenCalledWith(seeded.dateISO, seeded.toSet[0]!.bookingId)
+    fireEvent.click(within(row).getByRole('button', { name: /^Open the/ }))
+    expect(onOpenList).toHaveBeenCalledWith(seeded.listId)
   })
 
   it('Notifications is its own tab: switching shows the pool, not the to-do rows', () => {
@@ -55,21 +71,15 @@ describe('RailWorkCard', () => {
     expect(within(panel).getByRole('button', { name: 'See all notifications' })).toBeInTheDocument()
   })
 
-  it('orders warnings and no-Contract rows by date, then session', () => {
+  it('orders warnings by date, then session, and a replaced Contract (no session) first on its date (build plan Phase 49)', () => {
     const state = useAppStore.getState()
-    const items = toDoItems(openWarnings(state), needsInvoiceDestinationBookings(state))
+    const warnings = openWarnings(state)
+    const day = warnings[0]!.dateISO
+    const replaced = { contractId: 'CT-OLD', contractName: 'Old', aaCode: 'OLD-001', replacementId: 'CT-NEW', replacementName: 'New', replacementCode: 'OLD-002', fromISO: day }
+    const items = toDoItems(warnings, [replaced])
     const keys = items.map(toDoItemDate)
     expect(keys).toEqual([...keys].sort())
-  })
-
-  it('a replaced Contract has no session: it comes first on its date (build plan Phase 49)', () => {
-    const state = useAppStore.getState()
-    const noContract = needsInvoiceDestinationBookings(state)
-    const day = noContract[0]!.dateISO
-    const replaced = { contractId: 'CT-OLD', contractName: 'Old', aaCode: 'OLD-001', replacementId: 'CT-NEW', replacementName: 'New', replacementCode: 'OLD-002', fromISO: day }
-    const items = toDoItems(openWarnings(state), noContract, [replaced])
-    const onDay = items.filter((i) => toDoItemDate(i) === day)
-    expect(onDay[0]!.kind).toBe('replacedContract')
+    expect(items.filter((i) => toDoItemDate(i) === day)[0]!.kind).toBe('replacedContract')
   })
 
   it('the replaced-Contract to-do shows "Disable" and Open Contract opens its page', () => {

@@ -173,6 +173,7 @@ export function AdminDayRoute() {
           onOpenNotification={(target) => openNotificationTarget(target, ctx, (d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`))}
           onSeeAllNotifications={() => navigate('/admin/notifications')}
           onShowResolvedNotifications={() => navigate('/admin/notifications?resolved=1')}
+          onOpenList={ctx.onOpenList}
         />
         </div>
       </div>

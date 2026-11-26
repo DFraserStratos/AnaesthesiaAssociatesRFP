@@ -35,11 +35,13 @@ interface RightRailProps {
   onSeeAllNotifications?: () => void
   /** The Notifications page with Show resolved on (catch-up Phase 32b). */
   onShowResolvedNotifications?: () => void
+  /** Opens a List from the work card's Contracts tab (US-04.3.12). */
+  onOpenList?: (listId: string) => void
 }
 
 /**
  * The Admin Day rail: the calendar, two readings (Books square, Pre-payments), one work card with
- * To-do and Notifications tabs, and the day's notes. Draft Lists and Lists awaiting review have
+ * To-do, Contracts and Notifications tabs, and the day's notes. Draft Lists and Lists awaiting review have
  * their own pages; the day's Draft Lists also sit in the band above the grid.
  */
 export function RightRail(props: RightRailProps) {
@@ -58,6 +60,7 @@ export function RightRail(props: RightRailProps) {
         onSeeAllNotifications={props.onSeeAllNotifications ?? (() => undefined)}
         {...(props.onShowResolvedNotifications !== undefined ? { onShowResolvedNotifications: props.onShowResolvedNotifications } : {})}
         onOpenContract={(contractId) => navigate(contractPath(contractId))}
+        {...(props.onOpenList !== undefined ? { onOpenList: props.onOpenList } : {})}
       />
       <DayNotes notes={props.notes} onAddNote={props.onAddNote} />
     </div>

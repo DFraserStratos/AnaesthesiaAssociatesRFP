@@ -7,8 +7,8 @@ const SOURCES = import.meta.glob(['../../**/*.{ts,tsx}', '!../../**/*.test.{ts,t
 const entries = Object.entries(HELP_TOPICS) as [HelpTopicId, (typeof HELP_TOPICS)[HelpTopicId]][]
 
 describe('help topics (Phase 43a, US-15.0.1)', () => {
-  it('has about fifteen topics', () => {
-    expect(entries.length).toBe(15)
+  it('has about sixteen topics', () => {
+    expect(entries.length).toBe(16)
   })
 
   it.each(entries)('%s is dash-free and at most 60 words', (_id, topic) => {
