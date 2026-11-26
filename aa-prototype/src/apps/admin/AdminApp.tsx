@@ -269,8 +269,9 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   )
 
   // The Finances badge (build plan Phase 58; D109): billing problems plus failed ledger checks, one
-  // function in `financeCounts.ts` that reads only what it sums (never the monitor view).
-  const financesBadge = useMemo(() => financeBadge({ billing }), [billing])
+  // function in `financeCounts.ts` over the shared billing status model (Phase 60: problem Lists, Xero
+  // items under no problem List, failed ledger checks).
+  const financesBadge = useMemo(() => financeBadge({ billing, schedule, masters }), [billing, schedule, masters])
   // The named office user the app acts as (catch-up Phase 35; Switch office user, a demo stand-in for sign-in).
   const officeUser = useAppStore((s) => s.shell.officeUser)
   const officeActor = useMemo(() => officeActorOf({ officeUser }), [officeUser])

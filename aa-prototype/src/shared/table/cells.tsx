@@ -9,7 +9,7 @@
  */
 
 import { createContext, useContext, type CSSProperties, type ReactNode } from 'react'
-import { accent, neutral, space, type as typeScale } from '../../theme/tokens'
+import { accent, neutral, semantic, space, type as typeScale } from '../../theme/tokens'
 import type { DataAttributes } from '../ui/Field'
 
 export type TableDensity = 'comfortable' | 'compact' | 'dense'
@@ -173,11 +173,40 @@ export function Td({
  * `level="sub"` (build plan Phase 47) is the second-level heading under a group, as
  * `docs/explorations/contracts-section.html` #catalogue draws it: the small size, indented one
  * step, on the same `bg` band over a `sunken` rule. `group`, the default, is today's row.
+ *
+ * A List's heading on the Billing tab (build plan Phase 60, `finances-section.html` #billing-table
+ * version C) adds `counts` (a mono counts sentence, "5 of 6 sent · 5 of 6 in Xero · 0 of 6 paid in")
+ * and `aside` (a trailing cluster, "Run Tue 24 Nov 08:00" and Show all, pushed right): with either,
+ * the cell's content becomes one wrapping flex row, the children leading. `tone` draws a 3px inset
+ * stripe in the warning or error colour down the left edge, so the indent is unchanged. Without
+ * them the row is exactly today's.
  */
-export function GroupRow({ span, level = 'group', children, style, ...data }: { span: number; level?: 'group' | 'sub'; children: ReactNode; style?: CSSProperties } & DataAttributes) {
+export function GroupRow({
+  span,
+  level = 'group',
+  counts,
+  aside,
+  tone,
+  children,
+  style,
+  ...data
+}: {
+  span: number
+  level?: 'group' | 'sub'
+  /** A counts sentence after the leading cluster, mono, slate, normal weight, small. */
+  counts?: ReactNode
+  /** A trailing cluster pushed to the right (the run time, a Show all `TextAction`). */
+  aside?: ReactNode
+  /** A 3px left stripe in the status colour. */
+  tone?: 'warning' | 'error'
+  children: ReactNode
+  style?: CSSProperties
+} & DataAttributes) {
   const density = useContext(TableDensityContext)
   const sub = level === 'sub'
   const [padY, padX] = (density === 'comfortable' ? '10px 20px' : PADDING[density]).split(' ')
+  const split = counts !== undefined || aside !== undefined
+  const bit: CSSProperties = { fontSize: typeScale.small.size, fontWeight: typeScale.small.weight, color: neutral.slate }
   return (
     <tr {...data} {...(sub ? { 'data-group-level': 'sub' } : {})} style={{ background: neutral.bg }}>
       <th
@@ -191,10 +220,27 @@ export function GroupRow({ span, level = 'group', children, style, ...data }: { 
           color: neutral.slate,
           borderBottom: `1px solid ${sub ? neutral.sunken : neutral.line}`,
           ...(sub ? { paddingLeft: `calc(${padX} + ${space[4]}px)` } : {}),
+          ...(tone !== undefined ? { boxShadow: `inset 3px 0 0 ${semantic[tone].solid}` } : {}),
           ...style,
         }}
       >
-        {children}
+        {split ? (
+          <div data-group-row-layout="" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: `${space[1]}px ${space[3]}px` }}>
+            {children}
+            {counts !== undefined ? (
+              <span className="mono" data-group-row-counts="" style={bit}>
+                {counts}
+              </span>
+            ) : null}
+            {aside !== undefined ? (
+              <span data-group-row-aside="" style={{ ...bit, display: 'inline-flex', alignItems: 'center', gap: space[3], marginLeft: 'auto' }}>
+                {aside}
+              </span>
+            ) : null}
+          </div>
+        ) : (
+          children
+        )}
       </th>
     </tr>
   )

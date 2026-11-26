@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { elevation, neutral, radius, semantic } from '../../theme/tokens'
@@ -51,6 +52,59 @@ describe('table kit', () => {
     expect(sub).toHaveAttribute('colspan', '5')
     expect(sub).toHaveStyle({ fontSize: '12.5px', paddingLeft: 'calc(10px + 16px)', borderBottom: `1px solid ${neutral.sunken}` })
     expect(sub.closest('tr')).toHaveAttribute('data-g', 'b')
+  })
+
+  it('GroupRow counts, aside and tone (Phase 60): one wrapping flex row in the th, mono counts, aside pushed right, a status stripe', () => {
+    render(
+      <TableShell label="T" density="compact">
+        <tbody>
+          <GroupRow
+            span={8}
+            level="sub"
+            tone="error"
+            data-g="list"
+            counts="5 of 6 sent · 5 of 6 in Xero · 0 of 6 paid in"
+            aside={<><span>Run Tue 24 Nov 08:00</span><button type="button">Show all 6</button></>}
+          >
+            <span>Mon 23 Nov · AM</span>
+            <span>Southern Cross</span>
+          </GroupRow>
+          <GroupRow span={8} level="sub" tone="warning" aside="Run Wed 18 Nov 08:00">Forte Health</GroupRow>
+        </tbody>
+      </TableShell>,
+    )
+    const th = screen.getByText('Mon 23 Nov · AM').closest('th') as HTMLElement
+    expect(th).toHaveAttribute('scope', 'colgroup')
+    expect(th).toHaveAttribute('colspan', '8')
+    expect(th.closest('tr')).toHaveAttribute('data-g', 'list')
+    expect(th.style.boxShadow).toBe(`inset 3px 0 0 ${semantic.error.solid}`)
+    expect(th).toHaveStyle({ paddingLeft: 'calc(10px + 16px)' })
+    const layout = th.firstElementChild as HTMLElement
+    expect(layout).toHaveStyle({ display: 'flex', flexWrap: 'wrap', alignItems: 'center' })
+    const counts = screen.getByText('5 of 6 sent · 5 of 6 in Xero · 0 of 6 paid in')
+    expect(counts.parentElement).toBe(layout)
+    expect(counts).toHaveClass('mono')
+    expect(counts).toHaveStyle({ fontWeight: '400', fontSize: '12.5px', color: neutral.slate })
+    const aside = screen.getByText('Run Tue 24 Nov 08:00').parentElement as HTMLElement
+    expect(aside.parentElement).toBe(layout)
+    expect(aside).toHaveStyle({ marginLeft: 'auto' })
+    expect(aside).toContainElement(screen.getByRole('button', { name: 'Show all 6' }))
+    expect(Array.from(layout.children).map((c) => c.textContent)).toEqual(['Mon 23 Nov · AM', 'Southern Cross', '5 of 6 sent · 5 of 6 in Xero · 0 of 6 paid in', 'Run Tue 24 Nov 08:00Show all 6'])
+    const warn = screen.getByText('Forte Health').closest('th') as HTMLElement
+    expect(warn.style.boxShadow).toBe(`inset 3px 0 0 ${semantic.warning.solid}`)
+    expect(warn.querySelector('[data-group-row-counts]')).toBeNull()
+  })
+
+  it('GroupRow without counts, aside or tone renders exactly as before (no layout wrapper, no stripe)', () => {
+    const html = (el: ReactElement) => render(<table><tbody>{el}</tbody></table>).container.innerHTML
+    for (const level of ['group', 'sub'] as const) {
+      const plain = html(<GroupRow span={5} level={level} data-g="x">Hospitals</GroupRow>)
+      const absent = html(<GroupRow span={5} level={level} data-g="x" counts={undefined} aside={undefined} tone={undefined}>Hospitals</GroupRow>)
+      expect(absent).toBe(plain)
+      expect(plain).not.toContain('box-shadow')
+      expect(plain).not.toContain('display: flex')
+      expect(plain).toMatch(/<th colspan="5" scope="colgroup" style="[^"]*">Hospitals<\/th>/)
+    }
   })
 
   it('density: comfortable 12px 20px (web), compact 10px 10px at 13, dense 8px 10px at 12.5; sunken dividers', () => {

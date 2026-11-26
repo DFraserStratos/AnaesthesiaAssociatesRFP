@@ -23,7 +23,7 @@ import { CreditSheet } from '../../admin/flows/CreditSheet'
 import { CorrectInvoiceCard, CreditedBanner, CreditNoteDocument } from '../../admin/screens/InvoiceDocument'
 import { AccountCreditTrails } from '../../admin/screens/finances/AccountCreditTrails'
 import { ADMIN_RIGHT_RAIL_WIDTH } from '../../admin/layout'
-import { CorrectionRetry } from '../../admin/screens/BillingMonitorScreen'
+import { CorrectionRetry } from '../../admin/screens/finances/CorrectionRetry'
 import { SEED_EVENT_ID, SEED_EVENT_PROCEDURE_ID } from '../../../domain/seed/procedureEvents'
 
 export function ProcedureEventsListExample({ as }: { as: 'office' | 'anaesthetist' }) {

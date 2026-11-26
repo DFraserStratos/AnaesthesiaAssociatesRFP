@@ -95,7 +95,6 @@ import {
   UpdateEmailComposerExample,
   BookingUpdateEmailButtonExample,
   NotPreferredWarningExample,
-  PipelineStepperExample,
   ReviewScreenExample,
   RightRailExample,
   SideNavExample,
@@ -204,7 +203,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="SplitCombinedButton" source="shared/booking/SplitCombinedButton.tsx" usedIn={A} what="Split into additional invoices on the Procedure's Paid by row, beside Credit note (catch-up Phase 39; US-08.6.4): the office's only, opening the split sheet on the Procedure's live invoice; disabled with canSplitCombined's sentence otherwise (Not invoiced yet. Edit the Booking's Procedures, Contracts and prices instead.), while a credit waits, once credited, on a prepaid Procedure and while the Booking has unsaved changes. The invoice rail's Correct this invoice card has the same button." shared="shared/booking/SplitCombinedButton.tsx" note="Shown on David Chen's invoiced HP03; it opens the real split sheet.">
           <SplitCombinedButtonExample />
         </CatalogueRow>
-        <CatalogueRow name="CorrectionRetry (Billing)" source="apps/admin/screens/BillingMonitorScreen.tsx" usedIn={A} what="Resolve and retry on a Billing tab Booking row whose credit's Xero correction failed (catch-up Phase 39, work item 13): retries the queue item now, which reverses the original's Xero records and creates the new pairs together, or sets the next try. Shown on any row with a failed correction, a failed billing row included (beside its Retry). The office actor is a prop." shared="shared/ui/Button.tsx" note="Renders only while a correction waits after a failed attempt.">
+        <CatalogueRow name="CorrectionRetry (Billing)" source="apps/admin/screens/finances/CorrectionRetry.tsx" usedIn={A} what="Resolve and retry on a Billing tab Booking row whose credit's Xero correction failed (catch-up Phase 39, work item 13): retries the queue item now, which reverses the original's Xero records and creates the new pairs together, or sets the next try. Shown on any row with a failed correction, a failed billing row included (beside its Retry). The office actor is a prop." shared="shared/ui/Button.tsx" note="Renders only while a correction waits after a failed attempt.">
           <CorrectionRetryExample />
         </CatalogueRow>
       </FamilySection>
@@ -263,9 +262,6 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="LockBadge" source="shared/booking/LockBadge.tsx" usedIn={AWM} what="Contract locked at authorise (catch-up Phase 25; US-04.3.5): the shared neutral Pill with the lock glyph on a Booking whose List is AUTHORISED, in the Billing card on all three apps and the office's billing setup; who locked it and when on hover, or as a detail line on web and Admin. Never a seventh status colour." shared="shared/booking/LockBadge.tsx" note="Shown on the seeded AUTHORISED Face lift, locked at seed time.">
           <LockBadge bookingId={SEED_MARKERS['rangeAuthorisedBooking']?.entityId ?? ''} detail />
-        </CatalogueRow>
-        <CatalogueRow name="Billing pipeline (PipelineDetail)" source="apps/admin/screens/BillingMonitorScreen.tsx" usedIn={A} what="Inside an expanded List on the Billing tab (catch-up Phase 37 restyle): each stage (authorised, run, invoices, emailed, Xero) as the shared Pill, joined by arrows, in an ol named Billing pipeline with each stage's state in text." shared="shared/ui/Pill.tsx" note="Not exported: rebuilt here from the shared Pill, fed by the real billingMonitor selector. The Billing tab's status pills and Retry are the shared Pill and Button.">
-          <PipelineStepperExample />
         </CatalogueRow>
       </FamilySection>
 
@@ -598,7 +594,7 @@ export function AdminCatalogue() {
             <LoadResultPanelExample />
           </Wide>
         </CatalogueRow>
-        <CatalogueRow name="Table kit (TableShell · Th · Td · GroupRow · ClickableRow)" source="shared/table/" usedIn={AWM} what="The one table kit (UI unification U6, question 19): TableShell (white, line, radius 14, e1; a named focusable region only when it overflows; footer for a foot row such as the pager, kept below the rows; fit for an Admin fit page's list card), Th (scope col) on the Admin Review header, sortable with `sort` (aria-sort and a button, teal underline on the active column; the Billing tab), Td with sunken dividers, GroupRow (th scope colgroup; level sub is the grouped Contract catalogue's smaller, indented sub-heading, Phase 47 from contracts-section.html #catalogue), and ClickableRow with one RowOpenButton as the keyboard handle (selected, Phase 48: the picked row of a list whose pick shows beside it, the accent tint and aria-selected, as the Funding tags tab's picked tag). Density comfortable (web), compact (admin) or dense (audit and masters) keeps each table's row height." shared="shared/table/TableShell.tsx" note={`The ${DRAFT_LISTS} table is built this way: Tab to a session, Enter opens the ${DRAFT_LIST} drawer (bug 3). An inner button does only its own action.`}>
+        <CatalogueRow name="Table kit (TableShell · Th · Td · GroupRow · ClickableRow)" source="shared/table/" usedIn={AWM} what="The one table kit (UI unification U6, question 19): TableShell (white, line, radius 14, e1; a named focusable region only when it overflows; footer for a foot row such as the pager, kept below the rows; fit for an Admin fit page's list card), Th (scope col) on the Admin Review header, sortable with `sort` (aria-sort and a button, teal underline on the active column; the Billing tab), Td with sunken dividers, GroupRow (th scope colgroup; level sub is the grouped Contract catalogue's smaller, indented sub-heading, Phase 47 from contracts-section.html #catalogue; counts, aside and tone carry a List's heading on the Billing tab (finances-section.html #billing-table version C): the leading cluster, a mono counts sentence and a trailing aside in one wrapping row, with a warning or error stripe), and ClickableRow with one RowOpenButton as the keyboard handle (selected, Phase 48: the picked row of a list whose pick shows beside it, the accent tint and aria-selected, as the Funding tags tab's picked tag). Density comfortable (web), compact (admin) or dense (audit and masters) keeps each table's row height." shared="shared/table/TableShell.tsx" note={`The ${DRAFT_LISTS} table is built this way: Tab to a session, Enter opens the ${DRAFT_LIST} drawer (bug 3). An inner button does only its own action.`}>
           <TableKitExample />
         </CatalogueRow>
         <CatalogueRow name="ReviewQueue (clickable rows)" source="apps/admin/screens/ReviewQueue.tsx" usedIn={A} what="Submitted Lists to authorise, and since catch-up Phase 38b an Events tab (LineTabLink with its count) of events awaiting review, on the shared table kit (UI unification U6): TableShell (compact), Th, Td and ClickableRow, whose row click opens the List while the Review button stays the keyboard handle." shared="shared/table/ClickableRow.tsx" note="Rows never take focus; the Review button is the one handle per row. Open is stubbed." height={380}>

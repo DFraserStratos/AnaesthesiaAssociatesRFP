@@ -8,8 +8,11 @@
  * until Phases 27 and 41) and AA as agent,
  * links a split's shares to each other, and, when `send` is true, stamps each
  * invoice's delivery at the run's clock time from 21's one delivery rule
- * (`invoiceDeliveryFor`): emailed, marked to post, or raised with no address
- * (never a failure). The send step is separable: Phase 27 raises the
+ * (`invoiceDeliveryFor`): emailed or marked to post. A payer with no billing
+ * email or postal address fails the Booking in the List run and its retry
+ * before anything is raised (`withLiveDelivery`, `deliveryGapFor`; D116); a
+ * `noAddress` stamp here is only the seeded history's and the paths D116 leaves
+ * alone. The send step is separable: Phase 27 raises the
  * prepayment invoice unsent and sends it on admin approval.
  *
  * Each invoice's ledger pair is made here, in the caller's same mutate
@@ -25,7 +28,7 @@ import { anaesthetistPayee, HOLDING_PAYEE, newBookingPair } from '../domain/bill
 import type { DraftInvoice, LockedPayee } from '../domain/billing/lock'
 import { deliveryStampFor, supplierFor } from '../domain/billing/invoicePresentation'
 import { invoiceLineRecord, invoiceRecordFromDraft } from '../domain/billing/invoiceRecord'
-import { invoiceDeliveryFor } from '../domain/billing/whoIsBilled'
+import { billedToFor, invoiceDeliveryFor } from '../domain/billing/whoIsBilled'
 import { allocateId, type MutationMeta } from './mutate'
 import type { AppState } from './appStore'
 
@@ -66,6 +69,39 @@ export interface MaterialiseResult {
   sentCount: number
   toPostCount: number
   notSentCount: number
+}
+
+/**
+ * A Booking's drafts with each payer read fresh from current state (D116):
+ * `delivery` from `invoiceDeliveryFor` over the draft's own Procedures in its
+ * order, and a person payer's `billedTo` from `billedToFor` (the draft's kept
+ * when that finds none). The List run and a retry call it before the gap check
+ * and materialise what it returns, so a payer fixed since authorise is what
+ * the invoice names and is sent to. Pure.
+ */
+export function withLiveDelivery(s: Pick<AppState, 'schedule' | 'masters'>, patientId: string, drafts: readonly DraftInvoice[]): DraftInvoice[] {
+  const patient = s.masters.patients[patientId]
+  return drafts.map((draft) => {
+    const procedures = draft.procedureIds.flatMap((id) => {
+      const p = s.schedule.procedures[id]
+      return p !== undefined ? [p] : []
+    })
+    const billedTo = billedToFor(draft.counterparty, procedures, patientId, patient)
+    return {
+      ...draft,
+      ...(billedTo !== undefined ? { billedTo } : {}),
+      delivery: invoiceDeliveryFor(draft.counterparty, procedures, patientId, patient, s.masters.parties),
+    }
+  })
+}
+
+/**
+ * The first draft whose payer has nowhere to be sent to (no billing email or
+ * postal address), else undefined (D116): one such draft fails the whole
+ * Booking. Call it on `withLiveDelivery`'s drafts.
+ */
+export function deliveryGapFor(drafts: readonly DraftInvoice[]): DraftInvoice | undefined {
+  return drafts.find((d) => d.delivery?.method === 'none')
 }
 
 /**

@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import type { PillTone } from '../../../../shared/ui'
 import {
   bookingCountsByList,
   draftListsForDate,
@@ -66,10 +65,3 @@ export function useSeedIds() {
   return { todayISO, submittedListId, draftListId, conflictedListId, activeSlotId, emptySlotId, invoiceId, fixedContractId, holidayId }
 }
 
-/** One stage of the billing monitor's pipeline as a shared Pill tone (`StageChip` in BillingMonitorScreen.tsx, not exported; catch-up Phase 37). */
-export const STAGE_TONE: Record<'done' | 'partial' | 'failed' | 'pending', PillTone> = {
-  done: 'success',
-  partial: 'warning',
-  failed: 'error',
-  pending: 'neutral',
-}

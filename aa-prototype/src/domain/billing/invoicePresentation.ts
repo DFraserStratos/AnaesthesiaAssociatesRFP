@@ -289,7 +289,7 @@ export function crossMatchFor(procedureDateISO: IsoDate, surgeonName: string | u
 
 /**
  * The stamp the run puts on an invoice from 21's plan (`invoiceDeliveryFor`):
- * emailed now, marked to post, or raised with no address (never a failure).
+ * emailed now, marked to post, or no address (the List run fails such a Booking instead, D116: `noAddress` is the seeded history's and the credit notes').
  */
 export function deliveryStampFor(plan: DeliveryPlan, atISO: string, by: string): InvoiceDelivery {
   if (plan.method === 'email') return { method: 'email', status: 'sent', sends: [{ atISO, to: plan.to, by }] }

@@ -307,6 +307,8 @@ export const ACTION_LABELS: Record<string, string> = {
   'ledger.unmatchedRefunded': 'Unmatched receipt refunded',
   'ledger.allocationNoop': 'Allocation already applied',
   'billing.exceptionResolved': 'Billing exception resolved',
+  'billing.exceptionResolvedByHand': 'Billing failure marked resolved',
+  'procedure.payerContact': "Payer's contact details updated",
 
   // --- AA's monthly fee (catch-up Phase 16) -------------------------------
   'aaFee.settingsChanged': 'AA fee settings changed',
@@ -324,6 +326,8 @@ export const ACTION_LABELS: Record<string, string> = {
   'demo.bankLineRemoved': 'Bank download line removed',
   // Catch-up Phase 43: the full-scale data's load entry.
   'demo.fullScaleLoaded': 'Full-scale data loaded',
+  // Build plan Phase 60: the "Payer loses billing email" trigger (registered at the Wave 5 join).
+  'demo.payerContactCleared': "Payer's billing email and postal address cleared",
 
   // --- Accounts and sign-in (FT-13.5, simulated: catch-up Phase 14) -------
   'account.provisioned': 'Account provisioned',
