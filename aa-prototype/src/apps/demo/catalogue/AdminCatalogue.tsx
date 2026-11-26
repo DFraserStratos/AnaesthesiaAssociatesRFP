@@ -7,6 +7,7 @@ import { Pager } from '../../admin/components/Pager'
 import { GroupIndex } from '../../admin/components/GroupIndex'
 import { SCALE_GENERATING_LINE } from '../../../shared/scale/ScaleBanner'
 import { StubSetExample } from './stubExamples'
+import { FormatChecks } from '../../../shared/support/FormatChecks'
 import { DRAFT_LIST, DRAFT_LISTS, UNASSIGNED } from '../../../shared/scheduleTerms'
 import { ResponseTableExample, SupportHoursExample, SupportPanelExample, SupportRequestFormExample, SupportSidePanelExample, TicketListExample } from './supportExamples'
 import { CataloguePage, CatalogueRow, FamilySection, StageHint } from './CatalogueKit'
@@ -650,6 +651,9 @@ export function AdminCatalogue() {
         </CatalogueRow>
         <CatalogueRow name="TicketList" source="shared/support/TicketList.tsx" usedIn={AWM} what="The tickets, newest first (catch-up Phase 43b): id in mono, subject, a status Pill (Logged, Responded, Closed), the respond-by in mono or why there is none, and the Response overdue, Best effort or Awaiting AA's approval pills. Shown with the seeded product-support tickets and their requester." shared="shared/support/TicketList.tsx">
           <TicketListExample />
+        </CatalogueRow>
+        <CatalogueRow name="FormatChecks" source="shared/support/FormatChecks.tsx" usedIn={A} what="How the NHI and ethnicity codes are checked, in Admin's Help only, as plain text on the shared Card under one heading: the current AAANNNC and new AAANNAX NHI formats with their check characters, both from 4 November 2027, the Modulus 24 label for AA to confirm, and the NZHIS Level 4 ethnicity code checked against a curated subset (outside it reads as outside this demo's subset, never invalid)." shared="shared/ui/Card.tsx" note="The words live in supportCopy.ts. No try-it boxes: the NHI field checks as it is typed.">
+          <FormatChecks />
         </CatalogueRow>
         <CatalogueRow name="ListOriginRow" source="apps/admin/components/ListOriginRow.tsx" usedIn={A} what={`Where a List came from (catch-up Phase 34; US-02.2.4): one DefRow on the session and ${DRAFT_LIST} drawers, the origin in words and, as its note, who the office's replies go to through the one email helper (the List's sender first).`} shared="shared/ui/DefRow.tsx">
           <ListOriginExample />

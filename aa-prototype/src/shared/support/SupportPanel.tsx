@@ -10,6 +10,7 @@ import { ResponseTable } from './ResponseTable'
 import { SupportHours } from './SupportHours'
 import { SupportRequestForm, type SupportRequestDraft } from './SupportRequestForm'
 import { TicketList } from './TicketList'
+import { FormatChecks } from './FormatChecks'
 import { CHANNEL_INTRO, CHANNEL_LABEL, CHRISTMAS_NOTE, OUT_OF_HOURS_NOTE, PUBLIC_HOLIDAY_NOTE, SIMULATED_CAPTION } from './supportCopy'
 
 export interface SupportPanelProps {
@@ -88,6 +89,8 @@ export function SupportPanel({ channels, actor, app, seesEveryRequest, buttonSiz
         title={seesEveryRequest ? 'Every request' : 'Your requests'}
         {...(newestId !== undefined ? { newestId } : {})}
       />
+      {/* How the NHI and ethnicity codes are checked: the office's Help only. */}
+      {app === 'admin' && <FormatChecks />}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 4 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' }}>
           <DemoBadge label="Simulated" />
