@@ -101,7 +101,7 @@ export function AdminDayRoute() {
     <>
       <DayNav
         selectedDateISO={dateISO}
-        summary={beyondHorizon ? 'No sessions: this day is past the schedule horizon' : ctx.summary}
+        {...(beyondHorizon ? { summary: 'No sessions: this day is past the schedule horizon' } : {})}
         sortMode={ctx.sortMode}
         onSort={setSort}
         onNavigateDate={goToDay}
@@ -172,6 +172,7 @@ export function AdminDayRoute() {
           onOpenNotification={(target) => openNotificationTarget(target, ctx, (d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`))}
           onSeeAllNotifications={() => navigate('/admin/notifications')}
           onShowResolvedNotifications={() => navigate('/admin/notifications?resolved=1')}
+          onOpenList={ctx.onOpenList}
         />
         </div>
       </div>

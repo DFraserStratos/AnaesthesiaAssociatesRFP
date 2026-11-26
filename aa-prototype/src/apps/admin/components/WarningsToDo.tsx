@@ -1,6 +1,6 @@
 import { InfoTip } from '../../../shared/help/InfoTip'
 import { useMemo, useState, type ReactNode } from 'react'
-import { clearWarning, needsInvoiceDestinationBookings, openConflictCount, replacedContractsToDisable, useAppStore, type Actor, type NeedsInvoiceDestinationRow, type OpenWarningRow } from '../../../store'
+import { clearWarning, openConflictCount, replacedContractsToDisable, useAppStore, type Actor, type OpenWarningRow } from '../../../store'
 import type { ReplacedContractRow } from '../../../domain/warnings/rules'
 import { plainDate } from '../../../domain/dateText'
 import { accent, neutral, radius, semantic } from '../../../theme/tokens'
@@ -25,21 +25,13 @@ const TODO_ROW_SHOTS: Partial<Record<string, string>> = {
 }
 
 /**
- * The rows the to-do list shows: open warnings, plus (on the rail's work card) Bookings with no
- * Contract yet and replaced Contracts still active on or after their change date (build plan
- * Phase 49, DM-03).
+ * The rows the to-do list shows: open warnings, plus (on the rail's work card) replaced Contracts
+ * still active on or after their change date (build plan Phase 49, DM-03). Procedures with no
+ * Contract are not to-dos: they wait on the Contracts tab (US-04.3.12).
  */
 export type ToDoItem =
   | { kind: 'warning'; row: OpenWarningRow }
-  | { kind: 'noContract'; row: NeedsInvoiceDestinationRow }
   | { kind: 'replacedContract'; row: ReplacedContractRow }
-
-/** Bookings with no Contract yet (US-04.3.4), soonest first: a work list, so no Clear. */
-export function useNoContractRows(): NeedsInvoiceDestinationRow[] {
-  const masters = useAppStore((s) => s.masters)
-  const schedule = useAppStore((s) => s.schedule)
-  return useMemo(() => needsInvoiceDestinationBookings({ masters, schedule }), [masters, schedule])
-}
 
 /** The old Contracts to disable (DM-03): derived, so no Clear; each goes once the office disables it. */
 export function useReplacedContractRows(): ReplacedContractRow[] {
@@ -54,20 +46,15 @@ export function toDoItemDate(item: ToDoItem): string {
   return item.kind === 'replacedContract' ? item.row.fromISO : item.row.dateISO
 }
 
-const KIND_ORDER: Record<ToDoItem['kind'], number> = { replacedContract: 0, warning: 1, noContract: 2 }
+const KIND_ORDER: Record<ToDoItem['kind'], number> = { replacedContract: 0, warning: 1 }
 
 /**
  * Every to-do in one order: by date; on a date, a replaced Contract (which has no session) first;
- * then by session, a warning before a work row on the same session.
+ * then by session.
  */
-export function toDoItems(
-  warnings: readonly OpenWarningRow[],
-  noContract: readonly NeedsInvoiceDestinationRow[] = [],
-  replaced: readonly ReplacedContractRow[] = [],
-): ToDoItem[] {
+export function toDoItems(warnings: readonly OpenWarningRow[], replaced: readonly ReplacedContractRow[] = []): ToDoItem[] {
   const items: ToDoItem[] = [
     ...warnings.map((row) => ({ kind: 'warning' as const, row })),
-    ...noContract.map((row) => ({ kind: 'noContract' as const, row })),
     ...replaced.map((row) => ({ kind: 'replacedContract' as const, row })),
   ]
   // A stable sort keeps each source's own order inside a session.
@@ -82,8 +69,7 @@ export function toDoItems(
 /**
  * The dashboard to-do list (US-13.7.2) as a card: every OPEN warning, all
  * dates, soonest first, each with Open and the office's Clear. The Admin Day
- * rail shows the same list as the To-do tab of its work card (`ToDoList`),
- * where Bookings with no Contract yet join it.
+ * rail shows the same list as the To-do tab of its work card (`ToDoList`).
  */
 export function WarningsToDo({
   rows,
@@ -116,7 +102,7 @@ export function WarningsToDo({
 
 /**
  * The to-do list's body: the conflicts line, then each item (a warning with Open and Clear, or a
- * Booking with no Contract yet with Set Contract), six at first, then Show all.
+ * replaced Contract to disable), six at first, then Show all.
  */
 export function ToDoList({
   items,
@@ -179,28 +165,6 @@ export function ToDoList({
                 </ToDoRow>
               )
             }
-            if (item.kind === 'noContract') {
-              const r = item.row
-              const hospital = r.hospitalId !== undefined ? masters.hospitals[r.hospitalId]?.name ?? r.hospitalId : undefined
-              return (
-                <ToDoRow key={`nc:${r.procedureId}`} edge={null} shot="needs-destination-row" data-booking-id={r.bookingId}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, lineHeight: '17px', fontWeight: 600, color: neutral.ink }}>
-                    <Pill tone="neutral" variant="outline" size="sm">No Contract</Pill>
-                    {r.patientName}
-                  </span>
-                  <span style={{ fontSize: 11, lineHeight: '15px', color: neutral.slate }}>
-                    {shortDay(r.dateISO)} {sessionText(r.session)}
-                    {hospital !== undefined ? ` · ${hospital}` : ''}
-                    {r.answersText !== 'Not started' ? ` · ${r.answersText}` : ''}
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
-                    <TextAction size="sm" flush label={`Set the Contract for ${r.patientName}'s Booking`} onClick={() => onOpenBooking(r.dateISO, r.bookingId)} style={{ minHeight: 30 }}>
-                      Set Contract
-                    </TextAction>
-                  </span>
-                </ToDoRow>
-              )
-            }
             const r = item.row
             const patient = masters.patients[r.patientId]?.name ?? 'Unknown patient'
             const anae = r.anaesthetistId !== undefined ? masters.anaesthetists[r.anaesthetistId] : undefined
@@ -245,8 +209,8 @@ export function ToDoList({
   )
 }
 
-/** One to-do row: the bg well, a left edge in the warning's tone (none for a work row), an optional lead mark. */
-function ToDoRow({ edge, lead, shot, children, ...data }: { edge: string | null; lead?: ReactNode; shot: string | undefined; children: ReactNode } & { [key: `data-${string}`]: string }) {
+/** One work-card row: the bg well, a left edge in the warning's tone (none for a work row), an optional lead mark. */
+export function ToDoRow({ edge, lead, shot, children, ...data }: { edge: string | null; lead?: ReactNode; shot: string | undefined; children: ReactNode } & { [key: `data-${string}`]: string }) {
   return (
     <li {...data} data-shot={shot} style={{ display: 'flex', gap: 10, padding: '10px 12px', background: neutral.bg, borderRadius: radius.ctl, ...(edge !== null ? { boxShadow: `inset 3px 0 0 ${edge}` } : {}) }}>
       {lead !== undefined && <span style={{ paddingTop: 1 }}>{lead}</span>}

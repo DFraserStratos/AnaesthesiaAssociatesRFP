@@ -163,7 +163,6 @@ export function InvoicesScreen({ actor }: InvoicesScreenProps) {
     [masters.anaesthetists],
   )
 
-  const sub = "Raised when a list is authorised: one per billable party per Booking, or per share of a split fee, then emailed or marked to post as the party's delivery says."
   const filtered = q.trim() !== '' || anaesthetistId !== undefined
 
   const rail = (
@@ -183,7 +182,7 @@ export function InvoicesScreen({ actor }: InvoicesScreenProps) {
   )
 
   return (
-    <FinancesPage tab="invoices" mode="fit" testId="invoice-list-screen" data-view={show} sub={sub}>
+    <FinancesPage tab="invoices" mode="fit" testId="invoice-list-screen" data-view={show}>
       <PageToolbar end={<span className="mono" data-shot="invoices-count">{invoiceCountLine(summary.counts)}</span>}>
         <NameSearchBox
           size="pill"

@@ -2143,6 +2143,77 @@ export function needsInvoiceDestinationBookings(state: Pick<AppState, 'masters' 
   )
 }
 
+/** One Procedure on a List still waiting for its Contract (US-04.3.12). */
+export interface ProcedureToSet {
+  bookingId: string
+  procedureId: string
+  patientName: string
+  /** False while nothing is chosen; true once where the invoice goes is answered, the Contract still to pick. */
+  started: boolean
+  /** "Patient › Standard", or "Not started". */
+  answersText: string
+}
+
+/** A List on the office's Contracts tab (US-04.3.12): how many of its Procedures have a Contract, and the rest. */
+export interface ListNeedingContractsRow {
+  listId: string
+  dateISO: string
+  session: List['session']
+  hospitalId: string
+  anaesthetistId: string
+  /** The List's day is before today: it now holds up submission. */
+  past: boolean
+  set: number
+  total: number
+  toSet: ProcedureToSet[]
+}
+
+/**
+ * The office's Contracts tab (US-04.3.12): every List with an anaesthetist holding a Procedure with no
+ * Contract, one row per List, oldest day first (so Lists whose day has passed lead), then by session.
+ * Counts only Procedures on Bookings that are not cancelled. An RVG code still to fill in is the
+ * anaesthetist's and never puts a List here. Draft Lists are the office's own queue and are left off.
+ */
+export function listsNeedingContracts(state: Pick<AppState, 'masters' | 'schedule' | 'clock'>): ListNeedingContractsRow[] {
+  const listIds = new Set(needsInvoiceDestinationBookings(state).map((r) => r.listId))
+  const rows: ListNeedingContractsRow[] = []
+  for (const listId of listIds) {
+    const list = state.schedule.lists[listId]
+    if (list === undefined || list.anaesthetistId === undefined || list.state === 'AUTHORISED') continue
+    const ctx = railContextForList(state, list)
+    let total = 0
+    const toSet: ProcedureToSet[] = []
+    for (const booking of bookingsForList(state, listId)) {
+      if (booking.cancellation !== undefined) continue
+      const patientName = state.masters.patients[booking.patientId]?.name ?? booking.patientId
+      for (const procedure of proceduresForBooking(state, booking.id)) {
+        total += 1
+        if (procedure.governingContractId !== undefined) continue
+        toSet.push({
+          bookingId: booking.id,
+          procedureId: procedure.id,
+          patientName,
+          started: procedure.railAnswers !== undefined,
+          answersText: railAnswersText(state.masters, ctx, procedure.railAnswers),
+        })
+      }
+    }
+    if (toSet.length === 0) continue
+    rows.push({
+      listId,
+      dateISO: list.dateISO,
+      session: list.session,
+      hospitalId: list.hospitalId,
+      anaesthetistId: list.anaesthetistId,
+      past: list.dateISO < state.clock.todayISO,
+      set: total - toSet.length,
+      total,
+      toSet,
+    })
+  }
+  return rows.sort((a, b) => a.dateISO.localeCompare(b.dateISO) || compareSessions(a.session, b.session) || a.listId.localeCompare(b.listId))
+}
+
 /** The quiet cue on a List row (catch-up Phase 20): a Procedure needs an invoice destination, or its RVG code. */
 export function bookingContractCue(state: Pick<AppState, 'masters' | 'schedule'>, bookingId: string): string | undefined {
   const procs = proceduresForBooking(state, bookingId)

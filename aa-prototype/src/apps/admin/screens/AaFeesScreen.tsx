@@ -221,7 +221,6 @@ export function AaFeesScreen({ actor, settingsOpen = false }: { actor: Actor; se
       tab="aa-fees"
       mode="fit"
       data-aa-fee-show={show}
-      sub="AA invoices each anaesthetist its fee monthly: fixed charges plus a charge per buyer-created tax invoice (BCTI) paid. A separate invoice, never deducted from a payment."
     >
       <PageToolbar
         end={

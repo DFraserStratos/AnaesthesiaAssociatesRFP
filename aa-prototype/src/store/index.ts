@@ -579,6 +579,7 @@ export {
   contractRailForNewBooking,
   contractRailForProcedure,
   needsInvoiceDestinationBookings,
+  listsNeedingContracts,
   railContextForList,
   railContextForProcedure,
   railMastersOf,
@@ -586,6 +587,8 @@ export {
   rvgCodeToFillFor,
   completionContextFor,
   type NeedsInvoiceDestinationRow,
+  type ListNeedingContractsRow,
+  type ProcedureToSet,
 } from './selectors'
 export * from './locks'
 export { stageBillingFailure, BILLING_FAILURE_ALREADY } from './demoStaging'
