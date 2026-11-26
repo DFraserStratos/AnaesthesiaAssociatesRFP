@@ -70,61 +70,22 @@ section.idea{padding:56px 0 8px}
 .ghost .lbl{font-size:12px;color:var(--mist);margin-top:4px}
 svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
-/* A: sentence heading */
-.a{display:flex;gap:12px;align-items:flex-start}
-.a .tile{width:34px;height:34px;border-radius:10px;background:var(--sunken);color:var(--ink);display:grid;place-items:center;flex:none}
-.a .tile.cancel{background:var(--errTint);color:var(--errOn)}
-.a h3{font-size:17px;line-height:24px;font-weight:700}
-.a p{font-size:13px;line-height:19px;color:var(--slate);margin-top:2px}
-.a .state{font-size:12px;color:var(--mist);margin-top:4px}
-
-/* B: kind banner */
-.b{margin:-18px -20px 0;padding:12px 20px;display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--line)}
-.b.new{background:var(--okTint);color:var(--okOn)}
-.b.update{background:var(--warnTint);color:var(--warnOn)}
-.b.same{background:var(--bg);color:var(--slate)}
-.b.cancel{background:var(--errTint);color:var(--errOn)}
-.b strong{font-size:14px;font-weight:700}
-.b span{font-size:13px;color:var(--ink)}
-.b .sep{color:inherit;opacity:.5}
-
-/* C: before and after */
-.c{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch}
-.c .side{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
-.c .side.none{border-style:dashed;background:var(--bg);color:var(--mist)}
-.c .side.gone{border-color:var(--err);background:var(--errTint)}
-.c .side .k{font-size:11.5px;color:var(--slate)}
-.c .side .t{font-size:14px;font-weight:600;line-height:20px}
-.c .side .t.strike{text-decoration:line-through;text-decoration-color:var(--err);color:var(--errOn)}
-.c .side .d{font-size:12px;color:var(--slate);font-variant-numeric:tabular-nums}
-.c .join{display:grid;place-items:center;color:var(--mist);font-size:12px;font-weight:600;text-align:center;line-height:14px}
-.c .join.eq{color:var(--okOn)}
-.c-title{font-size:17px;line-height:24px;font-weight:700}
-
-/* D: tally first */
-.d .row1{display:flex;align-items:center;gap:8px}
-.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid var(--lineStrong);color:var(--slate);background:var(--surface)}
-.pill.cancel{border-color:transparent;background:var(--errTint);color:var(--errOn)}
-.d .row1 .who{font-size:13px;color:var(--slate)}
-.d .tally{display:flex;gap:18px;margin-top:10px;font-variant-numeric:tabular-nums;flex-wrap:wrap}
-.d .tally div{display:flex;flex-direction:column}
-.d .tally b{font-size:26px;line-height:30px;font-weight:700;letter-spacing:-.01em}
-.d .tally span{font-size:12px;color:var(--slate)}
-.d .tally .add b{color:var(--okOn)}.d .tally .rem b{color:var(--errOn)}.d .tally .chg b{color:var(--warnOn)}.d .tally .zero b{color:var(--mist)}
-
-/* E: track as header */
-.e .track{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;color:var(--slate)}
-.e .dot{width:10px;height:10px;border-radius:999px;background:var(--ink);flex:none}
-.e .dot.old{background:var(--slate)}
-.e .dot.pend{background:var(--surface);box-shadow:inset 0 0 0 2px var(--warn)}
-.e .dot.same{background:var(--surface);box-shadow:inset 0 0 0 2px var(--ok)}
-.e .dot.x{background:var(--surface);box-shadow:inset 0 0 0 2px var(--err)}
-.e .ln{width:26px;border-top:1.5px solid var(--lineStrong)}
-.e .ln.dash{border-top-style:dashed}
-.e .end{font-weight:700;font-size:15px;color:var(--ink)}
-.e .end.cancel{color:var(--errOn)}
-.e .sub{font-size:13px;color:var(--slate);margin-top:6px}
-
+/* the A family */
+.h{display:flex;flex-direction:column;gap:2px}
+.h h3{font-size:17px;line-height:24px;font-weight:700;display:flex;align-items:center;gap:8px}
+.h h3.cancel{color:var(--errOn)}
+.h h3 svg.i{width:18px;height:18px;color:var(--slate)}
+.h h3.cancel svg.i{color:var(--errOn)}
+.h .sign{font-family:var(--mono);font-weight:500;font-size:18px;color:var(--mist);width:14px;text-align:center}
+.h h3.cancel .sign{color:var(--errOn)}
+.h p{font-size:13px;line-height:19px;color:var(--slate)}
+.h .state{font-size:12px;color:var(--mist)}
+.h .from{font-weight:500;color:var(--slate)}
+.h .tally{font-size:13.5px;line-height:20px;color:var(--slate);font-variant-numeric:tabular-nums;margin-top:2px}
+.h .tally b{color:var(--ink);font-weight:700}
+.h .tally b.rm{color:var(--errOn)}
+.h .tally .dot{color:var(--lineStrong);margin:0 6px}
+.picked{outline:2px solid var(--teal);outline-offset:6px;border-radius:14px}
 .reco{background:var(--surface);border-radius:16px;box-shadow:var(--e2);padding:26px 30px;margin:56px 0 72px;border-left:4px solid var(--teal)}
 .reco h2{font-size:20px;margin-bottom:8px}
 .reco p{max-width:78ch}
@@ -141,32 +102,15 @@ svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stro
 <header class="top"><div class="wrap">
   <p class="kicker">Admin › Intake › an opened arrival · exploration, 27 Nov 2026</p>
   <h1>Say what the arrival does, first, in the rail</h1>
-  <p class="lede">Today the right-hand rail opens with the List's owner and state, then the match boxes. You have to read down to work out whether you are placing a new List, applying changes, clearing a re-send or cancelling. Each idea below puts one shared header at the very top of the rail. It has the same place and the same shape for every kind, and only the words and the mark change.</p>
-  <p class="lede">Every idea is shown for the four kinds on the same List (Mr Rochford, St George's, Wed 25 Nov AM). The faded part below each header is the rail as it is now, so you can judge the header in context. The rails are drawn at the app's real width.</p>
-  <nav class="toc" aria-label="Ideas">
-    <a href="#a">A · Sentence heading</a><a href="#b">B · Kind banner</a><a href="#c">C · Before and after</a><a href="#d">D · Tally first</a><a href="#e">E · The track as header</a><a href="#reco">Recommendation</a>
+  <p class="lede">One shared header at the top of the right-hand rail, the same place and shape for every kind, so you know whether you are placing a new List, applying changes, clearing a re-send or cancelling before you read anything else. Below are four takes on the sentence heading that drop the icon in a rounded box, then A and D together.</p>
+  <p class="lede">Each is shown for the four kinds on the same List (Mr Rochford, St George's, Wed 25 Nov AM). The faded part is the rail as it is now; the rails are at the app's real width.</p>
+  <nav class="toc" aria-label="Variants">
+    <a href="#a1">A1 · Bare icon</a><a href="#a2">A2 · Words only</a><a href="#a3">A3 · Signs</a><a href="#a4">A4 · The hospital as subject</a><a href="#ad">A and D together</a>
   </nav>
 </div></header>
 
 <main class="wrap" id="ideas"></main>
-
-<div class="wrap">
-  <section class="reco" id="reco">
-    <h2>Recommendation: A, with D's numbers in its second line</h2>
-    <p>The sentence heading answers "what is this?" in words the office already uses, in the same spot and at the same size for every kind. Its second line carries the tally ("1 patient added, 1 removed, 1 time moved") as plain text rather than big numbers, so it stays calm. Colour is kept for the one kind that destroys something, the cancellation. New, update and matches stay neutral and differ by icon and words, so amber and green keep meaning "check this" and "found".</p>
-    <p>The owner and state line ("Active, open to changes until it is authorised") becomes the heading's small third line, so nothing is lost. "This List so far" stays where it is for updates, matches and cancellations. E is the alternative if you would rather the track did the job itself, but it leaves a New List with an almost empty header.</p>
-    <div class="cmpw"><table class="cmp">
-      <thead><tr><th>Idea</th><th>Reads at a glance</th><th>Calm</th><th>Same shape for all four</th><th>Effort</th></tr></thead>
-      <tbody>
-        <tr><td>A · Sentence heading</td><td class="y">Yes, in words</td><td class="y">Yes</td><td class="y">Yes</td><td>Small: one shared header component</td></tr>
-        <tr><td>B · Kind banner</td><td class="y">Yes, by colour</td><td class="m">Loud; colour on every arrival</td><td class="y">Yes</td><td>Small</td></tr>
-        <tr><td>C · Before and after</td><td class="y">Yes, as a picture</td><td class="y">Yes</td><td class="m">New List has an empty left side</td><td>Medium</td></tr>
-        <tr><td>D · Tally first</td><td class="m">Numbers first, kind second</td><td class="m">Big numbers compete with the PDF</td><td class="m">Matches and New read oddly</td><td>Small</td></tr>
-        <tr><td>E · The track as header</td><td class="m">Needs the dot language learned</td><td class="y">Yes</td><td class="m">New List is one dot</td><td>Small; reuses VersionTrack</td></tr>
-      </tbody>
-    </table></div>
-  </section>
-</div>
+<div class="wrap" style="height:72px"></div>
 
 <script>
 const I = {
@@ -175,90 +119,88 @@ const I = {
   same: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>',
   cancel: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>',
 }
+const SIGN = { new: '+', update: '±', same: '=', cancel: '×' }
 const KINDS = [
-  { k: 'new', name: 'New List', foot: ['Reject this List', 'Place List'], cells: ['Mr Rochford', "St George's", 'Wed 25 Nov AM', '3 patients'], state: 'Not on the system yet' },
-  { k: 'update', name: 'Update', foot: ['Reject this update', 'Apply changes'], cells: ['Mr Rochford', "St George's", 'Wed 25 Nov AM', '3 of 3 found'], state: 'Active, open to changes until it is authorised' },
-  { k: 'same', name: 'Matches exactly', foot: [null, 'Confirm unchanged'], cells: ['Mr Rochford', "St George's", 'Wed 25 Nov AM', '3 of 3 found'], state: 'Active, open to changes until it is authorised' },
-  { k: 'cancel', name: 'Cancellation', foot: ['Reject', 'Cancel 3 Bookings'], cells: ['Mr Rochford', "St George's", 'Wed 25 Nov AM', '3 cancelled'], state: 'Active, open to changes until it is authorised' },
+  { k: 'new', name: 'New List', foot: ['Reject this List', 'Place List'], cells: ['Mr Rochford', "St George's", 'Wed 25 Nov AM', '3 patients'] },
+  { k: 'update', name: 'Update', foot: ['Reject this update', 'Apply changes'], cells: ['Mr Rochford', "St George's", 'Wed 25 Nov AM', '3 of 3 found'] },
+  { k: 'same', name: 'Matches exactly', foot: [null, 'Confirm unchanged'], cells: ['Mr Rochford', "St George's", 'Wed 25 Nov AM', '3 of 3 found'] },
+  { k: 'cancel', name: 'Cancellation', foot: ['Reject', 'Cancel 3 Bookings'], cells: ['Mr Rochford', "St George's", 'Wed 25 Nov AM', '3 cancelled'] },
 ]
+const TITLE = { new: 'New List', update: "Update to Dr Visser's List", same: "No changes to Dr Visser's List", cancel: "Cancels Dr Visser's List" }
+const LINE = {
+  new: 'Not on the system yet. Choose who does it, then place it.',
+  update: '1 patient added, 1 removed, 1 time moved.',
+  same: "St George's re-sent the List as it stands. Confirm it to clear it.",
+  cancel: "St George's cancelled all 3 patients. Their Bookings will be cancelled.",
+}
+const STATE = { new: '', update: 'Active, open to changes until it is authorised', same: 'Active, open to changes until it is authorised', cancel: 'Active, open to changes until it is authorised' }
+const state = (k) => (STATE[k] ? `<p class="state">${STATE[k]}</p>` : '')
+const cls = (k) => (k === 'cancel' ? ' class="cancel"' : '')
 
 const ghost = (kd) => `<div class="ghost" aria-hidden="true">
   <div class="strip">${['Surgeon', 'Hospital', 'Day and session', 'Patients'].map((h, i) => `<div>${h}<b>${kd.cells[i]}</b></div>`).join('')}</div>
-  <div class="lbl">${kd.k === 'new' ? 'Who does this List' : kd.k === 'update' ? 'What this changes on Dr Visser\'s List' : kd.k === 'same' ? 'The List that matches exactly' : 'The Bookings this cancels'}</div>
+  <div class="lbl">${kd.k === 'new' ? 'Who does this List' : kd.k === 'update' ? "What this changes on Dr Visser's List" : kd.k === 'same' ? 'The List that matches exactly' : 'The Bookings this cancels'}</div>
   <div class="bar m"></div><div class="bar s"></div><div class="bar m"></div>
 </div>`
 const foot = (kd) => `<div class="foot">${kd.foot[0] ? `<span class="btn sec">${kd.foot[0]}</span>` : ''}<span class="btn pri">${kd.foot[1]}</span></div>`
 const rail = (kd, head) => `<div class="rail"><div class="body">${head}${ghost(kd)}</div>${foot(kd)}</div>`
 
-const IDEAS = [
+const VARIANTS = [
   {
-    id: 'a', title: 'Sentence heading',
-    blurb: 'The kind becomes the rail\'s title, written as a sentence that names the List: "Update to Dr Visser\'s List". A small icon tile sits beside it, and one line under it says what going ahead will do. Only the cancellation takes a colour.',
-    head: {
-      new: `<div class="a"><span class="tile">${I.new}</span><div><h3>New List</h3><p>Not on the system yet. Choose who does it, then place it.</p></div></div>`,
-      update: `<div class="a"><span class="tile">${I.update}</span><div><h3>Update to Dr Visser's List</h3><p>1 patient added, 1 removed, 1 time moved.</p><p class="state">Active, open to changes until it is authorised</p></div></div>`,
-      same: `<div class="a"><span class="tile">${I.same}</span><div><h3>No changes to Dr Visser's List</h3><p>St George's re-sent the List as it stands. Confirm it to clear it.</p><p class="state">Active, open to changes until it is authorised</p></div></div>`,
-      cancel: `<div class="a"><span class="tile cancel">${I.cancel}</span><div><h3>Cancels Dr Visser's List</h3><p>St George's cancelled all 3 patients. Their Bookings will be cancelled.</p><p class="state">Active, open to changes until it is authorised</p></div></div>`,
-    },
-    pros: ['Answers the question in words before anything else', 'Same size and place for every kind, so stepping through stays still', 'Colour only where something is destroyed'],
-    cons: ['A second title under the page title; the two must not repeat each other', 'Neutral kinds lean on the icon and words to differ'],
+    id: 'a1', label: 'A1', title: 'Bare icon',
+    blurb: 'The same icon, at the title\'s size and in slate, sitting in the title line with no box behind it. It reads as part of the sentence rather than a badge.',
+    head: (k) => `<div class="h"><h3${cls(k)}>${I[k]}${TITLE[k]}</h3><p>${LINE[k]}</p>${state(k)}</div>`,
+    pros: ['Keeps a quick visual cue per kind', 'No chrome: nothing but the line itself'],
+    cons: ['Icons for "update" and "matches" are still abstract; the words do the real work'],
   },
   {
-    id: 'b', title: 'Kind banner',
-    blurb: 'A tinted strip runs across the top edge of the rail, with the kind in bold and what it does beside it. Each kind has its own status tint: green new, amber update, grey matches, red cancellation.',
-    head: {
-      new: `<div class="b new">${I.new}<strong>New List</strong><span class="sep">·</span><span>3 patients, not on the system yet</span></div>`,
-      update: `<div class="b update">${I.update}<strong>Update to Dr Visser's List</strong><span class="sep">·</span><span>3 changes</span></div>`,
-      same: `<div class="b same">${I.same}<strong>Matches exactly</strong><span class="sep">·</span><span>nothing to change</span></div>`,
-      cancel: `<div class="b cancel">${I.cancel}<strong>Cancels Dr Visser's List</strong><span class="sep">·</span><span>3 Bookings</span></div>`,
-    },
-    pros: ['Readable from across the room; you know the kind before reading', 'Takes almost no height'],
-    cons: ['Spends status colours on kinds: amber and green already mean "check" and "found" in the rail', 'Four colours flashing past as you press J and K'],
+    id: 'a2', label: 'A2', title: 'Words only',
+    blurb: 'No mark at all. The title is the signal, and the cancellation is the one title set in red. The calmest of the four, and the closest to how the rest of the admin app titles things.',
+    head: (k) => `<div class="h"><h3${cls(k)}>${TITLE[k]}</h3><p>${LINE[k]}</p>${state(k)}</div>`,
+    pros: ['Nothing to learn; the sentence says it', 'Quietest next to the PDF'],
+    cons: ['Kinds differ only by their first word when you step quickly with J and K'],
   },
   {
-    id: 'c', title: 'Before and after',
-    blurb: 'Two small boxes: what is on the system now, and what this arrival makes of it. The join between them names the kind. A new List has nothing on the left; a cancellation strikes the right.',
-    head: {
-      new: `<p class="c-title">New List</p><div class="c"><div class="side none"><span class="k">On the system</span><span class="t">No List</span></div><div class="join">→<br>new</div><div class="side"><span class="k">This arrival</span><span class="t">Mr Rochford's List</span><span class="d">3 patients</span></div></div>`,
-      update: `<p class="c-title">Update to Dr Visser's List</p><div class="c"><div class="side"><span class="k">On the system</span><span class="t">Dr Visser's List</span><span class="d">3 patients</span></div><div class="join">→<br>3 changes</div><div class="side"><span class="k">This arrival</span><span class="t">Dr Visser's List</span><span class="d">+1 · −1 · 1 moved</span></div></div>`,
-      same: `<p class="c-title">No changes to Dr Visser's List</p><div class="c"><div class="side"><span class="k">On the system</span><span class="t">Dr Visser's List</span><span class="d">3 patients</span></div><div class="join eq">=<br>same</div><div class="side"><span class="k">This arrival</span><span class="t">Dr Visser's List</span><span class="d">3 patients</span></div></div>`,
-      cancel: `<p class="c-title">Cancels Dr Visser's List</p><div class="c"><div class="side"><span class="k">On the system</span><span class="t">Dr Visser's List</span><span class="d">3 Bookings</span></div><div class="join">→</div><div class="side gone"><span class="k">This arrival</span><span class="t strike">Dr Visser's List</span><span class="d">all 3 cancelled</span></div></div>`,
-    },
-    pros: ['Shows the change as a picture, the clearest of the five', 'Matches exactly reads instantly as "="'],
-    cons: ['Tallest of the five; pushes the match boxes down', 'Repeats the List name twice in an update'],
+    id: 'a3', label: 'A3', title: 'Signs',
+    blurb: 'A typed sign in the mono face leads the title: + new, ± update, = no changes, × cancels. It is the vocabulary of a diff, which is what an arrival is, and it is type rather than an icon.',
+    head: (k) => `<div class="h"><h3${cls(k)}><span class="sign" aria-hidden="true">${SIGN[k]}</span>${TITLE[k]}</h3><p>${LINE[k]}</p>${state(k)}</div>`,
+    pros: ['Four marks that are instantly different shapes, even in peripheral vision', '"=" for no changes says it better than any icon'],
+    cons: ['"±" is less familiar to an office reader than the other three'],
   },
   {
-    id: 'd', title: 'Tally first',
-    blurb: 'A kind pill and the List\'s owner on one line, then the counts as big numbers: added, removed, changed. The numbers are the headline.',
-    head: {
-      new: `<div class="d"><div class="row1"><span class="pill">${I.new}New List</span><span class="who">no anaesthetist yet</span></div><div class="tally"><div class="add"><b>3</b><span>patients to place</span></div></div></div>`,
-      update: `<div class="d"><div class="row1"><span class="pill">${I.update}Update</span><span class="who">to Dr Visser's List</span></div><div class="tally"><div class="add"><b>+1</b><span>added</span></div><div class="rem"><b>−1</b><span>removed</span></div><div class="chg"><b>1</b><span>moved</span></div></div></div>`,
-      same: `<div class="d"><div class="row1"><span class="pill">${I.same}Matches exactly</span><span class="who">Dr Visser's List</span></div><div class="tally"><div class="zero"><b>0</b><span>changes</span></div></div></div>`,
-      cancel: `<div class="d"><div class="row1"><span class="pill cancel">${I.cancel}Cancellation</span><span class="who">Dr Visser's List</span></div><div class="tally"><div class="rem"><b>3</b><span>Bookings cancelled</span></div></div></div>`,
+    id: 'a4', label: 'A4', title: 'The hospital as subject',
+    blurb: 'The title is a sentence about what the sender did: "St George\'s updated Dr Visser\'s List". It puts the source first, which matters when the same List arrives from the hospital feed and the rooms.',
+    head: (k) => {
+      const t = { new: "St George's sent a new List", update: "St George's updated Dr Visser's List", same: "St George's re-sent Dr Visser's List, unchanged", cancel: "St George's cancelled Dr Visser's List" }[k]
+      const l = { new: 'Not on the system yet. Choose who does it, then place it.', update: '1 patient added, 1 removed, 1 time moved.', same: 'Nothing to change. Confirm it to clear it.', cancel: 'All 3 patients. Their Bookings will be cancelled.' }[k]
+      return `<div class="h"><h3${cls(k)}>${t}</h3><p>${l}</p>${state(k)}</div>`
     },
-    pros: ['Size of the job is obvious at once', 'Good for an update with many rows'],
-    cons: ['Big numbers pull the eye from the PDF on the left', 'New List and Matches exactly have little to count, so they look empty'],
-  },
-  {
-    id: 'e', title: 'The track as header',
-    blurb: '"This List so far" moves to the top and becomes the header, and the last stop names the kind in words. The dot language already exists: solid is done, a hollow ring at the end is this arrival.',
-    head: {
-      new: `<div class="e"><div class="track"><span class="dot pend"></span><span class="end">New List</span></div><p class="sub">Not on the system yet. Choose who does it, then place it.</p></div>`,
-      update: `<div class="e"><div class="track"><span class="dot old"></span>Recurring<span class="ln"></span><span class="dot"></span>St George's 12 Nov · current<span class="ln dash"></span><span class="dot pend"></span><span class="end">Update</span></div><p class="sub">1 patient added, 1 removed, 1 time moved on Dr Visser's List.</p></div>`,
-      same: `<div class="e"><div class="track"><span class="dot old"></span>Recurring<span class="ln"></span><span class="dot"></span>St George's 12 Nov · current<span class="ln dash"></span><span class="dot same"></span><span class="end">Matches exactly</span></div><p class="sub">Nothing to change on Dr Visser's List.</p></div>`,
-      cancel: `<div class="e"><div class="track"><span class="dot old"></span>Recurring<span class="ln"></span><span class="dot"></span>St George's 12 Nov · current<span class="ln dash"></span><span class="dot x"></span><span class="end cancel">Cancellation</span></div><p class="sub">All 3 Bookings on Dr Visser's List will be cancelled.</p></div>`,
-    },
-    pros: ['One element instead of two: history and kind together', 'Reuses VersionTrack, so the least new code'],
-    cons: ['The kind word sits at the end of a line; the eye lands on "Recurring" first', 'A New List is a single dot, so the header looks thin'],
+    pros: ['Reads like a message, which suits an inbox', 'Says who to call if something looks wrong'],
+    cons: ['The kind word sits mid-sentence, so it is slower to scan', 'Repeats the "from" already in the page\'s sub-line'],
   },
 ]
 
-document.getElementById('ideas').innerHTML = IDEAS.map((idea, n) => `
-<section class="idea" id="${idea.id}">
-  <div class="ihead"><h2><span class="n">${String.fromCharCode(65 + n)}</span>${idea.title}</h2><p>${idea.blurb}</p></div>
-  <div class="grid">${KINDS.map((kd) => `<div class="cell"><p class="cap"><b>${kd.name}</b></p>${rail(kd, idea.head[kd.k])}</div>`).join('')}</div>
-  <div class="notes"><div><h3>Works because</h3><ul>${idea.pros.map((p) => `<li>${p}</li>`).join('')}</ul></div><div><h3>Watch for</h3><ul>${idea.cons.map((p) => `<li>${p}</li>`).join('')}</ul></div></div>
-</section>`).join('')
+const TALLY = {
+  new: '<b>3</b> patients to place',
+  update: '<b>1</b> added<span class="dot">·</span><b class="rm">1</b> removed<span class="dot">·</span><b>1</b> time moved',
+  same: '<b>0</b> changes<span class="dot">·</span><b>3</b> patients checked',
+  cancel: '<b class="rm">3</b> Bookings to cancel',
+}
+const AD = {
+  id: 'ad', label: 'A + D', title: 'A and D together, my version',
+  blurb: 'The sign title from A3, then D\'s counts as the second line: the numbers in bold so the size of the job reads at a glance, but at text size, not as big figures. Removals and cancellations count in red, everything else in ink. The List\'s state stays as the quiet third line. The counts line would work under A1 or A2 just as well.',
+  head: (k) => `<div class="h"><h3${cls(k)}><span class="sign" aria-hidden="true">${SIGN[k]}</span>${TITLE[k]}</h3><p class="tally">${TALLY[k]}</p>${state(k)}</div>`,
+  pros: ['Kind and size of the job in two short lines', 'Same height for every kind, so stepping through stays still'],
+  cons: ['A New List has nothing to compare, so its count is just the patient total'],
+}
+
+const section = (v) => `
+<section class="idea" id="${v.id}">
+  <div class="ihead"><h2><span class="n">${v.label}</span>${v.title}</h2><p>${v.blurb}</p></div>
+  <div class="grid">${KINDS.map((kd) => `<div class="cell"><p class="cap"><b>${kd.name}</b></p>${rail(kd, v.head(kd.k))}</div>`).join('')}</div>
+  <div class="notes"><div><h3>Works because</h3><ul>${v.pros.map((p) => `<li>${p}</li>`).join('')}</ul></div><div><h3>Watch for</h3><ul>${v.cons.map((p) => `<li>${p}</li>`).join('')}</ul></div></div>
+</section>`
+document.getElementById('ideas').innerHTML = VARIANTS.map(section).join('') + section(AD)
 </script>
 </body>
 </html>
