@@ -29,7 +29,7 @@ function sessionBlockColours(list: List): { background: string; bar: string; onT
   return { background: p.tint, bar: p.solid, onTint: p.onTint }
 }
 
-export function SlotCard({ listId, shot = 'intake-slot-card', title = 'Where it lands' }: { listId: string | undefined; shot?: string; title?: string }) {
+export function SlotCard({ listId, shot = 'intake-lands-card', title = 'Where it lands' }: { listId: string | undefined; shot?: string; title?: string }) {
   const list = useHeldList(listId)
   const bookings = useBookingCount(list?.id)
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)

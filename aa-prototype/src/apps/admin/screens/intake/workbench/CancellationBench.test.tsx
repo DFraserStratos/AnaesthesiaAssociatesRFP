@@ -92,7 +92,7 @@ describe('CancellationBench', () => {
     expect(card).toHaveAttribute('data-booking-id', c.bookingId)
     expect(card).toHaveTextContent("Hospital's reason")
     expect(card).toHaveTextContent(REASON)
-    const where = q('[data-shot="intake-slot-card"]')!
+    const where = q('[data-shot="intake-lands-card"]')!
     expect(where).toHaveTextContent('Where it lands')
     expect(where).toHaveAttribute('data-list-id', listId)
 

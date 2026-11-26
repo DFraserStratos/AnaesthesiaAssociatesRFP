@@ -9,6 +9,7 @@ import { OFFICE_ACTOR, SOUTER_ACTOR } from './demoActors'
 import { receiveMailboxPdf } from './intakeIngest'
 import { arrivalItemsOf } from './intakeSelectors'
 import { arrivalRowValues, correctArrivalRow } from './pdfListActions'
+import { placeArrivalList, placeChoicesFor, sessionChoice } from './intakePlace'
 import { clockISO } from './mutate'
 import { OKAFOR_STORY } from '../domain/intake/hospitalDownloads'
 import { SEED_DECIDED_ARRIVAL, SEED_PDF_LIST } from '../domain/seed/intakeSeed'
@@ -114,5 +115,32 @@ describe('correctArrivalRow (Phase 70): corrections before placing', () => {
     const state = api.getState()
     expect(correctArrivalRow(api, SOUTER_ACTOR, rowIds[0]!, { scheduledTime: '13:30' })).toMatchObject({ ok: false, code: 'officeOnly' })
     expect(api.getState()).toBe(state)
+  })
+})
+
+describe('a corrected ethnicity code reaches the patient (Wave 7 join; DM-15)', () => {
+  it('placing the List carries the corrected code onto the new patient the row becomes', () => {
+    const { api, rowIds } = okafor()
+    // A row whose patient AA does not hold yet (an existing patient's record is not overwritten by an arrival).
+    const known = new Set(Object.values(api.getState().masters.patients).map((p) => p.nhi))
+    const rowId = rowIds.find((id) => {
+      const nhi = api.getState().intake.rows[id]!.incoming.patient.nhi
+      return nhi !== undefined && !known.has(nhi)
+    })!
+    expect(rowId).toBeDefined()
+    // A valid code from the demo's set, different from the one read.
+    const code = api.getState().intake.rows[rowId]!.incoming.patient.ethnicityCode === '11111' ? '21111' : '11111'
+    expect(correctArrivalRow(api, OFFICE_ACTOR, rowId, { ethnicityCode: code }).ok).toBe(true)
+    const item = arrivalItemsOf(api.getState()).find((i) => i.rowIds.includes(rowId) && i.kind === 'newList')!
+    const choices = placeChoicesFor(api.getState(), item.key)!
+    const slot = choices.suggested ?? choices.otherSlots[0]!
+    const placed = placeArrivalList(api, OFFICE_ACTOR, item.key, sessionChoice(slot.id))
+    if (!placed.ok) throw new Error(placed.message)
+    const s = api.getState()
+    const decision = s.intake.rows[rowId]!.decision
+    const bookingId = decision !== undefined && 'bookingId' in decision ? decision.bookingId : undefined
+    const patientId = bookingId !== undefined ? s.schedule.bookings[bookingId]?.patientId : undefined
+    expect(patientId).toBeDefined()
+    expect(s.masters.patients[patientId!]?.ethnicityCode).toBe(code)
   })
 })

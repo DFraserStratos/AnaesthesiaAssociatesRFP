@@ -164,7 +164,7 @@ describe('Needs NHI bench: the waiting row', () => {
 })
 
 describe('Needs NHI bench: Add NHI, the one path', () => {
-  it("Intake's count holds the waiting row once and drops by one on Add NHI; the row leaves Needs NHI and the feed moves on", () => {
+  it("Intake's count holds the waiting row once and drops by one on Add NHI; the row leaves Needs NHI and the bench says so", () => {
     const onDone = vi.fn()
     const before = matchingAttentionCount(useAppStore.getState())
     const needsNhi = arrivalFeedCounts(useAppStore.getState()).needsNhi
@@ -217,7 +217,7 @@ describe('Needs NHI bench: Add NHI, the one path', () => {
     addNhi(openAddNhi(bench), NO_NHI_NEW_PATIENT_NHI)
     expect(needsNhiKeyFor(useAppStore.getState(), rowId)).toBeUndefined()
     expect(matchingAttentionCount(useAppStore.getState())).toBe(before)
-    expect(onDone).not.toHaveBeenCalled()
+    expect(onDone).toHaveBeenCalledTimes(1)
     expect(document.querySelector('[data-shot="add-nhi-needs-decision"]')?.textContent).toBe('The NHI is added. The row has no List yet: decide it with its arrival.')
     fireEvent.click(document.querySelector('[data-shot="add-nhi-open-row"]')!)
     const where = document.querySelector('[data-testid="where"]')!.textContent!

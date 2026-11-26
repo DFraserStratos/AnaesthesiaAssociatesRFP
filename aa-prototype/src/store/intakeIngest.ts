@@ -264,14 +264,18 @@ export function receiveMailboxPdf(
 export function receiveUnreadablePdf(
   api: AppStoreApi,
   input: { fileName: string; facsimile: string; senderEmail: string; reason: string },
+  opts: { byHand?: { by: string } } = {},
 ): Outcome<{ batchId: string }> {
   const sender = input.senderEmail.trim()
+  // Added by hand (Phase 70, at the Wave 7 join): the person who added it, with the address it came from.
+  const byHand = opts.byHand !== undefined && opts.byHand.by.trim() !== '' ? opts.byHand.by.trim() : undefined
+  const actor: Actor = byHand !== undefined ? { who: byHand, role: 'office', source: 'office' } : MAILBOX_ACTOR
   if (!isEmailShaped(sender)) return refuse('invalidEmail', 'Enter the address the PDF was sent from as an email address.')
   if (input.fileName.trim() === '') return refuse('fileRequired', 'The PDF needs a file name.')
   if (input.reason.trim() === '') return refuse('reasonRequired', 'Say why the PDF cannot be read.')
   let batchId = ''
   const metas: MutationMeta[] = []
-  mutate(api, MAILBOX_ACTOR, metas, (s) => {
+  mutate(api, actor, metas, (s) => {
     const alloc = allocateId(s.counters, 'importBatch')
     batchId = alloc.id
     const atISO = clockISO(s.clock)
@@ -282,8 +286,9 @@ export function receiveUnreadablePdf(
       // Nothing on the page could be read, so no hospital is known.
       hospitalId: '',
       label: input.fileName.trim(),
-      arrivalSource: { kind: 'mailbox', senderEmail: sender },
+      arrivalSource: byHand !== undefined ? { kind: 'byHand', by: byHand, senderEmail: sender } : { kind: 'mailbox', senderEmail: sender },
       receivedAtISO: atISO,
+      ...(byHand !== undefined ? { importedBy: byHand } : {}),
       rowIds: [],
       senderEmail: sender,
       file: { name: input.fileName.trim(), facsimile: input.facsimile },
@@ -296,7 +301,8 @@ export function receiveUnreadablePdf(
       after: { file: batch.file!.name, senderEmail: sender, reason: batch.unreadableReason },
       stampBookingId: null,
     })
-    const mailbox = s.intake.sources[INTAKE_SOURCE_IDS.mailbox]
+    // Only the mailbox's own arrivals move its last received time.
+    const mailbox = byHand === undefined ? s.intake.sources[INTAKE_SOURCE_IDS.mailbox] : undefined
     const sources = mailbox !== undefined ? { ...s.intake.sources, [mailbox.id]: { ...mailbox, lastReceivedAtISO: atISO } } : s.intake.sources
     return { intake: { ...s.intake, batches: { ...s.intake.batches, [batchId]: batch }, sources }, counters: alloc.counters }
   })

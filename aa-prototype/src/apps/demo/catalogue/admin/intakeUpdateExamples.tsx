@@ -96,7 +96,7 @@ export function SlotCardExample() {
   if (arrival?.heldListId === undefined) return <StageHint>No update arrival in the store.</StageHint>
   return (
     <div style={{ maxWidth: 300 }}>
-      <SlotCard listId={arrival.heldListId} shot="catalogue-intake-slot-card" />
+      <SlotCard listId={arrival.heldListId} shot="catalogue-intake-lands-card" />
     </div>
   )
 }

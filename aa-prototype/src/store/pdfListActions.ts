@@ -201,8 +201,11 @@ export function addPdfByHand(api: AppStoreApi, actor: Actor, sampleId: string, s
   const state = api.getState()
   if (sampleId === BY_HAND_UNREADABLE.id) {
     if (unreadablePdfStanding(state, BY_HAND_UNREADABLE.fileName)) return refuse('alreadyReceived', 'This PDF is already in Intake.')
-    // 68's ingest records the mailbox as its source; the address is the one typed.
-    const out = receiveUnreadablePdf(api, { fileName: BY_HAND_UNREADABLE.fileName, facsimile: BY_HAND_UNREADABLE.facsimile, senderEmail: sender, reason: BY_HAND_UNREADABLE.reason })
+    const out = receiveUnreadablePdf(
+      api,
+      { fileName: BY_HAND_UNREADABLE.fileName, facsimile: BY_HAND_UNREADABLE.facsimile, senderEmail: sender, reason: BY_HAND_UNREADABLE.reason },
+      { byHand: { by: actor.who } },
+    )
     if (!out.ok) return out
     return ok({ batchId: out.value.batchId, arrivalKey: out.value.batchId })
   }

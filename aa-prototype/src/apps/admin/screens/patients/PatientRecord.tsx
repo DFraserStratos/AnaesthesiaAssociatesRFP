@@ -10,6 +10,10 @@
  * `patient.update` (`EditableCard` with the form `EditPatientSheet` shares), and the Bookings, a few
  * with See all. No tabs (US-11.1.1 and D104 win over the design page's). Back returns to the list the
  * office came from. Everything reads `patientRecordView`, which reads 36's ledger, never `state.xero`.
+ *
+ * The data-quality flag (build plan Phase 68's join; DM-15): an ethnicity code held for review
+ * (`dataQualityItems`) shows in Needs the office with Apply code (`correctEthnicityCode`), which moved
+ * here from Intake's retired Data quality tab. Applying a valid code clears the flag.
  */
 
 import { Fragment, useMemo, useRef, useState } from 'react'
@@ -17,7 +21,9 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import {
   clearBalanceWarningWithNote,
   completeFollowUp,
+  correctEthnicityCode,
   creditNoteForInvoice,
+  dataQualityItems,
   editPatient,
   logPatientFollowUp,
   openBalanceWarnings,
@@ -28,6 +34,7 @@ import {
   resolvePatientDetails,
   useAppStore,
   type Actor,
+  type DataQualityItem,
   type FollowUpKind,
   type PatientBookingRow,
   type PatientInvoiceRow,
@@ -65,6 +72,8 @@ export function PatientRecord({ nhi, actor, onOpenBooking }: { nhi: string; acto
   const reasons = useMemo(() => patientNeedReasons(slices, nhi), [slices, nhi])
   // The record itself, for the actions that take it (never shown).
   const patient = useAppStore((s) => patientByNhi(s, nhi))
+  const masters = useAppStore((s) => s.masters)
+  const quality = useMemo(() => (patient === undefined ? undefined : dataQualityItems({ masters }).find((i) => i.patientId === patient.hiddenInternalId)), [masters, patient])
   const navigate = useNavigate()
   const location = useLocation()
   const openBooking = onOpenBooking ?? ((dateISO: string, bookingId: string) => navigate(`/admin/day/${dateISO}/bookings/${bookingId}`))
@@ -106,7 +115,7 @@ export function PatientRecord({ nhi, actor, onOpenBooking }: { nhi: string; acto
     >
       <PageBody gap={18} rail={rail} railLabel="Patient details">
         <BalanceTiles view={view} patientId={patient.hiddenInternalId} />
-        {reasons.length > 0 && <NeedsOfficeCard view={view} patient={patient} reasons={reasons} actor={actor} onLogFollowUp={() => logFollowUp()} />}
+        {(reasons.length > 0 || quality !== undefined) && <NeedsOfficeCard view={view} patient={patient} reasons={reasons} quality={quality} actor={actor} onLogFollowUp={() => logFollowUp()} />}
         <InvoicesCard view={view} actor={actor} onLogFollowUp={logFollowUp} onOpenBooking={openBooking} />
         <FollowUpLogCard view={view} actor={actor} linkInvoice={linkInvoice} onLinkInvoice={setLinkInvoice} composerRef={composerRef} />
       </PageBody>
@@ -170,10 +179,11 @@ function BalanceTiles({ view, patientId }: { view: PatientRecordView; patientId:
  * People badge, each with its action in place. Resolving the last one takes the patient off the list
  * and drops the badge by one, with no extra code: they read the same selector.
  */
-function NeedsOfficeCard({ view, patient, reasons, actor, onLogFollowUp }: { view: PatientRecordView; patient: Patient; reasons: readonly PatientNeedReason[]; actor: Actor; onLogFollowUp: () => void }) {
+function NeedsOfficeCard({ view, patient, reasons, quality, actor, onLogFollowUp }: { view: PatientRecordView; patient: Patient; reasons: readonly PatientNeedReason[]; quality: DataQualityItem | undefined; actor: Actor; onLogFollowUp: () => void }) {
   const today = useAppStore((s) => s.clock.todayISO)
+  const kinds = [...reasons.map((r) => r.kind), ...(quality !== undefined ? ['dataQuality'] : [])]
   return (
-    <Card title="Needs the office" padding="panel" tone="warning" shot="patient-needs-office" data-reasons={reasons.map((r) => r.kind).join(' ')}>
+    <Card title="Needs the office" padding="panel" tone="warning" shot="patient-needs-office" data-reasons={kinds.join(' ')}>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {reasons.map((reason, i) => {
           const t = reasonText(reason, today)
@@ -197,8 +207,57 @@ function NeedsOfficeCard({ view, patient, reasons, actor, onLogFollowUp }: { vie
             </div>
           )
         })}
+        {quality !== undefined && <DataQualityRow item={quality} first={reasons.length === 0} actor={actor} />}
       </div>
     </Card>
+  )
+}
+
+/**
+ * An ethnicity code that came in but is not a valid NZHIS code: held for review, never stored. The
+ * office supplies a valid code and Apply code stores it (`correctEthnicityCode`), clearing the flag.
+ */
+function DataQualityRow({ item, first, actor }: { item: DataQualityItem; first: boolean; actor: Actor }) {
+  const [code, setCode] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const apply = () => {
+    const res = correctEthnicityCode(useAppStore, actor, item.patientId, code)
+    setError(res.ok ? null : res.message)
+  }
+  return (
+    <div data-reason="dataQuality" data-shot="patient-data-quality" style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: first ? '0 0 14px' : '14px 0', borderTop: first ? 'none' : `1px solid ${neutral.line}` }}>
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 600, color: neutral.ink }}>
+          Ethnicity code not recognised
+          <Pill size="sm" tone="warning" mono>{item.receivedCode}</Pill>
+        </span>
+        <span style={{ fontSize: 12.5, color: neutral.slate }}>
+          The code received is held for review and not stored. {item.reason} Enter a valid NZHIS code to clear it.
+        </span>
+      </span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <TextField
+          label="Valid NZHIS ethnicity code"
+          hideLabel
+          value={code}
+          onChange={(v) => {
+            setCode(v)
+            setError(null)
+          }}
+          placeholder="Valid NZHIS code"
+          mono
+          size="compact"
+          fill="surface"
+          width={160}
+          invalid={error !== null}
+          shot="patient-data-quality-code"
+        />
+        <Button variant="primary" size="compact" onClick={apply} disabled={code.trim() === ''} disabledReason={code.trim() === '' ? 'Enter a code first.' : undefined} shot="patient-data-quality-apply">
+          Apply code
+        </Button>
+        <FormError message={error} variant="inline" />
+      </span>
+    </div>
   )
 }
 

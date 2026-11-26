@@ -162,6 +162,8 @@ export function effectiveIncoming(row: Pick<ImportRow, 'incoming' | 'corrections
   if (c.nhi !== undefined) patient.nhi = c.nhi
   if (c.patientName !== undefined) patient.name = c.patientName
   if (c.dobISO !== undefined) patient.dobISO = c.dobISO
+  // A corrected ethnicity code, taken before the row becomes a Booking (DM-15; Wave 7 join).
+  if (c.ethnicityCode !== undefined) patient.ethnicityCode = c.ethnicityCode
   return {
     ...row.incoming,
     patient,

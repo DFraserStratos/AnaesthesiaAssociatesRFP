@@ -34,7 +34,7 @@ function renderCard(listId: string | undefined, title?: string) {
   )
 }
 
-const card = () => document.querySelector<HTMLElement>('[data-shot="intake-slot-card"]')!
+const card = () => document.querySelector<HTMLElement>('[data-shot="intake-lands-card"]')!
 
 beforeEach(() => {
   useAppStore.setState(freshAppState())

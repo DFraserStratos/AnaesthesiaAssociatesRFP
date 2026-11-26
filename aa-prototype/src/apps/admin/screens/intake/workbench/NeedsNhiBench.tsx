@@ -2,8 +2,9 @@
  * The bench for a row waiting for an NHI (build plan Phases 68 and 72; D117, D124, D125; US-11.1.5, US-11.1.4,
  * US-02.6.3): the arrival's one row from `waitingNhiRows`, top to bottom the patient as received, the List (how close,
  * the stub standing on it), the chase card and Add NHI, the one way to add an NHI by hand (`AddNhiSheet`). Once the
- * NHI is added the row leaves Needs NHI by 68's selectors: resolved, the Booking takes the stub's place and the feed
- * moves on (`onDone`); otherwise the sheet says why and links to the row under its own kind.
+ * NHI is added the row leaves Needs NHI by 68's selectors: resolved, the Booking takes the stub's place; otherwise the
+ * sheet says why and links to the row under its own kind. Either way `onDone` keeps the item picked, so the bench and
+ * the sheet's outcome stay until the office moves on.
  *
  * Hooks: `intake-bench-needsNhi` (`data-arrival-key`); `waiting-nhi-row` (`data-row-id`, `data-urgent`) around the
  * parts; `waiting-nhi-add`; `waiting-nhi-empty` once the row no longer waits. Each part names its own.
@@ -48,9 +49,9 @@ export function NeedsNhiBench({ arrival, actor, onDone }: BenchProps) {
           row={sheetRow}
           actor={actor}
           onClose={() => setSheetRow(null)}
-          onAdded={(result) => {
-            // Called in the click, so the feed moves on from this item (its keys are this render's).
-            if (result.kind === 'resolved') onDone()
+          onAdded={() => {
+            // Called in the click, so the item is kept picked while it still has this render's key.
+            onDone()
           }}
         />
       )}

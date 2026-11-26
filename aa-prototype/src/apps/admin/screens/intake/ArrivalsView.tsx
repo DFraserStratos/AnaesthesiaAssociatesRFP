@@ -3,14 +3,18 @@
  * docked Workbench in one `WorkbenchSplit`, so the office keeps its place and moves on with a key press.
  *
  * The URL holds the filter, the search and the picked item (`intakePaths.ts`). The picked item is `?item=`
- * when it is in the feed, else the feed's first item (derived, never written back). Picking writes `?item=`
- * with replace, keeping the filter and search; a new filter or search drops the item. When the Workbench
- * has decided an item, the pick moves to the next one in the feed (or the one before, at the end).
+ * when that arrival exists (in the feed or not), else the feed's first item (derived, never written back).
+ * Picking writes `?item=` with replace, keeping the filter and search; a new filter or search drops the item.
+ * When the Workbench decides an item, `?item=` is written for it and its bench stays, showing the decision,
+ * though the item has left the filter: the office moves on by picking (a click, or J and K, which from an
+ * item no longer listed go to the first). A Needs NHI item stops existing once its NHI is added, so the last
+ * arrival shown is held for its key and its bench keeps the outcome. The Workbench remounts per item, so no
+ * bench's state (an open sheet, an outcome) carries over to the next.
  */
 
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import type { FeedFilter } from '../../../../domain/intake/arrivals'
+import type { ArrivalItem, FeedFilter } from '../../../../domain/intake/arrivals'
 import { WorkbenchSplit } from '../../../../shared/surface'
 import { useArrival, useArrivalFeed, useIntakeSources } from '../../../../store/intakeSelectors'
 import type { Actor } from '../../../../store/mutate'
@@ -37,8 +41,15 @@ export function ArrivalsView({ actor }: { actor: Actor }) {
 
   const groups = useArrivalFeed(filter, q)
   const keys = useMemo(() => groups.flatMap((g) => g.items.map((i) => i.key)), [groups])
-  const selectedKey = itemParam !== undefined && keys.includes(itemParam) ? itemParam : keys[0]
-  const selected = useArrival(selectedKey)
+  // The picked arrival, by key from every arrival (a decided one has left To decide), else the last one shown
+  // under that key (a Needs NHI item is gone once its NHI is added); failing both, the feed's first.
+  const fromUrl = useArrival(itemParam)
+  const [held, setHeld] = useState<ArrivalItem | undefined>(undefined)
+  const kept = fromUrl ?? (itemParam !== undefined && held?.key === itemParam ? held : undefined)
+  const first = useArrival(kept === undefined ? keys[0] : undefined)
+  const selected = kept ?? first
+  const selectedKey = selected?.key
+  if (selected !== undefined && selected !== held) setHeld(selected)
 
   const mailbox = useIntakeSources().find((s) => s.kind === 'mailbox' && s.state !== 'notConnected')
 
@@ -51,10 +62,9 @@ export function ArrivalsView({ actor }: { actor: Actor }) {
     setTyped(next)
     go({ filter, q: next })
   }
+  // Decided: keep the item picked (it may have been the derived first), so its bench stays with the outcome.
   const onDone = () => {
-    const at = selectedKey === undefined ? -1 : keys.indexOf(selectedKey)
-    const next = at === -1 ? undefined : (keys[at + 1] ?? keys[at - 1])
-    go({ filter, q, ...(next !== undefined ? { item: next } : {}) })
+    if (selectedKey !== undefined && selectedKey !== itemParam) go({ filter, q, item: selectedKey })
   }
 
   const footer =
@@ -86,7 +96,7 @@ export function ArrivalsView({ actor }: { actor: Actor }) {
             {...(footer !== undefined ? { footer } : {})}
           />
         }
-        workbench={<Workbench arrival={selected} actor={actor} onDone={onDone} />}
+        workbench={<Workbench key={selectedKey ?? ''} arrival={selected} actor={actor} onDone={onDone} />}
       />
     </div>
   )

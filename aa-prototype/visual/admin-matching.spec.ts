@@ -101,7 +101,7 @@ test('An update to a List AA holds: the match basis, the versions and a tick per
   await expect(bench).toBeVisible()
   await expect(bench.locator('[data-shot="intake-match-basis"] [data-key="surgeon"]')).toHaveAttribute('data-agreed', 'true')
   await expect(bench.locator('[data-shot="intake-version-track"] [data-proposed="true"]')).toHaveCount(1)
-  await expect(bench.locator('[data-shot="intake-slot-card"]')).toBeVisible()
+  await expect(bench.locator('[data-shot="intake-lands-card"]')).toBeVisible()
   expect(/score|%/i.test(await bench.innerText())).toBe(false)
   const diff = bench.locator('[data-shot="intake-update-diff"]')
   const changed = diff.locator('tr[data-change="changed"]').first()
@@ -144,7 +144,7 @@ test('Southern Cross cancels a Booking: one Cancellation, its row cancelled on t
   await expect(workbench(page)).toHaveAttribute('data-arrival-kind', 'cancellation')
   const bench = page.locator('[data-shot="intake-bench-cancellation"]')
   await expect(bench.locator('[data-shot="intake-cancellation-booking"]').first()).toBeVisible()
-  await expect(bench.locator('[data-shot="intake-slot-card"]')).toBeVisible()
+  await expect(bench.locator('[data-shot="intake-lands-card"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/admin-intake-cancellation.png', fullPage: true })
   // Mark cancelled: the Booking stays visible, marked cancelled.
   await bench.locator('[data-shot="intake-cancellation-apply"]').click()
