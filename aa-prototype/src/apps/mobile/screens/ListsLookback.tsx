@@ -159,12 +159,12 @@ function DateSheetBody({ anaesthetistId, todayISO, selectedISO, onPick }: { anae
 export function LookbackDayView({ anaesthetistId, dateISO, todayISO, onOpenList }: { anaesthetistId: string; dateISO: string; todayISO: string; onOpenList: (listId: string) => void }) {
   const schedule = useAppStore((s) => s.schedule)
   const masters = useAppStore((s) => s.masters)
-  // Stubs on each List (catch-up Phase 33a): the marker on the row.
+  // Stubs on each List (catch-up Phase 33a): the marker on the row, and a List held by its stub never reads done.
   const stubCounts = useStubCountsByList()
   const appSettings = useAppStore((s) => s.appSettings)
   const day = useMemo(
-    () => listsOnDayFor({ schedule, masters, appSettings }, anaesthetistId, dateISO, todayISO),
-    [schedule, masters, appSettings, anaesthetistId, dateISO, todayISO],
+    () => listsOnDayFor({ schedule, masters, appSettings }, anaesthetistId, dateISO, todayISO, stubCounts),
+    [schedule, masters, appSettings, anaesthetistId, dateISO, todayISO, stubCounts],
   )
   const active = (listId: string) => Object.values(schedule.bookings).filter((b) => b.listId === listId && b.cancellation === undefined)
   return (

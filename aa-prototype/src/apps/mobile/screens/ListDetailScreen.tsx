@@ -24,8 +24,8 @@ import { slotTimeRange, locationName, dayWithYear } from '../../../shared/format
 import { procedureLabel } from '../../../domain/billing/procedureStack'
 import { sessionText } from '../../../domain/outOfHours'
 import { surgeonSpecialtyLabel } from '../../../domain/specialties'
-import { withStubsInTimeOrder } from '../../../domain/intake/stubs'
-import { useListStubs } from '../../../store/stubSelectors'
+import { listStubNote, STUB_ONLY_REASON, withStubsInTimeOrder } from '../../../domain/intake/stubs'
+import { useListHeldByStub, useListStubs } from '../../../store/stubSelectors'
 import { ListStubNote, StubRow, StubSheet } from '../../../shared/stubs'
 
 interface ListDetailScreenProps {
@@ -124,6 +124,8 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
   const schedule = useAppStore((s) => s.schedule)
   // Stubs for rows waiting at intake (catch-up Phase 33a): drawn in time order, never counted.
   const stubs = useListStubs(listId)
+  // The stub guard (US-02.6.4): a List holding only a stub reads "1 waiting at intake" and cannot be submitted.
+  const held = useListHeldByStub(listId)
   const [openStubId, setOpenStubId] = useState<string | null>(null)
   const entries = useMemo(() => withStubsInTimeOrder(model?.rows ?? [], (r) => r.booking.scheduledTime, stubs), [model, stubs])
   // An authorised List is read only and shows its invoices (catch-up Phase 38a).
@@ -229,11 +231,16 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
         <AlertOfficeEntry actor={actor} target={{ listId }} compact statusOnly style={{ marginTop: 10 }} />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0 4px' }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>
-            {model.done} of {model.activeCount} complete
-          </span>
+          {held ? (
+            // Held by its stub: the note in place of "0 of 0 complete" (never complete).
+            <ListStubNote count={stubs.length} />
+          ) : (
+            <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>
+              {model.done} of {model.activeCount} complete
+            </span>
+          )}
           <ProgressBar done={model.done} total={model.activeCount} width="fill" tone={stubs.length > 0 ? 'held' : 'done'} />
-          <ListStubNote count={stubs.length} />
+          {!held && <ListStubNote count={stubs.length} />}
         </div>
       </div>
 
@@ -367,9 +374,11 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
             <TickGlyph size={18} color={neutral.surface} />
             Submitted to office
           </div>
-        ) : incomplete > 0 ? (
+        ) : incomplete > 0 || held ? (
+          // Greyed: Bookings still to finish, or a List held by its stub (the sheet gives the reason; never the confirm).
           <button
             type="button"
+            data-shot={held ? 'list-submit-held' : undefined}
             onClick={() => setSheet('blockers')}
             style={{
               height: 54,
@@ -390,8 +399,8 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
               cursor: 'pointer',
             }}
           >
-            <span>Mark list completed · {incomplete} to finish</span>
-            <span style={{ fontSize: 11, fontWeight: 500 }}>Tap to see what is left</span>
+            <span>Mark list completed · {held ? listStubNote(stubs.length) : `${incomplete} to finish`}</span>
+            <span style={{ fontSize: 11, fontWeight: 500 }}>{held ? 'Tap to see why' : 'Tap to see what is left'}</span>
           </button>
         ) : (
           <button
@@ -432,7 +441,8 @@ export function ListDetailScreen({ listId, actor, onBack, onOpenBooking, onAddBo
           open
           listId={listId}
           actor={actor}
-          mode={sheet}
+          mode={held ? 'blockers' : sheet}
+          {...(held ? { listReason: STUB_ONLY_REASON } : {})}
           onClose={() => setSheet('none')}
           onSubmitted={() => {
             setSheet('none')

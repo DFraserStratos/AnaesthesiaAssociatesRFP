@@ -69,3 +69,23 @@ export function noTimeLine(t: SupportTicket): string | null {
   if (t.priority === 'P4') return SUPPORT_CONFIG.response[t.channel].P4.label
   return null
 }
+
+/**
+ * How the NHI and ethnicity codes are checked: Admin's Help only, as plain
+ * text (build plan Phase 72; the words the Intake Validators tab used to show,
+ * US-11.1.2). The NHI field checks a number as it is typed, so there is no
+ * try-it box here.
+ */
+export const FORMAT_CHECKS_TITLE = 'How NHI and ethnicity codes are checked'
+export const FORMAT_CHECKS_NHI_LABEL = 'NHI'
+export const FORMAT_CHECKS_NHI_LINES: readonly string[] = [
+  'The current format is AAANNNC: three letters, three digits and a mod-11 check digit.',
+  'The new format is AAANNAX: three letters, two digits, a letter and a mod-23 check letter.',
+  'Both formats are mandated side by side from 4 November 2027, and the NHI field accepts either.',
+  'The requirement labels the current check "Modulus 24", but its own example NHIs check only under mod-11, so the system uses mod-11. The label is for AA to confirm.',
+]
+export const FORMAT_CHECKS_ETHNICITY_LABEL = 'Ethnicity code'
+export const FORMAT_CHECKS_ETHNICITY_LINES: readonly string[] = [
+  'Ethnicity codes are NZHIS Level 4 codes of five digits.',
+  "This demo checks them against a curated subset. A well-formed code outside it may still be a real NZHIS code, so it reads as outside this demo's subset, never as invalid.",
+]

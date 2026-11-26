@@ -20,7 +20,7 @@ import { isBlankText } from '../billing/procedureStack'
 export const STUB_READINGS = [
   "The Booking takes the stub's place on the List once the office adds the NHI (US-02.6.3).",
   'A stub shows the patient name, procedure wording and time as received, the reason and the source (US-02.6.2).',
-  "A List holding a stub never reads complete: the stub's own marking and a note beside the progress, with no warning, to-do entry, prompt or block (US-02.6.1).",
+  "A List holding a stub never reads complete: the stub's own marking and a note beside the progress, with no warning, to-do entry or prompt; a List holding only a stub can be neither submitted nor authorised (US-02.6.1, US-02.6.4).",
   'No stub when the row has no List to land on, or its List is authorised, or the row is a cancellation.',
   'A stub follows its List when the List is reassigned or moved.',
   'Removing or re-dating a Draft List takes its stub off; the row keeps waiting.',
@@ -83,6 +83,23 @@ export function stubsOnList(stubs: Readonly<Record<string, Stub>> | readonly Stu
   return all
     .filter((s) => s.listId === listId && s.status === 'standing')
     .sort((a, b) => (a.asReceived.scheduledTime ?? '99:99').localeCompare(b.asReceived.scheduledTime ?? '99:99') || a.id.localeCompare(b.id))
+}
+
+/**
+ * The stub guard's one reason (US-02.6.4, DM-18): read by `submitList`'s and
+ * `authoriseList`'s refusals, `authoriseBlockersFor`, `SubmitListSheet` and the
+ * office stand-in. Our wording.
+ */
+export const STUB_ONLY_REASON =
+  'This List holds only a booking waiting at intake, with no NHI yet. The office has to resolve it before the List can be submitted or authorised.'
+
+/**
+ * The stub guard's pure rule (US-02.6.4): a List is held when a stub stands on
+ * it and it has no Booking that is not cancelled. A List with any live Booking
+ * is never held up by its stub.
+ */
+export function listHeldByStub(activeBookingCount: number, standingStubCount: number): boolean {
+  return standingStubCount > 0 && activeBookingCount === 0
 }
 
 /** "1 waiting at intake", "2 waiting at intake"; empty for none. */

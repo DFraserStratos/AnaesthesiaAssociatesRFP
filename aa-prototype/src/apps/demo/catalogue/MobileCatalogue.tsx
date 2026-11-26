@@ -248,7 +248,7 @@ export function MobileCatalogue() {
           <SupportSheetExample actor={actor} />
         </CatalogueRow>
         <CatalogueRow name="SubmitListSheet" source="shared/flows/SubmitListSheet.tsx" usedIn={WM} stage="mobile" height={560}
-          what="Opened from the greyed submit dock: names each Booking still to finish and what blocks it. Its confirm mode is a ConfirmSheet that submits the List."
+          what="Opened from the greyed submit dock: names each Booking still to finish and what blocks it, or, with listReason, the List-level reason (a List holding only a booking waiting at intake reads Waiting at intake). Its confirm mode is a ConfirmSheet that submits the List."
           shared="shared/flows/SubmitListSheet.tsx"
           note="Shown in blockers mode only, so nothing is submitted from here.">
           <Ex.SubmitListSheetExample picks={picks} />

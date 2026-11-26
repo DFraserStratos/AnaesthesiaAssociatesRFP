@@ -88,4 +88,30 @@ describe('SupportPanel (catch-up Phase 43b)', () => {
     fireEvent.click(screen.getByText('New feature'))
     expect(shot('support-new-feature-line').textContent).toBe('Goes to the product owner or the development team, to plan.')
   })
+
+  it('shows how NHI and ethnicity codes are checked in Admin\'s Help only, as text', () => {
+    render(
+      <SurfaceProvider variant="web">
+        <SupportPanel channels={['helpLine', 'productSupport']} actor={OFFICE_ACTOR} app="admin" seesEveryRequest buttonSize="desktop" />
+      </SurfaceProvider>,
+    )
+    const checks = shot('support-format-checks')
+    expect(checks.textContent).toContain('How NHI and ethnicity codes are checked')
+    expect(checks.textContent).toContain('AAANNNC')
+    expect(checks.textContent).toContain('AAANNAX')
+    expect(checks.textContent).toContain('4 November 2027')
+    expect(checks.textContent).toContain('for AA to confirm')
+    expect(checks.textContent).toContain("outside this demo's subset")
+    expect(checks.querySelector('input')).toBeNull()
+    cleanup()
+    for (const app of ['web', 'mobile', 'pwa'] as const) {
+      render(
+        <SurfaceProvider variant="web">
+          <SupportPanel channels={['helpLine']} actor={SOUTER_ACTOR} app={app} seesEveryRequest={false} buttonSize="desktop" />
+        </SurfaceProvider>,
+      )
+      expect(document.querySelector('[data-shot="support-format-checks"]')).toBeNull()
+      cleanup()
+    }
+  })
 })

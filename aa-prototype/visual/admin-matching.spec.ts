@@ -51,7 +51,12 @@ test('Needs NHI: the filter and the picked item live in the URL; the seeded row 
   await expect(workbench(page)).toHaveAttribute('data-arrival-kind', 'needsNhi')
   const bench = page.locator('[data-shot="intake-bench-needsNhi"]')
   await expect(bench).toBeVisible()
-  await expect(bench.locator('[data-row-id]', { hasText: 'Mere Tipene' })).toHaveAttribute('data-row-change', 'waiting')
+  // Phase 72: the bench's parts, top to bottom: as received, the List with its stub, the one address, Add NHI.
+  await expect(bench.locator('[data-shot="waiting-nhi-row"]')).toHaveAttribute('data-row-id', 'IRS001')
+  await expect(bench.locator('[data-shot="waiting-nhi-patient"]')).toContainText('Mere Tipene')
+  await expect(bench.locator('[data-shot="waiting-nhi-stub"]')).toContainText("Stub on Dr Souter's List")
+  await expect(bench.locator('a[data-shot="waiting-nhi-email"]')).toHaveAttribute('href', /^mailto:/)
+  await expect(bench.locator('[data-shot="waiting-nhi-add"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/admin-intake-needs-nhi.png', fullPage: true })
 
   // A reload keeps the filter and the pick; search narrows the feed and lands in the URL.
@@ -61,7 +66,13 @@ test('Needs NHI: the filter and the picked item live in the URL; the seeded row 
   await page.locator('[data-shot="intake-search"]').getByRole('searchbox').fill('Tipene')
   await expect(page).toHaveURL(/filter=needs-nhi&q=Tipene$/)
   await expect(feedItem(page, 'Mere Tipene')).toHaveCount(1)
-  // Phase 68: Add NHI on the waiting row (and its stub resolving) moved to 72; re-added there.
+
+  // Phase 72: Add NHI, the one path: the Booking takes the stub's place and the row leaves Needs NHI.
+  await page.locator('[data-shot="waiting-nhi-add"]').click()
+  const sheet = page.locator('[data-shot="add-nhi-sheet"]')
+  await sheet.getByLabel('NHI', { exact: true }).fill('ZQA1024')
+  await sheet.locator('[data-shot="add-nhi-save"]').click()
+  await expect(feedItem(page, 'Mere Tipene')).toHaveCount(0)
 })
 
 test("St George's sends the day-before List: the file lands as a heading over its Lists, nothing applied", async ({ page }) => {

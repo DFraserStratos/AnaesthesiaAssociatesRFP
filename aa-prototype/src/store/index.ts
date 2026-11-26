@@ -720,7 +720,7 @@ export { placeStubsOnList } from './stubSettle'
 export { confirmUnchangedLists, dismissHeldMessage, unchangedListsOfBatch, useUnchangedListsOf, type ConfirmUnchangedResult } from './intakeBulk'
 // Catch-up Phase 33a: stubs on a List (never Bookings) and the office's one resolve path.
 export { resolveStub, type ResolveStubInput, type ResolveStubResult } from './stubActions'
-export { resolvedStubForRow, standingStubCount, standingStubCountsByList, stubForRow, stubsForList, useListStubs, useStubCountsByList } from './stubSelectors'
+export { listHeldByStubOf, resolvedStubForRow, standingStubCount, standingStubCountsByList, stubForRow, stubsForList, useListHeldByStub, useListStubs, useStubCountsByList } from './stubSelectors'
 // Catch-up Phase 33a: the PWA office stand-in that adds the NHI to a List's stub.
 export { fixtureNhiForRow, officeAddsNhiRefusal, officeAddsNhiToStub } from './stubDemo'
 // Catch-up Phase 33: the PWA office stand-in behind "Hospital file imported and my booking matched" (Phase 68: rows

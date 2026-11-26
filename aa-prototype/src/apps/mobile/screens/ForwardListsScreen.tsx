@@ -156,7 +156,8 @@ export function ForwardListsScreen({
       else arr.push(c)
     }
     const activeBookings = (listId: string): Booking[] => bookingsByList.get(listId) ?? []
-    const progressOf = (l: AssignedList) => listProgress(l, activeBookings(l.id), todayISO)
+    // A List held by its stub (no live Booking) never reads done (US-02.6.4).
+    const progressOf = (l: AssignedList) => listProgress(l, activeBookings(l.id), todayISO, stubCounts.get(l.id) ?? 0)
 
     const slotState = { schedule: { slots: slotsRecord, lists: listsRecord, bookings: bookingsRecord }, appSettings, masters: { slotStatuses } }
     const forwardTo = format(addDays(parseISO(todayISO), filter === 'month' ? 31 : 7), 'yyyy-MM-dd')

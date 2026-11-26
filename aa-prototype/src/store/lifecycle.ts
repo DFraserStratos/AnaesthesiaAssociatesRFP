@@ -47,6 +47,8 @@ import { claimsAuditView } from '../domain/billing/modifiers'
 import { reconciledForGroup } from './modifierFacts'
 import { approvalsAtAuthorise } from './contractApprovalActions'
 import { isDraftStore } from './draftMode'
+import { listHeldByStubOf } from './stubSelectors'
+import { STUB_ONLY_REASON } from '../domain/intake/stubs'
 
 // ---------------------------------------------------------------------------
 // Shared checks
@@ -258,6 +260,10 @@ export function submitList(api: AppStoreApi, actor: Actor, listId: string): Outc
     return refuse('notOwnList', 'Anaesthetists can only submit their own Lists.')
   }
 
+  // The stub guard (US-02.6.4, DM-18): a List holding only a stub is never submitted.
+  const stubOnly = stubOnlyBlockerFor(state, listId)
+  if (stubOnly !== undefined) return refuse(stubOnly.code, stubOnly.message)
+
   const incomplete = incompleteBookingsOn(state, listId)
   if (incomplete.length > 0) {
     return refuse(
@@ -314,6 +320,8 @@ export function authoriseList(api: AppStoreApi, actor: Actor, listId: string): O
   const blockers = authoriseBlockersFor(state, listId)
   if (blockers.length > 0) {
     const first = blockers[0]!
+    // The stub guard carries its own reason, never "needs a price" (US-02.6.4).
+    if (first.code === STUB_ONLY_LIST) return refuse(first.code, first.message)
     const more = blockers.length > 1 ? ` (${blockers.length} Procedures need a price)` : ''
     return refuse(first.code, `${AUTHORISE_NEEDS_PRICE} ${first.message}${more}`, blockers.map((b) => b.bookingId ?? ''))
   }
@@ -387,6 +395,21 @@ function lockAuditSummary(lock: BookingLock): Record<string, unknown> {
   }
 }
 
+/** The stub guard's blocker code (US-02.6.4, DM-18). */
+export const STUB_ONLY_LIST = 'stubOnlyList'
+
+/**
+ * The stub guard, the one place `submitList`, `authoriseList` and
+ * `authoriseBlockersFor` read (US-02.6.4, DM-18): a live List with a standing
+ * stub and no Booking that is not cancelled. A lifecycle block, never a warning
+ * rule, because the story says the List "can be neither" submitted nor
+ * authorised. Nothing is stored: resolving or rejecting the stub, or the List
+ * gaining a Booking, lifts it. No `bookingId`: Review shows it as a plain line.
+ */
+export function stubOnlyBlockerFor(state: Pick<AppState, 'intake' | 'schedule'>, listId: string): AuthoriseBlocker | undefined {
+  return listHeldByStubOf(state, listId) ? { code: STUB_ONLY_LIST, message: STUB_ONLY_REASON } : undefined
+}
+
 /** A reason a SUBMITTED List may not be authorised yet (catch-up Phase 21a's seam). */
 export interface AuthoriseBlocker {
   code: string
@@ -407,6 +430,9 @@ export interface AuthoriseBlocker {
 export function authoriseBlockersFor(state: AppState, listId: string): AuthoriseBlocker[] {
   const list = state.schedule.lists[listId]
   if (list === undefined) return []
+  // The stub guard (Phase 72, US-02.6.4): a List holding only a stub has no Booking to price.
+  const stubOnly = stubOnlyBlockerFor(state, listId)
+  if (stubOnly !== undefined) return [stubOnly]
   const out: AuthoriseBlocker[] = []
   for (const booking of bookingsForList(state, listId)) {
     if (booking.cancellation !== undefined) continue

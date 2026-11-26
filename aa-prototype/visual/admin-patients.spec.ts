@@ -70,9 +70,12 @@ test('Waiting for NHI: the old address lands on Intake under Needs NHI, each wai
   const mere = rows.filter({ hasText: 'Mere Tipene' })
   await expect(mere).toHaveCount(1)
   await mere.click()
-  await expect(page.locator('[data-shot="intake-bench-needsNhi"] [data-row-id]', { hasText: 'Mere Tipene' })).toHaveAttribute('data-row-change', 'waiting')
+  // Phase 72: the Needs NHI bench (the old table's row hooks moved onto it).
+  const row = page.locator('[data-shot="intake-bench-needsNhi"] [data-shot="waiting-nhi-row"]')
+  await expect(row).toHaveAttribute('data-row-id', 'IRS001')
+  await expect(row.locator('[data-shot="waiting-nhi-chase"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/admin-waiting-nhi.png', fullPage: true })
-  // Phase 68: the Forte list's arrival (Receive list with a missing NHI, retired) and Add NHI JKL1188 matching Losa Tuilagi moved to 72; re-added there.
+  // The Forte list's arrival (Receive list with a missing NHI) is retired; Add NHI on the seeded row is walked in admin-matching.spec.ts.
 })
 
 test('Needs follow-up: a reminder for today puts Sarah on the list once; Done on her page takes her off', async ({ page }) => {

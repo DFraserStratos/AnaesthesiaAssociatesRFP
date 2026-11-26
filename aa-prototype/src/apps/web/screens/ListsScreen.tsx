@@ -107,7 +107,8 @@ export function ListsScreen({
       const surgeon = surgeons[l.surgeonId]
       return [location, surgeon?.name, surgeonSpecialtyLabel({ specialties }, surgeon)].filter((p): p is string => p !== undefined && p !== '').join(' · ')
     }
-    const progressOf = (l: AssignedList) => listProgress(l, active.get(l.id) ?? [], todayISO)
+    // A List held by its stub (no live Booking) never reads done or quiet (US-02.6.4).
+    const progressOf = (l: AssignedList) => listProgress(l, active.get(l.id) ?? [], todayISO, stubCounts.get(l.id) ?? 0)
 
     const view = mainViewFor(slotState, anaesthetistId, todayISO, toISO === '' ? '9999-12-31' : toISO)
     const earlierRows = view.earlier.map(
@@ -137,7 +138,7 @@ export function ListsScreen({
       }
     })
     return { earlier: earlierRows, upcoming: upcomingRows }
-  }, [listsRecord, slotsRecord, bookingsRecord, appSettings, slotStatuses, hospitals, surgeons, anaesthetistId, todayISO, toISO])
+  }, [listsRecord, slotsRecord, bookingsRecord, appSettings, slotStatuses, hospitals, surgeons, anaesthetistId, todayISO, toISO, stubCounts])
 
   function renderRow(r: Row) {
     const c = resolveDisplayStatus(r.displayKey, slotStatuses).visual

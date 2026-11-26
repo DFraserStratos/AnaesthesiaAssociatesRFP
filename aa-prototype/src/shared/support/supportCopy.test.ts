@@ -8,6 +8,13 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import {
+  FORMAT_CHECKS_ETHNICITY_LABEL,
+  FORMAT_CHECKS_ETHNICITY_LINES,
+  FORMAT_CHECKS_NHI_LABEL,
+  FORMAT_CHECKS_NHI_LINES,
+  FORMAT_CHECKS_TITLE,
+} from './supportCopy'
 
 const SRC = resolve(__dirname, '../..')
 
@@ -37,5 +44,17 @@ describe('support copy and the one place (catch-up Phase 43b)', () => {
     const shared = files.filter((f) => f.rel.startsWith(join('shared', 'support')) || f.rel === join('domain', 'support.ts'))
     expect(shared.length).toBeGreaterThan(5)
     expect(shared.filter((f) => /from '[./]*apps\/(admin|web)\//.test(f.code)).map((f) => f.rel)).toEqual([])
+  })
+
+  it('the NHI and ethnicity format words say the facts, with no dash, vendor or phase number', () => {
+    const all = [FORMAT_CHECKS_TITLE, FORMAT_CHECKS_NHI_LABEL, ...FORMAT_CHECKS_NHI_LINES, FORMAT_CHECKS_ETHNICITY_LABEL, ...FORMAT_CHECKS_ETHNICITY_LINES].join(' ')
+    expect(all).toMatch(/AAANNNC.*mod-11 check digit/)
+    expect(all).toMatch(/AAANNAX.*mod-23 check letter/)
+    expect(all).toContain('4 November 2027')
+    expect(all).toContain('"Modulus 24"')
+    expect(all).toContain('for AA to confirm')
+    expect(all).toContain('NZHIS Level 4')
+    expect(all).toContain("outside this demo's subset, never as invalid")
+    expect(all).not.toMatch(/[–—]|Stratos|[Pp]hase \d/)
   })
 })

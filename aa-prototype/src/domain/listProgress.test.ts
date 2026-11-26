@@ -35,6 +35,22 @@ describe('listProgress', () => {
     expect(listProgress({ state: 'AUTHORISED', dateISO: '2026-11-23' }, [done], TODAY)).toBe('authorised')
   })
 
+  it('a List held by its stub (no live Booking, a stub standing) is never done: ACTIVE or SUBMITTED reads upcoming (US-02.6.4)', () => {
+    expect(listProgress({ state: 'ACTIVE', dateISO: '2026-11-17' }, [], TODAY, 1)).toBe('upcoming')
+    expect(listProgress({ state: 'ACTIVE', dateISO: '2026-12-08' }, [], TODAY, 1)).toBe('upcoming')
+    // Every Booking cancelled after submit, the stub still standing: not done.
+    expect(listProgress({ state: 'SUBMITTED', dateISO: '2026-11-23' }, [], TODAY, 1)).toBe('upcoming')
+    expect(listProgress({ state: 'SUBMITTED', dateISO: '2026-11-23' }, [], TODAY)).toBe('submitted')
+    // AUTHORISED is unchanged.
+    expect(listProgress({ state: 'AUTHORISED', dateISO: '2026-11-23' }, [], TODAY, 1)).toBe('authorised')
+  })
+
+  it('a List with a live Booking and a stub reads as without the stub (never held up)', () => {
+    expect(listProgress({ state: 'ACTIVE', dateISO: '2026-11-17' }, [done, done], TODAY, 1)).toBe('readyToSubmit')
+    expect(listProgress({ state: 'SUBMITTED', dateISO: '2026-11-23' }, [done], TODAY, 2)).toBe('submitted')
+    expect(listProgress({ state: 'ACTIVE', dateISO: TODAY }, [open], TODAY, 1)).toBe('toFinish')
+  })
+
   it('labels come from one table', () => {
     expect(LIST_PROGRESS_LABEL.submitted).toBe('Done · unbilled')
     expect(LIST_PROGRESS_LABEL.invoiced).toBe('Invoiced')

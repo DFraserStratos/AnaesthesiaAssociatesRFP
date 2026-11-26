@@ -7,9 +7,10 @@
 
 import { useMemo } from 'react'
 import type { Stub } from '../domain/types'
-import { stubsOnList } from '../domain/intake/stubs'
+import { listHeldByStub, stubsOnList } from '../domain/intake/stubs'
 import type { AppState } from './appStore'
 import { useAppStore } from './appStore'
+import { bookingsForList } from './selectors'
 
 type Lists = AppState['schedule']['lists']
 
@@ -58,4 +59,21 @@ export function useStubCountsByList(): Map<string, number> {
   const stubs = useAppStore((s) => s.intake.stubs)
   const lists = useAppStore((s) => s.schedule.lists)
   return useMemo(() => standingStubCountsByList(stubs, lists), [stubs, lists])
+}
+
+/**
+ * The stub guard (US-02.6.4, DM-18): the List has a standing stub and no
+ * Booking that is not cancelled. Read live, never stored: resolving or
+ * rejecting the stub, or the List gaining a Booking, lifts it. The one reader
+ * `lifecycle.ts`'s guard and the apps' readings share.
+ */
+export function listHeldByStubOf(state: Pick<AppState, 'intake' | 'schedule'>, listId: string): boolean {
+  const standing = stubsForList(state, listId).length
+  if (standing === 0) return false
+  const active = bookingsForList(state, listId).filter((b) => b.cancellation === undefined).length
+  return listHeldByStub(active, standing)
+}
+
+export function useListHeldByStub(listId: string | undefined): boolean {
+  return useAppStore((s) => (listId === undefined ? false : listHeldByStubOf(s, listId)))
 }

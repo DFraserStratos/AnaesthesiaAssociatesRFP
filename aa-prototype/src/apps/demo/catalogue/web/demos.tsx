@@ -28,6 +28,8 @@ import { AddRowButton, BackLink, Button, Card, DayChip, FilterPills, StatTile, I
 import { drSurname, formatCurrency, locationName, mondayOf, shiftWeeks } from '../../../../shared/format'
 import { ListInvoices, useBookingSearch, useListInvoices } from '../../../../shared/schedule'
 import { AddBookingFlow, AlertOfficeEntry, MovedToYouPanel, SubmitListSheet, useMovableLists } from '../../../../shared/flows'
+import { SEED_STUB } from '../../../../domain/seed/intakeSeed'
+import { STUB_ONLY_REASON } from '../../../../domain/intake/stubs'
 import { AvailabilityEditor, SeriesList } from '../../../../shared/availability'
 import { ResultLine } from '../../../../shared/ui/ResultLine'
 import { HistoryTimeline } from '../../../../shared/booking'
@@ -496,12 +498,15 @@ export function DialogDemo({ f }: F) {
 }
 
 export function SubmitListSheetDemo({ f }: F) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState<'rows' | 'held' | null>(null)
   if (f.detailListId === undefined) return <Missing what="active List" />
   return (
     <>
-      <KnobButton onClick={() => setOpen(true)}>Open Bookings still to finish</KnobButton>
-      {open && <SubmitListSheet open listId={f.detailListId} actor={f.actor} mode="blockers" onClose={() => setOpen(false)} onSubmitted={() => setOpen(false)} />}
+      <KnobButton onClick={() => setOpen('rows')}>Open Bookings still to finish</KnobButton>
+      <KnobButton onClick={() => setOpen('held')}>Open a List waiting at intake</KnobButton>
+      {open === 'rows' && <SubmitListSheet open listId={f.detailListId} actor={f.actor} mode="blockers" onClose={() => setOpen(null)} onSubmitted={() => setOpen(null)} />}
+      {/* The stub-only List (Dr Souter's Tue 8 Dec PM): the List-level reason, "Waiting at intake". */}
+      {open === 'held' && <SubmitListSheet open listId={SEED_STUB.listId} actor={f.actor} mode="blockers" listReason={STUB_ONLY_REASON} onClose={() => setOpen(null)} onSubmitted={() => setOpen(null)} />}
     </>
   )
 }

@@ -222,6 +222,12 @@ interface AllowEntry {
  */
 const ALLOWLIST: readonly AllowEntry[] = [
   {
+    file: 'shared/support/supportCopy.ts',
+    phrase: 'The label is for AA to confirm.',
+    reason: "The NHI mod-11 flag, in Admin's Help since the Validators tab went: US-11.1.2 still says modulus 24, which its own example fails; the catalogue text needs correcting.",
+    item: 'US-11.1.2',
+  },
+  {
     file: 'domain/intake/rawRow.ts',
     phrase: 'Type 2 diabetes',
     reason: "A hospital row's clinical note, kept as received; not the retired Contract type.",
@@ -300,6 +306,7 @@ const MUST_KEEP: readonly MustKeep[] = [
   { file: 'domain/privacy/mask.ts', text: 'Masking policy is for AA to agree', item: 'US-15.0.6', phase: '43' },
   { file: 'apps/admin/components/XeroPanels.tsx', text: 'Provisional: the policy for each mismatch is to be agreed with AA.', item: 'US-09.2.2', phase: '37' },
   { file: 'apps/demo/DemoXero.tsx', text: 'How this posts in Xero is still to be confirmed.', item: 'US-06.5.1 (how Xero posts the move is still open)', phase: '27a' },
+  { file: 'shared/support/supportCopy.ts', text: 'The label is for AA to confirm.', item: 'US-11.1.2 (the Modulus 24 label, in Admin Help)', phase: '72' },
 ]
 
 // ---------------------------------------------------------------------------

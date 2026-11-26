@@ -1,8 +1,8 @@
 /**
  * Catch-up Phase 33a: a stub is never a Booking (FT-02.6, D66, D11). With the
  * seeded stub standing, every Booking path returns exactly what it returns
- * without it, and submit and authorise go through on a List holding one with
- * no prompt and no refusal, the stub standing afterwards.
+ * without it. Since Phase 72 a List holding only a stub is refused submit and
+ * authorise (the stub guard, US-02.6.4), read through `listHeldByStubOf` alone.
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -64,12 +64,13 @@ describe('a stub is never a Booking', () => {
     }
   })
 
-  it('submit and authorise go through on a List holding a stub, with no prompt or refusal; the stub stands', () => {
+  it('a List holding only a stub is refused submit, the one stub guard (Phase 72, US-02.6.4); the stub stands', () => {
+    // The guard reads the stub through `listHeldByStubOf` only; `lifecycleStubGuard.test.ts` covers it in full.
     const api: AppStoreApi = createAppStore()
-    expect(submitList(api, SOUTER_ACTOR, SEED_STUB.listId)).toMatchObject({ ok: true })
-    expect(authoriseList(api, OFFICE_ACTOR, SEED_STUB.listId)).toMatchObject({ ok: true })
+    expect(submitList(api, SOUTER_ACTOR, SEED_STUB.listId)).toMatchObject({ ok: false, code: 'stubOnlyList' })
+    expect(authoriseList(api, OFFICE_ACTOR, SEED_STUB.listId)).toMatchObject({ ok: false })
     const s = api.getState()
-    expect(s.schedule.lists[SEED_STUB.listId]?.state).toBe('AUTHORISED')
+    expect(s.schedule.lists[SEED_STUB.listId]?.state).toBe('ACTIVE')
     expect(s.intake.stubs[SEED_STUB.stubId]?.status).toBe('standing')
   })
 
