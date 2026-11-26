@@ -64,12 +64,13 @@ test('admin ledger: in balance, an unmatched receipt takes it out, allocating br
   // Her account says the same, in words.
   await souterRow.click()
   await expect(page).toHaveURL(new RegExp(`/admin/finances/ledger/anaesthetists/${SOUTER}$`))
-  await expect(balance).toContainText("Dr Souter's ledger is out of balance by $120.00")
-  // Who owes whom, in words. (Read from the tiles row: the two cards' own hooks do not reach the DOM, see Phase 36's checklist.)
-  const tiles = page.locator('[data-shot="ledger-tiles"]')
-  await expect(tiles).toHaveAttribute('data-shot-scope', 'anaesthetist')
-  await expect(tiles).toContainText('AA owes Dr Souter')
-  await expect(tiles).toContainText('Dr Souter owes AA')
+  // Build plan Phase 65: the account page's status pill and its out-of-balance notice.
+  await expect(page.locator('[data-shot="ledger-account-status"]')).toHaveAttribute('data-in-balance', 'false')
+  await expect(balance).toHaveAttribute('data-in-balance', 'false')
+  await expect(balance).toContainText("Dr Souter's account is out by $120.00")
+  // Who owes whom: the two money cards.
+  await expect(page.locator('[data-shot="ledger-aa-owes"]')).toContainText('AA owes them')
+  await expect(page.locator('[data-shot="ledger-owes-aa"]')).toContainText('They owe AA')
   await page.screenshot({ path: 'visual/shots/ledger-03-souter-out.png', fullPage: true })
 
   // Back to the whole ledger; allocate the held receipt to an invoice it covers.
@@ -96,11 +97,13 @@ test('admin ledger: in balance, an unmatched receipt takes it out, allocating br
   expect(pairId).not.toBeNull()
   await page.screenshot({ path: 'visual/shots/ledger-05-allocated.png', fullPage: true })
 
-  // Her scope is back in balance too.
+  // Her account is back in balance too: the pill says Square and the notice is gone.
   await page.goto(`/admin/finances/ledger/anaesthetists/${SOUTER}`)
   await page.waitForLoadState('networkidle')
-  await expect(balance).toHaveAttribute('data-in-balance', 'true')
-  await expect(balance).toContainText("Dr Souter's ledger is in balance")
+  const status = page.locator('[data-shot="ledger-account-status"]')
+  await expect(status).toHaveAttribute('data-in-balance', 'true')
+  await expect(status).toContainText('Square')
+  await expect(balance).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/ledger-06-souter-in-balance.png', fullPage: true })
 
   expect(consoleErrors, `console errors: ${consoleErrors.join(' | ')}`).toEqual([])

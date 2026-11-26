@@ -8,6 +8,7 @@ import { ANAE } from '../../../../domain/seed'
 import { remittanceAdviceFor, useAppStore } from '../../../../store'
 import { RemittanceAdviceDocument } from '../../../../shared/billing/RemittanceAdviceDocument'
 import { LedgerPaymentRuns, StillToNetNotice } from '../../../admin/components/LedgerPaymentRuns'
+import { ADMIN_RIGHT_RAIL_WIDTH } from '../../../admin/layout'
 import { RemittancesTab, StillToNetPanel } from '../../../web/screens/RemittancesTab'
 
 /** Dr Souter's Week 29 remittance advice (the seed's newest backdrop run). */
@@ -18,10 +19,10 @@ export function RemittanceAdviceDocumentExample() {
   return advice !== undefined ? <RemittanceAdviceDocument advice={advice} shot="catalogue-remittance-advice" /> : null
 }
 
-/** The Admin Ledger's per-anaesthetist Payment runs card and its still-to-net notice (shown only when a negative is open). */
+/** An anaesthetist's account page rail: the Payment runs section and the still-to-net notice (shown only when a negative is open). */
 export function LedgerPaymentRunsExample() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: ADMIN_RIGHT_RAIL_WIDTH }}>
       <StillToNetNotice anaesthetistId={ANAE.souter} surname="Dr Souter" />
       <LedgerPaymentRuns anaesthetistId={ANAE.souter} />
     </div>

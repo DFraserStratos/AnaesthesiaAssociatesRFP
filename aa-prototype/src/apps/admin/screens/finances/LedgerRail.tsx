@@ -37,7 +37,8 @@ export interface LedgerFigures {
   receiptsToPlaceCount: number
 }
 
-const CHECK_TEXT: Record<LedgerCheck['code'], string> = {
+/** What each failed ledger check is called (the Ledger rail and the account page). */
+export const CHECK_TEXT: Record<LedgerCheck['code'], string> = {
   unmatchedReceiptHeld: 'Receipt with no matching invoice',
   pairAmountMismatch: 'Payable differs from its invoice',
   transferMismatch: 'Transfer out differs from what was held',
