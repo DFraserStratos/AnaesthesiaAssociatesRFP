@@ -85,7 +85,9 @@ test("St George's sends the day-before List: the file lands as a heading over it
   await expect(exact.first()).toBeVisible()
   await exact.first().click()
   await expect(workbench(page)).toHaveAttribute('data-arrival-kind', 'matchesExactly')
-  await expect(page.locator('[data-shot="intake-bench-matchesExactly"] [data-row-id]').first()).toHaveAttribute('data-row-change', 'unchanged')
+  // 71's bench lists the Lists that match exactly, each a row with its arrival key, and one Confirm.
+  await expect(page.locator('[data-shot="intake-bench-matchesExactly"] [data-shot="intake-unchanged-lists"] [data-arrival-key]').first()).toBeVisible()
+  await expect(page.locator('[data-shot="intake-confirm-unchanged"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/admin-intake-stg-day-before.png', fullPage: true })
 })
 

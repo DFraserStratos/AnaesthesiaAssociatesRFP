@@ -23,6 +23,7 @@ import { ok, refuse, transaction, withChangeSet, type Actor, type Outcome } from
 import { assignListToSlot } from './slotActions'
 import { createDraftList } from './draftListActions'
 import { placeStubsOnList } from './stubSettle'
+import { REJECT_REASON_REQUIRED_MESSAGE } from './intakeApply'
 
 /** Where the office places the List. A surgeon is chosen only when the arrival's is not recognised. */
 export type PlaceChoice =
@@ -61,8 +62,8 @@ export interface PlaceResult {
 export const SLOT_TAKEN_MESSAGE = 'That session has just been taken. Choose another.'
 export const LIST_NOT_OFFERED_MESSAGE = 'That List cannot take these Bookings any more. Choose another.'
 export const PLACE_SURGEON_REQUIRED_MESSAGE = 'Choose the surgeon for this List first.'
-/** The same words as 69's Update bench (`intakeApply.ts`); the barrel exports that one. */
-export const REJECT_REASON_REQUIRED_MESSAGE = 'Give a reason to reject this List.'
+// One message for rejecting a whole List, whichever bench (69's Update bench owns it; Wave 7 join).
+export { REJECT_REASON_REQUIRED_MESSAGE }
 export const NOT_A_NEW_LIST_MESSAGE = 'This arrival is not a new List.'
 export const ALREADY_DECIDED_MESSAGE = 'This List has already been decided.'
 

@@ -11,6 +11,7 @@
 
 import type { ImportBatch, ImportRow, ImportRowCorrection, ImportRowCorrections } from '../domain/types'
 import { validateNhi } from '../domain/nhi'
+import { redactNhis } from '../domain/privacy/nhiDetect'
 import { isEmailShaped } from '../domain/billing/payer'
 import { plural } from '../domain/dateText'
 import { effectiveIncoming } from '../domain/intake/matching'
@@ -283,20 +284,22 @@ export const DISMISS_REASON_REQUIRED_MESSAGE = 'Say why this PDF is dismissed.'
 export function dismissUnreadablePdf(api: AppStoreApi, actor: Actor, batchId: string, reason: string): Outcome {
   const office = officeOnly(actor)
   if (office !== null) return office
-  const why = reason.trim()
+  // As 71's dismissHeldMessage: one change set, the same audit code, any NHI in the reason redacted (Wave 7 join).
+  const why = redactNhis(reason.trim())
   if (why === '') return refuse('reasonRequired', DISMISS_REASON_REQUIRED_MESSAGE)
   const found = standingUnreadable(api.getState(), batchId)
   if ('ok' in found) return found
   mutate(
     api,
     actor,
-    { entityType: 'importBatch', entityId: batchId, action: 'importBatch.dismiss', before: { dismissed: false }, after: { dismissed: true, reason: why }, stampBookingId: null },
+    { entityType: 'importBatch', entityId: batchId, action: 'importBatch.dismissed', after: { reason: why }, stampBookingId: null },
     (s) => {
       const cur = s.intake.batches[batchId]
       if (cur === undefined) return {}
       const next: UnreadableBatch = { ...cur, dismissed: { by: actor.who, atISO: clockISO(s.clock), reason: why } }
       return { intake: { ...s.intake, batches: { ...s.intake.batches, [batchId]: next } } }
     },
+    { changeSet: 'match' },
   )
   return ok(undefined)
 }

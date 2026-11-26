@@ -138,7 +138,7 @@ describe('an unreadable PDF', () => {
     expect(s.intake.batches[batchId]!.dismissed).toEqual({ by: OFFICE_ACTOR.who, atISO: expect.any(String), reason: 'Clearer copy received' })
     expect(matchingAttentionCount(s)).toBe(countBefore)
     expect(arrivalByKey(s, batchId)).toMatchObject({ decided: true })
-    expect(s.audit.at(-1)).toMatchObject({ action: 'importBatch.dismiss', entityType: 'importBatch', entityId: batchId, who: OFFICE_ACTOR.who })
+    expect(s.audit.at(-1)).toMatchObject({ action: 'importBatch.dismissed', entityType: 'importBatch', entityId: batchId, who: OFFICE_ACTOR.who })
     expect(dismissUnreadablePdf(api, OFFICE_ACTOR, batchId, 'Again')).toMatchObject({ ok: false, code: 'alreadyDismissed' })
     // Once dismissed, the page can be added again.
     expect(byHandSamples(s).map((x) => x.id)).toContain(UNREADABLE_PDF.id)

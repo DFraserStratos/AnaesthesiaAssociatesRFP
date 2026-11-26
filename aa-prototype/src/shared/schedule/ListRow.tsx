@@ -95,7 +95,8 @@ function RightCluster({ right, held = false }: { right: ListRowRight; held?: boo
     return (
       <span style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}>
         <RowPill bg={PILL_TONES[tone === 'done' ? 'warning' : tone].tint} color={PILL_TONES[tone === 'done' ? 'warning' : tone].onTint}>
-          {label}
+          {/* Held by a stub, a done List does not read done, so the row and the Done filter agree (Wave 7 join; 72). */}
+          {tone === 'done' && held ? 'Waiting at intake' : label}
         </RowPill>
         <Chevron />
       </span>
