@@ -105,7 +105,7 @@ svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stro
   <p class="lede">One shared header at the top of the right-hand rail, the same place and shape for every kind, so you know whether you are placing a new List, applying changes, clearing a re-send or cancelling before you read anything else. Below are four takes on the sentence heading that drop the icon in a rounded box, then A and D together.</p>
   <p class="lede">Each is shown for the four kinds on the same List (Mr Rochford, St George's, Wed 25 Nov AM). The faded part is the rail as it is now; the rails are at the app's real width.</p>
   <nav class="toc" aria-label="Variants">
-    <a href="#a1">A1 · Bare icon</a><a href="#a2">A2 · Words only</a><a href="#a3">A3 · Signs</a><a href="#a4">A4 · The hospital as subject</a><a href="#ad">A and D together</a>
+    <a href="#a1">A1 · Bare icon</a><a href="#a2">A2 · Words only</a><a href="#a3">A3 · Signs</a><a href="#a4">A4 · The hospital as subject</a><a href="#a1d">A1 + D</a><a href="#ad">A3 + D</a>
   </nav>
 </div></header>
 
@@ -115,7 +115,7 @@ svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stro
 <script>
 const I = {
   new: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>',
-  update: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>',
+  update: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>',
   same: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>',
   cancel: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>',
 }
@@ -186,8 +186,15 @@ const TALLY = {
   same: '<b>0</b> changes<span class="dot">·</span><b>3</b> patients checked',
   cancel: '<b class="rm">3</b> Bookings to cancel',
 }
+const A1D = {
+  id: 'a1d', label: 'A1 + D', title: 'Bare icon with the counts',
+  blurb: 'A1\'s bare icon title, with D\'s counts as the second line in place of the sentence. Numbers in bold at text size; removals and cancellations count in red. The List\'s state stays as the quiet third line.',
+  head: (k) => `<div class="h"><h3${cls(k)}>${I[k]}${TITLE[k]}</h3><p class="tally">${TALLY[k]}</p>${state(k)}</div>`,
+  pros: ['Kind and size of the job in two short lines', 'Same height for every kind, so stepping through stays still'],
+  cons: ['A New List has nothing to compare, so its count is just the patient total'],
+}
 const AD = {
-  id: 'ad', label: 'A + D', title: 'A and D together, my version',
+  id: 'ad', label: 'A3 + D', title: 'Signs with the counts',
   blurb: 'The sign title from A3, then D\'s counts as the second line: the numbers in bold so the size of the job reads at a glance, but at text size, not as big figures. Removals and cancellations count in red, everything else in ink. The List\'s state stays as the quiet third line. The counts line would work under A1 or A2 just as well.',
   head: (k) => `<div class="h"><h3${cls(k)}><span class="sign" aria-hidden="true">${SIGN[k]}</span>${TITLE[k]}</h3><p class="tally">${TALLY[k]}</p>${state(k)}</div>`,
   pros: ['Kind and size of the job in two short lines', 'Same height for every kind, so stepping through stays still'],
@@ -200,7 +207,7 @@ const section = (v) => `
   <div class="grid">${KINDS.map((kd) => `<div class="cell"><p class="cap"><b>${kd.name}</b></p>${rail(kd, v.head(kd.k))}</div>`).join('')}</div>
   <div class="notes"><div><h3>Works because</h3><ul>${v.pros.map((p) => `<li>${p}</li>`).join('')}</ul></div><div><h3>Watch for</h3><ul>${v.cons.map((p) => `<li>${p}</li>`).join('')}</ul></div></div>
 </section>`
-document.getElementById('ideas').innerHTML = VARIANTS.map(section).join('') + section(AD)
+document.getElementById('ideas').innerHTML = VARIANTS.map(section).join('') + section(A1D) + section(AD)
 </script>
 </body>
 </html>
