@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { ChevronRight } from 'lucide-react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { fontFamily, neutral, type as typeScale } from '../../../theme/tokens'
 import type { Invoice } from '../../../domain/types'
 import { invoiceDeliveryLabel, layoutShortLabel } from '../../../domain/billing'
@@ -41,6 +41,7 @@ import { PrepaymentApprovalList, PrepaymentApprovalSwitchCard } from '../compone
 import { PageBody, PageToolbar } from '../components/AdminPage'
 import { FinancesPage } from './finances/FinancesSection'
 import { creditNotePath, invoicePath } from './finances/financePaths'
+import { INVOICES_LIST_STATE_KEY } from './finances/InvoicePage'
 import {
   allInvoiceRows,
   bookingDayLine,
@@ -106,6 +107,7 @@ export function InvoicesScreen({ actor }: InvoicesScreenProps) {
   const masters = useAppStore((s) => s.masters)
   const todayISO = useToday()
   const navigate = useNavigate()
+  const location = useLocation()
   const pending = usePendingPrepayments()
 
   const { params, set } = useInvoiceListParams()
@@ -264,7 +266,7 @@ export function InvoicesScreen({ actor }: InvoicesScreenProps) {
             </thead>
             <tbody>
               {shown.map((row) => (
-                <InvoiceListRow key={row.id} row={row} billing={billing} schedule={schedule} eventLines={eventLineCounts.get(row.id) ?? 0} onOpen={(path) => navigate(path)} />
+                <InvoiceListRow key={row.id} row={row} billing={billing} schedule={schedule} eventLines={eventLineCounts.get(row.id) ?? 0} onOpen={(path) => navigate(path, { state: { [INVOICES_LIST_STATE_KEY]: `${location.pathname}${location.search}` } })} />
               ))}
             </tbody>
           </TableShell>

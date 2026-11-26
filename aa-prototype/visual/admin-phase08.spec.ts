@@ -448,7 +448,7 @@ test('exemplar staging via the guard console: patient layout and the fee split',
 
   // nib's share: holder layout, emailed to nib, the split note linking Alan's share.
   // The back link opens the tab afresh (Unpaid, no search), so pin Dr Souter's again.
-  await page.getByTestId('invoice-detail-screen').getByRole('link', { name: 'Invoices', exact: true }).click()
+  await page.getByTestId('invoice-detail-screen').locator('[data-shot="invoice-back"]').click()
   await expect(page).toHaveURL(/\/admin\/finances\/invoices$/)
   await page.getByLabel('Search invoices').fill('Souter')
   const nibRow = invoiceTable

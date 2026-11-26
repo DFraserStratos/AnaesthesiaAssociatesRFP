@@ -94,6 +94,24 @@ export function allInvoiceRows(state: InvoiceListState, todayISO: string): Invoi
   })
 }
 
+/** One invoice's row (its state, owing and age), for its own page: 59's model over that invoice and its credit notes alone. */
+export function invoiceRowFor(state: InvoiceListState, invoiceId: string, todayISO: string): InvoiceRow | undefined {
+  const invoice = state.billing.invoices[invoiceId]
+  if (invoice === undefined) return undefined
+  return invoiceRows({
+    invoices: [invoice],
+    creditNotes: Object.values(state.billing.creditNotes).filter((c) => c.originalInvoiceId === invoiceId),
+    pairByInvoice: pairByInvoice(state.billing.ledger),
+    bookings: state.schedule.bookings,
+    lists: state.schedule.lists,
+    patients: state.masters.patients,
+    anaesthetists: state.masters.anaesthetists,
+    payerName: (doc) => invoiceAddresseeName(state, doc),
+    pendingPrepayments: [],
+    todayISO,
+  }).find((r) => r.id === invoiceId)
+}
+
 export interface InvoiceListQuery {
   show: InvoiceShow
   kind?: InvoiceRowKind

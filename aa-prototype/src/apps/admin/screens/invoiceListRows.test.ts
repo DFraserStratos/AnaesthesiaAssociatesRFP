@@ -6,6 +6,7 @@ import { sessionText } from '../../../domain/outOfHours'
 import { freshAppState } from '../../../store/appStore'
 import {
   allInvoiceRows,
+  invoiceRowFor,
   bookingDayLine,
   invoiceList,
   invoiceListSummary,
@@ -403,5 +404,15 @@ describe('AA fee invoices never list', () => {
     const all = invoiceList(rows, { show: 'all' })
     expect(all.every((r) => !r.id.startsWith('pending:'))).toBe(true)
     expect(invoiceList(rows, { show: 'approval' }).every((r) => r.state === 'awaitingApproval')).toBe(true)
+  })
+})
+
+describe('invoiceRowFor: one invoice, as the list reads it', () => {
+  it('the seeded aged invoice reads Unpaid · 40 days, the same row the list holds', () => {
+    const state = freshAppState()
+    const row = invoiceRowFor(state, 'INV-S24-02', TODAY)
+    expect(row).toEqual(allInvoiceRows(state, TODAY).find((r) => r.id === 'INV-S24-02'))
+    expect(invoiceStateLabel(row!)).toEqual({ text: 'Unpaid · 40 days', tone: 'warning' })
+    expect(invoiceRowFor(state, 'nope', TODAY)).toBeUndefined()
   })
 })
