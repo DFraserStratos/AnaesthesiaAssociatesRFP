@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Intake, Less Noise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Tokens: the app's own (aa-prototype/src/theme/tokens.ts), so the mocks read as the app. */
+:root{
+  --ink:#172320;--slate:#58635F;--mist:#8A9490;--lineStrong:#C9D1CE;--line:#E2E7E5;--sunken:#EDF1EF;--bg:#F6F8F7;--surface:#FFFFFF;--grid:#F1F4F2;
+  --brand:#A91E3E;--brandMuted:#D89AA9;
+  --teal:#0D6E63;--tealTint:#E1F0ED;
+  --ok:#1E8E5A;--okTint:#E3F4EB;--okOn:#157A49;
+  --warn:#A16207;--warnTint:#F9F0DC;--warnOn:#7C4D08;
+  --err:#C2403C;--errTint:#FAE9E7;--errOn:#9C332F;
+  --e1:0 1px 2px rgba(23,35,32,.05),0 2px 6px rgba(23,35,32,.05);
+  --e2:0 2px 4px rgba(23,35,32,.06),0 8px 20px rgba(23,35,32,.09);
+  --e3:0 8px 16px rgba(23,35,32,.10),0 24px 56px rgba(23,35,32,.18);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,p{margin:0}
+a{color:var(--teal)}
+:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(13,110,99,.30);border-radius:6px}
+.wrap{max-width:1520px;margin:0 auto;padding:0 32px}
+@media (max-width:640px){.wrap{padding:0 16px}}
+
+/* ---------- page shell ---------- */
+header.top{background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{padding-top:44px;padding-bottom:36px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,560px);gap:56px}
+@media (max-width:1100px){header.top .wrap{grid-template-columns:1fr;gap:28px}}
+.kicker{font-size:14px;color:var(--slate)}
+.top h1{font-size:46px;line-height:1.06;letter-spacing:-.025em;margin:14px 0 18px;font-weight:800;max-width:16ch}
+@media (max-width:640px){.top h1{font-size:34px}}
+.lede{font-size:17px;color:var(--slate);max-width:62ch}
+.lede+.lede{margin-top:12px}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+.toc a{font-size:13px;font-weight:600;text-decoration:none;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:6px 12px;border-radius:999px}
+.toc a:hover{border-color:var(--teal);color:var(--teal)}
+.heard{background:var(--bg);border-radius:16px;padding:20px 22px}
+.heard h2{font-size:15px;margin-bottom:10px}
+.heard ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.heard li{display:grid;grid-template-columns:150px 1fr;gap:12px;font-size:14px}
+.heard li b{font-size:13.5px}
+.heard li span{color:var(--slate)}
+@media (max-width:640px){.heard li{grid-template-columns:1fr;gap:0}}
+
+section.idea{padding:56px 0 8px}
+.ihead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:end;margin-bottom:18px}
+.ihead h2{font-size:28px;line-height:34px;letter-spacing:-.015em}
+.ihead h2 .n{color:var(--mist);font-weight:600;margin-right:10px;font-variant-numeric:tabular-nums}
+.ihead p{color:var(--slate);max-width:72ch;margin-top:6px;font-size:16px}
+.effort{font-size:13px;color:var(--slate);white-space:nowrap;text-align:right}
+.effort b{display:block;color:var(--ink);font-size:14px}
+@media (max-width:800px){.ihead{grid-template-columns:1fr}.effort{text-align:left}}
+.cap{font-size:13px;color:var(--slate);margin:14px 0 8px}
+.cap b{color:var(--ink)}
+.notes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:20px}
+@media (max-width:800px){.notes{grid-template-columns:1fr}}
+.notes div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 20px}
+.notes h3{font-size:14px;margin-bottom:6px}
+.notes ul{margin:0;padding-left:18px;font-size:14px;color:var(--ink)}
+.notes li{margin-bottom:5px}
+.notes li::marker{color:var(--mist)}
+
+.cmp{width:100%;border-collapse:collapse;background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--e1);font-size:14px}
+.cmpw{overflow-x:auto;border-radius:14px}
+.cmp th,.cmp td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.cmp th{font-size:12.5px;color:var(--slate);font-weight:600;background:var(--bg)}
+.cmp td:first-child{font-weight:600;white-space:nowrap}
+.y{color:var(--okOn);font-weight:600}.m{color:var(--warnOn);font-weight:600}.no{color:var(--errOn);font-weight:600}
+.reco{background:var(--surface);border-radius:16px;box-shadow:var(--e2);padding:26px 30px;margin-top:18px;border-left:4px solid var(--teal)}
+.reco h3{font-size:20px;margin-bottom:8px}
+.reco p{max-width:80ch;color:var(--ink)}
+.reco p+p{margin-top:10px}
+footer{color:var(--mist);font-size:13px;padding:48px 0 64px}
+
+/* ---------- mock frame (drawn at 1440 wide, scaled to fit) ---------- */
+.fwrap{position:relative;border-radius:14px;overflow:hidden;box-shadow:var(--e3);border:1px solid var(--line);background:var(--bg)}
+.frame{position:absolute;top:0;left:0;width:1440px;transform-origin:0 0;display:grid;grid-template-columns:200px minmax(0,1fr);overflow:hidden;font-size:13px;line-height:1.4;background:var(--bg)}
+.side{background:var(--ink);color:#B9C4C0;padding:20px 12px;display:flex;flex-direction:column;gap:2px}
+.side .wm{font-family:Georgia,serif;color:#fff;font-size:14px;margin:0 10px 4px}
+.side .ad{color:var(--brandMuted);font-size:10px;letter-spacing:.08em;margin:0 10px 22px;font-weight:600}
+.side a{padding:8px 10px;border-radius:8px;font-size:13px;display:flex;justify-content:space-between;align-items:center;text-decoration:none;color:inherit}
+.side a.on{background:rgba(255,255,255,.07);color:#fff;box-shadow:inset 3px 0 0 var(--brand)}
+.side .ct{background:var(--warn);color:#fff;border-radius:999px;font-size:10.5px;font-weight:700;padding:0 7px;line-height:18px}
+.side .ct.r{background:var(--err)}
+.mainc{display:flex;flex-direction:column;min-width:0;min-height:0;padding:18px 24px 20px}
+.ph{display:flex;align-items:center;gap:28px;margin-bottom:14px;min-height:34px}
+.ph h1{font-size:22px;letter-spacing:-.01em}
+.tabsi{display:flex;gap:20px;align-self:stretch;align-items:stretch}
+.tb{font-size:13.5px;font-weight:600;color:var(--slate);display:flex;align-items:center;gap:6px;border-bottom:2px solid transparent}
+.tb.on{color:var(--ink);border-color:var(--teal)}
+.tb .n{font-size:11px;color:var(--warnOn);background:var(--warnTint);border-radius:999px;padding:0 6px;line-height:17px}
+.grow{flex:1}
+
+.split{flex:1;min-height:0;display:grid;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface);box-shadow:var(--e1)}
+.feed{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--surface)}
+.ftool{padding:12px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line)}
+.ftool .sels{display:flex;gap:8px}
+.ftool .sels .sel{flex:1;min-width:0}
+.srch{height:34px;border:1px solid var(--lineStrong);border-radius:10px;padding:0 10px;display:flex;align-items:center;gap:8px;color:var(--mist);background:#fff;font-size:13px;min-width:0}
+.srch svg{flex:none}
+.sel{height:34px;border:1px solid var(--lineStrong);border-radius:10px;padding:0 28px 0 10px;display:flex;align-items:center;gap:6px;position:relative;background:#fff;font-weight:500;white-space:nowrap;overflow:hidden;font-size:13px;color:var(--ink)}
+.sel::after{content:"";position:absolute;right:11px;top:50%;width:6px;height:6px;border-right:1.6px solid var(--slate);border-bottom:1.6px solid var(--slate);transform:translateY(-70%) rotate(45deg)}
+.sel .sl{color:var(--slate);font-weight:400}
+.sel.open{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,110,99,.20)}
+.frows{flex:1;min-height:0;overflow:hidden}
+.ffoot{border-top:1px solid var(--line);padding:10px 14px;font-size:12.5px}
+.row{padding:10px 14px;border-bottom:1px solid var(--grid);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px}
+.row.on{background:var(--tealTint);box-shadow:inset 3px 0 0 var(--teal)}
+.row .t{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .s{color:var(--slate);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .tm{color:var(--mist);font-size:12px;text-align:right;font-variant-numeric:tabular-nums}
+.row.one{grid-template-columns:minmax(0,1fr) auto;padding:8px 14px}
+.row .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--warn);margin-right:7px;vertical-align:1px}
+.k-new{color:var(--okOn);font-weight:600}.k-upd{color:var(--warnOn);font-weight:600}.k-can{color:var(--errOn);font-weight:600}.k-q{color:var(--slate);font-weight:600}
+.att{color:var(--warnOn)}
+.edge{box-shadow:inset 3px 0 0 var(--e,transparent)}
+.row.on.edge{box-shadow:inset 3px 0 0 var(--teal)}
+.gh{padding:12px 14px 6px;font-size:12px;font-weight:700;color:var(--slate);display:flex;justify-content:space-between;background:var(--surface);border-bottom:1px solid var(--grid)}
+.gh span{color:var(--mist);font-weight:600}
+
+.wb{display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--surface);position:relative}
+.wbh{padding:18px 24px 14px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:16px}
+.wbh h2{font-size:22px;line-height:28px;letter-spacing:-.01em}
+.meta{color:var(--slate);font-size:13px;margin-top:3px}
+.wbb{flex:1;min-height:0;overflow:hidden;padding:18px 24px}
+.desk{background:var(--sunken);border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.desk .dh{align-self:stretch;display:flex;justify-content:space-between;font-size:12px;color:var(--slate)}
+.desk .dh b{color:var(--ink);font-weight:600}
+.ta{color:var(--teal);font-weight:600;font-size:13px;white-space:nowrap}
+.btn{background:var(--teal);color:#fff;font-weight:600;border-radius:10px;padding:9px 16px;font-size:13.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
+.btn2{background:#fff;color:var(--ink);border:1px solid var(--lineStrong);font-weight:600;border-radius:10px;padding:8px 14px;font-size:13.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.btnsplit{display:inline-flex}
+.btnsplit .btn:first-child{border-radius:10px 0 0 10px}
+.btnsplit .btn:last-child{border-radius:0 10px 10px 0;border-left:1px solid rgba(255,255,255,.3);padding:9px 11px}
+.chev{width:7px;height:7px;border-right:1.8px solid currentColor;border-bottom:1.8px solid currentColor;transform:translateY(-2px) rotate(45deg);display:inline-block}
+.bar{border-top:1px solid var(--line);padding:12px 24px;display:flex;align-items:center;gap:14px;background:var(--surface);box-shadow:0 -6px 16px rgba(23,35,32,.05)}
+.bar .sum{font-size:13px;color:var(--slate);flex:1}
+.h3{font-size:14px;font-weight:700;margin-bottom:8px}
+.note{background:var(--warnTint);color:var(--warnOn);border-radius:10px;padding:8px 12px;font-size:12.5px;line-height:1.45}
+.note b{color:var(--warnOn)}
+
+.vt{width:100%;border-collapse:collapse;font-size:12.5px}
+.vt th{font-size:11.5px;color:var(--slate);font-weight:600;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.vt td{padding:8px;border-bottom:1px solid var(--grid);vertical-align:top}
+.vt td small{display:block;color:var(--mist);font-size:11px}
+.vt .mono{font-family:"Spline Sans Mono",monospace;font-size:12px;font-variant-numeric:tabular-nums}
+.vt .miss{color:var(--warnOn);font-weight:600;font-family:inherit;font-size:12px}
+.vt tr.hi td{background:var(--warnTint)}
+
+.opt{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.opt+.opt{margin-top:6px}
+.opt.on{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,110,99,.14)}
+.opt b{font-weight:600;font-size:13px}
+.opt small{display:block;color:var(--slate);font-size:12px}
+.opt .sel{margin-top:6px;height:30px;font-size:12.5px}
+.rad{width:15px;height:15px;border-radius:50%;border:1.5px solid var(--lineStrong);margin-top:2px;flex:none;background:#fff}
+.opt.on .rad{border:4.5px solid var(--teal)}
+.sug{display:inline-block;font-size:11px;font-weight:600;color:var(--okOn);background:var(--okTint);border-radius:999px;padding:0 7px;margin-left:6px;line-height:17px;vertical-align:1px}
+.olist{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.olist .o{display:flex;gap:10px;align-items:flex-start;padding:8px 12px;border-top:1px solid var(--grid);font-size:13px}
+.olist .o:first-child{border-top:0}
+.olist .o.on{background:var(--tealTint)}
+.olist .o small{display:block;color:var(--slate);font-size:12px}
+.olist .ogh{padding:8px 12px 4px;font-size:11.5px;font-weight:700;color:var(--slate);border-top:1px solid var(--line);background:var(--bg)}
+.olist .o.on .rad{border:4.5px solid var(--teal)}
+.menu{position:absolute;background:#fff;border-radius:12px;box-shadow:var(--e3);border:1px solid var(--line);padding:6px;z-index:5;font-size:13px}
+.menu .mg{font-size:11.5px;font-weight:700;color:var(--slate);padding:8px 10px 4px}
+.menu .mi{padding:7px 10px;border-radius:8px;display:flex;justify-content:space-between;gap:16px}
+.menu .mi.on{background:var(--tealTint);font-weight:600}
+.menu .mi span{color:var(--mist);font-variant-numeric:tabular-nums}
+.menu .mi small{display:block;color:var(--slate);font-size:12px;font-weight:400}
+.menu .sep{border-top:1px solid var(--line);margin:6px 0}
+.ttabs{display:flex;gap:22px;border-bottom:1px solid var(--line);padding:0 24px}
+.ttabs span{font-size:13.5px;font-weight:600;color:var(--slate);padding:10px 0;border-bottom:2px solid transparent}
+.ttabs span.on{color:var(--ink);border-color:var(--teal)}
+.steps{display:flex;gap:10px;align-items:center;font-size:13px;margin-top:12px}
+.steps .st{display:flex;align-items:center;gap:8px;color:var(--slate);font-weight:600}
+.steps .st i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;border:1.5px solid var(--lineStrong);color:var(--slate)}
+.steps .st.on{color:var(--ink)}.steps .st.on i{background:var(--teal);border-color:var(--teal);color:#fff}
+.steps .st.done i{background:var(--tealTint);border-color:var(--tealTint);color:var(--teal)}
+.steps .ln{width:40px;border-top:1.5px solid var(--lineStrong)}
+.nav2{display:inline-flex;gap:4px;align-items:center;color:var(--slate);font-size:13px}
+.nav2 .ib{width:30px;height:30px;border:1px solid var(--lineStrong);border-radius:8px;display:grid;place-items:center;color:var(--ink);background:#fff}
+.it{width:100%;border-collapse:collapse;font-size:13px}
+.it th{font-size:12px;color:var(--slate);font-weight:600;text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--surface);white-space:nowrap}
+.it td{padding:10px 14px;border-bottom:1px solid var(--grid);white-space:nowrap}
+.it td.tt{font-weight:600}
+.it tr.on td{background:var(--tealTint)}
+.it .tm{color:var(--slate);font-variant-numeric:tabular-nums}
+.it .sub{color:var(--slate)}
+.it tr.grp td{background:var(--bg);font-size:12px;font-weight:700;color:var(--slate);padding:7px 14px}
+.thumb{cursor:default}
+
+/* the A4 page, sized by --w */
+.a4{background:#fff;box-shadow:var(--e2);aspect-ratio:595/842;width:var(--w);padding:6.5%;font-family:"Helvetica Neue",Arial,sans-serif;color:#1d2b3a;font-size:calc(var(--w) / 50);line-height:1.35;flex:none;overflow:hidden}
+.a4 .lh b{display:block;font-size:2.1em;color:#1F3A5A;letter-spacing:-.01em;margin-bottom:.3em}
+.a4 .lh span{display:block;font-size:.95em;color:#33475e}
+.a4 .rule{border-top:.25em solid #1F3A5A;margin:1.2em 0 1.4em}
+.a4 .pt{font-size:1.8em;font-weight:700}
+.a4 .ps{color:#4a5b6e;margin-bottom:1.2em}
+.a4 .dt{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:.35em 1em;background:#f4f6f8;border:1px solid #d5dbe1;padding:.8em 1em;margin-bottom:1.6em}
+.a4 .dt i{font-style:normal;color:#5b6b7c;font-size:.9em}
+.a4 table{width:100%;border-collapse:collapse}
+.a4 th{font-size:.78em;text-align:left;color:#3d4f63;border-bottom:1.5px solid #1d2b3a;padding:.3em .3em}
+.a4 td{border-bottom:1px solid #d5dbe1;padding:.45em .3em;font-size:.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:9em}
+.a4 td.mo{font-family:"Spline Sans Mono",monospace}
+.a4 .pf{text-align:right;color:#5b6b7c;margin-top:.8em;font-size:.9em}
+.a4 .box{outline:1.5px solid var(--warn);background:rgba(161,98,7,.12)}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="wrap">
+  <div>
+    <p class="kicker">Admin Web App, Intake, Arrivals. Exploration, 27 November 2026.</p>
+    <h1>Intake, with the noise taken out</h1>
+    <p class="lede">The Arrivals screen works, but it says everything at once. Every row and every header carries three or four pills, the sources strip repeats the Sources tab, the workbench is grey on grey, and on a new List the button that finishes the job sits two screens down, under a list of every free anaesthetist in the practice.</p>
+    <p class="lede">Below are five ways to fix it, each drawn at 1440 × 900 with the same morning's data. All five drop the sources strip, swap the filter pills for drop-downs, put the List's name at the top of the workbench and show no sender addresses. They differ in how the feed reads and where the decision lives.</p>
+    <nav class="toc" aria-label="Ideas">
+      <a href="#i1">1 · Tidy in place</a>
+      <a href="#i2">2 · Decision rail</a>
+      <a href="#i3">3 · Inbox, then open</a>
+      <a href="#i4">4 · Action in the header</a>
+      <a href="#i5">5 · Check, then place</a>
+      <a href="#compare">Compare and recommend</a>
+    </nav>
+  </div>
+  <div class="heard">
+    <h2>What needs fixing</h2>
+    <ul>
+      <li><b>Sources strip</b><span>"Southern Cross, receiving" and friends at top right. The Sources tab already says it. Remove.</span></li>
+      <li><b>Filter pills</b><span>Seven pill buttons in three rows. Replace with ordinary drop-downs.</span></li>
+      <li><b>Pills on every row</b><span>"Rooms PDF", "Needs NHI 1", "Values to check 1", the kind. Keep the kind if it earns it, drop the rest.</span></li>
+      <li><b>Workbench header</b><span>Two pills and a received time above the name, a third pill below, then a sender address. Name first, details quietly after.</span></li>
+      <li><b>Grey on grey</b><span>A grey workbench holding grey panels. The working surface should be white.</span></li>
+      <li><b>Below the fold</b><span>Place this List lists every free anaesthetist, so Place and Reject end up two screens down.</span></li>
+    </ul>
+  </div>
+</div></header>
+
+<main class="wrap">
+
+<section class="idea" id="i1">
+  <div class="ihead">
+    <div><h2><span class="n">1</span>Tidy in place</h2>
+    <p>Keep the screen you have and take things away. The feed rows become two plain lines, the kind is a coloured word, the workbench turns white, and the choice of where a List goes shrinks to four options with drop-downs inside them. A bar pinned to the bottom of the workbench always holds Reject and Place.</p></div>
+    <div class="effort"><b>Smallest change</b>Same layout, same benches</div>
+  </div>
+  <div class="fwrap" data-h="900"><div class="frame" style="height:900px" id="m1"></div></div>
+  <div class="notes">
+    <div><h3>What changes</h3><ul>
+      <li>Three drop-downs under the search: what to show (To decide, Needs an NHI, Decided), which source, which kind.</li>
+      <li>Rows: the List on line one, then "New List · 4 patients · 1 has no NHI". Only something that needs the office is coloured.</li>
+      <li>"Place this List" offers the named anaesthetist, another anaesthetist (a drop-down of who is free), an existing List (a drop-down) or a Draft List. No more 25-row radio list.</li>
+      <li>Place and Reject pin to the bottom of the workbench, so they never scroll away.</li>
+    </ul></div>
+    <div><h3>What it gives up</h3><ul>
+      <li>The PDF stays small beside the values (about the width of a phone) unless you open it full size.</li>
+      <li>The drop-down hides who else is free until you open it. Fine when the suggestion is usually right.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="idea" id="i2">
+  <div class="ihead">
+    <div><h2><span class="n">2</span>Decision rail</h2>
+    <p>Three columns: the feed, the List in the middle, and a rail on the right that holds only the decision. The feed groups by kind, so the kind is said once in a heading rather than on every row. The rail's button sits at its foot and never moves.</p></div>
+    <div class="effort"><b>Medium change</b>New rail per bench</div>
+  </div>
+  <div class="fwrap" data-h="900"><div class="frame" style="height:900px" id="m2"></div></div>
+  <div class="notes">
+    <div><h3>What changes</h3><ul>
+      <li>The feed is grouped under New Lists, Updates, Cancellations, Can't be read and Waiting for an NHI. Rows lose every pill.</li>
+      <li>The middle column is the List: patients first, the PDF underneath at a readable size.</li>
+      <li>The rail lists the suggestion, then who is free that afternoon, then Lists that could take it, with a search box over all of them. It scrolls on its own; the button doesn't.</li>
+      <li>Every kind gets the same rail: an update's rail says Apply changes, a cancellation's says Cancel the Booking.</li>
+    </ul></div>
+    <div><h3>What it gives up</h3><ul>
+      <li>Three columns are tight at 1440. The PDF and the patients stack rather than sit side by side.</li>
+      <li>Every bench needs splitting into "what came" and "what to do", which is most of the build.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="idea" id="i3">
+  <div class="ihead">
+    <div><h2><span class="n">3</span>Inbox, then open</h2>
+    <p>Stop splitting the screen. Arrivals is a full-width table, like a mail inbox, with drop-downs above its columns. Opening one gives the whole width to that List: the PDF large on the left, the patients and the decision on the right, and a top bar with Place, Reject and next and previous.</p></div>
+    <div class="effort"><b>Larger change</b>Two screens instead of one</div>
+  </div>
+  <p class="cap"><b>The inbox.</b> Sortable columns say the kind and what needs attention without a pill in sight.</p>
+  <div class="fwrap" data-h="700"><div class="frame" style="height:700px" id="m3a"></div></div>
+  <p class="cap"><b>One arrival, opened.</b> J and K still step through; Esc goes back to the inbox with your place kept.</p>
+  <div class="fwrap" data-h="900"><div class="frame" style="height:900px" id="m3b"></div></div>
+  <div class="notes">
+    <div><h3>What changes</h3><ul>
+      <li>The table has room for real columns: received, the List, kind, from, patients, and a "Needs" column that is blank when nothing does.</li>
+      <li>Opened, the PDF is close to A4 size beside the patients, which is the comparison the office is actually making.</li>
+      <li>Place and Reject live in the top bar with next and previous, so deciding and moving on is one row of controls.</li>
+    </ul></div>
+    <div><h3>What it gives up</h3><ul>
+      <li>You lose sight of the feed while deciding. Next and previous and the count ("3 of 18") stand in for it.</li>
+      <li>It walks away from the feed-and-workbench idea agreed in the last round.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="idea" id="i4">
+  <div class="ihead">
+    <div><h2><span class="n">4</span>Action in the header</h2>
+    <p>The workbench header becomes the control bar: the List's name on the left, the main action on the right as a split button whose menu holds every other place the List could go. Below it, tabs separate the patients from the PDF so neither has to shrink.</p></div>
+    <div class="effort"><b>Medium change</b>Header and tabs, benches slimmed</div>
+  </div>
+  <div class="fwrap" data-h="900"><div class="frame" style="height:900px" id="m4"></div></div>
+  <div class="notes">
+    <div><h3>What changes</h3><ul>
+      <li>One filter drop-down in the feed holds show, source and kind together, with counts. The kind on a row is a thin coloured edge plus the word.</li>
+      <li>"Place in Dr Delaney's PM" is one click when the suggestion is right. The arrow opens the rest: free anaesthetists, Lists, a Draft List, and Reject at the foot.</li>
+      <li>Patients and PDF are tabs; the Patients tab keeps a small page beside the table so a click on a value still shows it on the page.</li>
+    </ul></div>
+    <div><h3>What it gives up</h3><ul>
+      <li>Choosing someone other than the suggestion is hidden in a menu. Quick for the common case, one step slower for the rest.</li>
+      <li>A split button is a new pattern for the shared Button; it needs a design source before it ships.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="idea" id="i5">
+  <div class="ihead">
+    <div><h2><span class="n">5</span>Check, then place</h2>
+    <p>Treat a new List as the two jobs it is. First check what was read against the page, then place it. Each step gets the whole workbench, and the footer always says what happens next. The feed sorts by what needs the office rather than by kind, with one-line rows.</p></div>
+    <div class="effort"><b>Medium change</b>New List and Update benches</div>
+  </div>
+  <p class="cap"><b>Step one, check.</b> The PDF at a readable size beside the values; anything unsure is highlighted on both.</p>
+  <div class="fwrap" data-h="900"><div class="frame" style="height:900px" id="m5a"></div></div>
+  <p class="cap"><b>Step two, place.</b> The choices get the whole width, laid out in columns, so 25 free anaesthetists fit without scrolling.</p>
+  <div class="fwrap" data-h="900"><div class="frame" style="height:900px" id="m5b"></div></div>
+  <div class="notes">
+    <div><h3>What changes</h3><ul>
+      <li>Feed groups: Something to check, Ready to apply, Waiting for an NHI. One line per arrival; a dot marks the ones that need a look.</li>
+      <li>Step one shows the PDF large and the values beside it. Step two shows every place it could go in three columns.</li>
+      <li>An exact match or a plain cancellation skips straight to a one-step bench.</li>
+    </ul></div>
+    <div><h3>What it gives up</h3><ul>
+      <li>An extra click on every new List, even when nothing needs checking. "Place now" on step one could cover that.</li>
+      <li>One-line rows show less: the patient count and the change summary move to the workbench.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="idea" id="compare">
+  <div class="ihead"><div><h2>Compare</h2><p>Every idea removes the sources strip, the filter pills and the per-row pills, and puts the List's name first. What separates them:</p></div></div>
+  <div class="cmpw"><table class="cmp">
+    <thead><tr><th></th><th>1 · Tidy in place</th><th>2 · Decision rail</th><th>3 · Inbox, then open</th><th>4 · Action in header</th><th>5 · Check, then place</th></tr></thead>
+    <tbody>
+      <tr><td>Place and Reject visible</td><td class="y">Always, pinned bar</td><td class="y">Always, foot of rail</td><td class="y">Always, top bar</td><td class="y">Always, header</td><td class="y">Always, pinned bar</td></tr>
+      <tr><td>PDF size at 1440</td><td class="m">Small, full size on click</td><td class="m">Medium, below patients</td><td class="y">Large, beside patients</td><td class="y">Large on its tab</td><td class="y">Large in step one</td></tr>
+      <tr><td>Choosing a different anaesthetist</td><td class="m">Open a drop-down</td><td class="y">Visible list in the rail</td><td class="m">Open a drop-down</td><td class="m">Open the button's menu</td><td class="y">All visible in step two</td></tr>
+      <tr><td>Clicks when the suggestion is right</td><td class="y">1</td><td class="y">1</td><td class="y">1 (after opening)</td><td class="y">1</td><td class="m">2</td></tr>
+      <tr><td>Feed while deciding</td><td class="y">Beside</td><td class="y">Beside, narrower</td><td class="no">Hidden</td><td class="y">Beside</td><td class="y">Beside</td></tr>
+      <tr><td>How the kind shows</td><td>Coloured word on the row</td><td>Group heading</td><td>Table column</td><td>Coloured edge and word</td><td>Grouped by what needs you</td></tr>
+      <tr><td>Size of the change</td><td class="y">Small</td><td class="m">Medium to large</td><td class="no">Large</td><td class="m">Medium</td><td class="m">Medium</td></tr>
+    </tbody>
+  </table></div>
+  <div class="reco">
+    <h3>Recommendation: start with 1, borrow the header from 4</h3>
+    <p>Idea 1 fixes every complaint on the list with the least rework: the pills go, the workbench turns white, the name comes first, and the pinned bar ends the scrolling. Add idea 4's tabs (Patients and PDF) to it and the PDF gets its full size without leaving the bench, which is idea 1's one weak point.</p>
+    <p>Keep 2 in mind if the drop-down for "another anaesthetist" turns out to be used often; the rail is the version that shows those choices without a click. I'd set 3 aside: it reads well but gives up the feed beside the work, which was the reason Idea 1 won last time.</p>
+  </div>
+</section>
+
+<footer>Mocks use the app's own tokens and this morning's seeded arrivals. Saved locally at docs/explorations/intake-declutter-ideas.html.</footer>
+</main>
+
+<script>
+(() => {
+  const S = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
+  const side = () => `<nav class="side"><div class="wm">Anaesthesia | Associates</div><div class="ad">ADMIN</div>
+    <a>Day view</a><a class="on">Intake <span class="ct">18</span></a><a>Draft Lists <span class="ct">47</span></a><a>Conflicts <span class="ct">6</span></a><a>Notifications</a><a>Review queue <span class="ct r">10</span></a><a>Finances</a><a>People</a><a>Contracts</a><a>Master data</a><a>Audit</a></nav>`;
+  const ph = (extra = '') => `<div class="ph"><h1>Intake</h1><div class="tabsi"><span class="tb on">Arrivals <span class="n">18</span></span><span class="tb">Sources</span></div><div class="grow"></div>${extra}</div>`;
+  const srch = (ph = 'Search patient, NHI, surgeon') => `<div class="srch">${S}<span>${ph}</span></div>`;
+  const sel = (v, l = '', cls = '') => `<div class="sel ${cls}">${l ? `<span class="sl">${l}</span>` : ''}${v}</div>`;
+
+  // This morning's arrivals (the seeded feed, To decide).
+  const F = [
+    { t: 'Mr Nand · Forte Health · Wed 16 Dec PM', k: 'new', kw: 'New List', d: '4 patients', a: '1 has no NHI', tm: '08:12', from: 'Nand Surgical Rooms', p: 4 },
+    { t: 'Mr Whitford · Christchurch Eye Surgery · Fri 4 Dec', k: 'upd', kw: 'Update', d: '1 changed, 1 removed', a: '', tm: '07:42', from: 'Whitford Eye Rooms', p: 4 },
+    { t: 'Ms Gallagher · Southern Cross · Thu 26 Nov AM', k: 'upd', kw: 'Update', d: '1 changed', a: '', tm: '07:24', from: 'Southern Cross', p: 3 },
+    { t: 'Mr Okafor · Forte Health · Wed 9 Dec AM', k: 'new', kw: 'New List', d: '3 patients', a: '1 value to check', tm: '07:10', from: 'Okafor Orthopaedics', p: 3 },
+    { t: 'Ms Reid · Christchurch Eye Surgery · Mon 21 Dec', k: 'new', kw: 'New List', d: '4 patients', a: '3 values to check', tm: '06:58', from: 'Reid Eye Specialists', p: 4 },
+    { t: 'Scan_0655.pdf', k: 'can', kw: "Can't be read", d: 'No surgeon or session found', a: '', tm: '06:31', from: 'Rooms mailbox', p: 0 },
+    { t: "Mr Tan · St George's · Thu 26 Nov AM", k: 'upd', kw: 'Update', d: '1 changed', a: '1 has no NHI', tm: '06:20', from: "St George's", p: 5 },
+    { t: 'Dr Lindqvist · Southern Cross · Thu 26 Nov PM', k: 'can', kw: 'Cancellation', d: '1 cancelled', a: '', tm: '06:05', from: 'Southern Cross', p: 1 },
+    { t: 'Southern Cross message', k: 'q', kw: 'Held message', d: 'Patient reference not recognised', a: '', tm: '05:52', from: 'Southern Cross', p: 0 },
+    { t: "Mr Tavener · St George's · Wed 25 Nov AM", k: 'upd', kw: 'Update', d: '2 changed', a: '', tm: '05:40', from: "St George's", p: 6 },
+    { t: "Ms Oduya · St George's · Wed 25 Nov PM", k: 'upd', kw: 'Update', d: '1 added', a: '', tm: '05:40', from: "St George's", p: 4 },
+    { t: "Mr Doyle · St George's · Wed 25 Nov PM", k: 'new', kw: 'New List', d: '2 patients', a: '', tm: '05:40', from: "St George's", p: 2 },
+    { t: "Prof Lockhart · St George's · Wed 25 Nov AM", k: 'q', kw: 'Matches exactly', d: 'Nothing changed', a: '', tm: '05:40', from: "St George's", p: 5 },
+  ];
+  const NHI = [
+    { t: 'Sina Leota', d: "Mr Nand's List, Wed 16 Dec", tm: '08:12' },
+    { t: 'Kahu Rangihuna', d: "Mr Tan's List, Thu 26 Nov", tm: '06:20' },
+    { t: 'Mere Tautahi', d: "Ms Hart's List, Tue 1 Dec", tm: 'Mon' },
+  ];
+  const EDGE = { new: 'var(--ok)', upd: 'var(--warn)', can: 'var(--err)', q: 'var(--lineStrong)' };
+
+  const rowPlain = (f, i) => `<div class="row ${i === 0 ? 'on' : ''}"><div class="t">${f.t}</div><div class="tm">${f.tm}</div>
+    <div class="s" style="grid-column:1/-1"><span class="k-${f.k}">${f.kw}</span> · ${f.d}${f.a ? ` · <span class="att">${f.a}</span>` : ''}</div></div>`;
+  const rowNoKind = (f, on) => `<div class="row ${on ? 'on' : ''}"><div class="t">${f.t}</div><div class="tm">${f.tm}</div>
+    <div class="s" style="grid-column:1/-1">${f.d}${f.a ? ` · <span class="att">${f.a}</span>` : ''}</div></div>`;
+  const rowEdge = (f, i) => `<div class="row edge ${i === 0 ? 'on' : ''}" style="--e:${EDGE[f.k]}"><div class="t">${f.t}</div><div class="tm">${f.tm}</div>
+    <div class="s" style="grid-column:1/-1">${f.kw} from ${f.from}${f.a ? ` · <span class="att">${f.a}</span>` : ''}</div></div>`;
+  const rowOne = (f, on, dot) => `<div class="row one ${on ? 'on' : ''}"><div class="t">${dot ? '<span class="dot"></span>' : ''}${f.t}</div><div class="tm">${f.tm}</div></div>`;
+  const gh = (l, n) => `<div class="gh">${l} <span>${n}</span></div>`;
+
+  const P = [
+    ['13:00', 'ZQG1043', 'Aroha Tamihana', '12/04/1979', 'R carpal tunnel release', '21111'],
+    ['13:45', 'ZQG1051', 'Graham Whitcombe', '30/09/1950', 'L trigger finger release', '11111'],
+    ['14:30', '', 'Sina Leota', '25/01/1991', "Dupuytren's fasciectomy R", '31111'],
+    ['15:30', 'ZQG1060', 'Peter Kowalczyk', '08/07/1962', 'Ganglion excision L wrist', '11111'],
+  ];
+  const a4 = (w) => `<div class="a4" style="--w:${w}px"><div class="lh"><b>Nand Surgical Rooms</b><span>Level 1, 149 Miro Place, Christchurch</span><span>Phone 03 555 0322 · Fax 03 555 0858</span></div><div class="rule"></div>
+    <div class="pt">Theatre list</div><div class="ps">Operating list, Wednesday 16 December (PM)</div>
+    <div class="dt"><i>Surgeon</i><b>Mr V. Nand</b><i>Date</i><span>Wed 16 Dec 2026</span><i>Hospital</i><span>Forte Health</span><i>Session</i><span>PM</span><i>Anaesthetist</i><span>Dr Mark Delaney</span><i></i><span></span></div>
+    <table><tr><th>TIME</th><th>NHI</th><th>PATIENT</th><th>DOB</th><th>PROCEDURE</th></tr>
+    ${P.map((p) => `<tr><td class="mo">${p[0]}</td><td class="mo ${p[1] ? '' : 'box'}">${p[1] || '&nbsp;'}</td><td>${p[2]}</td><td class="mo">${p[3]}</td><td>${p[4]}</td></tr>`).join('')}</table>
+    <div class="pf">4 patients</div></div>`;
+  const desk = (w, head = true) => `<div class="desk">${head ? `<div class="dh"><b>Nand hand list.pdf</b><span class="ta">Open full size</span></div>` : ''}${a4(w)}</div>`;
+  const vt = (eth = false) => `<table class="vt"><thead><tr><th>Time</th><th>Patient</th><th>NHI</th><th>Procedure</th>${eth ? '<th>Ethnicity</th>' : ''}</tr></thead><tbody>
+    ${P.map((p) => `<tr class="${p[1] ? '' : 'hi'}"><td class="mono">${p[0]}</td><td>${p[2]}<small>${p[3]}</small></td><td class="${p[1] ? 'mono' : 'miss'}">${p[1] || 'No NHI'}</td><td>${p[4]}</td>${eth ? `<td class="mono">${p[5]}</td>` : ''}</tr>`).join('')}</tbody></table>`;
+  const nhiNote = `<div class="note"><b>Sina Leota has no NHI.</b> She goes on the List as a stub, and the List can't be submitted until her NHI is added.</div>`;
+  const head = (right = '') => `<div class="wbh"><div style="flex:1;min-width:0"><h2>Mr Nand, Forte Health, Wednesday 16 December PM</h2><div class="meta">New List · 4 patients · from Nand Surgical Rooms at 8:12 today</div></div>${right}</div>`;
+  const FREE = ['Anderson', 'Baxter', 'Donaldson', 'Duncan', 'Faleolo', 'Gray', 'Hollis', 'Ivers', 'Kerr'];
+  const LISTS = [['Harris', 'Mr Desai'], ['Haddad', 'Dr Ridley'], ['Fletcher', 'Prof Lockhart'], ['Hunter', 'Ms Gallagher']];
+  const save = `Creates the List with 3 Bookings and a stub for Sina Leota.`;
+
+  const frame = (id, html) => { document.getElementById(id).innerHTML = side() + `<div class="mainc">${html}</div>`; };
+
+  /* ---------- 1 · Tidy in place ---------- */
+  frame('m1', ph() + `<div class="split" style="grid-template-columns:360px minmax(0,1fr)">
+    <div class="feed"><div class="ftool">${srch()}<div class="sels">${sel('To decide')}${sel('All sources')}${sel('All kinds')}</div></div>
+      <div class="frows">${F.slice(0, 12).map(rowPlain).join('')}</div>
+      <div class="ffoot"><span class="ta">Add a PDF by hand</span></div></div>
+    <div class="wb">${head()}
+      <div class="wbb" style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:start">
+        ${desk(340)}
+        <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+          ${vt()}${nhiNote}
+          <div><div class="h3">Place this List</div>
+            <div class="opt on"><span class="rad"></span><div><b>Dr Delaney's PM, Wed 16 Dec</b><span class="sug">Suggested</span><small>Named on the PDF, free that afternoon</small></div></div>
+            <div class="opt"><span class="rad"></span><div style="flex:1"><b>Another anaesthetist's PM</b><small>24 free that afternoon</small></div></div>
+            <div class="opt"><span class="rad"></span><div style="flex:1"><b>Add to a List we hold</b><small>9 Lists that afternoon could take it</small></div></div>
+            <div class="opt"><span class="rad"></span><div><b>Make a Draft List</b><small>No anaesthetist yet</small></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="bar"><span class="sum">${save}</span><span class="btn2">Reject this List</span><span class="btn">Place in Dr Delaney's PM</span></div>
+    </div></div>`);
+
+  /* ---------- 2 · Decision rail ---------- */
+  const g2 = [['New Lists', F.filter((f) => f.k === 'new')], ['Updates', F.filter((f) => f.k === 'upd')], ['Cancellations', F.filter((f) => f.kw === 'Cancellation')], ["Can't be read", F.filter((f) => f.kw === "Can't be read")]];
+  frame('m2', ph() + `<div class="split" style="grid-template-columns:310px minmax(0,1fr) 340px">
+    <div class="feed"><div class="ftool">${srch()}<div class="sels">${sel('To decide', 'Show')}${sel('All sources')}</div></div>
+      <div class="frows">${g2.map(([l, it]) => gh(l, it.length) + it.map((f) => rowNoKind(f, f === F[0])).join('')).join('')}</div></div>
+    <div class="wb" style="border-right:1px solid var(--line)">${head()}
+      <div class="wbb" style="display:flex;flex-direction:column;gap:14px">${nhiNote}${vt(true)}${desk(470)}</div></div>
+    <div class="wb" style="background:var(--surface)">
+      <div style="padding:18px 18px 10px"><div class="h3" style="font-size:16px">Place this List</div>${srch('Find an anaesthetist or a List')}</div>
+      <div style="flex:1;min-height:0;overflow:hidden;padding:0 18px"><div class="olist">
+        <div class="o on"><span class="rad"></span><div><b>Dr Delaney's PM</b><span class="sug">Suggested</span><small>Named on the PDF, free that afternoon</small></div></div>
+        <div class="ogh">Free that afternoon</div>
+        ${FREE.slice(0, 6).map((n) => `<div class="o"><span class="rad"></span><div>Dr ${n}'s PM</div></div>`).join('')}
+        <div class="o" style="color:var(--teal);font-weight:600;font-size:12.5px">18 more</div>
+        <div class="ogh">Add to a List we hold</div>
+        ${LISTS.slice(0, 3).map(([a, s]) => `<div class="o"><span class="rad"></span><div>Dr ${a}'s List<small>${s}, PM</small></div></div>`).join('')}
+        <div class="ogh">Or</div>
+        <div class="o"><span class="rad"></span><div>Make a Draft List<small>No anaesthetist yet</small></div></div>
+      </div></div>
+      <div style="border-top:1px solid var(--line);padding:14px 18px;display:flex;flex-direction:column;gap:10px;box-shadow:0 -6px 16px rgba(23,35,32,.05)">
+        <span style="font-size:12.5px;color:var(--slate)">${save}</span>
+        <span class="btn" style="justify-content:center">Place in Dr Delaney's PM</span>
+        <span class="ta" style="text-align:center">Reject this List</span></div>
+    </div></div>`);
+
+  /* ---------- 3 · Inbox, then open ---------- */
+  const NEEDS = { 0: 'NHI for 1 patient', 3: '1 value to check', 4: '3 values to check', 6: 'NHI for 1 patient' };
+  frame('m3a', ph() + `<div class="split" style="grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)">
+    <div style="display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);align-items:center"><div style="width:380px">${srch()}</div>${sel('To decide', 'Show')}${sel('All sources')}${sel('All kinds')}<div class="grow"></div><span class="btn2">Add a PDF by hand</span></div>
+    <div style="overflow:hidden"><table class="it"><thead><tr><th>Received</th><th>List</th><th>Kind</th><th>From</th><th>Patients</th><th>Needs</th></tr></thead><tbody>
+      ${F.map((f, i) => `<tr class="${i === 0 ? 'on' : ''}"><td class="tm">${f.tm}</td><td class="tt">${f.t}</td><td><span class="k-${f.k}">${f.kw}</span></td><td class="sub">${f.from}</td><td class="tm">${f.p || ''}</td><td class="att">${NEEDS[i] || ''}</td></tr>`).join('')}
+    </tbody></table></div></div>`);
+  frame('m3b', `<div class="split" style="grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)">
+    <div class="wbh" style="align-items:center"><span class="ta">‹ Arrivals</span><div style="width:1px;align-self:stretch;background:var(--line)"></div>
+      <div style="flex:1;min-width:0"><h2>Mr Nand, Forte Health, Wednesday 16 December PM</h2><div class="meta">New List · 4 patients · from Nand Surgical Rooms at 8:12 today</div></div>
+      <span class="nav2"><span class="ib">‹</span><span style="padding:0 6px">1 of 18</span><span class="ib">›</span></span><span class="btn2">Reject</span><span class="btn">Place in Dr Delaney's PM</span></div>
+    <div class="wbb" style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:24px;align-items:start">
+      ${desk(520)}
+      <div style="display:flex;flex-direction:column;gap:16px;min-width:0">${vt(true)}${nhiNote}
+        <div><div class="h3">Place this List</div>
+          <div class="opt on"><span class="rad"></span><div style="flex:1"><b>In an anaesthetist's PM</b>${sel("Dr Delaney · suggested, named on the PDF")}</div></div>
+          <div class="opt"><span class="rad"></span><div style="flex:1"><b>Add to a List we hold</b><small>9 Lists that afternoon could take it</small></div></div>
+          <div class="opt"><span class="rad"></span><div><b>Make a Draft List</b><small>No anaesthetist yet</small></div></div>
+        </div>
+        <span style="font-size:12.5px;color:var(--slate)">${save}</span>
+      </div></div></div>`);
+
+  /* ---------- 4 · Action in the header ---------- */
+  frame('m4', ph() + `<div class="split" style="grid-template-columns:350px minmax(0,1fr)">
+    <div class="feed"><div class="ftool"><div style="display:flex;gap:8px"><div style="flex:1;min-width:0">${srch('Search')}</div>${sel('To decide · all', 'Filter')}</div></div>
+      <div class="frows">${F.slice(0, 13).map(rowEdge).join('')}</div>
+      <div class="ffoot"><span class="ta">Add a PDF by hand</span></div></div>
+    <div class="wb">${head(`<span class="btnsplit"><span class="btn">Place in Dr Delaney's PM</span><span class="btn"><i class="chev"></i></span></span>`)}
+      <div class="ttabs"><span class="on">Patients 4</span><span>PDF</span><span>Earlier versions</span></div>
+      <div class="wbb" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:22px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:14px">${nhiNote}${vt(true)}<span style="font-size:12.5px;color:var(--slate)">Choose a value to see it on the page. ${save}</span></div>
+        ${desk(250, false)}
+      </div>
+      <div class="menu" style="top:70px;right:24px;width:330px">
+        ${srch('Find an anaesthetist or a List')}
+        <div class="mg">Suggested</div><div class="mi on"><div>Dr Delaney's PM<small>Named on the PDF, free that afternoon</small></div></div>
+        <div class="mg">Free that afternoon</div>${FREE.slice(0, 4).map((n) => `<div class="mi"><div>Dr ${n}'s PM</div></div>`).join('')}<div class="mi" style="color:var(--teal);font-weight:600">20 more</div>
+        <div class="mg">Add to a List we hold</div>${LISTS.slice(0, 2).map(([a, s]) => `<div class="mi"><div>Dr ${a}'s List<small>${s}, PM</small></div></div>`).join('')}
+        <div class="sep"></div><div class="mi"><div>Make a Draft List</div></div><div class="mi" style="color:var(--errOn);font-weight:600"><div>Reject this List</div></div>
+      </div>
+    </div></div>`);
+
+  /* ---------- 5 · Check, then place ---------- */
+  const check = [F[0], F[3], F[4], F[1], F[6], F[5], F[8]];
+  const ready = [F[2], F[7], F[9], F[10], F[11], F[12]];
+  const feed5 = `<div class="feed"><div class="ftool">${srch()}<div class="sels">${sel('To decide', 'Show')}${sel('All sources')}</div></div>
+      <div class="frows">${gh('Something to check', check.length)}${check.map((f) => rowOne(f, f === F[0], true)).join('')}
+      ${gh('Ready to apply', ready.length)}${ready.map((f) => rowOne(f, false, false)).join('')}
+      ${gh('Waiting for an NHI', 3)}${NHI.map((f) => rowOne(f, false, false)).join('')}</div>
+      <div class="ffoot"><span class="ta">Add a PDF by hand</span></div></div>`;
+  const steps = (n) => `<div class="steps"><span class="st ${n === 1 ? 'on' : 'done'}"><i>${n === 1 ? '1' : '✓'}</i>Check the values</span><span class="ln"></span><span class="st ${n === 2 ? 'on' : ''}"><i>2</i>Place it</span></div>`;
+  const head5 = (n) => `<div class="wbh"><div style="flex:1;min-width:0"><h2>Mr Nand, Forte Health, Wednesday 16 December PM</h2><div class="meta">New List · 4 patients · from Nand Surgical Rooms at 8:12 today</div>${steps(n)}</div></div>`;
+  frame('m5a', ph() + `<div class="split" style="grid-template-columns:330px minmax(0,1fr)">${feed5}
+    <div class="wb">${head5(1)}
+      <div class="wbb" style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:start">${desk(420)}
+        <div style="display:flex;flex-direction:column;gap:14px;min-width:0">${vt(true)}${nhiNote}<span style="font-size:12.5px;color:var(--slate)">Choose a value to see it on the page. Edit anything read wrongly before you place the List.</span></div></div>
+      <div class="bar"><span class="sum">3 Bookings and a stub for Sina Leota.</span><span class="ta">Reject this List</span><span class="btn">Next: place it</span></div>
+    </div></div>`);
+  const card = (t, s, on = false, sug = false) => `<div class="opt ${on ? 'on' : ''}" style="margin:0"><span class="rad"></span><div><b>${t}</b>${sug ? '<span class="sug">Suggested</span>' : ''}${s ? `<small>${s}</small>` : ''}</div></div>`;
+  const ALLFREE = ['Anderson', 'Baxter', 'Donaldson', 'Duncan', 'Faleolo', 'Gray', 'Hollis', 'Ivers', 'Kerr', 'Lam', 'Moana', 'Nguyen', 'Osei', 'Patel', 'Quinn', 'Rata', 'Sato', 'Turei'];
+  frame('m5b', ph() + `<div class="split" style="grid-template-columns:330px minmax(0,1fr)">${feed5}
+    <div class="wb">${head5(2)}
+      <div class="wbb" style="display:flex;flex-direction:column;gap:16px">
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">${card("Dr Delaney's PM, Wed 16 Dec", 'Named on the PDF, free that afternoon', true, true)}${card('Make a Draft List', 'No anaesthetist yet; shows in Draft Lists')}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><div class="h3" style="margin:0">Free that afternoon, 24</div><div style="width:280px">${srch('Find an anaesthetist')}</div></div>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">${ALLFREE.map((n) => card(`Dr ${n}`, '')).join('')}</div>
+        <div class="h3" style="margin:4px 0 0">Add to a List we hold that afternoon</div>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">${LISTS.map(([a, s]) => card(`Dr ${a}'s List`, `${s}, PM`)).join('')}</div>
+      </div>
+      <div class="bar"><span class="btn2">Back</span><span class="sum">${save}</span><span class="ta">Reject this List</span><span class="btn">Place in Dr Delaney's PM</span></div>
+    </div></div>`);
+
+  // Scale each 1440-wide frame to its column.
+  const fit = () => document.querySelectorAll('.fwrap').forEach((w) => {
+    const f = w.querySelector('.frame'); const s = w.clientWidth / 1440;
+    f.style.transform = `scale(${s})`; w.style.height = `${Number(w.dataset.h) * s}px`;
+  });
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>
