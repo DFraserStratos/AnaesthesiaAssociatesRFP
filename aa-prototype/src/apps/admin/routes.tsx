@@ -102,7 +102,7 @@ export function AdminDayRoute() {
     <>
       <DayNav
         selectedDateISO={dateISO}
-        summary={beyondHorizon ? 'No sessions: this day is past the schedule horizon' : ctx.summary}
+        {...(beyondHorizon ? { summary: 'No sessions: this day is past the schedule horizon' } : {})}
         sortMode={ctx.sortMode}
         onSort={setSort}
         onNavigateDate={goToDay}

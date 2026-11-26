@@ -28,7 +28,6 @@ export interface AdminOutletContext {
   warningFlags: ReadonlyMap<string, ListWarningSummary>
   /** Every open warning, all dates (the To-do card, US-13.7.2). */
   todoRows: OpenWarningRow[]
-  summary: string
   notes: DayNote[]
   reviewRows: ReviewRow[]
   /** Width reserved by the harness' vertical scrollbar, or zero for overlay scrollbars. */

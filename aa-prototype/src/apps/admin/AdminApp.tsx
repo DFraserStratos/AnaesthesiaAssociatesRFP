@@ -5,7 +5,6 @@ import { neutral } from '../../theme/tokens'
 import { SurfaceProvider } from '../../shared'
 import {
   addDayNote,
-  isOpenSlotView,
   matchingAttentionCount,
   patientAttentionCount,
   openConflictCount,
@@ -30,7 +29,6 @@ import { type SortMode } from './components/DayNav'
 import { SlotDrawer } from './components/SlotDrawer'
 import { DraftListDrawer } from './components/DraftListDrawer'
 import { SupportSidePanel } from '../../shared/support'
-import { draftListCount } from '../../shared/scheduleTerms'
 import type { AdminOutletContext } from './outlet'
 import { surnameOf } from './util'
 import { locationName } from '../../shared/format'
@@ -38,7 +36,6 @@ import type { AssignedList } from '../../domain/types'
 import { ADMIN_MIN_WIDTH, ADMIN_PAGE_HORIZONTAL_PADDING } from './layout'
 import { AdminFrameContext } from './components/AdminPage'
 import { sessionText } from '../../domain/outOfHours'
-import { practiceAnaesthetistCount } from '../../domain/anaesthetistStatus'
 import { OpenOutOfHoursSheet } from './flows/OpenOutOfHoursSheet'
 import { CreditSheet } from './flows/CreditSheet'
 import { CreditSheetSlot } from '../../shared/booking/CreditSheetSlot'
@@ -226,23 +223,6 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     [billing, schedule, masters, appSettings, clock, patientCare, intake, auditTrail],
   )
 
-  // The practice's anaesthetists on the demo clock's today: the one figure the
-  // app states as "N anaesthetists" (People's tab badge and Active line too).
-  const practiceCount = useMemo(() => practiceAnaesthetistCount(Object.values(masters.anaesthetists), todayISO), [masters.anaesthetists, todayISO])
-
-  // The header line: the practice's anaesthetists, then the day's roster (those
-  // with a session that day, the grid's rows; a joiner before their start date
-  // and anyone after their last day have none), Lists as sessions and open
-  // sessions as free, read from the same views the grid paints (no second
-  // derivation), and the day's Draft Lists when it has any.
-  const summary = useMemo(() => {
-    const sessions = dayViews.filter((v) => v.list !== undefined).length
-    const free = dayViews.filter(isOpenSlotView).length
-    const submitted = dayViews.filter((v) => v.list?.state === 'SUBMITTED').length
-    const drafts = dayDraftLists.length > 0 ? ` · ${draftListCount(dayDraftLists.length)}` : ''
-    return `${practiceCount} anaesthetists · ${anaesthetists.length} rostered · ${sessions} sessions · ${free} free · ${submitted} submitted${drafts}`
-  }, [dayViews, practiceCount, anaesthetists.length, dayDraftLists.length])
-
   // Derived review queue (all SUBMITTED lists; the badge + awaiting-review rows).
   const reviewLists = useMemo(
     () =>
@@ -301,7 +281,6 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     masters,
     warningFlags,
     todoRows,
-    summary,
     notes,
     reviewRows,
     shellScrollbarWidth,

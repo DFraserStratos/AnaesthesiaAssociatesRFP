@@ -14,7 +14,8 @@ const WEEK_STEP = { padding: '0 10px' } as const
 
 interface DayNavProps {
   selectedDateISO: string
-  summary: string
+  /** A notice under the date (the past-horizon message); absent shows the date alone. */
+  summary?: string
   sortMode: SortMode
   onSort: (mode: SortMode) => void
   onNavigateDate: (dateISO: string) => void
