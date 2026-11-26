@@ -69,7 +69,8 @@ export function ArrivalRailHead() {
             {titleText(arrival.kind, ownerName !== undefined ? drSurname(ownerName) : undefined)}
           </span>
         }
-        {...(state !== undefined ? { sub: state } : {})}
+        // The state line's space is kept when there is no state (a New List), so the strip sits at the same height on every kind.
+        sub={state ?? <span aria-hidden>{'\u00a0'}</span>}
         {...(cancels ? { style: { color: semantic.error.onTint } } : {})}
       />
       <MatchBasisStrip arrival={arrival} />
