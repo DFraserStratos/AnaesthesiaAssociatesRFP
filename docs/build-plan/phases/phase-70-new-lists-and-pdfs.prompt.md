@@ -1,0 +1,14 @@
+Please run build plan Phase 70 (New Lists and PDFs) of the Anaesthesia Associates (AA) prototype.
+
+Load the run-build-phase skill and follow it for this phase (1 to 2 sessions, Lane E). The phase doc's Before you start, Reference, Work items, Demo triggers, Manual test checklist, Demo guide updates, Adversarial review (at the Wave 7 join) and PROGRESS.md updates sections hold the phase's reads, drift-check stops, rules and finish items; below is only what the doc does not already say.
+
+Override: you run in an Intake build lane: follow docs/build-plan/LANES-INTAKE.md, which overrides this prompt, the run-build-phase skill and CLAUDE.md (quick checks only, no review, screen-proof or checklist run; commit on your lane branch by path; never push). Skip the catalogue screenshot recipes, the demo guide and the capture: the owner's sweep does them.
+
+Hold to these above all:
+- Start only when 68 is complete on lane/d and merged here; read 68's PROGRESS entry and notes.md for the arrival, reader, placement, decide and ingest names it shipped, and build on those, never your own copy.
+- Placing a List is one change set through the existing manual assignment action (assignListToSlot and its guards) or createDraftList, on 68's intakeDecide.ts; a Slot taken meanwhile is refused with nothing written; a Draft List changes no Slot; never a second path.
+- Boxes come from 68's reader output and the generated page places each value where its box lands; unsure values lie below 68's threshold, no score is shown, and no vendor or product is named anywhere.
+- Import nothing from apps/admin/matching/; edit no 68 file, no matchingActions.ts and no Finances file; settleStubForRow keeps its exact signature for 69; note any change needed elsewhere under For the merge.
+- The placed List's Bookings land with no Contract (no per-row pick); an unreadable PDF is never dropped: it stays until dismissed with a reason, and its draft email sends nothing.
+
+Phase goal: an arriving List AA does not hold is read and placed, and a rooms' PDF is shown beside the values read from it (US-02.2.1, FT-02.2, US-01.6.1, US-02.1.2's placement half; DM-16, DM-19; D118, D120, D124, D125). The new List bench, for a PDF or a hospital List, shows the page beside the values with how sure the reader was, unsure values marked to check and lit where they sit on the page, rows corrected before ingest with their history, and the sender; it places the whole List as one change set (a new store/intakePlace.ts) in the named anaesthetist's suggested free Slot, another free Slot, an existing List, or a Draft List holding all its Bookings with no Slot changed, its stubs placed with it. The unreadable PDF bench shows the page and the reason, a draft email to the sender and Dismiss with a reason; Add a PDF by hand lands a PDF through 68's mailbox ingest. Layout: docs/explorations/intake-ideas.html #idea1 (B), #reco and #journey.

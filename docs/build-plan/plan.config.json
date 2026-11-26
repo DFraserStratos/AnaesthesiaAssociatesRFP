@@ -324,7 +324,11 @@
     "branches": [
       "lane/a",
       "lane/b",
-      "lane/c"
+      "lane/c",
+      "lane/d",
+      "lane/e",
+      "lane/f",
+      "lane/g"
     ],
     "complete": "{id} complete:",
     "checkpoint": "{id} checkpoint:"

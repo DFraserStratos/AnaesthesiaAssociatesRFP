@@ -33,6 +33,11 @@ app does; the catalogue is the truth about what it should do.
   and the full gate, the review and the owner's test sheet run once, at Wave 5's join (D113).
   `docs/build-plan/LANES.md` overrides this file for a lane session; its prompts are in
   `docs/build-plan/lanes/`. Outside a lane, work stays in the main checkout.
+- **Phases 68 to 72 (the Intake rebuild) run in their own build lanes, D to G** (owner, 26 Nov 2026):
+  Wave 6 is Lane D (68, the groundwork) beside Finances Wave 5; Wave 7 is Lanes D (69), E (70), F (71)
+  and G (72). Intake reaches `master` only at the Wave 7 join, after Finances Wave 5 has joined; the
+  full gate, the review and `TEST-68-72.md` run once there. `docs/build-plan/LANES-INTAKE.md` overrides
+  this file for an Intake lane session (its prompts are `lanes/lane-d` to `lane-g`).
 - **Screenshots and the demo guide are caught up in a sweep, not per change.** A version of the demo
   guide (`docs/demo-guide/`, incl. `master-demo-guide.html`) and the catalogue screenshots goes to AA
   for testing and approvals; the owner brings both in step when they choose with `/sweep`

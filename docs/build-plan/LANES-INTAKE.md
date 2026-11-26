@@ -153,7 +153,8 @@ and Wave 7 follows that. Paths are under `aa-prototype/src/`.
   keeps reading `matchingAttentionCount`, re-based inside `store/matchingSelectors.ts`.
 - **The section, in `apps/admin/screens/intake/`:** `IntakeSection.tsx` (a `fit` AdminPage: the title,
   "From the rooms and hospitals. Nothing changes until you apply it.", LineTabs Arrivals and Sources,
-  the quiet sources strip), `intakePaths.ts` (every `/admin/intake` link goes through it),
+  the quiet sources strip, the quiet "Add a PDF by hand" action, disabled until 70 sets
+  `ADD_PDF_BY_HAND_READY`), `intakeTabs.ts` (the tab list, in its own file for oxlint), `intakePaths.ts` (every `/admin/intake` link goes through it),
   `ArrivalsView.tsx` (the feed beside the workbench in `WorkbenchSplit`; the selected arrival in the
   URL), `SourcesView.tsx` (a placeholder at 68's end; 71 builds it).
 - **The feed, `screens/intake/feed/`:** `IntakeFeed.tsx`, `FeedFilters.tsx` (To decide, Needs NHI,
@@ -165,8 +166,10 @@ and Wave 7 follows that. Paths are under `aa-prototype/src/`.
   taking `{ arrival, actor, onDone }`: `UpdateBench.tsx` and `CancellationBench.tsx` (69),
   `NewListBench.tsx` and `UnreadableBench.tsx` (70), `MatchesExactlyBench.tsx` and
   `HeldMessageBench.tsx` (71), `NeedsNhiBench.tsx` (72). At 68's end each bench is a working stub that
-  shows the arrival's rows, read only, with no copy about later work.
-- **The docked split:** `shared/surface/WorkbenchSplit.tsx`, a new shared component (non-modal; the feed
+  shows the arrival's rows, read only, with no copy about later work. 68 also creates
+  `workbench/newList/AddPdfByHand.tsx` as a stub (props `{ open, onClose, actor }`, exporting
+  `ADD_PDF_BY_HAND_READY = false`) that `IntakeSection.tsx` opens; 70 fills it and flips the constant.
+- **The docked split:** `shared/surface/WorkbenchSplit.tsx` (exported from `shared/surface/index.ts`), a new shared component (non-modal; the feed
   column and the workbench side by side at full height, like the Day view's grid and rail), with its
   `/demo/catalogue/admin` row and test. `SidePanel` stays modal and unchanged.
 - **Read models, pure and tested, in `domain/intake/`:** `arrivals.ts` (an arriving List: rows of one
@@ -175,36 +178,41 @@ and Wave 7 follows that. Paths are under `aa-prototype/src/`.
   `listChanges.ts` (the change summary per List and per Booking, removals included for a whole-List
   snapshot such as a re-sent PDF), `matchBasis.ts` (each match key, ticked or not), `listVersions.ts`
   (a List's versions from its origin and change history), `unchanged.ts` (Lists that match exactly,
-  identical re-arrivals included), `placement.ts` (the named anaesthetist's Slot suggested, other free
+  identical re-arrivals included), `stubMatch.ts` (an arriving row that matches a waiting stub's List, name and birth date, and
+  carries its NHI), `placement.ts` (the named anaesthetist's Slot suggested, other free
   Slots that day, a Draft List), `pdfRead.ts` (the simulated reader's output: each value with a
   confidence and its box on the page, and the "to check" threshold; no vendor is named anywhere).
 - **Store:** `store/intakeSelectors.ts` (the arrivals, one arrival, the feed counts), new ingest
   actions in `store/intakeIngest.ts` (a PDF from the rooms' mailbox, a hospital batch, a cancellation, a
-  failed feed message, each audited and none an office decision), `matchingSelectors.ts` (the badge).
+  failed feed message, each audited and none an office decision), `store/intakeDecide.ts` (the one
+  List-level decision path, D118: one or more Lists decided in one change set, each row applied, left
+  out, rejected or a removal confirmed, with an optional placement; 69's `intakeApply.ts`, 70's
+  `intakePlace.ts` and 71's `intakeBulk.ts` only map their bench to it), `matchingSelectors.ts` (the
+  badge).
 - **Data:** the additions to `domain/types.ts`; the Okafor story's everyday feed in
-  `domain/seed/intakeSeed.ts`; `PERSIST_VERSION` 82 in `store/appStore.ts`.
+  `domain/seed/intakeSeed.ts` and the samples in `domain/intake/hospitalDownloads.ts`; `PERSIST_VERSION` 82 in `store/appStore.ts`.
 - **Demo actions:** the six bodies in `shared/demoTriggers/intakeArrivals.ts`, registered in
   `registry.ts` on the Arrivals screen; the old intake triggers retired; the PWA stand-ins
   (`matching-office-matches-row`, `stub-office-adds-nhi`, `pwa-office-adds-nhi`) kept working.
 - **Deleted by 68:** `screens/IntakeScreen.tsx`, `screens/MatchingScreen.tsx` (and their tests),
   `matching/MatchingTable.tsx`, `matching/ImportDialog.tsx`, `intake/PdfListsTab.tsx`,
-  `intake/WaitingNhiTab.tsx`, `intake/DataQualityTab.tsx`, `intake/ValidatorsTab.tsx`, both header
-  buttons. The files the Wave 7 lanes reuse or delete stay for them (below).
+  `intake/WaitingNhiTab.tsx` (its `waitingNhiTab.test.tsx` stays for 72), `intake/DataQualityTab.tsx`,
+  `intake/ValidatorsTab.tsx`, both header buttons. The files the Wave 7 lanes reuse or delete stay for them (below).
 
 ### Who owns what in Wave 6
 
 | | Owns |
 |---|---|
-| Lane D (68) | Everything in the file contract above; `router.tsx`'s Intake block and `routes.tsx`'s Intake wrappers; `store/matchingSelectors.ts`; `store/matchingDemo.ts` (old bodies retired, the stand-in parts kept); `store/index.ts`'s Intake lines; `shared/demoTriggers/registry.ts` (its intake entries) and the trigger tests (`matchingTriggers`, `demoTriggers`, `demoGuideSync`); the catalogue rows of the deleted parts and `apps/demo/catalogue/admin/patientExamples.tsx`; the seed tests whose pins move; the Playwright specs whose Intake URLs move (`admin-matching`, `intake-pdf-lists`, `phase11`, `phase12`, `admin-patients`, `admin-layout`, `screens`, `pwa-demo-parity`, `demo-actions-audit`; re-pointed, not run) |
+| Lane D (68) | Everything in the file contract above; `router.tsx`'s Intake block and `routes.tsx`'s Intake wrappers; `store/matchingSelectors.ts`; `store/matchingDemo.ts` (old bodies retired, the stand-in parts kept; it passes to 69 for Wave 7); `store/officeStandIn.ts` (`addNhiAsSimulatedOffice` re-pointed to the ingest; it passes to 72); `stageImportRows` in `store/matchingActions.ts` (it passes to 69); `domain/intake/hospitalDownloads.ts` (samples); `components/StubResolveLink.tsx`, `screens/AdminBookingDetail.tsx` and `apps/demo/demoScenarios.ts` (their Intake links re-pointed through `intakePaths.ts`); `test/adminRoutes.tsx` (the route mirror); `shared/surface/index.ts`; `store/index.ts`'s Intake lines; `shared/demoTriggers/registry.ts` (its intake entries) and the trigger tests (`matchingTriggers`, `demoTriggers`, `demoGuideSync`); the catalogue rows of the deleted parts and `apps/demo/catalogue/admin/patientExamples.tsx`; the seed tests whose pins move; the Playwright specs whose Intake URLs move (`admin-matching`, `intake-pdf-lists`, `phase11`, `phase12`, `admin-patients`, `admin-layout`, `screens`, `pwa-demo-parity`, `demo-actions-audit`; re-pointed, not run) |
 
 ### Who owns what in Wave 7
 
 | | Owns |
 |---|---|
-| Lane D (69) | `workbench/UpdateBench.tsx`, `workbench/CancellationBench.tsx`, new `workbench/update/` parts (`ListDiffTable.tsx`, `MatchBasisStrip.tsx`, `VersionTrack.tsx`, `SlotCard.tsx`), new `store/intakeApply.ts` (a whole List applied as one change set, a Booking left out, removals confirmed, reject) with tests, `store/matchingActions.ts`, `matching/RowPanel.tsx`, `DiffTable.tsx`, `DecisionCards.tsx`, `RawRowSheet.tsx`, `matchingText.ts` (reuse or delete) and their catalogue rows |
-| Lane E (70) | `workbench/NewListBench.tsx`, `workbench/UnreadableBench.tsx`, new `workbench/newList/` parts (`PdfPage.tsx` with its highlight boxes, `PdfValuesTable.tsx`, `PlaceListCard.tsx`, `AddPdfByHand.tsx`), `store/pdfListActions.ts`, `store/stubSettle.ts`, `domain/intake/pdfLists.ts`, `intake/PdfListReview.tsx`, `intake/PdfUploadDialog.tsx` (reuse or delete) and their catalogue rows |
-| Lane F (71) | `screens/intake/SourcesView.tsx` and new `screens/intake/sources/` parts, `workbench/MatchesExactlyBench.tsx`, `workbench/HeldMessageBench.tsx`, new `domain/intake/sources.ts`, new `store/intakeBulk.ts` (confirm unchanged Lists together) with tests, `store/rawRowActions.ts`, `store/integrationActions.ts` |
-| Lane G (72) | `workbench/NeedsNhiBench.tsx`, `intake/AddNhiSheet.tsx`, `intake/WaitingNhiView.tsx` (folded in or deleted), the waiting-NHI parts of `store/patientActions.ts` and `store/patientSelectors.ts`, `store/stubActions.ts`, `store/stubDemo.ts`, `store/officeStandIn.ts`, `store/lifecycle.ts` (the stub guard in `submitList` and `authoriseBlockersFor`), `shared/flows/SubmitListSheet.tsx`, `domain/intake/stubs.ts`, `shared/stubs/`, the Day drawers' Mark list completed (`SlotDrawer`, `ListBookingsTable`, `DraftListDrawer`, only that), the Help page's Validators explanation |
+| Lane D (69) | `workbench/UpdateBench.tsx`, `workbench/CancellationBench.tsx`, new `workbench/update/` parts (`ListDiffTable.tsx`, `MatchBasisStrip.tsx`, `VersionTrack.tsx`, `SlotCard.tsx`), new `store/intakeApply.ts` (a whole List applied as one change set, a Booking left out, removals confirmed, reject) with tests, `store/matchingActions.ts`, `store/matchingDemo.ts` (the PWA stand-in, handed over by 68), `matching/RowPanel.tsx`, `DiffTable.tsx`, `DecisionCards.tsx`, `matchingText.ts` (reuse or delete) and their catalogue rows; `matching/RawRowSheet.tsx` stays with its export and props unchanged for 71; `docs/DECISIONS.md` line 14 |
+| Lane E (70) | `workbench/NewListBench.tsx`, `workbench/UnreadableBench.tsx`, new `workbench/newList/` parts (`PdfPage.tsx` with its highlight boxes, `PdfValuesTable.tsx`, `PlaceListCard.tsx`), `workbench/newList/AddPdfByHand.tsx` (68's stub, filled), new `store/intakePlace.ts` (a whole List placed as one change set) with tests, `store/pdfListActions.ts`, `store/stubSettle.ts`, `domain/intake/pdfLists.ts`, `intake/PdfListReview.tsx`, `intake/PdfUploadDialog.tsx` (reuse or delete) and their catalogue rows |
+| Lane F (71) | `screens/intake/SourcesView.tsx` and new `screens/intake/sources/` parts, `workbench/MatchesExactlyBench.tsx`, `workbench/HeldMessageBench.tsx`, new `domain/intake/sources.ts`, new `store/intakeBulk.ts` (confirm unchanged Lists together, and `dismissHeldMessage` if 68 shipped none) with tests, `store/rawRowActions.ts`, `store/integrationActions.ts`; imports `matching/RawRowSheet.tsx` unchanged and nothing else from `apps/admin/matching/` |
+| Lane G (72) | `workbench/NeedsNhiBench.tsx`, `intake/AddNhiSheet.tsx`, `intake/WaitingNhiView.tsx` (folded in or deleted), the waiting-NHI parts of `store/patientActions.ts` and `store/patientSelectors.ts`, `store/stubActions.ts`, `store/stubDemo.ts`, `store/stubSelectors.ts`, `store/officeStandIn.ts` (handed over by 68), `store/lifecycle.ts` (the stub guard in `submitList` and `authoriseBlockersFor`, with a new `store/lifecycleStubGuard.test.ts`), `shared/flows/SubmitListSheet.tsx` (an optional `listReason` prop), `domain/listProgress.ts` (an optional standing-stub count), `domain/intake/stubs.ts`, `store/lookback.ts`, the Lists readings (`apps/mobile/screens/ListDetailScreen.tsx`, `ForwardListsScreen.tsx`, `ListsScreen.tsx`, `ListsLookback.tsx`, `WeekStrip.tsx`, `apps/web/screens/ListDetailView.tsx`, `shared/schedule/ListRow.tsx`; `DayGrid.tsx` and the Day drawers (`SlotDrawer`, `ListBookingsTable`, `DraftListDrawer`) only if a submit control or stub reading needs it), the Help panel's NHI and ethnicity format explanation (`shared/support/`: a new `FormatChecks.tsx`, add-only lines in `supportCopy.ts` and `SupportPanel.tsx`) |
 
 - **No Wave 7 phase edits** 68's files: the route block, `IntakeSection.tsx`, `intakePaths.ts`,
   `ArrivalsView.tsx`, the feed, `Workbench.tsx`, `WorkbenchSplit.tsx`, 68's read models, selectors and

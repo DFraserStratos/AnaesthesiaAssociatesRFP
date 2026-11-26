@@ -27,21 +27,26 @@
   },
   "guidance": {
     "as_of": "2026-11-26",
-    "headline": "Start Wave 5: paste all three lane prompts. Wave 4 is on master: Finances is one Admin section with six routed tabs, and the billing and invoice read models are built.",
-    "headline_sub": "58 (the Finances shell: one nav entry and amber badge, six tabs opening on Billing, records under their tabs, every old link redirecting, today's panels moved unchanged) and 59 (the billing status and invoice state read models) were joined on wave/4 on the quick checks only. Wave 5 rebuilds each tab in three lanes; the one full gate, review and owner test sheet (TEST-58-67.md) come at its join (D113). 45 to 57 are still yours to walk from <a href=\"TEST-45-49.md\">TEST-45-49.md</a> and <a href=\"TEST-50-57.md\">TEST-50-57.md</a>.",
+    "headline": "Two builds in lanes: Finances Wave 5 (Lanes A, B, C) is finishing, and the Intake rebuild starts now in its own Lanes D to G. Paste Lane D's prompt to start 68.",
+    "headline_sub": "58 (the Finances shell: one nav entry and amber badge, six tabs opening on Billing, records under their tabs, every old link redirecting, today's panels moved unchanged) and 59 (the billing status and invoice state read models) were joined on wave/4 on the quick checks only. Wave 5 rebuilds each tab in three lanes; the one full gate, review and owner test sheet (TEST-58-67.md) come at its join (D113). 45 to 57 are still yours to walk from <a href=\"TEST-45-49.md\">TEST-45-49.md</a> and <a href=\"TEST-50-57.md\">TEST-50-57.md</a>. The Intake rebuild (68 to 72, <a href=\"LANES-INTAKE.md\">LANES-INTAKE.md</a>): 68, the groundwork, runs alone on lane/d beside Wave 5; Lanes E, F and G wait for it, then 69 to 72 build side by side; the Intake join waits for Wave 5 on master and writes TEST-68-72.md.",
     "safe": {
       "60": "Wave 5, Lane A: 58 and 59 are on master.",
       "62": "Wave 5, Lane B: 58 and 59 are on master.",
-      "64": "Wave 5, Lane C: 58 is on master."
+      "64": "Wave 5, Lane C: 58 is on master.",
+      "68": "Intake Wave 6, Lane D: starts now, beside Finances Wave 5, on lane/d (LANES-INTAKE.md). Paste Lane D's prompt."
     },
     "wait": {
       "61": "Wave 5, Lane A, after 60.",
       "63": "Wave 5, Lane B, after 62.",
       "65": "Wave 5, Lane C, after 64.",
       "66": "Wave 5, Lane C, after 65.",
-      "67": "Wave 5, Lane B, after 63."
+      "67": "Wave 5, Lane B, after 63.",
+      "69": "Intake Wave 7, Lane D, after 68 on lane/d.",
+      "70": "Intake Wave 7, Lane E, once 68 is complete on lane/d.",
+      "71": "Intake Wave 7, Lane F, once 68 is complete on lane/d.",
+      "72": "Intake Wave 7, Lane G, once 68 is complete on lane/d."
     },
-    "parallel": "Wave 5: Lanes A, B and C side by side; the last to finish joins with the full gate and writes TEST-58-67.md. Paste each lane's prompt again whenever its session ends.",
+    "parallel": "Finances Wave 5: Lanes A, B and C side by side. Intake: Lane D builds 68 now (Wave 6); Lanes E, F and G may be pasted at once and wait until 68 is on lane/d, then 69 to 72 run side by side (Wave 7). Paste each lane's prompt again whenever its session ends.",
     "lanes": [
       {
         "name": "Lane A",
@@ -71,6 +76,39 @@
           "66"
         ],
         "prompt_file": "lanes/lane-c.prompt.md"
+      },
+      {
+        "name": "Lane D",
+        "where": "`AnaesthesiaAssociatesRFP-laneD` worktree, branch `lane/d`, ports 5573/5574/5580 (Intake, LANES-INTAKE.md)",
+        "queue": [
+          "68",
+          "69"
+        ],
+        "prompt_file": "lanes/lane-d.prompt.md"
+      },
+      {
+        "name": "Lane E",
+        "where": "`AnaesthesiaAssociatesRFP-laneE` worktree, branch `lane/e`, ports 5673/5674/5680 (Intake, LANES-INTAKE.md)",
+        "queue": [
+          "70"
+        ],
+        "prompt_file": "lanes/lane-e.prompt.md"
+      },
+      {
+        "name": "Lane F",
+        "where": "`AnaesthesiaAssociatesRFP-laneF` worktree, branch `lane/f`, ports 5773/5774/5780 (Intake, LANES-INTAKE.md)",
+        "queue": [
+          "71"
+        ],
+        "prompt_file": "lanes/lane-f.prompt.md"
+      },
+      {
+        "name": "Lane G",
+        "where": "`AnaesthesiaAssociatesRFP-laneG` worktree, branch `lane/g`, ports 5873/5874/5880 (Intake, LANES-INTAKE.md)",
+        "queue": [
+          "72"
+        ],
+        "prompt_file": "lanes/lane-g.prompt.md"
       }
     ]
   }

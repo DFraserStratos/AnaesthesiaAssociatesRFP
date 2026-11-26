@@ -9,9 +9,10 @@ Most are expected to be UI and UX improvements. Routine fixes and polish are not
 `app-change` skill. Neither phases nor routine changes touch the screenshots or the demo guide: the
 owner brings both in step with one sweep (`/sweep`, last run in `docs/SWEEP.md`).
 
-The plan is now planned against catalogue commit `f885f67` (26 November 2026). It holds **twenty-three
-phases, 45 to 67**, from three changes: two of 25 November, now built, and one of 26 November. Every
-changed story is at Verify (US-10.2.7 and US-13.2.4 stay Proposed), not yet seen by AA.
+The plan is now planned against catalogue commit `8637b65` (26 November 2026). It holds **twenty-eight
+phases, 45 to 72**, from four changes: two of 25 November, now built, and two of 26 November. Every
+changed story is at Verify (US-10.2.7 and US-13.2.4 stay Proposed, and so does the epic EP-14), not yet
+seen by AA.
 
 - **The Contracts section (45 to 49).** Donald's decisions that give Contracts their own section of
   the Admin app, with a page for each Contract, a grouped catalogue, Parties and Funding tags as tabs,
@@ -34,8 +35,25 @@ changed story is at Verify (US-10.2.7 and US-13.2.4 stay Proposed), not yet seen
   what changes is where the office sees and does each piece. The gap analysis graded its 12 items
   (US-13.3.3 Missing; US-13.3.1, US-13.2.1 and US-08.4.7 Contradicts; seven Partial; US-10.2.4 Matches)
   and found no data-model delta. Built in two waves of lanes, and tested once, at the very end (D113).
+  **Built:** 58 and 59 in Wave 4; 60, 62, 64 and 65 in Wave 5, whose 61, 63, 66 and 67 are being built
+  now.
+- **Intake as the front door (68 to 72).** The Admin app's matching screen, Intake, becomes the front
+  door for every List and change the rooms and the hospitals send: one feed of arrivals grouped by List
+  (the source a mark; filters per hospital, Rooms PDFs, Needs NHI and Decided), a whole List decided at
+  once with any Booking's change left out, why it matched shown (match keys, the List's earlier
+  versions, its Slot, no score), hospital rows and the rooms' mailbox arriving on their own with no
+  import button (inbound only), PDFs read with a confidence and a place on the page for each value, a
+  re-sent PDF merged as the next version with its missing Bookings offered as removals, a new List
+  placed with the named anaesthetist's Slot suggested or as a Draft List, Needs NHI as a filter with
+  one Add NHI path, a second view of each source's state, and a List holding only a stub that can be
+  neither submitted nor authorised (change log
+  `requirements-board/requirements/changes/2026-11-26-donald-intake-front-door.md`, note AR-72). The
+  gap analysis graded its 23 items (9 Contradicts, 2 Missing, 7 Partial, 5 Matches: FT-01.3, FT-02.3,
+  US-01.3.3, US-01.6.3 and US-02.2.4) and found eleven data-model deltas (DM-11 to DM-21; DM-20 is the
+  Finances reading D116, which 60 built). Built in two waves of their own lanes, beside Finances, and
+  tested once, at the very end (D121, D122).
 
-In all, **42 units: 37 planned in phases, 5 parked** (DM-01 to DM-04, which Phase 49 built, and
+In all, **58 units: 56 planned in phases, 2 parked** (DM-20, which Phase 60 built under D116, and
 US-13.2.4; see Parked). The layout references are design pages, not catalogue artifacts (cite the
 paths): `docs/explorations/contracts-section.html` (sections `#map`, `#catalogue`, `#record`,
 `#updating`, `#new`, `#parties`, `#tagstab`; the first pass is `contracts-ideas.html`) for the Contracts
@@ -44,7 +62,11 @@ phases, `docs/explorations/people-section.html` (sections `#map`, `#nav`, `#grou
 `docs/explorations/finances-section.html` (the approved mock: `#p-billing`, `#p-invoices`,
 `#p-payments`, `#p-ledger`, `#p-xero`, `#p-aafees`, `#billing-table` version C only (A and B were
 rejected), `#records`, `#kit`, `#moves`, `#open`, `#cost`; Donald's answers in
-`finances-decisions.html`) for the Finances phases.
+`finances-decisions.html`) for the Finances phases, and `docs/explorations/intake-ideas.html` (the
+approved Idea 1, "Feed and workbench": `#idea1`; section 10, the recommendation, `#reco`; section 2, the
+Okafor story the demo actions play, `#journey`; section 8, the Sources view and the demo actions,
+`#sources`; Ideas 2 and 3 only for the Slot card and the version track the recommendation borrows) for
+the Intake phases.
 
 Settled prototype rulings are in `docs/DECISIONS.md`; known open work is in `docs/BACKLOG.md`. The
 archived catch-up ROADMAP, PROGRESS and phase docs are history: read them as leads, never as rules.
@@ -64,7 +86,14 @@ new open question (OQ-149), with the default 64 builds, **D107 to D115**, the ow
 the Finances section, its lanes and its single test, and **D116**, the reading 59 and 60 build for a
 payer with no billing email or postal address (the stories and the approved mock; it replaces catch-up
 Phase 22's "raised with no address, never a failure" for the billing run). No question is answered and
-no earlier row is superseded.
+no earlier row is superseded. The second 2026-11-26 update (catalogue `8637b65`, Intake as the front
+door) raises no new question. It answers two in the catalogue that no phase had planned a default for:
+OQ-109's part 2 (hospital rows arrive on their own, with no import button; 68 builds it) and OQ-44 (a
+Draft List can be made from Intake; 70 builds it). It adds **D117 to D124**, the owner's directives for
+Intake, its lanes, its single test and its boundaries with Finances Wave 5, and **D125**, the readings
+68 to 72 build where the stories and the deltas leave a detail open (plan defaults, each on its phase's
+"For the owner's review" list). D117 partly supersedes D99 and D100 (Waiting for NHI is a filter on the
+feed, not a tab), and D118 supersedes `docs/DECISIONS.md`'s "one change set per applied row".
 
 | ID | Decision | Gates | Source |
 |---|---|---|---|
@@ -77,8 +106,8 @@ no earlier row is superseded.
 | D96 | **Contracts stories split across phases. Decided** (owner; updated by the People plan update). US-04.1.2 is built across four phases, with its unit on 52, which finishes it: 45 builds Disable confirmed; 46 builds New contract order and Similar name, and removes the warning-only "Replaces" picker on create; 47 builds Grouped, Two surgeons, the search and the Active, Disabled or all filter, where the holder filter becomes the holder grouping (47's doc, written before the People change, says it finishes the story: it closes the criteria it builds); 52 builds the new Inactive anaesthetist criterion from new files that call `disableContract` and `enableContract`, and walks the whole story at its close. US-04.1.3 spans 45 (one audited change per card) and 49 (what a replacement audits), with its unit on 49. DM-04's confirm (list from today) is built in 45; its replaced case, listing from the change date, is US-04.1.8's Late disable in 49. DM-01 to DM-04 are parked in the plan (Parked), because only 49 builds what remains of them. | 45, 46, 47, 49, 52 | Owner directive |
 | D97 | **How an anaesthetist who has left sees later remittances (OQ-147). Open** (new 2026-11-25; Donald to ask AA; no recommendation). Default, the reading DM-07 builds: sign-in stops entirely after the last day, and comes back when the anaesthetist is made active again; no read-only sign-in is kept. Nothing is built for remittances that arrive later: the office sends them by email, and 52 puts that on its owner's review list. | 52 | OQ-147; US-12.1.6 Technical discussion; US-13.5.3 |
 | D98 | **Any record of surgeons who practise together (OQ-148). Open** (new 2026-11-25; Donald to ask AA and Greg; no recommendation). Default, as the catalogue says: no surgeon group record. A group that holds Contracts is a Party of kind surgeon group, its surgeons are the ones linked on its Contracts, and each surgeon's practice name says who practises together. 53 removes the Surgeon groups list and 55 the record behind it. An answer that brings a list back is a new phase, not a reprieve. | 53, 55 | OQ-148; US-13.4.1, US-13.6.2; domain model |
-| D99 | **The People section's shape. Decided** (owner, People plan update; Notes 2026-11-25 · Donald people section #1, #2). One Admin side-nav entry, People, where Patients was, taking Patients' attention count. Routed tabs Anaesthetists (`/admin/people/anaesthetists`, where the section opens), Surgeons (`/admin/people/surgeons`), Specialties (`/admin/people/specialties`) and Patients (`/admin/people/patients`), each an AdminPage fit list, searched, filtered and paged. A page per record, keyed by an id that never changes: `/admin/people/anaesthetists/:anaesthetistId` (the registration number, which is the anaesthetist's id), `/admin/people/surgeons/:surgeonId`, `/admin/people/specialties/:specialtyId` and `/admin/people/patients/:nhi`, on ProfilePage fluid with the 412px rail as the side panel. Master data keeps hospitals and their holidays ("People and places" becomes "Places") and the rest, with a pointer line. Waiting for NHI goes to Intake (51). Considered and not built: tabs on a record listing every List and Contract, Patients as a section of their own, and a grouped Surgeons list. | 50 to 57 | Owner directive; US-13.4.1, US-12.1.4, US-11.1.1; `docs/explorations/people-section.html` `#map`, `#nav` |
-| D100 | **Old People links redirect until the owner's sweep. Decided** (owner, as D93). `/admin/masters?view=anaesthetists`, `surgeons` and `specialties` go to their People tabs, and `?view=surgeonGroups` to Surgeons. `/admin/masters/anaesthetists/:id` and `/admin/masters/surgeons/:id` go to the record pages. `/admin/patients`, `/admin/patients/follow-up` and `/admin/patients/:nhi` go to the Patients tab, its Needs follow-up filter (once 57 builds it) and the patient's page (53). `/admin/patients/waiting` goes to `/admin/intake/waiting` (51). In-app links go to the new routes directly. No phase edits the recipes, ATLAS or the guide. The redirects stay. | 51, 53, 57 | Owner directive; standing rule "Demo guide and catalogue screenshots" |
+| D99 | **The People section's shape. Decided** (owner, People plan update; Notes 2026-11-25 · Donald people section #1, #2). One Admin side-nav entry, People, where Patients was, taking Patients' attention count. Routed tabs Anaesthetists (`/admin/people/anaesthetists`, where the section opens), Surgeons (`/admin/people/surgeons`), Specialties (`/admin/people/specialties`) and Patients (`/admin/people/patients`), each an AdminPage fit list, searched, filtered and paged. A page per record, keyed by an id that never changes: `/admin/people/anaesthetists/:anaesthetistId` (the registration number, which is the anaesthetist's id), `/admin/people/surgeons/:surgeonId`, `/admin/people/specialties/:specialtyId` and `/admin/people/patients/:nhi`, on ProfilePage fluid with the 412px rail as the side panel. Master data keeps hospitals and their holidays ("People and places" becomes "Places") and the rest, with a pointer line. Waiting for NHI goes to Intake (51). *Partly superseded by D117 (2026-11-26):* on Intake it is the Needs NHI filter on the one feed, not a tab of its own. Considered and not built: tabs on a record listing every List and Contract, Patients as a section of their own, and a grouped Surgeons list. | 50 to 57 | Owner directive; US-13.4.1, US-12.1.4, US-11.1.1; `docs/explorations/people-section.html` `#map`, `#nav` |
+| D100 | **Old People links redirect until the owner's sweep. Decided** (owner, as D93). `/admin/masters?view=anaesthetists`, `surgeons` and `specialties` go to their People tabs, and `?view=surgeonGroups` to Surgeons. `/admin/masters/anaesthetists/:id` and `/admin/masters/surgeons/:id` go to the record pages. `/admin/patients`, `/admin/patients/follow-up` and `/admin/patients/:nhi` go to the Patients tab, its Needs follow-up filter (once 57 builds it) and the patient's page (53). `/admin/patients/waiting` goes to `/admin/intake/waiting` (51). *Partly superseded by D117:* from 68, `/admin/intake/waiting` itself redirects, with replace, to the feed's Needs NHI filter, so the Patients link lands there too. In-app links go to the new routes directly. No phase edits the recipes, ATLAS or the guide. The redirects stay. | 51, 53, 57 | Owner directive; standing rule "Demo guide and catalogue screenshots" |
 | D101 | **Wave 2's split. Decided** (owner, 25 Nov 2026, revised the same day). The Contracts phases (46 to 49) join onto `master` first, as Wave 1 with Lanes A and B only. Wave 2 then runs Lane A: 50, then 52, then 53, with Lane B's 51 beside it; 53 merges 51's `complete:` commit at its start. Wave 3 is as before. The earlier Lane C boundary (a list of Contracts files 50 to 52 must not touch, and one router exception for 51) is withdrawn, because no Contracts lane runs beside the People phases. 50's card stays self-contained on today's anaesthetist record, and 52 still disables and re-enables Contracts through the existing store actions from new files, as design choices: 54 reuses the card, and the Contracts code stays untouched. | 50 to 53 | Owner directive |
 | D102 | **The rate and tier card's save (DM-09). Decided** (owner; the delta's recommendation). No new data: the tier stays in the office-private slice and the rate on the anaesthetist. Save writes only what changed. When both changed, the two writes (`editAnaesthetist`'s `unitValue` and `setPriorityTier`) run in one change set (`withChangeSet`), so one save is one audited change. Cancel writes nothing, and a click on a tier never saves. | 50, 54 | Owner directive; US-01.3.6, US-12.1.4; DM-09 |
 | D103 | **Making an anaesthetist inactive: the built defaults (DM-05 to DM-07). Decided** (owner; the deltas' recommendations). The last day and the reason are stored on the anaesthetist; activity is derived through one pure `isActiveOn(anaesthetist, dateISO)`, so no clock hook keeps a flag in step. The last day is today or later. Slots after it go when it is set (the refusal means none holds a List) and come back if it is cleared; made active again, the anaesthetist has Slots from that day (today on the demo clock). "Own Party" is derived, with no stored link: a Contract whose holder is an anaesthetist-kind Party and whose `linkedAnaesthetistId` is the person. When the demo clock passes the last day (the `dayAdvanced` event), the system disables those Contracts, one audited change each; only the Contracts that rule disabled are offered back. Sign-in is refused after the last day, at the attempt and at the stored-session gate, with its own audited reason. The shape change bumps `PERSIST_VERSION`. | 52, 54 | Owner directive; US-12.1.6, US-01.1.1, US-04.1.2, US-13.5.3; DM-05, DM-06, DM-07 |
@@ -95,6 +124,15 @@ no earlier row is superseded.
 | D114 | **Finances stories split across phases. Decided** (owner). US-13.3.3's unit, with FT-13.3's, is on 58, which builds the section, its own addresses, the tab numbers, the badge, the redirects and the record routes; 60 re-bases the Billing count, and 63, 65 and 66 rebuild the records 58 moved on the record pattern. 59 holds no unit: it is groundwork for 60 and 62. US-13.3.1's unit is on 60. US-13.3.2 is built across 60 (retry, fix the payer and mark resolved beside the Booking on Billing) and 61 (the Xero tab), with its unit on 61, which finishes it. US-08.4.7 and US-06.3.1 are on 62; 63 builds the invoice and credit note pages, the record half of US-13.3.3's "Records on their own pages", with no unit. US-13.2.1 is built across 64 (the sentence, the four figures, the three-way list, the Holding account entries, receipts to place) and 65 (the anaesthetist's account page), with its unit on 65, which finishes it. US-10.2.7 is on 66, built as written (OQ-47 untouched). US-10.3.1 and US-10.3.3 are on 67. US-13.2.4 is parked (Parked); US-13.7.4 is in the Future Work lane and out of scope (the approval switch beside the Invoices list is US-06.3.1's, built in 62). | 58 to 67 | Owner directive |
 | D115 | **Built from the shared kit. Decided** (owner; the mock's `#kit`). Shared components first: `src/shared/ui`, `src/shared/table` and the AdminPage frame. Every part of the mock is a component that exists today (AdminPage, PageToolbar, PageBody rail, LineTabs with CountBadge, NameSearchBox, FilterPills, SelectField, SlidingSegmentedControl, TableShell, Th, Td, GroupRow, the admin Pager, ClickableRow, DisclosureButton, Pill, StepRail, Card, RailSection, RailRow, DefList, TextAction, Notice, StatTile, Switch, Button), so no new shared component or variant is built unless it has a design source. The one new arrangement is GroupRow `level="sub"` carrying a List's date, hospital, status, counts and "Show all" (60, additive, its `/demo/catalogue` row updated); StatTiles two by two in a rail Card is only a grid change (64). | 58 to 67 | Owner directive; `finances-section.html` `#kit` |
 | D116 | **A payer with no billing email or postal address fails the Booking; a failure resolved by hand is stored on its exception. Decided** (plan default, read from the stories and the approved mock; on 60's "For the owner's review" list). Today's billing run never fails on this: it raises the invoice with `delivery.status: 'noAddress'` (catch-up Phase 22's reading). The stories and the mock treat it as a billing failure (US-13.3.1's Reason and fix beside the Booking; US-13.3.2's Fix beside the Booking, "fixes the payer ... and retries, then the Booking bills"; the mock's BK0051, "Not invoiced: the payer has no billing email or postal address", Billing failed, 0 invoices), so from 60, when the run or a retry finds that an invoice of a Booking has nowhere to go (`invoiceDeliveryFor` returns `none`: a person payer with neither an email nor a valid postal address, or a holder Party with neither for its delivery method), the Booking fails whole as a `BillingException` with a new code, and no invoice, pair or Xero hand-off is raised for it. 59 names the code (for example `payerNoAddress`) in its reason-and-fix vocabulary, with the reason and the fix "fix the payer", and its tests build the exception directly; 60 raises it from the run (`store/billingRun.ts`, `store/invoiceMaterialise.ts`) importing the code from 59. Fix the payer, then Retry (`retryBillingException`, reading the payer's details again), raises and sends the invoice, and the Booking leaves Problems. Invoices already stamped `noAddress` (the seeded history, and credit notes that follow their original's delivery) keep reading as today: 60 re-checks every `noAddress` reader (`deliveryCountsText`, the Review queue's delivery banner, the monitor rows' counts in `store/selectors.ts`, `PatientRecord`, `InvoiceDocument`'s Delivery card, `creditActions`, Resend) and `billingRun.test.ts`'s no-address cases, and removes none it still needs. Mark resolved: 59 adds optional `resolvedBy` and `resolvedNote` to `BillingException` in `domain/types.ts` (58 does not touch it; optional fields need no seed change or `PERSIST_VERSION` bump), and a failure resolved by hand is one with `resolvedAtISO` and no `resolvedPairIds` (a successful retry sets them); 60's Mark resolved writes them through `mutate()`, audited. Prepayment invoices are outside the billing run and unchanged. | 59, 60 | US-13.3.1, US-13.3.2 (acceptance criteria); US-08.5.2; `finances-section.html` `#billing-table` (version C), `#p-billing` |
+| D117 | **The Intake shape: Idea 1, "Feed and workbench". Decided** (owner, 2026-11-26 plan update; Notes 2026-11-26 · Donald intake front door #1, #2, #11, #13, #16; the approved design, `intake-ideas.html` `#idea1` and `#reco`). Intake keeps its one side-nav entry and has two routed views: Arrivals (`/admin/intake`, where it opens) and Sources (`/admin/intake/sources`). Arrivals is one feed on the left, grouped by List (a hospital file is a heading over its Lists, a PDF is one List; the source is a mark, never a tab), with filters per hospital, Rooms PDFs, Needs NHI and Decided kept in the URL, moved through with J and K, beside a docked, non-modal Workbench on the right (a new shared `WorkbenchSplit` in `shared/surface/`, with its `/demo/catalogue` row; `SidePanel` stays modal). The Workbench holds one bench per arrival kind: an update to a List AA holds, a cancellation, a new List, an unreadable PDF, Lists that match exactly, a held message, and Needs NHI. Waiting for NHI and PDF lists fold into the feed; Data quality becomes a flag on the arrival (and on the patient's page from Wave 7's join, D123); Validators goes, its explanation moving to Help; both header buttons go, leaving only a quiet "Add a PDF by hand". Every old URL redirects with replace, carrying `selectRowId` router state: `/admin/intake/matching` to Arrivals (that row's arrival selected), `/waiting` to the Needs NHI filter, `/pdfs` to Rooms PDFs, `/quality` and `/validators` to Arrivals. `SECTION_PATH` stays `/admin/intake/matching`, which redirects. No confidence score anywhere, and no vendor named for the PDF reader (D120). Considered and not built (the exploration): the schedule lens (Idea 2) and List threads (Idea 3), bar the Slot card and the version track the recommendation borrows. | 68 to 72 | Owner directive; EP-02, FT-02.1, US-02.1.4, US-02.1.7, US-11.1.5; `intake-ideas.html` `#idea1`, `#reco` |
+| D118 | **One change set per applied List. Decided** (owner; the shared path is the plan's, so three lanes never build three). Deciding an arriving List decides its rows together as one change set (`withChangeSet`), each row applied, left out (decided, changing nothing) or rejected, audited. Placing a new List, making a Draft List, confirming a removal as a cancellation and confirming unchanged Lists together are each one change set. This supersedes `docs/DECISIONS.md` line 14's "applied hospital row" (one change set per applied row); 69 rewrites that line when it builds the apply. 68 builds the one List-level decision path every bench calls (`store/intakeDecide.ts`), so 69's apply (`store/intakeApply.ts`), 70's placing (`store/intakePlace.ts`) and 71's bulk confirm (`store/intakeBulk.ts`) never build a second one. Rows waiting for an NHI are still counted once (US-11.1.5): 68, which removes the tab and re-bases the badge (D125), rewords `docs/DECISIONS.md` line 93 for the filter. | 68 to 72 | Owner directive; US-02.1.2 (A whole List), US-02.1.6, US-02.2.3; DM-11 |
+| D119 | **The six demo actions. Decided** (owner; `intake-ideas.html` `#sources`, section 8). They replace the two header buttons and today's scattered intake triggers, and played in order they tell the Okafor story (`#journey`): Mr Okafor operates at St George's on Wednesday 25 November, AM, with Dr Rutherford, and the demo clock is Tuesday 24 November. (1) **Rooms email a List:** Mr Okafor's PDF lands in the mailbox, four patients, one with no NHI, naming Dr Rutherford, whose AM Slot is free; New List at the top of the feed. (2) **Rooms re-send it:** the same surgeon, hospital, day and session, with a time change, a patient added and one missing; Update, with the missing Booking to confirm as a removal. (3) **St George's sends the day-before List:** Mr Okafor's List with fuller wording, an approval number, a time shift and the stub's NHI, matched on all four keys, plus Lists that match exactly. (4) **Southern Cross cancels a Booking:** one cancellation; applying keeps the Booking visible, marked cancelled. (5) **A scanned PDF arrives:** read from a scan, its unsure values marked to check, each lit where it sits on the page; its second choice, a page that cannot be read, lands with its reason (D125). (6) **A feed message fails:** a Southern Cross message with no patient, held with its reason and a raw view behind the restricted role, never dropped. Each runs as its source (the integration or mailbox actor), never as the office. 68 registers all six on Arrivals (the sixth also on Sources) and retires `matching-receive-theatre-list`, `matching-send-update`, `pdf-list-resend`, `receive-no-nhi-list` and `fire-hospital-message`. The PWA stand-ins (`matching-office-matches-row`, `stub-office-adds-nhi`, `pwa-office-adds-nhi`) keep working, re-pointed to the new ingest and the List-level decision path where they imported a file or decided a row: `store/matchingDemo.ts`'s `officeImportsS1File` and `officeMatchesHospitalRow` (behind `matching-office-matches-row`) and the Forte sheet stand-in in `store/officeStandIn.ts`. `pwa/officeSimulation.ts`, which only authorises Lists, is untouched. `demoGuideSync.test.ts` stays green without a guide edit: an action that plays a beat the guide scripts keeps that trigger's label until the sweep, and the rest go on its own `NOT_SCRIPTED` list with a reason. No Wave 7 phase needs a new trigger; one that does notes it for the join. | 68 to 72 | Owner directive; US-02.1.1, US-02.1.5, US-02.2.1, US-02.2.3, US-02.1.7; standing rules "Demo triggers", "PWA parity" |
+| D120 | **The simulated PDF reader. Decided** (owner; Notes 2026-11-26 · Donald intake front door #6, #7). The prototype simulates the reader: each value read from a PDF carries a confidence and its box on the page, set by the sample data, and a value below a check threshold is unsure, marked for the office to check, and lights its box on the page beside the values. A scan is read too, with lower confidences. A PDF that cannot be made into a List is an arrival with no rows and a reason, shown in the feed and under the mailbox on Sources, never dropped. The generated facsimile places each value where its box lands. How a real system reads a PDF is the development team's choice, so **no vendor or product is named** in the app, its copy or the requirements (the exploration's assumption stays in the exploration). 68 builds the reader's output and the arrival; 70 builds the page with its boxes. | 68, 70 | Owner directive; US-02.2.1 (Shown beside the PDF, Unsure values marked, Unreadable PDF), US-02.1.4; DM-16 |
+| D121 | **Waves 6 and 7: Intake's own lanes. Decided** (owner, 26 Nov 2026). Intake runs beside Finances in lanes of its own: Lanes D, E, F and G (ports 5573/5574/5580, 5673/5674/5680, 5773/5774/5780 and 5873/5874/5880), its own coordination folder `.git/lanes-intake/` and its own rules file, [LANES-INTAKE.md](LANES-INTAKE.md), which overrides a phase's kick-off prompt, the run-build-phase skill and CLAUDE.md for an Intake lane session, as LANES.md does for Finances; the phase docs point to it. **Wave 6:** Lane D builds 68 now, beside Finances Wave 5, on `lane/d` made from `master`; 68 never lands on `master` while Wave 5 runs. **Wave 7** starts when "68 complete:" is on `lane/d`: Lane D builds 69, Lane E 70, Lane F 71 and Lane G 72, each lane merging that commit at its start; each depends on 68 only. **The Intake join** (Wave 7's) waits until Wave 5 is on `master`, merges `master`, makes the changes the lanes noted for the merge, runs the one full gate and merges to `master` (D122). **Subagents, as much as possible:** each phase session sends parallel subagents to read code and requirements, to build independent pieces (each told exactly which files are its own) and for any review, and keeps its own context for decisions and joins. | 68 to 72 | Owner directive |
+| D122 | **Test once, at the very end (68 to 72). Decided** (owner, 26 Nov 2026, as D113). For 68 to 72 only, this overrides this file's standing rules on gates and the owner's test, LANES-INTAKE.md's gate steps, the `run-build-phase` skill's gate, adversarial review, screen-proof and manual checklist steps, and CLAUDE.md's "full gate before merging". Each phase finishes on the quick checks only (`node requirements-board/agent/skills/run-build-phase/tools/phase-check.mjs --changed`, plus `npm run lint` in `aa-prototype/`) and skips the adversarial review, the screen-proof and the manual checklist run; its checklist stays in its doc as the join's material, and it re-points the Playwright specs it breaks without running them. Only Wave 7's join runs the full gate (`phase-check.mjs` without `--changed`, plus lint), one review of 68 to 72, the fixes, the merge to `master` and one owner test sheet, `docs/build-plan/TEST-68-72.md`. | 68 to 72 | Owner directive |
+| D123 | **The Wave 5 boundaries. Decided** (owner). While Finances Wave 5 runs, Intake never edits `screens/finances/`, the Finances screens and panels, `store/billingRun.ts`, `store/invoiceMaterialise.ts`, the store files [LANES.md](LANES.md) lists, `GroupRow` (the feed's group headers are Intake's own file), `store/selectors.ts` (`dataQualityItems` stays there, and Intake reads it), `PatientRecord` (the data-quality flag on the patient's page, with Apply code, waits for the Intake join), `ReviewScreen` (the stub guard reaches it through `authoriseBlockersFor`), `AdminApp.tsx` or `SideNav.tsx` (`SECTION_PATH` stays `/admin/intake/matching`, which redirects, and the badge is re-based inside `matchingSelectors.ts`). Shared files are add-only, except that Intake may remove or rewrite its own lines: retire its triggers in `registry.ts`, drop the exports of deleted actions from `store/index.ts`, replace the `/demo/catalogue` rows of the deleted Matching, PDF and Waiting parts, and rewrite its own `router.tsx` block and `routes.tsx` wrappers. | 68 to 72 | Owner directive |
+| D124 | **Intake stories split across phases. Decided** (owner). 68 is the groundwork, with the units EP-02, FT-02.1, US-02.1.1, US-02.1.4, US-02.1.5, EP-14, DM-11 and DM-15 (the two views, the feed, arrivals with no import button, inbound only); it also lays the read models and stored shapes for DM-12, DM-16, DM-19 and DM-21, whose units sit with the Wave 7 phase that shows and acts on them. US-02.1.2 spans 69 (a whole List applied with a Booking's change left out, and Reject; its unit) and 70 (placing a new List: the named anaesthetist's Slot suggested, another free Slot, an existing List, or a Draft List). 69 also has US-02.1.3, US-02.2.3, DM-12, DM-13 and DM-17 (an arriving NHI turns the stub into the Booking when the update is applied). 70 has US-02.2.1, FT-02.2, US-01.6.1 (building OQ-44's answer), DM-16 and DM-19. 71 has US-02.1.7, US-02.1.6, DM-14 and DM-21. 72 has US-11.1.5, US-11.1.4, US-02.6.3, US-02.6.4 and DM-18; the later-arrival criteria of US-11.1.5 and US-02.6.3 are DM-17's, built by 69 and walked at the join. US-11.1.5, US-11.1.4 and US-02.1.4 leave built Phase 51's covers (its tab became a filter). DM-20 is parked: it is the Finances reading D116, built by 60. US-02.2.4, US-01.3.3, US-01.6.3, FT-01.3 and FT-02.3 match as built and are not planned; 70 keeps US-01.3.3's rule that placing a List in a free Slot is the manual assignment act, through its existing action and guards. Each Wave 7 phase owns its files (LANES-INTAKE.md); a change another lane's file needs goes in `notes.md` under "For the merge". **One Add NHI path:** `RowPanel` (69's) still holds a second manual entry (`addNhiToStub` and its `stub-add-nhi` button); 69 removes it wherever it reuses the panel or any part of it (and it goes with the panel if 69 deletes it), so the Hub lookup sheet (72's `AddNhiSheet`) is the one way to add an NHI by hand (US-02.6.3, DM-17), and the join checks that only one is left. **No cross-lane imports from `apps/admin/matching/`:** 69 may reuse or delete `RowPanel`, `DiffTable` and `DecisionCards` freely, so 70 builds its placement from the shared components and 68's placement options, and 72 imports nothing there; the one exception is `RawRowSheet`, which 71's held-message bench may import unchanged, so 69 keeps its export and props through Wave 7 and the join deletes it if nothing uses it. `store/matchingDemo.ts` (the PWA stand-in, which imports `matchingActions.ts`) is 68's in Wave 6 and 69's in Wave 7. | 68 to 72 | Owner directive |
+| D125 | **The intake readings 68 to 72 build. Decided** (plan defaults, read from the stories and the deltas; each on its phase's "For the owner's review" list). **Intake's count** (68, in `matchingSelectors.ts`): each arriving List with an undecided row that is not waiting for an NHI, once (unchanged Lists included, since a person confirms them); each unreadable PDF and held message, once, until the office dismisses it; and each row waiting for an NHI, once, dropping by one when the NHI is added (US-11.1.5). **Left out** is a decision of its own kind, shown under Decided and in the audit, never a reject (DM-11). **Removals:** a re-sent rooms' PDF stages one removal row for each Booking the rooms brought (`Booking.source`, or the decided rows' source) that is missing from it, decided like any row: confirm records the cancellation, leave out changes nothing (DM-13). A hospital List is not checked for missing Bookings (hospitals send cancellations), and a left-out removal is offered again by a later re-send that still lacks the Booking. **Unchanged:** every row of an arrival is staged, identical ones included, and an identical re-arrival whose earlier rows are all decided is still an unchanged List that waits for a person's confirm (DM-21). **Sources** (OQ-109's part 1 still open): St George's and Southern Cross connected and receiving, the rooms' mailbox reading, and Forte Health and the other hospitals listed as not connected, their Lists coming by PDF to the mailbox; the state is stored and seeded (DM-14). **A named anaesthetist** (OQ-13 open): an optional anaesthetist on the incoming fields, resolved to the master as the surgeon is; the Okafor PDF and some hospital sample Lists carry one (DM-19). **The Forte Health sheet** (channel `manualSheet`, which has no catalogue source) becomes a rooms' mailbox PDF, and the PWA stand-in that used it an arrival through the new ingest. **An unreadable PDF** shows its page and its reason, with a draft email to the sender that the office sends, and Dismiss with a reason. **Urgent** stays within three days, as built. **Data quality** is a flag for an unrecognised ethnicity code on the arrival (68), display-only on the feed and the benches; a new List's rows take a corrected code before ingest (70's row corrections, DM-15); and the patient's page gets the flag with Apply code (`correctEthnicityCode`, kept unchanged in `integrationActions.ts`) at Wave 7's join, so deleting the Data quality tab, its only caller today, never loses the correction. **A Contract on new Bookings** (69, 70): a List-level decision offers no per-row Contract pick, so a Booking made by applying or placing a List lands with no Contract, as a Booking added with no pick does today, and the Contract is chosen on the Booking; 68's `intakeDecide.ts` keeps today's per-row decision input (picks included), so the PWA stand-in still sets its Contract after deciding, and US-02.1.2's "Choose Contract" screenshot caption changes at the sweep. | 68 to 72 | US-11.1.5, US-02.1.4, US-02.1.6, US-02.2.3, US-02.1.7, US-02.1.2; DM-11, DM-13, DM-14, DM-19, DM-21; OQ-13, OQ-109 |
 
 ## Track
 
@@ -114,22 +152,37 @@ Wave 3      Lane A  54 the anaesthetist's page                                  
             ── join: owner tests 50 to 57 (TEST-50-57.md) ──
 
 Finances
-Wave 4      Lane A  58 the Finances section shell (nav & badge, six tabs, record routes,
+Wave 4      Lane A  58 the Finances section shell (nav & badge, six tabs, record routes,     (DONE)
                        redirects, links, counts, triggers, today's panels moved)
             Lane B  59 the Finances read models (pure domain, no UI)
             ── join: quick checks only; no review, no owner test ──
-Wave 5      Lane A  60 the Billing tab ─▶ 61 the Xero tab
-            Lane B  62 the Invoices tab ─▶ 63 the invoice & credit note pages ─▶ 67 the AA fees tab
+Wave 5      Lane A  60 the Billing tab ─▶ 61 the Xero tab                  (60, 62, 64, 65 DONE;
+            Lane B  62 the Invoices tab ─▶ 63 the invoice & credit note pages   61, 63, 66, 67 building)
+                    ─▶ 67 the AA fees tab
             Lane C  64 the Ledger tab ─▶ 65 the anaesthetist's account page
                     ─▶ 66 the Payments tab & the payment run pages
             ── join: the full gate & one review, once; owner tests 58 to 67 (TEST-58-67.md) ──
+
+Intake      (its own lanes D to G, beside Finances: LANES-INTAKE.md)
+Wave 6      Lane D  68 Intake groundwork (two views, the feed, the Workbench and WorkbenchSplit,
+                       the read models, the arrivals by source, the six demo actions,
+                       the seed; the old tabs and buttons gone)          (beside Wave 5, on lane/d)
+            ── no join: 68 stays on lane/d; each Wave 7 lane merges "68 complete:" ──
+Wave 7      Lane D  69 updates to a List we hold
+            Lane E  70 new Lists & PDFs
+            Lane F  71 Sources & confirming unchanged Lists
+            Lane G  72 Needs NHI, the stub guard & Validators to Help
+            ── join (once Wave 5 is on master; merges master): the full gate & one review, once;
+               owner tests 68 to 72 (TEST-68-72.md) ──
 ```
 
 45 ran alone. Everything after it runs in build lanes, wave by wave ([LANES.md](LANES.md)): the
 Contracts phases in two lanes, then the first People phases (50, 52 and 53 in Lane A, 51 in Lane B),
 then the four People pages in three lanes. The Finances phases run as Waves 4 and 5: the section shell
 and the read models in two lanes, then the six tabs and the record pages in three, tested once at the
-end (D112, D113).
+end (D112, D113). The Intake phases run in lanes of their own ([LANES-INTAKE.md](LANES-INTAKE.md)):
+the groundwork alone as Wave 6, beside Finances Wave 5, then the four benches and views in four lanes
+as Wave 7, joined once Wave 5 is on `master` and tested once at the end (D121, D122).
 
 ## Phases
 
@@ -141,7 +194,7 @@ end (D112, D113).
 | 48 | [The Parties and Funding tags tabs](phases/phase-48-parties-and-funding-tags-tabs.md) | Lane B | 45, 47 | 1 session | Parties and Funding tags as tabs of the Contracts section. Parties are grouped by kind, Contract-less ones included, and each Party has a page with its Contracts counted by funding tag, each count opening the catalogue. Picking a tag shows its Contracts grouped by hospital with counts. The three views leave Master data, with redirects and a pointer line. Covers US-04.1.5, US-13.4.5 (plus US-13.4.1's Contracts-section half; the story's unit moved to 53, D105) |
 | 49 | [Replace a Contract from a date](phases/phase-49-replace-contract-from-a-date.md) | Lane A | 45, 46 | 1 to 2 sessions | Replace from a date as one action, from a SidePanel record sheet: a copy with any setting changed and a new AA code; the Procedures from the date listed, locked ones left out, only the ticked ones moved; the old Contract left active with a to-do on the date, or disabled now. Every step is audited, in one change set (`replaceContract`). The to-do is a warning rule, never a blocker (D94). A late disable lists the Procedures from the change date. A "Demo: reach the change date" button. Covers US-04.1.8, US-04.1.3 (it builds DM-01 to DM-03 and DM-04's replaced case as its doc says; the deltas are parked) |
 | 50 | The rate and priority tier card | Lane A | 45 | 1 session | The rate per unit and the priority tier on one self-contained card on today's anaesthetist record: Edit, choose, Save (Cancel leaves it), one audited change per save (D102), never a single click. The rate leaves the edit sheet, and the Anaesthetists list filters by tier. Covers US-01.3.6, DM-09 |
-| 51 | Waiting for an NHI as a tab on Intake | Lane B | none | 1 session | A Waiting for NHI tab on Intake beside Matching, with the view moved from Patients unchanged and `/admin/patients/waiting` redirected. The rows count once, in Intake's attention count, which drops when the NHI is added; the Patients count stops counting them. The counts change in the selectors, not in AdminApp or SideNav. Covers US-11.1.5, US-11.1.4, US-02.1.4 |
+| 51 | Waiting for an NHI as a tab on Intake | Lane B | none | 1 session | A Waiting for NHI tab on Intake beside Matching, with the view moved from Patients unchanged and `/admin/patients/waiting` redirected. The rows count once, in Intake's attention count, which drops when the NHI is added; the Patients count stops counting them. The counts change in the selectors, not in AdminApp or SideNav. Covered US-11.1.5, US-11.1.4 and US-02.1.4, which left it at `8637b65` for 72 and 68 when the tab became a filter (D117, D124) |
 | 52 | Make an anaesthetist inactive from a last day | Lane A | 49, 50 | 2 sessions | A last day and a reason, refused while the anaesthetist holds a List after it (those Lists shown), cleared before the day, each step audited (D103). After the day: no Slots, not offered or picked, no sign-in in the mobile app, the PWA or the web app, and their own Contracts disabled by the system. Made active again: Slots and sign-in back from that day, and the disabled Contracts offered back, ticked with prices. A status card and two sheets on today's anaesthetist record; the edit sheet's Active toggle goes. "Demo: pass the last day". Covers US-12.1.6, US-13.5.3, US-01.1.1, US-04.1.2 (its Inactive anaesthetist criterion, finishing the story, D96), DM-05, DM-06, DM-07 |
 | 53 | The People section and the shared record pattern | Lane A | 46 to 52 | 2 sessions | A People entry where Patients was, with its attention count, and four routed tabs (Anaesthetists, Surgeons, Specialties, Patients), each list searched, filtered and paged (D99). Every record route moves under People, and the old Master data, profile and Patients links redirect (D100). Master data keeps Places with a pointer across, and the Surgeon groups list goes (D98). The Contract page's cards and a side panel are lifted into shared components with catalogue rows, the Contract page unchanged (D104). Covers US-13.4.1 (D105) |
 | 54 | The anaesthetist's page | Lane A | 50, 52, 53 | 1 session | A page per anaesthetist keyed by registration number: identity, contact, bank, rate and tier (50's card) and status (52's card) cards, each saved on its own as one audited change; a side panel of pairings, linked Contracts and next Lists with See all; Make inactive on the page. The all-fields edit sheet goes. Covers US-12.1.4 |
@@ -158,13 +211,20 @@ end (D112, D113).
 | 65 | [The anaesthetist's account page](phases/phase-65-anaesthetist-account-page.md) | Lane C | 58, 64 | 1 session | The anaesthetist's account page under Ledger on the record pattern: what AA owes them and what they owe AA, their invoice pairs (billed, paid in, disbursed), their payment runs with See all and their credit trails, a way back to the Ledger and a link to their People page. It replaces the whole/one-anaesthetist switch. Covers US-13.2.1 (finishing it, D114) |
 | 66 | [The Payments tab and the payment run pages](phases/phase-66-payments-tab-and-run-pages.md) | Lane C | 58 | 1 session | The Payments tab: the week's cycle (StepRail, Close the week, the Monday checks, approve BCTIs, send the schedule, Run payables), what waits for the run, every earlier payment run (paged), and the events awaiting the run in the rail. Each run's page under Payments, with its week number and each anaesthetist's remittance advice on its own page under it, on the record pattern. As written; OQ-47 untouched. Covers US-10.2.7 |
 | 67 | [The AA fees tab](phases/phase-67-aa-fees-tab.md) | Lane B | 58 | 1 session | The AA fees tab: AA's fee invoices to the anaesthetists, opening on the unpaid ones, with the month's run and its preview beside them and the fee settings on the same tab (`/aa-fees/settings` opens it with them in view). Not on the Invoices tab. Covers US-10.3.1, US-10.3.3 |
+| 68 | Intake groundwork: the shell, the feed, the read models and the arrivals | Lane D | none | 2 sessions | Intake as two views, Arrivals (`/admin/intake`) and Sources (`/admin/intake/sources`), with no import or upload button, only a quiet "Add a PDF by hand"; every old Intake URL redirected with replace, `selectRowId` carried (D117). One feed of arrivals grouped by List (a hospital file a heading over its Lists, a PDF one List), each with its source mark, kind and flags (Needs NHI, values to check, data quality, removals), filtered by hospital, Rooms PDFs, Needs NHI and Decided and moved through with J and K, beside a docked Workbench on a new shared `WorkbenchSplit`, whose benches are stubs for Wave 7. Pure, tested read models (arrivals by List, the change summary with removals, the match basis, a List's versions, unchanged Lists, the placement options), the simulated PDF reader's values with a confidence and a box (D120), the one List-level decision path (D118), arrivals made by their source (a mailbox PDF, a hospital batch with identical rows kept, a cancellation, a failed message), the badge re-based (D125), the Okafor-story seed with the sources and `PERSIST_VERSION` 82, the six demo actions with the old triggers retired (D119), and the Matching, PDF lists, Waiting for NHI, Data quality and Validators screens deleted. Covers EP-02, FT-02.1, US-02.1.1, US-02.1.4, US-02.1.5, EP-14, DM-11, DM-15 (and the groundwork of DM-12, DM-16, DM-19 and DM-21, D124) |
+| 69 | Updates to a List we hold | Lane D | 68 | 1 to 2 sessions | The update and cancellation benches for any source (a hospital update or a re-sent rooms' PDF): the version track, the match-basis strip (each key agreed or not, how many patients were found by NHI, no score), the Slot card, and a List-level difference table with a tick per Booking, added Bookings marked and removals struck through. Apply applies the whole List's ticked changes as one change set (D118): a change left out changes nothing, a confirmed removal is a cancellation, and an arriving NHI turns the stub into the Booking. Reject rejects the List with a reason. The hospital's List is proposed as an update to the rooms' List, never a new List. Covers US-02.1.2 (its placement half in 70, D124), US-02.1.3, US-02.2.3, DM-12, DM-13, DM-17 |
+| 70 | New Lists and PDFs | Lane E | 68 | 1 to 2 sessions | The new List bench for any source: the rooms' PDF beside the values read from it, each with how sure the reader was, unsure values marked to check and lit on the page, rows corrected before ingest. The whole List placed in the named anaesthetist's suggested free Slot, another free Slot or an existing List, or made a Draft List with all its Bookings and no Slot changed, each one change set, its stubs placed with it. An unreadable PDF lands with its reason, to email the sender or dismiss. "Add a PDF by hand" lands a PDF as the mailbox does. Covers US-02.2.1, FT-02.2, US-01.6.1, DM-16, DM-19 (and US-02.1.2's placement half, D124) |
+| 71 | Sources and confirming unchanged Lists | Lane F | 68 | 1 session | The Sources view: each connected hospital and the rooms' mailbox with whether it is receiving, when it last sent, today's messages and what each became, held messages with their reason and a restricted raw view, the hospitals not connected, and the line that AA only reads and never writes back. The matches-exactly bench: an arrival's unchanged Lists confirmed together in one click that changes nothing, never automatically; and the held-message bench. Covers US-02.1.7, US-02.1.6, DM-14, DM-21 |
+| 72 | Needs NHI, the stub guard and Validators to Help | Lane G | 68 | 1 to 2 sessions | The Needs NHI bench: the patient as received, how close the List is, a chase card with one address and the request, and the one Add NHI path (the Hub lookup sheet), the row becoming a Booking in its stub's place and Intake's count dropping by one; WaitingNhiView folded in. The stub guard: a List holding only a stub reads "1 waiting at intake", never complete, and can be neither submitted nor authorised, with the reason shown in the Review queue, SubmitListSheet and the apps; Mark list completed waits; a List with Bookings is never held up. The validators' explanation moves to Help. Covers US-11.1.5, US-11.1.4, US-02.6.3, US-02.6.4, DM-18 |
 
 ## Open questions
 
 Five questions were added on 2026-11-25, three with the Contracts section and two with the People
 section, and one on 2026-11-26 with the Finances section; all are open and none is answered, so the
-phases build without them. Older open questions touch planned phases too: for the Finances phases they
-change a label or a step only, and are built as written with the defaults below.
+phases build without them. The Intake change added none: it answered OQ-109's part 2 and OQ-44 in the
+catalogue (68 and 70 build the answers, D124), and two older open questions touch its phases. Older
+open questions touch planned phases too: for the Finances phases they change a label or a step only,
+and are built as written with the defaults below.
 
 | Question | Owner | Gates | Built meanwhile |
 |---|---|---|---|
@@ -183,14 +243,19 @@ change a label or a step only, and are built as written with the defaults below.
 | OQ-125 What triggers the release of a prepayment from the holding account (older) | Donald and Greg | 64 | The Ledger's AA Holding account list keeps today's provisional pill |
 | OQ-83 The anaesthetist's sign-in experience (older) | Donald | 52 | As built: the simulated account sign-in for the demo account (Dr Souter), provisional. 52 adds only the inactive refusal |
 | OQ-143 Surgeons without an HPI CPN or a full name (older) | Donald to ask Vanessa | 55 | As built: a blank HPI CPN saves ("No HPI CPN yet") and a duplicate is refused |
+| OQ-109 Which two hospitals are integrated today (older; its part 1 is still open, its part 2 answered by this change) | Donald to ask AA | 68, 71 (D125) | St George's and Southern Cross connected and receiving; Forte Health and the other hospitals listed as not connected, their Lists coming by PDF to the mailbox |
+| OQ-13 Hospital download format and fields, per hospital (older) | Stratos Tech, not yet named | 68, 70 (D125) | The demo samples' fields as built, gaining an optional named anaesthetist on the Okafor PDF and some hospital Lists, so either can suggest a Slot (DM-19) |
 
 ## Sequencing rules
 
 - **Every phase after 45 runs in a build lane** (owner, 2026-11-25 and 2026-11-26), in its own git
   worktree, wave by wave; [LANES.md](LANES.md) holds the lanes, the ownership tables, the sync, the
   joins and the conflict rules, and overrides a phase's kick-off prompt, the run-build-phase skill and
-  CLAUDE.md for a lane session. A phase starts only when every phase in its `depends_on` is DONE and
-  committed on its branch. A session on `master` never runs a lane phase from its own prompt.
+  CLAUDE.md for a lane session. The Intake phases (68 to 72) run in lanes of their own, D to G, with
+  their own coordination folder `.git/lanes-intake/` and their own rules file,
+  [LANES-INTAKE.md](LANES-INTAKE.md), which does the same for an Intake lane session (D121). A phase
+  starts only when every phase in its `depends_on` is DONE and committed on its branch. A session on
+  `master` never runs a lane phase from its own prompt.
 - **Every phase 58 to 67 tests once, at the very end (D113).** Each finishes on the quick checks only:
   `node requirements-board/agent/skills/run-build-phase/tools/phase-check.mjs --changed` plus
   `npm run lint` in `aa-prototype/`. It skips the adversarial review, the screen-proof against the
@@ -200,9 +265,13 @@ change a label or a step only, and are built as written with the defaults below.
   `--changed` plus lint, one review of all ten phases, the fixes, the merge to `master` and
   `TEST-58-67.md`. This overrides the run-build-phase skill, LANES.md's gate steps and CLAUDE.md's
   "full gate before merging" for these phases only.
-- **Every phase 58 to 67 uses subagents as much as possible (D112):** parallel subagents to read code
-  and requirements, one per independent panel or file of the build (each told which files are its
-  own), and for any review; the session keeps its own context for decisions and joins.
+- **Every phase 68 to 72 tests once, at the very end (D122),** as 58 to 67 do: the quick checks only,
+  no review, screen-proof or checklist run, the Playwright specs it breaks re-pointed but not run.
+  Wave 6 has no join of its own. Wave 7's join is the only full gate: `phase-check.mjs` without
+  `--changed` plus lint, one review of 68 to 72, the fixes, the merge to `master` and `TEST-68-72.md`.
+- **Every phase 58 to 72 uses subagents as much as possible (D112, D121):** parallel subagents to read
+  code and requirements, one per independent panel or file of the build (each told exactly which files
+  are its own), and for any review; the session keeps its own context for decisions and joins.
 - **Wave 1: two lanes, once 45 is DONE on `master`.** **Lane A** builds 46 then 49 and **Lane B** 47
   then 48. Whichever finishes second joins them onto `master` as soon as the full gate is green and
   writes `TEST-45-49.md`. Lane C does not run in Wave 1. (Done.)
@@ -221,15 +290,29 @@ change a label or a step only, and are built as written with the defaults below.
   `wave/5`, makes the route, link, trigger and count changes the lanes noted, runs the full gate once
   and one review of 58 to 67 (LANES.md "Checking Wave 5's join"), fixes what it finds, fast-forwards
   `master` and writes `TEST-58-67.md`; then the lanes are torn down.
-- **The owner tests three times, never between phases or waves.** 45 to 49 once after Wave 1's join,
+- **Wave 6: Lane D alone, now, beside Finances Wave 5 (D121).** Lane D builds 68 on `lane/d`, made
+  from `master` (LANES-INTAKE.md "Setting up the lanes"). 68 never lands on `master` while Wave 5 runs,
+  and Wave 6 has no join.
+- **Wave 7: four lanes, once "68 complete:" is on `lane/d` (D121).** **Lane D** builds 69, **Lane E**
+  70, **Lane F** 71 and **Lane G** 72, side by side; each lane merges the `68 complete:` commit at its
+  start (Lane D has it already). The last to finish joins them, but only once Wave 5 is on `master`: it
+  merges `master`, makes the changes the lanes noted for the merge (the data-quality flag on the
+  patient's page, with Apply code through `correctEthnicityCode`, among them), checks that only one
+  Add NHI path is left (the Hub lookup sheet) and deletes `RawRowSheet` if nothing uses it, runs the
+  full gate once and one review of 68 to 72, fixes what it finds, merges to `master` and writes
+  `TEST-68-72.md`; then the Intake lanes are torn down.
+- **The owner tests four times, never between phases or waves.** 45 to 49 once after Wave 1's join,
   from `TEST-45-49.md`. 50 to 57 once after Wave 3's join, from `TEST-50-57.md`. 58 to 67 once after
-  Wave 5's join, from `TEST-58-67.md` (Wave 4's join is not tested on its own). Wave 4 does not wait for
-  the owner's test of 50 to 57: a fix from it lands on `master` and reaches the lanes through their
-  `git merge master` at each phase start.
+  Wave 5's join, from `TEST-58-67.md` (Wave 4's join is not tested on its own). 68 to 72 once after
+  Wave 7's join, from `TEST-68-72.md`. Wave 4 does not wait for the owner's test of 50 to 57, and
+  Waves 6 and 7 do not wait for the test of 58 to 67: a fix from a test lands on `master` and reaches
+  the lanes through their `git merge master` at each phase start (for the Intake lanes, at Wave 7's
+  join, since 68 is cut from `master` before Wave 5 lands).
 - **Run order.** 45; Wave 1 (46 and 47 side by side; then 49 and 48); join; Wave 2 (50 and 51 side by
   side; then 52; then 53); join; Wave 3 (54, 55 and 57 side by side; then 56); join; Wave 4 (58 and 59
   side by side); join (quick checks); Wave 5 (60, 62 and 64 side by side; then 61, 63 and 65; then 67
-  and 66); join (the full gate, once).
+  and 66); join (the full gate, once). Beside Wave 5: Wave 6 (68 alone); then Wave 7 (69, 70, 71 and
+  72 side by side); join, once Wave 5 is on `master` (the full gate, once).
 - **45 first.** It makes the section, its routes, the redirects (D93) and the Contract page. It also
   adds the shared pieces the later phases reuse: the Card editing and footer variant (46's and 48's
   pages, 49's sheet, 50's card) and the ConfirmSheet danger variant over `stillOnContract` (49's late
@@ -323,18 +406,68 @@ change a label or a step only, and are built as written with the defaults below.
   Ledger's 3 to 4 s open and its 1440 overflow; 66 measures Run payables' 12 to 35 s freeze at practice
   scale and makes it asynchronous or faster if the split did not. Each deletes a line it closes and
   notes what changed; the final join re-checks all three.
+- **68 first, the only Intake phase that touches the shared Intake files (D117 to D120).** It owns
+  `router.tsx`'s Intake block and its `routes.tsx` wrappers (Arrivals, Sources and every old Intake
+  URL redirected with replace, `selectRowId` carried), the new `screens/intake/` folder (the section,
+  one file per piece of the feed, the Workbench dispatcher and one stub bench file per arrival kind for
+  the Wave 7 lanes), `shared/surface/WorkbenchSplit` with its `/demo/catalogue` row, the read models
+  in `domain/intake/`, the additions to `domain/types.ts`, `store/intakeSelectors.ts`, the ingest
+  actions and the one List-level decision path (`store/intakeDecide.ts`, D118), the Intake badge in
+  `matchingSelectors.ts` (D125), `intakeSeed.ts` and `PERSIST_VERSION`, `registry.ts`'s Intake
+  entries (D119), and the PWA stand-ins' bodies (`store/matchingDemo.ts`'s `officeImportsS1File` and
+  `officeMatchesHospitalRow`, and the Forte sheet in `store/officeStandIn.ts`, re-pointed to the ingest
+  and `intakeDecide.ts`; `pwa/officeSimulation.ts` untouched). Its second session lands what Wave 7
+  stands on first (the ingest actions, `intakeDecide.ts` and the seed, each with tests), then the badge,
+  the six demo actions and the stand-ins, then the retired triggers and the deletions. It deletes the
+  old screens (IntakeScreen, MatchingScreen, MatchingTable, ImportDialog, PdfListsTab, WaitingNhiTab,
+  DataQualityTab, ValidatorsTab and both header buttons) before "68 complete:", never deferring them:
+  each imports files a Wave 7 lane changes (RowPanel, DiffTable and DecisionCards; PdfListReview and
+  PdfUploadDialog; WaitingNhiView). Only the Playwright re-pointing may go under "For the merge" if the
+  session runs short. `correctEthnicityCode` stays when DataQualityTab goes. It writes the file
+  contract as shipped in `notes.md` and its PROGRESS entry, since no Wave 7 phase edits a file 68 owns.
+- **Wave 7's lanes each edit only their own files (D124; LANES-INTAKE.md).** 69: `matchingActions.ts`,
+  `store/matchingDemo.ts` (keeping the PWA stand-in working), the new `store/intakeApply.ts`, the update
+  and cancellation benches, and `matching/RowPanel`, `DiffTable`, `DecisionCards` and `RawRowSheet`
+  (reused or deleted, with `RowPanel`'s second Add NHI entry dropped wherever it is reused; `RawRowSheet`
+  keeps its export and props through Wave 7). No other lane imports from `apps/admin/matching/` but 71
+  (`RawRowSheet`, unchanged): 70 builds its placement from the shared components and 68's placement
+  options. 70: `pdfListActions.ts`, `stubSettle.ts`, `domain/intake/pdfLists.ts`, the new
+  `store/intakePlace.ts`, the new List and unreadable PDF benches, `AddPdfByHand` (68's stub, filled),
+  `intake/PdfListReview` and `PdfUploadDialog`. 71: `rawRowActions.ts`, `integrationActions.ts` (keeping `correctEthnicityCode`
+  unchanged for the join's patient-page flag), the new `store/intakeBulk.ts`, the
+  Sources view and the matches-exactly and held-message benches. 72: the waiting-NHI parts of
+  `patientActions.ts` and `patientSelectors.ts`, `stubActions.ts`, `stubSelectors.ts`, `stubDemo.ts`,
+  `officeStandIn.ts`, `lifecycle.ts`, `intake/AddNhiSheet`, `WaitingNhiView`, `domain/intake/stubs.ts`,
+  the Needs NHI bench, `SubmitListSheet`, `listProgress`, the Lists screens' stub readings and the
+  Help panel's format explanation (`shared/support/`). A lane calls another lane's exports and never edits them (69's apply calls
+  70's `settleStubForRow`); a change needed in another lane's file or in 68's goes in `notes.md` under
+  "For the merge", and the join makes it.
+- **Intake respects the Wave 5 boundaries (D123).** No Intake phase edits `screens/finances/`, the
+  Finances screens and panels, `store/billingRun.ts`, `store/invoiceMaterialise.ts`, the store files
+  LANES.md lists, `GroupRow`, `store/selectors.ts`, `PatientRecord`, `ReviewScreen`, `AdminApp.tsx` or
+  `SideNav.tsx`. Shared files are add-only, bar Intake's own lines (its triggers in `registry.ts`, the
+  exports of deleted actions in `store/index.ts`, the catalogue rows of the deleted Matching, PDF and
+  Waiting parts, its `router.tsx` block and `routes.tsx` wrappers). The data-quality flag on the
+  patient's page, with Apply code (`correctEthnicityCode`, unchanged), is made by Wave 7's join, after
+  Wave 5 is on `master`.
 - **`PERSIST_VERSION`.** 45 to 51 expect no bump (49 only if DM-01 takes a stored field or the seed
   gains a replacement). 52 bumps it (the anaesthetist's last day) and 55 bumps it (the surgeon group
   slice removed). 58 to 67 expect no bump: no seed change (62 only if no seeded invoice serves the
   40-day unpaid example; 60 only if the payer with no billing email is seeded rather than staged by
-  its trigger). A join that meets two bumps sets one past the higher. Any phase that seeds an
-  acceptance criterion's example bumps it.
+  its trigger). 68 bumps it from 80 to 82 (Finances' Lane B took 81) for the arrival records, the
+  sources and the Okafor-story seed; 69 to 72 expect no bump, since 68's seed carries every example
+  they show. A join that meets two bumps sets one past the higher (Wave 7's join, merging `master` after
+  Wave 5, included). Any phase that seeds an acceptance criterion's example bumps it.
 - **The screenshots and the guide wait for the sweep.** The redirects (D93, D100, D108) keep the
   recipes, ATLAS routes and the guide's links loading. Recipes that click into a retired panel, view or
   sheet break until the owner's sweep re-points them, and each phase lists those under "For the sweep"
   (for 58 to 67: about 76 recipes, 32 on the Billing monitor, 38 on Invoices and 6 on the Ledger; the
-  guide's 48 "Billing monitor" mentions and S3 Beats 6 and 7). Phases update the Playwright specs in
-  `aa-prototype/visual/` that they break (58 to 67 without running them: the final join runs them).
+  guide's 48 "Billing monitor" mentions and S3 Beats 6 and 7; for 68 to 72: the recipes on Matching,
+  the import dialog, PDF lists, Waiting for NHI, Data quality and Validators, ATLAS's Intake routes,
+  the screenshot captions on US-02.1.1, US-02.1.4, US-02.2.1 and US-02.6.1, and the guide's intake
+  beats). Phases update the Playwright specs in `aa-prototype/visual/` that they break (58 to 72
+  without running them: each final join runs them). `demoGuideSync.test.ts` stays green without a
+  guide edit for 68 to 72 (D119).
 
 ## Milestones
 
@@ -383,17 +516,33 @@ change a label or a step only, and are built as written with the defaults below.
 - **After 67 (Wave 5 joined, tested once):** The whole Finances section: the AA fees tab opening on the
   unpaid fee invoices with the month's run and the fee settings beside them, and 58 to 67 through the
   full gate and one review, ready for the owner's test from `TEST-58-67.md`.
+- **After 68 (Wave 6, on `lane/d` only, never on `master` mid-Wave 5):** Intake as two views, Arrivals
+  and Sources, with no import or upload button. The six demo actions bring Mr Okafor's PDF, its
+  re-send, St George's day-before List, a Southern Cross cancellation, a scanned PDF and a failed
+  message into one feed grouped by List, each with its source mark and its kind, filtered by hospital,
+  Rooms PDFs, Needs NHI or Decided and moved through with J and K; every old Intake link still lands.
+  Each arrival opens a placeholder bench until Wave 7.
+- **After 72 (Wave 7 joined once Wave 5 is on `master`, tested once):** Mr Okafor's List told end to
+  end. His rooms' PDF is shown beside the values read from it, an unsure value lit on the page, and
+  placed in Dr Rutherford's suggested AM Slot with one patient left waiting for an NHI as a stub. The
+  re-send is applied as the next version (a time change, a patient added, the missing Booking confirmed
+  as a removal). St George's day-before List shows all four keys agreeing and the List's versions, its
+  NHI turns the stub into the Booking, and its other Lists are confirmed unchanged in one click. A
+  Southern Cross cancellation is applied; the Sources view shows each feed's state, today's messages
+  and the held message with its reason, inbound only; a List holding only a stub is refused for submit
+  and authorise with the reason. 68 to 72 are through the full gate and one review, ready for the
+  owner's test from `TEST-68-72.md`.
 
 ## Parked
 
-Five units are parked: four data-model deltas Phase 49 built, and US-13.2.4, which no phase builds.
+Two units are parked: DM-20, which Phase 60 built for Finances, and US-13.2.4, which no phase builds.
+DM-01 to DM-04, which Phase 49 built and this list used to hold, are no longer units: this update's gap
+analysis carries only its own data-model deltas (DM-11 to DM-21), so they leave the list (as DM-05 to
+DM-10 stay only on their built phases' covers).
 
 | Unit | Why parked |
 |---|---|
-| DM-01 | A Contract remembers which Contract it replaces, and from when. Built by Phase 49 (DONE, joined onto `master` in Wave 1): the link and date ride the new Contract's `contract.create` audit entry (D94). The delta was not re-graded at `f885f67` (unchanged), so it stays parked rather than on a built phase; re-grade it as Matches when a later update touches it, and drop it here. |
-| DM-02 | Replace a Contract from a date, as one action (`replaceContract`). Built by Phase 49 (DONE); not re-graded at `f885f67`. Re-grade as Matches at a later update. |
-| DM-03 | A Contract still Active after its replacement's date is a To-do. Built by Phase 49 (DONE) as the Contract-subject rule `replacedContractStillActive`; not re-graded at `f885f67`. Re-grade as Matches at a later update. |
-| DM-04 | Disabling is confirmed and lists the Procedures first. The confirm was built in 45 and the replaced case (listing from the change date) in 49, both DONE; not re-graded at `f885f67`. Re-grade as Matches at a later update. |
+| DM-20 | A payer with no billing address fails the Booking, with its reason and fix. Not an Intake item: it is the Finances reading D116, re-graded here because the gap analysis read D116 against the code on `master`, where 60's run change had not yet landed. Phase 60 (built, Finances Wave 5, Lane A, on `lane/a`) makes the run fail the Booking whole as a `BillingException` with `payerNoAddress`, with Fix the payer then Retry billing it; it reaches `master` with Wave 5's join, which re-checks it. Re-grade it as Matches at a later update, and drop it here. |
 | US-13.2.4 | Reconciliation status at a glance (Proposed). Partial: the clearing-account (should read zero) and sub-ledger against control-account checks are deliberately not modelled, pending the posting design Greg and Sam are drawing. This change touched only its Notes (no summary page: the status stays on the Day view, and the Ledger tab says the same in one sentence). The Day view's `ReconciliationCard` stays as built; 58 re-points its links (`/admin/ledger`, `/admin/billing?problems=1`) to the Finances tabs and the old addresses redirect; its unplaced-receipt item follows OQ-149 (D106). No phase builds the extra checks. |
 
 ## Standing rules
@@ -411,7 +560,8 @@ plan and build; quick partial checks while building and the full green set at ga
 (`phase-check.mjs`); the design-fidelity check and the manual checklist; the review; a short PROGRESS entry with a Handoffs block; and updating `status.json` and the plan page
 so it names the next phase. A prompt line wins over the skill; the phase doc wins over the skill for
 what to build. For 58 to 67 the gate is the quick checks only, and the design-fidelity check, the
-manual checklist run and the review are skipped: Wave 5's join does them once for all ten (D113).
+manual checklist run and the review are skipped: Wave 5's join does them once for all ten (D113). The
+same holds for 68 to 72, whose Wave 7 join does them once for all five (D122).
 
 ### Owner review: agents test themselves
 
@@ -424,16 +574,17 @@ manual checklist run and the review are skipped: Wave 5's join does them once fo
   the `/run` skill and checking screenshots by eye. "Handset" checks use the emulated mobile viewport
   unless a real phone is attached. Each item is reported pass or fail with its evidence. For 58 to 67
   the phase skips this run; Wave 5's join walks the ten checklists for the owner's test sheet (D113).
+  For 68 to 72 likewise, Wave 7's join walking the five (D122).
 - **Defaults over questions.** Where a phase doc says "ask the owner" about a product choice, the agent
   builds the stated default, labels it provisional where the doc says so, and logs it on the phase's
   "For the owner's review" list instead of asking.
 - **Stop and ask only when it is very needed:** a drift-check stop the phase doc names, a blocker no
   documented default resolves, or an action that is destructive or hard to undo.
 - **Then the owner tests.** The phase commits when green and hands over: what changed, where to try
-  it and the "For the owner's review" list. For the lane phases the owner tests three times
-  ([LANES.md](LANES.md)): 45 to 49 once, after Wave 1's join, from `TEST-45-49.md`; 50 to 57 once,
-  after Wave 3's join, from `TEST-50-57.md`; and 58 to 67 once, after Wave 5's join, from
-  `TEST-58-67.md`.
+  it and the "For the owner's review" list. For the lane phases the owner tests four times
+  ([LANES.md](LANES.md), [LANES-INTAKE.md](LANES-INTAKE.md)): 45 to 49 once, after Wave 1's join, from
+  `TEST-45-49.md`; 50 to 57 once, after Wave 3's join, from `TEST-50-57.md`; 58 to 67 once, after
+  Wave 5's join, from `TEST-58-67.md`; and 68 to 72 once, after Wave 7's join, from `TEST-68-72.md`.
 
 ### Front-end design
 
@@ -443,7 +594,8 @@ system, not over it: the `docs/design` files and `src/theme` tokens stay authori
 binding convention 17, CLAUDE.md "Design"), so it shapes layout, hierarchy, spacing, states and finish,
 never a new palette, typeface or visual language, and the two hard rules (crimson identity only, teal
 the only action colour) hold. Each changed screen is screenshotted beside its mockup at the same
-viewport and compared before the phase is called done (for 58 to 67, once, at Wave 5's join: D113). A
+viewport and compared before the phase is called done (for 58 to 67, once, at Wave 5's join: D113;
+for 68 to 72, once, at Wave 7's join: D122). A
 phase that touches UI names, in its doc, the design page and screen for each screen it changes. Store,
 seed and pure-domain steps do not need it.
 
@@ -500,7 +652,9 @@ the guide, runs the full gate and the capture, and commits.
   capture, not even `--dry`. A phase doc may note, under "For the sweep", anything new worth a
   screenshot or a guide beat.
 - A phase keeps tests that read the guide green: `src/shared/demoTriggers/demoGuideSync.test.ts`
-  (a renamed or new demo trigger fixes the guide line the test names, nothing more).
+  (a renamed or new demo trigger fixes the guide line the test names, nothing more). For 68 to 72 no
+  guide line is edited: an action that plays a beat the guide scripts keeps that trigger's label, and
+  any other gap goes on the test's own `NOT_SCRIPTED` list with a reason, for the sweep (D119).
 - Recipes and images are never touched while updating the plan.
 
 ### Confirm before building
@@ -517,7 +671,7 @@ the recommended reading and labels it provisional in the UI.
 | 48 | US-04.1.5 and US-13.4.5 (Verify), and US-13.4.1's Contracts-section half: Parties and Funding tags as tabs, the Party page, each tag's Contracts by hospital | OQ-114 (as built) |
 | 49 | US-04.1.8 and US-04.1.3 (Verify), DM-01 to DM-03: Replace from a date, the to-do on the date, the late disable from the change date | OQ-144 (D90) |
 | 50 | US-01.3.6 (Verify) and DM-09: the rate and tier card, Edit then Save; the Anaesthetists list's tier filter | none |
-| 51 | US-11.1.5, US-11.1.4 and US-02.1.4 (Verify): Waiting for NHI as a tab on Intake, counted once | none |
+| 51 | US-11.1.5, US-11.1.4 and US-02.1.4 (Verify): Waiting for NHI as a tab on Intake, counted once (built; the three stories moved to 72 and 68 at `8637b65`, D124) | none |
 | 52 | US-12.1.6, US-13.5.3 and US-04.1.2's Inactive anaesthetist (Verify), US-01.1.1 (Agreed; its "active" now links to US-12.1.6), DM-05 to DM-07: the last day and its refusal, the Slots, sign-in, the Contracts disabled and offered back | OQ-147 (D97), OQ-83 (as built), OQ-144 (D90, no effect) |
 | 53 | US-13.4.1 (Verify): the People section, its lists, the redirects, the Surgeon groups list gone, the record pattern lifted | OQ-148 (D98) |
 | 54 | US-12.1.4 (Verify): the anaesthetist's page, its cards and side panel | none |
@@ -534,3 +688,8 @@ the recommended reading and labels it provisional in the UI.
 | 65 | US-13.2.1 (Verify): the anaesthetist's account page | none |
 | 66 | US-10.2.7 (Proposed): the Payments tab and the run pages, as written | OQ-47, OQ-29 (as written) |
 | 67 | US-10.3.1 and US-10.3.3 (Verify): the AA fees tab opening on unpaid, the run and the settings beside it | OQ-60, OQ-112 (as built) |
+| 68 | EP-02, FT-02.1, US-02.1.1, US-02.1.4 and US-02.1.5 (Verify: Donald's 26 November decisions, not yet seen by AA or Greg), EP-14 (Proposed), DM-11, DM-15: the two views, the feed grouped by List and its filters, arrivals by source with no import button, inbound only, the badge's unit (D125) | OQ-109 part 1, OQ-13 (D125) |
+| 69 | US-02.1.2, US-02.1.3 and US-02.2.3 (Verify), DM-12, DM-13, DM-17: a whole List applied with a change left out, the keys, versions and Slot, removals confirmed, an arriving NHI resolving the stub | none |
+| 70 | US-02.2.1 and US-01.6.1 (Verify), FT-02.2, US-02.1.2's placement, DM-16, DM-19: the PDF beside its values, unsure values on the page, the named anaesthetist's Slot suggested, a Draft List from Intake, the unreadable PDF | OQ-13 (D125) |
+| 71 | US-02.1.7 and US-02.1.6 (Verify), DM-14, DM-21: the Sources view, inbound only, unchanged Lists confirmed together | OQ-109 part 1 (D125) |
+| 72 | US-11.1.5, US-11.1.4, US-02.6.3 and US-02.6.4 (Verify), DM-18: the Needs NHI bench, one Add NHI path, the stub guard and its reason | none |
