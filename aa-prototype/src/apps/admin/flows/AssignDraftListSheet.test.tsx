@@ -95,6 +95,9 @@ describe('AssignDraftListSheet', () => {
     if (!res.ok) throw new Error(res.message)
     const { container } = renderSheet(res.value.listId)
     expect(screen.getByText('Not preferred with Ms Reid')).toBeInTheDocument()
+    // The group is "Not preferred" (US-01.3.5): nothing in the picker calls a pairing a conflict, a hospital closure only.
+    expect(screen.getByRole('region', { name: /^Not preferred/ })).toBe(container.querySelector('[data-shot="candidates-not-preferred"]'))
+    expect(container.querySelector('[data-shot="draft-list-candidates"]')!.textContent).not.toMatch(/conflict/i)
     const apart = rowsIn(container, 'candidates-not-preferred')
     expect(idsOf(apart)).toEqual([ANAE.sharma])
     fireEvent.click(apart[0]!)

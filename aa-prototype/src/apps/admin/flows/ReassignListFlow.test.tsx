@@ -92,6 +92,9 @@ describe('ReassignListFlow', () => {
     vi.useFakeTimers()
     const { container } = renderFlow(CHEN_PM)
     expect(screen.getByText('Not preferred with Ms Reid')).toBeInTheDocument()
+    // The group is "Not preferred" (US-01.3.5): nothing in the picker calls a pairing a conflict, a hospital closure only.
+    expect(screen.getByRole('region', { name: /^Not preferred/ })).toBe(container.querySelector('[data-shot="candidates-not-preferred"]'))
+    expect(container.querySelector('[data-shot="candidate-picker"]')!.textContent).not.toMatch(/conflict/i)
     const apart = group(container, 'candidates-not-preferred')
     expect(apart.map((r) => r.textContent?.includes('Sharma, Priya'))).toEqual([true])
     expect(apart[0]).toHaveTextContent('Not preferred')
