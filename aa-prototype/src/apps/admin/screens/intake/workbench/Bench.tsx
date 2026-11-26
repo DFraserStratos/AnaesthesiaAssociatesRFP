@@ -1,10 +1,11 @@
 /**
  * Exactly one bench for the arrival's kind (build plan Phase 68; D117; the opened arrival's O1). Each bench takes
- * `BenchProps` and lays itself out with `BenchLayout`; the opened arrival's page header names the arrival, so the
- * bench draws no header of its own.
+ * `BenchProps` and lays itself out with `BenchLayout`, which heads the decision column with what the arrival does
+ * (`ArrivalRailHead`, for the arrival provided here), so no bench draws a header of its own.
  */
 
 import type { ReactElement } from 'react'
+import { ArrivalHeadContext } from './ArrivalRailHead'
 import type { BenchProps } from './benchProps'
 import { CancellationBench } from './CancellationBench'
 import { HeldMessageBench } from './HeldMessageBench'
@@ -15,6 +16,14 @@ import { UnreadableBench } from './UnreadableBench'
 import { UpdateBench } from './UpdateBench'
 
 export function Bench(props: BenchProps): ReactElement {
+  return (
+    <ArrivalHeadContext.Provider value={props.arrival}>
+      <KindBench {...props} />
+    </ArrivalHeadContext.Provider>
+  )
+}
+
+function KindBench(props: BenchProps): ReactElement {
   const kind = props.arrival.kind
   switch (kind) {
     case 'update':

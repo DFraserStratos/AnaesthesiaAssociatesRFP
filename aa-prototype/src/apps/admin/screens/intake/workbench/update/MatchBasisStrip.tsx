@@ -3,8 +3,8 @@
  * #idea1 mock A, `.basis`): why an arriving List matched the List AA holds, as four lines side by side, each ticked or
  * crossed. Surgeon, Hospital, Day and session (agreed only when both agree) and Patients ("4 of 4 found", then
  * "3 by NHI · 1 by name and date of birth to a stub"). A crossed key names what AA holds. Never a score or a
- * percentage. Reads `useMatchBasis`, `usePatientRowCount` and `useStubMatchCount`; draws nothing for an arrival with
- * no held List.
+ * percentage. Reads `useMatchBasis`, `usePatientRowCount` and `useStubMatchCount`. With no held List (a New List)
+ * the same four parts show what arrived, unmarked; an arrival with no surgeon, day or hospital to show draws nothing.
  */
 
 import { Check, X } from 'lucide-react'
@@ -12,7 +12,7 @@ import type { ReactNode } from 'react'
 import type { ArrivalItem } from '../../../../../../domain/intake/arrivals'
 import { sessionLabel } from '../../../../../../domain/intake/matching'
 import { useAppStore } from '../../../../../../store/appStore'
-import { formatHpiCpn, titledSurname } from '../../../../../../shared/format'
+import { formatHpiCpn, plural, titledSurname } from '../../../../../../shared/format'
 import { Card, DefList, DefRow } from '../../../../../../shared/ui'
 import { neutral, radius, semantic } from '../../../../../../theme/tokens'
 import { useHeldList, useMatchBasis, usePatientRowCount, useStubMatchCount } from './updateReads'
@@ -22,7 +22,8 @@ type BasisLineKey = 'surgeon' | 'hospital' | 'daySession' | 'patients'
 interface BasisLine {
   key: BasisLineKey
   label: string
-  agreed: boolean
+  /** Undefined when there is nothing to compare with (no held List): the line shows no mark. */
+  agreed?: boolean
   value: string
   note?: string
 }
@@ -61,12 +62,12 @@ function Line({ line, first }: { line: BasisLine; first: boolean }): ReactNode {
       layout="stacked"
       label={line.label}
       data-key={line.key}
-      data-agreed={line.agreed ? 'true' : 'false'}
+      {...(line.agreed !== undefined ? { 'data-agreed': line.agreed ? 'true' : 'false' } : {})}
       {...(line.note !== undefined ? { note: line.note } : {})}
       valueStyle={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
       style={{ padding: '11px 14px', minWidth: 0, ...(first ? {} : { borderLeft: `1px solid ${neutral.line}` }) }}
     >
-      <Mark agreed={line.agreed} />
+      {line.agreed !== undefined && <Mark agreed={line.agreed} />}
       <span style={{ minWidth: 0 }}>{line.value}</span>
     </DefRow>
   )
@@ -79,7 +80,21 @@ export function MatchBasisStrip({ arrival, shot = 'intake-match-basis' }: { arri
   const list = useHeldList(arrival.heldListId)
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const hospitals = useAppStore((s) => s.masters.hospitals)
-  if (basis === undefined || list === undefined) return null
+  if (basis === undefined || list === undefined) {
+    if (arrival.surgeonName === undefined && arrival.dateISO === undefined) return null
+    const sent = arrival.surgeonId !== undefined ? surgeons[arrival.surgeonId] : undefined
+    return (
+      <Strip
+        shot={shot}
+        lines={[
+          { key: 'surgeon', label: 'Surgeon', value: sent !== undefined ? titledSurname(sent.name) : (arrival.surgeonName ?? 'None named') },
+          { key: 'hospital', label: 'Hospital', value: hospitals[arrival.hospitalId]?.name ?? arrival.hospitalId },
+          { key: 'daySession', label: 'Day and session', value: arrival.dateISO !== undefined && arrival.session !== undefined ? sessionLabel(arrival.dateISO, arrival.session) : 'Not given' },
+          { key: 'patients', label: 'Patients', value: plural(total, 'patient') },
+        ]}
+      />
+    )
+  }
 
   const agreed = (key: string) => basis.keys.find((k) => k.key === key)?.agreed === true
   const heldSurgeon = surgeons[list.surgeonId]
@@ -126,8 +141,12 @@ export function MatchBasisStrip({ arrival, shot = 'intake-match-basis' }: { arri
     },
   ]
 
+  return <Strip shot={shot} listId={list.id} lines={lines} />
+}
+
+function Strip({ lines, shot, listId }: { lines: BasisLine[]; shot: string; listId?: string }) {
   return (
-    <Card flush shot={shot} data-list-id={list.id} style={{ overflow: 'hidden' }}>
+    <Card flush shot={shot} data-list-id={listId} style={{ overflow: 'hidden' }}>
       <DefList gap={0} style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
         {lines.map((line, i) => (
           <Line key={line.key} line={line} first={i === 0} />

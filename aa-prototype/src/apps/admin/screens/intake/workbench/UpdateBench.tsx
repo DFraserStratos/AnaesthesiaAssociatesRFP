@@ -27,10 +27,9 @@ import { BenchLayout } from './BenchLayout'
 import type { BenchActions, BenchProps } from './benchProps'
 import { NextArrivalButton } from './NextArrivalButton'
 import { ListDiffTable } from './update/ListDiffTable'
-import { MatchBasisStrip } from './update/MatchBasisStrip'
 import { SlotCard } from './update/SlotCard'
 import { VersionTrack } from './update/VersionTrack'
-import { changeCountText, listStateLine, QUICK_REJECT_REASONS } from './update/updateText'
+import { changeCountText, QUICK_REJECT_REASONS } from './update/updateText'
 import { useUpdateBench, type UpdateBenchReads } from './update/useUpdateBench'
 
 const SMALL = { fontSize: typeScale.small.size, lineHeight: `${typeScale.small.line}px` } as const
@@ -169,16 +168,7 @@ function UpdateBenchFor({ arrival, actor, onDone, onNext }: BenchProps) {
 
   const decision = (
     <>
-      {list !== undefined && (
-        <p data-shot="intake-update-list-line" style={{ margin: 0, ...SMALL, color: neutral.slate }}>
-          {owner} · {listStateLine(list.state)}
-        </p>
-      )}
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: space[2], minWidth: 0 }}>
-        <MatchBasisStrip arrival={arrival} />
-        {list !== undefined && <VersionTrack arrival={arrival} listId={list.id} />}
-      </div>
+      {list !== undefined && <VersionTrack arrival={arrival} listId={list.id} />}
 
       {locked && !decided && (
         <Notice tone="warning" shot="intake-update-locked">

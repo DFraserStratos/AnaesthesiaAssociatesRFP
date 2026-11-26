@@ -11,11 +11,11 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { DecisionColumn } from '../../../../../shared/surface'
 import { elevation, neutral, radius, space } from '../../../../../theme/tokens'
+import { ArrivalRailHead } from './ArrivalRailHead'
 import type { BenchLayoutProps } from './benchProps'
 
 /** Narrower than this, the document sits above the decision. */
 const STACK_BELOW = 960
-/** The decision column: about 560 at 1440 (O1), never under 480 or over 600; `wide` (an update's difference table) about 640. */
 /** One width for every kind, so stepping between arrivals never moves the column. */
 const DECISION_WIDTH = 'clamp(480px, 48%, 600px)'
 
@@ -68,6 +68,7 @@ export function BenchLayout({ document, decision, actions, shot, ...data }: Benc
         {...(actions !== undefined ? { footer: actions } : {})}
         style={stacked ? { borderTop: `1px solid ${neutral.line}` } : { borderLeft: `1px solid ${neutral.line}` }}
       >
+        <ArrivalRailHead />
         {decision}
       </DecisionColumn>
     </div>
