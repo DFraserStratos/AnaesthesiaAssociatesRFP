@@ -1,10 +1,10 @@
 /**
  * Catch-up Phase 20a's Booking-route triggers: "Fire hospital message" (on the
- * Future-scope surface only since Phase 34), and "Hospital description arrives" (default pairing,
- * the three outcomes, the disabled reason, absent from the PWA).
+ * Future-scope surface only since Phase 34, retired by build plan Phase 68), and
+ * "Hospital description arrives" (default pairing, the three outcomes, the
+ * disabled reason, absent from the PWA).
  */
 
-import { SEED_STUB } from '../../domain/seed/intakeSeed'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from '../../store/appStore'
 import { setInvoiceDescription } from '../../store/procedureTextActions'
@@ -29,33 +29,18 @@ const ids = (api: BoundAppStore, pathname: string, surface: 'bar' | 'pwa') =>
   demoTriggersFor(api.getState(), pathname, surface).map((m) => m.trigger.id)
 
 beforeEach(() => {
-  useDemoTriggerMemory.setState({ lastMessageId: null, lastWebhook: null, webhookCounter: 0 })
+  useDemoTriggerMemory.setState({ lastWebhook: null, webhookCounter: 0 })
 })
 
-describe('Fire hospital message, Future scope only (catch-up Phase 34)', () => {
-  it('shows only on the Future-scope surface, in the bar, badged: never on a Booking or in the PWA', () => {
+describe('Fire hospital message, retired (build plan Phase 68; D119)', () => {
+  it('is gone, with its replay: a held feed message is Intake\'s "A feed message fails", on Arrivals only, never on a Booking or in the PWA', () => {
     const api = createAppStore()
-    for (const path of [`/mobile/lists/L-34821-2026-12-08-AM/bookings/${FOSTER}`, `/web/lists/L-34821-2026-12-08-AM/bookings/${FOSTER}`, `/admin/day/2026-12-08/bookings/${FOSTER}`]) {
-      expect(ids(api, path, 'bar')).not.toContain('fire-hospital-message')
-      expect(ids(api, path, 'pwa')).not.toContain('fire-hospital-message')
+    expect(DEMO_TRIGGERS.some((t) => t.id === 'fire-hospital-message' || t.id === 'replay-hospital-message')).toBe(false)
+    for (const path of [`/mobile/lists/L-34821-2026-12-08-AM/bookings/${FOSTER}`, `/web/lists/L-34821-2026-12-08-AM/bookings/${FOSTER}`, `/admin/day/2026-12-08/bookings/${FOSTER}`, '/demo/integrations']) {
+      expect(ids(api, path, 'bar')).not.toContain('intake-feed-fails')
+      expect(ids(api, path, 'pwa')).not.toContain('intake-feed-fails')
     }
-    for (const path of ['/demo/integrations', '/demo/integrations/log', '/demo/integrations/mapping']) {
-      expect(ids(api, path, 'bar')).toEqual(expect.arrayContaining(['fire-hospital-message', 'replay-hospital-message']))
-      expect(ids(api, path, 'pwa')).not.toContain('fire-hospital-message')
-    }
-    expect(byId('fire-hospital-message').badge).toBe('future-scope')
-  })
-
-  it("sends the message to matching and changes nothing until the office applies the row (catch-up Phase 33; RV-13)", () => {
-    const api = createAppStore()
-    const ctx: DemoTriggerCtx = { pathname: '/demo/integrations', params: {}, published: {} }
-    const text = primaryProcedureOf(api.getState(), FOSTER)!.procedureText
-    const first = byId('fire-hospital-message').run(api, ctx, 'MSG-STG-1012')
-    expect(first.message).toBe('Sent MSG-STG-1012: its row waits on Admin, Intake, for the office to decide.')
-    expect(primaryProcedureOf(api.getState(), FOSTER)!.procedureText).toEqual(text)
-    expect(Object.values(api.getState().intake.rows).filter((r) => r.id !== SEED_STUB.rowId)).toHaveLength(1)
-    byId('fire-hospital-message').run(api, ctx, 'MSG-STG-1012')
-    expect(Object.values(api.getState().intake.rows).filter((r) => r.id !== SEED_STUB.rowId)).toHaveLength(1)
+    expect(ids(api, '/admin/intake', 'bar')).toContain('intake-feed-fails')
   })
 })
 

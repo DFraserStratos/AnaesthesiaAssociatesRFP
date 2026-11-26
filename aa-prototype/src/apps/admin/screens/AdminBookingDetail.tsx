@@ -5,6 +5,8 @@ import { neutral } from '../../../theme/tokens'
 import { FormError, TextAction } from '../../../shared/ui'
 import { AdminPage } from '../components/AdminPage'
 import type { Procedure } from '../../../domain/types'
+import { arrivalKeyForRow } from '../../../store/intakeSelectors'
+import { arrivalsPath } from './intake/intakePaths'
 import { applyDefaultInvoiceDescription, lastChangeSetFor, onDomainReset, useAppStore, type Actor } from '../../../store'
 import { changeCount } from '../../../shared/booking/changeLabels'
 import { newerInvoiceDescription } from '../../../domain/billing/procedureStack'
@@ -49,6 +51,12 @@ interface AdminBookingDetailProps {
  * and the same desktop record layout the anaesthetist web app gets — both run
  * on `variant="web"`, so the capture column and sticky commit rail come free.
  */
+
+/** The `item` option of an Intake link, when the row's arrival is known. */
+function itemOption(item: string | undefined): { item?: string } {
+  return item !== undefined ? { item } : {}
+}
+
 export function AdminBookingDetail(props: AdminBookingDetailProps) {
   // Draft-then-save (catch-up Phase 35; US-02.3.2, RV-28): the office edits a draft until Save changes.
   return (
@@ -156,7 +164,7 @@ function AdminBookingDetailDraft({ bookingId, actor, todayISO, onBack, backLabel
           </div>
           {fromRowId !== undefined && (
             <div style={{ marginTop: 4 }}>
-              <TextAction size="sm" flush shot="booking-from-hospital-row" onClick={() => navigate('/admin/intake/matching', { state: { selectRowId: fromRowId } })} style={{ color: neutral.slate }}>
+              <TextAction size="sm" flush shot="booking-from-hospital-row" onClick={() => navigate(arrivalsPath({ filter: { kind: 'decided' }, ...itemOption(arrivalKeyForRow(useAppStore.getState(), fromRowId)) }))} style={{ color: neutral.slate }}>
                 From hospital row {fromRowId}
               </TextAction>
             </div>

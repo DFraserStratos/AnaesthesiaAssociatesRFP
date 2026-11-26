@@ -1,10 +1,11 @@
 /**
- * Catch-up Phase 33's demo triggers: the two Matching bar entries and the PWA
- * office stand-in. Routes, surfaces, disabled states, determinism, and that
- * nothing is applied except through `decideImportRow`.
+ * Catch-up Phase 33's PWA office stand-in ("Hospital file imported and my
+ * booking matched"; the two Matching bar entries were retired by build plan
+ * Phase 68, D119). Routes, surfaces, disabled states, determinism; since Phase
+ * 68 its rows arrive by their source through the ingest and the office decides
+ * through `decideArrivingLists`.
  */
 
-import { SEED_STUB } from '../../domain/seed/intakeSeed'
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type BoundAppStore } from '../../store/appStore'
 import { proceduresForBooking } from '../../store/selectors'
@@ -19,41 +20,9 @@ const ids = (api: BoundAppStore, pathname: string, surface: 'bar' | 'pwa') =>
   demoTriggersFor(api.getState(), pathname, surface)
     .map((m) => m.trigger.id)
     .filter((id) => id !== 'pwa-sign-out')
-const matchingCtx = (selected?: string): DemoTriggerCtx => ({ pathname: '/admin/intake/matching', params: {}, published: selected !== undefined ? { 'matching.selectedRowId': selected } : {} })
-const snapshot = (api: BoundAppStore) => JSON.stringify({ s: api.getState().schedule, p: api.getState().masters.patients })
+/** Not one of the seed's own intake rows (`IRS…`): the rows a run staged. */
+const staged = (id: string) => !id.startsWith('IRS')
 const FOSTER = 'BK0043'
-
-describe('Matching bar entries', () => {
-  it('show on /admin/intake/matching in the bar only', () => {
-    const api = createAppStore()
-    expect(ids(api, '/admin/intake/matching', 'bar')).toEqual(expect.arrayContaining(['matching-receive-theatre-list', 'matching-send-update']))
-    expect(ids(api, '/admin/intake/matching', 'pwa')).toEqual([])
-    expect(ids(api, '/admin/day/2026-11-24', 'bar')).not.toContain('matching-receive-theatre-list')
-  })
-
-  it('Import hospital file stages exactly the sample rows, applies nothing, and is then disabled', () => {
-    const api = createAppStore()
-    const before = snapshot(api)
-    const t = byId('matching-receive-theatre-list')
-    const res = t.run(api, matchingCtx(), 'sx')
-    expect(res).toMatchObject({ ok: true, message: 'Southern Cross sent its theatre list: 5 rows are waiting on Matching. Nothing changes the schedule until the office decides.' })
-    expect(Object.keys(api.getState().intake.rows).filter((id) => id !== SEED_STUB.rowId)).toHaveLength(5)
-    expect(snapshot(api)).toBe(before)
-    expect(t.disabledReason?.(api.getState(), matchingCtx(), 'sx')).toBe('This list is already on Matching')
-    expect(t.disabledReason?.(api.getState(), matchingCtx(), 'stg')).toBeNull()
-  })
-
-  it("Send update defaults to Diane Foster: her row waits, her Booking is unchanged, and a second run is disabled", () => {
-    const api = createAppStore()
-    const t = byId('matching-send-update')
-    const before = snapshot(api)
-    expect(t.run(api, matchingCtx(), undefined).message).toBe("St George's sent an update for Diane Foster: a new time and fuller wording. Check the differences and approve it.")
-    expect(snapshot(api)).toBe(before)
-    const row = Object.values(api.getState().intake.rows).filter((r) => r.id !== SEED_STUB.rowId)[0]!
-    expect(row.incoming).toMatchObject({ scheduledTime: '12:15', procedure: { text: FOSTER_HOSPITAL_WORDING } })
-    expect(t.disabledReason?.(api.getState(), matchingCtx(), undefined)).toBe('This update is already waiting on Matching')
-  })
-})
 
 describe('the PWA office stand-in', () => {
   it('is PWA only on the three Lists layers', () => {
@@ -73,11 +42,14 @@ describe('the PWA office stand-in', () => {
     expect(t.choices!(api.getState(), ctx)[0]).toEqual({ id: 's1', label: "St George's file, Tue 1 Dec AM (S1)" })
     const res = t.run(api, ctx, 's1')
     expect(res.ok).toBe(true)
-    const rows = Object.values(api.getState().intake.rows).filter((r) => r.id !== SEED_STUB.rowId)
-    // The whole file is imported (33's import); only the two rows for the persona's List are decided.
+    const rows = Object.values(api.getState().intake.rows).filter((r) => staged(r.id))
+    // The whole file arrives by St George's feed (Phase 68: as the hospital, never the office); only the two rows for the persona's List are decided.
     expect(rows).toHaveLength(5)
     expect(rows.filter((r) => r.status === 'applied').map((r) => r.incoming.patient.name).sort()).toEqual(['Dylan Kereama', 'Sarah Mitchell'])
     expect(rows.filter((r) => r.status === 'open')).toHaveLength(3)
+    const batch = api.getState().intake.batches[rows[0]!.batchId]!
+    expect(batch.arrivalSource).toEqual({ kind: 'hospitalFeed', hospitalId: 'H-STG' })
+    expect(api.getState().audit.find((e) => e.action === 'importBatch.create' && e.entityId === batch.id)?.role).not.toBe('office')
     const sarahRow = rows.find((r) => r.incoming.patient.name === 'Sarah Mitchell')!
     expect(sarahRow).toMatchObject({ status: 'applied', decidedBy: 'AA office (simulated)' })
     const bookingId = sarahRow.decision!.kind === 'createBooking' ? sarahRow.decision!.bookingId : ''

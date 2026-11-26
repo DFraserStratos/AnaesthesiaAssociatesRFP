@@ -29,7 +29,9 @@ const LANDS: readonly string[] = [
   'run-archive-job', 'run-next-billing-run', 'payer-loses-billing-email', 'stage-payment-week', 'stage-bank-mismatch', 'stage-refund-after-payout',
   // Admin · Finances · Ledger, Audit, Booking detail, Review, Finances · Invoices, Intake
   'inject-unmatched-receipt', 'simulate-sign-in', 'hospital-description-arrives', 'stage-post-op', 'stage-combined-procedure',
-  'pdf-list-resend', 'matching-receive-theatre-list', 'matching-send-update', 'matching-raw-row-other-role',
+  'matching-raw-row-other-role',
+  // Admin · Intake · Arrivals (build plan Phase 68; `intake-feed-fails` also on Sources)
+  'intake-rooms-email-list', 'intake-rooms-resend', 'intake-stg-day-before', 'intake-sx-cancels', 'intake-scanned-pdf', 'intake-feed-fails',
   // Admin · Finances · AA fees and the Xero simulation
   'run-scheduled-fee-run', 'seed-month-of-bctis', 'record-fee-payment', 'xero-bulk-remittance',
   // Admin · Day view, Draft Lists, Conflicts
@@ -40,16 +42,14 @@ const LANDS: readonly string[] = [
   'demo-backdated-range', 'stage-recurring-clash', 'load-sample-spreadsheet', 'go-live-data-load',
   // Admin · Review and Booking detail, prepaid (each shows, disabled, until its hinted step is done)
   'stage-longer-prepaid-procedure', 'prepayment-late-payment', 'prepayment-contract-changed',
-  // Admin · Patients
-  'receive-no-nhi-list',
   // Admin · Contracts (build plan Phase 49)
   'contract-reach-change-date',
   // Admin · Invoices and the Xero pair: the practice seed already holds open invoices (no List to authorise first)
   'regenerate-invoice', 'payment-full', 'payment-half', 'payment-replay', 'xero-amend-invoice', 'xero-void-invoice', 'xero-pay-bill',
   // Mobile (framed phone) and Web, List and Booking detail
   'photo-capture-future', 'load-multi-procedure-booking', 'web-payment-full', 'web-payment-half',
-  // Future scope and the Demo data inspector
-  'fire-hospital-message', 'replay-hospital-message', 'scan-nhi-leaks',
+  // The Demo data inspector (Future scope's message replay retired with its fire entry, build plan Phase 68)
+  'scan-nhi-leaks',
 ]
 
 interface Drive {

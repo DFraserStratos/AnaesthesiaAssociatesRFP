@@ -222,12 +222,6 @@ interface AllowEntry {
  */
 const ALLOWLIST: readonly AllowEntry[] = [
   {
-    file: 'apps/admin/intake/ValidatorsTab.tsx',
-    phrase: 'the label is flagged for AA to confirm',
-    reason: 'The NHI mod-11 flag: US-11.1.2 still says modulus 24, which its own example fails; the catalogue text needs correcting.',
-    item: 'US-11.1.2',
-  },
-  {
     file: 'domain/intake/rawRow.ts',
     phrase: 'Type 2 diabetes',
     reason: "A hospital row's clinical note, kept as received; not the retired Contract type.",
@@ -296,12 +290,8 @@ const MUST_KEEP: readonly MustKeep[] = [
   { file: 'shared/booking/BookingDetailBody.tsx', text: 'No base units billed (provisional, OQ-132)', item: 'OQ-132, D78', phase: '23' },
   // D23 at Confirm: labelled once, awaiting confirmation (27); one home, New contract's step 1 (build plan Phase 46), which the Contract page's card imports.
   { file: 'apps/admin/screens/contracts/new/NewContractPage.tsx', text: "A prepaid Contract always bills the payer, awaiting AA's confirmation.", item: 'OQ-73, D23', phase: '46' },
-  // The NHI mod-11 flag (US-11.1.2).
-  { file: 'apps/admin/intake/ValidatorsTab.tsx', text: 'The requirement labels the current algorithm “Modulus 24”', item: 'US-11.1.2', phase: '11, 34, 44' },
-  { file: 'apps/admin/intake/ValidatorsTab.tsx', text: 'the label is flagged for AA to confirm', item: 'US-11.1.2', phase: '44' },
   // Other open points a phase labelled on screen.
   { file: 'shared/procedureEventCopy.ts', text: "Codes to confirm with AA's accountant (OQ-12).", item: 'OQ-12', phase: '39b' },
-  { file: 'apps/admin/screens/MatchingScreen.tsx', text: "Sample files stand in for each hospital's bookings while the integration team confirms how each hospital provides them.", item: 'OQ-13', phase: '33, 34' },
   { file: 'shared/session/anaesthetistSession.ts', text: 'How anaesthetists sign in (two-step codes, single sign-on, Face ID) is still to be decided. This screen stands in for it.', item: 'OQ-83', phase: '43a' },
   { file: 'apps/mobile/screens/SignInScreen.tsx', text: 'Provisional', item: 'OQ-83', phase: '43a' },
   { file: 'domain/support.ts', text: 'whether AA needs cover from 8:00am is still to be agreed (OQ-141).', item: 'OQ-141, D87', phase: '43b' },

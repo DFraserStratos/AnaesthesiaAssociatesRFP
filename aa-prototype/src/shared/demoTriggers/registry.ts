@@ -56,10 +56,7 @@ import {
   setProcedureContract,
   railContextForList,
   railMastersOf,
-  receiveResentPdfList,
-  resendRefusal,
   openAccRecs,
-  processMessage,
   runArchiveJob,
   runReconciliationPoll,
   deliverPaymentWebhook,
@@ -138,20 +135,13 @@ import {
   officeImportsS1File,
   officeAddsNhiRefusal,
   officeAddsNhiToStub,
-  receiveTheatreList,
-  sendUpdateRefusal,
-  stageUpdateForBooking,
   standInRefusal,
-  theatreListRefusal,
-  updateTarget,
   type StandInChoice,
   officeEditsBooking,
   officeEditsBookingRefusal,
   OFFICE_USERS,
   otherOfficeUser,
 } from '../../store'
-import { CANNED_MESSAGES } from '../../domain/integrations'
-import { PDF_LIST_SAMPLES, resendSampleFor } from '../../domain/intake'
 import { contractCandidatesFor, destinationOf } from '../../domain/billing/contractRail'
 import { noContractRvg } from '../../domain/billing/contracts'
 import { ANAE, CANNED_DAY_DRAFT_LISTS, CANNED_DRAFT_LIST_REQUESTS, SEED_LIST_IDS, SEED_MARKERS, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
@@ -185,6 +175,7 @@ import {
   stagedCombined,
 } from '../../store/creditDemo'
 import type { DemoTrigger, DemoTriggerCtx, DemoTriggerResult } from './types'
+import { INTAKE_ARRIVAL_TRIGGERS, INTAKE_ARRIVALS_ROUTE, INTAKE_ARRIVALS_SCREEN } from './intakeArrivals'
 import { injectUnmatchedReceipt, injectUnmatchedRefusal, officeRunsWeeksCycle, officeRunsWeeksCycleRefusal, UNMATCHED_RECEIPT_DEMO } from '../../store/ledgerDemo'
 import { PAYMENT_WEEK_CHOICES, stageBankMismatch, stageBankMismatchRefusal, stagePaymentWeek, stagePaymentWeekRefusal } from '../../store/paymentWeekDemo'
 import { sessionText } from '../../domain/outOfHours'
@@ -223,9 +214,7 @@ import {
   standInReminderRefusal,
 } from '../../store/prepaymentSettlementDemo'
 import { addNhiAsSimulatedOffice, addNhiStandInRefusal } from '../../store/officeStandIn'
-import { importHospitalDownload } from '../../store/matchingActions'
 import { newlyStagedSampleNames, stagedSampleKeys } from '../../store/warningSamples'
-import { NO_NHI_LIST, NO_NHI_NEW_PATIENT_NHI, NO_NHI_RETURNING_NHI } from '../../domain/intake/hospitalDownloads'
 import { advanceSupportTicket, approveCallOut, newestAwaitingCallOut, newestOpenTicket, raiseSupportTicket, ticketsFor } from '../../store/supportActions'
 import { advanceClockMinutes as moveClockMinutes, advanceClockToDate as moveClockToDate } from '../../store/clockActions'
 import { replacementsAhead } from '../../store/replacedContractSelectors'
@@ -327,15 +316,7 @@ const XERO_SIM = ['/demo/xero', '/demo/xero/invoices', '/demo/xero/invoices/:acc
 /** The Xero simulator's Bank reconciliation tab (catch-up Phase 37; US-10.2.4). */
 const XERO_BANK = '/demo/xero/bank'
 const INVOICE_PAGES = [FINANCES_INVOICE, '/demo/xero/invoices/:accRecId'] as const
-/** Admin Intake's tabs (catch-up Phase 34): Matching and the rooms' PDF lists. */
-const ADMIN_MATCHING = '/admin/intake/matching'
-const ADMIN_PDF_LISTS = '/admin/intake/pdfs'
-/** The Admin Intake index heading (catch-up Phase 34). */
-const ADMIN_INTAKE_SCREEN = 'Admin · Intake'
 const XERO_PAIR = '/demo/xero/invoices/:accRecId'
-/** Future scope: HL7 and FHIR (catch-up Phase 34): the simulator, its message log and feed mapping. */
-const FUTURE_SCOPE_ROUTES = ['/demo/integrations', '/demo/integrations/log', '/demo/integrations/mapping'] as const
-const FUTURE_SCOPE_SCREEN = 'Future scope: HL7 and FHIR'
 /** The mobile Lists tab is one splat route; registered as its three explicit layers (`listsStackLocation`). */
 const MOBILE_LISTS = ['/mobile/lists', '/mobile/lists/:listId', '/mobile/lists/:listId/bookings/:bookingId'] as const
 const ADMIN_DAY = '/admin/day/:dateISO'
@@ -441,8 +422,6 @@ const SAMPLE_WARNING_ROUTES = [ADMIN_DAY, ADMIN_BOOKING, MOBILE_BOOKING] as cons
 
 /** Stage post-op: Dr Sharma's Tue 14 Jul AM List (Sarah Mitchell's first episode). */
 export const POST_OP_ORIGINAL_LIST_ID = projectedListId(ANAE.sharma, '2026-11-17', 'AM')
-
-const DEFAULT_MESSAGE_ID = CANNED_MESSAGES[0]?.id ?? 'MSG-STG-1001'
 
 // ---------------------------------------------------------------------------
 // Payments: one body for the bar's invoice pages and the PWA's Balances
@@ -690,20 +669,6 @@ function webPaymentEntry(id: 'web-payment-full' | 'web-payment-half', mode: 'ful
   }
 }
 
-/**
- * A message replay must find the message already in the integration log, or it
- * is not a replay: after a reset the same canned id would be processed afresh
- * and create its Booking again instead of showing the dedupe.
- */
-function messageReplayDisabledReason(state: AppState): string | null {
-  const last = useDemoTriggerMemory.getState().lastMessageId
-  if (last === null) return 'Fire a message first'
-  if (!Object.values(state.integrations.messages).some((m) => m.messageControlId === last)) {
-    return 'The last message was cleared by a reset: fire it again first'
-  }
-  return null
-}
-
 /** Where the payment entries' "Open screen" goes: the first open invoice, if any. */
 function firstOpenInvoicePath(state: AppState): string | null {
   const first = openAccRecs(state)[0]
@@ -759,7 +724,7 @@ const NHI_HUB_ROUTES = [
   ADMIN_DAY,
   ADMIN_DRAFT_LISTS,
   '/admin/people/patients',
-  '/admin/intake/waiting',
+  INTAKE_ARRIVALS_ROUTE,
   '/admin/people/patients/:nhi',
 ] as const
 const NHI_HUB_SCREEN = 'Add booking, and Admin · People · Patients'
@@ -1196,38 +1161,6 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return id !== undefined ? financeInvoicePath(id) : firstOpenInvoicePath(state)
     },
     indexEmptyReason: 'No open invoice yet: authorise a List first',
-  },
-
-  // ── Admin · Intake, PDF lists (catch-up Phase 34) ────────────────────
-  {
-    id: 'pdf-list-resend',
-    label: 'Receive updated PDF from rooms',
-    description:
-      "The rooms re-send a PDF list already sent to matching, with one changed time and one new patient. It lands in the inbox as received, marked Re-sent, with the address it came from. Once sent, the matching screen shows the change as a difference for approval and the new patient as a new row.",
-    screen: ADMIN_INTAKE_SCREEN,
-    routes: [ADMIN_PDF_LISTS],
-    surfaces: ['bar'],
-    choices: (state) =>
-      PDF_LIST_SAMPLES.filter((s) => Object.values(state.intake.pdfLists).some((l) => l.sampleId === s.id)).map((s) => ({
-        id: s.id,
-        label: `${s.surgeonName}, ${s.subject.split(' · ')[1] ?? s.subject}`,
-      })),
-    disabledReason: (state, _ctx, choiceId) => {
-      const sampleId = choiceId ?? PDF_LIST_SAMPLES.find((s) => Object.values(state.intake.pdfLists).some((l) => l.sampleId === s.id))?.id
-      return sampleId === undefined ? 'No PDF list has been sent to matching yet.' : resendRefusal(state, sampleId)
-    },
-    run: (api, _ctx, choiceId) => {
-      const sampleId = choiceId ?? PDF_LIST_SAMPLES[0]!.id
-      const res = receiveResentPdfList(api, OFFICE_ACTOR, sampleId)
-      const resend = resendSampleFor(sampleId)
-      return {
-        ok: res.ok,
-        message: res.ok
-          ? `The updated list arrived from ${resend?.defaultSender ?? 'the rooms'}, marked Re-sent. Open it and Send to matching: unchanged rows are skipped, the changed time waits as a difference for approval and the new patient arrives as a new row.`
-          : `Refused: ${res.message}`,
-      }
-    },
-    indexPath: () => ADMIN_PDF_LISTS,
   },
 
   // ── Admin · Invoice (and the Xero sim pair) ───────────────────────────
@@ -2358,55 +2291,14 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => `/mobile/lists/${PHOTO_CAPTURE_INDEX_LIST_ID}`,
   },
-  // ── Admin · Intake, Matching (catch-up Phase 33; Intake since Phase 34) ──
-  {
-    id: 'matching-receive-theatre-list',
-    label: 'Import hospital file',
-    description:
-      "Stands in for the hospital's file arriving: stages the sample theatre list's rows on Matching (St George's: a new Booking, a No change, a modification, and a day move as a cancellation plus a new Booking; Southern Cross: a new Booking, a modification with an insurer and approval number, a change for an authorised List, a row with no NHI and a row for a session with no List). Nothing changes the schedule until the office decides.",
-    screen: ADMIN_INTAKE_SCREEN,
-    routes: [ADMIN_MATCHING],
-    surfaces: ['bar'],
-    choices: () => [
-      { id: 'stg', label: "St George's" },
-      { id: 'sx', label: 'Southern Cross' },
-    ],
-    disabledReason: (state, _ctx, choiceId) => theatreListRefusal(state, choiceId === 'sx' ? 'sx' : 'stg'),
-    run: (api, _ctx, choiceId) => {
-      const hospital = choiceId === 'sx' ? 'sx' : 'stg'
-      const res = receiveTheatreList(api, OFFICE_ACTOR, hospital)
-      if (!res.ok) return { ok: false, message: res.message }
-      const name = hospital === 'sx' ? 'Southern Cross' : "St George's"
-      const n = res.value.rowIds.length
-      return { ok: true, message: `${name} sent its theatre list: ${n} ${n === 1 ? 'row is' : 'rows are'} waiting on Matching. Nothing changes the schedule until the office decides.` }
-    },
-    indexPath: () => ADMIN_MATCHING,
-  },
-  {
-    id: 'matching-send-update',
-    label: 'Send update for a matched Booking',
-    description:
-      "Stands in for the hospital sending a later update: for the Booking matched by the row selected on Matching (if open and not authorised), else Diane Foster's (Tue 8 Dec AM), a row for the same List and patient with a later time and the hospital's fuller wording. It waits for the office to check the differences and approve it.",
-    screen: ADMIN_INTAKE_SCREEN,
-    routes: [ADMIN_MATCHING],
-    surfaces: ['bar'],
-    disabledReason: (state, ctx) => sendUpdateRefusal(state, ctx.published['matching.selectedRowId']),
-    run: (api, ctx) => {
-      const state = api.getState()
-      const reason = sendUpdateRefusal(state, ctx.published['matching.selectedRowId'])
-      const target = updateTarget(state, ctx.published['matching.selectedRowId'])
-      if (reason !== null || target === undefined) return { ok: false, message: reason ?? 'Select a row matched to an open Booking' }
-      const res = stageUpdateForBooking(api, OFFICE_ACTOR, target)
-      if (!res.ok) return { ok: false, message: res.message }
-      return { ok: true, message: `${res.value.hospital} sent an update for ${res.value.patient}: a new time and fuller wording. Check the differences and approve it.` }
-    },
-    indexPath: () => ADMIN_MATCHING,
-  },
+  // ── Admin · Intake · Arrivals and Sources: the six demo actions (build plan Phase 68; D119) ──
+  ...INTAKE_ARRIVAL_TRIGGERS,
+  // ── Mobile · Lists: the office stand-ins on intake (catch-up Phases 33, 33a, 40; re-pointed by Phase 68) ──
   {
     id: 'matching-office-matches-row',
     label: 'Hospital file imported and my booking matched',
     description:
-      "Stands in for the office on the phone: the office imports St George's file, as on Admin, Intake, decides the rows for your Tue 1 Dec AM List with the suggested decision, and answers where each new Booking's invoice goes (Patient › Standard, No contract · RVG; the RVG code stays yours). Sarah Mitchell arrives with the hospital's wording as received; the file's other rows wait for the office. On a St George's or Southern Cross List, a new hospital booking; on a Booking, a hospital update approved by the office (on Diane Foster's, the hospital's fuller wording replaces WLE MM).",
+      "Stands in for the office on the phone: St George's sends its file to Intake, the office decides the rows for your Tue 1 Dec AM List with the suggested decision, and answers where each new Booking's invoice goes (Patient › Standard, No contract · RVG; the RVG code stays yours). Sarah Mitchell arrives with the hospital's wording as received; the file's other rows wait for the office. On a St George's or Southern Cross List, a new hospital booking; on a Booking, a hospital update approved by the office (on Diane Foster's, the hospital's fuller wording replaces WLE MM).",
     screen: 'Mobile · Lists and the Booking screen',
     routes: [...MOBILE_LISTS],
     surfaces: ['pwa'],
@@ -2445,7 +2337,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'stub-office-adds-nhi',
     label: 'Office adds the NHI to this stub',
     description:
-      "Stands in for the office on the phone: on a List holding a stub, the office adds the NHI the sample holds for its waiting row on Matching, through the one resolve path, and the Booking takes the stub's place. On Dr Souter's Tue 8 Dec PM List, Mere Tipene (ZQA1024); after the Southern Cross import, Tama Henare on Tue 1 Dec PM (ZQA1008).",
+      "Stands in for the office on the phone: on a List holding a stub, the office adds the NHI the sample holds for its waiting row at Intake, through the one resolve path, and the Booking takes the stub's place. On Dr Souter's Tue 8 Dec PM List, Mere Tipene (ZQA1024); after the Southern Cross import, Tama Henare on Tue 1 Dec PM (ZQA1008).",
     screen: 'Mobile · List detail',
     routes: ['/mobile/lists/:listId'],
     surfaces: ['pwa'],
@@ -2458,29 +2350,10 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       if (!res.ok) return { ok: false, message: res.message }
       return res.value.kind === 'resolved'
         ? { ok: true, message: "The office added the NHI. The Booking now stands in the stub's place." }
-        : { ok: true, message: `The office added ${res.value.patient}'s NHI. The row now waits for the office's decision on Matching.` }
+        : { ok: true, message: `The office added ${res.value.patient}'s NHI. The row now waits for the office's decision at Intake.` }
     },
     indexPath: () => null,
     indexEmptyReason: 'PWA only: the framed build plays the office in Admin, Intake (Add NHI).',
-  },
-  // ── Admin · Intake · Waiting for NHI and Mobile · List (catch-up Phase 40; on Intake since Phase 51) ──
-  {
-    id: 'receive-no-nhi-list',
-    label: 'Receive list with a missing NHI',
-    description: `Imports a Forte Health sheet with two bookings sent without an NHI: ${NO_NHI_LIST.rows[0]!.patient.name} on Thu 26 Nov PM (urgent, a new patient) and ${NO_NHI_LIST.rows[1]!.patient.name} on Mon 30 Nov (a returning patient). Both wait here and on Matching; nothing is created until the office adds the NHI.`,
-    screen: 'Admin · Intake · Waiting for NHI',
-    routes: ['/admin/intake/waiting'],
-    surfaces: ['bar'],
-    disabledReason: (state) => (Object.values(state.intake.batches).some((b) => b.sampleId === NO_NHI_LIST.id) ? 'Already received' : null),
-    run: (api) => {
-      const res = importHospitalDownload(api, OFFICE_ACTOR, NO_NHI_LIST.id)
-      if (!res.ok) return { ok: false, message: res.message }
-      return {
-        ok: true,
-        message: `Forte Health sent two bookings with no NHI. They wait here and on Matching, and nothing is created yet. Add NHI ${NO_NHI_NEW_PATIENT_NHI} for ${NO_NHI_LIST.rows[0]!.patient.name} (a new patient) and ${NO_NHI_RETURNING_NHI} for ${NO_NHI_LIST.rows[1]!.patient.name} (an existing record).`,
-      }
-    },
-    indexPath: () => '/admin/intake/waiting',
   },
   {
     id: 'pwa-office-adds-nhi',
@@ -2504,68 +2377,11 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
             ok: true,
             message: `The hospital sent a booking with no NHI, so it waited with the office as a stub on your List${fromBooking}. The office added the NHI: ${res.value.patient} is now on your List.`,
           }
-        : { ok: true, message: `The office added ${res.value.patient}'s NHI. The row now waits for the office's decision on Matching.` }
+        : { ok: true, message: `The office added ${res.value.patient}'s NHI. The row now waits for the office's decision at Intake.` }
     },
     indexPath: () => null,
-    indexEmptyReason: 'PWA only: the framed build adds the NHI on Admin, Patients, Waiting for NHI.',
+    indexEmptyReason: 'PWA only: the framed build adds the NHI on Admin, Intake (Needs NHI).',
   },
-  // ── Future scope: HL7 and FHIR (catch-up Phase 34) ───────────────────
-  {
-    id: 'fire-hospital-message',
-    label: 'Fire hospital message',
-    description:
-      "Sends a canned hospital HL7 v2 or FHIR message into the mock backend (Future scope, for discussion), including the Christchurch Public dead-letter case (MSG-CPH-2001); Christchurch Public is not integrated today. A message that reads stages one row on Admin, Intake, for the office to decide; nothing is applied by itself. Defaults to the message selected in the simulator.",
-    screen: FUTURE_SCOPE_SCREEN,
-    routes: [...FUTURE_SCOPE_ROUTES],
-    surfaces: ['bar'],
-    badge: 'future-scope',
-    choices: () => CANNED_MESSAGES.map((m) => ({ id: m.id, label: `${m.label} · ${m.id}` })),
-    // The simulator's pick, else its first message.
-    defaultChoice: (_state, ctx) => ctx.published['integrationsSim.selectedMessageId'] ?? DEFAULT_MESSAGE_ID,
-    disabledReason: () => null,
-    run: (api, _ctx, choiceId) => {
-      const selectedId = choiceId ?? DEFAULT_MESSAGE_ID
-      const res = processMessage(api, selectedId)
-      useDemoTriggerMemory.getState().rememberMessage(selectedId)
-      const staged = res.ok && res.value.importRowId !== undefined
-      return {
-        ok: res.ok,
-        message: !res.ok
-          ? `Refused: ${res.message}`
-          : staged
-            ? `Sent ${selectedId}: its row waits on Admin, Intake, for the office to decide.`
-            : `Fired ${selectedId}: ${res.value.outcome}. See it on the Message log.`,
-      }
-    },
-    indexPath: () => '/demo/integrations',
-  },
-  {
-    id: 'replay-hospital-message',
-    label: 'Replay last message (dedupe)',
-    description:
-      'Replays the last hospital message fired, to show idempotent dedupe: same message control ID, no second row on Matching.',
-    screen: FUTURE_SCOPE_SCREEN,
-    routes: [...FUTURE_SCOPE_ROUTES],
-    surfaces: ['bar'],
-    badge: 'future-scope',
-    disabledReason: (state) => messageReplayDisabledReason(state),
-    run: (api) => {
-      const last = useDemoTriggerMemory.getState().lastMessageId
-      const reason = messageReplayDisabledReason(api.getState())
-      if (last === null || reason !== null) return { ok: false, message: reason ?? 'Fire a message first' }
-      const res = processMessage(api, last)
-      return {
-        ok: res.ok,
-        message: res.ok
-          ? res.value.outcome === 'duplicate'
-            ? 'Deduplicated: same message control ID, no second row staged.'
-            : `Replayed ${last}: ${res.value.outcome}.`
-          : `Refused: ${res.message}`,
-      }
-    },
-    indexPath: () => '/demo/integrations',
-  },
-
   // ── Mobile · Balances, installed PWA only ─────────────────────────────
   {
     id: 'pwa-office-runs-payables',
@@ -2650,7 +2466,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'feed-changes-primary',
     label: 'Hospital feed changes the primary',
     description:
-      "Plays the List's hospital feed making the next procedure on this Booking the primary, audited as an integration: base units then come from it and it moves to the top. A demo shortcut: a real hospital update waits on Matching for the office.",
+      "Plays the List's hospital feed making the next procedure on this Booking the primary, audited as an integration: base units then come from it and it moves to the top. A demo shortcut: a real hospital update waits at Intake for the office.",
     screen: 'Booking detail',
     routes: [MOBILE_BOOKING, WEB_BOOKING, ADMIN_BOOKING],
     surfaces: ['bar', 'pwa'],
@@ -2752,28 +2568,29 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'matching-raw-row-other-role',
     label: 'View raw row as another role',
     description:
-      'Shows the restriction working: the same View raw row request, with the reason "Demo: access check", made as an anaesthetist or as the hospital feed, on the selected row (or the oldest row needing resolving). Only office staff can view a raw hospital row, and the refused attempt is recorded in the audit trail. No payload is shown.',
-    screen: 'Admin · Intake, Matching',
-    routes: [ADMIN_MATCHING],
+      'Shows the restriction working: the same View raw row request, with the reason "Demo: access check", made as an anaesthetist or as the hospital feed, on the oldest hospital row needing resolving. Only office staff can view a raw hospital row, and the refused attempt is recorded in the audit trail. No payload is shown.',
+    screen: INTAKE_ARRIVALS_SCREEN,
+    routes: [INTAKE_ARRIVALS_ROUTE],
     surfaces: ['bar'],
     choices: () => [
       { id: 'souter', label: 'As Dr Melanie Souter (anaesthetist)' },
       { id: 'feed', label: 'As the hospital feed (integration)' },
     ],
-    disabledReason: (state, ctx) => rawRowRefusal(state, rawRowTarget(state, ctx.published['matching.selectedRowId'])),
-    run: (api, ctx, choiceId) => {
+    // Arrivals publishes no selected row, so it acts on the oldest row needing resolving.
+    disabledReason: (state) => rawRowRefusal(state, rawRowTarget(state, undefined)),
+    run: (api, _ctx, choiceId) => {
       const state = api.getState()
-      const rowId = rawRowTarget(state, ctx.published['matching.selectedRowId'])
+      const rowId = rawRowTarget(state, undefined)
       if (rowId === undefined) return { ok: false, message: 'No hospital row needs resolving' }
       const res = viewRawImportRow(api, choiceId === 'feed' ? HOSPITAL_FEED_ACTOR : SOUTER_ACTOR, rowId, 'Demo: access check')
-      // Name the row it acted on: with none selected it falls back to the oldest row needing resolving.
+      // Name the row it acted on.
       const name = state.intake.rows[rowId]?.incoming.patient.name
       const whose = name !== undefined && name !== '' ? ` (${name}'s row)` : ''
       return res.ok
         ? { ok: false, message: 'The view was not refused.' }
         : { ok: true, message: res.code === 'officeOnly' ? `Refused: only office staff can view a raw hospital row${whose}. The attempt is in the audit trail.` : res.message }
     },
-    indexPath: () => ADMIN_MATCHING,
+    indexPath: () => INTAKE_ARRIVALS_ROUTE,
   },
   // ── Wherever an NHI is looked up: the simulated Digital Services Hub's mode (catch-up Phase 40a) ──
   {

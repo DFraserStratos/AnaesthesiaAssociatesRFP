@@ -2,10 +2,10 @@ import { expect, test, type Page } from '@playwright/test'
 import { runDemoAction } from './demoActions'
 
 /**
- * Catch-up Phase 34: the rooms' PDF lists on Admin Intake. Upload one with the
- * address it came from, correct the flagged NHI on the seeded list, send it to
- * matching, create the List from its first row and read where it came from,
- * then receive the re-sent list and see only its changed time wait for approval.
+ * The rooms' PDFs on Admin, Intake, Arrivals (build plan Phase 68; D117, D119; was the PDF lists tab, catch-up
+ * Phase 34). The old PDF lists address lands on the Rooms PDFs filter with replace; the rooms email Mr Okafor's
+ * List and it lands by itself as a New List marked as a rooms' PDF, its patient with no NHI as its own Needs NHI
+ * item, and the workbench shows its rows. Nothing is written until the office decides.
  */
 
 async function fresh(page: Page, path: string) {
@@ -15,86 +15,31 @@ async function fresh(page: Page, path: string) {
   await page.waitForLoadState('networkidle')
 }
 
-const row = (page: Page, text: string) => page.locator('[data-shot^="matching-row-"]', { hasText: text })
-
-test('upload with a sender, correct, send, create the List with its origin, then the re-sent differences', async ({ page }) => {
+test('the rooms email a List: it lands under Rooms PDFs as a New List with its no-NHI patient waiting, nothing applied', async ({ page }) => {
+  // The old PDF lists address lands on the Rooms PDFs filter.
   await fresh(page, '/admin/intake/pdfs')
+  await expect(page).toHaveURL(/\/admin\/intake\?filter=rooms-pdfs$/)
+  await expect(page.locator('[data-shot="intake-filters"]').getByRole('button', { name: /^Rooms PDFs/ })).toHaveAttribute('aria-pressed', 'true')
+  // No upload: only the quiet "Add a PDF by hand" at the feed's foot.
+  await expect(page.getByText('Upload PDF')).toHaveCount(0)
+  await expect(page.locator('[data-shot="intake-add-pdf"]')).toBeVisible()
 
-  // The seeded Okafor list, as received, with its sender.
-  await expect(page.locator('[data-shot="pdf-inbox"]')).toContainText('leanne.pa@avonsidesurgical.example')
+  expect(await runDemoAction(page, 'intake-rooms-email-list', { close: true })).not.toMatch(/^Refused/)
+  const okafor = page.locator('[data-shot="intake-feed-item"][data-arrival-kind="newList"]', { hasText: 'Okafor' })
+  await expect(okafor.first()).toBeVisible()
+  await expect(okafor.first().locator('[data-source-kind="rooms"]')).toBeVisible()
+  await okafor.first().click()
+  await expect(okafor.first()).toHaveAttribute('aria-selected', 'true')
+  await expect(page).toHaveURL(/filter=rooms-pdfs&item=/)
+  await expect(page.locator('[data-shot="intake-workbench"]')).toHaveAttribute('data-arrival-kind', 'newList')
+  await expect(page.locator('[data-shot="intake-bench-newList"] [data-row-id]').first()).toBeVisible()
+  await page.screenshot({ path: 'visual/shots/intake-pdf-new-list.png', fullPage: true })
 
-  // Upload: the badged sample picker, "Sent from" required and prefilled.
-  await page.locator('[data-shot="pdf-upload-open"]').click()
-  const upload = page.locator('[data-shot="pdf-upload"]')
-  await expect(upload).toContainText('Sample files')
-  await upload.locator('[data-sample-id="PDF-WHITFORD-0812"]').click()
-  const sender = upload.getByLabel('Sent from')
-  await expect(sender).toHaveValue('bookings@merivaleeye.example')
-  await sender.fill('')
-  await page.locator('[data-shot="pdf-upload-confirm"]').click()
-  await expect(upload).toBeVisible()
-  await sender.fill('bookings@merivaleeye.example')
-  await page.locator('[data-shot="pdf-upload-confirm"]').click()
-  await expect(page.locator('[data-shot="pdf-list-header"]')).toContainText('bookings@merivaleeye.example')
-  await page.getByRole('button', { name: 'Back to PDF lists' }).click()
+  // Its patient sent with no NHI waits under Needs NHI.
+  await page.locator('[data-shot="intake-filters"]').getByRole('button', { name: /^Needs NHI/ }).click()
+  await expect(page).toHaveURL(/\/admin\/intake\?filter=needs-nhi$/)
+  await expect(page.locator('[data-shot="intake-feed-item"][data-arrival-kind="needsNhi"]', { has: page.locator('[data-source-kind="rooms"]') }).first()).toBeVisible()
 
-  // Okafor's list: the printed NHI is invalid, so Send is refused until it is corrected.
-  await page.locator('[data-shot="pdf-inbox"] tbody tr', { hasText: 'leanne.pa@avonsidesurgical.example' }).click()
-  // Catch-up Phase 40a: the NHI is checked as typed, with the validator's reason, and no Hub lookup on a PDF row.
-  const nhi2 = page.locator('[data-shot="pdf-row-2"]').getByLabel('NHI')
-  await nhi2.fill('ZAA006')
-  await expect(page.locator('[data-shot="pdf-row-2"]')).toContainText('7 characters, AAA1234 or AAA12AB')
-  await nhi2.fill('ZAA0069')
-  await expect(page.locator('[data-shot="pdf-row-nhi-reason"]')).toContainText('The check digit does not match.')
-  await expect(page.locator('[data-shot="pdf-row-2-apply"]')).toBeDisabled()
-  await expect(page.locator('[data-shot="pdf-row-2"] [data-shot="nhi-lookup-status"]')).toHaveCount(0)
-  await page.locator('[data-shot="pdf-row-2"]').getByLabel('NHI').fill('ZAA0067')
-  await expect(page.locator('[data-shot="pdf-row-nhi-reason"]')).toHaveCount(0)
-  await page.locator('[data-shot="pdf-row-2-apply"]').click()
-  await expect(page.locator('[data-shot="pdf-correction"]').first()).toContainText('ZAA0068')
-  await page.locator('[data-shot="pdf-send"]').click()
-  await expect(page.getByText(/Sent to matching: 3 rows/)).toBeVisible()
-
-  // On Matching: the rooms' rows with their micro-cap and wording; nothing written yet.
-  await page.locator('[data-shot="pdf-open-matching"]').click()
-  await expect(page).toHaveURL(/\/admin\/intake\/matching$/)
-  await expect(row(page, 'Brian Holt')).toContainText('Rooms PDF')
-  await expect(row(page, 'Brian Holt')).toContainText('R inguinal hernia mesh')
-
-  // The first decision creates the List; it reads where it came from.
-  await row(page, 'Brian Holt').click()
-  const panel = page.locator('[data-shot="matching-panel"]')
-  await expect(panel).toBeVisible()
-  await panel.getByRole('radio', { name: /Create a List in a session/ }).click()
-  await panel.getByRole('button', { name: /Rutherford/ }).first().click()
-  await page.locator('[data-shot="matching-apply"]').click()
-  await expect(page.locator('[data-shot="matching-banner"]')).toBeVisible()
-  await page.screenshot({ path: 'visual/shots/intake-pdf-created-list.png', fullPage: true })
-  // The other two rows land on the new List (their suggestion), so the re-send can show a difference.
-  for (const name of ['Margaret Ellison', 'Hemi Parata']) {
-    await page.keyboard.press('Escape')
-    await row(page, name).click()
-    await expect(panel).toBeVisible()
-    await page.locator('[data-shot="matching-apply"]').click()
-    await expect(page.locator('[data-shot="matching-banner"]')).toBeVisible()
-  }
-  // The first new Booking takes the next id after the whole practice's last.
-  await page.goto('/admin/day/2026-12-09/bookings/BK5101')
-  await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="booking-list-origin"]')).toContainText("From a rooms' PDF")
-  await expect(page.locator('[data-shot="booking-list-origin"]')).toContainText('leanne.pa@avonsidesurgical.example')
-
-  // The re-sent list: the unchanged row is skipped, the changed time a modification, the new patient a new row.
-  await page.goto('/admin/intake/pdfs')
-  await page.waitForLoadState('networkidle')
-  expect(await runDemoAction(page, 'pdf-list-resend')).toMatch(/marked Re-sent/)
-  await page.locator('[data-shot="pdf-inbox"] tbody tr', { hasText: 'Re-sent' }).click()
-  await page.locator('[data-shot="pdf-send"]').click()
-  await page.locator('[data-shot="pdf-open-matching"]').click()
-  await page.keyboard.press('Escape')
-  await expect(row(page, 'Ruth Calder')).toContainText('New')
-  await expect(row(page, 'Margaret Ellison')).toHaveCount(1)
-  await expect(row(page, 'Margaret Ellison')).toContainText('Modification')
-  await expect(row(page, 'Hemi Parata')).toHaveCount(0)
-  await page.screenshot({ path: 'visual/shots/intake-pdf-resent.png', fullPage: true })
+  // Phase 68: the upload with a sender, correcting a read value and creating the List from the PDF (with its origin on the Booking) moved to 70; re-added there.
+  // Phase 68: the re-sent PDF's differences (the time change, the added and the missing patient) waiting for approval moved to 69; re-added there.
 })

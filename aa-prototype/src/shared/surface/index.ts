@@ -7,6 +7,7 @@ export { OverlayHeader, type OverlayHeaderProps } from './OverlayHeader'
 export { SheetActions, type SheetActionsProps } from './SheetActions'
 export { ConfirmSheet, type ConfirmSheetProps } from './ConfirmSheet'
 export { SidePanel, SIDE_PANEL_WIDTH, type SidePanelProps, type SidePanelAttrs } from './SidePanel'
+export { WorkbenchSplit, WORKBENCH_FEED_WIDTH, type WorkbenchSplitProps } from './WorkbenchSplit'
 export {
   useSurface,
   type Surface,

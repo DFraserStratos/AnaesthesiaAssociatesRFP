@@ -6,7 +6,9 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { freshAppState, importHospitalDownload, OFFICE_ACTOR, useAppStore, type Actor } from '../../../store'
+import { freshAppState, useAppStore, type Actor } from '../../../store'
+import { receiveSample } from '../../../test/intakeSamples'
+import { SAMPLE_SX } from '../../../domain/intake/hospitalDownloads'
 import { SurfaceProvider } from '../../../shared'
 import { SEED_STUB } from '../../../domain/seed/intakeSeed'
 import { ListDetailScreen } from './ListDetailScreen'
@@ -54,7 +56,7 @@ describe('a stub on the phone\'s List', () => {
   })
 
   it("Southern Cross R4's stub sits in time order among the Bookings, and the bar is held, never done green", () => {
-    importHospitalDownload(useAppStore, OFFICE_ACTOR, 'SAMPLE_SX')
+    receiveSample(useAppStore, SAMPLE_SX)
     const { container } = renderList('L-34821-2026-12-01-PM')
     const rows = [...container.querySelectorAll('[data-testid="mobile-list-scroll"] > button, [data-testid="mobile-list-scroll"] > [data-shot="list-stub"]')]
     const stubAt = rows.findIndex((r) => r.getAttribute('data-shot') === 'list-stub')

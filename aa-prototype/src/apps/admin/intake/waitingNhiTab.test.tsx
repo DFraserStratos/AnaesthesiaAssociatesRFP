@@ -3,19 +3,31 @@
  * 40 and 40a): the waiting row, the Add NHI sheet and its register check.
  */
 
-import type { ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { act, cleanup, fireEvent, render, within } from '@testing-library/react'
-import { createMemoryRouter, createRoutesFromElements, MemoryRouter, Navigate, Outlet, Route, RouterProvider } from 'react-router-dom'
+import { createMemoryRouter, createRoutesFromElements, MemoryRouter, Outlet, Route, RouterProvider } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { freshAppState, importHospitalDownload, OFFICE_ACTOR, useAppStore, waitingNhiRows } from '../../../store'
-import { NO_NHI_LIST, NO_NHI_RETURNING_NHI } from '../../../domain/intake/hospitalDownloads'
+import { freshAppState, OFFICE_ACTOR, useAppStore, waitingNhiRows } from '../../../store'
+import { stageNoNhiList } from '../../../test/intakeSamples'
+import { NO_NHI_RETURNING_NHI } from '../../../domain/intake/hospitalDownloads'
 import { SurfaceProvider } from '../../../shared/surface'
 import { HUB_TIMING } from '../../../shared/nhiHub'
-import { WaitingNhiTab } from './WaitingNhiTab'
+import { WaitingNhiView } from './WaitingNhiView'
 import { REGISTER_DIFFERS_LINE } from './AddNhiSheet'
-import { AdminIntakeRoute, AdminWaitingNhiTabRoute } from '../routes'
+import { intakeRoutes, mastersAndLegacyRoutes } from '../../../test/adminRoutes'
 
 const noop = () => undefined
+
+/** The waiting rows from the live store, on the view Intake's old Waiting for NHI tab rendered (the tab is gone; 72 folds the view into Needs NHI). */
+function WaitingNhi() {
+  const intake = useAppStore((s) => s.intake)
+  const masters = useAppStore((s) => s.masters)
+  const schedule = useAppStore((s) => s.schedule)
+  const clock = useAppStore((s) => s.clock)
+  const audit = useAppStore((s) => s.audit)
+  const rows = useMemo(() => waitingNhiRows({ intake, masters, schedule, clock, audit }), [intake, masters, schedule, clock, audit])
+  return <WaitingNhiView rows={rows} actor={OFFICE_ACTOR} onOpenList={noop} onOpenMatching={noop} />
+}
 
 function inAdmin(node: ReactNode, path = '/admin/intake/waiting') {
   return render(
@@ -26,8 +38,7 @@ function inAdmin(node: ReactNode, path = '/admin/intake/waiting') {
 }
 
 function receiveMissingNhiList() {
-  const res = importHospitalDownload(useAppStore, OFFICE_ACTOR, NO_NHI_LIST.id)
-  if (!res.ok) throw new Error(res.message)
+  stageNoNhiList(useAppStore)
 }
 
 function waitingRow(container: HTMLElement, name: string): HTMLElement {
@@ -39,7 +50,7 @@ function waitingRow(container: HTMLElement, name: string): HTMLElement {
 
 function openAddNhi(name: string): HTMLElement {
   receiveMissingNhiList()
-  const { container } = inAdmin(<WaitingNhiTab actor={OFFICE_ACTOR} onOpenList={noop} />)
+  const { container } = inAdmin(<WaitingNhi />)
   fireEvent.click(within(waitingRow(container, name)).getByRole('button', { name: 'Add NHI' }))
   return document.querySelector('[data-shot="add-nhi-sheet"]') as HTMLElement
 }
@@ -55,7 +66,7 @@ afterEach(() => cleanup())
 describe('Waiting for NHI', () => {
   it('a row shows the address to chase, the Urgent pill on a close row, and Add NHI', () => {
     receiveMissingNhiList()
-    const { container } = inAdmin(<WaitingNhiTab actor={OFFICE_ACTOR} onOpenList={noop} />)
+    const { container } = inAdmin(<WaitingNhi />)
     const rows = waitingNhiRows(useAppStore.getState())
     const aroha = rows.find((r) => r.patientName === 'Aroha Ngata')!
     const row = waitingRow(container, 'Aroha Ngata')
@@ -73,7 +84,7 @@ describe('Waiting for NHI', () => {
 
   it('Email for the NHI audits the request and the row reads Requested', () => {
     receiveMissingNhiList()
-    const { container } = inAdmin(<WaitingNhiTab actor={OFFICE_ACTOR} onOpenList={noop} />)
+    const { container } = inAdmin(<WaitingNhi />)
     const row = waitingRow(container, 'Losa Tuilagi')
     expect(row.textContent).toContain('Not yet')
     fireEvent.click(row.querySelector('a[data-shot="waiting-nhi-email"]')!)
@@ -83,7 +94,7 @@ describe('Waiting for NHI', () => {
 
   it('the Add NHI sheet shows the existing record and adds the NHI through addNhiToWaitingRow', () => {
     receiveMissingNhiList()
-    const { container } = inAdmin(<WaitingNhiTab actor={OFFICE_ACTOR} onOpenList={noop} />)
+    const { container } = inAdmin(<WaitingNhi />)
     const before = Object.keys(useAppStore.getState().masters.patients).length
     fireEvent.click(within(waitingRow(container, 'Losa Tuilagi')).getByRole('button', { name: 'Add NHI' }))
     const sheet = document.querySelector('[data-shot="add-nhi-sheet"]') as HTMLElement
@@ -100,7 +111,7 @@ describe('Waiting for NHI', () => {
 
   it('an invalid NHI shows its reason and keeps Add NHI disabled', () => {
     receiveMissingNhiList()
-    const { container } = inAdmin(<WaitingNhiTab actor={OFFICE_ACTOR} onOpenList={noop} />)
+    const { container } = inAdmin(<WaitingNhi />)
     fireEvent.click(within(waitingRow(container, 'Aroha Ngata')).getByRole('button', { name: 'Add NHI' }))
     const sheet = document.querySelector('[data-shot="add-nhi-sheet"]') as HTMLElement
     fireEvent.change(within(sheet).getByLabelText('NHI'), { target: { value: 'ZAE0311' } })
@@ -142,20 +153,14 @@ describe('Add NHI on a waiting row (catch-up Phase 40a)', () => {
   })
 })
 
-describe("Intake's Waiting for NHI tab and the old Patients link (Phase 51; D99, D100)", () => {
-  // The lines of router.tsx's Intake and Patients blocks this phase owns, mounted as there.
+describe('The old Patients and Intake waiting links land on Needs NHI (Phase 51, re-pointed by Phase 68; D99, D100, D117)', () => {
   function mountAt(url: string) {
     const router = createMemoryRouter(
       createRoutesFromElements(
         <Route path="/admin" element={<Outlet context={{ actor: OFFICE_ACTOR, onOpenList: noop }} />}>
           <Route path="day/:dateISO" element={<div data-testid="day" />} />
-          <Route path="intake" element={<AdminIntakeRoute />}>
-            <Route path="matching" element={<div data-testid="matching" />} />
-            <Route path="waiting" element={<AdminWaitingNhiTabRoute />} />
-          </Route>
-          <Route path="patients">
-            <Route path="waiting" element={<Navigate to="/admin/intake/waiting" replace />} />
-          </Route>
+          {intakeRoutes()}
+          {mastersAndLegacyRoutes()}
         </Route>,
       ),
       { initialEntries: ['/admin/day/2026-11-24', url], initialIndex: 1 },
@@ -168,23 +173,17 @@ describe("Intake's Waiting for NHI tab and the old Patients link (Phase 51; D99,
     return router
   }
 
-  it('/admin/patients/waiting lands on /admin/intake/waiting, replacing the old entry so Back does not loop', async () => {
-    const router = mountAt('/admin/patients/waiting')
-    expect(router.state.location.pathname).toBe('/admin/intake/waiting')
-    expect(router.state.historyAction).toBe('REPLACE')
-    expect(document.querySelector('[data-shot="admin-waiting-nhi"]')).not.toBeNull()
-    await act(async () => {
-      await router.navigate(-1)
+  for (const url of ['/admin/patients/waiting', '/admin/intake/waiting']) {
+    it(`${url} lands on Arrivals under Needs NHI, replacing the old entry so Back does not loop`, async () => {
+      const router = mountAt(url)
+      expect(router.state.location.pathname).toBe('/admin/intake')
+      expect(router.state.location.search).toBe('?filter=needs-nhi')
+      expect(router.state.historyAction).toBe('REPLACE')
+      expect(document.querySelector('[data-shot="intake-arrivals"]')).not.toBeNull()
+      await act(async () => {
+        await router.navigate(-1)
+      })
+      expect(router.state.location.pathname).toBe('/admin/day/2026-11-24')
     })
-    expect(router.state.location.pathname).toBe('/admin/day/2026-11-24')
-  })
-
-  it('the tab sits after Matching with the waiting rows as its count', () => {
-    receiveMissingNhiList()
-    mountAt('/admin/intake/waiting')
-    const tabs = document.querySelector('[data-shot="intake-tabs"]') as HTMLElement
-    expect([...tabs.querySelectorAll('a')].map((a) => a.textContent?.replace(/\d+$/, ''))).toEqual(['Matching', 'Waiting for NHI', 'PDF lists', 'Data quality', 'Validators'])
-    expect(document.querySelector('[data-shot="intake-waiting-count"]')?.textContent).toBe(String(waitingNhiRows(useAppStore.getState()).length))
-    expect(document.querySelectorAll('[data-shot="waiting-nhi-row"]')).toHaveLength(3)
-  })
+  }
 })

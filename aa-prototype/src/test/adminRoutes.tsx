@@ -1,6 +1,7 @@
 /**
  * Test helpers: the Admin route blocks for the People section and Master data
- * (build plan Phase 53) and the Finances section (build plan Phase 58), as
+ * (build plan Phase 53), the Finances section (build plan Phase 58) and Intake
+ * (build plan Phase 68), as
  * `router.tsx` declares them, so a test harness rendering Admin routes under a
  * `MemoryRouter` meets the same tabs, record pages and redirects. Call them
  * inside a `<Route path="/admin">`.
@@ -18,9 +19,14 @@ import {
   AdminPersonRedirect,
   AdminSurgeonProfileRoute,
   AdminSpecialtyPageRoute,
+  AdminArrivalsRoute,
+  AdminIntakeRoute,
+  AdminSourcesRoute,
   FinanceLegacyRedirect,
+  IntakeLegacyRedirect,
 } from '../apps/admin/routes'
 import { peoplePath } from '../apps/admin/peoplePaths'
+import { arrivalsPath } from '../apps/admin/screens/intake/intakePaths'
 import { AaFeesTab } from '../apps/admin/screens/finances/AaFeesTab'
 import { AnaesthetistAccountPage } from '../apps/admin/screens/finances/AnaesthetistAccountPage'
 import { BillingTab } from '../apps/admin/screens/finances/BillingTab'
@@ -68,7 +74,7 @@ export function mastersAndLegacyRoutes() {
     </Route>,
     <Route key="patients" path="patients">
       <Route index element={<Navigate to={peoplePath('patients')} replace />} />
-      <Route path="waiting" element={<Navigate to="/admin/intake/waiting" replace />} />
+      <Route path="waiting" element={<Navigate to={arrivalsPath({ filter: { kind: 'needsNhi' } })} replace />} />
       <Route path="follow-up" element={<Navigate to={peoplePath('patients', { filter: 'follow-up' })} replace />} />
       <Route path=":nhi" element={<AdminPersonRedirect kind="patient" />} />
     </Route>,
@@ -107,4 +113,18 @@ export function financesRoutes() {
 /** The old Invoices, credit note, Billing monitor and Ledger addresses, redirecting into Finances. */
 export function financeLegacyRoutes() {
   return ['invoices', 'credit-notes', 'billing', 'ledger'].map((head) => <Route key={head} path={`${head}/*`} element={<FinanceLegacyRedirect />} />)
+}
+
+/** The old Intake addresses (build plan Phase 68; D117), each redirected with replace. */
+const INTAKE_LEGACY_ROUTES = ['intake/matching', 'intake/waiting', 'intake/pdfs', 'intake/quality', 'intake/validators', 'matching', 'integrations']
+
+/** `/admin/intake/...` (build plan Phase 68; D117): Arrivals, Sources and every old Intake address redirected. */
+export function intakeRoutes() {
+  return [
+    <Route key="intake" path="intake" element={<AdminIntakeRoute />}>
+      <Route index element={<AdminArrivalsRoute />} />
+      <Route path="sources" element={<AdminSourcesRoute />} />
+    </Route>,
+    ...INTAKE_LEGACY_ROUTES.map((path) => <Route key={path} path={path} element={<IntakeLegacyRedirect />} />),
+  ]
 }

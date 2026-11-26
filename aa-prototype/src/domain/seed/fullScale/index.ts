@@ -1503,7 +1503,7 @@ export function buildFullScaleDataset<S extends FullScaleInput>(base: S, options
     const stub = stubFor(row, { id: list.id, state: list.state }, label, receivedAtISO)
     if (stub === undefined) continue
     rows[rowId] = row
-    batches[batchId] = { id: batchId, channel: 'download', source: 'hospital', hospitalId: list.hospitalId, label, importedBy: officeWho, importedAtISO: receivedAtISO, rowIds: [rowId], skippedCount: 0 }
+    batches[batchId] = { id: batchId, channel: 'download', source: 'hospital', hospitalId: list.hospitalId, label, arrivalSource: { kind: 'hospitalFeed', hospitalId: list.hospitalId }, receivedAtISO, rowIds: [rowId] }
     const stubId = nextId('stub')
     stubs[stubId] = { id: stubId, ...stub }
     stubCount += 1

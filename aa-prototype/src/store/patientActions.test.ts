@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { createAppStore, type AppStoreApi } from './appStore'
 import type { Actor } from './mutate'
 import { createBooking } from './bookingActions'
-import { importHospitalDownload } from './matchingActions'
+import { stageNoNhiList } from '../test/intakeSamples'
 import { clearWarning, warningsForBooking } from './warnings'
 import { setProcedurePayer } from './payerActions'
 import { resolvePatientDetails, upsertPatient, editPatient } from './intake'
@@ -24,7 +24,7 @@ import { proceduresForBooking } from './selectors'
 import { balanceAlertForBooking } from '../shared/patients/balanceAlert'
 import { advanceClockDays } from './clockActions'
 import { ANAE, PAT } from '../domain/seed'
-import { NO_NHI_LIST, NO_NHI_NEW_PATIENT_NHI, NO_NHI_RETURNING_NHI } from '../domain/intake/hospitalDownloads'
+import { NO_NHI_NEW_PATIENT_NHI, NO_NHI_RETURNING_NHI } from '../domain/intake/hospitalDownloads'
 import { buildNhiIndex } from '../domain/patients'
 import { deliverPaymentWebhook } from './paymentActions'
 
@@ -230,8 +230,7 @@ describe('the shared note (US-11.3.3)', () => {
 describe('waiting rows: add the NHI, ask the one address (US-11.1.5)', () => {
   function staged() {
     const api = createAppStore()
-    const imported = importHospitalDownload(api, OFFICE, NO_NHI_LIST.id)
-    if (!imported.ok) throw new Error(imported.message)
+    stageNoNhiList(api)
     // The seed's own waiting row (33a's IRS001, Mere Tipene) stays beside the sample's two.
     const rows = waitingNhiRows(api.getState()).filter((r) => r.rowId !== 'IRS001')
     return { api, rows }
@@ -321,7 +320,7 @@ describe('patient selectors', () => {
   it('the badge no longer counts the waiting rows: they are Intake\'s (Phase 51)', () => {
     const api = createAppStore()
     const base = patientAttentionCount(api.getState())
-    importHospitalDownload(api, OFFICE, NO_NHI_LIST.id)
+    stageNoNhiList(api)
     expect(patientAttentionCount(api.getState())).toBe(base)
     expect(waitingNhiRows(createAppStore().getState()).map((r) => r.rowId)).toEqual(['IRS001'])
   })

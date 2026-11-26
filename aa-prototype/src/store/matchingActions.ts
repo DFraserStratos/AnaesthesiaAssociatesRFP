@@ -18,6 +18,7 @@
 
 import { rawRowFor } from '../domain/intake/rawRow'
 import type {
+  ArrivalSource,
   ChangeType,
   ImportBatch,
   ImportChannel,
@@ -42,14 +43,13 @@ import {
   hospitalNoteLine,
   listsForRow,
   openSlotsForRow,
-  rowPatientKey,
   searchBookingsForRow,
   sourceTextChannelFor,
   targetProcedure,
   validNhiOf,
   type FieldDiff,
 } from '../domain/intake/matching'
-import { hospitalDownloadSample, hospitalSourceKey } from '../domain/intake/hospitalDownloads'
+import { hospitalSourceKey } from '../domain/intake/hospitalDownloads'
 import { allocateId, clockISO, mutate, ok, refuse, transaction, type Actor, type MutationMeta, type Outcome, withChangeSet } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { createBooking } from './bookingActions'
@@ -93,15 +93,27 @@ export interface StageExtras {
   /** Channel `pdfList` (Phase 34): the PDF list and the address it arrived from, kept on the batch. */
   pdfListId?: string
   senderEmail?: string
+  /** Who sent it (Phase 68; DM-15): defaults to the hospital's feed, or the mailbox for a rooms' PDF. */
+  arrivalSource?: ArrivalSource
+  /** Only for a PDF added by hand (Phase 68): the person who added it, kept on the batch. */
+  importedBy?: string
+  /** Per row, in `rows` order (Phase 68; D120): the `PdfListRow` each row was read from. */
+  pdfRowIds?: readonly (string | undefined)[]
+  /** Per row, in `rows` order (Phase 68; DM-13): the Booking a removal row stands for. */
+  removalOfBookingIds?: readonly (string | undefined)[]
+  /** The intake source that sent these rows (Phase 68; DM-14): its `lastReceivedAtISO` is set in the same commit. */
+  sourceId?: string
 }
 
 /**
  * Stage a batch of rows (one commit, audited `importBatch.create` plus one
- * `importRow.receive` per row). A row identical to one already received, of
- * any status, is skipped and counted: a corrected or rejected row never comes
- * back on the next import. A changed row for the same Booking is staged (the
- * matcher flags the earlier one if it is still open). No batch is written when
- * every row is skipped.
+ * `importRow.receive` per row). Every row is staged, identical ones included
+ * (build plan Phase 68; DM-21): a row identical to an earlier one that is
+ * already decided arrives again and waits for a person's confirm. A row is
+ * skipped only while an identical row (`incomingKey`) is still open, so the
+ * one job stays one (counted in `skipped`). A changed row for the same Booking
+ * is staged (the matcher flags the earlier one if it is still open). No batch
+ * is written when every row is skipped.
  */
 export function stageImportRows(
   api: AppStoreApi,
@@ -114,27 +126,21 @@ export function stageImportRows(
 ): Outcome<{ batchId?: string; rowIds: string[]; skipped: number }> {
   const state = api.getState()
   if (state.masters.hospitals[hospitalId] === undefined) return refuse('notFound', 'Hospital not found.')
-  // A row is skipped when the hospital sent exactly this before and nothing has
-  // arrived for that patient since: identical to an open row, or to the latest
-  // row received for the same patient, session and hospital (any status, so a
-  // decided or rejected row is not restaged on every import). A later revert to
-  // an earlier value is a new row (review fix).
-  const existing = Object.values(state.intake.rows).sort((a, b) => a.receivedAtISO.localeCompare(b.receivedAtISO) || a.id.localeCompare(b.id))
-  const openKeys = new Set(existing.filter((r) => r.status === 'open').map((r) => incomingKey(r.incoming)))
-  const latest = new Map<string, string>()
-  for (const r of existing) latest.set(rowPatientKey(r.incoming), incomingKey(r.incoming))
-  const fresh: IncomingBookingFields[] = []
+  // Skipped only while an identical row is still open (DM-21): a row identical to a decided one is staged again.
+  const openKeys = new Set(Object.values(state.intake.rows).filter((r) => r.status === 'open').map((r) => incomingKey(r.incoming)))
+  const fresh: { incoming: IncomingBookingFields; pdfRowId?: string; removalOfBookingId?: string }[] = []
   let skipped = 0
-  for (const row of rows) {
+  rows.forEach((row, i) => {
     const key = incomingKey(row)
-    if (openKeys.has(key) || latest.get(rowPatientKey(row)) === key) {
+    if (openKeys.has(key)) {
       skipped += 1
-      continue
+      return
     }
     openKeys.add(key)
-    latest.set(rowPatientKey(row), key)
-    fresh.push(row)
-  }
+    const pdfRowId = extras.pdfRowIds?.[i]
+    const removalOfBookingId = extras.removalOfBookingIds?.[i]
+    fresh.push({ incoming: row, ...(pdfRowId !== undefined ? { pdfRowId } : {}), ...(removalOfBookingId !== undefined ? { removalOfBookingId } : {}) })
+  })
   if (fresh.length === 0) return ok({ rowIds: [], skipped })
 
   const source = extras.source ?? 'hospital'
@@ -147,7 +153,7 @@ export function stageImportRows(
     batchId = batchAlloc.id
     const atISO = clockISO(s.clock)
     const newRows: Record<string, ImportRow> = {}
-    for (const incoming of fresh) {
+    for (const f of fresh) {
       const alloc = allocateId(counters, 'importRow')
       counters = alloc.counters
       rowIds.push(alloc.id)
@@ -157,11 +163,13 @@ export function stageImportRows(
         channel,
         source,
         receivedAtISO: atISO,
-        incoming,
+        incoming: f.incoming,
         status: 'open',
         ...(extras.messageId !== undefined ? { messageId: extras.messageId } : {}),
         // The row as sent, held under restricted access (catch-up Phase 43; US-15.0.6): written once, never edited.
-        raw: rawRowFor(incoming, channel),
+        raw: rawRowFor(f.incoming, channel),
+        ...(f.removalOfBookingId !== undefined ? { removalOfBookingId: f.removalOfBookingId } : {}),
+        ...(f.pdfRowId !== undefined ? { pdfRowId: f.pdfRowId } : {}),
       }
     }
     const batch: ImportBatch = {
@@ -173,10 +181,10 @@ export function stageImportRows(
       ...(extras.sampleId !== undefined ? { sampleId: extras.sampleId } : {}),
       ...(extras.pdfListId !== undefined ? { pdfListId: extras.pdfListId } : {}),
       ...(extras.senderEmail !== undefined ? { senderEmail: extras.senderEmail } : {}),
-      importedBy: actor.who,
-      importedAtISO: atISO,
+      arrivalSource: extras.arrivalSource ?? (source === 'rooms' && extras.senderEmail !== undefined ? { kind: 'mailbox', senderEmail: extras.senderEmail } : { kind: 'hospitalFeed', hospitalId }),
+      receivedAtISO: atISO,
+      ...(extras.importedBy !== undefined ? { importedBy: extras.importedBy } : {}),
       rowIds: [...rowIds],
-      skippedCount: skipped,
     }
     metas.push({
       entityType: 'importBatch',
@@ -191,37 +199,26 @@ export function stageImportRows(
         entityType: 'importRow',
         entityId: id,
         action: 'importRow.receive',
-        after: { batchId, patient: r.incoming.patient.name, dateISO: r.incoming.dateISO, session: r.incoming.session },
+        after: {
+          batchId,
+          patient: r.incoming.patient.name,
+          dateISO: r.incoming.dateISO,
+          session: r.incoming.session,
+          ...(r.removalOfBookingId !== undefined ? { removalOfBookingId: r.removalOfBookingId } : {}),
+        },
         stampBookingId: null,
       })
     }
+    const src = extras.sourceId !== undefined ? s.intake.sources[extras.sourceId] : undefined
+    const sources = src !== undefined ? { ...s.intake.sources, [src.id]: { ...src, lastReceivedAtISO: atISO } } : s.intake.sources
     return {
-      intake: { ...s.intake, batches: { ...s.intake.batches, [batchId]: batch }, rows: { ...s.intake.rows, ...newRows } },
+      intake: { ...s.intake, batches: { ...s.intake.batches, [batchId]: batch }, rows: { ...s.intake.rows, ...newRows }, sources },
       counters,
     }
   })
   // A row with no NHI waits and creates nothing (D11); a stub stands in its place on its List (33a, D66).
   placeStubsForRows(api, actor, rowIds)
   return ok({ batchId, rowIds, skipped })
-}
-
-/**
- * Import a hospital's file (US-02.1.1; the button reads "Import hospital
- * file", D52: no sync). Stages the sample's rows; re-importing the same file
- * adds nothing.
- */
-export function importHospitalDownload(
-  api: AppStoreApi,
-  actor: Actor,
-  sampleId: string,
-): Outcome<{ batchId?: string; added: number; skipped: number }> {
-  const office = officeOnly(actor)
-  if (office !== null) return office
-  const sample = hospitalDownloadSample(sampleId)
-  if (sample === undefined) return refuse('unknownSample', 'No such sample file.')
-  const staged = stageImportRows(api, actor, sample.channel, sample.hospitalId, sample.label, sample.rows, { sampleId })
-  if (!staged.ok) return staged
-  return ok({ ...(staged.value.batchId !== undefined ? { batchId: staged.value.batchId } : {}), added: staged.value.rowIds.length, skipped: staged.value.skipped })
 }
 
 // ---------------------------------------------------------------------------
@@ -471,7 +468,7 @@ function decideImportRowUnscoped(
         if (!used.ok) return used
       }
       const recorded = changeType === 'cancellation' ? undefined : picks
-      const decision: ImportDecision = { kind: 'match', bookingId: booking.id, changeType, fieldsApplied: applied, ...(recorded !== undefined ? { picks: recorded } : {}) }
+      const decision: ImportDecision = { kind: 'match', bookingId: booking.id, changeType, fieldsApplied: applied, ...(recorded !== undefined ? { picks: recorded } : {}), listId: booking.listId }
       record(api, actor, row, decision, { bookingId: booking.id, changeType, fields: applied })
       return ok({ decision, bookingId: booking.id })
     })
@@ -635,6 +632,25 @@ function applyMatch(
   return ok(undefined)
 }
 
+/** A decided row's status: rejected, left out (Phase 68; decided, changing nothing) or applied. */
+function statusForDecision(decision: ImportDecision): ImportRow['status'] {
+  return decision.kind === 'reject' ? 'rejected' : decision.kind === 'leftOut' ? 'leftOut' : 'applied'
+}
+
+/**
+ * Record a decision that changes nothing on the schedule (Phase 68's `intakeDecide.ts`: a row left out), in the
+ * same commit shape as every row decision (`importRow.decide`, its stub settled). Open rows only.
+ */
+export function recordRowDecision(api: AppStoreApi, actor: Actor, rowId: string, decision: Extract<ImportDecision, { kind: 'leftOut' }>): Outcome {
+  const office = officeOnly(actor)
+  if (office !== null) return office
+  const row = api.getState().intake.rows[rowId]
+  if (row === undefined) return refuse('notFound', 'Row not found.')
+  if (row.status !== 'open') return refuse('alreadyDecided', 'This row has already been decided.')
+  record(api, actor, row, decision, undefined)
+  return ok(undefined)
+}
+
 /** Write the row's decision last, in one commit with the Booking-side history entry naming the row. */
 function record(
   api: AppStoreApi,
@@ -650,7 +666,7 @@ function record(
       entityId: row.id,
       action: 'importRow.decide',
       before: { status: 'open' },
-      after: { status: decision.kind === 'reject' ? 'rejected' : 'applied', decision },
+      after: { status: statusForDecision(decision), decision },
       stampBookingId: null,
     },
   ]
@@ -673,7 +689,7 @@ function record(
     if (cur === undefined) return {}
     const next: ImportRow = {
       ...cur,
-      status: decision.kind === 'reject' ? 'rejected' : 'applied',
+      status: statusForDecision(decision),
       decision,
       decidedBy: actor.who,
       decidedAtISO: clockISO(s.clock),
