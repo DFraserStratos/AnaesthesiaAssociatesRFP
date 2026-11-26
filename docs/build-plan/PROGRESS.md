@@ -27,6 +27,7 @@ U7 is archived in `docs/archive/prototype-build/PROGRESS.md` (large: grep it, ne
 | 62 | The Invoices tab | DONE | 2026-11-26 | The Invoices tab lists every invoice, prepayment invoice and credit note AA raises on a payer (no AA fee invoices) over 59's model, opening on Unpaid oldest first, searched by number, -P number, case reference, patient, payer and anaesthetist, with Kind, Payer, Patient · Booking, Raised (with the year), Owing and State (Unpaid with its age) columns, the Unpaid, Part paid, Paid, Awaiting approval and All filters, Kind and anaesthetist selects, and a rail holding the prepayment approval switch and Unpaid by age; one seeded invoice is 40 days unpaid. |
 | 64 | The Ledger tab | DONE | 2026-11-26 | The Ledger tab says in one sentence, read from the Day view's reconciliation status, whether the books are square and what is wrong, shows four figures and the receipts to place (Allocate, Mark refunded) in a rail card, and lists the anaesthetists (five money columns from one pass over the pairs), the invoice pairs or the AA Holding account through a segmented control, its state in the URL; it opens in about 1.5 s at practice scale, list and page changes under 0.1 s. |
 | 65 | The anaesthetist's account page | DONE | 2026-11-26 | Each anaesthetist's money has its own record page under Ledger: Back to the Ledger, a Square or Out by pill, one line of who owes whom, Open in People, the AA owes them and They owe AA cards, their invoice pairs (billed, paid in, disbursed with the week), and a rail of payment runs and credit trails; the one-anaesthetist `LedgerScreen` is gone. |
+| 66 | The Payments tab and the payment run pages | DONE | 2026-11-26 | The Payments tab holds the weekly cycle card (its four steps from one shared step builder, the waiting table paged at 20), the payment runs as a paged table of week, dates, anaesthetists, BCTIs, netted, paid out, status and paid on, and the events awaiting the run in the rail; each run has its own record page (header, steps, totals with Remittance links, checks, schedule, a rail with the run, the ledger at close and History), and Run payables in Xero commits once instead of 1,598 times (19.5 s to 2.0 s at practice scale). |
 
 Rows: `| <id> | <title> | DONE | <YYYY-MM-DD> | <one-sentence summary> |`, or `IN PROGRESS` at a
 checkpoint, in run order.
@@ -735,3 +736,49 @@ Run in Lane C, Wave 5 (`docs/build-plan/LANES.md`; D112, D113): quick checks onl
 **For the sweep.** US-13.2.1's one-anaesthetist Ledger recipe (now the account page) and US-08.3.5's if it shows that view; ATLAS rows on `/admin/finances/ledger/anaesthetists/:id` and the retired hooks above; guide lines naming the "Whole ledger / One anaesthetist" switch or Souter's one-anaesthetist ledger.
 
 **For the owner's review.** See all on payment runs expands in place (no Payments filter yet). Credit trails as one row per credit note with its netting note. Pairs columns as the mock (Kind, Patient, Payer, Released and Xero left for the Ledger tab and Xero tab). No direct remittance column: a run row opens the run, one click from her remittance. Still to net as a Notice above the cards. Worth a look: `/admin/finances/ledger/anaesthetists/41267` at 1280 and 1440, before and after Inject unmatched receipt.
+
+### Phase 66 · The Payments tab and the payment run pages (2026-11-26)
+
+Run in Lane C, Wave 5 (`docs/build-plan/LANES.md`; D113): quick checks only, no review, screen-proof or checklist run. Synced Lane B's `62 complete:` (cbc51b32) at the start (PROGRESS.md conflict only, both sides kept).
+
+**Drift check against f885f67.** Nothing changed (US-10.2.7, US-10.2.6, US-13.3.3, OQ-47, OQ-29). D107, D114, D115 built; OQ-47 and OQ-29 as written (steps, days, "BCTI" untouched). Used 58's names: `PaymentsTab`, `PaymentRunPage`, `RemittancePage`, `financePath`, `paymentRunPath`, `remittancePath`.
+
+**Built.**
+- `components/paymentCycleSteps.ts` (pure): `paymentCycleSteps({ run, cycle, settings })`, the four `RailStep`s moved unchanged from the panel; the cycle card and the run page both call it.
+- `PaymentCyclePanel.tsx`: same name, `actor` prop, `RUN_STATUS`, `stampOf`, store calls, hooks and copy; the runs table and "Open the ledger" left it; its two sections are bare `Card`s (`titleLevel` 3) inside the cycle card; `TotalsTable` takes the admin `Pager` at 20 (expansions keyed by anaesthetist, page back to 1 when the rows change; hook `payment-cycle-pager`).
+- New `screens/finances/PaymentRunsTable.tsx` (`PaymentRunsTable`): a "Payment runs" `Card` with `CountBadge`, dense `TableShell`, `ClickableRow`s to `paymentRunPath`, the mock's eight columns, this week and staged first then newest, `Pager` at 20 (`payables-runs-pager`); `payables-runs`, `data-run-id`, `data-run-status` kept.
+- New `screens/finances/EventsAwaitingRun.tsx` (`EventsAwaitingRun`, `useEventsAwaitingRun`, `EVENTS_AWAITING_RUN_TITLE`): a `RailSection` in the tab's `PageBody` rail, rows to the Booking, narrow selectors; `PaymentsTab.tsx` passes the rail only while one waits. `EventsAwaitingRunPanel` is gone (no importer).
+- `PaymentRunScreen.tsx`: `ProfilePage` with back Payments, the week, `IdChip` Run and the status pills, the summary line, Download schedule (the existing Print, hook `payment-schedule-print` moved onto it, shown once approved), the `StepRail` compact; main column Totals by anaesthetist (Remittance `TextAction`s, `Pager` at 20), Checks before payment, Payment schedule; rail The run, Ledger at close, Kept out of every run, History (`RecordHistoryCard` on the run id). Slice selectors, not the whole store. `RemittanceAdviceScreen` unchanged but for its links (`paymentRunPath`, `TextAction`).
+- Run payables (`store/xeroSimActions.ts`, `payRunInXero`): measured at practice scale (1,597 bills, 69 anaesthetists): the store call 2.26 s, almost all 1,598 separate commits of `recordDisbursement`; with the persist delta per commit 19.5 s. The webhook recordings now run, each still audited and in the same order, on a working copy of the store and reach the live store in one `copyStateIntoDraft`: 2.0 s with saving. Same bills, audit rows and paid status.
+- No seed change; `PERSIST_VERSION` stays 81 (62's).
+
+**Tests.** New `PaymentsTab.test.tsx` (6), `PaymentRunScreen.test.tsx` (2), `store/payablesRunParity.test.ts` (3: staged week with a netting, an outage, a missed webhook; snapshots recorded on the old code). `moneyViewPurity.test.ts` allow-lists `PaymentRunScreen.tsx` (the remittance advice's Xero batch payment, read as before). Quick checks green (`phase-check --changed`: typecheck, vitest, verify-board; lint).
+
+**Checked.** Skipped in the lane (D113).
+
+**Review.** Skipped in the lane (D113).
+
+**Handoffs.**
+- 65 / the join: `LedgerPaymentRuns` still imports `RUN_STATUS`; runs open `paymentRunPath`.
+- The join: `EventsAwaitingRun` and `PaymentRunsTable` are the tab's new parts; `paymentCycleSteps` is the one step builder.
+
+**Deviations.**
+- The waiting table's range line has no "net $X" (the `Pager` has no suffix and no variant was added).
+- The rail title is written out ("Events awaiting the run"): `EVENT_LABELS.awaitingRunTitle` reads "Waiting for the next billing run". An event with no List links to the Payments tab (`RailRow` needs a `to`).
+- `data-testid="payment-run-screen"` sits on the run page's inner wrapper (`ProfilePage` takes no testId).
+- The freeze fix commits through `copyStateIntoDraft` (built for Booking drafts) rather than a named helper in `mutate.ts`, which is not this lane's file.
+
+**For the merge.**
+- New files: `components/paymentCycleSteps.ts`, `screens/finances/PaymentRunsTable.tsx`, `EventsAwaitingRun.tsx`, the three tests. `store/xeroSimActions.ts` changed (the freeze fix, LANES.md's list); `payablesActions.ts` and `payablesRun.ts` untouched.
+- `registry.ts`: add the Payments route to `run-next-billing-run`'s `routes` (the events awaiting the run now show on the Payments tab).
+- A Payments tab narrowed to one anaesthetist would let 65's runs See all link there (not built).
+- `financeCounts.ts`: the Payments tab has no count, as built by 58; nothing wrong.
+- Retired hook `billing-open-ledger`; new `payment-cycle-pager`, `payables-runs-pager`, `payment-run-page`, `payables-run-id`, `payables-run-status`, `payables-run-summary`, `payables-run-step-1` to `-4`, `payables-run-totals-pager`, `payables-run-history`, `payables-run-history-open`. `payables-run-detail` is now the rail's Run card (no status pill; the pill is `payables-run-status`).
+- Specs: `admin-phase39a.spec.ts` needs no step change (its run-detail screenshot changes); `phase38b-events` and `routing` read kept hooks. None run.
+
+**For the sweep.** US-10.2.7's five payment-week recipes (open cycle, anomaly, held, schedule, payment week) now on the Payments tab and the run page; US-10.2.6's remittance recipe; S3's payment beat (Finances, Payments); ATLAS rows for the run and remittance routes and the run page's new layout (line 467); the retired `billing-open-ledger`; every guide line naming the Billing monitor for the payment cycle or Run payables.
+
+**For the owner's review.**
+- Runs table columns as the mock (Run ID, Closed, Approved and Scheduled left for the run page); every table paged at 20; Download schedule is the Print (Save as PDF); "Open the ledger" dropped; the events rail rows as today's; History on the run page.
+- Run payables: 19.5 s to 2.0 s at practice scale by committing the recordings once; about 2 s remains in `disbursementDetection.ts` (BACKLOG).
+- The cycle card's section headings are bare Card titles (14/600 instead of 15/650); the runs table's Run link is teal (`TextAction`).
