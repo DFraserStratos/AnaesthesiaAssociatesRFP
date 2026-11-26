@@ -6,12 +6,13 @@
  * nothing. The selected value's box is lit stronger and scrolled into view, and choosing a value on another page
  * turns to that page. Each page is drawn at its own size (a landscape page is wider than tall) at the column's width;
  * "Open full size" shows the page in the shared Dialog at 100% scale or larger, scrolling sideways when the page is
- * wider than the dialog, its boxes still drawn. Intake's own, built from shared parts. No confidence number is ever
- * shown.
+ * wider than the dialog, its boxes still drawn. "Rotate" turns the page a quarter turn clockwise at a time (a scan
+ * fed in sideways), its boxes with it, in the column and full size alike. Intake's own, built from shared parts. No
+ * confidence number is ever shown.
  */
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { ChevronLeft, ChevronRight, FileText, Maximize2, Table2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, FileText, Maximize2, RotateCw, Table2 } from 'lucide-react'
 import type { PdfBox, PdfReadField, PdfReadValue, SurgeonPdfList } from '../../../../../../domain/types'
 import { isUnsure, PDF_PAGE, type PdfHeaderField } from '../../../../../../domain/intake/pdfRead'
 import { facsimileSize, PDF_HEADER_ROW, PDF_ROW_FIELD_LABELS, pdfValueKey } from '../../../../../../domain/intake/pdfLists'
@@ -89,6 +90,8 @@ export function PdfPage(props: PdfPageProps) {
   const pages = props.pages !== undefined && props.pages.length > 0 ? props.pages.length : (props.pageCount ?? Math.max(1, ...boxes.map((b) => b.box.page)))
   const [page, setPage] = useState(1)
   const [full, setFull] = useState(false)
+  /** Quarter turns clockwise, 0 to 3. */
+  const [turns, setTurns] = useState(0)
   // Only the pages there are images for can be shown.
   const shown = Math.min(Math.max(1, page), images.length)
   const image = images[shown - 1]!
@@ -105,7 +108,7 @@ export function PdfPage(props: PdfPageProps) {
   const onPage = boxes.filter((b) => b.box.page === shown)
   const toCheck = onPage.filter((b) => b.unsure).length
   const alt = `${fileName}, page ${shown} of ${pages}${toCheck > 0 ? `, ${toCheck === 1 ? 'one value' : `${toCheck} values`} to check marked` : ''}`
-  const sheet = { facsimile: image, alt, boxes: onPage, width, height, ...(selectedKey !== undefined ? { selectedKey } : {}) }
+  const sheet = { facsimile: image, alt, boxes: onPage, width, height, turns, ...(selectedKey !== undefined ? { selectedKey } : {}) }
   const turner = images.length > 1 ? <PageTurner page={shown} pages={images.length} onPage={setPage} shot={shot} /> : null
 
   return (
@@ -136,6 +139,9 @@ export function PdfPage(props: PdfPageProps) {
           Page {shown} of {pages}
         </span>
         {turner}
+        <IconButton label="Rotate page" onClick={() => setTurns((t) => (t + 1) % 4)} size={32} tone="neutral" shot={`${shot}-rotate`} data-pdf-turns={turns}>
+          <RotateCw size={15} aria-hidden />
+        </IconButton>
         {caption !== undefined && <span style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: space[2] }}>{caption}</span>}
         <TextAction size="sm" flush onClick={() => setFull(true)} shot={`${shot}-open-full`} label={`Open ${fileName} full size`} style={{ flex: 'none' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: space[1] }}>
@@ -154,7 +160,7 @@ export function PdfPage(props: PdfPageProps) {
         {turner !== null && <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: space[3] }}>{turner}</div>}
         {/* A landscape page is wider than the dialog: it keeps its full size and the frame scrolls sideways. */}
         <div data-shot={`${shot}-full`} style={{ marginTop: space[4], overflowX: 'auto', background: neutral.sunken, borderRadius: radius.card, padding: space[4] }}>
-          <div style={{ width: '100%', minWidth: width, margin: '0 auto' }}>
+          <div style={{ width: '100%', minWidth: turns % 2 === 1 ? height : width, margin: '0 auto' }}>
             <PdfSheet
               {...sheet}
               {...(onSelect !== undefined
@@ -195,6 +201,7 @@ function PdfSheet({
   boxes,
   width,
   height,
+  turns,
   selectedKey,
   onSelect,
   scrollSelected,
@@ -204,6 +211,7 @@ function PdfSheet({
   boxes: readonly PdfPageBox[]
   width: number
   height: number
+  turns: number
   selectedKey?: string
   onSelect?: (key: string) => void
   scrollSelected: boolean
@@ -215,8 +223,16 @@ function PdfSheet({
     // Again when the page turns to the selected value.
   }, [selectedKey, scrollSelected, facsimile])
 
-  return (
-    <div style={{ position: 'relative', background: neutral.surface, boxShadow: elevation.e2, borderRadius: radius.xs }}>
+  // A quarter turn swaps the page's sides: the frame takes the turned shape, and the page sits turned at its centre.
+  const sideways = turns % 2 === 1
+  const turned: CSSProperties | undefined =
+    turns === 0
+      ? undefined
+      : sideways
+        ? { position: 'absolute', left: '50%', top: '50%', width: pct(width, height), transform: `translate(-50%, -50%) rotate(${turns * 90}deg)` }
+        : { transform: 'rotate(180deg)' }
+  const sheet = (
+    <div style={{ position: 'relative', background: neutral.surface, boxShadow: elevation.e2, borderRadius: radius.xs, ...turned }}>
       <img src={facsimile} alt={alt} style={{ display: 'block', width: '100%', height: 'auto', borderRadius: radius.xs }} />
       {boxes.length > 0 && (
         <div data-pdf-boxes style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
@@ -238,6 +254,7 @@ function PdfSheet({
       )}
     </div>
   )
+  return sideways ? <div style={{ position: 'relative', width: '100%', aspectRatio: `${height} / ${width}` }}>{sheet}</div> : sheet
 }
 
 function PageBox({
