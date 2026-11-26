@@ -40,7 +40,8 @@ test('Draft Lists: soonest first, the band and rail card, and assigning St Georg
   await expect(band).toHaveAttribute('data-draft-band-count', '1')
   // Draft Lists left the rail: the band above the grid and the Draft Lists page carry them.
   await expect(page.locator('[data-shot="admin-draft-lists-rail"]')).toHaveCount(0)
-  await expect(page.getByText(/· 1 Draft List$/)).toBeVisible()
+  // The counts line under the date has gone; the band's own heading counts the day's Draft Lists.
+  await expect(band).toContainText('Draft Lists')
   await page.screenshot({ path: 'visual/shots/p31-02-day-band.png', fullPage: true })
 
   await page.locator('[data-draft-block="LD-001"]').click()

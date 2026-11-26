@@ -50,7 +50,7 @@ test('A feed message fails: held under Southern Cross with its reason; View raw 
   await bench.locator('[data-shot="intake-held-dismiss"]').click()
   const sheet = page.locator('[data-shot="intake-held-dismiss-sheet"]')
   await expect(sheet.locator('[data-shot="intake-held-dismiss-confirm"]')).toBeDisabled()
-  await sheet.locator('[data-shot="intake-held-dismiss-reason"] input').fill('Southern Cross resent it with the patient')
+  await sheet.locator('[data-shot="intake-held-dismiss-reason"]').fill('Southern Cross resent it with the patient')
   await sheet.locator('[data-shot="intake-held-dismiss-confirm"]').click()
   await page.goto('/admin/intake/sources')
   await expect(page.locator('[data-shot="intake-sources-messages"] [data-message-state="dismissed"]')).toHaveCount(1)

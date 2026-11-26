@@ -18,6 +18,16 @@ async function fresh(page: Page, path = '/admin/intake'): Promise<void> {
 const feedItem = (page: Page, text: string) => page.locator('[data-shot="intake-feed-item"]', { hasText: text })
 const workbench = (page: Page) => page.locator('[data-shot="intake-workbench"]')
 
+/** The Okafor story's first beat: the rooms email his List and the office places it, so AA holds it. */
+async function placeOkaforList(page: Page): Promise<void> {
+  await page.goto('/admin/intake?filter=rooms-pdfs')
+  await page.waitForLoadState('networkidle')
+  expect(await runDemoAction(page, 'intake-rooms-email-list', { close: true })).not.toMatch(/^Refused/)
+  await page.locator('[data-shot="intake-feed-item"][data-arrival-kind="newList"]', { hasText: 'Okafor' }).filter({ hasText: "St George's" }).click()
+  await page.locator('[data-shot="intake-place-list"]').getByRole('button', { name: /^Place in/ }).click()
+  await expect(page.locator('[data-shot="intake-newlist-decided"]')).toContainText('Placed')
+}
+
 test('Arrivals: the feed beside the docked workbench, no import or upload button, only "Add a PDF by hand"', async ({ page }) => {
   await fresh(page)
   await expect(page.locator('[data-shot="intake-section"]')).toBeVisible()
@@ -93,6 +103,8 @@ test("St George's sends the day-before List: the file lands as a heading over it
 
 test('An update to a List AA holds: the match basis, the versions and a tick per Booking; Apply decides the whole List', async ({ page }) => {
   await fresh(page)
+  // St George's sends an update only to a List AA holds: Mr Okafor's, once placed from the rooms' PDF.
+  await placeOkaforList(page)
   expect(await runDemoAction(page, 'intake-stg-day-before', { close: true })).not.toMatch(/^Refused/)
   await page.goto('/admin/intake?filter=hospital-H-STG')
   await page.waitForLoadState('networkidle')
@@ -123,6 +135,8 @@ test('An update to a List AA holds: the match basis, the versions and a tick per
 
 test('Reject an update with a reason: nothing on the schedule changes', async ({ page }) => {
   await fresh(page)
+  // St George's sends an update only to a List AA holds: Mr Okafor's, once placed from the rooms' PDF.
+  await placeOkaforList(page)
   expect(await runDemoAction(page, 'intake-stg-day-before', { close: true })).not.toMatch(/^Refused/)
   await page.goto('/admin/intake?filter=hospital-H-STG')
   await page.waitForLoadState('networkidle')
