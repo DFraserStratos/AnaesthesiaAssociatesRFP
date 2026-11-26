@@ -61,7 +61,8 @@ export interface PlaceResult {
 export const SLOT_TAKEN_MESSAGE = 'That session has just been taken. Choose another.'
 export const LIST_NOT_OFFERED_MESSAGE = 'That List cannot take these Bookings any more. Choose another.'
 export const PLACE_SURGEON_REQUIRED_MESSAGE = 'Choose the surgeon for this List first.'
-export const REJECT_REASON_REQUIRED_MESSAGE = 'Say why this List is rejected.'
+/** The same words as 69's Update bench (`intakeApply.ts`); the barrel exports that one. */
+export const REJECT_REASON_REQUIRED_MESSAGE = 'Give a reason to reject this List.'
 export const NOT_A_NEW_LIST_MESSAGE = 'This arrival is not a new List.'
 export const ALREADY_DECIDED_MESSAGE = 'This List has already been decided.'
 

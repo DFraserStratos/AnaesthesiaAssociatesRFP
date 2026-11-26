@@ -682,13 +682,30 @@ export {
   type IntakeViewState,
 } from './intakeSelectors'
 export { decideArrivingLists, type DecideResult, type ListDecision, type ListPlacement, type RowDecision } from './intakeDecide'
+// Build plan Phase 69: an update to a List AA holds, or a hospital's cancellation, decided a whole List at a time.
+export {
+  BOOKING_CANCELLED_MESSAGE,
+  CHOOSE_STUB_MESSAGE,
+  NOT_AN_UPDATE_MESSAGE,
+  NOT_A_CANCELLATION_MESSAGE,
+  NO_TARGET_MESSAGE,
+  REJECT_REASON_REQUIRED_MESSAGE,
+  STUB_NOT_RESOLVED_MESSAGE,
+  UNKNOWN_ARRIVAL_MESSAGE,
+  WAITS_FOR_NHI_MESSAGE,
+  applyArrivingList,
+  applyBlockers,
+  decideCancellation,
+  rejectArrivingList,
+  stubCandidates,
+  type RowChoice,
+} from './intakeApply'
 // Build plan Phase 70: placing a new List from Intake as one change set, or rejecting it whole.
 export {
   ALREADY_DECIDED_MESSAGE,
   LIST_NOT_OFFERED_MESSAGE,
   NOT_A_NEW_LIST_MESSAGE,
   PLACE_SURGEON_REQUIRED_MESSAGE,
-  REJECT_REASON_REQUIRED_MESSAGE,
   SLOT_TAKEN_MESSAGE,
   placeArrivalList,
   sessionChoice,

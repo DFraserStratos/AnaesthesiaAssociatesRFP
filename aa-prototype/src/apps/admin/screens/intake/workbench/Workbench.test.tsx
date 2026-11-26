@@ -18,6 +18,29 @@ vi.mock('../../../../../store/intakeSelectors', async (importOriginal) => ({
   useArrivalRows: (key: string | undefined) => (key === undefined || key.startsWith('none') ? [] : ROWS),
 }))
 
+// Phase 69: the frame's test keeps the update and cancellation benches to 68's read-only rows; each bench's own test
+// covers its decision (UpdateBench.test.tsx, CancellationBench.test.tsx).
+vi.mock('./UpdateBench', async () => {
+  const { ArrivalRowsTable } = await import('./ArrivalRowsTable')
+  return {
+    UpdateBench: ({ arrival }: { arrival: ArrivalItem }) => (
+      <div data-shot="intake-bench-update">
+        <ArrivalRowsTable arrivalKey={arrival.key} shot="intake-bench-update-rows" />
+      </div>
+    ),
+  }
+})
+vi.mock('./CancellationBench', async () => {
+  const { ArrivalRowsTable } = await import('./ArrivalRowsTable')
+  return {
+    CancellationBench: ({ arrival }: { arrival: ArrivalItem }) => (
+      <div data-shot="intake-bench-cancellation">
+        <ArrivalRowsTable arrivalKey={arrival.key} shot="intake-bench-cancellation-rows" />
+      </div>
+    ),
+  }
+})
+
 vi.mock('../feed/SourceMark', () => ({
   SourceMark: ({ source }: { source: { kind: string; label: string } }) => (
     <span data-testid="source-mark" data-source-kind={source.kind}>

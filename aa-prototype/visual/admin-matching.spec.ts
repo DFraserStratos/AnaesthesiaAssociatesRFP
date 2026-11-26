@@ -76,8 +76,50 @@ test("St George's sends the day-before List: the file lands as a heading over it
   await expect(workbench(page)).toHaveAttribute('data-arrival-kind', 'matchesExactly')
   await expect(page.locator('[data-shot="intake-bench-matchesExactly"] [data-row-id]').first()).toHaveAttribute('data-row-change', 'unchanged')
   await page.screenshot({ path: 'visual/shots/admin-intake-stg-day-before.png', fullPage: true })
-  // Phase 68: deciding rows (Create Booking, ticked differences, the day move, Reject, the later update) moved to 69; re-added there.
-  // Phase 68: S1 Beat 1's balance warning preview on deciding Sarah Mitchell's row moved to 69; re-added there.
+})
+
+test('An update to a List AA holds: the match basis, the versions and a tick per Booking; Apply decides the whole List', async ({ page }) => {
+  await fresh(page)
+  expect(await runDemoAction(page, 'intake-stg-day-before', { close: true })).not.toMatch(/^Refused/)
+  await page.goto('/admin/intake?filter=hospital-H-STG')
+  await page.waitForLoadState('networkidle')
+  const update = page.locator('[data-shot="intake-feed-item"][data-arrival-kind="update"]').first()
+  await expect(update).toBeVisible()
+  await update.click()
+  const bench = page.locator('[data-shot="intake-bench-update"]')
+  await expect(bench).toBeVisible()
+  await expect(bench.locator('[data-shot="intake-match-basis"] [data-key="surgeon"]')).toHaveAttribute('data-agreed', 'true')
+  await expect(bench.locator('[data-shot="intake-version-track"] [data-proposed="true"]')).toHaveCount(1)
+  await expect(bench.locator('[data-shot="intake-slot-card"]')).toBeVisible()
+  expect(/score|%/i.test(await bench.innerText())).toBe(false)
+  const diff = bench.locator('[data-shot="intake-update-diff"]')
+  const changed = diff.locator('tr[data-change="changed"]').first()
+  await expect(changed).toHaveAttribute('data-ticked', 'true')
+  await page.screenshot({ path: 'visual/shots/admin-intake-update-bench.png', fullPage: true })
+  // Untick one change: it is left out; Apply decides the rest as one change set and the feed moves on.
+  const leftOutId = await changed.getAttribute('data-row-id')
+  await changed.locator('[data-row-tick]').click()
+  await expect(changed).toHaveAttribute('data-ticked', 'false')
+  await bench.locator('[data-shot="matching-apply"]').click()
+  await page.goto('/admin/intake?filter=decided')
+  await page.waitForLoadState('networkidle')
+  await page.locator('[data-shot="intake-feed-item"][data-arrival-kind="update"]').first().click()
+  await expect(page.locator('[data-shot="intake-update-decided"]')).toContainText('left out')
+  await expect(page.locator(`tr[data-row-id="${leftOutId}"]`)).toContainText('Left out')
+})
+
+test('Reject an update with a reason: nothing on the schedule changes', async ({ page }) => {
+  await fresh(page)
+  expect(await runDemoAction(page, 'intake-stg-day-before', { close: true })).not.toMatch(/^Refused/)
+  await page.goto('/admin/intake?filter=hospital-H-STG')
+  await page.waitForLoadState('networkidle')
+  await page.locator('[data-shot="intake-feed-item"][data-arrival-kind="update"]').first().click()
+  const bench = page.locator('[data-shot="intake-bench-update"]')
+  await bench.locator('[data-shot="intake-update-reject"]').click()
+  await expect(bench.getByRole('button', { name: 'Reject List' })).toBeDisabled()
+  await bench.locator('[data-shot="intake-update-reject-form"]').getByRole('button', { name: 'Not an AA booking' }).click()
+  await bench.getByRole('button', { name: 'Reject List' }).click()
+  await expect(page.locator('[data-shot="intake-feed-item"][data-arrival-kind="update"]')).toHaveCount(0)
 })
 
 test('Southern Cross cancels a Booking: one Cancellation, its row cancelled on the workbench', async ({ page }) => {
@@ -89,8 +131,13 @@ test('Southern Cross cancels a Booking: one Cancellation, its row cancelled on t
   await expect(cancellation).toHaveCount(1)
   await cancellation.click()
   await expect(workbench(page)).toHaveAttribute('data-arrival-kind', 'cancellation')
-  await expect(page.locator('[data-shot="intake-bench-cancellation"] [data-row-id]').first()).toHaveAttribute('data-row-change', 'cancelled')
+  const bench = page.locator('[data-shot="intake-bench-cancellation"]')
+  await expect(bench.locator('[data-shot="intake-cancellation-booking"]').first()).toBeVisible()
+  await expect(bench.locator('[data-shot="intake-slot-card"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/admin-intake-cancellation.png', fullPage: true })
+  // Mark cancelled: the Booking stays visible, marked cancelled.
+  await bench.locator('[data-shot="intake-cancellation-apply"]').click()
+  await expect(page.locator('[data-shot="intake-feed-item"][data-arrival-kind="cancellation"]')).toHaveCount(0)
 })
 
 test('the old Matching addresses land on Arrivals with replace, so Back skips them', async ({ page }) => {
