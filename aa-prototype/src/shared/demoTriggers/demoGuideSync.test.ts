@@ -20,6 +20,7 @@ import { DEMO_TRIGGERS } from './registry'
  * be listed here (the last test below).
  */
 const NOT_SCRIPTED: Readonly<Record<string, string>> = {
+  'payer-loses-billing-email': 'Until the sweep scripts it.',
   'fire-hospital-message': 'Future scope (HL7 v2, FHIR R4): narrated from the Future-scope surface, never a scripted beat.',
   'record-fee-payment': "The AA fee pair's own Record fee payment button tells the same story in S3's aside.",
   'arm-handoff-fault': 'Diagnostic: one failed Xero call that retries itself; the outage pair and Trigger billing failure tell the retry story.',

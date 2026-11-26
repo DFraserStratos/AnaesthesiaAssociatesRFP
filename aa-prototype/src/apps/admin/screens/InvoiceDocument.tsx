@@ -55,6 +55,7 @@ import { DOCUMENT_DESK_STYLE, DOCUMENT_PAPER_STYLE, DOCUMENT_RAIL_STYLE } from '
 import { billingListPath, creditNotePath, financePath, invoicePath, ledgerPairPath } from './finances/financePaths'
 import { RecordHistoryCard } from '../components/RecordHistoryCard'
 import { invoiceRowFor } from './invoiceListRows'
+import { negativeNettingNote } from './finances/AccountCreditTrails'
 
 interface InvoiceDocumentProps {
   invoiceId: string
@@ -1001,7 +1002,7 @@ export function CreditNoteDocument({ creditNoteId }: { creditNoteId: string }) {
               {` to ${negativeTo} · `}
               <span className="mono">{formatMoney(negative.amount)}</span>
               {' · '}
-              {negative.status === 'toNet' ? CREDIT_LABELS.negativeNets(formatMoney(negative.recoveryDue)) : CREDIT_LABELS.negativeOffset}
+              {negativeNettingNote(billing, negative)}
             </div>
           </Card>
         )}

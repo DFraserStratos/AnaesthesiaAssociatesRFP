@@ -31,6 +31,9 @@ that need work are repeated here.
 - After S3/S4's payment run the saved state is about 4.8 MB and the next save fails with QuotaExceededError ("persistence paused"), so a reload loses later beats; the guide tells the presenter not to reload. `store/persistStorage.ts`, `store/persistDelta.ts`. M
 - Run payables in Xero still takes about 2 s at practice scale (1,597 bills; was 12 to 35 s: Phase 66 made the webhook recordings one commit instead of 1,598, measured 19.5 s to 2.0 s with saving). What is left is per-recording work in `store/disbursementDetection.ts`: `legFor` scans the ledger (could use `pairsByAccPayIndex`) and `completeRunsIn` re-checks every line on each recording. Capture recipes give the click 45 s and `admin-phase39a` 90 s; both could come down. S
 - The payment-run toast and schedule print "1617 BCTIs" with no thousands separator. Payment-run message in `store/`. S
+- Ledger tab: `LedgerTab.tsx` builds the next URL from the last render's params (the bug 60 closed for Billing), so two quick filter edits at practice scale can drop the first. `apps/admin/screens/finances/LedgerTab.tsx`. S
+- The same "Out by $X" pill is red on the Ledger list (`LedgerLists.tsx`) and amber on the anaesthetist's account page (`AnaesthetistAccountPage.tsx`); pick one. S
+- The Finances anaesthetist selects name people two ways: Dr Surname on Invoices, the full name on Billing and Xero. S
 
 ## Prototype: prepayments and patients
 

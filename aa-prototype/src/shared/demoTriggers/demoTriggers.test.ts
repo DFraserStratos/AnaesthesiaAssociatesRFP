@@ -162,9 +162,9 @@ const PINNED_XERO_BANK = PINNED_XERO_INVOICES
 describe('route scoping', () => {
   it("the Finances tabs each show exactly their own entries (build plan Phase 58; D111): the Billing monitor's ten split across Billing, Xero, Payments and the invoice page; routes match the path, so search params never change them", () => {
     const api = createAppStore()
-    expect(ids(api, '/admin/finances/billing')).toEqual(['billing-failure', 'run-next-billing-run'])
+    expect(ids(api, '/admin/finances/billing')).toEqual(['billing-failure', 'run-next-billing-run', 'payer-loses-billing-email'])
     expect(ids(api, '/admin/finances/xero')).toEqual(['arm-handoff-fault', 'xero-outage-start', 'xero-outage-restore', 'run-reconciliation-poll', 'run-archive-job'])
-    expect(ids(api, '/admin/finances/payments')).toEqual(['stage-payment-week', 'stage-bank-mismatch'])
+    expect(ids(api, '/admin/finances/payments')).toEqual(['run-next-billing-run', 'stage-payment-week', 'stage-bank-mismatch'])
     expect(ids(api, '/admin/finances/ledger')).toEqual(['inject-unmatched-receipt'])
     expect(ids(api, '/admin/finances/invoices')).toEqual(['stage-combined-procedure', 'load-full-scale'])
     expect(ids(api, '/admin/finances/aa-fees')).toEqual(['run-scheduled-fee-run', 'seed-month-of-bctis'])

@@ -109,7 +109,7 @@ test('the office credits in full and rebills from a copy: rail, both modes, pend
   await expect(doc).toContainText('CREDIT NOTE')
   await expect(doc).toContainText('Total credited')
   await expect(page.locator('[data-shot="negative-invoice-card"]')).toContainText('-P')
-  await expect(page.locator('[data-shot="negative-invoice-card"]')).toContainText('offset against the unpaid payable')
+  await expect(page.locator('[data-shot="negative-invoice-card"]')).toContainText('Offset against the unpaid payable')
   await page.screenshot({ path: 'visual/shots/p39-06-credit-note-document.png', fullPage: true })
 
   // The rebill names what it rebills.

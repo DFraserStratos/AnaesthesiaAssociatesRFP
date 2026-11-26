@@ -19,6 +19,7 @@ import { invoiceAddresseeName } from '../../../../store/selectors'
 import { invoicesByBooking } from '../../../../store/indexes'
 import { surnameOf } from '../../../../shared/format'
 import { FilterPills, NameSearchBox, SelectField } from '../../../../shared/ui'
+import { useScreenTiming } from '../../../../shared/scale/useScreenTiming'
 import { useAdminOutlet } from '../../outlet'
 import { PageBody, PageToolbar } from '../../components/AdminPage'
 import { FinancesPage } from './FinancesSection'
@@ -109,6 +110,7 @@ export function BillingTab() {
   }, [masters, schedule.procedures, billing.invoices])
 
   const view = useMemo(() => billingTabView(lists, params, { showAll, payerNames }), [lists, params, showAll, payerNames])
+  useScreenTiming('monitor', [lists, params, showAll])
 
   const anaesthetists = useMemo(() => {
     const names = new Map<string, string>()

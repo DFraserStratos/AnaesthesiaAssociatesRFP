@@ -195,6 +195,7 @@ import { tryInactiveSignIn } from '../../store/anaesthetistStatusActions'
 import { dayAfterISO, statusOn } from '../../domain/anaesthetistStatus'
 import { isSignedIn, signOutSession } from '../session/anaesthetistSession'
 import { newerInvoiceDescription } from '../../domain/billing/procedureStack'
+import { PAYER_LOSES_BILLING_EMAIL, payerLosesBillingEmailDisabledReason, stagePayerLosesBillingEmail } from './payerLosesBillingEmail'
 import {
   defaultHospitalDescription,
   primaryProcedureOf,
@@ -1095,7 +1096,8 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     description:
       'Invoices every approved additional invoice: each becomes its own invoice with its own number, ledger pair and Xero pair, linked to the original. Stands in for the scheduled run of the real system.',
     screen: FINANCES_BILLING_SCREEN,
-    routes: [FINANCES_BILLING, '/admin/review'],
+    // On Payments too: the approved events waiting for this run sit there (build plan Phase 66).
+    routes: [FINANCES_BILLING, '/admin/review', FINANCES_PAYMENTS],
     surfaces: ['bar'],
     disabledReason: (state) => nextRunRefusal(state),
     run: (api) => {
@@ -1106,6 +1108,16 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const numbers = [...out.value.creditNoteNumbers, ...out.value.numbers].join(', ')
       return { ok: true, message: `Billing run done: ${CREDIT_COPY.runResult(out.value.creditNoteNumbers.length, out.value.numbers.length)} (${numbers}).${skipped}` }
     },
+    indexPath: () => FINANCES_BILLING,
+  },
+  // ── Admin · Finances · Billing: a payer with nowhere to be sent to fails its Booking (build plan Phase 60; D116) ──
+  {
+    ...PAYER_LOSES_BILLING_EMAIL,
+    screen: FINANCES_BILLING_SCREEN,
+    routes: [FINANCES_BILLING],
+    surfaces: ['bar'],
+    disabledReason: (s) => payerLosesBillingEmailDisabledReason(s) ?? null,
+    run: (api) => stagePayerLosesBillingEmail(api),
     indexPath: () => FINANCES_BILLING,
   },
   // ── Admin · Finances · Invoices: a billed Merivale combination to split (catch-up Phase 39) ──

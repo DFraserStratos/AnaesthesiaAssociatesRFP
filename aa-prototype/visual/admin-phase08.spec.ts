@@ -204,8 +204,9 @@ test('authorise raises and sends invoices; contract-holder document, Resend and 
   const emailBox = await page.getByRole('button', { name: 'Resend' }).boundingBox()
   const printBox = await page.getByRole('button', { name: 'Print' }).boundingBox()
   if (emailBox === null || printBox === null) throw new Error('Invoice action buttons are missing')
-  expect(emailBox.height).toBeCloseTo(40, 0)
-  expect(printBox.height).toBeCloseTo(40, 0)
+  // The shared Button's compact size (36, Admin Day's mockup) since the rail moved to shared parts (build plan Phase 63).
+  expect(emailBox.height).toBeCloseTo(36, 0)
+  expect(printBox.height).toBeCloseTo(36, 0)
   expect(emailBox.y).toBeCloseTo(printBox.y, 0)
   expect(emailBox.width).toBeGreaterThan(printBox.width)
 
@@ -447,10 +448,10 @@ test('exemplar staging via the guard console: patient layout and the fee split',
   await page.screenshot({ path: 'visual/shots/a8-07-patient-doc.png', fullPage: true })
 
   // nib's share: holder layout, emailed to nib, the split note linking Alan's share.
-  // The back link opens the tab afresh (Unpaid, no search), so pin Dr Souter's again.
+  // Back returns to the tab at the filter the office came from (build plan Phase 63): Dr Souter's search.
   await page.getByTestId('invoice-detail-screen').locator('[data-shot="invoice-back"]').click()
-  await expect(page).toHaveURL(/\/admin\/finances\/invoices$/)
-  await page.getByLabel('Search invoices').fill('Souter')
+  await expect(page).toHaveURL(/\/admin\/finances\/invoices\?q=Souter$/)
+  await expect(page.getByLabel('Search invoices')).toHaveValue('Souter')
   const nibRow = invoiceTable
     .locator('tbody tr')
     .filter({ hasText: 'Alan Prentice' })
@@ -470,6 +471,6 @@ test('exemplar staging via the guard console: patient layout and the fee split',
   await expect(page.locator('.aa-invoice-doc')).toContainText('$152.38')
   const insurerPrintBox = await insurerRail.getByRole('button', { name: 'Print' }).boundingBox()
   if (insurerPrintBox === null) throw new Error('Insurer Print action is missing')
-  expect(insurerPrintBox.height).toBeCloseTo(40, 0)
+  expect(insurerPrintBox.height).toBeCloseTo(36, 0) // the shared compact Button (Phase 63)
   await page.screenshot({ path: 'visual/shots/a8-10-insurer-doc.png', fullPage: true })
 })
