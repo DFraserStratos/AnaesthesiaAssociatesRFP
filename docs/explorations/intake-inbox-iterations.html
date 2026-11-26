@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Intake Inbox Details</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Tokens: the app's own (aa-prototype/src/theme/tokens.ts), so the mocks read as the app. */
+:root{
+  --ink:#172320;--slate:#58635F;--mist:#8A9490;--lineStrong:#C9D1CE;--line:#E2E7E5;--sunken:#EDF1EF;--bg:#F6F8F7;--surface:#FFFFFF;--grid:#F1F4F2;
+  --brand:#A91E3E;--brandMuted:#D89AA9;
+  --teal:#0D6E63;--tealTint:#E1F0ED;
+  --ok:#1E8E5A;--okTint:#E3F4EB;--okOn:#157A49;
+  --warn:#A16207;--warnTint:#F9F0DC;--warnOn:#7C4D08;
+  --err:#C2403C;--errTint:#FAE9E7;--errOn:#9C332F;
+  --e1:0 1px 2px rgba(23,35,32,.05),0 2px 6px rgba(23,35,32,.05);
+  --e2:0 2px 4px rgba(23,35,32,.06),0 8px 20px rgba(23,35,32,.09);
+  --e3:0 8px 16px rgba(23,35,32,.10),0 24px 56px rgba(23,35,32,.18);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,p{margin:0}
+a{color:var(--teal)}
+:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(13,110,99,.30);border-radius:6px}
+.wrap{max-width:1520px;margin:0 auto;padding:0 32px}
+@media (max-width:640px){.wrap{padding:0 16px}}
+
+/* ---------- page shell ---------- */
+header.top{background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{padding-top:44px;padding-bottom:36px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,560px);gap:56px}
+@media (max-width:1100px){header.top .wrap{grid-template-columns:1fr;gap:28px}}
+.kicker{font-size:14px;color:var(--slate)}
+.top h1{font-size:46px;line-height:1.06;letter-spacing:-.025em;margin:14px 0 18px;font-weight:800;max-width:16ch}
+@media (max-width:640px){.top h1{font-size:34px}}
+.lede{font-size:17px;color:var(--slate);max-width:62ch}
+.lede+.lede{margin-top:12px}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+.toc a{font-size:13px;font-weight:600;text-decoration:none;color:var(--ink);background:var(--bg);border:1px solid var(--line);padding:6px 12px;border-radius:999px}
+.toc a:hover{border-color:var(--teal);color:var(--teal)}
+.heard{background:var(--bg);border-radius:16px;padding:20px 22px}
+.heard h2{font-size:15px;margin-bottom:10px}
+.heard ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.heard li{display:grid;grid-template-columns:150px 1fr;gap:12px;font-size:14px}
+.heard li b{font-size:13.5px}
+.heard li span{color:var(--slate)}
+@media (max-width:640px){.heard li{grid-template-columns:1fr;gap:0}}
+
+section.idea{padding:56px 0 8px}
+.ihead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:end;margin-bottom:18px}
+.ihead h2{font-size:28px;line-height:34px;letter-spacing:-.015em}
+.ihead h2 .n{color:var(--mist);font-weight:600;margin-right:10px;font-variant-numeric:tabular-nums}
+.ihead p{color:var(--slate);max-width:72ch;margin-top:6px;font-size:16px}
+.effort{font-size:13px;color:var(--slate);white-space:nowrap;text-align:right}
+.effort b{display:block;color:var(--ink);font-size:14px}
+@media (max-width:800px){.ihead{grid-template-columns:1fr}.effort{text-align:left}}
+.cap{font-size:13px;color:var(--slate);margin:14px 0 8px}
+.cap b{color:var(--ink)}
+.notes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:20px}
+@media (max-width:800px){.notes{grid-template-columns:1fr}}
+.notes div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 20px}
+.notes h3{font-size:14px;margin-bottom:6px}
+.notes ul{margin:0;padding-left:18px;font-size:14px;color:var(--ink)}
+.notes li{margin-bottom:5px}
+.notes li::marker{color:var(--mist)}
+
+.cmp{width:100%;border-collapse:collapse;background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--e1);font-size:14px}
+.cmpw{overflow-x:auto;border-radius:14px}
+.cmp th,.cmp td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.cmp th{font-size:12.5px;color:var(--slate);font-weight:600;background:var(--bg)}
+.cmp td:first-child{font-weight:600;white-space:nowrap}
+.y{color:var(--okOn);font-weight:600}.m{color:var(--warnOn);font-weight:600}.no{color:var(--errOn);font-weight:600}
+.reco{background:var(--surface);border-radius:16px;box-shadow:var(--e2);padding:26px 30px;margin-top:18px;border-left:4px solid var(--teal)}
+.reco h3{font-size:20px;margin-bottom:8px}
+.reco p{max-width:80ch;color:var(--ink)}
+.reco p+p{margin-top:10px}
+footer{color:var(--mist);font-size:13px;padding:48px 0 64px}
+
+/* ---------- mock frame (drawn at 1440 wide, scaled to fit) ---------- */
+.fwrap{position:relative;border-radius:14px;overflow:hidden;box-shadow:var(--e3);border:1px solid var(--line);background:var(--bg)}
+.frame{position:absolute;top:0;left:0;width:1440px;transform-origin:0 0;display:grid;grid-template-columns:200px minmax(0,1fr);overflow:hidden;font-size:13px;line-height:1.4;background:var(--bg)}
+.side{background:var(--ink);color:#B9C4C0;padding:20px 12px;display:flex;flex-direction:column;gap:2px}
+.side .wm{font-family:Georgia,serif;color:#fff;font-size:14px;margin:0 10px 4px}
+.side .ad{color:var(--brandMuted);font-size:10px;letter-spacing:.08em;margin:0 10px 22px;font-weight:600}
+.side a{padding:8px 10px;border-radius:8px;font-size:13px;display:flex;justify-content:space-between;align-items:center;text-decoration:none;color:inherit}
+.side a.on{background:rgba(255,255,255,.07);color:#fff;box-shadow:inset 3px 0 0 var(--brand)}
+.side .ct{background:var(--warn);color:#fff;border-radius:999px;font-size:10.5px;font-weight:700;padding:0 7px;line-height:18px}
+.side .ct.r{background:var(--err)}
+.mainc{display:flex;flex-direction:column;min-width:0;min-height:0;padding:18px 24px 20px}
+.ph{display:flex;align-items:center;gap:28px;margin-bottom:14px;min-height:34px}
+.ph h1{font-size:22px;letter-spacing:-.01em}
+.tabsi{display:flex;gap:20px;align-self:stretch;align-items:stretch}
+.tb{font-size:13.5px;font-weight:600;color:var(--slate);display:flex;align-items:center;gap:6px;border-bottom:2px solid transparent}
+.tb.on{color:var(--ink);border-color:var(--teal)}
+.tb .n{font-size:11px;color:var(--warnOn);background:var(--warnTint);border-radius:999px;padding:0 6px;line-height:17px}
+.grow{flex:1}
+
+.split{flex:1;min-height:0;display:grid;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface);box-shadow:var(--e1)}
+.feed{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--surface)}
+.ftool{padding:12px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line)}
+.ftool .sels{display:flex;gap:8px}
+.ftool .sels .sel{flex:1;min-width:0}
+.srch{height:34px;border:1px solid var(--lineStrong);border-radius:10px;padding:0 10px;display:flex;align-items:center;gap:8px;color:var(--mist);background:#fff;font-size:13px;min-width:0}
+.srch svg{flex:none}
+.sel{height:34px;border:1px solid var(--lineStrong);border-radius:10px;padding:0 28px 0 10px;display:flex;align-items:center;gap:6px;position:relative;background:#fff;font-weight:500;white-space:nowrap;overflow:hidden;font-size:13px;color:var(--ink)}
+.sel::after{content:"";position:absolute;right:11px;top:50%;width:6px;height:6px;border-right:1.6px solid var(--slate);border-bottom:1.6px solid var(--slate);transform:translateY(-70%) rotate(45deg)}
+.sel .sl{color:var(--slate);font-weight:400}
+.sel.open{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,110,99,.20)}
+.frows{flex:1;min-height:0;overflow:hidden}
+.ffoot{border-top:1px solid var(--line);padding:10px 14px;font-size:12.5px}
+.row{padding:10px 14px;border-bottom:1px solid var(--grid);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px}
+.row.on{background:var(--tealTint);box-shadow:inset 3px 0 0 var(--teal)}
+.row .t{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .s{color:var(--slate);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .tm{color:var(--mist);font-size:12px;text-align:right;font-variant-numeric:tabular-nums}
+.row.one{grid-template-columns:minmax(0,1fr) auto;padding:8px 14px}
+.row .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--warn);margin-right:7px;vertical-align:1px}
+.k-new{color:var(--okOn);font-weight:600}.k-upd{color:var(--warnOn);font-weight:600}.k-can{color:var(--errOn);font-weight:600}.k-q{color:var(--slate);font-weight:600}
+.att{color:var(--warnOn)}
+.edge{box-shadow:inset 3px 0 0 var(--e,transparent)}
+.row.on.edge{box-shadow:inset 3px 0 0 var(--teal)}
+.gh{padding:12px 14px 6px;font-size:12px;font-weight:700;color:var(--slate);display:flex;justify-content:space-between;background:var(--surface);border-bottom:1px solid var(--grid)}
+.gh span{color:var(--mist);font-weight:600}
+
+.wb{display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--surface);position:relative}
+.wbh{padding:18px 24px 14px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:16px}
+.wbh h2{font-size:22px;line-height:28px;letter-spacing:-.01em}
+.meta{color:var(--slate);font-size:13px;margin-top:3px}
+.wbb{flex:1;min-height:0;overflow:hidden;padding:18px 24px}
+.desk{background:var(--sunken);border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.desk .dh{align-self:stretch;display:flex;justify-content:space-between;font-size:12px;color:var(--slate)}
+.desk .dh b{color:var(--ink);font-weight:600}
+.ta{color:var(--teal);font-weight:600;font-size:13px;white-space:nowrap}
+.btn{background:var(--teal);color:#fff;font-weight:600;border-radius:10px;padding:9px 16px;font-size:13.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
+.btn2{background:#fff;color:var(--ink);border:1px solid var(--lineStrong);font-weight:600;border-radius:10px;padding:8px 14px;font-size:13.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.btnsplit{display:inline-flex}
+.btnsplit .btn:first-child{border-radius:10px 0 0 10px}
+.btnsplit .btn:last-child{border-radius:0 10px 10px 0;border-left:1px solid rgba(255,255,255,.3);padding:9px 11px}
+.chev{width:7px;height:7px;border-right:1.8px solid currentColor;border-bottom:1.8px solid currentColor;transform:translateY(-2px) rotate(45deg);display:inline-block}
+.bar{border-top:1px solid var(--line);padding:12px 24px;display:flex;align-items:center;gap:14px;background:var(--surface);box-shadow:0 -6px 16px rgba(23,35,32,.05)}
+.bar .sum{font-size:13px;color:var(--slate);flex:1}
+.h3{font-size:14px;font-weight:700;margin-bottom:8px}
+.note{background:var(--warnTint);color:var(--warnOn);border-radius:10px;padding:8px 12px;font-size:12.5px;line-height:1.45}
+.note b{color:var(--warnOn)}
+
+.vt{width:100%;border-collapse:collapse;font-size:12.5px}
+.vt th{font-size:11.5px;color:var(--slate);font-weight:600;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.vt td{padding:8px;border-bottom:1px solid var(--grid);vertical-align:top}
+.vt td small{display:block;color:var(--mist);font-size:11px}
+.vt .mono{font-family:"Spline Sans Mono",monospace;font-size:12px;font-variant-numeric:tabular-nums}
+.vt .miss{color:var(--warnOn);font-weight:600;font-family:inherit;font-size:12px}
+.vt tr.hi td{background:var(--warnTint)}
+
+.opt{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.opt+.opt{margin-top:6px}
+.opt.on{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,110,99,.14)}
+.opt b{font-weight:600;font-size:13px}
+.opt small{display:block;color:var(--slate);font-size:12px}
+.opt .sel{margin-top:6px;height:30px;font-size:12.5px}
+.rad{width:15px;height:15px;border-radius:50%;border:1.5px solid var(--lineStrong);margin-top:2px;flex:none;background:#fff}
+.opt.on .rad{border:4.5px solid var(--teal)}
+.sug{display:inline-block;font-size:11px;font-weight:600;color:var(--okOn);background:var(--okTint);border-radius:999px;padding:0 7px;margin-left:6px;line-height:17px;vertical-align:1px}
+.olist{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.olist .o{display:flex;gap:10px;align-items:flex-start;padding:8px 12px;border-top:1px solid var(--grid);font-size:13px}
+.olist .o:first-child{border-top:0}
+.olist .o.on{background:var(--tealTint)}
+.olist .o small{display:block;color:var(--slate);font-size:12px}
+.olist .ogh{padding:8px 12px 4px;font-size:11.5px;font-weight:700;color:var(--slate);border-top:1px solid var(--line);background:var(--bg)}
+.olist .o.on .rad{border:4.5px solid var(--teal)}
+.menu{position:absolute;background:#fff;border-radius:12px;box-shadow:var(--e3);border:1px solid var(--line);padding:6px;z-index:5;font-size:13px}
+.menu .mg{font-size:11.5px;font-weight:700;color:var(--slate);padding:8px 10px 4px}
+.menu .mi{padding:7px 10px;border-radius:8px;display:flex;justify-content:space-between;gap:16px}
+.menu .mi.on{background:var(--tealTint);font-weight:600}
+.menu .mi span{color:var(--mist);font-variant-numeric:tabular-nums}
+.menu .mi small{display:block;color:var(--slate);font-size:12px;font-weight:400}
+.menu .sep{border-top:1px solid var(--line);margin:6px 0}
+.ttabs{display:flex;gap:22px;border-bottom:1px solid var(--line);padding:0 24px}
+.ttabs span{font-size:13.5px;font-weight:600;color:var(--slate);padding:10px 0;border-bottom:2px solid transparent}
+.ttabs span.on{color:var(--ink);border-color:var(--teal)}
+.steps{display:flex;gap:10px;align-items:center;font-size:13px;margin-top:12px}
+.steps .st{display:flex;align-items:center;gap:8px;color:var(--slate);font-weight:600}
+.steps .st i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;border:1.5px solid var(--lineStrong);color:var(--slate)}
+.steps .st.on{color:var(--ink)}.steps .st.on i{background:var(--teal);border-color:var(--teal);color:#fff}
+.steps .st.done i{background:var(--tealTint);border-color:var(--tealTint);color:var(--teal)}
+.steps .ln{width:40px;border-top:1.5px solid var(--lineStrong)}
+.nav2{display:inline-flex;gap:4px;align-items:center;color:var(--slate);font-size:13px}
+.nav2 .ib{width:30px;height:30px;border:1px solid var(--lineStrong);border-radius:8px;display:grid;place-items:center;color:var(--ink);background:#fff}
+.it{width:100%;border-collapse:collapse;font-size:13px}
+.it th{font-size:12px;color:var(--slate);font-weight:600;text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--surface);white-space:nowrap}
+.it td{padding:10px 14px;border-bottom:1px solid var(--grid);white-space:nowrap}
+.it td.tt{font-weight:600}
+.it th,.it td{padding-left:12px;padding-right:12px}.it td{font-size:12.5px}
+.it tr.on td{background:var(--tealTint)}
+.it .tm{color:var(--slate);font-variant-numeric:tabular-nums}
+.it .sub{color:var(--slate)}
+.it tr.grp td{background:var(--bg);font-size:12px;font-weight:700;color:var(--slate);padding:7px 14px}
+.thumb{cursor:default}
+
+/* the A4 page, sized by --w */
+.a4{background:#fff;box-shadow:var(--e2);aspect-ratio:595/842;width:var(--w);padding:6.5%;font-family:"Helvetica Neue",Arial,sans-serif;color:#1d2b3a;font-size:calc(var(--w) / 50);line-height:1.35;flex:none;overflow:hidden}
+.a4 .lh b{display:block;font-size:2.1em;color:#1F3A5A;letter-spacing:-.01em;margin-bottom:.3em}
+.a4 .lh span{display:block;font-size:.95em;color:#33475e}
+.a4 .rule{border-top:.25em solid #1F3A5A;margin:1.2em 0 1.4em}
+.a4 .pt{font-size:1.8em;font-weight:700}
+.a4 .ps{color:#4a5b6e;margin-bottom:1.2em}
+.a4 .dt{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:.35em 1em;background:#f4f6f8;border:1px solid #d5dbe1;padding:.8em 1em;margin-bottom:1.6em}
+.a4 .dt i{font-style:normal;color:#5b6b7c;font-size:.9em}
+.a4 table{width:100%;border-collapse:collapse}
+.a4 th{font-size:.78em;text-align:left;color:#3d4f63;border-bottom:1.5px solid #1d2b3a;padding:.3em .3em}
+.a4 td{border-bottom:1px solid #d5dbe1;padding:.45em .3em;font-size:.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:9em}
+.a4 td.mo{font-family:"Spline Sans Mono",monospace}
+.a4 .pf{text-align:right;color:#5b6b7c;margin-top:.8em;font-size:.9em}
+.a4 .box{outline:1.5px solid var(--warn);background:rgba(161,98,7,.12)}
+</style>
+</head>
+<body>
+<style>
+/* additions for this page */
+.find{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+@media (max-width:1100px){.find{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.find{grid-template-columns:1fr}}
+.fc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.fc h3{font-size:14.5px}
+.fc p{font-size:13.5px;color:var(--slate)}
+.fc code{font-family:"Spline Sans Mono",monospace;font-size:11.5px;color:var(--mist)}
+.sch{position:relative;height:150px;background:var(--bg);border-radius:10px;border:1px solid var(--line);overflow:hidden}
+.sch i{position:absolute;display:block;font-style:normal}
+.sch .hd{left:10px;right:10px;top:10px;height:10px;border-radius:3px;background:var(--lineStrong);width:45%}
+.sch .blk{background:#fff;border:1px solid var(--line);border-radius:5px}
+.sch .p{background:var(--teal);border-radius:4px;height:12px}
+.sch .s{background:#fff;border:1px solid var(--lineStrong);border-radius:4px;height:12px}
+.sch .pick{background:var(--tealTint);border:1px solid var(--teal);border-radius:4px}
+.sch .ring{border:2px dashed var(--teal);border-radius:8px}
+.sch .bad{border:2px dashed var(--err);border-radius:8px}
+.rules{background:var(--surface);border-radius:16px;box-shadow:var(--e2);padding:22px 26px;margin-top:18px;border-left:4px solid var(--teal);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+@media (max-width:900px){.rules{grid-template-columns:1fr}}
+.rules b{display:block;font-size:15px;margin-bottom:4px}
+.rules p{font-size:14px;color:var(--slate)}
+.it th.so{color:var(--teal)}
+.it th .ar{font-size:10px;margin-left:4px;opacity:.45}
+.it th.so .ar{opacity:1}
+.it .soon{color:var(--errOn);font-weight:600}
+.it .near{color:var(--warnOn);font-weight:600}
+.it tr.dg td{background:var(--bg);font-size:12.5px;font-weight:700;color:var(--ink);padding:8px 14px;border-bottom:1px solid var(--line)}
+.it tr.dg td span{color:var(--mist);font-weight:600;margin-left:6px}
+.tbar{display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);align-items:center;flex-wrap:nowrap}
+.cb{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--slate);white-space:nowrap}
+.cb i{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--lineStrong);background:#fff;display:inline-block}
+.cb i.on{background:var(--teal);border-color:var(--teal);position:relative}
+.cb i.on::after{content:"";position:absolute;left:4.5px;top:1.5px;width:4px;height:8px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(45deg)}
+.res{font-size:12.5px;color:var(--slate);padding:8px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.chg td{vertical-align:top}
+.was{color:var(--mist);text-decoration:line-through;margin-right:6px}
+.now{color:var(--warnOn);font-weight:600}
+.rm td{background:var(--errTint)}
+.rm .nm{color:var(--errOn);font-weight:600}
+.col{display:flex;flex-direction:column;min-height:0;border-left:1px solid var(--line);background:var(--surface)}
+.col .sc{flex:1;min-height:0;overflow:hidden;padding:18px 22px;display:flex;flex-direction:column;gap:14px}
+.col .ft{border-top:1px solid var(--line);padding:14px 22px;display:flex;flex-direction:column;gap:10px;box-shadow:0 -6px 16px rgba(23,35,32,.05)}
+.col .ft .btns{display:flex;gap:10px;justify-content:flex-end}
+.deskfull{background:var(--sunken);padding:18px;display:flex;flex-direction:column;align-items:center;gap:10px;overflow:hidden;min-height:0}
+.deskfull .dh{align-self:stretch;display:flex;justify-content:space-between;font-size:12px;color:var(--slate)}
+.deskfull .dh b{color:var(--ink);font-weight:600}
+.kbd{font-family:"Spline Sans Mono",monospace;font-size:11px;border:1px solid var(--lineStrong);border-bottom-width:2px;border-radius:5px;padding:0 5px;color:var(--slate);background:#fff}
+</style>
+
+<header class="top"><div class="wrap">
+  <div>
+    <p class="kicker">Admin Web App, Intake, Arrivals. Second round, 27 November 2026.</p>
+    <h1>Inbox, then open: the details</h1>
+    <p class="lede">You picked idea 3 from the last round: Arrivals as a full-width inbox, and each arrival opened onto the whole screen. This round settles three things: where the decision lives once an arrival is open, how the inbox filters and sorts, and how the date of surgery sits beside the date received so the soonest Lists get dealt with first.</p>
+    <p class="lede">First, a look at where the rest of the Admin app puts its next action, because round one's mock put the choice of anaesthetist at the bottom of the screen and the button that confirms it at the top right.</p>
+    <nav class="toc" aria-label="Sections">
+      <a href="#where">Where the app puts actions</a>
+      <a href="#inbox">The inbox, two ways</a>
+      <a href="#open">Opened, three ways</a>
+      <a href="#update">The same frame for an update</a>
+      <a href="#reco">Recommendation</a>
+    </nav>
+  </div>
+  <div class="heard">
+    <h2>What this round answers</h2>
+    <ul>
+      <li><b>Choose and confirm</b><span>The anaesthetist was picked bottom middle and confirmed top right. They should sit together, where the rest of the app puts them.</span></li>
+      <li><b>Filter and sort</b><span>The inbox needs both: drop-downs that narrow it, and column headers that order it.</span></li>
+      <li><b>Two dates</b><span>When it arrived, and when the surgery is. Soonest surgery first is the order the office works in.</span></li>
+      <li><b>Every kind</b><span>The open frame has to hold an update or a cancellation as well as a new List.</span></li>
+    </ul>
+  </div>
+</div></header>
+
+<main class="wrap">
+
+<section class="idea" id="where">
+  <div class="ihead"><div><h2>Where the Admin app puts the next action</h2>
+  <p>Four patterns, read from the code. The dashed teal outline is where you choose; the solid teal block is the button that confirms.</p></div></div>
+  <div class="find">
+    <div class="fc"><div class="sch">
+        <i class="hd"></i><i class="s" style="right:66px;top:9px;width:24px"></i><i class="s" style="right:38px;top:9px;width:24px"></i><i class="s" style="right:10px;top:9px;width:24px"></i>
+        <i class="blk" style="left:10px;right:10px;top:32px;height:72px"></i>
+        <i class="ring" style="left:8px;right:8px;top:30px;height:76px"></i>
+        <i class="s" style="right:52px;bottom:14px;width:40px"></i><i class="p" style="right:10px;bottom:14px;width:38px"></i></div>
+      <h3>Review a List</h3>
+      <p>Previous and Next in queue sit top right with View invoices. "Authorise for billing" comes after the List's Bookings and totals, primary last, beside Log phone note.</p>
+      <code>ReviewScreen.tsx</code></div>
+    <div class="fc"><div class="sch">
+        <i class="blk" style="left:auto;right:0;top:0;bottom:0;width:58%;border-radius:0"></i>
+        <i class="hd" style="left:auto;right:10px;width:40%"></i>
+        <i class="pick" style="right:10px;top:36px;width:50%;height:14px"></i><i class="s" style="right:10px;top:56px;width:50%;height:14px"></i><i class="s" style="right:10px;top:76px;width:50%;height:14px"></i>
+        <i class="ring" style="right:6px;top:32px;width:54%;height:62px"></i>
+        <i class="s" style="right:54px;bottom:12px;width:34px"></i><i class="p" style="right:10px;bottom:12px;width:40px"></i></div>
+      <h3>Sheets and drawers</h3>
+      <p>Assign a Draft List, the List drawer, every edit sheet: you choose in the body, and the footer under it holds the buttons, secondary first and the primary last on the right.</p>
+      <code>SheetActions.tsx · SidePanel.tsx · AssignDraftListSheet.tsx</code></div>
+    <div class="fc"><div class="sch">
+        <i class="hd"></i><i class="p" style="right:10px;top:9px;width:46px"></i>
+        <i class="blk" style="left:10px;right:10px;top:32px;bottom:10px"></i></div>
+      <h3>Page header</h3>
+      <p>Top right is for things that make something new or take you somewhere: New Draft List, Add anaesthetist, Previous and Next. Never the decision about what's on screen.</p>
+      <code>PageHeader.tsx · DraftListsScreen.tsx · people/*Tab.tsx</code></div>
+    <div class="fc"><div class="sch">
+        <i class="hd"></i>
+        <i class="s" style="left:10px;top:30px;width:60px;height:14px"></i><i class="s" style="left:74px;top:30px;width:40px;height:14px"></i><i class="s" style="left:118px;top:30px;width:40px;height:14px"></i>
+        <i class="blk" style="left:10px;right:10px;top:52px;height:14px;background:var(--bg)"></i>
+        <i class="blk" style="left:10px;right:10px;top:66px;bottom:10px"></i></div>
+      <h3>Lists of things</h3>
+      <p>Conflicts filters with drop-downs and a checkbox in a toolbar above the table. The Billing monitor sorts by clicking a column header, which turns teal with an arrow.</p>
+      <code>ConflictsScreen.tsx · shared/table/cells.tsx (Th sort)</code></div>
+  </div>
+  <div class="rules">
+    <div><b>Top right moves you</b><p>Back, previous, next, and making something new. The opened arrival keeps exactly these in its header, as Review does.</p></div>
+    <div><b>Confirm under the choice</b><p>The button that decides sits directly below the options it decides between, in a footer, primary last on the right.</p></div>
+    <div><b>Round one broke it</b><p>Idea 3 put "Place in Dr Delaney's PM" top right while the anaesthetist was picked lower down. All three opened views below fix that.</p></div>
+  </div>
+</section>
+
+<section class="idea" id="inbox">
+  <div class="ihead"><div><h2>The inbox, two ways</h2>
+  <p>Both have the same toolbar: search, then drop-downs for what to show, kind, source and date of surgery, and a checkbox for "Needs a look". Every column header sorts. Both open sorted by date of surgery, soonest first.</p></div></div>
+  <p class="cap"><b>A · One sorted table.</b> "Surgery" and "Received" are separate columns. Surgery dates inside two days are red, inside a week amber. Shown with the date drop-down open.</p>
+  <div class="fwrap" data-h="900"><div class="frame" style="height:900px" id="ia"></div></div>
+  <p class="cap"><b>B · Grouped by date of surgery.</b> The same table with a heading per day, so tomorrow's Lists stand apart. Sorting by any other column drops the headings.</p>
+  <div class="fwrap" data-h="900"><div class="frame" style="height:900px" id="ib"></div></div>
+  <div class="notes">
+    <div><h3>Both</h3><ul>
+      <li>Columns: Surgery, List, Kind, Patients, Needs, From, Received. The List is surgeon and hospital only; the date has its own column.</li>
+      <li>"Needs" is blank when nothing does, so a scan down it is the to-do list. The checkbox hides the blank ones.</li>
+      <li>"Add a PDF by hand" is a secondary button at the end of the toolbar: it makes something new.</li>
+      <li>Waiting for an NHI stays a choice in Show, not a separate list.</li>
+    </ul></div>
+    <div><h3>A or B</h3><ul>
+      <li>A is the plainer table and sorts any way you like; urgency shows only through colour.</li>
+      <li>B makes "what's tomorrow" impossible to miss and costs one row per day. It is the Conflicts screen's own pattern (a group row per day).</li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="idea" id="open">
+  <div class="ihead"><div><h2>Opened, three ways</h2>
+  <p>All three keep the header for moving: back to Arrivals, the List's name, and Previous and Next with the count, as Review has them. They differ in where you choose the anaesthetist and confirm.</p></div></div>
+
+  <p class="cap"><b>O1 · Decide at the foot of the column.</b> The page on the left, the List and the choice on the right; the right column's footer holds Reject and Place directly below the options. The sheet pattern, on a page.</p>
+  <div class="fwrap" data-h="900"><div class="frame" style="height:900px" id="o1"></div></div>
+
+  <p class="cap"><b>O2 · Decide first.</b> One row at the top of the right column: where it goes and Place, side by side. The other choices are text actions under it, and the patients follow.</p>
+  <div class="fwrap" data-h="900"><div class="frame" style="height:900px" id="o2"></div></div>
+
+  <p class="cap"><b>O3 · One bar across the foot.</b> The page and the patients get all the height. The choice is a drop-down in a bar across the bottom, next to the buttons that act on it. Shown with the drop-down open.</p>
+  <div class="fwrap" data-h="900"><div class="frame" style="height:900px" id="o3"></div></div>
+
+  <div class="notes">
+    <div><h3>How they compare</h3><ul>
+      <li><b>O1</b> shows every kind of choice at once (named anaesthetist, someone else, a List we hold, Draft). Choice and button stay together however many options there are.</li>
+      <li><b>O2</b> is the fastest when the suggestion is right, but asks you to decide before your eye has reached the patients.</li>
+      <li><b>O3</b> gives the PDF and patients the most room. The choice is hidden in a drop-down until opened.</li>
+    </ul></div>
+    <div><h3>In all three</h3><ul>
+      <li>The page sits on the grey desk; everything you work with is on white. No grey on grey.</li>
+      <li><span class="kbd">J</span> <span class="kbd">K</span> step to the next and previous arrival, <span class="kbd">Esc</span> goes back to the inbox with its filter, sort and place kept.</li>
+      <li>After Place, the next arrival opens, with a line at the top saying what was placed and an Undo.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="idea" id="update">
+  <div class="ihead"><div><h2>The same frame for an update</h2>
+  <p>O1 with Mr Whitford's re-sent PDF: one time changed and one patient missing from the new page. The right column shows what would change; its footer applies it. A cancellation, a held message and an unreadable scan fit the same frame with their own footer buttons.</p></div></div>
+  <div class="fwrap" data-h="900"><div class="frame" style="height:900px" id="u1"></div></div>
+</section>
+
+<section class="idea" id="reco">
+  <div class="ihead"><div><h2>Recommendation</h2></div></div>
+  <div class="reco" style="margin-top:0">
+    <h3>Inbox B, opened as O1</h3>
+    <p>Group the inbox by date of surgery, soonest first, with every column still sortable and the four drop-downs and "Needs a look" above it. Tomorrow's Lists sit at the top under their own heading, which is the order the office actually works in, and Received is there whenever you want "what came in this morning".</p>
+    <p>Open each arrival as O1. It is the pattern the app already uses for choosing and confirming (the sheets, the drawers, Review's Authorise): choose in the right-hand column, confirm in the footer directly below, and keep the header for Back, Previous and Next. It also carries over to every other kind of arrival unchanged, as the update shows.</p>
+  </div>
+</section>
+
+<footer>Mocks use the app's own tokens and this morning's seeded arrivals (demo day Tuesday 24 November). Saved locally at docs/explorations/intake-inbox-iterations.html.</footer>
+</main>
+
+<script>
+(() => {
+  const S = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
+  const side = () => `<nav class="side"><div class="wm">Anaesthesia | Associates</div><div class="ad">ADMIN</div>
+    <a>Day view</a><a class="on">Intake <span class="ct">18</span></a><a>Draft Lists <span class="ct">47</span></a><a>Conflicts <span class="ct">6</span></a><a>Notifications</a><a>Review queue <span class="ct r">10</span></a><a>Finances</a><a>People</a><a>Contracts</a><a>Master data</a><a>Audit</a></nav>`;
+  const ph = () => `<div class="ph"><h1>Intake</h1><div class="tabsi"><span class="tb on">Arrivals <span class="n">18</span></span><span class="tb">Sources</span></div></div>`;
+  const srch = (p = 'Search patient, NHI, surgeon') => `<div class="srch">${S}<span>${p}</span></div>`;
+  const sel = (v, l = '', cls = '') => `<div class="sel ${cls}">${l ? `<span class="sl">${l}</span>` : ''}${v}</div>`;
+  const frame = (id, html) => { document.getElementById(id).innerHTML = side() + `<div class="mainc">${html}</div>`; };
+
+  // To decide, with the date of surgery (demo day Tue 24 Nov). d = days away.
+  const A = [
+    { l: "Mr Tavener · St George's", s: 'Wed 25 Nov AM', d: 1, k: 'upd', kw: 'Update', p: 6, n: '', from: "St George's", r: 'Today 05:40' },
+    { l: "Ms Oduya · St George's", s: 'Wed 25 Nov PM', d: 1, k: 'upd', kw: 'Update', p: 4, n: '', from: "St George's", r: 'Today 05:40' },
+    { l: "Mr Doyle · St George's", s: 'Wed 25 Nov PM', d: 1, k: 'new', kw: 'New List', p: 2, n: '', from: "St George's", r: 'Today 05:40' },
+    { l: "Prof Lockhart · St George's", s: 'Wed 25 Nov AM', d: 1, k: 'q', kw: 'Matches exactly', p: 5, n: '', from: "St George's", r: 'Today 05:40' },
+    { l: 'Ms Gallagher · Southern Cross', s: 'Thu 26 Nov AM', d: 2, k: 'upd', kw: 'Update', p: 3, n: '', from: 'Southern Cross', r: 'Today 07:24' },
+    { l: "Mr Tan · St George's", s: 'Thu 26 Nov AM', d: 2, k: 'upd', kw: 'Update', p: 5, n: 'NHI for 1 patient', from: "St George's", r: 'Today 06:20' },
+    { l: 'Dr Lindqvist · Southern Cross', s: 'Thu 26 Nov PM', d: 2, k: 'can', kw: 'Cancellation', p: 1, n: '', from: 'Southern Cross', r: 'Today 06:05' },
+    { l: 'Southern Cross message', s: 'Thu 26 Nov', d: 2, k: 'q', kw: 'Held message', p: '', n: 'Patient not recognised', from: 'Southern Cross', r: 'Today 05:52' },
+    { l: 'Ms Hart · Forte Health', s: 'Tue 1 Dec AM', d: 7, k: 'q', kw: 'Waiting for an NHI', p: 3, n: 'NHI for 1 patient', from: 'Hart Rooms', r: 'Mon 08:50' },
+    { l: 'Mr Whitford · Christchurch Eye Surgery', s: 'Fri 4 Dec AM', d: 10, k: 'upd', kw: 'Update', p: 4, n: '1 removal to confirm', from: 'Whitford Eye Rooms', r: 'Today 07:42' },
+    { l: 'Mr Okafor · Forte Health', s: 'Wed 9 Dec AM', d: 15, k: 'new', kw: 'New List', p: 3, n: '1 value to check', from: 'Okafor Orthopaedics', r: 'Today 07:10' },
+    { l: 'Mr Nand · Forte Health', s: 'Wed 16 Dec PM', d: 22, k: 'new', kw: 'New List', p: 4, n: 'NHI for 1 patient', from: 'Nand Surgical Rooms', r: 'Today 08:12', on: true },
+    { l: 'Ms Reid · Christchurch Eye Surgery', s: 'Mon 21 Dec PM', d: 27, k: 'new', kw: 'New List', p: 4, n: '3 values to check', from: 'Reid Eye Specialists', r: 'Today 06:58' },
+    { l: 'Scan_0655.pdf', s: 'Not read', d: 99, k: 'can', kw: "Can't be read", p: '', n: 'Read it by hand', from: 'Rooms mailbox', r: 'Today 06:31' },
+  ];
+  const urg = (d) => (d <= 2 ? 'soon' : d <= 7 ? 'near' : '');
+  const TH = (cols, sorted) => `<thead><tr>${cols.map((c) => `<th class="${c === sorted ? 'so' : ''}">${c}<span class="ar">${c === sorted ? '↑' : '↕'}</span></th>`).join('')}</tr></thead>`;
+  const COLS = ['Surgery', 'List', 'Kind', 'Patients', 'Needs', 'From', 'Received'];
+  const tr = (a, dateCell = true) => `<tr class="${a.on ? 'on' : ''}"><td class="tm ${urg(a.d)}">${dateCell ? a.s : a.s.replace(/^\w+ \d+ \w+ ?/, '') || 'All day'}</td><td class="tt">${a.l}</td><td><span class="k-${a.k}">${a.kw}</span></td><td class="tm">${a.p}</td><td class="att">${a.n}</td><td class="sub">${a.from}</td><td class="tm">${a.r}</td></tr>`;
+  const toolbar = (open = false) => `<div class="tbar"><div style="flex:1;min-width:160px">${srch("Search")}</div>${sel('To decide', 'Show')}${sel('All kinds', 'Kind')}${sel('All sources', 'Source')}${sel('Any date', 'Surgery', open ? 'open' : '')}<span class="cb"><i></i>Needs a look</span><span class="btn2">Add a PDF by hand</span></div>`;
+
+  frame('ia', ph() + `<div class="split" style="grid-template-columns:1fr;grid-template-rows:auto auto minmax(0,1fr);position:relative">${toolbar(true)}
+    <div class="res"><span>18 to decide, soonest surgery first</span></div>
+    <div style="overflow:hidden"><table class="it">${TH(COLS, 'Surgery')}<tbody>${A.map((a) => tr(a)).join('')}</tbody></table></div>
+    <div class="menu" style="top:52px;left:740px;width:240px">
+      <div class="mi on"><div>Any date</div><span>18</span></div>
+      <div class="mi"><div>Tomorrow</div><span>4</span></div>
+      <div class="mi"><div>Next 2 days</div><span>8</span></div>
+      <div class="mi"><div>Next 7 days</div><span>9</span></div>
+      <div class="mi"><div>Next 30 days</div><span>13</span></div>
+      <div class="sep"></div><div class="mi"><div>Choose dates</div></div>
+    </div></div>`);
+
+  const days = [];
+  for (const a of A) { const key = a.d === 99 ? 'Date not read' : a.d === 1 ? 'Tomorrow, Wednesday 25 November' : a.d === 2 ? 'Thursday 26 November' : a.d <= 7 ? 'Next week' : a.d <= 31 ? 'Later in December' : ''; const g = days.find((x) => x[0] === key); g ? g[1].push(a) : days.push([key, [a]]); }
+  frame('ib', ph() + `<div class="split" style="grid-template-columns:1fr;grid-template-rows:auto auto minmax(0,1fr)">${toolbar()}
+    <div class="res"><span>18 to decide, grouped by date of surgery</span></div>
+    <div style="overflow:hidden"><table class="it">${TH(COLS, 'Surgery')}<tbody>${days.map(([k, it]) => `<tr class="dg"><td colspan="7">${k}<span>${it.length}</span></td></tr>` + it.map((a) => tr(a, k === 'Next week' || k === 'Later in December' || k === 'Date not read')).join('')).join('')}</tbody></table></div></div>`);
+
+  /* ---------- opened ---------- */
+  const a4 = (w, o) => `<div class="a4" style="--w:${w}px"><div class="lh"><b>${o.rooms}</b><span>${o.addr}</span><span>Phone 03 555 0322 · Fax 03 555 0858</span></div><div class="rule"></div>
+    <div class="pt">Theatre list</div><div class="ps">Operating list, ${o.long}</div>
+    <div class="dt"><i>Surgeon</i><b>${o.surgeon}</b><i>Date</i><span>${o.date}</span><i>Hospital</i><span>${o.hosp}</span><i>Session</i><span>${o.sess}</span><i>Anaesthetist</i><span>${o.anaes}</span><i></i><span></span></div>
+    <table><tr><th>TIME</th><th>NHI</th><th>PATIENT</th><th>DOB</th><th>PROCEDURE</th></tr>
+    ${o.rows.map((p) => `<tr><td class="mo ${p[6] === 't' ? 'box' : ''}">${p[0]}</td><td class="mo ${p[1] ? '' : 'box'}">${p[1] || '&nbsp;'}</td><td>${p[2]}</td><td class="mo">${p[3]}</td><td>${p[4]}</td></tr>`).join('')}</table>
+    <div class="pf">${o.rows.length} patients</div></div>`;
+  const P = [
+    ['13:00', 'ZQG1043', 'Aroha Tamihana', '12/04/1979', 'R carpal tunnel release', '21111'],
+    ['13:45', 'ZQG1051', 'Graham Whitcombe', '30/09/1950', 'L trigger finger release', '11111'],
+    ['14:30', '', 'Sina Leota', '25/01/1991', "Dupuytren's fasciectomy R", '31111'],
+    ['15:30', 'ZQG1060', 'Peter Kowalczyk', '08/07/1962', 'Ganglion excision L wrist', '11111'],
+  ];
+  const NAND = { rooms: 'Nand Surgical Rooms', addr: 'Level 1, 149 Miro Place, Christchurch', long: 'Wednesday 16 December (PM)', surgeon: 'Mr V. Nand', date: 'Wed 16 Dec 2026', hosp: 'Forte Health', sess: 'PM', anaes: 'Dr Mark Delaney', rows: P };
+  const desk = (w, o, file) => `<div class="deskfull"><div class="dh"><b>${file}</b><span><span style="margin-right:14px">Page 1 of 1</span><span class="ta">Open full size</span></span></div>${a4(w, o)}</div>`;
+  const vt = () => `<table class="vt"><thead><tr><th>Time</th><th>Patient</th><th>NHI</th><th>Procedure</th><th>Ethnicity</th></tr></thead><tbody>
+    ${P.map((p) => `<tr class="${p[1] ? '' : 'hi'}"><td class="mono">${p[0]}</td><td>${p[2]}<small>${p[3]}</small></td><td class="${p[1] ? 'mono' : 'miss'}">${p[1] || 'No NHI'}</td><td>${p[4]}</td><td class="mono">${p[5]}</td></tr>`).join('')}</tbody></table>`;
+  const nhiNote = `<div class="note"><b>Sina Leota has no NHI.</b> She goes on the List as a stub, and the List can't be submitted until her NHI is added.</div>`;
+  const openHead = (title, meta, pos = '12 of 18') => `<div class="wbh" style="align-items:center;padding:14px 22px"><span class="ta">‹ Arrivals</span><div style="width:1px;align-self:stretch;background:var(--line)"></div>
+      <div style="flex:1;min-width:0"><h2>${title}</h2><div class="meta">${meta}</div></div>
+      <span class="btn2">‹ Previous</span><span style="font-size:13px;color:var(--slate);white-space:nowrap">${pos}</span><span class="btn2">Next ›</span></div>`;
+  const NAND_T = 'Mr Nand, Forte Health, Wednesday 16 December PM';
+  const NAND_M = 'New List · 4 patients · surgery in 22 days · from Nand Surgical Rooms, received today at 8:12';
+  const save = 'Creates the List with 3 Bookings and a stub for Sina Leota.';
+  const shell = (body, extra = '') => `<div class="split" style="grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr) ${extra};position:relative">${body}</div>`;
+
+  frame('o1', shell(openHead(NAND_T, NAND_M) + `<div style="display:grid;grid-template-columns:minmax(0,1fr) 560px;min-height:0">
+      ${desk(520, NAND, 'Nand hand list.pdf')}
+      <div class="col"><div class="sc">${vt()}${nhiNote}
+        <div><div class="h3">Place this List</div>
+          <div class="opt on"><span class="rad"></span><div><b>Dr Delaney's PM, Wed 16 Dec</b><span class="sug">Suggested</span><small>Named on the PDF, free that afternoon</small></div></div>
+          <div class="opt"><span class="rad"></span><div style="flex:1"><b>Another anaesthetist's PM</b><small>24 free that afternoon</small></div></div>
+          <div class="opt"><span class="rad"></span><div style="flex:1"><b>Add to a List we hold</b><small>9 Lists that afternoon could take it</small></div></div>
+          <div class="opt"><span class="rad"></span><div><b>Make a Draft List</b><small>No anaesthetist yet</small></div></div>
+        </div></div>
+        <div class="ft"><span style="font-size:12.5px;color:var(--slate)">${save}</span><div class="btns"><span class="btn2">Reject this List</span><span class="btn">Place in Dr Delaney's PM</span></div></div>
+      </div></div>`));
+
+  frame('o2', shell(openHead(NAND_T, NAND_M) + `<div style="display:grid;grid-template-columns:minmax(0,1fr) 560px;min-height:0">
+      ${desk(520, NAND, 'Nand hand list.pdf')}
+      <div class="col"><div class="sc">
+        <div style="border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--e1)">
+          <div class="h3">Place this List</div>
+          <div style="display:flex;gap:10px"><div style="flex:1;min-width:0">${sel("Dr Delaney's PM · suggested, named on the PDF")}</div><span class="btn">Place</span></div>
+          <div style="display:flex;gap:18px;margin-top:10px;font-size:13px"><span class="ta">Add to a List we hold</span><span class="ta">Make a Draft List</span><div class="grow"></div><span class="ta">Reject this List</span></div>
+        </div>
+        ${nhiNote}${vt()}<span style="font-size:12.5px;color:var(--slate)">${save} Choose a value to see it on the page.</span>
+      </div></div></div>`));
+
+  frame('o3', shell(openHead(NAND_T, NAND_M) + `<div style="display:grid;grid-template-columns:minmax(0,1fr) 620px;min-height:0">
+      ${desk(470, NAND, 'Nand hand list.pdf')}
+      <div class="col"><div class="sc">${vt()}${nhiNote}<span style="font-size:12.5px;color:var(--slate)">Choose a value to see it on the page.</span></div></div></div>
+      <div class="bar" style="padding:12px 22px"><span style="font-weight:600;white-space:nowrap">Place in</span><div style="width:340px">${sel("Dr Delaney's PM · suggested", '', 'open')}</div><span class="sum">${save}</span><span class="btn2">Reject this List</span><span class="btn">Place List</span></div>
+      <div class="menu" style="bottom:62px;left:96px;width:340px">${srch('Find an anaesthetist or a List')}
+        <div class="mg">Suggested</div><div class="mi on"><div>Dr Delaney's PM<small>Named on the PDF, free that afternoon</small></div></div>
+        <div class="mg">Free that afternoon</div>${['Anderson', 'Baxter', 'Donaldson', 'Duncan'].map((n) => `<div class="mi"><div>Dr ${n}'s PM</div></div>`).join('')}<div class="mi" style="color:var(--teal);font-weight:600">20 more</div>
+        <div class="mg">Add to a List we hold</div><div class="mi"><div>Dr Harris's List<small>Mr Desai, PM</small></div></div><div class="mi"><div>Dr Haddad's List<small>Dr Ridley, PM</small></div></div>
+        <div class="sep"></div><div class="mi"><div>Make a Draft List</div></div></div>`, 'auto'));
+
+  /* ---------- update ---------- */
+  const W = [
+    ['08:30', 'ZKP4410', 'Ruth Malone', '03/02/1948', 'R phaco + IOL', '', 't'],
+    ['09:30', 'ZKP4421', 'John Petrie', '19/11/1955', 'L phaco + IOL', ''],
+    ['10:15', 'ZKP4433', 'Tom Ngata', '07/06/1960', 'R phaco + IOL', ''],
+  ];
+  const WH = { rooms: 'Whitford Eye Rooms', addr: '22 Merivale Lane, Christchurch', long: 'Friday 4 December (AM)', surgeon: 'Mr J. Whitford', date: 'Fri 4 Dec 2026', hosp: 'Christchurch Eye Surgery', sess: 'AM', anaes: 'Dr Sarah Moana', rows: W };
+  frame('u1', shell(openHead('Mr Whitford, Christchurch Eye Surgery, Friday 4 December AM', "Update to Dr Moana's List · surgery in 10 days · from Whitford Eye Rooms, received today at 7:42 · third version", '10 of 18') + `<div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;min-height:0">
+      ${desk(500, WH, 'Whitford list v3.pdf')}
+      <div class="col"><div class="sc">
+        <div class="h3" style="margin:0">What this changes on Dr Moana's List</div>
+        <table class="vt chg"><thead><tr><th>Time</th><th>Patient</th><th>Procedure</th><th>Change</th></tr></thead><tbody>
+          <tr class="hi"><td class="mono"><span class="was">08:00</span><span class="now">08:30</span></td><td>Ruth Malone<small>ZKP4410</small></td><td>R phaco + IOL</td><td class="now">Time changed</td></tr>
+          <tr><td class="mono">09:30</td><td>John Petrie<small>ZKP4421</small></td><td>L phaco + IOL</td><td style="color:var(--mist)">The same</td></tr>
+          <tr class="rm"><td class="mono">09:45</td><td class="nm">Anne Kerr<small>ZKP4429</small></td><td>L phaco + IOL</td><td class="nm">Not on this PDF</td></tr>
+          <tr><td class="mono">10:15</td><td>Tom Ngata<small>ZKP4433</small></td><td>R phaco + IOL</td><td style="color:var(--mist)">The same</td></tr>
+        </tbody></table>
+        <div class="note"><b>Anne Kerr isn't on the re-sent list.</b> Her Booking is cancelled only if you tick it below; otherwise it stays and the rooms are asked.</div>
+        <div class="opt on"><span class="cb"><i class="on"></i></span><div><b>Cancel Anne Kerr's Booking</b><small>Leaves her on the List as cancelled, with this PDF as the reason</small></div></div>
+        <span class="ta" style="font-size:12.5px">Compare with version 2</span>
+      </div>
+        <div class="ft"><span style="font-size:12.5px;color:var(--slate)">Applies 1 change and 1 cancellation as one change set.</span><div class="btns"><span class="btn2">Reject this update</span><span class="btn">Apply changes</span></div></div>
+      </div></div>`));
+
+  const fit = () => document.querySelectorAll('.fwrap').forEach((w) => {
+    const f = w.querySelector('.frame'); const s = w.clientWidth / 1440;
+    f.style.transform = `scale(${s})`; w.style.height = `${Number(w.dataset.h) * s}px`;
+  });
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>
