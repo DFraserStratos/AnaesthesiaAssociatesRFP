@@ -40,7 +40,6 @@
     "headline_sub": "68 to 72 were built in Lanes D to G and joined with the one full gate and a three-lens review (D122). Walk them once from <a href=\"TEST-68-72.md\">TEST-68-72.md</a> on 5173; its last section lists the decisions to look at. Then run /sweep for the screenshots and the demo guide. 45 to 67 are still yours to walk from <a href=\"TEST-45-49.md\">TEST-45-49.md</a>, <a href=\"TEST-50-57.md\">TEST-50-57.md</a> and <a href=\"TEST-58-67.md\">TEST-58-67.md</a>.",
     "safe": {},
     "wait": {},
-    "parallel": "Nothing to run: every phase is built. Test 68 to 72 from TEST-68-72.md and 58 to 67 from TEST-58-67.md, then /sweep.",
-    "lanes": []
+    "parallel": "No build lanes are running: Finances and Intake were joined and their lanes torn down. New phases run in the main folder."
   }
 }

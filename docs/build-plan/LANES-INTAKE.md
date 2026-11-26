@@ -1,3 +1,5 @@
+> Closed 2026-11-26: Wave 7 joined; worktrees, branches and `.git/lanes-intake/` torn down. Later phases run in the main folder.
+
 # Build lanes: the Intake rebuild, Phases 68 to 72, in Waves 6 and 7
 
 The owner's decisions of 26 November 2026. The Admin app's Intake (the matching screen) is rebuilt as

@@ -1,3 +1,5 @@
+> Closed 2026-11-26: Wave 5 joined; worktrees, branches and `.git/lanes/` torn down. Later phases run in the main folder.
+
 # Build lanes: the Finances section, Phases 58 to 67, in Waves 4 and 5
 
 The owner's decisions of 26 November 2026. The Admin app's Finances section (US-13.3.3 and the stories

@@ -319,18 +319,5 @@
       "report": "requirements-board/requirements/capture/REPORT.md",
       "timeout": 3600
     }
-  },
-  "lanes": {
-    "branches": [
-      "lane/a",
-      "lane/b",
-      "lane/c",
-      "lane/d",
-      "lane/e",
-      "lane/f",
-      "lane/g"
-    ],
-    "complete": "{id} complete:",
-    "checkpoint": "{id} checkpoint:"
   }
 }
