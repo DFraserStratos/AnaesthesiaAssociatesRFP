@@ -21,14 +21,14 @@ import { DEMO_TRIGGERS } from './registry'
  */
 const NOT_SCRIPTED: Readonly<Record<string, string>> = {
   'payer-loses-billing-email': 'Until the sweep scripts it.',
-  'fire-hospital-message': 'Future scope (HL7 v2, FHIR R4): narrated from the Future-scope surface, never a scripted beat.',
+  'intake-scanned-pdf': "Intake's Okafor story (Phase 68, D119): no run-sheet beat until the sweep scripts it.",
+  'intake-feed-fails': "Intake's Okafor story (Phase 68, D119): no run-sheet beat until the sweep scripts it.",
   'record-fee-payment': "The AA fee pair's own Record fee payment button tells the same story in S3's aside.",
   'arm-handoff-fault': 'Diagnostic: one failed Xero call that retries itself; the outage pair and Trigger billing failure tell the retry story.',
   'run-archive-job': 'Diagnostic: runs the nightly Xero contact-archive job now; no beat waits on it.',
   'payment-replay': 'Diagnostic: re-sends the last payment webhook to show it is ignored.',
   'run-scheduled-fee-run': "Stands in for the month-end job; the AA fee beat uses the screen's own run.",
   'xero-pay-bill': 'Pays one bill in the Xero simulation; the scripted payment week pays through the weekly run.',
-  'replay-hospital-message': 'Future scope diagnostic: replays the last HL7 or FHIR message to show the dedupe.',
   'add-draft-list-for-day': 'Adds a Draft List to any day; the scripted Draft List beats use the seeded ones and Simulate incoming request.',
   'ask-colleague-make-available': 'Plays a colleague freeing a session inside the Assign picker; no scripted beat needs it.',
   'office-sets-booking-contract': "Handset stand-in for the office's step rail; the parity matrix (item 12) covers it.",

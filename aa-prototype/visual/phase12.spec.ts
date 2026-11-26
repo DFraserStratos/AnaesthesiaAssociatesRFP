@@ -5,7 +5,7 @@ import { runDemoAction } from './demoActions'
  * Phase 12 — the demo control panel, now the index (catch-up Phase 14). A
  * real-browser click-through of the scenario jumps and their beat links
  * (catch-up Phase 44) and the procedure-day jump, then
- * the PDF arrival (Admin Intake, PDF lists) and job run
+ * the PDF arrival (Admin Intake, Arrivals, Rooms PDFs) and job run
  * (Finances · Xero) from the harness bar's Demo actions, asserting the console
  * stays clean across the interaction.
  */
@@ -52,15 +52,13 @@ test('control panel: scenario jump, procedure-day jump, PDF ingest and jobs run 
   await expect(page).toHaveURL(/\/demo\/control$/)
   await expect(page.locator('[data-shot="scenario-result"] button[data-shot^="scenario-beat-"]')).toHaveCount(7)
 
-  // PDF arrival (catch-up Phase 34): Admin Intake, PDF lists, correct the flagged NHI and send to matching.
-  await page.goto('/admin/intake/pdfs')
+  // PDF arrival (build plan Phase 68; was catch-up Phase 34): the rooms email a List, which lands on Arrivals under Rooms PDFs.
+  await page.goto('/admin/intake?filter=rooms-pdfs')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot="demo-actions"]')).toHaveCount(1)
-  await page.locator('[data-shot="pdf-inbox"] tbody tr').first().click()
-  await page.locator('[data-shot="pdf-row-2"]').getByLabel('NHI').fill('ZAA0067')
-  await page.locator('[data-shot="pdf-row-2-apply"]').click()
-  await page.locator('[data-shot="pdf-send"]').click()
-  await expect(page.getByText(/Sent to matching: 3 rows/)).toBeVisible()
+  expect(await runDemoAction(page, 'intake-rooms-email-list', { close: true })).not.toMatch(/^Refused/)
+  await expect(page.locator('[data-shot="intake-feed-item"][data-arrival-kind="newList"]').first()).toBeVisible()
+  // Phase 68: correcting the flagged NHI and sending the PDF to matching moved to 70; re-added there.
 
   // Automated jobs: run the reconciliation poll from Finances · Xero.
   await page.goto('/admin/finances/xero')

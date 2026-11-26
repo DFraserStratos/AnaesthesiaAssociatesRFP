@@ -1,17 +1,24 @@
 /**
- * The seeded intake (catch-up Phase 33a; FT-02.6, D66): one Southern Cross
- * import holding one row with no NHI, waiting in the unmatched queue, and its
- * stub on Dr Souter's Tue 4 Aug PM List (Ms Patel), a List no scripted beat
- * uses. Synthetic patient; AR-35-style wording. No RNG draw, no patient
- * record (a waiting row creates none, D11), so no seeded id moves.
+ * The seeded intake (catch-up Phase 33a; FT-02.6, D66; build plan Phase 68, D125): every arrival made by its source.
  *
- * Seeded ids use their own namespace (`IBS`, `IRS`) so the first runtime
- * import is still IB0001 / IR0001; the stub is STB0001 and the `stub` counter
- * starts at 2.
+ * - One Southern Cross batch holding one row with no NHI, waiting, and its stub on Dr Souter's Tue 8 Dec PM List
+ *   (Ms Patel), a List no scripted beat uses. Synthetic patient; AR-35-style wording; no patient record (a waiting
+ *   row creates none, D11).
+ * - Mr Okafor's rooms' PDF (`PDL0001`), arrived in the mailbox from the practice PA's address and read at once: its
+ *   rows staged as open rows, each with its `pdfRowId` and the reader's values (one NHI printed wrongly reads unsure).
+ *   Its List (Forte Health, Wed 9 Dec AM) is not held, so it is a New List.
+ * - One decided arrival, so Decided is not empty: St George's day-before List for Mon 23 Nov AM (Dr Tom Ngata, Mr
+ *   Nand), every row matched with no change by the office on the Monday morning.
+ *
+ * No RNG draw, so no seeded id moves. Seeded ids use their own namespace (`IBS`, `IRS`) so the first runtime arrival
+ * is still IB0001 / IR0001; the stub is STB0001 (the `stub` counter starts at 2) and the PDF PDL0001 (`pdfList` at 2).
  */
 
-import type { ImportBatch, ImportRow, Stub, SurgeonPdfList } from '../types'
-import { buildFacsimile, PDF_LIST_SAMPLES } from '../intake/pdfLists'
+import type { ImportBatch, ImportRow, IncomingBookingFields, IntakeSource, Patient, Stub, SurgeonPdfList } from '../types'
+import { buildFacsimile, PDF_LIST_SAMPLES, pdfListBatchLabel, pdfRowIncoming } from '../intake/pdfLists'
+import { readValuesOfRow, simulateRead } from '../intake/pdfRead'
+import { sessionLabel } from '../intake/matching'
+import { longDay, shortDay } from '../dateText'
 import { DEMO_TODAY } from '../clock'
 import { ANAE, HOSP } from './cast'
 import { projectedListId } from '../slots'
@@ -30,19 +37,41 @@ export const SEED_STUB = {
 const RECEIVED_AT = `${DEMO_TODAY}T07:30:00`
 const SOURCE_LABEL = 'Southern Cross theatre list, Tue 8 Dec'
 
+/** The rooms' mailbox address the PDFs arrive at (D125). */
+export const ROOMS_MAILBOX_ADDRESS = 'lists@aa.example'
+
+/** The source ids (build plan Phase 68; DM-14). */
+export const INTAKE_SOURCE_IDS = { stg: 'SRC-STG', sx: 'SRC-SX', mailbox: 'SRC-MAILBOX', forte: 'SRC-FORTE' } as const
+
 /**
- * The seeded PDF list (catch-up Phase 34; DM-61): Mr Okafor's Wed 5 Aug AM
- * list, as received from the practice PA's address, not yet corrected or sent.
- * PDL0001; the `pdfList` counter starts at 2. Its target holds no List, so no
- * scripted List is touched.
+ * The seeded PDF list (catch-up Phase 34; DM-61; re-cast in build plan Phase 68 as a mailbox arrival): Mr Okafor's
+ * Wed 9 Dec AM list at Forte Health, naming Dr Rutherford, from the practice PA's address, read at once and its rows
+ * staged (`batchId`, rows `rowIds`). PDL0001; the `pdfList` counter starts at 2. Its List is not held, so no scripted
+ * List is touched.
  */
 export const SEED_PDF_LIST = {
   id: 'PDL0001',
   sampleId: 'PDF-OKAFOR-0805',
+  batchId: 'IBS002',
+  rowIds: ['IRS002', 'IRS003', 'IRS004'],
+  /** The anaesthetist the PDF names. */
+  anaesthetist: { name: 'Dr James Rutherford', hpiId: '11RUTJ' },
 } as const
 
-export function seededPdfLists(): Record<string, SurgeonPdfList> {
+const PDF_RECEIVED_AT = `${DEMO_TODAY}T07:10:00`
+/** The mailbox's actor name (`MAILBOX_ACTOR.who` in the store). */
+const MAILBOX_WHO = "Rooms' mailbox"
+const OKAFOR = { name: 'Mr C. Okafor', hpiId: '43OKAC' } as const
+
+/** The seeded PDF and its arrival: the list as read, its batch and its open rows. */
+function seededPdfArrival(): { list: SurgeonPdfList; batch: ImportBatch; rows: ImportRow[] } {
   const sample = PDF_LIST_SAMPLES.find((s) => s.id === SEED_PDF_LIST.sampleId)!
+  const asRead = sample.rows.map(({ id, ...rest }) => ({ id, asRead: rest }))
+  const read = simulateRead({
+    header: { surgeon: sample.surgeonName, hospital: sample.hospitalName, date: longDay(sample.target.dateISO), session: sample.target.session, anaesthetist: SEED_PDF_LIST.anaesthetist.name },
+    // R2's NHI is printed wrongly (ZAA0068 fails its check digit): the reader is unsure of it.
+    rows: asRead.map((r) => ({ id: r.id, values: readValuesOfRow(r.asRead), ...(r.id === 'R2' ? { confidence: { nhi: 0.62 } } : {}) })),
+  })
   const list: SurgeonPdfList = {
     id: SEED_PDF_LIST.id,
     sampleId: sample.id,
@@ -51,16 +80,138 @@ export function seededPdfLists(): Record<string, SurgeonPdfList> {
     senderEmail: sample.defaultSender,
     hospitalId: sample.hospitalId,
     subject: sample.subject,
-    receivedAtISO: `${DEMO_TODAY}T07:10:00`,
-    receivedBy: 'Kirsty W.',
+    receivedAtISO: PDF_RECEIVED_AT,
+    receivedBy: MAILBOX_WHO,
     target: { ...sample.target },
-    status: 'received',
-    rows: sample.rows.map(({ id, ...asRead }) => ({ id, asRead, corrections: [] })),
+    status: 'sent',
+    batchId: SEED_PDF_LIST.batchId,
+    sentAtISO: PDF_RECEIVED_AT,
+    sentBy: MAILBOX_WHO,
+    rows: asRead.map((r, i) => ({ id: r.id, asRead: r.asRead, corrections: [], read: read.rows[i]!.read })),
+    headerRead: read.headerRead,
   }
-  return { [list.id]: list }
+  const rows: ImportRow[] = list.rows.map((pdfRow, i) => {
+    const incoming: IncomingBookingFields = { ...pdfRowIncoming(list, pdfRow, { ...OKAFOR }), anaesthetist: { ...SEED_PDF_LIST.anaesthetist } }
+    return {
+      id: SEED_PDF_LIST.rowIds[i]!,
+      batchId: SEED_PDF_LIST.batchId,
+      channel: 'pdfList',
+      source: 'rooms',
+      receivedAtISO: PDF_RECEIVED_AT,
+      incoming,
+      status: 'open',
+      raw: rawRowFor(incoming, 'pdfList'),
+      pdfRowId: pdfRow.id,
+    }
+  })
+  const batch: ImportBatch = {
+    id: SEED_PDF_LIST.batchId,
+    channel: 'pdfList',
+    source: 'rooms',
+    hospitalId: sample.hospitalId,
+    label: pdfListBatchLabel(sample.surgeonName, sessionLabel(sample.target.dateISO, sample.target.session)),
+    sampleId: sample.id,
+    arrivalSource: { kind: 'mailbox', senderEmail: sample.defaultSender },
+    receivedAtISO: PDF_RECEIVED_AT,
+    rowIds: rows.map((r) => r.id),
+    pdfListId: list.id,
+    senderEmail: sample.defaultSender,
+  }
+  return { list, batch, rows }
 }
 
-export function seededIntake(): { batches: Record<string, ImportBatch>; rows: Record<string, ImportRow>; stubs: Record<string, Stub>; pdfLists: Record<string, SurgeonPdfList> } {
+/**
+ * The seeded decided arrival (build plan Phase 68; D125, so Decided is not empty): St George's day-before List for
+ * Mon 23 Nov AM, Dr Tom Ngata's List with Mr Nand, a List no scripted beat uses. Each of its live Bookings was sent
+ * exactly as held, and the office matched every row with no change on the Monday morning.
+ */
+export const SEED_DECIDED_ARRIVAL = {
+  batchId: 'IBS003',
+  listId: projectedListId(ANAE.ngata, '2026-11-23', 'AM'),
+  receivedAtISO: '2026-11-22T18:05:00',
+  decidedAtISO: '2026-11-23T07:35:00',
+  decidedBy: 'Kirsty W.',
+  /** The first row id; the rest follow (IRS005, IRS006, ...). */
+  firstRowNumber: 5,
+} as const
+
+/** The schedule and masters the decided arrival is read from (the core seed's own, before the practice joins). */
+export interface IntakeSeedSource {
+  schedule: { lists: Readonly<Record<string, { id: string; hospitalId: string; dateISO: string; session: IncomingBookingFields['session']; surgeonId: string }>>; bookings: Readonly<Record<string, { id: string; listId: string; patientId: string; scheduledTime?: string; cancellation?: unknown }>> }
+  masters: { patients: Readonly<Record<string, Pick<Patient, 'name' | 'nhi' | 'dobISO'>>>; surgeons: Readonly<Record<string, { name: string; hpiId?: string }>> }
+}
+
+function seededDecidedArrival(from: IntakeSeedSource): { batch: ImportBatch; rows: ImportRow[] } | undefined {
+  const a = SEED_DECIDED_ARRIVAL
+  const list = from.schedule.lists[a.listId]
+  if (list === undefined) return undefined
+  const surgeon = from.masters.surgeons[list.surgeonId]
+  const bookings = Object.values(from.schedule.bookings)
+    .filter((b) => b.listId === list.id && b.cancellation === undefined)
+    .sort((x, y) => (x.scheduledTime ?? '99:99').localeCompare(y.scheduledTime ?? '99:99') || x.id.localeCompare(y.id))
+  const rows: ImportRow[] = []
+  for (const b of bookings) {
+    const patient = from.masters.patients[b.patientId]
+    if (patient === undefined) continue
+    const incoming: IncomingBookingFields = {
+      hospitalId: list.hospitalId,
+      dateISO: list.dateISO,
+      session: list.session,
+      ...(surgeon !== undefined ? { surgeon: { name: surgeon.name, ...(surgeon.hpiId !== undefined ? { hpiId: surgeon.hpiId } : {}) } } : {}),
+      ...(b.scheduledTime !== undefined ? { scheduledTime: b.scheduledTime } : {}),
+      patient: { name: patient.name, nhi: patient.nhi, ...(patient.dobISO !== '' ? { dobISO: patient.dobISO } : {}) },
+      hospitalStatus: 'booked',
+    }
+    rows.push({
+      id: `IRS${String(a.firstRowNumber + rows.length).padStart(3, '0')}`,
+      batchId: a.batchId,
+      channel: 'download',
+      source: 'hospital',
+      receivedAtISO: a.receivedAtISO,
+      incoming,
+      status: 'applied',
+      decision: { kind: 'match', bookingId: b.id, changeType: 'noChange', fieldsApplied: [], listId: list.id },
+      decidedBy: a.decidedBy,
+      decidedAtISO: a.decidedAtISO,
+      raw: rawRowFor(incoming, 'download'),
+    })
+  }
+  if (rows.length === 0) return undefined
+  const batch: ImportBatch = {
+    id: a.batchId,
+    channel: 'download',
+    source: 'hospital',
+    hospitalId: list.hospitalId,
+    label: `St George's theatre Lists · ${shortDay(list.dateISO)}`,
+    arrivalSource: { kind: 'hospitalFeed', hospitalId: list.hospitalId },
+    receivedAtISO: a.receivedAtISO,
+    rowIds: rows.map((r) => r.id),
+  }
+  return { batch, rows }
+}
+
+/**
+ * The sources and their state (build plan Phase 68; DM-14, D125 with OQ-109 part 1 open): St George's (HL7 v2) and
+ * Southern Cross (FHIR R4) receiving, the rooms' mailbox reading, Forte Health not connected (its Lists come by PDF).
+ * Every other hospital without a record reads as not connected. Inbound only: nothing is ever sent back.
+ */
+export function seededSources(): Record<string, IntakeSource> {
+  const sources: IntakeSource[] = [
+    { id: INTAKE_SOURCE_IDS.stg, kind: 'hospitalFeed', name: "St George's", hospitalId: HOSP.stg, protocol: 'HL7 v2', state: 'receiving', lastReceivedAtISO: SEED_DECIDED_ARRIVAL.receivedAtISO },
+    { id: INTAKE_SOURCE_IDS.sx, kind: 'hospitalFeed', name: 'Southern Cross', hospitalId: HOSP.sx, protocol: 'FHIR R4', state: 'receiving', lastReceivedAtISO: RECEIVED_AT },
+    { id: INTAKE_SOURCE_IDS.mailbox, kind: 'mailbox', name: "Rooms' mailbox", address: ROOMS_MAILBOX_ADDRESS, state: 'reading', lastReceivedAtISO: PDF_RECEIVED_AT },
+    { id: INTAKE_SOURCE_IDS.forte, kind: 'hospitalFeed', name: 'Forte Health', hospitalId: HOSP.forte, state: 'notConnected' },
+  ]
+  return Object.fromEntries(sources.map((s) => [s.id, s]))
+}
+
+export function seededIntake(from: IntakeSeedSource): {
+  batches: Record<string, ImportBatch>
+  rows: Record<string, ImportRow>
+  stubs: Record<string, Stub>
+  pdfLists: Record<string, SurgeonPdfList>
+  sources: Record<string, IntakeSource>
+} {
   const row: ImportRow = {
     id: SEED_STUB.rowId,
     batchId: SEED_STUB.batchId,
@@ -87,10 +238,9 @@ export function seededIntake(): { batches: Record<string, ImportBatch>; rows: Re
     source: 'hospital',
     hospitalId: HOSP.sx,
     label: SOURCE_LABEL,
-    importedBy: 'Kirsty W.',
-    importedAtISO: RECEIVED_AT,
+    arrivalSource: { kind: 'hospitalFeed', hospitalId: HOSP.sx },
+    receivedAtISO: RECEIVED_AT,
     rowIds: [row.id],
-    skippedCount: 0,
   }
   const stub: Stub = {
     id: SEED_STUB.stubId,
@@ -101,5 +251,15 @@ export function seededIntake(): { batches: Record<string, ImportBatch>; rows: Re
     createdAtISO: RECEIVED_AT,
     status: 'standing',
   }
-  return { batches: { [batch.id]: batch }, rows: { [row.id]: row }, stubs: { [stub.id]: stub }, pdfLists: seededPdfLists() }
+  const pdf = seededPdfArrival()
+  const decided = seededDecidedArrival(from)
+  const batches: ImportBatch[] = [batch, pdf.batch, ...(decided !== undefined ? [decided.batch] : [])]
+  const rows: ImportRow[] = [row, ...pdf.rows, ...(decided?.rows ?? [])]
+  return {
+    batches: Object.fromEntries(batches.map((b) => [b.id, b])),
+    rows: Object.fromEntries(rows.map((r) => [r.id, r])),
+    stubs: { [stub.id]: stub },
+    pdfLists: { [pdf.list.id]: pdf.list },
+    sources: seededSources(),
+  }
 }

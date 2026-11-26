@@ -27,11 +27,9 @@ import {
   AdminDayRoute,
   AdminIndexRedirect,
   AdminIntakeRoute,
-  AdminIntakeRedirect,
-  AdminPdfListsRoute,
-  AdminDataQualityRoute,
-  AdminValidatorsRoute,
-  AdminWaitingNhiTabRoute,
+  AdminArrivalsRoute,
+  AdminSourcesRoute,
+  IntakeLegacyRedirect,
   AdminMastersRoute,
   AdminContractsRoute,
   AdminContractRoute,
@@ -39,7 +37,6 @@ import {
   AdminPartiesRoute,
   AdminPartyRoute,
   AdminFundingTagsRoute,
-  AdminMatchingRoute,
   AdminSurgeonProfileRoute,
   AdminSpecialtyPageRoute,
   AdminAnaesthetistRecordRoute,
@@ -68,6 +65,7 @@ import { PaymentRunPage } from './apps/admin/screens/finances/PaymentRunPage'
 import { RemittancePage } from './apps/admin/screens/finances/RemittancePage'
 import { AnaesthetistAccountPage } from './apps/admin/screens/finances/AnaesthetistAccountPage'
 import { peoplePath } from './apps/admin/peoplePaths'
+import { arrivalsPath } from './apps/admin/screens/intake/intakePaths'
 import { DemoControlPanel } from './apps/demo/DemoControlPanel'
 import { DemoXero } from './apps/demo/DemoXero'
 import { DemoIntegrations } from './apps/demo/DemoIntegrations'
@@ -138,16 +136,19 @@ const routeTree = (
               <Route path="bookings/:bookingId" element={<AdminBookingDetailRoute />} />
               <Route path="cards/:cardId" element={<LegacyBookingRedirect />} />
             </Route>
-            {/* Admin Intake (catch-up Phase 34): matching, the rows waiting for an NHI, the rooms' PDF lists, data quality and the validators. */}
+            {/* Admin Intake (build plan Phase 68; D117): Arrivals and Sources. Every old Intake address redirects with
+                replace (`IntakeLegacyRedirect`, `intakePaths.ts`), carrying `selectRowId` as the selected arrival.
+                Wave 7 (69 to 72) edits none of this block. */}
             <Route path="intake" element={<AdminIntakeRoute />}>
-              <Route index element={<Navigate to="matching" replace />} />
-              <Route path="matching" element={<AdminMatchingRoute />} />
-              <Route path="waiting" element={<AdminWaitingNhiTabRoute />} />
-              <Route path="pdfs" element={<AdminPdfListsRoute />} />
-              <Route path="quality" element={<AdminDataQualityRoute />} />
-              <Route path="validators" element={<AdminValidatorsRoute />} />
+              <Route index element={<AdminArrivalsRoute />} />
+              <Route path="sources" element={<AdminSourcesRoute />} />
             </Route>
-            <Route path="matching" element={<AdminIntakeRedirect />} />
+            <Route path="intake/matching" element={<IntakeLegacyRedirect />} />
+            <Route path="intake/waiting" element={<IntakeLegacyRedirect />} />
+            <Route path="intake/pdfs" element={<IntakeLegacyRedirect />} />
+            <Route path="intake/quality" element={<IntakeLegacyRedirect />} />
+            <Route path="intake/validators" element={<IntakeLegacyRedirect />} />
+            <Route path="matching" element={<IntakeLegacyRedirect />} />
             <Route path="conflicts" element={<AdminConflictsRoute />} />
             <Route path="draft-lists" element={<AdminDraftListsRoute />} />
             <Route path="notifications" element={<AdminNotificationsRoute />} />
@@ -212,7 +213,7 @@ const routeTree = (
             {/* The old Patients links (catch-up Phase 40) redirect and stay (D100): Waiting for NHI to Intake (51), the rest to People. Static segments rank above `:nhi`. */}
             <Route path="patients">
               <Route index element={<Navigate to={peoplePath('patients')} replace />} />
-              <Route path="waiting" element={<Navigate to="/admin/intake/waiting" replace />} />
+              <Route path="waiting" element={<Navigate to={arrivalsPath({ filter: { kind: 'needsNhi' } })} replace />} />
               <Route path="follow-up" element={<Navigate to={peoplePath('patients', { filter: 'follow-up' })} replace />} />
               <Route path=":nhi" element={<AdminPersonRedirect kind="patient" />} />
             </Route>
@@ -231,7 +232,7 @@ const routeTree = (
               <Route path="tags" element={<AdminFundingTagsRoute />} />
               <Route path=":contractId" element={<AdminContractRoute />} />
             </Route>
-            <Route path="integrations" element={<AdminIntakeRedirect />} />
+            <Route path="integrations" element={<IntakeLegacyRedirect />} />
             <Route path="masters">
               <Route index element={<AdminMastersRoute />} />
               {/* The old profile pages (catch-up Phase 17) moved to People (build plan Phase 53): they redirect and stay (D100). */}

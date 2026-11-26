@@ -39,6 +39,7 @@ import type {
   StubId,
   PdfListId,
   SurgeonPdfList,
+  IntakeSource,
   Invoice,
   InvoiceLine,
   LedgerDisbursement,
@@ -173,6 +174,8 @@ export interface IntakeSlice {
   stubs: Record<StubId, Stub>
   /** The rooms' PDF lists as received (catch-up Phase 34; DM-61). */
   pdfLists: Record<PdfListId, SurgeonPdfList>
+  /** Where arrivals come from and each source's state (build plan Phase 68; DM-14): inbound only. */
+  sources: Record<string, IntakeSource>
 }
 
 export interface ShellSlice {
@@ -501,17 +504,23 @@ export const PERSIST_KEY = 'aa-demo'
  *  v80 (lane/b): build plan Phase 55, the surgeon group record goes: `masters.surgeonGroups`, its seed and the
  *  `surgeonGroup` counter (DM-08; a group that holds Contracts is a Party of kind surgeon group). Reseeds on load.
  *  v81 (lane/b): build plan Phase 62, the aged unpaid invoice: Dr Ngata's Wed 14 Oct AM List, its Booking and
- *  AA-2026-S2402 (raised Thu 15 Oct, 40 days unpaid on the demo day; `seed/agedInvoiceBooking.ts`). Reseeds on load. */
-export const PERSIST_VERSION = 81
+ *  AA-2026-S2402 (raised Thu 15 Oct, 40 days unpaid on the demo day; `seed/agedInvoiceBooking.ts`). Reseeds on load.
+ *  v82 (lane/d): build plan Phase 68, Intake's front door: arrivals made by their source (the arrival record, the
+ *  sources, removal rows, read values with confidence and box), the seeded PDF re-cast as a mailbox arrival, one
+ *  decided arrival. Reseeds on load. */
+export const PERSIST_VERSION = 82
 
 /** The intake slice: seeded empty, the presenter imports or a trigger delivers (catch-up Phase 33). */
 export function emptyIntakeSlice(): IntakeSlice {
-  return { batches: {}, rows: {}, stubs: {}, pdfLists: {} }
+  return { batches: {}, rows: {}, stubs: {}, pdfLists: {}, sources: {} }
 }
 
-/** The seeded intake slice: one waiting no-NHI row and its stub on a List (catch-up Phase 33a). */
-export function seededIntakeSlice(): IntakeSlice {
-  return seededIntake()
+/**
+ * The seeded intake slice (catch-up Phase 33a; build plan Phase 68): every arrival by its source, the waiting no-NHI
+ * row and its stub, the rooms' PDF read in the mailbox, and one decided arrival read from the seed's own schedule.
+ */
+export function seededIntakeSlice(from: Pick<AppState, 'schedule' | 'masters'>): IntakeSlice {
+  return seededIntake(from)
 }
 
 /** The seeded integrations slice: the three feed configs, no messages yet (Phase 11). */
@@ -558,7 +567,7 @@ export function coreAppState(): AppState {
     },
     xero: seedBilling.xero,
     integrations: seededIntegrationsSlice(),
-    intake: seededIntakeSlice(),
+    intake: seededIntakeSlice(seed),
     masterLoads: emptyMasterLoadsSlice(),
     shell: { currentApp: 'mobile', suggestionSeq: 0 },
   }

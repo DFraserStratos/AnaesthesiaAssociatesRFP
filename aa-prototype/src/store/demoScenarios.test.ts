@@ -21,8 +21,9 @@ import { auditForEntity, bookingsForList, openAccRecs, proceduresForBooking } fr
 import { regenerateInvoiceFromLock } from './locks'
 import type { Actor } from './mutate'
 import { ANAE, HOSP, INS, SEED_LIST_IDS, SEED_MARKERS } from '../domain/seed'
-import { decideImportRow, importHospitalDownload } from './matchingActions'
-import { correctPdfListRow, sendPdfListToMatching } from './pdfListActions'
+import { correctImportRow, decideImportRow } from './matchingActions'
+import { receiveSample } from '../test/intakeSamples'
+import { SAMPLE_STG, SAMPLE_SX } from '../domain/intake/hospitalDownloads'
 import { setProcedureContract } from './contractSelectionActions'
 import { stubsForList } from './stubSelectors'
 import { needsInvoiceDestinationBookings } from './selectors'
@@ -47,9 +48,7 @@ describe('S1 · booking to theatre (rebuilt in catch-up Phase 34)', () => {
 
   /** Beat 1: import the St George's file and Create Booking for Sarah Mitchell's row. */
   function importAndCreateSarah(api: ReturnType<typeof createAppStore>) {
-    const imported = importHospitalDownload(api, OFFICE, 'SAMPLE_STG')
-    if (!imported.ok) throw new Error(imported.message)
-    const r1 = api.getState().intake.batches[imported.value.batchId!]!.rowIds[0]!
+    const r1 = receiveSample(api, SAMPLE_STG).rowIds[0]!
     return { r1, decide: () => decideImportRow(api, OFFICE, r1, { kind: 'createBooking', listId }) }
   }
 
@@ -107,10 +106,9 @@ describe('S1 · booking to theatre (rebuilt in catch-up Phase 34)', () => {
 
   it("Beat 1b: the Southern Cross file's row with no NHI waits, its stub on the List, never a Booking", () => {
     const api = createAppStore()
-    const imported = importHospitalDownload(api, OFFICE, 'SAMPLE_SX')
-    if (!imported.ok) throw new Error(imported.message)
+    const imported = receiveSample(api, SAMPLE_SX)
     const s = api.getState()
-    const noNhi = imported.value.batchId !== undefined ? s.intake.batches[imported.value.batchId]!.rowIds.map((id) => s.intake.rows[id]!).find((r) => r.incoming.patient.nhi === undefined) : undefined
+    const noNhi = s.intake.batches[imported.batchId]!.rowIds.map((id) => s.intake.rows[id]!).find((r) => r.incoming.patient.nhi === undefined)
     expect(noNhi?.status).toBe('open')
     const stub = Object.values(s.intake.stubs).find((x) => x.importRowId === noNhi!.id)
     expect(stub).toBeDefined()
@@ -118,14 +116,13 @@ describe('S1 · booking to theatre (rebuilt in catch-up Phase 34)', () => {
     expect(Object.values(s.schedule.bookings).some((b) => s.masters.patients[b.patientId]?.name === noNhi!.incoming.patient.name)).toBe(false)
   })
 
-  it("Beat 1c: Mr Okafor's PDF list, corrected and sent, creates a List that keeps the upload's sender; the rest land on it", () => {
+  it("Beat 1c: Mr Okafor's PDF list, arrived in the mailbox with its rows waiting, corrected, creates a List that keeps the email's sender; the rest land on it", () => {
     const api = createAppStore()
     const okafor = SEED_PDF_LIST.id
     const sender = api.getState().intake.pdfLists[okafor]!.senderEmail
-    expect(correctPdfListRow(api, OFFICE, okafor, 'R2', { nhi: 'ZAA0067' }).ok).toBe(true)
-    const sent = sendPdfListToMatching(api, OFFICE, okafor)
-    if (!sent.ok) throw new Error(sent.message)
-    const [first, ...rest] = api.getState().intake.batches[sent.value.batchId!]!.rowIds
+    // Phase 68 (D125): the PDF's rows are staged on arrival; the printed-wrong NHI is corrected on its row.
+    expect(correctImportRow(api, OFFICE, SEED_PDF_LIST.rowIds[1], { nhi: 'ZAA0067' }).ok).toBe(true)
+    const [first, ...rest] = api.getState().intake.batches[SEED_PDF_LIST.batchId]!.rowIds
     const made = decideImportRow(api, OFFICE, first!, { kind: 'createList', slotId: 'S-29104-2026-12-09-AM' })
     if (!made.ok) throw new Error(made.message)
     expect(api.getState().schedule.lists[made.value.listId!]!.origin).toEqual({ kind: 'pdf', senderEmail: sender, pdfListId: okafor })

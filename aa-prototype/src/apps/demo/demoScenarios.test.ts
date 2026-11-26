@@ -12,7 +12,9 @@ import { matchPath } from 'react-router-dom'
 import { createAppStore, type AppState, type AppStoreApi } from '../../store/appStore'
 import { wireBillingRun } from '../../store/billingRun'
 import { authoriseList, submitList } from '../../store/lifecycle'
-import { decideImportRow, importHospitalDownload } from '../../store/matchingActions'
+import { decideImportRow } from '../../store/matchingActions'
+import { receiveSample } from '../../test/intakeSamples'
+import { SAMPLE_STG } from '../../domain/intake/hospitalDownloads'
 import { lastChangeSetFor } from '../../store/changeSetSelectors'
 import { changeSetsFor } from '../../domain/changeSets'
 import { bookingsForList, proceduresForBooking } from '../../store/selectors'
@@ -65,10 +67,8 @@ const ROUTE_PATTERNS = [
   '/web/profile',
   '/admin/day/:dateISO',
   '/admin/day/:dateISO/bookings/:bookingId',
-  '/admin/intake/matching',
-  '/admin/intake/pdfs',
-  '/admin/intake/quality',
-  '/admin/intake/validators',
+  '/admin/intake',
+  '/admin/intake/sources',
   '/admin/conflicts',
   '/admin/draft-lists',
   '/admin/notifications',
@@ -82,7 +82,6 @@ const ROUTE_PATTERNS = [
   '/admin/finances/xero',
   '/admin/finances/aa-fees',
   '/admin/finances/aa-fees/settings',
-  '/admin/intake/waiting',
   '/admin/people/anaesthetists',
   '/admin/people/surgeons',
   '/admin/people/specialties',
@@ -299,9 +298,7 @@ describe('DEMO_SCENARIOS (catch-up Phase 44)', () => {
     // S1: the import and Create Booking put Sarah Mitchell on Tue 28 Jul AM.
     const s1 = wiredStore()
     scenario('S1').stage(s1)
-    const imported = importHospitalDownload(s1, OFFICE_ACTOR, 'SAMPLE_STG')
-    if (!imported.ok) throw new Error(imported.message)
-    const row = s1.getState().intake.batches[imported.value.batchId!]!.rowIds[0]!
+    const row = receiveSample(s1, SAMPLE_STG).rowIds[0]!
     expect(decideImportRow(s1, OFFICE_ACTOR, row, { kind: 'createBooking', listId: SEED_LIST_IDS.integrationStgList }).ok).toBe(true)
     expect(scenario('S1').beats.every((b) => b.path(s1.getState()) !== null)).toBe(true)
     expect(beatProblems(scenario('S1'), s1.getState())).toEqual([])
