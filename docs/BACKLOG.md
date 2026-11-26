@@ -26,11 +26,10 @@ that need work are repeated here.
 - During a Xero outage the system-actor `xero.queued` entry joins the office's change set: `mutate()` scopes change sets by store, not actor. `store/mutate.ts`. S
 - `paymentDisabledReason` and `openAccRecs` read the whole ledger once per render rather than once per screen. S
 - At reset the Reconciliation card reads "Books square" while the Ledger shows a pair not yet in Xero (AA-2026-S2401). Decided: the card counts pairs pending to Xero as not square ("1 pair not yet in Xero"); also count Xero-only items once polled. Admin Day. S
-- Payment runs list shows when a run was approved, not by whom (the run detail does). `apps/admin/screens/PaymentRunScreen.tsx`. S
 - Web Remittances' paid-on dates differ from Admin Payment runs for seeded weeks 12 and 13. S
 - nib's AA-2026-0005 Locked record reads "Billed to Alan Prentice". S
 - After S3/S4's payment run the saved state is about 4.8 MB and the next save fails with QuotaExceededError ("persistence paused"), so a reload loses later beats; the guide tells the presenter not to reload. `store/persistStorage.ts`, `store/persistDelta.ts`. M
-- Run payables in Xero pays about 1,600 BCTIs in one synchronous step at practice scale and freezes the page for 12 to 35 s; capture recipes give the click 45 s and `admin-phase39a` 90 s. Make it asynchronous or faster. `apps/admin/screens/BillingMonitorScreen.tsx` (`PaymentCyclePanel`, `runInXero`), `domain/billing/payablesRun.ts`. M
+- Run payables in Xero still takes about 2 s at practice scale (1,597 bills; was 12 to 35 s: Phase 66 made the webhook recordings one commit instead of 1,598, measured 19.5 s to 2.0 s with saving). What is left is per-recording work in `store/disbursementDetection.ts`: `legFor` scans the ledger (could use `pairsByAccPayIndex`) and `completeRunsIn` re-checks every line on each recording. Capture recipes give the click 45 s and `admin-phase39a` 90 s; both could come down. S
 - The payment-run toast and schedule print "1617 BCTIs" with no thousands separator. Payment-run message in `store/`. S
 
 ## Prototype: prepayments and patients
@@ -92,7 +91,7 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 
 - The Ledger tab's Invoice pairs (11 columns, 1,080 px) and AA Holding account (8 columns, 880 px) tables scroll sideways inside their cards at 1280 and 1440, so Amount to Xero (pairs) and Amount (Holding) start out of view; the page itself no longer scrolls (Phase 64). Narrow the columns or drop one. `apps/admin/screens/finances/LedgerLists.tsx`, `apps/admin/components/HoldingAccountPanel.tsx`. S
 - Patients has no Timings row. S
-- Long admin lists with no paging or search: Draft Lists (150), Review queue (130), Recurring bookings (393), the Billing monitor's payment-cycle table. M
+- Long admin lists with no paging or search: Draft Lists (150), Review queue (130), Recurring bookings (393). M
 - Anaesthetist names sort three ways: by first name (the Conflicts filter, Recurring bookings, web Availability and Who's free, mobile Availability), in roster order (the Recurring booking sheet, the Ledger select), by surname (Day view, Billing monitor, the move pickers). One rule, surname, everywhere. S
 - Make active (`store/anaesthetistStatusActions.ts`, `makeAnaesthetistActive`) writes the anaesthetist active and their sessions before the offered-back `enableContract`s; a refused enable would leave a partial change (the ids are checked first, so not reachable today). Check every enable before writing. S
 - The mobile sign-out gate for an anaesthetist past their last day (`apps/mobile/MobileApp.tsx`) writes two "Signed out · No longer active" audit rows in dev, where StrictMode runs the effect twice; guard it with a ref. S

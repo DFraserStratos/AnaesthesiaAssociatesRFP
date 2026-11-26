@@ -21,8 +21,8 @@ import type { Disbursement, PayablesRunLine, XeroAccPay, XeroBankLine, XeroBatch
 import { roundToCents, toCents } from '../domain/billing/money'
 import { matchRemittanceLines } from '../domain/xeroSim/remittance'
 import { resolveRemittance, ST_GEORGES_REMITTANCE, type RemittanceFixture } from '../domain/xeroSim/remittanceFixtures'
-import { allocateId, clockISO, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
-import type { AppState, AppStoreApi } from './appStore'
+import { allocateId, clockISO, copyStateIntoDraft, mutate, ok, refuse, type Actor, type MutationMeta, type Outcome } from './mutate'
+import { createAppStore, type AppState, type AppStoreApi } from './appStore'
 import { recordDisbursement, recordOffset } from './disbursementDetection'
 import { accPayOfLine, PAYMENT_CYCLE_COPY, runStaleness } from './paymentCycleActions'
 import { cycleLabel } from '../domain/billing/paymentCycle'
@@ -250,30 +250,37 @@ export function payRunInXero(api: AppStoreApi, actor: Actor, runId: string, opts
   })
 
   if (opts.webhook === 'missed') return ok(result)
-  // The engine learns of each allocation, then each bill payment (either order settles the same).
+  // The engine learns of each allocation, then each bill payment (either order settles the same). Each is still its
+  // own audited `recordOffset` / `recordDisbursement` (or queued sync), in the same order, but they land on a working
+  // copy of the store and reach the live store in ONE commit (build plan Phase 66): at practice scale a week is about
+  // 1,600 bills, and a commit per bill re-ran the saved delta and every subscriber 1,600 times (a 12 to 35 s freeze).
+  const engine = createAppStore()
+  copyStateIntoDraft(engine, api.getState())
   for (const a of result.allocations) {
-    const x = api.getState().xero.creditAllocations[a.xeroAllocationId]!
-    if (!xeroAvailable(api.getState())) {
-      a.queued = enqueueXeroWork(api, { kind: 'offsetSync', idempotencyKey: a.idempotencyKey, target: { accPayId: x.accPayId, xeroAllocationId: x.id }, lastError: XERO_OUTAGE_ERROR }).ok
+    const x = engine.getState().xero.creditAllocations[a.xeroAllocationId]!
+    if (!xeroAvailable(engine.getState())) {
+      a.queued = enqueueXeroWork(engine, { kind: 'offsetSync', idempotencyKey: a.idempotencyKey, target: { accPayId: x.accPayId, xeroAllocationId: x.id }, lastError: XERO_OUTAGE_ERROR }).ok
       continue
     }
-    const recorded = recordOffset(api, { accPayId: x.accPayId, accPayCreditId: x.accPayCreditId, xeroAllocationId: x.id, amount: x.amount, atISO: x.atISO, idempotencyKey: x.idempotencyKey, detectedBy: 'webhook', payablesRunId: runId })
+    const recorded = recordOffset(engine, { accPayId: x.accPayId, accPayCreditId: x.accPayCreditId, xeroAllocationId: x.id, amount: x.amount, atISO: x.atISO, idempotencyKey: x.idempotencyKey, detectedBy: 'webhook', payablesRunId: runId })
     a.recorded = recorded.ok && recorded.value.applied
   }
   for (const p of result.paid) {
     const target = { ...p.bill, xeroDisbursementId: p.xeroDisbursementId }
-    if (!xeroAvailable(api.getState())) {
-      const queued = enqueueXeroWork(api, { kind: 'disbursementSync', idempotencyKey: p.idempotencyKey, target, lastError: XERO_OUTAGE_ERROR })
+    if (!xeroAvailable(engine.getState())) {
+      const queued = enqueueXeroWork(engine, { kind: 'disbursementSync', idempotencyKey: p.idempotencyKey, target, lastError: XERO_OUTAGE_ERROR })
       p.queued = queued.ok
       continue
     }
-    const recorded = recordDisbursement(api, { ...p.bill, xeroDisbursementId: p.xeroDisbursementId, amount: p.amount, atISO: api.getState().xero.disbursements[p.xeroDisbursementId]!.atISO, idempotencyKey: p.idempotencyKey, detectedBy: 'webhook', payablesRunId: runId })
+    const recorded = recordDisbursement(engine, { ...p.bill, xeroDisbursementId: p.xeroDisbursementId, amount: p.amount, atISO: engine.getState().xero.disbursements[p.xeroDisbursementId]!.atISO, idempotencyKey: p.idempotencyKey, detectedBy: 'webhook', payablesRunId: runId })
     if (recorded.ok && recorded.value.applied) {
       p.recorded = true
       result.recordedCount += 1
       result.totalRecorded = roundToCents(result.totalRecorded + p.amount)
     }
   }
+  // Every recording appends to the audit, so an unchanged audit means nothing was written.
+  if (engine.getState().audit !== api.getState().audit) copyStateIntoDraft(api, engine.getState())
   return ok(result)
 }
 
