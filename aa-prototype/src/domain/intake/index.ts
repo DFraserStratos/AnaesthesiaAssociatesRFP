@@ -13,3 +13,5 @@ export * from './stubMatch'
 export * from './listVersions'
 export * from './placement'
 export * from './pdfRead'
+/** Intake's Sources view (build plan Phase 71): each source's state and today's messages, derived from arrivals. */
+export * from './sources'

@@ -161,3 +161,4 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 - A no-change Save on the patient page's Details card still writes a `patient.update` with equal before and after (`editPatient` in `store/intake.ts` always mutates, as the old sheet did); the other People cards write nothing when nothing changed. Found at the Wave 3 join review.
 - `visual/unavailability-phase32b.spec.ts` test 6 compares the notification tick with the To-do Clear button only if `[data-shot="admin-todo"]` exists; that hook is gone, so the check is silently skipped. Switch to the To-do tab first. S
 - Under heavy machine load some Playwright `page.goto` calls still time out at random; the full run is green on a quiet machine. S
+- Intake Sources (Phase 71): no quiet-source alert or switch for a source, and hospital connection state beyond the seed (which hospitals are connected, OQ-109 part 1) is seed content only; retry and alerting stay US-14.5.1 Future Work.

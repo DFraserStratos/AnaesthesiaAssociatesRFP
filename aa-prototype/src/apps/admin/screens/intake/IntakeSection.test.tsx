@@ -74,7 +74,7 @@ describe('IntakeSection', () => {
   it('Sources is its own tab, with the inbound-only sentence', () => {
     mountAt(sourcesPath())
     expect(within(tabs()).getByRole('link', { name: 'Sources' })).toHaveAttribute('aria-current', 'page')
-    expect(document.querySelector('[data-shot="intake-sources"]')).toHaveTextContent('Inbound only: nothing is ever sent back to a hospital or the rooms.')
+    expect(document.querySelector('[data-shot="intake-sources-inbound"]')).toHaveTextContent('AA reads from these sources and never writes back to them')
   })
 })
 
