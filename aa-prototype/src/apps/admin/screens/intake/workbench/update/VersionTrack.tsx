@@ -11,7 +11,7 @@ import type { ArrivalItem } from '../../../../../../domain/intake/arrivals'
 import { stampText } from '../../../../../../shared/format'
 import { Eyebrow, Pill, visuallyHidden } from '../../../../../../shared/ui'
 import { neutral, radius, semantic, type as typeScale } from '../../../../../../theme/tokens'
-import { SourceMark } from '../../feed/SourceMark'
+import { SourceMark } from '../../SourceMark'
 import { useVersionStops, type VersionStop } from './updateReads'
 
 /** The stop's day ("28 Oct"), or "now" for the arrival waiting on the bench. */

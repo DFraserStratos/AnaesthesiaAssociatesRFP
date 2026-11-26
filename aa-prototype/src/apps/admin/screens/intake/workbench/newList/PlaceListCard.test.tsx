@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { OFFICE_ACTOR, arrivalItemsOf, freshAppState, receiveMailboxPdf, useAppStore } from '../../../../../../store'
 import { assignListToSlot } from '../../../../../../store/slotActions'
 import { OKAFOR_ROOMS_PDF, OKAFOR_STORY_LIST } from '../../../../../../domain/intake/hospitalDownloads'
+import { surnameOf } from '../../../../../../shared/format'
 import { PlaceListCard } from './PlaceListCard'
 
 function okaforArrival() {
@@ -73,5 +74,29 @@ describe('PlaceListCard', () => {
     render(<PlaceListCard arrival={arrival} actor={OFFICE_ACTOR} onPlaced={() => {}} disabledReason="Correct the invalid NHI first." />)
     expect(submit().disabled).toBe(true)
     expect(document.body.textContent).toContain('Correct the invalid NHI first.')
+  })
+
+  it("four choices; another anaesthetist's session is picked from a drop-down and named on the button", () => {
+    const arrival = okaforArrival()
+    const onPlaced = vi.fn()
+    render(<PlaceListCard arrival={arrival} actor={OFFICE_ACTOR} onPlaced={onPlaced} />)
+    expect(document.querySelectorAll('[data-place-option="session"]')).toHaveLength(1)
+    expect(document.querySelectorAll('[data-place-option]').length).toBeLessThanOrEqual(4)
+    fireEvent.click(q('[data-place-option="session"]')!)
+    const pick = q('[data-shot="intake-place-list-session-pick"]') as HTMLSelectElement
+    const options = [...pick.querySelectorAll('option')]
+    expect(options.length).toBeGreaterThan(1)
+    const second = options[1]!
+    act(() => {
+      fireEvent.change(pick, { target: { value: second.value } })
+    })
+    expect(q('[data-place-option="session"]')!.getAttribute('data-slot-id')).toBe(second.value)
+    expect(submit().textContent).toBe(`Place in ${second.textContent}'s PM`)
+    fireEvent.click(submit())
+    expect(onPlaced).toHaveBeenCalledTimes(1)
+    const listId = onPlaced.mock.calls[0]![0].listId as string
+    const s = useAppStore.getState()
+    const anaesthetistId = s.schedule.lists[listId]!.anaesthetistId!
+    expect(second.textContent).toContain(surnameOf(s.masters.anaesthetists[anaesthetistId]!.name))
   })
 })

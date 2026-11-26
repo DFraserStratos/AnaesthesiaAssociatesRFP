@@ -1,42 +1,35 @@
 /**
- * Place this List (build plan Phase 70; US-02.1.2's placement half, US-01.6.1, DM-19, D118, D125;
- * `docs/explorations/intake-ideas.html` `#idea1` mock B and `#reco`, the session picker reading who is free that day).
- * Intake's own card, built from shared parts: the named anaesthetist's session first while it is free (Suggested),
- * the other anaesthetists free that day and session, the Lists AA holds that could take it, and a Draft List. One
- * primary button names the result; the whole List lands as one change set (`placeArrivalList`). A session taken
- * since the card was drawn is refused in place.
+ * Place this List (build plan Phase 70; US-02.1.2's placement half, US-01.6.1, DM-19, D118, D125; the opened arrival's
+ * O1 in docs/explorations/intake-inbox-iterations.html). Four choices as radio cards: the anaesthetist named on the
+ * PDF or by the hospital, while their session is free (Suggested); another anaesthetist free that session, picked
+ * from a drop-down; a List AA holds that could take it, picked from a drop-down; or a Draft List. The whole List
+ * lands as one change set (`placeArrivalList`); a session taken since the card was drawn is refused in place.
  *
- * Hooks: `data-shot="intake-place-list"` (or `shot`); each option `data-place-option` (`suggested`, `session`, `list`,
- * `draft`) with `data-slot-id` or `data-list-id`; `intake-place-list-submit`, `-error`, `-summary`, `-named-busy`,
- * `-surgeon`, `-more`.
+ * `usePlaceList` gives the choices (`node`) apart from what confirms them (`summary`, `primaryLabel`, `submit`,
+ * `blockedBy`, `error`), so the opened arrival puts the button in the decision column's footer directly under the
+ * choice. `PlaceListCard` is the same thing as one standalone card with its own button (the component catalogue).
+ *
+ * Hooks: `data-shot="intake-place-list"` (or `shot`); each option `data-place-option` (`suggested`, `session`,
+ * `list`, `draft`), the chosen one's `data-slot-id` or `data-list-id`; `-session-pick`, `-list-pick`, `-surgeon`,
+ * `-error`, `-named-busy`; the standalone card's `-summary` and `-submit` (the opened arrival's footer primary takes
+ * `intake-place-list-submit`).
  */
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import type { ArrivalItem } from '../../../../../../domain/intake/arrivals'
 import { rowWaitsForNhi } from '../../../../../../domain/intake/arrivals'
-import { sessionLabel, type MatchingList, type MatchingSlot } from '../../../../../../domain/intake/matching'
-import { placementSlotLabel } from '../../../../../../domain/intake/placement'
+import { sessionLabel, type MatchingList } from '../../../../../../domain/intake/matching'
 import type { Session } from '../../../../../../domain/types'
 import { plural, shortDay, titledSurname } from '../../../../../../shared/format'
 import { DRAFT_LIST, DRAFT_LISTS } from '../../../../../../shared/scheduleTerms'
-import { Button, Card, FormError, Pill, RadioCard, SelectField, TextAction, useRovingRadio } from '../../../../../../shared/ui'
+import { DecisionHeading } from '../../../../../../shared/surface'
+import { Button, Card, FormError, Pill, RadioCard, SelectField, useRovingRadio } from '../../../../../../shared/ui'
 import { placeArrivalList, placeChoicesFor, sessionChoice, useAppStore, type Actor, type PlaceChoice } from '../../../../../../store'
 import { neutral, space, type as typeScale } from '../../../../../../theme/tokens'
-
-/** How many other free anaesthetists show before "Show more". */
-const FIRST_SLOTS = 5
 
 const SMALL = { fontSize: typeScale.small.size, lineHeight: `${typeScale.small.line}px`, color: neutral.slate } as const
 
 type OptionKind = 'suggested' | 'session' | 'list' | 'draft'
-
-interface PlaceOption {
-  /** The radio value: unique per option. */
-  value: string
-  kind: OptionKind
-  slot?: MatchingSlot
-  list?: MatchingList
-}
 
 /** "Dr Rutherford", or "An anaesthetist" when the id is unknown. */
 function titledAnaesthetist(anaesthetists: Readonly<Record<string, { name: string }>>, id: string | undefined): string {
@@ -69,19 +62,33 @@ function contentsPhrase(bookings: number, stubNames: readonly string[]): string 
   return parts.join(' and ')
 }
 
-export function PlaceListCard({
-  arrival,
-  actor,
-  disabledReason,
-  onPlaced,
-  shot = 'intake-place-list',
-}: {
+export interface PlaceListOptions {
   arrival: ArrivalItem
   actor: Actor
+  /** Why the List cannot be placed yet (an invalid NHI): the primary is disabled with it. */
   disabledReason?: string
   onPlaced: (r: { listId: string }) => void
   shot?: string
-}) {
+}
+
+export interface PlaceList {
+  /** The choices, as a group of radio cards. */
+  node: ReactNode
+  /** What the primary will do: "Creates the List with 3 Bookings and a stub for Sina Leota." */
+  summary: string
+  /** The primary's label, naming the result: "Place in Dr Delaney's PM". */
+  primaryLabel: string
+  submit: () => void
+  /** Why the primary is disabled; undefined when it can place. */
+  blockedBy?: string
+  /** A refusal from the store (a session just taken). */
+  error: string | null
+  /** The patients waiting for an NHI, who go on the List as stubs. */
+  stubNames: string[]
+}
+
+/** Place this List, its choices apart from its confirm. Undefined when the arrival has no date or session to place by. */
+export function usePlaceList({ arrival, actor, disabledReason, onPlaced, shot = 'intake-place-list' }: PlaceListOptions): PlaceList | undefined {
   const masters = useAppStore((s) => s.masters)
   const schedule = useAppStore((s) => s.schedule)
   const intake = useAppStore((s) => s.intake)
@@ -97,8 +104,9 @@ export function PlaceListCard({
   const stubNames = rows.filter((r) => rowWaitsForNhi(r)).map((r) => r.incoming.patient.name)
   const bookingCount = rows.length - stubNames.length
 
-  const [showAll, setShowAll] = useState(false)
-  const [selected, setSelected] = useState<string | undefined>(() => (choices?.suggested !== undefined ? `suggested:${choices.suggested.id}` : undefined))
+  const [selected, setSelected] = useState<OptionKind | undefined>(() => (choices?.suggested !== undefined ? 'suggested' : undefined))
+  const [slotPick, setSlotPick] = useState('')
+  const [listPick, setListPick] = useState('')
   const [surgeonPick, setSurgeonPick] = useState('')
   const [refusal, setRefusal] = useState<string | null>(null)
 
@@ -106,72 +114,73 @@ export function PlaceListCard({
     const name = (id: string) => titledAnaesthetist(masters.anaesthetists, id)
     return [...(choices?.otherSlots ?? [])].sort((a, b) => name(a.anaesthetistId).localeCompare(name(b.anaesthetistId)) || a.id.localeCompare(b.id))
   }, [choices, masters.anaesthetists])
-  const shownSlots = showAll ? otherSlots : otherSlots.slice(0, FIRST_SLOTS)
-  const options: PlaceOption[] = [
-    ...(choices?.suggested !== undefined ? [{ value: `suggested:${choices.suggested.id}`, kind: 'suggested' as const, slot: choices.suggested }] : []),
-    ...shownSlots.map((slot) => ({ value: `slot:${slot.id}`, kind: 'session' as const, slot })),
-    ...(choices?.lists ?? []).map((list) => ({ value: `list:${list.id}`, kind: 'list' as const, list })),
-    { value: 'draft', kind: 'draft' },
+  const lists = choices?.lists ?? []
+  // The drop-downs start on their first entry; a pick no longer offered (taken meanwhile) falls back to it.
+  const slot = otherSlots.find((s) => s.id === slotPick) ?? otherSlots[0]
+  const list = lists.find((l) => l.id === listPick) ?? lists[0]
+
+  const offered: OptionKind[] = [
+    ...(choices?.suggested !== undefined ? (['suggested'] as const) : []),
+    ...(slot !== undefined ? (['session'] as const) : []),
+    ...(list !== undefined ? (['list'] as const) : []),
+    'draft',
   ]
   // A choice no longer offered (its session was taken) is no choice: the office chooses again.
-  const chosen = options.find((o) => o.value === selected)
-  const { groupProps, itemProps } = useRovingRadio({
-    values: options.map((o) => o.value),
-    value: chosen?.value,
-    onChange: (v) => {
-      setSelected(v)
-      setRefusal(null)
-    },
-  })
+  const chosen = selected !== undefined && offered.includes(selected) ? selected : undefined
+  const choose = (v: OptionKind) => {
+    setSelected(v)
+    setRefusal(null)
+  }
+  const { groupProps, itemProps } = useRovingRadio({ values: offered, value: chosen, onChange: choose })
 
-  if (choices === undefined || arrival.dateISO === undefined || arrival.session === undefined) return null
+  if (choices === undefined || arrival.dateISO === undefined || arrival.session === undefined) return undefined
   const { dateISO, session } = arrival
 
-  const needsSurgeon = !choices.surgeonKnown && (chosen?.kind === 'suggested' || chosen?.kind === 'session' || chosen?.kind === 'draft')
+  const needsSurgeon = !choices.surgeonKnown && (chosen === 'suggested' || chosen === 'session' || chosen === 'draft')
   const surgeonOptions = Object.values(masters.surgeons).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
   const namedBusy = choices.namedAnaesthetistId !== undefined && choices.suggested === undefined
   const namedBy = arrival.source.kind === 'rooms' ? 'Named on the PDF' : 'Named by the hospital'
 
-  const listTitle = (list: MatchingList) => (list.anaesthetistId !== undefined ? `Add to ${anaesthetistName(list.anaesthetistId)}'s List` : `Add to the ${DRAFT_LIST}`)
-  const listLine = (list: MatchingList) => {
-    const surgeon = list.surgeonId !== undefined ? masters.surgeons[list.surgeonId]?.name : undefined
-    return [surgeon !== undefined ? titledSurname(surgeon) : 'No surgeon', sessionLabel(list.dateISO, list.session), list.state === 'DRAFT' ? 'no anaesthetist yet' : undefined]
+  const listOwner = (l: MatchingList) => (l.anaesthetistId !== undefined ? `${anaesthetistName(l.anaesthetistId)}'s List` : `the ${DRAFT_LIST}`)
+  const listLine = (l: MatchingList) => {
+    const surgeon = l.surgeonId !== undefined ? masters.surgeons[l.surgeonId]?.name : undefined
+    return [surgeon !== undefined ? titledSurname(surgeon) : 'No surgeon', sessionLabel(l.dateISO, l.session), l.state === 'DRAFT' ? 'no anaesthetist yet' : undefined]
       .filter((p) => p !== undefined)
-      .join(' · ')
+      .join(', ')
   }
 
   const contents = contentsPhrase(bookingCount, stubNames)
   const summary =
     chosen === undefined
       ? `Choose where this List goes. It holds ${contents}.`
-      : chosen.kind === 'list' && chosen.list !== undefined
-        ? `Adds ${contents} to ${listTitle(chosen.list).replace(/^Add to /, '')}.`
-        : chosen.kind === 'draft'
+      : chosen === 'list' && list !== undefined
+        ? `Adds ${contents} to ${listOwner(list)}.`
+        : chosen === 'draft'
           ? `Makes a ${DRAFT_LIST} with ${contents}.`
           : `Creates the List with ${contents}.`
 
-  const buttonLabel =
+  const primaryLabel =
     chosen === undefined
       ? 'Place this List'
-      : chosen.kind === 'list'
-        ? 'Add to the List'
-        : chosen.kind === 'draft'
+      : chosen === 'list' && list !== undefined
+        ? `Add to ${listOwner(list)}`
+        : chosen === 'draft'
           ? `Make a ${DRAFT_LIST}`
-          : `Place in ${anaesthetistName(chosen.slot?.anaesthetistId)}'s ${sessionWord(session)}`
+          : `Place in ${anaesthetistName((chosen === 'suggested' ? choices.suggested : slot)?.anaesthetistId)}'s ${sessionWord(session)}`
 
   const blockedBy =
     disabledReason ??
     (chosen === undefined ? 'Choose where this List goes first.' : needsSurgeon && surgeonPick === '' ? 'Choose the surgeon for this List first.' : undefined)
 
-  const place = () => {
-    if (chosen === undefined) return
-    const surgeon = needsSurgeon && surgeonPick !== '' ? { surgeonId: surgeonPick } : {}
+  const submit = () => {
+    if (chosen === undefined || blockedBy !== undefined) return
+    const surgeonId = needsSurgeon && surgeonPick !== '' ? surgeonPick : undefined
     const choice: PlaceChoice =
-      chosen.kind === 'list' && chosen.list !== undefined
-        ? { kind: 'list', listId: chosen.list.id }
-        : chosen.kind === 'draft'
-          ? { kind: 'draft', ...surgeon }
-          : sessionChoice(chosen.slot?.id ?? '', needsSurgeon && surgeonPick !== '' ? surgeonPick : undefined)
+      chosen === 'list' && list !== undefined
+        ? { kind: 'list', listId: list.id }
+        : chosen === 'draft'
+          ? { kind: 'draft', ...(surgeonId !== undefined ? { surgeonId } : {}) }
+          : sessionChoice((chosen === 'suggested' ? choices.suggested : slot)?.id ?? '', surgeonId)
     const out = placeArrivalList(useAppStore, actor, arrival.key, choice)
     if (!out.ok) {
       setRefusal(out.message)
@@ -193,59 +202,87 @@ export function PlaceListCard({
     </SelectField>
   ) : undefined
 
-  return (
-    <Card title="Place this List" shot={shot} data-arrival-key={arrival.key}>
+  const common = (v: OptionKind, i: number) => ({ radio: itemProps(i), checked: chosen === v, onSelect: () => choose(v), 'data-place-option': v })
+  const at = (v: OptionKind) => offered.indexOf(v)
+
+  const node = (
+    <section data-shot={shot} data-arrival-key={arrival.key} aria-label="Place this List" style={{ display: 'flex', flexDirection: 'column', gap: space[2] }}>
+      <DecisionHeading>Place this List</DecisionHeading>
       {namedBusy && (
         <p data-shot={`${shot}-named-busy`} style={{ margin: 0, ...SMALL }}>
           {namedBy}: {anaesthetistName(choices.namedAnaesthetistId)}, whose {sessionWord(session)} on {shortDay(dateISO)} is not free.
         </p>
       )}
       <div {...groupProps} aria-label="Where this List goes" style={{ display: 'flex', flexDirection: 'column', gap: space[2] }}>
-        {options.map((o, i) => {
-          const common = { radio: itemProps(i), checked: chosen?.value === o.value, onSelect: () => { setSelected(o.value); setRefusal(null) }, 'data-place-option': o.kind }
-          if (o.kind === 'suggested' && o.slot !== undefined) {
-            return (
-              <RadioCard
-                key={o.value}
-                {...common}
-                data-slot-id={o.slot.id}
-                title={`${anaesthetistName(o.slot.anaesthetistId)}'s ${sessionWord(session)}, ${shortDay(dateISO)}`}
-                titleExtra={<Pill size="sm" tone="success">Suggested</Pill>}
-                description={`${namedBy} · free ${partOfDay(session)}`}
-              >
-                {surgeonField}
-              </RadioCard>
-            )
-          }
-          if (o.kind === 'session' && o.slot !== undefined) {
-            return (
-              <RadioCard key={o.value} {...common} data-slot-id={o.slot.id} title={placementSlotLabel(o.slot, masters.anaesthetists)}>
-                {surgeonField}
-              </RadioCard>
-            )
-          }
-          if (o.kind === 'list' && o.list !== undefined) {
-            return <RadioCard key={o.value} {...common} data-list-id={o.list.id} title={listTitle(o.list)} description={listLine(o.list)} />
-          }
-          return (
-            <RadioCard key={o.value} {...common} title={`Make a ${DRAFT_LIST}`} description={`No anaesthetist yet · shows in ${DRAFT_LISTS} until someone is assigned`}>
-              {surgeonField}
-            </RadioCard>
-          )
-        })}
+        {choices.suggested !== undefined && (
+          <RadioCard
+            {...common('suggested', at('suggested'))}
+            data-slot-id={choices.suggested.id}
+            title={`${anaesthetistName(choices.suggested.anaesthetistId)}'s ${sessionWord(session)}, ${shortDay(dateISO)}`}
+            titleExtra={<Pill size="sm" tone="success">Suggested</Pill>}
+            description={`${namedBy}, free ${partOfDay(session)}`}
+          >
+            {surgeonField}
+          </RadioCard>
+        )}
+        {slot !== undefined && (
+          <RadioCard
+            {...common('session', at('session'))}
+            data-slot-id={slot.id}
+            title={`Another anaesthetist's ${sessionWord(session)}`}
+            description={`${otherSlots.length} free ${partOfDay(session)}`}
+          >
+            <SelectField label="Anaesthetist" value={slot.id} onChange={(v) => { setSlotPick(v); setRefusal(null) }} size="compact" fill="well" shot={`${shot}-session-pick`}>
+              {otherSlots.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {anaesthetistName(s.anaesthetistId)}
+                </option>
+              ))}
+            </SelectField>
+            {surgeonField}
+          </RadioCard>
+        )}
+        {list !== undefined && (
+          <RadioCard
+            {...common('list', at('list'))}
+            data-list-id={list.id}
+            title="Add to a List we hold"
+            description={lists.length === 1 ? `1 List ${partOfDay(session)} could take it` : `${lists.length} Lists ${partOfDay(session)} could take it`}
+          >
+            <SelectField label="List" value={list.id} onChange={(v) => { setListPick(v); setRefusal(null) }} size="compact" fill="well" shot={`${shot}-list-pick`}>
+              {lists.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {`${listOwner(l).replace(/^the /, 'The ')} · ${listLine(l)}`}
+                </option>
+              ))}
+            </SelectField>
+          </RadioCard>
+        )}
+        <RadioCard {...common('draft', at('draft'))} title={`Make a ${DRAFT_LIST}`} description={`No anaesthetist yet, shows in ${DRAFT_LISTS} until someone is assigned`}>
+          {surgeonField}
+        </RadioCard>
       </div>
-      {otherSlots.length > FIRST_SLOTS && (
-        <TextAction size="sm" flush shot={`${shot}-more`} onClick={() => setShowAll((v) => !v)}>
-          {showAll ? 'Show fewer anaesthetists' : `Show ${plural(otherSlots.length - FIRST_SLOTS, 'more free anaesthetist')}`}
-        </TextAction>
-      )}
       <FormError message={refusal} shot={`${shot}-error`} />
+    </section>
+  )
+
+  return { node, summary, primaryLabel, submit, ...(blockedBy !== undefined ? { blockedBy } : {}), error: refusal, stubNames }
+}
+
+/** Place this List as one standalone card with its own summary and button (the component catalogue). */
+export function PlaceListCard(props: PlaceListOptions) {
+  const place = usePlaceList(props)
+  const shot = props.shot ?? 'intake-place-list'
+  if (place === undefined) return null
+  return (
+    <Card shot={`${shot}-card`}>
+      {place.node}
       <div style={{ display: 'flex', alignItems: 'center', gap: space[3], flexWrap: 'wrap', borderTop: `1px solid ${neutral.line}`, paddingTop: space[3] }}>
         <p data-shot={`${shot}-summary`} style={{ margin: 0, flex: '1 1 240px', ...SMALL }}>
-          {summary}
+          {place.summary}
         </p>
-        <Button variant="primary" size="desktop" onClick={place} disabled={blockedBy !== undefined} disabledReason={blockedBy} shot={`${shot}-submit`}>
-          {buttonLabel}
+        <Button variant="primary" size="desktop" onClick={place.submit} disabled={place.blockedBy !== undefined} disabledReason={place.blockedBy} shot={`${shot}-submit`}>
+          {place.primaryLabel}
         </Button>
       </div>
     </Card>

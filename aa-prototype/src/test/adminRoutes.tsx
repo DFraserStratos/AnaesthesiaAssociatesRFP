@@ -19,6 +19,7 @@ import {
   AdminPersonRedirect,
   AdminSurgeonProfileRoute,
   AdminSpecialtyPageRoute,
+  AdminArrivalRoute,
   AdminArrivalsRoute,
   AdminIntakeRoute,
   AdminSourcesRoute,
@@ -125,6 +126,7 @@ export function intakeRoutes() {
       <Route index element={<AdminArrivalsRoute />} />
       <Route path="sources" element={<AdminSourcesRoute />} />
     </Route>,
+    <Route key="intake-arrival" path="intake/arrival/:key" element={<AdminArrivalRoute />} />,
     ...INTAKE_LEGACY_ROUTES.map((path) => <Route key={path} path={path} element={<IntakeLegacyRedirect />} />),
   ]
 }

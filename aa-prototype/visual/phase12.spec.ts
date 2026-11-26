@@ -53,11 +53,11 @@ test('control panel: scenario jump, procedure-day jump, PDF ingest and jobs run 
   await expect(page.locator('[data-shot="scenario-result"] button[data-shot^="scenario-beat-"]')).toHaveCount(7)
 
   // PDF arrival (build plan Phase 68; was catch-up Phase 34): the rooms email a List, which lands on Arrivals under Rooms PDFs.
-  await page.goto('/admin/intake?filter=rooms-pdfs')
+  await page.goto('/admin/intake?source=rooms')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot="demo-actions"]')).toHaveCount(1)
   expect(await runDemoAction(page, 'intake-rooms-email-list', { close: true })).not.toMatch(/^Refused/)
-  await expect(page.locator('[data-shot="intake-feed-item"][data-arrival-kind="newList"]').first()).toBeVisible()
+  await expect(page.locator('[data-shot="intake-inbox-row"][data-arrival-kind="newList"]').first()).toBeVisible()
   // Phase 68: correcting the flagged NHI and sending the PDF to matching moved to 70; re-added there.
 
   // Automated jobs: run the reconciliation poll from Finances · Xero.

@@ -6,8 +6,8 @@
  */
 
 import { Building2, FileText } from 'lucide-react'
-import type { ArrivalSourceMark } from '../../../../../domain/intake/arrivals'
-import { Pill } from '../../../../../shared/ui'
+import type { ArrivalSourceMark } from '../../../../domain/intake/arrivals'
+import { Pill } from '../../../../shared/ui'
 
 export function SourceMark({ source, size = 'sm' }: { source: ArrivalSourceMark; size?: 'sm' | 'md' }) {
   const icon = size === 'sm' ? 10 : 12

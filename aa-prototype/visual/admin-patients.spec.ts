@@ -60,16 +60,17 @@ test('search finds Sarah Mitchell; her record shows the strong balance and both 
   await page.screenshot({ path: 'visual/shots/admin-patient-record-mitchell.png', fullPage: true })
 })
 
-test('Waiting for NHI: the old address lands on Intake under Needs NHI, each waiting row its own item with its rows on the workbench', async ({ page }) => {
+test('Waiting for NHI: the old address lands on Intake showing Waiting for an NHI, each waiting row its own arrival, opened on its own page', async ({ page }) => {
   await open(page, '/admin/patients/waiting')
-  await expect(page).toHaveURL(/\/admin\/intake\?filter=needs-nhi$/)
-  const rows = page.locator('[data-shot="intake-feed-item"]')
+  await expect(page).toHaveURL(/\/admin\/intake\?show=needs-nhi$/)
+  const rows = page.locator('[data-shot="intake-inbox-row"]')
   await expect(rows.first()).toBeVisible()
   const count = await rows.count()
-  await expect(page.locator('[data-shot="intake-feed-item"][data-arrival-kind="needsNhi"]')).toHaveCount(count)
+  await expect(page.locator('[data-shot="intake-inbox-row"][data-arrival-kind="needsNhi"]')).toHaveCount(count)
   const mere = rows.filter({ hasText: 'Mere Tipene' })
   await expect(mere).toHaveCount(1)
   await mere.click()
+  await expect(page.locator('[data-shot="intake-arrival-page"]')).toHaveAttribute('data-arrival-kind', 'needsNhi')
   // Phase 72: the Needs NHI bench (the old table's row hooks moved onto it).
   const row = page.locator('[data-shot="intake-bench-needsNhi"] [data-shot="waiting-nhi-row"]')
   await expect(row).toHaveAttribute('data-row-id', 'IRS001')

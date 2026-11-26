@@ -314,7 +314,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
 
   const SECTION_PATH: Record<NavSection, string> = {
     day: `/admin/day/${selectedDate}${dayQuery === '' ? '' : `?${dayQuery}`}`,
-    intake: '/admin/intake/matching',
+    intake: '/admin/intake',
     draftLists: '/admin/draft-lists',
     conflicts: '/admin/conflicts',
     notifications: '/admin/notifications',

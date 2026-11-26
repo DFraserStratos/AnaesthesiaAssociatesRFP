@@ -2,10 +2,11 @@ import { expect, test, type Page } from '@playwright/test'
 import { runDemoAction } from './demoActions'
 
 /**
- * Admin, Intake, Arrivals (build plan Phase 68; D117; was Matching, catch-up Phase 33). The feed beside the
- * docked workbench, with no import or upload button; its filter, search and picked item in the URL; arrivals
- * landing as their kind from their source, nothing applied; the old Matching addresses redirecting with
- * replace. Nothing changes the schedule until the office decides (RV-13).
+ * Admin, Intake, Arrivals (build plan Phase 68; D117; was Matching, catch-up Phase 33; the inbox rebuild of 27 Nov
+ * 2026). The inbox table of arrivals, with no import or upload button; its query (Show, Kind, Source, search) in the
+ * URL; a row opening its arrival on its own page, the query riding along; arrivals landing as their kind from their
+ * source, nothing applied; the old Matching addresses redirecting with replace. Nothing changes the schedule until
+ * the office decides (RV-13).
  */
 
 async function fresh(page: Page, path = '/admin/intake'): Promise<void> {
@@ -15,50 +16,53 @@ async function fresh(page: Page, path = '/admin/intake'): Promise<void> {
   await page.waitForLoadState('networkidle')
 }
 
-const feedItem = (page: Page, text: string) => page.locator('[data-shot="intake-feed-item"]', { hasText: text })
-const workbench = (page: Page) => page.locator('[data-shot="intake-workbench"]')
+const inboxRow = (page: Page, text: string) => page.locator('[data-shot="intake-inbox-row"]', { hasText: text })
+const kindRows = (page: Page, kind: string) => page.locator(`[data-shot="intake-inbox-row"][data-arrival-kind="${kind}"]`)
+const arrivalPage = (page: Page) => page.locator('[data-shot="intake-arrival-page"]')
+const toolbar = (page: Page) => page.locator('[data-shot="intake-inbox-filters"]')
 
 /** The Okafor story's first beat: the rooms email his List and the office places it, so AA holds it. */
 async function placeOkaforList(page: Page): Promise<void> {
-  await page.goto('/admin/intake?filter=rooms-pdfs')
+  await page.goto('/admin/intake?source=rooms')
   await page.waitForLoadState('networkidle')
   expect(await runDemoAction(page, 'intake-rooms-email-list', { close: true })).not.toMatch(/^Refused/)
-  await page.locator('[data-shot="intake-feed-item"][data-arrival-kind="newList"]', { hasText: 'Okafor' }).filter({ hasText: "St George's" }).click()
-  await page.locator('[data-shot="intake-place-list"]').getByRole('button', { name: /^Place in/ }).click()
+  await kindRows(page, 'newList').filter({ hasText: 'Okafor' }).filter({ hasText: "St George's" }).click()
+  await expect(arrivalPage(page)).toHaveAttribute('data-arrival-kind', 'newList')
+  await expect(page.locator('[data-shot="intake-place-list-submit"]')).toHaveText(/^Place in/)
+  await page.locator('[data-shot="intake-place-list-submit"]').click()
   await expect(page.locator('[data-shot="intake-newlist-decided"]')).toContainText('Placed')
 }
 
-test('Arrivals: the feed beside the docked workbench, no import or upload button, only "Add a PDF by hand"', async ({ page }) => {
+test('Arrivals: the inbox table, no import or upload button, only "Add a PDF by hand"', async ({ page }) => {
   await fresh(page)
   await expect(page.locator('[data-shot="intake-section"]')).toBeVisible()
   const tabs = page.locator('[data-shot="intake-tabs"]')
   await expect(tabs.getByRole('link', { name: /^Arrivals/ })).toBeVisible()
   await expect(tabs.getByRole('link', { name: 'Sources' })).toBeVisible()
-  await expect(page.locator('[data-shot="intake-sources-strip"]')).toContainText('Inbound only')
-  await expect(page.locator('[data-shot="intake-split"]')).toBeVisible()
-  await expect(page.locator('[data-shot="intake-feed"]')).toBeVisible()
-  await expect(workbench(page)).toBeVisible()
+  await expect(page.locator('[data-shot="intake-sources-strip"]')).toHaveCount(0)
+  await expect(toolbar(page)).toBeVisible()
+  await expect(page.locator('[data-shot="intake-inbox"]')).toBeVisible()
+  await expect(page.locator('[data-shot="intake-inbox-row"]').first()).toBeVisible()
   await expect(page.getByText('Import hospital file')).toHaveCount(0)
   await expect(page.getByText('Upload PDF')).toHaveCount(0)
   await expect(page.locator('[data-shot="intake-add-pdf"]')).toHaveText('Add a PDF by hand')
-  expect(/download/i.test(await page.locator('[data-shot="intake-arrivals"]').innerText())).toBe(false)
+  expect(/download/i.test(await page.locator('[data-shot="intake-section"]').innerText())).toBe(false)
   await page.screenshot({ path: 'visual/shots/admin-intake-arrivals.png', fullPage: true })
 })
 
-test('Needs NHI: the filter and the picked item live in the URL; the seeded row waits with its stub', async ({ page }) => {
+test('Needs NHI: the Show choice and the opened arrival live in the URL; the seeded row waits with its stub', async ({ page }) => {
   await fresh(page)
-  await page.locator('[data-shot="intake-filters"]').getByRole('button', { name: /^Needs NHI/ }).click()
-  await expect(page).toHaveURL(/\/admin\/intake\?filter=needs-nhi$/)
+  await toolbar(page).getByLabel('Show', { exact: true }).selectOption({ label: 'Waiting for an NHI' })
+  await expect(page).toHaveURL(/\/admin\/intake\?show=needs-nhi$/)
   // The seeded row waiting for an NHI, with its stub on a List (catch-up Phase 33a).
-  const mere = feedItem(page, 'Mere Tipene')
+  const mere = inboxRow(page, 'Mere Tipene')
   await expect(mere).toHaveAttribute('data-arrival-kind', 'needsNhi')
-  await mere.click()
-  await expect(mere).toHaveAttribute('aria-selected', 'true')
   const key = await mere.getAttribute('data-arrival-key')
   expect(key).not.toBeNull()
-  await expect(page).toHaveURL(/\/admin\/intake\?filter=needs-nhi&item=/)
-  expect(new URL(page.url()).searchParams.get('item')).toBe(key)
-  await expect(workbench(page)).toHaveAttribute('data-arrival-kind', 'needsNhi')
+  await mere.click()
+  await expect(page).toHaveURL(new RegExp(`/admin/intake/arrival/${encodeURIComponent(key!)}\\?show=needs-nhi$`))
+  await expect(arrivalPage(page)).toHaveAttribute('data-arrival-kind', 'needsNhi')
+  await expect(arrivalPage(page)).toHaveAttribute('data-arrival-key', key!)
   const bench = page.locator('[data-shot="intake-bench-needsNhi"]')
   await expect(bench).toBeVisible()
   // Phase 72: the bench's parts, top to bottom: as received, the List with its stub, the one address, Add NHI.
@@ -69,32 +73,38 @@ test('Needs NHI: the filter and the picked item live in the URL; the seeded row 
   await expect(bench.locator('[data-shot="waiting-nhi-add"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/admin-intake-needs-nhi.png', fullPage: true })
 
-  // A reload keeps the filter and the pick; search narrows the feed and lands in the URL.
+  // A reload keeps the opened arrival; Back returns to the inbox with its query, where search narrows it and lands in the URL.
   await page.reload()
   await page.waitForLoadState('networkidle')
-  await expect(feedItem(page, 'Mere Tipene')).toHaveAttribute('aria-selected', 'true')
+  await expect(arrivalPage(page)).toHaveAttribute('data-arrival-key', key!)
+  await page.locator('[data-shot="intake-arrival-back"]').click()
+  await expect(page).toHaveURL(/\/admin\/intake\?show=needs-nhi$/)
   await page.locator('[data-shot="intake-search"]').getByRole('searchbox').fill('Tipene')
-  await expect(page).toHaveURL(/filter=needs-nhi&q=Tipene$/)
-  await expect(feedItem(page, 'Mere Tipene')).toHaveCount(1)
+  await expect(page).toHaveURL(/show=needs-nhi&q=Tipene$/)
+  await expect(inboxRow(page, 'Mere Tipene')).toHaveCount(1)
 
   // Phase 72: Add NHI, the one path: the Booking takes the stub's place and the row leaves Needs NHI.
+  await inboxRow(page, 'Mere Tipene').click()
   await page.locator('[data-shot="waiting-nhi-add"]').click()
   const sheet = page.locator('[data-shot="add-nhi-sheet"]')
   await sheet.getByLabel('NHI', { exact: true }).fill('ZQA1024')
   await sheet.locator('[data-shot="add-nhi-save"]').click()
-  await expect(feedItem(page, 'Mere Tipene')).toHaveCount(0)
+  await page.goto('/admin/intake?show=needs-nhi')
+  await page.waitForLoadState('networkidle')
+  await expect(page.locator('[data-shot="intake-inbox-row"]').first()).toBeVisible()
+  await expect(inboxRow(page, 'Mere Tipene')).toHaveCount(0)
 })
 
 test("St George's sends the day-before List: the file lands as a heading over its Lists, nothing applied", async ({ page }) => {
   await fresh(page)
   expect(await runDemoAction(page, 'intake-stg-day-before', { close: true })).not.toMatch(/^Refused/)
-  await page.goto('/admin/intake?filter=hospital-H-STG')
+  await page.goto('/admin/intake?source=H-STG')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="intake-group-header"]').first()).toBeVisible()
-  const exact = page.locator('[data-shot="intake-feed-item"][data-arrival-kind="matchesExactly"]')
+  await expect(page.locator('[data-shot="intake-inbox-day"]').first()).toBeVisible()
+  const exact = kindRows(page, 'matchesExactly')
   await expect(exact.first()).toBeVisible()
   await exact.first().click()
-  await expect(workbench(page)).toHaveAttribute('data-arrival-kind', 'matchesExactly')
+  await expect(arrivalPage(page)).toHaveAttribute('data-arrival-kind', 'matchesExactly')
   // 71's bench lists the Lists that match exactly, each a row with its arrival key, and one Confirm.
   await expect(page.locator('[data-shot="intake-bench-matchesExactly"] [data-shot="intake-unchanged-lists"] [data-arrival-key]').first()).toBeVisible()
   await expect(page.locator('[data-shot="intake-confirm-unchanged"]')).toBeVisible()
@@ -106,10 +116,12 @@ test('An update to a List AA holds: the match basis, the versions and a tick per
   // St George's sends an update only to a List AA holds: Mr Okafor's, once placed from the rooms' PDF.
   await placeOkaforList(page)
   expect(await runDemoAction(page, 'intake-stg-day-before', { close: true })).not.toMatch(/^Refused/)
-  await page.goto('/admin/intake?filter=hospital-H-STG')
+  await page.goto('/admin/intake?source=H-STG')
   await page.waitForLoadState('networkidle')
-  const update = page.locator('[data-shot="intake-feed-item"][data-arrival-kind="update"]').first()
-  await expect(update).toBeVisible()
+  // The seed holds other updates from St George's: this is the one to Mr Okafor's List.
+  const update = kindRows(page, 'update').filter({ hasText: 'Okafor' })
+  await expect(update).toHaveCount(1)
+  const key = await update.getAttribute('data-arrival-key')
   await update.click()
   const bench = page.locator('[data-shot="intake-bench-update"]')
   await expect(bench).toBeVisible()
@@ -121,16 +133,17 @@ test('An update to a List AA holds: the match basis, the versions and a tick per
   const changed = diff.locator('tr[data-change="changed"]').first()
   await expect(changed).toHaveAttribute('data-ticked', 'true')
   await page.screenshot({ path: 'visual/shots/admin-intake-update-bench.png', fullPage: true })
-  // Untick one change: it is left out; Apply decides the rest as one change set and the feed moves on.
+  // Untick one change: it is left out; Apply decides the rest as one change set, and it shows under Decided.
   const leftOutId = await changed.getAttribute('data-row-id')
   await changed.locator('[data-row-tick]').click()
   await expect(changed).toHaveAttribute('data-ticked', 'false')
   await bench.locator('[data-shot="matching-apply"]').click()
-  await page.goto('/admin/intake?filter=decided')
+  await expect(page.locator('[data-shot="intake-update-decided"]')).toBeVisible()
+  await page.goto('/admin/intake?show=decided')
   await page.waitForLoadState('networkidle')
-  await page.locator('[data-shot="intake-feed-item"][data-arrival-kind="update"]').first().click()
+  await page.locator(`[data-shot="intake-inbox-row"][data-arrival-key="${key}"]`).click()
   await expect(page.locator('[data-shot="intake-update-decided"]')).toContainText('left out')
-  await expect(page.locator(`tr[data-row-id="${leftOutId}"]`)).toContainText('Left out')
+  await expect(page.locator(`[data-shot="intake-update-diff"] tr[data-row-id="${leftOutId}"]`)).toContainText('Left out')
 })
 
 test('Reject an update with a reason: nothing on the schedule changes', async ({ page }) => {
@@ -138,33 +151,48 @@ test('Reject an update with a reason: nothing on the schedule changes', async ({
   // St George's sends an update only to a List AA holds: Mr Okafor's, once placed from the rooms' PDF.
   await placeOkaforList(page)
   expect(await runDemoAction(page, 'intake-stg-day-before', { close: true })).not.toMatch(/^Refused/)
-  await page.goto('/admin/intake?filter=hospital-H-STG')
+  await page.goto('/admin/intake?source=H-STG')
   await page.waitForLoadState('networkidle')
-  await page.locator('[data-shot="intake-feed-item"][data-arrival-kind="update"]').first().click()
+  const update = kindRows(page, 'update').filter({ hasText: 'Okafor' })
+  await expect(update).toHaveCount(1)
+  const key = await update.getAttribute('data-arrival-key')
+  await update.click()
   const bench = page.locator('[data-shot="intake-bench-update"]')
   await bench.locator('[data-shot="intake-update-reject"]').click()
   await expect(bench.getByRole('button', { name: 'Reject List' })).toBeDisabled()
   await bench.locator('[data-shot="intake-update-reject-form"]').getByRole('button', { name: 'Not an AA booking' }).click()
   await bench.getByRole('button', { name: 'Reject List' }).click()
-  await expect(page.locator('[data-shot="intake-feed-item"][data-arrival-kind="update"]')).toHaveCount(0)
+  await expect(page.locator('[data-shot="intake-update-decided"]')).toBeVisible()
+  await page.locator('[data-shot="intake-arrival-back"]').click()
+  await expect(page).toHaveURL(/\/admin\/intake\?source=H-STG$/)
+  await expect(page.locator('[data-shot="intake-inbox-row"]').first()).toBeVisible()
+  await expect(page.locator(`[data-shot="intake-inbox-row"][data-arrival-key="${key}"]`)).toHaveCount(0)
 })
 
-test('Southern Cross cancels a Booking: one Cancellation, its row cancelled on the workbench', async ({ page }) => {
-  await fresh(page)
+test('Southern Cross cancels a Booking: one Cancellation, its row cancelled on its arrival page', async ({ page }) => {
+  await fresh(page, '/admin/intake?source=H-SX')
+  // The seed holds other cancellations from Southern Cross: the demo action adds exactly one more.
+  await expect(page.locator('[data-shot="intake-inbox-row"]').first()).toBeVisible()
+  const keysOf = () => kindRows(page, 'cancellation').evaluateAll((els) => els.map((e) => e.getAttribute('data-arrival-key')))
+  const before = await keysOf()
   expect(await runDemoAction(page, 'intake-sx-cancels', { close: true })).not.toMatch(/^Refused/)
-  await page.goto('/admin/intake?filter=hospital-H-SX')
-  await page.waitForLoadState('networkidle')
-  const cancellation = page.locator('[data-shot="intake-feed-item"][data-arrival-kind="cancellation"]')
-  await expect(cancellation).toHaveCount(1)
+  await expect(kindRows(page, 'cancellation')).toHaveCount(before.length + 1)
+  const added = (await keysOf()).filter((k) => !before.includes(k))
+  expect(added).toHaveLength(1)
+  const cancellation = page.locator(`[data-shot="intake-inbox-row"][data-arrival-key="${added[0]}"]`)
   await cancellation.click()
-  await expect(workbench(page)).toHaveAttribute('data-arrival-kind', 'cancellation')
+  await expect(arrivalPage(page)).toHaveAttribute('data-arrival-kind', 'cancellation')
   const bench = page.locator('[data-shot="intake-bench-cancellation"]')
   await expect(bench.locator('[data-shot="intake-cancellation-booking"]').first()).toBeVisible()
   await expect(bench.locator('[data-shot="intake-lands-card"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/admin-intake-cancellation.png', fullPage: true })
   // Mark cancelled: the Booking stays visible, marked cancelled.
   await bench.locator('[data-shot="intake-cancellation-apply"]').click()
-  await expect(page.locator('[data-shot="intake-feed-item"][data-arrival-kind="cancellation"]')).toHaveCount(0)
+  await expect(bench.locator('[data-shot="intake-cancellation-decided"]')).toBeVisible()
+  await page.locator('[data-shot="intake-arrival-back"]').click()
+  await expect(page).toHaveURL(/\/admin\/intake\?source=H-SX$/)
+  await expect(kindRows(page, 'cancellation')).toHaveCount(before.length)
+  await expect(cancellation).toHaveCount(0)
 })
 
 test('the old Matching addresses land on Arrivals with replace, so Back skips them', async ({ page }) => {
@@ -172,7 +200,7 @@ test('the old Matching addresses land on Arrivals with replace, so Back skips th
   for (const old of ['/admin/intake/matching', '/admin/matching', '/admin/integrations']) {
     await page.goto(old)
     await expect(page).toHaveURL(/\/admin\/intake$/)
-    await expect(page.locator('[data-shot="intake-arrivals"]')).toBeVisible()
+    await expect(page.locator('[data-shot="intake-inbox"]')).toBeVisible()
   }
   await page.goto('/admin/day/2026-11-24')
   await page.waitForLoadState('networkidle')

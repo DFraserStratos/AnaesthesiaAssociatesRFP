@@ -19,7 +19,7 @@ import { DemoBadge } from '../../../../../../shared/DemoBadge'
 import { OverlayHeader, SheetActions, useSurface } from '../../../../../../shared/surface'
 import { Button, FormError, RadioCard, TextField, useRovingRadio } from '../../../../../../shared/ui'
 import { neutral, space, type as typeScale } from '../../../../../../theme/tokens'
-import { arrivalsPath } from '../../intakePaths'
+import { arrivalPath } from '../../intakePaths'
 
 export const ADD_PDF_BY_HAND_READY = true
 
@@ -56,7 +56,7 @@ function AddPdfByHandDialog({ onClose, actor }: { onClose: () => void; actor: Ac
       return
     }
     onClose()
-    navigate(arrivalsPath({ item: out.value.arrivalKey }))
+    navigate(arrivalPath(out.value.arrivalKey))
   }
 
   return (

@@ -15,7 +15,7 @@ const CONTENT_INSET = 28
 const PAGES = [
   '/admin/day/2026-11-24',
   '/admin/intake',
-  '/admin/intake?filter=rooms-pdfs',
+  '/admin/intake?source=rooms',
   '/admin/intake/sources',
   '/admin/draft-lists',
   '/admin/conflicts',
@@ -23,7 +23,7 @@ const PAGES = [
   '/admin/review',
   '/admin/finances/invoices',
   '/admin/people/patients',
-  '/admin/intake?filter=needs-nhi',
+  '/admin/intake?show=needs-nhi',
   '/admin/people/patients?filter=follow-up',
   '/admin/people/anaesthetists',
   '/admin/people/surgeons',

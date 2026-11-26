@@ -4,7 +4,7 @@
  * `IntakeSection.tsx` so the component file only exports components.
  */
 
-import { arrivalsPath, sourcesPath } from './intakePaths'
+import { inboxPath, sourcesPath } from './intakePaths'
 
 export type IntakeTab = 'arrivals' | 'sources'
 
@@ -15,7 +15,7 @@ export interface IntakeTabEntry {
 }
 
 export const INTAKE_TABS: readonly IntakeTabEntry[] = [
-  { tab: 'arrivals', label: 'Arrivals', path: arrivalsPath() },
+  { tab: 'arrivals', label: 'Arrivals', path: inboxPath() },
   { tab: 'sources', label: 'Sources', path: sourcesPath() },
 ]
 

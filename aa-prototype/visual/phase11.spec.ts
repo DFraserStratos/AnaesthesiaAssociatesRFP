@@ -78,10 +78,10 @@ test('Admin Intake holds Arrivals and Sources, unbadged; the old routes redirect
   // Sources is the second tab, inbound only.
   await page.locator('[data-shot="intake-tabs"]').getByRole('link', { name: 'Sources' }).click()
   await expect(page).toHaveURL(/\/admin\/intake\/sources$/)
-  await expect(page.locator('[data-shot="intake-sources-strip"]')).toContainText('Inbound only')
+  await expect(page.locator('[data-shot="intake-sources-inbound"]')).toContainText('never writes back')
   await page.locator('[data-shot="intake-tabs"]').getByRole('link', { name: /^Arrivals/ }).click()
   await expect(page).toHaveURL(/\/admin\/intake$/)
-  await expect(page.locator('[data-shot="intake-feed"]')).toBeVisible()
+  await expect(page.locator('[data-shot="intake-inbox"]')).toBeVisible()
   await page.screenshot({ path: 'visual/shots/phase11-monitor.png', fullPage: true })
   // Phase 68: the PDF lists tab's facsimile moved to 70 (the New List bench); re-added there.
   // Phase 68: the Validators tab moved to 72 (Validators in Help); re-added there.

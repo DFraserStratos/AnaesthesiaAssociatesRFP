@@ -2,8 +2,9 @@
  * The bench for an update to a List AA holds (build plan Phase 69; US-02.1.2, US-02.1.3, US-02.2.3; DM-12, DM-13,
  * DM-17; D118; `docs/explorations/intake-ideas.html` `#idea1` mock A, `#reco`), for a hospital's update or a re-sent
  * rooms' PDF alike: the List line, the match basis with the List's versions, then the List-level difference table
- * with a tick per Booking beside where it lands and any stub an arriving NHI resolves; Reject and Apply below the
- * table. Apply decides the whole List as one change set (`applyArrivingList`); an unticked change is left out and
+ * with a tick per Booking beside where it lands and any stub an arriving NHI resolves. On the opened arrival (O1) the
+ * document is the re-sent PDF or the rows as the hospital sent them, the decision column holds the rest stacked, and
+ * Reject and Apply sit in its footer. Apply decides the whole List as one change set (`applyArrivingList`); an unticked change is left out and
  * changes nothing. Nothing changes until Apply. A decided arrival shows its decision, read only.
  *
  * Hooks: `intake-bench-update`; `intake-update-list-line`; `intake-update-diff` (the table); `intake-update-footer`,
@@ -20,12 +21,16 @@ import { drSurname, plural, stampText } from '../../../../../shared/format'
 import { Button, Card, FormError, Notice, OptionChip, TextAction, TextField } from '../../../../../shared/ui'
 import { neutral, space, type as typeScale } from '../../../../../theme/tokens'
 import { RawRowSheet } from '../../../matching/RawRowSheet'
-import type { BenchProps } from './benchProps'
+import { DecisionHeading } from '../../../../../shared/surface'
+import { ArrivalDocument } from './ArrivalDocument'
+import { BenchLayout } from './BenchLayout'
+import type { BenchActions, BenchProps } from './benchProps'
+import { NextArrivalButton } from './NextArrivalButton'
 import { ListDiffTable } from './update/ListDiffTable'
 import { MatchBasisStrip } from './update/MatchBasisStrip'
 import { SlotCard } from './update/SlotCard'
 import { VersionTrack } from './update/VersionTrack'
-import { applyLabel, changeCountText, listStateLine, QUICK_REJECT_REASONS } from './update/updateText'
+import { changeCountText, listStateLine, QUICK_REJECT_REASONS } from './update/updateText'
 import { useUpdateBench, type UpdateBenchReads } from './update/useUpdateBench'
 
 const SMALL = { fontSize: typeScale.small.size, lineHeight: `${typeScale.small.line}px` } as const
@@ -55,7 +60,7 @@ export function UpdateBench(props: BenchProps) {
   return <UpdateBenchFor key={props.arrival.key} {...props} />
 }
 
-function UpdateBenchFor({ arrival, actor, onDone }: BenchProps) {
+function UpdateBenchFor({ arrival, actor, onDone, onNext }: BenchProps) {
   const rows = useArrivalRows(arrival.key)
   const reads = useUpdateBench(arrival)
   const [ticked, setTicked] = useState<Set<string>>(() => defaultTicks(rows, reads))
@@ -122,37 +127,48 @@ function UpdateBenchFor({ arrival, actor, onDone }: BenchProps) {
     rejected: rows.filter((r) => r.status === 'rejected').length,
   }
 
-  const footer =
-    decided || locked ? null : (
-      <div data-shot="intake-update-footer" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: space[3], width: '100%' }}>
-        <span data-shot="intake-update-count" style={{ ...SMALL, color: neutral.slate, flex: '1 1 200px' }}>
-          {changeCountText(changes, bookings)}
-          {reads.anaesthetistName !== undefined ? `. ${drSurname(reads.anaesthetistName)} sees the update in the app.` : '.'}
-        </span>
-        {rejecting ? (
-          <>
-            <Button variant="secondary" size="compact" onClick={() => setRejecting(false)}>
-              Keep it
+  const canDecide = !decided && !locked
+  const actions: BenchActions | undefined = !canDecide
+    ? onNext !== undefined
+      ? { primary: <NextArrivalButton onNext={onNext} /> }
+      : undefined
+    : rejecting
+      ? {
+          shot: 'intake-update-footer',
+          note: 'Nothing on the schedule changes. Every row is rejected with your reason.',
+          secondary: (
+            <Button variant="secondary" size="desktop" onClick={() => setRejecting(false)}>
+              Cancel
             </Button>
-            <Button variant="primary" size="compact" onClick={reject} disabled={reason.trim() === ''} shot="intake-update-reject">
+          ),
+          primary: (
+            <Button variant="danger" size="desktop" onClick={reject} disabled={reason.trim() === ''} shot="intake-update-reject">
               Reject List
             </Button>
-          </>
-        ) : (
-          <>
-            <Button variant="secondary" size="compact" onClick={() => setRejecting(true)} shot="intake-update-reject">
-              Reject
+          ),
+        }
+      : {
+          shot: 'intake-update-footer',
+          note: (
+            <span data-shot="intake-update-count">
+              Applies {changeCountText(changes, bookings)} as one change set
+              {reads.anaesthetistName !== undefined ? `. ${drSurname(reads.anaesthetistName)} sees the update in the app.` : '.'}
+            </span>
+          ),
+          secondary: (
+            <Button variant="secondary" size="desktop" onClick={() => setRejecting(true)} shot="intake-update-reject">
+              Reject this update
             </Button>
-            <Button variant="primary" size="compact" onClick={apply} disabled={tickedRows.length === 0} shot="matching-apply">
-              {applyLabel(changes)}
+          ),
+          primary: (
+            <Button variant="primary" size="desktop" onClick={apply} disabled={tickedRows.length === 0} disabledReason="Tick at least one change to apply." shot="matching-apply">
+              Apply changes
             </Button>
-          </>
-        )}
-      </div>
-    )
+          ),
+        }
 
-  return (
-    <div data-shot="intake-bench-update" data-arrival-key={arrival.key} style={{ display: 'flex', flexDirection: 'column', gap: space[4], minWidth: 0 }}>
+  const decision = (
+    <>
       {list !== undefined && (
         <p data-shot="intake-update-list-line" style={{ margin: 0, ...SMALL, color: neutral.slate }}>
           {owner} · {listStateLine(list.state)}
@@ -183,67 +199,67 @@ function UpdateBenchFor({ arrival, actor, onDone }: BenchProps) {
         </Notice>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(220px, 280px)', gap: space[4], alignItems: 'start' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: space[3], minWidth: 0 }}>
-          <ListDiffTable
-            rows={rows}
-            ticked={ticked}
-            onToggle={toggle}
-            blockers={reads.blockers}
-            stubs={reads.stubs}
-            stubChoice={stubChoice}
-            onStubChoice={chooseStub}
-            warnings={reads.warnings}
-            extras={reads.extras}
-            readOnly={decided || locked}
-            rowAction={(row) =>
-              reads.rawEligible.has(row.rowId) ? (
-                <TextAction size="sm" onClick={() => setRawRow(row)} shot="intake-update-raw" data-row-id={row.rowId}>
-                  View as received
-                </TextAction>
-              ) : null
-            }
-            {...(footer !== null ? { footer } : {})}
-          />
+      <DecisionHeading>{list !== undefined ? `What this changes on ${owner}` : 'What this changes'}</DecisionHeading>
+      <ListDiffTable
+        rows={rows}
+        ticked={ticked}
+        onToggle={toggle}
+        blockers={reads.blockers}
+        stubs={reads.stubs}
+        stubChoice={stubChoice}
+        onStubChoice={chooseStub}
+        warnings={reads.warnings}
+        extras={reads.extras}
+        readOnly={!canDecide}
+        rowAction={(row) =>
+          reads.rawEligible.has(row.rowId) ? (
+            <TextAction size="sm" onClick={() => setRawRow(row)} shot="intake-update-raw" data-row-id={row.rowId}>
+              View as received
+            </TextAction>
+          ) : null
+        }
+      />
 
-          {!decided && !locked && rejecting && (
-            <div data-shot="intake-update-reject-form" style={{ display: 'flex', flexDirection: 'column', gap: space[2] }}>
-              <TextField label="Why reject this List" value={reason} onChange={setReason} size="compact" placeholder="Nothing on the schedule changes" autoFocus />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space[2] }}>
-                {QUICK_REJECT_REASONS.map((r) => (
-                  <OptionChip key={r} pressed={reason === r} onClick={() => setReason(r)}>
-                    {r}
-                  </OptionChip>
-                ))}
-              </div>
-            </div>
-          )}
+      {!decided &&
+        stubRowIds.map((rowId) => {
+          const options = reads.stubs[rowId] ?? []
+          const chosen = options.length === 1 ? options[0] : options.find((o) => o.stubId === stubChoice[rowId])
+          const nhi = options[0]?.nhi
+          return (
+            <Card key={rowId} title={chosen !== undefined ? `${chosen.patientName}'s stub` : 'A waiting patient'} titleLevel={3} shot="intake-update-stub" data-row-id={rowId}>
+              <Notice tone="success" icon={false}>
+                {arrival.source.label} sent NHI {nhi}. Name and date of birth agree with the patient waiting for it.
+              </Notice>
+              <p style={{ margin: `${space[2]}px 0 0`, ...SMALL, color: neutral.slate }}>
+                {options.length > 1 && chosen === undefined ? 'Two waiting patients fit: choose one in the table.' : 'On apply: stub becomes a Booking.'}
+              </p>
+            </Card>
+          )
+        })}
 
-          <FormError message={error} />
+      {canDecide && rejecting && (
+        <div data-shot="intake-update-reject-form" style={{ display: 'flex', flexDirection: 'column', gap: space[2] }}>
+          <TextField label="Why reject this List" value={reason} onChange={setReason} size="compact" placeholder="Nothing on the schedule changes" autoFocus />
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: space[2] }}>
+            {QUICK_REJECT_REASONS.map((r) => (
+              <OptionChip key={r} pressed={reason === r} onClick={() => setReason(r)}>
+                {r}
+              </OptionChip>
+            ))}
+          </div>
         </div>
+      )}
 
-        <aside style={{ display: 'flex', flexDirection: 'column', gap: space[3], minWidth: 0 }}>
-          {list !== undefined && <SlotCard listId={list.id} />}
-          {!decided &&
-            stubRowIds.map((rowId) => {
-              const options = reads.stubs[rowId] ?? []
-              const chosen = options.length === 1 ? options[0] : options.find((o) => o.stubId === stubChoice[rowId])
-              const nhi = options[0]?.nhi
-              return (
-                <Card key={rowId} title={chosen !== undefined ? `${chosen.patientName}'s stub` : 'A waiting patient'} titleLevel={3} shot="intake-update-stub" data-row-id={rowId}>
-                  <Notice tone="success" icon={false}>
-                    {arrival.source.label} sent NHI {nhi}. Name and date of birth agree with the patient waiting for it.
-                  </Notice>
-                  <p style={{ margin: `${space[2]}px 0 0`, ...SMALL, color: neutral.slate }}>
-                    {options.length > 1 && chosen === undefined ? 'Two waiting patients fit: choose one in the table.' : 'On apply: stub becomes a Booking.'}
-                  </p>
-                </Card>
-              )
-            })}
-        </aside>
-      </div>
+      <FormError message={error} />
 
+      {list !== undefined && <SlotCard listId={list.id} />}
+    </>
+  )
+
+  return (
+    <>
+      <BenchLayout shot="intake-bench-update" decisionWidth="wide" data-arrival-key={arrival.key} document={<ArrivalDocument arrival={arrival} />} decision={decision} {...(actions !== undefined ? { actions } : {})} />
       {rawRow !== null && <RawRowSheet rowId={rawRow.rowId} patientName={rawRow.patientName} actor={actor} onClose={() => setRawRow(null)} />}
-    </div>
+    </>
   )
 }

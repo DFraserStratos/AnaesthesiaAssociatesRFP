@@ -27,6 +27,7 @@ import {
   AdminDayRoute,
   AdminIndexRedirect,
   AdminIntakeRoute,
+  AdminArrivalRoute,
   AdminArrivalsRoute,
   AdminSourcesRoute,
   IntakeLegacyRedirect,
@@ -143,6 +144,7 @@ const routeTree = (
               <Route index element={<AdminArrivalsRoute />} />
               <Route path="sources" element={<AdminSourcesRoute />} />
             </Route>
+            <Route path="intake/arrival/:key" element={<AdminArrivalRoute />} />
             <Route path="intake/matching" element={<IntakeLegacyRedirect />} />
             <Route path="intake/waiting" element={<IntakeLegacyRedirect />} />
             <Route path="intake/pdfs" element={<IntakeLegacyRedirect />} />

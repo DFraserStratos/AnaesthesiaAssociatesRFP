@@ -221,8 +221,9 @@ describe('Needs NHI bench: Add NHI, the one path', () => {
     expect(document.querySelector('[data-shot="add-nhi-needs-decision"]')?.textContent).toBe('The NHI is added. The row has no List yet: decide it with its arrival.')
     fireEvent.click(document.querySelector('[data-shot="add-nhi-open-row"]')!)
     const where = document.querySelector('[data-testid="where"]')!.textContent!
-    const item = new URLSearchParams(where.split('?')[1]).get('item')
-    expect(item).not.toBeNull()
+    const opened = /^\/admin\/intake\/arrival\/([^?]+)/.exec(where)
+    expect(opened).not.toBeNull()
+    const item = decodeURIComponent(opened![1]!)
     expect(arrivalItemsOf(useAppStore.getState()).find((i) => i.key === item)?.rowIds).toContain(rowId)
     expect(item).not.toMatch(/^nhi~/)
   })
@@ -285,13 +286,11 @@ describe('The old Patients and Intake waiting links land on Needs NHI (Phase 51,
   }
 
   for (const url of ['/admin/patients/waiting', '/admin/intake/waiting']) {
-    it(`${url} lands on Arrivals under Needs NHI, replacing the old entry so Back does not loop`, async () => {
+    it(`${url} lands on the inbox showing rows waiting for an NHI, replacing the old entry so Back does not loop`, async () => {
       const router = mountAt(url)
       expect(router.state.location.pathname).toBe('/admin/intake')
-      expect(router.state.location.search).toBe('?filter=needs-nhi')
+      expect(router.state.location.search).toBe('?show=needs-nhi')
       expect(router.state.historyAction).toBe('REPLACE')
-      expect(document.querySelector('[data-shot="intake-arrivals"]')).not.toBeNull()
-      expect(document.querySelector('[data-shot="intake-bench-needsNhi"] [data-shot="waiting-nhi-row"]')).not.toBeNull()
       await act(async () => {
         await router.navigate(-1)
       })

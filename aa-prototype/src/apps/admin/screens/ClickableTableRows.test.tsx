@@ -170,6 +170,7 @@ describe('admin clickable table rows', () => {
 
 /** The Intake link's query (Phase 68): the filter and the selected arrival. */
 function SelectRowProbe() {
-  const { search } = useLocation()
-  return <output data-testid="select-row-probe">{new URLSearchParams(search).get('item') ?? ''}</output>
+  const { pathname } = useLocation()
+  const opened = pathname.match(/^\/admin\/intake\/arrival\/(.+)$/)
+  return <output data-testid="select-row-probe">{opened !== null ? decodeURIComponent(opened[1]!) : ''}</output>
 }

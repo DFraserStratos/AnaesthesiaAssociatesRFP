@@ -102,9 +102,10 @@ describe('the six actions are registered as D119 names them', () => {
     for (const t of DEMO_TRIGGERS.filter((x) => x.id.startsWith('intake-'))) {
       expect(t.surfaces, t.id).toEqual(['bar'])
       expect(t.routes, t.id).toContain('/admin/intake')
+      expect(t.routes, t.id).toContain('/admin/intake/arrival/:key')
       expect(`${t.label} ${t.description}`, t.id).not.toMatch(/[–—]|\bslot\b|\bCard\b/)
     }
-    expect(byId('intake-feed-fails').routes).toEqual(['/admin/intake', '/admin/intake/sources'])
+    expect(byId('intake-feed-fails').routes).toEqual(['/admin/intake', '/admin/intake/arrival/:key', '/admin/intake/sources'])
   })
 })
 

@@ -11,7 +11,6 @@ import { FormatChecks } from '../../../shared/support/FormatChecks'
 import { DRAFT_LIST, DRAFT_LISTS, UNASSIGNED } from '../../../shared/scheduleTerms'
 import { ResponseTableExample, SupportHoursExample, SupportPanelExample, SupportRequestFormExample, SupportSidePanelExample, TicketListExample } from './supportExamples'
 import { CataloguePage, CatalogueRow, FamilySection, StageHint } from './CatalogueKit'
-import { WorkbenchSplitExample } from './admin/workbenchSplitExample'
 import { AdminPageExample, CardExample, DefRowExample, EyebrowExample, PageHeaderExample, TableKitExample } from './admin/pageChromeExamples'
 import { ReviewQueue } from '../../admin/screens/ReviewQueue'
 import { AuditViewer } from '../../admin/screens/AuditViewer'
@@ -20,10 +19,11 @@ import { ListOriginRow } from '../../admin/components/ListOriginRow'
 import { PdfPage, pdfPageBoxes } from '../../admin/screens/intake/workbench/newList/PdfPage'
 import { PlaceListCard } from '../../admin/screens/intake/workbench/newList/PlaceListCard'
 import { arrivalItemsOf } from '../../../store'
-import { buildFacsimile, facsimileHeaderValues, readValuesOfRow, SCAN_PDF, simulateRead } from '../../../domain/intake'
+import { readRoomsPdf, SCAN_PDF } from '../../../domain/intake'
 import { SEED_ORIGIN_LISTS } from '../../../domain/seed/listOrigins'
 import { ListDiffTableExample, SlotCardExample, UpdateHeaderExample } from './admin/intakeUpdateExamples'
-import { DefList, Disclosure, DisclosureButton, OptionRow, Pill, RadioCard, useRovingRadio } from '../../../shared/ui'
+import { Button, DefList, Disclosure, DisclosureButton, OptionRow, Pill, RadioCard, useRovingRadio } from '../../../shared/ui'
+import { DecisionColumn, DecisionHeading } from '../../../shared/surface'
 import { useMemo, useState } from 'react'
 import { HospitalsView } from '../../admin/screens/masters/HospitalsView'
 import { RvgGroupsView } from '../../admin/screens/masters/RvgGroupsView'
@@ -443,8 +443,13 @@ export function AdminCatalogue() {
         <CatalogueRow name="SidePanel" source="shared/surface/SidePanel.tsx" usedIn={AW} what="The one right-docked panel (U2): scrim, an h2 header at 18/700 that names the dialog, the corner X, e3, a scrolling body and a footer. 440px list (the drawers) or 600px record (MasterPanel, the support panel). On the one modal stack. Moved from apps/admin/components to the shared surface in catch-up Phase 43b, so the web app's Help uses the same shell." shared="shared/surface/SidePanel.tsx">
           <SidePanelExample />
         </CatalogueRow>
-        <CatalogueRow name="WorkbenchSplit" source="shared/surface/WorkbenchSplit.tsx" usedIn={A} what="SidePanel's docked, non-modal sibling (build plan Phase 68; intake-ideas.html #idea1): a list on the left at a fixed width (400px unless given) beside the detail of the picked item, at the full height of a fit page, each column a labelled region scrolling on its own with a 1px line between. No scrim, no focus trap, nothing inert: the page around it stays usable. Framed as the main data surface by default, or flush. Intake's arrivals feed and workbench." shared="shared/surface/WorkbenchSplit.tsx" note="Shown in a 300px box with a narrower feed; picking a row changes local state only.">
-          <WorkbenchSplitExample />
+        <CatalogueRow name="DecisionColumn / DecisionHeading" source="shared/surface/DecisionColumn.tsx" usedIn={A} what="The opened arrival's decision column (27 Nov 2026; intake-inbox-iterations.html O1): a white column whose body scrolls, with a footer pinned under the choice: a note over a right-aligned row, secondary first and primary last (as SheetActions and SidePanel footerLayout end). DecisionHeading titles a section in it. Admin Intake's every bench." shared="shared/surface/DecisionColumn.tsx" note="Shown in a 320px box; the buttons do nothing here.">
+          <div style={{ height: 320, width: 480, display: 'flex' }}>
+            <DecisionColumn label="Place this List" footer={{ note: 'Creates the List with 3 Bookings.', secondary: <Button variant="secondary">Reject this List</Button>, primary: <Button variant="primary">Place in Dr Delaney's PM</Button> }}>
+              <DecisionHeading>Place this List</DecisionHeading>
+              <p style={{ margin: 0 }}>The choices sit here, and scroll on their own when there are many.</p>
+            </DecisionColumn>
+          </div>
         </CatalogueRow>
         <CatalogueRow name="SupportPanel" source="shared/support/SupportPanel.tsx" usedIn={AWM} what="The one support panel body (catch-up Phase 43b; US-15.0.8, US-15.0.9): the open or closed status from the demo clock and the holiday calendar, the phone line in mono and the hours (SupportHours), the response table (ResponseTable), the out-of-hours Notice, the request form (SupportRequestForm: subject, priority, description; What is happening? out of hours; the kind on Product support) and the tickets (TicketList: status Pill, respond-by in mono, Response overdue, Best effort or Awaiting AA's approval). LineTabs Help line and Product support in Admin. One Simulated badge and the readings caption." shared="shared/support/SupportPanel.tsx" note="Every hour and response time reads SUPPORT_CONFIG (domain/support.ts). Send writes an audited ticket to the demo store.">
           <SupportPanelExample />
@@ -569,7 +574,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="PdfPage (a rooms' PDF page and its boxes)" source="apps/admin/screens/intake/workbench/newList/PdfPage.tsx" usedIn={A} what="Intake's PDF page (build plan Phase 70; US-02.2.1, D120): the generated facsimile in a framed paper under a quiet bar (the file name, the page, a caption), with one box per value read laid over where it sits. A value to check is lit in the warning tint and outline, with a small IconButton that shows it in the values table; the rest have a quiet outline and do nothing. The selected value is lit stronger and scrolled into view. The page is a full A4 page printed like a rooms' theatre list (letterhead, title, meta block, ruled table, footer); Open full size shows it in the shared Dialog at 100% scale or larger, its boxes still drawn. No confidence number is shown; with no boxes (an unreadable PDF) it shows the page alone." shared="shared/ui/IconButton.tsx" note="Shown on the scanned sample, read through the simulated reader: three values to check. Showing one in the table selects it here only." height={860}>
           <PdfPageExample />
         </CatalogueRow>
-        <CatalogueRow name="PlaceListCard (Place this List)" source="apps/admin/screens/intake/workbench/newList/PlaceListCard.tsx" usedIn={A} what={`Where a new List from Intake goes (build plan Phase 70; US-02.1.2, US-01.6.1, DM-19): a RadioCard group with the named anaesthetist's session first, marked Suggested, only while it is free (a quiet line says so when it is not), then the other anaesthetists free that day and session (five, then Show more), the Lists AA holds that could take it, and Make a ${DRAFT_LIST} (a surgeon select when the arrival's is not recognised). A summary line says what it makes; the one primary Button names the result (Place in Dr Rutherford's PM, Add to the List, Make a ${DRAFT_LIST}) and places the whole List as one change set. A session taken meanwhile is refused in place.`} shared="shared/ui/RadioCard.tsx" note="Live on the first undecided new List in Intake, if there is one (the Demo actions' Rooms email a List adds Mr Okafor's). Placing writes to the demo store." height={520}>
+        <CatalogueRow name="PlaceListCard (Place this List)" source="apps/admin/screens/intake/workbench/newList/PlaceListCard.tsx" usedIn={A} what={`Where a new List from Intake goes (build plan Phase 70; US-02.1.2, US-01.6.1, DM-19): a RadioCard group with the named anaesthetist's session first, marked Suggested, only while it is free (a quiet line says so when it is not), then another anaesthetist free that day and session (a select of who is free), a List AA holds that could take it (a select), and Make a ${DRAFT_LIST} (a surgeon select when the arrival's is not recognised). usePlaceList lifts the choice so the opened arrival's footer (DecisionColumn) holds the one primary Button, which names the result (Place in Dr Rutherford's PM, Add to the List, Make a ${DRAFT_LIST}) and places the whole List as one change set. A session taken meanwhile is refused in place.`} shared="shared/ui/RadioCard.tsx" note="Live on the first undecided new List in Intake, if there is one (the Demo actions' Rooms email a List adds Mr Okafor's). Placing writes to the demo store." height={520}>
           <PlaceListCardExample />
         </CatalogueRow>
         <CatalogueRow name="Pager" source="apps/admin/components/Pager.tsx" usedIn={A} what="The one admin pager (catch-up Phase 43; US-15.0.4): the range in mono, first, previous, the teal page count, next and last. Shown only past one page: the Day view (30 anaesthetists), Invoices (50), Audit (100), the Ledger (50), the Billing tab's groups (20) and each group's Lists (25)." shared="shared/ui/IconButton.tsx">
@@ -581,7 +586,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="PatientsScreen (Coming up · Needs follow-up · All)" source="apps/admin/screens/patients/PatientsScreen.tsx" usedIn={A} what="People · Patients (catch-up Phase 40; build plan Phases 53 and 57; US-11.3.1, US-11.3.3, DM-10): one list searched by name, NHI or date of birth and paged by the admin Pager (50 a page, no cap), with the filters Coming up (the default, a Booking in the next 14 days, nearest first), Needs follow-up (one row per patient with its reasons in the Why column, from patientsNeedingOffice; its figure is the People badge) and All. The filter, search and page are in the URL (?filter=follow-up). A row opens the patient's page; no row carries an action. A search with no match in the chosen filter offers Search all patients." shared="shared/table/TableShell.tsx" note="On PeoplePage, PageToolbar, NameSearchBox, FilterPills (the count in the label), TableShell fit with the Pager in its footer, ClickableRow, RowOpenButton, StrengthPill and EmptyState. Hooks: admin-patients, patients-filter (data-patients-filter), patients-needs-office, tr[data-patient-nhi] with data-reasons on Needs follow-up. The internal id is never shown.">
           <PatientsSearchExample />
         </CatalogueRow>
-        <CatalogueRow name="NeedsNhiBench / PatientAsReceived / TheList / ChaseCard / AddNhiSheet / AddNhiOutcome" source="apps/admin/screens/intake/workbench/NeedsNhiBench.tsx · needsNhi/ · apps/admin/intake/AddNhiSheet.tsx" usedIn={A} what="Intake's Needs NHI bench (build plan Phase 72; US-11.1.5, US-11.1.4, US-02.6.3; D117, D124): a row waiting for an NHI, top to bottom the patient as received (No date of birth when none came), the List (its date and session, the days to go with an Urgent pill within three days, the stub on Dr X's List linking to the Day view; None with no List yet), Ask for the NHI (the one address to chase, the others offered, No office address held when none, Email for the NHI as a real mailto draft audited on click, Requested with its stamp) and Add NHI, the one way to add an NHI by hand: the desktop dialog with the live NHI check, the register lookup, the existing-record preview and the differences, ending on Patient is now on Dr X's List or the reason and a link to the row under its own kind." shared="shared/ui/Card.tsx" note="On the shared Card, DefList, Pill, TextAction, SelectField, Button (href), StubMarker, TextField, Notice, OverlayHeader and SheetActions. Shown on the seed's first waiting row (Mere Tipene's). Hooks: intake-bench-needsNhi, waiting-nhi-row (data-row-id, data-urgent), waiting-nhi-patient, waiting-nhi-list, waiting-nhi-urgent, waiting-nhi-stub, waiting-nhi-chase-card, waiting-nhi-chase, waiting-nhi-email, waiting-nhi-requested, waiting-nhi-add, add-nhi-sheet, add-nhi-done.">
+        <CatalogueRow name="NeedsNhiBench / PatientAsReceived / TheList / ChaseCard / AddNhiSheet / AddNhiOutcome" source="apps/admin/screens/intake/workbench/NeedsNhiBench.tsx · needsNhi/ · apps/admin/intake/AddNhiSheet.tsx" usedIn={A} what="Intake's Needs NHI bench (build plan Phase 72; US-11.1.5, US-11.1.4, US-02.6.3; D117, D124): a row waiting for an NHI, top to bottom the patient as received (No date of birth when none came), the List (its date and session, the days to go with an Urgent pill within three days, the stub on Dr X's List linking to the Day view; None with no List yet), Ask for the NHI (the one address to chase, the others offered, No office address held when none, Requested with its stamp; `useChase` puts Email for the NHI, a real mailto draft audited on click, in the footer) and Add NHI in the footer, the one way to add an NHI by hand: the desktop dialog with the live NHI check, the register lookup, the existing-record preview and the differences, ending on Patient is now on Dr X's List or the reason and a link to the row under its own kind." shared="shared/ui/Card.tsx" note="On the shared Card, DefList, Pill, TextAction, SelectField, Button (href), StubMarker, TextField, Notice, OverlayHeader and SheetActions. Shown on the seed's first waiting row (Mere Tipene's). Hooks: intake-bench-needsNhi, waiting-nhi-row (data-row-id, data-urgent), waiting-nhi-patient, waiting-nhi-list, waiting-nhi-urgent, waiting-nhi-stub, waiting-nhi-chase-card, waiting-nhi-chase, waiting-nhi-email, waiting-nhi-requested, waiting-nhi-add, add-nhi-sheet, add-nhi-done.">
           <NeedsNhiBenchExample />
         </CatalogueRow>
         <CatalogueRow name="DetailChoiceTable" source="apps/admin/screens/patients/patientParts.tsx" usedIn={A} what="The one details comparison table (catch-up Phase 40's Details differ, made shared in Phase 40a): Detail, the record's value, the other source's and, with a choice, Keep or Use per row (default Keep); an enrichment reads Will be added. Details differ (Use incoming), Add NHI's read-only preview and Refresh from the NHI register (Use register) all use it." shared="shared/table/TableShell.tsx" note="On the shared TableShell (nested, dense) and SelectField (compact, surface). Replaced the Add NHI sheet's private copy.">
@@ -894,21 +899,17 @@ function OptionRowExample() {
   )
 }
 
-/** The scanned sample PDF read by the simulated reader, on Intake's PDF page (build plan Phase 70). */
+/** The scanned sample PDF read by the simulated reader, on Intake's PDF page (build plan Phase 70; Nov 2026 layouts). */
 function PdfPageExample() {
   const [selectedKey, setSelectedKey] = useState<string | undefined>(undefined)
-  const boxes = useMemo(() => {
-    const read = simulateRead({
-      header: facsimileHeaderValues(SCAN_PDF),
-      ...(SCAN_PDF.headerConfidence !== undefined ? { headerConfidence: SCAN_PDF.headerConfidence } : {}),
-      rows: SCAN_PDF.rows.map((r) => ({ id: r.id, values: readValuesOfRow(r), ...(r.confidence !== undefined ? { confidence: r.confidence } : {}) })),
-      scanned: true,
-    })
-    return pdfPageBoxes({ headerRead: read.headerRead, rows: SCAN_PDF.rows.map((r, i) => ({ id: r.id, asRead: r, corrections: [], read: read.rows[i]!.read })) })
-  }, [])
+  const reading = useMemo(() => readRoomsPdf(SCAN_PDF), [])
+  const boxes = useMemo(
+    () => pdfPageBoxes({ headerRead: reading.headerRead, rows: SCAN_PDF.rows.map((r, i) => ({ id: r.id, asRead: r, corrections: [], read: reading.rows[i]!.read })) }),
+    [reading],
+  )
   return (
     <div style={{ width: 560 }}>
-      <PdfPage facsimile={buildFacsimile(SCAN_PDF)} fileName={SCAN_PDF.fileName} boxes={boxes} {...(selectedKey !== undefined ? { selectedKey } : {})} onSelect={setSelectedKey} shot="catalogue-pdf-page" />
+      <PdfPage facsimile={reading.file.facsimile} pages={reading.file.pages} fileName={SCAN_PDF.fileName} boxes={boxes} {...(selectedKey !== undefined ? { selectedKey } : {})} onSelect={setSelectedKey} shot="catalogue-pdf-page" />
     </div>
   )
 }

@@ -1,12 +1,11 @@
 /**
- * The Arrivals feed's words (build plan Phase 68; D117, D125): an item's counts, the received time, a
- * source's state and the empty feed per filter. Plain functions over the read model, so the feed's
- * components only lay them out.
+ * Intake's shared words (D117, D125): an item's counts, the received time and a source's state. Plain
+ * functions over the read model, so the inbox, the opened arrival and Sources only lay them out.
  */
 
-import type { ArrivalItem, FeedFilter } from '../../../../../domain/intake/arrivals'
-import type { IntakeSourceState } from '../../../../../domain/types'
-import { hhmm, plural, receivedDay } from '../../../../../shared/format'
+import type { ArrivalItem } from '../../../../domain/intake/arrivals'
+import type { IntakeSourceState } from '../../../../domain/types'
+import { hhmm, plural, receivedDay } from '../../../../shared/format'
 
 /** When an item or file arrived: the time today ("06:10"), else the day ("Mon 23 Nov"). */
 export function receivedText(iso: string, todayISO: string): string {
@@ -39,21 +38,4 @@ export const SOURCE_STATE_WORDS: Record<IntakeSourceState, string> = {
   receiving: 'receiving',
   reading: 'reading',
   notConnected: 'not connected',
-}
-
-/** The empty feed's words for a filter (and a search that found nothing). */
-export function emptyFeedText(filter: FeedFilter, q: string, hospitalName?: string): string {
-  if (q.trim() !== '') return `No arrivals match "${q.trim()}".`
-  switch (filter.kind) {
-    case 'toDecide':
-      return 'Nothing to decide.'
-    case 'needsNhi':
-      return 'No rows are waiting for an NHI.'
-    case 'roomsPdfs':
-      return 'No PDFs from the rooms.'
-    case 'hospital':
-      return `Nothing from ${hospitalName ?? 'this hospital'}.`
-    case 'decided':
-      return 'Nothing decided yet.'
-  }
 }

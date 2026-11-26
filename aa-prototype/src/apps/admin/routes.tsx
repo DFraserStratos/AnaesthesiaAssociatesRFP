@@ -14,9 +14,10 @@ import { AdminBookingDetail } from './screens/AdminBookingDetail'
 import { AuditViewer } from './screens/AuditViewer'
 import { MasterData } from './screens/masters/MasterData'
 import { IntakeSection } from './screens/intake/IntakeSection'
-import { ArrivalsView } from './screens/intake/ArrivalsView'
+import { ArrivalPage } from './screens/intake/ArrivalPage'
+import { InboxView } from './screens/intake/InboxView'
 import { SourcesView } from './screens/intake/SourcesView'
-import { intakePathFromLegacy } from './screens/intake/intakePaths'
+import { inboxRedirectFromLegacyParams, intakePathFromLegacy } from './screens/intake/intakePaths'
 import { arrivalKeyForRow } from '../../store/intakeSelectors'
 import { mastersRedirect } from './mastersRedirect'
 import { awaitingApprovalPath, creditNotePath, financePath, financePathFromLegacy, invoicePath } from './screens/finances/financePaths'
@@ -335,10 +336,22 @@ export function AdminIntakeRoute() {
   return <IntakeSection actor={actor} />
 }
 
-/** Arrivals (D117): the feed beside the docked Workbench; filter, search and the selected arrival in the URL. */
+/**
+ * Arrivals (27 Nov 2026 rebuild): the inbox, its query in the URL. An old address (`?item=`, `?filter=`) redirects
+ * with replace to the opened arrival or the inbox query it now means.
+ */
 export function AdminArrivalsRoute() {
   const { actor } = useAdminOutlet()
-  return <ArrivalsView actor={actor} />
+  const [params] = useSearchParams()
+  const legacy = inboxRedirectFromLegacyParams(params)
+  if (legacy !== undefined) return <Navigate to={legacy} replace />
+  return <InboxView actor={actor} />
+}
+
+/** One arrival opened on its own page (27 Nov 2026 rebuild; O1), outside Intake's tabs; the inbox's query in the URL. */
+export function AdminArrivalRoute() {
+  const { actor } = useAdminOutlet()
+  return <ArrivalPage actor={actor} />
 }
 
 /** Sources (D117; DM-14): where arrivals come from, inbound only. */

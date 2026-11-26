@@ -3,26 +3,31 @@
  * US-02.2.1): no rows, only the page and why it could not become a List. The page beside the reason and the sender;
  * a draft email to the sender asking for a clearer copy, which the office edits and sends (recorded in the
  * arrival's history; `sendUnreadablePdfEmail`); and Dismiss with a reason (`dismissUnreadablePdf`), the decision
- * that takes it out of the Intake count. It stays in the feed until dismissed. A dismissed one reads only.
+ * that takes it out of the Intake count. It stays in the inbox until dismissed. A dismissed one reads only. On the
+ * opened arrival (O1) the page is the document; Send email and Dismiss sit in the decision column's footer, and
+ * Dismiss's reason form takes the column's place until it is confirmed or cancelled.
  *
  * Hooks: `data-shot="intake-bench-unreadable"`, `data-arrival-key`; `intake-bench-unreadable-reason` (the Notice),
- * `intake-unreadable-sender`, `intake-unreadable-email` (the section), `intake-unreadable-send`,
+ * `intake-unreadable-email` (the section), `intake-unreadable-send`,
  * `intake-unreadable-sent`, `intake-unreadable-dismiss` (the section), `intake-unreadable-dismiss-confirm`,
  * `intake-unreadable-dismissed`; the page's own `intake-unreadable-page`.
  */
 
 import { useEffect, useState } from 'react'
-import type { BenchProps } from './benchProps'
+import type { BenchActions, BenchProps } from './benchProps'
+import { BenchLayout } from './BenchLayout'
+import { NextArrivalButton } from './NextArrivalButton'
+import { DecisionHeading } from '../../../../../shared/surface'
 import { stampText } from '../../../../../shared/format'
-import { Button, Eyebrow, FormError, Notice, ResultLine, TextAction, TextArea, TextField } from '../../../../../shared/ui'
+import { Button, FormError, Notice, ResultLine, TextArea, TextField } from '../../../../../shared/ui'
 import { dismissUnreadablePdf, sendUnreadablePdfEmail, unreadableEmailDraft, unreadableEmailsSent, useAppStore } from '../../../../../store'
 import { neutral, space, type as typeScale } from '../../../../../theme/tokens'
 import { PdfPage } from './newList/PdfPage'
 
 const SMALL = { fontSize: typeScale.small.size, lineHeight: `${typeScale.small.line}px`, color: neutral.slate } as const
-const SECTION = { display: 'flex', flexDirection: 'column', gap: space[3], paddingTop: space[4], borderTop: `1px solid ${neutral.line}` } as const
+const SECTION = { display: 'flex', flexDirection: 'column', gap: space[3] } as const
 
-export function UnreadableBench({ arrival, actor, onDone }: BenchProps) {
+export function UnreadableBench({ arrival, actor, onDone, onNext }: BenchProps) {
   const batch = useAppStore((s) => s.intake.batches[arrival.batchId])
   const audit = useAppStore((s) => s.audit)
   const sent = unreadableEmailsSent({ audit }, arrival.batchId)
@@ -54,11 +59,16 @@ export function UnreadableBench({ arrival, actor, onDone }: BenchProps) {
 
   if (batch === undefined) {
     return (
-      <div data-shot="intake-bench-unreadable" data-arrival-key={arrival.key}>
-        <Notice tone="warning" title={arrival.title} shot="intake-bench-unreadable-reason">
-          {reasonText}
-        </Notice>
-      </div>
+      <BenchLayout
+        shot="intake-bench-unreadable"
+        data-arrival-key={arrival.key}
+        document={null}
+        decision={
+          <Notice tone="warning" title={arrival.title} shot="intake-bench-unreadable-reason">
+            {reasonText}
+          </Notice>
+        }
+      />
     )
   }
 
@@ -78,7 +88,6 @@ export function UnreadableBench({ arrival, actor, onDone }: BenchProps) {
     onDone()
   }
 
-  const sender = batch.senderEmail ?? (batch.arrivalSource.kind === 'hospitalFeed' ? undefined : batch.arrivalSource.senderEmail)
   const sentLines =
     sent.length === 0 ? null : (
       <div data-shot="intake-unreadable-sent" style={{ display: 'flex', flexDirection: 'column', gap: space[1] }}>
@@ -88,127 +97,123 @@ export function UnreadableBench({ arrival, actor, onDone }: BenchProps) {
       </div>
     )
 
-  return (
-    <div
-      data-shot="intake-bench-unreadable"
-      data-arrival-key={arrival.key}
-      style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 520px), 1fr))', gap: space[6], alignItems: 'start', minWidth: 0 }}
-    >
-      {batch.file !== undefined ? (
-        <PdfPage facsimile={batch.file.facsimile} fileName={batch.file.name} shot="intake-unreadable-page" />
+  const document =
+    batch.file !== undefined ? <PdfPage facsimile={batch.file.facsimile} fileName={batch.file.name} {...(batch.file.pages !== undefined ? { pages: batch.file.pages } : {})} shot="intake-unreadable-page" /> : null
+
+  const decision = (
+    <>
+      <Notice tone="warning" title="This PDF could not be read" shot="intake-bench-unreadable-reason">
+        {reasonText}
+      </Notice>
+
+      {batch.dismissed !== undefined ? (
+        <>
+          <Notice tone="neutral" title={`Dismissed by ${batch.dismissed.by} · ${stampText(batch.dismissed.atISO)}`} shot="intake-unreadable-dismissed">
+            {batch.dismissed.reason}
+          </Notice>
+          {sentLines}
+        </>
+      ) : dismissing ? (
+        <section data-shot="intake-unreadable-dismiss" style={SECTION}>
+          <DecisionHeading>Dismiss this PDF</DecisionHeading>
+          <TextField
+            label="Why dismiss this PDF?"
+            value={reason}
+            onChange={(v) => {
+              setReason(v)
+              setDismissError(null)
+            }}
+            placeholder="The rooms sent a clearer copy"
+            size="compact"
+            invalid={dismissError !== null}
+            autoFocus
+            shot="intake-unreadable-dismiss-reason"
+          />
+          <FormError message={dismissError} />
+        </section>
       ) : (
-        <div />
+        <section data-shot="intake-unreadable-email" style={SECTION}>
+          <DecisionHeading>Email the rooms</DecisionHeading>
+          <p style={{ margin: 0, ...SMALL }}>Ask for a clearer copy. Edit the draft before you send it.</p>
+          <TextField
+            label="To"
+            type="email"
+            value={to}
+            onChange={(v) => {
+              setTo(v)
+              setEmailError(null)
+            }}
+            size="compact"
+            invalid={emailError !== null && to.trim() === ''}
+            shot="intake-unreadable-email-to"
+          />
+          <TextField
+            label="Subject"
+            value={subject}
+            onChange={(v) => {
+              setSubject(v)
+              setEmailError(null)
+            }}
+            size="compact"
+            shot="intake-unreadable-email-subject"
+          />
+          <TextArea
+            label="Message"
+            value={body}
+            onChange={(v) => {
+              setBody(v)
+              setEmailError(null)
+            }}
+            rows={10}
+            resize="vertical"
+            shot="intake-unreadable-email-body"
+          />
+          <FormError message={emailError} />
+          {sentLines}
+        </section>
       )}
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: space[4], minWidth: 0 }}>
-        <Notice tone="warning" title="This PDF could not be read" shot="intake-bench-unreadable-reason">
-          {reasonText}
-        </Notice>
-        <p data-shot="intake-unreadable-sender" style={{ margin: 0, ...SMALL }}>
-          {sender !== undefined ? `From ${sender}` : 'Sender not known'} · received {stampText(batch.receivedAtISO)}
-        </p>
-
-        {batch.dismissed !== undefined ? (
-          <>
-            <Notice tone="neutral" title={`Dismissed by ${batch.dismissed.by} · ${stampText(batch.dismissed.atISO)}`} shot="intake-unreadable-dismissed">
-              {batch.dismissed.reason}
-            </Notice>
-            {sentLines}
-          </>
-        ) : (
-          <>
-            <section data-shot="intake-unreadable-email" style={SECTION}>
-              <Eyebrow as="h3" tone="slate" style={{ margin: 0 }}>
-                Email the sender
-              </Eyebrow>
-              <p style={{ margin: 0, ...SMALL }}>Ask the rooms for a clearer copy. Edit the draft before you send it.</p>
-              <TextField
-                label="To"
-                type="email"
-                value={to}
-                onChange={(v) => {
-                  setTo(v)
-                  setEmailError(null)
-                }}
-                size="compact"
-                invalid={emailError !== null && to.trim() === ''}
-                shot="intake-unreadable-email-to"
-              />
-              <TextField
-                label="Subject"
-                value={subject}
-                onChange={(v) => {
-                  setSubject(v)
-                  setEmailError(null)
-                }}
-                size="compact"
-                shot="intake-unreadable-email-subject"
-              />
-              <TextArea
-                label="Message"
-                value={body}
-                onChange={(v) => {
-                  setBody(v)
-                  setEmailError(null)
-                }}
-                rows={10}
-                resize="vertical"
-                shot="intake-unreadable-email-body"
-              />
-              <FormError message={emailError} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: space[3] }}>
-                <Button variant="primary" size="compact" onClick={send} shot="intake-unreadable-send">
-                  {sent.length === 0 ? 'Send email' : 'Send again'}
-                </Button>
-              </div>
-              {sentLines}
-            </section>
-
-            <section data-shot="intake-unreadable-dismiss" style={SECTION}>
-              {dismissing ? (
-                <>
-                  <TextField
-                    label="Why dismiss this PDF?"
-                    value={reason}
-                    onChange={(v) => {
-                      setReason(v)
-                      setDismissError(null)
-                    }}
-                    placeholder="The rooms sent a clearer copy"
-                    size="compact"
-                    invalid={dismissError !== null}
-                    autoFocus
-                    shot="intake-unreadable-dismiss-reason"
-                  />
-                  <FormError message={dismissError} />
-                  <div style={{ display: 'flex', gap: space[2] }}>
-                    <Button variant="primary" size="compact" onClick={dismiss} shot="intake-unreadable-dismiss-confirm">
-                      Dismiss this PDF
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="compact"
-                      onClick={() => {
-                        setDismissing(false)
-                        setDismissError(null)
-                      }}
-                    >
-                      Keep it
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: space[1], alignItems: 'flex-start' }}>
-                  <TextAction flush onClick={() => setDismissing(true)} shot="intake-unreadable-dismiss-open">
-                    Dismiss
-                  </TextAction>
-                  <span style={SMALL}>It stays here until it is dismissed, with a reason.</span>
-                </div>
-              )}
-            </section>
-          </>
-        )}
-      </div>
-    </div>
+    </>
   )
+
+  const actions: BenchActions | undefined =
+    batch.dismissed !== undefined
+      ? onNext !== undefined
+        ? { primary: <NextArrivalButton onNext={onNext} /> }
+        : undefined
+      : dismissing
+        ? {
+            note: 'It leaves Intake and stays in the audit trail with your reason.',
+            secondary: (
+              <Button
+                variant="secondary"
+                size="desktop"
+                onClick={() => {
+                  setDismissing(false)
+                  setDismissError(null)
+                }}
+              >
+                Cancel
+              </Button>
+            ),
+            primary: (
+              <Button variant="primary" size="desktop" onClick={dismiss} disabled={reason.trim() === ''} shot="intake-unreadable-dismiss-confirm">
+                Dismiss this PDF
+              </Button>
+            ),
+          }
+        : {
+            note: 'It stays here until it is dismissed, with a reason.',
+            secondary: (
+              <Button variant="secondary" size="desktop" onClick={() => setDismissing(true)} shot="intake-unreadable-dismiss-open">
+                Dismiss
+              </Button>
+            ),
+            primary: (
+              <Button variant="primary" size="desktop" onClick={send} shot="intake-unreadable-send">
+                {sent.length === 0 ? 'Send email' : 'Send again'}
+              </Button>
+            ),
+          }
+
+  return <BenchLayout shot="intake-bench-unreadable" data-arrival-key={arrival.key} document={document} decision={decision} {...(actions !== undefined ? { actions } : {})} />
 }

@@ -34,6 +34,8 @@ import type { DemoTrigger } from './types'
 
 /** Arrivals (`intakePaths.ts`'s `INTAKE_BASE`): exactly that path, no deeper. */
 export const INTAKE_ARRIVALS_ROUTE = '/admin/intake'
+/** One arrival opened on its own page (`intakePaths.ts`'s `arrivalPath`): the same triggers show there. */
+export const INTAKE_ARRIVAL_ROUTE = '/admin/intake/arrival/:key'
 /** Sources. */
 export const INTAKE_SOURCES_ROUTE = '/admin/intake/sources'
 /** The Control Panel index headings. */
@@ -80,7 +82,7 @@ export const INTAKE_ARRIVAL_TRIGGERS: readonly DemoTrigger[] = [
     description:
       "Mr Okafor's rooms email his St George's List for Wed 25 Nov PM to the rooms' mailbox: four patients, Sione Faleolo with no NHI, naming Dr Rutherford, whose PM session is free. It is read at once and lands at the top of Arrivals as a New List, one patient waiting for an NHI. Nothing is decided.",
     screen: INTAKE_ARRIVALS_SCREEN,
-    routes: [INTAKE_ARRIVALS_ROUTE],
+    routes: [INTAKE_ARRIVALS_ROUTE, INTAKE_ARRIVAL_ROUTE],
     surfaces: ['bar'],
     disabledReason: (state) => (mailboxPdfReceived(state, S.roomsList.id) ? ALREADY_RECEIVED : null),
     run: (api) => {
@@ -97,7 +99,7 @@ export const INTAKE_ARRIVAL_TRIGGERS: readonly DemoTrigger[] = [
     description:
       "Mr Okafor's rooms re-send his Wed 25 Nov PM List: Ingrid Lindqvist moved to 15:30, Helen Brooks added, Gordon Pike no longer on it. Once his List is held (placed from the first PDF), it lands as an Update, with Gordon Pike's Booking to confirm as a removal; before that it lands as a second new List.",
     screen: INTAKE_ARRIVALS_SCREEN,
-    routes: [INTAKE_ARRIVALS_ROUTE],
+    routes: [INTAKE_ARRIVALS_ROUTE, INTAKE_ARRIVAL_ROUTE],
     surfaces: ['bar'],
     disabledReason: (state) => {
       if (!mailboxPdfReceived(state, S.roomsList.id)) return "Mr Okafor's first List has not arrived yet"
@@ -125,7 +127,7 @@ export const INTAKE_ARRIVAL_TRIGGERS: readonly DemoTrigger[] = [
     description:
       "St George's feed sends its Lists for Wed 25 Nov: Mr Okafor's with the hospital's fuller wording, an approval number, a time shift and Sione Faleolo's NHI, and the day's other Lists exactly as AA holds them. It arrives as a hospital file over its Lists. Nothing is decided.",
     screen: INTAKE_ARRIVALS_SCREEN,
-    routes: [INTAKE_ARRIVALS_ROUTE],
+    routes: [INTAKE_ARRIVALS_ROUTE, INTAKE_ARRIVAL_ROUTE],
     surfaces: ['bar'],
     disabledReason: (state) => stgDayBeforeRefusal(state),
     run: (api) => {
@@ -153,7 +155,7 @@ export const INTAKE_ARRIVAL_TRIGGERS: readonly DemoTrigger[] = [
     description:
       "Southern Cross's feed cancels its next Booking ahead (by day, session and time). It waits at Intake as a Cancellation; the Booking is unchanged until the office applies it, and then stays visible, marked cancelled.",
     screen: INTAKE_ARRIVALS_SCREEN,
-    routes: [INTAKE_ARRIVALS_ROUTE],
+    routes: [INTAKE_ARRIVALS_ROUTE, INTAKE_ARRIVAL_ROUTE],
     surfaces: ['bar'],
     disabledReason: (state) => sxCancelRefusal(state),
     run: (api) => {
@@ -173,7 +175,7 @@ export const INTAKE_ARRIVAL_TRIGGERS: readonly DemoTrigger[] = [
     description:
       "A PDF arrives in the rooms' mailbox: a scanned cataract List, read with its unsure values marked to check, or a page that cannot be read, which lands with its reason. Never dropped.",
     screen: INTAKE_ARRIVALS_SCREEN,
-    routes: [INTAKE_ARRIVALS_ROUTE],
+    routes: [INTAKE_ARRIVALS_ROUTE, INTAKE_ARRIVAL_ROUTE],
     surfaces: ['bar'],
     choices: () => [
       { id: 'scan', label: 'A scan with values to check' },
@@ -206,7 +208,7 @@ export const INTAKE_ARRIVAL_TRIGGERS: readonly DemoTrigger[] = [
       "Southern Cross's feed sends a message that names no patient. It is held with its reason, its raw text kept behind the restricted view, and shown in the feed and under Southern Cross on Sources. Never dropped.",
     screen: INTAKE_ARRIVALS_SCREEN,
     alsoScreens: [INTAKE_SOURCES_SCREEN],
-    routes: [INTAKE_ARRIVALS_ROUTE, INTAKE_SOURCES_ROUTE],
+    routes: [INTAKE_ARRIVALS_ROUTE, INTAKE_ARRIVAL_ROUTE, INTAKE_SOURCES_ROUTE],
     surfaces: ['bar'],
     disabledReason: (state) => feedFailsRefusal(state),
     run: (api) => {

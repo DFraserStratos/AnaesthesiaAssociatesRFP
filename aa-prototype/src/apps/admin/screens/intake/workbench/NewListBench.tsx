@@ -1,12 +1,15 @@
 /**
  * The bench for a new List, from any source (build plan Phase 70; D117, D118, D120; US-02.2.1, US-01.6.1, US-02.1.2's
- * placement half; `docs/explorations/intake-ideas.html` `#idea1` mock B). Who sent it; for a rooms' PDF the page
- * beside the values read from it (each unsure value marked to check and lit where it sits on the page), for a
- * hospital List its rows; each row corrected before the List is placed; then where to place the whole List, as one
- * change set (`PlaceListCard`, `store/intakePlace.ts`), or Reject with a reason.
+ * placement half; the opened arrival's O1 in docs/explorations/intake-inbox-iterations.html). The document is the
+ * rooms' PDF on the desk, each unsure value marked to check and lit where it sits on the page (a hospital's List has
+ * no page: its rows show as received). The decision column holds the values read from it, each correctable before
+ * the List is placed, a note for each patient with no NHI, and where to place the whole List (`usePlaceList`). The
+ * footer places it as one change set (`store/intakePlace.ts`), or opens Reject, whose reason form then sits in the
+ * column with its own confirm in the footer.
  *
- * Hooks: `data-shot="intake-bench-newList"`, `data-arrival-key`; `intake-newlist-sender`, `intake-newlist-reject`,
- * `intake-newlist-decided`; the parts' own (`intake-pdf-page`, `intake-pdf-values`, `intake-place-list`).
+ * Hooks: `data-shot="intake-bench-newList"`, `data-arrival-key`; `intake-newlist-reject` (the footer's Reject and,
+ * while the form is open, the form), `intake-newlist-reject-confirm`, `intake-newlist-decided`, `intake-newlist-nhi`;
+ * the parts' own (`intake-pdf-page`, `intake-pdf-values`, `intake-place-list`, `intake-place-list-submit`).
  */
 
 import { useState } from 'react'
@@ -16,29 +19,21 @@ import { pdfValueKey } from '../../../../../domain/intake/pdfLists'
 import { pdfPageCount } from '../../../../../domain/intake/pdfRead'
 import type { PdfReadField } from '../../../../../domain/types'
 import { stampText } from '../../../../../shared/format'
-import { Button, FormError, Notice, TextAction, TextField } from '../../../../../shared/ui'
+import { Button, FormError, Notice, TextField } from '../../../../../shared/ui'
 import { arrivalPlaced, rejectArrivalList, useAppStore } from '../../../../../store'
-import { neutral, space, type as typeScale } from '../../../../../theme/tokens'
-import type { BenchProps } from './benchProps'
+import { space } from '../../../../../theme/tokens'
+import { AsReceived } from './ArrivalDocument'
+import { BenchLayout } from './BenchLayout'
+import type { BenchActions, BenchProps } from './benchProps'
+import { NextArrivalButton } from './NextArrivalButton'
 import { PdfPage, pdfPageBoxes } from './newList/PdfPage'
 import { PdfValuesTable } from './newList/PdfValuesTable'
-import { PlaceListCard } from './newList/PlaceListCard'
+import { usePlaceList } from './newList/PlaceListCard'
 
-const SMALL = { fontSize: typeScale.small.size, lineHeight: `${typeScale.small.line}px`, color: neutral.slate } as const
-
-/** Who sent it, in words: the email's address, the person who added it by hand, or the hospital's feed. */
-function senderLine(source: { kind: string; senderEmail?: string; by?: string } | undefined, hospitalName: string): string {
-  if (source === undefined) return ''
-  if (source.kind === 'mailbox') return `From ${source.senderEmail ?? 'the rooms'}, by the rooms' mailbox`
-  if (source.kind === 'byHand') return `From ${source.senderEmail ?? 'the rooms'}, added by hand by ${source.by ?? 'the office'}`
-  return `From ${hospitalName}'s feed`
-}
-
-export function NewListBench({ arrival, actor, onDone }: BenchProps) {
+export function NewListBench({ arrival, actor, onDone, onNext }: BenchProps) {
   const batch = useAppStore((s) => s.intake.batches[arrival.batchId])
   const pdf = useAppStore((s) => (batch?.pdfListId !== undefined ? s.intake.pdfLists[batch.pdfListId] : undefined))
   const rows = useAppStore((s) => s.intake.rows)
-  const hospitalName = useAppStore((s) => s.masters.hospitals[arrival.hospitalId]?.name ?? arrival.hospitalId)
   const [selectedKey, setSelectedKey] = useState<string | undefined>(undefined)
   const [rejecting, setRejecting] = useState(false)
   const [reason, setReason] = useState('')
@@ -63,6 +58,13 @@ export function NewListBench({ arrival, actor, onDone }: BenchProps) {
   )
   const boxes = pdf === undefined ? [] : pdfPageBoxes(pdf, pdfRowIds).map((b) => (b.unsure && corrected.has(b.key) ? { ...b, unsure: false } : b))
 
+  const place = usePlaceList({ arrival, actor, ...(invalidNhi ? { disabledReason: 'Correct the invalid NHI first.' } : {}), onPlaced: () => onDone() })
+
+  const closeReject = () => {
+    setRejecting(false)
+    setReason('')
+    setRefusal(null)
+  }
   const reject = () => {
     const out = rejectArrivalList(useAppStore, actor, arrival.key, reason)
     if (!out.ok) {
@@ -74,63 +76,84 @@ export function NewListBench({ arrival, actor, onDone }: BenchProps) {
     onDone()
   }
 
-  return (
-    <div data-shot="intake-bench-newList" data-arrival-key={arrival.key} style={{ display: 'flex', flexDirection: 'column', gap: space[6], minWidth: 0 }}>
-      <p data-shot="intake-newlist-sender" style={{ margin: 0, ...SMALL }}>
-        {senderLine(batch?.arrivalSource as { kind: string; senderEmail?: string; by?: string } | undefined, hospitalName)}
-      </p>
+  const document =
+    pdf !== undefined ? (
+      <PdfPage
+        facsimile={pdf.file.facsimile}
+        fileName={pdf.file.name}
+        {...(pdf.file.pages !== undefined ? { pages: pdf.file.pages } : { pageCount: pdfPageCount(pdf.rows.length) })}
+        boxes={boxes}
+        {...(selectedKey !== undefined ? { selectedKey } : {})}
+        onSelect={setSelectedKey}
+      />
+    ) : (
+      <AsReceived arrival={arrival} />
+    )
 
-      {pdf !== undefined ? (
-        // The page gets a representative width (520 or more): the values table sits beside it on a wide bench, below it otherwise.
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 520px), 1fr))', gap: space[6], alignItems: 'start' }}>
-          <PdfPage
-            facsimile={pdf.file.facsimile}
-            fileName={pdf.file.name}
-            pageCount={pdfPageCount(pdf.rows.length)}
-            boxes={boxes}
-            {...(selectedKey !== undefined ? { selectedKey } : {})}
-            onSelect={setSelectedKey}
-          />
-          <PdfValuesTable arrival={arrival} actor={actor} {...(selectedKey !== undefined ? { selectedKey } : {})} onSelect={setSelectedKey} locked={locked} />
-        </div>
-      ) : (
-        <PdfValuesTable arrival={arrival} actor={actor} locked={locked} />
-      )}
-
+  const decision = (
+    <>
+      <PdfValuesTable arrival={arrival} actor={actor} {...(pdf !== undefined && selectedKey !== undefined ? { selectedKey } : {})} {...(pdf !== undefined ? { onSelect: setSelectedKey } : {})} locked={locked} />
       {locked ? (
-        <Notice tone="success" title={placed ? 'Placed' : 'Decided'} shot="intake-newlist-decided">
+        <Notice tone="success" title={placed && !arrival.decided ? 'Placed' : 'Decided'} shot="intake-newlist-decided">
           {placed && !arrival.decided
             ? 'This List has been placed. Its patients waiting for an NHI join it as stubs until their NHI arrives.'
             : `Every patient on this List has been decided. Received ${stampText(arrival.receivedAtISO)}.`}
         </Notice>
       ) : (
         <>
-          <PlaceListCard
-            arrival={arrival}
-            actor={actor}
-            {...(invalidNhi ? { disabledReason: 'Correct the invalid NHI first.' } : {})}
-            onPlaced={() => onDone()}
-          />
-          <div data-shot="intake-newlist-reject" style={{ display: 'flex', flexDirection: 'column', gap: space[2], alignItems: 'flex-start' }}>
-            {rejecting ? (
-              <>
-                <TextField label="Why reject this List?" value={reason} onChange={setReason} size="compact" width={360} autoFocus />
-                {refusal !== null && <FormError message={refusal} />}
-                <div style={{ display: 'flex', gap: space[2] }}>
-                  <Button variant="danger" size="compact" onClick={reject}>
-                    Reject List
-                  </Button>
-                  <Button variant="secondary" size="compact" onClick={() => { setRejecting(false); setRefusal(null) }}>
-                    Keep it
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <TextAction onClick={() => setRejecting(true)}>Reject this List</TextAction>
-            )}
-          </div>
+          {(place?.stubNames ?? []).map((name) => (
+            <Notice key={name} tone="warning" icon={false} title={`${name} has no NHI.`} shot="intake-newlist-nhi">
+              Goes on the List as a stub, and becomes a Booking once the NHI is added.
+            </Notice>
+          ))}
+          {rejecting ? (
+            <div data-shot="intake-newlist-reject" style={{ display: 'flex', flexDirection: 'column', gap: space[2] }}>
+              <TextField label="Why reject this List?" value={reason} onChange={(v) => { setReason(v); setRefusal(null) }} size="compact" autoFocus />
+              <FormError message={refusal} />
+            </div>
+          ) : (
+            place?.node
+          )}
         </>
       )}
-    </div>
+    </>
   )
+
+  const actions: BenchActions | undefined = locked
+    ? onNext !== undefined
+      ? { primary: <NextArrivalButton onNext={onNext} /> }
+      : undefined
+    : rejecting
+      ? {
+          note: 'Nothing on the schedule changes. The List leaves Intake with your reason.',
+          secondary: (
+            <Button variant="secondary" size="desktop" onClick={closeReject}>
+              Cancel
+            </Button>
+          ),
+          primary: (
+            <Button variant="danger" size="desktop" onClick={reject} disabled={reason.trim() === ''} shot="intake-newlist-reject-confirm">
+              Reject List
+            </Button>
+          ),
+        }
+      : {
+          ...(place !== undefined ? { note: <span data-shot="intake-place-list-summary">{place.summary}</span> } : {}),
+          secondary: (
+            <Button variant="secondary" size="desktop" onClick={() => setRejecting(true)} shot="intake-newlist-reject">
+              Reject this List
+            </Button>
+          ),
+          ...(place !== undefined
+            ? {
+                primary: (
+                  <Button variant="primary" size="desktop" onClick={place.submit} disabled={place.blockedBy !== undefined} disabledReason={place.blockedBy} shot="intake-place-list-submit">
+                    {place.primaryLabel}
+                  </Button>
+                ),
+              }
+            : {}),
+        }
+
+  return <BenchLayout shot="intake-bench-newList" data-arrival-key={arrival.key} document={document} decision={decision} {...(actions !== undefined ? { actions } : {})} />
 }

@@ -82,7 +82,8 @@ function renderBench(batchId: string, onDone = vi.fn()) {
 
 const q = (sel: string) => document.querySelector<HTMLElement>(sel)
 const bench = () => q('[data-shot="intake-bench-update"]')!
-const rowEl = (sel: string) => bench().querySelector<HTMLElement>(`tr[data-row-id]${sel}`)!
+// The decision column's difference table (the document beside it shows the rows as received).
+const rowEl = (sel: string) => bench().querySelector<HTMLElement>(`[data-shot="intake-decision-column"] tr[data-row-id]${sel}`)!
 
 beforeEach(() => {
   useAppStore.setState(freshAppState())
@@ -106,7 +107,7 @@ describe('UpdateBench: a re-sent rooms PDF', () => {
     expect(removal).toHaveAttribute('data-ticked', 'true')
     expect(within(removal).getByRole('checkbox')).toBeChecked()
 
-    expect(q('[data-shot="intake-update-count"]')!.textContent).toMatch(/^\d+ changes? on \d+ Bookings?/)
+    expect(q('[data-shot="intake-update-count"]')!.textContent).toMatch(/^Applies \d+ changes? on \d+ Bookings?/)
     expect(q('[data-shot="matching-apply"]')).toBeInTheDocument()
 
     expect(api.getState().audit).toHaveLength(auditBefore)
