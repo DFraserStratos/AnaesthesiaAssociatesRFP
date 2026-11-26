@@ -34,6 +34,7 @@ import { ANAE, CONTRACT, SEED_LIST_IDS, SEED_MARKERS } from '../../domain/seed'
 import { contractPath } from '../admin/contractsPaths'
 import { financePath, invoicePath as financeInvoicePath } from '../admin/screens/finances/financePaths'
 import { inboxPath } from '../admin/screens/intake/intakePaths'
+import { reviewPath as listReviewPath } from '../admin/screens/lists/listsPaths'
 import { DEFAULT_INBOX_QUERY } from '../../domain/intake/inbox'
 import { projectedListId } from '../../domain/slots'
 import { rvgModifierByCode } from '../../domain/billing/modifiers'
@@ -130,7 +131,7 @@ function mobileBookingPath(state: AppState, booking: Booking | undefined): strin
 }
 
 function reviewPath(state: AppState, listId: string | undefined): string | null {
-  return listId === undefined || state.schedule.lists[listId] === undefined ? null : `/admin/review/${listId}`
+  return listId === undefined || state.schedule.lists[listId] === undefined ? null : listReviewPath(listId)
 }
 
 /** A Booking's standard invoices, oldest number first. */

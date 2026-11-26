@@ -8,14 +8,14 @@
  * replace so Back is not a filter change.
  */
 
-import { useCallback, type ReactNode } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import type { ReactNode } from 'react'
 import { CountBadge, LineTabLink, LineTabs } from '../../../../shared/ui'
 import { useDemoTriggerContext } from '../../../../shared/demoTriggers'
 import { practiceAnaesthetistCount } from '../../../../domain/anaesthetistStatus'
 import { isRetired } from '../../../../domain/masterLifecycle'
 import { useAppStore, useToday } from '../../../../store'
 import { AdminPage, type AdminPageMode } from '../../components/AdminPage'
+import { useListParams } from '../../useListParams'
 import { LoadResultBanner } from '../masters/chrome'
 import { PEOPLE_TAB_SEEDED, PEOPLE_TABS, type PeopleTab } from './peopleTabs'
 
@@ -75,31 +75,5 @@ export function PeoplePage({ tab, sub, actions, mode = 'fit', shot, children }: 
   )
 }
 
-/**
- * A People list's state in the URL: read a param (with its default when absent) and set some at
- * once. Every change replaces the history entry, a value equal to its default leaves the URL, and any
- * change but the page's own goes back to page 1.
- */
-export function usePeopleListParams<K extends string>(defaults: Readonly<Record<K, string>>) {
-  const [params, setParams] = useSearchParams()
-  const get = useCallback((key: K | 'page'): string => params.get(key) ?? (key === 'page' ? '' : defaults[key as K]), [params, defaults])
-  const set = useCallback(
-    (patch: Partial<Record<K | 'page', string>>) => {
-      setParams(
-        (prev) => {
-          const next = new URLSearchParams(prev)
-          for (const [key, value] of Object.entries(patch) as [K | 'page', string][]) {
-            const fallback = key === 'page' ? '1' : defaults[key as K]
-            if (value === fallback || value === '') next.delete(key)
-            else next.set(key, value)
-          }
-          if (!('page' in patch)) next.delete('page')
-          return next
-        },
-        { replace: true },
-      )
-    },
-    [setParams, defaults],
-  )
-  return { get, set }
-}
+/** A People list's state in the URL: the Admin lists' one hook (`useListParams`). */
+export const usePeopleListParams = useListParams

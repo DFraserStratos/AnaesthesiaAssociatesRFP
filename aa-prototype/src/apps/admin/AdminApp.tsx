@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { bookingsByList } from '../../store/indexes'
 import { Outlet, useLocation, useMatch, useNavigate, useSearchParams } from 'react-router-dom'
 import { neutral } from '../../theme/tokens'
 import { SurfaceProvider } from '../../shared'
@@ -7,11 +6,9 @@ import {
   addDayNote,
   matchingAttentionCount,
   patientAttentionCount,
-  openConflictCount,
   openWarnings,
   bookingCountsByList,
   draftListsForDate,
-  waitingDraftListCount,
   activeNotificationCount,
   rosterForDate,
   scheduleHorizon,
@@ -21,7 +18,6 @@ import {
   warningSummaryFromRows,
   useToday,
   officeActorOf,
-  reviewRowsAwaiting,
 } from '../../store'
 import { isISODate } from '../../shell/routeParams'
 import { SideNav, type NavSection } from './components/SideNav'
@@ -31,23 +27,27 @@ import { DraftListDrawer } from './components/DraftListDrawer'
 import { SupportSidePanel } from '../../shared/support'
 import type { AdminOutletContext } from './outlet'
 import { surnameOf } from './util'
-import { locationName } from '../../shared/format'
-import type { AssignedList } from '../../domain/types'
 import { ADMIN_MIN_WIDTH, ADMIN_PAGE_HORIZONTAL_PADDING } from './layout'
 import { AdminFrameContext } from './components/AdminPage'
-import { sessionText } from '../../domain/outOfHours'
 import { OpenOutOfHoursSheet } from './flows/OpenOutOfHoursSheet'
 import { CreditSheet } from './flows/CreditSheet'
 import { CreditSheetSlot } from '../../shared/booking/CreditSheetSlot'
 import { financeBadge } from './screens/finances/financeCounts'
 import { FINANCES_BASE } from './screens/finances/financePaths'
+import { listsBadge as listsBadgeCount } from './screens/lists/listsCounts'
+import { LISTS_BASE, listsPath } from './screens/lists/listsPaths'
+import { useListsBadgeMode } from '../../shell/listsBadgeMode'
+
+/** Draft Lists' own address: its `?open=` opens a Draft List's drawer on arrival. */
+const DRAFT_LISTS_PATH = listsPath('draft-lists')
 
 /** The office persona actor, built once (Decisions log 2026-07-21). */
 
 /** Which side-nav section the current URL is in (`/admin` itself is the day view). */
 function sectionForPath(pathname: string): NavSection {
   const head = pathname.replace(/^\/admin\/?/, '').split('/')[0]
-  if (head === 'draft-lists') return 'draftLists'
+  // Lists (US-13.1.3), and the old Draft Lists, Conflicts and Review queue links that redirect into it.
+  if (head === 'lists' || head === 'draft-lists' || head === 'conflicts' || head === 'review') return 'lists'
   if (head === 'notifications') return 'notifications'
   if (head === 'intake') return 'intake'
   // People (build plan Phase 53), and the old Patients links that redirect into it.
@@ -55,8 +55,6 @@ function sectionForPath(pathname: string): NavSection {
   // Finances (build plan Phase 58; D107), and the old Invoices, credit note, Billing monitor and Ledger links that redirect into it.
   if (head === 'finances' || head === 'invoices' || head === 'credit-notes' || head === 'billing' || head === 'ledger') return 'finances'
   switch (head) {
-    case 'conflicts':
-    case 'review':
     case 'contracts':
     case 'masters':
     case 'audit':
@@ -81,16 +79,13 @@ export function AdminApp() {
 /**
  * The Admin Web App's LAYOUT: the dark side nav with its badge counts, the
  * day-scoped derivations every day-view child needs, and the session drawer. The
- * screens are router sub-routes (`/admin/day/:dateISO`, `/admin/review/:listId`,
+ * screens are router sub-routes (`/admin/day/:dateISO`, `/admin/lists/to-authorise/:listId`,
  * `/admin/finances/invoices/:invoiceId` …) so a refresh, the back button and a shared URL
  * all land on the same screen (Decisions log 2026-07-27). `?sort=az` carries the
  * day grid's row order — a view preference, not a navigation step.
  */
 function AdminShell({ todayISO }: { todayISO: string }) {
   const listsRecord = useAppStore((s) => s.schedule.lists)
-  // Events awaiting the office's review join the Review item's count (catch-up Phase 38b).
-  const procedureEvents = useAppStore((s) => s.schedule.procedureEvents)
-  const eventsAwaiting = useMemo(() => reviewRowsAwaiting({ schedule: { procedureEvents } }).length, [procedureEvents])
   const slotsRecord = useAppStore((s) => s.schedule.slots)
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
   const schedule = useAppStore((s) => s.schedule)
@@ -174,7 +169,7 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     const target = openListId !== null ? useAppStore.getState().schedule.lists[openListId] : undefined
     setDrawerSlotId(target?.slotId ?? null)
     // A Draft List opens its own drawer: from navigation state, or `?open=` on the Draft Lists page.
-    const openParam = pathname.startsWith('/admin/draft-lists') ? params.get('open') : null
+    const openParam = pathname.startsWith(DRAFT_LISTS_PATH) ? params.get('open') : null
     setDrawerDraftListId(target !== undefined && target.state === 'DRAFT' ? target.id : openParam)
     setDrawerAssign(undefined)
     setOpenOutOfHoursFor(null)
@@ -208,7 +203,6 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   // The day's Draft Lists (the band) and every List's booking count (US-13.1.1).
   const dayDraftLists = useMemo(() => draftListsForDate({ schedule: { lists: listsRecord } }, selectedDate), [listsRecord, selectedDate])
   const bookingCounts = useMemo(() => bookingCountsByList(bookingsRecord), [bookingsRecord])
-  const draftListBadge = useMemo(() => waitingDraftListCount({ schedule: { lists: listsRecord } }), [listsRecord])
   // Active notices (catch-up Phase 32b; US-13.8.1 "Count"): the same count as the rail card and the page.
   const notificationsRecord = useAppStore((s) => s.notifications)
   const notificationBadge = useMemo(() => activeNotificationCount({ notifications: notificationsRecord }), [notificationsRecord])
@@ -223,30 +217,10 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     [billing, schedule, masters, appSettings, clock, patientCare, intake, auditTrail],
   )
 
-  // Derived review queue (all SUBMITTED lists; the badge + awaiting-review rows).
-  const reviewLists = useMemo(
-    () =>
-      Object.values(listsRecord)
-        .filter((l): l is AssignedList => l.state === 'SUBMITTED')
-        .sort((a, b) =>
-          a.dateISO === b.dateISO ? a.anaesthetistId.localeCompare(b.anaesthetistId) : a.dateISO.localeCompare(b.dateISO),
-        ),
-    [listsRecord],
-  )
-  const reviewRows = useMemo(
-    () =>
-      reviewLists.map((l) => {
-        const anae = masters.anaesthetists[l.anaesthetistId]
-        const hospital = locationName(l.hospitalId, masters.hospitals)
-        const count = (bookingsByList(bookingsRecord).get(l.id) ?? []).filter((c) => c.cancellation === undefined).length
-        return {
-          listId: l.id,
-          title: `${anae !== undefined ? surnameOf(anae.name) : l.anaesthetistId} · ${hospital} ${sessionText(l.session)}`,
-          sub: `${count} booking${count === 1 ? '' : 's'} · submitted`,
-        }
-      }),
-    [reviewLists, masters, bookingsRecord],
-  )
+  // The Lists badge (US-13.1.3; OQ-151): each List that needs something once, across the four tabs; the
+  // harness bar's demo switch picks All or Urgent (the next week and anything earlier).
+  const listsBadgeMode = useListsBadgeMode((s) => s.mode)
+  const listsBadge = useMemo(() => listsBadgeCount({ schedule, masters, clock, appSettings }, listsBadgeMode), [schedule, masters, clock, appSettings, listsBadgeMode])
 
   // The Finances badge (build plan Phase 58; D109): billing problems plus failed ledger checks, one
   // function in `financeCounts.ts` over the shared billing status model (Phase 60: problem Lists, Xero
@@ -257,8 +231,6 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const officeActor = useMemo(() => officeActorOf({ officeUser }), [officeUser])
   // The support panel (catch-up Phase 43b): Help at the foot of the side nav, Help line and Product support.
   const [helpOpen, setHelpOpen] = useState(false)
-  // Live conflicts from today to the horizon (catch-up Phase 30): the amber Conflicts badge.
-  const conflictCount = useMemo(() => openConflictCount({ schedule, masters, clock, appSettings }), [schedule, masters, clock, appSettings])
 
   // The warning routine, read once for the day view (catch-up Phase 15a): the
   // per-List outline on the selected date and every open warning for the
@@ -282,7 +254,6 @@ function AdminShell({ todayISO }: { todayISO: string }) {
     warningFlags,
     todoRows,
     notes,
-    reviewRows,
     shellScrollbarWidth,
     onSelectSlot: (slotId) => {
       setDrawerAssign(undefined)
@@ -315,10 +286,8 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const SECTION_PATH: Record<NavSection, string> = {
     day: `/admin/day/${selectedDate}${dayQuery === '' ? '' : `?${dayQuery}`}`,
     intake: '/admin/intake',
-    draftLists: '/admin/draft-lists',
-    conflicts: '/admin/conflicts',
+    lists: LISTS_BASE,
     notifications: '/admin/notifications',
-    review: '/admin/review',
     finances: FINANCES_BASE,
     people: '/admin/people',
     contracts: '/admin/contracts',
@@ -332,10 +301,8 @@ function AdminShell({ todayISO }: { todayISO: string }) {
         {...(viewportHeight !== undefined ? { stickyHeight: viewportHeight } : {})}
         onHelp={() => setHelpOpen(true)}
         active={sectionForPath(pathname)}
-        reviewBadge={reviewLists.length + eventsAwaiting}
+        listsBadge={listsBadge}
         financesBadge={financesBadge}
-        conflictBadge={conflictCount}
-        draftListBadge={draftListBadge}
         notificationBadge={notificationBadge}
         intakeBadge={intakeBadge}
         peopleBadge={patientBadge}
@@ -361,9 +328,9 @@ function AdminShell({ todayISO }: { todayISO: string }) {
             // US-01.6.3 "Becomes active": the same List, now in the anaesthetist's session.
             setDrawerDraftListId(null)
             const l = useAppStore.getState().schedule.lists[listId]
-            if (pathname.startsWith('/admin/draft-lists')) {
+            if (pathname.startsWith(DRAFT_LISTS_PATH)) {
               // On the page the row leaves Unassigned and the outcome offers "Open List".
-              navigate(`/admin/draft-lists?assigned=${listId}`, { replace: true })
+              navigate(listsPath('draft-lists', { assigned: listId }), { replace: true })
             } else if (l !== undefined && (dayMatch === null || l.dateISO !== selectedDate)) {
               navigate(`/admin/day/${l.dateISO}`, { state: { openListId: l.id } })
             } else setDrawerSlotId(slotId)

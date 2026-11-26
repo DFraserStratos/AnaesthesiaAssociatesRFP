@@ -27,6 +27,7 @@ import { NotPreferredWarning, SurgeonPicker, useNotPreferredWarning } from '../c
 import { keptDetail, previewLine, resultLine, retirePreviewLine, retireResultLine, SKIPPED_DETAIL, SKIPPED_HEADING } from '../recurringBookingCopy'
 import { Notice } from '../../../shared/ui/Notice'
 import { ResultLine } from '../../../shared/ui/ResultLine'
+import { draftListOpenPath, listsPath } from '../screens/lists/listsPaths'
 
 interface Props {
   open: boolean
@@ -218,7 +219,7 @@ export function RecurringBookingSheet({ open, actor, recurringBooking, onClose }
             }}
             onOpenDraftLists={(listId) => {
               onClose()
-              navigate(listId !== undefined ? `/admin/draft-lists?open=${listId}` : '/admin/draft-lists')
+              navigate(listId !== undefined ? draftListOpenPath(listId) : listsPath('draft-lists'))
             }}
             onDone={onClose}
           />

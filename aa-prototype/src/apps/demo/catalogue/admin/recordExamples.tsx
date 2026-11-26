@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { DefList, DefRow, EditableCard, RailSection, TextField, useCardEdit } from '../../../../shared/ui'
 import { PROFILE_CARD } from '../../../admin/components/ProfileChrome'
 import { PeopleTabs } from '../../../admin/screens/people/PeopleSection'
+import { ListsTabs } from '../../../admin/screens/lists/ListsSection'
 
 /** Two cards edited one at a time: Save commits the card's patch (stubbed here); a blank name is refused on the card. */
 export function EditableCardExample() {
@@ -69,4 +70,9 @@ export function RailSectionExample() {
 /** The People section's tab strip, live: its counts come from the store. */
 export function PeopleTabsExample() {
   return <PeopleTabs active="surgeons" />
+}
+
+/** The Lists section's tab strip on the shared SectionTabs, live: its counts come from the store, hidden at zero. */
+export function ListsTabsExample() {
+  return <ListsTabs active="conflicts" />
 }

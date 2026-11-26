@@ -74,6 +74,11 @@ const ROUTE_PATTERNS = [
   '/admin/notifications',
   '/admin/review',
   '/admin/review/:listId',
+  '/admin/lists/draft-lists',
+  '/admin/lists/conflicts',
+  '/admin/lists/contracts-to-set',
+  '/admin/lists/to-authorise',
+  '/admin/lists/to-authorise/:listId',
   '/admin/finances/billing',
   '/admin/finances/invoices',
   '/admin/finances/invoices/:invoiceId',
@@ -260,7 +265,7 @@ describe('DEMO_SCENARIOS (catch-up Phase 44)', () => {
     // The capture recipes (US-11.3.3, US-08.4.4) open S5's first invoice by id and by Hemi Walker's row.
     expect(state.billing.invoices['INV0002']?.invoiceNumber).toBe('AA-2026-0002')
     // Beat 5 authorises Dr Souter's Mon 20 Jul AM List: Dr Whitaker's Contract carries its own rate, so his unit value moves nothing.
-    expect(scenario('S5').beats[4]!.path(state)).toBe('/admin/review/L-34821-2026-11-23-AM')
+    expect(scenario('S5').beats[4]!.path(state)).toBe('/admin/lists/to-authorise/L-34821-2026-11-23-AM')
   })
 
   it('staging twice from reset gives deep-equal domain state', () => {

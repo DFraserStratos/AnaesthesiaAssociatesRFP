@@ -35,11 +35,9 @@ import { anaesthetistRecordPath, surgeonProfilePath } from './peoplePaths'
 import { patientPath } from '../../shared/patients'
 import { SurgeonProfile } from './screens/SurgeonProfile'
 import { AnaesthetistPage } from './screens/AnaesthetistPage'
-import { ReviewQueue } from './screens/ReviewQueue'
-import { ConflictsScreen } from './screens/ConflictsScreen'
-import { DraftListsScreen } from './screens/DraftListsScreen'
 import { NotificationsScreen } from './screens/NotificationsScreen'
 import { ReviewScreen } from './screens/ReviewScreen'
+import { listsPath, listsPathFromLegacy, reviewPath } from './screens/lists/listsPaths'
 import { PatientsScreen } from './screens/patients/PatientsScreen'
 import { PatientRecord } from './screens/patients/PatientRecord'
 import { useAdminOutlet, type AdminOutletContext } from './outlet'
@@ -168,7 +166,7 @@ export function AdminDayRoute() {
           todoRows={ctx.todoRows}
           actor={ctx.actor}
           onOpenBooking={(d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`)}
-          onOpenConflicts={() => navigate('/admin/conflicts')}
+          onOpenConflicts={() => navigate(listsPath('conflicts'))}
           onOpenInvoices={() => navigate(awaitingApprovalPath())}
           onOpenNotification={(target) => openNotificationTarget(target, ctx, (d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`))}
           onSeeAllNotifications={() => navigate('/admin/notifications')}
@@ -230,19 +228,16 @@ export function AdminBookingDetailRoute() {
 }
 
 // ---------------------------------------------------------------------------
-// Review queue — `/admin/review`, `/admin/review/:listId`
+// Lists (US-13.1.3): the four tabs render from their own files in
+// `screens/lists/`, mounted directly by `router.tsx`. A submitted List's review
+// page sits under To authorise: `/admin/lists/to-authorise/:listId`. The old
+// Draft Lists, Conflicts and Review queue addresses redirect here, with
+// replace, keeping the query and router state.
 // ---------------------------------------------------------------------------
 
-export function AdminReviewQueueRoute() {
-  const navigate = useNavigate()
-  const { actor } = useAdminOutlet()
-  return (
-    <ReviewQueue
-      actor={actor}
-      onOpen={(listId) => navigate(`/admin/review/${listId}`)}
-      onViewInvoices={() => navigate(financePath('invoices'))}
-    />
-  )
+export function ListsLegacyRedirect() {
+  const { pathname, search, state } = useLocation()
+  return <Navigate to={listsPathFromLegacy(pathname, search)} replace state={state} />
 }
 
 /** Router state "Open in Review" passes from Finances' Billing tab: where to return, with its search. */
@@ -271,8 +266,8 @@ export function AdminReviewRoute() {
         listId={listId}
         actor={actor}
         backToBillingMonitor={from !== null}
-        onBack={() => navigate(from !== null ? financePath('billing') + from.search : '/admin/review')}
-        onOpen={(next) => navigate(`/admin/review/${next}`)}
+        onBack={() => navigate(from !== null ? financePath('billing') + from.search : listsPath('to-authorise'))}
+        onOpen={(next) => navigate(reviewPath(next))}
         onViewInvoices={() => navigate(financePath('invoices'))}
         onOpenBooking={(dateISO, bookingId) => navigate(`/admin/day/${dateISO}/bookings/${bookingId}`)}
       />
@@ -295,22 +290,6 @@ export function FinanceLegacyRedirect() {
 // ---------------------------------------------------------------------------
 // The single-screen sections
 // ---------------------------------------------------------------------------
-
-/** Every conflict across dates (catch-up Phase 30; US-01.5.4). A Draft List's row opens its drawer (catch-up Phase 31). */
-export function AdminConflictsRoute() {
-  const { actor, onSelectSlot, onOpenDraftList } = useAdminOutlet()
-  return <ConflictsScreen actor={actor} onOpenSession={onSelectSlot} onOpenDraftList={onOpenDraftList} />
-}
-
-/**
- * Draft Lists, the one place (catch-up Phase 31; US-01.6.2) — `/admin/draft-lists`
- * (`?tab=history`; `?open=<listId>` opens that Draft List's drawer on arrival,
- * read by the layout).
- */
-export function AdminDraftListsRoute() {
-  const { actor, onOpenDraftList, onOpenList } = useAdminOutlet()
-  return <DraftListsScreen actor={actor} onOpenDraftList={onOpenDraftList} onOpenList={onOpenList} />
-}
 
 /**
  * A notification opens its List in the Day drawer, or its Draft List's drawer

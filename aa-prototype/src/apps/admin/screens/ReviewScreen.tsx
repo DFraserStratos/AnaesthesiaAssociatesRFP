@@ -285,7 +285,7 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
       mode="fluid"
       actionsAlign="start"
       testId="review-detail-screen"
-      back={backToBillingMonitor ? { label: 'Billing', onClick: onBack, shot: 'review-back-to-billing' } : { label: 'Review queue', onClick: onBack }}
+      back={backToBillingMonitor ? { label: 'Billing', onClick: onBack, shot: 'review-back-to-billing' } : { label: 'To authorise', onClick: onBack }}
       title={<>{hospitalName} · {sessionText(list.session)} list</>}
       sub={
         <>

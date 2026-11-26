@@ -29,6 +29,8 @@ export interface DemoContextValues {
   'adminPeople.tab': 'anaesthetists' | 'surgeons' | 'specialties' | 'patients'
   /** Admin · Finances: the section's tab on show (build plan Phase 58; D107). */
   'adminFinances.tab': 'billing' | 'invoices' | 'payments' | 'ledger' | 'xero' | 'aa-fees'
+  /** Admin · Lists: the section's tab on show (US-13.1.3). */
+  'adminLists.tab': 'draft-lists' | 'conflicts' | 'contracts-to-set' | 'to-authorise'
   /** Mobile · My calendar: the last day opened in the session panel, `<anaesthetistId>|<dateISO>`, while the calendar shows (catch-up Phase 32d's office stand-in). */
   'mobileCalendar.day': string
   /** Admin · Booking detail: the Booking whose draft holds unsaved changes (catch-up Phase 35's Switch office user waits on it). */

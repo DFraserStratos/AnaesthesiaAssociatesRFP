@@ -65,14 +65,14 @@ beforeEach(() => {
 })
 
 describe('the side nav (D107, D109)', () => {
-  it('has one Finances entry, after Review queue, in place of Invoices, Billing monitor and Ledger: 11 items', () => {
+  it('has one Finances entry, after Notifications, in place of Invoices, Billing monitor and Ledger: 9 items', () => {
     mountAt(financePath('billing'))
     const labels = within(nav())
       .getAllByRole('button')
       .map((b) => b.firstElementChild?.textContent)
-    expect(labels).toHaveLength(11)
+    expect(labels).toHaveLength(9)
     expect(labels.filter((l) => l === 'Finances')).toHaveLength(1)
-    expect(labels.indexOf('Finances')).toBe(labels.indexOf('Review queue') + 1)
+    expect(labels.indexOf('Finances')).toBe(labels.indexOf('Notifications') + 1)
     for (const gone of ['Invoices', 'Billing monitor', 'Billing', 'Ledger']) expect(labels).not.toContain(gone)
     expect(within(nav()).getByRole('button', { name: /^Finances/ })).toHaveAttribute('aria-current', 'page')
     expect(document.querySelector('[data-shot="nav-badge-billing"]')).toBeNull()

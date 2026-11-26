@@ -7,6 +7,7 @@ import { AppSwitcher } from './AppSwitcher'
 import { DemoActionsMenu } from './DemoActionsMenu'
 import { DemoClockMenu } from './DemoClockMenu'
 import { DemoResetButton } from './DemoResetButton'
+import { ListsBadgeModeToggle } from './ListsBadgeModeToggle'
 import { PersonaChip } from '../shared/PersonaChip'
 import { ScaleBanner } from '../shared/scale/ScaleBanner'
 import { neutral, radius } from '../theme/tokens'
@@ -109,6 +110,8 @@ export function AppShell() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {/* Demo only (OQ-151): how the Admin side nav's Lists badge counts, shown while on the Lists section. */}
+          {location.pathname.startsWith('/admin/lists') && <ListsBadgeModeToggle />}
           <PersonaChip persona={persona} size={28} gap={8} />
           <AppSwitcher activeApp={activeApp} onSelect={handleSelect} />
           <DemoActionsMenu />

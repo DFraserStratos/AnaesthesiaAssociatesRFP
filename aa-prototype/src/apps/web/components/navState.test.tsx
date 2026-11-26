@@ -27,10 +27,10 @@ describe('nav state', () => {
   })
 
   it('the Admin side nav marks exactly its active item aria-current="page"', () => {
-    render(<SurfaceProvider variant="web"><SideNav active="review" reviewBadge={0} onNavigate={() => {}} /></SurfaceProvider>)
+    render(<SurfaceProvider variant="web"><SideNav active="lists" onNavigate={() => {}} /></SurfaceProvider>)
     const nav = screen.getByRole('navigation', { name: 'Admin' })
     const current = within(nav).getAllByRole('button').filter((b) => b.getAttribute('aria-current') === 'page')
     expect(current).toHaveLength(1)
-    expect(current[0]).toHaveTextContent('Review queue')
+    expect(current[0]).toHaveTextContent('Lists')
   })
 })

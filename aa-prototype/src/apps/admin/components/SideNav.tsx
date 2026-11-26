@@ -4,9 +4,8 @@ import { brand, neutral, semantic, radius } from '../../../theme/tokens'
 import { RolesInfo } from '../RolesInfo'
 import { officePersona } from '../../../shell/appConfig'
 import { useAppStore } from '../../../store'
-import { DRAFT_LISTS } from '../../../shared/scheduleTerms'
 
-export type NavSection = 'day' | 'intake' | 'draftLists' | 'conflicts' | 'notifications' | 'review' | 'finances' | 'people' | 'contracts' | 'masters' | 'audit'
+export type NavSection = 'day' | 'intake' | 'lists' | 'notifications' | 'finances' | 'people' | 'contracts' | 'masters' | 'audit'
 
 interface NavItem {
   section: NavSection
@@ -18,13 +17,14 @@ interface NavItem {
 
 interface SideNavProps {
   active: NavSection
-  reviewBadge: number
+  /**
+   * Lists (US-13.1.3; OQ-151): the Lists that need something across Draft Lists, Conflicts, Contracts to
+   * set and To authorise, each counted once (`listsCounts.ts`'s `listsBadge`, in the harness bar's
+   * All or Urgent mode): amber, an attention count.
+   */
+  listsBadge?: number
   /** Finances (build plan Phase 58; D109): billing problems plus failed ledger checks, one number from `financeCounts.ts`'s `financeBadge`: amber, never crimson. */
   financesBadge?: number
-  /** Open conflicts from today to the horizon (catch-up Phase 30; US-01.5.4) — amber. */
-  conflictBadge?: number
-  /** Waiting Draft Lists (catch-up Phase 31; US-01.6.2 "one visible place") — amber, an attention count. */
-  draftListBadge?: number
   /** Active notices in the shared pool (catch-up Phase 32b; US-13.8.1) — amber, an attention count. */
   notificationBadge?: number
   /** Open rows on Intake's matching screen (catch-up Phases 33 and 34; US-02.1.4) — amber, an attention count. */
@@ -61,21 +61,20 @@ function navItemStyle(active: boolean): CSSProperties {
 
 /**
  * Admin dark-ink side nav (Admin Day.dc.html), extended to the build's full set
- * (Decisions log 2026-07-21). The Review-queue badge derives from the SUBMITTED
- * list count (2026-07-23 decision) rather than a hardcoded figure.
+ * (Decisions log 2026-07-21). Every badge is an amber attention count from the
+ * store; Lists counts each List that needs something once (US-13.1.3).
  */
-export function SideNav({ active, reviewBadge, financesBadge = 0, conflictBadge = 0, draftListBadge = 0, notificationBadge = 0, intakeBadge = 0, peopleBadge = 0, onNavigate, onHelp, stickyHeight }: SideNavProps) {
+export function SideNav({ active, listsBadge = 0, financesBadge = 0, notificationBadge = 0, intakeBadge = 0, peopleBadge = 0, onNavigate, onHelp, stickyHeight }: SideNavProps) {
   const officeUser = useAppStore((s) => s.shell.officeUser)
   const items: NavItem[] = [
     { section: 'day', label: 'Day view' },
     // Intake (catch-up Phase 34): matching, PDF lists, data quality and validators. Its badge counts
     // only the rows waiting for the office's decision on matching: amber, never crimson.
     { section: 'intake', label: 'Intake', badge: intakeBadge, badgeTone: 'warn' },
-    { section: 'draftLists', label: DRAFT_LISTS, badge: draftListBadge, badgeTone: 'warn' },
-    { section: 'conflicts', label: 'Conflicts', badge: conflictBadge, badgeTone: 'warn' },
+    // Lists (US-13.1.3): Draft Lists, Conflicts, Contracts to set and To authorise in one section, with one amber badge.
+    { section: 'lists', label: 'Lists', badge: listsBadge, badgeTone: 'warn' },
     // The shared notification pool: its active notices (catch-up Phase 32b, D58; a resolved notice leaves the count).
     { section: 'notifications', label: 'Notifications', badge: notificationBadge, badgeTone: 'warn' },
-    { section: 'review', label: 'Review queue', badge: reviewBadge },
     // Finances (build plan Phase 58; D107, D109): Invoices, the Billing monitor and the Ledger in one section, with one amber badge.
     { section: 'finances', label: 'Finances', badge: financesBadge, badgeTone: 'warn' },
     // People (build plan Phase 53; D99): where Patients was, with its count; anaesthetists, surgeons, specialties and patients.

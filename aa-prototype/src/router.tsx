@@ -41,9 +41,6 @@ import {
   AdminSurgeonProfileRoute,
   AdminSpecialtyPageRoute,
   AdminAnaesthetistRecordRoute,
-  AdminReviewQueueRoute,
-  AdminConflictsRoute,
-  AdminDraftListsRoute,
   AdminNotificationsRoute,
   AdminReviewRoute,
   AdminPatientRecordRoute,
@@ -53,7 +50,12 @@ import {
   AdminPeoplePatientsRoute,
   AdminPersonRedirect,
   FinanceLegacyRedirect,
+  ListsLegacyRedirect,
 } from './apps/admin/routes'
+import { DraftListsTab } from './apps/admin/screens/lists/DraftListsTab'
+import { ConflictsTab } from './apps/admin/screens/lists/ConflictsTab'
+import { ContractsToSetTab } from './apps/admin/screens/lists/ContractsToSetTab'
+import { ToAuthoriseTab } from './apps/admin/screens/lists/ToAuthoriseTab'
 import { BillingTab } from './apps/admin/screens/finances/BillingTab'
 import { InvoicesTab } from './apps/admin/screens/finances/InvoicesTab'
 import { PaymentsTab } from './apps/admin/screens/finances/PaymentsTab'
@@ -151,13 +153,24 @@ const routeTree = (
             <Route path="intake/quality" element={<IntakeLegacyRedirect />} />
             <Route path="intake/validators" element={<IntakeLegacyRedirect />} />
             <Route path="matching" element={<IntakeLegacyRedirect />} />
-            <Route path="conflicts" element={<AdminConflictsRoute />} />
-            <Route path="draft-lists" element={<AdminDraftListsRoute />} />
-            <Route path="notifications" element={<AdminNotificationsRoute />} />
-            <Route path="review">
-              <Route index element={<AdminReviewQueueRoute />} />
-              <Route path=":listId" element={<AdminReviewRoute />} />
+            {/* Lists (US-13.1.3): four routed tabs opening on Draft Lists, a submitted List's review page nested under
+                To authorise so an unknown id falls back to the tab. Each tab is its own file in `screens/lists/`. The old
+                Draft Lists, Conflicts and Review queue addresses redirect with replace (`ListsLegacyRedirect`). */}
+            <Route path="lists">
+              <Route index element={<Navigate to="draft-lists" replace />} />
+              <Route path="draft-lists" element={<DraftListsTab />} />
+              <Route path="conflicts" element={<ConflictsTab />} />
+              <Route path="contracts-to-set" element={<ContractsToSetTab />} />
+              <Route path="to-authorise">
+                <Route index element={<ToAuthoriseTab />} />
+                <Route path=":listId" element={<AdminReviewRoute />} />
+              </Route>
+              <Route path="*" element={<Navigate to="draft-lists" replace />} />
             </Route>
+            <Route path="draft-lists" element={<ListsLegacyRedirect />} />
+            <Route path="conflicts" element={<ListsLegacyRedirect />} />
+            <Route path="review/*" element={<ListsLegacyRedirect />} />
+            <Route path="notifications" element={<AdminNotificationsRoute />} />
             {/* Finances (build plan Phase 58; D107): six routed tabs opening on Billing, each record nested under its
                 tab so an unknown id falls back to the tab. Each element is its own file in `screens/finances/`.
                 Fixed order: Wave 5 (60 to 67) edits none of this block. */}

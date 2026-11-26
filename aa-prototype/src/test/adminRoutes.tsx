@@ -1,7 +1,7 @@
 /**
  * Test helpers: the Admin route blocks for the People section and Master data
  * (build plan Phase 53), the Finances section (build plan Phase 58) and Intake
- * (build plan Phase 68), as
+ * (build plan Phase 68) and Lists (US-13.1.3), as
  * `router.tsx` declares them, so a test harness rendering Admin routes under a
  * `MemoryRouter` meets the same tabs, record pages and redirects. Call them
  * inside a `<Route path="/admin">`.
@@ -23,9 +23,15 @@ import {
   AdminArrivalsRoute,
   AdminIntakeRoute,
   AdminSourcesRoute,
+  AdminReviewRoute,
   FinanceLegacyRedirect,
   IntakeLegacyRedirect,
+  ListsLegacyRedirect,
 } from '../apps/admin/routes'
+import { ConflictsTab } from '../apps/admin/screens/lists/ConflictsTab'
+import { ContractsToSetTab } from '../apps/admin/screens/lists/ContractsToSetTab'
+import { DraftListsTab } from '../apps/admin/screens/lists/DraftListsTab'
+import { ToAuthoriseTab } from '../apps/admin/screens/lists/ToAuthoriseTab'
 import { peoplePath } from '../apps/admin/peoplePaths'
 import { arrivalsPath } from '../apps/admin/screens/intake/intakePaths'
 import { AaFeesTab } from '../apps/admin/screens/finances/AaFeesTab'
@@ -129,4 +135,26 @@ export function intakeRoutes() {
     <Route key="intake-arrival" path="intake/arrival/:key" element={<AdminArrivalRoute />} />,
     ...INTAKE_LEGACY_ROUTES.map((path) => <Route key={path} path={path} element={<IntakeLegacyRedirect />} />),
   ]
+}
+
+/** `/admin/lists/...` (US-13.1.3): the four tabs and a List's review page under To authorise. */
+export function listsRoutes() {
+  return (
+    <Route path="lists">
+      <Route index element={<Navigate to="draft-lists" replace />} />
+      <Route path="draft-lists" element={<DraftListsTab />} />
+      <Route path="conflicts" element={<ConflictsTab />} />
+      <Route path="contracts-to-set" element={<ContractsToSetTab />} />
+      <Route path="to-authorise">
+        <Route index element={<ToAuthoriseTab />} />
+        <Route path=":listId" element={<AdminReviewRoute />} />
+      </Route>
+      <Route path="*" element={<Navigate to="draft-lists" replace />} />
+    </Route>
+  )
+}
+
+/** The old Draft Lists, Conflicts and Review queue addresses, redirecting into Lists. */
+export function listsLegacyRoutes() {
+  return ['draft-lists', 'conflicts', 'review/*'].map((path) => <Route key={path} path={path} element={<ListsLegacyRedirect />} />)
 }

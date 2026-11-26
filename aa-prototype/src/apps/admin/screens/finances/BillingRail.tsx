@@ -15,6 +15,7 @@ import { sessionText } from '../../../../domain/outOfHours'
 import { hhmm, plural, shortDay } from '../../../../shared/format'
 import { Notice, RailSection, TextAction, type RailSectionRow } from '../../../../shared/ui'
 import { financePath } from './financePaths'
+import { listsPath, reviewPath } from '../lists/listsPaths'
 
 /** How many awaiting Lists the rail shows before "See all". */
 const AWAITING_SHOWN = 5
@@ -80,7 +81,7 @@ function AwaitingApproval() {
       const parts = [hospital, ...(bookings !== undefined ? [plural(bookings, 'Booking')] : []), ...(at !== undefined ? [`submitted ${shortDay(at)} ${hhmm(at)}`] : [])]
       return {
         key: l.id,
-        to: `/admin/review/${l.id}`,
+        to: reviewPath(l.id),
         state: back,
         title: `${name} · ${shortDay(l.dateISO)} · ${sessionText(l.session)}`,
         sub: parts.join(' · '),
@@ -95,7 +96,7 @@ function AwaitingApproval() {
       countNoun="Lists awaiting approval"
       rows={rows}
       limit={AWAITING_SHOWN}
-      allTo="/admin/review"
+      allTo={listsPath('to-authorise')}
       empty="No Lists are waiting for approval."
       shot="billing-awaiting"
     />

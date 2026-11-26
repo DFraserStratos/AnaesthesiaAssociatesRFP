@@ -37,7 +37,7 @@ function mountAt(url: string) {
     createRoutesFromElements(
       <Route path="/admin" element={<AdminApp />}>
         {financesRoutes()}
-        <Route path="review/:listId" element={<Probe />} />
+        <Route path="lists/to-authorise/:listId" element={<Probe />} />
         <Route path="day/:dateISO/bookings/:bookingId" element={<Probe />} />
       </Route>,
     ),
@@ -233,14 +233,14 @@ describe('the Billing tab (US-13.3.1, US-13.3.2)', () => {
 
     const first = awaiting[0]!
     fireEvent.click(rail.querySelector(`[data-shot="billing-awaiting-${first.id}"] a`)!)
-    expect(router.state.location.pathname).toBe(`/admin/review/${first.id}`)
+    expect(router.state.location.pathname).toBe(`/admin/lists/to-authorise/${first.id}`)
     expect(router.state.location.state).toEqual({ from: 'billing', search: '?show=all' })
     expect(billingMonitorReturn(router.state.location.state)).toEqual({ from: 'billing', search: '?show=all' })
     expect(billingMonitorReturn(null)).toBeNull()
     expect(billingMonitorReturn({ from: 'queue' })).toBeNull()
   })
 
-  it('Review opened from the Billing tab goes back to Billing; otherwise to the Review queue', () => {
+  it('Review opened from the Billing tab goes back to Billing; otherwise to To authorise', () => {
     const listId = projectedListId(ANAE.souter, '2026-11-23', 'AM')
     const onBack = vi.fn()
     const { unmount } = render(
@@ -261,6 +261,6 @@ describe('the Billing tab (US-13.3.1, US-13.3.2)', () => {
       </SurfaceProvider>,
     )
     expect(screen.queryByRole('button', { name: 'Billing' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Review queue' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'To authorise' })).toBeInTheDocument()
   })
 })

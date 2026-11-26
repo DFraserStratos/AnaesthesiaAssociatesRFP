@@ -3,12 +3,6 @@ import type { Anaesthetist, DayNote, DraftList } from '../../domain/types'
 import type { Actor, AppState, ListWarningSummary, OpenWarningRow, SlotView } from '../../store'
 import type { SortMode } from './components/DayNav'
 
-interface ReviewRow {
-  listId: string
-  title: string
-  sub: string
-}
-
 /** What the routed admin screens read from the `AdminApp` layout. */
 export interface AdminOutletContext {
   actor: Actor
@@ -29,7 +23,6 @@ export interface AdminOutletContext {
   /** Every open warning, all dates (the To-do card, US-13.7.2). */
   todoRows: OpenWarningRow[]
   notes: DayNote[]
-  reviewRows: ReviewRow[]
   /** Width reserved by the harness' vertical scrollbar, or zero for overlay scrollbars. */
   shellScrollbarWidth: number
   /** Open the session drawer (a Slot id), a transient overlay, not a route. */
