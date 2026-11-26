@@ -508,8 +508,11 @@ export const PERSIST_KEY = 'aa-demo'
  *  v82 (lane/d): build plan Phase 68, Intake's front door: arrivals made by their source (the arrival record, the
  *  sources, removal rows, read values with confidence and box), the seeded PDF re-cast as a mailbox arrival, one
  *  decided arrival. Reseeds on load.
- *  v83: Intake's seeded morning (`seed/intakeMorning.ts`): a day's arrivals from every source, read from the practice. Reseeds on load. */
-export const PERSIST_VERSION = 83
+ *  v83: Intake's seeded morning (`seed/intakeMorning.ts`): a day's arrivals from every source, read from the practice. Reseeds on load.
+ *  v84: the rooms' PDFs in seven real-world layouts (`domain/intake/pdfTemplates/`), scans included: each PDF keeps
+ *  its pages, layout, paper, orientation, scan and practice; boxes come from the layout that draws the page; no
+ *  ethnicity is read from a rooms' PDF. Reseeds on load. */
+export const PERSIST_VERSION = 84
 
 /** The intake slice: seeded empty, the presenter imports or a trigger delivers (catch-up Phase 33). */
 export function emptyIntakeSlice(): IntakeSlice {

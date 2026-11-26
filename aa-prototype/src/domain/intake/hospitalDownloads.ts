@@ -18,11 +18,11 @@
  * The rows' seeded targets are pinned in `hospitalDownloads.test.ts`.
  */
 
-import type { ImportChannel, IncomingBookingFields, PdfReadField, Session } from '../types'
+import type { ImportChannel, IncomingBookingFields, PdfReadField, PdfScan, PdfTemplateId, PdfTemplateVariant, Session } from '../types'
 import { FEED } from '../integrations/feeds'
 import { APPT } from '../integrations/messages'
 import { ANAE, HOSP, SURG } from '../seed/cast'
-import type { PdfListSampleRow } from './pdfLists'
+import { buildUnreadableFacsimile, type PdfListSampleRow } from './pdfLists'
 import { UNREADABLE_REASONS, type PdfHeaderField } from './pdfRead'
 import { longDay } from '../dateText'
 
@@ -325,6 +325,8 @@ export function hospitalSourceKey(hospitalId: string): string {
 /** One row of a rooms' PDF as printed, with the reader's confidence for a field when it is not the default (D120). */
 export interface MailboxPdfSampleRow extends PdfListSampleRow {
   confidence?: Partial<Record<PdfReadField, number>>
+  /** Changed since the List was last sent (a re-sent spreadsheet prints it in red). */
+  changed?: boolean
 }
 
 /**
@@ -351,6 +353,15 @@ export interface MailboxPdfSample {
   rows: readonly MailboxPdfSampleRow[]
   headerConfidence?: Partial<Record<PdfHeaderField, number>>
   scanned?: boolean
+  /** How the scan sits on the glass (a turned page, a skew); a scan when given. */
+  scan?: PdfScan
+  /** The layout the rooms print in (`pdfTemplates/`), and its second look. */
+  template?: PdfTemplateId
+  variant?: PdfTemplateVariant
+  /** The practice as printed (else the surgeon's own practice from the masters, else read from the address). */
+  practice?: string
+  /** Patients a re-sent List prints as cancelled (not read). */
+  cancelledRows?: readonly MailboxPdfSampleRow[]
   /** What the presenter should notice. */
   note?: string
 }
@@ -368,7 +379,7 @@ export function mailboxPdfHeaderValues(sample: MailboxPdfSample): Partial<Record
 
 /** Every field a row is read for, at a confidence a scan keeps sure, except the fields named (left to read unsure). */
 function sureExcept(...unsure: PdfReadField[]): Partial<Record<PdfReadField, number>> {
-  const fields: PdfReadField[] = ['nhi', 'name', 'procedureText', 'scheduledTime', 'dobISO', 'ethnicityCode']
+  const fields: PdfReadField[] = ['nhi', 'name', 'procedureText', 'scheduledTime', 'dobISO']
   return Object.fromEntries(fields.filter((f) => !unsure.includes(f)).map((f) => [f, 0.99]))
 }
 
@@ -412,12 +423,14 @@ export const OKAFOR_ROOMS_PDF: MailboxPdfSample = {
   dateISO: OKAFOR_STORY_LIST.dateISO,
   session: OKAFOR_STORY_LIST.session,
   anaesthetist: RUTHERFORD,
+  // The practice's day-surgery letter to St George's.
+  template: 'hospitalLetter',
   note: 'Four patients; Sione Faleolo has no NHI. Names Dr Rutherford.',
   rows: [
-    { id: 'R1', nhi: P.ngata.nhi, name: P.ngata.name, dobISO: P.ngata.dobISO, scheduledTime: '13:00', ethnicityCode: '21111', procedureText: 'RTK' },
-    { id: 'R2', nhi: P.pike.nhi, name: P.pike.name, dobISO: P.pike.dobISO, scheduledTime: '14:00', ethnicityCode: '11111', procedureText: 'L inguinal hernia mesh' },
-    { id: 'R3', nhi: P.lindqvist.nhi, name: P.lindqvist.name, dobISO: P.lindqvist.dobISO, scheduledTime: '15:00', ethnicityCode: '11111', procedureText: 'lap chole' },
-    { id: 'R4', name: P.faleolo.name, dobISO: P.faleolo.dobISO, scheduledTime: '16:00', ethnicityCode: '31111', procedureText: 'carpal tunnel decomp R' },
+    { id: 'R1', nhi: P.ngata.nhi, name: P.ngata.name, dobISO: P.ngata.dobISO, scheduledTime: '13:00', procedureText: 'RTK' },
+    { id: 'R2', nhi: P.pike.nhi, name: P.pike.name, dobISO: P.pike.dobISO, scheduledTime: '14:00', procedureText: 'L inguinal hernia mesh' },
+    { id: 'R3', nhi: P.lindqvist.nhi, name: P.lindqvist.name, dobISO: P.lindqvist.dobISO, scheduledTime: '15:00', procedureText: 'lap chole' },
+    { id: 'R4', name: P.faleolo.name, dobISO: P.faleolo.dobISO, scheduledTime: '16:00', procedureText: 'carpal tunnel decomp R' },
   ],
 }
 
@@ -429,10 +442,10 @@ export const OKAFOR_ROOMS_RESEND: MailboxPdfSample = {
   subject: 'Operating list · Wednesday 25 November (PM) · updated',
   note: 'Ingrid Lindqvist moved to 15:30, Helen Brooks added, Gordon Pike no longer on it.',
   rows: [
-    { id: 'R1', nhi: P.ngata.nhi, name: P.ngata.name, dobISO: P.ngata.dobISO, scheduledTime: '13:00', ethnicityCode: '21111', procedureText: 'RTK' },
-    { id: 'R2', nhi: P.lindqvist.nhi, name: P.lindqvist.name, dobISO: P.lindqvist.dobISO, scheduledTime: '15:30', ethnicityCode: '11111', procedureText: 'lap chole' },
-    { id: 'R3', name: P.faleolo.name, dobISO: P.faleolo.dobISO, scheduledTime: '16:00', ethnicityCode: '31111', procedureText: 'carpal tunnel decomp R' },
-    { id: 'R4', nhi: P.brooks.nhi, name: P.brooks.name, dobISO: P.brooks.dobISO, scheduledTime: '16:45', ethnicityCode: '11111', procedureText: 'lap appy' },
+    { id: 'R1', nhi: P.ngata.nhi, name: P.ngata.name, dobISO: P.ngata.dobISO, scheduledTime: '13:00', procedureText: 'RTK' },
+    { id: 'R2', nhi: P.lindqvist.nhi, name: P.lindqvist.name, dobISO: P.lindqvist.dobISO, scheduledTime: '15:30', procedureText: 'lap chole' },
+    { id: 'R3', name: P.faleolo.name, dobISO: P.faleolo.dobISO, scheduledTime: '16:00', procedureText: 'carpal tunnel decomp R' },
+    { id: 'R4', nhi: P.brooks.nhi, name: P.brooks.name, dobISO: P.brooks.dobISO, scheduledTime: '16:45', procedureText: 'lap appy' },
   ],
 }
 
@@ -498,28 +511,24 @@ export const SCAN_PDF: MailboxPdfSample = {
   session: 'PM',
   anaesthetist: { name: 'Dr Oliver Strand', hpiId: '23STRO' },
   scanned: true,
+  // The practice's Word table, printed and scanned back in.
+  template: 'wordGrid',
+  scan: { skewDeg: -0.7 },
   headerConfidence: { surgeon: 0.99, hospital: 0.99, date: 0.99, session: 0.99, anaesthetist: 0.99 },
   note: 'Read from a scan: three values to check (an NHI, a date of birth and a time).',
   rows: [
-    { id: 'R1', nhi: 'ZQE1069', name: 'Mavis Thornton', dobISO: '1944-02-11', scheduledTime: '13:00', ethnicityCode: '11111', procedureText: 'phaco + IOL R', confidence: sureExcept() },
-    { id: 'R2', nhi: 'ZQE1077', name: 'Rewi Tamatea', dobISO: '1952-09-30', scheduledTime: '13:40', ethnicityCode: '21111', procedureText: 'phaco + IOL L', confidence: sureExcept('nhi') },
-    { id: 'R3', nhi: 'ZQE1085', name: 'Joyce Abernethy', dobISO: '1939-12-05', scheduledTime: '14:20', ethnicityCode: '11111', procedureText: 'phaco + IOL R', confidence: sureExcept('dobISO') },
-    { id: 'R4', nhi: 'ZQE1093', name: 'Arjun Mehta', dobISO: '1961-07-17', scheduledTime: '15:00', ethnicityCode: '43111', procedureText: 'blephs', confidence: sureExcept('scheduledTime') },
+    { id: 'R1', nhi: 'ZQE1069', name: 'Mavis Thornton', dobISO: '1944-02-11', scheduledTime: '13:00', procedureText: 'phaco + IOL R', confidence: sureExcept() },
+    { id: 'R2', nhi: 'ZQE1077', name: 'Rewi Tamatea', dobISO: '1952-09-30', scheduledTime: '13:40', procedureText: 'phaco + IOL L', confidence: sureExcept('nhi') },
+    { id: 'R3', nhi: 'ZQE1085', name: 'Joyce Abernethy', dobISO: '1939-12-05', scheduledTime: '14:20', procedureText: 'phaco + IOL R', confidence: sureExcept('dobISO') },
+    { id: 'R4', nhi: 'ZQE1093', name: 'Arjun Mehta', dobISO: '1961-07-17', scheduledTime: '15:00', procedureText: 'blephs', confidence: sureExcept('scheduledTime') },
   ],
-}
-
-/** A faint scanned page: the facsimile of a PDF that cannot be read (no value on it can be made out). */
-function faintPageFacsimile(): string {
-  const lines = Array.from({ length: 14 }, (_, i) => `<rect x="24" y="${150 + i * 30}" width="${300 + ((i * 37) % 120)}" height="8" fill="#EEF1F0"/>`).join('')
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="648" height="640" viewBox="0 0 648 640"><rect width="648" height="640" fill="#FAFAF8"/><rect x="24" y="32" width="260" height="14" fill="#E9ECEB"/><rect x="24" y="58" width="180" height="10" fill="#EEF1F0"/>${lines}</svg>`
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
 /** (5, second choice) A page that cannot be read: an arrival with no rows and its reason (D120, D125). */
 export const UNREADABLE_PDF = {
   id: 'PDF-UNREADABLE-1012',
   fileName: 'Scan_1012.pdf',
-  facsimile: faintPageFacsimile(),
+  facsimile: buildUnreadableFacsimile('Scan_1012.pdf'),
   senderEmail: 'reception@riccartonortho.example',
   reason: UNREADABLE_REASONS.tooFaint,
 } as const
@@ -571,6 +580,8 @@ export const FORTE_ROOMS_PDF: MailboxPdfSample = {
   senderEmail: AVONSIDE_ADDRESS,
   dateISO: '2026-12-01',
   session: 'AM',
+  // The practice's database report (one patient block after another).
+  template: 'report',
   note: `Rosa Mendes's NHI is printed wrongly (${FORTE_MISTYPED_NHI}); the correct NHI is ${FORTE_CORRECTED_NHI}.`,
   rows: [
     { id: 'R1', nhi: 'ZQA1741', name: 'Peter Langley', dobISO: '1949-07-15', scheduledTime: '08:00', procedureText: 'phaco + IOL R' },
@@ -671,6 +682,8 @@ export const MORNING_NAND_PDF: MorningPdfSpec = {
   hospitalId: HOSP.forte,
   hospitalName: 'Forte Health',
   senderEmail: 'bookings@nandhandsurgery.example',
+  // A practice system's landscape operation list export.
+  template: 'oplistx',
   candidates: [
     { dateISO: '2026-12-15', session: 'PM' },
     { dateISO: '2026-12-16', session: 'PM' },
@@ -679,10 +692,10 @@ export const MORNING_NAND_PDF: MorningPdfSpec = {
   namesAnaesthetist: true,
   note: 'A new List naming a free anaesthetist; Sina Leota has no NHI.',
   rows: [
-    { id: 'R1', nhi: 'ZQG1043', name: 'Aroha Tamihana', dobISO: '1979-04-12', scheduledTime: '13:00', ethnicityCode: '21111', procedureText: 'R carpal tunnel release' },
-    { id: 'R2', nhi: 'ZQG1051', name: 'Graham Whitcombe', dobISO: '1950-09-30', scheduledTime: '13:45', ethnicityCode: '11111', procedureText: 'L trigger finger release' },
-    { id: 'R3', name: 'Sina Leota', dobISO: '1991-01-25', scheduledTime: '14:30', ethnicityCode: '31111', procedureText: "Dupuytren's fasciectomy R" },
-    { id: 'R4', nhi: 'ZQG1060', name: 'Peter Kowalczyk', dobISO: '1962-07-08', scheduledTime: '15:30', ethnicityCode: '11111', procedureText: 'ganglion excision L wrist' },
+    { id: 'R1', nhi: 'ZQG1043', name: 'Aroha Tamihana', dobISO: '1979-04-12', scheduledTime: '13:00', procedureText: 'R carpal tunnel release' },
+    { id: 'R2', nhi: 'ZQG1051', name: 'Graham Whitcombe', dobISO: '1950-09-30', scheduledTime: '13:45', procedureText: 'L trigger finger release' },
+    { id: 'R3', name: 'Sina Leota', dobISO: '1991-01-25', scheduledTime: '14:30', procedureText: "Dupuytren's fasciectomy R" },
+    { id: 'R4', nhi: 'ZQG1060', name: 'Peter Kowalczyk', dobISO: '1962-07-08', scheduledTime: '15:30', procedureText: 'ganglion excision L wrist' },
   ],
 }
 
@@ -702,13 +715,16 @@ export const MORNING_REID_SCAN: MorningPdfSpec = {
   ],
   namesAnaesthetist: false,
   scanned: true,
+  // The older export, printed landscape and scanned onto a portrait page.
+  template: 'oplist',
+  scan: { rotated: true, skewDeg: 0.8 },
   headerConfidence: { surgeon: 0.99, hospital: 0.99, date: 0.99, session: 0.99, anaesthetist: 0.99 },
   note: 'Read from a scan: three values to check (an NHI, a time and a date of birth).',
   rows: [
-    { id: 'R1', nhi: 'ZQG1078', name: 'Ngaire Hohaia', dobISO: '1948-03-02', scheduledTime: '08:00', ethnicityCode: '21111', procedureText: 'phaco + IOL L', confidence: sureExcept('nhi') },
-    { id: 'R2', nhi: 'ZQG1086', name: 'Bruce McAllister', dobISO: '1941-12-19', scheduledTime: '08:40', ethnicityCode: '11111', procedureText: 'phaco + IOL R', confidence: sureExcept() },
-    { id: 'R3', nhi: 'ZQG1094', name: 'Mei Ling Chua', dobISO: '1958-06-27', scheduledTime: '09:20', ethnicityCode: '42111', procedureText: 'squint correction R', confidence: sureExcept('scheduledTime') },
-    { id: 'R4', nhi: 'ZQG1108', name: 'Rangi Paewai', dobISO: '1966-10-14', scheduledTime: '10:15', ethnicityCode: '21111', procedureText: 'vitrectomy L', confidence: sureExcept('dobISO') },
+    { id: 'R1', nhi: 'ZQG1078', name: 'Ngaire Hohaia', dobISO: '1948-03-02', scheduledTime: '08:00', procedureText: 'phaco + IOL L', confidence: sureExcept('nhi') },
+    { id: 'R2', nhi: 'ZQG1086', name: 'Bruce McAllister', dobISO: '1941-12-19', scheduledTime: '08:40', procedureText: 'phaco + IOL R', confidence: sureExcept() },
+    { id: 'R3', nhi: 'ZQG1094', name: 'Mei Ling Chua', dobISO: '1958-06-27', scheduledTime: '09:20', procedureText: 'squint correction R', confidence: sureExcept('scheduledTime') },
+    { id: 'R4', nhi: 'ZQG1108', name: 'Rangi Paewai', dobISO: '1966-10-14', scheduledTime: '10:15', procedureText: 'vitrectomy L', confidence: sureExcept('dobISO') },
   ],
 }
 

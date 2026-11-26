@@ -50,6 +50,7 @@ import {
   type FieldDiff,
 } from '../domain/intake/matching'
 import { hospitalSourceKey } from '../domain/intake/hospitalDownloads'
+import { nhiRegister } from '../domain/seed/nhiRegister'
 import { allocateId, clockISO, mutate, ok, refuse, transaction, type Actor, type MutationMeta, type Outcome, withChangeSet } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { createBooking } from './bookingActions'
@@ -351,6 +352,14 @@ function hospitalName(state: AppState, hospitalId: string): string {
   return state.masters.hospitals[hospitalId]?.name ?? 'The hospital'
 }
 
+/** The ethnicity a row's patient is created with: as sent, or for a rooms' row (none printed) the NHI register's. */
+function ethnicityOf(row: ImportRow, fields: IncomingBookingFields): string | undefined {
+  if (fields.patient.ethnicityCode !== undefined) return fields.patient.ethnicityCode
+  if (row.source !== 'rooms') return undefined
+  const nhi = validNhiOf(fields)
+  return nhi !== undefined ? nhiRegister().get(nhi)?.ethnicityCode : undefined
+}
+
 /** The fields a row's new Booking takes: the patient, the text as received, the time, a note line, the correlation ref. */
 function createInput(state: AppState, row: ImportRow, fields: IncomingBookingFields, picks: OfficePicks | undefined) {
   const text = fields.procedure?.text
@@ -360,7 +369,9 @@ function createInput(state: AppState, row: ImportRow, fields: IncomingBookingFie
       nhi: validNhiOf(fields)!,
       name: fields.patient.name,
       dobISO: fields.patient.dobISO ?? '',
-      ...(fields.patient.ethnicityCode !== undefined ? { ethnicityCode: fields.patient.ethnicityCode } : {}),
+      // A rooms' PDF prints no ethnicity: the patient's comes from the NHI register when it holds one (an existing
+      // patient keeps their record's), else it stays blank for the office.
+      ...(ethnicityOf(row, fields) !== undefined ? { ethnicityCode: ethnicityOf(row, fields)! } : {}),
       // Who sent the details, for a "details differ" review (catch-up Phase 40).
       detailsSource: row.source === 'rooms' ? ('surgeon' as const) : ('hospital' as const),
     },

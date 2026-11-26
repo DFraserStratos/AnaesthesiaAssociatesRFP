@@ -1,34 +1,28 @@
-/** Build plan Phase 68: the simulated PDF reader (D120, DM-16, US-02.2.1). */
+/** Build plan Phase 68: the simulated PDF reader (D120, DM-16, US-02.2.1). The layouts' boxes: `pdfFacsimile.test.ts`. */
 import { describe, expect, it } from 'vitest'
 import type { PdfBox, PdfListRow } from '../types'
 import {
   PDF_CHECK_THRESHOLD,
-  PDF_HEADER_FIELDS,
-  PDF_LAYOUT,
-  PDF_PAGE,
-  PDF_ROWS_PER_PAGE,
+  PDF_DERIVED_FACTOR,
+  PDF_HEADER_ROW,
   PDF_ROW_READ_FIELDS,
   UNREADABLE_REASONS,
-  headerBoxes,
   isUnsure,
   pdfPageCount,
-  pdfPageHeight,
+  pdfValueKey,
   readConfidence,
   readValuesOfRow,
-  rowBox,
   simulateRead,
   toCheckCount,
   unsureFieldsOfRow,
   unsureValues,
+  type PdfReadSpot,
 } from './pdfRead'
 import { PDF_LIST_SAMPLES } from './pdfLists'
 
-const overlaps = (a: PdfBox, b: PdfBox) =>
-  a.page === b.page && a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
+const box = (page: number, y: number): PdfBox => ({ page, x: 40, y, width: 80, height: 12 })
 
-const inPage = (b: PdfBox) => b.x >= 0 && b.y >= 0 && b.x + b.width <= PDF_PAGE.width && b.y + b.height <= PDF_PAGE.height
-
-describe('the page geometry', () => {
+describe('the reader', () => {
   it('keeps the threshold and the unsure helpers', () => {
     expect(PDF_CHECK_THRESHOLD).toBe(0.8)
     expect(isUnsure({ confidence: 0.79 })).toBe(true)
@@ -36,95 +30,64 @@ describe('the page geometry', () => {
     expect(unsureValues(undefined)).toEqual([])
   })
 
-  it('gives stable boxes: the same call, the same box', () => {
-    expect(headerBoxes()).toEqual(headerBoxes())
-    expect(rowBox(3, 'nhi')).toEqual(rowBox(3, 'nhi'))
+  it('never reads an ethnicity: no rooms PDF prints one', () => {
+    expect(PDF_ROW_READ_FIELDS).toEqual(['nhi', 'name', 'procedureText', 'scheduledTime', 'dobISO'])
+    expect(readValuesOfRow({ name: 'A', procedureText: 'p', ethnicityCode: '11111' })).not.toHaveProperty('ethnicityCode')
   })
 
-  it("places the values the facsimile prints at its own x and baseline", () => {
-    // buildFacsimile: the meta block's values at x 124 (left) and 400 (right), 11pt, baselines 198, 216, 234;
-    // rows at y = 278 + i * 24 + 16, the time first at x 40.
-    expect(headerBoxes().surgeon).toMatchObject({ page: 1, x: 124, y: 198 - 11 })
-    expect(headerBoxes().hospital).toMatchObject({ x: 124, y: 216 - 11 })
-    expect(headerBoxes().anaesthetist).toMatchObject({ x: 124, y: 234 - 11 })
-    expect(headerBoxes().date).toMatchObject({ x: 400, y: 198 - 11 })
-    expect(headerBoxes().session).toMatchObject({ x: 400, y: 216 - 11 })
-    const baseline = (i: number) => 278 + i * 24 + 16
-    expect(rowBox(0, 'scheduledTime')).toMatchObject({ x: 40, y: baseline(0) - 11 })
-    expect(rowBox(0, 'nhi')).toMatchObject({ x: 88, y: baseline(0) - 11 })
-    expect(rowBox(2, 'name')).toMatchObject({ x: 156, y: baseline(2) - 11 })
-    expect(rowBox(1, 'procedureText')).toMatchObject({ x: 366, y: baseline(1) - 10 })
-    expect(rowBox(3, 'ethnicityCode')).toMatchObject({ x: 499, y: baseline(3) - 11 })
+  it('keys a value by its row and field', () => {
+    expect(pdfValueKey('R2', 'nhi')).toBe('R2:nhi')
+    expect(pdfValueKey(PDF_HEADER_ROW, 'surgeon')).toBe('header:surgeon')
   })
 
-  it('keeps every box inside the A4 page and its 40pt margins', () => {
-    expect(PDF_PAGE).toEqual({ width: 595, height: 842 })
-    const within = (b: PdfBox) => b.x >= PDF_LAYOUT.margin && b.x + b.width <= PDF_PAGE.width - PDF_LAYOUT.margin
-    for (const f of PDF_HEADER_FIELDS) expect(within(headerBoxes()[f]), f).toBe(true)
-    for (const f of PDF_ROW_READ_FIELDS) expect(within(rowBox(0, f)), f).toBe(true)
-  })
-
-  it('never overlaps two header boxes, and every header box sits above the first row', () => {
-    const boxes = PDF_HEADER_FIELDS.map((f) => headerBoxes()[f])
-    for (let a = 0; a < boxes.length; a++) for (let b = a + 1; b < boxes.length; b++) expect(overlaps(boxes[a]!, boxes[b]!)).toBe(false)
-    for (const b of boxes) {
-      expect(inPage(b)).toBe(true)
-      expect(b.y + b.height).toBeLessThanOrEqual(PDF_LAYOUT.columnLabelBaseline - 10)
-    }
-  })
-
-  it('never overlaps two boxes in a row, nor a box of one row with the next', () => {
-    for (const i of [0, 1, 7]) {
-      const row = PDF_ROW_READ_FIELDS.map((f) => rowBox(i, f))
-      const next = PDF_ROW_READ_FIELDS.map((f) => rowBox(i + 1, f))
-      for (let a = 0; a < row.length; a++) {
-        expect(inPage(row[a]!)).toBe(true)
-        for (let b = a + 1; b < row.length; b++) expect(overlaps(row[a]!, row[b]!)).toBe(false)
-        for (const n of next) expect(overlaps(row[a]!, n)).toBe(false)
-      }
-    }
-  })
-
-  it('runs a long List onto the next page at the first row height', () => {
-    expect(rowBox(PDF_ROWS_PER_PAGE - 1, 'nhi').page).toBe(1)
-    const overflow = rowBox(PDF_ROWS_PER_PAGE, 'nhi')
-    expect(overflow.page).toBe(2)
-    expect(overflow.y).toBe(rowBox(0, 'nhi').y)
-    expect(inPage(rowBox(PDF_ROWS_PER_PAGE - 1, 'ethnicityCode'))).toBe(true)
-  })
-
-  it('draws every page as a full A4 page, and counts the pages a List prints on', () => {
-    expect(PDF_ROWS_PER_PAGE).toBe(20)
-    expect(pdfPageHeight(0)).toBe(842)
-    expect(pdfPageHeight(3)).toBe(842)
-    expect(pdfPageHeight(500)).toBe(842)
+  it('counts pages at twenty rows a page when nothing better is known', () => {
     expect(pdfPageCount(0)).toBe(1)
-    expect(pdfPageCount(PDF_ROWS_PER_PAGE)).toBe(1)
-    expect(pdfPageCount(PDF_ROWS_PER_PAGE + 1)).toBe(2)
-    // The last row a page holds ends above the footer.
-    const last = rowBox(PDF_ROWS_PER_PAGE - 1, 'nhi')
-    expect(last.y + last.height).toBeLessThanOrEqual(PDF_PAGE.height - PDF_LAYOUT.footer)
+    expect(pdfPageCount(20)).toBe(1)
+    expect(pdfPageCount(21)).toBe(2)
+    expect(pdfPageCount(7, 3)).toBe(3)
   })
 })
 
 describe('simulateRead', () => {
   const sample = PDF_LIST_SAMPLES[0]!
-  const input = {
-    header: { surgeon: sample.surgeonName, hospital: sample.hospitalName, date: 'Wed 9 Dec', session: 'AM' },
-    rows: sample.rows.map((r) => ({ id: r.id, values: readValuesOfRow(r) })),
-  }
+  const rows = sample.rows.map((r) => ({ id: r.id, values: readValuesOfRow(r) }))
+  const header = { surgeon: sample.surgeonName, hospital: sample.hospitalName, date: 'Wednesday 9 December 2026', session: 'AM' }
+  // Every value printed, each on its own line: the layout's spots.
+  const spots = new Map<string, PdfReadSpot>()
+  let y = 40
+  for (const f of ['surgeon', 'hospital', 'date', 'session'] as const) spots.set(pdfValueKey(PDF_HEADER_ROW, f), { box: box(1, (y += 14)) })
+  for (const r of sample.rows) for (const f of PDF_ROW_READ_FIELDS) spots.set(pdfValueKey(r.id, f), { box: box(1, (y += 14)), ...(f === 'scheduledTime' ? { derived: true } : {}) })
+  const input = { header, rows, spots }
 
-  it('reads every present value at the clean confidence, each with its box', () => {
+  it('reads every present value at the clean confidence, each with the box its layout gave it', () => {
     const read = simulateRead(input)
     expect(read.headerRead.map((v) => v.field)).toEqual(['surgeon', 'hospital', 'date', 'session'])
     expect(read.headerRead.every((v) => v.confidence === 0.97)).toBe(true)
-    expect(read.headerRead[0]!.box).toEqual(headerBoxes().surgeon)
+    expect(read.headerRead[0]!.box).toEqual(spots.get('header:surgeon')!.box)
     expect(read.rows).toHaveLength(3)
     const second = read.rows[1]!
     expect(second.id).toBe('R2')
-    expect(second.read.map((v) => v.field)).toEqual(['nhi', 'name', 'procedureText', 'scheduledTime', 'dobISO', 'ethnicityCode'])
-    expect(second.read.find((v) => v.field === 'nhi')).toMatchObject({ value: 'ZAA0068', box: rowBox(1, 'nhi') })
+    expect(second.read.map((v) => v.field)).toEqual(['nhi', 'name', 'procedureText', 'scheduledTime', 'dobISO'])
+    expect(second.read.find((v) => v.field === 'nhi')).toMatchObject({ value: 'ZAA0068', box: spots.get('R2:nhi')!.box })
     expect(unsureValues(second.read)).toEqual([])
+  })
+
+  it('reads a worked-out value (a time from the start and the durations) a little lower, still sure when clean', () => {
+    const time = simulateRead(input).rows[0]!.read.find((v) => v.field === 'scheduledTime')!
+    expect(PDF_DERIVED_FACTOR).toBe(0.93)
+    expect(time.confidence).toBe(0.9)
+    expect(isUnsure(time)).toBe(false)
+    expect(readConfidence(undefined, true, true)).toBe(0.73)
+    expect(readConfidence(0.99, true, true)).toBe(0.75)
+  })
+
+  it('does not read a value its layout did not print', () => {
+    const partial = new Map(spots)
+    partial.delete('R1:dobISO')
+    partial.delete('header:session')
+    const read = simulateRead({ ...input, spots: partial })
+    expect(read.headerRead.map((v) => v.field)).not.toContain('session')
+    expect(read.rows[0]!.read.map((v) => v.field)).not.toContain('dobISO')
   })
 
   it('does not read a blank value', () => {
@@ -146,7 +109,7 @@ describe('simulateRead', () => {
 
   it('reads a scan lower: a value with no override falls below the threshold, one overridden high stays sure', () => {
     const read = simulateRead({
-      ...input,
+      header,
       scanned: true,
       rows: [{ id: 'R1', values: { nhi: 'ZAF4434', name: 'Brian Holt' }, confidence: { name: 1 } }],
     })
@@ -170,7 +133,7 @@ describe('simulateRead', () => {
 })
 
 describe('what to check', () => {
-  const v = (field: 'nhi' | 'name' | 'surgeon', confidence: number) => ({ field, value: 'x', confidence, box: rowBox(0, 'nhi') })
+  const v = (field: 'nhi' | 'name' | 'surgeon', confidence: number) => ({ field, value: 'x', confidence, box: box(1, 0) })
 
   it('counts the unsure values of the header and every row', () => {
     const rows: PdfListRow[] = [

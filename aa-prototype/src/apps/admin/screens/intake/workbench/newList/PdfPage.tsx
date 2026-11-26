@@ -1,15 +1,17 @@
 /**
  * A rooms' PDF page with the reader's boxes laid over it (build plan Phase 70; US-02.2.1, D120): the generated
- * facsimile in a framed paper, a quiet bar above with the file name and the page, and one box per value read. A value
- * to check is lit in the warning colour where it sits on the page, with a small button that shows it in the values
- * table; the rest have a quiet outline and do nothing. The selected value's box is lit stronger and scrolled into
- * view. The page is a full A4 page and is drawn at the column's width; "Open full size" shows it in the shared
- * Dialog at 100% scale or larger (595px wide at least, scrolling), its boxes still drawn. Intake's own, built from
- * shared parts. No confidence number is ever shown.
+ * facsimile in a framed paper, a quiet bar above with the file name, the page ("Page 2 of 3") and previous and next
+ * page buttons, and one box per value read on the page shown. A value to check is lit in the warning colour where it
+ * sits on the page, with a small button that shows it in the values table; the rest have a quiet outline and do
+ * nothing. The selected value's box is lit stronger and scrolled into view, and choosing a value on another page
+ * turns to that page. Each page is drawn at its own size (a landscape page is wider than tall) at the column's width;
+ * "Open full size" shows the page in the shared Dialog at 100% scale or larger, scrolling sideways when the page is
+ * wider than the dialog, its boxes still drawn. Intake's own, built from shared parts. No confidence number is ever
+ * shown.
  */
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { FileText, Maximize2, Table2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, FileText, Maximize2, Table2 } from 'lucide-react'
 import type { PdfBox, PdfReadField, PdfReadValue, SurgeonPdfList } from '../../../../../../domain/types'
 import { isUnsure, PDF_PAGE, type PdfHeaderField } from '../../../../../../domain/intake/pdfRead'
 import { facsimileSize, PDF_HEADER_ROW, PDF_ROW_FIELD_LABELS, pdfValueKey } from '../../../../../../domain/intake/pdfLists'
@@ -58,16 +60,18 @@ export function pdfPageBoxes(list: Pick<SurgeonPdfList, 'rows' | 'headerRead'>, 
 }
 
 interface PdfPageProps extends DataAttributes {
-  /** The facsimile's data URL (`buildFacsimile`, `buildUnreadableFacsimile`). */
+  /** The first page's data URL (`buildFacsimile`, `buildUnreadableFacsimile`): shown alone when `pages` is not given. */
   facsimile: string
+  /** Every page's data URL, in order (`SurgeonPdfList.file.pages`). */
+  pages?: readonly string[]
   fileName: string
   boxes?: readonly PdfPageBox[]
   selectedKey?: string
   /** Called with a value's key when its "show in the table" button is used (unsure boxes only). */
   onSelect?: (key: string) => void
-  /** The page's width in its own units; read from the facsimile when omitted (else `PDF_PAGE.width`). */
+  /** The page's width in its own units; read from each page's facsimile when omitted (else `PDF_PAGE.width`). */
   pageWidth?: number
-  /** How many pages the PDF has ("Page 1 of N"); the furthest page a box sits on when omitted. */
+  /** How many pages the PDF has ("Page 1 of N"): the pages given, else this, else the furthest page a box sits on. */
   pageCount?: number
   /** Beside the page count in the bar above the page. */
   caption?: ReactNode
@@ -81,21 +85,34 @@ const pct = (n: number, of: number) => `${(n / of) * 100}%`
 
 export function PdfPage(props: PdfPageProps) {
   const { facsimile, fileName, boxes = [], selectedKey, onSelect, caption, shot = 'intake-pdf-page' } = props
-  const read = facsimileSize(facsimile)
+  const images = props.pages !== undefined && props.pages.length > 0 ? props.pages : [facsimile]
+  const pages = props.pages !== undefined && props.pages.length > 0 ? props.pages.length : (props.pageCount ?? Math.max(1, ...boxes.map((b) => b.box.page)))
+  const [page, setPage] = useState(1)
+  const [full, setFull] = useState(false)
+  // Only the pages there are images for can be shown.
+  const shown = Math.min(Math.max(1, page), images.length)
+  const image = images[shown - 1]!
+  const read = facsimileSize(image)
   const width = props.pageWidth ?? read?.width ?? PDF_PAGE.width
   const height = read?.height ?? PDF_PAGE.height
-  const pages = props.pageCount ?? Math.max(1, ...boxes.map((b) => b.box.page))
-  const [full, setFull] = useState(false)
 
-  const onPage = boxes.filter((b) => b.box.page === 1)
+  // Choosing a value on another page turns to it.
+  const selectedPage = selectedKey !== undefined ? boxes.find((b) => b.key === selectedKey)?.box.page : undefined
+  useEffect(() => {
+    if (selectedPage !== undefined && selectedPage <= images.length) setPage(selectedPage)
+  }, [selectedKey, selectedPage, images.length])
+
+  const onPage = boxes.filter((b) => b.box.page === shown)
   const toCheck = onPage.filter((b) => b.unsure).length
-  const alt = `${fileName}, page 1 of ${pages}${toCheck > 0 ? `, ${toCheck === 1 ? 'one value' : `${toCheck} values`} to check marked` : ''}`
-  const sheet = { facsimile, alt, boxes: onPage, width, height, ...(selectedKey !== undefined ? { selectedKey } : {}) }
+  const alt = `${fileName}, page ${shown} of ${pages}${toCheck > 0 ? `, ${toCheck === 1 ? 'one value' : `${toCheck} values`} to check marked` : ''}`
+  const sheet = { facsimile: image, alt, boxes: onPage, width, height, ...(selectedKey !== undefined ? { selectedKey } : {}) }
+  const turner = images.length > 1 ? <PageTurner page={shown} pages={images.length} onPage={setPage} shot={shot} /> : null
 
   return (
     <figure
       {...dataAttributesOf(props)}
       data-shot={shot}
+      data-pdf-page={shown}
       style={{ margin: 0, minWidth: 0, border: `1px solid ${neutral.line}`, borderRadius: radius.card, background: neutral.sunken, overflow: 'hidden' }}
     >
       <figcaption
@@ -116,8 +133,9 @@ export function PdfPage(props: PdfPageProps) {
           {fileName}
         </span>
         <span data-pdf-page-count={pages} style={{ flex: 'none', fontSize: typeScale.captionSm.size, fontWeight: typeScale.captionSm.weight, color: neutral.mist, fontVariantNumeric: 'tabular-nums' }}>
-          Page 1 of {pages}
+          Page {shown} of {pages}
         </span>
+        {turner}
         {caption !== undefined && <span style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: space[2] }}>{caption}</span>}
         <TextAction size="sm" flush onClick={() => setFull(true)} shot={`${shot}-open-full`} label={`Open ${fileName} full size`} style={{ flex: 'none' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: space[1] }}>
@@ -132,9 +150,11 @@ export function PdfPage(props: PdfPageProps) {
       </div>
 
       <Dialog open={full} onClose={() => setFull(false)} size="wide">
-        <OverlayHeader title={fileName} description={`Page 1 of ${pages} at full size.${toCheck > 0 ? ' Values to check are marked.' : ''}`} />
+        <OverlayHeader title={fileName} description={`Page ${shown} of ${pages} at full size.${toCheck > 0 ? ' Values to check are marked.' : ''}`} />
+        {turner !== null && <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: space[3] }}>{turner}</div>}
+        {/* A landscape page is wider than the dialog: it keeps its full size and the frame scrolls sideways. */}
         <div data-shot={`${shot}-full`} style={{ marginTop: space[4], overflowX: 'auto', background: neutral.sunken, borderRadius: radius.card, padding: space[4] }}>
-          <div style={{ width: '100%', minWidth: PDF_PAGE.width, margin: '0 auto' }}>
+          <div style={{ width: '100%', minWidth: width, margin: '0 auto' }}>
             <PdfSheet
               {...sheet}
               {...(onSelect !== undefined
@@ -151,6 +171,20 @@ export function PdfPage(props: PdfPageProps) {
         </div>
       </Dialog>
     </figure>
+  )
+}
+
+/** Previous and next page, for a PDF of more than one page. */
+function PageTurner({ page, pages, onPage, shot }: { page: number; pages: number; onPage: (page: number) => void; shot: string }) {
+  return (
+    <span style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: space[1] }}>
+      <IconButton label="Previous page" onClick={() => onPage(page - 1)} disabled={page <= 1} size={32} tone="neutral" shot={`${shot}-previous`}>
+        <ChevronLeft size={16} aria-hidden />
+      </IconButton>
+      <IconButton label="Next page" onClick={() => onPage(page + 1)} disabled={page >= pages} size={32} tone="neutral" shot={`${shot}-next`}>
+        <ChevronRight size={16} aria-hidden />
+      </IconButton>
+    </span>
   )
 }
 
@@ -178,7 +212,8 @@ function PdfSheet({
   useEffect(() => {
     if (!scrollSelected || selectedKey === undefined) return
     refs.current.get(selectedKey)?.scrollIntoView?.({ block: 'nearest' })
-  }, [selectedKey, scrollSelected])
+    // Again when the page turns to the selected value.
+  }, [selectedKey, scrollSelected, facsimile])
 
   return (
     <div style={{ position: 'relative', background: neutral.surface, boxShadow: elevation.e2, borderRadius: radius.xs }}>

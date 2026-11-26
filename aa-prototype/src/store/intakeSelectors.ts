@@ -17,6 +17,7 @@ import {
   type ArrivalItem,
   type FeedFilter,
 } from '../domain/intake/arrivals'
+import { inboxItems, type InboxQuery } from '../domain/intake/inbox'
 import { listChangeSummary, type ListChangeRow } from '../domain/intake/listChanges'
 import { useAppStore, type AppState } from './appStore'
 import { matchingView } from './matchingSelectors'
@@ -77,6 +78,11 @@ export function arrivalItemsOf(state: IntakeViewState): ArrivalItem[] {
 /** The feed's groups for a filter and search. */
 export function arrivalFeed(state: IntakeViewState, filter: FeedFilter, q: string): ArrivalGroup[] {
   return feedGroups(cacheOf(state).items, filter, q, state.intake)
+}
+
+/** The inbox's rows for a query, in its order (`domain/intake/inbox.ts`). */
+export function inboxItemsOf(state: IntakeViewState, query: InboxQuery, todayISO: string): ArrivalItem[] {
+  return inboxItems(cacheOf(state).items, query, todayISO, state.intake)
 }
 
 /** One feed item by its key. */
@@ -149,6 +155,13 @@ export function useArrivalFeed(filter: FeedFilter, q: string): ArrivalGroup[] {
   const state = useIntakeViewState()
   const filterKey = JSON.stringify(filter)
   return useMemo(() => arrivalFeed(state, JSON.parse(filterKey) as FeedFilter, q), [state, filterKey, q])
+}
+
+/** The inbox's rows; a fresh query object per render does not recompute (memoised on its value). */
+export function useInboxItems(query: InboxQuery, todayISO: string): ArrivalItem[] {
+  const state = useIntakeViewState()
+  const queryKey = JSON.stringify(query)
+  return useMemo(() => inboxItemsOf(state, JSON.parse(queryKey) as InboxQuery, todayISO), [state, queryKey, todayISO])
 }
 
 export function useArrival(key: string | undefined): ArrivalItem | undefined {

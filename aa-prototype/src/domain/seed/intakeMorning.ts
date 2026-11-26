@@ -23,7 +23,6 @@
 
 import type { Anaesthetist, Booking, ImportBatch, ImportRow, IncomingBookingFields, List, Patient, Procedure, Session, Slot, Stub, Surgeon, SurgeonPdfList } from '../types'
 import {
-  mailboxPdfHeaderValues,
   MORNING_HOSPITAL_WORDING,
   MORNING_NAND_PDF,
   MORNING_REID_SCAN,
@@ -39,8 +38,7 @@ import {
   type MailboxPdfSampleRow,
   type MorningPdfSpec,
 } from '../intake/hospitalDownloads'
-import { buildFacsimile, buildUnreadableFacsimile, pdfListBatchLabel, pdfRowIncoming } from '../intake/pdfLists'
-import { readValuesOfRow, simulateRead } from '../intake/pdfRead'
+import { buildUnreadableFacsimile, pdfListBatchLabel, pdfListFieldsOf, pdfRowIncoming, readRoomsPdf } from '../intake/pdfLists'
 import { sessionLabel } from '../intake/matching'
 import { resolveNamedAnaesthetist } from '../intake/arrivals'
 import { rawRowFor } from '../intake/rawRow'
@@ -290,20 +288,16 @@ function pdfArrival(
   if (surgeon === undefined) return undefined
   const anaesthetists = Object.fromEntries(Object.entries(from.masters.anaesthetists).map(([id, a]) => [id, { name: a.name, ...(a.hpiId !== undefined ? { hpiId: a.hpiId } : {}) }]))
   const namedId = sample.anaesthetist !== undefined ? resolveNamedAnaesthetist(anaesthetists, { anaesthetist: sample.anaesthetist }) : undefined
-  const asRead = sample.rows.map(({ id, confidence: _c, ...rest }) => ({ id, asRead: rest }))
-  const read = simulateRead({
-    header: mailboxPdfHeaderValues(sample),
-    ...(sample.headerConfidence !== undefined ? { headerConfidence: sample.headerConfidence } : {}),
-    rows: sample.rows.map((r, i) => ({ id: r.id, values: readValuesOfRow(asRead[i]!.asRead), ...(r.confidence !== undefined ? { confidence: r.confidence } : {}) })),
-    scanned: sample.scanned === true,
-  })
+  const asRead = sample.rows.map(({ id, confidence: _c, changed: _ch, ...rest }) => ({ id, asRead: rest }))
+  // Read from the layout that draws it: each value's box is where its text is printed.
+  const practice = sample.practice ?? from.masters.surgeons[sample.surgeonId]?.practiceName
+  const reading = readRoomsPdf({ ...sample, ...(practice !== undefined ? { practice } : {}) })
   const batchId = ids.batch()
   const listId = ids.pdf()
   const target = { anaesthetistId: namedId ?? '', dateISO: sample.dateISO, session: sample.session }
   const list: SurgeonPdfList = {
     id: listId,
     sampleId: sample.id,
-    file: { name: sample.fileName, facsimile: buildFacsimile(sample) },
     surgeonId: sample.surgeonId,
     senderEmail: sample.senderEmail,
     hospitalId: sample.hospitalId,
@@ -315,9 +309,8 @@ function pdfArrival(
     batchId,
     sentAtISO: receivedAtISO,
     sentBy: MAILBOX_WHO,
-    rows: asRead.map((r, i) => ({ id: r.id, asRead: r.asRead, corrections: [], read: read.rows[i]!.read })),
-    headerRead: read.headerRead,
-    ...(sample.scanned === true ? { scanned: true } : {}),
+    rows: asRead.map((r, i) => ({ id: r.id, asRead: r.asRead, corrections: [], read: reading.rows[i]!.read })),
+    ...pdfListFieldsOf(reading),
   }
   const rows: ImportRow[] = list.rows.map((pdfRow, i) => {
     const incoming: IncomingBookingFields = {
@@ -583,7 +576,10 @@ export function seededMorning(from: MorningSource): SeededMorning {
       receivedAtISO: MORNING_TIMES.unreadable,
       rowIds: [],
       senderEmail: u.senderEmail,
-      file: { name: u.fileName, facsimile: buildUnreadableFacsimile(u.fileName) },
+      file: (() => {
+        const page = buildUnreadableFacsimile(u.fileName)
+        return { name: u.fileName, facsimile: page, pages: [page] }
+      })(),
       unreadableReason: u.reason,
     })
   }
@@ -614,7 +610,8 @@ export function seededMorning(from: MorningSource): SeededMorning {
       const rows = kept.map((b, i) => {
         const f = asSent(from, b, list, fields)!
         const moved = i === 1 ? shiftTime(f.scheduledTime, 20) : undefined
-        return printed(`R${i + 1}`, moved !== undefined ? { ...f, scheduledTime: moved } : f, primaryText(from, b.id) ?? '')
+        const row = printed(`R${i + 1}`, moved !== undefined ? { ...f, scheduledTime: moved } : f, primaryText(from, b.id) ?? '')
+        return moved !== undefined ? { ...row, changed: true } : row
       })
       const missingFields = asSent(from, missing, list, fields)!
       const sample: MailboxPdfSample = {
@@ -629,7 +626,10 @@ export function seededMorning(from: MorningSource): SeededMorning {
         dateISO: list.dateISO,
         session: list.session,
         note: 'Re-sent: one time change, and one Booking no longer on it.',
+        // The practice's spreadsheet, the changed time and the patient taken off in red.
+        template: 'sheet',
         rows,
+        cancelledRows: [printed('X1', missingFields, primaryText(from, missing.id) ?? '')],
       }
       addPdf(
         pdfArrival(from, ids, sample, MORNING_TIMES.resend, {
@@ -670,6 +670,8 @@ export function seededMorning(from: MorningSource): SeededMorning {
         senderEmail: roomsAddressOf(from, surgeon.id, morningRoomsAddress(surgeon.name)),
         dateISO: list.dateISO,
         session: list.session,
+        // St George's gets the practice's day-surgery letter; any other hospital its booking form (US letter).
+        ...(list.hospitalId === HOSP.stg ? { template: 'hospitalLetter' as const } : { template: 'report' as const, variant: 'letter' as const }),
         rows,
       }
       addPdf(pdfArrival(from, ids, sample, MORNING_TIMES.pdfMatched, { decided: (r) => noChange(byRow.get(r.id)!, OFFICE, MORNING_TIMES.pdfMatchedDecided) }))

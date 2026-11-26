@@ -1,7 +1,8 @@
 /**
  * The values read from an arriving List, beside its page (build plan Phase 70; US-02.2.1, DM-15, DM-16, D120).
- * One row per patient: NHI, name, date of birth, time and ethnicity code, each with how sure the reader was in
- * words (never a score); a value the reader was unsure of reads "To check". Choosing a value hands its key to the
+ * One row per patient: time, name and date of birth, NHI and the procedure as received (wrapping as text, so the
+ * table fits a narrow decision column), each with how sure the reader was in words (never a score); no ethnicity (a
+ * rooms' PDF prints none); a value the reader was unsure of reads "To check". Choosing a value hands its key to the
  * page, which lights its box. Each row is corrected before the List is placed, the NHI checked as typed, every
  * correction kept under the row with from, to, who and when; the procedure stays as received. A hospital List's
  * rows show the same way, as sent, with nothing to choose on a page. The List's own header values sit above.
@@ -15,6 +16,7 @@ import type { ArrivalItem } from '../../../../../../domain/intake/arrivals'
 import { isUnsure } from '../../../../../../domain/intake/pdfRead'
 import { PDF_HEADER_ROW, pdfValueKey } from '../../../../../../domain/intake/pdfLists'
 import { NHI_SHAPE_HINT, nhiEntryFeedback, validateNhi } from '../../../../../../domain/nhi'
+import { validateEthnicityCode } from '../../../../../../domain/nzhis'
 import type { ImportRow, ImportRowCorrectionField, PdfReadField, PdfReadValue } from '../../../../../../domain/types'
 import { arrivalRowValues, correctArrivalRow, useAppStore, type ArrivalRowField, type ArrivalRowPatch } from '../../../../../../store'
 import type { Actor } from '../../../../../../store/mutate'
@@ -83,7 +85,7 @@ const SUB_LINE: CSSProperties = {
   fontSize: typeScale.captionSm.size,
   lineHeight: `${typeScale.captionSm.line}px`,
   color: neutral.mist,
-  fontWeight: 400,
+  fontWeight: typeScale.body.weight,
 }
 
 const QUIET: CSSProperties = { color: neutral.mist }
@@ -115,16 +117,18 @@ interface ValueProps {
   onSelect?: (key: string) => void
   mono?: boolean
   bold?: boolean
+  /** Wraps like running text (the procedure as received). */
+  wrap?: boolean
 }
 
 /** A value as read: chosen to show it on the page, with "To check" when the reader was unsure and it is not yet corrected. */
-function ReadValue({ label, value, read, fromPdf, valueKey, corrected = false, selectedKey, onSelect, mono = false, bold = false }: ValueProps) {
+function ReadValue({ label, value, read, fromPdf, valueKey, corrected = false, selectedKey, onSelect, mono = false, bold = false, wrap = false }: ValueProps) {
   const unsure = read !== undefined && isUnsure(read)
   const toCheck = unsure && !corrected
   const selected = valueKey !== undefined && valueKey === selectedKey
   const words = corrected ? 'Corrected' : surenessWords(read, fromPdf)
   const text = (
-    <span className={mono ? 'mono' : undefined} style={{ ...valueLook(toCheck, selected), ...(bold ? { fontWeight: 600 } : {}) }}>
+    <span className={mono ? 'mono' : undefined} style={{ ...valueLook(toCheck, selected), ...(bold ? { fontWeight: typeScale.label.weight } : {}), ...(wrap ? { whiteSpace: 'normal', overflowWrap: 'anywhere' } : {}) }}>
       {value}
     </span>
   )
@@ -182,7 +186,10 @@ export function PdfValuesTable({ arrival, actor, selectedKey, onSelect, locked =
   const [editing, setEditing] = useState<string | null>(null)
   const fromPdf = list !== undefined
   const canEdit = !locked
-  const columns = canEdit ? 6 : 5
+  // No ethnicity column (the table sits in a narrow decision column, and a rooms' PDF prints none); a hospital
+  // List's row can still have its sent code corrected in the editor.
+  const showEthnicity = !fromPdf
+  const columns = (canEdit ? 5 : 4) + (showEthnicity ? 1 : 0)
   const toCheck = useMemo(() => {
     if (list === undefined) return 0
     let n = (list.headerRead ?? []).filter(isUnsure).length
@@ -233,7 +240,7 @@ export function PdfValuesTable({ arrival, actor, selectedKey, onSelect, locked =
               <Th width={64}>Time</Th>
               <Th>Patient</Th>
               <Th width={128}>NHI</Th>
-              <Th width={88}>Ethnicity</Th>
+              {showEthnicity && <Th width={88}>Ethnicity</Th>}
               <Th>Procedure as received</Th>
               {canEdit && (
                 <Th width={56}>
@@ -255,6 +262,7 @@ export function PdfValuesTable({ arrival, actor, selectedKey, onSelect, locked =
                 onSelect={onSelect}
                 editable={canEdit && row.status === 'open'}
                 showEditColumn={canEdit}
+                showEthnicity={showEthnicity}
                 editing={editing === row.id}
                 onEdit={() => setEditing(row.id)}
                 onClose={() => setEditing(null)}
@@ -282,13 +290,14 @@ interface PatientRowsProps {
   onSelect?: (key: string) => void
   editable: boolean
   showEditColumn: boolean
+  showEthnicity: boolean
   editing: boolean
   onEdit: () => void
   onClose: () => void
   actor: Actor
 }
 
-function PatientRows({ row, columns, fromPdf, readOf, keyOf, selectedKey, onSelect, editable, showEditColumn, editing, onEdit, onClose, actor }: PatientRowsProps) {
+function PatientRows({ row, columns, fromPdf, readOf, keyOf, selectedKey, onSelect, editable, showEditColumn, showEthnicity, editing, onEdit, onClose, actor }: PatientRowsProps) {
   const values = arrivalRowValues(row)
   const corrected = new Set<ImportRowCorrectionField>((row.correctionHistory ?? []).map((c) => c.field))
   const unsureOpen = (Object.keys(READ_FIELD) as ArrivalRowField[]).some((f) => {
@@ -340,14 +349,21 @@ function PatientRows({ row, columns, fromPdf, readOf, keyOf, selectedKey, onSele
             </>
           )}
         </Td>
-        <Td nowrap style={values.ethnicityCode === '' ? QUIET : ink}>
-          {values.ethnicityCode === '' ? 'None' : value('ethnicityCode', { mono: true })}
-        </Td>
+        {showEthnicity && (
+          <Td nowrap style={values.ethnicityCode === '' ? QUIET : ink}>
+            {values.ethnicityCode === '' ? 'None' : value('ethnicityCode', { mono: true })}
+            {values.ethnicityCode !== '' && validateEthnicityCode(values.ethnicityCode).verdict !== 'valid' && (
+              <FieldHint tone="error" style={{ marginTop: 2 }}>
+                Not a valid code
+              </FieldHint>
+            )}
+          </Td>
+        )}
         <Td style={procedure === undefined ? QUIET : ink}>
           {procedure === undefined ? (
             'None sent'
           ) : (
-            <ReadValue label="Procedure" value={procedure} read={readOf('procedureText')} fromPdf={fromPdf} valueKey={keyOf('procedureText')} selectedKey={selectedKey} onSelect={onSelect} mono />
+            <ReadValue label="Procedure" value={procedure} read={readOf('procedureText')} fromPdf={fromPdf} valueKey={keyOf('procedureText')} selectedKey={selectedKey} onSelect={onSelect} wrap />
           )}
         </Td>
         {showEditColumn && (
@@ -363,7 +379,7 @@ function PatientRows({ row, columns, fromPdf, readOf, keyOf, selectedKey, onSele
       {editing && editable && (
         <tr data-row-editor={row.id}>
           <Td colSpan={columns} style={{ background: neutral.bg }}>
-            <RowEditor row={row} actor={actor} onClose={onClose} />
+            <RowEditor row={row} actor={actor} onClose={onClose} showEthnicity={showEthnicity} />
           </Td>
         </tr>
       )}
@@ -390,7 +406,7 @@ function PatientRows({ row, columns, fromPdf, readOf, keyOf, selectedKey, onSele
 
 type Draft = Record<ArrivalRowField, string>
 
-function RowEditor({ row, actor, onClose }: { row: ImportRow; actor: Actor; onClose: () => void }) {
+function RowEditor({ row, actor, onClose, showEthnicity }: { row: ImportRow; actor: Actor; onClose: () => void; showEthnicity: boolean }) {
   const saved = arrivalRowValues(row)
   const [draft, setDraft] = useState<Draft>(saved)
   const [error, setError] = useState<string | null>(null)
@@ -436,20 +452,22 @@ function RowEditor({ row, actor, onClose }: { row: ImportRow; actor: Actor; onCl
         <TextField label="Name" value={draft.patientName} onChange={set('patientName')} width={180} size="compact" fill="surface" autoComplete="off" shot="intake-pdf-edit-name" />
         <TextField label="Date of birth" type="date" value={draft.dobISO} onChange={set('dobISO')} mono width={150} size="compact" fill="surface" shot="intake-pdf-edit-dob" />
         <TextField label="Time" type="time" value={draft.scheduledTime} onChange={set('scheduledTime')} mono width={104} size="compact" fill="surface" shot="intake-pdf-edit-time" />
-        <TextField
-          label="Ethnicity"
-          value={draft.ethnicityCode}
-          onChange={set('ethnicityCode')}
-          mono
-          width={92}
-          size="compact"
-          fill="surface"
-          inputMode="numeric"
-          maxLength={5}
-          autoComplete="off"
-          hint="Five digits"
-          shot="intake-pdf-edit-ethnicity"
-        />
+        {showEthnicity && (
+          <TextField
+            label="Ethnicity"
+            value={draft.ethnicityCode}
+            onChange={set('ethnicityCode')}
+            mono
+            width={92}
+            size="compact"
+            fill="surface"
+            inputMode="numeric"
+            maxLength={5}
+            autoComplete="off"
+            hint="Five digits"
+            shot="intake-pdf-edit-ethnicity"
+          />
+        )}
       </div>
       <FormError message={error} shot="intake-pdf-edit-error" />
       <div style={{ display: 'flex', alignItems: 'center', gap: space[3] }}>

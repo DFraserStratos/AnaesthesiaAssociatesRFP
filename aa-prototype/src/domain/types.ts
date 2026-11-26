@@ -2981,8 +2981,8 @@ export interface ImportBatch {
   /** Channel `pdfList` (catch-up Phase 34): the PDF list it came from and the address it arrived from. */
   pdfListId?: PdfListId
   senderEmail?: string
-  /** The PDF as received, for an arrival with no PDF list (an unreadable page): its file name and facsimile. */
-  file?: { name: string; facsimile: string }
+  /** The PDF as received, for an arrival with no PDF list (an unreadable page): its file name and facsimile (page 1), and every page. */
+  file?: PdfFile
   /** A PDF that cannot be made into a List: why (D120, D125). The arrival has no rows. */
   unreadableReason?: string
   /** A feed message that failed: why it is held (never dropped). `messageId` names the message. */
@@ -2992,7 +2992,33 @@ export interface ImportBatch {
   dismissed?: { by: string; atISO: IsoDateTime; reason: string }
 }
 
-/** A box on a PDF's page, in the facsimile's units (D120): where a read value sits. */
+/**
+ * A PDF as received: its file name and its pages as drawn (SVG data URLs, one per page, in the page's own units).
+ * `facsimile` is the first page (`pages[0]`), kept so a reader of one page needs nothing more.
+ */
+export interface PdfFile {
+  name: string
+  facsimile: string
+  pages?: string[]
+}
+
+/** The layouts a rooms' PDF is printed in, each modelled on a kind of document real surgeons' rooms send. */
+export type PdfTemplateId = 'oplistx' | 'oplist' | 'agenda' | 'wordGrid' | 'report' | 'hospitalLetter' | 'sheet'
+
+/** A layout's second look: a Word table under a practice logo (`wordGrid`), a booking form on US letter (`report`). */
+export type PdfTemplateVariant = 'logo' | 'letter'
+
+export type PdfPaper = 'a4' | 'letter'
+export type PdfOrientation = 'portrait' | 'landscape'
+
+/** How a scanned page sits: a landscape page turned onto a portrait scan, a small skew on the glass, its right edge cut. */
+export interface PdfScan {
+  rotated?: boolean
+  skewDeg?: number
+  clipRight?: boolean
+}
+
+/** A box on a PDF's page, in the page's own units (D120): where a read value sits. A landscape page is 842 x 595. */
 export interface PdfBox {
   page: number
   x: number
@@ -3078,7 +3104,14 @@ export interface SurgeonPdfList {
   id: PdfListId
   /** The sample it was uploaded from (the reading is simulated). */
   sampleId: string
-  file: { name: string; facsimile: string }
+  file: PdfFile
+  /** The layout it is printed in, and how (absent on a list from before the layouts: one A4 portrait page). */
+  template?: PdfTemplateId
+  templateVariant?: PdfTemplateVariant
+  paper?: PdfPaper
+  orientation?: PdfOrientation
+  /** How the scan sits on the glass (a scanned PDF only). */
+  scan?: PdfScan
   surgeonId: SurgeonId
   /** The email address the PDF arrived from, entered with the upload (US-02.2.4). */
   senderEmail: string
@@ -3098,6 +3131,8 @@ export interface SurgeonPdfList {
   rows: PdfListRow[]
   /** The List's own header values as read (surgeon, hospital, date, session, a named anaesthetist; D120). */
   headerRead?: PdfReadValue[]
+  /** The sending practice as printed on the PDF's letterhead or footer ("Avonside Surgical Rooms"): the inbox's From. */
+  practice?: string
   /** Read from a scan: its values carry lower confidences (D120). */
   scanned?: boolean
 }

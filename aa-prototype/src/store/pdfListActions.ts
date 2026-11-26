@@ -154,6 +154,8 @@ function convertedListSamples(state: Pick<AppState, 'masters'>): MailboxPdfSampl
       session: s.target.session,
       ...(named !== undefined ? { anaesthetist: { name: named.name, ...(named.hpiId !== undefined ? { hpiId: named.hpiId } : {}) } } : {}),
       rows: s.rows,
+      ...(s.template !== undefined ? { template: s.template } : {}),
+      ...(s.variant !== undefined ? { variant: s.variant } : {}),
       ...(s.note !== undefined ? { note: s.note } : {}),
     }
   })

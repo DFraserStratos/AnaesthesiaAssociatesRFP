@@ -89,7 +89,7 @@ describe('correctArrivalRow (Phase 70): corrections before placing', () => {
   })
 
   it("an unrecognised ethnicity code raises the arrival's data-quality flag; corrected, it clears", () => {
-    // No sample row arrives with an unrecognised code, so one is corrected in first (five digits, outside the list).
+    // A rooms' PDF prints no ethnicity, so the row arrives with none; an unrecognised code is corrected in (five digits, outside the list).
     const { api, batchId, rowIds } = okafor()
     expect(dataQualityOf(api, batchId)).toBeUndefined()
     expect(correctArrivalRow(api, OFFICE_ACTOR, rowIds[0]!, { ethnicityCode: '99999' }).ok).toBe(true)
@@ -97,7 +97,7 @@ describe('correctArrivalRow (Phase 70): corrections before placing', () => {
     expect(correctArrivalRow(api, OFFICE_ACTOR, rowIds[0]!, { ethnicityCode: '21111' }).ok).toBe(true)
     expect(dataQualityOf(api, batchId)).toBeUndefined()
     expect(api.getState().intake.rows[rowIds[0]!]!.correctionHistory?.map((c) => [c.field, c.from, c.to])).toEqual([
-      ['ethnicityCode', '21111', '99999'],
+      ['ethnicityCode', '', '99999'],
       ['ethnicityCode', '99999', '21111'],
     ])
   })

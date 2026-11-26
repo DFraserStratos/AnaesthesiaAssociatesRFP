@@ -19,14 +19,12 @@
 
 import type { ArrivalSource, ImportBatch, IncomingBookingFields, IntegrationMessage, PdfListRow, PdfRowAsRead, Session, SurgeonPdfList } from '../domain/types'
 import {
-  mailboxPdfHeaderValues,
   OKAFOR_STORY_LIST,
   STG_DAY_BEFORE,
   SX_CANCELLATION,
   type MailboxPdfSample,
 } from '../domain/intake/hospitalDownloads'
-import { buildFacsimile, pdfListBatchLabel, pdfRowIncoming, resentPdfListOf } from '../domain/intake/pdfLists'
-import { readValuesOfRow, simulateRead } from '../domain/intake/pdfRead'
+import { pdfListBatchLabel, pdfListFieldsOf, pdfRowIncoming, readRoomsPdf, resentPdfListOf } from '../domain/intake/pdfLists'
 import { normaliseName, sessionLabel, validNhiOf } from '../domain/intake/matching'
 import { resolveNamedAnaesthetist } from '../domain/intake/arrivals'
 import { validateNhi } from '../domain/nhi'
@@ -71,7 +69,6 @@ function asReadOf(row: MailboxPdfSample['rows'][number]): PdfRowAsRead {
   if (row.nhi !== undefined) out.nhi = row.nhi
   if (row.dobISO !== undefined) out.dobISO = row.dobISO
   if (row.scheduledTime !== undefined) out.scheduledTime = row.scheduledTime
-  if (row.ethnicityCode !== undefined) out.ethnicityCode = row.ethnicityCode
   return out
 }
 
@@ -170,13 +167,11 @@ export function receiveMailboxPdf(
     Object.entries(state.masters.anaesthetists).map(([id, a]) => [id, { name: a.name, ...(a.hpiId !== undefined ? { hpiId: a.hpiId } : {}) }]),
   )
   const namedId = sample.anaesthetist !== undefined ? resolveNamedAnaesthetist(anaesthetists, { anaesthetist: sample.anaesthetist }) : undefined
-  const read = simulateRead({
-    header: mailboxPdfHeaderValues(sample),
-    ...(sample.headerConfidence !== undefined ? { headerConfidence: sample.headerConfidence } : {}),
-    rows: sample.rows.map((r) => ({ id: r.id, values: readValuesOfRow(asReadOf(r)), ...(r.confidence !== undefined ? { confidence: r.confidence } : {}) })),
-    scanned: sample.scanned === true,
-  })
-  const pdfRows: PdfListRow[] = sample.rows.map((r, i) => ({ id: r.id, asRead: asReadOf(r), corrections: [], read: read.rows[i]!.read }))
+  // Read from the layout that draws the page (`readRoomsPdf`): each value's box is where its text is printed. The
+  // practice printed is the surgeon's own, as the masters hold it, unless the sample names one.
+  const practice = sample.practice ?? surgeon.practiceName
+  const reading = readRoomsPdf({ ...sample, ...(practice !== undefined ? { practice } : {}) })
+  const pdfRows: PdfListRow[] = sample.rows.map((r, i) => ({ id: r.id, asRead: asReadOf(r), corrections: [], read: reading.rows[i]!.read }))
   // `target.anaesthetistId` is the named anaesthetist resolved to the master, '' when none is named or resolved.
   const target = { anaesthetistId: namedId ?? '', dateISO: sample.dateISO, session: sample.session }
   const surgeonFields = { name: surgeon.name, ...(surgeon.hpiId !== undefined ? { hpiId: surgeon.hpiId } : {}) }
@@ -218,7 +213,8 @@ export function receiveMailboxPdf(
           surgeonId: sample.surgeonId,
           rows: pdfRows.length,
           batchId,
-          ...(sample.scanned === true ? { scanned: true } : {}),
+          ...(reading.scanned ? { scanned: true } : {}),
+          template: reading.template,
           ...(replaces !== undefined ? { replacesId: replaces.id } : {}),
         },
         stampBookingId: null,
@@ -230,7 +226,6 @@ export function receiveMailboxPdf(
         const list: SurgeonPdfList = {
           id: pdfListId,
           sampleId: sample.id,
-          file: { name: sample.fileName, facsimile: buildFacsimile(sample) },
           surgeonId: sample.surgeonId,
           senderEmail: sender,
           hospitalId: sample.hospitalId,
@@ -244,8 +239,7 @@ export function receiveMailboxPdf(
           sentAtISO: atISO,
           sentBy: actor.who,
           rows: pdfRows,
-          headerRead: read.headerRead,
-          ...(sample.scanned === true ? { scanned: true } : {}),
+          ...pdfListFieldsOf(reading),
         }
         return { intake: { ...s.intake, pdfLists: { ...s.intake.pdfLists, [pdfListId]: list } }, counters: alloc.counters }
       },
@@ -291,7 +285,7 @@ export function receiveUnreadablePdf(
       ...(byHand !== undefined ? { importedBy: byHand } : {}),
       rowIds: [],
       senderEmail: sender,
-      file: { name: input.fileName.trim(), facsimile: input.facsimile },
+      file: { name: input.fileName.trim(), facsimile: input.facsimile, pages: [input.facsimile] },
       unreadableReason: input.reason.trim(),
     }
     metas.push({

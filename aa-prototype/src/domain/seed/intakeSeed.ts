@@ -18,10 +18,9 @@
  */
 
 import type { ImportBatch, ImportRow, IncomingBookingFields, IntakeSource, Stub, SurgeonPdfList } from '../types'
-import { buildFacsimile, PDF_LIST_SAMPLES, pdfListBatchLabel, pdfRowIncoming } from '../intake/pdfLists'
-import { readValuesOfRow, simulateRead } from '../intake/pdfRead'
+import { PDF_LIST_SAMPLES, pdfListBatchLabel, pdfListFieldsOf, pdfRowIncoming, readRoomsPdf } from '../intake/pdfLists'
 import { sessionLabel } from '../intake/matching'
-import { longDay, shortDay } from '../dateText'
+import { shortDay } from '../dateText'
 import { DEMO_TODAY } from '../clock'
 import { ANAE, HOSP } from './cast'
 import { projectedListId } from '../slots'
@@ -71,15 +70,16 @@ const OKAFOR = { name: 'Mr C. Okafor', hpiId: '43OKAC' } as const
 function seededPdfArrival(): { list: SurgeonPdfList; batch: ImportBatch; rows: ImportRow[] } {
   const sample = PDF_LIST_SAMPLES.find((s) => s.id === SEED_PDF_LIST.sampleId)!
   const asRead = sample.rows.map(({ id, ...rest }) => ({ id, asRead: rest }))
-  const read = simulateRead({
-    header: { surgeon: sample.surgeonName, hospital: sample.hospitalName, date: longDay(sample.target.dateISO), session: sample.target.session, anaesthetist: SEED_PDF_LIST.anaesthetist.name },
-    // R2's NHI is printed wrongly (ZAA0068 fails its check digit): the reader is unsure of it.
-    rows: asRead.map((r) => ({ id: r.id, values: readValuesOfRow(r.asRead), ...(r.id === 'R2' ? { confidence: { nhi: 0.62 } } : {}) })),
+  // Read from the layout that draws it (`readRoomsPdf`). R2's NHI is printed wrongly (ZAA0068 fails its check
+  // digit): the reader is unsure of it.
+  const reading = readRoomsPdf({
+    ...sample,
+    anaesthetistName: SEED_PDF_LIST.anaesthetist.name,
+    rows: sample.rows.map((r) => (r.id === 'R2' ? { ...r, confidence: { nhi: 0.62 } } : r)),
   })
   const list: SurgeonPdfList = {
     id: SEED_PDF_LIST.id,
     sampleId: sample.id,
-    file: { name: sample.fileName, facsimile: buildFacsimile(sample) },
     surgeonId: sample.surgeonId,
     senderEmail: sample.defaultSender,
     hospitalId: sample.hospitalId,
@@ -91,8 +91,8 @@ function seededPdfArrival(): { list: SurgeonPdfList; batch: ImportBatch; rows: I
     batchId: SEED_PDF_LIST.batchId,
     sentAtISO: PDF_RECEIVED_AT,
     sentBy: MAILBOX_WHO,
-    rows: asRead.map((r, i) => ({ id: r.id, asRead: r.asRead, corrections: [], read: read.rows[i]!.read })),
-    headerRead: read.headerRead,
+    rows: asRead.map((r, i) => ({ id: r.id, asRead: r.asRead, corrections: [], read: reading.rows[i]!.read })),
+    ...pdfListFieldsOf(reading),
   }
   const rows: ImportRow[] = list.rows.map((pdfRow, i) => {
     const incoming: IncomingBookingFields = { ...pdfRowIncoming(list, pdfRow, { ...OKAFOR }), anaesthetist: { ...SEED_PDF_LIST.anaesthetist } }
