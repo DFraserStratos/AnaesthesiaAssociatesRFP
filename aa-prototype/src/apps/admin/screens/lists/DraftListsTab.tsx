@@ -1,23 +1,30 @@
 /**
- * Lists › Draft Lists (US-01.6.2 "one visible place", FT-01.6; US-13.1.3): every List with no
- * anaesthetist yet, flagged "Unassigned", with how long it has waited, soonest first, through the one
- * comparator. Assign (teal), Change date and Remove act on a row; a row click opens the drawer, and so
- * does the row's one keyboard handle, its session. History (`?view=history`) lists the ones assigned
- * or removed. First version: the old Draft Lists page's body moved under the Lists section.
+ * Lists › Draft Lists (US-01.6.2, FT-01.6; US-13.1.3): every List with no anaesthetist yet, flagged
+ * "Unassigned", soonest first under a group row per day (today's labelled as today), with its
+ * Bookings, how long it has waited and why it has no anaesthetist. One toolbar: Waiting or History
+ * (`?view=history`, the ones assigned or removed), a search (surgeon, hospital, note), When (from
+ * today by default, the next two weeks, or past ones included, each still flagged "Day passed"),
+ * Hospital and Why, the result count at its end; every filter in the URL (`useListParams`), 50 a
+ * page. Assign (teal), Change date and Remove act on a row; a row click opens the drawer, and so does
+ * the row's one keyboard handle, its session. The filtering, grouping and the why text live in
+ * `draftListsRows.ts`; this file only renders.
  */
 
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
-import { Plus, TriangleAlert } from 'lucide-react'
-import { neutral, semantic } from '../../../../theme/tokens'
+import { Plus } from 'lucide-react'
+import { neutral } from '../../../../theme/tokens'
 import { removeBlockedReason } from '../../../../domain/draftLists'
 import { bookingCountsByList, finishedDraftLists, useAppStore, waitingDraftLists } from '../../../../store'
-import { Button, SlidingSegmentedControl, TextAction } from '../../../../shared/ui'
+import { Button, EmptyState, FilterPills, NameSearchBox, SelectField, TextAction } from '../../../../shared/ui'
+import { ResultLine } from '../../../../shared/ui/ResultLine'
+import { Pill } from '../../../../shared/ui/Pill'
 import { PageBody, PageToolbar } from '../../components/AdminPage'
-import { ClickableRow, RowOpenButton, TableShell, Td, Th } from '../../../../shared/table'
-import { drSurname, hhmm, initialsOf, locationName, shortDay } from '../../../../shared/format'
-import { DRAFT_LIST, DRAFT_LISTS, ORIGIN_SHORT_LABELS, SOURCE_LABELS, UNASSIGNED, draftListCount, unavailableDetail } from '../../../../shared/scheduleTerms'
+import { Pager, pageOf, pageParam, pageWindow } from '../../components/Pager'
+import { ClickableRow, GroupRow, RowOpenButton, TableShell, Td, Th } from '../../../../shared/table'
+import { drSurname, formatCount, hhmm, initialsOf, locationName, shortDay } from '../../../../shared/format'
+import { DRAFT_LIST, DRAFT_LISTS, draftListCount } from '../../../../shared/scheduleTerms'
 import type { List } from '../../../../domain/types'
 import { surnameFirst } from '../../util'
 import { BookingCount, UnassignedPill, WaitingTime } from '../../components/draftLists/DraftListParts'
@@ -26,20 +33,36 @@ import { RedateDraftListSheet } from '../../flows/RedateDraftListSheet'
 import { RemoveDraftListSheet } from '../../flows/RemoveDraftListSheet'
 import { DraftListSheet } from '../../flows/DraftListSheet'
 import { sessionText } from '../../../../domain/outOfHours'
-import { ResultLine } from '../../../../shared/ui/ResultLine'
-import { Pill } from '../../../../shared/ui/Pill'
-import { EmptyState } from '../../../../shared/ui/EmptyState'
 import { useAdminOutlet } from '../../outlet'
+import { useListParams } from '../../useListParams'
 import { ListsPage } from './ListsSection'
-
-/** Draft List rows keep the plain admin table's top alignment beside their stacked Origin cell. */
+import {
+  DRAFT_LISTS_DEFAULTS,
+  DRAFT_LISTS_PAGE_SIZE,
+  WHEN_OPTIONS,
+  WHY_OPTIONS,
+  draftOriginText,
+  groupByDay,
+  historyDraftRows,
+  hospitalOptions,
+  parseView,
+  parseWhen,
+  parseWhy,
+  waitingDraftRows,
+} from './draftListsRows'
 
 type Sheet = { kind: 'assign' | 'redate' | 'remove'; listId: string } | { kind: 'new' } | null
+
+const COLUMNS = 7
 
 export function DraftListsTab() {
   const { actor, onOpenDraftList, onOpenList } = useAdminOutlet()
   const [params, setParams] = useSearchParams()
-  const tab: 'unassigned' | 'history' = params.get('view') === 'history' ? 'history' : 'unassigned'
+  const list = useListParams(DRAFT_LISTS_DEFAULTS)
+  const view = parseView(list.get('view'))
+  const q = list.get('q')
+  const when = parseWhen(list.get('when'))
+  const why = parseWhy(list.get('why'))
   const listsRecord = useAppStore((s) => s.schedule.lists)
   const bookings = useAppStore((s) => s.schedule.bookings)
   const masters = useAppStore((s) => s.masters)
@@ -48,6 +71,25 @@ export function DraftListsTab() {
   const finished = useMemo(() => finishedDraftLists({ schedule: { lists: listsRecord } }), [listsRecord])
   const counts = bookingCountsByList(bookings)
   const [sheet, setSheet] = useState<Sheet>(null)
+
+  const hospitalParam = list.get('hospital')
+  const base: readonly List[] = view === 'history' ? finished : waiting
+  const hospitalChoices = useMemo(() => hospitalOptions(base, masters.hospitals, hospitalParam), [base, masters.hospitals, hospitalParam])
+  const hospitalId = hospitalChoices.some((h) => h.value === hospitalParam) ? hospitalParam : 'all'
+  const waitingResult = useMemo(
+    () => waitingDraftRows(waiting, { q, hospitalId, why, when }, today, masters),
+    [waiting, q, hospitalId, why, when, today, masters],
+  )
+  const historyRows = useMemo(() => historyDraftRows(finished, { q, hospitalId, why }, masters), [finished, q, hospitalId, why, masters])
+  const rows: readonly List[] = view === 'history' ? historyRows : waitingResult.rows
+  const pages = pageWindow(rows.length, DRAFT_LISTS_PAGE_SIZE, pageParam(list.get('page')))
+  const shown = pageOf(rows, DRAFT_LISTS_PAGE_SIZE, pages.page)
+  const narrowed = q.trim() !== '' || hospitalId !== 'all' || why !== 'all' || (view === 'waiting' && when === 'fortnight')
+  const pager =
+    pages.pages > 1 ? (
+      <Pager total={rows.length} size={DRAFT_LISTS_PAGE_SIZE} page={pages.page} onPage={(p) => list.set({ page: String(p) })} lead={DRAFT_LISTS} shot="draft-lists-pager" />
+    ) : undefined
+
   // The outcome of an assignment made on this page (the row's sheet or the drawer): `?assigned=<listId>`.
   const assignedId = params.get('assigned')
   const assignedNote = useMemo(() => {
@@ -64,37 +106,30 @@ export function DraftListsTab() {
     setParams(p, { replace: true })
   }
 
-  // Unassigned or History: `view=history` set (or dropped for Unassigned), `open` dropped, the rest kept.
-  function setView(next: 'unassigned' | 'history') {
-    const p = new URLSearchParams(params)
-    if (next === 'history') p.set('view', 'history')
-    else p.delete('view')
-    p.delete('open')
-    setParams(p, { replace: true })
-  }
-
   const surgeon = (l: List) => masters.surgeons[l.surgeonId]?.name ?? l.surgeonId
-  const origin = (l: List): string => {
-    const t = l.draft
-    if (t === undefined) return ''
-    if (t.origin === 'request') return `${ORIGIN_SHORT_LABELS.request}${t.source !== undefined ? ` · ${SOURCE_LABELS[t.source]}` : ''}`
-    if (t.origin === 'recurringClash') {
-      const a = t.fromAnaesthetistId !== undefined ? masters.anaesthetists[t.fromAnaesthetistId] : undefined
-      return `${ORIGIN_SHORT_LABELS.recurringClash}${a !== undefined ? ` · ${unavailableDetail(drSurname(a.name))}` : ''}`
-    }
-    return ORIGIN_SHORT_LABELS[t.origin]
-  }
+  const hospital = (l: List) => locationName(l.hospitalId, masters.hospitals)
   // A person's initials ("KW"); a system or simulated actor in full.
   const byLabel = (by: string) => (/^[A-Z][a-z]+ [A-Z]\.?$/.test(by) ? initialsOf(by) : by)
-  const since = (l: List) => (l.draft !== undefined ? `${format(parseISO(l.draft.sinceISO), 'd MMM')} ${hhmm(l.draft.sinceISO)} · ${byLabel(l.draft.by)}` : '')
+  const since = (l: List) => (l.draft !== undefined ? `Waiting since ${format(parseISO(l.draft.sinceISO), 'd MMM')} ${hhmm(l.draft.sinceISO)} · ${byLabel(l.draft.by)}` : '')
 
-  // Day dividers between dates in the one order.
-  const byDay: [string, List[]][] = []
-  for (const l of waiting) {
-    const last = byDay[byDay.length - 1]
-    if (last !== undefined && last[0] === l.dateISO) last[1].push(l)
-    else byDay.push([l.dateISO, [l]])
-  }
+  const resultCount =
+    view === 'history' ? (
+      <span data-shot="draft-lists-count">
+        <span className="mono">{formatCount(rows.length)}</span> assigned or removed
+      </span>
+    ) : (
+      <>
+        {waitingResult.pastHidden > 0 && (
+          <TextAction size="sm" flush onClick={() => list.set({ when: 'all' })} data-show-past="true">
+            Show {formatCount(waitingResult.pastHidden)} past
+          </TextAction>
+        )}
+        <span data-shot="draft-lists-count">
+          <span className="mono">{formatCount(rows.length)}</span> {rows.length === 1 ? DRAFT_LIST : DRAFT_LISTS}
+          {q.trim() !== '' ? ` matching "${q.trim()}"` : ''}
+        </span>
+      </>
+    )
 
   return (
     <ListsPage
@@ -106,134 +141,160 @@ export function DraftListsTab() {
         </Button>
       }
     >
-      <PageToolbar shot="draft-lists-toolbar" end={<span style={{ color: neutral.ink, fontWeight: 600 }}>{draftListCount(waiting.length)} waiting</span>}>
-        <SlidingSegmentedControl
+      <PageToolbar shot="draft-lists-toolbar" end={resultCount}>
+        <FilterPills
           ariaLabel={`${DRAFT_LISTS} view`}
-          size="sm"
-          variant="surface"
-          value={tab}
-          onSelect={setView}
+          value={view}
+          onSelect={(next) => list.set({ view: next })}
           options={[
-            { value: 'unassigned', label: `${UNASSIGNED} ${waiting.length}` },
-            { value: 'history', label: `History ${finished.length}` },
+            { value: 'waiting', label: `Waiting ${formatCount(waiting.length)}` },
+            { value: 'history', label: `History ${formatCount(finished.length)}` },
           ]}
         />
+        <NameSearchBox size="pill" width={240} value={q} onChange={(next) => list.set({ q: next })} label="Search by surgeon, hospital or note" placeholder="Surgeon, hospital or note" shot="draft-lists-search" />
+        {view === 'waiting' && (
+          <SelectField label="When" hideLabel width={150} size="compact" fill="surface" value={when} onChange={(next) => list.set({ when: next })} shot="draft-lists-when">
+            {WHEN_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </SelectField>
+        )}
+        <SelectField label="Hospital" hideLabel width={200} size="compact" fill="surface" value={hospitalId} onChange={(next) => list.set({ hospital: next })} shot="draft-lists-hospital">
+          <option value="all">Any hospital</option>
+          {hospitalChoices.map((h) => (
+            <option key={h.value} value={h.value}>{h.label}</option>
+          ))}
+        </SelectField>
+        <SelectField label="Why it has no anaesthetist" hideLabel width={230} size="compact" fill="surface" value={why} onChange={(next) => list.set({ why: next })} shot="draft-lists-why">
+          <option value="all">Any reason</option>
+          {WHY_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </SelectField>
       </PageToolbar>
       <PageBody>
-      <ResultLine
-        shot="draft-lists-assigned"
-        line={assignedNote?.text}
-        actions={
-          assignedNote !== null ? (
-            <span style={{ display: 'inline-flex', gap: 14 }}>
-              <TextAction size="sm" flush onClick={() => onOpenList(assignedNote.listId)}>Open List</TextAction>
-              <TextAction size="sm" flush onClick={() => setAssigned(null)}>Dismiss</TextAction>
-            </span>
-          ) : undefined
-        }
-      />
+        <ResultLine
+          shot="draft-lists-assigned"
+          line={assignedNote?.text}
+          actions={
+            assignedNote !== null ? (
+              <span style={{ display: 'inline-flex', gap: 14 }}>
+                <TextAction size="sm" flush onClick={() => onOpenList(assignedNote.listId)}>Open List</TextAction>
+                <TextAction size="sm" flush onClick={() => setAssigned(null)}>Dismiss</TextAction>
+              </span>
+            ) : undefined
+          }
+        />
 
-      {tab === 'unassigned' ? (
-        waiting.length === 0 ? (
-          <EmptyState variant="card" shot="draft-lists-empty">
-            No {DRAFT_LISTS} are waiting. New requests appear here until they are assigned.
-          </EmptyState>
-        ) : (
-          <TableShell fit shot="draft-lists-table" label={DRAFT_LISTS} density="compact" minWidth={880} tableStyle={{ tableLayout: 'fixed' }}>
-              {/* Fits a 1280 laptop's 1008px: the surgeon sits under the hospital, when and by whom under the origin; the note takes the spare width. */}
-              <colgroup>
-                {[84, 68, 176, 84, 78, 176, undefined, 214].map((w, i) => (
-                  <col key={i} style={w !== undefined ? { width: w } : undefined} />
+        {rows.length === 0 ? (
+          narrowed || (view === 'waiting' && waitingResult.pastHidden > 0) ? (
+            <EmptyState
+              variant="card"
+              shot="draft-lists-empty"
+              title={`No ${DRAFT_LISTS} match.`}
+              action={<TextAction size="sm" flush onClick={() => list.set({ q: '', hospital: 'all', why: 'all', when: 'all' })}>Show every {DRAFT_LIST}</TextAction>}
+            >
+              Check the spelling, or widen the filters.
+            </EmptyState>
+          ) : view === 'waiting' ? (
+            <EmptyState variant="card" shot="draft-lists-empty">
+              No {DRAFT_LISTS} are waiting. New requests appear here until they are assigned.
+            </EmptyState>
+          ) : (
+            <EmptyState variant="card" shot="draft-lists-empty">
+              Nothing yet. {DRAFT_LISTS} appear here once they are assigned or removed.
+            </EmptyState>
+          )
+        ) : view === 'waiting' ? (
+          <TableShell
+            fit
+            shot="draft-lists-table"
+            label={DRAFT_LISTS}
+            density="compact"
+            minWidth={900}
+            tableStyle={{ tableLayout: 'fixed' }}
+            {...(pager !== undefined ? { footer: pager } : {})}
+          >
+            {/* Fits a 1280 laptop's 1008px: the hospital and the note share the spare width. */}
+            <colgroup>
+              {[72, undefined, 78, 78, 220, undefined, 206].map((w, i) => (
+                <col key={i} style={w !== undefined ? { width: w } : undefined} />
+              ))}
+            </colgroup>
+            <thead>
+              <tr>
+                {['Session', 'Hospital · Surgeon', 'Bookings', 'Waiting', 'Why it has no anaesthetist', 'Note', ''].map((h, i) => (
+                  <Th key={h === '' ? 'actions' : h} nowrap align={i === 2 || i === 3 ? 'right' : 'left'}>{h}</Th>
                 ))}
-              </colgroup>
-              <thead>
-                <tr>
-                  {['Day', 'Session', 'Hospital · Surgeon', 'Bookings', 'Waiting', 'Origin', 'Note', ''].map((h, i) => (
-                    <Th key={h === '' ? 'actions' : h} nowrap align={i === 3 || i === 4 ? 'right' : 'left'}>{h}</Th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {byDay.map(([dateISO, rows], g) =>
-                  rows.map((l, i) => {
-                    const passed = l.dateISO < today
-                    const holiday = l.conflicts.some((c) => c.kind === 'holiday')
-                    return (
-                      <ClickableRow
-                        key={l.id}
-                        align="top"
-                        data-draft-list-row={l.id}
-                        onOpen={() => onOpenDraftList(l.id)}
-                        {...(i === 0 && g > 0 ? { style: { borderTop: `2px solid ${neutral.lineStrong}` } } : {})}
-                      >
-                        <Td nowrap style={{ fontWeight: i === 0 ? 600 : 400, color: i === 0 ? neutral.ink : neutral.mist }}>{i === 0 ? shortDay(dateISO) : ''}</Td>
-                        <Td mono bold>
-                          {/* The row's keyboard handle (bug 3): the session opens the Draft List's drawer, as the row click does. */}
-                          <RowOpenButton
-                            label={`Open ${DRAFT_LIST} ${shortDay(l.dateISO)} ${sessionText(l.session)}, ${locationName(l.hospitalId, masters.hospitals)}, ${surgeon(l)}`}
-                            onOpen={() => onOpenDraftList(l.id)}
-                          >
-                            {sessionText(l.session)}
-                          </RowOpenButton>
-                        </Td>
-                        <Td>
-                          <div style={{ fontWeight: 600 }}>{locationName(l.hospitalId, masters.hospitals)}</div>
-                          <div style={{ marginTop: 2, fontSize: 12.5, color: neutral.slate }}>{surgeon(l)}</div>
-                        </Td>
-                        <Td align="right"><BookingCount count={counts.get(l.id) ?? 0} style={{ fontSize: 13 }} /></Td>
-                        <Td align="right" nowrap><WaitingTime list={l} style={{ fontSize: 13 }} /></Td>
-                        <Td>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
-                            <UnassignedPill />
-                            <span style={{ fontSize: 12.5, color: neutral.slate }}>{origin(l)}</span>
-                            <span className="mono" title={since(l)} style={{ fontSize: 12, color: neutral.slate }}>{since(l)}</span>
+              </tr>
+            </thead>
+            <tbody>
+              {groupByDay(shown, today).map((g) => [
+                <GroupRow key={`day-${g.dateISO}`} span={COLUMNS} counts={draftListCount(g.lists.length)} data-draft-day={g.dateISO} {...(g.past ? { tone: 'warning' as const } : {})}>
+                  {g.label}
+                </GroupRow>,
+                ...g.lists.map((l) => {
+                  const passed = l.dateISO < today
+                  const closed = l.conflicts.some((c) => c.kind === 'holiday')
+                  const booked = counts.get(l.id) ?? 0
+                  return (
+                    <ClickableRow key={l.id} align="top" data-draft-list-row={l.id} onOpen={() => onOpenDraftList(l.id)}>
+                      <Td mono bold>
+                        {/* The row's keyboard handle (bug 3): the session opens the Draft List's drawer, as the row click does. */}
+                        <RowOpenButton label={`Open ${DRAFT_LIST} ${shortDay(l.dateISO)} ${sessionText(l.session)}, ${hospital(l)}, ${surgeon(l)}`} onOpen={() => onOpenDraftList(l.id)}>
+                          {sessionText(l.session)}
+                        </RowOpenButton>
+                      </Td>
+                      <Td>
+                        <span style={{ fontWeight: 600 }}>{hospital(l)}</span> <span style={{ color: neutral.slate }}>· {surgeon(l)}</span>
+                        {(closed || passed) && (
+                          <span style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                            {closed && <Pill tone="error" data-holiday-flag="true">Hospital closed</Pill>}
                             {passed && <Pill tone="warning" data-day-passed="true">Day passed</Pill>}
-                            {holiday && (
-                              <span data-holiday-flag="true" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: semantic.warning.onTint }}>
-                                <TriangleAlert size={12} aria-hidden style={{ color: semantic.warning.solid }} />
-                                Hospital closed that day
-                              </span>
-                            )}
-                          </div>
-                        </Td>
-                        <Td clip style={{ color: neutral.slate }}><span title={l.notes}>{l.notes ?? ''}</span></Td>
-                        <Td nowrap>
-                          <span style={{ display: 'inline-flex', gap: 12 }}>
-                            <TextAction
-                              size="sm"
-                              flush
-                              label={`Assign ${DRAFT_LIST}, ${shortDay(l.dateISO)} ${sessionText(l.session)}`}
-                              disabled={passed}
-                              {...(passed ? { title: 'This day has passed. Change its date or remove it.' } : {})}
-                              onClick={() => setSheet({ kind: 'assign', listId: l.id })}
-                            >
-                              Assign
-                            </TextAction>
-                            <TextAction size="sm" flush onClick={() => setSheet({ kind: 'redate', listId: l.id })}>Change date</TextAction>
-                            <TextAction
-                              size="sm"
-                              flush
-                              disabled={(counts.get(l.id) ?? 0) > 0}
-                              {...((counts.get(l.id) ?? 0) > 0 ? { title: removeBlockedReason(counts.get(l.id) ?? 0) } : {})}
-                              onClick={() => setSheet({ kind: 'remove', listId: l.id })}
-                            >
-                              Remove
-                            </TextAction>
                           </span>
-                        </Td>
-                      </ClickableRow>
-                    )
-                  }),
-                )}
-              </tbody>
+                        )}
+                      </Td>
+                      <Td align="right"><BookingCount count={booked} style={{ fontSize: 13 }} /></Td>
+                      <Td align="right" nowrap><span title={since(l)}><WaitingTime list={l} style={{ fontSize: 13 }} /></span></Td>
+                      <Td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                          <UnassignedPill />
+                          <span style={{ fontSize: 12.5, color: neutral.slate }} data-draft-origin={l.draft?.origin}>{draftOriginText(l, masters.anaesthetists)}</span>
+                        </div>
+                      </Td>
+                      <Td clip style={{ color: neutral.slate }}><span title={l.notes}>{l.notes ?? ''}</span></Td>
+                      <Td nowrap align="right">
+                        <span style={{ display: 'inline-flex', gap: 12 }}>
+                          <TextAction
+                            size="sm"
+                            flush
+                            label={`Assign ${DRAFT_LIST}, ${shortDay(l.dateISO)} ${sessionText(l.session)}`}
+                            disabled={passed}
+                            {...(passed ? { title: 'This day has passed. Change its date or remove it.' } : {})}
+                            onClick={() => setSheet({ kind: 'assign', listId: l.id })}
+                          >
+                            Assign
+                          </TextAction>
+                          <TextAction size="sm" flush onClick={() => setSheet({ kind: 'redate', listId: l.id })}>Change date</TextAction>
+                          <TextAction
+                            size="sm"
+                            flush
+                            disabled={booked > 0}
+                            {...(booked > 0 ? { title: removeBlockedReason(booked) } : {})}
+                            onClick={() => setSheet({ kind: 'remove', listId: l.id })}
+                          >
+                            Remove
+                          </TextAction>
+                        </span>
+                      </Td>
+                    </ClickableRow>
+                  )
+                }),
+              ])}
+            </tbody>
           </TableShell>
-        )
-      ) : finished.length === 0 ? (
-        <EmptyState variant="card">
-          Nothing yet. {DRAFT_LISTS} appear here once they are assigned or removed.
-        </EmptyState>
-      ) : (
-        <TableShell fit shot="draft-lists-history" label={`${DRAFT_LISTS} history`} density="compact" minWidth={880}>
+        ) : (
+          <TableShell fit shot="draft-lists-history" label={`${DRAFT_LISTS} history`} density="compact" minWidth={880} {...(pager !== undefined ? { footer: pager } : {})}>
             <thead>
               <tr>
                 {['Day', 'Hospital', 'Surgeon', 'Outcome', 'Waited', 'By', ''].map((h) => (
@@ -242,15 +303,15 @@ export function DraftListsTab() {
               </tr>
             </thead>
             <tbody>
-              {finished.map((l) => {
+              {shown.map((l) => {
                 const assigned = l.state !== 'DRAFT'
-                const who = assigned ? masters.anaesthetists[l.anaesthetistId] : undefined
+                const who = assigned && l.anaesthetistId !== undefined ? masters.anaesthetists[l.anaesthetistId] : undefined
                 const by = assigned ? l.draft?.assignedBy : l.removedBy
                 const at = assigned ? l.draft?.assignedAtISO : l.removedAtISO
                 return (
                   <tr key={l.id} data-draft-history-row={l.id}>
                     <Td nowrap>{shortDay(l.dateISO)} {sessionText(l.session)}</Td>
-                    <Td nowrap>{locationName(l.hospitalId, masters.hospitals)}</Td>
+                    <Td nowrap>{hospital(l)}</Td>
                     <Td nowrap>{surgeon(l)}</Td>
                     <Td>
                       {assigned
@@ -268,8 +329,8 @@ export function DraftListsTab() {
                 )
               })}
             </tbody>
-        </TableShell>
-      )}
+          </TableShell>
+        )}
       </PageBody>
 
       {sheet !== null && sheet.kind === 'assign' && (
