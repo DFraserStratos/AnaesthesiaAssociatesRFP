@@ -79,6 +79,9 @@ interface PdfPageProps extends DataAttributes {
   shot?: string
 }
 
+/** A page shown upright (taller than wide) is capped at this width, so it is not drawn huge; a wide page fills the desk. */
+const UPRIGHT_MAX_WIDTH = 820
+
 /** A small breathing room around each box, in page units, so the outline clears the glyphs. */
 const PAD = 2
 
@@ -151,7 +154,7 @@ export function PdfPage(props: PdfPageProps) {
         </TextAction>
       </figcaption>
 
-      <div style={{ padding: space[4] }}>
+      <div style={{ padding: space[4], ...((turns % 2 === 1 ? width > height : height > width) ? { maxWidth: UPRIGHT_MAX_WIDTH + 2 * space[4], margin: '0 auto' } : {}) }}>
         <PdfSheet {...sheet} {...(onSelect !== undefined ? { onSelect } : {})} scrollSelected={!full} />
       </div>
 

@@ -60,7 +60,7 @@ export function BenchLayout({ document, decision, actions, shot, ...data }: Benc
         data-bench-document
         style={{ background: neutral.sunken, minWidth: 0, minHeight: 0, overflow: stacked ? 'visible' : 'auto', padding: space[6], display: 'flex', flexDirection: 'column', alignItems: 'center' }}
       >
-        <div style={{ width: '100%', maxWidth: 820, minWidth: 0, display: 'flex', flexDirection: 'column', gap: space[4] }}>{document}</div>
+        <div style={{ width: '100%', minWidth: 0, display: 'flex', flexDirection: 'column', gap: space[4] }}>{document}</div>
       </div>
       <DecisionColumn
         shot="intake-decision-column"
