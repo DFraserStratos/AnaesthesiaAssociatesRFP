@@ -716,6 +716,8 @@ export {
   type PlaceResult,
 } from './intakePlace'
 export { placeStubsOnList } from './stubSettle'
+// Build plan Phase 71: confirm unchanged Lists together; dismiss a held message.
+export { confirmUnchangedLists, dismissHeldMessage, unchangedListsOfBatch, useUnchangedListsOf, type ConfirmUnchangedResult } from './intakeBulk'
 // Catch-up Phase 33a: stubs on a List (never Bookings) and the office's one resolve path.
 export { resolveStub, type ResolveStubInput, type ResolveStubResult } from './stubActions'
 export { resolvedStubForRow, standingStubCount, standingStubCountsByList, stubForRow, stubsForList, useListStubs, useStubCountsByList } from './stubSelectors'

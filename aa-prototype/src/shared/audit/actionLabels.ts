@@ -254,6 +254,7 @@ export const ACTION_LABELS: Record<string, string> = {
   'pdfList.receive': 'PDF received in the mailbox',
   'pdfList.addByHand': 'PDF added by hand',
   'importBatch.held': 'Hospital message held',
+  'importBatch.dismissed': 'Held message dismissed',
   'importBatch.unreadable': 'Unreadable PDF received',
   // Build plan Phase 70: an unreadable PDF's sender emailed, and the PDF dismissed with a reason.
   'importBatch.emailSender': 'Sender emailed about an unreadable PDF',
