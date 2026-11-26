@@ -35,8 +35,6 @@ export interface BenchLayoutProps {
   decision: ReactNode
   /** The right-hand column's footer; absent when there is nothing to do. */
   actions?: BenchActions
-  /** `wide` gives the decision column more room (an update's difference table). */
-  decisionWidth?: 'standard' | 'wide'
   /** `data-shot` on the layout's root (`intake-bench-<kind>`). */
   shot?: string
   /** `data-*` (`data-arrival-key`) on the layout's root. */

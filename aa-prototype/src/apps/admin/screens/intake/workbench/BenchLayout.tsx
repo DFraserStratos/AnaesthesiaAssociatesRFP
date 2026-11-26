@@ -16,7 +16,8 @@ import type { BenchLayoutProps } from './benchProps'
 /** Narrower than this, the document sits above the decision. */
 const STACK_BELOW = 960
 /** The decision column: about 560 at 1440 (O1), never under 480 or over 600; `wide` (an update's difference table) about 640. */
-const DECISION_WIDTH = { standard: 'clamp(480px, 48%, 600px)', wide: 'clamp(520px, 55%, 680px)' } as const
+/** One width for every kind, so stepping between arrivals never moves the column. */
+const DECISION_WIDTH = 'clamp(480px, 48%, 600px)'
 
 function useStacked(ref: RefObject<HTMLElement>): boolean {
   const [stacked, setStacked] = useState(false)
@@ -32,7 +33,7 @@ function useStacked(ref: RefObject<HTMLElement>): boolean {
   return stacked
 }
 
-export function BenchLayout({ document, decision, actions, shot, decisionWidth = 'standard', ...data }: BenchLayoutProps) {
+export function BenchLayout({ document, decision, actions, shot, ...data }: BenchLayoutProps) {
   const root = useRef<HTMLDivElement>(null)
   const stacked = useStacked(root)
   return (
@@ -46,7 +47,7 @@ export function BenchLayout({ document, decision, actions, shot, decisionWidth =
         minHeight: 0,
         minWidth: 0,
         display: 'grid',
-        gridTemplateColumns: stacked ? 'minmax(0, 1fr)' : `minmax(0, 1fr) ${DECISION_WIDTH[decisionWidth]}`,
+        gridTemplateColumns: stacked ? 'minmax(0, 1fr)' : `minmax(0, 1fr) ${DECISION_WIDTH}`,
         gridTemplateRows: stacked ? 'auto auto' : 'minmax(0, 1fr)',
         overflow: stacked ? 'auto' : 'hidden',
         border: `1px solid ${neutral.line}`,

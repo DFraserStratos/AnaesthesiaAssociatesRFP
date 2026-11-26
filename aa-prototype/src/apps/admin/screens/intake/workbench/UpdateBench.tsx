@@ -258,7 +258,7 @@ function UpdateBenchFor({ arrival, actor, onDone, onNext }: BenchProps) {
 
   return (
     <>
-      <BenchLayout shot="intake-bench-update" decisionWidth="wide" data-arrival-key={arrival.key} document={<ArrivalDocument arrival={arrival} />} decision={decision} {...(actions !== undefined ? { actions } : {})} />
+      <BenchLayout shot="intake-bench-update" data-arrival-key={arrival.key} document={<ArrivalDocument arrival={arrival} />} decision={decision} {...(actions !== undefined ? { actions } : {})} />
       {rawRow !== null && <RawRowSheet rowId={rawRow.rowId} patientName={rawRow.patientName} actor={actor} onClose={() => setRawRow(null)} />}
     </>
   )
