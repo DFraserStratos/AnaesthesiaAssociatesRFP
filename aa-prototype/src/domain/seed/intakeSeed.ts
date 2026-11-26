@@ -9,12 +9,15 @@
  *   Its List (Forte Health, Wed 9 Dec AM) is not held, so it is a New List.
  * - One decided arrival, so Decided is not empty: St George's day-before List for Mon 23 Nov AM (Dr Tom Ngata, Mr
  *   Nand), every row matched with no change by the office on the Monday morning.
+ * - The morning's other arrivals (`intakeMorning.ts`): what St George's, Southern Cross and the rooms' mailbox sent
+ *   before the office sat down, and a few decided ones, read from the schedule the slice is built over (the core seed
+ *   under test; the whole practice at runtime, where `practiceAppState` rebuilds the slice over it).
  *
  * No RNG draw, so no seeded id moves. Seeded ids use their own namespace (`IBS`, `IRS`) so the first runtime arrival
  * is still IB0001 / IR0001; the stub is STB0001 (the `stub` counter starts at 2) and the PDF PDL0001 (`pdfList` at 2).
  */
 
-import type { ImportBatch, ImportRow, IncomingBookingFields, IntakeSource, Patient, Stub, SurgeonPdfList } from '../types'
+import type { ImportBatch, ImportRow, IncomingBookingFields, IntakeSource, Stub, SurgeonPdfList } from '../types'
 import { buildFacsimile, PDF_LIST_SAMPLES, pdfListBatchLabel, pdfRowIncoming } from '../intake/pdfLists'
 import { readValuesOfRow, simulateRead } from '../intake/pdfRead'
 import { sessionLabel } from '../intake/matching'
@@ -23,6 +26,7 @@ import { DEMO_TODAY } from '../clock'
 import { ANAE, HOSP } from './cast'
 import { projectedListId } from '../slots'
 import { rawRowFor } from '../intake/rawRow'
+import { seededMorning, type MorningSource } from './intakeMorning'
 
 export const SEED_STUB = {
   batchId: 'IBS001',
@@ -135,11 +139,11 @@ export const SEED_DECIDED_ARRIVAL = {
   firstRowNumber: 5,
 } as const
 
-/** The schedule and masters the decided arrival is read from (the core seed's own, before the practice joins). */
-export interface IntakeSeedSource {
-  schedule: { lists: Readonly<Record<string, { id: string; hospitalId: string; dateISO: string; session: IncomingBookingFields['session']; surgeonId: string }>>; bookings: Readonly<Record<string, { id: string; listId: string; patientId: string; scheduledTime?: string; cancellation?: unknown }>> }
-  masters: { patients: Readonly<Record<string, Pick<Patient, 'name' | 'nhi' | 'dobISO'>>>; surgeons: Readonly<Record<string, { name: string; hpiId?: string }>> }
-}
+/**
+ * The schedule and masters the seeded arrivals are read from: the core seed under test, the whole practice at
+ * runtime (`practiceAppState`). Structural, so the store's state satisfies it.
+ */
+export type IntakeSeedSource = MorningSource
 
 function seededDecidedArrival(from: IntakeSeedSource): { batch: ImportBatch; rows: ImportRow[] } | undefined {
   const a = SEED_DECIDED_ARRIVAL
@@ -195,16 +199,21 @@ function seededDecidedArrival(from: IntakeSeedSource): { batch: ImportBatch; row
  * Southern Cross (FHIR R4) receiving, the rooms' mailbox reading, Forte Health not connected (its Lists come by PDF).
  * Every other hospital without a record reads as not connected. Inbound only: nothing is ever sent back.
  */
-export function seededSources(): Record<string, IntakeSource> {
+export function seededSources(batches: readonly Pick<ImportBatch, 'arrivalSource' | 'receivedAtISO'>[] = []): Record<string, IntakeSource> {
+  // Each source's last arrival: the newest seeded one it made (the stored time the feed and Sources read).
+  const newest = (match: (b: Pick<ImportBatch, 'arrivalSource'>) => boolean, fallback: string) =>
+    batches.filter(match).reduce((max, b) => (b.receivedAtISO > max ? b.receivedAtISO : max), fallback)
+  const fromHospital = (hospitalId: string) => (b: Pick<ImportBatch, 'arrivalSource'>) => b.arrivalSource.kind === 'hospitalFeed' && b.arrivalSource.hospitalId === hospitalId
   const sources: IntakeSource[] = [
-    { id: INTAKE_SOURCE_IDS.stg, kind: 'hospitalFeed', name: "St George's", hospitalId: HOSP.stg, protocol: 'HL7 v2', state: 'receiving', lastReceivedAtISO: SEED_DECIDED_ARRIVAL.receivedAtISO },
-    { id: INTAKE_SOURCE_IDS.sx, kind: 'hospitalFeed', name: 'Southern Cross', hospitalId: HOSP.sx, protocol: 'FHIR R4', state: 'receiving', lastReceivedAtISO: RECEIVED_AT },
-    { id: INTAKE_SOURCE_IDS.mailbox, kind: 'mailbox', name: "Rooms' mailbox", address: ROOMS_MAILBOX_ADDRESS, state: 'reading', lastReceivedAtISO: PDF_RECEIVED_AT },
+    { id: INTAKE_SOURCE_IDS.stg, kind: 'hospitalFeed', name: "St George's", hospitalId: HOSP.stg, protocol: 'HL7 v2', state: 'receiving', lastReceivedAtISO: newest(fromHospital(HOSP.stg), SEED_DECIDED_ARRIVAL.receivedAtISO) },
+    { id: INTAKE_SOURCE_IDS.sx, kind: 'hospitalFeed', name: 'Southern Cross', hospitalId: HOSP.sx, protocol: 'FHIR R4', state: 'receiving', lastReceivedAtISO: newest(fromHospital(HOSP.sx), RECEIVED_AT) },
+    { id: INTAKE_SOURCE_IDS.mailbox, kind: 'mailbox', name: "Rooms' mailbox", address: ROOMS_MAILBOX_ADDRESS, state: 'reading', lastReceivedAtISO: newest((b) => b.arrivalSource.kind === 'mailbox', PDF_RECEIVED_AT) },
     { id: INTAKE_SOURCE_IDS.forte, kind: 'hospitalFeed', name: 'Forte Health', hospitalId: HOSP.forte, state: 'notConnected' },
   ]
   return Object.fromEntries(sources.map((s) => [s.id, s]))
 }
 
+/** The seeded intake slice over a schedule; each source's last received time is its newest seeded arrival. */
 export function seededIntake(from: IntakeSeedSource): {
   batches: Record<string, ImportBatch>
   rows: Record<string, ImportRow>
@@ -253,13 +262,14 @@ export function seededIntake(from: IntakeSeedSource): {
   }
   const pdf = seededPdfArrival()
   const decided = seededDecidedArrival(from)
-  const batches: ImportBatch[] = [batch, pdf.batch, ...(decided !== undefined ? [decided.batch] : [])]
-  const rows: ImportRow[] = [row, ...pdf.rows, ...(decided?.rows ?? [])]
+  const morning = seededMorning(from)
+  const batches: ImportBatch[] = [batch, pdf.batch, ...(decided !== undefined ? [decided.batch] : []), ...morning.batches]
+  const rows: ImportRow[] = [row, ...pdf.rows, ...(decided?.rows ?? []), ...morning.rows]
   return {
     batches: Object.fromEntries(batches.map((b) => [b.id, b])),
     rows: Object.fromEntries(rows.map((r) => [r.id, r])),
-    stubs: { [stub.id]: stub },
-    pdfLists: { [pdf.list.id]: pdf.list },
-    sources: seededSources(),
+    stubs: Object.fromEntries([stub, ...morning.stubs].map((s) => [s.id, s])),
+    pdfLists: Object.fromEntries([pdf.list, ...morning.pdfLists].map((l) => [l.id, l])),
+    sources: seededSources(batches),
   }
 }

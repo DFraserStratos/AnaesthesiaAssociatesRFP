@@ -41,12 +41,13 @@ describe('import (US-02.1.1)', () => {
     const api = fresh()
     const before = scheduleOf(api)
     const batchesBefore = Object.keys(api.getState().intake.batches).length
+    const attentionBefore = matchingAttentionCount(api.getState())
     const send = () => receiveHospitalBatch(api, SAMPLE_STG.hospitalId, SAMPLE_STG.label, SAMPLE_STG.rows, { sampleId: SAMPLE_STG.id })
     const res = send()
     expect(res.ok && res.value.rowIds).toHaveLength(5)
     expect(scheduleOf(api)).toBe(before)
-    // D125's unit: the file's three Lists, each once, plus the seed's rooms PDF List and its row waiting for an NHI.
-    expect(matchingAttentionCount(api.getState())).toBe(5)
+    // D125's unit: the file's three Lists, each once, on top of the seed's own arrivals.
+    expect(matchingAttentionCount(api.getState())).toBe(attentionBefore + 3)
     const rows = api.getState().intake.batches[res.ok ? res.value.batchId : '']!.rowIds
     expect(decideImportRow(api, OFFICE_ACTOR, rows[1]!, { kind: 'reject', reason: 'Duplicate of another row' }).ok).toBe(true)
     expect(correctImportRow(api, OFFICE_ACTOR, rows[0]!, { scheduledTime: '08:45' }).ok).toBe(true)

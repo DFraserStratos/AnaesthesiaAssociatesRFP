@@ -28,6 +28,9 @@ import { NO_NHI_NEW_PATIENT_NHI, NO_NHI_RETURNING_NHI } from '../domain/intake/h
 import { buildNhiIndex } from '../domain/patients'
 import { deliverPaymentWebhook } from './paymentActions'
 
+/** The seed's rows waiting for an NHI, by date: the morning's Kahu Rangihuna (Thu 26 Nov), Mere Tipene, the morning's Sina Leota (Wed 16 Dec). */
+const SEEDED_WAITING = ['IRM006', 'IRS001', 'IRM018']
+
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 const MORRISON: Actor = { who: 'Dr Kate Morrison', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.morrison }
@@ -231,8 +234,8 @@ describe('waiting rows: add the NHI, ask the one address (US-11.1.5)', () => {
   function staged() {
     const api = createAppStore()
     stageNoNhiList(api)
-    // The seed's own waiting row (33a's IRS001, Mere Tipene) stays beside the sample's two.
-    const rows = waitingNhiRows(api.getState()).filter((r) => r.rowId !== 'IRS001')
+    // The seed's own waiting rows (33a's IRS001, Mere Tipene, and the seeded morning's two) stay beside the sample's two.
+    const rows = waitingNhiRows(api.getState()).filter((r) => !SEEDED_WAITING.includes(r.rowId))
     return { api, rows }
   }
 
@@ -322,6 +325,6 @@ describe('patient selectors', () => {
     const base = patientAttentionCount(api.getState())
     stageNoNhiList(api)
     expect(patientAttentionCount(api.getState())).toBe(base)
-    expect(waitingNhiRows(createAppStore().getState()).map((r) => r.rowId)).toEqual(['IRS001'])
+    expect(waitingNhiRows(createAppStore().getState()).map((r) => r.rowId)).toEqual(SEEDED_WAITING)
   })
 })

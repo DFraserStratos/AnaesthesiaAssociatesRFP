@@ -1162,13 +1162,14 @@ describe('Phase 43 entries (scale and privacy)', () => {
   it('View raw row as another role: on Arrivals, acts on the oldest row needing resolving; refuses and audits (re-homed by Phase 68)', () => {
     const api = createAppStore()
     const t = byId('matching-raw-row-other-role')
-    // Arrivals publishes no selected row: it acts on the oldest row needing resolving, the seeded rooms PDF's Brian Holt.
+    // Arrivals publishes no selected row: it acts on the oldest row needing resolving, Hemi Parata on the seeded
+    // morning's St George's day-before file (05:40).
     expect(ids(api, '/admin/intake', 'bar')).toContain(t.id)
     expect(t.disabledReason(api.getState(), ctxFor('/admin/intake'))).toBeNull()
     const before = api.getState().audit.length
     const out = t.run(api, ctxFor('/admin/intake'), 'souter')
     // the result names the row it acted on
-    expect(out).toEqual({ ok: true, message: "Refused: only office staff can view a raw hospital row (Brian Holt's row). The attempt is in the audit trail." })
+    expect(out).toEqual({ ok: true, message: "Refused: only office staff can view a raw hospital row (Hemi Parata's row). The attempt is in the audit trail." })
     expect(api.getState().audit.slice(before).map((e) => e.action)).toEqual(['importRow.rawViewDenied'])
   })
 })

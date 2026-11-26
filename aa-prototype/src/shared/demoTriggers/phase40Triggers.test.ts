@@ -23,6 +23,7 @@ import { OFFICE_ACTOR } from '../../store/demoActors'
 import { DEMO_TRIGGERS } from './registry'
 import { demoTriggersFor } from './match'
 import type { DemoTrigger, DemoTriggerCtx } from './types'
+import { SEED_STUB } from '../../domain/seed/intakeSeed'
 
 function byId(id: string): DemoTrigger {
   const t = DEMO_TRIGGERS.find((x) => x.id === id)
@@ -161,7 +162,8 @@ describe('Office adds the NHI (PWA stand-in, catch-up Phase 40)', () => {
 
   it('uses a row already waiting on the List first (the seeded stub on Tue 8 Dec PM)', () => {
     const api = createAppStore()
-    const list = Object.values(api.getState().schedule.lists).find((l) => stubsOnList(api.getState().intake.stubs, l.id).length > 0)
+    // The seeded stub's List (the seeded morning's stub on Mr Tan's Thu 26 Nov AM List has no fixture NHI).
+    const list = api.getState().schedule.lists[SEED_STUB.listId]
     expect(list).toBeDefined()
     if (list === undefined || list.state !== 'ACTIVE') return
     const stub = stubsOnList(api.getState().intake.stubs, list.id)[0]!

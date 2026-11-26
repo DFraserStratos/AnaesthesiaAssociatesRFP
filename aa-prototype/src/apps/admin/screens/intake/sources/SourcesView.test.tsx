@@ -81,7 +81,8 @@ describe('SourcesView', () => {
     expect(msgRow).toHaveAttribute('data-message-state', 'held')
     expect(within(msgRow).getByText('Held', { selector: 'span' })).toBeInTheDocument()
     const sxRow = view().querySelector(`[data-shot="intake-sources-row"][data-source-id="${sx.id}"]`) as HTMLElement
-    expect(sxRow).toHaveTextContent('1 message held')
+    // The seeded morning's held message (05:52) and this one.
+    expect(sxRow).toHaveTextContent('2 messages held')
   })
 
   it('has no control that writes to a source', () => {

@@ -26,7 +26,8 @@ function withAndWithout(): { withStub: AppState; without: AppState } {
   const api = createAppStore()
   receiveSample(api, SAMPLE_SX) // R4's stub on Tue 28 Jul PM too
   const withStub = api.getState()
-  expect(Object.values(withStub.intake.stubs).filter((s) => s.status === 'standing')).toHaveLength(2)
+  // The seed's two (STB0001, and the seeded morning's STB9001 on Mr Tan's Thu 26 Nov AM List) and R4's.
+  expect(Object.values(withStub.intake.stubs).filter((s) => s.status === 'standing')).toHaveLength(3)
   return { withStub, without: { ...withStub, intake: { ...withStub.intake, stubs: {} } } }
 }
 

@@ -59,7 +59,8 @@ describe('placing (US-02.6.1)', () => {
     const stub = stubForRow(s, r4)!
     expect(stub).toMatchObject({ listId: R4_LIST, status: 'standing', asReceived: { patientName: 'Tama Henare', procedureText: 'T&A', scheduledTime: '15:30' } })
     expect(stub.id).toBe('STB0002')
-    expect(standingStubCount(s)).toBe(2)
+    // The seed's two (STB0001, and the seeded morning's STB9001) and R4's.
+    expect(standingStubCount(s)).toBe(3)
     expect(s.audit.filter((a) => a.action === 'stub.place').map((a) => a.entityId)).toEqual(['STB0002'])
   })
   it('a re-import places no second stub', () => {
@@ -67,7 +68,7 @@ describe('placing (US-02.6.1)', () => {
     sxRowIds(api)
     // The same file again while its rows are open: refused, every row already waiting.
     expect(receiveHospitalBatch(api, SAMPLE_SX.hospitalId, SAMPLE_SX.label, SAMPLE_SX.rows, { sampleId: SAMPLE_SX.id })).toMatchObject({ ok: false, code: 'alreadyWaiting' })
-    expect(standingStubCount(api.getState())).toBe(2)
+    expect(standingStubCount(api.getState())).toBe(3)
   })
   it('a row with no List to land on places none', () => {
     const api = fresh()
@@ -75,7 +76,8 @@ describe('placing (US-02.6.1)', () => {
       { hospitalId: 'H-SX', dateISO: '2026-12-10', session: 'PM', surgeon: { name: 'Ms K. Patel', hpiId: '41PATK' }, patient: { name: 'Nobody Listed' }, procedure: { text: 'Lap chole' }, hospitalStatus: 'booked' },
     ])
     expect(staged.ok).toBe(true)
-    expect(standingStubCount(api.getState())).toBe(1)
+    // Only the seed's two.
+    expect(standingStubCount(api.getState())).toBe(2)
   })
 })
 

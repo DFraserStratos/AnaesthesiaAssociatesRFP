@@ -22,7 +22,8 @@ const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 function staged() {
   const api = createAppStore()
   stageNoNhiList(api)
-  const rows = waitingNhiRows(api.getState()).filter((r) => r.rowId !== 'IRS001')
+  // The seed's own waiting rows (IRS001, and the seeded morning's IRM006 and IRM018) are left out.
+  const rows = waitingNhiRows(api.getState()).filter((r) => !['IRS001', 'IRM006', 'IRM018'].includes(r.rowId))
   const rowOf = (name: string) => rows.find((r) => r.patientName === name)!.rowId
   return { api, rowOf }
 }
@@ -42,7 +43,8 @@ describe('a waiting row counts once, on Intake (Phase 51)', () => {
     const intake = matchingAttentionCount(api.getState())
     const patients = patientAttentionCount(api.getState())
     stageNoNhiList(api)
-    expect(waitingNhiRows(api.getState())).toHaveLength(3)
+    // The seed's three and the sample's two.
+    expect(waitingNhiRows(api.getState())).toHaveLength(5)
     expect(matchingAttentionCount(api.getState())).toBe(intake + 2)
     expect(patientAttentionCount(api.getState())).toBe(patients)
   })

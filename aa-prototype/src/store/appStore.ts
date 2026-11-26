@@ -507,8 +507,9 @@ export const PERSIST_KEY = 'aa-demo'
  *  AA-2026-S2402 (raised Thu 15 Oct, 40 days unpaid on the demo day; `seed/agedInvoiceBooking.ts`). Reseeds on load.
  *  v82 (lane/d): build plan Phase 68, Intake's front door: arrivals made by their source (the arrival record, the
  *  sources, removal rows, read values with confidence and box), the seeded PDF re-cast as a mailbox arrival, one
- *  decided arrival. Reseeds on load. */
-export const PERSIST_VERSION = 82
+ *  decided arrival. Reseeds on load.
+ *  v83: Intake's seeded morning (`seed/intakeMorning.ts`): a day's arrivals from every source, read from the practice. Reseeds on load. */
+export const PERSIST_VERSION = 83
 
 /** The intake slice: seeded empty, the presenter imports or a trigger delivers (catch-up Phase 33). */
 export function emptyIntakeSlice(): IntakeSlice {
@@ -600,7 +601,9 @@ let coreStart: AppState | null = null
 export function practiceAppState(): AppState {
   if (practiceState === null) {
     const core = coreAppState()
-    const built = buildFullScaleDataset(core, { todayISO: core.clock.todayISO, scope: 'practice' }).state
+    const dataset = buildFullScaleDataset(core, { todayISO: core.clock.todayISO, scope: 'practice' }).state
+    // Intake's seeded arrivals read the whole practice's schedule, so the morning's feed updates Lists it holds.
+    const built = { ...dataset, intake: seededIntakeSlice(dataset) }
     practiceState = import.meta.env.MODE === 'test' ? deepFreeze(built) : built
   }
   return practiceState

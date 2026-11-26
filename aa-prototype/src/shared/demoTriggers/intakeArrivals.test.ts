@@ -245,21 +245,24 @@ describe('the badge walk (D125: each List, each waiting row, each unreadable PDF
     walk.push(['(5) a page that cannot be read', badge()])
     runAsSource(api, 'intake-feed-fails', SX_FEED)
     walk.push(['(6) a feed message fails', badge()])
+    // The seeded morning's own items on the practice (`intakeMorning.ts`): each action moves the badge by exactly what
+    // it moved before the morning was seeded, so none of the morning pre-empts or absorbs an action's arrival.
+    const M = 16
     expect(walk).toEqual([
-      // The seed's rooms PDF List and its row waiting for an NHI.
-      ['start', 2],
+      // The seed's rooms PDF List and its row waiting for an NHI, and the morning's.
+      ['start', M + 2],
       // Okafor's New List, and Sione Faleolo waiting for his NHI.
-      ['(1) Rooms email a List', 4],
+      ['(1) Rooms email a List', M + 4],
       // Its three rows with an NHI placed: the List leaves; Sione Faleolo still waits.
-      ["the office places Okafor's List", 3],
+      ["the office places Okafor's List", M + 3],
       // The Update (his still-open row is not sent twice).
-      ['(2) Rooms re-send it', 4],
+      ['(2) Rooms re-send it', M + 4],
       // Okafor's List from the hospital, and two Lists that match exactly.
-      ["(3) St George's day-before List", 7],
-      ['(4) Southern Cross cancels', 8],
-      ['(5) a scan', 9],
-      ['(5) a page that cannot be read', 10],
-      ['(6) a feed message fails', 11],
+      ["(3) St George's day-before List", M + 7],
+      ['(4) Southern Cross cancels', M + 8],
+      ['(5) a scan', M + 9],
+      ['(5) a page that cannot be read', M + 10],
+      ['(6) a feed message fails', M + 11],
     ])
   })
 })

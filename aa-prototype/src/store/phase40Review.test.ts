@@ -127,12 +127,13 @@ describe('bug 7: a real match keeps the stamp a sample made', () => {
 describe('bug 8: a cancellation without an NHI is not waiting for one', () => {
   it('drops the cancelled row from the list', () => {
     const api = createAppStore()
-    expect(waitingNhiRows(api.getState()).map((r) => r.rowId)).toEqual(['IRS001'])
+    // The seed's waiting rows (IRS001, Mere Tipene, and the seeded morning's two), by date.
+    expect(waitingNhiRows(api.getState()).map((r) => r.rowId)).toEqual(['IRM006', 'IRS001', 'IRM018'])
     api.setState((s) => {
       const row = s.intake.rows['IRS001']!
       return { intake: { ...s.intake, rows: { ...s.intake.rows, IRS001: { ...row, incoming: { ...row.incoming, hospitalStatus: 'cancelled' } } } } }
     })
-    expect(waitingNhiRows(api.getState())).toEqual([])
+    expect(waitingNhiRows(api.getState()).map((r) => r.rowId)).toEqual(['IRM006', 'IRM018'])
   })
 })
 

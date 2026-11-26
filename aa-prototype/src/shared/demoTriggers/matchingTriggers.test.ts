@@ -21,7 +21,8 @@ const ids = (api: BoundAppStore, pathname: string, surface: 'bar' | 'pwa') =>
     .map((m) => m.trigger.id)
     .filter((id) => id !== 'pwa-sign-out')
 /** Not one of the seed's own intake rows (`IRS…`): the rows a run staged. */
-const staged = (id: string) => !id.startsWith('IRS')
+/** Rows staged at runtime (the seed's own use `IRS`, and the seeded morning's `IRM`). */
+const staged = (id: string) => !/^IR[SM]/.test(id)
 const FOSTER = 'BK0043'
 
 describe('the PWA office stand-in', () => {

@@ -6,7 +6,7 @@
  */
 
 import { beforeAll, describe, expect, it } from 'vitest'
-import { coreAppState, practiceAppState, type AppState } from './appStore'
+import { coreAppState, practiceAppState, seededIntakeSlice, type AppState } from './appStore'
 import { openWarnings } from './warnings'
 import { scanForNhiLeaks } from './privacyScan'
 import { previewApplyAllRecurringBookings, rosterForDate } from './selectors'
@@ -83,7 +83,11 @@ describe('the everyday practice', () => {
   it('leaves the scripted demo\'s queues as seeded: Review queue, intake, problems, payment runs, invoice numbers, settings', () => {
     const submitted = (x: AppState) => Object.values(x.schedule.lists).filter((l) => l.state === 'SUBMITTED').map((l) => l.id).sort()
     expect(submitted(s)).toEqual(submitted(core))
-    expect(s.intake).toEqual(core.intake)
+    // The scripted intake (the waiting row and its stub, the rooms' PDF, the decided arrival) is the core seed's; the
+    // seeded morning (`intakeMorning.ts`: `IBM`, `IRM`, `STB9`, `PDL9`) is read from the whole practice's schedule.
+    const scripted = (rec: Readonly<Record<string, unknown>>) => Object.fromEntries(Object.entries(rec).filter(([id]) => !/^(IBM|IRM|STB9|PDL9)/.test(id)))
+    for (const k of ['batches', 'rows', 'stubs', 'pdfLists'] as const) expect(scripted(s.intake[k])).toEqual(scripted(core.intake[k]))
+    expect(s.intake).toEqual(seededIntakeSlice(s))
     expect(s.billing.exceptions).toEqual(core.billing.exceptions)
     expect(s.billing.payablesRuns).toEqual(core.billing.payablesRuns)
     expect(s.billing.disbursements).toEqual(core.billing.disbursements)

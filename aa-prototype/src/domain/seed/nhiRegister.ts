@@ -78,6 +78,17 @@ export const NHI_REGISTER_RESERVED: ReadonlySet<string> = new Set([
   'ZQE4017',
   'ZQE4025',
   'ZQE4033',
+  // Intake's seeded morning (`seed/intakeMorning.ts`): the patients its new Lists and scan bring.
+  'ZQG1019',
+  'ZQG1027',
+  'ZQG1035',
+  'ZQG1043',
+  'ZQG1051',
+  'ZQG1060',
+  'ZQG1078',
+  'ZQG1086',
+  'ZQG1094',
+  'ZQG1108',
 ])
 
 let memo: NhiRegister | undefined

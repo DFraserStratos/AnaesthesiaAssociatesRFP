@@ -848,7 +848,7 @@ describe('stubs on a List (catch-up Phase 33a)', () => {
     const fresh = freshAppState()
     localStorage.setItem(PERSIST_KEY, JSON.stringify({ state: { ...fresh, intake: { batches: {}, rows: {} } }, version: 55 }))
     const s = createAppStore({ persisted: true }).getState()
-    expect(Object.keys(s.intake.stubs)).toEqual(['STB0001'])
+    expect(Object.keys(s.intake.stubs)).toEqual(['STB0001', 'STB9001'])
     expect(s.intake.stubs.STB0001).toMatchObject({ status: 'standing', listId: 'L-34821-2026-12-08-PM', importRowId: 'IRS001' })
     expect(s.counters.stub).toBe(2)
   })

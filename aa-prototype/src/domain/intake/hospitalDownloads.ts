@@ -577,3 +577,151 @@ export const FORTE_ROOMS_PDF: MailboxPdfSample = {
     { id: 'R2', nhi: FORTE_MISTYPED_NHI, name: 'Rosa Mendes', dobISO: '1984-04-06', scheduledTime: '09:30', procedureText: 'carpal tunnel decomp L', confidence: { nhi: 0.64 } },
   ],
 }
+
+// ---------------------------------------------------------------------------
+// The seeded morning (Intake's everyday feed): what the sources sent before the office arrived on the demo day. The
+// fixed parts live here; `seed/intakeMorning.ts` places them on the schedule (which Lists they update, which day a
+// new List lands on, which anaesthetist the rooms name). Every patient is synthetic; every NHI valid and held by no
+// seeded patient. None of it is a Booking, List or file the six demo actions use.
+// ---------------------------------------------------------------------------
+
+/** A patient a seeded arrival brings, as the sender prints them (no NHI: the row waits for one). */
+export interface MorningPatient {
+  name: string
+  nhi?: string
+  dobISO: string
+  scheduledTime: string
+  procedureText: string
+  ethnicityCode?: string
+}
+
+/**
+ * St George's new List in its day-before file for Wed 25 Nov: a surgeon whose List AA does not hold, the first of
+ * `surgeonIds` with no List at St George's that AM. Three patients, every one new to AA.
+ */
+export const MORNING_STG_NEW_LIST = {
+  surgeonIds: [SURG.doyle, SURG.cameron, SURG.nand, SURG.reid],
+  session: 'AM' as Session,
+  patients: [
+    { name: 'Hemi Parata', nhi: 'ZQG1019', dobISO: '1957-05-22', scheduledTime: '08:00', procedureText: 'Right total hip joint replacement, primary' },
+    { name: 'Claire Donovan', nhi: 'ZQG1027', dobISO: '1969-11-03', scheduledTime: '09:45', procedureText: 'Left knee arthroscopy and partial meniscectomy' },
+    { name: 'Tavita Leaupepe', nhi: 'ZQG1035', dobISO: '1984-02-17', scheduledTime: '11:00', procedureText: 'ORIF right ankle, bimalleolar' },
+  ] as readonly MorningPatient[],
+} as const
+
+/** The patient St George's adds to a List AA holds, sent with no NHI: they wait for one, their stub on the List. */
+export const MORNING_STG_NO_NHI: MorningPatient = { name: 'Kahu Rangihuna', dobISO: '1975-08-09', scheduledTime: '12:15', procedureText: 'Excision of lipoma, upper back' }
+
+/** The hospital's fuller wording for a procedure AA holds in short (the day-before file's wording change). */
+export const MORNING_HOSPITAL_WORDING: Readonly<Record<string, string>> = {
+  'Cataract extraction with IOL': 'Phacoemulsification and posterior chamber IOL, right eye',
+  'Knee, total replacement': 'Right total knee joint replacement, cemented',
+  'Hip, total replacement, primary': 'Left total hip joint replacement, primary, uncemented',
+  'Laparoscopic cholecystectomy': 'Laparoscopic cholecystectomy +/- intraoperative cholangiogram',
+  'Inguinal hernia repair': 'Right inguinal hernia repair with mesh, open',
+  'Shoulder arthroscopy': 'Right shoulder arthroscopy, subacromial decompression',
+  'Knee arthroscopy': 'Left knee arthroscopy, debridement',
+  'Knee, ACL reconstruction': 'Right ACL reconstruction, hamstring graft',
+  'Appendicectomy, laparoscopic': 'Laparoscopic appendicectomy, may convert to open',
+  'Tonsillectomy': 'Bilateral tonsillectomy, cold steel',
+  'Septoplasty': 'Septoplasty and bilateral inferior turbinate reduction',
+  'Cystoscopy': 'Flexible cystoscopy, surveillance',
+  'TURP': 'Transurethral resection of prostate, bipolar',
+  'Umbilical hernia repair': 'Umbilical hernia repair, primary suture',
+  'Wrist, ORIF distal radius': 'ORIF left distal radius, volar plate',
+  'Thyroidectomy': 'Total thyroidectomy',
+  'Varicose veins, bilateral': 'Bilateral endovenous laser ablation, long saphenous veins',
+  'Ureteroscopy with lithotripsy': 'Right ureteroscopy, laser lithotripsy and stent',
+}
+
+/** Southern Cross's reasons, as its feed sends them. */
+export const MORNING_SX = {
+  cancelReason: 'Patient unwell, to be rebooked by the rooms',
+  updateNote: 'Theatre order changed',
+  /** The held message: its patient reference does not resolve. */
+  held: {
+    label: 'Southern Cross message · Appointment 1662231',
+    reason: 'The patient reference does not resolve, so the message cannot tell who the patient is.',
+  },
+  /** Yesterday's held message, dismissed by the office. */
+  heldYesterday: {
+    label: 'Southern Cross message · Appointment 1661977',
+    reason: 'The message names no patient, so it cannot become a Booking.',
+    dismissReason: 'Southern Cross re-sent it with the patient, and that copy was applied',
+  },
+  /** Yesterday's update the office rejected. */
+  rejectedNote: 'Start moved at theatre request',
+  rejectReason: 'Theatre confirmed the original time by phone',
+} as const
+
+/** A rooms' PDF the seeded morning places on a day: its fixed parts and the days it may land on, in order. */
+export interface MorningPdfSpec extends Omit<MailboxPdfSample, 'dateISO' | 'session' | 'anaesthetist' | 'subject'> {
+  /** The days and sessions it may print, in order: the first whose List AA does not hold. */
+  candidates: readonly { dateISO: string; session: Session }[]
+  /** The rooms name a free anaesthetist for the day. */
+  namesAnaesthetist: boolean
+}
+
+/** Mr Nand's rooms email a new List for Forte Health: four patients, one with no NHI, naming a free anaesthetist. */
+export const MORNING_NAND_PDF: MorningPdfSpec = {
+  id: 'PDF-MORNING-NAND',
+  fileName: 'Nand hand list.pdf',
+  surgeonId: SURG.nand,
+  surgeonName: 'Mr V. Nand',
+  hospitalId: HOSP.forte,
+  hospitalName: 'Forte Health',
+  senderEmail: 'bookings@nandhandsurgery.example',
+  candidates: [
+    { dateISO: '2026-12-15', session: 'PM' },
+    { dateISO: '2026-12-16', session: 'PM' },
+    { dateISO: '2026-12-17', session: 'PM' },
+  ],
+  namesAnaesthetist: true,
+  note: 'A new List naming a free anaesthetist; Sina Leota has no NHI.',
+  rows: [
+    { id: 'R1', nhi: 'ZQG1043', name: 'Aroha Tamihana', dobISO: '1979-04-12', scheduledTime: '13:00', ethnicityCode: '21111', procedureText: 'R carpal tunnel release' },
+    { id: 'R2', nhi: 'ZQG1051', name: 'Graham Whitcombe', dobISO: '1950-09-30', scheduledTime: '13:45', ethnicityCode: '11111', procedureText: 'L trigger finger release' },
+    { id: 'R3', name: 'Sina Leota', dobISO: '1991-01-25', scheduledTime: '14:30', ethnicityCode: '31111', procedureText: "Dupuytren's fasciectomy R" },
+    { id: 'R4', nhi: 'ZQG1060', name: 'Peter Kowalczyk', dobISO: '1962-07-08', scheduledTime: '15:30', ethnicityCode: '11111', procedureText: 'ganglion excision L wrist' },
+  ],
+}
+
+/** Ms Reid's rooms send a scanned eye List: read from a scan, three values below the check threshold. */
+export const MORNING_REID_SCAN: MorningPdfSpec = {
+  id: 'PDF-MORNING-REID-SCAN',
+  fileName: 'Scan_0712.pdf',
+  surgeonId: SURG.reid,
+  surgeonName: 'Ms A. Reid',
+  hospitalId: HOSP.ces,
+  hospitalName: 'Christchurch Eye Surgery',
+  senderEmail: 'reception@papanuieyecare.example',
+  candidates: [
+    { dateISO: '2026-12-14', session: 'AM' },
+    { dateISO: '2026-12-15', session: 'AM' },
+    { dateISO: '2026-12-21', session: 'AM' },
+  ],
+  namesAnaesthetist: false,
+  scanned: true,
+  headerConfidence: { surgeon: 0.99, hospital: 0.99, date: 0.99, session: 0.99, anaesthetist: 0.99 },
+  note: 'Read from a scan: three values to check (an NHI, a time and a date of birth).',
+  rows: [
+    { id: 'R1', nhi: 'ZQG1078', name: 'Ngaire Hohaia', dobISO: '1948-03-02', scheduledTime: '08:00', ethnicityCode: '21111', procedureText: 'phaco + IOL L', confidence: sureExcept('nhi') },
+    { id: 'R2', nhi: 'ZQG1086', name: 'Bruce McAllister', dobISO: '1941-12-19', scheduledTime: '08:40', ethnicityCode: '11111', procedureText: 'phaco + IOL R', confidence: sureExcept() },
+    { id: 'R3', nhi: 'ZQG1094', name: 'Mei Ling Chua', dobISO: '1958-06-27', scheduledTime: '09:20', ethnicityCode: '42111', procedureText: 'squint correction R', confidence: sureExcept('scheduledTime') },
+    { id: 'R4', nhi: 'ZQG1108', name: 'Rangi Paewai', dobISO: '1966-10-14', scheduledTime: '10:15', ethnicityCode: '21111', procedureText: 'vitrectomy L', confidence: sureExcept('dobISO') },
+  ],
+}
+
+/** A PDF that cannot be read: no surgeon or session can be made out on it. */
+export const MORNING_UNREADABLE = {
+  fileName: 'Scan_0655.pdf',
+  senderEmail: 'frontdesk@cashmeresurgical.example',
+  reason: UNREADABLE_REASONS.noSurgeon,
+} as const
+
+/** The address a rooms' PDF from a surgeon's own practice comes from (the re-sent List): `lists@<surname>rooms.example`. */
+export function morningRoomsAddress(surgeonName: string): string {
+  const parts = surgeonName.trim().split(/\s+/)
+  const surname = (parts[parts.length - 1] ?? 'surgeon').toLowerCase().replace(/[^a-z]/g, '')
+  return `lists@${surname}rooms.example`
+}
