@@ -26,16 +26,14 @@ export function unsureValues(values: readonly PdfReadValue[] | undefined): PdfRe
 // ---------------------------------------------------------------------------
 
 /**
- * The page the facsimile draws, in its own units (SVG user units). `buildFacsimile` (`pdfLists.ts`) prints
- * positioned text on a fixed grid: a header block, a column-label line, then one line per row at a fixed pitch.
- * Every value it prints today sits exactly where its box below says (the hospital, the surgeon line, and each row's
- * NHI, patient, procedure and time: same x, same baseline). The values it does not print yet (the date, session and
- * named anaesthetist in the header's right-hand column; each row's date of birth and ethnicity code, two columns to
- * the right of the time) have their place reserved here, which is why the page is wider than today's 460: the
- * facsimile prints them where their boxes land once it is drawn from this layout (Phase 70 renders the page from
- * these boxes). A long List runs onto further pages, rows starting at the same height.
+ * The page the facsimile draws: a full A4 page in points (595 x 842), in its own units (SVG user units). Every page
+ * is a whole A4 page, however few rows it holds. `buildFacsimile` (`pdfLists.ts`) prints it as a rooms' theatre list
+ * printed to PDF: a letterhead, a "Theatre list" title, the meta block (surgeon, hospital and named anaesthetist on the
+ * left; date and session on the right), a ruled table of rows, and a footer at the foot of the page. Every value it
+ * prints sits exactly where its box below says (same x, same baseline). A long List runs onto further pages, rows
+ * starting at the same height.
  */
-export const PDF_PAGE = { width: 648, height: 842 } as const
+export const PDF_PAGE = { width: 595, height: 842 } as const
 
 /** A printed value's place: its left edge, text baseline, the width it may take and its font size. */
 export interface PdfLayoutSpot {
@@ -55,46 +53,62 @@ export const PDF_HEADER_FIELDS: readonly PdfHeaderField[] = ['surgeon', 'hospita
 export const PDF_ROW_READ_FIELDS: readonly PdfRowReadField[] = ['nhi', 'name', 'procedureText', 'scheduledTime', 'dobISO', 'ethnicityCode']
 
 /**
- * The grid. The header's left column is the facsimile's own (the hospital at baseline 44 in 18pt, the surgeon line
- * at 66 in 12pt); its right column holds the date, session and named anaesthetist. Rows: the first baseline is
- * `rowTop + rowBaselineOffset` (156), then one every `rowPitch` (30); the column labels sit at
- * `columnLabelBaseline` (`rowTop - 12`); each column's x is the facsimile's. A box covers its text from
+ * The grid, inside a 40pt margin (the printable width runs from 40 to 555). The letterhead and title sit above the
+ * meta block; the meta block's left column (labels at 40, values at 124) holds the surgeon, hospital and named
+ * anaesthetist, its right column (labels at 336, values at 400) the date and session, 18pt apart. The table's column
+ * labels sit at `columnLabelBaseline` in a shaded band; rows: the first baseline is `rowTop + rowBaselineOffset`
+ * (294), then one every `rowPitch` (24), each row ruled below at `rowTop + (i + 1) * rowPitch`. `footer` is the space
+ * kept below the last row a page can hold (the footer rule and its line). A box covers its text from
  * `baseline - fontSize` to `baseline + 4` (descenders), so a renderer's baseline is `box.y + fontSize`.
  */
 export const PDF_LAYOUT = {
-  margin: 24,
+  margin: 40,
+  letterhead: { nameBaseline: 66, addressBaseline: 84, contactBaseline: 97, ruleY: 112 },
+  title: { baseline: 146, subtitleBaseline: 164 },
+  /** The meta block's shaded panel, behind the header values. */
+  meta: { top: 180, bottom: 244 },
   header: {
-    hospital: { x: 24, baseline: 44, width: 360, fontSize: 18 },
-    surgeon: { x: 24, baseline: 66, width: 220, fontSize: 12 },
-    date: { x: 424, baseline: 44, width: 200, fontSize: 12 },
-    session: { x: 424, baseline: 66, width: 200, fontSize: 12 },
-    anaesthetist: { x: 424, baseline: 88, width: 200, fontSize: 12 },
+    surgeon: { x: 124, baseline: 198, width: 192, fontSize: 11 },
+    hospital: { x: 124, baseline: 216, width: 192, fontSize: 11 },
+    anaesthetist: { x: 124, baseline: 234, width: 192, fontSize: 11 },
+    date: { x: 400, baseline: 198, width: 151, fontSize: 11 },
+    session: { x: 400, baseline: 216, width: 151, fontSize: 11 },
   } satisfies Record<PdfHeaderField, PdfLayoutSpot>,
-  /** The column-label line's baseline (10pt, letter-spaced). */
-  columnLabelBaseline: 138,
-  rowTop: 150,
-  rowPitch: 30,
+  /** Where each header value's printed label starts (left of its value). */
+  headerLabelX: { surgeon: 48, hospital: 48, anaesthetist: 48, date: 336, session: 336 } satisfies Record<PdfHeaderField, number>,
+  /** The column labels' shaded band (top) and baseline (8pt, letter-spaced). */
+  columnBandTop: 258,
+  columnLabelBaseline: 272,
+  rowTop: 278,
+  rowPitch: 24,
   /** A row value's baseline below the row's top. */
-  rowBaselineOffset: 6,
-  /** Space kept below the last row (the facsimile's footer line). */
-  footer: 60,
+  rowBaselineOffset: 16,
+  /** Space kept below the last row a page holds (the footer rule and line). */
+  footer: 72,
+  /** The footer: its rule and its line's baseline, measured up from the foot of the page. */
+  footerRuleFromBottom: 60,
+  footerBaselineFromBottom: 42,
   columns: {
-    nhi: { x: 24, width: 88, fontSize: 12, label: 'NHI' },
-    name: { x: 120, width: 142, fontSize: 12, label: 'PATIENT' },
-    procedureText: { x: 270, width: 132, fontSize: 11, label: 'PROCEDURE' },
-    scheduledTime: { x: 410, width: 42, fontSize: 12, label: 'TIME' },
-    dobISO: { x: 460, width: 80, fontSize: 12, label: 'DOB' },
-    ethnicityCode: { x: 552, width: 72, fontSize: 12, label: 'ETHNICITY' },
+    scheduledTime: { x: 40, width: 40, fontSize: 11, label: 'TIME' },
+    nhi: { x: 88, width: 60, fontSize: 11, label: 'NHI' },
+    name: { x: 156, width: 124, fontSize: 11, label: 'PATIENT' },
+    dobISO: { x: 288, width: 70, fontSize: 11, label: 'DOB' },
+    procedureText: { x: 366, width: 125, fontSize: 10, label: 'PROCEDURE' },
+    ethnicityCode: { x: 499, width: 56, fontSize: 11, label: 'ETHNICITY' },
   } satisfies Record<PdfRowReadField, { x: number; width: number; fontSize: number; label: string }>,
 } as const
 
 /** Rows that fit on one page under the header and above the footer. */
 export const PDF_ROWS_PER_PAGE = Math.floor((PDF_PAGE.height - PDF_LAYOUT.rowTop - PDF_LAYOUT.footer) / PDF_LAYOUT.rowPitch)
 
-/** The page height the facsimile draws for a List of `rowCount` rows (today's compact page, capped at a full page). */
-export function pdfPageHeight(rowCount: number): number {
-  const rows = Math.min(Math.max(rowCount, 0), PDF_ROWS_PER_PAGE)
-  return PDF_LAYOUT.rowTop + rows * PDF_LAYOUT.rowPitch + PDF_LAYOUT.footer
+/** The pages a List of `rowCount` rows prints on (at least one). */
+export function pdfPageCount(rowCount: number): number {
+  return Math.max(1, Math.ceil(Math.max(rowCount, 0) / PDF_ROWS_PER_PAGE))
+}
+
+/** The page height the facsimile draws: always a full A4 page, whatever the row count. */
+export function pdfPageHeight(_rowCount?: number): number {
+  return PDF_PAGE.height
 }
 
 function boxAt(page: number, spot: { x: number; width: number; fontSize: number }, baseline: number): PdfBox {

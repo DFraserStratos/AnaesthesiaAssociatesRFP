@@ -3,6 +3,7 @@ import {
   buildFacsimile,
   buildUnreadableFacsimile,
   facsimileHeaderValues,
+  facsimileLetterhead,
   facsimileSize,
   facsimileTextSpots,
   PDF_HEADER_ROW,
@@ -91,8 +92,33 @@ describe('the facsimile draws each value where the reader boxes it', () => {
     })
   })
 
-  it.each(SAMPLES)('$name: the page is the reader page width and its height for the rows', ({ sample }) => {
+  it.each(SAMPLES)('$name: the page is a full A4 page, whatever its row count', ({ sample }) => {
+    expect(facsimileSize(buildFacsimile(sample))).toEqual({ width: 595, height: 842 })
     expect(facsimileSize(buildFacsimile(sample))).toEqual({ width: PDF_PAGE.width, height: pdfPageHeight(sample.rows.length) })
+  })
+
+  it.each(SAMPLES)('$name: prints like a rooms theatre list: letterhead, title, labelled meta block, column labels and a footer', ({ sample }) => {
+    const svg = svgOf(buildFacsimile(sample))
+    const letterhead = facsimileLetterhead(sample)
+    expect(svg).toContain(`>${letterhead.practice}<`)
+    expect(svg).toContain('>Theatre list<')
+    for (const label of ['Surgeon', 'Hospital', 'Date', 'Session', 'Anaesthetist', 'PATIENT', 'PROCEDURE', 'Checked by']) expect(svg).toContain(`>${label}<`)
+    expect(svg).toMatch(/>Page 1 of 1</)
+    expect(svg).toMatch(/>Printed \d{1,2}\/\d{2}\/2026 \d{2}:\d{2}</)
+  })
+
+  it('names the practice from the address the PDF came from, else the surgeon', () => {
+    expect(facsimileLetterhead(OKAFOR_ROOMS_PDF).practice).toBe('Avonside Surgical Rooms')
+    expect(facsimileLetterhead(SCAN_PDF).practice).toBe('Merivale Eye Clinic')
+    expect(facsimileLetterhead({ ...SCAN_PDF, senderEmail: 'a@x.example' }).practice).toBe('Whitford Surgical Rooms')
+    expect(facsimileLetterhead(OKAFOR_ROOMS_PDF)).toEqual(facsimileLetterhead(OKAFOR_ROOMS_PDF))
+  })
+
+  it('prints a long List as page 1 of several, its first page rows only', () => {
+    const row = OKAFOR_ROOMS_PDF.rows[0]!
+    const long = { ...OKAFOR_ROOMS_PDF, id: 'long', rows: Array.from({ length: 25 }, (_, i) => ({ ...row, id: `L${i}` })) }
+    expect(svgOf(buildFacsimile(long))).toMatch(/>Page 1 of 2</)
+    expect(facsimileTextSpots(long).filter((s) => s.field === 'name')).toHaveLength(20)
   })
 
   it('draws the same page every time, and a scan with a scan look', () => {
@@ -110,7 +136,7 @@ describe('the unreadable page', () => {
     const url = buildUnreadableFacsimile()
     const svg = svgOf(url)
     expect(svg).not.toMatch(/<text/)
-    expect(facsimileSize(url)?.width).toBe(PDF_PAGE.width)
+    expect(facsimileSize(url)).toEqual({ width: PDF_PAGE.width, height: PDF_PAGE.height })
     expect(buildUnreadableFacsimile('a')).toBe(buildUnreadableFacsimile('a'))
     expect(buildUnreadableFacsimile('a')).not.toBe(buildUnreadableFacsimile('b'))
   })

@@ -11,6 +11,7 @@ import {
   UNREADABLE_REASONS,
   headerBoxes,
   isUnsure,
+  pdfPageCount,
   pdfPageHeight,
   readConfidence,
   readValuesOfRow,
@@ -41,14 +42,26 @@ describe('the page geometry', () => {
   })
 
   it("places the values the facsimile prints at its own x and baseline", () => {
-    // buildFacsimile: hospital at (24, 44) 18pt, surgeon line at (24, 66) 12pt; rows at y = 150 + i * 30 + 6.
-    expect(headerBoxes().hospital).toMatchObject({ page: 1, x: 24, y: 44 - 18 })
-    expect(headerBoxes().surgeon).toMatchObject({ x: 24, y: 66 - 12 })
-    const baseline = (i: number) => 150 + i * 30 + 6
-    expect(rowBox(0, 'nhi')).toMatchObject({ x: 24, y: baseline(0) - 12 })
-    expect(rowBox(2, 'name')).toMatchObject({ x: 120, y: baseline(2) - 12 })
-    expect(rowBox(1, 'procedureText')).toMatchObject({ x: 270, y: baseline(1) - 11 })
-    expect(rowBox(3, 'scheduledTime')).toMatchObject({ x: 410, y: baseline(3) - 12 })
+    // buildFacsimile: the meta block's values at x 124 (left) and 400 (right), 11pt, baselines 198, 216, 234;
+    // rows at y = 278 + i * 24 + 16, the time first at x 40.
+    expect(headerBoxes().surgeon).toMatchObject({ page: 1, x: 124, y: 198 - 11 })
+    expect(headerBoxes().hospital).toMatchObject({ x: 124, y: 216 - 11 })
+    expect(headerBoxes().anaesthetist).toMatchObject({ x: 124, y: 234 - 11 })
+    expect(headerBoxes().date).toMatchObject({ x: 400, y: 198 - 11 })
+    expect(headerBoxes().session).toMatchObject({ x: 400, y: 216 - 11 })
+    const baseline = (i: number) => 278 + i * 24 + 16
+    expect(rowBox(0, 'scheduledTime')).toMatchObject({ x: 40, y: baseline(0) - 11 })
+    expect(rowBox(0, 'nhi')).toMatchObject({ x: 88, y: baseline(0) - 11 })
+    expect(rowBox(2, 'name')).toMatchObject({ x: 156, y: baseline(2) - 11 })
+    expect(rowBox(1, 'procedureText')).toMatchObject({ x: 366, y: baseline(1) - 10 })
+    expect(rowBox(3, 'ethnicityCode')).toMatchObject({ x: 499, y: baseline(3) - 11 })
+  })
+
+  it('keeps every box inside the A4 page and its 40pt margins', () => {
+    expect(PDF_PAGE).toEqual({ width: 595, height: 842 })
+    const within = (b: PdfBox) => b.x >= PDF_LAYOUT.margin && b.x + b.width <= PDF_PAGE.width - PDF_LAYOUT.margin
+    for (const f of PDF_HEADER_FIELDS) expect(within(headerBoxes()[f]), f).toBe(true)
+    for (const f of PDF_ROW_READ_FIELDS) expect(within(rowBox(0, f)), f).toBe(true)
   })
 
   it('never overlaps two header boxes, and every header box sits above the first row', () => {
@@ -80,9 +93,17 @@ describe('the page geometry', () => {
     expect(inPage(rowBox(PDF_ROWS_PER_PAGE - 1, 'ethnicityCode'))).toBe(true)
   })
 
-  it("gives today's compact page height for a short List", () => {
-    expect(pdfPageHeight(3)).toBe(150 + 3 * 30 + 60)
-    expect(pdfPageHeight(500)).toBeLessThanOrEqual(PDF_PAGE.height)
+  it('draws every page as a full A4 page, and counts the pages a List prints on', () => {
+    expect(PDF_ROWS_PER_PAGE).toBe(20)
+    expect(pdfPageHeight(0)).toBe(842)
+    expect(pdfPageHeight(3)).toBe(842)
+    expect(pdfPageHeight(500)).toBe(842)
+    expect(pdfPageCount(0)).toBe(1)
+    expect(pdfPageCount(PDF_ROWS_PER_PAGE)).toBe(1)
+    expect(pdfPageCount(PDF_ROWS_PER_PAGE + 1)).toBe(2)
+    // The last row a page holds ends above the footer.
+    const last = rowBox(PDF_ROWS_PER_PAGE - 1, 'nhi')
+    expect(last.y + last.height).toBeLessThanOrEqual(PDF_PAGE.height - PDF_LAYOUT.footer)
   })
 })
 

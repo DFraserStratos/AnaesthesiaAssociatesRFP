@@ -13,6 +13,7 @@ import { useState } from 'react'
 import { validateNhi } from '../../../../../domain/nhi'
 import { effectiveIncoming } from '../../../../../domain/intake/matching'
 import { pdfValueKey } from '../../../../../domain/intake/pdfLists'
+import { pdfPageCount } from '../../../../../domain/intake/pdfRead'
 import type { PdfReadField } from '../../../../../domain/types'
 import { stampText } from '../../../../../shared/format'
 import { Button, FormError, Notice, TextAction, TextField } from '../../../../../shared/ui'
@@ -80,10 +81,12 @@ export function NewListBench({ arrival, actor, onDone }: BenchProps) {
       </p>
 
       {pdf !== undefined ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: space[6], alignItems: 'start' }}>
+        // The page gets a representative width (520 or more): the values table sits beside it on a wide bench, below it otherwise.
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 520px), 1fr))', gap: space[6], alignItems: 'start' }}>
           <PdfPage
             facsimile={pdf.file.facsimile}
             fileName={pdf.file.name}
+            pageCount={pdfPageCount(pdf.rows.length)}
             boxes={boxes}
             {...(selectedKey !== undefined ? { selectedKey } : {})}
             onSelect={setSelectedKey}

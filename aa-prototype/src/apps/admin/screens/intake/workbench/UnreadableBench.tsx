@@ -92,7 +92,7 @@ export function UnreadableBench({ arrival, actor, onDone }: BenchProps) {
     <div
       data-shot="intake-bench-unreadable"
       data-arrival-key={arrival.key}
-      style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: space[6], alignItems: 'start', minWidth: 0 }}
+      style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 520px), 1fr))', gap: space[6], alignItems: 'start', minWidth: 0 }}
     >
       {batch.file !== undefined ? (
         <PdfPage facsimile={batch.file.facsimile} fileName={batch.file.name} shot="intake-unreadable-page" />

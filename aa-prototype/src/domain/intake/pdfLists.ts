@@ -25,6 +25,7 @@ import type {
 } from '../types'
 import { validateNhi } from '../nhi'
 import { longDay } from '../dateText'
+import { addDaysISO } from '../clock'
 import { ANAE, ANAESTHETISTS, HOSP, SURG } from '../seed/cast'
 import {
   PDF_HEADER_FIELDS,
@@ -32,6 +33,7 @@ import {
   PDF_PAGE,
   PDF_ROW_READ_FIELDS,
   PDF_ROWS_PER_PAGE,
+  pdfPageCount,
   pdfPageHeight,
   readValuesOfRow,
   type PdfHeaderField,
@@ -187,6 +189,9 @@ export interface FacsimileSource {
   target?: { dateISO: string; session: Session; anaesthetistId?: string }
   anaesthetistName?: string
   anaesthetist?: { name: string }
+  /** The address the PDF came from (a mailbox PDF's), or the old library's prefilled sender: names the letterhead's practice. */
+  senderEmail?: string
+  defaultSender?: string
   /** Drawn with a scan's look (a grey wash, a skewed page, grain, greyer ink). */
   scanned?: boolean
 }
@@ -314,98 +319,198 @@ function scanPaper(width: number, height: number, seed: string): string {
 /** The colours of a printed page, and of the same page scanned (greyer ink). A paper facsimile, not app UI. */
 function inkOf(scanned: boolean) {
   return scanned
-    ? { ink: '#3A3F3D', soft: '#5F6663', faint: '#8E9491', rule: '#CDD0CC', bar: '#6C7370' }
-    : { ink: '#172320', soft: '#58635F', faint: '#8A9490', rule: '#E2E7E5', bar: '#58635F' }
+    ? { ink: '#3A3F3D', soft: '#5F6663', faint: '#8E9491', rule: '#C4C8C3', strong: '#6C7370', band: '#E3E5E0', panel: '#ECEDE8', brand: '#4B5552', paper: '#F6F6F2' }
+    : { ink: '#172320', soft: '#4F5A56', faint: '#86908C', rule: '#D9DFDC', strong: '#58635F', band: '#EEF1F0', panel: '#F5F7F6', brand: '#1F3B57', paper: '#FFFFFF' }
 }
 
-const HEADER_LABELS: Partial<Record<PdfHeaderField, string>> = { date: 'Date', session: 'Session', anaesthetist: 'Anaesthetist' }
+/** The rooms' letterhead: its practice name, a plain address and a phone line (made up and generic). */
+export interface FacsimileLetterhead {
+  practice: string
+  address: string
+  contact: string
+}
+
+/** The specialty words a rooms' email domain may end in, and the practice name each gives. */
+const PRACTICE_KINDS: readonly { suffix: string; name: string }[] = [
+  { suffix: 'colorectal', name: 'Colorectal' },
+  { suffix: 'gynaecology', name: 'Gynaecology' },
+  { suffix: 'surgical', name: 'Surgical Rooms' },
+  { suffix: 'womens', name: "Women's Health" },
+  { suffix: 'ortho', name: 'Orthopaedics' },
+  { suffix: 'eye', name: 'Eye Clinic' },
+  { suffix: 'ent', name: 'ENT' },
+]
+
+const STREETS = ['Rata Street', 'Kowhai Lane', 'Totara Avenue', 'Matai Road', 'Rimu Terrace', 'Miro Place']
+
+const titleCase = (word: string) => word.charAt(0).toUpperCase() + word.slice(1)
 
 /**
- * The page a rooms' PDF shows (an SVG data URL), drawn from the reader's layout so each value read sits where its box
- * lands (`facsimileTextSpots`): the hospital and surgeon on the left, the day, session and named anaesthetist in the
- * right-hand column (each after a small label), the column labels, and one line per patient (NHI, patient, procedure,
- * time, date of birth, ethnicity code). `PDF_PAGE.width` wide and `pdfPageHeight(rows)` high; only the first page's
- * rows are drawn. A scan is drawn with a scan's look. Deterministic.
+ * The letterhead a facsimile prints, from the address the PDF came from: "leanne.pa@avonsidesurgical.example" gives
+ * "Avonside Surgical Rooms" in Avonside; an address that names no practice gives the surgeon's own rooms. The street
+ * and phone number come from the seeded sequence, so the same source always prints the same letterhead.
+ */
+export function facsimileLetterhead(src: FacsimileSource): FacsimileLetterhead {
+  const sender = src.senderEmail ?? src.defaultSender
+  const stem = sender?.split('@')[1]?.split('.')[0]?.toLowerCase() ?? ''
+  const kind = PRACTICE_KINDS.find((k) => stem.endsWith(k.suffix) && stem.length > k.suffix.length + 2)
+  const place = kind !== undefined ? titleCase(stem.slice(0, -kind.suffix.length)) : undefined
+  const surname = src.surgeonName.trim().split(/\s+/).pop() ?? 'Surgical'
+  const practice = kind !== undefined && place !== undefined ? `${place} ${kind.name}` : `${surname} Surgical Rooms`
+  const next = seededSequence(`letterhead|${practice}`)
+  const level = 1 + Math.floor(next() * 3)
+  const number = 10 + Math.floor(next() * 180)
+  const street = STREETS[Math.floor(next() * STREETS.length)]!
+  const phone = `03 555 0${100 + Math.floor(next() * 900)}`
+  const fax = `03 555 0${100 + Math.floor(next() * 900)}`
+  const suburb = place !== undefined ? `${place}, ` : ''
+  return {
+    practice,
+    address: `Level ${level}, ${number} ${street}, ${suburb}Christchurch`,
+    contact: `Phone ${phone} · Fax ${fax}${sender !== undefined ? ` · ${sender}` : ''}`,
+  }
+}
+
+/** When the rooms printed the List: a weekday afternoon one to three days before it, from the seeded sequence. */
+export function facsimilePrintedAt(src: FacsimileSource): string | undefined {
+  const dateISO = src.dateISO ?? src.target?.dateISO
+  if (dateISO === undefined) return undefined
+  const next = seededSequence(`printed|${src.id ?? src.subject}`)
+  const day = addDaysISO(dateISO, -(1 + Math.floor(next() * 3)))
+  const [y, m, d] = day.split('-')
+  const hour = 13 + Math.floor(next() * 4)
+  const minute = Math.floor(next() * 60)
+  return `${Number(d)}/${m}/${y} ${hour}:${String(minute).padStart(2, '0')}`
+}
+
+const HEADER_LABELS: Record<PdfHeaderField, string> = { surgeon: 'Surgeon', hospital: 'Hospital', date: 'Date', session: 'Session', anaesthetist: 'Anaesthetist' }
+
+/**
+ * The page a rooms' PDF shows (an SVG data URL), a full A4 page (`PDF_PAGE`) drawn from the reader's layout so each
+ * value read sits where its box lands (`facsimileTextSpots`): the rooms' letterhead, a "Theatre list" title over the
+ * email's subject, the meta block (each value after its label), a ruled table with column labels and one line per
+ * patient (time, NHI, patient, date of birth, procedure, ethnicity code), and the footer at the foot of the page
+ * (when it was printed, a "Checked by" line, the page number). Only the first page's rows are drawn. A scan is drawn
+ * with a scan's look. Deterministic.
  */
 export function buildFacsimile(sample: FacsimileSource): string {
   const width = PDF_PAGE.width
   const height = pdfPageHeight(sample.rows.length)
   const scanned = sample.scanned === true
   const c = inkOf(scanned)
-  const m = PDF_LAYOUT.margin
+  const L = PDF_LAYOUT
+  const m = L.margin
   const right = width - m
   const spots = facsimileTextSpots(sample)
-  const labelX = PDF_LAYOUT.header.date.x - 8
-  const headerLabels = spots
-    .filter((s) => s.rowId === PDF_HEADER_ROW && HEADER_LABELS[s.field as PdfHeaderField] !== undefined)
-    .map((s) => `<text x="${labelX}" y="${s.baseline}" text-anchor="end" font-size="10" fill="${c.faint}">${HEADER_LABELS[s.field as PdfHeaderField]}</text>`)
+  const letterhead = facsimileLetterhead(sample)
+  const rowsOnPage = Math.min(sample.rows.length, PDF_ROWS_PER_PAGE)
+  const pages = pdfPageCount(sample.rows.length)
+  const printed = facsimilePrintedAt(sample)
+
+  const head = `
+    <text x="${m}" y="${L.letterhead.nameBaseline}" font-size="20" font-weight="700" fill="${c.brand}" letter-spacing="0.2">${esc(fitText(letterhead.practice, right - m, 20, false))}</text>
+    <text x="${m}" y="${L.letterhead.addressBaseline}" font-size="9" fill="${c.soft}">${esc(fitText(letterhead.address, right - m, 9, false))}</text>
+    <text x="${m}" y="${L.letterhead.contactBaseline}" font-size="9" fill="${c.soft}">${esc(fitText(letterhead.contact, right - m, 9, false))}</text>
+    <rect x="${m}" y="${L.letterhead.ruleY - 1}" width="${right - m}" height="2" fill="${c.brand}"${scanned ? ' fill-opacity="0.75"' : ''}/>
+    <text x="${m}" y="${L.title.baseline}" font-size="18" font-weight="700" fill="${c.ink}">Theatre list</text>
+    <text x="${m}" y="${L.title.subtitleBaseline}" font-size="10" fill="${c.soft}">${esc(fitText(sample.subject, right - m, 10, false))}</text>
+    <rect x="${m}" y="${L.meta.top}" width="${right - m}" height="${L.meta.bottom - L.meta.top}" fill="${c.panel}" stroke="${c.rule}" stroke-width="0.75"/>`
+  const headerLabels = PDF_HEADER_FIELDS.map((f) => {
+    const spot = L.header[f]
+    return `<text x="${L.headerLabelX[f]}" y="${spot.baseline}" font-size="9" font-weight="700" fill="${c.faint}">${HEADER_LABELS[f]}</text>`
+  }).join('')
+
+  const tableBottom = L.rowTop + Math.max(rowsOnPage, 1) * L.rowPitch
+  const columnBand = `<rect x="${m}" y="${L.columnBandTop}" width="${right - m}" height="${L.rowTop - L.columnBandTop}" fill="${c.band}"/>
+    <line x1="${m}" y1="${L.columnBandTop}" x2="${right}" y2="${L.columnBandTop}" stroke="${c.strong}" stroke-width="1"/>
+    <line x1="${m}" y1="${L.rowTop}" x2="${right}" y2="${L.rowTop}" stroke="${c.strong}" stroke-width="0.75"/>`
+  const columnLabels = Object.values(L.columns)
+    .map((col) => `<text x="${col.x}" y="${L.columnLabelBaseline}" font-size="8" font-weight="700" fill="${c.soft}" letter-spacing="0.6">${col.label}</text>`)
     .join('')
-  const columnLabels = Object.values(PDF_LAYOUT.columns)
-    .map((col) => `<text x="${col.x}" y="${PDF_LAYOUT.columnLabelBaseline}" font-size="10" font-weight="700" fill="${c.faint}" letter-spacing="1.2">${col.label}</text>`)
-    .join('')
-  const rules = sample.rows
-    .slice(0, PDF_ROWS_PER_PAGE)
-    .map((_, i) => {
-      const y = PDF_LAYOUT.rowTop + i * PDF_LAYOUT.rowPitch + PDF_LAYOUT.rowBaselineOffset + 10
-      return `<line x1="${m}" y1="${y}" x2="${right}" y2="${y}" stroke="${c.rule}" stroke-width="1"/>`
-    })
-    .join('')
+  const rules = Array.from({ length: rowsOnPage }, (_, i) => {
+    const y = L.rowTop + (i + 1) * L.rowPitch
+    const last = i === rowsOnPage - 1
+    return `<line x1="${m}" y1="${y}" x2="${right}" y2="${y}" stroke="${last ? c.strong : c.rule}" stroke-width="${last ? 1 : 0.75}"/>`
+  }).join('')
+  const empty = rowsOnPage === 0 ? `<text x="${m}" y="${L.rowTop + L.rowBaselineOffset}" font-size="10" fill="${c.faint}">No patients listed.</text><line x1="${m}" y1="${tableBottom}" x2="${right}" y2="${tableBottom}" stroke="${c.strong}" stroke-width="1"/>` : ''
   const values = spots
     .map((s) => {
-      const weight = s.field === 'hospital' ? ' font-weight="700"' : ''
+      const weight = s.field === 'surgeon' ? ' font-weight="700"' : ''
       const family = s.mono ? ' font-family="ui-monospace, Menlo, monospace"' : ''
-      const fill = s.field === 'surgeon' || s.field === 'procedureText' ? c.soft : c.ink
+      const fill = s.field === 'procedureText' ? c.soft : c.ink
       return `<text x="${s.x}" y="${s.baseline}" font-size="${s.fontSize}"${weight}${family} fill="${fill}" data-key="${esc(s.key)}">${esc(s.text)}</text>`
     })
     .join('')
-  const pages = Math.max(1, Math.ceil(sample.rows.length / PDF_ROWS_PER_PAGE))
-  const footer = `Emailed to the AA booking office · sample for the prototype${pages > 1 ? ` · page 1 of ${pages}` : ''}`
-  const paper = scanned ? scanPaper(width, height, sample.id ?? `${sample.surgeonName}|${sample.subject}`) : `<rect width="${width}" height="${height}" fill="#FFFFFF"/>`
+  const count = `<text x="${right}" y="${tableBottom + 16}" text-anchor="end" font-size="9" fill="${c.faint}">${sample.rows.length === 1 ? '1 patient' : `${sample.rows.length} patients`}</text>`
+
+  const footRule = height - L.footerRuleFromBottom
+  const footBase = height - L.footerBaselineFromBottom
+  const footer = `
+    <line x1="${m}" y1="${footRule}" x2="${right}" y2="${footRule}" stroke="${c.rule}" stroke-width="0.75"/>
+    <text x="${m}" y="${footBase}" font-size="8.5" fill="${c.faint}">${printed !== undefined ? `Printed ${esc(printed)}` : 'Printed copy'}</text>
+    <text x="${m + 170}" y="${footBase}" font-size="8.5" fill="${c.faint}">Checked by</text>
+    <line x1="${m + 220}" y1="${footBase + 2}" x2="${m + 330}" y2="${footBase + 2}" stroke="${c.faint}" stroke-width="0.75"/>
+    <text x="${right}" y="${footBase}" text-anchor="end" font-size="8.5" fill="${c.faint}">Page 1 of ${pages}</text>
+    <text x="${m}" y="${footBase + 14}" font-size="7.5" fill="${c.faint}">${esc(fitText(`${letterhead.practice} · Confidential patient information`, right - m, 7.5, false))}</text>`
+
+  const paper = scanned ? scanPaper(width, height, sample.id ?? `${sample.surgeonName}|${sample.subject}`) : `<rect width="${width}" height="${height}" fill="${c.paper}"/>`
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="Helvetica, Arial, sans-serif">
     ${paper}
-    <rect x="0" y="0" width="${width}" height="6" fill="${c.bar}"${scanned ? ' fill-opacity="0.7"' : ''}/>
+    ${head}
     ${headerLabels}
-    <text x="${m}" y="104" font-size="13" font-weight="600" fill="${c.ink}">${esc(fitText(sample.subject, labelX - 70 - m, 13, false))}</text>
-    <line x1="${m}" y1="120" x2="${right}" y2="120" stroke="${c.rule}" stroke-width="1"/>
+    ${columnBand}
     ${columnLabels}
     ${rules}
+    ${empty}
     ${values}
-    <text x="${m}" y="${height - 24}" font-size="10" fill="${c.faint}">${esc(footer)}</text>
+    ${count}
+    ${footer}
   </svg>`
   return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
 /**
- * A page nothing can be read from (an unreadable PDF's facsimile): a scan's paper with faint bars where the header
- * and the lines would be, and no text. `PDF_PAGE.width` wide; the same `seed`, the same page.
+ * A page nothing can be read from (an unreadable PDF's facsimile): a full A4 page of a scan's paper with faint bars
+ * where the letterhead, title, meta block, rows and footer would be, and no text. The same `seed`, the same page.
  */
 export function buildUnreadableFacsimile(seed = 'unreadable'): string {
   const width = PDF_PAGE.width
+  const height = pdfPageHeight()
+  const L = PDF_LAYOUT
   const lines = 14
-  const height = pdfPageHeight(lines)
   const next = seededSequence(`faint|${seed}`)
   const bar = (x: number, y: number, w: number, h: number) =>
     `<rect x="${x}" y="${y}" width="${Math.round(w)}" height="${h}" rx="2" fill="#B9BDB9" fill-opacity="${(0.16 + next() * 0.14).toFixed(2)}"/>`
-  const m = PDF_LAYOUT.margin
-  const rightX = PDF_LAYOUT.header.date.x
+  const m = L.margin
+  const right = width - m
   const head = [
-    bar(m, 30, 220 + next() * 100, 14),
-    bar(m, 58, 140 + next() * 60, 9),
-    bar(rightX, 35, 120 + next() * 60, 9),
-    bar(rightX, 57, 40 + next() * 30, 9),
-    bar(m, 95, 200 + next() * 120, 10),
+    bar(m, L.letterhead.nameBaseline - 16, 200 + next() * 80, 16),
+    bar(m, L.letterhead.addressBaseline - 7, 220 + next() * 60, 7),
+    bar(m, L.letterhead.contactBaseline - 7, 180 + next() * 80, 7),
+    bar(m, L.letterhead.ruleY - 1, right - m, 2),
+    bar(m, L.title.baseline - 14, 110 + next() * 20, 14),
+    bar(m, L.title.subtitleBaseline - 8, 180 + next() * 80, 8),
+    ...PDF_HEADER_FIELDS.map((f) => bar(L.header[f].x, L.header[f].baseline - 9, L.header[f].width * (0.4 + next() * 0.4), 9)),
+    ...PDF_HEADER_FIELDS.map((f) => bar(L.headerLabelX[f], L.header[f].baseline - 8, 40 + next() * 20, 8)),
+    bar(m, L.columnBandTop, right - m, L.rowTop - L.columnBandTop),
   ].join('')
   const rows = Array.from({ length: lines }, (_, i) => {
-    const y = PDF_LAYOUT.rowTop + i * PDF_LAYOUT.rowPitch - 4
-    return Object.values(PDF_LAYOUT.columns)
+    const y = L.rowTop + i * L.rowPitch + L.rowBaselineOffset - 9
+    return Object.values(L.columns)
       .filter(() => next() > 0.25)
       .map((col) => bar(col.x, y, col.width * (0.45 + next() * 0.45), 8))
       .join('')
   }).join('')
+  const foot = [
+    bar(m, height - L.footerRuleFromBottom, right - m, 1),
+    bar(m, height - L.footerBaselineFromBottom - 7, 120 + next() * 40, 7),
+    bar(right - 60, height - L.footerBaselineFromBottom - 7, 60, 7),
+  ].join('')
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
     ${scanPaper(width, height, `faint|${seed}`)}
     ${head}
     ${rows}
+    ${foot}
   </svg>`
   return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
