@@ -4,6 +4,7 @@ import { MemoryRouter, Outlet, Route, Routes, useLocation } from 'react-router-d
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { assessImportRow, decideImportRow, freshAppState, importHospitalDownload, isBackdropInvoice, useAppStore, type Actor } from '../../../store'
 import { SurfaceProvider } from '../../../shared'
+import { arrivalKeyForRow } from '../../../store/intakeSelectors'
 import { AdminBookingDetailRoute } from '../routes'
 import { InvoicesScreen } from './InvoicesScreen'
 import { MatchingScreen } from './MatchingScreen'
@@ -155,7 +156,7 @@ describe('admin clickable table rows', () => {
     expect(screen.getByTestId('matching-panel')).toHaveAttribute('data-import-row-id', row.getAttribute('data-import-row-id'))
   })
 
-  it("links a Booking made from a hospital row back to that row on Matching (catch-up Phase 33)", () => {
+  it("links a Booking made from a hospital row back to that row's arrival at Intake (catch-up Phase 33; Phase 68)", () => {
     importHospitalDownload(useAppStore, OFFICE, 'SAMPLE_STG')
     const rowId = useAppStore.getState().intake.batches[Object.keys(useAppStore.getState().intake.batches).find((id) => id !== SEED_STUB.batchId)!]!.rowIds[0]!
     const suggestion = assessImportRow(useAppStore.getState(), rowId)?.suggestion
@@ -179,13 +180,13 @@ describe('admin clickable table rows', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: `From hospital row ${rowId}` }))
-    expect(screen.getByTestId('location-probe')).toHaveTextContent('/admin/intake/matching')
-    expect(screen.getByTestId('select-row-probe')).toHaveTextContent(rowId)
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/admin/intake')
+    expect(screen.getByTestId('select-row-probe')).toHaveTextContent(arrivalKeyForRow(useAppStore.getState(), rowId)!)
   })
 })
 
+/** The Intake link's query (Phase 68): the filter and the selected arrival. */
 function SelectRowProbe() {
-  const { state } = useLocation()
-  const id = typeof state === 'object' && state !== null && 'selectRowId' in state ? String(state.selectRowId) : ''
-  return <output data-testid="select-row-probe">{id}</output>
+  const { search } = useLocation()
+  return <output data-testid="select-row-probe">{new URLSearchParams(search).get('item') ?? ''}</output>
 }

@@ -2837,6 +2837,12 @@ export interface IncomingBookingFields {
   externalRef?: string
   /** `hpiId` is the HPI CPN (OQ-52), matched first. */
   surgeon?: { name: string; hpiId?: string }
+  /**
+   * The anaesthetist the List was meant for, when the sender names one (build plan Phase 68; DM-19, OQ-13 open):
+   * resolved to the master as the surgeon is (`resolveNamedAnaesthetist`), so a new List can be placed with that
+   * anaesthetist's Slot suggested. Never a match key.
+   */
+  anaesthetist?: { name: string; hpiId?: string }
   scheduledTime?: WallTime
   /** No NHI means the row waits on the unmatched queue and creates nothing (D11). */
   patient: { name: string; nhi?: string; dobISO?: IsoDate; ethnicityCode?: string }
@@ -2857,6 +2863,20 @@ export interface ImportRowCorrections {
   scheduledTime?: WallTime
   /** A surgeon the office picked from the master (when the row's did not resolve). */
   surgeonId?: SurgeonId
+  /** A corrected ethnicity code, taken before the row becomes a Booking (build plan Phase 68; DM-15, D125). */
+  ethnicityCode?: string
+}
+
+/** The fields an incoming row's correction history names (DM-15). */
+export type ImportRowCorrectionField = keyof ImportRowCorrections
+
+/** One correction to an incoming row, from, to, who and when, as `PdfRowCorrection` keeps for a PDF (DM-15). */
+export interface ImportRowCorrection {
+  field: ImportRowCorrectionField
+  from: string
+  to: string
+  atISO: IsoDateTime
+  by: string
 }
 
 export type ChangeType = 'new' | 'modification' | 'cancellation' | 'noChange'
@@ -2872,13 +2892,21 @@ export interface OfficePicks {
   recordInsurer?: boolean
 }
 
-/** The office's decision on a row (US-02.1.2): there is no move (D62). */
+/**
+ * The office's decision on a row (US-02.1.2): there is no move (D62). `leftOut` (build plan Phase 68; DM-11,
+ * D125) is a decision of its own kind: the row is decided and changes nothing, shown under Decided and in the
+ * audit, never a reject. A match names its List (DM-12), so a List's versions read from its decided rows.
+ */
 export type ImportDecision =
-  | { kind: 'match'; bookingId: BookingId; changeType: ChangeType; fieldsApplied: IncomingFieldKey[]; picks?: OfficePicks }
+  | { kind: 'match'; bookingId: BookingId; changeType: ChangeType; fieldsApplied: IncomingFieldKey[]; picks?: OfficePicks; listId?: ListId }
   | { kind: 'createBooking'; listId: ListId; bookingId: BookingId; picks?: OfficePicks }
   | { kind: 'createList'; slotId: SlotId; listId: ListId; bookingId: BookingId; picks?: OfficePicks }
   | { kind: 'createDraft'; listId: ListId; bookingId: BookingId; picks?: OfficePicks }
   | { kind: 'reject'; reason: string }
+  | { kind: 'leftOut'; reason?: string }
+
+/** A row's status: open until the office decides it; `leftOut` is decided, changing nothing (Phase 68). */
+export type ImportRowStatus = 'open' | 'applied' | 'rejected' | 'leftOut'
 
 /**
  * One incoming row (DM-34). "Unmatched" and "waiting for an NHI" are derived
@@ -2901,7 +2929,9 @@ export interface ImportRow {
   receivedAtISO: IsoDateTime
   incoming: IncomingBookingFields
   corrections?: ImportRowCorrections
-  status: 'open' | 'applied' | 'rejected'
+  /** Every correction made, in order (build plan Phase 68; DM-15): the latest per field is `corrections`. */
+  correctionHistory?: ImportRowCorrection[]
+  status: ImportRowStatus
   decision?: ImportDecision
   decidedBy?: string
   decidedAtISO?: IsoDateTime
@@ -2909,9 +2939,31 @@ export interface ImportRow {
   messageId?: string
   /** As sent (catch-up Phase 43): written once at staging, never edited, never shown unmasked. */
   raw?: RawImportRow
+  /**
+   * A removal row (build plan Phase 68; DM-13, D125): a re-sent rooms' PDF lacks this Booking the rooms brought.
+   * Its `incoming` is the Booking as held, `hospitalStatus: 'cancelled'`; confirming it cancels the Booking, leaving
+   * it out changes nothing (and a later re-send that still lacks it offers it again).
+   */
+  removalOfBookingId?: BookingId
+  /** A rooms' PDF row: the `PdfListRow` it was read from (its values, confidences and boxes; D120). */
+  pdfRowId?: string
 }
 
-/** One import: a hospital's file, a keyed sheet or a feed message. */
+/**
+ * Who made an arrival (build plan Phase 68; DM-15): a hospital's feed, the rooms' mailbox (the sender the email's
+ * address), or a person adding a PDF by hand (with the address it came from). Never the office importing a file.
+ */
+export type ArrivalSource =
+  | { kind: 'hospitalFeed'; hospitalId: HospitalId }
+  | { kind: 'mailbox'; senderEmail: string }
+  | { kind: 'byHand'; by: string; senderEmail: string }
+
+/**
+ * One arrival (build plan Phase 68; DM-11, DM-15; the name `ImportBatch` kept so its readers don't churn): a
+ * hospital's batch, a rooms' PDF or a feed message, made by its source when it arrives. An arrival can hold no rows:
+ * a PDF that cannot be read (`unreadableReason`) or a message that failed (`heldReason`) waits in the feed until the
+ * office dismisses it. Nothing on it is an office decision.
+ */
 export interface ImportBatch {
   id: ImportBatchId
   channel: ImportChannel
@@ -2920,14 +2972,65 @@ export interface ImportBatch {
   label: string
   /** The sample file it came from (OQ-13 interim). */
   sampleId?: string
-  importedBy: string
-  importedAtISO: IsoDateTime
+  /** Who sent it (DM-15). */
+  arrivalSource: ArrivalSource
+  receivedAtISO: IsoDateTime
+  /** Only for a PDF added by hand: the person who added it. */
+  importedBy?: string
   rowIds: ImportRowId[]
-  /** Rows already imported with identical fields, skipped. */
-  skippedCount: number
-  /** Channel `pdfList` only (catch-up Phase 34): the PDF list it came from and the address it arrived from. */
+  /** Channel `pdfList` (catch-up Phase 34): the PDF list it came from and the address it arrived from. */
   pdfListId?: PdfListId
   senderEmail?: string
+  /** The PDF as received, for an arrival with no PDF list (an unreadable page): its file name and facsimile. */
+  file?: { name: string; facsimile: string }
+  /** A PDF that cannot be made into a List: why (D120, D125). The arrival has no rows. */
+  unreadableReason?: string
+  /** A feed message that failed: why it is held (never dropped). `messageId` names the message. */
+  heldReason?: string
+  messageId?: string
+  /** The office dismissed an unreadable PDF or a held message, with a reason (D125). */
+  dismissed?: { by: string; atISO: IsoDateTime; reason: string }
+}
+
+/** A box on a PDF's page, in the facsimile's units (D120): where a read value sits. */
+export interface PdfBox {
+  page: number
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+/** A field the simulated reader reads from a PDF: a row's fields, or the List's own header (D120; DM-16). */
+export type PdfReadField = PdfRowField | 'procedureText' | 'surgeon' | 'hospital' | 'date' | 'session' | 'anaesthetist'
+
+/** One value read from a PDF, with the reader's confidence (0 to 1) and its box on the page (D120; DM-16). */
+export interface PdfReadValue {
+  field: PdfReadField
+  value: string
+  confidence: number
+  box: PdfBox
+}
+
+/** How a source reaches Intake (DM-14): a hospital's feed, by protocol, or the rooms' mailbox. */
+export type IntakeSourceKind = 'hospitalFeed' | 'mailbox'
+
+/** A source's state (DM-14): a feed receiving, the mailbox reading, or a hospital not connected (its Lists come by PDF). */
+export type IntakeSourceState = 'receiving' | 'reading' | 'notConnected'
+
+/** One source of arrivals and its state (build plan Phase 68; DM-14, OQ-109 part 1 open, D125). Inbound only. */
+export interface IntakeSource {
+  id: string
+  kind: IntakeSourceKind
+  name: string
+  /** A hospital's feed: the hospital. */
+  hospitalId?: HospitalId
+  /** A connected feed's protocol, in words ("HL7 v2", "FHIR R4"). */
+  protocol?: string
+  /** The mailbox's address. */
+  address?: string
+  state: IntakeSourceState
+  lastReceivedAtISO?: IsoDateTime
 }
 
 // ---------------------------------------------------------------------------
@@ -2961,6 +3064,8 @@ export interface PdfListRow {
   asRead: PdfRowAsRead
   /** In the order made; the latest per field wins (`effectivePdfRow`). */
   corrections: PdfRowCorrection[]
+  /** The simulated reader's values for this row, each with its confidence and box (build plan Phase 68; D120). */
+  read?: PdfReadValue[]
 }
 
 /**
@@ -2991,6 +3096,10 @@ export interface SurgeonPdfList {
   sentAtISO?: IsoDateTime
   sentBy?: string
   rows: PdfListRow[]
+  /** The List's own header values as read (surgeon, hospital, date, session, a named anaesthetist; D120). */
+  headerRead?: PdfReadValue[]
+  /** Read from a scan: its values carry lower confidences (D120). */
+  scanned?: boolean
 }
 
 /** Why an incoming booking could not become a Booking. A union so another cause is one member more. */

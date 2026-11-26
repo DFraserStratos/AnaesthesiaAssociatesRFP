@@ -10,7 +10,7 @@
  * starts at 2.
  */
 
-import type { ImportBatch, ImportRow, Stub, SurgeonPdfList } from '../types'
+import type { ImportBatch, ImportRow, IntakeSource, Stub, SurgeonPdfList } from '../types'
 import { buildFacsimile, PDF_LIST_SAMPLES } from '../intake/pdfLists'
 import { DEMO_TODAY } from '../clock'
 import { ANAE, HOSP } from './cast'
@@ -60,7 +60,34 @@ export function seededPdfLists(): Record<string, SurgeonPdfList> {
   return { [list.id]: list }
 }
 
-export function seededIntake(): { batches: Record<string, ImportBatch>; rows: Record<string, ImportRow>; stubs: Record<string, Stub>; pdfLists: Record<string, SurgeonPdfList> } {
+/** The rooms' mailbox address the PDFs arrive at (D125). */
+export const ROOMS_MAILBOX_ADDRESS = 'lists@aa.example'
+
+/** The source ids (build plan Phase 68; DM-14). */
+export const INTAKE_SOURCE_IDS = { stg: 'SRC-STG', sx: 'SRC-SX', mailbox: 'SRC-MAILBOX', forte: 'SRC-FORTE' } as const
+
+/**
+ * The sources and their state (build plan Phase 68; DM-14, D125 with OQ-109 part 1 open): St George's (HL7 v2) and
+ * Southern Cross (FHIR R4) receiving, the rooms' mailbox reading, Forte Health not connected (its Lists come by PDF).
+ * Every other hospital without a record reads as not connected. Inbound only: nothing is ever sent back.
+ */
+export function seededSources(): Record<string, IntakeSource> {
+  const sources: IntakeSource[] = [
+    { id: INTAKE_SOURCE_IDS.stg, kind: 'hospitalFeed', name: "St George's", hospitalId: HOSP.stg, protocol: 'HL7 v2', state: 'receiving' },
+    { id: INTAKE_SOURCE_IDS.sx, kind: 'hospitalFeed', name: 'Southern Cross', hospitalId: HOSP.sx, protocol: 'FHIR R4', state: 'receiving', lastReceivedAtISO: RECEIVED_AT },
+    { id: INTAKE_SOURCE_IDS.mailbox, kind: 'mailbox', name: "Rooms' mailbox", address: ROOMS_MAILBOX_ADDRESS, state: 'reading' },
+    { id: INTAKE_SOURCE_IDS.forte, kind: 'hospitalFeed', name: 'Forte Health', hospitalId: HOSP.forte, state: 'notConnected' },
+  ]
+  return Object.fromEntries(sources.map((s) => [s.id, s]))
+}
+
+export function seededIntake(): {
+  batches: Record<string, ImportBatch>
+  rows: Record<string, ImportRow>
+  stubs: Record<string, Stub>
+  pdfLists: Record<string, SurgeonPdfList>
+  sources: Record<string, IntakeSource>
+} {
   const row: ImportRow = {
     id: SEED_STUB.rowId,
     batchId: SEED_STUB.batchId,
@@ -87,10 +114,9 @@ export function seededIntake(): { batches: Record<string, ImportBatch>; rows: Re
     source: 'hospital',
     hospitalId: HOSP.sx,
     label: SOURCE_LABEL,
-    importedBy: 'Kirsty W.',
-    importedAtISO: RECEIVED_AT,
+    arrivalSource: { kind: 'hospitalFeed', hospitalId: HOSP.sx },
+    receivedAtISO: RECEIVED_AT,
     rowIds: [row.id],
-    skippedCount: 0,
   }
   const stub: Stub = {
     id: SEED_STUB.stubId,
@@ -101,5 +127,5 @@ export function seededIntake(): { batches: Record<string, ImportBatch>; rows: Re
     createdAtISO: RECEIVED_AT,
     status: 'standing',
   }
-  return { batches: { [batch.id]: batch }, rows: { [row.id]: row }, stubs: { [stub.id]: stub }, pdfLists: seededPdfLists() }
+  return { batches: { [batch.id]: batch }, rows: { [row.id]: row }, stubs: { [stub.id]: stub }, pdfLists: seededPdfLists(), sources: seededSources() }
 }

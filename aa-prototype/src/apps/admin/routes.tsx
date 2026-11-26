@@ -12,12 +12,12 @@ import { DayGrid } from './components/DayGrid'
 import { RightRail } from './components/RightRail'
 import { AdminBookingDetail } from './screens/AdminBookingDetail'
 import { AuditViewer } from './screens/AuditViewer'
-import { IntakeScreen } from './screens/IntakeScreen'
-import { PdfListsTab } from './intake/PdfListsTab'
-import { DataQualityTab } from './intake/DataQualityTab'
-import { ValidatorsTab } from './intake/ValidatorsTab'
-import { WaitingNhiTab } from './intake/WaitingNhiTab'
 import { MasterData } from './screens/masters/MasterData'
+import { IntakeSection } from './screens/intake/IntakeSection'
+import { ArrivalsView } from './screens/intake/ArrivalsView'
+import { SourcesView } from './screens/intake/SourcesView'
+import { intakePathFromLegacy } from './screens/intake/intakePaths'
+import { arrivalKeyForRow } from '../../store/intakeSelectors'
 import { mastersRedirect } from './mastersRedirect'
 import { awaitingApprovalPath, creditNotePath, financePath, financePathFromLegacy, invoicePath } from './screens/finances/financePaths'
 import { ContractsSection } from './screens/contracts/ContractsSection'
@@ -38,7 +38,6 @@ import { ReviewQueue } from './screens/ReviewQueue'
 import { ConflictsScreen } from './screens/ConflictsScreen'
 import { DraftListsScreen } from './screens/DraftListsScreen'
 import { NotificationsScreen } from './screens/NotificationsScreen'
-import { MatchingScreen } from './screens/MatchingScreen'
 import { ReviewScreen } from './screens/ReviewScreen'
 import { PatientsScreen } from './screens/patients/PatientsScreen'
 import { PatientRecord } from './screens/patients/PatientRecord'
@@ -327,31 +326,35 @@ function openNotificationTarget(
 }
 
 /**
- * Admin Intake (catch-up Phase 34) — `/admin/intake/<tab>`: the header and the
- * route strip, its tab page in the outlet.
+ * Admin Intake (build plan Phase 68; D117): the section (`screens/intake/IntakeSection.tsx`) over its two routed
+ * views, Arrivals (`/admin/intake`) and Sources (`/admin/intake/sources`).
  */
 export function AdminIntakeRoute() {
-  return <IntakeScreen />
+  const { actor } = useAdminOutlet()
+  return <IntakeSection actor={actor} />
+}
+
+/** Arrivals (D117): the feed beside the docked Workbench; filter, search and the selected arrival in the URL. */
+export function AdminArrivalsRoute() {
+  const { actor } = useAdminOutlet()
+  return <ArrivalsView actor={actor} />
+}
+
+/** Sources (D117; DM-14): where arrivals come from, inbound only. */
+export function AdminSourcesRoute() {
+  return <SourcesView />
 }
 
 /**
- * `/admin/matching` and `/admin/integrations` before catch-up Phase 34: both
- * land on Intake's Matching tab, keeping any router state (`{ selectRowId }`).
+ * The old Intake addresses (Matching, Waiting for NHI, PDF lists, Data quality, Validators, `/admin/matching`,
+ * `/admin/integrations`) redirect with replace (D117), so Back never bounces here. A link's `{ selectRowId }` router
+ * state lands as that row's arrival selected; the state is carried on.
  */
-export function AdminIntakeRedirect() {
-  const { state } = useLocation()
-  return <Navigate to="/admin/intake/matching" replace state={state} />
-}
-
-/**
- * Matching (catch-up Phase 33; US-02.1.1 to US-02.1.4) — `/admin/intake/matching`
- * since Phase 34. A link may pass `{ selectRowId }` in router state to open that
- * row (the Admin Booking's "From hospital row").
- */
-export function AdminMatchingRoute() {
-  const { actor, todayISO } = useAdminOutlet()
-  const navigate = useNavigate()
-  return <MatchingScreen actor={actor} todayISO={todayISO} onOpenBooking={(d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`)} />
+export function IntakeLegacyRedirect() {
+  const { pathname, state } = useLocation()
+  const selectRowId = (state as { selectRowId?: unknown } | null)?.selectRowId
+  const item = useAppStore((s) => (typeof selectRowId === 'string' ? arrivalKeyForRow(s, selectRowId) : undefined))
+  return <Navigate to={intakePathFromLegacy(pathname, item)} replace state={state} />
 }
 
 /** The shared notification pool (catch-up Phase 32; US-13.8.1, US-13.8.3) — `/admin/notifications` (`?page=`, `?resolved=1`). */
@@ -359,29 +362,6 @@ export function AdminNotificationsRoute() {
   const ctx = useAdminOutlet()
   const navigate = useNavigate()
   return <NotificationsScreen actor={ctx.actor} onOpen={(target) => openNotificationTarget(target, ctx, (d, bookingId) => navigate(`/admin/day/${d}/bookings/${bookingId}`))} />
-}
-
-/** The rows waiting for an NHI (US-11.1.5; D99) — `/admin/intake/waiting`, beside Matching. */
-export function AdminWaitingNhiTabRoute() {
-  const { actor, onOpenList } = useAdminOutlet()
-  return <WaitingNhiTab actor={actor} onOpenList={onOpenList} />
-}
-
-/** The rooms' PDF lists (catch-up Phase 34; FT-02.2, US-02.2.1) — `/admin/intake/pdfs`. */
-export function AdminPdfListsRoute() {
-  const { actor } = useAdminOutlet()
-  return <PdfListsTab actor={actor} />
-}
-
-/** Data quality (Phase 11) — `/admin/intake/quality`. */
-export function AdminDataQualityRoute() {
-  const { actor } = useAdminOutlet()
-  return <DataQualityTab actor={actor} />
-}
-
-/** The NHI and ethnicity validators (Phase 11; US-11.1.2) — `/admin/intake/validators`. */
-export function AdminValidatorsRoute() {
-  return <ValidatorsTab />
 }
 
 export function AdminMastersRoute() {

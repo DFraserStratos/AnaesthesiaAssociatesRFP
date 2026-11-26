@@ -18,6 +18,7 @@
 
 import { rawRowFor } from '../domain/intake/rawRow'
 import type {
+  ArrivalSource,
   ChangeType,
   ImportBatch,
   ImportChannel,
@@ -93,6 +94,8 @@ export interface StageExtras {
   /** Channel `pdfList` (Phase 34): the PDF list and the address it arrived from, kept on the batch. */
   pdfListId?: string
   senderEmail?: string
+  /** Who sent it (Phase 68; DM-15): defaults to the hospital's feed, or the mailbox for a rooms' PDF. */
+  arrivalSource?: ArrivalSource
 }
 
 /**
@@ -173,10 +176,9 @@ export function stageImportRows(
       ...(extras.sampleId !== undefined ? { sampleId: extras.sampleId } : {}),
       ...(extras.pdfListId !== undefined ? { pdfListId: extras.pdfListId } : {}),
       ...(extras.senderEmail !== undefined ? { senderEmail: extras.senderEmail } : {}),
-      importedBy: actor.who,
-      importedAtISO: atISO,
+      arrivalSource: extras.arrivalSource ?? (source === 'rooms' && extras.senderEmail !== undefined ? { kind: 'mailbox', senderEmail: extras.senderEmail } : { kind: 'hospitalFeed', hospitalId }),
+      receivedAtISO: atISO,
       rowIds: [...rowIds],
-      skippedCount: skipped,
     }
     metas.push({
       entityType: 'importBatch',
@@ -471,7 +473,7 @@ function decideImportRowUnscoped(
         if (!used.ok) return used
       }
       const recorded = changeType === 'cancellation' ? undefined : picks
-      const decision: ImportDecision = { kind: 'match', bookingId: booking.id, changeType, fieldsApplied: applied, ...(recorded !== undefined ? { picks: recorded } : {}) }
+      const decision: ImportDecision = { kind: 'match', bookingId: booking.id, changeType, fieldsApplied: applied, ...(recorded !== undefined ? { picks: recorded } : {}), listId: booking.listId }
       record(api, actor, row, decision, { bookingId: booking.id, changeType, fields: applied })
       return ok({ decision, bookingId: booking.id })
     })
@@ -635,6 +637,25 @@ function applyMatch(
   return ok(undefined)
 }
 
+/** A decided row's status: rejected, left out (Phase 68; decided, changing nothing) or applied. */
+function statusForDecision(decision: ImportDecision): ImportRow['status'] {
+  return decision.kind === 'reject' ? 'rejected' : decision.kind === 'leftOut' ? 'leftOut' : 'applied'
+}
+
+/**
+ * Record a decision that changes nothing on the schedule (Phase 68's `intakeDecide.ts`: a row left out), in the
+ * same commit shape as every row decision (`importRow.decide`, its stub settled). Open rows only.
+ */
+export function recordRowDecision(api: AppStoreApi, actor: Actor, rowId: string, decision: Extract<ImportDecision, { kind: 'leftOut' }>): Outcome {
+  const office = officeOnly(actor)
+  if (office !== null) return office
+  const row = api.getState().intake.rows[rowId]
+  if (row === undefined) return refuse('notFound', 'Row not found.')
+  if (row.status !== 'open') return refuse('alreadyDecided', 'This row has already been decided.')
+  record(api, actor, row, decision, undefined)
+  return ok(undefined)
+}
+
 /** Write the row's decision last, in one commit with the Booking-side history entry naming the row. */
 function record(
   api: AppStoreApi,
@@ -650,7 +671,7 @@ function record(
       entityId: row.id,
       action: 'importRow.decide',
       before: { status: 'open' },
-      after: { status: decision.kind === 'reject' ? 'rejected' : 'applied', decision },
+      after: { status: statusForDecision(decision), decision },
       stampBookingId: null,
     },
   ]
@@ -673,7 +694,7 @@ function record(
     if (cur === undefined) return {}
     const next: ImportRow = {
       ...cur,
-      status: decision.kind === 'reject' ? 'rejected' : 'applied',
+      status: statusForDecision(decision),
       decision,
       decidedBy: actor.who,
       decidedAtISO: clockISO(s.clock),

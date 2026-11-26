@@ -26,7 +26,7 @@ interface StubRowProps {
   onOpen?: () => void
   /** What `onOpen` opens: the phone's sheet is a dialog, the web details expand in place. */
   opens?: 'dialog' | 'details'
-  /** Trailing content beside the row (Admin's "Resolve on Matching"), never inside its open control. */
+  /** Trailing content beside the row (Admin's "Resolve at Intake"), never inside its open control. */
   trailing?: ReactNode
   ariaExpanded?: boolean
   style?: CSSProperties

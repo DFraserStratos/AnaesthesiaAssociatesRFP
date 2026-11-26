@@ -39,6 +39,7 @@ import type {
   StubId,
   PdfListId,
   SurgeonPdfList,
+  IntakeSource,
   Invoice,
   InvoiceLine,
   LedgerDisbursement,
@@ -173,6 +174,8 @@ export interface IntakeSlice {
   stubs: Record<StubId, Stub>
   /** The rooms' PDF lists as received (catch-up Phase 34; DM-61). */
   pdfLists: Record<PdfListId, SurgeonPdfList>
+  /** Where arrivals come from and each source's state (build plan Phase 68; DM-14): inbound only. */
+  sources: Record<string, IntakeSource>
 }
 
 export interface ShellSlice {
@@ -506,7 +509,7 @@ export const PERSIST_VERSION = 81
 
 /** The intake slice: seeded empty, the presenter imports or a trigger delivers (catch-up Phase 33). */
 export function emptyIntakeSlice(): IntakeSlice {
-  return { batches: {}, rows: {}, stubs: {}, pdfLists: {} }
+  return { batches: {}, rows: {}, stubs: {}, pdfLists: {}, sources: {} }
 }
 
 /** The seeded intake slice: one waiting no-NHI row and its stub on a List (catch-up Phase 33a). */
