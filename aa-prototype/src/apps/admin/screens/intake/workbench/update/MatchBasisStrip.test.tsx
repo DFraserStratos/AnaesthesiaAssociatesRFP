@@ -92,10 +92,13 @@ describe('MatchBasisStrip', () => {
     expect(line('surgeon')).toHaveAttribute('data-agreed', 'true')
   })
 
-  it('draws nothing for an arrival with no held List', () => {
+  it('shows what arrived, unmarked, for an arrival with no held List', () => {
     const first = ok(receiveMailboxPdf(useAppStore, S.roomsList))
     const arrival = arrivalItemsOf(useAppStore.getState()).find((i) => i.batchId === first.batchId && i.kind === 'newList')!
     const { container } = render(<MatchBasisStrip arrival={arrival} />)
-    expect(container).toBeEmptyDOMElement()
+    const lines = [...container.querySelectorAll('[data-key]')]
+    expect(lines.map((l) => l.getAttribute('data-key'))).toEqual(['surgeon', 'hospital', 'daySession', 'patients'])
+    expect(container.querySelector('[data-agreed]')).toBeNull()
+    expect(container.querySelector('[data-key="patients"]')).toHaveTextContent(/\d+ patients?/)
   })
 })

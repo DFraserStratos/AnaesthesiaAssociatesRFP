@@ -15,7 +15,7 @@ import { OFFICE_ACTOR, freshAppState, receiveHospitalBatch, receiveMailboxPdf, u
 import { decideArrivingLists } from '../../../../../store/intakeDecide'
 import { arrivalItemsOf } from '../../../../../store/intakeSelectors'
 import { matchingView } from '../../../../../store/matchingSelectors'
-import { UpdateBench } from './UpdateBench'
+import { Bench } from './Bench'
 
 const P = OKAFOR_STORY_PATIENTS
 const api = useAppStore
@@ -74,7 +74,7 @@ function tipeneWithNhi(): { batchId: string; rowId: string } {
 function renderBench(batchId: string, onDone = vi.fn()) {
   const utils = render(
     <MemoryRouter>
-      <UpdateBench arrival={listItemOf(batchId)} actor={OFFICE_ACTOR} onDone={onDone} />
+      <Bench arrival={listItemOf(batchId)} actor={OFFICE_ACTOR} onDone={onDone} />
     </MemoryRouter>,
   )
   return { ...utils, onDone }
@@ -99,8 +99,8 @@ describe('UpdateBench: a re-sent rooms PDF', () => {
     renderBench(batchId)
 
     expect(bench()).toBeInTheDocument()
-    const line = q('[data-shot="intake-update-list-line"]')!
-    expect(line).toHaveTextContent("Dr Rutherford's List")
+    const line = q('[data-shot="intake-arrival-head"]')!
+    expect(line).toHaveTextContent("Update to Dr Rutherford's List")
     expect(line).toHaveTextContent('Active, open to changes until it is authorised')
 
     const removal = rowEl('[data-change="removed"]')

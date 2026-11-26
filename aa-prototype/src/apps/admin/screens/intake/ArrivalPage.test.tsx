@@ -111,7 +111,11 @@ describe("ArrivalPage: Previous, Next and Back follow the inbox's query", () => 
     fireEvent.click(screen.getByRole('button', { name: /^Previous$/ }))
     fireEvent.click(screen.getByRole('button', { name: /^Previous$/ }))
     expect(where(router)).toBe(arrivalPath(keys[0]!, query))
-    expect(screen.getByRole('button', { name: /^Previous$/ })).toBeDisabled()
+    // Before the first is the last: Previous loops round, and Next comes back.
+    fireEvent.click(screen.getByRole('button', { name: /^Previous$/ }))
+    expect(where(router)).toBe(arrivalPath(keys[keys.length - 1]!, query))
+    fireEvent.click(screen.getByRole('button', { name: /^Next$/ }))
+    expect(where(router)).toBe(arrivalPath(keys[0]!, query))
     fireEvent.click(screen.getByRole('link', { name: /Arrivals/ }))
     expect(where(router)).toBe(inboxPath(query))
   })
