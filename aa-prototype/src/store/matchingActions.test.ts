@@ -6,25 +6,29 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type AppStoreApi } from './appStore'
 import { OFFICE_ACTOR } from './demoActors'
-import { correctImportRow, decideImportRow, importHospitalDownload, stageImportRows } from './matchingActions'
+import { correctImportRow, decideImportRow, stageImportRows } from './matchingActions'
+import { receiveHospitalBatch, receiveMailboxPdf } from './intakeIngest'
 import { assessImportRow, matchingAttentionCount } from './matchingSelectors'
 import { needsInvoiceDestinationBookings, proceduresForBooking } from './selectors'
-import { SX_NO_NHI_TYPED, FORTE_CORRECTED_NHI, SARAH_UPDATE_WORDING, FOSTER_HOSPITAL_WORDING } from '../domain/intake'
-import type { Actor } from './mutate'
+import { SX_NO_NHI_TYPED, FORTE_CORRECTED_NHI, FORTE_ROOMS_PDF, HOSPITAL_DOWNLOAD_SAMPLES, SAMPLE_STG, SARAH_UPDATE_WORDING, FOSTER_HOSPITAL_WORDING } from '../domain/intake'
+import { receiveSample } from '../test/intakeSamples'
 import { setInvoiceDescription } from './procedureTextActions'
-
-const ANAESTHETIST: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: '34821' }
+import { warningsForBooking } from './warnings'
 
 function fresh(): AppStoreApi {
   return createAppStore()
 }
 
-/** Import a sample; return its row ids in file order. */
+/** A connected hospital's sample sent by its feed (Phase 68: no import); its row ids in file order. */
 function imported(api: AppStoreApi, sampleId: string): string[] {
-  const res = importHospitalDownload(api, OFFICE_ACTOR, sampleId)
+  return receiveSample(api, HOSPITAL_DOWNLOAD_SAMPLES.find((s) => s.id === sampleId)!).rowIds
+}
+
+/** Forte Health's List by PDF to the rooms' mailbox (D125); its row ids in PDF order. */
+function forteByPdf(api: AppStoreApi): string[] {
+  const res = receiveMailboxPdf(api, FORTE_ROOMS_PDF)
   if (!res.ok) throw new Error(res.message)
-  const batch = api.getState().intake.batches[res.value.batchId!]!
-  return batch.rowIds
+  return res.value.rowIds
 }
 
 function scheduleOf(api: AppStoreApi) {
@@ -33,24 +37,27 @@ function scheduleOf(api: AppStoreApi) {
 }
 
 describe('import (US-02.1.1)', () => {
-  it('stages the rows, applies nothing, and a re-import adds nothing (a rejected or corrected row included)', () => {
+  it('stages the rows, applies nothing; a re-send skips the open rows (a corrected one included) and stages the decided one again (DM-21)', () => {
     const api = fresh()
     const before = scheduleOf(api)
-    const res = importHospitalDownload(api, OFFICE_ACTOR, 'SAMPLE_STG')
-    expect(res).toMatchObject({ ok: true, value: { added: 5, skipped: 0 } })
+    const batchesBefore = Object.keys(api.getState().intake.batches).length
+    const send = () => receiveHospitalBatch(api, SAMPLE_STG.hospitalId, SAMPLE_STG.label, SAMPLE_STG.rows, { sampleId: SAMPLE_STG.id })
+    const res = send()
+    expect(res.ok && res.value.rowIds).toHaveLength(5)
     expect(scheduleOf(api)).toBe(before)
-    // Five plus the seeded row waiting for an NHI (catch-up Phase 33a).
-    expect(matchingAttentionCount(api.getState())).toBe(6)
-    const rows = api.getState().intake.batches[res.ok ? res.value.batchId! : '']!.rowIds
+    // D125's unit: the file's three Lists, each once, plus the seed's rooms PDF List and its row waiting for an NHI.
+    expect(matchingAttentionCount(api.getState())).toBe(5)
+    const rows = api.getState().intake.batches[res.ok ? res.value.batchId : '']!.rowIds
     expect(decideImportRow(api, OFFICE_ACTOR, rows[1]!, { kind: 'reject', reason: 'Duplicate of another row' }).ok).toBe(true)
     expect(correctImportRow(api, OFFICE_ACTOR, rows[0]!, { scheduledTime: '08:45' }).ok).toBe(true)
-    expect(importHospitalDownload(api, OFFICE_ACTOR, 'SAMPLE_STG')).toMatchObject({ ok: true, value: { added: 0, skipped: 5 } })
-    expect(Object.keys(api.getState().intake.batches)).toHaveLength(2)
+    const again = send()
+    expect(again.ok && again.value.rowIds.map((id) => api.getState().intake.rows[id]!.incoming.patient.name)).toEqual([SAMPLE_STG.rows[1]!.patient.name])
+    expect(Object.keys(api.getState().intake.batches)).toHaveLength(batchesBefore + 2)
   })
-  it('refuses a non-office actor and an unknown sample', () => {
+  it('refuses a hospital that is not connected and an unknown hospital', () => {
     const api = fresh()
-    expect(importHospitalDownload(api, ANAESTHETIST, 'SAMPLE_STG')).toMatchObject({ ok: false, code: 'officeOnly' })
-    expect(importHospitalDownload(api, OFFICE_ACTOR, 'NOPE')).toMatchObject({ ok: false, code: 'unknownSample' })
+    expect(receiveHospitalBatch(api, 'H-FORTE', 'x', SAMPLE_STG.rows.map((r) => ({ ...r, hospitalId: 'H-FORTE' })))).toMatchObject({ ok: false, code: 'notConnected' })
+    expect(receiveHospitalBatch(api, 'H-NOPE', 'x', SAMPLE_STG.rows)).toMatchObject({ ok: false, code: 'notFound' })
   })
   it('audits the batch and each row', () => {
     const api = fresh()
@@ -108,6 +115,8 @@ describe('decisions (US-02.1.2, US-02.1.3, FT-02.5)', () => {
     expect(procedure!.rvgGroupId).toBeUndefined()
     expect(procedure!.payer).toEqual({ kind: 'patient' })
     expect(needsInvoiceDestinationBookings(s).some((r) => r.bookingId === bookingId)).toBe(true)
+    // Sarah Mitchell owes AA: the Booking made from her row carries the strong balance warning (catch-up Phase 40; moved from the retired Matching screen's test).
+    expect(warningsForBooking(s, bookingId).filter((w) => w.ruleId === 'patientBalance').map((w) => w.strength)).toEqual(['strong'])
     const last = s.audit.slice(-2)
     expect(last.map((a) => a.action)).toEqual(['importRow.decide', 'booking.fromHospitalRow'])
     expect(last[1]).toMatchObject({ entityId: bookingId, after: { importRowId: r1, hospital: "St George's", channel: 'download', changeType: 'new' } })
@@ -204,24 +213,25 @@ describe('decisions (US-02.1.2, US-02.1.3, FT-02.5)', () => {
     expect(s1.schedule.lists[listId]).toMatchObject({ state: 'ACTIVE', hospitalId: 'H-SX', surgeonId: 'S-PATEL', anaesthetistId: '41267' })
     expect(s1.schedule.bookings[list.ok ? list.value.bookingId! : '']!.listId).toBe(listId)
 
-    const forte3 = imported(api, 'SAMPLE_FORTE_SHEET')[2]!
-    const draft = decideImportRow(api, OFFICE_ACTOR, forte3, { kind: 'createDraft' })
+    // Forte Health's List by PDF (Phase 68; D125): its first row held as a Draft List.
+    const forte1 = forteByPdf(api)[0]!
+    const draft = decideImportRow(api, OFFICE_ACTOR, forte1, { kind: 'createDraft' })
     expect(draft.ok).toBe(true)
     const s2 = api.getState()
     const draftId = draft.ok ? draft.value.listId! : ''
-    expect(s2.schedule.lists[draftId]).toMatchObject({ state: 'DRAFT', hospitalId: 'H-FORTE', surgeonId: 'S-OKAFOR', dateISO: '2026-12-04', session: 'PM', draft: { origin: 'hospitalRow' } })
-    expect(s2.schedule.lists[draftId]!.notes).toBe('From Forte Health daily sheet: Hugh Barnett, 14:00, TURBT')
+    expect(s2.schedule.lists[draftId]).toMatchObject({ state: 'DRAFT', hospitalId: 'H-FORTE', surgeonId: 'S-OKAFOR', dateISO: '2026-12-01', session: 'AM', draft: { origin: 'hospitalRow' } })
+    expect(s2.schedule.lists[draftId]!.notes).toBe("From Mr C. Okafor's rooms PDF list: Peter Langley, 08:00, phaco + IOL R")
     const bookingId = draft.ok ? draft.value.bookingId! : ''
-    expect(proceduresForBooking(s2, bookingId)[0]!.procedureText).toMatchObject({ text: 'TURBT', source: 'hospitalSheet', from: 'Forte Health daily sheet' })
+    expect(proceduresForBooking(s2, bookingId)[0]!.procedureText).toMatchObject({ text: 'phaco + IOL R', source: 'surgeonPdf', from: "Mr C. Okafor's rooms" })
   })
 
   it('a Draft List needs a surgeon; a mistyped NHI must be corrected first', () => {
     const api = fresh()
-    const forte = imported(api, 'SAMPLE_FORTE_SHEET')
-    expect(correctImportRow(api, OFFICE_ACTOR, forte[2]!, { surgeonId: 'S-NOPE' })).toMatchObject({ ok: false, code: 'notFound' })
-    expect(decideImportRow(api, OFFICE_ACTOR, forte[1]!, { kind: 'createBooking', listId: 'L-25490-2026-12-01-PM' })).toMatchObject({ ok: false, code: 'invalidNhi' })
+    const forte = forteByPdf(api)
+    expect(correctImportRow(api, OFFICE_ACTOR, forte[0]!, { surgeonId: 'S-NOPE' })).toMatchObject({ ok: false, code: 'notFound' })
+    expect(decideImportRow(api, OFFICE_ACTOR, forte[1]!, { kind: 'createBooking', listId: 'L-29104-2026-12-01-AM' })).toMatchObject({ ok: false, code: 'invalidNhi' })
     expect(correctImportRow(api, OFFICE_ACTOR, forte[1]!, { nhi: FORTE_CORRECTED_NHI }).ok).toBe(true)
-    expect(decideImportRow(api, OFFICE_ACTOR, forte[1]!, { kind: 'createBooking', listId: 'L-25490-2026-12-01-PM' }).ok).toBe(true)
+    expect(decideImportRow(api, OFFICE_ACTOR, forte[1]!, { kind: 'createBooking', listId: 'L-29104-2026-12-01-AM' }).ok).toBe(true)
     const staged = stageImportRows(api, OFFICE_ACTOR, 'download', 'H-SX', 'test', [
       { hospitalId: 'H-SX', dateISO: '2026-12-10', session: 'PM', patient: { name: 'No Surgeon', nhi: 'ZQA4333' }, procedure: { text: 'x' }, hospitalStatus: 'booked' },
     ])
@@ -293,12 +303,15 @@ describe('review fixes (catch-up Phase 33)', () => {
     expect(api.getState().schedule.bookings['BK0133']).toMatchObject({ funderPartyId: 'PY-SCHS', insuranceApprovalNumber: '111' })
   })
 
-  it('a revert to an earlier value is a new row; an identical repeat of the latest is skipped', () => {
+  it('a revert to an earlier value is a new row; an identical repeat of the latest, already decided, is staged again (DM-21)', () => {
     const api = fresh()
     const first = stage(api, stg({ scheduledTime: '08:00' }))!
     expect(decideImportRow(api, OFFICE_ACTOR, first, { kind: 'match', bookingId: 'BK0066', fieldsApplied: ['time'] }).ok).toBe(true)
     const second = stage(api, stg({ scheduledTime: '08:30' }))!
     expect(decideImportRow(api, OFFICE_ACTOR, second, { kind: 'match', bookingId: 'BK0066', fieldsApplied: ['time'] }).ok).toBe(true)
+    const repeat = stage(api, stg({ scheduledTime: '08:30' }))
+    expect(repeat).toBeDefined()
+    // While that repeat is still open, the same row again is skipped: the one job stays one.
     expect(stage(api, stg({ scheduledTime: '08:30' }))).toBeUndefined()
     expect(stage(api, stg({ scheduledTime: '08:00' }))).toBeDefined()
   })

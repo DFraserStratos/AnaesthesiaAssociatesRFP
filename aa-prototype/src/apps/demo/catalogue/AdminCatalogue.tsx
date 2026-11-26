@@ -10,11 +10,12 @@ import { StubSetExample } from './stubExamples'
 import { DRAFT_LIST, DRAFT_LISTS, UNASSIGNED } from '../../../shared/scheduleTerms'
 import { ResponseTableExample, SupportHoursExample, SupportPanelExample, SupportRequestFormExample, SupportSidePanelExample, TicketListExample } from './supportExamples'
 import { CataloguePage, CatalogueRow, FamilySection, StageHint } from './CatalogueKit'
+import { WorkbenchSplitExample } from './admin/workbenchSplitExample'
 import { AdminPageExample, CardExample, DefRowExample, EyebrowExample, PageHeaderExample, TableKitExample } from './admin/pageChromeExamples'
 import { ReviewQueue } from '../../admin/screens/ReviewQueue'
 import { AuditViewer } from '../../admin/screens/AuditViewer'
 import { RowField } from '../../admin/components/RowField'
-import { PdfListsTab } from '../../admin/intake/PdfListsTab'
+import { PdfListReview } from '../../admin/intake/PdfListReview'
 import { ListOriginRow } from '../../admin/components/ListOriginRow'
 import { SEED_ORIGIN_LISTS } from '../../../domain/seed/listOrigins'
 import { DiffTable } from '../../admin/matching/DiffTable'
@@ -443,6 +444,9 @@ export function AdminCatalogue() {
         <CatalogueRow name="SidePanel" source="shared/surface/SidePanel.tsx" usedIn={AW} what="The one right-docked panel (U2): scrim, an h2 header at 18/700 that names the dialog, the corner X, e3, a scrolling body and a footer. 440px list (the drawers) or 600px record (MasterPanel, the support panel). On the one modal stack. Moved from apps/admin/components to the shared surface in catch-up Phase 43b, so the web app's Help uses the same shell." shared="shared/surface/SidePanel.tsx">
           <SidePanelExample />
         </CatalogueRow>
+        <CatalogueRow name="WorkbenchSplit" source="shared/surface/WorkbenchSplit.tsx" usedIn={A} what="SidePanel's docked, non-modal sibling (build plan Phase 68; intake-ideas.html #idea1): a list on the left at a fixed width (400px unless given) beside the detail of the picked item, at the full height of a fit page, each column a labelled region scrolling on its own with a 1px line between. No scrim, no focus trap, nothing inert: the page around it stays usable. Framed as the main data surface by default, or flush. Intake's arrivals feed and workbench." shared="shared/surface/WorkbenchSplit.tsx" note="Shown in a 300px box with a narrower feed; picking a row changes local state only.">
+          <WorkbenchSplitExample />
+        </CatalogueRow>
         <CatalogueRow name="SupportPanel" source="shared/support/SupportPanel.tsx" usedIn={AWM} what="The one support panel body (catch-up Phase 43b; US-15.0.8, US-15.0.9): the open or closed status from the demo clock and the holiday calendar, the phone line in mono and the hours (SupportHours), the response table (ResponseTable), the out-of-hours Notice, the request form (SupportRequestForm: subject, priority, description; What is happening? out of hours; the kind on Product support) and the tickets (TicketList: status Pill, respond-by in mono, Response overdue, Best effort or Awaiting AA's approval). LineTabs Help line and Product support in Admin. One Simulated badge and the readings caption." shared="shared/support/SupportPanel.tsx" note="Every hour and response time reads SUPPORT_CONFIG (domain/support.ts). Send writes an audited ticket to the demo store.">
           <SupportPanelExample />
         </CatalogueRow>
@@ -563,9 +567,9 @@ export function AdminCatalogue() {
 
       {/* ------------------------------------------------------------------ */}
       <FamilySection id="tables">
-        <CatalogueRow name="PdfListsTab and PdfListReview (PDF lists)" source="apps/admin/intake/PdfListsTab.tsx" usedIn={A} what="The rooms' PDF lists (catch-up Phase 34): an inbox on the shared table kit (sender, surgeon, hospital, received, suggested List, a Re-sent Pill and a status Pill), Upload PDF list (PdfUploadDialog: the surface's Overlay with OverlayHeader, RadioCards badged Sample files, a Sent from TextField and SheetActions), and the review beside the facsimile: compact TextFields per row, each correction listed under its row, Send to matching (Button) and a ResultLine." shared="shared/table/TableShell.tsx" note="Uploading, correcting and sending write to the demo store." height={460}>
+        <CatalogueRow name="PdfListReview (a rooms' PDF list)" source="apps/admin/intake/PdfListReview.tsx" usedIn={A} what="A rooms' PDF list under review (catch-up Phase 34): the list beside its facsimile, compact TextFields per row, each correction listed under its row, Send to matching (Button) and a ResultLine. Intake's old PDF lists tab (its inbox and Upload PDF list) is gone; Arrivals' Rooms PDFs filter lists them now." shared="shared/ui/Field.tsx" note="Shown on the seed's received PDF list. Correcting and sending write to the demo store. PdfUploadDialog has no screen until the new list bench reuses or retires it." height={460}>
           <Wide minWidth={1000}>
-            <PdfListsTab actor={OFFICE_ACTOR} />
+            <PdfListReviewExample />
           </Wide>
         </CatalogueRow>
         <CatalogueRow name="Pager" source="apps/admin/components/Pager.tsx" usedIn={A} what="The one admin pager (catch-up Phase 43; US-15.0.4): the range in mono, first, previous, the teal page count, next and last. Shown only past one page: the Day view (30 anaesthetists), Invoices (50), Audit (100), the Ledger (50), the Billing tab's groups (20) and each group's Lists (25)." shared="shared/ui/IconButton.tsx">
@@ -577,7 +581,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="PatientsScreen (Coming up · Needs follow-up · All)" source="apps/admin/screens/patients/PatientsScreen.tsx" usedIn={A} what="People · Patients (catch-up Phase 40; build plan Phases 53 and 57; US-11.3.1, US-11.3.3, DM-10): one list searched by name, NHI or date of birth and paged by the admin Pager (50 a page, no cap), with the filters Coming up (the default, a Booking in the next 14 days, nearest first), Needs follow-up (one row per patient with its reasons in the Why column, from patientsNeedingOffice; its figure is the People badge) and All. The filter, search and page are in the URL (?filter=follow-up). A row opens the patient's page; no row carries an action. A search with no match in the chosen filter offers Search all patients." shared="shared/table/TableShell.tsx" note="On PeoplePage, PageToolbar, NameSearchBox, FilterPills (the count in the label), TableShell fit with the Pager in its footer, ClickableRow, RowOpenButton, StrengthPill and EmptyState. Hooks: admin-patients, patients-filter (data-patients-filter), patients-needs-office, tr[data-patient-nhi] with data-reasons on Needs follow-up. The internal id is never shown.">
           <PatientsSearchExample />
         </CatalogueRow>
-        <CatalogueRow name="WaitingNhiView / WaitingNhiRowView / AddNhiSheet" source="apps/admin/intake/WaitingNhiView.tsx · WaitingNhiTab.tsx · AddNhiSheet.tsx" usedIn={A} what="Intake's Waiting for NHI tab (catch-up Phase 40, on Intake since Phase 51; US-11.1.5): each intake row with the patient as received, its List, 33a's stub chip, the one address to chase (the others offered), the days to go with an Urgent pill and when the office asked. Email for the NHI is a real mailto link, audited on click; Add NHI opens the desktop dialog with the live NHI check, the existing-record preview and the differences." shared="shared/table/TableShell.tsx" note="On the shared TableShell, Pill, Button (href), SelectField, TextField, Notice, OverlayHeader and SheetActions. The seed holds one waiting row (33a's); the Demo actions' Receive list with a missing NHI adds two.">
+        <CatalogueRow name="WaitingNhiView / WaitingNhiRowView / AddNhiSheet" source="apps/admin/intake/WaitingNhiView.tsx · AddNhiSheet.tsx" usedIn={A} what="The Waiting for NHI table (catch-up Phase 40; US-11.1.5; Intake's old tab is gone, Arrivals' Needs NHI filter lists these rows now): each intake row with the patient as received, its List, 33a's stub chip, the one address to chase (the others offered), the days to go with an Urgent pill and when the office asked. Email for the NHI is a real mailto link, audited on click; Add NHI opens the desktop dialog with the live NHI check, the existing-record preview and the differences." shared="shared/table/TableShell.tsx" note="On the shared TableShell, Pill, Button (href), SelectField, TextField, Notice, OverlayHeader and SheetActions. The seed holds one waiting row (33a's); the Demo actions' Receive list with a missing NHI adds two.">
           <WaitingNhiExample />
         </CatalogueRow>
         <CatalogueRow name="DetailChoiceTable" source="apps/admin/screens/patients/patientParts.tsx" usedIn={A} what="The one details comparison table (catch-up Phase 40's Details differ, made shared in Phase 40a): Detail, the record's value, the other source's and, with a choice, Keep or Use per row (default Keep); an enrichment reads Will be added. Details differ (Use incoming), Add NHI's read-only preview and Refresh from the NHI register (Use register) all use it." shared="shared/table/TableShell.tsx" note="On the shared TableShell (nested, dense) and SelectField (compact, surface). Replaced the Add NHI sheet's private copy.">
@@ -743,7 +747,7 @@ export function AdminCatalogue() {
         <CatalogueRow name="SignalFilterButton (DayGrid focus filters)" source="apps/admin/components/DayGrid.tsx" usedIn={A} what="The Day grid footer's aria-pressed pills (Needs attention, Conflict, Has note, Has warnings) that narrow and regroup the rows, with Reset filters." shared="Stays custom" note="Not exported: the row mounts the real DayGrid with an empty roster, so only its live footer shows.">
           <FocusFiltersExample />
         </CatalogueRow>
-        <CatalogueRow name="StubRow and StubMarker" source="shared/stubs/StubParts.tsx" usedIn={AWM} what="A stub on a List (catch-up Phase 33a): a booking waiting at intake, not a Booking. StubRow is the Booking row with the dashed placeholder edge on the mild warning tint and the triangle disc: time, name and wording as received, the reason and who resolves it. StubTableRow holds it in a Bookings table and shows what was received inline; StubMarker is the triangle beside a List's count (Lists rows, the Day grid block); ListStubNote reads '1 waiting at intake' beside the progress. On Admin it ends in StubResolveLink, 'Resolve on Matching'." shared="shared/stubs/StubParts.tsx" note="A fixed example stub; nothing writes to the demo data.">
+        <CatalogueRow name="StubRow and StubMarker" source="shared/stubs/StubParts.tsx" usedIn={AWM} what="A stub on a List (catch-up Phase 33a): a booking waiting at intake, not a Booking. StubRow is the Booking row with the dashed placeholder edge on the mild warning tint and the triangle disc: time, name and wording as received, the reason and who resolves it. StubTableRow holds it in a Bookings table and shows what was received inline; StubMarker is the triangle beside a List's count (Lists rows, the Day grid block); ListStubNote reads '1 waiting at intake' beside the progress. On Admin it ends in StubResolveLink, 'Resolve at Intake'." shared="shared/stubs/StubParts.tsx" note="A fixed example stub; nothing writes to the demo data.">
           <StubSetExample />
         </CatalogueRow>
         <CatalogueRow name="RemittanceAdviceDocument (on the document parts)" source="shared/billing/RemittanceAdviceDocument.tsx · shared/billing/docParts.tsx" usedIn={AW} what="A payment run's remittance advice (catch-up Phase 39a; US-10.2.5): REMITTANCE ADVICE with the anaesthetist as supplier and AA as agent, the week, paid on and paid to, every BCTI paid, every negative netted as a signed amount, and Paid to you. The Admin document and web Accounts' sheet are one component." shared="shared/billing/RemittanceAdviceDocument.tsx" note="Built from the document parts the tax invoice and the credit note share (DocMasthead, AgentBlock, DocLinesTable with a printed signed amount, DocTotalLines), lifted out of InvoiceDocument so the three documents stay one family. Dr Souter's Week 47 advice here.">
@@ -927,6 +931,13 @@ function DiffTableExample() {
       />
     </div>
   )
+}
+
+/** The seed's first rooms' PDF list, under review. */
+function PdfListReviewExample() {
+  const list = useAppStore((s) => Object.values(s.intake.pdfLists).sort((a, b) => a.id.localeCompare(b.id))[0])
+  if (list === undefined) return <StageHint>No PDF list in the store.</StageHint>
+  return <PdfListReview list={list} actor={OFFICE_ACTOR} onBack={() => undefined} />
 }
 
 /** The seeded rooms' PDF List and the hospital's List, as the drawer shows them (catch-up Phase 34). */

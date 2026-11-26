@@ -18,10 +18,13 @@
  * The rows' seeded targets are pinned in `hospitalDownloads.test.ts`.
  */
 
-import type { ImportChannel, IncomingBookingFields } from '../types'
+import type { ImportChannel, IncomingBookingFields, PdfReadField, Session } from '../types'
 import { FEED } from '../integrations/feeds'
 import { APPT } from '../integrations/messages'
-import { HOSP } from '../seed/cast'
+import { ANAE, HOSP, SURG } from '../seed/cast'
+import type { PdfListSampleRow } from './pdfLists'
+import { UNREADABLE_REASONS, type PdfHeaderField } from './pdfRead'
+import { longDay } from '../dateText'
 
 export interface HospitalDownloadSample {
   id: string
@@ -206,6 +209,12 @@ export const SAMPLE_SX: HospitalDownloadSample = {
   ],
 }
 
+/**
+ * The Forte Health daily sheet as the office keyed it (channel `manualSheet`, no catalogue source). Re-cast as a
+ * rooms' mailbox PDF (build plan Phase 68; D125): `FORTE_ROOMS_PDF` below is what Intake receives now, and nothing in
+ * the app stages this sheet any more. It stays as fixture data (`matchingFixtures.test.ts`, the privacy masking test),
+ * as does the `manualSheet` channel, which the matcher's and the raw row's labels still read.
+ */
 export const SAMPLE_FORTE_SHEET: HospitalDownloadSample = {
   id: 'SAMPLE_FORTE_SHEET',
   channel: 'manualSheet',
@@ -293,12 +302,8 @@ export const NO_NHI_LIST: HospitalDownloadSample = {
   ],
 }
 
-/** The five samples, in the import dialog's order. */
+/** The five samples (the retired import dialog's order), read by the matching fixtures and the privacy tests. */
 export const HOSPITAL_DOWNLOAD_SAMPLES: readonly HospitalDownloadSample[] = [SAMPLE_STG, SAMPLE_STG_UPDATE, SAMPLE_SX, SAMPLE_FORTE_SHEET, NO_NHI_LIST]
-
-export function hospitalDownloadSample(id: string): HospitalDownloadSample | undefined {
-  return HOSPITAL_DOWNLOAD_SAMPLES.find((s) => s.id === id)
-}
 
 /**
  * The hospital's source key for a correlation ref: its seeded feed id where
@@ -311,4 +316,264 @@ export function hospitalSourceKey(hospitalId: string): string {
   if (hospitalId === HOSP.sx) return FEED.sx
   if (hospitalId === HOSP.cph) return FEED.cph
   return `MANUAL-${hospitalId}`
+}
+
+// ---------------------------------------------------------------------------
+// Intake's front door (build plan Phase 68; D119, D120, D125): the samples the six demo actions play
+// ---------------------------------------------------------------------------
+
+/** One row of a rooms' PDF as printed, with the reader's confidence for a field when it is not the default (D120). */
+export interface MailboxPdfSampleRow extends PdfListSampleRow {
+  confidence?: Partial<Record<PdfReadField, number>>
+}
+
+/**
+ * A rooms' PDF as it arrives in the mailbox (D125): the List it prints (surgeon, hospital, day, session, and the
+ * anaesthetist when the rooms name one, DM-19), the address the email came from, its rows as printed, and the
+ * reader's confidence overrides. A scan is read with lower confidences (`readConfidence`): a scanned value with no
+ * override reads unsure, and an override of 0.98 or more keeps it sure. Synthetic patients only.
+ */
+export interface MailboxPdfSample {
+  id: string
+  fileName: string
+  surgeonId: string
+  /** As printed on the letterhead. */
+  surgeonName: string
+  hospitalId: string
+  hospitalName: string
+  subject: string
+  /** The address the email came from. */
+  senderEmail: string
+  dateISO: string
+  session: Session
+  /** The anaesthetist the rooms name, when they name one (resolved to the master on arrival). */
+  anaesthetist?: { name: string; hpiId?: string }
+  rows: readonly MailboxPdfSampleRow[]
+  headerConfidence?: Partial<Record<PdfHeaderField, number>>
+  scanned?: boolean
+  /** What the presenter should notice. */
+  note?: string
+}
+
+/** The header values the reader reads from a rooms' PDF: surgeon, hospital, date, session and a named anaesthetist. */
+export function mailboxPdfHeaderValues(sample: MailboxPdfSample): Partial<Record<PdfHeaderField, string>> {
+  return {
+    surgeon: sample.surgeonName,
+    hospital: sample.hospitalName,
+    date: longDay(sample.dateISO),
+    session: sample.session,
+    ...(sample.anaesthetist !== undefined ? { anaesthetist: sample.anaesthetist.name } : {}),
+  }
+}
+
+/** Every field a row is read for, at a confidence a scan keeps sure, except the fields named (left to read unsure). */
+function sureExcept(...unsure: PdfReadField[]): Partial<Record<PdfReadField, number>> {
+  const fields: PdfReadField[] = ['nhi', 'name', 'procedureText', 'scheduledTime', 'dobISO', 'ethnicityCode']
+  return Object.fromEntries(fields.filter((f) => !unsure.includes(f)).map((f) => [f, 0.99]))
+}
+
+const OKAFOR = { name: 'Mr C. Okafor', hpiId: '43OKAC' } as const
+const RUTHERFORD = { name: 'Dr James Rutherford', hpiId: '11RUTJ' } as const
+/** Avonside Surgical Rooms' own address (Mr Okafor's practice). */
+const AVONSIDE_ADDRESS = 'admin@avonsidesurgical.example'
+
+/** Where the Okafor story's List sits (D119): Mr Okafor, St George's, Wed 25 Nov PM, Dr Rutherford named. */
+export const OKAFOR_STORY_LIST = {
+  surgeonId: SURG.okafor,
+  hospitalId: HOSP.stg,
+  dateISO: '2026-11-25',
+  session: 'PM' as const,
+  anaesthetistId: ANAE.rutherford,
+} as const
+
+/**
+ * The story's patients (synthetic; every NHI valid and held by no seeded patient). Sione Faleolo is sent by the rooms
+ * with no NHI; St George's day-before List brings `nhiFromHospital` with the same name and birth date.
+ */
+export const OKAFOR_STORY_PATIENTS = {
+  ngata: { name: 'Wiremu Ngata', nhi: 'ZQE1000', dobISO: '1958-03-14' },
+  pike: { name: 'Gordon Pike', nhi: 'ZQE1018', dobISO: '1949-11-02' },
+  lindqvist: { name: 'Ingrid Lindqvist', nhi: 'ZQE1026', dobISO: '1971-06-30' },
+  faleolo: { name: 'Sione Faleolo', dobISO: '1966-04-09', nhiFromHospital: 'ZQE1042' },
+  brooks: { name: 'Helen Brooks', nhi: 'ZQE1034', dobISO: '1983-01-21' },
+} as const
+const P = OKAFOR_STORY_PATIENTS
+
+/** (1) The rooms email the List: four patients, one with no NHI, naming Dr Rutherford, from the practice's address. */
+export const OKAFOR_ROOMS_PDF: MailboxPdfSample = {
+  id: 'PDF-OKAFOR-STG-1125',
+  fileName: 'Okafor theatre list Wed 25 Nov PM.pdf',
+  surgeonId: SURG.okafor,
+  surgeonName: OKAFOR.name,
+  hospitalId: HOSP.stg,
+  hospitalName: "St George's",
+  subject: 'Operating list · Wednesday 25 November (PM)',
+  senderEmail: AVONSIDE_ADDRESS,
+  dateISO: OKAFOR_STORY_LIST.dateISO,
+  session: OKAFOR_STORY_LIST.session,
+  anaesthetist: RUTHERFORD,
+  note: 'Four patients; Sione Faleolo has no NHI. Names Dr Rutherford.',
+  rows: [
+    { id: 'R1', nhi: P.ngata.nhi, name: P.ngata.name, dobISO: P.ngata.dobISO, scheduledTime: '13:00', ethnicityCode: '21111', procedureText: 'RTK' },
+    { id: 'R2', nhi: P.pike.nhi, name: P.pike.name, dobISO: P.pike.dobISO, scheduledTime: '14:00', ethnicityCode: '11111', procedureText: 'L inguinal hernia mesh' },
+    { id: 'R3', nhi: P.lindqvist.nhi, name: P.lindqvist.name, dobISO: P.lindqvist.dobISO, scheduledTime: '15:00', ethnicityCode: '11111', procedureText: 'lap chole' },
+    { id: 'R4', name: P.faleolo.name, dobISO: P.faleolo.dobISO, scheduledTime: '16:00', ethnicityCode: '31111', procedureText: 'carpal tunnel decomp R' },
+  ],
+}
+
+/** (2) The rooms re-send it: Lindqvist moved to 15:30, Helen Brooks added, Gordon Pike missing. */
+export const OKAFOR_ROOMS_RESEND: MailboxPdfSample = {
+  ...OKAFOR_ROOMS_PDF,
+  id: 'PDF-OKAFOR-STG-1125-R2',
+  fileName: 'Okafor theatre list Wed 25 Nov PM (updated).pdf',
+  subject: 'Operating list · Wednesday 25 November (PM) · updated',
+  note: 'Ingrid Lindqvist moved to 15:30, Helen Brooks added, Gordon Pike no longer on it.',
+  rows: [
+    { id: 'R1', nhi: P.ngata.nhi, name: P.ngata.name, dobISO: P.ngata.dobISO, scheduledTime: '13:00', ethnicityCode: '21111', procedureText: 'RTK' },
+    { id: 'R2', nhi: P.lindqvist.nhi, name: P.lindqvist.name, dobISO: P.lindqvist.dobISO, scheduledTime: '15:30', ethnicityCode: '11111', procedureText: 'lap chole' },
+    { id: 'R3', name: P.faleolo.name, dobISO: P.faleolo.dobISO, scheduledTime: '16:00', ethnicityCode: '31111', procedureText: 'carpal tunnel decomp R' },
+    { id: 'R4', nhi: P.brooks.nhi, name: P.brooks.name, dobISO: P.brooks.dobISO, scheduledTime: '16:45', ethnicityCode: '11111', procedureText: 'lap appy' },
+  ],
+}
+
+const STG_OKAFOR_ROW = {
+  hospitalId: HOSP.stg,
+  dateISO: OKAFOR_STORY_LIST.dateISO,
+  session: OKAFOR_STORY_LIST.session,
+  surgeon: OKAFOR,
+  anaesthetist: RUTHERFORD,
+  hospitalStatus: 'booked',
+} as const
+
+/**
+ * (3) St George's day-before List, Mr Okafor's part (a hospital feed message): the hospital's fuller wording and an
+ * insurer approval number for Wiremu Ngata, Ingrid Lindqvist shifted to 15:45, Sione Faleolo with his NHI (the waiting
+ * stub's patient, same name and birth date), Helen Brooks as held. Gordon Pike is not sent: a hospital List is never
+ * checked for missing Bookings. The rest of the day's message (Lists that match exactly) is built from the schedule
+ * (`stgDayBeforeRows` in the store).
+ */
+export const STG_DAY_BEFORE_OKAFOR_ROWS: readonly IncomingBookingFields[] = [
+  {
+    ...STG_OKAFOR_ROW,
+    externalRef: '1663501',
+    scheduledTime: '13:00',
+    patient: { name: P.ngata.name, nhi: P.ngata.nhi, dobISO: P.ngata.dobISO },
+    procedure: { text: 'Right total knee replacement', code: 'LL3' },
+    insurer: { text: 'Southern Cross Health Society', insurerPartyId: 'PY-SCHS', approvalNumber: '5528170' },
+  },
+  { ...STG_OKAFOR_ROW, externalRef: '1663502', scheduledTime: '15:45', patient: { name: P.lindqvist.name, nhi: P.lindqvist.nhi, dobISO: P.lindqvist.dobISO } },
+  { ...STG_OKAFOR_ROW, externalRef: '1663503', scheduledTime: '16:00', patient: { name: P.faleolo.name, nhi: P.faleolo.nhiFromHospital, dobISO: P.faleolo.dobISO } },
+  { ...STG_OKAFOR_ROW, externalRef: '1663504', scheduledTime: '16:45', patient: { name: P.brooks.name, nhi: P.brooks.nhi, dobISO: P.brooks.dobISO } },
+]
+
+export const STG_DAY_BEFORE = {
+  id: 'STG-DAY-BEFORE-1125',
+  hospitalId: HOSP.stg,
+  label: "St George's theatre Lists · Wed 25 Nov",
+  dateISO: OKAFOR_STORY_LIST.dateISO,
+  okaforRows: STG_DAY_BEFORE_OKAFOR_ROWS,
+  /** How many of the day's other St George's Lists the message carries, each matching exactly what AA holds. */
+  matchingListCount: 2,
+} as const
+
+/** (4) Southern Cross cancels one Booking (the Booking is picked from the schedule: `sxCancellationRow` in the store). */
+export const SX_CANCELLATION = {
+  id: 'SX-CANCEL-1',
+  hospitalId: HOSP.sx,
+  label: 'Southern Cross · appointment cancelled',
+  cancelReason: 'Cancelled by the patient, to rebook with the rooms',
+} as const
+
+/** (5) A scanned PDF: Mr Whitford's cataract List, read from a scan; three values read unsure, the rest kept sure. */
+export const SCAN_PDF: MailboxPdfSample = {
+  id: 'PDF-SCAN-WHITFORD-1203',
+  fileName: 'Scan_0958.pdf',
+  surgeonId: SURG.whitford,
+  surgeonName: 'Mr J. Whitford',
+  hospitalId: HOSP.ces,
+  hospitalName: 'Christchurch Eye Surgery',
+  subject: 'Cataract list · Thursday 3 December (PM)',
+  senderEmail: 'bookings@merivaleeye.example',
+  dateISO: '2026-12-03',
+  session: 'PM',
+  anaesthetist: { name: 'Dr Oliver Strand', hpiId: '23STRO' },
+  scanned: true,
+  headerConfidence: { surgeon: 0.99, hospital: 0.99, date: 0.99, session: 0.99, anaesthetist: 0.99 },
+  note: 'Read from a scan: three values to check (an NHI, a date of birth and a time).',
+  rows: [
+    { id: 'R1', nhi: 'ZQE1069', name: 'Mavis Thornton', dobISO: '1944-02-11', scheduledTime: '13:00', ethnicityCode: '11111', procedureText: 'phaco + IOL R', confidence: sureExcept() },
+    { id: 'R2', nhi: 'ZQE1077', name: 'Rewi Tamatea', dobISO: '1952-09-30', scheduledTime: '13:40', ethnicityCode: '21111', procedureText: 'phaco + IOL L', confidence: sureExcept('nhi') },
+    { id: 'R3', nhi: 'ZQE1085', name: 'Joyce Abernethy', dobISO: '1939-12-05', scheduledTime: '14:20', ethnicityCode: '11111', procedureText: 'phaco + IOL R', confidence: sureExcept('dobISO') },
+    { id: 'R4', nhi: 'ZQE1093', name: 'Arjun Mehta', dobISO: '1961-07-17', scheduledTime: '15:00', ethnicityCode: '43111', procedureText: 'blephs', confidence: sureExcept('scheduledTime') },
+  ],
+}
+
+/** A faint scanned page: the facsimile of a PDF that cannot be read (no value on it can be made out). */
+function faintPageFacsimile(): string {
+  const lines = Array.from({ length: 14 }, (_, i) => `<rect x="24" y="${150 + i * 30}" width="${300 + ((i * 37) % 120)}" height="8" fill="#EEF1F0"/>`).join('')
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="648" height="640" viewBox="0 0 648 640"><rect width="648" height="640" fill="#FAFAF8"/><rect x="24" y="32" width="260" height="14" fill="#E9ECEB"/><rect x="24" y="58" width="180" height="10" fill="#EEF1F0"/>${lines}</svg>`
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
+}
+
+/** (5, second choice) A page that cannot be read: an arrival with no rows and its reason (D120, D125). */
+export const UNREADABLE_PDF = {
+  id: 'PDF-UNREADABLE-1012',
+  fileName: 'Scan_1012.pdf',
+  facsimile: faintPageFacsimile(),
+  senderEmail: 'reception@riccartonortho.example',
+  reason: UNREADABLE_REASONS.tooFaint,
+} as const
+
+/** (6) A Southern Cross message with no patient: held with its reason, never dropped; its raw text kept. */
+export const SX_FAILED_MESSAGE = {
+  id: 'SX-FAILED-1',
+  hospitalId: HOSP.sx,
+  label: 'Southern Cross message · Appointment',
+  reason: 'The message names no patient, so it cannot become a Booking.',
+  raw: JSON.stringify(
+    {
+      resourceType: 'Appointment',
+      id: '1662188',
+      status: 'booked',
+      start: '2026-12-02T13:30:00+13:00',
+      participant: [{ actor: { reference: 'Practitioner/41PATK', display: 'Ms K. Patel' }, status: 'accepted' }],
+      serviceType: [{ text: 'lap chole' }],
+    },
+    null,
+    2,
+  ),
+} as const
+
+/** The Okafor story's samples, one per demo action (D119), in the order the actions play them. */
+export const OKAFOR_STORY = {
+  roomsList: OKAFOR_ROOMS_PDF,
+  roomsResend: OKAFOR_ROOMS_RESEND,
+  stgDayBefore: STG_DAY_BEFORE,
+  sxCancellation: SX_CANCELLATION,
+  scan: SCAN_PDF,
+  unreadable: UNREADABLE_PDF,
+  failedMessage: SX_FAILED_MESSAGE,
+} as const
+
+/**
+ * The Forte Health sheet re-cast as a rooms' mailbox PDF (D125: the `manualSheet` channel has no catalogue source;
+ * Forte Health is not connected, so its Lists come by PDF): Mr Okafor's Forte List for Tue 1 Dec AM, the sheet's first
+ * row as it had it, and Rosa Mendes with the mistyped NHI, which the reader reads unsure.
+ */
+export const FORTE_ROOMS_PDF: MailboxPdfSample = {
+  id: 'PDF-FORTE-OKAFOR-1201',
+  fileName: 'Okafor Forte list Tue 1 Dec AM.pdf',
+  surgeonId: SURG.okafor,
+  surgeonName: OKAFOR.name,
+  hospitalId: HOSP.forte,
+  hospitalName: 'Forte Health',
+  subject: 'Operating list · Tuesday 1 December (AM)',
+  senderEmail: AVONSIDE_ADDRESS,
+  dateISO: '2026-12-01',
+  session: 'AM',
+  note: `Rosa Mendes's NHI is printed wrongly (${FORTE_MISTYPED_NHI}); the correct NHI is ${FORTE_CORRECTED_NHI}.`,
+  rows: [
+    { id: 'R1', nhi: 'ZQA1741', name: 'Peter Langley', dobISO: '1949-07-15', scheduledTime: '08:00', procedureText: 'phaco + IOL R' },
+    { id: 'R2', nhi: FORTE_MISTYPED_NHI, name: 'Rosa Mendes', dobISO: '1984-04-06', scheduledTime: '09:30', procedureText: 'carpal tunnel decomp L', confidence: { nhi: 0.64 } },
+  ],
 }

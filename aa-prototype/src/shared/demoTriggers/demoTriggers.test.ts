@@ -20,7 +20,6 @@ import { PREPAYMENT_SETTLEMENT_DEMO_COPY } from '../../store/prepaymentSettlemen
 import { approvePrepayment } from '../../store/prepaymentActions'
 import { prepaymentStatusFor } from '../../store/prepaymentSelectors'
 import { formatCurrency } from '../format'
-import { correctPdfListRow, sendPdfListToMatching } from '../../store/pdfListActions'
 import { setAvailabilityRange } from '../../store/availabilityActions'
 import { alertOffice } from '../../store/officeAlertActions'
 import { ANAE, SEED_LIST_IDS, SEED_MARKERS, SEED_PREPAID_BOOKING_ID, SEED_WARNING_SAMPLE_BOOKINGS } from '../../domain/seed'
@@ -53,7 +52,7 @@ function ids(api: BoundAppStore, pathname: string, surface: 'bar' | 'pwa' = 'bar
 }
 
 beforeEach(() => {
-  useDemoTriggerMemory.setState({ lastMessageId: null, lastWebhook: null, webhookCounter: 0 })
+  useDemoTriggerMemory.setState({ lastWebhook: null, webhookCounter: 0 })
 })
 
 describe('registry shape', () => {
@@ -335,23 +334,24 @@ describe('route scoping', () => {
     expect(ids(api, `/admin/review/${SEED_LIST_IDS.souterMon20Am}`)).not.toContain('stage-post-op')
   })
 
-  it('Receive updated PDF from rooms shows only on Intake\'s PDF lists (catch-up Phase 34)', () => {
+  it("Intake's six actions show on Arrivals in the bar only, the feed failure on Sources too; the old Intake routes show none (build plan Phase 68)", () => {
     const api = createAppStore()
-    expect(ids(api, '/admin/intake/pdfs')).toContain('pdf-list-resend')
-    expect(ids(api, '/admin/intake/matching')).not.toContain('pdf-list-resend')
-    expect(ids(api, '/admin/intake/pdfs', 'pwa')).not.toContain('pdf-list-resend')
+    const six = ['intake-rooms-email-list', 'intake-rooms-resend', 'intake-stg-day-before', 'intake-sx-cancels', 'intake-scanned-pdf', 'intake-feed-fails']
+    expect(ids(api, '/admin/intake')).toEqual(expect.arrayContaining([...six, 'matching-raw-row-other-role']))
+    expect(ids(api, '/admin/intake', 'pwa').filter((id) => six.includes(id))).toEqual([])
+    expect(ids(api, '/admin/intake/sources').filter((id) => six.includes(id))).toEqual(['intake-feed-fails'])
+    for (const path of ['/admin/intake/matching', '/admin/intake/pdfs', '/admin/intake/waiting', '/admin/intake/quality', '/admin/intake/validators', '/admin/matching']) {
+      expect(ids(api, path).filter((id) => six.includes(id) || id === 'matching-raw-row-other-role'), path).toEqual([])
+    }
+    for (const id of six) expect(byId(id).screen).toBe('Admin · Intake · Arrivals')
+    expect(byId('intake-feed-fails').alsoScreens).toEqual(['Admin · Intake · Sources'])
   })
 
-  it('the Intake entries sit on Intake\'s routes, the HL7 entries only on the Future-scope surface (catch-up Phase 34)', () => {
+  it('the retired intake entries are gone (build plan Phase 68; D119)', () => {
+    const gone = ['matching-receive-theatre-list', 'matching-send-update', 'pdf-list-resend', 'receive-no-nhi-list', 'fire-hospital-message', 'replay-hospital-message']
+    expect(DEMO_TRIGGERS.filter((t) => gone.includes(t.id))).toEqual([])
     const api = createAppStore()
-    expect(ids(api, '/admin/intake/matching')).toEqual(expect.arrayContaining(['matching-receive-theatre-list', 'matching-send-update']))
-    for (const path of ['/mobile/lists', '/mobile/lists/L1', '/mobile/lists/L1/bookings/BK1', '/admin/intake/matching', '/admin/intake/pdfs', '/admin/integrations', '/admin/matching']) {
-      expect(ids(api, path, 'bar')).not.toContain('fire-hospital-message')
-      expect(ids(api, path, 'bar')).not.toContain('replay-hospital-message')
-    }
-    expect(ids(api, '/demo/integrations/log')).toEqual(expect.arrayContaining(['fire-hospital-message', 'replay-hospital-message']))
-    for (const id of ['matching-receive-theatre-list', 'matching-send-update', 'pdf-list-resend']) expect(byId(id).screen).toBe('Admin · Intake')
-    for (const id of ['fire-hospital-message', 'replay-hospital-message']) expect(byId(id).screen).toBe('Future scope: HL7 and FHIR')
+    expect(ids(api, '/demo/integrations/log')).toEqual([])
   })
 
   it('no entry outside the Future-scope surface names Christchurch Public (catch-up Phase 34; RV-16)', () => {
@@ -361,12 +361,6 @@ describe('route scoping', () => {
     }
   })
 
-  it('the simulator\'s published selection preselects the message', () => {
-    const api = createAppStore()
-    const t = byId('fire-hospital-message')
-    expect(initialChoice(t, api.getState(), ctxFor('/demo/integrations'))).toBe('MSG-STG-1001')
-    expect(initialChoice(t, api.getState(), ctxFor('/demo/integrations', {}, { 'integrationsSim.selectedMessageId': 'MSG-CPH-2001' }))).toBe('MSG-CPH-2001')
-  })
 })
 
 describe('re-homed bodies match the Control Panel', () => {
@@ -471,19 +465,6 @@ describe('re-homed bodies match the Control Panel', () => {
     expect(t.disabledReason(api.getState(), ctxFor('/mobile/lists/x/bookings/BK0001', { bookingId: 'BK0001' }))).toBe('No event awaiting review or the next run on this Booking')
   })
 
-  it('Receive updated PDF from rooms waits for a sent list, then lands the re-sent one once (catch-up Phase 34)', () => {
-    const api = createAppStore()
-    const t = byId('pdf-list-resend')
-    const ctx = ctxFor('/admin/intake/pdfs')
-    expect(t.disabledReason(api.getState(), ctx, 'PDF-OKAFOR-0805')).toBe('Send the first version to matching first.')
-    expect(correctPdfListRow(api, OFFICE_ACTOR, 'PDL0001', 'R2', { nhi: 'ZAA0067' }).ok).toBe(true)
-    expect(sendPdfListToMatching(api, OFFICE_ACTOR, 'PDL0001').ok).toBe(true)
-    expect(t.disabledReason(api.getState(), ctx, 'PDF-OKAFOR-0805')).toBeNull()
-    expect(t.run(api, ctx, 'PDF-OKAFOR-0805').ok).toBe(true)
-    expect(Object.values(api.getState().intake.pdfLists).filter((l) => l.replacesId === 'PDL0001')).toHaveLength(1)
-    expect(t.disabledReason(api.getState(), ctx, 'PDF-OKAFOR-0805')).toBe('The updated list has already arrived.')
-  })
-
   it('half then replay applies once, keyed WEBHOOK-<accRecId>-<n>', () => {
     const api = createAppStore()
     wireBillingRun(api)
@@ -547,20 +528,6 @@ describe('re-homed bodies match the Control Panel', () => {
     expect(byId('run-archive-job').run(api, ctxFor('/admin/finances/xero')).message).toMatch(/^Archive job/)
   })
 
-  it('fire then replay dedupes', () => {
-    const api = createAppStore()
-    const ctx = ctxFor('/mobile/lists')
-    expect(byId('replay-hospital-message').disabledReason(api.getState(), ctx)).toBe('Fire a message first')
-    expect(byId('fire-hospital-message').run(api, ctx, 'MSG-STG-1001').ok).toBe(true)
-    expect(byId('replay-hospital-message').run(api, ctx).message).toMatch(/^Deduplicated/)
-    // After a reset the message is gone from the log: replay refuses rather than re-creating the Booking.
-    resetDemo(api)
-    expect(byId('replay-hospital-message').disabledReason(api.getState(), ctx)).toMatch(/reset/)
-    expect(byId('replay-hospital-message').run(api, ctx).ok).toBe(false)
-  })
-})
-
-describe('session 2 entries', () => {
   it('Simulate sign-in attempts shows on Admin Audit only', () => {
     const api = createAppStore()
     expect(ids(api, '/admin/audit')).toEqual(['simulate-sign-in'])
@@ -1192,18 +1159,16 @@ describe('Phase 43 entries (scale and privacy)', () => {
     expect(out.message).toMatch(/^Scanned 3 areas and [\d,]+ items in \d+ ms\. One hit found, the planted test line\.$/)
   })
 
-  it('View raw row as another role: acts on the selected row, else the oldest row needing resolving; refuses and audits', () => {
+  it('View raw row as another role: on Arrivals, acts on the oldest row needing resolving; refuses and audits (re-homed by Phase 68)', () => {
     const api = createAppStore()
     const t = byId('matching-raw-row-other-role')
-    // With no row selected it falls back to the seeded row waiting for its NHI.
-    expect(t.disabledReason(api.getState(), ctxFor('/admin/intake/matching'))).toBeNull()
-    const published = { 'matching.selectedRowId': 'IRS001' }
-    expect(ids(api, '/admin/intake/matching', 'bar', published)).toContain(t.id)
-    expect(t.disabledReason(api.getState(), ctxFor('/admin/intake/matching', {}, published))).toBeNull()
+    // Arrivals publishes no selected row: it acts on the oldest row needing resolving, the seeded rooms PDF's Brian Holt.
+    expect(ids(api, '/admin/intake', 'bar')).toContain(t.id)
+    expect(t.disabledReason(api.getState(), ctxFor('/admin/intake'))).toBeNull()
     const before = api.getState().audit.length
-    const out = t.run(api, ctxFor('/admin/intake/matching', {}, published), 'souter')
-    // the result names the row it acted on (Mere Tipene's, IRS001)
-    expect(out).toEqual({ ok: true, message: "Refused: only office staff can view a raw hospital row (Mere Tipene's row). The attempt is in the audit trail." })
+    const out = t.run(api, ctxFor('/admin/intake'), 'souter')
+    // the result names the row it acted on
+    expect(out).toEqual({ ok: true, message: "Refused: only office staff can view a raw hospital row (Brian Holt's row). The attempt is in the audit trail." })
     expect(api.getState().audit.slice(before).map((e) => e.action)).toEqual(['importRow.rawViewDenied'])
   })
 })
@@ -1242,10 +1207,13 @@ describe('credit entries (catch-up Phase 39 session 2)', () => {
     expect(under(FINANCES_BILLING_SCREEN)).not.toContain('stage-refund-after-payout')
     expect(under(FINANCES_INVOICE_SCREEN)).toEqual(expect.arrayContaining(['regenerate-invoice', 'payment-full', 'payment-half', 'payment-replay', 'stage-refund-after-payout']))
     expect(groups.filter((g) => g.entries.some((t) => t.id === 'stage-refund-after-payout')).map((g) => g.screen)).toEqual([FINANCES_INVOICE_SCREEN])
-    // Every entry under its own screen, in registry order: the groups keep the order a plain grouping by `screen` gives.
+    // Every entry under its own screen, in registry order: the groups keep the order a plain grouping by `screen` gives,
+    // then a screen only an `alsoScreens` names (Phase 68's Intake · Sources) comes last.
     const plain: string[] = []
     for (const t of DEMO_TRIGGERS) if (!plain.includes(t.screen)) plain.push(t.screen)
-    expect(groups.map((g) => g.screen)).toEqual(plain)
+    const alsoOnly: string[] = []
+    for (const t of DEMO_TRIGGERS) for (const screen of t.alsoScreens ?? []) if (!plain.includes(screen) && !alsoOnly.includes(screen)) alsoOnly.push(screen)
+    expect(groups.map((g) => g.screen)).toEqual([...plain, ...alsoOnly])
     expect(groups.reduce((n, g) => n + g.entries.length, 0)).toBe(DEMO_TRIGGERS.length + DEMO_TRIGGERS.reduce((n, t) => n + (t.alsoScreens?.length ?? 0), 0))
   })
 

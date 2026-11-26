@@ -20,7 +20,7 @@ const EXAMPLE: Stub = {
   status: 'standing',
 }
 
-/** Admin: the drawer row with "Resolve on Matching", the Review table row, the Day grid and Lists marker, the note. */
+/** Admin: the drawer row with "Resolve at Intake", the Review table row, the Day grid and Lists marker, the note. */
 export function StubSetExample() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 560 }}>

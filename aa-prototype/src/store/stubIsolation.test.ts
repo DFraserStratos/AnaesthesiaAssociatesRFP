@@ -15,7 +15,8 @@ import { openWarnings } from './warnings'
 import { searchBookingsFor } from './lookback'
 import { anaesthetistLedgerPosition, bctiRecords } from './ledgerSelectors'
 import { SEED_STUB } from '../domain/seed/intakeSeed'
-import { importHospitalDownload } from './matchingActions'
+import { receiveSample } from '../test/intakeSamples'
+import { SAMPLE_SX } from '../domain/intake/hospitalDownloads'
 import type { Actor } from './mutate'
 
 const SOUTER = '34821'
@@ -23,7 +24,7 @@ const SOUTER_ACTOR: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', so
 
 function withAndWithout(): { withStub: AppState; without: AppState } {
   const api = createAppStore()
-  importHospitalDownload(api, OFFICE_ACTOR, 'SAMPLE_SX') // R4's stub on Tue 28 Jul PM too
+  receiveSample(api, SAMPLE_SX) // R4's stub on Tue 28 Jul PM too
   const withStub = api.getState()
   expect(Object.values(withStub.intake.stubs).filter((s) => s.status === 'standing')).toHaveLength(2)
   return { withStub, without: { ...withStub, intake: { ...withStub.intake, stubs: {} } } }

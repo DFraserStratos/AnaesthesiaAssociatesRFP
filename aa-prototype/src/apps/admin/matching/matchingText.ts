@@ -61,6 +61,8 @@ export function decisionText(view: Pick<MatchingView, 'lists' | 'anaesthetists' 
   switch (decision.kind) {
     case 'reject':
       return `Rejected: ${decision.reason}`
+    case 'leftOut':
+      return decision.reason !== undefined ? `Left out: ${decision.reason}` : 'Left out, nothing changed'
     case 'createBooking': {
       const list = view.lists[decision.listId]
       if (list === undefined) return 'Applied: Booking created'

@@ -73,7 +73,7 @@ export function placeStubsForRows(api: AppStoreApi, actor: Actor, rowIds: readon
 
 export type StubOutcome =
   | { kind: 'resolved'; bookingId: string }
-  | { kind: 'removed'; why: 'rowRejected' | 'draftListRemoved' | 'draftListRedated'; reason?: string }
+  | { kind: 'removed'; why: 'rowRejected' | 'rowLeftOut' | 'draftListRemoved' | 'draftListRedated'; reason?: string }
 
 /**
  * Settle the standing stub of a row (if any) inside a caller's commit: returns
@@ -107,9 +107,11 @@ export function settleStubForRow(
   return { stubs: { ...stubs, [stub.id]: next }, meta }
 }
 
-/** The stub outcome a row decision implies: reject removes, any create or match resolves. */
+/** The stub outcome a row decision implies: reject or leave out removes, any create or match resolves. */
 export function stubOutcomeForDecision(decision: ImportDecision): StubOutcome {
-  return decision.kind === 'reject' ? { kind: 'removed', why: 'rowRejected', reason: decision.reason } : { kind: 'resolved', bookingId: decision.bookingId }
+  if (decision.kind === 'reject') return { kind: 'removed', why: 'rowRejected', reason: decision.reason }
+  if (decision.kind === 'leftOut') return { kind: 'removed', why: 'rowLeftOut', ...(decision.reason !== undefined ? { reason: decision.reason } : {}) }
+  return { kind: 'resolved', bookingId: decision.bookingId }
 }
 
 /**

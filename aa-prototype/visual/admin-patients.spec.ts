@@ -1,16 +1,13 @@
 import { expect, test, type Page } from '@playwright/test'
-import { runDemoAction } from './demoActions'
 
 /**
  * Catch-up Phase 40: Admin, Patients. Search finds Sarah Mitchell by name and
  * NHI; her record shows the three balance tiles ($610.00 strong, billed to
  * her) and the invoice table with Paid and Unpaid rows, and never the internal
- * patient id. Waiting for NHI (on Intake since Phase 51) takes the "Receive list with a missing NHI"
- * demo action; Add NHI JKL1188 on Losa Tuilagi's row matches her record (no
- * second one is made) and the row leaves the view. Needs follow-up (build plan
+ * patient id. Waiting for NHI's old address lands on Intake's Needs NHI filter
+ * (build plan Phase 68), each waiting row its own item. Needs follow-up (build plan
  * Phase 57) lists the patient with the reminder logged on her page, once, and
- * Done on the page takes her off; the balance warning the Add NHI raised is
- * cleared on Losa's page and she leaves the list. Heather Sinclair's record
+ * Done on the page takes her off. Heather Sinclair's record
  * reads in credit with the Credited invoice. Master data's Patient balance
  * warning refuses 0, saves 20 and restores 90. Each test starts from a fresh
  * browser context, so from the seed. Shots land in `visual/shots/`.
@@ -63,46 +60,22 @@ test('search finds Sarah Mitchell; her record shows the strong balance and both 
   await page.screenshot({ path: 'visual/shots/admin-patient-record-mitchell.png', fullPage: true })
 })
 
-test('Waiting for NHI: the missing-NHI list arrives, Add NHI JKL1188 matches Losa Tuilagi and her row leaves', async ({ page }) => {
-  await open(page, '/admin/intake/waiting')
-  await expect(page.locator('[data-shot="admin-waiting-nhi"]')).toBeVisible()
-  const rows = page.locator('[data-shot="waiting-nhi-row"]')
-  const before = await rows.count()
-
-  expect(await runDemoAction(page, 'receive-no-nhi-list', { close: true })).toContain('Forte Health sent two bookings with no NHI')
-  await expect(rows).toHaveCount(before + 2)
-  const losa = rows.filter({ hasText: 'Losa Tuilagi' })
-  const aroha = rows.filter({ hasText: 'Aroha Ngata' })
-  await expect(losa).toHaveCount(1)
-  await expect(aroha).toHaveAttribute('data-urgent', 'true')
-  await expect(aroha.locator('[data-shot="waiting-nhi-urgent"]')).toBeVisible()
-  await expect(losa.locator('[data-shot="waiting-nhi-stub"]')).toBeVisible()
+test('Waiting for NHI: the old address lands on Intake under Needs NHI, each waiting row its own item with its rows on the workbench', async ({ page }) => {
+  await open(page, '/admin/patients/waiting')
+  await expect(page).toHaveURL(/\/admin\/intake\?filter=needs-nhi$/)
+  const rows = page.locator('[data-shot="intake-feed-item"]')
+  await expect(rows.first()).toBeVisible()
+  const count = await rows.count()
+  await expect(page.locator('[data-shot="intake-feed-item"][data-arrival-kind="needsNhi"]')).toHaveCount(count)
+  const mere = rows.filter({ hasText: 'Mere Tipene' })
+  await expect(mere).toHaveCount(1)
+  await mere.click()
+  await expect(page.locator('[data-shot="intake-bench-needsNhi"] [data-row-id]', { hasText: 'Mere Tipene' })).toHaveAttribute('data-row-change', 'waiting')
   await page.screenshot({ path: 'visual/shots/admin-waiting-nhi.png', fullPage: true })
-
-  await losa.locator('[data-shot="waiting-nhi-add"]').click()
-  const sheet = page.locator('[data-shot="add-nhi-sheet"]')
-  await expect(sheet).toBeVisible()
-  await expect(sheet.locator('[data-shot="add-nhi-save"]')).toBeDisabled()
-  await sheet.locator('[data-shot="add-nhi-field"]').fill('JKL1188')
-  const preview = sheet.locator('[data-shot="add-nhi-preview"]')
-  await expect(preview).toContainText('Matches Losa Tuilagi')
-  await expect(preview).toContainText('no second one is made')
-  await page.screenshot({ path: 'visual/shots/admin-add-nhi-sheet.png' })
-  await sheet.locator('[data-shot="add-nhi-save"]').click()
-  await expect(sheet.locator('[data-shot="add-nhi-done"]')).toContainText("in the stub's place")
-  await sheet.getByRole('button', { name: 'Done' }).click()
-  await expect(sheet).toBeHidden()
-
-  await expect(rows.filter({ hasText: 'Losa Tuilagi' })).toHaveCount(0)
-  await expect(rows).toHaveCount(before + 1)
-
-  // One Losa Tuilagi record exists.
-  await open(page, '/admin/people/patients?filter=all')
-  await page.getByLabel('Search patients').fill('Losa Tuilagi')
-  await expect(page.locator('[data-shot="patient-search-table"] [data-patient-nhi="JKL1188"]')).toHaveCount(1)
+  // Phase 68: the Forte list's arrival (Receive list with a missing NHI, retired) and Add NHI JKL1188 matching Losa Tuilagi moved to 72; re-added there.
 })
 
-test('Needs follow-up: a reminder for today puts Sarah on the list once; Done on her page takes her off; Clear on the page takes a balance warning off', async ({ page }) => {
+test('Needs follow-up: a reminder for today puts Sarah on the list once; Done on her page takes her off', async ({ page }) => {
   await open(page, `/admin/people/patients/${MITCHELL}`)
   const log = page.locator('[data-shot="patient-follow-up-log"]')
   await expect(log).toBeVisible()
@@ -139,27 +112,7 @@ test('Needs follow-up: a reminder for today puts Sarah on the list once; Done on
   await expect(page).toHaveURL(/filter=follow-up/)
   await expect(page.locator(`tr[data-patient-nhi="${MITCHELL}"]`)).toHaveCount(0)
 
-  // A balance warning to clear: Add NHI on Losa Tuilagi's waiting row puts her Booking on the List with a mild one.
-  await open(page, '/admin/intake/waiting')
-  await runDemoAction(page, 'receive-no-nhi-list', { close: true })
-  await page.locator('[data-shot="waiting-nhi-row"]', { hasText: 'Losa Tuilagi' }).locator('[data-shot="waiting-nhi-add"]').click()
-  const sheet = page.locator('[data-shot="add-nhi-sheet"]')
-  await sheet.locator('[data-shot="add-nhi-field"]').fill('JKL1188')
-  await sheet.locator('[data-shot="add-nhi-save"]').click()
-  await expect(sheet.locator('[data-shot="add-nhi-done"]')).toBeVisible()
-  await sheet.getByRole('button', { name: 'Done' }).click()
-
-  await open(page, '/admin/people/patients?filter=follow-up')
-  const losa = page.locator('tr[data-patient-nhi="JKL1188"]')
-  await expect(losa).toHaveCount(1)
-  await expect(losa.locator('[data-reason="balance"]')).toBeVisible()
-  await losa.locator('td').first().click()
-  const card = page.locator('[data-shot="patient-needs-office"]')
-  await expect(card.locator('[data-strength="mild"]').first()).toBeVisible()
-  await card.getByRole('button', { name: /^Clear/ }).first().click()
-  await expect(card).toHaveCount(0)
-  await open(page, '/admin/people/patients?filter=follow-up')
-  await expect(page.locator('tr[data-patient-nhi="JKL1188"]')).toHaveCount(0)
+  // Phase 68: clearing the balance warning Add NHI raises on Losa Tuilagi (Add NHI on her waiting row) moved to 72; re-added there.
 })
 
 test("Heather Sinclair's record reads in credit, with the Credited invoice", async ({ page }) => {

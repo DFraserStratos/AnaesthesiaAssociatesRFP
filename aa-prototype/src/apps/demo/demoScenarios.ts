@@ -33,6 +33,7 @@ import {
 import { ANAE, CONTRACT, SEED_LIST_IDS, SEED_MARKERS } from '../../domain/seed'
 import { contractPath } from '../admin/contractsPaths'
 import { financePath, invoicePath as financeInvoicePath } from '../admin/screens/finances/financePaths'
+import { arrivalsPath } from '../admin/screens/intake/intakePaths'
 import { projectedListId } from '../../domain/slots'
 import { rvgModifierByCode } from '../../domain/billing/modifiers'
 import { resetFramedDemo } from '../../shell/framedReset'
@@ -225,7 +226,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
         beat: 'Import, then match',
         label: 'Beat 2 · Admin Intake',
         does: "Demo actions → Import hospital file (St George's), then Create Booking on Sarah Mitchell's row",
-        path: () => '/admin/intake/matching',
+        path: () => arrivalsPath(),
       },
       {
         beat: 'The office sets the Contract',
@@ -450,7 +451,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
         beat: 'NHI at entry',
         label: 'Beat 2 · Admin Intake, Waiting for NHI',
         does: 'Demo actions → Receive list with a missing NHI; on an NHI lookup, Demo actions → Hub: Available / Slow / Unavailable',
-        path: () => '/admin/intake/waiting',
+        path: () => arrivalsPath({ filter: { kind: 'needsNhi' } }),
       },
       { beat: 'No NHI in Xero, and the leak scan', label: 'Beat 3 · Data inspector', does: 'Demo actions → Scan for NHI leaks', path: () => '/demo/data' },
       {

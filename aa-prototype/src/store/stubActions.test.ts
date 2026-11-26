@@ -5,14 +5,16 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type AppStoreApi } from './appStore'
 import { OFFICE_ACTOR, OFFICE_SIMULATION_ACTOR } from './demoActors'
-import { decideImportRow, importHospitalDownload, stageImportRows } from './matchingActions'
+import { decideImportRow, stageImportRows } from './matchingActions'
+import { receiveHospitalBatch } from './intakeIngest'
+import { receiveSample } from '../test/intakeSamples'
 import { assessImportRow } from './matchingSelectors'
 import { resolveStub } from './stubActions'
 import { standingStubCount, stubForRow, stubsForList } from './stubSelectors'
 import { needsInvoiceDestinationBookings } from './selectors'
 import { createDraftList, redateDraftList, removeDraftList } from './draftListActions'
 import { reassignList } from './slotActions'
-import { SX_NO_NHI_TYPED } from '../domain/intake'
+import { SAMPLE_SX, SX_NO_NHI_TYPED } from '../domain/intake'
 import { SEED_STUB } from '../domain/seed/intakeSeed'
 import type { Actor } from './mutate'
 
@@ -29,9 +31,7 @@ function domainOf(api: AppStoreApi): string {
 }
 
 function sxRowIds(api: AppStoreApi): string[] {
-  const res = importHospitalDownload(api, OFFICE_ACTOR, 'SAMPLE_SX')
-  if (!res.ok) throw new Error(res.message)
-  return api.getState().intake.batches[res.value.batchId!]!.rowIds
+  return receiveSample(api, SAMPLE_SX).rowIds
 }
 
 describe('the seeded stub', () => {
@@ -65,7 +65,8 @@ describe('placing (US-02.6.1)', () => {
   it('a re-import places no second stub', () => {
     const api = fresh()
     sxRowIds(api)
-    importHospitalDownload(api, OFFICE_ACTOR, 'SAMPLE_SX')
+    // The same file again while its rows are open: refused, every row already waiting.
+    expect(receiveHospitalBatch(api, SAMPLE_SX.hospitalId, SAMPLE_SX.label, SAMPLE_SX.rows, { sampleId: SAMPLE_SX.id })).toMatchObject({ ok: false, code: 'alreadyWaiting' })
     expect(standingStubCount(api.getState())).toBe(2)
   })
   it('a row with no List to land on places none', () => {

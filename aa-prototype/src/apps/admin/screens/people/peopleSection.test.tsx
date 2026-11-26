@@ -54,7 +54,7 @@ describe('old links redirect to People and stay (D100)', () => {
     ['/admin/patients', '/admin/people/patients'],
     ['/admin/patients/follow-up', '/admin/people/patients?filter=follow-up'],
     ['/admin/patients/CQY9304', '/admin/people/patients/CQY9304'],
-    ['/admin/patients/waiting', '/admin/intake/waiting'],
+    ['/admin/patients/waiting', '/admin/intake?filter=needs-nhi'],
     ['/admin/people', '/admin/people/anaesthetists'],
   ])('%s lands on %s, replacing the old entry so Back does not loop', async (from, to) => {
     const router = mountAt(from)

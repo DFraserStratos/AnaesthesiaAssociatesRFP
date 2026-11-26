@@ -21,7 +21,7 @@ import type { DemoContextValues } from './context'
 import type { DemoTrigger, DemoTriggerCtx, DemoTriggerSurface } from './types'
 
 beforeEach(() => {
-  useDemoTriggerMemory.setState({ lastMessageId: null, lastWebhook: null, webhookCounter: 0 })
+  useDemoTriggerMemory.setState({ lastWebhook: null, webhookCounter: 0 })
 })
 
 type StoreState = ReturnType<ReturnType<typeof createAppStore>['getState']>
@@ -271,25 +271,12 @@ describe('sample warnings cover every rule (15a, 19, 21, 40)', () => {
  * Every entry badged Future scope, with its surfaces and routes, as Phase 44
  * found it. A new Future-scope entry must be added here deliberately.
  * - 15b's photo capture (US-02.4.4), still Future scope.
- * - 34's two HL7 and FHIR entries: both survived 20a's per-Booking re-point and
- *   34's move, bar only, on the three Future-scope simulator routes.
- * The rooms' PDF entries (in scope since 34, D51) and 33a's stub stand-in are
- * not on this list.
+ * 34's two HL7 and FHIR entries were retired by build plan Phase 68 (D119):
+ * a held feed message is now Intake's "A feed message fails". The rooms' PDF
+ * entries (in scope since 34, D51) and 33a's stub stand-in are not on this list.
  */
 const FUTURE_SCOPE: readonly { id: string; label: string; surfaces: readonly DemoTriggerSurface[]; routes: readonly string[] }[] = [
   { id: 'photo-capture-future', label: 'Photo capture (Future scope)', surfaces: ['bar', 'pwa'], routes: ['/mobile/lists/:listId'] },
-  {
-    id: 'fire-hospital-message',
-    label: 'Fire hospital message',
-    surfaces: ['bar'],
-    routes: ['/demo/integrations', '/demo/integrations/log', '/demo/integrations/mapping'],
-  },
-  {
-    id: 'replay-hospital-message',
-    label: 'Replay last message (dedupe)',
-    surfaces: ['bar'],
-    routes: ['/demo/integrations', '/demo/integrations/log', '/demo/integrations/mapping'],
-  },
 ]
 
 describe('Future-scope entries are deliberate', () => {
@@ -303,14 +290,14 @@ describe('Future-scope entries are deliberate', () => {
     expect(actual).toEqual(FUTURE_SCOPE.map((f) => ({ ...f, surfaces: [...f.surfaces], routes: [...f.routes] })))
   })
 
-  it("the rooms' PDF entries (34) are in scope: own Intake screen, bar only, no badge; the old ingest and auto-match entries are gone", () => {
+  it("the rooms' PDF entries are in scope (34, D51; on Arrivals since 68): bar only, no badge; the old ingest and auto-match entries are gone", () => {
     const pdf = DEMO_TRIGGERS.filter((t) => /pdf/i.test(t.id) || /\bPDF\b/.test(t.label))
-    expect(pdf.map((t) => t.id)).toEqual(['pdf-list-resend'])
+    expect(pdf.map((t) => t.id)).toEqual(['intake-rooms-resend', 'intake-scanned-pdf'])
     for (const t of pdf) {
       expect(t.badge, t.id).toBeUndefined()
       expect(t.surfaces, t.id).toEqual(['bar'])
-      expect(t.screen, t.id).toBe('Admin · Intake')
-      for (const r of t.routes) expect(r, t.id).toMatch(/^\/admin\/intake\//)
+      expect(t.screen, t.id).toBe('Admin · Intake · Arrivals')
+      for (const r of t.routes) expect(r, t.id).toMatch(/^\/admin\/intake(\/|$)/)
     }
     for (const t of DEMO_TRIGGERS) expect(t.id).not.toMatch(/^ingest-pdf|auto-match/)
   })
@@ -356,7 +343,7 @@ describe('the privacy boundary holds (17, D44, US-13.6.3)', () => {
         const api = createAppStore()
         // The data only: the actions stay this store's own.
         api.setState(Object.fromEntries(Object.entries(state).filter(([, v]) => typeof v !== 'function')) as Partial<StoreState>)
-        useDemoTriggerMemory.setState({ lastMessageId: null, lastWebhook: null, webhookCounter: 0 })
+        useDemoTriggerMemory.setState({ lastWebhook: null, webhookCounter: 0 })
         const reason = t.disabledReason(api.getState(), ctx, choiceId)
         if (reason !== null) said.push(`${t.id} disabled: ${reason}`)
         let out

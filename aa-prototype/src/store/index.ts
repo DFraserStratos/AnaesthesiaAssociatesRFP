@@ -599,7 +599,6 @@ export { clearPayerContact, billListAsSimulatedOffice, stagePayerContactLoss, PA
 export {
   correctImportRow,
   decideImportRow,
-  importHospitalDownload,
   INVALID_NHI_MESSAGE,
   LIST_LOCKED_MESSAGE,
   NHI_REQUIRED_MESSAGE,
@@ -629,23 +628,57 @@ export {
   type ImportRowView,
   type MatchingFilter,
 } from './matchingSelectors'
+// Build plan Phase 68: Intake's front door. Arrivals made by their source (never the office), the feed's
+// selectors, and the one List-level decision path every bench calls.
+export {
+  MAILBOX_ACTOR,
+  REMOVAL_REASON,
+  STAND_IN_ROOMS_ADDRESS,
+  heldMessageStanding,
+  hospitalBatchReceived,
+  hospitalFeedRefusal,
+  identicalRowOpen,
+  mailboxPdfReceived,
+  receiveCancellation,
+  receiveFailedMessage,
+  receiveHospitalBatch,
+  receiveMailboxPdf,
+  receiveRowsForList,
+  receiveUnreadablePdf,
+  removalRowsFor,
+  unreadablePdfStanding,
+  stgDayBeforeRows,
+  sxCancellationRow,
+  type MailboxPdfSample,
+  type MailboxPdfSampleRow,
+} from './intakeIngest'
+export {
+  arrivalByKey,
+  arrivalFeed,
+  arrivalFeedCounts,
+  arrivalItemsOf,
+  arrivalKeyForRow,
+  arrivalRows,
+  connectedHospitals,
+  intakeSources,
+  useArrival,
+  useArrivalFeed,
+  useArrivalFeedCounts,
+  useArrivalRows,
+  useConnectedHospitals,
+  useIntakeSources,
+  type ArrivalFeedCounts,
+  type IntakeViewState,
+} from './intakeSelectors'
+export { decideArrivingLists, type DecideResult, type ListDecision, type ListPlacement, type RowDecision } from './intakeDecide'
 // Catch-up Phase 33a: stubs on a List (never Bookings) and the office's one resolve path.
 export { resolveStub, type ResolveStubInput, type ResolveStubResult } from './stubActions'
 export { resolvedStubForRow, standingStubCount, standingStubCountsByList, stubForRow, stubsForList, useListStubs, useStubCountsByList } from './stubSelectors'
 // Catch-up Phase 33a: the PWA office stand-in that adds the NHI to a List's stub.
 export { fixtureNhiForRow, officeAddsNhiRefusal, officeAddsNhiToStub } from './stubDemo'
-// Catch-up Phase 33: the matching screen's demo trigger bodies (bar entries and the PWA office stand-in).
-export {
-  officeMatchesHospitalRow,
-  officeImportsS1File,
-  receiveTheatreList,
-  sendUpdateRefusal,
-  stageUpdateForBooking,
-  standInRefusal,
-  theatreListRefusal,
-  updateTarget,
-  type StandInChoice,
-} from './matchingDemo'
+// Catch-up Phase 33: the PWA office stand-in behind "Hospital file imported and my booking matched" (Phase 68: rows
+// arrive through the ingest and the office decides through `decideArrivingLists`).
+export { officeMatchesHospitalRow, officeImportsS1File, standInRefusal, type StandInChoice } from './matchingDemo'
 // Catch-up Phase 35: the office's explicit save, one change set per save (US-02.3.2, DM-35).
 export {
   SAVE_NHI_REQUIRED_MESSAGE,

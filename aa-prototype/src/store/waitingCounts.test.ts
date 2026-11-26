@@ -10,19 +10,18 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore, type AppStoreApi } from './appStore'
 import type { Actor } from './mutate'
-import { importHospitalDownload } from './matchingActions'
+import { stageNoNhiList } from '../test/intakeSamples'
 import { addNhiToWaitingRow } from './patientActions'
 import { patientAttentionCount, waitingNhiRows } from './patientSelectors'
 import { assessImportRow, matchingAttentionCount } from './matchingSelectors'
 import { stubForRow } from './stubSelectors'
-import { NO_NHI_LIST, NO_NHI_NEW_PATIENT_NHI, NO_NHI_RETURNING_NHI } from '../domain/intake/hospitalDownloads'
+import { NO_NHI_NEW_PATIENT_NHI, NO_NHI_RETURNING_NHI } from '../domain/intake/hospitalDownloads'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
 function staged() {
   const api = createAppStore()
-  const imported = importHospitalDownload(api, OFFICE, NO_NHI_LIST.id)
-  if (!imported.ok) throw new Error(imported.message)
+  stageNoNhiList(api)
   const rows = waitingNhiRows(api.getState()).filter((r) => r.rowId !== 'IRS001')
   const rowOf = (name: string) => rows.find((r) => r.patientName === name)!.rowId
   return { api, rowOf }
@@ -42,7 +41,7 @@ describe('a waiting row counts once, on Intake (Phase 51)', () => {
     const api = createAppStore()
     const intake = matchingAttentionCount(api.getState())
     const patients = patientAttentionCount(api.getState())
-    importHospitalDownload(api, OFFICE, NO_NHI_LIST.id)
+    stageNoNhiList(api)
     expect(waitingNhiRows(api.getState())).toHaveLength(3)
     expect(matchingAttentionCount(api.getState())).toBe(intake + 2)
     expect(patientAttentionCount(api.getState())).toBe(patients)

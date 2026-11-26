@@ -60,7 +60,7 @@ that need work are repeated here.
 - History: grouped-save rows carry no clock time, it reopens on the last as-at view, and seeded rows (14:20, 14:22, Chen's 16:00) sit after the 08:00 clock. `shared/audit/`, `domain/seed/`. S
 - The Mon 10 Aug PM drawer shows "4 bookings" after the Lattimer move (verify first). S
 - The Mon 27 Jul price-rule List cannot be authorised: its date is in the future (demo-data staging). S (owner)
-- Draft update email after S1's import names the RVG name, not the text received, and Send update repeats the import's Diane Foster row. `store/matchingDemo.ts`. S
+- Draft update email after S1's St George's file names the RVG name, not the text received. `domain/updateEmail.ts`. S
 - The Split sheet's Apply is enabled while the new person has no email or address. S
 - Lattimer's moved Booking reads "Agreed fee" without the Contract name. S
 - A loaded 3-procedure Booking sits at 16:30 on an AM List. `store/demoMultiProcedure.ts`. S

@@ -128,6 +128,7 @@ export const DECISION_KIND_LABELS: Record<ImportDecision['kind'], string> = {
   createList: 'Create a List in a session',
   createDraft: 'Create a Draft List',
   reject: 'Reject',
+  leftOut: 'Left out',
 }
 
 export const NO_NHI_REASON = 'No NHI. Add the NHI to continue.'
@@ -176,11 +177,11 @@ export function validNhiOf(fields: IncomingBookingFields): string | undefined {
   return v.valid ? v.normalised : undefined
 }
 
-function hasNhi(fields: IncomingBookingFields): boolean {
+export function hasNhi(fields: IncomingBookingFields): boolean {
   return fields.patient.nhi !== undefined && fields.patient.nhi.trim() !== ''
 }
 
-function normaliseName(name: string): string {
+export function normaliseName(name: string): string {
   return name.toLowerCase().replace(/^(dr|mr|ms|mrs|miss|prof)\.?\s+/, '').replace(/[^a-z]/g, '')
 }
 
@@ -230,7 +231,7 @@ export interface RowMatch {
 }
 
 /** Lists that can hold the row: not removed (the caller's view holds none), at the key. */
-function listsAtKey(view: Pick<MatchingView, 'lists'>, fields: IncomingBookingFields, surgeonId: string | undefined): MatchingList[] {
+export function listsAtKey(view: Pick<MatchingView, 'lists'>, fields: IncomingBookingFields, surgeonId: string | undefined): MatchingList[] {
   return Object.values(view.lists)
     .filter(
       (l) =>
