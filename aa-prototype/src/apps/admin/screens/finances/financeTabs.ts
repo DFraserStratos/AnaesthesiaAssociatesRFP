@@ -15,10 +15,10 @@ export interface FinanceTabEntry {
 }
 
 export const FINANCE_TABS: readonly FinanceTabEntry[] = [
-  { tab: 'billing', label: 'Billing', path: financePath('billing'), sub: "Each authorised List's Bookings on their way through billing, with any problem and its fix beside the Booking." },
-  { tab: 'invoices', label: 'Invoices', path: financePath('invoices'), sub: 'Every invoice and credit note, raised when a List is authorised, and what is still owed on each.' },
+  { tab: 'billing', label: 'Billing', path: financePath('billing'), sub: "Each authorised List's Bookings through billing, with any problem and its fix." },
+  { tab: 'invoices', label: 'Invoices', path: financePath('invoices'), sub: 'Every invoice and credit note, and what is still owed on each.' },
   { tab: 'payments', label: 'Payments', path: financePath('payments'), sub: "The payment cycle, its runs and each anaesthetist's remittance." },
-  { tab: 'ledger', label: 'Ledger', path: financePath('ledger'), sub: "AA's system of record: each invoice a receivable from the payer and a linked payable to the anaesthetist." },
+  { tab: 'ledger', label: 'Ledger', path: financePath('ledger'), sub: "AA's system of record: what each payer owes and what each anaesthetist is owed." },
   { tab: 'xero', label: 'Xero', path: financePath('xero'), sub: 'What the Billing Engine hands to Xero, and anything changed directly in Xero.' },
   { tab: 'aa-fees', label: 'AA fees', path: financePath('aa-fees'), sub: "AA's monthly fee to each anaesthetist: a separate invoice, never deducted from a payment." },
 ]
