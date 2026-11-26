@@ -373,7 +373,8 @@ This is the one full test of the Finances build.
   after Wave 5: "Current wave: none (Wave 5 joined <date>)".
 - **Update the plan page:** in `docs/build-plan/status.json`, add every joined phase to `done`, keep
   `in_progress` to phases still building, set `next` to the next wave's phases, and set `guidance.lanes`
-  to the next wave's queues (remove it after Wave 5). Write a `headline` saying what is on `master` and,
+  to the next wave's queues (remove it after Wave 5). Keep the Intake lanes' entries (Lanes D to G, LANES-INTAKE.md) in
+  `guidance.lanes`, and their phases (68 to 72) out of `done`: they are another build. Write a `headline` saying what is on `master` and,
   after Wave 5, for the owner's test, with `headline_sub` linking `TEST-58-67.md`. Then
   `node requirements-board/agent/skills/update-build-plan/tools/build-index.mjs` from the worktree root,
   which must print no warnings.
@@ -457,3 +458,13 @@ into its own session, usually started in the main checkout: Lane A's first in Wa
 lanes up. The same prompt starts, resumes and joins, in every wave: the session works out which. A
 phase's own kick-off prompt is what a lane session follows inside its worktree; never paste a lane
 phase's own prompt into a session on `master`.
+
+## Another build in lanes beside this one: the Intake rebuild
+
+The Intake rebuild (Phases 68 to 72) runs in its own lanes, D to G, in Waves 6 and 7, from
+[LANES-INTAKE.md](LANES-INTAKE.md): its own worktrees (`-laneD` to `-laneG`), branches (`lane/d` to
+`lane/g`, `wave/7`), ports (5573 to 5880) and coordination folder (`.git/lanes-intake/`). A Finances
+lane session ignores it: it never merges, edits or tears down anything of the Intake build, and the
+Intake build never edits a Finances file or lands on `master` before Wave 5 has joined. Intake's
+Phase 68 takes `PERSIST_VERSION` to 82 on `lane/d` and says so in this build's `notes.md`; it reaches
+`master` only at the Intake join, after Wave 5's.
