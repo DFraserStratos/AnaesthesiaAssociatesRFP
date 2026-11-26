@@ -255,8 +255,17 @@ function lookbackBooking(state: Pick<AppState, 'masters'>, b: Booking, procs: re
  * The anaesthetist's Lists on one date, AM before PM, every state included
  * (backdrop, authorised and invoiced too), each with its non-cancelled
  * Bookings. It reads Lists, not Slots: backdrop Lists have no Slot record.
+ * `waitingByList` is each List's count of bookings waiting at intake, read by
+ * the caller (this module never reads them); without it a List reads as if
+ * none waited.
  */
-export function listsOnDayFor(state: LookbackState, anaesthetistId: string, dateISO: string, todayISO: string): LookbackList[] {
+export function listsOnDayFor(
+  state: LookbackState,
+  anaesthetistId: string,
+  dateISO: string,
+  todayISO: string,
+  waitingByList?: ReadonlyMap<string, number>,
+): LookbackList[] {
   const procs = proceduresByBooking(state)
   return ownLists(state, anaesthetistId)
     .filter((l) => l.dateISO === dateISO)
@@ -267,7 +276,7 @@ export function listsOnDayFor(state: LookbackState, anaesthetistId: string, date
       )
       return {
         list,
-        progress: listProgress(list, active, todayISO),
+        progress: listProgress(list, active, todayISO, waitingByList?.get(list.id) ?? 0),
         startTime: timesForList(state, list).startTime,
         bookings: active.map((b) => lookbackBooking(state, b, procs.get(b.id) ?? [])),
       }

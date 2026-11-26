@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { neutral, radius, semantic } from '../../theme/tokens'
 import type { CompletionFailure } from '../../domain/billing/completion'
 import { completionBlockersFor, submitList, useAppStore, type Actor } from '../../store'
-import { Button, FormError } from '../ui'
+import { Button, FormError, Notice } from '../ui'
 import { useSurface } from '../surface'
 import { ConfirmSheet } from '../surface/ConfirmSheet'
 import { OverlayHeader } from '../surface/OverlayHeader'
@@ -19,6 +19,13 @@ interface SubmitListSheetProps {
    * 'confirm': the pre-submit confirmation explaining what SUBMITTED means.
    */
   mode: 'blockers' | 'confirm'
+  /**
+   * A List-level reason the List cannot be submitted (the stub guard's one
+   * reason, US-02.6.4), drawn as a warning notice above the rows in
+   * `blockers` mode. With no rows the sheet reads "Waiting at intake".
+   * Omitted: the sheet looks as it always has.
+   */
+  listReason?: string
   onClose: () => void
   onSubmitted: () => void
 }
@@ -31,7 +38,7 @@ interface BlockerRow {
   messages: string[]
 }
 
-export function SubmitListSheet({ open, listId, actor, mode, onClose, onSubmitted }: SubmitListSheetProps) {
+export function SubmitListSheet({ open, listId, actor, mode, listReason, onClose, onSubmitted }: SubmitListSheetProps) {
   const { Overlay } = useSurface()
   const state = useAppStore()
   const [error, setError] = useState<string | null>(null)
@@ -96,10 +103,19 @@ export function SubmitListSheet({ open, listId, actor, mode, onClose, onSubmitte
   return (
     <Overlay open={open} onClose={onClose}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <OverlayHeader
-            title="Bookings still to finish"
-            description="Every booking must be marked complete before the list can be submitted to the office. Cancelled bookings do not count."
-          />
+          {listReason !== undefined && rows.length === 0 ? (
+            <OverlayHeader title="Waiting at intake" />
+          ) : (
+            <OverlayHeader
+              title="Bookings still to finish"
+              description="Every booking must be marked complete before the list can be submitted to the office. Cancelled bookings do not count."
+            />
+          )}
+          {listReason !== undefined && (
+            <Notice tone="warning" shot="submit-list-reason">
+              {listReason}
+            </Notice>
+          )}
           {rows.map((row) => (
             <div
               key={row.bookingId}

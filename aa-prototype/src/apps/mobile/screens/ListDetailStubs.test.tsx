@@ -11,6 +11,7 @@ import { receiveSample } from '../../../test/intakeSamples'
 import { SAMPLE_SX } from '../../../domain/intake/hospitalDownloads'
 import { SurfaceProvider } from '../../../shared'
 import { SEED_STUB } from '../../../domain/seed/intakeSeed'
+import { STUB_ONLY_REASON } from '../../../domain/intake/stubs'
 import { ListDetailScreen } from './ListDetailScreen'
 
 afterEach(cleanup)
@@ -39,9 +40,23 @@ describe('a stub on the phone\'s List', () => {
     expect(stub).toHaveTextContent('Lap chole')
     expect(stub).toHaveTextContent('Waiting at intake: no NHI')
     expect(container.querySelector('[data-shot="list-stub-note"]')).toHaveTextContent('1 waiting at intake')
-    expect(screen.getByText('0 of 0 complete')).toBeInTheDocument()
+    // Held by its stub (US-02.6.4): the note replaces "0 of 0 complete".
+    expect(screen.queryByText('0 of 0 complete')).toBeNull()
+    expect(container.querySelectorAll('[data-shot="list-stub-note"]')).toHaveLength(1)
     expect(container.textContent).not.toMatch(/[–—]/)
     expect(container.textContent?.toLowerCase()).not.toContain('stub booking')
+  })
+
+  it('Mark list completed is greyed, "1 waiting at intake", and opens the reason, never the confirm (US-02.6.4)', () => {
+    const { container } = renderList(SEED_STUB.listId)
+    const dock = container.querySelector('[data-shot="list-submit-held"]') as HTMLElement
+    expect(dock).toHaveTextContent('Mark list completed · 1 waiting at intake')
+    fireEvent.click(dock)
+    const doc = container.ownerDocument
+    expect(within(doc.body).getByText('Waiting at intake')).toBeInTheDocument()
+    expect(doc.querySelector('[data-shot="submit-list-reason"]')).toHaveTextContent(STUB_ONLY_REASON)
+    expect(within(doc.body).queryByText('Submit this list to the office?')).toBeNull()
+    expect(useAppStore.getState().schedule.lists[SEED_STUB.listId]?.state).toBe('ACTIVE')
   })
 
   it('opens the sheet with what was received and the readings caption, never a Booking', () => {

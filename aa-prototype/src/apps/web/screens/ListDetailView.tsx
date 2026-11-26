@@ -21,8 +21,8 @@ import { NEEDS_PRICE_LABEL } from '../../../domain/billing/priceRanges'
 import { AddRowButton } from '../../../shared/ui/AddRowButton'
 import { BackLink, Button, Card, PageHeader, ProgressBar } from '../../../shared/ui'
 import { ClickableRow, RowOpenButton, TableShell, Td, Th } from '../../../shared/table'
-import { withStubsInTimeOrder } from '../../../domain/intake/stubs'
-import { useListStubs } from '../../../store/stubSelectors'
+import { listStubNote, STUB_ONLY_REASON, withStubsInTimeOrder } from '../../../domain/intake/stubs'
+import { useListHeldByStub, useListStubs } from '../../../store/stubSelectors'
 import { ListStubNote, StubTableRow } from '../../../shared/stubs'
 
 /** The totals row keeps no divider under it (the table's last line), as before the kit. */
@@ -141,6 +141,8 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
   const schedule = useAppStore((s) => s.schedule)
   // Stubs for rows waiting at intake (catch-up Phase 33a): in time order, never counted or totalled.
   const stubs = useListStubs(listId)
+  // The stub guard (US-02.6.4): a List holding only a stub reads "1 waiting at intake" and cannot be submitted.
+  const held = useListHeldByStub(listId)
   const entries = useMemo(() => withStubsInTimeOrder(model?.rows ?? [], (r) => r.booking.scheduledTime, stubs), [model, stubs])
 
   if (list === undefined || model === undefined) return null
@@ -194,6 +196,7 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
               state={list.state}
               authorisedLabel={progressLabel}
               incomplete={incomplete}
+              {...(held ? { heldNote: listStubNote(stubs.length) } : {})}
               onBlockers={() => setSubmitSheet('blockers')}
               onConfirm={() => setSubmitSheet('confirm')}
             />
@@ -207,11 +210,16 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
         title="Bookings"
         action={
           <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>
-              {model.done} of {model.activeCount} complete
-            </span>
+            {held ? (
+              // Held by its stub: the note in place of "0 of 0 complete" (never complete).
+              <ListStubNote count={stubs.length} />
+            ) : (
+              <span style={{ fontSize: 12, fontWeight: 600, color: neutral.slate, flex: 'none' }}>
+                {model.done} of {model.activeCount} complete
+              </span>
+            )}
             <ProgressBar done={model.done} total={model.activeCount} width={200} tone={stubs.length > 0 ? 'held' : 'done'} />
-            <ListStubNote count={stubs.length} />
+            {!held && <ListStubNote count={stubs.length} />}
           </span>
         }
       >
@@ -342,7 +350,14 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
 
       <AddBookingFlow open={addOpen} listId={listId} actor={actor} onClose={() => setAddOpen(false)} onCreated={() => undefined} />
       {submitSheet !== 'none' && (
-        <SubmitListSheet open listId={listId} actor={actor} mode={submitSheet} onClose={() => setSubmitSheet('none')} onSubmitted={() => setSubmitSheet('none')} />
+        <SubmitListSheet
+          open
+          listId={listId}
+          actor={actor}
+          mode={held ? 'blockers' : submitSheet}
+          {...(held ? { listReason: STUB_ONLY_REASON } : {})}
+          onClose={() => setSubmitSheet('none')} onSubmitted={() => setSubmitSheet('none')}
+        />
       )}
     </div>
   )
@@ -351,13 +366,15 @@ export function ListDetailView({ listId, actor, todayISO, onBack, onOpenBooking 
 /**
  * The page's primary action, in the header slot the dashboard uses for "Move a
  * List". Three states, all of them the same object: already submitted (a
- * static confirmation), blocked (the count of what is left, still clickable so
- * the blockers sheet can say which bookings), or ready.
+ * static confirmation), blocked (the count of what is left, or the List held by
+ * its stub, still clickable so the blockers sheet can say which bookings or
+ * why), or ready.
  */
 function SubmitAction({
   state,
   authorisedLabel,
   incomplete,
+  heldNote,
   onBlockers,
   onConfirm,
 }: {
@@ -365,6 +382,8 @@ function SubmitAction({
   /** "Invoiced" or "Authorised" (LIST_PROGRESS_LABEL) for a List the office has authorised. */
   authorisedLabel: string
   incomplete: number
+  /** "1 waiting at intake" when the List holds only a stub (US-02.6.4): the greyed state, never the confirm. */
+  heldNote?: string
   onBlockers: () => void
   onConfirm: () => void
 }) {
@@ -396,16 +415,17 @@ function SubmitAction({
       </span>
     )
   }
-  if (incomplete > 0) {
+  if (incomplete > 0 || heldNote !== undefined) {
     return (
       <button
         type="button"
         className="aa-ctl"
+        data-shot={heldNote !== undefined ? 'list-submit-held' : undefined}
         onClick={onBlockers}
-        title="See what is left to finish"
+        title={heldNote !== undefined ? 'See why this List cannot be submitted yet' : 'See what is left to finish'}
         style={{ ...shared, background: neutral.surface, color: neutral.slate, border: `1px solid ${neutral.lineStrong}`, cursor: 'pointer' }}
       >
-        {incomplete} to finish before submitting
+        {heldNote !== undefined ? `Mark list completed · ${heldNote}` : `${incomplete} to finish before submitting`}
       </button>
     )
   }

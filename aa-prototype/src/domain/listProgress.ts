@@ -7,6 +7,7 @@
  */
 
 import type { Booking, List } from './types'
+import { listHeldByStub } from './intake/stubs'
 
 /**
  * True once the List has left the anaesthetist's main view: when the office
@@ -50,14 +51,20 @@ export const LIST_PROGRESS_LABEL: Readonly<Record<ListProgress, string>> = {
 
 /**
  * The List's progress. `activeBookings` are its non-cancelled Bookings (the
- * caller filters); `todayISO` is the demo clock's date.
+ * caller filters); `todayISO` is the demo clock's date; `waitingAtIntake` is
+ * the count of stubs standing on the List (the caller reads it; default 0, so a
+ * caller that passes none reads as before). A List held by its stub (no live
+ * Booking, a stub standing: US-02.6.4) is never done: ACTIVE or SUBMITTED, it
+ * reads upcoming.
  */
 export function listProgress(
   list: Pick<List, 'state' | 'dateISO' | 'billedAtISO'>,
   activeBookings: readonly Pick<Booking, 'completed'>[],
   todayISO: string,
+  waitingAtIntake = 0,
 ): ListProgress {
   if (list.state === 'AUTHORISED') return list.billedAtISO !== undefined ? 'invoiced' : 'authorised'
+  if (listHeldByStub(activeBookings.length, waitingAtIntake)) return 'upcoming'
   const total = activeBookings.length
   const done = activeBookings.filter((b) => b.completed).length
   // A reopened or added Booking blocks authorise: she sees it as to finish (owner, 2026-11-10).

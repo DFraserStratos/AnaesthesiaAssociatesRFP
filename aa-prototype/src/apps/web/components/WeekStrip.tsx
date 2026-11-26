@@ -41,6 +41,8 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
   const surgeons = useAppStore((s) => s.masters.surgeons)
   const slotStatuses = useAppStore((s) => s.masters.slotStatuses)
   const bookingsRecord = useAppStore((s) => s.schedule.bookings)
+  // Bookings waiting at intake on each List: a List held by its stub never reads done (US-02.6.4).
+  const stubCounts = useStubCountsByList()
 
   const days = useMemo(() => weekDays(weekAnchorISO), [weekAnchorISO])
   const views = useMemo(() => {
@@ -66,7 +68,7 @@ export function WeekStrip({ anaesthetistId, weekAnchorISO, todayISO, onPrevWeek,
     const list = v?.list
     if (list === undefined) return false
     const active = Object.values(bookingsRecord).filter((b) => b.listId === list.id && b.cancellation === undefined)
-    return listProgress(list, active, todayISO) === 'submitted'
+    return listProgress(list, active, todayISO, stubCounts.get(list.id) ?? 0) === 'submitted'
   }
 
   function labels(v: SlotView): { l1: string; l2: string } {

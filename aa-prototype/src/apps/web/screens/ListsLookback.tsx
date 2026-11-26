@@ -7,7 +7,7 @@
 
 import { useMemo } from 'react'
 import { neutral, radius } from '../../../theme/tokens'
-import { listsOnDayFor, useAppStore, type BookingSearchRow } from '../../../store'
+import { listsOnDayFor, useAppStore, useStubCountsByList, type BookingSearchRow } from '../../../store'
 import { ProgressPill, resolveDisplayStatus, StatusChip, useBookingWarnings, WarningTriangle } from '../../../shared'
 import { warningsFor } from '../../../shared/warnings'
 import { dayWithYear, locationName, longDay } from '../../../shared/format'
@@ -93,7 +93,12 @@ export function WebDayTable({ anaesthetistId, dateISO, todayISO, onOpenList }: {
   const schedule = useAppStore((s) => s.schedule)
   const masters = useAppStore((s) => s.masters)
   const appSettings = useAppStore((s) => s.appSettings)
-  const day = useMemo(() => listsOnDayFor({ schedule, masters, appSettings }, anaesthetistId, dateISO, todayISO), [schedule, masters, appSettings, anaesthetistId, dateISO, todayISO])
+  // A List held by its stub never reads done (US-02.6.4).
+  const stubCounts = useStubCountsByList()
+  const day = useMemo(
+    () => listsOnDayFor({ schedule, masters, appSettings }, anaesthetistId, dateISO, todayISO, stubCounts),
+    [schedule, masters, appSettings, anaesthetistId, dateISO, todayISO, stubCounts],
+  )
   return (
     <TableShell label={`Lists on ${longDay(dateISO)}`} tableData={{ 'data-shot': 'web-lookback-day' }}>
       <thead>

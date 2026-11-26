@@ -67,6 +67,8 @@ import { OverlayHeader } from '../../../../shared/surface/OverlayHeader'
 import { DoneStep, InlineConfirm } from '../../../../shared/ui'
 import { EmptyState } from '../../../../shared/ui/EmptyState'
 import { SEED_MARKERS, SEED_PREPAID_BOOKING_ID } from '../../../../domain/seed'
+import { SEED_STUB } from '../../../../domain/seed/intakeSeed'
+import { STUB_ONLY_REASON } from '../../../../domain/intake/stubs'
 
 // ---------------------------------------------------------------------------
 // Small helpers
@@ -253,12 +255,17 @@ export function AlertOfficeSheetExample({ picks }: { picks: SeedPicks }) {
 
 export function SubmitListSheetExample({ picks }: { picks: SeedPicks }) {
   const { actor } = useMobilePersona()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState<'rows' | 'held' | null>(null)
   if (picks.listId === null) return <Missing what="List" />
   return (
     <>
-      <Button variant="secondary" onClick={() => setOpen(true)}>What is left to finish?</Button>
-      {open && <SubmitListSheet open listId={picks.listId} actor={actor} mode="blockers" onClose={() => setOpen(false)} onSubmitted={() => setOpen(false)} />}
+      <div style={row}>
+        <Button variant="secondary" onClick={() => setOpen('rows')}>What is left to finish?</Button>
+        <Button variant="secondary" onClick={() => setOpen('held')}>A List waiting at intake</Button>
+      </div>
+      {open === 'rows' && <SubmitListSheet open listId={picks.listId} actor={actor} mode="blockers" onClose={() => setOpen(null)} onSubmitted={() => setOpen(null)} />}
+      {/* The stub-only List (Dr Souter's Tue 8 Dec PM): the List-level reason, "Waiting at intake". */}
+      {open === 'held' && <SubmitListSheet open listId={SEED_STUB.listId} actor={actor} mode="blockers" listReason={STUB_ONLY_REASON} onClose={() => setOpen(null)} onSubmitted={() => setOpen(null)} />}
     </>
   )
 }
