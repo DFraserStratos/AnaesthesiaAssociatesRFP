@@ -8,7 +8,7 @@
  * the arrival is decided it may leave that order: the page keeps the order it last saw, so Previous and Next still
  * step on from where it was. A Needs NHI arrival stops existing once its NHI is added, so the last arrival seen for
  * the key is held and its bench keeps showing the outcome. The bench remounts per key, so nothing carries over.
- * J and K step, Escape goes back to the inbox (`workbench/useArrivalKeys.ts`).
+ * Previous and Next loop round the ends of the inbox. J and K step, Escape goes back to the inbox (`workbench/useArrivalKeys.ts`).
  *
  * Hooks: `intake-arrival-page` (`data-arrival-key`, `data-arrival-kind`), `intake-arrival-back`,
  * `intake-arrival-previous`, `intake-arrival-position`, `intake-arrival-next`, `intake-arrival-gone`.
@@ -65,6 +65,10 @@ export function ArrivalPage({ actor }: { actor: Actor }) {
       previous = [...seenKeys.slice(0, at)].reverse().find((k) => liveKeys.includes(k))
     }
   }
+  // Previous and Next loop round: past the last arrival is the first, before the first is the last.
+  const others = liveKeys.filter((k) => k !== key)
+  if (next === undefined) next = others[0]
+  if (previous === undefined) previous = others[others.length - 1]
   const position = live ? `${liveKeys.indexOf(key) + 1} of ${liveKeys.length}` : `${plural(liveKeys.length, 'more', 'more')} in the inbox`
 
   const hospitalName = useAppStore((s) => (arrival !== undefined ? s.masters.hospitals[arrival.hospitalId]?.name : undefined))
