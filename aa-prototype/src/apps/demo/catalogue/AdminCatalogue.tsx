@@ -15,8 +15,11 @@ import { AdminPageExample, CardExample, DefRowExample, EyebrowExample, PageHeade
 import { ReviewQueue } from '../../admin/screens/ReviewQueue'
 import { AuditViewer } from '../../admin/screens/AuditViewer'
 import { RowField } from '../../admin/components/RowField'
-import { PdfListReview } from '../../admin/intake/PdfListReview'
 import { ListOriginRow } from '../../admin/components/ListOriginRow'
+import { PdfPage, pdfPageBoxes } from '../../admin/screens/intake/workbench/newList/PdfPage'
+import { PlaceListCard } from '../../admin/screens/intake/workbench/newList/PlaceListCard'
+import { arrivalItemsOf } from '../../../store'
+import { buildFacsimile, facsimileHeaderValues, readValuesOfRow, SCAN_PDF, simulateRead } from '../../../domain/intake'
 import { SEED_ORIGIN_LISTS } from '../../../domain/seed/listOrigins'
 import { DiffTable } from '../../admin/matching/DiffTable'
 import { DecisionCards, type DecisionKind } from '../../admin/matching/DecisionCards'
@@ -567,10 +570,11 @@ export function AdminCatalogue() {
 
       {/* ------------------------------------------------------------------ */}
       <FamilySection id="tables">
-        <CatalogueRow name="PdfListReview (a rooms' PDF list)" source="apps/admin/intake/PdfListReview.tsx" usedIn={A} what="A rooms' PDF list under review (catch-up Phase 34): the list beside its facsimile, compact TextFields per row, each correction listed under its row, Send to matching (Button) and a ResultLine. Intake's old PDF lists tab (its inbox and Upload PDF list) is gone; Arrivals' Rooms PDFs filter lists them now." shared="shared/ui/Field.tsx" note="Shown on the seed's received PDF list. Correcting and sending write to the demo store. PdfUploadDialog has no screen until the new list bench reuses or retires it." height={460}>
-          <Wide minWidth={1000}>
-            <PdfListReviewExample />
-          </Wide>
+        <CatalogueRow name="PdfPage (a rooms' PDF page and its boxes)" source="apps/admin/screens/intake/workbench/newList/PdfPage.tsx" usedIn={A} what="Intake's PDF page (build plan Phase 70; US-02.2.1, D120): the generated facsimile in a framed paper under a quiet bar (the file name, the page, a caption), with one box per value read laid over where it sits. A value to check is lit in the warning tint and outline, with a small IconButton that shows it in the values table; the rest have a quiet outline and do nothing. The selected value is lit stronger and scrolled into view. No confidence number is shown; with no boxes (an unreadable PDF) it shows the page alone." shared="shared/ui/IconButton.tsx" note="Shown on the scanned sample, read through the simulated reader: three values to check. Showing one in the table selects it here only." height={520}>
+          <PdfPageExample />
+        </CatalogueRow>
+        <CatalogueRow name="PlaceListCard (Place this List)" source="apps/admin/screens/intake/workbench/newList/PlaceListCard.tsx" usedIn={A} what="Where a new List from Intake goes (build plan Phase 70; US-02.1.2, US-01.6.1, DM-19): a RadioCard group with the named anaesthetist's session first, marked Suggested, only while it is free (a quiet line says so when it is not), then the other anaesthetists free that day and session (five, then Show more), the Lists AA holds that could take it, and Make a Draft List (a surgeon select when the arrival's is not recognised). A summary line says what it makes; the one primary Button names the result (Place in Dr Rutherford's PM, Add to the List, Make a Draft List) and places the whole List as one change set. A session taken meanwhile is refused in place." shared="shared/ui/RadioCard.tsx" note="Live on the first undecided new List in Intake, if there is one (the Demo actions' Rooms email a List adds Mr Okafor's). Placing writes to the demo store." height={520}>
+          <PlaceListCardExample />
         </CatalogueRow>
         <CatalogueRow name="Pager" source="apps/admin/components/Pager.tsx" usedIn={A} what="The one admin pager (catch-up Phase 43; US-15.0.4): the range in mono, first, previous, the teal page count, next and last. Shown only past one page: the Day view (30 anaesthetists), Invoices (50), Audit (100), the Ledger (50), the Billing tab's groups (20) and each group's Lists (25)." shared="shared/ui/IconButton.tsx">
           <Pager total={28114} size={50} page={2} onPage={() => {}} />
@@ -933,11 +937,34 @@ function DiffTableExample() {
   )
 }
 
-/** The seed's first rooms' PDF list, under review. */
-function PdfListReviewExample() {
-  const list = useAppStore((s) => Object.values(s.intake.pdfLists).sort((a, b) => a.id.localeCompare(b.id))[0])
-  if (list === undefined) return <StageHint>No PDF list in the store.</StageHint>
-  return <PdfListReview list={list} actor={OFFICE_ACTOR} onBack={() => undefined} />
+/** The scanned sample PDF read by the simulated reader, on Intake's PDF page (build plan Phase 70). */
+function PdfPageExample() {
+  const [selectedKey, setSelectedKey] = useState<string | undefined>(undefined)
+  const boxes = useMemo(() => {
+    const read = simulateRead({
+      header: facsimileHeaderValues(SCAN_PDF),
+      ...(SCAN_PDF.headerConfidence !== undefined ? { headerConfidence: SCAN_PDF.headerConfidence } : {}),
+      rows: SCAN_PDF.rows.map((r) => ({ id: r.id, values: readValuesOfRow(r), ...(r.confidence !== undefined ? { confidence: r.confidence } : {}) })),
+      scanned: true,
+    })
+    return pdfPageBoxes({ headerRead: read.headerRead, rows: SCAN_PDF.rows.map((r, i) => ({ id: r.id, asRead: r, corrections: [], read: read.rows[i]!.read })) })
+  }, [])
+  return (
+    <div style={{ width: 560 }}>
+      <PdfPage facsimile={buildFacsimile(SCAN_PDF)} fileName={SCAN_PDF.fileName} boxes={boxes} {...(selectedKey !== undefined ? { selectedKey } : {})} onSelect={setSelectedKey} shot="catalogue-pdf-page" />
+    </div>
+  )
+}
+
+/** Place this List on the first undecided new List in Intake (build plan Phase 70); it writes to the demo store. */
+function PlaceListCardExample() {
+  const arrival = useAppStore((s) => arrivalItemsOf(s).find((i) => i.kind === 'newList' && !i.decided))
+  if (arrival === undefined) return <Notice tone="neutral">No new List is waiting in Intake. Rooms email a List in the Demo actions adds one.</Notice>
+  return (
+    <div style={{ width: 520 }}>
+      <PlaceListCard arrival={arrival} actor={OFFICE_ACTOR} onPlaced={() => {}} shot="catalogue-place-list" />
+    </div>
+  )
 }
 
 /** The seeded rooms' PDF List and the hospital's List, as the drawer shows them (catch-up Phase 34). */

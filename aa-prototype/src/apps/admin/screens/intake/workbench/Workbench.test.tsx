@@ -12,7 +12,9 @@ const ROWS: ListChangeRow[] = [
   { rowId: 'r-4', change: 'unchanged', status: 'leftOut', patientName: 'Peter Lindqvist', nhi: 'ZLM2290', diffs: [], flags: [] },
 ]
 
-vi.mock('../../../../../store/intakeSelectors', () => ({
+// Partial (Phase 70): the filled new List bench reads the real selectors (placement), only the rows are stubbed.
+vi.mock('../../../../../store/intakeSelectors', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../../../../store/intakeSelectors')>()),
   useArrivalRows: (key: string | undefined) => (key === undefined || key.startsWith('none') ? [] : ROWS),
 }))
 
@@ -27,6 +29,9 @@ vi.mock('../feed/SourceMark', () => ({
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
 const NO_ROWS: ReadonlySet<ArrivalKind> = new Set(['unreadable', 'held'])
+
+/** The benches no longer stubs (each Wave 7 lane adds its own kinds at the join). */
+const FILLED_BENCHES: ReadonlySet<ArrivalKind> = new Set(['newList', 'unreadable'])
 
 function arrivalOf(kind: ArrivalKind, extra: Partial<ArrivalItem> = {}): ArrivalItem {
   const rowIds = NO_ROWS.has(kind) ? [] : ROWS.map((r) => r.rowId)
@@ -127,6 +132,7 @@ describe('Intake Workbench', () => {
     expect(text).not.toMatch(/\bslots?\b/i)
     expect(text).not.toMatch(/\bCards?\b/)
     expect(text).not.toMatch(/\b(swap|timesheet)/i)
-    expect(container.querySelectorAll('button')).toHaveLength(0)
+    // A read-only stub bench has no controls; a bench Wave 7 has filled decides, so it has (Phase 70: newList, unreadable).
+    if (!FILLED_BENCHES.has(kind)) expect(container.querySelectorAll('button')).toHaveLength(0)
   })
 })

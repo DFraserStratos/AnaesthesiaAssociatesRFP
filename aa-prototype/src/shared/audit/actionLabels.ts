@@ -255,6 +255,9 @@ export const ACTION_LABELS: Record<string, string> = {
   'pdfList.addByHand': 'PDF added by hand',
   'importBatch.held': 'Hospital message held',
   'importBatch.unreadable': 'Unreadable PDF received',
+  // Build plan Phase 70: an unreadable PDF's sender emailed, and the PDF dismissed with a reason.
+  'importBatch.emailSender': 'Sender emailed about an unreadable PDF',
+  'importBatch.dismiss': 'Unreadable PDF dismissed',
 
   // --- Xero simulation & money movement -----------------------------------
   'xero.pairCreated': 'Xero invoice pair created',

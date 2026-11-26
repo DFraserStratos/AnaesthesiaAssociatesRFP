@@ -6,6 +6,8 @@
  * - `placeStubsForRows`: called by `stageImportRows` after its commit, from
  *   any source (a hospital file today, a rooms' PDF row from Phase 34; there
  *   is no sync, D52), audited `stub.place`.
+ * - `placeStubsOnList`: the same, onto one named List (Intake placing a new
+ *   List, build plan Phase 70), inside the placement's change set.
  * - `settleStubForRow`: the one place a stub's status changes, inside
  *   `decideImportRow`'s commit (`stub.resolve`, `stub.remove`) and a Draft
  *   List's removal or re-dating (through `stubsOffDraftList`).
@@ -15,6 +17,7 @@
 
 import type { ImportDecision, Stub } from '../domain/types'
 import { stubFor } from '../domain/intake/stubs'
+import { rowWaitsForNhi } from '../domain/intake/arrivals'
 import { allocateId, clockISO, mutate, type Actor, type MutationMeta } from './mutate'
 import type { AppState, AppStoreApi } from './appStore'
 import { assessImportRow } from './matchingSelectors'
@@ -43,6 +46,35 @@ export function placeStubsForRows(api: AppStoreApi, actor: Actor, rowIds: readon
     const draft = stubFor(row, list !== undefined && list.removedAtISO === undefined ? { id: list.id, state: list.state } : undefined, label, atISO)
     if (draft !== undefined) drafts.push(draft)
   }
+  return writeStubs(api, actor, drafts)
+}
+
+/**
+ * Place a stub on one named List for each of these rows that waits for an NHI
+ * (build plan Phase 70, US-02.6.1): the List a new List's placement made or
+ * chose, not the matcher's target. One commit, audited `stub.place` as
+ * `placeStubsForRows` is. A row with a standing stub gets no second one; no
+ * stub lands on an AUTHORISED or removed List. Returns the stub ids.
+ */
+export function placeStubsOnList(api: AppStoreApi, actor: Actor, listId: string, rowIds: readonly string[]): string[] {
+  const state = api.getState()
+  const list = state.schedule.lists[listId]
+  if (list === undefined || list.removedAtISO !== undefined || list.state === 'AUTHORISED') return []
+  const standingFor = new Set(Object.values(state.intake.stubs).filter((s) => s.status === 'standing').map((s) => s.importRowId))
+  const atISO = clockISO(state.clock)
+  const drafts: Array<Omit<Stub, 'id'>> = []
+  for (const rowId of rowIds) {
+    const row = state.intake.rows[rowId]
+    if (row === undefined || !rowWaitsForNhi(row) || standingFor.has(rowId)) continue
+    const label = state.intake.batches[row.batchId]?.label ?? 'Imported file'
+    const draft = stubFor(row, { id: list.id, state: list.state }, label, atISO)
+    if (draft !== undefined) drafts.push(draft)
+  }
+  return writeStubs(api, actor, drafts)
+}
+
+/** One commit placing these stubs, each audited `stub.place`; their ids. */
+function writeStubs(api: AppStoreApi, actor: Actor, drafts: ReadonlyArray<Omit<Stub, 'id'>>): string[] {
   if (drafts.length === 0) return []
   const ids: string[] = []
   const metas: MutationMeta[] = []

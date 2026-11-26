@@ -48,7 +48,7 @@ describe('IntakeSection', () => {
     expect(document.querySelector('[data-shot="intake-section"]')).toHaveAttribute('data-admin-page', 'fit')
   })
 
-  it('shows the quiet sources strip with Inbound only, and a disabled Add a PDF by hand', () => {
+  it('shows the quiet sources strip with Inbound only, and Add a PDF by hand', () => {
     mountAt(arrivalsPath())
     const strip = document.querySelector('[data-shot="intake-sources-strip"]') as HTMLElement
     expect(strip).toHaveTextContent('Inbound only')
@@ -56,7 +56,8 @@ describe('IntakeSection', () => {
     expect(connected.length).toBeGreaterThan(0)
     for (const source of connected) expect(strip).toHaveTextContent(source.name)
     const add = screen.getByRole('button', { name: 'Add a PDF by hand' })
-    expect(add).toBeDisabled()
+    // Phase 70 fills Add a PDF by hand and flips ADD_PDF_BY_HAND_READY, so it is enabled.
+    expect(add).toBeEnabled()
     expect(add).toHaveAttribute('data-shot', 'intake-add-pdf')
   })
 

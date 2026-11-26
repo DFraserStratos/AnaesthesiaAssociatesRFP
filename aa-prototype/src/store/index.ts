@@ -607,16 +607,27 @@ export {
   WORDING_OR_CODE_MESSAGE,
   type DecisionInput,
 } from './matchingActions'
-// The rooms' PDF lists (catch-up Phase 34; DM-61): upload, correct, send to matching; the re-send trigger's body.
+// The rooms' PDFs: the address a PDF added by hand came from (US-02.2.4).
+export { SENDER_REQUIRED_MESSAGE } from './pdfListActions'
+// Unreadable PDFs and PDFs added by hand (build plan Phase 70; US-02.2.1, D125).
 export {
-  correctPdfListRow,
-  INVALID_NHI_SEND_MESSAGE,
-  receiveResentPdfList,
-  resendRefusal,
-  sendPdfListToMatching,
-  SENDER_REQUIRED_MESSAGE,
-  uploadPdfList,
-  type PdfRowPatch,
+  addPdfByHand,
+  byHandSamples,
+  dismissUnreadablePdf,
+  DISMISS_REASON_REQUIRED_MESSAGE,
+  sendUnreadablePdfEmail,
+  unreadableEmailDraft,
+  unreadableEmailsSent,
+  type ByHandSample,
+} from './pdfListActions'
+// An arriving List's rows corrected before it is placed (build plan Phase 70; US-02.2.1, DM-15).
+export {
+  ARRIVAL_ROW_FIELDS,
+  arrivalRowValues,
+  correctArrivalRow,
+  NHI_NOT_CLEARED_MESSAGE,
+  type ArrivalRowField,
+  type ArrivalRowPatch,
 } from './pdfListActions'
 export {
   assessImportRow,
@@ -671,6 +682,23 @@ export {
   type IntakeViewState,
 } from './intakeSelectors'
 export { decideArrivingLists, type DecideResult, type ListDecision, type ListPlacement, type RowDecision } from './intakeDecide'
+// Build plan Phase 70: placing a new List from Intake as one change set, or rejecting it whole.
+export {
+  ALREADY_DECIDED_MESSAGE,
+  LIST_NOT_OFFERED_MESSAGE,
+  NOT_A_NEW_LIST_MESSAGE,
+  PLACE_SURGEON_REQUIRED_MESSAGE,
+  REJECT_REASON_REQUIRED_MESSAGE,
+  SLOT_TAKEN_MESSAGE,
+  placeArrivalList,
+  sessionChoice,
+  placeChoicesFor,
+  rejectArrivalList,
+  type PlaceChoice,
+  type PlaceChoices,
+  type PlaceResult,
+} from './intakePlace'
+export { placeStubsOnList } from './stubSettle'
 // Catch-up Phase 33a: stubs on a List (never Bookings) and the office's one resolve path.
 export { resolveStub, type ResolveStubInput, type ResolveStubResult } from './stubActions'
 export { resolvedStubForRow, standingStubCount, standingStubCountsByList, stubForRow, stubsForList, useListStubs, useStubCountsByList } from './stubSelectors'

@@ -5,7 +5,8 @@ import { runDemoAction } from './demoActions'
  * The rooms' PDFs on Admin, Intake, Arrivals (build plan Phase 68; D117, D119; was the PDF lists tab, catch-up
  * Phase 34). The old PDF lists address lands on the Rooms PDFs filter with replace; the rooms email Mr Okafor's
  * List and it lands by itself as a New List marked as a rooms' PDF, its patient with no NHI as its own Needs NHI
- * item, and the workbench shows its rows. Nothing is written until the office decides.
+ * item, and the workbench shows its rows. Nothing is written until the office decides. Phase 70: the new List bench
+ * (the page beside the values, the placement) and Add a PDF by hand. Updated by the phase, run at the Wave 7 join.
  */
 
 async function fresh(page: Page, path: string) {
@@ -40,6 +41,44 @@ test('the rooms email a List: it lands under Rooms PDFs as a New List with its n
   await expect(page).toHaveURL(/\/admin\/intake\?filter=needs-nhi$/)
   await expect(page.locator('[data-shot="intake-feed-item"][data-arrival-kind="needsNhi"]', { has: page.locator('[data-source-kind="rooms"]') }).first()).toBeVisible()
 
-  // Phase 68: the upload with a sender, correcting a read value and creating the List from the PDF (with its origin on the Booking) moved to 70; re-added there.
   // Phase 68: the re-sent PDF's differences (the time change, the added and the missing patient) waiting for approval moved to 69; re-added there.
+})
+
+test('the new List bench: the page beside the values, the named anaesthetist suggested, placed as one change set with its stub', async ({ page }) => {
+  await fresh(page, '/admin/intake?filter=rooms-pdfs')
+  expect(await runDemoAction(page, 'intake-rooms-email-list', { close: true })).not.toMatch(/^Refused/)
+  await page.locator('[data-shot="intake-feed-item"][data-arrival-kind="newList"]', { hasText: 'Okafor' }).first().click()
+  const bench = page.locator('[data-shot="intake-bench-newList"]')
+  await expect(bench.locator('[data-shot="intake-newlist-sender"]')).toContainText('@')
+  // The page sits beside the values read from it; choosing a value lights its box.
+  await expect(bench.locator('[data-shot="intake-pdf-page"]')).toBeVisible()
+  await expect(bench.locator('[data-shot="intake-pdf-values"]')).toBeVisible()
+  const value = bench.locator('[data-shot="intake-pdf-values"] [data-pdf-value]').first()
+  const key = await value.getAttribute('data-pdf-value')
+  await value.click()
+  await expect(bench.locator(`[data-pdf-box="${key}"]`)).toHaveAttribute('data-selected', 'true')
+  // The named anaesthetist's session is suggested first.
+  const place = bench.locator('[data-shot="intake-place-list"]')
+  await expect(place.locator('[data-place-option="suggested"]')).toBeVisible()
+  await expect(place).toContainText('Rutherford')
+  await page.screenshot({ path: 'visual/shots/intake-pdf-new-list-bench.png', fullPage: true })
+  await place.getByRole('button', { name: /^Place in/ }).click()
+  // Decided: it leaves the Rooms PDFs filter (which shows only what is still to decide).
+  await expect(page.locator('[data-shot="intake-feed-item"][data-arrival-kind="newList"]', { hasText: 'Okafor' })).toHaveCount(0)
+})
+
+test('Add a PDF by hand: choose a sample, type the sender; it lands selected like a mailbox PDF', async ({ page }) => {
+  await fresh(page, '/admin/intake')
+  await page.locator('[data-shot="intake-add-pdf"]').click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByText('Sample files')).toBeVisible()
+  await dialog.getByRole('radio').first().click()
+  await dialog.getByLabel('Sent from').fill('not an address')
+  await dialog.getByRole('button', { name: 'Add PDF' }).click()
+  await expect(dialog).toContainText('email address')
+  await dialog.getByLabel('Sent from').fill('rooms@example.com')
+  await dialog.getByRole('button', { name: 'Add PDF' }).click()
+  await expect(dialog).toHaveCount(0)
+  await expect(page).toHaveURL(/item=/)
+  await expect(page.locator('[data-shot="intake-workbench"]')).toBeVisible()
 })
