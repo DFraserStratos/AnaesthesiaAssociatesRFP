@@ -4,15 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SurfaceProvider } from '../../../shared'
 import { freshAppState, useAppStore, type Actor } from '../../../store'
 import { ReviewScreen } from './ReviewScreen'
-import type { AssignedList } from '../../../domain/types'
+import { toAuthoriseOrder } from './lists/toAuthoriseRows'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
+/** The To authorise tab's order (oldest submitted first), which Previous and Next follow. */
 function submittedListIds() {
-  return Object.values(useAppStore.getState().schedule.lists)
-    .filter((list): list is AssignedList => list.state === 'SUBMITTED')
-    .sort((a, b) => (a.dateISO === b.dateISO ? a.anaesthetistId.localeCompare(b.anaesthetistId) : a.dateISO.localeCompare(b.dateISO)))
-    .map((list) => list.id)
+  return toAuthoriseOrder(useAppStore.getState())
 }
 
 function renderReview(listId: string, onOpen = vi.fn(), onViewInvoices = vi.fn()) {

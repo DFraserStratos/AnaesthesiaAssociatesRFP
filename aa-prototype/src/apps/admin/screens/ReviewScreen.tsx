@@ -5,7 +5,7 @@ import { runDeliverySummary } from '../../../domain/billing/invoicePresentation'
 import { useMemo, useState, type ReactNode } from 'react'
 import { ArrowLeft, ArrowRight, Check, Lock, Receipt } from 'lucide-react'
 import { accent, elevation, neutral, radius, semantic } from '../../../theme/tokens'
-import type { AssignedList, Booking, Contract, Procedure } from '../../../domain/types'
+import type { Booking, Contract, Procedure } from '../../../domain/types'
 import {
   activeAlertFor,
   approveContractChangesOnList,
@@ -60,6 +60,7 @@ import { useListStubs } from '../../../store/stubSelectors'
 import { StubTableRow } from '../../../shared/stubs'
 import { StubResolveLink } from '../components/StubResolveLink'
 import { financePath } from './finances/financePaths'
+import { toAuthoriseOrder } from './lists/toAuthoriseRows'
 
 interface ReviewScreenProps {
   listId: string
@@ -249,14 +250,12 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
   const raisedCount = raisedInvoices.length
   const noAddressCount = raisedInvoices.filter((i) => i.delivery?.status === 'noAddress').length
 
-  // Keep the open list in its former queue position after authorisation so the
-  // permanent previous/next controls remain stable while its state changes.
-  const queueLists = Object.values(listsRecord)
-    .filter((candidate): candidate is AssignedList => candidate.state !== 'DRAFT' && (candidate.state === 'SUBMITTED' || candidate.id === listId))
-    .sort((a, b) => (a.dateISO === b.dateISO ? a.anaesthetistId.localeCompare(b.anaesthetistId) : a.dateISO.localeCompare(b.dateISO)))
-  const queueIndex = queueLists.findIndex((candidate) => candidate.id === listId)
-  const previousListId = queueIndex > 0 ? queueLists[queueIndex - 1]?.id : undefined
-  const nextListId = queueIndex >= 0 ? queueLists[queueIndex + 1]?.id : undefined
+  // Previous and Next follow the To authorise tab's order (oldest submitted first), the open List
+  // kept in its place after it is authorised so the controls stay stable while its state changes.
+  const queueIds = toAuthoriseOrder({ schedule: { lists: listsRecord }, audit }, listId)
+  const queueIndex = queueIds.indexOf(listId)
+  const previousListId = queueIndex > 0 ? queueIds[queueIndex - 1] : undefined
+  const nextListId = queueIndex >= 0 ? queueIds[queueIndex + 1] : undefined
 
   function doAuthorise() {
     const outcome = authoriseList(useAppStore, actor, listId)
