@@ -752,8 +752,9 @@ decisions #9; Meeting 2026-11-05 · Ben and Vanessa; Donald's decisions 2026-11-
   two-way: held by admin staff on surgeon and anaesthetist profiles, they record pairings someone
   does not want to work with (in either direction) and pairings someone prefers. They are never
   shown to anaesthetists, and neither side learns of the other's. When admin assign or move a List
-  or Draft List, available anaesthetists with a conflict are shown separately from those without:
-  information for the decision, never a block. There is no warning when an anaesthetist hands their
+  or Draft List, available anaesthetists with a not-preferred pairing are shown in their own "Not
+  preferred" group: information for the decision, never a block. A not-preferred pairing is never
+  called a conflict, which means a hospital closure only (Notes 2026-11-27 · Donald lists section #7). There is no warning when an anaesthetist hands their
   own List to a colleague; the system reveals nothing (OQ-43) (Notes 2026-10-07 · AA client meeting
   #4, #19, #20).
 - **Priority tier**: each anaesthetist carries an admin-only tier, set administratively, that orders
@@ -1106,7 +1107,7 @@ with Greg #5; Notes 2026-10-19 · AA meeting with Greg #4; Notes 2026-10-27 · A
 | Recurring booking | The standing intersection of a hospital, an anaesthetist and a surgeon on a day of week and session, painted onto Lists. Replaces "template", "permanent booking" and "Permanent List". Not a Booking for one patient. |
 | Surgeons' rooms | The practices that book surgery and send List PDFs. The system keeps no record of them: a surgeon's practice name and contacts are on the surgeon's profile. |
 | Stub | What stands in a Booking's place on its List while an incoming booking with no NHI waits at intake: seen by the anaesthetist and the office until the office resolves it. A stub is not a Booking (OQ-118). A List holding only a stub can be neither marked completed nor authorised until the stub is resolved or rejected; a List with Bookings is never held up by its stub. |
-| Preferences | Private, two-way pairings of anaesthetists and surgeons, not wanted or preferred, kept by admin staff on both profiles and never shown to anaesthetists. Admin see conflicts separated when assigning or moving a List; no warning on an anaesthetist's own hand-over. Labelled Not preferred and Preferred until AA picks names (OQ-102); formerly "blacklist". |
+| Preferences | Private, two-way pairings of anaesthetists and surgeons, not wanted or preferred, kept by admin staff on both profiles and never shown to anaesthetists. Admin see not-preferred pairings grouped apart when assigning or moving a List (never called a conflict); no warning on an anaesthetist's own hand-over. Labelled Not preferred and Preferred until AA picks names (OQ-102); formerly "blacklist". |
 | Priority tier | An admin-only tier on each anaesthetist (four, Tier 1 to Tier 4, Tier 4 the default, until AA picks names; OQ-102) that orders assignment suggestions, shuffled within a tier. |
 | HPI | Health Provider Index: identifies a practitioner or facility. Not the patient's NHI. |
 | HPI CPN | HPI CPN (Common Person Number): the one identifier for an individual practitioner, used for surgeons and anaesthetists. |
