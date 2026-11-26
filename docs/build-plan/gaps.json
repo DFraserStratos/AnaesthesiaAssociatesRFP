@@ -1,30 +1,30 @@
 {
  "generated": "2026-11-26",
- "catalogue_commit": "f885f67c44ed2e0a94c9181e407ed4c58f6faf3a",
+ "catalogue_commit": "8637b65da64690b0e1f6d9956d303ef2a1fffaa9",
  "seeded": "64b3dff7aef0a2a290e6f6a50f42a28d3874c540",
  "method": "Per-epic Sonnet reviewers against six prototype maps, each review re-checked by an adversarial Sonnet verifier; plus a verified data-model delta and a verified reverse check.",
  "counts": {
-  "Contradicts": 11,
-  "Partial": 20,
-  "Missing": 1,
+  "Contradicts": 19,
+  "Partial": 25,
+  "Missing": 3,
   "OutOfScope": 0,
-  "Matches": 4,
+  "Matches": 9,
   "Grouping": 3
  },
- "in_scope": 39,
+ "in_scope": 59,
  "themes": [],
  "epics": [
   {
    "id": "EP-01",
    "title": "Schedule canvas, Slots and Lists",
    "status": "Agreed (4)",
-   "observations": "EP-01 has only two items in scope here, and both gaps come from the 25 Nov People section update (Donald people section #7, #10, #11), not from Contracts phases 46 to 49. US-01.1.1's gap is really US-12.1.6. The canvas generator (domain/seed/canvas.ts) and anaesthetistCanvasDelta (store/slotActions.ts) already take an active flag. They need a last-day input and an active-from input instead of the trim-from-today in editAnaesthetist (store/mastersActions.ts), plus clock-driven trimming of Slots after a passed last day. US-01.3.6 is a card-edit pattern change (Edit, choose, Save, Cancel on one card shared with the rate per unit, audited per save) plus a tier filter on the People Anaesthetists list. It can be done standalone in AnaesthetistRecord.tsx and AnaesthetistsView.tsx, or after the shared record pattern is lifted out of the Contract page. The ordering, shuffle, pickers' filter and privacy logic are done and tested. No new demo trigger is needed. Demo beats that edit a tier by one click, or make an anaesthetist inactive immediately, would gain Edit and Save steps and a last-day choice.",
+   "observations": "Four items checked. FT-01.3 and US-01.6.3 (both Agreed) are Matches and I found nothing wrong in the code. The one real gap is the 26 Nov 'Intake as the front door' decisions (AR-72 points 9 and 10, cited by US-01.3.3, US-01.6.1 and US-02.1.2). The matching screen decides one hospital row at a time; there is no arriving-List unit. As a result, 'Create a Draft List' from Intake saves a Draft List holding only that row's Booking, whereas US-01.6.1's new AC says it holds its Bookings. That is why US-01.6.1 is corrected from Matches to Partial (M standalone, but it should be built with US-02.1.2's whole-List decision). The named-anaesthetist Slot suggestion (US-02.1.2 AC) is also absent: PdfListSample.target.anaesthetistId is only displayed in the PDF lists tab and the createList picker starts with no one chosen. US-01.3.3 stays Matches because its own text does not state the suggestion, but with medium confidence: if the owner reads 'placing an arriving List' as whole-List placement, it moves to Partial with US-02.1.2. Dependencies: US-02.1.2, US-02.1.4, US-01.4.2 and US-01.3.5 (both already built), FT-07.1 and US-13.5.2. Demo guide: the Intake script step (Okafor PDF, 'Create a List in a session', pick Rutherford) and the Draft List beats would change only if the rebuild preselects the named anaesthetist or builds the Draft List from the whole PDF. No seed or PERSIST_VERSION change is forced by these four items.",
    "counts": {
     "Contradicts": 1,
-    "Partial": 1,
+    "Partial": 2,
     "Missing": 0,
     "OutOfScope": 0,
-    "Matches": 0,
+    "Matches": 3,
     "Grouping": 0
    }
   },
@@ -32,13 +32,13 @@
    "id": "EP-02",
    "title": "Booking intake and change handling",
    "status": "Verify (3)",
-   "observations": "Only US-02.1.4 was graded, and the verification upholds the reviewer. The core behaviour (stubs, waitingForNhi assessment, Unmatched filter, no Booking created) is built; the one gap is the Waiting for an NHI tab on Intake, the same work as US-11.1.5. Build it once, in Lane C or the People work, not twice. Touch points: IntakeScreen.tsx (INTAKE_TABS and a new tab screen), router.tsx (new /admin/intake/waiting route plus a redirect from /admin/patients/waiting), the MatchingTable link, the receive-no-nhi-list trigger's screen, routes and indexPath, and the Patients badge (patientAttentionCount should drop waitingNhiRows). Of these, router.tsx and SideNav badge logic overlap the Contracts files, so keep those edits small or sequence them. The Patients nav entry moves into the People section, so the waiting view should move to Intake before or together with that move. Demo-guide references (03-demo-script.md lines ~27, ~105, ~215) change paths only; the sweep handles them.",
+   "observations": "All 16 gradings upheld after re-reading the code; no verdict changed. The prototype is at the pre-26-Nov intake reading (phases 33, 34, 40): intake is row-level and button-driven. Import hospital file, Upload PDF list and Send to matching are in-app actions, PDF lists and Waiting for NHI are separate tabs, the feed is a flat row table with no List or file grouping and no source filter, and every decision is per row (IncomingBookingFields cannot even name an anaesthetist). The catalogue now wants a List-level front door: arrivals appear on their own, grouped by List, decided as a whole List with the named anaesthetist's Slot suggested, with per-key match display and List versions, unchanged Lists confirmed in one click, removals offered from a re-sent PDF, and a Sources view. US-02.1.2, 02.1.3, 02.1.4, 02.1.6, 02.2.1 and 02.2.3 share one new List-level arrival and version model and should be one phase; US-02.1.1 and 02.1.5 (remove the import button, relabel the existing trigger) are a small independent S change that could land first; US-02.1.7 (Sources view) and US-02.6.3 (later NHI resolves a stub) build on that model. US-02.6.4 (stub guard in submitList and authoriseList plus a shown reason) is standalone and S. Already matching: FT-02.3 (admin entry), US-02.2.4 (List origin, incl. later-address rule), the stub placement and Add NHI resolution, procedure text as received, Draft List from intake, Reject, nothing applied until decided, and inbound-only behaviour (not stated in the UI). Size is per item, not additive. Dependencies: EP-11 (US-11.1.4/11.1.5 NHI waiting rows move from a tab into the feed filter), FT-02.5 (change types, procedure text US-02.5.7, cancellations from removals US-02.5.3), EP-14 (US-14.5.1 failure visibility feeds the Sources view; US-14.6.x future feeds), EP-01 (Draft List creation US-01.6.1), EP-07 (submit/authorise guard), US-02.3.3 and US-13.6.5 (reply to the List's sender), OQ-13 and OQ-124 (open, no grade impact). Demo-guide impact: S1 Beat 2 ('Import, then match', the PDF lists tab, Send to matching, the Open/Unmatched/Decided strip, the Waiting for NHI tab reading 1), the optional rooms re-send aside, the Diane Foster update beat, the handset stand-ins ('Hospital file imported and my booking matched', 'Office adds the NHI', which call importHospitalDownload/decideImportRow) and the /admin/intake/waiting and /admin/intake/pdfs routes all change; demoGuideSync.test.ts must stay green when trigger labels change.",
    "counts": {
-    "Contradicts": 0,
-    "Partial": 1,
-    "Missing": 0,
+    "Contradicts": 6,
+    "Partial": 6,
+    "Missing": 2,
     "OutOfScope": 0,
-    "Matches": 0,
+    "Matches": 2,
     "Grouping": 0
    }
   },
@@ -158,10 +158,10 @@
    "id": "EP-11",
    "title": "Patients and billable parties",
    "status": "Verify (3)",
-   "observations": "EP-11 is largely built and the gaps are structural, all from the 25 Nov People-section decision (note AR-70). I confirmed each reviewer finding against the code and found no false Matches; the one correction is the shared-note evidence in US-11.3.3.\n\n(1) Waiting for NHI moves to a tab on Intake (US-11.1.4 and US-11.1.5). The change is IntakeScreen.tsx INTAKE_TABS, a new Intake route entry, a redirect from /admin/patients/waiting, and WaitingNhiView moving out of patients/. It does not need the People section, so it fits a People lane in Wave 1. It touches shared files: router.tsx (one route) and AdminApp.tsx (the badge). Flag those against the Contracts lanes.\n\n(2) The Patients badge double-counts waiting rows today (patientAttentionCount adds waitingNhiRows, and the Intake badge matchingAttentionCount already counts every open row). Remove them from the patient count in the same change.\n\n(3) Needs follow-up (US-11.3.3) and the list filters, paging and defaults (US-11.3.1) are one piece of work. patientSearch needs Coming up (default), Needs follow-up and All filters with paging. Needs follow-up needs a one-row-per-patient selector with reasons, a People badge counting distinct patients (strong and mild warnings alike, no waiting rows), and the Clear/Done actions moved onto the patient's page. The selector and domain part could run in the People lane before the section move, but the screen work lands on the Patients screen that moves. Doing both together after the move is simpler.\n\n(4) The section move (US-11.1.1, US-11.3.1): the People nav entry, routes and redirects for /admin/patients/*, and the Patients tab of People. PatientRecord's content is already the intended pattern (NHI pill beside the name, Details rail with own audited Edit, Details differ card, invoices, alerts and follow-up log), so adopting the shared record page lifted from the Contract page is a refactor. It depends on that lift and on router.tsx, SideNav.tsx, AdminApp.tsx, apps/admin/routes.tsx and masterViews.ts, so it waits for Wave 1 to join.\n\n(5) Already matching: dedupe and dedupe-never-overwrites with held details, mandatory NHI, stubs on Lists in all three apps, one-address chase, Urgent marking within 3 days, follow-up log kinds with audited resend, shared notes (addSharedNote, all three apps), and invoices across anaesthetists with status and balance.\n\nDemo guide impact (left to the owner's sweep): S2 patient beat paths (/admin/patients/CQY9304), the Waiting for NHI beats ('Patients → Waiting for NHI', Receive list counts) and the NHI register refresh beat ('Patients → Search') change their paths and labels. Cross-epic links: US-13.4.1 (People section), US-02.6.1 (stubs), US-02.1.4 (unmatched rows), US-13.6.5 (surgeon office contacts), US-11.3.2 (balance warning).",
+   "observations": "Both stories were reworked on 26 Nov (intake front door). The prototype built the 25 Nov tab reading (Waiting for NHI tab, /admin/intake/waiting), and the catalogue now wants a Needs NHI filter in the one matching feed (US-02.1.4). The gap is mostly structural: fold the waiting rows into MatchingScreen as a Needs NHI filter with its count, remove the tab and route, and redirect /admin/patients/waiting to Matching with the filter set. Intake's attention count already counts each waiting row once. The real new behaviour is later-arrival NHI resolution (a proposed update showing the NHI, applied to turn the waiting row into a Booking and remove the stub). It depends on the EP-02 front-door rework (US-02.1.4, US-02.2.4, stubs FT-02.6) and on how hospital updates and PDF resends are staged. Decide whether the Matching RowPanel Add NHI stays (one hand route rule). Chase-address logic (US-02.2.4, US-13.6.5) already matches. Demo guide: docs/demo-guide/03-demo-script.md names the Waiting for NHI tab (S1 optional check, Intake section, the Losa Tuilagi beat) and needs rewording, plus a beat for the later-arrival update. Trigger screen strings are read by demoGuideSync.test.ts, so renaming them must keep it green. Capture recipes and screenshots (admin-waiting-for-nhi-*.png) are left to the owner's sweep.",
    "counts": {
-    "Contradicts": 3,
-    "Partial": 2,
+    "Contradicts": 4,
+    "Partial": 1,
     "Missing": 0,
     "OutOfScope": 0,
     "Matches": 0,
@@ -200,9 +200,9 @@
    "id": "EP-14",
    "title": "Health systems integration",
    "status": "Proposed (1)",
-   "observations": "",
+   "observations": "x",
    "counts": {
-    "Contradicts": 0,
+    "Contradicts": 1,
     "Partial": 0,
     "Missing": 0,
     "OutOfScope": 0,
@@ -226,6 +226,33 @@
   }
  ],
  "items": [
+  {
+   "id": "FT-01.3",
+   "verdict": "Matches",
+   "summary": "The model is as the feature states: a Slot carries no surgeon or hospital, an assigned List carries exactly one anaesthetist, surgeon, hospital, day and session, and a Draft List has all but the anaesthetist.",
+   "requirement_says": "A Slot with no List has no surgeon or hospital. An assigned List belongs to one anaesthetist, surgeon, hospital, day and session (an active List); a Draft List has surgeon, hospital, day and session but no anaesthetist.",
+   "prototype_does": "Slot holds only anaesthetist, date, session, status, note, time overrides and series pointer, with no surgeon or hospital. AssignedList requires anaesthetistId and slotId; DraftList types them as undefined while keeping hospital, surgeon, day and session (ListBase). assignListToSlot and createDraftList enforce hospital and surgeon through the one pairing rule, and a session holds one List.",
+   "missing_or_wrong": [],
+   "evidence": [
+    "aa-prototype/src/domain/types.ts:762-786 (Slot: no surgeon or hospital)",
+    "aa-prototype/src/domain/types.ts:919-941 (AssignedList requires anaesthetistId and slotId; DraftList has them undefined; List = AssignedList | DraftList)",
+    "aa-prototype/src/store/slotActions.ts:389-426 (assignListToSlot: slotOccupied refusal, pairingIssues requires hospital and surgeon)",
+    "aa-prototype/src/store/draftListActions.ts:97-161 (createDraftList builds a DRAFT List with hospital, surgeon, day, session and no anaesthetist or slot)"
+   ],
+   "demo_trigger": "",
+   "surfaces": [],
+   "size": "None",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Matches",
+   "verify_note": "Re-opened the type definitions and both store actions. The feature body states only the data-model rule and the prototype's types and actions encode it exactly. Status is Agreed, so I looked for anything quietly different (a surgeon or hospital on Slot, a Draft List with an anaesthetist) and found none.",
+   "epic": "EP-01",
+   "title": "List assignment",
+   "type": "feature",
+   "status": "Agreed (4)",
+   "open_questions": [],
+   "file": "stories/FT-01.3.md"
+  },
   {
    "id": "US-01.1.1",
    "verdict": "Partial",
@@ -266,6 +293,40 @@
    "file": "stories/US-01.1.1.md"
   },
   {
+   "id": "US-01.3.3",
+   "verdict": "Matches",
+   "summary": "Manual assignment of a surgeon and hospital to a free Slot, and the Intake 'Create a List in a session' act, are built as the story text says. The 26 Nov 'named anaesthetist suggested' point is not built, but the story text does not state it (it is an acceptance criterion of US-02.1.2).",
+   "requirement_says": "An admin assigns a surgeon and a hospital to an available Slot directly, creating its List; placing an arriving List in a free Slot from the matching screen is the same act, with the arrival's surgeon and hospital. Anaesthetists do not do this. A List can also be found by day, Slot and anaesthetist, or made as a Draft.",
+   "prototype_does": "SlotDrawer on an empty session offers Assign List (hospital and surgeon required, not-preferred pairing warns and is acknowledged, refused if closed or occupied), Book (phone advice), Edit times, History. Find available opens the drawer on Assign List with the surgeon preselected. Office only (officeOnly refusal); no anaesthetist surface does it. On Intake Matching, the decision 'Create a List in a session' calls assignListToSlot with the row's hospital and the row's recognised (or picked) surgeon, then creates the row's Booking on it; 'Create a Draft List' is the alternative.",
+   "missing_or_wrong": [
+    "Intake placement does not suggest the Slot of the anaesthetist the PDF or hospital List names (AR-72 point 9, which the story cites as a source; the AC is in US-02.1.2). PdfListSample.target.anaesthetistId is only a label in the PDF lists tab; the createList picker (AnaesthetistCandidates) starts with anaesthetistId undefined and ranks by tier and pairing. Graded under US-02.1.2; it does not make this story's own text false.",
+    "Intake placement is per row (one Booking per decision, other rows added with 'Create a Booking on a List'), not per arriving List. Same US-02.1.2 whole-List rebuild."
+   ],
+   "evidence": [
+    "aa-prototype/src/store/slotActions.ts:389-426 (assignListToSlot: office only, slotOccupied, sessionNotOpen, pairing)",
+    "aa-prototype/src/store/matchingActions.ts:503-520 (createList uses assignListToSlot with fields.hospitalId and the row's surgeonId, then createOnList)",
+    "aa-prototype/src/apps/admin/matching/RowPanel.tsx:128,218,754-775 (anaesthetistId state starts undefined; AnaesthetistCandidates picker; no named-anaesthetist preselect)",
+    "aa-prototype/src/domain/intake/pdfLists.ts:49,57-58 (target.anaesthetistId carried by the sample, unused outside the PDF lists tab display)",
+    "aa-prototype/src/apps/admin/components/SlotDrawer.tsx and flows/AssignListSheet.tsx (empty-session body)"
+   ],
+   "demo_trigger": "Existing: Intake PDF lists upload (Okafor PDF, 'Create a List in a session') and 'matching-receive-theatre-list'. No new control; the suggestion would show as a preselected anaesthetist on that same decision.",
+   "surfaces": [
+    "admin",
+    "domain"
+   ],
+   "size": "None",
+   "confidence": "medium",
+   "verify_outcome": "upheld",
+   "original_verdict": "Matches",
+   "verify_note": "Re-read the story and AR-72 point 9 and US-02.1.2. The story body has no suggestion rule and no acceptance criteria; the suggestion is a US-02.1.2 AC. Re-checked the matching code and RowPanel: no suggestion exists, so the gap is real but belongs to US-02.1.2. Kept Matches on the story text as written (medium confidence); if the owner reads 'placing an arriving List' as whole-List placement it becomes Partial and moves with US-02.1.2. Size left None because the work is counted under US-02.1.2.",
+   "epic": "EP-01",
+   "title": "Manual List assignment",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-01.3.3.md"
+  },
+  {
    "id": "US-01.3.6",
    "verdict": "Contradicts",
    "summary": "Tiers 1 to 4 (default 4), office-only privacy, tier then seeded-shuffle ordering and a 'Filter by tier' control on the finder and Draft List pickers are built. But the tier saves on a single click on its own card, which the story now forbids, and the Anaesthetists list in People has no tier filter.",
@@ -302,42 +363,657 @@
    "file": "stories/US-01.3.6.md"
   },
   {
-   "id": "US-02.1.4",
+   "id": "US-01.6.1",
    "verdict": "Partial",
-   "summary": "Unmatched queue, no-NHI waiting (no Booking created) and the stub on the List all work per both acceptance criteria; the one gap is that rows waiting for an NHI are not shown on Intake as their own tab beside the unmatched rows (the view lives at /admin/patients/waiting under Patients), which the 25 Nov people-section decision (#9) now requires.",
-   "requirement_says": "Unmatched rows stay in a queue for manual intervention. An incoming booking with no NHI waits at intake (no Booking created), shown on Intake beside the unmatched rows as a row waiting for an NHI, with a stub standing in its place on its List (seen by anaesthetist and office) until the office adds the NHI. Nothing is silently dropped.",
-   "prototype_does": "Intake > Matching has Open / Unmatched / Decided filters; the Unmatched filter includes no-NHI rows (store/matchingSelectors.ts importRowViews, ~135-150, 'rows waiting for an NHI included'). A no-NHI row is assessed waitingForNhi with queue 'unmatched' and creates no Booking (domain/intake/matching.ts:~525-535); placeStubsForRows (store/stubSettle.ts:~31-65) puts a stub on its List, drawn in the admin List table, web List detail and mobile List detail (ListDetailScreen.tsx:125); adding the NHI resolves it into a Booking. The dedicated Waiting for NHI view (chase address, urgency, Add NHI) is only at /admin/patients/waiting under the Patients nav item. Matching rows link across to it (MatchingTable.tsx:120). INTAKE_TABS (IntakeScreen.tsx:21-26) has only Matching, PDF lists, Data quality, Validators. Intake's badge (matchingAttentionCount, all open rows) already includes waiting rows; the Patients badge also counts them (patientAttentionCount adds waitingNhiRows).",
+   "summary": "Creating a Draft List by hand (New Draft List form) is fully built, but the new acceptance criterion 'from the matching screen ... a Draft List holding its Bookings' is only met per row: Intake makes the Draft List with one row's Booking and the arriving List's other Bookings must be added row by row.",
+   "requirement_says": "AA staff create a Draft List (phone, email, PDF) or make one on the matching screen from an arriving List with no anaesthetist; hospital, surgeon, day and session required; no anaesthetist and no Slot taken; Bookings can be added before assignment. AC: on the matching screen, a Draft List is saved with the arrival's hospital, surgeon, day and session and its Bookings, and no Slot changes.",
+   "prototype_does": "createDraftList (office only) requires hospital, surgeon, day within horizon and not past, session, kind and how it came in; inserts a DRAFT List with no anaesthetist or slot and touches no Slot; audited draftList.create. The Draft List drawer has Add Booking. On Intake Matching, 'Create a Draft List' (row without a match) runs createDraftList with the row's hospital, surgeon, date and session, then creates only that row's Booking on it. The sample PDFs hold three rows each, so the Draft List holds one Booking after the decision and the other two rows are decided one by one.",
    "missing_or_wrong": [
-    "Waiting for an NHI is not a tab on Intake (INTAKE_TABS has no such tab); the view exists only at /admin/patients/waiting, so waiting rows are not 'on Intake beside the unmatched rows' as now written. The tab itself is specified mainly by US-11.1.5 and is the same build.",
-    "MatchingTable's 'Waiting for NHI' TextAction (to /admin/patients/waiting, line 120) and the receive-no-nhi-list demo trigger (screen 'Admin · Patients · Waiting for NHI', routes and indexPath /admin/patients/waiting, registry.ts:~2364-2380) point at the Patients path and must repoint to the Intake tab.",
-    "patientAttentionCount still adds waitingNhiRows, so the Patients badge double counts rows that become an Intake tab; it should drop them (Intake's count already includes them)."
+    "From Intake, the 'Create a Draft List' decision is per row: it saves the Draft List with one Booking, not 'its Bookings' (the arriving List's whole set) in one act. The matching screen has no arriving-List grouping (no whole-List decision, matchingActions.ts createDraft branch handles one row)."
    ],
    "evidence": [
-    "aa-prototype/src/apps/admin/screens/IntakeScreen.tsx:21-26 (INTAKE_TABS, no waiting tab)",
-    "aa-prototype/src/apps/admin/matching/MatchingTable.tsx:120 (link to /admin/patients/waiting)",
-    "aa-prototype/src/store/matchingSelectors.ts:~135-150 (importRowViews), ~155 (matchingAttentionCount)",
-    "aa-prototype/src/store/patientSelectors.ts:345-390 (waitingNhiRows, patientAttentionCount)",
-    "aa-prototype/src/domain/intake/matching.ts:~525-535 (waitingForNhi, queue 'unmatched')",
-    "aa-prototype/src/store/stubSettle.ts:~31-65",
-    "aa-prototype/src/apps/mobile/screens/ListDetailScreen.tsx:125",
-    "aa-prototype/src/shared/demoTriggers/registry.ts:2364-2380"
+    "aa-prototype/src/store/matchingActions.ts:523-540 (createDraft branch: createDraftList then createOnList for the single row)",
+    "aa-prototype/src/apps/admin/matching/RowPanel.tsx:203-208,246-248,777-782 (option title 'Holds this Booking until the office assigns an anaesthetist'; surgeon picker only when none recognised)",
+    "aa-prototype/src/domain/intake/pdfLists.ts:67-98 (each sample PDF has three rows, each decided separately)",
+    "aa-prototype/src/store/draftListActions.ts:97-161 (createDraftList: required fields, no slot, audit)",
+    "aa-prototype/src/domain/types.ts:934-939 (DraftList has no anaesthetistId or slotId)",
+    "aa-prototype/src/apps/admin/components/DraftListDrawer.tsx (Add Booking before assignment)",
+    "searched: arrivingList|ArrivingList|groupBy in apps/admin/matching, domain/intake, store -> no whole-List decision"
    ],
-   "demo_trigger": "Existing: 'Receive list with a missing NHI' (receive-no-nhi-list) and 'Office adds the NHI' (pwa-office-adds-nhi). Repoint receive-no-nhi-list's screen, routes and indexPath to the Intake waiting tab.",
+   "demo_trigger": "Existing: Intake Matching 'Create a Draft List' on a row with no match (from the Okafor or Whitford PDF upload, 'matching-receive-theatre-list', 'simulate-incoming-request'). After the fix, one decision on the PDF should leave a Draft List holding all of its rows' Bookings; no new control.",
    "surfaces": [
     "admin",
+    "store"
+   ],
+   "size": "M",
+   "confidence": "medium",
+   "verify_outcome": "corrected",
+   "original_verdict": "Matches",
+   "verify_note": "The reviewer graded Matches while admitting the gap. The rubric for Matches is ALL acceptance criteria; the last AC is new (26 Nov) and says the Draft List holds 'its Bookings' from the matching-screen act. Confirmed in code that the act saves one row's Booking and that the sample PDFs carry three rows, so the AC is not demonstrated as written. The manual-creation parts (required fields, no Slot, Bookings addable, audit) all check out. Corrected to Partial; fix largely rides on the US-02.1.2 whole-List rebuild, standalone M (loop the arriving List's rows, with stub and wrong-NHI rows still handled).",
+   "epic": "EP-01",
+   "title": "Create a Draft List",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-01.6.1.md"
+  },
+  {
+   "id": "US-01.6.3",
+   "verdict": "Matches",
+   "summary": "The office assigns a Draft List by choosing only the anaesthetist; the List goes ACTIVE in the Slot its day and session fix, keeping its Bookings, occupied and unavailable Slots are never assignable, a not-preferred pairing warns and can proceed, and the assignment is audited.",
+   "requirement_says": "Only the office assigns a Draft List (never offered to anaesthetists), by choosing the anaesthetist, with the session predefined. It becomes an active List in that Slot with its content kept. An occupied Slot is not offered; an unavailable Slot is refused until made available with the anaesthetist's agreement; a not-preferred pairing warns softly. Audited.",
+   "prototype_does": "assignDraftListUnscoped (office only) takes only anaesthetistId; the Slot comes from the Draft List's day and session. It refuses a past day, inactive anaesthetist, no session, occupied Slot (slotOccupied) and closed or unavailable session (sessionNotOpen), then attachListToSlot keeps the List id, Bookings, hospital, surgeon and notes so it is ACTIVE. A not-preferred pairing adds a warning and records list.pairingAcknowledged ('Assign anyway' in the sheet). DraftListCandidates groups Free (by tier), Not preferred apart, Not available (ClosedColleagueRow, not pickable) and 'Already has a List' (blocked row with Open List). Audit draftList.assign (before DRAFT, after ACTIVE with slotId). Mobile and web routes drop DRAFT Lists, so none reaches an anaesthetist.",
+   "missing_or_wrong": [],
+   "evidence": [
+    "aa-prototype/src/store/draftListActions.ts:190-275 (assignDraftListUnscoped: refusals, attachListToSlot, draftList.assign audit, pairing acknowledgement)",
+    "aa-prototype/src/apps/admin/components/pairing/DraftListCandidates.tsx:187-222 (Free, Not preferred, Not available, Already has a List groups)",
+    "aa-prototype/src/apps/admin/flows/AssignDraftListSheet.tsx (two-step, warnings, Assign anyway)",
+    "aa-prototype/src/apps/mobile/routes.tsx:99 and aa-prototype/src/apps/web/screens/ListDetailView.tsx:94 (DRAFT Lists never shown to anaesthetists)",
+    "aa-prototype/src/shared/demoTriggers/registry.ts:1606 (office-assigns-draft-list)"
+   ],
+   "demo_trigger": "Existing: demo trigger 'office-assigns-draft-list' (Anaesthetist Mobile lists screen) and Admin Draft Lists 'Assign'; scripted Beat 3 of the Admin day assigns a recurring-clash Draft List.",
+   "surfaces": [],
+   "size": "None",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Matches",
+   "verify_note": "Status Agreed, so I re-checked every AC against the code: office-only, becomes active with content kept, occupied Slot refused and shown as blocked, unavailable refused with the 'made available first' route, audit entry written, soft pairing warning. Also confirmed no Draft List surfaces on the mobile or web apps. No missing or wrong behaviour found.",
+   "epic": "EP-01",
+   "title": "Assign a Draft List to an anaesthetist",
+   "type": "story",
+   "status": "Agreed (4)",
+   "open_questions": [],
+   "file": "stories/US-01.6.3.md"
+  },
+  {
+   "id": "EP-02",
+   "verdict": "Partial",
+   "summary": "All four booking sources exist and every List and Booking records its source, but the 'one front door' the epic now states is not built: hospital rows arrive by an Import button, rooms' PDFs sit on a separate tab behind a manual Send to matching, and decisions are per row.",
+   "requirement_says": "Bookings reach the Scheduling Engine from four sources (hospitals, rooms' List PDFs, admin entry, anaesthetist ad hoc). Hospital and rooms Lists and changes arrive at one matching screen where the office checks them before the schedule; every Booking change keeps where it came from.",
+   "prototype_does": "Hospital rows are staged by an 'Import hospital file' button over sample files; rooms' PDFs are uploaded one at a time on a separate PDF lists tab, then 'Send to matching'; the office decides row by row on a flat table. Admin entry (source 'admin') and anaesthetist ad hoc (source 'anaesthetistAdHoc') exist via AddBookingFlow. Booking.source, ListOrigin and audit source record provenance.",
+   "missing_or_wrong": [
+    "Rooms' PDFs do not arrive on the matching screen on their own: they go through a separate PDF lists tab and a manual Send to matching",
+    "Hospital rows still need someone to press Import hospital file",
+    "Matching is row-level, not List-level: no sources view, List versions or removals (see FT-02.1, US-02.1.x, US-02.2.x)"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/MatchingScreen.tsx:70,176 (importAction page action; flat MatchingTable)",
+    "aa-prototype/src/apps/admin/screens/IntakeScreen.tsx:23-29 (INTAKE_TABS: Matching, Waiting for NHI, PDF lists, Data quality, Validators)",
+    "aa-prototype/src/apps/admin/intake/PdfListsTab.tsx:30-35 (Upload PDF list)",
+    "aa-prototype/src/shared/flows/AddBookingFlow.tsx:35 (sourceFor: admin vs anaesthetistAdHoc)",
+    "aa-prototype/src/domain/types.ts:844-849,973 (ListOrigin, BookingSource)"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin",
+    "domain",
+    "store",
+    "simulator",
+    "demo-guide"
+   ],
+   "size": "XL",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-opened IntakeScreen, MatchingScreen, MatchingTable, PdfListsTab and the types. The epic states a rule of its own (one matching screen for both sources), so not Grouping. Source and provenance recording is real, so Partial rather than Contradicts; the contradictions sit in the children. XL stands because the List-level rebuild is one coherent change across FT-02.1, FT-02.2 and the stub guard.",
+   "epic": "EP-02",
+   "title": "Booking intake and change handling",
+   "type": "epic",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/EP-02.md"
+  },
+  {
+   "id": "FT-02.1",
+   "verdict": "Contradicts",
+   "summary": "A matching screen exists and holds every outside row with nothing applied until decided, but it is built on the superseded reading: import button, row-by-row decisions, Waiting for NHI as its own tab, no source view.",
+   "requirement_says": "Intake is the front door for every List and change from rooms and hospitals; arrivals come in on their own and the office decides what each becomes (new List, or an update merged into a held List) at one checking step.",
+   "prototype_does": "Matching tab lists individual rows (Open / Unmatched / Decided) that arrive by 'Import hospital file' (sample files) or 'Send to matching' from the PDF tab. The office picks match / create Booking / create List / create Draft List / reject per row, with field diffs and ticks. Waiting for NHI, PDF lists, Data quality and Validators are separate tabs.",
+   "missing_or_wrong": [
+    "Arrivals are imported by a button, contradicting 'come in on their own'",
+    "Decisions are per row, not per List",
+    "No grouping by List or file, no source filters, no sources view (US-02.1.4, US-02.1.7)",
+    "Rooms' PDFs bypass the screen until manually sent from another tab",
+    "Page subtitle and sample-file note say rows are 'imported' and stand in for hospitals"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/IntakeScreen.tsx:23-29,73-77 (tabs; subtitle 'Imported hospital files')",
+    "aa-prototype/src/apps/admin/screens/MatchingScreen.tsx:96-100,134-150,176,206-212",
+    "aa-prototype/src/domain/intake/matching.ts:63-71 (per-row decision kinds)",
+    "aa-prototype/src/store/matchingActions.ts:213,700 (importHospitalDownload, decideImportRow)"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin",
+    "domain",
+    "store",
+    "simulator",
+    "demo-guide"
+   ],
+   "size": "XL",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Contradicts",
+   "verify_note": "Confirmed the flat row table with no batch or List headings, the import page action, and the five-tab layout. The feature text ('arrivals come in on their own', no import button per the 26 Nov note) directly contradicts the implemented import-driven, per-row design, so Contradicts holds.",
+   "epic": "EP-02",
+   "title": "Matching screen for incoming Lists",
+   "type": "feature",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/FT-02.1.md"
+  },
+  {
+   "id": "FT-02.2",
+   "verdict": "Partial",
+   "summary": "Rooms' PDF read (simulated), side-by-side review, correction and re-send comparison exist, and PDF rows do reach the same matching screen, but only after a manual upload and Send to matching from a separate tab; OQ-124 is open and does not change the grade.",
+   "requirement_says": "Rooms email Lists as PDFs and re-send the whole List on every change. The system reads them and lets staff review and merge changes into Bookings, each arriving in the same matching screen as the hospital rows.",
+   "prototype_does": "PDF lists tab: Upload PDF list (sample plus Sent from), facsimile beside editable rows, correction, Send to matching, a re-sent list compared to the first (replacesId, unchanged rows skipped). Trigger 'Receive updated PDF from rooms' simulates a re-send. Reading is fixed sample rows; the domain file states 'no OCR and no mailbox'.",
+   "missing_or_wrong": [
+    "No automatic read from the office mailbox",
+    "PDF rows reach Matching only after a manual Send to matching from a separate tab",
+    "No removal detection for a re-sent List (US-02.2.3)",
+    "No per-value confidence or page positions (US-02.2.1)"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/intake/PdfListsTab.tsx:30-35,106-123",
+    "aa-prototype/src/store/pdfListActions.ts:133,191",
+    "aa-prototype/src/domain/intake/pdfLists.ts:1-17 (no OCR and no mailbox)",
+    "aa-prototype/src/shared/demoTriggers/registry.ts:1191 (pdf-list-resend)"
+   ],
+   "demo_trigger": "Existing 'Receive updated PDF from rooms' (pdf-list-resend) covers the re-send; the mailbox arrival trigger is proposed under US-02.2.1.",
+   "surfaces": [
+    "admin",
+    "store",
+    "domain",
+    "simulator"
+   ],
+   "size": "L",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Feature body does not itself say 'without upload' (that is in US-02.2.1), and the PDF rows do land on the same matching screen, so Partial rather than Contradicts. Confirmed no confidence/mailbox code via grep of pdfLists.ts and PdfListReview.tsx. Size L is the child stories' work, overlapping US-02.2.1 and 02.2.3.",
+   "epic": "EP-02",
+   "title": "Surgeon PDF list ingest",
+   "type": "feature",
+   "status": "Verify (3)",
+   "open_questions": [
+    "OQ-124"
+   ],
+   "file": "stories/FT-02.2.md"
+  },
+  {
+   "id": "FT-02.3",
+   "verdict": "Matches",
+   "summary": "Admin creates and amends Bookings directly (Add booking in the session and Draft List drawers, phone-advice Book, New Draft List, Booking detail edits) outside the matching screen, with source 'admin' and List origin 'manual'.",
+   "requirement_says": "Admin staff create and amend Bookings directly for bookings arriving by phone or email, outside the matching screen.",
+   "prototype_does": "SlotDrawer and DraftListDrawer open the shared AddBookingFlow (source 'admin' for the office actor); Book (phone advice) assigns then opens it; the office edits Bookings on ACTIVE/SUBMITTED Lists in AdminBookingDetail; hand-made Lists carry origin 'manual'.",
+   "missing_or_wrong": [],
+   "evidence": [
+    "aa-prototype/src/apps/admin/components/SlotDrawer.tsx:236",
+    "aa-prototype/src/apps/admin/components/DraftListDrawer.tsx:260",
+    "aa-prototype/src/shared/flows/AddBookingFlow.tsx:35",
+    "aa-prototype/src/domain/lists/listOrigin.ts:44-46"
+   ],
+   "demo_trigger": "",
+   "surfaces": [],
+   "size": "None",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Matches",
+   "verify_note": "Agreed (4) item re-checked: found the AddBookingFlow mounts in both admin drawers and sourceFor mapping office to 'admin'. The one-sentence requirement has no further acceptance criteria and nothing in the code contradicts it.",
+   "epic": "EP-02",
+   "title": "Manual booking entry by admin",
+   "type": "feature",
+   "status": "Agreed (4)",
+   "open_questions": [],
+   "file": "stories/FT-02.3.md"
+  },
+  {
+   "id": "US-02.1.1",
+   "verdict": "Contradicts",
+   "summary": "Hospital rows land on the matching screen only after an admin presses Import hospital file and picks a sample; the catalogue now says nobody imports a file. OQ-13 (format) open.",
+   "requirement_says": "Each hospital's bookings reach the matching screen as the hospital sends them; no import step, so rows are ready as soon as sent.",
+   "prototype_does": "Intake page action 'Import hospital file' opens ImportDialog of four sample files, calling importHospitalDownload; a control-panel trigger of the same label also stages a theatre list. The page note says sample files stand in for each hospital.",
+   "missing_or_wrong": [
+    "User-facing Import hospital file button and ImportDialog must go",
+    "Rows should appear on their own (demo control only, not a product button)",
+    "Copy 'imported', 'Imported hospital files' (Intake subtitle) and 'Sample files stand in...' note to rework",
+    "Handset stand-in 'Hospital file imported and my booking matched' and tests that open the dialog need re-pointing"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/MatchingScreen.tsx:96-100,134-150,206-212",
+    "aa-prototype/src/apps/admin/matching/ImportDialog.tsx",
+    "aa-prototype/src/apps/admin/screens/IntakeScreen.tsx:73-77",
+    "aa-prototype/src/shared/demoTriggers/registry.ts:2351-2371 (matching-receive-theatre-list, label 'Import hospital file')"
+   ],
+   "demo_trigger": "Existing control-panel trigger on Admin, Intake, Matching ('Import hospital file', choose St George's or Southern Cross) already stages a theatre list; relabel to 'Hospital sends its theatre list', remove the in-app button so rows simply appear with the existing New chip.",
+   "surfaces": [
+    "admin",
+    "simulator",
     "demo-guide"
    ],
    "size": "S",
    "confidence": "high",
    "verify_outcome": "upheld",
-   "original_verdict": "Partial",
-   "verify_note": "Re-read US-02.1.4 and US-11.1.5 and re-opened IntakeScreen.tsx (no waiting tab), MatchingTable.tsx:120 (link to /admin/patients/waiting), matchingSelectors.ts (Unmatched filter includes waiting rows), matching.ts (no-NHI row waits, no Booking), stubSettle.ts (stubs placed), the stub renderers, patientSelectors.ts (double count) and the trigger registry. All the reviewer's points hold. Both of US-02.1.4's own acceptance criteria (No NHI; Stub on the List) are met. Only the description's 'shown on Intake beside the unmatched rows' is unmet, so Partial is right (nothing implemented is wrong). Small extra: waitingNhiRows excludes hospital cancellations with no NHI, which stay on Matching for Reject; US-11.1.5 should be checked against this when the tab is built.",
+   "original_verdict": "Contradicts",
+   "verify_note": "Confirmed the import action and dialog in MatchingScreen and the trigger at registry.ts:2351. The single AC ('no import step') is violated by the button; the trigger already exists so only relabel and removal. Added the Intake subtitle copy and test/stand-in knock-ons.",
    "epic": "EP-02",
-   "title": "Unmatched queue",
+   "title": "Hospital bookings reach the matching screen",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [
+    "OQ-13"
+   ],
+   "file": "stories/US-02.1.1.md"
+  },
+  {
+   "id": "US-02.1.2",
+   "verdict": "Contradicts",
+   "summary": "The office decides each row separately; the catalogue now has it decide a whole List at a time, with the named anaesthetist's Slot suggested for a new List.",
+   "requirement_says": "For each arriving List the office decides the whole List (changes applied together, any one Booking's change can be left out): to a matched List, an existing List, a new List in the named (or another) free anaesthetist's Slot, a Draft List, or reject; rows with no NHI wait; procedure text shown as received.",
+   "prototype_does": "Per-row decision cards (match, create Booking on a List, create List in an open slot, create Draft List, reject with reason); per-field ticks on one row; procedure shown verbatim; no-NHI rows blocked except Reject. These parts agree with the text: as received, Draft List from intake, Reject creates nothing.",
+   "missing_or_wrong": [
+    "No List-level decision or apply-together: each row is decided alone, so 'three changes, leave one out, apply the List' cannot be done",
+    "Named anaesthetist's Slot is not suggested: IncomingBookingFields carries no anaesthetist and createList just offers openSlotsForRow",
+    "No concept of an arriving List as a unit; ticks are per field of one row, not per Booking change across a List"
+   ],
+   "evidence": [
+    "aa-prototype/src/domain/intake/matching.ts:63-71,455-458 (suggestions are per row: match, createBooking, reject)",
+    "aa-prototype/src/domain/types.ts:2832-2850 (IncomingBookingFields has no anaesthetist)",
+    "aa-prototype/src/apps/admin/matching/RowPanel.tsx:171 (openSlotsForRow)",
+    "aa-prototype/src/store/matchingActions.ts:288,700 (decideImportRow)",
+    "aa-prototype/src/apps/admin/matching/MatchingTable.tsx:75-84 (procedure as received)"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin",
+    "domain",
+    "store",
+    "demo-guide"
+   ],
+   "size": "L",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Contradicts",
+   "verify_note": "Verified the row-only decision model and that incoming fields cannot name an anaesthetist (so the Slot suggestion is genuinely missing, also for PDFs only via the sample target). Behaviour is an older per-row reading, so Contradicts over Partial.",
+   "epic": "EP-02",
+   "title": "Decide an arriving List",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-02.1.2.md"
+  },
+  {
+   "id": "US-02.1.3",
+   "verdict": "Partial",
+   "summary": "Field-level differences with current and new values are shown before applying and the match basis is named, but not per-key agreement, earlier versions, the Slot, or the hospital-updates-rooms-List framing.",
+   "requirement_says": "For a matched List show each match key (surgeon, hospital, day and session, NHI count) as agreeing or not, no confidence score; earlier versions (rooms PDF first, hospital update proposed); the Slot; per-Booking field differences before apply.",
+   "prototype_does": "Row panel shows a single match-basis label ('Matched by date, surgeon, hospital and session, then NHI') and a DiffTable of current against incoming values with ticks. No confidence score. Matching is by List key then NHI whatever the source, so a hospital row for a rooms-made Booking shows as a modification.",
+   "missing_or_wrong": [
+    "No per-key agree/disagree display and no count of the List's patients found by NHI",
+    "No earlier versions or first-version timeline for the List",
+    "Slot the List sits in is not shown on the match",
+    "Differences shown per row, not for the List's Bookings together",
+    "Hospital List as a proposed update of a rooms' List is not labelled as such"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/matching/RowPanel.tsx:552-585",
+    "aa-prototype/src/domain/intake/matching.ts:259-273 (findMatch), MATCH_BASIS_LABELS",
+    "aa-prototype/src/apps/admin/matching/DiffTable.tsx"
+   ],
+   "demo_trigger": "",
+   "surfaces": [
+    "admin",
+    "domain",
+    "store",
+    "demo-guide"
+   ],
+   "size": "L",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Re-read findMatch (single basis enum, no per-key results) and the panel. Nothing implemented contradicts the text (diffs before applying, no confidence score are right), so Partial. Version history and per-key display need a List-level arrival model, hence L.",
+   "epic": "EP-02",
+   "title": "Show why a List matched and what it changes",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-02.1.3.md"
+  },
+  {
+   "id": "US-02.1.4",
+   "verdict": "Contradicts",
+   "summary": "The feed is a flat row table with Open/Unmatched/Decided filters and Waiting for NHI in its own tab; the catalogue wants one feed grouped by List with source and Needs NHI filters.",
+   "requirement_says": "One feed on the matching screen grouped by List (a hospital file a heading over its Lists, a PDF one List), filters by source, Needs NHI and Decided; nothing dropped, an unreadable PDF lands with the reason; no-NHI booking waits under Needs NHI with a stub on the List.",
+   "prototype_does": "Flat MatchingTable with Open / Unmatched / Decided pills; Waiting for NHI is a separate Intake tab with its own table; PDF lists is a separate tab; a stub stands on the List for no-NHI rows and no Booking is made until the NHI is added. Decided filter and nothing-dropped hold.",
+   "missing_or_wrong": [
+    "No grouping by file or List",
+    "No filter by hospital or rooms' PDFs",
+    "Needs NHI is a separate tab (the catalogue replaced that tab with a filter); the 'Unmatched' filter has no catalogue equivalent",
+    "Unreadable PDF landing in the feed with a reason does not exist"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/MatchingScreen.tsx:186-195 (FilterPills Open/Unmatched/Decided)",
+    "aa-prototype/src/apps/admin/screens/IntakeScreen.tsx:23-29 (separate Waiting for NHI tab)",
+    "aa-prototype/src/apps/admin/matching/MatchingTable.tsx:61-80 (one tr per row, no group headings)",
+    "aa-prototype/src/store/stubSettle.ts:32-66 (stub placement)",
+    "searched: unreadable|cannot be read|couldn't read in domain/intake, store, apps/admin/intake -> none"
+   ],
+   "demo_trigger": "Existing 'Receive list with a missing NHI' (Intake) covers Needs NHI; add 'Rooms send an unreadable PDF' on Intake that lands a held item with its reason.",
+   "surfaces": [
+    "admin",
+    "domain",
+    "store",
+    "simulator",
+    "demo-guide"
+   ],
+   "size": "L",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Contradicts",
+   "verify_note": "Confirmed no grouping or source filter in MatchingScreen/MatchingTable and the separate waiting route. The Needs-NHI-as-tab behaviour is exactly what the 26 Nov note says was replaced, so Contradicts.",
+   "epic": "EP-02",
+   "title": "One feed of everything waiting",
    "type": "story",
    "status": "Verify (3)",
    "open_questions": [],
    "file": "stories/US-02.1.4.md"
+  },
+  {
+   "id": "US-02.1.5",
+   "verdict": "Contradicts",
+   "summary": "Hospital rows only appear after an admin presses Import hospital file; the catalogue now says rows arrive by themselves with no import or sync button. OQ-13 open.",
+   "requirement_says": "St George's and Southern Cross rows arrive in the feed by themselves; no import or sync button; nothing applied until the office decides; inbound only, nothing sent back.",
+   "prototype_does": "Import is an admin button over sample files (also a demo trigger). Nothing applies until the office decides (holds). No outbound path to hospitals exists in the store (holds), but the UI never says so.",
+   "missing_or_wrong": [
+    "Import button and dialog contradict 'arrives by itself'",
+    "No stated inbound-only message (the story's third criterion holds in behaviour, not in words)",
+    "Rows should simply appear, with the demo control standing in for the hospital"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/MatchingScreen.tsx:96-100,134-150",
+    "aa-prototype/src/store/matchingActions.ts:213",
+    "aa-prototype/src/shared/demoTriggers/registry.ts:2351",
+    "aa-prototype/src/store/lifecycle.ts:74 (an integration never writes a Booking; it stages)"
+   ],
+   "demo_trigger": "Reuse the 'Import hospital file' trigger on Admin, Intake, Matching as 'St George's sends its theatre list' / 'Southern Cross sends its theatre list' so rows appear unprompted (existing New chip and bannerIn); remove the in-app import button.",
+   "surfaces": [
+    "admin",
+    "simulator",
+    "demo-guide"
+   ],
+   "size": "S",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Contradicts",
+   "verify_note": "Same root cause as US-02.1.1; checked No-silent-apply (rows stay 'open' until decideImportRow) and inbound-only (no outbound code) both hold. Contradicts because of the import button.",
+   "epic": "EP-02",
+   "title": "Hospital rows arrive on their own",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [
+    "OQ-13"
+   ],
+   "file": "stories/US-02.1.5.md"
+  },
+  {
+   "id": "US-02.1.6",
+   "verdict": "Partial",
+   "summary": "Rows with no difference are classed 'No change' and can be marked matched with nothing to change, but one row at a time; no unchanged-Lists grouping or one-click confirm.",
+   "requirement_says": "Lists in an arrival that match what AA holds with no differences show as unchanged and the office confirms them all in one click (marked decided, nothing changes); never automatic.",
+   "prototype_does": "classifyChange returns 'noChange'; each such row is decided individually as a match with zero fields. Rows stay open until decided, so nothing is automatic (holds).",
+   "missing_or_wrong": [
+    "No 'unchanged' List state or grouping",
+    "No bulk 'confirm unchanged' action",
+    "Matching is not List-level, so four unchanged Lists plus one changed cannot be shown"
+   ],
+   "evidence": [
+    "aa-prototype/src/domain/intake/matching.ts classifyChange (noChange)",
+    "aa-prototype/src/domain/intake/hospitalDownloads.ts:69 (No change sample row)",
+    "aa-prototype/src/apps/admin/screens/MatchingScreen.tsx:186-195 (no bulk action in toolbar)"
+   ],
+   "demo_trigger": "Add on Matching 'Hospital file with unchanged Lists': a St George's file of five Lists, four identical to AA's and one with a changed time, to show Confirm unchanged (4).",
+   "surfaces": [
+    "admin",
+    "domain",
+    "store",
+    "simulator",
+    "seed"
+   ],
+   "size": "M",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Searched for any bulk or confirm-all control in MatchingScreen and matchingActions: none. The No change classification is correct as far as it goes, so Partial not Missing. M assumes List grouping (US-02.1.4) lands first.",
+   "epic": "EP-02",
+   "title": "Confirm unchanged Lists together",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-02.1.6.md"
+  },
+  {
+   "id": "US-02.1.7",
+   "verdict": "Missing",
+   "summary": "No second Sources view on the matching screen; the only source and message state is the Future-scope HL7 simulator under /demo.",
+   "requirement_says": "A second view beside the feed shows each source (hospitals, rooms' mailbox): receiving, last sent, today's messages and what each became, held or unreadable items with reason, not-connected sources, and an inbound-only statement.",
+   "prototype_does": "Nothing on Intake. The demo-only Future scope simulator (/demo/integrations) has an IntegrationFeed and message log (processed, deadLetter, duplicate) outside the admin app and presented as Future scope.",
+   "missing_or_wrong": [
+    "No Sources view on Intake",
+    "No per-source receiving, last-sent or today's-count display",
+    "No held-with-reason list per source",
+    "No not-connected hospital listing",
+    "No inbound-only statement"
+   ],
+   "evidence": [
+    "searched: inbound only|never writes|only reads|not connected|last sent|lastSent|sourcesView in aa-prototype/src (non-test) -> none relevant",
+    "aa-prototype/src/apps/admin/screens/IntakeScreen.tsx:23-29 (tabs: Matching, Waiting, PDF lists, Data quality, Validators)",
+    "aa-prototype/src/apps/admin/intake/DataQualityTab.tsx (ethnicity codes only)",
+    "aa-prototype/src/domain/types.ts:2763-2790 (IntegrationFeed/Message exist for the demo simulator)"
+   ],
+   "demo_trigger": "On the Intake Sources view: add 'Source goes quiet' (Southern Cross stops sending, last-sent ages) and 'Message fails' (adds a held, unreadable message with reason); the existing 'Fire hospital message' on Future scope can feed today's counts.",
+   "surfaces": [
+    "admin",
+    "domain",
+    "store",
+    "simulator",
+    "seed",
+    "demo-guide"
+   ],
+   "size": "M",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Missing",
+   "verify_note": "Searched wider (all non-test source, Data quality and Validators tabs) for any source-state view: none. The Future-scope simulator is demo-only and outside Intake, so Missing holds; it supplies reusable message types.",
+   "epic": "EP-02",
+   "title": "See each source's state",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-02.1.7.md"
+  },
+  {
+   "id": "US-02.2.1",
+   "verdict": "Contradicts",
+   "summary": "PDFs are uploaded one at a time on a separate tab with a manual Send to matching, not read from the office mailbox into the feed; no per-value confidence. Manual add with sender, side-by-side review, correction before ingest and re-sent comparison exist.",
+   "requirement_says": "The system reads rooms' PDFs from the office mailbox as they arrive and the List lands on the matching screen; sender is the email address; a hand-added PDF takes a typed sender; PDF beside read values with per-value confidence and page positions; correct before ingest; re-sent List merged as the next version with differences; unreadable PDF shows with reason.",
+   "prototype_does": "Upload PDF list dialog (sample plus Sent from required); facsimile beside editable NHI/name/DOB/time/ethnicity rows; invalid NHI blocks send; Send to matching stages the rows; a re-sent sample is compared against the first (replacesId) and unchanged rows skipped.",
+   "missing_or_wrong": [
+    "No mailbox arrival: upload is the only path (should be the by-hand fallback)",
+    "PDF does not land on matching on its own; separate tab and a manual Send to matching step, so a hand-added PDF does not 'land like one from the mailbox'",
+    "No confidence per value, no 'unsure' marking, no location on the page",
+    "No unreadable-PDF-with-reason in the feed",
+    "Re-sent merge is by skipping unchanged rows, not a List version with its differences shown against the first"
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/intake/PdfListsTab.tsx:30-35,106-123",
+    "aa-prototype/src/apps/admin/intake/PdfUploadDialog.tsx:87 (Sent from)",
+    "aa-prototype/src/apps/admin/intake/PdfListReview.tsx:49-76",
+    "aa-prototype/src/store/pdfListActions.ts:133,191",
+    "aa-prototype/src/domain/intake/pdfLists.ts:1-17 (no OCR and no mailbox); grep confidence|unsure -> none"
+   ],
+   "demo_trigger": "Control-panel button on Intake: 'Rooms email a PDF list' (picks a sample; it appears in the feed with its From address and a confidence-marked variant), plus 'Rooms email an unreadable PDF'. Existing 'Receive updated PDF from rooms' covers the re-send. Keep Upload PDF list as the by-hand fallback.",
+   "surfaces": [
+    "admin",
+    "domain",
+    "store",
+    "simulator",
+    "seed",
+    "demo-guide"
+   ],
+   "size": "L",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Contradicts",
+   "verify_note": "Confirmed no mailbox or confidence code. Kept Contradicts (not Partial) because the implemented separate-tab, manual-send flow is the opposite of 'without anyone uploading' and 'lands on the matching screen'. FT-02.2 stays Partial because its own text does not say 'without upload'.",
+   "epic": "EP-02",
+   "title": "Read, correct and ingest a surgeon PDF list",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-02.2.1.md"
+  },
+  {
+   "id": "US-02.2.3",
+   "verdict": "Missing",
+   "summary": "A re-sent PDF is only compared for changed or new rows; Bookings missing from it are never offered as removals.",
+   "requirement_says": "When a re-sent PDF is merged as the next version of a held List, Bookings on the List missing from it are offered on the matching screen as removals, which the office confirms as a cancellation or leaves out.",
+   "prototype_does": "Nothing for removals. receiveResentPdfList and sendPdfListToMatching stage changed and new rows and skip unchanged ones; cancellations arise only from a row a hospital marks cancelled.",
+   "missing_or_wrong": [
+    "No missing-Booking detection on a re-sent List",
+    "No removal item or confirm/leave-out control",
+    "No link to record a cancellation from an offered removal"
+   ],
+   "evidence": [
+    "searched: removal|removed from|missing from|offerRemov in domain/intake, store/pdfListActions.ts, store/matchingActions.ts, apps/admin/intake, apps/admin/matching -> none (only matchingText 'Missing from the hospital', which lists absent fields)",
+    "aa-prototype/src/store/pdfListActions.ts:185-229 (sendPdfListToMatching skips unchanged)",
+    "aa-prototype/src/domain/intake/pdfLists.ts (resend samples)"
+   ],
+   "demo_trigger": "Variant of 'Receive updated PDF from rooms': 'Rooms re-send List without one patient' on Intake; the missing Booking appears as an offered removal to confirm as a cancellation.",
+   "surfaces": [
+    "admin",
+    "domain",
+    "store",
+    "simulator",
+    "seed"
+   ],
+   "size": "M",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Missing",
+   "verify_note": "Searched under other names (removal, missing from, disappear) across intake domain, stores and admin screens: only the unrelated 'Missing from the hospital' field text exists. Missing holds.",
+   "epic": "EP-02",
+   "title": "Detect Bookings removed from a re-sent List",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-02.2.3.md"
+  },
+  {
+   "id": "US-02.2.4",
+   "verdict": "Matches",
+   "summary": "Each List records origin (rooms' PDF with sender address, hospital, by hand, recurring), stamped on every creation path, and the Booking detail and List drawers show it.",
+   "requirement_says": "Each List records whether it came from a rooms' PDF (with the sender address), the hospital's list or by hand; a hand-added PDF records the typed sender; hospital and hand Lists hold no sender.",
+   "prototype_does": "ListOrigin union {pdf+senderEmail, hospital, manual, recurring} set by originForNewList on every creation path; upload requires 'Sent from' so a hand-added PDF records the typed sender; hospital and manual origins carry no address; a later PDF from another address updates the sender with history; shown on the Booking detail ('List origin') and in the List drawers (ListOriginRow, with who replies go to).",
+   "missing_or_wrong": [],
+   "evidence": [
+    "aa-prototype/src/domain/types.ts:844-849",
+    "aa-prototype/src/domain/lists/listOrigin.ts:41-68",
+    "aa-prototype/src/apps/admin/screens/AdminBookingDetail.tsx:153-156",
+    "aa-prototype/src/apps/admin/components/ListOriginRow.tsx:20-30",
+    "aa-prototype/src/apps/admin/intake/PdfUploadDialog.tsx:87"
+   ],
+   "demo_trigger": "",
+   "surfaces": [],
+   "size": "None",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Matches",
+   "verify_note": "Re-checked all three ACs against originForNewList (rooms row with sender gives pdf+address; hospital gives hospital only; office gives manual) and the display sites. The 'sender is the mailbox address' wording is not testable until the mailbox exists (US-02.2.1) but the recorded behaviour is right.",
+   "epic": "EP-02",
+   "title": "A List keeps where it came from",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-02.2.4.md"
+  },
+  {
+   "id": "US-02.6.3",
+   "verdict": "Partial",
+   "summary": "Add NHI at intake turns the stub into the Booking in its place, but a later arrival (the hospital's List) carrying the NHI does not resolve a waiting stub.",
+   "requirement_says": "The office resolves a stub from intake, e.g. by adding the NHI; a later arrival for the List can also carry the NHI, and applying that update turns the stub into the Booking; either way the Booking takes the stub's place.",
+   "prototype_does": "resolveStub addNhi corrects the row then decides it, the stub is marked resolved and the Booking shows where the stub stood; Reject removes it. A stub settles only through its own row's decision (settleStubForRow by importRowId). A later row is keyed by NHI, else name and DOB, so it is not linked to the standing stub.",
+   "missing_or_wrong": [
+    "No link between a later arrival carrying the NHI and the waiting stub: applying it leaves the stub standing or makes a second Booking",
+    "Update on Matching does not show 'NHI now present' for the stub's patient",
+    "Resolution happens in the Waiting for NHI tab and Add NHI sheet, not in a single feed"
+   ],
+   "evidence": [
+    "aa-prototype/src/store/stubActions.ts:44-80",
+    "aa-prototype/src/store/stubSettle.ts:80-103 (settles only by importRowId)",
+    "aa-prototype/src/domain/intake/matching.ts:438-442 (rowPatientKey: NHI else name|dob, so a later NHI row has a different key)",
+    "aa-prototype/src/domain/intake/matching.ts:259-273 (findMatch needs a valid NHI)",
+    "aa-prototype/src/apps/admin/intake/AddNhiSheet.tsx"
+   ],
+   "demo_trigger": "On Matching: 'Hospital sends updated List with the missing NHI' for Mere Tipene's stub; the update shows the NHI and applying it replaces the stub with the Booking.",
+   "surfaces": [
+    "admin",
+    "domain",
+    "store",
+    "simulator",
+    "seed"
+   ],
+   "size": "M",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Confirmed by reading rowPatientKey and settleStubForRow that no path ties a later NHI-carrying row to a stub. The first AC (resolve from intake) is met, so Partial.",
+   "epic": "EP-02",
+   "title": "Office resolves a stub from intake",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-02.6.3.md"
+  },
+  {
+   "id": "US-02.6.4",
+   "verdict": "Partial",
+   "summary": "A List with a stub shows a held progress tone and a 'waiting at intake' note, but nothing stops a stub-only List from being submitted or authorised, and no reason is shown.",
+   "requirement_says": "A List whose only line is a stub cannot be submitted or authorised until the office resolves or rejects it, with the reason shown; a List with Bookings plus a stub is not held up.",
+   "prototype_does": "ProgressBar tone 'held' and ListStubNote on mobile and web List detail; stubs listed in Review and drawers. submitList and authoriseList gate only on incomplete non-cancelled Bookings (zero Bookings means none incomplete) with no stub check; the stubs module is not referenced by lifecycle.ts.",
+   "missing_or_wrong": [
+    "submitList accepts a List with zero Bookings and a stub",
+    "authoriseList and authoriseBlockersFor do not consider stubs",
+    "No reason message for a stub-only List on mobile, web or Review",
+    "The not-held-up case for Lists with Bookings already works (nothing to add)"
+   ],
+   "evidence": [
+    "aa-prototype/src/store/lifecycle.ts:241-286 (submitList: no stub check; grep 'stub' in lifecycle.ts -> none)",
+    "aa-prototype/src/store/lifecycle.ts:301-340,407-422 (authorise)",
+    "aa-prototype/src/apps/mobile/screens/ListDetailScreen.tsx:235-236",
+    "aa-prototype/src/apps/web/screens/ListDetailView.tsx:213-214",
+    "docs/build-plan/analysis/domain-model-delta.md:110 (DM-18 stub guard open)"
+   ],
+   "demo_trigger": "On a List holding only a stub (Mere Tipene's Dr Souter Tue 8 Dec PM): the Submit and Authorise controls show the disabled reason; the existing 'Office adds the NHI to this stub' trigger then unlocks it.",
+   "surfaces": [
+    "mobile",
+    "web",
+    "admin",
+    "store",
+    "domain",
+    "seed"
+   ],
+   "size": "S",
+   "confidence": "high",
+   "verify_outcome": "upheld",
+   "original_verdict": "Partial",
+   "verify_note": "Grepped lifecycle.ts and found no stub reference; the 'never reads complete' half is met by the held tone and note, the cannot-submit/authorise and reason halves are not. Unverified whether the seeded stub List holds any Bookings (needed for the demo beat), so seed may need a stub-only List.",
+   "epic": "EP-02",
+   "title": "A List holding only a stub cannot be submitted or authorised",
+   "type": "story",
+   "status": "Verify (3)",
+   "open_questions": [],
+   "file": "stories/US-02.6.4.md"
   },
   {
    "id": "FT-04.1",
@@ -1004,31 +1680,35 @@
   },
   {
    "id": "US-11.1.4",
-   "verdict": "Partial",
-   "summary": "Mandatory NHI, no Booking or patient from a no-NHI row, stub on the List, and Add NHI then match are all built; only the placement differs: the waiting rows are a Patients tab, not a tab on Intake beside the unmatched rows.",
-   "requirement_says": "Every patient has an NHI and a Booking cannot be saved without one. An incoming booking with no NHI waits at intake, shown with the rows waiting for an NHI beside the unmatched rows. No Booking or patient is created and a stub stands in its place on its List. Adding the NHI matches it into a Booking.",
-   "prototype_does": "Booking save, patient create and patient edit refuse a blank NHI. No-NHI rows are assessed waitingForNhi, stay open and visible in Intake > Matching with the reason 'Waiting for an NHI', create no Booking or patient, and stand as stubs on Lists. addNhiToWaitingRow resolves the stub (matched or new record, Booking made). The dedicated waiting list is Patients > Waiting for NHI at /admin/patients/waiting.",
+   "verdict": "Contradicts",
+   "summary": "The core rule is built (no Booking or patient without an NHI; no-NHI rows wait and a stub stands on the List), but the waiting rows live on their own Waiting for NHI tab, where the story (26 Nov) now puts them under a Needs NHI filter in the one matching feed.",
+   "requirement_says": "The NHI is mandatory and a Booking cannot be saved without one. An incoming booking with no NHI waits at intake in the matching screen's feed under the Needs NHI filter with the other waiting rows, creates no Booking or patient record, shows a stub on its List, and becomes a Booking once the office adds the NHI.",
+   "prototype_does": "ManualBookingForm blocks Save without an NHI. A feed or PDF row with no NHI is flagged noNhi and waitingForNhi, creates nothing (only Reject or Add NHI allowed), and stages a stub on its target List. Add NHI (the Waiting tab sheet, or the Matching RowPanel through resolveStub) creates the Booking and settles the stub. Waiting rows are listed on a separate Intake tab 'Waiting for NHI' (/admin/intake/waiting) with a count badge. Matching has only Open, Unmatched and Decided filters, with no Needs NHI filter.",
    "missing_or_wrong": [
-    "The rows waiting for an NHI are not shown on Intake as their own tab beside the unmatched rows. INTAKE_TABS is Matching, PDF lists, Data quality and Validators, and the dedicated view sits under Patients. They do also appear inside the Matching queue with a 'Waiting for an NHI' reason, so the gap is the missing tab, not missing visibility."
+    "Waiting rows sit on a separate Waiting for NHI tab (the 25 Nov reading), not under a Needs NHI filter in the one matching feed (the 26 Nov reading)",
+    "Matching's filter set (Open, Unmatched, Decided) has no Needs NHI option",
+    "The tab, its route /admin/intake/waiting and the legacy redirect /admin/patients/waiting need folding into the feed filter"
    ],
    "evidence": [
-    "aa-prototype/src/store/bookingSaveActions.ts:52,360",
-    "aa-prototype/src/domain/intake/matching.ts:532,597-600",
-    "aa-prototype/src/store/patientActions.ts:137-168 (addNhiToWaitingRow)",
-    "aa-prototype/src/apps/admin/matching/RowPanel.tsx:169-175,350,514",
-    "aa-prototype/src/apps/admin/screens/IntakeScreen.tsx:28-33",
-    "aa-prototype/src/apps/admin/screens/patients/PatientsScreen.tsx:41-45"
+    "aa-prototype/src/apps/admin/screens/IntakeScreen.tsx:23-30 (INTAKE_TABS holds 'Waiting for NHI')",
+    "aa-prototype/src/apps/admin/screens/IntakeScreen.tsx:75-90 (tab count badge)",
+    "aa-prototype/src/apps/admin/screens/MatchingScreen.tsx:185-187 (filters: Open, Unmatched, Decided)",
+    "aa-prototype/src/domain/intake/matching.ts:512-537 (noNhi flag, waitingForNhi, queue unmatched, creates nothing)",
+    "aa-prototype/src/domain/intake/stubs.ts:61-85 (stubFor, reason noNhi)",
+    "aa-prototype/src/store/stubActions.ts:47-100 (resolveStub addNhi)",
+    "aa-prototype/src/shared/flows/nhiCopy.ts:11 and aa-prototype/src/apps/admin/matching/RowPanel.tsx:169-175 (blocked without NHI)"
    ],
-   "demo_trigger": "Existing: the Receive list / Forte Health demo control on Waiting for NHI (adds two no-NHI rows). It moves with the view to the new Intake tab.",
+   "demo_trigger": "Existing: 'Receive list with a missing NHI' (Admin Intake; its screen label would move from the Waiting for NHI tab to the Matching feed) and 'Office adds the NHI to this stub'. No new trigger needed.",
    "surfaces": [
     "admin",
-    "demo-guide"
+    "demo-guide",
+    "simulator"
    ],
    "size": "S",
    "confidence": "high",
    "verify_outcome": "upheld",
-   "original_verdict": "Partial",
-   "verify_note": "Re-checked the matching queue, patientActions and IntakeScreen. All four acceptance criteria hold behaviourally. The waiting rows are also visible on Matching, which the reviewer mentioned, so Partial rather than Contradicts is right. Placement is the only gap, and it overlaps US-11.1.5's fix (one change).",
+   "original_verdict": "Contradicts",
+   "verify_note": "Re-read both story files and the code. Story body and ACs say rows show in the matching feed under a Needs NHI filter and are shown with the other waiting rows; Notes record 26 Nov superseding the 25 Nov tab. IntakeScreen still has the Waiting for NHI tab and MatchingScreen has no Needs NHI filter. Searched 'Needs NHI' in apps/admin and store: no hits. The rest of the rule (no Booking or patient, stub, add NHI creates Booking) is implemented. Contradicts (an older reading built), not Partial. Size S is reasonable, though the fold is shared work with US-11.1.5.",
    "epic": "EP-11",
    "title": "Patient without NHI",
    "type": "story",
@@ -1039,37 +1719,42 @@
   {
    "id": "US-11.1.5",
    "verdict": "Contradicts",
-   "summary": "All row behaviour exists (patient as received, one address to chase, Urgent when close, Add NHI matches the single record, stub on the List), but the view is Patients > Waiting for NHI instead of an Intake tab, and the Patients badge counts the waiting rows that the Intake badge already counts.",
-   "requirement_says": "Rows waiting for an NHI show on their own tab on Intake beside the unmatched rows, and Intake's attention count includes them and drops when the NHI is added. Each row shows the patient as received, the List or date, and one address to chase (the List's sender, else the surgeon's first office contact, with others offered to switch to). Close rows are marked urgent. Adding the NHI matches the row to the single record and it leaves the view. A stub stands on the List.",
-   "prototype_does": "WaitingNhiView at /admin/patients/waiting lists open rows with no NHI (waitingNhiRows) with patient as received, List, stub chip, one address (officeAddressFor: List sender first, else the surgeon's office contacts; others offered), days to go with an Urgent pill within 3 days, last requested, an audited mailto request, and AddNhiSheet -> addNhiToWaitingRow. The Intake badge is matchingAttentionCount (all open rows, which includes waiting rows). The Patients badge (patientAttentionCount) adds waitingNhiRows again.",
+   "summary": "Chase address, single-address rule, urgent marking, stub, no duplicate patient and the Intake count all exist, but the rows sit on their own tab (the story now says no view of their own, a Needs NHI filter in the one feed), and an NHI carried by a later arrival never resolves the waiting row.",
+   "requirement_says": "Rows waiting for an NHI show in the matching feed under a Needs NHI filter (no view of their own), counted once in Intake's attention count, with the one address to chase (List sender, else the surgeon's first office contact) and an urgent mark when the date is close. Adding the NHI by hand from the row, or applying a later arrival that carries the NHI, matches the patient's single record, creates the Booking and removes the stub.",
+   "prototype_does": "A dedicated Waiting for NHI tab (WaitingNhiTab and WaitingNhiView) lists the rows with patient, List, stub link, one chase address (alternatives in a select), days to go with an Urgent pill (3 days or fewer, or passed), Email for the NHI (mailto, audited, one address) and an Add NHI sheet. Intake's matchingAttentionCount counts each open row once, and the tab carries its own count badge. Add NHI (tab sheet, or RowPanel Add NHI via resolveStub) creates the Booking on the single patient record and settles the stub. Stubs show on Mobile, Web and Admin Lists with no amount. A later arrival with an NHI is a separate row: findMatch needs an existing Booking, so it is not matched to the waiting row, and the waiting row and stub stay.",
    "missing_or_wrong": [
-    "No Waiting for NHI tab on Intake (INTAKE_TABS lacks it). The view and its tab count live under Patients.",
-    "Waiting rows are counted in both the Intake badge (all open rows) and the Patients badge (waiting + warnings + reminders + pending details). Once the view moves, the patient count must stop including them.",
-    "The old /admin/patients/waiting route needs a redirect to the Intake tab, and WaitingNhiView's caption and tab copy need re-pointing.",
-    "Minor edge: with no stub standing (a row with no List yet), addNhiToWaitingRow only corrects the row and leaves a decision on Matching ('Choose a decision for this row'), so the row does not become a Booking and the Intake count does not drop until it is decided. The acceptance criterion assumes the row is matched when the NHI is added."
+    "Needs NHI filter on Matching is missing; rows are on a separate tab with their own table, which the story now says they must not have",
+    "Later arrival carrying the NHI does not resolve the waiting row: no proposed update showing the NHI, no apply that turns the row into a Booking and removes the stub",
+    "'The one way to add an NHI by hand' is not true: there are two Add NHI entry points (the tab's AddNhiSheet and the Matching RowPanel's stub-add-nhi), and a presenter beat uses the tab",
+    "Tab count badge duplicates the count; the count should sit on the filter while Intake's attention count stays once per row (that part already holds)",
+    "Urgent threshold (3 days) and no-List-yet behaviour are our readings, unconfirmed; story is Verify"
    ],
    "evidence": [
-    "aa-prototype/src/apps/admin/screens/IntakeScreen.tsx:28-33",
-    "aa-prototype/src/apps/admin/screens/patients/WaitingNhiView.tsx:1-80",
-    "aa-prototype/src/apps/admin/screens/patients/PatientsScreen.tsx:41-45,95",
-    "aa-prototype/src/store/patientSelectors.ts:324-358,383-390",
-    "aa-prototype/src/store/patientActions.ts:137-168,205-241",
-    "aa-prototype/src/domain/surgeonContacts.ts:66-89",
-    "aa-prototype/src/domain/patients/waitingNhi.ts:10-16",
-    "aa-prototype/src/store/matchingSelectors.ts:161-163",
-    "aa-prototype/src/apps/admin/AdminApp.tsx:221-225"
+    "aa-prototype/src/apps/admin/screens/IntakeScreen.tsx:23-30,75-90",
+    "aa-prototype/src/apps/admin/intake/WaitingNhiTab.tsx",
+    "aa-prototype/src/apps/admin/intake/WaitingNhiView.tsx",
+    "aa-prototype/src/store/patientActions.ts:204-243 (nhiRequestAddressFor, requestNhiFromOffice)",
+    "aa-prototype/src/store/patientSelectors.ts:515-552 (waitingNhiRows)",
+    "aa-prototype/src/store/matchingSelectors.ts:169-171 (matchingAttentionCount)",
+    "aa-prototype/src/domain/patients/waitingNhi.ts:13-19 (urgent within 3 days)",
+    "aa-prototype/src/domain/intake/matching.ts:439-449,512-537 (no-NHI row waits; later row goes to findMatch)",
+    "aa-prototype/src/apps/admin/matching/RowPanel.tsx:333-349,509-517 (second Add NHI route)",
+    "aa-prototype/src/store/stubActions.ts:47-100",
+    "searched: 'later arrival|carries the nhi|nhi.*(update|resend)' in src -> no implementation"
    ],
-   "demo_trigger": "Existing: Receive list (Forte Health, two no-NHI bookings) and Add NHI, moved to the new Intake tab. For urgency, the existing demo clock control (advance to within 3 days of the row's date).",
+   "demo_trigger": "Add 'Receive update with the NHI' on Admin Intake (Matching feed, Needs NHI filter): stands in for the hospital's later update for a List holding a waiting row (e.g. Forte Health Mon 30 Nov, Losa Tuilagi with the NHI). It stages a proposed update showing the NHI; Apply makes the row a Booking on her single record, drops it from Needs NHI, drops Intake's count by one and removes the stub. Keep 'Receive list with a missing NHI' and 'Office adds the NHI to this stub'.",
    "surfaces": [
     "admin",
+    "domain",
     "store",
+    "simulator",
     "demo-guide"
    ],
    "size": "M",
    "confidence": "high",
    "verify_outcome": "upheld",
    "original_verdict": "Contradicts",
-   "verify_note": "Re-opened IntakeScreen, AdminApp badge wiring, waitingNhiRows and patientAttentionCount. Confirmed the view lives under Patients and the double count. Contradicts holds because the prototype puts the view in the place the story now rules out and miscounts it. Added the no-stub edge case in addNhiToWaitingRow. Parallel-lane note: this touches IntakeScreen.tsx, a new Intake route in router.tsx and the badge in AdminApp.tsx, so the shared-file touch has to be coordinated with Contracts lanes A and B.",
+   "verify_note": "Re-checked the story body and ACs: Needs NHI filter, no view of its own, one hand route, and a later arrival carrying the NHI resolving the row are all new on 26 Nov. Code confirms the tab, two Add NHI routes, and no later-arrival resolution (grep found nothing). One small correction to the reviewer's evidence: a later row with an NHI has a different rowPatientKey (NHI versus name|dob), so the earlierRowOpen flag would not even appear between them; the prototype simply does not link the two. Chase address, one-address, urgent mark, stub and attention count genuinely match, so those ACs hold. Contradicts is right because the tab and second hand route are the older reading; M size holds.",
    "epic": "EP-11",
    "title": "Intake rows waiting for an NHI",
    "type": "story",
@@ -1724,271 +2409,339 @@
     "OQ-148"
    ],
    "file": "stories/US-13.6.2.md"
+  },
+  {
+   "id": "EP-14",
+   "verdict": "Contradicts",
+   "summary": "Inbound-only and NHI lookup are right, but the Matching screen still has an office-facing 'Import hospital file' button and dialog, which the epic's rule (rows arrive on their own, no import button) now forbids; Proposed status, rule changed 26 Nov.",
+   "requirement_says": "HL7 v2/FHIR and national identity (NHI) integration is inbound only, never writes back. In the first release St George's and Southern Cross rows arrive on the matching screen on their own with no import button, and the office decides every row. More feeds, automatic matching and HL7/FHIR are Future Work; NHI lookup is in scope.",
+   "prototype_does": "Admin Intake > Matching has a primary 'Import hospital file' page action opening ImportDialog, which calls importHospitalDownload with a canned sample file (the D52 'no sync' reading). A bar demo trigger 'Import hospital file' (matching-receive-theatre-list) stages the same rows, described as standing in for the hospital's file arriving. HL7/FHIR simulator at /demo/integrations (badged Future scope) parses canned messages into Matching rows via processMessage, with a message log, retry, dead-letter and mapping fix. Nothing writes back to any hospital (no outbound code found). NHI lookup is simulated through shared/nhiHub. Staged rows never apply until the office decides.",
+   "missing_or_wrong": [
+    "WRONG: MatchingScreen shows an 'Import hospital file' button and ImportDialog (office pulls a file by hand), contradicting 'no import button and no sync button' (US-02.1.5 and EP-14 Notes, 26 Nov).",
+    "WRONG vocabulary: the demo trigger is labelled 'Import hospital file' and described as a file being imported; it should read as a hospital sending its list (for example 'Hospital sends its theatre list').",
+    "Nothing on the matching screen shows rows as arriving by themselves from the two hospitals (no arrival indicator or source label). The only paths are the manual import or a demo-bar press.",
+    "No explicit 'inbound only' statement or visible proof that nothing is sent back (for example in the audit or integration monitor).",
+    "Adapter and transport configuration matrix (v2 or FHIR, polled or pushed per hospital) is not shown. FEED_META and the mapping screen cover mapping only. This is Proposed technical discussion and arguably Future scope.",
+    "Open decision on how many formats ship at go-live is not represented. This is only a question."
+   ],
+   "evidence": [
+    "aa-prototype/src/apps/admin/screens/MatchingScreen.tsx:65-69 (Import hospital file button), :121-123 (runImport calls importHospitalDownload)",
+    "aa-prototype/src/apps/admin/matching/ImportDialog.tsx:2,32",
+    "aa-prototype/src/store/matchingActions.ts:209-213 importHospitalDownload",
+    "aa-prototype/src/shared/demoTriggers/registry.ts:2350-2372 matching-receive-theatre-list ('Import hospital file')",
+    "aa-prototype/src/shared/demoTriggers/registry.ts:2502-2527 fire-hospital-message (Future scope)",
+    "aa-prototype/src/store/integrationActions.ts:1-31 (feed messages stage a row, no silent apply, MAX_ATTEMPTS, deadLetter)",
+    "aa-prototype/src/domain/integrations/ (feeds, hl7, fhir, messages)",
+    "aa-prototype/src/shared/nhiHub/ (simulated NHI lookup)",
+    "searched: writeBack|sendToHospital|outbound in src/store and src/domain/integrations -> none (inbound only holds)"
+   ],
+   "demo_trigger": "Rename the existing bar trigger on Admin, Intake, Matching from 'Import hospital file' to 'Hospital sends theatre list' (choices St George's and Southern Cross). It stages the rows on Matching as an arrival. Optionally seed the first arrivals at reset so the demo opens with rows already waiting. Keep 'Fire hospital message' on /demo/integrations for the Future Work HL7/FHIR discussion.",
+   "surfaces": [
+    "admin",
+    "simulator",
+    "shell",
+    "demo-guide",
+    "store"
+   ],
+   "size": "S",
+   "confidence": "high",
+   "verify_outcome": "unverified",
+   "original_verdict": "Contradicts",
+   "verify_note": "Verifier did not return this item.",
+   "epic": "EP-14",
+   "title": "Health systems integration",
+   "type": "epic",
+   "status": "Proposed (1)",
+   "open_questions": [],
+   "file": "stories/EP-14.md"
   }
  ],
  "summary_md": "",
  "dataModelDeltas": [
   {
-   "id": "DM-01",
-   "kind": "NewRelationship",
-   "title": "A Contract remembers which Contract it replaces, and from when",
-   "catalogue_says": "US-04.1.8: the late disable lists the Procedures dated from the change date; the old Contract gets a to-do on that date. US-04.1.2: a Contract has no start, end or review date. US-04.1.3: a replacement is audited.",
-   "prototype_has": "The link is two useState values in the New contract panel (replacesId, replacesFrom), used for a one-off warning list and then lost. Contract has no replaces field, createContract takes no replaces input, and the contract.create audit entry does not name the old Contract. Phase 46 removes the picker; Phase 49 builds the link.",
-   "catalogue_refs": [
-    "US-04.1.8",
-    "US-04.1.2",
-    "US-04.1.3",
-    "OQ-144"
-   ],
-   "prototype_refs": [
-    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx:85",
-    "aa-prototype/src/domain/billing/contracts.ts:67",
-    "aa-prototype/src/store/contractActions.ts:158",
-    "aa-prototype/src/store/contractActions.ts:201",
-    "aa-prototype/src/domain/billing/contractHistory.ts:68"
-   ],
-   "impact": "Must precede DM-02, DM-03 and DM-04 (replaced case). The change date must be stored after the fact, but a date field on the Contract would break the no-dates rule and OQ-144, so the audit route fits: the new Contract's contract.create entry carries replaces {contractId, fromISO} in its after (Phase 49's D94). One derived read each way feeds DM-02, DM-03 and DM-04. No PERSIST_VERSION bump. Phase 49, Lane A.",
-   "size": "M",
-   "verify_outcome": "upheld",
-   "verify_note": "Catalogue text and prototype refs re-read and confirmed (lines 85, 158, 169, 201 match)."
-  },
-  {
-   "id": "DM-02",
-   "kind": "NewLifecycle",
-   "title": "Replace a Contract from a date, as one action",
-   "catalogue_says": "US-04.1.8: one action copies the Contract with any setting changed under a new AA code, moves the ticked Procedures dated on or after the change date, and leaves the old Contract Active (to-do) or disables it; authorised Lists are locked and left out.",
-   "prototype_has": "Two separate acts: create a new Contract by hand, optionally naming a replaced one and a date, then a read-only list of Procedures still on the old one. Nothing copies the old Contract, moves a Procedure from the panel, or leaves or disables the old one as part of the act. setProcedureContract has no planner and runs its own mutate with side effects.",
-   "catalogue_refs": [
-    "US-04.1.8",
-    "US-04.1.2",
-    "US-04.1.3",
-    "US-04.2.15",
-    "US-07.3.1"
-   ],
-   "prototype_refs": [
-    "aa-prototype/src/apps/admin/flows/ContractEditSheet.tsx:90",
-    "aa-prototype/src/domain/billing/contractChanges.ts:43",
-    "aa-prototype/src/store/contractChangeSelectors.ts:14",
-    "aa-prototype/src/store/contractSelectionActions.ts:99",
-    "aa-prototype/src/store/contractSelectionActions.ts:52",
-    "aa-prototype/src/store/contractActions.ts:169"
-   ],
-   "impact": "Needs DM-01. New office-only store action in one change set: create from the copy (planContractCreate + contractRefusal), move the ticked Procedures one audited change each, then leave or disable the old Contract (move first, then disable). Open points for the phase: moves are per-Procedure commits unless setProcedureContract is refactored; per-row refusal; whether event fees copy; a system Contract cannot be replaced. Phase 49, Lane A.",
-   "size": "L",
-   "verify_outcome": "upheld",
-   "verify_note": "Refs re-checked against master; Phase 49 doc covers it."
-  },
-  {
-   "id": "DM-03",
+   "id": "DM-11",
    "kind": "NewEntity",
-   "title": "A Contract still Active after its replacement date is a to-do item",
-   "catalogue_says": "US-04.1.8: on the change date a to-do reminds the office to disable the old Contract. FT-13.7 and US-13.7.2: the dashboard to-do list.",
-   "prototype_has": "The to-do list has two row kinds, both keyed to a Booking (open warnings, Bookings with no Contract). Warnings take one Booking as subject (Warning carries a bookingId); no row concerns a Contract and none depends on a date passing.",
+   "title": "The arriving List is what the office decides",
+   "catalogue_says": "For each List that arrives, the office decides the whole List at a time: its changes apply together and any one Booking's change can be left out. The feed groups rows by List (a hospital file is a heading over its Lists, a PDF is one List) with filters By source, Needs NHI and Decided. Lists that match with no differences are shown as unchanged and confirmed together by a person in one click.",
+   "prototype_has": "The unit is a row. ImportBatch holds rowIds; each ImportRow has its own status (open|applied|rejected) and one ImportDecision (match, createBooking, createList, createDraft, reject) made by decideImportRow one row at a time. A List appears only as RowAssessment.targetListId; counts are of rows; an unchanged row is its own decision. A Decided filter exists today but over rows. There is no leave-out outcome and no confirm-all-unchanged action. The surgeon is a per-row correction (ImportRowCorrections.surgeonId), not a List choice.",
    "catalogue_refs": [
-    "US-04.1.8",
-    "FT-13.7",
-    "US-13.7.2"
-   ],
-   "prototype_refs": [
-    "aa-prototype/src/apps/admin/components/WarningsToDo.tsx:26",
-    "aa-prototype/src/apps/admin/components/WarningsToDo.tsx:36",
-    "aa-prototype/src/domain/warnings/types.ts:114",
-    "aa-prototype/src/apps/admin/components/RailWorkCard.tsx:28"
-   ],
-   "impact": "Needs DM-01. A third ToDoItem kind whose subject is a Contract, derived (not stored) from the replacement link when the date is reached and the old Contract is still Active; follows the noContract row pattern (no Clear). Needs an ordering rule for a row with no session and a way for the rail card to open a Contract. Whether a re-enabled Contract brings the row back is unstated (a derived row would). Phase 49's D94 words the to-do as a rule in domain/warnings/rules/, but a Warning is Booking-keyed, so the phase must either widen the finding's subject to a Contract or use the derived ToDoItem kind. Phase 49, Lane A.",
-   "size": "M",
-   "verify_outcome": "corrected",
-   "verify_note": "Added the D94 tension: the phase doc calls it a warning rule, while the Warning type (types.ts:114) is keyed to a Booking."
-  },
-  {
-   "id": "DM-04",
-   "kind": "ChangedLifecycle",
-   "title": "Disabling is confirmed and lists the Procedures first (replaced case remains)",
-   "catalogue_says": "US-04.1.2 criterion 'Disable confirmed': Disable asks first and lists the Procedures still on the Contract. US-04.1.8 'Late disable': a replaced Contract disabled after the change date lists from the change date.",
-   "prototype_has": "Built on master in Phase 45: ContractDisable opens a danger ConfirmSheet that lists the Procedures from disableFromISO before anything changes. disableFromISO returns today. Not built: listing from an earlier replacement change date, and the disable-as-replaced path.",
-   "catalogue_refs": [
-    "US-04.1.2",
-    "US-04.1.8",
-    "US-07.2.2",
-    "OQ-144"
-   ],
-   "prototype_refs": [
-    "aa-prototype/src/apps/admin/screens/contracts/ContractDisable.tsx:25",
-    "aa-prototype/src/apps/admin/screens/contracts/StillOnNotice.tsx:17",
-    "aa-prototype/src/store/contractChangeSelectors.ts:48",
-    "aa-prototype/src/store/contractActions.ts:321"
-   ],
-   "impact": "Narrowed since the earlier run. Only disableFromISO widens once DM-01's read exists (Phase 49 item 8); no store invariant changes. The confirm list is the same read the replace action shows (DM-02). Needs DM-01 for the replaced case only.",
-   "size": "S",
-   "verify_outcome": "upheld",
-   "verify_note": "disableFromISO at contractChangeSelectors.ts:48 still returns today; confirm sheet is on master."
-  },
-  {
-   "id": "DM-05",
-   "kind": "ChangedLifecycle",
-   "title": "An anaesthetist has a last day, from which they are inactive",
-   "catalogue_says": "US-12.1.6 (new) and the domain model rule: the office sets a last day with a reason; refused while the anaesthetist holds a List after it; until then nothing changes; after it no Slots and not offered or picked for any List (assignment or availability finder); the day can be cleared before it comes; made active again gives Slots from that day; each action audited. US-01.1.1 links 'active'.",
-   "prototype_has": "A single boolean Anaesthetist.active flipped by the editor's Status control, acting at once: Slots removed from today, refused while Lists exist from today. No last day, no reason, no future date, no clearing; audited only as an ordinary update. The flag is read as 'usable now' in about fifteen to twenty places (slot picker, AA fee preview, list and booking moves, draft assignment, canvas generator, clock roll, pairing picker, matching open-slot read, rebook candidates, list-move demo, demo invariant), and the unmatched-receipt check refuses a payment naming an inactive anaesthetist. Recurring bookings read Slot existence, not the flag. startDateISO already exists, so active-from-start-date needs no change. No seeded anaesthetist is inactive.",
-   "catalogue_refs": [
-    "US-12.1.6",
-    "US-01.1.1",
-    "US-12.1.4",
-    "FT-12.1",
-    "OQ-147"
-   ],
-   "prototype_refs": [
-    "aa-prototype/src/domain/types.ts:452",
-    "aa-prototype/src/apps/admin/flows/EditAnaesthetistSheet.tsx:46",
-    "aa-prototype/src/store/mastersActions.ts:368",
-    "aa-prototype/src/store/mastersActions.ts:375",
-    "aa-prototype/src/store/slotActions.ts:972",
-    "aa-prototype/src/store/selectors.ts:201",
-    "aa-prototype/src/store/selectors.ts:1587",
-    "aa-prototype/src/domain/listMoves.ts:85",
-    "aa-prototype/src/domain/bookingMoves.ts:149",
-    "aa-prototype/src/store/draftListActions.ts:209",
-    "aa-prototype/src/domain/seed/canvas.ts:116",
-    "aa-prototype/src/domain/recurringBookingProjection.ts:233",
-    "aa-prototype/src/store/paymentActions.ts:294",
-    "aa-prototype/src/store/matchingSelectors.ts:98"
-   ],
-   "impact": "Must precede DM-06 and DM-07. Add last day and reason to the anaesthetist; activity becomes a function of a date, so every reader moves to one pure isActiveOn(anaesthetist, dateISO). Canvas generation, roll-forward and anaesthetistCanvasDelta take the last day as an end; the guard becomes 'a List after the last day' and returns those Lists; three audited actions (set, clear, make active again). A stored mirror flag would need a dayAdvanced hook; a derived one needs none. Open: the AA fee run for the month someone leaves keys on the flag; a payment received after the last day for earlier work would be refused by paymentActions.ts:294 and must not be (key it on existence or the work's date); a demo needs an inactive anaesthetist or a trigger. Touches no Contracts-lane file (editor and record are EditAnaesthetistSheet and AnaesthetistRecord); a seeded inactive anaesthetist bumps PERSIST_VERSION (second to join renumbers). Lane C candidate in Wave 1.",
-   "size": "L",
-   "verify_outcome": "corrected",
-   "verify_note": "Catalogue and core claim upheld. Corrected the reader list (recurring bookings do not read the flag), added readers, and added the payment-receipt guard conflict with 'everything recorded before stays'."
-  },
-  {
-   "id": "DM-06",
-   "kind": "NewRelationship",
-   "title": "An inactive anaesthetist's own Contracts are disabled, and offered back",
-   "catalogue_says": "US-04.1.2 criterion 'Inactive anaesthetist' and US-12.1.6: once the last day has passed the Contracts held by the anaesthetist's own Party and linked to them are Disabled; made active again, they are offered back to the office ticked and showing their price, and the ticked ones become Active.",
-   "prototype_has": "Nothing connects an anaesthetist's status to a Contract's. disableContract and enableContract exist and are audited. The seed has the story's example (Beaumont Rhinoplasty, held by PARTY.beaumont, linked to her). A Party of kind anaesthetist has no link to the anaesthetist record (matched by name only; Party has hospitalId but no anaesthetistId), so 'own Party' has no stored meaning.",
-   "catalogue_refs": [
-    "US-12.1.6",
-    "US-04.1.2",
-    "FT-12.1"
-   ],
-   "prototype_refs": [
-    "aa-prototype/src/store/contractActions.ts:321",
-    "aa-prototype/src/store/contractActions.ts:326",
-    "aa-prototype/src/domain/seed/pricedItems.ts:186",
-    "aa-prototype/src/domain/seed/parties.ts:71",
-    "aa-prototype/src/domain/billing/contracts.ts:102",
-    "aa-prototype/src/domain/billing/contractHistory.ts:68"
-   ],
-   "impact": "Needs DM-05. A rule, not a new record: on the last day passing, disable Contracts whose holder is an anaesthetist-kind Party and whose linkedAnaesthetistId is the person (system, audited, via the existing planner); on reactivation show them ticked and enable the confirmed ones. Phase choices: find 'own Party' by derivation (no new field, matches the domain model) or a stored Party.anaesthetistId (bump, backfill; addAnaesthetist creates no Party); offer back all disabled or only those disabled by inactivity (the audit can tell); when the disable happens (a dayAdvanced subscriber vs at set time). The date stays on the anaesthetist, so no-dates and OQ-144 are untouched. Use a new store file calling the existing actions; do not edit contractActions.ts or contractHistory.ts while Lane A holds them.",
-   "size": "M",
-   "verify_outcome": "upheld",
-   "verify_note": "Party shape (parties.ts:44-75) has no anaesthetistId; seed example confirmed."
-  },
-  {
-   "id": "DM-07",
-   "kind": "RuleChange",
-   "title": "No sign-in after the last day",
-   "catalogue_says": "US-13.5.3 criterion 'Inactive': sign-in succeeds on the last day and is refused the day after; an anaesthetist made active again can sign in again. OQ-147 (open) asks how a departed anaesthetist sees later remittances.",
-   "prototype_has": "Sign-in is a per-device browser session ({signedIn, account} in localStorage) that imports nothing from the store; the one demo account is Dr Souter's and any other email is refused and audited. Nothing consults the anaesthetist's status, and a stored session survives reloads and clock changes.",
-   "catalogue_refs": [
-    "US-13.5.3",
-    "US-12.1.6",
-    "OQ-147"
-   ],
-   "prototype_refs": [
-    "aa-prototype/src/shared/session/anaesthetistSession.ts:1",
-    "aa-prototype/src/apps/mobile/screens/SignInScreen.tsx:37",
-    "aa-prototype/src/apps/mobile/MobileApp.tsx:138",
-    "aa-prototype/src/store/authDemoActions.ts:88"
-   ],
-   "impact": "Needs DM-05. Apply 'the account's anaesthetist is active today' at the sign-in attempt (refused with its own reason in the auth.signInFailed audit) and at the gate that keeps a stored session so a signed-in handset is signed out once the clock passes the last day. The session store stays pure. The rule shows in the demo only if Dr Souter is the one made inactive or the demo account becomes selectable. No stored state. Built to the default of OQ-147 (sign-in stops entirely).",
-   "size": "S",
-   "verify_outcome": "upheld",
-   "verify_note": "Session file and sign-in screen re-read; no status check exists."
-  },
-  {
-   "id": "DM-08",
-   "kind": "RemovedEntity",
-   "title": "The surgeon group record is removed; the Party of kind surgeon group stays",
-   "catalogue_says": "US-13.4.1 criterion 'No surgeon group record' and US-13.6.2: there is no surgeon group list to keep; a surgeon belongs to no group; a group that holds Contracts is a Party and its surgeons are those linked on its Contracts. Domain model: a surgeon group exists only as a Party. OQ-148 (open) asks whether AA needs any list of who practises together.",
-   "prototype_has": "A SurgeonGroup master (name, description, memberSurgeonIds, retired fields) in masters.surgeonGroups with two seeded groups; create, edit and retire actions; a retire kind, id prefix SGN, activeGroups selector and groupsForSurgeon; a Master data view and sheet; a Groups card on the surgeon profile; audit labels. Nothing in billing, the step rail, pairings or rules reads the members (checked by grep: only screens, groupsForSurgeon and the retire plumbing). A group rename carries the same-named Party along by name (partyRenameFollowing). The surgeon-group Parties and the Parties loader kind are the Party kind and stay.",
-   "catalogue_refs": [
-    "US-13.4.1",
-    "US-13.6.2",
-    "US-04.1.5",
-    "OQ-148"
-   ],
-   "prototype_refs": [
-    "aa-prototype/src/domain/types.ts:542",
-    "aa-prototype/src/domain/seed/index.ts:143",
-    "aa-prototype/src/domain/seed/cast.ts:162",
-    "aa-prototype/src/store/surgeonActions.ts:218",
-    "aa-prototype/src/store/masterLifecycleActions.ts:238",
-    "aa-prototype/src/domain/masterLifecycle.ts:44",
-    "aa-prototype/src/store/mutate.ts:98",
-    "aa-prototype/src/store/selectors.ts:2350",
-    "aa-prototype/src/domain/surgeons.ts:26",
-    "aa-prototype/src/apps/admin/screens/masters/SurgeonsView.tsx:110",
-    "aa-prototype/src/apps/admin/flows/SurgeonGroupSheet.tsx:14",
-    "aa-prototype/src/apps/admin/screens/SurgeonProfile.tsx:29",
-    "aa-prototype/src/apps/admin/screens/masters/masterViews.ts:39",
-    "aa-prototype/src/apps/admin/screens/masters/view.ts:16",
-    "aa-prototype/src/domain/seed/parties.ts:64"
-   ],
-   "impact": "Independent of the other deltas, but one unit: the type cannot go while a screen reads it, and the screens sit on masterViews.ts, view.ts and MasterData.tsx which Phase 48 edits, so it runs after the Contracts lanes join (the later wave with the section move). Remove the type, the masters slice and seed, the three actions and the retire/rename plumbing, the Master data view and catalogue rows, the Groups card, audit labels, and the tests and parity baselines naming them. Requires a PERSIST_VERSION bump (persisted state carries the slice). Party and Contracts held by a surgeon-group Party are untouched.",
-   "size": "M",
-   "verify_outcome": "upheld",
-   "verify_note": "Grep for memberSurgeonIds and groupsForSurgeon confirms no billing or rule reader."
-  },
-  {
-   "id": "DM-09",
-   "kind": "ChangedRelationship",
-   "title": "The rate and the priority tier are one card and one audited change",
-   "catalogue_says": "US-12.1.4: the rate per unit and the priority tier sit on one card; each save is one audited change. US-01.3.6: the tier is changed with Edit then Save (Cancel leaves it), never by a single click.",
-   "prototype_has": "Two records written by two actions: Anaesthetist.unitValue via editAnaesthetist (one anaesthetist.update) and the tier as a row of officePrivate.priorityTiers via setPriorityTier (its own anaesthetist.tierSet). The record page shows the tier as a sliding control that saves on every click, apart from the Profile card holding the rate.",
-   "catalogue_refs": [
-    "US-12.1.4",
-    "US-01.3.6"
-   ],
-   "prototype_refs": [
-    "aa-prototype/src/store/mastersActions.ts:299",
-    "aa-prototype/src/store/officePrivate.ts:134",
-    "aa-prototype/src/apps/admin/screens/AnaesthetistRecord.tsx:54",
-    "aa-prototype/src/store/mutate.ts:290"
-   ],
-   "impact": "No new data. A card saving both would write two commits and two audit entries unless joined; withChangeSet already makes several entries one change set, matching the codebase's 'a save is one change set'. The tier stays in the office-private slice. Changing only one writes only that one; the click-to-save control becomes Edit, Save and Cancel. Touches AnaesthetistRecord.tsx and EditAnaesthetistSheet.tsx, neither a Contracts-lane file; the later page rebuild uses ProfileChrome. Lane C candidate (the tier in a card).",
-   "size": "S",
-   "verify_outcome": "upheld",
-   "verify_note": "Confirmed the tier saves on each click (AnaesthetistRecord.tsx) and setPriorityTier is its own audited mutate."
-  },
-  {
-   "id": "DM-10",
-   "kind": "NewEntity",
-   "title": "A patient needing the office is one row with its reasons",
-   "catalogue_says": "US-11.3.3: Needs follow-up is one list of every patient needing the office (a balance warning, a follow-up due, details that differ), the reason on each row, a patient with several reasons appearing once; its count is the People attention count. US-11.1.5: rows waiting for an NHI are shown on Intake and counted in Intake's attention count.",
-   "prototype_has": "The follow-up view is three separate tables (balance warnings, follow-ups due, details to review) plus a Waiting NHI tab, and the nav count sums four lists. The count is of rows, not patients: a patient with two reasons counts twice, and so does one with two open balance warnings (one per Booking) or two due reminders (openBalanceWarnings and followUpsDue are per warning and per reminder; only patientsWithPendingDetails is per patient). Waiting NHI rows are already open intake rows (derived), which Intake's attention count already includes, so they are counted in both badges today.",
-   "catalogue_refs": [
-    "US-11.3.3",
-    "US-11.3.1",
-    "US-11.1.5",
-    "US-11.1.4",
+    "US-02.1.2",
     "US-02.1.4",
-    "US-13.4.1"
+    "US-02.1.6",
+    "US-01.6.1",
+    "US-01.3.3",
+    "US-11.1.5",
+    "domain-model.md Matching screen"
    ],
    "prototype_refs": [
-    "aa-prototype/src/store/patientSelectors.ts:383",
-    "aa-prototype/src/store/patientSelectors.ts:345",
-    "aa-prototype/src/store/patientSelectors.ts:48",
-    "aa-prototype/src/store/patientSelectors.ts:63",
-    "aa-prototype/src/store/matchingSelectors.ts:161",
-    "aa-prototype/src/apps/admin/screens/patients/PatientsScreen.tsx:185",
-    "aa-prototype/src/apps/admin/AdminApp.tsx:221",
-    "aa-prototype/src/apps/admin/screens/IntakeScreen.tsx:22"
+    "aa-prototype/src/domain/types.ts:2876",
+    "aa-prototype/src/domain/types.ts:2896",
+    "aa-prototype/src/domain/types.ts:2915",
+    "aa-prototype/src/store/matchingActions.ts:699",
+    "aa-prototype/src/domain/intake/matching.ts:503",
+    "aa-prototype/src/domain/intake/matching.ts:614",
+    "aa-prototype/src/domain/intake/matching.ts:647",
+    "aa-prototype/src/apps/admin/screens/MatchingScreen.tsx:99"
    ],
-   "impact": "A derived read patientsNeedingOffice(state): one row per patient with its set of reasons and the count of those patients, replacing the three-table split and four-way sum (grouping balance warnings and reminders by patient); waiting NHI rows leave the patient count and stay in Intake's. No stored change. The Needs follow-up filter and People badge (AdminApp.tsx) belong to the section-move wave. The new Intake tab for waiting rows is a Lane C candidate, but Intake's tabs are routes (routes.tsx, router.tsx), so it adds one route in files the Contracts lanes edit: keep it to one added entry and expect a small merge at the join.",
+   "impact": "Derive the arriving List (rows of one arrival sharing hospital, day, session, surgeon as sent; an unrecognised surgeon is chosen once for the List). Add a List-level decision as one change set: apply ticked rows, place the whole List in one Slot holding every row's Booking, reject the whole List, confirm unchanged Lists as a person's act. Leave-out needs an outcome that is decided but changed nothing: either a reject carrying a fixed 'left out' reason (cheapest) or a new ImportDecision member (clearer in Decided and the audit); without one the row hangs. Counts and the stats strip move from rows to Lists; Intake's attention count still counts each waiting-NHI row once, so its unit needs one stated rule. Unchanged Lists only exist in the feed if DM-21 stops skipping identical re-arrivals. Must precede DM-12, DM-13, DM-17, DM-19, DM-21 and the Intake screen rebuild. Same lane as DM-15. Bump PERSIST_VERSION only if the seed carries decided rows (it does not today).",
+   "size": "L",
+   "verify_outcome": "corrected",
+   "verify_note": "Catalogue and prototype claims hold. Corrected: leave-out does not strictly need a new union member (reject already decides a row and changes nothing), the surgeon becomes a List-level choice, and the unchanged-List display depends on the new DM-21."
+  },
+  {
+   "id": "DM-12",
+   "kind": "ChangedRelationship",
+   "title": "A List keeps its versions, and a match shows its keys",
+   "catalogue_says": "A match shows each key and whether it agreed (surgeon, hospital, day and session, and how many patients were found by NHI), with no score; the List's earlier versions (where it first came from and each later arrival) and its Slot. The hospital's List for the same surgeon, hospital, day and session as a List the rooms sent is proposed as an update to it, not a new List.",
+   "prototype_has": "A List remembers only its first source (ListOrigin). The matcher already finds the List by hospital, day, session and surgeon then the patient by NHI (findMatch, basis listAndPatient) but returns one MatchBasis per Booking with no record of which keys agreed or the NHI count. The only version link is PDF to PDF (SurgeonPdfList.replacesId, our reading). A hospital row for a rooms-made List already matches Booking by Booking at row level; nothing lists the List's earlier arrivals. A match decision names a Booking, not a List.",
+   "catalogue_refs": [
+    "US-02.1.3",
+    "US-02.2.1",
+    "US-02.2.4"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/domain/types.ts:844",
+    "aa-prototype/src/domain/types.ts:2877",
+    "aa-prototype/src/domain/types.ts:2972",
+    "aa-prototype/src/domain/intake/matching.ts:218",
+    "aa-prototype/src/domain/intake/matching.ts:259",
+    "aa-prototype/src/domain/intake/pdfLists.ts:274"
+   ],
+   "impact": "Two pure reads: matchKeys(arrivingList) and listVersions(state, listId) built from decided rows (match, createBooking, createList) plus open rows targeting the List, across both sources. One stored gap: a match decision does not name the List and a Booking can later move Lists, so record listId on the match decision (optional field, no bump). Needs DM-11. No new entity.",
+   "size": "M",
+   "verify_outcome": "upheld",
+   "verify_note": "Both sides re-read and hold; noted that the matcher already uses the keys, so only exposing their results and the NHI count is new."
+  },
+  {
+   "id": "DM-13",
+   "kind": "NewLifecycle",
+   "title": "Bookings missing from a re-sent List are offered as removals",
+   "catalogue_says": "A re-sent rooms' PDF for a List AA holds is merged as its next version; each Booking on the List that is missing from it is offered on the matching screen as a removal the office confirms as a cancellation or leaves out. In the first release (was Future Work).",
+   "prototype_has": "Not built. A re-sent PDF stages only changed rows against the earlier sent list; the code states 'A patient left off the re-sent List is not detected (US-02.2.3, Future Work)'. A cancellation arrives only as an explicit row with hospitalStatus 'cancelled'. Booking.source (BookingSource, incl. surgeonPdf) is already stored.",
+   "catalogue_refs": [
+    "US-02.2.3",
+    "US-02.2.1",
+    "US-02.5.3",
+    "US-02.5.5",
+    "domain-model.md Sources"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/domain/intake/pdfLists.ts:271",
+    "aa-prototype/src/store/pdfListActions.ts:116",
+    "aa-prototype/src/domain/types.ts:2832",
+    "aa-prototype/src/domain/types.ts:973",
+    "aa-prototype/src/domain/types.ts:991",
+    "aa-prototype/src/domain/intake/matching.ts:406"
+   ],
+   "impact": "On arrival of a rooms' PDF for a held List, each non-cancelled Booking whose patient is not among the PDF rows becomes an offered removal. Cheapest shape: stage a synthetic cancellation row per missing Booking (hospitalStatus cancelled, source rooms, carrying the Booking's NHI) so confirm is today's match+cancellation decision and leave-out is DM-11's outcome; the alternative is a stored offer record. Which Bookings count as 'on the List' needs no new field: Booking.source (surgeonPdf) and the decided rows' source say which the rooms brought. Open: whether hospital re-sends do the same and whether a left-out removal is re-offered by the next re-send. Needs DM-11.",
+   "size": "M",
+   "verify_outcome": "corrected",
+   "verify_note": "Catalogue holds (US-02.2.3 is MVP lane, not Future Work). Corrected: the Booking's source is already stored, so no new field is needed to scope the check."
+  },
+  {
+   "id": "DM-14",
+   "kind": "NewEntity",
+   "title": "A source is an entity with a state",
+   "catalogue_says": "A second matching-screen view lists each source (each connected hospital and the rooms' mailbox): whether it is receiving, when it last sent, messages today and what each became, anything unreadable or held with the reason; sources not connected are listed as such; the view states AA only reads and never writes back.",
+   "prototype_has": "No source record. IntegrationFeed (three Future-scope simulator feeds: St George's, Christchurch Public, Southern Cross) holds only a field mapping; IntegrationMessage is the HL7/FHIR simulator log at /demo/integrations and is the one existing arrival with a recorded outcome (status, attempts, resultImportRowId, failureReason). The rooms have no record by design and a mailbox has no equivalent. Batches carry hospitalId and channel but no source identity.",
+   "catalogue_refs": [
+    "US-02.1.7",
+    "FT-02.1",
+    "US-02.1.5"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/domain/types.ts:2763",
+    "aa-prototype/src/domain/types.ts:2782",
+    "aa-prototype/src/domain/types.ts:2915",
+    "aa-prototype/src/domain/integrations/feeds.ts",
+    "aa-prototype/src/store/integrationActions.ts:246"
+   ],
+   "impact": "A small seeded list of sources (St George's, Southern Cross, the rooms' mailbox, plus unconnected hospitals such as Christchurch Public) with stored connected/receiving state the demo can switch; last sent, messages today and what each became are derived from arrivals (DM-15), held from DM-16's reason. The simulator's message path is the model for the derived measures but stays Future-scope: generalise it through DM-15's arrival record rather than widening IntegrationFeed. US-14.5.1 (retry and alerting) is Future Work and out of scope; only the held reason of US-02.1.7 is. Needs DM-15, DM-16 and DM-21; seeded slice bumps PERSIST_VERSION.",
+   "size": "M",
+   "verify_outcome": "corrected",
+   "verify_note": "Claims hold. Corrected: US-14.5.1 is Future Work (context only, dropped as a requirement ref), and the feed-message path is prior art for what-each-became and held-with-reason."
+  },
+  {
+   "id": "DM-15",
+   "kind": "ChangedLifecycle",
+   "title": "Rows arrive by source, not by an office import",
+   "catalogue_says": "Hospital rows reach the matching screen as each hospital sends them and PDFs are read from the office's mailbox as they arrive; nobody imports or uploads. A PDF that reached someone's own inbox can be added by hand with its sender. Nothing is applied silently and AA never writes back. Replaces the 18 November answer to OQ-109.",
+   "prototype_has": "Every arrival starts with an office act: importHospitalDownload is office-only and stamps ImportBatch.importedBy with a person (button 'Import hospital file'); a PDF is uploaded by an office user with a typed sender (SurgeonPdfList status 'received', own PDF lists tab) then sent to matching in a second step. Channel 'manualSheet' (Forte Health no-NHI sample, PWA office stand-in) has no catalogue source. No arrival exists that produced no rows (a batch is made only when fresh rows exist). Arrival-shaped demo triggers already exist (receiveTheatreList, receiveResentPdfList) but run as the office actor; the Forte sheet trigger calls importHospitalDownload. PDF row corrections allow ethnicityCode but ImportRowCorrections does not.",
+   "catalogue_refs": [
+    "US-02.1.1",
+    "US-02.1.5",
+    "US-02.2.1",
+    "US-02.2.4",
+    "OQ-109",
+    "domain-model.md Sources"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/store/matchingActions.ts:176",
+    "aa-prototype/src/store/matchingActions.ts:213",
+    "aa-prototype/src/store/matchingActions.ts:138",
+    "aa-prototype/src/store/pdfListActions.ts:93",
+    "aa-prototype/src/store/pdfListActions.ts:191",
+    "aa-prototype/src/store/pdfListActions.ts:147",
+    "aa-prototype/src/apps/admin/screens/MatchingScreen.tsx:67",
+    "aa-prototype/src/apps/admin/routes.tsx:370",
+    "aa-prototype/src/shared/demoTriggers/registry.ts:2365",
+    "aa-prototype/src/shared/demoTriggers/registry.ts:2464",
+    "aa-prototype/src/store/matchingDemo.ts:71",
+    "aa-prototype/src/store/officeStandIn.ts:350",
+    "aa-prototype/src/domain/types.ts:2818",
+    "aa-prototype/src/domain/types.ts:2853"
+   ],
+   "impact": "An arrival becomes a record made by a source actor (actor source 'integration' exists), carrying its source and time, existing even with zero rows. ImportBatch.importedBy becomes the source (a person kept only for a PDF added by hand). The received/sent two-step collapses: PDF rows land on arrival and the office corrects on the row; ImportRowCorrections must take ethnicityCode and the from/to/who/when history PdfRowCorrection keeps. SurgeonPdfList becomes the PDF attachment of the arrival or folds into it. Import, upload and send actions go; existing arrival-shaped triggers change actor and label and the Forte trigger is re-pointed. manualSheet: keep as demo-only (sample and PWA stand-in use it) or move them to download. Persisted intake slice changes shape: bump PERSIST_VERSION. Must precede DM-14; same lane as DM-11. Removing the Waiting for NHI, PDF lists, Data quality and Validators tabs edits router.tsx/routes.tsx that the Finances Wave 5 lanes also edit.",
+   "size": "L",
+   "verify_outcome": "corrected",
+   "verify_note": "Catalogue and core prototype claims hold. Corrected: arrival-shaped demo triggers already exist (change is actor and label), the simulator is prior art for an integration-actor arrival, and the PDF-to-row collapse would lose the ethnicity correction."
+  },
+  {
+   "id": "DM-16",
+   "kind": "ChangedEntity",
+   "title": "A PDF is read with a confidence for each value, and one that cannot be read is held",
+   "catalogue_says": "The office sees the PDF beside the values read from it; each value shows how sure the reader was, an unsure value is marked for checking and shows where it sits on the page. A PDF that cannot be made into a List still lands in the feed with the reason, never dropped. How it is read is the development team's choice.",
+   "prototype_has": "PdfRowAsRead holds plain values and the wording with no confidence or location. The PDF is a generated SVG data URL (facsimile) already shown as an image beside the rows as read, but only on the PDF lists tab before send, not on the matching screen. Reading problems are only invalid or missing NHI. Every PDF yields rows, so there is no unreadable PDF. The per-value confidence design exists only as the exploration docs/explorations/intake-ideas.html.",
+   "catalogue_refs": [
+    "US-02.2.1",
+    "US-02.1.4",
+    "US-02.5.7"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/domain/types.ts:2941",
+    "aa-prototype/src/domain/types.ts:2972",
+    "aa-prototype/src/domain/intake/pdfLists.ts:158",
+    "aa-prototype/src/domain/intake/pdfLists.ts:229",
+    "aa-prototype/src/apps/admin/intake/PdfListReview.tsx:59"
+   ],
+   "impact": "Each read value carries {confidence, where (page, box)} with a check threshold; the simulated reading is set by the sample data. The existing facsimile image moves to the matching screen beside the values with a highlight box (the generated image must place each value so the box lands on it). A PDF with nothing readable is a zero-row arrival with a held reason (DM-15) shown in the feed and under its source (DM-14). PdfRowCorrection history and verbatim wording unchanged. Persisted shape: bump with DM-15.",
+   "size": "M",
+   "verify_outcome": "corrected",
+   "verify_note": "Catalogue holds. Corrected: the PDF is not a text string but an image that already sits beside the values one screen earlier; the real gaps are confidence, location, matching-screen placement and the unreadable case."
+  },
+  {
+   "id": "DM-17",
+   "kind": "ChangedRelationship",
+   "title": "A stub is resolved by a later arrival that carries the NHI",
+   "catalogue_says": "When a later arrival for the List (usually the hospital's) carries the NHI of a patient whose stub is waiting, the update shows the NHI and applying it turns the stub into the Booking. Adding the NHI by hand stays the one manual way.",
+   "prototype_has": "A stub is tied to its waiting row (Stub.importRowId) and settles only when that row is decided or its Draft List goes; resolveStub addNhi is the only route. A later row carrying the NHI has a different duplicate key (NHI vs name|dob in rowPatientKey), is not linked by earlierOpenRow, finds no Booking (a stub is not one), and would be proposed as a new Booking while the stub stays standing.",
+   "catalogue_refs": [
+    "US-02.6.3",
+    "US-11.1.5",
+    "US-02.1.3"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/domain/types.ts:3007",
+    "aa-prototype/src/store/stubSettle.ts:83",
+    "aa-prototype/src/store/stubActions.ts:47",
+    "aa-prototype/src/domain/intake/matching.ts:438"
+   ],
+   "impact": "A stub's matching identity is its List plus the patient's name and birth date as received. An arriving row for that List with the same name and birth date is proposed as an update to the stub's row (new suggestion kind or row flag showing the NHI it adds); applying adds the NHI to the waiting row and decides it in one commit so the Booking takes the stub's place, with settleStubForRow called for the stub's row. Ambiguity (two stubs fit) is the office's choice. No new stored field. Needs DM-11.",
+   "size": "M",
+   "verify_outcome": "upheld",
+   "verify_note": "Re-read both sides; the failure path is confirmed in matching.ts and stubActions.ts."
+  },
+  {
+   "id": "DM-18",
+   "kind": "RuleChange",
+   "title": "A List holding only a stub cannot be completed or authorised",
+   "catalogue_says": "A List whose only line is a stub never reads complete and can be neither submitted as completed nor authorised until the stub is resolved or rejected, with the reason shown to whoever tries. A List that also holds Bookings is never held up by its stub.",
+   "prototype_has": "Stubs live in the intake slice and are not read by the lifecycle. submitList refuses only incomplete Bookings, so a List with no Bookings and one stub submits and can then be authorised; listProgress returns 'upcoming' for a List with no Bookings, which hides the case in screens without refusing it. The shared SubmitListSheet lists blockers per incomplete Booking only.",
+   "catalogue_refs": [
+    "US-02.6.4",
+    "FT-02.6",
+    "US-07.1.1",
+    "US-07.3.1",
+    "domain-model.md Stub"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/store/lifecycle.ts:232",
+    "aa-prototype/src/store/lifecycle.ts:241",
+    "aa-prototype/src/store/lifecycle.ts:301",
+    "aa-prototype/src/store/lifecycle.ts:407",
+    "aa-prototype/src/store/stubSelectors.ts:43",
+    "aa-prototype/src/domain/listProgress.ts:66",
+    "aa-prototype/src/shared/flows/SubmitListSheet.tsx"
+   ],
+   "impact": "Refuse in submitList and authoriseList, and add a blocker in authoriseBlockersFor, when the List has a standing stub and no non-cancelled Booking; show the reason from one place: the Review screen and SubmitListSheet (which needs a List-level reason line, as it would otherwise show an empty list). A lifecycle block, not a warning rule, because the catalogue says 'can be neither'. Lifted by resolving or rejecting the stub or the List gaining a Booking; no stored state. Standalone; can run any time.",
    "size": "S",
    "verify_outcome": "corrected",
-   "verify_note": "Count is by row (per warning, per reminder), so even a single reason can repeat; the new read must group by patient. The rest upheld."
+   "verify_note": "Catalogue and lifecycle claims hold. Corrected: names the shared SubmitListSheet as the place needing a List-level reason."
+  },
+  {
+   "id": "DM-19",
+   "kind": "ChangedEntity",
+   "title": "An arrival names the anaesthetist it was meant for, and a new List is placed with that Slot suggested",
+   "catalogue_says": "For an arriving List AA does not hold, the Slot of the anaesthetist the PDF or hospital List names is suggested when free; the alternatives are another anaesthetist's free Slot or a Draft List. Placing from Intake is the same act as manual assignment.",
+   "prototype_has": "IncomingBookingFields has no anaesthetist. A PDF names one only at list level (SurgeonPdfList.target.anaesthetistId) and pdfRowIncoming drops it when staging rows. openSlotsForRow lists every open Slot for the day and session and the panel offers the free anaesthetists with no suggestion; the createList decision carries only the chosen slotId.",
+   "catalogue_refs": [
+    "US-02.1.2",
+    "US-01.3.3",
+    "OQ-13"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/domain/types.ts:2832",
+    "aa-prototype/src/domain/types.ts:2972",
+    "aa-prototype/src/domain/intake/pdfLists.ts:238",
+    "aa-prototype/src/domain/intake/matching.ts:623",
+    "aa-prototype/src/apps/admin/matching/RowPanel.tsx:218"
+   ],
+   "impact": "Optional anaesthetist {name, hpiId?} on the incoming fields, resolved to the master like resolveSurgeon, so PDF and hospital Lists can name one; the arriving List's read gives the suggested free Slot first and the alternatives after. Optional field needs no PERSIST_VERSION bump alone. Whether hospital rows carry an anaesthetist depends on the open format question OQ-13; the demo hospital samples gain the field. Needs DM-11.",
+   "size": "S",
+   "verify_outcome": "upheld",
+   "verify_note": "Re-read both sides; holds as drafted."
+  },
+  {
+   "id": "DM-20",
+   "kind": "RuleChange",
+   "title": "A payer with no billing address fails the Booking, with its reason and fix",
+   "catalogue_says": "A Booking whose payer has no billing email shows its reason under the patient's name with a fix-the-payer action beside it on the Billing tab; an admin fixes the payer and retries and the Booking bills and leaves Problems. Billing fails one Booking at a time and a Booking whose billable party fails is held whole with none of its invoices issued.",
+   "prototype_has": "A payer with no address does not fail the run: the invoice is raised and stamped not sent with reason noAddress (audit invoice.notSent), awaiting a typed address. Phase 59 added only the code payerNoAddress and the Mark-resolved fields (resolvedBy, resolvedNote); nothing raises the code.",
+   "catalogue_refs": [
+    "US-13.3.1",
+    "US-13.3.2",
+    "US-08.5.2",
+    "Notes 2026-11-26 Donald finances section #4"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/store/invoiceMaterialise.ts:138",
+    "aa-prototype/src/store/invoiceMaterialise.ts:199",
+    "aa-prototype/src/store/billingRun.ts:310",
+    "aa-prototype/src/domain/billing/billingStatus.ts:27",
+    "aa-prototype/src/domain/types.ts:2064",
+    "docs/build-plan/ROADMAP.md D116"
+   ],
+   "impact": "Decided, not open: D116 (ROADMAP, a plan default on Phase 60's owner-review list) has the run fail the Booking whole as a BillingException with payerNoAddress and no invoice, pair or Xero hand-off; Fix the payer edits whoever is billed and Retry (retryBillingException) bills it. The raised-but-unsent alternative is closed. Changes the billing run, retryBillingException, the seed's failure examples and every noAddress reader; no new stored field beyond Phase 59's. Owned by Phase 60 (Wave 5, Lane A); standalone.",
+   "size": "S",
+   "verify_outcome": "corrected",
+   "verify_note": "Catalogue and code claims hold. Corrected: the choice the draft called open is already decided as D116 and owned by Phase 60."
+  },
+  {
+   "id": "DM-21",
+   "kind": "RuleChange",
+   "title": "Identical re-arrivals are shown as unchanged Lists, not skipped",
+   "catalogue_says": "Lists in an arrival that match what AA holds with no differences are shown as unchanged and confirmed together by a person in one click; they stay waiting until a person confirms. Nothing that arrives is silently dropped, and the sources view shows messages today and what each became.",
+   "prototype_has": "Staging drops what it has seen: stageImportRows skips a row equal to an open row or to the patient's latest earlier row at that hospital, day and session, counts it in ImportBatch.skippedCount, and makes no batch when every row is skipped. A re-sent identical hospital List, or a re-sent PDF with no change (sendPdfListToMatching stages only changed rows), leaves no trace in the feed. An unchanged row exists today only when a hand-made Booking matches a first-time row.",
+   "catalogue_refs": [
+    "US-02.1.6",
+    "US-02.1.4",
+    "US-02.1.7",
+    "Notes 2026-11-26 Donald intake front door #12 #13"
+   ],
+   "prototype_refs": [
+    "aa-prototype/src/store/matchingActions.ts:122",
+    "aa-prototype/src/store/matchingActions.ts:138",
+    "aa-prototype/src/store/pdfListActions.ts:191",
+    "aa-prototype/src/domain/types.ts:2915",
+    "aa-prototype/src/store/matchingDemo.ts:64"
+   ],
+   "impact": "All of an arrival's rows are staged, including those identical to the last arrival; the matcher already classifies a matched row with no differences noChange, so an unchanged List is a List whose rows are all noChange and DM-11's one-click confirm decides them. The duplicate key keeps only its earlierRowOpen job. skippedCount goes or becomes the unchanged count; the sources view (DM-14) reads what each became from rows that now exist. Open for the owner: whether an identical daily re-arrival whose earlier rows are all decided still asks for a confirm (the stories say unchanged Lists wait for a person). No stored field; intake counts and the demo triggers' 'already received' refusals change. Needs DM-11; touches the same staging code as DM-15.",
+   "size": "S",
+   "verify_outcome": "added",
+   "verify_note": "Missed by the author, who assumed unchanged rows already reach the feed; found in stageImportRows' dedupe."
   }
  ],
- "deltaSummary": "Ten deltas verified and none refuted or dropped. All catalogue claims were re-read at 67cba2ce and are in scope, none retired and none in Future Work. Upheld: DM-01, DM-02, DM-04, DM-06, DM-07, DM-08 and DM-09. Corrected: DM-03, DM-05 and DM-10. In DM-03, Phase 49's D94 calls the to-do a warning rule, but a Warning is keyed to a Booking, so the phase must either widen the finding's subject to a Contract or use the derived ToDoItem kind. In DM-05, recurring bookings read Slot existence rather than the active flag, and more flag readers exist: matching open-slot, rebook candidates, list-move demo. The start date already exists. paymentActions.ts:294 refuses a receipt naming an inactive anaesthetist, which conflicts with \"everything recorded before stays\". In DM-10, the follow-up and attention counts are by row (per warning, per reminder), so even a single reason can repeat. Nothing was added: People-page keys, side panels, filters, patient pending details and the waiting-NHI move need no model change. domain-model-delta.md is updated with the corrections and an adversarial-verification note.",
+ "deltaSummary": "Verification is done and docs/build-plan/analysis/domain-model-delta.md is updated to match. No delta was refuted. Every catalogue claim holds against the stories and note points, and none rests on a retired story or the Future Work lane. Every prototype claim was re-read in code. I corrected 7 deltas, upheld 3 unchanged (DM-12, DM-17, DM-19) and added 1 (DM-21). The file now has 11 open deltas, DM-11 to DM-21, with a Verified line under each.\n\n**Corrected**\n- **DM-11:**\n  - Leave-out does not strictly need a new union member. `reject` already decides a row and changes nothing, so a reject with a fixed reason is the cheapest shape; a member of its own is clearer.\n  - The surgeon is a per-row correction today. It has to become a List-level choice for a List-level place action.\n  - The unchanged-List display depends on DM-21.\n- **DM-13:** No new stored field is needed to say which Bookings the rooms brought. `Booking.source` already holds `surgeonPdf`, and decided rows carry their source.\n- **DM-14:** US-14.5.1 is Future Work, so it is context only. The simulator's feed-message path (`integrationActions.ts:246`) already records what each message became and why it failed, which is a model for the derived measures.\n- **DM-15:**\n  - Arrival-shaped demo triggers already exist (`receiveTheatreList`, `receiveResentPdfList`), but they run as the office actor. The change there is the actor and the label.\n  - `manualSheet` is also used by the PWA office stand-in.\n  - Folding the PDF row corrections into `ImportRowCorrections` would lose the ethnicity correction, which the PDF path allows and `ImportRowCorrections` does not.\n- **DM-16:** The PDF is not a text string. It is a generated SVG image already shown beside the values, but on the PDF lists tab before send, not on the matching screen. The real gaps are per-value confidence and location, placement on the matching screen, and the unreadable-PDF case.\n- **DM-18:** The shared `SubmitListSheet` lists blockers per incomplete Booking only. It needs a List-level reason line, or it shows an empty list for a stub-only List.\n- **DM-20:** The choice the author called open is already decided as D116 in `docs/build-plan/ROADMAP.md` and owned by Phase 60. The raised-but-unsent invoice alternative is closed.\n\n**Added**\n- **DM-21:** `stageImportRows` skips rows identical to ones already seen and makes no batch when every row is skipped. An identical re-sent List therefore never reaches the feed as an unchanged List, so US-02.1.6 has nothing to show or confirm. The author's DM-11 assumed unchanged rows already arrive.\n\nI also added DM-21 to the order of work (with DM-11) and to DM-14's needs.",
  "reverseFindings": [],
  "reverseSummary": "",
  "excluded": [
@@ -2043,21 +2796,9 @@
    "status": "Retired (6)"
   },
   {
-   "id": "US-02.1.5",
-   "title": "Automatic sync from St George's and Southern Cross",
-   "status": "Proposed (1)",
-   "swimlane": "Future Work"
-  },
-  {
    "id": "US-02.2.2",
    "title": "Edit then ingest",
    "status": "Retired (6)"
-  },
-  {
-   "id": "US-02.2.3",
-   "title": "Detect Bookings removed from a re-sent List",
-   "status": "Verify (3)",
-   "swimlane": "Future Work"
   },
   {
    "id": "US-02.3.5",
