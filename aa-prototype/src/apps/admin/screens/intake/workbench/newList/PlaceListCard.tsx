@@ -18,6 +18,7 @@ import { sessionLabel, type MatchingList, type MatchingSlot } from '../../../../
 import { placementSlotLabel } from '../../../../../../domain/intake/placement'
 import type { Session } from '../../../../../../domain/types'
 import { plural, shortDay, titledSurname } from '../../../../../../shared/format'
+import { DRAFT_LIST, DRAFT_LISTS } from '../../../../../../shared/scheduleTerms'
 import { Button, Card, FormError, Pill, RadioCard, SelectField, TextAction, useRovingRadio } from '../../../../../../shared/ui'
 import { placeArrivalList, placeChoicesFor, sessionChoice, useAppStore, type Actor, type PlaceChoice } from '../../../../../../store'
 import { neutral, space, type as typeScale } from '../../../../../../theme/tokens'
@@ -131,7 +132,7 @@ export function PlaceListCard({
   const namedBusy = choices.namedAnaesthetistId !== undefined && choices.suggested === undefined
   const namedBy = arrival.source.kind === 'rooms' ? 'Named on the PDF' : 'Named by the hospital'
 
-  const listTitle = (list: MatchingList) => (list.anaesthetistId !== undefined ? `Add to ${anaesthetistName(list.anaesthetistId)}'s List` : 'Add to the Draft List')
+  const listTitle = (list: MatchingList) => (list.anaesthetistId !== undefined ? `Add to ${anaesthetistName(list.anaesthetistId)}'s List` : `Add to the ${DRAFT_LIST}`)
   const listLine = (list: MatchingList) => {
     const surgeon = list.surgeonId !== undefined ? masters.surgeons[list.surgeonId]?.name : undefined
     return [surgeon !== undefined ? titledSurname(surgeon) : 'No surgeon', sessionLabel(list.dateISO, list.session), list.state === 'DRAFT' ? 'no anaesthetist yet' : undefined]
@@ -146,7 +147,7 @@ export function PlaceListCard({
       : chosen.kind === 'list' && chosen.list !== undefined
         ? `Adds ${contents} to ${listTitle(chosen.list).replace(/^Add to /, '')}.`
         : chosen.kind === 'draft'
-          ? `Makes a Draft List with ${contents}.`
+          ? `Makes a ${DRAFT_LIST} with ${contents}.`
           : `Creates the List with ${contents}.`
 
   const buttonLabel =
@@ -155,7 +156,7 @@ export function PlaceListCard({
       : chosen.kind === 'list'
         ? 'Add to the List'
         : chosen.kind === 'draft'
-          ? 'Make a Draft List'
+          ? `Make a ${DRAFT_LIST}`
           : `Place in ${anaesthetistName(chosen.slot?.anaesthetistId)}'s ${sessionWord(session)}`
 
   const blockedBy =
@@ -227,7 +228,7 @@ export function PlaceListCard({
             return <RadioCard key={o.value} {...common} data-list-id={o.list.id} title={listTitle(o.list)} description={listLine(o.list)} />
           }
           return (
-            <RadioCard key={o.value} {...common} title="Make a Draft List" description="No anaesthetist yet · shows in Draft Lists until someone is assigned">
+            <RadioCard key={o.value} {...common} title={`Make a ${DRAFT_LIST}`} description={`No anaesthetist yet · shows in ${DRAFT_LISTS} until someone is assigned`}>
               {surgeonField}
             </RadioCard>
           )

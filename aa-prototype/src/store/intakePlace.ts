@@ -104,7 +104,19 @@ function newListArrival(state: AppState, actor: Actor, arrivalKey: string): Outc
   if (arrival === undefined) return refuse('notFound', 'Arrival not found.')
   if (arrival.kind !== 'newList') return refuse('notANewList', NOT_A_NEW_LIST_MESSAGE)
   if (arrival.decided) return refuse('alreadyDecided', ALREADY_DECIDED_MESSAGE)
+  // Its rows waiting for an NHI keep it undecided after placing: it is placed once (Wave 7 join).
+  if (arrivalPlaced(state, arrival)) return refuse('alreadyPlaced', ALREADY_PLACED_MESSAGE)
   return ok(arrival)
+}
+
+export const ALREADY_PLACED_MESSAGE = 'This List has already been placed. Its waiting patients join it when their NHI arrives.'
+
+/** Whether this arrival's List has been placed: any of its rows became a Booking on a List it made or joined. */
+export function arrivalPlaced(state: Pick<AppState, 'intake'>, arrival: Pick<ArrivalItem, 'rowIds'>): boolean {
+  return arrival.rowIds.some((id) => {
+    const kind = state.intake.rows[id]?.decision?.kind
+    return kind === 'createList' || kind === 'createDraft' || kind === 'createBooking'
+  })
 }
 
 /** Where the Draft List says it came from, as the row path's note does. */

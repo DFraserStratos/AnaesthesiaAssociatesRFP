@@ -245,10 +245,6 @@ export const ACTION_LABELS: Record<string, string> = {
   'stub.resolve': 'Stub replaced by Booking',
   'stub.remove': 'Stub removed',
   // The rooms' PDF lists and where a List came from (catch-up Phase 34).
-  'pdfList.upload': 'PDF list uploaded',
-  'pdfList.resend': 'Updated PDF list received',
-  'pdfList.correct': 'PDF list row corrected',
-  'pdfList.send': 'PDF list sent to matching',
   'list.senderChanged': 'List sender changed',
   // Intake's front door (build plan Phase 68): arrivals made by their source.
   'pdfList.receive': 'PDF received in the mailbox',

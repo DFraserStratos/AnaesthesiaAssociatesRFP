@@ -16,7 +16,7 @@ import { pdfValueKey } from '../../../../../domain/intake/pdfLists'
 import type { PdfReadField } from '../../../../../domain/types'
 import { stampText } from '../../../../../shared/format'
 import { Button, FormError, Notice, TextAction, TextField } from '../../../../../shared/ui'
-import { rejectArrivalList, useAppStore } from '../../../../../store'
+import { arrivalPlaced, rejectArrivalList, useAppStore } from '../../../../../store'
 import { neutral, space, type as typeScale } from '../../../../../theme/tokens'
 import type { BenchProps } from './benchProps'
 import { PdfPage, pdfPageBoxes } from './newList/PdfPage'
@@ -51,7 +51,9 @@ export function NewListBench({ arrival, actor, onDone }: BenchProps) {
     const nhi = effectiveIncoming(row).patient.nhi
     return nhi !== undefined && nhi.trim() !== '' && !validateNhi(nhi).valid
   })
-  const locked = arrival.decided
+  // Placed (its waiting patients still open) or decided: no more corrections, placing or rejecting here.
+  const placed = useAppStore((s) => arrivalPlaced(s, arrival))
+  const locked = arrival.decided || placed
   // A value the office has corrected is no longer one to check: its box goes quiet on the page.
   const corrected = new Set(
     arrivalRows.flatMap((r) =>
@@ -93,8 +95,10 @@ export function NewListBench({ arrival, actor, onDone }: BenchProps) {
       )}
 
       {locked ? (
-        <Notice tone="success" title="Decided" shot="intake-newlist-decided">
-          Every patient on this List has been decided. Received {stampText(arrival.receivedAtISO)}.
+        <Notice tone="success" title={placed ? 'Placed' : 'Decided'} shot="intake-newlist-decided">
+          {placed && !arrival.decided
+            ? 'This List has been placed. Its patients waiting for an NHI join it as stubs until their NHI arrives.'
+            : `Every patient on this List has been decided. Received ${stampText(arrival.receivedAtISO)}.`}
         </Notice>
       ) : (
         <>

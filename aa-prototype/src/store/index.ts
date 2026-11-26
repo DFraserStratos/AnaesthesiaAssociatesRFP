@@ -709,6 +709,8 @@ export {
   SLOT_TAKEN_MESSAGE,
   placeArrivalList,
   sessionChoice,
+  arrivalPlaced,
+  ALREADY_PLACED_MESSAGE,
   placeChoicesFor,
   rejectArrivalList,
   type PlaceChoice,

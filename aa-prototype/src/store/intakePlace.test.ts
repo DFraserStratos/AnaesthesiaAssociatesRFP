@@ -246,3 +246,20 @@ describe('placeStubsOnList', () => {
     expect(placeStubsOnList(api, OFFICE_ACTOR, listId, rowIds)).toEqual([])
   })
 })
+
+describe('placed once (Wave 7 join)', () => {
+  it('a placed List whose stub still waits cannot be placed or rejected again, and nothing is written', () => {
+    const api = createAppStore()
+    const { key } = okaforArrives(api)
+    const choices = placeChoicesFor(api.getState(), key)!
+    const first = placeArrivalList(api, OFFICE_ACTOR, key, { kind: 'slot', slotId: (choices.suggested ?? choices.otherSlots[0]!).id })
+    expect(first.ok).toBe(true)
+    // The no-NHI row still waits, so the arrival is not decided, but it is placed.
+    expect(arrivalByKey(api.getState(), key)?.decided).toBe(false)
+    const before = api.getState()
+    expect(placeArrivalList(api, OFFICE_ACTOR, key, { kind: 'draft' })).toMatchObject({ ok: false, code: 'alreadyPlaced' })
+    expect(rejectArrivalList(api, OFFICE_ACTOR, key, 'Wrong List')).toMatchObject({ ok: false, code: 'alreadyPlaced' })
+    expect(api.getState().schedule).toBe(before.schedule)
+    expect(api.getState().audit.length).toBe(before.audit.length)
+  })
+})
