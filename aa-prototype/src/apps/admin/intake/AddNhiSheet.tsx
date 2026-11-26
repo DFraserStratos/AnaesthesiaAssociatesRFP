@@ -1,17 +1,20 @@
 /**
- * The Add NHI sheet (catch-up Phase 40, item 12; US-11.1.4, US-11.1.5): a
- * desktop dialog (convention 16) on a row waiting for an NHI. The NHI field
- * checks live (`validateNhi` through `nhiRowPreview`), the preview line says
- * whether a record already holds it, a read-only table shows how the row's
- * details differ from that record, and the teal Add NHI runs
+ * The Add NHI sheet (catch-up Phase 40, item 12; US-11.1.4, US-11.1.5): the
+ * one way to add an NHI by hand, opened from the Needs NHI bench (build plan
+ * Phase 72). A desktop dialog (convention 16) on a row waiting for an NHI. The
+ * NHI field checks live (`validateNhi` through `nhiRowPreview`), the preview
+ * line says whether a record already holds it, a read-only table shows how the
+ * row's details differ from that record, and the teal Add NHI runs
  * `addNhiToWaitingRow` (33a's one resolve path). No second patient is made.
+ * Its last step is `AddNhiOutcome`: on the List in the stub's place, or the
+ * reason and a link to the row under its own kind.
  */
 
 import { useEffect, useMemo, useState } from 'react'
 import { addNhiToWaitingRow, nhiRowPreview, useAppStore, type Actor, type AddNhiResult, type WaitingNhiRow } from '../../../store'
 import { useSurface } from '../../../shared'
 import { OverlayHeader, SheetActions } from '../../../shared/surface'
-import { Button, FieldHint, FormError, Notice, TextAction, TextField } from '../../../shared/ui'
+import { Button, FieldHint, FormError, TextField } from '../../../shared/ui'
 import { formatDob, plural, shortDay } from '../../../shared/format'
 import { sessionText } from '../../../domain/outOfHours'
 import { neutral } from '../../../theme/tokens'
@@ -20,6 +23,7 @@ import { nhiFieldCheck } from '../../../shared/flows/nhiCopy'
 import { AA_OFFICE, NHI_LOOKUP_COPY, NhiLookupStatus, NhiPurposeNote, useNhiHubLookup } from '../../../shared/nhiHub'
 import { detailDifferences } from '../../../domain/patients'
 import { useDemoTriggerContextWhile } from '../../../shared/demoTriggers/context'
+import { AddNhiOutcome } from '../screens/intake/workbench/needsNhi/AddNhiOutcome'
 
 /** The register's name or date of birth for a typed NHI differs from the row's (catch-up Phase 40a): a mild line, never a block. */
 export const REGISTER_DIFFERS_LINE = 'The register has a different name or date of birth for this NHI. Check before adding.'
@@ -29,15 +33,14 @@ export function AddNhiSheet({
   row,
   actor,
   onClose,
-  onOpenList,
-  onOpenMatching,
+  onAdded,
 }: {
   /** The row the sheet is open on; null closes it. */
   row: WaitingNhiRow | null
   actor: Actor
   onClose: () => void
-  onOpenList: (listId: string) => void
-  onOpenMatching: (rowId: string) => void
+  /** Runs once the NHI is added, with what it did (the bench moves the feed on when the row is resolved). */
+  onAdded?: (result: AddNhiResult, row: WaitingNhiRow) => void
 }) {
   const { Overlay } = useSurface()
   const intake = useAppStore((s) => s.intake)
@@ -78,6 +81,7 @@ export function AddNhiSheet({
     }
     setError(null)
     setDone({ result: res.value, row })
+    onAdded?.(res.value, row)
   }
 
   const shown = done?.row ?? row
@@ -89,7 +93,7 @@ export function AddNhiSheet({
           description={shown !== null && shown !== undefined ? `${shortDay(shown.dateISO)} ${sessionText(shown.session)}, ${shown.hospital}${shown.surgeon !== undefined ? `, ${shown.surgeon}` : ''}` : undefined}
         />
         {done !== null ? (
-          <AddedStep done={done} onOpenList={onOpenList} onOpenMatching={onOpenMatching} onClose={onClose} />
+          <AddedStep done={done} onClose={onClose} />
         ) : (
           <>
             <TextField
@@ -164,38 +168,11 @@ export function AddNhiSheet({
   )
 }
 
-function AddedStep({
-  done,
-  onOpenList,
-  onOpenMatching,
-  onClose,
-}: {
-  done: { result: AddNhiResult; row: WaitingNhiRow }
-  onOpenList: (listId: string) => void
-  onOpenMatching: (rowId: string) => void
-  onClose: () => void
-}) {
-  const { result, row } = done
-  if (result.kind === 'resolved') {
-    return (
-      <>
-        <Notice tone="success" live="status" shot="add-nhi-done">
-          Added. The Booking is on {row.surgeon !== undefined ? `${row.surgeon}'s` : 'its'} List in the stub's place.
-        </Notice>
-        <SheetActions
-          secondary={<Button variant="secondary" size="desktop" onClick={onClose}>Done</Button>}
-          primary={<Button variant="primary" size="desktop" block onClick={() => onOpenList(result.listId)}>Open List</Button>}
-        />
-      </>
-    )
-  }
+function AddedStep({ done, onClose }: { done: { result: AddNhiResult; row: WaitingNhiRow }; onClose: () => void }) {
   return (
     <>
-      <Notice tone="neutral" live="status">{result.kind === 'needsDecision' ? result.reason : 'The row is decided.'}</Notice>
-      <span style={{ display: 'flex', gap: 14 }}>
-        <TextAction size="md" flush onClick={() => onOpenMatching(row.rowId)}>Open on matching</TextAction>
-        <TextAction size="md" flush onClick={onClose}>Close</TextAction>
-      </span>
+      <AddNhiOutcome result={done.result} rowId={done.row.rowId} patientName={done.row.patientName} onClose={onClose} />
+      <SheetActions primary={<Button variant="primary" size="desktop" block onClick={onClose} shot="add-nhi-close">Done</Button>} />
     </>
   )
 }

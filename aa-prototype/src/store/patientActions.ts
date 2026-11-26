@@ -147,8 +147,8 @@ export type AddNhiResult = ResolveStubResult
  * The office adds the NHI to a row waiting for one (US-11.1.4, US-11.1.5):
  * through 33a's one resolve path when the row's stub stands (the Booking takes
  * the stub's place, matched to the patient's single record or with the one new
- * record), else 33's `correctImportRow` alone, leaving the decision on
- * Matching. Office (and the simulated office) only.
+ * record), else 33's `correctImportRow` alone, leaving the decision to the
+ * row's arrival in Intake. Office (and the simulated office) only.
  */
 export function addNhiToWaitingRow(api: AppStoreApi, actor: Actor, rowId: string, nhi: string): Outcome<AddNhiResult> {
   if (actor.role !== 'office') return refuse('officeOnly', OFFICE_ADDS_NHI_MESSAGE)
@@ -164,7 +164,7 @@ export function addNhiToWaitingRow(api: AppStoreApi, actor: Actor, rowId: string
   if (stub !== undefined) return resolveStub(api, actor, stub.id, { kind: 'addNhi', nhi: v.normalised })
   const corrected = correctImportRow(api, actor, rowId, { nhi: v.normalised })
   if (!corrected.ok) return corrected
-  return ok({ kind: 'needsDecision', reason: 'The NHI is added. Choose a decision for this row on Matching.' })
+  return ok({ kind: 'needsDecision', reason: 'The NHI is added. The row has no List yet: decide it with its arrival.' })
 }
 
 export interface NhiRowPreview {
