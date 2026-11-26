@@ -59,18 +59,25 @@ async function openMonitor(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Finances', level: 1 })).toBeVisible()
 }
 
-/** Finances · Xero: the connection line, the Xero sync queue and Changed directly in Xero. */
+/** Finances · Xero on All: the connection in the rail, then one table of hand-offs and Changed directly in Xero. */
 async function openXero(page: Page): Promise<void> {
-  await page.goto('/admin/finances/xero')
+  await page.goto('/admin/finances/xero?show=all')
   await page.waitForLoadState('networkidle')
   await expect(page.getByRole('heading', { name: 'Finances', level: 1 })).toBeVisible()
 }
 
-const queueRows = (page: Page) => page.locator('[data-shot="billing-xero-queue"] [data-queue-item]')
+const queueRows = (page: Page) => page.locator('[data-shot="xero-table"] [data-queue-item]')
+const xeroEmpty = (page: Page) => page.locator('[data-shot="xero-empty"]')
 
 async function attemptsOf(page: Page): Promise<number[]> {
-  // The Attempts cell is the row's second cell.
-  return queueRows(page).evaluateAll((rows) => rows.map((r) => Number(r.querySelectorAll('td')[1]?.textContent ?? 'NaN')))
+  // The Attempts cell sits under the table's Attempts heading.
+  return queueRows(page).evaluateAll((rows) =>
+    rows.map((r) => {
+      const heads = Array.from(r.closest('table')?.querySelectorAll('thead th') ?? [])
+      const at = heads.findIndex((th) => (th.textContent ?? '').trim() === 'Attempts')
+      return Number(r.querySelectorAll('td')[at]?.textContent ?? 'NaN')
+    }),
+  )
 }
 
 test('outage: authorising still bills, the hand-offs queue and back off with the clock, Restore leaves one Xero pair per invoice', async ({ page }) => {
@@ -78,8 +85,8 @@ test('outage: authorising still bills, the hand-offs queue and back off with the
   await fresh(page, '/admin/finances/xero')
   const connection = page.locator('[data-shot="billing-xero-connection"]')
   await expect(connection).toContainText('Connected')
-  await expect(page.locator('[data-shot="billing-xero-queue"]').getByText('Nothing is waiting for Xero.')).toBeVisible()
-  await expect(page.locator('[data-shot="billing-xero-divergence"]')).toHaveCount(0)
+  await expect(xeroEmpty(page)).toContainText('Nothing needs action in Xero.')
+  await expect(page.locator('[data-divergence-id]')).toHaveCount(0)
 
   const before = await xeroPairCount(page)
 
@@ -88,7 +95,8 @@ test('outage: authorising still bills, the hand-offs queue and back off with the
   expect(await runDemoAction(page, 'xero-outage-start')).toMatch(/Xero is unavailable/)
   await expect(page.locator('[data-shot="demo-action-xero-outage-restore"]').getByRole('button', { name: 'Run' })).toBeEnabled()
   await page.keyboard.press('Escape')
-  await expect(connection).toContainText(/Xero unavailable since \d\d:\d\d · 0 waiting/)
+  await expect(connection).toContainText(/Xero is unavailable\.\s*Since \d\d:\d\d/)
+  await expect(page.locator('[data-xero-fact="waiting"]')).toContainText('0')
 
   // Authorise a List on Review: it bills with no error.
   const invoices = await authorise(page, SOUTER_MON_AM)
@@ -101,7 +109,7 @@ test('outage: authorising still bills, the hand-offs queue and back off with the
   for (const kind of await queueRows(page).evaluateAll((rows) => rows.map((r) => r.getAttribute('data-queue-kind')))) expect(kind).toMatch(/handoff/i)
   expect(await attemptsOf(page)).toEqual(Array(invoices).fill(1))
   await expect(queueRows(page).first().getByText('Waiting', { exact: true })).toBeVisible()
-  await expect(connection).toContainText(`· ${invoices} waiting`)
+  await expect(page.locator('[data-xero-fact="waiting"]')).toContainText(String(invoices))
   await page.screenshot({ path: 'visual/shots/p37-xero-01-queue.png', fullPage: true })
   await openMonitor(page)
   await expect(page.locator(`tbody[data-shot="billing-pipeline-${SOUTER_MON_AM}"]`)).toHaveAttribute('data-problems', /waitingForXero/)
@@ -120,8 +128,9 @@ test('outage: authorising still bills, the hand-offs queue and back off with the
 
   // Restore Xero: the queue drains in order.
   expect(await runDemoAction(page, 'xero-outage-restore', { close: true })).toMatch(new RegExp(`Xero is back\\. The queue sent ${invoices} waiting call`))
-  await expect(page.locator('[data-shot="billing-xero-queue"]').getByText('Nothing is waiting for Xero.')).toBeVisible()
-  await expect(connection).toHaveText(/Connected$/)
+  await expect(queueRows(page)).toHaveCount(0)
+  await expect(connection).toContainText('Connected.')
+  await expect(connection).toContainText('Nothing is waiting for Xero.')
   await openMonitor(page)
   await expect(page.locator(`tbody[data-shot="billing-pipeline-${SOUTER_MON_AM}"]`)).toHaveAttribute('data-problems', '')
 
@@ -155,12 +164,12 @@ test('changes made in Xero: a void and an amended total, flagged at the reconcil
   expect(await runDemoAction(page, 'xero-void-invoice', { close: true })).toMatch(new RegExp(`${voidPair.number} is voided in Xero`))
   await expect(page.locator('[data-shot="xero-accrec-voided"]')).toBeVisible()
   await openXero(page)
-  await expect(page.locator('[data-shot="billing-xero-divergence"]')).toHaveCount(0)
+  await expect(page.locator('[data-divergence-id]')).toHaveCount(0)
 
-  // Run reconciliation poll: the divergence panel flags it, and its List shows under Problems only.
+  // Run reconciliation poll: Changed directly in Xero lists it, and its List shows under Problems only.
   expect(await runDemoAction(page, 'run-reconciliation-poll', { close: true })).toMatch(/Reconciliation poll/)
-  const divergence = page.locator('[data-shot="billing-xero-divergence"]')
-  await expect(divergence).toBeVisible()
+  const divergence = page.locator('[data-shot="xero-table"]')
+  await expect(divergence.locator('[data-divergence-id]')).toHaveCount(1)
   const voidRow = divergence.locator('[data-divergence-kind="voidedInXero"]')
   await expect(voidRow).toHaveCount(1)
   await expect(voidRow).toContainText(voidPair.number)
@@ -182,7 +191,7 @@ test('changes made in Xero: a void and an amended total, flagged at the reconcil
   await expect(amendRow).toHaveCount(1)
   await expect(amendRow).toContainText(amendPair.number)
   await expect(amendRow).toContainText(/Amended in Xero \d\d:\d\d · total \$/)
-  await expect(amendRow).toContainText(/Receivable open, \$/)
+  await expect(amendRow).toContainText(/Xero shows \$[\d,.]+, the engine holds \$/)
 
   // A second poll adds no second flag.
   await runDemoAction(page, 'run-reconciliation-poll', { close: true })

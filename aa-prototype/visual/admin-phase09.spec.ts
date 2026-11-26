@@ -31,15 +31,15 @@ test('admin phase 09: billing monitor failure, resolve and retry (re-based on th
   await expect(page.getByRole('button', { name: 'Resolve & retry' })).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p9-02-monitor.png', fullPage: true })
 
-  // Retry now, on the Xero tab's sync queue, hands it off once; no Contract is edited.
+  // Retry now, on the Xero tab (it opens on Needs action, the waiting hand-off listed), hands it off once; no Contract is edited.
   await page.locator('[data-shot="finances-tabs"] [data-finances-tab="xero"]').click()
   await expect(page).toHaveURL(/\/admin\/finances\/xero/)
-  const queue = page.locator('[data-shot="billing-xero-queue"]')
-  await expect(queue.getByRole('button', { name: 'Retry now' })).toHaveCount(1)
-  await queue.getByRole('button', { name: 'Retry now' }).click()
+  const table = page.locator('[data-shot="xero-table"]')
+  await expect(table.getByRole('button', { name: 'Retry now' })).toHaveCount(1)
+  await table.getByRole('button', { name: 'Retry now' }).click()
   await page.waitForTimeout(400)
-  await expect(queue.getByRole('button', { name: 'Retry now' })).toHaveCount(0)
-  await expect(queue.getByText('Nothing is waiting for Xero.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Retry now' })).toHaveCount(0)
+  await expect(page.locator('[data-shot="xero-empty"]')).toContainText('Nothing needs action in Xero.')
   await page.locator('[data-shot="finances-tabs"] [data-finances-tab="billing"]').click()
   await expect(page).toHaveURL(/\/admin\/finances\/billing/)
   await page.locator('[data-shot="billing-filters"]').getByLabel('Anaesthetist', { exact: true }).selectOption('39560')
