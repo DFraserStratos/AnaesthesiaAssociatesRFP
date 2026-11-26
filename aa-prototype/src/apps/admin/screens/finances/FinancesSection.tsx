@@ -51,12 +51,11 @@ export function FinancesTabs({ active }: { active: FinanceTab }) {
 }
 
 /**
- * One Finances tab's page: the Finances title, the tab's own sub line and mode (each screen keeps
- * today's), its primary action, the tab strip and the tab's body.
+ * One Finances tab's page: the Finances title, the tab's one-line sub from `FINANCE_TABS` (every tab
+ * has one, so the strip never moves), its mode, its primary action, the tab strip and the tab's body.
  */
 export function FinancesPage({
   tab,
-  sub,
   mode,
   actions,
   testId,
@@ -65,7 +64,6 @@ export function FinancesPage({
   ...data
 }: {
   tab: FinanceTab
-  sub?: ReactNode
   mode: AdminPageMode
   actions?: ReactNode
   testId?: string
@@ -76,7 +74,7 @@ export function FinancesPage({
     <AdminPage
       mode={mode}
       title="Finances"
-      {...(sub !== undefined ? { sub } : {})}
+      sub={FINANCE_TABS.find((t) => t.tab === tab)?.sub ?? ''}
       {...(actions !== undefined ? { actions } : {})}
       tabs={<FinancesTabs active={tab} />}
       {...(testId !== undefined ? { testId } : {})}

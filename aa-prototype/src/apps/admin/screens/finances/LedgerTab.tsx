@@ -74,19 +74,13 @@ export function LedgerTab() {
 
   useScreenTiming('ledger', [list, shownRows, pairsFilter, pageValue])
 
-  const sub = (
-    <span data-shot="ledger-system-of-record">
-      The Billing Engine's ledger is AA's system of record: each invoice is a receivable from the billable party and a linked payable to the anaesthetist. Xero mirrors it.
-    </span>
-  )
-
   const end =
     list === 'anaesthetists' ? (
       <span data-shot="ledger-summary">{`${plural(rows.length, 'anaesthetist')}, ${outCount === 0 ? (rows.length === 1 ? 'square' : 'every one square') : `${outCount} out of balance`}`}</span>
     ) : undefined
 
   return (
-    <FinancesPage tab="ledger" mode="fit" sub={sub} data-ledger-list={list}>
+    <FinancesPage tab="ledger" mode="fit" data-ledger-list={list}>
       <PageToolbar {...(end !== undefined ? { end } : {})}>
         <SlidingSegmentedControl
           ariaLabel="Which list"
