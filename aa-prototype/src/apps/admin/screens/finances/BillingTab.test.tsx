@@ -12,7 +12,8 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { createMemoryRouter, createRoutesFromElements, MemoryRouter, Route, RouterProvider, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { authoriseList, freshAppState, runBillingForList, submittedLists, useAppStore, type Actor } from '../../../../store'
+import { authoriseList, freshAppState, runBillingForList, useAppStore, type Actor } from '../../../../store'
+import { toAuthoriseOrder } from '../lists/toAuthoriseRows'
 import { ANAE, SEED_LIST_IDS, SEED_MARKERS } from '../../../../domain/seed'
 import { projectedListId } from '../../../../domain/slots'
 import { payerLosesBillingEmailTarget, stagePayerLosesBillingEmail } from '../../../../shared/demoTriggers/payerLosesBillingEmail'
@@ -225,10 +226,15 @@ describe('the Billing tab (US-13.3.1, US-13.3.2)', () => {
 
   it('Awaiting approval rows open Review with the way back to Billing; nothing on the tab approves', () => {
     const router = mountAt(`${BILLING}?show=all`)
-    const awaiting = submittedLists(useAppStore.getState()).filter((l) => !l.id.startsWith('L-HIST'))
+    // In To authorise's order: oldest submitted first.
+    const awaiting = toAuthoriseOrder(useAppStore.getState())
+      .filter((id) => !id.startsWith('L-HIST'))
+      .map((id) => ({ id }))
     expect(awaiting.length).toBeGreaterThan(0)
     const rail = shot('billing-awaiting')!
-    for (const l of awaiting.slice(0, 5)) expect(rail.querySelector(`[data-shot="billing-awaiting-${l.id}"]`)).not.toBeNull()
+    expect([...rail.querySelectorAll('[data-list-id]')].map((li) => li.getAttribute('data-list-id'))).toEqual(awaiting.slice(0, 5).map((l) => l.id))
+    // See all opens the To authorise tab.
+    expect(rail.querySelector('[data-shot="billing-awaiting-all"]')?.getAttribute('href')).toBe('/admin/lists/to-authorise')
     expect(screen.queryByRole('button', { name: /authorise|approve/i })).toBeNull()
 
     const first = awaiting[0]!

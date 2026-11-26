@@ -1,15 +1,16 @@
 /**
  * The Billing tab's rail (build plan Phase 60; US-13.3.1 "Approval only in
- * Review"): a line to the Xero tab while a hand-off has alerted, then the
- * Lists awaiting approval, oldest first, five shown. Each opens the Review
- * queue on that List, with the way back to this tab's filters; nothing here
- * approves.
+ * To authorise"): a line to the Xero tab while a hand-off has alerted, then the
+ * Lists awaiting approval in To authorise's order (oldest submitted first),
+ * five shown. Each opens the List's review page under Lists › To authorise,
+ * with the way back to this tab's filters; See all opens the To authorise tab.
+ * Nothing here approves.
  */
 
 import { useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAppStore } from '../../../../store'
-import { submittedLists } from '../../../../store/selectors'
+import { toAuthoriseOrder } from '../lists/toAuthoriseRows'
 import { bookingsByList } from '../../../../store/indexes'
 import { sessionText } from '../../../../domain/outOfHours'
 import { hhmm, plural, shortDay } from '../../../../shared/format'
@@ -51,14 +52,23 @@ function XeroHandoffNotice() {
   )
 }
 
-/** The Lists awaiting approval, as Review will show them (the history Lists left out, as the monitor did). */
+/** The Lists awaiting approval, as To authorise shows them (the history Lists left out, as the monitor did). */
 function AwaitingApproval() {
   const schedule = useAppStore((s) => s.schedule)
   const masters = useAppStore((s) => s.masters)
   const audit = useAppStore((s) => s.audit)
   const location = useLocation()
 
-  const lists = useMemo(() => submittedLists({ schedule }).filter((l) => !l.id.startsWith('L-HIST')), [schedule])
+  const lists = useMemo(
+    () =>
+      toAuthoriseOrder({ schedule, audit })
+        .filter((id) => !id.startsWith('L-HIST'))
+        .flatMap((id) => {
+          const l = schedule.lists[id]
+          return l !== undefined && l.state === 'SUBMITTED' ? [l] : []
+        }),
+    [schedule, audit],
+  )
 
   // When each shown List was submitted: one pass over the audit, for the few rows on screen.
   const submittedAt = useMemo(() => {
