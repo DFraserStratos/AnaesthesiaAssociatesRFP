@@ -102,7 +102,7 @@ export function AssignDraftListSheet({ open, listId, actor, initialAnaesthetistI
   }
 
   return (
-    <Overlay open={open} onClose={onClose}>
+    <Overlay open={open} onClose={onClose} size="wide">
       <div data-shot="admin-assign-draft-list" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <OverlayHeader title={<>Assign {DRAFT_LIST}</>} trailing={<UnassignedPill />} />
@@ -120,7 +120,7 @@ export function AssignDraftListSheet({ open, listId, actor, initialAnaesthetistI
         ) : targetId === null ? (
           <>
             <div style={{ fontSize: 13, color: neutral.slate }}>Choose the anaesthetist. To use another day, change the {DRAFT_LIST}'s date first.</div>
-            <DraftListCandidates listId={listId} requestKey={requestKey} onPick={(p) => setTargetId(p.anaesthetistId)} onOpenOccupied={onOpenOccupied} />
+            <DraftListCandidates listId={listId} requestKey={requestKey} onPick={(p) => setTargetId(p.anaesthetistId)} onOpenOccupied={onOpenOccupied} layout="wide" />
             <SheetActions primary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>} />
           </>
         ) : (

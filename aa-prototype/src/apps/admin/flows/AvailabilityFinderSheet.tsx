@@ -66,7 +66,7 @@ export function AvailabilityFinderSheet({ open, dateISO, initialSession, onClose
   const count = candidates.length
 
   return (
-    <Overlay open={open} onClose={onClose}>
+    <Overlay open={open} onClose={onClose} size="wide">
       <div data-shot="admin-availability-finder" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
           <OverlayHeader title="Find available" />
@@ -78,7 +78,7 @@ export function AvailabilityFinderSheet({ open, dateISO, initialSession, onClose
             {/* `wrap` sizes each segment to its word, so "Out-of-hours" keeps one line and the row its 48px (U5). */}
             <Segmented label="Session" layout="wrap" value={session} options={[{ value: 'AM', label: 'AM' }, { value: 'PM', label: 'PM' }, { value: 'OOH', label: 'Out-of-hours' }]} onChange={setSession} />
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <SelectField label="Surgeon for the List (optional)" value={surgeonId} onChange={setSurgeonId} shot="finder-surgeon">
               <option value="">Any surgeon</option>
               {surgeonOptions.map((s) => (
@@ -99,6 +99,8 @@ export function AvailabilityFinderSheet({ open, dateISO, initialSession, onClose
             requestKey={requestKey}
             onPick={(anaesthetistId) => onPick(slotIdFor(anaesthetistId, dateISO, session), surgeonId !== '' ? surgeonId : undefined)}
             emptyText={`No one is free ${when}.`}
+            // 360 where the screen allows, else what the dialog's 86vh leaves under the controls, so only the list scrolls.
+            listMaxHeight="min(360px, calc(86vh - 431px))"
             trailing={() => <span style={{ fontSize: 12, color: accent.base, fontWeight: 600 }}>Free {session === 'OOH' ? 'out of hours' : session}</span>}
           />
         )}

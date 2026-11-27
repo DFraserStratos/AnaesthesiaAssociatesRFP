@@ -101,7 +101,7 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
   }
 
   return (
-    <Overlay open={open} onClose={showSuccess ? () => {} : onClose}>
+    <Overlay open={open} onClose={showSuccess ? () => {} : onClose} size="wide">
       <div aria-hidden={showSuccess} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <OverlayHeader title="Reassign list (cover)" />
 

@@ -172,8 +172,9 @@ export function SessionStatusSheet({ open, slotId, actor, onClose }: { open: boo
   )
 
   return (
-    <Overlay open={open} onClose={onClose}>
-      <div data-shot="office-status-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14, width: 480, maxWidth: '100%' }}>
+    // Wide only while the colleague picker shows: its dense rows need the room, the other steps are one column.
+    <Overlay open={open} onClose={onClose} size={step === 'colleague' ? 'wide' : 'default'}>
+      <div data-shot="office-status-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {step === 'status' && (
           <>
             {header}

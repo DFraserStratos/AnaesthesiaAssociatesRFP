@@ -47,6 +47,13 @@ const REACH_OPTIONS: { value: Reach; label: string }[] = [
   { value: 'free', label: 'Free only' },
 ]
 
+/**
+ * The wide layout's Show control, beside the search, and its list's cap: 450 where the screen allows, else what
+ * the dialog's 86vh leaves under the Assign sheet's header, controls and Cancel, so only the list scrolls.
+ */
+const REACH_WIDTH = 220
+const WIDE_LIST_HEIGHT = 'min(450px, calc(86vh - 390px))'
+
 export interface DraftListPick {
   anaesthetistId: string
   group: CandidateGroup
@@ -111,12 +118,19 @@ export function DraftListCandidates({
   requestKey,
   onPick,
   onOpenOccupied,
+  layout = 'stacked',
 }: {
   listId: string
   requestKey: string
   onPick: (pick: DraftListPick) => void
   /** Open the List that already holds an anaesthetist's session (the Day view drawer). */
   onOpenOccupied: (listId: string) => void
+  /**
+   * `stacked` (default) puts each control on its own row, for a narrow container. `wide`, for the 760 dialog
+   * (docs/explorations/overlay-changes.html, view 4 "Assign · after"): the offer order filter has its own row,
+   * then Show beside the name search, and the list runs taller.
+   */
+  layout?: 'stacked' | 'wide'
 }) {
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const lists = useAppStore((s) => s.schedule.lists)
@@ -165,16 +179,37 @@ export function DraftListCandidates({
     )
   }
 
+  const wide = layout === 'wide'
+  const reachControl = (
+    <div data-shot="draft-list-reach">
+      <Segmented label="Show" value={reach} options={REACH_OPTIONS} onChange={setReach} />
+    </div>
+  )
+  const tierControl = (
+    <div data-shot="tier-filter">
+      <Segmented label="Filter by offer order" value={filter} options={FILTER_OPTIONS} onChange={setFilter} />
+    </div>
+  )
+  const searchBox = <NameSearchBox value={query} onChange={setQuery} label="Find an anaesthetist" placeholder="Type a name" shot="candidate-search" fill="well" />
+
   return (
     <div data-shot="draft-list-candidates" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div data-shot="draft-list-reach">
-        <Segmented label="Show" value={reach} options={REACH_OPTIONS} onChange={setReach} />
-      </div>
-      <div data-shot="tier-filter">
-        <Segmented label="Filter by offer order" value={filter} options={FILTER_OPTIONS} onChange={setFilter} />
-      </div>
-      <NameSearchBox value={query} onChange={setQuery} label="Find an anaesthetist" placeholder="Type a name" shot="candidate-search" fill="well" />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: 380, overflow: 'auto', paddingRight: 2 }}>
+      {wide ? (
+        <>
+          {tierControl}
+          <div style={{ display: 'grid', gridTemplateColumns: `${REACH_WIDTH}px minmax(0, 1fr)`, gap: 14, alignItems: 'end' }}>
+            {reachControl}
+            {searchBox}
+          </div>
+        </>
+      ) : (
+        <>
+          {reachControl}
+          {tierControl}
+          {searchBox}
+        </>
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: wide ? WIDE_LIST_HEIGHT : 380, overflow: 'auto', paddingRight: 2 }}>
         {shown === 0 && (
           <div style={{ fontSize: 13, color: neutral.mist }}>
             {query.trim() !== '' ? 'No anaesthetist matches' : filter === 'all' ? 'No one has this session free.' : `No one on ${TIER_LABELS[Number(filter) as PriorityTier]} for this session.`}

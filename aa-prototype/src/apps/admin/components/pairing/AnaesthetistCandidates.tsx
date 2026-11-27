@@ -58,9 +58,11 @@ interface AnaesthetistCandidatesProps {
   /** The type-ahead's text, when the caller also filters rows of its own by it (Reassign's Not available group). */
   query?: string
   onQueryChange?: (query: string) => void
+  /** The list's cap; 360 by default. A dialog with more controls above passes a viewport-relative cap so only the list scrolls. */
+  listMaxHeight?: number | string
 }
 
-export function AnaesthetistCandidates({ candidates, surgeonId, requestKey, onPick, trailing, emptyText, query: controlledQuery, onQueryChange }: AnaesthetistCandidatesProps) {
+export function AnaesthetistCandidates({ candidates, surgeonId, requestKey, onPick, trailing, emptyText, query: controlledQuery, onQueryChange, listMaxHeight = 360 }: AnaesthetistCandidatesProps) {
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
   const surgeonName = useAppStore((s) => (surgeonId !== undefined ? s.masters.surgeons[surgeonId]?.name : undefined))
   const entries = usePairingEntries()
@@ -100,7 +102,7 @@ export function AnaesthetistCandidates({ candidates, surgeonId, requestKey, onPi
         <Segmented label="Filter by offer order" value={filter} options={FILTER_OPTIONS} onChange={setFilter} />
       </div>
       <NameSearchBox value={query} onChange={setQuery} label="Find an anaesthetist" placeholder="Type a name" shot="candidate-search" fill="well" />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 360, overflow: 'auto', paddingRight: 2 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: listMaxHeight, overflow: 'auto', paddingRight: 2 }}>
         {nothingInTier && (
           <div style={{ fontSize: 13, color: neutral.mist }}>
             {query.trim() !== '' ? 'No anaesthetist matches' : `No one on ${TIER_LABELS[Number(filter) as PriorityTier]} is free for this session.`}
