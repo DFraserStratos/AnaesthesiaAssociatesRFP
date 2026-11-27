@@ -126,6 +126,26 @@ describe('the everyday practice', () => {
     for (const area of report.areas) if (!area.heldByDesign) expect(area.hits, area.label).toEqual([])
   }, 60_000)
 
+  it('starts the day with a morning in the notification pool: seven active and two resolved, about the 71 only', () => {
+    const all = Object.values(s.notifications)
+    expect(core.notifications).toEqual({})
+    expect(all.filter((n) => n.resolvedAt === undefined)).toHaveLength(7)
+    expect(all.filter((n) => n.resolvedAt !== undefined).map((n) => n.resolvedBy).sort()).toEqual(['Kirsty W.', 'Sam T.'])
+    const kinds = new Set(all.map((n) => `${n.kind}:${n.route ?? (n.bookingId !== undefined ? 'booking' : 'list')}:${n.cause ?? ''}`))
+    for (const k of ['listMoved:office:move', 'listMoved:colleague:move', 'listMoved:colleague:unavailable', 'bookingMoved:colleague:move', 'officeAlert:list:', 'officeAlert:booking:']) expect(kinds.has(k), k).toBe(true)
+    for (const n of all) {
+      expect(core.masters.anaesthetists[n.fromAnaesthetistId], n.id).toBeUndefined()
+      expect(n.atISO < `${TODAY}T08:00:00`, n.id).toBe(true)
+      // Each notice's own audit event, as its action writes it (the update email reads the id).
+      expect(s.audit.some((e) => (e.after as { notificationId?: string } | undefined)?.notificationId === n.id), n.id).toBe(true)
+      const list = s.schedule.lists[n.listId]!
+      if (n.kind === 'listMoved' && n.route === 'office') expect(list.state, n.id).toBe('DRAFT')
+      if (n.kind === 'listMoved' && n.route === 'colleague') expect(list.state !== 'DRAFT' && list.anaesthetistId === n.toAnaesthetistId, n.id).toBe(true)
+      if (n.bookingId !== undefined) expect(s.schedule.bookings[n.bookingId]!.listId, n.id).toBe(n.listId)
+    }
+    expect(new Set(s.audit.map((e) => e.id)).size).toBe(s.audit.length)
+  })
+
   it('saves as an empty delta untouched (persistDelta.ts)', () => {
     expect(deltaOf(s as unknown as Record<string, unknown>, s as unknown as Record<string, unknown>).top).toEqual({})
   })

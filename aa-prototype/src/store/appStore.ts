@@ -71,6 +71,7 @@ import type { BookingLock } from '../domain/billing/lock'
 import { seedLocks } from './locks'
 import { seededIntake } from '../domain/seed/intakeSeed'
 import { buildFullScaleDataset } from '../domain/seed/fullScale'
+import { withPracticeNotices } from '../domain/seed/practiceNotices'
 
 // ---------------------------------------------------------------------------
 // Slice shapes (typed now, filled in Phases 08 to 11)
@@ -511,8 +512,10 @@ export const PERSIST_KEY = 'aa-demo'
  *  v83: Intake's seeded morning (`seed/intakeMorning.ts`): a day's arrivals from every source, read from the practice. Reseeds on load.
  *  v84: the rooms' PDFs in seven real-world layouts (`domain/intake/pdfTemplates/`), scans included: each PDF keeps
  *  its pages, layout, paper, orientation, scan and practice; boxes come from the layout that draws the page; no
- *  ethnicity is read from a rooms' PDF. Reseeds on load. */
-export const PERSIST_VERSION = 84
+ *  ethnicity is read from a rooms' PDF. Reseeds on load.
+ *  v85: the practice's morning in the notification pool (`seed/practiceNotices.ts`): nine notices from generated
+ *  colleagues, seven active and two resolved, with the Draft Lists, sessions and audit their moves leave. Reseeds on load. */
+export const PERSIST_VERSION = 85
 
 /** The intake slice: seeded empty, the presenter imports or a trigger delivers (catch-up Phase 33). */
 export function emptyIntakeSlice(): IntakeSlice {
@@ -604,7 +607,9 @@ let coreStart: AppState | null = null
 export function practiceAppState(): AppState {
   if (practiceState === null) {
     const core = coreAppState()
-    const dataset = buildFullScaleDataset(core, { todayISO: core.clock.todayISO, scope: 'practice' }).state
+    const generated = buildFullScaleDataset(core, { todayISO: core.clock.todayISO, scope: 'practice' }).state
+    // The colleagues' morning in the shared notification pool (List moves, a Booking move, alerts), never the cast's.
+    const dataset = withPracticeNotices(generated, new Set(Object.keys(core.masters.anaesthetists)), core.clock.todayISO)
     // Intake's seeded arrivals read the whole practice's schedule, so the morning's feed updates Lists it holds.
     const built = { ...dataset, intake: seededIntakeSlice(dataset) }
     practiceState = import.meta.env.MODE === 'test' ? deepFreeze(built) : built
