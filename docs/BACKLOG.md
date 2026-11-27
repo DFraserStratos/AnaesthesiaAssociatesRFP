@@ -34,7 +34,6 @@ that need work are repeated here.
 - Ledger tab: `LedgerTab.tsx` builds the next URL from the last render's params (the bug 60 closed for Billing), so two quick filter edits at practice scale can drop the first. `apps/admin/screens/finances/LedgerTab.tsx`. S
 - The same "Out by $X" pill is red on the Ledger list (`LedgerLists.tsx`) and amber on the anaesthetist's account page (`AnaesthetistAccountPage.tsx`); pick one. S
 - The Finances anaesthetist selects name people two ways: Dr Surname on Invoices, the full name on Billing and Xero. S
-- Whether Finances › Payments shows a count of procedure events awaiting approval on its tab (`eventsAwaitingApprovalCount` in `apps/admin/screens/finances/EventsAwaitingApproval.tsx` is ready; the tab shows no number today). S (owner)
 
 ## Prototype: prepayments and patients
 

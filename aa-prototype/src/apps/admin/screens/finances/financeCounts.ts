@@ -1,8 +1,9 @@
 /**
  * The Finances section's numbers (build plan Phases 58 and 60; D109, US-13.3.3):
  * the one home for its tab counts and its side-nav badge. A tab's number counts
- * what needs doing there, not what it lists; Payments and AA fees never show
- * one, so they have no count here. Pure over state slices.
+ * what needs doing there, not what it lists; Payments counts the events on
+ * Procedures awaiting approval (nothing in the payment cycle is ever due), and
+ * AA fees never shows one, so it has no count here. Pure over state slices.
  *
  * The Billing count is the Lists with a billing problem, from the billing
  * status model (`domain/billing/billingStatus.ts`), built once per change of
@@ -15,6 +16,7 @@ import type { AppState } from '../../../../store/appStore'
 import { bookingsByList, pairsByBooking } from '../../../../store/indexes'
 import { ledgerAttentionCount, openXeroDivergences, openXeroQueueItems } from '../../../../store/ledgerSelectors'
 import { pendingPrepayments } from '../../../../store/prepaymentSelectors'
+import { reviewRowsAwaiting } from '../../../../store/creditActions'
 import {
   listBillingStatuses,
   problemListCount,
@@ -36,10 +38,14 @@ export type FinanceBillingSliceState = Pick<AppState, 'billing'>
 /** The slices the side-nav badge and the Billing count read: the billing status model's three (D109). */
 export type FinanceBadgeState = Pick<AppState, 'billing' | 'schedule' | 'masters'>
 
-/** The tab strip's numbers. No `payments` or `aa-fees`: those tabs never show one. */
+/** The slice the Payments count reads. */
+export type FinanceEventsState = { schedule: Pick<AppState['schedule'], 'procedureEvents'> }
+
+/** The tab strip's numbers. No `aa-fees`: that tab never shows one. */
 export interface FinanceTabCounts {
   billing: number
   invoices: number
+  payments: number
   ledger: number
   xero: number
 }
@@ -119,6 +125,19 @@ export function invoicesTabCount(state: FinanceCountsState): number {
   return pendingPrepayments(state).length
 }
 
+/**
+ * How many events on Procedures await approval: one per row of the Payments tab's card, a credit
+ * and its new invoices counted once (US-03.7.2).
+ */
+export function eventsAwaitingApprovalCount(state: FinanceEventsState): number {
+  return reviewRowsAwaiting(state).length
+}
+
+/** Payments: the events on Procedures awaiting approval. Nothing in the payment cycle is ever due, so it adds nothing. */
+export function paymentsTabCount(state: FinanceEventsState): number {
+  return eventsAwaitingApprovalCount(state)
+}
+
 /** Ledger: the failed ledger checks, held unmatched receipts among them. */
 export function ledgerTabCount(state: FinanceBillingSliceState): number {
   return ledgerAttentionCount(state)
@@ -134,6 +153,7 @@ export function financeTabCounts(state: FinanceCountsState): FinanceTabCounts {
   return {
     billing: billingTabCount(state),
     invoices: invoicesTabCount(state),
+    payments: paymentsTabCount(state),
     ledger: ledgerTabCount(state),
     xero: xeroTabCount(state),
   }
@@ -166,10 +186,10 @@ export function badgeBillingPart(state: FinanceBadgeState): number {
 }
 
 /**
- * The Finances side-nav badge (D109): the billing part plus the failed ledger
- * checks. A Booking stuck at Xero shows on the Billing and Xero tabs but counts
- * once, in the billing part.
+ * The Finances side-nav badge (D109, US-13.3.3): the billing part plus the
+ * failed ledger checks and the events awaiting approval. A Booking stuck at Xero
+ * shows on the Billing and Xero tabs but counts once, in the billing part.
  */
 export function financeBadge(state: FinanceBadgeState): number {
-  return badgeBillingPart(state) + ledgerTabCount(state)
+  return badgeBillingPart(state) + ledgerTabCount(state) + paymentsTabCount(state)
 }

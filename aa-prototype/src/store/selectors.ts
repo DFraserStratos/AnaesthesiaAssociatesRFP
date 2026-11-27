@@ -1957,11 +1957,6 @@ export function draftListsForDate(state: { schedule: Pick<AppState['schedule'], 
   return waitingDraftLists(state).filter((l) => l.dateISO === dateISO)
 }
 
-/** How many Draft Lists are waiting (the nav badge and the rail card heading). */
-export function waitingDraftListCount(state: { schedule: Pick<AppState['schedule'], 'lists'> }): number {
-  return waitingDraftLists(state).length
-}
-
 /**
  * The Draft Lists that stopped waiting, newest first, for the page's History:
  * Lists assigned from a Draft List (they keep their trail) and removed Draft

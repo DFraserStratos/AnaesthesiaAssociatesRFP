@@ -1,9 +1,10 @@
 /**
  * The Finances section's numbers (build plan Phases 58 and 60; D109, US-13.3.3):
  * each tab counts what needs doing there; the Billing tab counts the Lists with
- * a billing problem; the badge sums those Lists, the Xero items under no
- * problem List and the failed ledger checks, so a Booking stuck at Xero counts
- * once.
+ * a billing problem; Payments the events on Procedures awaiting approval; the
+ * badge sums those Lists, the Xero items under no problem List, the failed
+ * ledger checks and the events awaiting approval, so a Booking stuck at Xero
+ * counts once.
  */
 
 import { afterEach, describe, expect, it } from 'vitest'
@@ -18,6 +19,7 @@ import { approvePrepayment } from '../../../../store/prepaymentActions'
 import { pendingPrepayments, prepaymentStatusFor } from '../../../../store/prepaymentSelectors'
 import { ledgerAttentionCount, openBillingExceptions, openXeroDivergences, openXeroQueueItems, pairsForList } from '../../../../store/ledgerSelectors'
 import { OFFICE_ACTOR } from '../../../../store/demoActors'
+import { reviewRowsAwaiting, submitCredit } from '../../../../store/creditActions'
 import { ANAE, SEED_LIST_IDS, SEED_MARKERS } from '../../../../domain/seed'
 import { projectedListId } from '../../../../domain/slots'
 import { listBillingStatuses, problemListCount, xeroItemsOnLists } from '../../../../domain/billing/billingStatus'
@@ -32,6 +34,7 @@ import {
   financeTabCounts,
   invoicesTabCount,
   ledgerTabCount,
+  paymentsTabCount,
   xeroTabCount,
 } from './financeCounts'
 
@@ -44,6 +47,26 @@ const LIST = SEED_LIST_IDS.billingFailure
 const SOUTER_AM23 = projectedListId(ANAE.souter, '2026-11-23', 'AM')
 const LOSA = () => SEED_MARKERS['billingFailureBooking']!.entityId
 const RILEY = () => SEED_MARKERS['prepaymentBooking']!.entityId
+
+/** Drop the events awaiting approval (the seed's one), so the badge counts only billing and ledger. */
+function noEventsWaiting(api: BoundAppStore): BoundAppStore {
+  const waiting = new Set(reviewRowsAwaiting(api.getState()).flatMap((r) => [r.event.id, ...r.replacements.map((e) => e.id)]))
+  const schedule = api.getState().schedule
+  api.setState({ schedule: { ...schedule, procedureEvents: Object.fromEntries(Object.entries(schedule.procedureEvents).filter(([id]) => !waiting.has(id))) } })
+  expect(paymentsTabCount(api.getState())).toBe(0)
+  return api
+}
+
+/** A credit of the seeded AA-2026-H03 with one new invoice: one event awaiting approval. */
+function raiseCredit(api: BoundAppStore): void {
+  const out = submitCredit(api, OFFICE_ACTOR, {
+    invoiceId: 'HINV03',
+    reason: 'Wrong amount',
+    cause: 'correction',
+    replacements: [{ occurredOnISO: api.getState().clock.todayISO, party: { sameAs: true }, lines: [{ description: 'Corrected fee', quantity: 1, unitAmount: 200 }] }],
+  })
+  if (!out.ok) throw new Error(out.message)
+}
 
 /** Two receipts that match no invoice: two failed ledger checks. */
 function holdTwoReceipts(api: BoundAppStore): void {
@@ -102,7 +125,7 @@ function divergenceOn(id: string, pairId: string, invoiceId: string): XeroDiverg
 
 describe('financeBadge (US-13.3.3; D109)', () => {
   it('one billing problem and two failed ledger checks read 3; once a retry bills the Booking it reads 2', () => {
-    const api = createAppStore()
+    const api = noEventsWaiting(createAppStore())
     expect(financeBadge(api.getState())).toBe(0)
     const lock = failLosa(api)
     holdTwoReceipts(api)
@@ -121,7 +144,7 @@ describe('financeBadge (US-13.3.3; D109)', () => {
   })
 
   it('one billing problem and two failed ledger checks read 3; once the failure is marked resolved by hand it reads 2', () => {
-    const api = createAppStore()
+    const api = noEventsWaiting(createAppStore())
     failLosa(api)
     holdTwoReceipts(api)
     expect(financeBadge(api.getState())).toBe(3)
@@ -143,7 +166,7 @@ describe('financeBadge (US-13.3.3; D109)', () => {
   })
 
   it('a Booking stuck at Xero (an alerted hand-off) shows on the Billing and Xero tabs but counts once', () => {
-    const api = createAppStore()
+    const api = noEventsWaiting(createAppStore())
     unwires.push(wireBillingRun(api), wireXeroQueue(api))
     expect(setXeroOutage(api, OFFICE_ACTOR, true).ok).toBe(true)
     expect(authoriseList(api, OFFICE_ACTOR, SOUTER_AM23).ok).toBe(true)
@@ -161,7 +184,7 @@ describe('financeBadge (US-13.3.3; D109)', () => {
   })
 
   it('a List with a failed Booking and another stuck at Xero counts once', () => {
-    const api = createAppStore()
+    const api = noEventsWaiting(createAppStore())
     unwires.push(wireXeroQueue(api))
     expect(setXeroOutage(api, OFFICE_ACTOR, true).ok).toBe(true)
     failLosa(api)
@@ -178,7 +201,7 @@ describe('financeBadge (US-13.3.3; D109)', () => {
   })
 
   it('a Xero item under no List adds one: an alert tied to no Booking, and a change in Xero on a pair with no Booking', () => {
-    const api = createAppStore()
+    const api = noEventsWaiting(createAppStore())
     failLosa(api)
     expect(badgeBillingPart(api.getState())).toBe(1)
 
@@ -195,14 +218,14 @@ describe('financeBadge (US-13.3.3; D109)', () => {
   })
 
   it('a waiting hand-off with no alert, tied to no List, adds nothing (the Xero tab does not count it)', () => {
-    const api = createAppStore()
+    const api = noEventsWaiting(createAppStore())
     addXeroItem(api, { queue: { ...ALERTED_POLL, status: 'waiting' } })
     expect(xeroTabCount(api.getState())).toBe(0)
     expect(badgeBillingPart(api.getState())).toBe(0)
   })
 
   it("a Xero item on a List that reads no problem (a cancelled Booking's pair) still adds one", () => {
-    const api = createAppStore()
+    const api = noEventsWaiting(createAppStore())
     unwires.push(wireBillingRun(api))
     expect(authoriseList(api, OFFICE_ACTOR, SOUTER_AM23).ok).toBe(true)
     expect(billingTabCount(api.getState())).toBe(0)
@@ -261,11 +284,27 @@ describe('the tab counts', () => {
     expect(invoicesTabCount(api.getState())).toBe(0)
   })
 
-  it('has no payments or aa-fees key', () => {
+  it('has no aa-fees key', () => {
     const counts = financeTabCounts(createAppStore().getState())
-    expect(Object.keys(counts).sort()).toEqual(['billing', 'invoices', 'ledger', 'xero'])
-    expect(counts).not.toHaveProperty('payments')
+    expect(Object.keys(counts).sort()).toEqual(['billing', 'invoices', 'ledger', 'payments', 'xero'])
     expect(counts).not.toHaveProperty('aa-fees')
+  })
+
+  it('Payments: no number when no event awaits approval (nothing in the payment cycle is ever due)', () => {
+    const api = noEventsWaiting(createAppStore())
+    expect(paymentsTabCount(api.getState())).toBe(0)
+    expect(financeTabCounts(api.getState()).payments).toBe(0)
+  })
+
+  it('Payments: two events on Procedures awaiting approval read 2 and add 2 to the Finances badge', () => {
+    // The seed's additional invoice and a credit with its new invoice (counted once): two events.
+    const api = createAppStore()
+    raiseCredit(api)
+    expect(paymentsTabCount(api.getState())).toBe(2)
+    expect(financeTabCounts(api.getState()).payments).toBe(2)
+    const withEvents = financeBadge(api.getState())
+    noEventsWaiting(api)
+    expect(financeBadge(api.getState())).toBe(withEvents - 2)
   })
 
   it('takes the slices the section passes', () => {
@@ -286,10 +325,13 @@ describe('the tab counts', () => {
     const counted = (i: { kind: string; alerted: boolean }) => i.kind === 'divergence' || i.alerted
     const outside = unattached.filter(counted).length + [...byList].filter(([id]) => !problemLists.has(id)).flatMap(([, items]) => items.filter(counted)).length
     expect(badgeBillingPart(state)).toBe(problemLists.size + outside)
-    expect(financeBadge(state)).toBe(badgeBillingPart(state) + ledgerAttentionCount(state))
+    expect(paymentsTabCount(state)).toBe(reviewRowsAwaiting(state).length)
+    expect(paymentsTabCount(state)).toBe(1)
+    expect(financeBadge(state)).toBe(badgeBillingPart(state) + ledgerAttentionCount(state) + paymentsTabCount(state))
     expect(financeTabCounts(state)).toEqual({
       billing: billingTabCount(state),
       invoices: invoicesTabCount(state),
+      payments: paymentsTabCount(state),
       ledger: ledgerTabCount(state),
       xero: xeroTabCount(state),
     })

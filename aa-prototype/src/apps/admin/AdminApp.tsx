@@ -222,9 +222,10 @@ function AdminShell({ todayISO }: { todayISO: string }) {
   const listsBadgeMode = useListsBadgeMode((s) => s.mode)
   const listsBadge = useMemo(() => listsBadgeCount({ schedule, masters, clock, appSettings }, listsBadgeMode), [schedule, masters, clock, appSettings, listsBadgeMode])
 
-  // The Finances badge (build plan Phase 58; D109): billing problems plus failed ledger checks, one
+  // The Finances badge (build plan Phase 58; D109, US-13.3.3): billing problems, failed ledger checks and
+  // events awaiting approval, one
   // function in `financeCounts.ts` over the shared billing status model (Phase 60: problem Lists, Xero
-  // items under no problem List, failed ledger checks).
+  // items under no problem List, failed ledger checks; the Payments tab's events awaiting approval).
   const financesBadge = useMemo(() => financeBadge({ billing, schedule, masters }), [billing, schedule, masters])
   // The named office user the app acts as (catch-up Phase 35; Switch office user, a demo stand-in for sign-in).
   const officeUser = useAppStore((s) => s.shell.officeUser)

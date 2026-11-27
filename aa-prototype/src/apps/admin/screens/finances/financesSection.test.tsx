@@ -2,7 +2,8 @@
  * The Finances section (build plan Phase 58; D107 to D111, US-13.3.3): one side-nav
  * entry with one amber badge in place of Invoices, the Billing monitor and the
  * Ledger; six routed tabs opening on Billing, each its own address (a reload
- * lands on it); a number on a tab only where something needs doing there; every
+ * lands on it); a number on a tab only where something needs doing there (Payments:
+ * the events awaiting approval, also in the badge); every
  * old address lands on its new one with a replace, its query and state kept; and
  * an unknown record id falls back to its tab.
  */
@@ -11,6 +12,7 @@ import { act, cleanup, render, within } from '@testing-library/react'
 import { createMemoryRouter, createRoutesFromElements, Route, RouterProvider } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { ANAE } from '../../../../domain/seed'
+import { SEED_EVENT_ID } from '../../../../domain/seed/procedureEvents'
 import { freshAppState, useAppStore } from '../../../../store'
 import { injectUnmatchedReceipt } from '../../../../store/ledgerDemo'
 import { AdminApp } from '../../AdminApp'
@@ -80,6 +82,9 @@ describe('the side nav (D107, D109)', () => {
   })
 
   it('shows no badge while nothing needs doing', () => {
+    // Without the seed's one event awaiting approval (US-13.3.3), nothing needs doing.
+    const { [SEED_EVENT_ID]: _seeded, ...procedureEvents } = useAppStore.getState().schedule.procedureEvents
+    useAppStore.setState({ schedule: { ...useAppStore.getState().schedule, procedureEvents } })
     expect(financeBadge(useAppStore.getState())).toBe(0)
     mountAt(financePath('billing'))
     expect(document.querySelector('[data-shot="nav-badge-finances"]')).toBeNull()
@@ -145,16 +150,19 @@ describe("the strip's numbers (D109)", () => {
     for (const t of FINANCE_TABS) {
       const count = (counts as Partial<Record<FinanceTab, number>>)[t.tab]
       const text = tabLink(t.tab).textContent
-      if (t.tab === 'payments' || t.tab === 'aa-fees') expect(text, t.tab).toBe(t.label)
+      if (t.tab === 'aa-fees') expect(text, t.tab).toBe(t.label)
       else expect(text, t.tab).toBe(count! > 0 ? `${t.label}${count}` : t.label)
     }
     return counts
   }
 
-  it('shows a number only where its count is above zero, never on Payments or AA fees', () => {
+  it('shows a number only where its count is above zero, never on AA fees', () => {
     mountAt(financePath('billing'))
     const fresh = expectNumbers()
     expect(fresh.invoices).toBeGreaterThan(0)
+    // Payments: the seed's one event awaiting approval (US-13.3.3).
+    expect(fresh.payments).toBe(1)
+    expect(tabLink('payments').textContent).toBe('Payments1')
     expect(fresh.ledger).toBe(0)
     expect(tabLink('ledger').textContent).toBe('Ledger')
     act(() => {

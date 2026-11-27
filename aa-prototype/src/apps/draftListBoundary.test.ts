@@ -13,7 +13,7 @@ const SOURCES = import.meta.glob(['./mobile/**/*.{ts,tsx}', './web/**/*.{ts,tsx}
   eager: true,
 }) as Record<string, string>
 
-const DRAFT_NAMES = /\b(waitingDraftLists|draftListsForDate|waitingDraftListCount|finishedDraftLists|draftListAvailabilityFor|createDraftList|assignDraftList|redateDraftList|removeDraftList|DraftListDrawer|DraftListsTab|DraftListBand|DraftListsCard|scheduleTerms|isDraftList)\b/
+const DRAFT_NAMES = /\b(waitingDraftLists|draftListsForDate|finishedDraftLists|draftListAvailabilityFor|createDraftList|assignDraftList|redateDraftList|removeDraftList|DraftListDrawer|DraftListsTab|DraftListBand|DraftListsCard|scheduleTerms|isDraftList)\b/
 
 describe('Draft Lists stay in the office (OQ-86 answered no)', () => {
   it('no mobile, web or PWA source names a Draft List selector, action, screen or word', () => {

@@ -3,8 +3,8 @@
  * US-10.2.7, US-03.7.2): the events on Procedures awaiting the office's approval first, while any
  * wait, then the weekly payment cycle card and the payment runs table in the main column; the
  * approved events waiting for the next billing run in the rail, shown only while one waits
- * (docs/explorations/finances-section.html `#p-payments`). The tab shows no number for now; the
- * events' count is `eventsAwaitingApprovalCount` when it gets one.
+ * (docs/explorations/finances-section.html `#p-payments`). The tab's number, and its share of the
+ * Finances badge, is the events awaiting approval (`financeCounts.ts`'s `paymentsTabCount`).
  */
 
 import { useAdminOutlet } from '../../outlet'

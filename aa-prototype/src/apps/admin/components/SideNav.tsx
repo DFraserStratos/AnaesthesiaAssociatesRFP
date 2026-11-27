@@ -23,7 +23,7 @@ interface SideNavProps {
    * All or Urgent mode): amber, an attention count.
    */
   listsBadge?: number
-  /** Finances (build plan Phase 58; D109): billing problems plus failed ledger checks, one number from `financeCounts.ts`'s `financeBadge`: amber, never crimson. */
+  /** Finances (build plan Phase 58; D109, US-13.3.3): billing problems, failed ledger checks and events awaiting approval, one number from `financeCounts.ts`'s `financeBadge`: amber, never crimson. */
   financesBadge?: number
   /** Active notices in the shared pool (catch-up Phase 32b; US-13.8.1) — amber, an attention count. */
   notificationBadge?: number

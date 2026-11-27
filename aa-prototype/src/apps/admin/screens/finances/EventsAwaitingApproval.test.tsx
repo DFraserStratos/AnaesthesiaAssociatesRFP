@@ -2,7 +2,8 @@
  * Events awaiting approval on Finances › Payments (US-03.7.2, US-13.3.3): every event on a
  * Procedure waiting for the office's review, a credit as one row with its new invoices nested;
  * a row opens the review sheet, whose Approve for billing moves the event to the events awaiting
- * the run beside it. Payments still shows no tab number; the count is one pure function.
+ * the run beside it. The Payments tab's number and the Finances badge count the events awaiting
+ * approval (`financeCounts.ts`); with none waiting the tab shows no number.
  */
 
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
@@ -12,7 +13,7 @@ import { freshAppState, submitCredit, useAppStore, type Actor, type CreditInput 
 import { SEED_EVENT_ID } from '../../../../domain/seed/procedureEvents'
 import { financesRoutes } from '../../../../test/adminRoutes'
 import { AdminApp } from '../../AdminApp'
-import { eventsAwaitingApprovalCount } from './EventsAwaitingApproval'
+import { eventsAwaitingApprovalCount, financeBadge } from './financeCounts'
 import { financePath } from './financePaths'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -61,8 +62,8 @@ describe('events awaiting approval on the Payments tab', () => {
     expect([...rows].map((r) => r.getAttribute('data-event-id'))).toEqual([SEED_EVENT_ID])
     // It sits above the cycle: approving events comes first.
     expect(card.compareDocumentPosition(shot('payment-cycle')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    // Still no number on the Payments tab.
-    expect(document.querySelector('[data-finances-tab="payments"]')?.textContent).toBe('Payments')
+    // The Payments tab counts it.
+    expect(document.querySelector('[data-finances-tab="payments"]')?.textContent).toBe('Payments1')
   })
 
   it('shows a credit as one row with its new invoices nested, and counts it once', () => {
@@ -77,6 +78,18 @@ describe('events awaiting approval on the Payments tab', () => {
     expect(shot('events-awaiting-approval')!.querySelector('h2')?.textContent).toContain('2')
   })
 
+  it('two events awaiting approval: the Payments tab shows 2 and they add 2 to the Finances badge', () => {
+    const { [SEED_EVENT_ID]: _seeded, ...rest } = useAppStore.getState().schedule.procedureEvents
+    useAppStore.setState({ schedule: { ...useAppStore.getState().schedule, procedureEvents: rest } })
+    const without = financeBadge(useAppStore.getState())
+    useAppStore.setState(freshAppState())
+    submitCreditWith(1)
+    mountPayments()
+    expect(document.querySelector('[data-finances-tab="payments"]')?.textContent).toBe('Payments2')
+    expect(financeBadge(useAppStore.getState())).toBe(without + 2)
+    expect(shot('nav-badge-finances')?.textContent).toBe(String(without + 2))
+  })
+
   it('a row opens the review sheet; Approve for billing moves the event to the events awaiting the run', async () => {
     mountPayments()
     expect(shot('events-awaiting-run')).toBeNull()
@@ -89,5 +102,7 @@ describe('events awaiting approval on the Payments tab', () => {
     expect(shot('events-awaiting-approval')).toBeNull()
     expect(shot('events-awaiting-run')!.querySelector(`[data-event-id="${SEED_EVENT_ID}"]`)).not.toBeNull()
     expect(eventsAwaitingApprovalCount(useAppStore.getState())).toBe(0)
+    // Nothing waits and nothing in the payment cycle is due: no number on the Payments tab.
+    expect(document.querySelector('[data-finances-tab="payments"]')?.textContent).toBe('Payments')
   })
 })

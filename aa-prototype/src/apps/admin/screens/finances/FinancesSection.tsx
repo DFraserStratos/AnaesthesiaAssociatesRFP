@@ -3,8 +3,8 @@
  * side-nav entry in place of Invoices, the Billing monitor and the Ledger, with
  * six routed tabs (`FINANCE_TABS`, `financeTabs.ts`), opening on Billing. Every tab is an
  * `AdminPage` titled Finances with the tab strip under it; a tab's number counts
- * only what needs doing there (`financeCounts.ts`), and Payments and AA fees
- * never show one. Each tab and record renders from its own file in this folder
+ * only what needs doing there (`financeCounts.ts`; Payments the events awaiting
+ * approval), and AA fees never shows one. Each tab and record renders from its own file in this folder
  * (LANES.md "The file contract 58 sets up").
  */
 
@@ -20,7 +20,7 @@ import { financeTabCounts } from './financeCounts'
 
 /**
  * The section's tab strip: each tab with a number only where something needs doing (hidden at
- * zero; Payments and AA fees have none). Showing a tab publishes its id under `adminFinances.tab`.
+ * zero; AA fees has none). Showing a tab publishes its id under `adminFinances.tab`.
  */
 export function FinancesTabs({ active }: { active: FinanceTab }) {
   useDemoTriggerContext('adminFinances.tab', active)

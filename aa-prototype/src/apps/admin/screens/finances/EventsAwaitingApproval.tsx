@@ -24,19 +24,12 @@ import { dayMicroCap, drSurname, formatCurrency, plural } from '../../../../shar
 import { Card, CountBadge, Pill, TextAction } from '../../../../shared/ui'
 import { ClickableRow, TableShell, Td, Th } from '../../../../shared/table'
 import { EventReviewSheet } from '../../flows/EventReviewSheet'
+import { eventsAwaitingApprovalCount } from './financeCounts'
 
 /** The card's title, also the table's name. */
 export const EVENTS_AWAITING_APPROVAL_TITLE = 'Events awaiting approval'
 
-/**
- * How many events wait for approval: one per row, a credit and its new invoices counted once. The
- * Payments tab shows no number for them yet (US-13.3.3); this is the count a tab number would read.
- */
-export function eventsAwaitingApprovalCount(state: { schedule: Pick<AppState['schedule'], 'procedureEvents'> }): number {
-  return reviewRowsAwaiting(state).length
-}
-
-/** The count from the store, read from the events slice alone. */
+/** How many events wait for approval (`financeCounts.ts`, also the Payments tab's number), read from the events slice alone. */
 export function useEventsAwaitingApprovalCount(): number {
   const procedureEvents = useAppStore((s) => s.schedule.procedureEvents)
   return useMemo(() => eventsAwaitingApprovalCount({ schedule: { procedureEvents } }), [procedureEvents])

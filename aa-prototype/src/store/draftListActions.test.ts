@@ -49,7 +49,6 @@ import {
   slotViewsForAnaesthetist,
   slotViewsForDate,
   submittedLists,
-  waitingDraftListCount,
   waitingDraftLists,
 } from './selectors'
 import { openWarnings } from './warnings'
@@ -316,11 +315,11 @@ describe('redateDraftList and removeDraftList (US-01.6.4)', () => {
     expect(code(refused)).toBe('hasBookings')
     expect(refused.ok ? '' : refused.message).toBe('Move or cancel its 2 Bookings first.')
     for (const b of Object.values(api.getState().schedule.bookings).filter((x) => x.listId === id)) cancelBooking(api, OFFICE, b.id, 'Cancelled by the rooms')
-    const count = waitingDraftListCount(api.getState())
+    const count = waitingDraftLists(api.getState()).length
     expect(removeDraftList(api, OFFICE, id, '  Duplicate request ').ok).toBe(true)
     const l = api.getState().schedule.lists[id]!
     expect(l).toMatchObject({ state: 'DRAFT', removedBy: 'Kirsty W.', removeReason: 'Duplicate request' })
-    expect(waitingDraftListCount(api.getState())).toBe(count - 1)
+    expect(waitingDraftLists(api.getState())).toHaveLength(count - 1)
     expect(finishedDraftLists(api.getState()).map((x) => x.id)).toContain(id)
     expect(code(assignDraftList(api, OFFICE, id, { anaesthetistId: ANAE.souter }))).toBe('notDraftList')
     expect(code(removeDraftList(api, OFFICE, id))).toBe('notDraftList')
