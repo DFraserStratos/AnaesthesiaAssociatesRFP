@@ -259,25 +259,26 @@ function Entry({ rb, names, todayISO }: { rb: RecurringBooking; names: ReturnTyp
 function EntryBody({ rb, names, todayISO }: { rb: RecurringBooking; names: ReturnType<typeof useEntryNames>; todayISO: string }) {
   const times = timesText(rb)
   const note = runsNote(rb, todayISO)
+  // Two lines in every cell, so the AM and PM rows stay one height: the bold name with the times at its
+  // right (hidden when the cell is too narrow; they stay in the tooltip and the List view), then the
+  // slate name with its pill at the right.
   return (
     <>
-      <b>{names.bold(rb)}</b>
-      <span>{names.under(rb)}</span>
-      {rb.kind === 'preop' && (
-        <>
-          {/* The times on their own line: "Pre-op · 13:00 to 17:00" in one pill is cut off in a fifth-width cell. */}
-          {times !== undefined && <span className="mono" style={{ fontSize: 11.5 }}>{times}</span>}
-          <Pill size="sm" style={PILL_PLACE}>Pre-op</Pill>
-        </>
-      )}
-      {note !== undefined && (
-        <Pill size="sm" tone="warning" style={PILL_PLACE}>{note}</Pill>
-      )}
+      <span className="aa-usual-week-line" {...(times !== undefined ? { title: times } : {})}>
+        <b>{names.bold(rb)}</b>
+        {times !== undefined && <span className="aa-usual-week-times mono">{times}</span>}
+      </span>
+      <span className="aa-usual-week-line">
+        <span className="aa-usual-week-under">{names.under(rb)}</span>
+        {rb.kind === 'preop' && <Pill size="sm" style={PILL_PLACE}>Pre-op</Pill>}
+        {note !== undefined && <Pill size="sm" tone="warning" style={PILL_PLACE}>{note}</Pill>}
+      </span>
     </>
   )
 }
 
-const PILL_PLACE = { alignSelf: 'flex-start', marginTop: 3, maxWidth: '100%', overflow: 'hidden' } as const
+/** A pill at a line's right end: never squeezed by the name, and never wider than most of the cell. */
+const PILL_PLACE = { flex: 'none', maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis' } as const
 
 function ListView({
   perspective,

@@ -961,6 +961,8 @@ body:has([data-aa-under-harness]) .aa-harness {
 .aa-usual-week-grid {
   display: grid;
   grid-template-columns: 34px repeat(5, minmax(0, 1fr));
+  /* The day header, then AM and PM as equal rows: a busier half-day never makes its row the taller. */
+  grid-template-rows: auto 1fr 1fr;
   gap: 6px;
 }
 .aa-usual-week-day {
@@ -976,6 +978,7 @@ body:has([data-aa-under-harness]) .aa-harness {
   align-self: center;
 }
 .aa-usual-week-cell {
+  container: usual-week-cell / inline-size;
   min-height: 66px;
   min-width: 0;
   border-radius: var(--radius-ctl);
@@ -1043,6 +1046,45 @@ button.aa-usual-week-cell {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* A recurring booking's two lines: a name that gives way (ellipsis) to what sits at its right, a pill on
+   the first line, the times on the second. Every cell holds two lines, so AM and PM rows match. */
+.aa-usual-week-entry > .aa-usual-week-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 18px;
+  color: var(--color-ink);
+  overflow: visible;
+}
+.aa-usual-week-line > b {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.aa-usual-week-under {
+  flex: 1;
+  min-width: 0;
+  color: var(--color-slate);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.aa-usual-week-times {
+  flex: none;
+  font-size: 11px;
+  color: var(--color-slate);
+}
+/* Too narrow for the times beside a name: they stay in the line's tooltip and the List view. */
+@container usual-week-cell (max-width: 170px) {
+  .aa-usual-week-times {
+    display: none;
+  }
 }
 .aa-usual-week-entry > .aa-usual-week-note {
   align-self: flex-start;
