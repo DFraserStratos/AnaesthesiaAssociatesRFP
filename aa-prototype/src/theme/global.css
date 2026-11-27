@@ -954,3 +954,145 @@ body:has([data-aa-dialog]) .aa-harness,
 body:has([data-aa-under-harness]) .aa-harness {
   z-index: 210;
 }
+
+/* The profile pages' Usual week grid (`apps/admin/components/UsualWeekCard.tsx`;
+   docs/explorations/profile-ideas.html tab 3, its `.wk` rules). A stays-custom grid: the half-day
+   cells are buttons drawn by these classes, never a style object. */
+.aa-usual-week-grid {
+  display: grid;
+  grid-template-columns: 34px repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+.aa-usual-week-day {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-slate);
+  padding: 0 2px 2px;
+}
+.aa-usual-week-session {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-mist);
+  align-self: center;
+}
+.aa-usual-week-cell {
+  min-height: 66px;
+  min-width: 0;
+  border-radius: var(--radius-ctl);
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  text-align: left;
+  color: var(--color-ink);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+button.aa-usual-week-cell {
+  cursor: pointer;
+  transition: border-color 120ms ease-out, background-color 120ms ease-out;
+}
+.aa-usual-week-cell[data-cell='recurring'] {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  box-shadow: inset 3px 0 0 var(--color-accent), var(--shadow-e1);
+}
+.aa-usual-week-cell[data-cell='free'] {
+  background: transparent;
+  border: 1.5px dashed var(--color-line-strong);
+  color: var(--color-mist);
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 11.5px;
+}
+.aa-usual-week-cell[data-cell='public'] {
+  background: repeating-linear-gradient(135deg, var(--color-sunken) 0 5px, var(--color-surface) 5px 10px);
+  border: 1px solid var(--color-line);
+  color: var(--color-slate);
+}
+@media (hover: hover) {
+  button.aa-usual-week-cell:hover {
+    border-color: var(--color-accent);
+  }
+  button.aa-usual-week-cell[data-cell='free']:hover {
+    color: var(--color-accent);
+    background: var(--color-surface);
+  }
+}
+.aa-usual-week-entry {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.aa-usual-week-entry + .aa-usual-week-entry {
+  border-top: 1px solid var(--color-sunken);
+  padding-top: 5px;
+}
+.aa-usual-week-entry > b {
+  font-weight: 600;
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.aa-usual-week-entry > span {
+  color: var(--color-slate);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.aa-usual-week-entry > .aa-usual-week-note {
+  align-self: flex-start;
+  margin-top: 3px;
+  overflow: visible;
+}
+.aa-usual-week-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 11.5px;
+  color: var(--color-slate);
+  align-items: center;
+}
+.aa-usual-week-swatch {
+  display: inline-block;
+  width: 16px;
+  height: 11px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+.aa-usual-week-swatch[data-cell='recurring'] {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+.aa-usual-week-swatch[data-cell='public'] {
+  background: repeating-linear-gradient(135deg, var(--color-sunken) 0 3px, var(--color-surface) 3px 6px);
+  border: 1px solid var(--color-line);
+}
+.aa-usual-week-swatch[data-cell='free'] {
+  border: 1.5px dashed var(--color-line-strong);
+}
+.aa-usual-week-entry-button {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  border-radius: var(--radius-xs);
+}
+@media (hover: hover) {
+  .aa-usual-week-entry-button:hover > b {
+    color: var(--color-accent);
+  }
+}
+.aa-usual-week-entry-button + .aa-usual-week-entry-button {
+  padding-top: 5px;
+}

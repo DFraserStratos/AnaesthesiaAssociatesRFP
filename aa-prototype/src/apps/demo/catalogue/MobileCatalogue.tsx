@@ -92,7 +92,7 @@ export function MobileCatalogue() {
           <Ex.DayChipExample />
         </CatalogueRow>
         <CatalogueRow name="Avatar" source="shared/Avatar.tsx" usedIn={SW} stage="mobile" height={160}
-          what="The one avatar (UI unification U3): elevated white on mobile (the persona), the crimson tint of web and Admin (colleagues, the web nav), and neutral in the move sheets (muted when a colleague cannot be picked). The mockup font steps: 30 gives 11, 34 gives 12, 36 gives 13, 44 gives 15. PersonaChip draws it on the dark bars."
+          what="The one avatar (UI unification U3): elevated white on mobile (the persona), the crimson tint of web and Admin (colleagues, the web nav), solid crimson with white initials at the head of an Admin People page (54px, profile-ideas.html), and neutral in the move sheets (muted when a colleague cannot be picked). The mockup font steps: 30 gives 11, 34 gives 12, 36 gives 13, 44 gives 15, 54 gives 19. PersonaChip draws it on the dark bars."
           shared="shared/Avatar.tsx">
           <Ex.AvatarExample />
         </CatalogueRow>

@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { Button, TextField } from '../../../shared'
-import { INACTIVE_REASON_LABELS, statusOn } from '../../../domain/anaesthetistStatus'
-import { anaesthetistStatusLabel, plainDate } from '../../../shared/format'
+import { INACTIVE_REASON_LABELS, statusOn, type AnaesthetistStatus } from '../../../domain/anaesthetistStatus'
+import { anaesthetistStatusLabel, plainDate, shortDay } from '../../../shared/format'
 import { Card, DefList, DefRow, FieldHint, FormError, Pill, TextAction } from '../../../shared/ui'
 import { clearLastDay, editAnaesthetist, useAppStore, useToday, type Actor } from '../../../store'
 import { MakeActiveSheet } from '../flows/MakeActiveSheet'
 import { MakeInactiveSheet } from '../flows/MakeInactiveSheet'
-import { PROFILE_CARD } from './ProfileChrome'
+import { PROFILE_CARD, type StatusDotTone } from './ProfileChrome'
 
 /** Two facts side by side, as the Rate and tier card beside it lays its own out. */
 const FACTS = { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' } as const
@@ -33,7 +33,18 @@ const FACTS = { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))
  * date that removes a session holding a List, shown here). Hooks
  * `anaesthetist-start-date`, `-change`, `-field`, `-cancel`, `-save`.
  */
-export function AnaesthetistStatusCard({ anaesthetistId, actor, editStartDate = false }: { anaesthetistId: string; actor: Actor; editStartDate?: boolean }) {
+export function AnaesthetistStatusCard({
+  anaesthetistId,
+  actor,
+  editStartDate = false,
+  showAction = true,
+}: {
+  anaesthetistId: string
+  actor: Actor
+  editStartDate?: boolean
+  /** Off on the anaesthetist's page, whose header carries the action (`AnaesthetistStatusAction`); the card keeps the facts and the start date. */
+  showAction?: boolean
+}) {
   const anaesthetist = useAppStore((s) => s.masters.anaesthetists[anaesthetistId])
   const todayISO = useToday()
   const [sheet, setSheet] = useState<'inactive' | 'active' | null>(null)
@@ -70,7 +81,7 @@ export function AnaesthetistStatusCard({ anaesthetistId, actor, editStartDate = 
     )
 
   return (
-    <Card style={PROFILE_CARD} title="Status" shot="anaesthetist-status" data-status={status.kind} action={action}>
+    <Card style={PROFILE_CARD} title="Status" shot="anaesthetist-status" data-status={status.kind} {...(showAction ? { action } : {})}>
       <div>
         <Pill tone={status.kind === 'active' ? 'success' : status.kind === 'leaving' ? 'warning' : 'neutral'} size="sm" shot="anaesthetist-status-pill">
           {anaesthetistStatusLabel(status)}
@@ -119,5 +130,54 @@ export function AnaesthetistStatusCard({ anaesthetistId, actor, editStartDate = 
       {sheet === 'inactive' && <MakeInactiveSheet open anaesthetistId={anaesthetistId} actor={actor} onClose={() => setSheet(null)} />}
       {sheet === 'active' && <MakeActiveSheet open anaesthetistId={anaesthetistId} actor={actor} onClose={() => setSheet(null)} />}
     </Card>
+  )
+}
+
+/**
+ * The anaesthetist's status as the page header's fact strip reads it (profile-ideas.html tab 3): the
+ * word with its dot, and a short note on the same line. Active "since" the day they became active;
+ * a last day ahead still reads Active, with "last day" and the warning dot; Inactive "since" the day
+ * after their last day, in mist.
+ */
+export function anaesthetistStatusFact(status: AnaesthetistStatus): { tone: StatusDotTone; word: string; note: string } {
+  if (status.kind === 'leaving') return { tone: 'warn', word: 'Active', note: `last day ${shortDay(status.lastDayISO)}` }
+  if (status.kind === 'inactive') return { tone: 'off', word: 'Inactive', note: `since ${plainDate(status.sinceISO)}` }
+  return { tone: 'ok', word: 'Active', note: `since ${plainDate(status.sinceISO)}` }
+}
+
+/**
+ * The Status card's one action as the anaesthetist's page header button (a secondary compact
+ * `Button` at the end of the title row), opening the same flows: Make inactive opens
+ * `MakeInactiveSheet`; with a last day ahead, Clear last day clears it straight away; inactive,
+ * Make active again opens `MakeActiveSheet`. Keeps the card's hooks: `anaesthetist-make-inactive`,
+ * `anaesthetist-clear-last-day`, `anaesthetist-make-active`; a refusal shows under it
+ * (`anaesthetist-status-action-error`).
+ */
+export function AnaesthetistStatusAction({ anaesthetistId, actor }: { anaesthetistId: string; actor: Actor }) {
+  const anaesthetist = useAppStore((s) => s.masters.anaesthetists[anaesthetistId])
+  const todayISO = useToday()
+  const [sheet, setSheet] = useState<'inactive' | 'active' | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  if (anaesthetist === undefined) return null
+  const status = statusOn(anaesthetist, todayISO)
+
+  function clear() {
+    const outcome = clearLastDay(useAppStore, actor, anaesthetistId)
+    setError(outcome.ok ? null : outcome.message)
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+      {status.kind === 'active' ? (
+        <Button variant="secondary" size="compact" onClick={() => setSheet('inactive')} shot="anaesthetist-make-inactive">Make inactive</Button>
+      ) : status.kind === 'leaving' ? (
+        <Button variant="secondary" size="compact" onClick={clear} shot="anaesthetist-clear-last-day">Clear last day</Button>
+      ) : (
+        <Button variant="secondary" size="compact" onClick={() => setSheet('active')} shot="anaesthetist-make-active">Make active again</Button>
+      )}
+      <FormError message={error} variant="inline" shot="anaesthetist-status-action-error" />
+      {sheet === 'inactive' && <MakeInactiveSheet open anaesthetistId={anaesthetistId} actor={actor} onClose={() => setSheet(null)} />}
+      {sheet === 'active' && <MakeActiveSheet open anaesthetistId={anaesthetistId} actor={actor} onClose={() => setSheet(null)} />}
+    </div>
   )
 }

@@ -12,10 +12,16 @@ describe('Avatar', () => {
     [34, 12],
     [36, 13],
     [44, 15],
+    [54, 19],
   ])('at %ipx the initials are %ipx', (size, font) => {
     expect(avatarFontSize(size)).toBe(font)
     render(<Avatar initials="AB" size={size} />)
     expect(screen.getByText('AB')).toHaveStyle({ fontSize: `${font}px`, fontWeight: '700' })
+  })
+
+  it('solid is the crimson disc with white initials (the Admin People page header)', () => {
+    render(<Avatar name="Ms K. Patel" size={54} variant="solid" />)
+    expect(screen.getByText('KP')).toHaveStyle({ background: brand.base, color: neutral.surface })
   })
 
   it('is hidden from assistive tech (a name is always printed beside it)', () => {

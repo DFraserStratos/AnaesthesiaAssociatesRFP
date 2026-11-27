@@ -51,12 +51,36 @@ describe("the anaesthetist's page", () => {
     useAppStore.setState(freshAppState())
   })
 
-  it('lays out Identity, Contact, Bank and GST, Rate and tier, Status and History, in that order, with no all-fields editor', () => {
+  it('leads with the Usual week, then lays out Identity, Contact, Bank and GST, Rate and tier and Status two to a row, then History full width, with no all-fields editor', () => {
     const { container } = renderPage()
-    const order = [...container.querySelectorAll('[data-page-body] > div > section[data-shot]')].map((el) => el.getAttribute('data-shot'))
-    expect(order).toEqual(['anaesthetist-identity', 'anaesthetist-contact', 'anaesthetist-bank', 'rate-tier-card', 'anaesthetist-status', 'anaesthetist-history'])
+    const cards = [...container.querySelectorAll('[data-profile-cards] > section[data-shot]')].map((el) => el.getAttribute('data-shot'))
+    expect(cards).toEqual(['anaesthetist-identity', 'anaesthetist-contact', 'anaesthetist-bank', 'rate-tier-card', 'anaesthetist-status'])
+    const main = [...container.querySelectorAll('[data-page-body] > div > *')].map((el) => el.getAttribute('data-shot') ?? (el.hasAttribute('data-profile-cards') ? 'cards' : null))
+    expect(main).toEqual(['usual-week', 'cards', 'anaesthetist-history'])
     expect(screen.queryByRole('button', { name: /Edit details/ })).toBeNull()
     expect(screen.queryByRole('button', { name: 'History' })).toBeNull()
+  })
+
+  it('heads the page with the avatar, the sub line, Make inactive and the fact strip, with the HPI chip gone', () => {
+    renderPage(ANAE.souter)
+    const a = useAppStore.getState().masters.anaesthetists[ANAE.souter]!
+    const hero = document.querySelector('[data-profile-hero]') as HTMLElement
+    expect(within(hero).getByRole('heading', { level: 1 })).toHaveTextContent(a.name)
+    expect(hero).toHaveTextContent(`Anaesthetist · Registration ${a.registrationNumber}`)
+    expect(within(hero).getByRole('button', { name: 'Make inactive' })).toBe(card('anaesthetist-make-inactive'))
+    const facts = [...card('profile-facts').querySelectorAll('[data-fact]')].map((el) => el.getAttribute('data-fact'))
+    expect(facts).toEqual(['Status', 'HPI CPN', 'Rate per unit', 'Priority tier'])
+    expect(card('anaesthetist-hpi-chip')).toHaveTextContent(a.hpiId)
+    expect(card('anaesthetist-hpi-chip').closest('[data-shot="profile-facts"]')).not.toBeNull()
+    expect(card('profile-facts')).toHaveTextContent('$26.50')
+    expect(card('profile-facts-phone').getAttribute('href')).toBe(`tel:${a.phone.replace(/\s+/g, '')}`)
+    expect(card('profile-facts-email').getAttribute('href')).toBe(`mailto:${a.email}`)
+    expect(card('profile-facts-email')).toHaveTextContent('Email')
+  })
+
+  it('orders the side panel Pairings, Next Lists, Contracts, History', () => {
+    renderPage(ANAE.souter)
+    expect([...card('anaesthetist-panel').children].map((el) => el.getAttribute('data-shot'))).toEqual(['panel-pairings', 'panel-lists', 'panel-contracts', 'anaesthetist-record-history'])
   })
 
   it('shows History last in the side panel, opening the record and its pairings in the History sheet', () => {
@@ -190,7 +214,9 @@ describe("the anaesthetist's page", () => {
   it("places 50's Rate and tier card and 52's Status and History cards as built", () => {
     renderPage()
     expect(within(card('rate-tier-card')).getByRole('button', { name: 'Edit rate and tier' })).toBeInTheDocument()
-    expect(within(card('anaesthetist-status')).getByRole('button', { name: 'Make inactive' })).toBeInTheDocument()
+    // The Status card keeps its facts and the start date; its action is the header's.
+    expect(within(card('anaesthetist-status')).queryByRole('button', { name: 'Make inactive' })).toBeNull()
+    expect(within(card('anaesthetist-status')).getByRole('button', { name: 'Change start date' })).toBeInTheDocument()
     expect(card('anaesthetist-history')).not.toBeNull()
   })
 })

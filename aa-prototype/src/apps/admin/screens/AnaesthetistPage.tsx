@@ -7,7 +7,10 @@ import { formatGstNumber, normaliseGstNumber } from '../../../domain/billing/inv
 import { normaliseHpiCpn } from '../../../domain/surgeons'
 import { sessionText } from '../../../domain/outOfHours'
 import { pricingLabel } from '../../../shared/contracts'
-import { anaesthetistStatusLabel, HPI_CPN_LABEL, locationName, shortDay } from '../../../shared/format'
+import { formatCurrency, HPI_CPN_LABEL, locationName, shortDay } from '../../../shared/format'
+import { RATE_PER_UNIT } from '../../../shared/profile/profileCopy'
+import { TIER_LABELS } from '../../../domain/pairingPreferences'
+import { selectPriorityTier } from '../../../store/officePrivate'
 import { DefList, DefRow, EditableCard, Pill, RailSection, TextField, useCardEdit, type CardCommit, type RailSectionRow } from '../../../shared/ui'
 import {
   ANAESTHETIST_HPI_CPN_REQUIRED,
@@ -20,11 +23,12 @@ import {
 } from '../../../store'
 import { PairingSection, useProfileHistory } from '../components/pairing'
 import { RateTierCard } from '../components/RateTierCard'
-import { AnaesthetistStatusCard } from '../components/AnaesthetistStatusCard'
+import { AnaesthetistStatusAction, AnaesthetistStatusCard, anaesthetistStatusFact } from '../components/AnaesthetistStatusCard'
 import { AnaesthetistHistoryCard } from '../components/AnaesthetistHistoryCard'
 import { RecordHistoryCard } from '../components/RecordHistoryCard'
-import { IdChip, PROFILE_CARD, ProfilePage } from '../components/ProfileChrome'
+import { PROFILE_CARD, PROFILE_COLS2, ProfilePage, StatusFactValue, type ProfileFact } from '../components/ProfileChrome'
 import { PageBody } from '../components/AdminPage'
+import { UsualWeekCard } from '../components/UsualWeekCard'
 import { BankAccountFields, HpiCpnField } from '../flows/anaesthetistFields'
 import { contractPath } from '../contractsPaths'
 import { peoplePath } from '../peoplePaths'
@@ -32,51 +36,71 @@ import { peoplePath } from '../peoplePaths'
 /**
  * The anaesthetist's page in People (build plan Phase 54; US-12.1.4, D99, D104, D105):
  * `/admin/people/anaesthetists/:anaesthetistId`, keyed by the registration number, which never
- * changes. On 53's record pattern, as the Contract page (contracts-section.html #record): cards
- * stacked in the main column, each edited and saved on its own (`EditableCard`, `useCardEdit`), and a
- * side panel of short sections with See all (`RailSection`).
+ * changes. On 53's record pattern, laid out as docs/explorations/profile-ideas.html tab 3
+ * ("Contact on the right", 27 Nov 2026):
  *
- * - **Identity**: the name and registration number, read-only, and the HPI CPN (mandatory, unique).
- * - **Contact**: phone and email.
- * - **Bank and GST**: the bank account (mandatory; masked at rest, the full number only while
- *   editing) and the GST number (optional; blank clears it).
- * - 50's **Rate and tier** card and 52's **Status** card (with the start date, Phase 54's prop) and
- *   **History** card, placed as they are.
+ * - **Header**: the crimson initials disc, the name, "Anaesthetist · Registration n", and the
+ *   Status card's action (Make inactive, Clear last day or Make active again) at the row's end; under
+ *   it a fact strip: Status (word, dot and "since" on one line), HPI CPN, Rate per unit, Priority
+ *   tier, then their phone and email as links.
+ * - **Main column**: the detail cards two to a row, each edited and saved on its own
+ *   (`EditableCard`, `useCardEdit`): Identity (name and registration read-only, the HPI CPN),
+ *   Contact, Bank and GST (masked at rest, the full number only while editing), 50's Rate and tier
+ *   and 52's Status (the start date, last day and reason, D105; its action is in the header); then
+ *   Past Lists (`AnaesthetistHistoryCard`) full width.
  *
  * Each card's Save is `editAnaesthetist` with that card's changed fields only, so one audited
  * `anaesthetist.update`; a refusal shows on that card and nothing changes. The side panel: their
- * pairings (office only), the Contracts linked to them and their next Lists, three of each, See all
+ * pairings (office only), their next Lists and the Contracts linked to them, three of each, See all
  * expanding the section in place, then the record's History (its changes and its pairings', in the
- * shared History sheet), as the Party and specialty pages show theirs. The tier and the pairings are
- * seen only here, in Admin.
+ * shared History sheet). The tier and the pairings are seen only here, in Admin.
  */
 export function AnaesthetistPage({ anaesthetistId, actor }: { anaesthetistId: string; actor: Actor }) {
   const anaesthetist = useAppStore((s) => s.masters.anaesthetists[anaesthetistId])
+  const tier = useAppStore((s) => selectPriorityTier(s, anaesthetistId))
   const todayISO = useToday()
   if (anaesthetist === undefined) return null
+  const status = statusOn(anaesthetist, todayISO)
+  const statusFact = anaesthetistStatusFact(status)
+  const facts: ProfileFact[] = [
+    { label: 'Status', value: <StatusFactValue {...statusFact} />, shot: 'anaesthetist-status-sub', data: { 'data-status': status.kind } },
+    { label: HPI_CPN_LABEL, value: anaesthetist.hpiId, mono: true, shot: 'anaesthetist-hpi-chip' },
+    { label: RATE_PER_UNIT, value: formatCurrency(anaesthetist.unitValue), mono: true },
+    { label: 'Priority tier', value: TIER_LABELS[tier] },
+  ]
 
   return (
     <ProfilePage
       shot="anaesthetist-record"
       back={{ label: 'Anaesthetists', to: peoplePath('anaesthetists') }}
       name={anaesthetist.name}
-      chip={<IdChip label={HPI_CPN_LABEL} value={anaesthetist.hpiId} shot="anaesthetist-hpi-chip" />}
-      sub={<>Registration <span className="mono">{anaesthetist.registrationNumber}</span> · <span data-shot="anaesthetist-status-sub">{anaesthetistStatusLabel(statusOn(anaesthetist, todayISO))}</span></>}
+      avatar={anaesthetist.name}
+      sub={<>Anaesthetist · Registration <span className="mono">{anaesthetist.registrationNumber}</span></>}
+      action={<AnaesthetistStatusAction anaesthetistId={anaesthetistId} actor={actor} />}
+      facts={facts}
+      reach={{
+        ...(anaesthetist.phone.trim() !== '' ? { phone: anaesthetist.phone } : {}),
+        ...(anaesthetist.email.trim() !== '' ? { email: anaesthetist.email } : {}),
+        emailLabel: 'Email',
+      }}
     >
-      <PageBody rail={<AnaesthetistPanel anaesthetist={anaesthetist} actor={actor} />} railLabel="About this anaesthetist">
-        <IdentityCard anaesthetist={anaesthetist} actor={actor} />
-        <ContactCard anaesthetist={anaesthetist} actor={actor} />
-        <BankCard anaesthetist={anaesthetist} actor={actor} />
-        <RateTierCard anaesthetistId={anaesthetistId} actor={actor} />
-        <AnaesthetistStatusCard anaesthetistId={anaesthetistId} actor={actor} editStartDate />
+      <PageBody rail={<AnaesthetistPanel anaesthetist={anaesthetist} actor={actor} />} railLabel="About this anaesthetist" gap={14}>
+        <UsualWeekCard perspective="anaesthetist" subjectId={anaesthetistId} actor={actor} />
+        <div data-profile-cards style={PROFILE_COLS2}>
+          <IdentityCard anaesthetist={anaesthetist} actor={actor} />
+          <ContactCard anaesthetist={anaesthetist} actor={actor} />
+          <BankCard anaesthetist={anaesthetist} actor={actor} />
+          <RateTierCard anaesthetistId={anaesthetistId} actor={actor} />
+          <AnaesthetistStatusCard anaesthetistId={anaesthetistId} actor={actor} editStartDate showAction={false} />
+        </div>
         <AnaesthetistHistoryCard anaesthetistId={anaesthetistId} />
       </PageBody>
     </ProfilePage>
   )
 }
 
-/** A card's label and value rows: the label in a 150px slate column beside its value (contracts-section.html #record `.kv`). */
-const KV = { layout: 'inline', labelWidth: 150, labelTone: 'slate' } as const
+/** A card's label and value rows: the label in a 120px slate column beside its value, narrowed for the half-width cards (profile-ideas.html `.kv.n`). */
+const KV = { layout: 'inline', labelWidth: 120, labelTone: 'slate' } as const
 
 /** The cards' edit fields, side by side where the card is wide enough. */
 const FIELDS = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14, alignItems: 'start' } as const
@@ -223,7 +247,7 @@ function BankCard({ anaesthetist: a, actor }: CardProps) {
 /** Rows shown in each side panel section before See all. */
 const PANEL_LIMIT = 3
 
-/** The side panel: pairings, the Contracts linked to them, their next Lists, then History. */
+/** The side panel: pairings, their next Lists, the Contracts linked to them, then History. */
 function AnaesthetistPanel({ anaesthetist: a, actor }: CardProps) {
   const contracts = useAppStore((s) => s.masters.contracts)
   const parties = useAppStore((s) => s.masters.parties)
@@ -271,8 +295,8 @@ function AnaesthetistPanel({ anaesthetist: a, actor }: CardProps) {
       <div data-shot="panel-pairings">
         <PairingSection perspective="anaesthetist" subjectId={id} actor={actor} />
       </div>
-      <RailSection title="Contracts" countNoun="Contracts linked to them" rows={contractRows} limit={PANEL_LIMIT} empty="No Contract is linked to them." shot="panel-contracts" />
       <RailSection title="Next Lists" countNoun="Lists from today" rows={listRows} limit={PANEL_LIMIT} empty="No List from today on." shot="panel-lists" />
+      <RailSection title="Contracts" countNoun="Contracts linked to them" rows={contractRows} limit={PANEL_LIMIT} empty="No Contract is linked to them." shot="panel-contracts" />
       <RecordHistoryCard entityIds={profileHistory.ids} entityLabels={profileHistory.labels} name={a.name} shot="anaesthetist-record-history" openShot="anaesthetist-history-open" />
     </div>
   )

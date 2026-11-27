@@ -42,7 +42,7 @@ test('phase 17 master data views', async ({ page }) => {
 test("phase 55 Mr Hale's page: the cards, no Groups card, the side panel's Contracts and next Lists", async ({ page }) => {
   await page.goto('/admin/people/surgeons/S-HALE')
   await page.waitForLoadState('networkidle')
-  for (const card of ['surgeon-name-card', 'surgeon-registration-card', 'surgeon-identifiers', 'surgeon-specialties', 'surgeon-contacts', 'surgeon-status-card']) {
+  for (const card of ['surgeon-name-card', 'surgeon-registration-card', 'surgeon-identifiers', 'surgeon-specialties', 'surgeon-contacts', 'surgeon-status']) {
     await expect(page.locator(`[data-shot="${card}"]`)).toBeVisible()
   }
   await expect(page.locator('[data-shot="surgeon-groups"]')).toHaveCount(0)

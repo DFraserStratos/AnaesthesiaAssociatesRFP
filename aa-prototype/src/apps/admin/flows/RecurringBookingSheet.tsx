@@ -34,7 +34,17 @@ interface Props {
   actor: Actor
   /** Present = edit; absent = add. */
   recurringBooking?: RecurringBooking
+  /** Add mode only: the fields to start from (a profile's Usual week opens it for that person, day and session). */
+  initial?: RecurringBookingPrefill
   onClose: () => void
+}
+
+/** What an add can start from; an edit reads the saved recurring booking instead. */
+export interface RecurringBookingPrefill {
+  anaesthetistId?: string
+  surgeonId?: string
+  dayOfWeek?: RecurringBooking['dayOfWeek']
+  session?: Session
 }
 
 const DAYS: { value: number; label: string }[] = [
@@ -64,7 +74,7 @@ type Applied = { line: string; result: RecurringBookingApplyResult }
  * work; edit mode can retire it (no hard delete). Phase 17's not-preferred
  * surgeon warning reads "Apply anyway" and never disables the button.
  */
-export function RecurringBookingSheet({ open, actor, recurringBooking, onClose }: Props) {
+export function RecurringBookingSheet({ open, actor, recurringBooking, initial, onClose }: Props) {
   const { Overlay } = useSurface()
   const navigate = useNavigate()
   const anaesthetists = useAppStore((s) => s.masters.anaesthetists)
@@ -101,14 +111,15 @@ export function RecurringBookingSheet({ open, actor, recurringBooking, onClose }
 
   useEffect(() => {
     if (!open) return
-    setAnaesthetistId(recurringBooking?.anaesthetistId ?? '')
-    setDayOfWeek(recurringBooking?.dayOfWeek ?? 1)
-    setSession(recurringBooking?.session ?? 'AM')
+    const start = recurringBooking === undefined ? initial : undefined
+    setAnaesthetistId(recurringBooking?.anaesthetistId ?? start?.anaesthetistId ?? '')
+    setDayOfWeek(recurringBooking?.dayOfWeek ?? start?.dayOfWeek ?? 1)
+    setSession(recurringBooking?.session ?? start?.session ?? 'AM')
     setKind(recurringBooking?.kind ?? 'private')
     setStartTime(recurringBooking?.startTime ?? '')
     setEndTime(recurringBooking?.endTime ?? '')
     setHospitalId(recurringBooking?.hospitalId ?? '')
-    setSurgeonId(recurringBooking?.surgeonId ?? '')
+    setSurgeonId(recurringBooking?.surgeonId ?? start?.surgeonId ?? '')
     setNotes(recurringBooking?.notes ?? '')
     setFromISO(recurringBooking?.effectiveFromISO ?? '')
     setToISO(recurringBooking?.effectiveToISO ?? '')

@@ -45,10 +45,11 @@ describe("the surgeon's page: one card, one change", () => {
     useAppStore.setState(freshAppState())
   })
 
-  it('stacks Identity, Specialties, Contacts and Status full width; no Groups card and no all-fields edit', () => {
+  it('lays Identity on the left and Specialties over Contacts on the right; no Status, Groups card or all-fields edit', () => {
     const { container } = renderAdmin(`/admin/people/surgeons/${SURG.hale}`)
-    const order = [...container.querySelectorAll('[data-page-body] > div > section[data-shot]')].map((el) => el.getAttribute('data-shot'))
-    expect(order).toEqual(['surgeon-name-card', 'surgeon-specialties', 'surgeon-contacts', 'surgeon-status-card'])
+    const columns = [...container.querySelectorAll('[data-profile-cards] > div')].map((col) => [...col.querySelectorAll(':scope > section[data-shot]')].map((el) => el.getAttribute('data-shot')))
+    expect(columns).toEqual([['surgeon-name-card'], ['surgeon-specialties', 'surgeon-contacts']])
+    expect(shot('surgeon-status-card')).toBeNull()
     // Identity holds the registration number and HPI CPN rows, with their hints.
     expect(within(shot('surgeon-name-card')).getByText("Unique index on the Health Provider Index. Not the patient's NHI.")).toBeInTheDocument()
     expect(shot('surgeon-name-card').contains(shot('surgeon-registration-card'))).toBe(true)
@@ -56,7 +57,42 @@ describe("the surgeon's page: one card, one change", () => {
     expect(shot('surgeon-groups')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Edit details' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'History' })).toBeNull()
-    expect(within(shot('surgeon-status-card')).getByText('Active')).toBeInTheDocument()
+    expect(shot('surgeon-status').querySelector('[data-status-word]')?.textContent).toBe('Active')
+  })
+
+  it("the header: the avatar, 'Surgeon · NZ medical registration', the strip's facts, the office's phone and email, Retire", () => {
+    renderAdmin(`/admin/people/surgeons/${SURG.patel}`)
+    const s = surgeon(SURG.patel)
+    const hero = document.querySelector('[data-profile-hero]') as HTMLElement
+    expect(within(hero).getByRole('heading', { level: 1 })).toHaveTextContent(s.name)
+    expect(hero).toHaveTextContent(`Surgeon · NZ medical registration ${s.medicalRegistrationNumber!}`)
+    expect(within(hero).getByRole('button', { name: 'Retire' })).toBeInTheDocument()
+    const facts = [...shot('profile-facts').querySelectorAll('[data-fact]')].map((el) => el.getAttribute('data-fact'))
+    expect(facts).toEqual(['Status', 'HPI CPN', 'Specialties', 'Practice'])
+    expect(shot('surgeon-hpi-chip')).toHaveTextContent(s.hpiId!)
+    const office = s.officeContacts[0]!
+    expect(shot('profile-facts-phone').getAttribute('href')).toBe(`tel:${office.phone!.replace(/\s+/g, '')}`)
+    expect(shot('profile-facts-email').getAttribute('href')).toBe(`mailto:${office.email!}`)
+    expect(shot('profile-facts-email')).toHaveTextContent('Email the office')
+  })
+
+  it('orders the side panel Pairings, Next Lists, Contracts, History', () => {
+    renderAdmin(`/admin/people/surgeons/${SURG.patel}`)
+    const rail = document.querySelector('[data-page-rail]') as HTMLElement
+    expect([...rail.children].map((el) => el.getAttribute('data-shot'))).toEqual(['pairing-section', 'surgeon-side-lists', 'surgeon-side-contracts', 'surgeon-history'])
+  })
+
+  it("Specialties reads as chips with what they decide; the strip says Not recorded for a blank HPI CPN and practice", () => {
+    renderAdmin(`/admin/people/surgeons/${SURG.patel}`)
+    const card = shot('surgeon-specialties')
+    expect(card).toHaveTextContent("Decides which Contracts are offered on this surgeon's Lists.")
+    expect(card.querySelectorAll('[data-specialty-chips] > *').length).toBe(surgeon(SURG.patel).specialtyIds.length)
+    fireEvent.click(screen.getByRole('button', { name: 'Edit identity' }))
+    fireEvent.change(within(shot('surgeon-name-card')).getByLabelText('Practice (optional)'), { target: { value: '' } })
+    fireEvent.change(within(shot('surgeon-name-card')).getByLabelText('HPI CPN (optional)'), { target: { value: '' } })
+    fireEvent.click(within(shot('surgeon-name-card')).getByRole('button', { name: 'Save' }))
+    expect(shot('surgeon-hpi-chip')).toHaveTextContent('Not recorded')
+    expect(shot('profile-facts').querySelector('[data-fact="Practice"]')).toHaveTextContent('Not recorded')
   })
 
   it('shows History in the side panel, opening the record and its pairings in the History sheet', () => {
@@ -143,17 +179,21 @@ describe("the surgeon's page: one card, one change", () => {
     expect(Object.keys(a!.after as object)).toEqual(['name'])
   })
 
-  it('Retire and Reinstate from the Status card audit as before', () => {
+  it('Retire and Reinstate from the header open the surgeon retire in a sheet and audit as before', () => {
     renderAdmin(`/admin/people/surgeons/${FIXTURE_SURGEON}`)
-    const card = () => shot('surgeon-status-card')
-    fireEvent.change(within(card()).getByLabelText('Why it is being retired'), { target: { value: 'Moved to Auckland' } })
-    fireEvent.click(within(card()).getByRole('button', { name: 'Retire surgeon' }))
+    const status = () => shot('surgeon-status')
+    const sheet = () => shot('surgeon-retire-sheet')
+    fireEvent.click(shot('surgeon-retire'))
+    fireEvent.change(within(sheet()).getByLabelText('Why it is being retired'), { target: { value: 'Moved to Auckland' } })
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Retire surgeon' }))
     expect(audit().at(-1)?.action).toBe('surgeon.retire')
-    expect(card().getAttribute('data-retired')).toBe('true')
-    expect(within(card()).getAllByText('Retired').length).toBeGreaterThan(0)
-    fireEvent.click(within(card()).getByRole('button', { name: 'Reinstate surgeon' }))
+    expect(sheet()).toBeNull()
+    expect(status().getAttribute('data-retired')).toBe('true')
+    expect(status().querySelector('[data-status-word]')?.textContent).toMatch(/^Retired since \d{1,2} [A-Z][a-z]{2} \d{4}$/)
+    fireEvent.click(shot('surgeon-reinstate'))
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Reinstate surgeon' }))
     expect(audit().at(-1)?.action).toBe('surgeon.reinstate')
-    expect(within(card()).getByText('Active')).toBeInTheDocument()
+    expect(status().querySelector('[data-status-word]')?.textContent).toBe('Active')
   })
 
   it('Add surgeon on the Surgeons tab opens the create-only sheet and lands on the new page', () => {

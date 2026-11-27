@@ -12,26 +12,31 @@ import { initialsOf } from './format'
  *   mobile atmosphere and on white cards alike. Crimson stays identity only.
  * - `tint`: the crimson tint of web and Admin (the Web Dashboard "MS", the Web
  *   Availability colleagues, the Admin Day and Review "KW").
+ * - `solid`: crimson with white initials, the record's own disc at the head
+ *   of an Admin People page (docs/explorations/profile-ideas.html `.av`, 54px
+ *   with 19px initials).
  * - `neutral`: a colleague in the move sheets, with no tint that could read as
  *   a mark; `muted` for one who cannot be picked (a dashed ring, mist text).
  *
  * The initials come from `initialsOf(name)` (titles such as "Dr" and "Ms"
  * dropped), or from `initials` as given. The font follows the mockups' steps:
- * 28 to 30 gives 11, 34 gives 12, 36 gives 13, 44 gives 15, weight 700.
+ * 28 to 30 gives 11, 34 gives 12, 36 gives 13, 44 gives 15, 54 gives 19, weight 700.
  */
 
-export type AvatarVariant = 'elevated' | 'tint' | 'neutral'
+export type AvatarVariant = 'elevated' | 'tint' | 'solid' | 'neutral'
 
 export function avatarFontSize(size: number): number {
   if (size <= 30) return 11
   if (size <= 34) return 12
   if (size <= 36) return 13
   if (size <= 40) return 14
-  return 15
+  if (size < 54) return 15
+  return 19
 }
 
 function look(variant: AvatarVariant, muted: boolean): CSSProperties {
   if (variant === 'tint') return { background: brand.tint, color: brand.base }
+  if (variant === 'solid') return { background: brand.base, color: neutral.surface, letterSpacing: '0.01em' }
   if (variant === 'neutral') {
     return muted
       ? { background: neutral.surface, border: `1px dashed ${neutral.lineStrong}`, color: neutral.mist }

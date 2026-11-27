@@ -43,6 +43,8 @@ export interface AdminPageProps extends DataAttributes {
   mode: AdminPageMode
   /** The title (an `h1`, `PageHeader` size admin). Omit only on a page whose title is part of its document. */
   title?: ReactNode
+  /** A record's own title row in place of the `PageHeader` (`ProfilePage`'s avatar header on the People pages); it must hold the page's `h1`. */
+  titleRow?: ReactNode
   /** One sentence, at most two lines: `PageHeader` caps it at the prose width. On a page with `tabs` it is held to one line (`TABBED_SUB`), so the tab strip never moves between tabs. */
   sub?: ReactNode
   /** The sub-line's own style (a one-line summary that should run the page's width rather than the prose measure). */
@@ -66,7 +68,7 @@ export interface AdminPageProps extends DataAttributes {
   style?: CSSProperties
 }
 
-export function AdminPage({ mode, title, sub, subStyle, actions, actionsAlign = 'end', count, aside, headingRef, back, tabs, children, shot, testId, style, ...data }: AdminPageProps) {
+export function AdminPage({ mode, title, titleRow, sub, subStyle, actions, actionsAlign = 'end', count, aside, headingRef, back, tabs, children, shot, testId, style, ...data }: AdminPageProps) {
   const setFits = useContext(AdminFrameContext)
   const fits = mode === 'fit'
   useLayoutEffect(() => {
@@ -92,14 +94,15 @@ export function AdminPage({ mode, title, sub, subStyle, actions, actionsAlign = 
           ...style,
         }}
       >
-        {(back !== undefined || title !== undefined) && (
+        {(back !== undefined || title !== undefined || titleRow !== undefined) && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 'none' }}>
             {back !== undefined && (
               <BackLink {...(back.to !== undefined ? { to: back.to } : {})} {...(back.onClick !== undefined ? { onClick: back.onClick } : {})} {...(back.shot !== undefined ? { shot: back.shot } : {})}>
                 {back.label}
               </BackLink>
             )}
-            {title !== undefined && (
+            {titleRow}
+            {titleRow === undefined && title !== undefined && (
               <PageHeader
                 size="admin"
                 title={title}

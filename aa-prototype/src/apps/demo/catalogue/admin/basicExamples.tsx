@@ -30,7 +30,7 @@ import { AttentionDot } from '../../../../shared/warnings/AttentionDot'
 import { ChangedSinceSubmittedPill } from '../../../admin/components/ChangedSinceSubmitted'
 import { NotPreferredPill, PreferredPill, TierPill } from '../../../admin/components/pairing'
 import { DrawerLink, DrawerSection } from '../../../admin/components/drawerParts'
-import { HeaderActions, IdChip, PROFILE_CARD, ProfilePage } from '../../../admin/components/ProfileChrome'
+import { HeaderActions, IdChip, PROFILE_CARD, ProfilePage, StatusFactValue } from '../../../admin/components/ProfileChrome'
 import { MasterPanel, PanelGrid, PanelSection } from '../../../admin/components/MasterPanel'
 import { SidePanel } from '../../../../shared/surface/SidePanel'
 import { ACTIONS_COLUMN, EditCell, MasterHeader, MasterTable } from '../../../admin/screens/masters/chrome'
@@ -687,6 +687,26 @@ export function ProfileChromeExample() {
           <DefList gap={12}>
             <DefRow layout="stacked" label="Email">example@aa.co.nz</DefRow>
             <DefRow layout="stacked" label="Mobile" mono note="Shown to the office only.">021 000 0000</DefRow>
+          </DefList>
+        </Card>
+      </ProfilePage>
+      <ProfilePage
+        shot="catalogue-profile-page-person"
+        back={{ label: 'Component catalogue', to: '/demo/catalogue/admin' }}
+        name="Dr Example Anaesthetist"
+        avatar="Dr Example Anaesthetist"
+        sub="Anaesthetist · Registration 12345"
+        action={<Button variant="secondary" size="compact" onClick={() => setLast('Make inactive (stubbed).')}>Make inactive</Button>}
+        facts={[
+          { label: 'Status', value: <StatusFactValue tone="ok" word="Active" note="since 9 Jun 2014" /> },
+          { label: 'HPI CPN', value: '10EXAM', mono: true },
+          { label: 'Priority tier', value: 'Tier 2' },
+        ]}
+        reach={{ phone: '021 000 0000', email: 'example@aa.example', emailLabel: 'Email' }}
+      >
+        <Card title="Contact" style={PROFILE_CARD}>
+          <DefList gap={12}>
+            <DefRow layout="stacked" label="Email">example@aa.example</DefRow>
           </DefList>
         </Card>
       </ProfilePage>

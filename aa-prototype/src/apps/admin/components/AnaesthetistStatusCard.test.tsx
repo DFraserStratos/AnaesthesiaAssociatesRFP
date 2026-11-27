@@ -3,6 +3,8 @@
  * the status card's three states, the make-inactive sheet's refusal listing the Lists after the
  * day, Clear last day, the offer-back sheet ticking and enabling the rule's Contracts, the history
  * card, the record header and the Anaesthetists list's status, and the edit sheet's missing toggle.
+ * Since 27 Nov 2026 the action is the page header's button and the status reads in its fact strip;
+ * the card keeps the facts and the start date (D105).
  */
 
 import { fireEvent, render, screen, within } from '@testing-library/react'
@@ -12,6 +14,7 @@ import { dayAfterISO } from '../../../domain/anaesthetistStatus'
 import { ANAE } from '../../../domain/seed'
 import { PRICED_ITEM } from '../../../domain/seed/pricedItems'
 import { SurfaceProvider } from '../../../shared'
+import { plainDate } from '../../../shared/format'
 import {
   freshAppState,
   makeAnaesthetistInactive,
@@ -41,6 +44,10 @@ function renderAt(path: string) {
 }
 
 const statusCard = () => document.querySelector('[data-shot="anaesthetist-status"]') as HTMLElement
+/** The status action at the end of the page header's title row. */
+const headerAction = (name: string) => within(document.querySelector('[data-profile-hero]') as HTMLElement).getByRole('button', { name })
+/** The fact strip's Status cell, its dot, word and note. */
+const statusFact = () => document.querySelector('[data-shot="anaesthetist-status-sub"]') as HTMLElement
 
 /** A last day after every List Beaumont holds. */
 function freeLastDay(): string {
@@ -58,7 +65,7 @@ describe('the anaesthetist record (Phase 52)', () => {
   it('Refused while holding Lists: the sheet lists the Lists after today, each opening its day, and Make inactive waits', () => {
     renderAt(`/admin/people/anaesthetists/${BEAU}`)
     expect(statusCard().dataset['status']).toBe('active')
-    fireEvent.click(within(statusCard()).getByRole('button', { name: 'Make inactive' }))
+    fireEvent.click(headerAction('Make inactive'))
     const sheet = document.querySelector('[data-shot="make-inactive-sheet"]') as HTMLElement
     const rows = sheet.querySelectorAll('[data-shot="make-inactive-list-row"]')
     expect(rows.length).toBeGreaterThan(0)
@@ -73,7 +80,7 @@ describe('the anaesthetist record (Phase 52)', () => {
   it('Last day chosen then Cleared in time: the card reads Inactive from the day, Clear puts it back, each audited', () => {
     const last = freeLastDay()
     renderAt(`/admin/people/anaesthetists/${BEAU}`)
-    fireEvent.click(within(statusCard()).getByRole('button', { name: 'Make inactive' }))
+    fireEvent.click(headerAction('Make inactive'))
     const sheet = document.querySelector('[data-shot="make-inactive-sheet"]') as HTMLElement
     fireEvent.change(within(sheet).getByLabelText('Last day'), { target: { value: last } })
     expect(sheet.querySelector('[data-shot="make-inactive-after"]')?.textContent).toContain('Rhinoplasty')
@@ -81,10 +88,12 @@ describe('the anaesthetist record (Phase 52)', () => {
     fireEvent.click(document.querySelector('[data-shot="make-inactive-confirm"]') as HTMLElement)
     expect(statusCard().dataset['status']).toBe('leaving')
     expect(within(statusCard()).getByText('Long leave')).toBeTruthy()
-    expect(document.querySelector('[data-shot="anaesthetist-status-sub"]')?.textContent).toMatch(/^Inactive from /)
+    // Still Active until the day: the strip says so with the last day and the warning dot.
+    expect(statusFact().dataset['status']).toBe('leaving')
+    expect(statusFact().querySelector('[data-status-word]')?.textContent).toMatch(/^Active last day [A-Z][a-z]{2} \d{1,2} [A-Z][a-z]{2}$/)
     expect(useAppStore.getState().audit.findLast((e) => e.entityType === 'anaesthetist')?.action).toBe('anaesthetist.makeInactive')
 
-    fireEvent.click(within(statusCard()).getByRole('button', { name: 'Clear last day' }))
+    fireEvent.click(headerAction('Clear last day'))
     expect(statusCard().dataset['status']).toBe('active')
     expect(useAppStore.getState().audit.findLast((e) => e.entityType === 'anaesthetist')?.action).toBe('anaesthetist.clearLastDay')
   })
@@ -97,12 +106,12 @@ describe('the anaesthetist record (Phase 52)', () => {
     expect(useAppStore.getState().masters.contracts[RHINO]!.status).toBe('disabled')
     renderAt(`/admin/people/anaesthetists/${BEAU}`)
     expect(statusCard().dataset['status']).toBe('inactive')
-    expect(document.querySelector('[data-shot="anaesthetist-status-sub"]')?.textContent).toBe('Inactive')
+    expect(statusFact().querySelector('[data-status-word]')?.textContent).toBe(`Inactive since ${plainDate(dayAfterISO(last))}`)
     // History readable while inactive.
     expect(document.querySelectorAll('[data-shot="anaesthetist-history-row"]').length).toBeGreaterThan(0)
     expect(document.querySelector('[data-shot="anaesthetist-ledger-link"]')?.getAttribute('href')).toBe(`/admin/finances/ledger/anaesthetists/${BEAU}`)
 
-    fireEvent.click(within(statusCard()).getByRole('button', { name: 'Make active' }))
+    fireEvent.click(headerAction('Make active again'))
     const row = document.querySelector(`[data-shot="make-active-contract"][data-contract-id="${RHINO}"]`) as HTMLInputElement
     expect(row.checked).toBe(true)
     expect(screen.getByText(/\$1,350\.00/)).toBeTruthy()
@@ -117,13 +126,22 @@ describe('the anaesthetist record (Phase 52)', () => {
     advanceClockToDate(useAppStore, dayAfterISO(last))
     runInactiveContractsJob(useAppStore)
     renderAt(`/admin/people/anaesthetists/${BEAU}`)
-    fireEvent.click(within(statusCard()).getByRole('button', { name: 'Make active' }))
+    fireEvent.click(headerAction('Make active again'))
     fireEvent.click(document.querySelector(`[data-shot="make-active-contract"][data-contract-id="${RHINO}"]`) as HTMLElement)
     fireEvent.click(document.querySelector('[data-shot="make-active-confirm"]') as HTMLElement)
     expect(useAppStore.getState().masters.contracts[RHINO]!.status).toBe('disabled')
   })
 
-  it('only the Status card sets the status: no all-fields editor, and no other card offers it (build plan Phase 54)', () => {
+  it('the strip reads Active since the start date, and the card shows no action of its own', () => {
+    renderAt(`/admin/people/anaesthetists/${BEAU}`)
+    const start = useAppStore.getState().masters.anaesthetists[BEAU]!.startDateISO
+    expect(statusFact().dataset['status']).toBe('active')
+    expect(statusFact().querySelector('[data-status-word]')?.textContent).toBe(`Active since ${plainDate(start)}`)
+    expect(within(statusCard()).queryByRole('button', { name: /Make inactive|Clear last day|Make active/ })).toBeNull()
+    expect(document.querySelector('[data-shot="anaesthetist-make-inactive"]')?.closest('[data-profile-hero]')).not.toBeNull()
+  })
+
+  it('the status is set from the header and the Status card only: no all-fields editor, and no other card offers it (build plan Phase 54)', () => {
     renderAt(`/admin/people/anaesthetists/${BEAU}`)
     expect(screen.queryByRole('button', { name: /Edit details/ })).toBeNull()
     for (const shot of ['anaesthetist-identity', 'anaesthetist-contact', 'anaesthetist-bank']) {

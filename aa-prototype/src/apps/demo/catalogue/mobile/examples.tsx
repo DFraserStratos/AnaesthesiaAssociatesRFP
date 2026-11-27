@@ -724,6 +724,7 @@ export function AvatarExample() {
       <Avatar initials={initials} size={36} variant="tint" />
       <Avatar name="Dr Ana Kaur" size={36} variant="neutral" />
       <Avatar name="Dr Ana Kaur" size={36} variant="neutral" muted />
+      <Avatar name="Dr Ana Kaur" size={54} variant="solid" />
     </div>
   )
 }

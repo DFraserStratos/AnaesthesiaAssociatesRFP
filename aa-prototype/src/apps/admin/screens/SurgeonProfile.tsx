@@ -6,53 +6,128 @@ import { isRetired } from '../../../domain/masterLifecycle'
 import type { Surgeon, SurgeonContact } from '../../../domain/types'
 import { editSurgeon, useAppStore, withChangeSet, type Actor, type SurgeonFields } from '../../../store'
 import { contractsLinkedToSurgeon, nextListsForSurgeon } from '../../../store/surgeonPageSelectors'
-import { specialtiesInOrder, surgeonSpecialtyLabel } from '../../../domain/specialties'
+import { specialtiesInOrder } from '../../../domain/specialties'
 import { PairingSection, useProfileHistory } from '../components/pairing'
-import { IdChip, PROFILE_CARD, ProfilePage } from '../components/ProfileChrome'
+import { PROFILE_CARD, PROFILE_COLS2, PROFILE_COLUMN, ProfilePage, StatusFactValue, type ProfileFact, type ProfileReach } from '../components/ProfileChrome'
 import { RecordHistoryCard } from '../components/RecordHistoryCard'
 import { PageBody } from '../components/AdminPage'
+import { UsualWeekCard } from '../components/UsualWeekCard'
 import { ChipMultiSelect } from '../components/ChipMultiSelect'
 import { ContactFields, EMPTY_CONTACT, type ContactDraft } from '../components/ContactFields'
-import { AddRowButton, Card, DefList, DefRow, EditableCard, Eyebrow, Pill, RailSection, TextField, useCardEdit, type CardCommit, type RailSectionRow } from '../../../shared/ui'
+import { AddRowButton, Button, DefList, DefRow, EditableCard, Eyebrow, FieldHint, Pill, RailSection, TextField, useCardEdit, type CardCommit, type RailSectionRow } from '../../../shared/ui'
+import { OverlayHeader, useSurface } from '../../../shared/surface'
 import { RetireSection } from './masters/chrome'
 import { peoplePath } from '../peoplePaths'
 import { contractPath, contractsPath } from '../contractsPaths'
-import { drSurname, HPI_CPN_LABEL, shortDay } from '../../../shared/format'
+import { drSurname, HPI_CPN_LABEL, plainDate, shortDay } from '../../../shared/format'
 import { sessionText } from '../../../domain/outOfHours'
 import { DRAFT_LIST } from '../../../shared/scheduleTerms'
 
 /**
  * The surgeon's page (build plan Phase 55; US-13.6.2, US-13.4.1 "One card, one change"; D99, D104,
- * D105), at `/admin/people/surgeons/:surgeonId`. On 53's record pattern, as the anaesthetist's page:
- * full-width cards stacked in the main column, each a label and value list. Identity (name, practice,
- * registration number, HPI CPN), Specialties and Contacts are each edited and saved on their own
- * through `editSurgeon` with only that card's fields, so each save is one audited change (a surgeon
- * Party that follows a rename joins the same change set); a refusal shows on its card. A Status card
- * holds Retire and Reinstate. The side panel shows the surgeon's private pairings both ways, the
- * Contracts linked to them (each naming its holder), their next Lists, a few each with See all, and
- * the record's History (its changes and its pairings', in the shared History sheet). A surgeon belongs to
- * no group (DM-08): a group that holds Contracts is a Party whose surgeons are linked on its Contracts.
+ * D105), at `/admin/people/surgeons/:surgeonId`, laid out as docs/explorations/profile-ideas.html
+ * tab 3 ("Contact on the right", 27 Nov 2026).
+ *
+ * - **Header**: the crimson initials disc, the name, "Surgeon · NZ medical registration n" (when
+ *   held), and Retire (or Reinstate) at the row's end, opening the existing surgeon retire in a
+ *   sheet; under it a fact strip: Status (Active, or Retired since the day), HPI CPN, Specialties,
+ *   Practice, then the office's phone and "Email the office" (the personal contact's when no office
+ *   contact is held).
+ * - **Main column**: Identity (name, practice, registration number, HPI CPN) on the left; Specialties
+ *   (neutral chips) over Contacts on the right. Each is edited and saved on its own through
+ *   `editSurgeon` with only that card's fields, so each save is one audited change (a surgeon Party
+ *   that follows a rename joins the same change set); a refusal shows on its card.
+ *
+ * The side panel shows the surgeon's private pairings both ways, their next Lists, the Contracts
+ * linked to them (each naming its holder), a few each with See all, and the record's History (its
+ * changes and its pairings', in the shared History sheet). A surgeon belongs to no group (DM-08): a
+ * group that holds Contracts is a Party whose surgeons are linked on its Contracts.
  */
 export function SurgeonProfile({ surgeonId, actor }: { surgeonId: string; actor: Actor }) {
   const surgeon = useAppStore((s) => s.masters.surgeons[surgeonId])
+  const surgeons = useAppStore((s) => s.masters.surgeons)
   const specialties = useAppStore((s) => s.masters.specialties)
   if (surgeon === undefined) return null
+  const retired = isRetired(surgeon)
+  const notRecorded = mist('Not recorded')
+  const specialtyNames = surgeon.specialtyIds.flatMap((id) => (specialties[id] !== undefined ? [specialties[id].name] : []))
+  const facts: ProfileFact[] = [
+    {
+      label: 'Status',
+      value: retired ? <StatusFactValue tone="off" word="Retired" {...(surgeon.retiredAtISO !== undefined ? { note: `since ${plainDate(surgeon.retiredAtISO)}` } : {})} /> : <StatusFactValue tone="ok" word="Active" />,
+      shot: 'surgeon-status',
+      data: { 'data-retired': retired ? 'true' : 'false' },
+    },
+    { label: HPI_CPN_LABEL, value: surgeon.hpiId ?? notRecorded, mono: surgeon.hpiId !== undefined, shot: 'surgeon-hpi-chip' },
+    { label: 'Specialties', value: specialtyNames.length > 0 ? specialtyNames.join(', ') : notRecorded },
+    { label: 'Practice', value: surgeon.practiceName !== undefined && surgeon.practiceName !== '' ? surgeon.practiceName : notRecorded },
+  ]
+  const registration = surgeon.medicalRegistrationNumber
 
   return (
     <ProfilePage
       shot="surgeon-profile"
       back={{ label: 'Surgeons', to: peoplePath('surgeons') }}
       name={surgeon.name}
-      chip={<IdChip label={HPI_CPN_LABEL} value={surgeon.hpiId} empty={NO_HPI_CPN} shot="surgeon-hpi-chip" />}
-      sub={[surgeonSpecialtyLabel({ specialties }, surgeon), surgeon.practiceName].filter((v) => v !== undefined && v !== '').join(' · ')}
+      avatar={surgeon.name}
+      sub={registration !== undefined && registration !== '' ? <>Surgeon · NZ medical registration <span className="mono">{registration}</span></> : 'Surgeon'}
+      action={<SurgeonRetireAction surgeon={surgeon} actor={actor} />}
+      facts={facts}
+      reach={surgeonReach(surgeons, surgeon)}
     >
-      <PageBody rail={<SurgeonSidePanel surgeonId={surgeonId} actor={actor} />} railLabel="What this surgeon is on">
-        <IdentityCard surgeon={surgeon} actor={actor} />
-        <SpecialtiesCard surgeon={surgeon} actor={actor} />
-        <ContactsCard surgeon={surgeon} actor={actor} />
-        <StatusCard surgeon={surgeon} actor={actor} />
+      <PageBody rail={<SurgeonSidePanel surgeonId={surgeonId} actor={actor} />} railLabel="What this surgeon is on" gap={14}>
+        <UsualWeekCard perspective="surgeon" subjectId={surgeonId} actor={actor} />
+        <div data-profile-cards style={PROFILE_COLS2}>
+          <div style={PROFILE_COLUMN}>
+            <IdentityCard surgeon={surgeon} actor={actor} />
+          </div>
+          <div style={PROFILE_COLUMN}>
+            <SpecialtiesCard surgeon={surgeon} actor={actor} />
+            <ContactsCard surgeon={surgeon} actor={actor} />
+          </div>
+        </div>
       </PageBody>
     </ProfilePage>
+  )
+}
+
+/**
+ * How the office reaches the surgeon from the header: the office address it emails first
+ * (`officeAddressFor`) with that contact's phone, as "Email the office"; with no office email, the
+ * first office contact's phone; with no office contact at all, the surgeon's own phone and email.
+ */
+function surgeonReach(surgeons: Readonly<Record<string, Surgeon>>, surgeon: Surgeon): ProfileReach {
+  const to = officeAddressFor({ surgeons }, surgeon.id).to
+  if (to !== null) return { email: to.email, ...(to.phone !== undefined ? { phone: to.phone } : {}), emailLabel: 'Email the office' }
+  const office = surgeon.officeContacts.map(cleanContact).find((c) => c.phone !== undefined || c.name !== undefined)
+  if (office !== undefined) return { ...(office.phone !== undefined ? { phone: office.phone } : {}), emailLabel: 'Email the office' }
+  const own = cleanContact(surgeon.personalContact)
+  return { ...(own.phone !== undefined ? { phone: own.phone } : {}), ...(own.email !== undefined ? { email: own.email } : {}), emailLabel: 'Email' }
+}
+
+/**
+ * Retire, or Reinstate a retired surgeon, at the end of the header's title row: opens the existing
+ * surgeon retire (`RetireSection`: the reason, the blockers, Retire or Reinstate) in a sheet, which
+ * closes once it is done. Hooks `surgeon-retire` or `surgeon-reinstate`, the sheet `surgeon-retire-sheet`.
+ */
+function SurgeonRetireAction({ surgeon, actor }: CardProps) {
+  const { Overlay } = useSurface()
+  const [open, setOpen] = useState(false)
+  const retired = isRetired(surgeon)
+  return (
+    <>
+      <Button variant="secondary" size="compact" onClick={() => setOpen(true)} shot={retired ? 'surgeon-reinstate' : 'surgeon-retire'}>
+        {retired ? 'Reinstate' : 'Retire'}
+      </Button>
+      {open && (
+        <Overlay open onClose={() => setOpen(false)}>
+          <div data-shot="surgeon-retire-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <OverlayHeader title={retired ? `Reinstate ${surgeon.name}?` : `Retire ${surgeon.name}?`} />
+            <RetireSection kind="surgeon" id={surgeon.id} actor={actor} onDone={() => setOpen(false)} />
+          </div>
+        </Overlay>
+      )}
+    </>
   )
 }
 
@@ -90,8 +165,8 @@ type CardProps = { surgeon: Surgeon; actor: Actor }
 
 const mist = (text: string) => <span style={{ color: neutral.mist }}>{text}</span>
 
-/** A card's label and value rows: the label in a 150px slate column beside its value (contracts-section.html #record `.kv`), as on the anaesthetist's page. */
-const KV = { layout: 'inline', labelWidth: 150, labelTone: 'slate' } as const
+/** A card's label and value rows: the label in a 120px slate column beside its value, narrowed for the half-width cards (profile-ideas.html `.kv.n`), as on the anaesthetist's page. */
+const KV = { layout: 'inline', labelWidth: 120, labelTone: 'slate' } as const
 
 /** The cards' edit fields, side by side where the card is wide enough. */
 const FIELDS = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14, alignItems: 'start' } as const
@@ -136,6 +211,9 @@ function IdentityCard({ surgeon, actor }: CardProps) {
   )
 }
 
+const SPECIALTIES_HINT = "From AA's specialties list. One or more, usually one. Decides which Contracts are offered on this surgeon's Lists."
+
+/** The surgeon's specialties as neutral chips with what they decide; Edit keeps the `ChipMultiSelect`. */
 function SpecialtiesCard({ surgeon, actor }: CardProps) {
   const specialties = useAppStore((s) => s.masters.specialties)
   const edit = useCardEdit(() => ({ specialtyIds: surgeon.specialtyIds }), useSurgeonCommit(surgeon.id, actor))
@@ -144,15 +222,12 @@ function SpecialtiesCard({ surgeon, actor }: CardProps) {
     <EditableCard style={PROFILE_CARD} title="Specialties" shot="surgeon-specialties" editable editing={draft !== null} onEdit={edit.start} onCancel={edit.cancel} onSave={() => draft !== null && edit.save(draft)} error={edit.error}>
       {draft === null ? (
         <>
-          <DefList gap={10}>
-            <DefRow {...KV} label="Specialties" note="From AA's specialties list. One or more, usually one.">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {surgeon.specialtyIds.filter((id) => specialties[id] !== undefined).map((id) => (
-                  <Pill key={id}>{specialties[id]!.name}</Pill>
-                ))}
-              </div>
-            </DefRow>
-          </DefList>
+          <div data-specialty-chips style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {surgeon.specialtyIds.filter((id) => specialties[id] !== undefined).map((id) => (
+              <Pill key={id} size="md">{specialties[id]!.name}</Pill>
+            ))}
+          </div>
+          <FieldHint tone="slate">{SPECIALTIES_HINT}</FieldHint>
         </>
       ) : (
         <ChipMultiSelect
@@ -228,7 +303,7 @@ function ContactsCard({ surgeon, actor }: CardProps) {
             {surgeon.officeContacts.length === 0 ? (
               mist('None held')
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12, marginTop: 4 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(240px, 100%), 1fr))', gap: 12, marginTop: 4 }}>
                 {surgeon.officeContacts.map((contact, index) => (
                   <div key={index} data-office-contact={index + 1} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 12px', borderRadius: radius.ctl, border: `1px solid ${neutral.line}`, minWidth: 0 }}>
                     <ContactLines contact={contact} />
@@ -286,19 +361,6 @@ function ContactsCard({ surgeon, actor }: CardProps) {
   )
 }
 
-/** Active, or Retired on a day with its reason, and Retire or Reinstate (the existing surgeon retire, unchanged). */
-function StatusCard({ surgeon, actor }: CardProps) {
-  const retired = isRetired(surgeon)
-  return (
-    <Card style={PROFILE_CARD} title="Status" shot="surgeon-status-card" data-retired={retired ? 'true' : 'false'}>
-      <div>
-        <Pill tone={retired ? 'neutral' : 'success'}>{retired ? 'Retired' : 'Active'}</Pill>
-      </div>
-      <RetireSection kind="surgeon" id={surgeon.id} actor={actor} />
-    </Card>
-  )
-}
-
 /** A contact's name, mono email and phone; a blank one says which ("Email not recorded") in mist. */
 function ContactLines({ contact }: { contact: SurgeonContact }) {
   const c = cleanContact(contact)
@@ -352,6 +414,7 @@ function SurgeonSidePanel({ surgeonId, actor }: { surgeonId: string; actor: Acto
   return (
     <>
       <PairingSection perspective="surgeon" subjectId={surgeonId} actor={actor} />
+      <RailSection title="Next Lists" countNoun="upcoming Lists" rows={listRows} empty="No upcoming List." shot="surgeon-side-lists" />
       <RailSection
         title="Contracts"
         countNoun="Contracts linked to this surgeon"
@@ -361,7 +424,6 @@ function SurgeonSidePanel({ surgeonId, actor }: { surgeonId: string; actor: Acto
         allTo={contractsPath({ group: 'surgeon', in: surgeonId, ...(contracts.some((r) => r.contract.status !== 'active') ? { status: 'all' as const } : {}) })}
         shot="surgeon-side-contracts"
       />
-      <RailSection title="Next Lists" countNoun="upcoming Lists" rows={listRows} empty="No upcoming List." shot="surgeon-side-lists" />
       <RecordHistoryCard entityIds={profileHistory.ids} entityLabels={profileHistory.labels} name={masters.surgeons[surgeonId]?.name ?? surgeonId} shot="surgeon-history" />
     </>
   )
