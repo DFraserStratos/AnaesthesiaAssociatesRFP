@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { addDays, format, parseISO } from 'date-fns'
 import { neutral, radius } from '../../../theme/tokens'
@@ -64,6 +64,9 @@ const KINDS: { value: ListKind; label: string }[] = [
 ]
 
 type Applied = { line: string; result: RecurringBookingApplyResult }
+
+/** Two fields side by side in the wide dialog (as SurgeonEditSheet). */
+const PAIR: CSSProperties = { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 14, alignItems: 'start' }
 
 /**
  * Add or edit a recurring booking (US-01.3.2, DM-53; catch-up Phase 30). The
@@ -218,7 +221,7 @@ export function RecurringBookingSheet({ open, actor, recurringBooking, initial, 
 
   const editing = recurringBooking !== undefined
   return (
-    <Overlay open={open} onClose={onClose}>
+    <Overlay open={open} onClose={onClose} size="wide">
       <div data-shot="recurring-booking-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <OverlayHeader
           title={editing ? 'Edit recurring booking' : 'Add recurring booking'}
@@ -239,43 +242,47 @@ export function RecurringBookingSheet({ open, actor, recurringBooking, initial, 
           />
         ) : (
           <>
-            <SelectField label="Anaesthetist" value={anaesthetistId} onChange={setAnaesthetistId}>
-              <option value="">Select an anaesthetist</option>
-              {Object.values(anaesthetists).map((a) => (
-                <option key={a.registrationNumber} value={a.registrationNumber}>{a.name}</option>
-              ))}
-            </SelectField>
-            <SelectField label="Day of week" value={String(dayOfWeek)} onChange={(v) => setDayOfWeek(Number(v))}>
-              {DAYS.map((d) => (
-                <option key={d.value} value={d.value}>{d.label}</option>
-              ))}
-            </SelectField>
-            <Segmented label="Session" value={session} options={[{ value: 'AM', label: 'AM' }, { value: 'PM', label: 'PM' }]} onChange={setSession} />
-            <Segmented label="Kind of List" value={kind} options={KINDS} onChange={setKind} />
-            <TimeRangeFields
-              optional
-              value={{ start: startTime, end: endTime }}
-              onChange={(next) => {
-                setStartTime(next.start)
-                setEndTime(next.end)
-              }}
-              hint="Leave blank for the default session times."
-            />
-            <SelectField label="Hospital (usual)" value={hospitalId} onChange={setHospitalId}>
-              <option value="" disabled>Choose a hospital</option>
-              {hospitalOptions.map((h) => (
-                <option key={h.id} value={h.id}>{retiredLabel(h.name, h)}</option>
-              ))}
-            </SelectField>
-            <SurgeonPicker label="Usual surgeon" anaesthetistId={anaesthetistId !== '' ? anaesthetistId : undefined} value={surgeonId} keepId={recurringBooking?.surgeonId} onChange={setSurgeonId} emptyLabel="Choose a surgeon" />
-            <TextField label="Display note (optional)" value={notes} onChange={setNotes} placeholder="e.g. Elective ortho" />
-            <div style={{ display: 'flex', gap: 12 }}>
-              <div style={{ flex: 1 }}>
-                <TextField label="Starts (optional)" type="date" value={fromISO} onChange={setFromISO} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <TextField label="Runs until (optional)" type="date" value={toISO} onChange={setToISO} />
-              </div>
+            <div style={PAIR}>
+              <SelectField label="Anaesthetist" value={anaesthetistId} onChange={setAnaesthetistId}>
+                <option value="">Select an anaesthetist</option>
+                {Object.values(anaesthetists).map((a) => (
+                  <option key={a.registrationNumber} value={a.registrationNumber}>{a.name}</option>
+                ))}
+              </SelectField>
+              <SelectField label="Day of week" value={String(dayOfWeek)} onChange={(v) => setDayOfWeek(Number(v))}>
+                {DAYS.map((d) => (
+                  <option key={d.value} value={d.value}>{d.label}</option>
+                ))}
+              </SelectField>
+            </div>
+            <div style={PAIR}>
+              <Segmented label="Session" value={session} options={[{ value: 'AM', label: 'AM' }, { value: 'PM', label: 'PM' }]} onChange={setSession} />
+              <Segmented label="Kind of List" value={kind} options={KINDS} onChange={setKind} />
+            </div>
+            <div style={PAIR}>
+              <SelectField label="Hospital (usual)" value={hospitalId} onChange={setHospitalId}>
+                <option value="" disabled>Choose a hospital</option>
+                {hospitalOptions.map((h) => (
+                  <option key={h.id} value={h.id}>{retiredLabel(h.name, h)}</option>
+                ))}
+              </SelectField>
+              <SurgeonPicker label="Usual surgeon" anaesthetistId={anaesthetistId !== '' ? anaesthetistId : undefined} value={surgeonId} keepId={recurringBooking?.surgeonId} onChange={setSurgeonId} emptyLabel="Choose a surgeon" />
+            </div>
+            <div style={PAIR}>
+              <TimeRangeFields
+                optional
+                value={{ start: startTime, end: endTime }}
+                onChange={(next) => {
+                  setStartTime(next.start)
+                  setEndTime(next.end)
+                }}
+                hint="Leave blank for the default session times."
+              />
+              <TextField label="Display note (optional)" value={notes} onChange={setNotes} placeholder="e.g. Elective ortho" />
+            </div>
+            <div style={PAIR}>
+              <TextField label="Starts (optional)" type="date" value={fromISO} onChange={setFromISO} />
+              <TextField label="Runs until (optional)" type="date" value={toISO} onChange={setToISO} />
             </div>
             <FormError message={error} />
             <NotPreferredWarning warning={pairingWarning} shot="recurring-booking-pairing-warning" />

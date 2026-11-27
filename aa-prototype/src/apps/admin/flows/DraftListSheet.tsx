@@ -6,7 +6,7 @@
  * nobody's schedule. Inline errors are the store's refusals.
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { neutral } from '../../../theme/tokens'
 import { activeHospitals, activeSurgeons, createDraftList, scheduleHorizon, useAppStore, type Actor } from '../../../store'
 import type { ListKind, RequestSource, Session } from '../../../domain/types'
@@ -29,6 +29,9 @@ const SESSION_OPTIONS: { value: Session; label: string }[] = [
   { value: 'OOH', label: 'Out-of-hours' },
 ]
 const SOURCE_OPTIONS = (Object.keys(SOURCE_LABELS) as RequestSource[]).map((value) => ({ value, label: SOURCE_LABELS[value] }))
+
+/** Two fields side by side in the wide dialog (as SurgeonEditSheet). */
+const PAIR: CSSProperties = { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 14, alignItems: 'start' }
 
 interface Draft {
   hospitalId: string
@@ -109,38 +112,40 @@ export function DraftListSheet({
   }
 
   return (
-    <Overlay open={open} onClose={onClose}>
+    <Overlay open={open} onClose={onClose} size="wide">
       <div data-shot="admin-new-draft-list" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
           <OverlayHeader title={<>New {DRAFT_LIST}</>} />
           <div style={{ fontSize: 13, color: neutral.slate, marginTop: 2 }}>A request with no anaesthetist yet.</div>
         </div>
 
-        <SelectField label="Hospital" value={draft.hospitalId} onChange={(hospitalId) => update({ hospitalId })} shot="draft-list-hospital">
-          <option value="" disabled>Choose a hospital</option>
-          {hospitalOptions.map((h) => (
-            <option key={h.id} value={h.id}>{optionLabel(h.id, retiredLabel(h.name, h))}</option>
-          ))}
-        </SelectField>
+        <div style={PAIR}>
+          <SelectField label="Hospital" value={draft.hospitalId} onChange={(hospitalId) => update({ hospitalId })} shot="draft-list-hospital">
+            <option value="" disabled>Choose a hospital</option>
+            {hospitalOptions.map((h) => (
+              <option key={h.id} value={h.id}>{optionLabel(h.id, retiredLabel(h.name, h))}</option>
+            ))}
+          </SelectField>
 
-        {/* No anaesthetist yet, so no preference group: a plain list, by name. */}
-        <SelectField label="Surgeon" value={draft.surgeonId} onChange={(surgeonId) => update({ surgeonId })} shot="draft-list-surgeon">
-          <option value="" disabled>Choose a surgeon</option>
-          {surgeonOptions.map((s) => (
-            <option key={s.id} value={s.id}>{withSpecialties(retiredLabel(s.name, s), surgeonSpecialtyLabel({ specialties }, s))}</option>
-          ))}
-        </SelectField>
+          {/* No anaesthetist yet, so no preference group: a plain list, by name. */}
+          <SelectField label="Surgeon" value={draft.surgeonId} onChange={(surgeonId) => update({ surgeonId })} shot="draft-list-surgeon">
+            <option value="" disabled>Choose a surgeon</option>
+            {surgeonOptions.map((s) => (
+              <option key={s.id} value={s.id}>{withSpecialties(retiredLabel(s.name, s), surgeonSpecialtyLabel({ specialties }, s))}</option>
+            ))}
+          </SelectField>
+        </div>
 
-        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-          <div style={{ flex: 1 }}>
-            <TextField label="Day" type="date" value={draft.dateISO} min={today} max={horizonEnd} onChange={(dateISO) => update({ dateISO })} shot="draft-list-date" />
-          </div>
+        <div style={PAIR}>
+          <TextField label="Day" type="date" value={draft.dateISO} min={today} max={horizonEnd} onChange={(dateISO) => update({ dateISO })} shot="draft-list-date" />
           {/* `wrap` sizes each segment to its word, so "Out-of-hours" keeps one line and the row its 48px (U5). */}
           <Segmented label="Session" layout="wrap" value={draft.session} options={SESSION_OPTIONS} onChange={(session) => update({ session })} />
         </div>
 
-        <Segmented label="Kind of List" value={draft.kind} options={KIND_OPTIONS} onChange={(kind) => setDraft((d) => withKind(d, kind, aaRoomsId))} />
-        <Segmented label="Came in by" value={draft.source} options={SOURCE_OPTIONS} onChange={(source) => update({ source })} />
+        <div style={PAIR}>
+          <Segmented label="Kind of List" value={draft.kind} options={KIND_OPTIONS} onChange={(kind) => setDraft((d) => withKind(d, kind, aaRoomsId))} />
+          <Segmented label="Came in by" value={draft.source} options={SOURCE_OPTIONS} onChange={(source) => update({ source })} />
+        </div>
         {draft.source === 'pdf' && (
           <TextField
             label="Sent from"

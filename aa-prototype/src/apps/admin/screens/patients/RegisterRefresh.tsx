@@ -110,7 +110,7 @@ export function RegisterRefreshPanel({
   }
 
   return (
-    <Overlay open onClose={onClose}>
+    <Overlay open onClose={onClose} size="wide">
       <div data-shot="patient-register-refresh" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <OverlayHeader title={REGISTER_REFRESH_COPY.title} description={REGISTER_REFRESH_COPY.description(patientName, nhi)} />
       <NhiLookupStatus state={hub.state} manualEntry={false} onStopWaiting={hub.cancel} onRetry={hub.retry} found={(s) => NHI_LOOKUP_COPY.onRegister(s.person.name, s.person.dobISO)} />

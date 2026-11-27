@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { normaliseNzBankAccount } from '../../../domain/bankAccount'
 import { HPI_CPN_INVALID, isPlausibleHpiCpn } from '../../../domain/surgeons'
 import { BANK_ACCOUNT_INVALID } from '../../../store'
@@ -26,6 +27,9 @@ export function mandatoryFilled(hpiId: string, accountName: string, accountNumbe
   return hpiId.trim() !== '' && accountName.trim() !== '' && accountNumber.trim() !== ''
 }
 
+/** Two fields side by side in a wide dialog (as SurgeonEditSheet). */
+const FIELD_PAIR: CSSProperties = { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 14, alignItems: 'start' }
+
 export function HpiCpnField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const invalid = hpiCpnInvalid(value)
   return (
@@ -48,7 +52,10 @@ export function BankAccountFields({
   accountNumber,
   onAccountName,
   onAccountNumber,
+  paired = false,
 }: {
+  /** Name and number side by side, for a wide dialog (Add an anaesthetist); stacked by default. */
+  paired?: boolean
   accountName: string
   accountNumber: string
   onAccountName: (value: string) => void
@@ -56,7 +63,7 @@ export function BankAccountFields({
 }) {
   const invalid = bankNumberInvalid(accountNumber)
   return (
-    <div data-shot="anaesthetist-bank-fields" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div data-shot="anaesthetist-bank-fields" style={paired ? FIELD_PAIR : { display: 'flex', flexDirection: 'column', gap: 14 }}>
       <TextField label="Bank account name (required)" value={accountName} onChange={onAccountName} placeholder="e.g. Nadia Kerr" data-validation-field="accountName" />
       <TextField
         label="Bank account number (required)"
