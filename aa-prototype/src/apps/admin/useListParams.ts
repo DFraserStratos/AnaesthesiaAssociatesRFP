@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useLiveSearchParams } from '../../shared/useLiveSearchParams'
 
 /**
  * An Admin list's state in the URL (People, Lists): read a param (with its default when absent) and
@@ -8,7 +8,7 @@ import { useSearchParams } from 'react-router-dom'
  * its identity is stable. `page` reads '' when absent (`pageParam` turns that into 1).
  */
 export function useListParams<K extends string>(defaults: Readonly<Record<K, string>>) {
-  const [params, setParams] = useSearchParams()
+  const [params, setParams] = useLiveSearchParams()
   const get = useCallback((key: K | 'page'): string => params.get(key) ?? (key === 'page' ? '' : defaults[key as K]), [params, defaults])
   const set = useCallback(
     (patch: Partial<Record<K | 'page', string>>) => {

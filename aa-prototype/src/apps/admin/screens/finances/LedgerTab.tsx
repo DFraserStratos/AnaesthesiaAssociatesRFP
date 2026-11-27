@@ -12,7 +12,7 @@
  */
 
 import { useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useLiveSearchParams } from '../../../../shared/useLiveSearchParams'
 import { anaesthetistLedgerRowsOf, ledgerPositionOf, ledgerSentenceFor, receiptsToPlaceOf, useAppStore, useHoldingAccount } from '../../../../store'
 import { FilterPills, NameSearchBox, SlidingSegmentedControl } from '../../../../shared/ui'
 import { plural } from '../../../../shared/format'
@@ -33,7 +33,7 @@ const LISTS: readonly LedgerList[] = ['anaesthetists', 'pairs', 'holding']
 
 export function LedgerTab() {
   const { actor } = useAdminOutlet()
-  const [params, setParams] = useSearchParams()
+  const [params, setParams] = useLiveSearchParams()
   const highlightId = params.get('pair')
   const listParam = params.get('list')
   // A `?pair=` link lands on Invoice pairs, All.
@@ -46,13 +46,15 @@ export function LedgerTab() {
 
   /** Change the URL's list state in place (replace), dropping defaults; any change but paging goes back to page 1. */
   function update(next: Record<string, string | null>, keepPage = false) {
-    const out = new URLSearchParams(params)
-    for (const [k, v] of Object.entries(next)) {
-      if (v === null || v === '') out.delete(k)
-      else out.set(k, v)
-    }
-    if (!keepPage) out.delete('page')
-    setParams(out, { replace: true })
+    setParams((prev) => {
+      const out = new URLSearchParams(prev)
+      for (const [k, v] of Object.entries(next)) {
+        if (v === null || v === '') out.delete(k)
+        else out.set(k, v)
+      }
+      if (!keepPage) out.delete('page')
+      return out
+    }, { replace: true })
   }
 
   const billing = useAppStore((s) => s.billing)

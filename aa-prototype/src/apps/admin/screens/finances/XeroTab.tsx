@@ -12,8 +12,8 @@
  * the queue and the open divergences (`xeroTabRows`).
  */
 
+import { useLiveSearchParams } from '../../../../shared/useLiveSearchParams'
 import { useCallback, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import { useAppStore } from '../../../../store'
 import { today } from '../../../../domain/clock'
 import { surnameOf } from '../../../../shared/format'
@@ -50,7 +50,7 @@ export function XeroTab() {
   const masters = useAppStore((s) => s.masters)
   const schedule = useAppStore((s) => s.schedule)
   const todayISO = useAppStore((s) => today(s.clock))
-  const [search, setSearchParams] = useSearchParams()
+  const [search, setSearchParams] = useLiveSearchParams()
   const params = useMemo(() => xeroParamsFrom(search), [search])
   /** The box shows what was typed (a trailing space included); the view reads it trimmed. */
   const typed = search.get('q') ?? ''

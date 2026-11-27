@@ -12,8 +12,8 @@
  * render from the shared billing status model (`billingStatusesFor`).
  */
 
+import { useLiveSearchParams } from '../../../../shared/useLiveSearchParams'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import { useAppStore } from '../../../../store'
 import { invoiceAddresseeName } from '../../../../store/selectors'
 import { invoicesByBooking } from '../../../../store/indexes'
@@ -50,7 +50,7 @@ export function BillingTab() {
   const schedule = useAppStore((s) => s.schedule)
   const billing = useAppStore((s) => s.billing)
   const masters = useAppStore((s) => s.masters)
-  const [search, setSearchParams] = useSearchParams()
+  const [search, setSearchParams] = useLiveSearchParams()
   const params = useMemo(() => billingParamsFrom(search), [search])
   /** The box shows what was typed (a trailing space included); the view reads it trimmed. */
   const typed = search.get('q') ?? ''
