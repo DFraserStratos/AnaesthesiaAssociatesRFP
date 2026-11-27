@@ -51,7 +51,7 @@ export function NotificationsScreen({ actor, onOpen }: { actor: Actor; onOpen: (
       title="Notifications"
       count={<ActiveCount count={count} shot="admin-notifications-page-count" />}
       headingRef={heading}
-      sub="Lists anaesthetists moved themselves, and their alerts to the office, newest first. Resolving a notice hides it for everyone."
+      sub="What anaesthetists have moved or asked the office to check. Resolving one clears it for everyone."
     >
       <PageToolbar>
         <Checkbox labelShot="admin-notifications-show-resolved" checked={showResolved} onChange={(c) => setQuery({ page: 1, resolved: c })} style={{ display: 'inline-flex', gap: 6, fontSize: 13, color: neutral.slate }}>

@@ -96,7 +96,7 @@ export function AdminPageExample() {
   const [hospital, setHospital] = useState('all')
   const [page, setPage] = useState(1)
   return (
-    <AdminPage mode="fluid" title="Notifications" sub="Lists anaesthetists moved themselves, newest first." actions={<Button size="desktop">Resolve all</Button>}>
+    <AdminPage mode="fluid" title="Notifications" sub="What anaesthetists have moved or asked the office to check." actions={<Button size="desktop">Resolve all</Button>}>
       <PageToolbar end={<span className="mono">{FRAME_ROWS.length} notices</span>}>
         <SelectField label="Hospital" hideLabel size="compact" fill="surface" value={hospital} onChange={setHospital}>
           <option value="all">All hospitals</option>
