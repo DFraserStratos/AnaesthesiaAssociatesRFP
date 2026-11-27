@@ -53,12 +53,13 @@ export function PeopleTabs({ active }: { active: PeopleTab }) {
 }
 
 /**
- * One People tab's page: the People title, the tab's one sentence (ending with the seeded line on a
- * tab loaded at go-live), its primary Add action, the tab strip and, on a seeded tab, the
- * waiting-load banner. A list tab fits the window; Patients' Needs follow-up is fluid.
+ * One People tab's page: the People title, the tab's one-line sub from `PEOPLE_TABS`, its primary Add
+ * action, the tab strip and, on a seeded tab, the waiting-load banner. A list tab fits the window;
+ * Patients' Needs follow-up is fluid.
  */
-export function PeoplePage({ tab, sub, actions, mode = 'fit', shot, children }: { tab: PeopleTab; sub: ReactNode; actions?: ReactNode; mode?: AdminPageMode; shot?: string; children: ReactNode }) {
+export function PeoplePage({ tab, actions, mode = 'fit', shot, children }: { tab: PeopleTab; actions?: ReactNode; mode?: AdminPageMode; shot?: string; children: ReactNode }) {
   const seeded = PEOPLE_TAB_SEEDED[tab]
+  const sub = PEOPLE_TABS.find((t) => t.tab === tab)?.sub ?? ''
   return (
     <AdminPage
       mode={mode}

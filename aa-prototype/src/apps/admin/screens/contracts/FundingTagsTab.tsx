@@ -28,10 +28,9 @@ import { AdminPage, PageBody } from '../../components/AdminPage'
 import { contractsCatalogueLink } from '../../contractsPaths'
 import { FundingTagSheet } from '../../flows/FundingTagSheet'
 import { LoadResultBanner, MasterTable } from '../masters/chrome'
-import { SEEDED_SUBTITLE } from '../masters/masterViews'
 import { cellStyle } from '../masters/tableStyles'
 import { ContractsTabs } from './ContractsSection'
-import { CONTRACTS_TAB_SEEDED } from './contractsTabs'
+import { CONTRACTS_TAB_SEEDED, contractsTabSub } from './contractsTabs'
 
 const COLUMNS = ['Tag', 'Funder', { label: 'Contracts', align: 'right' as const }, '']
 
@@ -65,7 +64,7 @@ export function FundingTagsTab({ actor }: { actor: Actor }) {
       mode="fluid"
       shot="contracts-section"
       title="Contracts"
-      sub={`Who funds a hospital's work. A Contract carries at most one tag; a hospital's tags show on the step rail in this order. ${SEEDED_SUBTITLE}`}
+      sub={contractsTabSub('fundingTags')}
       actions={
         <Button variant="primary" size="desktop" shot="funding-tag-add" onClick={() => { setError(null); setSheet({}) }}>
           Add funding tag

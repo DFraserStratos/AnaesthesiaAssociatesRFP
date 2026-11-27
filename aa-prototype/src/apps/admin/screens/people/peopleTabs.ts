@@ -18,6 +18,8 @@ export interface PeopleTabEntry {
   label: string
   path: string
   catalogueRows: readonly string[]
+  /** The one-line sub under the People title, the same height on every tab (`AdminPage` keeps a tabbed page's sub to one line). */
+  sub: string
   /** Patients come from Bookings, never added by hand (US-13.4.1). */
   add: boolean
   edit: true
@@ -25,10 +27,10 @@ export interface PeopleTabEntry {
 }
 
 export const PEOPLE_TABS: readonly PeopleTabEntry[] = [
-  { tab: 'anaesthetists', label: 'Anaesthetists', path: peoplePath('anaesthetists'), catalogueRows: ['anaesthetists'], add: true, edit: true, seeded: ['anaesthetists'] },
-  { tab: 'surgeons', label: 'Surgeons', path: peoplePath('surgeons'), catalogueRows: ['surgeons'], add: true, edit: true, seeded: ['surgeons'] },
-  { tab: 'specialties', label: 'Specialties', path: peoplePath('specialties'), catalogueRows: ['specialties'], add: true, edit: true, seeded: ['specialties'] },
-  { tab: 'patients', label: 'Patients', path: peoplePath('patients'), catalogueRows: ['patients, whose records come from Bookings'], add: false, edit: true, seeded: [] },
+  { tab: 'anaesthetists', label: 'Anaesthetists', path: peoplePath('anaesthetists'), sub: 'Record, rate, tier and pairing preferences for each anaesthetist.', catalogueRows: ['anaesthetists'], add: true, edit: true, seeded: ['anaesthetists'] },
+  { tab: 'surgeons', label: 'Surgeons', path: peoplePath('surgeons'), sub: 'Contacts, pairing preferences, Contracts and next Lists for each surgeon.', catalogueRows: ['surgeons'], add: true, edit: true, seeded: ['surgeons'] },
+  { tab: 'specialties', label: 'Specialties', path: peoplePath('specialties'), sub: 'Broad surgical specialties, such as General surgery rather than Upper GI.', catalogueRows: ['specialties'], add: true, edit: true, seeded: ['specialties'] },
+  { tab: 'patients', label: 'Patients', path: peoplePath('patients'), sub: 'Find a patient by name, NHI or date of birth.', catalogueRows: ['patients, whose records come from Bookings'], add: false, edit: true, seeded: [] },
 ]
 
 /** Each tab's seeded sheets, for its subtitle line and waiting-load banner. */

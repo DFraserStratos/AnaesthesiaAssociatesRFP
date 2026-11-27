@@ -22,10 +22,9 @@ import { AdminPage, PageBody } from '../../components/AdminPage'
 import { contractsCatalogueLink, partyPath } from '../../contractsPaths'
 import { PartyPanel } from '../../flows/PartyPanel'
 import { LoadResultBanner, MasterTable } from '../masters/chrome'
-import { SEEDED_SUBTITLE } from '../masters/masterViews'
 import { rowCellStyle } from '../masters/tableStyles'
 import { ContractsTabs } from './ContractsSection'
-import { CONTRACTS_TAB_SEEDED } from './contractsTabs'
+import { CONTRACTS_TAB_SEEDED, contractsTabSub } from './contractsTabs'
 
 const COLUMNS = ['Name', 'Billing name', 'Delivery', { label: 'Contracts', align: 'right' as const }, '']
 const mist = { color: neutral.mist }
@@ -54,7 +53,7 @@ export function PartiesTab({ actor }: { actor: Actor }) {
       mode="fit"
       shot="contracts-section"
       title="Contracts"
-      sub={`Everyone who can hold a Contract, with the billing name and delivery its invoices use. ${SEEDED_SUBTITLE}`}
+      sub={contractsTabSub('parties')}
       actions={
         <Button variant="primary" size="desktop" shot="party-new" onClick={() => setCreating(true)}>
           New party

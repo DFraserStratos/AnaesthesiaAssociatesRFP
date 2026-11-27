@@ -12,7 +12,6 @@ import { PageBody, PageToolbar } from '../../components/AdminPage'
 import { Pager, pageOf, pageParam, pageWindow } from '../../components/Pager'
 import { MasterTable } from '../masters/chrome'
 import { cellStyle } from '../masters/tableStyles'
-import { SEEDED_SUBTITLE } from '../masters/masterViews'
 import { formatCount } from '../../../../shared/format'
 import { PeoplePage, usePeopleListParams } from './PeopleSection'
 import { PEOPLE_PAGE_SIZE } from './peopleTabs'
@@ -43,12 +42,6 @@ export function SpecialtiesTab({ actor }: { actor: Actor }) {
     <PeoplePage
       tab="specialties"
       shot="people-specialties"
-      sub={
-        <>
-          <span>AA's broad surgical specialties, with no subspecialties: General surgery, not Upper GI. Every surgeon holds one or more. A Contract with none is offered for every specialty.</span>{' '}
-          <span data-seeded-line>{SEEDED_SUBTITLE}</span>
-        </>
-      }
       actions={<Button variant="primary" size="desktop" onClick={() => setAdding(true)}>Add specialty</Button>}
     >
       <PageToolbar

@@ -335,7 +335,7 @@ describe('catch-up Phase 17b: no surgeons\' rooms, contacts on the surgeon, the 
     const wainwright = first.container.querySelector('tr[data-surgeon="S-WAINWRIGHT"]') as HTMLElement
     expect(wainwright.getAttribute('data-practice')).toBe('Upper GI Partners and Hillsborough Colorectal Specialists')
     expect(within(wainwright).getByText('info@uppergi.example')).toBeInTheDocument()
-    expect(within(first.container).getByText("AA's address book of surgeons. Open a surgeon for their contacts, pairing preferences, Contracts and next Lists.")).toBeInTheDocument()
+    expect(within(first.container).getByText('Contacts, pairing preferences, Contracts and next Lists for each surgeon.')).toBeInTheDocument()
     first.unmount()
     for (const [id, q] of [['S-WHAANGA', 'Whaanga'], ['S-OSEI', 'Osei'], ['S-SELWYN', 'Selwyn']] as const) {
       const view = renderAdmin(`/admin/people/surgeons?q=${q}`)
@@ -418,7 +418,7 @@ describe('catch-up Phase 17b: no surgeons\' rooms, contacts on the surgeon, the 
     fireEvent.click(within(card()).getByRole('button', { name: 'Save' }))
     expect(useAppStore.getState().masters.surgeons[SURG.reid]).not.toHaveProperty('hpiId')
     expect(useAppStore.getState().audit.at(-1)).toMatchObject({ action: 'surgeon.update', before: { hpiId: '47REIA' }, after: { hpiId: 'None' } })
-    expect(within(document.querySelector('[data-shot="surgeon-hpi-chip"]') as HTMLElement).getByText('No HPI CPN yet')).toBeInTheDocument()
+    expect(within(document.querySelector('[data-shot="surgeon-hpi-chip"]') as HTMLElement).getByText('Not recorded')).toBeInTheDocument()
     expect(within(card()).getByText('No HPI CPN yet')).toBeInTheDocument()
   })
 

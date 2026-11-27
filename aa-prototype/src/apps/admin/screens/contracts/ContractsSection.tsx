@@ -13,7 +13,7 @@ import { activeContractCount } from '../../../../domain/billing/contracts'
 import { useAppStore } from '../../../../store'
 import { AdminPage } from '../../components/AdminPage'
 import { newContractPath } from '../../contractsPaths'
-import { SEEDED_SUBTITLE } from '../masters/masterViews'
+import { contractsTabSub } from './contractsTabs'
 import { CONTRACTS_TABS, type ContractsTab } from './contractsTabs'
 import { ContractsView } from './ContractsView'
 
@@ -52,7 +52,7 @@ export function ContractsSection() {
       mode="fit"
       shot="contracts-section"
       title="Contracts"
-      sub={`What each Procedure can be priced at, and who it bills. ${SEEDED_SUBTITLE}`}
+      sub={contractsTabSub('contracts')}
       actions={
         <Button variant="primary" size="desktop" shot="contract-new" onClick={() => navigate(newContractPath(holder !== '' ? { holder } : {}))}>
           New contract

@@ -15,7 +15,6 @@ import { PageBody, PageToolbar } from '../../components/AdminPage'
 import { Pager, pageOf, pageParam, pageWindow } from '../../components/Pager'
 import { MasterTable, type MasterColumn } from '../masters/chrome'
 import { rowCellStyle } from '../masters/tableStyles'
-import { SEEDED_SUBTITLE } from '../masters/masterViews'
 import { anaesthetistRecordPath } from '../../peoplePaths'
 import { anaesthetistStatusLabel, formatCount, formatCurrency, HPI_CPN_LABEL } from '../../../../shared/format'
 import { RATE_PER_UNIT } from '../../../../shared/profile/profileCopy'
@@ -85,12 +84,6 @@ export function AnaesthetistsTab({ actor }: { actor: Actor }) {
     <PeoplePage
       tab="anaesthetists"
       shot="people-anaesthetists"
-      sub={
-        <>
-          <span>Open an anaesthetist for their record, rate, tier and pairing preferences. Adding one creates their sessions from their start date.</span>{' '}
-          <span data-seeded-line>{SEEDED_SUBTITLE}</span>
-        </>
-      }
       actions={<Button variant="primary" size="desktop" onClick={() => setAdding(true)}>Add anaesthetist</Button>}
     >
       <PageToolbar

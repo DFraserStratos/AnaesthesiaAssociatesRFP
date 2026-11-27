@@ -88,7 +88,7 @@ export function PatientsScreen() {
   const open = (nhi: string) => navigate(patientPath(nhi), { state: { patientsList: here } satisfies PatientsListState })
 
   return (
-    <PeoplePage tab="patients" shot="admin-patients" sub="Find a patient by name, NHI or date of birth. The NHI is the patient's identifier.">
+    <PeoplePage tab="patients" shot="admin-patients">
       <PageToolbar
         end={
           filter === 'followUp' && !searching ? (

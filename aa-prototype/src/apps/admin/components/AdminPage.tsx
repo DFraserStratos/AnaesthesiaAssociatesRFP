@@ -26,6 +26,9 @@ const MAIN_RESERVE = 756
 
 export type AdminPageMode = 'fit' | 'fluid' | 'document'
 
+/** A tabbed section's sub-line: one line at the page's width (no prose measure), clipped rather than wrapped, so every tab's header is the same height. */
+const TABBED_SUB: CSSProperties = { maxWidth: 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
+
 /** Lets a `fit` page tell the Admin shell to stop scrolling and hand the page the window's height. */
 export const AdminFrameContext = createContext<((fits: boolean) => void) | null>(null)
 
@@ -40,7 +43,7 @@ export interface AdminPageProps extends DataAttributes {
   mode: AdminPageMode
   /** The title (an `h1`, `PageHeader` size admin). Omit only on a page whose title is part of its document. */
   title?: ReactNode
-  /** One sentence, at most two lines: `PageHeader` caps it at the prose width. */
+  /** One sentence, at most two lines: `PageHeader` caps it at the prose width. On a page with `tabs` it is held to one line (`TABBED_SUB`), so the tab strip never moves between tabs. */
   sub?: ReactNode
   /** The sub-line's own style (a one-line summary that should run the page's width rather than the prose measure). */
   subStyle?: CSSProperties
@@ -101,7 +104,7 @@ export function AdminPage({ mode, title, sub, subStyle, actions, actionsAlign = 
                 size="admin"
                 title={title}
                 {...(sub !== undefined ? { sub } : {})}
-                {...(subStyle !== undefined ? { subStyle } : {})}
+                {...(subStyle !== undefined || tabs !== undefined ? { subStyle: { ...(tabs !== undefined ? TABBED_SUB : {}), ...subStyle } } : {})}
                 {...(actions !== undefined ? { actions } : {})}
                 {...(count !== undefined ? { count } : {})}
                 {...(aside !== undefined ? { aside } : {})}

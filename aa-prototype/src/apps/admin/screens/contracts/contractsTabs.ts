@@ -17,6 +17,8 @@ export interface ContractsTabEntry {
   label: string
   path: string
   catalogueRows: readonly string[]
+  /** The one-line sub under the Contracts title, the same height on every tab (`AdminPage` keeps a tabbed page's sub to one line). */
+  sub: string
   /** Like Master data's views, every tab adds and edits its records. */
   add: true
   edit: true
@@ -24,10 +26,15 @@ export interface ContractsTabEntry {
 }
 
 export const CONTRACTS_TABS: readonly ContractsTabEntry[] = [
-  { tab: 'contracts', label: 'Contracts', path: contractsPath(), catalogueRows: ['Contracts, with their price ranges'], add: true, edit: true, seeded: ['contracts', 'priceRanges'] },
-  { tab: 'parties', label: 'Parties', path: partiesPath(), catalogueRows: ['Parties, insurers and funders among them'], add: true, edit: true, seeded: ['parties'] },
-  { tab: 'fundingTags', label: 'Funding tags', path: fundingTagsPath(), catalogueRows: ['funding tags'], add: true, edit: true, seeded: ['fundingTags'] },
+  { tab: 'contracts', label: 'Contracts', path: contractsPath(), sub: 'What each Procedure can be priced at, and who it bills.', catalogueRows: ['Contracts, with their price ranges'], add: true, edit: true, seeded: ['contracts', 'priceRanges'] },
+  { tab: 'parties', label: 'Parties', path: partiesPath(), sub: 'Everyone who can hold a Contract, and how their invoices are addressed and sent.', catalogueRows: ['Parties, insurers and funders among them'], add: true, edit: true, seeded: ['parties'] },
+  { tab: 'fundingTags', label: 'Funding tags', path: fundingTagsPath(), sub: "Who funds a hospital's work. A Contract carries one tag at most.", catalogueRows: ['funding tags'], add: true, edit: true, seeded: ['fundingTags'] },
 ]
+
+/** A tab's one-line sub. */
+export function contractsTabSub(tab: ContractsTab): string {
+  return CONTRACTS_TABS.find((t) => t.tab === tab)?.sub ?? ''
+}
 
 /** Each tab's seeded sheets, for its subtitle line and waiting-load banner. */
 export const CONTRACTS_TAB_SEEDED = Object.fromEntries(CONTRACTS_TABS.map((t) => [t.tab, t.seeded])) as Readonly<Record<ContractsTab, readonly LoadEntity[]>>

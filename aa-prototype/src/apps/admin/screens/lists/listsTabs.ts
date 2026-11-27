@@ -15,10 +15,10 @@ export interface ListsTabEntry {
 }
 
 export const LISTS_TABS: readonly ListsTabEntry[] = [
-  { tab: 'draft-lists', label: DRAFT_LISTS, path: listsPath('draft-lists'), sub: 'Lists with no anaesthetist yet, soonest first. Assign each one for its session.' },
+  { tab: 'draft-lists', label: DRAFT_LISTS, path: listsPath('draft-lists'), sub: 'Lists with no anaesthetist yet, soonest first.' },
   { tab: 'conflicts', label: 'Conflicts', path: listsPath('conflicts'), sub: 'Lists at a hospital closed that day. Reassign the List or clear the flag.' },
-  { tab: 'contracts-to-set', label: 'Contracts to set', path: listsPath('contracts-to-set'), sub: 'Procedures still needing a Contract. Past Lists first: they hold up submission.' },
-  { tab: 'to-authorise', label: 'To authorise', path: listsPath('to-authorise'), sub: 'Submitted Lists waiting for the office to check and authorise for billing.' },
+  { tab: 'contracts-to-set', label: 'Contracts to set', path: listsPath('contracts-to-set'), sub: 'Procedures with no Contract yet. Past Lists come first, as they block submission.' },
+  { tab: 'to-authorise', label: 'To authorise', path: listsPath('to-authorise'), sub: 'Submitted Lists for the office to check and authorise for billing.' },
 ]
 
 export function listsTabEntry(tab: ListsTab): ListsTabEntry {

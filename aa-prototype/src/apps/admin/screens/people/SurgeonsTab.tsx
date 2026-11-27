@@ -15,7 +15,6 @@ import { PageBody, PageToolbar } from '../../components/AdminPage'
 import { Pager, pageOf, pageParam, pageWindow } from '../../components/Pager'
 import { MasterTable, RetiredPill, retiredRowStyle } from '../masters/chrome'
 import { rowCellStyle } from '../masters/tableStyles'
-import { SEEDED_SUBTITLE } from '../masters/masterViews'
 import { surgeonProfilePath } from '../../peoplePaths'
 import { formatCount, HPI_CPN_LABEL } from '../../../../shared/format'
 import { PeoplePage, usePeopleListParams } from './PeopleSection'
@@ -74,12 +73,6 @@ export function SurgeonsTab({ actor }: { actor: Actor }) {
     <PeoplePage
       tab="surgeons"
       shot="people-surgeons"
-      sub={
-        <>
-          <span>AA's address book of surgeons. Open a surgeon for their contacts, pairing preferences, Contracts and next Lists.</span>{' '}
-          <span data-seeded-line>{SEEDED_SUBTITLE}</span>
-        </>
-      }
       actions={<Button variant="primary" size="desktop" onClick={() => setAdding(true)}>Add surgeon</Button>}
     >
       <PageToolbar
