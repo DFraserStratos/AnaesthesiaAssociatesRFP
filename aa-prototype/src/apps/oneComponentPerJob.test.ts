@@ -75,7 +75,7 @@ export const ALLOW_LIST: readonly { file: string; count: number; reason: string 
   { file: 'shared/capture/ui.tsx', count: 2, reason: "The capture's typed-value cell and the 44x36 nudge buttons (Mobile App mockup; README section 5): IconButton draws one square or round size, never 44 by 36" },
   { file: 'shared/capture/TimesCard.tsx', count: 1, reason: "The capture's big record-now target (56 or 96px, radius 12): not a Button size" },
   // Navigation items stay buttons (question 3).
-  { file: 'apps/admin/components/SideNav.tsx', count: 2, reason: 'Nav items on the ink side nav with aria-current (question 3); Help drawn as one of them' },
+  { file: 'apps/admin/components/SideNav.tsx', count: 1, reason: 'Nav items on the ink side nav with aria-current (question 3); More and Help drawn as one of them' },
   { file: 'apps/admin/screens/masters/MasterData.tsx', count: 1, reason: 'The Master data sub-nav items with aria-current (question 3)' },
   { file: 'apps/web/components/WebNav.tsx', count: 2, reason: 'Web nav tabs and the profile link with the crimson underline (question 3; README section 5)' },
   { file: 'apps/mobile/MobileApp.tsx', count: 1, reason: 'The bottom tab bar items, teal active tab (question 3; README section 5)' },

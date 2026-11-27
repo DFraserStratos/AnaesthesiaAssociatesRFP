@@ -75,6 +75,8 @@ test('admin phase 07 master data', async ({ page }) => {
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(400)
 
+  // Master data and Audit sit under More at the foot of the side nav.
+  await page.getByRole('navigation', { name: 'Admin' }).getByRole('button', { name: 'More' }).click()
   await page.getByRole('button', { name: 'Master data' }).click()
   await page.waitForTimeout(300)
   await expect(page.getByRole('heading', { name: 'Master data' })).toBeVisible()
@@ -134,6 +136,8 @@ test('admin phase 07 master data', async ({ page }) => {
   await form.getByRole('button', { name: 'Cancel' }).click()
   await expect(page).toHaveURL(/\/admin\/contracts$/)
   // Back to Master data from the Contracts section.
+  // Master data and Audit sit under More at the foot of the side nav.
+  await page.getByRole('navigation', { name: 'Admin' }).getByRole('button', { name: 'More' }).click()
   await page.getByLabel('Admin').getByRole('button', { name: 'Master data' }).click()
 
   // Hospitals: adding one adds its Party, and no Contract.
@@ -153,6 +157,8 @@ test('admin phase 07 audit viewer', async ({ page }) => {
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(400)
 
+  // Master data and Audit sit under More at the foot of the side nav.
+  await page.getByRole('navigation', { name: 'Admin' }).getByRole('button', { name: 'More' }).click()
   await page.getByRole('button', { name: 'Audit', exact: true }).click()
   await page.waitForTimeout(300)
   await expect(page.getByRole('heading', { name: 'Audit' })).toBeVisible()

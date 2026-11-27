@@ -53,12 +53,12 @@ afterEach(() => {
 })
 
 describe('the side nav (US-13.1.3)', () => {
-  it('has one Lists entry, after Intake, in place of Draft Lists, Conflicts and Review queue: 9 items', () => {
+  it('has one Lists entry, after Intake, in place of Draft Lists, Conflicts and Review queue; Master data and Audit fold under More', () => {
     mountAt(listsPath('conflicts'))
     const labels = within(nav())
       .getAllByRole('button')
       .map((b) => b.firstElementChild?.textContent)
-    expect(labels).toEqual(['Day view', 'Intake', 'Lists', 'Notifications', 'Finances', 'People', 'Contracts', 'Master data', 'Audit'])
+    expect(labels).toEqual(['Day view', 'Intake', 'Lists', 'Notifications', 'Finances', 'People', 'Contracts', 'More'])
     for (const gone of ['Draft Lists', 'Conflicts', 'Review queue']) expect(labels).not.toContain(gone)
     expect(within(nav()).getByRole('button', { name: /^Lists/ })).toHaveAttribute('aria-current', 'page')
   })

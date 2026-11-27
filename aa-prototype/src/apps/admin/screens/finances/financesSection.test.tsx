@@ -67,12 +67,12 @@ beforeEach(() => {
 })
 
 describe('the side nav (D107, D109)', () => {
-  it('has one Finances entry, after Notifications, in place of Invoices, Billing monitor and Ledger: 9 items', () => {
+  it('has one Finances entry, after Notifications, in place of Invoices, Billing monitor and Ledger: 8 rows, Master data and Audit under More', () => {
     mountAt(financePath('billing'))
     const labels = within(nav())
       .getAllByRole('button')
       .map((b) => b.firstElementChild?.textContent)
-    expect(labels).toHaveLength(9)
+    expect(labels).toHaveLength(8)
     expect(labels.filter((l) => l === 'Finances')).toHaveLength(1)
     expect(labels.indexOf('Finances')).toBe(labels.indexOf('Notifications') + 1)
     for (const gone of ['Invoices', 'Billing monitor', 'Billing', 'Ledger']) expect(labels).not.toContain(gone)

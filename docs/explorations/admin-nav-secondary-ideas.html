@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Nav Ideas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Tokens: the app's own (aa-prototype/src/theme/tokens.ts), so the mocks read as the app. */
+:root{
+  --ink:#172320;--slate:#58635F;--mist:#8A9490;--lineStrong:#C9D1CE;--line:#E2E7E5;--sunken:#EDF1EF;--bg:#F6F8F7;--surface:#FFFFFF;
+  --brand:#A91E3E;--brandTint:#F7E7EC;--brandMuted:#D89AA9;
+  --teal:#0D6E63;--tealTint:#E1F0ED;
+  --ok:#1E8E5A;--okTint:#E3F4EB;--okOn:#157A49;
+  --warn:#A16207;--errOn:#9C332F;
+  --e1:0 1px 2px rgba(23,35,32,.05),0 2px 6px rgba(23,35,32,.05);
+  --e3:0 8px 16px rgba(23,35,32,.10),0 24px 56px rgba(23,35,32,.18);
+  --barH:64px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p{margin:0}
+button{font:inherit;color:inherit}
+:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(13,110,99,.30);border-radius:8px}
+
+/* ---------- switcher ---------- */
+.bar{position:fixed;top:0;left:0;right:0;height:var(--barH);z-index:50;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:20px;padding:0 20px}
+.bar .ttl{font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.bar .ttl small{display:block;font-weight:500;font-size:12px;color:var(--slate);letter-spacing:0}
+.opts{display:flex;gap:4px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;align-self:stretch}
+.opt{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:2.5px solid transparent;color:var(--slate);white-space:nowrap;font-size:13.5px;font-weight:600}
+.opt b{font-weight:700;color:var(--mist)}
+.opt:hover{color:var(--ink)}
+.opt[aria-selected="true"]{color:var(--ink);border-color:var(--teal)}
+.opt[aria-selected="true"] b{color:var(--teal)}
+.opt .rec{font-size:10.5px;font-weight:700;color:var(--okOn);background:var(--okTint);border-radius:999px;padding:0 7px;line-height:17px}
+.keys{font-size:12px;color:var(--mist);white-space:nowrap}
+.kbd{font-family:"Spline Sans Mono",monospace;font-size:11px;border:1px solid var(--lineStrong);border-bottom-width:2px;border-radius:5px;padding:0 5px;color:var(--slate);background:#fff}
+
+/* ---------- layout ---------- */
+main{padding-top:var(--barH);display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding-left:24px;padding-right:24px;height:100vh}
+.stageCol{display:flex;flex-direction:column;min-height:0;padding:18px 0 20px;gap:12px}
+.vhead h2{font-size:22px;letter-spacing:-.015em}
+.vhead h2 .l{color:var(--mist);font-weight:600;margin-right:8px}
+.vhead p{color:var(--slate);font-size:14px;max-width:80ch;margin-top:2px}
+.viewing{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--slate)}
+.subs{display:flex;gap:4px;background:var(--sunken);border-radius:10px;padding:3px}
+.subs button{all:unset;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--slate);padding:5px 11px;border-radius:8px;white-space:nowrap}
+.subs button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--e1)}
+.fwrap{flex:1;min-height:0;border-radius:12px;overflow:hidden;box-shadow:var(--e3);border:1px solid var(--line);display:flex;background:var(--bg);position:relative}
+
+.why{overflow-y:auto;padding:18px 2px 20px 0;display:flex;flex-direction:column;gap:12px}
+.why section{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 18px}
+.why h3{font-size:14px;margin-bottom:6px}
+.why ul{margin:0;padding-left:18px;font-size:13.5px}
+.why li{margin-bottom:5px}
+.why li::marker{color:var(--mist)}
+.why p{font-size:13.5px;color:var(--slate)}
+.why .for h3{color:var(--okOn)}
+.why .against h3{color:var(--errOn)}
+.why .rec{border-color:var(--teal);background:var(--tealTint)}
+.why .rec h3{color:var(--teal)}
+.why .rec p{color:var(--ink)}
+.try{font-size:12.5px;color:var(--slate);background:var(--sunken);border-radius:10px;padding:8px 12px}
+
+/* ---------- the mock admin shell ---------- */
+.nav{width:216px;flex:none;background:var(--ink);display:flex;flex-direction:column;padding:20px 12px;gap:24px;position:relative;z-index:3}
+.wm{display:flex;flex-direction:column;gap:5px;padding:0 8px}
+.wm .w{display:inline-flex;align-items:baseline;gap:4px;font-family:Georgia,"Times New Roman",serif;font-size:15px;line-height:1;color:#fff}
+.wm .w i{display:inline-block;width:1.5px;height:13px;background:#C25B72;transform:translateY(2px)}
+.wm .w small{font-size:8px;letter-spacing:.05em;color:rgba(255,255,255,.72);margin-left:2px}
+.wm .eb{font-size:9px;font-weight:600;letter-spacing:.14em;color:var(--brandMuted);padding-left:2px}
+.items{display:flex;flex-direction:column;gap:2px}
+.ni{all:unset;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:9px;font-size:13.5px;font-weight:500;color:rgba(255,255,255,.9);position:relative}
+.ni:hover{background:rgba(255,255,255,.05)}
+.ni[aria-current="page"]{font-weight:600;color:#fff;background:rgba(255,255,255,.08);box-shadow:inset 3px 0 0 var(--brand)}
+.ni .lab{display:flex;align-items:center;gap:9px}
+.ni svg{flex:none;opacity:.75}
+.badge{background:var(--warn);color:#fff;border-radius:999px;font-size:11px;font-weight:700;padding:2px 8px;line-height:1.3}
+.foot{margin-top:auto;display:flex;flex-direction:column;gap:8px;position:relative}
+.roles{all:unset;cursor:pointer;padding:2px 8px;color:rgba(255,255,255,.6);font-size:12px;font-weight:500}
+.persona{display:flex;align-items:center;gap:10px;padding:8px;border-radius:9px}
+.av{width:30px;height:30px;border-radius:50%;background:var(--brandTint);color:var(--brand);display:grid;place-items:center;font-size:11.5px;font-weight:700;flex:none}
+.pn{display:flex;flex-direction:column;line-height:1.2}
+.pn b{font-size:12.5px;font-weight:600;color:#fff}
+.pn span{font-size:11px;color:rgba(255,255,255,.5)}
+
+/* quiet secondary rows (A, B, C) */
+.ni.quiet{padding:7px 12px;font-size:12.5px;color:rgba(255,255,255,.62)}
+.ni.quiet[aria-current="page"]{color:#fff}
+.eyebrow{font-size:10px;font-weight:600;letter-spacing:.12em;color:rgba(255,255,255,.38);padding:0 12px 4px}
+.rule{height:1px;background:rgba(255,255,255,.08);margin:4px 8px}
+
+/* C: disclosure */
+.disc{all:unset;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-radius:9px;font-size:12.5px;font-weight:500;color:rgba(255,255,255,.62)}
+.disc:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.85)}
+.disc svg{transition:transform .18s ease}
+.disc[aria-expanded="true"] svg{transform:rotate(180deg)}
+.discBody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .2s ease}
+.discBody.open{grid-template-rows:1fr}
+.discBody > div{overflow:hidden;display:flex;flex-direction:column;gap:2px}
+.disc .dot{width:6px;height:6px;border-radius:50%;background:var(--brand);margin-left:6px;display:inline-block}
+
+/* D: icon tray */
+.tray{display:flex;gap:4px;padding:0 4px}
+.tb{all:unset;cursor:pointer;width:36px;height:34px;border-radius:9px;display:grid;place-items:center;color:rgba(255,255,255,.62);position:relative}
+.tb:hover{background:rgba(255,255,255,.06);color:#fff}
+.tb[aria-current="page"]{background:rgba(255,255,255,.10);color:#fff;box-shadow:inset 0 -2px 0 var(--brand)}
+.tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#fff;color:var(--ink);font-size:12px;font-weight:600;white-space:nowrap;padding:5px 9px;border-radius:7px;box-shadow:var(--e3);opacity:0;pointer-events:none;transition:opacity .12s}
+.tb:hover .tip,.tb:focus-visible .tip{opacity:1}
+
+/* E, F: popover menus */
+.pop{position:absolute;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--e3);padding:6px;min-width:240px;z-index:10;animation:popIn .14s ease-out}
+@keyframes popIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.pop .mi{all:unset;cursor:pointer;display:flex;gap:11px;align-items:flex-start;padding:9px 10px;border-radius:8px;color:var(--ink)}
+.pop .mi:hover{background:var(--sunken)}
+.pop .mi[aria-current="page"]{background:var(--tealTint)}
+.pop .mi svg{color:var(--slate);margin-top:1px;flex:none}
+.pop .mi b{display:block;font-size:13px;font-weight:600}
+.pop .mi span{display:block;font-size:11.5px;color:var(--slate);line-height:1.35}
+.pop .sep{height:1px;background:var(--line);margin:5px 4px}
+.pop .ph{font-size:10.5px;font-weight:700;letter-spacing:.08em;color:var(--mist);padding:6px 10px 4px}
+.personaBtn{all:unset;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border-radius:9px}
+.personaBtn:hover,.personaBtn[aria-expanded="true"]{background:rgba(255,255,255,.07)}
+.personaBtn .chev{color:rgba(255,255,255,.5)}
+.personaBtn.cur{box-shadow:inset 3px 0 0 var(--brand);background:rgba(255,255,255,.08)}
+
+/* stub page */
+.page{flex:1;min-width:0;padding:26px 28px;display:flex;flex-direction:column;gap:16px;overflow:hidden}
+.page h1{font-size:22px;letter-spacing:-.01em}
+.page .sub{font-size:13px;color:var(--slate);margin-top:2px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--e1)}
+.grid{flex:1;display:grid;gap:10px;padding:16px;align-content:start}
+.sk{height:12px;border-radius:6px;background:var(--sunken)}
+.row{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:center;padding:6px 0;border-bottom:1px solid #F1F4F2}
+.bars{display:flex;gap:8px}
+.bars i{height:26px;border-radius:7px;background:var(--tealTint)}
+.bars i.w{background:#F9F0DC}
+.split{display:grid;grid-template-columns:180px 1fr;gap:16px;flex:1;min-height:0}
+.subnav{padding:10px;display:flex;flex-direction:column;gap:3px}
+.subnav div{font-size:13px;padding:7px 10px;border-radius:8px;color:var(--slate)}
+.subnav div.on{background:var(--tealTint);color:var(--teal);font-weight:600}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="ttl">Admin side nav: quieter Master data and Audit<small>Six ways to keep them in reach but out of the way</small></div>
+  <div class="opts" role="tablist" id="opts"></div>
+  <div class="keys"><span class="kbd">←</span> <span class="kbd">→</span> to step</div>
+</header>
+
+<main>
+  <div class="stageCol">
+    <div class="vhead"><h2 id="vTitle"></h2><p id="vLede"></p></div>
+    <div class="viewing">You are on
+      <div class="subs" id="viewing">
+        <button data-s="day" aria-pressed="true">Day view</button>
+        <button data-s="masters">Master data</button>
+        <button data-s="audit">Audit</button>
+      </div>
+      <span>· switch to see how each idea shows where you are</span>
+    </div>
+    <div class="fwrap" id="frame"></div>
+  </div>
+  <aside class="why" id="why"></aside>
+</main>
+
+<script>
+const I = {
+  db:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>',
+  audit:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>',
+  help:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',
+  cog:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
+  users:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  chevD:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+  chevUD:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>',
+  chevR:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
+}
+
+const MAIN = [
+  ['day','Day view'],['intake','Intake',4],['lists','Lists',7],['notifications','Notifications',3],
+  ['finances','Finances',2],['people','People',5],['contracts','Contracts'],
+]
+const SEC = {masters:'Master data', audit:'Audit'}
+const DESC = {masters:'Hospitals, theatres, codes and settings', audit:'Every change, who made it and when'}
+
+const IDEAS = [
+  { key:'A', name:'Down at the foot', rec:false,
+    lede:'Master data and Audit leave the main list and sit at the bottom beside Help, in a smaller, dimmer row style. Nothing is hidden; the main list is just the daily work.',
+    howTo:'Look at the gap: the seven daily sections now stand alone at the top.',
+    forL:['Zero clicks: still one click away, still visible','No new pattern to learn; same nav rows, just quieter','The active state works exactly as today'],
+    against:['Still always on screen, so still some visual noise (less, though)','Help and the two sections share a group but are different kinds of thing'],
+  },
+  { key:'B', name:'Labelled “Setup” group', rec:false,
+    lede:'They stay in the list but sit under a hairline and a small “SETUP” eyebrow, in the quieter row style. The label tells people they are not daily work.',
+    howTo:'Compare with A: the group is still near the main list, but named.',
+    forL:['Zero clicks, and the label explains why they are separate','A pattern you can grow: other back office pages can join the group later','Cheapest change of all'],
+    against:['Least reduction in noise: same item count, plus a label','An extra label in a nav that has none today'],
+  },
+  { key:'C', name:'Fold-away “More”', rec:true,
+    lede:'A quiet “More” row at the foot folds open to show Master data and Audit. It remembers whether you left it open, and opens itself whenever you are on one of those pages.',
+    howTo:'Click “More” to fold it open. Then switch to “Master data” above: it opens itself and shows the active row.',
+    forL:['Out of the way by default, one click when you need them','Active state stays honest: you can always see where you are','People who use them a lot leave it open; it stays open','Same nav row look, no icons or menus to learn'],
+    against:['A hidden thing is easier to forget it exists (a demo presenter needs to know)','Two clicks the first time, instead of one'],
+  },
+  { key:'D', name:'Icon tray beside Help', rec:false,
+    lede:'Help, Master data and Audit shrink to three icon buttons in one row at the foot, each with a tooltip on hover. The quietest still-visible option.',
+    howTo:'Hover the three icons at the bottom left. Switch to “Audit” to see the active icon.',
+    forL:['Takes the least space while staying one click','Clean: the nav reads as text sections plus a small tools row','Familiar from tools like Slack, Linear, Notion'],
+    against:['Icons alone are guesswork for the office until learnt; tooltips needed','The nav has no icons today, so a new visual element','Active state on an icon is weaker than a full row'],
+  },
+  { key:'E', name:'In the user menu', rec:false,
+    lede:'Clicking the office user at the foot opens a menu: Master data, Audit, Help and Roles. Treats them as tools for the person, not places in the day.',
+    howTo:'Click “Kirsty W.” at the bottom. Switch to “Master data” to see how you know where you are.',
+    forL:['Most hidden: the nav is only daily work, Help included','A well-known pattern (account menu)','Room for descriptions in the menu, so it explains itself'],
+    against:['Least discoverable: nobody looks for data setup under their name','When you are on Master data, no nav row shows it (only the user button marks it)','Mixes “me” things with practice-wide data'],
+  },
+  { key:'F', name:'One “Setup” item with a fly-out', rec:false,
+    lede:'Master data and Audit collapse into one nav row, “Setup”, at the foot. Clicking it opens a fly-out to the right with both pages and a line on each.',
+    howTo:'Click “Setup” at the bottom. Then switch to “Audit” above: the Setup row marks where you are.',
+    forL:['One row instead of two, and it still reads as a real section','The fly-out explains each page, helpful for new office staff','Clean place to add future admin pages'],
+    against:['Two clicks every time','Fly-out menus are fiddly on a trackpad and need care for keyboard use','Active state is one step removed (“Setup”, not “Audit”)'],
+  },
+]
+
+let idx = 2, viewing = 'day', open = { C:false, E:false, F:false }
+
+const ni = (s,label,badge,cls='',icon='') =>
+  `<button class="ni ${cls}" data-go="${s}" ${viewing===s?'aria-current="page"':''}><span class="lab">${icon}${label}</span>${badge?`<span class="badge">${badge}</span>`:''}</button>`
+const roles = `<button class="roles">Roles in this prototype</button>`
+const persona = `<div class="persona"><div class="av">KW</div><div class="pn"><b>Kirsty W.</b><span>Office</span></div></div>`
+const help = (cls='') => `<button class="ni ${cls}"><span class="lab">Help</span></button>`
+const wm = `<div class="wm"><span class="w">Anaesthesia<i></i>Associates<small>LTD</small></span><span class="eb">ADMIN</span></div>`
+const mainItems = () => `<nav class="items">${MAIN.map(([s,l,b])=>ni(s,l,b)).join('')}</nav>`
+const onSecondary = () => viewing==='masters' || viewing==='audit'
+
+function navFor(k){
+  if(k==='A') return `${wm}${mainItems()}
+    <div class="foot"><div class="items">${ni('masters','Master data',0,'quiet')}${ni('audit','Audit',0,'quiet')}${help('quiet')}</div>${roles}${persona}</div>`
+  if(k==='B') return `${wm}<div style="display:flex;flex-direction:column;gap:14px">${mainItems()}
+    <div><div class="rule"></div><div class="eyebrow" style="padding-top:10px">SETUP</div><div class="items">${ni('masters','Master data',0,'quiet')}${ni('audit','Audit',0,'quiet')}</div></div></div>
+    <div class="foot">${help()}${roles}${persona}</div>`
+  if(k==='C'){
+    const isOpen = open.C || onSecondary()
+    return `${wm}${mainItems()}
+    <div class="foot"><div class="items">
+      <button class="disc" data-toggle="C" aria-expanded="${isOpen}"><span>More${onSecondary()&&!open.C?'':''}</span>${I.chevD}</button>
+      <div class="discBody ${isOpen?'open':''}"><div>${ni('masters','Master data',0,'quiet')}${ni('audit','Audit',0,'quiet')}</div></div>
+      ${help('quiet')}</div>${roles}${persona}</div>`
+  }
+  if(k==='D') {
+    const tb = (s,icon,label) => `<button class="tb" ${s?`data-go="${s}"`:''} ${viewing===s?'aria-current="page"':''} aria-label="${label}">${icon}<span class="tip">${label}</span></button>`
+    return `${wm}${mainItems()}
+    <div class="foot"><div class="tray">${tb('masters',I.db,'Master data')}${tb('audit',I.audit,'Audit')}${tb('',I.help,'Help')}</div>${roles}${persona}</div>`
+  }
+  if(k==='E'){
+    const mi = (s,icon,label,desc) => `<button class="mi" ${s?`data-go="${s}"`:''} ${viewing===s?'aria-current="page"':''}>${icon}<div><b>${label}</b>${desc?`<span>${desc}</span>`:''}</div></button>`
+    const pop = open.E ? `<div class="pop" style="left:4px;right:-60px;bottom:calc(100% + 6px)">
+      <div class="ph">PRACTICE</div>${mi('masters',I.db,'Master data',DESC.masters)}${mi('audit',I.audit,'Audit',DESC.audit)}
+      <div class="sep"></div>${mi('',I.help,'Help','')}${mi('',I.users,'Roles in this prototype','')}</div>` : ''
+    return `${wm}${mainItems()}
+    <div class="foot">${pop}<button class="personaBtn ${onSecondary()?'cur':''}" data-toggle="E" aria-expanded="${open.E}">
+      <span style="display:flex;align-items:center;gap:10px"><div class="av">KW</div><div class="pn"><b>Kirsty W.</b><span>${onSecondary()?SEC[viewing]:'Office'}</span></div></span><span class="chev">${I.chevUD}</span></button></div>`
+  }
+  if(k==='F'){
+    const mi = (s,icon,label,desc) => `<button class="mi" data-go="${s}" ${viewing===s?'aria-current="page"':''}>${icon}<div><b>${label}</b><span>${desc}</span></div></button>`
+    const pop = open.F ? `<div class="pop" style="left:calc(100% + 16px);bottom:-4px;min-width:280px">
+      <div class="ph">SETUP</div>${mi('masters',I.db,'Master data',DESC.masters)}${mi('audit',I.audit,'Audit',DESC.audit)}</div>` : ''
+    return `${wm}${mainItems()}
+    <div class="foot"><div class="items" style="position:relative">${pop}
+      <button class="ni" data-toggle="F" ${onSecondary()?'aria-current="page"':''}><span class="lab">${I.cog}Setup</span><span style="opacity:.55">${I.chevR}</span></button>
+      ${help()}</div>${roles}${persona}</div>`
+  }
+}
+
+function pageFor(){
+  if(viewing==='masters') return `<div class="page"><div><h1>Master data</h1><div class="sub">Hospitals, theatres, codes and the practice's settings</div></div>
+    <div class="split"><div class="card subnav">${['Hospitals','Theatres','Procedure codes','Funders','Session statuses','Settings'].map((t,i)=>`<div class="${i===0?'on':''}">${t}</div>`).join('')}</div>
+    <div class="card grid">${Array.from({length:9},(_,i)=>`<div class="row"><div class="sk" style="width:${110-i*5}px"></div><div class="sk" style="width:${40+((i*37)%45)}%"></div></div>`).join('')}</div></div></div>`
+  if(viewing==='audit') return `<div class="page"><div><h1>Audit</h1><div class="sub">Every change, who made it and when</div></div>
+    <div class="card grid">${Array.from({length:12},(_,i)=>`<div class="row" style="grid-template-columns:110px 90px 1fr"><div class="sk" style="width:80px"></div><div class="sk" style="width:60px;background:var(--tealTint)"></div><div class="sk" style="width:${35+((i*29)%50)}%"></div></div>`).join('')}</div></div>`
+  const label = (MAIN.find(m=>m[0]===viewing)||MAIN[0])[1]
+  return `<div class="page"><div><h1>${label==='Day view'?'Tuesday 24 November':label}</h1><div class="sub">${label==='Day view'?'Day view · 38 anaesthetists rostered':'A stand-in page'}</div></div>
+    <div class="card grid">${Array.from({length:10},(_,i)=>`<div class="row"><div class="sk" style="width:${90+((i*23)%40)}px"></div><div class="bars"><i style="width:${120+((i*53)%140)}px"></i><i class="${i%3===1?'w':''}" style="width:${90+((i*31)%120)}px"></i>${i%2?`<i style="width:${70+((i*17)%60)}px"></i>`:''}</div></div>`).join('')}</div></div>`
+}
+
+function render(){
+  const idea = IDEAS[idx]
+  document.getElementById('opts').innerHTML = IDEAS.map((d,i)=>`<button class="opt" role="tab" data-i="${i}" aria-selected="${i===idx}"><b>${d.key}</b>${d.name}${d.rec?'<span class="rec">Recommended</span>':''}</button>`).join('')
+  document.getElementById('vTitle').innerHTML = `<span class="l">${idea.key}</span>${idea.name}`
+  document.getElementById('vLede').textContent = idea.lede
+  document.getElementById('frame').innerHTML = `<div class="nav">${navFor(idea.key)}</div>${pageFor()}`
+  document.querySelectorAll('#viewing button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.s===viewing))
+  document.getElementById('why').innerHTML = `
+    <div class="try"><b>Try it:</b> ${idea.howTo}</div>
+    <section class="for"><h3>For</h3><ul>${idea.forL.map(x=>`<li>${x}</li>`).join('')}</ul></section>
+    <section class="against"><h3>Against</h3><ul>${idea.against.map(x=>`<li>${x}</li>`).join('')}</ul></section>
+    ${idea.rec ? `<section class="rec"><h3>Why this one</h3><p>It gets the two items off the screen for the people who rarely need them, without hiding where you are when you do. It keeps the nav's own row style (no icons, no menus), so it is the smallest change that still feels like a real decluttering. A is the fallback if you want nothing hidden at all.</p></section>` : ''}
+    <section><h3>All six at a glance</h3><p style="font-size:13px">${IDEAS.map(d=>`<b>${d.key}</b> ${d.name}`).join(' · ')}</p></section>`
+}
+
+document.addEventListener('click', e => {
+  const opt = e.target.closest('.opt'); if(opt){ idx=+opt.dataset.i; open={C:open.C,E:false,F:false}; render(); return }
+  const vb = e.target.closest('#viewing button'); if(vb){ viewing=vb.dataset.s; open.E=false; open.F=false; render(); return }
+  const t = e.target.closest('[data-toggle]'); if(t){ const k=t.dataset.toggle; open[k]=!open[k]; if(k==='C'&&onSecondary()) open.C=false; render(); return }
+  const g = e.target.closest('[data-go]'); if(g){ viewing=g.dataset.go; open.E=false; open.F=false; render(); return }
+  if(!e.target.closest('.pop') && (open.E||open.F)){ open.E=false; open.F=false; render() }
+})
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape' && (open.E||open.F)){ open.E=false; open.F=false; render() }
+  if(e.key==='ArrowRight'){ idx=(idx+1)%IDEAS.length; render() }
+  if(e.key==='ArrowLeft'){ idx=(idx+IDEAS.length-1)%IDEAS.length; render() }
+})
+render()
+</script>
+</body>
+</html>
