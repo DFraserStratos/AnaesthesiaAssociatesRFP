@@ -1,19 +1,19 @@
 /**
- * Replace from a date on a Contract's page (build plan Phase 49; US-04.1.8):
- * the header button (Active, non-system only), the sheet's preview, ticking,
- * the rate notice, the fixed-price pointer, save landing on the new page with
- * its result, the old page's lines and the late disable listing from the
- * change date.
+ * Replace from a date (build plan Phase 49; US-04.1.8): the Contract page's
+ * header button (Active, non-system only) opening its own page, the page's
+ * preview, ticking, the rate notice, the fixed-price pointer, save landing on
+ * the new page with its result, the old page's lines and the late disable
+ * listing from the change date.
  */
 
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { CONTRACT } from '../../../domain/seed/contracts'
-import { advanceClockToDate, disableContract, freshAppState, replaceContract, setProcedureContract, useAppStore, type Actor } from '../../../store'
-import { SurfaceProvider } from '../../../shared'
-import { AdminContractRoute } from '../routes'
-import { contractPath } from '../contractsPaths'
+import { CONTRACT } from '../../../../domain/seed/contracts'
+import { advanceClockToDate, disableContract, freshAppState, replaceContract, setProcedureContract, useAppStore, type Actor } from '../../../../store'
+import { SurfaceProvider } from '../../../../shared'
+import { AdminContractRoute, AdminReplaceContractRoute } from '../../routes'
+import { contractPath, replaceContractPath } from '../../contractsPaths'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 const UNI = CONTRACT.unisports
@@ -34,6 +34,7 @@ function renderAt(url: string) {
         <Routes>
           <Route path="/admin" element={<Outlet context={{ actor: OFFICE, todayISO: useAppStore.getState().clock.todayISO }} />}>
             <Route path="contracts/:contractId" element={<AdminContractRoute />} />
+            <Route path="contracts/:contractId/replace" element={<AdminReplaceContractRoute />} />
             <Route path="*" element={<div data-testid="elsewhere" />} />
           </Route>
         </Routes>
@@ -65,11 +66,30 @@ describe('Replace from a date (US-04.1.8)', () => {
     expect(shot('contract-replace')).toBeNull()
   })
 
-  it('previews the code, lists the Procedures ticked, says the rate is offered from today, and saves', () => {
+  it('opens its own page under the Contract; a system or Disabled Contract goes back to its page', () => {
     renderAt(contractPath(UNI))
     fireEvent.click(screen.getByRole('button', { name: 'Replace from a date' }))
+    expect(location).toBe(replaceContractPath(UNI))
+    const page = shot('contract-replace-sheet')!
+    expect(within(page).getByRole('heading', { level: 1, name: 'Replace from a date' })).toBeInTheDocument()
+    expect(page.textContent).toContain('A new Contract takes over UNI-001. Everything is copied except what you change here.')
+    expect(shot('contract-replace-on-save')!.querySelector('p')!.textContent).toBe('AA code UNI-002 is assigned. 3 Procedures move to it. You land on its page.')
+    cleanup()
+    const system = Object.values(useAppStore.getState().masters.contracts).find((c) => c.systemRole !== undefined)!
+    renderAt(replaceContractPath(system.id))
+    expect(location).toBe(contractPath(system.id))
+    expect(shot('contract-replace-sheet')).toBeNull()
+    cleanup()
+    disableContract(useAppStore, OFFICE, UNI)
+    renderAt(replaceContractPath(UNI))
+    expect(location).toBe(contractPath(UNI))
+    expect(shot('contract-replace-sheet')).toBeNull()
+  })
+
+  it('previews the code, lists the Procedures ticked, says the rate is offered from today, and saves', () => {
+    renderAt(replaceContractPath(UNI))
     const sheet = shot('contract-replace-sheet')!
-    expect(within(sheet).getByRole('heading', { name: 'Replace Unisports Ortho from a date' })).toBeInTheDocument()
+    expect(within(sheet).getByRole('button', { name: 'Unisports Ortho' })).toBeInTheDocument()
     fireEvent.change(within(sheet).getByLabelText('Change date'), { target: { value: '2026-12-01' } })
     fireEvent.change(within(sheet).getByLabelText('New Contract'), { target: { value: '97' } })
     expect(inputOf('contract-replace-now').value).toBe('RVG at $93.47 per unit')
@@ -93,9 +113,8 @@ describe('Replace from a date (US-04.1.8)', () => {
     expect(shot('contract-replaces-line')!.textContent).toContain('Replaces UNI-001 from 1 Dec 2026.')
   })
 
-  it('a refused create keeps the sheet open with its message, writing nothing', () => {
-    renderAt(contractPath(UNI))
-    fireEvent.click(screen.getByRole('button', { name: 'Replace from a date' }))
+  it('a refused create stays on the page with its message, writing nothing', () => {
+    renderAt(replaceContractPath(UNI))
     const sheet = shot('contract-replace-sheet')!
     fireEvent.change(within(sheet).getByLabelText('New Contract'), { target: { value: '0' } })
     const audit = useAppStore.getState().audit.length
@@ -105,18 +124,31 @@ describe('Replace from a date (US-04.1.8)', () => {
     expect(useAppStore.getState().audit.length).toBe(audit)
   })
 
-  it('Escape closes the sheet with nothing written', () => {
-    renderAt(contractPath(UNI))
-    fireEvent.click(screen.getByRole('button', { name: 'Replace from a date' }))
+  it('Cancel and Back return to the Contract with nothing written', () => {
     const audit = useAppStore.getState().audit.length
-    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
-    expect(shot('contract-replace-sheet')).toBeNull()
+    renderAt(replaceContractPath(UNI))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(location).toBe(contractPath(UNI))
+    expect(shot('contract-detail')).not.toBeNull()
+    cleanup()
+    renderAt(replaceContractPath(UNI))
+    fireEvent.click(shot('contract-replace-back')!)
+    expect(location).toBe(contractPath(UNI))
     expect(useAppStore.getState().audit.length).toBe(audit)
   })
 
+  it('Disable now lands on the new Contract with the old one disabled', () => {
+    renderAt(replaceContractPath(UNI))
+    fireEvent.click(document.querySelector('[data-old-choice="disable"]')!)
+    fireEvent.click(screen.getByRole('button', { name: 'Create UNI-002 and move 3' }))
+    const created = Object.values(useAppStore.getState().masters.contracts).find((c) => c.aaCode === 'UNI-002')!
+    expect(location).toBe(contractPath(created.id))
+    expect(useAppStore.getState().masters.contracts[UNI]!.status).toBe('disabled')
+    expect(shot('contract-replaced-result')!.textContent).toContain('Replaced UNI-001. 3 Procedures moved.')
+  })
+
   it('a fixed price shows the price-range pointer, which opens the add-range row', () => {
-    renderAt(contractPath('CT-MER-FACELIFT'))
-    fireEvent.click(screen.getByRole('button', { name: 'Replace from a date' }))
+    renderAt(replaceContractPath('CT-MER-FACELIFT'))
     expect(shot('contract-replace-range-pointer')).not.toBeNull()
     expect(shot('contract-replace-rate-notice')).toBeNull()
     expect(inputOf('contract-replace-new-price').value).toMatch(/ from /)

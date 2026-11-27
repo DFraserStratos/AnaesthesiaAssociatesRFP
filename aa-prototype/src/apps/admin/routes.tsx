@@ -5,7 +5,7 @@ import { neutral, radius, elevation } from '../../theme/tokens'
 import { TextAction } from '../../shared/ui'
 import { RequireEntity } from '../../shell/RequireEntity'
 import { isISODate } from '../../shell/routeParams'
-import { listInSlot, patientByNhi, useAppStore, useToday, type NotificationTarget } from '../../store'
+import { listInSlot, patientByNhi, useAppStore, useToday, type Actor, type NotificationTarget } from '../../store'
 import { DayNav } from './components/DayNav'
 import { AvailabilityFinderSheet } from './flows/AvailabilityFinderSheet'
 import { DayGrid } from './components/DayGrid'
@@ -24,6 +24,7 @@ import { awaitingApprovalPath, creditNotePath, financePath, financePathFromLegac
 import { ContractsSection } from './screens/contracts/ContractsSection'
 import { ContractPage } from './screens/contracts/ContractPage'
 import { NewContractPage } from './screens/contracts/new/NewContractPage'
+import { ReplaceContractPage } from './screens/contracts/ReplaceContractPage'
 import { PartiesTab } from './screens/contracts/PartiesTab'
 import { PartyPage } from './screens/contracts/PartyPage'
 import { FundingTagsTab } from './screens/contracts/FundingTagsTab'
@@ -32,6 +33,7 @@ import { SurgeonsTab } from './screens/people/SurgeonsTab'
 import { SpecialtiesTab } from './screens/people/SpecialtiesTab'
 import { SpecialtyPage } from './screens/people/SpecialtyPage'
 import { anaesthetistRecordPath, surgeonProfilePath } from './peoplePaths'
+import { contractPath } from './contractsPaths'
 import { patientPath } from '../../shared/patients'
 import { SurgeonProfile } from './screens/SurgeonProfile'
 import { AnaesthetistPage } from './screens/AnaesthetistPage'
@@ -374,7 +376,7 @@ export function AdminMastersRoute() {
 // ---------------------------------------------------------------------------
 // Contracts (build plan Phase 45; D92) — `/admin/contracts` (the list),
 // `/admin/contracts/new` (the create panel over the list until 46; one element) and
-// `/admin/contracts/:contractId` (a Contract's page, keyed by its id; an
+// `/admin/contracts/:contractId` (a Contract's page, keyed by its id, with Replace from a date at `.../replace`; an
 // unknown id falls back to the list).
 // ---------------------------------------------------------------------------
 
@@ -425,6 +427,29 @@ export function AdminContractRoute() {
       <ContractPage key={contractId} contractId={contractId} actor={actor} />
     </RequireEntity>
   )
+}
+
+/**
+ * Replace from a date (build plan Phase 49; US-04.1.8): `/admin/contracts/:contractId/replace`. Only an
+ * Active, non-system Contract is replaced; any other goes back to its page, as an unknown id falls back
+ * to the list.
+ */
+export function AdminReplaceContractRoute() {
+  const { contractId = '' } = useParams()
+  const { actor } = useAdminOutlet()
+  const exists = useAppStore((s) => s.masters.contracts[contractId] !== undefined)
+  return (
+    <RequireEntity exists={exists}>
+      <ReplaceContractGate key={contractId} contractId={contractId} actor={actor} />
+    </RequireEntity>
+  )
+}
+
+function ReplaceContractGate({ contractId, actor }: { contractId: string; actor: Actor }) {
+  const contract = useAppStore((s) => s.masters.contracts[contractId])!
+  // Read once: saving with "Disable now" disables this Contract on the way to the new one's page.
+  const [replaceable] = useState(() => contract.status === 'active' && contract.systemRole === undefined)
+  return replaceable ? <ReplaceContractPage contract={contract} actor={actor} /> : <Navigate to={contractPath(contractId)} replace />
 }
 
 // ---------------------------------------------------------------------------

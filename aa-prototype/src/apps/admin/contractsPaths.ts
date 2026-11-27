@@ -45,6 +45,16 @@ export function contractPath(contractId: string, tab: ContractTab = 'overview'):
   return `/admin/contracts/${encodeURIComponent(contractId)}${query({ tab: tab === 'overview' ? undefined : tab })}`
 }
 
+/** A Contract's Overview with the add-range row open (`?add=range`): Replace from a date's pointer for a price change alone. */
+export function contractAddRangePath(contractId: string): string {
+  return `${contractPath(contractId)}${query({ add: 'range' })}`
+}
+
+/** Replace from a date (US-04.1.8): its own page, a child of the Contract it replaces. */
+export function replaceContractPath(contractId: string): string {
+  return `/admin/contracts/${encodeURIComponent(contractId)}/replace`
+}
+
 /** New contract, optionally for a holder (the create panel until 46). */
 export function newContractPath(opts: { holder?: string } = {}): string {
   return `/admin/contracts/new${query({ holder: opts.holder })}`

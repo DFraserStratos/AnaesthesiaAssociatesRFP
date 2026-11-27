@@ -35,6 +35,7 @@ import {
   AdminContractsRoute,
   AdminContractRoute,
   AdminNewContractRoute,
+  AdminReplaceContractRoute,
   AdminPartiesRoute,
   AdminPartyRoute,
   AdminFundingTagsRoute,
@@ -246,6 +247,8 @@ const routeTree = (
               </Route>
               <Route path="tags" element={<AdminFundingTagsRoute />} />
               <Route path=":contractId" element={<AdminContractRoute />} />
+              {/* Replace from a date: its own page under the Contract it replaces. */}
+              <Route path=":contractId/replace" element={<AdminReplaceContractRoute />} />
             </Route>
             <Route path="integrations" element={<IntakeLegacyRedirect />} />
             <Route path="masters">

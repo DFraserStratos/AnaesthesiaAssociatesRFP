@@ -28,13 +28,13 @@ import type { StillOnRow } from '../../../../domain/billing/contractChanges'
 import { neutral } from '../../../../theme/tokens'
 import { PageBody } from '../../components/AdminPage'
 import { PROFILE_CARD, ProfilePage } from '../../components/ProfileChrome'
-import { catalogueReturnPath, contractPath, parseContractTab, type ContractTab } from '../../contractsPaths'
+import { catalogueReturnPath, contractPath, parseContractTab, replaceContractPath, type ContractTab } from '../../contractsPaths'
 import { ContractEventFees } from '../../flows/ContractEventFees'
 import { ContractHistory } from '../../flows/ContractHistory'
-import { ReplaceContractSheet, type ReplacedState } from '../../flows/ReplaceContractSheet'
 import { listShortLabel } from '../../util'
 import { ContractOverview } from './ContractCards'
 import { ContractDisable } from './ContractDisable'
+import type { ReplacedState } from './ReplaceContractPage'
 
 const TAB_LABEL: Record<ContractTab, string> = { overview: 'Overview', bookings: 'Bookings', eventFees: 'Event fees', history: 'History' }
 
@@ -57,8 +57,8 @@ export function ContractPage({ contractId, actor }: { contractId: string; actor:
   const location = useLocation()
   const tab = parseContractTab(params.get('tab'))
   const [feeError, setFeeError] = useState<string | null>(null)
-  // Replace from a date (build plan Phase 49): the sheet, the Disable confirm the to-do notice opens, the result on arrival.
-  const [replacing, setReplacing] = useState(false)
+  // Replace from a date (build plan Phase 49): its own page; here the Disable confirm the to-do notice opens and the result on arrival.
+  const navigate = useNavigate()
   const [disabling, setDisabling] = useState(false)
   const [resultDismissed, setResultDismissed] = useState(false)
   const navState: unknown = location.state
@@ -101,7 +101,7 @@ export function ContractPage({ contractId, actor }: { contractId: string; actor:
             action: (
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                 {contract.status === 'active' && (
-                  <Button variant="secondary" size="desktop" shot="contract-replace" onClick={() => setReplacing(true)}>
+                  <Button variant="secondary" size="desktop" shot="contract-replace" onClick={() => navigate(replaceContractPath(contractId), { state: location.state })}>
                     Replace from a date
                   </Button>
                 )}
@@ -174,7 +174,6 @@ export function ContractPage({ contractId, actor }: { contractId: string; actor:
           <ContractOverview key={addRange ? 'add-range' : 'cards'} contract={contract} actor={actor} addRange={addRange} />
         </PageBody>
       )}
-      {!system && <ReplaceContractSheet contract={contract} actor={actor} open={replacing} onClose={() => setReplacing(false)} />}
       {tab === 'bookings' && <ContractBookings open={touches.open} authorised={touches.authorised} />}
       {tab === 'eventFees' && (
         <Card style={PROFILE_CARD} title="Event fees" shot="contract-event-fees-card">

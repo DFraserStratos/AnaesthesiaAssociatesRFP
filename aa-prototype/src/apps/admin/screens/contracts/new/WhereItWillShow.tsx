@@ -36,7 +36,8 @@ export function whereSentence(
   return `${lists}, ${forWhat}${from}. ${bills}`
 }
 
-export function WhereItWillShow({ draft, rules }: { draft: ContractDraft; rules: DraftRules }) {
+/** `shot` names the card (Replace from a date's rail shows it too). */
+export function WhereItWillShow({ draft, rules, shot = 'new-contract-where' }: { draft: ContractDraft; rules: DraftRules; shot?: string }) {
   const masters = useAppStore((s) => s.masters)
   const holder = rules.holder
   const placement =
@@ -60,7 +61,7 @@ export function WhereItWillShow({ draft, rules }: { draft: ContractDraft; rules:
           contractSpecialtyLabel(masters, draft.specialtyIds),
         )
   return (
-    <Card title="Where it will show" shot="new-contract-where">
+    <Card title="Where it will show" shot={shot}>
       {placement === null ? (
         <span style={{ fontSize: 13, color: neutral.mist }}>Choose the holder to see where it will show on the step rail.</span>
       ) : (
