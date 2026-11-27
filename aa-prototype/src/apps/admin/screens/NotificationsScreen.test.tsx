@@ -38,7 +38,7 @@ describe('Notifications: active or resolved', () => {
     expect(container.querySelector('[data-shot="admin-notifications-page-count"]')).toHaveTextContent('2')
     expect(container.querySelector('[data-shot="admin-notifications-provisional"]')).toBeNull()
     expect(document.body.textContent).not.toMatch(/still being confirmed/)
-    expect(screen.getByText(/asked the office to check/)).toBeInTheDocument()
+    expect(screen.getByText(/^Dr .* asked the office to check/)).toBeInTheDocument()
     expect(container.querySelector('[data-shot="notification-alert-note"]')).toHaveTextContent('Note: "Is the funder right?"')
   })
 
