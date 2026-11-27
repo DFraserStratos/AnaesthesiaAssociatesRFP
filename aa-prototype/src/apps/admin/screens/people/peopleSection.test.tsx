@@ -125,8 +125,8 @@ describe('Anaesthetists: search, status and tier, in the URL', () => {
   it('reads its state from the URL (a reload keeps it) and lists in surname order', () => {
     mountAt('/admin/people/anaesthetists?q=a&tier=1')
     expect((screen.getByLabelText('Search by name, registration or HPI CPN') as HTMLInputElement).value).toBe('a')
-    const tier = screen.getByRole('group', { name: 'Filter by tier' })
-    expect(within(tier).getByRole('button', { name: 'Tier 1' })).toHaveAttribute('aria-pressed', 'true')
+    const tier = screen.getByRole('group', { name: 'Filter by offer order' })
+    expect(within(tier).getByRole('button', { name: 'First' })).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('Active by default; Inactive and All read isActiveOn on the demo day', () => {

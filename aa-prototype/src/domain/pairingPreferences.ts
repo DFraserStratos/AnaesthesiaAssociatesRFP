@@ -68,18 +68,33 @@ export const PAIRING_LABELS = {
 
 export const TIER_VALUES: readonly PriorityTier[] = [1, 2, 3, 4] as const
 
+/**
+ * The offer order (US-01.3.6): who the office offers extra or cover work to
+ * first. The full name is for a value that stands alone, such as a pill on a
+ * picker row; the short name sits beside an "Offer order" heading or label (a
+ * field, a table column, a filter). The type keeps its code name, `PriorityTier`.
+ */
+export const OFFER_ORDER_LABEL = 'Offer order'
+
 export const TIER_LABELS: Record<PriorityTier, string> = {
-  1: 'Tier 1',
-  2: 'Tier 2',
-  3: 'Tier 3',
-  4: 'Tier 4',
+  1: 'Offer first',
+  2: 'Offer second',
+  3: 'Offer third',
+  4: 'Standard',
+}
+
+export const TIER_SHORT_LABELS: Record<PriorityTier, string> = {
+  1: 'First',
+  2: 'Second',
+  3: 'Third',
+  4: 'Standard',
 }
 
 /** An anaesthetist with no tier entry, a new one included, sits here (US-01.3.6 "Default"). */
 export const DEFAULT_PRIORITY_TIER: PriorityTier = 4
 
-export function tierLabel(tier: PriorityTier): string {
-  return TIER_LABELS[tier]
+export function tierLabel(tier: PriorityTier, form: 'full' | 'short' = 'full'): string {
+  return form === 'short' ? TIER_SHORT_LABELS[tier] : TIER_LABELS[tier]
 }
 
 export function isPriorityTier(value: unknown): value is PriorityTier {

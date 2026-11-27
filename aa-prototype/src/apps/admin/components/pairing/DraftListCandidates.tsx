@@ -171,13 +171,13 @@ export function DraftListCandidates({
         <Segmented label="Show" value={reach} options={REACH_OPTIONS} onChange={setReach} />
       </div>
       <div data-shot="tier-filter">
-        <Segmented label="Filter by tier" value={filter} options={FILTER_OPTIONS} onChange={setFilter} />
+        <Segmented label="Filter by offer order" value={filter} options={FILTER_OPTIONS} onChange={setFilter} />
       </div>
       <NameSearchBox value={query} onChange={setQuery} label="Find an anaesthetist" placeholder="Type a name" shot="candidate-search" fill="well" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: 380, overflow: 'auto', paddingRight: 2 }}>
         {shown === 0 && (
           <div style={{ fontSize: 13, color: neutral.mist }}>
-            {query.trim() !== '' ? 'No anaesthetist matches' : filter === 'all' ? 'No one has this session free.' : `No one in ${TIER_LABELS[Number(filter) as PriorityTier]} for this session.`}
+            {query.trim() !== '' ? 'No anaesthetist matches' : filter === 'all' ? 'No one has this session free.' : `No one on ${TIER_LABELS[Number(filter) as PriorityTier]} for this session.`}
           </div>
         )}
         {groups.free.length > 0 && (

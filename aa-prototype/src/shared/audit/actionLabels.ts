@@ -146,7 +146,7 @@ export const ACTION_LABELS: Record<string, string> = {
   // Office-private (catch-up Phase 17): only Admin histories read these.
   'pairing.add': `${PAIRING_LABELS.entry} added`,
   'pairing.end': `${PAIRING_LABELS.entry} ended`,
-  'anaesthetist.tierSet': 'Priority tier changed',
+  'anaesthetist.tierSet': 'Offer order changed',
   // Catch-up Phase 18 (US-04.1.5).
   'party.create': 'Party added',
   'party.update': 'Party updated',

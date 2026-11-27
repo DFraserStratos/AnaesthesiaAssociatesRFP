@@ -18,6 +18,7 @@ import { TriangleAlert } from 'lucide-react'
 import {
   PAIRING_LABELS,
   TIER_LABELS,
+  TIER_SHORT_LABELS,
   TIER_VALUES,
   rankAnaesthetistCandidates,
   type RankedCandidate,
@@ -39,8 +40,8 @@ type TierFilter = 'all' | '1' | '2' | '3' | '4'
 
 export type { TierFilter }
 export const FILTER_OPTIONS: { value: TierFilter; label: string }[] = [
-  { value: 'all', label: 'All' },
-  ...TIER_VALUES.map((t) => ({ value: String(t) as TierFilter, label: TIER_LABELS[t] })),
+  { value: 'all', label: 'Any offer order' },
+  ...TIER_VALUES.map((t) => ({ value: String(t) as TierFilter, label: TIER_SHORT_LABELS[t] })),
 ]
 
 interface AnaesthetistCandidatesProps {
@@ -96,17 +97,17 @@ export function AnaesthetistCandidates({ candidates, surgeonId, requestKey, onPi
   return (
     <div data-shot="candidate-picker" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div data-shot="tier-filter">
-        <Segmented label="Filter by tier" value={filter} options={FILTER_OPTIONS} onChange={setFilter} />
+        <Segmented label="Filter by offer order" value={filter} options={FILTER_OPTIONS} onChange={setFilter} />
       </div>
       <NameSearchBox value={query} onChange={setQuery} label="Find an anaesthetist" placeholder="Type a name" shot="candidate-search" fill="well" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 360, overflow: 'auto', paddingRight: 2 }}>
         {nothingInTier && (
           <div style={{ fontSize: 13, color: neutral.mist }}>
-            {query.trim() !== '' ? 'No anaesthetist matches' : `No one in ${TIER_LABELS[Number(filter) as PriorityTier]} is free for this session.`}
+            {query.trim() !== '' ? 'No anaesthetist matches' : `No one on ${TIER_LABELS[Number(filter) as PriorityTier]} is free for this session.`}
           </div>
         )}
         {ranked.clear.length > 0 && (
-          <Group shot="candidates-clear" heading="In tier order">
+          <Group shot="candidates-clear" heading="In offer order">
             {ranked.clear.map((c, i) => (
               <CandidateRow key={c.anaesthetistId} candidate={c} gapAbove={i > 0 && ranked.clear[i - 1]?.tier !== c.tier} name={nameOf(c.anaesthetistId)} trailing={trailing?.(c.anaesthetistId)} onPick={onPick} />
             ))}

@@ -255,7 +255,7 @@ export const FIELD_LABELS: Record<string, string> = {
   endedAtISO: 'Ended',
   endedBy: 'Ended by',
   endReason: 'End reason',
-  tier: 'Priority tier',
+  tier: 'Offer order',
   pairingPreferenceIds: 'Pairing preferences',
 
   // --- Amounts -------------------------------------------------------------

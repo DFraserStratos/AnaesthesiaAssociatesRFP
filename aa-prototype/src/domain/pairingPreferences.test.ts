@@ -257,7 +257,7 @@ describe('the one label set', () => {
     }
     expect(PAIRING_LABELS.notPreferredWith('Dr Sharma')).toBe('Not preferred with Dr Sharma')
     expect(PAIRING_LABELS.optionSuffix('NOT_PREFERRED')).toBe(' · not preferred')
-    expect(TIER_LABELS[1]).toBe('Tier 1')
+    expect(TIER_LABELS[1]).toBe('Offer first')
   })
 
   it('words each direction of the side sentence', () => {

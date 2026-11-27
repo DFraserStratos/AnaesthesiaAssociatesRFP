@@ -132,8 +132,8 @@ export function endPairingPreference(api: AppStoreApi, actor: Actor, entryId: st
  * `anaesthetist.tierSet` on the anaesthetist entity, before and after.
  */
 export function setPriorityTier(api: AppStoreApi, actor: Actor, anaesthetistId: AnaesthetistId, tier: PriorityTier): Outcome {
-  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can set a priority tier.')
-  if (!isPriorityTier(tier)) return refuse('invalidTier', 'Choose a tier from 1 to 4.')
+  if (actor.role !== 'office') return refuse('officeOnly', 'Only the office can set an offer order.')
+  if (!isPriorityTier(tier)) return refuse('invalidTier', 'Choose an offer order: Offer first, Offer second, Offer third or Standard.')
   const state = api.getState()
   if (state.masters.anaesthetists[anaesthetistId] === undefined) return refuse('notFound', 'Anaesthetist not found.')
   const before = tierFor(state.officePrivate.priorityTiers, anaesthetistId)

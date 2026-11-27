@@ -108,7 +108,7 @@ export function ReassignListFlow({ open, list, actor, onClose, onReassigned }: R
         {targetId === null ? (
           <>
             <div style={{ fontSize: 13, color: neutral.slate }}>
-              Choose an anaesthetist whose {sessionText(list.session)} session is free, listed by tier, then preferred pairing. The List moves into their session.
+              Choose an anaesthetist whose {sessionText(list.session)} session is free, listed by offer order, then preferred pairing. The List moves into their session.
             </div>
             <AnaesthetistCandidates
               candidates={candidateIds}

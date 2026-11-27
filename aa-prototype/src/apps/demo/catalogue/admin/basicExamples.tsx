@@ -700,7 +700,7 @@ export function ProfileChromeExample() {
         facts={[
           { label: 'Status', value: <StatusFactValue tone="ok" word="Active" note="since 9 Jun 2014" /> },
           { label: 'HPI CPN', value: '10EXAM', mono: true },
-          { label: 'Priority tier', value: 'Tier 2' },
+          { label: 'Offer order', value: 'Second' },
         ]}
         reach={{ phone: '021 000 0000', email: 'example@aa.example', emailLabel: 'Email' }}
       >

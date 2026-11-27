@@ -73,9 +73,9 @@ describe('AvailabilityFinderSheet', () => {
 
   it('filters by tier, and switches session', () => {
     const { container } = renderFinder()
-    fireEvent.click(within(container.querySelector('[data-shot="tier-filter"]') as HTMLElement).getByText('Tier 1'))
+    fireEvent.click(within(container.querySelector('[data-shot="tier-filter"]') as HTMLElement).getByText('First'))
     expect(tiers(rows(container, 'candidates-clear')).every((t) => t === 1)).toBe(true)
-    fireEvent.click(within(container.querySelector('[data-shot="tier-filter"]') as HTMLElement).getByText('All'))
+    fireEvent.click(within(container.querySelector('[data-shot="tier-filter"]') as HTMLElement).getByText('Any offer order'))
     fireEvent.click(within(screen.getByRole('group', { name: 'Session' })).getByRole('button', { name: 'AM' }))
     expect(screen.getByText('1 anaesthetist free this AM')).toBeInTheDocument()
     expect(ids(rows(container, 'candidates-clear'))).toEqual([ANAE.hughes])

@@ -1,6 +1,6 @@
 import { neutral } from '../../../theme/tokens'
 import { parseAmount } from '../../../domain/billing/money'
-import { TIER_LABELS, TIER_VALUES, isPriorityTier } from '../../../domain/pairingPreferences'
+import { OFFER_ORDER_LABEL, TIER_SHORT_LABELS, TIER_VALUES, isPriorityTier } from '../../../domain/pairingPreferences'
 import { UNIT_VALUE_INVALID, editAnaesthetist, useAppStore, withChangeSet, type Actor } from '../../../store'
 import { selectPriorityTier, setPriorityTier } from '../../../store/officePrivate'
 import { RATE_LABEL, RATE_PER_UNIT } from '../../../shared/profile/profileCopy'
@@ -8,13 +8,13 @@ import { amountInputText, formatCurrency } from '../../../shared/format'
 import { DefList, DefRow, EditableCard, FieldHint, Segmented, TextField, useCardEdit, type CardCommit } from '../../../shared/ui'
 import { PROFILE_CARD } from './ProfileChrome'
 
-const TIER_OPTIONS = TIER_VALUES.map((t) => ({ value: String(t), label: TIER_LABELS[t] }))
+const TIER_OPTIONS = TIER_VALUES.map((t) => ({ value: String(t), label: TIER_SHORT_LABELS[t] }))
 
 /** At rest the two facts sit side by side (people-section.html #tier, "Proposed, at rest"). */
 const AT_REST_FACTS = { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' } as const
 
 const RATE_HINT = 'The dollar value per RVG unit. The anaesthetist can change it too.'
-const TIER_HINT = 'Orders suggestions when the office assigns or moves a List. Never shown to anaesthetists.'
+const TIER_HINT = 'Who the office offers extra or cover Lists to first, highest on the left. Never shown to anaesthetists.'
 
 interface Draft {
   rate: string
@@ -22,7 +22,7 @@ interface Draft {
 }
 
 /**
- * The anaesthetist's rate per unit and priority tier on one card (build plan Phase 50; US-01.3.6,
+ * The anaesthetist's rate per unit and offer order (the priority tier) on one card (build plan Phase 50; US-01.3.6,
  * DM-09, D102; docs/explorations/people-section.html #tier), on the shared `EditableCard` and
  * `useCardEdit` (moved onto them at the Wave 2 join, build plan Phase 53's lift). At rest it shows
  * both, with Edit. Editing holds a draft: a click on a tier only moves the draft, never saves. Cancel
@@ -68,7 +68,7 @@ export function RateTierCard({ anaesthetistId, actor }: { anaesthetistId: string
   return (
     <EditableCard
       style={PROFILE_CARD}
-      title="Rate and tier"
+      title="Rate and offer order"
       shot="rate-tier-card"
       data-tier={tier}
       editable
@@ -81,8 +81,8 @@ export function RateTierCard({ anaesthetistId, actor }: { anaesthetistId: string
       {draft === null ? (
         <DefList gap={12} style={AT_REST_FACTS}>
           <DefRow layout="stacked" label={RATE_PER_UNIT} mono shot="rate-tier-rate">{formatCurrency(anaesthetist.unitValue)}</DefRow>
-          <DefRow layout="stacked" label="Priority tier" shot="rate-tier-tier">
-            {TIER_LABELS[tier]} <span style={{ fontSize: 12, color: neutral.mist }}>· office only</span>
+          <DefRow layout="stacked" label={OFFER_ORDER_LABEL} shot="rate-tier-tier">
+            {TIER_SHORT_LABELS[tier]} <span style={{ fontSize: 12, color: neutral.mist }}>· office only</span>
           </DefRow>
         </DefList>
       ) : (
@@ -96,7 +96,7 @@ export function RateTierCard({ anaesthetistId, actor }: { anaesthetistId: string
             hint={RATE_HINT}
           />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <Segmented label="Priority tier" value={draft.tier} options={TIER_OPTIONS} onChange={(t) => edit.setDraft({ ...draft, tier: t })} />
+            <Segmented label={OFFER_ORDER_LABEL} value={draft.tier} options={TIER_OPTIONS} onChange={(t) => edit.setDraft({ ...draft, tier: t })} />
             <FieldHint>{TIER_HINT}</FieldHint>
           </div>
         </>

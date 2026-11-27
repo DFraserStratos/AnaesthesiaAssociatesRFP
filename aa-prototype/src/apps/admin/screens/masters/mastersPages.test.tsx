@@ -75,9 +75,9 @@ describe('Master data views', () => {
     expect(screen.getByRole('group', { name: 'Places' })).toBeInTheDocument()
     renderAdmin('/admin/people/anaesthetists')
     const ropata = document.querySelector(`tr[data-anaesthetist="${ANAE.ropata}"]`) as HTMLElement
-    expect(within(ropata).getByText('Tier 4')).toBeInTheDocument()
+    expect(within(ropata).getByText('Standard')).toBeInTheDocument()
     const souter = document.querySelector(`tr[data-anaesthetist="${ANAE.souter}"]`) as HTMLElement
-    expect(within(souter).getByText('Tier 1')).toBeInTheDocument()
+    expect(within(souter).getByText('First')).toBeInTheDocument()
   })
 
   it('a row opens the record, and has no Edit of its own (build plan Phase 54)', () => {
@@ -211,15 +211,15 @@ describe('the surgeon profile and the anaesthetist record', () => {
   it('the record History merges the record and its pairings, each pairing row labelled by its sentence', () => {
     renderAdmin(`/admin/people/anaesthetists/${ANAE.sharma}`)
     const card = document.querySelector('[data-shot="rate-tier-card"]') as HTMLElement
-    fireEvent.click(within(card).getByRole('button', { name: 'Edit rate and tier' }))
-    fireEvent.click(within(card).getByRole('button', { name: 'Tier 1' }))
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit rate and offer order' }))
+    fireEvent.click(within(card).getByRole('button', { name: 'First' }))
     fireEvent.click(within(card).getByRole('button', { name: 'Save' }))
     const preferred = document.querySelector('[data-pairing-group="PREFERRED"]') as HTMLElement
     fireEvent.click(within(preferred).getByRole('button', { name: /^End / }))
     fireEvent.click(screen.getByRole('button', { name: 'End pairing' }))
     fireEvent.click(screen.getByRole('button', { name: 'See history' }))
     const dialog = screen.getByRole('dialog')
-    expect(within(dialog).getByText('Priority tier changed')).toBeInTheDocument()
+    expect(within(dialog).getByText('Offer order changed')).toBeInTheDocument()
     expect(within(dialog).getByText('Pairing preference ended')).toBeInTheDocument()
     expect(within(dialog).getAllByText(/Mr J\. Whitford prefers to work with Dr Priya Sharma/).length).toBeGreaterThan(0)
   })
@@ -232,11 +232,11 @@ describe('the surgeon profile and the anaesthetist record', () => {
     for (const other of ['anaesthetist-identity', 'anaesthetist-contact', 'anaesthetist-bank']) {
       expect(within(document.querySelector(`[data-shot="${other}"]`) as HTMLElement).queryByText(/Rate per unit/)).toBeNull()
     }
-    fireEvent.click(within(card).getByRole('button', { name: 'Edit rate and tier' }))
-    expect(within(card).getByText('Orders suggestions when the office assigns or moves a List. Never shown to anaesthetists.')).toBeInTheDocument()
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit rate and offer order' }))
+    expect(within(card).getByText('Who the office offers extra or cover Lists to first, highest on the left. Never shown to anaesthetists.')).toBeInTheDocument()
     // OQ-102 answered (D36): no provisional line (catch-up Phase 25a).
     expect(within(card).queryByText('Tier names are provisional.')).toBeNull()
-    fireEvent.click(within(card).getByRole('button', { name: 'Tier 1' }))
+    fireEvent.click(within(card).getByRole('button', { name: 'First' }))
     expect(selectPriorityTier(useAppStore.getState(), ANAE.sharma)).not.toBe(1)
     fireEvent.click(within(card).getByRole('button', { name: 'Save' }))
     expect(selectPriorityTier(useAppStore.getState(), ANAE.sharma)).toBe(1)
@@ -246,19 +246,19 @@ describe('the surgeon profile and the anaesthetist record', () => {
   it('the list filters by tier: a tier narrows the rows, All restores them, an empty tier says so', () => {
     renderAdmin('/admin/people/anaesthetists')
     const all = document.querySelectorAll('tr[data-anaesthetist]').length
-    const filter = screen.getByRole('group', { name: 'Filter by tier' })
-    fireEvent.click(within(filter).getByRole('button', { name: 'Tier 1' }))
+    const filter = screen.getByRole('group', { name: 'Filter by offer order' })
+    fireEvent.click(within(filter).getByRole('button', { name: 'First' }))
     const tier1 = [...document.querySelectorAll<HTMLElement>('tr[data-anaesthetist]')]
     expect(tier1.length).toBeGreaterThan(0)
     expect(tier1.length).toBeLessThan(all)
-    for (const row of tier1) expect(within(row).getByText('Tier 1')).toBeInTheDocument()
+    for (const row of tier1) expect(within(row).getByText('First')).toBeInTheDocument()
     expect(document.querySelector(`tr[data-anaesthetist="${ANAE.souter}"]`)).not.toBeNull()
     expect(document.querySelector(`tr[data-anaesthetist="${ANAE.ropata}"]`)).toBeNull()
-    fireEvent.click(within(filter).getByRole('button', { name: 'All tiers' }))
+    fireEvent.click(within(filter).getByRole('button', { name: 'Any offer order' }))
     expect(document.querySelectorAll('tr[data-anaesthetist]').length).toBe(all)
     // Nobody in a tier: the empty line.
     useAppStore.setState((s) => ({ officePrivate: { ...s.officePrivate, priorityTiers: {} } }))
-    fireEvent.click(within(filter).getByRole('button', { name: 'Tier 2' }))
+    fireEvent.click(within(filter).getByRole('button', { name: 'Second' }))
     expect(screen.getByText('No anaesthetists match.')).toBeInTheDocument()
   })
 

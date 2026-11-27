@@ -106,7 +106,7 @@ export const HELP_TOPICS: Readonly<Record<HelpTopicId, HelpTopic>> = {
     title: DRAFT_LISTS,
     body: [
       `A ${DRAFT_LIST} has a hospital, surgeon, day and session, but no anaesthetist yet. Only the office assigns one; anaesthetists never see them.`,
-      'A List lands here when, for example, its anaesthetist returns it or a surgeon\'s regular booking falls on a session marked unavailable. Suggestions come in tier order, Tier 1 first, with any Not preferred pairing shown apart.',
+      'A List lands here when, for example, its anaesthetist returns it or a surgeon\'s regular booking falls on a session marked unavailable. Suggestions come in offer order, with any Not preferred pairing shown apart.',
     ],
   },
   'day.todo': {

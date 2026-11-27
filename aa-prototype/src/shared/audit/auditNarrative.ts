@@ -217,7 +217,7 @@ export function formatAuditValue(key: string, value: unknown, names?: AuditNames
   if (typeof value === 'boolean' && key === 'approvalRequired') return value ? 'on' : 'off'
   if (typeof value === 'boolean') return value ? 'yes' : 'no'
   if (typeof value === 'number') {
-    if (key === 'tier' && isPriorityTier(value)) return tierLabel(value)
+    if (key === 'tier' && isPriorityTier(value)) return tierLabel(value, 'short')
     return MONEY_KEYS.has(key) ? formatCurrency(value) : String(value)
   }
   if (typeof value === 'string') {

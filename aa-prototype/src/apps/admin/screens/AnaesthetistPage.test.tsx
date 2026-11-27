@@ -69,7 +69,7 @@ describe("the anaesthetist's page", () => {
     expect(hero).toHaveTextContent(`Anaesthetist · Registration ${a.registrationNumber}`)
     expect(within(hero).getByRole('button', { name: 'Make inactive' })).toBe(card('anaesthetist-make-inactive'))
     const facts = [...card('profile-facts').querySelectorAll('[data-fact]')].map((el) => el.getAttribute('data-fact'))
-    expect(facts).toEqual(['Status', 'HPI CPN', 'Rate per unit', 'Priority tier'])
+    expect(facts).toEqual(['Status', 'HPI CPN', 'Rate per unit', 'Offer order'])
     expect(card('anaesthetist-hpi-chip')).toHaveTextContent(a.hpiId)
     expect(card('anaesthetist-hpi-chip').closest('[data-shot="profile-facts"]')).not.toBeNull()
     expect(card('profile-facts')).toHaveTextContent('$26.50')
@@ -213,7 +213,7 @@ describe("the anaesthetist's page", () => {
 
   it("places 50's Rate and tier card and 52's Status and History cards as built", () => {
     renderPage()
-    expect(within(card('rate-tier-card')).getByRole('button', { name: 'Edit rate and tier' })).toBeInTheDocument()
+    expect(within(card('rate-tier-card')).getByRole('button', { name: 'Edit rate and offer order' })).toBeInTheDocument()
     // The Status card keeps its facts and the start date; its action is the header's.
     expect(within(card('anaesthetist-status')).queryByRole('button', { name: 'Make inactive' })).toBeNull()
     expect(within(card('anaesthetist-status')).getByRole('button', { name: 'Change start date' })).toBeInTheDocument()

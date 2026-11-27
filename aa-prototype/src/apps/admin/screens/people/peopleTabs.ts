@@ -27,7 +27,7 @@ export interface PeopleTabEntry {
 }
 
 export const PEOPLE_TABS: readonly PeopleTabEntry[] = [
-  { tab: 'anaesthetists', label: 'Anaesthetists', path: peoplePath('anaesthetists'), sub: 'Record, rate, tier and pairing preferences for each anaesthetist.', catalogueRows: ['anaesthetists'], add: true, edit: true, seeded: ['anaesthetists'] },
+  { tab: 'anaesthetists', label: 'Anaesthetists', path: peoplePath('anaesthetists'), sub: 'Record, rate, offer order and pairing preferences for each anaesthetist.', catalogueRows: ['anaesthetists'], add: true, edit: true, seeded: ['anaesthetists'] },
   { tab: 'surgeons', label: 'Surgeons', path: peoplePath('surgeons'), sub: 'Contacts, pairing preferences, Contracts and next Lists for each surgeon.', catalogueRows: ['surgeons'], add: true, edit: true, seeded: ['surgeons'] },
   { tab: 'specialties', label: 'Specialties', path: peoplePath('specialties'), sub: 'Broad surgical specialties, such as General surgery rather than Upper GI.', catalogueRows: ['specialties'], add: true, edit: true, seeded: ['specialties'] },
   { tab: 'patients', label: 'Patients', path: peoplePath('patients'), sub: 'Find a patient by name, NHI or date of birth.', catalogueRows: ['patients, whose records come from Bookings'], add: false, edit: true, seeded: [] },

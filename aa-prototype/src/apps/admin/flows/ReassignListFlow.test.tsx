@@ -82,7 +82,7 @@ describe('ReassignListFlow', () => {
     expect(group(container, 'candidates-not-preferred')).toEqual([])
     const sharma = clear.find((r) => r.textContent?.includes('Sharma, Priya'))!
     expect(sharma).toHaveTextContent('Preferred')
-    expect(sharma).toHaveTextContent('Tier 2')
+    expect(sharma).toHaveTextContent('Offer second')
     fireEvent.click(sharma)
     expect(screen.queryByText(/prefers not to work with/)).toBeNull()
     expect(screen.getByRole('button', { name: 'Confirm reassignment' })).toBeInTheDocument()
@@ -155,10 +155,10 @@ describe('ReassignListFlow', () => {
 
   it('filters both groups by tier', () => {
     const { container } = renderFlow(CHEN_PM)
-    fireEvent.click(within(container.querySelector('[data-shot="tier-filter"]') as HTMLElement).getByText('Tier 1'))
+    fireEvent.click(within(container.querySelector('[data-shot="tier-filter"]') as HTMLElement).getByText('First'))
     expect(tiersOf(group(container, 'candidates-clear'))).toEqual([1, 1])
     expect(group(container, 'candidates-not-preferred')).toEqual([])
-    fireEvent.click(within(container.querySelector('[data-shot="tier-filter"]') as HTMLElement).getByText('Tier 2'))
+    fireEvent.click(within(container.querySelector('[data-shot="tier-filter"]') as HTMLElement).getByText('Second'))
     expect(tiersOf(group(container, 'candidates-clear'))).toEqual([2])
     expect(group(container, 'candidates-not-preferred')).toHaveLength(1)
   })

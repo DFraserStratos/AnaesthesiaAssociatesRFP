@@ -9,7 +9,7 @@ import { sessionText } from '../../../domain/outOfHours'
 import { pricingLabel } from '../../../shared/contracts'
 import { formatCurrency, HPI_CPN_LABEL, locationName, shortDay } from '../../../shared/format'
 import { RATE_PER_UNIT } from '../../../shared/profile/profileCopy'
-import { TIER_LABELS } from '../../../domain/pairingPreferences'
+import { OFFER_ORDER_LABEL, TIER_SHORT_LABELS } from '../../../domain/pairingPreferences'
 import { selectPriorityTier } from '../../../store/officePrivate'
 import { DefList, DefRow, EditableCard, Pill, RailSection, TextField, useCardEdit, type CardCommit, type RailSectionRow } from '../../../shared/ui'
 import {
@@ -66,7 +66,7 @@ export function AnaesthetistPage({ anaesthetistId, actor }: { anaesthetistId: st
     { label: 'Status', value: <StatusFactValue {...statusFact} />, shot: 'anaesthetist-status-sub', data: { 'data-status': status.kind } },
     { label: HPI_CPN_LABEL, value: anaesthetist.hpiId, mono: true, shot: 'anaesthetist-hpi-chip' },
     { label: RATE_PER_UNIT, value: formatCurrency(anaesthetist.unitValue), mono: true },
-    { label: 'Priority tier', value: TIER_LABELS[tier] },
+    { label: OFFER_ORDER_LABEL, value: TIER_SHORT_LABELS[tier] },
   ]
 
   return (

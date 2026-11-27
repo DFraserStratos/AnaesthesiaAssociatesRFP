@@ -4,7 +4,8 @@ import { formatGstNumber } from '../../../../domain/billing/invoicePresentation'
 import { maskBankAccount } from '../../../../domain/bankAccount'
 import { format, parseISO } from 'date-fns'
 import { Link, useNavigate } from 'react-router-dom'
-import { TIER_LABELS, TIER_VALUES, tierFor } from '../../../../domain/pairingPreferences'
+import { OFFER_ORDER_LABEL, TIER_LABELS, TIER_SHORT_LABELS, TIER_VALUES, tierFor } from '../../../../domain/pairingPreferences'
+import type { PriorityTier } from '../../../../domain/types'
 import { useAppStore, useToday, type Actor } from '../../../../store'
 import { statusOn } from '../../../../domain/anaesthetistStatus'
 import { AddAnaesthetistFlow } from '../../flows/AddAnaesthetistFlow'
@@ -32,7 +33,7 @@ const COLUMNS: readonly MasterColumn[] = [
   'Name',
   `Reg · ${HPI_CPN_LABEL}`,
   RATE_PER_UNIT,
-  'Tier',
+  OFFER_ORDER_LABEL,
   'Bank account · GST',
   'Email · phone',
   'Start date',
@@ -44,8 +45,8 @@ const STATUS_OPTIONS: readonly { value: AnaesthetistStatusFilter; label: string 
   { value: 'all', label: 'All' },
 ]
 
-/** The list's tier filter (build plan Phase 50; US-01.3.6): All, then Tier 1 to Tier 4. */
-const TIER_FILTER_OPTIONS = [{ value: 'all', label: 'All tiers' }, ...TIER_VALUES.map((t) => ({ value: String(t), label: TIER_LABELS[t] }))]
+/** The list's offer order filter (build plan Phase 50; US-01.3.6): Any offer order, then First to Standard (short, beside "Any offer order"). */
+const TIER_FILTER_OPTIONS = [{ value: 'all', label: 'Any offer order' }, ...TIER_VALUES.map((t) => ({ value: String(t), label: TIER_SHORT_LABELS[t] }))]
 
 const DEFAULTS = { q: '', status: 'active', tier: 'all' } as const
 
@@ -77,7 +78,7 @@ export function AnaesthetistsTab({ actor }: { actor: Actor }) {
   )
   const pages = pageWindow(rows.length, PEOPLE_PAGE_SIZE, pageParam(list.get('page')))
   const shown = pageOf(rows, PEOPLE_PAGE_SIZE, pages.page)
-  const tierLabel = TIER_FILTER_OPTIONS.find((o) => o.value === tier && o.value !== 'all')?.label
+  const tierLabel = TIER_VALUES.find((t) => String(t) === tier) !== undefined ? TIER_LABELS[Number(tier) as PriorityTier] : undefined
   const narrowed = q.trim() !== '' || status !== 'active' || tier !== 'all'
 
   return (
@@ -91,7 +92,7 @@ export function AnaesthetistsTab({ actor }: { actor: Actor }) {
           <span data-shot="people-result-count">
             <span className="mono">{formatCount(rows.length)}</span> {rows.length === 1 ? 'anaesthetist' : 'anaesthetists'}
             {status === 'active' ? ' active' : status === 'inactive' ? ' inactive' : ''}
-            {tierLabel !== undefined ? ` in ${tierLabel}` : ''}
+            {tierLabel !== undefined ? ` on ${tierLabel}` : ''}
             {q.trim() !== '' ? ` matching "${q.trim()}"` : ''}
           </span>
         }
@@ -99,7 +100,7 @@ export function AnaesthetistsTab({ actor }: { actor: Actor }) {
         <NameSearchBox size="pill" width={260} value={q} onChange={(next) => list.set({ q: next })} label="Search by name, registration or HPI CPN" placeholder="Name, registration or HPI CPN" shot="people-search" />
         <FilterPills ariaLabel="Status" value={status} options={STATUS_OPTIONS} onSelect={(next) => list.set({ status: next })} />
         <div data-shot="tier-filter-list">
-          <FilterPills ariaLabel="Filter by tier" value={tier} options={TIER_FILTER_OPTIONS} onSelect={(next) => list.set({ tier: next })} />
+          <FilterPills ariaLabel="Filter by offer order" value={tier} options={TIER_FILTER_OPTIONS} onSelect={(next) => list.set({ tier: next })} />
         </div>
       </PageToolbar>
       <PageBody>
@@ -138,7 +139,7 @@ export function AnaesthetistsTab({ actor }: { actor: Actor }) {
                     <div style={{ fontSize: 12, color: neutral.slate }}>{a.hpiId}</div>
                   </td>
                   <td className="mono" style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>{formatCurrency(a.unitValue)}</td>
-                  <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}><TierPill tier={tierFor(tiers, a.registrationNumber)} /></td>
+                  <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}><TierPill short tier={tierFor(tiers, a.registrationNumber)} /></td>
                   {/* The bank account over the GST number: one column, so the table fits a laptop without scrolling sideways. */}
                   <td style={{ ...rowCellStyle, whiteSpace: 'nowrap' }}>
                     <div data-shot="anaesthetist-bank" className="mono">{maskBankAccount(a.bankAccount.accountNumber)}</div>

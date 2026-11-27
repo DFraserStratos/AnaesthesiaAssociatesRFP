@@ -237,7 +237,7 @@ export function SessionStatusSheet({ open, slotId, actor, onClose }: { open: boo
                 shot="office-status-choice-colleague"
                 icon={<Users size={18} strokeWidth={2.2} aria-hidden />}
                 title="Hand on to a colleague"
-                line={colleagueCount === 0 ? 'No colleague is free this session.' : `${colleagueCount} ${colleagueCount === 1 ? 'colleague is' : 'colleagues are'} free on ${dayLine}, by tier, then preferred pairing.`}
+                line={colleagueCount === 0 ? 'No colleague is free this session.' : `${colleagueCount} ${colleagueCount === 1 ? 'colleague is' : 'colleagues are'} free on ${dayLine}, by offer order, then preferred pairing.`}
                 disabled={colleagueCount === 0 && closedColleagues.length === 0}
                 onClick={() => {
                   setRoute('colleague')

@@ -85,7 +85,7 @@ describe('AssignDraftListSheet', () => {
       orders.add(idsOf(again).join(','))
     }
     expect(orders.size).toBeGreaterThan(1)
-    fireEvent.click(within(view.container.querySelector('[data-shot="tier-filter"]') as HTMLElement).getByText('Tier 1'))
+    fireEvent.click(within(view.container.querySelector('[data-shot="tier-filter"]') as HTMLElement).getByText('First'))
     expect(tiersOf(rowsIn(view.container, 'candidates-clear')).every((t) => t === 1)).toBe(true)
     expect(closedTiers(view.container).every((t) => t === 1)).toBe(true)
   })
