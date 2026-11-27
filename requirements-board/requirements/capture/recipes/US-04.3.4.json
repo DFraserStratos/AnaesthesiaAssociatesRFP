@@ -113,15 +113,25 @@
     {
       "name": "needs-destination",
       "app": "admin",
-      "caption": "Bookings without an invoice destination wait in the office's To-do",
-      "start": "/admin/day/2026-11-24",
+      "caption": "Bookings with no Contract wait on the Contracts tab of the Day rail's work card",
+      "start": "/admin/day/2026-11-26",
       "states": [
         {
-          "steps": [],
-          "highlight": [
-            "[data-shot=needs-destination-row] >> nth=0"
+          "caption": "The Day view's Contracts tab: each List with Procedures still to set, and how far each has got",
+          "steps": [
+            {
+              "click": "[data-shot=admin-work-tab-contracts]"
+            },
+            {
+              "wait": "[data-shot=contracts-to-set-row]"
+            },
+            {
+              "wait": 400
+            }
           ],
-          "caption": "Bookings without one wait in the Day rail's To-do, marked No Contract"
+          "highlight": [
+            "[data-shot=admin-contracts-to-set]"
+          ]
         }
       ]
     },

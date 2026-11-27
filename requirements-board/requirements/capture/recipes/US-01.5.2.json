@@ -95,7 +95,7 @@
       "name": "recurring-clash",
       "app": "admin",
       "caption": "A recurring booking on an unavailable session goes to the office as a Draft List",
-      "start": "/admin/draft-lists",
+      "start": "/admin/lists/draft-lists",
       "states": [
         {
           "steps": [

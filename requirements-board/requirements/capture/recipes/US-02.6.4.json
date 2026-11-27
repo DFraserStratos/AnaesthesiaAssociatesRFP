@@ -1,0 +1,91 @@
+{
+  "id": "US-02.6.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "stub-only",
+      "app": "web",
+      "caption": "A List whose only line is a stub cannot be submitted until the office resolves or rejects the stub",
+      "start": "/web/lists/L-34821-2026-12-08-PM",
+      "states": [
+        {
+          "state": "held",
+          "caption": "Dr Souter's Tue 8 Dec PM List holds only a stub: it does not read as complete and Mark list completed waits",
+          "steps": [
+            {
+              "wait": "[data-shot=list-submit-held]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=list-stub-row]",
+            "[data-shot=list-submit-held]"
+          ]
+        },
+        {
+          "state": "reason",
+          "caption": "The reason, shown to whoever tries",
+          "steps": [
+            {
+              "click": "[data-shot=list-submit-held]"
+            },
+            {
+              "wait": "[role=dialog]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "stub-only",
+      "app": "mobile",
+      "caption": "A List whose only line is a stub cannot be submitted until the office resolves or rejects the stub",
+      "start": "/mobile/lists/L-34821-2026-12-08-PM",
+      "states": [
+        {
+          "state": "held",
+          "caption": "The List holds only a stub: the submit button is greyed",
+          "steps": [
+            {
+              "wait": "[data-shot=list-submit-held]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=list-stub]",
+            "[data-shot=list-submit-held]"
+          ]
+        },
+        {
+          "state": "reason",
+          "caption": "The reason, shown to whoever tries",
+          "steps": [
+            {
+              "click": "[data-shot=list-submit-held]"
+            },
+            {
+              "wait": "[data-aa-mobile-product] [role=dialog]"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-aa-mobile-product] [role=dialog]"
+          ]
+        }
+      ]
+    }
+  ]
+}

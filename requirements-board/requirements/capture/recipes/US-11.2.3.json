@@ -90,7 +90,7 @@
       "name": "review-payer-contact",
       "app": "admin",
       "caption": "Office review flags a billed payer with neither, on that Procedure's row, never a block",
-      "start": "/admin/review/L-45178-2026-11-20-AM",
+      "start": "/admin/lists/to-authorise/L-45178-2026-11-20-AM",
       "states": [
         {
           "steps": [

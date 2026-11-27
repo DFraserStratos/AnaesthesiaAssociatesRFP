@@ -1,6 +1,6 @@
 {
   "id": "US-02.5.2",
   "status": "absent",
-  "absentReason": "Future Work: a day move is not detected from a re-sent List or handled automatically. In the first release the office decides each row on the matching screen (US-02.1.2).",
+  "absentReason": "Future Work: a day move is not detected from a re-sent List or handled automatically. In the first release the office decides each arriving List at Intake (US-02.1.2).",
   "shots": []
 }

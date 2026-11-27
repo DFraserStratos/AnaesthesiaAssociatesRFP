@@ -7,7 +7,7 @@
       "name": "invoice-list",
       "app": "admin",
       "caption": "Invoices raised and sent by the billing run: the Layout column reads Patient or Holder, the Delivery column how each was sent",
-      "start": "/admin/invoices",
+      "start": "/admin/finances/invoices",
       "setup": [
         {
           "scenario": "S3"
@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -31,7 +31,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-PM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"

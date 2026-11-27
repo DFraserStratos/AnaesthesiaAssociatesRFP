@@ -107,7 +107,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/review/L-34821-2026-12-14-AM"
+              "goto": "/admin/lists/to-authorise/L-34821-2026-12-14-AM"
             },
             {
               "wait": 800

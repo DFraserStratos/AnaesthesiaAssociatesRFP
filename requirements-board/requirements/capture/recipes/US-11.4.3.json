@@ -134,49 +134,54 @@
       ]
     },
     {
-      "name": "matching-insurer",
+      "name": "arrival-insurer",
       "app": "admin",
-      "caption": "A hospital row's insurer and approval number show on the row and are recorded by the office's decision",
-      "start": "/admin/intake/matching",
+      "caption": "A hospital's update shows the insurer and approval number it sent; the office's decision records them",
+      "start": "/admin/intake",
+      "setup": [
+        {
+          "goto": "/admin/intake"
+        },
+        {
+          "trigger": "intake-rooms-email-list"
+        },
+        {
+          "wait": 300
+        },
+        {
+          "click": "[data-shot=intake-inbox-row][data-arrival-kind=newList]:has-text(\"Mr Okafor · St George's\")"
+        },
+        {
+          "wait": "[data-shot=intake-place-list]"
+        },
+        {
+          "click": "[data-shot=intake-place-list-submit]"
+        },
+        {
+          "wait": "[data-shot=intake-newlist-decided]"
+        },
+        {
+          "trigger": "intake-stg-day-before"
+        },
+        {
+          "wait": 300
+        }
+      ],
       "states": [
         {
           "steps": [
             {
-              "click": "[data-shot=matching-import-open]"
+              "click": "[data-shot=intake-inbox-row][data-arrival-kind=update]:has-text(\"Mr Okafor\")"
             },
             {
-              "wait": "[data-shot=matching-import]"
+              "wait": "[data-shot=intake-bench-update]"
             },
             {
-              "click": "[data-sample-id=SAMPLE_SX]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "press": "Escape"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-shot^='matching-row-']:has-text('Ratima')"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=matching-diff]"
+            "[data-shot=intake-update-diff]"
           ]
         }
       ]

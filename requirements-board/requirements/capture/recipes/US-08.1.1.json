@@ -7,7 +7,7 @@
       "name": "authorise-list",
       "app": "admin",
       "caption": "Authorising a submitted List locks each Procedure and hands the List to the billing run",
-      "start": "/admin/review/L-34821-2026-11-23-AM",
+      "start": "/admin/lists/to-authorise/L-34821-2026-11-23-AM",
       "setup": [
         {
           "scenario": "S3"
@@ -56,7 +56,7 @@
       "name": "billing-run",
       "app": "admin",
       "caption": "The billing run raises its invoices from each Procedure's locked record, one invoice per payer, and sends each by its party's delivery; the Procedures on a Booking billing the same payer share an invoice",
-      "start": "/admin/billing?list=L-34821-2026-11-23-AM",
+      "start": "/admin/finances/billing?list=L-34821-2026-11-23-AM",
       "setup": [
         {
           "scenario": "S3"
@@ -65,7 +65,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -85,7 +85,8 @@
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-34821-2026-11-23-AM]"
+            "[data-shot=\"billing-list-L-34821-2026-11-23-AM\"]",
+            "[data-shot=billing-table] tr[data-booking-id]"
           ]
         }
       ]

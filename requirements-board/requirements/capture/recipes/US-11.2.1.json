@@ -29,7 +29,7 @@
       "name": "surgeon-fixed-price",
       "app": "admin",
       "caption": "A surgeon's fixed price bills the payer: Mr Doyle's bariatric price list invoices the patient, Gareth Mills",
-      "start": "/admin/review/L-43015-2026-11-17-AM",
+      "start": "/admin/lists/to-authorise/L-43015-2026-11-17-AM",
       "states": [
         {
           "steps": [
@@ -47,7 +47,7 @@
       "name": "insured-claims-back",
       "app": "admin",
       "caption": "An insured patient who claims the money back is invoiced under No contract · RVG like any patient",
-      "start": "/admin/review/L-29104-2026-11-19-AM",
+      "start": "/admin/lists/to-authorise/L-29104-2026-11-19-AM",
       "states": [
         {
           "steps": [

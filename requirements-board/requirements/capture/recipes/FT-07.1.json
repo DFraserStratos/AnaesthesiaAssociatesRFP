@@ -7,7 +7,7 @@
       "name": "draft-to-active",
       "app": "admin",
       "caption": "A Draft List becomes ACTIVE once the office assigns its anaesthetist",
-      "start": "/admin/draft-lists?open=LD-001",
+      "start": "/admin/lists/draft-lists?open=LD-001",
       "states": [
         {
           "state": "draft",

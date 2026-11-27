@@ -10,7 +10,7 @@
       "start": "/admin/day/2026-11-17/bookings/BK0032",
       "setup": [
         {
-          "goto": "/admin/review/L-41267-2026-11-17-AM"
+          "goto": "/admin/lists/to-authorise/L-41267-2026-11-17-AM"
         },
         {
           "trigger": "stage-post-op"
@@ -387,7 +387,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-11-27-PM"
+              "goto": "/admin/lists/to-authorise/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"

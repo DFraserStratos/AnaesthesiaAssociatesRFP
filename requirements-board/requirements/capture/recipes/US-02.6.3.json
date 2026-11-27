@@ -6,67 +6,78 @@
     {
       "name": "add-nhi",
       "app": "admin",
-      "caption": "The office adds the NHI at intake and the Booking takes the stub's place (our reading)",
-      "start": "/admin/intake/matching",
+      "caption": "The office adds the NHI at Intake and the Booking takes the stub's place",
+      "start": "/admin/intake/arrival/nhi~IRS001",
       "states": [
         {
           "state": "waiting",
-          "caption": "Mere Tipene's row waits for an NHI: the stub notice, the NHI typed in its field, Add NHI and Reject",
+          "caption": "Mere Tipene's row waits for an NHI, a stub on Dr Souter's List in her place",
           "steps": [
             {
-              "click": "[data-shot^='matching-row-'][data-import-row-id=IRS001]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "fill": "[data-shot=matching-nhi] >> role=textbox",
-              "value": "ZQA1024"
+              "wait": "[data-shot=waiting-nhi-row]"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=matching-stub]",
-            "[data-shot=matching-nhi]"
+            "[data-shot=waiting-nhi-row]"
+          ]
+        },
+        {
+          "state": "typed",
+          "caption": "The NHI typed in Add NHI, checked before it is added",
+          "steps": [
+            {
+              "click": "[data-shot=waiting-nhi-add]"
+            },
+            {
+              "wait": "[data-shot=add-nhi-sheet]"
+            },
+            {
+              "fill": "[data-shot=add-nhi-field]",
+              "value": "ZQA1024"
+            },
+            {
+              "wait": "[data-shot=add-nhi-preview]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
           ]
         },
         {
           "state": "added",
-          "caption": "Add NHI creates the Booking, and it takes the stub's place on the List (our reading)",
+          "caption": "Added: Mere Tipene is now on Dr Souter's List",
           "steps": [
             {
-              "click": "[data-shot^='matching-row-'][data-import-row-id=IRS001]"
+              "click": "[data-shot=waiting-nhi-add]"
             },
             {
-              "wait": "[data-shot=matching-panel]"
+              "wait": "[data-shot=add-nhi-sheet]"
             },
             {
-              "wait": 400
-            },
-            {
-              "fill": "[data-shot=matching-nhi] >> role=textbox",
+              "fill": "[data-shot=add-nhi-field]",
               "value": "ZQA1024"
             },
             {
+              "wait": "[data-shot=add-nhi-preview]"
+            },
+            {
+              "click": "[data-shot=add-nhi-save]"
+            },
+            {
+              "wait": "[data-shot=add-nhi-done]"
+            },
+            {
               "wait": 300
-            },
-            {
-              "click": "[data-shot=stub-add-nhi]"
-            },
-            {
-              "wait": "[data-shot=matching-banner]"
-            },
-            {
-              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=matching-banner]"
+            "[data-shot=add-nhi-done]"
           ]
         }
       ]
@@ -74,42 +85,39 @@
     {
       "name": "add-nhi",
       "app": "admin",
-      "caption": "The office adds the NHI at intake and the Booking takes the stub's place (our reading)",
+      "caption": "The office adds the NHI at Intake and the Booking takes the stub's place",
       "start": "/admin/day/2026-12-08",
       "setup": [
         {
-          "goto": "/admin/intake/matching"
+          "goto": "/admin/intake/arrival/nhi~IRS001"
         },
         {
-          "click": "[data-shot^='matching-row-'][data-import-row-id=IRS001]"
+          "click": "[data-shot=waiting-nhi-add]"
         },
         {
-          "wait": "[data-shot=matching-panel]"
+          "wait": "[data-shot=add-nhi-sheet]"
         },
         {
-          "wait": 400
-        },
-        {
-          "fill": "[data-shot=matching-nhi] >> role=textbox",
+          "fill": "[data-shot=add-nhi-field]",
           "value": "ZQA1024"
         },
         {
+          "wait": "[data-shot=add-nhi-preview]"
+        },
+        {
+          "click": "[data-shot=add-nhi-save]"
+        },
+        {
+          "wait": "[data-shot=add-nhi-done]"
+        },
+        {
           "wait": 300
-        },
-        {
-          "click": "[data-shot=stub-add-nhi]"
-        },
-        {
-          "wait": "[data-shot=matching-banner]"
-        },
-        {
-          "wait": 400
         }
       ],
       "states": [
         {
           "state": "resolved",
-          "caption": "The List drawer: Mere Tipene's Booking where the stub stood, and no stub left (our reading)",
+          "caption": "The List drawer: Mere Tipene's Booking where the stub stood, and no stub left",
           "steps": [
             {
               "click": "button[data-list-id=\"L-34821-2026-12-08-PM\"]"
@@ -130,7 +138,7 @@
     {
       "name": "add-nhi",
       "app": "mobile",
-      "caption": "The office adds the NHI at intake and the Booking takes the stub's place (our reading)",
+      "caption": "The office adds the NHI at Intake and the Booking takes the stub's place",
       "start": "/mobile/lists/L-34821-2026-12-08-PM",
       "states": [
         {
@@ -150,7 +158,7 @@
         },
         {
           "state": "resolved",
-          "caption": "Once the office adds the NHI, the Booking stands where the stub was (our reading)",
+          "caption": "Once the office adds the NHI, the Booking stands where the stub was",
           "steps": [
             {
               "trigger": "stub-office-adds-nhi"

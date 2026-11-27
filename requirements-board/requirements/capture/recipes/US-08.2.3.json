@@ -7,7 +7,7 @@
       "name": "split-invoices",
       "app": "admin",
       "caption": "One procedure's fee split on the Booking between nib and the patient, an invoice each",
-      "start": "/admin/invoices",
+      "start": "/admin/finances/invoices?show=all&q=Alan%20Prentice",
       "setup": [
         {
           "scenario": "S3"
@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -31,7 +31,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-PM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -56,7 +56,7 @@
       "name": "insured-portion",
       "app": "admin",
       "caption": "nib's share of the fee on its own invoice, with a note naming the other share",
-      "start": "/admin/invoices",
+      "start": "/admin/finances/invoices",
       "setup": [
         {
           "scenario": "S3"
@@ -65,7 +65,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -80,7 +80,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-PM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -95,6 +95,9 @@
       "states": [
         {
           "steps": [
+            {
+              "goto": "/admin/finances/invoices?show=all&q=AA-2026-0005"
+            },
             {
               "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0005\") >> role=button[name=/^View invoice /]"
             },
@@ -113,7 +116,7 @@
       "name": "remaining-portion",
       "app": "admin",
       "caption": "The patient's gap, the rest of the fee, invoiced to Alan Prentice",
-      "start": "/admin/invoices",
+      "start": "/admin/finances/invoices",
       "setup": [
         {
           "scenario": "S3"
@@ -122,7 +125,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -137,7 +140,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-PM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -152,6 +155,9 @@
       "states": [
         {
           "steps": [
+            {
+              "goto": "/admin/finances/invoices?show=all&q=AA-2026-0006"
+            },
             {
               "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0006\") >> role=button[name=/^View invoice /]"
             },

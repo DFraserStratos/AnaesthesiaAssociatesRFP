@@ -1,6 +1,6 @@
 {
   "id": "US-02.5.1",
   "status": "absent",
-  "absentReason": "Future Work: a modification from an integration is not applied automatically. In the first release the office applies each hospital modification on the matching screen (US-02.1.2, US-02.1.3).",
+  "absentReason": "Future Work: a modification from an integration is not applied automatically. In the first release the office applies each hospital update at Intake (US-02.1.2, US-02.1.3).",
   "shots": []
 }

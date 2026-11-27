@@ -26,10 +26,7 @@
           "caption": "A cleared warning leaves the to-do list",
           "steps": [
             {
-              "click": "[data-shot=admin-warnings-todo] >> role=button[name=/^Show all/]"
-            },
-            {
-              "click": "[data-shot=admin-warnings-todo] >> role=button[name=\"Clear (optional) warning for Annette Riley\"]"
+              "click": "[data-shot=admin-warnings-todo] >> role=button[name=\"Clear warning for Annette Riley\"]"
             },
             {
               "wait": 400

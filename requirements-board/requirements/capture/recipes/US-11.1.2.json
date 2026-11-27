@@ -4,48 +4,99 @@
   "absentReason": "",
   "shots": [
     {
-      "name": "nhi-validator",
+      "name": "nhi-check",
       "app": "admin",
-      "caption": "NHI validator for both formats",
-      "start": "/admin/intake/validators",
+      "caption": "Every NHI typed in is checked in both formats",
+      "start": "/admin/intake/arrival/nhi~IRS001",
       "states": [
         {
           "state": "current",
-          "caption": "Current format NHI validated",
+          "caption": "A current format NHI passes the check",
           "steps": [
             {
-              "fill": "[data-shot=integrations-nhi-validator] input",
-              "value": "ZAA0067"
+              "click": "[data-shot=waiting-nhi-add]"
+            },
+            {
+              "wait": "[data-shot=add-nhi-sheet]"
+            },
+            {
+              "fill": "[data-shot=add-nhi-field]",
+              "value": "ZQA1024"
+            },
+            {
+              "wait": 600
             }
           ],
           "highlight": [
-            "[data-shot=integrations-nhi-validator]"
+            "[role=dialog]"
           ]
         },
         {
           "state": "new",
-          "caption": "New format NHI validated",
+          "caption": "A new format NHI passes the check",
           "steps": [
             {
-              "fill": "[data-shot=integrations-nhi-validator] input",
-              "value": "ACA31FM"
+              "click": "[data-shot=waiting-nhi-add]"
+            },
+            {
+              "wait": "[data-shot=add-nhi-sheet]"
+            },
+            {
+              "fill": "[data-shot=add-nhi-field]",
+              "value": "ZBX41AL"
+            },
+            {
+              "wait": 600
             }
           ],
           "highlight": [
-            "[data-shot=integrations-nhi-validator]"
+            "[role=dialog]"
           ]
         },
         {
           "state": "invalid",
-          "caption": "NHI with a wrong check digit rejected",
+          "caption": "An NHI with a wrong check digit is refused, with the reason",
           "steps": [
             {
-              "fill": "[data-shot=integrations-nhi-validator] input",
-              "value": "ZAA0068"
+              "click": "[data-shot=waiting-nhi-add]"
+            },
+            {
+              "wait": "[data-shot=add-nhi-sheet]"
+            },
+            {
+              "fill": "[data-shot=add-nhi-field]",
+              "value": "ZAE0311"
+            },
+            {
+              "wait": 600
             }
           ],
           "highlight": [
-            "[data-shot=integrations-nhi-validator]"
+            "[role=dialog]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "help",
+      "app": "admin",
+      "caption": "Admin's Help explains the two NHI formats and how the check digit is worked out",
+      "start": "/admin/day/2026-11-24",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=nav-help]"
+            },
+            {
+              "wait": "[data-shot=support-format-checks-nhi]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=support-format-checks-nhi]"
           ]
         }
       ]

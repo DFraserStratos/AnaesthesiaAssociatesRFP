@@ -1,0 +1,49 @@
+{
+  "id": "US-13.1.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "lists-section",
+      "app": "admin",
+      "caption": "The Lists section: one side-nav entry with four tabs, each its own page with its own table, filters and one-line sub",
+      "start": "/admin/lists/draft-lists",
+      "states": [
+        {
+          "state": "draft-lists",
+          "caption": "Draft Lists, Conflicts, Contracts to set and To authorise, each tab's number counting what needs doing, and one badge on Lists",
+          "steps": [
+            {
+              "wait": "[data-shot=lists-tabs]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=lists-tabs]",
+            "[data-shot=nav-badge-lists]"
+          ]
+        },
+        {
+          "state": "conflicts",
+          "caption": "The Conflicts tab, on its own address",
+          "steps": [
+            {
+              "click": "[data-shot=lists-tabs] a[data-lists-tab=conflicts]"
+            },
+            {
+              "wait": "[data-shot=conflicts-table]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=lists-tabs]"
+          ]
+        }
+      ]
+    }
+  ]
+}

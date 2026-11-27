@@ -74,7 +74,7 @@
       "name": "phone-note",
       "app": "admin",
       "caption": "Log a phone note, issues are resolved by a call from the office",
-      "start": "/admin/review/L-25490-2026-11-23-AM",
+      "start": "/admin/lists/to-authorise/L-25490-2026-11-23-AM",
       "states": [
         {
           "steps": [
@@ -95,7 +95,7 @@
       "name": "changed-since-submitted",
       "app": "admin",
       "caption": "Review shows the anaesthetist changed the List after submitting it; the last change stands",
-      "start": "/admin/review/L-34821-2026-11-23-PM",
+      "start": "/admin/lists/to-authorise/L-34821-2026-11-23-PM",
       "setup": [
         {
           "goto": "/mobile/lists/L-34821-2026-11-23-PM/bookings/BK0025"

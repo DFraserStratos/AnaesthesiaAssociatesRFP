@@ -35,7 +35,7 @@
           "caption": "Sent but not paid: the cancel sheet says the prepayment invoice is credited in full, so the patient is not chased",
           "steps": [
             {
-              "goto": "/admin/invoices?view=approval"
+              "goto": "/admin/finances/invoices?view=approval"
             },
             {
               "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
@@ -114,7 +114,7 @@
           "caption": "A payment that arrives after the credit note is refunded to the payer at once",
           "steps": [
             {
-              "goto": "/admin/invoices?view=approval"
+              "goto": "/admin/finances/invoices?view=approval"
             },
             {
               "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
@@ -206,7 +206,7 @@
               "wait": 400
             },
             {
-              "goto": "/admin/billing"
+              "goto": "/admin/finances/ledger?list=holding"
             },
             {
               "wait": "[data-shot=holding-entry][data-entry-kind=refunded]"

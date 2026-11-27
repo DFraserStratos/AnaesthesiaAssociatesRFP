@@ -1,0 +1,74 @@
+{
+  "id": "US-02.1.7",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "sources",
+      "app": "admin",
+      "caption": "Intake's Sources view: the state of each source of incoming Lists",
+      "start": "/admin/intake/sources",
+      "states": [
+        {
+          "state": "each-source",
+          "caption": "Each hospital feed and the rooms' mailbox: receiving or not, when it last sent, and today's messages",
+          "steps": [
+            {
+              "wait": "[data-shot=intake-sources-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": []
+        },
+        {
+          "state": "messages",
+          "caption": "How many messages each source sent today, and what each became",
+          "steps": [
+            {
+              "wait": "[data-shot=intake-sources-messages]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-sources-messages]"
+          ]
+        },
+        {
+          "state": "held",
+          "caption": "A message that could not be read, held under its source with the reason",
+          "steps": [
+            {
+              "wait": "[data-shot=intake-sources-held]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-sources-held]"
+          ]
+        },
+        {
+          "state": "not-connected",
+          "caption": "Hospitals not connected listed as such, and the note that AA only reads from these sources",
+          "steps": [
+            {
+              "wait": "[data-shot=intake-sources-not-connected]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-sources-not-connected]",
+            "[data-shot=intake-sources-inbound]"
+          ]
+        }
+      ]
+    }
+  ]
+}

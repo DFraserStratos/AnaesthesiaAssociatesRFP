@@ -7,7 +7,7 @@
       "name": "split-combined",
       "app": "admin",
       "caption": "A split after invoicing credits the original, then raises one additional invoice per component",
-      "start": "/admin/invoices",
+      "start": "/admin/finances/invoices",
       "states": [
         {
           "state": "button",
@@ -18,6 +18,9 @@
             },
             {
               "wait": 800
+            },
+            {
+              "goto": "/admin/finances/invoices?show=all&q=Lorraine%20Petrie"
             },
             {
               "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Lorraine Petrie\") >> nth=0 >> td >> nth=0"
@@ -39,6 +42,9 @@
             },
             {
               "wait": 800
+            },
+            {
+              "goto": "/admin/finances/invoices?show=all&q=Lorraine%20Petrie"
             },
             {
               "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Lorraine Petrie\") >> nth=0 >> td >> nth=0"
@@ -93,6 +99,9 @@
               "wait": 800
             },
             {
+              "goto": "/admin/finances/invoices?show=all&q=Lorraine%20Petrie"
+            },
+            {
               "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Lorraine Petrie\") >> nth=0 >> td >> nth=0"
             },
             {
@@ -137,6 +146,9 @@
             },
             {
               "wait": 800
+            },
+            {
+              "goto": "/admin/finances/invoices?show=all&q=Lorraine%20Petrie"
             },
             {
               "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Lorraine Petrie\") >> nth=0 >> td >> nth=0"
@@ -191,6 +203,9 @@
               "wait": 800
             },
             {
+              "goto": "/admin/finances/invoices?show=all&q=Lorraine%20Petrie"
+            },
+            {
               "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Lorraine Petrie\") >> nth=0 >> td >> nth=0"
             },
             {
@@ -222,6 +237,9 @@
             },
             {
               "wait": 800
+            },
+            {
+              "goto": "/admin/finances/invoices?show=all&q=Lorraine%20Petrie"
             },
             {
               "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Lorraine Petrie\") >> nth=0 >> td >> nth=0"
@@ -267,7 +285,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/review?tab=events"
+              "goto": "/admin/finances/payments"
             },
             {
               "wait": "[data-shot=admin-events-queue]"
@@ -285,7 +303,7 @@
               "wait": 600
             },
             {
-              "goto": "/admin/billing"
+              "goto": "/admin/finances/billing"
             },
             {
               "trigger": "run-next-billing-run"
@@ -294,7 +312,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/finances/invoices?show=all&q=Lorraine%20Petrie"
             },
             {
               "wait": "[data-shot=invoice-list-standing]"

@@ -6,8 +6,8 @@
     {
       "name": "billing-monitor",
       "app": "admin",
-      "caption": "Billing monitor, the office view of every billing run: summary tiles, filters and the Xero sync queue, here holding one hand-off waiting for Xero",
-      "start": "/admin/billing",
+      "caption": "The Billing tab, the office view of every billing run: each Booking of each authorised List under its anaesthetist, with its fix beside any problem",
+      "start": "/admin/finances/billing",
       "setup": [
         {
           "scenario": "S3"
@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -31,7 +31,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-PM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -46,7 +46,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/billing"
+          "goto": "/admin/finances/billing"
         },
         {
           "trigger": "billing-failure"

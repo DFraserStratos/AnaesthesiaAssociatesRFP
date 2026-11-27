@@ -7,7 +7,7 @@
       "name": "left-off",
       "app": "admin",
       "caption": "Prepaid Procedures are left off the final invoice; nothing is deducted",
-      "start": "/admin/invoices/INV2570",
+      "start": "/admin/finances/invoices/INV2570",
       "setup": [
         {
           "goto": "/web/lists/L-34821-2026-11-27-PM"
@@ -68,7 +68,7 @@
           "wait": 1500
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-27-PM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-27-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"

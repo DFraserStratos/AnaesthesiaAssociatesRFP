@@ -29,7 +29,7 @@
       "name": "poll-flags-void",
       "app": "admin",
       "caption": "The poll also catches what was changed directly in Xero: AA-2026-0002 voided in Xero while the engine's receivable is open, flagged for the office",
-      "start": "/admin/billing",
+      "start": "/admin/finances/xero",
       "setup": [
         {
           "scenario": "S3"
@@ -38,7 +38,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -78,11 +78,15 @@
         {
           "steps": [
             {
-              "wait": "[data-shot=billing-xero-divergence]"
+              "wait": "[data-shot=xero-group-changed]"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=billing-xero-divergence]"
+            "[data-shot=xero-group-changed]",
+            "[data-shot=xero-table] tr[data-divergence-id]"
           ]
         }
       ]
@@ -91,7 +95,7 @@
       "name": "poll-flags-amended",
       "app": "admin",
       "caption": "The poll also catches what was changed directly in Xero: AA-2026-0002 edited in Xero to a total $20.00 lower than the engine issued, flagged for the office",
-      "start": "/admin/billing",
+      "start": "/admin/finances/xero",
       "setup": [
         {
           "scenario": "S3"
@@ -100,7 +104,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -140,11 +144,15 @@
         {
           "steps": [
             {
-              "wait": "[data-shot=billing-xero-divergence]"
+              "wait": "[data-shot=xero-group-changed]"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=billing-xero-divergence]"
+            "[data-shot=xero-group-changed]",
+            "[data-shot=xero-table] tr[data-divergence-id]"
           ]
         }
       ]

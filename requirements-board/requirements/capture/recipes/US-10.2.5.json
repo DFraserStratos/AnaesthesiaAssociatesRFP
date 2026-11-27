@@ -7,10 +7,10 @@
       "name": "remittance-advice",
       "app": "admin",
       "caption": "The remittance advice shows the negative invoice netted against the positive ones",
-      "start": "/admin/billing/payment-runs/PR0001/remittance/41267",
+      "start": "/admin/finances/payments/PR0001/remittance/41267",
       "setup": [
         {
-          "goto": "/admin/billing"
+          "goto": "/admin/finances/payments"
         },
         {
           "wait": "[data-shot=payment-cycle]"
@@ -41,7 +41,8 @@
           "wait": 2500
         },
         {
-          "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
+          "click": "[data-shot=billing-run-payables-in-xero]",
+          "timeout": 45000
         },
         {
           "wait": "[data-shot=billing-payables-result]"
@@ -68,10 +69,10 @@
       "name": "payables-run-detail",
       "app": "admin",
       "caption": "The payment to the anaesthetist is the net total",
-      "start": "/admin/billing/payment-runs/PR0001",
+      "start": "/admin/finances/payments/PR0001",
       "setup": [
         {
-          "goto": "/admin/billing"
+          "goto": "/admin/finances/payments"
         },
         {
           "wait": "[data-shot=payment-cycle]"
@@ -102,7 +103,8 @@
           "wait": 2500
         },
         {
-          "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
+          "click": "[data-shot=billing-run-payables-in-xero]",
+          "timeout": 45000
         },
         {
           "wait": "[data-shot=billing-payables-result]"

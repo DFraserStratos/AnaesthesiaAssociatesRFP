@@ -6,7 +6,7 @@
     {
       "name": "tier-record",
       "app": "admin",
-      "caption": "The priority tier on the anaesthetist's Rate and tier card, seen only by the office",
+      "caption": "The offer order on the anaesthetist's Rate and offer order card, seen only by the office",
       "start": "/admin/people/anaesthetists/41267",
       "states": [
         {
@@ -24,15 +24,15 @@
     {
       "name": "tier-list",
       "app": "admin",
-      "caption": "The People section's Anaesthetists list, filtered by tier",
+      "caption": "The People section's Anaesthetists list, filtered by offer order",
       "start": "/admin/people/anaesthetists",
       "states": [
         {
           "state": "tier-1",
-          "caption": "The Anaesthetists list filtered to Tier 1, office only",
+          "caption": "The Anaesthetists list filtered to those offered first, office only",
           "steps": [
             {
-              "click": "[data-shot=tier-filter-list] >> role=button[name=\"Tier 1\"]"
+              "click": "[data-shot=tier-filter-list] >> role=button[name=\"First\"]"
             },
             {
               "wait": 400
@@ -47,7 +47,7 @@
     {
       "name": "tier-order",
       "app": "admin",
-      "caption": "Cover suggestions ordered by tier, then preferred pairing, shuffled within that, seen only by the office",
+      "caption": "Cover suggestions in offer order, then preferred pairing, shuffled within that, seen only by the office",
       "start": "/admin/day/2026-11-25",
       "states": [
         {
@@ -72,7 +72,7 @@
         },
         {
           "state": "filter",
-          "caption": "The same picker filtered to Tier 1",
+          "caption": "The same picker filtered to those offered first",
           "steps": [
             {
               "click": "[data-list-id=\"L-34821-2026-11-25-AM\"]"
@@ -87,7 +87,7 @@
               "wait": 500
             },
             {
-              "click": "[data-shot=tier-filter] >> role=button[name=\"Tier 1\"]"
+              "click": "[data-shot=tier-filter] >> role=button[name=\"First\"]"
             },
             {
               "wait": 500
@@ -103,7 +103,7 @@
     {
       "name": "finder-tiers",
       "app": "admin",
-      "caption": "Find available on the Day view: free anaesthetists by tier, shuffled within a tier, office only",
+      "caption": "Find available on the Day view: free anaesthetists in offer order, shuffled within each step, office only",
       "start": "/admin/day/2026-11-24",
       "states": [
         {
@@ -131,8 +131,8 @@
     {
       "name": "draft-list-tiers",
       "app": "admin",
-      "caption": "Who can fill a Draft List, ordered by tier and shuffled within a tier, seen only by the office",
-      "start": "/admin/draft-lists",
+      "caption": "Who can fill a Draft List, in offer order and shuffled within each step, seen only by the office",
+      "start": "/admin/lists/draft-lists",
       "states": [
         {
           "steps": [
@@ -149,7 +149,7 @@
               "wait": 300
             },
             {
-              "click": "[data-shot=tier-filter] >> role=button[name=\"Tier 2\"]"
+              "click": "[data-shot=tier-filter] >> role=button[name=\"Second\"]"
             },
             {
               "wait": 500

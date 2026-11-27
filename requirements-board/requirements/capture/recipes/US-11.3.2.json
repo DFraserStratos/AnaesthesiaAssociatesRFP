@@ -1,7 +1,7 @@
 {
   "id": "US-11.3.2",
-  "status": "captured",
-  "absentReason": "",
+  "status": "partial",
+  "absentReason": "The web List's alert is not shot: the hospital file that once created Sarah Mitchell's Booking on the web origin is gone (Intake rebuild), and the web origin cannot run the phone's demo action. The phone shows the same alert.",
   "shots": [
     {
       "name": "balance-warning",
@@ -11,110 +11,53 @@
       "states": [
         {
           "state": "preview",
-          "caption": "The matching row previews the warning before Create Booking: Sarah Mitchell has a 98-day invoice billed to her",
+          "caption": "Phone advice for Sarah Mitchell, who has a 98-day invoice billed to her: the strong warning shows before the Booking is saved",
           "steps": [
-            {
-              "click": "[data-shot=matching-import-open]"
-            },
-            {
-              "wait": "[data-shot=matching-import]"
-            },
-            {
-              "click": "[data-sample-id=SAMPLE_STG]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "wait": "[data-shot=matching-balance-preview]"
-            }
-          ],
-          "highlight": [
-            "[data-shot=matching-balance-preview]"
-          ]
-        },
-        {
-          "state": "result",
-          "caption": "After Create Booking, the decision reads the strong warning",
-          "steps": [
-            {
-              "click": "[data-shot=matching-import-open]"
-            },
-            {
-              "wait": "[data-shot=matching-import]"
-            },
-            {
-              "click": "[data-sample-id=SAMPLE_STG]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-shot=matching-apply]"
-            },
-            {
-              "wait": "[data-shot=matching-banner]"
-            },
-            {
-              "wait": "[data-shot=matching-balance-result]"
-            }
-          ],
-          "highlight": [
-            "[data-shot=matching-balance-result]"
-          ]
-        },
-        {
-          "state": "to-do",
-          "caption": "The strong red warning on the Admin to-do list",
-          "steps": [
-            {
-              "click": "[data-shot=matching-import-open]"
-            },
-            {
-              "wait": "[data-shot=matching-import]"
-            },
-            {
-              "click": "[data-sample-id=SAMPLE_STG]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-shot=matching-apply]"
-            },
-            {
-              "wait": "[data-shot=matching-banner]"
-            },
             {
               "goto": "/admin/day/2026-11-24"
             },
             {
-              "wait": "[data-shot=admin-warnings-todo]"
+              "click": "button[data-slot-id=\"S-43015-2026-11-24-PM\"]"
             },
             {
               "wait": 400
+            },
+            {
+              "click": "role=button[name=\"Book (phone advice)\"]"
+            },
+            {
+              "wait": 400
+            },
+            {
+              "select": "[role=dialog]:not([data-testid=admin-list-drawer]) [data-shot=assign-hospital]",
+              "value": "H-FORTE"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "select": "[role=dialog]:not([data-testid=admin-list-drawer]) select[data-shot=surgeon-picker]",
+              "value": "S-OKAFOR"
+            },
+            {
+              "wait": 300
+            },
+            {
+              "click": "role=button[name=\"Continue to add booking\"]"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "fill": "[role=dialog]:not([data-testid=admin-list-drawer]) [placeholder=\"ABC1234\"]",
+              "value": "CQY9304"
+            },
+            {
+              "wait": "[data-shot=manual-balance-preview]"
             }
           ],
           "highlight": [
-            "[data-shot=admin-warnings-todo]"
+            "[data-shot=manual-balance-preview]"
           ]
         },
         {
@@ -181,58 +124,6 @@
           ],
           "highlight": [
             "[data-shot=master-patient-balance-threshold]"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "balance-warning",
-      "app": "web",
-      "caption": "The strong alert on the anaesthetist's List, with no amount",
-      "setup": [
-        {
-          "goto": "/admin/intake/matching"
-        },
-        {
-          "click": "[data-shot=matching-import-open]"
-        },
-        {
-          "wait": "[data-shot=matching-import]"
-        },
-        {
-          "click": "[data-sample-id=SAMPLE_STG]"
-        },
-        {
-          "click": "[data-shot=matching-import-confirm]"
-        },
-        {
-          "wait": "[data-shot=matching-panel]"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "click": "[data-shot=matching-apply]"
-        },
-        {
-          "wait": "[data-shot=matching-banner]"
-        }
-      ],
-      "start": "/web/lists/L-34821-2026-12-01-AM",
-      "states": [
-        {
-          "state": "anaesthetist",
-          "caption": "Dr Souter's List after the Booking is created: a strong red alert on Sarah Mitchell's Booking",
-          "steps": [
-            {
-              "wait": "[data-shot=balance-alert-chip]"
-            },
-            {
-              "wait": 300
-            }
-          ],
-          "highlight": [
-            "[data-shot=balance-alert-chip]"
           ]
         }
       ]

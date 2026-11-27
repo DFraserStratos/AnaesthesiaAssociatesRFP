@@ -7,7 +7,7 @@
       "name": "payables-awaiting-xero-run",
       "app": "admin",
       "caption": "Once its receivable is paid, the payable is released and waits for this week's payment run, paid in Xero: nothing disbursed yet",
-      "start": "/admin/billing",
+      "start": "/admin/finances/payments",
       "setup": [
         {
           "scenario": "S3"
@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -63,7 +63,7 @@
       "name": "after-xero-run",
       "app": "admin",
       "caption": "Once the week is closed, its BCTIs approved and the payment schedule sent, Run payables in Xero (simulated) pays the bill in Xero and the Billing Engine records the disbursement",
-      "start": "/admin/billing",
+      "start": "/admin/finances/payments",
       "setup": [
         {
           "scenario": "S3"
@@ -72,7 +72,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -124,7 +124,8 @@
               "wait": 2500
             },
             {
-              "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
+              "click": "[data-shot=billing-run-payables-in-xero]",
+              "timeout": 45000
             },
             {
               "wait": "[data-shot=billing-payables-result]"

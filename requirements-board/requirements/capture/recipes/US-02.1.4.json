@@ -4,227 +4,111 @@
   "absentReason": "",
   "shots": [
     {
-      "name": "unmatched-queue",
+      "name": "feed",
       "app": "admin",
-      "caption": "A row with no NHI, or that matches nothing, waits in the unmatched queue until the office decides",
-      "start": "/admin/intake/matching",
+      "caption": "Everything waiting for the office in one inbox, grouped by surgery day, one row for each arriving List",
+      "start": "/admin/intake",
       "states": [
         {
-          "state": "waiting",
-          "caption": "A row with no NHI, or that matches nothing, waits in the unmatched queue until the office decides",
+          "state": "to-decide",
+          "caption": "Everything still to decide, from every source, grouped by surgery day",
           "steps": [
             {
-              "click": "[data-shot=matching-import-open]"
+              "wait": "[data-shot=intake-inbox-row]"
             },
             {
-              "wait": "[data-shot=matching-import]"
-            },
-            {
-              "click": "[data-sample-id=SAMPLE_SX]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "press": "Escape"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[aria-label=\"Show rows\"] >> text=/^Unmatched/"
-            },
-            {
-              "wait": 400
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=matching-unmatched]",
-            "[data-stat=unmatched]"
+            "[data-shot=intake-inbox]"
           ]
         },
         {
-          "state": "nhi-added",
-          "caption": "A valid NHI added: the row leaves the unmatched queue and its Booking takes the stub's place on the List",
+          "state": "filters",
+          "caption": "Filters for what is waiting for an NHI and what has been decided, by kind and by source",
           "steps": [
             {
-              "click": "[data-shot=matching-import-open]"
-            },
-            {
-              "wait": "[data-shot=matching-import]"
-            },
-            {
-              "click": "[data-sample-id=SAMPLE_SX]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "press": "Escape"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[aria-label=\"Show rows\"] >> text=/^Unmatched/"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-shot^='matching-row-']:has-text('Tama Henare')"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "fill": "[data-shot=matching-nhi] >> role=textbox",
-              "value": "ZQA1008"
+              "wait": "[data-shot=intake-inbox-row]"
             },
             {
               "wait": 300
-            },
-            {
-              "click": "[data-shot=stub-add-nhi]"
-            },
-            {
-              "wait": "[data-shot=matching-banner]"
-            },
-            {
-              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=matching-banner]"
+            "[data-shot=intake-inbox-filters]"
           ]
         },
         {
-          "state": "decided",
-          "caption": "The row for a session with no List, decided by the office as a Draft List: nothing is dropped",
+          "state": "never-dropped",
+          "caption": "A PDF that cannot be read and a message that was held still land in the inbox, with the reason",
           "steps": [
             {
-              "click": "[data-shot=matching-import-open]"
-            },
-            {
-              "wait": "[data-shot=matching-import]"
-            },
-            {
-              "click": "[data-sample-id=SAMPLE_SX]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "press": "Escape"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-shot^='matching-row-']:has-text('Grace Whitu')"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-decision=createDraft]"
+              "wait": "[data-shot=intake-inbox-row][data-arrival-kind=unreadable]"
             },
             {
               "wait": 300
-            },
-            {
-              "click": "[data-shot=matching-apply]"
-            },
-            {
-              "wait": "[data-shot=matching-banner]"
-            },
-            {
-              "wait": 300
-            },
-            {
-              "press": "Escape"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[aria-label=\"Show rows\"] >> text=/^Decided/"
-            },
-            {
-              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot^='matching-row-']:has-text('Grace Whitu')"
+            "[data-shot=intake-inbox-row][data-arrival-kind=unreadable]",
+            "[data-shot=intake-inbox-row][data-arrival-kind=held]"
           ]
         }
       ]
     },
     {
-      "name": "unmatched-queue",
+      "name": "needs-nhi",
       "app": "admin",
-      "caption": "A row with no NHI, or that matches nothing, waits in the unmatched queue until the office decides",
-      "start": "/admin/day/2026-12-01",
-      "setup": [
-        {
-          "goto": "/admin/intake/matching"
-        },
-        {
-          "click": "[data-shot=matching-import-open]"
-        },
-        {
-          "wait": "[data-shot=matching-import]"
-        },
-        {
-          "click": "[data-sample-id=SAMPLE_SX]"
-        },
-        {
-          "click": "[data-shot=matching-import-confirm]"
-        },
-        {
-          "wait": "[data-shot=matching-panel]"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "press": "Escape"
-        },
-        {
-          "wait": 400
-        }
-      ],
+      "caption": "The rows waiting for an NHI, under their own filter",
+      "start": "/admin/intake?show=needs-nhi",
       "states": [
         {
-          "state": "stub",
-          "caption": "While Tama Henare's row waits for an NHI, a stub stands in its place on Dr Souter's Tue 1 Dec PM List",
           "steps": [
             {
-              "click": "button[data-list-id=\"L-34821-2026-12-01-PM\"]"
+              "wait": "[data-shot=intake-inbox-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-inbox]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "decided",
+      "app": "admin",
+      "caption": "What the office has decided stays in the inbox under Decided",
+      "start": "/admin/intake?show=decided",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=intake-inbox-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-inbox]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "stub",
+      "app": "admin",
+      "caption": "While Mere Tipene's row waits for an NHI, a stub stands in its place on Dr Souter's Tue 8 Dec PM List",
+      "start": "/admin/day/2026-12-08",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "button[data-list-id=\"L-34821-2026-12-08-PM\"]"
             },
             {
               "wait": "[data-testid=admin-list-drawer]"

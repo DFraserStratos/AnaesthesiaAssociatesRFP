@@ -7,7 +7,7 @@
       "name": "assign-draft-list",
       "app": "admin",
       "caption": "The office picks only the anaesthetist; the session is set on the Draft List, which then becomes active",
-      "start": "/admin/draft-lists?open=LD-001",
+      "start": "/admin/lists/draft-lists?open=LD-001",
       "states": [
         {
           "state": "drawer",
@@ -19,13 +19,13 @@
           "highlight": [
             "[data-shot=draft-list-available]"
           ],
-          "caption": "A Draft List's drawer: who is free that session, with tier pills"
+          "caption": "A Draft List's drawer: who is free that session, with their offer order"
         },
         {
           "state": "pick",
           "steps": [
             {
-              "goto": "/admin/draft-lists"
+              "goto": "/admin/lists/draft-lists"
             },
             {
               "wait": 500
@@ -49,14 +49,14 @@
           "highlight": [
             "[data-shot=admin-assign-draft-list]"
           ],
-          "caption": "Assign Draft List, Everyone: Free by tier then Preferred, Not preferred apart, Not available shown but never selectable"
+          "caption": "Assign Draft List, Everyone: free in offer order then Preferred, Not preferred apart, Not available shown but never selectable"
         },
         {
           "state": "not-available",
           "caption": "A colleague marked unavailable cannot be picked; the session is made available first, with their agreement",
           "steps": [
             {
-              "goto": "/admin/draft-lists"
+              "goto": "/admin/lists/draft-lists"
             },
             {
               "wait": 500
@@ -85,7 +85,7 @@
           "state": "warning",
           "steps": [
             {
-              "goto": "/admin/draft-lists"
+              "goto": "/admin/lists/draft-lists"
             },
             {
               "wait": 500
@@ -97,7 +97,7 @@
               "wait": 400
             },
             {
-              "click": "[data-draft-list-row]:has-text(\"Thu\"):has-text(\"Reid\") >> role=button[name=/^Assign/]"
+              "click": "[data-draft-list-row]:has-text(\"Reid\"):has([aria-label=\"Assign Draft List, Thu 26 Nov PM\"]) >> role=button[name=/^Assign/]"
             },
             {
               "wait": 500

@@ -1,0 +1,89 @@
+{
+  "id": "US-08.4.7",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "invoices",
+      "app": "admin",
+      "caption": "The Invoices tab: every invoice, prepayment invoice and credit note AA raises on a payer",
+      "start": "/admin/finances/invoices",
+      "states": [
+        {
+          "state": "unpaid",
+          "caption": "It opens on Unpaid, with what is still owed; the other states and All are a filter away",
+          "steps": [
+            {
+              "wait": "[data-testid=invoice-list-table-shell] tr[data-invoice-id]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoices-tabs]",
+            "[data-shot=invoices-count]"
+          ]
+        },
+        {
+          "state": "row",
+          "caption": "Each row: its kind, payer, patient and Booking, anaesthetist, date raised, total, what is owed, its state with the age of an unpaid one, and how it was delivered",
+          "steps": [
+            {
+              "wait": "[data-testid=invoice-list-table-shell] tr[data-invoice-id]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-testid=invoice-list-table-shell] tr[data-invoice-id] >> nth=0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "search",
+      "app": "admin",
+      "caption": "Searched by patient: Tessa Henare's invoices found from the one list",
+      "start": "/admin/finances/invoices?show=all&q=Tessa%20Henare",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-testid=invoice-list-table-shell] tr[data-invoice-id]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoices-search]",
+            "[data-testid=invoice-list-table-shell]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "awaiting-approval",
+      "app": "admin",
+      "caption": "Awaiting approval: the prepayment invoices waiting to be approved and sent, with the switch for the approval step beside them",
+      "start": "/admin/finances/invoices?view=approval",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=invoices-tabs]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=invoices-tabs]"
+          ]
+        }
+      ]
+    }
+  ]
+}

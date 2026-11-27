@@ -19,7 +19,7 @@
         },
         {
           "state": "anaesthetists",
-          "caption": "The People section, anaesthetists with their rate per unit, priority tier, HPI CPN, masked bank account and status, each opening their page",
+          "caption": "The People section, anaesthetists with their rate per unit, offer order, HPI CPN, masked bank account and status, each opening their page",
           "steps": [
             {
               "goto": "/admin/people/anaesthetists"

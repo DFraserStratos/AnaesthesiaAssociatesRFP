@@ -12,21 +12,40 @@
         {
           "state": "stack-kept",
           "steps": [
-            { "wait": "[data-shot=procedure-stack]" },
-            { "scroll": "[data-testid=slide-booking] [data-testid=mobile-booking-scroll]", "by": 520 },
-            { "wait": 400 }
+            {
+              "wait": "[data-shot=procedure-stack]"
+            },
+            {
+              "scroll": "[data-testid=slide-booking] [data-testid=mobile-booking-scroll]",
+              "by": 520
+            },
+            {
+              "wait": 400
+            }
           ],
-          "highlight": ["[data-shot=procedure-stack]", "[data-shot=billing-contract-rows]", "[data-shot=price-card]"]
+          "highlight": [
+            "[data-shot=procedure-stack]",
+            "[data-shot=billing-contract-rows]",
+            "[data-shot=price-card]"
+          ]
         },
         {
           "state": "tip-open",
           "caption": "Help at the point of need",
           "steps": [
-            { "click": "[data-shot=info-tip-capture-stack]" },
-            { "wait": "[data-shot=info-tip-capture-stack-sheet]" },
-            { "wait": 500 }
+            {
+              "click": "[data-shot=info-tip-capture-stack]"
+            },
+            {
+              "wait": "[data-shot=info-tip-capture-stack-sheet]"
+            },
+            {
+              "wait": 500
+            }
           ],
-          "highlight": ["[data-shot=info-tip-capture-stack-sheet]"]
+          "highlight": [
+            "[data-shot=info-tip-capture-stack-sheet]"
+          ]
         }
       ]
     },
@@ -45,11 +64,19 @@
           "state": "tip-open",
           "caption": "Help at the point of need",
           "steps": [
-            { "click": "[data-shot=info-tip-day-statuses]" },
-            { "wait": "[data-shot=info-tip-day-statuses-popover]" },
-            { "wait": 400 }
+            {
+              "click": "[data-shot=info-tip-day-statuses]"
+            },
+            {
+              "wait": "[data-shot=info-tip-day-statuses-popover]"
+            },
+            {
+              "wait": 400
+            }
           ],
-          "highlight": ["[data-shot=info-tip-day-statuses-popover]"]
+          "highlight": [
+            "[data-shot=info-tip-day-statuses-popover]"
+          ]
         }
       ]
     },
@@ -57,15 +84,23 @@
       "name": "review-tip",
       "app": "admin",
       "caption": "Help at the point of need",
-      "start": "/admin/review/L-34821-2026-11-16-AM",
+      "start": "/admin/lists/to-authorise/L-34821-2026-11-16-AM",
       "states": [
         {
           "steps": [
-            { "click": "[data-shot=info-tip-review-contracts]" },
-            { "wait": "[data-shot=info-tip-review-contracts-popover]" },
-            { "wait": 400 }
+            {
+              "click": "[data-shot=info-tip-review-contracts]"
+            },
+            {
+              "wait": "[data-shot=info-tip-review-contracts-popover]"
+            },
+            {
+              "wait": 400
+            }
           ],
-          "highlight": ["[data-shot=info-tip-review-contracts-popover]"]
+          "highlight": [
+            "[data-shot=info-tip-review-contracts-popover]"
+          ]
         }
       ]
     },
@@ -77,12 +112,22 @@
       "states": [
         {
           "steps": [
-            { "scroll": "[data-shot=price-card]" },
-            { "click": "[data-shot=info-tip-capture-price]" },
-            { "wait": "[data-shot=info-tip-capture-price-popover]" },
-            { "wait": 400 }
+            {
+              "scroll": "[data-shot=price-card]"
+            },
+            {
+              "click": "[data-shot=info-tip-capture-price]"
+            },
+            {
+              "wait": "[data-shot=info-tip-capture-price-popover]"
+            },
+            {
+              "wait": 400
+            }
           ],
-          "highlight": ["[data-shot=info-tip-capture-price-popover]"]
+          "highlight": [
+            "[data-shot=info-tip-capture-price-popover]"
+          ]
         }
       ]
     }

@@ -1,0 +1,69 @@
+{
+  "id": "US-13.3.3",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "finances-section",
+      "app": "admin",
+      "caption": "The Finances section: one side-nav entry with six tabs, opening on Billing",
+      "start": "/admin/finances",
+      "states": [
+        {
+          "state": "billing",
+          "caption": "Billing, Invoices, Payments, Ledger, Xero and AA fees, each tab's number counting what needs doing, and one warning badge on Finances",
+          "steps": [
+            {
+              "wait": "[data-shot=finances-tabs]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=finances-tabs]",
+            "[data-shot=nav-badge-finances]"
+          ]
+        },
+        {
+          "state": "payments",
+          "caption": "The Payments tab counts the events awaiting approval, approved here for the next billing run",
+          "steps": [
+            {
+              "click": "[data-shot=finances-tabs] a[data-finances-tab=payments]"
+            },
+            {
+              "wait": "[data-shot=events-awaiting-approval]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=finances-tabs]",
+            "[data-shot=events-awaiting-approval]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "record-page",
+      "app": "admin",
+      "caption": "A record opens on its own page under its tab, with a way back: an anaesthetist's account under Ledger",
+      "start": "/admin/finances/ledger/anaesthetists/34821",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=ledger-account]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    }
+  ]
+}

@@ -7,7 +7,7 @@
       "name": "fee-settings",
       "app": "admin",
       "caption": "Fixed items plus a charge per BCTI, kept in settings and not in code",
-      "start": "/admin/billing/aa-fees/settings",
+      "start": "/admin/finances/aa-fees/settings",
       "states": [
         {
           "state": "schedule",

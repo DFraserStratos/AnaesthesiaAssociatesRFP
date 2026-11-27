@@ -69,9 +69,6 @@
               "click": "[data-shot=surgeon-name-card-edit]"
             },
             {
-              "click": "[data-shot=surgeon-identifiers-edit]"
-            },
-            {
               "wait": "[data-shot=surgeon-practice-field]"
             },
             {

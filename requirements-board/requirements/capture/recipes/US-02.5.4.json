@@ -1,6 +1,6 @@
 {
   "id": "US-02.5.4",
   "status": "absent",
-  "absentReason": "Future Work: there are no automated inbound changes. In the first release every hospital change waits on the matching screen for the office, who may apply it until the List is authorised (US-02.1.2).",
+  "absentReason": "Future Work: there are no automated inbound changes. In the first release every hospital change waits at Intake for the office, who may apply it until the List is authorised (US-02.1.2).",
   "shots": []
 }

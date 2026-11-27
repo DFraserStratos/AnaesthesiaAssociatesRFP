@@ -1,6 +1,6 @@
 {
   "id": "US-13.2.3",
   "status": "absent",
-  "absentReason": "Retired: merged into US-13.2.1, where the ledger's view for one anaesthetist is shot.",
+  "absentReason": "Retired: merged into US-13.2.1, where an anaesthetist's account under Ledger is shot.",
   "shots": []
 }

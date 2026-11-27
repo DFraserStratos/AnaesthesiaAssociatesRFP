@@ -6,7 +6,7 @@
     {
       "name": "procedure-text",
       "app": "web",
-      "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
+      "caption": "The hospital's text replaces the rooms' once the office approves the update; the rooms' text stays in the change history",
       "start": "/web/lists/L-34821-2026-12-08-AM/bookings/BK0043",
       "states": [
         {
@@ -25,75 +25,8 @@
     },
     {
       "name": "procedure-text",
-      "app": "web",
-      "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
-      "start": "/web/lists/L-34821-2026-12-08-AM/bookings/BK0043",
-      "setup": [
-        {
-          "goto": "/admin/intake/matching"
-        },
-        {
-          "click": "[data-shot=matching-import-open]"
-        },
-        {
-          "wait": "[data-shot=matching-import]"
-        },
-        {
-          "click": "[data-sample-id=SAMPLE_STG]"
-        },
-        {
-          "click": "[data-shot=matching-import-confirm]"
-        },
-        {
-          "wait": "[data-shot=matching-panel]"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "press": "Escape"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "click": "[data-shot^='matching-row-']:has-text('Diane Foster')"
-        },
-        {
-          "wait": "[data-shot=matching-panel]"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "click": "[data-shot=matching-apply]"
-        },
-        {
-          "wait": "[data-shot=matching-banner]"
-        },
-        {
-          "wait": 300
-        }
-      ],
-      "states": [
-        {
-          "state": "hospital-update",
-          "caption": "The hospital's text, once the office applies the row on Matching",
-          "steps": [
-            {
-              "wait": 400
-            }
-          ],
-          "highlight": [
-            "[data-shot=procedure-text]"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "procedure-text",
       "app": "mobile",
-      "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
+      "caption": "The hospital's text replaces the rooms' once the office approves the update; the rooms' text stays in the change history",
       "start": "/mobile/lists/L-34821-2026-12-08-AM/bookings/BK0043",
       "states": [
         {
@@ -131,143 +64,6 @@
           ],
           "highlight": [
             "[data-shot=procedure-text]"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "procedure-text",
-      "app": "admin",
-      "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
-      "start": "/admin/day/2026-12-08/bookings/BK0043",
-      "states": [
-        {
-          "state": "rooms",
-          "caption": "The procedure text as the rooms sent it",
-          "steps": [
-            {
-              "wait": 400
-            }
-          ],
-          "highlight": [
-            "[data-shot=procedure-text]"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "procedure-text",
-      "app": "admin",
-      "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
-      "start": "/admin/day/2026-12-08/bookings/BK0043",
-      "setup": [
-        {
-          "goto": "/admin/intake/matching"
-        },
-        {
-          "click": "[data-shot=matching-import-open]"
-        },
-        {
-          "wait": "[data-shot=matching-import]"
-        },
-        {
-          "click": "[data-sample-id=SAMPLE_STG]"
-        },
-        {
-          "click": "[data-shot=matching-import-confirm]"
-        },
-        {
-          "wait": "[data-shot=matching-panel]"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "press": "Escape"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "click": "[data-shot^='matching-row-']:has-text('Diane Foster')"
-        },
-        {
-          "wait": "[data-shot=matching-panel]"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "click": "[data-shot=matching-apply]"
-        },
-        {
-          "wait": "[data-shot=matching-banner]"
-        },
-        {
-          "wait": 300
-        }
-      ],
-      "states": [
-        {
-          "state": "hospital-update",
-          "caption": "The hospital's text, once the office applies the row on Matching",
-          "steps": [
-            {
-              "wait": 400
-            }
-          ],
-          "highlight": [
-            "[data-shot=procedure-text]"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "procedure-text",
-      "app": "admin",
-      "caption": "The hospital's text replaces the rooms' once the office approves the row; the rooms' text stays in the change history",
-      "start": "/admin/intake/matching",
-      "states": [
-        {
-          "state": "matching-row",
-          "caption": "On Matching, the hospital's text shown replacing the rooms' WLE MM before the office applies it",
-          "steps": [
-            {
-              "click": "[data-shot=matching-import-open]"
-            },
-            {
-              "wait": "[data-shot=matching-import]"
-            },
-            {
-              "click": "[data-sample-id=SAMPLE_STG]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "press": "Escape"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-shot^='matching-row-']:has-text('Diane Foster')"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            }
-          ],
-          "highlight": [
-            "[data-shot=matching-diff]"
           ]
         }
       ]
@@ -315,52 +111,85 @@
       ]
     },
     {
-      "name": "procedure-text-history",
+      "name": "procedure-text",
       "app": "admin",
-      "caption": "After the office applies the hospital row, WLE MM stays in the Booking's change history",
-      "start": "/admin/day/2026-12-08/bookings/BK0043",
+      "caption": "The hospital's procedure text replaces the current text once the office applies the update",
+      "start": "/admin/intake/arrival/IBM001~2026-11-25~AM~H-STG~56ROCI",
+      "states": [
+        {
+          "state": "arrival",
+          "caption": "On the arrival, St George's fuller wording for Michael Novak shown replacing the current text, before the office applies it",
+          "steps": [
+            {
+              "wait": "[data-shot=intake-update-diff]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-update-diff] tr[data-row-id=IRM001]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "procedure-text",
+      "app": "admin",
+      "caption": "The hospital's procedure text replaces the current text once the office applies the update",
+      "start": "/admin/day/2026-11-25/bookings/BK2973",
       "setup": [
         {
-          "goto": "/admin/intake/matching"
+          "goto": "/admin/intake/arrival/IBM001~2026-11-25~AM~H-STG~56ROCI"
         },
         {
-          "click": "[data-shot=matching-import-open]"
-        },
-        {
-          "wait": "[data-shot=matching-import]"
-        },
-        {
-          "click": "[data-sample-id=SAMPLE_STG]"
-        },
-        {
-          "click": "[data-shot=matching-import-confirm]"
-        },
-        {
-          "wait": "[data-shot=matching-panel]"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "press": "Escape"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "click": "[data-shot^='matching-row-']:has-text('Diane Foster')"
-        },
-        {
-          "wait": "[data-shot=matching-panel]"
-        },
-        {
-          "wait": 400
+          "wait": "[data-shot=matching-apply]"
         },
         {
           "click": "[data-shot=matching-apply]"
         },
         {
-          "wait": "[data-shot=matching-banner]"
+          "wait": "[data-shot=intake-update-decided]"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "states": [
+        {
+          "state": "hospital-update",
+          "caption": "Applied: the hospital's text is the Booking's procedure text",
+          "steps": [
+            {
+              "wait": "[data-shot=procedure-text]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=procedure-text]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "procedure-text-history",
+      "app": "admin",
+      "caption": "The text it replaced stays in the Booking's change history",
+      "start": "/admin/day/2026-11-25/bookings/BK2973",
+      "setup": [
+        {
+          "goto": "/admin/intake/arrival/IBM001~2026-11-25~AM~H-STG~56ROCI"
+        },
+        {
+          "wait": "[data-shot=matching-apply]"
+        },
+        {
+          "click": "[data-shot=matching-apply]"
+        },
+        {
+          "wait": "[data-shot=intake-update-decided]"
         },
         {
           "wait": 300

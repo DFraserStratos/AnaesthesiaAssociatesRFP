@@ -90,7 +90,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-11-27-PM"
+              "goto": "/admin/lists/to-authorise/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -205,7 +205,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-11-27-PM"
+              "goto": "/admin/lists/to-authorise/L-34821-2026-11-27-PM"
             },
             {
               "wait": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -306,7 +306,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-11-27-PM"
+              "goto": "/admin/lists/to-authorise/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -342,7 +342,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/review?tab=events"
+              "goto": "/admin/finances/payments"
             },
             {
               "wait": "[data-shot=admin-events-queue]"
@@ -360,7 +360,7 @@
               "wait": 600
             },
             {
-              "goto": "/admin/billing"
+              "goto": "/admin/finances/billing"
             },
             {
               "trigger": "run-next-billing-run"
@@ -398,7 +398,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/review?tab=events"
+              "goto": "/admin/finances/payments"
             },
             {
               "wait": "[data-shot=admin-events-queue]"
@@ -416,7 +416,7 @@
               "wait": 600
             },
             {
-              "goto": "/admin/billing"
+              "goto": "/admin/finances/billing"
             },
             {
               "trigger": "run-next-billing-run"
@@ -508,7 +508,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-11-27-PM"
+              "goto": "/admin/lists/to-authorise/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"

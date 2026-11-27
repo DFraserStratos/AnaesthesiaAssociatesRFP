@@ -41,7 +41,7 @@
       "start": "/admin/day/2026-11-27/bookings/BK0034",
       "setup": [
         {
-          "goto": "/admin/invoices?view=approval"
+          "goto": "/admin/finances/invoices?view=approval"
         },
         {
           "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"

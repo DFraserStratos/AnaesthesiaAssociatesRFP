@@ -35,7 +35,7 @@
         },
         {
           "state": "during-outage",
-          "caption": "During a Xero outage the payment still lands in Xero; the engine's payment sync waits in its Xero sync queue, so nothing is received in the ledger yet",
+          "caption": "During a Xero outage the payment still lands in Xero; the engine's payment sync waits for Xero, so nothing is received in the ledger yet",
           "steps": [
             {
               "trigger": "xero-outage-start"
@@ -56,7 +56,7 @@
       ],
       "setup": [
         {
-          "goto": "/admin/invoices?view=approval"
+          "goto": "/admin/finances/invoices?view=approval"
         },
         {
           "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"

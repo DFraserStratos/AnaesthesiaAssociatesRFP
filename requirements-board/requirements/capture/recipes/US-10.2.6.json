@@ -7,7 +7,7 @@
       "name": "approve-week",
       "app": "admin",
       "caption": "BCTIs not yet approved are not in the payment run",
-      "start": "/admin/billing",
+      "start": "/admin/finances/payments",
       "states": [
         {
           "state": "closed",
@@ -98,7 +98,8 @@
               "wait": 2500
             },
             {
-              "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
+              "click": "[data-shot=billing-run-payables-in-xero]",
+              "timeout": 45000
             },
             {
               "wait": "[data-shot=billing-payables-result]"

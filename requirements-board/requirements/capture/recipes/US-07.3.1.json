@@ -7,7 +7,7 @@
       "name": "authorise",
       "app": "admin",
       "caption": "Authorise the List for billing, locking each Procedure's Contract and price",
-      "start": "/admin/review/L-25490-2026-11-23-AM",
+      "start": "/admin/lists/to-authorise/L-25490-2026-11-23-AM",
       "states": [
         {
           "state": "confirm",

@@ -28,7 +28,7 @@
           "highlight": [
             "[role=dialog]:not([data-testid=admin-list-drawer])"
           ],
-          "caption": "Choose an anaesthetist whose session is free, listed in tier order"
+          "caption": "Choose an anaesthetist whose session is free, listed in offer order"
         },
         {
           "state": "confirm",

@@ -1,6 +1,6 @@
 {
   "id": "US-02.5.3",
   "status": "absent",
-  "absentReason": "Future Work: a cancellation from an integration is not recorded automatically. In the first release the office records a hospital's cancellation on the matching screen (US-02.1.2).",
+  "absentReason": "Future Work: a cancellation from an integration is not recorded automatically. In the first release a hospital's cancellation waits at Intake until the office marks the Booking cancelled (US-02.1.2).",
   "shots": []
 }

@@ -62,8 +62,8 @@
     {
       "name": "anaesthetist-ledger",
       "app": "admin",
-      "caption": "One anaesthetist's ledger position in the office: what AA owes them, what they owe AA, collected and paid out",
-      "start": "/admin/ledger/anaesthetists/34821",
+      "caption": "An anaesthetist's account under Ledger: what AA owes them, what they owe AA, collected and paid out",
+      "start": "/admin/finances/ledger/anaesthetists/34821",
       "states": [
         {
           "steps": [
@@ -72,7 +72,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=ledger-balance]",
+            "[data-shot=ledger-account-status]",
             "[data-shot=ledger-tiles]"
           ]
         }

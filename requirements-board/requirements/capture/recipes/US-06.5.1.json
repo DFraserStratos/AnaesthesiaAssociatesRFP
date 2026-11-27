@@ -7,7 +7,7 @@
       "name": "holding-account",
       "app": "admin",
       "caption": "A prepayment is credited to the AA Holding account and transferred to the anaesthetist who did the List; money leaves it only by a transfer or refund the system raises",
-      "start": "/admin/billing",
+      "start": "/admin/finances/ledger?list=holding",
       "states": [
         {
           "state": "held",
@@ -84,7 +84,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-11-27-PM"
+              "goto": "/admin/lists/to-authorise/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -99,7 +99,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/billing"
+              "goto": "/admin/finances/ledger?list=holding"
             },
             {
               "wait": "[data-shot=holding-entry][data-entry-kind=transferred]"
@@ -195,7 +195,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-11-27-PM"
+              "goto": "/admin/lists/to-authorise/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -210,7 +210,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/billing"
+              "goto": "/admin/finances/payments"
             },
             {
               "click": "[data-shot=payment-cycle-close]"
@@ -231,7 +231,8 @@
               "wait": 2500
             },
             {
-              "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
+              "click": "[data-shot=billing-run-payables-in-xero]",
+              "timeout": 45000
             },
             {
               "wait": "[data-shot=billing-payables-result]"

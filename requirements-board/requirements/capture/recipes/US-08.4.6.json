@@ -7,7 +7,7 @@
       "name": "invoice-description",
       "app": "admin",
       "caption": "The invoice description on each Procedure",
-      "start": "/admin/review/L-25490-2026-11-23-AM",
+      "start": "/admin/lists/to-authorise/L-25490-2026-11-23-AM",
       "states": [
         {
           "state": "printed",
@@ -26,7 +26,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/invoices/INV2570"
+              "goto": "/admin/finances/invoices/INV2570"
             },
             {
               "wait": "[data-shot=invoice-lines]"

@@ -1,7 +1,7 @@
 {
   "id": "US-14.3.1",
   "status": "partial",
-  "absentReason": "Future Work: shown only on the badged Future scope: HL7 and FHIR demo, for discussion. In the first release hospital files are imported by the office (US-02.1.1).",
+  "absentReason": "Future Work: shown only on the badged Future scope: HL7 and FHIR demo, for discussion. In the first release the hospitals' Lists arrive at Intake for the office to decide (US-02.1.1).",
   "shots": [
     {
       "name": "live-feed",

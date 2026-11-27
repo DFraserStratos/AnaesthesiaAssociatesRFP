@@ -7,7 +7,7 @@
       "name": "patient-layout",
       "app": "admin",
       "caption": "Invoice document in the patient's layout, used when the Contract bills the payer: the invoice description on each line, no BTM breakdown or cross-match fields",
-      "start": "/admin/invoices/INV0001",
+      "start": "/admin/finances/invoices/INV0001",
       "states": [
         {
           "steps": [],
@@ -21,7 +21,7 @@
       "name": "contract-holder-layout",
       "app": "admin",
       "caption": "Invoice document in the holder's layout, used when the Contract bills its holder: the BTM breakdown, the cross-match fields and Your reference, so the hospital can match it",
-      "start": "/admin/invoices",
+      "start": "/admin/finances/invoices",
       "setup": [
         {
           "scenario": "S3"
@@ -30,7 +30,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -45,7 +45,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-PM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -60,6 +60,9 @@
       "states": [
         {
           "steps": [
+            {
+              "goto": "/admin/finances/invoices?show=all&q=AA-2026-0007"
+            },
             {
               "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0007\") >> role=button[name=/^View invoice /]"
             },

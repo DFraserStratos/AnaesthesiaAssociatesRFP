@@ -7,10 +7,10 @@
       "name": "fee-run",
       "app": "admin",
       "caption": "One run raises every anaesthetist's fee invoice for the month: Dr Donaldson, 40 paid BCTIs, $700.00 plus GST",
-      "start": "/admin/billing/aa-fees",
+      "start": "/admin/finances/aa-fees",
       "setup": [
         {
-          "goto": "/admin/billing/aa-fees"
+          "goto": "/admin/finances/aa-fees"
         },
         {
           "wait": 400
@@ -25,7 +25,17 @@
       "states": [
         {
           "state": "preview",
-          "steps": [],
+          "steps": [
+            {
+              "wait": "[data-shot=aa-fee-preview-open]"
+            },
+            {
+              "click": "[data-shot=aa-fee-preview-open]"
+            },
+            {
+              "wait": "[data-testid=aa-fee-preview]"
+            }
+          ],
           "highlight": [
             "[data-testid=aa-fee-preview-60062]"
           ]
@@ -34,6 +44,15 @@
           "state": "run",
           "steps": [
             {
+              "wait": "[data-shot=aa-fee-preview-open]"
+            },
+            {
+              "click": "[data-shot=aa-fee-preview-open]"
+            },
+            {
+              "wait": "[data-testid=aa-fee-preview]"
+            },
+            {
               "click": "role=button[name=\"Run monthly fee invoices\"]"
             },
             {
@@ -41,7 +60,7 @@
             }
           ],
           "highlight": [
-            "[data-testid=aa-fee-preview-60062]",
+            "[data-shot=aa-fee-run-card]",
             "[data-shot=aa-fee-run-result]"
           ]
         }

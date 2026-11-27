@@ -4,15 +4,39 @@
   "absentReason": "",
   "shots": [
     {
-      "name": "surgeon-pdf-inbox",
+      "name": "rooms-pdfs",
       "app": "admin",
-      "caption": "The rooms' PDF lists, read and sent to the same matching screen as the hospital files",
-      "start": "/admin/intake/pdfs",
+      "caption": "The rooms' PDF Lists in the Arrivals inbox, read and waiting in the same place as the hospitals' Lists",
+      "start": "/admin/intake?source=rooms",
       "states": [
         {
           "steps": [
             {
-              "wait": "[data-shot=pdf-inbox]"
+              "wait": "[data-shot=intake-inbox-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-inbox]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pdf-beside-values",
+      "app": "admin",
+      "caption": "A rooms' PDF opened on its own page, the page beside the values read from it",
+      "start": "/admin/intake/arrival/IBS002~2026-12-09~AM~H-FORTE~43OKAC",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=intake-pdf-page]"
+            },
+            {
+              "wait": 400
             }
           ],
           "highlight": []

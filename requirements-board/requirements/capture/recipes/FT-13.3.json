@@ -6,11 +6,11 @@
     {
       "name": "billing-monitor",
       "app": "admin",
-      "caption": "Billing monitor, grouped by anaesthetist",
-      "start": "/admin/billing?list=L-25490-2026-11-23-AM",
+      "caption": "The Billing tab, grouped by anaesthetist",
+      "start": "/admin/finances/billing?list=L-25490-2026-11-23-AM",
       "setup": [
         {
-          "goto": "/admin/review/L-25490-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-25490-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"

@@ -1,0 +1,85 @@
+{
+  "id": "US-02.1.6",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "unchanged",
+      "app": "admin",
+      "caption": "The Lists in St George's file that match AA's with no differences, shown as unchanged and confirmed together in one click",
+      "start": "/admin/intake/arrival/IBM001~2026-11-25~AM~H-STG~46TANS",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=intake-unchanged-lists]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-unchanged-lists]",
+            "[data-shot=intake-confirm-unchanged]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "not-automatic",
+      "app": "admin",
+      "caption": "Unchanged Lists wait in the inbox until a person confirms them",
+      "start": "/admin/intake",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=intake-inbox-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-inbox-row][data-arrival-kind=matchesExactly]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "confirmed",
+      "app": "admin",
+      "caption": "Confirmed: the unchanged Lists are decided together, and nothing on the schedule changes",
+      "start": "/admin/intake?show=decided",
+      "setup": [
+        {
+          "goto": "/admin/intake/arrival/IBM001~2026-11-25~AM~H-STG~46TANS"
+        },
+        {
+          "wait": "[data-shot=intake-confirm-unchanged]"
+        },
+        {
+          "click": "[data-shot=intake-confirm-unchanged]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=intake-inbox-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-inbox-row][data-arrival-kind=matchesExactly]"
+          ]
+        }
+      ]
+    }
+  ]
+}

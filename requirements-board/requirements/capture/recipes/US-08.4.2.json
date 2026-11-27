@@ -7,7 +7,7 @@
       "name": "email-invoice",
       "app": "admin",
       "caption": "The billing run sends each invoice once per payer, by its party's delivery: emailed to the invoice email, or marked to post",
-      "start": "/admin/review/L-34821-2026-11-23-PM",
+      "start": "/admin/lists/to-authorise/L-34821-2026-11-23-PM",
       "setup": [
         {
           "scenario": "S3"
@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -64,10 +64,13 @@
               "wait": 400
             },
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/finances/invoices"
             },
             {
               "wait": 400
+            },
+            {
+              "goto": "/admin/finances/invoices?show=all&q=AA-2026-0005"
             },
             {
               "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0005\") >> role=button[name=/^View invoice /]"
@@ -85,7 +88,7 @@
           "caption": "Grace Park's invoice emailed to her mother, Hana Park, the payer on her Procedure",
           "steps": [
             {
-              "goto": "/admin/invoices/HINV13"
+              "goto": "/admin/finances/invoices/HINV13"
             },
             {
               "wait": 500
@@ -100,7 +103,7 @@
           "caption": "A payer with only a postal address: the invoice is marked To post with a print view; posting is provisional (OQ-122)",
           "steps": [
             {
-              "goto": "/admin/review/L-45178-2026-11-20-AM"
+              "goto": "/admin/lists/to-authorise/L-45178-2026-11-20-AM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -115,10 +118,13 @@
               "wait": 400
             },
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/finances/invoices"
             },
             {
               "wait": 400
+            },
+            {
+              "goto": "/admin/finances/invoices?show=all&q=Robert Whitcombe"
             },
             {
               "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Robert Whitcombe\") >> role=button[name=/^View invoice /]"
@@ -133,10 +139,10 @@
         },
         {
           "state": "no-address",
-          "caption": "No invoice address for the payer: the office types an email and sends the invoice",
+          "caption": "No invoice address for Kevin Doherty's payer: the Billing tab holds the Booking, and Fix the payer takes an email so the invoice can be sent",
           "steps": [
             {
-              "goto": "/admin/review/L-45178-2026-11-20-AM"
+              "goto": "/admin/lists/to-authorise/L-45178-2026-11-20-AM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -151,20 +157,23 @@
               "wait": 400
             },
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/finances/billing"
+            },
+            {
+              "wait": "[data-shot=billing-fix-payer-BK0171]"
+            },
+            {
+              "click": "[data-shot=billing-fix-payer-BK0171]"
+            },
+            {
+              "wait": "[data-shot=billing-fix-payer-sheet]"
             },
             {
               "wait": 400
-            },
-            {
-              "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Kevin Doherty\") >> role=button[name=/^View invoice /]"
-            },
-            {
-              "wait": 500
             }
           ],
           "highlight": [
-            "[data-shot=invoice-delivery]"
+            "[role=dialog]"
           ]
         }
       ]

@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -46,7 +46,7 @@
           "wait": 600
         },
         {
-          "goto": "/admin/billing"
+          "goto": "/admin/finances/payments"
         },
         {
           "wait": 800
@@ -170,7 +170,7 @@
       "name": "payables-run",
       "app": "admin",
       "caption": "Released payables wait for this week's payment run; the payment is made in Xero and the Billing Engine records it",
-      "start": "/admin/billing",
+      "start": "/admin/finances/payments",
       "states": [
         {
           "state": "due",
@@ -235,7 +235,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-11-27-PM"
+              "goto": "/admin/lists/to-authorise/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -250,7 +250,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/billing"
+              "goto": "/admin/finances/payments"
             },
             {
               "wait": "[data-shot=payables-run-draft]"
@@ -323,7 +323,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-11-27-PM"
+              "goto": "/admin/lists/to-authorise/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -338,7 +338,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/billing"
+              "goto": "/admin/finances/payments"
             },
             {
               "wait": "[data-shot=billing-payables-run]"
@@ -362,7 +362,8 @@
               "wait": 2500
             },
             {
-              "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
+              "click": "[data-shot=billing-run-payables-in-xero]",
+              "timeout": 45000
             },
             {
               "wait": "[data-shot=billing-payables-result]"

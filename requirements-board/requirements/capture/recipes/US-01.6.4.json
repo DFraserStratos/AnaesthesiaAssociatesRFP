@@ -7,38 +7,66 @@
       "name": "redate-remove",
       "app": "admin",
       "caption": "Remove a cancelled request or change its date",
-      "start": "/admin/draft-lists",
+      "start": "/admin/lists/draft-lists",
       "states": [
         {
           "state": "change-date",
           "steps": [
-            { "click": "[data-draft-list-row=\"LD-002\"] >> role=button[name=\"Change date\"]" },
-            { "wait": 500 }
+            {
+              "click": "[data-draft-list-row=\"LD-002\"] >> role=button[name=\"Change date\"]"
+            },
+            {
+              "wait": 500
+            }
           ],
-          "highlight": ["[data-shot=admin-redate-draft-list]"],
+          "highlight": [
+            "[data-shot=admin-redate-draft-list]"
+          ],
           "caption": "Change date: its Bookings move with it"
         },
         {
           "state": "remove",
           "steps": [
-            { "click": "[data-draft-list-row=\"LD-001\"] >> role=button[name=\"Remove\"]" },
-            { "wait": 500 }
+            {
+              "click": "[data-draft-list-row=\"LD-001\"] >> role=button[name=\"Remove\"]"
+            },
+            {
+              "wait": 500
+            }
           ],
-          "highlight": ["[data-shot=admin-remove-draft-list]"],
+          "highlight": [
+            "[data-shot=admin-remove-draft-list]"
+          ],
           "caption": "Remove a Draft List with a reason"
         },
         {
           "state": "history",
           "steps": [
-            { "click": "[data-draft-list-row=\"LD-001\"] >> role=button[name=\"Remove\"]" },
-            { "wait": 500 },
-            { "click": "[data-shot=admin-remove-draft-list] >> role=button[name=/Duplicate/]" },
-            { "click": "[data-shot=admin-remove-draft-list] >> role=button[name=/^Remove/] >> nth=-1" },
-            { "wait": 600 },
-            { "goto": "/admin/draft-lists?tab=history" },
-            { "wait": 600 }
+            {
+              "click": "[data-draft-list-row=\"LD-001\"] >> role=button[name=\"Remove\"]"
+            },
+            {
+              "wait": 500
+            },
+            {
+              "click": "[data-shot=admin-remove-draft-list] >> role=button[name=/Duplicate/]"
+            },
+            {
+              "click": "[data-shot=admin-remove-draft-list] >> role=button[name=/^Remove/] >> nth=-1"
+            },
+            {
+              "wait": 600
+            },
+            {
+              "goto": "/admin/lists/draft-lists?view=history"
+            },
+            {
+              "wait": 600
+            }
           ],
-          "highlight": ["[data-shot=draft-lists-history] tbody tr >> nth=0"],
+          "highlight": [
+            "[data-shot=draft-lists-history] tbody tr >> nth=0"
+          ],
           "caption": "The History tab keeps the removed request and its reason"
         }
       ]

@@ -1,7 +1,7 @@
 {
   "id": "US-14.5.1",
   "status": "partial",
-  "absentReason": "Future Work: shown only on the badged Future scope: HL7 and FHIR demo, for discussion. There are no automatic feeds in the first release.",
+  "absentReason": "Future Work: retrying a failed message and alerting the office to it are shown only on the badged Future scope: HL7 and FHIR demo, for discussion. In the first release a message that cannot be read is held at Intake with its reason (US-02.1.7).",
   "shots": [
     {
       "name": "dead-letter",
@@ -10,14 +10,19 @@
       "start": "/demo/integrations/log",
       "setup": [
         {
-          "goto": "/demo/integrations/log"
+          "goto": "/demo/integrations"
         },
         {
-          "wait": "[data-shot=future-scope-log]"
+          "click": "[data-testid=integration-inspector] button:has-text(\"Christchurch Public\")"
         },
         {
-          "trigger": "fire-hospital-message",
-          "choice": "MSG-CPH-2001"
+          "wait": 300
+        },
+        {
+          "wait": "[data-shot=integrations-replay]"
+        },
+        {
+          "click": "[data-shot=integrations-replay]"
         },
         {
           "wait": 800

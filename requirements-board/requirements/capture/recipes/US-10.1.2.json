@@ -7,7 +7,7 @@
       "name": "two-states",
       "app": "admin",
       "caption": "Paid into AA and disbursed to the anaesthetist tracked separately",
-      "start": "/admin/billing?list=L-34821-2026-11-23-AM",
+      "start": "/admin/finances/billing?list=L-34821-2026-11-23-AM",
       "setup": [
         {
           "scenario": "S3"
@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -56,13 +56,19 @@
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-34821-2026-11-23-AM] tr[data-booking-id=BK0022]"
+            "[data-shot=billing-row-BK0022]"
           ]
         },
         {
           "state": "disbursed",
           "caption": "After the week's payment run is paid in Xero, the Billing Engine records the disbursement: disbursed to the anaesthetist",
           "steps": [
+            {
+              "goto": "/admin/finances/payments"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-close]"
+            },
             {
               "click": "[data-shot=payment-cycle-close]"
             },
@@ -82,17 +88,21 @@
               "wait": 2500
             },
             {
-              "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
+              "click": "[data-shot=billing-run-payables-in-xero]",
+              "timeout": 45000
             },
             {
               "wait": "[data-shot=billing-payables-result]"
+            },
+            {
+              "goto": "/admin/finances/billing?list=L-34821-2026-11-23-AM"
             },
             {
               "wait": 2200
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-34821-2026-11-23-AM] tr[data-booking-id=BK0022]"
+            "[data-shot=billing-row-BK0022]"
           ]
         }
       ]
@@ -101,7 +111,7 @@
       "name": "invoice-states",
       "app": "admin",
       "caption": "The two money states on the invoice",
-      "start": "/admin/invoices",
+      "start": "/admin/finances/invoices",
       "setup": [
         {
           "scenario": "S3"
@@ -110,7 +120,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -143,6 +153,9 @@
       "states": [
         {
           "steps": [
+            {
+              "goto": "/admin/finances/invoices?show=all&q=Brian Holt"
+            },
             {
               "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Brian Holt\") >> td >> nth=0"
             },

@@ -47,7 +47,7 @@
           "caption": "Sent and unpaid: the invoice is outstanding",
           "steps": [
             {
-              "goto": "/admin/invoices?view=approval"
+              "goto": "/admin/finances/invoices?view=approval"
             },
             {
               "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
@@ -80,7 +80,7 @@
           "caption": "Half received: part paid",
           "steps": [
             {
-              "goto": "/admin/invoices?view=approval"
+              "goto": "/admin/finances/invoices?view=approval"
             },
             {
               "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"

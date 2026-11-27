@@ -4,13 +4,13 @@
   "absentReason": "",
   "shots": [
     {
-      "name": "billing-monitor",
+      "name": "billing",
       "app": "admin",
-      "caption": "Billing monitor, each authorised List inside its anaesthetist's group: whether it has been invoiced, sent and mirrored to Xero",
-      "start": "/admin/billing?list=L-25490-2026-11-23-AM",
+      "caption": "The Billing tab: each Booking of an authorised List under its anaesthetist, with whether it is sent, in Xero, paid in and disbursed",
+      "start": "/admin/finances/billing?list=L-25490-2026-11-23-AM",
       "setup": [
         {
-          "goto": "/admin/review/L-25490-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-25490-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -29,46 +29,36 @@
         {
           "steps": [
             {
-              "wait": 2200
+              "wait": "[data-shot=\"billing-list-L-25490-2026-11-23-AM\"]"
+            },
+            {
+              "wait": 600
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-25490-2026-11-23-AM]"
+            "[data-shot=\"billing-list-L-25490-2026-11-23-AM\"]",
+            "[data-shot=billing-table] tr[data-booking-id]"
           ]
         }
       ]
     },
     {
-      "name": "grouped",
+      "name": "awaiting",
       "app": "admin",
-      "caption": "Grouped by anaesthetist: Dr Souter's Lists awaiting approval, each opening in Review, where it is authorised",
-      "start": "/admin/billing?anaesthetist=34821",
-      "setup": [
-        {
-          "goto": "/admin/review/L-25490-2026-11-23-AM"
-        },
-        {
-          "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
-        },
-        {
-          "wait": 600
-        },
-        {
-          "click": "role=button[name=\"Authorise for billing\"] >> nth=-1"
-        },
-        {
-          "wait": 1500
-        }
-      ],
+      "caption": "The Lists awaiting approval sit in the rail, each opening on To authorise; nothing on the Billing tab approves a List",
+      "start": "/admin/finances/billing",
       "states": [
         {
           "steps": [
             {
-              "wait": "[data-shot=billing-awaiting-L-34821-2026-11-23-AM]"
+              "wait": "[data-shot=billing-awaiting]"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=billing-group-34821]"
+            "[data-shot=billing-awaiting]"
           ]
         }
       ]
@@ -77,10 +67,10 @@
       "name": "filtered",
       "app": "admin",
       "caption": "Standard filtering: one anaesthetist, Dr Morrison",
-      "start": "/admin/billing?anaesthetist=25490",
+      "start": "/admin/finances/billing?anaesthetist=25490&show=all",
       "setup": [
         {
-          "goto": "/admin/review/L-25490-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-25490-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -98,30 +88,46 @@
       "states": [
         {
           "state": "filter-bar",
-          "caption": "Standard filtering: the filter bar set to one anaesthetist, with the count of Lists in view",
-          "steps": [],
+          "caption": "The filters set to one anaesthetist and All, with the count of Lists in view",
+          "steps": [
+            {
+              "wait": "[data-shot=billing-filters]"
+            },
+            {
+              "wait": 300
+            }
+          ],
           "highlight": [
-            "[data-shot=billing-monitor-filters]"
+            "[data-shot=billing-filters]",
+            "[data-shot=billing-summary]"
           ]
         },
         {
           "state": "group",
-          "caption": "Filtered to one anaesthetist, only Dr Morrison's group shows, its authorised List expanded",
-          "steps": [],
+          "caption": "Only Dr Morrison's Lists show, her authorised List with its Bookings",
+          "steps": [
+            {
+              "wait": "[data-shot=billing-group-25490]"
+            },
+            {
+              "wait": 300
+            }
+          ],
           "highlight": [
-            "[data-shot=billing-group-25490]"
+            "[data-shot=billing-group-25490]",
+            "[data-shot=billing-table] tr[data-booking-id]"
           ]
         }
       ]
     },
     {
-      "name": "problems-only",
+      "name": "problems",
       "app": "admin",
-      "caption": "Problems only: just the Lists where something needs the office, with why it failed",
-      "start": "/admin/billing?problems=1",
+      "caption": "Problems, the tab's opening view: just the Lists where something needs the office, with why it failed and its fix",
+      "start": "/admin/finances/billing",
       "setup": [
         {
-          "goto": "/admin/billing"
+          "goto": "/admin/finances/billing"
         },
         {
           "trigger": "billing-failure"
@@ -133,19 +139,34 @@
       "states": [
         {
           "state": "filter-bar",
-          "caption": "Problems only, from the With problems tile or the filter bar",
-          "steps": [],
+          "caption": "The Billing tab opens on Problems",
+          "steps": [
+            {
+              "wait": "[data-shot=billing-filters]"
+            },
+            {
+              "wait": 300
+            }
+          ],
           "highlight": [
-            "[data-shot=billing-tile-problems]",
-            "[data-shot=billing-monitor-filters]"
+            "[data-shot=billing-filters]",
+            "[data-shot=billing-summary]"
           ]
         },
         {
           "state": "list",
-          "caption": "Only Dr Ropata's List shows, expanded: Losa Tuilagi's Booking waits for Xero, with why and its next try",
-          "steps": [],
+          "caption": "Only Dr Ropata's List shows: Losa Tuilagi's Booking waits for Xero, with why and its next try",
+          "steps": [
+            {
+              "wait": "[data-shot=\"billing-list-L-39560-2026-11-19-AM\"]"
+            },
+            {
+              "wait": 300
+            }
+          ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-39560-2026-11-19-AM]"
+            "[data-shot=\"billing-list-L-39560-2026-11-19-AM\"]",
+            "[data-shot^=\"billing-reason-\"]"
           ]
         }
       ]

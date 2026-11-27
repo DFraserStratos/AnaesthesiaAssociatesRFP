@@ -1,0 +1,72 @@
+{
+  "id": "US-04.3.12",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "contracts-to-set",
+      "app": "admin",
+      "caption": "The Contracts to set tab: across every date, one row per List whose Procedures still need a Contract",
+      "start": "/admin/lists/contracts-to-set",
+      "states": [
+        {
+          "state": "lists",
+          "caption": "Each List with how many of its Procedures are set, and how far the rest have got",
+          "steps": [
+            {
+              "wait": "[data-shot=contracts-to-set-table] tr[data-list-id]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=contracts-to-set-table]"
+          ]
+        },
+        {
+          "state": "procedures",
+          "caption": "A List opened to its Procedures still to set: nothing chosen yet, or where the invoice goes chosen but no Contract",
+          "steps": [
+            {
+              "wait": "[data-shot=contracts-to-set-table] tr[data-list-id]"
+            },
+            {
+              "click": "[data-shot=contracts-to-set-table] tr[data-list-id=\"L-34821-2026-11-26-PM\"] [data-shot=contracts-to-set-expand]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=contracts-to-set-table] tr[data-list-id=\"L-34821-2026-11-26-PM\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "day-rail",
+      "app": "admin",
+      "caption": "The Day view's rail shows the same for the day in view, on a Contracts tab beside the to-do list and the notifications",
+      "start": "/admin/day/2026-11-26",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=admin-work-tab-contracts]"
+            },
+            {
+              "wait": "[data-shot=admin-contracts-to-set]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=admin-work-card]"
+          ]
+        }
+      ]
+    }
+  ]
+}

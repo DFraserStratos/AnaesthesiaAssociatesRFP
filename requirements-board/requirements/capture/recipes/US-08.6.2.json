@@ -7,10 +7,10 @@
       "name": "credit-rebill",
       "app": "admin",
       "caption": "Credit in full, then rebill",
-      "start": "/admin/invoices",
+      "start": "/admin/finances/invoices?show=all&q=Sarah%20Mitchell",
       "setup": [
         {
-          "goto": "/admin/review/L-41267-2026-11-17-AM"
+          "goto": "/admin/lists/to-authorise/L-41267-2026-11-17-AM"
         },
         {
           "trigger": "stage-post-op"
@@ -118,7 +118,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/review?tab=events"
+              "goto": "/admin/finances/payments"
             },
             {
               "wait": "[data-shot=admin-events-queue]"
@@ -136,7 +136,7 @@
               "wait": 600
             },
             {
-              "goto": "/admin/billing"
+              "goto": "/admin/finances/billing"
             },
             {
               "trigger": "run-next-billing-run"
@@ -145,7 +145,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/finances/invoices?show=all&q=Sarah%20Mitchell"
             },
             {
               "wait": "[data-shot=invoice-list-standing]"
@@ -193,7 +193,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/review?tab=events"
+              "goto": "/admin/finances/payments"
             },
             {
               "wait": "[data-shot=admin-events-queue]"
@@ -211,7 +211,7 @@
               "wait": 600
             },
             {
-              "goto": "/admin/billing"
+              "goto": "/admin/finances/billing"
             },
             {
               "trigger": "run-next-billing-run"
@@ -220,7 +220,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/finances/invoices?show=all&q=Sarah%20Mitchell"
             },
             {
               "wait": "[data-shot=invoice-list-standing]"
@@ -262,7 +262,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/review?tab=events"
+              "goto": "/admin/finances/payments"
             },
             {
               "wait": "[data-shot=admin-events-queue]"
@@ -280,7 +280,7 @@
               "wait": 600
             },
             {
-              "goto": "/admin/billing"
+              "goto": "/admin/finances/billing"
             },
             {
               "trigger": "run-next-billing-run"
@@ -289,7 +289,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/finances/invoices?show=all&q=Sarah%20Mitchell"
             },
             {
               "wait": "[data-shot=invoice-list-standing]"
@@ -317,10 +317,10 @@
       "name": "refund-after-payout",
       "app": "admin",
       "caption": "Credit after the anaesthetist was paid: the negative invoice nets in their next payment run",
-      "start": "/admin/invoices",
+      "start": "/admin/finances/invoices?show=all&q=Sarah%20Mitchell",
       "setup": [
         {
-          "goto": "/admin/review/L-41267-2026-11-17-AM"
+          "goto": "/admin/lists/to-authorise/L-41267-2026-11-17-AM"
         },
         {
           "trigger": "stage-post-op"
@@ -395,7 +395,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/review?tab=events"
+              "goto": "/admin/finances/payments"
             },
             {
               "wait": "[data-shot=admin-events-queue]"
@@ -413,7 +413,7 @@
               "wait": 600
             },
             {
-              "goto": "/admin/billing"
+              "goto": "/admin/finances/billing"
             },
             {
               "trigger": "run-next-billing-run"
@@ -422,7 +422,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/finances/invoices?show=all&q=Sarah%20Mitchell"
             },
             {
               "wait": "[data-shot=invoice-list-standing]"
@@ -450,10 +450,10 @@
       "name": "xero-credit-note",
       "app": "simulator",
       "caption": "Both sides move in Xero: a credit note against the receivable and one against the payable, with the new pair",
-      "start": "/admin/invoices",
+      "start": "/admin/finances/invoices?show=all&q=Sarah%20Mitchell",
       "setup": [
         {
-          "goto": "/admin/review/L-41267-2026-11-17-AM"
+          "goto": "/admin/lists/to-authorise/L-41267-2026-11-17-AM"
         },
         {
           "trigger": "stage-post-op"
@@ -487,7 +487,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/review?tab=events"
+              "goto": "/admin/finances/payments"
             },
             {
               "wait": "[data-shot=admin-events-queue]"
@@ -505,7 +505,7 @@
               "wait": 600
             },
             {
-              "goto": "/admin/billing"
+              "goto": "/admin/finances/billing"
             },
             {
               "trigger": "run-next-billing-run"
@@ -514,7 +514,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/finances/invoices?show=all&q=Sarah%20Mitchell"
             },
             {
               "wait": "[data-shot=invoice-list-standing]"

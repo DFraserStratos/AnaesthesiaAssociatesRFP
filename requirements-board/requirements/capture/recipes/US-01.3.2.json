@@ -223,9 +223,52 @@
             }
           ],
           "highlight": [
-            "[data-draft-list-row]:has-text(\"Thu 26 Nov\")"
+            "[data-draft-list-row]:has([aria-label^=\"Assign Draft List, Thu 26 Nov\"])"
           ],
           "caption": "The Draft Lists row: Recurring booking, Dr Beaumont unavailable"
+        }
+      ]
+    },
+    {
+      "name": "usual-week",
+      "app": "admin",
+      "caption": "Dr Souter's usual week on her page: her recurring bookings by day and session, each opening to edit",
+      "start": "/admin/people/anaesthetists/34821",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=usual-week]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=usual-week]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "usual-week",
+      "app": "admin",
+      "caption": "A surgeon's usual week on his page: the recurring bookings he operates on, by day and session",
+      "start": "/admin/people/surgeons/S-OKAFOR",
+      "states": [
+        {
+          "state": "surgeon",
+          "steps": [
+            {
+              "wait": "[data-shot=usual-week]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=usual-week]"
+          ]
         }
       ]
     }

@@ -1,6 +1,50 @@
 {
   "id": "US-02.1.5",
-  "status": "absent",
-  "absentReason": "Future Work: the automatic sync from St George's and Southern Cross is not in the first release, so there is no shot. Hospital files come in through Import hospital file on the matching screen (US-02.1.1).",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "sources",
+      "app": "admin",
+      "caption": "St George's and Southern Cross send their Lists by themselves: each feed receiving, with when it last sent, and no import or sync button",
+      "start": "/admin/intake/sources",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=intake-sources-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-sources-row][data-source-id=SRC-STG]",
+            "[data-shot=intake-sources-row][data-source-id=SRC-SX]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "arrived",
+      "app": "admin",
+      "caption": "The hospitals' Lists waiting in Arrivals; nothing reaches a List or Booking until the office decides",
+      "start": "/admin/intake",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=intake-inbox-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-inbox]"
+          ]
+        }
+      ]
+    }
+  ]
 }

@@ -6,50 +6,59 @@
     {
       "name": "waiting-for-nhi",
       "app": "admin",
-      "caption": "Intake's Waiting for NHI tab: rows received without an NHI, each a stub on its List, with the address to chase",
-      "start": "/admin/intake/waiting",
+      "caption": "The rows waiting for an NHI, under Intake's Waiting for an NHI filter",
+      "start": "/admin/intake?show=needs-nhi",
       "states": [
         {
-          "state": "list",
-          "caption": "Two rows received without an NHI: the urgent one first, each with the address to chase",
           "steps": [
             {
-              "trigger": "receive-no-nhi-list"
-            },
-            {
-              "wait": "[data-shot=waiting-nhi-row]"
+              "wait": "[data-shot=intake-inbox-row]"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=waiting-nhi-row][data-urgent=true]",
-            "[data-shot=waiting-nhi-chase]"
+            "[data-shot=intake-inbox]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "chase",
+      "app": "admin",
+      "caption": "A row waiting for an NHI: the patient as received, the List and its stub, and the one address to chase",
+      "start": "/admin/intake/arrival/nhi~IRS001",
+      "states": [
+        {
+          "state": "chase",
+          "caption": "The List with its stub, days to go, and the rooms' address to ask for the NHI",
+          "steps": [
+            {
+              "wait": "[data-shot=waiting-nhi-chase-card]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=waiting-nhi-list]",
+            "[data-shot=waiting-nhi-chase-card]"
           ]
         },
         {
           "state": "add-nhi",
-          "caption": "Adding the NHI matches the existing record for Losa Tuilagi; no second one is made",
+          "caption": "Add NHI, the one way to add an NHI by hand: the row is matched to the patient's single record",
           "steps": [
             {
-              "trigger": "receive-no-nhi-list"
-            },
-            {
-              "wait": "[data-shot=waiting-nhi-row]"
-            },
-            {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=waiting-nhi-row]:has-text(\"Losa Tuilagi\") >> [data-shot=waiting-nhi-add]"
+              "click": "[data-shot=waiting-nhi-add]"
             },
             {
               "wait": "[data-shot=add-nhi-sheet]"
             },
             {
-              "fill": "[data-shot=add-nhi-sheet] input >> nth=0",
-              "value": "JKL1188"
+              "fill": "[data-shot=add-nhi-field]",
+              "value": "ZQA1024"
             },
             {
               "wait": "[data-shot=add-nhi-preview]"
@@ -59,31 +68,22 @@
             }
           ],
           "highlight": [
-            "[data-shot=add-nhi-sheet]"
+            "[role=dialog]"
           ]
         },
         {
           "state": "ready",
-          "caption": "The Booking is created on the List, matched to her single record",
+          "caption": "The Booking is created on the List and the row leaves Waiting for an NHI",
           "steps": [
             {
-              "trigger": "receive-no-nhi-list"
-            },
-            {
-              "wait": "[data-shot=waiting-nhi-row]"
-            },
-            {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=waiting-nhi-row]:has-text(\"Losa Tuilagi\") >> [data-shot=waiting-nhi-add]"
+              "click": "[data-shot=waiting-nhi-add]"
             },
             {
               "wait": "[data-shot=add-nhi-sheet]"
             },
             {
-              "fill": "[data-shot=add-nhi-sheet] input >> nth=0",
-              "value": "JKL1188"
+              "fill": "[data-shot=add-nhi-field]",
+              "value": "ZQA1024"
             },
             {
               "wait": "[data-shot=add-nhi-preview]"
@@ -100,6 +100,27 @@
           ],
           "highlight": [
             "[data-shot=add-nhi-done]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "urgent",
+      "app": "admin",
+      "caption": "Kahu Rangihuna's surgery is two days away: her row is marked urgent",
+      "start": "/admin/intake/arrival/nhi~IRM022",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=waiting-nhi-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=waiting-nhi-row][data-urgent=true]"
           ]
         }
       ]

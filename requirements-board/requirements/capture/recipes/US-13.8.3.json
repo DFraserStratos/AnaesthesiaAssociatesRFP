@@ -67,7 +67,7 @@
               "wait": 800
             },
             {
-              "click": "[data-shot=\"admin-notifications-show-resolved\"] input"
+              "click": "[data-shot=\"admin-notifications-show-resolved\"]"
             },
             {
               "wait": "[data-notification-resolved=\"true\"]"

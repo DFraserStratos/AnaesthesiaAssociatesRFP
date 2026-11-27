@@ -103,7 +103,7 @@
       "name": "no-charge",
       "app": "admin",
       "caption": "A $0 price reaches the office as No charge",
-      "start": "/admin/review/L-34821-2026-11-16-AM",
+      "start": "/admin/lists/to-authorise/L-34821-2026-11-16-AM",
       "states": [
         {
           "state": "review",
@@ -137,10 +137,13 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/finances/invoices"
             },
             {
               "wait": 900
+            },
+            {
+              "goto": "/admin/finances/invoices?show=all&q=AA-2026-0003"
             },
             {
               "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"AA-2026-0003\") >> role=button[name=/^View invoice /]"

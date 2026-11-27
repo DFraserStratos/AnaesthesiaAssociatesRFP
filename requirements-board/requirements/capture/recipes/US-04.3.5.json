@@ -34,7 +34,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -66,7 +66,7 @@
       "name": "needs-price",
       "app": "admin",
       "caption": "A Procedure that still needs a price blocks authorise: Review names it and Authorise for billing stays off",
-      "start": "/admin/review/L-45178-2026-11-17-AM",
+      "start": "/admin/lists/to-authorise/L-45178-2026-11-17-AM",
       "states": [
         {
           "steps": [

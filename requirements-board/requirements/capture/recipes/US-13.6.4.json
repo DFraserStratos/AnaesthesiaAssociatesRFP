@@ -28,7 +28,7 @@
     {
       "name": "preferred-picker",
       "app": "admin",
-      "caption": "Assigning Mr Whitford's returned List: Dr Sharma, Preferred, comes first within her tier",
+      "caption": "Assigning Mr Whitford's returned List: Dr Sharma, Preferred, comes first within her step of the offer order",
       "start": "/admin/day/2026-11-25",
       "states": [
         {

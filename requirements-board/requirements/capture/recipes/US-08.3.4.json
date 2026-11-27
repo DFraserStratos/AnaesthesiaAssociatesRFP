@@ -1,13 +1,13 @@
 {
   "id": "US-08.3.4",
   "status": "partial",
-  "absentReason": "The shots show money in and out overall, for one anaesthetist and for one Booking. A patient's position is on the patient record in Admin Patients (US-13.2.2).",
+  "absentReason": "The shots show money in and out overall, for one anaesthetist and for one Booking. A patient's position is on the patient's page in People (US-13.2.2).",
   "shots": [
     {
       "name": "money-in-out",
       "app": "admin",
       "caption": "Money in and money out per Booking, after the week's payment run is paid in Xero: paid in and disbursed, each dated",
-      "start": "/admin/billing?list=L-34821-2026-11-23-AM",
+      "start": "/admin/finances/billing?list=L-34821-2026-11-23-AM",
       "setup": [
         {
           "scenario": "S3"
@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -50,6 +50,12 @@
         {
           "steps": [
             {
+              "goto": "/admin/finances/payments"
+            },
+            {
+              "wait": "[data-shot=payment-cycle-close]"
+            },
+            {
               "click": "[data-shot=payment-cycle-close]"
             },
             {
@@ -68,17 +74,22 @@
               "wait": 2500
             },
             {
-              "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
+              "click": "[data-shot=billing-run-payables-in-xero]",
+              "timeout": 45000
             },
             {
               "wait": "[data-shot=billing-payables-result]"
+            },
+            {
+              "goto": "/admin/finances/billing?list=L-34821-2026-11-23-AM"
             },
             {
               "wait": 2200
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-34821-2026-11-23-AM]"
+            "[data-shot=\"billing-list-L-34821-2026-11-23-AM\"]",
+            "[data-shot=billing-table] tr[data-booking-id]"
           ]
         }
       ]
@@ -87,7 +98,7 @@
       "name": "ledger-balance",
       "app": "admin",
       "caption": "Money in and money out for AA overall: in balance, with receivables outstanding, receipts held, payables due, the AA Holding account and disbursed",
-      "start": "/admin/ledger",
+      "start": "/admin/finances/ledger",
       "states": [
         {
           "steps": [
@@ -105,17 +116,17 @@
     {
       "name": "anaesthetist-balance",
       "app": "admin",
-      "caption": "Money in and money out for one anaesthetist: Dr Souter's ledger in balance, collected and paid out",
-      "start": "/admin/ledger/anaesthetists/34821",
+      "caption": "Money in and money out for one anaesthetist: Dr Souter's account under Ledger, square, collected and paid out",
+      "start": "/admin/finances/ledger/anaesthetists/34821",
       "states": [
         {
           "steps": [
             {
-              "wait": "[data-shot=ledger-balance][data-in-balance=true]"
+              "wait": "[data-shot=ledger-account-status][data-in-balance=true]"
             }
           ],
           "highlight": [
-            "[data-shot=ledger-balance]",
+            "[data-shot=ledger-account-status]",
             "[data-shot=ledger-tiles]"
           ]
         }
@@ -125,10 +136,10 @@
       "name": "ledger-out-of-balance",
       "app": "admin",
       "caption": "A $120.00 receipt naming Dr Souter matches no invoice: the ledger is out of balance by $120.00 until the office deals with it",
-      "start": "/admin/ledger",
+      "start": "/admin/finances/ledger",
       "setup": [
         {
-          "goto": "/admin/ledger"
+          "goto": "/admin/finances/ledger"
         },
         {
           "trigger": "inject-unmatched-receipt",
@@ -156,10 +167,10 @@
       "name": "ledger-allocated",
       "app": "admin",
       "caption": "Allocated to one of Dr Souter's invoices, the receipt is matched and the ledger is back in balance",
-      "start": "/admin/ledger",
+      "start": "/admin/finances/ledger",
       "setup": [
         {
-          "goto": "/admin/ledger"
+          "goto": "/admin/finances/ledger"
         },
         {
           "trigger": "inject-unmatched-receipt",

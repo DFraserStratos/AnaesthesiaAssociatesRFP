@@ -136,7 +136,7 @@
           "wait": 800
         }
       ],
-      "start": "/admin/review",
+      "start": "/admin/lists/to-authorise",
       "states": [
         {
           "state": "on-invoice",
@@ -178,7 +178,7 @@
               "wait": 600
             },
             {
-              "goto": "/admin/review?tab=events"
+              "goto": "/admin/finances/payments"
             },
             {
               "wait": "[data-shot=admin-events-queue]"
@@ -202,7 +202,7 @@
               "wait": 300
             },
             {
-              "goto": "/admin/review"
+              "goto": "/admin/lists/to-authorise"
             },
             {
               "click": "role=button[name=/^Review .*Souter.*Wed 18 Nov$/]"
@@ -223,10 +223,13 @@
               "wait": "text=\"List authorised · locked for billing\""
             },
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/finances/invoices?show=all&q=Bennett"
             },
             {
               "wait": "[data-shot=invoice-list-event-lines]"
+            },
+            {
+              "goto": "/admin/finances/invoices?show=all&q=Bennett"
             },
             {
               "click": "[data-shot=invoice-list-event-lines] >> nth=0"

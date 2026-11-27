@@ -28,7 +28,7 @@
       "name": "invoice-handoff",
       "app": "admin",
       "caption": "Receivable and payable created together with the invoice and linked in the ledger, each with its Xero ID",
-      "start": "/admin/invoices",
+      "start": "/admin/finances/invoices",
       "setup": [
         {
           "scenario": "S3"
@@ -37,7 +37,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -52,6 +52,9 @@
       "states": [
         {
           "steps": [
+            {
+              "goto": "/admin/finances/invoices?show=all&q=Brian Holt"
+            },
             {
               "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Brian Holt\") >> role=button[name=/^View invoice /]"
             },
@@ -68,11 +71,11 @@
     {
       "name": "pair-not-in-xero",
       "app": "admin",
-      "caption": "While the Xero hand-off waits in the sync queue, the invoice and its ledger pair still stand: Waiting for Xero, with its attempt and next try",
-      "start": "/admin/invoices",
+      "caption": "While the Xero hand-off waits, the invoice and its ledger pair still stand: Waiting for Xero, with its attempt and next try",
+      "start": "/admin/finances/invoices",
       "setup": [
         {
-          "goto": "/admin/billing"
+          "goto": "/admin/finances/billing"
         },
         {
           "trigger": "billing-failure"
@@ -84,6 +87,9 @@
       "states": [
         {
           "steps": [
+            {
+              "goto": "/admin/finances/invoices?show=all&q=Losa Tuilagi"
+            },
             {
               "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Losa Tuilagi\") >> role=button[name=/^View invoice /] >> nth=0"
             },
@@ -101,7 +107,7 @@
       "name": "prepay-pair",
       "app": "admin",
       "caption": "A prepayment's pair in the ledger: its payable goes to the AA Holding account",
-      "start": "/admin/ledger?pair=BC0001",
+      "start": "/admin/finances/ledger?pair=BC0001",
       "states": [
         {
           "steps": [
@@ -119,7 +125,7 @@
       "name": "prepay-transfer",
       "app": "admin",
       "caption": "Once the List is authorised, the prepayment is released by a transfer: no receivable, payable to the anaesthetist who did the List",
-      "start": "/admin/ledger",
+      "start": "/admin/finances/ledger?list=pairs&pairs=all",
       "setup": [
         {
           "goto": "/web/lists/L-34821-2026-11-27-PM"
@@ -180,7 +186,7 @@
           "wait": 1500
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-27-PM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-27-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"

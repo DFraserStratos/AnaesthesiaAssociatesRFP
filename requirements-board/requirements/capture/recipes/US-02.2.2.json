@@ -1,6 +1,6 @@
 {
   "id": "US-02.2.2",
   "status": "absent",
-  "absentReason": "Retired: merged into US-02.2.1, where an extracted row is corrected before it is sent to matching.",
+  "absentReason": "Retired: merged into US-02.2.1, where a value read from a PDF is corrected before the List is placed.",
   "shots": []
 }

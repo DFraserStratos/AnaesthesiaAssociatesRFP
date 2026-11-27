@@ -7,7 +7,7 @@
       "name": "resend-invoice",
       "app": "admin",
       "caption": "Re-sending an invoice from its Delivery card",
-      "start": "/admin/invoices/INV2570",
+      "start": "/admin/finances/invoices/INV2570",
       "setup": [
         {
           "scenario": "S5"
@@ -113,70 +113,21 @@
     {
       "name": "needs-follow-up",
       "app": "admin",
-      "caption": "The Patients tab's Needs follow-up filter: once a Booking raises Sarah Mitchell's balance warning, she needs the office",
+      "caption": "The Patients tab's Needs follow-up filter: the patients who need the office, none at the start of the demo day",
       "start": "/admin/people/patients?filter=follow-up",
       "states": [
         {
-          "state": "list",
           "steps": [
             {
-              "wait": "[data-shot=patient-search-table]"
+              "wait": "[data-shot=patients-filter]"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=patients-filter]",
-            "[data-shot=patient-search-table]"
+            "[data-shot=patients-filter]"
           ]
-        },
-        {
-          "state": "page",
-          "caption": "Opened from the list, Sarah Mitchell's page shows what needs the office, with Done and the follow-up log",
-          "steps": [
-            {
-              "click": "[data-shot=patient-search-table] tr[data-patient-nhi=CQY9304]"
-            },
-            {
-              "wait": "[data-shot=admin-patient-record]"
-            },
-            {
-              "wait": 300
-            }
-          ],
-          "highlight": [
-            "[data-shot=patient-needs-office]"
-          ]
-        }
-      ],
-      "setup": [
-        {
-          "goto": "/admin/intake/matching"
-        },
-        {
-          "click": "[data-shot=matching-import-open]"
-        },
-        {
-          "wait": "[data-shot=matching-import]"
-        },
-        {
-          "click": "[data-sample-id=SAMPLE_STG]"
-        },
-        {
-          "click": "[data-shot=matching-import-confirm]"
-        },
-        {
-          "wait": "[data-shot=matching-panel]"
-        },
-        {
-          "wait": 400
-        },
-        {
-          "click": "[data-shot=matching-apply]"
-        },
-        {
-          "wait": "[data-shot=matching-banner]"
         }
       ]
     },

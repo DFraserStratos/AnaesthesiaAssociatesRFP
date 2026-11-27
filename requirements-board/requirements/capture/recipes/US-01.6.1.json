@@ -7,7 +7,7 @@
       "name": "new-draft-list",
       "app": "admin",
       "caption": "A Draft List needs no anaesthetist, changes nobody's schedule and can hold Bookings",
-      "start": "/admin/draft-lists",
+      "start": "/admin/lists/draft-lists",
       "states": [
         {
           "state": "form",
@@ -67,7 +67,7 @@
               "wait": 700
             },
             {
-              "click": "[data-draft-list-row]:has-text(\"Thu\"):has-text(\"Reid\")"
+              "click": "[data-draft-list-row]:has-text(\"Reid\"):has([aria-label^=\"Assign Draft List, Thu 26 Nov\"])"
             },
             {
               "wait": 600

@@ -7,7 +7,7 @@
       "name": "invoices-by-party",
       "app": "admin",
       "caption": "One invoice per payer or holder: Alan Prentice's Booking raises one to nib and one to Alan Prentice",
-      "start": "/admin/invoices",
+      "start": "/admin/finances/invoices?show=all&q=Alan%20Prentice",
       "setup": [
         {
           "scenario": "S3"
@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -31,7 +31,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-PM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -56,7 +56,7 @@
       "name": "grouped-invoice",
       "app": "admin",
       "caption": "Brian Holt's two procedures for the same hospital grouped on one invoice",
-      "start": "/admin/invoices",
+      "start": "/admin/finances/invoices",
       "setup": [
         {
           "scenario": "S3"
@@ -65,7 +65,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -80,7 +80,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-PM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -95,6 +95,9 @@
       "states": [
         {
           "steps": [
+            {
+              "goto": "/admin/finances/invoices?show=all&q=Brian Holt"
+            },
             {
               "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Brian Holt\") >> td >> nth=0"
             },
@@ -133,7 +136,7 @@
       "name": "two-payer-invoices",
       "app": "admin",
       "caption": "Procedures sharing a payer share an invoice; a payer typed separately gets their own: Erik Halvorsen has two invoices",
-      "start": "/admin/invoices",
+      "start": "/admin/finances/invoices?show=all&q=Erik%20Halvorsen",
       "setup": [
         {
           "scenario": "S3"
@@ -142,7 +145,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-45178-2026-11-20-AM"
+          "goto": "/admin/lists/to-authorise/L-45178-2026-11-20-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"

@@ -47,7 +47,7 @@
       ],
       "setup": [
         {
-          "goto": "/admin/invoices?view=approval"
+          "goto": "/admin/finances/invoices?view=approval"
         },
         {
           "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
@@ -70,10 +70,10 @@
       "name": "restore-no-duplicate",
       "app": "admin",
       "caption": "A payment that landed during a Xero outage syncs once when Xero is restored: one receipt, no double effect",
-      "start": "/admin/billing",
+      "start": "/admin/finances/xero",
       "setup": [
         {
-          "goto": "/admin/invoices?view=approval"
+          "goto": "/admin/finances/invoices?view=approval"
         },
         {
           "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
@@ -109,21 +109,27 @@
           "wait": 600
         },
         {
-          "goto": "/admin/billing"
+          "goto": "/admin/finances/xero"
         }
       ],
       "states": [
         {
           "steps": [
             {
+              "wait": "[data-shot=billing-xero-sent-toggle]"
+            },
+            {
               "click": "[data-shot=billing-xero-sent-toggle]"
+            },
+            {
+              "wait": "[data-shot=xero-sent]"
             },
             {
               "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=billing-xero-queue]"
+            "[data-shot=xero-sent]"
           ]
         }
       ]

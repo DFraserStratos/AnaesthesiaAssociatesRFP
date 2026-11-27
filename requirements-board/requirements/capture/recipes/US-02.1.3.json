@@ -4,160 +4,109 @@
   "absentReason": "",
   "shots": [
     {
-      "name": "differences",
+      "name": "match",
       "app": "admin",
-      "caption": "The differences between a row and its matched Booking, each ticked to apply",
-      "start": "/admin/intake/matching",
+      "caption": "Why an arriving List matched the List AA holds, and what it changes, before anything is applied",
+      "start": "/admin/intake/arrival/IBM001~2026-11-25~AM~H-STG~56ROCI",
       "states": [
         {
-          "state": "diff",
-          "caption": "Diane Foster's modification: a new time, the hospital's text replacing the current text, and a note",
+          "state": "keys",
+          "caption": "Each match key and whether it agreed: surgeon, hospital, day and session, and how many patients were found by NHI",
           "steps": [
             {
-              "click": "[data-shot=matching-import-open]"
-            },
-            {
-              "wait": "[data-shot=matching-import]"
-            },
-            {
-              "click": "[data-sample-id=SAMPLE_STG]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "press": "Escape"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-shot^='matching-row-']:has-text('Diane Foster')"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            }
-          ],
-          "highlight": [
-            "[data-shot=matching-diff]"
-          ]
-        },
-        {
-          "state": "diff-unticked",
-          "caption": "The note unticked: the footer applies 2 changes",
-          "steps": [
-            {
-              "click": "[data-shot=matching-import-open]"
-            },
-            {
-              "wait": "[data-shot=matching-import]"
-            },
-            {
-              "click": "[data-sample-id=SAMPLE_STG]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "press": "Escape"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-shot^='matching-row-']:has-text('Diane Foster')"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-shot=matching-diff] >> role=checkbox[name=/Note/]"
+              "wait": "[data-shot=intake-match-basis]"
             },
             {
               "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=matching-diff]",
-            "[data-shot=matching-apply]"
+            "[data-shot=intake-match-basis]"
           ]
         },
         {
-          "state": "matched-update",
-          "caption": "A later update for the Booking a row created, matched by date, surgeon, hospital and session, then NHI, waits for approval",
+          "state": "versions",
+          "caption": "Where the List came from and each later arrival for it, and the anaesthetist's session it sits in",
           "steps": [
             {
-              "click": "[data-shot=matching-import-open]"
-            },
-            {
-              "wait": "[data-shot=matching-import]"
-            },
-            {
-              "click": "[data-sample-id=SAMPLE_STG]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-shot=matching-apply]"
-            },
-            {
-              "wait": "[data-shot=matching-banner]"
+              "wait": "[data-shot=intake-version-track]"
             },
             {
               "wait": 300
-            },
-            {
-              "press": "Escape"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-shot=matching-import-open]"
-            },
-            {
-              "wait": "[data-shot=matching-import]"
-            },
-            {
-              "click": "[data-sample-id=SAMPLE_STG_UPDATE]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=matching-diff]"
+            "[data-shot=intake-version-track]",
+            "[data-shot=intake-lands-card]"
+          ]
+        },
+        {
+          "state": "differences",
+          "caption": "Each Booking's differences, field by field: a new time, the hospital's fuller procedure wording, a note",
+          "steps": [
+            {
+              "wait": "[data-shot=intake-update-diff]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-update-diff]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rooms-then-hospital",
+      "app": "admin",
+      "caption": "The hospital's List for the same surgeon, hospital, day and session as the List the rooms sent arrives as an update to that List",
+      "start": "/admin/intake",
+      "setup": [
+        {
+          "goto": "/admin/intake"
+        },
+        {
+          "trigger": "intake-rooms-email-list"
+        },
+        {
+          "wait": 300
+        },
+        {
+          "click": "[data-shot=intake-inbox-row][data-arrival-kind=newList]:has-text(\"Mr Okafor · St George's\")"
+        },
+        {
+          "wait": "[data-shot=intake-place-list]"
+        },
+        {
+          "click": "[data-shot=intake-place-list-submit]"
+        },
+        {
+          "wait": "[data-shot=intake-newlist-decided]"
+        },
+        {
+          "trigger": "intake-stg-day-before"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=intake-inbox-row][data-arrival-kind=update]:has-text(\"Mr Okafor\")"
+            },
+            {
+              "wait": "[data-shot=intake-bench-update]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-version-track]",
+            "[data-shot=intake-update-diff]"
           ]
         }
       ]

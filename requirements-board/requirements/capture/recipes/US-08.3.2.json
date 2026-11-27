@@ -35,7 +35,7 @@
       "name": "ledger-system-of-record",
       "app": "admin",
       "caption": "Balances come from the ledger, not from Xero: the Ledger, AA's system of record, with Xero as its mirror for receivables and banking",
-      "start": "/admin/ledger",
+      "start": "/admin/finances/ledger?list=pairs",
       "states": [
         {
           "steps": [
@@ -44,7 +44,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=ledger-system-of-record]",
+            "[data-shot=ledger-books]",
             "[data-shot=ledger-pairs]"
           ]
         }

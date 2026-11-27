@@ -7,7 +7,7 @@
       "name": "conflicts-screen",
       "app": "admin",
       "caption": "Closed hospitals, across every date, with the Bookings still in place",
-      "start": "/admin/conflicts",
+      "start": "/admin/lists/conflicts",
       "states": [
         {
           "steps": [
@@ -16,7 +16,8 @@
             }
           ],
           "highlight": [
-            "[data-shot=conflicts-table] tr[data-conflict-date=\"2026-11-25\"]", "[data-conflict-row*=\"2026-11-25\"]"
+            "[data-shot=conflicts-table] tr[data-conflict-date=\"2026-11-25\"]",
+            "[data-conflict-row*=\"2026-11-25\"]"
           ]
         }
       ]
@@ -25,7 +26,7 @@
       "name": "conflict-clear",
       "app": "admin",
       "caption": "Clear a conflict, with an optional note",
-      "start": "/admin/conflicts",
+      "start": "/admin/lists/conflicts",
       "states": [
         {
           "steps": [
@@ -50,7 +51,7 @@
       "name": "conflict-reassigned",
       "app": "admin",
       "caption": "Reassign from a row: the List moves to an available anaesthetist, and a closure goes with it",
-      "start": "/admin/conflicts",
+      "start": "/admin/lists/conflicts",
       "states": [
         {
           "steps": [
@@ -106,7 +107,7 @@
       "name": "draft-list-holiday",
       "app": "admin",
       "caption": "A recurring clash is a Draft List, not a conflict on the anaesthetist",
-      "start": "/admin/conflicts",
+      "start": "/admin/lists/conflicts",
       "states": [
         {
           "steps": [

@@ -7,7 +7,7 @@
       "name": "full-fee-invoice",
       "app": "admin",
       "caption": "Prepayment invoice for the Procedure's price when raised, in full",
-      "start": "/admin/invoices/INV0001",
+      "start": "/admin/finances/invoices/INV0001",
       "states": [
         {
           "steps": [],
@@ -25,7 +25,7 @@
       "start": "/admin/day/2026-11-27/bookings/BK0034",
       "setup": [
         {
-          "goto": "/admin/invoices?view=approval"
+          "goto": "/admin/finances/invoices?view=approval"
         },
         {
           "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"

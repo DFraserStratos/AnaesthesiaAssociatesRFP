@@ -6,8 +6,8 @@
     {
       "name": "whole-ledger",
       "app": "admin",
-      "caption": "The ledger's position at the whole-ledger scope: in balance, with receivables outstanding, receipts held, payables due, the AA Holding account and disbursed",
-      "start": "/admin/ledger",
+      "caption": "The Ledger tab: whether the books are square, with what is owed to AA, owed to the anaesthetists, held and disbursed",
+      "start": "/admin/finances/ledger",
       "states": [
         {
           "steps": [
@@ -25,17 +25,20 @@
     {
       "name": "anaesthetist-scope",
       "app": "admin",
-      "caption": "The same balance view scoped to one anaesthetist, Dr Souter: what AA owes her and what she owes AA",
-      "start": "/admin/ledger/anaesthetists/34821",
+      "caption": "Dr Souter's account under Ledger: what AA owes her and what she owes AA",
+      "start": "/admin/finances/ledger/anaesthetists/34821",
       "states": [
         {
           "steps": [
             {
               "wait": "[data-shot=ledger-aa-owes]"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=ledger-balance]",
+            "[data-shot=ledger-account-status]",
             "[data-shot=ledger-aa-owes]",
             "[data-shot=ledger-owes-aa]"
           ]
@@ -46,10 +49,10 @@
       "name": "imbalance",
       "app": "admin",
       "caption": "A $120.00 receipt that matches no invoice is held, and the ledger is out of balance by $120.00",
-      "start": "/admin/ledger",
+      "start": "/admin/finances/ledger",
       "setup": [
         {
-          "goto": "/admin/ledger"
+          "goto": "/admin/finances/ledger"
         },
         {
           "trigger": "inject-unmatched-receipt",
@@ -76,11 +79,11 @@
     {
       "name": "out-of-balance-list",
       "app": "admin",
-      "caption": "Anaesthetists out of balance, just a list: Dr Souter is on it while the receipt naming her is held",
-      "start": "/admin/ledger",
+      "caption": "The Anaesthetists list narrowed to those out of balance: Dr Souter is on it while the receipt naming her is held",
+      "start": "/admin/finances/ledger?balance=out",
       "setup": [
         {
-          "goto": "/admin/ledger"
+          "goto": "/admin/finances/ledger"
         },
         {
           "trigger": "inject-unmatched-receipt",
@@ -94,11 +97,14 @@
         {
           "steps": [
             {
-              "wait": "[data-shot=ledger-anaesthetists-out-of-balance] tr[data-anaesthetist-id=\"34821\"]"
+              "wait": "[data-shot=ledger-anaesthetists] tr[data-anaesthetist-id=\"34821\"]"
+            },
+            {
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=ledger-anaesthetists-out-of-balance]"
+            "[data-shot=ledger-anaesthetists]"
           ]
         }
       ]

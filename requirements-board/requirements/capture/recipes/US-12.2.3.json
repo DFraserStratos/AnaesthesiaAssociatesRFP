@@ -26,7 +26,7 @@
         {
           "steps": [
             {
-              "goto": "/admin/review/L-34821-2026-11-23-AM"
+              "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -53,7 +53,7 @@
               "wait": 600
             },
             {
-              "goto": "/admin/billing"
+              "goto": "/admin/finances/payments"
             },
             {
               "wait": "[data-shot=billing-payables-run]"
@@ -77,7 +77,8 @@
               "wait": 2500
             },
             {
-              "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
+              "click": "[data-shot=billing-run-payables-in-xero]",
+              "timeout": 45000
             },
             {
               "wait": "[data-shot=billing-payables-result]"

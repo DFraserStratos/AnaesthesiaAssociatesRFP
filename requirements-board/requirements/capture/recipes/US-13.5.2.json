@@ -49,7 +49,7 @@
       "start": "/admin/audit",
       "setup": [
         {
-          "goto": "/admin/review/L-41267-2026-11-17-AM"
+          "goto": "/admin/lists/to-authorise/L-41267-2026-11-17-AM"
         },
         {
           "trigger": "stage-post-op"
@@ -58,7 +58,7 @@
           "wait": 800
         },
         {
-          "goto": "/admin/invoices"
+          "goto": "/admin/finances/invoices?show=all&q=Sarah%20Mitchell"
         },
         {
           "click": "[data-testid=invoice-list-screen] tr[data-invoice-id]:has-text(\"Sarah Mitchell\") >> nth=0 >> td >> nth=0"
@@ -82,7 +82,7 @@
           "wait": 800
         },
         {
-          "goto": "/admin/review?tab=events"
+          "goto": "/admin/finances/payments"
         },
         {
           "wait": "[data-shot=admin-events-queue]"
@@ -100,7 +100,7 @@
           "wait": 600
         },
         {
-          "goto": "/admin/billing"
+          "goto": "/admin/finances/billing"
         },
         {
           "trigger": "run-next-billing-run"

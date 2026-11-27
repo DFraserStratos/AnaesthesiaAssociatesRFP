@@ -1,0 +1,112 @@
+{
+  "id": "US-07.2.4",
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "to-authorise",
+      "app": "admin",
+      "caption": "The To authorise tab: every submitted List waiting for the office, oldest submitted first",
+      "start": "/admin/lists/to-authorise",
+      "states": [
+        {
+          "state": "oldest-first",
+          "caption": "Oldest submitted first, each row with what needs a closer look",
+          "steps": [
+            {
+              "wait": "[data-shot=to-authorise-rows] tr[data-list-id]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=to-authorise-rows]"
+          ]
+        },
+        {
+          "state": "needs-a-look",
+          "caption": "Needs a look: only the Lists with a review flag, a change since submitting or a Procedure that needs a price",
+          "steps": [
+            {
+              "wait": "[data-shot=to-authorise-filters]"
+            },
+            {
+              "click": "[data-shot=to-authorise-filters] >> role=button[name=/^Needs a look/]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=to-authorise-filters]",
+            "[data-shot=to-authorise-rows]"
+          ]
+        },
+        {
+          "state": "search",
+          "caption": "Search and the date filter narrow the tab to the Lists that match",
+          "steps": [
+            {
+              "wait": "[data-shot=to-authorise-search] input"
+            },
+            {
+              "fill": "[data-shot=to-authorise-search] input",
+              "value": "Okafor"
+            },
+            {
+              "wait": 500
+            }
+          ],
+          "highlight": [
+            "[data-shot=to-authorise-filters]",
+            "[data-shot=to-authorise-rows]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "review-page",
+      "app": "admin",
+      "caption": "A row opens the List's review page under To authorise, the only place a List is authorised, with a way back to the tab",
+      "start": "/admin/lists/to-authorise",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=to-authorise-rows] tr[data-list-id=\"L-34821-2026-11-23-AM\"]"
+            },
+            {
+              "wait": "role=button[name=\"Authorise for billing\"]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": []
+        }
+      ]
+    },
+    {
+      "name": "billing-rail",
+      "app": "admin",
+      "caption": "The Billing tab lists the Lists awaiting approval; its rows open To authorise",
+      "start": "/admin/finances/billing",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=billing-awaiting]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=billing-awaiting]"
+          ]
+        }
+      ]
+    }
+  ]
+}

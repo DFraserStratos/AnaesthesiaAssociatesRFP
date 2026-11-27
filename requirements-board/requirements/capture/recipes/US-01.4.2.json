@@ -89,7 +89,7 @@
     {
       "name": "office-finder",
       "app": "admin",
-      "caption": "The office sees who is free by priority tier, with not-preferred pairings apart",
+      "caption": "The office sees who is free in offer order, with not-preferred pairings apart",
       "start": "/admin/day/2026-11-24",
       "states": [
         {
@@ -112,7 +112,7 @@
             "[data-shot=candidates-clear]",
             "[data-shot=tier-filter]"
           ],
-          "caption": "Find available: free this PM, Tier 1 first, with the tier filter"
+          "caption": "Find available: free this PM, those offered first at the top, with the offer order filter"
         },
         {
           "state": "not-preferred",
@@ -255,7 +255,7 @@
       "name": "draft-list-finder",
       "app": "admin",
       "caption": "The Assign Draft List sheet is the finder's Draft List view",
-      "start": "/admin/draft-lists",
+      "start": "/admin/lists/draft-lists",
       "states": [
         {
           "state": "everyone",
@@ -271,7 +271,7 @@
             "[data-shot=draft-list-reach]",
             "[data-shot=draft-list-candidates]"
           ],
-          "caption": "Everyone: tier-ordered, with who is free and who is not"
+          "caption": "Everyone: in offer order, with who is free and who is not"
         },
         {
           "state": "free-only",

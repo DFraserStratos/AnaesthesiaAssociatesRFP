@@ -40,7 +40,7 @@
       "name": "invoice-xero-ids",
       "app": "admin",
       "caption": "Both Xero records referenced in the invoice's Ledger card; a prepayment's payee is the AA Holding account",
-      "start": "/admin/invoices/INV0001",
+      "start": "/admin/finances/invoices/INV0001",
       "states": [
         {
           "state": "held",
@@ -120,7 +120,7 @@
               "wait": 1500
             },
             {
-              "goto": "/admin/review/L-34821-2026-11-27-PM"
+              "goto": "/admin/lists/to-authorise/L-34821-2026-11-27-PM"
             },
             {
               "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -135,7 +135,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/invoices/INV0001"
+              "goto": "/admin/finances/invoices/INV0001"
             },
             {
               "wait": "[data-testid=xero-transfer-journal-reference]"
@@ -151,10 +151,10 @@
         },
         {
           "state": "waiting",
-          "caption": "While Xero does not answer, the hand-off waits in the Xero sync queue: Waiting for Xero, with its attempt and next try; the invoice and its ledger pair stand",
+          "caption": "While Xero does not answer, the hand-off waits on the Xero tab: Waiting for Xero, with its attempt and next try; the invoice and its ledger pair stand",
           "steps": [
             {
-              "goto": "/admin/billing"
+              "goto": "/admin/finances/billing"
             },
             {
               "trigger": "billing-failure"
@@ -163,7 +163,7 @@
               "wait": 800
             },
             {
-              "goto": "/admin/invoices"
+              "goto": "/admin/finances/invoices?show=all&q=Losa Tuilagi"
             },
             {
               "click": "[data-testid=invoice-list-table-shell] tr:has-text(\"Losa Tuilagi\") >> role=button[name=/^View invoice /] >> nth=0"
@@ -182,11 +182,11 @@
     {
       "name": "pair-after-outage",
       "app": "admin",
-      "caption": "After Restore Xero the sync queue sends every hand-off that waited, in order: each invoice handed off once, one ACCREC and ACCPAY pair each",
-      "start": "/admin/billing",
+      "caption": "After Restore Xero every hand-off that waited is sent, in order: each invoice handed off once, one ACCREC and ACCPAY pair each",
+      "start": "/admin/finances/xero",
       "setup": [
         {
-          "goto": "/admin/billing"
+          "goto": "/admin/finances/xero"
         },
         {
           "trigger": "xero-outage-start"
@@ -195,7 +195,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-25490-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-25490-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -210,7 +210,7 @@
           "wait": 1500
         },
         {
-          "goto": "/admin/billing"
+          "goto": "/admin/finances/xero"
         },
         {
           "trigger": "xero-outage-restore"
@@ -223,14 +223,20 @@
         {
           "steps": [
             {
+              "wait": "[data-shot=billing-xero-sent-toggle]"
+            },
+            {
               "click": "[data-shot=billing-xero-sent-toggle]"
+            },
+            {
+              "wait": "[data-shot=xero-sent]"
             },
             {
               "wait": 400
             }
           ],
           "highlight": [
-            "[data-shot=billing-xero-queue]"
+            "[data-shot=xero-sent]"
           ]
         }
       ]

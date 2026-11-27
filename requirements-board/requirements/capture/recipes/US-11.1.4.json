@@ -6,7 +6,7 @@
     {
       "name": "nhi-required",
       "app": "admin",
-      "caption": "A Booking cannot be saved without an NHI; an incoming row without one waits at intake",
+      "caption": "A Booking cannot be saved without an NHI",
       "start": "/admin/day/2026-11-24",
       "states": [
         {
@@ -57,38 +57,27 @@
             "[data-shot=manual-save]",
             ":text-is(\"An NHI is needed to save a Booking.\") >> nth=-1"
           ]
-        },
+        }
+      ]
+    },
+    {
+      "name": "waiting",
+      "app": "admin",
+      "caption": "A row received without an NHI waits at Intake; no Booking or patient record is made until the office adds it",
+      "start": "/admin/intake/arrival/nhi~IRS001",
+      "states": [
         {
-          "state": "waiting",
-          "caption": "A row received without an NHI waits on Matching; nothing is created until the office adds it",
           "steps": [
-            {
-              "goto": "/admin/intake/waiting"
-            },
-            {
-              "trigger": "receive-no-nhi-list"
-            },
             {
               "wait": "[data-shot=waiting-nhi-row]"
             },
             {
-              "goto": "/admin/intake/matching"
-            },
-            {
-              "wait": "[data-shot^='matching-row-']"
-            },
-            {
-              "click": "[data-shot^='matching-row-']:has-text('Aroha Ngata')"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=matching-nhi]"
+            "[data-shot=waiting-nhi-patient]",
+            "[data-shot=waiting-nhi-list]"
           ]
         }
       ]

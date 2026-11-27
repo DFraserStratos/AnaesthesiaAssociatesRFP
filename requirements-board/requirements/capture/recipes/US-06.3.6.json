@@ -48,7 +48,7 @@
       "name": "letter-picker",
       "app": "admin",
       "caption": "The prepayment letter, from one standard template, states the prepaid amount as the price",
-      "start": "/admin/invoices?view=approval",
+      "start": "/admin/finances/invoices?view=approval",
       "states": [
         {
           "state": "preview",
@@ -83,7 +83,7 @@
       "name": "letter-on-invoice",
       "app": "admin",
       "caption": "The letter goes out with the prepayment invoice",
-      "start": "/admin/invoices/INV0001",
+      "start": "/admin/finances/invoices/INV0001",
       "states": [
         {
           "state": "cover",
@@ -121,7 +121,7 @@
       "start": "/admin/day/2026-11-27/bookings/BK0034",
       "setup": [
         {
-          "goto": "/admin/invoices?view=approval"
+          "goto": "/admin/finances/invoices?view=approval"
         },
         {
           "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"

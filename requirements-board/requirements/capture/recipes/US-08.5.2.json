@@ -7,10 +7,10 @@
       "name": "card-failure",
       "app": "admin",
       "caption": "One Booking is held back while the rest of the List bills",
-      "start": "/admin/billing?list=L-39560-2026-11-19-AM",
+      "start": "/admin/finances/billing?list=L-39560-2026-11-19-AM",
       "setup": [
         {
-          "goto": "/admin/billing"
+          "goto": "/admin/finances/billing"
         },
         {
           "trigger": "billing-failure"
@@ -25,26 +25,46 @@
           "caption": "Losa Tuilagi's Booking waits for Xero while Hemi Walker's bills; the List is not failed",
           "steps": [
             {
-              "wait": 2200
+              "wait": "[data-shot=\"billing-list-L-39560-2026-11-19-AM\"]"
+            },
+            {
+              "wait": 600
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-39560-2026-11-19-AM]"
+            "[data-shot=\"billing-list-L-39560-2026-11-19-AM\"]",
+            "[data-shot=billing-table] tr[data-booking-id]"
           ]
         },
         {
           "state": "retried",
-          "caption": "Retry now on the Xero sync queue hands the held Booking off once, on its own; nothing else on the List is billed again",
+          "caption": "Retry now on the Xero tab hands the held Booking off once, on its own; nothing else on the List is billed again",
           "steps": [
             {
-              "click": "[data-shot=billing-xero-queue] [data-queue-item] >> role=button[name=\"Retry now\"]"
+              "goto": "/admin/finances/xero"
             },
             {
-              "wait": 2200
+              "wait": "[data-shot=xero-table] tr[data-queue-item]"
+            },
+            {
+              "click": "[data-shot=xero-table] tr[data-queue-item] >> role=button[name=\"Retry now\"]"
+            },
+            {
+              "wait": 1200
+            },
+            {
+              "goto": "/admin/finances/billing?list=L-39560-2026-11-19-AM"
+            },
+            {
+              "wait": "[data-shot=\"billing-list-L-39560-2026-11-19-AM\"]"
+            },
+            {
+              "wait": 600
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-39560-2026-11-19-AM]"
+            "[data-shot=\"billing-list-L-39560-2026-11-19-AM\"]",
+            "[data-shot=billing-table] tr[data-booking-id]"
           ]
         }
       ]

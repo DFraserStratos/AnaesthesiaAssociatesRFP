@@ -108,7 +108,7 @@
         },
         {
           "state": "drawer",
-          "caption": "In the List drawer, the stub among the Bookings with Resolve on Matching",
+          "caption": "In the List drawer, the stub among the Bookings with Resolve at Intake",
           "steps": [
             {
               "click": "button[data-list-id=\"L-34821-2026-12-08-PM\"]"
@@ -130,11 +130,11 @@
       "name": "stub-review",
       "app": "admin",
       "caption": "The stub is clearly marked for the anaesthetist and the office as a booking the office must resolve",
-      "start": "/admin/review/L-34821-2026-12-08-PM",
+      "start": "/admin/lists/to-authorise/L-34821-2026-12-08-PM",
       "states": [
         {
           "state": "row",
-          "caption": "On Review, the stub row with Resolve on Matching, outside the stats and totals",
+          "caption": "On the review page, the stub row with Resolve at Intake, outside the stats and totals",
           "steps": [
             {
               "wait": "[data-shot=list-stub-row]"
@@ -149,7 +149,7 @@
         },
         {
           "state": "details",
-          "caption": "Selected on Review, the stub shows what was received and why it waits",
+          "caption": "Selected on the review page, the stub shows what was received and why it waits",
           "steps": [
             {
               "click": "[data-shot=list-stub-row] [data-shot=list-stub]"

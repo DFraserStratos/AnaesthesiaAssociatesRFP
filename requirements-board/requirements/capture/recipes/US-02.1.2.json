@@ -4,218 +4,218 @@
   "absentReason": "",
   "shots": [
     {
-      "name": "as-received",
+      "name": "update",
       "app": "admin",
-      "caption": "Each row shows its procedure text exactly as the hospital sent it",
-      "start": "/admin/intake/matching",
+      "caption": "An update to a List AA holds, decided as a whole List",
+      "start": "/admin/intake/arrival/IBM001~2026-11-25~AM~H-STG~56ROCI",
       "states": [
         {
+          "state": "apply",
+          "caption": "Every ticked change on the List applies together, as one change set",
           "steps": [
             {
-              "click": "[data-shot=matching-import-open]"
+              "wait": "[data-shot=intake-update-diff]"
             },
             {
-              "wait": "[data-shot=matching-import]"
-            },
-            {
-              "click": "[data-sample-id=SAMPLE_STG]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "press": "Escape"
-            },
-            {
-              "wait": 400
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=matching-received]"
+            "[data-shot=intake-update-diff]",
+            "[data-shot=intake-update-footer]"
+          ]
+        },
+        {
+          "state": "leave-out",
+          "caption": "Pauline Williams's change left out: the rest of the List still applies",
+          "steps": [
+            {
+              "wait": "[data-shot=intake-update-diff]"
+            },
+            {
+              "click": "input[data-row-tick=IRM002]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-update-diff] tr[data-row-id=IRM002]",
+            "[data-shot=intake-update-footer]"
+          ]
+        },
+        {
+          "state": "applied",
+          "caption": "Applied: the List's changes reach its Bookings together",
+          "steps": [
+            {
+              "wait": "[data-shot=matching-apply]"
+            },
+            {
+              "click": "[data-shot=matching-apply]"
+            },
+            {
+              "wait": "[data-shot=intake-update-decided]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-update-decided]"
           ]
         }
       ]
     },
     {
-      "name": "decision",
+      "name": "new-list",
       "app": "admin",
-      "caption": "The office decides each row in its panel",
-      "start": "/admin/intake/matching",
+      "caption": "A new List from a rooms' PDF that matches no List AA holds",
+      "start": "/admin/intake/arrival/IBS002~2026-12-09~AM~H-FORTE~43OKAC",
       "states": [
         {
-          "state": "match",
-          "caption": "Match and apply: the row's ticked changes go to the matched Booking",
+          "state": "suggested",
+          "caption": "Placed in the session of the anaesthetist the PDF names, suggested because it is free",
           "steps": [
             {
-              "click": "[data-shot=matching-import-open]"
+              "wait": "[data-shot=intake-place-list]"
             },
             {
-              "wait": "[data-shot=matching-import]"
-            },
-            {
-              "click": "[data-sample-id=SAMPLE_STG]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "press": "Escape"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-shot^='matching-row-']:has-text('Diane Foster')"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=matching-decision]"
+            "[data-shot=intake-place-list]"
           ]
         },
         {
-          "state": "create-booking",
-          "caption": "Create a Booking on a List: the List picker, the Procedure as it will land, and Choose Contract",
+          "state": "other-session",
+          "caption": "Or placed in another anaesthetist's free session that morning",
           "steps": [
             {
-              "click": "[data-shot=matching-import-open]"
+              "wait": "[data-shot=intake-place-list]"
             },
             {
-              "wait": "[data-shot=matching-import]"
+              "click": "[data-shot=intake-place-list] [data-place-option=session]"
             },
             {
-              "click": "[data-sample-id=SAMPLE_STG]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=matching-stack]",
-            "[data-shot=matching-decision]"
+            "[data-shot=intake-place-list]"
           ]
         },
         {
-          "state": "create-list",
-          "caption": "Create a List in a free anaesthetist's session, holding the row's Booking",
+          "state": "existing-list",
+          "caption": "Or its Bookings added to a List AA already holds",
           "steps": [
             {
-              "click": "[data-shot=matching-import-open]"
+              "wait": "[data-shot=intake-place-list]"
             },
             {
-              "wait": "[data-shot=matching-import]"
+              "click": "[data-shot=intake-place-list] [data-place-option=list]"
             },
             {
-              "click": "[data-sample-id=SAMPLE_STG]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-decision=createList]"
-            },
-            {
-              "wait": 400
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=matching-decision]"
+            "[data-shot=intake-place-list]"
           ]
         },
         {
-          "state": "create-draft",
-          "caption": "Create a Draft List that holds the row's Booking until the office assigns an anaesthetist",
+          "state": "draft",
+          "caption": "Or made a Draft List when there is nobody to place it with",
           "steps": [
             {
-              "click": "[data-shot=matching-import-open]"
+              "wait": "[data-shot=intake-place-list]"
             },
             {
-              "wait": "[data-shot=matching-import]"
+              "click": "[data-shot=intake-place-list] [data-place-option=draft]"
             },
             {
-              "click": "[data-sample-id=SAMPLE_STG]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-decision=createDraft]"
-            },
-            {
-              "wait": 400
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=matching-decision]"
+            "[data-shot=intake-place-list]"
           ]
         },
         {
           "state": "reject",
-          "caption": "Reject: nothing is created or changed, and a reason is required",
+          "caption": "Reject: nothing is created, and a reason is required",
           "steps": [
             {
-              "click": "[data-shot=matching-import-open]"
+              "wait": "[data-shot=intake-newlist-reject]"
             },
             {
-              "wait": "[data-shot=matching-import]"
+              "click": "[data-shot=intake-newlist-reject]"
             },
             {
-              "click": "[data-sample-id=SAMPLE_STG]"
+              "wait": "[data-shot=intake-newlist-reject-confirm]"
             },
             {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-decision=reject]"
-            },
-            {
-              "wait": 400
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=matching-decision]",
-            "[data-shot=matching-apply]"
+            "[data-shot=intake-decision-column]"
+          ]
+        },
+        {
+          "state": "placed",
+          "caption": "Once Margaret Ellison's NHI is corrected, placed: the List is created with its Bookings in Dr Rutherford's session",
+          "steps": [
+            {
+              "click": "[data-shot=intake-pdf-row-edit][data-row-id=IRS003]"
+            },
+            {
+              "wait": "[data-shot=intake-pdf-edit-nhi]"
+            },
+            {
+              "fill": "[data-shot=intake-pdf-edit-nhi]",
+              "value": "ZAA0067"
+            },
+            {
+              "click": "[data-shot=intake-pdf-edit-save]"
+            },
+            {
+              "wait": "[data-shot=intake-pdf-correction]"
+            },
+            {
+              "click": "[data-shot=intake-place-list-submit]"
+            },
+            {
+              "wait": "[data-shot=intake-newlist-decided]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-newlist-decided]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "needs-nhi",
+      "app": "admin",
+      "caption": "A row with no NHI cannot become a Booking: it waits for an NHI until the office adds it",
+      "start": "/admin/intake/arrival/nhi~IRS001",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=waiting-nhi-row]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=waiting-nhi-row]"
           ]
         }
       ]

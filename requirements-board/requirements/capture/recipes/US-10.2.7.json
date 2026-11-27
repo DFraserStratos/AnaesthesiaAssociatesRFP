@@ -7,7 +7,7 @@
       "name": "payment-cycle",
       "app": "admin",
       "caption": "Each accounting week is named by its ISO week number",
-      "start": "/admin/billing",
+      "start": "/admin/finances/payments",
       "states": [
         {
           "state": "open",
@@ -105,10 +105,10 @@
       "name": "payment-schedule",
       "app": "admin",
       "caption": "The payment schedule of released payables goes to the accountant for payment",
-      "start": "/admin/billing/payment-runs/PR0001",
+      "start": "/admin/finances/payments/PR0001",
       "setup": [
         {
-          "goto": "/admin/billing"
+          "goto": "/admin/finances/payments"
         },
         {
           "wait": "[data-shot=payment-cycle]"
@@ -156,10 +156,10 @@
       "name": "payment-week",
       "app": "admin",
       "caption": "A payment is shown against the week number of the cycle it was paid in",
-      "start": "/admin/invoices/PPINV01",
+      "start": "/admin/finances/invoices/PPINV01",
       "setup": [
         {
-          "goto": "/admin/billing"
+          "goto": "/admin/finances/payments"
         },
         {
           "wait": "[data-shot=payment-cycle]"
@@ -190,7 +190,8 @@
           "wait": 2500
         },
         {
-          "click": "[data-shot=billing-run-payables-in-xero]", "timeout": 45000
+          "click": "[data-shot=billing-run-payables-in-xero]",
+          "timeout": 45000
         },
         {
           "wait": "[data-shot=billing-payables-result]"

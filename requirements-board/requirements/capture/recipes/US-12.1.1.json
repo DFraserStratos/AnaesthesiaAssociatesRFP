@@ -20,7 +20,7 @@
         },
         {
           "state": "edit",
-          "caption": "Editing Dr Souter's rate per unit on her record's Rate and tier card",
+          "caption": "Editing Dr Souter's rate per unit on her page's Rate and offer order card",
           "steps": [
             {
               "goto": "/admin/people/anaesthetists/34821"

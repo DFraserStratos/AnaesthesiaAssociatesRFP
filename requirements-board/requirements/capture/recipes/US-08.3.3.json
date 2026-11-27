@@ -57,10 +57,10 @@
       "name": "ledger-archived-contact",
       "app": "admin",
       "caption": "Annette Riley's pairs keep their rows and money in the ledger after her Xero contact is archived",
-      "start": "/admin/ledger?pair=HBC12",
+      "start": "/admin/finances/ledger?pair=HBC12",
       "setup": [
         {
-          "goto": "/admin/ledger?pair=HBC12"
+          "goto": "/admin/finances/xero"
         },
         {
           "trigger": "run-archive-job"

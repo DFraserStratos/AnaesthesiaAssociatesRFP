@@ -7,7 +7,7 @@
       "name": "locked-cards",
       "app": "admin",
       "caption": "Authorised List, every Booking locked",
-      "start": "/admin/review/L-25490-2026-11-23-AM",
+      "start": "/admin/lists/to-authorise/L-25490-2026-11-23-AM",
       "states": [
         {
           "steps": [

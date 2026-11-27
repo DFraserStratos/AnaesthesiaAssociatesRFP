@@ -14,7 +14,7 @@
           "caption": "Half the pre-payment received, still outstanding",
           "steps": [
             {
-              "goto": "/admin/invoices?view=approval"
+              "goto": "/admin/finances/invoices?view=approval"
             },
             {
               "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"
@@ -62,7 +62,7 @@
           "caption": "Pre-payment paid in full, received and the warning cleared",
           "steps": [
             {
-              "goto": "/admin/invoices?view=approval"
+              "goto": "/admin/finances/invoices?view=approval"
             },
             {
               "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"

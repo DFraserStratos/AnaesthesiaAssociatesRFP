@@ -7,10 +7,10 @@
       "name": "rebill-from-copy",
       "app": "admin",
       "caption": "After a credit note, the rebill starts from a copy of the original's lines",
-      "start": "/admin/invoices",
+      "start": "/admin/finances/invoices?show=all&q=Sarah%20Mitchell",
       "setup": [
         {
-          "goto": "/admin/review/L-41267-2026-11-17-AM"
+          "goto": "/admin/lists/to-authorise/L-41267-2026-11-17-AM"
         },
         {
           "trigger": "stage-post-op"

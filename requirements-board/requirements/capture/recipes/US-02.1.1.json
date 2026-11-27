@@ -4,64 +4,44 @@
   "absentReason": "",
   "shots": [
     {
-      "name": "matching-import",
+      "name": "arrivals",
       "app": "admin",
-      "caption": "A hospital file imported through an integration (sample file)",
-      "start": "/admin/intake/matching",
+      "caption": "St George's Lists land in the Arrivals inbox as the hospital sends them; nobody imports a file",
+      "start": "/admin/intake",
       "states": [
         {
           "steps": [
             {
-              "click": "[data-shot=matching-import-open]"
+              "wait": "[data-shot=intake-inbox-row]"
             },
             {
-              "wait": "[data-shot=matching-import]"
-            },
-            {
-              "wait": 400
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=matching-import]"
+            "[data-shot=intake-inbox-day][data-surgery-date=\"2026-11-25\"]",
+            "[data-shot=intake-inbox-row][data-arrival-key^=\"IBM001~\"]"
           ]
         }
       ]
     },
     {
-      "name": "matching-table",
+      "name": "as-received",
       "app": "admin",
-      "caption": "Each imported row lands on the matching screen with its procedure text as received",
-      "start": "/admin/intake/matching",
+      "caption": "An arriving List with each row as St George's sent it, its procedure text as received",
+      "start": "/admin/intake/arrival/IBM001~2026-11-25~AM~H-STG~56ROCI",
       "states": [
         {
           "steps": [
             {
-              "click": "[data-shot=matching-import-open]"
+              "wait": "[data-shot=intake-as-received]"
             },
             {
-              "wait": "[data-shot=matching-import]"
-            },
-            {
-              "click": "[data-sample-id=SAMPLE_STG]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "press": "Escape"
-            },
-            {
-              "wait": 400
+              "wait": 300
             }
           ],
           "highlight": [
-            "[data-shot=matching-table]"
+            "[data-shot=intake-as-received]"
           ]
         }
       ]

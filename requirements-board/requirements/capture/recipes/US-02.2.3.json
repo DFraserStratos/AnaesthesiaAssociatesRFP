@@ -1,6 +1,28 @@
 {
   "id": "US-02.2.3",
-  "status": "absent",
-  "absentReason": "Future Work: Bookings missing from a re-sent List are not detected. In the first release the office decides each row of a re-sent List on the matching screen (US-02.2.1).",
-  "shots": []
+  "status": "captured",
+  "absentReason": "",
+  "shots": [
+    {
+      "name": "removal",
+      "app": "admin",
+      "caption": "Kahu Wihongi is missing from the re-sent List, so her Booking is offered as a removal for the office to confirm",
+      "start": "/admin/intake/arrival/IBM008~2026-12-04~PM~H-CES~42WHIJ",
+      "states": [
+        {
+          "steps": [
+            {
+              "wait": "[data-shot=intake-update-diff] tr[data-change=removed]"
+            },
+            {
+              "wait": 300
+            }
+          ],
+          "highlight": [
+            "[data-shot=intake-update-diff] tr[data-change=removed]"
+          ]
+        }
+      ]
+    }
+  ]
 }

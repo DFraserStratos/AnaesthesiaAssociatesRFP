@@ -7,7 +7,7 @@
       "name": "review-contracts",
       "app": "admin",
       "caption": "Office review of each Procedure's Contract, codes and flags",
-      "start": "/admin/review/L-25490-2026-11-23-AM",
+      "start": "/admin/lists/to-authorise/L-25490-2026-11-23-AM",
       "states": [
         {
           "state": "procedures",
@@ -28,7 +28,7 @@
           "caption": "Each Procedure's payer in its row, the insurer or funder in the Billed to column, a missing approval number marked",
           "steps": [
             {
-              "goto": "/admin/review/L-45178-2026-11-20-AM"
+              "goto": "/admin/lists/to-authorise/L-45178-2026-11-20-AM"
             },
             {
               "wait": 600
@@ -50,7 +50,7 @@
           "caption": "Flags under each Procedure: a Contract change with Approve and Correct, a typed price beside the computed one, a Contract not offered on this List",
           "steps": [
             {
-              "goto": "/admin/review/L-45178-2026-11-17-AM"
+              "goto": "/admin/lists/to-authorise/L-45178-2026-11-17-AM"
             },
             {
               "wait": 600
@@ -67,7 +67,7 @@
           "caption": "A Procedure on a Contract disabled before its date is flagged, never blocked",
           "steps": [
             {
-              "goto": "/admin/review/L-45178-2026-11-17-AM"
+              "goto": "/admin/lists/to-authorise/L-45178-2026-11-17-AM"
             },
             {
               "wait": 600
@@ -88,7 +88,7 @@
           "caption": "Approve accepts the anaesthetist's Contract change and stamps when",
           "steps": [
             {
-              "goto": "/admin/review/L-45178-2026-11-17-AM"
+              "goto": "/admin/lists/to-authorise/L-45178-2026-11-17-AM"
             },
             {
               "wait": 600

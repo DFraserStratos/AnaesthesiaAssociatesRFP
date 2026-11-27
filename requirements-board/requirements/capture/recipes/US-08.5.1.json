@@ -6,8 +6,8 @@
     {
       "name": "processing-status",
       "app": "admin",
-      "caption": "Billing monitor, processing succeeded for the List and each Booking",
-      "start": "/admin/billing?list=L-34821-2026-11-23-AM",
+      "caption": "The Billing tab: processing succeeded for the List and each Booking",
+      "start": "/admin/finances/billing?list=L-34821-2026-11-23-AM",
       "setup": [
         {
           "scenario": "S3"
@@ -16,7 +16,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-AM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-AM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -31,7 +31,7 @@
           "wait": 400
         },
         {
-          "goto": "/admin/review/L-34821-2026-11-23-PM"
+          "goto": "/admin/lists/to-authorise/L-34821-2026-11-23-PM"
         },
         {
           "click": "role=button[name=\"Authorise for billing\"] >> nth=0"
@@ -51,7 +51,8 @@
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-34821-2026-11-23-AM]"
+            "[data-shot=\"billing-list-L-34821-2026-11-23-AM\"]",
+            "[data-shot=billing-table] tr[data-booking-id]"
           ]
         }
       ]
@@ -60,10 +61,10 @@
       "name": "failure-reason",
       "app": "admin",
       "caption": "A Booking waiting for Xero, with the reason and its next try, while the rest of the List bills",
-      "start": "/admin/billing?list=L-39560-2026-11-19-AM",
+      "start": "/admin/finances/billing?list=L-39560-2026-11-19-AM",
       "setup": [
         {
-          "goto": "/admin/billing"
+          "goto": "/admin/finances/billing"
         },
         {
           "trigger": "billing-failure"
@@ -80,7 +81,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=billing-pipeline-L-39560-2026-11-19-AM] tr[data-booking-id=BK0039]"
+            "[data-shot=billing-row-BK0039]"
           ]
         }
       ]

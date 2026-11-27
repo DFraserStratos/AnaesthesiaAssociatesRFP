@@ -6,120 +6,138 @@
     {
       "name": "surgeon-pdf",
       "app": "admin",
-      "caption": "Read, correct and send a surgeon's emailed PDF list to matching",
-      "start": "/admin/intake/pdfs",
+      "caption": "A rooms' PDF List read, checked and corrected before it is placed",
+      "start": "/admin/intake/arrival/IBS002~2026-12-09~AM~H-FORTE~43OKAC",
       "states": [
         {
-          "state": "inbox",
-          "caption": "The emailed PDF lists, each with the address it was sent from, when it arrived and the List it suggests",
+          "state": "beside",
+          "caption": "The PDF beside the values read from it",
           "steps": [
-            { "wait": "[data-shot=pdf-inbox]" }
+            {
+              "wait": "[data-shot=intake-pdf-values]"
+            },
+            {
+              "wait": 400
+            }
           ],
           "highlight": [
-            "[data-shot=pdf-inbox]"
+            "[data-shot=intake-pdf-page]",
+            "[data-shot=intake-pdf-values]"
           ]
         },
         {
-          "state": "extracted",
-          "caption": "The bookings read from the PDF, shown beside the document for review, with who sent it",
+          "state": "to-check",
+          "caption": "A value the reader was unsure of, Margaret Ellison's NHI, marked to check and shown where it sits on the page",
           "steps": [
-            { "click": "[data-shot=pdf-inbox] tr[data-pdf-list-id=PDL0001]" },
-            { "wait": "[data-shot=pdf-list-header]" },
-            { "wait": 400 }
-          ],
-          "highlight": []
-        },
-        {
-          "state": "upload",
-          "caption": "Upload an emailed PDF list with the address it was sent from (sample files)",
-          "steps": [
-            { "click": "[data-shot=pdf-upload-open]" },
-            { "wait": "[data-shot=pdf-upload]" },
-            { "wait": 400 }
+            {
+              "wait": "[data-shot=intake-pdf-values]"
+            },
+            {
+              "click": "[data-shot=intake-pdf-values] button[aria-label^=\"NHI ZAA0068\"]"
+            },
+            {
+              "wait": 400
+            }
           ],
           "highlight": [
-            "[data-shot=pdf-upload]"
+            "[data-shot=intake-pdf-values] button[aria-label^=\"NHI ZAA0068\"]",
+            "[data-shot=intake-pdf-page]"
           ]
         },
         {
           "state": "correction",
-          "caption": "An invalid NHI flagged and corrected before the row is sent, the correction kept with who and when",
+          "caption": "The NHI corrected before the List is placed, the correction kept with who made it and when",
           "steps": [
-            { "click": "[data-shot=pdf-inbox] tr[data-pdf-list-id=PDL0001]" },
-            { "wait": "[data-shot=pdf-list-header]" },
-            { "fill": "[data-shot=pdf-row-2] input >> nth=0", "value": "ZAA0067" },
-            { "click": "[data-shot=pdf-row-2-apply]" },
-            { "wait": "[data-shot=pdf-correction]" },
-            { "wait": 400 }
+            {
+              "click": "[data-shot=intake-pdf-row-edit][data-row-id=IRS003]"
+            },
+            {
+              "wait": "[data-shot=intake-pdf-edit-nhi]"
+            },
+            {
+              "fill": "[data-shot=intake-pdf-edit-nhi]",
+              "value": "ZAA0067"
+            },
+            {
+              "click": "[data-shot=intake-pdf-edit-save]"
+            },
+            {
+              "wait": "[data-shot=intake-pdf-correction]"
+            },
+            {
+              "wait": 300
+            }
           ],
           "highlight": [
-            "[data-shot=pdf-correction]"
+            "[data-shot=intake-pdf-correction]"
           ]
-        },
+        }
+      ]
+    },
+    {
+      "name": "resent",
+      "app": "admin",
+      "caption": "The rooms re-send the List: the new PDF is the next version of the List AA holds, with what changed",
+      "start": "/admin/intake/arrival/IBM008~2026-12-04~PM~H-CES~42WHIJ",
+      "states": [
         {
-          "state": "on-matching",
-          "caption": "The PDF's rows on the matching screen, marked Rooms PDF, each waiting for the office's decision",
           "steps": [
-            { "click": "[data-shot=pdf-inbox] tr[data-pdf-list-id=PDL0001]" },
-            { "wait": "[data-shot=pdf-list-header]" },
-            { "fill": "[data-shot=pdf-row-2] input >> nth=0", "value": "ZAA0067" },
-            { "click": "[data-shot=pdf-row-2-apply]" },
-            { "wait": "[data-shot=pdf-correction]" },
-            { "click": "[data-shot=pdf-send]" },
-            { "wait": "[data-shot=pdf-open-matching]" },
-            { "click": "[data-shot=pdf-open-matching]" },
-            { "wait": "[data-shot=matching-table]" },
-            { "wait": 400 },
-            { "press": "Escape" },
-            { "wait": 400 }
+            {
+              "wait": "[data-shot=intake-update-diff]"
+            },
+            {
+              "wait": 300
+            }
           ],
           "highlight": [
-            "[data-shot^='matching-row-']:has-text('Brian Holt')",
-            "[data-shot^='matching-row-']:has-text('Margaret Ellison')",
-            "[data-shot^='matching-row-']:has-text('Hemi Parata')"
+            "[data-shot=intake-version-track]",
+            "[data-shot=intake-update-diff]"
           ]
-        },
+        }
+      ]
+    },
+    {
+      "name": "unreadable",
+      "app": "admin",
+      "caption": "A PDF that cannot be read still lands, with the reason, and an email to the rooms ready to send",
+      "start": "/admin/intake/arrival/IBM006",
+      "states": [
         {
-          "state": "resent",
-          "caption": "The rooms re-send the List: the changed time waits on the matching screen as a difference for the office to accept",
           "steps": [
-            { "click": "[data-shot=pdf-inbox] tr[data-pdf-list-id=PDL0001]" },
-            { "wait": "[data-shot=pdf-list-header]" },
-            { "fill": "[data-shot=pdf-row-2] input >> nth=0", "value": "ZAA0067" },
-            { "click": "[data-shot=pdf-row-2-apply]" },
-            { "wait": "[data-shot=pdf-correction]" },
-            { "click": "[data-shot=pdf-send]" },
-            { "wait": "[data-shot=pdf-open-matching]" },
-            { "click": "[data-shot=pdf-open-matching]" },
-            { "wait": "[data-shot=matching-table]" },
-            { "wait": 400 },
-            { "press": "Escape" },
-            { "wait": 400 },
-            { "click": "[data-shot^='matching-row-']:has-text('Margaret Ellison')" },
-            { "wait": "[data-shot=matching-panel]" },
-            { "click": "[data-shot=matching-panel] >> role=radio[name=/Create a List in a session/]" },
-            { "click": "[data-shot=matching-panel] >> role=button[name=/Rutherford/] >> nth=0" },
-            { "click": "[data-shot=matching-apply]" },
-            { "wait": "[data-shot=matching-banner]" },
-            { "wait": 300 },
-            { "goto": "/admin/intake/pdfs" },
-            { "trigger": "pdf-list-resend", "choice": "PDF-OKAFOR-0805" },
-            { "wait": 400 },
-            { "click": "[data-shot=pdf-inbox] tr[data-status=received]" },
-            { "wait": "[data-shot=pdf-list-header]" },
-            { "click": "[data-shot=pdf-send]" },
-            { "wait": "[data-shot=pdf-open-matching]" },
-            { "click": "[data-shot=pdf-open-matching]" },
-            { "wait": "[data-shot=matching-table]" },
-            { "wait": 400 },
-            { "press": "Escape" },
-            { "wait": 400 },
-            { "click": "[data-shot^='matching-row-']:has-text('Margaret Ellison')" },
-            { "wait": "[data-shot=matching-panel]" },
-            { "wait": 400 }
+            {
+              "wait": "[data-shot=intake-bench-unreadable-reason]"
+            },
+            {
+              "wait": 300
+            }
           ],
           "highlight": [
-            "[data-shot=matching-diff]"
+            "[data-shot=intake-bench-unreadable-reason]",
+            "[data-shot=intake-unreadable-email]"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "add-by-hand",
+      "app": "admin",
+      "caption": "A PDF that reached someone's own inbox, added by hand with the address it came from",
+      "start": "/admin/intake",
+      "states": [
+        {
+          "steps": [
+            {
+              "click": "[data-shot=intake-add-pdf]"
+            },
+            {
+              "wait": "[data-shot=intake-add-pdf-dialog]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[role=dialog]"
           ]
         }
       ]

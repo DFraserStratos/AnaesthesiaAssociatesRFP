@@ -132,7 +132,7 @@
       "name": "review-stack",
       "app": "admin",
       "caption": "Office review shows the text and Contract for every Procedure",
-      "start": "/admin/review/L-34821-2026-11-23-AM",
+      "start": "/admin/lists/to-authorise/L-34821-2026-11-23-AM",
       "states": [
         {
           "steps": [
@@ -141,64 +141,7 @@
             }
           ],
           "highlight": [
-            "[data-shot=review-procedures] >> nth=0"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "matching-stack",
-      "app": "admin",
-      "caption": "The matching screen shows each Procedure's text as received, then its Contract",
-      "start": "/admin/intake/matching",
-      "states": [
-        {
-          "steps": [
-            {
-              "click": "[data-shot=matching-import-open]"
-            },
-            {
-              "wait": "[data-shot=matching-import]"
-            },
-            {
-              "click": "[data-sample-id=SAMPLE_STG]"
-            },
-            {
-              "click": "[data-shot=matching-import-confirm]"
-            },
-            {
-              "wait": "[data-shot=matching-panel]"
-            },
-            {
-              "wait": 400
-            },
-            {
-              "click": "[data-shot=matching-choose-contract]"
-            },
-            {
-              "wait": "[data-shot=contract-picker]"
-            },
-            {
-              "click": "[data-shot=contract-picker] [data-rail-option=patient]"
-            },
-            {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=contract-picker] [data-rail-option=standard]"
-            },
-            {
-              "wait": 300
-            },
-            {
-              "click": "[data-shot=contract-picker] >> role=button[name=\"Use this Contract\"]"
-            },
-            {
-              "wait": 500
-            }
-          ],
-          "highlight": [
-            "[data-shot=matching-stack]"
+            "[data-shot=review-procedure-stack] >> nth=0"
           ]
         }
       ]

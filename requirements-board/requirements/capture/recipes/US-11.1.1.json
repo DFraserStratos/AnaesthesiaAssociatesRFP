@@ -102,39 +102,11 @@
     {
       "name": "not-supplied",
       "app": "admin",
-      "caption": "A record with no phone or ethnicity supplied: nothing on it is marked required",
-      "start": "/admin/intake/waiting",
+      "caption": "A record made from a row with no phone or ethnicity supplied: nothing on it is marked required",
+      "start": "/admin/people/patients/ZQA1024",
       "states": [
         {
           "steps": [
-            {
-              "trigger": "receive-no-nhi-list"
-            },
-            {
-              "wait": "[data-shot=waiting-nhi-row]"
-            },
-            {
-              "click": "[data-shot=waiting-nhi-row]:has-text(\"Aroha Ngata\") >> [data-shot=waiting-nhi-add]"
-            },
-            {
-              "wait": "[data-shot=add-nhi-sheet]"
-            },
-            {
-              "fill": "[data-shot=add-nhi-sheet] input >> nth=0",
-              "value": "ZQA3019"
-            },
-            {
-              "wait": "[data-shot=add-nhi-preview]"
-            },
-            {
-              "click": "[data-shot=add-nhi-save]"
-            },
-            {
-              "wait": "[data-shot=add-nhi-done]"
-            },
-            {
-              "goto": "/admin/people/patients/ZQA3019"
-            },
             {
               "wait": "[data-shot=patient-details]"
             },
@@ -145,6 +117,33 @@
           "highlight": [
             "[data-shot=patient-details]"
           ]
+        }
+      ],
+      "setup": [
+        {
+          "goto": "/admin/intake/arrival/nhi~IRS001"
+        },
+        {
+          "click": "[data-shot=waiting-nhi-add]"
+        },
+        {
+          "wait": "[data-shot=add-nhi-sheet]"
+        },
+        {
+          "fill": "[data-shot=add-nhi-field]",
+          "value": "ZQA1024"
+        },
+        {
+          "wait": "[data-shot=add-nhi-preview]"
+        },
+        {
+          "click": "[data-shot=add-nhi-save]"
+        },
+        {
+          "wait": "[data-shot=add-nhi-done]"
+        },
+        {
+          "wait": 300
         }
       ]
     },

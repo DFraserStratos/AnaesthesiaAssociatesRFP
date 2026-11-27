@@ -1,12 +1,12 @@
 {
   "id": "US-14.1.1",
   "status": "partial",
-  "absentReason": "Future Work: shown only on the badged Future scope: HL7 and FHIR demo, for discussion. In the first release hospital files are imported and matched by the office (US-02.1.1).",
+  "absentReason": "Future Work: shown only on the badged Future scope: HL7 and FHIR demo, for discussion. In the first release the hospitals' Lists arrive at Intake for the office to decide (US-02.1.1).",
   "shots": [
     {
       "name": "hl7-siu-message",
       "app": "simulator",
-      "caption": "Future scope: an inbound HL7 SIU message, translated to FHIR and sent to the matching screen, nothing applied",
+      "caption": "Future scope: an inbound HL7 SIU message, translated to FHIR and sent to Intake, nothing applied",
       "start": "/demo/integrations",
       "states": [
         {
@@ -33,7 +33,7 @@
           "highlight": [
             "[data-shot=integrations-schedule-change]"
           ],
-          "caption": "Inbound HL7 SIU message, translated to FHIR and sent to the matching screen, nothing applied"
+          "caption": "Inbound HL7 SIU message, translated to FHIR and sent to Intake, nothing applied"
         }
       ]
     },

@@ -28,7 +28,7 @@
           "caption": "Once invoiced, the event shows its own invoice",
           "steps": [
             {
-              "goto": "/admin/review?tab=events"
+              "goto": "/admin/finances/payments"
             },
             {
               "wait": "[data-shot=admin-events-queue]"
@@ -46,7 +46,7 @@
               "wait": 600
             },
             {
-              "goto": "/admin/billing"
+              "goto": "/admin/finances/billing"
             },
             {
               "trigger": "run-next-billing-run"

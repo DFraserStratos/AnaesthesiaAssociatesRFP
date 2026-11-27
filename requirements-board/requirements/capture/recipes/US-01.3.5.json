@@ -148,7 +148,7 @@
       "name": "assign-draft-list-not-preferred",
       "app": "admin",
       "caption": "A not-preferred pairing is grouped apart and warns on every office path, a Draft List included",
-      "start": "/admin/draft-lists",
+      "start": "/admin/lists/draft-lists",
       "states": [
         {
           "state": "group",
@@ -160,7 +160,7 @@
               "wait": 400
             },
             {
-              "click": "[data-draft-list-row]:has-text(\"Thu\"):has-text(\"Reid\") >> role=button[name=/^Assign/]"
+              "click": "[data-draft-list-row]:has-text(\"Reid\"):has([aria-label=\"Assign Draft List, Thu 26 Nov PM\"]) >> role=button[name=/^Assign/]"
             },
             {
               "wait": 500
@@ -187,7 +187,7 @@
               "wait": 400
             },
             {
-              "click": "[data-draft-list-row]:has-text(\"Thu\"):has-text(\"Reid\") >> role=button[name=/^Assign/]"
+              "click": "[data-draft-list-row]:has-text(\"Reid\"):has([aria-label=\"Assign Draft List, Thu 26 Nov PM\"]) >> role=button[name=/^Assign/]"
             },
             {
               "wait": 500

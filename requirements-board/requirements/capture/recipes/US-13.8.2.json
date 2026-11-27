@@ -18,11 +18,11 @@
               "choice": "busy"
             },
             {
-              "wait": "[data-notification-row=\"NT0008\"]"
+              "wait": "[data-notification-row] >> nth=0"
             }
           ],
           "highlight": [
-            "[data-notification-row=\"NT0008\"]"
+            "[data-notification-row] >> nth=0"
           ]
         },
         {
@@ -34,7 +34,7 @@
               "choice": "one"
             },
             {
-              "click": "[data-notification-row=\"NT0001\"] button:has-text(\"Open Draft List\")"
+              "click": "[data-notification-row]:has(button:has-text(\"Open Draft List\")) >> nth=0 >> button:has-text(\"Open Draft List\")"
             },
             {
               "wait": "[data-shot=\"draft-list-returned-by\"]"

@@ -14,7 +14,7 @@
           "caption": "Sent, not paid: the office moves Annette Riley's procedure off her prepaid Contract, and the line says the invoice is credited and the procedure billed after it under the new Contract",
           "steps": [
             {
-              "goto": "/admin/invoices?view=approval"
+              "goto": "/admin/finances/invoices?view=approval"
             },
             {
               "wait": "[data-shot=awaiting-approval-row][data-booking-id=BK0034]"

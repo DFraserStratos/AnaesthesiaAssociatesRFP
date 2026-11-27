@@ -7,11 +7,20 @@
       "name": "draft-list-origins",
       "app": "admin",
       "caption": "Draft Lists from a surgeon's room request and from a recurring booking on an unavailable day",
-      "start": "/admin/draft-lists",
+      "start": "/admin/lists/draft-lists",
       "states": [
         {
-          "steps": [{ "wait": 500 }],
-          "highlight": ["[data-shot=draft-lists-table] th:text-is(\"Origin\")", "[data-draft-list-row]:nth-child(-n+6) td:nth-child(6)"]
+          "steps": [
+            {
+              "wait": "[data-shot=draft-lists-table] [data-draft-origin]"
+            },
+            {
+              "wait": 400
+            }
+          ],
+          "highlight": [
+            "[data-shot=draft-lists-table] [data-draft-origin]"
+          ]
         }
       ]
     }
