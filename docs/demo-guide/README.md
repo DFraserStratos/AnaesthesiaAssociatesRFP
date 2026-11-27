@@ -73,7 +73,7 @@ The flow over that model:
 
 - Availability paints first, then the surgeons' recurring bookings fill sessions with Lists. A
   recurring booking that meets an unavailable session becomes a Draft List.
-- The office imports and matches bookings, sets each Procedure's Contract, and assigns Draft Lists.
+- The office decides what arrives at Intake, a List at a time, sets each Procedure's Contract, and assigns Draft Lists.
 - The anaesthetist completes each Booking and submits the whole List. She can still change it until
   the office authorises it.
 - The office checks and authorises the whole List. Authorise locks the pricing snapshot, and the
@@ -105,8 +105,10 @@ AR-58 (the contract model proposal, `requirements-board/requirements/artifacts/A
 
 ## Prototype readiness snapshot
 
-Snapshot date: **25 November 2026**. Every catch-up phase and every build-plan phase (the Contracts and People sections) is built, and everything in S1 to S5 runs in
-the app. Settled rules show on screen as rules, with no label. The few readings still open with AA
+Snapshot date: **27 November 2026**. Every catch-up phase and every build-plan phase (the Contracts,
+People and Finances sections, the Intake rebuild and the Lists section) is built, and everything in
+S1 to S5 runs in the app, with one gap: the Control Panel's S1 beat links still name the earlier
+intake story (see S1 in the [demo script](03-demo-script.md)). Settled rules show on screen as rules, with no label. The few readings still open with AA
 carry the label the run sheet quotes, listed under "How to read the readiness" in the
 [demo script](03-demo-script.md). The phase behind each area is in the readiness table of
 [workflows and handoffs](02-workflows-and-handoffs.md).
@@ -114,10 +116,10 @@ carry the label the run sheet quotes, listed under "How to read the readiness" i
 | Area | Where it shows |
 |---|---|
 | Sign-in on the handset (provisional, OQ-83), Lists, Bookings, capture, submit, search | S1 |
-| Intake: hospital file import, Matching, the rooms' PDF lists, stubs, each List's sender | S1 |
+| Intake: Arrivals as an inbox, each arrival on its own page, a rooms' PDF placed whole, updates applied a List at a time, Lists that match exactly, Sources, stubs, each List's sender | S1 |
 | The step rail, No contract · RVG and No contract · Fixed price, the descriptions | S1 |
-| Day view (in pages or one scrolling list, its rail one work card with To-do and Notifications), sessions and Public sessions, out-of-hours sessions, help line and product support | S2 |
-| Warnings and the to-do list, Draft Lists with tiers and pairings, sickness, Conflicts (hospital closures and Christmas shutdowns) | S2 |
+| Day view (in pages or one scrolling list, roster order or A to Z, its rail one work card with To-do, Contracts and Notifications), sessions and Public sessions, out-of-hours sessions, help line and product support | S2 |
+| Warnings and the to-do list, the Lists section (Draft Lists with the offer order and pairings, Conflicts for hospital closures and Christmas shutdowns, Contracts to set, To authorise), sickness | S2 |
 | An anaesthetist's own move of a List or a single Booking, the notification pool, the update email | S2 |
 | Review and authorise, the pricing snapshot, one invoice per payer, the Split, the five pricing kinds | S2, S3 |
 | Xero pairs, payment by webhook, the weekly payment run (proposed, OQ-47), remittances, GST report | S3 |
@@ -127,7 +129,7 @@ carry the label the run sheet quotes, listed under "How to read the readiness" i
 | Audit trail and change sets, NHI at entry, no NHI in Xero, the lock, each Contract's history | S5 |
 | The rate per unit read at authorise and kept in the lock, the go-live load | S5 |
 | The Contracts section: the grouped catalogue, each Contract's page, New contract, Parties and Funding tags, Replace from a date | S3 aside, S5 |
-| The People section: the anaesthetist's, surgeon's, specialty's and patient's pages, the Rate and tier card, making an anaesthetist inactive from a last day | S1 aside, S5 |
+| The People section: the anaesthetist's, surgeon's, specialty's and patient's pages, the Rate and offer order card and the usual week, making an anaesthetist inactive from a last day | S1 aside, S5 |
 | AA's whole practice as the everyday data (85 anaesthetists, four months); a full year of invoices on demand | Every scenario; S2 aside |
 | Automatic hospital feeds over HL7 and FHIR | Future scope, on its own badged demo surface |
 
@@ -143,12 +145,14 @@ Follow one recognisable business object instead of touring screens:
 
 > Dr Melanie Souter's operating Lists, at Southern Cross, St George's and Forte Health.
 
-Her Tue 1 Dec AM List at St George's takes S1's imported Booking, Sarah Mitchell, for live capture on
-the phone. Her two Mon 23 Nov Lists wait on Review for S3. Her Fri 27 Nov Lists carry the prepaid
+S1's intake story is Mr C. Okafor's St George's List for Wed 25 Nov PM: his rooms email it, the
+office places it in Dr Rutherford's free session, the rooms re-send it and the hospital's file
+confirms it. Dr Souter's own Tue 1 Dec AM List at St George's is then captured live on the phone. Her
+two Mon 23 Nov Lists wait on **Lists → To authorise** for S3. Her Fri 27 Nov Lists carry the prepaid
 Bookings for S4.
 
 ```text
-Hospital file imported and matched        S1
+The List arrives at Intake, placed whole  S1
   -> Office sets the Contract
   -> Anaesthetist captures on the phone and submits
   -> Office reviews and authorises         S2, S3

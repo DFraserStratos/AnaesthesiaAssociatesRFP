@@ -73,6 +73,12 @@ that need work are repeated here.
 - The Contracts tab badge reads 79 while the list says "147 Contracts active" (may count office Contracts only; check). `apps/admin/screens/contracts/`. S
 - Master data, Modifiers: the "AA's own" table is squeezed to its header at 1440x900 and a sticky `th` blocks clicks on its rows. `apps/admin/screens/masters/ModifiersView.tsx`. S
 - David Chen's history Booking `HBK03` falls on Mon 26 Oct 2026, Labour Day, after the date move. `domain/seed/history.ts`. S
+- S1 cannot run as scripted in the framed build: Intake has no Create Booking step, so nothing puts Sarah Mitchell on Dr Souter's Tue 1 Dec AM List. The guide's S1 now walks the Okafor story instead; the Control Panel's S1 beat notes still describe the old story (Beat 2 "press Create Booking on Sarah Mitchell's row") and its Beat 4 and Beat 6 links stay greyed out. Decide the S1 story, then rewrite `apps/demo/demoScenarios.ts`. M (owner)
+- Demo action labels no longer say what they do: "Import hospital file" sends St George's Wed 25 Nov file, "Send update for a matched Booking" is a Southern Cross cancellation, "Receive list with a missing NHI" is Mr Okafor's emailed List. Rename in `shared/demoTriggers/registry.ts` with the guide, `demoGuideSync.test.ts` and the recipes that click them. S
+- Trigger messages still name retired screens (the Xero void message says "flagged on the Billing monitor"). Sweep `shared/demoTriggers/` and `store/` copy for Billing monitor, Matching and other old screen names. S
+- `NOT_SCRIPTED` in `demoGuideSync.test.ts` still lists `intake-scanned-pdf` and `intake-feed-fails`; S4 uses the seeded unreadable PDF and held message instead. Script them as presses or retire them. S
+- Review's "View invoices" opens the whole Invoices tab, not the List's invoices; "Next in queue" goes in submitted order, so after Dr Souter's AM List it opens Morrison's, not her PM List. S
+- The framed phone is always Dr Souter, so Dr Rutherford's view of the Okafor List can't be shown (TEST-68-72 step 8). S (owner)
 
 ## Prototype: anaesthetist apps (mobile, PWA, web)
 

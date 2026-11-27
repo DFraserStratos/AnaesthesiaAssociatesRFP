@@ -128,7 +128,7 @@ needs to bill.
 - `DRAFT` belongs to a Draft List, which has no anaesthetist yet. She never sees Draft Lists.
 - Sees only her own Lists and patients. Sees colleagues' availability and phone numbers when she
   looks for cover, never their patients.
-- Never sees the office's tiers, preferred pairings or who she is Not preferred with.
+- Never sees the office's offer order, preferred pairings or who she is Not preferred with.
 - Sets her own rate per unit. Cannot change her contact details, HPI CPN, bank details or any other
   master data.
 - Cannot authorise a List, assign a Draft List or see the office's notifications.
@@ -204,14 +204,19 @@ bookings by phone, email and PDF, hospital changes, cancellations and short-noti
 
 1. Read **Day view**: one row per anaesthetist, AM and PM (and an out-of-hours session where one is
    open), each showing its List or its availability. Draft Lists wait in their own band at the top.
-   The grid shows its rows in pages, or as one scrolling list. The right rail holds the **Books
-   square** and **Pre-payments** tiles, then one work card with two tabs: **To-do** (warnings,
-   Conflicts and the Bookings that need an invoice destination) and **Notifications**.
-2. Work **Intake**: **Import hospital file**, then on **Matching** create, apply or reject each row.
-   Nothing reaches the schedule until the office decides, and the procedure text keeps the hospital's
-   wording. On **PDF lists**, open each rooms' PDF with the address it came from, correct a row beside
-   the original and **Send to matching**. Every List keeps where it came from.
-3. Set each new Booking's Contract on the step rail: where the invoice goes (**Patient**, the List's
+   The grid shows its rows in pages, or as one scrolling list, in roster order or A to Z. The right
+   rail holds the **Books square** and **Pre-payments** tiles, then one work card with three tabs:
+   **To-do** (the open Conflicts line and the warnings), **Contracts** (the Lists with Procedures
+   still to set) and **Notifications**.
+2. Work **Intake**: **Arrivals** is an inbox of what the hospitals' feeds and the rooms' mailbox
+   send, grouped by surgery day. She opens each arrival on its own page and decides the whole List:
+   places a New List (the rooms' PDF beside the values read from it, any unsure value marked to
+   check and corrected first), applies an Update to a List AA holds, confirms Lists that match
+   exactly together, marks a cancellation, or rejects with a reason. Nothing reaches the schedule
+   until the office decides, and the procedure text keeps the sender's wording. **Sources** shows
+   what each source sent. Every List keeps where it came from.
+3. Set each new Booking's Contract on the step rail (from the work card's **Contracts** tab or
+   **Lists → Contracts to set**; placed Bookings land with none): where the invoice goes (**Patient**, the List's
    hospital, or **Special** for an insurer, a funder or a surgeon who is billed), then **Standard** or
    **Prepaid** (or the hospital's funding tag), then the Contract, chosen by typing. No contract · RVG
    and No contract · Fixed price are always offered. The Contract decides who is invoiced: its holder,
@@ -222,23 +227,25 @@ bookings by phone, email and PDF, hospital changes, cancellations and short-noti
    it was told, then the step rail.
 6. Assign Draft Lists. They come from a recurring booking that meets an unavailable session, a List
    an anaesthetist returns, a sickness, or a request by phone, email or PDF. Only the office assigns
-   one. The picker lists who is free, in the office's priority tiers, then preferred pairings; a
-   Not preferred pairing sits apart with a warning, and she can still go ahead. Tiers and pairings
-   are the office's alone.
+   one, from the Day view's band or **Lists → Draft Lists**. The picker lists who is free, in the
+   office's offer order (Offer first, Offer second, Offer third, Standard), then preferred pairings;
+   a Not preferred pairing sits apart with a warning, and she can still go ahead. The offer order
+   and pairings are the office's alone.
 7. Record a sickness with **Change status** on Day view. A booked session asks where its List goes,
-   back to the Draft Lists or on to a colleague, there and then. **Conflicts** lists hospital closures.
+   back to the Draft Lists or on to a colleague, there and then. **Lists → Conflicts** lists hospital
+   closures.
 8. Open an out-of-hours session for an emergency or late case: **Open out-of-hours session** on an
    anaesthetist's row, any day from today, one a day, 18:00 to 21:00 unless changed. Put a List in it,
    a new one or a Draft List for that evening, and close an empty one from its drawer.
 9. Move a Booking to another List, or reassign a whole List. A move never resets a Contract or a
    typed price; a Contract that does not fit the new List is flagged at review.
-10. Work the **To-do** list: each warning with **Open**; a strong one needs **Clear**, a mild one has
-    **Clear (optional)**. Warnings cover a missing approval number, a child as the payer, base units
+10. Work the **To-do** list: each warning is a quiet row that opens its Booking, with a round tick to
+    clear it (on the Booking, a strong one needs **Clear**, a mild one has **Clear (optional)**). Warnings cover a missing approval number, a child as the payer, base units
     outside the RVG guide, a patient who owes AA and an unpaid prepayment. None of them blocks
     anything.
 11. Work **Notifications**, the one pool the whole office shares: every List or Booking an
-    anaesthetist moves, and every alert to the office. Nothing in it needs approving. **Resolve**
-    takes a notice away for everyone, **Show resolved** brings it back with who and when, and nothing
+    anaesthetist moves, and every alert to the office. Nothing in it needs approving. Resolving
+    (the round tick) takes a notice away for everyone, **Resolved today** lists the morning's, **Show resolved** brings it back with who and when, and nothing
     expires.
 12. Save each Booking on purpose with **Save changes**: each save is one change set with her name on
     it, shown in **History**, where **View as at** shows the Booking at any save.
@@ -247,11 +254,12 @@ bookings by phone, email and PDF, hospital changes, cancellations and short-noti
     to report, the template from **Master data → Email templates** fills the wording, and the email
     opens in her own mail client. The system does not send it.
 14. Keep master data by hand after the one-off go-live load. In **People**: anaesthetists (identity,
-    contact, bank and GST, rate per unit and priority tier, each a card on her page; the HPI CPN and
+    contact, bank and GST, rate per unit and offer order, each a card on her page, with her usual
+    week of recurring bookings; the HPI CPN and
     bank details are required), with **Make inactive** from a last day and **Make active**;
     surgeons, each with a page edited one card at a time; specialties; and patients. In
     **Contracts**: Contracts and their price ranges, **Replace from a date**, Parties and funding
-    tags. In **Master data**: hospitals and holidays, recurring bookings, availability statuses,
+    tags. In **Master data** (under **More** in the side nav, beside **Audit**): hospitals and holidays, recurring bookings, availability statuses,
     public holidays, schedule settings, RVG groups and modifiers, email templates, prepayment
     letters and the patient balance warning. Every change is audited.
 
@@ -275,7 +283,7 @@ public-holiday call-out waits for AA's approval). Whether AA needs cover from 8:
 - Edits `ACTIVE` and `SUBMITTED` Lists and Bookings, and changes any price until the List is
   `AUTHORISED` (or a prepayment invoice is raised).
 - Nobody edits a Booking after `AUTHORISED`.
-- Assigns Draft Lists, reassigns a List or a Booking, and keeps tiers and preferred pairings.
+- Assigns Draft Lists, reassigns a List or a Booking, and keeps the offer order and preferred pairings.
 - Holds each anaesthetist's profile, bank details and HPI CPN, makes an anaesthetist inactive from a
   last day, and can change any anaesthetist's unit
   value.
@@ -319,13 +327,14 @@ for billing.
 
 ### Core actions
 
-1. Open **Review queue** and a submitted List with **Review →**. Each row shows the procedure text as
-   received, its Contract and RVG code, **Paid by**, the fee and any flag.
+1. Open **Lists → To authorise** (oldest submitted first; **Needs a look** narrows it) and a submitted
+   List with **Review →**. Each Procedure is its own line, with the procedure text as received, its
+   Contract and RVG code, its times, units and fee, **Paid by** once per Booking, and any flag.
 2. Read the flags: a Contract change (**Approve** or **Correct**), a typed price ("Price typed" with
    the computed price), a $0.00 price (**No charge**), a Contract this List does not offer, a Contract
    disabled before the procedure date, a Procedure that needs a price, a Booking not marked
-   completed. The **Changed** marker shows edits made after submit. Only a Procedure with no price, or a
-   Booking not completed, holds up authorise.
+   completed. The **Changed** marker shows edits made after submit. Only a Procedure with no price, a
+   Booking not completed, or a List holding only a stub waiting for its NHI, holds up authorise.
 3. Correct billing setup herself: the Contract, the payer, the price. Authorising approves any
    Contract change still waiting.
 4. **Split** a Procedure's fee from its Paid by line when more than one party pays, until authorise.
@@ -335,11 +344,12 @@ for billing.
    marked **To post**. A $0.00 Booking gets a "No charge" invoice with nothing to pay out.
 6. Keep invoices moving: **Resend** on an invoice, or type an address on one that reads **No invoice
    address** and **Send**.
-7. Approve prepayment invoices on **Invoices** (**Approve and send**, with the letter; AA can switch the
+7. Approve prepayment invoices on **Finances → Invoices**, Awaiting approval (**Approve and send**, with the letter; AA can switch the
    approval step off), send a reminder with **Send prepayment reminder** while one is unpaid or part
    paid, and keep the three letters on **Master data → Prepayment letters**. On a cancelled prepaid
    Booking, **Rebook with another anaesthetist** at that anaesthetist's own price.
-8. Review every event, the anaesthetists' and the office's, on **Review → Events**. She adds pre-op,
+8. Review every event, the anaesthetists' and the office's, on **Finances → Payments** (Events
+   awaiting approval; the Finances badge counts them). She adds pre-op,
    post-op and billing events herself, prices an event's time at review, and keeps each Contract's
    **Event fees**. An approved event bills in the next billing run.
 9. Create an additional invoice to any party with **Create additional invoice**, free-form lines,
@@ -347,10 +357,10 @@ for billing.
 10. Correct an issued invoice without editing it, from **Correct this invoice**: **Credit note**,
     **Credit in full and rebill** (the new invoice starts from a copy of the original's lines), or
     **Split into additional invoices** when the payer wants a combined procedure in pieces. A credit
-    note always covers the whole invoice. Each credit is reviewed on **Review → Events** and issued in
-    the next run.
-11. Watch the **Billing monitor**: every List grouped by anaesthetist (invoiced, sent, in Xero, paid
-    in, paid out), **Problems only**, and the **Xero sync queue**, where a failed hand-off waits and
+    note always covers the whole invoice. Each credit is reviewed on **Finances → Payments** and issued
+    in the next run.
+11. Watch **Finances → Billing**: every authorised List by anaesthetist (invoiced, sent, in Xero, paid
+    in, disbursed), opening on **Problems**, and **Finances → Xero**, where a failed hand-off waits and
     retries by itself or with **Retry now**. One Booking's failure holds back only that Booking.
 
 ### Critical rule
@@ -362,19 +372,23 @@ anaesthetist and fixes it herself. The anaesthetist can still edit the List unti
 
 ### Context
 
-Bookings arrive as hospital files and the rooms' PDF lists. Someone in the office decides each row.
+Bookings arrive from the hospitals' feeds and as the rooms' PDF lists. Someone in the office decides
+each List.
 In a small office this is Kirsty again.
 
 ### Goals and actions
 
-- Work **Intake** (side nav, under **Day view**): **Matching** for imported hospital files and sent
-  PDF rows (create, apply or reject each, with unmatched rows and rows with no NHI waiting in the
-  unmatched queue); **PDF lists** for each rooms' list with its sender (a re-sent list's differences
-  wait for approval); **Data quality** and **Validators** to check what arrived and test an NHI.
-- Approve an update to a matched Booking field by field. A Booking moved to another day arrives as a
-  cancellation and a new row.
-- Chase rows on **Intake → Waiting for NHI**: email the List's sender (else the surgeon's first
-  office contact) and add the NHI when it comes. A stub holds the place on the List meanwhile.
+- Work **Intake** (side nav, under **Day view**): **Arrivals**, the inbox (filters To decide, Waiting
+  for an NHI and Decided; by kind, source and surgery date; **Needs a look**), each arrival on its own
+  page with **Previous** and **Next**; **Sources** for what each source sent and what it became.
+- Place a New List whole, apply an Update with a tick per Booking (a re-sent rooms' List's removals
+  confirmed with it), confirm Lists that match exactly together, mark a cancellation, or reject a
+  List with a reason. Correct a value marked to check before placing. A PDF that cannot be read and
+  a held message wait until dismissed with a reason.
+- Chase patients **Waiting for an NHI**: email the List's sender (else the surgeon's first office
+  contact) and **Add NHI** when it comes. A stub holds the place on the List meanwhile. How NHIs and
+  ethnicity codes are checked is in Admin's **Help**; a data-quality flag (an ethnicity code not
+  recognised) is fixed on the patient's page.
 - Refresh a patient from the NHI register (**Refresh from NHI register** on the patient's page, Keep
   or Use register for each field that differs, audited).
 - Follow up patients who owe AA from **People → Patients → Needs follow-up**, then the patient's
@@ -384,7 +398,7 @@ In a small office this is Kirsty again.
 
 Automatic hospital feeds over HL7 and FHIR, with monitoring of failed, duplicate and retried
 messages, are Future scope. The **Demo: Future scope, HL7 and FHIR** surface (`/demo/integrations`)
-replays sample messages for discussion; a fired message lands on Intake as a row like any other.
+replays sample messages for discussion.
 Christchurch Public is not integrated.
 
 ## Persona 6: finance and reconciliation
@@ -395,25 +409,25 @@ The money side of the office. Whether this is a separate person is up to AA.
 
 ### Goals and actions
 
-- Watch invoices the Billing Engine raised and sent (the Billing monitor's **Sent or to post**
-  stage), resend one, and fix a missing invoice address.
+- Watch invoices the Billing Engine raised and sent (**Finances → Invoices**, each on its own page
+  with its Delivery, Ledger and Locked record cards), resend one, and fix a missing invoice address.
 - See payments arrive: Xero tells the Billing Engine by webhook, and the anaesthetist's payable is
   released for exactly what came in. A part payment releases only that part. A bulk remittance line
   Xero could not match is matched in Xero.
-- Watch the **AA Holding account** panel: prepaid amounts held until the List is authorised, then
+- Watch the **AA Holding account** (**Finances → Ledger**): prepaid amounts held until the List is authorised, then
   moved to whoever did the List by a transfer (when it moves is to confirm with AA, OQ-125).
-- Run the weekly payment run on the Billing monitor: **Close the week** (Friday, reconciled to the bank
+- Run the weekly payment run on **Finances → Payments**: **Close the week** (Friday, reconciled to the bank
   download), the Monday checks (**Mark fixed**, or **Hold out of this run** so a payment rolls into
   next week), approve the week's BCTIs, and **Send payment schedule** to the accountant on Tuesday,
   who pays it in Xero. Negative invoices net in the run, and every run keeps its remittance advice per
   anaesthetist. The weekly cycle is proposed and with AA's accountant (OQ-47).
-- Run AA's monthly fee invoices from **AA fee invoices**: fixed charges plus a charge per BCTI paid
+- Run AA's monthly fee invoices from **Finances → AA fees**: fixed charges plus a charge per BCTI paid
   that month, always its own invoice, paid into AA's own account and never taken out of a payment to
   the anaesthetist. What the per-BCTI charge counts is provisional (OQ-29, OQ-60).
-- Check the **Ledger**: the whole ledger or one anaesthetist, in balance when receipts held equal
-  payables due, with an out-of-balance list. A receipt that matches no invoice is allocated to one
-  or refunded.
-- Watch the **Reconciliation** panel on Day view, and on the Billing monitor any invoice voided or
+- Check **Finances → Ledger**: **The books** square when receipts held equal payables due, each
+  anaesthetist's row Square or out, and each one's account page. A receipt that matches no invoice
+  waits under **Receipts to place** until it is allocated to one or refunded.
+- Watch the **Books square** tile on Day view, and on **Finances → Xero** any invoice voided or
   changed directly in Xero.
 - Archive Xero contacts in bulk (**Master data → Xero & archiving**).
 
@@ -429,7 +443,7 @@ save strip, History and the email name whoever saved.
 | Actor | What they do |
 |---|---|
 | Surgeon and the surgeon's practice office | Ask for a List, phone changes and email PDF lists; receive the update email and the missing-NHI request |
-| Hospital | Provides its theatre list as a file the office imports; may be invoiced where a Contract bills it |
+| Hospital | Sends its theatre Lists to Intake (or, where not connected, its surgeons' rooms email PDFs); may be invoiced where a Contract bills it |
 | Patient or another payer | The payer on each Procedure (the patient, or a parent, guardian, benefactor or family trust); invoiced when the Contract bills the payer |
 | Insurer or funder | A Party like any other; invoiced only where a Contract bills it. An insurer named on the Booking with its approval number may reimburse a patient who is invoiced under No contract · RVG |
 | Billing Engine | Prices, raises and sends invoices (emailed, or marked to post), keeps AA's ledger |
@@ -444,7 +458,7 @@ There is no patient, hospital or surgeon portal.
 |---|---|---|
 | Anaesthetist Mobile App | Dr Melanie Souter | The day itself: Lists, Bookings, capture, submit, moves, calendar, balances |
 | Anaesthetist Web App | Dr Melanie Souter | The weeks ahead, the same List and Booking work, availability, accounts |
-| Admin Web App | Kirsty W. (and Sam T. for the audit beat) | Day view, intake, Draft Lists, review and authorise, billing, ledger, People, Contracts, master data, audit |
+| Admin Web App | Kirsty W. (and Sam T. for the audit beat) | Day view, Intake, Lists (Draft Lists, Conflicts, Contracts to set, To authorise), Notifications, Finances, People, Contracts, master data, audit |
 | Demo surfaces | The presenter | Control Panel, Demo actions, Demo sheet, Xero simulation, Future scope surface. Never proposed as product screens |
 
 ## Where the requirements live

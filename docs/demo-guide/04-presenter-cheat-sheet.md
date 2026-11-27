@@ -63,7 +63,7 @@ The words around them:
 | Part credit | Credit note | A credit note always covers the whole invoice. |
 | Surgeons' rooms (as a record) | The surgeon's office contacts | Contacts sit on the surgeon. |
 | Public List | A Public session | Public is a session status. |
-| Hospital sync, Simulate sync | Import | The office imports each hospital file. |
+| Hospital sync, Simulate sync, Import, Matching | Arrivals at Intake | Each hospital file or rooms' PDF arrives at Intake and waits for the office. |
 | Hospital reference | The procedure date and surgeon | The invoice cross-matches on those. |
 | SSA | Anaesthetist | SSA does not appear in the RFP. |
 | Delete Booking | Cancel Booking | History is kept. |
@@ -77,7 +77,7 @@ DRAFT (a Draft List) -> ACTIVE -> SUBMITTED -> AUTHORISED
 ```
 
 - **DRAFT**: a Draft List, with no anaesthetist yet. Only the office assigns it.
-- **ACTIVE**: the anaesthetist and the office both edit it. A hospital row changes a Booking only when the office applies it on **Matching**.
+- **ACTIVE**: the anaesthetist and the office both edit it. Anything a hospital or the rooms send changes it only when the office applies it at **Intake**, a whole List at a time.
 - **SUBMITTED**: the office reviews it. The anaesthetist can still change it until the office authorises it. The last change stands, and Review shows "Changed since submitted". On her main view it reads "Done · unbilled".
 - **AUTHORISED**: every Booking is locked, and each Procedure's pricing is locked onto it. The invoices are raised in the same step. The List leaves the anaesthetist's main view, and search finds it.
 - There is no returned state. If something needs clarifying, the office phones and corrects it.
@@ -93,9 +93,9 @@ DRAFT (a Draft List) -> ACTIVE -> SUBMITTED -> AUTHORISED
 | Change a price | Only where an RVG Contract allows it, or the amount on No contract · Fixed price | Any price, until authorised or until a prepayment invoice is raised |
 | Move a List, or one Booking | Her own, at once | Any, at any time before authorise |
 | Assign a Draft List | No | Yes |
-| See tiers and pairing preferences | No | Yes |
+| See the offer order and pairing preferences | No | Yes |
 | Add an event, create an additional invoice or a credit note | On her own Procedure | Yes |
-| Approve events | No | Yes, on **Review queue → Events** |
+| Approve events | No | Yes, on **Finances → Payments** (Events awaiting approval) |
 | Change her rate per unit | Yes, her own | Yes |
 | Edit master data | No | Yes, every change audited |
 
@@ -150,7 +150,7 @@ The office sets the Contract when it sets up the Booking, in three steps:
 ### Units and the RVG code
 
 - **Base** comes from the RVG group, on the primary Procedure only.
-- **Time** comes from start and finish: 1 unit per 15 minutes for the first two hours, then 1 per 10 minutes. A part interval rounds up. The office keeps the tiers in **Master data → RVG groups**.
+- **Time** comes from start and finish: 1 unit per 15 minutes for the first two hours, then 1 per 10 minutes. A part interval rounds up. The office keeps the time tiers in **Master data → RVG groups**.
 - **Modifiers** are a step the anaesthetist answers, even with **None apply**. The age modifier, and P1 where the base units include it, come in applied and can be removed. Anything else she claims needs a short reason, ASA included.
 - Base units outside the RVG guide raise a warning. It never blocks.
 
@@ -202,24 +202,25 @@ The office sets the Contract when it sets up the Booking, in three steps:
 
 - Six warning rules: an unpaid prepayment, base units outside the RVG guide, a child as the payer, an insurer with no approval number, a split that no longer fits the fee, and a patient who owes AA.
 - Mild ones can wait. Strong ones need action before the procedure.
-- They land on the office's **To-do** list. A triangle marks the Booking in every app, and the warning shows when the Booking opens.
+- They land on the office's **To-do** list (Day view's work card), one quiet row each, cleared with its round tick. A triangle marks the Booking in every app, and the warning shows when the Booking opens.
 - Nothing stops completing, submitting or authorising.
 - A patient who owes AA: mild within the threshold, strong over it (90 days from the invoice date, set in **Master data → Patient balance warning**). The anaesthetist sees "This patient owes AA money. The office is following up.", with no amounts.
 - At review, flags point at what needs a look: "Changed by Dr X: was" the old Contract (**Approve** or **Correct**), "Price typed: $X (computed $Y)", "Contract not offered on this List", "Contract disabled on" a day, "Email or postal address needed", **Needs a price**.
-- Two things hold up authorising: a Procedure with no price, and a Booking reopened and not completed again. **Authorise for billing** names it, with **Open**.
+- Two things hold up authorising: a Procedure with no price, and a Booking reopened and not completed again. **Authorise for billing** names it, with **Open**. A List holding only a stub (a patient waiting for an NHI, and no Booking yet) can be neither submitted nor authorised: "This List holds only a booking waiting at intake, with no NHI yet. The office has to resolve it before the List can be submitted or authorised." A List with any live Booking is never held up by a stub, though it never reads complete while the stub stands.
 
 ## The notification pool and the to-do list
 
-- Admin Day's right rail holds one work card with two tabs: **To-do** and **Notifications**, one pool the whole office shares.
+- Admin Day's right rail holds one work card with three tabs: **To-do** (the open Conflicts line and the warnings), **Contracts** (the Lists with Procedures still to set) and **Notifications**, one pool the whole office shares. **Notifications** in the side nav is the same pool on its own page, with **Resolved today** beside it.
 - Every move by an anaesthetist posts a notice. So does **Alert the office**, with her note.
-- A notice is active or resolved. When anyone ticks it resolved, it goes for everyone. **Show resolved** brings it back with who and when. Nothing expires.
-- Nothing in the pool needs approving. The cover-change email is drafted from the notice.
+- A notice is active or resolved. When anyone resolves it with its round tick, it goes for everyone. **Show resolved** brings it back with who and when. Nothing expires.
+- Nothing in the pool needs approving. The cover-change email is drafted from the notice's **Email**.
+- The everyday data opens on a morning's notices from the practice: 7 active.
 
-## Preferences and tiers, admin only
+## Preferences and the offer order, admin only
 
 - A surgeon can prefer, or prefer not, to work with an anaesthetist. The office sees it on both pages in **People**.
-- Priority tiers (the **Rate and tier** card on the anaesthetist's page; the Anaesthetists list filters by tier) order who the office's pickers offer: tier, then preferred pairing. Not preferred sits apart with a warning, and the office can still go ahead.
-- Anaesthetists never see tiers, pairings or Draft Lists. Their own moves show colleagues by availability alone.
+- The offer order (First, Second, Third, Standard; the **Rate and offer order** card on the anaesthetist's page, and a filter on **People → Anaesthetists**) decides who the office's pickers offer first: offer order, then preferred pairing. Pickers label each "Offer first", "Offer second", "Offer third" or "Standard". Not preferred sits apart with a warning, and the office can still go ahead. AA can rename the groups.
+- Anaesthetists never see the offer order, pairings or Draft Lists. Their own moves show colleagues by availability alone.
 - Seeded: Ms A. Reid prefers not to work with Dr Sharma; Mr J. Whitford prefers Dr Sharma.
 
 ## The money model
@@ -234,7 +235,7 @@ Payer -> ACCREC -> AA's bank account -> ACCPAY (the same amount) -> Anaesthetist
 - Each Party's invoices go by email or by post (OQ-114). The billing run sends them as it raises them.
 - The ACCPAY is the buyer-created tax invoice, one per invoice. The count is provisional (OQ-29, OQ-60).
 - Xero holds no NHI and no patient name. It knows each patient or payer by a hidden ID ("Patient PT0005").
-- Every call to Xero waits in the **Xero sync queue** and retries by itself. An outage never stops authorising.
+- Every call to Xero waits in the sync queue on **Finances → Xero** and retries by itself. An outage never stops authorising. An invoice voided or edited directly in Xero is flagged there too, and the ledger keeps what AA issued.
 - A part payment releases the anaesthetist's payable for exactly the amount received.
 - Billing fails per Booking. The rest of the List bills.
 
@@ -258,7 +259,7 @@ Payer -> ACCREC -> AA's bank account -> ACCPAY (the same amount) -> Anaesthetist
 Receipts held = payables due + the AA Holding account + credits held for payers - negative invoices to net
 ```
 
-- On a fresh reset: Receivables outstanding $12,630.50, Receipts held $1,640.00, Payables due $0.00, Disbursed $27,760.00.
+- **Finances → Ledger** shows it as **The books** ("The books are square"; **See the checks**), with OWED TO AA, OWED TO ANAESTHETISTS, the AA HOLDING ACCOUNT and RECEIPTS TO PLACE, and one row per anaesthetist, each Square or out. Each anaesthetist has an account page.
 - A receipt nobody can match puts it out of balance, with a name on it. The office allocates it to an invoice or marks it refunded.
 - The anaesthetist sees her position on web **Accounts**, the web Dashboard and mobile **Balances**, from the same ledger.
 
@@ -284,7 +285,7 @@ Receipts held = payables due + the AA Holding account + credits held for payers 
 ## Events
 
 - Events sit on the Procedure, on no List: pre-op and post-op events (a time or a fixed fee, with their own date), billing events (a free-text charge or credit), additional invoices and credit notes.
-- The office or the anaesthetist raises them. Each goes through one review step, **Review queue → Events**, and bills in the next billing run.
+- The office or the anaesthetist raises them. Each goes through one review step, on **Finances → Payments** (Events awaiting approval; its tab badge counts them), and bills in the next billing run.
 - An event joins an invoice to the same party in that run where it can, otherwise it gets its own.
 - ACC pre-op assessments are preconfigured pre-op events with codes CS250, CS260 and CS70 (to confirm, OQ-12).
 
@@ -309,16 +310,16 @@ Receipts held = payables due + the AA Holding account + credits held for payers 
 
 ### Admin Web
 
-- **Day view**: every session and List, in pages or one scrolling list, with the Books square and Pre-payments tiles and one work card for the To-do list (the Bookings needing an invoice destination among it) and Notifications.
-- **Intake**: hospital files and the rooms' PDF lists, every row waiting for the office on **Matching**.
-- **Intake** also holds **Waiting for NHI**.
-- **Draft Lists**, **Conflicts** (hospital closures only), **Notifications**, **Review queue**, **Invoices**, **Billing monitor**, **Ledger**, **Audit**.
+- **Day view**: every session and List, in pages or one scrolling list, in roster order or A to Z, with the Books square and Pre-payments tiles and one work card: **To-do**, **Contracts** and **Notifications**.
+- **Intake**: **Arrivals**, an inbox of everything the hospitals' feeds and the rooms' mailbox send, grouped by surgery day, each arrival on its own page (a New List beside its PDF, an Update against the List AA holds, Lists that match exactly, cancellations, held messages, unreadable PDFs, patients waiting for an NHI); and **Sources**, what each source sent today. **Add a PDF by hand** is the one manual way in.
+- **Lists**: **Draft Lists**, **Conflicts** (hospital closures only), **Contracts to set** and **To authorise** (the review queue).
+- **Notifications**, then **Finances**: **Billing**, **Invoices**, **Payments**, **Ledger**, **Xero** and **AA fees**, each record on its own page.
 - **People**: anaesthetists, surgeons, specialties and patients, each with a page edited one card at a time. An anaesthetist is made inactive from a last day there.
 - **Contracts**: the catalogue, each Contract's page, **New contract**, **Replace from a date**, **Parties** and **Funding tags**.
 - The Admin Booking saves on purpose: each **Save changes** is one change set with a name, and History can show the Booking as it stood at any save.
 - **Draft update email** on demand, opened in the office's mail client. The system never sends it.
 - **Open out-of-hours session** on an anaesthetist's Day row opens an evening session after PM.
-- **Master data**: places, schedule, billing and settings, every change audited.
+- **Master data** and **Audit**, under **More** at the foot of the side nav: places, schedule, billing and settings, every change audited.
 - **Help** at the foot of the side nav: **Help line** and **Product support**.
 
 ## Strong phrases to use
@@ -362,7 +363,7 @@ Receipts held = payables due + the AA Holding account + credits held for payers 
 - On a handset, the amber **Demo** chip opens the **Demo sheet**. Entries badged "Office stand-in" or "Colleague stand-in" play the people who are not on the phone, such as **Demo sheet → Office authorises this List**.
 - **Play the office** on the handset's More screen is off by default. Leave it off.
 - **Switch office user** stands in for two office users signing in as themselves.
-- The Xero simulation and the Control Panel are badged demo surfaces. The Billing monitor is product UI; only its triggers are badged. **Run payables in Xero** carries a **Simulated Xero** badge: it stands in for the accountant paying the schedule.
+- The Xero simulation and the Control Panel are badged demo surfaces. The Finances tabs are product UI; only their triggers are badged. **Run payables in Xero** carries a **Simulated Xero** badge: it stands in for the accountant paying the schedule.
 - **Seed load** and **Go-live load** stand in for a developer's one-off load of AA's controlled spreadsheets.
 - The everyday data is already AA's whole practice, 85 anaesthetists. **Load full-scale data** adds a full year of invoices in memory, for timing only. **Reset** returns to the demo data.
 - The Digital Services Hub is simulated: **Demo actions → Hub: Available / Slow / Unavailable** shows the fallback.
@@ -379,7 +380,7 @@ Each is built with a default, labelled on screen where the app shows it. Raise t
 | OQ | Question | Built | Our recommendation |
 |---|---|---|---|
 | OQ-12 | ACC pre-op assessment codes and fixed fee | CS250, CS260 and CS70 as preconfigured pre-op events, priced by the generic event rules | Ask AA's accountant to confirm the three codes. |
-| OQ-13 | Hospital download format and fields, per hospital | Sample files per hospital, imported on Matching | Get one real file and its field list from each hospital before the integration is priced. |
+| OQ-13 | Hospital download format and fields, per hospital | Sample files and messages per hospital, arriving at Intake by a demo action | Get one real file and its field list from each hospital before the integration is priced. |
 | OQ-29 | GST agency treatment of the receivable and payable invoices | Invoices in the anaesthetist's name with AA as agent; the ACCPAY is the BCTI, one per invoice | Put the wording and the BCTI to AA's accountant, with the IRD's current name for it. |
 | OQ-47 (proposed) | Does the accountant agree to the weekly payment cycle? | Friday close, Monday checks, Tuesday schedule, paid in Xero | Adopt it if Ben agrees, and settle the payment day with the accountant. |
 | OQ-60 | What the AA per-invoice fee counts, and how the fee is paid | One paid BCTI per receivable invoice, counted once, against a sample fixed schedule | Count each BCTI once against the anaesthetist who did the procedure, and keep the fee a separate invoice. |
@@ -420,7 +421,7 @@ Yes. The anaesthetist picks a colleague free in that session, by name or from th
 
 ### "Can a warning stop me?"
 
-No. Warnings sit on the To-do list and on the Booking. Completing, submitting and authorising all go through. Only a Procedure with no price, or a Booking reopened and not completed again, holds up authorising.
+No. Warnings sit on the To-do list and on the Booking. Completing, submitting and authorising all go through. Only a Procedure with no price, or a Booking reopened and not completed again, holds up authorising, and a List holding only a stub waiting for its NHI cannot be submitted or authorised.
 
 ### "Can I copy a Booking?"
 
@@ -444,7 +445,7 @@ There is nothing to notice. A move changes nothing in the ledger. When the offic
 
 ### "Can an anaesthetist see who they are not preferred with?"
 
-No. Pairing preferences and tiers are admin only.
+No. Pairing preferences and the offer order are admin only.
 
 ### "Who uses mobile and who uses web?"
 
@@ -480,11 +481,11 @@ No. The prepaid amount waits in the AA Holding account until the office authoris
 
 ### "How do late hospital changes work?"
 
-A later row from the hospital lands on **Matching**, matched to its Booking by date, surgeon, hospital and session. It waits for the office to approve it, field by field, up to AUTHORISED. Nothing applies itself, and the hospital never sets the Contract.
+A later file from the hospital, or a re-sent PDF from the rooms, lands at **Intake** as an Update to the List AA holds, matched by date, surgeon, hospital and session, then each patient by NHI. The office sees only what changed, a tick per Booking, and applies it as one change, up to AUTHORISED. Lists that match exactly are confirmed together. Nothing applies itself, and the hospital never sets the Contract.
 
 ### "What if the patient has no NHI?"
 
-The NHI is mandatory. A row with no NHI waits on Matching, and a stub holds its place on the List so the anaesthetist still sees the case. When the office adds the NHI, the Booking takes the stub's place.
+The NHI is mandatory. A patient with no NHI waits at Intake under **Waiting for an NHI**, and a stub holds the place on the List so the anaesthetist still sees the case; a List holding only a stub cannot be submitted or authorised. The office chases the NHI with whoever sent the List. When the NHI is added, or arrives in a later file, the Booking takes the stub's place.
 
 ### "Who do the update emails go to?"
 
@@ -496,7 +497,7 @@ No. Point at the **Synthetic data only** badge. The hospital files and PDF lists
 
 ### "Can it handle 85 anaesthetists and 28,000 invoices a year?"
 
-Show it: **Admin → Day view → Demo actions → Load full-scale data → Confirm**. The everyday data is already the whole practice of 85 anaesthetists; the load adds a year of invoices: 85 anaesthetists, 20,092 sessions and 28,361 invoices in the browser. The banner's **Timings** shows each screen's render time. These are timings on one laptop, with no server; formal performance testing is a Testing-milestone task. **Reset** returns to the demo data.
+Show it: **Admin → Day view → Demo actions → Load full-scale data → Confirm**. The everyday data is already the whole practice of 85 anaesthetists; the load adds a year of invoices: 85 anaesthetists, 20,092 sessions and 28,370 invoices in the browser. The banner's **Timings** shows each screen's render time. These are timings on one laptop, with no server; formal performance testing is a Testing-milestone task. **Reset** returns to the demo data.
 
 ### "How will people who are not comfortable with new systems cope?"
 
