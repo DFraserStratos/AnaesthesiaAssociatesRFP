@@ -9,7 +9,8 @@
  * anaesthetist's changes since the List was submitted (`changedSinceSubmitted`).
  */
 
-import type { AssignedList, AuditEntry } from '../../../../domain/types'
+import type { AssignedList, AuditEntry, List } from '../../../../domain/types'
+import { sessionRank } from '../../../../domain/outOfHours'
 import type { AppState } from '../../../../store/appStore'
 import { changedSinceSubmitted, reviewFlagsFor, type ChangedSinceSubmitted } from '../../../../store'
 import { bookingsByList } from '../../../../store/indexes'
@@ -83,6 +84,24 @@ export function toAuthoriseOrder(state: { schedule: Pick<AppState['schedule'], '
       return { list, ...(submittedAtISO !== undefined ? { submittedAtISO } : {}) }
     }),
   ).map((r) => r.list.id)
+}
+
+/**
+ * Review's Previous and Next order: the To authorise order with each anaesthetist's Lists kept together,
+ * so finishing Dr Souter's AM List leads to her PM List, not to whoever submitted next. Anaesthetists
+ * follow the order their first List holds in `ids`; within one, by date, then AM before PM.
+ */
+export function reviewQueueOrder(ids: readonly string[], lists: Readonly<Record<string, Pick<List, 'anaesthetistId' | 'dateISO' | 'session'>>>): string[] {
+  const groups = new Map<string, string[]>()
+  for (const id of ids) {
+    const who = lists[id]?.anaesthetistId ?? id
+    const group = groups.get(who)
+    if (group === undefined) groups.set(who, [id])
+    else group.push(id)
+  }
+  const rank = (id: string) => { const session = lists[id]?.session; return session === undefined ? 9 : sessionRank(session) }
+  const byWhen = (a: string, b: string) => (lists[a]?.dateISO ?? '').localeCompare(lists[b]?.dateISO ?? '') || rank(a) - rank(b)
+  return [...groups.values()].flatMap((group) => [...group].sort(byWhen))
 }
 
 /** What one submitted List needs a look at. `disabledDays` is read once for many Lists. */

@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { editBooking, freshAppState, useAppStore, type Actor } from '../../../../store'
 import { ANAE, SEED_LIST_IDS } from '../../../../domain/seed'
 import type { AssignedList, AuditEntry } from '../../../../domain/types'
-import { filterToAuthorise, needsALook, orderToAuthorise, submittedAtByList, toAuthoriseOrder, toAuthoriseRows } from './toAuthoriseRows'
+import { filterToAuthorise, needsALook, orderToAuthorise, reviewQueueOrder, submittedAtByList, toAuthoriseOrder, toAuthoriseRows } from './toAuthoriseRows'
 import { listsToAuthorise } from './listsCounts'
 
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
@@ -101,5 +101,30 @@ describe('the filters', () => {
     expect(look.map((r) => r.list.id)).toContain(FLAGGED)
     expect(look.every((r) => r.needsALook)).toBe(true)
     expect(look.length).toBeLessThan(rows.length)
+  })
+})
+
+describe("reviewQueueOrder (Review's Previous and Next)", () => {
+  const list = (anaesthetistId: string, dateISO: string, session: 'AM' | 'PM') => ({ anaesthetistId, dateISO, session })
+  const lists = {
+    souterAm: list(ANAE.souter, '2026-11-23', 'AM'),
+    morrison: list(ANAE.morrison, '2026-11-20', 'PM'),
+    souterPm: list(ANAE.souter, '2026-11-23', 'PM'),
+    souterEarlier: list(ANAE.souter, '2026-11-20', 'PM'),
+    chen: list(ANAE.chen, '2026-11-19', 'AM'),
+  }
+
+  it("keeps each anaesthetist's Lists together, by date then AM before PM, in the order each first appears", () => {
+    expect(reviewQueueOrder(['souterPm', 'morrison', 'souterAm', 'chen', 'souterEarlier'], lists)).toEqual([
+      'souterEarlier',
+      'souterAm',
+      'souterPm',
+      'morrison',
+      'chen',
+    ])
+  })
+
+  it('leaves a queue of one anaesthetist each as it is', () => {
+    expect(reviewQueueOrder(['chen', 'morrison', 'souterAm'], lists)).toEqual(['chen', 'morrison', 'souterAm'])
   })
 })

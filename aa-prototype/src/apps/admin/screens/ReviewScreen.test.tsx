@@ -4,13 +4,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SurfaceProvider } from '../../../shared'
 import { freshAppState, useAppStore, type Actor } from '../../../store'
 import { ReviewScreen } from './ReviewScreen'
-import { toAuthoriseOrder } from './lists/toAuthoriseRows'
+import { reviewQueueOrder, toAuthoriseOrder } from './lists/toAuthoriseRows'
 
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
 
 /** The To authorise tab's order (oldest submitted first), which Previous and Next follow. */
+/** Review's queue: the To authorise order with each anaesthetist's Lists together. */
 function submittedListIds() {
-  return toAuthoriseOrder(useAppStore.getState())
+  return reviewQueueOrder(toAuthoriseOrder(useAppStore.getState()), useAppStore.getState().schedule.lists)
 }
 
 function renderReview(listId: string, onOpen = vi.fn(), onViewInvoices = vi.fn()) {

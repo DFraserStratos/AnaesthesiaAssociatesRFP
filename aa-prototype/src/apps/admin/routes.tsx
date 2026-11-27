@@ -274,7 +274,7 @@ export function AdminReviewRoute() {
         backToBillingMonitor={from !== null}
         onBack={() => navigate(from !== null ? financePath('billing') + from.search : listsPath('to-authorise') + (tab?.search ?? ''))}
         onOpen={(next) => navigate(reviewPath(next), { state: location.state })}
-        onViewInvoices={() => navigate(financePath('invoices'))}
+        onViewInvoices={() => navigate(financePath('invoices', { list: listId, show: 'all' }))}
         onOpenBooking={(dateISO, bookingId) => navigate(`/admin/day/${dateISO}/bookings/${bookingId}`)}
       />
     </RequireEntity>

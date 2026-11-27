@@ -14,6 +14,7 @@ import {
   FilterPills,
   FormError,
   NameSearchBox,
+  Notice,
   Pill,
   ResultLine,
   SelectField,
@@ -36,7 +37,7 @@ import {
 import type { AppState } from '../../../store/appStore'
 import { pairByInvoice } from '../../../store/indexes'
 import { ADDITIONAL_INVOICE_COPY, CREDIT_LABELS, PRE_POST_OP_COPY } from '../../../shared/procedureEventCopy'
-import { drSurname, formatCount, formatMoney, plainDate, stampText, surnameOf } from '../../../shared/format'
+import { drSurname, formatCount, formatMoney, plainDate, shortDay, stampText, surnameOf } from '../../../shared/format'
 import { PrepaymentApprovalList, PrepaymentApprovalSwitchCard } from '../components/PrepaymentApprovalStrip'
 import { PageBody, PageToolbar } from '../components/AdminPage'
 import { FinancesPage } from './finances/FinancesSection'
@@ -62,11 +63,11 @@ interface InvoicesScreenProps {
   actor: Actor
 }
 
-type InvoiceParam = 'q' | 'show' | 'kind' | 'anaesthetist' | 'page'
+type InvoiceParam = 'q' | 'show' | 'kind' | 'anaesthetist' | 'list' | 'page'
 
 /**
- * The list's state in the URL, replaced, never pushed: `q`, `show`, `kind`, `anaesthetist` and
- * `page`. A key at its default or empty is dropped; any write drops the old `view` link shape, and
+ * The list's state in the URL, replaced, never pushed: `q`, `show`, `kind`, `anaesthetist`, `list`
+ * (one List's invoices, from Review's View invoices) and `page`. A key at its default or empty is dropped; any write drops the old `view` link shape, and
  * any change other than paging goes back to page 1.
  */
 function useInvoiceListParams() {
@@ -115,6 +116,8 @@ export function InvoicesScreen({ actor }: InvoicesScreenProps) {
   const kind = show === 'approval' ? undefined : parseInvoiceKind(params.get('kind'))
   const anaesthetistParam = params.get('anaesthetist')
   const anaesthetistId = anaesthetistParam !== null && masters.anaesthetists[anaesthetistParam] !== undefined ? anaesthetistParam : undefined
+  const listParam = params.get('list')
+  const scopeList = listParam !== null ? schedule.lists[listParam] : undefined
   const q = params.get('q') ?? ''
   const page = pageParam(params.get('page'))
   const choose = (next: InvoiceShow) => set({ show: next })
@@ -128,18 +131,18 @@ export function InvoicesScreen({ actor }: InvoicesScreenProps) {
   const hasInvoices = useMemo(() => all.some((r) => r.state !== 'awaitingApproval'), [all])
   const rows = useMemo(
     () =>
-      invoiceList(all, {
+      invoiceList(scopeList === undefined ? all : all.filter((r) => r.listId === scopeList.id), {
         show,
         ...(kind !== undefined ? { kind } : {}),
         ...(anaesthetistId !== undefined ? { anaesthetistId } : {}),
         q,
       }),
-    [all, show, kind, anaesthetistId, q],
+    [all, scopeList, show, kind, anaesthetistId, q],
   )
   const pageSize = FULL_SCALE.pageSizes.invoices
   const pager = pageWindow(rows.length, pageSize, page)
   const shown = useMemo(() => pageOf(rows, pageSize, pager.page), [rows, pageSize, pager.page])
-  useScreenTiming('invoices', [all, show, kind, anaesthetistId, q, pager.page])
+  useScreenTiming('invoices', [all, scopeList, show, kind, anaesthetistId, q, pager.page])
 
   // Under Awaiting approval: the store's pending rows, in the list's order.
   const approvalRows = useMemo(() => {
@@ -163,7 +166,8 @@ export function InvoicesScreen({ actor }: InvoicesScreenProps) {
     [masters.anaesthetists],
   )
 
-  const filtered = q.trim() !== '' || anaesthetistId !== undefined
+  const filtered = q.trim() !== '' || anaesthetistId !== undefined || scopeList !== undefined
+  const scopeAnaesthetist = scopeList?.anaesthetistId === undefined ? undefined : masters.anaesthetists[scopeList.anaesthetistId]
 
   const rail = (
     <>
@@ -234,6 +238,15 @@ export function InvoicesScreen({ actor }: InvoicesScreenProps) {
       <PageBody rail={rail} railLabel="Invoices summary">
         <FormError message={error} />
         <ResultLine line={done} shot="approve-and-send-result" />
+        {scopeList !== undefined && (
+          <Notice
+            tone="neutral"
+            shot="invoices-list-scope"
+            action={<TextAction onClick={() => set({ list: '' })} shot="invoices-list-scope-clear">Show every List</TextAction>}
+          >
+            {`The invoices for ${scopeAnaesthetist !== undefined ? `${drSurname(scopeAnaesthetist.name)}'s` : 'the'} ${shortDay(scopeList.dateISO)} ${scopeList.session} List.`}
+          </Notice>
+        )}
         {show === 'approval' ? (
           <PrepaymentApprovalList actor={actor} rows={approvalRows} filtered={filtered} onDone={setDone} onError={setError} />
         ) : !hasInvoices ? (

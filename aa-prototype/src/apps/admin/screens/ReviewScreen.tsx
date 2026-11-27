@@ -60,7 +60,7 @@ import { useListStubs } from '../../../store/stubSelectors'
 import { StubTableRow } from '../../../shared/stubs'
 import { StubResolveLink } from '../components/StubResolveLink'
 import { financePath } from './finances/financePaths'
-import { toAuthoriseOrder } from './lists/toAuthoriseRows'
+import { reviewQueueOrder, toAuthoriseOrder } from './lists/toAuthoriseRows'
 
 interface ReviewScreenProps {
   listId: string
@@ -250,9 +250,10 @@ export function ReviewScreen({ listId, actor, onBack, backToBillingMonitor = fal
   const raisedCount = raisedInvoices.length
   const noAddressCount = raisedInvoices.filter((i) => i.delivery?.status === 'noAddress').length
 
-  // Previous and Next follow the To authorise tab's order (oldest submitted first), the open List
-  // kept in its place after it is authorised so the controls stay stable while its state changes.
-  const queueIds = toAuthoriseOrder({ schedule: { lists: listsRecord }, audit }, listId)
+  // Previous and Next follow the To authorise tab's order (oldest submitted first) with each anaesthetist's
+  // Lists kept together, the open List kept in its place after it is authorised so the controls stay
+  // stable while its state changes.
+  const queueIds = reviewQueueOrder(toAuthoriseOrder({ schedule: { lists: listsRecord }, audit }, listId), listsRecord)
   const queueIndex = queueIds.indexOf(listId)
   const previousListId = queueIndex > 0 ? queueIds[queueIndex - 1] : undefined
   const nextListId = queueIndex >= 0 ? queueIds[queueIndex + 1] : undefined

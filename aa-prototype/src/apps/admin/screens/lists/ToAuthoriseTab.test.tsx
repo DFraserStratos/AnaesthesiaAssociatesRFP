@@ -14,7 +14,7 @@ import type { AssignedList } from '../../../../domain/types'
 import { financesRoutes, listsRoutes } from '../../../../test/adminRoutes'
 import { AdminApp } from '../../AdminApp'
 import { listsPath, reviewPath } from './listsPaths'
-import { toAuthoriseOrder, toAuthoriseRows } from './toAuthoriseRows'
+import { reviewQueueOrder, toAuthoriseOrder, toAuthoriseRows } from './toAuthoriseRows'
 
 const SOUTER: Actor = { who: 'Dr Melanie Souter', role: 'anaesthetist', source: 'anaesthetist', anaesthetistId: ANAE.souter }
 const FLAGGED = 'L-45178-2026-11-17-AM'
@@ -119,8 +119,8 @@ describe('the To authorise tab', () => {
     expect(here(router)).toBe(TAB)
   })
 
-  it("the review page's Previous and Next follow the tab's order", async () => {
-    const order = toAuthoriseOrder(useAppStore.getState())
+  it("the review page's Previous and Next follow the tab's order, each anaesthetist's Lists together", async () => {
+    const order = reviewQueueOrder(toAuthoriseOrder(useAppStore.getState()), useAppStore.getState().schedule.lists)
     const router = mountAt(reviewPath(order[1]!))
     await act(async () => {
       screen.getByRole('button', { name: 'Next in queue' }).click()
