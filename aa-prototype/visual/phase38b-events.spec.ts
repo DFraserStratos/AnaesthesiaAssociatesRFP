@@ -53,7 +53,7 @@ test('a Booking with no events: the add controls on the owner\'s apps, the empty
 })
 
 test('the office creates, reviews and runs an additional invoice; it links both ways', async ({ page }) => {
-  await page.goto(`/admin/review/${SHARMA_TUE14}`)
+  await page.goto(`/admin/lists/to-authorise/${SHARMA_TUE14}`)
   await page.waitForLoadState('networkidle')
   expect(await runDemoAction(page, 'stage-post-op', { close: true })).toContain('Staged')
 
@@ -72,7 +72,7 @@ test('the office creates, reviews and runs an additional invoice; it links both 
   await expect(row).toContainText('Raised by the office')
   await expect(row.locator('[data-shot="procedure-event-status"]')).toHaveText('Awaiting review')
 
-  await page.goto('/admin/review?tab=events')
+  await page.goto('/admin/finances/payments')
   const queue = page.locator('[data-shot="admin-events-queue"]')
   await expect(queue.locator('tr')).toHaveCount(2)
   await queue.locator('tr', { hasText: 'Sarah Mitchell' }).click()

@@ -106,7 +106,7 @@ test('admin: the mixed bariatric Booking bills no base, labelled provisional (OQ
 })
 
 test('admin Review: the seeded List row reads Modifiers 7, split 3 · 2 · 2', async ({ page }) => {
-  await page.goto(`/admin/review/${SEEDED_LIST}`)
+  await page.goto(`/admin/lists/to-authorise/${SEEDED_LIST}`)
   await settle(page)
   await expect(page.locator('[data-shot="review-modifier-split"]')).toHaveText('Modifiers 7, split 3 · 2 · 2')
   await expect(page.locator('[data-shot="review-procedure-share"]').first()).toHaveText('Primary')

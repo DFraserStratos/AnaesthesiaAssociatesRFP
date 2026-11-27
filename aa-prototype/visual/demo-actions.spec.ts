@@ -7,11 +7,12 @@ import { runDemoAction } from './demoActions'
  * in the URL (a part payment on the invoice page moves that invoice's money).
  */
 
-test('demo actions: one on the Review queue, eleven on the Day view, three on Finances · Billing, five on Xero, three on Payments', async ({ page }) => {
-  // The Review queue holds "Run the next billing run" (catch-up Phase 38b).
-  await page.goto('/admin/review')
+test('demo actions: none on Lists › To authorise, eleven on the Day view, three on Finances · Billing, five on Xero, three on Payments', async ({ page }) => {
+  // "Run the next billing run" left the old Review queue with its events, for Finances › Payments (US-13.3.3).
+  await page.goto('/admin/lists/to-authorise')
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-shot="demo-actions"]')).toHaveAccessibleName('Demo actions for this screen, 1')
+  await expect(page.locator('[data-lists-page="to-authorise"]')).toBeVisible()
+  await expect(page.locator('[data-shot="demo-actions"]')).toHaveCount(0)
 
   // The Day view carries the sample warnings (catch-up Phase 15a), Simulate sickness (catch-up Phase 30), Add Draft List for this day (catch-up Phase 31), Colleague moves a List to the office (catch-up Phase 32) and Colleague hands a Booking to Dr Souter (catch-up Phase 32a), Move to 2 days before procedure and Add prepaid Booking (catch-up Phase 27), Inject unmatched receipt for the Reconciliation card (catch-up Phase 37), Switch office user (catch-up Phase 35) and Load full-scale data (catch-up Phase 43).
   await page.goto('/admin/day/2026-11-24')
@@ -67,7 +68,7 @@ test('demo actions: one on the Review queue, eleven on the Day view, three on Fi
 
 test('demo actions: a half payment from an invoice page moves that invoice\'s money chip', async ({ page }) => {
   // Authorise Dr Souter's Mon 20 AM List so its invoices reach Xero.
-  await page.goto('/admin/review/L-34821-2026-11-23-AM')
+  await page.goto('/admin/lists/to-authorise/L-34821-2026-11-23-AM')
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()
   await page.getByRole('button', { name: 'Authorise for billing' }).last().click()

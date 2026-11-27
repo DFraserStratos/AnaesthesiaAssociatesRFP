@@ -257,8 +257,10 @@ export function AdminReviewRoute() {
   const { actor } = useAdminOutlet()
   const navigate = useNavigate()
   const exists = useAppStore((s) => s.schedule.lists[listId] !== undefined)
-  // Opened from Billing's "Open in Review" (catch-up Phase 37): back returns to the Billing tab with its filters.
-  const from = billingMonitorReturn(useLocation().state)
+  // Opened from Billing's "Open in Review" (catch-up Phase 37): back returns to the Billing tab with its filters,
+  // and Previous and Next carry the router state so it still does.
+  const location = useLocation()
+  const from = billingMonitorReturn(location.state)
 
   return (
     <RequireEntity exists={exists}>
@@ -267,7 +269,7 @@ export function AdminReviewRoute() {
         actor={actor}
         backToBillingMonitor={from !== null}
         onBack={() => navigate(from !== null ? financePath('billing') + from.search : listsPath('to-authorise'))}
-        onOpen={(next) => navigate(reviewPath(next))}
+        onOpen={(next) => navigate(reviewPath(next), { state: location.state })}
         onViewInvoices={() => navigate(financePath('invoices'))}
         onOpenBooking={(dateISO, bookingId) => navigate(`/admin/day/${dateISO}/bookings/${bookingId}`)}
       />

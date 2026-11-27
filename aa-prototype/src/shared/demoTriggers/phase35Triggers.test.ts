@@ -13,7 +13,7 @@ describe('Phase 35 entries (explicit save and named office users)', () => {
     const on = (path: string) => demoTriggersFor(api.getState(), path, 'bar', {}).map((m) => m.trigger.id)
     expect(on('/admin/day/2026-11-24')).toContain('switch-office-user')
     expect(on('/admin/day/2026-11-24/bookings/BK0001')).toContain('switch-office-user')
-    expect(on('/admin/review')).not.toContain('switch-office-user')
+    expect(on('/admin/lists/to-authorise')).not.toContain('switch-office-user')
     expect(on('/mobile/lists')).not.toContain('switch-office-user')
     const entry = byId('switch-office-user')
     expect(entry.surfaces).toEqual(['bar'])

@@ -91,7 +91,7 @@ test('Awaiting approval opens Review with the filters on: authorise there, Back 
   await expect(lists(page)).toHaveCount(1)
 
   await awaiting(page).locator(`li[data-shot="billing-awaiting-${SOUTER_MON16_AM}"] a`).click()
-  await expect(page).toHaveURL(new RegExp(`/admin/review/${SOUTER_MON16_AM}$`))
+  await expect(page).toHaveURL(new RegExp(`/admin/lists/to-authorise/${SOUTER_MON16_AM}$`))
   const back = page.locator('[data-shot="review-back-to-billing"]')
   await expect(back).toHaveText(/Billing/)
   await expect(back).not.toHaveText(/Billing monitor/)
@@ -113,13 +113,13 @@ test('Awaiting approval opens Review with the filters on: authorise there, Back 
   await expect(page.getByRole('button', { name: /Authorise|Approve/ })).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/p37-monitor-02-back-from-review.png', fullPage: true })
 
-  // Opened from the Review queue, Review shows its ordinary breadcrumb instead.
-  await page.goto('/admin/review')
+  // Opened from To authorise, Review shows its ordinary breadcrumb instead.
+  await page.goto('/admin/lists/to-authorise')
   await page.waitForLoadState('networkidle')
   await page.getByRole('row').filter({ hasText: /Souter/ }).filter({ hasText: /St George's/ }).getByRole('button', { name: /^Review / }).first().click()
-  await expect(page).toHaveURL(/\/admin\/review\/L-/)
+  await expect(page).toHaveURL(/\/admin\/lists\/to-authorise\/L-/)
   await expect(page.locator('[data-shot="review-back-to-billing"]')).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Review queue', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'To authorise', exact: true })).toBeVisible()
 
   // Reload keeps the view: the filter, the anaesthetist and the Lists.
   await page.goto(`/admin/finances/billing?show=all&anaesthetist=${SOUTER}`)

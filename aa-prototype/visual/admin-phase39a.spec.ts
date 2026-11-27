@@ -119,7 +119,7 @@ test('netting: 19 BCTIs and a credit after payout; the run detail, schedule, rem
 })
 
 test('Stage refund after payout pays out through a one-bill staged run the office approved (no back door)', async ({ page }) => {
-  await page.goto('/admin/review/L-41267-2026-11-17-AM')
+  await page.goto('/admin/lists/to-authorise/L-41267-2026-11-17-AM')
   await page.waitForLoadState('networkidle')
   await runDemoAction(page, 'stage-post-op', { close: true })
   // The entry lives on the invoice's page: the Control Panel's Open screen lands on Sarah Mitchell's invoice.

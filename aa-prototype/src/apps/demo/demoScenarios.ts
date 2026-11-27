@@ -322,11 +322,11 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       const am = state.schedule.lists[SEED_LIST_IDS.souterMon20Am]
       const pm = state.schedule.lists[SEED_LIST_IDS.souterMon20Pm]
       if (am?.state !== 'SUBMITTED' || pm?.state !== 'SUBMITTED') {
-        return { ok: false, message: "Reset done, but Dr Souter's two Mon 23 Nov Lists are not both SUBMITTED in the Review queue." }
+        return { ok: false, message: "Reset done, but Dr Souter's two Mon 23 Nov Lists are not both SUBMITTED on To authorise." }
       }
       return {
         ok: true,
-        message: `Reset to the pristine seed, where Dr Souter's Mon 23 Nov AM and PM Lists are SUBMITTED in the Review queue. ${FOLLOW_THE_BEATS}`,
+        message: `Reset to the pristine seed, where Dr Souter's Mon 23 Nov AM and PM Lists are SUBMITTED on To authorise. ${FOLLOW_THE_BEATS}`,
       }
     },
     beats: [
@@ -414,7 +414,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       {
         beat: 'An additional invoice to any party',
         label: 'Beat 5 · Admin Booking, after Stage post-op scenario',
-        does: 'Create additional invoice, approve it in Review, then Demo actions → Run the next billing run',
+        does: 'Create additional invoice, approve it on Finances › Payments, then Demo actions → Run the next billing run',
         path: (s) =>
           s.schedule.lists[S4_POST_OP_LIST_ID]?.state === 'AUTHORISED' ? adminBookingPath(s, liveBookingOn(s, S4_POST_OP_LIST_ID, 'Mitchell')?.id) : null,
       },

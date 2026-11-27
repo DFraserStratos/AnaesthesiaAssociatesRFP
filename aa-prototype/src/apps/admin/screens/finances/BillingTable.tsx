@@ -146,7 +146,7 @@ const EMPTY_LINE: Record<BillingShow, string> = {
   problems: 'Every authorised List has billed, been sent and reached Xero.',
   'in-progress': 'No authorised List is waiting to be sent, reach Xero, be paid in or be disbursed.',
   done: 'No authorised List has been paid in and disbursed in full yet.',
-  all: 'A List shows here once it is authorised in Review.',
+  all: 'A List shows here once it is authorised on To authorise.',
 }
 
 function BillingEmpty({ params, onShow, onClearSearch }: { params: BillingTabParams; onShow: (show: BillingShow) => void; onClearSearch: () => void }) {

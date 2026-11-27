@@ -98,7 +98,8 @@ test('authorise raises and sends invoices; contract-holder document, Resend and 
   await page.waitForTimeout(400)
 
   // Review queue → Morrison → authorise.
-  await page.getByRole('button', { name: /Review queue/ }).first().click()
+  await page.getByRole('button', { name: /^Lists/ }).first().click()
+  await page.locator('[data-lists-tab="to-authorise"]').click()
   await page.waitForTimeout(300)
   await page.getByRole('row').filter({ hasText: /Morrison/ }).getByRole('button', { name: /Review/ }).click()
   await page.waitForTimeout(300)
@@ -310,7 +311,8 @@ test('the authorised design-day list leaves the mobile main view (catch-up Phase
   // Office authorises → the run bills it in the same moment.
   await page.goto('/admin')
   await page.waitForLoadState('networkidle')
-  await page.getByRole('button', { name: /Review queue/ }).first().click()
+  await page.getByRole('button', { name: /^Lists/ }).first().click()
+  await page.locator('[data-lists-tab="to-authorise"]').click()
   await page.waitForTimeout(300)
   // Name the list, don't take the first Souter row: the seed also ships her two
   // Mon 20 money-story lists SUBMITTED, and both sort ahead of this Tue 21 one.
@@ -347,7 +349,7 @@ test('invoice rail shows a hand-off waiting for Xero', async ({ page }) => {
   await expect(page.locator('[data-shot="demo-action-arm-handoff-fault"]').getByText('Armed', { exact: true })).toBeVisible()
   await page.keyboard.press('Escape')
 
-  await page.goto('/admin/review')
+  await page.goto('/admin/lists/to-authorise')
   await page.waitForLoadState('networkidle')
   await page.getByRole('row').filter({ hasText: /Morrison/ }).getByRole('button', { name: /Review/ }).click()
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()

@@ -49,11 +49,13 @@ test('1 · Reset: Rutherford Wed 22 AM reads Unavailable with no flag; his List 
   await expect(page.locator('[data-shot="admin-draft-list-drawer"]')).toContainText('Returned: anaesthetist unavailable')
   await page.waitForTimeout(400)
   await page.screenshot({ path: 'visual/shots/p32b-02-returned-draft-list.png', fullPage: true })
-  await page.goto('/admin/conflicts')
+  await page.goto('/admin/lists/conflicts')
   await page.waitForLoadState('networkidle')
-  const reasons = await page.locator('tr[data-conflict-row]').allInnerTexts()
+  // Each day's group row names what closed the hospital; every row under it is a List there.
+  await expect(page.locator('tr[data-conflict-row]').first()).toBeVisible()
+  const reasons = await page.locator('tr[data-conflict-date] [data-conflict-closure]').allInnerTexts()
   expect(reasons.length).toBeGreaterThan(0)
-  for (const r of reasons) expect(r).toContain('Hospital closed')
+  for (const r of reasons) expect(r).toMatch(/ closed|Public holiday/)
   await page.screenshot({ path: 'visual/shots/p32b-03-conflicts-closures.png', fullPage: true })
   await clean(page, 'Conflicts')
 })
@@ -104,7 +106,7 @@ test('2 · Admin Change status on a booked session forces where the List goes, t
   await page.waitForLoadState('networkidle')
   await expect(page.locator(`button[data-slot-id="S-${pickedId}-2026-11-25-PM"]`)).toHaveAttribute('data-list-id', SHARMA_WED22_PM)
   await expect(page.locator('button[data-slot-id="S-41267-2026-11-25-PM"]')).toContainText('Unavailable')
-  await page.goto('/admin/conflicts')
+  await page.goto('/admin/lists/conflicts')
   await expect(page.locator('body')).not.toContainText('Anaesthetist unavailable')
 })
 
@@ -113,14 +115,14 @@ test('3 · Simulate sickness on a List with Bookings: the result says where the 
   const msg = await runDemoAction(page, 'simulate-sickness', { close: true })
   expect(msg).toMatch(/The List went (back to the Draft Lists|to Dr \w+) with its Bookings\. No conflict\./)
   await page.screenshot({ path: 'visual/shots/p32b-08-simulate-sickness.png', fullPage: true })
-  await page.goto('/admin/conflicts')
+  await page.goto('/admin/lists/conflicts')
   await page.waitForLoadState('networkidle')
   // The six closure flags from the demo day on (the Wed 25 Southern Cross closure); sickness adds none.
-  await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('6')
+  await expect(page.locator('[data-lists-tab="conflicts"]')).toContainText('6')
 })
 
 test('4 · Assign Draft List and Reassign: an unavailable colleague shows but cannot be picked; Ask Dr X frees the row; Preferred first within a tier', async ({ page }) => {
-  await fresh(page, '/admin/draft-lists')
+  await fresh(page, '/admin/lists/draft-lists')
   // Dr Beaumont's Fri 24 AM clash (Dr Ngata's Tue 21 acute clash went with the public List kind, catch-up Phase 32d).
   await page.locator(`tr[data-draft-list-row="LD-RCB022-2026-11-27-AM"]`).click()
   await page.locator('[data-shot="admin-draft-list-drawer"]').getByRole('button', { name: /See everyone/ }).click()

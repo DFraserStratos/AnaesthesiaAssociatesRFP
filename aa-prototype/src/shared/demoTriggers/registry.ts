@@ -320,7 +320,12 @@ const XERO_PAIR = '/demo/xero/invoices/:accRecId'
 /** The mobile Lists tab is one splat route; registered as its three explicit layers (`listsStackLocation`). */
 const MOBILE_LISTS = ['/mobile/lists', '/mobile/lists/:listId', '/mobile/lists/:listId/bookings/:bookingId'] as const
 const ADMIN_DAY = '/admin/day/:dateISO'
-const ADMIN_DRAFT_LISTS = '/admin/draft-lists'
+/** The Lists section (US-13.1.3): `apps/admin/screens/lists/listsPaths.ts` builds these in the app. */
+const ADMIN_DRAFT_LISTS = '/admin/lists/draft-lists'
+const ADMIN_TO_AUTHORISE = '/admin/lists/to-authorise'
+/** A submitted List's review page, under To authorise (`listsPaths.reviewPath`). */
+const ADMIN_REVIEW = '/admin/lists/to-authorise/:listId'
+const adminReviewPath = (listId: string) => `${ADMIN_TO_AUTHORISE}/${encodeURIComponent(listId)}`
 const ADMIN_MASTERS = '/admin/masters'
 /** The People section (build plan Phase 53): `apps/admin/peoplePaths.ts` builds these in the app. */
 const ANAESTHETIST_RECORD = '/admin/people/anaesthetists/:anaesthetistId'
@@ -407,7 +412,7 @@ function adminBookingPath(state: AppState, bookingId: string | undefined): strin
 function pairingOf(state: AppState, hospitalId: string, surgeonId: string): string {
   return `${state.masters.hospitals[hospitalId]?.name ?? hospitalId} · ${state.masters.surgeons[surgeonId]?.name ?? surgeonId}`
 }
-const ADMIN_CONFLICTS = '/admin/conflicts'
+const ADMIN_CONFLICTS = '/admin/lists/conflicts'
 /** The hospital's download, as the demo stands it in (catch-up Phase 20a): an integration write, so a locked List refuses it. */
 const HOSPITAL_DOWNLOAD_ACTOR = { who: 'Hospital booking download', role: 'system' as const, source: 'integration' as const }
 const ADMIN_BOOKING = '/admin/day/:dateISO/bookings/:bookingId'
@@ -1011,15 +1016,15 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     indexPath: () => '/admin/day/2026-11-24/bookings/BK0006',
   },
 
-  // ── Admin · Review and Booking detail (seed-scoped) ──────────────────────
+  // ── Admin · Lists › To authorise review and Booking detail (seed-scoped) ──────────────────────
   {
     id: 'stage-post-op',
     label: 'Stage post-op scenario',
     description:
       "Gives Dr Souter a submitted ACL reconstruction (Coral Bennett, Wed 18 Nov) awaiting review, to add pre-op and post-op events to, and keeps Dr Sharma's Tue 17 Nov List ready for the additional invoice.",
-    screen: 'Admin · Review and Booking detail; Mobile and Web · Lists and Booking',
+    screen: 'Admin · To authorise review and Booking detail; Mobile and Web · Lists and Booking',
     // Catch-up Phase 39b: also on the anaesthetist's Lists and Booking (bar and the PWA sheet).
-    routes: ['/admin/review/:listId', '/admin/day/:dateISO/bookings/:bookingId', ...MOBILE_LISTS, '/web/lists', '/web/lists/:listId', WEB_BOOKING],
+    routes: [ADMIN_REVIEW, '/admin/day/:dateISO/bookings/:bookingId', ...MOBILE_LISTS, '/web/lists', '/web/lists/:listId', WEB_BOOKING],
     surfaces: ['bar', 'pwa'],
     when: (state, ctx) => {
       if (!ctx.pathname.startsWith('/admin')) return true
@@ -1052,7 +1057,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
           "Staged. Search Bennett, open Wednesday's Booking and use Add pre-op or post-op event. Sarah Mitchell's Tue 17 Nov List is authorised and billed for Create additional invoice.",
       }
     },
-    indexPath: () => `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`,
+    indexPath: () => adminReviewPath(POST_OP_ORIGINAL_LIST_ID),
   },
   // ── Admin · Finances · Billing and Review: the next billing run for events (catch-up Phase 38b) ──
   {
@@ -1062,7 +1067,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       'Invoices every approved additional invoice: each becomes its own invoice with its own number, ledger pair and Xero pair, linked to the original. Stands in for the scheduled run of the real system.',
     screen: FINANCES_BILLING_SCREEN,
     // On Payments too: the approved events waiting for this run sit there (build plan Phase 66).
-    routes: [FINANCES_BILLING, '/admin/review', FINANCES_PAYMENTS],
+    routes: [FINANCES_BILLING, FINANCES_PAYMENTS],
     surfaces: ['bar'],
     disabledReason: (state) => nextRunRefusal(state),
     run: (api) => {
@@ -1414,7 +1419,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'office-authorises-list',
     label: 'Office authorises this List',
     description:
-      'Stands in for the office, which has no app on the phone: authorises this submitted List and runs billing, as Kirsty would from the Admin review queue.',
+      'Stands in for the office, which has no app on the phone: authorises this submitted List and runs billing, as Kirsty would from Lists › To authorise.',
     screen: 'Mobile · List',
     routes: ['/mobile/lists/:listId', '/mobile/lists/:listId/bookings/:bookingId'],
     surfaces: ['pwa'],
@@ -1438,7 +1443,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     // Catch-up Phase 39b: widened to every reviewed kind; 38b's id kept (tests and recipes name it).
     label: 'Office reviews this event',
     description:
-      'Stands in for the office, which has no app on the phone: approves the oldest event awaiting review on this Booking (else takes the oldest approved one) and invoices it in the next billing run, as Kirsty would from Admin Review.',
+      'Stands in for the office, which has no app on the phone: approves the oldest event awaiting review on this Booking (else takes the oldest approved one) and invoices it in the next billing run, as Kirsty would from Finances › Payments.',
     screen: 'Mobile · Booking',
     routes: [MOBILE_BOOKING],
     surfaces: ['pwa'],
@@ -1457,7 +1462,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'office-reviews-credit',
     label: 'Office reviews this credit',
     description:
-      'Stands in for the office, which has no app on the phone: approves the credit awaiting review on this Booking, with any new invoice raised with it, and issues it in the next billing run, as Kirsty would from Admin Review.',
+      'Stands in for the office, which has no app on the phone: approves the credit awaiting review on this Booking, with any new invoice raised with it, and issues it in the next billing run, as Kirsty would from Finances › Payments.',
     screen: 'Mobile · Booking',
     routes: [MOBILE_BOOKING],
     surfaces: ['pwa'],
@@ -1579,7 +1584,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'simulate-sickness',
     label: 'Simulate sickness',
     description: `An anaesthetist phones in sick and the office records it: their session on the chosen List is marked unavailable and, in the same step, the List goes back to the office as a ${DRAFT_LIST} or on to the first free colleague in the office's order. Unavailability is never a conflict.`,
-    screen: 'Admin · Day view and Conflicts',
+    screen: 'Admin · Day view and Lists › Conflicts',
     routes: [ADMIN_DAY, ADMIN_CONFLICTS],
     surfaces: ['bar'],
     choices: (state, ctx) => sicknessChoices(state, ctx),
@@ -1643,7 +1648,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const who = drSurname(state.masters.anaesthetists[res.value.anaesthetistId]?.name ?? res.value.anaesthetistId)
       return { ok: true, message: `${who} made ${shortDay(slot.dateISO)} ${sessionText(slot.session)} available. You can assign to them now.` }
     },
-    indexPath: () => `/admin/draft-lists`,
+    indexPath: () => ADMIN_DRAFT_LISTS,
     indexHint: `Open Assign on a ${DRAFT_LIST}, or Reassign on a List: the button sits on each unavailable colleague's row.`,
   },
   // ── Mobile · List and Booking: the office ticks an alert (catch-up Phase 32b; PWA parity) ──
@@ -1674,7 +1679,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'office-approves-contract-change',
     label: 'Office approves this Contract change',
     description:
-      "Plays the office approving the Contract you changed on this Booking, as Kirsty would with Approve on Review, so the handset shows \"Approved by the office\" instead of \"Awaiting office approval\". In the framed build, approve it on Admin Review.",
+      "Plays the office approving the Contract you changed on this Booking, as Kirsty would with Approve on Review, so the handset shows \"Approved by the office\" instead of \"Awaiting office approval\". In the framed build, approve it on the List's review page under Lists › To authorise.",
     screen: 'Mobile · Booking',
     routes: [MOBILE_BOOKING],
     surfaces: ['pwa'],
@@ -1691,7 +1696,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       return res.ok ? { ok: true, message: 'The office approved your Contract change.' } : { ok: false, message: res.message }
     },
     indexPath: () => null,
-    indexEmptyReason: 'PWA only: the framed build plays the office on Admin Review (Approve).',
+    indexEmptyReason: "PWA only: the framed build plays the office on the List's review page under Lists › To authorise (Approve).",
   },
   // ── Admin · Day and Notifications: a colleague's own move (catch-up Phase 32) ──
   {
@@ -1810,7 +1815,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     id: 'simulate-incoming-request',
     label: 'Simulate incoming request',
     description: `A surgeon's secretary sends a request before an anaesthetist is found: the office logs it as a ${DRAFT_LIST}, with how it came in. It takes its place in date order, waiting from now, with no Bookings yet.`,
-    screen: `Admin · ${DRAFT_LISTS}`,
+    screen: `Admin · Lists › ${DRAFT_LISTS}`,
     routes: [ADMIN_DRAFT_LISTS],
     surfaces: ['bar'],
     choices: (state) =>
@@ -2030,14 +2035,14 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
     },
     indexPath: () => `${ADMIN_MASTERS}?view=goLive`,
   },
-  // ── Admin · Review: a prepaid procedure that ran longer (catch-up Phase 41; US-06.4.1) ──
+  // ── Admin · To authorise review: a prepaid procedure that ran longer (catch-up Phase 41; US-06.4.1) ──
   {
     id: 'stage-longer-prepaid-procedure',
     label: 'Stage longer prepaid procedure',
     description:
       "On a submitted List, lengthens a Booking's prepaid procedure to four hours of anaesthetic time as the office, so Authorise can show that nothing further is billed for the difference: the prepaid amount is the price, and an additional invoice is created by hand if one is needed.",
-    screen: 'Admin · Review',
-    routes: ['/admin/review/:listId'],
+    screen: 'Admin · To authorise review',
+    routes: [ADMIN_REVIEW],
     surfaces: ['bar'],
     choices: (state, ctx) => longerPrepaidChoices(state, ctx.params['listId'] ?? ''),
     disabledReason: (state, ctx) => stageLongerRefusal(state, ctx.params['listId']),
@@ -2045,7 +2050,7 @@ export const DEMO_TRIGGERS: readonly DemoTrigger[] = [
       const out = stageLongerPrepaidProcedure(api, OFFICE_ACTOR, ctx.params['listId'] ?? '', choiceId)
       return out.ok ? { ok: true, message: LONGER_PREPAID_COPY.staged(out.value.units) } : { ok: false, message: out.message }
     },
-    indexPath: () => `/admin/review/${SEED_LIST_IDS.prepaymentPaidList}`,
+    indexPath: () => adminReviewPath(SEED_LIST_IDS.prepaymentPaidList),
     indexHint: "Submit Dr Souter's Fri 27 Nov PM List first.",
   },
   // ── Admin · Booking detail: a prepayment settled automatically (catch-up Phase 41; US-06.5.2, US-06.3.7) ──

@@ -247,7 +247,7 @@ describe('S4 · exceptions', () => {
     const api = createAppStore()
     const unwire = wireBillingRun(api)
     const stage = DEMO_TRIGGERS.find((t) => t.id === 'stage-post-op')!
-    expect(stage.run(api, { pathname: `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`, params: { listId: POST_OP_ORIGINAL_LIST_ID }, published: {} }).ok).toBe(true)
+    expect(stage.run(api, { pathname: `/admin/lists/to-authorise/${POST_OP_ORIGINAL_LIST_ID}`, params: { listId: POST_OP_ORIGINAL_LIST_ID }, published: {} }).ok).toBe(true)
     unwire()
     const mitchell = bookingsForList(api.getState(), POST_OP_ORIGINAL_LIST_ID)[0]!
     expect(api.getState().masters.patients[mitchell.patientId]?.name).toBe('Sarah Mitchell')
@@ -277,7 +277,7 @@ describe('S4 · exceptions', () => {
     const unwire = wireBillingRun(api)
     const ctx = (pathname: string, params: Record<string, string> = {}) => ({ pathname, params, published: {} })
     expect(approveAllPrepayments(api, SEED_MARKERS['prepaymentBooking']!.entityId, OFFICE)).toHaveLength(1)
-    expect(DEMO_TRIGGERS.find((t) => t.id === 'stage-post-op')!.run(api, ctx('/admin/review', { listId: POST_OP_ORIGINAL_LIST_ID })).ok).toBe(true)
+    expect(DEMO_TRIGGERS.find((t) => t.id === 'stage-post-op')!.run(api, ctx('/admin/lists/to-authorise', { listId: POST_OP_ORIGINAL_LIST_ID })).ok).toBe(true)
     const mitchell = bookingsForList(api.getState(), POST_OP_ORIGINAL_LIST_ID)[0]!
     const out = addProcedureEvent(api, OFFICE, proceduresForBooking(api.getState(), mitchell.id)[0]!.id, { kind: 'additionalInvoice', occurredOnISO: '2026-11-18', party: { sameAs: true }, lines: [{ description: 'Post-op ward review, Wed 18 Nov, 15 min', quantity: 1, unitAmount: 30 }] })
     if (!out.ok) throw new Error(out.message)
@@ -311,7 +311,7 @@ describe('S4 · exceptions', () => {
     const nextRun = () => trigger('run-next-billing-run').run(api, ctx('/admin/finances/billing'))
 
     // Stage post-op, and 38b's additional invoice on Sarah Mitchell.
-    expect(trigger('stage-post-op').run(api, ctx(`/admin/review/${POST_OP_ORIGINAL_LIST_ID}`, { listId: POST_OP_ORIGINAL_LIST_ID })).ok).toBe(true)
+    expect(trigger('stage-post-op').run(api, ctx(`/admin/lists/to-authorise/${POST_OP_ORIGINAL_LIST_ID}`, { listId: POST_OP_ORIGINAL_LIST_ID })).ok).toBe(true)
     const mitchell = bookingsForList(api.getState(), POST_OP_ORIGINAL_LIST_ID)[0]!
     const procedureId = proceduresForBooking(api.getState(), mitchell.id)[0]!.id
     const original = liveInvoiceForProcedure(api.getState(), procedureId)!

@@ -66,7 +66,7 @@ test('Clear from the drawer, Show cleared and Flag again', async ({ page }) => {
   await sheet.getByRole('button', { name: 'Clear', exact: true }).click()
   await expect(drawer.locator('[data-shot="drawer-conflict-cleared"]')).toContainText('Theatre confirmed running')
   await page.keyboard.press('Escape')
-  await page.goto('/admin/conflicts?cleared=1')
+  await page.goto('/admin/lists/conflicts?cleared=1')
   await page.waitForLoadState('networkidle')
   const cleared = page.locator(`tr[data-conflict-row="${MORRISON_WED22_PM}"][data-conflict-cleared="true"]`)
   await expect(cleared).toContainText('Theatre confirmed running')
@@ -75,11 +75,11 @@ test('Clear from the drawer, Show cleared and Flag again', async ({ page }) => {
 })
 
 test('Conflicts screen: closures only, grouped by day, filters in the URL; Simulate sickness never adds a row; reassign from a row', async ({ page }) => {
-  await fresh(page, '/admin/conflicts')
-  await expect(page.getByRole('heading', { name: 'Conflicts', exact: true })).toBeVisible()
+  await fresh(page, '/admin/lists/conflicts')
+  await expect(page.locator('[data-lists-page="conflicts"]')).toBeVisible()
   // From today on: the Wed 25 Southern Cross closure flags four Lists and Dr Beaumont's two Draft Lists
   // (catch-up Phase 31); no sickness (32b). Labour Day and Canterbury Anniversary Day are behind the demo day.
-  await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('6')
+  await expect(page.locator('[data-lists-tab="conflicts"]')).toContainText('6')
   await expect(page.locator('tr[data-conflict-row]')).toHaveCount(6)
   await expect(page.locator('tr[data-conflict-date="2026-11-25"]')).toBeVisible()
   await expect(page.getByText('Anaesthetist unavailable')).toHaveCount(0)
@@ -92,10 +92,10 @@ test('Conflicts screen: closures only, grouped by day, filters in the URL; Simul
   await page.waitForLoadState('networkidle')
   const msg = await runDemoAction(page, 'simulate-sickness', { close: true })
   expect(msg).toMatch(/recorded as Unavailable for Tue 24 Nov (AM|PM)\. The List went (back to the Draft Lists|to Dr \w+) with its Bookings\. No conflict\./)
-  await page.goto('/admin/conflicts')
+  await page.goto('/admin/lists/conflicts')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('tr[data-conflict-date="2026-11-24"]')).toHaveCount(0)
-  await expect(page.locator('[data-shot="nav-badge-conflicts"]')).toHaveText('6')
+  await expect(page.locator('[data-lists-tab="conflicts"]')).toContainText('6')
   await page.screenshot({ path: 'visual/shots/p30-05-simulated-sickness.png', fullPage: true })
 
   // Reassign Morrison's Wed 22 PM: the closure goes with the List, so it stays flagged.

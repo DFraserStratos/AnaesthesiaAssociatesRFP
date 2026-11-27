@@ -14,7 +14,7 @@ import { runDemoAction } from './demoActions'
 const S3_AM = 'L-34821-2026-11-23-AM'
 
 async function authoriseS3Am(page: Page): Promise<void> {
-  await page.goto(`/admin/review/${S3_AM}`)
+  await page.goto(`/admin/lists/to-authorise/${S3_AM}`)
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()
   await page.waitForTimeout(200)

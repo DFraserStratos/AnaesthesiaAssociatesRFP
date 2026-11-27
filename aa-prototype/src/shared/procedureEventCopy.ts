@@ -32,11 +32,6 @@ export const EVENT_LABELS = {
   raisedBySystem: 'Raised automatically',
   /** "Raised by Dr Souter". */
   raisedBy: (name: string) => `Raised by ${name}`,
-  /** Admin Review's tabs. */
-  listsTab: 'Lists',
-  eventsTab: 'Events',
-  /** The Events tab's page subtitle (the Lists tab keeps the queue's own). */
-  eventsTabSub: (n: number) => `Pre-op, post-op and billing events, additional invoices and credits awaiting review before the next billing run. ${n} in the queue.`,
   /** The Payments tab's panel. */
   awaitingRunTitle: 'Waiting for the next billing run',
   /** The review sheet. */
@@ -240,7 +235,7 @@ export const CREDIT_LABELS = {
   /** The events list. */
   rebillOf: (number: string) => `Rebill of ${number}`,
   creditsInFull: (number: string) => `Credits ${number} in full`,
-  /** The review queue's one row per correction. */
+  /** Events awaiting approval's one row per correction (Finances › Payments). */
   reviewRow: (number: string, replacements: number) =>
     `Credit ${number} in full${replacements > 0 ? `, ${replacements} new ${replacements === 1 ? 'invoice' : 'invoices'}` : ''}`,
   newInvoice: 'New invoice',

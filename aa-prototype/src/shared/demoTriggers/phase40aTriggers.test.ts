@@ -21,7 +21,7 @@ describe('nhi-hub-mode (catch-up Phase 40a)', () => {
       expect(demoTriggersFor(state, LIST, surface).some((m) => m.trigger.id === 'nhi-hub-mode')).toBe(false)
       expect(demoTriggersFor(state, LIST, surface, inUse).some((m) => m.trigger.id === 'nhi-hub-mode')).toBe(true)
     }
-    for (const path of [`/web/lists/${SEED_LIST_IDS.souterPm21}`, '/admin/day/2026-11-24', '/admin/draft-lists', '/admin/people/patients/ZAM1098', '/admin/intake']) {
+    for (const path of [`/web/lists/${SEED_LIST_IDS.souterPm21}`, '/admin/day/2026-11-24', '/admin/lists/draft-lists', '/admin/people/patients/ZAM1098', '/admin/intake']) {
       expect(demoTriggersFor(state, path, 'bar', inUse).some((m) => m.trigger.id === 'nhi-hub-mode'), path).toBe(true)
     }
     expect(demoTriggersFor(state, '/admin/finances/billing', 'bar', inUse).some((m) => m.trigger.id === 'nhi-hub-mode')).toBe(false)

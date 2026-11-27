@@ -238,7 +238,7 @@ describe('route scoping', () => {
 
   it('Simulate sickness shows on the Day view and Conflicts, bar only, and not on a Booking', () => {
     const api = createAppStore()
-    expect(ids(api, '/admin/conflicts')).toContain('simulate-sickness')
+    expect(ids(api, '/admin/lists/conflicts')).toContain('simulate-sickness')
     expect(ids(api, '/admin/day/2026-11-25/bookings/BK0001')).not.toContain('simulate-sickness')
     const entry = DEMO_TRIGGERS.find((t) => t.id === 'simulate-sickness')!
     expect(entry.surfaces).toEqual(['bar'])
@@ -310,10 +310,10 @@ describe('route scoping', () => {
     const api = createAppStore()
     const t = byId('ask-colleague-make-available')
     expect(t.badge).toBe('colleague-stand-in')
-    expect(ids(api, '/admin/draft-lists')).not.toContain(t.id)
+    expect(ids(api, '/admin/lists/draft-lists')).not.toContain(t.id)
     const published = { 'adminPicker.listId': 'L-29104-2026-11-25-AM' }
-    expect(ids(api, '/admin/draft-lists', 'bar', published)).toContain(t.id)
-    const ctx = ctxFor('/admin/draft-lists', {}, published)
+    expect(ids(api, '/admin/lists/draft-lists', 'bar', published)).toContain(t.id)
+    const ctx = ctxFor('/admin/lists/draft-lists', {}, published)
     const rutherford = 'S-29104-2026-11-25-AM'
     expect(t.choices!(api.getState(), ctx).map((c) => c.id)).toContain(rutherford)
     expect(t.disabledReason(api.getState(), ctx, rutherford)).toBeNull()
@@ -327,11 +327,11 @@ describe('route scoping', () => {
 
   it('Stage post-op shows on Dr Sharma\'s Tue 14 AM review and Booking, and nowhere else', () => {
     const api = createAppStore()
-    expect(ids(api, `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`)).toContain('stage-post-op')
+    expect(ids(api, `/admin/lists/to-authorise/${POST_OP_ORIGINAL_LIST_ID}`)).toContain('stage-post-op')
     const booking = bookingsForList(api.getState(), POST_OP_ORIGINAL_LIST_ID)[0]
     expect(booking).toBeDefined()
     expect(ids(api, `/admin/day/2026-11-17/bookings/${booking?.id ?? ''}`)).toContain('stage-post-op')
-    expect(ids(api, `/admin/review/${SEED_LIST_IDS.souterMon20Am}`)).not.toContain('stage-post-op')
+    expect(ids(api, `/admin/lists/to-authorise/${SEED_LIST_IDS.souterMon20Am}`)).not.toContain('stage-post-op')
   })
 
   it("Intake's six actions show on Arrivals in the bar only, the feed failure on Sources too; the old Intake routes show none (build plan Phase 68)", () => {
@@ -404,7 +404,7 @@ describe('re-homed bodies match the Control Panel', () => {
     const api = createAppStore()
     const unwire = wireBillingRun(api)
     const t = byId('stage-post-op')
-    const ctx = ctxFor(`/admin/review/${POST_OP_ORIGINAL_LIST_ID}`, { listId: POST_OP_ORIGINAL_LIST_ID })
+    const ctx = ctxFor(`/admin/lists/to-authorise/${POST_OP_ORIGINAL_LIST_ID}`, { listId: POST_OP_ORIGINAL_LIST_ID })
     const lists = Object.keys(api.getState().schedule.lists).length
     const events = Object.keys(api.getState().schedule.procedureEvents)
     const out = t.run(api, ctx)
@@ -430,11 +430,12 @@ describe('re-homed bodies match the Control Panel', () => {
     expect(ids(api, '/web/lists', 'bar')).toContain('stage-post-op')
   })
 
-  it('Run the next billing run is on Finances · Billing and Review only, disabled until an event is approved, then raises its invoice once (catch-up Phase 38b)', () => {
+  it('Run the next billing run is on Finances · Billing and Payments only, disabled until an event is approved, then raises its invoice once (catch-up Phase 38b)', () => {
     const api = createAppStore()
     const t = byId('run-next-billing-run')
     expect(t.surfaces).toEqual(['bar'])
-    expect(ids(api, '/admin/review')).toContain('run-next-billing-run')
+    expect(ids(api, '/admin/finances/payments')).toContain('run-next-billing-run')
+    expect(ids(api, '/admin/lists/to-authorise')).not.toContain('run-next-billing-run')
     expect(ids(api, '/admin/finances/billing')).toContain('run-next-billing-run')
     expect(ids(api, '/admin/finances/invoices')).not.toContain('run-next-billing-run')
     const ctx = ctxFor('/admin/finances/billing')
@@ -732,7 +733,7 @@ describe('sample warnings (catch-up Phase 15a)', () => {
     for (const surface of ['bar', 'pwa'] as const) {
       expect(ids(api, mobile, surface)).toEqual(expect.arrayContaining(['raise-sample-warnings', 'clear-sample-warnings']))
     }
-    for (const path of ['/admin/review', '/admin/finances/billing', '/mobile/lists', `/mobile/lists/${SEED_LIST_IDS.rutherfordAm21}`, '/web/dashboard']) {
+    for (const path of ['/admin/lists/to-authorise', '/admin/finances/billing', '/mobile/lists', `/mobile/lists/${SEED_LIST_IDS.rutherfordAm21}`, '/web/dashboard']) {
       expect(ids(api, path, 'bar')).not.toContain('raise-sample-warnings')
     }
   })
@@ -1182,7 +1183,7 @@ describe('credit entries (catch-up Phase 39 session 2)', () => {
     if (!out.ok) throw new Error(out.message)
     return out.value
   }
-  const runPostOp = (api: BoundAppStore) => expect(byId('stage-post-op').run(api, ctxFor(`/admin/review/${POST_OP_ORIGINAL_LIST_ID}`, { listId: POST_OP_ORIGINAL_LIST_ID })).ok).toBe(true)
+  const runPostOp = (api: BoundAppStore) => expect(byId('stage-post-op').run(api, ctxFor(`/admin/lists/to-authorise/${POST_OP_ORIGINAL_LIST_ID}`, { listId: POST_OP_ORIGINAL_LIST_ID })).ok).toBe(true)
 
   it('register on their screens and surfaces only', () => {
     const api = createAppStore()
@@ -1306,18 +1307,18 @@ describe('credit entries (catch-up Phase 39 session 2)', () => {
 
 describe('Stage longer prepaid procedure (catch-up Phase 41; US-06.4.1)', () => {
   const LIST = SEED_LIST_IDS.prepaymentPaidList
-  const at = () => ctxFor(`/admin/review/${LIST}`, { listId: LIST })
+  const at = () => ctxFor(`/admin/lists/to-authorise/${LIST}`, { listId: LIST })
   function submitNairList(api: BoundAppStore) {
     for (const b of bookingsForList(api.getState(), LIST)) completeAnswered(api, SOUTER_ACTOR, b.id)
     const out = submitList(api, SOUTER_ACTOR, LIST)
     if (!out.ok) throw new Error(out.message)
   }
 
-  it('shows on Admin Review only, on the bar; disabled until the List is submitted, then runs once', () => {
+  it('shows on a List\'s review page only, on the bar; disabled until the List is submitted, then runs once', () => {
     const api = createAppStore()
     const t = byId('stage-longer-prepaid-procedure')
     expect(t.surfaces).toEqual(['bar'])
-    expect(ids(api, `/admin/review/${LIST}`)).toContain('stage-longer-prepaid-procedure')
+    expect(ids(api, `/admin/lists/to-authorise/${LIST}`)).toContain('stage-longer-prepaid-procedure')
     expect(ids(api, '/admin/finances/invoices')).not.toContain('stage-longer-prepaid-procedure')
     expect(t.disabledReason(api.getState(), at())).toBe(LONGER_PREPAID_COPY.submitFirst)
     submitNairList(api)
@@ -1336,7 +1337,7 @@ describe('Stage longer prepaid procedure (catch-up Phase 41; US-06.4.1)', () => 
     const other = SEED_LIST_IDS.souterPm21
     const list = api.getState().schedule.lists[other]
     if (list === undefined) return
-    expect(byId('stage-longer-prepaid-procedure').disabledReason(api.getState(), ctxFor(`/admin/review/${other}`, { listId: other }))).not.toBeNull()
+    expect(byId('stage-longer-prepaid-procedure').disabledReason(api.getState(), ctxFor(`/admin/lists/to-authorise/${other}`, { listId: other }))).not.toBeNull()
   })
 })
 

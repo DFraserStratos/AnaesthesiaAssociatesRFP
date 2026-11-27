@@ -43,7 +43,7 @@ test('phase 25a Disable lists the Procedures still on the Face lift; Review flag
   await page.locator('[data-shot=contract-tab-history]').click()
   await expect(page.locator('[data-shot=contract-history]')).toContainText('Kirsty')
 
-  await page.goto(`/admin/review/${MON_10_AUG}`)
+  await page.goto(`/admin/lists/to-authorise/${MON_10_AUG}`)
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot=review-flag]', { hasText: 'Contract disabled on Tue 24 Nov' }).first()).toBeVisible()
   // A flag, never a block: no authorise blocker names it (contractChangeSelectors.test.ts pins the blockers unchanged).
@@ -53,7 +53,7 @@ test('phase 25a Disable lists the Procedures still on the Face lift; Review flag
   await openContract(page, FACE_LIFT)
   await page.locator('[data-shot=contract-detail]').getByRole('button', { name: 'Make active' }).click()
   await expect(page.locator('[data-shot=contract-disabled-note]')).toHaveCount(0)
-  await page.goto(`/admin/review/${MON_10_AUG}`)
+  await page.goto(`/admin/lists/to-authorise/${MON_10_AUG}`)
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot=review-flag]', { hasText: 'Contract disabled' })).toHaveCount(0)
 })
@@ -78,7 +78,7 @@ test('phase 25a the backdated range warns that an authorised Procedure kept its 
 })
 
 test('phase 25a the seeded Disabled Contract: its Booking on the review-flags List is flagged', async ({ page }) => {
-  await page.goto(`/admin/review/${REVIEW_FLAGS_LIST}`)
+  await page.goto(`/admin/lists/to-authorise/${REVIEW_FLAGS_LIST}`)
   await page.waitForLoadState('networkidle')
   const flag = page.locator('[data-shot=review-flag]', { hasText: 'Contract disabled on Fri 13 Nov' })
   await expect(flag).toHaveCount(1)

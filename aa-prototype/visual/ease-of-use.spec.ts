@@ -10,7 +10,7 @@ test.use({ storageState: { cookies: [], origins: [] } })
 
 const ELLISON_MOBILE = '/mobile/lists/L-34821-2026-11-24-PM/bookings/BK0009'
 const DAY = '/admin/day/2026-11-24'
-const REVIEW = '/admin/review/L-34821-2026-11-16-AM'
+const REVIEW = '/admin/lists/to-authorise/L-34821-2026-11-16-AM'
 
 async function settle(page: Page, ms = 400): Promise<void> {
   await page.waitForLoadState('networkidle')

@@ -13,7 +13,7 @@ import { nowMs, recordScreenSample } from '../../store/scaleMode'
 /** The timed screens, in the banner's order, with their labels. */
 export const TIMED_SCREENS = [
   { key: 'day', label: 'Day view' },
-  { key: 'review', label: 'Review queue' },
+  { key: 'review', label: 'To authorise' },
   { key: 'invoices', label: 'Invoices' },
   { key: 'audit', label: 'Audit' },
   { key: 'monitor', label: 'Billing' },

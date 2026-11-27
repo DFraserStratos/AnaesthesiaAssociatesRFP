@@ -42,7 +42,7 @@ async function xeroPairCount(page: Page): Promise<number> {
 
 /** Authorise a List on Review (the usual confirm); returns how many invoices the run raised. */
 async function authorise(page: Page, listId: string): Promise<number> {
-  await page.goto(`/admin/review/${listId}`)
+  await page.goto(`/admin/lists/to-authorise/${listId}`)
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()
   await page.getByRole('button', { name: 'Authorise for billing' }).last().click()

@@ -24,9 +24,10 @@ async function cleanCopy(page: Page, where: string) {
 }
 
 test('Draft Lists: soonest first, the band and rail card, and assigning St George\'s to Dr Fitzgerald makes it ACTIVE', async ({ page }) => {
-  await fresh(page, '/admin/draft-lists')
-  // 47 across the whole practice (the scripted ten plus the colleagues' recurring and returned Lists).
-  await expect(page.locator('[data-shot="nav-badge-draftLists"]')).toHaveText('47')
+  // Every date (When: All), so none waits behind Show past.
+  await fresh(page, '/admin/lists/draft-lists?when=all')
+  // 47 across the whole practice (the scripted ten plus the colleagues' recurring and returned Lists): the tab's number.
+  await expect(page.locator('[data-lists-tab="draft-lists"]')).toContainText('47')
   const rows = page.locator('tr[data-draft-list-row]')
   await expect(rows).toHaveCount(47)
   await expect(rows.first()).toHaveAttribute('data-draft-list-row', 'LD-001')
@@ -66,10 +67,11 @@ test('Draft Lists: soonest first, the band and rail card, and assigning St Georg
 })
 
 test('The Reid request puts Dr Sharma apart as not preferred; changing the date moves it; removing an empty one goes to History', async ({ page }) => {
-  await fresh(page, '/admin/draft-lists')
+  await fresh(page, '/admin/lists/draft-lists')
   const msg = await runDemoAction(page, 'simulate-incoming-request', { close: true })
   expect(msg).toContain('Christchurch Eye Surgery · Ms A. Reid, Thu 26 Nov PM')
-  const row = page.locator('tr[data-draft-list-row]', { hasText: 'Thu 26 Nov' }).first()
+  // Rows sit under their day's group row; the Assign button names the day and session.
+  const row = page.locator('tr[data-draft-list-row]', { hasText: 'Ms A. Reid', has: page.getByRole('button', { name: /^Assign Draft List, Thu 26 Nov PM/ }) }).first()
   await row.getByRole('button', { name: /^Assign/ }).click()
   const sheet = page.locator('[data-shot="admin-assign-draft-list"]')
   await expect(sheet.locator('[data-shot="candidates-not-preferred"]')).toContainText('Sharma, Priya')
@@ -85,18 +87,19 @@ test('The Reid request puts Dr Sharma apart as not preferred; changing the date 
   const redate = page.locator('[data-shot="admin-redate-draft-list"]')
   await redate.locator('input[type="date"]').fill('2026-12-02')
   await redate.getByRole('button', { name: 'Change date' }).click()
-  await expect(page.locator('tr[data-draft-list-row="LD-003"]')).toContainText('Wed 2 Dec')
+  await expect(page.locator('tr[data-draft-list-row="LD-003"]').getByRole('button', { name: /^Open Draft List Wed 2 Dec/ })).toHaveCount(1)
   await expect(page.locator('tr[data-draft-list-row="LD-003"]')).toContainText('3 d 22 h')
   // It now waits on its new day's band.
   await page.goto('/admin/day/2026-12-02')
   await expect(page.locator('[data-shot="daygrid-draft-band"] [data-draft-block="LD-003"]')).toBeVisible()
-  await page.goto('/admin/draft-lists')
+  await page.goto('/admin/lists/draft-lists')
 
   await page.locator('tr[data-draft-list-row="LD-001"]').getByRole('button', { name: 'Remove' }).click()
   await page.getByRole('button', { name: 'Duplicate request' }).click()
   await page.locator('[data-shot="admin-remove-draft-list"]').getByRole('button', { name: 'Remove' }).click()
   await expect(page.locator('tr[data-draft-list-row="LD-001"]')).toHaveCount(0)
-  await page.locator('[data-draft-tab="history"]').click()
+  await page.getByRole('group', { name: 'Draft Lists view' }).getByRole('button', { name: /^History/ }).click()
+  await expect(page).toHaveURL(/view=history/)
   await expect(page.locator('tr[data-draft-history-row="LD-001"]')).toContainText('Removed: Duplicate request')
   await page.screenshot({ path: 'visual/shots/p31-05-history.png', fullPage: true })
 })
@@ -114,11 +117,12 @@ test('A recurring booking for Dr Beaumont on Thursday AM, while she is away, mak
   await expect(sheet.locator('[data-shot="recurring-booking-result"]')).toContainText('1 session to a Draft List')
   await page.screenshot({ path: 'visual/shots/p31-06-recurring-clash.png', fullPage: true })
   await sheet.locator('[data-shot="recurring-booking-draft-lists"]').click()
-  await expect(page.locator('tr[data-draft-list-row]', { hasText: 'Thu 26 Nov' })).toContainText('Recurring booking · Dr Beaumont unavailable')
+  const beaumont = page.locator('tr[data-draft-list-row]', { has: page.getByRole('button', { name: /^Assign Draft List, Thu 26 Nov AM/ }) })
+  await expect(beaumont.filter({ hasText: 'Recurring booking · Dr Beaumont unavailable' })).toHaveCount(1)
 })
 
 test('Draft Lists by keyboard (UI unification U6, bug 3): Tab to a row handle past the rail\'s first five, Enter opens its drawer', async ({ page }) => {
-  await fresh(page, '/admin/draft-lists')
+  await fresh(page, '/admin/lists/draft-lists')
   const sixth = page.locator('tr[data-draft-list-row]').nth(5)
   const listId = await sixth.getAttribute('data-draft-list-row')
   const handle = sixth.getByRole('button', { name: /^Open Draft List / })

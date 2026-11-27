@@ -1,14 +1,16 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { MemoryRouter, Outlet, Route, Routes, useLocation } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createMemoryRouter, createRoutesFromElements, MemoryRouter, Outlet, Route, RouterProvider, Routes, useLocation } from 'react-router-dom'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { assessImportRow, decideImportRow, freshAppState, isBackdropInvoice, useAppStore, type Actor } from '../../../store'
 import { receiveSample } from '../../../test/intakeSamples'
 import { SAMPLE_STG } from '../../../domain/intake/hospitalDownloads'
 import { SurfaceProvider } from '../../../shared'
 import { arrivalKeyForRow } from '../../../store/intakeSelectors'
+import { AdminApp } from '../AdminApp'
 import { AdminBookingDetailRoute } from '../routes'
+import { listsRoutes } from '../../../test/adminRoutes'
 import { InvoicesScreen } from './InvoicesScreen'
-import { ReviewQueue } from './ReviewQueue'
+import { listsPath, reviewPath } from './lists/listsPaths'
 import { invoicePath } from './finances/financePaths'
 import { allInvoiceRows, bookingDayLine, invoiceList } from './invoiceListRows'
 
@@ -37,16 +39,24 @@ describe('admin clickable table rows', () => {
     useAppStore.setState(freshAppState())
   })
 
-  it('opens a review when the review queue row is clicked', () => {
-    const onOpen = vi.fn()
-    render(<MemoryRouter><ReviewQueue onOpen={onOpen} onViewInvoices={vi.fn()} /></MemoryRouter>)
+  it("opens a List's review when its To authorise row is clicked", () => {
+    const router = createMemoryRouter(
+      createRoutesFromElements(
+        <Route path="/admin" element={<AdminApp />}>
+          {listsRoutes()}
+        </Route>,
+      ),
+      { initialEntries: [listsPath('to-authorise')] },
+    )
+    render(<RouterProvider router={router} />)
 
     const row = screen.getByTestId('review-queue-table-shell').querySelector('tbody tr')
     expect(row).toHaveClass('aa-clickable-table-row')
     expect(row?.querySelector('td')).toHaveStyle({ verticalAlign: 'middle' })
 
+    const listId = row!.getAttribute('data-list-id')!
     fireEvent.click(row!)
-    expect(onOpen).toHaveBeenCalledOnce()
+    expect(router.state.location.pathname).toBe(reviewPath(listId))
   })
 
   it('opens an invoice on its own page when its row is clicked', () => {

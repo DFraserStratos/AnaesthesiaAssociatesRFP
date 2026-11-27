@@ -104,7 +104,7 @@ test('phase 24 admin: the discount Booking total shows the gross, the discount l
 })
 
 test('phase 24 admin: Review shows the typed price beside the computed one; Contracts name who may change the price', async ({ page }) => {
-  await page.goto('/admin/review/L-45178-2026-11-17-AM')
+  await page.goto('/admin/lists/to-authorise/L-45178-2026-11-17-AM')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot=review-fee-computed]').first()).toHaveText('Computed $265.50')
   await page.screenshot({ path: 'visual/shots/p24-05-review-fee.png', fullPage: true })
@@ -120,7 +120,7 @@ test('phase 24 admin: Review shows the typed price beside the computed one; Cont
 })
 
 test('phase 24 admin: authorising the no-charge List raises a $0.00 "No charge" invoice', async ({ page }) => {
-  await page.goto('/admin/review/L-34821-2026-11-16-AM')
+  await page.goto('/admin/lists/to-authorise/L-34821-2026-11-16-AM')
   await page.waitForLoadState('networkidle')
   await expect(page.locator('[data-shot=review-no-charge]')).toHaveText('No charge')
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()

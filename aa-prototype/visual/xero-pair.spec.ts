@@ -16,10 +16,11 @@ test('S3: the nib invoice opens its routed ACCREC and ACCPAY pair', async ({ pag
   await scenario.getByRole('button', { name: 'Confirm jump' }).click()
   // Beat 1's link opens the Mon 20 Jul AM List on Admin Review (catch-up Phase 44).
   await scenario.getByRole('button', { name: 'Beat 1 · Admin Review' }).click()
-  await expect(page).toHaveURL(/\/admin\/review\/L-34821-2026-11-23-AM$/)
+  await expect(page).toHaveURL(/\/admin\/lists\/to-authorise\/L-34821-2026-11-23-AM$/)
 
   // Authorise the Forte AM List and the St George's PM List.
-  await page.getByRole('button', { name: /Review queue/ }).first().click()
+  await page.getByRole('button', { name: /^Lists/ }).first().click()
+  await page.locator('[data-lists-tab="to-authorise"]').click()
   // Mon 20 Jul: catch-up Phase 23 seeds a second Souter Forte List (Mon 13 Jul AM) in the queue.
   const forteRow = page.getByRole('row').filter({ hasText: /Dr Melanie Souter/ }).filter({ hasText: /Forte Health/ }).filter({ hasText: /23 Nov/i })
   await forteRow.getByRole('button', { name: /^Review / }).click()
@@ -27,7 +28,8 @@ test('S3: the nib invoice opens its routed ACCREC and ACCPAY pair', async ({ pag
   await page.getByRole('button', { name: 'Authorise for billing' }).last().click()
   await expect(page.getByText('List authorised · locked for billing')).toBeVisible()
 
-  await page.getByRole('button', { name: /Review queue/ }).first().click()
+  await page.getByRole('button', { name: /^Lists/ }).first().click()
+  await page.locator('[data-lists-tab="to-authorise"]').click()
   const stgRow = page.getByRole('row').filter({ hasText: /Dr Melanie Souter/ }).filter({ hasText: /St George's/ })
   await stgRow.getByRole('button', { name: /^Review / }).click()
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()

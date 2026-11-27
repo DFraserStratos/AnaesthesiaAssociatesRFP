@@ -146,8 +146,9 @@ test('admin: leaving the day view and returning lands back on the day and order 
   await page.waitForLoadState('networkidle')
   await expect(page.getByRole('heading', { name: 'Wednesday 25 November 2026' })).toBeVisible()
 
-  await page.getByRole('button', { name: /Review queue/ }).first().click()
-  await expect(page).toHaveURL(/\/admin\/review$/)
+  await page.getByRole('button', { name: /^Lists/ }).first().click()
+  await page.locator('[data-lists-tab="to-authorise"]').click()
+  await expect(page).toHaveURL(/\/admin\/lists\/to-authorise$/)
 
   // Both are remembered while the office is off in another section.
   await page.getByRole('button', { name: 'Day view', exact: true }).first().click()
@@ -159,11 +160,12 @@ test('admin: review queue → review screen is a URL; refresh holds it, Back ret
   await page.goto('/admin')
   await page.waitForLoadState('networkidle')
 
-  await page.getByRole('button', { name: /Review queue/ }).first().click()
-  await expect(page).toHaveURL(/\/admin\/review$/)
+  await page.getByRole('button', { name: /^Lists/ }).first().click()
+  await page.locator('[data-lists-tab="to-authorise"]').click()
+  await expect(page).toHaveURL(/\/admin\/lists\/to-authorise$/)
 
   await page.getByRole('row').filter({ hasText: /Morrison/ }).getByRole('button', { name: /Review/ }).click()
-  await expect(page).toHaveURL(/\/admin\/review\/[^/]+$/)
+  await expect(page).toHaveURL(/\/admin\/lists\/to-authorise\/[^/]+$/)
   const reviewURL = page.url()
 
   await page.reload()
@@ -172,8 +174,8 @@ test('admin: review queue → review screen is a URL; refresh holds it, Back ret
   await expect(page.getByText('Total units')).toBeVisible()
 
   await page.goBack()
-  await expect(page).toHaveURL(/\/admin\/review$/)
-  await expect(page.getByRole('heading', { name: 'Review queue' })).toBeVisible()
+  await expect(page).toHaveURL(/\/admin\/lists\/to-authorise$/)
+  await expect(page.locator('[data-lists-page="to-authorise"]')).toBeVisible()
 })
 
 test('admin: an invoice document is a URL that survives a refresh', async ({ page }) => {
@@ -304,10 +306,10 @@ test('stale ids redirect to their parent instead of blanking', async ({ page }) 
   await expect(page).toHaveURL(/\/web\/lists$/)
   await expect(page.getByRole('heading', { name: 'Lists' })).toBeVisible()
 
-  await page.goto('/admin/review/NOPE')
+  await page.goto('/admin/lists/to-authorise/NOPE')
   await page.waitForLoadState('networkidle')
-  await expect(page).toHaveURL(/\/admin\/review$/)
-  await expect(page.getByRole('heading', { name: 'Review queue' })).toBeVisible()
+  await expect(page).toHaveURL(/\/admin\/lists\/to-authorise$/)
+  await expect(page.locator('[data-lists-page="to-authorise"]')).toBeVisible()
 
   await page.goto('/admin/finances/invoices/NOPE')
   await expect(page).toHaveURL(/\/admin\/finances\/invoices$/)
@@ -384,14 +386,14 @@ test('old Invoices, Billing monitor, credit note, payment run and Ledger URLs re
     { from: '/admin/ledger/anaesthetists/34821', to: '/admin/finances/ledger/anaesthetists/34821' },
   ]
   for (const { from, to } of cases) {
-    await page.goto('/admin/review')
+    await page.goto('/admin/lists/to-authorise')
     await page.waitForLoadState('networkidle')
     await page.goto(from)
     await page.waitForLoadState('networkidle')
     await expect(page, `${from} lands on ${to}`).toHaveURL(new RegExp(`${to.replace(/[/.?]/g, '\\$&')}$`))
     // `replace`: Back skips the old URL rather than bouncing into it again.
     await page.goBack()
-    await expect(page, `Back from ${to}`).toHaveURL(/\/admin\/review$/)
+    await expect(page, `Back from ${to}`).toHaveURL(/\/admin\/lists\/to-authorise$/)
   }
 })
 

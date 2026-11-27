@@ -4,13 +4,11 @@
  */
 
 import { cleanup, act, render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { editBooking, freshAppState, uncompleteBooking, useAppStore, type Actor } from '../../../store'
 import { SurfaceProvider } from '../../../shared'
 import { ANAE, SEED_LIST_IDS } from '../../../domain/seed'
 import { ReviewScreen } from './ReviewScreen'
-import { ReviewQueue } from './ReviewQueue'
 
 afterEach(cleanup)
 
@@ -38,21 +36,13 @@ describe('Changed since submitted', () => {
     expect(document.querySelector('[data-shot="review-changed-since-submitted"]')).toBeNull()
   })
 
-  it('shows the count after an anaesthetist edit and marks the changed Booking; also on the queue', () => {
+  it('shows the count after an anaesthetist edit and marks the changed Booking', () => {
     act(() => {
       editBooking(useAppStore, SOUTER, firstBooking().id, { notes: 'next-day fix' })
     })
     review()
     expect(document.querySelector('[data-shot="review-changed-since-submitted"]')?.textContent).toContain('Changed since submitted · 1')
     expect(document.querySelectorAll('[data-shot="review-changed-booking"]')).toHaveLength(1)
-  })
-
-  it('appears on the review queue row', () => {
-    act(() => {
-      editBooking(useAppStore, SOUTER, firstBooking().id, { notes: 'next-day fix' })
-    })
-    render(<MemoryRouter><ReviewQueue onOpen={vi.fn()} onViewInvoices={vi.fn()} /></MemoryRouter>)
-    expect(document.querySelectorAll('[data-shot="review-changed-since-submitted"]')).toHaveLength(1)
   })
 
   it('disables Authorise for billing while a re-opened Booking is incomplete, naming it', () => {

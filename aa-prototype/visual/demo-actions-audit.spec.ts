@@ -63,7 +63,7 @@ interface Drive {
 
 /** Authorise Dr Souter's Mon 20 Jul AM List on Review, so its invoices reach Xero (as `demo-actions.spec.ts` does). */
 async function authoriseAList(page: Page): Promise<void> {
-  await page.goto('/admin/review/L-34821-2026-11-23-AM')
+  await page.goto('/admin/lists/to-authorise/L-34821-2026-11-23-AM')
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()
   await page.getByRole('button', { name: 'Authorise for billing' }).last().click()

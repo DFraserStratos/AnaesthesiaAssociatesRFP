@@ -124,7 +124,7 @@ test('3 · Any List goes in: a new one (Assign List), or a Draft List for the ev
   await page.screenshot({ path: 'visual/shots/p32c-05-evening-new-list.png', fullPage: true })
 
   // A Draft List for the evening.
-  await page.goto('/admin/draft-lists')
+  await page.goto('/admin/lists/draft-lists')
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: /New Draft List/ }).click()
   const nd = page.locator('[data-shot="admin-new-draft-list"]')
@@ -257,7 +257,7 @@ test('6 · Review authorises it and the billing run bills it; the audit shows th
   await page.getByRole('button', { name: 'Submit to office' }).click()
   await page.waitForTimeout(1400)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto(`/admin/review/${id}`)
+  await page.goto(`/admin/lists/to-authorise/${id}`)
   await page.waitForLoadState('networkidle')
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Out-of-hours list')
   await page.screenshot({ path: 'visual/shots/p32c-15-review.png', fullPage: true })

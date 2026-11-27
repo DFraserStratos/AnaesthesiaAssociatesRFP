@@ -9,7 +9,7 @@ import { test, expect } from '@playwright/test'
  */
 
 test('review flags: the Contract change, the typed price, the misfit, Approve', async ({ page }) => {
-  await page.goto('/admin/review/L-45178-2026-11-17-AM')
+  await page.goto('/admin/lists/to-authorise/L-45178-2026-11-17-AM')
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(400)
 

@@ -34,6 +34,7 @@ that need work are repeated here.
 - Ledger tab: `LedgerTab.tsx` builds the next URL from the last render's params (the bug 60 closed for Billing), so two quick filter edits at practice scale can drop the first. `apps/admin/screens/finances/LedgerTab.tsx`. S
 - The same "Out by $X" pill is red on the Ledger list (`LedgerLists.tsx`) and amber on the anaesthetist's account page (`AnaesthetistAccountPage.tsx`); pick one. S
 - The Finances anaesthetist selects name people two ways: Dr Surname on Invoices, the full name on Billing and Xero. S
+- Whether Finances › Payments shows a count of procedure events awaiting approval on its tab (`eventsAwaitingApprovalCount` in `apps/admin/screens/finances/EventsAwaitingApproval.tsx` is ready; the tab shows no number today). S (owner)
 
 ## Prototype: prepayments and patients
 
@@ -92,7 +93,7 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 
 - The Ledger tab's Invoice pairs (11 columns, 1,080 px) and AA Holding account (8 columns, 880 px) tables scroll sideways inside their cards at 1280 and 1440, so Amount to Xero (pairs) and Amount (Holding) start out of view; the page itself no longer scrolls (Phase 64). Narrow the columns or drop one. `apps/admin/screens/finances/LedgerLists.tsx`, `apps/admin/components/HoldingAccountPanel.tsx`. S
 - Patients has no Timings row. S
-- Long admin lists with no paging or search: Draft Lists (150), Review queue (130), Recurring bookings (393). M
+- Recurring bookings (393 at size) has no paging or search. M
 - Anaesthetist names sort three ways: by first name (the Conflicts filter, Recurring bookings, web Availability and Who's free, mobile Availability), in roster order (the Recurring booking sheet, the Ledger select), by surname (Day view, Billing monitor, the move pickers). One rule, surname, everywhere. S
 - Make active (`store/anaesthetistStatusActions.ts`, `makeAnaesthetistActive`) writes the anaesthetist active and their sessions before the offered-back `enableContract`s; a refused enable would leave a partial change (the ids are checked first, so not reachable today). Check every enable before writing. S
 - The mobile sign-out gate for an anaesthetist past their last day (`apps/mobile/MobileApp.tsx`) writes two "Signed out · No longer active" audit rows in dev, where StrictMode runs the effect twice; guard it with a ref. S
@@ -132,6 +133,7 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 - Remove the Gradient Lab (the gradient is signed off): delete `shell/gradientLab/`, `GRADIENT_LAB_ENABLED` and `theme/gradientLabGate.ts`, and `visual/mobile-phase13.spec.ts`; the shipped look stays `AA_DEFAULT_GRADIENT`. Update CLAUDE.md's Design section. S
 - Contract page back link (build plan Phase 47): it returns to the catalogue as the row was opened (grouping, group, search, page) through router state, but switching the page's tab drops that state, so Back then opens the bare list. Carry `location.state` through `ContractPage`'s tab links if the owner wants it.
 - The app switcher says "Demo: Billing Monitor & Xero" while the page says "Xero simulation". `shell/appConfig.ts`. S
+- People, Contracts and Finances still draw their own tab strips; move them onto the shared `SectionTabs` (`shared/ui/SectionTabs.tsx`), as Lists uses. S
 
 ## Requirements Board
 
@@ -165,4 +167,4 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 - Intake: the masters' `.example` addresses (surgeons' office contacts, the AA mailbox `lists@aa.example`) show on screen (the Unreadable bench's email To, the Needs NHI chase card, Sources); pick one domain scheme that reads as real without naming real businesses, app-wide. S (owner)
 - Intake: the synthetic rooms' PDFs print patient emails and GP practices at invented `.co.nz` domains and names (`kiwimail.co.nz`, `southnet.co.nz`, ...) that could match real ones; check or swap for clearly invented ones. `domain/intake/pdfTemplates/`. S
 - Intake: the handset's office stand-ins (`matching-office-matches-row`, `pwa-office-adds-nhi`) on a List at a hospital with no feed (Forte) send the List's whole held set as a rooms PDF and decide only their own row, leaving an Update of unchanged rows in To decide (and a removal offered for a held Booking with no valid NHI). `store/intakeIngest.ts` `receiveRowsForList`: send only the stand-in's row, or decide the unchanged rows with it. S
-- Known failures on `master` from 2c2223e9 (Admin Day's Contracts tab) and the Finances build, seen at the Intake Wave 7 join and not caused by it: Playwright `warnings.spec.ts` 31 and 89 (`admin-warnings-todo` Show all), `admin-phase06.spec.ts` 164 (`admin-work-tab-contracts`), `billing-monitor.spec.ts` 211 (the search no longer writes `q=`); verify-board's round-trip of `US-04.3.12.md` (the serialiser adds `images: []`). S
+- Known failures on `master` from 2c2223e9 (Admin Day's Contracts tab) and the Finances build, seen at the Intake Wave 7 join and again at the Lists join, not caused by either: Playwright `warnings.spec.ts` 31 and 89 (`admin-warnings-todo` Show all) and `admin-phase06.spec.ts` 164 (`admin-work-tab-contracts`); `billing-monitor.spec.ts` 211 (the search no longer writes `q=`), failing some runs and not others. S

@@ -22,7 +22,7 @@ const SOUTER_WEB_HBK03 = '/web/lists/L-HIST-03/bookings/HBK03'
 const SOUTER_MOBILE_HBK03 = '/mobile/lists/L-HIST-03/bookings/HBK03'
 
 async function stagePostOp(page: Page): Promise<string> {
-  await page.goto(`/admin/review/${SHARMA_TUE14}`)
+  await page.goto(`/admin/lists/to-authorise/${SHARMA_TUE14}`)
   await page.waitForLoadState('networkidle')
   expect(await runDemoAction(page, 'stage-post-op', { close: true })).toContain('Staged')
   await page.goto(MITCHELL_ADMIN)
@@ -35,7 +35,7 @@ async function stagePostOp(page: Page): Promise<string> {
 
 /** Approve the oldest credit in Review's Events tab, then run the next billing run from Finances · Billing. */
 async function approveAndRun(page: Page): Promise<void> {
-  await page.goto('/admin/review?tab=events')
+  await page.goto('/admin/finances/payments')
   const row = page.locator('[data-shot="admin-events-queue"] tr', { has: page.locator('[data-shot="review-credit-row"]') }).first()
   await row.click()
   const review = page.locator('[data-shot="event-review-sheet"]')

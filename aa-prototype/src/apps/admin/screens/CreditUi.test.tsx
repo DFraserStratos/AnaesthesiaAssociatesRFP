@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, render, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { approveCreditUnit, creditNoteForInvoice, freshAppState, pairForInvoice, submitCredit, useAppStore, type Actor, type CreditInput } from '../../../store'
@@ -8,13 +8,11 @@ import { ProcedureEventsList } from '../../../shared/booking/ProcedureEventsList
 import { paymentDisabledReason } from '../../../shared/demoTriggers/registry'
 import { InvoiceDocument, CreditNoteDocument } from './InvoiceDocument'
 import { InvoicesScreen } from './InvoicesScreen'
-import { ReviewQueue } from './ReviewQueue'
 
 /**
  * Catch-up Phase 39, work item 7: the Admin side of a credit on the seeded
  * AA-2026-H03 (David Chen's HP03, St George's, $520.50, unpaid, in Xero):
- * the review queue's one row per correction, the credited original and its
- * banner, the credit note document, the events list's credit row and the
+ * the credited original and its banner, the credit note document, the events list's credit row and the
  * Invoices screen.
  */
 const OFFICE: Actor = { who: 'Kirsty W.', role: 'office', source: 'office' }
@@ -58,19 +56,6 @@ function inAdmin(node: React.ReactNode, path = '/admin') {
 
 beforeEach(() => useAppStore.setState(freshAppState()))
 afterEach(() => cleanup())
-
-describe('Admin Review, Events tab', () => {
-  it('shows a credit as one row with its new invoices nested, and counts it once', () => {
-    submit(2)
-    const { container } = inAdmin(<ReviewQueue onOpen={() => undefined} onViewInvoices={() => undefined} actor={OFFICE} />, '/admin/review?tab=events')
-    const creditRows = container.querySelectorAll('tr[data-kind="credit"]')
-    expect(creditRows).toHaveLength(1)
-    expect(creditRows[0]!.textContent).toContain('Credit AA-2026-H03 in full, 2 new invoices')
-    expect(container.querySelectorAll('[data-shot="review-credit-replacement"]')).toHaveLength(2)
-    // The seeded EV0001 and the credit: two to review, not four.
-    expect(screen.getByRole('link', { name: /Events/ }).textContent).toContain('2')
-  })
-})
 
 describe('the credited original', () => {
   it('shows the pending pill while the credit waits, and disables its correction', () => {

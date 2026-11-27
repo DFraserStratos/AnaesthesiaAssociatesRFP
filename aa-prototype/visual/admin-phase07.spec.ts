@@ -14,11 +14,12 @@ test('admin phase 07 review + authorise', async ({ page }) => {
   await page.waitForTimeout(400)
 
   // Into the review queue.
-  await page.getByRole('button', { name: /Review queue/ }).first().click()
+  await page.getByRole('button', { name: /^Lists/ }).first().click()
+  await page.locator('[data-lists-tab="to-authorise"]').click()
   await page.waitForTimeout(300)
-  await expect(page.getByRole('heading', { name: 'Review queue' })).toBeVisible()
-  // Phase 08 replaced the "Handed to billing" placeholder with the live panel.
-  await expect(page.getByText('Recently billed')).toBeVisible()
+  await expect(page.locator('[data-lists-page="to-authorise"]')).toBeVisible()
+  // Phase 08 replaced the "Handed to billing" placeholder with the live panel, now Recently authorised.
+  await expect(page.getByText('Recently authorised')).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'Anaesthetist · List' })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'List date' })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'Bookings' })).toBeVisible()

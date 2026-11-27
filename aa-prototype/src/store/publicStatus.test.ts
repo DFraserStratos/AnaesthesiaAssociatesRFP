@@ -91,7 +91,7 @@ describe('Public as a Slot status (catch-up Phase 32d)', () => {
     expect(api.getState().schedule.lists[POST_OP_ORIGINAL_LIST_ID]).toMatchObject({ kind: 'private', hospitalId: HOSP.cph })
     expect(api.getState().schedule.lists[SEED_LIST_IDS.billingFailure]).toBeDefined()
     const t = DEMO_TRIGGERS.find((x) => x.id === 'stage-post-op')!
-    const ctx = { path: `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`, params: { listId: POST_OP_ORIGINAL_LIST_ID }, surface: 'bar' as const, screen: {} }
+    const ctx = { path: `/admin/lists/to-authorise/${POST_OP_ORIGINAL_LIST_ID}`, params: { listId: POST_OP_ORIGINAL_LIST_ID }, surface: 'bar' as const, screen: {} }
     expect(t.run(api, ctx as never).ok).toBe(true)
     expect(api.getState().schedule.lists[POST_OP_ORIGINAL_LIST_ID]?.state).toBe('AUTHORISED')
   })
@@ -99,7 +99,7 @@ describe('Public as a Slot status (catch-up Phase 32d)', () => {
   it('the post-op trigger is enabled on its Review before it runs', () => {
     const api = createAppStore()
     const t = DEMO_TRIGGERS.find((x) => x.id === 'stage-post-op')!
-    const ctx = { pathname: `/admin/review/${POST_OP_ORIGINAL_LIST_ID}`, params: { listId: POST_OP_ORIGINAL_LIST_ID }, published: {} }
+    const ctx = { pathname: `/admin/lists/to-authorise/${POST_OP_ORIGINAL_LIST_ID}`, params: { listId: POST_OP_ORIGINAL_LIST_ID }, published: {} }
     expect(t.when?.(api.getState(), ctx) ?? true).toBe(true)
     expect(t.disabledReason(api.getState(), ctx)).toBeNull()
   })

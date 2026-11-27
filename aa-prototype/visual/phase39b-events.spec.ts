@@ -28,7 +28,7 @@ function listIdOf(page: Page): string {
 let LIST = ''
 
 async function authorise(page: Page) {
-  await page.goto(`/admin/review/${LIST}`)
+  await page.goto(`/admin/lists/to-authorise/${LIST}`)
   await page.getByRole('button', { name: 'Authorise for billing' }).first().click()
   await page.waitForTimeout(200)
   await page.getByRole('button', { name: 'Authorise for billing' }).last().click()
@@ -64,7 +64,7 @@ test('events through review onto the Procedure invoice, then an own invoice in t
   await expect(page.locator('[data-shot="procedure-event-row"][data-kind="billing"]')).toContainText('$180.00')
 
   // The office reviews both in the Events tab: the ward review shows the calculation.
-  await page.goto('/admin/review?tab=events')
+  await page.goto('/admin/finances/payments')
   const queue = page.locator('[data-shot="admin-events-queue"]')
   await expect(queue).toContainText('30 min · 2 time units x $25.00 Contract rate = $50.00')
   for (const kind of ['postOp', 'billing']) {
@@ -91,7 +91,7 @@ test('events through review onto the Procedure invoice, then an own invoice in t
   await page.locator('[data-shot="add-pre-post-op-event"]').first().click()
   await sheet.getByText('Pain consult').click()
   await sheet.locator('[data-shot="add-event-save"]').click()
-  await page.goto('/admin/review?tab=events')
+  await page.goto('/admin/finances/payments')
   await expect(queue).toContainText('Contract fee STGACC-PAIN · $120.00 replaces 30 min')
   await queue.locator('tr[data-kind="postOp"]', { hasText: 'Pain consult' }).click()
   await page.locator('[data-shot="event-review-approve"]').click()
