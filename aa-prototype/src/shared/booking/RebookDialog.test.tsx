@@ -49,7 +49,7 @@ describe('RebookDialog', () => {
     const cancelled = cancelBooking(useAppStore, OFFICE, NAIR, 'Patient asked for another anaesthetist')
     expect(cancelled.ok).toBe(true)
     const onRebooked = renderDialog()
-    const dialog = shot('rebook-dialog')!
+    const dialog = shot('rebook-dialog')!.closest('[role="dialog"]') as HTMLElement
     expect(within(dialog).getByText('Rebook with another anaesthetist')).toBeTruthy()
     const options = [...(shot('rebook-anaesthetist') as HTMLSelectElement).options].map((o) => o.value)
     expect(options).not.toContain(ANAE.souter)

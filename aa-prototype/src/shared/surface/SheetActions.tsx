@@ -12,30 +12,51 @@
  * `data-shot` and handlers stay on them. Footer buttons stay 54px
  * (question 7). Outside a `SurfaceProvider` it lays out as the phone. Hooks
  * stay on the buttons (`Button shot`), which render on both surfaces.
+ *
+ * Inside the web `Dialog` the row portals into the dialog's pinned footer, so
+ * the action stays on screen while the form scrolls (dialogSlots.ts). `note` is
+ * the quiet line about what the action does: above the row on web (in the
+ * pinned footer), after the buttons on the phone.
  */
 
-import { useContext, type ReactNode } from 'react'
+import { useContext, useLayoutEffect, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
+import { neutral } from '../../theme/tokens'
 import { SurfaceCtx } from './context'
+import { useDialogSlots } from './dialogSlots'
 
 export interface SheetActionsProps {
   primary: ReactNode
   secondary?: ReactNode
+  /** What the action does, in one quiet line (e.g. "Saves it and applies it to the schedule ahead"). */
+  note?: ReactNode
 }
 
-export function SheetActions({ primary, secondary }: SheetActionsProps) {
+function Note({ children }: { children: ReactNode }) {
+  return <div style={{ fontSize: 12, lineHeight: '18px', color: neutral.mist }}>{children}</div>
+}
+
+export function SheetActions({ primary, secondary, note }: SheetActionsProps) {
   const variant = useContext(SurfaceCtx)?.variant ?? 'mobile'
-  if (variant === 'mobile') {
-    return (
+  const slots = useDialogSlots()
+  const registerFooter = slots?.registerFooter
+  useLayoutEffect(() => registerFooter?.(), [registerFooter])
+  const hasNote = note !== undefined && note !== null && note !== false
+  const actions =
+    variant === 'mobile' ? (
       <>
         {primary}
         {secondary}
+        {hasNote && <Note>{note}</Note>}
+      </>
+    ) : (
+      <>
+        {hasNote && <Note>{note}</Note>}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+          {secondary !== undefined && secondary !== null && secondary !== false && <div style={{ flex: '0 0 auto', display: 'flex' }}>{secondary}</div>}
+          <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex' }}>{primary}</div>
+        </div>
       </>
     )
-  }
-  return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
-      {secondary !== undefined && secondary !== null && secondary !== false && <div style={{ flex: '0 0 auto', display: 'flex' }}>{secondary}</div>}
-      <div style={{ flex: '1 1 auto', minWidth: 0, display: 'flex' }}>{primary}</div>
-    </div>
-  )
+  return slots !== null ? createPortal(actions, slots.footer) : actions
 }

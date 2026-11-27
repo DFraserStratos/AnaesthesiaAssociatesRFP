@@ -137,7 +137,7 @@ describe('Replace from a date (US-04.1.8)', () => {
     renderAt(contractPath(UNI))
     expect(shot('contract-replaced-todo')!.textContent).toContain('Replaced by UNI-002 from 1 Dec 2026. Disable it so it is no longer offered.')
     fireEvent.click(within(shot('contract-replaced-todo')!).getByRole('button', { name: 'Disable' }))
-    const dialog = shot('contract-disable-sheet')!
+    const dialog = shot('contract-disable-sheet')!.closest('[role="dialog"]') as HTMLElement
     expect(shot('contract-disable-from-change-date')!.textContent).toBe('Listed from Tue 1 Dec, the date it was replaced by UNI-002.')
     expect(dialog.querySelectorAll('[data-shot="contract-still-on-row"]')).toHaveLength(3)
     fireEvent.click(within(dialog).getByRole('button', { name: 'Disable' }))

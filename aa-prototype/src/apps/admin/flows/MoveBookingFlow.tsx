@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import { accent, neutral, radius, semantic } from '../../../theme/tokens'
+import { neutral, radius, semantic } from '../../../theme/tokens'
 import type { List } from '../../../domain/types'
 import { hasSentPrepayment, reassignBooking, useAppStore, type Actor } from '../../../store'
 import { LIST_STATE_LABELS, locationName } from '../../../shared/format'
@@ -112,8 +112,7 @@ export function MoveBookingFlow({ open, bookingId, actor, onClose, onMoved }: Mo
         </div>
 
         <FormError message={error} />
-        <SheetActions primary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>} />
-        <div style={{ fontSize: 11, color: accent.pressed }}>Select a target list to move the booking immediately.</div>
+        <SheetActions primary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>} note="Select a target list to move the booking immediately." />
       </div>
     </Overlay>
   )

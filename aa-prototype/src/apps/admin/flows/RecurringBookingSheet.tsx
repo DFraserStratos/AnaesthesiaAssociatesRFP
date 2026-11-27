@@ -220,7 +220,10 @@ export function RecurringBookingSheet({ open, actor, recurringBooking, initial, 
   return (
     <Overlay open={open} onClose={onClose}>
       <div data-shot="recurring-booking-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <OverlayHeader title={editing ? 'Edit recurring booking' : 'Add recurring booking'} />
+        <OverlayHeader
+          title={editing ? 'Edit recurring booking' : 'Add recurring booking'}
+          description={applied === null ? 'A pattern of Lists for this anaesthetist, surgeon and hospital on one day and session each week, not a Booking for a patient.' : undefined}
+        />
         {applied !== null ? (
           <AppliedView
             applied={applied}
@@ -236,9 +239,6 @@ export function RecurringBookingSheet({ open, actor, recurringBooking, initial, 
           />
         ) : (
           <>
-            <div style={{ fontSize: 13, color: neutral.slate, lineHeight: '19px' }}>
-              A pattern of Lists for this anaesthetist, surgeon and hospital on one day and session each week, not a Booking for a patient.
-            </div>
             <SelectField label="Anaesthetist" value={anaesthetistId} onChange={setAnaesthetistId}>
               <option value="">Select an anaesthetist</option>
               {Object.values(anaesthetists).map((a) => (
@@ -302,8 +302,8 @@ export function RecurringBookingSheet({ open, actor, recurringBooking, initial, 
                 <SheetActions
                   primary={<Button variant="primary" block onClick={apply}>{pairingWarning !== null ? 'Apply anyway' : 'Apply to canvas now'}</Button>}
                   secondary={editing ? <Button variant="secondary" block onClick={() => setRetiring(true)}>Retire</Button> : undefined}
+                  note="Saves it and applies it to the schedule ahead, from tomorrow. Lists with Bookings or office edits are left as they are."
                 />
-                <div style={{ fontSize: 12, color: neutral.mist }}>Saves it and applies it to the schedule ahead, from tomorrow. Lists with Bookings or office edits are left as they are.</div>
               </>
             )}
           </>

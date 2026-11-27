@@ -1,4 +1,4 @@
-import { useId, type CSSProperties, type HTMLAttributes, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type CSSProperties, type HTMLAttributes, type KeyboardEvent, type ReactNode } from 'react'
 import { neutral, radius, semantic } from '../../theme/tokens'
 import { controlStyle, FIELD_CLASS, FIELD_FILL, fieldControlStyle, type FieldFill, type FieldSize } from './fieldChrome'
 import { SlidingSegmentedControl, type SlidingSegmentLayout, type SlidingSegmentSize } from './SlidingSegmentedControl'
@@ -234,17 +234,24 @@ export function FormError({
   shot?: string
   style?: CSSProperties
 }) {
+  // In a web dialog the actions are pinned below the scrolling body, so a
+  // refusal at the body's end could sit out of sight: bring it into view.
+  const ref = useRef<HTMLDivElement & HTMLSpanElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (el !== null && el.closest('[data-aa-dialog-body]') !== null) el.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' })
+  }, [message])
   if (message === null || message === undefined || message === '') return null
   if (variant === 'inline') {
     // A span, so it can sit inside a row's text column; block, so it takes its own line.
     return (
-      <span role="alert" data-shot={shot} style={{ display: 'block', color: semantic.error.onTint, fontSize: 12, ...style }}>
+      <span ref={ref} role="alert" data-shot={shot} style={{ display: 'block', color: semantic.error.onTint, fontSize: 12, ...style }}>
         {message}
       </span>
     )
   }
   return (
-    <div role="alert" data-shot={shot} style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, ...style }}>
+    <div ref={ref} role="alert" data-shot={shot} style={{ background: semantic.error.tint, color: semantic.error.onTint, borderRadius: radius.ctl, padding: '10px 12px', fontSize: 13, ...style }}>
       {message}
     </div>
   )

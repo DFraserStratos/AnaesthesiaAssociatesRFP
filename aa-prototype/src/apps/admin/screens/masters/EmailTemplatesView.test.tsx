@@ -37,7 +37,7 @@ describe('Email templates master', () => {
   it('edits the subject with a live preview, reports an unknown placeholder, and saves', () => {
     renderView()
     fireEvent.click(screen.getByRole('button', { name: 'Edit Booking change' }))
-    const editor = document.querySelector('[data-shot="email-template-editor"]') as HTMLElement
+    const editor = document.querySelector('[data-shot="email-template-editor"]')!.closest('[role="dialog"]') as HTMLElement
     expect(within(editor).getByText('Sample')).toBeTruthy()
     const subject = within(editor).getByLabelText('Subject') as HTMLInputElement
     fireEvent.change(subject, { target: { value: 'Changed: {patient} {unknown}' } })

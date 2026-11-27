@@ -247,14 +247,14 @@ describe('Disable, confirmed (US-04.1.2, DM-04)', () => {
     expect(nextWeek).toBeDefined()
     renderAt(contractPath(id))
     fireEvent.click(screen.getByRole('button', { name: 'Disable' }))
-    const sheet = card('contract-disable-sheet')
+    const sheet = card('contract-disable-sheet').closest('[role="dialog"]') as HTMLElement
     expect(sheet.querySelectorAll('[data-shot="contract-still-on-row"]')).toHaveLength(rows.length)
     expect(sheet.querySelector(`[data-shot="contract-still-on-row"][data-booking-id="${nextWeek.bookingId}"]`)).not.toBeNull()
     // Keep it active changes nothing.
     fireEvent.click(within(sheet).getByRole('button', { name: 'Keep it active' }))
     expect(useAppStore.getState().masters.contracts[id]!.status).toBe('active')
     fireEvent.click(screen.getByRole('button', { name: 'Disable' }))
-    fireEvent.click(within(card('contract-disable-sheet')).getByRole('button', { name: 'Disable' }))
+    fireEvent.click(within(card('contract-disable-sheet').closest('[role="dialog"]') as HTMLElement).getByRole('button', { name: 'Disable' }))
     expect(useAppStore.getState().masters.contracts[id]!.status).toBe('disabled')
     expect(useAppStore.getState().schedule.procedures[nextWeek.procedureId]!.governingContractId).toBe(id)
     expect(card('contract-disabled-note')).not.toBeNull()

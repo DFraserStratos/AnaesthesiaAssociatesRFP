@@ -69,7 +69,7 @@ describe('the Admin Booking draft on screen', () => {
       await router.navigate('/admin/elsewhere')
     })
     expect(router.state.location.pathname).not.toBe('/admin/elsewhere')
-    const dialog = leaveDialog() as HTMLElement
+    const dialog = leaveDialog()?.closest('[role="dialog"]') as HTMLElement
     expect(dialog).not.toBeNull()
     expect(within(dialog).getByText('1', { exact: true })).toBeTruthy()
     const keep = screen.getByRole('button', { name: 'Keep editing' })

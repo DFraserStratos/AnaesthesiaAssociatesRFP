@@ -22,7 +22,7 @@ function renderView() {
 
 function openNew() {
   fireEvent.click(screen.getByRole('button', { name: 'New template' }))
-  return document.querySelector('[data-shot="letter-template-editor"]') as HTMLElement
+  return document.querySelector('[data-shot="letter-template-editor"]')!.closest('[role="dialog"]') as HTMLElement
 }
 
 describe('Prepayment letters master', () => {

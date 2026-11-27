@@ -199,7 +199,7 @@ describe("the surgeon's page: one card, one change", () => {
   it('Add surgeon on the Surgeons tab opens the create-only sheet and lands on the new page', () => {
     renderAdmin('/admin/people/surgeons')
     fireEvent.click(screen.getByRole('button', { name: 'Add surgeon' }))
-    const sheet = shot('surgeon-edit-sheet')
+    const sheet = shot('surgeon-edit-sheet').closest('[role="dialog"]') as HTMLElement
     expect(within(sheet).getByText('Add a surgeon')).toBeInTheDocument()
     expect(within(sheet).queryByText(/Retire this surgeon/)).toBeNull()
     fireEvent.change(within(sheet).getByRole('textbox', { name: 'Name' }), { target: { value: 'Ms K. Fenwick' } })

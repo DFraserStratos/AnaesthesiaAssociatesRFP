@@ -126,7 +126,7 @@ describe('the Billing tab (US-13.3.1, US-13.3.2)', () => {
     expect(rowIds()).toEqual([bookingId])
 
     fireEvent.click(shot(`billing-fix-payer-${bookingId}`)!)
-    const sheet = shot('billing-fix-payer-sheet')!
+    const sheet = shot('billing-fix-payer-sheet')!.closest('[role="dialog"]') as HTMLElement
     fireEvent.change(within(sheet).getByLabelText('Billing email'), { target: { value: 'accounts@example.co.nz' } })
     fireEvent.click(within(sheet).getByRole('button', { name: 'Save and retry' }))
     expect(shot('billing-fix-payer-sheet')).toBeNull()
@@ -145,7 +145,7 @@ describe('the Billing tab (US-13.3.1, US-13.3.2)', () => {
     expect(within(row).getByRole('button', { name: 'Retry' })).toBeInTheDocument()
 
     fireEvent.click(shot(`billing-mark-resolved-${bookingId}`)!)
-    const sheet = shot('billing-mark-resolved-sheet')!
+    const sheet = shot('billing-mark-resolved-sheet')!.closest('[role="dialog"]') as HTMLElement
     fireEvent.click(within(sheet).getByRole('button', { name: 'Mark resolved' }))
     expect(shot('billing-mark-resolved-error')?.textContent ?? '').not.toBe('')
     expect(shot('billing-mark-resolved-sheet')).not.toBeNull()

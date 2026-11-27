@@ -69,7 +69,7 @@ function benchFor(name: string, onDone: () => void = noop): HTMLElement {
 
 function openAddNhi(bench: HTMLElement): HTMLElement {
   fireEvent.click(within(bench).getByRole('button', { name: 'Add NHI' }))
-  return document.querySelector('[data-shot="add-nhi-sheet"]') as HTMLElement
+  return document.querySelector('[data-shot="add-nhi-sheet"]')!.closest('[role="dialog"]') as HTMLElement
 }
 
 function addNhi(sheet: HTMLElement, nhi: string) {

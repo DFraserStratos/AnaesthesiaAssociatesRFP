@@ -70,7 +70,7 @@ describe('Public holidays view', () => {
   it('adds, marks a hospital open and deletes, each with a computed result line', () => {
     renderAdmin('/admin/masters?view=publicHolidays')
     fireEvent.click(screen.getByRole('button', { name: 'Add public holiday' }))
-    const add = shot('public-holiday-add-sheet')
+    const add = shot('public-holiday-add-sheet').closest('[role="dialog"]') as HTMLElement
     fireEvent.change(within(add).getByLabelText('Date'), { target: { value: '2026-11-26' } })
     fireEvent.change(within(add).getByLabelText('Name'), { target: { value: 'Demo holiday' } })
     fireEvent.click(within(add).getByRole('button', { name: 'Add public holiday' }))
@@ -80,7 +80,7 @@ describe('Public holidays view', () => {
     expect(shot('public-holiday-result')).toHaveTextContent(`Public holiday added. ${flagged} ${flagged === 1 ? 'List' : 'Lists'} flagged.`)
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit Demo holiday' }))
-    const edit = shot('public-holiday-edit-sheet')
+    const edit = shot('public-holiday-edit-sheet').closest('[role="dialog"]') as HTMLElement
     const cph = Object.values(useAppStore.getState().masters.hospitals).find((h) => h.name === 'Christchurch Public')!
     const before = listsFlaggedByPublicHoliday(useAppStore.getState(), added.id)
     fireEvent.change(within(edit).getByLabelText('Open that day'), { target: { value: cph.id } })
@@ -90,7 +90,7 @@ describe('Public holidays view', () => {
 
     const left = listsFlaggedByPublicHoliday(useAppStore.getState(), added.id)
     fireEvent.click(screen.getByRole('button', { name: 'Delete Demo holiday' }))
-    const confirm = shot('public-holiday-delete-confirm')
+    const confirm = shot('public-holiday-delete-confirm').closest('[role="dialog"]') as HTMLElement
     expect(confirm).toHaveTextContent(`clears ${left} flagged ${left === 1 ? 'List' : 'Lists'}`)
     fireEvent.click(within(confirm).getByRole('button', { name: 'Delete public holiday' }))
     expect(useAppStore.getState().masters.publicHolidays[added.id]).toBeUndefined()

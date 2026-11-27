@@ -80,7 +80,7 @@ describe('OpenOutOfHoursSheet', () => {
         <OpenOutOfHoursSheet open anaesthetistId={ANAE.souter} dateISO={TODAY} actor={OFFICE} onClose={vi.fn()} onOpened={onOpened} />
       </SurfaceProvider>,
     )
-    const sheet = document.querySelector('[data-shot="out-of-hours-open-sheet"]') as HTMLElement
+    const sheet = document.querySelector('[data-shot="out-of-hours-open-sheet"]')!.closest('[role="dialog"]') as HTMLElement
     expect(within(sheet).getByLabelText('Start')).toHaveValue('18:00')
     expect(within(sheet).getByLabelText('End')).toHaveValue('21:00')
     expect(sheet.textContent ?? '').not.toMatch(/slot|[–—]/i)
