@@ -197,6 +197,12 @@ export interface ShellSlice {
    */
   officeUser?: 'kirsty' | 'sam'
   /**
+   * Which anaesthetist the framed Mobile and Web apps are signed in as: a demo stand-in for each
+   * anaesthetist signing in on their own device, switched from the harness bar's "Signed in as".
+   * A registration number from the scripted cast; absent means Dr Souter. The PWA never sets it.
+   */
+  anaesthetistUser?: string
+  /**
    * Each office user's last Contract catalogue grouping (build plan Phase 47; US-04.1.2): a bare
    * `/admin/contracts` opens on it, and `?group=` wins over it. A view preference, not audited;
    * optional, so a stored state without it loads with no `PERSIST_VERSION` bump. Reset clears it.
@@ -221,6 +227,8 @@ export interface AppActions {
   nextSuggestionSeq: () => number
   /** Switch the named office user the Admin app acts as (catch-up Phase 35; a demo stand-in for sign-in). */
   setOfficeUser: (user: 'kirsty' | 'sam') => void
+  /** Switch the anaesthetist the framed Mobile and Web apps are signed in as (a demo stand-in for sign-in). */
+  setAnaesthetistUser: (anaesthetistId: string) => void
   /** Remember an office user's Contract catalogue grouping (build plan Phase 47; not audited). */
   setContractGrouping: (user: 'kirsty' | 'sam', by: ContractGrouping) => void
 }
@@ -693,6 +701,7 @@ export function createAppStore(options: CreateAppStoreOptions = {}): BoundAppSto
     setCurrentApp: (app: AppId) =>
       set((state) => ({ shell: { ...state.shell, currentApp: app } })),
     setOfficeUser: (user: 'kirsty' | 'sam') => set((state) => ({ shell: { ...state.shell, officeUser: user } })),
+    setAnaesthetistUser: (anaesthetistId: string) => set((state) => ({ shell: { ...state.shell, anaesthetistUser: anaesthetistId } })),
     setContractGrouping: (user: 'kirsty' | 'sam', by: ContractGrouping) =>
       set((state) => (state.shell.contractGrouping?.[user] === by ? {} : { shell: { ...state.shell, contractGrouping: { ...state.shell.contractGrouping, [user]: by } } })),
     nextSuggestionSeq: () => {

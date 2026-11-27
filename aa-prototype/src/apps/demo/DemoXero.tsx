@@ -19,7 +19,7 @@ import { HELD_UNTIL_AUTHORISED, LEAVES_ONLY_BY_SYSTEM, RELEASE_TRIGGER_CAPTION }
 import { transferOfPair } from '../../domain/billing/ledger'
 import { toCents } from '../../domain/billing/money'
 import { accent, neutral, radius, semantic } from '../../theme/tokens'
-import { APP_CONFIG } from '../../shell/appConfig'
+import { anaesthetistUserId } from '../../shell/anaesthetistUser'
 import { xeroInvoicePairViews, type XeroAllocationView, type XeroBillPaymentView, type XeroCreditView, type XeroInvoicePairView } from './xeroPairView'
 import { CREDIT_LABELS } from '../../shared/procedureEventCopy'
 import { recordFeePaymentFor } from '../../shared/demoTriggers'
@@ -306,9 +306,8 @@ function PairDetail({ pair }: { pair: XeroInvoicePairView }) {
   const voided = pair.accRec.status === 'voided'
   // A credited ACCREC (catch-up Phase 39) takes no simulated payment from here either.
   const credited = pair.accRec.status === 'credited'
-  const canOpenWebAccount =
-    pair.accRec.amountReceived > 0 &&
-    pair.ledger.anaesthetistId === APP_CONFIG.web.persona.anaesthetistId
+  const webUser = useAppStore((s) => anaesthetistUserId(s.shell))
+  const canOpenWebAccount = pair.accRec.amountReceived > 0 && pair.ledger.anaesthetistId === webUser
 
   const heldInHolding = pair.accPay?.held === true
   // Once transferred, the money has left the AA Holding account: nothing to try from here (catch-up Phase 27a).
@@ -615,7 +614,8 @@ function FeePairDetail({ pair }: { pair: XeroInvoicePairView }) {
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
   const paid = pair.accRec.status === 'paid'
   const feeId = pair.ledger.aaFeeInvoiceId
-  const canOpenWebAccount = pair.ledger.anaesthetistId === APP_CONFIG.web.persona.anaesthetistId
+  const webUser = useAppStore((s) => anaesthetistUserId(s.shell))
+  const canOpenWebAccount = pair.ledger.anaesthetistId === webUser
   const anaesthetist = pair.accRec.contact?.name ?? 'Anaesthetist'
 
   function recordPayment() {

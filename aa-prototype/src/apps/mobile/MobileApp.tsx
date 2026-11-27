@@ -2,7 +2,7 @@ import { useEffect, useMemo, type ComponentType, type ReactNode } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { List as ListIcon, LayoutGrid, CircleDollarSign, MoreHorizontal } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { APP_CONFIG } from '../../shell/appConfig'
+import { useAnaesthetistPersona } from '../../shell/anaesthetistUser'
 import { neutral, accent } from '../../theme/tokens'
 import { recordAnaesthetistSignIn, signInRefusal, useAppStore, type Actor } from '../../store'
 import { SurfaceProvider } from '../../shared'
@@ -127,7 +127,8 @@ export function MobileApp({
   /** Which app a support request says it came from (catch-up Phase 43b): the installed PWA passes 'pwa'. */
   supportApp?: 'mobile' | 'pwa'
 }) {
-  const persona = APP_CONFIG.mobile.persona
+  // Dr Souter, or the anaesthetist the harness bar's "Signed in as" chose (the PWA never switches).
+  const persona = useAnaesthetistPersona()
   const anaesthetistId = persona.anaesthetistId ?? '34821'
   const actor: Actor = useMemo(
     () => ({ who: persona.name, role: 'anaesthetist', source: 'anaesthetist', anaesthetistId }),

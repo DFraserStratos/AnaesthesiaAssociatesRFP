@@ -12,9 +12,10 @@ import { matchPath } from 'react-router-dom'
 import { createAppStore, type AppState, type AppStoreApi } from '../../store/appStore'
 import { wireBillingRun } from '../../store/billingRun'
 import { authoriseList, submitList } from '../../store/lifecycle'
-import { decideImportRow } from '../../store/matchingActions'
-import { receiveSample } from '../../test/intakeSamples'
-import { SAMPLE_STG } from '../../domain/intake/hospitalDownloads'
+import { decideArrivingLists } from '../../store/intakeDecide'
+import { OKAFOR_STORY_LIST } from '../../domain/intake/hospitalDownloads'
+import { SURG } from '../../domain/seed/cast'
+import { slotIdFor } from '../../domain/slots'
 import { lastChangeSetFor } from '../../store/changeSetSelectors'
 import { changeSetsFor } from '../../domain/changeSets'
 import { bookingsForList, proceduresForBooking } from '../../store/selectors'
@@ -286,7 +287,7 @@ describe('DEMO_SCENARIOS (catch-up Phase 44)', () => {
 
   it('a beat that waits says so in its label, and opens once its target exists', () => {
     // On each staged state, the waiting beats are exactly these, each label naming what it waits for.
-    const waiting: Record<string, number[]> = { S1: [4, 6], S2: [], S3: [3], S4: [2, 5, 7], S5: [] }
+    const waiting: Record<string, number[]> = { S1: [4], S2: [], S3: [3], S4: [2, 5, 7], S5: [] }
     for (const s of DEMO_SCENARIOS) {
       const api = wiredStore()
       s.stage(api)
@@ -296,11 +297,20 @@ describe('DEMO_SCENARIOS (catch-up Phase 44)', () => {
       unwire?.()
     }
 
-    // S1: the import and Create Booking put Sarah Mitchell on Tue 28 Jul AM.
+    // S1: the rooms email Mr Okafor's List and the office places it in Dr Rutherford's Wed 25 Nov PM.
     const s1 = wiredStore()
     scenario('S1').stage(s1)
-    const row = receiveSample(s1, SAMPLE_STG).rowIds[0]!
-    expect(decideImportRow(s1, OFFICE_ACTOR, row, { kind: 'createBooking', listId: SEED_LIST_IDS.integrationStgList }).ok).toBe(true)
+    const arrived = DEMO_TRIGGERS.find((t) => t.id === 'intake-rooms-email-list')!.run(s1, { pathname: '/admin/intake', params: {}, published: {} })
+    expect(arrived.ok, arrived.message).toBe(true)
+    const batch = Object.values(s1.getState().intake.batches).at(-1)!
+    const placeable = batch.rowIds.map((id) => s1.getState().intake.rows[id]!).filter((r) => r.incoming.patient.nhi !== undefined)
+    const placed = decideArrivingLists(s1, OFFICE_ACTOR, [
+      {
+        rows: placeable.map((r) => ({ rowId: r.id, kind: 'place' as const })),
+        placement: { kind: 'slot', slotId: slotIdFor(OKAFOR_STORY_LIST.anaesthetistId, OKAFOR_STORY_LIST.dateISO, OKAFOR_STORY_LIST.session), surgeonId: SURG.okafor },
+      },
+    ])
+    expect(placed.ok).toBe(true)
     expect(scenario('S1').beats.every((b) => b.path(s1.getState()) !== null)).toBe(true)
     expect(beatProblems(scenario('S1'), s1.getState())).toEqual([])
     unwire?.()

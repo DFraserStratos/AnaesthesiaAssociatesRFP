@@ -31,7 +31,7 @@ test('control panel: scenario jump, procedure-day jump, PDF ingest and jobs run 
   await page.getByRole('button', { name: /Procedure day/ }).click()
   await expect(page.getByText(/1 December 2026/)).toBeVisible()
 
-  // S1 scenario jump (catch-up Phase 44): reset only, then the seven beats in order, each a link to
+  // S1 scenario jump (catch-up Phase 44; the Okafor story since the 28 Nov sweep): reset only, then the seven beats in order, each a link to
   // its screen with its steps beside it; a beat whose target does not exist yet waits, disabled, its
   // label saying for what.
   await page.getByRole('button', { name: 'Jump', exact: true }).first().click()
@@ -39,11 +39,11 @@ test('control panel: scenario jump, procedure-day jump, PDF ingest and jobs run 
   const result = page.locator('[data-shot="scenario-result"]')
   await expect(result).toContainText('Reset to the pristine seed; nothing staged. Follow the beats below in order.')
   await expect(result.locator('[data-shot="scenario-beat-2-steps"]')).toHaveText(
-    "Demo actions → Import hospital file (St George's), then Create Booking on Sarah Mitchell's row",
+    "Demo actions → Rooms email a List, then Place in Dr Rutherford's PM; then Rooms re-send the List and St George's sends the day-before List, applying each. Signed in as Dr Rutherford shows his phone",
   )
   await expect(page.getByText(/^Tuesday 24 November 2026 · /)).toBeVisible()
   await expect(result.locator('button[data-shot^="scenario-beat-"]')).toHaveCount(7)
-  await expect(result.locator('[data-shot="scenario-beat-4"]')).toHaveText('Beat 4 · Admin Booking, after Create Booking')
+  await expect(result.locator('[data-shot="scenario-beat-4"]')).toHaveText("Beat 4 · Admin Booking, after Mr Okafor's List is placed")
   await expect(result.locator('[data-shot="scenario-beat-4"]')).toBeDisabled()
   await result.locator('[data-shot="scenario-beat-1"]').click()
   await expect(page).toHaveURL(/\/mobile\/more$/)

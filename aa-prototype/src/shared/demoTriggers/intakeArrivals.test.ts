@@ -92,10 +92,10 @@ const SX_FEED = integrationActorForHospital(HOSP.sx).who
 describe('the six actions are registered as D119 names them', () => {
   it('on Arrivals, in the bar, the feed failure on Sources too; four keep the run sheet label until the sweep', () => {
     expect(DEMO_TRIGGERS.filter((t) => t.id.startsWith('intake-')).map((t) => [t.id, t.label])).toEqual([
-      ['intake-rooms-email-list', 'Receive list with a missing NHI'],
-      ['intake-rooms-resend', 'Receive updated PDF from rooms'],
-      ['intake-stg-day-before', 'Import hospital file'],
-      ['intake-sx-cancels', 'Send update for a matched Booking'],
+      ['intake-rooms-email-list', 'Rooms email a List'],
+      ['intake-rooms-resend', 'Rooms re-send the List'],
+      ['intake-stg-day-before', "St George's sends the day-before List"],
+      ['intake-sx-cancels', 'Southern Cross cancels a Booking'],
       ['intake-scanned-pdf', 'A scanned PDF arrives'],
       ['intake-feed-fails', 'A feed message fails'],
     ])

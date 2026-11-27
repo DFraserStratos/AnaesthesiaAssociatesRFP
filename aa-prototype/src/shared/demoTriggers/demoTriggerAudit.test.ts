@@ -291,8 +291,8 @@ describe('Future-scope entries are deliberate', () => {
   })
 
   it("the rooms' PDF entries are in scope (34, D51; on Arrivals since 68): bar only, no badge; the old ingest and auto-match entries are gone", () => {
-    const pdf = DEMO_TRIGGERS.filter((t) => /pdf/i.test(t.id) || /\bPDF\b/.test(t.label))
-    expect(pdf.map((t) => t.id)).toEqual(['intake-rooms-resend', 'intake-scanned-pdf'])
+    const pdf = DEMO_TRIGGERS.filter((t) => /pdf|intake-rooms/i.test(t.id) || /\bPDF\b/.test(t.label))
+    expect(pdf.map((t) => t.id)).toEqual(['intake-rooms-email-list', 'intake-rooms-resend', 'intake-scanned-pdf'])
     for (const t of pdf) {
       expect(t.badge, t.id).toBeUndefined()
       expect(t.surfaces, t.id).toEqual(['bar'])

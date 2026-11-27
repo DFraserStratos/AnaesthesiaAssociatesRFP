@@ -162,7 +162,7 @@ The Booking shows on the assigned anaesthetist's List on mobile and web, with th
 
 - Intake is an inbox the office decides a List at a time. Nothing applies by itself.
 - Hospitals and surgeons send bookings; they have no login in the prototype.
-- The demo actions send each arrival (**Demo actions → Receive list with a missing NHI**, **Receive updated PDF from rooms**, **Import hospital file**, **Send update for a matched Booking**); their labels are older than the screens they now play.
+- The demo actions send each arrival (**Demo actions → Rooms email a List**, **Rooms re-send the List**, **St George's sends the day-before List**, **Southern Cross cancels a Booking**), each named for what arrives.
 
 ## Workflow 2: plan the day, Draft Lists and late changes
 

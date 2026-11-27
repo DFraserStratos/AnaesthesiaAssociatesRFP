@@ -533,7 +533,7 @@
         <div class="task"><input type="checkbox" id="t0"><label for="t0">In the top bar, <strong>Reset</strong> &#8594; <strong>Confirm reset</strong>. The clock reads Tuesday 24 November 2026 · 8:00. Open the <strong>Anaesthetist Mobile App</strong> from the app switcher.</label></div>
         <div class="task"><input type="checkbox" id="t1"><label for="t1">Beat 1: <strong>More</strong> &#8594; <strong>Sign out</strong>, then <strong>Sign in</strong>. The sign-in screen carries a Provisional pill (OQ-83).</label></div>
         <div class="task"><input type="checkbox" id="t2"><label for="t2">Beat 2: switch to Admin and open <strong>Intake</strong>. It opens on <strong>Arrivals</strong>, "18 to decide", grouped by surgery day.</label></div>
-        <div class="task"><input type="checkbox" id="t3"><label for="t3"><strong>Demo actions &#8594; Receive list with a missing NHI</strong> &#8594; <strong>Run</strong>. Open the new <strong>Mr Okafor · St George's</strong> row (Wed 25 Nov PM, New List): the PDF beside the values read from it.</label></div>
+        <div class="task"><input type="checkbox" id="t3"><label for="t3"><strong>Demo actions &#8594; Rooms email a List</strong> &#8594; <strong>Run</strong>. Open the new <strong>Mr Okafor · St George's</strong> row (Wed 25 Nov PM, New List): the PDF beside the values read from it.</label></div>
         <div class="task"><input type="checkbox" id="t4"><label for="t4">Press <strong>Place in Dr Rutherford's PM</strong>. The List is placed whole, Sione Faleolo as a stub until her NHI arrives.</label></div>
         <div class="task"><input type="checkbox" id="t5"><label for="t5">Beat 3: on <strong>Day view</strong>, open the work card's <strong>Contracts</strong> tab: Dr Rutherford's Wed 25 Nov PM List at St George's heads it, nothing set. Press <strong>Set Contracts</strong>: it opens the List's first Booking, Wiremu Ngata.</label></div>
         <div class="task"><input type="checkbox" id="t6"><label for="t6">On the step rail, <strong>Patient</strong> &#8594; <strong>Standard</strong>. Leave the RVG code empty and press <strong>Save changes</strong>: No contract · RVG.</label></div>
@@ -1483,7 +1483,7 @@ EP-10 (billing, Xero, payments and AA fees) and EP-13 (admin oversight and maste
 <ul>
 <li>Intake is an inbox the office decides a List at a time. Nothing applies by itself.</li>
 <li>Hospitals and surgeons send bookings; they have no login in the prototype.</li>
-<li>The demo actions send each arrival (<strong>Demo actions → Receive list with a missing NHI</strong>, <strong>Receive updated PDF from rooms</strong>, <strong>Import hospital file</strong>, <strong>Send update for a matched Booking</strong>); their labels are older than the screens they now play.</li>
+<li>The demo actions send each arrival (<strong>Demo actions → Rooms email a List</strong>, <strong>Rooms re-send the List</strong>, <strong>St George's sends the day-before List</strong>, <strong>Southern Cross cancels a Booking</strong>), each named for what arrives.</li>
 </ul>
 </div></details>
 <details><summary>Workflow 2: plan the day, Draft Lists and late changes</summary><div class="details-body">
@@ -2608,12 +2608,12 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
 <li>Beat 1 · Mobile sign-in</li>
 <li>Beat 2 · Admin Intake</li>
 <li>Beat 3 · Admin Day</li>
-<li>Beat 4 · Admin Booking, after Create Booking</li>
+<li>Beat 4 · Admin Booking, after Mr Okafor&#39;s List is placed</li>
 <li>Beat 5 · Mobile List, Tue 1 Dec AM</li>
-<li>Beat 6 · Mobile Booking, after Create Booking</li>
+<li>Beat 6 · Mobile Booking, Dylan Kereama</li>
 <li>Beat 7 · Mobile search</li>
 </ul>
-<p>The panel still describes the earlier intake story: Beat 2&#39;s note asks for the St George&#39;s import and then <strong>Create Booking</strong> on Sarah Mitchell&#39;s row, and Beats 4 and 6 wait for a Booking for Sarah Mitchell on Dr Souter&#39;s Tue 1 Dec AM List. Intake no longer has a Create Booking step, so in the framed build those two links stay greyed out. Use the routes in each beat below instead.</p>
+<p>Beat 4 stays greyed out until Mr Okafor&#39;s List is placed in Beat 2. A beat link that opens the Mobile or Web app signs it in as Dr Souter.</p>
 <p>Then open the <strong>Anaesthetist Mobile App</strong>.</p>
 </div>
     </div>
@@ -2635,10 +2635,10 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
       <h4>Beat 2: The rooms&#39; List, then the hospital&#39;s</h4>
       <div class="row"><span class="k">Click</span><div class="v"><ul>
 <li>Switch to Admin and open <strong>Intake</strong>. It opens on <strong>Arrivals</strong>, the inbox. Point at the feed, grouped by surgery day, and the <strong>Sources</strong> tab beside Arrivals.</li>
-<li><strong>Demo actions → Receive list with a missing NHI</strong>, <strong>Run</strong>. Open the new row <strong>Mr Okafor · St George&#39;s</strong> (Wed 25 Nov PM, New List). Choose a value in the table to light its box on the page.</li>
+<li><strong>Demo actions → Rooms email a List</strong>, <strong>Run</strong>. Open the new row <strong>Mr Okafor · St George&#39;s</strong> (Wed 25 Nov PM, New List). Choose a value in the table to light its box on the page.</li>
 <li>Press <strong>Place in Dr Rutherford&#39;s PM</strong>.</li>
-<li>Back on <strong>Arrivals</strong>, <strong>Demo actions → Receive updated PDF from rooms</strong>, <strong>Run</strong>. Open Mr Okafor&#39;s row again, now an Update. Read the version track and the changes, then <strong>Apply changes</strong>.</li>
-<li>Back on <strong>Arrivals</strong>, <strong>Demo actions → Import hospital file</strong>, <strong>Run</strong>. Open <strong>K. Gorman · St George&#39;s</strong> (Matches exactly) and press <strong>Confirm unchanged (2)</strong>.</li>
+<li>Back on <strong>Arrivals</strong>, <strong>Demo actions → Rooms re-send the List</strong>, <strong>Run</strong>. Open Mr Okafor&#39;s row again, now an Update. Read the version track and the changes, then <strong>Apply changes</strong>.</li>
+<li>Back on <strong>Arrivals</strong>, <strong>Demo actions → St George's sends the day-before List</strong>, <strong>Run</strong>. Open <strong>K. Gorman · St George&#39;s</strong> (Matches exactly) and press <strong>Confirm unchanged (2)</strong>.</li>
 <li>Open <strong>Mr Okafor · St George&#39;s</strong> once more, now from St George&#39;s, and press <strong>Apply changes</strong>.</li>
 <li>Filter <strong>Waiting for an NHI</strong> and open <strong>Mere Tipene</strong>.</li>
 <li>Open <strong>People → Surgeons</strong>, search &quot;Okafor&quot; and open <strong>Mr C. Okafor</strong>.</li>
@@ -2668,7 +2668,7 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
       <div class="row"><span class="k">Worth pointing at</span><div class="v"><ul>
 <li><strong>Sources</strong>: &quot;AA reads from these sources and never writes back to them&quot;. Southern Cross (FHIR R4) and St George&#39;s (HL7 v2) read Receiving, the rooms&#39; mailbox (lists@aa.example) Reading, each with its last sent and today&#39;s messages; Forte Health reads &quot;Lists come by PDF to the mailbox&quot;, Not connected. <strong>Today&#39;s messages</strong> lists each message once with what it became.</li>
 <li>Rutherford&#39;s Wed 25 Nov PM List on <strong>Day view</strong>: its drawer reads &quot;Origin · From a rooms&#39; PDF · sent from admin@avonsidesurgical.example&quot; and &quot;Replies go to admin@avonsidesurgical.example&quot;, Gordon Pike &quot;Cancelled&quot;, the other four &quot;Needs an invoice destination&quot;. Placed Bookings land with no Contract; Beat 3 sets them.</li>
-<li>The framed phone is always Dr Souter&#39;s, so Dr Rutherford&#39;s view of the List is narrated, not shown.</li>
+<li>Dr Rutherford&#39;s phone: in the harness bar, open the persona chip (<strong>Signed in as</strong>) and choose <strong>Dr James Rutherford</strong>. Mobile opens on his Lists, Wed 25 Nov PM at St George&#39;s with Mr Okafor&#39;s patients and Sione Faleolo&#39;s stub. Choose <strong>Dr Melanie Souter</strong> again before Beat 5.</li>
 </ul>
 </div></div>
       <div class="row"><span class="k">Handset</span><div class="v"><p>the handset still plays the earlier story onto Dr Souter&#39;s own List: on the Tue 1 Dec AM List, <strong>Demo sheet → Hospital file imported and my booking matched</strong>, choice &quot;St George&#39;s file, Tue 1 Dec AM (S1)&quot;, <strong>Run</strong>. It reads &quot;The office imported St George&#39;s file and matched it. Sarah Mitchell is now on your Tue 1 Dec AM List, the invoice going to the patient at the standard rate (No contract · RVG). The RVG code is yours to add.&quot; The List then reads &quot;0 of 4 complete&quot;, Sarah&#39;s row &quot;RVG code to fill in&quot;. After that its <strong>Run</strong> is greyed out, with the reason &quot;Nothing new from the hospital for your Lists&quot;. Mere Tipene&#39;s stub on Tue 8 Dec PM shows the same on the handset. Arrivals, Sources and the surgeon records belong to the office and have no mobile side.</p>
@@ -2702,7 +2702,7 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
     </div>
     <div class="beat aside">
       <h4>Optional aside: a cancellation from the hospital</h4>
-      <div class="row"><span class="k">Click</span><div class="v"><p>on <strong>Arrivals</strong>, <strong>Demo actions → Send update for a matched Booking</strong>, <strong>Run</strong>. Open the new <strong>Cancellation</strong> row (Dr Garside · Southern Cross, Thu 26 Nov AM), then press <strong>Mark cancelled</strong>.</p>
+      <div class="row"><span class="k">Click</span><div class="v"><p>on <strong>Arrivals</strong>, <strong>Demo actions → Southern Cross cancels a Booking</strong>, <strong>Run</strong>. Open the new <strong>Cancellation</strong> row (Dr Garside · Southern Cross, Thu 26 Nov AM), then press <strong>Mark cancelled</strong>.</p>
 </div></div>
       <div class="row"><span class="k">Say</span><div class="v say"><p>&quot;Southern Cross cancels a Booking. It waits here like anything else, and the Booking is unchanged until the office applies it. Applied, it stays on the List, marked cancelled, so nobody wonders where it went.&quot;</p>
 </div></div>
@@ -3380,15 +3380,15 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
   <details class="demo-scenario"><summary>S3 · Money end to end</summary><div class="details-body">
     <div class="scenario-head">
       <span class="serves"><strong>Serves:</strong> the Billing Engine at the centre: authorise and the pricing snapshot, one invoice per payer, the five pricing kinds, a discount line and a $0 invoice, the Xero pair, the payment detected from Xero, the weekly payment run, AA&#39;s monthly fee and a ledger that balances. <strong>Time:</strong> 11 to 13 minutes.</span>
-      <div class="stage"><strong>Stage it:</strong> Reset → Confirm reset, or Control Panel <strong>S3 · Money end to end → Jump → Confirm jump</strong>. The jump resets to the pristine seed and checks that Dr Souter&#39;s Mon 23 Nov AM and PM Lists are both SUBMITTED on To authorise (it reports a failure if they are not). It shows seven beat links (their older names stay: Beats 4 and 5 open <strong>Finances → Payments</strong>, Beat 6 <strong>Finances → AA fees</strong> and Beat 7 <strong>Finances → Ledger</strong>):</div>
+      <div class="stage"><strong>Stage it:</strong> Reset → Confirm reset, or Control Panel <strong>S3 · Money end to end → Jump → Confirm jump</strong>. The jump resets to the pristine seed and checks that Dr Souter&#39;s Mon 23 Nov AM and PM Lists are both SUBMITTED on To authorise (it reports a failure if they are not). It shows seven beat links:</div>
       <div class="stage-more"><ul>
 <li>Beat 1 · Admin Review</li>
 <li>Beat 2 · Admin Review, Mon 16 Nov</li>
 <li>Beat 3 · Xero pair, after authorise (live once Beat 1 has raised the invoices)</li>
-<li>Beat 4 · Billing monitor</li>
-<li>Beat 5 · Billing monitor</li>
-<li>Beat 6 · AA fee invoices</li>
-<li>Beat 7 · Admin Ledger</li>
+<li>Beat 4 · Admin Finances, Payments</li>
+<li>Beat 5 · Admin Finances, Payments</li>
+<li>Beat 6 · Admin Finances, AA fees</li>
+<li>Beat 7 · Admin Finances, Ledger</li>
 </ul>
 <p>Nothing is invoiced until you authorise live. Run the beats in order, because the invoice numbers below (AA-2026-0002 to 0010) assume it. Two asides must run before a later step: the Split before you authorise the PM List, and Make primary before Beat 2 authorises Mon 16 Nov. Beat 5&#39;s run pays the whole practice, and after it the demo data no longer fits the browser&#39;s storage, so from Beat 6 on nothing more is saved: move between screens with the side nav and the app switcher, never a reload or a typed address, or Beats 6 and 7 are lost (the Jump restores the start).</p>
 </div>
@@ -3800,7 +3800,7 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
 <li>Beat 3 · Admin Booking, Annette Riley</li>
 <li>Beat 4 · Admin Review, Tue 17 Nov AM</li>
 <li>Beat 5 · Admin Booking, after Stage post-op scenario</li>
-<li>Beat 6 · Billing monitor (it opens <strong>Finances → Billing</strong>)</li>
+<li>Beat 6 · Admin Finances, Billing</li>
 <li>Beat 7 · Admin invoice, after Stage post-op scenario</li>
 <li>Beat 8 · Admin Day</li>
 </ul>
@@ -4065,7 +4065,7 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
 </div></div>
       <div class="row"><span class="k">Expected</span><div class="v"><ul>
 <li>Outage: &quot;Xero is unavailable to the Billing Engine. Authorise a List: its hand-offs wait in the Xero sync queue, and every clock change retries what is due.&quot; Authorise reads &quot;1 invoice raised. 1 emailed, 0 to post.&quot; (AA-2026-0011, Alan Prentice, $341.55). Connection reads &quot;Xero is unavailable. Since 08:00&quot;; the row &quot;Xero API unavailable (simulated outage)&quot;, Waiting. After +15 min: 2 attempts, next try 08:19, Retrying. Restore: &quot;Xero is back. The queue sent 1 waiting call in order.&quot;, &quot;Nothing is waiting for Xero.&quot;, <strong>Sent after waiting (2)</strong> after Beat 6. This aside takes AA-2026-0011, so Beat 7&#39;s rebill reads AA-2026-0012.</li>
-<li>Void and edit: &quot;AA-2026-H05 is voided in Xero. The engine does not know yet: run the reconciliation poll (or Next day) and it is flagged on the Billing monitor.&quot; (the action&#39;s own wording; the flag shows on <strong>Finances → Xero</strong>) and &quot;AA-2026-H06 now totals $1,910.00 in Xero. ...&quot; The poll: &quot;Reconciliation poll applied 1 missed payment, flagged 2 invoices changed directly in Xero.&quot; <strong>Xero → Needs action</strong> lists, as changed directly in Xero, AA-2026-H05 &quot;Voided in Xero 08:15&quot; against &quot;Receivable open, $1,410.00&quot; and AA-2026-H06 &quot;Amended in Xero 08:15 · total $1,910.00&quot; against &quot;Receivable open, $1,930.00&quot;. <strong>Resolve</strong> reads &quot;Provisional: the policy for each mismatch is to be agreed with AA.&quot; The missed payment releases AA-2026-H02 ($1,240.00) to Dr Souter&#39;s next run.</li>
+<li>Void and edit: &quot;AA-2026-H05 is voided in Xero. The engine does not know yet: run the reconciliation poll (or Next day) and it is flagged on Finances · Xero.&quot; (the action&#39;s own wording; the flag shows on <strong>Finances → Xero</strong>) and &quot;AA-2026-H06 now totals $1,910.00 in Xero. ...&quot; The poll: &quot;Reconciliation poll applied 1 missed payment, flagged 2 invoices changed directly in Xero.&quot; <strong>Xero → Needs action</strong> lists, as changed directly in Xero, AA-2026-H05 &quot;Voided in Xero 08:15&quot; against &quot;Receivable open, $1,410.00&quot; and AA-2026-H06 &quot;Amended in Xero 08:15 · total $1,910.00&quot; against &quot;Receivable open, $1,930.00&quot;. <strong>Resolve</strong> reads &quot;Provisional: the policy for each mismatch is to be agreed with AA.&quot; The missed payment releases AA-2026-H02 ($1,240.00) to Dr Souter&#39;s next run.</li>
 <li>Bulk: &quot;St George&#39;s remittance landed in Xero: 2 lines matched by invoice number ($1,365.50), and the engine learned each payment by webhook. 1 line could not be matched and waits in Bank reconciliation.&quot; Choose <strong>AA-2026-H04 · $980.00 open</strong> on the unmatched line, <strong>Match in Xero</strong>.</li>
 </ul>
 </div></div>
@@ -4236,7 +4236,7 @@ Both carry the invoice number (the <code>ACCPAY</code>&#39;s ends <code>-P</code
 <li>A blank NHI reads &quot;An NHI is needed to save a Booking.&quot; and <strong>Save booking</strong> stays disabled.</li>
 </ul>
 </div></div>
-      <div class="row"><span class="k">Worth pointing at</span><div class="v"><p><strong>Demo actions → Receive list with a missing NHI</strong> (S1 Beat 2) adds Sione Faleolo to Waiting for an NHI, marked Urgent, as the rooms&#39; List arrives. The Hub entry appears under <strong>Demo actions</strong> only while an NHI lookup is open (Add a booking, Add NHI, or Refresh from NHI register). <strong>Slow</strong> shows &quot;The Hub is slow to answer. Keep waiting, or stop and enter the details by hand.&quot; with <strong>Stop waiting</strong>; the answer arrives after a few seconds.</p>
+      <div class="row"><span class="k">Worth pointing at</span><div class="v"><p><strong>Demo actions → Rooms email a List</strong> (S1 Beat 2) adds Sione Faleolo to Waiting for an NHI, marked Urgent, as the rooms&#39; List arrives. The Hub entry appears under <strong>Demo actions</strong> only while an NHI lookup is open (Add a booking, Add NHI, or Refresh from NHI register). <strong>Slow</strong> shows &quot;The Hub is slow to answer. Keep waiting, or stop and enter the details by hand.&quot; with <strong>Stop waiting</strong>; the answer arrives after a few seconds.</p>
 </div></div>
       <div class="row"><span class="k">Handset</span><div class="v"><ul>
 <li>On Dr Souter&#39;s Tue 8 Dec PM List, Mere Tipene shows &quot;Waiting at intake: no NHI · The office is resolving this&quot;. <strong>Demo sheet → Office adds the NHI to this stub</strong> reads &quot;The office added the NHI. The Booking now stands in the stub&#39;s place.&quot; (Mere Tipene, ZQA1024).</li>

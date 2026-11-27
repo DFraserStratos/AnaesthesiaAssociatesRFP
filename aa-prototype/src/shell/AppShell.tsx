@@ -8,6 +8,7 @@ import { DemoActionsMenu } from './DemoActionsMenu'
 import { DemoClockMenu } from './DemoClockMenu'
 import { DemoResetButton } from './DemoResetButton'
 import { ListsBadgeModeToggle } from './ListsBadgeModeToggle'
+import { AnaesthetistUserMenu } from './AnaesthetistUserMenu'
 import { PersonaChip } from '../shared/PersonaChip'
 import { ScaleBanner } from '../shared/scale/ScaleBanner'
 import { neutral, radius } from '../theme/tokens'
@@ -112,7 +113,12 @@ export function AppShell() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           {/* Demo only (OQ-151): how the Admin side nav's Lists badge counts, shown while on the Lists section. */}
           {location.pathname.startsWith('/admin/lists') && <ListsBadgeModeToggle />}
-          <PersonaChip persona={persona} size={28} gap={8} />
+          {/* The Mobile and Web apps' persona chip is the "Signed in as" menu (any scripted anaesthetist). */}
+          {activeApp === 'mobile' || activeApp === 'web' ? (
+            <AnaesthetistUserMenu onChosen={() => navigate(APP_CONFIG[activeApp].path)} />
+          ) : (
+            <PersonaChip persona={persona} size={28} gap={8} />
+          )}
           <AppSwitcher activeApp={activeApp} onSelect={handleSelect} />
           <DemoActionsMenu />
           <DemoClockMenu />

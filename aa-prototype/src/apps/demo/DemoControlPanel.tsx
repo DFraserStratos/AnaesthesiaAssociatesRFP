@@ -1,3 +1,4 @@
+import { ANAE } from '../../domain/seed'
 import { useMemo, useState } from 'react'
 import { create } from 'zustand'
 import { useNavigate } from 'react-router-dom'
@@ -299,7 +300,10 @@ function ScenarioBeats({ scenario }: { scenario: DemoScenario }) {
               style={{ justifySelf: 'start' }}
               onClick={() => {
                 const path = b.path(useAppStore.getState())
-                if (path !== null) navigate(path)
+                if (path === null) return
+                // A beat on the anaesthetists' apps signs them in as its anaesthetist (Dr Souter unless it says).
+                if (path.startsWith('/mobile') || path.startsWith('/web')) useAppStore.getState().setAnaesthetistUser(b.signInAs ?? ANAE.souter)
+                navigate(path)
               }}
             >
               {b.label}

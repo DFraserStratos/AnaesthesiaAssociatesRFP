@@ -1208,7 +1208,7 @@ function buildMarkers(scenario: BookingScenarioIds): Record<string, SeedMarker> 
       label: 'Integration booking · locked target (SUBMITTED list)',
       entityType: 'booking',
       entityId: scenario.integrationLockedTarget,
-      detail: 'Delaney Fri 20 (SUBMITTED); the S14 message for it stages an ordinary row on Matching, which the office can apply until AUTHORISED.',
+      detail: 'Delaney Fri 20 (SUBMITTED); the S14 message for it stages an ordinary arrival at Intake, which the office can apply until AUTHORISED.',
     },
     includedModifierBooking: {
       label: 'Included modifier · P1 on a Spine group (S3a)',

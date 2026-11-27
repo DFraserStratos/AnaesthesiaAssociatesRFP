@@ -5,11 +5,7 @@
  * or still standing in the feed). Deterministic: the samples are fixed (`OKAFOR_STORY`) and the rows built from the
  * schedule are sorted. Registered in `registry.ts`.
  *
- * Labels: four actions play a beat the demo guide's run sheet scripts under a retired trigger, so until the sweep
- * they keep that trigger's label (D119): Rooms email a List reads "Receive list with a missing NHI", Rooms re-send it
- * reads "Receive updated PDF from rooms", St George's sends the day-before List reads "Import hospital file", and
- * Southern Cross cancels a Booking (a hospital's update to a Booking AA holds) reads "Send update for a matched
- * Booking". The other two carry their D119 labels.
+ * Labels: each carries its D119 name ("Rooms re-send it" reads "Rooms re-send the List"), since the 28 Nov sweep.
  */
 
 import type { AppState } from '../../store'
@@ -77,8 +73,7 @@ function feedFailsRefusal(state: AppState): string | null {
 export const INTAKE_ARRIVAL_TRIGGERS: readonly DemoTrigger[] = [
   {
     id: 'intake-rooms-email-list',
-    // D119: "Rooms email a List" (the run sheet's label kept until the sweep).
-    label: 'Receive list with a missing NHI',
+    label: 'Rooms email a List',
     description:
       "Mr Okafor's rooms email his St George's List for Wed 25 Nov PM to the rooms' mailbox: four patients, Sione Faleolo with no NHI, naming Dr Rutherford, whose PM session is free. It is read at once and lands at the top of Arrivals as a New List, one patient waiting for an NHI. Nothing is decided.",
     screen: INTAKE_ARRIVALS_SCREEN,
@@ -94,8 +89,7 @@ export const INTAKE_ARRIVAL_TRIGGERS: readonly DemoTrigger[] = [
   },
   {
     id: 'intake-rooms-resend',
-    // D119: "Rooms re-send it" (the run sheet's label kept until the sweep).
-    label: 'Receive updated PDF from rooms',
+    label: 'Rooms re-send the List',
     description:
       "Mr Okafor's rooms re-send his Wed 25 Nov PM List: Ingrid Lindqvist moved to 15:30, Helen Brooks added, Gordon Pike no longer on it. Once his List is held (placed from the first PDF), it lands as an Update, with Gordon Pike's Booking to confirm as a removal; before that it lands as a second new List.",
     screen: INTAKE_ARRIVALS_SCREEN,
@@ -122,8 +116,7 @@ export const INTAKE_ARRIVAL_TRIGGERS: readonly DemoTrigger[] = [
   },
   {
     id: 'intake-stg-day-before',
-    // D119: "St George's sends the day-before List" (the run sheet's label kept until the sweep).
-    label: 'Import hospital file',
+    label: "St George's sends the day-before List",
     description:
       "St George's feed sends its Lists for Wed 25 Nov: Mr Okafor's with the hospital's fuller wording, an approval number, a time shift and Sione Faleolo's NHI, and the day's other Lists exactly as AA holds them. It arrives as a hospital file over its Lists. Nothing is decided.",
     screen: INTAKE_ARRIVALS_SCREEN,
@@ -150,8 +143,7 @@ export const INTAKE_ARRIVAL_TRIGGERS: readonly DemoTrigger[] = [
   },
   {
     id: 'intake-sx-cancels',
-    // D119: "Southern Cross cancels a Booking" (the run sheet's label kept until the sweep).
-    label: 'Send update for a matched Booking',
+    label: 'Southern Cross cancels a Booking',
     description:
       "Southern Cross's feed cancels its next Booking ahead (by day, session and time). It waits at Intake as a Cancellation; the Booking is unchanged until the office applies it, and then stays visible, marked cancelled.",
     screen: INTAKE_ARRIVALS_SCREEN,

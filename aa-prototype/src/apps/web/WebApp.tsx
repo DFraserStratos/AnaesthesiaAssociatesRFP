@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { APP_CONFIG } from '../../shell/appConfig'
+import { useAnaesthetistPersona } from '../../shell/anaesthetistUser'
 import { neutral } from '../../theme/tokens'
 import { signInRefusal, useAppStore, useToday, type Actor } from '../../store'
 import { SurfaceProvider } from '../../shared'
@@ -38,7 +38,8 @@ function tabForPath(pathname: string): WebTab | null {
  * Souter (A8); there are no authorise controls anywhere.
  */
 export function WebApp() {
-  const persona = APP_CONFIG.web.persona
+  // Dr Souter, or the anaesthetist the harness bar's "Signed in as" chose.
+  const persona = useAnaesthetistPersona()
   const anaesthetistId = persona.anaesthetistId ?? '34821'
   const actor: Actor = useMemo(
     () => ({ who: persona.name, role: 'anaesthetist', source: 'anaesthetist', anaesthetistId }),

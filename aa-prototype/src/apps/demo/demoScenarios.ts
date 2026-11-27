@@ -36,6 +36,7 @@ import { financePath, invoicePath as financeInvoicePath } from '../admin/screens
 import { inboxPath } from '../admin/screens/intake/intakePaths'
 import { reviewPath as listReviewPath } from '../admin/screens/lists/listsPaths'
 import { DEFAULT_INBOX_QUERY } from '../../domain/intake/inbox'
+import { OKAFOR_STORY_LIST } from '../../domain/intake/hospitalDownloads'
 import { projectedListId } from '../../domain/slots'
 import { rvgModifierByCode } from '../../domain/billing/modifiers'
 import { resetFramedDemo } from '../../shell/framedReset'
@@ -62,6 +63,12 @@ export interface ScenarioBeatLink {
    * <its label in the registry>".
    */
   does?: string
+  /**
+   * Who the framed Mobile and Web apps are signed in as when this beat's link opens one of them
+   * (the harness bar's "Signed in as"); Dr Souter when absent, so a beat link always lands on the
+   * anaesthetist its story follows.
+   */
+  signInAs?: string
 }
 
 export interface DemoScenario {
@@ -97,8 +104,15 @@ const FOLLOW_THE_BEATS = 'Follow the beats below in order.'
 // Path helpers: read from state, null when the target is missing
 // ---------------------------------------------------------------------------
 
-/** Souter's Tue 28 Jul AM List at St George's, where S1's import lands Sarah Mitchell. */
+/** Souter's Tue 1 Dec AM List at St George's, where S1 captures Dylan Kereama on the day. */
 const S1_LIST_ID = SEED_LIST_IDS.integrationStgList
+/** The List in Dr Rutherford's Wed 25 Nov PM, where S1 places Mr Okafor's emailed List (none until it is placed). */
+function okaforListId(state: AppState): string | undefined {
+  const { anaesthetistId, dateISO, session } = OKAFOR_STORY_LIST
+  return Object.values(state.schedule.lists).find(
+    (l) => l.anaesthetistId === anaesthetistId && l.dateISO === dateISO && l.session === session,
+  )?.id
+}
 /** Souter's Wed 22 Jul AM List, where S2 Beat 6 hands Lachlan Robinson's Booking on. */
 const S2_MOVE_LIST_ID = projectedListId(ANAE.souter, '2026-11-25', 'AM')
 /** Dr Sharma's Tue 14 Jul AM List, where S4's post-op and additional invoice beats run. */
@@ -217,7 +231,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
     id: 'S1',
     title: 'S1 · Booking to theatre',
     blurb:
-      "A St George's file arrives, the office matches Sarah Mitchell onto Dr Souter's Tue 1 Dec AM List and sets her Contract, and Dr Souter captures her Booking on the day.",
+      "Mr Okafor's rooms email his List, the office places it on Dr Rutherford's Wed 25 Nov PM and sets its Contracts, he sees it on his phone, and Dr Souter captures her own Tue 1 Dec AM List on the day.",
     stage: (api) => {
       resetFirst(api)
       return { ok: true, message: `${NOTHING_STAGED} ${FOLLOW_THE_BEATS}` }
@@ -225,40 +239,43 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
     beats: [
       { beat: 'Sign-in', label: 'Beat 1 · Mobile sign-in', does: 'Sign out, then sign back in', path: () => '/mobile/more' },
       {
-        beat: 'Import, then match',
+        beat: "The rooms' List, then the hospital's",
         label: 'Beat 2 · Admin Intake',
-        does: "Demo actions → Import hospital file (St George's), then Create Booking on Sarah Mitchell's row",
+        does: "Demo actions → Rooms email a List, then Place in Dr Rutherford's PM; then Rooms re-send the List and St George's sends the day-before List, applying each. Signed in as Dr Rutherford shows his phone",
         path: () => inboxPath(),
       },
       {
         beat: 'The office sets the Contract',
         label: 'Beat 3 · Admin Day',
-        does: "On the To-do tab, Show all, then Set Contract on Sarah Mitchell's entry",
+        does: "Contracts tab: Open List on Wed 25 Nov PM · St George's, open Helen Brooks, then Patient and Standard",
         path: adminDayPath,
       },
       {
         beat: 'The descriptions',
-        label: 'Beat 4 · Admin Booking, after Create Booking',
-        does: 'The wording as received and each description, kept apart',
-        path: (s) => adminBookingPath(s, liveBookingOn(s, S1_LIST_ID, 'Mitchell')?.id),
+        label: "Beat 4 · Admin Booking, after Mr Okafor's List is placed",
+        does: 'Wiremu Ngata: the wording as received and each description, kept apart; then History',
+        path: (s) => {
+          const listId = okaforListId(s)
+          return listId === undefined ? null : adminBookingPath(s, liveBookingOn(s, listId, 'Ngata')?.id)
+        },
       },
       {
         beat: 'The day arrives',
         label: 'Beat 5 · Mobile List, Tue 1 Dec AM',
-        does: 'Procedure day · 1 Dec on the clock beside the app switcher',
+        does: 'Procedure day · 1 Dec, then +1 hour, on the clock beside the app switcher',
         path: (s) => (s.schedule.lists[S1_LIST_ID] === undefined ? null : `/mobile/lists/${S1_LIST_ID}`),
       },
       {
         beat: 'Capture on mobile',
-        label: 'Beat 6 · Mobile Booking, after Create Booking',
-        does: 'Capture her Booking, Mark complete, then submit the List',
-        path: (s) => mobileBookingPath(s, liveBookingOn(s, S1_LIST_ID, 'Mitchell')),
+        label: 'Beat 6 · Mobile Booking, Dylan Kereama',
+        does: 'Start now, Finish now, None apply, Mark complete, then submit the List',
+        path: (s) => mobileBookingPath(s, liveBookingOn(s, S1_LIST_ID, 'Kereama')),
       },
       {
         beat: 'Edit until authorised, then find past work',
         label: 'Beat 7 · Mobile search',
-        does: 'Change the submitted List until it is authorised, then search Mitchell or her NHI',
-        path: () => '/mobile/lists?q=Mitchell',
+        does: 'Amend the submitted List until it is authorised, then search Kereama',
+        path: () => '/mobile/lists?q=Kereama',
       },
     ],
   },
@@ -353,25 +370,25 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       },
       {
         beat: 'Payment, ledger and disbursement',
-        label: 'Beat 4 · Billing monitor',
+        label: 'Beat 4 · Admin Finances, Payments',
         does: 'The payment in from Xero and the payout, by anaesthetist',
         path: () => financePath('payments'),
       },
       {
         beat: 'The weekly payment run',
-        label: 'Beat 5 · Billing monitor',
+        label: 'Beat 5 · Admin Finances, Payments',
         does: 'Demo actions → Stage a payment week, approve its BCTIs, then the remittance advice',
         path: () => financePath('payments'),
       },
       {
         beat: "AA's monthly fee run",
-        label: 'Beat 6 · AA fee invoices',
+        label: 'Beat 6 · Admin Finances, AA fees',
         does: 'Demo actions → Seed a month of BCTIs, then Run monthly fee invoices',
         path: () => financePath('aa-fees'),
       },
       {
         beat: 'The ledger balances',
-        label: 'Beat 7 · Admin Ledger',
+        label: 'Beat 7 · Admin Finances, Ledger',
         does: 'Demo actions → Inject unmatched receipt, then Allocate to invoice',
         path: () => financePath('ledger'),
       },
@@ -420,7 +437,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       },
       {
         beat: 'Billing failure and retry',
-        label: 'Beat 6 · Billing monitor',
+        label: 'Beat 6 · Admin Finances, Billing',
         does: 'Demo actions → Trigger billing failure, then Retry now on its queue row',
         path: () => financePath('billing'),
       },
@@ -452,7 +469,7 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       {
         beat: 'NHI at entry',
         label: 'Beat 2 · Admin Intake, Waiting for NHI',
-        does: 'Demo actions → Receive list with a missing NHI; on an NHI lookup, Demo actions → Hub: Available / Slow / Unavailable',
+        does: 'Demo actions → Rooms email a List; on an NHI lookup, Demo actions → Hub: Available / Slow / Unavailable',
         path: () => inboxPath({ ...DEFAULT_INBOX_QUERY, show: 'needsNhi' }),
       },
       { beat: 'No NHI in Xero, and the leak scan', label: 'Beat 3 · Data inspector', does: 'Demo actions → Scan for NHI leaks', path: () => '/demo/data' },

@@ -21,8 +21,8 @@ import { DEMO_TRIGGERS } from './registry'
  */
 const NOT_SCRIPTED: Readonly<Record<string, string>> = {
   'payer-loses-billing-email': 'Until the sweep scripts it.',
-  'intake-scanned-pdf': "Intake's Okafor story (Phase 68, D119): no run-sheet beat until the sweep scripts it.",
-  'intake-feed-fails': "Intake's Okafor story (Phase 68, D119): no run-sheet beat until the sweep scripts it.",
+  'intake-scanned-pdf': "S4 shows the seeded unreadable PDF and S1's aside the seeded Forte PDF with a value to check; this action (D119) adds another of each for a presenter who wants a fresh one.",
+  'intake-feed-fails': "S4 shows the seeded held Southern Cross message; this action (D119) holds another for a presenter who wants a fresh one.",
   'record-fee-payment': "The AA fee pair's own Record fee payment button tells the same story in S3's aside.",
   'arm-handoff-fault': 'Diagnostic: one failed Xero call that retries itself; the outage pair and Trigger billing failure tell the retry story.',
   'run-archive-job': 'Diagnostic: runs the nightly Xero contact-archive job now; no beat waits on it.',

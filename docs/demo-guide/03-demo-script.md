@@ -172,12 +172,12 @@ Open questions with nothing on screen, raised only where a beat touches them: OQ
 - Beat 1 · Mobile sign-in
 - Beat 2 · Admin Intake
 - Beat 3 · Admin Day
-- Beat 4 · Admin Booking, after Create Booking
+- Beat 4 · Admin Booking, after Mr Okafor's List is placed
 - Beat 5 · Mobile List, Tue 1 Dec AM
-- Beat 6 · Mobile Booking, after Create Booking
+- Beat 6 · Mobile Booking, Dylan Kereama
 - Beat 7 · Mobile search
 
-The panel still describes the earlier intake story: Beat 2's note asks for the St George's import and then **Create Booking** on Sarah Mitchell's row, and Beats 4 and 6 wait for a Booking for Sarah Mitchell on Dr Souter's Tue 1 Dec AM List. Intake no longer has a Create Booking step, so in the framed build those two links stay greyed out. Use the routes in each beat below instead.
+Beat 4 stays greyed out until Mr Okafor's List is placed in Beat 2. A beat link that opens the Mobile or Web app signs it in as Dr Souter.
 
 Then open the **Anaesthetist Mobile App**.
 
@@ -194,10 +194,10 @@ Then open the **Anaesthetist Mobile App**.
 
 - **Click:**
   - Switch to Admin and open **Intake**. It opens on **Arrivals**, the inbox. Point at the feed, grouped by surgery day, and the **Sources** tab beside Arrivals.
-  - **Demo actions → Receive list with a missing NHI**, **Run**. Open the new row **Mr Okafor · St George's** (Wed 25 Nov PM, New List). Choose a value in the table to light its box on the page.
+  - **Demo actions → Rooms email a List**, **Run**. Open the new row **Mr Okafor · St George's** (Wed 25 Nov PM, New List). Choose a value in the table to light its box on the page.
   - Press **Place in Dr Rutherford's PM**.
-  - Back on **Arrivals**, **Demo actions → Receive updated PDF from rooms**, **Run**. Open Mr Okafor's row again, now an Update. Read the version track and the changes, then **Apply changes**.
-  - Back on **Arrivals**, **Demo actions → Import hospital file**, **Run**. Open **K. Gorman · St George's** (Matches exactly) and press **Confirm unchanged (2)**.
+  - Back on **Arrivals**, **Demo actions → Rooms re-send the List**, **Run**. Open Mr Okafor's row again, now an Update. Read the version track and the changes, then **Apply changes**.
+  - Back on **Arrivals**, **Demo actions → St George's sends the day-before List**, **Run**. Open **K. Gorman · St George's** (Matches exactly) and press **Confirm unchanged (2)**.
   - Open **Mr Okafor · St George's** once more, now from St George's, and press **Apply changes**.
   - Filter **Waiting for an NHI** and open **Mere Tipene**.
   - Open **People → Surgeons**, search "Okafor" and open **Mr C. Okafor**.
@@ -221,7 +221,7 @@ Then open the **Anaesthetist Mobile App**.
 - **Worth pointing at:**
   - **Sources**: "AA reads from these sources and never writes back to them". Southern Cross (FHIR R4) and St George's (HL7 v2) read Receiving, the rooms' mailbox (lists@aa.example) Reading, each with its last sent and today's messages; Forte Health reads "Lists come by PDF to the mailbox", Not connected. **Today's messages** lists each message once with what it became.
   - Rutherford's Wed 25 Nov PM List on **Day view**: its drawer reads "Origin · From a rooms' PDF · sent from admin@avonsidesurgical.example" and "Replies go to admin@avonsidesurgical.example", Gordon Pike "Cancelled", the other four "Needs an invoice destination". Placed Bookings land with no Contract; Beat 3 sets them.
-  - The framed phone is always Dr Souter's, so Dr Rutherford's view of the List is narrated, not shown.
+  - Dr Rutherford's phone: in the harness bar, open the persona chip (**Signed in as**) and choose **Dr James Rutherford**. Mobile opens on his Lists, Wed 25 Nov PM at St George's with Mr Okafor's patients and Sione Faleolo's stub. Choose **Dr Melanie Souter** again before Beat 5.
 - **Handset:** the handset still plays the earlier story onto Dr Souter's own List: on the Tue 1 Dec AM List, **Demo sheet → Hospital file imported and my booking matched**, choice "St George's file, Tue 1 Dec AM (S1)", **Run**. It reads "The office imported St George's file and matched it. Sarah Mitchell is now on your Tue 1 Dec AM List, the invoice going to the patient at the standard rate (No contract · RVG). The RVG code is yours to add." The List then reads "0 of 4 complete", Sarah's row "RVG code to fill in". After that its **Run** is greyed out, with the reason "Nothing new from the hospital for your Lists". Mere Tipene's stub on Tue 8 Dec PM shows the same on the handset. Arrivals, Sources and the surgeon records belong to the office and have no mobile side.
 
 #### Optional aside: a rooms' PDF with a value to check, made a Draft List
@@ -243,7 +243,7 @@ Then open the **Anaesthetist Mobile App**.
 
 #### Optional aside: a cancellation from the hospital
 
-- **Click:** on **Arrivals**, **Demo actions → Send update for a matched Booking**, **Run**. Open the new **Cancellation** row (Dr Garside · Southern Cross, Thu 26 Nov AM), then press **Mark cancelled**.
+- **Click:** on **Arrivals**, **Demo actions → Southern Cross cancels a Booking**, **Run**. Open the new **Cancellation** row (Dr Garside · Southern Cross, Thu 26 Nov AM), then press **Mark cancelled**.
 - **Say:** "Southern Cross cancels a Booking. It waits here like anything else, and the Booking is unchanged until the office applies it. Applied, it stays on the List, marked cancelled, so nobody wonders where it went."
 - **Expected:** the press reads "Southern Cross cancelled Kim Hall's Booking on Thu 26 Nov AM. It waits at Intake; the Booking is unchanged until the office applies it." The page reads "Cancellation · 1 patient · surgery in 2 days · from Southern Cross", "Cancels Dr Wong's List", **The Booking the hospital cancelled**: Kim Hall, born 18 MAR 1994, 07:47, Procedure Not sent, Hospital's reason "Cancelled by the patient, to rebook with the rooms"; **Where it lands** Dr Wong · Thu 26 Nov AM, "Southern Cross · Dr Garside · 5 Bookings", and "The Booking stays visible on its List, marked cancelled." with **Reject** and **Mark cancelled**. Marked: "Marked cancelled · Kirsty W., Tue 24 Nov, 08:00" and 4 Bookings.
 - **Handset:** no mobile side.
@@ -725,15 +725,15 @@ About 2 minutes, last, or when someone asks about volume. The full-scale data li
 
 **Serves:** the Billing Engine at the centre: authorise and the pricing snapshot, one invoice per payer, the five pricing kinds, a discount line and a $0 invoice, the Xero pair, the payment detected from Xero, the weekly payment run, AA's monthly fee and a ledger that balances. **Time:** 11 to 13 minutes.
 
-**Stage it:** Reset → Confirm reset, or Control Panel **S3 · Money end to end → Jump → Confirm jump**. The jump resets to the pristine seed and checks that Dr Souter's Mon 23 Nov AM and PM Lists are both SUBMITTED on To authorise (it reports a failure if they are not). It shows seven beat links (their older names stay: Beats 4 and 5 open **Finances → Payments**, Beat 6 **Finances → AA fees** and Beat 7 **Finances → Ledger**):
+**Stage it:** Reset → Confirm reset, or Control Panel **S3 · Money end to end → Jump → Confirm jump**. The jump resets to the pristine seed and checks that Dr Souter's Mon 23 Nov AM and PM Lists are both SUBMITTED on To authorise (it reports a failure if they are not). It shows seven beat links:
 
 - Beat 1 · Admin Review
 - Beat 2 · Admin Review, Mon 16 Nov
 - Beat 3 · Xero pair, after authorise (live once Beat 1 has raised the invoices)
-- Beat 4 · Billing monitor
-- Beat 5 · Billing monitor
-- Beat 6 · AA fee invoices
-- Beat 7 · Admin Ledger
+- Beat 4 · Admin Finances, Payments
+- Beat 5 · Admin Finances, Payments
+- Beat 6 · Admin Finances, AA fees
+- Beat 7 · Admin Finances, Ledger
 
 Nothing is invoiced until you authorise live. Run the beats in order, because the invoice numbers below (AA-2026-0002 to 0010) assume it. Two asides must run before a later step: the Split before you authorise the PM List, and Make primary before Beat 2 authorises Mon 16 Nov. Beat 5's run pays the whole practice, and after it the demo data no longer fits the browser's storage, so from Beat 6 on nothing more is saved: move between screens with the side nav and the app switcher, never a reload or a typed address, or Beats 6 and 7 are lost (the Jump restores the start).
 
@@ -1031,7 +1031,7 @@ Nothing is invoiced until you authorise live. Run the beats in order, because th
 - Beat 3 · Admin Booking, Annette Riley
 - Beat 4 · Admin Review, Tue 17 Nov AM
 - Beat 5 · Admin Booking, after Stage post-op scenario
-- Beat 6 · Billing monitor (it opens **Finances → Billing**)
+- Beat 6 · Admin Finances, Billing
 - Beat 7 · Admin invoice, after Stage post-op scenario
 - Beat 8 · Admin Day
 
@@ -1216,7 +1216,7 @@ Run it from a fresh Reset (or the S4 jump), so the main order's figures stay as 
 - **Say:** "Xero going down doesn't stop the office. Authorising carries on, every call waits in the queue, and when Xero comes back the queue sends them in order, once each. If someone voids or edits an invoice straight in Xero, the daily poll flags it and the ledger keeps what AA issued. When a hospital pays many invoices with one bank payment, Xero matches the lines by invoice number."
 - **Expected:**
   - Outage: "Xero is unavailable to the Billing Engine. Authorise a List: its hand-offs wait in the Xero sync queue, and every clock change retries what is due." Authorise reads "1 invoice raised. 1 emailed, 0 to post." (AA-2026-0011, Alan Prentice, $341.55). Connection reads "Xero is unavailable. Since 08:00"; the row "Xero API unavailable (simulated outage)", Waiting. After +15 min: 2 attempts, next try 08:19, Retrying. Restore: "Xero is back. The queue sent 1 waiting call in order.", "Nothing is waiting for Xero.", **Sent after waiting (2)** after Beat 6. This aside takes AA-2026-0011, so Beat 7's rebill reads AA-2026-0012.
-  - Void and edit: "AA-2026-H05 is voided in Xero. The engine does not know yet: run the reconciliation poll (or Next day) and it is flagged on the Billing monitor." (the action's own wording; the flag shows on **Finances → Xero**) and "AA-2026-H06 now totals $1,910.00 in Xero. ..." The poll: "Reconciliation poll applied 1 missed payment, flagged 2 invoices changed directly in Xero." **Xero → Needs action** lists, as changed directly in Xero, AA-2026-H05 "Voided in Xero 08:15" against "Receivable open, $1,410.00" and AA-2026-H06 "Amended in Xero 08:15 · total $1,910.00" against "Receivable open, $1,930.00". **Resolve** reads "Provisional: the policy for each mismatch is to be agreed with AA." The missed payment releases AA-2026-H02 ($1,240.00) to Dr Souter's next run.
+  - Void and edit: "AA-2026-H05 is voided in Xero. The engine does not know yet: run the reconciliation poll (or Next day) and it is flagged on Finances · Xero." (the action's own wording; the flag shows on **Finances → Xero**) and "AA-2026-H06 now totals $1,910.00 in Xero. ..." The poll: "Reconciliation poll applied 1 missed payment, flagged 2 invoices changed directly in Xero." **Xero → Needs action** lists, as changed directly in Xero, AA-2026-H05 "Voided in Xero 08:15" against "Receivable open, $1,410.00" and AA-2026-H06 "Amended in Xero 08:15 · total $1,910.00" against "Receivable open, $1,930.00". **Resolve** reads "Provisional: the policy for each mismatch is to be agreed with AA." The missed payment releases AA-2026-H02 ($1,240.00) to Dr Souter's next run.
   - Bulk: "St George's remittance landed in Xero: 2 lines matched by invoice number ($1,365.50), and the engine learned each payment by webhook. 1 line could not be matched and waits in Bank reconciliation." Choose **AA-2026-H04 · $980.00 open** on the unmatched line, **Match in Xero**.
 - **Handset:** no mobile side.
 
@@ -1350,7 +1350,7 @@ Each link only opens the screen, in the same tab. In Beat 1 open **History** you
   - The purpose note reads "Looked up on behalf of Dr Melanie Souter (HPI CPN 10SOUM), only to identify this patient. Health Information Privacy Code 2020."
   - With the Hub Unavailable the form shows **HUB SIMULATED AS UNAVAILABLE** and "The Digital Services Hub is not answering. Enter the details by hand, or try again." with **Retry**.
   - A blank NHI reads "An NHI is needed to save a Booking." and **Save booking** stays disabled.
-- **Worth pointing at:** **Demo actions → Receive list with a missing NHI** (S1 Beat 2) adds Sione Faleolo to Waiting for an NHI, marked Urgent, as the rooms' List arrives. The Hub entry appears under **Demo actions** only while an NHI lookup is open (Add a booking, Add NHI, or Refresh from NHI register). **Slow** shows "The Hub is slow to answer. Keep waiting, or stop and enter the details by hand." with **Stop waiting**; the answer arrives after a few seconds.
+- **Worth pointing at:** **Demo actions → Rooms email a List** (S1 Beat 2) adds Sione Faleolo to Waiting for an NHI, marked Urgent, as the rooms' List arrives. The Hub entry appears under **Demo actions** only while an NHI lookup is open (Add a booking, Add NHI, or Refresh from NHI register). **Slow** shows "The Hub is slow to answer. Keep waiting, or stop and enter the details by hand." with **Stop waiting**; the answer arrives after a few seconds.
 - **Handset:**
   - On Dr Souter's Tue 8 Dec PM List, Mere Tipene shows "Waiting at intake: no NHI · The office is resolving this". **Demo sheet → Office adds the NHI to this stub** reads "The office added the NHI. The Booking now stands in the stub's place." (Mere Tipene, ZQA1024).
   - On the Mon 30 Nov AM List, **Demo sheet → Office adds the NHI** plays the whole round: "The office added the NHI: Tomasz Nowak is now on your List."

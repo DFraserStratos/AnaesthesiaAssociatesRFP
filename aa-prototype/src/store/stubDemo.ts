@@ -30,7 +30,7 @@ export function officeAddsNhiRefusal(state: Pick<AppState, 'intake'>, listId: st
   if (stub === undefined) return 'No stub on this List'
   const row = state.intake.rows[stub.importRowId]
   if (row === undefined || fixtureNhiForRow(row) === undefined) return 'No NHI to add for this stub'
-  if (row.corrections?.nhi !== undefined) return 'The NHI is added; the office decides this row on Matching'
+  if (row.corrections?.nhi !== undefined) return 'The NHI is added; the office decides it at Intake'
   return null
 }
 

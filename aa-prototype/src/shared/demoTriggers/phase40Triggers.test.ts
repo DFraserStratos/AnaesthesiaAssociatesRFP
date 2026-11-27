@@ -1,5 +1,5 @@
 /**
- * Catch-up Phase 40's demo triggers: "Receive list with a missing NHI" (since
+ * Catch-up Phase 40's demo triggers: "Rooms email a List" (since
  * build plan Phase 68 the label of Intake's "Rooms email a List"), the
  * patient balance sample in 15a's "Raise sample warnings", the PWA's "Office
  * adds the NHI", and 15a's "Office clears this warning" never listing the
@@ -35,11 +35,11 @@ const ctx = (pathname: string, params: Record<string, string> = {}): DemoTrigger
 const MULTI = SEED_WARNING_SAMPLE_BOOKINGS.multiWarning
 const [, PM_TARGET] = SEED_WARNING_SAMPLE_BOOKINGS.targets
 
-describe('Receive list with a missing NHI (catch-up Phase 40; Intake\'s "Rooms email a List" since Phase 68)', () => {
+describe('Rooms email a List (catch-up Phase 40; Intake\'s "Rooms email a List" since Phase 68)', () => {
   it('shows on Arrivals, receives the List with a patient sent without an NHI, creating nothing, then reads Already received', () => {
     const api = createAppStore()
     const t = byId('intake-rooms-email-list')
-    expect(t.label).toBe('Receive list with a missing NHI')
+    expect(t.label).toBe('Rooms email a List')
     expect(demoTriggersFor(api.getState(), '/admin/intake', 'bar').map((m) => m.trigger.id)).toContain('intake-rooms-email-list')
     const c = ctx('/admin/intake')
     expect(t.disabledReason(api.getState(), c)).toBeNull()

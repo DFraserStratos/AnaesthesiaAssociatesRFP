@@ -4,7 +4,7 @@ import { DemoBadge } from '../../../shared/DemoBadge'
 import { Button, Card, Notice, Pill, TextField } from '../../../shared/ui'
 import { stampText } from '../../../shared/format'
 import { useDemoTriggerContext } from '../../../shared/demoTriggers/context'
-import { ANAE } from '../../../domain/seed'
+import { anaesthetistUserId } from '../../../shell/anaesthetistUser'
 import { latestNoLongerActiveRefusal, recordAnaesthetistSignIn, signInRefusal, useAppStore } from '../../../store'
 import { SIGN_IN_PROVISIONAL, signInSession } from '../../../shared/session/anaesthetistSession'
 import { neutral, type as typeScale } from '../../../theme/tokens'
@@ -36,7 +36,7 @@ type EmailError = 'noEmail' | 'unknown' | null
  * the URL is untouched and sign-in lands where it already points.
  */
 export function SignInScreen() {
-  const demoEmail = useAppStore((s) => s.masters.anaesthetists[ANAE.souter]?.email ?? '')
+  const demoEmail = useAppStore((s) => s.masters.anaesthetists[anaesthetistUserId(s.shell)]?.email ?? '')
   const [email, setEmail] = useState(demoEmail)
   const [password, setPassword] = useState(DEMO_PASSWORD)
   const [emailError, setEmailError] = useState<EmailError>(null)
