@@ -3,7 +3,7 @@
 ## Inputs
 
 - [Notes 2026-11-27 · Donald offer order](../notes/2026-11-27-donald-offer-order.md) (AR-75): Donald's
-  typed decision in the session. Not yet seen by AA or Greg.
+  typed decision in the session. Not yet seen by AA, who can rename the levels easily when they review the prototype (#4); Greg is no longer involved in the project.
 
 ## Questions answered
 

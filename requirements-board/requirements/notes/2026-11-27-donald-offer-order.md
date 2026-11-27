@@ -1,6 +1,6 @@
 # Donald's decision: the priority tiers become an offer order, 2026-11-27
 
-- **Who:** Donald Fraser (Stratos, product owner), with Claude. Greg and AA have not seen it yet.
+- **Who:** Donald Fraser (Stratos, product owner), with Claude. AA has not seen it yet; Greg is no longer involved in the project.
 - **Covered:** what the four admin-only priority tiers are called in the app, and where the short and
   long forms of the names are used.
 - **Standing:** Donald's decision, made for the build. Items it changes go to Verify, not Agreed.
@@ -33,3 +33,8 @@ whole note.
    field on the anaesthetist's card, a table column, a filter); the long form is used where the name
    stands alone, such as the pill on a row of the office's anaesthetist pickers. Bears on US-01.3.6
    and US-12.1.4.
+4. **AA can rename the levels when they see them.** Donald: "Greg isn't involved in the project
+   anymore and these things can be changed easily by AA in the future when they see all of this."
+   The offer order names are the build's working names: AA reviews them with the rest of the
+   prototype and can change them then, without changing how the ordering works. Bears on US-01.3.6
+   and OQ-102.
