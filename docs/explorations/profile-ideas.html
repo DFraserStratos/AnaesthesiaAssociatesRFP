@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Profile Page Ideas</title>
+<title>Profile Page Design</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -178,7 +178,7 @@ main{padding-top:var(--barH)}
 .facts span{font-size:11.5px;color:var(--slate);font-weight:600}
 .facts b{font-size:14.5px;font-weight:600;white-space:nowrap}
 .facts b.mono{font-size:13.5px;font-weight:500}
-.facts b .sd{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:7px;vertical-align:1px}
+.facts b .sd,.hero .open b .sd{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:7px;vertical-align:1px}
 .facts small{font-size:11.5px;color:var(--slate);white-space:nowrap}
 /* specialties: neutral chips and the add select (ChipMultiSelect) */
 .spchips{display:flex;flex-wrap:wrap;gap:6px}
@@ -262,189 +262,137 @@ main{padding-top:var(--barH)}
 .legend i.pub{background:repeating-linear-gradient(135deg,var(--sunken) 0 3px,#fff 3px 6px);border:1px solid var(--line)}
 .legend i.free{border:1.5px dashed var(--lineStrong)}
 
-/* tabs */
-.ltabs{display:flex;gap:24px;border-bottom:1px solid var(--line);flex:none}
-.ltabs > span{font-size:14px;font-weight:600;color:var(--slate);padding:0 0 10px;border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;align-items:center;gap:7px}
-.ltabs > span.on{color:var(--ink);border-color:var(--teal)}
-.ltabs .n{font-size:11px;font-weight:600;color:var(--slate);background:var(--sunken);border-radius:999px;padding:0 7px;line-height:18px;font-family:"Spline Sans Mono",monospace}
-.tool{display:flex;gap:10px;align-items:center;flex:none}
-.tool .end{margin-left:auto}
-.sumline{font-size:12.5px;color:var(--slate)}
-.sumline b{color:var(--ink);font-weight:600}
-
-/* timeline (E) */
-.tlr{display:grid;grid-template-columns:120px minmax(0,1fr) 300px 92px;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--grid)}
-.tlr:first-of-type{border-top:0}
-.tlr .when b{display:block;font-weight:600;font-size:13px}
-.tlr .when span{font-size:11.5px;color:var(--mist);font-family:"Spline Sans Mono",monospace}
-.tlr .what b{font-weight:600;font-size:13px}
-.tlr .what span{display:block;color:var(--slate);font-size:12px}
-.occ{display:flex;gap:5px;flex-wrap:wrap}
-.oc{font-family:"Spline Sans Mono",monospace;font-size:11px;border-radius:6px;padding:1px 7px;background:var(--sunken);color:var(--slate);white-space:nowrap}
-.oc.chg{background:var(--warnTint);color:var(--warnOn)}
-.oc.dl{background:var(--errTint);color:var(--errOn)}
-.oc.end{background:none;color:var(--mist);padding-left:2px}
-.tlr .acts{text-align:right}
-.tlhead{display:grid;grid-template-columns:120px minmax(0,1fr) 300px 92px;gap:12px;font-size:11.5px;color:var(--slate);font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--line)}
+/* ---------- the five bar treatments ---------- */
+/* 1: cells share the width */
+.facts.stretch div{flex:1}
+/* 2: the bar hugs its content; the status action sits at the row's end */
+.factrow{display:flex;align-items:center;gap:16px;flex:none}
+.factrow .facts{flex:none}
+.factrow .sp{flex:1}
+.facts b .since{font-weight:500;font-size:12.5px;color:var(--slate);margin-left:6px}
+/* 3: contact actions anchor the right end */
+.facts .reach{margin-left:auto;flex-direction:row;align-items:center;gap:18px;padding:0 20px}
+.reach a{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--teal);text-decoration:none;white-space:nowrap}
+.reach a .mono{font-weight:500;color:var(--ink)}
+.reach svg{width:15px;height:15px;color:var(--teal);flex:none}
+/* 4: no box; facts sit in the header row */
+.hero .open{display:flex;gap:28px;align-items:flex-start;flex:none}
+.hero .open div{display:flex;flex-direction:column;gap:1px}
+.hero .open span{font-size:11.5px;color:var(--slate);font-weight:600}
+.hero .open b{font-size:14px;font-weight:600;white-space:nowrap}
+.hero .open b.mono{font-size:13px;font-weight:500}
+/* 5: one header card; the facts run along its foot */
+.hcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--e1);flex:none;overflow:hidden}
+.hcard .top{display:flex;align-items:center;gap:16px;padding:16px 20px}
+.hcard .top .t{flex:1;min-width:0}
+.hcard .facts{border:0;border-top:1px solid var(--line);border-radius:0;box-shadow:none;background:var(--bg)}
+.hcard .facts div{padding:9px 20px}
+.hcard .facts div:last-child{border-right:1px solid var(--line)}
+.hero h1,.hcard h1{font-size:24px;letter-spacing:-.015em;line-height:30px}
 </style>
 </head>
 <body>
 
 <header class="bar">
-  <div class="ttl">Anaesthetist and surgeon profiles<small>Ideas, 27 November 2026</small></div>
+  <div class="ttl">Profile page · option C<small>The header bar, 27 November 2026</small></div>
   <nav class="opts" role="tablist" aria-label="Ideas" id="opts"></nav>
-  <div class="keys"><span class="hint"><span class="kbd">←</span> <span class="kbd">→</span> or <span class="kbd">1</span> to <span class="kbd">7</span> to switch</span>
+  <div class="keys"><span class="hint"><span class="kbd">←</span> <span class="kbd">→</span> or <span class="kbd">1</span> to <span class="kbd">6</span> to switch</span>
     <button class="step" id="prev" aria-label="Previous idea">‹</button><button class="step" id="next" aria-label="Next idea">›</button></div>
 </header>
 
 <main id="views">
 
-<!-- ================= START ================= -->
-<section class="view" id="v-start" data-name="Start" role="tabpanel">
-  <div class="doc"><div class="in">
-    <h1>Profiles that show the person's usual week</h1>
-    <p class="lede">Recurring bookings live in one place today: Master data › Recurring bookings, a single table of every standing arrangement in the practice. That list is useful for the office's overview. But the question asked most is about one person: "what does Dr Souter usually do on a Tuesday?" or "who covers Ms Patel's Wednesday afternoons?" This page draws five ways to put each person's recurring bookings on their own profile, and to tidy the profiles while we're there. Every idea has an anaesthetist view (Dr Melanie Souter) and a surgeon view (Ms K. Patel), drawn from the seed.</p>
-
-    <h2>What the catalogue says a profile holds</h2>
-    <div class="find">
-      <div class="fc"><h3>Anaesthetist</h3><ul>
-        <li>Identity: name, registration number (the key), HPI CPN (mandatory)</li>
-        <li>Contact: phone and email</li>
-        <li>Bank account (mandatory) and GST number</li>
-        <li>Rate per unit and priority tier (tier is office only)</li>
-        <li>Status: start date, last day, reason</li>
-      </ul><p class="ref">US-12.1.4 · US-12.1.1 · US-01.3.6 · US-12.1.6</p></div>
-      <div class="fc"><h3>Surgeon</h3><ul>
-        <li>Identity: name, practice (plain text), NZ medical registration number, HPI CPN (optional, unique)</li>
-        <li>Specialties: one or more, usually one</li>
-        <li>Contacts: one personal, one or more office</li>
-        <li>Status: Active or Retired</li>
-      </ul><p class="ref">US-13.6.2 · US-13.6.5 · US-13.6.6</p></div>
-      <div class="fc"><h3>Both pages' side panel</h3><ul>
-        <li>Pairings, Preferred and Not preferred (office only)</li>
-        <li>Contracts linked to them</li>
-        <li>Next Lists</li>
-        <li>History of changes</li>
-      </ul><p class="ref">US-12.1.4 · US-13.6.2 · US-13.6.3 · US-13.6.4</p></div>
-    </div>
-
-    <h2>Why recurring bookings belong on the profile</h2>
-    <div class="find two">
-      <div class="fc"><h3>They're a standing arrangement between two people</h3><p>A recurring booking pairs a hospital, an anaesthetist, a surgeon, a weekday and a session (US-01.3.2), and drives about 80% of the Lists. So it belongs to both profiles. The anaesthetist's page shows the surgeon, and the surgeon's page shows the anaesthetist.</p></div>
-      <div class="fc"><h3>The catalogue left "edit from both ends" open</h3><p>US-01.3.2's note says the surgeon and the anaesthetist each keep their own arrangements, and that editing one from either end is unsettled. A section on each profile that opens the same Add and Edit sheet, with that person already filled in, settles it without a second record.</p></div>
-      <div class="fc"><h3>The "Next Lists" panel only shows what's already made</h3><p>Next Lists shows the three Lists from today. It doesn't say which are regular and which are one-offs, or what the person's week looks like after the canvas horizon.</p></div>
-      <div class="fc"><h3>Things to keep in mind</h3><p>Public sessions are not recurring bookings: they are a weekly Public series on the anaesthetist's availability (since Phase 32d). Some ideas show them in the week, greyed and marked as availability. Retired recurring bookings stay for history and never project.</p></div>
-    </div>
-
-    <h2>The five ideas</h2>
-    <div class="opts-list" id="olist"></div>
-    <p class="gate">Each mock marks the new recurring bookings section with a teal <span class="newtag" style="margin-left:2px">NEW</span> tag. The tag is only a review aid here; it isn't part of the design.</p>
-  </div></div>
-</section>
-
-<!-- ================= A ================= -->
-<section class="view" id="v-a" data-name="A" role="tabpanel">
-  <div class="vhead"><div class="grow"><h2><span class="l">A</span>One more panel section</h2>
-    <p>Keep today's page as it is and add "Recurring bookings" to the side panel, between Pairings and Contracts, in the same three rows and See all as its neighbours. Add opens today's sheet with the person filled in.</p></div>
-    <div class="subs" data-for="a"><button aria-pressed="true" data-f="a1">Anaesthetist</button><button data-f="a2">Surgeon</button></div></div>
-  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="a1"></div><div class="frame" id="a2"></div></div></div>
+<!-- ================= 1 ================= -->
+<section class="view" id="v-1" data-name="1" role="tabpanel">
+  <div class="vhead"><div class="grow"><h2><span class="l">1</span>Cells share the width</h2>
+    <p>The bar keeps its full width, and every cell stretches to an equal share, so the last one ends at the bar's edge. "Active since" gets its own cell, so the Status cell drops back to one line.</p></div>
+    <div class="subs"><button aria-pressed="true" data-f="f1a">Anaesthetist</button><button data-f="f1s">Surgeon</button></div></div>
+  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="f1a"></div><div class="frame" id="f1s"></div></div></div>
     <aside class="why">
       <section class="for"><h3>For</h3><ul>
-        <li>The smallest change: one more <code>RailSection</code>, the pattern the Contracts and Next Lists sections already use.</li>
-        <li>Nothing about the cards moves, so the demo guide and screenshots barely change.</li>
+        <li>The smallest change: one rule, and nothing hangs off an edge.</li>
+        <li>Lines up as a row of equal columns, like a summary table.</li>
       </ul></section>
       <section class="against"><h3>Against</h3><ul>
-        <li>Three rows of a 320px panel is cramped for an arrangement with five facts.</li>
-        <li>The week can't be seen at a glance; a full-time anaesthetist has six or more rows behind See all.</li>
-        <li>The page itself doesn't look any better.</li>
+        <li>Short values ("Tier 2") sit in wide cells with a lot of space after them.</li>
+        <li>The anaesthetist bar has six cells and the surgeon bar five, so the two pages' columns don't match.</li>
+        <li>A long practice name gets squeezed into an equal share.</li>
       </ul></section>
-      <section class="size"><b>Build size</b><span class="meter"><i class="f"></i><i></i><i></i><i></i><i></i></span></section>
     </aside></div>
 </section>
 
-<!-- ================= B ================= -->
-<section class="view" id="v-b" data-name="B" role="tabpanel">
-  <div class="vhead"><div class="grow"><h2><span class="l">B</span>Tidied cards and a recurring bookings table</h2>
-    <p>Merge the small cards so the main column reads as one profile: Identity and Contact become one Details card, and the money cards sit side by side. Recurring bookings then get a full-width card, with a table, Edit and Retire as text actions, and retired rows behind a toggle.</p></div>
-    <div class="subs" data-for="b"><button aria-pressed="true" data-f="b1">Anaesthetist</button><button data-f="b2">Surgeon</button></div></div>
-  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="b1"></div><div class="frame" id="b2"></div></div></div>
+<!-- ================= 2 ================= -->
+<section class="view" id="v-2" data-name="2" role="tabpanel">
+  <div class="vhead"><div class="grow"><h2><span class="l">2</span>The bar hugs its content</h2>
+    <p>The bar is only as wide as its facts, so its last divider is its own edge. "Make inactive" (or "Retire" for a surgeon) sits at the far end of the same row, filling the space with something useful. "Since 9 Jun 2014" goes on the Status line in smaller type.</p></div>
+    <div class="subs"><button aria-pressed="true" data-f="f2a">Anaesthetist</button><button data-f="f2s">Surgeon</button></div></div>
+  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="f2a"></div><div class="frame" id="f2s"></div></div></div>
     <aside class="why">
       <section class="for"><h3>For</h3><ul>
-        <li>The table has the same columns as Master data's list, so it reads the same in both places.</li>
-        <li>Fewer, larger cards: the page reads as a profile, not six forms.</li>
-        <li>Every action is in the row, as on Draft Lists.</li>
+        <li>Every cell is as wide as its value; nothing is padded out.</li>
+        <li>The status action sits right beside the status, where the office looks for it.</li>
+        <li>One line high on both pages.</li>
       </ul></section>
       <section class="against"><h3>Against</h3><ul>
-        <li>A table still doesn't show the week's shape (gaps, double days).</li>
-        <li>Merging cards changes what one Save covers (two cards become one edit).</li>
+        <li>The bar's width changes from person to person (a long practice name makes it wider).</li>
+        <li>The status action moves out of the Status card; the card goes, or keeps only the history of last days.</li>
       </ul></section>
-      <section class="size"><b>Build size</b><span class="meter"><i class="f"></i><i class="f"></i><i></i><i></i><i></i></span></section>
     </aside></div>
 </section>
 
-<!-- ================= C ================= -->
-<section class="view" id="v-c" data-name="C" role="tabpanel">
-  <div class="vhead"><div class="grow"><h2><span class="l">C</span>The usual week first</h2>
-    <p>A new header (initials, name, and a strip of key facts that holds the status and HPI CPN) sits over a Monday to Friday, AM and PM grid of the person's recurring bookings: the usual week. Clicking a block opens the Edit sheet, and an empty half-day opens Add for that day. The detail cards move below; a surgeon's Specialties get their own card, edited as removable chips.</p></div>
-    <div class="subs" data-for="c"><button aria-pressed="true" data-f="c1">Anaesthetist</button><button data-f="c2">Surgeon</button><button data-f="c3">Editing specialties</button></div></div>
-  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="c1"></div><div class="frame" id="c2"></div><div class="frame" id="c3"></div></div></div>
+<!-- ================= 3 ================= -->
+<section class="view" id="v-3" data-name="3" role="tabpanel">
+  <div class="vhead"><div class="grow"><h2><span class="l">3</span>Contact on the right</h2>
+    <p>The record facts sit on the left. Phone and email move to the right end as contact links (a phone and a mail icon, each with its value), behind a divider. The space in the middle now separates "who they are" from "how to reach them", so it reads as deliberate. "Since" goes on the Status line.</p></div>
+    <div class="subs"><button aria-pressed="true" data-f="f3a">Anaesthetist</button><button data-f="f3s">Surgeon</button></div></div>
+  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="f3a"></div><div class="frame" id="f3s"></div></div></div>
     <aside class="why">
       <section class="for"><h3>For</h3><ul>
-        <li>Answers "what does their week look like" in one look, for both kinds of person.</li>
-        <li>On a surgeon, the grid shows who covers each session; two anaesthetists in one session stack in the cell.</li>
-        <li>The anaesthetist's grid can show Public sessions, greyed, so free half-days are really free.</li>
-        <li>The fact strip leads with Status (a green dot, or "Inactive from" or "Retired" in its place) and the HPI CPN, then what the office checks most: rate and tier, or specialties and practice.</li>
-        <li>Specialties use the app's existing chip picker (<code>ChipMultiSelect</code>): pick from AA's list to add one, × to remove, at least one kept. "Editing specialties" shows Ms Patel with a second one, Gastroenterology, just added.</li>
+        <li>Both ends of the bar are anchored, and the bar keeps its full width.</li>
+        <li>The phone number is the thing the office does something with: it now looks like a link, not a fact.</li>
+        <li>On a surgeon, the office contact is the one emails go to first (US-13.6.5), so it belongs there.</li>
       </ul></section>
-      <section><h3>Still to confirm with AA</h3><p>Whether a surgeon can hold more than one specialty (US-13.6.6 allows it; Ben said "No" on 5 Nov). If AA says one only, the same card holds a single select instead of chips.</p></section>
       <section class="against"><h3>Against</h3><ul>
-        <li>A new component: no week grid like it exists in Admin (the DayGrid is a day of the whole practice).</li>
-        <li>Weekend sessions and start or end dates don't fit the grid; they need a note or a list view.</li>
-        <li>Details sit below the fold on a laptop.</li>
+        <li>A tel: or mailto: link from a desktop app may do nothing useful; a copy button may suit better.</li>
+        <li>The Contact card below repeats the phone and email.</li>
       </ul></section>
-      <section class="size"><b>Build size</b><span class="meter"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></span></section>
     </aside></div>
 </section>
 
-<!-- ================= D ================= -->
-<section class="view" id="v-d" data-name="D" role="tabpanel">
-  <div class="vhead"><div class="grow"><h2><span class="l">D</span>Tabs</h2>
-    <p>The same new header, then tabs: Details, Recurring bookings, Lists, Contracts, Pairings, History. Each section gets a full-width page, so the recurring bookings tab can carry filters and a summary line. Shown here with the Recurring bookings tab open.</p></div>
-    <div class="subs" data-for="d"><button aria-pressed="true" data-f="d1">Anaesthetist</button><button data-f="d2">Surgeon</button></div></div>
-  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="d1"></div><div class="frame" id="d2"></div></div></div>
+<!-- ================= 4 ================= -->
+<section class="view" id="v-4" data-name="4" role="tabpanel">
+  <div class="vhead"><div class="grow"><h2><span class="l">4</span>No box</h2>
+    <p>Drop the bar's border. The facts sit as plain label and value pairs in the header row, to the right of the name, so there's no edge to hang off. "Active since 9 Jun 2014" becomes the Status value's own words.</p></div>
+    <div class="subs"><button aria-pressed="true" data-f="f4a">Anaesthetist</button><button data-f="f4s">Surgeon</button></div></div>
+  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="f4a"></div><div class="frame" id="f4s"></div></div></div>
     <aside class="why">
       <section class="for"><h3>For</h3><ul>
-        <li>Room to grow: Lists, Contracts and History each get a full table instead of three rows.</li>
-        <li>Each tab is short; nothing scrolls on a laptop.</li>
-        <li>Tabs are a pattern Admin already uses (People, Lists, Finances).</li>
+        <li>The calmest header: one row instead of two, so the usual week moves up about 70px.</li>
+        <li>Nothing to align, so nothing can look unfinished.</li>
       </ul></section>
       <section class="against"><h3>Against</h3><ul>
-        <li>No single screen shows the whole person; the office clicks between tabs.</li>
-        <li>Undoes the record pattern (cards plus side panel) that Contracts and Parties share.</li>
-        <li>The most rework of the screenshots and demo guide.</li>
+        <li>The facts compete with the name for the eye.</li>
+        <li>Five facts beside a long name won't fit on a laptop; they wrap under it.</li>
       </ul></section>
-      <section class="size"><b>Build size</b><span class="meter"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i></span></section>
     </aside></div>
 </section>
 
-<!-- ================= E ================= -->
-<section class="view" id="v-e" data-name="E" role="tabpanel">
-  <div class="vhead"><div class="grow"><h2><span class="l">E</span>Schedule first, details compact</h2>
-    <p>The main column becomes "Schedule": each recurring booking on a row with its next four dates, where any date that won't run as usual is coloured (surgeon changed, sent to a Draft List). All the profile fields fold into one compact Details card in the side panel, each section with its own Edit.</p></div>
-    <div class="subs" data-for="e"><button aria-pressed="true" data-f="e1">Anaesthetist</button><button data-f="e2">Surgeon</button></div></div>
-  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="e1"></div><div class="frame" id="e2"></div></div></div>
+<!-- ================= 5 ================= -->
+<section class="view" id="v-5" data-name="5" role="tabpanel">
+  <div class="vhead"><div class="grow"><h2><span class="l">5</span>One header card</h2>
+    <p>The name, avatar and status action sit in one card, and the facts run along its foot as a tinted strip. The strip ends with a divider after the last fact, and the rest is just the card's footer, so it reads as finished. "Active since" gets its own cell, so the strip stays one line.</p></div>
+    <div class="subs"><button aria-pressed="true" data-f="f5a">Anaesthetist</button><button data-f="f5s">Surgeon</button></div></div>
+  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="f5a"></div><div class="frame" id="f5s"></div></div></div>
     <aside class="why">
       <section class="for"><h3>For</h3><ul>
-        <li>Shows the recurring booking and what it actually made, so exceptions are visible before the day.</li>
-        <li>Merges "Next Lists" into the schedule: one place for the person's sessions.</li>
-        <li>Details stay one click from editing, in less space.</li>
+        <li>The empty space belongs to a card, so it reads as layout, not a gap.</li>
+        <li>The header becomes one object, like a contact card: who, how they stand, the action.</li>
+        <li>Cells stay as wide as their values; the two pages look alike however many facts each has.</li>
       </ul></section>
       <section class="against"><h3>Against</h3><ul>
-        <li>Puts the schedule ahead of identity and bank details, which the office edits less but must find fast.</li>
-        <li>Working out each date's status reads the projection and the Lists: new domain code.</li>
-        <li>A narrow Details card is tight for bank details and contacts.</li>
+        <li>One more card on a page of cards; the header carries a bit more weight than today.</li>
+        <li>A little taller than idea 2.</li>
       </ul></section>
-      <section class="size"><b>Build size</b><span class="meter"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i></span></section>
     </aside></div>
 </section>
 
@@ -452,9 +400,9 @@ main{padding-top:var(--barH)}
 <section class="view" id="v-decide" data-name="Decide" role="tabpanel">
   <div class="doc"><div class="in">
     <h1>Decide</h1>
-    <div class="reco"><h3>My pick: C, the usual week first</h3>
-      <p>The grid answers the question the office actually asks, for both kinds of person, and it's the only idea where the page looks clearly better than today. It keeps the record pattern: cards below, side panel on the right.</p>
-      <p>From B, I'd borrow the table as a "List" toggle on the same card (for weekend sessions, start and end dates and retired rows). From E, the coloured exception dates could come later, as a second step.</p></div>
+    <div class="reco"><h3>My pick: 5, one header card</h3>
+      <p>Idea 5 solves both problems without trade-offs. The empty space at the end of the strip sits inside a card's footer, so nothing hangs. "Active since" gets its own short cell, so the strip stays one line. And the Make inactive / Retire action gets a natural home in the card's top corner.</p>
+      <p>Idea 2 is close behind, and is the one I'd take if the header should stay lighter.</p></div>
     <div id="qs"></div>
     <div class="copy"><button class="cbtn" id="copy">Copy my answers</button><span class="copied" id="copied"></span></div>
   </div></div>
@@ -465,70 +413,64 @@ main{padding-top:var(--barH)}
 <script>
 (() => {
   /* ===================== the people (seed: domain/seed/cast.ts, recurringBookings.ts) ===================== */
-  // Recurring booking: d day, s session, h hospital, o the other person, k kind, runs, occ next four [date, cls, title]
   const SOUTER = {
     kind: 'a', back: 'Anaesthetists', name: 'Dr Melanie Souter', init: 'MS',
-    chip: ['HPI CPN', '10SOUM'],
-    sub: 'Registration <span class="mono">34821</span> · Active',
-    subRich: 'Anaesthetist · Registration <span class="mono">34821</span>',
-    status: ['o', 'Active'],
-    facts: [['Status', '<i class="sd"></i>Active', 0, 'since 9 Jun 2014'], ['HPI CPN', '10SOUM', 1], ['Rate per unit', '$26.50', 1], ['Priority tier', 'Tier 2'], ['Phone', '021 555 0134', 1]],
-    cards: [
-      ['Identity', [['Name', 'Dr Melanie Souter'], ['Registration number', '34821', 1], ['HPI CPN', '10SOUM', 1]]],
-      ['Contact', [['Phone', '021 555 0134', 1], ['Email', 'm.souter@aa-associates.example']]],
-      ['Bank and GST', [['Bank account', '12-3100-•••••21-00', 1, 'Melanie Souter'], ['GST number', '104348211', 1]]],
-      ['Rate and tier', [['Rate per unit', '$26.50', 1], ['Priority tier', 'Tier 2']]],
-      ['Status', [['Status', 'Active'], ['Active since', '9 Jun 2014', 1]]],
-    ],
-    otherLabel: 'Surgeon',
+    sub: 'Anaesthetist · Registration <span class="mono">34821</span>',
+    action: 'Make inactive',
+    since: '9 Jun 2014',
+    facts: [['HPI CPN', '10SOUM', 1], ['Rate per unit', '$26.50', 1], ['Priority tier', 'Tier 2']],
+    phone: '021 555 0134', email: 'm.souter@aa-associates.example',
+    cards: {
+      Identity: [['Name', 'Dr Melanie Souter'], ['Registration number', '34821', 1], ['HPI CPN', '10SOUM', 1]],
+      Contact: [['Phone', '021 555 0134', 1], ['Email', 'm.souter@aa-associates.example']],
+      'Bank and GST': [['Bank account', '12-3100-•••••21-00', 1, 'Melanie Souter'], ['GST number', '104348211', 1]],
+      'Rate and tier': [['Rate per unit', '$26.50', 1], ['Priority tier', 'Tier 2']],
+    },
     rb: [
-      { d: 'Mon', s: 'AM', h: 'Forte Health', o: 'Mr C. Okafor', k: 'Private', runs: 'Ongoing', occ: [['30 Nov'], ['7 Dec'], ['14 Dec'], ['21 Dec']] },
-      { d: 'Mon', s: 'PM', h: "St George's", o: 'Ms G. Lim', k: 'Private', runs: 'Ongoing', occ: [['30 Nov'], ['7 Dec', 'chg', 'Surgeon changed to Mr D. Kwan'], ['14 Dec'], ['21 Dec']] },
-      { d: 'Tue', s: 'AM', h: "St George's", o: 'Mr T. Hale', k: 'Private', runs: 'Ongoing', occ: [['1 Dec'], ['8 Dec'], ['15 Dec'], ['22 Dec']] },
-      { d: 'Tue', s: 'PM', h: 'Southern Cross', o: 'Ms K. Patel', k: 'Private', runs: 'Until Tue 15 Dec', occ: [['Today'], ['1 Dec'], ['8 Dec'], ['15 Dec'], ['ends', 'end']] },
-      { d: 'Wed', s: 'AM', h: 'Christchurch Eye Surgery', o: 'Mr J. Whitford', k: 'Private', runs: 'Ongoing', occ: [['25 Nov'], ['2 Dec'], ['9 Dec'], ['16 Dec', 'dl', 'Holiday: sent to a Draft List']] },
-      { d: 'Thu', s: 'PM', h: 'AA rooms', o: 'Ms K. Patel', k: 'Pre-op', t: '13:00 to 17:00', runs: 'Ongoing', occ: [['26 Nov'], ['3 Dec'], ['10 Dec'], ['17 Dec']] },
+      { d: 'Mon', s: 'AM', h: 'Forte Health', o: 'Mr C. Okafor', k: 'Private', runs: 'Ongoing' },
+      { d: 'Mon', s: 'PM', h: "St George's", o: 'Ms G. Lim', k: 'Private', runs: 'Ongoing' },
+      { d: 'Tue', s: 'AM', h: "St George's", o: 'Mr T. Hale', k: 'Private', runs: 'Ongoing' },
+      { d: 'Tue', s: 'PM', h: 'Southern Cross', o: 'Ms K. Patel', k: 'Private', runs: 'Until Tue 15 Dec' },
+      { d: 'Wed', s: 'AM', h: 'Christchurch Eye Surgery', o: 'Mr J. Whitford', k: 'Private', runs: 'Ongoing' },
+      { d: 'Thu', s: 'PM', h: 'AA rooms', o: 'Ms K. Patel', k: 'Pre-op', t: '13:00 to 17:00', runs: 'Ongoing' },
     ],
-    retired: [{ d: 'Fri', s: 'AM', h: 'Forte Health', o: 'Mr C. Okafor', k: 'Private', runs: 'Retired 2 Nov' }],
+    retired: 1,
     pub: [{ d: 'Thu', s: 'AM', h: 'Christchurch Public', n: 'Acute theatre' }],
     pairings: [['p', 'Mr T. Hale'], ['p', 'Ms K. Patel']],
     contracts: [['Dr Souter price list · knee arthroscopy', 'Fixed price'], ['Dr Souter price list · cataract', 'Fixed price'], ['Southern Cross day surgery', "Southern Cross · RVG at the Contract's rate"]],
     contractCount: 5,
     next: [['Today · PM', 'Southern Cross · Ms K. Patel'], ['Wed 25 Nov · AM', 'Christchurch Eye Surgery · Mr J. Whitford'], ['Thu 26 Nov · AM', 'Christchurch Public · Acute theatre']],
     nextCount: 61,
-    summary: '<b>6 recurring bookings</b> · 5 theatre sessions and 1 pre-op clinic a week · about 26 Lists a month · plus 1 weekly Public session (from availability)',
+    count: '6 recurring bookings',
   };
   const PATEL = {
     kind: 's', back: 'Surgeons', name: 'Ms K. Patel', init: 'KP',
-    chip: ['HPI CPN', '41PATK'],
-    sub: 'General surgery · Avonside Surgical Rooms · Active',
-    subRich: 'Surgeon · NZ medical registration <span class="mono">71588</span>',
-    status: ['o', 'Active'],
-    facts: [['Status', '<i class="sd"></i>Active'], ['HPI CPN', '41PATK', 1], ['Specialties', 'General surgery'], ['Practice', 'Avonside Surgical Rooms'], ['Office', '03 555 0118', 1]],
-    cards: [
-      ['Identity', [['Name', 'Ms K. Patel'], ['Practice', 'Avonside Surgical Rooms'], ['NZ medical registration number', '71588', 1, 'For information'], ['HPI CPN', '41PATK', 1]]],
-      ['Specialties', [['Specialties', 'General surgery', 0, "From AA's specialties list"]]],
-      ['Contacts', [['Personal contact', 'Ms K. Patel', 0, 'k.patel@surgeons.example · 021 555 0412'], ['Office contacts', 'Avonside Surgical Rooms', 0, 'admin@avonsidesurgical.example · 03 555 0118']]],
-      ['Status', [['Status', 'Active']]],
-    ],
-    otherLabel: 'Anaesthetist',
+    sub: 'Surgeon · NZ medical registration <span class="mono">71588</span>',
+    action: 'Retire',
+    since: null,
+    facts: [['HPI CPN', '41PATK', 1], ['Specialties', 'General surgery'], ['Practice', 'Avonside Surgical Rooms']],
+    phone: '03 555 0118', email: 'admin@avonsidesurgical.example', phoneLabel: 'Office',
+    cards: {
+      Identity: [['Name', 'Ms K. Patel'], ['Practice', 'Avonside Surgical Rooms'], ['NZ medical registration number', '71588', 1, 'For information'], ['HPI CPN', '41PATK', 1]],
+      Contacts: [['Personal contact', 'Ms K. Patel', 0, 'k.patel@surgeons.example · 021 555 0412'], ['Office contacts', 'Avonside Surgical Rooms', 0, 'admin@avonsidesurgical.example · 03 555 0118']],
+    },
     rb: [
-      { d: 'Mon', s: 'PM', h: 'Southern Cross', o: 'Dr Aroha Ngatai', k: 'Private', runs: 'Ongoing', occ: [['30 Nov'], ['7 Dec'], ['14 Dec'], ['21 Dec']] },
-      { d: 'Tue', s: 'PM', h: 'Southern Cross', o: 'Dr Melanie Souter', k: 'Private', runs: 'Until Tue 15 Dec', occ: [['Today'], ['1 Dec'], ['8 Dec'], ['15 Dec'], ['ends', 'end']] },
-      { d: 'Wed', s: 'AM', h: 'Southern Cross', o: 'Dr Sarah Beaumont', k: 'Private', runs: 'Ongoing', occ: [['25 Nov'], ['2 Dec'], ['9 Dec', 'chg', 'Anaesthetist changed to Dr Tom Ngata'], ['16 Dec']] },
-      { d: 'Wed', s: 'PM', h: 'Southern Cross', o: 'Dr Sarah Beaumont', k: 'Private', runs: 'Ongoing', occ: [['25 Nov'], ['2 Dec'], ['9 Dec'], ['16 Dec']] },
-      { d: 'Wed', s: 'PM', h: 'Southern Cross', o: 'Dr Priya Sharma', k: 'Private', runs: 'Ongoing', occ: [['25 Nov'], ['2 Dec'], ['9 Dec'], ['16 Dec']] },
-      { d: 'Thu', s: 'AM', h: 'Southern Cross', o: 'Dr Emma Fitzgerald', k: 'Private', runs: 'Ongoing', occ: [['26 Nov'], ['3 Dec', 'dl', 'Anaesthetist on holiday: sent to a Draft List'], ['10 Dec'], ['17 Dec']] },
-      { d: 'Thu', s: 'PM', h: 'AA rooms', o: 'Dr Melanie Souter', k: 'Pre-op', t: '13:00 to 17:00', runs: 'Ongoing', occ: [['26 Nov'], ['3 Dec'], ['10 Dec'], ['17 Dec']] },
+      { d: 'Mon', s: 'PM', h: 'Southern Cross', o: 'Dr Aroha Ngatai', k: 'Private', runs: 'Ongoing' },
+      { d: 'Tue', s: 'PM', h: 'Southern Cross', o: 'Dr Melanie Souter', k: 'Private', runs: 'Until Tue 15 Dec' },
+      { d: 'Wed', s: 'AM', h: 'Southern Cross', o: 'Dr Sarah Beaumont', k: 'Private', runs: 'Ongoing' },
+      { d: 'Wed', s: 'PM', h: 'Southern Cross', o: 'Dr Sarah Beaumont', k: 'Private', runs: 'Ongoing' },
+      { d: 'Wed', s: 'PM', h: 'Southern Cross', o: 'Dr Priya Sharma', k: 'Private', runs: 'Ongoing' },
+      { d: 'Thu', s: 'AM', h: 'Southern Cross', o: 'Dr Emma Fitzgerald', k: 'Private', runs: 'Ongoing' },
+      { d: 'Thu', s: 'PM', h: 'AA rooms', o: 'Dr Melanie Souter', k: 'Pre-op', t: '13:00 to 17:00', runs: 'Ongoing' },
     ],
-    retired: [],
+    retired: 0,
     pub: [],
     pairings: [['p', 'Dr Melanie Souter'], ['x', 'Dr Tom Ngata']],
     contracts: [['Avonside general surgery set fees', 'Avonside Surgical Rooms · Fixed price'], ['Laparoscopic cholecystectomy', 'Ms K. Patel · Fixed price']],
     contractCount: 2,
     next: [['Today · PM', 'Southern Cross · Dr Melanie Souter'], ['Wed 25 Nov · AM', 'Southern Cross · Dr Sarah Beaumont'], ['Wed 25 Nov · PM', 'Southern Cross · Dr Sarah Beaumont']],
     nextCount: 74,
-    summary: '<b>7 recurring bookings</b> · with 5 anaesthetists · 6 theatre sessions and 1 pre-op clinic a week · about 30 Lists a month',
+    count: '7 recurring bookings · 5 anaesthetists',
   };
 
   /* ===================== shared mock pieces ===================== */
@@ -536,43 +478,47 @@ main{padding-top:var(--barH)}
   const side = () => `<nav class="side"><div class="wm">Anaesthesia | Associates</div><div class="ad">ADMIN</div>${
     NAV.map(([n, c]) => `<a class="${n === 'People' ? 'on' : ''}">${n}${c ? ` <span class="ct">${c}</span>` : ''}</a>`).join('')}</nav>`;
   const frame = (id, html) => { document.getElementById(id).innerHTML = side() + `<div class="mainc">${html}</div>`; };
-  const NEW = '<span class="newtag">NEW</span>';
   const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-  const DAYP = { Mon: 'Mondays', Tue: 'Tuesdays', Wed: 'Wednesdays', Thu: 'Thursdays', Fri: 'Fridays' };
   const back = (p) => `<div class="back">‹ ${p.back}</div>`;
-  const idc = (p) => `<span class="idc">${p.chip[0]} <span class="mono">${p.chip[1]}</span></span>`;
-
-  // Today's header: name, the HPI chip, a sub line.
-  const hdrPlain = (p) => `${back(p)}<div class="ph"><div class="t"><h1>${p.name} ${idc(p)}</h1><p class="psub">${p.sub}</p></div></div>`;
-  // The new header: initials, status pill, then the fact strip.
-  const hdrRich = (p, right = '') => `${back(p)}<div class="hero"><span class="av">${p.init}</span><div class="t"><h1 style="font-size:24px;letter-spacing:-.015em;line-height:30px;display:flex;align-items:center;gap:10px">${p.name}</h1><p class="psub">${p.subRich}</p></div>${right}</div>
-    <div class="facts">${p.facts.map(([l, v, m, note]) => `<div><span>${l}</span><b class="${m ? 'mono' : ''}">${v}</b>${note ? `<small>${note}</small>` : ''}</div>`).join('')}</div>`;
-
-  const kv = (rows, narrow) => `<div class="kv${narrow ? ' n' : ''}">${rows.map(([l, v, m, note]) => `<span>${l}</span><div><span class="${m ? 'mono' : ''}">${v}</span>${note ? `<small>${note}</small>` : ''}</div>`).join('')}</div>`;
-  const card = (title, body, { edit = true, right = '', cls = '', style = '' } = {}) => `<div class="pc ${cls}" style="${style}"><div class="hd"><h4>${title}</h4>${right || (edit ? '<span class="ed">Edit</span>' : '')}</div>${body}</div>`;
-  const cardOf = (p, title, narrow) => { const c = p.cards.find(([t]) => t === title); return card(c[0], kv(c[1], narrow), { edit: title !== 'Status', right: title === 'Status' ? `<span class="ed">${p.kind === 'a' ? 'Make inactive' : 'Retire'}</span>` : '' }); };
-
-  const rs = (title, rows, { count, add, more, cls = '', tag = '' } = {}) => `<div class="rs ${cls}"><div class="hd"><h4>${title}${count !== undefined ? `<span class="cnt">${count}</span>` : ''}${tag}</h4>${add ? `<a>${add}</a>` : ''}</div>${rows}${more ? `<div class="more">${more}</div>` : ''}</div>`;
-  const rr = (b, s) => `<div class="rr"><b>${b}</b><span>${s}</span></div>`;
-  const pairRows = (p) => p.pairings.map(([k, n]) => `<div class="prow"><span>${n}</span><span class="pl ${k === 'p' ? 'o' : 'e'}">${k === 'p' ? 'Preferred' : 'Not preferred'}</span></div>`).join('');
-  const railPairings = (p) => rs('Pairings', pairRows(p), { add: 'Add' });
-  const railContracts = (p) => rs('Contracts', p.contracts.map(([t, s]) => rr(t, s)).join(''), { count: p.contractCount, more: p.contractCount > 3 ? `See all ${p.contractCount}` : '' });
-  const railNext = (p) => rs('Next Lists', p.next.map(([t, s]) => rr(t, s)).join(''), { more: `See all ${p.nextCount}` });
-  const railHistory = () => rs('History', rr('Rate per unit changed', 'Sam T. · 3 Nov') + rr('Contact changed', 'Kirsty W. · 14 Oct'), { more: 'Open history' });
-
-  const rbLine = (r) => `${DAYP[r.d]} · ${r.s}`;
-  const rbSub = (r) => `${r.h} · ${r.o}${r.k === 'Pre-op' ? ' · Pre-op' : ''}`;
-
-  // The table B and D use: the Master data list's columns, less the person the page is about.
-  const rbTable = (p, { retired = false, next = false } = {}) => {
-    const cols = [['Day', '96px'], ['Session', '64px'], ['Hospital', 'auto'], [p.otherLabel, 'auto'], ['Kind', '84px'], ['Runs', '130px']];
-    if (next) cols.push(['Next', '86px']);
-    cols.push(['', '110px', 'r']);
-    const row = (r, dim) => `<tr class="${dim ? 'dim' : ''}"><td class="b">${DAYP[r.d]}</td><td class="m">${r.s}</td><td class="b">${r.h}</td><td class="s">${r.o}</td><td>${r.k === 'Pre-op' ? `<span class="pl n">Pre-op</span>` : '<span class="s">Private</span>'}</td><td class="s">${r.runs}${r.t ? `<span class="m" style="display:block;font-size:11px">${r.t}</span>` : ''}</td>${next ? `<td class="m">${dim ? '' : r.occ[0][0]}</td>` : ''}<td class="r">${dim ? '<span class="ta">View</span>' : '<span class="ta">Edit</span><span class="ta">Retire</span>'}</td></tr>`;
-    return `<table class="it"><colgroup>${cols.map((c) => `<col style="width:${c[1]}">`).join('')}</colgroup><thead><tr>${cols.map((c) => `<th class="${c[2] ?? ''}">${c[0]}</th>`).join('')}</tr></thead><tbody>${p.rb.map((r) => row(r, false)).join('')}${retired ? p.retired.map((r) => row(r, true)).join('') : ''}</tbody></table>`;
+  const DOT = '<i class="sd"></i>';
+  const ICON = {
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+    mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>',
   };
 
-  // The usual week grid C uses.
+  // Fact cells: [label, value, mono, note]
+  const cell = ([l, v, m, note]) => `<div><span>${l}</span><b class="${m ? 'mono' : ''}">${v}</b>${note ? `<small>${note}</small>` : ''}</div>`;
+  const phoneFact = (p) => [p.phoneLabel ?? 'Phone', p.phone, 1];
+  // Status as its own cell, with "since" as a separate cell (ideas 1 and 5).
+  const statusCells = (p) => [['Status', `${DOT}Active`], ...(p.since ? [['Active since', p.since, 1]] : [])];
+  // Status with "since" on the same line (ideas 2 and 3).
+  const statusInline = (p) => ['Status', `${DOT}Active${p.since ? `<span class="since">since ${p.since}</span>` : ''}`];
+
+  const nameBlock = (p) => `<span class="av">${p.init}</span><div class="t"><h1>${p.name}</h1><p class="psub">${p.sub}</p></div>`;
+  const HEADERS = {
+    1: (p) => `${back(p)}<div class="hero">${nameBlock(p)}</div>
+      <div class="facts stretch">${[...statusCells(p), ...p.facts, phoneFact(p)].map(cell).join('')}</div>`,
+    2: (p) => `${back(p)}<div class="hero">${nameBlock(p)}</div>
+      <div class="factrow"><div class="facts">${[statusInline(p), ...p.facts, phoneFact(p)].map(cell).join('')}</div><span class="sp"></span><span class="btn2">${p.action}</span></div>`,
+    3: (p) => `${back(p)}<div class="hero">${nameBlock(p)}</div>
+      <div class="facts">${[statusInline(p), ...p.facts].map(cell).join('')}<div class="reach" style="border-left:1px solid var(--line)"><a>${ICON.phone}<span class="mono">${p.phone}</span></a><a>${ICON.mail}${p.kind === 'a' ? 'Email' : 'Email the office'}</a></div></div>`,
+    4: (p) => `${back(p)}<div class="hero">${nameBlock(p)}<div class="open">${[['Status', `${DOT}${p.since ? `Active since ${p.since}` : 'Active'}`], ...p.facts, phoneFact(p)].map(cell).join('')}</div></div>`,
+    5: (p) => `${back(p)}<div class="hcard"><div class="top">${nameBlock(p)}<span class="btn2">${p.action}</span></div>
+      <div class="facts">${[...statusCells(p), ...p.facts, phoneFact(p)].map(cell).join('')}</div></div>`,
+  };
+
+  const kv = (rows) => `<div class="kv n">${rows.map(([l, v, m, note]) => `<span>${l}</span><div><span class="${m ? 'mono' : ''}">${v}</span>${note ? `<small>${note}</small>` : ''}</div>`).join('')}</div>`;
+  const card = (title, body, right = '<span class="ed">Edit</span>') => `<div class="pc"><div class="hd"><h4>${title}</h4>${right}</div>${body}</div>`;
+  const cardOf = (p, t) => card(t, kv(p.cards[t]));
+  const SPC_HINT = "From AA's specialties list. One or more, usually one. Decides which Contracts are offered on this surgeon's Lists.";
+  const specialtiesCard = () => card('Specialties', `<div class="spchips"><span class="spchip">General surgery</span></div><span class="fhint">${SPC_HINT}</span>`);
+
+  const rs = (title, rows, { count, add, more } = {}) => `<div class="rs"><div class="hd"><h4>${title}${count !== undefined ? `<span class="cnt">${count}</span>` : ''}</h4>${add ? `<a>${add}</a>` : ''}</div>${rows}${more ? `<div class="more">${more}</div>` : ''}</div>`;
+  const rr = (b, s) => `<div class="rr"><b>${b}</b><span>${s}</span></div>`;
+  const railPairings = (p) => rs('Pairings', p.pairings.map(([k, n]) => `<div class="prow"><span>${n}</span><span class="pl ${k === 'p' ? 'o' : 'e'}">${k === 'p' ? 'Preferred' : 'Not preferred'}</span></div>`).join(''), { add: 'Add' });
+  const railContracts = (p) => rs('Contracts', p.contracts.map(([t, s]) => rr(t, s)).join(''), { count: p.contractCount, more: p.contractCount > 3 ? `See all ${p.contractCount}` : '' });
+  const railNext = (p) => rs('Next Lists', p.next.map(([t, s]) => rr(t, s)).join(''), { more: `See all ${p.nextCount}` });
+
   const weekGrid = (p, hovKey) => {
     let html = `<div class="wk"><span></span>${DAYS.map((d) => `<span class="dh">${d}</span>`).join('')}`;
     ['AM', 'PM'].forEach((s) => {
@@ -592,133 +538,38 @@ main{padding-top:var(--barH)}
     return html + '</div>';
   };
 
-  /* ===================== A: one more panel section ===================== */
-  const aFrame = (p) => {
-    const rbRows = p.rb.slice(0, 3).map((r) => rr(rbLine(r), rbSub(r))).join('');
-    const rbSec = rs('Recurring bookings', rbRows, { count: p.rb.length, add: 'Add', more: `See all ${p.rb.length}`, cls: 'isnew', tag: NEW });
-    const main = p.kind === 'a'
-      ? ['Identity', 'Contact', 'Bank and GST', 'Rate and tier', 'Status'].map((t) => cardOf(p, t)).join('')
-      : ['Identity', 'Specialties', 'Contacts', 'Status'].map((t) => cardOf(p, t)).join('');
-    return hdrPlain(p) + `<div class="pbody"><div class="colm">${main}</div><div class="rail">${railPairings(p)}${rbSec}${railContracts(p)}${railNext(p)}</div></div>`;
-  };
-  frame('a1', aFrame(SOUTER));
-  frame('a2', aFrame(PATEL));
-
-  /* ===================== B: tidied cards and a table ===================== */
-  const bFrame = (p) => {
-    const rbCard = card(`Recurring bookings <span class="cnt">${p.rb.length}</span>${NEW}`, rbTable(p, { retired: true }), {
-      right: `<span style="display:flex;gap:12px;align-items:center">${p.retired.length ? `<span class="fp">Show retired <span class="c">${p.retired.length}</span></span>` : ''}<span class="btn2">+ Add recurring booking</span></span>`,
-      cls: 'isnew',
-    });
-    let top;
-    if (p.kind === 'a') {
-      const det = p.cards[0][1].concat(p.cards[1][1]);
-      top = card('Details', `<div class="secg"><div class="kv n">${det.slice(0, 3).map(([l, v, m]) => `<span>${l}</span><span class="${m ? 'mono' : ''}">${v}</span>`).join('')}</div><div class="kv n">${det.slice(3).map(([l, v, m]) => `<span>${l}</span><span class="${m ? 'mono' : ''}">${v}</span>`).join('')}<span>Status</span><span><span class="pl o">Active</span> <span class="s" style="color:var(--slate)">since 9 Jun 2014</span></span></div></div>`)
-        + `<div class="cols2">${cardOf(p, 'Bank and GST', true)}${cardOf(p, 'Rate and tier', true)}</div>`;
-    } else {
-      top = card('Details', `<div class="secg"><div class="kv n"><span>Name</span><span>Ms K. Patel</span><span>Practice</span><span>Avonside Surgical Rooms</span><span>Specialties</span><span>General surgery</span></div><div class="kv n"><span>Registration</span><span class="mono">71588</span><span>HPI CPN</span><span class="mono">41PATK</span><span>Status</span><span><span class="pl o">Active</span></span></div></div>`)
-        + cardOf(p, 'Contacts', true);
-    }
-    // Retired rows show in the mock as if "Show retired" were on, so the treatment can be seen.
-    return hdrPlain(p) + `<div class="pbody"><div class="colm">${top}${rbCard}</div><div class="rail">${railPairings(p)}${railContracts(p)}${railNext(p)}${railHistory()}</div></div>`;
-  };
-  frame('b1', bFrame(SOUTER));
-  frame('b2', bFrame(PATEL));
-
-  /* ===================== C: usual week first ===================== */
-  // A surgeon's Specialties card: neutral chips to read; ChipMultiSelect to edit.
-  const SPC_HINT = "From AA's specialties list. One or more, usually one. Decides which Contracts are offered on this surgeon's Lists.";
-  const specialtiesCard = (editing) => editing
-    ? `<div class="pc editing"><div class="hd"><h4>Specialties</h4></div>
-        <div style="display:flex;flex-direction:column;gap:8px"><span class="flabel">Specialties</span>
-          <div class="spchips"><span class="spchip">General surgery <span class="x">×</span></span><span class="spchip just">Gastroenterology <span class="x">×</span></span></div>
-          <span class="fsel">Add a specialty</span><span class="fhint">${SPC_HINT}</span></div>
-        <div class="foot"><span class="btn2">Cancel</span><span class="btn">Save</span></div></div>`
-    : card('Specialties', `<div class="spchips"><span class="spchip">General surgery</span></div><span class="fhint">${SPC_HINT}</span>`);
-  const cFrame = (p, editingSpecialties = false) => {
+  // Option C's body, the same under every header.
+  const body = (p) => {
     const legend = `<div class="legend"><span><i class="rb"></i>Recurring booking</span>${p.kind === 'a' ? '<span><i class="pub"></i>Public session (availability)</span><span><i class="free"></i>Free</span>' : '<span><i class="free"></i>No recurring booking</span>'}</div>`;
-    const week = card(`Usual week${NEW}`, weekGrid(p, p.kind === 'a' ? 'TuePM' : 'WedPM') + `<div style="display:flex;justify-content:space-between;align-items:center">${legend}<span class="sumline">${p.kind === 'a' ? '6 recurring bookings' : '7 recurring bookings · 5 anaesthetists'}</span></div>`, {
-      right: `<span style="display:flex;gap:10px;align-items:center"><span class="fp on">Week</span><span class="fp">List${p.retired.length ? ` <span class="c">+${p.retired.length} retired</span>` : ''}</span><span class="btn2">+ Add</span></span>`,
-      cls: 'isnew',
-    });
-    const cardsBelow = p.kind === 'a'
-      ? `<div class="cols2">${cardOf(p, 'Identity', true)}${cardOf(p, 'Contact', true)}${cardOf(p, 'Bank and GST', true)}${cardOf(p, 'Rate and tier', true)}</div>`
-      : `<div class="cols2"><div class="colm">${cardOf(p, 'Identity', true)}</div><div class="colm">${specialtiesCard(editingSpecialties)}${cardOf(p, 'Contacts', true)}</div></div>`;
-    return hdrRich(p) + `<div class="pbody"><div class="colm">${week}${cardsBelow}</div><div class="rail">${railPairings(p)}${railNext(p)}${railContracts(p)}</div></div>`;
+    const week = card('Usual week', weekGrid(p, p.kind === 'a' ? 'TuePM' : 'WedPM') + `<div style="display:flex;justify-content:space-between;align-items:center">${legend}<span class="sumline">${p.count}</span></div>`,
+      `<span style="display:flex;gap:10px;align-items:center"><span class="fp on">Week</span><span class="fp">List${p.retired ? ` <span class="c">+${p.retired} retired</span>` : ''}</span><span class="btn2">+ Add</span></span>`);
+    const below = p.kind === 'a'
+      ? `<div class="cols2">${cardOf(p, 'Identity')}${cardOf(p, 'Contact')}${cardOf(p, 'Bank and GST')}${cardOf(p, 'Rate and tier')}</div>`
+      : `<div class="cols2"><div class="colm">${cardOf(p, 'Identity')}</div><div class="colm">${specialtiesCard()}${cardOf(p, 'Contacts')}</div></div>`;
+    return `<div class="pbody"><div class="colm">${week}${below}</div><div class="rail">${railPairings(p)}${railNext(p)}${railContracts(p)}</div></div>`;
   };
-  frame('c1', cFrame(SOUTER));
-  frame('c3', cFrame(PATEL, true));
-  frame('c2', cFrame(PATEL));
 
-  /* ===================== D: tabs ===================== */
-  const dFrame = (p) => {
-    const tabs = [['Details'], ['Recurring bookings', p.rb.length, true], ['Lists', p.nextCount], ['Contracts', p.contractCount], ['Pairings', p.pairings.length], ['History']];
-    const tabBar = `<div class="ltabs">${tabs.map(([t, n, on]) => `<span class="${on ? 'on' : ''}">${t}${n !== undefined ? ` <span class="n">${n}</span>` : ''}${on ? NEW : ''}</span>`).join('')}</div>`;
-    const days = p.kind === 'a' ? [['All days', p.rb.length, true], ['Mon', 2], ['Tue', 2], ['Wed', 1], ['Thu', 1], ['Fri', 0]] : [['All days', p.rb.length, true], ['Mon', 1], ['Tue', 1], ['Wed', 3], ['Thu', 2], ['Fri', 0]];
-    const tool = `<div class="tool"><span class="fp on">Active <span class="c">${p.rb.length}</span></span><span class="fp">Retired <span class="c">${p.retired.length}</span></span><span style="width:1px;height:20px;background:var(--line);margin:0 4px"></span>${days.map(([d, n, on]) => `<span class="fp${on ? ' on' : ''}">${d}${n !== undefined && !on ? ` <span class="c">${n}</span>` : ''}</span>`).join('')}<span class="end"><span class="btn">+ Add recurring booking</span></span></div>`;
-    const body = `<div class="pc isnew" style="flex:1;min-height:0"><p class="sumline">${p.summary}</p>${rbTable(p, { next: true })}</div>`;
-    return hdrRich(p, `<span class="btn2">${p.kind === 'a' ? 'Make inactive' : 'Retire'}</span>`) + tabBar + tool + body;
-  };
-  frame('d1', dFrame(SOUTER));
-  frame('d2', dFrame(PATEL));
-
-  /* ===================== E: schedule first ===================== */
-  const eFrame = (p) => {
-    const rows = p.rb.map((r) => `<div class="tlr"><div class="when"><b>${DAYP[r.d]}</b><span>${r.s}${r.t ? `<br>${r.t}` : ''}</span></div>
-      <div class="what"><b>${r.h}</b> ${r.k === 'Pre-op' ? '<span class="pl n" style="display:inline-block;margin-left:4px">Pre-op</span>' : ''}<span>${p.kind === 'a' ? 'with ' : 'Anaesthetist '}${r.o}${r.runs !== 'Ongoing' ? ` · ${r.runs}` : ''}</span></div>
-      <div class="occ">${r.occ.map(([dt, cls, ttl]) => `<span class="oc ${cls ?? ''}" ${ttl ? `title="${ttl}"` : ''}>${dt}</span>`).join('')}</div>
-      <div class="acts"><span class="ta">Edit</span></div></div>`).join('');
-    const pubRows = p.pub.map((r) => `<div class="tlr" style="opacity:.75"><div class="when"><b>${DAYP[r.d]}</b><span>${r.s}</span></div><div class="what"><b>Public</b><span>${r.h} · ${r.n} · from availability</span></div><div class="occ"><span class="oc">26 Nov</span><span class="oc">3 Dec</span><span class="oc">10 Dec</span><span class="oc">17 Dec</span></div><div class="acts"><span class="ta">Availability</span></div></div>`).join('');
-    const exc = p.rb.flatMap((r) => r.occ.filter(([, c]) => c === 'chg' || c === 'dl').map(([dt, c, t]) => [`${DAYP[r.d].slice(0, -1)} ${dt} · ${r.s}`, t, c]));
-    const sched = card(`Schedule${NEW}`, `<div class="legend"><span><i style="background:var(--sunken)"></i>Runs as usual</span><span><i style="background:var(--warnTint)"></i>Changed by the office</span><span><i style="background:var(--errTint)"></i>Sent to a Draft List</span></div>
-      <div><div class="tlhead"><span>Every</span><span>Where and with whom</span><span>Next four</span><span></span></div>${rows}${pubRows}</div>`, {
-      right: `<span style="display:flex;gap:10px;align-items:center"><span class="sumline">${p.rb.length} recurring bookings</span><span class="btn2">+ Add</span></span>`, cls: 'isnew', style: 'flex:1;min-height:0',
-    });
-    const excCard = exc.length ? rs('Not as usual', exc.map(([w, t, c]) => `<div class="rr"><b>${w}</b><span style="color:var(${c === 'dl' ? '--errOn' : '--warnOn'})">${t}</span></div>`).join(''), { count: exc.length }) : '';
-    let details;
-    if (p.kind === 'a') {
-      details = card('Details', `<div style="display:flex;flex-direction:column;gap:10px">
-        <div class="sec" style="border-top:0;padding-top:0"><div class="sh">Identity and contact<span class="ed">Edit</span></div>${kv([['Registration', '34821', 1], ['HPI CPN', '10SOUM', 1], ['Phone', '021 555 0134', 1], ['Email', 'm.souter@aa-assoc…']], true)}</div>
-        <div class="sec"><div class="sh">Bank and GST<span class="ed">Edit</span></div>${kv([['Bank account', '12-3100-•••••21-00', 1], ['GST number', '104348211', 1]], true)}</div>
-        <div class="sec"><div class="sh">Pairings<span class="ed">Add</span></div><div class="chips">${p.pairings.map(([k, n]) => `<span class="chipp">${n}<i class="${k}">${k === 'p' ? 'Preferred' : 'Not preferred'}</i></span>`).join('')}</div></div>
-      </div>`, { edit: false });
-    } else {
-      details = card('Details', `<div style="display:flex;flex-direction:column;gap:10px">
-        <div class="sec" style="border-top:0;padding-top:0"><div class="sh">Identity<span class="ed">Edit</span></div>${kv([['Registration', '71588', 1], ['HPI CPN', '41PATK', 1]], true)}</div>
-        <div class="sec"><div class="sh">Contacts<span class="ed">Edit</span></div>${kv([['Personal', 'k.patel@surgeons.example', 0, '021 555 0412'], ['Office', 'Avonside Surgical Rooms', 0, '03 555 0118']], true)}</div>
-        <div class="sec"><div class="sh">Pairings<span class="ed">Add</span></div><div class="chips">${p.pairings.map(([k, n]) => `<span class="chipp">${n}<i class="${k}">${k === 'p' ? 'Preferred' : 'Not preferred'}</i></span>`).join('')}</div></div>
-      </div>`, { edit: false });
-    }
-    return hdrRich(p) + `<div class="pbody" style="grid-template-columns:minmax(0,1fr) 360px"><div class="colm">${sched}</div><div class="rail">${excCard}${details}${railContracts(p)}</div></div>`;
-  };
-  frame('e1', eFrame(SOUTER));
-  frame('e2', eFrame(PATEL));
+  [1, 2, 3, 4, 5].forEach((n) => {
+    frame(`f${n}a`, HEADERS[n](SOUTER) + body(SOUTER));
+    frame(`f${n}s`, HEADERS[n](PATEL) + body(PATEL));
+  });
 
   /* ===================== switcher ===================== */
   const GLYPH = {
-    start: '<rect x="3" y="3" width="22" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 8h9M7 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
-    a: '<rect x="2" y="3" width="16" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="20" y="3" width="6" height="4" rx="1.2" fill="currentColor" opacity=".35"/><rect x="20" y="8.5" width="6" height="4" rx="1.2" fill="currentColor"/><rect x="20" y="14" width="6" height="3" rx="1.2" fill="currentColor" opacity=".35"/>',
-    b: '<rect x="2" y="3" width="24" height="5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2 11h24M2 14h24M2 17h24" stroke="currentColor" stroke-width="1.5"/>',
-    c: '<g fill="currentColor"><rect x="2" y="3" width="4" height="6" rx="1"/><rect x="7" y="3" width="4" height="6" rx="1" opacity=".35"/><rect x="12" y="3" width="4" height="6" rx="1"/><rect x="17" y="3" width="4" height="6" rx="1"/><rect x="22" y="3" width="4" height="6" rx="1" opacity=".35"/><rect x="2" y="11" width="4" height="6" rx="1" opacity=".35"/><rect x="7" y="11" width="4" height="6" rx="1"/><rect x="12" y="11" width="4" height="6" rx="1"/><rect x="17" y="11" width="4" height="6" rx="1" opacity=".35"/><rect x="22" y="11" width="4" height="6" rx="1" opacity=".35"/></g>',
-    d: '<path d="M2 7h7M11 7h6M19 7h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M11 9.5h6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><rect x="2" y="12" width="24" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/>',
-    e: '<path d="M2 5h6M2 10h6M2 15h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><g fill="currentColor"><rect x="10" y="3.5" width="3" height="3" rx=".8"/><rect x="14" y="3.5" width="3" height="3" rx=".8"/><rect x="18" y="3.5" width="3" height="3" rx=".8" opacity=".4"/><rect x="10" y="8.5" width="3" height="3" rx=".8"/><rect x="14" y="8.5" width="3" height="3" rx=".8"/><rect x="18" y="8.5" width="3" height="3" rx=".8"/><rect x="10" y="13.5" width="3" height="3" rx=".8" opacity=".4"/><rect x="14" y="13.5" width="3" height="3" rx=".8"/><rect x="18" y="13.5" width="3" height="3" rx=".8"/></g><rect x="23" y="3" width="3" height="14" rx="1" fill="currentColor" opacity=".25"/>',
+    1: '<rect x="2" y="6" width="24" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 6v8M14 6v8M20 6v8" stroke="currentColor" stroke-width="1.4"/>',
+    2: '<rect x="2" y="6" width="15" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 6v8M12 6v8" stroke="currentColor" stroke-width="1.4"/><rect x="20" y="7" width="6" height="6" rx="2" fill="currentColor"/>',
+    3: '<rect x="2" y="6" width="24" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 6v8M12 6v8M18 6v8" stroke="currentColor" stroke-width="1.4"/><circle cx="22" cy="10" r="1.6" fill="currentColor"/>',
+    4: '<circle cx="5" cy="10" r="3" fill="currentColor"/><path d="M11 8h5M11 12h3M19 8h3M19 12h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+    5: '<rect x="2" y="3" width="24" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2 11h24M8 11v6M14 11v6" stroke="currentColor" stroke-width="1.4"/><circle cx="6" cy="7" r="1.8" fill="currentColor"/>',
     decide: '<path d="M4 10.5l5 5L24 4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
   };
-  const VIEWS = [['start', 'Start', ''], ['a', 'Panel section', 'A'], ['b', 'Table card', 'B'], ['c', 'Usual week', 'C', true], ['d', 'Tabs', 'D'], ['e', 'Schedule first', 'E'], ['decide', 'Decide', '']];
-  const svg = (k, w = 28, h = 20) => `<svg width="${w}" height="${h}" viewBox="0 0 28 20" aria-hidden="true">${GLYPH[k]}</svg>`;
+  const VIEWS = [['1', 'Equal cells', '1'], ['2', 'Hug content', '2'], ['3', 'Contact on the right', '3'], ['4', 'No box', '4'], ['5', 'Header card', '5', true], ['decide', 'Decide', '']];
+  const svg = (k) => `<svg width="28" height="20" viewBox="0 0 28 20" aria-hidden="true">${GLYPH[k]}</svg>`;
   const opts = document.getElementById('opts');
   opts.innerHTML = VIEWS.map(([k, n, l, rec]) => `<button class="opt" role="tab" id="t-${k}" aria-controls="v-${k}" data-k="${k}">${svg(k)}${l ? `<b>${l}</b>` : ''}${n}${rec ? '<span class="rec">My pick</span>' : ''}</button>`).join('');
-  const PITCH = {
-    a: "Today's page, plus a Recurring bookings section in the side panel.",
-    b: 'Fewer, larger cards and a full-width recurring bookings table.',
-    c: 'A new header and fact strip over a Monday to Friday grid.',
-    d: 'A new header, then a tab for each part of the profile.',
-    e: 'Each recurring booking with its next four dates; details compact.',
-  };
-  document.getElementById('olist').innerHTML = VIEWS.filter(([, , l]) => l).map(([k, n, l]) => `<button class="ol" data-go="${k}">${svg(k, 42, 30)}<b>${l} · ${n}</b><span>${PITCH[k]}</span></button>`).join('');
 
   const keys = VIEWS.map(([k]) => k);
-  let cur = 'start';
+  let cur = '1';
   const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* storage off */ } } };
   const fit = () => {
     const v = document.getElementById(`v-${cur}`); if (!v) return;
@@ -731,7 +582,7 @@ main{padding-top:var(--barH)}
     });
   };
   const show = (k, push = true) => {
-    if (!keys.includes(k)) k = 'start';
+    if (!keys.includes(k)) k = '1';
     cur = k;
     document.querySelectorAll('.view').forEach((v) => v.classList.toggle('on', v.id === `v-${k}`));
     document.querySelectorAll('.opt').forEach((b) => { const on = b.dataset.k === k; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
@@ -740,53 +591,50 @@ main{padding-top:var(--barH)}
     requestAnimationFrame(fit);
   };
   opts.addEventListener('click', (e) => { const b = e.target.closest('.opt'); if (b) show(b.dataset.k); });
-  document.getElementById('olist').addEventListener('click', (e) => { const b = e.target.closest('[data-go]'); if (b) show(b.dataset.go); });
   const step = (d) => show(keys[(keys.indexOf(cur) + d + keys.length) % keys.length]);
   document.getElementById('prev').addEventListener('click', () => step(-1));
   document.getElementById('next').addEventListener('click', () => step(1));
+  // Anaesthetist / Surgeon: the choice carries across ideas, so the same person stays in view.
+  let who = 'a';
+  const setWho = (w) => {
+    who = w;
+    document.querySelectorAll('.subs').forEach((sw) => {
+      sw.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x.dataset.f.endsWith(w)));
+      sw.closest('.view').querySelectorAll('.frame').forEach((f) => f.classList.toggle('on', f.id.endsWith(w)));
+    });
+  };
   document.querySelectorAll('.subs').forEach((sw) => sw.addEventListener('click', (e) => {
-    const b = e.target.closest('button'); if (!b) return;
-    sw.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x === b));
-    sw.closest('.view').querySelectorAll('.frame').forEach((f) => f.classList.toggle('on', f.id === b.dataset.f));
+    const b = e.target.closest('button'); if (b) setWho(b.dataset.f.slice(-1));
   }));
   document.addEventListener('keydown', (e) => {
     if (e.target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === 'ArrowRight') { step(1); e.preventDefault(); }
     else if (e.key === 'ArrowLeft') { step(-1); e.preventDefault(); }
-    else if (/^[1-7]$/.test(e.key)) show(keys[Number(e.key) - 1]);
+    else if (/^[1-6]$/.test(e.key)) show(keys[Number(e.key) - 1]);
   });
   window.addEventListener('resize', fit);
   window.addEventListener('hashchange', () => show(location.hash.slice(1), false));
 
   /* ===================== decide ===================== */
   const QS = [
-    ['shape', 'Which layout?', 'Pick one, and say in the note what to borrow from the others.', [
-      ['A', 'A · One more panel section', "Today's page, plus a side panel section."],
-      ['B', 'B · Tidied cards and a table', 'Fewer cards; a full-width recurring bookings table.'],
-      ['C', 'C · The usual week first', 'New header and fact strip; a Monday to Friday grid.', true],
-      ['D', 'D · Tabs', 'A tab for each part of the profile.'],
-      ['E', 'E · Schedule first', 'Next four dates per recurring booking; compact details.'],
+    ['bar', 'Which header?', 'Pick one, and say in the note what to borrow from the others.', [
+      ['1', '1 · Cells share the width', 'Full-width bar, equal cells.'],
+      ['2', '2 · The bar hugs its content', 'Bar as wide as its facts; the status action at the row\'s end.'],
+      ['3', '3 · Contact on the right', 'Record facts left; phone and email as links at the right end.'],
+      ['4', '4 · No box', 'Facts as plain pairs beside the name.'],
+      ['5', '5 · One header card', 'Name, action and a facts strip along the card\'s foot.', true],
     ]],
-    ['edit', 'Can the office add and edit recurring bookings from a profile?', 'US-01.3.2 left "edit from both ends" open.', [
-      ['both', 'Yes, from both profiles: the same sheet, with that person filled in', 'One record; the anaesthetist page fills the anaesthetist, the surgeon page the surgeon.', true],
-      ['read', 'Show them on the profile, edit only in Master data', ''],
-      ['anaes', 'Edit from the anaesthetist page only; the surgeon page shows them', ''],
+    ['since', 'Where does "Active since" go?', 'Today it makes the Status cell two lines high.', [
+      ['cell', 'Its own cell, "Active since 9 Jun 2014"', 'Ideas 1 and 5.', true],
+      ['inline', 'On the Status line, in smaller type', 'Ideas 2 and 3.'],
+      ['card', 'Only in the Status details below, not in the header', ''],
     ]],
-    ['master', 'What happens to Master data › Recurring bookings?', 'Today it is the only place they live.', [
-      ['keep', 'Keep it as the practice-wide list, with "Apply to canvas now"', '', true],
-      ['lists', 'Move it under Lists, beside Draft Lists', ''],
-      ['drop', 'Remove it; profiles are enough', ''],
-    ]],
-    ['public', "Does an anaesthetist's week show their Public sessions?", 'They are a weekly Public series on availability, not recurring bookings.', [
-      ['show', 'Yes, greyed and marked as availability', 'So a free half-day is really free.', true],
-      ['hide', 'No, recurring bookings only', ''],
-    ]],
-    ['header', 'Take the new header (initials, status, fact strip) whichever layout wins?', 'It appears in C, D and E.', [
-      ['yes', 'Yes, on both profile pages', '', true],
-      ['no', "No, keep today's name and sub line", ''],
+    ['action', 'Where do "Make inactive" and "Retire" live?', 'Today they sit on a Status card in the main column.', [
+      ['header', 'In the header, beside the status', 'Ideas 2 and 5.', true],
+      ['card', 'On a Status card below, as today', ''],
     ]],
   ];
-  const saved = (() => { try { return JSON.parse(store.get('profile-ideas-answers') ?? '{}'); } catch { return {}; } })();
+  const saved = (() => { try { return JSON.parse(store.get('profile-header-answers') ?? '{}'); } catch { return {}; } })();
   const qs = document.getElementById('qs');
   qs.innerHTML = QS.map(([id, h, p, choices], i) => `<div class="q"><h3>${i + 1}. ${h}</h3><p>${p}</p><div class="ch">${
     choices.map(([v, l, s, r]) => `<label><input type="radio" name="${id}" value="${v}" ${saved[id] === v ? 'checked' : ''}><span>${l}${r ? '<span class="r">My pick</span>' : ''}${s ? `<small>${s}</small>` : ''}</span></label>`).join('')
@@ -795,11 +643,11 @@ main{padding-top:var(--barH)}
     const out = {};
     qs.querySelectorAll('input:checked').forEach((i) => { out[i.name] = i.value; });
     qs.querySelectorAll('textarea').forEach((t) => { if (t.value.trim()) out[t.name] = t.value; });
-    store.set('profile-ideas-answers', JSON.stringify(out));
+    store.set('profile-header-answers', JSON.stringify(out));
   };
   qs.addEventListener('change', save); qs.addEventListener('input', save);
   document.getElementById('copy').addEventListener('click', async () => {
-    const lines = ['# Profile pages: my answers', ''];
+    const lines = ['# Profile header: my answers', ''];
     QS.forEach(([id, h, , choices], i) => {
       const v = qs.querySelector(`input[name="${id}"]:checked`)?.value;
       const c = choices.find(([x]) => x === v);
@@ -812,7 +660,7 @@ main{padding-top:var(--barH)}
     catch { msg.textContent = 'Copy is blocked here; select the answers and copy by hand.'; }
   });
 
-  show(location.hash.slice(1) || 'start', false);
+  show(location.hash.slice(1) || '1', false);
   document.fonts?.ready.then(fit);
 })();
 </script>
