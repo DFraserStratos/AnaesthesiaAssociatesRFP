@@ -19,7 +19,7 @@ None.
 | [US-07.2.4](../stories/US-07.2.4.md) | Lists waiting to be authorised | **New.** The To authorise tab: submitted Lists oldest submitted first, search, date filter, Needs a look (review flags, changed since submitted, Needs a price); each row opens the review page, which goes back to the tab; the only place a List is authorised. Verify (3). | #2; Notes 2026-11-26 · Donald finances section #3 |
 | [FT-13.1](../stories/FT-13.1.md) | Schedule dashboard | Theme also covers the Lists section. Agreed (4) to Verify (3). | #1 |
 | [US-13.3.1](../stories/US-13.3.1.md) | Billing status of each List and Booking | "Lists awaiting approval" rows open the To authorise tab; criterion renamed to match. | #2 |
-| [US-13.3.3](../stories/US-13.3.3.md) | The Finances section | Lists are authorised on To authorise; the Payments tab also holds procedure events awaiting approval beside those waiting for the run (new criterion); the counting rule is shared with the Lists section. | #2 #3 #6 |
+| [US-13.3.3](../stories/US-13.3.3.md) | The Finances section | Lists are authorised on To authorise; the Payments tab also holds procedure events awaiting approval beside those waiting for the run (new criterion); the counting rule is shared with the Lists section; the Payments tab's number and the Finances badge count the events awaiting approval (new criterion "Events counted"). | #2 #3 #6 #10 |
 | [US-03.7.2](../stories/US-03.7.2.md) | Bill an event | The events' review step happens on Finances › Payments (new criterion). | #3 |
 | [US-07.3.1](../stories/US-07.3.1.md) | Authorise the List | Authorised on its review page, opened from To authorise, and nowhere else. Agreed (4) to Verify (3). | Notes 2026-11-26 · Donald finances section #3; #2 |
 | [US-07.2.2](../stories/US-07.2.2.md) | Office review of Contracts and references | The review happens on the review page opened from To authorise. | #2 |
@@ -41,3 +41,4 @@ None.
 - #8, the toggle itself: a prototype control for showing AA both counts, not a requirement; the
   question is OQ-151.
 - #9 (built without a phased plan): how and when the work is built.
+- #11 (clearing a conflict with an optional note): kept; US-01.5.4 already says so.

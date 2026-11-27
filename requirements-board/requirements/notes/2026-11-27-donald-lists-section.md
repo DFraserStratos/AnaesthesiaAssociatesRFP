@@ -62,3 +62,10 @@ whole note.
 9. **Built without a phased plan.** Donald asked whether this could be built "without doing the huge
    build plan thing". It is to be built after Intake's rebuild lands, as a smaller change on main.
    No requirement change.
+10. **Payments counts the events awaiting approval, and so does the Finances badge.** Asked whether
+   Finances › Payments should show a number for the procedure events awaiting approval and add them
+   to the Finances badge, Donald answered "Yes". Bears on US-13.3.3.
+11. **A conflict can still be cleared with an optional note.** Asked whether to keep clearing a
+   conflict from the Conflicts tab with an optional note, Donald left it to Claude ("Whatever you
+   think is best"); it is kept, as the app already does it. No requirement change (US-01.5.4 already
+   says so).
