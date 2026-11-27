@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notifications Page Ideas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Tokens: the app's own (aa-prototype/src/theme/tokens.ts), so the mocks read as the app. */
+:root{
+  --ink:#172320;--slate:#58635F;--mist:#8A9490;--lineStrong:#C9D1CE;--line:#E2E7E5;--sunken:#EDF1EF;--bg:#F6F8F7;--surface:#FFFFFF;--grid:#F1F4F2;
+  --brand:#A91E3E;--brandMuted:#D89AA9;
+  --teal:#0D6E63;--tealTint:#E1F0ED;
+  --ok:#1E8E5A;--okTint:#E3F4EB;--okOn:#157A49;
+  --warn:#A16207;--warnTint:#F9F0DC;--warnOn:#7C4D08;
+  --err:#C2403C;--errTint:#FAE9E7;--errOn:#9C332F;
+  --e1:0 1px 2px rgba(23,35,32,.05),0 2px 6px rgba(23,35,32,.05);
+  --e2:0 2px 4px rgba(23,35,32,.06),0 8px 20px rgba(23,35,32,.09);
+  --e3:0 8px 16px rgba(23,35,32,.10),0 24px 56px rgba(23,35,32,.18);
+  --barH:64px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,p{margin:0}
+a{color:var(--teal)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(13,110,99,.30);border-radius:8px}
+
+/* ---------- the fixed switcher ---------- */
+.bar{position:fixed;top:0;left:0;right:0;height:var(--barH);z-index:20;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:20px;padding:0 20px}
+.bar .ttl{font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.bar .ttl small{display:block;font-weight:500;font-size:12px;color:var(--slate);letter-spacing:0}
+.opts{display:flex;gap:4px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;align-self:stretch;align-items:stretch}
+.opts::-webkit-scrollbar{display:none}
+.opt{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:2.5px solid transparent;color:var(--slate);white-space:nowrap;font-size:13.5px;font-weight:600}
+.opt svg{flex:none;color:var(--mist)}
+.opt b{color:inherit;font-weight:700}
+.opt:hover{color:var(--ink)}
+.opt[aria-selected="true"]{color:var(--ink);border-color:var(--teal)}
+.opt[aria-selected="true"] svg{color:var(--teal)}
+.opt:focus-visible{box-shadow:inset 0 0 0 2px rgba(13,110,99,.35);border-radius:6px}
+.opt .rec{font-size:10.5px;font-weight:700;color:var(--okOn);background:var(--okTint);border-radius:999px;padding:0 7px;line-height:17px}
+.keys{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mist);white-space:nowrap}
+.kbd{font-family:"Spline Sans Mono",monospace;font-size:11px;border:1px solid var(--lineStrong);border-bottom-width:2px;border-radius:5px;padding:0 5px;color:var(--slate);background:#fff}
+.step{all:unset;cursor:pointer;width:30px;height:30px;border:1px solid var(--lineStrong);border-radius:8px;display:grid;place-items:center;color:var(--ink)}
+.step:hover{border-color:var(--teal);color:var(--teal)}
+@media (max-width:1640px){.keys .hint{display:none}}
+
+/* ---------- one view at a time ---------- */
+main{padding-top:var(--barH)}
+.view{display:none;height:calc(100vh - var(--barH));min-height:560px}
+.view.on{display:grid;grid-template-rows:auto minmax(0,1fr)}
+.vhead{display:flex;align-items:flex-end;gap:24px;padding:18px 24px 14px}
+.vhead h2{font-size:24px;line-height:30px;letter-spacing:-.015em}
+.vhead h2 .l{color:var(--mist);font-weight:600;margin-right:10px}
+.vhead p{color:var(--slate);font-size:14.5px;max-width:78ch;margin-top:3px}
+.vhead .grow{flex:1;min-width:0}
+.subs{display:flex;gap:4px;background:var(--sunken);border-radius:10px;padding:3px;flex:none}
+.subs button{all:unset;cursor:pointer;font-size:13px;font-weight:600;color:var(--slate);padding:6px 12px;border-radius:8px;white-space:nowrap}
+.subs button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--e1)}
+.subs button:focus-visible{box-shadow:0 0 0 2px rgba(13,110,99,.35)}
+.vbody{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;padding:0 24px 20px;min-height:0}
+.stage{min-width:0;min-height:0;position:relative}
+.fwrap{position:relative;border-radius:12px;overflow:hidden;box-shadow:var(--e3);border:1px solid var(--line);background:var(--bg)}
+.frame{position:absolute;top:0;left:0;width:1440px;height:860px;transform-origin:0 0;display:none;grid-template-columns:200px minmax(0,1fr);overflow:hidden;font-size:13px;line-height:1.4;background:var(--bg)}
+.frame.on{display:grid}
+.why{overflow-y:auto;min-height:0;display:flex;flex-direction:column;gap:14px;padding-right:2px}
+.why section{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 18px}
+.why h3{font-size:14px;margin-bottom:6px}
+.why ul{margin:0;padding-left:18px;font-size:13.5px}
+.why li{margin-bottom:5px}
+.why li::marker{color:var(--mist)}
+.why p{font-size:13.5px;color:var(--slate)}
+.why .for h3{color:var(--okOn)}
+.why .against h3{color:var(--errOn)}
+.why .size{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.why .size b{font-size:14px}
+.meter{display:inline-flex;gap:3px}
+.meter i{width:14px;height:6px;border-radius:3px;background:var(--line)}
+.meter i.f{background:var(--teal)}
+@media (max-width:1000px){
+  .view.on{height:auto;display:block}
+  .vhead{flex-direction:column;align-items:flex-start}
+  .vbody{grid-template-columns:1fr}
+  .why{overflow:visible}
+}
+@media (max-width:640px){.vhead,.vbody{padding-left:16px;padding-right:16px}.bar{padding:0 12px;gap:12px}.bar .ttl small{display:none}}
+
+/* ---------- text views (start, decide) ---------- */
+.doc{overflow-y:auto;grid-row:1 / -1}
+.doc .in{max-width:1180px;margin:0 auto;padding:36px 24px 64px}
+.doc h1{font-size:40px;line-height:1.08;letter-spacing:-.025em;font-weight:800;max-width:20ch}
+.doc .lede{font-size:17px;color:var(--slate);max-width:66ch;margin-top:14px}
+.doc h2{font-size:22px;letter-spacing:-.01em;margin:40px 0 14px}
+.find{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:900px){.find{grid-template-columns:1fr}}
+.fc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.fc h3{font-size:15px;margin-bottom:6px}
+.fc p{font-size:14px;color:var(--slate)}
+.fc p+p{margin-top:8px}
+.navcmp{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:900px){.navcmp{grid-template-columns:1fr}}
+.mininav{background:var(--ink);color:#B9C4C0;border-radius:12px;padding:14px 10px;width:210px;font-size:13px}
+.mininav h4{color:#fff;font-size:12.5px;font-weight:600;margin:0 8px 10px}
+.mininav div{padding:6px 8px;border-radius:7px;display:flex;justify-content:space-between}
+.mininav .gone{color:#6E7C77;text-decoration:line-through}
+.mininav .new{background:rgba(255,255,255,.08);color:#fff;box-shadow:inset 3px 0 0 var(--brand)}
+.mininav .ct{background:var(--warn);color:#fff;border-radius:999px;font-size:10.5px;font-weight:700;padding:0 7px;line-height:18px}
+.mininav .ct.r{background:var(--err)}
+.jobs{width:100%;border-collapse:collapse;background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--e1);font-size:14px}
+.jobs th,.jobs td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.jobs th{font-size:12.5px;color:var(--slate);font-weight:600;background:var(--bg)}
+.jobs td:first-child{font-weight:600}
+.jobs .tl{display:flex;gap:2px;width:220px}
+.jobs .tl i{flex:1;height:8px;border-radius:3px;background:var(--line)}
+.jobs .tl i.f{background:var(--teal)}
+.jobs .tll{display:flex;justify-content:space-between;width:220px;font-size:11px;color:var(--mist)}
+.opts-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+@media (max-width:1100px){.opts-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ol{all:unset;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.ol:hover{border-color:var(--teal)}
+.ol svg{color:var(--teal)}
+.ol b{font-size:14.5px}
+.ol span{font-size:13px;color:var(--slate)}
+.gate{margin-top:28px;background:var(--warnTint);color:var(--warnOn);border-radius:12px;padding:12px 16px;font-size:14px;max-width:80ch}
+.gate b{color:var(--warnOn)}
+
+/* decide */
+.q{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin-bottom:14px}
+.q h3{font-size:16px}
+.q > p{font-size:14px;color:var(--slate);margin-top:4px;max-width:80ch}
+.ch{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.ch label{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:14px}
+.ch label:hover{border-color:var(--lineStrong)}
+.ch input{accent-color:var(--teal);margin-top:4px}
+.ch label:has(input:checked){border-color:var(--teal);background:var(--tealTint)}
+.ch small{display:block;color:var(--slate);font-size:13px}
+.ch .r{font-size:11px;font-weight:700;color:var(--okOn);background:var(--okTint);border-radius:999px;padding:0 7px;line-height:17px;margin-left:6px;vertical-align:1px}
+.q textarea{width:100%;margin-top:10px;min-height:56px;border:1px solid var(--lineStrong);border-radius:10px;padding:9px 12px;font:inherit;font-size:14px;resize:vertical}
+.q textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,110,99,.2)}
+.copy{display:flex;align-items:center;gap:14px;margin-top:8px}
+.cbtn{all:unset;cursor:pointer;background:var(--teal);color:#fff;font-weight:600;border-radius:10px;padding:10px 18px;font-size:14px}
+.cbtn:focus-visible{box-shadow:0 0 0 3px rgba(13,110,99,.35)}
+.copied{font-size:13.5px;color:var(--okOn)}
+.reco{background:var(--surface);border-radius:16px;box-shadow:var(--e2);padding:22px 26px;border-left:4px solid var(--teal);margin-bottom:22px}
+.reco h3{font-size:19px;margin-bottom:6px}
+.reco p{max-width:84ch}
+.reco p+p{margin-top:8px}
+
+/* ---------- inside the mocks ---------- */
+.side{background:var(--ink);color:#B9C4C0;padding:20px 12px;display:flex;flex-direction:column;gap:2px}
+.side .wm{font-family:Georgia,serif;color:#fff;font-size:14px;margin:0 10px 4px}
+.side .ad{color:var(--brandMuted);font-size:10px;letter-spacing:.08em;margin:0 10px 22px;font-weight:600}
+.side a{padding:8px 10px;border-radius:8px;font-size:13px;display:flex;justify-content:space-between;align-items:center;text-decoration:none;color:inherit}
+.side a.on{background:rgba(255,255,255,.07);color:#fff;box-shadow:inset 3px 0 0 var(--brand)}
+.side .ct{background:var(--warn);color:#fff;border-radius:999px;font-size:10.5px;font-weight:700;padding:0 7px;line-height:18px}
+.side .ct.r{background:var(--err)}
+.mainc{display:flex;flex-direction:column;gap:14px;min-width:0;min-height:0;padding:22px 28px 22px}
+.phd{display:flex;align-items:flex-end;gap:24px}
+.phd .t{flex:1;min-width:0}
+.phd h1{font-size:24px;letter-spacing:-.015em;line-height:30px}
+.phd h1 .pl{margin-left:8px;vertical-align:4px}
+.psub{color:var(--slate);font-size:13.5px;margin-top:2px}
+.back{color:var(--teal);font-weight:600;font-size:13px;margin-bottom:6px;display:flex;gap:6px;align-items:center}
+.ltabs{display:flex;gap:24px;border-bottom:1px solid var(--line);flex:none}
+.ltabs span{font-size:14px;font-weight:600;color:var(--slate);padding:0 0 10px;border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;align-items:center;gap:7px}
+.ltabs span.on{color:var(--ink);border-color:var(--teal)}
+.ltabs .n{font-size:11px;font-weight:700;color:var(--warnOn);background:var(--warnTint);border-radius:999px;padding:0 7px;line-height:18px;font-variant-numeric:tabular-nums}
+.ltabs .n.e{color:var(--errOn);background:var(--errTint)}
+.tool{display:flex;gap:10px;align-items:center;flex:none}
+.tool .end{margin-left:auto;font-size:12.5px;color:var(--slate);white-space:nowrap}
+.srch{height:34px;border:1px solid var(--lineStrong);border-radius:999px;padding:0 14px;display:flex;align-items:center;gap:8px;color:var(--mist);background:#fff;font-size:13px;width:260px}
+.sel{height:34px;border:1px solid var(--lineStrong);border-radius:10px;padding:0 30px 0 12px;display:flex;align-items:center;gap:6px;position:relative;background:#fff;font-weight:500;white-space:nowrap;font-size:13px;color:var(--ink)}
+.sel::after{content:"";position:absolute;right:12px;top:50%;width:6px;height:6px;border-right:1.6px solid var(--slate);border-bottom:1.6px solid var(--slate);transform:translateY(-70%) rotate(45deg)}
+.fpills{display:flex;gap:6px}
+.fp{height:32px;border:1px solid var(--lineStrong);border-radius:999px;padding:0 13px;display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--slate);background:#fff;white-space:nowrap}
+.fp.on{background:var(--tealTint);border-color:var(--teal);color:var(--teal)}
+.fp .c{font-family:"Spline Sans Mono",monospace;font-size:11.5px;font-weight:500;color:var(--mist)}
+.fp.on .c{color:var(--teal)}
+.btn{background:var(--teal);color:#fff;font-weight:600;border-radius:10px;padding:9px 16px;font-size:13.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
+.btn2{background:#fff;color:var(--ink);border:1px solid var(--lineStrong);font-weight:600;border-radius:10px;padding:8px 14px;font-size:13.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.ta{color:var(--teal);font-weight:600;font-size:12.5px;white-space:nowrap}
+.ta + .ta{margin-left:14px}
+.tcard{flex:1;min-height:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--e1);display:flex;flex-direction:column;overflow:hidden}
+.tcard .tb{flex:1;min-height:0;overflow:hidden}
+.tfoot{border-top:1px solid var(--line);padding:10px 16px;font-size:12.5px;color:var(--slate);display:flex;align-items:center;gap:10px}
+.tfoot .pg{margin-left:auto;display:flex;gap:4px}
+.tfoot .pg span{min-width:28px;height:28px;border:1px solid var(--lineStrong);border-radius:8px;display:grid;place-items:center;color:var(--ink);font-size:12.5px;padding:0 6px}
+.tfoot .pg span.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.it{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.it th{font-size:12px;color:var(--slate);font-weight:600;text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--surface);white-space:nowrap}
+.it th.so{color:var(--teal)}
+.it td{padding:9px 12px;border-bottom:1px solid var(--grid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+.it td.r,.it th.r{text-align:right}
+.it .b{font-weight:600}
+.it .s{color:var(--slate)}
+.it .m{font-family:"Spline Sans Mono",monospace;font-size:12px;font-variant-numeric:tabular-nums;color:var(--slate)}
+.it tr.g td{background:var(--bg);font-size:12.5px;font-weight:700;color:var(--ink);padding:7px 12px;border-bottom:1px solid var(--line)}
+.it tr.g td span{color:var(--mist);font-weight:600;margin-left:8px}
+.it tr.g td em{font-style:normal;color:var(--errOn);font-weight:600;margin-left:8px}
+.it tr.hov td{background:#FAFCFB}
+.it tr.dim td{color:var(--mist)}
+.pl{display:inline-block;font-size:11.5px;font-weight:600;border-radius:999px;padding:0 8px;line-height:20px;white-space:nowrap;vertical-align:middle}
+.pl + .pl{margin-left:4px}
+.pl.w{background:var(--warnTint);color:var(--warnOn)}
+.pl.e{background:var(--errTint);color:var(--errOn)}
+.pl.o{background:var(--okTint);color:var(--okOn)}
+.pl.t{background:var(--tealTint);color:var(--teal)}
+.pl.n{background:var(--sunken);color:var(--slate)}
+.pl.d{background:#fff;color:var(--slate);box-shadow:inset 0 0 0 1px var(--lineStrong);border:0}
+.prog{display:inline-flex;align-items:center;gap:8px}
+.prog i{display:inline-block;width:54px;height:6px;border-radius:3px;background:var(--line);position:relative;overflow:hidden}
+.prog i b{position:absolute;left:0;top:0;bottom:0;background:var(--teal);border-radius:3px}
+.body2{flex:1;min-height:0;display:grid;gap:16px}
+.rcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--e1);padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.rcard h4{font-size:13.5px}
+.rcard .dl{display:grid;grid-template-columns:110px 1fr;gap:6px 10px;font-size:12.5px}
+.rcard .dl span{color:var(--slate)}
+.rcard .hi{font-size:12.5px;display:flex;gap:8px}
+.rcard .hi span{color:var(--mist);font-family:"Spline Sans Mono",monospace;font-size:11.5px;width:74px;flex:none}
+.note{background:var(--warnTint);color:var(--warnOn);border-radius:10px;padding:8px 12px;font-size:12.5px;line-height:1.45}
+.daylist{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--e1);overflow:hidden;display:flex;flex-direction:column}
+.daylist .dh{padding:12px 14px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--slate);display:flex;justify-content:space-between}
+.dayrow{padding:10px 14px;border-bottom:1px solid var(--grid);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center}
+.dayrow .d{font-weight:600;font-size:13.5px}
+.dayrow .d small{color:var(--mist);font-weight:500;margin-left:6px;font-size:12px}
+.dayrow .c{font-family:"Spline Sans Mono",monospace;font-size:12px;color:var(--slate)}
+.dayrow .dots{grid-column:1 / -1;display:flex;gap:6px;font-size:11.5px;color:var(--slate)}
+.dayrow .dots i{display:inline-flex;align-items:center;gap:4px;font-style:normal}
+.dayrow .dots i::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--x)}
+.dayrow.on{background:var(--tealTint);box-shadow:inset 3px 0 0 var(--teal)}
+.dayrow.sp{background:var(--bg)}
+.dsec{font-size:12px;font-weight:700;color:var(--slate);padding:12px 16px 6px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.dsec span{color:var(--mist);font-weight:600}
+.ready{padding:12px 16px;font-size:12.5px;color:var(--slate);display:flex;align-items:center;gap:8px;border-top:1px solid var(--line)}
+.ready::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ok)}
+
+/* ---------- this page ---------- */
+.diag{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:1000px){.diag{grid-template-columns:1fr}}
+.shot{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--e1);overflow:hidden}
+.shot .row{display:grid;grid-template-columns:118px minmax(0,1fr) 112px 78px 96px;gap:10px;padding:10px 14px;border-bottom:1px solid var(--grid);font-size:12.5px;align-items:start}
+.shot .row.h{font-size:11px;color:var(--slate);font-weight:600;border-bottom:1px solid var(--line)}
+.shot .m{font-family:"Spline Sans Mono",monospace;font-size:11.5px;color:var(--slate)}
+.shot b{font-weight:600}
+.shot .qt{color:var(--slate);margin-top:3px}
+.shot .ob{display:inline-block;margin-top:6px;border:1px solid var(--teal);color:var(--teal);border-radius:8px;padding:3px 9px;font-weight:600;font-size:11.5px}
+.shot .rb{border:1px solid var(--teal);color:var(--teal);border-radius:8px;padding:3px 8px;font-weight:600;font-size:11.5px;justify-self:start}
+.shot .tl{color:var(--teal);font-weight:600;font-size:11.5px;justify-self:end}
+.pin{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--err);color:#fff;font-size:10.5px;font-weight:700;margin-right:4px;vertical-align:1px}
+.probs{display:flex;flex-direction:column;gap:10px}
+.probs .fc h3{display:flex;align-items:center;gap:6px}
+.doc h1 + .reco{margin-top:22px}
+.pat{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media (max-width:1000px){.pat{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* the three mocks */
+.it td.top{vertical-align:top}
+.it td.wrap{white-space:normal}
+.kind{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;border-radius:999px;padding:0 9px 0 7px;line-height:21px;white-space:nowrap}
+.kind::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.8}
+.kind.chk{background:var(--warnTint);color:var(--warnOn)}
+.kind.mv{background:var(--sunken);color:var(--slate)}
+.kind.ret{background:var(--tealTint);color:var(--teal)}
+.lst b{font-weight:600}
+.lst .s{display:block;color:var(--slate);font-size:12.5px;margin-top:1px;overflow:hidden;text-overflow:ellipsis}
+.ft{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.ft .ar{color:var(--mist)}
+.ft .of{color:var(--slate)}
+.msg{color:var(--slate);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;line-height:1.45}
+.msg.none{color:var(--mist)}
+.acts{display:flex;align-items:center;justify-content:flex-end;gap:14px}
+.tick{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--lineStrong);display:grid;place-items:center;color:var(--slate);flex:none;background:#fff}
+.tick svg{width:14px;height:14px}
+.tick.hov{border-color:var(--teal);color:var(--teal);background:var(--tealTint)}
+.it tr.res td{color:var(--mist)}
+.it tr.res .kind{opacity:.7}
+.by{font-size:12px;color:var(--mist)}
+
+/* B: the feed */
+.feedwrap{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px}
+.feed{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--e1);overflow:hidden;display:flex;flex-direction:column}
+.feed .dh{padding:10px 18px;border-bottom:1px solid var(--line);font-size:12.5px;font-weight:700;background:var(--bg)}
+.feed .dh span{color:var(--mist);font-weight:600;margin-left:8px}
+.fi{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:4px 14px;padding:14px 18px;border-bottom:1px solid var(--grid)}
+.fi .ic{grid-column:1;grid-row:1 / span 3;width:30px;height:30px;border-radius:50%;display:grid;place-items:center}
+.fi .ic svg{width:15px;height:15px}
+.fi .ic.chk{background:var(--warnTint);color:var(--warnOn)}
+.fi .ic.mv{background:var(--sunken);color:var(--slate)}
+.fi .ic.ret{background:var(--tealTint);color:var(--teal)}
+.fi .hd{grid-column:2;grid-row:1;font-size:13.5px;line-height:1.4}
+.fi .bd{grid-column:2;grid-row:3}
+.fi .hd b{font-weight:600}
+.fi .sub{grid-column:2;grid-row:2;color:var(--slate);font-size:12.5px}
+.fi .tm{font-family:"Spline Sans Mono",monospace;font-size:12px;color:var(--mist);text-align:right;white-space:nowrap}
+.fi .side2{grid-column:3;grid-row:1 / span 3;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.fi blockquote{margin:6px 0 0;padding:2px 0 2px 12px;border-left:3px solid var(--line);color:var(--ink);font-size:13px;line-height:1.45;max-width:70ch}
+.fi blockquote.chk{border-color:var(--warn)}
+.fi .ta2{margin-top:8px;display:flex;gap:16px}
+.rrail{display:flex;flex-direction:column;gap:14px}
+.rrail .rcard h4{display:flex;justify-content:space-between;align-items:baseline}
+.rrail .rcard h4 a{font-size:12px;font-weight:600;color:var(--teal);text-decoration:none}
+.rrail .ri{font-size:12.5px;line-height:1.4;padding:6px 0;border-top:1px solid var(--grid)}
+.rrail .ri:first-of-type{border-top:0}
+.rrail .ri span{display:block;color:var(--mist);font-size:11.5px;margin-top:2px}
+.rrail p{font-size:12.5px;color:var(--slate)}
+
+/* C: rows and a detail pane */
+.split{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:20px}
+.it tr.picked td{background:var(--tealTint)}
+.it tr.picked td:first-child{box-shadow:inset 3px 0 0 var(--teal)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--teal);margin-right:2px}
+.pane{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--e2);display:flex;flex-direction:column;overflow:hidden}
+.pane .ph{padding:16px 20px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.pane .ph .r1{display:flex;justify-content:space-between;align-items:center}
+.pane h3{font-size:16px;line-height:1.35;letter-spacing:-.005em}
+.pane .pb{padding:14px 20px;display:flex;flex-direction:column;gap:14px;flex:1}
+.pane .dl{display:grid;grid-template-columns:96px 1fr;gap:7px 12px;font-size:13px}
+.pane .dl span{color:var(--slate)}
+.pane .quote{background:var(--bg);border-radius:10px;padding:10px 14px;font-size:13px;line-height:1.5}
+.pane .quote small{display:block;color:var(--slate);font-size:11.5px;margin-bottom:3px}
+.pane .pf{padding:14px 20px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.pane .pf .row2{display:flex;gap:8px;align-items:center}
+.pane .pf small{color:var(--mist);font-size:11.5px}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="ttl">Notifications page<small>Ideas, 27 November 2026</small></div>
+  <nav class="opts" role="tablist" aria-label="Ideas" id="opts"></nav>
+  <div class="keys"><span class="hint"><span class="kbd">←</span> <span class="kbd">→</span> or <span class="kbd">1</span> to <span class="kbd">5</span> to switch</span>
+    <button class="step" id="prev" aria-label="Previous idea">‹</button><button class="step" id="next" aria-label="Next idea">›</button></div>
+</header>
+
+<main id="views">
+
+<!-- ================= START ================= -->
+<section class="view" id="v-start" data-name="Start" role="tabpanel">
+  <div class="doc"><div class="in">
+    <h1>Why the Notifications page feels noisy</h1>
+    <p class="lede">The page holds a short, simple thing: what anaesthetists moved or asked the office to check this morning. It reads harder than the Lists and Intake tables beside it because each row packs everything into one bold sentence, then adds three styles of action around it. This page draws three refreshes on this morning's seeded notices so you can compare them a screen at a time.</p>
+
+    <h2>What makes it hard to read</h2>
+    <div class="diag">
+      <div class="shot" aria-label="Today's page, simplified">
+        <div class="row h"><span>When</span><span>What happened</span><span>By</span><span></span><span></span></div>
+        <div class="row"><span class="m">Tue 24 Nov, 07:40</span><span><b>Dr Tamihana returned Thu 7 Jan AM (Forte Health, Mr G. Lowry) to the office</b><div class="qt">Assign this Draft List first. Its cover email is drafted from the List drawer after. <span style="color:var(--teal);font-weight:600">Open Draft List</span></div></span><span>Dr Ana Tamihana</span><span class="rb">✓ Resolve</span><span class="tl">Open Draft List</span></div>
+        <div class="row"><span class="m">Tue 24 Nov, 07:05</span><span><b>Dr Karaka moved Wed 25 Nov AM (Forte Health, Dr R. Iyer) to Dr Zhou when marking the session not available</b><div class="qt">"Not feeling well, so I have arranged cover for tomorrow."</div><span class="ob">✉ Draft cover-change email</span></span><span>Dr Wiremu Karaka</span><span class="rb">✓ Resolve</span><span class="tl">Open List</span></div>
+        <div class="row"><span class="m">Tue 24 Nov, 06:48</span><span><b>Dr Clarke asked the office to check a Booking (Sullivan, A., Mon 30 Nov AM, St George's)</b><div class="qt">Note: "Patient says their insurer has not approved this yet. Can you check before the day?"</div></span><span>Dr Nathan Clarke</span><span class="rb">✓ Resolve</span><span class="tl">Open Booking</span></div>
+      </div>
+      <div class="probs">
+        <div class="fc"><h3>One bold sentence holds six facts</h3><p>Who, what they did, the date and session, the hospital, the surgeon and who it went to are all in one bold line, so nothing stands out. On a wide screen the line runs about 140 characters.</p></div>
+        <div class="fc"><h3>The same thing said twice</h3><p>"By" repeats the name the sentence opens with. "When" repeats "Tue 24 Nov" on every row. The returned List says "Open Draft List" twice in one row.</p></div>
+        <div class="fc"><h3>Three kinds of action per row</h3><p>An outlined Resolve button, a text link to open, and a big outlined email button inside the text. Each row is a different height and its actions sit in different places.</p></div>
+        <div class="fc"><h3>Nothing says what kind it is</h3><p>A check request needs the office to do something. A move is mostly worth knowing. Both look the same until you read the whole sentence.</p></div>
+      </div>
+    </div>
+
+    <h2>What the other admin tables do</h2>
+    <div class="pat">
+      <div class="fc"><h3>Facts in columns</h3><p>Draft Lists and Intake put session, hospital and surgeon in their own columns: bold hospital, slate surgeon. Rows are one or two lines.</p></div>
+      <div class="fc"><h3>Status as a tinted pill</h3><p>"Unassigned" and "Hospital closed" are pills, amber when something needs doing. You can scan the column without reading the rows.</p></div>
+      <div class="fc"><h3>Days as bands</h3><p>Draft Lists and Intake group rows under a day band ("Wed 25 Nov · 5 Draft Lists"), so each row only needs a time.</p></div>
+      <div class="fc"><h3>Text actions on the right</h3><p>Draft Lists ends each row with Assign, Change date, Remove as plain teal words. Payments ends with Review. Outlined buttons are kept for page-level actions.</p></div>
+    </div>
+
+    <h2>The three ideas</h2>
+    <div class="opts-list" id="olist" style="grid-template-columns:repeat(3,minmax(0,1fr))"></div>
+  </div></div>
+</section>
+
+<!-- ================= A ================= -->
+<section class="view" id="v-a" data-name="A" role="tabpanel">
+  <div class="vhead"><div class="grow"><h2><span class="l">A</span>Columns, like Draft Lists</h2>
+    <p>Break the sentence into the columns the Lists tabs already use: what kind, which List, from whom to whom, and the message. Rows sit under a day band. Actions are words on the right, with a round tick to resolve.</p></div>
+    <div class="subs" data-for="a"><button aria-pressed="true" data-f="a1">Active</button><button data-f="a2">Resolved</button></div></div>
+  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="a1"></div><div class="frame" id="a2"></div></div></div>
+    <aside class="why">
+      <section class="for"><h3>For</h3><ul>
+        <li>Reads like the Draft Lists and Intake tables beside it: same columns, pills and day bands.</li>
+        <li>The kind pill tells a check request from a move at a glance; only check requests are amber.</li>
+        <li>Every row is one or two lines high, and every action sits in the same place.</li>
+        <li>Active and Resolved become pills, like Draft Lists' Waiting and History, instead of a checkbox.</li>
+      </ul></section>
+      <section class="against"><h3>Against</h3><ul>
+        <li>A long message is cut at two lines; you open the List to read the rest.</li>
+        <li>"Dr Karaka to Dr Zhou" loses the sentence's "when marking the session not available". It moves into the pill's wording ("Handed on, unwell").</li>
+      </ul></section>
+      <section><h3>What changes</h3><ul>
+        <li>The Day rail keeps the notice sentence; the page shows the notice's parts in columns instead.</li>
+        <li>"Draft cover-change email" becomes the text action "Email".</li>
+        <li>The returned List's hint line goes; "Assign" opens the Draft List.</li>
+      </ul></section>
+      <section class="size"><b>Build size</b><span class="meter"><i class="f"></i><i class="f"></i><i></i><i></i><i></i></span></section>
+    </aside></div>
+</section>
+
+<!-- ================= B ================= -->
+<section class="view" id="v-b" data-name="B" role="tabpanel">
+  <div class="vhead"><div class="grow"><h2><span class="l">B</span>A quiet feed</h2>
+    <p>Keep the sentence, but short and in regular weight, with the List's details on a second line and the message as a quote beneath. Resolved notices move to a rail on the right, like To authorise's "Recently authorised".</p></div></div>
+  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="b1"></div></div></div>
+    <aside class="why">
+      <section class="for"><h3>For</h3><ul>
+        <li>The closest to today's page: the same content, much easier to read.</li>
+        <li>Messages show in full. A check request's note gets an amber edge.</li>
+        <li>Who resolved what is always in view, without a filter.</li>
+      </ul></section>
+      <section class="against"><h3>Against</h3><ul>
+        <li>Fewer notices fit on a screen: rows with a message run three or four lines.</li>
+        <li>A feed is a new pattern in the admin app; every other list is a table.</li>
+        <li>The rail shows only today's resolved notices; older ones need a link.</li>
+      </ul></section>
+      <section class="size"><b>Build size</b><span class="meter"><i class="f"></i><i class="f"></i><i></i><i></i><i></i></span></section>
+    </aside></div>
+</section>
+
+<!-- ================= C ================= -->
+<section class="view" id="v-c" data-name="C" role="tabpanel">
+  <div class="vhead"><div class="grow"><h2><span class="l">C</span>Rows and a detail pane</h2>
+    <p>One line per notice, with nothing to click in the row. Selecting a row opens it in a pane on the right, with the message, the List as it is now, and the actions: Resolve as the main button, the email and Open beside it.</p></div></div>
+  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="c1"></div></div></div>
+    <aside class="why">
+      <section class="for"><h3>For</h3><ul>
+        <li>The calmest table: every row is one line, so the whole morning fits on a screen.</li>
+        <li>The pane has room to say where the List is now (it may have moved again since).</li>
+        <li>Resolve is one clear button, after you have read the notice.</li>
+      </ul></section>
+      <section class="against"><h3>Against</h3><ul>
+        <li>Two clicks to resolve instead of one.</li>
+        <li>No other admin list has a pane like this; Lists opens a drawer or a page.</li>
+        <li>The most new code of the three.</li>
+      </ul></section>
+      <section class="size"><b>Build size</b><span class="meter"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></span></section>
+    </aside></div>
+</section>
+
+<!-- ================= DECIDE ================= -->
+<section class="view" id="v-decide" data-name="Decide" role="tabpanel">
+  <div class="doc"><div class="in">
+    <h1>Decide</h1>
+    <div class="reco"><h3>My pick: A, columns like Draft Lists</h3>
+      <p>The page's trouble is that it doesn't look like its neighbours. A uses the patterns the office already reads every day on Lists and Intake: columns, a kind pill, day bands and text actions. It keeps Resolve one click away.</p>
+      <p>From B, I'd borrow the amber edge on a check request's note if two lines turn out to be too few.</p></div>
+    <div id="qs"></div>
+    <div class="copy"><button class="cbtn" id="copy">Copy my answers</button><span class="copied" id="copied"></span></div>
+  </div></div>
+</section>
+
+</main>
+
+<script>
+(() => {
+  /* ===================== shared mock pieces ===================== */
+  const NAV = [['Day view'], ['Intake', 18], ['Lists', 66], ['Notifications', 7], ['Finances', 1], ['People'], ['Contracts'], ['Master data'], ['Audit']];
+  const side = () => `<nav class="side"><div class="wm">Anaesthesia | Associates</div><div class="ad">ADMIN</div>${
+    NAV.map(([n, c]) => `<a class="${n === 'Notifications' ? 'on' : ''}">${n}${c ? ` <span class="ct">${c}</span>` : ''}</a>`).join('')}</nav>`;
+  const frame = (id, html) => { document.getElementById(id).innerHTML = side() + `<div class="mainc">${html}</div>`; };
+  const SUB = 'What anaesthetists have moved or asked the office to check. Resolving one clears it for everyone.';
+  const hdr = (count) => `<div class="phd"><div class="t"><h1>Notifications <span class="pl n">${count}</span></h1><p class="psub">${SUB}</p></div></div>`;
+  const fps = (list) => `<div class="fpills">${list.map(([l, c, on]) => `<span class="fp${on ? ' on' : ''}">${l}${c !== undefined ? ` <span class="c">${c}</span>` : ''}</span>`).join('')}</div>`;
+  const sel = (v) => `<div class="sel">${v}</div>`;
+  const tool = (left, end = '') => `<div class="tool">${left}${end ? `<span class="end">${end}</span>` : ''}</div>`;
+  const table = (cols, rows, foot = '') => `<div class="tcard"><div class="tb"><table class="it"><colgroup>${cols.map((c) => `<col style="width:${c[1]}">`).join('')}</colgroup><thead><tr>${cols.map((c) => `<th class="${c[2] ?? ''}">${c[0]}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>${foot ? `<div class="tfoot">${foot}</div>` : ''}</div>`;
+  const g = (label, count = '', span = 9) => `<tr class="g"><td colspan="${span}">${label}${count !== '' ? `<span>${count}</span>` : ''}</td></tr>`;
+  const TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  const tick = (hov) => `<span class="tick${hov ? ' hov' : ''}" title="Resolve">${TICK}</span>`;
+  const ta = (l) => `<span class="ta">${l}</span>`;
+
+  /* ===================== data: this morning's seeded pool (Tue 24 Nov) ===================== */
+  // [time, kindClass, kindLabel, list line 1, list line 2, from, to, message, isCheck(note), actions, booking?]
+  const ACTIVE = [
+    ['07:40', 'ret', 'Returned to office', 'Thu 7 Jan AM', 'Forte Health · Mr G. Lowry', 'Dr Tamihana', 'Office', '', ['Assign']],
+    ['07:22', 'chk', 'Check requested', 'Wed 2 Dec AM', 'Christchurch Eye Surgery · Mr D. Kwan', 'Dr Murray', '', 'The surgeon rang to add two more cases. Can you check with theatre that the List can run late?', ['Open List']],
+    ['07:05', 'mv', 'Handed on, unwell', 'Wed 25 Nov AM', 'Forte Health · Dr R. Iyer', 'Dr Karaka', 'Dr Zhou', 'Not feeling well, so I have arranged cover for tomorrow.', ['Email', 'Open List']],
+    ['06:48', 'chk', 'Check requested', 'Sullivan, A.', "Mon 30 Nov AM · St George's", 'Dr Clarke', '', 'Patient says their insurer has not approved this yet. Can you check before the day?', ['Open Booking']],
+    ['06:31', 'mv', 'Booking moved', 'Herewini, H.', 'Fri 27 Nov AM · Southern Cross', 'Dr Wong', 'Dr Gupta', 'The surgery moved to the afternoon, so I have passed it on.', ['Email', 'Open Booking']],
+    ['06:14', 'mv', 'Handed on', 'Mon 30 Nov AM', "St George's · Mr K. Merriman", 'Dr Campbell', 'Dr Stewart', 'We have agreed this between us. Thanks!', ['Email', 'Open List']],
+    ['05:52', 'ret', 'Returned to office', 'Wed 23 Dec AM', "St George's · K. Gorman", 'Dr Anderson', 'Office', 'A family commitment has come up that day. Sorry!', ['Assign']],
+  ];
+  const RESOLVED = [
+    ['06:03', 'chk', 'Check requested', 'Mon 30 Nov AM', 'Forte Health · Ms F. Holmes', 'Dr Thompson', '', 'Theatre has this List starting at 07:00. It is usually 08:00 here. Can you confirm?', ['Open List'], 'Sam T. at 07:46'],
+    ['05:41', 'ret', 'Returned to office', 'Tue 5 Jan AM', 'Forte Health · Mr C. Rutherford', 'Dr Tipene', 'Office', 'Away at a conference that week, sorry.', ['Open Draft List'], 'Kirsty W. at 07:31'],
+  ];
+
+  /* ===================== A: columns ===================== */
+  const ftCell = (from, to) => `<span class="ft">${from}${to ? ` <span class="ar">→</span> <span class="of">${to}</span>` : ''}</span>`;
+  const aRow = (r, i, resolved) => {
+    const [t, k, kl, l1, l2, from, to, msg, acts, by] = r;
+    return `<tr class="${resolved ? 'res' : ''}">
+      <td class="m top" style="padding-top:12px">${t}</td>
+      <td class="top" style="padding-top:10px"><span class="kind ${k}">${kl}</span></td>
+      <td class="top lst" style="padding-top:11px"><b>${l1}</b><span class="s">${l2}</span></td>
+      <td class="top" style="padding-top:11px">${ftCell(from, to)}</td>
+      <td class="top" style="padding-top:11px">${msg ? `<span class="msg">${msg}</span>` : '<span class="msg none">No message</span>'}</td>
+      <td class="top r" style="padding-top:7px"><div class="acts">${acts.map(ta).join('')}${resolved ? `<span class="by">${by}</span>` : tick(i === 1)}</div></td>
+    </tr>`;
+  };
+  const aCols = [['Time', '64px'], ['What', '168px'], ['List or Booking', '270px'], ['From', '200px'], ['Message', 'auto'], ['', '230px', 'r']];
+  frame('a1', hdr(7)
+    + tool(fps([['Active', 7, true], ['Resolved', 2]]) + sel('All kinds'), '7 active · newest first')
+    + table(aCols, g('Today, Tue 24 Nov', '7 notices', 6) + ACTIVE.map((r, i) => aRow(r, i, false)).join(''), '<span>Showing 1 to 7 of 7</span>'));
+  frame('a2', hdr(7)
+    + tool(fps([['Active', 7], ['Resolved', 2, true]]) + sel('All kinds'), '2 resolved · newest first')
+    + table([...aCols.slice(0, 5), ['', '260px', 'r']], g('Today, Tue 24 Nov', '2 notices', 6) + RESOLVED.map((r, i) => aRow(r, i, true)).join(''), '<span>Showing 1 to 2 of 2</span>'));
+
+  /* ===================== B: feed ===================== */
+  const ICON = {
+    chk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 7v6"/><circle cx="12" cy="17" r=".6" fill="currentColor"/><circle cx="12" cy="12" r="9"/></svg>',
+    mv: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>',
+    ret: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l-5-5 5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>',
+  };
+  const head = (r) => {
+    const [, k, , l1, , from, to] = r;
+    if (k === 'chk') return `<b>${from}</b> asked the office to check ${l1.includes(',') ? 'a Booking' : 'a List'}`;
+    if (k === 'ret') return `<b>${from}</b> returned a List to the office`;
+    if (r[2] === 'Booking moved') return `<b>${from}</b> moved a Booking to <b>${to}</b>`;
+    return `<b>${from}</b> handed a List on to <b>${to}</b>${r[2].includes('unwell') ? ', marking the session not available' : ''}`;
+  };
+  const fi = (r, i) => {
+    const [t, k, , l1, l2, , , msg, acts] = r;
+    return `<div class="fi"><span class="ic ${k}">${ICON[k]}</span>
+      <div class="hd">${head(r)}</div>
+      <div class="side2"><span class="tm">${t}</span>${tick(i === 2)}</div>
+      <div class="sub">${l1} · ${l2}</div>
+      <div class="bd">${msg ? `<blockquote class="${k === 'chk' ? 'chk' : ''}">${msg}</blockquote>` : ''}<div class="ta2">${acts.map(ta).join('')}</div></div>
+    </div>`;
+  };
+  frame('b1', hdr(7) + `<div class="feedwrap"><div class="feed"><div class="dh">Today, Tue 24 Nov<span>7 notices</span></div><div style="overflow:hidden">${ACTIVE.slice(0, 5).map(fi).join('')}</div></div>
+    <div class="rrail"><div class="rcard"><h4>Resolved today <a>See all</a></h4>
+      ${RESOLVED.map((r) => `<div class="ri">${head(r).replace(/<\/?b>/g, '')}, ${r[3]}<span>${r[9].replace(' at ', ', ')}</span></div>`).join('')}</div>
+      <div class="rcard"><h4>What shows here</h4><p>Lists and Bookings anaesthetists move themselves, and anything they ask the office to check. A notice stays until someone in the office resolves it.</p></div></div></div>`);
+
+  /* ===================== C: rows and a pane ===================== */
+  const cRow = (r, i) => {
+    const [t, k, kl, l1, l2, from, to, msg] = r;
+    return `<tr class="${i === 1 ? 'picked' : ''}">
+      <td class="m">${t}</td>
+      <td><span class="kind ${k}">${kl}</span></td>
+      <td><span class="b">${l1}</span> <span class="s">${l2}</span></td>
+      <td>${ftCell(from, to)}</td>
+      <td class="r">${msg ? '<span class="dot" title="Has a message"></span>' : ''}</td>
+    </tr>`;
+  };
+  const S1 = ACTIVE[1];
+  frame('c1', hdr(7)
+    + tool(fps([['Active', 7, true], ['Resolved', 2]]) + sel('All kinds'), '7 active · newest first')
+    + `<div class="split">${table([['Time', '64px'], ['What', '168px'], ['List or Booking', 'auto'], ['From', '190px'], ['', '36px', 'r']], g('Today, Tue 24 Nov', '7 notices', 5) + ACTIVE.map(cRow).join(''))}
+      <div class="pane">
+        <div class="ph"><div class="r1"><span class="kind chk">Check requested</span><span class="m" style="font-family:'Spline Sans Mono',monospace;font-size:12px;color:var(--mist)">Today 07:22</span></div>
+          <h3>Dr Murray asked the office to check a List</h3></div>
+        <div class="pb">
+          <div class="quote"><small>Dr Murray's note</small>${S1[7]}</div>
+          <div class="dl"><span>List</span><b style="font-weight:600">Wed 2 Dec AM</b><span>Hospital</span><span style="color:var(--ink)">Christchurch Eye Surgery</span><span>Surgeon</span><span style="color:var(--ink)">Mr D. Kwan</span><span>Anaesthetist</span><span style="color:var(--ink)">Dr Hayley Murray</span><span>Bookings</span><span style="color:var(--ink)">4</span></div>
+        </div>
+        <div class="pf"><div class="row2"><span class="btn">${TICK.replace('<svg', '<svg width="15" height="15"')} Resolve</span><span class="btn2">Open List</span></div><small>Resolving clears it for everyone in the office.</small></div>
+      </div></div>`);
+
+  /* ===================== switcher ===================== */
+  const GLYPH = {
+    start: '<rect x="3" y="3" width="22" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 8h9M7 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    a: '<rect x="2" y="3" width="24" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 3v14M14 3v14M20 3v14" stroke="currentColor" stroke-width="1.5"/>',
+    b: '<circle cx="5" cy="6" r="2.2" fill="currentColor"/><circle cx="5" cy="14" r="2.2" fill="currentColor"/><path d="M10 5h14M10 8h9M10 13h14M10 16h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+    c: '<rect x="2" y="3" width="14" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="18" y="3" width="8" height="14" rx="2" fill="currentColor" opacity=".35"/><path d="M5 7h8M5 10h8M5 13h8" stroke="currentColor" stroke-width="1.4"/>',
+    decide: '<path d="M4 10.5l5 5L24 4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
+  };
+  const VIEWS = [['start', 'Start', ''], ['a', 'Columns', 'A', true], ['b', 'Quiet feed', 'B'], ['c', 'Detail pane', 'C'], ['decide', 'Decide', '']];
+  const svg = (k, w = 28, h = 20) => `<svg width="${w}" height="${h}" viewBox="0 0 28 20" aria-hidden="true">${GLYPH[k]}</svg>`;
+  const opts = document.getElementById('opts');
+  opts.innerHTML = VIEWS.map(([k, n, l, rec]) => `<button class="opt" role="tab" id="t-${k}" aria-controls="v-${k}" data-k="${k}">${svg(k)}${l ? `<b>${l}</b>` : ''}${n}${rec ? '<span class="rec">My pick</span>' : ''}</button>`).join('');
+  const PITCH = { a: 'The sentence split into the columns Lists uses.', b: 'The same sentence, quieter, with resolved notices in a rail.', c: 'One line a notice; read and resolve in a pane.' };
+  document.getElementById('olist').innerHTML = VIEWS.filter(([, , l]) => l).map(([k, n, l]) => `<button class="ol" data-go="${k}">${svg(k, 42, 30)}<b>${l} · ${n}</b><span>${PITCH[k]}</span></button>`).join('');
+
+  const keys = VIEWS.map(([k]) => k);
+  let cur = 'start';
+  const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* storage off */ } } };
+  const fit = () => {
+    const v = document.getElementById(`v-${cur}`); if (!v) return;
+    v.querySelectorAll('.stage').forEach((st) => {
+      const w = st.querySelector('.fwrap'); if (!w) return;
+      const narrow = window.innerWidth <= 1000;
+      const s = narrow ? st.clientWidth / 1440 : Math.min(st.clientWidth / 1440, st.clientHeight / 860);
+      w.style.width = `${1440 * s}px`; w.style.height = `${860 * s}px`;
+      w.querySelectorAll('.frame').forEach((f) => { f.style.transform = `scale(${s})`; });
+    });
+  };
+  const show = (k, push = true) => {
+    if (!keys.includes(k)) k = 'start';
+    cur = k;
+    document.querySelectorAll('.view').forEach((v) => v.classList.toggle('on', v.id === `v-${k}`));
+    document.querySelectorAll('.opt').forEach((b) => { const on = b.dataset.k === k; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
+    if (push) history.replaceState(null, '', `#${k}`);
+    const doc = document.querySelector(`#v-${k} .doc`); if (doc) doc.scrollTop = 0;
+    requestAnimationFrame(fit);
+  };
+  opts.addEventListener('click', (e) => { const b = e.target.closest('.opt'); if (b) show(b.dataset.k); });
+  document.getElementById('olist').addEventListener('click', (e) => { const b = e.target.closest('[data-go]'); if (b) show(b.dataset.go); });
+  const step = (d) => show(keys[(keys.indexOf(cur) + d + keys.length) % keys.length]);
+  document.getElementById('prev').addEventListener('click', () => step(-1));
+  document.getElementById('next').addEventListener('click', () => step(1));
+  document.querySelectorAll('.subs').forEach((sw) => sw.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    sw.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x === b));
+    sw.closest('.view').querySelectorAll('.frame').forEach((f) => f.classList.toggle('on', f.id === b.dataset.f));
+  }));
+  document.addEventListener('keydown', (e) => {
+    if (e.target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'ArrowRight') { step(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { step(-1); e.preventDefault(); }
+    else if (/^[1-5]$/.test(e.key)) show(keys[Number(e.key) - 1]);
+  });
+  window.addEventListener('resize', fit);
+  window.addEventListener('hashchange', () => show(location.hash.slice(1), false));
+
+  /* ===================== decide ===================== */
+  const QS = [
+    ['shape', 'Which layout?', 'Pick one, and say in the note what to borrow from the others.', [
+      ['A', 'A · Columns, like Draft Lists', 'Kind, List, from and to, message, words for actions.', true],
+      ['B', 'B · A quiet feed', 'The sentence kept, quieter; resolved notices in a rail.'],
+      ['C', 'C · Rows and a detail pane', 'One line a notice; resolve from the pane.'],
+    ]],
+    ['resolved', 'How do resolved notices show?', 'Today it is a "Show resolved" checkbox that mixes them into the table.', [
+      ['pills', 'Active and Resolved pills, like Draft Lists\' Waiting and History', '', true],
+      ['check', 'Keep the checkbox', ''],
+      ['rail', 'A "Resolved today" rail beside the list (idea B)', ''],
+    ]],
+    ['email', 'What does the email action say?', 'Today: an outlined "Draft cover-change email" or "Draft update email" button inside the row.', [
+      ['short', 'A text action, "Email", opening the same draft', '', true],
+      ['long', 'Keep the full names as text actions', ''],
+    ]],
+    ['rail', 'Should the Day rail\'s Notifications tab follow?', 'It shows the newest three notices as sentences.', [
+      ['pill', 'Yes: add the kind pill to each rail row', 'The sentence stays; the pill gives the same scan as the page.', true],
+      ['no', 'No: leave the rail as it is', ''],
+    ]],
+  ];
+  const saved = (() => { try { return JSON.parse(store.get('notifications-ideas-answers') ?? '{}'); } catch { return {}; } })();
+  const qs = document.getElementById('qs');
+  qs.innerHTML = QS.map(([id, h, p, choices], i) => `<div class="q"><h3>${i + 1}. ${h}</h3><p>${p}</p><div class="ch">${
+    choices.map(([v, l, s, r]) => `<label><input type="radio" name="${id}" value="${v}" ${saved[id] === v ? 'checked' : ''}><span>${l}${r ? '<span class="r">My pick</span>' : ''}${s ? `<small>${s}</small>` : ''}</span></label>`).join('')
+  }</div><textarea name="${id}-note" placeholder="Anything to add">${saved[`${id}-note`] ?? ''}</textarea></div>`).join('');
+  const save = () => {
+    const out = {};
+    qs.querySelectorAll('input:checked').forEach((i) => { out[i.name] = i.value; });
+    qs.querySelectorAll('textarea').forEach((t) => { if (t.value.trim()) out[t.name] = t.value; });
+    store.set('notifications-ideas-answers', JSON.stringify(out));
+  };
+  qs.addEventListener('change', save); qs.addEventListener('input', save);
+  document.getElementById('copy').addEventListener('click', async () => {
+    const lines = ['# Notifications page: my answers', ''];
+    QS.forEach(([id, h, , choices], i) => {
+      const v = qs.querySelector(`input[name="${id}"]:checked`)?.value;
+      const c = choices.find(([x]) => x === v);
+      const note = qs.querySelector(`textarea[name="${id}-note"]`).value.trim();
+      lines.push(`${i + 1}. **${h}** ${c ? c[1] : '(not answered)'}`);
+      if (note) lines.push(`   Note: ${note}`);
+    });
+    const msg = document.getElementById('copied');
+    try { await navigator.clipboard.writeText(lines.join('\n')); msg.textContent = 'Copied. Paste it into the chat.'; }
+    catch { msg.textContent = 'Copy is blocked here; select the answers and copy by hand.'; }
+  });
+
+  show(location.hash.slice(1) || 'start', false);
+  document.fonts?.ready.then(fit);
+})();
+</script>
+</body>
+</html>
