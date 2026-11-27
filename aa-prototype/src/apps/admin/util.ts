@@ -125,10 +125,10 @@ export function listSourceLabels(
 }
 
 /**
- * Why a List block needs the amber attention flag: any live conflict (a
+ * Why a List block is conflicted: any live conflict (a
  * cleared one is never stored, catch-up Phase 30). Every List names its
  * surgeon since catch-up Phase 31 (US-01.3.1), so there is no "surgeon not yet
- * assigned" flag any more. An empty array means no flag. With `lookups` a
+ * assigned" flag any more. An empty array means none. With `lookups` a
  * conflict reads as its detail line; without, as its short reason.
  */
 export function attentionReasons(list: List, lookups?: ConflictLookups): string[] {

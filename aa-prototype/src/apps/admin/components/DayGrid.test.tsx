@@ -67,7 +67,7 @@ function renderGrid() {
     anaesthetist('A4', 'Dr Dia Delta'),
   ]
   const hospitalId = Object.keys(masters.hospitals)[0]!
-  // A List needs attention for a live conflict (no List lacks a surgeon since catch-up Phase 31).
+  // A List with a live conflict.
   const attention = view('A1', {
     kind: 'preop',
     id: 'attention',
@@ -124,7 +124,8 @@ describe('DayGrid filters', () => {
   it('combines focus signals with OR semantics and resets to the full day', () => {
     const { container } = renderGrid()
 
-    const attentionFilter = screen.getByRole('button', { name: 'Needs attention' })
+    expect(screen.queryByRole('button', { name: 'Needs attention' })).not.toBeInTheDocument()
+    const attentionFilter = screen.getByRole('button', { name: 'Conflict' })
     const noteFilter = screen.getByRole('button', { name: 'Has note' })
     const prepaymentFilter = screen.getByRole('button', { name: 'Has warnings' })
 
@@ -159,9 +160,9 @@ describe('DayGrid filters', () => {
     expect(block).not.toBeNull()
     expect(block.getAttribute('data-list-id')).toBe('warned')
     expect(screen.getByRole('img', { name: '2 open warnings' })).toBeInTheDocument()
-    // The List-level `!` stays on the conflicted block only, never on a warning block.
+    // No block carries a corner `!`: a conflict reads from its fill and reason line.
     const attention = container.querySelector('[data-list-id="attention"]') as HTMLElement
-    expect(attention.textContent).toContain('!')
+    expect(attention.textContent).not.toContain('!')
     expect(block.textContent).not.toContain('!')
   })
 })
@@ -216,14 +217,10 @@ describe('DayGrid conflicts (catch-up Phase 30: the List changes colour)', () =>
     const surgeonOnly = container.querySelector('[data-list-id="surgeon-only"]') as HTMLElement
     expect(conflicted).toHaveAttribute('data-conflict', 'true')
     expect(conflicted.textContent).toContain('Hospital closed')
-    expect(conflicted.textContent).toContain('!')
+    expect(conflicted.textContent).not.toContain('!')
     expect(conflicted.style.background).not.toBe(surgeonOnly.style.background)
     expect(conflicted.style.boxShadow).toBe(surgeonOnly.style.boxShadow)
     expect(surgeonOnly).not.toHaveAttribute('data-conflict')
-    // The "!" disc is a marker, hidden from the block button's accessible name (UI unification U1).
-    const dot = Array.from(conflicted.querySelectorAll('span')).find((s) => s.textContent === '!')
-    expect(dot).toBeDefined()
-    expect(dot).toHaveAttribute('aria-hidden', 'true')
     const blockButton = conflicted.tagName === 'BUTTON' ? conflicted : (conflicted.closest('button') ?? conflicted.querySelector('button'))
     expect(blockButton).not.toBeNull()
     expect(blockButton).toHaveAccessibleName(expect.stringContaining('Hospital closed'))

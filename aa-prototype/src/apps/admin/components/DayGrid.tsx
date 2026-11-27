@@ -86,13 +86,11 @@ interface Segment {
   end: number
 }
 
-type FocusFilter = 'attention' | 'conflicts' | 'note' | 'warnings'
+type FocusFilter = 'conflicts' | 'note' | 'warnings'
 
 interface DisplaySegment extends Segment {
   displayKey: DisplayKey
-  /** List-level attention (a live conflict; `attentionReasons`): the amber `!` corner. */
-  listAttention: boolean
-  /** List-level attention or an open warning on one of its Bookings: the outline. */
+  /** A live conflict or an open warning on one of its Bookings: the outline. */
   needsAttention: boolean
   /**
    * A live conflict (catch-up Phase 30; US-01.5.2 "the List changes colour"):
@@ -163,15 +161,13 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
         segments: segmentsFor(viewsByAnaesthetist[anaesthetist.registrationNumber] ?? [], slotStatuses).map(
           (segment): DisplaySegment => {
             const list = segment.view.list
-            const listAttention = list !== undefined && attentionReasons(list).length > 0
             const conflict = list !== undefined && list.conflicts.length > 0
             const warnings = list !== undefined ? warningFlags.get(list.id) : undefined
             return {
               ...segment,
               displayKey: segment.view.displayKey,
-              listAttention,
               conflict,
-              needsAttention: listAttention || warnings !== undefined,
+              needsAttention: conflict || warnings !== undefined,
               hasNote: hasNoteSignal(segment.view),
               warnings,
             }
@@ -189,7 +185,6 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
           if (hiddenStatuses.has(segment.displayKey)) return false
           if (focusFilters.size === 0) return true
           return (
-            (focusFilters.has('attention') && segment.listAttention) ||
             (focusFilters.has('conflicts') && segment.conflict) ||
             (focusFilters.has('note') && segment.hasNote) ||
             (focusFilters.has('warnings') && segment.warnings !== undefined)
@@ -365,12 +360,6 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
         <InfoTip topic="day.statuses" />
         <div role="group" aria-label="List focus filters" style={{ display: 'inline-flex', gap: 8, flexWrap: 'wrap' }}>
           <SignalFilterButton
-            label="Needs attention"
-            active={focusFilters.has('attention')}
-            icon="!"
-            onClick={() => toggleFocus('attention')}
-          />
-          <SignalFilterButton
             label="Conflict"
             active={focusFilters.has('conflicts')}
             icon="conflict"
@@ -412,7 +401,7 @@ export function DayGrid({ anaesthetists, viewsByAnaesthetist, masters, warningFl
   )
 }
 
-function SignalFilterButton({ label, active, icon, onClick }: { label: string; active: boolean; icon: '!' | 'conflict' | 'warning' | 'note'; onClick: () => void }) {
+function SignalFilterButton({ label, active, icon, onClick }: { label: string; active: boolean; icon: 'conflict' | 'warning' | 'note'; onClick: () => void }) {
   return (
     <button
       type="button"
@@ -440,10 +429,8 @@ function SignalFilterButton({ label, active, icon, onClick }: { label: string; a
         </span>
       ) : icon === 'note' ? (
         <span aria-hidden style={{ width: 7, height: 7, borderRadius: radius.pill, background: neutral.ink, opacity: 0.55 }} />
-      ) : icon === 'warning' ? (
-        <AttentionDot glyph="triangle" />
       ) : (
-        <AttentionDot />
+        <AttentionDot glyph="triangle" />
       )}
       {label}
     </button>
@@ -452,7 +439,7 @@ function SignalFilterButton({ label, active, icon, onClick }: { label: string; a
 
 function GridBlock({ seg, masters, ruler, bookingCount, stubCount = 0, onClick }: { seg: DisplaySegment; masters: AppState['masters']; ruler: Ruler; bookingCount: number | undefined; stubCount?: number; onClick: () => void }) {
   const { slot, list } = seg.view
-  const { displayKey, listAttention, needsAttention, conflict, hasNote: hasNoteSignal, warnings } = seg
+  const { displayKey, needsAttention, conflict, hasNote: hasNoteSignal, warnings } = seg
   const resolved = resolveDisplayStatus(displayKey, masters.slotStatuses)
   const colour = resolved.visual
   const isOpenEmpty = list === undefined && seg.view.open
@@ -507,7 +494,7 @@ function GridBlock({ seg, masters, ruler, bookingCount, stubCount = 0, onClick }
   // as the block's subtitle (recurring-booking notes, free-cover text).
   const hasNote = note !== undefined && note.trim() !== ''
   const noteIsSubtitle = hasNote && l2 === note
-  const showNoteDot = hasNoteSignal && !listAttention
+  const showNoteDot = hasNoteSignal
   const warningTip = warnings !== undefined ? plural(warnings.open, 'open warning') : ''
   const surgeonTip = (conflict || templateLabel !== undefined) && surgeon !== undefined ? surgeon.name : ''
   const countTip = bookingCount !== undefined ? [plural(bookingCount, 'booking'), listStubNote(stubCount)].filter(Boolean).join(', ') : ''
@@ -563,10 +550,6 @@ function GridBlock({ seg, masters, ruler, bookingCount, stubCount = 0, onClick }
             <span style={conflict ? { fontSize: 9.5, lineHeight: '12px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: semantic.warning.onTint } : { fontSize: 9.5, lineHeight: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: colour.onTint, opacity: 0.75 }}>{l2}</span>
           )}
         </span>
-      )}
-      {listAttention && (
-        // A marker, never a control: the reasons reach assistive tech through the block button's title, so the glyph stays out of its name (U1).
-        <AttentionDot style={{ position: 'absolute', top: 3, right: 3 }} />
       )}
       {showNoteDot && (
         <span style={{ position: 'absolute', top: 5, right: 5, width: 7, height: 7, borderRadius: radius.pill, background: neutral.ink, opacity: 0.55 }} />
