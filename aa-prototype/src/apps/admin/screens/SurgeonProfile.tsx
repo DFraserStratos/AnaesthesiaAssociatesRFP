@@ -123,7 +123,7 @@ function SurgeonRetireAction({ surgeon, actor }: CardProps) {
         <Overlay open onClose={() => setOpen(false)}>
           <div data-shot="surgeon-retire-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <OverlayHeader title={retired ? `Reinstate ${surgeon.name}?` : `Retire ${surgeon.name}?`} />
-            <RetireSection kind="surgeon" id={surgeon.id} actor={actor} onDone={() => setOpen(false)} />
+            <RetireSection kind="surgeon" id={surgeon.id} actor={actor} titled={false} onDone={() => setOpen(false)} />
           </div>
         </Overlay>
       )}

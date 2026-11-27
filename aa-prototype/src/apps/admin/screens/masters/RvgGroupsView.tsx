@@ -20,7 +20,7 @@ import {
 } from '../../../../domain/billing/rvgGroups'
 import { createRvgGroup, editRvgGroup, restoreRvgGroup, retireRvgGroup, useAppStore, type Actor } from '../../../../store'
 import { Button, FormError, TextField, useSurface } from '../../../../shared'
-import { OverlayHeader, SheetActions } from '../../../../shared/surface'
+import { ConfirmSheet, OverlayHeader, SheetActions } from '../../../../shared/surface'
 import { HistorySheet } from '../../../../shared/booking'
 import { Checkbox, FilterPills, NameSearchBox, SelectField } from '../../../../shared/ui'
 import { PageToolbar } from '../../components/AdminPage'
@@ -251,7 +251,6 @@ function RvgGroupSheet({ group, actor, headings, onClose }: { group?: RvgGroup; 
 }
 
 function RetireRvgGroup({ group, actor, onClose }: { group: RvgGroup; actor: Actor; onClose: () => void }) {
-  const { Overlay } = useSurface()
   const [error, setError] = useState<string | null>(null)
 
   function retire() {
@@ -264,19 +263,12 @@ function RetireRvgGroup({ group, actor, onClose }: { group: RvgGroup; actor: Act
   }
 
   return (
-    <Overlay open onClose={onClose}>
-      <div data-shot="rvg-group-retire" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <OverlayHeader title={<>Retire {group.code}?</>} />
-        <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
-          {group.description} leaves the RVG code search. Procedures that already carry it keep it and price as before. You can restore it later.
-        </div>
-        <FormError message={error} />
-        <SheetActions
-          primary={<Button variant="primary" block onClick={retire}>Retire group</Button>}
-          secondary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>}
-        />
+    <ConfirmSheet open onClose={onClose} title={<>Retire {group.code}?</>} confirmLabel="Retire group" onConfirm={retire} cancelLabel="Cancel" shot="rvg-group-retire">
+      <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
+        {group.description} leaves the RVG code search. Procedures that already carry it keep it and price as before. You can restore it later.
       </div>
-    </Overlay>
+      <FormError message={error} />
+    </ConfirmSheet>
   )
 }
 

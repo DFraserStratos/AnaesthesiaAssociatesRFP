@@ -5,7 +5,7 @@
  * and the old waiting addresses landing on Needs NHI.
  */
 
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { act, cleanup, fireEvent, render, within } from '@testing-library/react'
 import { createMemoryRouter, createRoutesFromElements, MemoryRouter, Outlet, Route, RouterProvider, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -16,7 +16,8 @@ import { stubForRow } from '../../../../../store/stubSelectors'
 import { stageNoNhiList } from '../../../../../test/intakeSamples'
 import { NO_NHI_NEW_PATIENT_NHI, NO_NHI_RETURNING_NHI } from '../../../../../domain/intake/hospitalDownloads'
 import { SEED_STUB } from '../../../../../domain/seed/intakeSeed'
-import { SurfaceProvider } from '../../../../../shared/surface'
+import { SurfaceProvider, useSurface, type OverlayProps, type Surface } from '../../../../../shared/surface'
+import { SurfaceCtx } from '../../../../../shared/surface/context'
 import { HUB_TIMING } from '../../../../../shared/nhiHub'
 import { REGISTER_DIFFERS_LINE } from '../../../intake/AddNhiSheet'
 import { intakeRoutes, mastersAndLegacyRoutes } from '../../../../../test/adminRoutes'
@@ -70,6 +71,16 @@ function benchFor(name: string, onDone: () => void = noop): HTMLElement {
 function openAddNhi(bench: HTMLElement): HTMLElement {
   fireEvent.click(within(bench).getByRole('button', { name: 'Add NHI' }))
   return document.querySelector('[data-shot="add-nhi-sheet"]') as HTMLElement
+}
+
+/** The web surface with its Overlay wrapped in a marker of the size asked for (jsdom drops the dialog's `min()` width). */
+function OverlaySizeProbe({ children }: { children: ReactNode }) {
+  const surface = useSurface()
+  const probed = useMemo<Surface>(() => {
+    const Inner = surface.Overlay
+    return { ...surface, Overlay: (props: OverlayProps) => <div data-overlay-size={props.size ?? 'default'}><Inner {...props} /></div> }
+  }, [surface])
+  return <SurfaceCtx.Provider value={probed}>{children}</SurfaceCtx.Provider>
 }
 
 function addNhi(sheet: HTMLElement, nhi: string) {
@@ -262,6 +273,25 @@ describe('Add NHI: the register check (catch-up Phase 40a)', () => {
     answer()
     expect(sheet.querySelector('[data-shot="add-nhi-register-differs"]')?.textContent).toBe(REGISTER_DIFFERS_LINE)
     expect(within(sheet).getByRole('button', { name: 'Add NHI' })).toBeEnabled()
+  })
+
+  it('the dialog stays default while typing and widens only while the differences table shows', () => {
+    stageNoNhiList(useAppStore)
+    const key = needsNhiKeyFor(useAppStore.getState(), rowIdOf('Aroha Ngata'))!
+    const { container } = inAdmin(
+      <OverlaySizeProbe>
+        <Bench arrivalKey={key} onDone={noop} />
+      </OverlaySizeProbe>,
+    )
+    const sheet = openAddNhi(container.querySelector('[data-shot="intake-bench-needsNhi"]') as HTMLElement)
+    const size = () => sheet.closest('[data-overlay-size]')?.getAttribute('data-overlay-size')
+    expect(size()).toBe('default')
+    fireEvent.change(within(sheet).getByLabelText('NHI'), { target: { value: NO_NHI_RETURNING_NHI } })
+    expect(sheet.querySelector('[data-shot="add-nhi-differences"]')).not.toBeNull()
+    expect(size()).toBe('wide')
+    fireEvent.change(within(sheet).getByLabelText('NHI'), { target: { value: 'ZAE0311' } })
+    expect(sheet.querySelector('[data-shot="add-nhi-differences"]')).toBeNull()
+    expect(size()).toBe('default')
   })
 })
 

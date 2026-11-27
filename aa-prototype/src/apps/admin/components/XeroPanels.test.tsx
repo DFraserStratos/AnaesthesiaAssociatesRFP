@@ -2,7 +2,7 @@
  * The Xero panels (catch-up Phase 37; EP-09; build plan Phases 58 and 61), as
  * the Xero tab shows them: the hand-off rows (Retry now, its result in place,
  * the alert banner after repeated attempts), the changed-in-Xero rows and the
- * Resolve side panel (note required, provisional, no money moved). The three
+ * Resolve dialog (note required, provisional, no money moved). The three
  * panel exports the catalogue shows still render on their own.
  */
 

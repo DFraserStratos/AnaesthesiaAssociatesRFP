@@ -184,6 +184,8 @@ describe("the surgeon's page: one card, one change", () => {
     const status = () => shot('surgeon-status')
     const sheet = () => shot('surgeon-retire-sheet')
     fireEvent.click(shot('surgeon-retire'))
+    // The dialog's title names the retire once; the section adds no heading of its own.
+    expect(within(sheet()).getAllByRole('heading').map((h) => h.textContent)).toEqual([expect.stringMatching(/^Retire .+\?$/)])
     fireEvent.change(within(sheet()).getByLabelText('Why it is being retired'), { target: { value: 'Moved to Auckland' } })
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Retire surgeon' }))
     expect(audit().at(-1)?.action).toBe('surgeon.retire')

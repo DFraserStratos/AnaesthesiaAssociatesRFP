@@ -4,7 +4,7 @@
  *
  * - one grouped table: `XeroTableHead` (`XERO_TABLE_SPAN` columns), then a `XeroQueueRows`
  *   fragment per group of hand-offs (Retry now, its result in place) and a `XeroDivergenceRows`
- *   fragment for the invoices changed directly in Xero (Resolve opens `ResolveDivergencePanel`);
+ *   fragment for the invoices changed directly in Xero (Resolve opens the `ResolveDivergencePanel` dialog);
  * - the rail: `XeroConnectionCard` (the connection as a `Notice`, then what the store knows about
  *   it) and `XeroWhatHappensCard`;
  * - `XeroConnectionLine`, `XeroQueuePanel` and `XeroDivergencePanel`, each a small table of its
@@ -37,7 +37,7 @@ import {
 import { XERO_ALERT_AFTER_ATTEMPTS } from '../../../domain/xero/queue'
 import { isBookingPair } from '../../../domain/billing/ledger'
 import type { XeroDivergence, XeroQueueItem } from '../../../domain/types'
-import { SidePanel } from '../../../shared/surface/SidePanel'
+import { OverlayHeader, SheetActions, useSurface } from '../../../shared/surface'
 import { xeroFlagText } from '../../../shared/procedureEventCopy'
 
 type BillingSlice = AppState['billing']
@@ -474,7 +474,7 @@ function ShowsAgainstHolds({ d }: { d: XeroDivergence }) {
 /**
  * The invoices changed directly in Xero, as one group of the grouped table: its heading, then a
  * row per flag (the invoice, the anaesthetist, what Xero shows against what the engine holds, when
- * the poll found it, its status) with Resolve, which opens the Resolve side panel owned here.
+ * the poll found it, its status) with Resolve, which opens the Resolve dialog owned here.
  */
 export function XeroDivergenceRows({
   title,
@@ -523,7 +523,7 @@ export function XeroDivergenceRows({
           </tr>
         )
       })}
-      {/* The side panel is fixed to the viewport; this empty row only gives it a valid home inside the tbody while it is open. */}
+      {/* The dialog is fixed to the viewport; this empty row only gives it a valid home inside the tbody while it is open. */}
       {resolving !== null && (
         <tr data-xero-resolve-host="">
           <Td colSpan={XERO_TABLE_SPAN} style={{ padding: 0, borderBottom: 'none' }}>
@@ -563,8 +563,9 @@ export function XeroDivergencePanel({ actor, anaesthetistId }: { actor: Actor; a
   )
 }
 
-/** The Resolve side panel: one of three outcomes and a required note; provisional, and moves no money. */
+/** The Resolve dialog: one of three outcomes and a required note; provisional, and moves no money. */
 export function ResolveDivergencePanel({ flag, actor, onClose }: { flag: XeroDivergence | null; actor: Actor; onClose: () => void }) {
+  const { Overlay } = useSurface()
   const invoices = useAppStore((s) => s.billing.invoices)
   const [outcome, setOutcome] = useState<(typeof DIVERGENCE_OUTCOMES)[number]['id']>('reissueInXero')
   const [note, setNote] = useState('')
@@ -588,35 +589,32 @@ export function ResolveDivergencePanel({ flag, actor, onClose }: { flag: XeroDiv
     close()
   }
 
+  if (flag === null) return null
   return (
-    <SidePanel
-      open={flag !== null}
-      onClose={close}
-      width="record"
-      title={flag !== null ? `Resolve ${invoices[flag.invoiceId]?.invoiceNumber ?? flag.invoiceId}` : 'Resolve'}
-      meta={flag !== null ? <Pill tone="error">{xeroShowsText(flag)}</Pill> : undefined}
-      shot="billing-xero-resolve-panel"
-      footerLayout="end"
-      footer={
-        <>
-          <Button variant="secondary" size="desktop" onClick={close}>Cancel</Button>
-          <Button variant="primary" size="desktop" onClick={save} shot="billing-xero-resolve-save">Record resolution</Button>
-        </>
-      }
-    >
-      <div style={{ fontSize: 13, color: neutral.slate }}>
-        Recording a resolution moves no money: the ledger keeps the amount the engine issued.
+    <Overlay open onClose={close}>
+      <div data-shot="billing-xero-resolve-panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <OverlayHeader
+          title={`Resolve ${invoices[flag.invoiceId]?.invoiceNumber ?? flag.invoiceId}`}
+          description={<Pill tone="error">{xeroShowsText(flag)}</Pill>}
+        />
+        <div style={{ fontSize: 13, color: neutral.slate }}>
+          Recording a resolution moves no money: the ledger keeps the amount the engine issued.
+        </div>
+        <div {...groupProps} aria-label="Resolution" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {DIVERGENCE_OUTCOMES.map((o, i) => (
+            <RadioCard key={o.id} radio={itemProps(i)} checked={outcome === o.id} onSelect={() => setOutcome(o.id)} title={o.label} data-outcome={o.id} />
+          ))}
+        </div>
+        <TextArea label="Note" value={note} onChange={setNote} rows={3} placeholder="What was done, and by whom" shot="billing-xero-resolve-note" />
+        <FormError message={error} />
+        <div data-shot="billing-xero-resolve-provisional" style={{ fontSize: 12, color: neutral.mist }}>
+          Provisional: the policy for each mismatch is to be agreed with AA.
+        </div>
+        <SheetActions
+          secondary={<Button variant="secondary" size="desktop" onClick={close}>Cancel</Button>}
+          primary={<Button variant="primary" size="desktop" block onClick={save} shot="billing-xero-resolve-save">Record resolution</Button>}
+        />
       </div>
-      <div {...groupProps} aria-label="Resolution" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {DIVERGENCE_OUTCOMES.map((o, i) => (
-          <RadioCard key={o.id} radio={itemProps(i)} checked={outcome === o.id} onSelect={() => setOutcome(o.id)} title={o.label} data-outcome={o.id} />
-        ))}
-      </div>
-      <TextArea label="Note" value={note} onChange={setNote} rows={3} placeholder="What was done, and by whom" shot="billing-xero-resolve-note" />
-      <FormError message={error} />
-      <div data-shot="billing-xero-resolve-provisional" style={{ fontSize: 12, color: neutral.mist }}>
-        Provisional: the policy for each mismatch is to be agreed with AA.
-      </div>
-    </SidePanel>
+    </Overlay>
   )
 }

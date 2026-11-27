@@ -223,7 +223,7 @@ test('changes made in Xero: a void and an amended total, flagged at the reconcil
   await runDemoAction(page, 'run-reconciliation-poll', { close: true })
   await expect(divergence.locator('[data-divergence-id]')).toHaveCount(2)
 
-  // Resolve the void: the side panel records the outcome with a note; the flag leaves the panel.
+  // Resolve the void: the dialog records the outcome with a note; the flag leaves the panel.
   await voidRow.getByRole('button', { name: 'Resolve' }).click()
   const panel = page.locator('[data-shot="billing-xero-resolve-panel"]')
   await expect(panel).toBeVisible()

@@ -4,8 +4,8 @@ import { neutral, radius } from '../../../../theme/tokens'
 import { LIST_KINDS, type SlotStatus } from '../../../../domain/types'
 import { allStatusesForEditor } from '../../../../domain/slotStatus'
 import { futureSessionsWithStatus, reorderSlotStatus, restoreSlotStatus, retireSlotStatus, useAppStore, type Actor } from '../../../../store'
-import { Button, FormError, StatusChip, useSurface } from '../../../../shared'
-import { OverlayHeader, SheetActions } from '../../../../shared/surface'
+import { FormError, StatusChip } from '../../../../shared'
+import { ConfirmSheet } from '../../../../shared/surface'
 import { SlotStatusSheet } from '../../flows/SlotStatusSheet'
 import { MasterHeader, MasterTable } from './chrome'
 import { TextAction } from '../../../../shared/ui'
@@ -96,7 +96,6 @@ export function AvailabilityStatusesView({ actor }: { actor: Actor }) {
 }
 
 function RetireConfirm({ status, actor, onClose }: { status: SlotStatus; actor: Actor; onClose: () => void }) {
-  const { Overlay } = useSurface()
   const carrying = useAppStore((s) => futureSessionsWithStatus(s, status.key))
   const [error, setError] = useState<string | null>(null)
 
@@ -110,19 +109,20 @@ function RetireConfirm({ status, actor, onClose }: { status: SlotStatus; actor: 
   }
 
   return (
-    <Overlay open onClose={onClose}>
-      <div data-shot="admin-availability-status-retire" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <OverlayHeader title={<>Retire {status.label}?</>} />
-        <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
-          It leaves the choices and the legends. {carrying === 0 ? 'No session from today on carries it.' : `${carrying} ${carrying === 1 ? 'session' : 'sessions'} from today on ${carrying === 1 ? 'carries' : 'carry'} it. They keep it until changed.`} You can restore it later.
-        </div>
-        <div style={{ background: neutral.bg, borderRadius: radius.ctl, padding: 10 }}><StatusChip status={status.key} /></div>
-        <FormError message={error} />
-        <SheetActions
-          primary={<Button variant="primary" block onClick={retire}>Retire status</Button>}
-          secondary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>}
-        />
+    <ConfirmSheet
+      open
+      onClose={onClose}
+      title={<>Retire {status.label}?</>}
+      confirmLabel="Retire status"
+      onConfirm={retire}
+      cancelLabel="Cancel"
+      shot="admin-availability-status-retire"
+    >
+      <div style={{ fontSize: 14, color: neutral.slate, lineHeight: '20px' }}>
+        It leaves the choices and the legends. {carrying === 0 ? 'No session from today on carries it.' : `${carrying} ${carrying === 1 ? 'session' : 'sessions'} from today on ${carrying === 1 ? 'carries' : 'carry'} it. They keep it until changed.`} You can restore it later.
       </div>
-    </Overlay>
+      <div style={{ background: neutral.bg, borderRadius: radius.ctl, padding: 10 }}><StatusChip status={status.key} /></div>
+      <FormError message={error} />
+    </ConfirmSheet>
   )
 }

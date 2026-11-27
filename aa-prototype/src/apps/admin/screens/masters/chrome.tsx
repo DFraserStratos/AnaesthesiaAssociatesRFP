@@ -237,9 +237,10 @@ const NOUN: Record<RetireKind, string> = { hospital: 'hospital', surgeon: 'surge
  * Retire (with a required reason) or Reinstate a hospital, surgeon or AA
  * modifier, at the foot of its edit sheet (a surgeon's, on its page's Status card). A refused retire lists
  * the store's blockers as a warning; AA rooms (built in) says it cannot be retired.
- * `onDone` runs after a retire or reinstate goes through.
+ * `onDone` runs after a retire or reinstate goes through. `titled={false}` drops its own heading and
+ * rule, where a dialog's title already names the retire (the surgeon page's Retire dialog).
  */
-export function RetireSection({ kind, id, actor, onDone }: { kind: RetireKind; id: string; actor: Actor; onDone?: () => void }) {
+export function RetireSection({ kind, id, actor, onDone, titled = true }: { kind: RetireKind; id: string; actor: Actor; onDone?: () => void; titled?: boolean }) {
   const record = useRetireRecord(kind, id)
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -287,8 +288,8 @@ export function RetireSection({ kind, id, actor, onDone }: { kind: RetireKind; i
   }
 
   return (
-    <section data-shot="retire-section" data-retired={retired ? 'true' : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 14, borderTop: `1px solid ${neutral.line}` }}>
-      <Eyebrow as="h3" style={{ margin: 0 }}>{retired ? 'Retired' : `Retire this ${noun}`}</Eyebrow>
+    <section data-shot="retire-section" data-retired={retired ? 'true' : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 10, ...(titled ? { paddingTop: 14, borderTop: `1px solid ${neutral.line}` } : {}) }}>
+      {titled && <Eyebrow as="h3" style={{ margin: 0 }}>{retired ? 'Retired' : `Retire this ${noun}`}</Eyebrow>}
       {retired ? (
         <>
           <div style={{ fontSize: 13, color: neutral.slate, lineHeight: '19px' }}>

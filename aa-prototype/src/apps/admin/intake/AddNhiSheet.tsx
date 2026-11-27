@@ -71,6 +71,8 @@ export function AddNhiSheet({
   const preview = useMemo(() => (rowId !== undefined && done === null ? nhiRowPreview({ intake, masters, schedule }, rowId, nhi) : null), [rowId, done, intake, masters, schedule, nhi])
   const typed = nhi.trim() !== ''
   const valid = typed && preview !== null && preview.invalidReason === undefined
+  // The read-only comparison table needs the wide dialog; the plain case stays one column (docs/explorations/overlay-changes.html, Add NHI).
+  const showsDifferences = done === null && valid && preview !== null && preview.differences.length > 0
 
   function add() {
     if (row === null) return
@@ -86,7 +88,7 @@ export function AddNhiSheet({
 
   const shown = done?.row ?? row
   return (
-    <Overlay open={row !== null || done !== null} onClose={onClose}>
+    <Overlay open={row !== null || done !== null} onClose={onClose} size={showsDifferences ? 'wide' : 'default'}>
       <div data-shot="add-nhi-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <OverlayHeader
           title={`Add the NHI for ${shown?.patientName ?? 'this patient'}`}
@@ -146,7 +148,7 @@ export function AddNhiSheet({
                   )}
               </p>
             )}
-            {valid && preview !== null && preview.differences.length > 0 && (
+            {showsDifferences && preview !== null && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <span style={{ fontSize: 12.5, color: neutral.slate }}>The row's details differ from the record. They are held for review when the row is decided.</span>
                 <DetailChoiceTable rows={preview.differences} recordHeader="On the record" incomingHeader="On the row" shot="add-nhi-differences" />

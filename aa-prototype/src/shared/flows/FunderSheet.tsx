@@ -67,7 +67,7 @@ export function FunderSheet({ open, bookingId, actor, onClose }: FunderSheetProp
 
   return (
     <Overlay open={open} onClose={onClose}>
-      <div data-shot="funder-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 16, width: variant === 'web' ? 480 : undefined, maxWidth: '100%' }}>
+      <div data-shot="funder-sheet" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <OverlayHeader
             title="Insurer or funder"
