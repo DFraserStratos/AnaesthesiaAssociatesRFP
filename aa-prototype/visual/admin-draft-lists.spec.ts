@@ -26,10 +26,10 @@ async function cleanCopy(page: Page, where: string) {
 test('Draft Lists: soonest first, the band and rail card, and assigning St George\'s to Dr Fitzgerald makes it ACTIVE', async ({ page }) => {
   // Every date (When: All), so none waits behind Show past.
   await fresh(page, '/admin/lists/draft-lists?when=all')
-  // 47 across the whole practice (the scripted ten plus the colleagues' recurring and returned Lists): the tab's number.
-  await expect(page.locator('[data-lists-tab="draft-lists"]')).toContainText('47')
+  // 50 across the whole practice (the scripted ten plus the colleagues' recurring and returned Lists, and the morning's notices' returns): the tab's number.
+  await expect(page.locator('[data-lists-tab="draft-lists"]')).toContainText('50')
   const rows = page.locator('tr[data-draft-list-row]')
-  await expect(rows).toHaveCount(47)
+  await expect(rows).toHaveCount(50)
   await expect(rows.first()).toHaveAttribute('data-draft-list-row', 'LD-001')
   await expect(page.locator('tr[data-draft-list-row="LD-003"]')).toContainText('3 d 22 h')
   await page.screenshot({ path: 'visual/shots/p31-01-draft-lists.png', fullPage: true })

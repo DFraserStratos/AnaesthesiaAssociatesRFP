@@ -96,7 +96,7 @@ test('phase 26 admin: the Anaesthetists columns and the page\'s Bank and GST car
 
   const status = page.locator('[data-shot="anaesthetist-status"]')
   await expect(status).toHaveAttribute('data-status', 'active')
-  await status.getByRole('button', { name: 'Make inactive' }).click()
+  await page.locator('[data-shot="anaesthetist-make-inactive"]').click()
   const sheet = page.locator('[data-shot="make-inactive-sheet"]')
   // Dr Souter holds Lists after today, so the sheet lists them and Make inactive waits.
   await expect(sheet.locator('[data-shot="make-inactive-lists"]')).toContainText('Reassign them first.')

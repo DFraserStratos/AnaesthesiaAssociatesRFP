@@ -33,7 +33,8 @@ test('admin ledger: in balance, an unmatched receipt takes it out, allocating br
   await expect(page.locator('[data-shot="ledger-tiles"] [data-ledger-tile]')).toHaveCount(4)
   await expect(page.locator('[data-ledger-tile="receipts-to-place"]')).toContainText('$0.00')
   await expect(page.locator('[data-shot="ledger-summary"]')).toContainText('every one square')
-  await expect(page.locator('[data-shot="nav-badge-finances"]')).toHaveCount(0)
+  // The badge also counts the events awaiting approval on Payments (one at reset), never the Ledger here.
+  await expect(page.locator('[data-shot="nav-badge-finances"]')).toHaveText('1')
   await expect(page.locator('[data-shot="ledger-unmatched"] [data-unmatched-id]')).toHaveCount(0)
   await page.screenshot({ path: 'visual/shots/ledger-01-in-balance.png', fullPage: true })
 
@@ -49,7 +50,7 @@ test('admin ledger: in balance, an unmatched receipt takes it out, allocating br
   await expect(balance).toContainText('1 receipt that matches no invoice')
   await expect(page.locator('[data-check="unmatchedReceiptHeld"]')).toContainText('SOUTER JULY, $120.00')
   await expect(page.locator('[data-ledger-tile="receipts-to-place"]')).toContainText('$120.00')
-  await expect(page.locator('[data-shot="nav-badge-finances"]')).toHaveText('1')
+  await expect(page.locator('[data-shot="nav-badge-finances"]')).toHaveText('2')
   // 85 anaesthetists page at 50: find her by name.
   await page.locator('[data-shot="ledger-search"] input, input[data-shot="ledger-search"]').first().fill('Souter')
   const list = page.locator('[data-shot="ledger-anaesthetists"]')
@@ -91,7 +92,7 @@ test('admin ledger: in balance, an unmatched receipt takes it out, allocating br
   await expect(balance).toHaveAttribute('data-in-balance', 'true')
   await expect(balance).toContainText('The books are square')
   await expect(souterRow).toContainText('Square')
-  await expect(page.locator('[data-shot="nav-badge-finances"]')).toHaveCount(0)
+  await expect(page.locator('[data-shot="nav-badge-finances"]')).toHaveText('1')
   // A placed receipt leaves the rail (D106).
   await expect(held.locator('[data-unmatched-id]')).toHaveCount(0)
   expect(pairId).not.toBeNull()

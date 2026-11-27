@@ -34,8 +34,7 @@ test('admin: To-do card, outline down to the Booking, Clear, sample triggers', a
 
   const todo = page.locator('[data-shot="admin-warnings-todo"]')
   await expect(todo).toBeVisible()
-  // The whole practice's To-do runs past the card's first rows: Riley's prepayment sits behind Show all.
-  await todo.getByRole('button', { name: /^Show all/ }).click()
+  // The To-do holds warnings only (the Contracts tab took the Lists without a Contract), so Riley's prepayment shows without Show all.
   await expect(todo).toContainText('awaiting approval on Invoices')
   await expect(todo).toContainText('Annette Riley')
   await expect(todo).not.toContainText('Provisional')
@@ -90,7 +89,6 @@ test('admin: the Booking detail shows the warning first, awaiting approval, with
   await page.goto('/admin/day/2026-11-27')
   await page.waitForLoadState('networkidle')
   const todo = page.locator('[data-shot="admin-warnings-todo"]')
-  await todo.getByRole('button', { name: /^Show all/ }).click()
   await todo.getByRole('button', { name: "Open Annette Riley's Booking" }).click()
   const panel = page.locator('[data-shot="booking-warnings"]')
   await expect(panel).toBeVisible()

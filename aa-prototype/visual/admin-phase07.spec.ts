@@ -95,7 +95,7 @@ test('admin phase 07 master data', async ({ page }) => {
   // Edit an anaesthetist's unit value: on the record's Rate and tier card (build plan Phase 50), Edit then Save.
   await page.locator('tr[data-anaesthetist]').first().locator('.aa-table-entity-link').click()
   const rateTier = page.locator('[data-shot="rate-tier-card"]')
-  await rateTier.getByRole('button', { name: 'Edit rate and tier' }).click()
+  await rateTier.getByRole('button', { name: 'Edit rate and offer order' }).click()
   await rateTier.getByLabel('Rate per unit ($)').fill('55')
   await rateTier.getByRole('button', { name: 'Save' }).click()
   await expect(rateTier.locator('[data-shot="rate-tier-rate"]')).toContainText('$55.00')

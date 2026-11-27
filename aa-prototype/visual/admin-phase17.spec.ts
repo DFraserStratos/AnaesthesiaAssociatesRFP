@@ -102,21 +102,21 @@ test('phase 17 anaesthetist record', async ({ page }) => {
 
   // Build plan Phase 50: the tier is edited on the Rate and tier card, never by a single click.
   await expect(card).toContainText('office only')
-  await card.getByRole('button', { name: 'Edit rate and tier' }).click()
-  await card.getByRole('button', { name: 'Tier 3' }).click()
+  await card.getByRole('button', { name: 'Edit rate and offer order' }).click()
+  await card.getByRole('button', { name: 'Third' }).click()
   await expect(card).toHaveAttribute('data-editing', '')
   await card.getByRole('button', { name: 'Save' }).click()
   await expect(card).toHaveAttribute('data-tier', '3')
-  await expect(card.locator('[data-shot="rate-tier-tier"]')).toContainText('Tier 3')
+  await expect(card.locator('[data-shot="rate-tier-tier"]')).toContainText('Third')
 
   // The Anaesthetists list filters by tier.
   await page.goto('/admin/people/anaesthetists?q=Sharma')
-  const filter = page.locator('[data-shot="tier-filter-list"]').getByRole('group', { name: 'Filter by tier' })
-  await filter.getByRole('button', { name: 'Tier 3' }).click()
+  const filter = page.locator('[data-shot="tier-filter-list"]').getByRole('group', { name: 'Filter by offer order' })
+  await filter.getByRole('button', { name: 'Third' }).click()
   await expect(page.locator('tr[data-anaesthetist="41267"]')).toBeVisible()
-  await filter.getByRole('button', { name: 'Tier 1' }).click()
+  await filter.getByRole('button', { name: 'First' }).click()
   await expect(page.locator('tr[data-anaesthetist="41267"]')).toHaveCount(0)
-  await filter.getByRole('button', { name: 'All tiers' }).click()
+  await filter.getByRole('button', { name: 'Any offer order' }).click()
   await expect(page.locator('tr[data-anaesthetist="41267"]')).toBeVisible()
 })
 
@@ -146,7 +146,7 @@ test('phase 17 reassign pickers (open only)', async ({ page }) => {
   await expect(page.locator('[data-shot="candidates-clear"] [data-candidate="41267"]').getByText('Preferred')).toBeVisible()
   await page.waitForTimeout(450)
   await page.screenshot({ path: 'visual/shots/p17-08-reassign-tiers.png', fullPage: true })
-  await page.locator('[data-shot="tier-filter"]').getByRole('button', { name: 'Tier 1' }).click()
+  await page.locator('[data-shot="tier-filter"]').getByRole('button', { name: 'First' }).click()
   const filtered = await page.locator('[data-candidate] [data-tier]').evaluateAll((els) => els.map((e) => e.getAttribute('data-tier')))
   expect(new Set(filtered)).toEqual(new Set(['1']))
   await page.waitForTimeout(450)

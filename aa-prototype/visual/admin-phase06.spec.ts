@@ -246,11 +246,12 @@ test('S2 phone-advice lookup fills and saves the complete booking', async ({ pag
   // The store persists on a short debounce.
   await expect.poll(readSaved).toEqual({ text: 'Appendicectomy, laparoscopic', source: 'phone', origin: 'entered' })
   // Saved with no Contract, its List waits on the Contracts tab of Admin Day's work card (US-04.3.12).
+  // The session drawer stays open over the rail after Done: close it first.
+  await page.keyboard.press('Escape')
   await page.locator('[data-shot=admin-work-tab-contracts]').click()
   await expect(page.locator('[data-shot=admin-contracts-to-set] [data-shot=contracts-to-set-procedure]').filter({ hasText: 'Demo Patient' })).toHaveCount(1)
   await page.locator('[data-shot=admin-work-tab-todo]').click()
   // The session now holds a Private List (P5 closed): the block reads St George's.
-  await page.keyboard.press('Escape')
   await expect(page.locator('button[data-slot-id="S-41267-2026-11-24-PM"]')).toContainText("St George's")
 })
 
