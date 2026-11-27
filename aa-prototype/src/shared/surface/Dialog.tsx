@@ -12,11 +12,14 @@ interface DialogProps {
   children: ReactNode
   /** Accepted for signature parity with the mobile bottom sheet; unused on web. */
   hideHandle?: boolean
-  /** `wide` for a two-column body (the step rail). */
-  size?: 'default' | 'wide'
+  /** `DIALOG_WIDTH`: `wide` for tables, pairs and two columns, `large` for a document or an editor with a preview. */
+  size?: 'default' | 'wide' | 'large'
   /** The control that takes focus on open (a confirm's safe button). */
   initialFocusRef?: RefObject<HTMLElement>
 }
+
+/** The desktop widths (docs/explorations/overlay-changes.html): one column, wide, and a document or editor with a preview. */
+export const DIALOG_WIDTH = { default: 520, wide: 760, large: 1040 } as const
 
 /**
  * The web `SurfaceProvider`'s `Overlay` (convention 16): a centred desktop
@@ -115,7 +118,7 @@ export function Dialog({ open, onClose, children, size = 'default', initialFocus
         style={{
           position: 'relative',
           outline: 'none',
-          width: size === 'wide' ? 'min(760px, 100%)' : 'min(520px, 100%)',
+          width: `min(${DIALOG_WIDTH[size]}px, 100%)`,
           maxHeight: '86vh',
           display: 'flex',
           flexDirection: 'column',

@@ -136,7 +136,7 @@ export function EmailTemplateSheet({ template, actor, onClose }: { template?: Em
   }
 
   return (
-    <Overlay open onClose={onClose} size="wide">
+    <Overlay open onClose={onClose} size="large">
       <div data-shot="email-template-editor" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <OverlayHeader
           title={template === undefined ? 'Add an email template' : `Edit ${template.name}`}

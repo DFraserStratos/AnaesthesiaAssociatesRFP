@@ -18,8 +18,12 @@ export interface OverlayProps {
   children: ReactNode
   /** Hide the drag handle on mobile (sheet owns its own header chrome). */
   hideHandle?: boolean
-  /** A wider desktop dialog for a two-column body (the step rail, catch-up Phase 20); the mobile sheet ignores it. */
-  size?: 'default' | 'wide'
+  /**
+   * The desktop dialog's width; the mobile sheet ignores it. `default` 520 for one column; `wide` 760 for a
+   * table of three or more columns, paired fields, two columns or dense picker rows; `large` 1040 for a
+   * document at full size or an editor beside its live preview (docs/explorations/overlay-changes.html).
+   */
+  size?: 'default' | 'wide' | 'large'
   /** The control that takes focus on open (a `ConfirmSheet`'s safe button; UI unification U2). */
   initialFocusRef?: RefObject<HTMLElement>
 }

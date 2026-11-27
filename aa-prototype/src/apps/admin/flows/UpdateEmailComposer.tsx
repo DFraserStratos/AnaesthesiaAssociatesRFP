@@ -132,7 +132,7 @@ export interface UpdateEmailComposerProps {
 export function UpdateEmailComposer(props: UpdateEmailComposerProps) {
   const { Overlay } = useSurface()
   return (
-    <Overlay open={props.open} onClose={props.onClose} size="wide">
+    <Overlay open={props.open} onClose={props.onClose} size="large">
       {props.open && <ComposerBody {...props} />}
     </Overlay>
   )

@@ -16,9 +16,9 @@ import {
   setDefaultLetterTemplate,
   setLetterTemplateActive,
 } from '../../../../store/letterTemplateActions'
-import { Button, FormError, TextArea, TextField } from '../../../../shared'
+import { Button, FormError, TextArea, TextField, useSurface } from '../../../../shared'
 import { Pill, SelectField, TextAction } from '../../../../shared/ui'
-import { Dialog, OverlayHeader, SheetActions } from '../../../../shared/surface'
+import { OverlayHeader, SheetActions } from '../../../../shared/surface'
 import { MasterHeader, MasterTable } from './chrome'
 import { cellStyle } from './tableStyles'
 
@@ -96,6 +96,7 @@ export function PrepaymentLettersView({ actor }: { actor: Actor }) {
 
 /** Add or edit one template: name, kind (new only), body with merge-field chips, and a live preview against a sample Booking. */
 export function LetterTemplateSheet({ template, actor, onClose }: { template?: PrepaymentLetterTemplate; actor: Actor; onClose: () => void }) {
+  const { Overlay } = useSurface()
   const [name, setName] = useState(template?.name ?? '')
   const [kind, setKind] = useState<PrepaymentLetterKind>(template?.kind ?? 'request')
   const [body, setBody] = useState(template?.body ?? '')
@@ -141,7 +142,7 @@ export function LetterTemplateSheet({ template, actor, onClose }: { template?: P
   const fieldError = (field: 'name' | 'body') => (refusal !== null && refusal.field === field ? refusal.message : null)
 
   return (
-    <Dialog open onClose={onClose} size="wide">
+    <Overlay open onClose={onClose} size="large">
       <div data-shot="letter-template-editor" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <OverlayHeader
           title={template === undefined ? 'New letter template' : `Edit ${template.name}`}
@@ -205,6 +206,6 @@ export function LetterTemplateSheet({ template, actor, onClose }: { template?: P
           secondary={<Button variant="secondary" block onClick={onClose}>Cancel</Button>}
         />
       </div>
-    </Dialog>
+    </Overlay>
   )
 }

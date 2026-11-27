@@ -158,10 +158,10 @@ export function PdfPage(props: PdfPageProps) {
         <PdfSheet {...sheet} {...(onSelect !== undefined ? { onSelect } : {})} scrollSelected={!full} />
       </div>
 
-      <Dialog open={full} onClose={() => setFull(false)} size="wide">
+      <Dialog open={full} onClose={() => setFull(false)} size="large">
         <OverlayHeader title={fileName} description={`Page ${shown} of ${pages} at full size.${toCheck > 0 ? ' Values to check are marked.' : ''}`} />
         {turner !== null && <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: space[3] }}>{turner}</div>}
-        {/* A landscape page is wider than the dialog: it keeps its full size and the frame scrolls sideways. */}
+        {/* The large dialog fits an A4 or US letter landscape page; anything wider keeps its full size and the frame scrolls sideways. */}
         <div data-shot={`${shot}-full`} style={{ marginTop: space[4], overflowX: 'auto', background: neutral.sunken, borderRadius: radius.card, padding: space[4] }}>
           <div style={{ width: '100%', minWidth: turns % 2 === 1 ? height : width, margin: '0 auto' }}>
             <PdfSheet
