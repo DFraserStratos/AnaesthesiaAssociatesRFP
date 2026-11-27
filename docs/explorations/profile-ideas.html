@@ -271,7 +271,7 @@ main{padding-top:var(--barH)}
 .factrow .sp{flex:1}
 .facts b .since{font-weight:500;font-size:12.5px;color:var(--slate);margin-left:6px}
 /* 3: contact actions anchor the right end */
-.facts .reach{margin-left:auto;flex-direction:row;align-items:center;gap:18px;padding:0 20px}
+.facts .reach{border-left:0;margin-left:auto;flex-direction:row;align-items:center;gap:18px;padding:0 20px}
 .reach a{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--teal);text-decoration:none;white-space:nowrap}
 .reach a .mono{font-weight:500;color:var(--ink)}
 .reach svg{width:15px;height:15px;color:var(--teal);flex:none}
@@ -343,7 +343,7 @@ main{padding-top:var(--barH)}
 <!-- ================= 3 ================= -->
 <section class="view" id="v-3" data-name="3" role="tabpanel">
   <div class="vhead"><div class="grow"><h2><span class="l">3</span>Contact on the right</h2>
-    <p>The record facts sit on the left. Phone and email move to the right end as contact links (a phone and a mail icon, each with its value), behind a divider. The space in the middle now separates "who they are" from "how to reach them", so it reads as deliberate. "Since" goes on the Status line.</p></div>
+    <p>The record facts sit on the left. Phone and email move to the right end as contact links (a phone and a mail icon), with no divider before them, so they read as the bar's own right-hand end rather than another cell. "Make inactive" (or "Retire") sits at the right of the name row, level with the name and above the contact links. "Since" goes on the Status line.</p></div>
     <div class="subs"><button aria-pressed="true" data-f="f3a">Anaesthetist</button><button data-f="f3s">Surgeon</button></div></div>
   <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="f3a"></div><div class="frame" id="f3s"></div></div></div>
     <aside class="why">
@@ -351,6 +351,7 @@ main{padding-top:var(--barH)}
         <li>Both ends of the bar are anchored, and the bar keeps its full width.</li>
         <li>The phone number is the thing the office does something with: it now looks like a link, not a fact.</li>
         <li>On a surgeon, the office contact is the one emails go to first (US-13.6.5), so it belongs there.</li>
+        <li>The status action has the name row's empty right end to itself, the usual place for a page's main action, and the Status card below can go.</li>
       </ul></section>
       <section class="against"><h3>Against</h3><ul>
         <li>A tel: or mailto: link from a desktop app may do nothing useful; a copy button may suit better.</li>
@@ -500,8 +501,8 @@ main{padding-top:var(--barH)}
       <div class="facts stretch">${[...statusCells(p), ...p.facts, phoneFact(p)].map(cell).join('')}</div>`,
     2: (p) => `${back(p)}<div class="hero">${nameBlock(p)}</div>
       <div class="factrow"><div class="facts">${[statusInline(p), ...p.facts, phoneFact(p)].map(cell).join('')}</div><span class="sp"></span><span class="btn2">${p.action}</span></div>`,
-    3: (p) => `${back(p)}<div class="hero">${nameBlock(p)}</div>
-      <div class="facts">${[statusInline(p), ...p.facts].map(cell).join('')}<div class="reach" style="border-left:1px solid var(--line)"><a>${ICON.phone}<span class="mono">${p.phone}</span></a><a>${ICON.mail}${p.kind === 'a' ? 'Email' : 'Email the office'}</a></div></div>`,
+    3: (p) => `${back(p)}<div class="hero">${nameBlock(p)}<span class="btn2">${p.action}</span></div>
+      <div class="facts">${[statusInline(p), ...p.facts].map(cell).join('')}<div class="reach"><a>${ICON.phone}<span class="mono">${p.phone}</span></a><a>${ICON.mail}${p.kind === 'a' ? 'Email' : 'Email the office'}</a></div></div>`,
     4: (p) => `${back(p)}<div class="hero">${nameBlock(p)}<div class="open">${[['Status', `${DOT}${p.since ? `Active since ${p.since}` : 'Active'}`], ...p.facts, phoneFact(p)].map(cell).join('')}</div></div>`,
     5: (p) => `${back(p)}<div class="hcard"><div class="top">${nameBlock(p)}<span class="btn2">${p.action}</span></div>
       <div class="facts">${[...statusCells(p), ...p.facts, phoneFact(p)].map(cell).join('')}</div></div>`,
