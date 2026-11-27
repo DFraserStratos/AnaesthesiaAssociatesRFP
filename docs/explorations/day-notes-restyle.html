@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day notes options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#172320;--slate:#58635F;--mist:#8A9490;--lineStrong:#C9D1CE;--line:#E2E7E5;--sunken:#EDF1EF;--bg:#F6F8F7;--surface:#FFFFFF;
+  --teal:#0D6E63;--tealHover:#0A5A51;--tealTint:#E1F0ED;--focus:0 0 0 3px rgba(13,110,99,.30);
+  --warn:#A16207;--warnTint:#F9F0DC;--warnOn:#7C4D08;--err:#C2403C;
+  --brand:#A91E3E;--brandTint:#F7E7EC;
+  --ui:'Schibsted Grotesk',system-ui,sans-serif;--mono:'Spline Sans Mono',ui-monospace,monospace;
+  --rCard:12px;--rCtl:8px;--shadowCard:0 1px 2px rgba(23,35,32,.06),0 1px 1px rgba(23,35,32,.04);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:22px;-webkit-font-smoothing:antialiased}
+button,textarea,input{font:inherit;color:inherit}
+button:focus-visible,textarea:focus-visible,input:focus-visible{outline:none;box-shadow:var(--focus)}
+.page{max-width:1480px;margin:0 auto;padding:40px 24px 80px}
+h1{font-size:32px;line-height:38px;letter-spacing:-.02em;margin:0 0 12px}
+.lede{color:var(--slate);margin:0 0 28px;max-width:68ch}
+.finding{background:var(--surface);border:1px solid var(--line);border-radius:var(--rCard);padding:20px 24px;max-width:880px;margin-bottom:40px}
+.finding h2{font-size:17px;line-height:24px;margin:0 0 8px}
+.finding p{margin:0 0 10px;max-width:72ch}
+.finding ul{margin:0;padding-left:20px;max-width:72ch}
+.finding li{margin-bottom:6px}
+.finding b{font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:40px 28px}
+.option h3{font-size:17px;line-height:24px;margin:0 0 4px}
+.option .idea{color:var(--slate);font-size:13.5px;line-height:20px;margin:0 0 14px;min-height:60px}
+.option .tradeoffs{font-size:13px;line-height:19px;color:var(--slate);margin-top:14px;max-width:340px}
+.option .tradeoffs b{color:var(--ink);font-weight:600}
+.option.current h3::after{content:"Today";margin-left:8px;font-size:12px;font-weight:600;color:var(--slate);background:var(--sunken);padding:2px 8px;border-radius:999px;vertical-align:2px}
+
+.card{width:100%;max-width:340px;background:var(--surface);border-radius:var(--rCard);box-shadow:var(--shadowCard);border:1px solid var(--line);padding:14px 16px 16px}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.head h4{margin:0;font-size:15px;line-height:20px;font-weight:600;display:flex;gap:8px;align-items:center}
+.count{font-size:11px;font-weight:600;background:var(--sunken);color:var(--slate);border-radius:999px;padding:0 6px;line-height:16px;font-variant-numeric:tabular-nums}
+.link{background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:600;cursor:pointer;padding:4px 0;display:inline-flex;gap:4px;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:var(--rCtl);font-size:12.5px;font-weight:600;cursor:pointer;min-height:32px;padding:0 12px;border:1px solid transparent;background:none}
+.btn.primary{background:var(--teal);color:#fff}.btn.primary:disabled{opacity:.45;cursor:default}
+.btn.secondary{border-color:var(--lineStrong);color:var(--ink);background:var(--surface)}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.meta{font-size:11.5px;line-height:16px;color:var(--slate)}
+.note-text{font-size:12.5px;line-height:18px}
+.fresh{animation:fresh 1.2s ease-out}
+@keyframes fresh{from{background:var(--tealTint)}to{background:transparent}}
+
+/* composer shared */
+.composer{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.composer textarea{width:100%;min-height:64px;resize:vertical;border:1px solid var(--lineStrong);border-radius:var(--rCtl);padding:8px 10px;font-size:13px;line-height:18px;background:var(--surface)}
+.composer label{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--slate);cursor:pointer}
+.composer .row{display:flex;gap:8px}
+.composer .row .primary{flex:1}
+
+/* Today */
+.cur-list{display:flex;flex-direction:column;gap:10px}
+.cur-note{display:flex;flex-direction:column;gap:2px;border-left:3px solid var(--line);padding-left:10px}
+.cur-note.flag{border-color:var(--warn)}
+.cur-note .m{font-family:var(--mono);font-size:10px;color:var(--mist)}
+
+/* A quiet list */
+.a-list{margin:0 -16px}
+.a-row{display:flex;gap:12px;padding:10px 16px;border-top:1px solid var(--line)}
+.a-row:first-child{border-top:none;padding-top:4px}
+.a-ico{width:20px;display:flex;justify-content:center;color:var(--mist);margin-top:-1px}
+.a-ico.flag{color:var(--warn)}
+.a-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+
+/* B who said it */
+.b-row{display:flex;gap:10px;padding:8px 0}
+.b-row+.b-row{border-top:1px solid var(--line)}
+.av{width:26px;height:26px;border-radius:999px;background:var(--brandTint);color:var(--brand);font-size:10.5px;font-weight:700;display:grid;place-items:center;flex-shrink:0;letter-spacing:.02em}
+.b-body{flex:1;min-width:0}
+.b-line{display:flex;align-items:center;gap:6px;font-size:12px;line-height:16px}
+.b-line b{font-weight:600}
+.b-line .t{color:var(--slate)}
+.b-flag{display:inline-flex;align-items:center;gap:3px;color:var(--warnOn);font-weight:600;font-size:11.5px;margin-left:auto}
+.b-body .note-text{margin-top:2px}
+
+/* C time log */
+.c-row{display:grid;grid-template-columns:44px 1fr;gap:10px;padding:7px 0}
+.c-time{font-size:12px;line-height:18px;color:var(--slate);display:flex;flex-direction:column;gap:2px}
+.c-time .f{color:var(--warn);display:flex;align-items:center;gap:3px;font-family:var(--ui);font-size:11px;font-weight:600}
+.c-row.flag .c-time{color:var(--warnOn);font-weight:500}
+.c-by{color:var(--mist);font-size:11.5px;margin-left:4px;white-space:nowrap}
+
+/* D flagged on top */
+.d-pinned{background:var(--warnTint);border-radius:var(--rCtl);padding:10px 12px;margin-bottom:6px}
+.d-pinned-h{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--warnOn);margin-bottom:4px}
+.d-pinned .d-row{padding:4px 0}
+.d-pinned .note-text{color:var(--ink)}
+.d-pinned .meta{color:var(--warnOn)}
+.d-row{padding:8px 0;display:flex;flex-direction:column;gap:2px}
+.d-rest .d-row+.d-row{border-top:1px solid var(--line)}
+
+/* E always-open composer */
+.e-row{padding:8px 0;display:flex;flex-direction:column;gap:2px}
+.e-row+.e-row{border-top:1px solid var(--line)}
+.e-row .flagword{color:var(--warnOn);font-weight:600}
+.e-compose{display:flex;align-items:flex-end;gap:6px;margin-top:8px;border:1px solid var(--lineStrong);border-radius:var(--rCtl);padding:4px 4px 4px 10px;background:var(--surface)}
+.e-compose:focus-within{border-color:var(--teal);box-shadow:var(--focus)}
+.e-compose textarea{flex:1;border:none;resize:none;min-height:22px;max-height:96px;padding:5px 0;font-size:13px;line-height:18px;background:none;outline:none}
+.e-compose textarea:focus-visible{box-shadow:none}
+.ib{width:30px;height:30px;border-radius:var(--rCtl);border:none;background:none;color:var(--mist);display:grid;place-items:center;cursor:pointer;flex-shrink:0}
+.ib:hover{background:var(--sunken);color:var(--ink)}
+.ib[aria-pressed="true"]{color:var(--warn);background:var(--warnTint)}
+.ib.send{color:#fff;background:var(--teal)}
+.ib.send:disabled{background:var(--sunken);color:var(--mist);cursor:default}
+.e-hint{font-size:11px;color:var(--mist);margin-top:4px}
+
+/* F tab on the work card */
+.card.f{padding-top:0}
+.tabs{display:flex;gap:0;margin:0 -16px 8px;padding:0 4px;overflow:hidden;border-bottom:1px solid var(--line)}
+.tab{padding:12px 5px 10px;font-size:12px;font-weight:600;color:var(--slate);display:flex;gap:5px;align-items:center;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap}
+.tab.on{color:var(--ink);border-bottom-color:var(--ink)}
+.f-placeholder{font-size:12.5px;color:var(--slate);padding:18px 0;text-align:center}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:420px){.page{padding:28px 16px 64px}h1{font-size:26px;line-height:32px}}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Day notes options</h1>
+    <p class="lede">Six ways the Admin Day notes card could look now that the To-do list is flat, plus how it looks today. Every card works: add a note, flag it, and watch where it lands. All use the three notes on 24 November.</p>
+  </header>
+
+  <section class="finding">
+    <h2>What makes the card look out of place</h2>
+    <ul>
+      <li><b>The left rule is the same device we just took off the To-do rows:</b> a grey bar, turning amber for a flagged note.</li>
+      <li><b>The time and initials are 10px mono in mist:</b> the smallest type in the rail, and too pale to read comfortably. Every other row in the app puts its details in 11.5px slate under the main text.</li>
+      <li><b>Flagging only shows as colour,</b> and the checkbox names the colour, "Flag (amber)", instead of what the flag means. Every option here shows a flag icon and uses the label "Flag as important".</li>
+      <li><b>Initials stand in for a name.</b> "RT" means little to someone covering for Rachel. Most options spell out the name, which <code>DayNote.by</code> already holds.</li>
+    </ul>
+  </section>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+const ICONS={
+  note:'<path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/>',
+  flag:'<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/>',
+  plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',
+  send:'<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
+};
+const ic=(n,s=16,w=2)=>`<svg class="i" viewBox="0 0 24 24" style="width:${s}px;height:${s}px;stroke-width:${w}" aria-hidden="true">${ICONS[n]}</svg>`;
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const SEED=[
+  {id:1,at:'08:12',by:'Kirsty W.',ini:'KW',text:'Dr Delaney on call for ICU tonight. Keep his PM free.',flag:false},
+  {id:2,at:'09:40',by:'Rachel T.',ini:'RT',text:"St George's theatre 3 closed this PM. Ms Lim's list moved to theatre 5.",flag:false},
+  {id:3,at:'11:05',by:'Kirsty W.',ini:'KW',text:"St George's PM request, no anaesthetist yet (Draft List).",flag:true},
+];
+const NEW_TIMES=['11:20','11:34','11:48','12:02','12:15'];
+
+const composer=(flagLabel='Flag as important')=>`<div class="composer">
+  <textarea aria-label="Note for this day" placeholder="Add a note for this day"></textarea>
+  <label><input type="checkbox" class="cflag"> ${flagLabel}</label>
+  <div class="row"><button class="btn primary csave" disabled>Save note</button><button class="btn secondary ccancel">Cancel</button></div></div>`;
+
+const VARIANTS=[
+ {key:'cur',name:'Today',current:true,
+  idea:'A 3px rule on the left of each note (amber when flagged), the time and initials in 10px mono above the text.',
+  pros:'Already built; compact.',cons:'The left rule echoes the old To-do edge; the details are the palest, smallest type in the rail; flagging is colour only.',
+  flagLabel:'Flag (amber)',
+  body:ns=>`<div class="cur-list">${ns.map(n=>`<div class="cur-note${n.flag?' flag':''}" data-id="${n.id}"><span class="m">${n.at} · ${n.ini}</span><span class="note-text">${esc(n.text)}</span></div>`).join('')}</div>`},
+
+ {key:'a',name:'Quiet list',
+  idea:'The To-do rows, used for notes: rows split by hairlines with an icon column. A plain note gets a pale note icon and a flagged one an amber flag. The text leads, with the name and time underneath.',
+  pros:'Matches the new To-do card exactly, so the rail reads as one system; the flag has a shape as well as a colour.',cons:'The note icon on every row adds little: it is there to keep the column even.',
+  body:ns=>`<div class="a-list">${ns.map(n=>`<div class="a-row" data-id="${n.id}"><span class="a-ico${n.flag?' flag':''}">${ic(n.flag?'flag':'note',18)}</span><div class="a-body"><span class="note-text">${esc(n.text)}</span><span class="meta">${n.by} · <span class="mono">${n.at}</span>${n.flag?' · Flagged':''}</span></div></div>`).join('')}</div>`},
+
+ {key:'b',name:'Who said it',
+  idea:'Each note starts with its author: the crimson initials avatar the app already uses for people, then the name and time, then the text. A flagged note shows a small amber flag on the right of that line.',
+  pros:'Notes are messages between colleagues, and this says so; the avatar is the app\'s own identity mark (crimson is allowed on avatars).',cons:'The avatars add crimson to the rail; it reads more like chat than a log.',
+  body:ns=>ns.map(n=>`<div class="b-row" data-id="${n.id}"><span class="av">${n.ini}</span><div class="b-body"><div class="b-line"><b>${n.by}</b><span class="t mono">${n.at}</span>${n.flag?`<span class="b-flag">${ic('flag',12)} Flagged</span>`:''}</div><div class="note-text">${esc(n.text)}</div></div></div>`).join('')},
+
+ {key:'c',name:'Time log',
+  idea:'A narrow time column on the left, like the day grid\'s hour scale, with the note beside it and the initials trailing the text. A flagged note turns its time amber with a flag under it.',
+  pros:'Ties the notes to the day\'s timeline; the most compact; easy to scan by time.',cons:'Initials stay as the only sign of who wrote it; the flag hides a little in the time column.',
+  body:ns=>ns.map(n=>`<div class="c-row${n.flag?' flag':''}" data-id="${n.id}"><span class="c-time"><span class="mono">${n.at}</span>${n.flag?`<span class="f">${ic('flag',11)} Flag</span>`:''}</span><span class="note-text">${esc(n.text)}<span class="c-by">${n.ini}</span></span></div>`).join('')},
+
+ {key:'d',name:'Flagged on top',
+  idea:'Flagged notes move into an amber block at the top of the card, so what matters today is read first. The rest follow as a plain log.',
+  pros:'The flag now changes something the office can see at a glance, not just a colour; the amber tint is the app\'s warning Notice look.',cons:'Notes leave time order once flagged; a tinted block is louder than the cards around it.',
+  body:ns=>{const f=ns.filter(n=>n.flag),r=ns.filter(n=>!n.flag);
+    return (f.length?`<div class="d-pinned"><div class="d-pinned-h">${ic('flag',13)} Flagged</div>${f.map(n=>`<div class="d-row" data-id="${n.id}"><span class="note-text">${esc(n.text)}</span><span class="meta">${n.by} · <span class="mono">${n.at}</span></span></div>`).join('')}</div>`:'')
+    +`<div class="d-rest">${r.map(n=>`<div class="d-row" data-id="${n.id}"><span class="note-text">${esc(n.text)}</span><span class="meta">${n.by} · <span class="mono">${n.at}</span></span></div>`).join('')}</div>`}},
+
+ {key:'e',name:'Always ready to write',
+  inline:true,
+  idea:'No Add note link: a one-line box stays at the bottom of the card, with a flag toggle and a send button. Enter saves, Shift and Enter add a new line. Notes read as a plain log above it.',
+  pros:'The fastest way to jot something down mid-call; one fewer step and no form opening up.',cons:'An empty box in the rail all day; easy to save a half-written note by pressing Enter.',
+  body:ns=>ns.map(n=>`<div class="e-row" data-id="${n.id}"><span class="note-text">${esc(n.text)}</span><span class="meta">${n.flag?`<span class="flagword">Flagged</span> · `:''}${n.by} · <span class="mono">${n.at}</span></span></div>`).join('')},
+
+ {key:'f',name:'A tab on the work card',
+  tab:true,
+  idea:'Notes become a fourth tab of the work card, beside To-do, Contracts and Notifications, with the Quiet list rows. The rail loses a whole card.',
+  pros:'One less stacked card; everything the office deals with is in one place, the same shape.',cons:'Notes are hidden behind a tab, and a flagged note is easy to miss; four tabs only just fit at the rail\'s width.',
+  body:ns=>`<div class="a-list">${ns.map(n=>`<div class="a-row" data-id="${n.id}"><span class="a-ico${n.flag?' flag':''}">${ic(n.flag?'flag':'note',18)}</span><div class="a-body"><span class="note-text">${esc(n.text)}</span><span class="meta">${n.by} · <span class="mono">${n.at}</span>${n.flag?' · Flagged':''}</span></div></div>`).join('')}</div>`},
+];
+
+function mount(v){
+  const wrap=document.createElement('section');
+  wrap.className='option'+(v.current?' current':'');
+  wrap.innerHTML=`<h3>${v.name}</h3><p class="idea">${v.idea}</p><div class="card${v.tab?' f':''}"></div><div class="tradeoffs"><b>Good:</b> ${v.pros}<br><b>Watch:</b> ${v.cons}</div>`;
+  document.getElementById('grid').appendChild(wrap);
+  const card=wrap.querySelector('.card');
+  const st={notes:SEED.map(n=>({...n})),adding:false,tab:'notes',flagOn:false,fresh:null,n:0};
+
+  function add(text,flag){
+    st.notes.push({id:100+st.n,at:NEW_TIMES[st.n%NEW_TIMES.length],by:'Kirsty W.',ini:'KW',text,flag});
+    st.fresh=100+st.n;st.n++;st.adding=false;st.flagOn=false;render();
+  }
+  function render(){
+    const count=st.notes.length;
+    let html='';
+    if(v.tab){
+      html+=`<div class="tabs" role="tablist">${[['todo','To-do',3],['contracts','Contracts',3],['notif','Notifications',4],['notes','Notes',count]].map(([k,l,c])=>`<button class="tab${st.tab===k?' on':''}" data-tab="${k}">${l} <span class="count">${c}</span></button>`).join('')}</div>`;
+      if(st.tab!=='notes'){html+=`<div class="f-placeholder">The ${st.tab==='todo'?'To-do':st.tab==='contracts'?'Contracts':'Notifications'} tab, as built.</div>`}
+      else{
+        html+=`<div class="head" style="margin:4px 0 8px"><span class="meta">Notes for Tue 24 Nov</span>${st.adding?'':`<button class="link" data-add>${ic('plus',14)} Add note</button>`}</div>`;
+        html+=v.body(st.notes)+(st.adding?composer():'');
+      }
+    } else {
+      html+=`<div class="head"><h4>Day notes${v.current?'':` <span class="count">${count}</span>`}</h4>${v.inline||st.adding?'':`<button class="link" data-add>${v.current?'':ic('plus',14)} Add note</button>`}</div>`;
+      html+=v.body(st.notes);
+      if(v.inline){
+        html+=`<div class="e-compose"><textarea rows="1" aria-label="Note for this day" placeholder="Add a note for this day"></textarea><button class="ib eflag" aria-pressed="${st.flagOn}" aria-label="Flag as important" title="Flag as important">${ic('flag',15)}</button><button class="ib send" aria-label="Save note" disabled>${ic('send',15)}</button></div><div class="e-hint">Enter to save · Shift and Enter for a new line</div>`;
+      } else if(st.adding) html+=composer(v.flagLabel);
+    }
+    card.innerHTML=html;
+    if(st.fresh!==null){const el=card.querySelector(`[data-id="${st.fresh}"]`);if(el)el.classList.add('fresh');st.fresh=null}
+    const ta=card.querySelector('.composer textarea, .e-compose textarea');
+    if(ta){
+      const btn=card.querySelector('.csave, .send');
+      ta.addEventListener('input',()=>{btn.disabled=ta.value.trim()==='';if(v.inline){ta.style.height='auto';ta.style.height=ta.scrollHeight+'px'}});
+      if(st.adding)ta.focus();
+      if(v.inline)ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(ta.value.trim())add(ta.value.trim(),st.flagOn)}});
+    }
+  }
+  card.addEventListener('click',e=>{
+    const t=e.target.closest('button');if(!t)return;
+    if(t.dataset.tab){st.tab=t.dataset.tab;render();return}
+    if(t.hasAttribute('data-add')){st.adding=true;render();return}
+    if(t.classList.contains('ccancel')){st.adding=false;render();return}
+    if(t.classList.contains('csave')){const ta=card.querySelector('.composer textarea');if(ta.value.trim())add(ta.value.trim(),card.querySelector('.cflag').checked);return}
+    if(t.classList.contains('eflag')){st.flagOn=!st.flagOn;t.setAttribute('aria-pressed',st.flagOn);return}
+    if(t.classList.contains('send')){const ta=card.querySelector('.e-compose textarea');if(ta.value.trim())add(ta.value.trim(),st.flagOn);return}
+  });
+  render();
+}
+VARIANTS.forEach(mount);
+</script>
+</body>
+</html>

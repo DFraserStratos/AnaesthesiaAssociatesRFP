@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { contractPath } from '../contractsPaths'
 import { addMonths, format, parseISO, startOfMonth } from 'date-fns'
-import { brand, neutral, radius, semantic } from '../../../theme/tokens'
+import { brand, neutral, radius, semantic, type } from '../../../theme/tokens'
 import type { DayNote } from '../../../domain/types'
 import type { Actor, OpenWarningRow } from '../../../store'
 import { RailReadings } from './RailReadings'
@@ -12,7 +12,9 @@ import { ADMIN_RIGHT_RAIL_WIDTH } from '../layout'
 import { hhmm, longDay } from '../../../shared/format'
 import { useCalendarKeys } from '../../../shared/calendar'
 import { monthCells, WEEKDAY_INITIALS } from '../../../shared/availability/monthCells'
-import { Button, Card, Checkbox, TextAction, TextArea } from '../../../shared/ui'
+import { Button, Card, Checkbox, CountBadge, TextAction, TextArea } from '../../../shared/ui'
+import { Flag, StickyNote } from 'lucide-react'
+import { ToDoRow } from './WarningsToDo'
 
 interface RightRailProps {
   /** The month to show (derived from the selected day). */
@@ -178,23 +180,31 @@ function DayNotes({ notes, onAddNote }: { notes: DayNote[]; onAddNote: (text: st
   return (
     <Card
       shot="admin-day-notes"
-      title="Day notes"
+      title={
+        <>
+          Day notes
+          <CountBadge count={notes.length} srNoun={notes.length === 1 ? 'note' : 'notes'} />
+        </>
+      }
       {...(adding ? {} : { action: <TextAction size="sm" flush onClick={() => setAdding(true)}>Add note</TextAction> })}
     >
       {notes.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <ul className="aa-row-list" style={{ listStyle: 'none', margin: '-4px -16px 0', padding: 0 }}>
           {notes.map((n) => (
-            <div key={n.id} style={{ display: 'flex', flexDirection: 'column', gap: 2, borderLeft: `3px solid ${n.flagged ? semantic.warning.solid : neutral.line}`, paddingLeft: 10 }}>
-              <span className="mono" style={{ fontSize: 10, color: neutral.mist }}>{hhmm(n.atISO)} · {n.initials}</span>
-              <span style={{ fontSize: 12.5, lineHeight: '18px', color: neutral.ink }}>{n.text}</span>
-            </div>
+            <ToDoRow key={n.id} icon={n.flagged ? Flag : StickyNote} iconColor={n.flagged ? semantic.warning.solid : neutral.mist} shot="admin-day-note" data-flagged={n.flagged ? 'true' : 'false'} style={{ padding: '10px 16px' }}>
+              <span style={{ fontSize: type.small.size, lineHeight: '18px', color: neutral.ink }}>{n.text}</span>
+              <span style={{ fontSize: type.captionSm.size, lineHeight: '16px', color: neutral.slate }}>
+                {n.by} · <span className="mono">{hhmm(n.atISO)}</span>
+                {n.flagged ? ' · Flagged' : ''}
+              </span>
+            </ToDoRow>
           ))}
-        </div>
+        </ul>
       )}
       {adding && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <TextArea size="compact" ariaLabel="Note for this day" value={text} onChange={setText} placeholder="Add a note for this day" autoFocus />
-          <Checkbox checked={flagged} onChange={setFlagged} style={{ gap: 6, fontSize: 12, color: neutral.slate }}>Flag (amber)</Checkbox>
+          <Checkbox checked={flagged} onChange={setFlagged} style={{ gap: 6, fontSize: 12, color: neutral.slate }}>Flag as important</Checkbox>
           <div style={{ display: 'flex', gap: 8 }}>
             <Button variant="primary" size="compact" onClick={save} disabled={text.trim() === ''} style={{ flex: 1 }}>Save note</Button>
             <Button variant="secondary" size="compact" onClick={() => { setAdding(false); setText('') }} style={{ flex: 'none' }}>Cancel</Button>
