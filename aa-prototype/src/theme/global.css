@@ -376,6 +376,35 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
   display: none;
 }
 
+/*
+ * The web Dialog's body (shared/surface/Dialog.tsx; docs/explorations/
+ * dialog-scroll-ideas.html, option C): a slim scrollbar whose track runs only
+ * between the pinned header and footer, so it never meets the card's rounded
+ * corners. Dialog.tsx sets the two insets from the pinned parts' heights.
+ * Browsers without ::-webkit-scrollbar get the standard thin bar instead.
+ */
+[data-aa-dialog-body]::-webkit-scrollbar {
+  width: 6px;
+}
+
+[data-aa-dialog-body]::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 999px;
+}
+
+[data-aa-dialog-body]::-webkit-scrollbar-track {
+  background: transparent;
+  margin-top: var(--aa-dialog-head, 12px);
+  margin-bottom: var(--aa-dialog-foot, 12px);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  [data-aa-dialog-body] {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+}
+
 .aa-admin-calendar-day:focus-visible {
   position: relative;
   z-index: 1;

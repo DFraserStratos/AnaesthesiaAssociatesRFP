@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { elevation, neutral, radius, scrim, space, zIndex } from '../../theme/tokens'
 import { motion } from '../../theme/motion'
 import { useModalLayer } from './useModalLayer'
 import { OverlayTitleContext } from './overlayTitle'
-import { DialogSlotsContext, type DialogSlots } from './dialogSlots'
+import { BODY_INSET, CONTENT_ATTR, DialogPinContext, type DialogPin, type PinnedPart } from './dialogPin'
 import { CloseButton } from '../ui/IconButton'
 
 interface DialogProps {
@@ -18,23 +18,6 @@ interface DialogProps {
   initialFocusRef?: RefObject<HTMLElement>
 }
 
-/** A slot element the header or footer portals into, made once per dialog. */
-function slotElement(name: 'header' | 'footer', gap: number): HTMLElement {
-  const el = document.createElement('div')
-  el.setAttribute('data-aa-dialog-slot', name)
-  el.style.display = 'flex'
-  el.style.flexDirection = 'column'
-  el.style.gap = `${gap}px`
-  return el
-}
-
-/** A ref that hosts a slot element inside a React-rendered wrapper. */
-function useHost(slot: HTMLElement) {
-  return useCallback((wrapper: HTMLDivElement | null) => {
-    if (wrapper !== null && slot.parentNode !== wrapper) wrapper.appendChild(slot)
-  }, [slot])
-}
-
 /**
  * The web `SurfaceProvider`'s `Overlay` (convention 16): a centred desktop
  * dialog with the same `{open, onClose, children, hideHandle}` signature as the
@@ -45,12 +28,12 @@ function useHost(slot: HTMLElement) {
  * the detail panel sits. An `OverlayHeader` inside names it and shows the
  * corner X (UI unification U2, questions 11 and 12).
  *
- * The card never scrolls as a whole (docs/explorations/dialog-scroll-ideas.html,
- * option C): the `OverlayHeader` pins to a fixed header with the X, the
- * `SheetActions` row pins to a fixed footer, and only the body between them
- * scrolls, with a slim scrollbar kept off the rounded corners. A hairline shows
- * under the header while content is hidden above, and over the footer while
- * content is hidden below.
+ * The card clips to its corners and only its body scrolls
+ * (docs/explorations/dialog-scroll-ideas.html, option C): the sheet's
+ * `OverlayHeader` sticks to the top under the X and its `SheetActions` to the
+ * bottom (dialogPin.ts), a hairline shows while content is hidden past either,
+ * and the slim scrollbar (global.css) runs only between them, in a gutter clear
+ * of the rounded edge.
  */
 export function Dialog({ open, onClose, children, size = 'default', initialFocusRef }: DialogProps) {
   // One modal stack (U2): Escape closes only the top layer (the RVG code
@@ -63,48 +46,54 @@ export function Dialog({ open, onClose, children, size = 'default', initialFocus
   const [titleId, setTitleId] = useState<string | null>(null)
   const seam = useMemo(() => ({ register: setTitleId, corner: true }), [])
 
-  const [footers, setFooters] = useState(0)
-  const [header] = useState(() => slotElement('header', space[2]))
-  const [footer] = useState(() => slotElement('footer', space[3]))
-  const slots = useMemo<DialogSlots>(() => ({
-    header,
-    footer,
-    registerFooter: () => {
-      setFooters((n) => n + 1)
-      return () => setFooters((n) => n - 1)
-    },
-  }), [header, footer])
-  const hostHeader = useHost(header)
-  const hostFooter = useHost(footer)
-
-  // Hidden content above or below the scrolling body: the hairlines' cue.
   const bodyRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
-  // An empty body (a confirm whose header and footer say it all) collapses.
-  const [edges, setEdges] = useState({ above: false, below: false, empty: false })
+  const [parts, setParts] = useState<Record<PinnedPart, HTMLElement | null>>({ header: null, footer: null })
+  const report = useCallback((part: PinnedPart, el: HTMLElement | null) => setParts((p) => (p[part] === el ? p : { ...p, [part]: el })), [])
+  const [edges, setEdges] = useState({ scrollable: false, above: false, below: false })
+  const [inset, setInset] = useState({ head: 0, foot: 0 })
   const measure = useCallback(() => {
     const body = bodyRef.current
     if (body === null) return
+    const scrollable = body.scrollHeight > body.clientHeight + 1
     const above = body.scrollTop > 1
     const below = body.scrollTop + body.clientHeight < body.scrollHeight - 1
-    const empty = (contentRef.current?.offsetHeight ?? 0) === 0 && typeof ResizeObserver !== 'undefined'
-    setEdges((e) => (e.above === above && e.below === below && e.empty === empty ? e : { above, below, empty }))
+    setEdges((e) => (e.scrollable === scrollable && e.above === above && e.below === below ? e : { scrollable, above, below }))
   }, [])
   useEffect(() => {
     if (!open) return undefined
-    measure()
+    const sizes = () => {
+      measure()
+      const head = parts.header?.offsetHeight ?? 0
+      const foot = parts.footer?.offsetHeight ?? 0
+      setInset((i) => (i.head === head && i.foot === foot ? i : { head, foot }))
+    }
+    sizes()
     // jsdom has no ResizeObserver; there nothing is laid out to measure.
     if (typeof ResizeObserver === 'undefined') return undefined
-    const observer = new ResizeObserver(measure)
-    if (bodyRef.current !== null) observer.observe(bodyRef.current)
-    if (contentRef.current !== null) observer.observe(contentRef.current)
+    const observer = new ResizeObserver(sizes)
+    for (const el of [bodyRef.current, contentRef.current, parts.header, parts.footer]) if (el !== null) observer.observe(el)
     return () => observer.disconnect()
-  }, [open, measure])
+  }, [open, measure, parts])
+  const pin = useMemo<DialogPin>(() => ({ edges, report }), [edges, report])
 
   if (!open) return null
-  const hasHeader = titleId !== null
-  const hasFooter = footers > 0
-  const hairline = (on: boolean) => `1px solid ${on ? neutral.line : 'transparent'}`
+  const hasHeader = parts.header !== null
+  const hasFooter = parts.footer !== null
+  const bodyStyle = {
+    flex: '1 1 auto',
+    minHeight: 0,
+    overflowY: 'auto',
+    // The scrollbar sits in a 6px gutter, clear of the card's rounded edge.
+    marginRight: 6,
+    padding: `${hasHeader ? 0 : space[6]}px ${BODY_INSET.right}px ${hasFooter ? 0 : 28}px ${BODY_INSET.left}px`,
+    // A field scrolled to (Tab, a refusal) lands clear of the pinned parts.
+    scrollPaddingTop: inset.head,
+    scrollPaddingBottom: inset.foot,
+    // The scrollbar's track starts under the header and ends over the footer (global.css).
+    '--aa-dialog-head': `${Math.max(inset.head, space[3])}px`,
+    '--aa-dialog-foot': `${Math.max(inset.foot, space[3])}px`,
+  } as CSSProperties
   return (
     <div ref={rootRef} data-aa-dialog style={{ position: 'fixed', inset: 0, zIndex: zIndex.dialog, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: space[6] }}>
       <div
@@ -137,50 +126,16 @@ export function Dialog({ open, onClose, children, size = 'default', initialFocus
           animation: `aa-fade-in ${motion.sheetIn.scrimFade}ms ${motion.sheetIn.easing}`,
         }}
       >
-        <div
-          ref={hostHeader}
-          data-aa-dialog-header
-          style={{
-            flex: 'none',
-            padding: hasHeader ? `${space[6]}px ${space[6]}px 14px` : 0,
-            borderBottom: hasHeader ? hairline(edges.above) : 'none',
-            transition: `border-color ${motion.sheetIn.scrimFade}ms`,
-          }}
-        />
-        <div
-          ref={bodyRef}
-          data-aa-dialog-body
-          onScroll={measure}
-          style={{
-            flex: '1 1 auto',
-            minHeight: 0,
-            overflowY: 'auto',
-            // The scrollbar sits in a 6px gutter, clear of the card's rounded edge.
-            marginRight: 6,
-            padding: edges.empty ? 0 : `${hasHeader ? space[1] : space[6]}px 18px ${hasFooter ? space[1] : 28}px ${space[6]}px`,
-            scrollbarWidth: 'thin',
-            scrollbarColor: `${neutral.lineStrong} transparent`,
-          }}
-        >
-          <div ref={contentRef}>
-            <DialogSlotsContext.Provider value={slots}>
+        <div ref={bodyRef} data-aa-dialog-body onScroll={measure} style={bodyStyle}>
+          <div ref={contentRef} {...{ [CONTENT_ATTR]: '' }}>
+            <DialogPinContext.Provider value={pin}>
               <OverlayTitleContext.Provider value={seam}>{children}</OverlayTitleContext.Provider>
-            </DialogSlotsContext.Provider>
+            </DialogPinContext.Provider>
           </div>
         </div>
-        <div
-          ref={hostFooter}
-          data-aa-dialog-footer
-          style={{
-            flex: 'none',
-            padding: hasFooter ? `14px ${space[6]}px ${space[6]}px` : 0,
-            borderTop: hasFooter ? hairline(edges.below) : 'none',
-            transition: `border-color ${motion.sheetIn.scrimFade}ms`,
-          }}
-        />
-        {hasHeader && (
+        {titleId !== null && (
           // The drawer's corner X, through the layer's one onClose (question 11; the shared CloseButton since U5).
-          <CloseButton onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, display: 'flex' }} />
+          <CloseButton onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, display: 'flex', zIndex: zIndex.sticky }} />
         )}
       </div>
     </div>

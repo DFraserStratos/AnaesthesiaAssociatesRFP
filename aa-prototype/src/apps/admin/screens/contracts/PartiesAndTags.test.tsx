@@ -226,7 +226,7 @@ describe('the Funding tags tab (US-13.4.5)', () => {
     renderAt(fundingTagsPath())
     fireEvent.click(screen.getByRole('button', { name: 'Add funding tag' }))
     fireEvent.change(within(card('funding-tag-sheet')).getByLabelText('Code'), { target: { value: 'nzdf' } })
-    fireEvent.click(within(card('funding-tag-sheet').closest('[role="dialog"]') as HTMLElement).getByRole('button', { name: 'Add funding tag' }))
+    fireEvent.click(within(card('funding-tag-sheet')).getByRole('button', { name: 'Add funding tag' }))
     fireEvent.click(within(card('masters-funding-tags')).getByRole('button', { name: 'Show the Contracts under NZDF' }))
     expect(card('tag-contracts')).toHaveTextContent('No Contract carries this tag yet.')
   })

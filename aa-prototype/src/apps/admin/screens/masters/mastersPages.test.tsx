@@ -107,7 +107,7 @@ describe('Master data views', () => {
   it('adds a surgeon with a lower-case HPI CPN (stored upper-case) and refuses one Dr Sharma holds', () => {
     renderAdmin('/admin/people/surgeons')
     fireEvent.click(screen.getByRole('button', { name: 'Add surgeon' }))
-    const sheet = () => document.querySelector('[data-shot="surgeon-edit-sheet"]')!.closest('[role="dialog"]') as HTMLElement
+    const sheet = () => document.querySelector('[data-shot="surgeon-edit-sheet"]') as HTMLElement
     fireEvent.change(within(sheet()).getAllByLabelText('Name')[0]!, { target: { value: 'Ms R. Tester' } })
     fireEvent.change(within(sheet()).getByLabelText('Practice (optional)'), { target: { value: 'Merivale Eye Rooms' } })
     fireEvent.change(screen.getByLabelText('HPI CPN (optional)'), { target: { value: '12shap' } })
@@ -177,7 +177,7 @@ describe('the surgeon profile and the anaesthetist record', () => {
     expect(sharmaOption().disabled).toBe(false)
     fireEvent.change(select, { target: { value: ANAE.sharma } })
     expect(screen.getByText('Dr Priya Sharma prefers not to work with Ms A. Reid')).toBeInTheDocument()
-    const sheet = document.querySelector('[data-shot="pairing-add-sheet"]')!.closest('[role="dialog"]') as HTMLElement
+    const sheet = document.querySelector('[data-shot="pairing-add-sheet"]') as HTMLElement
     fireEvent.click(within(sheet).getByRole('button', { name: 'Add pairing' }))
 
     const active = activePairings(useAppStore.getState().officePrivate.pairingPreferences)

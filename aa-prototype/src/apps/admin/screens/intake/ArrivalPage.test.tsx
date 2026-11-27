@@ -156,7 +156,7 @@ describe('ArrivalPage: once decided', () => {
     const router = mountAt(arrivalPath(key))
 
     fireEvent.click(q('[data-shot="intake-held-dismiss"]')!)
-    const sheet = q('[data-shot="intake-held-dismiss-sheet"]')!.closest('[role="dialog"]') as HTMLElement
+    const sheet = q('[data-shot="intake-held-dismiss-sheet"]')!
     fireEvent.change(within(sheet).getByLabelText('Reason'), { target: { value: 'Sent again with the patient' } })
     act(() => {
       fireEvent.click(within(sheet).getByRole('button', { name: 'Dismiss' }))
@@ -181,7 +181,7 @@ describe('ArrivalPage: once decided', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toContain(SEED_STUB.patientName)
     const footer = q('[data-decision-footer]')!
     fireEvent.click(within(footer).getByRole('button', { name: 'Add NHI' }))
-    const sheet = q('[data-shot="add-nhi-sheet"]')!.closest('[role="dialog"]') as HTMLElement
+    const sheet = q('[data-shot="add-nhi-sheet"]')!
     fireEvent.change(within(sheet).getByLabelText('NHI'), { target: { value: SEED_STUB.nhiToType } })
     fireEvent.click(within(sheet).getByRole('button', { name: 'Add NHI' }))
 

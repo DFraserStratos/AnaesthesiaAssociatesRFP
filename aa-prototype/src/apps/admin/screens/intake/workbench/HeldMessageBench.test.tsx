@@ -65,7 +65,7 @@ describe('HeldMessageBench', () => {
     const arrival = holdMessage()
     const { onDone } = renderBench(arrival)
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
-    const sheet = document.querySelector('[data-shot="intake-held-dismiss-sheet"]')!.closest('[role="dialog"]') as HTMLElement
+    const sheet = document.querySelector('[data-shot="intake-held-dismiss-sheet"]') as HTMLElement
     const confirm = within(sheet).getByRole('button', { name: 'Dismiss' })
     expect(confirm).toBeDisabled()
     fireEvent.change(within(sheet).getByLabelText('Reason'), { target: { value: 'Sent again with the patient' } })

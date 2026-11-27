@@ -62,7 +62,7 @@ describe('Specialties tab and the specialty page (US-13.4.4; the page since buil
     expect(screen.queryByRole('button', { name: /^(Rename|Remove|History of) / })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Add specialty' }))
     fireEvent.change(within(shot('specialty-sheet')).getByLabelText('Name'), { target: { value: 'Paediatric surgery' } })
-    fireEvent.click(within(shot('specialty-sheet').closest('[role="dialog"]') as HTMLElement).getByRole('button', { name: 'Add specialty' }))
+    fireEvent.click(within(shot('specialty-sheet')).getByRole('button', { name: 'Add specialty' }))
     expect(useAppStore.getState().audit.at(-1)?.action).toBe('specialty.create')
     expect(shot('specialty-page')).not.toBeNull()
     expect(within(shot('specialty-name')).getByText('Paediatric surgery')).toBeInTheDocument()
@@ -70,7 +70,7 @@ describe('Specialties tab and the specialty page (US-13.4.4; the page since buil
     expect(within(shot('specialty-contracts')).getByText('No Contract is limited to this specialty.')).toBeInTheDocument()
     // Unheld: Remove confirms, audits specialty.remove and lands on the tab.
     fireEvent.click(screen.getByRole('button', { name: 'Remove Paediatric surgery' }))
-    fireEvent.click(within(shot('specialty-remove-confirm').closest('[role="dialog"]') as HTMLElement).getByRole('button', { name: 'Remove specialty' }))
+    fireEvent.click(within(shot('specialty-remove-confirm')).getByRole('button', { name: 'Remove specialty' }))
     expect(useAppStore.getState().audit.at(-1)?.action).toBe('specialty.remove')
     expect(shot('masters-specialties')).not.toBeNull()
     expect(screen.queryByText('Paediatric surgery')).toBeNull()
@@ -143,7 +143,7 @@ describe('Funding tags tab (US-13.4.5; moved to the Contracts section by build p
   it('adds a tag, edits its funder, removes it; refuses removing SXAP', () => {
     renderAdmin('/admin/contracts/tags')
     fireEvent.click(screen.getByRole('button', { name: 'Add funding tag' }))
-    const sheet = () => shot('funding-tag-sheet').closest('[role="dialog"]') as HTMLElement
+    const sheet = () => shot('funding-tag-sheet')
     fireEvent.change(within(sheet()).getByLabelText('Code'), { target: { value: 'nzdf' } })
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Add funding tag' }))
     expect(codes()).toEqual(['SXAP', 'HNZ', 'ACC', 'NZDF'])

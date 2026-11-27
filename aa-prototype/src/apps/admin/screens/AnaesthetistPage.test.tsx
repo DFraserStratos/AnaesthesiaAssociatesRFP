@@ -274,7 +274,7 @@ describe("the anaesthetist's side panel", () => {
     expect(pairings()).toHaveTextContent('Private to the office. Anaesthetists never see these.')
     const before = pairings().querySelectorAll('li[data-pairing]').length
     fireEvent.click(within(pairings()).getByRole('button', { name: 'Add pairing' }))
-    const sheet = document.querySelector('[data-shot="pairing-add-sheet"]')!.closest('[role="dialog"]') as HTMLElement
+    const sheet = document.querySelector('[data-shot="pairing-add-sheet"]') as HTMLElement
     const select = sheet.querySelector('select[data-shot="pairing-counterpart"]') as HTMLSelectElement
     const option = [...select.querySelectorAll('option')].find((o) => o.value !== '' && !o.disabled)!
     fireEvent.change(select, { target: { value: option.value } })

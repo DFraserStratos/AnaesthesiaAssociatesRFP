@@ -7,15 +7,14 @@
  *
  * Renders as two siblings, not a wrapper, so the sheet's own column gap keeps
  * spacing the title and description exactly as before. Inside the web `Dialog`
- * it portals into the dialog's pinned header instead, so it stays put while the
- * body scrolls (dialogSlots.ts).
+ * it sticks to the dialog's top instead, so it stays put while the body
+ * scrolls (dialogPin.ts).
  */
 
 import { useId, useLayoutEffect, type CSSProperties, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
 import { neutral, type as typeScale } from '../../theme/tokens'
 import { useOverlayTitleSeam } from './overlayTitle'
-import { useDialogSlots } from './dialogSlots'
+import { usePinnedPart } from './dialogPin'
 
 export interface OverlayHeaderProps {
   /** A fixed id where something else already points at the title (`contract-rail-title`); generated otherwise. */
@@ -36,7 +35,7 @@ export function OverlayHeader({ id: fixedId, title, description, style, trailing
   const generatedId = useId()
   const id = fixedId ?? generatedId
   const seam = useOverlayTitleSeam()
-  const slots = useDialogSlots()
+  const { pin, ref, style: pinStyle } = usePinnedPart('header')
   const register = seam?.register
   useLayoutEffect(() => {
     if (register === undefined) return undefined
@@ -74,5 +73,10 @@ export function OverlayHeader({ id: fixedId, title, description, style, trailing
       {description !== undefined && <p style={{ margin: 0, fontSize: 13, lineHeight: '19px', color: neutral.slate }}>{description}</p>}
     </>
   )
-  return slots !== null ? createPortal(header, slots.header) : header
+  if (pin === null) return header
+  return (
+    <div ref={ref} data-aa-dialog-header style={pinStyle}>
+      {header}
+    </div>
+  )
 }

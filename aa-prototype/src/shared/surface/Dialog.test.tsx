@@ -36,7 +36,7 @@ describe('Dialog', () => {
     expect(screen.queryByText('Outer form')).not.toBeInTheDocument()
   })
 
-  it('pins the header and the actions around the one scrolling body, the note above the buttons', () => {
+  it('keeps the header and actions inside the sheet, wrapped to stick around the one scrolling body, the note above the buttons', () => {
     render(
       <SurfaceProvider variant="web">
         <Dialog open onClose={() => {}}>
@@ -49,15 +49,33 @@ describe('Dialog', () => {
       </SurfaceProvider>,
     )
     const dialog = screen.getByRole('dialog', { name: 'Add recurring booking' })
-    const header = dialog.querySelector('[data-aa-dialog-header]')!
-    const body = dialog.querySelector('[data-aa-dialog-body]')!
-    const footer = dialog.querySelector('[data-aa-dialog-footer]')!
+    const sheet = dialog.querySelector('[data-shot="sheet"]')!
+    const header = sheet.querySelector<HTMLElement>(':scope > [data-aa-dialog-header]')!
+    const footer = sheet.querySelector<HTMLElement>(':scope > [data-aa-dialog-footer]')!
     expect(header).toHaveTextContent('Add recurring booking')
     expect(header).toHaveTextContent('A pattern of Lists')
-    expect(body).toHaveTextContent('Form')
-    expect(body).not.toHaveTextContent('Add recurring booking')
-    expect(body.querySelector('button')).toBeNull()
+    expect(header.style.position).toBe('sticky')
+    expect(footer.style.position).toBe('sticky')
     expect(footer.textContent).toBe('Saves itApply')
+    expect(dialog.querySelector('[data-aa-dialog-body]')).toContainElement(footer)
     expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument()
+  })
+
+  it('leaves actions nested deeper in the sheet inline', () => {
+    render(
+      <SurfaceProvider variant="web">
+        <Dialog open onClose={() => {}}>
+          <div>
+            <OverlayHeader title="Edit" />
+            <div data-testid="box">
+              <SheetActions primary={<Button block>Retire</Button>} />
+            </div>
+          </div>
+        </Dialog>
+      </SurfaceProvider>,
+    )
+    const footer = screen.getByTestId('box').querySelector<HTMLElement>('[data-aa-dialog-footer]')!
+    expect(footer.style.display).toBe('contents')
+    expect(footer.style.position).toBe('')
   })
 })

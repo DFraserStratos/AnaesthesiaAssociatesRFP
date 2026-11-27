@@ -48,7 +48,7 @@ function web(ui: React.ReactNode) {
 }
 
 function composer(): HTMLElement {
-  return document.querySelector('[data-shot="update-email-composer"]')?.closest('[role="dialog"]') as HTMLElement
+  return document.querySelector('[data-shot="update-email-composer"]') as HTMLElement
 }
 
 function ticked(): string[] {
@@ -58,7 +58,7 @@ function ticked(): string[] {
 }
 
 function openLink(): HTMLAnchorElement | null {
-  return document.querySelector('a[data-shot="update-email-open"]')
+  return composer().querySelector('a[data-shot="update-email-open"]')
 }
 
 function toLine(): string {

@@ -13,17 +13,16 @@
  * (question 7). Outside a `SurfaceProvider` it lays out as the phone. Hooks
  * stay on the buttons (`Button shot`), which render on both surfaces.
  *
- * Inside the web `Dialog` the row portals into the dialog's pinned footer, so
- * the action stays on screen while the form scrolls (dialogSlots.ts). `note` is
+ * Inside the web `Dialog` the row sticks to the dialog's bottom, so the action
+ * stays on screen while the form scrolls (dialogPin.ts). `note` is
  * the quiet line about what the action does: above the row on web (in the
  * pinned footer), after the buttons on the phone.
  */
 
-import { useContext, useLayoutEffect, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
+import { useContext, type ReactNode } from 'react'
 import { neutral } from '../../theme/tokens'
 import { SurfaceCtx } from './context'
-import { useDialogSlots } from './dialogSlots'
+import { usePinnedPart } from './dialogPin'
 
 export interface SheetActionsProps {
   primary: ReactNode
@@ -38,9 +37,7 @@ function Note({ children }: { children: ReactNode }) {
 
 export function SheetActions({ primary, secondary, note }: SheetActionsProps) {
   const variant = useContext(SurfaceCtx)?.variant ?? 'mobile'
-  const slots = useDialogSlots()
-  const registerFooter = slots?.registerFooter
-  useLayoutEffect(() => registerFooter?.(), [registerFooter])
+  const { pin, ref, style } = usePinnedPart('footer')
   const hasNote = note !== undefined && note !== null && note !== false
   const actions =
     variant === 'mobile' ? (
@@ -58,5 +55,10 @@ export function SheetActions({ primary, secondary, note }: SheetActionsProps) {
         </div>
       </>
     )
-  return slots !== null ? createPortal(actions, slots.footer) : actions
+  if (pin === null) return actions
+  return (
+    <div ref={ref} data-aa-dialog-footer style={style}>
+      {actions}
+    </div>
+  )
 }
