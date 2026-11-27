@@ -185,4 +185,19 @@ describe('old addresses (replace, query and state kept)', () => {
     })
     expect(here(router)).toBe(listsPath('to-authorise'))
   })
+
+  it('a review page opened from a filtered To authorise goes back to the tab with its filters', async () => {
+    const list = listsToAuthorise(useAppStore.getState())[0]!
+    const filtered = listsPath('to-authorise', { date: list.dateISO })
+    const router = mountAt(filtered)
+    const row = document.querySelector(`tr[data-list-id="${list.id}"]`) as HTMLElement
+    await act(async () => {
+      within(row).getByRole('button', { name: /^Review / }).click()
+    })
+    expect(router.state.location.pathname).toBe(reviewPath(list.id))
+    await act(async () => {
+      screen.getByRole('button', { name: 'To authorise' }).click()
+    })
+    expect(here(router)).toBe(filtered)
+  })
 })

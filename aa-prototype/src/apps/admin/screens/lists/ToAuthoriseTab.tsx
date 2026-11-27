@@ -12,9 +12,10 @@
  */
 
 import { useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { fontFamily, neutral } from '../../../../theme/tokens'
 import { billedLists, invoiceCountsByList, useAppStore } from '../../../../store'
+import { isISODate } from '../../../../shell/routeParams'
 import { useScreenTiming } from '../../../../shared/scale/useScreenTiming'
 import { dayMicroCap, hhmm, plural, shortDay, stampText } from '../../../../shared/format'
 import type { List } from '../../../../domain/types'
@@ -28,7 +29,7 @@ import { financePath } from '../finances/financePaths'
 import { useEventsAwaitingApprovalCount } from '../finances/EventsAwaitingApproval'
 import { useListParams } from '../../useListParams'
 import { filterToAuthorise, toAuthoriseRows, type ToAuthoriseNeeds } from './toAuthoriseRows'
-import { reviewPath } from './listsPaths'
+import { reviewPath, type ToAuthoriseReturnState } from './listsPaths'
 import { ListsPage } from './ListsSection'
 
 /** The tab's URL state: `q` the search, `date` one List date, `look=1` Needs a look only. */
@@ -42,6 +43,7 @@ const RECENT_SHOWN = 6
 
 export function ToAuthoriseTab() {
   const navigate = useNavigate()
+  const { search } = useLocation()
   const schedule = useAppStore((s) => s.schedule)
   const billing = useAppStore((s) => s.billing)
   const masters = useAppStore((s) => s.masters)
@@ -55,7 +57,8 @@ export function ToAuthoriseTab() {
   // Review's flag selectors read the whole state: rebuilt when the slices they read change.
   const rows = useMemo(() => toAuthoriseRows({ ...useAppStore.getState(), schedule, billing, masters, audit, clock }), [schedule, billing, masters, audit, clock])
   const lookCount = useMemo(() => rows.filter((r) => r.needsALook).length, [rows])
-  const dates = useMemo(() => [...new Set(rows.map((r) => r.list.dateISO))].sort(), [rows])
+  // The chosen date stays a choice after its last List leaves, so the select never shows a filter it isn't applying.
+  const dates = useMemo(() => [...new Set([...rows.map((r) => r.list.dateISO), ...(isISODate(dateISO) ? [dateISO] : [])])].sort(), [rows, dateISO])
   const shown = useMemo(() => filterToAuthorise(rows, { q, dateISO, look }, masters), [rows, q, dateISO, look, masters])
   const page = pageWindow(shown.length, PAGE_SIZE, pageParam(get('page'))).page
   const pageRows = pageOf(shown, PAGE_SIZE, page)
@@ -66,7 +69,8 @@ export function ToAuthoriseTab() {
   // Timed at both scales, paged at 25: its backlog is a few dozen Lists at most (catch-up Phase 43).
   useScreenTiming('review', [rows])
 
-  const onOpen = (listId: string) => navigate(reviewPath(listId))
+  // The review page's Back (and its Previous and Next) come back here with these filters.
+  const onOpen = (listId: string) => navigate(reviewPath(listId), { state: { from: 'to-authorise', search } satisfies ToAuthoriseReturnState })
 
   return (
     <ListsPage tab="to-authorise" testId="review-queue-screen">

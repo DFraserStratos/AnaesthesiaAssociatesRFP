@@ -41,6 +41,19 @@ export function reviewPath(listId: string): string {
   return `${LISTS_BASE}/to-authorise/${encodeURIComponent(listId)}`
 }
 
+/** Router state a To authorise row passes to a List's review page: the tab's filters (`?q=`, `?date=`, `?look=`, `?page=`) to go back to. */
+export interface ToAuthoriseReturnState {
+  from: 'to-authorise'
+  search: string
+}
+
+/** The To authorise filters a review page goes back to, from its router state; null when it was not opened from the tab. */
+export function toAuthoriseReturn(state: unknown): ToAuthoriseReturnState | null {
+  if (typeof state !== 'object' || state === null) return null
+  const s = state as Partial<ToAuthoriseReturnState>
+  return s.from === 'to-authorise' ? { from: 'to-authorise', search: typeof s.search === 'string' ? s.search : '' } : null
+}
+
 /** Draft Lists with one Draft List's drawer open on arrival. */
 export function draftListOpenPath(listId: string): string {
   return listsPath('draft-lists', { open: listId })

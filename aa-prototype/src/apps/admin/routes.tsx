@@ -37,7 +37,7 @@ import { SurgeonProfile } from './screens/SurgeonProfile'
 import { AnaesthetistPage } from './screens/AnaesthetistPage'
 import { NotificationsScreen } from './screens/NotificationsScreen'
 import { ReviewScreen } from './screens/ReviewScreen'
-import { listsPath, listsPathFromLegacy, reviewPath } from './screens/lists/listsPaths'
+import { listsPath, listsPathFromLegacy, reviewPath, toAuthoriseReturn } from './screens/lists/listsPaths'
 import { PatientsScreen } from './screens/patients/PatientsScreen'
 import { PatientRecord } from './screens/patients/PatientRecord'
 import { useAdminOutlet, type AdminOutletContext } from './outlet'
@@ -261,6 +261,8 @@ export function AdminReviewRoute() {
   // and Previous and Next carry the router state so it still does.
   const location = useLocation()
   const from = billingMonitorReturn(location.state)
+  // Opened from To authorise: back returns to the tab with its filters (search, date, Needs a look, page).
+  const tab = toAuthoriseReturn(location.state)
 
   return (
     <RequireEntity exists={exists}>
@@ -268,7 +270,7 @@ export function AdminReviewRoute() {
         listId={listId}
         actor={actor}
         backToBillingMonitor={from !== null}
-        onBack={() => navigate(from !== null ? financePath('billing') + from.search : listsPath('to-authorise'))}
+        onBack={() => navigate(from !== null ? financePath('billing') + from.search : listsPath('to-authorise') + (tab?.search ?? ''))}
         onOpen={(next) => navigate(reviewPath(next), { state: location.state })}
         onViewInvoices={() => navigate(financePath('invoices'))}
         onOpenBooking={(dateISO, bookingId) => navigate(`/admin/day/${dateISO}/bookings/${bookingId}`)}

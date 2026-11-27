@@ -47,9 +47,20 @@ describe('listsTabCounts', () => {
     const state = freshAppState()
     const counts = listsTabCounts(state)
     expect(counts['draft-lists']).toBe(waitingDraftLists(state).length)
-    expect(counts.conflicts).toBe(openConflictRows(state).length)
+    expect(counts.conflicts).toBe(new Set(openConflictRows(state).map((r) => r.listId)).size)
     expect(counts['contracts-to-set']).toBe(listsNeedingContracts(state).length)
     expect(counts['to-authorise']).toBe(Object.values(state.schedule.lists).filter((l) => l.state === 'SUBMITTED').length)
+  })
+
+  it('counts a List closed twice that day once on Conflicts, as the tab\'s count line does', () => {
+    const base = freshAppState()
+    const row = openConflictRows(base)[0]!
+    const list = base.schedule.lists[row.listId]!
+    const twice = { ...list, conflicts: [...list.conflicts, { kind: 'holiday' as const, cause: 'publicHoliday:PH-PROBE', raisedAtISO: list.conflicts[0]!.raisedAtISO, publicHolidayId: 'PH-PROBE' }] }
+    const state: AppState = { ...base, schedule: { ...base.schedule, lists: { ...base.schedule.lists, [list.id]: twice } } }
+    expect(openConflictRows(state).length).toBe(openConflictRows(base).length + 1)
+    expect(listsTabCounts(state).conflicts).toBe(listsTabCounts(base).conflicts)
+    expect(listsBadge(state, 'all')).toBe(listsBadge(base, 'all'))
   })
 
   it('counts open conflicts only, from the demo day on', () => {
@@ -66,6 +77,19 @@ describe('listsBadge (OQ-151)', () => {
     const state = freshAppState()
     const union = new Set(Object.values(tabIds(state)).flatMap((m) => [...m.keys()]))
     expect(listsBadge(state, 'all')).toBe(union.size)
+  })
+
+  it('Counted once (US-13.1.3): a Draft List at a closed hospital shows on Draft Lists and Conflicts, and counts once', () => {
+    const base = freshAppState()
+    const draft = waitingDraftLists(base).find((l) => openConflictRows(base).some((r) => r.listId === l.id))!
+    // Nothing else needs work: every other List off the four tabs.
+    const lists = Object.fromEntries(
+      Object.entries(base.schedule.lists).filter(([id, l]) => id === draft.id || (l.state !== 'DRAFT' && l.state !== 'SUBMITTED' && l.conflicts.length === 0)),
+    )
+    const procedures = Object.fromEntries(Object.entries(base.schedule.procedures).filter(([, p]) => p.governingContractId !== undefined))
+    const state: AppState = { ...base, schedule: { ...base.schedule, lists, procedures } }
+    expect(listsTabCounts(state)).toEqual({ 'draft-lists': 1, conflicts: 1, 'contracts-to-set': 0, 'to-authorise': 0 })
+    expect(listsBadge(state, 'all')).toBe(1)
   })
 
   it('a List on two tabs counts once', () => {

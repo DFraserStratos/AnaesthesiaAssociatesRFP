@@ -43,6 +43,13 @@ beforeEach(() => useAppStore.setState(freshAppState()))
 afterEach(() => cleanup())
 
 describe('the To authorise tab', () => {
+  it('keeps a chosen List date in the select after its last List leaves the tab', () => {
+    mountAt(listsPath('to-authorise', { date: '2026-01-05' }))
+    const select = document.querySelector('[data-shot="to-authorise-date"] select, select[data-shot="to-authorise-date"]') as HTMLSelectElement
+    expect(select.value).toBe('2026-01-05')
+    expect(shot('to-authorise-none-match')).not.toBeNull()
+  })
+
   it('lists every submitted List, oldest submitted first, with when it was submitted and what needs a look', () => {
     mountAt(TAB)
     const order = toAuthoriseOrder(useAppStore.getState())

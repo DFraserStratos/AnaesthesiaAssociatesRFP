@@ -65,11 +65,15 @@ function listsByTab(state: ListsCountsState): Record<ListsTab, { id: string; dat
   }
 }
 
-/** The tab strip's numbers: what needs doing on each tab (zero is hidden). Conflicts counts conflicts, the others Lists. */
+/**
+ * The tab strip's numbers: what needs doing on each tab (zero is hidden), each counting Lists. A List
+ * at a hospital closed twice that day (its own closure and a public holiday) counts once on
+ * Conflicts, as the tab's own count line does (`conflictListCounts`).
+ */
 export function listsTabCounts(state: ListsCountsState): Record<ListsTab, number> {
   return {
     'draft-lists': waitingDraftLists(state).length,
-    conflicts: openConflictRows(state).length,
+    conflicts: new Set(openConflictRows(state).map((r) => r.listId)).size,
     'contracts-to-set': listsNeedingContracts(state).length,
     'to-authorise': listsToAuthorise(state).length,
   }

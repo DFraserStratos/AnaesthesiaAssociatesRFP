@@ -12,7 +12,6 @@
 
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { format, parseISO } from 'date-fns'
 import { Plus } from 'lucide-react'
 import { neutral } from '../../../../theme/tokens'
 import { removeBlockedReason } from '../../../../domain/draftLists'
@@ -23,7 +22,7 @@ import { Pill } from '../../../../shared/ui/Pill'
 import { PageBody, PageToolbar } from '../../components/AdminPage'
 import { Pager, pageOf, pageParam, pageWindow } from '../../components/Pager'
 import { ClickableRow, GroupRow, RowOpenButton, TableShell, Td, Th } from '../../../../shared/table'
-import { drSurname, formatCount, hhmm, initialsOf, locationName, shortDay } from '../../../../shared/format'
+import { drSurname, formatCount, initialsOf, locationName, shortDay, stampText } from '../../../../shared/format'
 import { DRAFT_LIST, DRAFT_LISTS, draftListCount } from '../../../../shared/scheduleTerms'
 import type { List } from '../../../../domain/types'
 import { surnameFirst } from '../../util'
@@ -110,7 +109,7 @@ export function DraftListsTab() {
   const hospital = (l: List) => locationName(l.hospitalId, masters.hospitals)
   // A person's initials ("KW"); a system or simulated actor in full.
   const byLabel = (by: string) => (/^[A-Z][a-z]+ [A-Z]\.?$/.test(by) ? initialsOf(by) : by)
-  const since = (l: List) => (l.draft !== undefined ? `Waiting since ${format(parseISO(l.draft.sinceISO), 'd MMM')} ${hhmm(l.draft.sinceISO)} · ${byLabel(l.draft.by)}` : '')
+  const since = (l: List) => (l.draft !== undefined ? `Waiting since ${stampText(l.draft.sinceISO, { weekday: false })} · ${byLabel(l.draft.by)}` : '')
 
   const resultCount =
     view === 'history' ? (
@@ -320,7 +319,7 @@ export function DraftListsTab() {
                     </Td>
                     <Td nowrap><WaitingTime list={l} style={{ fontSize: 13 }} /></Td>
                     <Td mono nowrap style={{ fontSize: 12, color: neutral.slate }}>
-                      {at !== undefined ? `${format(parseISO(at), 'd MMM')} ${hhmm(at)}` : ''} · {by ?? ''}
+                      {at !== undefined ? stampText(at, { weekday: false }) : ''} · {by ?? ''}
                     </Td>
                     <Td nowrap>
                       {assigned && <TextAction size="sm" flush onClick={() => onOpenList(l.id)}>Open List</TextAction>}
