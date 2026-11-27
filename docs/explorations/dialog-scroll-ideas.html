@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dialog Scrolling Ideas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Tokens: the app's own (aa-prototype/src/theme/tokens.ts), so the mocks read as the app. */
+:root{
+  --ink:#172320;--slate:#58635F;--mist:#8A9490;--lineStrong:#C9D1CE;--line:#E2E7E5;--sunken:#EDF1EF;--bg:#F6F8F7;--surface:#FFFFFF;
+  --brand:#A91E3E;
+  --teal:#0D6E63;--tealTint:#E1F0ED;
+  --okOn:#157A49;--okTint:#E3F4EB;--errOn:#9C332F;
+  --e1:0 1px 2px rgba(23,35,32,.05),0 2px 6px rgba(23,35,32,.05);
+  --e3:0 8px 16px rgba(23,35,32,.10),0 24px 56px rgba(23,35,32,.18);
+  --scrim:rgba(23,35,32,.32);
+  --barH:64px;
+  --mh:640px; /* the dialog's max height, set by the Window control */
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,p{margin:0}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(13,110,99,.30);border-radius:8px}
+
+/* ---------- the fixed switcher ---------- */
+.bar{position:fixed;top:0;left:0;right:0;height:var(--barH);z-index:20;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:20px;padding:0 20px}
+.bar .ttl{font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.bar .ttl small{display:block;font-weight:500;font-size:12px;color:var(--slate);letter-spacing:0}
+.opts{display:flex;gap:4px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;align-self:stretch;align-items:stretch}
+.opt{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:2.5px solid transparent;color:var(--slate);white-space:nowrap;font-size:13.5px;font-weight:600}
+.opt b{font-weight:700;color:var(--mist)}
+.opt:hover{color:var(--ink)}
+.opt[aria-selected="true"]{color:var(--ink);border-color:var(--teal)}
+.opt[aria-selected="true"] b{color:var(--teal)}
+.opt .rec{font-size:10.5px;font-weight:700;color:var(--okOn);background:var(--okTint);border-radius:999px;padding:0 7px;line-height:17px}
+.keys{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mist);white-space:nowrap}
+.kbd{font-family:"Spline Sans Mono",monospace;font-size:11px;border:1px solid var(--lineStrong);border-bottom-width:2px;border-radius:5px;padding:0 5px;color:var(--slate);background:#fff}
+
+main{padding-top:var(--barH)}
+.view{height:calc(100vh - var(--barH));min-height:600px;display:grid;grid-template-rows:auto minmax(0,1fr)}
+.vhead{display:flex;align-items:flex-end;gap:20px;padding:18px 24px 14px;flex-wrap:wrap}
+.vhead .grow{flex:1;min-width:320px}
+.vhead h2{font-size:24px;line-height:30px;letter-spacing:-.015em}
+.vhead h2 .l{color:var(--mist);font-weight:600;margin-right:10px}
+.vhead p{color:var(--slate);font-size:14.5px;max-width:78ch;margin-top:3px}
+.ctl{display:flex;flex-direction:column;gap:4px}
+.ctl > span{font-size:11.5px;font-weight:600;color:var(--mist)}
+.subs{display:flex;gap:4px;background:var(--sunken);border-radius:10px;padding:3px}
+.subs button{all:unset;cursor:pointer;font-size:13px;font-weight:600;color:var(--slate);padding:6px 12px;border-radius:8px;white-space:nowrap}
+.subs button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--e1)}
+.vbody{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;padding:0 24px 20px;min-height:0}
+@media (max-width:1000px){.view{height:auto}.vbody{grid-template-columns:1fr}.stage{height:760px}}
+
+/* ---------- the stage: a faded admin screen under a scrim ---------- */
+.stage{position:relative;min-height:0;border-radius:12px;overflow:hidden;box-shadow:var(--e3);border:1px solid var(--line);background:var(--bg)}
+.app{position:absolute;inset:0;display:grid;grid-template-columns:200px 1fr}
+.app nav{background:var(--ink);padding:18px 14px;display:flex;flex-direction:column;gap:8px}
+.app nav .wm{color:#fff;font-weight:700;font-size:13px;margin-bottom:14px}
+.app nav i{display:block;height:10px;border-radius:5px;background:rgba(255,255,255,.12);margin:6px 4px}
+.app nav i.on{background:rgba(255,255,255,.28);box-shadow:-4px 0 0 var(--brand)}
+.app .pg{padding:22px 28px;display:flex;flex-direction:column;gap:12px}
+.app .pg .h{height:18px;width:220px;border-radius:6px;background:var(--lineStrong)}
+.app .pg .r{height:46px;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+.scrimL{position:absolute;inset:0;background:var(--scrim)}
+.center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px}
+
+/* ---------- the dialog (Dialog.tsx: 520 wide, radius.panel, e3) ---------- */
+.dlg{position:relative;width:min(520px,100%);max-height:var(--mh);background:var(--surface);border-radius:20px;box-shadow:var(--e3)}
+.x{all:unset;cursor:pointer;position:absolute;top:20px;right:20px;width:32px;height:32px;border-radius:8px;display:grid;place-items:center;color:var(--slate);z-index:2}
+.x:hover{background:var(--sunken);color:var(--ink)}
+.title{font-size:18px;line-height:24px;font-weight:700;padding-right:44px}
+.desc{font-size:13px;line-height:19px;color:var(--slate);margin-top:8px}
+.fields{display:flex;flex-direction:column;gap:16px}
+.f label{display:block;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--slate);margin-bottom:6px}
+.f select,.f input{width:100%;height:48px;border-radius:10px;border:1px solid var(--line);background:var(--bg);padding:0 14px;font-size:15px}
+.f input::placeholder{color:var(--mist)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.help{font-size:12.5px;color:var(--slate);margin-top:-8px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--sunken);border-radius:10px;padding:3px;gap:3px}
+.seg span{height:40px;display:grid;place-items:center;border-radius:8px;font-weight:600;color:var(--slate);font-size:15px}
+.seg span.on{background:var(--teal);color:#fff;box-shadow:0 1px 3px rgba(23,35,32,.2)}
+.btn{all:unset;cursor:pointer;box-sizing:border-box;height:54px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;padding:0 20px}
+.btn.p{background:var(--teal);color:#fff;flex:1}
+.btn.s{border:1px solid var(--lineStrong);color:var(--ink);background:var(--surface)}
+.acts{display:flex;gap:8px}
+.hint{font-size:12.5px;line-height:18px;color:var(--slate)}
+
+/* Now: the whole card scrolls (today's Dialog.tsx). */
+.dlg.now{overflow:auto;padding:24px 24px 28px}
+.dlg.now .stack{display:flex;flex-direction:column;gap:16px}
+
+/* A: the card clips; a slim bar inside, kept off the rounded corners. X still scrolls. */
+.dlg.a{display:flex;overflow:hidden}
+.dlg.a .sc{flex:1;overflow:auto;max-height:calc(var(--mh) - 24px);margin:12px 6px 12px 0;padding:12px 14px 16px 24px;position:relative;scrollbar-width:thin;scrollbar-color:var(--lineStrong) transparent}
+.dlg.a .stack{display:flex;flex-direction:column;gap:16px}
+.dlg.a .x{top:8px;right:4px}
+
+/* B, C, D: pinned header, scrolling body (and pinned footer for C and D). */
+.dlg.split{display:flex;flex-direction:column;overflow:hidden}
+.hd{flex:none;padding:24px 24px 14px;border-bottom:1px solid transparent;transition:border-color .15s}
+.bd{flex:1 1 auto;min-height:0;overflow:auto;padding:4px 14px 24px 24px;margin-right:6px;scrollbar-width:thin;scrollbar-color:var(--lineStrong) transparent}
+.bd .stack{display:flex;flex-direction:column;gap:16px}
+.ft{flex:none;padding:14px 24px 24px;border-top:1px solid transparent;transition:border-color .15s;display:flex;flex-direction:column;gap:12px}
+.dlg.lines.sc-top .hd{border-bottom-color:var(--line)}
+.dlg.lines.sc-more .ft{border-top-color:var(--line)}
+
+/* D: no scrollbar; soft fades say there is more. */
+.dlg.d .bd{scrollbar-width:none;margin-right:0;padding-right:24px}
+.dlg.d .bd::-webkit-scrollbar{display:none}
+.dlg.d.sc-more .bd{-webkit-mask-image:linear-gradient(#000 calc(100% - 40px),transparent);mask-image:linear-gradient(#000 calc(100% - 40px),transparent)}
+.dlg.d.sc-top .bd{-webkit-mask-image:linear-gradient(transparent,#000 28px);mask-image:linear-gradient(transparent,#000 28px)}
+.dlg.d.sc-top.sc-more .bd{-webkit-mask-image:linear-gradient(transparent,#000 28px,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(transparent,#000 28px,#000 calc(100% - 40px),transparent)}
+
+/* ---------- the notes column ---------- */
+.why{overflow-y:auto;min-height:0;display:flex;flex-direction:column;gap:14px}
+.why section{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 18px}
+.why h3{font-size:14px;margin-bottom:6px}
+.why ul{margin:0;padding-left:18px;font-size:13.5px}
+.why li{margin-bottom:5px}
+.why li::marker{color:var(--mist)}
+.why p{font-size:13.5px;color:var(--slate)}
+.why .for h3{color:var(--okOn)}
+.why .against h3{color:var(--errOn)}
+.why .try{background:var(--tealTint);border-color:transparent}
+.why .try h3{color:var(--teal)}
+.meter{display:inline-flex;gap:3px;margin-left:8px;vertical-align:1px}
+.meter i{width:14px;height:6px;border-radius:3px;background:var(--line)}
+.meter i.f{background:var(--teal)}
+
+/* ---------- decide ---------- */
+.doc{overflow-y:auto;grid-row:1 / -1}
+.doc .in{max-width:880px;margin:0 auto;padding:36px 24px 64px}
+.doc h1{font-size:34px;line-height:1.1;letter-spacing:-.02em;font-weight:800}
+.doc .lede{font-size:16px;color:var(--slate);margin:10px 0 24px;max-width:66ch}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin-bottom:14px}
+.q h3{font-size:16px}
+.q > p{font-size:14px;color:var(--slate);margin-top:4px}
+.ch{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.ch label{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:14px}
+.ch input{accent-color:var(--teal);margin-top:4px}
+.ch label:has(input:checked){border-color:var(--teal);background:var(--tealTint)}
+.ch small{display:block;color:var(--slate);font-size:13px}
+.ch .r{font-size:11px;font-weight:700;color:var(--okOn);background:var(--okTint);border-radius:999px;padding:0 7px;line-height:17px;margin-left:6px}
+.q textarea{width:100%;min-height:70px;margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;font-size:14px;resize:vertical}
+.copy{all:unset;cursor:pointer;background:var(--teal);color:#fff;font-weight:700;border-radius:12px;padding:14px 22px;margin-top:8px}
+.copied{margin-left:12px;color:var(--okOn);font-weight:600;font-size:14px}
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="ttl">Dialog scrolling<small>Admin and web dialogs · Dialog.tsx</small></div>
+  <nav class="opts" role="tablist" aria-label="Options" id="opts"></nav>
+  <div class="keys"><span class="kbd">←</span><span class="kbd">→</span> or <span class="kbd">1</span>to<span class="kbd">6</span></div>
+</header>
+<main id="main"></main>
+
+<script>
+const OPTS = [
+  { k:'now', l:'', name:'As it is today', sub:'The whole white card is the scroller, so the browser puts its bar on the card\'s rounded edge, and the title, X and button all scroll with the form.',
+    what:['Unchanged: this is Dialog.tsx as it is.'],
+    pros:['Nothing to build.'],
+    cons:['The scrollbar runs into the rounded corners, which is the bit that looks pasted on.','The title and X scroll away, so there is no way out without scrolling back up (Escape still works).','On a laptop the main button sits below the fold.'],
+    size:0, try:'Scroll the form and watch the X leave with it. Set Window to Small to see the button disappear.' },
+  { k:'a', l:'A', name:'Slim scrollbar', sub:'Smallest fix: the card clips to its corners and a thin, quiet scrollbar sits inside it, kept off the curves. Everything still scrolls together.',
+    what:['The card keeps its radius and clips; a scroll area sits inside it with a little inset.','Thin bar in the line colour rather than the browser\'s default grey.'],
+    pros:['Fixes the look in one place, nothing changes inside any dialog.','No risk to the 40 or so dialogs that use it.'],
+    cons:['The X and title still scroll away.','The main button is still below the fold on a laptop.'],
+    size:1, try:'Compare the bar with Now: it stops short of the top and bottom curves.' },
+  { k:'b', l:'B', name:'Pinned header', sub:'The title, description and X stay put; only the form between them scrolls. A hairline appears under the header once you start scrolling.',
+    what:['Dialog splits into a fixed header (the OverlayHeader) and a scrolling body.','The scrollbar lives only in the body, so it never meets a rounded corner.'],
+    pros:['The X is always there.','You always know which dialog you are in.','Still nothing to change inside the dialogs: the header is already one shared component.'],
+    cons:['The main button still scrolls with the form.'],
+    size:2, try:'Scroll a little: a line slides in under the header so the form tucks beneath it.' },
+  { k:'c', l:'C', name:'Pinned header and buttons', rec:true, sub:'Header and footer both fixed, the form scrolls between them. The buttons are always on screen; lines show only while there is content hidden above or below.',
+    what:['As B, plus the shared SheetActions row pins to the bottom in web dialogs.','A hint that used to sit under the buttons moves into the footer, above them.','Phone bottom sheets are unchanged.'],
+    pros:['The action is always one click away, whatever the window height.','The lines double as a cue that there is more to scroll.','A short dialog that fits looks exactly as it does today.'],
+    cons:['The few dialogs with a hint under their buttons need that line moved (a small pass through each).','The scrolling area is shorter, by the height of the footer.'],
+    size:3, try:'Scroll to the bottom: the footer line fades away when there is nothing left below. Then try Short confirm: no lines, no bar.' },
+  { k:'d', l:'D', name:'No scrollbar, soft fades', sub:'Like C, but the scrollbar is hidden altogether and the form fades out at the edge where there is more to see.',
+    what:['As C, with the bar hidden and a fade mask on the scrolling edge instead of lines.'],
+    pros:['The calmest look; nothing on the right edge at all.'],
+    cons:['On Windows with a mouse, people rely on the bar to know they can scroll and to drag it.','A fade is easier to miss than a line or a bar.'],
+    size:3, try:'Scroll and watch the fade move from the bottom to the top edge.' },
+  { k:'decide', l:'Decide', name:'Decide' },
+]
+
+let cur = 0, content = 'tall', win = 'laptop'
+const WIN = { small:520, laptop:640, large:1000 }
+try { const h = location.hash.slice(1); const i = OPTS.findIndex(o => o.k === h); if (i >= 0) cur = i } catch (e) {}
+
+const X = `<button class="x" aria-label="Close"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>`
+
+const TALL = {
+  title:'Add recurring booking',
+  desc:'A pattern of Lists for this anaesthetist, surgeon and hospital on one day and session each week, not a Booking for a patient.',
+  fields:`<div class="fields">
+    <div class="f"><label>Anaesthetist</label><select><option>Dr Richard Allan</option><option>Dr Sarah Chen</option></select></div>
+    <div class="f"><label>Day of week</label><select><option>Thursday</option><option>Friday</option></select></div>
+    <div class="f"><label>Session</label><div class="seg"><span>AM</span><span class="on">PM</span></div></div>
+    <div class="f"><label>Kind of list</label><div class="seg"><span class="on">Private</span><span>Pre-op</span></div></div>
+    <div class="two"><div class="f"><label>Start (optional)</label><input type="time"></div><div class="f"><label>End (optional)</label><input type="time"></div></div>
+    <p class="help">Leave blank for the default session times.</p>
+    <div class="f"><label>Hospital (usual)</label><select><option>Choose a hospital</option><option>Forte Health</option></select></div>
+    <div class="f"><label>Usual surgeon</label><select><option>Choose a surgeon</option><option>Mr James Blake</option></select></div>
+    <div class="f"><label>Display note (optional)</label><input placeholder="e.g. Elective ortho"></div>
+    <div class="two"><div class="f"><label>Starts (optional)</label><input type="date"></div><div class="f"><label>Runs until (optional)</label><input type="date"></div></div>
+  </div>`,
+  acts:`<div class="acts"><button class="btn p">Apply to canvas now</button></div>`,
+  hint:'Saves it and applies it to the schedule ahead, from tomorrow. Lists with Bookings or office edits are left as they are.',
+}
+const SHORT = {
+  title:'End this recurring booking?',
+  desc:'Dr Richard Allan\'s Thursday PM Private list stops after 18 Dec. Lists already on the schedule stay as they are.',
+  fields:'',
+  acts:`<div class="acts"><button class="btn s">Keep it</button><button class="btn p">End it</button></div>`,
+  hint:'',
+}
+
+function dialog(k) {
+  const c = content === 'tall' ? TALL : SHORT
+  const head = `<h3 class="title">${c.title}</h3><p class="desc">${c.desc}</p>`
+  const hint = c.hint ? `<p class="hint">${c.hint}</p>` : ''
+  if (k === 'now') return `<div class="dlg now" role="dialog">${X}<div class="stack">${head}${c.fields}${c.acts}${hint}</div></div>`
+  if (k === 'a') return `<div class="dlg a" role="dialog"><div class="sc">${X}<div class="stack">${head}${c.fields}${c.acts}${hint}</div></div></div>`
+  if (k === 'b') return `<div class="dlg split lines nofoot" role="dialog">${X}<div class="hd">${head}</div><div class="bd"><div class="stack">${c.fields}${c.acts}${hint}</div></div></div>`
+  const cls = k === 'c' ? 'lines' : 'd'
+  const body = c.fields ? `<div class="bd"><div class="stack">${c.fields}</div></div>` : ''
+  return `<div class="dlg split ${cls}" role="dialog">${X}<div class="hd">${head}</div>${body}<div class="ft">${hint}${c.acts}</div></div>`
+}
+
+function backdrop() {
+  return `<div class="app"><nav><div class="wm">Anaesthesia Associates</div><i class="on"></i><i></i><i></i><i></i><i></i><i></i></nav>
+    <div class="pg"><div class="h"></div>${'<div class="r"></div>'.repeat(14)}</div></div><div class="scrimL"></div>`
+}
+
+function seg(label, key, val, items) {
+  return `<div class="ctl"><span>${label}</span><div class="subs" data-key="${key}">${items.map(([v, t]) => `<button data-v="${v}" aria-pressed="${v === val}">${t}</button>`).join('')}</div></div>`
+}
+
+function meter(n) { return `<span class="meter">${[1,2,3].map(i => `<i class="${i <= n ? 'f' : ''}"></i>`).join('')}</span>` }
+
+function renderTabs() {
+  document.getElementById('opts').innerHTML = OPTS.map((o, i) =>
+    `<button class="opt" role="tab" aria-selected="${i === cur}" data-i="${i}">${o.l ? `<b>${o.l}</b>` : ''}${o.name}${o.rec ? '<span class="rec">Recommended</span>' : ''}</button>`).join('')
+}
+
+function render() {
+  renderTabs()
+  const o = OPTS[cur]
+  const main = document.getElementById('main')
+  try { history.replaceState(null, '', '#' + o.k) } catch (e) {}
+  if (o.k === 'decide') { main.innerHTML = decideHtml(); wireDecide(); return }
+  main.innerHTML = `<section class="view">
+    <div class="vhead">
+      <div class="grow"><h2><span class="l">${o.l}</span>${o.name}</h2><p>${o.sub}</p></div>
+      ${seg('Content', 'content', content, [['tall', 'Tall form'], ['short', 'Short confirm']])}
+      ${seg('Window', 'win', win, [['small', 'Small'], ['laptop', 'Laptop'], ['large', 'Large']])}
+    </div>
+    <div class="vbody">
+      <div class="stage" id="stage">${backdrop()}<div class="center">${dialog(o.k)}</div></div>
+      <aside class="why">
+        <section class="try"><h3>Try it</h3><p>${o.try}</p></section>
+        <section><h3>What changes</h3><ul>${o.what.map(x => `<li>${x}</li>`).join('')}</ul></section>
+        <section class="for"><h3>For</h3><ul>${o.pros.map(x => `<li>${x}</li>`).join('')}</ul></section>
+        <section class="against"><h3>Against</h3><ul>${o.cons.map(x => `<li>${x}</li>`).join('')}</ul></section>
+        <section><h3>Size of change ${meter(o.size)}</h3><p>${['None.', 'One file (Dialog.tsx).', 'Dialog.tsx and how it places the OverlayHeader.', 'Dialog.tsx, SheetActions in web dialogs, and moving a few hint lines.'][o.size]}</p></section>
+        <section><p>The scrollbars here are your browser's own, so they look as they will in the app. On a Mac set to show scroll bars only when scrolling, they appear as you scroll.</p></section>
+      </aside>
+    </div></section>`
+  main.querySelectorAll('.subs').forEach(s => s.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return
+    if (s.dataset.key === 'content') content = b.dataset.v; else win = b.dataset.v
+    render()
+  }))
+  fit(); wireScroll()
+}
+
+function fit() {
+  const st = document.getElementById('stage'); if (!st) return
+  const avail = st.clientHeight - 48
+  document.documentElement.style.setProperty('--mh', Math.max(280, Math.min(WIN[win], avail)) + 'px')
+}
+
+function wireScroll() {
+  const d = document.querySelector('.dlg.split'); if (!d) return
+  const bd = d.querySelector('.bd')
+  const upd = () => {
+    if (!bd) { d.classList.remove('sc-top', 'sc-more'); return }
+    d.classList.toggle('sc-top', bd.scrollTop > 1)
+    d.classList.toggle('sc-more', bd.scrollTop + bd.clientHeight < bd.scrollHeight - 1)
+  }
+  if (bd) bd.addEventListener('scroll', upd, { passive: true })
+  upd(); requestAnimationFrame(upd)
+}
+
+const QS = [
+  { id:'opt', h:'Which treatment for admin and web dialogs?', p:'The phone\'s bottom sheets are not part of this.', ch:[
+    ['A', 'A · Slim scrollbar', 'Fixes the look only; the X and button still scroll.'],
+    ['B', 'B · Pinned header', 'Title and X always visible; button scrolls.'],
+    ['C', 'C · Pinned header and buttons', 'Title, X and main button always visible.', true],
+    ['D', 'D · No scrollbar, soft fades', 'As C, with fades in place of a scrollbar.'],
+    ['Now', 'Leave it as it is', ''],
+  ]},
+  { id:'hint', h:'A hint line under the buttons (like "Saves it and applies it…")', p:'Only matters for C and D, where the buttons pin to the bottom.', ch:[
+    ['above', 'Move it into the footer, above the buttons', 'Stays visible with the buttons.', true],
+    ['body', 'Leave it at the end of the scrolling form', 'Only seen when you scroll to the bottom.'],
+    ['drop', 'Drop it where it repeats what the button says', ''],
+  ]},
+  { id:'phone', h:'Phone bottom sheets', p:'They already scroll inside the sheet on the phone.', ch:[
+    ['leave', 'Leave them as they are', '', true],
+    ['same', 'Pin their buttons too, the same way', ''],
+  ]},
+]
+const answers = {}
+function decideHtml() {
+  return `<section class="view"><div class="doc"><div class="in">
+    <h1>Decide</h1><p class="lede">Pick what you'd like and copy your answers back into the chat.</p>
+    ${QS.map(q => `<div class="q"><h3>${q.h}</h3><p>${q.p}</p><div class="ch">${q.ch.map(([v, t, s, r]) =>
+      `<label><input type="radio" name="${q.id}" value="${v}" ${answers[q.id] === v ? 'checked' : ''}><span>${t}${r ? '<span class="r">Recommended</span>' : ''}${s ? `<small>${s}</small>` : ''}</span></label>`).join('')}</div></div>`).join('')}
+    <div class="q"><h3>Anything else?</h3><textarea id="notes" placeholder="Notes">${answers.notes || ''}</textarea></div>
+    <button class="copy" id="copy">Copy my answers</button><span class="copied" id="copied"></span>
+  </div></div></section>`
+}
+function wireDecide() {
+  document.querySelectorAll('.ch input').forEach(i => i.addEventListener('change', () => { answers[i.name] = i.value }))
+  const n = document.getElementById('notes'); n.addEventListener('input', () => { answers.notes = n.value })
+  document.getElementById('copy').addEventListener('click', async () => {
+    const lines = ['Dialog scrolling ideas: my answers']
+    QS.forEach(q => { const c = q.ch.find(x => x[0] === answers[q.id]); lines.push(`- ${q.h}: ${c ? c[1] : '(no answer)'}`) })
+    if (answers.notes) lines.push(`- Notes: ${answers.notes}`)
+    const txt = lines.join('\n'); const out = document.getElementById('copied')
+    try { await navigator.clipboard.writeText(txt); out.textContent = 'Copied' } catch (e) { out.textContent = 'Copy failed; select and copy:\n' + txt }
+  })
+}
+
+document.getElementById('opts').addEventListener('click', e => { const b = e.target.closest('.opt'); if (b) { cur = +b.dataset.i; render() } })
+document.addEventListener('keydown', e => {
+  if (e.target.closest('input,textarea,select')) return
+  if (e.key === 'ArrowRight') { cur = (cur + 1) % OPTS.length; render() }
+  else if (e.key === 'ArrowLeft') { cur = (cur - 1 + OPTS.length) % OPTS.length; render() }
+  else if (/^[1-6]$/.test(e.key)) { cur = +e.key - 1; render() }
+})
+addEventListener('resize', () => { fit(); wireScroll() })
+render()
+</script>
+</body>
+</html>
