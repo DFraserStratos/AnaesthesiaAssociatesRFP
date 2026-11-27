@@ -134,6 +134,9 @@ the full-scale data; the everyday data shows the same screens with its own (smal
 - The app switcher says "Demo: Billing Monitor & Xero" while the page says "Xero simulation". `shell/appConfig.ts`. S
 - People, Contracts and Finances still draw their own tab strips; move them onto the shared `SectionTabs` (`shared/ui/SectionTabs.tsx`), as Lists uses. S
 
+- Dialog width ruling (DECISIONS, 27 Nov): four shared sheets still set a private web width of 440 to 460 inside the dialog body (MoveBookingToColleague, AlertOffice, MoveListSheet, MoveListPrompt); drop it so the dialog sets the width. S
+- Sweep: ATLAS and the US-04.1.8 recipe still describe Replace from a date as a sheet (now a page at `/admin/contracts/:id/replace`, same data-shots plus `contract-replace-summary`, `-on-save`, `-where`, `-back`), and ATLAS calls the Xero resolve a side panel (now a dialog). S
+
 ## Requirements Board
 
 - Plan tools fall back to built-in status lists when `board.config.json` or `status-recodes.json` is unreadable (SY-1), and an unreadable recodes file raises no board issue (SY-4). S to M
