@@ -26,6 +26,7 @@ interface DayNavProps {
   onFindAvailable?: () => void
 }
 
+/** The row order is a two-way toggle: a click on either side flips it. */
 export function DayNav({ selectedDateISO, summary, sortMode, onSort, onNavigateDate, todayISO, maxDateISO, onFindAvailable }: DayNavProps) {
   const title = longDay(selectedDateISO)
   const step = (days: number) => onNavigateDate(format(addDays(parseISO(selectedDateISO), days), 'yyyy-MM-dd'))
@@ -46,7 +47,7 @@ export function DayNav({ selectedDateISO, summary, sortMode, onSort, onNavigateD
             Find available
           </Button>
         )}
-        <SlidingSegmentedControl size="sm" layout="wrap" variant="teal" ariaLabel="Row order" value={sortMode} options={SORT_OPTIONS} onSelect={onSort} />
+        <SlidingSegmentedControl size="sm" layout="wrap" variant="teal" ariaLabel="Row order" value={sortMode} options={SORT_OPTIONS} onSelect={() => onSort(sortMode === 'roster' ? 'az' : 'roster')} />
         <Button variant="secondary" size="compact" style={WEEK_STEP} onClick={() => week(-4)}>-4w</Button>
         <Button variant="secondary" size="compact" style={WEEK_STEP} onClick={() => week(-1)}>-1w</Button>
         <IconButton size={36} label="Previous day" onClick={() => step(-1)}>‹</IconButton>
