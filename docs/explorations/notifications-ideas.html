@@ -307,6 +307,17 @@ main{padding-top:var(--barH)}
 .rrail .ri span{display:block;color:var(--mist);font-size:11.5px;margin-top:2px}
 .rrail p{font-size:12.5px;color:var(--slate)}
 
+/* B2: bare icons, as the Day rail's To-do rows */
+.fi2{display:flex;gap:12px;align-items:flex-start;padding:12px 18px;border-bottom:1px solid var(--grid)}
+.fi2 > svg{flex:none;width:20px;height:20px;margin-top:-1px}
+.fi2 .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.fi2 .hd{font-size:13.5px;line-height:18px;font-weight:600;color:var(--ink)}
+.fi2 .sub{font-size:12.5px;color:var(--slate)}
+.fi2 .nt{font-size:12.5px;color:var(--slate);line-height:1.45;max-width:72ch;margin-top:2px}
+.fi2 .ta2{margin-top:5px;display:flex;gap:16px}
+.fi2 .rt{flex:none;display:flex;align-items:center;gap:12px}
+.fi2 .tm{font-family:"Spline Sans Mono",monospace;font-size:12px;color:var(--mist);white-space:nowrap}
+
 /* C: rows and a detail pane */
 .split{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:20px}
 .it tr.picked td{background:var(--tealTint)}
@@ -401,12 +412,14 @@ main{padding-top:var(--barH)}
 <!-- ================= B ================= -->
 <section class="view" id="v-b" data-name="B" role="tabpanel">
   <div class="vhead"><div class="grow"><h2><span class="l">B</span>A quiet feed</h2>
-    <p>Keep the sentence, but short and in regular weight, with the List's details on a second line and the message as a quote beneath. Resolved notices move to a rail on the right, like To authorise's "Recently authorised".</p></div></div>
-  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="b1"></div></div></div>
+    <p>Keep the sentence, but short, with the List's details on a second line and the message beneath. Resolved notices move to a rail on the right, like To authorise's "Recently authorised". "Bare icons" draws each kind as the Day rail's To-do rows do: the icon alone, amber only for a check request.</p></div>
+    <div class="subs" data-for="b"><button aria-pressed="true" data-f="b2">Bare icons</button><button data-f="b1">Round marks</button></div></div>
+  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="b2"></div><div class="frame" id="b1"></div></div></div>
     <aside class="why">
       <section class="for"><h3>For</h3><ul>
         <li>The closest to today's page: the same content, much easier to read.</li>
-        <li>Messages show in full. A check request's note gets an amber edge.</li>
+        <li>Messages show in full, as the Day rail shows a note.</li>
+        <li>With bare icons, the rows match the To-do tab beside the Notifications tab on the Day rail.</li>
         <li>Who resolved what is always in view, without a filter.</li>
       </ul></section>
       <section class="against"><h3>Against</h3><ul>
@@ -530,6 +543,33 @@ main{padding-top:var(--barH)}
     </div>`;
   };
   frame('b1', hdr(7) + `<div class="feedwrap"><div class="feed"><div class="dh">Today, Tue 24 Nov<span>7 notices</span></div><div style="overflow:hidden">${ACTIVE.slice(0, 5).map(fi).join('')}</div></div>
+    <div class="rrail"><div class="rcard"><h4>Resolved today <a>See all</a></h4>
+      ${RESOLVED.map((r) => `<div class="ri">${head(r).replace(/<\/?b>/g, '')}, ${r[3]}<span>${r[9].replace(' at ', ', ')}</span></div>`).join('')}</div>
+      <div class="rcard"><h4>What shows here</h4><p>Lists and Bookings anaesthetists move themselves, and anything they ask the office to check. A notice stays until someone in the office resolves it.</p></div></div></div>`);
+
+  // Lucide's own shapes (the app's icon set), drawn bare at 20px, stroke 2: the To-do rows' treatment.
+  const LUCIDE = {
+    chk: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+    ret: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/>',
+    hand: '<polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/>',
+    bk: '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m14 14 2 2-2 2"/><path d="M8 16h8"/>',
+  };
+  const ico = (r) => {
+    const key = r[1] === 'chk' ? 'chk' : r[1] === 'ret' ? 'ret' : r[2] === 'Booking moved' ? 'bk' : 'hand';
+    const colour = key === 'chk' ? 'var(--warn)' : 'var(--slate)';
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="${colour}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${LUCIDE[key]}</svg>`;
+  };
+  const fi2 = (r, i) => {
+    const [t, k, , l1, l2, , , msg, acts] = r;
+    return `<div class="fi2">${ico(r)}
+      <div class="tx"><span class="hd">${head(r).replace(/<\/?b>/g, '')}</span>
+        <span class="sub">${l1} · ${l2}</span>
+        ${msg ? `<span class="nt">${k === 'chk' ? 'Note: ' : ''}"${msg}"</span>` : ''}
+        <span class="ta2">${acts.map(ta).join('')}</span></div>
+      <div class="rt"><span class="tm">${t}</span>${tick(i === 2)}</div>
+    </div>`;
+  };
+  frame('b2', hdr(7) + `<div class="feedwrap"><div class="feed"><div class="dh">Today, Tue 24 Nov<span>7 notices</span></div><div style="overflow:hidden">${ACTIVE.map(fi2).join('')}</div></div>
     <div class="rrail"><div class="rcard"><h4>Resolved today <a>See all</a></h4>
       ${RESOLVED.map((r) => `<div class="ri">${head(r).replace(/<\/?b>/g, '')}, ${r[3]}<span>${r[9].replace(' at ', ', ')}</span></div>`).join('')}</div>
       <div class="rcard"><h4>What shows here</h4><p>Lists and Bookings anaesthetists move themselves, and anything they ask the office to check. A notice stays until someone in the office resolves it.</p></div></div></div>`);
