@@ -178,6 +178,19 @@ main{padding-top:var(--barH)}
 .facts span{font-size:11.5px;color:var(--slate);font-weight:600}
 .facts b{font-size:14.5px;font-weight:600;white-space:nowrap}
 .facts b.mono{font-size:13.5px;font-weight:500}
+.facts b .sd{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:7px;vertical-align:1px}
+.facts small{font-size:11.5px;color:var(--slate);white-space:nowrap}
+/* specialties: neutral chips and the add select (ChipMultiSelect) */
+.spchips{display:flex;flex-wrap:wrap;gap:6px}
+.spchip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;background:var(--sunken);color:var(--ink);border-radius:999px;padding:0 11px;line-height:26px}
+.spchip .x{color:var(--slate);font-weight:500;font-size:14px;line-height:1}
+.spchip.just{box-shadow:inset 0 0 0 1.5px var(--lineStrong);background:#fff}
+.flabel{font-size:12px;font-weight:600;color:var(--slate)}
+.fsel{height:34px;border:1px solid var(--lineStrong);border-radius:10px;padding:0 30px 0 12px;display:flex;align-items:center;position:relative;background:#fff;font-size:13px;color:var(--mist);width:240px}
+.fsel::after{content:"";position:absolute;right:12px;top:50%;width:6px;height:6px;border-right:1.6px solid var(--slate);border-bottom:1.6px solid var(--slate);transform:translateY(-70%) rotate(45deg)}
+.fhint{font-size:12px;color:var(--slate)}
+.pc.editing{box-shadow:0 0 0 2px rgba(13,110,99,.25),var(--e2);border-color:var(--teal)}
+.pc .foot{display:flex;justify-content:flex-end;gap:8px;padding-top:10px;border-top:1px solid var(--grid)}
 .pbody{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px}
 .colm{display:flex;flex-direction:column;gap:14px;min-height:0;min-width:0}
 .cols2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
@@ -372,16 +385,18 @@ main{padding-top:var(--barH)}
 <!-- ================= C ================= -->
 <section class="view" id="v-c" data-name="C" role="tabpanel">
   <div class="vhead"><div class="grow"><h2><span class="l">C</span>The usual week first</h2>
-    <p>A new header (initials, status and a strip of key facts) sits over a Monday to Friday, AM and PM grid of the person's recurring bookings: the usual week. Clicking a block opens the Edit sheet, and an empty half-day opens Add for that day. The detail cards move below, two to a row.</p></div>
-    <div class="subs" data-for="c"><button aria-pressed="true" data-f="c1">Anaesthetist</button><button data-f="c2">Surgeon</button></div></div>
-  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="c1"></div><div class="frame" id="c2"></div></div></div>
+    <p>A new header (initials, name, and a strip of key facts that holds the status and HPI CPN) sits over a Monday to Friday, AM and PM grid of the person's recurring bookings: the usual week. Clicking a block opens the Edit sheet, and an empty half-day opens Add for that day. The detail cards move below; a surgeon's Specialties get their own card, edited as removable chips.</p></div>
+    <div class="subs" data-for="c"><button aria-pressed="true" data-f="c1">Anaesthetist</button><button data-f="c2">Surgeon</button><button data-f="c3">Editing specialties</button></div></div>
+  <div class="vbody"><div class="stage"><div class="fwrap"><div class="frame on" id="c1"></div><div class="frame" id="c2"></div><div class="frame" id="c3"></div></div></div>
     <aside class="why">
       <section class="for"><h3>For</h3><ul>
         <li>Answers "what does their week look like" in one look, for both kinds of person.</li>
         <li>On a surgeon, the grid shows who covers each session; two anaesthetists in one session stack in the cell.</li>
         <li>The anaesthetist's grid can show Public sessions, greyed, so free half-days are really free.</li>
-        <li>The fact strip puts what the office checks most (rate, tier, status) at the top.</li>
+        <li>The fact strip leads with Status (a green dot, or "Inactive from" or "Retired" in its place) and the HPI CPN, then what the office checks most: rate and tier, or specialties and practice.</li>
+        <li>Specialties use the app's existing chip picker (<code>ChipMultiSelect</code>): pick from AA's list to add one, × to remove, at least one kept. "Editing specialties" shows Ms Patel with a second one, Gastroenterology, just added.</li>
       </ul></section>
+      <section><h3>Still to confirm with AA</h3><p>Whether a surgeon can hold more than one specialty (US-13.6.6 allows it; Ben said "No" on 5 Nov). If AA says one only, the same card holds a single select instead of chips.</p></section>
       <section class="against"><h3>Against</h3><ul>
         <li>A new component: no week grid like it exists in Admin (the DayGrid is a day of the whole practice).</li>
         <li>Weekend sessions and start or end dates don't fit the grid; they need a note or a list view.</li>
@@ -457,7 +472,7 @@ main{padding-top:var(--barH)}
     sub: 'Registration <span class="mono">34821</span> · Active',
     subRich: 'Anaesthetist · Registration <span class="mono">34821</span>',
     status: ['o', 'Active'],
-    facts: [['Rate per unit', '$26.50', 1], ['Priority tier', 'Tier 2'], ['Active since', '9 Jun 2014', 1], ['Phone', '021 555 0134', 1]],
+    facts: [['Status', '<i class="sd"></i>Active', 0, 'since 9 Jun 2014'], ['HPI CPN', '10SOUM', 1], ['Rate per unit', '$26.50', 1], ['Priority tier', 'Tier 2'], ['Phone', '021 555 0134', 1]],
     cards: [
       ['Identity', [['Name', 'Dr Melanie Souter'], ['Registration number', '34821', 1], ['HPI CPN', '10SOUM', 1]]],
       ['Contact', [['Phone', '021 555 0134', 1], ['Email', 'm.souter@aa-associates.example']]],
@@ -487,9 +502,9 @@ main{padding-top:var(--barH)}
     kind: 's', back: 'Surgeons', name: 'Ms K. Patel', init: 'KP',
     chip: ['HPI CPN', '41PATK'],
     sub: 'General surgery · Avonside Surgical Rooms · Active',
-    subRich: 'Surgeon · General surgery · Avonside Surgical Rooms',
+    subRich: 'Surgeon · NZ medical registration <span class="mono">71588</span>',
     status: ['o', 'Active'],
-    facts: [['Specialty', 'General surgery'], ['Practice', 'Avonside Surgical Rooms'], ['Registration', '71588', 1], ['Office', '03 555 0118', 1]],
+    facts: [['Status', '<i class="sd"></i>Active'], ['HPI CPN', '41PATK', 1], ['Specialties', 'General surgery'], ['Practice', 'Avonside Surgical Rooms'], ['Office', '03 555 0118', 1]],
     cards: [
       ['Identity', [['Name', 'Ms K. Patel'], ['Practice', 'Avonside Surgical Rooms'], ['NZ medical registration number', '71588', 1, 'For information'], ['HPI CPN', '41PATK', 1]]],
       ['Specialties', [['Specialties', 'General surgery', 0, "From AA's specialties list"]]],
@@ -530,8 +545,8 @@ main{padding-top:var(--barH)}
   // Today's header: name, the HPI chip, a sub line.
   const hdrPlain = (p) => `${back(p)}<div class="ph"><div class="t"><h1>${p.name} ${idc(p)}</h1><p class="psub">${p.sub}</p></div></div>`;
   // The new header: initials, status pill, then the fact strip.
-  const hdrRich = (p, right = '') => `${back(p)}<div class="hero"><span class="av">${p.init}</span><div class="t"><h1 style="font-size:24px;letter-spacing:-.015em;line-height:30px;display:flex;align-items:center;gap:10px">${p.name} <span class="pl ${p.status[0]}">${p.status[1]}</span> ${idc(p)}</h1><p class="psub">${p.subRich}</p></div>${right}</div>
-    <div class="facts">${p.facts.map(([l, v, m]) => `<div><span>${l}</span><b class="${m ? 'mono' : ''}">${v}</b></div>`).join('')}</div>`;
+  const hdrRich = (p, right = '') => `${back(p)}<div class="hero"><span class="av">${p.init}</span><div class="t"><h1 style="font-size:24px;letter-spacing:-.015em;line-height:30px;display:flex;align-items:center;gap:10px">${p.name}</h1><p class="psub">${p.subRich}</p></div>${right}</div>
+    <div class="facts">${p.facts.map(([l, v, m, note]) => `<div><span>${l}</span><b class="${m ? 'mono' : ''}">${v}</b>${note ? `<small>${note}</small>` : ''}</div>`).join('')}</div>`;
 
   const kv = (rows, narrow) => `<div class="kv${narrow ? ' n' : ''}">${rows.map(([l, v, m, note]) => `<span>${l}</span><div><span class="${m ? 'mono' : ''}">${v}</span>${note ? `<small>${note}</small>` : ''}</div>`).join('')}</div>`;
   const card = (title, body, { edit = true, right = '', cls = '', style = '' } = {}) => `<div class="pc ${cls}" style="${style}"><div class="hd"><h4>${title}</h4>${right || (edit ? '<span class="ed">Edit</span>' : '')}</div>${body}</div>`;
@@ -611,7 +626,16 @@ main{padding-top:var(--barH)}
   frame('b2', bFrame(PATEL));
 
   /* ===================== C: usual week first ===================== */
-  const cFrame = (p) => {
+  // A surgeon's Specialties card: neutral chips to read; ChipMultiSelect to edit.
+  const SPC_HINT = "From AA's specialties list. One or more, usually one. Decides which Contracts are offered on this surgeon's Lists.";
+  const specialtiesCard = (editing) => editing
+    ? `<div class="pc editing"><div class="hd"><h4>Specialties</h4></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><span class="flabel">Specialties</span>
+          <div class="spchips"><span class="spchip">General surgery <span class="x">×</span></span><span class="spchip just">Gastroenterology <span class="x">×</span></span></div>
+          <span class="fsel">Add a specialty</span><span class="fhint">${SPC_HINT}</span></div>
+        <div class="foot"><span class="btn2">Cancel</span><span class="btn">Save</span></div></div>`
+    : card('Specialties', `<div class="spchips"><span class="spchip">General surgery</span></div><span class="fhint">${SPC_HINT}</span>`);
+  const cFrame = (p, editingSpecialties = false) => {
     const legend = `<div class="legend"><span><i class="rb"></i>Recurring booking</span>${p.kind === 'a' ? '<span><i class="pub"></i>Public session (availability)</span><span><i class="free"></i>Free</span>' : '<span><i class="free"></i>No recurring booking</span>'}</div>`;
     const week = card(`Usual week${NEW}`, weekGrid(p, p.kind === 'a' ? 'TuePM' : 'WedPM') + `<div style="display:flex;justify-content:space-between;align-items:center">${legend}<span class="sumline">${p.kind === 'a' ? '6 recurring bookings' : '7 recurring bookings · 5 anaesthetists'}</span></div>`, {
       right: `<span style="display:flex;gap:10px;align-items:center"><span class="fp on">Week</span><span class="fp">List${p.retired.length ? ` <span class="c">+${p.retired.length} retired</span>` : ''}</span><span class="btn2">+ Add</span></span>`,
@@ -619,10 +643,11 @@ main{padding-top:var(--barH)}
     });
     const cardsBelow = p.kind === 'a'
       ? `<div class="cols2">${cardOf(p, 'Identity', true)}${cardOf(p, 'Contact', true)}${cardOf(p, 'Bank and GST', true)}${cardOf(p, 'Rate and tier', true)}</div>`
-      : `<div class="cols2">${cardOf(p, 'Identity', true)}${cardOf(p, 'Contacts', true)}</div>`;
+      : `<div class="cols2"><div class="colm">${cardOf(p, 'Identity', true)}</div><div class="colm">${specialtiesCard(editingSpecialties)}${cardOf(p, 'Contacts', true)}</div></div>`;
     return hdrRich(p) + `<div class="pbody"><div class="colm">${week}${cardsBelow}</div><div class="rail">${railPairings(p)}${railNext(p)}${railContracts(p)}</div></div>`;
   };
   frame('c1', cFrame(SOUTER));
+  frame('c3', cFrame(PATEL, true));
   frame('c2', cFrame(PATEL));
 
   /* ===================== D: tabs ===================== */
