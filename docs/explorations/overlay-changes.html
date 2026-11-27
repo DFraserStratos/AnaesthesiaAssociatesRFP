@@ -1,0 +1,848 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Overlay Changes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Base: the switcher, views and page mocks from lists-ideas.html. Tokens are the app's own (aa-prototype/src/theme/tokens.ts). */
+:root{
+  --ink:#172320;--slate:#58635F;--mist:#8A9490;--lineStrong:#C9D1CE;--line:#E2E7E5;--sunken:#EDF1EF;--bg:#F6F8F7;--surface:#FFFFFF;--grid:#F1F4F2;
+  --brand:#A91E3E;--brandMuted:#D89AA9;
+  --teal:#0D6E63;--tealTint:#E1F0ED;
+  --ok:#1E8E5A;--okTint:#E3F4EB;--okOn:#157A49;
+  --warn:#A16207;--warnTint:#F9F0DC;--warnOn:#7C4D08;
+  --err:#C2403C;--errTint:#FAE9E7;--errOn:#9C332F;
+  --e1:0 1px 2px rgba(23,35,32,.05),0 2px 6px rgba(23,35,32,.05);
+  --e2:0 2px 4px rgba(23,35,32,.06),0 8px 20px rgba(23,35,32,.09);
+  --e3:0 8px 16px rgba(23,35,32,.10),0 24px 56px rgba(23,35,32,.18);
+  --barH:64px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,p{margin:0}
+a{color:var(--teal)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(13,110,99,.30);border-radius:8px}
+
+/* ---------- the fixed switcher ---------- */
+.bar{position:fixed;top:0;left:0;right:0;height:var(--barH);z-index:20;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:20px;padding:0 20px}
+.bar .ttl{font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.bar .ttl small{display:block;font-weight:500;font-size:12px;color:var(--slate);letter-spacing:0}
+.opts{display:flex;gap:4px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;align-self:stretch;align-items:stretch}
+.opts::-webkit-scrollbar{display:none}
+.opt{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:2.5px solid transparent;color:var(--slate);white-space:nowrap;font-size:13.5px;font-weight:600}
+.opt svg{flex:none;color:var(--mist)}
+.opt b{color:inherit;font-weight:700}
+.opt:hover{color:var(--ink)}
+.opt[aria-selected="true"]{color:var(--ink);border-color:var(--teal)}
+.opt[aria-selected="true"] svg{color:var(--teal)}
+.opt:focus-visible{box-shadow:inset 0 0 0 2px rgba(13,110,99,.35);border-radius:6px}
+.opt .rec{font-size:10.5px;font-weight:700;color:var(--okOn);background:var(--okTint);border-radius:999px;padding:0 7px;line-height:17px}
+.keys{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mist);white-space:nowrap}
+.kbd{font-family:"Spline Sans Mono",monospace;font-size:11px;border:1px solid var(--lineStrong);border-bottom-width:2px;border-radius:5px;padding:0 5px;color:var(--slate);background:#fff}
+.step{all:unset;cursor:pointer;width:30px;height:30px;border:1px solid var(--lineStrong);border-radius:8px;display:grid;place-items:center;color:var(--ink)}
+.step:hover{border-color:var(--teal);color:var(--teal)}
+@media (max-width:1640px){.keys .hint{display:none}}
+
+/* ---------- one view at a time ---------- */
+main{padding-top:var(--barH)}
+.view{display:none;height:calc(100vh - var(--barH));min-height:560px}
+.view.on{display:grid;grid-template-rows:auto minmax(0,1fr)}
+.vhead{display:flex;align-items:flex-end;gap:24px;padding:18px 24px 14px}
+.vhead h2{font-size:24px;line-height:30px;letter-spacing:-.015em}
+.vhead h2 .l{color:var(--mist);font-weight:600;margin-right:10px}
+.vhead p{color:var(--slate);font-size:14.5px;max-width:78ch;margin-top:3px}
+.vhead .grow{flex:1;min-width:0}
+.subs{display:flex;gap:4px;background:var(--sunken);border-radius:10px;padding:3px;flex:none}
+.subs button{all:unset;cursor:pointer;font-size:13px;font-weight:600;color:var(--slate);padding:6px 12px;border-radius:8px;white-space:nowrap}
+.subs button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--e1)}
+.subs button:focus-visible{box-shadow:0 0 0 2px rgba(13,110,99,.35)}
+.vbody{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;padding:0 24px 20px;min-height:0}
+.stage{min-width:0;min-height:0;position:relative}
+.fwrap{position:relative;border-radius:12px;overflow:hidden;box-shadow:var(--e3);border:1px solid var(--line);background:var(--bg)}
+.frame{position:absolute;top:0;left:0;width:1440px;height:860px;transform-origin:0 0;display:none;grid-template-columns:200px minmax(0,1fr);overflow:hidden;font-size:13px;line-height:1.4;background:var(--bg)}
+.frame.on{display:grid}
+.why{overflow-y:auto;min-height:0;display:flex;flex-direction:column;gap:14px;padding-right:2px}
+.why section{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 18px}
+.why h3{font-size:14px;margin-bottom:6px}
+.why ul{margin:0;padding-left:18px;font-size:13.5px}
+.why li{margin-bottom:5px}
+.why li::marker{color:var(--mist)}
+.why p{font-size:13.5px;color:var(--slate)}
+.why .for h3{color:var(--okOn)}
+.why .against h3{color:var(--errOn)}
+.why .size{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.why .size b{font-size:14px}
+.meter{display:inline-flex;gap:3px}
+.meter i{width:14px;height:6px;border-radius:3px;background:var(--line)}
+.meter i.f{background:var(--teal)}
+@media (max-width:1000px){
+  .view.on{height:auto;display:block}
+  .vhead{flex-direction:column;align-items:flex-start}
+  .vbody{grid-template-columns:1fr}
+  .why{overflow:visible}
+}
+@media (max-width:640px){.vhead,.vbody{padding-left:16px;padding-right:16px}.bar{padding:0 12px;gap:12px}.bar .ttl small{display:none}}
+
+/* ---------- text views (start, decide) ---------- */
+.doc{overflow-y:auto;grid-row:1 / -1}
+.doc .in{max-width:1180px;margin:0 auto;padding:36px 24px 64px}
+.doc h1{font-size:40px;line-height:1.08;letter-spacing:-.025em;font-weight:800;max-width:20ch}
+.doc .lede{font-size:17px;color:var(--slate);max-width:66ch;margin-top:14px}
+.doc h2{font-size:22px;letter-spacing:-.01em;margin:40px 0 14px}
+.find{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:900px){.find{grid-template-columns:1fr}}
+.fc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.fc h3{font-size:15px;margin-bottom:6px}
+.fc p{font-size:14px;color:var(--slate)}
+.fc p+p{margin-top:8px}
+.navcmp{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:900px){.navcmp{grid-template-columns:1fr}}
+.mininav{background:var(--ink);color:#B9C4C0;border-radius:12px;padding:14px 10px;width:210px;font-size:13px}
+.mininav h4{color:#fff;font-size:12.5px;font-weight:600;margin:0 8px 10px}
+.mininav div{padding:6px 8px;border-radius:7px;display:flex;justify-content:space-between}
+.mininav .gone{color:#6E7C77;text-decoration:line-through}
+.mininav .new{background:rgba(255,255,255,.08);color:#fff;box-shadow:inset 3px 0 0 var(--brand)}
+.mininav .ct{background:var(--warn);color:#fff;border-radius:999px;font-size:10.5px;font-weight:700;padding:0 7px;line-height:18px}
+.mininav .ct.r{background:var(--err)}
+.jobs{width:100%;border-collapse:collapse;background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--e1);font-size:14px}
+.jobs th,.jobs td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.jobs th{font-size:12.5px;color:var(--slate);font-weight:600;background:var(--bg)}
+.jobs td:first-child{font-weight:600}
+.jobs .tl{display:flex;gap:2px;width:220px}
+.jobs .tl i{flex:1;height:8px;border-radius:3px;background:var(--line)}
+.jobs .tl i.f{background:var(--teal)}
+.jobs .tll{display:flex;justify-content:space-between;width:220px;font-size:11px;color:var(--mist)}
+.opts-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+@media (max-width:1100px){.opts-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ol{all:unset;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.ol:hover{border-color:var(--teal)}
+.ol svg{color:var(--teal)}
+.ol b{font-size:14.5px}
+.ol span{font-size:13px;color:var(--slate)}
+.gate{margin-top:28px;background:var(--warnTint);color:var(--warnOn);border-radius:12px;padding:12px 16px;font-size:14px;max-width:80ch}
+.gate b{color:var(--warnOn)}
+
+/* decide */
+.q{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin-bottom:14px}
+.q h3{font-size:16px}
+.q > p{font-size:14px;color:var(--slate);margin-top:4px;max-width:80ch}
+.ch{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.ch label{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:14px}
+.ch label:hover{border-color:var(--lineStrong)}
+.ch input{accent-color:var(--teal);margin-top:4px}
+.ch label:has(input:checked){border-color:var(--teal);background:var(--tealTint)}
+.ch small{display:block;color:var(--slate);font-size:13px}
+.ch .r{font-size:11px;font-weight:700;color:var(--okOn);background:var(--okTint);border-radius:999px;padding:0 7px;line-height:17px;margin-left:6px;vertical-align:1px}
+.q textarea{width:100%;margin-top:10px;min-height:56px;border:1px solid var(--lineStrong);border-radius:10px;padding:9px 12px;font:inherit;font-size:14px;resize:vertical}
+.q textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,110,99,.2)}
+.copy{display:flex;align-items:center;gap:14px;margin-top:8px}
+.cbtn{all:unset;cursor:pointer;background:var(--teal);color:#fff;font-weight:600;border-radius:10px;padding:10px 18px;font-size:14px}
+.cbtn:focus-visible{box-shadow:0 0 0 3px rgba(13,110,99,.35)}
+.copied{font-size:13.5px;color:var(--okOn)}
+.reco{background:var(--surface);border-radius:16px;box-shadow:var(--e2);padding:22px 26px;border-left:4px solid var(--teal);margin-bottom:22px}
+.reco h3{font-size:19px;margin-bottom:6px}
+.reco p{max-width:84ch}
+.reco p+p{margin-top:8px}
+
+/* ---------- inside the mocks ---------- */
+.side{background:var(--ink);color:#B9C4C0;padding:20px 12px;display:flex;flex-direction:column;gap:2px}
+.side .wm{font-family:Georgia,serif;color:#fff;font-size:14px;margin:0 10px 4px}
+.side .ad{color:var(--brandMuted);font-size:10px;letter-spacing:.08em;margin:0 10px 22px;font-weight:600}
+.side a{padding:8px 10px;border-radius:8px;font-size:13px;display:flex;justify-content:space-between;align-items:center;text-decoration:none;color:inherit}
+.side a.on{background:rgba(255,255,255,.07);color:#fff;box-shadow:inset 3px 0 0 var(--brand)}
+.side .ct{background:var(--warn);color:#fff;border-radius:999px;font-size:10.5px;font-weight:700;padding:0 7px;line-height:18px}
+.side .ct.r{background:var(--err)}
+.mainc{display:flex;flex-direction:column;gap:14px;min-width:0;min-height:0;padding:22px 28px 22px}
+.phd{display:flex;align-items:flex-end;gap:24px}
+.phd .t{flex:1;min-width:0}
+.phd h1{font-size:24px;letter-spacing:-.015em;line-height:30px}
+.phd h1 .pl{margin-left:8px;vertical-align:4px}
+.psub{color:var(--slate);font-size:13.5px;margin-top:2px}
+.back{color:var(--teal);font-weight:600;font-size:13px;margin-bottom:6px;display:flex;gap:6px;align-items:center}
+.ltabs{display:flex;gap:24px;border-bottom:1px solid var(--line);flex:none}
+.ltabs span{font-size:14px;font-weight:600;color:var(--slate);padding:0 0 10px;border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;align-items:center;gap:7px}
+.ltabs span.on{color:var(--ink);border-color:var(--teal)}
+.ltabs .n{font-size:11px;font-weight:700;color:var(--warnOn);background:var(--warnTint);border-radius:999px;padding:0 7px;line-height:18px;font-variant-numeric:tabular-nums}
+.ltabs .n.e{color:var(--errOn);background:var(--errTint)}
+.tool{display:flex;gap:10px;align-items:center;flex:none}
+.tool .end{margin-left:auto;font-size:12.5px;color:var(--slate);white-space:nowrap}
+.srch{height:34px;border:1px solid var(--lineStrong);border-radius:999px;padding:0 14px;display:flex;align-items:center;gap:8px;color:var(--mist);background:#fff;font-size:13px;width:260px}
+.sel{height:34px;border:1px solid var(--lineStrong);border-radius:10px;padding:0 30px 0 12px;display:flex;align-items:center;gap:6px;position:relative;background:#fff;font-weight:500;white-space:nowrap;font-size:13px;color:var(--ink)}
+.sel::after{content:"";position:absolute;right:12px;top:50%;width:6px;height:6px;border-right:1.6px solid var(--slate);border-bottom:1.6px solid var(--slate);transform:translateY(-70%) rotate(45deg)}
+.fpills{display:flex;gap:6px}
+.fp{height:32px;border:1px solid var(--lineStrong);border-radius:999px;padding:0 13px;display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--slate);background:#fff;white-space:nowrap}
+.fp.on{background:var(--tealTint);border-color:var(--teal);color:var(--teal)}
+.fp .c{font-family:"Spline Sans Mono",monospace;font-size:11.5px;font-weight:500;color:var(--mist)}
+.fp.on .c{color:var(--teal)}
+.btn{background:var(--teal);color:#fff;font-weight:600;border-radius:10px;padding:9px 16px;font-size:13.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
+.btn2{background:#fff;color:var(--ink);border:1px solid var(--lineStrong);font-weight:600;border-radius:10px;padding:8px 14px;font-size:13.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.ta{color:var(--teal);font-weight:600;font-size:12.5px;white-space:nowrap}
+.ta + .ta{margin-left:14px}
+.tcard{flex:1;min-height:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--e1);display:flex;flex-direction:column;overflow:hidden}
+.tcard .tb{flex:1;min-height:0;overflow:hidden}
+.tfoot{border-top:1px solid var(--line);padding:10px 16px;font-size:12.5px;color:var(--slate);display:flex;align-items:center;gap:10px}
+.tfoot .pg{margin-left:auto;display:flex;gap:4px}
+.tfoot .pg span{min-width:28px;height:28px;border:1px solid var(--lineStrong);border-radius:8px;display:grid;place-items:center;color:var(--ink);font-size:12.5px;padding:0 6px}
+.tfoot .pg span.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.it{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.it th{font-size:12px;color:var(--slate);font-weight:600;text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--surface);white-space:nowrap}
+.it th.so{color:var(--teal)}
+.it td{padding:9px 12px;border-bottom:1px solid var(--grid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+.it td.r,.it th.r{text-align:right}
+.it .b{font-weight:600}
+.it .s{color:var(--slate)}
+.it .m{font-family:"Spline Sans Mono",monospace;font-size:12px;font-variant-numeric:tabular-nums;color:var(--slate)}
+.it tr.g td{background:var(--bg);font-size:12.5px;font-weight:700;color:var(--ink);padding:7px 12px;border-bottom:1px solid var(--line)}
+.it tr.g td span{color:var(--mist);font-weight:600;margin-left:8px}
+.it tr.g td em{font-style:normal;color:var(--errOn);font-weight:600;margin-left:8px}
+.it tr.hov td{background:#FAFCFB}
+.it tr.dim td{color:var(--mist)}
+.pl{display:inline-block;font-size:11.5px;font-weight:600;border-radius:999px;padding:0 8px;line-height:20px;white-space:nowrap;vertical-align:middle}
+.pl + .pl{margin-left:4px}
+.pl.w{background:var(--warnTint);color:var(--warnOn)}
+.pl.e{background:var(--errTint);color:var(--errOn)}
+.pl.o{background:var(--okTint);color:var(--okOn)}
+.pl.t{background:var(--tealTint);color:var(--teal)}
+.pl.n{background:var(--sunken);color:var(--slate)}
+.pl.d{background:#fff;color:var(--slate);box-shadow:inset 0 0 0 1px var(--lineStrong);border:0}
+.prog{display:inline-flex;align-items:center;gap:8px}
+.prog i{display:inline-block;width:54px;height:6px;border-radius:3px;background:var(--line);position:relative;overflow:hidden}
+.prog i b{position:absolute;left:0;top:0;bottom:0;background:var(--teal);border-radius:3px}
+.body2{flex:1;min-height:0;display:grid;gap:16px}
+.rcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--e1);padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.rcard h4{font-size:13.5px}
+.rcard .dl{display:grid;grid-template-columns:110px 1fr;gap:6px 10px;font-size:12.5px}
+.rcard .dl span{color:var(--slate)}
+.rcard .hi{font-size:12.5px;display:flex;gap:8px}
+.rcard .hi span{color:var(--mist);font-family:"Spline Sans Mono",monospace;font-size:11.5px;width:74px;flex:none}
+.note{background:var(--warnTint);color:var(--warnOn);border-radius:10px;padding:8px 12px;font-size:12.5px;line-height:1.45}
+.daylist{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--e1);overflow:hidden;display:flex;flex-direction:column}
+.daylist .dh{padding:12px 14px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--slate);display:flex;justify-content:space-between}
+.dayrow{padding:10px 14px;border-bottom:1px solid var(--grid);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center}
+.dayrow .d{font-weight:600;font-size:13.5px}
+.dayrow .d small{color:var(--mist);font-weight:500;margin-left:6px;font-size:12px}
+.dayrow .c{font-family:"Spline Sans Mono",monospace;font-size:12px;color:var(--slate)}
+.dayrow .dots{grid-column:1 / -1;display:flex;gap:6px;font-size:11.5px;color:var(--slate)}
+.dayrow .dots i{display:inline-flex;align-items:center;gap:4px;font-style:normal}
+.dayrow .dots i::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--x)}
+.dayrow.on{background:var(--tealTint);box-shadow:inset 3px 0 0 var(--teal)}
+.dayrow.sp{background:var(--bg)}
+.dsec{font-size:12px;font-weight:700;color:var(--slate);padding:12px 16px 6px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.dsec span{color:var(--mist);font-weight:600}
+.ready{padding:12px 16px;font-size:12.5px;color:var(--slate);display:flex;align-items:center;gap:8px;border-top:1px solid var(--line)}
+.ready::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ok)}
+
+/* ---------- this page: overlays drawn at their real widths ---------- */
+:root{--scrim:rgba(23,35,32,.32)}
+.vbody{grid-template-columns:minmax(0,1fr) 340px}
+.ov{position:absolute;inset:0;background:var(--scrim);display:flex;align-items:center;justify-content:center;padding:24px;z-index:5}
+.ov.r{justify-content:flex-end;align-items:stretch;padding:0}
+.dwrap{position:relative;display:flex;flex-direction:column;max-height:100%}
+.dim{position:absolute;left:0;right:0;top:-30px;height:20px;display:flex;align-items:center;justify-content:center;border-left:1.5px solid #fff;border-right:1.5px solid #fff}
+.dim::before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1.5px dashed rgba(255,255,255,.85)}
+.dim span{position:relative;background:var(--ink);color:#fff;font:600 12px/20px "Spline Sans Mono",monospace;padding:0 9px;border-radius:999px}
+.dim.aft span{background:var(--teal)}
+.dlg{position:relative;width:520px;max-height:740px;background:var(--surface);border-radius:20px;box-shadow:var(--e3);display:flex;flex-direction:column;overflow:hidden;font-size:14px;line-height:1.45}
+.dhd{flex:none;padding:24px 24px 14px;position:relative}
+.dhd h2{font-size:18px;line-height:24px;font-weight:700;padding-right:36px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dhd p{font-size:13px;line-height:19px;color:var(--slate);margin-top:4px;padding-right:20px}
+.dx{position:absolute;top:20px;right:20px;width:32px;height:32px;border-radius:8px;display:grid;place-items:center;color:var(--slate)}
+.dbd{flex:1 1 auto;min-height:0;overflow-y:auto;margin-right:6px;padding:4px 18px 6px 24px;display:flex;flex-direction:column;gap:14px;scrollbar-width:thin;scrollbar-color:var(--lineStrong) transparent}
+.dft{flex:none;padding:14px 24px 24px;display:flex;flex-direction:column;gap:8px}
+.dft .nt{font-size:12px;line-height:18px;color:var(--mist)}
+.dft .row{display:flex;gap:8px}
+.fb{height:54px;border-radius:12px;font-weight:600;font-size:15px;display:flex;align-items:center;justify-content:center;padding:0 22px;white-space:nowrap}
+.fb.p{background:var(--teal);color:#fff;flex:1}
+.fb.s{background:#fff;border:1px solid var(--lineStrong);color:var(--ink)}
+.fb.s.full{flex:1}
+.f{display:flex;flex-direction:column;gap:6px;min-width:0}
+.f > label{font-size:13px;font-weight:600;color:var(--ink)}
+.well{min-height:48px;background:var(--sunken);border-radius:10px;padding:0 14px;display:flex;align-items:center;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;color:var(--ink)}
+.well > span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.well.ph{color:var(--mist)}
+.well.mono{font-family:"Spline Sans Mono",monospace;font-size:14px}
+.well.sel{padding-right:34px}
+.well.sel::after{content:"";position:absolute;right:15px;top:50%;width:7px;height:7px;border-right:1.7px solid var(--slate);border-bottom:1.7px solid var(--slate);transform:translateY(-70%) rotate(45deg)}
+.well.ta{align-items:flex-start;padding:12px 14px;white-space:pre-wrap;line-height:1.5;font-size:14px}
+.well.ta > span{white-space:pre-wrap;overflow:visible}
+.well.sm{min-height:36px;font-size:13px;padding:0 30px 0 10px;border-radius:8px;background:#fff;border:1px solid var(--lineStrong)}
+.well.sm::after{right:11px;width:6px;height:6px}
+.well.dis{color:var(--slate)}
+.hint{font-size:12.5px;line-height:1.4;color:var(--slate)}
+.hint.ok{color:var(--okOn)}
+.hint.warn{color:var(--warnOn)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.trio{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:10px}
+.seg{display:flex;background:var(--sunken);border-radius:10px;padding:3px;gap:2px;height:44px}
+.seg span{flex:1 1 0;display:flex;align-items:center;justify-content:center;font-size:13.5px;font-weight:600;color:var(--slate);border-radius:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px;min-width:0}
+.seg span.on{background:var(--teal);color:#fff}
+.seg.wrap span{flex:0 0 auto;padding:0 14px}
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--slate);border-top:1px solid var(--line);padding-top:14px}
+.lead{font-size:13px;color:var(--slate)}
+.ink13{font-size:13px;color:var(--ink)}
+.mist12{font-size:12px;color:var(--mist)}
+.mono{font-family:"Spline Sans Mono",monospace;font-variant-numeric:tabular-nums}
+.ntc{border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.45}
+.ntc b{display:block;font-weight:600;margin-bottom:2px}
+.ntc.w{background:var(--warnTint);color:var(--warnOn)}
+.ntc.n{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+.rc{border:1px solid var(--lineStrong);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;font-size:14px;background:#fff}
+.rc::before{content:"";flex:none;width:16px;height:16px;border-radius:50%;border:1.6px solid var(--lineStrong);margin-top:2px;background:#fff}
+.rc.on{border-color:var(--teal);background:var(--tealTint)}
+.rc.on::before{border:5px solid var(--teal)}
+.rc b{display:block;font-weight:600}
+.rc small{display:block;color:var(--slate);font-size:12.5px;margin-top:2px}
+.rcs{display:flex;flex-direction:column;gap:8px}
+.rcs.h{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dtab{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.dtab th{font-size:12px;font-weight:600;color:var(--slate);text-align:left;padding:8px 10px;background:var(--bg);border-bottom:1px solid var(--line)}
+.dtab td{padding:8px 10px;border-bottom:1px solid var(--grid);vertical-align:top;line-height:1.4}
+.dtab tr:last-child td{border-bottom:0}
+.dtab td.m{font-family:"Spline Sans Mono",monospace;font-size:12.5px}
+.dtab .well.sm{display:inline-flex;min-height:30px}
+.dtab .ck{width:16px;height:16px;border-radius:4px;background:var(--teal);display:inline-block;vertical-align:-3px}
+.dtab .ck.off{background:#fff;border:1.5px solid var(--lineStrong)}
+.cands{display:flex;flex-direction:column;gap:6px;overflow:hidden;position:relative}
+.cands::after{content:"";position:absolute;left:0;right:0;bottom:0;height:28px;background:linear-gradient(transparent,#fff)}
+.gh{font-size:12px;font-weight:600;color:var(--slate);margin:6px 0 2px}
+.gh.w{color:var(--warnOn)}
+.cand{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px}
+.cand .nm{font-weight:600;margin-right:2px}
+.cand .end{margin-left:auto;display:flex;align-items:center;gap:6px}
+.cand .t{font-family:"Spline Sans Mono",monospace;font-size:11px;color:var(--mist)}
+.cand.w{border-color:#E8C98A}
+.cand.x{border:1px dashed var(--lineStrong);background:var(--bg)}
+.cand.x .nm{color:var(--slate)}
+.cand .sub{flex-basis:100%;font-size:12px;color:var(--mist)}
+.cand .ask{border:1px dashed var(--teal);color:var(--teal);border-radius:8px;padding:3px 8px;font-size:12px;font-weight:600}
+.cand .fr{color:var(--teal);font-weight:600;font-size:12px}
+.srchw{min-height:48px;background:var(--sunken);border-radius:10px;padding:0 14px;display:flex;align-items:center;gap:8px;color:var(--mist);font-size:15px}
+.prev{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.prev .pv{display:grid;grid-template-columns:56px 1fr;gap:4px 8px;font-size:12.5px}
+.prev .pv span{color:var(--mist)}
+.prev pre{margin:0;background:#fff;border-radius:6px;padding:10px;font:12px/18px "Spline Sans Mono",monospace;white-space:pre-wrap;color:var(--ink)}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pills span{font-family:"Spline Sans Mono",monospace;font-size:11.5px;height:28px;display:inline-flex;align-items:center;padding:0 9px;border-radius:999px;border:1px solid var(--lineStrong);color:var(--ink);background:#fff}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+/* side panel */
+.pwrap{position:relative;height:100%;background:var(--surface);box-shadow:var(--e3);display:flex;flex-direction:column;font-size:14px;line-height:1.45}
+.ptag{position:absolute;top:18px;right:calc(100% + 14px);background:var(--ink);color:#fff;font:600 12px/22px "Spline Sans Mono",monospace;padding:0 10px;border-radius:999px;white-space:nowrap}
+.phd2{padding:20px 24px;border-bottom:1px solid var(--line);position:relative}
+.phd2 h2{font-size:18px;line-height:24px;font-weight:700;padding-right:40px}
+.phd2 .mt{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px;font-size:13px;color:var(--slate)}
+.pbd{flex:1;min-height:0;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:20px}
+.pft{border-top:1px solid var(--line);padding:14px 24px;display:flex;justify-content:flex-end;gap:10px}
+.scard{border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;background:#fff}
+.scard .sh{display:flex;align-items:center;gap:10px;font-weight:700;font-size:14.5px}
+.stp{width:24px;height:24px;border-radius:50%;background:var(--tealTint);color:var(--teal);display:grid;place-items:center;font-size:12.5px;font-weight:700;flex:none}
+.scard .ct{font-family:"Spline Sans Mono",monospace;font-size:11.5px;background:var(--sunken);color:var(--slate);border-radius:999px;padding:0 8px;line-height:20px}
+.disc{color:var(--teal);font-weight:600;font-size:13px}
+/* page mocks used behind the overlays */
+.cols{flex:1;min-height:0;display:grid;gap:18px}
+.rail{display:flex;flex-direction:column;gap:14px;min-width:0}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.tile span{font-size:12px;color:var(--slate)}
+.tile b{display:block;font-size:20px;margin:2px 0}
+.tile small{font-size:12px;color:var(--slate)}
+.subnav{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 8px;display:flex;flex-direction:column;gap:1px;font-size:13px;align-self:start}
+.subnav h5{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mist);margin:10px 10px 4px}
+.subnav h5:first-child{margin-top:2px}
+.subnav a{padding:6px 10px;border-radius:8px;color:var(--ink)}
+.subnav a.on{background:var(--tealTint);color:var(--teal);font-weight:600}
+.vh{display:flex;align-items:flex-end;gap:16px}
+.vh .t{flex:1}
+.vh h3{font-size:18px}
+.vh p{font-size:13px;color:var(--slate);max-width:90ch;margin-top:2px}
+.desk{background:#E6EBE9;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;min-height:0;overflow:hidden}
+.dcol{background:#fff;border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.dcol .in{flex:1;padding:16px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.dcol .ft{border-top:1px solid var(--line);padding:12px 16px;display:flex;gap:8px;align-items:center}
+.dcol .ft .nt{flex:1;font-size:12px;color:var(--slate)}
+.dgrid{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.dgrid .ruler{display:grid;grid-template-columns:170px 1fr;border-bottom:1px solid var(--line);font:11px "Spline Sans Mono",monospace;color:var(--mist)}
+.dgrid .ruler div:last-child{display:flex;justify-content:space-between;padding:6px 10px}
+.drow{display:grid;grid-template-columns:170px 1fr;border-bottom:1px solid var(--grid);height:38px;align-items:center}
+.drow > span{padding:0 12px;font-weight:600;font-size:12.5px}
+.drow .tl{position:relative;height:100%}
+.blk{position:absolute;top:5px;bottom:5px;border-radius:7px;font-size:11px;padding:3px 7px;overflow:hidden;white-space:nowrap;line-height:1.3}
+.blk.l{background:var(--tealTint);color:var(--teal);font-weight:600}
+.blk.f{border:1.5px dashed #9CC9C2;color:var(--teal)}
+.blk.u{background:repeating-linear-gradient(135deg,#EEF1F0 0 6px,#E2E7E5 6px 12px);color:var(--slate)}
+.pdfp{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15);font-family:Arial,Helvetica,sans-serif;color:#222;flex:none;position:relative}
+.pdfp .ph{display:flex;justify-content:space-between;font-size:11px}
+.pdfp h6{text-align:center;font-size:15px;margin:2px 0 0}
+.pdfp .hr{text-align:center;font-size:11px;margin-bottom:10px}
+.pdfp table{width:100%;border-collapse:collapse;font-size:10.5px}
+.pdfp th{text-align:left;border-bottom:1.5px solid #222;padding:4px 6px}
+.pdfp td{border-bottom:1px solid #bbb;padding:6px;vertical-align:top}
+.pdfp .bx{outline:2px solid #E0A84A;background:rgba(249,240,220,.7)}
+.pdfp .ff{position:absolute;bottom:10px;left:28px;right:28px;font-size:9.5px;color:#666;display:flex;justify-content:space-between}
+.pdfscroll{background:var(--sunken);border-radius:14px;padding:16px;overflow-x:auto;overflow-y:hidden;margin-top:4px;scrollbar-width:auto}
+.pdfscroll.cut{position:relative}
+/* start page */
+.ruler2{display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.rl{display:grid;grid-template-columns:180px minmax(0,1fr) 150px;gap:14px;align-items:center;font-size:13.5px}
+.rl .bar{position:relative;height:26px;background:var(--bg);border-radius:6px;border:1px dashed var(--line)}
+.rl .bar i{position:absolute;top:3px;bottom:3px;border-radius:5px;background:var(--tealTint);border:1.5px solid var(--teal);display:flex;align-items:center;padding:0 8px;font:600 11.5px "Spline Sans Mono",monospace;color:var(--teal);font-style:normal}
+.rl .bar i.p{right:3px}
+.rl .bar i.d{left:50%;transform:translateX(-50%)}
+.rl .bar i.new{background:#fff;border-style:dashed}
+.rl .n{font-size:12.5px;color:var(--slate)}
+.rl b{font-weight:600}
+.rules{counter-reset:r;display:flex;flex-direction:column;gap:10px}
+.rule{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 18px 14px 56px;position:relative;font-size:14.5px}
+.rule::before{counter-increment:r;content:counter(r);position:absolute;left:18px;top:14px;width:26px;height:26px;border-radius:50%;background:var(--tealTint);color:var(--teal);font-weight:700;font-size:13px;display:grid;place-items:center}
+.rule b{display:block;font-size:15px;margin-bottom:2px}
+.rule span{color:var(--slate);font-size:14px}
+.kept{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.kept{grid-template-columns:1fr}.rl{grid-template-columns:1fr}}
+.chg{width:100%;border-collapse:collapse;background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--e1);font-size:14px}
+.chg th,.chg td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.chg th{font-size:12.5px;color:var(--slate);font-weight:600;background:var(--bg)}
+.chg td:first-child{font-family:"Spline Sans Mono",monospace;color:var(--mist);width:30px}
+.chg button{all:unset;cursor:pointer;color:var(--teal);font-weight:600}
+.chg .m{font-family:"Spline Sans Mono",monospace;font-size:12.5px;white-space:nowrap}
+.conf{font-size:11.5px;font-weight:700;border-radius:999px;padding:0 8px;line-height:20px;white-space:nowrap}
+.conf.h{background:var(--okTint);color:var(--okOn)}
+.conf.m{background:var(--warnTint);color:var(--warnOn)}
+.conf.l{background:var(--sunken);color:var(--slate)}
+.why .chgbox{display:flex;align-items:center;gap:8px;font-family:"Spline Sans Mono",monospace;font-size:12.5px;flex-wrap:wrap}
+.why .chgbox span{background:var(--sunken);border-radius:999px;padding:0 9px;line-height:22px}
+.why .chgbox span.to{background:var(--tealTint);color:var(--teal);font-weight:600}
+.why .file{font-family:"Spline Sans Mono",monospace;font-size:12px;color:var(--slate);word-break:break-all}
+.why .mine{border-left:3px solid var(--teal)}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="ttl">Admin dialogs and side panels<small>Before and after, 27 November 2026</small></div>
+  <nav class="opts" role="tablist" aria-label="Changes" id="opts"></nav>
+  <div class="keys"><span class="hint"><span class="kbd">←</span> <span class="kbd">→</span> change · <span class="kbd">B</span> before / after</span>
+    <button class="step" id="prev" aria-label="Previous">‹</button><button class="step" id="next" aria-label="Next">›</button></div>
+</header>
+
+<main id="views"></main>
+
+<script>
+(() => {
+  /* ===================== page mock helpers (as lists-ideas.html) ===================== */
+  const S = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
+  const X = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+  const NAV = [['Day view'], ['Intake', 18], ['Lists', 50], ['Notifications'], ['Finances', 3], ['People'], ['Contracts'], ['Master data'], ['Audit']];
+  const side = (on) => `<nav class="side"><div class="wm">Anaesthesia | Associates</div><div class="ad">ADMIN</div>${
+    NAV.map(([n, c]) => `<a class="${n === on ? 'on' : ''}">${n}${c ? ` <span class="ct">${c}</span>` : ''}</a>`).join('')}</nav>`;
+  const hdr = (title, sub, actions = '', back = '') => `<div class="phd"><div class="t">${back ? `<div class="back">‹ ${back}</div>` : ''}<h1>${title}</h1>${sub ? `<p class="psub">${sub}</p>` : ''}</div>${actions}</div>`;
+  const tabs = (list, on) => `<div class="ltabs">${list.map(([l, n]) => `<span class="${l === on ? 'on' : ''}">${l}${n ? ` <i class="n" style="font-style:normal">${n}</i>` : ''}</span>`).join('')}</div>`;
+  const srch = (p, w = 260) => `<div class="srch" style="width:${w}px">${S}<span>${p}</span></div>`;
+  const sel = (v) => `<div class="sel">${v}</div>`;
+  const fps = (list) => `<div class="fpills">${list.map(([l, c, on]) => `<span class="fp${on ? ' on' : ''}">${l}${c !== undefined ? ` <span class="c">${c}</span>` : ''}</span>`).join('')}</div>`;
+  const tool = (left, end = '') => `<div class="tool">${left}${end ? `<span class="end">${end}</span>` : ''}</div>`;
+  const table = (cols, rows) => `<div class="tcard"><div class="tb"><table class="it"><colgroup>${cols.map((c) => `<col style="width:${c[1]}">`).join('')}</colgroup><thead><tr>${cols.map((c) => `<th class="${c[2] ?? ''}">${c[0]}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  const g = (label, count = '', span = 9) => `<tr class="g"><td colspan="${span}">${label}${count !== '' ? `<span>${count}</span>` : ''}</td></tr>`;
+  const card = (h, inner, extra = '') => `<div class="rcard" ${extra}><h4>${h}</h4>${inner}</div>`;
+  const dl = (rows, w = 110) => `<div class="dl" style="grid-template-columns:${w}px 1fr">${rows.map(([k, v]) => `<span>${k}</span><div>${v}</div>`).join('')}</div>`;
+  const cols = (main, rail, w = 412) => `<div class="cols" style="grid-template-columns:minmax(0,1fr) ${w}px">${main}<div class="rail">${rail}</div></div>`;
+  const stack = (...xs) => `<div style="display:flex;flex-direction:column;gap:14px;min-height:0;min-width:0">${xs.join('')}</div>`;
+
+  /* ===================== overlay helpers ===================== */
+  const fld = (label, value, o = {}) => `<div class="f">${label ? `<label>${label}</label>` : ''}<div class="well${o.ph ? ' ph' : ''}${o.mono ? ' mono' : ''}${o.sel ? ' sel' : ''}${o.ta ? ' ta' : ''}${o.dis ? ' dis' : ''}" ${o.rows ? `style="min-height:${o.rows * 21 + 24}px"` : ''}><span>${value}</span></div>${o.hint ? `<div class="hint ${o.hc ?? ''}">${o.hint}</div>` : ''}</div>`;
+  const seg = (label, opts, on, wrap = false) => `<div class="f">${label ? `<label>${label}</label>` : ''}<div class="seg${wrap ? ' wrap' : ''}">${opts.map((o) => `<span class="${o === on ? 'on' : ''}">${o}</span>`).join('')}</div></div>`;
+  const pair = (a, b, style = '') => `<div class="pair" style="${style}">${a}${b}</div>`;
+  const foot = (sec, pri, note = '', full = false) => `<div class="dft">${note ? `<div class="nt">${note}</div>` : ''}<div class="row">${sec ? `<span class="fb s${full || !pri ? ' full' : ''}">${sec}</span>` : ''}${pri ? `<span class="fb p">${pri}</span>` : ''}</div></div>`;
+  const dlg = ({ w = 520, title, pill = '', desc = '', body, ft = '', changed = false, h = '' }) =>
+    `<div class="ov"><div class="dwrap"><div class="dim${changed ? ' aft' : ''}"><span>${w}px${changed ? ' after' : ''}</span></div><div class="dlg" style="width:${w}px;${h}"><div class="dhd"><h2>${title}${pill}</h2>${desc ? `<p>${desc}</p>` : ''}<span class="dx">${X}</span></div><div class="dbd">${body}</div>${ft}</div></div></div>`;
+  const panel = ({ w = 600, title, meta = '', body, ft = '' }) =>
+    `<div class="ov r"><div class="pwrap" style="width:${w}px"><span class="ptag">${w}px side panel</span><div class="phd2"><h2>${title}</h2>${meta ? `<div class="mt">${meta}</div>` : ''}<span class="dx">${X}</span></div><div class="pbd">${body}</div>${ft ? `<div class="pft">${ft}</div>` : ''}</div></div>`;
+  const frames = {};
+  const frame = (id, nav, page, overlay = '') => { frames[id] = side(nav) + `<div class="mainc">${page}</div>` + overlay; };
+
+  /* ===================== 1 · Register refresh ===================== */
+  const patientPage = hdr('Fiona Gray <span class="pl n mono" style="font-size:12px">NHI ZAM1098</span>', 'Born <span class="mono">17 OCT 1963</span>, 63', '', 'Patients') +
+    cols(stack(
+      `<div class="tiles"><div class="tile"><span>Balance</span><b class="mono">$1,240.00</b><small>Every invoice, whoever pays</small></div><div class="tile"><span>Billed to the patient</span><b class="mono">$0.00</b><small>Nothing owing</small></div><div class="tile"><span>Other payers</span><b class="mono">$1,240.00</b><small>Southern Cross</small></div></div>`,
+      table([['Number', '120px'], ['Anaesthetist', '19%'], ['Booking', '18%'], ['Billed to', '20%'], ['Raised', '90px'], ['Total', '100px', 'r'], ['Status', '110px']],
+        [['AA-2026-0388', 'Dr Melanie Souter', 'Tue 4 Aug · AM', 'Southern Cross', '5 Aug', '$1,240.00', '<span class="pl w">Sent</span>'],
+          ['AA-2026-0201', 'Dr Priya Sharma', 'Mon 18 May · PM', 'Fiona Gray', '19 May', '$640.00', '<span class="pl o">Paid</span>'],
+          ['AA-2025-1190', 'Dr Melanie Souter', 'Thu 6 Nov · AM', 'Fiona Gray', '7 Nov', '$880.00', '<span class="pl o">Paid</span>']]
+          .map((r) => `<tr><td class="m">${r[0]}</td><td class="b">${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td class="s">${r[4]}</td><td class="r m">${r[5]}</td><td>${r[6]}</td></tr>`).join('')),
+      card('Follow-up log', '<p class="psub">No calls or notes yet.</p>')),
+    card('Details', dl([['Name', 'Fiona Gray'], ['Date of birth', '<span class="mono">17 OCT 1963</span>'], ['Phone', '03 555 4678'], ['Email', 'fiona.gray18@example.net'], ['Address', '236 Clyde Road, Cashmere, Christchurch 8022'], ['Ethnicity', '<span class="mono">11111</span> · New Zealand European'], ['NHI register', 'Not refreshed yet']], 104) +
+      '<div><span class="btn2" style="opacity:.55">Refresh from NHI register</span> <span class="pl n">Provisional</span></div>') +
+    card('Bookings', '<div class="hi"><span>Tue 4 Aug</span>St George\'s · Dr Souter · Past</div>'));
+  const refreshRows = [['Name', 'Fiona Gray', 'Fiona Tamihana'], ['Date of birth', '1963-10-17', '1963-10-07', 1], ['Phone', '03 555 4678', '021 555 4678'], ['Address', '236 Clyde Road, Cashmere, Christchurch 8022', '5 Kowhai Lane, Halswell, Christchurch 8025']];
+  const refreshTable = (w) => `<table class="dtab"><colgroup><col style="width:${w[0]}px"><col><col><col style="width:${w[1]}px"></colgroup><thead><tr><th>Detail</th><th>On this record</th><th>On the register</th><th>Keep / Use register</th></tr></thead><tbody>${
+    refreshRows.map(([d, a, b, m]) => `<tr><td>${d}</td><td class="${m ? 'm' : ''}">${a}</td><td class="${m ? 'm' : ''}">${b}</td><td><span class="well sel sm"><span>Keep</span></span></td></tr>`).join('')}</tbody></table>`;
+  const refreshBody = (w) => `<div class="hint ok">On the NHI register: Fiona Tamihana, <span class="mono">17 OCT 1963</span>.</div>${refreshTable(w)}<div class="mist12">🛡 Looked up on behalf of the AA office, only to identify this patient. Health Information Privacy Code 2020.</div>`;
+  const refreshD = (w, changed) => dlg({ w, changed, title: 'Refresh from the NHI register', desc: 'Fiona Gray, NHI ZAM1098. Missing details are filled in; for each that differs, keep this record\'s or use the register\'s.', body: refreshBody(w === 520 ? [78, 118] : [110, 150]), ft: foot('Cancel', 'Apply') });
+  frame('r1', 'People', patientPage, refreshD(520));
+  frame('r2', 'People', patientPage, refreshD(760, true));
+
+  /* ===================== 2 · Add anaesthetist ===================== */
+  const ANS = [['Dr Melanie Souter', '34821', '10SOUM', '$26.50', 'First', '99-0101-•••••21-00', '104-348-211', 'm.souter@aa-associates.example', '021 555 0134', '9 Jun 2014'],
+    ['Dr James Rutherford', '29104', '11RUTJ', '$32.00', 'First', '99-0101-•••••04-00', '104-291-041', 'j.rutherford@aa-associates.example', '021 555 0217', '6 Jul 2009'],
+    ['Dr Priya Sharma', '41267', '12SHAP', '$30.00', 'Second', '99-0101-•••••67-00', '104-412-671', 'p.sharma@aa-associates.example', '021 555 0342', '7 Nov 2016'],
+    ['Dr Oliver Strand', '47733', '23STRO', '$42.00', 'First', '99-0101-•••••33-00', '<span style="color:var(--mist)">Not held</span>', 'o.strand@aa-associates.example', '021 555 0471', '2 Feb 2021'],
+    ['Dr Mark Delaney', '33018', '14DELM', '$30.00', 'First', '99-0101-•••••18-00', '104-330-181', 'm.delaney@aa-associates.example', '021 555 0158', '14 Mar 2012'],
+    ['Dr Emma Fitzgerald', '38842', '15FITE', '$28.00', 'Second', '99-0101-•••••42-00', '104-388-421', 'e.fitzgerald@aa-associates.example', '021 555 0263', '1 Aug 2015'],
+    ['Dr Alistair Chen', '30551', '16CHEA', '$30.00', 'Second', '99-0101-•••••51-00', '104-305-511', 'a.chen@aa-associates.example', '021 555 0390', '3 May 2010'],
+    ['Dr Tom Ngata', '44120', '17NGAT', '$27.50', 'Third', '99-0101-•••••20-00', '104-441-201', 't.ngata@aa-associates.example', '021 555 0412', '18 Jan 2019'],
+    ['Dr Sarah Beaumont', '36675', '18BEAS', '$30.00', 'Third', '99-0101-•••••75-00', '104-366-751', 's.beaumont@aa-associates.example', '021 555 0524', '9 Sep 2013'],
+    ['Dr Kate Morrison', '31297', '19MORK', '$31.00', 'First', '99-0101-•••••97-00', '104-312-971', 'k.morrison@aa-associates.example', '021 555 0618', '22 Feb 2011']];
+  const peoplePage = hdr('People', 'Record, rate, offer order and pairing preferences for each anaesthetist.', '<span class="btn">+ Add anaesthetist</span>') +
+    tabs([['Anaesthetists'], ['Surgeons'], ['Specialties'], ['Patients']], 'Anaesthetists') +
+    tool(srch('Name, registration or HPI CPN') + fps([['Active', undefined, true], ['Inactive'], ['All']]) + fps([['Any offer order', undefined, true], ['First'], ['Second'], ['Third'], ['Standard']]), '85 anaesthetists active') +
+    table([['Name', '19%'], ['Reg · HPI CPN', '11%'], ['Rate per unit', '9%', 'r'], ['Offer order', '9%'], ['Bank account · GST', '16%'], ['Email · phone', '22%'], ['Start date', '11%']],
+      ANS.map((a) => `<tr><td class="b">${a[0]}</td><td class="m">${a[1]}<br><span class="s">${a[2]}</span></td><td class="r m">${a[3]}</td><td><span class="pl n">${a[4]}</span></td><td class="m">${a[5]}<br><span class="s">${a[6]}</span></td><td>${a[7]}<br><span class="s">${a[8]}</span></td><td>${a[9]}<br><span class="s">Active</span></td></tr>`).join(''));
+  const aF = {
+    reg: fld('Registration number (ID)', 'e.g. 41552', { ph: 1, mono: 1 }),
+    name: fld('Name', 'e.g. Dr Nadia Kerr', { ph: 1 }),
+    phone: fld('Phone', '', {}),
+    email: fld('Email', '', {}),
+    rate: fld('Rate per unit ($)', '30', { mono: 1 }),
+    hpi: fld('HPI CPN (required)', '12ABCD', { ph: 1, mono: 1, hint: 'The anaesthetist\'s unique number on the Health Provider Index.' }),
+    bname: fld('Bank account name (required)', 'e.g. Nadia Kerr', { ph: 1 }),
+    bnum: fld('Bank account number (required)', '12-3456-7654321-00', { ph: 1, mono: 1, hint: 'Held on file by the AA office. Payments are made in Xero.' }),
+    gst: fld('GST number (optional)', '123-456-789', { ph: 1, mono: 1 }),
+    start: fld('Start date', '24/11/2026', { mono: 1, hint: 'Sessions are created from this date to the end of the schedule horizon.' }),
+  };
+  const aIntro = '<div class="lead" style="font-size:12.5px">Adding an anaesthetist creates their AM and PM sessions, free, from their start date.</div>';
+  frame('a1', 'People', peoplePage, dlg({ title: 'Add an anaesthetist', body: aIntro + aF.reg + aF.name + aF.phone + aF.email + aF.rate + aF.hpi + aF.bname + aF.bnum + aF.gst + aF.start, ft: foot('', 'Add anaesthetist') }));
+  frame('a2', 'People', peoplePage, dlg({ w: 760, changed: true, title: 'Add an anaesthetist', body: aIntro + pair(aF.name, aF.start) + pair(aF.reg, aF.hpi) + pair(aF.phone, aF.email) + pair(aF.rate, aF.gst) + '<div class="eyebrow">Bank account</div>' + pair(aF.bname, aF.bnum), ft: foot('', 'Add anaesthetist') }));
+
+  /* ===================== 3 · Xero resolve ===================== */
+  const xeroPage = hdr('Finances', 'What the Billing Engine hands to Xero, and anything changed directly in Xero.') +
+    tabs([['Billing', 3], ['Invoices'], ['Payments'], ['Ledger'], ['Xero', 1], ['AA fees']], 'Xero') +
+    tool(srch('Invoice, payer or anaesthetist', 300) + fps([['Needs action', 1, true], ['Waiting', 0], ['Sent after waiting', 0], ['All']]) + sel('All anaesthetists'), '<span class="mono">1 needs action: 1 changed in Xero</span>') +
+    cols(table([['What', '17%'], ['Anaesthetist', '14%'], ['Problem', '26%'], ['Attempts', '70px', 'r'], ['Next try', '90px'], ['Last error', '22%'], ['Status', '84px'], ['', '86px']],
+      g('Changed directly in Xero', '1') + `<tr class="hov"><td><span class="m" style="color:var(--teal)">AA-2026-0412</span><br><span class="s">Southern Cross Hospital Christchurch</span></td><td class="b">Dr Melanie Souter</td><td style="white-space:normal">Xero shows <span class="m">$1,220.00</span>, the engine holds <span class="m">$1,240.00</span></td><td></td><td class="s">Found 09:20</td><td class="s" style="white-space:normal">Amended in Xero 09:14 · total $1,220.00</td><td><span class="pl w">Flagged</span></td><td class="r"><span class="btn2" style="padding:4px 10px;font-size:12px">Resolve</span></td></tr>` +
+      g('Hand-offs failing', '0') + '<tr class="dim"><td colspan="8">Nothing failing.</td></tr>'),
+    card('Connection', '<div class="ntc n" style="background:var(--okTint);border:0;color:var(--okOn)"><b>Connected.</b>Nothing is waiting for Xero.</div>' + dl([['Last good', '09:20'], ['Waiting', '0'], ['Sent after waiting', '0 today'], ['Last payment check', '09:00']])) +
+    card('What happens here', '<p class="psub">Invoices and their payables go to Xero; payments come back from it. Bank matching and paying stay in Xero.</p><p class="psub">An invoice changed directly in Xero stays listed until it is resolved. Resolving records what was done and moves no money.</p>'), 340);
+  const xeroBody = '<div class="lead">Recording a resolution moves no money: the ledger keeps the amount the engine issued.</div>' +
+    '<div class="f"><label>Resolution</label><div class="rcs"><div class="rc on"><span><b>Re-issue it in Xero as the engine issued it</b></span></div><div class="rc"><span><b>Credit it in the engine</b></span></div><div class="rc"><span><b>No action</b></span></div></div></div>' +
+    fld('Note', 'What was done, and by whom', { ph: 1, ta: 1, rows: 3 }) +
+    '<div class="mist12">Provisional: the policy for each mismatch is to be agreed with AA.</div>';
+  frame('x1', 'Finances', xeroPage, panel({ title: 'Resolve AA-2026-0412', meta: '<span class="pl e">Amended in Xero 09:14 · total $1,220.00</span>', body: xeroBody, ft: '<span class="btn2">Cancel</span><span class="btn">Record resolution</span>' }));
+  frame('x2', 'Finances', xeroPage, dlg({ changed: true, title: 'Resolve AA-2026-0412', desc: '<span class="pl e">Amended in Xero 09:14 · total $1,220.00</span>', body: xeroBody, ft: foot('Cancel', 'Record resolution') }));
+
+  /* ===================== 4 · Candidate pickers ===================== */
+  const draftPage = hdr('Lists', 'Lists with no anaesthetist yet, soonest first.', '<span class="btn">+ New Draft List</span>') +
+    tabs([['Draft Lists', 50], ['Conflicts', 6], ['Contracts to set', 12], ['To authorise', 10]], 'Draft Lists') +
+    tool(fps([['Waiting', 50, true], ['History']]) + srch('Surgeon, hospital or note', 240) + sel('From today') + sel('Any hospital') + sel('Any reason'), '50 Draft Lists') +
+    table([['Session', '70px'], ['Hospital · Surgeon', '25%'], ['Bookings', '80px', 'r'], ['Waiting', '84px', 'r'], ['Why it has no anaesthetist', '24%'], ['Note', '20%'], ['', '200px', 'r']],
+      g('Today, Tue 24 Nov', '1 Draft List', 7) + [['PM', 'St George\'s · Mr S. Tan', 0, '16 h', 'Request · Phone', 'St George\'s booking office needs an anaesthetist']].map(dr).join('') +
+      g('Wed 25 Nov', '4 Draft Lists', 7) + [['AM', 'Southern Cross · Ms K. Patel', 0, '7 h', 'Recurring booking · Dr Beaumont unavailable', ''], ['AM', 'Christchurch Eye Surgery · Ms A. Reid', 0, '7 h', 'Recurring booking · Dr Ngatai unavailable', ''], ['AM', 'Christchurch Eye Surgery · Mr J. Whitford', 0, '20 min', 'Returned: anaesthetist unavailable · Dr Rutherford', ''], ['PM', 'Forte Health · Mr V. Nand', 2, '14 h', 'Request · Email', 'Emailed by Mr Nand\'s secretary']].map(dr).join('') +
+      g('Mon 30 Nov', '3 Draft Lists', 7) + [['AM', 'Christchurch Eye Surgery · Ms A. Reid', 0, '3 d 22 h', 'Request · PDF', 'PDF from the rooms, cataract list', 1], ['PM', 'St George\'s · Mr P. Doyle', 2, '1 d', 'Request · Phone', '']].map(dr).join(''));
+  function dr([s, hs, b, w, why, note, hot]) { return `<tr class="${hot ? 'hov' : ''}"><td class="b">${s}</td><td class="b">${hs}</td><td class="r m">${b}</td><td class="r m" style="${w.includes('d') ? 'color:var(--warnOn);font-weight:700' : ''}">${w}</td><td style="white-space:normal"><span class="pl w">Unassigned</span><br><span class="s" style="font-size:12px">${why}</span></td><td class="s">${note}</td><td class="r"><span class="ta">Assign</span><span class="ta">Change date</span><span class="ta">Remove</span></td></tr>`; }
+  const tier = (t) => `<span class="pl n">${t}</span>`;
+  const free = (n, t, extra = '', times = '07:30 to 12:30') => `<div class="cand"><span class="nm">${n}</span>${extra}${tier(t)}<span class="end"><span class="pl o">Free</span><span class="t">${times}</span></span></div>`;
+  const pickerList = (h) => `<div class="cands" style="max-height:${h}px"><div class="gh">Free</div>${
+    free('Delaney, Mark', 'Offer first') + free('Strand, Oliver', 'Offer first') + free('Fitzgerald, Emma', 'Offer second') + free('Morgan, Bridget', 'Offer second') + free('Robertson, Claire', 'Offer second') + free('Gupta, Rohan', 'Offer third') + free('Ngata, Tom', 'Offer third')}
+    <div class="gh w">⚠ Not preferred with Ms Reid</div><div class="cand w"><span class="nm">Sharma, Priya</span><span class="pl d" style="box-shadow:inset 0 0 0 1px #E0A84A;color:var(--warnOn)">Not preferred</span>${tier('Offer second')}<span class="end"><span class="pl o">Free</span><span class="t">07:30 to 12:30</span></span></div>
+    <div class="gh">Not available</div><div class="cand x"><span class="nm">Henderson, Lucy</span><span class="pl n" style="background:#EEF1F0">Unavailable</span>${tier('Offer second')}<span class="end"><span class="pl t">Colleague stand-in</span><span class="ask">Ask Dr Henderson to make this session available</span></span><span class="sub">Not available this session</span></div>
+    <div class="cand x"><span class="nm">Aumua, Malia</span><span class="pl n">Unavailable</span>${tier('Offer second')}<span class="sub">Not available this session</span></div></div>`;
+  const assignHead = { title: 'Assign Draft List', pill: '<span class="pl w">● Unassigned</span>' };
+  const assignMeta = '<div class="lead">Mon 30 Nov · AM · Christchurch Eye Surgery · Ms A. Reid · <span class="mono">0</span> bookings</div><div class="lead">Choose the anaesthetist. To use another day, change the Draft List\'s date first.</div>';
+  const offer = ['Any offer order', 'First', 'Second', 'Third', 'Standard'];
+  const search = `<div class="srchw">${S}<span>Type a name</span></div>`;
+  frame('p1', 'Lists', draftPage, dlg({ ...assignHead, body: assignMeta + seg('Show', ['Everyone', 'Free only'], 'Everyone') + seg('Filter by offer order', offer, 'Any offer order') + search + pickerList(380), ft: foot('Cancel', '', '', true) }));
+  frame('p2', 'Lists', draftPage, dlg({ ...assignHead, w: 760, changed: true, body: assignMeta + seg('Filter by offer order', offer, 'Any offer order') + `<div style="display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:end">${seg('Show', ['Everyone', 'Free only'], 'Everyone')}${search}</div>` + pickerList(452), ft: foot('Cancel', '', '', true) }));
+  // Find available, over the Day view
+  const DAYROWS = [['Souter, Melanie', [[0, 40, 'l', 'Forte Health · Mr C. Okafor'], [45, 40, 'l', 'St George\'s · Mr S. Tan']]], ['Rutherford, James', [[0, 40, 'u', 'Unavailable'], [45, 40, 'l', 'Southern Cross · Mr P. Doyle']]], ['Sharma, Priya', [[0, 40, 'l', 'Christchurch Eye · Mr J. Whitford'], [45, 40, 'f', 'Free']]],
+    ['Strand, Oliver', [[0, 40, 'f', 'Free'], [45, 40, 'f', 'Free']]], ['Delaney, Mark', [[0, 40, 'l', 'Forte Health · Ms G. Lim'], [45, 40, 'f', 'Free']]], ['Aumua, Malia', [[0, 40, 'f', 'Free'], [45, 40, 'f', 'Free']]], ['Chen, Alistair', [[0, 40, 'l', 'Southern Cross · Mr V. Nand'], [45, 40, 'l', 'Southern Cross · Mr V. Nand']]],
+    ['Fitzgerald, Emma', [[0, 40, 'l', 'St George\'s · Ms K. Patel'], [45, 40, 'u', 'Holiday']]], ['Gupta, Rohan', [[0, 40, 'f', 'Free'], [45, 40, 'l', 'Forte Health · Mr T. Hale']]], ['Hughes, Rawiri', [[0, 40, 'f', 'Free'], [45, 40, 'u', 'Unavailable']]], ['Morgan, Bridget', [[0, 40, 'l', 'Christchurch Public · Ms H. Cameron'], [45, 40, 'f', 'Free']]],
+    ['Morrison, Kate', [[0, 40, 'l', 'St George\'s · Mr S. Tan'], [45, 40, 'l', 'St George\'s · Mr S. Tan']]], ['Ngata, Tom', [[0, 40, 'u', 'Unavailable'], [45, 40, 'f', 'Free']]], ['Pearce, Liam', [[0, 40, 'l', 'Southern Cross · Ms A. Reid'], [45, 40, 'f', 'Free']]], ['Tahana, Ngaio', [[0, 40, 'f', 'Free'], [45, 40, 'l', 'Forte Health · Mr V. Nand']]]];
+  const dayPage = hdr('Tuesday 24 November 2026', '', '<div style="display:flex;gap:6px"><span class="btn2">Find available</span><span class="btn2">Roster order</span><span class="btn2">‹</span><span class="btn2">Today</span><span class="btn2">›</span></div>') +
+    cols(`<div class="dgrid"><div class="ruler"><div></div><div><span>07:00</span><span>09:00</span><span>11:00</span><span>13:00</span><span>15:00</span><span>17:00</span><span>19:00</span></div></div>${
+      DAYROWS.map(([n, bl]) => `<div class="drow"><span>${n}</span><div class="tl">${bl.map(([l, w, k, t]) => `<div class="blk ${k}" style="left:${l + 2}%;width:${w}%">${t}</div>`).join('')}</div></div>`).join('')}</div>`,
+    card('November 2026', '<p class="psub">Month calendar</p>') + card('To-do', '<div class="hi"><span>Today</span>Assign St George\'s PM Draft List</div><div class="hi"><span>Today</span>Set Contracts on 3 Lists</div>') + card('Notifications', '<p class="psub">2 new since 07:00</p>'), 300);
+  const findBody = (w) => `<div class="lead">Tuesday 24 November</div><div style="display:flex;gap:12px;align-items:flex-end"><div style="width:260px;flex:none">${seg('Session', ['AM', 'PM', 'Out-of-hours'], 'PM', true)}</div><div style="flex:1;min-width:0">${fld('Surgeon for the List (optional)', 'Mr J. Whitford (Ophthalmology)', { sel: 1 })}</div></div>
+    <div class="ink13" style="font-weight:600">30 anaesthetists free this PM</div>${seg('Filter by offer order', offer, 'Any offer order')}${search}
+    <div class="cands" style="max-height:${w === 520 ? 300 : 300}px"><div class="gh">In offer order</div>${[['Strand, Oliver', 'Offer first'], ['Delaney, Mark', 'Offer first'], ['Sharma, Priya', 'Offer second', '<span class="pl o">Preferred</span>'], ['Aumua, Malia', 'Offer second'], ['Pearce, Liam', 'Offer second'], ['Henderson, Lucy', 'Offer second']].map(([n, t, e = '']) => `<div class="cand"><span class="nm">${n}</span>${e}${tier(t)}<span class="end"><span class="fr">Free PM</span></span></div>`).join('')}</div>`;
+  frame('p3', 'Day view', dayPage, dlg({ title: 'Find available', body: findBody(520), ft: foot('Close', '', '', true) }));
+  frame('p4', 'Day view', dayPage, dlg({ w: 760, changed: true, title: 'Find available', body: findBody(760), ft: foot('Close', '', '', true) }));
+
+  /* ===================== 5 · Add NHI ===================== */
+  const nhiPage = hdr('Aroha Ngata, Forte Health, Thursday 26 November PM', 'Needs NHI · surgery in 2 days · from Forte Health sheet with two missing NHIs, received today at 07:30', '<div style="display:flex;gap:6px"><span class="btn2">Previous</span><span class="btn2">Next</span></div>', 'Arrivals') +
+    `<div class="cols" style="grid-template-columns:minmax(0,1fr) 600px"><div class="desk">${card('The List', dl([['List', 'Thu 26 Nov PM'], ['Days to go', '2 days to go'], ['Stub', '<span style="color:var(--teal);font-weight:600">Stub on Dr Ropata\'s List</span>']]))}<div style="flex:1;background:#fff;border-radius:10px;opacity:.7"></div></div>
+    <div class="dcol"><div class="in">${card('Patient as received', dl([['Name', '<b>Aroha Ngata</b>'], ['Date of birth', '<span class="mono">18 JAN 1980</span>'], ['Procedure', 'Septoplasty'], ['When', 'Thu 26 Nov PM 13:30'], ['Hospital', 'Forte Health'], ['Surgeon', 'Mr C. Okafor']]))}${card('Ask for the NHI', '<div><b>Forte Health bookings</b><br><span class="s">bookings@fortehealth.example</span></div><p class="psub">Not requested yet</p>')}</div>
+    <div class="ft"><span class="nt">Adding the NHI turns the stub into a Booking on its List.</span><span class="btn2">Email for the NHI</span><span class="btn">Add NHI</span></div></div></div>`;
+  const nhiHead = { title: 'Add the NHI for Aroha Ngata', desc: 'Thu 26 Nov PM, Forte Health, Mr C. Okafor' };
+  const purpose = '<div class="mist12">🛡 Looked up on behalf of the AA office, only to identify this patient. Health Information Privacy Code 2020.</div>';
+  const nhiDiff = fld('NHI', 'JKL1188', { mono: 1, hint: 'Valid NHI', hc: 'ok' }) + '<div class="hint ok">On the NHI register: Losa Tuilagi, <span class="mono">1 JUN 1992</span>.</div><div class="hint warn">The register has a different name or date of birth for this NHI. Check before adding.</div>' + purpose +
+    '<div class="ink13">Matches Losa Tuilagi, born <span class="mono">1 JUN 1992</span>, 3 earlier Bookings. The row uses this record; no second one is made.</div><div class="lead" style="font-size:12.5px">The row\'s details differ from the record. They are held for review when the row is decided.</div>' +
+    '<table class="dtab"><colgroup><col style="width:120px"><col><col></colgroup><thead><tr><th>Detail</th><th>On the record</th><th>On the row</th></tr></thead><tbody><tr><td>Name</td><td>Losa Tuilagi</td><td>Aroha Ngata</td></tr><tr><td>Date of birth</td><td class="m">1992-06-01</td><td class="m">1980-01-18</td></tr></tbody></table>';
+  frame('n1', 'Intake', nhiPage, dlg({ ...nhiHead, body: fld('NHI', 'Type the NHI', { ph: 1, mono: 1, hint: 'Required. Seven characters, as on the referral or the hospital list.' }) + purpose, ft: foot('Cancel', 'Add NHI') }));
+  frame('n2', 'Intake', nhiPage, dlg({ ...nhiHead, body: nhiDiff, ft: foot('Cancel', 'Add NHI') }));
+  frame('n3', 'Intake', nhiPage, dlg({ ...nhiHead, w: 760, changed: true, body: nhiDiff, ft: foot('Cancel', 'Add NHI') }));
+
+  /* ===================== 6 · Recurring booking ===================== */
+  const MD = [['Places', ['Hospitals & holidays']], ['Schedule', ['Recurring bookings', 'Availability statuses', 'Public holidays', 'Schedule settings']], ['Billing', ['RVG groups', 'Modifiers']], ['Settings', ['Email templates', 'Prepayment letters', 'Xero & archiving', 'Patient balance warning']], ['Go-live', ['Seed load', 'Go-live load']]];
+  const masters = (on, inner) => hdr('Master data', 'Contracts, Parties and Funding tags are in <a>Contracts</a>. Anaesthetists, surgeons and specialties are in <a>People</a>.') +
+    `<div class="cols" style="grid-template-columns:210px minmax(0,1fr)"><div class="subnav">${MD.map(([h, xs]) => `<h5>${h}</h5>${xs.map((x) => `<a class="${x === on ? 'on' : ''}">${x}</a>`).join('')}`).join('')}</div>${stack(inner)}</div>`;
+  const recPage = masters('Recurring bookings', `<div class="vh"><div class="t"><h3>Recurring bookings</h3><p>Standing arrangements of hospital, anaesthetist and surgeon on a day and session, each creating its Lists across the schedule ahead. Applying adds or updates empty Lists from tomorrow; Lists with Bookings or office edits are left as they are.</p></div><span class="btn2">Apply to canvas now</span><span class="btn">Add recurring booking</span></div>` +
+    table([['Anaesthetist', '20%'], ['Day', '70px'], ['Session', '80px'], ['Kind', '90px'], ['Hospital', '20%'], ['Surgeon', '16%'], ['Runs', '90px'], ['', '60px']],
+      [['Mon', 'AM', 'Forte Health', 'Mr C. Okafor'], ['Mon', 'PM', 'St George\'s', 'Ms G. Lim'], ['Tue', 'AM', 'St George\'s', 'Mr T. Hale'], ['Tue', 'PM', 'Southern Cross', 'Ms K. Patel'], ['Wed', 'AM', 'Christchurch Eye Surgery', 'Mr J. Whitford'], ['Thu', 'PM', 'AA rooms', 'Ms K. Patel', 'Pre-op'], ['Fri', 'AM', 'Forte Health', 'Mr V. Nand']]
+        .map(([d, s, h, su, k = 'Private']) => `<tr><td class="b">Dr Melanie Souter</td><td>${d}</td><td>${s}</td><td><span class="pl ${k === 'Private' ? 't' : 'n'}">${k}</span></td><td>${h}</td><td>${su}</td><td class="s">Ongoing</td><td><span class="ta">Edit</span></td></tr>`).join('') +
+      [['Dr James Rutherford', 'Mon', 'AM', 'Southern Cross', 'Mr P. Doyle'], ['Dr Priya Sharma', 'Tue', 'PM', 'Christchurch Eye Surgery', 'Mr J. Whitford']].map(([a, d, s, h, su]) => `<tr><td class="b">${a}</td><td>${d}</td><td>${s}</td><td><span class="pl t">Private</span></td><td>${h}</td><td>${su}</td><td class="s">Ongoing</td><td><span class="ta">Edit</span></td></tr>`).join('')));
+  const rF = {
+    an: fld('Anaesthetist', 'Dr Melanie Souter', { sel: 1 }), day: fld('Day of week', 'Friday', { sel: 1 }), ses: seg('Session', ['AM', 'PM'], 'AM'), kind: seg('Kind of List', ['Private', 'Pre-op'], 'Private'),
+    times: `<div class="f"><div class="pair" style="gap:12px">${fld('Start (optional)', '--:--', { ph: 1, mono: 1 })}${fld('End (optional)', '--:--', { ph: 1, mono: 1 })}</div><div class="hint">Leave blank for the default session times.</div></div>`,
+    hosp: fld('Hospital (usual)', 'Forte Health', { sel: 1 }), surg: fld('Usual surgeon', 'Mr V. Nand', { sel: 1 }), note: fld('Display note (optional)', 'e.g. Elective ortho', { ph: 1 }),
+    runs: `<div class="pair" style="gap:12px">${fld('Starts (optional)', 'dd/mm/yyyy', { ph: 1, mono: 1 })}${fld('Runs until (optional)', 'dd/mm/yyyy', { ph: 1, mono: 1 })}</div>`,
+    prev: '<div class="ntc n">Applying adds 13 Lists on future Fridays, keeps 1 (edited by the office) and sends 1 session to a Draft List (anaesthetist unavailable).</div>',
+  };
+  const recHead = { title: 'Add recurring booking', desc: 'A pattern of Lists for this anaesthetist, surgeon and hospital on one day and session each week, not a Booking for a patient.' };
+  const recFoot = foot('', 'Apply to canvas now', 'Saves it and applies it to the schedule ahead, from tomorrow. Lists with Bookings or office edits are left as they are.');
+  frame('rb1', 'Master data', recPage, dlg({ ...recHead, body: rF.an + rF.day + rF.ses + rF.kind + rF.times + rF.hosp + rF.surg + rF.note + rF.runs + rF.prev, ft: recFoot }));
+  frame('rb2', 'Master data', recPage, dlg({ ...recHead, w: 760, changed: true, body: pair(rF.an, rF.day) + pair(rF.ses, rF.kind) + pair(rF.hosp, rF.surg) + pair(rF.times, rF.note) + rF.runs.replace('class="pair" style="gap:12px"', 'class="pair"') + rF.prev, ft: recFoot }));
+
+  /* ===================== 7 · New Draft List ===================== */
+  const dF = {
+    hosp: fld('Hospital', 'Southern Cross', { sel: 1 }), surg: fld('Surgeon', 'Mr J. Whitford (Ophthalmology)', { sel: 1 }),
+    day: fld('Day', '30/11/2026', { mono: 1 }), ses: seg('Session', ['AM', 'PM', 'Out-of-hours'], 'AM', true),
+    kind: seg('Kind of List', ['Private', 'Pre-op'], 'Private'), came: seg('Came in by', ['Phone', 'Email', 'PDF', 'Other'], 'Phone'),
+    note: fld('Note (optional)', 'What the rooms asked for', { ph: 1 }),
+    line: '<div class="lead">Saving does not change anyone\'s schedule. You can add Bookings before an anaesthetist is assigned.</div>',
+  };
+  const daySes = `<div style="display:flex;gap:12px;align-items:flex-end"><div style="flex:1;min-width:0">${dF.day}</div><div>${dF.ses}</div></div>`;
+  const draftHead = { title: 'New Draft List' };
+  frame('d1', 'Lists', draftPage, dlg({ ...draftHead, body: '<div class="lead">A request with no anaesthetist yet.</div>' + dF.hosp + dF.surg + daySes + dF.kind + dF.came + dF.note + dF.line, ft: foot('Cancel', 'Save Draft List') }));
+  frame('d2', 'Lists', draftPage, dlg({ ...draftHead, w: 760, changed: true, body: '<div class="lead">A request with no anaesthetist yet.</div>' + pair(dF.hosp, dF.surg) + pair(dF.day, dF.ses) + pair(dF.kind, dF.came) + dF.note + dF.line, ft: foot('Cancel', 'Save Draft List') }));
+
+  /* ===================== 8 · Large size ===================== */
+  const tplPage = masters('Email templates', `<div class="vh"><div class="t"><h3>Email templates</h3><p>The wording of the update email the office drafts from a Booking or a List, one template for each kind of change, and who it goes to by default. The email opens in your own mail client; nothing is sent from here.</p></div><span class="btn">Add template</span></div>` +
+    table([['Name', '26%'], ['Kind of change', '26%'], ['Sends to', '18%'], ['Active', '12%'], ['', '22%', 'r']],
+      [['Change of anaesthetist', 'Hospital'], ['Cancellation', 'Surgeon\'s office'], ['Correction of an error', 'Surgeon\'s office'], ['Booking change', 'Surgeon\'s office']].map(([n, s]) => `<tr><td class="b">${n}</td><td>${n}</td><td>${s}</td><td><span class="pl o">Active</span></td><td class="r"><span class="ta">History</span><span class="ta">Edit</span><span class="ta">Retire</span></td></tr>`).join('')));
+  const TPL_BODY = 'Kia ora,\n\nThe booking for {patient} on {surgeon}\'s {date} {session} List at {hospital} has changed:\n\n{changes}\n\nAnaesthetist: {anaesthetist}\n\nNgā mihi,\n{signature}';
+  const PREV_BODY = 'Kia ora,\n\nThe booking for Aroha Sample on Mr T. Hale\'s Tue 24 Nov AM List at St George\'s has changed:\n\n- Time: was 09:00, now 09:30\n- Procedure: was Knee arthroscopy, now Total knee replacement\n\nAnaesthetist: Dr Priya Sharma\n\nNgā mihi,\nKirsty W.';
+  const tplBody = `<div class="two"><div style="display:flex;flex-direction:column;gap:12px;min-width:0">${fld('Name', 'Booking change')}${fld('Sends to', 'Surgeon\'s office', { sel: 1, hint: 'The default when the email is drafted. The office can change it each time.' })}${fld('Subject', 'Booking update: {patient}, {date} {session}')}${fld('Body', TPL_BODY, { ta: 1, rows: 10 })}<div class="lead" style="font-size:12.5px">Insert into the body:</div><div class="pills">${['{patient}', '{date}', '{session}', '{hospital}', '{surgeon}', '{anaesthetist}', '{previousAnaesthetist}', '{bookingCount}', '{changes}', '{signature}'].map((p) => `<span>${p}</span>`).join('')}</div></div>
+    <div class="prev" style="align-self:start"><div style="display:flex;justify-content:space-between"><b>Preview</b><span class="pl w">Sample</span></div><div class="lead" style="font-size:12.5px">A sample Booking with a time change and a procedure change.</div><div class="pv"><span>To</span><div>office@surgeons.example</div><span>Subject</span><div>Booking update: Aroha Sample, Tue 24 Nov AM</div></div><pre>${PREV_BODY}</pre></div></div>`;
+  const tplD = (w, changed) => dlg({ w, changed, title: 'Edit Booking change', desc: 'Booking change. The kind of change is fixed once a template is made.', body: tplBody, ft: foot('Cancel', 'Save changes') });
+  frame('l1', 'Master data', tplPage, tplD(760));
+  frame('l2', 'Master data', tplPage, tplD(1040, true));
+  const PDF_ROWS = [['1. (45 mins)', 'Aroha Tamihana', '12 Rata Street, Riccarton · 021 555 8812', 'R carpal tunnel release', 'GA', 'Day case · Report time: 12:30 pm'], ['2.', 'Graham Whitcombe', '4 Hereford Lane, Merivale · 027 555 1043', 'L trigger finger release', 'LA + sedation', 'Day case · Report time: 13:15 pm'], ['3.', 'Sina Leota', '88 Main South Road, Hornby · 022 555 3390', 'Dupuytren\'s fasciectomy R', 'GA', 'Day case · Report time: 14:00 pm'], ['4.', 'Peter Kowalczyk', '17 Ilam Road, Ilam · 021 555 6621', 'ganglion excision L wrist', 'LA', 'Day case · Report time: 14:45 pm']];
+  const pdfPage = (scale = 1) => `<div class="pdfp" style="width:842px;height:595px;padding:22px 28px;${scale !== 1 ? `transform:scale(${scale});transform-origin:0 0;margin-bottom:${-595 * (1 - scale)}px;margin-right:${-842 * (1 - scale)}px` : ''}"><div class="ph"><span></span><span>24/11/2026 07:41</span></div><h6>FORTE HEALTH</h6><div class="hr">13:00 - 16:30</div>
+    <div class="ph" style="font-size:12px;margin-bottom:4px"><span>Surgeon: &nbsp; Mr V. Nand</span><span>Anaesthetist:</span></div><div class="ph" style="font-size:12px;margin-bottom:12px"><span>Date: &nbsp; Tuesday 15.12.2026</span><span>Assistant:</span></div>
+    <table><thead><tr><th style="width:80px">Order</th><th style="width:220px">Patient</th><th>Procedure</th><th style="width:90px">Anaesthetic</th><th style="width:170px">Admission Information</th></tr></thead><tbody>${
+      PDF_ROWS.map(([o, n, a, p, an, ad], i) => `<tr><td>${o}</td><td><b>${n}</b><br>${a}<br>NHI: <span class="${i === 1 ? 'bx' : ''}">${i === 1 ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : ['ZBA4471', '', 'ZKD2290', 'ZHM8835'][i]}</span></td><td>${p}</td><td>${an}</td><td>${ad}</td></tr>`).join('')}</tbody></table><div class="ff"><span>OPLISTX · Nand Hand Surgery · v119</span><span>Page: 1</span></div></div>`;
+  const intakePdfPage = hdr('Mr V. Nand, Forte Health, Tuesday 15 December PM', 'New List · 4 patients · surgery in 21 days · from Mr Nand\'s rooms, received today at 07:42', '<div style="display:flex;gap:6px;align-items:center"><span class="btn2">Previous</span><span class="psub">3 of 18</span><span class="btn2">Next</span></div>', 'Arrivals') +
+    `<div class="cols" style="grid-template-columns:minmax(0,1fr) 560px"><div class="desk"><div style="background:#fff;border-radius:10px;padding:8px 12px;display:flex;gap:10px;font-size:12.5px;align-items:center"><b>Nand hand list.pdf</b><span class="psub" style="margin:0">Page 1 of 2</span><span style="margin-left:auto;color:var(--teal);font-weight:600">⤢ Open full size</span></div>${pdfPage(0.62)}</div>
+    <div class="dcol"><div class="in">${table([['Time', '60px'], ['Patient', '34%'], ['NHI', '90px'], ['Procedure as received', '40%']], [['13:00', 'Aroha Tamihana', 'ZBA4471', 'R carpal tunnel release'], ['13:45', 'Graham Whitcombe', '<span class="pl w">Missing</span>', 'L trigger finger release'], ['14:30', 'Sina Leota', 'ZKD2290', 'Dupuytren\'s fasciectomy R'], ['15:15', 'Peter Kowalczyk', 'ZHM8835', 'ganglion excision L wrist']].map((r) => `<tr><td class="m">${r[0]}</td><td class="b">${r[1]}</td><td class="m">${r[2]}</td><td>${r[3]}</td></tr>`).join(''))}<div class="note"><b>Graham Whitcombe has no NHI.</b><br>Goes on the List as a stub, and becomes a Booking once the NHI is added.</div></div><div class="ft"><span class="nt"></span><span class="btn">Place List</span></div></div></div>`;
+  const pdfD = (w, changed) => dlg({ w, changed, title: 'Nand hand list.pdf', desc: 'Page 1 of 2 at full size. Values to check are marked.', body: `<div style="display:flex;justify-content:flex-end;gap:6px"><span class="btn2" style="padding:4px 10px;font-size:12.5px">Previous page</span><span class="btn2" style="padding:4px 10px;font-size:12.5px">Next page</span></div><div class="pdfscroll">${pdfPage()}</div>` });
+  frame('l3', 'Intake', intakePdfPage, pdfD(760));
+  frame('l4', 'Intake', intakePdfPage, pdfD(1040, true));
+
+  /* ===================== 9 · Replace contract ===================== */
+  const contractPage = hdr('Southern Cross Affiliated Provider <span class="pl n mono" style="font-size:12px">SX-002</span> <span class="pl o">Active</span>', 'Held by Southern Cross · bills its holder · RVG at the Contract\'s rate', '<div style="display:flex;gap:8px"><span class="btn2">Replace from a date</span><span class="btn2">Disable</span></div>', 'Contracts') +
+    tabs([['Overview'], ['Bookings', 4], ['Event fees', 2], ['History', 6]], 'Overview') +
+    cols(`<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-content:start">${card('Price', dl([['Pricing', 'RVG at the Contract\'s rate'], ['Rate', '<span class="mono">$26.50</span> per unit'], ['Prepaid', 'No']]))}${card('Where it is offered', dl([['Offered under', 'Southern Cross › SXAP'], ['Specialties', 'Every specialty'], ['Funding tag', 'SXAP']]))}${card('Who it bills', dl([['Holder', 'Southern Cross'], ['Bills', 'Its holder']]))}${card('Invoice and codes', dl([['AA code', '<span class="mono">SX-002</span>'], ['Holder reference', '<span class="mono">SXAP-ANA</span>'], ['Default RVG code', 'None']]))}</div>`,
+      card('On this Contract', '<p class="psub">Not yet billed, then authorised</p>' + ['Wiremu Tane · Wed 25 Nov', 'Susan Marsh · Wed 25 Nov', 'David Chen · Thu 26 Nov', 'Margaret Ellison · Fri 27 Nov'].map((r) => `<div class="hi"><span>Procedure</span>${r}</div>`).join('')));
+  const stepCard = (n, t, inner, count = '') => `<div class="scard"><div class="sh"><span class="stp">${n}</span>${t}${count ? `<span class="ct">${count}</span>` : ''}</div>${inner}</div>`;
+  const procRows = [['Wiremu Tane', 'Wed 25 Nov', 'Souter · Southern Cross PM', 1], ['Susan Marsh', 'Wed 25 Nov', 'Souter · Southern Cross PM', 1], ['David Chen', 'Thu 26 Nov', 'Sharma · Southern Cross AM', 1], ['Margaret Ellison', 'Fri 27 Nov', 'Ngata · Southern Cross AM', 0]];
+  const procTable = (wide) => `<table class="dtab"><colgroup><col style="width:36px"><col><col style="width:${wide ? 140 : 110}px"><col></colgroup><thead><tr><th><span class="ck"></span></th><th>Patient</th><th>Date</th><th>List</th></tr></thead><tbody>${procRows.map(([p, d, l, on]) => `<tr><td><span class="ck${on ? '' : ' off'}"></span></td><td>${p}${on ? '' : '<div class="hint">Its Booking is on a List already submitted.</div>'}</td><td>${d}</td><td>${l}</td></tr>`).join('')}</tbody></table><div class="hint">Ticked Procedures move to SX-003 when you save. Authorised Lists are locked and are not listed.</div>`;
+  const replaceSteps = (wide) => [
+    stepCard(1, 'What changes', pair(fld('Now', 'RVG at $26.50 per unit', { mono: 1, dis: 1 }), fld('New Contract', '28.00', { mono: 1, hint: '$ per unit' })) + '<div class="disc">▸ Every other setting: the pricing kind, the holder, where it is offered, the name and codes</div><div class="hint">Any setting can change here, the fixed ones included. AA code SX-003 is assigned on save.</div>'),
+    stepCard(2, 'From', `<div style="width:200px">${fld('Change date', '24/11/2026', { mono: 1 })}</div><div class="hint">Today by default. A past date is allowed.</div>`),
+    stepCard(3, 'Procedures from Tue 24 Nov still on SX-002', procTable(wide), '4'),
+    stepCard(4, 'The old Contract', `<div class="rcs${wide ? ' h' : ''}"><div class="rc on"><span><b>Leave SX-002 active; a to-do on 24 Nov 2026 reminds you to disable it</b><small>Until then both are offered, so a Procedure before 24 Nov 2026 should stay on SX-002.</small></span></div><div class="rc"><span><b>Disable SX-002 now</b><small>Procedures already on it keep it.</small></span></div></div>`),
+    '<div class="ntc w">A rate has no dates, so SX-003 is offered from today, not from 24 Nov 2026. Until SX-002 is disabled, both are offered.</div>'].join('');
+  frame('c1', 'Contracts', contractPage, panel({ title: 'Replace Southern Cross Affiliated Provider from a date', meta: 'A new Contract takes over. Everything is copied except what you change here.', body: replaceSteps(false), ft: '<span class="btn2">Cancel</span><span class="btn">Create SX-003 and move 3</span>' }));
+  const replacePage = hdr('Replace from a date', 'A new Contract takes over SX-002. Everything is copied except what you change here.', '<div style="display:flex;gap:8px"><span class="btn2">Cancel</span><span class="btn">Create SX-003 and move 3</span></div>', 'Southern Cross Affiliated Provider') +
+    `<div class="cols" style="grid-template-columns:minmax(0,1fr) 412px;overflow:hidden"><div style="display:flex;flex-direction:column;gap:14px;overflow-y:auto;min-height:0">${replaceSteps(true)}</div><div class="rail">${card('Replacing', dl([['Old', '<span class="mono">SX-002</span> · RVG at $26.50'], ['New', '<span class="mono">SX-003</span> · RVG at $28.00'], ['From', 'Tue 24 Nov 2026']], 70))}${card('On save', '<p class="psub">AA code SX-003 is assigned. 3 Procedures move to it. You land on its page.</p>')}${card('Where it will show', '<b>Offered under Southern Cross › SXAP</b><p class="psub">On every List, for every specialty. Bills Southern Cross.</p>')}</div></div>`;
+  frame('c2', 'Contracts', replacePage);
+
+  /* ===================== the views ===================== */
+  const V = [
+    { k: 'refresh', n: 'Register refresh', conf: 'h', title: 'Refresh from the NHI register', where: 'People › Patients › a patient › Details › Refresh from NHI register', file: 'apps/admin/screens/patients/RegisterRefresh.tsx',
+      change: ['Dialog 520', 'Dialog 760'], subs: [['r1', 'Before · 520'], ['r2', 'After · 760']],
+      pitch: 'A four-column comparison table squeezed into 472px of content. Addresses wrap to three or four lines; at 760 each value column nearly doubles.',
+      forL: ['Names, phone numbers and addresses sit on one or two lines, so the two versions read side by side.', 'The Keep / Use register choice stops crowding the values.', 'One-line change: size="wide".'],
+      against: ['The dialog is wider than its intro text needs when nothing differs ("nothing to change").'],
+      note: 'The Name and Address rows are real seed data (Fiona Gray). The Date of birth and Phone rows are made up to show a fuller case.' },
+    { k: 'anaesthetist', n: 'Add anaesthetist', conf: 'h', title: 'Add an anaesthetist', where: 'People › Anaesthetists › + Add anaesthetist', file: 'apps/admin/flows/AddAnaesthetistFlow.tsx',
+      change: ['Dialog 520, 10 fields stacked', 'Dialog 760, fields in pairs'], subs: [['a1', 'Before · 520'], ['a2', 'After · 760']],
+      pitch: 'The tallest create form in the admin app, one field per row, so it scrolls. Add a surgeon is already 760 with fields in pairs; this follows it.',
+      forL: ['Fits without scrolling on a laptop.', 'Matches Add a surgeon, its nearest neighbour.', 'Admin only: no phone layout to worry about.'],
+      against: ['The pairings are a choice. Name with Start date, the two identifiers together, Phone with Email, Rate with GST, then the bank account.'] },
+    { k: 'xero', n: 'Xero resolve', conf: 'h', title: 'Resolve a Xero mismatch', where: 'Finances › Xero › Changed directly in Xero › Resolve', file: 'apps/admin/components/XeroPanels.tsx:592',
+      change: ['Side panel 600', 'Dialog 520'], subs: [['x1', 'Before · panel'], ['x2', 'After · dialog']],
+      pitch: 'Three radio cards, a note and one commit. It is the only short decision in a side panel, and its siblings on the Billing tab (Fix the payer, Mark resolved) are dialogs.',
+      forL: ['Same kind of task, same container, across Finances.', 'The panel is mostly empty space.', 'Both are modal, so you lose nothing by covering the page.'],
+      against: ['The panel keeps the row visible on the left; the dialog dims it. The dialog\'s header still names the invoice and the mismatch.'] },
+    { k: 'pickers', n: 'Anaesthetist pickers', conf: 'm', title: 'The anaesthetist pickers', where: 'Lists › Draft Lists › Assign, and Day view › Find available (also Reassign List and the colleague step of Session status)', file: 'apps/admin/flows/AssignDraftListSheet.tsx · AvailabilityFinderSheet.tsx · ReassignListFlow.tsx · SessionStatusSheet.tsx',
+      change: ['Dialog 520', 'Dialog 760'], subs: [['p1', 'Assign · before'], ['p2', 'Assign · after'], ['p3', 'Find available · before'], ['p4', 'Find available · after']],
+      pitch: 'Four dialogs that share one picker. At 520 the five-way offer order filter truncates, the stand-in rows wrap, and in Find available the surgeon select is left about 200px beside a fixed 260px session control.',
+      forL: ['The offer order filter reads in full, and Show sits beside the search, so the list starts higher and more people show without scrolling.', 'Surgeon names in Find available are readable.', 'All four pickers change together, so they stay the same.'],
+      against: ['At 520 most Free rows already fit on one line. The gain is in the controls and the less common rows, not the main list.', 'Session status has a private width of 480 that has to go too.'] },
+    { k: 'nhi', n: 'Add NHI', conf: 'm', title: 'Add the NHI', where: 'Intake › a Needs NHI arrival › Add NHI', file: 'apps/admin/intake/AddNhiSheet.tsx',
+      change: ['Dialog 520', '760 only when the table shows'], subs: [['n1', 'Typing · 520, no change'], ['n2', 'Differences · before'], ['n3', 'Differences · after']],
+      pitch: 'The plain case is one field and stays 520. Once a valid NHI matches a record whose details differ, a comparison table appears; the proposal widens the dialog only then, the way Disable a Contract does.',
+      forL: ['The table and the preview line get room.', 'Follows an existing pattern (Contract Disable, Make inactive).'],
+      against: ['The dialog grows while you type, which can feel jumpy.', 'The table here is short (two rows, short values), so 520 is not badly cramped. This is the weakest of the width changes.'] },
+    { k: 'recurring', n: 'Recurring booking', conf: 'm', title: 'Add a recurring booking', where: 'Master data › Recurring bookings › Add recurring booking (and the Usual week card on a profile)', file: 'apps/admin/flows/RecurringBookingSheet.tsx',
+      change: ['Dialog 520, 11 controls', 'Dialog 760, in pairs'], subs: [['rb1', 'Before · 520'], ['rb2', 'After · 760']],
+      pitch: 'Eleven controls stacked, so it scrolls before you reach the preview of what applying will do. The natural pairs are already in the form: Day and Session, Hospital and Surgeon, the times, the dates.',
+      forL: ['The preview and the Apply button are in view together.', 'Who, when and where read as three rows.'],
+      against: ['A side panel was suggested by one reviewer and rejected: it is one commit, and modal either way.'] },
+    { k: 'draft', n: 'New Draft List', conf: 'm', title: 'New Draft List', where: 'Lists › Draft Lists › + New Draft List', file: 'apps/admin/flows/DraftListSheet.tsx',
+      change: ['Dialog 520', 'Dialog 760, in pairs'], subs: [['d1', 'Before · 520'], ['d2', 'After · 760']],
+      pitch: 'A tall create form where Day and Session are already paired. Hospital with Surgeon and Kind with Came in by pair naturally too.',
+      forL: ['Shorter, and the surgeon\'s specialty is no longer cut off.', 'Same treatment as Recurring booking, which it resembles.'],
+      against: ['Borderline: at 520 it nearly fits a laptop screen already.'] },
+    { k: 'large', n: 'New large size', conf: 'm', title: 'A large dialog for documents and editors', where: 'Master data › Email templates › Edit (and Prepayment letters, the update email composer), Intake › an arrival › Open full size', file: 'shared/surface/Dialog.tsx (new size) · EmailTemplatesView.tsx · LetterTemplateSheet · UpdateEmailComposer.tsx · PdfPage.tsx',
+      change: ['Dialog 760', 'Dialog 1040 (new)'], subs: [['l1', 'Template · 760'], ['l2', 'Template · 1040'], ['l3', 'PDF · 760'], ['l4', 'PDF · 1040']],
+      pitch: 'Editors with a live preview split 760 into two columns of about 346px. A landscape PDF page is 842px wide, so "Open full size" scrolls sideways (already in the backlog). One larger size serves all four.',
+      forL: ['The full-size PDF shows the whole page.', 'The template body and the preview stop wrapping every line.'],
+      against: ['It is a new size, so it needs a design source in docs/design first.', 'An email preview at 346px is close to what a phone shows, so the email editor gains least.'] },
+    { k: 'replace', n: 'Replace contract', conf: 'l', title: 'Replace a Contract from a date', where: 'Contracts › a Contract › Replace from a date', file: 'apps/admin/flows/ReplaceContractSheet.tsx',
+      change: ['Side panel 600', 'A page'], subs: [['c1', 'Before · panel'], ['c2', 'After · page']],
+      pitch: 'Four numbered steps, the New contract field sets, a Procedures table and radio cards in one 600 column. New contract is a page; this reuses its sections, so it could be a page too.',
+      forL: ['Room for the table and the radio cards side by side.', 'A rail can say what happens on save.', 'Matches New contract.'],
+      against: ['It was designed as a panel (docs/explorations/contracts-section.html), so this reverses a design choice.', 'A page loses the Contract behind it, though the panel already covers most of it.'] },
+  ];
+  const CONF = { h: ['High', 'h'], m: ['Medium', 'm'], l: ['Low', 'l'] };
+  const views = document.getElementById('views');
+  views.innerHTML = `<section class="view" id="v-start" role="tabpanel"><div class="doc"><div class="in" id="startIn"></div></div></section>` +
+    V.map((v, i) => `<section class="view" id="v-${v.k}" role="tabpanel"><div class="vhead"><div class="grow"><h2><span class="l">${i + 1}</span>${v.title}</h2><p>${v.pitch}</p></div>
+      <div class="subs">${v.subs.map(([id, l], j) => `<button aria-pressed="${j === 0}" data-f="${id}">${l}</button>`).join('')}</div></div>
+      <div class="vbody"><div class="stage"><div class="fwrap">${v.subs.map(([id], j) => `<div class="frame${j === 0 ? ' on' : ''}" id="${id}"></div>`).join('')}</div></div>
+      <aside class="why"><section class="mine"><h3>The change</h3><div class="chgbox"><span>${v.change[0]}</span>→<span class="to">${v.change[1]}</span></div><p style="margin-top:8px">${v.where}</p><p class="file" style="margin-top:6px">${v.file}</p><p style="margin-top:8px"><span class="conf ${CONF[v.conf][1]}">${CONF[v.conf][0]} confidence</span></p></section>
+      <section class="for"><h3>For</h3><ul>${v.forL.map((x) => `<li>${x}</li>`).join('')}</ul></section>
+      <section class="against"><h3>Against</h3><ul>${v.against.map((x) => `<li>${x}</li>`).join('')}</ul></section>
+      ${v.note ? `<section><h3>About this mock</h3><p>${v.note}</p></section>` : ''}</aside></div></section>`).join('') +
+    `<section class="view" id="v-decide" role="tabpanel"><div class="doc"><div class="in" style="max-width:920px"><h1 style="margin-bottom:22px">Decide</h1>
+      <div class="reco"><h3>My pick: 1 to 3 now, 4, 6 and 7 together, the rest later</h3><p>Register refresh, Add anaesthetist and the Xero resolve are clear wins and small. The pickers, Recurring booking and New Draft List are one consistent widening, best done in one go. Add NHI is marginal. The large size needs a design source first, and Replace contract reverses a design you chose, so both are yours to call.</p></div>
+      <div id="qs"></div><div class="copy"><button class="cbtn" id="copy">Copy my answers</button><span class="copied" id="copied" aria-live="polite"></span></div></div></div></section>`;
+  Object.entries(frames).forEach(([id, html]) => { const el = document.getElementById(id); if (el) el.innerHTML = html; });
+
+  /* ===================== start page ===================== */
+  const SIZES = [['Side panel · list', 440, 'p', 'about 3', 'about 3', 'Day and Lists drawers only'], ['Dialog · default', 520, 'd', 'about 65', 'about 58', 'One task, one column'], ['Side panel · record', 600, 'p', '7', '5', 'A record with several actions'], ['Dialog · wide', 760, 'd', '6, plus 2 that widen', '10, plus 3 that widen', 'Tables, pairs, two columns'], ['Dialog · large (new)', 1040, 'd new', '0', '4', 'Documents, editors with a preview']];
+  document.getElementById('startIn').innerHTML = `<h1>Every admin dialog and side panel, and what should change</h1>
+    <p class="lede">Twelve agents read the admin app's code and found about 85 overlays: 75 dialogs (confirms included) and 10 side panels. This page shows the nine changes the review recommends, each over the screen it opens from, drawn at its real width on a 1440 by 860 screen. Flip Before and After with the buttons, or press <span class="kbd">B</span>.</p>
+    <h2>The sizes, to scale on a 1440 screen</h2>
+    <div class="ruler2">${SIZES.map(([l, w, k, now, after, use]) => `<div class="rl"><div><b>${l}</b><br><span class="n">${use}</span></div><div class="bar"><i class="${k.includes('p') ? 'p' : 'd'}${k.includes('new') ? ' new' : ''}" style="width:${(w / 1440) * 100}%">${w}</i></div><div class="n">Today ${now}<br>After ${after}</div></div>`).join('')}</div>
+    <h2>The rule we already follow, written down</h2>
+    <div class="rules">
+      <div class="rule"><b>One task, one commit: a dialog.</b><span>Confirm, create, a short edit, pick, send, a history to read. Even when the form is long.</span></div>
+      <div class="rule"><b>A record with several actions, opened from a row, a cell or a document: a side panel.</b><span>440 only from the Day grid, where it sits exactly over the right rail and never covers the grid; 600 everywhere else. A short form never gets a panel.</span></div>
+      <div class="rule"><b>Numbered steps, or a form that reuses a page's sections: a page.</b><span>Like New contract.</span></div>
+      <div class="rule"><b>A value the page already shows: edit it in place.</b><span>The record pages' cards. Existing dialogs stay unless they hurt.</span></div>
+      <div class="rule"><b>Width follows content.</b><span>520 for one column. 760 for a table of three or more columns, fields that pair, two columns, or dense picker rows; widen only when the table appears if it only sometimes does. 1040 for documents and editors with a live preview.</span></div>
+    </div>
+    <p class="gate" style="background:var(--tealTint);color:var(--teal)"><b style="color:var(--teal)">Worth knowing:</b> both containers are modal. A side panel has a scrim and makes the page behind inert, so it lets you <i>see</i> the list, not work it row by row. That is why several "make it a panel" ideas were dropped.</p>
+    <h2>The nine changes</h2>
+    <table class="chg"><thead><tr><th>#</th><th>Overlay</th><th>Today → after</th><th>Confidence</th></tr></thead><tbody>${V.map((v, i) => `<tr><td>${i + 1}</td><td><button data-go="${v.k}">${v.title}</button></td><td class="m">${v.change[0]} → ${v.change[1]}</td><td><span class="conf ${CONF[v.conf][1]}">${CONF[v.conf][0]}</span></td></tr>`).join('')}</tbody></table>
+    <h2>Looked at and kept as they are</h2>
+    <div class="kept">
+      <div class="fc"><h3>The List and Draft List drawers stay 440</h3><p>Their width is the Day view's right rail, so the drawer covers the rail and never the grid. If the List drawer feels tight, trim its five or six footer buttons instead.</p></div>
+      <div class="fc"><h3>History stays a dialog</h3><p>Three of its callers open it from inside a 440 drawer; as a panel it would be a panel on a panel. The timeline already adapts to width.</p></div>
+      <div class="fc"><h3>Code, modifier and payer pickers stay 520</h3><p>Their rows fit, and they are shared with the phone, where a panel would need a new surface slot.</p></div>
+      <div class="fc"><h3>Additional invoice and the letter dialogs stay 520</h3><p>The invoice lines are cards made for narrow widths; the letter preview at about 470px is a comfortable reading width.</p></div>
+    </div>
+    <h2>Also found: tidy-ups with no visible change</h2>
+    <ul style="font-size:14.5px;color:var(--slate);max-width:84ch">
+      <li>Three confirms are built by hand (Retire an availability status, Retire an RVG group, End a pairing) instead of through ConfirmSheet.</li>
+      <li>Session status and Funder sheets set a private width of 480 that would cap the body once the dialog widens; Funder's also branches on platform.</li>
+      <li>The letter template editor calls Dialog directly while its email sibling goes through the surface.</li>
+      <li>The surgeon page's retire dialog repeats its own title.</li>
+    </ul>
+    <p class="gate">Mocks are drawn from the code (labels, fields, columns and seed data), not screenshots. Heights and wrapping are close to the app, not exact.</p>`;
+
+  /* ===================== the switcher ===================== */
+  const opts = document.getElementById('opts');
+  const TABS = [['start', 'Start', '']].concat(V.map((v, i) => [v.k, v.n, String(i + 1), v.conf])).concat([['decide', 'Decide', '']]);
+  opts.innerHTML = TABS.map(([k, n, l]) => `<button class="opt" role="tab" aria-controls="v-${k}" data-k="${k}">${l ? `<b style="color:var(--mist)">${l}</b>` : ''}${n}</button>`).join('');
+  const keys = TABS.map(([k]) => k);
+  let cur = 'start';
+  const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* storage off */ } } };
+  const fit = () => {
+    const v = document.getElementById(`v-${cur}`); if (!v) return;
+    v.querySelectorAll('.stage').forEach((st) => {
+      const w = st.querySelector('.fwrap'); if (!w) return;
+      const narrow = window.innerWidth <= 1000;
+      const s = narrow ? st.clientWidth / 1440 : Math.min(st.clientWidth / 1440, st.clientHeight / 860);
+      w.style.width = `${1440 * s}px`; w.style.height = `${860 * s}px`;
+      w.querySelectorAll('.frame').forEach((f) => { f.style.transform = `scale(${s})`; });
+    });
+  };
+  const show = (k, push = true) => {
+    if (!keys.includes(k)) k = 'start';
+    cur = k;
+    document.querySelectorAll('.view').forEach((v) => v.classList.toggle('on', v.id === `v-${k}`));
+    document.querySelectorAll('.opt').forEach((b) => { const on = b.dataset.k === k; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; if (on) b.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
+    if (push) history.replaceState(null, '', `#${k}`);
+    const doc = document.querySelector(`#v-${k} .doc`); if (doc) doc.scrollTop = 0;
+    requestAnimationFrame(fit);
+  };
+  opts.addEventListener('click', (e) => { const b = e.target.closest('.opt'); if (b) show(b.dataset.k); });
+  document.getElementById('startIn').addEventListener('click', (e) => { const b = e.target.closest('[data-go]'); if (b) show(b.dataset.go); });
+  const step = (d) => show(keys[(keys.indexOf(cur) + d + keys.length) % keys.length]);
+  document.getElementById('prev').addEventListener('click', () => step(-1));
+  document.getElementById('next').addEventListener('click', () => step(1));
+  document.querySelectorAll('.subs').forEach((sw) => sw.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    sw.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x === b));
+    sw.closest('.view').querySelectorAll('.frame').forEach((f) => f.classList.toggle('on', f.id === b.dataset.f));
+  }));
+  const flip = (d = 1) => {
+    const sw = document.querySelector(`#v-${cur} .subs`); if (!sw) return;
+    const bs = [...sw.querySelectorAll('button')]; const i = bs.findIndex((b) => b.getAttribute('aria-pressed') === 'true');
+    bs[(i + d + bs.length) % bs.length].click();
+  };
+  document.addEventListener('keydown', (e) => {
+    if (e.target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'ArrowRight') { step(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { step(-1); e.preventDefault(); }
+    else if (/^[1-9]$/.test(e.key)) show(keys[Number(e.key)]);
+    else if (e.key === 'b' || e.key === 'B' || e.key === ']') flip(1);
+    else if (e.key === '[') flip(-1);
+  });
+  window.addEventListener('resize', fit);
+  window.addEventListener('hashchange', () => show(location.hash.slice(1), false));
+
+  /* ===================== decide ===================== */
+  const PICK = { refresh: 'do', anaesthetist: 'do', xero: 'do', pickers: 'do', nhi: 'skip', recurring: 'do', draft: 'do', large: 'later', replace: 'later' };
+  const QS = V.map((v, i) => [v.k, `${i + 1}. ${v.title}`, `${v.change[0]} → ${v.change[1]}`, [['do', 'Make this change'], ['later', 'Later, or needs more design first'], ['skip', 'Leave it as it is']]])
+    .concat([['rule', 'The rule', 'Adopt the five-line rule on the Start page as a settled ruling in docs/DECISIONS.md?', [['do', 'Yes, as written'], ['later', 'Yes, with changes (say which in the note)'], ['skip', 'No']]],
+      ['tidy', 'The tidy-ups', 'Hand-built confirms to ConfirmSheet, drop the private 480 widths, the letter editor through the surface, the repeated retire title.', [['do', 'Do them with the changes'], ['skip', 'Leave them']]]]);
+  const pickOf = (id) => PICK[id] ?? 'do';
+  const saved = (() => { try { return JSON.parse(store.get('overlay-changes-answers') ?? '{}'); } catch { return {}; } })();
+  const qs = document.getElementById('qs');
+  qs.innerHTML = QS.map(([id, h, p, choices]) => `<div class="q"><h3>${h}</h3><p>${p}</p><div class="ch">${
+    choices.map(([v, l]) => `<label><input type="radio" name="${id}" value="${v}" ${saved[id] === v ? 'checked' : ''}><span>${l}${pickOf(id) === v ? '<span class="r">My pick</span>' : ''}</span></label>`).join('')
+  }</div><textarea name="${id}-note" placeholder="Anything to add">${saved[`${id}-note`] ?? ''}</textarea></div>`).join('');
+  const save = () => {
+    const out = {};
+    qs.querySelectorAll('input:checked').forEach((i) => { out[i.name] = i.value; });
+    qs.querySelectorAll('textarea').forEach((t) => { if (t.value.trim()) out[t.name] = t.value; });
+    store.set('overlay-changes-answers', JSON.stringify(out));
+  };
+  qs.addEventListener('change', save); qs.addEventListener('input', save);
+  document.getElementById('copy').addEventListener('click', async () => {
+    const lines = ['# Admin dialogs and side panels: my answers', ''];
+    QS.forEach(([id, h, , choices]) => {
+      const v = qs.querySelector(`input[name="${id}"]:checked`)?.value;
+      const c = choices.find(([x]) => x === v);
+      const note = qs.querySelector(`textarea[name="${id}-note"]`).value.trim();
+      lines.push(`- **${h}** ${c ? c[1] : '(not answered)'}`);
+      if (note) lines.push(`  Note: ${note}`);
+    });
+    const msg = document.getElementById('copied');
+    try { await navigator.clipboard.writeText(lines.join('\n')); msg.textContent = 'Copied. Paste it into the chat.'; }
+    catch { msg.textContent = 'Copy is blocked here; select the answers and copy by hand.'; }
+  });
+
+  show(location.hash.slice(1) || 'start', false);
+  document.fonts?.ready.then(fit);
+})();
+</script>
+</body>
+</html>
