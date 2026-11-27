@@ -105,6 +105,37 @@ export function notificationText(n: Notification, masters: NotificationMasters):
   return `${by} moved ${what} to ${anaesthetistShort(masters, n.toAnaesthetistId)}${tail}`
 }
 
+/**
+ * A notice's short headline on the Notifications page's feed, who did what and to whom, with the List or
+ * Booking's details on a line of their own (`notificationDetail`): "Dr Murray asked the office to check a
+ * List", "Dr Tamihana returned a List to the office", "Dr Campbell handed a List on to Dr Stewart", "Dr Wong
+ * moved a Booking to Dr Gupta". A hand-on from the unavailable prompt adds ", marking the session not
+ * available". The Day rail keeps the one-sentence `notificationText`.
+ */
+export function notificationHeadline(n: Notification, masters: NotificationMasters): string {
+  const by = anaesthetistShort(masters, n.fromAnaesthetistId)
+  if (n.kind === 'officeAlert') return `${by} asked the office to check ${n.bookingId !== undefined ? 'a Booking' : 'a List'}`
+  const to = anaesthetistShort(masters, n.toAnaesthetistId)
+  if (n.kind === 'bookingMoved') return `${by} moved a Booking to ${to}`
+  const tail = n.cause === 'unavailable' ? ', marking the session not available' : ''
+  if (n.route === 'office') return `${by} returned a List to the office${tail}`
+  return `${by} handed a List on to ${to}${tail}`
+}
+
+/**
+ * The List or Booking a notice is about, as it was when posted: "Wed 2 Dec AM · Christchurch Eye Surgery ·
+ * Mr D. Kwan" for a List, "Herewini, H. · Fri 27 Nov AM · Southern Cross" for a Booking.
+ */
+export function notificationDetail(n: Notification, masters: NotificationMasters): string {
+  const hospital = masters.hospitals[n.hospitalId]?.name ?? 'Hospital not set'
+  const when = `${shortDateLabel(n.dateISO)} ${sessionText(n.session)}`
+  if (n.bookingId !== undefined && (n.kind === 'bookingMoved' || n.kind === 'officeAlert')) {
+    return [n.patientName, when, hospital].filter((p): p is string => p !== undefined && p !== '').join(' · ')
+  }
+  const surgeon = masters.surgeons[n.surgeonId]?.name
+  return [when, hospital, surgeon].filter((p): p is string => p !== undefined && p !== '').join(' · ')
+}
+
 /** Newest first: by `atISO`, then id descending (ids are allocated in order). */
 export function compareNewestFirst(a: Pick<Notification, 'atISO' | 'id'>, b: Pick<Notification, 'atISO' | 'id'>): number {
   return b.atISO.localeCompare(a.atISO) || b.id.localeCompare(a.id)

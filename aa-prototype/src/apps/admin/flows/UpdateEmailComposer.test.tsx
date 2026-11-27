@@ -8,7 +8,7 @@
 
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { ANAE, SEED_LIST_IDS, SEED_MARKERS } from '../../../domain/seed'
 import {
   editBooking,
@@ -222,12 +222,11 @@ describe('Draft update email in the List drawer', () => {
 function PoolHarness() {
   const state = useAppStore()
   const pool = notificationPool(state, { page: 1, showResolved: true })
-  const onOpen = vi.fn()
   return (
     <ul>
       {pool.rows.map((r) => (
         <li key={r.notification.id} data-row={r.notification.id}>
-          <NotificationEmailAction notification={r.notification} target={r.target} actor={OFFICE_ACTOR} onOpen={onOpen} />
+          <NotificationEmailAction notification={r.notification} actor={OFFICE_ACTOR} />
         </li>
       ))}
     </ul>
@@ -267,14 +266,13 @@ describe('Draft cover-change email from the notification pool', () => {
     expect(useAppStore.getState().notifications).toBe(before)
   })
 
-  it('a return to the office offers no email and points to the Draft List', () => {
+  it('a return to the office offers no email (its row opens the Draft List)', () => {
     const state = useAppStore.getState()
     const list = state.schedule.lists[SEED_LIST_IDS.rutherfordPm21]!
     const actor = anaesthetistActor(state, ANAE.rutherford)!
     expect(moveListToOffice(useAppStore, actor, list.id, { vacatedStatus: SEED_STATUS.unavailable }).ok).toBe(true)
     web(<PoolHarness />)
     expect(document.querySelector('[data-shot="pool-cover-email"]')).toBeNull()
-    expect(document.querySelector('[data-shot="pool-returned-hint"]')).toHaveTextContent('Assign this Draft List first. Its cover email is drafted from the List drawer after.')
-    expect(within(document.querySelector('[data-shot="pool-returned-hint"]') as HTMLElement).getByRole('button', { name: /Open Draft List/ })).toBeInTheDocument()
+    expect(document.querySelector('[data-row] button')).toBeNull()
   })
 })

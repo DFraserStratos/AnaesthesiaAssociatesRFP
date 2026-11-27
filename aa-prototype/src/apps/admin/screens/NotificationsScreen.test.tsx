@@ -51,11 +51,27 @@ describe('Notifications: active or resolved', () => {
     expect(useAppStore.getState().notifications[id]).toMatchObject({ resolvedBy: 'Kirsty W.' })
     expect(container.querySelector(`[data-notification-row="${id}"]`)).toBeNull()
     expect(container.querySelector('[data-shot="admin-notifications-page-count"]')).toHaveTextContent('1')
-    fireEvent.click(within(container.querySelector('[data-shot="admin-notifications-show-resolved"]') as HTMLElement).getByRole('checkbox'))
+    fireEvent.click(container.querySelector('[data-shot="admin-notifications-show-resolved"]') as HTMLElement)
     const back = container.querySelector(`[data-notification-row="${id}"]`) as HTMLElement
     expect(back.getAttribute('data-notification-resolved')).toBe('true')
     expect(back).toHaveTextContent(/Resolved by Kirsty W\., Tue 24 Nov, \d\d:\d\d/)
     expect(within(back).queryByRole('button', { name: /^Resolve notice/ })).toBeNull()
+  })
+
+  it('reads as a feed: a day band, a short headline, the List on its own line, and the open action as words', () => {
+    const { container } = renderPage()
+    const card = container.querySelector('[data-shot="admin-notifications-table"]') as HTMLElement
+    expect(card).toHaveTextContent(/Today, Tue 24 Nov\s*2 notices/)
+    expect(within(card).getByText(/^Dr .* returned a List to the office$/)).toBeInTheDocument()
+    expect(within(card).getByRole('button', { name: 'Open Draft List' })).toBeInTheDocument()
+    expect(container.querySelector('[data-shot="admin-notifications-resolved-today"]')).toHaveTextContent('Nothing resolved yet today.')
+  })
+
+  it('a resolved notice joins the rail\'s Resolved today with who and when', () => {
+    const { container } = renderPage()
+    fireEvent.click(screen.getAllByRole('button', { name: /^Resolve notice: / })[0]!)
+    act(() => vi.advanceTimersByTime(500))
+    expect(container.querySelector('[data-shot="admin-notifications-resolved-today"]')).toHaveTextContent(/Kirsty W\., \d\d:\d\d/)
   })
 
   it('the rail card carries the count and the same tick; a ticked row leaves the card', () => {

@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { activeCount, isActive, MOVED_TO_ME_DAYS, NOTIFICATION_POOL_RULE, notificationText, pageOf } from './notifications'
+import { activeCount, isActive, MOVED_TO_ME_DAYS, NOTIFICATION_POOL_RULE, notificationDetail, notificationHeadline, notificationText, pageOf } from './notifications'
 import { surnameCommaInitial } from './names'
 import type { Anaesthetist, Hospital, Notification, Surgeon } from './types'
 
@@ -35,6 +35,24 @@ function n(extra: Partial<Notification> = {}): Notification {
     ...extra,
   }
 }
+
+describe('notificationHeadline and notificationDetail (the page\'s feed)', () => {
+  it('says who did what to whom, with the List on its own line', () => {
+    expect(notificationHeadline(n(), masters)).toBe('Dr Hughes handed a List on to Dr Sharma')
+    expect(notificationHeadline(n({ route: 'office', toAnaesthetistId: undefined }), masters)).toBe('Dr Hughes returned a List to the office')
+    expect(notificationHeadline(n({ cause: 'unavailable' }), masters)).toBe('Dr Hughes handed a List on to Dr Sharma, marking the session not available')
+    expect(notificationDetail(n(), masters)).toBe("Thu 26 Nov AM · St George's · Ms A. Reid")
+  })
+
+  it('names a Booking by its patient', () => {
+    const moved = n({ kind: 'bookingMoved', bookingId: 'B1', patientName: 'Riley, A.' })
+    expect(notificationHeadline(moved, masters)).toBe('Dr Hughes moved a Booking to Dr Sharma')
+    expect(notificationDetail(moved, masters)).toBe("Riley, A. · Thu 26 Nov AM · St George's")
+    const alert = n({ kind: 'officeAlert', route: undefined, cause: undefined, toAnaesthetistId: undefined, message: 'Check the funder' })
+    expect(notificationHeadline(alert, masters)).toBe('Dr Hughes asked the office to check a List')
+    expect(notificationHeadline({ ...alert, bookingId: 'B1' }, masters)).toBe('Dr Hughes asked the office to check a Booking')
+  })
+})
 
 describe('notificationText', () => {
   it('names both anaesthetists on a move to a colleague (US-13.8.2 "Moved to a colleague")', () => {

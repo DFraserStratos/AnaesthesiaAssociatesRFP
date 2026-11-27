@@ -17,16 +17,14 @@ import { Mail } from 'lucide-react'
 import { neutral } from '../../../theme/tokens'
 import type { AuditEntry, Notification } from '../../../domain/types'
 import type { PickableChange } from '../../../domain/updateEmail'
-import { useAppStore, type Actor, type NotificationTarget } from '../../../store'
+import { useAppStore, type Actor } from '../../../store'
 import { Button, TextAction } from '../../../shared/ui'
 import { useBookingDraft } from '../../../shared/booking'
 import { drSurname } from '../../../shared/format'
-import { DRAFT_LIST } from '../../../shared/scheduleTerms'
 import { UpdateEmailComposer, usePickableChanges } from './UpdateEmailComposer'
 
 export const SAVE_FIRST_REASON = 'Save your changes first. The email uses saved changes.'
 export const NOTHING_SAVED_REASON = 'No saved changes to email yet'
-export const RETURNED_LIST_HINT = `Assign this ${DRAFT_LIST} first. Its cover email is drafted from the List drawer after.`
 
 const MAIL_ICON = <Mail size={15} aria-hidden />
 
@@ -122,25 +120,13 @@ export function moveKeyFor(audit: readonly AuditEntry[], notificationId: string)
 }
 
 /**
- * The email a pool row offers: a List moved into a colleague's session gives
- * Draft cover-change email (the hospital, the move ticked, the typed message
- * quoted for the admin); a List returned to the office points to the Draft
- * List; a single Booking moved gives Draft update email for that Booking (the
- * surgeon's office). Alerts offer none.
+ * The email a pool row offers, as a quiet "Email" text action on the Notifications feed: a List moved
+ * into a colleague's session drafts the cover-change email (the hospital, the move ticked, the typed
+ * message quoted for the admin); a single Booking moved drafts the update email for that Booking (the
+ * surgeon's office). A List returned to the office offers none: its row opens the Draft List, and the
+ * cover email is drafted from the List drawer once it is assigned. Alerts offer none.
  */
-export function NotificationEmailAction({ notification, target, actor, onOpen }: { notification: Notification; target: NotificationTarget; actor: Actor; onOpen: (target: NotificationTarget) => void }) {
-  if (notification.kind === 'listMoved' && notification.route === 'office') {
-    return (
-      <span data-shot="pool-returned-hint" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: 8, fontSize: 12.5, color: neutral.slate }}>
-        <span>{RETURNED_LIST_HINT}</span>
-        {target.kind === 'draftList' && (
-          <TextAction size="sm" flush onClick={() => onOpen(target)}>
-            Open {DRAFT_LIST}
-          </TextAction>
-        )}
-      </span>
-    )
-  }
+export function NotificationEmailAction({ notification, actor }: { notification: Notification; actor: Actor }) {
   if (notification.kind === 'listMoved' && notification.route === 'colleague') return <PoolDraft notification={notification} actor={actor} />
   if (notification.kind === 'bookingMoved' && notification.bookingId !== undefined) return <PoolDraft notification={notification} actor={actor} />
   return null
@@ -169,12 +155,16 @@ function PoolDraft({ notification, actor }: { notification: Notification; actor:
   const message = notification.message?.trim()
   return (
     <>
-      <span style={{ display: 'flex' }}>
-        <Button variant="outline" size="compact" shot={forBooking ? 'pool-booking-email' : 'pool-cover-email'} onClick={() => setOpen(true)}>
-          {MAIL_ICON}
-          {forBooking ? 'Draft update email' : 'Draft cover-change email'}
-        </Button>
-      </span>
+      <TextAction
+        size="sm"
+        flush
+        shot={forBooking ? 'pool-booking-email' : 'pool-cover-email'}
+        label={forBooking ? 'Draft update email' : 'Draft cover-change email'}
+        title={forBooking ? 'Draft update email' : 'Draft cover-change email'}
+        onClick={() => setOpen(true)}
+      >
+        Email
+      </TextAction>
       {open && (
         <UpdateEmailComposer
           open
