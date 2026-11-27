@@ -51,7 +51,7 @@ describe('WarningsToDo', () => {
 
   it('Clear removes the row at once and writes the audit row (Cleared)', () => {
     render(<Harness />)
-    fireEvent.click(screen.getByRole('button', { name: 'Clear (optional) warning for Annette Riley' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Clear warning for Annette Riley' }))
     expect(screen.queryAllByRole('listitem')).toHaveLength(0)
     expect(screen.getByText('Nothing needs attention.')).toBeInTheDocument()
     expect(useAppStore.getState().audit.at(-1)).toMatchObject({ action: 'booking.warningCleared', entityId: RILEY, who: 'Kirsty W.' })

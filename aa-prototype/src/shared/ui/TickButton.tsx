@@ -6,7 +6,10 @@ import { accent, neutral, radius } from '../../theme/tokens'
  * US-13.8.3): the To-do card's Clear and a notice's Resolve are this same
  * control, so the affordance reads the same wherever the office finishes
  * something. A teal outline button with a check (teal is the only action
- * colour), its text and accessible name given per use.
+ * colour), its text and accessible name given per use. `iconOnly` is the quiet round tick of the
+ * Admin Day To-do rows (docs/explorations/todo-restyle.html, "Quiet list, bare icons"): a 28px
+ * circle with a mist check that turns teal on hover, its text kept as the accessible name and tip,
+ * so Open stays the row's main action.
  */
 export function TickButton({
   children,
@@ -14,6 +17,7 @@ export function TickButton({
   compact = false,
   label,
   shot,
+  iconOnly = false,
 }: {
   children: string
   onClick: () => void
@@ -21,7 +25,36 @@ export function TickButton({
   /** The accessible name, giving the row's context ("Resolve notice: Dr Souter moved ..."). */
   label?: string
   shot?: string
+  /** Draw only the check in a quiet round button; the text becomes the tip (and the name without `label`). */
+  iconOnly?: boolean
 }) {
+  if (iconOnly) {
+    return (
+      <button
+        type="button"
+        className="aa-ctl aa-tick-icon"
+        onClick={onClick}
+        aria-label={label ?? children}
+        title={children}
+        data-shot={shot}
+        style={{
+          display: 'inline-grid',
+          placeItems: 'center',
+          width: 28,
+          height: 28,
+          padding: 0,
+          borderRadius: radius.pill,
+          border: `1px solid ${neutral.line}`,
+          background: neutral.surface,
+          color: neutral.mist,
+          cursor: 'pointer',
+          flex: 'none',
+        }}
+      >
+        <Check size={15} aria-hidden />
+      </button>
+    )
+  }
   return (
     <button
       type="button"

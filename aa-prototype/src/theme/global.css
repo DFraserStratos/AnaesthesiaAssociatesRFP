@@ -493,7 +493,25 @@ html.aa-viewport-probe .aa-mobile-viewport::after {
   background: var(--color-bg);
 }
 
+/* A list row that opens its record (the Admin Day work card's rows): the same quiet hover as a
+   table row, on the row itself. Rows in an `aa-row-list` are split by a hairline. */
+.aa-clickable-list-row {
+  cursor: pointer;
+  transition: background-color 120ms ease-out;
+}
+.aa-row-list > li + li {
+  border-top: 1px solid var(--color-line);
+}
+
 @media (hover: hover) {
+  .aa-clickable-list-row:hover {
+    background: var(--color-bg);
+  }
+  .aa-tick-icon:hover {
+    color: var(--color-accent) !important;
+    border-color: var(--color-accent) !important;
+    background-color: var(--color-accent-tint) !important;
+  }
   .aa-clickable-table-row:hover > td {
     background: var(--color-sunken);
   }

@@ -100,6 +100,7 @@ export function TickButtonExample() {
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         <TickButton onClick={() => setDone((n) => n + 1)} label="Resolve notice: example">Resolve</TickButton>
         <TickButton compact onClick={() => setDone((n) => n + 1)}>Clear</TickButton>
+        <TickButton iconOnly onClick={() => setDone((n) => n + 1)} label="Clear warning for example">Clear</TickButton>
       </div>
       <Echo>{done === 0 ? 'Not ticked yet.' : `Ticked ${done} time${done === 1 ? '' : 's'}.`}</Echo>
     </div>

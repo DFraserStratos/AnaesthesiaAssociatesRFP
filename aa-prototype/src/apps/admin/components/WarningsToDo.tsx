@@ -1,17 +1,19 @@
 import { InfoTip } from '../../../shared/help/InfoTip'
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { clearWarning, openConflictCount, replacedContractsToDisable, useAppStore, type Actor, type OpenWarningRow } from '../../../store'
 import type { ReplacedContractRow } from '../../../domain/warnings/rules'
 import { plainDate } from '../../../domain/dateText'
-import { accent, neutral, radius, semantic } from '../../../theme/tokens'
+import { neutral, semantic, type as typeScale } from '../../../theme/tokens'
 import { CountBadge } from '../../../shared/ui/CountBadge'
-import { Pill } from '../../../shared/ui/Pill'
 import { FormError } from '../../../shared/ui/Field'
 import { Card, TextAction } from '../../../shared/ui'
 import { drSurname, shortDay, plural } from '../../../shared/format'
 import { UNASSIGNED } from '../../../shared/scheduleTerms'
-import { AttentionDot } from '../../../shared/warnings/AttentionDot'
-import { ClearWarningButton, WarningTriangle, warningTone } from '../../../shared/warnings'
+import { ClearWarningButton, warningTone } from '../../../shared/warnings'
+import { RowOpenButton, isInteractiveRowTarget } from '../../../shared/table/ClickableRow'
+import { WARNING_RULES } from '../../../domain/warnings/rules'
+import type { WarningRuleId } from '../../../domain/warnings'
+import { CalendarX2, ChevronRight, FileCheck, ReceiptText, Ruler, ShieldAlert, Split, TriangleAlert, UserRound, Wallet, type LucideIcon } from 'lucide-react'
 import { compareSessions, sessionText } from '../../../domain/outOfHours'
 import { EmptyState } from '../../../shared/ui/EmptyState'
 
@@ -22,6 +24,21 @@ export const TODO_VISIBLE_ROWS = 6
 const TODO_ROW_SHOTS: Partial<Record<string, string>> = {
   childPayer: 'todo-child-warning',
   approvalNumberMissing: 'todo-approval-warning',
+}
+
+/** Each rule's icon on a To-do row, so the kind of problem reads at a glance; its colour is the strength's. */
+const RULE_ICONS: Record<WarningRuleId, LucideIcon> = {
+  childPayer: UserRound,
+  approvalNumberMissing: ShieldAlert,
+  patientBalance: Wallet,
+  prepaymentUnpaid: ReceiptText,
+  baseUnitsOutsideGuide: Ruler,
+  splitDoesNotFit: Split,
+}
+
+/** A rule's short name, the row's title (the rule's own label; one home). */
+function ruleLabel(ruleId: string): string {
+  return WARNING_RULES.find((r) => r.id === ruleId)?.label ?? 'Warning'
 }
 
 /**
@@ -128,76 +145,96 @@ export function ToDoList({
   const [error, setError] = useState<string | null>(null)
   const shown = expanded ? items : items.slice(0, TODO_VISIBLE_ROWS)
 
+  const text: CSSProperties = { fontSize: typeScale.small.size, lineHeight: '17px', color: neutral.slate, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }
+  const metaLine: CSSProperties = { fontSize: typeScale.captionSm.size, lineHeight: '16px', color: neutral.slate }
+  const chevron = <ChevronRight size={14} aria-hidden style={{ flex: 'none', marginTop: 3, color: neutral.mist }} />
+
   return (
     <>
-      {conflicts > 0 && (
-        <button
-          type="button"
-          data-shot="admin-todo-conflicts"
-          onClick={onOpenConflicts}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: 'none', borderRadius: radius.ctl, background: neutral.bg, boxShadow: `inset 3px 0 0 ${semantic.warning.solid}`, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, color: accent.base, cursor: 'pointer', textAlign: 'left' }}
-        >
-          <AttentionDot size={14} />
-          {plural(conflicts, 'open conflict')}
-        </button>
-      )}
       {items.length === 0 && conflicts === 0 && <EmptyState>Nothing needs attention.</EmptyState>}
-      {items.length === 0 && conflicts > 0 && <EmptyState>No open warnings.</EmptyState>}
-      {shown.length > 0 && (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {shown.map((item) => {
-            if (item.kind === 'replacedContract') {
-              const r = item.row
-              return (
-                <ToDoRow key={`rc:${r.contractId}`} edge={null} shot="todo-replaced-contract" data-contract-id={r.contractId}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, lineHeight: '17px', fontWeight: 600, color: neutral.ink }}>
-                    <Pill tone="neutral" variant="outline" size="sm">Contract</Pill>
-                    {`Disable ${r.contractName} (${r.aaCode})`}
-                  </span>
-                  <span style={{ fontSize: 11, lineHeight: '15px', color: neutral.slate }}>{`Replaced by ${r.replacementCode} from ${plainDate(r.fromISO)}`}</span>
-                  {onOpenContract !== undefined && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
-                      <TextAction size="sm" flush label={`Open ${r.contractName} (${r.aaCode})`} onClick={() => onOpenContract(r.contractId)} style={{ minHeight: 30 }} shot="todo-replaced-contract-open">
-                        Open Contract
-                      </TextAction>
+      {(conflicts > 0 || shown.length > 0) && (
+        <div style={{ margin: '-4px -16px 0' }}>
+          {conflicts > 0 && onOpenConflicts !== undefined && (
+            <ToDoRow
+              as="div"
+              icon={CalendarX2}
+              iconColor={semantic.warning.solid}
+              onOpen={onOpenConflicts}
+              action={chevron}
+              shot={undefined}
+              style={shown.length > 0 || items.length === 0 ? { borderBottom: `1px solid ${neutral.line}` } : undefined}
+            >
+              <RowOpenButton label={`${plural(conflicts, 'open conflict')}, open Conflicts`} onOpen={onOpenConflicts} data-shot="admin-todo-conflicts" style={ROW_TITLE}>
+                {plural(conflicts, 'open conflict')}
+              </RowOpenButton>
+            </ToDoRow>
+          )}
+          {items.length === 0 && conflicts > 0 && <EmptyState>No open warnings.</EmptyState>}
+          {shown.length > 0 && (
+            <ul className="aa-row-list" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {shown.map((item) => {
+                if (item.kind === 'replacedContract') {
+                  const r = item.row
+                  const open = onOpenContract !== undefined ? () => onOpenContract(r.contractId) : undefined
+                  const title = `Disable ${r.contractName} (${r.aaCode})`
+                  return (
+                    <ToDoRow key={`rc:${r.contractId}`} icon={FileCheck} iconColor={neutral.slate} {...(open !== undefined ? { onOpen: open, action: chevron } : {})} shot="todo-replaced-contract" data-contract-id={r.contractId}>
+                      {open !== undefined ? (
+                        <RowOpenButton label={`Open ${r.contractName} (${r.aaCode})`} onOpen={open} data-shot="todo-replaced-contract-open" style={ROW_TITLE}>
+                          {title}
+                        </RowOpenButton>
+                      ) : (
+                        <span style={ROW_TITLE}>{title}</span>
+                      )}
+                      <span style={metaLine}>{`Replaced by ${r.replacementCode} from ${plainDate(r.fromISO)}`}</span>
+                    </ToDoRow>
+                  )
+                }
+                const r = item.row
+                const patient = masters.patients[r.patientId]?.name ?? 'Unknown patient'
+                const anae = r.anaesthetistId !== undefined ? masters.anaesthetists[r.anaesthetistId] : undefined
+                const open = () => onOpenBooking(r.dateISO, r.bookingId)
+                const strong = r.warning.strength === 'strong'
+                return (
+                  <ToDoRow
+                    key={r.warning.key}
+                    icon={RULE_ICONS[r.warning.ruleId] ?? TriangleAlert}
+                    iconColor={warningTone(r.warning.strength).solid}
+                    onOpen={open}
+                    shot={TODO_ROW_SHOTS[r.warning.ruleId]}
+                    data-warning-key={r.warning.key}
+                    data-strength={r.warning.strength}
+                    action={
+                      <ClearWarningButton
+                        iconOnly
+                        warning={r.warning}
+                        label={`Clear warning for ${patient}`}
+                        onClear={() => {
+                          // A folded row (the child warning on each Procedure, catch-up Phase 22a) clears every Procedure's.
+                          let message: string | null = null
+                          for (const key of [r.warning.key, ...(r.foldedKeys ?? [])]) {
+                            const res = clearWarning(useAppStore, actor, r.bookingId, key)
+                            if (!res.ok) message = res.message
+                          }
+                          setError(message)
+                        }}
+                      />
+                    }
+                  >
+                    <RowOpenButton label={`Open ${patient}'s Booking`} onOpen={open} style={ROW_TITLE}>
+                      {ruleLabel(r.warning.ruleId)}
+                      {strong && <span style={VISUALLY_HIDDEN}> (strong warning)</span>}
+                    </RowOpenButton>
+                    <span style={text}>{r.warning.text}</span>
+                    <span style={metaLine}>
+                      {patient} · {anae !== undefined ? drSurname(anae.name) : (r.anaesthetistId ?? UNASSIGNED)} · {shortDay(r.dateISO)} {sessionText(r.session)}
                     </span>
-                  )}
-                </ToDoRow>
-              )
-            }
-            const r = item.row
-            const patient = masters.patients[r.patientId]?.name ?? 'Unknown patient'
-            const anae = r.anaesthetistId !== undefined ? masters.anaesthetists[r.anaesthetistId] : undefined
-            const tone = warningTone(r.warning.strength)
-            return (
-              <ToDoRow key={r.warning.key} edge={tone.solid} shot={TODO_ROW_SHOTS[r.warning.ruleId]} data-warning-key={r.warning.key} lead={<WarningTriangle warnings={[r.warning]} size="sm" />}>
-                <span style={{ fontSize: 12.5, lineHeight: '17px', fontWeight: 600, color: neutral.ink }}>{r.warning.text}</span>
-                <span style={{ fontSize: 11, lineHeight: '15px', color: neutral.slate }}>
-                  {patient} · {anae !== undefined ? drSurname(anae.name) : (r.anaesthetistId ?? UNASSIGNED)} · {shortDay(r.dateISO)} {sessionText(r.session)}
-                </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
-                  <TextAction size="sm" flush label={`Open ${patient}'s Booking`} onClick={() => onOpenBooking(r.dateISO, r.bookingId)} style={{ minHeight: 30 }}>
-                    Open
-                  </TextAction>
-                  <ClearWarningButton
-                    compact
-                    warning={r.warning}
-                    label={`${r.warning.strength === 'mild' ? 'Clear (optional)' : 'Clear'} warning for ${patient}`}
-                    onClear={() => {
-                      // A folded row (the child warning on each Procedure, catch-up Phase 22a) clears every Procedure's.
-                      let message: string | null = null
-                      for (const key of [r.warning.key, ...(r.foldedKeys ?? [])]) {
-                        const res = clearWarning(useAppStore, actor, r.bookingId, key)
-                        if (!res.ok) message = res.message
-                      }
-                      setError(message)
-                    }}
-                  />
-                </span>
-              </ToDoRow>
-            )
-          })}
-        </ul>
+                  </ToDoRow>
+                )
+              })}
+            </ul>
+          )}
+        </div>
       )}
       {items.length > TODO_VISIBLE_ROWS && (
         <TextAction size="sm" flush ariaExpanded={expanded} onClick={() => setExpanded((v) => !v)} style={{ alignSelf: 'flex-start', minHeight: 28 }}>
@@ -209,12 +246,51 @@ export function ToDoList({
   )
 }
 
-/** One work-card row: the bg well, a left edge in the warning's tone (none for a work row), an optional lead mark. */
-export function ToDoRow({ edge, lead, shot, children, ...data }: { edge: string | null; lead?: ReactNode; shot: string | undefined; children: ReactNode } & { [key: `data-${string}`]: string }) {
+/** A row's title: the open handle's words, at the rail's label size. */
+const ROW_TITLE: CSSProperties = { fontSize: typeScale.label.size, lineHeight: '18px', fontWeight: 600, color: neutral.ink }
+
+const VISUALLY_HIDDEN: CSSProperties = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }
+
+/**
+ * One work-card row (docs/explorations/todo-restyle.html, "Quiet list, bare icons"): flat, split from
+ * its neighbours by the list's hairline, never a well or a coloured edge. An optional 20px icon in its
+ * own column (a warning's rule, in its strength's colour); the title, wording and details share one
+ * left edge beside it; an optional `action` on the right (the round Clear tick, or a chevron). With
+ * `onOpen` the whole row opens (clicks on an inner button do only their own action); put a
+ * `RowOpenButton` in it as the keyboard handle.
+ */
+export function ToDoRow({
+  icon: Icon,
+  iconColor,
+  onOpen,
+  action,
+  as = 'li',
+  shot,
+  style,
+  children,
+  ...data
+}: {
+  icon?: LucideIcon
+  iconColor?: string
+  onOpen?: () => void
+  action?: ReactNode
+  as?: 'li' | 'div'
+  shot: string | undefined
+  style?: CSSProperties | undefined
+  children: ReactNode
+} & { [key: `data-${string}`]: string }) {
+  const Tag = as
   return (
-    <li {...data} data-shot={shot} style={{ display: 'flex', gap: 10, padding: '10px 12px', background: neutral.bg, borderRadius: radius.ctl, ...(edge !== null ? { boxShadow: `inset 3px 0 0 ${edge}` } : {}) }}>
-      {lead !== undefined && <span style={{ paddingTop: 1 }}>{lead}</span>}
-      <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>{children}</span>
-    </li>
+    <Tag
+      {...data}
+      data-shot={shot}
+      className={onOpen !== undefined ? 'aa-clickable-list-row' : undefined}
+      onClick={onOpen !== undefined ? (e: React.MouseEvent) => { if (!isInteractiveRowTarget(e.target)) onOpen() } : undefined}
+      style={{ position: 'relative', display: 'flex', gap: 12, alignItems: 'flex-start', padding: '12px 16px', ...style }}
+    >
+      {Icon !== undefined && <Icon size={20} strokeWidth={2} aria-hidden style={{ flex: 'none', marginTop: -1, color: iconColor ?? neutral.slate }} />}
+      <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>{children}</span>
+      {action}
+    </Tag>
   )
 }

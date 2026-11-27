@@ -6,7 +6,6 @@ import { TextAction } from '../../../shared/ui'
 import { EmptyState } from '../../../shared/ui/EmptyState'
 import { drSurname, shortDay } from '../../../shared/format'
 import { sessionText } from '../../../domain/outOfHours'
-import { warningTone } from '../../../shared/warnings'
 import { ToDoRow, TODO_VISIBLE_ROWS } from './WarningsToDo'
 
 /** Procedures named under a List before "+n more". */
@@ -37,20 +36,19 @@ export function ContractsToSetList({
   const masters = useAppStore((s) => s.masters)
   const [expanded, setExpanded] = useState(false)
   const shown = expanded ? rows : rows.slice(0, TODO_VISIBLE_ROWS)
-  const strong = warningTone('strong')
 
   if (rows.length === 0) return <EmptyState>Every List has its Contracts.</EmptyState>
 
   return (
     <>
-      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <ul className="aa-row-list" style={{ listStyle: 'none', margin: '-4px -16px 0', padding: 0 }}>
         {shown.map((r) => {
           const hospital = masters.hospitals[r.hospitalId]?.name ?? r.hospitalId
           const anae = masters.anaesthetists[r.anaesthetistId]
           const first = r.toSet[0]!
           const more = r.toSet.length - NAMED_PROCEDURES
           return (
-            <ToDoRow key={r.listId} edge={r.past ? strong.solid : null} shot="contracts-to-set-row" data-list-id={r.listId} data-past={r.past ? 'true' : 'false'}>
+            <ToDoRow key={r.listId} shot="contracts-to-set-row" data-list-id={r.listId} data-past={r.past ? 'true' : 'false'}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12.5, lineHeight: '17px', fontWeight: 600, color: neutral.ink }}>
                 <Pill tone={r.past ? 'error' : 'neutral'} variant="outline" size="sm" mono>{`${r.set} of ${r.total} set`}</Pill>
                 {`${shortDay(r.dateISO)} ${sessionText(r.session)} · ${hospital}`}

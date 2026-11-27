@@ -22,16 +22,19 @@ export function ClearWarningButton({
   warning,
   onClear,
   compact = false,
+  iconOnly = false,
   label,
 }: {
   warning: Warning
   onClear: () => void
   compact?: boolean
+  /** The quiet round tick of the To-do rows; the Clear wording becomes its tip. */
+  iconOnly?: boolean
   /** The accessible name, giving the row's context ("Clear warning for Annette Riley"). */
   label?: string
 }) {
   return (
-    <TickButton onClick={onClear} compact={compact} {...(label !== undefined ? { label } : {})}>
+    <TickButton onClick={onClear} compact={compact} iconOnly={iconOnly} {...(label !== undefined ? { label } : {})}>
       {warning.strength === 'mild' ? 'Clear (optional)' : 'Clear'}
     </TickButton>
   )

@@ -96,7 +96,6 @@ export const ALLOW_LIST: readonly { file: string; count: number; reason: string 
   // Rows and cards that open a record: one whole target, not a command button.
   { file: 'apps/admin/components/DraftListBand.tsx', count: 1, reason: 'A Draft List block placed on the Day ruler that opens its drawer' },
   { file: 'apps/admin/components/PrepaymentsRailCard.tsx', count: 1, reason: 'Rail rows that open a Booking or Invoices' },
-  { file: 'apps/admin/components/WarningsToDo.tsx', count: 1, reason: "The to-do card's row that opens Conflicts (warning edge)" },
   { file: 'apps/admin/flows/MoveBookingFlow.tsx', count: 1, reason: 'Candidate List cards that move the Booking on tap' },
   { file: 'apps/admin/components/pairing/AnaesthetistCandidates.tsx', count: 1, reason: "The office's candidate row (name, pills, tier): a pick row PickRow's two looks do not cover" },
   { file: 'apps/mobile/screens/BalancesScreen.tsx', count: 1, reason: 'An Outstanding card whose whole face is the target' },
@@ -126,7 +125,7 @@ export const ALLOW_LIST: readonly { file: string; count: number; reason: string 
 ]
 
 /** The list's length, and its buttons in all, when U7 closed (23 November 2026). Both may only come down. */
-export const ALLOW_LIST_CEILING = 52
+export const ALLOW_LIST_CEILING = 51
 export const ALLOWED_BUTTONS_CEILING = 83
 
 /** Block and line comments blanked (newlines kept, so offsets and line numbers hold). */
